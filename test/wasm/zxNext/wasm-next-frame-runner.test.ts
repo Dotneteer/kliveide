@@ -21,7 +21,6 @@ type FrameSnapshot = {
   frames: number;
   tacts: number;
   currentFrameTact: number;
-  lastRenderedFrameTact: number;
   frameCompleted: boolean;
 };
 
@@ -153,7 +152,8 @@ function executeAndCaptureFrame(machine: FrameRunnerMachine): FrameSnapshot {
     frames: machine.frames,
     tacts: machine.tacts,
     currentFrameTact: machine.currentFrameTact,
-    lastRenderedFrameTact: machine.lastRenderedFrameTact,
+    // --- Not lastRenderedFrameTact: TS render bookkeeping (it renders the whole frame at the frame end);
+    // --- the WASM raster tracks rendered pixels instead and leaves the field 0
     frameCompleted: machine.frameCompleted
   };
 }

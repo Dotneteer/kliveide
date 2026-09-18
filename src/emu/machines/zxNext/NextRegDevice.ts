@@ -353,10 +353,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x05,
       description: "Peripheral 1 Setting",
+      // --- zxnext.vhd ~5843: the joystick modes and the *effective* 50/60 Hz and scandoubler bits
+      readFn: () =>
+        (this.regValues[0x05] & 0xfa) |
+        (machine.composedScreenDevice.effective60Hz ? 0x04 : 0x00) |
+        (machine.composedScreenDevice.effectiveScandoubler ? 0x01 : 0x00),
       writeFn: (v) => {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
-        machine.composedScreenDevice.is60HzMode = (v & 0x04) !== 0; // DEPRECATED
         machine.composedScreenDevice.scandoublerEnabled = (v & 0x01) !== 0; // DEPRECATED
         machine.composedScreenDevice.nextReg0x05Value = v & 0xff;
       },
@@ -770,8 +774,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x11,
       description: "Video Timing",
       readFn: () => machine.composedScreenDevice.videoTimingMode,
+      // --- zxnext.vhd ~5186-5193: config mode only; 111 stores 000 (issue 4 board: all three bits)
       writeFn: (v) => {
-        machine.composedScreenDevice.videoTimingMode = v & 0x07;
+        if (!this.configMode) return;
+        machine.composedScreenDevice.videoTimingMode = (v & 0x07) === 0x07 ? 0 : v & 0x07;
       },
       slices: [
         {
@@ -3415,6 +3421,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     scr.userLockOnDisplayTiming = false;
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
+    // --- A power-on starts with the effective (frame-latched) video bits equal to the requested ones
+    machine.composedScreenDevice.effective60Hz = machine.composedScreenDevice.is60HzMode;
+    machine.composedScreenDevice.effectiveScandoubler = machine.composedScreenDevice.scandoublerEnabled;
     this.directSetRegValue(0x06, 0x80); // --- Enable hotkey CPU speed (bit 7)
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound

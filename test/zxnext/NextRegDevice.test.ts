@@ -1293,7 +1293,8 @@ describe("Next - NextRegDevice", function () {
     // --- Arrange
     const m = await createTestNextMachine();
 
-    // --- Act
+    // --- Act: zxnext.vhd ~5186 - $11 is written only in config mode
+    writeNextReg(m, 0x03, 0x07);
     writeNextReg(m, 0x11, 0x26);
 
     // --- Assert

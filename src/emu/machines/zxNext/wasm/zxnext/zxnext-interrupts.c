@@ -42,13 +42,19 @@ static uint8_t zxnextInterruptsDeviceRequesting(uint32_t index) {
   return daisyStatus[slot] && daisyEnabled[slot];
 }
 
+static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact);
+static uint32_t zxnextVideoLineIntActive(uint32_t frameTact);
+
 static uint32_t zxnextInterruptsGetNextRegister(uint32_t reg) {
+  uint32_t renderedTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
   switch (reg & 0xffu) {
     case 0x20:
       return (lineInterruptStatus ? 0x80u : 0x00u) | (ulaInterruptStatus ? 0x40u : 0x00u);
     case 0x22:
       return
-        (intSignalActive ? 0x80u : 0x00u) |
+        /* ~5938: bit 7 is the INT pulse itself (`not pulse_int_n`), started only by an enabled source */
+        (((!ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedTact)) ||
+          (lineInterruptEnabled && zxnextVideoLineIntActive(renderedTact))) ? 0x80u : 0x00u) |
         (ulaInterruptDisabled ? 0x04u : 0x00u) |
         (lineInterruptEnabled ? 0x02u : 0x00u) |
         ((lineInterrupt & 0x100u) ? 0x01u : 0x00u);

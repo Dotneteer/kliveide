@@ -140,6 +140,7 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
 
   // --- Ports that change the picture: render what the beam has drawn so far with the old state.
   // --- Even ports are the ULA's $FE; only a border colour change matters (beeper writes are frequent).
+  // --- The new colour itself shows from the next 8-pixel border latch (zxnextUlaWritePortFe).
   if (((normalized & 0x0001u) == 0u && (byteValue & 0x07u) != borderColor) ||
       (normalized & 0x00ffu) == 0x00ffu ||
       (normalized & 0xffffu) == 0x123bu || (normalized & 0xffffu) == 0x303bu || (normalized & 0xffffu) == 0xff3bu ||

@@ -13,7 +13,12 @@
 #define ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH (ZXNEXT_STANDARD_SCREEN_WIDTH * ZXNEXT_STANDARD_SCREEN_SCALE_X)
 #define ZXNEXT_STANDARD_SCREEN_HEIGHT 192u
 #define ZXNEXT_STANDARD_SCREEN_X 96u
-#define ZXNEXT_STANDARD_SCREEN_Y ((ZXNEXT_SCREEN_HEIGHT - ZXNEXT_STANDARD_SCREEN_HEIGHT) / 2u)
+/*
+ * The paper's buffer row: display start minus the first buffer line - 48 at 50 Hz, 24 at 60 Hz (as the
+ * TypeScript core frames it). At 60 Hz the 320x256 layers start at row -8: the unsigned row wraps to a
+ * huge value and zxnextRenderRowOff skips it.
+ */
+#define ZXNEXT_STANDARD_SCREEN_Y (zxnextTimingDisplayYStart - zxnextTimingFirstVc)
 #define ZXNEXT_LAYER2_320_SCREEN_WIDTH 320u
 #define ZXNEXT_LAYER2_320_SCREEN_OUTPUT_WIDTH (ZXNEXT_LAYER2_320_SCREEN_WIDTH * ZXNEXT_STANDARD_SCREEN_SCALE_X)
 #define ZXNEXT_LAYER2_WIDE_SCREEN_HEIGHT 256u
@@ -69,6 +74,43 @@ static uint8_t ulaFlashCounter;
 static uint8_t ulaFlashFlag;
 static uint8_t ulaScrollX;
 static uint8_t ulaScrollY;
+
+/*
+ * The border colour and ULA scroll the picture shows. The ULA takes a port $FE / NextReg $26 / $27
+ * write only at its next 8-pixel latch point (zxula.vhd attr_reg, px/py), so each write is kept as a
+ * pending latch and applied by the raster when drawing reaches that point (zxnextRasterRenderTo).
+ * The registers above keep the written values for readback.
+ */
+#define ZXNEXT_ULA_LATCH_BORDER 0u
+#define ZXNEXT_ULA_LATCH_SCROLL_X 1u
+#define ZXNEXT_ULA_LATCH_SCROLL_Y 2u
+#define ZXNEXT_ULA_LATCH_COUNT 3u
+static uint8_t ulaShown[ZXNEXT_ULA_LATCH_COUNT];
+static uint8_t ulaLatchPending[ZXNEXT_ULA_LATCH_COUNT];
+static uint8_t ulaLatchValue[ZXNEXT_ULA_LATCH_COUNT];
+static uint32_t ulaLatchTact[ZXNEXT_ULA_LATCH_COUNT];
+#define ulaBorderShown ulaShown[ZXNEXT_ULA_LATCH_BORDER]
+#define ulaScrollXShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_X]
+#define ulaScrollYShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_Y]
+
+/* Defined with the raster at the end of this file. */
+static uint32_t zxnextRasterBorderTact(uint32_t frameTact);
+static uint32_t zxnextRasterUlaScrollTact(uint32_t frameTact);
+static uint32_t zxnextRasterWriteTact(void);
+
+static void zxnextUlaScheduleLatch(uint32_t which, uint32_t value, uint32_t frameTact) {
+  ulaLatchPending[which] = 1u;
+  ulaLatchValue[which] = (uint8_t)value;
+  ulaLatchTact[which] = frameTact;
+}
+
+/* Applies every pending latch now (frame end, reset). */
+static void zxnextUlaApplyAllLatches(void) {
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) {
+    if (ulaLatchPending[i]) ulaShown[i] = ulaLatchValue[i];
+    ulaLatchPending[i] = 0u;
+  }
+}
 static uint8_t ulaClipWindow[4];
 static uint8_t ulaClipIndex;
 static uint8_t ulaDisableOutput;
@@ -93,6 +135,10 @@ static void zxnextUlaReset(void) {
   ulaFlashFlag = 0u;
   ulaScrollX = 0u;
   ulaScrollY = 0u;
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) ulaLatchPending[i] = 0u;
+  ulaBorderShown = 7u;
+  ulaScrollXShown = 0u;
+  ulaScrollYShown = 0u;
   ulaClipWindow[0] = 0u;
   ulaClipWindow[1] = 255u;
   ulaClipWindow[2] = 0u;
@@ -129,7 +175,12 @@ static inline uint32_t zxnextUlaReadPortFe(uint32_t address) {
 static inline void zxnextUlaWritePortFe(uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   portFeValue = byteValue;
-  borderColor = byteValue & 0x07u;
+  /* Only a new colour moves the latch: beeper writes repeat the colour without a raster catch-up, and
+   * re-scheduling would push an earlier change that has not been drawn yet to a later latch point. */
+  if ((byteValue & 0x07u) != borderColor) {
+    borderColor = byteValue & 0x07u;
+    zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_BORDER, borderColor, zxnextRasterBorderTact(currentFrameTact));
+  }
   micBit = (byteValue & 0x08u) != 0u;
   uint8_t bit4 = (byteValue & 0x10u) != 0u;
   if (earBit && !bit4) {
@@ -238,45 +289,34 @@ static inline uint32_t zxnextUlaLoResWrappedY(uint32_t y) {
   return y & 0xffu;
 }
 
+/* One standard-mode ULA pixel: screen row sourceY, screen x sourceX (both already scrolled). */
+static uint32_t zxnextUlaStandardPixel(uint32_t sourceY, uint32_t sourceX) {
+  uint32_t sourceXByte = sourceX >> 3u;
+  uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaBitmapAddress(sourceY, sourceXByte));
+  uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaAttributeAddress(sourceY, sourceXByte));
+  uint32_t mask = 0x80u >> (sourceX & 0x07u);
+  return zxnextUlaPx(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
+}
+
 static void zxnextUlaRenderStandardScreen(void) {
   uint32_t fallbackPixel = 0u /* clipped: transparent */;
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
     if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
-    uint32_t previousPixel = zxnextLayerUla[outputOffset - 1u];
-    for (uint32_t xByte = 0; xByte < 32u; xByte++) {
-      uint32_t logicalX = xByte * 8u;
-      uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
-      uint32_t outputPixel = outputOffset + xByte * 8u * ZXNEXT_STANDARD_SCREEN_SCALE_X;
-      for (uint32_t bit = 0; bit < 8u; bit++) {
-        uint32_t x = logicalX + bit;
-        uint32_t pixelOffset = outputPixel + bit * ZXNEXT_STANDARD_SCREEN_SCALE_X;
-        if (zxnextUlaIsClipped(x, y)) {
-          if (ulaHalfPixelScroll) {
-            zxnextLayerUla[pixelOffset] = previousPixel;
-            zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
-            previousPixel = fallbackPixel;
-          } else {
-            zxnextLayerUla[pixelOffset] = fallbackPixel;
-            zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
-          }
-          continue;
-        }
-        uint32_t sourceX = (x + ulaScrollX) & 0xffu;
-        uint32_t sourceXByte = sourceX >> 3u;
-        uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaBitmapAddress(sourceY, sourceXByte));
-        uint8_t attr = (uint8_t)zxnextMemoryReadScreenOffset(zxnextUlaAttributeAddress(sourceY, sourceXByte));
-        uint32_t mask = 0x80u >> (sourceX & 0x07u);
-        uint32_t pixel = zxnextUlaPx(zxnextUlaAttrPaletteIndex(attr, (pixels & mask) != 0u));
-        if (ulaHalfPixelScroll) {
-          zxnextLayerUla[pixelOffset] = previousPixel;
-          zxnextLayerUla[pixelOffset + 1u] = pixel;
-          previousPixel = pixel;
-        } else {
-          zxnextLayerUla[pixelOffset] = pixel;
-          zxnextLayerUla[pixelOffset + 1u] = pixel;
-        }
+    uint32_t sourceY = (y + ulaScrollYShown) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
+    for (uint32_t x = 0; x < 256u; x++) {
+      uint32_t pixelOffset = outputOffset + x * ZXNEXT_STANDARD_SCREEN_SCALE_X;
+      if (zxnextUlaIsClipped(x, y)) {
+        zxnextLayerUla[pixelOffset] = fallbackPixel;
+        zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
+        continue;
       }
+      uint32_t pixel = zxnextUlaStandardPixel(sourceY, (x + ulaScrollXShown) & 0xffu);
+      zxnextLayerUla[pixelOffset] = pixel;
+      /* zxula.vhd ~397: the half-pixel scroll ($68 bit 2) loads the shift register one more 14 MHz
+       * half pixel to the left, so the second half of paper x is the first half of screen x + 1 */
+      zxnextLayerUla[pixelOffset + 1u] =
+        ulaHalfPixelScroll ? zxnextUlaStandardPixel(sourceY, (x + 1u + ulaScrollXShown) & 0xffu) : pixel;
     }
   }
 }
@@ -288,7 +328,7 @@ static void zxnextUlaRenderHiResScreen(void) {
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
     if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
-    uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
+    uint32_t sourceY = (y + ulaScrollYShown) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
     for (uint32_t x = 0; x < ZXNEXT_STANDARD_SCREEN_OUTPUT_WIDTH; x++) {
       uint32_t logicalX = x >> 1u;
       uint32_t pixelOffset = outputOffset + x;
@@ -296,7 +336,7 @@ static void zxnextUlaRenderHiResScreen(void) {
         zxnextLayerUla[pixelOffset] = fallbackPixel;
         continue;
       }
-      uint32_t sourceX = (x + ((uint32_t)ulaScrollX << 1u)) & 0x1ffu;
+      uint32_t sourceX = (x + ((uint32_t)ulaScrollXShown << 1u)) & 0x1ffu;
       uint32_t sourceXByte = sourceX >> 4u;
       uint32_t pixelInWord = sourceX & 0x0fu;
       uint32_t pixelAddr = zxnextUlaBitmapAddress(sourceY, sourceXByte);
@@ -353,7 +393,7 @@ static void zxnextUlaRenderHiColorScreen(void) {
   for (uint32_t y = 0; y < ZXNEXT_STANDARD_SCREEN_HEIGHT; y++) {
     if (zxnextRenderRowOff(ZXNEXT_STANDARD_SCREEN_Y + y)) continue;
     uint32_t outputOffset = (ZXNEXT_STANDARD_SCREEN_Y + y) * ZXNEXT_SCREEN_WIDTH + ZXNEXT_STANDARD_SCREEN_X;
-    uint32_t sourceY = (y + ulaScrollY) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
+    uint32_t sourceY = (y + ulaScrollYShown) % ZXNEXT_STANDARD_SCREEN_HEIGHT;
     for (uint32_t xByte = 0; xByte < 32u; xByte++) {
       uint32_t logicalX = xByte * 8u;
       uint32_t outputPixel = outputOffset + xByte * 8u * ZXNEXT_STANDARD_SCREEN_SCALE_X;
@@ -365,7 +405,7 @@ static void zxnextUlaRenderHiColorScreen(void) {
           zxnextLayerUla[pixelOffset + 1u] = fallbackPixel;
           continue;
         }
-        uint32_t sourceX = (x + ulaScrollX) & 0xffu;
+        uint32_t sourceX = (x + ulaScrollXShown) & 0xffu;
         uint32_t sourceXByte = sourceX >> 3u;
         uint32_t pixelAddr = zxnextUlaBitmapAddress(sourceY, sourceXByte);
         uint8_t pixels = (uint8_t)zxnextMemoryReadScreenOffset(pixelAddr);
@@ -1339,7 +1379,7 @@ static void zxnextUlaCompose(void) {
 
 /* Border colour n: ULANext $80+n (fallback with format $FF), ULA+ $C8+n, standard 16+n (zxula.vhd). */
 static inline uint32_t zxnextUlaBorderPaletteIndex(void) {
-  uint32_t n = borderColor & 0x07u;
+  uint32_t n = ulaBorderShown & 0x07u;
   if (zxnextPaletteGetUlaNextEnabled()) return zxnextNextRegs[0x42u] == 0xffu ? ZXNEXT_ULA_SELECT_FALLBACK : 0x80u + n;
   if (ulaPlusEnabled) return 0xc8u + n;
   return 16u + n;
@@ -1423,9 +1463,11 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
       break;
     case 0x26u:
       ulaScrollX = byteValue;
+      zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_SCROLL_X, byteValue, zxnextRasterUlaScrollTact(zxnextRasterWriteTact()));
       break;
     case 0x27u:
       ulaScrollY = byteValue;
+      zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_SCROLL_Y, byteValue, zxnextRasterUlaScrollTact(zxnextRasterWriteTact()));
       break;
     case 0x68u:
       ulaDisableOutput = (byteValue & 0x80u) != 0u;
@@ -1482,7 +1524,9 @@ static uint32_t zxnextUlaGetScrollX(void) { return ulaScrollX; }
 static uint32_t zxnextUlaGetScrollY(void) { return ulaScrollY; }
 
 static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
-  return frameTact >= zxnextTimingIntStart && frameTact < zxnextTimingIntStart + zxnextTimingIntPulseLength();
+  /* the Pentagon interrupt starts at the last tact of the frame: the pulse wraps into the next one */
+  uint32_t sinceInt = (frameTact + ZXNEXT_RENDERING_TACTS_IN_FRAME - zxnextTimingIntStart) % ZXNEXT_RENDERING_TACTS_IN_FRAME;
+  return sinceInt < zxnextTimingIntPulseLength();
 }
 
 static uint32_t zxnextNextRegGetMachineTiming(void);
@@ -1570,8 +1614,13 @@ static inline uint32_t zxnextRasterTactToPixel(uint32_t frameTact) {
   return row * ZXNEXT_SCREEN_WIDTH + x;
 }
 
+/* The frame tact of the NextReg write in progress: the copper's, or the CPU's. */
+static uint32_t zxnextRasterWriteTact(void) {
+  return zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
+}
+
 /* Renders buffer pixels [zxnextRasterPixel, endPixel) from the current state. */
-static void zxnextRasterRenderTo(uint32_t endPixel) {
+static void zxnextRasterRenderSpan(uint32_t endPixel) {
   if (endPixel > ZXNEXT_PIXEL_COUNT) endPixel = ZXNEXT_PIXEL_COUNT;
   uint32_t start = zxnextRasterPixel;
   if (endPixel <= start) return;
@@ -1590,6 +1639,28 @@ static void zxnextRasterRenderTo(uint32_t endPixel) {
 }
 
 /*
+ * Renders buffer pixels [zxnextRasterPixel, endPixel), applying each pending ULA latch (border, scroll)
+ * at its own pixel: the span before it with the old value, the rest with the new one. So a write never
+ * makes the raster draw past the beam, and a change that lands between the write and its latch point
+ * (a copper palette MOVE) still shows where it happens.
+ */
+static void zxnextRasterRenderTo(uint32_t endPixel) {
+  for (;;) {
+    uint32_t next = ZXNEXT_ULA_LATCH_COUNT;
+    for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) {
+      if (ulaLatchPending[i] && (next == ZXNEXT_ULA_LATCH_COUNT || ulaLatchTact[i] < ulaLatchTact[next])) next = i;
+    }
+    if (next == ZXNEXT_ULA_LATCH_COUNT) break;
+    uint32_t latchPixel = zxnextRasterTactToPixel(ulaLatchTact[next]);
+    if (latchPixel >= endPixel) break;
+    zxnextRasterRenderSpan(latchPixel);
+    ulaShown[next] = ulaLatchValue[next];
+    ulaLatchPending[next] = 0u;
+  }
+  zxnextRasterRenderSpan(endPixel);
+}
+
+/*
  * The frame tact from which a ULA scroll ($26/$27) write shows.
  *
  * The ULA latches scroll once per 8-pixel cell, not per pixel (zxula.vhd: `px`/`py` load at
@@ -1597,10 +1668,22 @@ static void zxnextRasterRenderTo(uint32_t endPixel) {
  * at 0/8, so a write at raw HC h first affects the cell starting at the next multiple of 8 above h.
  * The pixels before that cell still show the old scroll.
  */
-static inline uint32_t zxnextRasterUlaScrollTact(uint32_t frameTact) {
+static uint32_t zxnextRasterUlaScrollTact(uint32_t frameTact) {
   uint32_t hc = frameTact % ZXNEXT_SCREEN_TOTAL_HC;
   uint32_t cell = (hc + 1u + 7u) & ~7u;
   return frameTact - hc + cell;
+}
+
+/*
+ * The frame tact from which a port $FE border colour shows. zxula.vhd ~427-441: the border reaches the
+ * picture through attr_reg, which takes the port value only at the shift-register loads, every 8
+ * pixels (HC = displayXStart mod 8, like the scroll cells above); Pentagon timing reloads it every
+ * clock. The palette lookup stays per pixel.
+ */
+static uint32_t zxnextRasterBorderTact(uint32_t frameTact) {
+  if (zxnextTimingTotalVc == 320u) return frameTact; /* the Pentagon raster */
+  uint32_t hc = frameTact % ZXNEXT_SCREEN_TOTAL_HC;
+  return frameTact - hc + ((hc + 7u) & ~7u);
 }
 
 /* Call just before a write that changes the picture, with the frame tact the write happens at. */
@@ -1611,6 +1694,7 @@ static void zxnextRasterCatchUp(uint32_t frameTact) {
 /* Completes the frame's picture; called when the frame completes, before anything resets. */
 static void zxnextRasterFinishFrame(void) {
   zxnextRasterRenderTo(ZXNEXT_PIXEL_COUNT);
+  zxnextUlaApplyAllLatches(); /* a latch point past the last visible pixel */
   zxnextRasterPixel = 0u;
 }
 
@@ -1634,6 +1718,7 @@ static void zxnextRasterMemoryWrite(uint32_t physical, uint32_t value) {
 }
 
 static void zxnextRasterReset(void) {
+  zxnextUlaApplyAllLatches();
   zxnextRasterPixel = 0u;
 }
 

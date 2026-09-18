@@ -3,10 +3,12 @@
  *
  * D1 — Standard-mode paper palette index offset (+0x10)
  * D2 — ULANext default format NR 0x42 (soft reset = 0x07)
- * D3 — ULANext border uses paper path (palette 128+)
  * D4 — Blend modes (priority 6-7, NR 0x68 bits [6:5])
  * D5 — Stencil mode (NR 0x68 bit 0, AND of ULA & tilemap)
- * D6 — Half-pixel scroll (NR 0x68 bit 2)
+ *
+ * Moved to the real machine (test/zxnext-hw/ula/): the border colour mapping of D1 and D3
+ * (ula-colours ULA-001, ulanext-ulaplus) - the border colour now reaches the picture at the ULA's
+ * 8-pixel border latch, so a field write no longer updates the cache at once - and D6 (scroll ULA-012).
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
@@ -24,36 +26,10 @@ function csd() {
   return m.composedScreenDevice;
 }
 
-// Helper: read a palette entry directly from the ULA palette array
-function getUlaFirstPaletteEntry(index: number): number {
-  return m.paletteDevice.ulaFirst[index & 0xff];
-}
-
 // ---------------------------------------------------------------------------
 // D1 — Standard paper palette index offset
 // ---------------------------------------------------------------------------
 describe("D1 — Standard paper palette index offset", () => {
-  it("standard mode paper indices are in range 16–31 (non-bright 16–23, bright 24–31)", () => {
-    // The attribute decode table maps attr bytes to palette indices.
-    // For standard mode, paper should use indices 16-31 (paper = 16 + bright*8 + paperColor).
-    // Set a known custom palette entry at index 16 (paper=0, non-bright) to verify
-    // that the border/paper lookups read from the paper region.
-
-    // Write a unique colour to ULA palette index 16 (paper 0, non-bright)
-    m.paletteDevice.ulaFirst[16] = 0x100; // arbitrary distinct 9-bit colour
-
-    // Standard border color 0 should now use palette index 16
-    csd().borderColor = 0;
-    // borderRgbCache should reflect the value at palette index 16
-    expect((csd() as any).borderRgbCache).toBe(0x100);
-  });
-
-  it("border color 3 maps to palette index 19 (16+3)", () => {
-    m.paletteDevice.ulaFirst[19] = 0x1ab;
-    csd().borderColor = 3;
-    expect((csd() as any).borderRgbCache).toBe(0x1ab);
-  });
-
   it("attribute decode tables: non-bright paper uses indices 16–23", () => {
     // attr = 0b00_PPP_III: non-flash, non-bright, paper PPP, ink III
     // For attr=0x08 (paper=1, ink=0, no flash, no bright):
@@ -119,56 +95,6 @@ describe("D2 — ULANext default format NR 0x42", () => {
     expect(csd().nextReg0x42Value).toBe(0x0f);
     csd().nextReg0x42Value = 0x01;
     expect(csd().nextReg0x42Value).toBe(0x01);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// D3 — ULANext border colour
-// ---------------------------------------------------------------------------
-describe("D3 — ULANext border palette path (indices 128+)", () => {
-  it("ULANext border color 0 maps to palette index 128", () => {
-    m.paletteDevice.ulaFirst[128] = 0x1ee;
-    csd().nextReg0x43Value = 0x01; // enable ULANext
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x1ee);
-  });
-
-  it("ULANext border color 5 maps to palette index 133 (128+5)", () => {
-    m.paletteDevice.ulaFirst[133] = 0x155;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 5;
-    expect((csd() as any).borderRgbCache).toBe(0x155);
-  });
-
-  it("ULANext takes priority over ULA+ for border", () => {
-    m.paletteDevice.ulaFirst[128] = 0x111;
-    m.paletteDevice.ulaFirst[200] = 0x222; // ULA+ would use this
-    csd().ulaPlusEnabled = true;
-    csd().nextReg0x43Value = 0x01; // ULANext overrides ULA+
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x111);
-  });
-
-  it("border cache updates when ULANext format changes", () => {
-    m.paletteDevice.ulaFirst[128] = 0x1dd;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x1dd);
-
-    // Change format — cache should be refreshed
-    m.paletteDevice.ulaFirst[128] = 0x1cc;
-    csd().nextReg0x42Value = 0x0f; // triggers updateBorderRgbCache
-    expect((csd() as any).borderRgbCache).toBe(0x1cc);
-  });
-
-  it("disabling ULANext falls back to standard paper path", () => {
-    m.paletteDevice.ulaFirst[16] = 0x1aa;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 0;
-    // Now disable ULANext
-    csd().nextReg0x43Value = 0x00;
-    // Should use standard paper index 16
-    expect((csd() as any).borderRgbCache).toBe(0x1aa);
   });
 });
 
@@ -391,40 +317,6 @@ describe("D5 — Stencil mode (NR 0x68 bit 0)", () => {
     // Without stencil, tilemap replaces ULA
     expect((csd() as any).ulaPixel1Rgb333).toBe(0x173);
     expect((csd() as any).ulaPixel2Rgb333).toBe(0x173);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// D6 — Half-pixel scroll
-// ---------------------------------------------------------------------------
-describe("D6 — Half-pixel scroll (NR 0x68 bit 2)", () => {
-  it("ulaHalfPixelScroll is sampled into ulaHalfPixelScrollSampled", () => {
-    csd().ulaHalfPixelScroll = true;
-    (csd() as any).sampleNextRegistersForUlaMode();
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(true);
-
-    csd().ulaHalfPixelScroll = false;
-    (csd() as any).sampleNextRegistersForUlaMode();
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(false);
-  });
-
-  it("half-pixel scroll stores previous pixel for next tact", () => {
-    // Enable half-pixel scroll
-    (csd() as any).ulaHalfPixelScrollSampled = true;
-    (csd() as any).ulaPreviousPixelRgb333 = 0x111;
-    (csd() as any).ulaPreviousPixelTransparent = false;
-
-    // After rendering a pixel with value 0x222, pixel1 should be the
-    // previous value (0x111) and pixel2 should be the new value (0x222)
-    // Previous pixel should then update to 0x222
-
-    // We verify the field is initialized correctly
-    expect((csd() as any).ulaPreviousPixelRgb333).toBe(0x111);
-  });
-
-  it("half-pixel scroll fields default to safe values", () => {
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(false);
-    expect((csd() as any).ulaPreviousPixelTransparent).toBe(true);
   });
 });
 

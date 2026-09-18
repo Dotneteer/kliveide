@@ -42,7 +42,9 @@ these instead of counting pixels), contact sheets, `motion-*.json`, `result.json
 `runDisplayedFrame` / `FrameRunner.step` capture right after `executeMachineFrame()`, like
 `EmulatorPanel`. Both cores draw the frame *during* execution: TS tact by tact, WASM with a beam-racing
 raster (`zxnext-ula.c`: before a video NextReg/port write, or a screen *memory* write, render up to the
-beam with the old state - memory writes to the start of the current row; finish at frame completion).
+beam with the old state - memory writes to the start of the current row; a `$26`/`$27` scroll or `$FE`
+border value becomes a pending latch the raster applies at the next 8-pixel cell, where the ULA takes
+it - the raster never draws past the beam; finish at frame completion).
 The panel no longer calls `renderInstantScreen()` after each frame (it only produced a copy of the
 displayed picture for the pause overlay, at 23-38% of the frame time); `renderInstantScreen()` is an
 end-of-frame render and is used only for the paused "instant screen" view.

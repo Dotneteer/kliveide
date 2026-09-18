@@ -232,7 +232,15 @@ uint32_t zxnextExecuteInstruction(void) {
 }
 
 uint32_t zxnextRenderInstantScreen(void) {
-  return zxnextUlaRenderInstantScreen();
+  /* The paused view shows the current state: pending ULA latches included, without applying them */
+  uint8_t shown[ZXNEXT_ULA_LATCH_COUNT];
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) {
+    shown[i] = ulaShown[i];
+    if (ulaLatchPending[i]) ulaShown[i] = ulaLatchValue[i];
+  }
+  uint32_t result = zxnextUlaRenderInstantScreen();
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) ulaShown[i] = shown[i];
+  return result;
 }
 
 uint32_t zxnextReadMemory(uint32_t address) {

@@ -333,6 +333,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.nextRegDevice.configMode = false;
     this._prevUlaIntPulse = false;
     this._prevLineIntPulse = false;
+    // --- The reset restarts the frame (tacts and frameTacts are 0): rewind the raster with it, or
+    // --- nothing is rendered - and no interrupt is captured - until the new frame reaches the tact
+    // --- the old one had got to (the WASM core already restarts both).
+    this.currentFrameTact = 0;
+    this.lastRenderedFrameTact = 0;
+    this._copperCurrentLine = 0;
+    this._copperCurrentColumn = 0;
   }
 
   /**
@@ -1772,8 +1779,23 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param increment The tact increment value
    */
   onTactIncremented(): void {
-    if (this.frameCompleted) return;
-    while (this.lastRenderedFrameTact < this.currentFrameTact) {
+    if (this.frameCompleted) {
+      // --- The frame ended inside this instruction: render its remaining tacts before the next frame
+      // --- starts. They carry pulses too - the Pentagon interrupt starts on the frame's last tact.
+      this.renderFrameTactsTo(this.tactsInFrame >>> 2);
+      return;
+    }
+    this.renderFrameTactsTo(this.currentFrameTact);
+    this.beeperDevice.setNextAudioSample();
+    // --- Generate audio samples for all audio devices
+    this._turboSoundDevice.setNextAudioSample(this.frameTacts);
+    this._dacDevice.setNextAudioSample();
+    this._audioMixerDevice.setNextAudioSample();
+  }
+
+  /** Renders the frame tacts (copper, raster, interrupt pulses) up to, not including, `endTact`. */
+  private renderFrameTactsTo(endTact: number): void {
+    while (this.lastRenderedFrameTact < endTact) {
       // The copper sees the ULA beam - `cvc` and `hc_ula` (zxnext.vhd wires them to copper.vhd) - not
       // the raw counters, and it runs on the 28 MHz clock: four ticks per horizontal position.
       // Guard on the start mode so a stopped copper costs nothing.
@@ -1802,11 +1824,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this._prevUlaIntPulse = ulaIntPulse;
       this._prevLineIntPulse = lineIntPulse;
     }
-    this.beeperDevice.setNextAudioSample();
-    // --- Generate audio samples for all audio devices
-    this._turboSoundDevice.setNextAudioSample(this.frameTacts);
-    this._dacDevice.setNextAudioSample();
-    this._audioMixerDevice.setNextAudioSample();
   }
 
   /**

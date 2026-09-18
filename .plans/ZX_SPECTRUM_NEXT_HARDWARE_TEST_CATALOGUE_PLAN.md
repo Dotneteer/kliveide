@@ -251,43 +251,43 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| VT-001 | Tacts per frame 50 Hz | S | 1 | | For 48K, 128K, +3, Pentagon timing: `tacts` difference over one `runFrames(1)` equals lines × tacts/line from `zxula_timing.vhd` (at 3.5 MHz). | ◐ `reset/machine-type` (RST-008): 50 Hz ✅; 60 Hz frame on WASM ❌ (B20) |
-| VT-002 | Lines per frame | S | 1 | | A program samples `$1E/$1F` in a tight loop across one frame: max line equals the timing's last line (e.g. 310 for 128K 50 Hz). | — |
-| VT-003 | 60 Hz frame | S | 1 | | `$05` bit 2 = 1: lines/frame and tacts/frame switch to the 60 Hz values; `$05` readback shows it. | — |
-| VT-004 | `$1E/$1F` counter origin | S | 1 | | Line counter 0 aligns with the first paper line minus the VHDL offset (C00 established paper row = cvc − `$64` for copper). `$1F` read at the frame interrupt returns the documented line. | ◐ visual `C00` |
-| VT-005 | `$1E` bit 0 MSB | S | 2 | | Reading at a line above 255 returns `$1E` = 1. | — |
-| VT-006 | Frame interrupt position | S | 1 | | `runTo` the IM1 handler: the line/tact at which the ULA interrupt fires matches the timing's interrupt position (48K vs 128K differ). | — |
-| VT-007 | Interrupt pulse length | S | 2 | | An `EI` issued a few tacts after the interrupt start still catches it; after the pulse length (32 tacts 48K / 36 128K) it does not. | — |
-| VT-008 | Pentagon timing | S | 3 | | 320 lines, 224 tacts/line, interrupt position per VHDL. | — |
-| VT-009 | `$11` video timing register | S | 3 | | Readback of bits 2–0; write only in config mode (document effect or lack of it). | — |
-| VT-010 | Timing change keeps display stable | V | 3 | | Switch 50→60 Hz; screen buffer size and paper origin remain consistent in the captured frame. | — |
-| VT-011 | Scandoubler/scanlines bits | S | 3 | | `$05` bit 0 and `$09` bits 1–0 read back; no picture change required by the emulator. | — |
+| VT-001 | Tacts per frame 50 Hz | S | 1 | | For 48K, 128K, +3, Pentagon timing: `tacts` difference over one `runFrames(1)` equals lines × tacts/line from `zxula_timing.vhd` (at 3.5 MHz). | ✅ `video/video-timing` (all 7 timings; B20 fixed: WASM 60 Hz) |
+| VT-002 | Lines per frame | S | 1 | | A program samples `$1E/$1F` in a tight loop across one frame: max line equals the timing's last line (e.g. 310 for 128K 50 Hz). | ✅ `video/video-timing` |
+| VT-003 | 60 Hz frame | S | 1 | | `$05` bit 2 = 1: lines/frame and tacts/frame switch to the 60 Hz values; `$05` readback shows it. | ✅ `video/video-timing` (B37 fixed: readback is the effective bit) |
+| VT-004 | `$1E/$1F` counter origin | S | 1 | | Line counter 0 aligns with the first paper line minus the VHDL offset (C00 established paper row = cvc − `$64` for copper). `$1F` read at the frame interrupt returns the documented line. | ✅ `video/video-timing` (with VT-006: `$1F` at the interrupt) |
+| VT-005 | `$1E` bit 0 MSB | S | 2 | | Reading at a line above 255 returns `$1E` = 1. | ✅ `video/video-timing` (with VT-002) |
+| VT-006 | Frame interrupt position | S | 1 | | `runTo` the IM1 handler: the line/tact at which the ULA interrupt fires matches the timing's interrupt position (48K vs 128K differ). | ✅ `video/video-timing` (to the tact, without taking an interrupt; B21, B34, B36 fixed) |
+| VT-007 | Interrupt pulse length | S | 2 | | An `EI` issued a few tacts after the interrupt start still catches it; after the pulse length (32 tacts 48K / 36 128K) it does not. | ✅ `video/video-timing` (measured on `$22` bit 7; B37 fixed) |
+| VT-008 | Pentagon timing | S | 3 | | 320 lines, 224 tacts/line, interrupt position per VHDL. | ✅ `video/video-timing` (B37 fixed: forces 50 Hz) |
+| VT-009 | `$11` video timing register | S | 3 | | Readback of bits 2–0; write only in config mode (document effect or lack of it). | ✅ `video/video-timing` (B37 fixed) |
+| VT-010 | Timing change keeps display stable | V | 3 | | Switch 50→60 Hz; screen buffer size and paper origin remain consistent in the captured frame. | ✅ `video/video-timing` (P: paper row 48 at 50 Hz, 24 at 60 Hz on both cores) |
+| VT-011 | Scandoubler/scanlines bits | S | 3 | | `$05` bit 0 and `$09` bits 1–0 read back; no picture change required by the emulator. | ✅ `video/video-timing` |
 
 ### 4.8 `ULA` – Standard ULA
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| ULA-001 | Border colours 0–7 | P | 1 | | `out $FE,n` for n=0..7 with palette 16+n written; border pixels equal each colour. | ◐ visual `C04` |
-| ULA-002 | Paper/ink standard colours | V | 1 | | 8×8 grid of attribute cells covering ink 0–7 × paper 0–7 with a checker bitmap; probes per cell. | — |
-| ULA-003 | Bright | V | 1 | | Same grid with BRIGHT; palette indices 8–15 / 24–31 used. | — |
-| ULA-004 | Flash period | V | 1 | | FLASH cells swap ink/paper every 16 frames; capture frames 0, 15, 16, 32 and compare. | — |
-| ULA-005 | Display file address layout | P | 1 | | Poke single bytes at `$4000`, `$47FF`, `$57FF`, and an attribute at `$5AFF`; pixel positions match the `$4000 \| third<<11 \| …` layout. | — |
-| ULA-006 | Border mid-frame change (racing) | V | 1 | | Change `$FE` from a line-interrupt handler every N lines; horizontal stripes at the expected rows. | — |
-| ULA-007 | Border mid-line change | V | 2 | | Change `$FE` at a known tact inside a border line; edge x within the 8-pixel ULA border resolution (VHDL border latch). | — |
+| ULA-001 | Border colours 0–7 | P | 1 | | `out $FE,n` for n=0..7 with palette 16+n written; border pixels equal each colour. | ✅ `ula/ula-colours`, visual `C04` |
+| ULA-002 | Paper/ink standard colours | V | 1 | | 8×8 grid of attribute cells covering ink 0–7 × paper 0–7 with a checker bitmap; probes per cell. | ✅ `ula/ula-colours` (P: probes per cell) |
+| ULA-003 | Bright | V | 1 | | Same grid with BRIGHT; palette indices 8–15 / 24–31 used. | ✅ `ula/ula-colours` |
+| ULA-004 | Flash period | V | 1 | | FLASH cells swap ink/paper every 16 frames; capture frames 0, 15, 16, 32 and compare. | ✅ `ula/flash-and-layout` (P: 72 frames, runs of 16) |
+| ULA-005 | Display file address layout | P | 1 | | Poke single bytes at `$4000`, `$47FF`, `$57FF`, and an attribute at `$5AFF`; pixel positions match the `$4000 \| third<<11 \| …` layout. | ✅ `ula/flash-and-layout` |
+| ULA-006 | Border mid-frame change (racing) | V | 1 | | Change `$FE` from a line-interrupt handler every N lines; horizontal stripes at the expected rows. | ✅ `ula/border-timing` (P: 8 stripes from an IM2 line-interrupt handler) |
+| ULA-007 | Border mid-line change | V | 2 | | Change `$FE` at a known tact inside a border line; edge x within the 8-pixel ULA border resolution (VHDL border latch). | ✅ `ula/border-timing` (B40 fixed: 8-pixel latch; Pentagon per T-state; a Copper palette write before the latch point) |
 | ULA-008 | Attribute change mid-frame | V | 1 | | From a line interrupt rewrite attribute memory; top/bottom halves of a cell row differ. Guards bug B8 (WASM screen-memory racing). | ✅ `ula/midframe-memory-write` |
-| ULA-009 | Bitmap change mid-frame | V | 2 | | Same as ULA-008 for pixel memory. | — |
-| ULA-010 | ULA scroll X `$26` | V | 1 | | Static scroll 0/1/8/255: picture shifts left with wrap at 256; border unaffected. | ◐ visual `C09` (per line) |
-| ULA-011 | ULA scroll Y `$27` | V | 1 | | Scroll 0/1/191: vertical shift with wrap at 192. | — |
-| ULA-012 | Half-pixel scroll `$68` bit 2 | V | 2 | | With `$68` bit 2 the ULA shifts one extra 720-res pixel horizontally. | — |
-| ULA-013 | ULA clip `$1A` | V | 1 | | Clip window (x1,x2,y1,y2) written via 4 writes; outside the window ULA is transparent (fallback / lower layers shown). | — |
-| ULA-014 | Clip index cycling | S | 2 | | Five `$1A` writes wrap the index; `$1C` bit 2 resets it. | — |
+| ULA-009 | Bitmap change mid-frame | V | 2 | | Same as ULA-008 for pixel memory. | ✅ `ula/midframe-memory-write` |
+| ULA-010 | ULA scroll X `$26` | V | 1 | | Static scroll 0/1/8/255: picture shifts left with wrap at 256; border unaffected. | ✅ `ula/scroll` (incl. a Copper palette write before the scroll latch), visual `C09` (per line) |
+| ULA-011 | ULA scroll Y `$27` | V | 1 | | Scroll 0/1/191: vertical shift with wrap at 192. | ✅ `ula/scroll` (B39 fixed: TS scroll 192-255) |
+| ULA-012 | Half-pixel scroll `$68` bit 2 | V | 2 | | With `$68` bit 2 the ULA shifts one extra 720-res pixel horizontally. | ✅ `ula/scroll` (B38 fixed: shifts left) |
+| ULA-013 | ULA clip `$1A` | V | 1 | | Clip window (x1,x2,y1,y2) written via 4 writes; outside the window ULA is transparent (fallback / lower layers shown). | ✅ `ula/clip` (with the y2 ≥ $C0 clamp) |
+| ULA-014 | Clip index cycling | S | 2 | | Five `$1A` writes wrap the index; `$1C` bit 2 resets it. | ✅ `ula/clip` |
 | ULA-015 | ULA disable `$68` bit 7 | V | 1 | | ULA and border transparent; fallback `$4A` visible. (C11 covers the per-line copper variant.) | ✅ `nextreg/fallback-colour-reset`, visual `C11` |
-| ULA-016 | ULA palette index 16+n for paper/border | P | 1 | | Rewrite palette entries 16–23 only; paper and border change, ink (0–7) unchanged. | — |
-| ULA-017 | Second ULA palette `$43` bit 1 | P | 2 | | Write different colours to ULA palette 1 and 2; `$43` bit 1 switches the displayed colours. | — |
-| ULA-018 | ULA transparency via `$14` | V | 1 | | ULA ink colour equal to `$14` is transparent (RGB compare), Layer 2 underneath shows. | ◐ visual `C10`, `P02` |
-| ULA-019 | Stencil mode `$68` bit 0 | V | 2 | | With tilemap enabled, output = ULA AND tilemap (P02 covers basics; add all four transparency combinations). | ◐ visual `P02` |
-| ULA-020 | Keyboard issue 2 bit | S | 3 | | `$08` bit 0 changes `$FE` bit 6 read with no EAR input per VHDL. | — |
-| ULA-021 | 48K ROM boot picture | V | 3 | | Hard reset without NEX loader (or browser tier boot): copyright screen matches golden. | — |
+| ULA-016 | ULA palette index 16+n for paper/border | P | 1 | | Rewrite palette entries 16–23 only; paper and border change, ink (0–7) unchanged. | ✅ `ula/ula-colours` |
+| ULA-017 | Second ULA palette `$43` bit 1 | P | 2 | | Write different colours to ULA palette 1 and 2; `$43` bit 1 switches the displayed colours. | ✅ `ula/ula-colours` |
+| ULA-018 | ULA transparency via `$14` | V | 1 | | ULA ink colour equal to `$14` is transparent (RGB compare), Layer 2 underneath shows. | ✅ `ula/transparency-stencil` (over Layer 2, RGB compare), visual `C10`, `P02` |
+| ULA-019 | Stencil mode `$68` bit 0 | V | 2 | | With tilemap enabled, output = ULA AND tilemap (P02 covers basics; add all four transparency combinations). | ✅ `ula/transparency-stencil` (all four combinations), visual `P02` |
+| ULA-020 | Keyboard issue 2 bit | S | 3 | | `$08` bit 0 changes `$FE` bit 6 read with no EAR input per VHDL. | ✅ `ports/port-decode` (with PORT-005) |
+| ULA-021 | 48K ROM boot picture | V | 3 | | Hard reset without NEX loader (or browser tier boot): copyright screen matches golden. | ✅ `ula/rom-boot-screen` (stock 48K ROM run from RAM; expected text from the ROM font) |
 
 ### 4.9 `TMX` – Timex modes
 
@@ -840,5 +840,4 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 | — | Not started. |
 
 When a test lands, update its row in the same change. Open known failures right now: B7 residual
-(TS ULANext border vs `$14`, ULN-004), B26 (no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21). Open gaps without a failing test yet: B20 (WASM 60 Hz frame),
-B21 (60 Hz interrupt position).
+(TS ULANext border vs `$14`, ULN-004), B26 (no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21).

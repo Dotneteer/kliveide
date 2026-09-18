@@ -1,6 +1,6 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
-import { Plus3_50Hz, Plus3_60Hz, TimingConfig, selectTimingConfig } from "./TimingConfig";
+import { Pentagon_50Hz, Plus3_50Hz, Plus3_60Hz, TimingConfig, selectTimingConfig } from "./TimingConfig";
 import { zxNextBgra } from "../PaletteDevice";
 import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
 import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
@@ -57,6 +57,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   userLockOnDisplayTiming: boolean;
   // Reg $05 [2] - 50/60 Hz mode (0 = 50Hz, 1 = 60Hz, Pentagon forces 50Hz)
   is60HzMode: boolean;
+  /** The 50/60 Hz bit in effect for the current frame (set at the frame start). */
+  effective60Hz = false;
+  /** The scandoubler bit in effect for the current frame (set at the frame start). */
+  effectiveScandoubler = true;
   // INT signal (active: true, inactive: false)
   pulseIntActive: boolean;
   // Line interrupt pulse: true for one tact (HC=0) when the raster enters the target line
@@ -79,6 +83,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private fallbackColorField: number;
   // Standard 0xFE port border value
   private borderColorField: number;
+  // The border value the picture shows: zxula.vhd attr_reg, loaded from the port every 8 pixels
+  private borderColorLatched: number;
+  // The raster in effect is Pentagon's (its border reloads every clock)
+  private confPentagon = false;
   // Reg $15 [4:2] - Layer priority (Sprites, Layer 2, ULA)
   layerPriority: number;
 
@@ -155,8 +163,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaHiColorMode = false;
     this.ulaHiColorModeSampled = false;
     this.ulaHalfPixelScrollSampled = false;
-    this.ulaPreviousPixelRgb333 = 0;
-    this.ulaPreviousPixelTransparent = true;
 
     // --- Initialize LoRes state
     this.loResEnabled = false;
@@ -300,6 +306,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // --- Initialize border color (use setter to update cache)
     this.borderColor = 7; // Default white border
+    this.borderColorLatched = 7;
+    this.updateBorderRgbCache();
 
     // --- Initialize timing mode, matrices, and the pixel bitmap
     this.onNewFrame();
@@ -334,11 +342,10 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     return this.borderColorField;
   }
 
-  // Set the border color and update the cached RGB value
-  // This optimization eliminates method calls for border pixels (~30% of pixels)
+  // Set the border color written to port $FE. The picture takes it at the next border latch
+  // (renderTact), which updates the cached RGB value.
   set borderColor(value: number) {
     this.borderColorField = value;
-    this.updateBorderRgbCache();
   }
 
   // Get the fallback color value
@@ -367,14 +374,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   updateBorderRgbCache(): void {
     if (this.ulaNextEnabledField) {
       // ULANext: border resolves through paper path (palette indices 128+)
-      this.borderRgbCache = this.paletteDevice.getUlaRgb333(128 + this.borderColorField);
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(128 + this.borderColorLatched);
     } else if (this.ulaPlusEnabledField) {
       // ULA+: Border uses palette indices 200-207 (for border colors 0-7)
-      const ulaPlusPaletteIndex = 200 + this.borderColorField;
+      const ulaPlusPaletteIndex = 200 + this.borderColorLatched;
       this.borderRgbCache = this.paletteDevice.getUlaRgb333(ulaPlusPaletteIndex);
     } else {
       // Standard: Border uses paper palette indices 16-23
-      this.borderRgbCache = this.paletteDevice.getUlaRgb333(16 + this.borderColorField);
+      this.borderRgbCache = this.paletteDevice.getUlaRgb333(16 + this.borderColorLatched);
     }
   }
 
@@ -556,6 +563,12 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * This method signs that a new screen frame has been started
    */
   onNewFrame(): void {
+    // --- zxnext.vhd ~5781: Pentagon timing holds the 50/60 Hz bit at 0
+    if (this.displayTiming & 0b100) this.is60HzMode = false;
+    // --- zxnext.vhd ~6644-6649: the 50/60 Hz bit and the scandoubler take effect at the frame start;
+    // --- $05 reads these effective values
+    this.effective60Hz = this.is60HzMode;
+    this.effectiveScandoubler = this.scandoublerEnabled;
     // --- Set up the timing mode and rendering matrices accord to the current frequency mode
     const is60Hz = this.is60HzMode;
     const oldConfig = this.config;
@@ -569,6 +582,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.confTotalHC = this.config.totalHC;
     this.confDisplayXStart = this.config.displayXStart;
     this.confDisplayYStart = this.config.displayYStart;
+    this.confPentagon = this.config === Pentagon_50Hz;
     this.updateTilemapFastPathCaches();
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
@@ -760,7 +774,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // of the rendering pipeline, called once per tact in the frame.
   renderTact(tact: number): boolean {
     const pulseLength = this.intPulseLength;
-    this.pulseIntActive = tact >= this.confIntStartTact && tact < this.confIntStartTact + pulseLength;
+    // --- The Pentagon interrupt starts at the last tact of the frame: the pulse wraps into the next one
+    const sinceInt = tact - this.confIntStartTact;
+    this.pulseIntActive = (sinceInt >= 0 ? sinceInt : sinceInt + this.renderingTacts) < pulseLength;
 
     // --- Get pre-calculated VC and HC positions
     const vc = activeTactToVC[tact];
@@ -773,6 +789,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // At vc=displayYStart with no offset, CVC=0 (first ULA pixel row = line 0).
     // The line changes with `hc_ula`, like the copper's (zxnext.vhd: $1E/$1F read `cvc`).
     this.activeVideoLine = this.copperLineAt(vc, hc);
+
+    // --- zxula.vhd ~427-441: the border reaches the picture through attr_reg, which takes the port
+    // --- $FE value only at the shift-register loads, every 8 pixels (HC = displayXStart mod 8);
+    // --- Pentagon timing reloads it every clock. The palette lookup stays per pixel.
+    if (this.borderColorLatched !== this.borderColorField && ((hc & 0x07) === 0 || this.confPentagon)) {
+      this.borderColorLatched = this.borderColorField;
+      this.updateBorderRgbCache();
+    }
 
     // --- Line interrupt pulse: as long as the ULA interrupt pulse, starting at the hardware position.
     const lineElapsed = (tact - this.lineInterruptStartTact() + this.renderingTacts) % this.renderingTacts;
@@ -1067,7 +1091,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // Spectrum Next screen rendering.
   // ==============================================================================================
   set nextReg0x05Value(value: number) {
-    this.is60HzMode = (value & 0x04) !== 0;
+    // --- ~5781: Pentagon timing holds the 50/60 Hz bit at 0
+    this.is60HzMode = (value & 0x04) !== 0 && (this.displayTiming & 0b100) === 0;
     this.scandoublerEnabled = (value & 0x01) !== 0;
   }
 
@@ -1433,8 +1458,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private ulaHiResInkRgb333: number;
   private ulaHiResPaperRgb333: number;
   private ulaHalfPixelScrollSampled: boolean;
-  private ulaPreviousPixelRgb333: number;
-  private ulaPreviousPixelTransparent: boolean;
 
   // Active attribute lookup tables (references to module-level tables, switch based on flash state)
   private ulaActiveAttrToInk: Uint8Array;
@@ -1463,20 +1486,18 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.sampleNextRegistersForUlaMode();
 
       // Calculate scrolled Y position with vertical scroll offset
-      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
-      if (this.ulaScrollYSampled >= 0xc0) {
-        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
-      }
+      // --- zxula.vhd ~196-208: (vc + scroll) mod 192, also for scroll values of 192-255
+      this.ulaScrollYSampled = (vc - this.confDisplayYStart + this.ulaScrollYSampled) % 0xc0;
     }
 
     // --- Shift Register Load ---
     if ((cell & SCR_SHIFT_REG_LOAD) !== 0) {
       // Load pixel and attribute data into shift register
       // This prepares the next 8 pixels for output
+      // --- Both bytes are kept (zxula.vhd shift_reg_ld): bit 15 - j is pixel j of this group, and
+      // --- bit 7 the first pixel of the next one, which the half-pixel scroll shows early
       this.ulaShiftReg =
-        ((((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrollXSampled & 0x07)) >>
-          8) &
-        0xff;
+        (((this.ulaPixelByte1 << 8) | this.ulaPixelByte2) << (this.ulaScrollXSampled & 0x07)) & 0xffff;
       this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
       this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
       this.ulaShiftAttrCount = 8 - (this.ulaScrollXSampled & 0x07); // Reset attribute shift counter
@@ -1533,10 +1554,6 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
         // --- The border is a ULA pixel: it is transparent when it matches $14 (zxnext.vhd ula_rgb_2).
         this.ulaPixel1Transparent = this.ulaPixel2Transparent = this.ulaPixel1Rgb333 >> 1 === this.globalTransparencyColor;
       }
-      if (this.ulaHalfPixelScrollSampled) {
-        this.ulaPreviousPixelRgb333 = this.ulaPixel2Rgb333;
-        this.ulaPreviousPixelTransparent = this.ulaPixel2Transparent;
-      }
       return;
     }
 
@@ -1546,48 +1563,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     const displayHC = hc - this.confDisplayXStart;
     const displayVC = vc - this.confDisplayYStart;
     const pixelWithinByte = displayHC & 0x07; // Pixel position within byte (0-7)
-    const pixelBit = (this.ulaShiftReg >> (7 - pixelWithinByte)) & 0x01;
+    const pixelBit = (this.ulaShiftReg >> (15 - pixelWithinByte)) & 0x01;
+    const pixelRgb333 = this.ulaStandardPixelRgb333(pixelBit, this.ulaShiftAttr);
 
-    let pixelRgb333: number;
-
-    if (this.ulaNextEnabled) {
-      // ULANext Mode: Use pre-calculated lookup tables
-      // Eliminates all runtime computation (mask validation, bit shifting, etc.)
-      const attr = this.ulaShiftAttr;
-      const formatMask = this.ulaNextFormat;
-      let paletteIndex: number;
-
-      if (pixelBit) {
-        // INK pixel: Direct lookup (range 0-127)
-        paletteIndex = getULANextInkIndex(formatMask, attr);
-      } else {
-        // PAPER pixel: Lookup returns 128-255 or 255 for fallback
-        paletteIndex = getULANextPaperIndex(formatMask, attr);
-
-        if (paletteIndex === 255) {
-          // Invalid mask or 0xFF: Use cached fallback color
-          pixelRgb333 = this.machine.composedScreenDevice.fallbackRgb333Cache;
-          paletteIndex = -1; // Skip palette lookup
-        }
-      }
-
-      if (paletteIndex !== -1) {
-        pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
-      }
-    } else if (this.ulaPlusEnabled) {
-      // ULA+ Mode: Use 64-color palette (indices 192-255 in ULA palette)
-      // Use pre-calculated lookup tables - no bit operations needed
-      const ulaPaletteIndex = pixelBit
-        ? this.ulaPlusAttrToInk[this.ulaShiftAttr]
-        : this.ulaPlusAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDevice.getUlaRgb333(ulaPaletteIndex);
-    } else {
-      // Standard Mode: Use pre-calculated lookup tables with BRIGHT already applied
-      // Direct palette index lookup (0-15) - no bit operations needed
-      const paletteIndex = pixelBit
-        ? this.ulaActiveAttrToInk[this.ulaShiftAttr]
-        : this.ulaActiveAttrToPaper[this.ulaShiftAttr];
-      pixelRgb333 = this.paletteDevice.getUlaRgb333(paletteIndex);
+    // --- Half-pixel scroll ($68 bit 2): zxula.vhd ~397 loads the shift register one more 14 MHz
+    // --- half pixel to the left, so the second half of this pixel is the first half of the next one
+    let nextRgb333 = pixelRgb333;
+    if (this.ulaHalfPixelScrollSampled) {
+      const nextBit = (this.ulaShiftReg >> (14 - pixelWithinByte)) & 0x01;
+      const nextAttr = this.ulaShiftAttrCount > 1 ? this.ulaShiftAttr : this.ulaShiftAttr2;
+      nextRgb333 = this.ulaStandardPixelRgb333(nextBit, nextAttr);
     }
 
     this.ulaShiftAttrCount--;
@@ -1607,17 +1592,34 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // Return layer output for composition stage
     const transparent = pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
     if (this.ulaHalfPixelScrollSampled) {
-      // Half-pixel scroll: shift ULA output right by one 14 MHz dot
-      this.ulaPixel1Rgb333 = this.ulaPreviousPixelRgb333;
-      this.ulaPixel1Transparent = this.ulaPreviousPixelTransparent;
-      this.ulaPixel2Rgb333 = pixelRgb333;
-      this.ulaPixel2Transparent = transparent;
-      this.ulaPreviousPixelRgb333 = pixelRgb333;
-      this.ulaPreviousPixelTransparent = transparent;
+      this.ulaPixel1Rgb333 = pixelRgb333;
+      this.ulaPixel1Transparent = transparent;
+      this.ulaPixel2Rgb333 = nextRgb333;
+      this.ulaPixel2Transparent = nextRgb333 >> 1 === this.globalTransparencyColor || clipped;
     } else {
       this.ulaPixel1Rgb333 = this.ulaPixel2Rgb333 = pixelRgb333;
       this.ulaPixel1Transparent = this.ulaPixel2Transparent = transparent;
     }
+  }
+
+  /** The colour of a standard-mode ULA pixel (ink or paper of `attr`) in ULANext, ULA+ or standard mode. */
+  private ulaStandardPixelRgb333(pixelBit: number, attr: number): number {
+    if (this.ulaNextEnabled) {
+      // --- ULANext: ink 0-127; paper 128-255, or 255 for "use the fallback colour"
+      if (pixelBit) {
+        return this.paletteDevice.getUlaRgb333(getULANextInkIndex(this.ulaNextFormat, attr));
+      }
+      const paperIndex = getULANextPaperIndex(this.ulaNextFormat, attr);
+      return paperIndex === 255
+        ? this.machine.composedScreenDevice.fallbackRgb333Cache
+        : this.paletteDevice.getUlaRgb333(paperIndex);
+    }
+    if (this.ulaPlusEnabled) {
+      // --- ULA+: 64 colours at ULA palette indices 192-255
+      return this.paletteDevice.getUlaRgb333(pixelBit ? this.ulaPlusAttrToInk[attr] : this.ulaPlusAttrToPaper[attr]);
+    }
+    // --- Standard: BRIGHT already applied by the lookup tables
+    return this.paletteDevice.getUlaRgb333(pixelBit ? this.ulaActiveAttrToInk[attr] : this.ulaActiveAttrToPaper[attr]);
   }
 
   /**
@@ -1649,10 +1651,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.sampleNextRegistersForUlaMode();
 
       // Calculate scrolled Y position with vertical scroll offset
-      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
-      if (this.ulaScrollYSampled >= 0xc0) {
-        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
-      }
+      // --- zxula.vhd ~196-208: (vc + scroll) mod 192, also for scroll values of 192-255
+      this.ulaScrollYSampled = (vc - this.confDisplayYStart + this.ulaScrollYSampled) % 0xc0;
     }
 
     // --- Shift Register Load ---
@@ -1819,10 +1819,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.sampleNextRegistersForUlaMode();
 
       // Calculate scrolled Y position with vertical scroll offset
-      this.ulaScrollYSampled = vc - this.confDisplayYStart + this.ulaScrollYSampled;
-      if (this.ulaScrollYSampled >= 0xc0) {
-        this.ulaScrollYSampled -= 0xc0; // Wrap Y at 192 for vertical scrolling
-      }
+      // --- zxula.vhd ~196-208: (vc + scroll) mod 192, also for scroll values of 192-255
+      this.ulaScrollYSampled = (vc - this.confDisplayYStart + this.ulaScrollYSampled) % 0xc0;
     }
 
     // --- Shift Register Load ---

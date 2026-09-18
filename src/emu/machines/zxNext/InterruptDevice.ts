@@ -143,7 +143,12 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   get nextReg22Value(): number {
     return (
-      (this.intSignalActive ? 0x80 : 0x00) |
+      // --- zxnext.vhd ~5938: bit 7 is the INT pulse itself (`not pulse_int_n`), not a stored bit; only
+      // --- an enabled source starts it (~1968-1985)
+      ((this.machine.composedScreenDevice.pulseIntActive && !this.ulaInterruptDisabled) ||
+      (this.machine.composedScreenDevice.lineIntActive && this.lineInterruptEnabled)
+        ? 0x80
+        : 0x00) |
       (this.ulaInterruptDisabled ? 0x04 : 0x00) |
       (this.lineInterruptEnabled ? 0x02 : 0x00) |
       ((this.lineInterrupt & 0x100) ? 0x01 : 0x00)

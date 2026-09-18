@@ -157,4 +157,30 @@ Fill:   nextreg $56,a
     });
     cell(s, { ink: "next8:0xE0", paper: "next8:0x1C", border: "next8:0x03" });
   });
+
+  /*
+   * zxula.vhd ~491-553: `if i_ulanext_en ... elsif i_ulap_en ... else` (standard) - ULANext wins over
+   * ULA+, and with both off the standard mapping applies (border 16 + n). Covers the precedence the
+   * removed field-level tests in test/zxnext/UlaRendering.test.ts (D1, D3) checked.
+   */
+  it("ULANext takes precedence over ULA+; with both off the standard mapping applies", async () => {
+    // --- attr $5B: ULANext $07 -> ink 3, paper $8B, border 2 -> $82
+    // ---           ULA+ (group 1) -> ink $D3, paper $DB, border $CA
+    // ---           standard (BRIGHT) -> ink 11, paper 27, border 18
+    const s = await screenWith(core, {
+      nextRegs: [[0x42, 0x07], [0x68, 0x08], [0x43, 0x01]],
+      attr: 0x5b,
+      border: 2,
+      palette: [
+        [0x03, 0xe0], [0x8b, 0x1c], [0x82, 0x03],
+        [0xd3, 0xfc], [0xdb, 0x1f], [0xca, 0xa2],
+        [11, 0x6d], [27, 0x92], [18, 0x49]
+      ]
+    });
+    cell(s, { ink: "next8:0xE0", paper: "next8:0x1C", border: "next8:0x03" });
+    s.setNextReg(0x43, 0x00).runFrames(1); // --- ULANext off: ULA+ applies
+    cell(s, { ink: "next8:0xFC", paper: "next8:0x1F", border: "next8:0xA2" });
+    s.setNextReg(0x68, 0x00).runFrames(1); // --- ULA+ off: standard
+    cell(s, { ink: "next8:0x6D", paper: "next8:0x92", border: "next8:0x49" });
+  });
 });

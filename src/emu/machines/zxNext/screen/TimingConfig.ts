@@ -42,7 +42,7 @@ export const Plus3_50Hz: TimingConfig = {
   lastBitmapVC: 0x12f,  // 303
   maxVC: 0x136,         // 310
   totalVC: 0x137,       // 311
-  intStartTact: 0x252,  // vc(1) * totalHC(456) + hc(138) = 594
+  intStartTact: 456 + 134, // vc(1) * totalHC(456) + c_int_h(126) + 8 = 590
   intPulseCycles: 32
 };
 
@@ -61,16 +61,17 @@ export const Plus3_60Hz: TimingConfig = {
   lastBitmapVC: 0xff,   // 255
   maxVC: 0x107,         // 263
   totalVC: 0x108,       // 264
-  intStartTact: 0x138,  // vc(0) * totalHC(456) + hc(138) = 138
+  intStartTact: 134,    // vc(0) + c_int_h(126) + 8 (was 0x138 = 312, a hex/decimal slip - B21)
   intPulseCycles: 32
 };
 
 /*
  * The other display timings (NextReg $03 bits 6-4). zxula_timing.vhd (~146-300) sets per timing the
  * line length (`c_max_hc`), frame length (`c_max_vc`), display origin (`c_min_hactive`,
- * `c_min_vactive`) and ULA interrupt position (`c_int_h`, `c_int_v`). The configs above map the VHDL
- * coordinates as: displayXStart = c_min_hactive + 8, interrupt HC = c_int_h + 12; the ones below use
- * the same mapping.
+ * `c_min_vactive`) and ULA interrupt position (`c_int_h`, `c_int_v`). Every config maps a VHDL hc
+ * to HC = hc + 8: displayXStart = c_min_hactive + 8, the line counter / copper line changes at
+ * displayXStart - 12, and the interrupt is at c_int_h + 8 (it was + 12: 2 tacts late against the
+ * line counter; catalogue VT-006 measures it).
  *
  * Framing: every timing shows its paper at the same place in the 720x288 buffer (buffer x 96, row 48)
  * - the 360-HC-wide visible window starts 48 HC before the display. (The VHDL HDMI window would put
@@ -91,7 +92,7 @@ export const Zx128_60Hz: TimingConfig = {
   intPulseCycles: 36
 };
 
-/** ZX 48K 50 Hz: 448 HC x 312 lines (224 x 312 = 69888 T-states), interrupt at VC 0, HC 116 + 12. */
+/** ZX 48K 50 Hz: 448 HC x 312 lines (224 x 312 = 69888 T-states), interrupt at VC 0, HC 116 + 8. */
 export const Zx48_50Hz: TimingConfig = {
   firstVisibleHC: 88,
   displayXStart: 136,
@@ -104,7 +105,7 @@ export const Zx48_50Hz: TimingConfig = {
   lastBitmapVC: 303,
   maxVC: 311,
   totalVC: 312,
-  intStartTact: 128,
+  intStartTact: 124,    // vc(0) + c_int_h(116) + 8
   intPulseCycles: 32
 };
 
@@ -120,7 +121,7 @@ export const Zx48_60Hz: TimingConfig = {
 
 /**
  * Pentagon (always 50 Hz): 448 HC x 320 lines (224 x 320 = 71680 T-states). The interrupt is at
- * VC 319, HC 439 + 12 - past the end of that line, so it lands at VC 0, HC 3.
+ * VC 319, HC 439 + 8 = 447, the last HC of the frame.
  */
 export const Pentagon_50Hz: TimingConfig = {
   firstVisibleHC: 88,
@@ -134,7 +135,8 @@ export const Pentagon_50Hz: TimingConfig = {
   lastBitmapVC: 319,
   maxVC: 319,
   totalVC: 320,
-  intStartTact: 3,
+  // --- vc(319), c_int_h(439) + 8 = 447: the last HC of the frame; the pulse runs on into the next one
+  intStartTact: 319 * 448 + 447,
   intPulseCycles: 36
 };
 

@@ -171,6 +171,18 @@ that through NextZXOS in Chrome. How to write one, the geometry, and the pitfall
 - **The TS core's first displayed frame after a hard reset is black.** Run one frame before comparing
   pixels across cores or against a reference session.
 
+## Measuring to the tact
+
+Taking an interrupt adds acceptance jitter (the instruction in progress, HALT's 4-tact steps). To
+place a raster event exactly, do not take one: from a fixed start (a frame boundary reached by
+`runFrames` with the CPU parked), run an exact-length delay and read a latch or counter with one IN,
+and binary-search the delay at which the value changes. Two events read by the same IN instruction
+subtract the CPU's own timing out. `test/zxnext-hw/_timing-helpers.ts` has the exact-length `delay`;
+`test/zxnext-hw/video/video-timing.test.ts` (`probe`, `threshold`) finds the ULA interrupt through the
+`$C8` latch and the line change through `$1F` this way, and `ula/border-timing.test.ts` sweeps a border
+`OUT` one T-state at a time. Take a fresh session per measurement when the timing is not +3: after a
+`hardReset` from another raster the cores can start the next frame at different phases.
+
 ## Direct load
 
 `loadCode` and `loadProgramFile` put the program into memory the way the NEX format promises the

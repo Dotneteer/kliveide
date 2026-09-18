@@ -157,6 +157,9 @@ static void zxnextNextRegApplyResetBranch(void) {
   cpuTactScale = 8;
   zxnextNextRegs[0x07] = 0x00;
   zxnextMemoryResetMapping();
+  /* the raster and the effective $05 bits from the power-on register values (the call above ran on the
+     old ones) */
+  zxnextTimingSelect();
 }
 
 /*
@@ -193,35 +196,41 @@ static void zxnextNextRegSoftReset(uint32_t keptNr06) {
   zxnextNextRegSetDirect(0x8cu, (altRomLow << 4u) | altRomLow);
 }
 
+/* The 50/60 Hz and scandoubler bits in effect for the current frame (zxnext.vhd ~6644-6649); $05 reads them */
+static uint8_t zxnextEffective5060;
+static uint8_t zxnextEffectiveScandoubler = 1u;
+
 /*
  * Picks the raster for the next frame (zxula_timing.vhd `i_timing`: 1XX Pentagon, 010 128K, 011 +3,
- * else 48K), mirroring TimingConfig.selectTimingConfig. The configs map the VHDL as displayXStart =
- * c_min_hactive + 8 and interrupt HC = c_int_h + 12, and keep the paper at buffer (96, 48).
- * 60 Hz: this core keeps the 311-line +3 frame with the 60 Hz interrupt position (as before); the
- * TypeScript core runs 264-line frames.
+ * else 48K; `i_50_60`), mirroring TimingConfig.selectTimingConfig. The configs map a VHDL hc to
+ * HC = hc + 8: displayXStart = c_min_hactive + 8, the interrupt at c_int_h + 8. 60 Hz frames are 264
+ * lines with the display from line 40, so the paper sits at buffer row 24 as in the TypeScript core.
  */
 static void zxnextTimingSelect(void) {
   uint32_t t = zxnextMachineTiming;
-  uint32_t is60 = (zxnextNextRegs[0x05u] & 0x04u) != 0u && (t & 0x04u) == 0u;
+  /* ~5781: Pentagon timing holds the 50/60 Hz bit at 0 */
+  if ((t & 0x04u) != 0u) zxnextNextRegs[0x05u] &= (uint8_t)~0x04u;
+  uint32_t is60 = (zxnextNextRegs[0x05u] & 0x04u) != 0u;
+  zxnextEffective5060 = (uint8_t)is60;
+  zxnextEffectiveScandoubler = (uint8_t)(zxnextNextRegs[0x05u] & 0x01u);
   if ((t & 0x04u) != 0u) {
-    /* Pentagon, always 50 Hz: 448 x 320; interrupt at VC 319, HC 439 + 12 -> VC 0, HC 3 */
+    /* Pentagon: 448 x 320; interrupt at VC 319, HC 439 + 8 = 447, the last HC of the frame */
     zxnextTimingTotalHc = 448u; zxnextTimingTotalVc = 320u;
     zxnextTimingFirstVc = 32u; zxnextTimingFirstHc = 88u;
     zxnextTimingDisplayXStart = 136u; zxnextTimingDisplayYStart = 80u;
-    zxnextTimingIntStart = 3u;
-  } else if (t == 2u || t == 3u || is60) {
-    /* 128K / +3 (and every 60 Hz timing here): 456 x 311; interrupt at VC 1 (VC 0 at 60 Hz) */
-    zxnextTimingTotalHc = 456u; zxnextTimingTotalVc = 311u;
+    zxnextTimingIntStart = 319u * 448u + 447u;
+  } else if (t == 2u || t == 3u) {
+    /* 128K / +3: 456 x 311 (60 Hz: 264); interrupt at VC 1 (60 Hz: VC 0), HC 128 + 8 (128K) or 126 + 8 (+3) */
+    zxnextTimingTotalHc = 456u; zxnextTimingTotalVc = is60 ? 264u : 311u;
     zxnextTimingFirstVc = 16u; zxnextTimingFirstHc = 96u;
-    zxnextTimingDisplayXStart = 144u; zxnextTimingDisplayYStart = 64u;
-    /* 128K interrupts 2 HC after +3 (c_int_h 136+4-12 vs 136+2-12); 60 Hz keeps Plus3_60Hz's 0x138 */
-    zxnextTimingIntStart = (is60 ? 0x138u : 0x252u) + (t == 2u ? 2u : 0u);
+    zxnextTimingDisplayXStart = 144u; zxnextTimingDisplayYStart = is60 ? 40u : 64u;
+    zxnextTimingIntStart = (is60 ? 0u : 456u) + (t == 2u ? 136u : 134u);
   } else {
-    /* 48K 50 Hz: 448 x 312; interrupt at VC 0, HC 116 + 12 */
-    zxnextTimingTotalHc = 448u; zxnextTimingTotalVc = 312u;
+    /* 48K: 448 x 312 (60 Hz: 264); interrupt at VC 0, HC 116 + 8 */
+    zxnextTimingTotalHc = 448u; zxnextTimingTotalVc = is60 ? 264u : 312u;
     zxnextTimingFirstVc = 16u; zxnextTimingFirstHc = 88u;
-    zxnextTimingDisplayXStart = 136u; zxnextTimingDisplayYStart = 64u;
-    zxnextTimingIntStart = 128u;
+    zxnextTimingDisplayXStart = 136u; zxnextTimingDisplayYStart = is60 ? 40u : 64u;
+    zxnextTimingIntStart = 124u;
   }
   /* ~1989: pulse_count_end - 36 CPU cycles for 128K and Pentagon, 32 for 48K and +3 */
   zxnextTimingIntPulseCycles = (t == 2u || (t & 0x04u) != 0u) ? 36u : 32u;
@@ -392,7 +401,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   uint32_t normalized = reg & 0xffu;
   if (zxnextRasterIsVideoNextReg(normalized)) {
     uint32_t writeTact = zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
-    zxnextRasterCatchUp(normalized == 0x26u || normalized == 0x27u ? zxnextRasterUlaScrollTact(writeTact) : writeTact);
+    /* $26 / $27 then show from the next 8-pixel cell: a pending latch (zxnextUlaSetNextReg) */
+    zxnextRasterCatchUp(writeTact);
   }
   /* $00, $01, $0E, $0F are read-only: the read mux returns generics, no write branch assigns them */
   if (normalized == 0x00u || normalized == 0x01u || normalized == 0x0eu || normalized == 0x0fu ||
@@ -407,6 +417,14 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     if ((value & 0x02u) != 0u) zxnextResetRequest = 2u;
     else if ((value & 0x01u) != 0u && zxnextResetRequest == 0u) zxnextResetRequest = 1u;
   }
+  /* ~5186-5193: $11 only in config mode; 111 stores 000 (issue 4 board: all three bits) */
+  if (normalized == 0x11u) {
+    if (!zxnextConfigMode) return;
+    zxnextNextRegs[0x11u] = (uint8_t)((value & 0x07u) == 0x07u ? 0u : value & 0x07u);
+    return;
+  }
+  /* ~5781: Pentagon timing holds the 50/60 Hz bit at 0 */
+  if (normalized == 0x05u && (zxnextMachineTiming & 0x04u) != 0u) value &= ~0x04u;
   if (normalized == 0x03u) {
     uint32_t machineType = value & 0x07u;
     /* timing: only with bit 7, bit 3 clear and the lock off; 000 -> 001, 101-111 -> 011 */
@@ -500,6 +518,9 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
         (zxnextDivMmcGetEnableMultifaceNmiByM1Button() ? 0x08u : 0x00u);
     case 0x07u:
       return (cpuProgrammedSpeed & 0x03u) | ((cpuEffectiveSpeed & 0x03u) << 4u);
+    /* ~5843: the joystick modes and the effective 50/60 Hz and scandoubler bits */
+    case 0x05u:
+      return (zxnextNextRegs[0x05u] & 0xfau) | (zxnextEffective5060 ? 0x04u : 0x00u) | (zxnextEffectiveScandoubler ? 0x01u : 0x00u);
     /* $02: bus reset (bit 7), I/O trap / Multiface / DivMMC NMI flags (4-2), the last reset type */
     case 0x02u:
       return (zxnextNextRegs[0x02u] & 0x80u) | zxnextNmiNextReg02Flags() | (zxnextLastResetWasHard ? 0x02u : 0x01u);

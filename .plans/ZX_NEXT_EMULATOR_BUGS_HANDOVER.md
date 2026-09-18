@@ -435,19 +435,20 @@ Found by the catalogue §4.1 tests (`test/zxnext-hw/nextreg/register-select.test
 - **Cost:** WASM 2.01 vs 1.96 ms/frame against the last commit on a busy loop (that covers B16-B19 too:
   the NMI state machine per instruction, the Multiface overlay per memory access, variable geometry).
 
-### B20 – WASM 60 Hz keeps the 311-line frame – OPEN (found 2026-09-18)
+### B20 – WASM 60 Hz kept the 311-line frame – FIXED 2026-09-18
 
-- The WASM core has always run 311-line frames at 60 Hz (only the interrupt position changes); the TS
-  core runs 264 lines (Plus3_60Hz, Zx48_60Hz). `zxnextTimingSelect` keeps that behaviour: the WASM
-  raster draws layers at fixed buffer rows, and the TS 60 Hz frame puts the paper at row 24, not 48.
-  Needs the WASM layer drawing to take a per-timing paper row. Catalogue VT-003.
+- The WASM core ran 311-line frames at 60 Hz (only the interrupt moved); zxula_timing.vhd has 264
+  lines with the display from line 40 for 48K, 128K and +3. `zxnextTimingSelect` now picks the 60 Hz
+  geometry (48K 60 Hz too, which used the 128K line length), and `ZXNEXT_STANDARD_SCREEN_Y` is
+  `displayYStart - firstVc` (48 at 50 Hz, 24 at 60 Hz, as the TS core frames it). At 60 Hz the 320x256
+  layers start at row -8: the unsigned row wraps and `zxnextRenderRowOff` skips it.
+- Left: at 60 Hz the WASM core draws border on buffer rows 248-287 (past the frame); the TS core
+  leaves them. Tests: VT-001, VT-002, VT-010.
 
-### B21 – `Plus3_60Hz.intStartTact` looks like a hex/decimal slip – OPEN, not verified (found 2026-09-18)
+### B21 – `Plus3_60Hz.intStartTact` was a hex/decimal slip – FIXED 2026-09-18
 
-- `screen/TimingConfig.ts`: `intStartTact: 0x138` with the comment "vc(0) * totalHC(456) + hc(138) =
-  138" - `0x138` is 312. The WASM core copied the value. The new 128K 60 Hz config derives from it
-  (+2), so both stay consistent until someone checks the 60 Hz interrupt position against the VHDL
-  (`c_int_v` = 0, `c_int_h` = 126 for +3) with a test (catalogue VT-006).
+- `intStartTact: 0x138` (312) for c_int_h 126 + 8 = HC 134: the 128K and +3 60 Hz interrupt was 88
+  tacts late on both cores (the WASM core copied the value). Test: VT-006.
 
 ### B19 – NextReg `$02`/`$03`/`$0A` behaviour – FIXED 2026-09-18
 
@@ -623,6 +624,93 @@ Found by catalogue §4.6 (`test/zxnext-hw/ports/*.test.ts`, 92 tests):
   register n & 15 in AY mode. `zxSpectrum128/PsgChip.ts` (shared with the 128K machine) does the
   opposite: YM mode aliases 16-31 to 0-15 (writes land), AY mode reads 0. The WASM core follows the
   VHDL. Left for catalogue §4.21 (AY) because the chip is shared with another machine.
+
+### B34 – The ULA interrupt was 2 tacts late in every timing – FIXED 2026-09-18
+
+Found by catalogue §4.7 (`test/zxnext-hw/video/video-timing.test.ts`, VT-006). The test reads, from a
+fixed frame start, `$C8` bit 0 (the ULA interrupt latch) and `$1F` (the line counter) with the same
+IN after a delay swept one tact at a time - no interrupt is taken, so there is no acceptance jitter.
+- Both cores map a VHDL hc to HC = hc + 8 (displayXStart = c_min_hactive + 8, the line counter and
+  copper line change at displayXStart - 12), but placed the interrupt at c_int_h + **12**: 4 HC, 2
+  tacts, late against the line counter in every timing. Now c_int_h + 8 (`TimingConfig`,
+  `zxnextTimingSelect`). The Pentagon interrupt (c_int_v 319, c_int_h 439) is then the last HC of the
+  frame, so the pulse test wraps across the frame end (`renderTact`, `zxnextUlaGetPulseIntActive`).
+
+### B35 – TS reset left the raster counters mid-frame – FIXED 2026-09-18
+
+- `ZxNextMachine.reset()` restarts the frame (`tacts`, `frameTacts` = 0) but left `currentFrameTact`
+  and `lastRenderedFrameTact` at their old values, so nothing was rendered - and no interrupt captured
+  - until the new frame reached the tact where the old one had stopped. A soft/hard reset in mid-frame
+  (`$02`, F1/F4, the harness) lost the next frame interrupt. Test: "a soft reset in mid-frame keeps the
+  next frame interrupt" (fails with the old code).
+- Left: after a reset the TS core keeps the previous frame's raster config (`onNewFrame` picks it) until
+  the next frame starts; a reset from Pentagon or 60 Hz shows one frame in the old geometry.
+
+### B36 – TS never rendered the last tacts of a frame – FIXED 2026-09-18
+
+- `onTactIncremented` returned as soon as `frameCompleted` was set, so the tacts between the last
+  instruction boundary and the frame end were not rendered and their pulses not captured. With the
+  Pentagon interrupt on the frame's last tact (B34) it was seen ~10 tacts late and 25 tacts long. The
+  completing frame now renders to its end (`renderFrameTactsTo`). Corrected test:
+  `test/wasm/zxNext/wasm-next-frame-runner.test.ts` no longer compares `lastRenderedFrameTact`, TS
+  bookkeeping the WASM core does not keep.
+
+### B37 – `$05`, `$11`, `$22` readbacks – FIXED 2026-09-18
+
+- `$05` (~5843) reads the *effective* 50/60 Hz and scandoubler bits, latched at the frame start
+  (~6644); both cores returned the written value at once. Pentagon timing holds the 50/60 Hz bit at 0
+  (~5781); both cores let it through.
+- `$11` (~5186) is written only in config mode, `111` storing `000`; both cores always stored it.
+- `$22` bit 7 (~5938) is the INT pulse (`not pulse_int_n`); both cores returned a stored bit. It now
+  reads the pulse of an enabled ULA or line interrupt (VT-007 measures 32 / 36 tacts on it).
+- Corrected tests: `test/zxnext/NextRegDevice.test.ts` ($11 needs config mode), `InterruptDevice.test.ts`
+  ($22 bit 7).
+
+### B38 – The half-pixel scroll moved the ULA picture right – FIXED 2026-09-18
+
+Found by catalogue §4.8 (`test/zxnext-hw/ula/scroll.test.ts`, ULA-012).
+- zxula.vhd ~198, ~397: `$68` bit 2 is the low bit of the 4-bit shift amount (`px(2:0) & px(8)`, in
+  14 MHz half pixels), so the shift register loads one more half pixel to the *left*: the second half
+  of paper x shows the first half of screen x + 1. Both cores output the previous pixel's colour in the
+  first half instead (a right shift), deliberately ("shift ULA output right by one 14 MHz dot").
+- TS: the standard-mode shift register now keeps both bytes (16 bits), and the second half of a pixel
+  is the next pixel, with the next pixel's attribute (`ulaStandardPixelRgb333`). WASM:
+  `zxnextUlaRenderStandardScreen` draws screen x + 1 in the second half. The field-level test D6 in
+  `test/zxnext/UlaRendering.test.ts` (it encoded the old "previous pixel") is replaced by ULA-012.
+- Left for §4.9: neither core applies the half-pixel scroll in the Timex HiRes / HiColor renderers.
+
+### B39 – TS `$27` scroll values of 192-255 read outside the display file – FIXED 2026-09-18
+
+Found by catalogue §4.8 (ULA-011). zxula.vhd ~196-208 folds `vc + scroll_y` back into 0-191 for every
+8-bit scroll value (it amounts to mod 192). The TS core subtracted 192 once, so a scroll of 200 on the
+bottom rows indexed past its 192-entry line table and showed bytes from `$4000 + column`. Now `% 192` in
+the standard, HiRes and HiColor renderers. The WASM core already used `% 192`.
+
+### B40 – The border colour changed at any T-state instead of at the 8-pixel border latch – FIXED 2026-09-18
+
+Found by catalogue §4.8 (`test/zxnext-hw/ula/border-timing.test.ts`, ULA-007).
+- zxula.vhd ~427-441: the border reaches the picture through `attr_reg`, which takes the port `$FE`
+  colour only at the shift-register loads (`sload`, every 8 pixels, on the paper cells' grid); only
+  Pentagon timing reloads it every clock. A mid-line `OUT ($FE)` therefore moves the edge in 8-pixel
+  (4 T-state) steps - the well-known border resolution of the original machines. Both cores changed it
+  at the T-state (2-pixel steps).
+- TS: `renderTact` latches the port value into `borderColorLatched` at HC = 0 mod 8 (every HC on the
+  Pentagon raster); the border RGB cache follows the latched value, so palette writes still act per
+  pixel. WASM: the raster keeps separate *shown* values for the border and the `$26`/`$27` scroll; a
+  write catches the raster up to the beam and schedules a pending latch at the next 8-pixel point
+  (`zxnextUlaScheduleLatch`, `zxnextRasterBorderTact`, `zxnextRasterUlaScrollTact`), and
+  `zxnextRasterRenderTo` applies each latch at its own pixel. Readback keeps the written values.
+- A first version of the WASM fix (and the scroll handling before it) caught the raster up to the latch
+  point instead, drawing up to 7 HC past the beam with the state of the write: a copper palette MOVE in
+  that window showed at the latch point, not at once. Guarded by "a Copper palette write between a border
+  OUT and its latch point shows at once" (`border-timing`) and "... between a $26 write and its cell
+  latch ..." (`scroll`); both fail with the draw-ahead and pass on TS, which draws pixel by pixel.
+- Field-level tests that set the device's `borderColor` and read `borderRgbCache` at once
+  (`UlaRendering.test.ts` D1/D3, `PaletteDevice.test.ts` "Border colour follows palette writes") were
+  removed: ULA-001, ULA-016 and `ulanext-ulaplus.test.ts` cover that behaviour on the real machine.
+- Not a bug, noted while measuring Pentagon: after `hardReset` from a Pentagon frame the two cores can
+  start the next frame at a different phase (the B35 residual), so tact-exact tests take a fresh
+  session per measurement.
 
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 

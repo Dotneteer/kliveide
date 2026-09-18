@@ -73,8 +73,8 @@ describe("Next - InterrputDevice", function () {
       // --- Act
       writeNextReg(m, 0x22, 0x80);
 
-      // --- Assert
-      expect(readNextReg(m, 0x22)).toBe(0x80);
+      // --- Assert: zxnext.vhd ~5938 - bit 7 reads the INT pulse (none active here), not the written bit
+      expect(readNextReg(m, 0x22)).toBe(0x00);
       expect(intDevice.intSignalActive).toBe(true);
       expect(intDevice.ulaInterruptDisabled).toBe(false);
       expect(intDevice.lineInterruptEnabled).toBe(false);
@@ -139,8 +139,8 @@ describe("Next - InterrputDevice", function () {
       // --- Act
       writeNextReg(m, 0x22, 0xff);
 
-      // --- Assert
-      expect(readNextReg(m, 0x22)).toBe(0x87);
+      // --- Assert: bit 7 reads the INT pulse (none active here), not the written bit
+      expect(readNextReg(m, 0x22)).toBe(0x07);
       expect(intDevice.intSignalActive).toBe(true);
       expect(intDevice.ulaInterruptDisabled).toBe(true);
       expect(intDevice.lineInterruptEnabled).toBe(true);
