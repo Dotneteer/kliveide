@@ -163,6 +163,14 @@ that through NextZXOS in Chrome. How to write one, the geometry, and the pitfall
 `.ai/visual-tests-guide.md`. Design history and emulator findings:
 `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
 
+## Pitfalls
+
+- **Park the CPU before running frames.** A session with no `loadCode` runs the Next ROM, which
+  rewrites NextRegs (the port enables, `$08`, ...) and the border within a frame or two. Load at least
+  `.org $8000 / jr $` before `runFrames` when the test sets hardware state from outside.
+- **The TS core's first displayed frame after a hard reset is black.** Run one frame before comparing
+  pixels across cores or against a reference session.
+
 ## Direct load
 
 `loadCode` and `loadProgramFile` put the program into memory the way the NEX format promises the

@@ -947,7 +947,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     bps.forEach(async (bp) => {
       let unreachable = true;
       if (
-        compilationResult?.errors?.length === 0 &&
+        compilationResult?.errors?.every((e) => e.isWarning) &&
         isDebuggableCompilerOutput(compilationResult)
       ) {
         // --- In case of a successful compilation, test if the breakpoint is allowed

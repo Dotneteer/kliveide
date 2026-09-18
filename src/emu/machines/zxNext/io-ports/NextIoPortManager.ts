@@ -83,11 +83,16 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
       readerFns: () => {
-        if (pe(0, 0)) {
-          // Timex port is enabled. Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615).
+        // --- zxnext.vhd ~2769: the Timex register with $08 bit 2 and the port enabled; otherwise the
+        // --- ULA floating bus, which $FF shows in 48K and 128K timing only (~4493)
+        if (pe(0, 0) && machine.nextRegDevice.enablePort0xffTimexVideoModeRead) {
+          // Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615).
           return (this._portTimexValue & 0xc0) | this.machine.composedScreenDevice.timexPortBits;
         }
-        return 0xff;
+        const timing = machine.composedScreenDevice.displayTiming;
+        return timing === 0b001 || timing === 0b010
+          ? machine.composedScreenDevice.floatingBusAt(machine.currentFrameTact, 0xff)
+          : 0xff;
       },
       writerFns: (_, v) => {
         if (pe(0, 0)) {
@@ -98,14 +103,30 @@ export class NextIoPortManager {
         }
       }
     });
+    // --- zxnext.vhd ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing
+    const isP3Timing = () => machine.composedScreenDevice.displayTiming === 0b011;
     r({
       description: "ZX Spectrum 128 memory",
       port: 0x7ffd,
-      pmask: 0b1100_0000_0000_0011,
-      value: 0b0100_0000_0000_0001,
-      writerFns: gW(0, 1, (_, v) => {
+      pmask: 0b1000_0000_0000_0011,
+      value: 0b0000_0000_0000_0001,
+      writerFns: gW(0, 1, (p, v) => {
+        if ((p & 0xf000) === 0x1000) return; // --- $1FFD
+        if (!(p & 0x4000) && isP3Timing()) return;
         machine.memoryDevice.port7ffdValue = v;
       })
+    });
+    // --- zxnext.vhd ~2545, 4497: the +3 floating bus, in +3 timing with enable bit 4; $FF while locked
+    r({
+      description: "+3 floating bus",
+      port: 0x0ffd,
+      pmask: 0b1111_0000_0000_0011,
+      value: 0b0000_0000_0000_0001,
+      readerFns: () => {
+        if (!isP3Timing() || !pe(0, 4)) return NOT_HANDLED;
+        if (!machine.memoryDevice.pagingEnabled) return 0xff;
+        return machine.composedScreenDevice.floatingBusAt(machine.currentFrameTact, machine.p3FloatingBusValue);
+      }
     });
     r({
       description: "Spectrum Next bank extension",
@@ -290,7 +311,8 @@ export class NextIoPortManager {
       port: 0xbffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1000_0000_0000_0101,
-      readerFns: (p) => pe(2, 0) ? readAyDatPort(machine, p) : 0xff,
+      // --- ~2747: $BFFD reads the register like $FFFD in +3 timing only; A3 = 0 is $BFF5 (below)
+      readerFns: (p) => pe(2, 0) && p & 0x08 && isP3Timing() ? readAyDatPort(machine, p) : NOT_HANDLED,
       writerFns: (_, v) => { if (pe(2, 0)) writeAyDatPort(machine, v); }
     });
     r({
@@ -508,7 +530,8 @@ export class NextIoPortManager {
       value: 0b0000_0000_1101_1111,
       readerFns: ((fn) =>
         (p: number): number =>
-          pe(0, 6) && !pe(1, 5) ? fn(p) : NOT_HANDLED
+          // --- ~2622: only with the Specdrum port enabled and the mouse disabled
+          pe(0, 6) && pe(2, 7) && !pe(1, 5) ? fn(p) : NOT_HANDLED
       )(readKempstonJoy1AliasPort(machine))
     });
     r({

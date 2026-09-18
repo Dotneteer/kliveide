@@ -37,6 +37,8 @@ export interface IZxNextMachine extends IZ80Machine {
   get romId(): string;
 
   cpuSpeedDevice: CpuSpeedDevice;
+  /** The last byte the CPU moved to or from a contended bank (+3 floating bus). */
+  p3FloatingBusValue: number;
 
   portManager: NextIoPortManager;
 

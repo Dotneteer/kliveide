@@ -290,6 +290,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
             case 0b011:
             case 0b100:
               scrDevice.machineType = machineType;
+              // --- The ROM selection depends on the machine type (zxnext.vhd ~2938)
+              machine.memoryDevice.updateMemoryConfig();
               break;
           }
         }
@@ -794,6 +796,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => machine.composedScreenDevice.layer2ActiveRamBank,
       writeFn: (v) => {
         machine.composedScreenDevice.layer2ActiveRamBank = v & 0x7f;
+        // --- The Layer 2 memory paging follows the bank (zxnext.vhd ~2924)
+        machine.memoryDevice.updateFastPathFlags();
       },
       slices: [
         {
@@ -809,6 +813,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => machine.composedScreenDevice.layer2ShadowRamBank,
       writeFn: (v) => {
         machine.composedScreenDevice.layer2ShadowRamBank = v & 0x7f;
+        // --- The Layer 2 memory paging follows the bank (zxnext.vhd ~2924)
+        machine.memoryDevice.updateFastPathFlags();
       },
       slices: [
         {
@@ -3425,7 +3431,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x82, 0xff); // --- Internal Port Decoding Enables #1
     this.directSetRegValue(0x83, 0xff); // --- Internal Port Decoding Enables #2
     this.directSetRegValue(0x84, 0xff); // --- Internal Port Decoding Enables #3
-    this.directSetRegValue(0x85, 0x0f); // --- Internal Port Decoding Enables #4 (bit 7=reset mode=0)
+    // --- zxnext.vhd ~1222-1223: power-on enables $F and reset type (bit 7) 1: a soft reset re-enables
+    this.directSetRegValue(0x85, 0x8f); // --- Internal Port Decoding Enables #4
 
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
 

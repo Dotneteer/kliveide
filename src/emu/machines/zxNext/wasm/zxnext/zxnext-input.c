@@ -85,7 +85,8 @@ uint32_t zxnextMouseReadPortFadf(void) {
     left = swappedLeft;
     right = swappedRight;
   }
-  return ((uint32_t)(zxnextMouseWheel & 0x0fu) << 4) | 0x08u | middle | left | right;
+  /* zxnext.vhd ~3557: the buttons read 0 while pressed (`not i_MOUSE_BUTTON(n)`) */
+  return ((uint32_t)(zxnextMouseWheel & 0x0fu) << 4) | 0x08u | (~(middle | left | right) & 0x07u);
 }
 uint32_t zxnextGetMouseDpi(void) { return zxnextMouseDpi; }
 uint32_t zxnextGetMouseSwapButtons(void) { return zxnextMouseSwapButtons; }

@@ -522,6 +522,108 @@ Found by catalogue §4.4 (`test/zxnext-hw/speed/cpu-speed.test.ts`, SPD-003):
 - **Not checked:** `toggle5060Hz` (F3) and `toggleScandoubler` take the same base-class path on WASM;
   F3 belongs with B20.
 
+### B26 – No memory contention in either core – OPEN (found 2026-09-18)
+
+- zxnext.vhd ~4461-4473: at 3.5 MHz, with `$08` bit 6 = 0 and a non-Pentagon timing, accesses to
+  pages $00-$0F are contended by the ULA - 48K timing: bank 5; 128K: odd banks; +3: banks 4-7. It
+  depends on the page being accessed, not on the address. Neither core stretches memory accesses
+  (`ZxNextMachine.getContentionValue` is a TODO; only port I/O has the structural delay pattern).
+- Test: `test/zxnext-hw/memory/contention.test.ts` (MEM-023) - the six contended cases are
+  `it.fails`; the uncontended ones (other banks, `$08` bit 6, Pentagon, 7 MHz) pass. Implementing it
+  needs the ULA contention pattern per timing (zxula.vhd `o_cpu_wait_n`) and a decision on cost.
+
+### B27 – Layer 2 memory paging hit the wrong RAM – FIXED 2026-09-18
+
+Found by catalogue §4.5 (`test/zxnext-hw/memory/layer2-paging.test.ts`, MEM-017 - MEM-021):
+- **Both cores added the RAM base twice.** zxnext.vhd ~2926: `layer2_A21_A13 = ("0001" + page(7:5)) &
+  page(4:0)` is already the SRAM page (RAM page + 32); both cores used `OFFS_NEXT_RAM +
+  layer2_A21_A13 x 8K`, so a `$123B`-paged access to Layer 2 page p went to RAM page p + 32 (bank 8
+  -> page 48). Programs that draw Layer 2 through `$123B` wrote to the wrong memory; drawing through
+  the MMU was right, which is why the visual cases never saw it.
+- **Segments 01 and 10 were mapped at $4000 / $8000 (both).** ~3001-3020: segments 00/01/10 all
+  map $0000-$3FFF (the segment picks which third of Layer 2 is shown there); only 11 maps $0000-$BFFF.
+- **TS only:** the lookup-table builder walked 8K chunks *and* both halves, so segment 00 also claimed
+  $4000-$5FFF (writes to bank 5 vanished); a later, smaller segment left the previous one's entries
+  mapped; `$12`/`$13` writes did not rebuild the table.
+- **Fixed:** `MemoryDevice.updateLayer2Mapping`, `zxnextMemoryResolveLayer2Offset`, NextReg `$12`/`$13`.
+  Corrected test: `test/wasm/zxNext/wasm-next-screen-ula.test.ts` (`layer2MappedOffset` had the same
+  double offset).
+
+### B28 – The paging ports did not follow the FPGA's MMU reload – FIXED 2026-09-18
+
+Found by catalogue §4.5 (`memory/paging-ports.test.ts`, `memory/alt-rom.test.ts`). zxnext.vhd
+~4599-4664: `$7FFD`/`$DFFD`/`$1FFD`/`$EFF7`/`$8E`/`$8F` never map memory directly - an accepted write
+*reloads the MMU registers*, and the mapping comes from those. Both cores kept a separate paging state
+beside the MMU instead:
+- **+3 special mode left `$50-$57` alone (both);** the FPGA loads all eight. A `$8E` write did not put
+  the ROM back in MMU0/1 (both); WASM `$7FFD` did not either.
+- **`$8F` Pentagon 512/1024 paging was missing (both)** - `$7FFD` bits 7-6 (and bit 5 in 1024 mode,
+  which also has no lock); `$8F` mode 01 (Profi) is disabled in the VHDL and pages as standard. A `$8F`
+  write reloads the MMU too. **WASM had no `$EFF7` at all** (bit 3 = RAM bank 0 at $0000, bit 2
+  turns Pentagon 1024 off); the WASM Multiface now reads it back.
+- **The `$8C` lock bits only worked with the Alt ROM enabled (both);** ~2944 applies them always, and
+  the ROM choice depends on the machine type (48K type: ROM 0; 128K/Pentagon: `$7FFD` bit 4 only).
+- **Fixed:** both cores now store the VHDL registers (`port_7ffd_reg`, `port_dffd_reg`,
+  `port_1ffd_reg`, `port_eff7_reg`, `nr_8c_altrom`) and run the VHDL reload (`reloadMmuFromPorts` /
+  `zxnextMemoryReloadMmu`) and ROM selection (`updateRomSelection` / `zxnextMemoryUpdateRomSelection`);
+  the old fields (`allRamMode`, `pagingEnabled`, `useShadowScreen`, ...) are derived getters. `$69`
+  bit 6 writes `$7FFD` bit 3 as in the VHDL. The machine type change refreshes the ROM mapping.
+- **Corrected test:** `test/zxnext/MemoryDevice.test.ts` expected the lock bits to be ignored without
+  the Alt ROM.
+- **Not covered:** config mode's `$04` ROM/RAM bank in $0000-$3FFF (~3001) is still not mapped.
+
+### B29 – Port enables and decoding diverged from the VHDL – FIXED 2026-09-18
+
+Found by catalogue §4.6 (`test/zxnext-hw/ports/*.test.ts`, 92 tests):
+- **`$85` powered on as `$0F` (both).** zxnext.vhd ~1223 declares the reset type (bit 7) `'1'`, so it
+  reads `$8F` and a soft reset re-enables every port. Both cores had chosen 0 on purpose.
+- **WASM ignored most enable bits:** zxnDMA `$6B` (bit 5), Z80 DMA `$0B` (25), Kempston `$1F`/`$37`
+  (6, 7), I2C (10), UART (12), the mouse ports (13) and every DAC port (17-23).
+- **WASM DAC decode:** matched `port & $FE`, so even (ULA) ports `$1E`, `$DE`, ... drove the DACs too,
+  and `$FB` wrote channels A and D although with Soundrive mode 2 enabled (the default) it is channel
+  D only. Rewritten from the ~2378-2395 equations (`zxnextDacWritePort`).
+- **`$FF` returned the Timex register without `$08` bit 2 (both);** ~2769 needs it, else the floating
+  bus (B30).
+- **`$7FFD` always needed A14 = 1 (both);** ~2549 decodes A14 only in +3 timing.
+- **`$BFFD` read the AY register in every timing (both);** ~2747: +3 timing only. **WASM `$BFF5`**
+  returned a 4-bit register number; the PSG register number is 5 bits and registers 16-31 take no
+  writes and read `$FF` in YM mode (ym2149.vhd ~173-222).
+- **`$DF` as Kempston 1 (~2622):** TS ignored the Specdrum enable; WASM did not have the alias.
+- Corrected tests: `test/zxnext/PortEnableGating.test.ts`, `NextRegDevice.test.ts` (`$85`, `$08` bit 2),
+  `NextIoPortManager.test.ts` (`$1FFD` now also in the `$7FFD` decode), `test/wasm/zxNext/wasm-next-psg-audio.test.ts`.
+
+### B30 – No floating bus in either core – FIXED 2026-09-18
+
+- zxula.vhd ~306-340, 573: in the display each character pair puts pixel, attribute, pixel, attribute
+  on the bus for ULA hc 9-10, 11-12, 13-14, 15-0 and `$FF` for hc 1-8. `$FF` shows it in 48K/128K
+  timing (~4493). In +3 timing `$0FFD` (enable bit 4, `$FF` while `$7FFD` is locked, ~4497) shows
+  those bytes with bit 0 set and otherwise `p3_floating_bus_dat`, the last byte the CPU read or wrote
+  in a contended page (~4478-4488: banks 4-7 in +3 timing).
+- Neither core had any of it: `$FF` read 0, `$0FFD` `$FF`.
+- **Fixed:** `NextComposedScreenDevice.floatingBusAt` / `zxnextUlaFloatingBus`; the CPU's memory reads,
+  code fetches and writes latch the +3 value (`ZxNextMachine.readMemory/fetchCodeByte/writeMemory`
+  overrides, `zxnextCpuLatchP3FloatingBus`). Scrolling and the Timex modes are not applied to the
+  floating-bus address.
+
+### B31 – Kempston mouse buttons were active-high – FIXED 2026-09-18
+
+- zxnext.vhd ~3557: `$FADF` bits 2-0 are `not` middle, left, right - 0 while pressed, `$0F` with nothing
+  pressed and the wheel at 0. Both cores returned the pressed state. `test/zxnext/KempstonMouse.test.ts`
+  now flips the button bits back where it tests bit positions, and checks the raw value.
+
+### B32 – WASM TurboSound could never be enabled – FIXED 2026-09-18
+
+- NextReg `$08` bit 1 (`nr_08_psg_turbosound_en`, ~5159) did not reach the WASM PSG: only a test export
+  called `zxnextPsgSetTurbosoundEnabled`, so software on the production core could never select AY#1
+  or AY#2. Now set with the other `$08` audio bits.
+
+### B33 – TS PSG registers 16-31 are inverted against the VHDL – OPEN (found 2026-09-18)
+
+- ym2149.vhd ~188, ~222: a register number with bit 4 set takes no write; it reads `$FF` in YM mode and
+  register n & 15 in AY mode. `zxSpectrum128/PsgChip.ts` (shared with the 128K machine) does the
+  opposite: YM mode aliases 16-31 to 0-15 (writes land), AY mode reads 0. The WASM core follows the
+  VHDL. Left for catalogue §4.21 (AY) because the chip is shared with another machine.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling

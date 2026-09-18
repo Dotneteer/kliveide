@@ -124,7 +124,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0x0f);
+    expect(d.directGetRegValue(0x85)).toBe(0x8f); // --- zxnext.vhd ~1222-1223: reset type 1
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);
@@ -276,7 +276,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0x0f);
+    expect(d.directGetRegValue(0x85)).toBe(0x8f); // --- zxnext.vhd ~1222-1223: reset type 1
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);

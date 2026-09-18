@@ -914,7 +914,7 @@ export abstract class CommonAssembler<
       if (!(this._currentSegment as any).rangeWarned) {
         // Report as warning, not error - code can exceed $bfff
         this.reportAssemblyWarning(
-          "Z0904",
+          "Z0370",
           this._currentSourceLine,
           null,
           currentAddress.toString(16).toUpperCase()
@@ -3542,8 +3542,8 @@ export abstract class CommonAssembler<
           origLine.endPosition,
           origLine.startColumn,
           origLine.endColumn,
-          errorPrefix + error.text,
-          true
+          // --- An error, not a warning: it stops the macro and fails the compilation
+          errorPrefix + error.text
         );
         this._output.errors.push(errorInfo);
         this.reportScopeError(errorInfo.errorCode);

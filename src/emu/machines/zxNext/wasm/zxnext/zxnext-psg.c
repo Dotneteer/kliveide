@@ -212,18 +212,23 @@ static void zxnextPsgSetRegisterIndex(uint32_t value) {
       zxnextPsgRefreshCurrentStereoOutput();
     }
   } else if ((byteValue & 0xe0u) == 0u) {
-    zxnextPsgChips[zxnextPsgSelectedChip].selectedReg = byteValue & 0x0fu;
+    /* ym2149.vhd ~173: the register address is 5 bits (bits 7-5 = 000 checked in turbosound.vhd ~140) */
+    zxnextPsgChips[zxnextPsgSelectedChip].selectedReg = byteValue & 0x1fu;
   }
 }
 
 static void zxnextPsgWriteRegisterValue(uint32_t value) {
   ZxNextPsgChip *chip = &zxnextPsgChips[zxnextPsgSelectedChip];
+  /* ym2149.vhd ~188: registers 16-31 do not exist; the write is dropped */
+  if ((chip->selectedReg & 0x10u) != 0u) return;
   zxnextPsgAdvanceToFrameTact((double)frameTacts28);
   zxnextPsgWriteRegister(chip, chip->selectedReg, value);
 }
 
 static uint32_t zxnextPsgReadRegisterValue(void) {
   ZxNextPsgChip *chip = &zxnextPsgChips[zxnextPsgSelectedChip];
+  /* ym2149.vhd ~222: registers 16-31 read $FF in YM mode ($06 bit 0 = 0), register n & 15 in AY mode */
+  if ((chip->selectedReg & 0x10u) != 0u && (zxnextNextRegs[0x06u] & 0x01u) == 0u) return 0xffu;
   uint8_t index = chip->selectedReg & 0x0fu;
   return chip->regs[index];
 }

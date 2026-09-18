@@ -37,10 +37,11 @@ export class AssemblerOutput<
   readonly errors: IAssemblerErrorInfo[] = [];
 
   /**
-   * Number of errors
+   * Number of errors. Warnings are in `errors` too (with `isWarning` set) but are not counted: a
+   * compilation with warnings only succeeds and emits its code.
    */
   get errorCount (): number {
-    return this.errors.length;
+    return this.errors.filter((e) => !e.isWarning).length;
   }
 
   /**

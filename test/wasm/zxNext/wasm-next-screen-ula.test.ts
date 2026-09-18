@@ -638,7 +638,7 @@ function layer2MappedOffset(activeBank: number, address: number, mapSegment = 0,
   const layer2ActiveBankOffsetPre = mapSegment === 3 ? (address >> 14) & 0x03 : mapSegment;
   const layer2ActiveBankOffset = (layer2ActiveBankOffsetPre + bankOffset) & 0x07;
   const layer2ActivePage = (((activeBank + layer2ActiveBankOffset) & 0x7f) << 1) | ((address >> 13) & 0x01);
-  const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0f;
-  const layer2A21A13 = (upperNibble << 5) | (layer2ActivePage & 0x1f);
-  return OFFS_NEXT_RAM + ((layer2A21A13 & 0xff) << 13) + (address & 0x1fff);
+  // --- zxnext.vhd ~2926: layer2_A21_A13 = ("0001" + page(7:5)) & page(4:0) is the SRAM page, which
+  // --- already includes the 256K below RAM: RAM page p is at OFFS_NEXT_RAM + p x 8K.
+  return OFFS_NEXT_RAM + (layer2ActivePage << 13) + (address & 0x1fff);
 }

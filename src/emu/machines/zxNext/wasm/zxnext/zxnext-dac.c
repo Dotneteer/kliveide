@@ -50,38 +50,31 @@ static uint32_t zxnextDacGetNextReg(uint32_t reg) {
   }
 }
 
+/* internal_port_enable bit n: $82 + n / 8, bit n % 8 (zxnext.vhd ~2348) */
+static inline uint32_t zxnextDacPortEnabled(uint32_t bit) {
+  return (zxnextNextRegs[0x82u + (bit >> 3)] >> (bit & 0x07u)) & 0x01u;
+}
+
+/*
+ * The DAC port decode (zxnext.vhd ~2378-2395): the full low byte, one enable bit per port family -
+ * 17 Soundrive 1 ($1F $0F $4F $5F), 18 Soundrive 2 ($F1 $F3 $F9 $FB), 19 Profi Covox ($3F $5F),
+ * 20 Covox ($0F $4F), 21 Pentagon mono ($FB, only with bit 18 off), 22 GS Covox ($B3), 23 Specdrum
+ * ($DF). Writes need $08 bit 3 (`dac_hw_en`).
+ */
 static void zxnextDacWritePort(uint32_t port, uint32_t value) {
   uint8_t byteValue = (uint8_t)value;
   if (!zxnextDacEnabled) return;
-  switch (port & 0x00feu) {
-    case 0x001eu:
-    case 0x00f0u:
-    case 0x003eu:
-      zxnextDacChannels[0] = byteValue;
-      break;
-    case 0x000eu:
-    case 0x00f2u:
-      zxnextDacChannels[1] = byteValue;
-      break;
-    case 0x00deu:
-    case 0x00fau:
-      zxnextDacChannels[0] = byteValue;
-      zxnextDacChannels[3] = byteValue;
-      break;
-    case 0x00b2u:
-      zxnextDacChannels[1] = byteValue;
-      zxnextDacChannels[2] = byteValue;
-      break;
-    case 0x004eu:
-    case 0x00f8u:
-      zxnextDacChannels[2] = byteValue;
-      break;
-    case 0x005eu:
-      zxnextDacChannels[3] = byteValue;
-      break;
-    default:
-      break;
-  }
+  uint32_t lsb = port & 0x00ffu;
+  uint32_t sd1 = zxnextDacPortEnabled(17u);
+  uint32_t sd2 = zxnextDacPortEnabled(18u);
+  uint32_t profi = zxnextDacPortEnabled(19u);
+  uint32_t covox = zxnextDacPortEnabled(20u);
+  uint32_t monoAD = (lsb == 0xfbu && zxnextDacPortEnabled(21u) && !sd2) || (lsb == 0xdfu && zxnextDacPortEnabled(23u));
+  uint32_t monoBC = lsb == 0xb3u && zxnextDacPortEnabled(22u);
+  if (monoAD || (lsb == 0x1fu && sd1) || (lsb == 0xf1u && sd2) || (lsb == 0x3fu && profi)) zxnextDacChannels[0] = byteValue;
+  if (monoBC || (lsb == 0x0fu && (sd1 || covox)) || (lsb == 0xf3u && sd2)) zxnextDacChannels[1] = byteValue;
+  if (monoBC || (lsb == 0x4fu && (sd1 || covox)) || (lsb == 0xf9u && sd2)) zxnextDacChannels[2] = byteValue;
+  if (monoAD || (lsb == 0x5fu && (sd1 || profi)) || (lsb == 0xfbu && sd2)) zxnextDacChannels[3] = byteValue;
 }
 
 static uint32_t zxnextDacGetChannel(uint32_t channel) {

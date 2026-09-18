@@ -196,8 +196,15 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
     zxnextDmaGetIpSignal();
 }
 
+/* ~4472: in +3 timing banks 4-7 (MMU pages $08-$0F) are contended; the page is the MMU's */
+static inline void zxnextCpuLatchP3FloatingBus(uint32_t address, uint32_t value) {
+  if (zxnextNextRegGetMachineTiming() != 3u) return;
+  if ((zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)] & 0xf8u) == 0x08u) zxnextP3FloatingBus = (uint8_t)value;
+}
+
 static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
   uint32_t value = zxnextMemoryReadMapped(address & 0xffffu);
+  zxnextCpuLatchP3FloatingBus(address, value);
   lastMemoryAddress = (uint16_t)address;
   lastMemoryValue = (uint8_t)value;
   lastMemoryAccessed = 1;
@@ -208,11 +215,14 @@ static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
 static uint32_t zxnextCpuSharedFetchCodeByte(uint32_t address) {
   const uint32_t normalized = address & 0xffffu;
   zxnextCpuDelayMemoryRead(normalized);
-  return zxnextMemoryPeekMapped(normalized);
+  uint32_t value = zxnextMemoryPeekMapped(normalized);
+  zxnextCpuLatchP3FloatingBus(normalized, value);
+  return value;
 }
 
 static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value) {
   zxnextMemoryWriteMapped(address & 0xffffu, value & 0xffu);
+  zxnextCpuLatchP3FloatingBus(address, value);
   lastMemoryAddress = (uint16_t)address;
   lastMemoryValue = (uint8_t)value;
   lastMemoryAccessed = 1;

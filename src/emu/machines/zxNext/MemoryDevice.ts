@@ -89,27 +89,28 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   maxPages: number;
   memory: Uint8Array;
 
+  /**
+   * The ROM the `$0000-$3FFF` area shows (zxnext.vhd ~2938-2962 `sram_rom`), split into its two bits.
+   * Derived from the machine type, `$1FFD`, `$7FFD` and the `$8C` lock bits at every paging change.
+   */
   selectedRomLsb: number;
   selectedRomMsb: number;
-  selectedBankLsb: number;
-  selectedBankMsb: number;
 
-  pagingEnabled: boolean;
-  useShadowScreen: boolean;
-  allRamMode: boolean;
-  specialConfig: number;
-
-  enableAltRom: boolean;
-  altRomVisibleOnlyForWrites: boolean;
-  lockRom1: boolean;
-  lockRom0: boolean;
-  reg8CLowNibble: number;
   configRomRamBank: number;
+  /** NextReg `$8F` (zxnext.vhd ~3766): no reset branch, so a reset keeps it. */
   mappingMode: number;
 
   readonly mmuRegs = new Uint8Array(0x08);
 
-  private _wasInAllRamMode = false;
+  // --- The paging registers exactly as zxnext.vhd stores them (~3638-3764). Everything else about
+  // --- 128K/+3/Pentagon paging is derived from these and from the MMU registers they reload.
+  private _port7ffd = 0; // port_7ffd_reg
+  private _portDffd = 0; // port_dffd_reg (bits 4-0)
+  private _port1ffd = 0; // port_1ffd_reg
+  private _portEff7 = 0; // port_eff7_reg_2 / _3 (bits 2 and 3)
+  private _altRom = 0; // nr_8c_altrom
+  /** Alt ROM 1 (48K) rather than Alt ROM 0 (128K) - `sram_alt_128_n`. */
+  private _alt128n = false;
 
   // --- Fast path optimization flags
   private _divMmcActive = false;
@@ -195,25 +196,15 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    this._wasInAllRamMode = true;
-    this.selectedRomLsb = 0;
-    this.selectedRomMsb = 0;
-    this.selectedBankLsb = 0;
-    this.selectedBankMsb = 0;
-
-    this.pagingEnabled = true;
-    this.useShadowScreen = false;
-    this.allRamMode = false;
-    this.specialConfig = 0;
-    this._portEff7Value = 0;
+    // --- zxnext.vhd ~3645, 3685, 3712, 3758: every reset clears the paging ports
+    this._port7ffd = 0;
+    this._portDffd = 0;
+    this._port1ffd = 0;
+    this._portEff7 = 0;
 
     // --- zxnext.vhd ~2211: a reset copies NextReg $8C bits 3-0 into bits 7-4 and keeps bits 3-0.
-    const altRomLowNibble = (this.reg8CLowNibble ?? 0) & 0x0f;
-    this.enableAltRom = (altRomLowNibble & 0x08) !== 0;
-    this.altRomVisibleOnlyForWrites = (altRomLowNibble & 0x04) !== 0;
-    this.lockRom1 = (altRomLowNibble & 0x02) !== 0;
-    this.lockRom0 = (altRomLowNibble & 0x01) !== 0;
-    this.reg8CLowNibble = altRomLowNibble;
+    const altRomLowNibble = (this._altRom ?? 0) & 0x0f;
+    this._altRom = (altRomLowNibble << 4) | altRomLowNibble;
     this.configRomRamBank = 0;
     // --- NextReg $8F (mapping mode) has no reset branch (zxnext.vhd ~3767): a soft reset keeps it.
     this.mappingMode ??= 0;
@@ -376,72 +367,132 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     return bank << (13 + 0x40_0000);
   }
 
-  get port1ffdValue(): number {
-    return (this.allRamMode ? 0x01 : 0x00) | (this.specialConfig << 1);
+  // ==========================================================================================
+  // Paging registers (zxnext.vhd ~3638-3800)
+
+  /** `$7FFD` bit 3: bank 7 is displayed (`port_7ffd_shadow`). NextReg `$69` bit 6 writes it too. */
+  get useShadowScreen(): boolean {
+    return (this._port7ffd & 0x08) !== 0;
+  }
+  set useShadowScreen(value: boolean) {
+    this._port7ffd = value ? this._port7ffd | 0x08 : this._port7ffd & ~0x08;
   }
 
-  /**
-   * Updates the memory configuration based on the new 0x1ffd port value
-   */
-  set port1ffdValue(value: number) {
-    if (!this.pagingEnabled) return;
-    this.allRamMode = (value & 0x01) !== 0;
-    this.specialConfig = (value >> 1) & 0x03;
-    this.selectedRomMsb = this.specialConfig & 0x02;
-    this.updateMemoryConfig(true);
+  /** Not `port_7ffd_locked` (~3749): Pentagon 1024 has no lock. `$08` bit 7 = 1 unlocks (~3650). */
+  get pagingEnabled(): boolean {
+    return this.pentagon1024 || (this._port7ffd & 0x20) === 0;
+  }
+  set pagingEnabled(value: boolean) {
+    this._port7ffd = value ? this._port7ffd & ~0x20 : this._port7ffd | 0x20;
+  }
+
+  /** +3 special (all-RAM) mode: `$1FFD` bit 0. */
+  get allRamMode(): boolean {
+    return (this._port1ffd & 0x01) !== 0;
+  }
+  /** The +3 special layout: `$1FFD` bits 2-1. */
+  get specialConfig(): number {
+    return (this._port1ffd >> 1) & 0x03;
+  }
+
+  /** `$8F` = 11 and `$EFF7` bit 2 clear (~3781). */
+  private get pentagon1024(): boolean {
+    return this.mappingMode === 3 && (this._portEff7 & 0x04) === 0;
+  }
+
+  /** `port_7ffd_bank` (~3743-3746): the 16K bank `$7FFD` / `$DFFD` / Pentagon paging select. */
+  get selectedBank16k(): number {
+    const p = this._port7ffd;
+    if (this.mappingMode === 2 || this.pentagon1024) {
+      return (p & 0x07) | (((p >> 6) & 0x03) << 3) | (this.pentagon1024 && p & 0x20 ? 0x20 : 0);
+    }
+    return (p & 0x07) | ((this._portDffd & 0x0f) << 3);
+  }
+  get selectedBankLsb(): number {
+    return this._port7ffd & 0x07;
+  }
+  get selectedBankMsb(): number {
+    return this.selectedBank16k & 0x78;
   }
 
   get port7ffdValue(): number {
-    return (
-      this.selectedBankLsb |
-      (this.useShadowScreen ? 0x08 : 0x00) |
-      (this.selectedRomLsb << 4) |
-      (this.pagingEnabled ? 0x00 : 0x20)
-    );
+    return this._port7ffd;
   }
-
-  /**
-   * Updates the memory configuration based on the new 0x7ffd port value
-   */
+  /** A `$7FFD` write; ignored while locked (~3646). */
   set port7ffdValue(value: number) {
-    // --- Port value has changed; abort if paging is not enabled
     if (!this.pagingEnabled) return;
-
-    // --- Update port value changes
-    const newBank16k = (this.selectedBankLsb = value & 0x07);
-    this.mmuRegs[6] = this.selectedBankMsb * 16 + newBank16k * 2;
-    this.mmuRegs[7] = this.mmuRegs[6] + 1;
-    this.useShadowScreen = !!((value >> 3) & 0x01);
-    this.selectedRomLsb = (value >> 4) & 0x01;
-    this.pagingEnabled = !(value & 0x20);
-    this.updateMemoryConfig(true);
+    this._port7ffd = value & 0xff;
+    this.reloadMmuFromPorts(true, false);
   }
 
   get portDffdValue(): number {
-    return this.selectedBankMsb;
+    return this._portDffd;
+  }
+  /** A `$DFFD` write; ignored while locked (~3688, the Profi exception is disabled in this core). */
+  set portDffdValue(value: number) {
+    if (!this.pagingEnabled) return;
+    this._portDffd = value & 0x1f;
+    this.reloadMmuFromPorts(true, false);
+  }
+
+  get port1ffdValue(): number {
+    return this._port1ffd;
+  }
+  /** A `$1FFD` write; ignored while locked (~3715). */
+  set port1ffdValue(value: number) {
+    if (!this.pagingEnabled) return;
+    const specialOld = this.allRamMode;
+    this._port1ffd = value & 0xff;
+    this.reloadMmuFromPorts(true, specialOld);
+  }
+
+  get portEff7Value(): number {
+    return this._portEff7;
+  }
+  /** A `$EFF7` write: only bits 2 and 3 are stored (~3761); the lock does not apply. */
+  set portEff7Value(value: number) {
+    this._portEff7 = value & 0x0c;
+    this.reloadMmuFromPorts(true, false);
   }
 
   /**
-   * Updates the memory configuration based on the new 0xdffd port value
+   * The MMU reload after a paging write (zxnext.vhd ~4599-4664). `ramChange` is
+   * `port_memory_ram_change_dly` (false only for a `$8E` write without bit 3); `specialOld` is
+   * `port_1ffd_special_old`, the special-mode flag before a `$1FFD` / `$8E` write.
    */
-  set portDffdValue(value: number) {
-    if (!this.pagingEnabled) return;
-    this.selectedBankMsb = value & 0x0f;
-    this.mmuRegs[6] = this.selectedBankMsb * 16 + this.selectedBankLsb * 2;
-    this.mmuRegs[7] = this.mmuRegs[6] + 1;
-    this.updateMemoryConfig(true);
-  }
-
-  /** Port 0xEFF7 value — FPGA stores bits 2-3 only (pentagon 1024K control) */
-  private _portEff7Value: number = 0;
-
-  get portEff7Value(): number {
-    return this._portEff7Value;
-  }
-
-  set portEff7Value(value: number) {
-    this._portEff7Value = value;
-    this.updateMemoryConfig(true);
+  private reloadMmuFromPorts(ramChange: boolean, specialOld: boolean): void {
+    const mmu = this.mmuRegs;
+    const p = this._port1ffd;
+    if (p & 0x01) {
+      const b2 = (p >> 2) & 0x01;
+      const b1 = (p >> 1) & 0x01;
+      const high = (b2 | b1) << 3;
+      const upper = ((b2 ^ 1) & b1) << 3;
+      mmu[0] = high;
+      mmu[1] = high | 1;
+      mmu[2] = high | ((b2 & b1) << 2) | 2;
+      mmu[3] = mmu[2] | 1;
+      mmu[4] = high | 4;
+      mmu[5] = high | 5;
+      mmu[6] = upper | 6;
+      mmu[7] = upper | 7;
+    } else {
+      const bank0 = (this._portEff7 & 0x08) !== 0;
+      mmu[0] = bank0 ? 0x00 : 0xff;
+      mmu[1] = bank0 ? 0x01 : 0xff;
+      if (specialOld) {
+        mmu[2] = 0x0a;
+        mmu[3] = 0x0b;
+        mmu[4] = 0x04;
+        mmu[5] = 0x05;
+      }
+      if (specialOld || ramChange) {
+        const bank = this.selectedBank16k;
+        mmu[6] = (bank << 1) & 0xff;
+        mmu[7] = ((bank << 1) | 1) & 0xff;
+      }
+    }
+    this.updateMemoryConfig();
   }
 
   /**
@@ -463,83 +514,71 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
     this.updateMemoryConfig();
   }
 
-  /**
-   * Gets the value to be read from the Next register $8C
-   */
-  get nextReg8CValue(): number {
-    return (
-      (this.enableAltRom ? 0x80 : 0x00) |
-      (this.altRomVisibleOnlyForWrites ? 0x40 : 0x00) |
-      (this.lockRom1 ? 0x20 : 0x00) |
-      (this.lockRom0 ? 0x10 : 0x00) |
-      (this.reg8CLowNibble & 0x0f)
-    );
+  // --- NextReg $8C (~2207-2221)
+  get enableAltRom(): boolean {
+    return (this._altRom & 0x80) !== 0;
+  }
+  /** Bit 6: the Alt ROM is the write target and reads see the normal ROM. */
+  get altRomVisibleOnlyForWrites(): boolean {
+    return (this._altRom & 0x40) !== 0;
+  }
+  get lockRom1(): boolean {
+    return (this._altRom & 0x20) !== 0;
+  }
+  get lockRom0(): boolean {
+    return (this._altRom & 0x10) !== 0;
   }
 
-  /**
-   * Sets the value of the Next register $8C
-   * @param value Value to set
-   */
+  get nextReg8CValue(): number {
+    return this._altRom;
+  }
   set nextReg8CValue(value: number) {
-    this.enableAltRom = (value & 0x80) !== 0;
-    this.altRomVisibleOnlyForWrites = (value & 0x40) !== 0;
-    this.lockRom1 = (value & 0x20) !== 0;
-    this.lockRom0 = (value & 0x10) !== 0;
-    this.reg8CLowNibble = value & 0x0f;
+    this._altRom = value & 0xff;
     this.updateMemoryConfig();
   }
 
-  /**
-   * Gets the value to be read from the Next register $8E
-   */
+  /** ~6104: dffd(0) & 7ffd(2:0) & 1 & 1ffd(0) & 1ffd(2) & ((7ffd(4) and not 1ffd(0)) or (1ffd(1) and 1ffd(0))) */
   get nextReg8EValue(): number {
+    const p7 = this._port7ffd;
+    const p1 = this._port1ffd;
+    const special = p1 & 0x01;
     return (
-      ((this.selectedBankMsb & 0x01) << 7) |
-      ((this.selectedBankLsb & 0x07) << 4) |
+      ((this._portDffd & 0x01) << 7) |
+      ((p7 & 0x07) << 4) |
       0x08 |
-      (this.allRamMode ? 0x04 : 0x00) |
-      (this.allRamMode ? this.specialConfig & 0x02 : this.selectedRomMsb) |
-      (this.allRamMode ? this.specialConfig & 0x01 : this.selectedRomLsb)
+      (special << 2) |
+      (((p1 >> 2) & 0x01) << 1) |
+      ((((p7 >> 4) & 0x01) & (special ^ 1)) | (((p1 >> 1) & 0x01) & special))
     );
   }
 
   /**
-   * Sets the value of the Next register $8E
+   * A `$8E` write (~3659-3730): bit 3 sets the bank (bits 6-4, `$DFFD` bit 0 from bit 7, `$DFFD` bit 3
+   * cleared) and reloads MMU6/7; bit 2 = 0 sets the ROM bit from bit 0; `$1FFD` bits 2-0 always take
+   * bits 1, 0, 2. The lock does not apply.
    */
   set nextReg8EValue(value: number) {
-    // --- Bit 3 indicates
+    const specialOld = this.allRamMode;
     if (value & 0x08) {
-      // --- Change RAM bank, MMU6, and MMU7
-      this.selectedBankMsb = (value & 0x80) >> 7;
-      this.selectedBankLsb = (value >> 4) & 0x07;
-      this.mmuRegs[6] = (this.selectedBankMsb << 4) | (this.selectedBankLsb << 1);
-      this.mmuRegs[7] = this.mmuRegs[6] + 1;
+      this._port7ffd = (this._port7ffd & ~0x07) | ((value >> 4) & 0x07);
+      this._portDffd = (this._portDffd & 0x10) | ((value >> 7) & 0x01);
     }
-
-    // --- Set the AllRAM flag
-    this.allRamMode = (value & 0x04) !== 0;
-    if (this.allRamMode) {
-      this.specialConfig = value & 0x03;
-    } else {
-      this.selectedRomMsb = value & 0x02;
-      this.selectedRomLsb = value & 0x01;
+    if (!(value & 0x04)) {
+      this._port7ffd = (this._port7ffd & ~0x10) | ((value & 0x01) << 4);
     }
-
-    this.updateMemoryConfig();
+    this._port1ffd =
+      (this._port1ffd & ~0x07) | (((value >> 1) & 0x01) << 2) | ((value & 0x01) << 1) | ((value >> 2) & 0x01);
+    this.reloadMmuFromPorts((value & 0x08) !== 0, specialOld);
   }
 
-  /**
-   * Gets the value to be read from the Next register $8F
-   */
   get nextReg8FValue(): number {
     return this.mappingMode;
   }
 
-  /**
-   * Sets the value of the Next register $8F
-   */
+  /** A `$8F` write: the mode, then (one clock later, ~3793) an MMU reload like a port write. */
   set nextReg8FValue(value: number) {
     this.mappingMode = value & 0x03;
+    this.reloadMmuFromPorts(true, false);
   }
 
   /**
@@ -729,9 +768,10 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       : screen.layer2ActiveRamBank;
     const bankOffset = screen.layer2BankOffset || 0;
 
-    // Calculate address range
-    const startAddr = mapSegment === 3 ? 0x0000 : mapSegment << 14;
-    const endAddr = mapSegment === 3 ? 0xc000 : (mapSegment + 1) << 14;
+    // --- zxnext.vhd ~3001-3020: segments 00/01/10 all map $0000-$3FFF (the segment picks the third of
+    // --- Layer 2 shown there); only segment 11 maps $0000-$BFFF
+    const startAddr = 0x0000;
+    const endAddr = mapSegment === 3 ? 0xc000 : 0x4000;
 
     // Allocate lazily on first use (saves 512 KB of startup allocation)
     if (enableReads && !this._layer2ReadMap) {
@@ -741,67 +781,25 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
       this._layer2WriteMap = new Int32Array(0x10000).fill(-1);
     }
 
-    // Only fill the range that will be affected (optimization: avoid filling full 64K)
-    if (enableReads) {
-      this._layer2ReadMap!.fill(-1, startAddr, endAddr);
-    }
-    if (enableWrites) {
-      this._layer2WriteMap!.fill(-1, startAddr, endAddr);
-    }
+    // --- Clear everything a previous segment may have mapped ($0000-$BFFF), not just this segment
+    this._layer2ReadMap?.fill(-1, 0, 0xc000);
+    this._layer2WriteMap?.fill(-1, 0, 0xc000);
 
-    // Process in 8KB chunks (calculations only change at 8KB boundaries)
-    // This reduces iterations from ~49152 to ~6
-    for (let chunkStart = startAddr; chunkStart < endAddr; chunkStart += 0x2000) {
-      // Use middle address of chunk for calculations (bit 13 doesn't affect segment offset)
-      const addr = chunkStart;
-
-      // Calculate segment index based on address
-      // VHDL: layer2_active_bank_offset_pre <= cpu_a(15 downto 14) when port_123b_layer2_map_segment = "11" else port_123b_layer2_map_segment
-      const layer2ActiveBankOffsetPre = mapSegment === 3 ? (addr >> 14) & 0x03 : mapSegment;
-
-      // VHDL: layer2_active_bank_offset <= ("00" & layer2_active_bank_offset_pre) + ('0' & port_123b_layer2_offset)
-      const layer2ActiveBankOffset = (layer2ActiveBankOffsetPre + bankOffset) & 0x07;
-
-      // Process both 8KB halves (bit 13 = 0 and bit 13 = 1)
-      for (let half = 0; half < 2; half++) {
-        const addrWithHalf = chunkStart | (half << 13);
-
-        // VHDL: layer2_active_page <= (('0' & layer2_active_bank) + ("0000" & layer2_active_bank_offset)) & cpu_a(13)
-        const pageBits7_1 = (activeBank + layer2ActiveBankOffset) & 0x7f;
-        const pageBit0 = half;
-        const layer2ActivePage = (pageBits7_1 << 1) | pageBit0;
-
-        // VHDL: layer2_A21_A13 <= ("0001" + ('0' & layer2_active_page(7 downto 5))) & layer2_active_page(4 downto 0)
-        const upperNibble = (0x01 + ((layer2ActivePage >> 5) & 0x07)) & 0x0f;
-        const lowerBits = layer2ActivePage & 0x1f;
-        const layer2_A21_A13 = (upperNibble << 5) | lowerBits;
-
-        // VHDL: sram_active <= not sram_pre_layer2_A21_A13(8)
-        if ((layer2_A21_A13 & 0x100) === 0) {
-          // This 8KB region is mapped - fill all addresses in the region
-          const baseOffset = OFFS_NEXT_RAM + ((layer2_A21_A13 & 0xff) << 13);
-          const regionStart = chunkStart + (half << 13);
-          const regionEnd = regionStart + 0x2000;
-
-          // Fill the entire 8KB region with computed offsets
-          // offset = baseOffset + (addr - regionStart)
-          // Optimize: use a single condition check for read/write
-          if (enableReads && enableWrites) {
-            for (let addr = regionStart; addr < regionEnd; addr++) {
-              const offset = baseOffset + (addr - regionStart);
-              this._layer2ReadMap![addr] = offset;
-              this._layer2WriteMap![addr] = offset;
-            }
-          } else if (enableReads) {
-            for (let addr = regionStart; addr < regionEnd; addr++) {
-              this._layer2ReadMap![addr] = baseOffset + (addr - regionStart);
-            }
-          } else {
-            for (let addr = regionStart; addr < regionEnd; addr++) {
-              this._layer2WriteMap![addr] = baseOffset + (addr - regionStart);
-            }
-          }
-        }
+    // --- One 8K page at a time: the page only changes at 8K boundaries
+    for (let regionStart = startAddr; regionStart < endAddr; regionStart += 0x2000) {
+      // --- VHDL: layer2_active_bank_offset_pre <= cpu_a(15 downto 14) when segment = "11" else segment
+      const offsetPre = mapSegment === 3 ? (regionStart >> 14) & 0x03 : mapSegment;
+      // --- layer2_active_bank_offset <= ("00" & offset_pre) + ('0' & port_123b_layer2_offset)
+      const bankOffsetSum = (offsetPre + bankOffset) & 0x07;
+      // --- layer2_active_page <= (('0' & bank) + ("0000" & bank_offset)) & cpu_a(13): 8 bits
+      const page = (((activeBank + bankOffsetSum) << 1) | ((regionStart >> 13) & 0x01)) & 0xff;
+      // --- layer2_A21_A13 = ("0001" + page(7:5)) & page(4:0) is the SRAM page, i.e. RAM page + 32:
+      // --- bit 8 (no SRAM cycle) is set for pages $E0-$FF. RAM page p lives at OFFS_NEXT_RAM + p x 8K.
+      if (page >= 0xe0) continue;
+      const baseOffset = OFFS_NEXT_RAM + (page << 13);
+      for (let i = 0; i < 0x2000; i++) {
+        if (enableReads) this._layer2ReadMap![regionStart + i] = baseOffset + i;
+        if (enableWrites) this._layer2WriteMap![regionStart + i] = baseOffset + i;
       }
     }
   }
@@ -1048,83 +1046,46 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Updates the memory configuration based on the current settings
+   * The ROM selection process (zxnext.vhd ~2938-2962): which ROM `$0000-$3FFF` shows and which Alt
+   * ROM (`sram_alt_128_n`). The `$8C` lock bits override the ports whether or not the Alt ROM is on.
    */
-  updateMemoryConfig(fromPort: boolean = false): void {
-    if (this.allRamMode) {
-      // --- All RAM page setup
-      this._wasInAllRamMode = true;
-
-      switch (this.specialConfig) {
-        case 0:
-          this.setRamSlotAndMmu(0, 0);
-          this.setRamSlotAndMmu(1, 1);
-          this.setRamSlotAndMmu(2, 2);
-          this.setRamSlotAndMmu(3, 3);
-          break;
-        case 1:
-          // --- 0x01: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x6000
-          this.setRamSlotAndMmu(0, 4);
-          this.setRamSlotAndMmu(1, 5);
-          this.setRamSlotAndMmu(2, 6);
-          this.setRamSlotAndMmu(3, 7);
-          break;
-        case 2:
-          // --- 0x10: 16K RAM at 0x0000, 8K RAM at 0x4000, 8K RAM at 0x8000
-          this.setRamSlotAndMmu(0, 4);
-          this.setRamSlotAndMmu(1, 5);
-          this.setRamSlotAndMmu(2, 6);
-          this.setRamSlotAndMmu(3, 3);
-          break;
-        case 3:
-          // --- 0x11: 16K RAM at 0x0000, 16K RAM at 0x4000
-          this.setRamSlotAndMmu(0, 4);
-          this.setRamSlotAndMmu(1, 7);
-          this.setRamSlotAndMmu(2, 6);
-          this.setRamSlotAndMmu(3, 3);
-          break;
+  private updateRomSelection(): void {
+    const lock1 = this.lockRom1;
+    const lock0 = this.lockRom0;
+    const rom7ffd = (this._port7ffd >> 4) & 0x01;
+    const machineType = this.machine.composedScreenDevice?.machineType ?? 0b011;
+    let rom: number;
+    if (machineType === 0b001) {
+      rom = 0;
+      this._alt128n = !(!lock1 && lock0);
+    } else if (machineType === 0b011) {
+      if (lock1 || lock0) {
+        rom = (lock1 ? 2 : 0) | (lock0 ? 1 : 0);
+        this._alt128n = lock1;
+      } else {
+        rom = (((this._port1ffd >> 2) & 0x01) << 1) | rom7ffd;
+        this._alt128n = rom7ffd === 1;
       }
-      return;
+    } else if (lock1 || lock0) {
+      rom = lock1 ? 1 : 0;
+      this._alt128n = lock1;
     } else {
-      if (this._wasInAllRamMode) {
-        // --- Restore the original configuration (M2 fix: 0x0a/0x0b not 0x10/0x11)
-        // --- M5: EFF7 bit 3 maps 16K bank 0 to slot 0 even when restoring
-        const eff7Bank0 = (this._portEff7Value & 0x08) !== 0;
-        this.mmuRegs[0] = eff7Bank0 ? 0x00 : 0xff;
-        this.mmuRegs[1] = eff7Bank0 ? 0x01 : 0xff;
-        this.mmuRegs[2] = 0x0a;
-        this.mmuRegs[3] = 0x0b;
-        this.mmuRegs[4] = 0x04;
-        this.mmuRegs[5] = 0x05;
-        // --- CR1: restore to the bank that was active before allRam was entered
-        // --- FPGA: MMU6 = port_7ffd_bank × 2 = selectedBankMsb × 16 + selectedBankLsb × 2
-        const bank6 = this.selectedBankMsb * 16 + this.selectedBankLsb * 2;
-        this.mmuRegs[6] = bank6;
-        this.mmuRegs[7] = bank6 + 1;
-        this._wasInAllRamMode = false;
-      }
-
-      // --- Normal mode page setup
-      if (!this.machine.divMmcDevice?.conmem) {
-        // --- M5: port writes (7FFD, DFFD, 1FFD, EFF7) always re-evaluate EFF7 bit 3
-        // --- for slot 0/1, matching FPGA behaviour. NextReg writes skip this override.
-        if (fromPort) {
-          const eff7Bank0 = (this._portEff7Value & 0x08) !== 0;
-          this.mmuRegs[0] = eff7Bank0 ? 0x00 : 0xff;
-          this.mmuRegs[1] = eff7Bank0 ? 0x01 : 0xff;
-        }
-        this.setRomSlotByMmu(0);
-        this.setRomSlotByMmu(1);
-      }
-
-      this.setRamSlotByMmu(2);
-      this.setRamSlotByMmu(3);
-      this.setRamSlotByMmu(4);
-      this.setRamSlotByMmu(5);
-      this.setRamSlotByMmu(6);
-      this.setRamSlotByMmu(7);
+      rom = rom7ffd;
+      this._alt128n = rom7ffd === 1;
     }
+    this.selectedRomMsb = rom & 0x02;
+    this.selectedRomLsb = rom & 0x01;
+  }
 
+  /**
+   * Maps the eight 8K slots from the MMU registers (zxnext.vhd ~2986-3017). The paging ports never
+   * map memory directly: they reload the MMU registers (`reloadMmuFromPorts`), as the FPGA does.
+   */
+  updateMemoryConfig(): void {
+    this.updateRomSelection();
+    for (let slot = 0; slot < 8; slot++) {
+      this.setRamSlotByMmu(slot);
+    }
     // --- Update fast path flags after memory configuration changes
     this.updateFastPathFlags();
   }
@@ -1153,116 +1114,38 @@ export class MemoryDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   /**
-   * Sets the specified 16K memory slot to the specified 16K bank
-   * @param slotNo
-   * @param bank16k
+   * Maps one 8K slot from its MMU register. Pages `$00-$DF` are RAM (SRAM page + 32). Anything
+   * above has bit 8 of `mmu_A21_A13` set: in slots 0/1 that is the ROM (~3010-3014: read-only unless
+   * the Alt ROM takes writes); in slots 2-7 there is no SRAM cycle at all - writes are dropped (reads
+   * are undefined on the hardware; the ROM is shown).
    */
-  private setRamSlotAndMmu(slotNo: number, bank16k: number): void {
-    let bank8k = bank16k * 2;
-    if (bank8k >= this.maxPages) {
-      this.setPageInfo(slotNo * 2, OFFS_ERR_PAGE, null, bank16k, bank8k);
-    } else {
-      let offset = OFFS_NEXT_RAM + (bank8k << 13);
-      this.setPageInfo(slotNo * 2, offset, offset, bank16k, bank8k);
-    }
-    bank8k++;
-    if (bank8k >= this.maxPages) {
-      this.setPageInfo(slotNo * 2 + 1, OFFS_ERR_PAGE, null, bank16k, bank8k);
-    } else {
-      let offset = OFFS_NEXT_RAM + (bank8k << 13);
-      this.setPageInfo(slotNo * 2 + 1, offset, offset, bank16k, bank8k);
-    }
-  }
-
   private setRamSlotByMmu(pageNo: number): void {
     const bank8k = this.mmuRegs[pageNo];
-
-    // --- MMU values 224-255 (0xE0-0xFF) trigger overflow detection
-    // --- and bypass MMU to use priority decode chain for System Region access
-    if (bank8k >= 224) {
-      // --- Use priority decode chain (same logic as setRomSlotByMmu)
-      const slotNo = pageNo & 0x01;
-      const romPage = this.selectedRomMsb | this.selectedRomLsb;
-      const slotIndex = romPage * 2 + slotNo;
-      const romOffs = OFFS_NEXT_ROM + (slotIndex << 13);
-      const altRomOffs = this.getAltRomOffset() + (slotNo << 13);
-
-      if (this.enableAltRom) {
-        if (this.altRomVisibleOnlyForWrites) {
-          const page =
-            !this.lockRom0 && !this.lockRom1
-              ? this.selectedRomMsb + this.selectedRomLsb
-              : (this.lockRom1 ? 2 : 0) + (this.lockRom0 ? 1 : 0);
-          this.setPageInfo(
-            pageNo,
-            OFFS_NEXT_ROM + (page << 14) + (slotNo << 13),
-            altRomOffs,
-            0xff,
-            0xff
-          );
-        } else {
-          this.setPageInfo(pageNo, altRomOffs, null, 0xff, 0xff);
-        }
+    if (bank8k < 0xe0) {
+      if (bank8k >= this.maxPages) {
+        this.setPageInfo(pageNo, OFFS_ERR_PAGE, null, bank8k >> 1, bank8k);
       } else {
-        this.setPageInfo(pageNo, romOffs, null, 0xff, 0xff);
+        const offset = OFFS_NEXT_RAM + (bank8k << 13);
+        this.setPageInfo(pageNo, offset, offset, bank8k >> 1, bank8k);
       }
       return;
     }
 
-    // --- Normal MMU mapping for banks 0-223
-    if (bank8k >= this.maxPages) {
-      this.setPageInfo(pageNo, OFFS_ERR_PAGE, null, bank8k >> 1, bank8k);
-    } else {
-      let offset = OFFS_NEXT_RAM + (bank8k << 13);
-      this.setPageInfo(pageNo, offset, offset, bank8k >> 1, bank8k);
-    }
-  }
-
-  private setRomSlotByMmu(slotNo: number): void {
-    slotNo = slotNo & 0x01;
-    const romPage = this.selectedRomMsb | this.selectedRomLsb;
-    const slotIndex = romPage * 2 + slotNo;
-    const bank8k = this.mmuRegs[slotNo];
-
-    // --- MMU values 224-255 (0xE0-0xFF) trigger overflow detection
-    // --- and use priority decode chain for System Region access
-    if (bank8k < 224) {
-      // --- Normal MMU mapping for banks 0-223
-      this.setRamSlotByMmu(slotNo);
+    const half = pageNo & 0x01;
+    const romOffs = OFFS_NEXT_ROM + ((this.selectedRomMsb | this.selectedRomLsb) << 14) + (half << 13);
+    if (pageNo > 1) {
+      this.setPageInfo(pageNo, romOffs, null, 0xff, 0xff);
       return;
     }
 
-    // --- System Region access via priority decode chain
-    const romOffs = OFFS_NEXT_ROM + (slotIndex << 13);
-    const altRomOffs = this.getAltRomOffset() + (slotNo << 13);
-    if (this.enableAltRom) {
-      if (this.altRomVisibleOnlyForWrites) {
-        const page =
-          !this.lockRom0 && !this.lockRom1
-            ? this.selectedRomMsb + this.selectedRomLsb
-            : (this.lockRom1 ? 2 : 0) + (this.lockRom0 ? 1 : 0);
-        this.setPageInfo(
-          slotNo,
-          OFFS_NEXT_ROM + (page << 14) + (slotNo << 13),
-          altRomOffs,
-          0xff,
-          0xff
-        );
-      } else {
-        this.setPageInfo(slotNo, altRomOffs, null, 0xff, 0xff);
-      }
+    // --- ~3050-3083: `sram_altrom_en` for reads while read-only, for writes while writable
+    const altRomOffs = (this._alt128n ? OFFS_ALT_ROM_1 : OFFS_ALT_ROM_0) + (half << 13);
+    if (!this.enableAltRom) {
+      this.setPageInfo(pageNo, romOffs, null, 0xff, 0xff);
+    } else if (this.altRomVisibleOnlyForWrites) {
+      this.setPageInfo(pageNo, romOffs, altRomOffs, 0xff, 0xff);
     } else {
-      this.setPageInfo(slotNo, romOffs, null, 0xff, 0xff);
+      this.setPageInfo(pageNo, altRomOffs, null, 0xff, 0xff);
     }
-  }
-
-  private getAltRomOffset(): number {
-    return this.lockRom1
-      ? OFFS_ALT_ROM_1
-      : this.lockRom0
-        ? OFFS_ALT_ROM_0
-        : this.selectedRomLsb
-          ? OFFS_ALT_ROM_1
-          : OFFS_ALT_ROM_0;
   }
 }

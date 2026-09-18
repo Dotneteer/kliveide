@@ -11,8 +11,9 @@ describe("Next - NextIoPortManager", function () {
     let handler = d.getPortHandler(0x1ffd);
     expect(handler).not.toBeNull();
     expect(handler.readerFns).toBeUndefined();
+    // --- $1FFD also falls in the $7FFD decode (A14 is decoded only in +3 timing), whose writer skips it;
+    // --- `test/zxnext-hw/ports/port-decode.test.ts` PORT-010 checks the behaviour
     expect(handler.writerFns).not.toBeUndefined();
-    expect(Array.isArray(handler.writerFns)).toBe(false);
   });
 
   const cases0x1ffd = [

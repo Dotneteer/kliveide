@@ -97,8 +97,7 @@ export type ErrorCodes =
   | "Z0368"
 
   // --- Next model warnings
-  | "Z0902"
-  | "Z0904"
+  | "Z0370"
 
   // --- Instructions
   | "Z0401"
@@ -286,7 +285,9 @@ export const errorMessages: Record<string, string> = {
   Z0366: "Expected operating mode: 'byte', 'continuous', or 'burst'.",
   Z0367: "Prescaler requires cycle length to be specified.",
   Z0368: "The .dma pragma requires the Next model (.model next).",
-  Z0902: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
+
+  // --- Next model warnings
+  Z0370: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",
 
   // --- Instructions
   Z0401: "Unexpected error when emitting code for mnemonic '{0}'.",
@@ -346,7 +347,7 @@ export const errorMessages: Record<string, string> = {
 
   // --- Modules
   Z0901: "You cannot define a module without a name.",
-  Z0904: "You cannot define a module with a temporary name ({0}).",
+  Z0902: "You cannot define a module with a temporary name ({0}).",
   Z0903: "Module with name '{0}' already exists.",
 
   // --- Macros

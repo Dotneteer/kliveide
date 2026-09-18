@@ -57,11 +57,11 @@ static uint32_t zxnextPortsRead(uint32_t address) {
              (normalized & 0xffffu) == 0x143bu ||
              (normalized & 0xffffu) == 0x153bu ||
              (normalized & 0xffffu) == 0x163bu) {
-    lastPortValue = zxnextUartReadPort(normalized);
+    lastPortValue = zxnextPortsGroupEnabled(1, 4) ? zxnextUartReadPort(normalized) : 0xffu;
   } else if ((normalized & 0xffffu) == 0x103bu) {
-    lastPortValue = zxnextI2cReadSclPort();
+    lastPortValue = zxnextPortsGroupEnabled(1, 2) ? zxnextI2cReadSclPort() : 0xffu;
   } else if ((normalized & 0xffffu) == 0x113bu) {
-    lastPortValue = zxnextI2cReadSdaPort();
+    lastPortValue = zxnextPortsGroupEnabled(1, 2) ? zxnextI2cReadSdaPort() : 0xffu;
   } else if ((normalized & 0xffffu) == 0x123bu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 7) ? zxnextLayer2GetPort123B() : 0xffu;
   } else if ((normalized & 0xffffu) == 0x303bu) {
@@ -70,23 +70,28 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     lastPortValue = zxnextPortsGroupEnabled(3, 0) ? zxnextUlaPlusReadDataPort() : 0xffu;
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     lastPortValue = zxnextCtcReadPort(normalized);
-  } else if ((normalized & 0x00ffu) == 0x006bu) {
+  } else if ((normalized & 0x00ffu) == 0x006bu && zxnextPortsGroupEnabled(0, 5)) {
     zxnextDmaSetMode(0);
     lastPortValue = zxnextDmaReadStatusByte();
-  } else if ((normalized & 0x00ffu) == 0x000bu) {
+  } else if ((normalized & 0x00ffu) == 0x000bu && zxnextPortsGroupEnabled(3, 1)) {
     zxnextDmaSetMode(1);
     lastPortValue = zxnextDmaReadStatusByte();
-  } else if ((normalized & 0xffffu) == 0xfbdfu ||
-             (normalized & 0xffffu) == 0xffdfu ||
-             (normalized & 0xffffu) == 0xfadfu ||
-             (normalized & 0x00ffu) == 0x001fu ||
-             (normalized & 0x00ffu) == 0x0037u) {
-    lastPortValue = zxnextInputReadPort(normalized);
+  } else if ((normalized & 0x00ffu) == 0x00dfu && (normalized & 0x0f00u) >= 0x0a00u && (normalized & 0x0f00u) != 0x0c00u &&
+             (normalized & 0x0f00u) != 0x0d00u && (normalized & 0x0f00u) != 0x0e00u) {
+    /* ~2615-2617: $xADF / $xBDF / $xFDF (A11-8), with the mouse port enable */
+    lastPortValue = zxnextPortsGroupEnabled(1, 5) ? zxnextInputReadPort(0xf0dfu | (normalized & 0x0f00u)) : 0xffu;
+  } else if ((normalized & 0x00ffu) == 0x001fu ||
+             ((normalized & 0x00ffu) == 0x00dfu && zxnextPortsGroupEnabled(2, 7) && !zxnextPortsGroupEnabled(1, 5))) {
+    /* ~2622: $1F, or $DF with the Specdrum port on and the mouse off */
+    lastPortValue = zxnextPortsGroupEnabled(0, 6) ? zxnextInputReadPort(0x001fu) : 0xffu;
+  } else if ((normalized & 0x00ffu) == 0x0037u) {
+    lastPortValue = zxnextPortsGroupEnabled(0, 7) ? zxnextInputReadPort(0x0037u) : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
     lastPortValue = zxnextPortsGroupEnabled(1, 0) ? zxnextDivMmcGetPortE3() : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ebu) {
     lastPortValue = zxnextPortsGroupEnabled(1, 3) ? zxnextSdReadMmcData() : 0xffu;
   } else if ((normalized & 0xc00fu) == 0x8005u) {
+    /* $BFF5 (A3 = 0): ym2149.vhd ~221 AY_ID & '0' & the 5-bit register number */
     if (zxnextPortsGroupEnabled(2, 0)) {
       uint32_t chip = zxnextPsgGetSelectedChip();
       uint32_t ayId = chip == 0u ? 3u : (chip == 1u ? 2u : 1u);
@@ -97,9 +102,20 @@ static uint32_t zxnextPortsRead(uint32_t address) {
   } else if ((normalized & 0xc007u) == 0xc005u) {
     lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
   } else if ((normalized & 0xc007u) == 0x8005u) {
-    lastPortValue = zxnextPortsGroupEnabled(2, 0) ? zxnextPsgReadRegisterValue() : 0xffu;
+    /* ~2747: $BFFD reads like $FFFD in +3 timing only */
+    lastPortValue = zxnextPortsGroupEnabled(2, 0) && zxnextNextRegGetMachineTiming() == 3u ? zxnextPsgReadRegisterValue() : 0xffu;
+  } else if ((normalized & 0xf003u) == 0x0001u && zxnextNextRegGetMachineTiming() == 3u && zxnextPortsGroupEnabled(0, 4)) {
+    /* ~2545, 4497: the +3 floating bus; $FF while $7FFD is locked */
+    lastPortValue = zxnextMemoryPagingEnabled() ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
   } else if ((normalized & 0x00ffu) == 0x00ffu) {
-    lastPortValue = zxnextPortsGroupEnabled(0, 0) ? portTimexValue : 0xffu;
+    /* ~2769: the Timex register with $08 bit 2 and the port enabled; else the ULA floating bus in 48K
+       and 128K timing (~4493), $FF otherwise */
+    if (zxnextPortsGroupEnabled(0, 0) && (zxnextNextRegs[0x08u] & 0x04u) != 0u) {
+      lastPortValue = portTimexValue;
+    } else {
+      uint32_t t = zxnextNextRegGetMachineTiming();
+      lastPortValue = (t == 1u || t == 2u) ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
+    }
   } else if ((normalized & 0x0001u) == 0) {
     lastPortValue = zxnextUlaReadPortFe(normalized);
   } else {
@@ -140,11 +156,11 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
              (normalized & 0xffffu) == 0x143bu ||
              (normalized & 0xffffu) == 0x153bu ||
              (normalized & 0xffffu) == 0x163bu) {
-    zxnextUartWritePort(normalized, byteValue);
+    if (zxnextPortsGroupEnabled(1, 4)) zxnextUartWritePort(normalized, byteValue);
   } else if ((normalized & 0xffffu) == 0x103bu) {
-    zxnextI2cWriteSclPort(byteValue);
+    if (zxnextPortsGroupEnabled(1, 2)) zxnextI2cWriteSclPort(byteValue);
   } else if ((normalized & 0xffffu) == 0x113bu) {
-    zxnextI2cWriteSdaPort(byteValue);
+    if (zxnextPortsGroupEnabled(1, 2)) zxnextI2cWriteSdaPort(byteValue);
   } else if ((normalized & 0xffffu) == 0x123bu) {
     if (zxnextPortsGroupEnabled(1, 7)) zxnextLayer2SetPort123B(byteValue);
   } else if ((normalized & 0xffffu) == 0x303bu) {
@@ -160,17 +176,26 @@ static void zxnextPortsWrite(uint32_t address, uint32_t value) {
   } else if ((normalized & 0xf8ffu) == 0x183bu) {
     zxnextCtcWritePort(normalized, byteValue);
   } else if ((normalized & 0x00ffu) == 0x006bu) {
-    zxnextDmaSetMode(0);
-    zxnextDmaWritePort(byteValue);
+    if (zxnextPortsGroupEnabled(0, 5)) {
+      zxnextDmaSetMode(0);
+      zxnextDmaWritePort(byteValue);
+    }
   } else if ((normalized & 0x00ffu) == 0x000bu) {
-    zxnextDmaSetMode(1);
-    zxnextDmaWritePort(byteValue);
-  } else if ((normalized & 0xc003u) == 0x4001u) {
+    if (zxnextPortsGroupEnabled(3, 1)) {
+      zxnextDmaSetMode(1);
+      zxnextDmaWritePort(byteValue);
+    }
+  } else if ((normalized & 0x8003u) == 0x0001u && (normalized & 0xf000u) != 0x1000u &&
+             ((normalized & 0x4000u) != 0u || zxnextNextRegGetMachineTiming() != 3u)) {
+    /* ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing */
     if (zxnextPortsGroupEnabled(0, 1)) zxnextMemorySetPort7ffd(byteValue);
   } else if ((normalized & 0xf003u) == 0xd001u) {
     if (zxnextPortsGroupEnabled(0, 2)) zxnextMemorySetPortDffd(byteValue);
   } else if ((normalized & 0xf003u) == 0x1001u) {
     if (zxnextPortsGroupEnabled(0, 3)) zxnextMemorySetPort1ffd(byteValue);
+  } else if ((normalized & 0xf0ffu) == 0xe0f7u) {
+    /* $EFF7 (zxnext.vhd ~2560): A15-12 = 1110, low byte $F7; internal port enable bit 26 = $85 bit 2 */
+    if (zxnextPortsGroupEnabled(3, 2)) zxnextMemorySetPortEff7(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e3u) {
     if (zxnextPortsGroupEnabled(1, 0)) zxnextDivMmcSetPortE3(byteValue);
   } else if ((normalized & 0x00ffu) == 0x00e7u) {

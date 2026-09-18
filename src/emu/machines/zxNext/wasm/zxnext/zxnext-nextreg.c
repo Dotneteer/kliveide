@@ -19,6 +19,14 @@ static uint8_t zxnextMachineType;
 static uint8_t zxnextUserDtLock;
 static uint8_t zxnextResetType;
 
+static uint32_t zxnextNextRegGetMachineTiming(void) {
+  return zxnextMachineTiming;
+}
+
+static uint32_t zxnextNextRegGetMachineType(void) {
+  return zxnextMachineType;
+}
+
 static uint32_t zxnextNextRegConfigModeOrFlashReset(void) {
   return zxnextConfigMode || (zxnextResetType & 0x04u) != 0u;
 }
@@ -69,7 +77,7 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x82] = 0xff;
   zxnextNextRegs[0x83] = 0xff;
   zxnextNextRegs[0x84] = 0xff;
-  zxnextNextRegs[0x85] = 0x0f;
+  zxnextNextRegs[0x85] = 0x8f; /* ~1222-1223: enables $F, reset type 1 */
   zxnextNextRegs[0x8c] = 0x00;
   zxnextNextRegs[0xb8] = 0x83;
   zxnextNextRegs[0xb9] = 0x01;
@@ -408,7 +416,11 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     }
     if ((value & 0x08u) != 0u) zxnextUserDtLock ^= 1u;
     /* machine type: config mode only (the mode before this write) */
-    if (zxnextConfigMode && machineType >= 1u && machineType <= 4u) zxnextMachineType = (uint8_t)machineType;
+    if (zxnextConfigMode && machineType >= 1u && machineType <= 4u) {
+      zxnextMachineType = (uint8_t)machineType;
+      /* the ROM selection depends on the machine type (zxnext.vhd ~2938) */
+      zxnextMemoryUpdateMapping();
+    }
     if (machineType == 0x07u) zxnextConfigMode = 1u;
     else if (machineType != 0u) zxnextConfigMode = 0u;
   }
@@ -447,10 +459,12 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   }
   if (normalized == 0x08u) {
     /* ~3650: writing bit 7 = 1 clears the $7FFD lock */
-    if ((value & 0x80u) != 0u) pagingEnabled = 1u;
+    if ((value & 0x80u) != 0u) zxnextMemoryUnlockPaging();
     /* ~5155-5157: bit 5 = AY stereo mode (0 ABC, 1 ACB), bit 4 = internal speaker, bit 3 = DAC enable */
     zxnextPsgSetAyStereoMode(value & 0x20u);
     zxnextDacSetEnabled(value & 0x08u);
+    /* ~5159: bit 1 = TurboSound (AY#1 and AY#2 selectable through $FFFD) */
+    zxnextPsgSetTurbosoundEnabled(value & 0x02u);
   } else if (normalized == 0x09u) {
     zxnextPsgSetChipMonoMode(0u, value & 0x20u);
     zxnextPsgSetChipMonoMode(1u, value & 0x40u);
@@ -501,10 +515,10 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
       return zxnextSpritesGetMirrorNumber();
     /* $69: port_123b_layer2_en & port_7ffd_shadow & port_ff_reg(5:0) */
     case 0x69u:
-      return (zxnextLayer2Enabled ? 0x80u : 0x00u) | (useShadowScreen ? 0x40u : 0x00u) | (portTimexValue & 0x3fu);
+      return (zxnextLayer2Enabled ? 0x80u : 0x00u) | (zxnextMemoryShadowScreen() ? 0x40u : 0x00u) | (portTimexValue & 0x3fu);
     /* zxnext.vhd read mux: $08 bit 7 is `not port_7ffd_locked` */
     case 0x08u:
-      return (zxnextNextRegs[0x08u] & 0x7fu) | (pagingEnabled ? 0x80u : 0x00u);
+      return (zxnextNextRegs[0x08u] & 0x7fu) | (zxnextMemoryPagingEnabled() ? 0x80u : 0x00u);
     /* $A2: nr_a2(7:6) & '0' & nr_a2(4:2) & '1' & nr_a2(0) */
     case 0xa2u:
       return (zxnextNextRegs[0xa2u] & 0xddu) | 0x02u;

@@ -454,7 +454,7 @@ describe("Next Auto Defaults (Step 1)", () => {
         ld a,1
       `;
       const output = await testCompile(source);
-      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      const warnings = output.errors.filter(e => e.errorCode === "Z0370");
       expect(warnings.length).toBe(0);
     });
 
@@ -480,24 +480,24 @@ describe("Next Auto Defaults (Step 1)", () => {
         nop
       `;
       const output = await testCompile(source);
-      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      const warnings = output.errors.filter(e => e.errorCode === "Z0370");
       expect(warnings.length).toBe(0);
     });
 
-    it("✅ Code at $c000 generates Z0904 warning", async () => {
+    it("✅ Code at $c000 generates Z0370 warning", async () => {
       const source = `
         .model next
         .org $c000
         ld a,1
       `;
       const output = await testCompile(source);
-      const warnings = output.errors.filter(e => e.errorCode === "Z0904");
+      const warnings = output.errors.filter(e => e.errorCode === "Z0370");
       expect(warnings.length).toBe(1);
       expect(warnings[0].isWarning).toBe(true);
       expect(warnings[0].message).toContain("C000");
     });
 
-    it("✅ Code compiles despite Z0904 warning", async () => {
+    it("✅ Code compiles despite Z0370 warning", async () => {
       const source = `
         .model next
         .org $c000
@@ -505,7 +505,7 @@ describe("Next Auto Defaults (Step 1)", () => {
       `;
       const output = await testCompile(source);
       // Should have warning but not fail compilation
-      expect(output.errors.some(e => e.errorCode === "Z0904")).toBe(true);
+      expect(output.errors.some(e => e.errorCode === "Z0370")).toBe(true);
       // Only the warning should exist, not errors
       const errors = output.errors.filter(e => !e.isWarning);
       expect(errors.length).toBe(0);
@@ -519,7 +519,7 @@ describe("Next Auto Defaults (Step 1)", () => {
         ld a,1
       `;
       const output = await testCompile(source);
-      const warnings = output.errors.filter(e => e.errorCode === "Z0902");
+      const warnings = output.errors.filter(e => e.errorCode === "Z0370");
       expect(warnings.length).toBe(0);
     });
 

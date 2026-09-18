@@ -204,48 +204,48 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
 | MEM-001 | MMU reset layout | S | 1 | | `$50`–`$57` after hard reset = `$FF,$FF,$0A,$0B,$04,$05,$00,$01`. | ✅ `nextreg/soft-reset`, `reset/soft-reset-memory` |
-| MEM-002 | MMU slot write/read | S | 1 | | For each slot 2–7 page a distinct bank, poke a signature at the slot base, read it back through another slot mapping the same bank. | — |
-| MEM-003 | Bank aliasing 16K ↔ 8K | S | 1 | | 16K bank n via `$7FFD` equals 8K pages 2n/2n+1 via MMU. | — |
-| MEM-004 | ROM in slots 0/1 (`$FF`) | S | 1 | | With `$50/$51 = $FF` writes to `$0000–$3FFF` do not change memory. | — |
-| MEM-005 | RAM in slots 0/1 | S | 1 | | `$50 = $0A`: `$0000` is writable RAM of page 10; restore `$FF` returns ROM. | — |
-| MEM-006 | Highest page and out-of-range pages | S | 2 | | Writing a page number above the installed RAM (e.g. `$E0`) behaves per VHDL (reads `$FF`/writes ignored). Parametrise by configured RAM size. | — |
-| MEM-007 | `$7FFD` 128K paging | S | 1 | | Bits 2–0 select the bank at `$C000` (MMU6/7 updated); bit 4 selects ROM; `$50/$51` readback follow. | ◐ `memory/port-7ffd-lock` (bank via MMU6) |
-| MEM-008 | `$DFFD` extended bank bits | S | 1 | | `$DFFD` bits extend the `$7FFD` bank number beyond 7. | — |
+| MEM-002 | MMU slot write/read | S | 1 | | For each slot 2–7 page a distinct bank, poke a signature at the slot base, read it back through another slot mapping the same bank. | ✅ `memory/mmu` |
+| MEM-003 | Bank aliasing 16K ↔ 8K | S | 1 | | 16K bank n via `$7FFD` equals 8K pages 2n/2n+1 via MMU. | ✅ `memory/paging-ports` |
+| MEM-004 | ROM in slots 0/1 (`$FF`) | S | 1 | | With `$50/$51 = $FF` writes to `$0000–$3FFF` do not change memory. | ✅ `memory/mmu` |
+| MEM-005 | RAM in slots 0/1 | S | 1 | | `$50 = $0A`: `$0000` is writable RAM of page 10; restore `$FF` returns ROM. | ✅ `memory/mmu` |
+| MEM-006 | Highest page and out-of-range pages | S | 2 | | Writing a page number above the installed RAM (e.g. `$E0`) behaves per VHDL (reads `$FF`/writes ignored). Parametrise by configured RAM size. | ✅ `memory/mmu` (2 MB: $DF is the last RAM page; $E0-$FF = ROM in slots 0/1, no write in 2-7) |
+| MEM-007 | `$7FFD` 128K paging | S | 1 | | Bits 2–0 select the bank at `$C000` (MMU6/7 updated); bit 4 selects ROM; `$50/$51` readback follow. | ✅ `memory/paging-ports` (B28 fixed) |
+| MEM-008 | `$DFFD` extended bank bits | S | 1 | | `$DFFD` bits extend the `$7FFD` bank number beyond 7. | ✅ `memory/paging-ports` |
 | MEM-009 | `$7FFD` lock (bit 5 / `$08` bit 7) | S | 2 | | After `$7FFD` bit 5, further `$7FFD` writes are ignored; `$08` bit 7 read = not locked; writing `$08` bit 7 unlocks. | ✅ `memory/port-7ffd-lock` |
-| MEM-010 | `$1FFD` +3 special all-RAM modes | S | 1 | | Bit 0 = 1 with bits 2–1 = 00/01/10/11 give the four +3 all-RAM layouts (banks 0-1-2-3, 4-5-6-7, 4-5-6-3, 4-7-6-3). | — |
-| MEM-011 | `$1FFD` ROM select | S | 1 | | Bit 2 with `$7FFD` bit 4 select ROM 0–3 on +3 timing. | — |
-| MEM-012 | Pentagon 1024 paging | S | 3 | | With Pentagon timing / `$EFF7` settings, `$7FFD` bits 7–5 extend the bank (check VHDL gating). | — |
-| MEM-013 | `$EFF7` RAM at `$0000` | S | 3 | | `$EFF7` bit 3 maps RAM page 0 into `$0000`. | — |
-| MEM-014 | `$8E` write sets 128K mapping | S | 2 | | Writing `$8E` with bit 3 = 1 changes bank/ROM atomically; bit 3 = 0 changes ROM only. | — |
-| MEM-015 | `$8F` mapping mode | S | 3 | | Mode 0 standard, other modes (Pentagon 512/1024) change `$7FFD` interpretation per VHDL. | — |
-| MEM-016 | Alt ROM `$8C` | S | 2 | | Bit 7 enables the alt ROM, bit 6 selects write-enable (ROM area writable), bits 5–4 lock ROM1/ROM0; readback matches, soft reset copies bits 3–0 to 7–4. | — |
-| MEM-017 | Layer 2 write paging `$123B` | S | 1 | | `$123B` bit 0 maps Layer 2 bank(s) for writes into `$0000–$3FFF`; reads still hit ROM. | — |
-| MEM-018 | Layer 2 read paging | S | 1 | | `$123B` bit 2 maps for reads; both bits map read/write. | — |
-| MEM-019 | Layer 2 paging segment select | S | 1 | | `$123B` bits 7–6 select section 0/1/2 or all 48K (`11`), and bit 3 switches `$12` active vs `$13` shadow bank. | — |
-| MEM-020 | Layer 2 paging offset `$123B` bit 4 | S | 2 | | Writing with bit 4 set stores the 3-bit bank offset in bits 2–0 (per VHDL); paging then uses bank + offset. | — |
-| MEM-021 | Memory priority: DivMMC > Layer 2 > MMU | S | 1 | | With DivMMC `conmem` and Layer 2 write paging both active, `$0000` access goes to the higher-priority source per VHDL. | — |
-| MEM-022 | ROM contents per ROM select | S | 2 | | Signature bytes of ROM 0–3 at known addresses differ as expected (48K, 128K editor, +3DOS, 48 BASIC). | — |
-| MEM-023 | Contention disable `$08` bit 6 | S | 3 | | On 48K/128K timing, a timing-sensitive loop reading the frame counter at 3.5 MHz differs with contention on vs off (only if the emulator models contention; otherwise document). | — |
-| MEM-024 | `$0000` write protection of ROM | S | 1 | | `LDIR` over `$0000–$3FFF` with ROM mapped leaves ROM unchanged; same block with RAM mapped is changed. | — |
+| MEM-010 | `$1FFD` +3 special all-RAM modes | S | 1 | | Bit 0 = 1 with bits 2–1 = 00/01/10/11 give the four +3 all-RAM layouts (banks 0-1-2-3, 4-5-6-7, 4-5-6-3, 4-7-6-3). | ✅ `memory/paging-ports` (B28 fixed: the layouts load MMU0-7) |
+| MEM-011 | `$1FFD` ROM select | S | 1 | | Bit 2 with `$7FFD` bit 4 select ROM 0–3 on +3 timing. | ✅ `memory/paging-ports` |
+| MEM-012 | Pentagon 1024 paging | S | 3 | | With Pentagon timing / `$EFF7` settings, `$7FFD` bits 7–5 extend the bank (check VHDL gating). | ✅ `memory/paging-ports` (B28 fixed: it is `$8F`, not the timing) |
+| MEM-013 | `$EFF7` RAM at `$0000` | S | 3 | | `$EFF7` bit 3 maps RAM page 0 into `$0000`. | ✅ `memory/paging-ports` (B28 fixed, WASM) |
+| MEM-014 | `$8E` write sets 128K mapping | S | 2 | | Writing `$8E` with bit 3 = 1 changes bank/ROM atomically; bit 3 = 0 changes ROM only. | ✅ `memory/paging-ports` (B28 fixed) |
+| MEM-015 | `$8F` mapping mode | S | 3 | | Mode 0 standard, other modes (Pentagon 512/1024) change `$7FFD` interpretation per VHDL. | ✅ `memory/paging-ports` (mode 01 Profi is disabled in the VHDL) |
+| MEM-016 | Alt ROM `$8C` | S | 2 | | Bit 7 enables the alt ROM, bit 6 selects write-enable (ROM area writable), bits 5–4 lock ROM1/ROM0; readback matches, soft reset copies bits 3–0 to 7–4. | ✅ `memory/alt-rom` (B28 fixed: lock bits apply without the Alt ROM) |
+| MEM-017 | Layer 2 write paging `$123B` | S | 1 | | `$123B` bit 0 maps Layer 2 bank(s) for writes into `$0000–$3FFF`; reads still hit ROM. | ✅ `memory/layer2-paging` (B27 fixed) |
+| MEM-018 | Layer 2 read paging | S | 1 | | `$123B` bit 2 maps for reads; both bits map read/write. | ✅ `memory/layer2-paging` (B27 fixed) |
+| MEM-019 | Layer 2 paging segment select | S | 1 | | `$123B` bits 7–6 select section 0/1/2 or all 48K (`11`), and bit 3 switches `$12` active vs `$13` shadow bank. | ✅ `memory/layer2-paging` (B27 fixed) |
+| MEM-020 | Layer 2 paging offset `$123B` bit 4 | S | 2 | | Writing with bit 4 set stores the 3-bit bank offset in bits 2–0 (per VHDL); paging then uses bank + offset. | ✅ `memory/layer2-paging` (B27 fixed) |
+| MEM-021 | Memory priority: DivMMC > Layer 2 > MMU | S | 1 | | With DivMMC `conmem` and Layer 2 write paging both active, `$0000` access goes to the higher-priority source per VHDL. | ✅ `memory/layer2-paging` (B27 fixed) |
+| MEM-022 | ROM contents per ROM select | S | 2 | | Signature bytes of ROM 0–3 at known addresses differ as expected (48K, 128K editor, +3DOS, 48 BASIC). | ✅ `memory/alt-rom` |
+| MEM-023 | Contention disable `$08` bit 6 | S | 3 | | On 48K/128K timing, a timing-sensitive loop reading the frame counter at 3.5 MHz differs with contention on vs off (only if the emulator models contention; otherwise document). | ❌ (B26) `memory/contention` - no memory contention in either core; the uncontended cases pass |
+| MEM-024 | `$0000` write protection of ROM | S | 1 | | `LDIR` over `$0000–$3FFF` with ROM mapped leaves ROM unchanged; same block with RAM mapped is changed. | ✅ `memory/mmu` |
 | MEM-025 | Bank 5/7 shadow screen | P | 1 | | Write distinct patterns into bank 5 and bank 7 display files; `$7FFD` bit 3 (and `$69` bit 6) switches which one is displayed. | ✅ `memory/shadow-screen` |
 
 ### 4.6 `PORT` – Port decoding and enables
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| PORT-001 | Internal port enable reset | S | 1 | | `$82`–`$85` read their hard-reset values from `zxnext.vhd` (all implemented ports enabled). | — |
-| PORT-002 | Disable each internal port | S | 1 | | Parametrised over `internal_port_enable(0..27)`: clearing the bit makes the port write ineffective and its read return the floating/`$FF` value. E.g. bit 14 disables `$57/$5B/$303B`; bit 15 `$123B`; bit 16 AY. | — |
-| PORT-003 | `$85` reset type bit | S | 2 | | Bit 7 selects whether `$82`–`$85` reset on soft reset; verify both settings. | — |
-| PORT-004 | Port `$FE` partial decode | S | 1 | | Any even port address reaches the ULA: `out $00FE`, `out $1234` (even) both change the border. | — |
-| PORT-005 | `$FE` read unused bits | S | 1 | | Bits 7–5 per VHDL (bit 6 EAR, bit 5 read 1 / issue 2 behaviour via `$08` bit 0). | — |
-| PORT-006 | Port `$FF` floating bus | S | 2 | | With `$08` bit 2 = 0, reading `$FF` during paper returns the attribute byte being drawn, in border `$FF`. Use `runTo` a known beam position. | — |
-| PORT-007 | Port `$FF` Timex readback | S | 2 | | `$08` bit 2 = 1: `in $FF` returns the Timex register instead of floating bus. | — |
-| PORT-008 | +3 floating bus `$0FFD` | S | 3 | | On +3 timing with enable bit 4, `in $0FFD` returns floating bus; otherwise `$FF`. | — |
-| PORT-009 | `$7FFD` decode per timing | S | 2 | | On 48K timing `$7FFD` writes have no effect (`port_7ffd_active`); on 128K/+3 they page. A14 requirement differs on +3. | — |
-| PORT-010 | `$1FFD` does not also hit `$7FFD` | S | 2 | | `out $1FFD` leaves `$7FFD` state unchanged. | — |
-| PORT-011 | Unmapped port read | S | 2 | | Reading ports with no device (e.g. `$00FF` with Timex readback off during border) returns `$FF`. | — |
-| PORT-012 | AY info port `$BFF5` | S | 3 | | Reading `$BFF5` returns the AY/TurboSound id value per VHDL. | — |
-| PORT-013 | `$DF` shared by mouse/Specdrum | S | 3 | | Port `$DF` routes to Kempston joystick 1 only when Specdrum enabled and mouse disabled (`port_1f` equation). | — |
+| PORT-001 | Internal port enable reset | S | 1 | | `$82`–`$85` read their hard-reset values from `zxnext.vhd` (all implemented ports enabled). | ✅ `ports/port-enables` (B29 fixed: `$85` powers on `$8F`) |
+| PORT-002 | Disable each internal port | S | 1 | | Parametrised over `internal_port_enable(0..27)`: clearing the bit makes the port write ineffective and its read return the floating/`$FF` value. E.g. bit 14 disables `$57/$5B/$303B`; bit 15 `$123B`; bit 16 AY. | ✅ `ports/port-enables` (27 of 28 bits; bit 11 SPI needs `sd`; B29 fixed) |
+| PORT-003 | `$85` reset type bit | S | 2 | | Bit 7 selects whether `$82`–`$85` reset on soft reset; verify both settings. | ✅ `ports/port-enables` |
+| PORT-004 | Port `$FE` partial decode | S | 1 | | Any even port address reaches the ULA: `out $00FE`, `out $1234` (even) both change the border. | ✅ `ports/port-decode` |
+| PORT-005 | `$FE` read unused bits | S | 1 | | Bits 7–5 per VHDL (bit 6 EAR, bit 5 read 1 / issue 2 behaviour via `$08` bit 0). | ✅ `ports/port-decode` |
+| PORT-006 | Port `$FF` floating bus | S | 2 | | With `$08` bit 2 = 0, reading `$FF` during paper returns the attribute byte being drawn, in border `$FF`. Use `runTo` a known beam position. | ✅ `ports/floating-bus` (B30 fixed) |
+| PORT-007 | Port `$FF` Timex readback | S | 2 | | `$08` bit 2 = 1: `in $FF` returns the Timex register instead of floating bus. | ✅ `ports/floating-bus` (B29 fixed) |
+| PORT-008 | +3 floating bus `$0FFD` | S | 3 | | On +3 timing with enable bit 4, `in $0FFD` returns floating bus; otherwise `$FF`. | ✅ `ports/floating-bus` (B30 fixed) |
+| PORT-009 | `$7FFD` decode per timing | S | 2 | | `$7FFD` pages in every timing (`port_7ffd_wr` does not use `port_7ffd_active`, which only drives contention, ~4476); A14 = 1 is decoded only in +3 timing, so `$0FFD` pages in 48K/128K timing. *(Corrected 2026-09-18: the first draft said 48K timing ignores `$7FFD`.)* | ✅ `ports/port-decode` (B29 fixed) |
+| PORT-010 | `$1FFD` does not also hit `$7FFD` | S | 2 | | `out $1FFD` leaves `$7FFD` state unchanged. | ✅ `ports/port-decode` |
+| PORT-011 | Unmapped port read | S | 2 | | Reading ports with no device (e.g. `$00FF` with Timex readback off during border) returns `$FF`. Note `$DFFD` is *not* unmapped for reads: it matches `$FFFD`'s decode and reads the AY (~2591); `$0xx1` with A15-12 = 0 is the +3 floating bus. | ✅ `ports/port-decode` |
+| PORT-012 | AY info port `$BFF5` | S | 3 | | Reading `$BFF5` returns the AY/TurboSound id value per VHDL. | ✅ `ports/port-decode` (B29, B32 fixed) |
+| PORT-013 | `$DF` shared by mouse/Specdrum | S | 3 | | Port `$DF` routes to Kempston joystick 1 only when Specdrum enabled and mouse disabled (`port_1f` equation). | ✅ `ports/port-decode` (B29 fixed) |
 
 ### 4.7 `VT` – Video timing
 
@@ -840,5 +840,5 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 | — | Not started. |
 
 When a test lands, update its row in the same change. Open known failures right now: B7 residual
-(TS ULANext border vs `$14`, ULN-004). Open gaps without a failing test yet: B20 (WASM 60 Hz frame),
+(TS ULANext border vs `$14`, ULN-004), B26 (no memory contention, MEM-023). Open without a failing test: B33 (TS PSG registers 16-31, for §4.21). Open gaps without a failing test yet: B20 (WASM 60 Hz frame),
 B21 (60 Hz interrupt position).

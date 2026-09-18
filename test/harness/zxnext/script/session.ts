@@ -128,9 +128,11 @@ export class NextTestSession {
     const options_ = new AssemblerOptions();
     options_.currentModel = NEXT_MODEL;
     const output = await new Z80Assembler().compile(text, options_);
-    if (output.errors.length) {
+    // --- Warnings (e.g. unbanked code above $BFFF under .model Next) do not stop a test program
+    const errors = output.errors.filter((e) => !e.isWarning);
+    if (errors.length) {
       throw new Error(
-        "Assembly failed:\n" + output.errors.map((e) => `  line ${e.line}:${e.startColumn} ${e.errorCode}: ${e.message}`).join("\n")
+        "Assembly failed:\n" + errors.map((e) => `  line ${e.line}:${e.startColumn} ${e.errorCode}: ${e.message}`).join("\n")
       );
     }
     if (output.segments.some((s) => s.bank !== undefined)) {

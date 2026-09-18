@@ -1018,6 +1018,37 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * `p3_floating_bus_dat` (zxnext.vhd ~4478-4488): the last byte the CPU read or wrote in a contended
+   * bank. Only the +3 floating bus shows it, so it is tracked in +3 timing, where banks 4-7 are
+   * contended (~4472: pages $08-$0F). The page is the MMU's, whatever overlay answered.
+   */
+  p3FloatingBusValue = 0xff;
+
+  private latchP3FloatingBus(address: number, value: number): void {
+    if (this.composedScreenDevice.displayTiming !== 0b011) return;
+    const page = this.memoryDevice.mmuRegs[address >>> 13];
+    if ((page & 0xf8) === 0x08) this.p3FloatingBusValue = value;
+  }
+
+  override readMemory(address: number): number {
+    const value = super.readMemory(address);
+    this.latchP3FloatingBus(address, value);
+    return value;
+  }
+
+  override fetchCodeByte(): number {
+    const address = this.pc;
+    const value = super.fetchCodeByte();
+    this.latchP3FloatingBus(address, value);
+    return value;
+  }
+
+  override writeMemory(address: number, data: number): void {
+    super.writeMemory(address, data);
+    this.latchP3FloatingBus(address, data);
+  }
+
+  /**
    * This function implements the memory read delay of the CPU.
    * @param address Memory address to read
    *

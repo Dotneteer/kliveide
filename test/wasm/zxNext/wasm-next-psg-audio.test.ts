@@ -32,19 +32,23 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextReadPsgRegisterValue()).toBe(oracle.readPsgRegisterValue());
   });
 
-  it("matches TypeScript high-bit YM register alias selection", async () => {
+  it("selects a 5-bit YM register number; registers 16-31 take no write and read $FF", async () => {
     const oracle = new TurboSoundDevice();
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;
 
-    oracle.setPsgRegisterIndex(0x11);
-    oracle.writePsgRegisterValue(0xa5);
+    // --- The $FFFD port path (AyRegPortHandler -> selectRegister): a 5-bit register number
+    // --- (ym2149.vhd ~173). Registers 16-31 take no writes and read $FF in YM mode (~188, ~222).
+    oracle.selectRegister(0x11);
+    oracle.writeSelectedRegister(0xa5);
     exports.zxnextSetPsgRegisterIndex(0x11);
     exports.zxnextWritePsgRegisterValue(0xa5);
 
+    expect(exports.zxnextGetPsgSelectedRegister()).toBe(0x11);
     expect(exports.zxnextGetPsgSelectedRegister()).toBe(oracle.getSelectedRegister());
-    expect(exports.zxnextGetPsgRegister(0, 1)).toBe(oracle.getChip(0).readPsgRegisterValue());
-    expect(exports.zxnextReadPsgRegisterValue()).toBe(oracle.readPsgRegisterValue());
+    expect(exports.zxnextGetPsgRegister(0, 1), "register 1 untouched").toBe(0);
+    expect(exports.zxnextReadPsgRegisterValue()).toBe(0xff);
+    // --- Not compared with the oracle: TS PsgChip aliases registers 16-31 in YM mode (B31, open)
   });
 
   it("exposes deterministic noise/envelope movement and stereo samples", async () => {

@@ -1485,6 +1485,39 @@ static uint32_t zxnextUlaGetPulseIntActive(uint32_t frameTact) {
   return frameTact >= zxnextTimingIntStart && frameTact < zxnextTimingIntStart + zxnextTimingIntPulseLength();
 }
 
+static uint32_t zxnextNextRegGetMachineTiming(void);
+
+/* p3_floating_bus_dat (zxnext.vhd ~4478-4488): the last byte the CPU moved to or from a contended bank */
+static uint8_t zxnextP3FloatingBus = 0xffu;
+
+/*
+ * The ULA floating bus at a frame tact (zxula.vhd ~306-340, 573), as NextComposedScreenDevice.floatingBusAt:
+ * in the display each 16-HC pair of cells shows pixel, attribute, pixel, attribute for ULA hc 9-10,
+ * 11-12, 13-14, 15-0 and $FF for hc 1-8; the border is $FF. +3 timing sets bit 0 of those bytes and
+ * shows the contended-access latch the rest of the time. hc_ula = HC - (displayXStart - 12),
+ * vc_ula = VC - displayYStart; scrolling and the Timex modes are not applied.
+ */
+static uint32_t zxnextUlaFloatingBus(uint32_t frameTact) {
+  uint32_t p3 = zxnextNextRegGetMachineTiming() == 3u;
+  int32_t hc = (int32_t)(frameTact % zxnextTimingTotalHc) - (int32_t)(zxnextTimingDisplayXStart - 12u);
+  int32_t vc = (int32_t)(frameTact / zxnextTimingTotalHc) - (int32_t)zxnextTimingDisplayYStart;
+  if (hc >= 0 && hc < 256 && vc >= 0 && vc < 192) {
+    uint32_t phase = (uint32_t)hc & 0x0fu;
+    if ((phase >= 9u || phase == 0u) && hc != 0) {
+      uint32_t pair = (uint32_t)(phase == 0u ? hc - 16 : hc) >> 4;
+      uint32_t column = pair * 2u + ((phase >= 13u || phase == 0u) ? 1u : 0u);
+      uint32_t attribute = phase == 11u || phase == 12u || phase == 15u || phase == 0u;
+      uint32_t y = (uint32_t)vc;
+      uint32_t offset = attribute
+        ? 0x1800u + ((y >> 3) << 5) + column
+        : (((y & 0xc0u) << 5) | ((y & 0x07u) << 8) | ((y & 0x38u) << 2) | column);
+      uint32_t value = zxnextMemoryReadScreenOffset(offset);
+      return p3 ? (value | 0x01u) : value;
+    }
+  }
+  return p3 ? zxnextP3FloatingBus : 0xffu;
+}
+
 static uint32_t zxnextUlaGetScanlineForTact(uint32_t tact) {
   return (tact % ZXNEXT_RENDERING_TACTS_IN_FRAME) / ZXNEXT_SCREEN_TOTAL_HC;
 }

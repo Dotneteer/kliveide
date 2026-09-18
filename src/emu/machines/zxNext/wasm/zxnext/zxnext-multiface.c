@@ -61,7 +61,7 @@ static uint32_t zxnextMultifacePortData(uint32_t port) {
       case 0x1u: return zxnextMemoryGetPort1ffd();
       case 0x7u: return zxnextMemoryGetPort7ffd();
       case 0xdu: return zxnextMemoryGetPortDffd();
-      case 0xeu: return 0x00u; /* $EFF7 bits 3-2: not modelled in this core */
+      case 0xeu: return zxnextMemoryGetPortEff7(); /* bits 3-2 */
       default: return borderColor & 0x07u;
     }
   }

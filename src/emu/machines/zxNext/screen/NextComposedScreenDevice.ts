@@ -711,6 +711,36 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   }
 
   /**
+   * The ULA floating bus at a frame tact (zxula.vhd ~306-340, 573). In the display area each 16-HC
+   * character pair puts the bytes the ULA fetches on the bus - pixel, attribute, pixel, attribute for
+   * ULA hc 9-10, 11-12, 13-14, 15-0 - and nothing ($FF) for hc 1-8; the border is $FF. In +3 timing
+   * bit 0 of those bytes reads 1 and the rest of the time the bus holds `p3Latch`, the last byte the
+   * CPU moved to or from a contended bank (zxnext.vhd ~4478-4488).
+   *
+   * The ULA counters are the raster's, offset as the copper sees them: hc_ula = HC - (displayXStart -
+   * 12), vc_ula = VC - displayYStart. Scrolling and the Timex modes are not applied.
+   */
+  floatingBusAt(frameTact: number, p3Latch: number): number {
+    const p3 = this.displayTiming === 0b011;
+    const hc = (frameTact % this.confTotalHC) - (this.confDisplayXStart - 12);
+    const vc = Math.floor(frameTact / this.confTotalHC) - this.confDisplayYStart;
+    if (hc >= 0 && hc < 256 && vc >= 0 && vc < 192) {
+      const phase = hc & 0x0f;
+      if ((phase >= 9 || phase === 0) && !(phase === 0 && hc === 0)) {
+        const pair = (phase === 0 ? hc - 16 : hc) >> 4;
+        const column = pair * 2 + (phase >= 13 || phase === 0 ? 1 : 0);
+        const attribute = phase === 11 || phase === 12 || phase === 15 || phase === 0;
+        const offset = attribute
+          ? 0x1800 + ((vc >> 3) << 5) + column
+          : ((vc & 0xc0) << 5) | ((vc & 0x07) << 8) | ((vc & 0x38) << 2) | column;
+        const value = this.machine.memoryDevice.readScreenMemory(offset);
+        return p3 ? value | 0x01 : value;
+      }
+    }
+    return p3 ? p3Latch : 0xff;
+  }
+
+  /**
    * The frame tact at which the line interrupt pulse for NextReg $22/$23 starts.
    *
    * zxula_timing.vhd: "the line interrupt occurs before the line is drawn" - it fires when

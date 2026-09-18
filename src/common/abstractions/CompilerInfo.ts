@@ -98,7 +98,7 @@ export interface CompilerOutput extends CompiledModule {
   readonly errors: AssemblerErrorInfo[];
 
   /**
-   * Number of errors
+   * Number of errors, warnings excluded (`errors` holds both; warnings have `isWarning` set)
    */
   readonly errorCount: number;
 

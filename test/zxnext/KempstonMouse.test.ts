@@ -6,6 +6,13 @@ const PORT_FBDF = 0xfbdf; // Mouse X
 const PORT_FFDF = 0xffdf; // Mouse Y
 const PORT_FADF = 0xfadf; // Mouse wheel + buttons
 
+/*
+ * zxnext.vhd ~3557: the button bits read 0 while pressed (`not i_MOUSE_BUTTON(n)`). The tests below are
+ * about which bit a button lands in, so they read the port with the button bits flipped back to 1 =
+ * pressed; "raw active-low button bits" checks the port value itself.
+ */
+const ACTIVE_LOW_BUTTONS = 0x07;
+
 describe("Kempston Mouse", () => {
   let machine: TestZxNextMachine;
 
@@ -163,61 +170,67 @@ describe("Kempston Mouse", () => {
   // ========================================================================
 
   describe("Port 0xFADF - Wheel + Buttons", () => {
+    it("raw active-low button bits: $0F released, pressed buttons read 0", () => {
+      expect(machine.mouseDevice.readPortFadf()).toBe(0x0f);
+      machine.mouseDevice.setButtons(true, false, false);
+      expect(machine.mouseDevice.readPortFadf()).toBe(0x0d);
+    });
+
     it("returns 0x08 with no buttons and no wheel (bit 3 always 1)", () => {
-      expect(machine.mouseDevice.readPortFadf()).toBe(0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe(0x08);
     });
 
     it("left button sets bit 1", () => {
       machine.mouseDevice.setButtons(true, false, false);
-      expect(machine.mouseDevice.readPortFadf()).toBe(0x08 | 0x02);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe(0x08 | 0x02);
     });
 
     it("right button sets bit 0", () => {
       machine.mouseDevice.setButtons(false, true, false);
-      expect(machine.mouseDevice.readPortFadf()).toBe(0x08 | 0x01);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe(0x08 | 0x01);
     });
 
     it("middle button sets bit 2", () => {
       machine.mouseDevice.setButtons(false, false, true);
-      expect(machine.mouseDevice.readPortFadf()).toBe(0x08 | 0x04);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe(0x08 | 0x04);
     });
 
     it("all buttons pressed", () => {
       machine.mouseDevice.setButtons(true, true, true);
       // --- bit 3 = 1, bit 2 = middle, bit 1 = left, bit 0 = right
-      expect(machine.mouseDevice.readPortFadf()).toBe(0x08 | 0x04 | 0x02 | 0x01);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe(0x08 | 0x04 | 0x02 | 0x01);
     });
 
     it("wheel positive delta in bits 7:4", () => {
       machine.mouseDevice.addWheelDelta(3);
-      expect(machine.mouseDevice.readPortFadf()).toBe((3 << 4) | 0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe((3 << 4) | 0x08);
     });
 
     it("wheel negative delta wraps in 4-bit range", () => {
       machine.mouseDevice.addWheelDelta(-1);
       // --- 0 - 1 = -1, masked to 0x0F = 15
-      expect(machine.mouseDevice.readPortFadf()).toBe((15 << 4) | 0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe((15 << 4) | 0x08);
     });
 
     it("wheel wraps at 4 bits (0-15)", () => {
       machine.mouseDevice.addWheelDelta(15);
-      expect((machine.mouseDevice.readPortFadf() >> 4) & 0x0f).toBe(15);
+      expect(((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) >> 4) & 0x0f).toBe(15);
       machine.mouseDevice.addWheelDelta(1);
-      expect((machine.mouseDevice.readPortFadf() >> 4) & 0x0f).toBe(0);
+      expect(((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) >> 4) & 0x0f).toBe(0);
     });
 
     it("wheel and buttons combined", () => {
       machine.mouseDevice.addWheelDelta(7);
       machine.mouseDevice.setButtons(true, false, true);
       // --- wheel=7 in bits 7:4, bit 3=1, middle=1 (bit 2), left=1 (bit 1)
-      expect(machine.mouseDevice.readPortFadf()).toBe((7 << 4) | 0x08 | 0x04 | 0x02);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS)).toBe((7 << 4) | 0x08 | 0x04 | 0x02);
     });
 
     it("port read via portManager matches device read", () => {
       machine.mouseDevice.addWheelDelta(5);
       machine.mouseDevice.setButtons(false, true, false);
       const portResult = machine.portManager.readPort(PORT_FADF);
-      const deviceResult = machine.mouseDevice.readPortFadf();
+      const deviceResult = machine.mouseDevice.readPortFadf(); // raw on both sides
       expect(portResult & 0xff).toBe(deviceResult);
     });
   });
@@ -248,7 +261,7 @@ describe("Kempston Mouse", () => {
     it("no swap: left=bit1, right=bit0", () => {
       machine.mouseDevice.swapButtons = false;
       machine.mouseDevice.setButtons(true, false, false); // left only
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       expect(result & 0x02).toBe(0x02); // left in bit 1
       expect(result & 0x01).toBe(0x00); // right off
     });
@@ -256,7 +269,7 @@ describe("Kempston Mouse", () => {
     it("swap: left button appears in bit 0 (right position)", () => {
       machine.mouseDevice.swapButtons = true;
       machine.mouseDevice.setButtons(true, false, false); // left only
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       expect(result & 0x01).toBe(0x01); // swapped to right position
       expect(result & 0x02).toBe(0x00); // left position off
     });
@@ -264,7 +277,7 @@ describe("Kempston Mouse", () => {
     it("swap: right button appears in bit 1 (left position)", () => {
       machine.mouseDevice.swapButtons = true;
       machine.mouseDevice.setButtons(false, true, false); // right only
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       expect(result & 0x02).toBe(0x02); // swapped to left position
       expect(result & 0x01).toBe(0x00); // right position off
     });
@@ -272,14 +285,14 @@ describe("Kempston Mouse", () => {
     it("swap: middle button is unaffected", () => {
       machine.mouseDevice.swapButtons = true;
       machine.mouseDevice.setButtons(false, false, true); // middle only
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       expect(result & 0x04).toBe(0x04); // middle still in bit 2
     });
 
     it("swap: both left and right swap positions", () => {
       machine.mouseDevice.swapButtons = true;
       machine.mouseDevice.setButtons(true, true, false);
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       // --- Both are pressed, so both bits should be set regardless
       expect(result & 0x03).toBe(0x03);
     });
@@ -291,7 +304,7 @@ describe("Kempston Mouse", () => {
       expect(machine.mouseDevice.swapButtons).toBe(true);
 
       machine.mouseDevice.setButtons(true, false, false); // left only
-      const result = machine.mouseDevice.readPortFadf();
+      const result = (machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS);
       expect(result & 0x01).toBe(0x01); // swapped to right position
     });
   });
@@ -445,25 +458,25 @@ describe("Kempston Mouse", () => {
     it("wheel accumulates multiple deltas", () => {
       machine.mouseDevice.addWheelDelta(3);
       machine.mouseDevice.addWheelDelta(5);
-      expect((machine.mouseDevice.readPortFadf() >> 4) & 0x0f).toBe(8);
+      expect(((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) >> 4) & 0x0f).toBe(8);
     });
 
     it("button state can be changed multiple times", () => {
       machine.mouseDevice.setButtons(true, false, false);
-      expect(machine.mouseDevice.readPortFadf() & 0x07).toBe(0x02); // left
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x07).toBe(0x02); // left
       machine.mouseDevice.setButtons(false, true, false);
-      expect(machine.mouseDevice.readPortFadf() & 0x07).toBe(0x01); // right
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x07).toBe(0x01); // right
       machine.mouseDevice.setButtons(false, false, false);
-      expect(machine.mouseDevice.readPortFadf() & 0x07).toBe(0x00); // none
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x07).toBe(0x00); // none
     });
 
     it("bit 3 is always 1 regardless of state", () => {
       // --- Various combinations, bit 3 must always be set
-      expect(machine.mouseDevice.readPortFadf() & 0x08).toBe(0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x08).toBe(0x08);
       machine.mouseDevice.setButtons(true, true, true);
-      expect(machine.mouseDevice.readPortFadf() & 0x08).toBe(0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x08).toBe(0x08);
       machine.mouseDevice.addWheelDelta(15);
-      expect(machine.mouseDevice.readPortFadf() & 0x08).toBe(0x08);
+      expect((machine.mouseDevice.readPortFadf() ^ ACTIVE_LOW_BUTTONS) & 0x08).toBe(0x08);
     });
   });
 
@@ -493,7 +506,7 @@ describe("Kempston Mouse", () => {
       expect(machine.portManager.readPort(PORT_FFDF) & 0xff).toBe(20);
 
       // --- Read wheel + buttons: wheel=3 in bits 7:4, bit3=1, middle=1, left=1
-      const fadf = machine.portManager.readPort(PORT_FADF) & 0xff;
+      const fadf = (machine.portManager.readPort(PORT_FADF) & 0xff) ^ ACTIVE_LOW_BUTTONS;
       expect((fadf >> 4) & 0x0f).toBe(3);  // wheel
       expect(fadf & 0x08).toBe(0x08);       // bit 3
       expect(fadf & 0x04).toBe(0x04);       // middle
@@ -510,7 +523,7 @@ describe("Kempston Mouse", () => {
       machine.mouseDevice.setButtons(true, false, false);
 
       // --- Read port — left should appear as right (bit 0)
-      const fadf = machine.portManager.readPort(PORT_FADF) & 0xff;
+      const fadf = (machine.portManager.readPort(PORT_FADF) & 0xff) ^ ACTIVE_LOW_BUTTONS;
       expect(fadf & 0x01).toBe(0x01); // swapped to right
       expect(fadf & 0x02).toBe(0x00); // left position empty
     });

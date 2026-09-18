@@ -126,9 +126,10 @@ export class MouseDevice implements IGenericDevice<IZxNextMachine> {
     return (
       ((this.wheelZ & 0x0f) << 4) |
       0x08 | // bit 3 always 1
-      (this.buttonMiddle ? 0x04 : 0x00) |
-      (left ? 0x02 : 0x00) |
-      (right ? 0x01 : 0x00)
+      // --- zxnext.vhd ~3557: the buttons read 0 while pressed (`not i_MOUSE_BUTTON(n)`)
+      (this.buttonMiddle ? 0x00 : 0x04) |
+      (left ? 0x00 : 0x02) |
+      (right ? 0x00 : 0x01)
     );
   }
 }
