@@ -81,12 +81,8 @@ describe("ZX Spectrum Next WASM shared-source contract", () => {
 
     expect(zxnextBytes).toBeGreaterThan(48 * 1024);
     expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).not.toContain("binary-size-parity-audit");
-    expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).toEqual([
-      "ula-screen-tact-pipeline-parity",
-      "ula-timex-mode-rendering-parity",
-      "ula-next-plus-rendering-parity",
-      "screen-layer-composition-parity"
-    ]);
+    // --- The ULA/screen blockers were closed 2026-09-19 (removal plan, Step 0): none is left
+    expect(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS).toEqual([]);
   });
 
   it("keeps classic Spectrum WASM models on common device sources", () => {

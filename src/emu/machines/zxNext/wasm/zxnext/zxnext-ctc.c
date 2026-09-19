@@ -308,8 +308,29 @@ void zxnextCtcWritePort(uint32_t port, uint32_t value) {
 
   zxnextCtcAdvanceToSysClock(frameTacts28);
   zxnextCtcClock(channel, 1, value, 0, 0, 0);
+  uint32_t zeroCounts = ch->zcTo ? 1u : 0u;
   zxnextCtcClock(channel, 0, value, 0, 0, 0);
+  if (ch->zcTo) zeroCounts++;
   zxnextCtcLastSyncClock += 2u;
+  /* A control word that flips D4 counts an edge (ctc_chan clk_edge_change); a zero count it reaches is
+     a ZC/TO like any other (ctc_chan ~142-166): the status latches and the next channel of the ring is
+     clocked (zxnext.vhd ~1897, ~4044-4073) */
+  if (zeroCounts > 0u) {
+    zxnextInterruptsRequest(ZXNEXT_INT_CTC0 + channel, zxnextGetCtcIntEnabled(channel), 1);
+    for (uint32_t k = 1u; k < 4u && zeroCounts > 0u; k++) {
+      const uint32_t i = (channel + k) & 0x03u;
+      ZxNextCtcChannel *next = zxnextCtcChannel(i);
+      if (!zxnextCtcIsTriggerDriven(next)) break;
+      if (zxnextCtcIsCounterMode(next)) {
+        zeroCounts = zxnextCtcAdvanceChannelByTriggers(next, zeroCounts);
+        if (zeroCounts > 0u) zxnextInterruptsRequest(ZXNEXT_INT_CTC0 + i, zxnextGetCtcIntEnabled(i), 1);
+      } else {
+        /* A timer waiting for its trigger starts now; its zero counts come with time */
+        zxnextCtcStartOnTrigger(next);
+        break;
+      }
+    }
+  }
 }
 
 /* NextReg $C5 writes control_reg(7) directly (ctc_chan.vhd i_int_en_wr) */

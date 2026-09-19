@@ -1,5 +1,9 @@
 # ZX Spectrum Next ULA WASM Parity Audit
 
+> **Status 2026-09-19: superseded.** Every gap below was re-audited against the VHDL and the current
+> C core in Step 0 of `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: all are closed, each with dual-core
+> tests (table there). The last one, the mid-line `$68` half-pixel scroll, was fixed in both cores.
+
 Created: 2026-08-22
 
 ## Verdict

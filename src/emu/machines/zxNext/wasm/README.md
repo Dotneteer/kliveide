@@ -38,7 +38,8 @@ The runtime switch has two supported values:
 - `zxnextImplementation: "wasm"` selects the production WASM backend.
 
 Diagnostics from `ZxNextWasmV2Machine.getWasmV2Diagnostics()` report the
-migrated public surfaces, default readiness, and any future rollout blockers.
+migrated public surfaces, default readiness, and any future rollout blockers. Since 2026-09-19
+every surface is migrated, `defaultReady` is `true` and no blocker is left.
 
 ## Maintenance Policy
 

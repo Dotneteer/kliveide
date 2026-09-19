@@ -76,9 +76,10 @@ static uint8_t ulaScrollX;
 static uint8_t ulaScrollY;
 
 /*
- * The border colour, ULA scroll and Timex screen mode (port $FF bits 5-0) the picture shows. The ULA
- * takes a port $FE / $FF or NextReg $26 / $27 / $69 write only at its next 8-pixel latch point
- * (zxula.vhd attr_reg, px/py/screen_mode), so each write is kept as a
+ * The border colour, ULA scroll, Timex screen mode (port $FF bits 5-0) and half-pixel scroll ($68 bit 2)
+ * the picture shows. The ULA takes a port $FE / $FF or NextReg $26 / $27 / $69 / $68-bit-2 write only at
+ * its next 8-pixel latch point (zxula.vhd attr_reg, px/py/screen_mode; the fine bit is px(8)), so each
+ * write is kept as a
  * pending latch and applied by the raster when drawing reaches that point (zxnextRasterRenderTo).
  * The registers above keep the written values for readback.
  */
@@ -86,7 +87,8 @@ static uint8_t ulaScrollY;
 #define ZXNEXT_ULA_LATCH_SCROLL_X 1u
 #define ZXNEXT_ULA_LATCH_SCROLL_Y 2u
 #define ZXNEXT_ULA_LATCH_TIMEX 3u
-#define ZXNEXT_ULA_LATCH_COUNT 4u
+#define ZXNEXT_ULA_LATCH_FINE_SCROLL 4u
+#define ZXNEXT_ULA_LATCH_COUNT 5u
 static uint8_t ulaShown[ZXNEXT_ULA_LATCH_COUNT];
 static uint8_t ulaLatchPending[ZXNEXT_ULA_LATCH_COUNT];
 static uint8_t ulaLatchValue[ZXNEXT_ULA_LATCH_COUNT];
@@ -95,6 +97,7 @@ static uint32_t ulaLatchTact[ZXNEXT_ULA_LATCH_COUNT];
 #define ulaScrollXShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_X]
 #define ulaScrollYShown ulaShown[ZXNEXT_ULA_LATCH_SCROLL_Y]
 #define ulaTimexShown ulaShown[ZXNEXT_ULA_LATCH_TIMEX]
+#define ulaFineScrollShown ulaShown[ZXNEXT_ULA_LATCH_FINE_SCROLL]
 
 /* Defined with the raster at the end of this file. */
 static uint32_t zxnextRasterBorderTact(uint32_t frameTact);
@@ -144,6 +147,7 @@ static void zxnextUlaReset(void) {
   ulaScrollXShown = 0u;
   ulaScrollYShown = 0u;
   ulaTimexShown = 0u;
+  ulaFineScrollShown = 0u;
   ulaClipWindow[0] = 0u;
   ulaClipWindow[1] = 255u;
   ulaClipWindow[2] = 0u;
@@ -342,7 +346,7 @@ static void zxnextUlaRenderStandardScreen(void) {
       /* zxula.vhd ~397: the half-pixel scroll ($68 bit 2) loads the shift register one more 14 MHz
        * half pixel to the left, so the second half of paper x is the first half of screen x + 1 */
       zxnextLayerUla[pixelOffset + 1u] =
-        ulaHalfPixelScroll ? zxnextUlaStandardPixel(mode, sourceY, (x + 1u + ulaScrollXShown) & 0xffu) : pixel;
+        ulaFineScrollShown ? zxnextUlaStandardPixel(mode, sourceY, (x + 1u + ulaScrollXShown) & 0xffu) : pixel;
     }
   }
 }
@@ -369,7 +373,7 @@ static void zxnextUlaRenderHiResScreen(void) {
         zxnextLayerUla[pixelOffset] = fallbackPixel;
         continue;
       }
-      uint32_t sourceX = (x + ((uint32_t)ulaScrollXShown << 1u) + (ulaHalfPixelScroll ? 1u : 0u)) & 0x1ffu;
+      uint32_t sourceX = (x + ((uint32_t)ulaScrollXShown << 1u) + (ulaFineScrollShown ? 1u : 0u)) & 0x1ffu;
       uint32_t sourceXByte = sourceX >> 4u;
       uint32_t pixelInWord = sourceX & 0x0fu;
       uint32_t pixelAddr = pixelInWord < 8u
@@ -914,7 +918,9 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
 static uint32_t zxnextUlaReadTilemapVram(uint32_t useBank7, uint32_t offset, uint32_t address) {
   uint32_t offsetMask = useBank7 ? 0x1fu : 0x3fu;
   uint32_t highByte = ((offset & offsetMask) + ((address >> 8u) & 0x3fu)) & 0x3fu;
-  uint32_t fullAddress = (highByte << 8u) | (address & 0xffu);
+  /* Bank 7 is an 8K BRAM addressed by bits 12-0 (zxnext.vhd ~6609-6632): past 8K the fetch wraps to
+     the start of bank 7 instead of reading on into page $0F */
+  uint32_t fullAddress = ((highByte << 8u) | (address & 0xffu)) & (useBank7 ? 0x1fffu : 0x3fffu);
   uint32_t bankBase = useBank7 ? ZXNEXT_BANK_07_OFFSET : ZXNEXT_LORES_BANK_05_OFFSET;
   return zxnextMemoryReadPhysical(bankBase + fullAddress);
 }
@@ -1273,6 +1279,9 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
       ulaDisableOutput = (byteValue & 0x80u) != 0u;
       ulaBlendingInSluModes = (byteValue >> 5u) & 0x03u;
       ulaHalfPixelScroll = (byteValue & 0x04u) != 0u;
+      /* The fine bit is sampled with the coarse scroll, px(8) at hc(3:0) = 3 / B (zxula.vhd ~198): it
+       * shows from the next 8-pixel cell, like a $26 write. Bit 7 (ULA output enable) acts per pixel. */
+      zxnextUlaScheduleLatch(ZXNEXT_ULA_LATCH_FINE_SCROLL, ulaHalfPixelScroll, zxnextRasterUlaScrollTact(zxnextRasterWriteTact()));
       ulaEnableStencilMode = (byteValue & 0x01u) != 0u;
       ulaPlusEnabled = (byteValue & 0x08u) != 0u;
       /* bit 4: the extra keys stop making matrix entries (membrane.vhd i_cancel_extended_entries) */

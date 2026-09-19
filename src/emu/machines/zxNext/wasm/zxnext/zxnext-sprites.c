@@ -14,7 +14,6 @@ static uint8_t zxnextSpritesEnabled;
 static uint8_t zxnextSpriteLayerPriority;
 static uint8_t zxnextSpriteTooMany;
 static uint8_t zxnextSpriteCollision;
-static int16_t zxnextSpriteLastVisibleIndex;
 static uint8_t zxnextSpriteAttributes[128][5];
 static uint8_t zxnextSpritePatternMemory8[512][256];
 static uint8_t zxnextSpritePatternMemory4[1024][256];
@@ -48,7 +47,6 @@ static uint32_t zxnextSpritesGetMirrorNumber(void) { return zxnextSpriteMirrorQ 
 static void zxnextSpritesMirrorWrite(uint32_t attribute, uint8_t byteValue) {
   uint8_t sprite = zxnextSpriteMirrorQ & 0x7fu;
   zxnextSpriteAttributes[sprite][attribute] = byteValue;
-  if (attribute == 3u && (byteValue & 0x80u)) zxnextSpriteLastVisibleIndex = sprite;
 }
 
 static void zxnextSpritesReset(void) {
@@ -70,7 +68,6 @@ static void zxnextSpritesReset(void) {
   zxnextSpriteLayerPriority = 0u;
   zxnextSpriteTooMany = 0u;
   zxnextSpriteCollision = 0u;
-  zxnextSpriteLastVisibleIndex = -1;
   for (uint32_t i = 0u; i < 128u; i++) {
     for (uint32_t a = 0u; a < 5u; a++) zxnextSpriteAttributes[i][a] = 0u;
   }
@@ -152,9 +149,9 @@ static void zxnextSpritesWritePort303b(uint32_t value) {
 static void zxnextSpritesWritePort57(uint32_t value) {
   uint8_t sprite = zxnextSpriteIndex & 0x7fu;
   zxnextSpriteAttributes[sprite][zxnextSpriteSubIndex] = (uint8_t)value;
-  if (zxnextSpriteSubIndex == 3u && (value & 0x80u)) zxnextSpriteLastVisibleIndex = sprite;
+  /* A 4-byte sprite: the index skips attr4 without writing it (sprites.vhd ~641, ~660-664, ~717 write
+     attr4 only at attr_id "100"); the renderer ignores attr4 while attr3 bit 6 is clear. */
   if (zxnextSpriteSubIndex == 3u && (value & 0x40u) == 0u) {
-    zxnextSpriteAttributes[sprite][4] = 0u;
     zxnextSpriteSubIndex++;
   }
   zxnextSpriteSubIndex++;
@@ -271,8 +268,18 @@ static uint32_t zxnextSpritesGetPatternByte8(uint32_t variant, uint32_t offset) 
 static uint32_t zxnextSpritesGetPatternByte4(uint32_t variant, uint32_t offset) {
   return zxnextSpritePatternMemory4[variant & 0x3ffu][offset & 0xffu];
 }
+/*
+ * The highest-numbered sprite with its visible bit (attr3 bit 7) set, or 0xffffffff when none is: the
+ * renderer's cutoff. The FPGA walks all 128 sprites every line (sprites.vhd ~846-870), and a sprite
+ * above this one - relative sprites included, which need their own visible bit - shows nothing.
+ * It used to be the sprite *last written* visible, which hid every higher-numbered sprite made
+ * visible earlier.
+ */
 static uint32_t zxnextSpritesGetLastVisibleSpriteIndex(void) {
-  return zxnextSpriteLastVisibleIndex < 0 ? 0xffffffffu : (uint32_t)zxnextSpriteLastVisibleIndex;
+  for (int32_t sprite = 127; sprite >= 0; sprite--) {
+    if (zxnextSpriteAttributes[sprite][3] & 0x80u) return (uint32_t)sprite;
+  }
+  return 0xffffffffu;
 }
 static uint32_t zxnextSpritesGetSprite0OnTop(void) { return zxnextSprite0OnTop; }
 static uint32_t zxnextSpritesGetClippingEnabled(void) { return zxnextSpriteClippingEnabled; }

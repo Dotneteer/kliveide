@@ -311,18 +311,28 @@ static uint32_t zxnextInterruptsAcknowledge(void) {
 }
 
 /*
- * Whether an interrupt the program routed to the DMA (nextreg $CC) is pending.
- *
- * FPGA peripherals.vhd o_dma_int; DmaDevice.ts reads it through InterruptDevice
- * dmaInterruptRequestActive. Only the line and ULA sources exist in this backend's interrupt model;
- * the CTC ($CD) and UART ($CE) sources are not modelled here yet.
+ * Whether an interrupt holds the DMA off (im2_dma_delay, zxnext.vhd ~1955-1966): a daisy-chain device
+ * out of S_0 - pending or in service (im2_device o_dma_int) - whose bit is set in the DMA interrupt
+ * enables, or an active NMI with $CC bit 7. The enables are ordered as im2_dma_int_en (~1911): the line
+ * interrupt ($CC bit 1), UART 0 / 1 RX ($CE bits 1-0 / 5-4), CTC 0-7 ($CD), the ULA ($CC bit 0), and
+ * UART 0 / 1 TX ($CE bit 2 / 6) - the same device order as the chain's priority.
  */
 static uint32_t zxnextInterruptsDmaRequestActive(void) {
-  /* im2_device o_dma_int: a device out of S_0 (pending or in service) with its $CC bit */
-  uint8_t enables = zxnextNextRegs[0xccu];
-  if ((enables & 0x02u) && (daisyPending[ZXNEXT_INT_LINE] || daisyInService[ZXNEXT_INT_LINE])) return 1;
-  if ((enables & 0x01u) && (daisyPending[ZXNEXT_INT_ULA] || daisyInService[ZXNEXT_INT_ULA])) return 1;
-  return 0;
+  uint32_t cc = zxnextNextRegs[0xccu];
+  uint32_t cd = zxnextNextRegs[0xcdu];
+  uint32_t ce = zxnextNextRegs[0xceu];
+  uint32_t mask =
+    ((cc >> 1u) & 0x01u) |                                  /* 0: line */
+    (((ce & 0x03u) != 0u) << 1u) |                          /* 1: UART 0 RX */
+    (((ce & 0x30u) != 0u) << 2u) |                          /* 2: UART 1 RX */
+    ((cd & 0xffu) << 3u) |                                  /* 3-10: CTC 0-7 */
+    ((cc & 0x01u) << 11u) |                                 /* 11: ULA */
+    (((ce >> 2u) & 0x01u) << 12u) |                         /* 12: UART 0 TX */
+    (((ce >> 6u) & 0x01u) << 13u);                          /* 13: UART 1 TX */
+  for (uint32_t i = 0; i < ZXNEXT_DAISY_DEVICE_COUNT; i++) {
+    if ((mask & (1u << i)) && (daisyPending[i] || daisyInService[i])) return 1;
+  }
+  return (cc & 0x80u) && zxnextNmiIsActivated();
 }
 
 static void zxnextInterruptsReti(void) {

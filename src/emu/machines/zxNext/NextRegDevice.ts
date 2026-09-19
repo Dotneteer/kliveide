@@ -3335,12 +3335,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * ZxNextMachine.reset captures the readback before any device resets and restores it afterwards.
    */
   captureResetSurvivors(): Array<[reg: number, value: number]> {
-    return [0x05, 0x06, 0x08, 0x09, 0x0a, 0x8f].map((reg) => [reg, this.directGetRegValue(reg)]);
+    return [0x02, 0x05, 0x06, 0x08, 0x09, 0x0a, 0x8f].map((reg) => [reg, this.directGetRegValue(reg)]);
   }
 
   restoreResetSurvivors(survivors: Array<[reg: number, value: number]>): void {
     for (const [reg, kept] of survivors) {
       switch (reg) {
+        case 0x02:
+          // --- Bit 7 (expansion bus reset) is stored outside the NextReg reset branch (zxnext.vhd ~5097
+          // --- vs ~4908-5090), so a soft reset keeps it. Set directly: a $02 write would act on bits 1-0.
+          this.machine.interruptDevice.busResetRequested = (kept & 0x80) !== 0;
+          break;
         case 0x06:
           // --- Bits 7 and 5 (hotkey enables) are reset to 1; the others survive
           this.directSetRegValue(0x06, 0xa0 | (kept & 0x5f));

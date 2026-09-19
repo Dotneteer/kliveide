@@ -171,6 +171,7 @@ describe("Mirror port protocol (D6)", () => {
 
   it("NR $39 writes attr4 of mirrorSpriteQ", () => {
     writeNextReg(machine, 0x34, 0x01);
+    writeNextReg(machine, 0x38, 0x40);        // attr3 bit 6: a five-byte sprite, so attr4 applies
     writeNextReg(machine, 0x39, 0x20);        // attr4 = 0x20 → attributeFlag2=true
     expect(spr.attributes[1].attributeFlag2).toBe(true);
     expect(spr.mirrorSpriteQ).toBe(1);

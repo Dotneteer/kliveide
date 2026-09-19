@@ -318,6 +318,7 @@ uint32_t zxnextGetTactsInFrame(void) { return ZXNEXT_TACTS_IN_FRAME; }
 uint32_t zxnextGetTimingTotalHc(void) { return zxnextTimingTotalHc; }
 /* The INT line the CPU sampled before its last instruction (the CPU panel's INT) */
 uint32_t zxnextGetCpuSigInt(void) { return z80GetSigInt(); }
+uint32_t zxnextGetCpuHeldByDma(void) { return zxnextCpuHeldAtFrameEnd; }
 uint32_t zxnextGetTimingTotalVc(void) { return zxnextTimingTotalVc; }
 /* The contention the CPU has been held for, in CPU tacts: since the machine started / since the counter's last restart */
 uint32_t zxnextGetTotalContentionDelaySinceStart(void) { return totalContentionDelaySinceStart; }
@@ -596,6 +597,13 @@ int32_t zxnextGetAudioMixerMixedLeftWord(void) { return zxnextAudioMixerGetMixed
 int32_t zxnextGetAudioMixerMixedRightWord(void) { return zxnextAudioMixerGetMixedRightWord(); }
 uint32_t zxnextAppendAudioMixerCurrentSample(void) { return zxnextAudioMixerAppendCurrentSample(); }
 void zxnextBeginAudioMixerFrame(void) { zxnextAudioMixerBeginFrame(); }
+/* A new frame's audio, as zxnextFrameExecute begins it: the host's per-instruction (debug) loop starts
+   frames itself, and without this the sample buffers filled in its first frame and stayed full */
+void zxnextBeginAudioFrame(void) {
+  zxnextBeeperBeginFrame();
+  zxnextPsgBeginFrame();
+  zxnextAudioMixerBeginFrame();
+}
 void zxnextSetNextAudioMixerSample(uint32_t frameTacts28) { zxnextAudioMixerSetNextSample(frameTacts28); }
 uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
 int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }

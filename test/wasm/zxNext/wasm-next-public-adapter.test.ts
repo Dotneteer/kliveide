@@ -33,13 +33,13 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     const machine = await createTestZxNextWasmMachine();
     const diagnostics = machine.getWasmV2Diagnostics();
 
-    expect(diagnostics.defaultReady).toBe(false);
+    expect(diagnostics.defaultReady).toBe(true);
     expect(diagnostics.defaultBlockers).toEqual(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS);
     for (const surface of ZXNEXT_WASM_V2_MIGRATED_SURFACES) {
       expect(diagnostics.migratedSurfaces).toContain(surface);
     }
-    expect(diagnostics.migratedSurfaces).not.toContain("ULA");
-    expect(diagnostics.migratedSurfaces).not.toContain("screen");
+    expect(diagnostics.migratedSurfaces).toContain("ULA");
+    expect(diagnostics.migratedSurfaces).toContain("screen");
   });
 
   it("reports OS initialization from live WASM CPU state", async () => {

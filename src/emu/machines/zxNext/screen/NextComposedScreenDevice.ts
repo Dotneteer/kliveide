@@ -160,6 +160,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.ulaHiColorMode = false;
     this.ulaScreenModeSampled = 0;
     this.ulaHalfPixelScrollSampled = false;
+    this.ulaShiftHalfPixel = false;
 
     // --- Initialize LoRes state
     this.loResEnabled = false;
@@ -1430,6 +1431,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   // The Timex screen mode (port $FF bits 2-0) in effect, sampled with the scroll
   private ulaScreenModeSampled: number;
   private ulaHalfPixelScrollSampled: boolean;
+  /** The half-pixel scroll of the group in the shift register (loaded with it). */
+  private ulaShiftHalfPixel = false;
 
   // Active attribute lookup tables (references to module-level tables, switch based on flash state)
   private ulaActiveAttrToInk: Uint8Array;
@@ -1473,6 +1476,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       this.ulaShiftAttr = this.ulaAttrByte1; // Load attribute byte 1
       this.ulaShiftAttr2 = this.ulaAttrByte2; // Load attribute byte 2
       this.ulaShiftAttrCount = 8 - (this.ulaScrollXSampled & 0x07); // Reset attribute shift counter
+      // --- The half-pixel scroll travels with the load (zxula.vhd scroll_0 / scroll_1 -> shift_scroll,
+      // --- ~350-359, ~397): a `$68` bit 2 change shows from the next cell, not in the one on screen
+      this.ulaShiftHalfPixel = this.ulaHalfPixelScrollSampled;
     }
 
     // --- Memory Read Activities ---
@@ -1541,7 +1547,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- Half-pixel scroll ($68 bit 2): zxula.vhd ~397 loads the shift register one more 14 MHz
     // --- half pixel to the left, so the second half of this pixel is the first half of the next one
     let nextRgb333 = pixelRgb333;
-    if (this.ulaHalfPixelScrollSampled) {
+    if (this.ulaShiftHalfPixel) {
       const nextBit = (this.ulaShiftReg >> (14 - pixelWithinByte)) & 0x01;
       const nextAttr = this.ulaShiftAttrCount > 1 ? this.ulaShiftAttr : this.ulaShiftAttr2;
       nextRgb333 = this.ulaStandardPixelRgb333(nextBit, nextAttr);
@@ -1563,7 +1569,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
 
     // Return layer output for composition stage
     const transparent = pixelRgb333 >> 1 === this.globalTransparencyColor || clipped;
-    if (this.ulaHalfPixelScrollSampled) {
+    if (this.ulaShiftHalfPixel) {
       this.ulaPixel1Rgb333 = pixelRgb333;
       this.ulaPixel1Transparent = transparent;
       this.ulaPixel2Rgb333 = nextRgb333;
@@ -2695,7 +2701,9 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // D2 fix: MAME uses 5-bit mask for bank 7, 6-bit mask for bank 5
     const offsetMask = useBank7 ? 0x1f : 0x3f;
     const highByte = ((offset & offsetMask) + ((address >> 8) & 0x3f)) & 0x3f;
-    const fullAddress = (highByte << 8) | (address & 0xff);
+    // --- Bank 7 is an 8K BRAM addressed by bits 12-0 (zxnext.vhd ~6609-6632): a map or tile table that
+    // --- runs past 8K wraps to the start of bank 7, it does not read on into page $0F
+    const fullAddress = ((highByte << 8) | (address & 0xff)) & (useBank7 ? 0x1fff : 0x3fff);
 
     // Bank selection: Bank 5 or Bank 7 (these are 16K RAM banks in ZX Next)
     // OFFS_BANK_05 = 0x054000, OFFS_BANK_07 = 0x05c000

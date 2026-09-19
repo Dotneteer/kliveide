@@ -172,4 +172,47 @@ ${delay(d)}
     // --- the interesting case is in the sweep: a latch cell that starts before C and ends after it
     expect(sweep.some((r) => r.l >= 0 && r.l < c && r.l + 16 > c), JSON.stringify(sweep)).toBe(true);
   });
+
+  /*
+   * ULA-012 mid-line: the fine scroll bit is sampled with the coarse scroll - px(8) at hc(3:0) = 3 / B
+   * (zxula.vhd ~198) - and reaches the shift register through scroll_0 / scroll_1 at the next load
+   * (~350-359, ~397), so a `$68` bit 2 write takes effect at an 8-pixel cell boundary, never mid-cell.
+   * Every paper byte is $AA (ink, paper, ink, ... per ULA pixel = 2 buffer pixels), so a one-buffer-pixel
+   * shift changes every pixel after the switch. With the switch at cell offset 0 the first changed buffer
+   * pixel is offset 1 (offset 0 is ink either way); the sweep moves the write across many cells.
+   */
+  it("ULA-013: a mid-line $68 bit 2 write switches the half-pixel scroll at an 8-pixel cell boundary", async () => {
+    const LINE = 100;
+    const ROW = 48 + LINE;
+
+    async function firstShiftedOffset(d: number): Promise<number> {
+      const s = await createSession(core);
+      await s.loadCode(" .org $8000\n di\n jr $");
+      writePalette(s, [[0, INK], [23, PAPER], [18, BORDER]]);
+      s.setNextReg(0x14, 0xe3).setNextReg(0x03, 0xb0).setNextReg(0x68, 0x00).out(0xfe, 2);
+      fillScreen(s, 0xaa, 0x38);
+      s.runFrames(2);
+      await s.loadCode(`
+        .org $8000
+Start:  di
+${delay(d)}
+        nextreg $68,4
+        nextreg $7f,$a5
+        jr $
+      `, { entry: "Start" });
+      s.setNextReg(0x7f, 0).runUntilReady({ maxFrames: 5 });
+      for (let o = 0; o < 512; o++) {
+        const unshiftedInk = o % 4 < 2;
+        if ((s.pixel(PAPER_LEFT + o, ROW) === hex8(INK)) !== unshiftedInk) return o;
+      }
+      return -1;
+    }
+
+    const sweep: Array<{ d: number; o: number }> = [];
+    for (let d = 37440; d <= 37490; d += 3) sweep.push({ d, o: await firstShiftedOffset(d) });
+    const onRow = sweep.filter((r) => r.o >= 0);
+    expect(onRow.length, JSON.stringify(sweep)).toBeGreaterThan(8);
+    expect(new Set(onRow.map((r) => r.o >> 4)).size, "the sweep crosses cells").toBeGreaterThan(3);
+    expect(onRow.filter((r) => r.o % 16 !== 1), "switches not at a cell boundary").toEqual([]);
+  });
 });

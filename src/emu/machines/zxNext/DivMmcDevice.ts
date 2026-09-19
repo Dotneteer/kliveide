@@ -317,13 +317,10 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     const rom3 = (mem.selectedRomMsb | mem.selectedRomLsb) === 0x03;
     if (!rom3) return false;
 
-    // Check Layer 2 is not mapped over the ROM area (page 0)
-    const screen = this.machine.composedScreenDevice;
-    if (screen?.layer2EnableMappingForReads) {
-      const mapSegment = screen.layer2Bank;
-      // Layer 2 segment 0 or segment 3 covers 0x0000-0x3FFF
-      if (mapSegment === 0 || mapSegment === 3) return false;
-    }
+    // --- Layer 2 must not be read-mapped over the ROM (zxnext.vhd ~3093 `not sram_layer2_map_en`). In
+    // --- the ROM area sram_pre_override is "111" for every segment (~3009-3012): segments 1 and 2 put
+    // --- Layer 2 at $0000-$3FFF just as 0 and 3 do, so any read mapping covers the fetch.
+    if (this.machine.composedScreenDevice?.layer2EnableMappingForReads) return false;
 
     return true;
   }

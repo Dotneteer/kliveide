@@ -58,6 +58,8 @@ const productionExports = [
   "zxnextGetTactsInFrame",
   "zxnextGetTimingTotalHc",
   "zxnextGetCpuSigInt",
+  "zxnextGetCpuHeldByDma",
+  "zxnextBeginAudioFrame",
   "zxnextGetTimingTotalVc",
   "zxnextGetTotalContentionDelaySinceStart",
   "zxnextGetContentionDelaySincePause",

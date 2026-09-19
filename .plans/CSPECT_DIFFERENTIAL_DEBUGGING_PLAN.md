@@ -1,5 +1,9 @@
 # CSpect Differential Debugging Plan
 
+> **Note 2026-09-19:** the TypeScript Next core, one of this proposal's comparison tiers, is being
+> retired by `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`; plan any new tier against the WASM core and
+> the VHDL.
+
 Created: 2026-09-14
 
 **Status:** proposal. No implementation started. **§12 carries the decisions the project author still

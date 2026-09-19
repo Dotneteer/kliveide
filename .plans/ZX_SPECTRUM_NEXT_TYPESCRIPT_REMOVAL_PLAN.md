@@ -259,8 +259,28 @@ additive, needs both cores, and only has to be complete by the Step 7 gate.
 
 ## 0. Baseline And Parity Audit
 
-Status: In progress. Baseline recorded 2026-09-19 at `f61b60ed2`; the D6 re-audit, the tape status and
-the frame-diff survey are still open.
+Status: Done 2026-09-19. Baseline recorded at `f61b60ed2`.
+
+D6 re-audit (against the VHDL and the current C core, not the 2026-08-22 audit's snapshot):
+
+| Blocker / audit gap | Verdict | Evidence (dual-core unless noted) |
+|---|---|---|
+| `ula-screen-tact-pipeline-parity` (tact renderer, render-before-mutation, active line) | Closed: the core has a beam-racing raster (`zxnextRasterRenderTo`) with catch-up before video NextReg, port and screen-memory writes, and per-cell ULA latches | `ula/midframe-memory-write`, `ula/border-timing`, `ula/scroll` ULA-010 Copper case and ULA-013, visual C03/C09/C10/C11/D01-D04, PAR-005, `parity/screen-parity` |
+| `ula-timex-mode-rendering-parity` (port `$FF`, HiColor/HiRes, interrupt disable, shadow) | Closed | `ula/timex-modes` (12), `ula/timex-port` (5), `ports/floating-bus` PORT-007 |
+| `ula-next-plus-rendering-parity` (ULANext, ULA+ ports/palette) | Closed | `ula/ulanext` (7), `ula/ulaplus` (5), `ula/ulanext-ulaplus` (6), `ula/ulaplus-ports` (3), `palette/*` |
+| `screen-layer-composition-parity` (priorities, blending, sprites, Layer 2 320/640, tilemap) | Closed | `layers/compositing`, `layers/blend-and-border`, `layer2`, `tilemap`, `sprites/*`, visual L01/P01/P02 |
+| `$68` rendering (ULA disable, blend, ULA+, stencil, half-pixel scroll) | Closed | visual C11, `layers/blend-and-border`, `ula/transparency-stencil`, `ula/scroll` ULA-012/013 |
+| Line interrupt / active line | Closed | `interrupts/interrupts` (19), `video/video-timing` VT-002/006/007, visual D04 |
+| Floating bus from display reads | Closed | `ports/floating-bus` PORT-006/008 (48K/128K/+3 timing) |
+| 50/60 Hz geometry and centring | Closed | `video/video-timing` VT-001..011 for every timing |
+| B8 open part (`$68` half-pixel scroll mid-line) | Closed - see P1 | `ula/scroll` ULA-013 |
+
+Frame-diff survey (`npm run diff:zxnext-machine`, empty in-memory SD card): the first run diverged at
+frame 0, instruction 100 (`sigINT`, P20); after that fix, **no difference in 1500 frames**. The real
+NextZXOS boot is compared by `sd/nextzxos-boot.test.ts` (both cores, a clone of `~/Klive/ks2.cim`).
+
+Tape (P8): neither core has a tape *loading* path (the TypeScript Next never assigned a `tapeDevice`),
+so the two agree; the WASM facade only carries the ULA's EAR/MIC lines.
 
 Baseline (both cores, clean worktree):
 
@@ -343,7 +363,24 @@ behave identically on both cores.
 
 ## 2. Close Coverage Gaps In The Harness
 
-Status: Not started.
+Status: Done 2026-09-19. Six parallel passes (one per area) triaged every `test/zxnext/*.test.ts` and
+every Next file in `test/audio/` against the dual-core suites, and ported what was hardware-visible and
+uncovered: about 130 new cases in 22 new files and 2 extended ones under `test/zxnext-hw/`
+(`sprites/sprite-ports|status|clip`, `ports/port-enable-state`, `nextreg/config-romram-bank`,
+`divmmc/divmmc-entry-points`, `sd/sd-card` SPI-010..012, `bus`-area `interrupts/interrupt-status-dma`,
+`multiface/multiface-nmi-state`, `nmi/nmi-arbiter`, `ctc/ctc-counter-edge`, `memory/paging-extras|wait-states`,
+`ula/ulaplus-port-details`, `layers/fallback-colour`, `tilemap/tilemap-bank7`, `copper/copper-wrap|tick-timing`,
+`keyboard/keystroke-queue`, `audio/turbosound-mix|psg-bus-reset|beeper-levels|dac-decode`). The table
+at the end of this plan records each file's disposition.
+
+They found 11 TypeScript/WASM parity problems (P21-P31), each fixed against the VHDL in the core(s)
+it was wrong in. Four old TypeScript tests turned out to contradict the VHDL where both cores were
+right (audio: `$1E` as `$1F`, `$2C` as DAC readback, `$FC` ignored, pans kept across a reset); several
+sprite unit tests encoded attr4 decoding on four-byte sprites and were corrected with P22.
+
+Not portable without new harness capabilities: the expansion bus's ROMCS / NMI / INT input lines
+(`ExpansionBusDevice`, `ExpansionBusNmi`: needs `busSignals()`), a second SD card in slot 1, a PS/2
+keyboard for `$28` bit 7 = 0, and the Pi I2S / tape EAR inputs to the mixer.
 
 Work:
 
@@ -548,7 +585,10 @@ passes on both models.
 
 ## 6. Documentation For The Separated State
 
-Status: Not started.
+Status: Done 2026-09-19 - `wasm/README.md` ("How The Machine Is Put Together"), the harness README
+(`NextMachine`, `ideState`, the new hotkeys), `.ai/wasm-migration-intent-and-lessons.md` (the
+no-subclassing lesson, IDE-level parity), status notes at the top of the four related plans, and
+`CHANGELOG.md` (Unreleased: the user-visible fixes).
 
 Work:
 
@@ -562,7 +602,21 @@ Done when: a reader of the docs would build the next machine migration separated
 
 ## 7. GATE - Separation And Parity Sign-Off
 
-Status: Not started. **Phase B requires the project author's explicit go-ahead after this gate.**
+Status: Evidence gathered 2026-09-19; one item open (10: the manual app pass). **Phase B requires the
+project author's explicit go-ahead after this gate.**
+
+| # | Condition | State 2026-09-19 |
+|---|---|---|
+| 1 | Separation guards | Met: `wasm-next-separation.test.ts` passes (prototype chain, full import graph incl. type imports, no TS device on an instance) |
+| 2 | Harness parity | Met: 104+ `test/zxnext-hw` files pass on both cores, no `it.fails`; `sd/nextzxos-boot` runs (card present). Core-specific: checkpoints (WASM only, documented) and `sd/spi-flash-select` (reads a WASM export; no session method yet) |
+| 3 | Visual parity | Met: 21/21, exact core parity, `ts` = `wasm` goldens |
+| 4 | Oracle-test parity | Met: all `test/wasm/zxNext` tests pass |
+| 5 | Frame-diff parity | Met: no difference in 1500 frames (empty SD card); the real NextZXOS boot is covered by `sd/nextzxos-boot` |
+| 6 | Ledger closed | Met: every row Resolved (P16 on 2026-09-19: neither core ever reported the DMA hold; both do now) |
+| 7 | D6 closed, constants flipped | Met 2026-09-19 (the author's go-ahead): `ZXNEXT_WASM_V2_DEFAULT_READY = true`, `ZXNEXT_WASM_V2_DEFAULT_BLOCKERS = []`, `ULA` and `screen` among the migrated surfaces; the rollout guard and its tests follow |
+| 8 | IDE parity | Met: PAR-006 |
+| 9 | Coverage | Met: the Test Disposition Table is complete |
+| 10 | Green build and app smoke | Build met (node 705 files / 22074 tests, jsdom, `build:check`, lint, Vite). **Open: the manual app pass** of `.nexload`/code injection, the debugger, the Next panels, checkpoints and the F-keys on both models (boot, clock, pacing and keys were driven) |
 
 All of the following must hold, with evidence recorded in this plan:
 
@@ -752,14 +806,14 @@ Filled in from Step 0 onward. One row per known TypeScript/WASM difference.
 
 | Id | Difference | Proving test | VHDL verdict (which core is right) | Fix (core / commit) | Status |
 |---|---|---|---|---|---|
-| P1 | B8: `$68` half-pixel scroll latched per pixel-write (WASM) vs per 8-pixel cell (TS); sampled registers open | | | | Open |
-| P2 | Default blocker `ula-screen-tact-pipeline-parity` | | | | To audit |
-| P3 | Default blocker `ula-timex-mode-rendering-parity` | | | | To audit |
-| P4 | Default blocker `ula-next-plus-rendering-parity` | | | | To audit |
-| P5 | Default blocker `screen-layer-composition-parity` | | | | To audit |
+| P1 | B8: a mid-line `$68` bit 2 write switched the half-pixel scroll at the written pixel (WASM) / one pixel before the cell (TS) | `ula/scroll` ULA-013 (sweep; failed on both) | the fine bit is px(8), sampled with the coarse scroll and loaded with the cell (zxula.vhd ~198, ~350-359, ~397): switches at the cell boundary | WASM: a fifth ULA latch; TS: the flag is taken at the shift-register load | Resolved |
+| P2 | Default blocker `ula-screen-tact-pipeline-parity` | see Step 0 table | | | Resolved (audit) |
+| P3 | Default blocker `ula-timex-mode-rendering-parity` | see Step 0 table | | | Resolved (audit) |
+| P4 | Default blocker `ula-next-plus-rendering-parity` | see Step 0 table | | | Resolved (audit) |
+| P5 | Default blocker `screen-layer-composition-parity` | see Step 0 table | | | Resolved (audit) |
 | P6 | F2/F3/F7 screen toggles have no effect on WASM | `display-hotkeys.test.ts` HK-001..006 | n/a (host feature) | WASM sets `$05`/`$09` | Resolved |
 | P7 | Palette/ULA IDE panels read TypeScript state on WASM | PAR-006 | n/a (IDE) | `IZxNextIdeMachine` | Resolved |
-| P8 | Tape loading on WASM (no TAPE_DATA path) | | | | To audit |
+| P8 | Tape loading on WASM (no TAPE_DATA path) | n/a | | neither core has one | Resolved (both agree) |
 | P9 | TS Palettes panel showed `$4C`/`$6B` from dead `TilemapDevice` fields (defaults, never written) | PAR-006 | n/a (IDE) | read `composedScreenDevice` | Resolved |
 | P10 | TS ULA & I/O panel threw on the TS Next (no `screenDevice`); both reported ROM/RAM 0 | PAR-006 | n/a (IDE) | `getNextUlaState` on both | Resolved |
 | P11 | WASM Memory Mapping: logical instead of physical offsets, ROM `bank16k` -1, paging ports rebuilt from `$8E`, `$EFF7`/DivMMC hard-coded 0 | PAR-006 | n/a (IDE) | core page table + port exports | Resolved |
@@ -767,14 +821,58 @@ Filled in from Step 0 onward. One row per known TypeScript/WASM difference.
 | P13 | Next Registers panel: WASM showed raw stored bytes for all 256 ids and a last write for read-only ones; TS showed unmasked read functions | PAR-006 | both now show the `$253B` readback (read mux) and CPU last writes | `zxnextPeekNextRegister`, `zxnextGetNextRegisterLastWrite` | Resolved |
 | P14 | TS `getDescriptors()` returns an array with trailing holes (sorts a sparse table) | `nextRegDescriptors.test.ts` | n/a | Step 3 static table | Resolved |
 | P15 | `getRomFlags()`: TS reported all 8 pages as RAM (the memory editor then treated the ROM as writable), WASM pages 0-1 as ROM | `nextMachineInfo.test.ts` | n/a (IDE; static by design, like the classic machines) | shared `NEXT_ROM_FLAGS` | Resolved |
-| P16 | `getCpuState().snoozed` (CPU held by the DMA): TS reports it, WASM never does | | n/a (debug view) | | Open |
+| P16 | `getCpuState().snoozed` (the CPU held by the DMA at a frame end) was never reported: TS set and cleared its flag inside one frame-runner pass, WASM had none | `dma/cpu-held-by-dma` DMA-030 (failed on both) | a continuous transfer keeps BUSREQ across the frame end (dma.vhd) | both report the hold until the next opcode fetch (`zxnextGetCpuHeldByDma`) | Resolved |
 | P17 | `opStartAddress` (Breakpoints panel, memory/I/O hits): WASM never set it | `wasm-next-access-breakpoint.test.ts` | n/a | recorded in the debug loop | Resolved |
+| P20 | WASM suppressed the ULA frame interrupt in frame 0 after a reset (`frames != 0`) | `interrupts/first-frame` INT-020 | the ULA counters restart with the reset and the interrupt is a compare (zxula_timing.vhd): frame 0 has one; only a Pentagon pulse wrapping in from a previous frame does not exist | `zxnextCpuFrameIntStarted` | Resolved |
+| P21 | Sprites numbered above the one most recently made visible disappeared | `sprites/sprite-ports` | sprites.vhd ~846-870: every line walks all 128 | WASM: cutoff = highest visible index | Resolved |
+| P22 | A 4-byte `$57` write zeroed attr4 (a later attr3 bit 6 did not restore it) | `sprites/sprite-ports` | attr4 is written only at attr_id "100" (~641, ~660-664, ~717) | both: attr4 kept; TS decodes it only while attr3 bit 6 is set | Resolved |
+| P23 | A soft reset left the `$57` / `$5B` upload positions | `sprites/sprite-ports` | ~653-654, ~733-734 clear them | TS `SpriteDevice.reset` | Resolved |
+| P24 | A D4 flip in a control word that reaches zero lost its ZC/TO (status, chain) | `ctc/ctc-counter-edge` CTC-016 | ctc_chan ~142-166 | both: zero counts of the port-write clocks delivered | Resolved |
+| P25 | CTC ($CD) / UART ($CE) interrupts did not break into a DMA transfer | `interrupts/interrupt-status-dma` INT-025 | zxnext.vhd ~1911, ~1963 | WASM: the full 14-device mask | Resolved |
+| P26 | An NMI with `$CC` bit 7 did not break into a DMA transfer | INT-026 | ~1963, ~2051-2070 (sources latch per 28 MHz clock) | both: the NMI term, and sources latch at the cause instead of the next opcode fetch | Resolved |
+| P27 | A soft reset cleared `$02` bit 7 | INT-027 | stored outside the reset branch (~5097) | TS reset survivors | Resolved |
+| P28 | A Layer 2 read mapping did not disable the ROM 3 entry points | `divmmc/divmmc-entry-points` DIV-024 | ~3093 `not sram_layer2_map_en` | WASM | Resolved |
+| P29 | Layer 2 read segments 1 and 2 were not seen as covering `$0000` | DIV-024 | sram_pre_override "111" in the ROM area (~3009-3012) | both | Resolved |
+| P30 | RETN at `$0066` with ROM 0 was taken from the ROM bytes, not the DivMMC code the fetch paged in | DIV-031 | RETN from the decoded instruction (~1866-1882, ~4090) | WASM: RETI/RETN from the fetched opcodes | Resolved |
+| P31 | A bank 7 tilemap read past 8K into page `$0F` | `tilemap/tilemap-bank7` | bank 7 is an 8K BRAM, bits 12-0 (~6609-6632) | both: 13-bit wrap | Resolved |
+| P32 | No sound in debug mode on WASM: the per-instruction debug loop never began a beeper/PSG/mixer frame, so the sample buffers filled in its first frame and stayed full (reported by the author, 2026-09-19) | `wasm-next-debug-audio` (both cores, frame and debug loop) | n/a (host loop) | `zxnextBeginAudioFrame` at each debug-loop frame start | Resolved |
 | P18 | Status bar CPU speed: WASM never updated `clockMultiplier` (showed 3.5 MHz while NextZXOS ran at 28 MHz) | `wasm-next-clock-report.test.ts` | effective speed, `$07` bits 5-4 | mirrored in `syncCpuFromWasmV2` | Resolved |
 
 ## Test Disposition Table
 
-Filled in during Step 2. One row per `test/zxnext/*.test.ts` and per Next file in `test/audio/`.
+Filled in 2026-09-19 (Step 2). "Covered" names the dual-core tests that already checked the behaviour;
+"ported" names the new ones; "obsolete" is TypeScript-internal state with no hardware-visible effect.
 
 | TypeScript test file | Disposition | Harness / WASM replacement |
 |---|---|---|
-| | | |
+| `SpriteDevice.test.ts` | partly ported; field dumps obsolete | `sprites/sprite-ports`, `sprite-status`, NR-014/015, `attribute-mirror`, SPR-001..035 |
+| `SpriteDevice-anchor`, `-resolve`, `-dimensions` | obsolete (internal fields); pixels covered | SPR-001..035 random scenes, SPR-035 |
+| `SpriteDevice-clip.test.ts` | ported / covered | `sprites/sprite-clip`, SPR-011..013, SPR-018 |
+| `SpriteDevice-collision.test.ts` + scenarios | covered + 1 ported | `sprite-collision`, SPR-025, `sprite-status` |
+| `SpriteDevice-d4d6d7.test.ts` | ported / covered | `sprite-ports`, SPR-007/029, NR-015 |
+| `SpriteDevice-fpga.test.ts` + scenarios | covered; pattern-table probes obsolete | SPR random scenes, SPR-011/012 |
+| `SpriteDevice-index`, `-patterns`, `-status` | ported | `sprite-ports`, `sprite-status` |
+| `NextRegDevice.test.ts` | partly ported (NR-019); rest covered per register or by PAR-001; firmware reset values obsolete | `nextreg/*`, `ports/*`, `reset/*`, PAR-001 |
+| `NextIoPortManager.test.ts` | partly ported (PORT-016) | MEM-003/007/010/011 |
+| `PortEnableGating.test.ts` | partly ported (PORT-014/015) | PORT-001..003/013, MOU-005, BUS-003/005 |
+| `DivMmcDevice-fpga.test.ts` | ported / covered | DIV-001..010, DIV-024, DIV-032..035 |
+| `DivMmcDevice-regression.test.ts` | ported / covered; 2 made-up orderings obsolete | DIV-020..023, DIV-030/031 |
+| `DivMmmc.test.ts` | ported / covered | DIV-020..025, DIV-032, `nextreg/soft-reset` |
+| `SdCardDevice.test.ts` | ported / covered | SPI-001..012, `spi-flash-select` |
+| `ExpansionBusDevice.test.ts`, `ExpansionBusNmi.test.ts` | registers covered; bus input lines **not portable** (needs `busSignals()`) | BUS-001..005 |
+| `MultifaceDevice.test.ts`, `MultifaceMemory.test.ts` | ported / covered | MF-001..012 |
+| `NmiSoftware.test.ts`, `NmiStateMachine.test.ts` | ported / covered; state names obsolete | NMI-003..009, RST-004..006, MF-008/009 |
+| `InterruptDevice.test.ts` | ported / covered | `interrupts/*` INT-005..027, CTC-006/011, UART-007/008, DMA-018 |
+| `CtcDevice.test.ts` | ported / covered; sub-T-state timing obsolete | CTC-001..017 |
+| `MemoryDevice.test.ts` | ported / covered | `memory/*` incl. `paging-extras`, `wait-states` |
+| `Layer2Fixes.test.ts` | covered | `layers/compositing`, CMP-013 |
+| `NextComposedScreenDevice.test.ts` | ported / covered | `ula/*`, `video/*`, `ula/ulaplus-port-details`, `layers/*` |
+| `UlaRendering.test.ts`, `ula-rendering.test.ts` | covered | ULA-002..011, ULN-001, TMX-004, CMP-* |
+| `TilemapDevice-d1d2.test.ts` | ported | TM-009/010/012, `tilemap/tilemap-bank7` |
+| `UlaDisableFallback.test.ts` | ported / covered | ULA-018, `fallback-colour-reset`, `layers/fallback-colour` |
+| `CopperDevice.test.ts` | ported / covered | COP-002..016, `copper/copper-wrap`, `copper-tick-timing`, visual C00-C11 |
+| `KeystrokeQueue.test.ts` | ported (host API, both machines) | `keyboard/keystroke-queue` |
+| `ZxNextMachineFactory.test.ts` | app-level; kept until Phase B | - |
+| `test/audio` AudioControlDevice.step9, AudioMixing.step17, DacPlayback.step16, FinalIntegration.step20, PsgCompatibility.step14, PortHandlers.step10, TurboSoundDevice.step2/3/4, TurboSoundTesting.step15, PsgEnvStereo.step56, DacPortEnableGating.step21, BeeperFpga.step22, BeeperMameCompat, AudioMixerDevice.step8 | ported / covered; mixer scaling, persistence, debug objects obsolete | `audio/*` (AY-*, DAC-*, BEEP-*, `turbosound-mix`, `psg-bus-reset`, `beeper-levels`, `dac-decode`), PAR-003 |
+| `test/audio` DacDevice.step5, DacNextRegDevice.step7, DacPortDevice.step6 | covered | DAC-001..012, DAC-DEC-1..3 |
+| `test/audio` AudioDebug.step13, AudioStatePersistence.step12, AudioPerformance.step18.perf, FinalIntegration.step20.perf, TurboSoundDevice.sample-window | obsolete (TypeScript debug, persistence, performance, sampling model) | `wasm-next-audio-debug-loop`, PSG-RESET-1/2 |

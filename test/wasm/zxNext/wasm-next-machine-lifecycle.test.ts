@@ -68,7 +68,7 @@ describe("ZX Spectrum Next WASM machine lifecycle", () => {
 
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      defaultReady: false,
+      defaultReady: true,
       defaultBlockers: ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
       normalFrames: 1,
       lastWasmStopReason: "wasmFrameComplete"

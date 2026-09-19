@@ -52,6 +52,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetTactsInFrame: ZxNextWasmV2ExportFunction;
   zxnextGetTimingTotalHc: ZxNextWasmV2ExportFunction;
   zxnextGetCpuSigInt: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuHeldByDma: ZxNextWasmV2ExportFunction;
+  zxnextBeginAudioFrame: ZxNextWasmV2ExportFunction;
   zxnextGetTimingTotalVc: ZxNextWasmV2ExportFunction;
   zxnextGetTotalContentionDelaySinceStart: ZxNextWasmV2ExportFunction;
   zxnextGetContentionDelaySincePause: ZxNextWasmV2ExportFunction;
@@ -403,6 +405,8 @@ const requiredV2Exports = [
   "zxnextGetTactsInFrame",
   "zxnextGetTimingTotalHc",
   "zxnextGetCpuSigInt",
+  "zxnextGetCpuHeldByDma",
+  "zxnextBeginAudioFrame",
   "zxnextGetTimingTotalVc",
   "zxnextGetTotalContentionDelaySinceStart",
   "zxnextGetContentionDelaySincePause",

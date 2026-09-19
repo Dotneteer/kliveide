@@ -573,10 +573,38 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
 
     // Clock the channel with this write asserted for one cycle, then deasserted
     channel.clock(true, value, false, false, false);
+    let zeroCounts = channel.zcTo ? 1 : 0;
     channel.clock(false, value, false, false, false);
+    if (channel.zcTo) zeroCounts++;
 
     // Account for the 2 extra clock() calls so they aren't double-counted
     this._lastSyncClock += 2;
+
+    // --- A control word that flips D4 counts an edge (ctc_chan clk_edge_change); a zero count it
+    // --- reaches is a ZC/TO like any other (ctc_chan ~142-166): it latches the status and clocks the
+    // --- next channel of the ring (zxnext.vhd ~1897, ~4044-4073)
+    if (zeroCounts > 0) this.deliverZeroCounts(ch, zeroCounts);
+  }
+
+  /**
+   * Reports `count` zero counts of channel `i` outside the time advance: the interrupt status, and the
+   * trigger-driven channels downstream in ring order.
+   */
+  private deliverZeroCounts(i: number, count: number): void {
+    const intDev = this.machine.interruptDevice;
+    intDev.ctcZeroCount(i, this.channels[i].intEnabled);
+    for (let k = 1; k < 4 && count > 0; k++) {
+      const next = this.channels[(i + k) & 0x03];
+      if (!next.isTriggerDriven) break;
+      if (next.isCounterMode) {
+        count = next.advanceByTriggers(count);
+        if (count > 0) intDev.ctcZeroCount((i + k) & 0x03, next.intEnabled);
+      } else {
+        // --- A timer waiting for its trigger starts now; its zero counts come with time
+        next.startOnTrigger();
+        break;
+      }
+    }
   }
 
   /**

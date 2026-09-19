@@ -515,7 +515,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     if (this.enableUart0TxEmptyToIntDma && active(DAISY_PRIORITY_UART0_TX)) return true;
     if ((this.enableUart1RxNearFullToIntDma || this.enableUart1RxAvailableToIntDma) && active(DAISY_PRIORITY_UART1_RX)) return true;
     if (this.enableUart1TxEmptyToIntDma && active(DAISY_PRIORITY_UART1_TX)) return true;
-    return false;
+    // --- zxnext.vhd ~1963: an active NMI holds the DMA off too, with $CC bit 7
+    return this.enableNmiToIntDma && !!(this.machine as { nmiActivated?: boolean }).nmiActivated;
   }
 
   /**

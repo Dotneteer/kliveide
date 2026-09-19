@@ -37,16 +37,19 @@ describe("NmiStateMachine", async () => {
   //  Task 3 – custom commands set pending flags
   // ─────────────────────────────
 
-  it("executeCustomCommand('multifaceNmi') sets _pendingMfNmi", async () => {
-    expect((m as any)._pendingMfNmi).toBe(false);
+  // --- The source latches on the next 28 MHz clock (zxnext.vhd ~2051-2070), not at the next opcode fetch
+  it("executeCustomCommand('multifaceNmi') latches the Multiface NMI source", async () => {
+    expect(m.nmiActivated).toBe(false);
     await m.executeCustomCommand("multifaceNmi");
-    expect((m as any)._pendingMfNmi).toBe(true);
+    expect((m as any)._nmiSourceMf).toBe(true);
+    expect(m.nmiActivated).toBe(true);
   });
 
-  it("executeCustomCommand('divmmcNmi') sets _pendingDivMmcNmi", async () => {
-    expect((m as any)._pendingDivMmcNmi).toBe(false);
+  it("executeCustomCommand('divmmcNmi') latches the DivMMC NMI source", async () => {
+    expect(m.nmiActivated).toBe(false);
     await m.executeCustomCommand("divmmcNmi");
-    expect((m as any)._pendingDivMmcNmi).toBe(true);
+    expect((m as any)._nmiSourceDivMmc).toBe(true);
+    expect(m.nmiActivated).toBe(true);
   });
 
   // ─────────────────────────────

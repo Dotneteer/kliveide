@@ -2,6 +2,15 @@ import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
+/**
+ * attr4 counts only for a five-byte sprite: the FPGA reads it through attr3 bit 6 (sprites.vhd
+ * `spr_cur_h <= attr_4(7) and attr_3(6)`), and a four-byte sprite ignores whatever attr4 holds. Tests of
+ * attr4 decoding therefore start from five-byte sprites.
+ */
+function makeFiveByteSprites(machine: { spriteDevice: { writeIndexedSpriteAttribute(s: number, a: number, v: number): void } }): void {
+  for (let i = 0; i < 128; i++) machine.spriteDevice.writeIndexedSpriteAttribute(i, 3, 0x40);
+}
+
 describe("Next - SpriteDevice", async function () {
   it("After cold start", async () => {
     // --- Act
@@ -2075,6 +2084,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $39 with lockStep #1", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x10);
     writeNextReg(m, 0x34, 0x00);
@@ -2092,7 +2102,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2106,6 +2116,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $39 with lockStep #2", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x10);
     writeNextReg(m, 0x34, 0x04);
@@ -2123,7 +2134,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2137,6 +2148,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $39 with lockStep #3", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x10);
     writeNextReg(m, 0x34, 0x84);
@@ -2154,7 +2166,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2168,6 +2180,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $39 with no lockStep #1", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const io = m.portManager;
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x00);
@@ -2187,7 +2200,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2201,6 +2214,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $39 with no lockStep #2", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const io = m.portManager;
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x00);
@@ -2220,7 +2234,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2494,6 +2508,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $79 with lockStep", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x10);
     writeNextReg(m, 0x34, 0x04);
@@ -2511,7 +2526,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2525,6 +2540,7 @@ describe("Next - SpriteDevice", async function () {
 
   it("Reg $79 with no lockStep", async () => {
     const m = await createTestNextMachine();
+    makeFiveByteSprites(m);
     const io = m.portManager;
     const spr = m.spriteDevice;
     writeNextReg(m, 0x09, 0x00);
@@ -2544,7 +2560,7 @@ describe("Next - SpriteDevice", async function () {
     expect(attrs.rotate).toBe(false);
     expect(attrs.attributeFlag1).toBe(false);
     expect(attrs.visible).toBe(false);
-    expect(attrs.has5AttributeBytes).toBe(false);
+    expect(attrs.has5AttributeBytes).toBe(true); // --- five-byte sprites (makeFiveByteSprites)
     expect(attrs.patternIndex).toBe(0x00);
     expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
@@ -2746,9 +2762,11 @@ describe("9-bit Coordinate Validation", async function () {
     expect(attrs.visible).toBe(true);
     expect(attrs.has5AttributeBytes).toBe(false);
     expect(attrs.patternIndex).toBe(0x3f);
-    expect(attrs.colorMode).toBe(0x03);
+    // --- A four-byte sprite: attr4 is stored but does not apply (sprites.vhd reads it through attr3 bit 6)
+    expect(attrs.attr4).toBe(0xd9);
+    expect(attrs.colorMode).toBe(0x00);
     expect(attrs.attributeFlag2).toBe(false);
-    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.scaleX).toBe(0x00);
     expect(attrs.scaleY).toBe(0x00);
   });
 });
@@ -2788,9 +2806,10 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("pattern7Bit: MSB set via attr4[6]", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
-    spr.writeIndexedSpriteAttribute(0, 3, 0x1f);  // patternIndex = 31
+    spr.writeIndexedSpriteAttribute(0, 3, 0x5f);  // patternIndex = 31
     spr.writeIndexedSpriteAttribute(0, 4, 0x40);  // N6 = 1 (bit 6)
 
     // --- Assert: pattern7Bit = 31 | 64 = 95
@@ -2802,6 +2821,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("pattern7Bit: range 0-127 via both components", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const testCases = [
       { patternIdx: 0x00, msb: false, expected: 0x00 },
@@ -2814,7 +2834,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
     for (const tc of testCases) {
       const attrs = spr.attributes[0];
-      spr.writeIndexedSpriteAttribute(0, 3, tc.patternIdx);
+      spr.writeIndexedSpriteAttribute(0, 3, 0x40 | tc.patternIdx);
       spr.writeIndexedSpriteAttribute(0, 4, tc.msb ? 0x40 : 0x00);
       expect(attrs.pattern7Bit).toBe(tc.expected);
     }
@@ -2822,23 +2842,25 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("pattern7Bit: updates when patternIndex changes", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
     spr.writeIndexedSpriteAttribute(0, 4, 0x40);  // Set MSB = 1
 
     // --- Change patternIndex
-    spr.writeIndexedSpriteAttribute(0, 3, 0x0f);
+    spr.writeIndexedSpriteAttribute(0, 3, 0x4f);
     expect(attrs.pattern7Bit).toBe(0x4f);  // 15 + 64
 
-    spr.writeIndexedSpriteAttribute(0, 3, 0x2a);
+    spr.writeIndexedSpriteAttribute(0, 3, 0x6a);
     expect(attrs.pattern7Bit).toBe(0x6a);  // 42 + 64
   });
 
   it("pattern7Bit: updates when MSB changes", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
-    spr.writeIndexedSpriteAttribute(0, 3, 0x1f);  // patternIndex = 31
+    spr.writeIndexedSpriteAttribute(0, 3, 0x5f);  // patternIndex = 31
 
     // --- Start without MSB
     expect(attrs.pattern7Bit).toBe(0x1f);
@@ -2862,6 +2884,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("is4BitPattern: set via attr4[7]", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
 
@@ -2880,6 +2903,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("is4BitPattern: combined with other attr4 bits", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
 
@@ -2903,11 +2927,12 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
 
   it("pattern7Bit and is4BitPattern: both fields independent", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
     const attrs = spr.attributes[0];
 
     // --- Set pattern index to 42, MSB off, 8-bit mode
-    spr.writeIndexedSpriteAttribute(0, 3, 42);
+    spr.writeIndexedSpriteAttribute(0, 3, 0x40 | 42); // --- five-byte, so attr4 counts
     spr.writeIndexedSpriteAttribute(0, 4, 0x00);
 
     expect(attrs.pattern7Bit).toBe(42);
@@ -2935,12 +2960,13 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     spr.writeIndexedSpriteAttribute(0, 0, 0x55);  // X LSB
     spr.writeIndexedSpriteAttribute(0, 1, 0xaa);  // Y LSB
     spr.writeIndexedSpriteAttribute(0, 2, 0x4c);  // Palette, mirrors, rotate
-    spr.writeIndexedSpriteAttribute(0, 3, 0xbf);  // Visibility, pattern
+    spr.writeIndexedSpriteAttribute(0, 3, 0xbf);  // Visibility, pattern (four-byte sprite)
     spr.writeIndexedSpriteAttribute(0, 4, 0xf9);  // colorMode, scales, N6, 4-bit, bit 0 (no Y MSB: 4-byte)
 
     // --- Verify computed fields
-    expect(attrs.pattern7Bit).toBe(63 + 64);  // 0x3f | 0x40
-    expect(attrs.is4BitPattern).toBe(true);
+    // --- A four-byte sprite ignores attr4 (sprites.vhd `spr_cur_h <= attr_4(7) and attr_3(6)`, N6 needs H)
+    expect(attrs.pattern7Bit).toBe(63);
+    expect(attrs.is4BitPattern).toBe(false);
 
     // --- Verify all other attributes unchanged
     expect(attrs.x).toBe(0x55);                // X MSB is attr2 bit 0, clear in 0x4c
@@ -2950,25 +2976,26 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     expect(attrs.mirrorY).toBe(true);
     expect(attrs.rotate).toBe(false);
     expect(attrs.visible).toBe(true);
-    expect(attrs.colorMode).toBe(0x03);
-    expect(attrs.scaleX).toBe(0x03);
+    expect(attrs.colorMode).toBe(0x00);
+    expect(attrs.scaleX).toBe(0x00);
     expect(attrs.scaleY).toBe(0x00);
   });
 
   it("Multiple sprites have independent computed fields", async () => {
     const machine = await createTestNextMachine();
+    makeFiveByteSprites(machine);
     const spr = machine.spriteDevice;
 
     // --- Set sprite 0
-    spr.writeIndexedSpriteAttribute(0, 3, 10);
+    spr.writeIndexedSpriteAttribute(0, 3, 0x40 | 10);
     spr.writeIndexedSpriteAttribute(0, 4, 0x00);
 
     // --- Set sprite 1
-    spr.writeIndexedSpriteAttribute(1, 3, 20);
+    spr.writeIndexedSpriteAttribute(1, 3, 0x40 | 20);
     spr.writeIndexedSpriteAttribute(1, 4, 0x40);
 
     // --- Set sprite 2
-    spr.writeIndexedSpriteAttribute(2, 3, 30);
+    spr.writeIndexedSpriteAttribute(2, 3, 0x40 | 30);
     spr.writeIndexedSpriteAttribute(2, 4, 0x80);
 
     // --- Verify each sprite has correct computed fields
@@ -3001,11 +3028,12 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should compute correct pattern index using attr4[6] extension bit (7-bit)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       const sprite = spr.attributes[0];
       
       // --- Act: Write pattern index to attr3 (0x3f), then set attr4[6] (attributeFlag2)
-      spr.writeIndexedSpriteAttribute(0, 3, 0x3f); // patternIndex = 0x3f
+      spr.writeIndexedSpriteAttribute(0, 3, 0x7f); // patternIndex = 0x3f
       spr.writeIndexedSpriteAttribute(0, 4, 0x40); // attr4[6] set (N6)
       
       // --- Assert
@@ -3018,6 +3046,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should allow all 128 pattern indices (0-127)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       
       // --- Act & Assert: Test all 128 pattern indices
@@ -3026,7 +3055,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
         const attr4Val = (patIdx & 0x40) ? 0x40 : 0x00; // Bit 6 → attr4[6]
         
         // Only write without enableVisibility bit for these tests
-        spr.writeIndexedSpriteAttribute(0, 3, attr3Val);
+        spr.writeIndexedSpriteAttribute(0, 3, 0x40 | attr3Val); // --- five-byte, so attr4 counts
         spr.writeIndexedSpriteAttribute(0, 4, attr4Val);
         
         const sprite = spr.attributes[0];
@@ -3051,11 +3080,12 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should handle attributeFlag2 bit (attr4[6]) correctly", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       const sprite = spr.attributes[0];
       
       // --- Act: Set pattern to 0, then enable attr4[6]
-      spr.writeIndexedSpriteAttribute(0, 3, 0x00);
+      spr.writeIndexedSpriteAttribute(0, 3, 0x40);
       expect(spr.getFullPatternIndex(sprite)).toBe(0x00);
       
       spr.writeIndexedSpriteAttribute(0, 4, 0x40); // attr4[6] = 1
@@ -3068,12 +3098,13 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should compute pattern7Bit when writing attr3", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       const sprite = spr.attributes[1];
       
       // --- Act: Set attributeFlag2 first, then write attr3
       spr.writeIndexedSpriteAttribute(1, 4, 0x40); // N6 = true
-      spr.writeIndexedSpriteAttribute(1, 3, 0x25); // patternIndex = 0x25
+      spr.writeIndexedSpriteAttribute(1, 3, 0x65); // patternIndex = 0x25
       
       // --- Assert
       expect(sprite.patternIndex).toBe(0x25);
@@ -3085,11 +3116,12 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should compute pattern7Bit when writing attr4[6]", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       const sprite = spr.attributes[2];
       
       // --- Act: Set patternIndex first, then toggle attr4[6]
-      spr.writeIndexedSpriteAttribute(2, 3, 0x22); // patternIndex = 0x22
+      spr.writeIndexedSpriteAttribute(2, 3, 0x62); // patternIndex = 0x22
       expect(sprite.pattern7Bit).toBe(0x22); // No attr4[6] bit set
       
       spr.writeIndexedSpriteAttribute(2, 4, 0x40); // Set attr4[6]
@@ -3101,6 +3133,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should handle multiple sprites with different pattern indices", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       
       // --- Act: Set different pattern indices for multiple sprites
@@ -3114,7 +3147,7 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
       ];
       
       for (const tc of testCases) {
-        spr.writeIndexedSpriteAttribute(tc.sprite, 3, tc.attr3 | 0x80);
+        spr.writeIndexedSpriteAttribute(tc.sprite, 3, tc.attr3 | 0xc0); // --- visible, five-byte
         spr.writeIndexedSpriteAttribute(tc.sprite, 4, tc.attr4);
       }
       
@@ -3173,17 +3206,18 @@ describe("Computed Fields (pattern7Bit and is4BitPattern)", async function () {
     it("Should maintain pattern index consistency across multiple writes", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
+      makeFiveByteSprites(m);
       const spr = m.spriteDevice;
       const sprite = spr.attributes[0];
       
       // --- Act: Perform sequence of writes
-      spr.writeIndexedSpriteAttribute(0, 3, 0x15);
+      spr.writeIndexedSpriteAttribute(0, 3, 0x55);
       expect(spr.getFullPatternIndex(sprite)).toBe(0x15);
       
       spr.writeIndexedSpriteAttribute(0, 4, 0x40);
       expect(spr.getFullPatternIndex(sprite)).toBe(0x55); // 0x15 | 0x40
       
-      spr.writeIndexedSpriteAttribute(0, 3, 0x2a);
+      spr.writeIndexedSpriteAttribute(0, 3, 0x6a);
       expect(spr.getFullPatternIndex(sprite)).toBe(0x6a); // 0x2a | 0x40
       
       spr.writeIndexedSpriteAttribute(0, 4, 0x00);

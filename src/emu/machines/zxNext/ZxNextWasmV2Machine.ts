@@ -65,17 +65,20 @@ export const ZXNEXT_WASM_V2_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = 
   "registers",
   "memory",
   "disassembly",
+  "ULA",
+  "screen",
   "frame",
   "debug"
 ];
 
-export const ZXNEXT_WASM_V2_DEFAULT_READY = false;
-export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [
-  "ula-screen-tact-pipeline-parity",
-  "ula-timex-mode-rendering-parity",
-  "ula-next-plus-rendering-parity",
-  "screen-layer-composition-parity"
-];
+/*
+ * Parity declared 2026-09-19. The four ULA/screen blockers were re-audited against the VHDL and closed,
+ * each with dual-core tests (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 0), the WASM
+ * machine no longer derives from the TypeScript one (Step 5), and every known TypeScript/WASM
+ * difference in that plan's parity ledger is resolved.
+ */
+export const ZXNEXT_WASM_V2_DEFAULT_READY = true;
+export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [];
 
 const ZXNEXT_SD_HOST_COMMAND_READ = 1;
 const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
@@ -705,6 +708,9 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
     this.syncCpuFromWasmV2(runtime);
     if (this.frameCompleted) {
       this.onInitNewFrame(false);
+      // --- The new frame's audio starts empty, as `zxnextExecuteFrame` begins it. Without this the
+      // --- sample buffers filled in the first frame run here and stayed full: no sound while debugging.
+      wasm.zxnextBeginAudioFrame();
       this.frameCompleted = false;
     }
 
@@ -1150,6 +1156,14 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
       });
     }
     return this.wasmV2AudioSamples;
+  }
+
+  /**
+   * "Snoozed" in the CPU panel: the frame ended while a DMA transfer held the bus, and the CPU has not
+   * run an instruction since. (The TypeScript frame runner's own snooze path is not used here.)
+   */
+  override isCpuSnoozed(): boolean {
+    return (this.wasmV2Runtime?.exports.zxnextGetCpuHeldByDma() ?? 0) !== 0;
   }
 
   override getCpuState(): CpuState {

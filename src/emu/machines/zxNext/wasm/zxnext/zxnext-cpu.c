@@ -23,6 +23,10 @@ static inline void zxnextCpuCaptureVideoInterrupts(void);
    with MREQ held high - SP moves and the cycles take their time, but no byte reaches memory. */
 static uint8_t zxnextCpuMreqSuppressed;
 
+/* The frame ended with the DMA holding the bus (BUSREQ) and no instruction has run since: the CPU
+   panel's "snoozed" */
+static uint8_t zxnextCpuHeldAtFrameEnd;
+
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() zxnextMemory
 #define Z80_READ_MEMORY(address) zxnextCpuSharedReadMemory(address)
@@ -237,6 +241,16 @@ static inline void zxnextCpuCaptureVideoInterrupts(void) {
   zxnextCpuPrevLinePulse = linePulse;
 }
 
+/*
+ * Whether the ULA frame interrupt can be active at this tact. The ULA counters restart with a reset and
+ * the interrupt is a compare against them (zxula_timing.vhd), so frame 0 has its interrupt like any
+ * other frame. Only the part of a pulse that wraps in from the previous frame - the Pentagon's starts
+ * at the frame's last tact - does not exist in frame 0, as no frame came before it.
+ */
+static inline uint32_t zxnextCpuFrameIntStarted(uint32_t renderedFrameTact) {
+  return frames != 0u || renderedFrameTact >= zxnextTimingIntStart;
+}
+
 static inline uint32_t zxnextCpuShouldRaiseInt(void) {
   zxnextCtcSync();
   /* a byte received or the TX FIFO emptied requests at once (nothing to do while both lines are idle) */
@@ -246,14 +260,14 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void) {
        not in IM 2 pulse instead */
     uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
     return zxnextInterruptsShouldAcceptInt() ||
-      (z80GetInterruptMode() != 2u && frames != 0u && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+      (z80GetInterruptMode() != 2u && zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
       zxnextInterruptsPulseActive();
   }
   // --- Pulse mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`). The ULA frame
   // --- interrupt obeys its disable bit; the line interrupt used to be missing altogether.
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
   return zxnextInterruptsGetSignalInt() ||
-    (frames != 0u && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+    (zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
     (lineInterruptEnabled && zxnextVideoLineIntActive(renderedFrameTact)) ||
     zxnextInterruptsPulseActive() ||
     zxnextDmaGetIpSignal();
@@ -325,6 +339,7 @@ static void zxnextCpuClearInstructionAccesses(void) {
 
 static void zxnextCpuReset(void) {
   zxnextSharedCpuExecutedInstructions = 0;
+  zxnextCpuHeldAtFrameEnd = 0u;
   z80Reset();
   z80SetZ80NMode(1);
   z80SetTacts(tacts);
@@ -337,11 +352,6 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint8_t shouldAcceptInt = rawIntSignal && z80GetIff1();
   uint8_t nmiSignal = zxnextNmiGetSignal();
   uint8_t wasHalted = z80GetHalted() != 0u;
-  uint8_t isRetiInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
-    zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x4du;
-  /* im2_control o_retn_seen: exactly ED 45 (not RETI, not the RETN aliases) */
-  uint8_t isRetnInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
-    zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x45u;
   uint32_t cyclesExecuted = 0;
 
   frameCompleted = 0;
@@ -351,7 +361,11 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
-  if (zxnextCpuRunDma()) return zxnextSharedCpuExecutedInstructions;
+  if (zxnextCpuRunDma()) {
+    zxnextCpuHeldAtFrameEnd = 1u;
+    return zxnextSharedCpuExecutedInstructions;
+  }
+  zxnextCpuHeldAtFrameEnd = 0u;
   /* zxnext.vhd ~2008-2041: the acknowledge's push always lands in $C2/$C3; with $C0 bit 3 it does not
      reach memory. The pushed address is past a HALT, as removeFromHaltedState makes it. */
   uint16_t nmiReturnAddress = (uint16_t)(pcBefore + (wasHalted ? 1u : 0u));
@@ -373,10 +387,21 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       ? zxnextInterruptsAcknowledge() : 0xffu);
   }
 
+  /* The opcode bytes the CPU fetched for this instruction - after any paging its own M1 cycle caused
+     (a DivMMC automap at $0066 supplies different code from the ROM that was there) - so RETI / RETN are
+     the instruction the CPU decoded, as the FPGA takes them (~1866-1882, ~4090), not the bytes that
+     happened to be in memory before the fetch. An interrupt acknowledge fetches no opcode. */
+  uint8_t firstOpcode = 0u;
+  uint8_t secondOpcode = 0u;
   do {
     z80ExecuteCpuCycle();
+    if (cyclesExecuted == 0u) firstOpcode = cpu.opCode;
+    else if (cyclesExecuted == 1u) secondOpcode = cpu.opCode;
     cyclesExecuted++;
   } while (z80GetPrefix() != 0 && cyclesExecuted < 4u);
+  uint8_t isRetiInstruction = firstOpcode == 0xedu && secondOpcode == 0x4du && cyclesExecuted == 2u;
+  /* im2_control o_retn_seen: exactly ED 45 (not RETI, not the RETN aliases) */
+  uint8_t isRetnInstruction = firstOpcode == 0xedu && secondOpcode == 0x45u && cyclesExecuted == 2u;
 
   zxnextCpuMreqSuppressed = 0u;
   zxnextSharedCpuExecutedInstructions++;

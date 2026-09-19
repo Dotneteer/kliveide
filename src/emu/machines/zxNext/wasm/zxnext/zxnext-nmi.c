@@ -50,15 +50,21 @@ static uint32_t zxnextNmiAcceptCause(void) {
  * asserted only while its $06 enable is set and latched only while no source is active. A pulse that
  * misses either is gone - it does not wait for the enable.
  */
+static void zxnextNmiUpdateSources(void);
+
+/* The source latches on the next 28 MHz clock (~2051-2070), not at the next opcode fetch - which a DMA
+   transfer holding the bus postpones (and $CC bit 7 lets the NMI stop it) */
 static void zxnextNmiRequestMultiface(void) {
   if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableMultifaceNmiByM1Button()) {
     nmiPendingMf = 1u;
+    zxnextNmiUpdateSources();
   }
 }
 
 static void zxnextNmiRequestDivMmc(void) {
   if (zxnextNmiAcceptCause() && !nmiSourceMf && !nmiSourceDivMmc && zxnextDivMmcGetEnableNmiByDriveButton()) {
     nmiPendingDivMmc = 1u;
+    zxnextNmiUpdateSources();
   }
 }
 
@@ -150,6 +156,11 @@ static void zxnextNmiIoTrap(uint32_t cause, uint32_t value, uint32_t isWrite) {
 static void zxnextNmiSetSignal(uint32_t active) {
   nmiSignalActive = active != 0;
   if (nmiSignalActive && nmiCause == 0) nmiCause = 1;
+}
+
+/* nmi_activated (zxnext.vhd ~2046-2060): an NMI source is latched and not yet served */
+static uint32_t zxnextNmiIsActivated(void) {
+  return nmiSourceMf || nmiSourceDivMmc;
 }
 
 static uint32_t zxnextNmiGetSignal(void) {

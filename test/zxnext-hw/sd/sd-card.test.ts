@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { ALL_CORES, createSession, MemorySdCard, type CoreName, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
 
 /*
  * SPI master and SD card (catalogue SPI-001 - SPI-008; SPI-001's register-level half, the WASM `$E7`
@@ -99,7 +99,7 @@ const LOG = 0xa000;
 const logOf = (s: NextTestSession, n: number) => Array.from(s.peekBytes(LOG, n));
 
 /** Runs `body` (after selecting `select` on $E7) with the image attached; returns the session. */
-async function run(core: CoreName, body: string, opts: { select?: number; img?: Uint8Array; data?: string; maxFrames?: number } = {}) {
+async function run(core: CoreName, body: string, opts: { select?: number; img?: Uint8Array | SdCardBacking; data?: string; maxFrames?: number } = {}) {
   const s = await createSession(core);
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   s.poke(LOG, new Array(0x1800).fill(0xee));
@@ -378,5 +378,114 @@ ${readMore(3)}`,
       { select: 0xff }
     );
     expect(logOf(s, 3)).toEqual([0xff, 0xff, 0xff]);
+  });
+
+  /*
+   * Ported from test/zxnext/SdCardDevice.test.ts (D5, write error response, D1 "no SD swap").
+   */
+
+  it("SPI-010: once a response has been clocked out the card drives $FF (after R1, after a data block)", async () => {
+    // --- SD Physical Layer spec, SPI mode: DO is high between responses; a data block ends with its CRC16
+    const s = await run(
+      core,
+      `
+${send("Cmd0")}
+${readMore(6)}
+${INIT}
+${send("Cmd17")}
+        call WaitTok
+        call Store
+        ld hl,$b000
+        ld b,0
+        inir
+        inir
+${readMore(6)}`,
+      { data: `${INIT_DATA}\nTries: .defb 0\nCmd17: ${defb(cmd(17, 3))}` }
+    );
+    const log = logOf(s, 200);
+    expect(log.slice(0, 7), "CMD0: R1, then high").toEqual([0x01, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+    const end = log.indexOf(0xee);
+    const crc = crc16(Array.from(s.peekBytes(0xb000, 512)));
+    expect(log.slice(end - 8, end), "CMD17: R1, token, 512 bytes (in memory), CRC16, then high").toEqual([
+      0x00, 0xfe, crc >> 8, crc & 0xff, 0xff, 0xff, 0xff, 0xff
+    ]);
+  });
+
+  it("SPI-011: a write the medium refuses answers the data response 'write error' and leaves the sector as it was", async () => {
+    // --- SD spec 7.3.3.1: data response token xxx0 sss1, sss = 010 accepted, 110 write error (& $1F = $0D).
+    // --- The host storage throws on sector 9, as a failed or unconfirmed write of the image file does.
+    const img = image();
+    const inner = new MemorySdCard(img);
+    const refusing: SdCardBacking = {
+      get totalSectors() {
+        return inner.totalSectors;
+      },
+      readSector: (n) => inner.readSector(n),
+      writeSector: (n, d) => {
+        if (n === 9) throw new Error("medium error");
+        inner.writeSector(n, d);
+      }
+    };
+    const block = Array.from({ length: 512 }, (_, i) => (i * 5 + 0x33) & 0xff);
+    const crc = crc16(block);
+    const s = await run(
+      core,
+      `${INIT}
+${send("Cmd24")}
+        ld a,$ff
+        out (c),a
+        ld a,$fe
+        out (c),a
+        ld hl,Block
+        ld b,0
+        otir
+        otir
+        ld a,$${(crc >> 8).toString(16)}
+        out (c),a
+        ld a,$${(crc & 0xff).toString(16)}
+        out (c),a
+        call WaitTok
+        call Store                ; data response
+        ld de,4000
+Busy:   in a,(c)
+        cp $ff
+        jr z,NotBusy
+        dec de
+        ld a,d
+        or e
+        jr nz,Busy
+NotBusy:
+${send("Cmd17")}
+        call WaitTok
+        call Store
+        ld hl,$b000
+        ld b,0
+        inir
+        inir`,
+      { img: refusing, data: `${INIT_DATA}\nTries: .defb 0\nCmd24: ${defb(cmd(24, 9))}\nCmd17: ${defb(cmd(17, 9))}\nBlock: ${defb(block)}` }
+    );
+    const log = logOf(s, 200);
+    const end = log.indexOf(0xee);
+    const [r1, response, r1Read, token] = log.slice(end - 4, end);
+    expect(r1, "CMD24 R1").toBe(0x00);
+    expect(response & 0x1f, "data response: write error").toBe(0x0d);
+    expect([r1Read, token], "the card still answers CMD17").toEqual([0x00, 0xfe]);
+    expect(Array.from(s.peekBytes(0xb000, 512)), "sector 9 unchanged").toEqual(sectorOf(image(), 9));
+    expect(sectorOf(img, 9), "the image too").toEqual(sectorOf(image(), 9));
+  });
+
+  it("SPI-012: NextReg $0A bit 5 does not swap the SD cards: $E7 = $FE still reaches card 0", async () => {
+    // --- nextreg.txt $0A bit 5 "Reserved, must be zero"; zxnext.vhd ~5171-5175 stores no bit 5 and the
+    // --- $E7 decode (~3305-3321) looks at nothing else: there is no card swap on the Next.
+    const s = await run(core, `        nextreg $0a,$30\n${send("Cmd0")}`, { data: INIT_DATA });
+    expect(logOf(s, 1)).toEqual([0x01]);
+  });
+
+  it("SPI-012: NextReg $0A bit 5 reads back 0", async () => {
+    // --- zxnext.vhd ~5858: $0A reads mf_type & '0' & automap & reverse & '0' & dpi
+    const s = await createSession(core);
+    await s.loadCode(" .org $8000\n di\nPark: jr Park");
+    s.setNextReg(0x0a, 0x30);
+    expect(s.readNextReg(0x0a) & 0x20).toBe(0x00);
   });
 });

@@ -1,5 +1,9 @@
 # ZX Spectrum Next WASM Migration Plan
 
+> **Status 2026-09-19:** the WASM machine no longer derives from the TypeScript `ZxNextMachine`
+> (`ZxNextWasmHost`), and the ULA/screen blockers are closed. The TypeScript backend's deprecation plan
+> (the one Step 28 asks for) is `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`.
+
 Created: 2026-08-16
 
 Status: Reopened for ULA/screen parity correction. The normal ZX Spectrum Next

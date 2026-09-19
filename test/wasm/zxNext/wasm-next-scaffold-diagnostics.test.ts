@@ -34,13 +34,8 @@ describe("ZX Spectrum Next WASM migration diagnostics oracle guard", () => {
   it("fails loudly when migration diagnostics change without updating the guard", async () => {
     expect(() =>
       expectCurrentMigrationDiagnosticsMatchRolloutGuard({
-        defaultReady: false,
-        defaultBlockers: [
-          "ula-screen-tact-pipeline-parity",
-          "ula-timex-mode-rendering-parity",
-          "ula-next-plus-rendering-parity",
-          "screen-layer-composition-parity"
-        ],
+        defaultReady: true,
+        defaultBlockers: [],
         migratedSurfaces: ["debug"]
       })
     ).toThrow(/migrated surfaces changed without updating oracle coverage/);
@@ -49,15 +44,20 @@ describe("ZX Spectrum Next WASM migration diagnostics oracle guard", () => {
   it("fails loudly when default readiness changes without updating the guard", async () => {
     expect(() =>
       expectCurrentMigrationDiagnosticsMatchRolloutGuard({
-        defaultReady: true,
-        defaultBlockers: [
-          "ula-screen-tact-pipeline-parity",
-          "ula-timex-mode-rendering-parity",
-          "ula-next-plus-rendering-parity",
-          "screen-layer-composition-parity"
-        ],
+        defaultReady: false,
+        defaultBlockers: [],
         migratedSurfaces: ZXNEXT_ORACLE_MIGRATED_SURFACES
       })
     ).toThrow(/defaultReady without updating the rollout guard/);
+  });
+
+  it("fails loudly when a closed blocker comes back without updating the guard", async () => {
+    expect(() =>
+      expectCurrentMigrationDiagnosticsMatchRolloutGuard({
+        defaultReady: true,
+        defaultBlockers: ["ula-screen-tact-pipeline-parity"],
+        migratedSurfaces: ZXNEXT_ORACLE_MIGRATED_SURFACES
+      })
+    ).toThrow(/default blockers changed without updating the rollout guard/);
   });
 });

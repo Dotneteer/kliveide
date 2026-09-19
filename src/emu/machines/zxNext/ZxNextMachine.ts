@@ -340,7 +340,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
       iff2: this.iff2,
       sigINT: this.sigINT,
       halted: this.halted,
-      snoozed: this.isCpuSnoozed(),
+      snoozed: this._cpuHeldAtFrameEnd || this.isCpuSnoozed(),
       opStartAddress: this.opStartAddress,
       lastMemoryReads: this.lastMemoryReads,
       lastMemoryReadValue: this.lastMemoryReadValue,
@@ -404,6 +404,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
     this.nextRegDevice.configMode = false;
     this._prevUlaIntPulse = false;
     this._prevLineIntPulse = false;
+    this._cpuHeldAtFrameEnd = false;
     // --- The reset restarts the frame (tacts and frameTacts are 0): rewind the raster with it, or
     // --- nothing is rendered - and no interrupt is captured - until the new frame reaches the tact
     // --- the old one had got to (the WASM core already restarts both).
@@ -607,6 +608,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
   private assertMfNmi(): void {
     if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableMultifaceNmiByM1Button) {
       this._pendingMfNmi = true;
+      // --- ~2051-2070: the source latches on the next 28 MHz clock, not at the next opcode fetch -
+      // --- which a DMA transfer holding the bus postpones (and $CC bit 7 lets the NMI stop it)
+      this.updateNmiSources();
     }
   }
 
@@ -614,6 +618,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
   private assertDivMmcNmi(): void {
     if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableDivMmcNmiByDriveButton) {
       this._pendingDivMmcNmi = true;
+      this.updateNmiSources();
     }
   }
 
@@ -1301,6 +1306,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
    * Execute this method before fetching the opcode of the next instruction
    */
   beforeOpcodeFetch(): void {
+    this._cpuHeldAtFrameEnd = false;
     this.divMmcDevice.beforeOpcodeFetch();
 
     // 1. Accept new NMI causes (only in IDLE or FETCH)
@@ -1366,6 +1372,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
   /** The DMA kept the bus across a frame end: the CPU runs no instruction in this loop pass. */
   private _cpuHeldByDma = false;
 
+  /** The frame ended with the DMA holding the bus, and no opcode has been fetched since ("snoozed"). */
+  private _cpuHeldAtFrameEnd = false;
+
   isCpuSnoozed(): boolean {
     return this._cpuHeldByDma || super.isCpuSnoozed();
   }
@@ -1373,6 +1382,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
   onSnooze(): void {
     if (this._cpuHeldByDma) {
       this._cpuHeldByDma = false;
+      // --- Still held (BUSREQ) when the frame stops here: what the CPU panel reports until an opcode is
+      // --- fetched again
+      this._cpuHeldAtFrameEnd = true;
       return;
     }
     super.onSnooze();
