@@ -8,7 +8,7 @@ uint32_t zxnextI2cReadSclPort(void);
 uint32_t zxnextI2cReadSdaPort(void);
 void zxnextI2cWriteSclPort(uint32_t value);
 void zxnextI2cWriteSdaPort(uint32_t value);
-uint32_t zxnextGetI2cScl(void);
-uint32_t zxnextGetI2cSda(void);
+void zxnextRtcSetTime(uint32_t seconds, uint32_t minutes, uint32_t hours, uint32_t day, uint32_t date,
+                      uint32_t month, uint32_t year);
 
 #endif

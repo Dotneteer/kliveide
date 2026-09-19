@@ -154,6 +154,7 @@ static void zxnextUlaReset(void) {
   ulaHalfPixelScroll = 0u;
   ulaEnableStencilMode = 0u;
   ulaPlusEnabled = 0u;
+  zxnextKeyboardSetCancelExtended(0u); /* nr_68_cancel_extended_keys <= '0' (~5006) */
   ulaPlusMode = 0u;
   ulaPlusIndex = 0u;
   ulaPortBit4ChangedFrom0Tacts = 0u;
@@ -1274,6 +1275,8 @@ static void zxnextUlaSetNextReg(uint32_t reg, uint32_t value) {
       ulaHalfPixelScroll = (byteValue & 0x04u) != 0u;
       ulaEnableStencilMode = (byteValue & 0x01u) != 0u;
       ulaPlusEnabled = (byteValue & 0x08u) != 0u;
+      /* bit 4: the extra keys stop making matrix entries (membrane.vhd i_cancel_extended_entries) */
+      zxnextKeyboardSetCancelExtended(byteValue & 0x10u);
       break;
     case 0x69u:
       /* ~3615: a $69 write sets port_ff_reg(5:0); bits 7-6 stay */
@@ -1310,6 +1313,7 @@ static uint32_t zxnextUlaGetNextReg(uint32_t reg) {
     case 0x68u:
       return (ulaDisableOutput ? 0x80u : 0u) |
         ((uint32_t)ulaBlendingInSluModes << 5u) |
+        (zxnextKeyboardGetCancelExtended() ? 0x10u : 0u) |
         (ulaPlusEnabled ? 0x08u : 0u) |
         (ulaHalfPixelScroll ? 0x04u : 0u) |
         (ulaEnableStencilMode ? 0x01u : 0u);

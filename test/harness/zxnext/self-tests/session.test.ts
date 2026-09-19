@@ -188,6 +188,151 @@ Cmd:    .defb $51,0,0,0,3,$01`;
     await t.loadCode(program);
     expect(() => t.runUntilReady()).toThrow(/frame command/);
   });
+
+  it("mouse: packets move the Kempston counters; buttons stay held until the next packet names them", async () => {
+    const s = await createSession(core);
+    await s.loadCode(" .org $8000\n di\n jr $");
+    expect([s.in(0xfbdf), s.in(0xffdf), s.in(0xfadf)], "power-on").toEqual([0x00, 0x00, 0x0f]);
+    s.mouse({ dx: 3, dy: -2, wheel: 1, buttons: ["left"] });
+    expect([s.in(0xfbdf), s.in(0xffdf), s.in(0xfadf)], "one packet").toEqual([0x03, 0xfe, 0x1d]);
+    s.mouse({ dx: 1 });
+    expect([s.in(0xfbdf), s.in(0xfadf)], "left still held").toEqual([0x04, 0x1d]);
+    expect(() => s.mouse({ dx: 300 }), "a PS/2 packet's range").toThrow(/-255..255/);
+  });
+
+  it("joystick: buttons reach the Kempston port, the MD pad's extra buttons $B2", async () => {
+    const s = await createSession(core);
+    await s.loadCode(" .org $8000\n di\n jr $");
+    s.setNextReg(0x05, 0x48); // --- left: MD 1 on $1F
+    expect(s.in(0x1f), "nothing pressed").toBe(0x00);
+    s.joystick("left", "UP", "B", "START");
+    expect(s.in(0x1f), "UP, fire, START").toBe(0x98);
+    s.joystick("left", "X").joystick("right", "MODE");
+    expect([s.in(0x1f), s.readNextReg(0xb2)], "X, right MODE").toEqual([0x00, 0x18]);
+    s.joystick("right");
+    expect(s.readNextReg(0xb2), "right released").toBe(0x08);
+  });
+
+  it("keyDown / keyUp: matrix keys reach $xxFE, extra keys $B0 and their matrix combination", async () => {
+    const s = await createSession(core);
+    await s.loadCode(" .org $8000\n di\n jr $");
+    expect(s.in(0xfbfe) & 0x1f, "nothing pressed").toBe(0x1f);
+    s.keyDown("Q").runFrames(1);
+    expect(s.in(0xfbfe) & 0x1f, "Q: row A10, bit 0").toBe(0x1e);
+    s.keyUp("Q").keyDown("UP").runFrames(1);
+    expect(s.readNextReg(0xb0), "UP in $B0").toBe(0x08);
+    expect([s.in(0xfefe) & 0x1f, s.in(0xeffe) & 0x1f], "UP = CAPS + 7").toEqual([0x1e, 0x17]);
+    s.keyUp("UP").runFrames(1);
+    expect([s.readNextReg(0xb0), s.in(0x00fe) & 0x1f], "released").toEqual([0x00, 0x1f]);
+  });
+
+  it("setRtcTime: the DS1307 on the I2C bus reports the set year", async () => {
+    // --- Minimal bit-banged read of register 6 (year): START $D0 $06, START $D1, 8 bits, NACK, STOP
+    const program = `
+        .org $8000
+        ld bc,$113b
+        ld e,$d0
+        call Start
+        call Byte
+        ld e,$06
+        call Byte
+        ld e,$d1
+        call Start
+        call Byte
+        ld d,8
+Rd:     ld b,$10
+        ld a,1
+        out (c),a
+        ld b,$11
+        in a,(c)
+        rra
+        rl l
+        ld b,$10
+        xor a
+        out (c),a
+        dec d
+        jr nz,Rd
+        ld a,l
+        ld ($9000),a
+        nextreg $7f,$a5
+        jr $
+Start:  ld b,$11
+        ld a,1
+        out (c),a
+        ld b,$10
+        out (c),a
+        ld b,$11
+        xor a
+        out (c),a
+        ld b,$10
+        out (c),a
+        ret
+Byte:   ld d,8
+Bit:    ld b,$11
+        xor a
+        rl e
+        rla
+        out (c),a
+        ld b,$10
+        ld a,1
+        out (c),a
+        xor a
+        out (c),a
+        dec d
+        jr nz,Bit
+        ld b,$11
+        ld a,1
+        out (c),a
+        ld b,$10
+        out (c),a
+        xor a
+        out (c),a
+        ret`;
+    for (const year of [31, 2047]) {
+      const s = await createSession(core);
+      s.setRtcTime({ year, month: 1, date: 1, day: 1, hours: 0, minutes: 0, seconds: 0 });
+      await s.loadCode(program);
+      s.runUntilReady();
+      expect(s.peek(0x9000), `year ${year}`).toBe(year === 31 ? 0x31 : 0x47);
+    }
+  });
+
+  it("UART peer: frames arrive with time, output collects what the Next sends, CTS/RTR/loopback/break act", async () => {
+    // --- A Z80 echo: every received byte goes back out on UART 0
+    const s = await createSession(core);
+    await s.loadCode(`
+        .org $8000
+        ld bc,$133b
+Wait:   in a,(c)
+        rra
+        jr nc,Wait
+        ld b,$14
+        in a,(c)
+        ld b,$13
+        out (c),a
+        jr Wait`);
+    s.uartSend(0, [1, 2, 3]);
+    expect(s.uartOutput(0), "nothing before time runs").toEqual([]);
+    s.runFrames(1);
+    expect(s.uartOutput(0), "echoed").toEqual([1, 2, 3]);
+    expect(s.uartOutput(1), "UART 1 untouched").toEqual([]);
+
+    // --- A break sets status bit 7 (visible to the program as a pause in echoing)
+    const p = await createSession(core);
+    await p.loadCode(" .org $8000\n di\n jr $");
+    p.uartBreak(0, true).runFrames(1);
+    expect(p.in(0x133b) & 0x80, "break").toBe(0x80);
+    p.uartBreak(0, false).runFrames(1);
+    expect(p.in(0x133b) & 0x80, "released").toBe(0);
+
+    // --- Loopback wires TX to RX; CTS holds the transmitter only with flow control on
+    p.uartLoopback(0, true).out(0x163b, 0x38).uartSetCts(0, false).out(0x133b, 0x42).runFrames(1);
+    expect(p.in(0x133b) & 0x01, "held by CTS").toBe(0);
+    p.uartSetCts(0, true).runFrames(1);
+    expect(p.in(0x143b), "looped back").toBe(0x42);
+    p.uartLoopback(0, false).uartSend(0, Array(600).fill(0x55)).runFrames(5);
+    expect(p.uartReadyToReceive(0), "RTR with flow control and a full FIFO").toBe(false);
+  });
 });
 
 describe("harness session - parity", () => {

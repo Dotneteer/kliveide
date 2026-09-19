@@ -77,9 +77,9 @@ static uint32_t zxnextPortsRead(uint32_t address) {
     zxnextDmaSetMode(1);
     lastPortValue = zxnextDmaReadStatusByte();
   } else if ((normalized & 0x00ffu) == 0x00dfu && (normalized & 0x0f00u) >= 0x0a00u && (normalized & 0x0f00u) != 0x0c00u &&
-             (normalized & 0x0f00u) != 0x0d00u && (normalized & 0x0f00u) != 0x0e00u) {
-    /* ~2615-2617: $xADF / $xBDF / $xFDF (A11-8), with the mouse port enable */
-    lastPortValue = zxnextPortsGroupEnabled(1, 5) ? zxnextInputReadPort(0xf0dfu | (normalized & 0x0f00u)) : 0xffu;
+             (normalized & 0x0f00u) != 0x0d00u && (normalized & 0x0f00u) != 0x0e00u && zxnextPortsGroupEnabled(1, 5)) {
+    /* ~2624-2626: $xADF / $xBDF / $xFDF (A11-8) while the mouse port is on; off, they are plain $DF reads */
+    lastPortValue = zxnextInputReadPort(0xf0dfu | (normalized & 0x0f00u));
   } else if ((normalized & 0x00ffu) == 0x001fu ||
              ((normalized & 0x00ffu) == 0x00dfu && zxnextPortsGroupEnabled(2, 7) && !zxnextPortsGroupEnabled(1, 5))) {
     /* ~2622: $1F, or $DF with the Specdrum port on and the mouse off */

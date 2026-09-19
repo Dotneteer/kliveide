@@ -58,6 +58,7 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x15] = 0x00;
   zxnextNextRegs[0x16] = 0x00;
   zxnextNextRegs[0x17] = 0x00;
+  zxnextNextRegs[0x7f] = 0xff; /* zxnext.vhd:1210 nr_7f_user_register_0 := X"FF" (no reset branch) */
   zxnextNextRegs[0x1c] = 0x00;
   zxnextNextRegs[0x1e] = 0x00;
   zxnextNextRegs[0x1f] = 0x00;
@@ -90,7 +91,6 @@ static void zxnextNextRegHardReset(void) {
   zxnextDivMmcSetNextRegB9(zxnextNextRegs[0xb9]);
   zxnextDivMmcSetNextRegBA(zxnextNextRegs[0xba]);
   zxnextDivMmcSetNextRegBB(zxnextNextRegs[0xbb]);
-  zxnextMouseSetNextReg0A(zxnextNextRegs[0x0a]);
   zxnextPsgSetAyStereoMode(zxnextNextRegs[0x08] & 0x20u);
   zxnextDacSetEnabled(zxnextNextRegs[0x08] & 0x08u);
   zxnextExpansionHardReset();
@@ -447,6 +447,8 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   }
   /* $0A bits 7-6 (Multiface type) change only in config mode (~5170) */
   if (normalized == 0x0au && !zxnextConfigMode) value = (value & 0x3fu) | (zxnextNextRegs[0x0au] & 0xc0u);
+  /* $06 bit 2 (PS/2 mode) changes only in config mode (~5145) */
+  if (normalized == 0x06u && !zxnextConfigMode) value = (value & 0xfbu) | (zxnextNextRegs[0x06u] & 0x04u);
   if (normalized == 0x09u) {
     zxnextDivMmcSetNextReg09(value);
   } else if (normalized == 0x06u) {
@@ -454,7 +456,6 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextDivMmcSetEnableMultifaceNmiByM1Button(value & 0x08u);
   } else if (normalized == 0x0au) {
     zxnextDivMmcSetNextReg0A(value);
-    zxnextMouseSetNextReg0A(value);
   } else if (normalized == 0x1cu) {
     if ((value & 0x01u) != 0u) zxnextLayer2ResetClipIndex();
     if ((value & 0x02u) != 0u) zxnextSpritesResetClipIndex();
@@ -504,11 +505,22 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   zxnextCopperSetNextReg(normalized, value);
   if (zxnextExpansionHandlesNextReg(normalized)) zxnextExpansionSetNextReg(normalized, value);
   zxnextMemorySetNextRegister(reg, value);
+  /* $28 / $29 / $2B: the key-joystick map (zxnext.vhd ~6244) */
+  if (normalized == 0x28u || normalized == 0x29u || normalized == 0x2bu) zxnextJoystickWriteKeymapRegister(normalized, value);
+  /* $C6 bits 1 / 5 (near full only) change the UART RX request level itself (zxnext.vhd ~1898) */
+  if (normalized == 0xc6u) zxnextUartOnInterruptEnableChanged();
 }
 
 static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
   if (zxnextInterruptsHandlesNextRegister(reg)) return zxnextInterruptsGetNextRegister(reg);
   switch (reg & 0xffu) {
+    /* ~6152-6158: the membrane's extra keys */
+    case 0xb0u:
+      return zxnextKeyboardGetNextRegB0();
+    case 0xb1u:
+      return zxnextKeyboardGetNextRegB1();
+    case 0xb2u:
+      return zxnextJoystickGetNextRegB2();
     // --- Active video line: the copper line (hardware `cvc`, $64 offset included) the beam is on.
     // --- Computed, not stored. Mirrors NextComposedScreenDevice.activeVideoLine, which is updated
     // --- as each tact renders, i.e. it holds the line of the last tact before currentFrameTact.

@@ -194,6 +194,8 @@ static inline void zxnextCpuCaptureVideoInterrupts(void) {
 
 static inline uint32_t zxnextCpuShouldRaiseInt(void) {
   zxnextCtcSync();
+  /* a byte received or the TX FIFO emptied requests at once (nothing to do while both lines are idle) */
+  if (zxnextUartNextEvent != ZXNEXT_UART_NEVER) zxnextUartSync();
   if (zxnextInterruptsGetHardwareIm2Mode()) {
     /* The chain interrupts a CPU in IM 2 only; the ULA (EXCEPTION) and requests raised while the CPU was
        not in IM 2 pulse instead */

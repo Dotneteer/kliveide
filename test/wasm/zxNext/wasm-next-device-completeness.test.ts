@@ -41,16 +41,32 @@ const DEVICE_COVERAGE: DeviceCoverage[] = [
     requiredSemantics: ["control register", "time constant", "timer/counter clocking", "interrupt enable"]
   },
   {
-    device: "UART/I2C",
-    wasmSuites: ["wasm-next-uart-i2c.test.ts"],
-    typeScriptSuites: ["UartDevice.test.ts", "I2cDevice.test.ts"],
-    requiredSemantics: ["UART FIFOs", "UART status", "UART channel selection", "I2C SCL/SDA state"]
+    device: "UART",
+    // --- the hardware-interface tests of test/zxnext-hw/uart run on both cores (they replaced the mocks)
+    wasmSuites: ["../../zxnext-hw/uart/uart.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/uart/uart.test.ts"],
+    requiredSemantics: ["UART FIFOs", "UART status", "UART channel selection", "UART timing", "UART interrupts"]
   },
   {
-    device: "joystick/mouse",
-    wasmSuites: ["wasm-next-input.test.ts"],
-    typeScriptSuites: ["KempstonJoystick.test.ts", "KempstonMouse.test.ts"],
-    requiredSemantics: ["Kempston joystick reads", "Mega Drive joystick reads", "Kempston mouse movement/buttons/wheel"]
+    device: "I2C / DS1307",
+    // --- the hardware-interface tests of test/zxnext-hw/i2c run on both cores (they replaced the mocks)
+    wasmSuites: ["../../zxnext-hw/i2c/i2c-rtc.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/i2c/i2c-rtc.test.ts", "I2cDevice.test.ts"],
+    requiredSemantics: ["I2C SCL/SDA state", "DS1307 protocol", "DS1307 clock", "DS1307 RAM"]
+  },
+  {
+    device: "joystick",
+    // --- the hardware-interface tests of test/zxnext-hw/joystick run on both cores (they replaced the mocks)
+    wasmSuites: ["../../zxnext-hw/joystick/joystick.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/joystick/joystick.test.ts"],
+    requiredSemantics: ["Kempston joystick reads", "Mega Drive joystick reads", "key joystick", "joystick I/O mode"]
+  },
+  {
+    device: "mouse",
+    // --- the hardware-interface tests of test/zxnext-hw/mouse run on both cores (they replaced the mocks)
+    wasmSuites: ["../../zxnext-hw/mouse/mouse.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/mouse/mouse.test.ts"],
+    requiredSemantics: ["Kempston mouse movement/buttons/wheel", "mouse DPI and button reverse"]
   },
   {
     device: "expansion/multiface",

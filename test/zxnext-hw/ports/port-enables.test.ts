@@ -150,7 +150,8 @@ const SCENARIOS: Scenario[] = [
   },
   // --- bit 11 (SPI $E7/$EB) reads $FF enabled or not without an SD card: not observable here
   { bit: 12, port: "$133B (UART status)", observe: (s) => s.in(0x133b), enabled: 0x10, disabled: 0xff },
-  { bit: 13, port: "$FADF (mouse buttons)", observe: (s) => s.in(0xfadf), enabled: 0x0f, disabled: 0xff },
+  // --- ~2630: with the mouse off $FADF is a $DF read, which Kempston 1 answers - no joystick mode here
+  { bit: 13, port: "$FADF (mouse buttons)", observe: (s) => s.setNextReg(0x05, 0x00).in(0xfadf), enabled: 0x0f, disabled: 0xff },
   { bit: 14, port: "$303B (sprite status)", observe: (s) => s.in(0x303b), enabled: 0x00, disabled: 0xff },
   {
     bit: 15, port: "$123B (Layer 2)",

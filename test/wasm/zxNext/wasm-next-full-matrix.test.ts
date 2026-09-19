@@ -180,8 +180,10 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "input",
     requiredDomain: "input",
-    typeScriptTests: ["KempstonJoystick.test.ts", "KempstonMouse.test.ts"],
-    wasmSuites: ["wasm-next-input.test.ts", "wasm-next-keyboard-ula.test.ts"],
+    // --- The joysticks and the mouse run on both cores in test/zxnext-hw/joystick and test/zxnext-hw/mouse
+    // --- (they replaced KempstonJoystick.test.ts and KempstonMouse.test.ts)
+    typeScriptTests: [],
+    wasmSuites: ["wasm-next-keyboard-ula.test.ts"],
     reason: "wasm-suite"
   },
   {
@@ -213,10 +215,10 @@ const MATRIX: MatrixEntry[] = [
       "I2cDevice.test.ts",
       "InterruptDevice.test.ts",
       "NmiSoftware.test.ts",
-      "NmiStateMachine.test.ts",
-      "UartDevice.test.ts"
+      "NmiStateMachine.test.ts"
     ],
-    wasmSuites: ["wasm-next-ctc.test.ts", "wasm-next-interrupts.test.ts", "wasm-next-nmi.test.ts", "wasm-next-uart-i2c.test.ts"],
+    // --- The UART and I2C run on both cores in test/zxnext-hw/uart and test/zxnext-hw/i2c
+    wasmSuites: ["wasm-next-ctc.test.ts", "wasm-next-interrupts.test.ts", "wasm-next-nmi.test.ts"],
     reason: "wasm-suite"
   },
   {

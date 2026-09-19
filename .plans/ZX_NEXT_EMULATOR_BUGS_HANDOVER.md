@@ -1079,7 +1079,9 @@ ports - and each such partial render recomputed the sprite line-timing table for
 sprites (`zxnextUlaComputeSpriteLineCuts`). The table is per line, so a partial render now computes only
 the rows it draws; the once-a-frame collision pass still computes all of them. ScrollNutter: 29.4 ->
 9.6 ms a frame. Guard: `test/wasm/zxNext/wasm-next-raster-sprite-cost.test.ts` (fails at 9.6x with the old
-code). Still open: the TS core runs ScrollNutter at ~25 ms a frame (not the default core); and each
+code; ~2.2x with the fix). Wall-clock, so it runs both programs side by side in interleaved rounds and
+judges the median ratio against 4.5x - a single sample under parallel test load swung 1.7x-3.1x and
+made the earlier one-shot 2.5x limit flaky (2026-09-19). Still open: the TS core runs ScrollNutter at ~25 ms a frame (not the default core); and each
 catch-up still re-renders every layer for the touched rows, so a program writing the sprite ports tens
 of thousands of times a frame stays expensive by design.
 
@@ -1181,6 +1183,110 @@ SPI-003, SPI-006, SPI-007 (the card follows the SD Physical Layer spec, SPI mode
 Harness: `attachSdCard` / `runFramesAsync` / `runUntilReadyAsync` (README "Session API") serve an image
 from memory - or a CIM clone - through the machines' own `processFrameCommand`. Not modelled: CMD25
 (multi-block write) in either core; the flash chip on $E7 = $7F.
+
+### B87 – UART: a register stub with no lines, no timing and no interrupts – FIXED 2026-09-18
+
+UART-001 - UART-010 (serial/uart.vhd, uart_tx.vhd, uart_rx.vhd, fifop.vhd; both cores).
+- **`$153B` bit 4** wrote the prescaler MSB of the *previously* selected UART; uart.vhd routes it by bit 6
+  of the same write.
+- **`$163B` bit 7** was a one-shot FIFO clear and read back as 0. The VHDL stores all 8 bits and holds
+  the FIFOs and both state machines in reset for as long as bit 7 is set (TX empty reads 0 meanwhile).
+- **A soft reset** restored the prescalers and frame registers. The UART's `i_reset_hard` is tied to '0'
+  ("hard_reset done by core load"): only a core load - a `$02` hard reset reboots the FPGA - resets them.
+- **No transmitter**: TS emptied the TX FIFOs at every frame start, WASM never did - after 64 bytes TX
+  full stayed set for ever and a driver waiting for room hung. TX empty ignored the byte being sent.
+  Both cores now shift each byte out in (start + data + parity + stop) x prescaler 28 MHz clocks, with
+  break (bit 6) and CTS flow control (bit 5).
+- **No receiver**: bytes could only be pushed by a host call, instantly. The RX line now takes frames
+  from a peer, available half a bit before the frame ends; FIFO 512 plus one byte held while full, the
+  next one overflowing; parity / stop-bit errors throw the byte away and flag the next; a held-low line
+  reports a break; RTR (almost full, 510) with flow control.
+- **No UART interrupts** in either core (TS had the status fields, nothing set them; WASM had none). The
+  request levels of zxnext.vhd ~1897 (RX near full or available unless `$C6` asks near-full only, TX
+  FIFO empty) now raise im2_peripheral edges: status in `$CA`, IM2 vectors 1/2/12/13, pulses in pulse
+  mode. Every reset latches the TX empty status bits (`$CA` = `$44`): int_req_d is 0 in reset.
+- Harness: the `uart` peer (`uartSend`, `uartBreak`, `uartSetCts`, `uartLoopback`,
+  `uartReadyToReceive`, `uartOutput`); the old host API (`pushRxByte`, `popTxByte`, ...) and its WASM
+  exports are gone. Not modelled: the UART on the joystick port (`$0B` I/O mode), the DMA break-in from
+  UART interrupts on WASM (`$CE`), anything shorter than a whole frame on the RX line.
+
+### B88 – User register `$7F` was not `$FF` at power-on – FIXED 2026-09-18
+
+NR-011. zxnext.vhd:1210 `nr_7f_user_register_0 := X"FF"` with no reset branch: power-on and a hard
+reset (a core load) give `$FF`, a soft reset keeps it. TS kept the last value across a hard reset;
+WASM powered on with `$00`. Test: `test/zxnext-hw/nextreg/soft-reset.test.ts`.
+
+### B89 – DS1307: missing on WASM; TS lost it on every reset, ran on frames, read live registers – FIXED 2026-09-18
+
+I2C-002 - I2C-004 (Maxim DS1307 datasheet; both cores, `I2cDevice.ts` / `zxnext-i2c.c`).
+- **WASM had no DS1307**: the I2C ports were bare lines, so nothing ACKed `$D0` and NextZXOS showed no
+  date. It now has the same model as TS, set to the host's time at start-up like the TS core.
+- **TS reset the chip with the Next**: every soft or hard reset cleared the 56 RAM bytes and reloaded
+  the host time. The chip is battery backed and not part of the FPGA: a Next reset only releases SCL
+  and SDA (zxnext.vhd ~3232).
+- **TS counted seconds as 50 frames** (at 49.4 frames/s on +3 timing, 1.3% fast) and a seconds write
+  did not restart the second. Both cores now count 28M clocks of 28 MHz per second (the wall clock
+  the app paces by) from the last seconds write (the countdown chain reset).
+- **The time came from the running registers**; the DS1307 reads from user buffers copied at START,
+  so a read that spans a second boundary stays consistent.
+- Harness: `setRtcTime`. Shared lazy clocks: `Clock28.ts` / `zxnext-clock28.c` (the UARTs use them too).
+  SPI-009 now compares the whole NextZXOS menu, date line included. Not modelled: the SQW/OUT pin, the
+  Pi's I2C on GPIO 2/3 (`$A0` bit 3), clock stretching (the DS1307 does none).
+
+### B90 – The Next's 16 extra keys could not be pressed; `$68` bit 4 and `$06` bit 2 – FIXED 2026-09-19
+
+KEY-004, KEY-005, KEY-008 (input/membrane/membrane.vhd, zxnext.vhd; both cores).
+- **No extra keys**: both cores took only the 40 matrix keys. The Next membrane's columns 5-6 (EXTEND,
+  UP, CAPS LOCK, GRAPH, TRUE/INV VIDEO, BREAK, EDIT, `;` `"` `,` `.`, DELETE, the arrows) are now codes
+  40-55 of `setKeyStatus` (40 + the bit in `o_extended_keys`). Each also enters its two matrix keys
+  (e.g. UP = CAPS+7, `;` = SYM+O) as membrane.vhd `matrix_work_ex` does, and `$B0`/`$B1` report them:
+  TS had the register layout but nothing set its flags; WASM read both as constant 0.
+- **`$68` bit 4** (cancel the extra keys' matrix entries): WASM neither stored nor read it back; TS
+  stored it and nothing used it.
+- **`$06` bit 2** (PS/2 mode) was written outside config mode; zxnext.vhd ~5145 writes it only in
+  config mode. `test/zxnext/NextRegDevice.test.ts` expected the old behaviour and was corrected.
+- Harness: `keyDown` / `keyUp`. The app's virtual Next keyboard still sends the extra keys as their
+  combinations (so they keep the combination even with `$68` bit 4 set); not changed here. Not
+  modelled: the membrane's one-scan lead / extra-scan hold of the shift keys (membrane.vhd), electrical
+  ghosting.
+
+### B91 – Joysticks: WASM ignored `$05`; undecoded `$1F`/`$37`; no key joystick, `$B2` or I/O mode – FIXED 2026-09-19
+
+JOY-001 - JOY-008, KEY-007 (zxnext.vhd ~3426-3536, membrane_stick.vhd, md6_joystick_connector_x2.vhd;
+both cores).
+- **WASM ignored `$05`**: its joystick modes came only from a host call nothing made, so both sticks
+  stayed in mode 000. The modes now come from the stored `$05` (bit 3 & 7-6 / bit 1 & 5-4).
+- **`$1F` / `$37` answered in every mode** (with `$00`); they are decoded only while a joystick is in
+  Kempston 1 / MD 1 (Kempston 2 / MD 2) mode - otherwise no device answers and the read is `$FF`.
+- **No key joystick**: the Sinclair, Cursor and user-defined modes press membrane keys
+  (membrane_stick.vhd with the joymap RAM, initialised from keyjoy_64_6.coe): `011` = 7 6 8 9 0, `000` =
+  2 1 3 4 5, `010` = 8 5 6 7 0 (R L D U fire), `111` = the programmed entries, which also give the
+  Kempston modes' buttons 5-11 and the MD modes' 8-11 a key. `$28` bit 7 / `$29` / `$2B` program the map
+  (a soft reset keeps it, a core load restores it). The keys go through the membrane, so extra-key
+  columns show in `$B0`/`$B1` with their matrix entries. The comment block of zxnext.vhd ~3426 names
+  `000` and `011` the other way round; the table is what the hardware does.
+- **`$B2`** (the MD pads' X Z Y MODE) read constant 0 on both cores; the state was 8 bits wide.
+- **`$0B` I/O mode** was stored only: a connector in I/O mode reports its six raw pins (C B U D L R)
+  and the key joystick stops. Not modelled: pin 7 output, the UART on the joystick pins.
+- **A reset no longer releases the sticks** (they are physical); the TS joystick reset had cleared them.
+- Harness: `joystick(side, ...buttons)`. The app has no joystick input yet (`src/emu/plan.md`).
+
+### B92 – Mouse: reset cleared the counters; reverse at read time; DPI on the signed delta; `$DF` alias – FIXED 2026-09-19
+
+MOU-001, MOU-003 - MOU-005 (input/ps2_mouse.v, zxnext.vhd ~2622-2630, zxnext_top_issue4 ~1678-1701; both
+cores).
+- **A Next reset cleared the counters and buttons** (both cores). The mouse's reset is `m_reset`, from
+  the power-on reset only. WASM now reads DPI and reverse from the stored `$0A` instead of a copy.
+- **Button reverse was applied when the port was read**; ps2_mouse.v swaps as each packet arrives, so
+  buttons latched before the change keep their place until the next packet.
+- **DPI 10 / 11 shifted the signed host delta**; the FPGA shifts the packet's 8-bit data byte with
+  its bit 7 as the sign (the 9th bit of the PS/2 delta is not used), so a +200 move at DPI 10 counts -28.
+- **With the mouse port off, `$xADF` / `$xBDF` / `$xFDF` read `$FF`**; they are plain `$DF` reads then,
+  which the Kempston 1 alias answers with the Specdrum port on (~2630).
+  `test/zxnext/PortEnableGating.test.ts` asserted the opposite; that case was removed.
+- The host API is one PS/2 packet (`receivePacket` / `zxnextMousePacket`: buttons, dx, dy, wheel),
+  replacing `addDelta` / `addWheelDelta` / `setButtons` and their exports. Harness: `mouse(...)`. The
+  app has no mouse input yet (`src/emu/plan.md`).
 
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 

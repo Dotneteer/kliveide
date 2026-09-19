@@ -17,13 +17,13 @@ import { colours } from "../ula/_ula-helpers";
  *
  * What must hold: the machine asks the host for the card size once and reads the card through SPI
  * (CMD17/CMD18 via port $EB) until the NextZXOS menu is up - the title bar with its colour stripes - and
- * both cores show the same picture. The menu's date line comes from the I2C RTC, which only the
- * TypeScript core emulates (§4.30), so those rows are left out of the comparison.
+ * both cores show the same picture - the menu's date line included: both get the same DS1307 time
+ * (I2C-003).
  */
 
 const CARD = process.env.KLIVE_SD_CARD ?? join(userInfo().homedir, "Klive", "ks2.cim");
 const BOOT_FRAMES = 250;
-/** Buffer rows of the menu's date line (the RTC) - excluded from the parity check. */
+/** Buffer rows of the menu's date line (the RTC). */
 const DATE_ROWS: [number, number] = [154, 168];
 
 function cloneCard(dir: string, name: string): { card: SdCardBacking; close: () => void } {
@@ -45,6 +45,7 @@ async function boot(core: "ts" | "wasm", dir: string): Promise<NextTestSession> 
   const { card, close } = cloneCard(dir, `ks2-${core}.cim`);
   try {
     const s = await createSession(core);
+    s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 34, seconds: 56 });
     s.attachSdCard(card);
     await s.runFramesAsync(BOOT_FRAMES);
     return s;
@@ -64,10 +65,11 @@ describe.skipIf(!existsSync(CARD))("SPI-009: NextZXOS boots from the SD card", (
         expect(s.sdCalls.readSdCardSector, `${s.core}: sectors read`).toBeGreaterThan(200);
         // --- the title bar's colour stripes: black, white and at least four stripe colours
         expect(colours(s, [360, 470], [88, 100]).split(",").length, `${s.core}: the menu title bar`).toBeGreaterThanOrEqual(6);
+        // --- NextZXOS shows the date only when it finds the RTC
+        expect(colours(s, [0, 719], DATE_ROWS).split(",").length, `${s.core}: the date line`).toBeGreaterThanOrEqual(2);
       }
       const differing: string[] = [];
       for (let y = 0; y < 288; y++) {
-        if (y >= DATE_ROWS[0] && y <= DATE_ROWS[1]) continue;
         for (let x = 0; x < 720; x++) if (ts.pixel(x, y) !== wasm.pixel(x, y)) differing.push(`(${x},${y})`);
       }
       expect(differing.slice(0, 10), `${differing.length} pixels differ`).toEqual([]);

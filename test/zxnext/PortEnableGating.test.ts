@@ -244,20 +244,9 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
   // NR $83 — Mouse ports (bit 5)
   // ==========================================================================
 
-  it("Mouse ports return 0xFF when NR $83 bit 5 is cleared", async () => {
-    const m = await createTestNextMachine();
-    // Set mouse position so we can distinguish mouse data from 0xFF
-    m.mouseDevice.xPos = 0x42;
-    m.mouseDevice.yPos = 0x55;
-    // With mouse enabled, read mouse X port
-    expect(m.portManager.readPort(0xfbdf)).toBe(0x42);
-    // Disable mouse (NR $83 bit 5)
-    writeNextReg(m, 0x83, 0xdf);
-    // Mouse ports return 0xFF when disabled; they do not fall through to joy alias
-    expect(m.portManager.readPort(0xfbdf)).toBe(0xff);
-    // Verify mouse Y port also returns 0xFF, not mouse data
-    expect(m.portManager.readPort(0xffdf)).toBe(0xff);
-  });
+  // --- The mouse port enable (NR $83 bit 5) is tested through the hardware in
+  // --- test/zxnext-hw/mouse/mouse.test.ts (MOU-005): disabled, $xBDF / $xFDF / $xADF become plain $DF
+  // --- reads, which the Kempston joystick alias answers (zxnext.vhd ~2630).
 
   // ==========================================================================
   // NR $83 — Sprite ports (bit 6)

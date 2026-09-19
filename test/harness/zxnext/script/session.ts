@@ -5,6 +5,8 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import { toBcd } from "@emu/machines/zxNext/I2cDevice";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { loadNexFileContents, type NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
@@ -16,6 +18,10 @@ import { loadNexDirect, readNextReg, writeNextReg } from "../core/load-nex-direc
 import { ALL_CORES, createCore, readNextRegDirect, type CoreName } from "../core/machines";
 import { evaluateProbe, type Probe } from "../cases/probes";
 import { InMemorySdMessenger, MemorySdCard, type SdCardBacking } from "./sd-card";
+import { uartPeerOf, type UartFrame, type UartIndex } from "./uart-peer";
+import { keyCode, type NextKey } from "./keys";
+import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joystick";
+import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
 
 /*
  * The scripting layer of the ZX Spectrum Next test harness: one real machine (TypeScript or WASM
@@ -53,6 +59,9 @@ export type WritableRegisters = Partial<Omit<Registers, "im">>;
 
 export type AudioSample = { left: number; right: number };
 
+/** A DS1307 time: `year` is 0-99 (or a full year), `day` the day of week 1-7, hours 0-23. */
+export type RtcTime = { year: number; month: number; date: number; day: number; hours: number; minutes: number; seconds: number };
+
 export type Program = {
   /** Value of a label or `.equ` symbol. Throws for an unknown name. */
   symbol(name: string): number;
@@ -80,6 +89,7 @@ export class NextTestSession {
   private program?: Program;
   private recording?: AudioSample[];
   private sd?: InMemorySdMessenger;
+  private mouseButtons = 0;
 
   private constructor(
     readonly core: CoreName,
@@ -176,6 +186,117 @@ export class NextTestSession {
       this.machine.setFrameCommand(null);
     }
     return termination;
+  }
+
+  // ==========================================================================================
+  // UART peer: the device on the other end of UART 0 (ESP) / UART 1 (Pi)
+
+  /**
+   * The peer sends frames on the Next's RX line: bytes, or `{ value, error: "parity" | "framing" }` for a
+   * frame with a wrong parity bit (only matters with parity on) or a low stop bit. They go back to back
+   * after anything already queued, at the Next's own baud rate and framing, sampled at each frame's
+   * start. The peer honours the Next's RTR: with flow control on it starts no frame while the Next is
+   * not ready. Time runs with the machine: run frames (or `runTo`) for the bytes to arrive.
+   */
+  uartSend(uart: UartIndex, frames: ArrayLike<UartFrame>): this {
+    uartPeerOf(this.machine).send(uart, frames);
+    return this;
+  }
+
+  /**
+   * The peer holds the Next's RX line low (after its queued frames) until released. Modelled as at least
+   * one frame long; the receiver reports a framing error, then a break once 8 more bit times pass.
+   */
+  uartBreak(uart: UartIndex, on: boolean): this {
+    uartPeerOf(this.machine).setBreak(uart, on);
+    return this;
+  }
+
+  /** The peer's RTS into the Next's CTS: with `$163B` bit 5 set, the Next transmits only while clear. */
+  uartSetCts(uart: UartIndex, clear: boolean): this {
+    uartPeerOf(this.machine).setCts(uart, clear);
+    return this;
+  }
+
+  /** A wire from the Next's TX to its own RX (the peer stops driving the RX line meanwhile). */
+  uartLoopback(uart: UartIndex, on: boolean): this {
+    uartPeerOf(this.machine).setLoopback(uart, on);
+    return this;
+  }
+
+  /** The Next's RTR output as the peer sees it (`o_Rx_rtr_n` = 0). */
+  uartReadyToReceive(uart: UartIndex): boolean {
+    return uartPeerOf(this.machine).readyToReceive(uart);
+  }
+
+  /** The bytes the Next has transmitted on the UART since power-on, whole frames only (the last 4096). */
+  uartOutput(uart: UartIndex): number[] {
+    return uartPeerOf(this.machine).output(uart);
+  }
+
+  // ==========================================================================================
+  // Keyboard
+
+  /**
+   * Presses keys on the Next's membrane and keeps them down: the 40 matrix keys ("CAPS", "Z", ...,
+   * "SYM", "ENTER", "SPACE", "0"-"9") and the 16 extra keys ("UP", "EDIT", ";", ...). The machines see
+   * them at once; run frames for a program (or the ROM's interrupt scan) to notice.
+   */
+  keyDown(...keys: NextKey[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), true);
+    return this;
+  }
+
+  /** Releases keys pressed by `keyDown`. */
+  keyUp(...keys: NextKey[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), false);
+    return this;
+  }
+
+  // ==========================================================================================
+  // Joysticks
+
+  /**
+   * Holds exactly these buttons on a joystick connector (none: everything released): "UP", "DOWN",
+   * "LEFT", "RIGHT", "B" (fire 1), "C" (fire 2) and the MD pad's "A", "START", "X", "Y", "Z", "MODE".
+   * What the machine makes of them depends on NextReg $05 (Kempston ports, keys, MD pad) and $0B.
+   */
+  joystick(side: JoySide, ...buttons: JoyButton[]): this {
+    setJoystickState(this.machine, side, joyBits(buttons));
+    return this;
+  }
+
+  // ==========================================================================================
+  // Mouse
+
+  /**
+   * The PS/2 mouse sends one packet: `dx` / `dy` (-255..255, right / up), `wheel` (-8..7) and the
+   * `buttons` held - left out, the buttons of the previous packet stay held, as a mouse reports them.
+   * NextReg $0A's DPI and button reverse act on the packet as it arrives.
+   */
+  mouse({ dx = 0, dy = 0, wheel = 0, buttons }: MouseEvent = {}): this {
+    if (buttons) this.mouseButtons = mouseButtonBits(buttons);
+    sendMousePacket(this.machine, this.mouseButtons, dx, dy, wheel);
+    return this;
+  }
+
+  // ==========================================================================================
+  // Real-time clock
+
+  /**
+   * Sets the DS1307 on the I2C bus to a time (24-hour mode, oscillator running), as a clock set before
+   * the test and kept by its battery; the current second starts now. It then runs with the machine:
+   * 28M clocks of 28 MHz are one second. Nothing else of the chip changes (RAM, control register).
+   */
+  setRtcTime(t: RtcTime): this {
+    const regs = [t.seconds, t.minutes, t.hours, -1, t.date, t.month, t.year % 100].map((v, i) => (i === 3 ? t.day & 0x07 : toBcd(v)));
+    if (this.machine instanceof ZxNextWasmV2Machine) {
+      const [sec, min, hour, day, date, month, year] = regs;
+      this.machine.wasmV2Runtime!.exports.zxnextRtcSetTime(sec, min, hour, day, date, month, year);
+    } else {
+      this.machine.i2cDevice.setRtcTime(regs);
+    }
+    return this;
   }
 
   // ==========================================================================================

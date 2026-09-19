@@ -157,8 +157,10 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
     expect(d.directGetRegValue(0xc8)).toBe(0x00);
     expect(d.directGetRegValue(0xc9)).toBe(0x00);
-    expect(d.directGetRegValue(0xca)).toBe(0x00);
-    expect(d.directGetRegValue(0xcb)).toBe(0x00);
+    // --- im2_peripheral: int_req_d is 0 in reset, so both UARTs' TX-empty level latches its status
+    expect(d.directGetRegValue(0xca)).toBe(0x44);
+    // --- $CB is write-only: the direct read repeats the last value read ($CA's)
+    expect(d.directGetRegValue(0xcb)).toBe(0x44);
     expect(d.directGetRegValue(0xcc)).toBe(0x00);
     expect(d.directGetRegValue(0xcd)).toBe(0x00);
     expect(d.directGetRegValue(0xce)).toBe(0x00);
@@ -309,8 +311,10 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
     expect(d.directGetRegValue(0xc8)).toBe(0x00);
     expect(d.directGetRegValue(0xc9)).toBe(0x00);
-    expect(d.directGetRegValue(0xca)).toBe(0x00);
-    expect(d.directGetRegValue(0xcb)).toBe(0x00);
+    // --- im2_peripheral: int_req_d is 0 in reset, so both UARTs' TX-empty level latches its status
+    expect(d.directGetRegValue(0xca)).toBe(0x44);
+    // --- $CB is write-only: the direct read repeats the last value read ($CA's)
+    expect(d.directGetRegValue(0xcb)).toBe(0x44);
     expect(d.directGetRegValue(0xcc)).toBe(0x00);
     expect(d.directGetRegValue(0xcd)).toBe(0x00);
     expect(d.directGetRegValue(0xce)).toBe(0x00);
@@ -736,7 +740,8 @@ describe("Next - NextRegDevice", function () {
     const divMmcDevice = m.divMmcDevice;
     const nrDevice = m.nextRegDevice;
 
-    // --- Act
+    // --- Act (zxnext.vhd ~5145: bit 2 is written only in config mode)
+    writeNextReg(m, 0x03, 0x07);
     writeNextReg(m, 0x06, 0x04);
 
     // --- Assert
@@ -799,13 +804,13 @@ describe("Next - NextRegDevice", function () {
     // --- Act
     writeNextReg(m, 0x06, 0xff);
 
-    // --- Assert
+    // --- Assert (bit 2, the PS/2 mode, is written only in config mode: zxnext.vhd ~5145)
     expect(nrDevice.hotkeyCpuSpeedEnabled).toBe(true);
     expect(soundDevice.beepOnlyToInternalSpeaker).toBe(true);
     expect(nrDevice.hotkey50_60HzEnabled).toBe(true);
     expect(divMmcDevice.enableDivMmcNmiByDriveButton).toBe(true);
     expect(divMmcDevice.enableMultifaceNmiByM1Button).toBe(true);
-    expect(nrDevice.ps2Mode).toBe(true);
+    expect(nrDevice.ps2Mode).toBe(false);
     expect(soundDevice.psgMode).toBe(3);
   });
 

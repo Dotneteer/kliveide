@@ -3,6 +3,53 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { SpectrumKeyCode } from "../zxSpectrum/SpectrumKeyCode";
 
+/**
+ * The Next's extra membrane keys as `setKeyStatus` codes after the 40 matrix keys: 40 + the key's bit
+ * in the membrane's `o_extended_keys` (membrane.vhd: physical row * 2 + 1 for column 6, + 0 for
+ * column 5).
+ */
+export const NextExtraKeyCode = {
+  Extend: 40,
+  Up: 41,
+  CapsLock: 42,
+  Graph: 43,
+  TrueVideo: 44,
+  InvVideo: 45,
+  Break: 46,
+  Edit: 47,
+  Semicolon: 48,
+  DoubleQuote: 49,
+  Comma: 50,
+  Period: 51,
+  Delete: 52,
+  Right: 53,
+  Left: 54,
+  Down: 55
+} as const;
+
+/**
+ * membrane.vhd `matrix_work_ex`: the two matrix keys each extra key also presses (CAPS SHIFT or
+ * SYMBOL SHIFT with a key), by extra-key bit. `$68` bit 4 cancels these entries.
+ */
+const EXTRA_KEY_COMBOS: ReadonlyArray<readonly [number, number]> = [
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.SShift], // EXTEND
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N7], // UP
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N2], // CAPS LOCK
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N9], // GRAPH
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N3], // TRUE VIDEO
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N4], // INV VIDEO
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.Space], // BREAK
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N1], // EDIT
+  [SpectrumKeyCode.SShift, SpectrumKeyCode.O], // ;
+  [SpectrumKeyCode.SShift, SpectrumKeyCode.P], // "
+  [SpectrumKeyCode.SShift, SpectrumKeyCode.N], // ,
+  [SpectrumKeyCode.SShift, SpectrumKeyCode.M], // .
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N0], // DELETE
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N8], // RIGHT
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N5], // LEFT
+  [SpectrumKeyCode.CShift, SpectrumKeyCode.N6] // DOWN
+];
+
 export class NextKeyboardDevice extends KeyboardDevice {
   /**
    * Initialize the keyboard device and assign it to its host machine.
@@ -12,104 +59,75 @@ export class NextKeyboardDevice extends KeyboardDevice {
     super(machine);
   }
 
-  semicolonPressed: boolean;
-  doubleQuotePressed: boolean;
-  commaPressed: boolean;
-  dotPressed: boolean;
-  upPressed: boolean;
-  downPressed: boolean;
-  leftPressed: boolean;
-  rightPressed: boolean;
+  /** The 16 extra keys, pressed = 1, in `o_extended_keys` bit order (NextExtraKeyCode - 40). */
+  extendedKeys = 0;
 
-  deletePressed: boolean;
-  editPressed: boolean;
-  breakPressed: boolean;
-  invVideoPressed: boolean;
-  trueVideoPressed: boolean;
-  graphPressed: boolean;
-  capsLockPressed: boolean;
-  extendPressed: boolean;
-
-  rightPadXPressed: boolean;
-  rightPadZPressed: boolean;
-  rightPadYPressed: boolean;
-  rightPadModePressed: boolean;
-  leftPadXPressed: boolean;
-  leftPadZPressed: boolean;
-  leftPadYPressed: boolean;
-  leftPadModePressed: boolean;
-
+  /** NextReg `$68` bit 4: the extra keys stop pressing their matrix combinations. */
   cancelExtendedKeyEntries: boolean;
 
   reset(): void {
     super.reset();
-    this.semicolonPressed = false;
-    this.doubleQuotePressed = false;
-    this.commaPressed = false;
-    this.dotPressed = false;
-    this.upPressed = false;
-    this.downPressed = false;
-    this.leftPressed = false;
-    this.rightPressed = false;
-
-    this.deletePressed = false;
-    this.editPressed = false;
-    this.breakPressed = false;
-    this.invVideoPressed = false;
-    this.trueVideoPressed = false;
-    this.graphPressed = false;
-    this.capsLockPressed = false;
-    this.extendPressed = false;
-
-    this.rightPadXPressed = false;
-    this.rightPadZPressed = false;
-    this.rightPadYPressed = false;
-    this.rightPadModePressed = false;
-    this.leftPadXPressed = false;
-    this.leftPadZPressed = false;
-    this.leftPadYPressed = false;
-    this.leftPadModePressed = false;
+    this.extendedKeys = 0;
 
     this.cancelExtendedKeyEntries = false;
   }
 
+  /** Codes 0-39 are the matrix keys (SpectrumKeyCode), 40-55 the extra keys (NextExtraKeyCode). */
+  setKeyStatus(key: number, isDown: boolean): void {
+    if (key >= 40 && key < 56) {
+      const mask = 1 << (key - 40);
+      this.extendedKeys = isDown ? this.extendedKeys | mask : this.extendedKeys & ~mask;
+      return;
+    }
+    super.setKeyStatus(key, isDown);
+  }
+
+  getKeyStatus(key: number): boolean {
+    if (key >= 40 && key < 56) return (this.extendedKeys & (1 << (key - 40))) !== 0;
+    return super.getKeyStatus(key);
+  }
+
+  /**
+   * The extra keys held on the membrane: the keyboard's and those a joystick presses through its key
+   * mapping (membrane_stick.vhd drives the same membrane columns).
+   */
+  private membraneExtendedKeys(joy = this.machine.joystickDevice?.keysPressed()): number {
+    return this.extendedKeys | (joy?.extended ?? 0);
+  }
+
+  /**
+   * membrane.vhd `o_cols`: the rows A15-A8 select (0 = selected) AND together; each row is its keys
+   * (the keyboard's and the joysticks') plus the matrix entries of the pressed extra keys, unless
+   * `$68` bit 4 cancels them.
+   */
+  getKeyLineStatus(address: number): number {
+    const joy = this.machine.joystickDevice?.keysPressed();
+    const lines: number[] = [];
+    for (let line = 0; line < 8; line++) lines.push((this.getKeyLineValue(line) | (joy?.lines[line] ?? 0)) & 0x1f);
+    const extended = this.membraneExtendedKeys(joy);
+    if (extended && !this.cancelExtendedKeyEntries) {
+      for (let bit = 0; bit < 16; bit++) {
+        if (!(extended & (1 << bit))) continue;
+        for (const code of EXTRA_KEY_COMBOS[bit]) lines[(code / 5) | 0] |= 1 << code % 5;
+      }
+    }
+    let status = 0;
+    const selected = ~(address >> 8) & 0xff;
+    for (let line = 0; line < 8; line++) if (selected & (1 << line)) status |= lines[line];
+    return ~status & 0xff;
+  }
+
+  /** zxnext.vhd ~6154: ; " , . UP DOWN LEFT RIGHT (extended keys 8, 9, 10, 11, 1, 15, 14, 13) */
   get nextRegB0Value(): number {
-    return (
-      (this.semicolonPressed ? 0x80 : 0x00) |
-      (this.doubleQuotePressed ? 0x40 : 0x00) |
-      (this.commaPressed ? 0x20 : 0x00) |
-      (this.dotPressed ? 0x10 : 0x00) |
-      (this.upPressed ? 0x08 : 0x00) |
-      (this.downPressed ? 0x04 : 0x00) |
-      (this.leftPressed ? 0x02 : 0x00) |
-      (this.rightPressed ? 0x01 : 0x00)
-    );
+    const e = this.membraneExtendedKeys();
+    const b = (bit: number) => (e >> bit) & 0x01;
+    return (b(8) << 7) | (b(9) << 6) | (b(10) << 5) | (b(11) << 4) | (b(1) << 3) | (b(15) << 2) | (b(14) << 1) | b(13);
   }
 
+  /** zxnext.vhd ~6158: DELETE EDIT BREAK INV TRUE GRAPH CAPSLOCK EXTEND (extended keys 12, 7-2, 0) */
   get nextRegB1Value(): number {
-    return (
-      (this.deletePressed ? 0x80 : 0x00) |
-      (this.editPressed ? 0x40 : 0x00) |
-      (this.breakPressed ? 0x20 : 0x00) |
-      (this.invVideoPressed ? 0x10 : 0x00) |
-      (this.trueVideoPressed ? 0x08 : 0x00) |
-      (this.graphPressed ? 0x04 : 0x00) |
-      (this.capsLockPressed ? 0x02 : 0x00) |
-      (this.extendPressed ? 0x01 : 0x00)
-    );
-  }
-
-  get nextRegB2Value(): number {
-    return (
-      (this.rightPadXPressed ? 0x80 : 0x00) |
-      (this.rightPadZPressed ? 0x40 : 0x00) |
-      (this.rightPadYPressed ? 0x20 : 0x00) |
-      (this.rightPadModePressed ? 0x10 : 0x00) |
-      (this.leftPadXPressed ? 0x08 : 0x00) |
-      (this.leftPadZPressed ? 0x04 : 0x00) |
-      (this.leftPadYPressed ? 0x02 : 0x00) |
-      (this.leftPadModePressed ? 0x01 : 0x00)
-    );
+    const e = this.membraneExtendedKeys();
+    return (((e >> 12) & 0x01) << 7) | (((e >> 2) & 0x3f) << 1) | (e & 0x01);
   }
 }
 

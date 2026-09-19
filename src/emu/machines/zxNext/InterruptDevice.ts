@@ -270,6 +270,8 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
     this.uart0TxEmpty = (value & 0x04) !== 0;
     this.uart0RxNearFull = (value & 0x02) !== 0;
     this.uart0RxAvailable = (value & 0x01) !== 0;
+    // --- Bits 1 / 5 (near full only) change the RX request level itself (zxnext.vhd ~1898)
+    this.machine.uartDevice?.onInterruptEnableChanged();
   }
 
   /** im2_peripheral o_int_status: the status latch or a pending request. */
@@ -345,6 +347,7 @@ export class InterruptDevice implements IGenericDevice<IZxNextMachine> {
 
   /** zxnext.vhd ~6200: '0' & UART1 TX & UART1 RX & UART1 RX & '0' & UART0 TX & UART0 RX & UART0 RX. */
   get nextRegCAValue(): number {
+    this.machine.uartDevice?.sync();
     return (
       (this.statusOf(DAISY_PRIORITY_UART1_TX) ? 0x40 : 0x00) |
       (this.statusOf(DAISY_PRIORITY_UART1_RX) ? 0x30 : 0x00) |

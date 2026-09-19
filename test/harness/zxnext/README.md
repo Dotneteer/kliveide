@@ -92,6 +92,11 @@ Every method runs on both cores; methods returning `this` chain.
 | | `nextRegValue(r)` | Stored value without port side effects - for assertions and wait conditions. |
 | Keys | `await pressHotkey("F5" \| "F6" \| "F8" \| "F9" \| "F10")` | Function-key hotkeys: expansion bus on/off, CPU speed step (gated by NextReg `$06` bit 7, like the FPGA); the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (gated by `$06` bits 3 / 4). |
 | SD card | `attachSdCard(image \| backing)` `await runFramesAsync(n)` `await runUntilReadyAsync()` `sdImage` `sdCalls` | Card 0 in the slot: a flat `Uint8Array` (whole 512-byte sectors) or any `SdCardBacking` (e.g. a CIM clone). The machines read and write sectors through frame commands; the async runs answer them with the machine's own `processFrameCommand`, the sync runs throw on one. `sdImage` has the writes; `sdCalls` counts the host calls. |
+| UART | `uartSend(uart, frames)` `uartBreak(uart, on)` `uartSetCts(uart, clear)` `uartLoopback(uart, on)` `uartReadyToReceive(uart)` `uartOutput(uart)` | The peer on UART 0 (ESP) / UART 1 (Pi): frames (`number` or `{ value, error: "parity" \| "framing" }`) go out back to back at the Next's own baud rate and framing as frames run; it holds the line low for a break, drives CTS, honours RTR, or wires TX to RX. `uartOutput` is what the Next transmitted. Both cores model the lines a frame at a time on the 28 MHz clock. |
+| Keyboard | `keyDown(...keys)` `keyUp(...keys)` | Holds / releases membrane keys: the 40 matrix keys (`"CAPS"`, `"Z"`, ..., `"SYM"`, `"ENTER"`, `"SPACE"`, `"0"`-`"9"`) and the 16 Next extra keys (`"UP"`, `"EDIT"`, `";"`, ...; `NEXT_EXTRA_KEYS`). Through the machines' `setKeyStatus` (codes 40-55 are the extra keys). Run frames for the ROM's scan to see them. |
+| Joysticks | `joystick(side, ...buttons)` | Holds exactly these buttons on the `"left"` / `"right"` connector (none: all released): `"UP"` `"DOWN"` `"LEFT"` `"RIGHT"` `"B"` (fire 1) `"C"` (fire 2) and the MD pad's `"A"` `"START"` `"X"` `"Y"` `"Z"` `"MODE"` - the connector's 12-bit output. NextReg `$05` decides what they do (Kempston / MD ports, keys). |
+| Mouse | `mouse({ dx, dy, wheel, buttons })` | One PS/2 packet: `dx` / `dy` -255..255 (right / up), `wheel` -8..7, `buttons` held (`"left"` `"right"` `"middle"`; left out, the last packet's stay held). `$0A`'s DPI and button reverse act on the packet as it arrives. |
+| RTC | `setRtcTime({ year, month, date, day, hours, minutes, seconds })` | Sets the DS1307 on the I2C bus (24-hour mode, running), as a clock set before the test and kept by its battery; the second starts now and the clock runs with the machine (28M clocks of 28 MHz per second). Tests read it through `$103B`/`$113B` like software does. |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` has 16-bit pairs (`bc`, not `b`). |
 | Screen | `screen()` `pixel(x, y)` `rowRuns(y)` `expectProbe(probe)` `saveScreenPng(path)` | The last *displayed* 720x288 frame. Probe and colour notation as in `case.json` (`ula:N`, `next8:0xNN`, `rgb333:R,G,B`, `#RRGGBB`). |
 | Audio | `startAudio()` `audio()` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. |
@@ -151,7 +156,7 @@ When a test needs something the session cannot do, add it to `script/session.ts`
    if the method silently did nothing.
 5. **Export** new types from `index.ts` and **add a row** to the Session API table above.
 
-Candidates not written yet: keyboard (`setKeyStatus`), joystick/mouse input, observing the INT line
+Candidates not written yet: observing the INT line
 and interrupt acknowledge, a port/memory write log for both cores, checkpoints
 (`captureCheckpoint` exists on the WASM core only).
 
@@ -169,6 +174,9 @@ that through NextZXOS in Chrome. How to write one, the geometry, and the pitfall
 - **Park the CPU before running frames.** A session with no `loadCode` runs the Next ROM, which
   rewrites NextRegs (the port enables, `$08`, ...) and the border within a frame or two. Load at least
   `.org $8000 / jr $` before `runFrames` when the test sets hardware state from outside.
+- **`runUntilReady` after a soft reset returns at once** when the previous program already wrote the
+  marker: NextReg `$7F` has no reset branch. Clear it (`setNextReg(0x7f, 0)`) before running again. A
+  hard reset reloads the core, which sets it to `$FF`.
 - **The TS core's first displayed frame after a hard reset is black.** Run one frame before comparing
   pixels across cores or against a reference session.
 

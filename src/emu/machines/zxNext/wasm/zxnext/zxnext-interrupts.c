@@ -11,6 +11,7 @@ uint32_t z80GetTacts(void);
 uint32_t z80GetInterruptMode(void);
 uint32_t zxnextGetCtcIntEnabled(uint32_t channel);
 void zxnextCtcSetIntEnabled(uint32_t channel, uint32_t enabled);
+static uint64_t zxnextUartSync(void);
 
 static uint8_t intSignalActive;
 static uint8_t ulaInterruptDisabled;
@@ -158,6 +159,7 @@ static uint32_t zxnextInterruptsGetNextRegister(uint32_t reg) {
       return v;
     }
     case 0xca:
+      zxnextUartSync(); /* the FIFO levels up to now: their edges latch these bits */
       return (zxnextInterruptsStatus(13) ? 0x40u : 0x00u) | (zxnextInterruptsStatus(2) ? 0x30u : 0x00u) |
         (zxnextInterruptsStatus(12) ? 0x04u : 0x00u) | (zxnextInterruptsStatus(1) ? 0x03u : 0x00u);
     default:

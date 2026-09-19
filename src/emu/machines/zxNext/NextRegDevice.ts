@@ -77,7 +77,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- Reg $06 state
   hotkeyCpuSpeedEnabled: boolean;
   hotkey50_60HzEnabled: boolean;
-  ps2Mode: boolean;
+  /** zxnext.vhd:1106 nr_06_ps2_mode := '0', written only in config mode, no reset branch */
+  ps2Mode = false;
 
   // --- Reg $08 state
   disableRamPortContention: boolean;
@@ -430,7 +431,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         this.hotkey50_60HzEnabled = (v & 0x20) !== 0;
         machine.divMmcDevice.enableDivMmcNmiByDriveButton = (v & 0x10) !== 0;
         machine.divMmcDevice.enableMultifaceNmiByM1Button = (v & 0x08) !== 0;
-        this.ps2Mode = (v & 0x04) !== 0;
+        // --- zxnext.vhd ~5145: the PS/2 mode changes only in config mode
+        if (this.configMode) this.ps2Mode = (v & 0x04) !== 0;
         machine.soundDevice.psgMode = v & 0x03;
         machine.audioControlDevice.applyConfiguration();
       },
@@ -1089,12 +1091,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         this.selectKeyJoystick = !!(v & 0x80);
         this.ps2KeymapAddressMsb = !!(v & 0x01);
+        machine.joystickDevice.writeKeymapSelect(v);
       }
     });
     r({
       id: 0x29,
       description: "PS/2 Keymap Address LSB",
-      writeFn: (v) => (this.ps2KeymapAddressLsb = v & 0xff)
+      writeFn: (v) => {
+        this.ps2KeymapAddressLsb = v & 0xff;
+        machine.joystickDevice.writeKeymapAddress(v);
+      }
     });
     r({
       id: 0x2a,
@@ -1112,7 +1118,11 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x2b,
       description: "PS/2 Keymap Data LSB",
       readFn: () => this.ps2KeymapDataLsb,
-      writeFn: (v) => (this.ps2KeymapDataLsb = v & 0xff)
+      writeFn: (v) => {
+        this.ps2KeymapDataLsb = v & 0xff;
+        // --- zxnext.vhd ~6267: with $28 bit 7 set the byte goes to the key-joystick map
+        machine.joystickDevice.writeKeymapData(v);
+      }
     });
     // --- zxnext.vhd ~4830, soundrive.vhd: the mirrors write the DACs, which ignore writes while
     // --- $08 bit 3 holds them in reset. ~5952-5961: reads return the Pi I2S sample (bits 9-2 from
@@ -2596,7 +2606,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb2,
       description: "Extended MD Pad Buttons",
-      readFn: () => machine.keyboardDevice.nextRegB2Value,
+      readFn: () => machine.joystickDevice.nextRegB2Value,
       slices: [
         {
           mask: 0x80,
@@ -3445,6 +3455,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     scr.userLockOnDisplayTiming = false;
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
+    // --- zxnext.vhd:1210 nr_7f_user_register_0 := X"FF": no reset branch, so only a core load sets it
+    this.directSetRegValue(0x7f, 0xff);
     // --- A power-on starts with the effective (frame-latched) video bits equal to the requested ones
     machine.composedScreenDevice.effective60Hz = machine.composedScreenDevice.is60HzMode;
     machine.composedScreenDevice.effectiveScandoubler = machine.composedScreenDevice.scandoublerEnabled;

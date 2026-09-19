@@ -381,6 +381,12 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // --- Palette contents first: a soft reset keeps them, and `reset` caches the border colour
     this.paletteDevice.hardReset();
     this.reset();
+    // --- A hard reset reloads the FPGA core: the UART prescalers and frame registers start over
+    this.uartDevice.hardReset();
+    // --- ... and the key-joystick map RAM its initial contents
+    this.joystickDevice.hardReset();
+    // --- ... and the PS/2 mouse its power-on reset (m_reset)
+    this.mouseDevice.hardReset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
     // --- Clear NMI state machine on hard reset
@@ -1795,12 +1801,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._dacDevice.onNewFrame();
     this._audioMixerDevice.onNewFrame();
 
-    // --- Advance DS1307 RTC clock (1 Hz tick via frame counting)
-    this.i2cDevice.onNewFrame();
-
-    // --- Auto-drain UART TX FIFOs
-    this.uartDevice.onNewFrame();
-
     // --- Advance floppy disk motor timing
     this.floppyDevice.onFrameCompleted();
   }
@@ -1828,6 +1828,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     const id = this.interruptDevice;
     // --- A CTC zero count requests its interrupt at once (ctc_zc_to), not at the next CTC port access
     this.ctcDevice.sync();
+    // --- So do the UART FIFO levels (a byte received, the TX FIFO emptied)
+    this.uartDevice.sync();
 
     if (id.hwIm2Mode) {
       // --- The daisy chain interrupts a CPU in IM 2 only; the ULA (the EXCEPTION generic) and requests

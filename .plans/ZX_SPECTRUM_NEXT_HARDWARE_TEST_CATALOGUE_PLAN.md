@@ -45,15 +45,15 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 
 | Tag | Session capability to add |
 |---|---|
-| `key` | Keyboard matrix input (`setKeyStatus`) including the Next extended keys. |
-| `joy` | Joystick / MD pad input on both joystick connectors. |
-| `mouse` | Kempston mouse movement and buttons. |
+| `key` | Keyboard matrix input (`setKeyStatus`) including the Next extended keys. **Written 2026-09-19:** `keyDown`, `keyUp`; both cores now take the 16 extra keys (codes 40-55). |
+| `joy` | Joystick / MD pad input on both joystick connectors. **Written 2026-09-19:** `joystick(side, ...buttons)` (the connector's 12-bit output). |
+| `mouse` | Kempston mouse movement and buttons. **Written 2026-09-19:** `mouse({ dx, dy, wheel, buttons })` (one PS/2 packet). |
 | `intack` | Observe the INT line and the vector placed on the bus at interrupt acknowledge. |
 | `nmi` | Press the Multiface / DivMMC NMI buttons. **Written 2026-09-18:** `pressHotkey("F9" \| "F10")`. |
 | `iolog` | Port and memory write log (both cores). |
 | `sd` | SD card image attach and block access (the browser tier already has it). **Written 2026-09-18:** `attachSdCard(image \| backing)`, `runFramesAsync`, `runUntilReadyAsync`, `sdImage`, `sdCalls`. |
-| `uart` | A peer on the UART lines (loopback or scripted ESP/Pi responder). |
-| `rtc` | I2C RTC with a settable time. |
+| `uart` | A peer on the UART lines (loopback or scripted ESP/Pi responder). **Written 2026-09-18:** `uartSend`, `uartBreak`, `uartSetCts`, `uartLoopback`, `uartReadyToReceive`, `uartOutput`; both cores now time the lines a frame at a time on the 28 MHz clock. |
+| `rtc` | I2C RTC with a settable time. **Written 2026-09-18:** `setRtcTime`; both cores now emulate the DS1307. |
 | `tape` | EAR input (tape signal injection). |
 | `ckpt` | Checkpoints on both cores (`captureCheckpoint` is WASM-only today). |
 
@@ -106,11 +106,11 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
 | `MF` | Multiface | `device/multiface.vhd` | `test/zxnext-hw/multiface/multiface.test.ts` (2026-09-18, bug B84); the mocks `test/zxnext/Multiface*.test.ts` still pass and stay |
 | `SPI` | SPI master, SD card, flash | `serial/spi_master.vhd` | `test/zxnext-hw/sd/spi-flash-select.test.ts` (bug B2), `sd-card.test.ts`, `nextzxos-boot.test.ts` (2026-09-18, bug B86) |
-| `UART` | UART 0 (ESP) / UART 1 (Pi) | `serial/uart*.vhd` | `test/zxnext/UartDevice.test.ts` (mock) |
-| `I2C` | I2C bus, RTC | `zxnext.vhd` | `test/zxnext/I2cDevice.test.ts` (mock) |
-| `KEY` | Keyboard, extended keys | `input/membrane`, `input/keyboard` | – |
-| `JOY` | Joysticks, MD pads, I/O mode | `input/md6_joystick_connector_x2.vhd` | – |
-| `MOU` | Kempston mouse | `input/ps2_mouse.v` | – |
+| `UART` | UART 0 (ESP) / UART 1 (Pi) | `serial/uart*.vhd` | `test/zxnext-hw/uart/uart.test.ts` (2026-09-18, bug B87; replaced the mock `test/zxnext/UartDevice.test.ts` and the UART half of `test/wasm/zxNext/wasm-next-uart-i2c.test.ts`; its I2C half went with §4.30) |
+| `I2C` | I2C bus, RTC | `zxnext.vhd`, Maxim DS1307 datasheet | `test/zxnext-hw/i2c/i2c-rtc.test.ts` (2026-09-18, bug B89; replaced the device mocks of `test/zxnext/I2cDevice.test.ts`, which keeps the pure BCD / counter-chain tests, and `test/wasm/zxNext/wasm-next-i2c.test.ts`) |
+| `KEY` | Keyboard, extended keys | `input/membrane`, `input/keyboard` | `test/zxnext-hw/keyboard/keyboard.test.ts` (2026-09-19, bug B90) |
+| `JOY` | Joysticks, MD pads, I/O mode | `input/md6_joystick_connector_x2.vhd`, `input/membrane/membrane_stick.vhd` | `test/zxnext-hw/joystick/joystick.test.ts` (2026-09-19, bug B91; replaced the mock `test/zxnext/KempstonJoystick.test.ts` and the joystick half of `test/wasm/zxNext/wasm-next-input.test.ts`) |
+| `MOU` | Kempston mouse | `input/ps2_mouse.v` | `test/zxnext-hw/mouse/mouse.test.ts` (2026-09-19, bug B92; replaced the mock `test/zxnext/KempstonMouse.test.ts` and `test/wasm/zxNext/wasm-next-input.test.ts`) |
 | `FDC` | +3 FDC I/O traps | `zxnext.vhd` | – |
 | `BUS` | Expansion bus control | `zxnext.vhd` | `test/zxnext/ExpansionBus*.test.ts` (mock) |
 | `GPIO` | Pi / ESP GPIO, XADC, misc board registers | `zxnext.vhd` | – |
@@ -134,7 +134,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | NR-008 | Board issue `$0F` | S | 3 | | Upper nibble reads 0. | ✅ `nextreg/identity` |
 | NR-009 | Unused register reads | S | 2 | | Reads of unassigned registers (e.g. `$0C`, `$0D`, `$1D`, `$21`, `$24`, `$25`, `$3A`–`$3F`, `$45`–`$49`, `$58`–`$5F`, `$65`–`$67`, `$72`–`$7E`, `$FE`) return the VHDL default (`others =>` branch). | ✅ `nextreg/read-mux` |
 | NR-010 | Write-only bits read as 0 | S | 2 | | For each register whose read mux pads bits with `'0'` (e.g. `$0A` bit 5/1, `$22` bits 6–3, `$6E` bit 6), write `$FF` and assert padded bits are 0. | ✅ `nextreg/read-mux` |
-| NR-011 | User register `$7F` | S | 1 | | Full 8-bit read/write; soft reset behaviour per VHDL. | ✅ `nextreg/read-mux` |
+| NR-011 | User register `$7F` | S | 1 | | Full 8-bit read/write; soft reset behaviour per VHDL. | ✅ `nextreg/read-mux`, `nextreg/soft-reset` (power-on / hard reset `$FF`, bug B88) |
 | NR-012 | Hard-reset values table | S | 1 | | One parametrised test: after `hardReset()`, every register in the read mux equals its VHDL reset value (`$14=$E3`, `$4A=$E3`, `$4B=$E3`, `$4C=$0F`, `$50–$57`, `$15`, `$43`, `$68`, `$6B`, `$70`, …). Guards bug B3. | ✅ `nextreg/soft-reset`, `nextreg/fallback-colour-reset` |
 | NR-013 | Soft-reset values table | S | 1 | | Same as NR-012 after `reset()`: registers reset on soft reset change, registers reset only on hard reset keep a value written before. | ✅ `nextreg/soft-reset`, `nextreg/fallback-colour-reset` |
 | NR-014 | `$1C` clip index readback | S | 2 | | `$18`-`$1B` read the clip value at the current index (~5892); writes advance it; `$1C` shows each 2-bit index and a write with bit n set resets index n. | ✅ `nextreg/composite-readbacks` |
@@ -695,7 +695,7 @@ Ports `$183B`–`$1F3B` = channels 0–7 (0–3 implemented as timers).
 | SPI-006 | Multi-block read/write | S | 2 | `sd` | CMD18/CMD25 with stop token. | ◐ `sd/sd-card` - CMD18 + CMD12 (B86 fixed: the first block lost CMD18's R1); CMD25 is not modelled by either core |
 | SPI-007 | Card 1 vs card 0 | S | 3 | `sd` | Deselect returns `$FF`. | ✅ `sd/sd-card` (empty slot 1 and a deselected card read $FF; B86 fixed) |
 | SPI-008 | Flash read ID | S | 3 | | Flash chip select in config mode returns flash ID per emulator model. | ✅ `sd/sd-card` (documented: no flash model, a JEDEC ID read gives $FF) |
-| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | ✅ `sd/nextzxos-boot` - headless, both cores, from a clone of `~/Klive/ks2.cim` (skipped without it): menu up, cores identical outside the RTC date line; the browser tier boots it too |
+| SPI-009 | NextZXOS boot from SD | V | 1 | `sd` | Browser tier: boots to the NextZXOS menu; golden picture. | ✅ `sd/nextzxos-boot` - headless, both cores, from a clone of `~/Klive/ks2.cim` (skipped without it): menu up, both cores identical including the RTC date line (same `setRtcTime`); the browser tier boots it too |
 
 ### 4.29 `UART` – UART
 
@@ -703,63 +703,63 @@ Ports: `$133B` TX, `$143B` RX, `$153B` select, `$163B` frame.
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| UART-001 | Select `$153B` | S | 1 | | Bit 6 selects UART 0/1; readback. | — |
-| UART-002 | Baud prescaler via `$143B` writes | S | 1 | | Lower 14 bits in two writes (bit 7 selects part), upper via `$153B` bit 4; readbacks per `uart.vhd`. | — |
-| UART-003 | TX status bits | S | 1 | | `$133B` read: TX empty, TX full, RX avail, RX near full, error flags. | — |
-| UART-004 | Transmit byte timing | S | 2 | `uart` | TX empty clears then sets after 10 bits at the baud rate. | — |
-| UART-005 | Receive and FIFO | S | 1 | `uart` | Bytes from peer appear in RX; FIFO depth 512 (UART0) per VHDL; overflow flag. | — |
-| UART-006 | Frame register `$163B` | S | 2 | | Bits/parity/stop bits; reset bit 7 clears FIFOs. | — |
-| UART-007 | RX interrupt | S | 2 | `uart` | `$C6` enable; RX avail vs near-full selection per `im2_int_req` formula. | — |
-| UART-008 | TX empty interrupt | S | 3 | `uart` | | — |
-| UART-009 | Break / hardware flow control | S | 3 | `uart` | `$163B` bits per VHDL. | — |
-| UART-010 | Port enable bit 12 | S | 3 | | | — |
+| UART-001 | Select `$153B` | S | 1 | | Bit 6 selects UART 0/1; readback. | ✅ `uart/uart` (readback `"00000"`/`"01000"` & MSB; bit 4 routes the MSB to the UART the same write selects - B87; the other registers follow the select; a soft reset selects UART 0 and keeps the MSBs) |
+| UART-002 | Baud prescaler via `$143B` writes | S | 1 | | Lower 14 bits in two writes (bit 7 selects part), upper via `$153B` bit 4; readbacks per `uart.vhd`. | ✅ `uart/uart` - observed through the transmit time (only the MSB reads back): one bit = prescaler 28 MHz clocks, default 243, each half of the LSB and the MSB, per UART, kept by a soft reset (B87) |
+| UART-003 | TX status bits | S | 1 | `uart` | `$133B` read: TX empty, TX full, RX avail, RX near full, error flags. | ✅ `uart/uart` (TX empty/full with 64 queued behind the byte sending, the 66th write dropped; framing/parity error, the error flag stored with the next byte, cleared by the status read) |
+| UART-004 | Transmit byte timing | S | 2 | `uart` | TX empty clears then sets after 10 bits at the baud rate. | ✅ `uart/uart` (to the T-state: start + 5-8 data + parity + 1-2 stop bits for 7 frame formats, two bytes back to back, the data bits the peer gets; the baud rate does not follow the CPU speed) |
+| UART-005 | Receive and FIFO | S | 1 | `uart` | Bytes from peer appear in RX; FIFO depth 512 (UART0) per VHDL; overflow flag. | ✅ `uart/uart` (order, 0 when empty, 7-bit frames, available half a bit before the frame ends, near full at 384, 512 + one held, the next overflows, the error flag after an overflow, loopback, UART 1's own lines) |
+| UART-006 | Frame register `$163B` | S | 2 | | Bits/parity/stop bits; reset bit 7 clears FIFOs. | ✅ `uart/uart` (all 8 bits read back; bit 7 holds FIFOs and state machines in reset while set - TX empty reads 0 meanwhile, writes and received bytes are lost, a byte being sent is cut off; kept by a soft reset - B87) |
+| UART-007 | RX interrupt | S | 2 | `uart` | `$C6` enable; RX avail vs near-full selection per `im2_int_req` formula. | ✅ `uart/uart` (vector index 1 / 2, one interrupt per rising level, near-full-only at 384, polled `$CA` bits 1-0 / 5-4 - B87) |
+| UART-008 | TX empty interrupt | S | 3 | `uart` | | ✅ `uart/uart` (vector index 12 / 13; the request is the TX FIFO emptying, one byte time before TX empty; every reset latches `$CA` bits 6 and 2 - B87) |
+| UART-009 | Break / hardware flow control | S | 3 | `uart` | `$163B` bits per VHDL. | ✅ `uart/uart` (TX break: busy, nothing sent; RX break: framing error, then bit 7 while the line is low; CTS holds the transmitter; RTR stops the peer at 510 bytes, no overflow) |
+| UART-010 | Port enable bit 12 | S | 3 | | | ✅ `ports/port-enables` (status read), `uart/uart` (all four ports read `$FF`, writes ignored) |
 
 ### 4.30 `I2C` – I2C / RTC
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| I2C-001 | SCL/SDA ports `$103B/$113B` | S | 2 | | Written level reads back (open-drain with pull-up when no device). | — |
-| I2C-002 | Start/stop and address ACK | S | 2 | `rtc` | Bit-banged address `$D0` gets ACK from DS1307. | — |
-| I2C-003 | RTC time read | S | 2 | `rtc` | Registers 0–6 BCD match the set time. | — (seen in SPI-009: only the TS core emulates the DS1307 - its NextZXOS menu shows the date line, the WASM core's does not) |
-| I2C-004 | RTC write | S | 3 | `rtc` | Written time reads back. | — |
-| I2C-005 | Unknown address NACK | S | 3 | | | — |
-| I2C-006 | Port enable bit 10 | S | 3 | | | — |
+| I2C-001 | SCL/SDA ports `$103B/$113B` | S | 2 | | Written level reads back (open-drain with pull-up when no device). | ✅ `i2c/i2c-rtc` (`$FE` \| the line, bit 0 only, a soft reset releases both) |
+| I2C-002 | Start/stop and address ACK | S | 2 | `rtc` | Bit-banged address `$D0` gets ACK from DS1307. | ✅ `i2c/i2c-rtc` (`$D0` and `$D1` ACKed, bus released after STOP; WASM had no DS1307 - B89) |
+| I2C-003 | RTC time read | S | 2 | `rtc` | Registers 0–6 BCD match the set time. | ✅ `i2c/i2c-rtc` (set time in BCD, whole seconds, 7 rollovers incl. leap years and the century, 12-hour AM/PM, the time copied at START; B89), `sd/nextzxos-boot` (both menus show the same date) |
+| I2C-004 | RTC write | S | 3 | `rtc` | Written time reads back. | ✅ `i2c/i2c-rtc` (time, control, 56 RAM bytes; pointer wraps `$3F` → `$00` and persists; a seconds write restarts the second; CH stops the clock; RAM and time survive soft and hard resets - B89) |
+| I2C-005 | Unknown address NACK | S | 3 | | | ✅ `i2c/i2c-rtc` (six other addresses NACKed, their data does not reach the DS1307) |
+| I2C-006 | Port enable bit 10 | S | 3 | | | ✅ `ports/port-enables` (read), `i2c/i2c-rtc` (both ports read `$FF`, writes ignored) |
 
 ### 4.31 `KEY` – Keyboard
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| KEY-001 | Matrix half-rows | S | 1 | `key` | Each of the 40 keys pressed alone clears exactly one bit in the right `$xxFE` read. | — |
-| KEY-002 | Multiple keys / ghosting | S | 2 | `key` | Three keys forming a rectangle behave per membrane model (no ghosting on Next). | — |
-| KEY-003 | Partial address decoding | S | 2 | `key` | Reading with multiple low address bits in the high byte ANDs the rows. | — |
-| KEY-004 | Extended keys `$B0/$B1` | S | 1 | `key` | Next extended keys (`;`, `"`, `,`, `.`, arrows, EDIT, BREAK, …) set bits in `$B0/$B1`. | — |
-| KEY-005 | Extended keys cancel `$68` bit 4 | S | 2 | `key` | Bit 4 set: extended keys no longer produce matrix combinations (e.g. arrow = CAPS+5). | — |
-| KEY-006 | Keyboard ROM scan | S | 1 | `key` | Browser/48K ROM tier: pressing keys types into BASIC (screen case). | — |
-| KEY-007 | Keyjoy mapping `$05` modes | S | 3 | `key`,`joy` | Joystick mapped to keys (mode 101?) per VHDL. | — |
-| KEY-008 | PS/2 mode `$06` bit 2 | S | 3 | | Readback only. | — |
+| KEY-001 | Matrix half-rows | S | 1 | `key` | Each of the 40 keys pressed alone clears exactly one bit in the right `$xxFE` read. | ✅ `keyboard/keyboard` (bits 7 and 5 read 1) |
+| KEY-002 | Multiple keys / ghosting | S | 2 | `key` | Three keys forming a rectangle behave per membrane model (no ghosting on Next). | ✅ `keyboard/keyboard` (one row, several rows, a rectangle shows no fourth key - the membrane logic holds every row's state; electrical ghosting is not in the VHDL and not modelled) |
+| KEY-003 | Partial address decoding | S | 2 | `key` | Reading with multiple low address bits in the high byte ANDs the rows. | ✅ `keyboard/keyboard` (rows AND; no row selected reads `$1F`; any even port is `$FE`) |
+| KEY-004 | Extended keys `$B0/$B1` | S | 1 | `key` | Next extended keys (`;`, `"`, `,`, `.`, arrows, EDIT, BREAK, …) set bits in `$B0/$B1`. | ✅ `keyboard/keyboard` (all 16: their `$B0`/`$B1` bit and their two matrix keys per membrane.vhd - B90) |
+| KEY-005 | Extended keys cancel `$68` bit 4 | S | 2 | `key` | Bit 4 set: extended keys no longer produce matrix combinations (e.g. arrow = CAPS+5). | ✅ `keyboard/keyboard` (no matrix entries, `$B0`/`$B1` still set, real matrix keys unaffected, bit 4 reads back and clears on reset - B90) |
+| KEY-006 | Keyboard ROM scan | S | 1 | `key` | Browser/48K ROM tier: pressing keys types into BASIC (screen case). | ✅ `keyboard/keyboard` - headless NextZXOS from a clone of `~/Klive/ks2.cim` (skipped without it), both cores: DOWN/ENTER in the menu, `POKE 40000,42` (the extra `,` key) and `BORDER 2` typed into NextBASIC |
+| KEY-007 | Keyjoy mapping `$05` modes | S | 3 | `key`,`joy` | Joystick mapped to keys (mode 101?) per VHDL. | ✅ `joystick/joystick` (mode `111` through the joymap programmed with `$28`/`$29`/`$2B`, extra keys included; Kempston buttons 5-11 and MD buttons 8-11 through the same entries; kept by a soft reset, restored by a core load - B91) |
+| KEY-008 | PS/2 mode `$06` bit 2 | S | 3 | | Readback only. | ✅ `keyboard/keyboard` (written only in config mode, kept by a soft reset - B90) |
 
 ### 4.32 `JOY` – Joysticks
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| JOY-001 | Kempston 1 `$1F` | S | 1 | `joy` | Directions + fire bits for `$05` mode Kempston 1. | — |
-| JOY-002 | Kempston 2 `$37` | S | 1 | `joy` | Joystick 2 in Kempston 2 mode. | — |
-| JOY-003 | Sinclair 1/2 | S | 2 | `joy` | Mapped onto keyboard rows (`$EFFE`/`$F7FE`). | — |
-| JOY-004 | Cursor mode | S | 2 | `joy` | Mapped to 5/6/7/8/0. | — |
-| JOY-005 | MD pad 3/6 button | S | 2 | `joy` | Extra buttons in `$1F` bits 7–5 and `$B2`. | — |
-| JOY-006 | `$05` mode encoding | S | 1 | | 3-bit mode per joystick split across bits (7–6 + 3 / 5–4 + 1); readback. | — |
-| JOY-007 | Joystick I/O mode `$0B` | S | 3 | | Readback; pin output mode per VHDL. | — |
-| JOY-008 | No joystick connected | S | 1 | | Kempston reads 0 with no input. | — |
+| JOY-001 | Kempston 1 `$1F` | S | 1 | `joy` | Directions + fire bits for `$05` mode Kempston 1. | ✅ `joystick/joystick` (R L D U B C in bits 0-5, A/START not shown, both connectors OR) |
+| JOY-002 | Kempston 2 `$37` | S | 1 | `joy` | Joystick 2 in Kempston 2 mode. | ✅ `joystick/joystick` (either connector) |
+| JOY-003 | Sinclair 1/2 | S | 2 | `joy` | Mapped onto keyboard rows (`$EFFE`/`$F7FE`). | ✅ `joystick/joystick` - per keyjoy_64_6.coe mode `011` presses 7 6 8 9 0 and mode `000` 2 1 3 4 5 (R L D U fire); zxnext.vhd's comment block names them the other way round (B91) |
+| JOY-004 | Cursor mode | S | 2 | `joy` | Mapped to 5/6/7/8/0. | ✅ `joystick/joystick` (R 8, L 5, D 6, U 7, fire 0, no CAPS SHIFT; combines with the keyboard - B91) |
+| JOY-005 | MD pad 3/6 button | S | 2 | `joy` | Extra buttons in `$1F` bits 7–5 and `$B2`. | ✅ `joystick/joystick` (START/A in bits 7-6 of `$1F`/`$37`; X Z Y MODE of both pads in `$B2` - B91) |
+| JOY-006 | `$05` mode encoding | S | 1 | | 3-bit mode per joystick split across bits (7–6 + 3 / 5–4 + 1); readback. | ✅ `joystick/joystick` (readback and the port the split selects; WASM ignored `$05` - B91) |
+| JOY-007 | Joystick I/O mode `$0B` | S | 3 | | Readback; pin output mode per VHDL. | ✅ `joystick/joystick` (readback mask `$B1`, reset `$01`; I/O mode passes the six raw pins, stops the key joystick - B91). Not observable from the CPU: the pin 7 output (`$0B` bits 5-4 and 0), the UART on the joystick pins |
+| JOY-008 | No joystick connected | S | 1 | | Kempston reads 0 with no input. | ✅ `joystick/joystick` (0 in a Kempston mode; `$FF` when no mode uses the port - B91) |
 
 ### 4.33 `MOU` – Kempston mouse
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| MOU-001 | X `$FBDF` / Y `$FFDF` counters | S | 1 | `mouse` | Movement changes 8-bit counters with wrap. | — |
-| MOU-002 | Buttons `$FADF` | S | 1 | `mouse` | Left/right/middle bits and wheel nibble. | — |
-| MOU-003 | Button reverse `$0A` bit 3 | S | 2 | `mouse` | Swaps left/right. | — |
-| MOU-004 | DPI `$0A` bits 1–0 | S | 3 | `mouse` | Movement scaling. | — |
-| MOU-005 | Port enable bit 13 | S | 2 | | Disabled: ports read `$FF`, `$DF` goes to Specdrum/joystick. | — |
+| MOU-001 | X `$FBDF` / Y `$FFDF` counters | S | 1 | `mouse` | Movement changes 8-bit counters with wrap. | ✅ `mouse/mouse` (wrap, reads do not change them, A15-12 not decoded; a Next reset keeps them, only power-on clears them - B92) |
+| MOU-002 | Buttons `$FADF` | S | 1 | `mouse` | Left/right/middle bits and wheel nibble. | ✅ `mouse/mouse` (0 = pressed, bit 3 = 1, held across packets; wheel's 4-bit delta wraps) |
+| MOU-003 | Button reverse `$0A` bit 3 | S | 2 | `mouse` | Swaps left/right. | ✅ `mouse/mouse` (applied as each packet arrives, not to the latched buttons - B92) |
+| MOU-004 | DPI `$0A` bits 1–0 | S | 3 | `mouse` | Movement scaling. | ✅ `mouse/mouse` (00 doubles, 01, 10 / 11 shift the packet's byte with its bit 7 as the sign; X and Y - B92) |
+| MOU-005 | Port enable bit 13 | S | 2 | | Disabled: ports read `$FF`, `$DF` goes to Specdrum/joystick. | ✅ `mouse/mouse` (`$FF` with no `$DF` reader; the mouse still counts; with the Specdrum port on, every `$xxDF` is the Kempston 1 alias - B92), `ports/port-enables` |
 
 ### 4.34 `FDC` – +3 FDC I/O traps
 

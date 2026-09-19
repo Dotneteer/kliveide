@@ -286,37 +286,26 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetCtcZcTo: ZxNextWasmV2ExportFunction;
   zxnextGetCtcIntEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetCtcExpectingTimeConstant: ZxNextWasmV2ExportFunction;
-  zxnextUartPushRxByte: ZxNextWasmV2ExportFunction;
-  zxnextUartPopTxByte: ZxNextWasmV2ExportFunction;
-  zxnextUartHasTxData: ZxNextWasmV2ExportFunction;
-  zxnextUartDrainTxFifo: ZxNextWasmV2ExportFunction;
-  zxnextUartSetBreakCondition: ZxNextWasmV2ExportFunction;
-  zxnextUartSetFramingError: ZxNextWasmV2ExportFunction;
-  zxnextGetUartSelected: ZxNextWasmV2ExportFunction;
-  zxnextGetUartPrescaler: ZxNextWasmV2ExportFunction;
-  zxnextGetUartFrameRegister: ZxNextWasmV2ExportFunction;
-  zxnextGetUartRxCount: ZxNextWasmV2ExportFunction;
-  zxnextGetUartTxCount: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerSend: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerBreak: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerSetCts: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerSetLoopback: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerReadyToReceive: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerOutputCount: ZxNextWasmV2ExportFunction;
+  zxnextUartPeerOutputByte: ZxNextWasmV2ExportFunction;
   zxnextI2cReadSclPort: ZxNextWasmV2ExportFunction;
   zxnextI2cReadSdaPort: ZxNextWasmV2ExportFunction;
   zxnextI2cWriteSclPort: ZxNextWasmV2ExportFunction;
   zxnextI2cWriteSdaPort: ZxNextWasmV2ExportFunction;
-  zxnextGetI2cScl: ZxNextWasmV2ExportFunction;
-  zxnextGetI2cSda: ZxNextWasmV2ExportFunction;
-  zxnextSetJoystickModes: ZxNextWasmV2ExportFunction;
+  zxnextRtcSetTime: ZxNextWasmV2ExportFunction;
   zxnextSetJoystickLeftState: ZxNextWasmV2ExportFunction;
   zxnextSetJoystickRightState: ZxNextWasmV2ExportFunction;
   zxnextJoystickReadPort1f: ZxNextWasmV2ExportFunction;
   zxnextJoystickReadPort37: ZxNextWasmV2ExportFunction;
-  zxnextMouseSetNextReg0A: ZxNextWasmV2ExportFunction;
-  zxnextMouseAddDelta: ZxNextWasmV2ExportFunction;
-  zxnextMouseAddWheelDelta: ZxNextWasmV2ExportFunction;
-  zxnextMouseSetButtons: ZxNextWasmV2ExportFunction;
+  zxnextMousePacket: ZxNextWasmV2ExportFunction;
   zxnextMouseReadPortFbdf: ZxNextWasmV2ExportFunction;
   zxnextMouseReadPortFfdf: ZxNextWasmV2ExportFunction;
   zxnextMouseReadPortFadf: ZxNextWasmV2ExportFunction;
-  zxnextGetMouseDpi: ZxNextWasmV2ExportFunction;
-  zxnextGetMouseSwapButtons: ZxNextWasmV2ExportFunction;
   zxnextExpansionSetNextReg: ZxNextWasmV2ExportFunction;
   zxnextExpansionGetNextReg: ZxNextWasmV2ExportFunction;
   zxnextExpansionEffectivePortEnable: ZxNextWasmV2ExportFunction;
@@ -651,37 +640,26 @@ const requiredV2Exports = [
   "zxnextGetCtcZcTo",
   "zxnextGetCtcIntEnabled",
   "zxnextGetCtcExpectingTimeConstant",
-  "zxnextUartPushRxByte",
-  "zxnextUartPopTxByte",
-  "zxnextUartHasTxData",
-  "zxnextUartDrainTxFifo",
-  "zxnextUartSetBreakCondition",
-  "zxnextUartSetFramingError",
-  "zxnextGetUartSelected",
-  "zxnextGetUartPrescaler",
-  "zxnextGetUartFrameRegister",
-  "zxnextGetUartRxCount",
-  "zxnextGetUartTxCount",
+  "zxnextUartPeerSend",
+  "zxnextUartPeerBreak",
+  "zxnextUartPeerSetCts",
+  "zxnextUartPeerSetLoopback",
+  "zxnextUartPeerReadyToReceive",
+  "zxnextUartPeerOutputCount",
+  "zxnextUartPeerOutputByte",
   "zxnextI2cReadSclPort",
   "zxnextI2cReadSdaPort",
   "zxnextI2cWriteSclPort",
   "zxnextI2cWriteSdaPort",
-  "zxnextGetI2cScl",
-  "zxnextGetI2cSda",
-  "zxnextSetJoystickModes",
+  "zxnextRtcSetTime",
   "zxnextSetJoystickLeftState",
   "zxnextSetJoystickRightState",
   "zxnextJoystickReadPort1f",
   "zxnextJoystickReadPort37",
-  "zxnextMouseSetNextReg0A",
-  "zxnextMouseAddDelta",
-  "zxnextMouseAddWheelDelta",
-  "zxnextMouseSetButtons",
+  "zxnextMousePacket",
   "zxnextMouseReadPortFbdf",
   "zxnextMouseReadPortFfdf",
   "zxnextMouseReadPortFadf",
-  "zxnextGetMouseDpi",
-  "zxnextGetMouseSwapButtons",
   "zxnextExpansionSetNextReg",
   "zxnextExpansionGetNextReg",
   "zxnextExpansionEffectivePortEnable",

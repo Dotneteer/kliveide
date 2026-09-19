@@ -188,6 +188,15 @@ describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
     expect([0x82, 0x83, 0x84, 0x85].map((r) => hex(s.readNextReg(r)))).toEqual(["$5a", "$a5", "$3c", "$0a"]);
   });
 
+  it("the user register $7F powers on as $FF; a hard reset (a core reload) restores it", async () => {
+    // --- zxnext.vhd:1210 nr_7f_user_register_0 := X"FF", no reset branch; a $02 hard reset reboots the
+    // --- FPGA (zxnext_top ~1062), so only the power-on value applies
+    const s = await createSession(core);
+    expect(hex(s.readNextReg(0x7f)), "power-on").toBe("$ff");
+    s.setNextReg(0x7f, 0xa5).hardReset();
+    expect(hex(s.readNextReg(0x7f)), "hard reset").toBe("$ff");
+  });
+
   it("soft reset clears the clip window indices ($1C)", async () => {
     const s = await createSession(core);
     // --- One write to each clip register moves each 2-bit index to 1.

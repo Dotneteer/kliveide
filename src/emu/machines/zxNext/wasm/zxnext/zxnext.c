@@ -112,6 +112,7 @@ static uint8_t micBit;
 #include "zxnext-psg.c"
 #include "zxnext-audio-mixer.c"
 #include "zxnext-ctc.c"
+#include "zxnext-clock28.c"
 #include "zxnext-uart.c"
 #include "zxnext-i2c.c"
 #include "zxnext-input.c"
@@ -146,9 +147,11 @@ static void clearMachineBuffers(void) {
   zxnextPsgReset();
   zxnextAudioMixerReset();
   zxnextCtcReset();
-  zxnextUartReset();
+  zxnextUartHardReset(); /* a hard reset reloads the FPGA core */
   zxnextI2cReset();
   zxnextInputReset();
+  zxnextJoystickHardReset(); /* a core load initialises the key-joystick map */
+  zxnextMouseHardReset(); /* the power-on m_reset */
   zxnextExpansionHardReset();
   zxnextDmaReset();
   zxnextFloppyReset();

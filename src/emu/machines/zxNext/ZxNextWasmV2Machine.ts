@@ -19,6 +19,7 @@ import {
   UNPAGED_PARTITION_LABEL
 } from "./MemoryDevice";
 import { ZxNextMachine } from "./ZxNextMachine";
+import { rtcRegistersFromDate } from "./I2cDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
@@ -170,6 +171,7 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
+  private wasmV2ExtendedKeys = 0;
   private wasmV2Checkpoint?: ZxNextWasmV2Checkpoint;
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -528,6 +530,8 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
     this.wasmV2RomImages = await this.loadWasmV2RomImages();
     this.wasmV2Runtime = await loadZxNextWasmV2(this.wasmV2LoaderOptions);
     this.hardResetWasmV2(this.wasmV2Runtime);
+    // --- The DS1307 holds the host's time, as the battery-backed clock of a machine set up before
+    this.wasmV2Runtime.exports.zxnextRtcSetTime(...rtcRegistersFromDate(new Date()));
     this.syncAudioSampleRateToWasmV2(this.wasmV2Runtime);
     this.syncCpuFromWasmV2(this.wasmV2Runtime);
   }
@@ -1260,6 +1264,13 @@ export class ZxNextWasmV2Machine extends ZxNextMachine {
       }
       this.wasmV2KeyboardRows[line] = lineValue;
     }
+    // --- The extra keys: codes 40-55
+    const extended = this.keyboardDevice.extendedKeys;
+    const changedExtended = this.wasmV2KeyboardRowsValid ? this.wasmV2ExtendedKeys ^ extended : 0xffff;
+    for (let bit = 0; bit < 16; bit++) {
+      if (changedExtended & (1 << bit)) runtime.exports.zxnextSetKeyStatus(40 + bit, (extended >> bit) & 0x01);
+    }
+    this.wasmV2ExtendedKeys = extended;
     this.wasmV2KeyboardRowsValid = true;
   }
 
