@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  spectrumWasmCpuContract,
-  validateWasmCpuContract
+  validateWasmCpuContract,
+  wasmCpuContract
 } from "../../scripts/check-wasm-cpu-contract.cjs";
 
-describe("Spectrum WASM shared Z80/Z80N CPU contract", () => {
-  it("requires every Spectrum WASM artifact to be built around the shared CPU source", () => {
+describe("WASM machines: shared Z80/Z80N CPU contract", () => {
+  it("requires every WASM machine artifact to be built around the shared CPU source", () => {
     const report = validateWasmCpuContract();
 
     expect(report.errors).toEqual([]);
@@ -24,7 +24,8 @@ describe("Spectrum WASM shared Z80/Z80N CPU contract", () => {
       ["sp48", "z80"],
       ["sp128", "z80"],
       ["spp3e", "z80"],
-      ["zxnext", "z80n"]
+      ["zxnext", "z80n"],
+      ["z88", "z80"]
     ]);
     for (const model of report.models) {
       expect(model.sharedCpuSource).toBe(report.shared.relativePath);
@@ -49,9 +50,14 @@ describe("Spectrum WASM shared Z80/Z80N CPU contract", () => {
     expect(report.models.find(model => model.id === "spp3e")?.sharedDeviceIncludes).not.toContain(
       '#include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"'
     );
+    // --- The Cambridge Z88 shares the CPU but none of the Spectrum devices
+    const z88 = report.models.find(model => model.id === "z88");
+    expect(z88?.sharedDeviceIncludes).toEqual([]);
+    expect(z88?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
+    expect(z88?.ok).toBe(true);
   });
 
-  it("keeps the contract list explicit so new Spectrum WASM models cannot appear silently", () => {
-    expect(spectrumWasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "sp128", "spp3e", "zxnext"]);
+  it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
+    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "sp128", "spp3e", "zxnext", "z88"]);
   });
 });

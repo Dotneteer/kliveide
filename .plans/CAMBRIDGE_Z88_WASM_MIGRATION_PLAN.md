@@ -567,7 +567,44 @@ Original scope:
 
 ### Step 1 - Build, packaging, loader and C skeleton
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `scripts/build-z88-wasm.cjs` (+ `.d.cts`) builds `src/emu/machines/z88/wasm/z88/z88.c` into
+  `src/emu/machines/z88/wasm/dist/cambridge-z88.wasm`: clang wasm32, `speed`/`size`/`lto` profiles,
+  8 MiB fixed linear memory (`z88.c` has a `_Static_assert` that 4 MB of memory + the 800x480 pixel
+  buffer + audio + 512K of headroom fit), export allow-list, stale-artifact cleanup, packaged to
+  `wasm/z88`.
+- **Build lock.** Test workers build the artifact in parallel, so real builds of the production
+  artifact hold a lock file (`scripts/wasm-build-lock.cjs`, a neutral copy of the Next build's lock
+  logic; the Next script keeps its own copy), and readers call `waitForZ88WasmBuildLock()`.
+  `test/z88/z88-wasm-test-helpers.ts` (`z88WasmArtifactBytes()`) builds once per worker and reads
+  under the lock.
+- `scripts/check-z88-wasm-size.cjs` (+ `.d.cts`): a **provisional** ceiling of 700,000 bytes (the
+  Next's) until Step 12 measures the real machine. The skeleton is 1,479 bytes, because nothing
+  calls the CPU yet, so the linker drops the shared core. The "larger than the standalone Z80 core"
+  sanity rule therefore starts to apply in Step 5, once the frame loop runs the CPU.
+- `package.json`: `build:z88-wasm`, `check:z88-wasm-size`, Z88 added to `build:all-wasm` (so every
+  platform build compiles it), `extraResources` entry.
+- `z88.c` + `z88-memory.c`: static buffers (4 MB physical memory, 800x480 pixels, audio, 8 key
+  lines), `z88Reset` (CPU, counters, pixels, key lines, audio; memory kept) and `z88HardReset`
+  (also clears memory), `z88SetLcdSize(scw, sch)` with the `Z88ScreenDevice` size rule (invalid
+  values select 640x64), clock/frame constants, and the six `z88GetCpu*` getters the contract
+  requires. The shared `z80.c` is included behind the `Z80_*` hooks; memory reads `$FF` and ports
+  are stubs until Steps 4-6, as the README and file headers say. **Nothing emulates a Z88 yet.**
+- `Z88WasmV2Loader.ts`: module cache per artifact name (each load a fresh instance),
+  required-export validation (`z88WasmV2RequiredExports`, which the build allow-list must cover),
+  bounds-checked views. The pixel view covers the whole 800x480 buffer; the adapter will use the
+  first width x height words of it.
+- `check-wasm-cpu-contract.cjs`: the list is now `wasmCpuContract` (not Spectrum-only) and includes
+  `z88`. New rule `forbiddenIncludeFragments`: every `.c`/`.h` in the Z88 source folder is scanned,
+  and any `zxSpectrum/wasm/common/` include fails the contract (checked by planting one). Added
+  `check-wasm-cpu-contract.d.cts`, which also cleared the contract test's old implicit-any errors.
+- Tests: `test/z88/z88-wasm-build.test.ts` (14), `test/z88/z88-wasm-v2-loader.test.ts` (21), and
+  the updated `test/wasm/wasm-shared-z80-cpu-contract.test.ts`.
+- Usable afterwards: a loadable, validated Z88 core with nothing behind it. The TypeScript Z88 is
+  still the only backend a user can run.
+
+Original scope:
 
 - `scripts/build-z88-wasm.cjs` / `.d.cts`: clang wasm32, speed profile, `size`/`lto` profiles,
   `productionExports` allow-list, stale-artifact cleanup, `packagedResourceDirectory = "wasm/z88"`.
@@ -581,7 +618,7 @@ Status: Not started.
 - `Z88WasmV2Loader.ts`: artifact `cambridge-z88.wasm`, module cache, required-export validation,
   typed views (`memory` 4 MB physical, `pixelBuffer`, `pixelBufferBytes`, `audioSamples`,
   `keyboardLines`) with bounds checks.
-- Add `z88` to `spectrumWasmCpuContract`. The contract test asserts the Z88 includes the shared
+- Add `z88` to the CPU contract list (renamed `wasmCpuContract`). The contract test asserts the Z88 includes the shared
   `z80.c` and **none** of the Spectrum device sources, and the explicit model list becomes
   `["sp48","sp128","spp3e","zxnext","z88"]`. Rename the test's wording from "Spectrum" to "WASM
   machines".

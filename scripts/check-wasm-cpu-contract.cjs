@@ -1,5 +1,5 @@
-const { existsSync, readFileSync, statSync } = require("node:fs");
-const { relative, resolve, sep } = require("node:path");
+const { existsSync, readdirSync, readFileSync, statSync } = require("node:fs");
+const { dirname, relative, resolve, sep } = require("node:path");
 
 const root = resolve(__dirname, "..");
 const sharedCpuSource = resolve(root, "src/emu/z80/wasm/z80.c");
@@ -12,7 +12,11 @@ const sharedSpectrumDeviceSources = {
   psg: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c")
 };
 
-const spectrumWasmCpuContract = [
+/*
+ * Every full-machine WASM core, and what it must be built from. A new core cannot appear without an
+ * entry here: the contract test pins the list.
+ */
+const wasmCpuContract = [
   {
     id: "sp48",
     label: "ZX Spectrum 48K",
@@ -86,6 +90,19 @@ const spectrumWasmCpuContract = [
       "zxnextGetCpuSp",
       "zxnextGetSharedZ80NMode"
     ]
+  },
+  {
+    id: "z88",
+    label: "Cambridge Z88",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-z88-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/z88/wasm/z88/z88.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/z88/wasm/z88/z88.c"),
+    artifact: resolve(root, "src/emu/machines/z88/wasm/dist/cambridge-z88.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- The Z88's Blink, LCD, keyboard and beeper are its own; no Spectrum device may leak in
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    requiredExports: ["z88GetCpuAf", "z88GetCpuBc", "z88GetCpuDe", "z88GetCpuHl", "z88GetCpuPc", "z88GetCpuSp"]
   }
 ];
 
@@ -152,6 +169,19 @@ function validateModelContract(entry) {
       errors.push(`${relativeToRoot(entry.cpuAdapterSource)} does not include shared Spectrum device source '${include}'`);
     }
   }
+  // --- Forbidden includes are searched in every C file of the core's source folder, since the
+  // --- translation unit includes its siblings
+  if ((entry.forbiddenIncludeFragments ?? []).length > 0) {
+    const folder = dirname(entry.cpuAdapterSource);
+    for (const file of readdirSync(folder).filter((name) => name.endsWith(".c") || name.endsWith(".h"))) {
+      const lines = readText(resolve(folder, file)).split(/\r?\n/);
+      for (const fragment of entry.forbiddenIncludeFragments) {
+        for (const line of lines.filter((l) => l.trim().startsWith("#include") && l.includes(fragment))) {
+          errors.push(`${relativeToRoot(resolve(folder, file))} must not include '${line.trim()}'`);
+        }
+      }
+    }
+  }
   if (!sourceText.includes("#define Z80_EXTERNAL_BUS 1")) {
     errors.push(`${relativeToRoot(entry.cpuAdapterSource)} does not declare the external Z80 bus adapter`);
   }
@@ -190,6 +220,7 @@ function validateModelContract(entry) {
     artifactBytes: existsSync(entry.artifact) ? statSync(entry.artifact).size : 0,
     sharedCpuSource: relativeToRoot(sharedCpuSource),
     sharedDeviceIncludes: entry.sharedDeviceIncludes ?? [],
+    forbiddenIncludeFragments: entry.forbiddenIncludeFragments ?? [],
     ok: errors.length === 0,
     errors
   };
@@ -198,7 +229,7 @@ function validateModelContract(entry) {
 function validateWasmCpuContract() {
   const shared = validateSharedCpuSource();
   const sharedSpectrumDevices = validateSharedSpectrumDeviceSources();
-  const models = spectrumWasmCpuContract.map(validateModelContract);
+  const models = wasmCpuContract.map(validateModelContract);
   const errors = [
     ...shared.errors,
     ...sharedSpectrumDevices.flatMap(device => device.errors),
@@ -217,7 +248,7 @@ function checkWasmCpuContract() {
   const report = validateWasmCpuContract();
   console.log(JSON.stringify(report, null, 2));
   if (!report.ok) {
-    throw new Error(`Spectrum WASM CPU contract failed with ${report.errors.length} issue(s).`);
+    throw new Error(`WASM CPU contract failed with ${report.errors.length} issue(s).`);
   }
   return report;
 }
@@ -230,6 +261,6 @@ module.exports = {
   checkWasmCpuContract,
   sharedCpuSource,
   sharedSpectrumDeviceSources,
-  spectrumWasmCpuContract,
-  validateWasmCpuContract
+  validateWasmCpuContract,
+  wasmCpuContract
 };

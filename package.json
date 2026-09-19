@@ -35,7 +35,9 @@
     "check:spp3e-wasm-size": "node scripts/check-spp3e-wasm-size.cjs",
     "build:zxnext-wasm": "node scripts/build-zxnext-wasm.cjs",
     "check:zxnext-wasm-size": "node scripts/check-zxnext-wasm-size.cjs",
-    "build:all-wasm": "npm run build:sp48-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm",
+    "build:z88-wasm": "node scripts/build-z88-wasm.cjs",
+    "check:z88-wasm-size": "node scripts/check-z88-wasm-size.cjs",
+    "build:all-wasm": "npm run build:sp48-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm",
     "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
@@ -246,6 +248,13 @@
       {
         "from": "src/emu/machines/zxNext/wasm/dist",
         "to": "wasm/zxNext",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/z88/wasm/dist",
+        "to": "wasm/z88",
         "filter": [
           "**/*.wasm"
         ]
