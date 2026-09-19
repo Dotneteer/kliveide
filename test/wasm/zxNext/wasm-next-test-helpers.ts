@@ -255,9 +255,9 @@ function captureNextRegSnapshot(
   machine: TestZxNextMachine | ZxNextWasmV2Machine
 ): ZxNextOracleNextRegSnapshot {
   // --- The $243B/$253B path: NEXTREG (tbblueOut) writes without selecting (zxnext.vhd ~4719-4725)
-  machine.nextRegDevice.setNextRegisterIndex(0x12);
-  machine.nextRegDevice.setNextRegisterValue(0x34);
-  const state = machine.nextRegDevice.getNextRegDeviceState();
+  machine.doWritePort(0x243b, 0x12);
+  machine.doWritePort(0x253b, 0x34);
+  const state = machine.getNextRegState();
   const sampledValues: Record<number, number | undefined> = {};
   for (const id of NEXT_REG_SAMPLE_IDS) {
     sampledValues[id] = state.regs.find(reg => reg.id === id)?.value;

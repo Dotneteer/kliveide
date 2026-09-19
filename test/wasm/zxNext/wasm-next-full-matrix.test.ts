@@ -74,26 +74,21 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "memory/mmu",
     requiredDomain: "memory",
-    typeScriptTests: ["MemoryDevice.test.ts", "AllRamBanks.test.ts"],
+    typeScriptTests: ["MemoryDevice.test.ts"],
     wasmSuites: ["wasm-next-memory-mmu.test.ts", "wasm-next-partition-labels.test.ts"],
     reason: "wasm-suite",
     note:
-      "`AllRamBanks.test.ts` covers `allRamBanksFor`, which both machines now call — it is a pure " +
-      "function of the reported $1FFD value, so there is nothing machine-specific left for a WASM " +
-      "suite to re-check. What is WASM-specific is `getWasmV2Port1ffdValue`'s conversion from " +
-      "NextReg $8E, which wasm-next-memory-mmu.test.ts owns."
+      "`allRamBanksFor`, which both machines call, is a pure function of the stored $1FFD value in " +
+      "the neutral `nextMemoryLayout.ts`; test/zxnext-shared/nextMemoryLayout.test.ts covers it."
   },
   {
     category: "NextReg/palette",
     requiredDomain: "NextReg",
-    typeScriptTests: [
-      "NextRegDevice.test.ts",
-      "palette-codec.test.ts"
-    ],
+    typeScriptTests: ["NextRegDevice.test.ts"],
     wasmSuites: ["wasm-next-nextreg.test.ts", "wasm-next-palette-ulaplus.test.ts"],
     reason: "typescript-owned-host-boundary",
     note:
-      "Device and NextReg palette behaviour is covered in WASM. `palette-codec.test.ts` is not: it " +
+      "Device and NextReg palette behaviour is covered in WASM. test/zxnext-shared/palette-codec.test.ts is not: it " +
       "pins the two bit layouts the *host* moves a palette entry around in (the register packing " +
       "versus PaletteDevice's straight 9 bits) and the 3-bit to 8-bit component ramp the renderer " +
       "expands them with. None of that crosses into the emulated machine — the WASM core never " +
@@ -190,15 +185,15 @@ const MATRIX: MatrixEntry[] = [
   {
     category: "input/keystroke queue",
     requiredDomain: "input",
-    typeScriptTests: ["KeystrokeQueue.test.ts", "NextKeyCodeMapping.test.ts"],
+    typeScriptTests: ["KeystrokeQueue.test.ts"],
     wasmSuites: ["wasm-next-input.test.ts", "wasm-next-keyboard-ula.test.ts"],
     reason: "typescript-owned-host-boundary",
     note:
       "The emulated keystroke queue is TypeScript-owned: `queueKeystroke`/`emulateKeystroke` and " +
       "the `emulatedKeyStrokes` list live in the machine class, and only the resulting key rows " +
       "are pushed into the core by `syncKeyboardToWasmV2`. The WASM suites cover the row state " +
-      "that arrives; these suites cover the ASCII-to-key-code mapping and the scheduling that " +
-      "produce it."
+      "that arrives; KeystrokeQueue.test.ts covers the scheduling that produces it, and " +
+      "test/zxnext-shared/nextKeyCodes.test.ts the ASCII-to-key-code mapping."
   },
   {
     category: "expansion/multiface",
@@ -213,7 +208,6 @@ const MATRIX: MatrixEntry[] = [
     requiredDomain: "NMI/interrupt",
     typeScriptTests: [
       "CtcDevice.test.ts",
-      "I2cDevice.test.ts",
       "InterruptDevice.test.ts",
       "NmiSoftware.test.ts",
       "NmiStateMachine.test.ts"

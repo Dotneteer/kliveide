@@ -1,5 +1,5 @@
 import type { NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "./machines";
 
 /** NextReg select / data ports. Writing through them is the hardware path in both cores. */
 const NEXTREG_SELECT = 0x243b;
@@ -16,12 +16,12 @@ export type DirectLoadResult = {
   differencesFromNexload: string[];
 };
 
-export function writeNextReg(machine: ZxNextMachine, reg: number, value: number): void {
+export function writeNextReg(machine: NextMachine, reg: number, value: number): void {
   machine.doWritePort(NEXTREG_SELECT, reg & 0xff);
   machine.doWritePort(NEXTREG_DATA, value & 0xff);
 }
 
-export function readNextReg(machine: ZxNextMachine, reg: number): number {
+export function readNextReg(machine: NextMachine, reg: number): number {
   machine.doWritePort(NEXTREG_SELECT, reg & 0xff);
   return machine.doReadPort(NEXTREG_DATA);
 }
@@ -39,7 +39,7 @@ export function readNextReg(machine: ZxNextMachine, reg: number): number {
  * interrupt mode, sysvars) is listed in the result. Tier 2 runs the real `nex-run` path to catch
  * a test that silently depends on any of it.
  */
-export function loadNexDirect(machine: ZxNextMachine, nex: NexFileContents): DirectLoadResult {
+export function loadNexDirect(machine: NextMachine, nex: NexFileContents): DirectLoadResult {
   const { header } = nex;
 
   // --- Copy each bank through slot 6/7 ($C000-$FFFF), the one window never needed by the loader.

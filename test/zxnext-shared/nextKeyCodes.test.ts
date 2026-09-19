@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { convertAsciiStringToNextKeyCodes } from "@emu/machines/zxNext/NextKeyboardDevice";
+import { convertAsciiStringToNextKeyCodes } from "@emu/machines/zxNext/nextKeyCodes";
 
 /*
  * Capitals are CAPS SHIFT + letter. They were encoded as SYMBOL SHIFT + letter, which does not

@@ -79,11 +79,11 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
       af: 0xabcd
     });
 
-    machine.memoryDevice.writeMemory(0x4000, 0x11);
+    machine.doWriteMemory(0x4000, 0x11);
     machine.doWriteMemory(0x4000, 0x5a);
     expect(machine.doReadMemory(0x4000)).toBe(0x5a);
     expect(machine.get64KFlatMemory()[0x4000]).toBe(0x5a);
-    expect(machine.memoryDevice.readMemory(0x4000)).toBe(0x5a);
+    expect(machine.doReadMemory(0x4000)).toBe(0x5a);
 
     const sections = machine.getDisassemblySections({ ram: true, screen: true });
     expect(sections).toContainEqual({
@@ -94,8 +94,8 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
 
     machine.tbblueOut(0x12, 0x34);
     // --- NEXTREG writes without touching the $243B selection, which a reset left at $24
-    expect(machine.nextRegDevice.getNextRegisterIndex()).toBe(0x24);
-    const nextRegState = machine.nextRegDevice.getNextRegDeviceState();
+    expect(machine.getNextRegState().lastRegisterIndex).toBe(0x24);
+    const nextRegState = machine.getNextRegState();
     expect(nextRegState.regs.find(reg => reg.id === 0x12)).toMatchObject({
       id: 0x12,
       value: 0x34,

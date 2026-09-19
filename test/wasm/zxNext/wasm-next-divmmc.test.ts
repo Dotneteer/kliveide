@@ -287,13 +287,13 @@ function normalizeWasmOffset(offset: number): number | null {
 }
 
 function writeNextReg(machine: TestZxNextMachine | ZxNextWasmV2Machine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }
 
 function readNextReg(machine: TestZxNextMachine | ZxNextWasmV2Machine, reg: number): number {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  return machine.nextRegDevice.getNextRegisterValue();
+  machine.doWritePort(0x243b, reg);
+  return machine.doReadPort(0x253b);
 }
 
 function runBeforeFetch(machine: TestZxNextMachine | ZxNextWasmV2Machine, pc: number): void {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MemoryMap, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
-import { extendedInstructionLenghts } from "@emu/machines/zxNext/Z80NMachineBase";
+import { extendedInstructionLenghts } from "@emu/machines/zxNext/z80nInstructionLengths";
 
 /**
  * `getCallInstructionLength` decides where step-over plants its temporary breakpoint: at

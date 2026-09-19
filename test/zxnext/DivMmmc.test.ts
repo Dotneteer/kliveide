@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine } from "./TestNextMachine";
-import { OFFS_NEXT_ROM } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_NEXT_ROM } from "@emu/machines/zxNext/nextMemoryLayout";
 
 const nextRom0Signature0 = [0xf3, 0xc3, 0xef, 0x00, 0x45, 0x44, 0x08, 0x02]; // 0x0000
 const nextRom3Signature0 = [0xf3, 0xaf, 0x01, 0x3b, 0x24, 0xc3, 0xe8, 0x3b]; // 0x0000

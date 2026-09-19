@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { ALL_CORES, createSession } from "../../harness/zxnext";
-import { CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_SUB_MINOR } from "@emu/machines/zxNext/NextRegDevice";
+import { CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_SUB_MINOR } from "@emu/machines/zxNext/nextCoreVersion";
 
 /*
  * Machine identity registers (catalogue NR-006 - NR-008). All three are read-only: the read mux

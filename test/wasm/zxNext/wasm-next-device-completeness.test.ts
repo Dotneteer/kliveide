@@ -52,7 +52,7 @@ const DEVICE_COVERAGE: DeviceCoverage[] = [
     device: "I2C / DS1307",
     // --- the hardware-interface tests of test/zxnext-hw/i2c run on both cores (they replaced the mocks)
     wasmSuites: ["../../zxnext-hw/i2c/i2c-rtc.test.ts"],
-    typeScriptSuites: ["../zxnext-hw/i2c/i2c-rtc.test.ts", "I2cDevice.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/i2c/i2c-rtc.test.ts", "../zxnext-shared/nextRtc.test.ts"],
     requiredSemantics: ["I2C SCL/SDA state", "DS1307 protocol", "DS1307 clock", "DS1307 RAM"]
   },
   {

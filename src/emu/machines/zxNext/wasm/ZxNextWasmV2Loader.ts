@@ -1,9 +1,5 @@
-import { OFFS_ERR_PAGE } from "../MemoryDevice";
-import {
-  ZXNEXT_FRAME_TRACE_CAPACITY,
-  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
-  ZXNEXT_FRAME_TRACE_RECORD_SIZE
-} from "../diagnostics/ZxNextFrameTrace";
+import { OFFS_ERR_PAGE } from "../nextMemoryLayout";
+import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "./frameTraceLayout";
 
 export const ZXNEXT_WASM_V2_ARTIFACT_NAME = "zx-spectrum-next.wasm";
 export const ZXNEXT_WASM_V2_MEMORY_SIZE = OFFS_ERR_PAGE + 0x2000;
@@ -31,6 +27,10 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextReadScreenMemoryOffset: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageReadOffset: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageWriteOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPort7ffd: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPortDffd: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPort1ffd: ZxNextWasmV2ExportFunction;
+  zxnextGetMemoryPortEff7: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank16: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank8: ZxNextWasmV2ExportFunction;
   zxnextGetMemorySelectedRomPage: ZxNextWasmV2ExportFunction;
@@ -50,6 +50,11 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetTacts: ZxNextWasmV2ExportFunction;
   zxnextGetCurrentFrameTact: ZxNextWasmV2ExportFunction;
   zxnextGetTactsInFrame: ZxNextWasmV2ExportFunction;
+  zxnextGetTimingTotalHc: ZxNextWasmV2ExportFunction;
+  zxnextGetCpuSigInt: ZxNextWasmV2ExportFunction;
+  zxnextGetTimingTotalVc: ZxNextWasmV2ExportFunction;
+  zxnextGetTotalContentionDelaySinceStart: ZxNextWasmV2ExportFunction;
+  zxnextGetContentionDelaySincePause: ZxNextWasmV2ExportFunction;
   zxnextGetFrameCompleted: ZxNextWasmV2ExportFunction;
   zxnextSetSignalNmi: ZxNextWasmV2ExportFunction;
   zxnextGetSignalNmi: ZxNextWasmV2ExportFunction;
@@ -123,6 +128,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetNextRegisterIndex: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegisterValue: ZxNextWasmV2ExportFunction;
   zxnextWriteNextRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetNextRegisterLastWrite: ZxNextWasmV2ExportFunction;
+  zxnextPeekNextRegister: ZxNextWasmV2ExportFunction;
   zxnextTakeResetRequest: ZxNextWasmV2ExportFunction;
   zxnextPressMultifaceNmiButton: ZxNextWasmV2ExportFunction;
   zxnextPressDivMmcNmiButton: ZxNextWasmV2ExportFunction;
@@ -371,6 +378,10 @@ const requiredV2Exports = [
   "zxnextReadScreenMemoryOffset",
   "zxnextGetMemoryPageReadOffset",
   "zxnextGetMemoryPageWriteOffset",
+  "zxnextGetMemoryPort7ffd",
+  "zxnextGetMemoryPortDffd",
+  "zxnextGetMemoryPort1ffd",
+  "zxnextGetMemoryPortEff7",
   "zxnextGetMemoryPageBank16",
   "zxnextGetMemoryPageBank8",
   "zxnextGetMemorySelectedRomPage",
@@ -390,6 +401,11 @@ const requiredV2Exports = [
   "zxnextGetTacts",
   "zxnextGetCurrentFrameTact",
   "zxnextGetTactsInFrame",
+  "zxnextGetTimingTotalHc",
+  "zxnextGetCpuSigInt",
+  "zxnextGetTimingTotalVc",
+  "zxnextGetTotalContentionDelaySinceStart",
+  "zxnextGetContentionDelaySincePause",
   "zxnextGetFrameCompleted",
   "zxnextSetSignalNmi",
   "zxnextGetSignalNmi",
@@ -463,6 +479,8 @@ const requiredV2Exports = [
   "zxnextGetNextRegisterIndex",
   "zxnextSetNextRegisterValue",
   "zxnextWriteNextRegister",
+  "zxnextGetNextRegisterLastWrite",
+  "zxnextPeekNextRegister",
   "zxnextTakeResetRequest",
   "zxnextPressMultifaceNmiButton",
   "zxnextPressDivMmcNmiButton",

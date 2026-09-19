@@ -134,7 +134,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
      *
      * If that address is never reached the machine runs on to the next real breakpoint, which is
      * how a wrong instruction length shows up as step-over apparently teleporting. See
-     * `extendedInstructionLenghts` in `Z80NMachineBase`, and the test that checks it.
+     * `extendedInstructionLenghts` in `z80nInstructionLengths.ts`, and the test that checks it.
      */
     if (debugSupport.imminentBreakpoint !== undefined) {
       if (debugSupport.imminentBreakpoint === pc) {

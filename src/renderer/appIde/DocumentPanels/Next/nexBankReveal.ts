@@ -1,4 +1,4 @@
-import type { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 
 import { bank16kAtAddress } from "./nextBankLocation";
 import { getNexLoad } from "./nexLoadSession";

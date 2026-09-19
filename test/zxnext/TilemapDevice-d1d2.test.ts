@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
 import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextComposedScreenDevice";
-import { OFFS_BANK_05, OFFS_BANK_07 } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_BANK_05, OFFS_BANK_07 } from "@emu/machines/zxNext/nextMemoryLayout";
 
 // --- D1 (per-tile ULA priority) moved to the real machine: test/zxnext-hw/tilemap/tilemap.test.ts
 // --- (TM-009, TM-010, TM-012). D2 (bank 7 base addresses) stays here until bank 7 is covered there.

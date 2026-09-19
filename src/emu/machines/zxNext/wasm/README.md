@@ -10,6 +10,26 @@ name is `zx-spectrum-next.wasm`, built from this folder and loaded by
 
 - `zxnext/`: the freestanding C implementation.
 - `dist/`: generated production WASM artifact.
+- `ZxNextWasmV2Loader.ts`, `frameTraceLayout.ts`: the loader and the frame-trace ring layout.
+
+## How The Machine Is Put Together
+
+`ZxNextWasmV2Machine` stands on its own; it does not derive from the TypeScript `ZxNextMachine`.
+
+```
+Z80Cpu -> Z80MachineBase -> ZxNextWasmHost -> ZxNextWasmV2Machine   (this backend)
+Z80Cpu -> Z80NCpu -> Z80NMachineBase -> ZxNextMachine               (TypeScript compatibility)
+```
+
+- `ZxNextWasmHost` is the host-side plumbing that does not depend on how the hardware is emulated:
+  frame units for the pacing, the key-stroke queue, code injection, partition names, sysvars.
+- What both machines share lives in neutral modules next to them - `nextMachineInfo.ts` (partition
+  naming, disassembly sections, the NextZXOS code-injection flow, step-over lengths),
+  `nextMemoryLayout.ts`, `nextRegDescriptors.ts`, `nextCoreVersion.ts`, `nextRtc.ts`,
+  `nextKeyCodes.ts`, `nextColorTables.ts`, `z80nInstructionLengths.ts` - and in the IDE contract
+  `IZxNextIdeMachine`, which both implement and `MainToEmuProcessor` talks to.
+- `test/wasm/zxNext/wasm-next-separation.test.ts` fails if a TypeScript Next class, device or port
+  handler becomes reachable from this machine or its loader again, even through a type import.
 
 The runtime switch has two supported values:
 

@@ -1,4 +1,4 @@
-import { getNextRegisters, NextRegInfo } from "@emu/machines/zxNext/NextRegDevice";
+import { getNextRegDescriptor } from "@emu/machines/zxNext/nextRegDescriptors";
 import { ICustomDisassembler } from "./custom-disassembly";
 import { toDecimal3, toDecimal5 } from "../../services/ide-commands";
 import {
@@ -31,7 +31,6 @@ export class Z80Disassembler {
   private _decimalMode = false;
   private _overflow = false;
   private _addressOffset = 0;
-  private _nextRegInfo: NextRegInfo[] = [];
 
   /**
    * Initializes a new instance of the disassembler
@@ -47,7 +46,6 @@ export class Z80Disassembler {
   ) {
     this.memorySections = memorySections;
     this.memoryContents = memoryContents;
-    this._nextRegInfo = getNextRegisters();
     this._decimalMode = options?.decimalMode ?? false;
   }
 
@@ -591,7 +589,7 @@ export class Z80Disassembler {
         // --- #N: 8-bit Next Register index from the code
         var value = this.fetch();
         replacement = this._decimalMode ? value.toString(10) : `$${intToX2(value)}`;
-        const regInfo = this._nextRegInfo.find((n) => n?.id === value);
+        const regInfo = getNextRegDescriptor(value);
         if (regInfo) {
           disassemblyItem.hardComment = regInfo.description;
         }

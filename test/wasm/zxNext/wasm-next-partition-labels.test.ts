@@ -103,6 +103,6 @@ function expectSameLabels(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMachine):
 }
 
 function writeNextReg(machine: LabelMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }

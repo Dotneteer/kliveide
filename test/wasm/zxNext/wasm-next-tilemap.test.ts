@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { OFFS_BANK_05 } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_BANK_05 } from "@emu/machines/zxNext/nextMemoryLayout";
 import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
-import { zxNextBgra } from "@emu/machines/zxNext/PaletteDevice";
+import { zxNextBgra } from "@emu/machines/zxNext/nextColorTables";
 import { createTestNextMachine } from "../../zxnext/TestNextMachine";
 import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
 

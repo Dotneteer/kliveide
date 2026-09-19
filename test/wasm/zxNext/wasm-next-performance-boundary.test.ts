@@ -10,11 +10,7 @@ import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
-import {
-  ZXNEXT_FRAME_TRACE_CAPACITY,
-  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
-  ZXNEXT_FRAME_TRACE_RECORD_SIZE
-} from "@emu/machines/zxNext/diagnostics/ZxNextFrameTrace";
+import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 import { createTestNextMachine } from "../../zxnext/TestNextMachine";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../scripts/check-zxnext-wasm-size.cjs";

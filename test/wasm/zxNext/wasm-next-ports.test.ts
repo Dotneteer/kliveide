@@ -122,18 +122,19 @@ function hardResetBoth(oracle: TestZxNextMachine, wasm: ZxNextWasmV2Machine): vo
 }
 
 function writeNextReg(machine: PortMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }
 
-function readNextReg(machine: PortMachine, reg: number): number {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  return machine.nextRegDevice.getNextRegisterValue();
-}
-
+/**
+ * Compares NextRegs as a `$253B` read returns them - but through the IDE interface, which reads without
+ * touching the bus, so the last-I/O-access assertions that follow still see the test's own writes.
+ */
 function expectSameNextRegs(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMachine, regs: number[]): void {
+  const value = (machine: PortMachine, reg: number) =>
+    machine.getNextRegState().regs.find((r) => r.id === reg)?.value;
   for (const reg of regs) {
-    expect(readNextReg(wasm, reg), `reg $${reg.toString(16)}`).toBe(readNextReg(oracle, reg));
+    expect(value(wasm, reg), `reg $${reg.toString(16)}`).toBe(value(oracle, reg));
   }
 }
 

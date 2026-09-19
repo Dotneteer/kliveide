@@ -7,11 +7,7 @@ import { toBin8, toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
 import {} from "@controls/Tooltip";
-import {
-  NextRegDescriptor,
-  NextRegValueSlice,
-  RegValueState
-} from "@emu/machines/zxNext/NextRegDevice";
+import { NextRegDescriptor, NextRegValueSlice, RegValueState } from "@emu/machines/zxNext/nextRegDescriptors";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { DataRow } from "@renderer/controls/data";

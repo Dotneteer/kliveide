@@ -20,6 +20,7 @@ import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { IMachineFrameRunner, MachineFrameRunner } from "../MachineFrameRunner";
+import { z80nCallInstructionLength } from "./nextMachineInfo";
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -514,7 +515,6 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
     return {};
   }
 
-
   /**
    * Gets the current call stack information
    */
@@ -596,37 +596,10 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
    * @return 0, if the next instruction is not a call; otherwise the length of the call instruction
    */
   getCallInstructionLength(): number {
-    // --- We intentionally avoid using ReadMemory() directly
-    // --- So that we can prevent false memory touching.
-    var opCode = this.doReadMemory(this.pc);
-
-    // --- CALL instruction
-    if (opCode == 0xcd) return 3;
-
-    // --- Call instruction with condition
-    if ((opCode & 0xc7) == 0xc4) return 3;
-
-    // --- Check for RST instructions
-    if ((opCode & 0xc7) == 0xc7) {
-      return opCode === 0xdf || opCode === 0xef ? 3 : 1;
-    }
-
-    // --- Check for HALT instruction
-    if (opCode == 0x76) return 1;
-
-    // --- Check for extended instruction prefix
-    if (opCode != 0xed) return 0;
-
-    // --- Check for I/O and block transfer instructions
-    opCode = this.doReadMemory(this.pc + 1);
-    if ((opCode & 0xb4) === 0xb0) {
-      return 2;
-    }
-    if (extendedInstructionLenghts[opCode] !== undefined) {
-      return extendedInstructionLenghts[opCode];
-    }
-    return 0;
+    // --- `doReadMemory`, not `readMemory`: no contention, no touching the memory for breakpoints
+    return z80nCallInstructionLength((address) => this.doReadMemory(address), this.pc);
   }
+
 
   /**
    * Gets the structure describing system variables
@@ -636,46 +609,3 @@ export abstract class Z80NMachineBase extends Z80NCpu implements IZ80Machine {
   }
 }
 
-/**
- * How many bytes each ED-prefixed Z80N instruction occupies, for step-over.
- *
- * Step-over plants a temporary breakpoint at `PC + length`. A wrong length points it into the
- * middle of the *next* instruction, where PC never lands — the breakpoint never fires and the
- * machine runs on to the next real one, which looks like step-over jumping somewhere unrelated.
- *
- * `test/emu/z80n-step-over-lengths.test.ts` checks every entry against the disassembler, which
- * derives lengths by consuming operand bytes rather than by hand. Exported for that test.
- */
-export const extendedInstructionLenghts: Record<number, number> = {
-  0xa4: 2,
-  0xa5: 2,
-  0xb4: 2,
-  0xac: 2,
-  0xbc: 2,
-  0xb7: 2,
-  0x90: 2,
-  0x30: 2,
-  0x31: 2,
-  0x32: 2,
-  0x33: 2,
-  0x34: 4,
-  0x35: 4,
-  0x36: 4,
-  0x23: 2,
-  0x24: 2,
-  0x8a: 4,
-  0x91: 4,
-  // --- `NEXTREG n,A` takes ONE operand byte where `NEXTREG n,n` takes two, so this is 3 and not 4.
-  // --- It was 4, and stepping over `$00FD` in the Next ROM ran away to the next breakpoint.
-  0x92: 3,
-  0x93: 2,
-  0x94: 2,
-  0x95: 2,
-  0x27: 3,
-  0x28: 2,
-  0x29: 2,
-  0x2a: 2,
-  0x2b: 2,
-  0x2c: 2,
-  0x98: 2
-};

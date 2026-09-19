@@ -7,6 +7,13 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
 export type CoreName = "ts" | "wasm";
+
+/**
+ * A ZX Spectrum Next on either core. The WASM machine no longer derives from the TypeScript one, so
+ * code that works on both uses what they have in common (the `IZ80Machine` API, `IZxNextIdeMachine`)
+ * or narrows with `instanceof ZxNextWasmV2Machine`.
+ */
+export type NextMachine = ZxNextMachine | ZxNextWasmV2Machine;
 export const ALL_CORES: CoreName[] = ["ts", "wasm"];
 
 /**
@@ -75,7 +82,7 @@ export type CreateCoreOptions = {
   hardReset?: boolean;
 };
 
-export async function createCore(core: CoreName, options: CreateCoreOptions = {}): Promise<ZxNextMachine> {
+export async function createCore(core: CoreName, options: CreateCoreOptions = {}): Promise<NextMachine> {
   const machine =
     core === "ts"
       ? new ZxNextMachine()
@@ -92,7 +99,7 @@ export async function createCore(core: CoreName, options: CreateCoreOptions = {}
 }
 
 /** A NextReg's stored value without the port side effects of reading it through $243B/$253B. */
-export function readNextRegDirect(machine: ZxNextMachine, reg: number): number {
+export function readNextRegDirect(machine: NextMachine, reg: number): number {
   return machine instanceof ZxNextWasmV2Machine
     ? machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(reg)
     : machine.nextRegDevice.directGetRegValue(reg);

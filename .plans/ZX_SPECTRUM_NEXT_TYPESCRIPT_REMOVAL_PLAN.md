@@ -253,9 +253,23 @@ tests. The only permitted changes to TypeScript files are:
 Nothing in Phase A deletes TypeScript implementation code. After every step, both cores pass the full
 harness, and the Compatibility model still runs.
 
+**Execution order.** Separation comes first (the project author's priority, 2026-09-19): Steps 0, 1,
+3, 4, 5 and 6 run before Step 2. Step 2 (porting TypeScript-only coverage into the harness) is
+additive, needs both cores, and only has to be complete by the Step 7 gate.
+
 ## 0. Baseline And Parity Audit
 
-Status: Not started.
+Status: In progress. Baseline recorded 2026-09-19 at `f61b60ed2`; the D6 re-audit, the tape status and
+the frame-diff survey are still open.
+
+Baseline (both cores, clean worktree):
+
+- `npm test -- --project node test/zxnext test/wasm/zxNext test/zxnext-hw test/harness/zxnext test/audio test/memory`:
+  209 files, 7268 passed, 1 skipped.
+- `npm run test:visual`: 21/21 cases pass, all golden matches (the inventory's "22" counted a folder
+  that holds no case).
+- `npm run build:check`: no new type errors (121 known).
+- The bugs handover's "uncommitted TS fixes" note (line 45) is stale: the worktree was clean.
 
 Work:
 
@@ -287,7 +301,18 @@ Done when: the baseline is recorded, and every known TypeScript/WASM difference 
 
 ## 1. IDE Bugs And Screen Toggles On WASM
 
-Status: Not started.
+Status: Done 2026-09-19 (merged with the interface part of Step 4).
+
+Result:
+
+- F2/F3/F7 work on WASM: `executeCustomCommand` sets `$05` bit 0 / `$05` bit 2 (gated by `$06`
+  bit 5) / `$09` bits 1-0 through `zxnextSetNextRegisterDirect`, reading the *stored* `$05` bits
+  (the readback shows the effective ones, which change only at the frame start). Tests:
+  `test/zxnext-hw/video/display-hotkeys.test.ts` HK-001..HK-006, both cores; 4 of them failed on WASM
+  before the fix. The harness `pressHotkey` gained F2/F3/F7 and `lastHotkeyResult`.
+- The palette, ULA, Next Registers and Memory Mapping handlers now go through `IZxNextIdeMachine`
+  (Step 4), with PAR-006 (`test/zxnext-hw/parity/ide-parity.test.ts`) proving both cores report the
+  same panel state.
 
 Work:
 
@@ -346,7 +371,24 @@ Done when: every file has a disposition, and every *ported* row exists and passe
 
 ## 3. Extract Neutral Metadata Modules
 
-Status: Not started.
+Status: Done 2026-09-19.
+
+Result (all under `src/emu/machines/zxNext/`; importers point at them directly, no re-exports):
+
+- `nextMemoryLayout.ts`: `OFFS_*`, `UNPAGED_PARTITION_LABEL`, `allRamBanksFor`, `bank16kForPartition`,
+  `MemoryPageInfo`. The WASM machine's private copies of the offsets are gone.
+- `nextRegDescriptors.ts`: the NextReg types and the static `NEXT_REG_DESCRIPTORS` table (141
+  registers, generated from `NextRegDevice`; no holes), `getNextRegDescriptor`. Both cores'
+  `getNextRegDescriptors()` and the disassembler read it.
+- `nextCoreVersion.ts`, `nextRtc.ts`, `nextKeyCodes.ts` (with `EXTRA_KEY_COMBOS`),
+  `nextColorTables.ts` (`zxNextRgb333Codes`, `zxNextBgra`, `TBBLUE_DEF_TRANSPARENT_COLOR`; separate from
+  `palette.ts`, which imports renderer code), `z80nInstructionLengths.ts`, `wasm/frameTraceLayout.ts`.
+- Tests of the neutral modules live in `test/zxnext-shared/` (they survive Phase B):
+  `nextMemoryLayout`, `palette-codec`, `nextRtc`, `nextKeyCodes` (moved from `test/zxnext/`) and
+  `nextRegDescriptors` (new; checks the static table against `NextRegDevice` until Phase B). The
+  full-matrix and device-completeness meta tests were updated.
+- `getNextRegisters()` stays in `NextRegDevice.ts` (unused now) until Phase B, per the governing rule.
+- Verified: 257 node test files / 8550 tests, jsdom controls, `build:check`, the Vite build.
 
 Work:
 
@@ -375,7 +417,18 @@ the neutral modules.
 
 ## 4. Introduce `IZxNextIdeMachine` And Rewire The IDE
 
-Status: Not started.
+Status: Mostly done 2026-09-19. `src/emu/machines/zxNext/IZxNextIdeMachine.ts` defines the contract;
+both machines implement it; `MainToEmuProcessor` no longer imports `ZxNextMachine` or
+`IZxNextMachine` and dispatches on `isZxNextIdeMachine`. The harness exposes it as
+`s.ideState()`, and PAR-006 is the dual-machine IDE parity test (in place of jsdom tests: it runs the
+real cores). Remaining: `getNextRegDescriptors` on WASM still comes from the inherited TypeScript
+`NextRegDevice` until Step 3's static table; the remaining `IZxNextMachine` users belong to the
+TypeScript devices and go in Phase B.
+
+New WASM exports added for it: `zxnextGetTimingTotalHc/Vc`, `zxnextGetTotalContentionDelaySinceStart`,
+`zxnextGetContentionDelaySincePause`, `zxnextGetNextRegisterLastWrite` (CPU writes only, as the
+TypeScript `writeRegister` records them), `zxnextPeekNextRegister` (a `$253B` read without selecting),
+`zxnextGetMemoryPort7ffd/Dffd/1ffd/Eff7`.
 
 Work:
 
@@ -400,8 +453,43 @@ IDE shows the same data for both cores.
 
 ## 5. Build `ZxNextWasmHost` And Detach The WASM Machine
 
-Status: Not started. This is the core engineering step; split it into several commits and keep both
-cores green after each one.
+Status: Done 2026-09-19, except the parts of the app smoke test not yet driven (below).
+
+App smoke test (2026-09-19, Playwright's Electron driver as in `scripts/doc-shots/`, an isolated
+settings file and a *copy* of the SD card image): on both the standard (WASM) and the Compatibility
+(TypeScript) model NextZXOS boots from the card to the main menu, the RTC shows the host time, frames
+pace at 50 Hz, the cursor keys move the menu selection, and the renderer logs no errors. The status bar
+showed 3.5 MHz on WASM and 28 MHz on TypeScript while NextZXOS ran at 28 MHz (P18, fixed). **Not yet
+driven in the app:** `.nexload`/code injection of a project, the debugger (step, step over/out,
+breakpoints), the Next panels, checkpoints, the F-key menu items - these are covered by the test suites
+(`wasm-next-debug-step`, `-access-breakpoint`, `-step-out-stack`, `-checkpoint-flow`, PAR-006,
+`display-hotkeys`), but should get one manual pass before the gate.
+
+Result:
+
+- `ZxNextWasmHost extends Z80MachineBase` (`ZxNextWasmHost.ts`): frame units (`frameTactMultiplier`
+  8, 3.5 MHz base clock), frame command, the slimmed key-stroke queue (D3: keys go straight to the core
+  through `setKeyStatus`; no `NextKeyboardDevice`, no per-frame matrix sync), code injection writing
+  through `doWriteMemory` (no TypeScript contention or tact path), partition names, disassembly
+  sections, sysvars, `getCallInstructionLength`, `onInitNewFrame` (the rendering mark only).
+- The logic both machines share moved to the neutral `nextMachineInfo.ts` (partition naming,
+  disassembly sections, the NextZXOS code-injection flow, `z80nCallInstructionLength`); the TypeScript
+  machine delegates to it. `test/zxnext-shared/nextMachineInfo.test.ts` pins both machines to it.
+- `ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMachine`. Gone: the TypeScript
+  device construction and resets, the in-place `nextRegDevice`/`memoryDevice` patches, the keyboard
+  mirror, the pre-`setup()` fallback to the TypeScript frame runner (it now throws), the TypeScript
+  `onInitNewFrame` in the debug loop. `tactsInFrame` (frame pacing, the key queue), `tactsInDisplayLine`,
+  `sigINT` (new export `zxnextGetCpuSigInt`) and the contention counters come from the core;
+  `opStartAddress` is recorded before each debug-loop instruction when access breakpoints are watched.
+  The tape and floating-bus facades have local types (the Spectrum device interfaces' type graph
+  reached every TypeScript Next device).
+- `Z80MachineBase.frameTactMultiplier` is typed `number` (was the literal `1`).
+- Separation guards: `test/wasm/zxNext/wasm-next-separation.test.ts` - no TypeScript Next class in the
+  prototype chain, no TypeScript Next emulation file reachable from `ZxNextWasmV2Machine.ts` or the
+  loader through any import (type imports included), no TypeScript device on an instance.
+- WASM tests moved off the removed facades (NextRegs through `$243B`/`$253B`, state through
+  `getNextRegState()`); the harness types its machine as `NextMachine` (the union); no new harness
+  type errors (61 before and after).
 
 Work:
 
@@ -669,9 +757,19 @@ Filled in from Step 0 onward. One row per known TypeScript/WASM difference.
 | P3 | Default blocker `ula-timex-mode-rendering-parity` | | | | To audit |
 | P4 | Default blocker `ula-next-plus-rendering-parity` | | | | To audit |
 | P5 | Default blocker `screen-layer-composition-parity` | | | | To audit |
-| P6 | F2/F3/F7 screen toggles have no effect on WASM | | n/a (host feature) | Step 1 | Open |
-| P7 | Palette/ULA IDE panels read TypeScript state on WASM | | n/a (IDE) | Steps 1, 4 | Open |
+| P6 | F2/F3/F7 screen toggles have no effect on WASM | `display-hotkeys.test.ts` HK-001..006 | n/a (host feature) | WASM sets `$05`/`$09` | Resolved |
+| P7 | Palette/ULA IDE panels read TypeScript state on WASM | PAR-006 | n/a (IDE) | `IZxNextIdeMachine` | Resolved |
 | P8 | Tape loading on WASM (no TAPE_DATA path) | | | | To audit |
+| P9 | TS Palettes panel showed `$4C`/`$6B` from dead `TilemapDevice` fields (defaults, never written) | PAR-006 | n/a (IDE) | read `composedScreenDevice` | Resolved |
+| P10 | TS ULA & I/O panel threw on the TS Next (no `screenDevice`); both reported ROM/RAM 0 | PAR-006 | n/a (IDE) | `getNextUlaState` on both | Resolved |
+| P11 | WASM Memory Mapping: logical instead of physical offsets, ROM `bank16k` -1, paging ports rebuilt from `$8E`, `$EFF7`/DivMMC hard-coded 0 | PAR-006 | n/a (IDE) | core page table + port exports | Resolved |
+| P12 | WASM contention counters (ULA panel, `getCpuState`) never mirrored | PAR-006 | n/a | counter exports, mirrored like sp48 | Resolved |
+| P13 | Next Registers panel: WASM showed raw stored bytes for all 256 ids and a last write for read-only ones; TS showed unmasked read functions | PAR-006 | both now show the `$253B` readback (read mux) and CPU last writes | `zxnextPeekNextRegister`, `zxnextGetNextRegisterLastWrite` | Resolved |
+| P14 | TS `getDescriptors()` returns an array with trailing holes (sorts a sparse table) | `nextRegDescriptors.test.ts` | n/a | Step 3 static table | Resolved |
+| P15 | `getRomFlags()`: TS reported all 8 pages as RAM (the memory editor then treated the ROM as writable), WASM pages 0-1 as ROM | `nextMachineInfo.test.ts` | n/a (IDE; static by design, like the classic machines) | shared `NEXT_ROM_FLAGS` | Resolved |
+| P16 | `getCpuState().snoozed` (CPU held by the DMA): TS reports it, WASM never does | | n/a (debug view) | | Open |
+| P17 | `opStartAddress` (Breakpoints panel, memory/I/O hits): WASM never set it | `wasm-next-access-breakpoint.test.ts` | n/a | recorded in the debug loop | Resolved |
+| P18 | Status bar CPU speed: WASM never updated `clockMultiplier` (showed 3.5 MHz while NextZXOS ran at 28 MHz) | `wasm-next-clock-report.test.ts` | effective speed, `$07` bits 5-4 | mirrored in `syncCpuFromWasmV2` | Resolved |
 
 ## Test Disposition Table
 

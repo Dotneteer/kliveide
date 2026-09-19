@@ -1,8 +1,8 @@
 import { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import { Pentagon_50Hz, Plus3_50Hz, Plus3_60Hz, TimingConfig, selectTimingConfig } from "./TimingConfig";
-import { zxNextBgra } from "../PaletteDevice";
-import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../MemoryDevice";
+import { zxNextBgra } from "../nextColorTables";
+import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "../nextMemoryLayout";
 import { SpriteDevice, type SpriteAttributes } from "../SpriteDevice";
 
 /**

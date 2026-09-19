@@ -1,4 +1,4 @@
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "../core/machines";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
@@ -21,7 +21,7 @@ export function joyBits(buttons: JoyButton[]): number {
   return bits;
 }
 
-export function setJoystickState(machine: ZxNextMachine, side: JoySide, bits: number): void {
+export function setJoystickState(machine: NextMachine, side: JoySide, bits: number): void {
   if (machine instanceof ZxNextWasmV2Machine) {
     const x = machine.wasmV2Runtime!.exports;
     if (side === "left") x.zxnextSetJoystickLeftState(bits);

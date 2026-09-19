@@ -33,6 +33,9 @@ static uint8_t zxnextMemory[ZXNEXT_MEMORY_SIZE];
 static uint32_t zxnextPixelBuffer[ZXNEXT_PIXEL_COUNT];
 static uint8_t zxnextKeyboardLines[ZXNEXT_KEYBOARD_LINE_COUNT];
 static uint8_t zxnextNextRegs[ZXNEXT_NEXT_REG_COUNT];
+/* The last value the CPU wrote to each NextReg ($253B or NEXTREG), for the IDE; never cleared, like the TypeScript core's */
+static uint8_t zxnextNextRegLastWrite[ZXNEXT_NEXT_REG_COUNT];
+static uint8_t zxnextNextRegWritten[ZXNEXT_NEXT_REG_COUNT];
 
 static uint16_t cpuAf;
 static uint16_t cpuBc;
@@ -262,6 +265,12 @@ uint32_t zxnextGetMemoryPageReadOffset(uint32_t page) {
   return zxnextMemoryGetPageReadOffset(page);
 }
 
+/* The paging ports as stored (the Next Memory Mapping panel) */
+uint32_t zxnextGetMemoryPort7ffd(void) { return memPort7ffd; }
+uint32_t zxnextGetMemoryPortDffd(void) { return memPortDffd; }
+uint32_t zxnextGetMemoryPort1ffd(void) { return memPort1ffd; }
+uint32_t zxnextGetMemoryPortEff7(void) { return memPortEff7; }
+
 uint32_t zxnextGetMemoryPageWriteOffset(uint32_t page) {
   return zxnextMemoryGetPageWriteOffset(page);
 }
@@ -305,6 +314,14 @@ uint32_t zxnextGetFrames(void) { return frames; }
 uint32_t zxnextGetTacts(void) { return tacts; }
 uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
 uint32_t zxnextGetTactsInFrame(void) { return ZXNEXT_TACTS_IN_FRAME; }
+/* The raster of the frame in progress: HCs per line (7 MHz) and lines (zxula_timing.vhd c_max_hc/vc + 1) */
+uint32_t zxnextGetTimingTotalHc(void) { return zxnextTimingTotalHc; }
+/* The INT line the CPU sampled before its last instruction (the CPU panel's INT) */
+uint32_t zxnextGetCpuSigInt(void) { return z80GetSigInt(); }
+uint32_t zxnextGetTimingTotalVc(void) { return zxnextTimingTotalVc; }
+/* The contention the CPU has been held for, in CPU tacts: since the machine started / since the counter's last restart */
+uint32_t zxnextGetTotalContentionDelaySinceStart(void) { return totalContentionDelaySinceStart; }
+uint32_t zxnextGetContentionDelaySincePause(void) { return contentionDelaySincePause; }
 uint32_t zxnextGetFrameCompleted(void) { return frameCompleted; }
 
 void zxnextSetSignalNmi(uint32_t active) { zxnextNmiSetSignal(active); }
@@ -393,7 +410,11 @@ void zxnextTraceFinishFrame(void) { zxnextTraceFinishFrameImpl(); }
 void zxnextSetNextRegisterIndex(uint32_t reg) { zxnextNextRegSetIndex(reg); }
 uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
 void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); }
-void zxnextWriteNextRegister(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg & 0xffu, value & 0xffu); }
+void zxnextWriteNextRegister(uint32_t reg, uint32_t value) { zxnextNextRegCpuWrite(reg & 0xffu, value & 0xffu); }
+/* The IDE's Next Registers panel: the value the CPU last wrote, or 0x100 when it never wrote one */
+uint32_t zxnextGetNextRegisterLastWrite(uint32_t reg) {
+  return zxnextNextRegWritten[reg & 0xffu] ? zxnextNextRegLastWrite[reg & 0xffu] : 0x100u;
+}
 /* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
 void zxnextPressMultifaceNmiButton(void) { zxnextNmiRequestMultiface(); }
 void zxnextPressDivMmcNmiButton(void) { zxnextNmiRequestDivMmc(); }
@@ -404,6 +425,8 @@ uint32_t zxnextTakeResetRequest(void) {
 }
 uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegGetValue(); }
 uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDirect(reg); }
+/* The IDE's Next Registers panel: a `$253B` read of `reg`, leaving the `$243B` selection alone */
+uint32_t zxnextPeekNextRegister(uint32_t reg) { return zxnextNextRegPeek(reg & 0xffu); }
 void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }
 
 void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }

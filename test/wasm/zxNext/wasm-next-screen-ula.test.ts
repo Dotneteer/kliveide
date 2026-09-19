@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
-import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "@emu/machines/zxNext/MemoryDevice";
-import { zxNextBgra } from "@emu/machines/zxNext/PaletteDevice";
+import { OFFS_BANK_05, OFFS_BANK_07, OFFS_NEXT_RAM } from "@emu/machines/zxNext/nextMemoryLayout";
+import { zxNextBgra } from "@emu/machines/zxNext/nextColorTables";
 import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH

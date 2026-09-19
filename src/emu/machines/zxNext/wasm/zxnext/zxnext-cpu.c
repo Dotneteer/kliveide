@@ -304,7 +304,7 @@ static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value) {
 /* NEXTREG n,v / n,A: zxnext.vhd ~4719-4725 requests the write with the instruction's own register
    number; `nr_register` (the $243B selection) changes only on a $243B write. */
 static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value) {
-  zxnextNextRegSetDirect(address & 0xffu, value & 0xffu);
+  zxnextNextRegCpuWrite(address & 0xffu, value & 0xffu);
 }
 
 static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTacts) {

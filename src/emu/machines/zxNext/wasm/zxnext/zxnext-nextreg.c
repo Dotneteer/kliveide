@@ -262,8 +262,10 @@ static uint32_t zxnextNextRegGetIndex(void) {
   return nextRegIndex;
 }
 
+static void zxnextNextRegCpuWrite(uint32_t reg, uint32_t value);
+
 static void zxnextNextRegSetValue(uint32_t value) {
-  zxnextNextRegSetDirect(nextRegIndex, value);
+  zxnextNextRegCpuWrite(nextRegIndex, value);
 }
 
 /*
@@ -410,9 +412,26 @@ static uint32_t zxnextNextRegReadOneMask(uint32_t reg) {
   }
 }
 
-static uint32_t zxnextNextRegGetValue(void) {
-  uint32_t reg = nextRegIndex;
+/* What a `$253B` read of `reg` returns, through the read mux - without selecting the register */
+static uint32_t zxnextNextRegPeek(uint32_t reg) {
   return ((zxnextNextRegGetDirect(reg) & ~zxnextNextRegReadZeroMask(reg)) | zxnextNextRegReadOneMask(reg)) & 0xffu;
+}
+
+static uint32_t zxnextNextRegGetValue(void) {
+  return zxnextNextRegPeek(nextRegIndex);
+}
+
+static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value);
+
+/*
+ * A CPU write - `$253B`, or NEXTREG - recorded as the last write for the IDE (as the TypeScript
+ * core's `NextRegDevice.writeRegister` does). Copper writes, reset branches and the app's hotkeys go
+ * straight to `zxnextNextRegSetDirect` and are not recorded.
+ */
+static void zxnextNextRegCpuWrite(uint32_t reg, uint32_t value) {
+  zxnextNextRegLastWrite[reg & 0xffu] = (uint8_t)value;
+  zxnextNextRegWritten[reg & 0xffu] = 1u;
+  zxnextNextRegSetDirect(reg, value);
 }
 
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {

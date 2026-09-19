@@ -1,4 +1,4 @@
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "../core/machines";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
@@ -15,7 +15,7 @@ export function mouseButtonBits(buttons: MouseButton[]): number {
   return buttons.reduce((bits, b) => bits | BUTTON_BITS[b], 0);
 }
 
-export function sendMousePacket(machine: ZxNextMachine, buttons: number, dx: number, dy: number, dz: number): void {
+export function sendMousePacket(machine: NextMachine, buttons: number, dx: number, dy: number, dz: number): void {
   if (dx < -255 || dx > 255 || dy < -255 || dy > 255) throw new Error("A PS/2 packet moves -255..255 per axis");
   if (dz < -8 || dz > 7) throw new Error("A PS/2 wheel delta is -8..7");
   if (machine instanceof ZxNextWasmV2Machine) {

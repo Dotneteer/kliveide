@@ -1,6 +1,6 @@
 import { describe, it } from "vitest";
 import { Z80Tester } from "./z80-tester";
-import { getNextRegisters } from "@emu/machines/zxNext/NextRegDevice";
+import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 
 describe("Disassembler - extended instructions", function () {
   it("Next extended instructions work as expected", async () => {
@@ -225,7 +225,7 @@ describe("Disassembler - extended instructions", function () {
     });
   }
 
-  const nextRegs = getNextRegisters();
+  const nextRegs = NEXT_REG_DESCRIPTORS;
   nextRegs.forEach((reg, idx) => {
     it(`nextreg N,N comment with reg #${idx}`, async () => {
       if (reg.id !== undefined) {

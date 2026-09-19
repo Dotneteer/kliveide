@@ -4,8 +4,9 @@ import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBe
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextIdeMachine } from "./IZxNextIdeMachine";
 import type { MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
@@ -25,7 +26,8 @@ import { CopperDevice } from "./CopperDevice";
 import { CtcDevice } from "./CtcDevice";
 import { I2cDevice } from "./I2cDevice";
 import { UartDevice } from "./UartDevice";
-import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
+import { MemoryDevice } from "./MemoryDevice";
+import { OFFS_NEXT_ROM, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./nextMemoryLayout";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { MultifaceDevice } from "./MultifaceDevice";
@@ -34,14 +36,33 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
-import { convertAsciiStringToNextKeyCodes, NextKeyboardDevice } from "./NextKeyboardDevice";
+import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import { CpuState } from "@common/messaging/EmuApi";
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import {
+  CpuState,
+  ULA_BORDER_COLOR_NAMES,
+  type NextMemoryMapping,
+  type NextRegDescriptors,
+  type NextRegState,
+  type PaletteDeviceInfo,
+  type UlaState
+} from "@common/messaging/EmuApi";
+import { nextRasterPosition } from "./IZxNextIdeMachine";
+import {
+  buildNextCodeInjectionFlow,
+  NEXT_ROM_FLAGS,
+  nextDisassemblySections,
+  nextPartitionDescriptions,
+  nextPartitionGroups,
+  nextPartitionLabels,
+  parseNextPartitionLabel
+} from "./nextMachineInfo";
+import { applyNextRegReadMux } from "./nextRegReadMux";
+import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
+import { IMemorySection } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
@@ -52,32 +73,11 @@ import { DacDevice } from "./DacDevice";
 import { AudioMixerDevice } from "./AudioMixerDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
-const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
-
-/*
- * The bounds of NextZXOS's key-wait loop in ROM 0:
- *
- *   $1202: HALT
- *   $1203: LD HL,$5C3B      ; FLAGS
- *   $1206: BIT 5,(HL)       ; a key is available?
- *   $1208: JR Z,$11F4       ; no - keep waiting
- *   $120A: RES 5,(HL)       ; consume it
- *
- * with an outer `JR $11E5` at $1200. The OS parks here whenever it wants a key - during boot, at the
- * boot menu, at the BASIC prompt, inside the Calculator. That is precisely why reaching
- * `ZXNEXT_MAIN_WAITING_LOOP` once proves nothing about *which* program is waiting, and why the flow
- * below waits for the machine to settle in this range instead.
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
- */
-const ZXNEXT_KEY_WAIT_LOOP_FROM = 0x11e5;
-const ZXNEXT_KEY_WAIT_LOOP_TO = 0x120b;
-const SP_KEY_WAIT = 250;
-const SP_KEY_WAIT_SHORT = 50;
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
  */
-export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
+export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZxNextIdeMachine {
   /**
    * The unique identifier of the machine type
    */
@@ -244,6 +244,74 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.hardReset();
     // --- Initialize totalHC cache now that composedScreenDevice is fully set up
     this._totalHC = this.composedScreenDevice.config.totalHC;
+  }
+
+  // ─── IZxNextIdeMachine: what the IDE panels read ─────────────────────────
+
+  getNextRegDescriptors(): NextRegDescriptors["descriptors"] {
+    return NEXT_REG_DESCRIPTORS.slice();
+  }
+
+  getNextRegState(): NextRegState {
+    // --- The value shown is what a `$253B` read returns: through the FPGA read mux, as on the WASM
+    // --- core. (A never-written register without a read function reads as a `$253B` read does.)
+    const state = this.nextRegDevice.getNextRegDeviceState();
+    const writeOnly = new Set(this.getNextRegDescriptors().filter((d) => d?.isWriteOnly).map((d) => d.id));
+    return {
+      lastRegisterIndex: state.lastRegisterIndex,
+      regs: state.regs.map((reg) => ({
+        ...reg,
+        value: writeOnly.has(reg.id) ? undefined : applyNextRegReadMux(reg.id, reg.value ?? 0xff)
+      }))
+    };
+  }
+
+  getNextMemoryMapping(): NextMemoryMapping {
+    return this.memoryDevice.getMemoryMappings();
+  }
+
+  getPaletteDeviceInfo(): PaletteDeviceInfo {
+    const pd = this.paletteDevice;
+    return {
+      ulaFirst: pd.ulaFirst.slice(),
+      ulaSecond: pd.ulaSecond.slice(),
+      layer2First: pd.layer2First.slice(),
+      layer2Second: pd.layer2Second.slice(),
+      spriteFirst: pd.spriteFirst.slice(),
+      spriteSecond: pd.spriteSecond.slice(),
+      tilemapFirst: pd.tilemapFirst.slice(),
+      tilemapSecond: pd.tilemapSecond.slice(),
+      storedPaletteValue: pd.storedPaletteValue,
+      spriteTransparencyIndex: this.spriteDevice.transparencyIndex,
+      // --- `$4C` and `$6B` live on the composed screen (the `TilemapDevice` fields are not written)
+      tilemapTransparencyIndex: this.composedScreenDevice.tilemapTransparencyIndex,
+      reg43Value: pd.nextReg43Value,
+      reg6bValue:
+        this.composedScreenDevice.nextReg0x6bValue | (pd.secondTilemapPalette ? 0x10 : 0),
+      ulaNextFormat: this.composedScreenDevice.ulaNextFormat
+    };
+  }
+
+  getNextUlaState(): UlaState {
+    const { line, hc } = nextRasterPosition(this.currentFrameTact ?? 0, this.composedScreenDevice.config.totalHC);
+    return {
+      fcl: this.currentFrameTact ?? 0,
+      frm: this.frames,
+      ras: line,
+      pos: hc,
+      // --- Neither core keeps a per-tact rendering-phase table for the Next's composed screen
+      pix: "n/a",
+      bor: ULA_BORDER_COLOR_NAMES[this.composedScreenDevice.borderColor & 0x07],
+      // --- Sampling the floating bus is a port read; a polled panel must not perform one
+      flo: 0xff,
+      con: this.totalContentionDelaySinceStart,
+      lco: this.contentionDelaySincePause,
+      ear: this.beeperDevice.earBit,
+      mic: (this.beeperDevice as { micBit?: boolean }).micBit ?? false,
+      keyLines: Array.from({ length: 8 }, (_, i) => this.keyboardDevice.getKeyLineValue(i)),
+      romP: this.getSelectedRomPage(),
+      ramB: this.getSelectedRamBank()
+    };
   }
 
   /**
@@ -796,52 +864,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    // --- Normalize once and use the normalized value throughout. The `default:` branch used to
-    // --- test the *original* string (`label.startsWith("M")`) while the switch tested the
-    // --- uppercased one, and `BreakpointCommands` lowercases an address spec before parsing it —
-    // --- so `bp-set m0:$8000` fell through to the hex branch, failed, and reported "Invalid
-    // --- partition". Every DivMMC RAM partition was unreachable from every breakpoint command.
-    const normalized = (label ?? "").trim().toUpperCase();
-    switch (normalized) {
-      case "UN":
-        return undefined;
-      case "R0":
-        return -1;
-      case "R1":
-        return -2;
-      case "R2":
-        return -3;
-      case "R3":
-        return -4;
-      case "X0":
-        return -5;
-      case "X1":
-        return -6;
-      // --- `Q0`/`Q1` were the alternate ROMs' names before they were renamed to the slightly more
-      // --- suggestive `X0`/`X1` ("eXtra"). Still accepted so a script that names them keeps
-      // --- working; `getPartitionLabels` no longer returns them.
-      case "Q0":
-        return -5;
-      case "Q1":
-        return -6;
-      case "DM":
-        return -7;
-    }
-
-    // --- DivMMC RAM pages M0..MF occupy partitions -8..-23.
-    if (normalized.startsWith("M")) {
-      const page = normalized.substring(1);
-      return /^[0-9A-F]$/.test(page) ? -8 - parseInt(page, 16) : undefined;
-    }
-
-    // --- Everything else is a RAM bank, named by its hex index. Note this is what makes `A0` and
-    // --- `D0` mean banks $A0 and $D0 rather than the alt ROM and a DivMMC page: those spellings
-    // --- are ambiguous with the bank namespace, which is why the map does not use them.
-    if (/^[0-9A-F]{1,2}$/.test(normalized)) {
-      const bank = parseInt(normalized, 16);
-      return bank >= 0 && bank < 224 ? bank : undefined;
-    }
-    return undefined;
+    return parseNextPartitionLabel(label);
   }
 
   /**
@@ -849,22 +872,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param partition Partition index
    */
   getPartitionLabels(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "R0",
-      [-2]: "R1",
-      [-3]: "R2",
-      [-4]: "R3",
-      [-5]: "X0",
-      [-6]: "X1",
-      [-7]: "DM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = `M${i.toString(16).toUpperCase()}`;
-    }
-    for (let i = 0; i < 224; i++) {
-      result[i] = toHexa2(i).toUpperCase();
-    }
-    return result;
+    return nextPartitionLabels();
   }
 
   /**
@@ -875,22 +883,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * `parsePartitionLabel` rejected. They are descriptions now, and the label is what identifies.
    */
   getPartitionDescriptions(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "Next ROM 0",
-      [-2]: "Next ROM 1",
-      [-3]: "Next ROM 2",
-      [-4]: "Next ROM 3",
-      [-5]: "Alt ROM 0",
-      [-6]: "Alt ROM 1",
-      [-7]: "DivMMC ROM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = `DivMMC RAM ${i}`;
-    }
-    for (let i = 0; i < 224; i++) {
-      result[i] = `Bank $${toHexa2(i).toUpperCase()}`;
-    }
-    return result;
+    return nextPartitionDescriptions();
   }
 
   /**
@@ -900,31 +893,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * "DivMMC RAM" heading rather than spelling it out sixteen times.
    */
   getPartitionGroups(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "Next ROM",
-      [-2]: "Next ROM",
-      [-3]: "Next ROM",
-      [-4]: "Next ROM",
-      [-5]: "Alt ROM",
-      [-6]: "Alt ROM",
-      [-7]: "DivMMC ROM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = "DivMMC RAM";
-    }
-    // --- The bank grid's caption sits to its *left*, on the first row, so naming it costs no
-    // --- height — which was the only reason to leave it unlabelled.
-    for (let i = 0; i < 224; i++) {
-      result[i] = "RAM Banks";
-    }
-    return result;
+    return nextPartitionGroups();
   }
 
   /**
    * Gets a flag for each 8K page that indicates if the page is a ROM
    */
   getRomFlags(): boolean[] {
-    return [false, false, false, false, false, false, false, false];
+    return NEXT_ROM_FLAGS.slice();
   }
 
   /**
@@ -1640,138 +1616,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   async getCodeInjectionFlow(_model: string, additionalInfo: any): Promise<CodeInjectionFlow> {
     // --- Check for autoexec file
-    const mainApi = createMainApi(this.messenger);
-    const hasAutoExect = await mainApi.hasNextAutoExec();
-
-    // --- Create QueueKey steps for the prompt
-    const prompt = `.nexload ${additionalInfo}\n`;
-    const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
-    const promptQueue: CodeInjectionStep[] = [];
-    for (const keyCode of promtKeys) {
-      if (keyCode.extMode) {
-        promptQueue.push({
-          type: "QueueKey",
-          primary: SpectrumKeyCode.CShift,
-          secondary: SpectrumKeyCode.CShift,
-          wait: SP_KEY_WAIT_SHORT
-        });
-      }
-      promptQueue.push({
-        type: "QueueKey",
-        primary: keyCode.primaryCode,
-        secondary: keyCode.secondaryCode,
-        wait: SP_KEY_WAIT_SHORT
-      });
-      promptQueue.push({
-        type: "Wait",
-        duration: SP_KEY_WAIT_SHORT
-      });
-    }
-
-    // --- Create the flow
-    const keys: CodeInjectionFlow = [
-      {
-        type: "KeepPc"
-      },
-      {
-        // --- The cold boot: from a hard reset all the way through NextZXOS coming up, and by far
-        // --- the longest step in this flow. Checkpointed so later runs start from the boot menu
-        // --- instead of booting again.
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-        checkpoint: "zxnext-boot",
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      },
-      {
-        type: "Start"
-      },
-      {
-        type: "Wait",
-        duration: 100
-      },
-      {
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      },
-      {
-        type: "Start"
-      }
-    ];
-    if (hasAutoExect) {
-      keys.push(
-        {
-          type: "QueueKey",
-          primary: SpectrumKeyCode.Space,
-          wait: SP_KEY_WAIT,
-          message: "Space"
-        },
-        {
-          type: "ReachExecPoint",
-          rom: 0,
-          execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-        }
-      );
-    }
-    keys.push(
-      {
-        type: "Start"
-      },
-      // --- Do not touch the menu until it is actually up and waiting.
-      //
-      // The boot sync above only proves the OS reached its key-wait loop once, which happens during
-      // startup too. Pressing the menu keys before the menu is drawn threw them away, and the
-      // `.nexload` text that followed was then typed into the menu instead - where `c` of
-      // `ScrollNutter` starts the Calculator.
-      {
-        type: "WaitIdle",
-        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
-        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
-        message: "Boot menu ready"
-      },
-      {
-        type: "QueueKey",
-        primary: SpectrumKeyCode.N6,
-        secondary: SpectrumKeyCode.CShift,
-        wait: SP_KEY_WAIT,
-        message: "Arrow down"
-      },
-      {
-        type: "QueueKey",
-        primary: SpectrumKeyCode.Enter,
-        wait: 0,
-        message: "Enter"
-      },
-      // --- Let the machine actually consume the Enter above before asking where it is.
-      //
-      // `QueueKey` only *queues*; `emulateKeystroke()` plays the key back over the following frames.
-      // Without this the `ReachExecPoint` below ran while the machine was still sitting in the boot
-      // menu's waiting loop — which is the very address it waits for — so it matched instantly and
-      // typing started anyway. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
-      {
-        type: "WaitKeyQueue"
-      },
-      // --- Wait for the command line to be up and idle before typing into it.
-      //
-      // Not `ReachExecPoint` on the key-wait loop: that address is where the OS waits for *any* key,
-      // so it matches while the boot menu is still up. Settling in the loop across consecutive
-      // samples is the difference between "something wants a key" and "the command line is ready" -
-      // while NextZXOS loads it, it is doing real work and cannot satisfy this.
-      {
-        type: "WaitIdle",
-        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
-        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
-        message: "Command line ready"
-      },
-      {
-        type: "Start"
-      },
-      ...promptQueue
-    );
-    return keys;
+    const hasAutoExec = await createMainApi(this.messenger).hasNextAutoExec();
+    return buildNextCodeInjectionFlow(hasAutoExec, additionalInfo);
   }
 
   /**
@@ -2110,46 +1956,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns The disassembly section.
    */
   getDisassemblySections(options: Record<string, any>): IMemorySection[] {
-    const ram = !!options.ram;
-    const screen = !!options.screen;
-    const sections: IMemorySection[] = [];
-    if (!ram || !screen) {
-      // --- Use the memory segments according to the "ram" and "screen" flags
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0x3fff,
-        sectionType: MemorySectionType.Disassemble
-      });
-      if (ram) {
-        if (screen) {
-          sections.push({
-            startAddress: 0x4000,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        } else {
-          sections.push({
-            startAddress: 0x5b00,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        }
-      } else if (screen) {
-        sections.push({
-          startAddress: 0x4000,
-          endAddress: 0x5aff,
-          sectionType: MemorySectionType.Disassemble
-        });
-      }
-    } else {
-      // --- Disassemble the whole memory
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0xffff,
-        sectionType: MemorySectionType.Disassemble
-      });
-    }
-
-    return sections;
+    return nextDisassemblySections(options);
   }
 }

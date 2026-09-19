@@ -4,12 +4,7 @@ import { resolve } from "node:path";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import {
-  OFFS_ALT_ROM_0,
-  OFFS_DIVMMC_ROM,
-  OFFS_MULTIFACE_MEM,
-  OFFS_NEXT_ROM
-} from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM, OFFS_NEXT_ROM } from "@emu/machines/zxNext/nextMemoryLayout";
 import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
@@ -162,7 +157,7 @@ function captureBootSnapshot(
     ),
     nextRegs: Object.fromEntries(
       NEXT_REG_SAMPLE_IDS.map(reg => {
-        const state = machine.nextRegDevice.getNextRegDeviceState().regs.find(item => item.id === reg);
+        const state = machine.getNextRegState().regs.find(item => item.id === reg);
         return [hex(reg, 2), state?.lastWrite ?? state?.value ?? 0];
       })
     ),

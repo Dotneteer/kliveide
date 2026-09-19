@@ -16,6 +16,7 @@ export {
   READY_VALUE,
   type AudioSample,
   type Hotkey,
+  type IdeState,
   type Program,
   type Registers,
   type RtcTime,
@@ -29,7 +30,7 @@ export { JOY_BUTTONS, type JoyButton, type JoySide } from "./script/joystick";
 export { MATRIX_KEYS, NEXT_EXTRA_KEYS, type ExtraKey, type MatrixKey, type NextKey } from "./script/keys";
 
 // --- Machines and low-level helpers
-export { ALL_CORES, createCore, readNextRegDirect, runDisplayedFrame, type CoreName } from "./core/machines";
+export { ALL_CORES, createCore, readNextRegDirect, runDisplayedFrame, type CoreName, type NextMachine } from "./core/machines";
 export { captureFrame, pixelHex, rowRuns, summarizeRows, type Frame, type RowRun } from "./core/frame";
 export { frameHash, framePng } from "./core/capture";
 export { compileNexFile, type CompiledNex } from "./core/compile-nex";

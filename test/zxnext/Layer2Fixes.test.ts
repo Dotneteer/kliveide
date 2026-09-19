@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
-import { OFFS_NEXT_RAM } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_NEXT_RAM } from "@emu/machines/zxNext/nextMemoryLayout";
 
 // 50Hz timing constants
 const TOTAL_HC = 456;

@@ -112,6 +112,8 @@ function captureAccessStop(machine: AccessMachine): {
   lastTerminationReason: FrameTerminationMode | undefined;
   pc: number;
   af: number;
+  /** The instruction the Breakpoints panel reports the access against */
+  opStartAddress: number;
 } {
   const termination = machine.executeMachineFrame();
   const cpu = machine.getCpuState();
@@ -119,6 +121,7 @@ function captureAccessStop(machine: AccessMachine): {
     termination,
     lastTerminationReason: machine.executionContext.lastTerminationReason,
     pc: cpu.pc,
-    af: cpu.af
+    af: cpu.af,
+    opStartAddress: cpu.opStartAddress
   };
 }

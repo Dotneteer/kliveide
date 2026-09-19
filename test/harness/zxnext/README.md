@@ -91,7 +91,8 @@ Every method runs on both cores; methods returning `this` chain.
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |
 | NextReg | `setNextReg(r, v)` `readNextReg(r)` | Through `$243B`/`$253B`, as Z80 code would. |
 | | `nextRegValue(r)` | Stored value without port side effects - for assertions and wait conditions. |
-| Keys | `await pressHotkey("F5" \| "F6" \| "F8" \| "F9" \| "F10")` | Function-key hotkeys: expansion bus on/off, CPU speed step (gated by NextReg `$06` bit 7, like the FPGA); the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (gated by `$06` bits 3 / 4). |
+| Keys | `await pressHotkey("F2" \| "F3" \| "F5" \| "F6" \| "F7" \| "F8" \| "F9" \| "F10")`, `lastHotkeyResult` | Function-key hotkeys: scandoubler toggle (`$05` bit 0), 50/60 Hz toggle (`$05` bit 2, gated by `$06` bit 5), scanline weight step (`$09` bits 1-0); expansion bus on/off, CPU speed step (gated by NextReg `$06` bit 7, like the FPGA); the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (gated by `$06` bits 3 / 4). `lastHotkeyResult` is what the app was told (the new setting, or `undefined` when gated). |
+| IDE | `ideState()` | What the IDE's Next panels would show (Next Registers, Memory Mapping, Palettes, ULA & I/O) through `IZxNextIdeMachine`, which both cores implement; no side effects on the machine. PAR-006 compares it across the cores. |
 | SD card | `attachSdCard(image \| backing)` `await runFramesAsync(n)` `await runUntilReadyAsync()` `sdImage` `sdCalls` | Card 0 in the slot: a flat `Uint8Array` (whole 512-byte sectors) or any `SdCardBacking` (e.g. a CIM clone). The machines read and write sectors through frame commands; the async runs answer them with the machine's own `processFrameCommand`, the sync runs throw on one. `sdImage` has the writes; `sdCalls` counts the host calls. |
 | UART | `uartSend(uart, frames)` `uartBreak(uart, on)` `uartSetCts(uart, clear)` `uartLoopback(uart, on)` `uartReadyToReceive(uart)` `uartOutput(uart)` | The peer on UART 0 (ESP) / UART 1 (Pi): frames (`number` or `{ value, error: "parity" \| "framing" }`) go out back to back at the Next's own baud rate and framing as frames run; it holds the line low for a break, drives CTS, honours RTR, or wires TX to RX. `uartOutput` is what the Next transmitted. Both cores model the lines a frame at a time on the 28 MHz clock. |
 | Keyboard | `keyDown(...keys)` `keyUp(...keys)` | Holds / releases membrane keys: the 40 matrix keys (`"CAPS"`, `"Z"`, ..., `"SYM"`, `"ENTER"`, `"SPACE"`, `"0"`-`"9"`) and the 16 Next extra keys (`"UP"`, `"EDIT"`, `";"`, ...; `NEXT_EXTRA_KEYS`). Through the machines' `setKeyStatus` (codes 40-55 are the extra keys). Run frames for the ROM's scan to see them. |
@@ -144,12 +145,13 @@ colour conversions) are exported from `index.ts` too.
 When a test needs something the session cannot do, add it to `script/session.ts` - do not reach into
 `s.machine` from the test.
 
-1. **Find the public machine API** both cores implement (`ZxNextMachine` members that
-   `ZxNextWasmV2Machine` overrides: memory, ports, CPU registers, `executeMachineFrame`,
-   `executionContext`, `getAudioSamples`, `setKeyStatus`, ...). If the cores differ, branch on
-   `this.machine instanceof ZxNextWasmV2Machine` inside the method, as `readNextRegDirect` in
-   `core/machines.ts` does. If only one core can provide it, say so in the doc comment and throw on
-   the other.
+1. **Find the public machine API** both cores implement. `s.machine` is a `NextMachine`
+   (`ZxNextMachine | ZxNextWasmV2Machine`): the two are separate classes, so what they share is the
+   `IZ80Machine` surface (memory, ports, CPU registers, `executeMachineFrame`, `executionContext`,
+   `getAudioSamples`, `setKeyStatus`, ...) and `IZxNextIdeMachine` (what the IDE panels read; see
+   `ideState`). If the cores differ, branch on `this.machine instanceof ZxNextWasmV2Machine` inside
+   the method, as `readNextRegDirect` in `core/machines.ts` does. If only one core can provide it, say
+   so in the doc comment and throw on the other.
 2. **Keep the rules** in the header of `session.ts`: both cores; hardware-level input; no hidden state
    setting; every wait has a frame limit and its error names the PC and what it waited for.
 3. **Name it after the hardware action** (`out`, `runTo`, `startAudio`), add a JSDoc comment with

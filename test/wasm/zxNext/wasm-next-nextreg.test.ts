@@ -44,8 +44,8 @@ describe("ZX Spectrum Next WASM NextReg core parity", () => {
     for (const reg of RESET_NEXT_REGS) {
       expect(readNextReg(wasm, reg), `reg $${hex(reg)}`).toBe(readNextReg(oracle, reg));
     }
-    expect(wasm.nextRegDevice.getNextRegDeviceState().lastRegisterIndex).toBe(
-      oracle.nextRegDevice.getNextRegDeviceState().lastRegisterIndex
+    expect(wasm.getNextRegState().lastRegisterIndex).toBe(
+      oracle.getNextRegState().lastRegisterIndex
     );
     expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
     expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
@@ -128,13 +128,13 @@ function hardResetBoth(oracle: TestZxNextMachine, wasm: ZxNextWasmV2Machine): vo
 }
 
 function writeNextReg(machine: NextRegMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }
 
 function readNextReg(machine: NextRegMachine, reg: number): number {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  return machine.nextRegDevice.getNextRegisterValue();
+  machine.doWritePort(0x243b, reg);
+  return machine.doReadPort(0x253b);
 }
 
 function hex(value: number): string {

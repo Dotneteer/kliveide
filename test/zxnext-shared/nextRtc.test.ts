@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fromBcd, rtcAdvanceOneSecond, rtcRegistersFromDate, toBcd } from "@emu/machines/zxNext/I2cDevice";
+import { fromBcd, rtcAdvanceOneSecond, rtcRegistersFromDate, toBcd } from "@emu/machines/zxNext/nextRtc";
 
 /*
  * Pure functions of the DS1307 model. The bus, the chip's protocol and its clock on both cores are

@@ -4,9 +4,17 @@ import { readFile } from "node:fs/promises";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "../core/machines";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { toBcd } from "@emu/machines/zxNext/I2cDevice";
+import { toBcd } from "@emu/machines/zxNext/nextRtc";
+import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import type {
+  NextMemoryMapping,
+  NextRegDescriptors,
+  NextRegState,
+  PaletteDeviceInfo,
+  UlaState
+} from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { loadNexFileContents, type NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
@@ -29,7 +37,7 @@ import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
  * observed the same way, plus the picture and the audio the app would show and play.
  *
  * Rules every method follows (keep them when adding one; see README.md "Adding a method"):
- * - It works on BOTH cores through the public `ZxNextMachine` API, or branches explicitly per core.
+ * - It works on BOTH cores through the API both machines share, or branches explicitly per core.
  * - It never reaches into a device object to set state the hardware could not set. Reading device
  *   state for an assertion is allowed only when the method says so (`nextRegValue`).
  * - A wait never hangs: every run has a frame limit and fails with the PC and what it waited for.
@@ -72,9 +80,21 @@ export type Program = {
 
 type RunLimit = { maxFrames?: number };
 
+/** What the IDE's Next panels would show; see `ideState`. */
+export type IdeState = {
+  descriptors: NextRegDescriptors["descriptors"];
+  nextRegs: NextRegState;
+  memoryMapping: NextMemoryMapping;
+  palette: PaletteDeviceInfo;
+  ula: UlaState;
+};
+
 /** The function-key hotkeys `pressHotkey` can press. */
-export type Hotkey = "F5" | "F6" | "F8" | "F9" | "F10";
+export type Hotkey = "F2" | "F3" | "F5" | "F6" | "F7" | "F8" | "F9" | "F10";
 const HOTKEY_COMMANDS: Record<Hotkey, string> = {
+  F2: "toggleScandoubler",
+  F3: "toggle5060Hz",
+  F7: "adjustScanlineWeight",
   F5: "enableExpansionBus",
   F6: "disableExpansionBus",
   F8: "cycleCpuSpeed",
@@ -95,7 +115,7 @@ export class NextTestSession {
   private constructor(
     readonly core: CoreName,
     /** Escape hatch. Prefer adding a session method over using it in a test; see README.md. */
-    readonly machine: ZxNextMachine,
+    readonly machine: NextMachine,
     private readonly options: SessionOptions
   ) {}
 
@@ -126,11 +146,18 @@ export class NextTestSession {
    * F9 and F10 are the M1 (Multiface) and DRIVE (DivMMC) NMI buttons (~6294-6295, `hotkey_m1`,
    * `hotkey_drive`): one-cycle pulses into the NMI arbiter, gated there by NextReg `$06` bits 3 / 4
    * (~2046-2047). F10 also needs the DivMMC port enabled (`port_divmmc_io_en`, `$83` bit 0).
+   *
+   * F2, F3 and F7 are the app's display hotkeys (machine menu): F2 toggles the scandoubler (`$05`
+   * bit 0), F3 toggles 50/60 Hz (`$05` bit 2, only while `$06` bit 5 enables the hotkey), F7 steps
+   * the scanline weight (`$09` bits 1-0). The value the app shows for them is `lastHotkeyResult`.
    */
   async pressHotkey(key: Hotkey): Promise<this> {
-    await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);
+    this.lastHotkeyResult = await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);
     return this;
   }
+
+  /** What the last `pressHotkey` returned to the app (the new setting, or `undefined` when gated). */
+  lastHotkeyResult: unknown;
 
   // ==========================================================================================
   // Checkpoints
@@ -551,6 +578,23 @@ export class NextTestSession {
   /** The stored NextReg value, with no port side effects. For assertions and wait conditions. */
   nextRegValue(reg: number): number {
     return readNextRegDirect(this.machine, reg);
+  }
+
+  /**
+   * What the IDE's Next panels would show now - Next Registers, Memory Mapping, Palettes, ULA & I/O -
+   * through `IZxNextIdeMachine`, the contract both cores implement for the IDE. Reading it has no
+   * side effects on the machine.
+   */
+  ideState(): IdeState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error(`The ${this.core} core does not implement IZxNextIdeMachine`);
+    return {
+      descriptors: m.getNextRegDescriptors(),
+      nextRegs: m.getNextRegState(),
+      memoryMapping: m.getNextMemoryMapping(),
+      palette: m.getPaletteDeviceInfo(),
+      ula: m.getNextUlaState()
+    };
   }
 
   registers(): Registers {

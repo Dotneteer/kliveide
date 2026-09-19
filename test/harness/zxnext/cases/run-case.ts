@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "../core/machines";
 
 import { captureFrame, frameHash, framePng, summarizeRows, type Frame } from "../core/capture";
 import { READY_REG, READY_VALUE, type CaseSpec, type KnownFailure, type LoadedCase, type OracleName } from "./case";

@@ -1,4 +1,4 @@
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "./machines";
 
 /*
  * Browser-safe frame helpers (no Node imports): used by the headless runner and by the browser page.
@@ -18,7 +18,7 @@ export type Frame = {
  * its bytes are already RGBA, and the visible frame starts at `getBufferStartOffset()`. Copied, not
  * viewed: the next frame overwrites the machine's buffer in place.
  */
-export function captureFrame(machine: ZxNextMachine): Frame {
+export function captureFrame(machine: NextMachine): Frame {
   const width = machine.screenWidthInPixels;
   const height = machine.screenHeightInPixels;
   const words = machine.getPixelBuffer();
@@ -36,7 +36,7 @@ export function captureFrame(machine: ZxNextMachine): Frame {
  * beam-racing raster). The panel used to call `renderInstantScreen()` after every frame as well - only
  * to keep a copy of the displayed picture - which the harness mirrored; it no longer does (B11).
  */
-export function runDisplayedFrame(machine: ZxNextMachine, onDisplayed?: () => void): void {
+export function runDisplayedFrame(machine: NextMachine, onDisplayed?: () => void): void {
   machine.executeMachineFrame();
   onDisplayed?.();
 }

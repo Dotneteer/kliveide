@@ -40,6 +40,13 @@ export class SpectrumBeeperDevice
   }
 
   /**
+   * The current value of the MIC bit
+   */
+  get micBit(): boolean {
+    return this._micBit;
+  }
+
+  /**
    * The current speaker output level (0.0, 0.33, 0.66, or 1.0)
    */
   get outputLevel(): number {

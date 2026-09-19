@@ -2,25 +2,14 @@ import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import { applyNextRegReadMux } from "./nextRegReadMux";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
-
-/*
- * The core version this emulator reports through NextReg $01/$0E.
- *
- * Exported because a NEX header can *ask* for a minimum core version, and the viewer says so when
- * the file asks for more than this provides (`nexValidation.ts`). `NextRegPanel` already imports
- * from this module, so the renderer reading these is the established direction.
- */
-export const CORE_VERSION_MAJOR = 3;
-export const CORE_VERSION_MINOR = 2;
-export const CORE_VERSION_SUB_MINOR = 0;
-
-/** The same three, as the tuple `validateNexHeader` compares against. */
-export const EMULATED_CORE_VERSION: [number, number, number] = [
-  CORE_VERSION_MAJOR,
-  CORE_VERSION_MINOR,
-  CORE_VERSION_SUB_MINOR
-];
+import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./nextColorTables";
+import { CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_SUB_MINOR } from "./nextCoreVersion";
+import type {
+  NextRegDescriptor,
+  NextRegDeviceState,
+  NextRegValueSlice,
+  RegValueState
+} from "./nextRegDescriptors";
 const BOARD_ID = 0b0010;
 
 type NextRegreadFn = () => number;
@@ -37,27 +26,6 @@ export type NextRegInfo = {
   readFn?: NextRegreadFn;
   writeFn?: NextRegWriteFn;
   slices?: NextRegValueSlice[];
-};
-
-export type NextRegValueSlice = {
-  mask?: number;
-  shift?: number;
-  description?: string;
-  valueSet?: Record<number, string>;
-  view?: "flag" | "number";
-};
-
-export type NextRegDescriptor = Omit<NextRegInfo, "readFn" | "writeFn">;
-
-export type NextRegDeviceState = {
-  lastRegisterIndex: number;
-  regs: RegValueState[];
-};
-
-export type RegValueState = {
-  id: number;
-  lastWrite?: number;
-  value?: number;
 };
 
 const readOnlyRegs: number[] = [0x00, 0x01, 0x0e, 0x0f, 0x1e, 0x1f, 0xb0, 0xb1, 0xb2];

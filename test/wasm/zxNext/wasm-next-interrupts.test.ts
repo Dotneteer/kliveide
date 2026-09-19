@@ -104,8 +104,8 @@ function expectCpuInterruptState(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMa
 }
 
 function writeNextReg(machine: InterruptMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }
 
 function writeLoadedByte(machine: InterruptMachine, address: number, value: number): void {

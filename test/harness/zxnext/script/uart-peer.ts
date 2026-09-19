@@ -1,4 +1,4 @@
-import type { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import type { NextMachine } from "../core/machines";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
@@ -27,7 +27,7 @@ function normalize(frame: UartFrame): { value: number; kind: "byte" | "parity" |
   return typeof frame === "number" ? { value: frame & 0xff, kind: "byte" } : { value: frame.value & 0xff, kind: frame.error ?? "byte" };
 }
 
-export function uartPeerOf(machine: ZxNextMachine): UartPeer {
+export function uartPeerOf(machine: NextMachine): UartPeer {
   if (machine instanceof ZxNextWasmV2Machine) {
     const x = machine.wasmV2Runtime!.exports;
     return {

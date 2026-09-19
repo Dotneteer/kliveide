@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { allRamBanksFor, bank16kForPartition } from "@emu/machines/zxNext/MemoryDevice";
+import { allRamBanksFor, bank16kForPartition } from "@emu/machines/zxNext/nextMemoryLayout";
 
 /*
  * All-RAM mode: the ZX Spectrum +3's special paging configurations, which the Next inherits.

@@ -7,23 +7,8 @@ import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { createTestNextMachine } from "../../zxnext/TestNextMachine";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
-import {
-  compareZxNextFrameTraces,
-  formatZxNextFrameTraceDifference,
-  readTraceHeader,
-  readTraceRecord,
-  writeTraceHeader,
-  ZxNextFrameTraceRecorder,
-  ZXNEXT_FRAME_TRACE_CAPACITY,
-  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
-  ZXNEXT_FRAME_TRACE_MAGIC,
-  ZXNEXT_FRAME_TRACE_RECORD_SIZE,
-  ZXNEXT_FRAME_TRACE_TOTAL_BYTES,
-  ZXNEXT_FRAME_TRACE_VERSION,
-  ZxNextTraceHeaderOffset,
-  ZxNextTraceRecordOffset,
-  ZXNEXT_TRACE_RECORD_FIELDS
-} from "@emu/machines/zxNext/diagnostics/ZxNextFrameTrace";
+import { compareZxNextFrameTraces, formatZxNextFrameTraceDifference, readTraceHeader, readTraceRecord, writeTraceHeader, ZxNextFrameTraceRecorder, ZxNextTraceHeaderOffset, ZxNextTraceRecordOffset, ZXNEXT_TRACE_RECORD_FIELDS } from "@emu/machines/zxNext/diagnostics/ZxNextFrameTrace";
+import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_MAGIC, ZXNEXT_FRAME_TRACE_RECORD_SIZE, ZXNEXT_FRAME_TRACE_TOTAL_BYTES, ZXNEXT_FRAME_TRACE_VERSION } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 
 describe("ZX Spectrum Next frame diff trace layout", () => {
   it("keeps the binary trace ABI fixed and inside the 128-byte record", () => {
@@ -380,8 +365,8 @@ describe("ZX Spectrum Next WASM frame trace recorder", () => {
     wasm.hardReset();
 
     for (const machine of [oracle, wasm]) {
-      machine.nextRegDevice.setNextRegisterIndex(0x50);
-      machine.nextRegDevice.setNextRegisterValue(0x00);
+      machine.doWritePort(0x243b, 0x50);
+      machine.doWritePort(0x253b, 0x00);
       machine.pc = 0x0000;
       machine.doWriteMemory(0x0000, 0x00);
     }

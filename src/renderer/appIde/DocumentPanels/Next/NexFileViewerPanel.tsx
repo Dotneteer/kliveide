@@ -29,7 +29,7 @@ import {
   validateNexHeader,
   type NexIssue
 } from "./nexValidation";
-import { EMULATED_CORE_VERSION } from "@emu/machines/zxNext/NextRegDevice";
+import { EMULATED_CORE_VERSION } from "@emu/machines/zxNext/nextCoreVersion";
 import { MF_BANK } from "@common/machines/constants";
 import { useNexBankBreakpointCounts } from "./useNexBankBreakpoints";
 import type { NexFileContents, NexHeader } from "./nexFileLoader";
