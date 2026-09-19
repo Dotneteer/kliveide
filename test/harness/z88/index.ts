@@ -2,13 +2,13 @@
  * The Cambridge Z88 test harness - see README.md.
  */
 export {
-  createZ88Machine,
+  createHarnessZ88Machine,
   HarnessFileProvider,
   ResolvingMessenger,
   z88Model,
   z88WasmArtifactBytes,
   Z88_HARNESS_BACKENDS,
-  type CreateZ88MachineOptions,
+  type CreateHarnessZ88MachineOptions,
   type Z88HarnessBackend,
   type Z88HarnessMachine
 } from "./core/machines";

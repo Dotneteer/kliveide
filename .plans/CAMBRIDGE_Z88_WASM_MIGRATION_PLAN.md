@@ -652,7 +652,7 @@ Status: Done on 2026-09-19.
 - **Core fix found here:** `z88HardReset` cleared all 4 MB; the TypeScript hard reset clears only
   the internal RAM (`resetInternalRam`: $080000-$0FFFFF) and card contents survive. The core now
   matches, and the loader test says so.
-- The harness can create a WASM machine (`createZ88Machine({ backend: "wasm" })`), but
+- The harness can create a WASM machine (`createHarnessZ88Machine({ backend: "wasm" })`), but
   `Z88_HARNESS_BACKENDS` stays `["typescript"]` until the core runs code.
 - Tests: `test/wasm/z88/wasm-z88-separation.test.ts` (6: prototype chain, import graph from the
   machine, host and loader, type imports included, neutral modules reached, the detector's own
@@ -681,7 +681,43 @@ Original scope:
 
 ### Step 3 - Implementation switch, factory and menu groups
 
-Status: Not started.
+Status: Done on 2026-09-19 (the preview twins are deferred to Step 5, as Step 2 recommended).
+
+- `MC_Z88_IMPLEMENTATION = "z88Implementation"` (`constants.ts`). `Z88Implementation.ts`:
+  `DEFAULT_Z88_IMPLEMENTATION = "typescript"`, `getZ88Implementation(config, model)` with the
+  per-key fallback (configuration's key, else the model's, else the default; unknown values select
+  the default). `Z88MachineFactory.ts`: `createZ88Machine(model, config, messenger)`. The renderer
+  registry now creates the Z88 through it, so the WASM machine is part of the app bundle. (Vite
+  inlines the 1.5 KB skeleton artifact as a data URL - its standard treatment of assets under 4 KB;
+  once the core grows past that it is emitted as a hashed file like the other cores, and
+  `extraResources` packages `dist/` regardless.)
+- `MachineModel.menuGroup` (`info-types.ts`). The machine-type items of the Machine menu moved out of
+  `app-menu.ts` into the pure `src/main/machine-types-menu.ts` (`createMachineTypesMenu`), which
+  lists models sharing a `menuGroup` in one submenu after the machine's ungrouped models; item ids
+  and checked state are unchanged, and `app-menu.ts` keeps its selection behaviour (the scanline
+  switch-off only for machines with models). Nothing in the registry has a group yet, so the menu
+  looks exactly as before.
+- `src/common/machines/model-twins.ts`: `createModelTwins(models, { configKey, implementation,
+  menuGroup, idSuffix, nameSuffix })` derives the comparison twins (explicit backend key, own menu
+  group, original ids untouched). **Not registered yet**: a preview entry would create a machine
+  whose frame loop throws. Step 5 registers the `-wasm` twins ("Cambridge Z88 (WASM preview)");
+  Step 14 replaces them with the `-ts` twins.
+- The harness's machine helper was renamed `createHarnessZ88Machine`, freeing the name for the
+  factory.
+- Tests: `test/z88/Z88MachineFactory.test.ts` (16: default, explicit values, unknown values,
+  per-key fallback, model/config handed to the WASM machine, the renderer registry, the key
+  surviving the slot-0 dialog (`configWithSlot0`), hot-plug (`applyCardStateChange`), the RAM
+  dialog and LCD menu spreads, registered models selecting no backend, no `-wasm` model yet, twin
+  derivation), `test/main/machine-types-menu.test.ts` (5: layout and ids, group submenus, checked
+  state inside groups, selection, the real menu still flat). `machine-inject-support` and the
+  other `test/main`, `test/common`, `test/controls`, `test/dialogs` suites pass.
+- Found on the way (not fixed here, offered as a separate task): the Z88 LCD menu mutates the
+  registered model's configuration object (`getModelConfig` returns it, and the handler assigns
+  `MC_SCREEN_SIZE` into it).
+- Usable afterwards: the app creates every Z88 through the factory, still on TypeScript; the
+  machinery to list and select the WASM backend exists and is tested.
+
+Original scope:
 
 - `MC_Z88_IMPLEMENTATION = "z88Implementation"` in `constants.ts`. `Z88Implementation.ts` sets
   `DEFAULT_Z88_IMPLEMENTATION = "typescript"`. `Z88MachineFactory.ts` uses the per-key fallback.
@@ -715,6 +751,11 @@ Status: Not started.
 ### Step 5 - Z80 integration and the frame lifecycle
 
 Status: Not started.
+
+- When the machine runs frames: register the ten `-wasm` preview twins in `machine-registry.ts`
+  with `createModelTwins` (group "Cambridge Z88 (WASM preview)"), flip the "no WASM preview entry"
+  test in `Z88MachineFactory.test.ts`, and add the WASM backend to `Z88_HARNESS_BACKENDS` once the
+  session suites can run on it.
 
 - Include `z80.c` with the hook set above. Implement tacts/frames, the 16,384-tact frame,
   `z88ExecuteFrame` / `z88ExecuteInstruction`, overshoot, `z88SetTacts`, the snooze cycle, the

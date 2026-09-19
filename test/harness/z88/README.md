@@ -8,7 +8,7 @@ object, so **the same test runs on every backend**.
 The harness exists for the TypeScript-to-WASM migration
 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). `Z88_HARNESS_BACKENDS` lists the backends the
 tests run on: only `"typescript"` until the WASM core can run code, then both.
-`createZ88Machine({ backend: "wasm" })` already creates a `Z88WasmV2Machine` (the WASM machine
+`createHarnessZ88Machine({ backend: "wasm" })` already creates a `Z88WasmV2Machine` (the WASM machine
 tests use it), and `z88WasmArtifactBytes()` builds the core once per test worker.
 
 ```ts
@@ -80,5 +80,5 @@ Methods returning `this` chain.
 
 ## Adding a backend
 
-Add the backend to `Z88HarnessBackend`, create its machine in `createZ88Machine`
+Add the backend to `Z88HarnessBackend`, create its machine in `createHarnessZ88Machine`
 (`core/machines.ts`), and add it to `Z88_HARNESS_BACKENDS`. Every session test then runs on it.

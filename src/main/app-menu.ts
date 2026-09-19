@@ -12,6 +12,7 @@ import path from "path";
 import os from "os";
 
 import { __DARWIN__, __WIN32__ } from "./electron-utils";
+import { createMachineTypesMenu } from "./machine-types-menu";
 import { getMonospaceFontOptions } from "@common/settings/monospace-fonts";
 import {
   EDITOR_FONT_SIZES,
@@ -736,42 +737,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   });
 
   // --- Machine types submenu (use the registered machines)
-  const machineTypesMenu: MenuItemConstructorOptions[] = [];
-  machineRegistry.forEach((mt) => {
-    if (!mt.models) {
-      machineTypesMenu.push({
-        id: `machine_${mt.machineId}`,
-        label: mt.displayName,
-        type: "checkbox",
-        checked: appState.emulatorState?.machineId === mt.machineId,
-        click: async () => {
-          await setMachineType(mt.machineId);
-          await saveKliveProject();
+  const machineTypesMenu = createMachineTypesMenu(
+    machineRegistry,
+    appState.emulatorState?.machineId,
+    appState.emulatorState?.modelId,
+    async (machineId, modelId) => {
+      await setMachineType(machineId, modelId);
+      if (modelId !== undefined) {
+        const newMachine = machineRegistry.find((m) => m.machineId === machineId);
+        if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
+          // --- Turn off scanline effect for machines that support it by default
+          setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
         }
-      });
-    } else {
-      mt.models.forEach((m) => {
-        machineTypesMenu.push({
-          id: `machine_${mt.machineId}_${m.modelId}`,
-          label: m.displayName,
-          type: "checkbox",
-          checked:
-            appState.emulatorState?.machineId === mt.machineId &&
-            appState.emulatorState?.modelId === m.modelId,
-          click: async () => {
-            await setMachineType(mt.machineId, m.modelId);
-            const newMachine = machineRegistry.find((m) => m.machineId === mt.machineId);
-            if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
-              // --- Turn off scanline effect for machines that support it by default
-              setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
-            }
-            await saveKliveProject();
-          }
-        });
-      });
+      }
+      await saveKliveProject();
     }
-    machineTypesMenu.push({ type: "separator" });
-  });
+  );
 
   // --- Machine-specific menus
   let specificMachineMenus: MenuItemConstructorOptions[] = [];

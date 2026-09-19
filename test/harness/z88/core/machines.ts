@@ -90,7 +90,7 @@ export class ResolvingMessenger extends MessengerBase {
   }
 }
 
-export type CreateZ88MachineOptions = {
+export type CreateHarnessZ88MachineOptions = {
   /** The backend; "typescript" by default */
   backend?: Z88HarnessBackend;
   /** The machine model id (`OZ50`, `OZ40`, ...); the first registered model by default */
@@ -122,7 +122,7 @@ export function z88Model(modelId?: string): MachineModel {
  * provider, audio sample rate, and (for `rom: "model"`) setup followed by a hard reset. A
  * `DebugSupport` is attached, because the step-into and breakpoint paths need one.
  */
-export async function createZ88Machine(options: CreateZ88MachineOptions = {}): Promise<Z88HarnessMachine> {
+export async function createHarnessZ88Machine(options: CreateHarnessZ88MachineOptions = {}): Promise<Z88HarnessMachine> {
   const backend = options.backend ?? "typescript";
   const model = z88Model(options.model);
   const config = options.config ?? model.config;

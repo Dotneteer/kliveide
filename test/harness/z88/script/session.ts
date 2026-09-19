@@ -6,8 +6,8 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
 
 import {
-  createZ88Machine,
-  type CreateZ88MachineOptions,
+  createHarnessZ88Machine,
+  type CreateHarnessZ88MachineOptions,
   type Z88HarnessBackend,
   type Z88HarnessMachine
 } from "../core/machines";
@@ -64,14 +64,14 @@ export type Z88Registers = {
 
 export type Z88Sample = { left: number; right: number };
 
-export type CreateZ88SessionOptions = CreateZ88MachineOptions;
+export type CreateZ88SessionOptions = CreateHarnessZ88MachineOptions;
 
 /**
  * Creates a Z88 test session: a machine on the requested backend (TypeScript by default), wired the
  * way the app wires it. See `test/harness/z88/README.md`.
  */
 export async function createZ88Session(options: CreateZ88SessionOptions = {}): Promise<Z88TestSession> {
-  const machine = await createZ88Machine(options);
+  const machine = await createHarnessZ88Machine(options);
   return new Z88TestSession(machine, options.backend ?? "typescript");
 }
 

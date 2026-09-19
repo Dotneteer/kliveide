@@ -19,7 +19,7 @@ import { Z88WasmNotMigratedError, Z88WasmV2Machine } from "@emu/machines/z88/Z88
 import { CardIds } from "@emu/machines/z88/memory/CardIds";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
 import { z88InternalRamSizeInBytes } from "@emu/machines/z88/z88CardCatalog";
-import { createZ88Machine, HarnessFileProvider, ResolvingMessenger, z88WasmArtifactBytes } from "../../harness/z88";
+import { createHarnessZ88Machine, HarnessFileProvider, ResolvingMessenger, z88WasmArtifactBytes } from "../../harness/z88";
 
 /*
  * The WASM Cambridge Z88 as a machine (Step 2 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the
@@ -110,8 +110,8 @@ describe("Cambridge Z88 WASM machine - identity and metadata (same as the TypeSc
 
 describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", () => {
   it.each(models())("%s: loads the same slot-0 image, ROM properties and keyboard layout", async (model) => {
-    const ts = await createZ88Machine({ backend: "typescript", model, rom: "model" });
-    const wasm = await createZ88Machine({ backend: "wasm", model, rom: "model" });
+    const ts = await createHarnessZ88Machine({ backend: "typescript", model, rom: "model" });
+    const wasm = await createHarnessZ88Machine({ backend: "wasm", model, rom: "model" });
 
     expect(wasm.getMachineProperty(MC_Z88_INTROM)).toBe(ts.getMachineProperty(MC_Z88_INTROM));
     expect(wasm.getMachineProperty(MC_Z88_USE_DEFAULT_ROM)).toBe(ts.getMachineProperty(MC_Z88_USE_DEFAULT_ROM));
@@ -142,7 +142,7 @@ describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", 
   });
 
   it("a blank core holds the blank 512K ROM card in slot 0, as a constructed TypeScript machine does", async () => {
-    const wasm = (await createZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
     expect(wasm.getInsertedCard(0)).toEqual({ kind: "ROM", sizeInBytes: 0x08_0000 });
     for (const slot of [1, 2, 3]) expect(wasm.getInsertedCard(slot)).toBeUndefined();
     expect(wasm.directReadMemory(0)).toBe(0);
@@ -157,8 +157,8 @@ describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", 
   ])("LCD size %s: %i x %i, and the pixel buffer is exactly the LCD", async (size, width, height) => {
     const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
     const config = { ...model.config, [MC_SCREEN_SIZE]: size };
-    const ts = await createZ88Machine({ backend: "typescript", config, rom: "model" });
-    const wasm = (await createZ88Machine({ backend: "wasm", config, rom: "model" })) as Z88WasmV2Machine;
+    const ts = await createHarnessZ88Machine({ backend: "typescript", config, rom: "model" });
+    const wasm = (await createHarnessZ88Machine({ backend: "wasm", config, rom: "model" })) as Z88WasmV2Machine;
 
     expect([wasm.screenWidthInPixels, wasm.screenHeightInPixels]).toEqual([width, height]);
     expect([wasm.screenWidthInPixels, wasm.screenHeightInPixels]).toEqual([
@@ -187,7 +187,7 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
     const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
     const results: Z88HarnessMachine[] = [];
     for (const backend of ["typescript", "wasm"] as const) {
-      const machine = await createZ88Machine({ backend, model: model.modelId, rom: "model" });
+      const machine = await createHarnessZ88Machine({ backend, model: model.modelId, rom: "model" });
       machine.setMachineProperty(FILE_PROVIDER, new CardFiles(files));
       machine.dynamicConfig = slots;
       results.push(machine);
@@ -271,7 +271,7 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
 
 describe("Cambridge Z88 WASM machine - reset and power-on", () => {
   it("hard reset clears the internal RAM, keeps and re-inserts the cards", async () => {
-    const wasm = (await createZ88Machine({ backend: "wasm", model: "OZ40", rom: "model" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ backend: "wasm", model: "OZ40", rom: "model" })) as Z88WasmV2Machine;
     const memory = wasm.wasmV2Runtime!.memory;
     const romByte = memory[0x1234];
     memory[0x08_0100] = 0x55;
@@ -286,7 +286,7 @@ describe("Cambridge Z88 WASM machine - reset and power-on", () => {
   });
 
   it("reset keeps memory, clears the keystroke queue and the sleep flag, and resets the CPU", async () => {
-    const wasm = (await createZ88Machine({ backend: "wasm", rom: "model" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ backend: "wasm", rom: "model" })) as Z88WasmV2Machine;
     const memory = wasm.wasmV2Runtime!.memory;
     memory[0x08_0100] = 0x55;
     wasm.queueKeystroke(1, 2, Z88KeyCode.A);
@@ -374,7 +374,7 @@ describe("Cambridge Z88 WASM machine - surfaces not migrated yet", () => {
     ["renderInstantScreen", (m: Z88WasmV2Machine) => m.renderInstantScreen(), 8],
     ["getAudioSamples", (m: Z88WasmV2Machine) => m.getAudioSamples(), 9]
   ] as const)("%s says it arrives in Step %i", async (_name, call, step) => {
-    const machine = (await createZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+    const machine = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
     let error: unknown;
     try {
       call(machine);
