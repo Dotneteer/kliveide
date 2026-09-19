@@ -1,15 +1,37 @@
 // Total ring buffer capacity in frames. Small enough to bound maximum latency.
 const FRAMES_BUFFERED = 6;
-// Pre-fill frames of silence to absorb scheduling jitter without gaps.
+// Frames to hold back before playing (at start and after running dry) to absorb scheduling jitter.
 const FRAMES_DELAYED = 1;
 // If the buffer fills beyond this many frames, skip ahead to stay in sync.
 const MAX_LAG_FRAMES = 3;
+// Per-sample decay of the held value while dry: fades any DC level out over a few milliseconds
+// instead of cutting it to zero, which would click.
+const DRY_DECAY = 0.995;
 
 let waveBuffer;
-let samplesPerFrameStereo = 0; // stereo sample-pairs per frame
+let samplesPerFrameStereo = 0; // interleaved values (L, R) per frame, rounded up by one sample
+// Queued values that end priming: FRAMES_DELAYED frames, less a little slack, because a frame's
+// sample count is fractional and a delivered frame can be a sample or two short of the rounded-up size
+let primeValues = 0;
 let writeIndex = 0;
 let readIndex = 0;
+// Interleaved values written but not yet played. Kept explicitly: when `writeIndex === readIndex`
+// the indices alone cannot tell an empty ring from a full one.
+let available = 0;
+// True until FRAMES_DELAYED frames are queued again after the start or after running dry
+let priming = true;
+// The last value played on each channel, faded out while there is nothing to play
+let lastLeft = 0;
+let lastRight = 0;
 
+/*
+ * The reader must never overtake the writer. The machine delivers a frame of samples only when it
+ * completes one, and it falls behind real time whenever the debugger runs it an instruction at a time
+ * or it waits on an SD-card round trip. Reading on regardless wraps the reader around the ring into
+ * samples it has already played - which is how, after `.nexload` was typed in a debug session, the
+ * key clicks kept coming back as echoes. Running dry fades the last value out instead (silence, with
+ * no click), and waits for a frame's worth of samples before playing again.
+ */
 class SamplingGenerator extends AudioWorkletProcessor {
   constructor () {
     super();
@@ -30,47 +52,62 @@ class SamplingGenerator extends AudioWorkletProcessor {
     // Buffer size for stereo: 2 values per sample (left + right)
     samplesPerFrameStereo = (Math.floor(samplesPerFrame) + 1) * 2;
     waveBuffer = new Float32Array(samplesPerFrameStereo * FRAMES_BUFFERED);
+    primeValues = FRAMES_DELAYED * (samplesPerFrameStereo - 8);
     writeIndex = 0;
     readIndex = 0;
-
-    // Pre-fill one frame of silence so the reader never starves on the first callback
-    for (let i = 0; i < FRAMES_DELAYED * samplesPerFrameStereo; i++) {
-      waveBuffer[writeIndex++] = 0.0;
-    }
+    available = 0;
+    priming = true;
+    lastLeft = 0;
+    lastRight = 0;
   }
 
   /**
-   * Returns the number of stereo sample-pairs currently queued.
-   */
-  bufferedPairs () {
-    const len = waveBuffer ? waveBuffer.length : 0;
-    if (len === 0) return 0;
-    return ((writeIndex - readIndex + len) % len) >> 1; // divide by 2 for pairs
-  }
-
-  /**
-   * Stores the samples to render, discarding oldest data if the buffer
-   * has grown too large.
+   * Stores the samples to render, discarding the oldest data if the buffer has grown too large.
    * @param samples Interleaved stereo samples [L, R, L, R, ...]
    */
   storeSamples (samples) {
     if (!waveBuffer) return;
+    const len = waveBuffer.length;
 
-    // If we have accumulated more than MAX_LAG_FRAMES worth of audio,
-    // skip the read pointer forward to drop the oldest data and
-    // keep the output latency bounded.
-    const maxPairs = MAX_LAG_FRAMES * (samplesPerFrameStereo >> 1);
-    if (this.bufferedPairs() > maxPairs) {
-      const skipStereoValues = (this.bufferedPairs() - maxPairs) * 2;
-      readIndex = (readIndex + skipStereoValues) % waveBuffer.length;
+    // --- A batch larger than the ring can only keep its newest part
+    let start = 0;
+    if (samples.length > len) {
+      start = (samples.length - len) & ~1;
+    }
+    for (let i = start; i < samples.length; i++) {
+      waveBuffer[writeIndex++] = samples[i];
+      if (writeIndex >= len) writeIndex = 0;
+    }
+    available += samples.length - start;
+
+    // --- Keep the output latency bounded: drop the oldest queued audio beyond MAX_LAG_FRAMES
+    const maxValues = MAX_LAG_FRAMES * samplesPerFrameStereo;
+    if (available > maxValues) {
+      readIndex = (readIndex + (available - maxValues)) % len;
+      available = maxValues;
     }
 
-    for (const sample of samples) {
-      waveBuffer[writeIndex++] = sample;
-      if (writeIndex >= waveBuffer.length) {
-        writeIndex = 0;
-      }
+    if (priming && available >= primeValues) {
+      priming = false;
     }
+  }
+
+  /**
+   * Takes the next stereo pair into `lastLeft`/`lastRight`, or fades them out when dry.
+   */
+  nextPair () {
+    if (priming || available < 2) {
+      // --- Ran dry: wait for a frame's worth before playing again, so a machine delivering
+      // --- slightly slower than real time is heard with gaps rather than as a stutter
+      priming = true;
+      lastLeft *= DRY_DECAY;
+      lastRight *= DRY_DECAY;
+      return;
+    }
+    lastLeft = waveBuffer[readIndex++];
+    lastRight = waveBuffer[readIndex++];
+    if (readIndex >= waveBuffer.length) readIndex = 0;
+    available -= 2;
   }
 
   process (_inputs, outputs) {
@@ -81,24 +118,17 @@ class SamplingGenerator extends AudioWorkletProcessor {
       // Mono output: downmix stereo to mono
       const outputChannel = output[0];
       for (let i = 0; i < outputChannel.length; ++i) {
-        const left = waveBuffer ? (waveBuffer[readIndex++] || 0) : 0;
-        const right = waveBuffer ? (waveBuffer[readIndex++] || 0) : 0;
-        if (waveBuffer && readIndex >= waveBuffer.length) {
-          readIndex = 0;
-        }
-        outputChannel[i] = (left + right) / 2;
+        this.nextPair();
+        outputChannel[i] = (lastLeft + lastRight) / 2;
       }
     } else {
       // Stereo output: de-interleave samples
       const leftChannel = output[0];
       const rightChannel = output[1];
-      
       for (let i = 0; i < leftChannel.length; ++i) {
-        leftChannel[i] = waveBuffer ? (waveBuffer[readIndex++] || 0) : 0;
-        rightChannel[i] = waveBuffer ? (waveBuffer[readIndex++] || 0) : 0;
-        if (waveBuffer && readIndex >= waveBuffer.length) {
-          readIndex = 0;
-        }
+        this.nextPair();
+        leftChannel[i] = lastLeft;
+        rightChannel[i] = lastRight;
       }
     }
     return true;
