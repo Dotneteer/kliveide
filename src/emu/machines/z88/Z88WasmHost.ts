@@ -33,6 +33,7 @@ import {
   resolveZ88KeyboardLayout,
   Z88_BASE_CLOCK_FREQUENCY,
   Z88_DEFAULT_ROM,
+  Z88_NO_CODE_INJECTION,
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY,
   z88DisassemblySections,
@@ -370,11 +371,13 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   // ==========================================================================================
   // Code injection (a stub on both backends - follow-up F4)
 
+  /** There is no Z88 code injection flow (follow-up F4 of the Z88 WASM migration plan) */
   async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
-    return [];
+    throw new Error(Z88_NO_CODE_INJECTION);
   }
 
+  /** There is no Z88 code injection (follow-up F4); the IDE refuses before it gets here */
   injectCodeToRun(_codeToInject: CodeToInject): number {
-    return 0;
+    throw new Error(Z88_NO_CODE_INJECTION);
   }
 }

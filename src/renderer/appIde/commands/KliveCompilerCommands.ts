@@ -33,7 +33,7 @@ import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_INJECT_SUPPORT } from "@common/machines/constants";
+import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 import {
   compileCode,
@@ -1054,17 +1054,27 @@ export async function injectCode(
    *
    * The document header hides the Inject button for these machines, but the button is not the only
    * way in — `inject` is a command, reachable from the prompt and from a script — so the rule lives
-   * here as well as in the UI. Run and debug are unaffected: they deliver the code by whatever
-   * route the machine does support, which for the Next is the exported `.nex` file below.
+   * here as well as in the UI. Run and debug deliver the code by whatever route the machine does
+   * support: for the Next that is the exported `.nex` file below. A machine with no such route (the
+   * Cambridge Z88, whose memory OZ owns) refuses them too, rather than "running" code it never
+   * delivered.
    */
-  if (operationType === "inject") {
+  {
     const machineId = context.store.getState().emulatorState?.machineId;
     const machine = machineRegistry.find((mi) => mi.machineId === machineId);
     if (machine && machine.features?.[MF_INJECT_SUPPORT] === false) {
-      return commandError(
-        `${machine.displayName} does not support injecting code into its memory. ` +
-          "Use run or debug instead."
-      );
+      if (operationType === "inject") {
+        return commandError(
+          `${machine.displayName} does not support injecting code into its memory. ` +
+            (machine.machineId === MI_ZXNEXT ? "Use run or debug instead." : "")
+        );
+      }
+      if (machine.machineId !== MI_ZXNEXT) {
+        return commandError(
+          `${machine.displayName} cannot run code built in the IDE: there is no route to deliver ` +
+            "it into the machine. Put the program on a card instead."
+        );
+      }
     }
   }
 

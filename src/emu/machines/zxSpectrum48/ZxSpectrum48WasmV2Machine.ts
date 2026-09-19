@@ -76,8 +76,133 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     super(modelInfo, config);
   }
 
+  // --- CPU registers: the core owns them. Reads come from it and every write is pushed into it, so the
+  // --- IDE's register editor reaches the core and a register read after a normal frame (which
+  // --- refreshes only PC and the counters) is never stale - `getMemoryContents` reads them directly.
+
+  override get af(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuAf() : super.af;
+  }
+
+  override set af(value: number) {
+    super.af = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuAf(super.af);
+  }
+
+  override get bc(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuBc() : super.bc;
+  }
+
+  override set bc(value: number) {
+    super.bc = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuBc(super.bc);
+  }
+
+  override get de(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuDe() : super.de;
+  }
+
+  override set de(value: number) {
+    super.de = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuDe(super.de);
+  }
+
+  override get hl(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuHl() : super.hl;
+  }
+
+  override set hl(value: number) {
+    super.hl = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuHl(super.hl);
+  }
+
+  override get af_(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuAfAlt() : super.af_;
+  }
+
+  override set af_(value: number) {
+    super.af_ = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuAfAlt(super.af_);
+  }
+
+  override get bc_(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuBcAlt() : super.bc_;
+  }
+
+  override set bc_(value: number) {
+    super.bc_ = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuBcAlt(super.bc_);
+  }
+
+  override get de_(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuDeAlt() : super.de_;
+  }
+
+  override set de_(value: number) {
+    super.de_ = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuDeAlt(super.de_);
+  }
+
+  override get hl_(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuHlAlt() : super.hl_;
+  }
+
+  override set hl_(value: number) {
+    super.hl_ = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuHlAlt(super.hl_);
+  }
+
+  override get ix(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuIx() : super.ix;
+  }
+
+  override set ix(value: number) {
+    super.ix = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuIx(super.ix);
+  }
+
+  override get iy(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuIy() : super.iy;
+  }
+
+  override set iy(value: number) {
+    super.iy = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuIy(super.iy);
+  }
+
+  override get ir(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuIr() : super.ir;
+  }
+
+  override set ir(value: number) {
+    super.ir = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuIr(super.ir);
+  }
+
+  override get wz(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuWz() : super.wz;
+  }
+
+  override set wz(value: number) {
+    super.wz = value;
+    this.wasmV2Runtime?.exports.sp48SetCpuWz(super.wz);
+  }
+
   override get pc(): number {
-    return super.pc;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuPc() : super.pc;
   }
 
   override set pc(value: number) {
@@ -86,12 +211,128 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
   }
 
   override get sp(): number {
-    return super.sp;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.sp48GetCpuSp() : super.sp;
   }
 
   override set sp(value: number) {
     super.sp = value;
     this.wasmV2Runtime?.exports.sp48SetCpuSp(super.sp);
+  }
+
+  // --- The 8-bit halves: `Z80Cpu` writes them into its own register views, which the core never
+  // --- sees; the register editor (`setRegisterValue`) sets them one by one. They go through the pairs.
+
+  override get a(): number {
+    return this.af >> 8;
+  }
+
+  override set a(value: number) {
+    this.af = ((value & 0xff) << 8) | (this.af & 0xff);
+  }
+
+  override get f(): number {
+    return this.af & 0xff;
+  }
+
+  override set f(value: number) {
+    this.af = (this.af & 0xff00) | (value & 0xff);
+  }
+
+  override get b(): number {
+    return this.bc >> 8;
+  }
+
+  override set b(value: number) {
+    this.bc = ((value & 0xff) << 8) | (this.bc & 0xff);
+  }
+
+  override get c(): number {
+    return this.bc & 0xff;
+  }
+
+  override set c(value: number) {
+    this.bc = (this.bc & 0xff00) | (value & 0xff);
+  }
+
+  override get d(): number {
+    return this.de >> 8;
+  }
+
+  override set d(value: number) {
+    this.de = ((value & 0xff) << 8) | (this.de & 0xff);
+  }
+
+  override get e(): number {
+    return this.de & 0xff;
+  }
+
+  override set e(value: number) {
+    this.de = (this.de & 0xff00) | (value & 0xff);
+  }
+
+  override get h(): number {
+    return this.hl >> 8;
+  }
+
+  override set h(value: number) {
+    this.hl = ((value & 0xff) << 8) | (this.hl & 0xff);
+  }
+
+  override get l(): number {
+    return this.hl & 0xff;
+  }
+
+  override set l(value: number) {
+    this.hl = (this.hl & 0xff00) | (value & 0xff);
+  }
+
+  override get xh(): number {
+    return this.ix >> 8;
+  }
+
+  override set xh(value: number) {
+    this.ix = ((value & 0xff) << 8) | (this.ix & 0xff);
+  }
+
+  override get xl(): number {
+    return this.ix & 0xff;
+  }
+
+  override set xl(value: number) {
+    this.ix = (this.ix & 0xff00) | (value & 0xff);
+  }
+
+  override get yh(): number {
+    return this.iy >> 8;
+  }
+
+  override set yh(value: number) {
+    this.iy = ((value & 0xff) << 8) | (this.iy & 0xff);
+  }
+
+  override get yl(): number {
+    return this.iy & 0xff;
+  }
+
+  override set yl(value: number) {
+    this.iy = (this.iy & 0xff00) | (value & 0xff);
+  }
+
+  override get i(): number {
+    return this.ir >> 8;
+  }
+
+  override set i(value: number) {
+    this.ir = ((value & 0xff) << 8) | (this.ir & 0xff);
+  }
+
+  override get r(): number {
+    return this.ir & 0xff;
+  }
+
+  override set r(value: number) {
+    this.ir = (this.ir & 0xff00) | (value & 0xff);
   }
 
   override async setup(): Promise<void> {
@@ -697,20 +938,20 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
 
   private syncCpuFromWasmV2(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.af = wasm.sp48GetCpuAf();
-    this.bc = wasm.sp48GetCpuBc();
-    this.de = wasm.sp48GetCpuDe();
-    this.hl = wasm.sp48GetCpuHl();
-    this.af_ = wasm.sp48GetCpuAfAlt();
-    this.bc_ = wasm.sp48GetCpuBcAlt();
-    this.de_ = wasm.sp48GetCpuDeAlt();
-    this.hl_ = wasm.sp48GetCpuHlAlt();
-    this.ix = wasm.sp48GetCpuIx();
-    this.iy = wasm.sp48GetCpuIy();
-    this.ir = wasm.sp48GetCpuIr();
-    this.wz = wasm.sp48GetCpuWz();
-    this.pc = wasm.sp48GetCpuPc();
-    this.sp = wasm.sp48GetCpuSp();
+    super.af = wasm.sp48GetCpuAf();
+    super.bc = wasm.sp48GetCpuBc();
+    super.de = wasm.sp48GetCpuDe();
+    super.hl = wasm.sp48GetCpuHl();
+    super.af_ = wasm.sp48GetCpuAfAlt();
+    super.bc_ = wasm.sp48GetCpuBcAlt();
+    super.de_ = wasm.sp48GetCpuDeAlt();
+    super.hl_ = wasm.sp48GetCpuHlAlt();
+    super.ix = wasm.sp48GetCpuIx();
+    super.iy = wasm.sp48GetCpuIy();
+    super.ir = wasm.sp48GetCpuIr();
+    super.wz = wasm.sp48GetCpuWz();
+    super.pc = wasm.sp48GetCpuPc();
+    super.sp = wasm.sp48GetCpuSp();
     this.tacts = wasm.sp48GetTacts();
     this.frames = wasm.sp48GetFrames();
     this.clockMultiplier = wasm.sp48GetClockMultiplier();
@@ -729,7 +970,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
 
   private syncFrameCountersFromWasmV2(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.pc = wasm.sp48GetCpuPc();
+    super.pc = wasm.sp48GetCpuPc();
     this.tacts = wasm.sp48GetTacts();
     this.frames = wasm.sp48GetFrames();
     this.clockMultiplier = wasm.sp48GetClockMultiplier();

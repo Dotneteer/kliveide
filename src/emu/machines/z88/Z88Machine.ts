@@ -45,6 +45,7 @@ import {
   resolveZ88KeyboardLayout,
   Z88_BASE_CLOCK_FREQUENCY,
   Z88_DEFAULT_ROM,
+  Z88_NO_CODE_INJECTION,
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY,
   z88DisassemblySections,
@@ -684,9 +685,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88DeviceHost, IZ88Id
    * Gets the main execution point information of the machine
    * @param _model Machine model to use for code execution
    */
+  /** There is no Z88 code injection flow (follow-up F4 of the Z88 WASM migration plan) */
   async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {
-    // TODO: Implement this
-    return [];
+    throw new Error(Z88_NO_CODE_INJECTION);
   }
 
   /**
@@ -694,9 +695,9 @@ export class Z88Machine extends Z80MachineBase implements IZ88DeviceHost, IZ88Id
    * @param _codeToInject Code to inject into the machine
    * @returns The start address of the injected code
    */
+  /** There is no Z88 code injection (follow-up F4); the IDE refuses before it gets here */
   injectCodeToRun(_codeToInject: CodeToInject): number {
-    // TODO: Implement this
-    return 0;
+    throw new Error(Z88_NO_CODE_INJECTION);
   }
 
   /**

@@ -12,6 +12,11 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 /* Local, so this neutral module does not depend on the renderer's command services */
 const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
 
+/** Why a Z88 refuses to inject or run IDE-built code (follow-up F4 of the WASM migration plan) */
+export const Z88_NO_CODE_INJECTION =
+  "The Cambridge Z88 cannot run code injected from the IDE: OZ owns the memory and its paging, so " +
+  "there is no delivery route. Put the program on a card instead.";
+
 /** The ROM loaded into slot 0 when the configuration names none */
 export const Z88_DEFAULT_ROM = "z88v50-r1f99aaae";
 
@@ -93,55 +98,23 @@ export function z88RomFlags(): boolean[] {
 }
 
 /**
- * Gets the disassembly sections for the specified options.
+ * Gets the disassembly sections: the whole 64K address space.
  *
- * Note: these ranges are the ZX Spectrum's (screen at $4000-$5AFF, RAM from $5B00); the Z88 has no
- * such layout. Kept verbatim for backend parity - follow-up F3 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
- * @param options The `ram` and `screen` disassembly options
+ * The Z88's 64K is four segments of banks the Blink pages in (SR0-SR3); there is no fixed ROM, RAM or
+ * screen range in it as on the ZX Spectrum, which is why the disassembly view hides its "RAM" and
+ * "Screen" options for the Z88 (`CT_DISASSEMBLER_VIEW` in `machine-registry.ts`). The Spectrum ranges
+ * this used to return left `$4000-$5AFF` (the Spectrum's screen) out of every Z88 disassembly -
+ * follow-up F3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * @param _options The view's `ram` and `screen` options, which do not apply to the Z88
  */
-export function z88DisassemblySections(options: Record<string, any>): IMemorySection[] {
-  const ram = !!options.ram;
-  const screen = !!options.screen;
-  const sections: IMemorySection[] = [];
-  if (!ram || !screen) {
-    // --- Use the memory segments according to the "ram" and "screen" flags
-    sections.push({
-      startAddress: 0x0000,
-      endAddress: 0x3fff,
-      sectionType: MemorySectionType.Disassemble
-    });
-    if (ram) {
-      if (screen) {
-        sections.push({
-          startAddress: 0x4000,
-          endAddress: 0xffff,
-          sectionType: MemorySectionType.Disassemble
-        });
-      } else {
-        sections.push({
-          startAddress: 0x5b00,
-          endAddress: 0xffff,
-          sectionType: MemorySectionType.Disassemble
-        });
-      }
-    } else if (screen) {
-      sections.push({
-        startAddress: 0x4000,
-        endAddress: 0x5aff,
-        sectionType: MemorySectionType.Disassemble
-      });
-    }
-  } else {
-    // --- Disassemble the whole memory
-    sections.push({
+export function z88DisassemblySections(_options: Record<string, any>): IMemorySection[] {
+  return [
+    {
       startAddress: 0x0000,
       endAddress: 0xffff,
       sectionType: MemorySectionType.Disassemble
-    });
-  }
-
-  return sections;
+    }
+  ];
 }
 
 /** The LCD size registers (SCW, SCH) of the Blink */

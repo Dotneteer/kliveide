@@ -80,8 +80,11 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetCpuAfAlt: Sp48WasmV2ExportFunction;
   sp48SetCpuAfAlt: Sp48WasmV2ExportFunction;
   sp48GetCpuBcAlt: Sp48WasmV2ExportFunction;
+  sp48SetCpuBcAlt: Sp48WasmV2ExportFunction;
   sp48GetCpuDeAlt: Sp48WasmV2ExportFunction;
+  sp48SetCpuDeAlt: Sp48WasmV2ExportFunction;
   sp48GetCpuHlAlt: Sp48WasmV2ExportFunction;
+  sp48SetCpuHlAlt: Sp48WasmV2ExportFunction;
   sp48GetCpuIx: Sp48WasmV2ExportFunction;
   sp48SetCpuIx: Sp48WasmV2ExportFunction;
   sp48GetCpuIy: Sp48WasmV2ExportFunction;
@@ -89,6 +92,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48GetCpuIr: Sp48WasmV2ExportFunction;
   sp48SetCpuIr: Sp48WasmV2ExportFunction;
   sp48GetCpuWz: Sp48WasmV2ExportFunction;
+  sp48SetCpuWz: Sp48WasmV2ExportFunction;
   sp48GetCpuPc: Sp48WasmV2ExportFunction;
   sp48GetStepOutAddress: Sp48WasmV2ExportFunction;
   sp48SetCpuPc: Sp48WasmV2ExportFunction;
@@ -259,8 +263,11 @@ const requiredV2Exports = [
   "sp48GetCpuAfAlt",
   "sp48SetCpuAfAlt",
   "sp48GetCpuBcAlt",
+  "sp48SetCpuBcAlt",
   "sp48GetCpuDeAlt",
+  "sp48SetCpuDeAlt",
   "sp48GetCpuHlAlt",
+  "sp48SetCpuHlAlt",
   "sp48GetCpuIx",
   "sp48SetCpuIx",
   "sp48GetCpuIy",
@@ -268,6 +275,7 @@ const requiredV2Exports = [
   "sp48GetCpuIr",
   "sp48SetCpuIr",
   "sp48GetCpuWz",
+  "sp48SetCpuWz",
   "sp48GetCpuPc",
   "sp48GetStepOutAddress",
   "sp48SetCpuPc",

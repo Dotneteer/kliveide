@@ -151,8 +151,11 @@ has `z80SoftReset()` for the reset button, and the WASM corpus wrapper's `reset(
 core's registers only on `getCpuState()` is stale after a normal frame, and the IDE does not always
 go through `getCpuState()`: `getMemoryContents` reads `m.af`, `m.hl`, ... directly, the register
 editor (`setRegisterValue`) writes the 8-bit halves `a`, `f`, `xl`, `i`, `r`, ..., and `Z80Cpu`
-implements those on its own register views, which the core never sees. The Z88 adapter overrides
-every accessor - the 16-bit pairs read live from the core and push every write, the 8-bit halves go
+implements those on its own register views, which the core never sees. This hit every WASM adapter:
+the 48K and 128K pushed only PC and SP (the 128K did not even sync AF', BC', DE', HL', IR and WZ back),
+and the +3E pushed writes but returned the stale mirror after a normal frame
+(`test/wasm/zxSpectrum/wasm-register-editor.test.ts` drives the IDE's processor on all three). The
+Z88, 48K, 128K and +3E adapters now override every accessor - the 16-bit pairs read live from the core and push every write, the 8-bit halves go
 through the pairs, and `iff1`/`iff2`/`interruptMode` read the core too. Override a getter with every
 setter: a setter-only accessor in a subclass hides the base getter. Fields that are not accessors
 (`opStartAddress`, `sigINT`) must be refreshed after every frame, because the Breakpoints panel
@@ -203,6 +206,13 @@ A parity test that passes the first time proves nothing until it has failed:
 change one colour constant and one filter constant, rebuild, and watch the
 pixel and sample comparisons fail, then restore. The Z88 LCD and beeper parity
 tests were checked this way.
+
+**Before fixing an oracle quirk, check whether the ROM relies on it.** The Z88 Blink's interrupt test
+(`INT & STA`) contradicts the documented bit layout, and OZvm - the emulator the TypeScript Blink
+came from - has the same test, which made it look deliberate. Running the scenario the quirk could
+matter for (OZ opening the flap, taking a card, closing it) under both checks, with the ROM, showed
+identical behaviour, and only then was it fixed in both cores. A quirk that a ROM does depend on is a
+finding about the hardware, not a bug to remove.
 
 **Test the IDE through `MainToEmuProcessor`, not through the machine.** The IDE reaches the emulator
 only through that processor, and it reads fields no machine-level test looks at. The Z88's IDE parity

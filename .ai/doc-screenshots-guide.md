@@ -124,7 +124,8 @@ of a machine through the same session and compares them:
   on actionability checks; `locator('button[aria-label="..."]').click({ force: true })` works.
 - **Dialogs use a combobox**: `getByRole("combobox")` opens it, `getByRole("option", { name })` picks,
   then the button by its text (`Ok`).
-- **The EMU status bar names the backend** ("... - WASM preview") and shows the PC, so reading it
+- **The EMU status bar names the model** (a backend twin's name says which: "... - TypeScript") and
+  shows the PC, so reading it
   after each step proves a rebuild kept the selected backend. A paused machine shows a
   `Paused (PC: $xxxx)` overlay on the screen - the proof a breakpoint stopped it.
 - **Two runs of the same script are not the same machine run.** Keys and menu clicks land on

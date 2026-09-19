@@ -18,6 +18,7 @@ import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { CardIds } from "@emu/machines/z88/memory/CardIds";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
+import { Z88_NO_CODE_INJECTION } from "@emu/machines/z88/z88MachineInfo";
 import { z88InternalRamSizeInBytes } from "@emu/machines/z88/z88CardCatalog";
 import {
   createHarnessZ88Machine,
@@ -104,9 +105,11 @@ describe("Cambridge Z88 WASM machine - identity and metadata (same as the TypeSc
     expect(wasm.getDefaultKeyMapping()).toBe(ts.getDefaultKeyMapping());
   });
 
-  it("has the same code-injection stub (follow-up F4)", async () => {
-    expect(await wasm.getCodeInjectionFlow("OZ50")).toEqual(await ts.getCodeInjectionFlow("OZ50"));
-    expect(wasm.injectCodeToRun({} as any)).toBe(ts.injectCodeToRun({} as any));
+  it("refuses code injection the same way (follow-up F4: no delivery route on the Z88)", async () => {
+    for (const machine of [ts, wasm]) {
+      await expect(machine.getCodeInjectionFlow("OZ50")).rejects.toThrow(Z88_NO_CODE_INJECTION);
+      expect(() => machine.injectCodeToRun({} as any)).toThrow(Z88_NO_CODE_INJECTION);
+    }
   });
 
   it("sizes the internal RAM from MC_Z88_INTRAM as the TypeScript banked memory does", () => {
@@ -262,9 +265,9 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
       "Invalid initial content size (100/32768)"
     ],
     [
-      "an unknown card type (EPROMUV256, follow-up F2)",
-      { [MC_Z88_SLOT2]: { size: 256, cardType: CardIds.EPROMUV256 } },
-      "Unknown card type: EPROMUV256"
+      "an unknown card type",
+      { [MC_Z88_SLOT2]: { size: 256, cardType: "EPROMUV512" } },
+      "Unknown card type: EPROMUV512"
     ],
     [
       "an invalid card size",

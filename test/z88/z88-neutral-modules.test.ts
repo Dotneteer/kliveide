@@ -82,20 +82,13 @@ describe("z88MachineInfo", () => {
     expect(z88RomFlags()).toEqual(new Array(8).fill(false));
   });
 
-  it("keeps the (Spectrum-shaped) disassembly sections verbatim - follow-up F3", () => {
-    const d = MemorySectionType.Disassemble;
-    expect(z88DisassemblySections({})).toEqual([{ startAddress: 0, endAddress: 0x3fff, sectionType: d }]);
-    expect(z88DisassemblySections({ ram: true })).toEqual([
-      { startAddress: 0, endAddress: 0x3fff, sectionType: d },
-      { startAddress: 0x5b00, endAddress: 0xffff, sectionType: d }
-    ]);
-    expect(z88DisassemblySections({ screen: true })).toEqual([
-      { startAddress: 0, endAddress: 0x3fff, sectionType: d },
-      { startAddress: 0x4000, endAddress: 0x5aff, sectionType: d }
-    ]);
-    expect(z88DisassemblySections({ ram: true, screen: true })).toEqual([
-      { startAddress: 0, endAddress: 0xffff, sectionType: d }
-    ]);
+  it("disassembles the whole 64K, whatever the view's (hidden) RAM and Screen options - F3", () => {
+    // --- The Z88's 64K is four paged segments: no ROM/RAM/screen split as on the Spectrum. The
+    // --- Spectrum ranges it used to answer left $4000-$5AFF out with the view's defaults (ram, no screen).
+    const whole = [{ startAddress: 0, endAddress: 0xffff, sectionType: MemorySectionType.Disassemble }];
+    for (const options of [{}, { ram: true }, { screen: true }, { ram: true, screen: true }]) {
+      expect(z88DisassemblySections(options), JSON.stringify(options)).toEqual(whole);
+    }
   });
 });
 
@@ -193,6 +186,12 @@ describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules bot
       expect(s.kind).toBe(expectedKind[card.type]);
     }
   );
+
+  it("the card dialog's 256K UV EPROM (EPROMUV256) is a 256K UV EPROM on both backends (F2)", () => {
+    expect(z88CardSpec(CardIds.EPROMUV256, 256)).toEqual({ kind: "UV_EPROM", sizeInBytes: 0x4_0000 });
+    const card = createZ88MemoryCard(host, 256, CardIds.EPROMUV256);
+    expect([card.size, card.type]).toEqual([0x4_0000, CardType.EpromVpp128KB]);
+  });
 
   it.each([
     [undefined, false],

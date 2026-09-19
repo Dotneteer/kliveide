@@ -4,14 +4,15 @@ The Cambridge Z88 WASM implementation is the full-machine C core under this fold
 `dist/cambridge-z88.wasm` and is loaded by `Z88WasmV2Loader.ts`. The migration is planned and
 tracked in `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
 
-**Status (Step 12).** The whole machine is emulated: the memory map and every card type - RAM, ROM, UV
+**Status (Step 14).** The whole machine is emulated: the memory map and every card type - RAM, ROM, UV
 EPROM, Intel and AMD flash with their command states (Steps 4 and 10) - the CPU and the frame loop,
 one boundary call per normal frame (Step 5), the Blink (Step 6), the keyboard and sleep detection
 (Step 7), the LCD (Step 8) and the beeper (Step 9), with the IDE surfaces of the TypeScript machine
 (Step 11). It boots every OZ ROM, types, draws, sounds, programs cards and debugs exactly like the
 TypeScript machine (`test/wasm/z88/wasm-z88-parity.test.ts`, `wasm-z88-ide-parity.test.ts`,
-`wasm-z88-debug-step.test.ts`), and runs frames 9-22 times faster (below). The machine menu lists it
-under "Cambridge Z88 (WASM preview)"; the TypeScript `Z88Machine` stays the default until Step 14.
+`wasm-z88-debug-step.test.ts`), and runs frames 9-22 times faster (below). It has been the default since
+Step 14 (2026-09-19); the TypeScript `Z88Machine` stays selectable under "Cambridge Z88 (TypeScript)"
+(`<id>-ts`) for the comparison period, and a saved `<id>-wasm` preview model opens as `<id>`.
 
 ## Layout
 
@@ -87,8 +88,6 @@ is smaller than the 48K).
 
 Ported verbatim for parity, and fixed in both cores later (follow-ups of the migration plan):
 
-- **F1:** the Blink's interrupt check tests `INT & STA`, whose bits do not line up everywhere
-  (STA.TIME meets INT.GINT, STA.FLAPOPEN meets INT.KWAIT).
 - A row of LORES cells leaves the last 4 pixels of a 640-pixel row unpainted.
 - A snoozing `$B2` keyboard read answers `$FF` at once (the hardware holds the read).
 - The Blink's reset re-pages SR0-SR3 with the COM value from before the reset, and can leave the
@@ -102,6 +101,11 @@ Ported verbatim for parity, and fixed in both cores later (follow-ups of the mig
   size, so on a card smaller than its slot a mirrored bank erases memory past the card. The AMD
   command cycle's address is not checked (only the two unlock cycles'), and a write while an AMD chip
   executes a command is ignored unless it is the reset ($F0).
+
+Fixed in both cores during the comparison period (Step 15): the Blink raises /INT only for an STA
+source whose INT enable is set - STA.TIME by INT.TIME (bit 1), not by GINT, and never STA.FLAPOPEN
+(F1); the card dialog's 256K UV EPROM is constructible (F2); the Z88 disassembles its whole 64K (F3);
+code injection is refused on both backends instead of "running" at address 0 (F4).
 
 Fixed in TypeScript instead of copied (Step 11): `Z80Cpu`'s CALL and RST passed the whole 16-bit PC
 as the low byte they push, so the CPU panel showed a 16-bit "last write value" and a card saw a

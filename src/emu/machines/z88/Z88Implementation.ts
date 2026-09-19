@@ -5,9 +5,9 @@ import { MC_Z88_IMPLEMENTATION } from "@common/machines/constants";
 /**
  * Selects the execution backend for a Cambridge Z88 machine.
  *
- * The TypeScript backend is the default and the parity oracle while the WASM backend is being
- * built (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`); Step 14 flips the default to WASM and keeps
- * TypeScript selectable for comparison.
+ * The WASM backend is the default since Step 14 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`
+ * (2026-09-19). The TypeScript backend stays selectable - the "Cambridge Z88 (TypeScript)" models -
+ * and remains the parity oracle for the comparison period.
  */
 export type Z88Implementation = "typescript" | "wasm";
 
@@ -15,7 +15,7 @@ export type Z88Implementation = "typescript" | "wasm";
 export const Z88_IMPLEMENTATION = MC_Z88_IMPLEMENTATION;
 
 /** The backend used when neither the configuration nor the model selects one */
-export const DEFAULT_Z88_IMPLEMENTATION: Z88Implementation = "typescript";
+export const DEFAULT_Z88_IMPLEMENTATION: Z88Implementation = "wasm";
 
 /**
  * Resolves the backend of a Z88, key by key: the configuration's value, else the model's own

@@ -29,11 +29,14 @@ describe("MF_INJECT_SUPPORT", () => {
     expect(featureOf(MI_ZXNEXT)).toBe(false);
   });
 
+  it("is declared false for the Cambridge Z88 (OZ owns its memory: no delivery route - F4)", () => {
+    expect(featureOf(MI_Z88)).toBe(false);
+  });
+
   it.each([
     ["ZX Spectrum 48K", MI_SPECTRUM_48],
     ["ZX Spectrum 128K", MI_SPECTRUM_128],
     ["ZX Spectrum +3E", MI_SPECTRUM_3E],
-    ["Cambridge Z88", MI_Z88],
     ["Commodore 64", MI_C64]
   ])("is declared true for %s", (_name, machineId) => {
     expect(featureOf(machineId)).toBe(true);

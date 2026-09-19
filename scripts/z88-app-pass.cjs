@@ -10,8 +10,9 @@
  * a breakpoint), soft and hard reset (F8/F9), the LCD sizes, a keyboard layout and the RAM dialog.
  *
  * Each step records the LCD picture, the EMU status bar (which names the backend) and the IDE text it
- * checks; console errors of both windows are collected. For a TypeScript model and its WASM twin the
- * pictures are put side by side (TypeScript left) in `.doc-shots/z88-app-pass/compare/`.
+ * checks; console errors of both windows are collected. For a model (WASM, the default) and its
+ * TypeScript twin (`<id>-ts`) the pictures are put side by side (TypeScript left) in
+ * `.doc-shots/z88-app-pass/compare/`.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts   # out/ must be current
  *   node scripts/z88-app-pass.cjs [OZ50 OZ40 ...]                     # default: OZ50
@@ -326,9 +327,10 @@ async function main() {
   const bases = models.length ? models : ["OZ50"];
   const summary = [];
   for (const base of bases) {
-    const ts = await runModel(base);
-    const wasm = await runModel(`${base}-wasm`);
-    await compare(base, `${base}-wasm`);
+    // --- Since Step 14 the original model runs on WASM; its "-ts" twin is the TypeScript machine
+    const ts = await runModel(`${base}-ts`);
+    const wasm = await runModel(base);
+    await compare(`${base}-ts`, base);
     summary.push({ ts, wasm });
   }
   fs.writeFileSync(path.join(OUT, "summary.json"), JSON.stringify(summary, null, 2));

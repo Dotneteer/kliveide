@@ -79,18 +79,18 @@ describe("createMachineTypesMenu", () => {
     expect(select).toHaveBeenLastCalledWith("multi", "b-alt");
   });
 
-  it("lists the Z88's WASM preview twins in one submenu; every other machine stays flat", () => {
+  it("lists the Z88's TypeScript twins in one submenu; every other machine stays flat", () => {
     const items = createMachineTypesMenu(machineRegistry, undefined, undefined, vi.fn());
     const submenus = items.filter((i) => i.type === "submenu");
     expect(submenus.map((i) => [i.id, i.label])).toEqual([
-      ["machine_z88_group_cambridge_z88_wasm_preview", "Cambridge Z88 (WASM preview)"]
+      ["machine_z88_group_cambridge_z88_typescript", "Cambridge Z88 (TypeScript)"]
     ]);
 
     const z88 = machineRegistry.find((m) => m.machineId === "z88")!;
     const originals = z88.models!.filter((m) => m.menuGroup === undefined);
-    const preview = submenus[0].submenu as MenuItemConstructorOptions[];
-    expect(preview.map((i) => i.id)).toEqual(originals.map((m) => `machine_z88_${m.modelId}-wasm`));
-    expect(preview.map((i) => i.label)).toEqual(originals.map((m) => `${m.displayName} - WASM preview`));
+    const twins = submenus[0].submenu as MenuItemConstructorOptions[];
+    expect(twins.map((i) => i.id)).toEqual(originals.map((m) => `machine_z88_${m.modelId}-ts`));
+    expect(twins.map((i) => i.label)).toEqual(originals.map((m) => `${m.displayName} - TypeScript`));
 
     // --- The originals keep their flat items; every model has exactly one checkbox
     const flat = items.filter((i) => i.type === "checkbox");
@@ -98,13 +98,13 @@ describe("createMachineTypesMenu", () => {
       expect(flat.some((i) => i.id === `machine_z88_${model.modelId}`), model.modelId).toBe(true);
     }
     const modelCount = machineRegistry.reduce((n, m) => n + (m.models?.length ?? 1), 0);
-    expect(flat.length + preview.length).toBe(modelCount);
+    expect(flat.length + twins.length).toBe(modelCount);
   });
 
-  it("checks a running preview twin inside its submenu", () => {
-    const items = createMachineTypesMenu(machineRegistry, "z88", "OZ40-wasm", vi.fn());
-    const preview = items.find((i) => i.type === "submenu")!.submenu as MenuItemConstructorOptions[];
-    expect(preview.filter((i) => i.checked).map((i) => i.id)).toEqual(["machine_z88_OZ40-wasm"]);
+  it("checks a running TypeScript twin inside its submenu", () => {
+    const items = createMachineTypesMenu(machineRegistry, "z88", "OZ40-ts", vi.fn());
+    const twins = items.find((i) => i.type === "submenu")!.submenu as MenuItemConstructorOptions[];
+    expect(twins.filter((i) => i.checked).map((i) => i.id)).toEqual(["machine_z88_OZ40-ts"]);
     expect(items.filter((i) => i.type === "checkbox" && i.checked)).toEqual([]);
   });
 });

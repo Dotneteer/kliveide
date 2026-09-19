@@ -2,6 +2,11 @@
 
 Created: 2026-09-19
 
+**Status: complete (2026-09-19).** Steps 0-15 are done: WASM is the default Z88, the TypeScript
+machine stays under "Cambridge Z88 (TypeScript)" for the comparison period, and follow-ups F1-F4 are
+fixed in both cores. When the author ends the comparison period, carry out
+`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`.
+
 ## Goal
 
 Replace the TypeScript Cambridge Z88 emulator with a fast, full-machine C/WASM backend, built the
@@ -1120,7 +1125,43 @@ Compare against the TypeScript model side by side, and record the results in thi
 
 ### Step 14 - Flip the default and keep TypeScript in the menu
 
-Status: Not started.
+Status: Done on 2026-09-19 (the author's go-ahead: "Go on" after Step 13).
+
+- `DEFAULT_Z88_IMPLEMENTATION = "wasm"`: the ten original models (ids unchanged) run on WASM.
+- The "Cambridge Z88 (WASM preview)" group is replaced by "Cambridge Z88 (TypeScript)": ten
+  `<id>-ts` twins (`createModelTwins`, `z88Implementation: "typescript"`).
+- The alias: `modelIdAliases` / `resolveModelId` in `machine-registry.ts` map `<id>-wasm` to `<id>`;
+  `MachineService.setMachineType` resolves it before searching the registry (every path goes
+  through it: project load, the last session at startup, the menus, the LCD/RAM rebuilds) and
+  `getMachineName` for the log line. A saved preview project keeps its configuration (its explicit
+  `"wasm"` key agrees with the default).
+- Tests: `Z88MachineFactory.test.ts` (default, TypeScript twins, the per-key fallback now guarding
+  the TypeScript twins through the slot-0 dialog, hot-plug, the RAM dialog and the LCD menu, and the
+  alias: every preview id resolves, other ids and machines are untouched, and a project saved with
+  `OZ50-wasm` creates `OZ50` with its saved configuration); `machine-types-menu.test.ts` (the
+  TypeScript submenu and its checked state). Node 22,081 and jsdom 1,079 cases pass. In the built
+  app: the menu shows the TypeScript group, `OZ50` boots on WASM and `OZ50-ts` on TypeScript
+  ("- TypeScript" in the status bar), no page errors.
+- `scripts/z88-app-pass.cjs` now compares `<id>-ts` (TypeScript) with `<id>` (WASM).
+- Docs: a Cambridge Z88 section in `.ai/wasm-v2-machine-migration-guide.md` (non-Spectrum machine,
+  shared-core extensions, feature-gated test backends, per-key fallback, the comparison submenu and
+  the alias), a pointer in `.ai/README.md`; the lessons were added to
+  `.ai/wasm-migration-intent-and-lessons.md` step by step.
+
+Rollout criteria, as met:
+
+| Criterion | Evidence |
+|---|---|
+| 887 original cases and every new case on both backends, none excluded | `Z88_WASM_FEATURES` has every feature (Step 10); `test/z88/README.md` |
+| ROM, LCD and card parity | 10 OZ boots and typing sessions, 5 LCD sizes, 10 card types in slots 1-3 (`wasm-z88-parity.test.ts`) |
+| Separation | `wasm-z88-separation.test.ts` |
+| Debugger | `wasm-z88-debug-step.test.ts`, incl. the fast path and memory/I/O breakpoints |
+| IDE panels identical | `wasm-z88-ide-parity.test.ts` (through `MainToEmuProcessor`) |
+| Shared-CPU contract; other machines green | `check-wasm-cpu-contract.cjs`; sp48/sp128/spp3e/zxnext suites and the Z80 corpus |
+| Under the ceiling; faster | 151,854 of 200,000 bytes; 9-22x faster (`wasm-z88-benchmark.perf.test.ts`) |
+| Manual pass | OZ 5.0 only, by the author's choice; no blocker (Step 13) |
+
+Original scope:
 
 - Set `DEFAULT_Z88_IMPLEMENTATION = "wasm"`. Replace the WASM preview group with the
   `"Cambridge Z88 (TypeScript)"` group (`<id>-ts`). Add the `<id>-wasm` → `<id>` alias with a test.
@@ -1131,7 +1172,35 @@ Status: Not started.
 
 ### Step 15 - Comparison period and handover
 
-Status: Not started.
+Status: Done on 2026-09-19 - the follow-ups are resolved and the removal plan is written. The
+comparison period itself continues until the author ends it; then
+`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md` starts.
+
+- **F1 (Blink interrupt):** checked against the Z88 Developers' Notes (STA: 7 FLAPOPEN, 6 A19,
+  5 FLAP, 4 UART, 3 BTL, 2 KEY, 1 -, 0 TIME; INT: 7 KWAIT, 6 A19, 5 FLAP, 4 UART, 3 BTL, 2 KEY,
+  1 TIME, 0 GINT). OZvm, the source of the TypeScript Blink, has the same `INT & STA` test
+  (`Z80Processor.intRequest`), so it was first checked for being load-bearing: OZ 5.0 opening the
+  flap, taking a card and closing it runs identically under both checks (OZ clears INT.KWAIT itself
+  when the flap opens). Both cores now raise /INT for `GINT && ((INT & STA & $7C) || (INT.TIME &&
+  STA.TIME))`. The pinning test became two documented-behaviour tests (an open flap with KWAIT
+  interrupts once; a pending STA.TIME with INT.TIME off does not interrupt), both backends, checked
+  by mutation.
+- **F2 (256K UV EPROM):** `z88CardSpec` builds `EPROMUV256` as the UV EPROM both cards already
+  supported (EPR $69, like 128K); the card parity test now uses the dialog's id.
+- **F3 (disassembly sections):** `z88DisassemblySections` returns the whole 64K. The Spectrum ranges
+  left `$4000-$5AFF` out of every Z88 disassembly with the view's defaults (the Z88 hides the RAM and
+  Screen options); the Z88's 64K is paged segments with no such split.
+- **F4 (code injection):** the Z88 has no route for IDE-built code (OZ owns the memory and its
+  paging); the stubs wrote nothing and "started" at address 0, rebooting OZ. `MF_INJECT_SUPPORT` is
+  now `false` for the Z88, `injectCode` refuses inject, run and debug before compiling on a machine
+  without inject support and without another route (the Next keeps its `.nex` route), and both
+  hosts throw `Z88_NO_CODE_INJECTION` if anything reaches them (`test/z88/z88-code-injection.test.ts`).
+  A real OZ injection flow (an application or a card image built from the output) is future work.
+- **The removal plan** is `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`: tag first, turn every
+  comparison into fixed WASM assertions while the oracle still exists, then remove the `-ts` group
+  and the switch (with the `<id>-ts` alias) and the TypeScript emulation.
+
+Original scope:
 
 - New machine-owned Z88 behaviour is implemented in WASM first, or in both cores while TypeScript
   is still the oracle.
@@ -1195,6 +1264,8 @@ folders (`test/zxSpectrum`, `test/wasm/zxSpectrum`, `test/wasm/zxNext`, `test/zx
   class.
 
 ## Follow-ups (outside the parity scope, fixed in both cores later)
+
+All four were resolved in Step 15 (2026-09-19).
 
 - **F1:** the Blink interrupt check pairs STA and INT bits that do not correspond (STA.TIME vs
   INT.GINT, STA.FLAPOPEN vs INT.KWAIT). Verify against Blink documentation, fix in both cores, and

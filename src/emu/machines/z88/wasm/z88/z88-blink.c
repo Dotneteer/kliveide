@@ -6,8 +6,6 @@
  * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). The TypeScript behaviour is the contract, quirks
  * included, and every quirk is named where it is kept:
  *
- * - F1: the interrupt line is `INT.GINT && (INT & STA)`, which pairs bits that do not correspond
- *   (STA.TIME meets INT.GINT, STA.FLAPOPEN meets INT.KWAIT).
  * - The reset re-pages SR0-SR3 with the COM value from *before* the reset, then clears COM without
  *   re-paging; and it tests the interrupt line against the old STA before clearing STA, so the line
  *   can stay active after a reset until STA or INT is written.
@@ -68,9 +66,16 @@ static uint8_t z88KeyLineStatus(uint8_t selection) {
 // Registers
 // -----------------------------------------------------------------------------
 
-/* F1 (kept for parity): see the file header */
+/*
+ * The interrupt line: with INT.GINT set, a pending STA source whose enable bit is set in INT. A19, FLAP,
+ * UART, BTL and KEY share bits 6-2 of STA and INT; STA.TIME (bit 0) is enabled by INT.TIME (bit 1);
+ * STA.FLAPOPEN (bit 7) is a state and INT.KWAIT (bit 7) the snooze control, so neither takes part (Z88
+ * Developers' Notes, "Blink interrupts"). Follow-up F1 of the migration plan; `Z88BlinkDevice` agrees.
+ */
+#define Z88_STA_SOURCES 0x7cu
 static void z88CheckMaskableInterrupt(void) {
-  z88InterruptSignal = (z88Int & Z88_INT_GINT) && (z88Int & z88Sta) ? 1u : 0u;
+  z88InterruptSignal =
+    (z88Int & Z88_INT_GINT) && ((z88Int & z88Sta & Z88_STA_SOURCES) || ((z88Int & 0x02u) && (z88Sta & 0x01u))) ? 1u : 0u;
 }
 
 static void z88BlinkSetSta(uint8_t value) {

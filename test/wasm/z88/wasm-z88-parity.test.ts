@@ -494,7 +494,7 @@ describe.runIf(runsOnWasm)("Z88 parity: cards hot-plugged and programmed from Z8
     { label: "Intel 28F008S5", cardType: "IF28F008S5", size: 1024, family: "intel" },
     { label: "UV EPROM 32K", cardType: "EPROMUV32", size: 32, family: "eprom" },
     { label: "UV EPROM 128K", cardType: "EPROMUV128", size: 128, family: "eprom" },
-    { label: "UV EPROM 256K", cardType: "EPROMUV128", size: 256, family: "eprom" },
+    { label: "UV EPROM 256K", cardType: "EPROMUV256", size: 256, family: "eprom" },
     { label: "RAM 128K", cardType: "RAM128", size: 128, family: "plain" },
     { label: "RAM 1M", cardType: "RAM1024", size: 1024, family: "plain" },
     { label: "ROM 128K", cardType: "ROM", size: 128, family: "plain" }

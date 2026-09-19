@@ -44,8 +44,8 @@ import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassemb
 
 /**
  * The Cambridge Z88 models. Their ids never change (saved projects refer to them) and they select no
- * backend: they follow `DEFAULT_Z88_IMPLEMENTATION` (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`,
- * "Machine menu during the comparison period").
+ * backend: they follow `DEFAULT_Z88_IMPLEMENTATION`, WASM since Step 14 of
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` ("Machine menu during the comparison period").
  */
 const Z88_MODELS: MachineModel[] = [
   {
@@ -363,20 +363,23 @@ export const machineRegistry: MachineInfo[] = [
     charSet: ZxSpectrumChars,
     features: {
       [MF_Z80]: true,
-      [MF_INJECT_SUPPORT]: true,
+      // --- No route to deliver IDE-built code: OZ owns the memory and its paging, so there is no
+      // --- inject/run/debug flow (follow-up F4 of the Z88 WASM migration plan). Programs go on cards.
+      [MF_INJECT_SUPPORT]: false,
       [MF_BANK]: 256,
       [MF_BLINK]: true,
       [MF_ALLOW_SCAN_LINES]: false
     },
     models: [
       ...Z88_MODELS,
-      // --- The comparison period of the WASM migration: every model on the WASM core, in a submenu
+      // --- The comparison period of the WASM migration: every model on the TypeScript backend, in a
+      // --- submenu (the originals run on WASM, the default)
       ...createModelTwins(Z88_MODELS, {
         configKey: MC_Z88_IMPLEMENTATION,
-        implementation: "wasm",
-        menuGroup: "Cambridge Z88 (WASM preview)",
-        idSuffix: "-wasm",
-        nameSuffix: " - WASM preview"
+        implementation: "typescript",
+        menuGroup: "Cambridge Z88 (TypeScript)",
+        idSuffix: "-ts",
+        nameSuffix: " - TypeScript"
       })
     ],
     toolInfo: {
@@ -440,8 +443,31 @@ export function getMachineName(machineId: string, modelId?: string): string {
   if (!modelId) {
     return machine.displayName;
   }
-  const model = machine.models?.find((m) => m.modelId === modelId);
+  const resolvedId = resolveModelId(machineId, modelId);
+  const model = machine.models?.find((m) => m.modelId === resolvedId);
   return model?.displayName ?? "";
+}
+
+/**
+ * Model ids that are gone, and the model each one now means, by machine. A saved project or the last
+ * session can still name one; `resolveModelId` maps it before the registry is searched.
+ *
+ * The Cambridge Z88's "WASM preview" twins (`<id>-wasm`, Steps 9-13 of
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default.
+ */
+export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  [MI_Z88]: Object.fromEntries(Z88_MODELS.map((m) => [`${m.modelId}-wasm`, m.modelId]))
+};
+
+/**
+ * The model a model id means now: its alias target, or the id itself
+ * @param machineId The machine
+ * @param modelId The model id, as saved
+ */
+export function resolveModelId(machineId: string, modelId: string): string;
+export function resolveModelId(machineId: string, modelId: string | undefined): string | undefined;
+export function resolveModelId(machineId: string, modelId: string | undefined): string | undefined {
+  return modelId === undefined ? undefined : (modelIdAliases[machineId]?.[modelId] ?? modelId);
 }
 
 /**

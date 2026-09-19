@@ -89,26 +89,13 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     super(requestedModelInfo, requestedConfig);
   }
 
-  override get a(): number {
-    return super.a;
-  }
-
-  override set a(value: number) {
-    super.a = value;
-    this.syncWasmV2AfFromFacade();
-  }
-
-  override get f(): number {
-    return super.f;
-  }
-
-  override set f(value: number) {
-    super.f = value;
-    this.syncWasmV2AfFromFacade();
-  }
+  // --- CPU registers: the core owns them. Reads come from it and every write is pushed into it, so the
+  // --- IDE's register editor reaches the core and a register read after a normal frame (which
+  // --- refreshes only PC and the counters) is never stale - `getMemoryContents` reads them directly.
 
   override get af(): number {
-    return super.af;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuAf() : super.af;
   }
 
   override set af(value: number) {
@@ -116,26 +103,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuAf(super.af);
   }
 
-  override get b(): number {
-    return super.b;
-  }
-
-  override set b(value: number) {
-    super.b = value;
-    this.syncWasmV2BcFromFacade();
-  }
-
-  override get c(): number {
-    return super.c;
-  }
-
-  override set c(value: number) {
-    super.c = value;
-    this.syncWasmV2BcFromFacade();
-  }
-
   override get bc(): number {
-    return super.bc;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuBc() : super.bc;
   }
 
   override set bc(value: number) {
@@ -143,26 +113,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuBc(super.bc);
   }
 
-  override get d(): number {
-    return super.d;
-  }
-
-  override set d(value: number) {
-    super.d = value;
-    this.syncWasmV2DeFromFacade();
-  }
-
-  override get e(): number {
-    return super.e;
-  }
-
-  override set e(value: number) {
-    super.e = value;
-    this.syncWasmV2DeFromFacade();
-  }
-
   override get de(): number {
-    return super.de;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuDe() : super.de;
   }
 
   override set de(value: number) {
@@ -170,26 +123,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuDe(super.de);
   }
 
-  override get h(): number {
-    return super.h;
-  }
-
-  override set h(value: number) {
-    super.h = value;
-    this.syncWasmV2HlFromFacade();
-  }
-
-  override get l(): number {
-    return super.l;
-  }
-
-  override set l(value: number) {
-    super.l = value;
-    this.syncWasmV2HlFromFacade();
-  }
-
   override get hl(): number {
-    return super.hl;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuHl() : super.hl;
   }
 
   override set hl(value: number) {
@@ -198,7 +134,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get af_(): number {
-    return super.af_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuAfAlt() : super.af_;
   }
 
   override set af_(value: number) {
@@ -207,7 +144,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get bc_(): number {
-    return super.bc_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuBcAlt() : super.bc_;
   }
 
   override set bc_(value: number) {
@@ -216,7 +154,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get de_(): number {
-    return super.de_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuDeAlt() : super.de_;
   }
 
   override set de_(value: number) {
@@ -225,7 +164,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get hl_(): number {
-    return super.hl_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuHlAlt() : super.hl_;
   }
 
   override set hl_(value: number) {
@@ -233,26 +173,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuHlAlt(super.hl_);
   }
 
-  override get xh(): number {
-    return super.xh;
-  }
-
-  override set xh(value: number) {
-    super.xh = value;
-    this.syncWasmV2IxFromFacade();
-  }
-
-  override get xl(): number {
-    return super.xl;
-  }
-
-  override set xl(value: number) {
-    super.xl = value;
-    this.syncWasmV2IxFromFacade();
-  }
-
   override get ix(): number {
-    return super.ix;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuIx() : super.ix;
   }
 
   override set ix(value: number) {
@@ -260,26 +183,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuIx(super.ix);
   }
 
-  override get yh(): number {
-    return super.yh;
-  }
-
-  override set yh(value: number) {
-    super.yh = value;
-    this.syncWasmV2IyFromFacade();
-  }
-
-  override get yl(): number {
-    return super.yl;
-  }
-
-  override set yl(value: number) {
-    super.yl = value;
-    this.syncWasmV2IyFromFacade();
-  }
-
   override get iy(): number {
-    return super.iy;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuIy() : super.iy;
   }
 
   override set iy(value: number) {
@@ -287,26 +193,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     this.wasmV2Runtime?.exports.spp3eSetCpuIy(super.iy);
   }
 
-  override get i(): number {
-    return super.i;
-  }
-
-  override set i(value: number) {
-    super.i = value;
-    this.syncWasmV2IrFromFacade();
-  }
-
-  override get r(): number {
-    return super.r;
-  }
-
-  override set r(value: number) {
-    super.r = value;
-    this.syncWasmV2IrFromFacade();
-  }
-
   override get ir(): number {
-    return super.ir;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuIr() : super.ir;
   }
 
   override set ir(value: number) {
@@ -315,7 +204,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get wz(): number {
-    return super.wz;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuWz() : super.wz;
   }
 
   override set wz(value: number) {
@@ -324,7 +214,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get pc(): number {
-    return super.pc;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuPc() : super.pc;
   }
 
   override set pc(value: number) {
@@ -333,12 +224,128 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
   }
 
   override get sp(): number {
-    return super.sp;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.spp3eGetCpuSp() : super.sp;
   }
 
   override set sp(value: number) {
     super.sp = value;
     this.wasmV2Runtime?.exports.spp3eSetCpuSp(super.sp);
+  }
+
+  // --- The 8-bit halves: `Z80Cpu` writes them into its own register views, which the core never
+  // --- sees; the register editor (`setRegisterValue`) sets them one by one. They go through the pairs.
+
+  override get a(): number {
+    return this.af >> 8;
+  }
+
+  override set a(value: number) {
+    this.af = ((value & 0xff) << 8) | (this.af & 0xff);
+  }
+
+  override get f(): number {
+    return this.af & 0xff;
+  }
+
+  override set f(value: number) {
+    this.af = (this.af & 0xff00) | (value & 0xff);
+  }
+
+  override get b(): number {
+    return this.bc >> 8;
+  }
+
+  override set b(value: number) {
+    this.bc = ((value & 0xff) << 8) | (this.bc & 0xff);
+  }
+
+  override get c(): number {
+    return this.bc & 0xff;
+  }
+
+  override set c(value: number) {
+    this.bc = (this.bc & 0xff00) | (value & 0xff);
+  }
+
+  override get d(): number {
+    return this.de >> 8;
+  }
+
+  override set d(value: number) {
+    this.de = ((value & 0xff) << 8) | (this.de & 0xff);
+  }
+
+  override get e(): number {
+    return this.de & 0xff;
+  }
+
+  override set e(value: number) {
+    this.de = (this.de & 0xff00) | (value & 0xff);
+  }
+
+  override get h(): number {
+    return this.hl >> 8;
+  }
+
+  override set h(value: number) {
+    this.hl = ((value & 0xff) << 8) | (this.hl & 0xff);
+  }
+
+  override get l(): number {
+    return this.hl & 0xff;
+  }
+
+  override set l(value: number) {
+    this.hl = (this.hl & 0xff00) | (value & 0xff);
+  }
+
+  override get xh(): number {
+    return this.ix >> 8;
+  }
+
+  override set xh(value: number) {
+    this.ix = ((value & 0xff) << 8) | (this.ix & 0xff);
+  }
+
+  override get xl(): number {
+    return this.ix & 0xff;
+  }
+
+  override set xl(value: number) {
+    this.ix = (this.ix & 0xff00) | (value & 0xff);
+  }
+
+  override get yh(): number {
+    return this.iy >> 8;
+  }
+
+  override set yh(value: number) {
+    this.iy = ((value & 0xff) << 8) | (this.iy & 0xff);
+  }
+
+  override get yl(): number {
+    return this.iy & 0xff;
+  }
+
+  override set yl(value: number) {
+    this.iy = (this.iy & 0xff00) | (value & 0xff);
+  }
+
+  override get i(): number {
+    return this.ir >> 8;
+  }
+
+  override set i(value: number) {
+    this.ir = ((value & 0xff) << 8) | (this.ir & 0xff);
+  }
+
+  override get r(): number {
+    return this.ir & 0xff;
+  }
+
+  override set r(value: number) {
+    this.ir = (this.ir & 0xff00) | (value & 0xff);
   }
 
   override async setup(): Promise<void> {
@@ -1044,20 +1051,20 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
 
   private syncCpuFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.af = wasm.spp3eGetCpuAf();
-    this.af_ = wasm.spp3eGetCpuAfAlt();
-    this.bc = wasm.spp3eGetCpuBc();
-    this.bc_ = wasm.spp3eGetCpuBcAlt();
-    this.de = wasm.spp3eGetCpuDe();
-    this.de_ = wasm.spp3eGetCpuDeAlt();
-    this.hl = wasm.spp3eGetCpuHl();
-    this.hl_ = wasm.spp3eGetCpuHlAlt();
-    this.ix = wasm.spp3eGetCpuIx();
-    this.iy = wasm.spp3eGetCpuIy();
-    this.ir = wasm.spp3eGetCpuIr();
-    this.wz = wasm.spp3eGetCpuWz();
-    this.pc = wasm.spp3eGetCpuPc();
-    this.sp = wasm.spp3eGetCpuSp();
+    super.af = wasm.spp3eGetCpuAf();
+    super.af_ = wasm.spp3eGetCpuAfAlt();
+    super.bc = wasm.spp3eGetCpuBc();
+    super.bc_ = wasm.spp3eGetCpuBcAlt();
+    super.de = wasm.spp3eGetCpuDe();
+    super.de_ = wasm.spp3eGetCpuDeAlt();
+    super.hl = wasm.spp3eGetCpuHl();
+    super.hl_ = wasm.spp3eGetCpuHlAlt();
+    super.ix = wasm.spp3eGetCpuIx();
+    super.iy = wasm.spp3eGetCpuIy();
+    super.ir = wasm.spp3eGetCpuIr();
+    super.wz = wasm.spp3eGetCpuWz();
+    super.pc = wasm.spp3eGetCpuPc();
+    super.sp = wasm.spp3eGetCpuSp();
     this.tacts = wasm.spp3eGetTacts();
     this.frames = wasm.spp3eGetFrames();
     this.frameTacts = wasm.spp3eGetCurrentFrameTact();
@@ -1073,7 +1080,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
 
   private syncFrameCountersFromWasmV2(runtime: SpP3eWasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.pc = wasm.spp3eGetCpuPc();
+    super.pc = wasm.spp3eGetCpuPc();
     this.frames = wasm.spp3eGetFrames();
     this.tacts = wasm.spp3eGetTacts();
     this.frameTacts = wasm.spp3eGetCurrentFrameTact();
@@ -1280,33 +1287,12 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     }
   }
 
-  private syncWasmV2AfFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuAf(super.af);
-  }
 
-  private syncWasmV2BcFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuBc(super.bc);
-  }
 
-  private syncWasmV2DeFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuDe(super.de);
-  }
 
-  private syncWasmV2HlFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuHl(super.hl);
-  }
 
-  private syncWasmV2IxFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuIx(super.ix);
-  }
 
-  private syncWasmV2IyFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuIy(super.iy);
-  }
 
-  private syncWasmV2IrFromFacade(): void {
-    this.wasmV2Runtime?.exports.spp3eSetCpuIr(super.ir);
-  }
 
   private invalidateWasmV2Sync(): void {
     this.wasmV2KeyboardRowsValid = false;

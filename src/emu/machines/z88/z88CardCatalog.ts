@@ -157,8 +157,11 @@ export function z88CardSpec(cardTypeId: string, sizeK: number): Z88CardSpec {
       return { kind: "RAM", sizeInBytes };
     case CT_ROM:
       return { kind: "ROM", sizeInBytes };
+    // --- 32K (EPR $48), 128K and 256K (EPR $69) UV EPROMs; the 256K one was offered by the card
+    // --- dialog but could not be built (follow-up F2 of the Z88 WASM migration plan)
     case CardIds.EPROMUV32:
     case CardIds.EPROMUV128:
+    case CardIds.EPROMUV256:
       return { kind: "UV_EPROM", sizeInBytes };
     case CardIds.IF28F004S5:
     case CardIds.IF28F008S5:

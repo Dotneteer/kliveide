@@ -132,16 +132,59 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
     expect(s.peekWord(0x9000)).toBeGreaterThan(before + 5);
   });
 
-  it("pins defect F1: with INT.KWAIT set, an open flap keeps the interrupt line active", async () => {
-    // --- The TypeScript oracle tests INT & STA, and STA.FLAPOPEN (bit 7) meets INT.KWAIT (bit 7).
-    // --- The hardware would not interrupt again. Ported verbatim for parity; fix in both cores
-    // --- (follow-up F1 of the migration plan) and update this test then.
+  it("an open flap is a state, not a source: with INT.KWAIT set, it interrupts once (FLAP)", async () => {
+    // --- STA.FLAPOPEN and INT.KWAIT share bit 7, but neither is an interrupt source or enable (Blink
+    // --- documentation). Testing INT & STA interrupted for as long as the flap was open (F1).
     const s = await createZ88Session({ backend });
     await interruptCounter(s, INT_GINT | INT_FLAP | INT_KWAIT);
     s.runFrames(1);
     s.flapOpen();
-    s.runFrames(2);
-    expect(s.peekWord(0x9000)).toBeGreaterThan(10);
+    s.runFrames(20);
+    expect(s.blinkState().STA & STA_FLAPOPEN).toBe(STA_FLAPOPEN);
+    expect(s.peekWord(0x9000)).toBe(1);
+  });
+
+  it("a pending STA.TIME does not interrupt once INT.TIME is off (TIME is INT bit 1, STA bit 0)", async () => {
+    // --- Testing INT & STA paired STA.TIME with INT.GINT, so a pending RTC event interrupted with
+    // --- INT.TIME off (F1). The handler acknowledges nothing: every interrupt would repeat.
+    const s = await createZ88Session({ backend });
+    await s.loadCode(`
+      .org $0038
+      jp handler
+
+      .org $8000
+start:
+      im 1
+      ld a,${INT_GINT | INT_TIME}
+      out ($b1),a
+      ld a,$01
+      out ($b5),a          ; TMK = TICK
+      ld a,$07
+      out ($b4),a          ; TACK
+wait: in a,($b1)           ; STA
+      and ${STA_TIME}
+      jr z,wait            ; until an RTC event is pending
+      ld a,${INT_GINT}
+      out ($b1),a          ; INT.TIME off; STA.TIME still pending
+      ld (pending),a
+      ei
+spin: jr spin
+
+handler:
+      push hl
+      ld hl,($9000)
+      inc hl
+      ld ($9000),hl
+      pop hl
+      ei
+      reti
+
+pending: .defb 0
+    `, { entry: "start" });
+    s.runTo("spin", { maxFrames: 20 });
+    expect(s.blinkState().STA & STA_TIME).toBe(STA_TIME);
+    s.step(200);
+    expect(s.peekWord(0x9000)).toBe(0);
   });
 
   it("an enabled RTC event wakes a snoozing CPU; without INT.TIME it sleeps on", async () => {
