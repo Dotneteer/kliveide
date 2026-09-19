@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 import {
   bank16kPages,
   bankOffsetOfAddress,

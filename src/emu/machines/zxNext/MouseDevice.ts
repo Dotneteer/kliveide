@@ -1,134 +1,99 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
+/** Mouse buttons in a PS/2 packet (and `receivePacket`): bit 0 left, bit 1 right, bit 2 middle. */
+export const MOUSE_LEFT = 0x01;
+export const MOUSE_RIGHT = 0x02;
+export const MOUSE_MIDDLE = 0x04;
+
 /**
- * Kempston mouse device for ZX Spectrum Next
+ * The Kempston mouse (input/ps2_mouse.v behind zxnext.vhd ~2622-2626, ~3538-3557). The PS/2 mouse
+ * sends packets; each one latches the buttons and adds its X, Y and wheel deltas to 8-bit counters.
+ * NextReg `$0A` bit 3 (button reverse) and bits 1-0 (DPI) act on each packet as it arrives - not on
+ * what was counted before. The counters clear only at power-on (`m_reset`), not on a Next reset.
+ * zxnext-input.c implements the same model in the WASM core.
  *
- * Ports:
- *   0xFBDF — X position (8-bit wrapping accumulator)
- *   0xFFDF — Y position (8-bit wrapping accumulator, increments up, decrements down)
- *   0xFADF — bits 7:4 = wheel (4-bit wrapping), bit 3 = 1, bit 2 = middle, bit 1 = left, bit 0 = right
- *
- * Buttons are active HIGH (1 = pressed).
- * NR 0x0A controls DPI (bits 1:0) and button swap (bit 3).
+ * Ports: $xBDF X, $xFDF Y, $xADF = wheel (7-4) & 1 & not middle & not left & not right.
  */
 export class MouseDevice implements IGenericDevice<IZxNextMachine> {
-  // --- NR 0x0A configuration
-  swapButtons: boolean;
-  dpi: number;
+  // --- NR 0x0A configuration (no reset branch: zxnext.vhd initial values)
+  swapButtons = false;
+  dpi = 1;
 
-  // --- 8-bit wrapping position accumulators
-  xPos: number;
-  yPos: number;
+  // --- ps2_mouse.v xcount / ycount / zcount (8 bits; the port shows zcount's low nibble)
+  xPos = 0;
+  yPos = 0;
+  wheelZ = 0;
 
-  // --- 4-bit wrapping wheel accumulator (only lower 4 bits used)
-  wheelZ: number;
+  // --- {mthird, mright, mleft} as latched from the last packet (1 = pressed)
+  buttonLeft = false;
+  buttonRight = false;
+  buttonMiddle = false;
 
-  // --- Button state (active HIGH)
-  buttonLeft: boolean;
-  buttonRight: boolean;
-  buttonMiddle: boolean;
+  constructor(public readonly machine: IZxNextMachine) {}
 
-  constructor(public readonly machine: IZxNextMachine) {
-    this.reset();
-  }
+  /** A Next reset does not reach the mouse (its reset is the power-on `m_reset`). */
+  reset(): void {}
 
-  reset(): void {
+  hardReset(): void {
     this.xPos = 0;
     this.yPos = 0;
     this.wheelZ = 0;
-    this.buttonLeft = false;
-    this.buttonRight = false;
-    this.buttonMiddle = false;
-    // --- swapButtons and dpi are managed by NR 0x0A hard reset (0x01)
-    // --- On soft reset, they persist; on hard reset NextRegDevice sets them
-    this.swapButtons = false;
-    this.dpi = 1; // Default DPI
+    this.buttonLeft = this.buttonRight = this.buttonMiddle = false;
   }
 
   /**
-   * Add a mouse movement delta. DPI scaling is applied before accumulation.
-   * @param dx - Raw X delta (positive = right)
-   * @param dy - Raw Y delta (positive = up)
+   * ps2_mouse.v `xydelta`: the packet's 8-bit data byte by DPI - 00 doubled, 01 as is, 10 and 11
+   * arithmetic shifts of that byte by 1 and 2 (its bit 7 is the sign; the 9th bit of the PS/2 delta is
+   * not used).
    */
-  addDelta(dx: number, dy: number): void {
-    // --- Apply DPI scaling (matches FPGA ps2_mouse.v behavior)
-    // --- DPI 00: shift left 1 (double speed, "low DPI" = less precise)
-    // --- DPI 01: no shift (default)
-    // --- DPI 10: shift right 1 (half speed, "medium DPI")
-    // --- DPI 11: shift right 2 (quarter speed, "high DPI")
+  private scaled(delta: number): number {
+    const b = delta & 0xff;
     switch (this.dpi & 0x03) {
       case 0:
-        dx = dx << 1;
-        dy = dy << 1;
-        break;
+        return (b << 1) & 0xff;
       case 1:
-        // --- Default, no change
-        break;
+        return b;
       case 2:
-        dx = dx >> 1;
-        dy = dy >> 1;
-        break;
-      case 3:
-        dx = dx >> 2;
-        dy = dy >> 2;
-        break;
+        return (b & 0x80) | (b >> 1);
+      default:
+        return ((b & 0x80) ? 0xc0 : 0x00) | (b >> 2);
     }
-
-    // --- Accumulate with 8-bit wrapping
-    this.xPos = (this.xPos + dx) & 0xff;
-    this.yPos = (this.yPos + dy) & 0xff;
   }
 
   /**
-   * Add a wheel delta.
-   * @param dz - Raw wheel delta (positive = scroll up)
+   * One PS/2 packet: `buttons` (MOUSE_LEFT | MOUSE_RIGHT | MOUSE_MIDDLE), X and Y deltas (-255..255,
+   * positive = right / up) and the 4-bit wheel delta.
    */
-  addWheelDelta(dz: number): void {
-    this.wheelZ = (this.wheelZ + dz) & 0x0f;
+  receivePacket(buttons: number, dx: number, dy: number, dz: number): void {
+    const left = (buttons & MOUSE_LEFT) !== 0;
+    const right = (buttons & MOUSE_RIGHT) !== 0;
+    // --- mbutton: with the reverse bit set, left and right trade places as the packet is taken
+    this.buttonLeft = this.swapButtons ? right : left;
+    this.buttonRight = this.swapButtons ? left : right;
+    this.buttonMiddle = (buttons & MOUSE_MIDDLE) !== 0;
+    this.xPos = (this.xPos + this.scaled(dx)) & 0xff;
+    this.yPos = (this.yPos + this.scaled(dy)) & 0xff;
+    const nibble = dz & 0x0f;
+    this.wheelZ = (this.wheelZ + (nibble & 0x08 ? nibble | 0xf0 : nibble)) & 0xff;
   }
 
-  /**
-   * Set button state.
-   * @param left - Left button pressed
-   * @param right - Right button pressed
-   * @param middle - Middle button pressed
-   */
-  setButtons(left: boolean, right: boolean, middle: boolean): void {
-    this.buttonLeft = left;
-    this.buttonRight = right;
-    this.buttonMiddle = middle;
-  }
-
-  /**
-   * Read port 0xFBDF — Mouse X position
-   */
   readPortFbdf(): number {
     return this.xPos;
   }
 
-  /**
-   * Read port 0xFFDF — Mouse Y position
-   */
   readPortFfdf(): number {
     return this.yPos;
   }
 
-  /**
-   * Read port 0xFADF — Wheel + buttons
-   * bits 7:4 = wheel (4-bit), bit 3 = 1, bit 2 = middle, bit 1 = left, bit 0 = right
-   * Button swap (NR 0x0A bit 3) exchanges left and right in the output
-   */
+  /** zxnext.vhd ~3557: wheel & '1' & not middle & not left & not right (0 = pressed). */
   readPortFadf(): number {
-    const left = this.swapButtons ? this.buttonRight : this.buttonLeft;
-    const right = this.swapButtons ? this.buttonLeft : this.buttonRight;
-
     return (
       ((this.wheelZ & 0x0f) << 4) |
-      0x08 | // bit 3 always 1
-      (this.buttonMiddle ? 0x04 : 0x00) |
-      (left ? 0x02 : 0x00) |
-      (right ? 0x01 : 0x00)
+      0x08 |
+      (this.buttonMiddle ? 0x00 : 0x04) |
+      (this.buttonLeft ? 0x00 : 0x02) |
+      (this.buttonRight ? 0x00 : 0x01)
     );
   }
 }

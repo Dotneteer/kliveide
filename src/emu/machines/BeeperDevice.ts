@@ -40,6 +40,13 @@ export class SpectrumBeeperDevice
   }
 
   /**
+   * The current value of the MIC bit
+   */
+  get micBit(): boolean {
+    return this._micBit;
+  }
+
+  /**
    * The current speaker output level (0.0, 0.33, 0.66, or 1.0)
    */
   get outputLevel(): number {
@@ -197,9 +204,8 @@ export class SpectrumBeeperDevice
    */
   onNewFrame(): void {
     super.onNewFrame();
-    this._transitions.length = 0;
-    this._sampleWindowStartTact = this.machine.tacts;
-    this._sampleWindowStartEar = this._earBit;
-    this._sampleWindowStartMic = this._micBit;
+    // --- The sample window and the pending transitions carry on across frames: the tact counter does.
+    // --- Restarting the window at the new frame's first tact dropped the part of the straddling sample
+    // --- - and any EAR/MIC change - before it, after an instruction had overrun the frame end.
   }
 }

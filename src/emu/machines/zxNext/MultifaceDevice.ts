@@ -216,7 +216,7 @@ export class MultifaceDevice implements IGenericDevice<IZxNextMachine> {
       switch (highNibble) {
         case 0b0001: return memDevice.port1ffdValue;
         case 0b0111: return memDevice.port7ffdValue;
-        case 0b1101: return memDevice.portDffdValue;
+        case 0b1101: return memDevice.portDffdReadback;
         case 0b1110: return memDevice.portEff7Value & 0x0c; // bits 2-3 only
         default: return this.machine.composedScreenDevice.borderColor & 0x07;
       }

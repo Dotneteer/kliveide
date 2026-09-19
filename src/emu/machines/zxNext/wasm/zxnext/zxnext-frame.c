@@ -19,7 +19,7 @@ static uint32_t zxnextFrameExecute(void) {
   zxnextBeeperBeginFrame();
   zxnextPsgBeginFrame();
   zxnextAudioMixerBeginFrame();
-  while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE) {
+  while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE && zxnextResetRequest == 0u) {
     zxnextCpuExecuteInstruction();
   }
   return 0;

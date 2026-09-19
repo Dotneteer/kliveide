@@ -131,11 +131,11 @@ describe("Step 21: DAC Port Enable Gating (D5/D6/D8)", () => {
       expect(getDac().getDacD()).toBe(0x80);
     });
 
-    it("should write to A+D via port 0x3F when Profi Covox enabled", () => {
+    it("should write to A only via port 0x3F when Profi Covox enabled (zxnext.vhd ~2617; D is $5F)", () => {
       machine.nextRegDevice.portDacStereoProfiCovoxEnabled = true;
       writePort(0x3f, 0x44);
       expect(getDac().getDacA()).toBe(0x44);
-      expect(getDac().getDacD()).toBe(0x44);
+      expect(getDac().getDacD()).toBe(0x80);
       // B and C unchanged
       expect(getDac().getDacB()).toBe(0x80);
       expect(getDac().getDacC()).toBe(0x80);

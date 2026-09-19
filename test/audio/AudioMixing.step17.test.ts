@@ -1,6 +1,11 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine } from "../zxnext/TestNextMachine";
 import type { TestZxNextMachine } from "../zxnext/TestNextMachine";
+import { MIXER_GAIN } from "@emu/machines/zxNext/AudioMixerDevice";
+
+/** The normalized mixer output for a sum in audio_mixer.vhd units (EAR 512, MIC 128), at `volume`. */
+const mix = (units: number, volume = 1) =>
+  Math.max(-32768, Math.min(32767, Math.floor(Math.trunc(units * MIXER_GAIN) * volume))) / 32768;
 
 describe("Step 17: Audio Mixing Testing", () => {
   let machine: TestZxNextMachine;
@@ -316,16 +321,16 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setPsgOutput({ left: 0, right: 0 });
 
       const output1 = mixer.getMixedOutput();
-      // Beeper(256*12=3072) + MIC(128*12=1536) = 4608, * 5.5 = 25344, normalized: 0.774
-      expect(output1.left).toBeCloseTo(0.774, 2);
-      expect(output1.right).toBeCloseTo(0.774, 2);
+      // EAR 256 + MIC 128
+      expect(output1.left).toBeCloseTo(mix(384), 4);
+      expect(output1.right).toBeCloseTo(mix(384), 4);
 
       // Disable MIC
       mixer.setMicLevel(0);
       const output2 = mixer.getMixedOutput();
-      // Beeper(3072) only, * 5.5 = 16896, normalized: 0.516
-      expect(output2.left).toBeCloseTo(0.516, 2);
-      expect(output2.right).toBeCloseTo(0.516, 2);
+      // EAR 256 only
+      expect(output2.left).toBeCloseTo(mix(256), 4);
+      expect(output2.right).toBeCloseTo(mix(256), 4);
 
       // Disable EAR
       mixer.setEarLevel(0);
@@ -506,9 +511,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setEarLevel(1);
       const output = mixer.getMixedOutput();
 
-      // Beeper(512*12=6144) * 5.5 = 33792 → clamped → ~1.0
-      expect(output.left).toBeCloseTo(1.0, 2);
-      expect(output.right).toBeCloseTo(1.0, 2);
+      // EAR 512
+      expect(output.left).toBeCloseTo(mix(512), 4);
+      expect(output.right).toBeCloseTo(mix(512), 4);
     });
 
     it("should apply half volume at scale 0.5", () => {
@@ -520,9 +525,9 @@ describe("Step 17: Audio Mixing Testing", () => {
       mixer.setEarLevel(1);
       const output = mixer.getMixedOutput();
 
-      // Beeper(+6144) * 5.5 = 33792, * 0.5 = 16896, normalized: +0.516
-      expect(output.left).toBeCloseTo(0.516, 2);
-      expect(output.right).toBeCloseTo(0.516, 2);
+      // EAR 512 at half volume
+      expect(output.left).toBeCloseTo(mix(512, 0.5), 4);
+      expect(output.right).toBeCloseTo(mix(512, 0.5), 4);
     });
 
     it("should mute at scale 0.0", () => {

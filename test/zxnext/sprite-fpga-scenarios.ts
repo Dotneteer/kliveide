@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { zxNextBgra } from "@emu/machines/zxNext/PaletteDevice";
+import { zxNextBgra } from "@emu/machines/zxNext/nextColorTables";
 import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH

@@ -1,10 +1,5 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
-import {
-  readSpectrumP3FdcControlPort,
-  writeSpectrumP3FdcControlPort
-} from "./SpectrumP3FdcControlPortHandler";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
@@ -57,7 +52,6 @@ export class NextIoPortManager {
   private readonly ports: PortDescriptor[] = [];
   private readonly portMap: Map<number, PortDescriptor> = new Map();
   private readonly portCollisions: Map<number, string[]> = new Map();
-  private _portTimexValue = 0;
 
   constructor(public readonly machine: IZxNextMachine) {
     const r = (val: PortDescriptor) => this.registerPort(val);
@@ -83,36 +77,66 @@ export class NextIoPortManager {
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_1111_1111,
       readerFns: () => {
-        if (pe(0, 0)) {
-          // Timex port is enabled
-          return this._portTimexValue;
+        // --- zxnext.vhd ~2769: the Timex register with $08 bit 2 and the port enabled; otherwise the
+        // --- ULA floating bus, which $FF shows in 48K and 128K timing only (~4493)
+        if (pe(0, 0) && machine.nextRegDevice.enablePort0xffTimexVideoModeRead) {
+          // Bits 5-0 are shared with NextReg $69 (zxnext.vhd ~3615), bit 6 (ULA interrupt disable)
+          // with $22 bit 2 and $C4 bit 0 (~3616-3619); bit 7 is only stored.
+          return (
+            (this.machine.composedScreenDevice.timexPortBit7 ? 0x80 : 0x00) |
+            (this.machine.interruptDevice.ulaInterruptDisabled ? 0x40 : 0x00) |
+            this.machine.composedScreenDevice.timexPortBits
+          );
         }
-        return 0xff;
+        const timing = machine.composedScreenDevice.displayTiming;
+        return timing === 0b001 || timing === 0b010
+          ? machine.composedScreenDevice.floatingBusAt(machine.currentFrameTact, 0xff)
+          : 0xff;
       },
       writerFns: (_, v) => {
         if (pe(0, 0)) {
           // Timex port is enabled
-          this._portTimexValue = v & 0xff;
+          this.machine.composedScreenDevice.timexPortBit7 = (v & 0x80) !== 0;
           this.machine.interruptDevice.ulaInterruptDisabled = (v & 0x40) !== 0;
           this.machine.composedScreenDevice.timexPortValue = v & 0x3f;
         }
       }
     });
+    // --- zxnext.vhd ~2549: A15 = 0, A1-0 = 01, not $1FFD; A14 = 1 is decoded only in +3 timing
+    const isP3Timing = () => machine.composedScreenDevice.displayTiming === 0b011;
+    // --- ~2664-2681: while Soundrive 2 (port enable bit 18) is on, $xxF1 / $xxF9 writes are DAC writes
+    // --- only - they do not also reach $7FFD, $DFFD, $1FFD or $3FFD (`port_fd_conflict_wr`)
+    const fdConflict = (p: number) => ((p & 0xff) === 0xf1 || (p & 0xff) === 0xf9) && pe(2, 2);
     r({
       description: "ZX Spectrum 128 memory",
       port: 0x7ffd,
-      pmask: 0b1100_0000_0000_0011,
-      value: 0b0100_0000_0000_0001,
-      writerFns: gW(0, 1, (_, v) => {
+      pmask: 0b1000_0000_0000_0011,
+      value: 0b0000_0000_0000_0001,
+      writerFns: gW(0, 1, (p, v) => {
+        if ((p & 0xf000) === 0x1000 || fdConflict(p)) return; // --- $1FFD
+        if (!(p & 0x4000) && isP3Timing()) return;
         machine.memoryDevice.port7ffdValue = v;
       })
+    });
+    // --- zxnext.vhd ~2545, 4497: the +3 floating bus, in +3 timing with enable bit 4; $FF while locked
+    r({
+      description: "+3 floating bus",
+      port: 0x0ffd,
+      pmask: 0b1111_0000_0000_0011,
+      value: 0b0000_0000_0000_0001,
+      readerFns: () => {
+        if (!isP3Timing() || !pe(0, 4)) return NOT_HANDLED;
+        if (!machine.memoryDevice.pagingEnabled) return 0xff;
+        return machine.composedScreenDevice.floatingBusAt(machine.currentFrameTact, machine.p3FloatingBusValue);
+      }
     });
     r({
       description: "Spectrum Next bank extension",
       port: 0xdffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b1101_0000_0000_0001,
-      writerFns: gW(0, 2, (_, v) => {
+      writerFns: gW(0, 2, (p, v) => {
+        if (fdConflict(p)) return;
         machine.memoryDevice.portDffdValue = v;
       })
     });
@@ -121,29 +145,30 @@ export class NextIoPortManager {
       port: 0x1ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0001_0000_0000_0001,
-      writerFns: gW(0, 3, (_, v) => {
+      writerFns: gW(0, 3, (p, v) => {
+        if (fdConflict(p)) return;
+        // --- Bit 3 is the +3 disk motor; the Next has no uPD765 or drive (zxnext.vhd ~2554-2558)
         machine.memoryDevice.port1ffdValue = v;
-        if (v & 0x08) {
-          machine.floppyDevice.turnOnMotor();
-        } else {
-          machine.floppyDevice.turnOffMotor();
-        }
       })
     });
+    // --- zxnext.vhd ~2554-2558, ~3815: the +3 FDC ports exist only for the $D8 I/O trap. The Next has no
+    // --- uPD765: untrapped, nothing answers them. A trapped read is an internal response without data: $FF.
     r({
-      description: "ZX Spectrum +3 FDC status",
+      description: "+3 FDC status (I/O trap)",
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFns: gR(0, 4, readSpectrumP3FdcStatusPort(machine))
+      readerFns: (_) => (machine.trapFdcPortAccess(1) ? 0xff : NOT_HANDLED)
     });
     r({
-      description: "ZX Spectrum +3 FDC control",
+      description: "+3 FDC data (I/O trap)",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFns: gR(0, 4, readSpectrumP3FdcControlPort(machine)),
-      writerFns: gW(0, 4, writeSpectrumP3FdcControlPort(machine))
+      readerFns: (_) => (machine.trapFdcPortAccess(2) ? 0xff : NOT_HANDLED),
+      writerFns: (p, v) => {
+        if (!fdConflict(p)) machine.trapFdcPortAccess(3, v);
+      }
     });
     r({
       description: "Pentagon 1024K memory",
@@ -286,7 +311,8 @@ export class NextIoPortManager {
       port: 0xbffd,
       pmask: 0b1100_0000_0000_0111,
       value: 0b1000_0000_0000_0101,
-      readerFns: (p) => pe(2, 0) ? readAyDatPort(machine, p) : 0xff,
+      // --- ~2747: $BFFD reads the register like $FFFD in +3 timing only; A3 = 0 is $BFF5 (below)
+      readerFns: (p) => pe(2, 0) && p & 0x08 && isP3Timing() ? readAyDatPort(machine, p) : NOT_HANDLED,
       writerFns: (_, v) => { if (pe(2, 0)) writeAyDatPort(machine, v); }
     });
     r({
@@ -316,12 +342,12 @@ export class NextIoPortManager {
       }
     });
     r({
-      description: "DAC A+D (Profi Covox)",
+      description: "DAC A (Profi Covox)", // --- ~2617: $3F is channel A only; $5F is its D
       port: 0x3f,
       pmask: 0b0000_0000_1111_1111,
       value: 0b0000_0000_0011_1111,
       writerFns: (_, v) => {
-        if (pe(2, 3)) writeDacAandDPort(machine, v);
+        if (pe(2, 3)) writeDacAPort(machine, v);
       }
     });
     r({
@@ -504,7 +530,8 @@ export class NextIoPortManager {
       value: 0b0000_0000_1101_1111,
       readerFns: ((fn) =>
         (p: number): number =>
-          pe(0, 6) && !pe(1, 5) ? fn(p) : NOT_HANDLED
+          // --- ~2622: only with the Specdrum port enabled and the mouse disabled
+          pe(0, 6) && pe(2, 7) && !pe(1, 5) ? fn(p) : NOT_HANDLED
       )(readKempstonJoy1AliasPort(machine))
     });
     r({

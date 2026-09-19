@@ -3,13 +3,18 @@ import { describe, expect, it } from "vitest";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 
 import {
+  checksumBootTrace,
   checksumBytes,
   createEarlyBootTrace,
   readZxNextBootRomImages
 } from "./wasm-next-boot-trace";
 
+// --- Pinned values (the trace checksum) are the ones the TypeScript and WASM cores agreed on at tag
+// --- pre-zxnext-ts-removal-2026-09-19.
+const EARLY_BOOT_TRACE_CHECKSUM = 0x13927d32;
+
 describe("ZX Spectrum Next WASM early boot smoke", () => {
-  it("matches the TypeScript reset-vector boot trace before storage is involved", async () => {
+  it("follows the reset-vector boot trace before storage is involved", async () => {
     const roms = readZxNextBootRomImages();
     const trace = await createEarlyBootTrace();
 
@@ -26,8 +31,8 @@ describe("ZX Spectrum Next WASM early boot smoke", () => {
       }
     });
 
-    expect(trace.wasm).toEqual(trace.oracle);
-    expect(trace.wasm[0]).toMatchObject({
+    expect(checksumBootTrace(trace.snapshots)).toBe(EARLY_BOOT_TRACE_CHECKSUM);
+    expect(trace.snapshots[0]).toMatchObject({
       label: "reset",
       pc: 0x0000,
       sp: 0xffff,
@@ -39,17 +44,19 @@ describe("ZX Spectrum Next WASM early boot smoke", () => {
         "0003": 0x00
       }
     });
-    expect(trace.wasm[1]).toMatchObject({
+    // --- ROM0 starts with DI (4 T-states) and JP $00EF (10 T-states)
+    expect(trace.snapshots[1]).toMatchObject({
       termination: FrameTerminationMode.DebugEvent,
       lastTerminationReason: FrameTerminationMode.DebugEvent,
-      pc: 0x0001
+      pc: 0x0001,
+      tacts: 4
     });
-    expect(trace.wasm[2]).toMatchObject({
+    expect(trace.snapshots[2]).toMatchObject({
       termination: FrameTerminationMode.DebugEvent,
       lastTerminationReason: FrameTerminationMode.DebugEvent,
-      pc: 0x00ef
+      pc: 0x00ef,
+      tacts: 14
     });
-    expect(trace.wasm.slice(1).some(snapshot => snapshot.pc === 0x0000)).toBe(false);
+    expect(trace.snapshots.slice(1).some(snapshot => snapshot.pc === 0x0000)).toBe(false);
   });
-
 });

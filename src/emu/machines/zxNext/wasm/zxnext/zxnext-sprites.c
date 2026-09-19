@@ -14,12 +14,43 @@ static uint8_t zxnextSpritesEnabled;
 static uint8_t zxnextSpriteLayerPriority;
 static uint8_t zxnextSpriteTooMany;
 static uint8_t zxnextSpriteCollision;
-static int16_t zxnextSpriteLastVisibleIndex;
 static uint8_t zxnextSpriteAttributes[128][5];
 static uint8_t zxnextSpritePatternMemory8[512][256];
 static uint8_t zxnextSpritePatternMemory4[1024][256];
 
+/*
+ * sprites.vhd ~596-616 `mirror_sprite_q`: the sprite the NextReg attribute mirrors write. $34 sets it,
+ * $35-$39 write attributes 0-4 of it, $75-$79 do the same and then advance it. It is separate from the
+ * port $57 upload index unless NextReg $09 bit 4 ("sprite tie") links the two.
+ */
+static uint8_t zxnextSpriteMirrorQ;
+
+static uint32_t zxnextSpritesMirrorTied(void) { return (zxnextNextRegs[0x09u] & 0x10u) != 0u; }
+
+/* mirror_num_change with the tie on: the upload and pattern indices follow the mirror (~655, ~733). */
+static void zxnextSpritesMirrorNumberChanged(void) {
+  if (!zxnextSpritesMirrorTied()) return;
+  zxnextSpriteIndex = zxnextSpriteMirrorQ & 0x7fu;
+  zxnextSpriteSubIndex = 0u;
+  zxnextSpritePatternIndex = zxnextSpriteMirrorQ & 0x3fu;
+  zxnextSpritePatternSubIndex = zxnextSpriteMirrorQ & 0x80u;
+}
+
+/* attr_num_change with the tie on: the mirror follows the upload index (~609-611). */
+static void zxnextSpritesAttrNumberChanged(void) {
+  if (!zxnextSpritesMirrorTied()) return;
+  zxnextSpriteMirrorQ = (uint8_t)((zxnextSpriteIndex & 0x7fu) | (zxnextSpritePatternSubIndex ? 0x80u : 0x00u));
+}
+
+static uint32_t zxnextSpritesGetMirrorNumber(void) { return zxnextSpriteMirrorQ & 0x7fu; }
+
+static void zxnextSpritesMirrorWrite(uint32_t attribute, uint8_t byteValue) {
+  uint8_t sprite = zxnextSpriteMirrorQ & 0x7fu;
+  zxnextSpriteAttributes[sprite][attribute] = byteValue;
+}
+
 static void zxnextSpritesReset(void) {
+  zxnextSpriteMirrorQ = 0u;
   zxnextSpriteClipWindow[0] = 0u;
   zxnextSpriteClipWindow[1] = 255u;
   zxnextSpriteClipWindow[2] = 0u;
@@ -37,7 +68,6 @@ static void zxnextSpritesReset(void) {
   zxnextSpriteLayerPriority = 0u;
   zxnextSpriteTooMany = 0u;
   zxnextSpriteCollision = 0u;
-  zxnextSpriteLastVisibleIndex = -1;
   for (uint32_t i = 0u; i < 128u; i++) {
     for (uint32_t a = 0u; a < 5u; a++) zxnextSpriteAttributes[i][a] = 0u;
   }
@@ -67,25 +97,24 @@ static void zxnextSpritesSetNextReg(uint32_t reg, uint32_t value) {
       zxnextSpritesEnabled = (byteValue & 0x01u) != 0u;
       break;
     case 0x34u:
+      zxnextSpriteMirrorQ = byteValue;
+      zxnextSpritesMirrorNumberChanged();
+      break;
     case 0x35u:
     case 0x36u:
     case 0x37u:
     case 0x38u:
-      zxnextSpriteAttributes[zxnextSpriteIndex & 0x7fu][(reg - 0x34u) & 0x07u] = byteValue;
-      if (((reg - 0x34u) & 0x07u) == 3u && (byteValue & 0x80u)) {
-        zxnextSpriteLastVisibleIndex = zxnextSpriteIndex & 0x7f;
-      }
+    case 0x39u:
+      zxnextSpritesMirrorWrite((reg & 0xffu) - 0x35u, byteValue);
       break;
     case 0x75u:
     case 0x76u:
     case 0x77u:
     case 0x78u:
     case 0x79u:
-      zxnextSpriteAttributes[zxnextSpriteIndex & 0x7fu][(reg - 0x75u) & 0x07u] = byteValue;
-      if (((reg - 0x75u) & 0x07u) == 3u && (byteValue & 0x80u)) {
-        zxnextSpriteLastVisibleIndex = zxnextSpriteIndex & 0x7f;
-      }
-      zxnextSpriteIndex = (uint8_t)((zxnextSpriteIndex + 1u) & 0x7fu);
+      zxnextSpritesMirrorWrite((reg & 0xffu) - 0x75u, byteValue);
+      zxnextSpriteMirrorQ = (uint8_t)(((zxnextSpriteMirrorQ + 1u) & 0x7fu) | (zxnextSpritePatternSubIndex ? 0x80u : 0x00u));
+      zxnextSpritesMirrorNumberChanged();
       break;
     default:
       break;
@@ -114,20 +143,22 @@ static void zxnextSpritesWritePort303b(uint32_t value) {
   zxnextSpritePatternSubIndex = byteValue & 0x80u;
   zxnextSpriteIndex = byteValue & 0x7fu;
   zxnextSpriteSubIndex = 0u;
+  zxnextSpritesAttrNumberChanged();
 }
 
 static void zxnextSpritesWritePort57(uint32_t value) {
   uint8_t sprite = zxnextSpriteIndex & 0x7fu;
   zxnextSpriteAttributes[sprite][zxnextSpriteSubIndex] = (uint8_t)value;
-  if (zxnextSpriteSubIndex == 3u && (value & 0x80u)) zxnextSpriteLastVisibleIndex = sprite;
+  /* A 4-byte sprite: the index skips attr4 without writing it (sprites.vhd ~641, ~660-664, ~717 write
+     attr4 only at attr_id "100"); the renderer ignores attr4 while attr3 bit 6 is clear. */
   if (zxnextSpriteSubIndex == 3u && (value & 0x40u) == 0u) {
-    zxnextSpriteAttributes[sprite][4] = 0u;
     zxnextSpriteSubIndex++;
   }
   zxnextSpriteSubIndex++;
   if (zxnextSpriteSubIndex >= 5u) {
     zxnextSpriteSubIndex = 0u;
     zxnextSpriteIndex = (uint8_t)((zxnextSpriteIndex + 1u) & 0x7fu);
+    zxnextSpritesAttrNumberChanged();
   }
 }
 
@@ -212,6 +243,9 @@ static void zxnextSpritesWritePort5b(uint32_t value) {
  */
 static void zxnextSpritesSignalCollision(void) { zxnextSpriteCollision = 1u; }
 
+/* Latch "a line ran out of time" (status bit 1, sprites.vhd sprites_overtime). Sticky until read. */
+static void zxnextSpritesSignalTooMany(void) { zxnextSpriteTooMany = 1u; }
+
 static uint32_t zxnextSpritesReadPort303b(void) {
   uint32_t value = (zxnextSpriteTooMany ? 0x02u : 0u) | (zxnextSpriteCollision ? 0x01u : 0u);
   zxnextSpriteTooMany = 0u;
@@ -234,8 +268,18 @@ static uint32_t zxnextSpritesGetPatternByte8(uint32_t variant, uint32_t offset) 
 static uint32_t zxnextSpritesGetPatternByte4(uint32_t variant, uint32_t offset) {
   return zxnextSpritePatternMemory4[variant & 0x3ffu][offset & 0xffu];
 }
+/*
+ * The highest-numbered sprite with its visible bit (attr3 bit 7) set, or 0xffffffff when none is: the
+ * renderer's cutoff. The FPGA walks all 128 sprites every line (sprites.vhd ~846-870), and a sprite
+ * above this one - relative sprites included, which need their own visible bit - shows nothing.
+ * It used to be the sprite *last written* visible, which hid every higher-numbered sprite made
+ * visible earlier.
+ */
 static uint32_t zxnextSpritesGetLastVisibleSpriteIndex(void) {
-  return zxnextSpriteLastVisibleIndex < 0 ? 0xffffffffu : (uint32_t)zxnextSpriteLastVisibleIndex;
+  for (int32_t sprite = 127; sprite >= 0; sprite--) {
+    if (zxnextSpriteAttributes[sprite][3] & 0x80u) return (uint32_t)sprite;
+  }
+  return 0xffffffffu;
 }
 static uint32_t zxnextSpritesGetSprite0OnTop(void) { return zxnextSprite0OnTop; }
 static uint32_t zxnextSpritesGetClippingEnabled(void) { return zxnextSpriteClippingEnabled; }

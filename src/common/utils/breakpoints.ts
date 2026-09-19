@@ -181,7 +181,8 @@ export async function refreshSourceCodeBreakpoints(
   const machineId = store.getState().emulatorState?.machineId;
   const emuApi = createEmuApi(messenger);
   const resolvedBp: ResolvedBreakpoint[] = [];
-  if (compilation.result && !compilation.failed && compilation.result.errors?.length === 0) {
+  // --- Warnings are listed with the errors but do not fail the compilation
+  if (compilation.result && !compilation.failed && !compilation.result.errors?.some((e) => !e.isWarning)) {
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }

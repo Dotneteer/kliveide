@@ -189,7 +189,7 @@ Source of truth: `src/renderer/appIde/DocumentPanels/Next/nexAnnotations.ts`.
 - Names match `/^[A-Za-z_][A-Za-z0-9_]*$/`, max **16** characters (`NEX_LABEL_MAX_LENGTH`).
 - ScrollNutter uses global labels throughout, even for bank-local code. That is legal and fine.
 
-**`regions`** — `{ start, end, type }`, bank-relative, **inclusive** on both ends. Types:
+**`regions`** — `{ start, end, type, rowBytes? }`, bank-relative, **inclusive** on both ends. Types:
 
 | Type | Renders as |
 |---|---|
@@ -197,6 +197,9 @@ Source of truth: `src/renderer/appIde/DocumentPanels/Next/nexAnnotations.ts`.
 | `bytes` | `.defb`, up to four per line |
 | `words` | `.defw`, up to two per line |
 | `skip` | a single `.skip` line |
+
+`rowBytes` (1–4, `bytes` only) fixes how many bytes each `.defb` row holds — see [Data sections
+become regions](#4-data-sections-become-regions--and-uncertainty-gets-reported).
 
 **`lineAnnotations`** — keyed by **bank-relative offset as a decimal string**. Each value may carry:
 
@@ -231,6 +234,7 @@ What counts as an error:
 4. **Duplicate label name within one scope** — among `globalLabels`, or within one bank's
    `localLabels`. Across scopes is *not* an error (see the Annotation standard).
 5. **Offsets out of `0..16383`**, including `lineAnnotations` / `operandReferences` keys.
+   `rowBytes` outside `1..4`, or on a region that is not `bytes`, is an error too.
 6. **`schemaVersion` other than 1 or 2** — rejects annotations *and* debug state.
 7. Bank numbers outside `0..111` (`NEX_MAX_BANK`).
 
@@ -485,6 +489,44 @@ The player is recognisable too — `$8000` holding `ld hl,<module>` with entry p
 in turn, each with its own AY selected, is a TurboSound pair: the same tune arranged twice, so the
 two modules differ in length.
 
+**Copper instructions and tables.** `nextreg.txt` documents the copper *registers* (`$60`–`$64`)
+but not the instruction format; that is in `_input/next-fpga/src/device/copper.vhd`. An instruction is
+two bytes, most significant first:
+
+```
+WAIT  %1hhhhhhv vvvvvvvv   hold until vcount = v (9 bits) and hcount >= h*8 + 12
+MOVE  %0rrrrrrr vvvvvvvv   write v to Next register r   (MOVE $00,$00 is a NOP)
+```
+
+The `+ 12` cancels the ULA horizontal counter's own offset (`zxula_timing.vhd` restarts it 12 counts
+before the first display pixel), so `h*8` is a **display pixel column**: `h = 32` fires just past pixel
+255, in the right border — the usual way to change something for the *next* row without splitting
+this one. `v` is the ULA pixel row, shifted by nextreg `$64` if the program sets it.
+
+A per-line copper table usually shows as a run of fixed-length records, each opening with a WAIT (a
+byte `$80`–`$FF`); `C0 LL 40 00 41 cc 41 cc …` is "wait for line LL, then reload palette entries
+from 0". Two consequences:
+
+- **Code that patches the line numbers loads `record + 1`**, the WAIT's low byte — so the table begins
+  one byte *before* the address the patching loop starts from. Put the region and label on the WAIT.
+- **Mark it `bytes` with `"rowBytes": 2`**, so each copper instruction is its own `.defb` row and can
+  carry its own comment. A label on a WAIT's line byte (the patched operand) then names the operand
+  without splitting the instruction.
+
+The upload idiom is a copper stop, then a bulk write through register `$60`:
+
+```
+nextreg $62,$00   ; copper stopped
+nextreg $61,$00   ; copper address 0
+ld bc,$243B
+ld a,$60          ; select Copper Data 8-bit Write
+out (c),a
+...               ; otir / DMA to port $253B with the list and its length
+nextreg $62,$C0   ; mode 11: run from 0, restart at raster (0,0)
+```
+
+The length handed to the copy is the list's exact size, which bounds what to mark as data.
+
 **Clip windows take four successive writes.** `nextreg $18`/`$19`/`$1A` (Layer 2 / Sprites / ULA)
 advance an internal index on each write: X1, X2, Y1, Y2. Four writes of `0` collapse the window to a
 single pixel — that is *hiding* a layer, not resetting it. The index is reset through `nextreg $1C`,
@@ -615,10 +657,19 @@ You only need to declare the data — gaps between regions, and any tail to `$3F
 `disassemble` automatically.
 
 **Annotations only render on a row start, and data rows are not per-byte.** A `bytes` region lays out
-**four bytes per row counting from the region's own start**; `words` lays out two. A label or
-`lineAnnotation` on an offset that does not begin a row is **silently dropped from the listing** —
-no diagnostic, nothing to notice. So a one-byte flag sitting immediately before a table will push
-every row out of phase and make the table's own annotations vanish.
+**four bytes per row counting from the region's own start**; `words` lays out two. **A label starts a
+new row** (a `words` row only at a word boundary), and rows continue in fours from there. A
+`lineAnnotation` on an offset that does not begin a row is **silently dropped from the listing** — no
+diagnostic, nothing to notice. So a one-byte flag sitting immediately before a table will push every
+row out of phase and make the table's own annotations vanish.
+
+**Records: set `rowBytes`.** When the data has a fixed record size, give the `bytes` region
+`"rowBytes": n` (1–4) and every row is one record — `2` for copper instructions, `1` for a run of
+one-byte variables. Rows in such a region are **not** cut at labels, so a label on a byte *inside* a
+record (the WAIT line byte a loop patches, say) keeps the record whole and still names the operand;
+only a label on a record boundary shows in the label column. Touching `bytes` regions with different
+`rowBytes` stay separate, which is also a clean way to break a merge. Records longer than 4 bytes
+(an 8-colour table) are simply rows of 4 that stay aligned as long as the record size is a multiple.
 
 Adjacent same-type regions are merged, so you cannot fix this by splitting a run into two `bytes`
 regions. Break it with a region of a **different type** instead. Two ways, depending on what the
@@ -649,8 +700,9 @@ Check the alignment rather than assuming it: an annotated offset must satisfy
 `(offset - regionStart) % 4 === 0` for `bytes`, `% 2` for `words`, measured from the start of the
 region **after normalization**, which is not necessarily the region you wrote.
 
-**Labels are not affected.** A label resolves into operands (`ld hl,TitleText1`) from its *value*, so
-it works wherever it points. Only `lineAnnotations` need a row start.
+**Labels always resolve into operands** (`ld hl,TitleText1`, `djnz BarRowLoop`) from their *value*,
+wherever they point — including relative `jr`/`djnz` targets, so name loop heads. Only
+`lineAnnotations` need a row start.
 
 This matters more than it looks: one data byte decoded as an opcode shifts every instruction boundary
 below it, so an unmarked table silently corrupts the rest of the bank's listing.
@@ -734,13 +786,15 @@ debugger, `-e` stopping at the entry point.
 | Relying on the validator for label uniqueness | Within a scope it nukes the file; across scopes it says nothing |
 | Label longer than 16 characters | Rejected outright |
 | Guessing a `bytes` region to be tidy | A wrong data region hides real code — report the doubt instead |
-| Annotating any offset inside a data region | Only **row starts** render — 4-byte rows for `bytes`, 2 for `words`, counted from the region start |
+| Annotating any offset inside a data region | Only **row starts** render — 4-byte rows for `bytes` (or `rowBytes`), 2 for `words`, counted from the region start and restarted at each label |
 | Splitting a data run to realign rows | Adjacent same-type regions merge; break it with a different type — `skip` for a stray byte, a two-byte `words` where nothing may be hidden |
 | Annotating a bank without setting `offsetIndex` | It defaults to 0; a bank paged at `$8000` needs 2, or every address is out by `$8000` |
 | A global label in a bank that shares its slot | Two banks at the same address need `localLabels`, not globals |
 | Printing `instruction` for synopsis rows | Synopsis text lives in `prefixComment`; `instruction` is empty |
 | Decoding `out ($243B),a` as an ordinary port write | `$243B`/`$253B` are `nextreg` long-hand — look the *register* up |
 | Reading only the top table of `ports.txt` | Per-port bit detail is in the sections below it |
+| Looking for the WAIT/MOVE format in `nextreg.txt` | It is not there; it is in `device/copper.vhd` |
+| Starting a copper table where the line-patching loop starts | That loop points at the WAIT's low byte; the record starts one byte earlier |
 
 ---
 
@@ -794,6 +848,7 @@ Read these rather than trusting this summary when precision matters:
 | **Next register bit meanings** | `_input/next-fpga/nextreg.txt` |
 | **I/O port decoding and bit meanings** | `_input/next-fpga/ports.txt` |
 | Next core VHDL (last resort) | `_input/next-fpga/src/` |
+| Copper instruction format | `_input/next-fpga/src/device/copper.vhd` |
 | Schema, validation, normalization, label rules | `src/renderer/appIde/DocumentPanels/Next/nexAnnotations.ts` |
 | NEX container parsing, bank order, flags | `src/renderer/appIde/DocumentPanels/Next/nexFileLoader.ts` |
 | Annotated listing generation | `src/renderer/appIde/DocumentPanels/Next/nexAnnotatedDisassembly.ts` |

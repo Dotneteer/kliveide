@@ -9,37 +9,15 @@ import {
   DEFAULT_ZXNEXT_IMPLEMENTATION,
   ZXNEXT_IMPLEMENTATION
 } from "@emu/machines/zxNext/ZxNextImplementation";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
-import {
-  ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
-  ZXNEXT_WASM_V2_MIGRATED_SURFACES,
-  ZxNextWasmV2Machine
-} from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 describe("ZX Spectrum Next WASM public adapter", () => {
-  it("uses WASM as the factory default while TypeScript remains explicit", () => {
+  it("creates the WASM machine from the factory by default and on request", () => {
     expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
     expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
     expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(ZxNextWasmV2Machine);
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).toBeInstanceOf(ZxNextMachine);
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).not.toBeInstanceOf(
-      ZxNextWasmV2Machine
-    );
-  });
-
-  it("reports current migrated public adapter surfaces and open ULA/screen blockers", async () => {
-    const machine = await createTestZxNextWasmMachine();
-    const diagnostics = machine.getWasmV2Diagnostics();
-
-    expect(diagnostics.defaultReady).toBe(false);
-    expect(diagnostics.defaultBlockers).toEqual(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS);
-    for (const surface of ZXNEXT_WASM_V2_MIGRATED_SURFACES) {
-      expect(diagnostics.migratedSurfaces).toContain(surface);
-    }
-    expect(diagnostics.migratedSurfaces).not.toContain("ULA");
-    expect(diagnostics.migratedSurfaces).not.toContain("screen");
   });
 
   it("reports OS initialization from live WASM CPU state", async () => {
@@ -66,17 +44,19 @@ describe("ZX Spectrum Next WASM public adapter", () => {
       sp: 0xcdef
     });
 
-    machine.memoryDevice.writeMemory(0x4000, 0x12);
+    machine.doWriteMemory(0x4000, 0x12);
     expect(machine.doReadMemory(0x4000)).toBe(0x12);
     expect(machine.get64KFlatMemory()[0x4000]).toBe(0x12);
-    expect(machine.memoryDevice.readMemory(0x4000)).toBe(0x12);
+    expect(machine.doReadMemory(0x4000)).toBe(0x12);
     runtime.memory[0x040000 + 0x0a * 0x2000] = 0x34;
-    expect(machine.memoryDevice.getMemoryPartition(0x0a)[0]).toBe(0x34);
+    expect(machine.getMemoryPartition(0x0a)[0]).toBe(0x34);
 
     machine.tbblueOut(0x12, 0x56);
-    expect(machine.nextRegDevice.getNextRegisterIndex()).toBe(0x12);
-    expect(machine.nextRegDevice.getNextRegisterValue()).toBe(0x56);
-    expect(machine.nextRegDevice.getNextRegDeviceState().regs.find(reg => reg.id === 0x12)).toMatchObject({
+    // --- NEXTREG writes without touching the $243B selection, which a reset left at $24
+    expect(machine.getNextRegState().lastRegisterIndex).toBe(0x24);
+    machine.doWritePort(0x243b, 0x12);
+    expect(machine.doReadPort(0x253b)).toBe(0x56);
+    expect(machine.getNextRegState().regs.find(reg => reg.id === 0x12)).toMatchObject({
       value: 0x56,
       lastWrite: 0x56
     });
@@ -106,8 +86,8 @@ describe("ZX Spectrum Next WASM public adapter", () => {
     const machine = await createTestZxNextWasmMachine();
 
     machine.pc = 0x8000;
-    machine.memoryDevice.getMemoryPartition(0)[0] = 0x00;
-    machine.memoryDevice.getMemoryPartition(0)[1] = 0x00;
+    machine.getMemoryPartition(0)[0] = 0x00;
+    machine.getMemoryPartition(0)[1] = 0x00;
     machine.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
     machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
     machine.executionContext.debugSupport = new DebugSupport(undefined, [{ address: 0x8001, exec: true }]);

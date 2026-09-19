@@ -1,0 +1,109 @@
+{
+  "id": "C07-line-offset",
+  "title": "NextReg $64 = 16 moves WAIT(96) up to paper row 80",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000
+  ],
+  "expectIdenticalFrames": true,
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "probes": [
+    {
+      "name": "paper",
+      "kind": "bands",
+      "x": [
+        100,
+        607
+      ],
+      "bands": [
+        {
+          "y": [
+            48,
+            127
+          ],
+          "rgb": "next8:0x00"
+        },
+        {
+          "y": [
+            128,
+            143
+          ],
+          "rgb": "next8:0x1C"
+        },
+        {
+          "y": [
+            144,
+            144
+          ],
+          "rgb": "ula:2"
+        },
+        {
+          "y": [
+            145,
+            239
+          ],
+          "rgb": "next8:0x1C"
+        }
+      ]
+    },
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ]
+}

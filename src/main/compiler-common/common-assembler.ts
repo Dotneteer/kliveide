@@ -257,6 +257,9 @@ export abstract class CommonAssembler<
    */
   compareBins: BinaryComparisonInfo<TInstruction, TToken>[] = [];
 
+  // --- True once a `.savenex border` pragma set the border, so the Next auto-mode default does not override it
+  private _nexBorderSetExplicitly = false;
+
   /**
    * Store the handler of trace messages
    */
@@ -334,6 +337,7 @@ export abstract class CommonAssembler<
       options?.useCaseSensitiveSymbols ?? false
     );
     this.compareBins = [];
+    this._nexBorderSetExplicitly = false;
 
     // --- Prepare pre-defined symbols
     this.conditionSymbols = Object.assign({}, this._options.predefinedSymbols);
@@ -365,6 +369,11 @@ export abstract class CommonAssembler<
     if (!emitSuccess) {
       // --- If failed, clear output segments
       this._output.segments.length = 0;
+    }
+
+    // --- Next auto-mode defaults for whatever the source did not set (`.ent` is resolved by now)
+    if (this._output.isNextAutoMode) {
+      this.applyNextAutoModeFinalDefaults();
     }
 
     // --- Done
@@ -841,28 +850,32 @@ export abstract class CommonAssembler<
   }
 
   /**
-   * Applies automatic defaults for ZX Spectrum Next model
+   * Applies automatic defaults for ZX Spectrum Next model.
+   *
+   * Only switches automatic Next mode on. The border and entry address defaults are applied by
+   * `applyNextAutoModeFinalDefaults` once the whole source has been assembled: filling them in here
+   * (when `.model Next` is seen) made them indistinguishable from explicit values - `.ent` could never
+   * set the NEX entry point, and a `.savenex border 0` could only survive by the accident that `.model`
+   * is processed before the pragmas.
    */
   private applyNextDefaults(): void {
-    // Set default .savenex ram if not explicitly set
-    if (this._output.nexConfig.ramSize === 768) {
-      // 768 is the default in NexConfiguration, but we'll keep it
-      // Only override if it's still the default
-    }
-    
-    // Set default .savenex border if not explicitly set
-    if (this._output.nexConfig.borderColor === 0) {
-      // Only override if it's still the default (0)
-      this._output.nexConfig.borderColor = 7;
-    }
-    
-    // Set default .savenex entryaddr if not explicitly set
-    if (this._output.nexConfig.entryAddr === undefined) {
-      this._output.nexConfig.entryAddr = 0x8000;
-    }
-    
     // Mark that we're in automatic Next mode (for unbanked code handling)
     this._output.isNextAutoMode = true;
+  }
+
+  /**
+   * Fills the Next auto-mode `.savenex` defaults that no source line set, after all fixups are resolved:
+   * - border: 7, unless `.savenex border` gave a value (0 included);
+   * - entry address: `.savenex entryaddr` > `.ent` > $8000.
+   */
+  private applyNextAutoModeFinalDefaults(): void {
+    const nexConfig = this._output.nexConfig;
+    if (!this._nexBorderSetExplicitly) {
+      nexConfig.borderColor = 7;
+    }
+    if (nexConfig.entryAddr === undefined) {
+      nexConfig.entryAddr = this._output.entryAddress ?? 0x8000;
+    }
   }
 
   /**
@@ -901,7 +914,7 @@ export abstract class CommonAssembler<
       if (!(this._currentSegment as any).rangeWarned) {
         // Report as warning, not error - code can exceed $bfff
         this.reportAssemblyWarning(
-          "Z0904",
+          "Z0370",
           this._currentSourceLine,
           null,
           currentAddress.toString(16).toUpperCase()
@@ -2655,6 +2668,7 @@ export abstract class CommonAssembler<
     }
 
     this._output.nexConfig.borderColor = color;
+    this._nexBorderSetExplicitly = true;
   }
 
   /**
@@ -3528,8 +3542,8 @@ export abstract class CommonAssembler<
           origLine.endPosition,
           origLine.startColumn,
           origLine.endColumn,
-          errorPrefix + error.text,
-          true
+          // --- An error, not a warning: it stops the macro and fails the compilation
+          errorPrefix + error.text
         );
         this._output.errors.push(errorInfo);
         this.reportScopeError(errorInfo.errorCode);

@@ -100,8 +100,18 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
   setNextAudioSample (): void {
     this.calculateCurrentAudioValue();
     if (this.machine.tacts + AudioDeviceBase.SAMPLE_TACT_EPSILON < this._audioNextSampleTact) return;
+    this.emitSampleAt(this._audioNextSampleTact);
+    this._audioNextSampleTact +=
+      this._audioSampleLength * this.machine.clockMultiplier;
+  }
 
-    const raw = this.getCurrentSampleValue(this._audioNextSampleTact);
+  /**
+   * Closes the current sample window at `sampleEndTact` (a CPU tact) and appends the DC-filtered
+   * sample. `setNextAudioSample` calls it on its own tact schedule; a machine that keeps the sample
+   * clock itself (the ZX Next, on its 28 MHz clock) calls it directly.
+   */
+  emitSampleAt (sampleEndTact: number): void {
+    const raw = this.getCurrentSampleValue(sampleEndTact);
 
     // Try to reuse a pool object; allocate only when pool is exhausted
     let slot: AudioSample;
@@ -124,8 +134,6 @@ export class AudioDeviceBase<T extends IAnyMachine> implements IAudioDevice<T> {
     slot.right = Math.max(-1.0, Math.min(1.0, outRight));
 
     this._audioSamples.push(slot);
-    this._audioNextSampleTact +=
-      this._audioSampleLength * this.machine.clockMultiplier;
   }
 
   /**

@@ -26,9 +26,9 @@ static void zxnextTilemapReset(void) {
   zxnextTilemapControl = 0u;
   zxnextTilemapDefaultAttr = 0u;
   zxnextTilemapBaseUseBank7 = 0u;
-  zxnextTilemapBaseMsb = 0u;
+  zxnextTilemapBaseMsb = 0x2cu; /* zxnext.vhd reset: nr_6e_tilemap_base <= "101100" */
   zxnextTilemapDefUseBank7 = 0u;
-  zxnextTilemapDefMsb = 0u;
+  zxnextTilemapDefMsb = 0x0cu; /* zxnext.vhd reset: nr_6f_tilemap_tiles <= "001100" */
 }
 
 static void zxnextTilemapSetNextReg(uint32_t reg, uint32_t value) {

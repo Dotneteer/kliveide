@@ -290,7 +290,7 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
   /**
    * The multiplier of tacts per frame for the machine
    */
-  readonly frameTactMultiplier = 1;
+  readonly frameTactMultiplier: number = 1;
 
   /**
    * Clean up machine resources on stop

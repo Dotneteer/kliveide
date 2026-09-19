@@ -22,10 +22,6 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
   mirrorY: boolean;
   rotate: boolean;
   ulaOverTilemap: boolean;
-  baseAddressUseBank7: boolean;
-  baseAddressMsb: number;
-  definitionAddressUseBank7: boolean;
-  definitionAddressMsb: number;
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -52,10 +48,6 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
     this.mirrorY = false;
     this.rotate = false;
     this.ulaOverTilemap = false;
-    this.baseAddressUseBank7 = false;
-    this.baseAddressMsb = 0;
-    this.definitionAddressUseBank7 = false;
-    this.definitionAddressMsb = 0;
   }
 
   /**
@@ -133,23 +125,5 @@ export class TilemapDevice implements IGenericDevice<IZxNextMachine> {
     this.mirrorY = (value & 0x04) !== 0;
     this.rotate = (value & 0x02) !== 0;
     this.ulaOverTilemap = (value & 0x01) !== 0;
-  }
-
-  get nextReg6eValue(): number {
-    return (this.baseAddressUseBank7 ? 0x80 : 0) | this.baseAddressMsb;
-  }
-
-  set nextReg6eValue(value: number) {
-    this.baseAddressUseBank7 = (value & 0x80) !== 0;
-    this.baseAddressMsb = value & 0x01f;
-  }
-
-  get nextReg6fValue(): number {
-    return (this.definitionAddressUseBank7 ? 0x80 : 0) | this.definitionAddressMsb;
-  }
-
-  set nextReg6fValue(value: number) {
-    this.definitionAddressUseBank7 = (value & 0x80) !== 0;
-    this.definitionAddressMsb = value & 0x01f;
   }
 }

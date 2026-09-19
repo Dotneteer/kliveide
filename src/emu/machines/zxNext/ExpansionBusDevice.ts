@@ -283,7 +283,17 @@ export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
    * @returns true if ULA override should apply
    */
   isUlaOverride(address: number): boolean {
-    return this._enabled && this._ulaOverrideEnabled && ((address >> 12) & 0x0f) === 0x00;
+    return this._enabled && this._ulaOverrideEnabled && ((address >> 4) & 0x0f) === 0x00;
+  }
+
+  /**
+   * Applies the bus to a port $FE read of the internal ULA (zxnext.vhd ~3450-3462): with the bus on
+   * and $FE propagated ($8A bit 0), the bus data is ANDed in, and the ULA override ($81 bit 6, A7-4 =
+   * 0000) replaces the ULA's value with 1s.
+   */
+  applyToPortFeRead(address: number, ulaValue: number): number {
+    if (!this.shouldPropagateIo(0)) return ulaValue;
+    return (this.isUlaOverride(address) ? 0xff : ulaValue) & this.externalBusData;
   }
 
   // ==========================================================================
@@ -305,9 +315,18 @@ export class ExpansionBusDevice implements IGenericDevice<IZxNextMachine> {
     this.iorqulaSignal = false;
   }
 
+  /**
+   * zxnext.vhd ~2142: a reset copies $80 bits 3-0 into 7-4. ~5039-5045: it sets the bus port enables
+   * ($86-$89) to 1s when the reset type ($89 bit 7) is 0 - the opposite sense to $85. $81 and $8A
+   * have no reset branch.
+   */
   reset(): void {
     const persistence = this.nextReg80Value & 0x0f;
     this.nextReg80Value = (persistence << 4) | persistence;
+    if ((this._busPortEnables[3] & 0x80) === 0) {
+      this._busPortEnables[0] = this._busPortEnables[1] = this._busPortEnables[2] = 0xff;
+      this._busPortEnables[3] = 0x0f;
+    }
   }
 
   dispose(): void {}

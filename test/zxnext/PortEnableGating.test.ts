@@ -39,11 +39,11 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
     expect(readNextReg(m, 0x84)).toBe(0xff);
   });
 
-  it("Hard reset sets NR $85 to 0x0F (enables on, reset mode off)", async () => {
+  it("Hard reset sets NR $85 to 0x8F (enables on, reset type 1: zxnext.vhd ~1222-1223)", async () => {
     const m = await createTestNextMachine();
-    writeNextReg(m, 0x85, 0x8f);
+    writeNextReg(m, 0x85, 0x05);
     m.nextRegDevice.hardReset();
-    expect(readNextReg(m, 0x85)).toBe(0x0f);
+    expect(readNextReg(m, 0x85)).toBe(0x8f);
   });
 
   it("isPortGroupEnabled returns true by default for all groups", async () => {
@@ -62,12 +62,14 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Port 0xFF reads Timex value when NR $82 bit 0 is set", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     m.portManager.writePort(0xff, 0x07);
     expect(m.portManager.readPort(0xff)).toBe(0x07);
   });
 
   it("Port 0xFF returns 0xFF when NR $82 bit 0 is cleared", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     m.portManager.writePort(0xff, 0x07);
     writeNextReg(m, 0x82, 0xfe); // clear bit 0
     expect(m.portManager.readPort(0xff)).toBe(0xff);
@@ -75,6 +77,7 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Port 0xFF write is ignored when NR $82 bit 0 is cleared", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     m.portManager.writePort(0xff, 0x07); // initial write (enabled)
     writeNextReg(m, 0x82, 0xfe); // disable
     m.portManager.writePort(0xff, 0x3f); // this should be ignored
@@ -241,20 +244,9 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
   // NR $83 — Mouse ports (bit 5)
   // ==========================================================================
 
-  it("Mouse ports return 0xFF when NR $83 bit 5 is cleared", async () => {
-    const m = await createTestNextMachine();
-    // Set mouse position so we can distinguish mouse data from 0xFF
-    m.mouseDevice.xPos = 0x42;
-    m.mouseDevice.yPos = 0x55;
-    // With mouse enabled, read mouse X port
-    expect(m.portManager.readPort(0xfbdf)).toBe(0x42);
-    // Disable mouse (NR $83 bit 5)
-    writeNextReg(m, 0x83, 0xdf);
-    // Mouse ports return 0xFF when disabled; they do not fall through to joy alias
-    expect(m.portManager.readPort(0xfbdf)).toBe(0xff);
-    // Verify mouse Y port also returns 0xFF, not mouse data
-    expect(m.portManager.readPort(0xffdf)).toBe(0xff);
-  });
+  // --- The mouse port enable (NR $83 bit 5) is tested through the hardware in
+  // --- test/zxnext-hw/mouse/mouse.test.ts (MOU-005): disabled, $xBDF / $xFDF / $xADF become plain $DF
+  // --- reads, which the Kempston joystick alias answers (zxnext.vhd ~2630).
 
   // ==========================================================================
   // NR $83 — Sprite ports (bit 6)
@@ -356,6 +348,7 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Bus enable AND-masking: port disabled when bus enable clears bit", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     // Enable expansion bus
     m.expansionBusDevice.nextReg80Value = 0x80;
     // Clear bit 0 of NR $86 (disables port 0xFF via bus)
@@ -367,6 +360,7 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Bus enable AND-masking: port enabled when both internal and bus set", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     // Enable expansion bus
     m.expansionBusDevice.nextReg80Value = 0x80;
     // Both NR $82 and NR $86 have bit 0 set (default)
@@ -376,6 +370,7 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Bus enable AND-masking has no effect when expansion bus is off", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     // Bus is OFF (default)
     // Clear bit 0 of NR $86
     writeNextReg(m, 0x86, 0xfe);
@@ -435,6 +430,7 @@ describe("Next - Port Enable Gating (NR $82-$85)", function () {
 
   it("Port responds again after re-enabling via NR $82", async () => {
     const m = await createTestNextMachine();
+    writeNextReg(m, 0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (zxnext.vhd ~2769)
     m.portManager.writePort(0xff, 0x07);
     writeNextReg(m, 0x82, 0xfe); // disable port 0xFF
     expect(m.portManager.readPort(0xff)).toBe(0xff);

@@ -1,67 +1,45 @@
 import { describe, expect, it } from "vitest";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 const CMD0 = [0x40, 0x00, 0x00, 0x00, 0x00, 0x95];
-const CMD8 = [0x48, 0x00, 0x00, 0x01, 0xaa, 0x87];
 const CMD9 = [0x49, 0x00, 0x00, 0x00, 0x00, 0xff];
-const CMD16_512 = [0x50, 0x00, 0x00, 0x02, 0x00, 0xff];
 
-describe("ZX Spectrum Next WASM SD SPI parity", () => {
-  it("matches TypeScript chip-select decode and immediate command responses", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.hardReset();
+/*
+ * Card 0 is covered by `test/zxnext-hw/sd/sd-card.test.ts`; the harness has no image for slot 1, so
+ * a card present in slot 1 is checked here.
+ */
+describe("ZX Spectrum Next WASM SD SPI card 1", () => {
+  it("selects card 1 and answers CMD0", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     wasm.hardReset();
-    oracle.sdCardDevice.setCardInfo(4096);
-    wasm.wasmV2Runtime!.exports.zxnextSetSdCardInfo(0, 4096);
-
-    for (const value of [0x02, 0x01, 0xfb, 0xff, 0x02]) {
-      oracle.doWritePort(0xe7, value);
-      wasm.doWritePort(0xe7, value);
-      expect(wasm.wasmV2Runtime!.exports.zxnextGetSdSelectedCard()).toBe(oracle.sdCardDevice.selectedCard);
-    }
-
-    writeCommand(oracle, wasm, CMD0);
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetSdLastCommand(0)).toBe(0x40);
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetSdCommandIndex(0)).toBe(0);
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetSdState(0)).toBe(0);
-    expect(wasm.doReadPort(0xeb)).toBe(oracle.doReadPort(0xeb));
-
-    writeCommand(oracle, wasm, CMD8);
-    expect(readBytes(oracle, wasm, 5)).toEqual([0x01, 0x00, 0x00, 0x01, 0xaa]);
-
-    writeCommand(oracle, wasm, CMD16_512);
-    expect(wasm.doReadPort(0xeb)).toBe(oracle.doReadPort(0xeb));
-    expect(wasm.doReadPort(0xeb)).toBe(0xff);
-  });
-
-  it("matches TypeScript card 1 SPI command state", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.hardReset();
-    wasm.hardReset();
-    oracle.sdCardDevice.setCard1Info(2048);
     wasm.wasmV2Runtime!.exports.zxnextSetSdCardInfo(1, 2048);
 
-    oracle.doWritePort(0xe7, 0x01);
+    // --- $E7 low bits 01 select card 1 (zxnext.vhd; catalogue SPI-001)
     wasm.doWritePort(0xe7, 0x01);
     expect(wasm.wasmV2Runtime!.exports.zxnextGetSdSelectedCard()).toBe(1);
 
-    writeCommand(oracle, wasm, CMD0);
+    writeCommand(wasm, CMD0);
     expect(wasm.wasmV2Runtime!.exports.zxnextGetSdLastCommand(1)).toBe(0x40);
     expect(wasm.wasmV2Runtime!.exports.zxnextGetSdState(1)).toBe(0);
-    expect(wasm.doReadPort(0xeb)).toBe(oracle.doReadPort(0xeb));
+    // --- R1 = $01: in idle state (SD spec; the card 0 counterpart is SPI-003)
+    expect(wasm.doReadPort(0xeb)).toBe(0x01);
   });
 
-  it("matches TypeScript card 1 CMD9 zeroed CSD response", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.hardReset();
+  it("answers card 1 CMD9 with a zeroed CSD", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     wasm.hardReset();
+    // --- an empty slot does not answer: give card 1 a size
+    wasm.wasmV2Runtime!.exports.zxnextSetSdCardInfo(1, 2048);
 
-    oracle.doWritePort(0xe7, 0x01);
     wasm.doWritePort(0xe7, 0x01);
-    writeCommand(oracle, wasm, CMD9);
+    writeCommand(wasm, CMD9);
 
-    expect(readBytes(oracle, wasm, 19)).toEqual([
+    // --- R1, a gap byte, the $FE data token, then 16 zero CSD bytes (pinned: the values both cores
+    // --- agreed on at tag `pre-zxnext-ts-removal-2026-09-19`)
+    expect(readBytes(wasm, 19)).toEqual([
       0x00, 0xff, 0xfe,
       0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00,
@@ -71,20 +49,10 @@ describe("ZX Spectrum Next WASM SD SPI parity", () => {
   });
 });
 
-function writeCommand(oracle: any, wasm: any, bytes: number[]): void {
-  for (const byte of bytes) {
-    oracle.doWritePort(0xeb, byte);
-    wasm.doWritePort(0xeb, byte);
-  }
+function writeCommand(wasm: ZxNextWasmV2Machine, bytes: number[]): void {
+  for (const byte of bytes) wasm.doWritePort(0xeb, byte);
 }
 
-function readBytes(oracle: any, wasm: any, length: number): number[] {
-  const result: number[] = [];
-  for (let i = 0; i < length; i++) {
-    const wasmByte = wasm.doReadPort(0xeb);
-    const oracleByte = oracle.doReadPort(0xeb);
-    expect(wasmByte).toBe(oracleByte);
-    result.push(wasmByte);
-  }
-  return result;
+function readBytes(wasm: ZxNextWasmV2Machine, length: number): number[] {
+  return Array.from({ length }, () => wasm.doReadPort(0xeb));
 }

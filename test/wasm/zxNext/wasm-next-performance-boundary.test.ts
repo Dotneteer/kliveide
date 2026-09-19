@@ -10,12 +10,7 @@ import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
-import {
-  ZXNEXT_FRAME_TRACE_CAPACITY,
-  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
-  ZXNEXT_FRAME_TRACE_RECORD_SIZE
-} from "@emu/machines/zxNext/diagnostics/ZxNextFrameTrace";
-import { createTestNextMachine } from "../../zxnext/TestNextMachine";
+import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../scripts/check-zxnext-wasm-size.cjs";
 import {
@@ -71,16 +66,12 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
     expect(report.withinLimit).toBe(true);
   });
 
-  it("compares TypeScript and WASM frame timing shape while rejecting safety-guard stop reasons", async () => {
-    const oracle = await createTestNextMachine();
+  it("measures WASM frame timing while rejecting safety-guard stop reasons", async () => {
     const wasm = await createTestZxNextWasmMachine();
-    const oracleMetrics = measureMachineFrames(oracle, 3);
     const wasmMetrics = measureMachineFrames(wasm, 3);
     const diagnostics = wasm.getWasmV2Diagnostics();
 
-    expect(oracleMetrics.framesAdvanced).toBe(3);
     expect(wasmMetrics.framesAdvanced).toBe(3);
-    expect(oracleMetrics.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(wasmMetrics.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(diagnostics.lastWasmStopReason).toBe("wasmFrameComplete");
     expect(diagnostics.normalFrames).toBeGreaterThanOrEqual(3);
@@ -108,9 +99,7 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
     expect(typeof report.threshold.met).toBe("boolean");
     expect(report.scenarios.map((scenario: any) => scenario.id)).toEqual(["debug-step"]);
     for (const scenario of report.scenarios) {
-      expect(scenario.typescript.metrics.operations).toBe(2);
       expect(scenario.wasm.metrics.operations).toBe(2);
-      expect(scenario.typescript.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
       expect(scenario.wasm.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
       expect(scenario.minWasmSpeedRatio).toBe(MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT);
       expect(typeof scenario.thresholdMet).toBe("boolean");

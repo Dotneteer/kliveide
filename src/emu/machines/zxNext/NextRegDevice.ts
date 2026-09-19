@@ -1,25 +1,15 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
+import { applyNextRegReadMux } from "./nextRegReadMux";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./PaletteDevice";
-
-/*
- * The core version this emulator reports through NextReg $01/$0E.
- *
- * Exported because a NEX header can *ask* for a minimum core version, and the viewer says so when
- * the file asks for more than this provides (`nexValidation.ts`). `NextRegPanel` already imports
- * from this module, so the renderer reading these is the established direction.
- */
-export const CORE_VERSION_MAJOR = 3;
-export const CORE_VERSION_MINOR = 2;
-export const CORE_VERSION_SUB_MINOR = 0;
-
-/** The same three, as the tuple `validateNexHeader` compares against. */
-export const EMULATED_CORE_VERSION: [number, number, number] = [
-  CORE_VERSION_MAJOR,
-  CORE_VERSION_MINOR,
-  CORE_VERSION_SUB_MINOR
-];
+import { TBBLUE_DEF_TRANSPARENT_COLOR } from "./nextColorTables";
+import { CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_SUB_MINOR } from "./nextCoreVersion";
+import type {
+  NextRegDescriptor,
+  NextRegDeviceState,
+  NextRegValueSlice,
+  RegValueState
+} from "./nextRegDescriptors";
 const BOARD_ID = 0b0010;
 
 type NextRegreadFn = () => number;
@@ -38,27 +28,6 @@ export type NextRegInfo = {
   slices?: NextRegValueSlice[];
 };
 
-export type NextRegValueSlice = {
-  mask?: number;
-  shift?: number;
-  description?: string;
-  valueSet?: Record<number, string>;
-  view?: "flag" | "number";
-};
-
-export type NextRegDescriptor = Omit<NextRegInfo, "readFn" | "writeFn">;
-
-export type NextRegDeviceState = {
-  lastRegisterIndex: number;
-  regs: RegValueState[];
-};
-
-export type RegValueState = {
-  id: number;
-  lastWrite?: number;
-  value?: number;
-};
-
 const readOnlyRegs: number[] = [0x00, 0x01, 0x0e, 0x0f, 0x1e, 0x1f, 0xb0, 0xb1, 0xb2];
 const writeOnlyRegs: number[] = [
   0x04, 0x35, 0x36, 0x37, 0x38, 0x39, 0x60, 0x63, 0x75, 0x76, 0x77, 0x78, 0x79, 0xc7, 0xcb, 0xcf
@@ -71,15 +40,21 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regValues: number[] = [];
 
   configMode: boolean = false;
+  // --- $10 core ID (zxnext.vhd ~1127: "00001", no reset branch)
+  private coreId = 0x01;
+  // --- $F0 XDEV command, Issue 4 (~7386-7427): select mode and the selected DNA / XADC device
+  private xdevSelect = true;
+  private xdevDna = false;
+  private xdevAdc = false;
   lastReadValue: number;
 
   // --- Reg $06 state
   hotkeyCpuSpeedEnabled: boolean;
   hotkey50_60HzEnabled: boolean;
-  ps2Mode: boolean;
+  /** zxnext.vhd:1106 nr_06_ps2_mode := '0', written only in config mode, no reset branch */
+  ps2Mode = false;
 
   // --- Reg $08 state
-  unlockPort7ffd: boolean;
   disableRamPortContention: boolean;
   enablePort0xffTimexVideoModeRead: boolean;
   implementIssue2Keyboard: boolean;
@@ -192,9 +167,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         machine.interruptDevice.busResetRequested = (v & 0x80) !== 0;
 
-        // Bit 3: generate multiface NMI
+        // Bit 3: generate multiface NMI. zxnext.vhd ~3820-3842: the flag is set only while the NMI
+        // state machine accepts a cause (IDLE / FETCH); a request during HOLD / END changes nothing.
         if (v & 0x08) {
-          machine.interruptDevice.mfNmiByNextReg = true;
+          if (machine.nmiAcceptCause) machine.interruptDevice.mfNmiByNextReg = true;
           machine.requestMfNmiFromSoftware();
         } else {
           machine.interruptDevice.mfNmiByNextReg = false;
@@ -202,15 +178,21 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
         // Bit 2: generate DivMMC NMI
         if (v & 0x04) {
-          machine.interruptDevice.divMccNmiBtNextReg = true;
+          if (machine.nmiAcceptCause) machine.interruptDevice.divMccNmiBtNextReg = true;
           machine.requestDivMmcNmiFromSoftware();
         } else {
           machine.interruptDevice.divMccNmiBtNextReg = false;
         }
 
-        // Bit 4 clear: clear I/O trap flag
+        // Bit 4 clear: clear the I/O trap cause ($DA) and flag (zxnext.vhd ~3862)
         if (!(v & 0x10)) {
           machine.interruptDevice.mfNmiByIoTrap = false;
+          this.ioTrapCause = 0x00;
+        }
+
+        // --- Bits 1/0: hard/soft reset (zxnext.vhd ~6316-6317; hard reset has precedence)
+        if (v & 0x03) {
+          machine.requestResetFromNextReg((v & 0x02) !== 0);
         }
       },
       slices: [
@@ -284,16 +266,21 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
             case 0b011:
             case 0b100:
               scrDevice.machineType = machineType;
+              // --- The ROM selection depends on the machine type (zxnext.vhd ~2938)
+              machine.memoryDevice.updateMemoryConfig();
               break;
           }
         }
 
+        const wasConfigMode = this.configMode;
         if (machineType === 0b111) {
           this.configMode = true;
           machine.onConfigModeEntered();
         } else if (machineType !== 0b000) {
           this.configMode = false;
         }
+        // --- config mode maps the $04 bank over the ROM slots (zxnext.vhd ~2994)
+        if (wasConfigMode !== this.configMode) machine.memoryDevice.updateMemoryConfig();
       },
       slices: [
         {
@@ -334,7 +321,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x04,
       description: "Config Mapping",
-      writeFn: (v) => (machine.memoryDevice.configRomRamBank = v & 0x7f),
+      writeFn: (v) => {
+        machine.memoryDevice.configRomRamBank = v & 0x7f;
+        if (this.configMode) machine.memoryDevice.updateMemoryConfig();
+      },
       slices: [
         {
           mask: 0x7f,
@@ -345,10 +335,14 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x05,
       description: "Peripheral 1 Setting",
+      // --- zxnext.vhd ~5843: the joystick modes and the *effective* 50/60 Hz and scandoubler bits
+      readFn: () =>
+        (this.regValues[0x05] & 0xfa) |
+        (machine.composedScreenDevice.effective60Hz ? 0x04 : 0x00) |
+        (machine.composedScreenDevice.effectiveScandoubler ? 0x01 : 0x00),
       writeFn: (v) => {
         machine.joystickDevice.joystick1Mode = ((v & 0xc0) >> 6) | ((v & 0x08) >> 1);
         machine.joystickDevice.joystick2Mode = ((v & 0x30) >> 4) | ((v & 0x02) << 1);
-        machine.composedScreenDevice.is60HzMode = (v & 0x04) !== 0; // DEPRECATED
         machine.composedScreenDevice.scandoublerEnabled = (v & 0x01) !== 0; // DEPRECATED
         machine.composedScreenDevice.nextReg0x05Value = v & 0xff;
       },
@@ -411,8 +405,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         this.hotkey50_60HzEnabled = (v & 0x20) !== 0;
         machine.divMmcDevice.enableDivMmcNmiByDriveButton = (v & 0x10) !== 0;
         machine.divMmcDevice.enableMultifaceNmiByM1Button = (v & 0x08) !== 0;
-        this.ps2Mode = (v & 0x04) !== 0;
+        // --- zxnext.vhd ~5145: the PS/2 mode changes only in config mode
+        if (this.configMode) this.ps2Mode = (v & 0x04) !== 0;
         machine.soundDevice.psgMode = v & 0x03;
+        machine.audioControlDevice.applyConfiguration();
       },
       slices: [
         {
@@ -492,7 +488,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x08,
       description: "Peripheral 3 Setting",
       readFn: () =>
-        (this.unlockPort7ffd ? 0x80 : 0x00) |
+        // --- zxnext.vhd read mux: bit 7 is `not port_7ffd_locked`
+        (machine.memoryDevice.pagingEnabled ? 0x80 : 0x00) |
         (this.disableRamPortContention ? 0x40 : 0x00) |
         (machine.soundDevice.ayStereoMode ? 0x20 : 0x00) |
         (machine.soundDevice.enableInternalSpeaker ? 0x10 : 0x00) |
@@ -501,7 +498,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         (machine.soundDevice.enableTurbosound ? 0x02 : 0x00) |
         (this.implementIssue2Keyboard ? 0x01 : 0x00),
       writeFn: (v) => {
-        this.unlockPort7ffd = (v & 0x80) !== 0;
+        // --- zxnext.vhd ~3650: writing bit 7 = 1 clears the $7FFD lock; 0 leaves it
+        if (v & 0x80) machine.memoryDevice.pagingEnabled = true;
         this.disableRamPortContention = (v & 0x40) !== 0;
         machine.soundDevice.ayStereoMode = (v & 0x20) !== 0;
         machine.soundDevice.enableInternalSpeaker = (v & 0x10) !== 0;
@@ -571,7 +569,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
         machine.soundDevice.ay1Mono = (v & 0x40) !== 0;
         machine.soundDevice.ay0Mono = (v & 0x20) !== 0;
         machine.spriteDevice.mirrorTie = (v & 0x10) !== 0;
-        machine.divMmcDevice.resetDivMmcMapramFlag = (v & 0x08) !== 0;
+        if (v & 0x08) machine.divMmcDevice.clearMapram();
         machine.soundDevice.silenceHdmiAudio = (v & 0x04) !== 0;
         machine.composedScreenDevice.scanlineWeight = v & 0x03;
         machine.audioControlDevice.applyConfiguration();
@@ -738,7 +736,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x10,
       description: "Core Boot",
-      writeFn: () => {},
+      // --- ~5869: '0' & core ID & the DRIVE / M1 buttons (pressed only as pulses: 0)
+      readFn: () => (this.coreId & 0x1f) << 2,
+      // --- ~5667-5683 (Issue 4): a core ID only in config mode, bit 4 = 0 and not 1111; bit 7 (boot
+      // --- the selected core) has nothing to boot
+      writeFn: (v) => {
+        if (this.configMode && !(v & 0x10) && (v & 0x0f) !== 0x0f) this.coreId = v & 0x0f;
+      },
       slices: [
         {
           mask: 0x7c,
@@ -760,8 +764,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x11,
       description: "Video Timing",
       readFn: () => machine.composedScreenDevice.videoTimingMode,
+      // --- zxnext.vhd ~5186-5193: config mode only; 111 stores 000 (issue 4 board: all three bits)
       writeFn: (v) => {
-        machine.composedScreenDevice.videoTimingMode = v & 0x07;
+        if (!this.configMode) return;
+        machine.composedScreenDevice.videoTimingMode = (v & 0x07) === 0x07 ? 0 : v & 0x07;
       },
       slices: [
         {
@@ -786,6 +792,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => machine.composedScreenDevice.layer2ActiveRamBank,
       writeFn: (v) => {
         machine.composedScreenDevice.layer2ActiveRamBank = v & 0x7f;
+        // --- The Layer 2 memory paging follows the bank (zxnext.vhd ~2924)
+        machine.memoryDevice.updateFastPathFlags();
       },
       slices: [
         {
@@ -801,6 +809,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       readFn: () => machine.composedScreenDevice.layer2ShadowRamBank,
       writeFn: (v) => {
         machine.composedScreenDevice.layer2ShadowRamBank = v & 0x7f;
+        // --- The Layer 2 memory paging follows the bank (zxnext.vhd ~2924)
+        machine.memoryDevice.updateFastPathFlags();
       },
       slices: [
         {
@@ -902,7 +912,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x19,
       description: "Clip Window Sprites",
       readFn: () => machine.spriteDevice.nextReg19Value,
-      writeFn: (v) => (machine.spriteDevice.nextReg19Value = v & 0xff)
+      writeFn: (v) => {
+        machine.spriteDevice.nextReg19Value = v & 0xff;
+        machine.composedScreenDevice.updateSpriteClipBoundaries();
+      }
     });
     r({
       id: 0x1a,
@@ -982,7 +995,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x20,
       description: "Generate Maskable Interrupt",
       readFn: () => machine.interruptDevice.nextReg20Value,
-      writeFn: () => {},
+      writeFn: (v) => (machine.interruptDevice.nextReg20Value = v & 0xff),
       slices: [
         {
           mask: 0x80,
@@ -1058,12 +1071,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       writeFn: (v) => {
         this.selectKeyJoystick = !!(v & 0x80);
         this.ps2KeymapAddressMsb = !!(v & 0x01);
+        machine.joystickDevice.writeKeymapSelect(v);
       }
     });
     r({
       id: 0x29,
       description: "PS/2 Keymap Address LSB",
-      writeFn: (v) => (this.ps2KeymapAddressLsb = v & 0xff)
+      writeFn: (v) => {
+        this.ps2KeymapAddressLsb = v & 0xff;
+        machine.joystickDevice.writeKeymapAddress(v);
+      }
     });
     r({
       id: 0x2a,
@@ -1081,31 +1098,42 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0x2b,
       description: "PS/2 Keymap Data LSB",
       readFn: () => this.ps2KeymapDataLsb,
-      writeFn: (v) => (this.ps2KeymapDataLsb = v & 0xff)
+      writeFn: (v) => {
+        this.ps2KeymapDataLsb = v & 0xff;
+        // --- zxnext.vhd ~6267: with $28 bit 7 set the byte goes to the key-joystick map
+        machine.joystickDevice.writeKeymapData(v);
+      }
     });
+    // --- zxnext.vhd ~4830, soundrive.vhd: the mirrors write the DACs, which ignore writes while
+    // --- $08 bit 3 holds them in reset. ~5952-5961: reads return the Pi I2S sample (bits 9-2 from
+    // --- $2C/$2E, the latched bits 1-0 from $2D); with I2S off it is "10" & X"00" (~2314).
+    const dacs = () => machine.audioControlDevice.getDacDevice();
+    const dacsOn = () => machine.soundDevice.enable8BitDacs;
     r({
       id: 0x2c,
       description: "DAC B Mirror (left)",
-      isWriteOnly: true,
-      readFn: () => 0x00,
-      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacB(v)
+      readFn: () => 0x80,
+      writeFn: (v) => {
+        if (dacsOn()) dacs().setDacB(v);
+      }
     });
     r({
       id: 0x2d,
       description: "DAC A+D Mirror (mono)",
-      isWriteOnly: true,
       readFn: () => 0x00,
       writeFn: (v) => {
-        machine.audioControlDevice.getDacDevice().setDacA(v);
-        machine.audioControlDevice.getDacDevice().setDacD(v);
+        if (!dacsOn()) return;
+        dacs().setDacA(v);
+        dacs().setDacD(v);
       }
     });
     r({
       id: 0x2e,
       description: "DAC C Mirror (right)",
-      isWriteOnly: true,
-      readFn: () => 0x00,
-      writeFn: (v) => machine.audioControlDevice.getDacDevice().setDacC(v)
+      readFn: () => 0x80,
+      writeFn: (v) => {
+        if (dacsOn()) dacs().setDacC(v);
+      }
     });
     r({
       id: 0x2f,
@@ -1247,21 +1275,22 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
           mask: 0x70,
           shift: 4,
           description: "Select palette for reading or writing (soft reset = 000)",
+          // --- zxnext.vhd ~6898-6903: bit 6 picks the second palette, bits 5-4 the layer
           valueSet: {
             0b000: "ULA first palette",
-            0b001: "ULA second palette",
-            0b010: "Layer 2 first palette",
-            0b011: "Layer 2 second palette",
-            0b100: "Sprites first palette",
-            0b101: "Sprites second palette",
-            0b110: "Tilemap first palette",
+            0b001: "Layer 2 first palette",
+            0b010: "Sprites first palette",
+            0b011: "Tilemap first palette",
+            0b100: "ULA second palette",
+            0b101: "Layer 2 second palette",
+            0b110: "Sprites second palette",
             0b111: "Tilemap second palette"
           }
         },
         {
           mask: 0x08,
           shift: 3,
-          description: "Select palette for reading or writing (soft reset = 0)"
+          description: "Select sprites palette (0 = first palette, 1 = second palette) (soft reset = 0)"
         },
         {
           mask: 0x04,
@@ -1358,6 +1387,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x61,
       description: "Copper Address LSB",
+      // --- zxnext.vhd ~6030: the live write address, which $60/$63 writes move on
+      readFn: () => machine.copperDevice.nextReg61Value,
       writeFn: (v) => (machine.copperDevice.nextReg61Value = v & 0xff)
     });
     r({
@@ -1391,6 +1422,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x64,
       description: "Vertical Line Count Offset",
+      readFn: () => machine.copperDevice.verticalLineOffset & 0xff,
       writeFn: (v) => (machine.copperDevice.verticalLineOffset = v & 0xff)
     });
     r({
@@ -2341,22 +2373,25 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x98,
       description: "PI GPIO #1 (LSB)",
+      readFn: () => this.piGpioPins(0x98),
       writeFn: () => {}
     });
     r({
       id: 0x99,
       description: "PI GPIO #2",
+      readFn: () => this.piGpioPins(0x99),
       writeFn: () => {}
     });
     r({
       id: 0x9a,
       description: "PI GPIO #3",
+      readFn: () => this.piGpioPins(0x9a),
       writeFn: () => {}
     });
     r({
       id: 0x9b,
       description: "PI GPIO #4 (LSB)",
-      readFn: () => (this.regValues[0x9b] ?? 0x00) & 0x0f,
+      readFn: () => this.piGpioPins(0x9b),
       writeFn: () => {}
     });
     r({
@@ -2445,7 +2480,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xa9,
       description: "ESP Wifi GPIO",
-      readFn: () => (this.regValues[0xa9] ?? 0x00) & 0x05,
+      // --- ~6146: "00000" & GPIO2 & '0' & GPIO0; both pulled up on the board, GPIO0 driven by its
+      // --- latch while $A8 bit 0 enables it
+      readFn: () => 0x04 | ((this.regValues[0xa8] ?? 0) & 0x01 ? (this.regValues[0xa9] ?? 1) & 0x01 : 0x01),
       writeFn: () => {},
       slices: [
         {
@@ -2554,7 +2591,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xb2,
       description: "Extended MD Pad Buttons",
-      readFn: () => machine.keyboardDevice.nextRegB2Value,
+      readFn: () => machine.joystickDevice.nextRegB2Value,
       slices: [
         {
           mask: 0x80,
@@ -2791,7 +2828,10 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
       id: 0xc0,
       description: "Interrupt Control",
       readFn: () => this.machine.interruptDevice.nextRegC0Value,
-      writeFn: (v) => (machine.interruptDevice.nextRegC0Value = v),
+      writeFn: (v) => {
+        machine.interruptDevice.nextRegC0Value = v;
+        if (!(v & 0x08)) machine.onStacklessNmiDisabled();
+      },
       slices: [
         {
           mask: 0xe0,
@@ -3165,7 +3205,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xf0,
       description: "XDEV CMD",
-      writeFn: () => {}
+      // --- ~7418-7428: select mode shows the selection; no DNA or XADC is modelled: device mode reads 0
+      readFn: () =>
+        this.xdevSelect ? 0x80 | (this.xdevAdc ? 0x02 : 0x00) | (this.xdevDna ? 0x01 : 0x00) : 0x00,
+      // --- ~7390-7410: any write sets select mode from bit 7; bits 7-6 = 11 also choose the device
+      writeFn: (v) => {
+        this.xdevSelect = (v & 0x80) !== 0;
+        if ((v & 0xc0) === 0xc0) {
+          this.xdevDna = (v & 0x03) === 0x01;
+          this.xdevAdc = (v & 0x03) === 0x02;
+        }
+      }
     });
     r({
       id: 0xf8,
@@ -3231,7 +3281,7 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- First layer 2 palette
     // --- First ULA palette
     // --- Disable ULA Next mode
-    this.directSetRegValue(0x4a, 0x00); // --- Fallback color = 0x00
+    this.directSetRegValue(0x4a, 0xe3); // --- Fallback colour: zxnext.vhd reset branch `nr_4a_fallback_rgb <= X"E3"`
     this.directSetRegValue(0x4b, TBBLUE_DEF_TRANSPARENT_COLOR);
     this.directSetRegValue(0x4c, 0x0f); // --- Tilemap transparency index = 0x0f
     this.directSetRegValue(0x61, 0x00); // --- Copper address LSB
@@ -3246,23 +3296,97 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- No tilemap on top
     this.directSetRegValue(0x70, 0x00); // --- Layer 2 resolution: 256x192x8
     // --- Palette offset = 0
+
+    // --- Further zxnext.vhd reset branch values (~4907-5083, ~3871)
+    this.directSetRegValue(0x64, 0x00); // --- Copper line offset
+    this.directSetRegValue(0x68, 0x00); // --- ULA enabled, no blending, extended keys on, ULA+ off, no fine scroll/stencil
+    this.directSetRegValue(0x6a, 0x00); // --- LoRes: no Radastan, palette offset 0
+    this.directSetRegValue(0x6e, 0x2c); // --- nr_6e_tilemap_base <= "101100"
+    this.directSetRegValue(0x6f, 0x0c); // --- nr_6f_tilemap_tiles <= "001100"
+    for (const reg of [0x90, 0x91, 0x92, 0x93, 0xa0, 0xa2, 0xa8, 0xd9]) {
+      this.directSetRegValue(reg, 0x00); // --- Pi GPIO/peripheral/I2S, ESP GPIO0 enable, I/O trap write
+    }
+    // --- ~5048-5051, ~5063: the Pi GPIO and ESP GPIO0 output latches
+    this.directSetRegValue(0x98, 0xff);
+    this.directSetRegValue(0x99, 0x01);
+    this.directSetRegValue(0x9a, 0x00);
+    this.directSetRegValue(0x9b, 0x00);
+    this.directSetRegValue(0xa9, 0x01);
+    // --- ~7394, ~7405: $F0 back in select mode with no device
+    this.xdevSelect = true;
+    this.xdevDna = false;
+    this.xdevAdc = false;
+  }
+
+  /**
+   * A Pi GPIO pin register ($98-$9B) as zxnext.vhd ~6122-6132 reads it: the pins, not the latches.
+   * Nothing is attached, so a pin whose output is enabled ($90-$93; GPIO 1-0 never) reads its latch
+   * and an undriven pin reads 1. The Pi peripherals ($A0, $A2) do not take over the pins.
+   */
+  private piGpioPins(reg: number): number {
+    const width = reg === 0x9b ? 0x0f : 0xff;
+    const enable = (this.regValues[reg - 0x08] ?? 0) & (reg === 0x98 ? 0xfc : width);
+    return (((this.regValues[reg] ?? 0) & enable) | (~enable & width)) & 0xff;
+  }
+
+  /**
+   * NextReg bits zxnext.vhd has no reset branch for: only the FPGA configuration and the firmware set
+   * them, so a soft reset keeps them. The devices behind them reset their own fields, so
+   * ZxNextMachine.reset captures the readback before any device resets and restores it afterwards.
+   */
+  captureResetSurvivors(): Array<[reg: number, value: number]> {
+    return [0x02, 0x05, 0x06, 0x08, 0x09, 0x0a, 0x8f].map((reg) => [reg, this.directGetRegValue(reg)]);
+  }
+
+  restoreResetSurvivors(survivors: Array<[reg: number, value: number]>): void {
+    for (const [reg, kept] of survivors) {
+      switch (reg) {
+        case 0x02:
+          // --- Bit 7 (expansion bus reset) is stored outside the NextReg reset branch (zxnext.vhd ~5097
+          // --- vs ~4908-5090), so a soft reset keeps it. Set directly: a $02 write would act on bits 1-0.
+          this.machine.interruptDevice.busResetRequested = (kept & 0x80) !== 0;
+          break;
+        case 0x06:
+          // --- Bits 7 and 5 (hotkey enables) are reset to 1; the others survive
+          this.directSetRegValue(0x06, 0xa0 | (kept & 0x5f));
+          break;
+        case 0x08:
+          // --- Bit 7 would unlock $7FFD (already unlocked by the reset), bit 6 is reset to 0
+          this.directSetRegValue(0x08, kept & 0x3f);
+          break;
+        case 0x09:
+          // --- Bit 4 (sprite tie) is reset; bit 3 is a write-only "reset MAPRAM" strobe
+          this.directSetRegValue(0x09, kept & 0xe7);
+          break;
+        case 0x0a:
+          // --- The Multiface type is writable only in config mode, so restore it directly
+          this.machine.divMmcDevice.multifaceType = (kept >> 6) & 0x03;
+          this.directSetRegValue(0x0a, kept);
+          break;
+        default:
+          this.directSetRegValue(reg, kept);
+      }
+    }
   }
 
   // --- NR $83 bit 5 enables mouse port decoding (0xfadf/0xfbdf/0xffdf).
   // --- When the bit is cleared the mouse ports go silent and port $DF
   // --- becomes a Kempston joy1 alias.
+  // --- Port enable bit 13, ANDed with $87 bit 5 while the expansion bus is on (zxnext.vhd ~2348)
   isMouseEnabled(): boolean {
-    return this.portMouseEnabled;
+    return this.isPortGroupEnabled(1, 5);
   }
 
   isPortDfKempstonAlias(): boolean {
-    return !this.portMouseEnabled;
+    return !this.isPortGroupEnabled(1, 5);
   }
 
   // --- Soft reset
   reset(): void {
     // --- Turn off config mode
     this.configMode = false;
+    // --- zxnext.vhd ~4575: a reset selects register $24 (protection against legacy programs)
+    this.lastRegister = 0x24;
     this.lastReadValue = 0xff;
     this.hotkeyCpuSpeedEnabled = true;
     this.hotkey50_60HzEnabled = true;
@@ -3281,9 +3405,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     // --- Reset all registers (soft reset)
     this.directSetRegValue(0x02, 0x00); // --- Sign the last reset was soft reset
 
-    // --- Next reg $05
-    const reg0x05BitsKept = this.directGetRegValue(0x05) & 0x05; // --- Keep bits 0 and 2
-    this.directSetRegValue(0x05, reg0x05BitsKept | 0x40); // --- Cursor mode, Sinclair 2, keep scandoubler setting
+    // --- zxnext.vhd reset branch: nr_08_contention_disable <= '0'
+    this.disableRamPortContention = false;
 
     // --- Sign soft reset
     const machine = this.machine;
@@ -3301,7 +3424,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
     machine.expansionBusDevice.reset(); // --- Reg 0x80 and 0x81
 
-    this.directSetRegValue(0xa9, 0x05); // --- Write ESP GPIO2, Write ESP GPIO0
     this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
     this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
     this.directSetRegValue(0xba, 0x00); // --- Delayed mapping for all RSTs with DivMMC
@@ -3311,9 +3433,15 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     const bit0to3ExpBus = this.directGetRegValue(0x80) & 0x0f;
     this.directSetRegValue(0x80, (bit0to3ExpBus << 4) | bit0to3ExpBus);
 
-    // --- Copy alternate ROM bits 0:3 to bits 4:7
-    const bit0to3 = this.directGetRegValue(0x8c) & 0x0f;
-    this.directSetRegValue(0x8c, (bit0to3 << 4) | bit0to3);
+    // --- NextReg $8C copies bits 3-0 into 7-4 in MemoryDevice.reset (it has already run here)
+
+    // --- zxnext.vhd ~5029: the internal port enables reset only when $85 bit 7 (reset type) is 1
+    if (this.registerSoftResetMode) {
+      this.directSetRegValue(0x82, 0xff);
+      this.directSetRegValue(0x83, 0xff);
+      this.directSetRegValue(0x84, 0xff);
+      this.directSetRegValue(0x85, 0x8f);
+    }
 
     // --- Apply common reset operations
     this.commonReset();
@@ -3322,6 +3450,8 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   hardReset(): void {
     // --- Turn off config mode
     this.configMode = false;
+    // --- zxnext.vhd ~4575: a reset selects register $24 (protection against legacy programs)
+    this.lastRegister = 0x24;
     this.lastReadValue = 0xff;
     this.ps2KeymapAddressLsb = 0x00;
     this.ps2KeymapAddressMsb = false;
@@ -3339,9 +3469,18 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     machine.interruptDevice.lastWasHardReset = true;
     machine.interruptDevice.lastWasSoftReset = false;
 
-    this.directSetRegValue(0x03, 0x03); // --- ZX +2A/+2B/+3 mode
+    // --- After the firmware: +2A/+2B/+3 machine type and display timing, user lock off
+    const scr = this.machine.composedScreenDevice;
+    scr.machineType = 0b011;
+    scr.displayTiming = 0b011;
+    scr.userLockOnDisplayTiming = false;
     this.directSetRegValue(0x04, 0x00); // --- Config: 16K SRAM bank #0 mapped to 0x0000-0x3FFF
     this.directSetRegValue(0x05, 0x41); // --- Cursor mode, enable scandoubler for VGA
+    // --- zxnext.vhd:1210 nr_7f_user_register_0 := X"FF": no reset branch, so only a core load sets it
+    this.directSetRegValue(0x7f, 0xff);
+    // --- A power-on starts with the effective (frame-latched) video bits equal to the requested ones
+    machine.composedScreenDevice.effective60Hz = machine.composedScreenDevice.is60HzMode;
+    machine.composedScreenDevice.effectiveScandoubler = machine.composedScreenDevice.scandoublerEnabled;
     this.directSetRegValue(0x06, 0x80); // --- Enable hotkey CPU speed (bit 7)
     this.directSetRegValue(0x07, 0x00); // --- CPU speed to 3.5MHz
     this.directSetRegValue(0x08, 0x1a); // --- Enable internal speaker, spectdrum, and turbosound
@@ -3358,9 +3497,16 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x82, 0xff); // --- Internal Port Decoding Enables #1
     this.directSetRegValue(0x83, 0xff); // --- Internal Port Decoding Enables #2
     this.directSetRegValue(0x84, 0xff); // --- Internal Port Decoding Enables #3
-    this.directSetRegValue(0x85, 0x0f); // --- Internal Port Decoding Enables #4 (bit 7=reset mode=0)
+    // --- zxnext.vhd ~1222-1223: power-on enables $F and reset type (bit 7) 1: a soft reset re-enables
+    this.directSetRegValue(0x85, 0x8f); // --- Internal Port Decoding Enables #4
 
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
+
+    // --- Power-on values of registers without a reset branch: the core ID, XADC $F8-$FA
+    this.coreId = 0x01;
+    this.directSetRegValue(0xf8, 0x00);
+    this.directSetRegValue(0xf9, 0x00);
+    this.directSetRegValue(0xfa, 0x00);
 
     // --- Apply soft reset
     this.commonReset();
@@ -3386,22 +3532,33 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
    * @param value
    */
   setNextRegisterValue(value: number): void {
-    const regInfo = this.regs[this.lastRegister];
+    this.writeRegister(this.lastRegister, value);
+  }
+
+  /**
+   * Writes a register without touching the `$243B` selection - what the Z80N `NEXTREG` instructions
+   * do (zxnext.vhd ~4719-4725: they request the write with their own operand, `nr_register` changes
+   * only on a `$243B` write).
+   */
+  writeRegister(reg: number, value: number): void {
+    const register = reg & 0xff;
+    const regInfo = this.regs[register];
     if (!regInfo?.writeFn) {
       return;
     }
-    this.regLastWriteValues[this.lastRegister] = value;
-    if (!writeOnlyRegs.includes(this.lastRegister)) {
-      this.regValues[this.lastRegister] = value;
+    this.regLastWriteValues[register] = value;
+    if (!writeOnlyRegs.includes(register)) {
+      this.regValues[register] = value;
     }
     regInfo.writeFn(value);
   }
 
   /**
-   * Gets the value of the next register
+   * Gets the value of the next register, as a `$253B` read returns it: through the FPGA read mux
+   * (unlisted registers read $00, hard-wired bits forced).
    */
   getNextRegisterValue(): number {
-    return this.directGetRegValue(this.lastRegister);
+    return applyNextRegReadMux(this.lastRegister, this.directGetRegValue(this.lastRegister));
   }
 
   directGetRegValue(reg: number): number {

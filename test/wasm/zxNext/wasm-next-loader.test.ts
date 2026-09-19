@@ -9,12 +9,8 @@ import {
   ZXNEXT_WASM_V2_SCREEN_WIDTH,
   type ZxNextWasmV2Exports
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
-import { OFFS_ERR_PAGE } from "@emu/machines/zxNext/MemoryDevice";
-import {
-  ZXNEXT_FRAME_TRACE_CAPACITY,
-  ZXNEXT_FRAME_TRACE_HEADER_SIZE,
-  ZXNEXT_FRAME_TRACE_RECORD_SIZE
-} from "@emu/machines/zxNext/diagnostics/ZxNextFrameTrace";
+import { OFFS_ERR_PAGE } from "@emu/machines/zxNext/nextMemoryLayout";
+import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "@emu/machines/zxNext/wasm/frameTraceLayout";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 loader", () => {

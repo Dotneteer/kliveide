@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
 import { NextComposedScreenDevice } from "@emu/machines/zxNext/screen/NextComposedScreenDevice";
-import { OFFS_BANK_05, OFFS_BANK_07 } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_BANK_05, OFFS_BANK_07 } from "@emu/machines/zxNext/nextMemoryLayout";
+
+// --- D1 (per-tile ULA priority) moved to the real machine: test/zxnext-hw/tilemap/tilemap.test.ts
+// --- (TM-009, TM-010, TM-012). D2 (bank 7 base addresses) stays here until bank 7 is covered there.
 
 // --- Screen constants
 // Bitmap width = (maxHC - firstVisibleHC + 1) * 2 = (455 - 96 + 1) * 2 = 720
@@ -106,56 +109,6 @@ function setUlaColor(pd: any, idx: number, rgb333: number): void {
   pd.ulaFirst[idx & 0xff] = rgb333;
 }
 
-describe("Tilemap D1 — Per-tile ULA priority", () => {
-  beforeEach(async () => {
-    m = await createTestNextMachine();
-    d = m.composedScreenDevice;
-  });
-
-  it("belowUla is false when attr bit0=0 and forceOnTop=false", () => {
-    // NR $6B = 0x80 (enabled, forceOnTop=0)
-    d.tilemapForceOnTopOfUla = false;
-    d.tilemap512TileMode = false;
-    (d as any).tilemapTilePriority = false; // attr bit 0 = 0
-    const belowUla = (d as any).tilemapTilePriority && !d.tilemapForceOnTopOfUla;
-    expect(belowUla).toBe(false); // tile on top of ULA
-  });
-
-  it("belowUla is true when attr bit0=1 and forceOnTop=false", () => {
-    d.tilemapForceOnTopOfUla = false;
-    d.tilemap512TileMode = false;
-    (d as any).tilemapTilePriority = true; // attr bit 0 = 1
-    const belowUla = (d as any).tilemapTilePriority && !d.tilemapForceOnTopOfUla;
-    expect(belowUla).toBe(true); // tile below ULA
-  });
-
-  it("forceOnTopOfUla=true overrides per-tile priority", () => {
-    d.tilemapForceOnTopOfUla = true;
-    (d as any).tilemapTilePriority = true; // attr bit 0 = 1 (below), but force overrides
-    const belowUla = (d as any).tilemapTilePriority && !d.tilemapForceOnTopOfUla;
-    expect(belowUla).toBe(false); // forced on top
-  });
-
-  it("512 tile mode: attr bit0 not used for priority", () => {
-    d.tilemap512TileMode = true;
-    d.tilemapForceOnTopOfUla = false;
-    // In 512 mode attr bit 0 is tile index bit 8, not priority
-    // tilemapTilePriority should always be false in 512 mode
-    // Test the condition the compositing code uses
-    const belowUla = (d as any).tilemapTilePriority && !d.tilemapForceOnTopOfUla && !d.tilemap512TileMode;
-    expect(belowUla).toBe(false);
-  });
-
-  it("transparent tilemap pixel: belowUla irrelevant when pixel is transparent", () => {
-    // When tilemap pixel is transparent, ULA shows regardless of priority
-    (d as any).tilemapTilePriority = true; // below ULA
-    d.tilemapForceOnTopOfUla = false;
-    // Compositing picks ULA when tilemap is transparent — no priority check needed
-    expect((d as any).tilemapTilePriority).toBe(true);
-    // The compositing code only checks belowUla when BOTH are non-transparent
-  });
-});
-
 describe("Tilemap D2 — Bank 7 map base 5-bit mask", () => {
   beforeEach(async () => {
     m = await createTestNextMachine();
@@ -254,30 +207,5 @@ describe("Tilemap D2 — Bank 7 map base 5-bit mask", () => {
     const buffer = d.renderFullScreen();
 
     expect(buffer).toBeDefined();
-  });
-});
-
-describe("Tilemap D1+D2 integration", () => {
-  beforeEach(async () => {
-    m = await createTestNextMachine();
-    d = m.composedScreenDevice;
-  });
-
-  it("tilemapPixel1BelowUla and tilemapPixel2BelowUla are reset on frame start", () => {
-    // Verify that belowUla flags default to false
-    expect(d.tilemapPixel1BelowUla).toBe(false);
-    expect(d.tilemapPixel2BelowUla).toBe(false);
-  });
-
-  it("belowUla fields are accessible and writable", () => {
-    // Verify the new public fields exist and can be set
-    d.tilemapPixel1BelowUla = true;
-    expect(d.tilemapPixel1BelowUla).toBe(true);
-    d.tilemapPixel1BelowUla = false;
-    expect(d.tilemapPixel1BelowUla).toBe(false);
-  });
-
-  it("tilemapNextTilePriority staging field exists and defaults to false", () => {
-    expect((d as any).tilemapNextTilePriority).toBe(false);
   });
 });

@@ -4,6 +4,29 @@
 
 ### Fixes
 
+- **ZX Spectrum Next panels showed stale data.** On the standard (WASM) Next the Palettes panel and
+  the sprite editor's palette showed power-on colours whatever a program had written, the ULA & I/O
+  panel read values the emulator never updated, and the Memory Mapping panel showed logical instead of
+  physical page offsets and zero for the paging and DivMMC ports. On the Next Compatibility model the
+  ULA & I/O panel failed outright, and the memory editor treated the ROM pages as RAM.
+- **No sound while debugging the ZX Spectrum Next.** With the debugger attached, the standard model
+  played nothing after its first frame; it now sounds as it does without the debugger.
+- The ZX Spectrum Next's **F2 (scandoubler), F3 (50/60 Hz) and F7 (scanline weight)** menu items had no
+  effect on the standard model.
+- On the standard ZX Next the status bar always showed 3.5 MHz, however fast the CPU ran, and a memory
+  or I/O breakpoint hit was reported against address `$0000` in the Breakpoints panel.
+- ZX Spectrum Next: a mid-line write to NextReg `$68` bit 2 (half-pixel ULA scroll) now takes effect at
+  the next 8-pixel cell, as on the hardware; and the frame interrupt is raised in the first frame after
+  a reset.
+- **ZX Spectrum Next sprites could vanish.** On the standard model, sprites numbered above the one a
+  program made visible last were not drawn at all. Both models also forgot a sprite's fifth attribute
+  byte after a four-byte write, instead of keeping it for when the sprite becomes five-byte again.
+- ZX Spectrum Next hardware fixes found by the new cross-checks (each against the FPGA source): CTC and
+  UART interrupts, and an NMI with NextReg `$CC` bit 7, now break into a DMA transfer; a CTC control word
+  that counts the channel down to zero raises its zero count; a Layer 2 read mapping (any segment)
+  disables the DivMMC's ROM 3 entry points; a RETN at `$0066` is recognised from the code the DivMMC
+  pages in; a tilemap in bank 7 wraps at 8K; and a soft reset now resets the sprite upload positions and
+  keeps NextReg `$02` bit 7.
 - **A popped-out NEX bank could be open twice.** Opening a bank from the NEX viewer and then
   stopping in it while debugging (or following a label into it) gave two documents for the one
   bank, and the debugger scrolled the one you were not looking at. The two also carried different
@@ -11,6 +34,8 @@
 - *Go to Definition* landed at the start of the line instead of on the symbol.
 - Opening a file whose viewer is not a code editor through the `nav` command (the NEX viewer, for
   example) took about five seconds.
+- In a disassembly listing, a label on the target of a `jr` or `djnz` appeared in the label column but
+  never in the jump itself, which kept the generated `L…` name.
 - **Only source files came back when you reopened a project.** Every other document backed by a
   project file &mdash; the NEX, DSK and Z80 viewers, plain text files &mdash; was saved into the
   workspace correctly and then discarded while restoring it, because restoring matched on the code
@@ -81,6 +106,9 @@
 
 ### Features
 
+- **Fixed-size data rows in NEX annotations.** A `bytes` region in a `.nex.dis` file can set
+  `rowBytes` (1&ndash;4), so a table of records lists one record per `.defb` line &mdash; each two-byte
+  copper instruction on its own line, for example &mdash; with its own comment.
 - **Go Back and Go Forward.** Klive remembers the places you jump to &mdash; *Go to Definition*, an
   output-pane link, a breakpoint, a document tab, *Go To* in the Memory and Disassembly views, a NEX
   bank or label &mdash; and takes you back through them with `Ctrl+-` / `Ctrl+Shift+-` on

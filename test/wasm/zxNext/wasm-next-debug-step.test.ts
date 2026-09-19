@@ -4,19 +4,31 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type BreakpointMachine = TestZxNextMachine | ZxNextWasmV2Machine;
-
-type BreakpointCase = {
-  name: string;
-  startAddress: number;
-  breakpointAddress: number;
-  code: number[];
-  expectedInstructions: number;
+type BreakpointCpu = {
+  af: number;
+  bc: number;
+  de: number;
+  hl: number;
+  af_: number;
+  bc_: number;
+  de_: number;
+  hl_: number;
+  ix: number;
+  iy: number;
+  ir: number;
+  wz: number;
+  sp: number;
+  prefix: number;
+  halted: boolean;
+  interruptMode: number;
+  iff1: boolean;
+  iff2: boolean;
+  tacts: number;
+  currentFrameTact: number;
 };
 
 type BreakpointSnapshot = {
@@ -24,77 +36,99 @@ type BreakpointSnapshot = {
   lastTerminationReason: FrameTerminationMode | undefined;
   pc: number;
   executedInstructions: number;
-  cpu: {
-    af: number;
-    bc: number;
-    de: number;
-    hl: number;
-    af_: number;
-    bc_: number;
-    de_: number;
-    hl_: number;
-    ix: number;
-    iy: number;
-    ir: number;
-    wz: number;
-    sp: number;
-    prefix: number;
-    halted: boolean;
-    interruptMode: number;
-    iff1: boolean;
-    iff2: boolean;
-    tacts: number;
-    currentFrameTact: number;
-  };
+  cpu: BreakpointCpu;
   disassembly: {
     hasSectionAtPc: boolean;
     preview: number[];
   };
 };
 
-describe("ZX Spectrum Next WASM debug breakpoint parity", () => {
+type BreakpointCase = {
+  name: string;
+  startAddress: number;
+  breakpointAddress: number;
+  code: number[];
+  expectedInstructions: number;
+  /** CPU fields that differ from the seeded state when the breakpoint stops the frame */
+  expectedCpu: Partial<BreakpointCpu>;
+  expectedPreview: number[];
+};
+
+/** The registers `seedBreakpointRegisters` sets, plus the reset state of the rest. */
+const SEEDED_CPU: BreakpointCpu = {
+  af: 0x1200,
+  bc: 0x3456,
+  de: 0x789a,
+  hl: 0xbcde,
+  af_: 0x0102,
+  bc_: 0x0304,
+  de_: 0x0506,
+  hl_: 0x0708,
+  ix: 0x1111,
+  iy: 0x2222,
+  ir: 0x3300,
+  wz: 0x4444,
+  sp: 0xff00,
+  prefix: 0,
+  halted: false,
+  interruptMode: 0,
+  iff1: false,
+  iff2: false,
+  tacts: 0,
+  currentFrameTact: 0
+};
+
+/**
+ * Execution breakpoints through the WASM debug loop (`DebugStepMode.StopAtBreakpoint`). Register
+ * results, R (+1 per M1) and the memory preview at PC follow from the programs. The T-state counts
+ * and `currentFrameTact` are pinned: they are the values both the TypeScript and the WASM core agreed
+ * on at tag `pre-zxnext-ts-removal-2026-09-19`.
+ */
+describe("ZX Spectrum Next WASM debug breakpoints", () => {
   const cases: BreakpointCase[] = [
     {
       name: "pauses at the required $0001 execution breakpoint",
       startAddress: 0x0000,
       breakpointAddress: 0x0001,
+      // --- NOP / LD A,$42 / NOP / NOP
       code: [0x00, 0x3e, 0x42, 0x00, 0x00],
-      expectedInstructions: 1
+      expectedInstructions: 1,
+      expectedCpu: { ir: 0x3301, tacts: 4, currentFrameTact: 8 },
+      expectedPreview: [0x3e, 0x42, 0x00, 0x00]
     },
     {
       name: "pauses after multiple deterministic CPU steps in RAM",
       startAddress: 0x8000,
       breakpointAddress: 0x8005,
+      // --- LD A,$77 / LD BC,$1234 / NOP
       code: [0x3e, 0x77, 0x01, 0x34, 0x12, 0x00],
-      expectedInstructions: 2
+      expectedInstructions: 2,
+      expectedCpu: { af: 0x7700, bc: 0x1234, ir: 0x3302, tacts: 17, currentFrameTact: 34 },
+      expectedPreview: [0x00, 0x00, 0x00, 0x00]
     }
   ];
 
   for (const testCase of cases) {
     it(testCase.name, async () => {
-      const { oracle, wasm } = await createZxNextOracleHarness();
-      initializeBreakpointMachine(oracle, testCase);
+      const wasm = await createTestZxNextWasmMachine();
       initializeBreakpointMachine(wasm, testCase);
 
-      const oracleSnapshot = executeUntilBreakpoint(oracle, testCase.expectedInstructions);
-      const wasmSnapshot = executeUntilBreakpoint(
-        wasm,
-        wasm.getWasmV2Diagnostics().debugSteps + testCase.expectedInstructions
-      );
-
-      expect(wasmSnapshot).toEqual(oracleSnapshot);
-      expect(oracleSnapshot).toMatchObject({
+      expect(executeUntilBreakpoint(wasm)).toEqual({
         termination: FrameTerminationMode.DebugEvent,
         lastTerminationReason: FrameTerminationMode.DebugEvent,
         pc: testCase.breakpointAddress,
-        executedInstructions: testCase.expectedInstructions
+        executedInstructions: testCase.expectedInstructions,
+        cpu: { ...SEEDED_CPU, ...testCase.expectedCpu },
+        disassembly: {
+          hasSectionAtPc: true,
+          preview: testCase.expectedPreview
+        }
       });
-      expect(oracleSnapshot.disassembly.hasSectionAtPc).toBe(true);
     });
   }
 });
 
-function initializeBreakpointMachine(machine: BreakpointMachine, testCase: BreakpointCase): void {
+function initializeBreakpointMachine(machine: ZxNextWasmV2Machine, testCase: BreakpointCase): void {
   machine.hardReset();
   seedBreakpointRegisters(machine);
   loadBreakpointProgram(machine, testCase.startAddress, testCase.code);
@@ -112,24 +146,24 @@ function initializeBreakpointMachine(machine: BreakpointMachine, testCase: Break
   machine.executionContext.lastTerminationReason = undefined;
 }
 
-function seedBreakpointRegisters(machine: BreakpointMachine): void {
-  machine.af = 0x1200;
-  machine.bc = 0x3456;
-  machine.de = 0x789a;
-  machine.hl = 0xbcde;
-  machine.af_ = 0x0102;
-  machine.bc_ = 0x0304;
-  machine.de_ = 0x0506;
-  machine.hl_ = 0x0708;
-  machine.ix = 0x1111;
-  machine.iy = 0x2222;
-  machine.ir = 0x3300;
-  machine.wz = 0x4444;
-  machine.sp = 0xff00;
+function seedBreakpointRegisters(machine: ZxNextWasmV2Machine): void {
+  machine.af = SEEDED_CPU.af;
+  machine.bc = SEEDED_CPU.bc;
+  machine.de = SEEDED_CPU.de;
+  machine.hl = SEEDED_CPU.hl;
+  machine.af_ = SEEDED_CPU.af_;
+  machine.bc_ = SEEDED_CPU.bc_;
+  machine.de_ = SEEDED_CPU.de_;
+  machine.hl_ = SEEDED_CPU.hl_;
+  machine.ix = SEEDED_CPU.ix;
+  machine.iy = SEEDED_CPU.iy;
+  machine.ir = SEEDED_CPU.ir;
+  machine.wz = SEEDED_CPU.wz;
+  machine.sp = SEEDED_CPU.sp;
 }
 
 function loadBreakpointProgram(
-  machine: BreakpointMachine,
+  machine: ZxNextWasmV2Machine,
   startAddress: number,
   code: number[]
 ): void {
@@ -138,15 +172,7 @@ function loadBreakpointProgram(
   }
 }
 
-function writeLoadedByte(machine: BreakpointMachine, address: number, value: number): void {
-  if (machine instanceof TestZxNextMachine) {
-    const page = machine.memoryDevice.getPageInfo(address >>> 13);
-    machine.memoryDevice.memory[page.readOffset + (address & 0x1fff)] = value;
-    if (page.writeOffset != null) {
-      machine.memoryDevice.memory[page.writeOffset + (address & 0x1fff)] = value;
-    }
-    return;
-  }
+function writeLoadedByte(machine: ZxNextWasmV2Machine, address: number, value: number): void {
   const partition = machine.getPartition(address);
   if (partition != null) {
     // --- `getPartition` already answers in the same index space `getMemoryPartition` expects, so
@@ -162,20 +188,11 @@ function writeLoadedByte(machine: BreakpointMachine, address: number, value: num
   }
 }
 
-function executeUntilBreakpoint(
-  machine: BreakpointMachine,
-  expectedExecutedInstructions: number
-): BreakpointSnapshot {
-  const debugStepsBefore =
-    machine instanceof ZxNextWasmV2Machine ? machine.getWasmV2Diagnostics().debugSteps : 0;
+function executeUntilBreakpoint(machine: ZxNextWasmV2Machine): BreakpointSnapshot {
+  const debugStepsBefore = machine.getWasmV2Diagnostics().debugSteps;
   const termination = machine.executeMachineFrame();
-  const debugStepsAfter =
-    machine instanceof ZxNextWasmV2Machine ? machine.getWasmV2Diagnostics().debugSteps : 0;
+  const debugStepsAfter = machine.getWasmV2Diagnostics().debugSteps;
   const cpu = machine.getCpuState();
-  const executedInstructions =
-    machine instanceof ZxNextWasmV2Machine
-      ? debugStepsAfter - debugStepsBefore
-      : expectedExecutedInstructions;
   const disassemblySections = machine.getDisassemblySections({ ram: true, screen: true });
   const preview = [
     machine.doReadMemory(cpu.pc),
@@ -188,7 +205,7 @@ function executeUntilBreakpoint(
     termination,
     lastTerminationReason: machine.executionContext.lastTerminationReason,
     pc: cpu.pc,
-    executedInstructions,
+    executedInstructions: debugStepsAfter - debugStepsBefore,
     cpu: {
       af: cpu.af,
       bc: cpu.bc,

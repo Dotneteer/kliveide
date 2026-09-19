@@ -1,111 +1,147 @@
 import { describe, expect, it } from "vitest";
 
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type MemoryMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+/*
+ * The debugger's view of the Next memory map: `getCurrentPartitions`, `getCurrentPartitionLabels`,
+ * `getPartition`, `get64KFlatMemory`, `getMemoryPartition`, `getSelectedRomPage/RamBank`. The paging
+ * hardware itself is covered by `test/zxnext-hw/memory/`; these tests pin what the IDE reads.
+ *
+ * Byte values come from `seedResetPhysicalMemory`: ROM 0 carries $10/$11/$12/$13 at offsets
+ * $0000/$1FFF/$2000/$3FFF, and each seeded 8K RAM page n carries $40+n at its first byte and $60+n at
+ * its last. Values not derived that way are pinned: they are the ones both cores agreed on at tag
+ * `pre-zxnext-ts-removal-2026-09-19`.
+ */
 
 const OFFS_NEXT_ROM = 0x000000;
 const OFFS_NEXT_RAM = 0x040000;
 
-const BOUNDARY_ADDRESSES = [
-  0x0000,
-  0x1fff,
-  0x2000,
-  0x3fff,
-  0x4000,
-  0x5fff,
-  0x8000,
-  0xbfff,
-  0xc000,
-  0xffff
-];
+/** [address, partition, byte read] */
+type AddressRow = [number, number, number];
 
-describe("ZX Spectrum Next WASM memory MMU parity", () => {
-  it("matches TypeScript reset mapping across debugger read paths", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    seedResetPhysicalMemory(oracle);
+type ExpectedMap = {
+  partitions: number[];
+  labels: string[];
+  rom: number;
+  bank: number;
+  addresses: AddressRow[];
+};
+
+describe("ZX Spectrum Next WASM memory map (debugger read paths)", () => {
+  it("reports the reset mapping and keeps the ROM read-only through every read path", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     seedResetPhysicalMemory(wasm);
 
-    expectSamePublicMemoryMap(wasm, oracle, BOUNDARY_ADDRESSES);
+    // --- MMU reset layout $FF,$FF,$0A,$0B,$04,$05,$00,$01 (catalogue MEM-001); ROM partitions are -1 ("R0")
+    expectPublicMemoryMap(wasm, {
+      partitions: [0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x00, 0x01],
+      labels: ["R0", "R0", "0A", "0B", "04", "05", "00", "01"],
+      rom: 0,
+      bank: 0,
+      addresses: [
+        [0x0000, -1, 0x10],
+        [0x1fff, -1, 0x11],
+        [0x2000, -1, 0x12],
+        [0x3fff, -1, 0x13],
+        [0x4000, 0x0a, 0x4a],
+        [0x5fff, 0x0a, 0x6a],
+        [0x8000, 0x04, 0x44],
+        [0xbfff, 0x05, 0x65],
+        [0xc000, 0x00, 0x40],
+        [0xffff, 0x01, 0x61]
+      ]
+    });
 
-    const romBefore = oracle.doReadMemory(0x0000);
-    for (const machine of [oracle, wasm]) {
-      machine.doWriteMemory(0x0000, 0xa5);
-      machine.doWriteMemory(0x4000, 0x66);
-    }
+    wasm.doWriteMemory(0x0000, 0xa5);
+    wasm.doWriteMemory(0x4000, 0x66);
 
-    expect(wasm.doReadMemory(0x0000)).toBe(oracle.doReadMemory(0x0000));
-    expect(wasm.doReadMemory(0x0000)).toBe(romBefore);
-    expect(wasm.doReadMemory(0x4000)).toBe(oracle.doReadMemory(0x4000));
-    expect(wasm.get64KFlatMemory()[0x4000]).toBe(oracle.get64KFlatMemory()[0x4000]);
-    expect(wasm.getMemoryPartition(0x0a)[0]).toBe(oracle.getMemoryPartition(0x0a)[0]);
+    // --- The ROM write is ignored; the RAM write lands in page $0A
+    expect(wasm.doReadMemory(0x0000)).toBe(0x10);
+    expect(wasm.doReadMemory(0x4000)).toBe(0x66);
+    expect(wasm.get64KFlatMemory()[0x4000]).toBe(0x66);
+    expect(wasm.getMemoryPartition(0x0a)[0]).toBe(0x66);
   });
 
-  it("matches TypeScript MMU NextReg RAM remapping and sentinel system-region fallback", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    seedResetPhysicalMemory(oracle);
+  it("follows MMU NextReg RAM remapping and the sentinel system-region fallback", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     seedResetPhysicalMemory(wasm);
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x50, 0x04);
-      writeNextReg(machine, 0x51, 0x05);
-      writeNextReg(machine, 0x52, 0xe0);
-      machine.doWriteMemory(0x0000, 0x77);
-    }
+    writeNextReg(wasm, 0x50, 0x04);
+    writeNextReg(wasm, 0x51, 0x05);
+    writeNextReg(wasm, 0x52, 0xe0);
+    wasm.doWriteMemory(0x0000, 0x77);
 
-    expectSamePublicMemoryMap(wasm, oracle, [0x0000, 0x1fff, 0x2000, 0x4000, 0x5fff]);
-    expect(wasm.getMemoryPartition(0x04)[0]).toBe(oracle.getMemoryPartition(0x04)[0]);
+    // --- Pages $04/$05 in slots 0/1; page $E0 in slot 2 is past the last RAM page and is reported as
+    // --- ROM ($FF, "R0", partition -1), reading ROM 0's bytes (pinned).
+    expectPublicMemoryMap(wasm, {
+      partitions: [0x04, 0x05, 0xff, 0x0b, 0x04, 0x05, 0x00, 0x01],
+      labels: ["04", "05", "R0", "0B", "04", "05", "00", "01"],
+      rom: 0,
+      bank: 0,
+      addresses: [
+        [0x0000, 0x04, 0x77],
+        [0x1fff, 0x04, 0x64],
+        [0x2000, 0x05, 0x45],
+        [0x4000, -1, 0x10],
+        [0x5fff, -1, 0x11]
+      ]
+    });
     expect(wasm.getMemoryPartition(0x04)[0]).toBe(0x77);
   });
 
-  it("matches TypeScript all-RAM mapping writes through public memory APIs", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    seedResetPhysicalMemory(oracle);
+  it("maps the +3 all-RAM layout 0-1-2-3 and writes through the public memory APIs", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     seedResetPhysicalMemory(wasm);
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x8e, 0x04);
-      machine.doWriteMemory(0x0000, 0x21);
-      machine.doWriteMemory(0x4000, 0x22);
-      machine.doWriteMemory(0x8000, 0x23);
-      machine.doWriteMemory(0xc000, 0x24);
-    }
+    // --- $8E = $04: bit 2 enters +3 special mode, layout 00 = banks 0-1-2-3 (catalogue MEM-010/MEM-014)
+    writeNextReg(wasm, 0x8e, 0x04);
+    wasm.doWriteMemory(0x0000, 0x21);
+    wasm.doWriteMemory(0x4000, 0x22);
+    wasm.doWriteMemory(0x8000, 0x23);
+    wasm.doWriteMemory(0xc000, 0x24);
 
-    expectSamePublicMemoryMap(wasm, oracle, BOUNDARY_ADDRESSES);
-    expect(wasm.getMemoryPartition(0)[0]).toBe(oracle.getMemoryPartition(0)[0]);
-    expect(wasm.getMemoryPartition(2)[0]).toBe(oracle.getMemoryPartition(2)[0]);
-    expect(wasm.getMemoryPartition(4)[0]).toBe(oracle.getMemoryPartition(4)[0]);
-    expect(wasm.getMemoryPartition(6)[0]).toBe(oracle.getMemoryPartition(6)[0]);
+    expectPublicMemoryMap(wasm, {
+      partitions: [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07],
+      labels: ["00", "01", "02", "03", "04", "05", "06", "07"],
+      rom: 0,
+      bank: 0,
+      addresses: [
+        [0x0000, 0x00, 0x21],
+        [0x1fff, 0x00, 0x60],
+        [0x2000, 0x01, 0x41],
+        [0x3fff, 0x01, 0x61],
+        [0x4000, 0x02, 0x22],
+        [0x5fff, 0x02, 0x00], // --- page 2 is not seeded
+        [0x8000, 0x04, 0x23],
+        [0xbfff, 0x05, 0x65],
+        [0xc000, 0x06, 0x24],
+        [0xffff, 0x07, 0x00] // --- page 7 is not seeded
+      ]
+    });
+    expect(wasm.getMemoryPartition(0)[0]).toBe(0x21);
+    expect(wasm.getMemoryPartition(2)[0]).toBe(0x22);
+    expect(wasm.getMemoryPartition(4)[0]).toBe(0x23);
+    expect(wasm.getMemoryPartition(6)[0]).toBe(0x24);
   });
 });
 
-function expectSamePublicMemoryMap(
-  wasm: ZxNextWasmV2Machine,
-  oracle: TestZxNextMachine,
-  addresses: number[]
-): void {
-  expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
-  expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
-  expect(wasm.getSelectedRomPage()).toBe(oracle.getSelectedRomPage());
-  expect(wasm.getSelectedRamBank()).toBe(oracle.getSelectedRamBank());
+function expectPublicMemoryMap(wasm: ZxNextWasmV2Machine, expected: ExpectedMap): void {
+  expect(wasm.getCurrentPartitions()).toEqual(expected.partitions);
+  expect(wasm.getCurrentPartitionLabels()).toEqual(expected.labels);
+  expect(wasm.getSelectedRomPage()).toBe(expected.rom);
+  expect(wasm.getSelectedRamBank()).toBe(expected.bank);
 
-  const wasmFlat = wasm.get64KFlatMemory();
-  const oracleFlat = oracle.get64KFlatMemory();
-  for (const address of addresses) {
-    expect(wasm.getPartition(address), `partition ${address.toString(16)}`).toBe(
-      oracle.getPartition(address)
-    );
-    expect(wasm.doReadMemory(address), `read ${address.toString(16)}`).toBe(
-      oracle.doReadMemory(address)
-    );
-    expect(wasmFlat[address], `flat ${address.toString(16)}`).toBe(oracleFlat[address]);
+  const flat = wasm.get64KFlatMemory();
+  for (const [address, partition, value] of expected.addresses) {
+    expect(wasm.getPartition(address), `partition ${address.toString(16)}`).toBe(partition);
+    expect(wasm.doReadMemory(address), `read ${address.toString(16)}`).toBe(value);
+    expect(flat[address], `flat ${address.toString(16)}`).toBe(value);
   }
 }
 
-function seedResetPhysicalMemory(machine: MemoryMachine): void {
+function seedResetPhysicalMemory(machine: ZxNextWasmV2Machine): void {
   writePhysical(machine, OFFS_NEXT_ROM + 0x0000, 0x10);
   writePhysical(machine, OFFS_NEXT_ROM + 0x1fff, 0x11);
   writePhysical(machine, OFFS_NEXT_ROM + 0x2000, 0x12);
@@ -116,12 +152,8 @@ function seedResetPhysicalMemory(machine: MemoryMachine): void {
   }
 }
 
-function writePhysical(machine: MemoryMachine, offset: number, value: number): void {
-  if (machine instanceof TestZxNextMachine) {
-    machine.memoryDevice.directWrite(offset, value);
-  } else {
-    machine.getMemoryPartition(physicalOffsetToPartition(offset))[offset & partitionOffsetMask(offset)] = value;
-  }
+function writePhysical(machine: ZxNextWasmV2Machine, offset: number, value: number): void {
+  machine.getMemoryPartition(physicalOffsetToPartition(offset))[offset & partitionOffsetMask(offset)] = value;
 }
 
 function physicalOffsetToPartition(offset: number): number {
@@ -135,7 +167,7 @@ function partitionOffsetMask(offset: number): number {
   return offset < OFFS_NEXT_RAM ? 0x3fff : 0x1fff;
 }
 
-function writeNextReg(machine: MemoryMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
+function writeNextReg(machine: ZxNextWasmV2Machine, reg: number, value: number): void {
+  machine.doWritePort(0x243b, reg);
+  machine.doWritePort(0x253b, value);
 }

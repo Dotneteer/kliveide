@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Klive Visual Tests</title>
+    <style>
+      :root { color-scheme: dark; --bg: #16181d; --fg: #d8dde6; --muted: #8a93a3; --ok: #5fd38d; --bad: #ff6b6b; }
+      body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, sans-serif; }
+      canvas { image-rendering: pixelated; width: 720px; height: 576px; max-width: 100%; background: #000; display: block; }
+      #log { font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; color: var(--muted); max-height: 40vh; overflow: auto; }
+      .ok { color: var(--ok); } .bad { color: var(--bad); }
+      a { color: #7fb4ff; }
+    </style>
+  </head>
+  <body>
+    <h1 id="title">Klive Visual Tests</h1>
+    <div id="cases"></div>
+    <canvas id="screen" width="720" height="288"></canvas>
+    <p id="status"></p>
+    <div id="log"></div>
+    <script type="module" src="/test/harness/zxnext/browser/page.ts"></script>
+  </body>
+</html>

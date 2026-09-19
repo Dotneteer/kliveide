@@ -145,9 +145,11 @@ describe("Mirror port protocol (D6)", () => {
     expect(spr.mirrorSpriteQ).toBe(5);
   });
 
-  it("NR $34 with mirrorIndex=7 only stores lower 7 bits", () => {
+  it("NR $34 stores all 8 bits (bit 7 is the tie's pattern half) and reads back bits 6-0", () => {
+    // --- sprites.vhd mirror_sprite_q <= mirror_data_i (8 bits); zxnext.vhd ~5978 $34 reads '0' & q(6:0)
     writeNextReg(machine, 0x34, 0xff);
-    expect(spr.mirrorSpriteQ).toBe(0x7f);
+    expect(spr.mirrorSpriteQ).toBe(0xff);
+    expect(spr.nextReg34Value).toBe(0x7f);
   });
 
   // ── NR $35-$39: write to attribute, no auto-inc ──────────────────────────
@@ -169,6 +171,7 @@ describe("Mirror port protocol (D6)", () => {
 
   it("NR $39 writes attr4 of mirrorSpriteQ", () => {
     writeNextReg(machine, 0x34, 0x01);
+    writeNextReg(machine, 0x38, 0x40);        // attr3 bit 6: a five-byte sprite, so attr4 applies
     writeNextReg(machine, 0x39, 0x20);        // attr4 = 0x20 → attributeFlag2=true
     expect(spr.attributes[1].attributeFlag2).toBe(true);
     expect(spr.mirrorSpriteQ).toBe(1);
@@ -201,14 +204,17 @@ describe("Mirror port protocol (D6)", () => {
     }
   });
 
-  // ── NR $34 reuses mirrorIndex set by NR $35-$39 ─────────────────────────
+  // ── NR $34 always selects the sprite ─────────────────────────────────────
+  // --- zxnext.vhd ~4806-4833 defaults nr_sprite_mirror_index to "111" on every cycle and only
+  // --- $35-$39/$75-$79 change it, so a $34 write is always a sprite-number write. (MAME kept the
+  // --- index a previous $35-$39 write left behind; this test used to encode that.)
 
-  it("NR $35 sets mirrorIndex=0; subsequent NR $34 write goes to attr0 not sprite number", () => {
-    writeNextReg(machine, 0x34, 0x07);        // mirrorSpriteQ=7 (mirrorIndex still 7 at this point)
-    writeNextReg(machine, 0x35, 0xaa);        // sets mirrorIndex=0; writes attr0 of sprite 7
-    writeNextReg(machine, 0x34, 0xbb);        // mirrorIndex=0, writes attr0 of sprite 7 again
-    expect(spr.attributes[7].x & 0xff).toBe(0xbb);
-    expect(spr.mirrorSpriteQ).toBe(7);        // mirrorSpriteQ unchanged (mirrorInc=false)
+  it("NR $34 after NR $35 selects the sprite, it does not write attr0", () => {
+    writeNextReg(machine, 0x34, 0x07);        // mirrorSpriteQ=7
+    writeNextReg(machine, 0x35, 0xaa);        // attr0 of sprite 7
+    writeNextReg(machine, 0x34, 0x0b);        // select sprite 11
+    expect(spr.attributes[7].x & 0xff).toBe(0xaa);
+    expect(spr.mirrorSpriteQ).toBe(0x0b);
   });
 
   // ── mirrorTie: mirrorSpriteQ change → sync spriteIndex+patternIndex ──────

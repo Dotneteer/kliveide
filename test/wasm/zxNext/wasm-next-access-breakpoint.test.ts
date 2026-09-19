@@ -5,93 +5,121 @@ import { describe, expect, it } from "vitest";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type AccessMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+type AccessStop = {
+  termination: FrameTerminationMode;
+  lastTerminationReason: FrameTerminationMode | undefined;
+  pc: number;
+  af: number;
+  /** The instruction the Breakpoints panel reports the access against */
+  opStartAddress: number;
+};
 
 type AccessCase = {
   name: string;
   code: number[];
   breakpoint: BreakpointInfo;
-  expectedPc: number;
+  expected: AccessStop;
 };
 
 const START_ADDRESS = 0x8000;
 
 /**
  * The WASM debug loop only mirrors the core's bus activity when a breakpoint actually watches for
- * it, so these cases are what stands between that optimisation and silently dead watchpoints. Each
- * one is checked against the TypeScript machine rather than against a hard-coded expectation.
+ * it, so these cases are what stands between that optimisation and silently dead watchpoints.
+ *
+ * PC, A and opStartAddress follow from the programs: the stop comes after the accessing instruction
+ * completes, reported against that instruction's first byte. F = $FF is the value after a hard reset.
+ * The unwatched frame's end PC/opStartAddress are pinned: they are the values both the TypeScript and
+ * the WASM core agreed on at tag `pre-zxnext-ts-removal-2026-09-19`.
  */
-describe("ZX Spectrum Next WASM access breakpoint parity", () => {
+describe("ZX Spectrum Next WASM access breakpoints", () => {
   const cases: AccessCase[] = [
     {
       name: "stops on a watched memory write",
       // --- LD A,$77 / LD ($9000),A / NOP
       code: [0x3e, 0x77, 0x32, 0x00, 0x90, 0x00],
       breakpoint: { address: 0x9000, memoryWrite: true },
-      expectedPc: 0x8005
+      expected: {
+        termination: FrameTerminationMode.DebugEvent,
+        lastTerminationReason: FrameTerminationMode.DebugEvent,
+        pc: 0x8005,
+        af: 0x77ff,
+        opStartAddress: 0x8002
+      }
     },
     {
       name: "stops on a watched memory read",
       // --- LD A,($9010) / NOP
       code: [0x3a, 0x10, 0x90, 0x00],
       breakpoint: { address: 0x9010, memoryRead: true },
-      expectedPc: 0x8003
+      expected: {
+        termination: FrameTerminationMode.DebugEvent,
+        lastTerminationReason: FrameTerminationMode.DebugEvent,
+        pc: 0x8003,
+        // --- $9010 is zero after a hard reset
+        af: 0x00ff,
+        opStartAddress: 0x8000
+      }
     },
     {
       name: "stops on a watched I/O write",
       // --- LD BC,$7FFD / LD A,$07 / OUT (C),A / NOP
       code: [0x01, 0xfd, 0x7f, 0x3e, 0x07, 0xed, 0x79, 0x00],
       breakpoint: { address: 0x7ffd, ioWrite: true },
-      expectedPc: 0x8007
+      expected: {
+        termination: FrameTerminationMode.DebugEvent,
+        lastTerminationReason: FrameTerminationMode.DebugEvent,
+        pc: 0x8007,
+        af: 0x07ff,
+        opStartAddress: 0x8005
+      }
     }
   ];
 
   for (const testCase of cases) {
     it(testCase.name, async () => {
-      const { oracle, wasm } = await createZxNextOracleHarness();
-      initializeAccessMachine(oracle, testCase);
-      initializeAccessMachine(wasm, testCase);
+      const wasm = await createTestZxNextWasmMachine();
+      initializeAccessMachine(wasm, testCase.code, testCase.breakpoint);
 
-      const oracleSnapshot = captureAccessStop(oracle);
-      const wasmSnapshot = captureAccessStop(wasm);
-
-      expect(wasmSnapshot).toEqual(oracleSnapshot);
-      expect(wasmSnapshot).toMatchObject({
-        termination: FrameTerminationMode.DebugEvent,
-        pc: testCase.expectedPc
-      });
+      expect(captureAccessStop(wasm)).toEqual(testCase.expected);
     });
   }
 
   it("leaves the frame alone when no breakpoint watches the same access", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    const unwatched: AccessCase = {
-      name: "unwatched",
+    const wasm = await createTestZxNextWasmMachine();
+    initializeAccessMachine(
+      wasm,
       // --- LD A,$77 / LD ($9000),A / NOP
-      code: [0x3e, 0x77, 0x32, 0x00, 0x90, 0x00],
+      [0x3e, 0x77, 0x32, 0x00, 0x90, 0x00],
       // --- A write watch on a different address must not stop this program
-      breakpoint: { address: 0x9001, memoryWrite: true },
-      expectedPc: 0
-    };
-    initializeAccessMachine(oracle, unwatched);
-    initializeAccessMachine(wasm, unwatched);
+      { address: 0x9001, memoryWrite: true }
+    );
 
-    const oracleSnapshot = captureAccessStop(oracle);
-    const wasmSnapshot = captureAccessStop(wasm);
+    const snapshot = captureAccessStop(wasm);
 
-    expect(wasmSnapshot).toEqual(oracleSnapshot);
-    expect(wasmSnapshot.termination).toBe(FrameTerminationMode.Normal);
+    expect(snapshot.termination).toBe(FrameTerminationMode.Normal);
+    expect(snapshot).toEqual({
+      termination: FrameTerminationMode.Normal,
+      lastTerminationReason: FrameTerminationMode.Normal,
+      // --- pinned: where the full frame of NOPs ends
+      pc: 0xc53f,
+      af: 0x77ff,
+      opStartAddress: 0xc53e
+    });
   });
 });
 
-function initializeAccessMachine(machine: AccessMachine, testCase: AccessCase): void {
+function initializeAccessMachine(
+  machine: ZxNextWasmV2Machine,
+  code: number[],
+  breakpoint: BreakpointInfo
+): void {
   machine.hardReset();
-  testCase.code.forEach((byte, offset) =>
+  code.forEach((byte, offset) =>
     machine.doWriteMemory(START_ADDRESS + offset, byte)
   );
   machine.pc = START_ADDRESS;
@@ -103,22 +131,18 @@ function initializeAccessMachine(machine: AccessMachine, testCase: AccessCase): 
   machine.frameCompleted = false;
   machine.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
   machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
-  machine.executionContext.debugSupport = new DebugSupport(undefined, [testCase.breakpoint]);
+  machine.executionContext.debugSupport = new DebugSupport(undefined, [breakpoint]);
   machine.executionContext.lastTerminationReason = undefined;
 }
 
-function captureAccessStop(machine: AccessMachine): {
-  termination: FrameTerminationMode;
-  lastTerminationReason: FrameTerminationMode | undefined;
-  pc: number;
-  af: number;
-} {
+function captureAccessStop(machine: ZxNextWasmV2Machine): AccessStop {
   const termination = machine.executeMachineFrame();
   const cpu = machine.getCpuState();
   return {
     termination,
     lastTerminationReason: machine.executionContext.lastTerminationReason,
     pc: cpu.pc,
-    af: cpu.af
+    af: cpu.af,
+    opStartAddress: cpu.opStartAddress
   };
 }

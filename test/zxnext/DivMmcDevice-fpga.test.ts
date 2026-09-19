@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
-import { OFFS_DIVMMC_ROM, OFFS_DIVMMC_RAM, OFFS_DIVMMC_RAM_BANK_3 } from "../../src/emu/machines/zxNext/MemoryDevice";
+import { OFFS_DIVMMC_ROM, OFFS_DIVMMC_RAM, OFFS_DIVMMC_RAM_BANK_3 } from "../../src/emu/machines/zxNext/nextMemoryLayout";
 
 /**
  * Tests for DivMMC FPGA-verified fixes (divmmc-plan.md D1–D8).

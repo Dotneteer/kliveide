@@ -4,11 +4,11 @@
 Core audio components have dedicated unit coverage:
 - `AudioDeviceBase`
 - `SpectrumBeeperDevice`
-- `PsgChip`
 
 Classic ZX Spectrum PSG device integration now lives in the WASM machine
-implementations. The TypeScript `PsgChip` remains covered directly and is still
-used by the ZX Spectrum Next TypeScript implementation.
+implementations. The ZX Spectrum Next's TurboSound uses `zxNext/NextPsgChip.ts`, a port of
+`ym2149.vhd` (2026-09-18, bug B73), tested on both cores by `test/zxnext-hw/audio/ay-psg.test.ts`.
+The MAME-shaped TypeScript `PsgChip` (and its unit tests) was retired once nothing used it.
 
 ## Test Gaps
 
@@ -103,23 +103,10 @@ Location: `test/audio/BeeperDevice.test.ts`
 - Inheritance: AudioDeviceBase method chain
 - Realistic Scenarios: Beep effects, audio modulation simulation
 
-### PsgChip Tests ✓
-Location: `test/audio/PsgDevice.test.ts`
-
-**Coverage (PsgChip):**
-- Register Operations: 16 registers, 8-bit values, read/write
-- Tone Channels: 12-bit frequency for channels A/B/C (registers 0-5)
-- Noise Generator: 5-bit frequency, LFSR generation (register 6)
-- Mixer Control: Tone/noise enable per channel (register 7)
-- Volume Control: 4-bit volume + envelope mode per channel (registers 8-10)
-- Envelope: Frequency (registers 11-12), shape selection, 16 shapes (register 13)
-- Audio Output: Zero/non-zero output, accumulation, multi-channel mixing
-- Reset Behavior: State reset, orphan sample clearing
-
 ## Test Statistics
 - **Total Tests**: See the current jsdom audio test run
 - **Test Files**: 3
-- **Coverage**: AudioDeviceBase + SpectrumBeeperDevice + PsgChip
+- **Coverage**: AudioDeviceBase + SpectrumBeeperDevice (Next PSG: `test/zxnext-hw/audio/ay-psg.test.ts`)
 
 Run all audio tests: `npm test -- test/audio/`
 
@@ -129,4 +116,4 @@ Run all audio tests: `npm test -- test/audio/`
 - Performance benchmarks
 
 ## Notes
-Only existing audio test: `test/zxnext/DmaDevice-audio.test.ts` (DMA timing for DAC, not audio device testing)
+DMA-paced DAC playback is tested on both cores in `test/zxnext-hw/dma/dma.test.ts` (DMA-020).

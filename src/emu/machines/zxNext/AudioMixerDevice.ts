@@ -92,6 +92,12 @@ import { DacDevice } from "./DacDevice";
  * - See NEXTREG_AUDIO.md for NextReg 0x08 configuration details
  * - See PORT_MAPPINGS.md for port address details (0xFFFD, 0xBFFD, 0xFE)
  */
+/**
+ * Output gain on the audio_mixer.vhd sum (see getMixedOutput): a full YM channel (255) comes out at
+ * 7507, its level before the mixer followed the VHDL proportions.
+ */
+export const MIXER_GAIN = 29.44;
+
 export class AudioMixerDevice {
   private dac: DacDevice;
 
@@ -99,6 +105,7 @@ export class AudioMixerDevice {
   private earLevel: number = 0; // 0 or 512
   private micLevel: number = 0; // 0 or 128
   private psgOutput: AudioSample = { left: 0, right: 0 };
+  private dacOutputOverride: AudioSample | undefined;
   private i2sInput: AudioSample = { left: 0, right: 0 };
 
   // Volume scaling factors (0-100 or 0-1.0)
@@ -156,6 +163,14 @@ export class AudioMixerDevice {
   }
 
   /**
+   * The DAC sides (0-510) to mix instead of the DAC device's current output - the level recorded at
+   * the time of the sample being mixed. `undefined` returns to the current output.
+   */
+  setDacOutput(output: AudioSample | undefined): void {
+    this.dacOutputOverride = output;
+  }
+
+  /**
    * Get PSG stereo output
    */
   getPsgOutput(): AudioSample {
@@ -193,96 +208,25 @@ export class AudioMixerDevice {
   }
 
   /**
-   * Get mixed stereo audio output
-   * 
-   * HARDWARE-ACCURATE IMPLEMENTATION (from VHDL audio_mixer.vhd):
-   * 
-   * Step 1: UNSIGNED ADDITION of all sources (range 0-5998):
-   *   pcm_L = ear + mic + ay_L + dac_L + i2s_L
-   *   pcm_R = ear + mic + ay_R + dac_R + i2s_R
-   * 
-   * Step 2: Convert unsigned to signed via MSB inversion:
-   *   signed13bit = unsigned13bit XOR 0x1000
-   *   This centers the DC-biased signal around zero for AC audio output
-   * 
-   * Step 3: Scale to 16-bit signed for intermediate processing
-   * 
-   * Step 4: Normalize to Web Audio API format (-1.0 to +1.0)
-   *   Hardware outputs to DAC/PWM; software must normalize for Float32Array
-   * 
-   * Source levels (all UNSIGNED):
-   * - EAR (Beeper): 0 or 512
-   * - MIC: 0 or 128
-   * - PSG (TurboSound): 0-2295 (from 3 chips)
-   * - DAC: 0-2040
-   * - I2S: 0-1023
-   * Total max: 0-5998
-   * 
-   * NOTE: Currently PSG, DAC, and I2S are disabled (return 0) for beeper-only testing.
-   * 
-   * @returns Mixed AudioSample (normalized floating-point for Web Audio API)
+   * Mixes the current sources into one output sample (normalized to -1.0..+1.0 for Web Audio), in the
+   * proportions of audio_mixer.vhd: `pcm = ear + mic + ay + dac + i2s` per side.
    */
   getMixedOutput(): AudioSample {
-    // AC Coupling Strategy for DC-biased sources
-    // Hardware sources output unsigned DC levels that oscillate (square waves)
-    // AC coupling removes DC component, passing only the oscillating AC signal
-    // 
-    // Key insight: When a source is inactive (at minimum=0), it shouldn't contribute DC offset
-    // Only active/oscillating signals need AC coupling applied
-    
-    let mixedLeft = 0;
-    let mixedRight = 0;
+    // --- audio_mixer.vhd: pcm = ear + mic + ay + dac + i2s, each side on its own, in these units:
+    // --- EAR 512 and MIC 128 while high, a full YM channel 255 (the PSG output is that table x 257),
+    // --- one DAC channel 4 per step. The beeper arrives DC-filtered (-1..+1) and the DACs are taken
+    // --- about their $80 centre, so silence stays 0; the AY stays unipolar, as before.
+    // --- MIXER_GAIN maps the sum to the 16-bit range: chosen (2026-09-18) so that a full AY channel
+    // --- keeps the level it had before the mixer followed the VHDL proportions. Stacked sources above
+    // --- ~1110 units clamp.
+    const dacOutput = this.dacOutputOverride ?? this.dac.getStereoOutput();
+    const side = (psg: number, dac: number) =>
+      this.earLevel + this.micLevel + psg / 257 + (dac - 256) * 4;
+    const mixedLeft = side(this.psgOutput.left, dacOutput.left);
+    const mixedRight = side(this.psgOutput.right, dacOutput.right);
 
-    // Add EAR (Beeper): DC-filtered, range ±512 (AC signal centered at 0).
-    // Scale by 12 to match 48K beeper loudness in the mix.
-    const beeperScaled = this.earLevel * 12;  // ±6144
-    mixedLeft += beeperScaled;
-    mixedRight += beeperScaled;
-
-    // Add MIC: DC-filtered AC signal, range ±128 (from BeeperDevice right channel).
-    // Same ×12 loudness boost preserves FPGA EAR:MIC amplitude ratio of 4:1.
-    const micScaled = this.micLevel * 12;   // ±1536
-    mixedLeft += micScaled;
-    mixedRight += micScaled;
-
-    // Add PSG output (unsigned 0-196605 per stereo channel).
-    // Scale down from software range to mixer range (÷24 gives ≤ 8192 for mono, ≤ 4095 for Phase-6 stereo).
-    // AC coupling: subtract the peak-based midpoint from BOTH channels simultaneously.
-    // Using Math.max(left, right) as the reference ensures both channels contribute even when
-    // one side is silent (e.g. only channel A active in ABC stereo mode), fixing the
-    // "only left channel" audio bug where psgOutput.right = 0 previously produced silence on right.
-    const psgLeftScaled = Math.floor(this.psgOutput.left / 24);
-    const psgRightScaled = Math.floor(this.psgOutput.right / 24);
-    // Apply AC coupling unconditionally: when both channels are 0, midpoint=0 and contribution
-    // is zero regardless. This avoids a DC-offset gate and ensures consistent per-sample behaviour.
-    const psgPeak = Math.max(psgLeftScaled, psgRightScaled);
-    const midpoint = Math.floor(psgPeak / 2);
-    mixedLeft  += psgLeftScaled  - midpoint;
-    mixedRight += psgRightScaled - midpoint;
-
-    // Add DAC output (unsigned 0-510 per side, matching FPGA soundrive.vhd)
-    // FPGA mixer (audio_mixer.vhd): dac_L <= "00" & dac_L_i & "00"  (×4, 0-2040)
-    // AC coupling: subtract midpoint (center = 0x80+0x80 = 256, ×4 = 1024)
-    const dacOutput = this.dac.getStereoOutput();
-    const dacLeftScaled = (dacOutput.left << 2) - 1024;   // -1024 to +1016
-    const dacRightScaled = (dacOutput.right << 2) - 1024;
-    mixedLeft += dacLeftScaled;
-    mixedRight += dacRightScaled;
-
-    // Add I2S input (unsigned, will be 0-1023 when enabled)
-    // const i2sLeftAC = this.i2sInput.left - 512;  // AC-couple
-    // const i2sRightAC = this.i2sInput.right - 512;
-    // mixedLeft += i2sLeftAC;
-    // mixedRight += i2sRightAC;
-
-    // Mixed values are now AC-coupled (centered around zero)
-    // Range: approximately -6000 to +6000 (all sources can contribute positive and negative)
-    // No need for MSB inversion - we already have proper AC audio
-
-    // Scale to 16-bit signed range (-32768 to +32767)
-    // AC-coupled sources sum to approximately ±6000, scale up to ±32768
-    let left = Math.floor(mixedLeft * 5.5);  // ≈6000 * 5.5 ≈ 33000
-    let right = Math.floor(mixedRight * 5.5);
+    let left = Math.trunc(mixedLeft * MIXER_GAIN);
+    let right = Math.trunc(mixedRight * MIXER_GAIN);
 
     // Apply master volume scale (before final clamp)
     left = Math.floor(left * this.volumeScale);

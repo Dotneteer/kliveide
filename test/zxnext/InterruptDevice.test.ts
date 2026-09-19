@@ -73,8 +73,8 @@ describe("Next - InterrputDevice", function () {
       // --- Act
       writeNextReg(m, 0x22, 0x80);
 
-      // --- Assert
-      expect(readNextReg(m, 0x22)).toBe(0x80);
+      // --- Assert: zxnext.vhd ~5938 - bit 7 reads the INT pulse (none active here), not the written bit
+      expect(readNextReg(m, 0x22)).toBe(0x00);
       expect(intDevice.intSignalActive).toBe(true);
       expect(intDevice.ulaInterruptDisabled).toBe(false);
       expect(intDevice.lineInterruptEnabled).toBe(false);
@@ -139,8 +139,8 @@ describe("Next - InterrputDevice", function () {
       // --- Act
       writeNextReg(m, 0x22, 0xff);
 
-      // --- Assert
-      expect(readNextReg(m, 0x22)).toBe(0x87);
+      // --- Assert: bit 7 reads the INT pulse (none active here), not the written bit
+      expect(readNextReg(m, 0x22)).toBe(0x07);
       expect(intDevice.intSignalActive).toBe(true);
       expect(intDevice.ulaInterruptDisabled).toBe(true);
       expect(intDevice.lineInterruptEnabled).toBe(true);
@@ -388,16 +388,10 @@ describe("Next - InterrputDevice", function () {
       // --- Act
       writeNextReg(m, 0xc5, 0xa5);
 
-      // --- Assert
-      expect(readNextReg(m, 0xc5)).toBe(0xa5);
-      expect(intDevice.ctcIntEnabled[7]).toBe(true);
-      expect(intDevice.ctcIntEnabled[6]).toBe(false);
-      expect(intDevice.ctcIntEnabled[5]).toBe(true);
-      expect(intDevice.ctcIntEnabled[4]).toBe(false);
-      expect(intDevice.ctcIntEnabled[3]).toBe(false);
-      expect(intDevice.ctcIntEnabled[2]).toBe(true);
-      expect(intDevice.ctcIntEnabled[1]).toBe(false);
-      expect(intDevice.ctcIntEnabled[0]).toBe(true);
+      // --- Assert: the channels' own enable bit (control_reg(7)); channels 4-7 do not exist
+      void intDevice;
+      expect(readNextReg(m, 0xc5)).toBe(0x05);
+      expect(m.ctcDevice.channels.map((c) => c.intEnabled)).toEqual([true, false, true, false]);
     });
   });
 
@@ -553,7 +547,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.lineInterruptStatus).toBe(false);
     });
 
-    it("lineInterruptStatus - no clear with HW IM2", async () => {
+    it("lineInterruptStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -564,7 +558,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc8, 0x02);
 
       // --- Assert
-      expect(intDevice.lineInterruptStatus).toBe(true);
+      expect(intDevice.lineInterruptStatus).toBe(false);
     });
 
     it("ulaInterruptStatus - clear", async () => {
@@ -580,7 +574,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ulaInterruptStatus).toBe(false);
     });
 
-    it("ulaInterruptStatus - no clear with HW IM2", async () => {
+    it("ulaInterruptStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -591,7 +585,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc8, 0x01);
 
       // --- Assert
-      expect(intDevice.ulaInterruptStatus).toBe(true);
+      expect(intDevice.ulaInterruptStatus).toBe(false);
     });
   });
 
@@ -609,7 +603,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[0]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 0 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 0 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -620,7 +614,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x01);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[0]).toBe(true);
+      expect(intDevice.ctcIntStatus[0]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 1 - clear", async () => {
@@ -636,7 +630,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[1]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 1 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 1 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -647,7 +641,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x02);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[1]).toBe(true);
+      expect(intDevice.ctcIntStatus[1]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 2 - clear", async () => {
@@ -663,7 +657,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[2]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 2 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 2 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -674,7 +668,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x04);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[2]).toBe(true);
+      expect(intDevice.ctcIntStatus[2]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 3 - clear", async () => {
@@ -690,7 +684,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[3]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 3 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 3 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -701,7 +695,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x08);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[3]).toBe(true);
+      expect(intDevice.ctcIntStatus[3]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 4 - clear", async () => {
@@ -717,7 +711,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[4]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 4 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 4 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -728,7 +722,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x10);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[4]).toBe(true);
+      expect(intDevice.ctcIntStatus[4]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 5 - clear", async () => {
@@ -744,7 +738,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[5]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 5 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 5 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -755,7 +749,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x20);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[5]).toBe(true);
+      expect(intDevice.ctcIntStatus[5]).toBe(false);
     });
 
     it("ctcChannelInterruptStatus 6 - clear", async () => {
@@ -771,7 +765,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.ctcIntStatus[6]).toBe(false);
     });
 
-    it("ctcChannelInterruptStatus 6 - no clear with HW IM2", async () => {
+    it("ctcChannelInterruptStatus 6 - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -782,7 +776,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xc9, 0x40);
 
       // --- Assert
-      expect(intDevice.ctcIntStatus[6]).toBe(true);
+      expect(intDevice.ctcIntStatus[6]).toBe(false);
     });
   });
 
@@ -800,7 +794,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart1TxEmptyStatus).toBe(false);
     });
 
-    it("uart1TxEmptyStatus - no clear with HW IM2", async () => {
+    it("uart1TxEmptyStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -811,7 +805,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x40);
 
       // --- Assert
-      expect(intDevice.uart1TxEmptyStatus).toBe(true);
+      expect(intDevice.uart1TxEmptyStatus).toBe(false);
     });
 
     it("uart1RxNearFullStatus - clear", async () => {
@@ -827,7 +821,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart1RxNearFullStatus).toBe(false);
     });
 
-    it("uart1RxNearFullStatus - no clear with HW IM2", async () => {
+    it("uart1RxNearFullStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -838,7 +832,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x20);
 
       // --- Assert
-      expect(intDevice.uart1RxNearFullStatus).toBe(true);
+      expect(intDevice.uart1RxNearFullStatus).toBe(false);
     });
 
     it("uart1RxAvailableStatus - clear", async () => {
@@ -854,7 +848,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart1RxAvailableStatus).toBe(false);
     });
 
-    it("uart1RxAvailableStatus - no clear with HW IM2", async () => {
+    it("uart1RxAvailableStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -865,7 +859,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x10);
 
       // --- Assert
-      expect(intDevice.uart1RxAvailableStatus).toBe(true);
+      expect(intDevice.uart1RxAvailableStatus).toBe(false);
     });
 
     it("uart0TxEmptyStatus - clear", async () => {
@@ -881,7 +875,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart0TxEmptyStatus).toBe(false);
     });
 
-    it("uart0TxEmptyStatus - no clear with HW IM2", async () => {
+    it("uart0TxEmptyStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -892,7 +886,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x04);
 
       // --- Assert
-      expect(intDevice.uart0TxEmptyStatus).toBe(true);
+      expect(intDevice.uart0TxEmptyStatus).toBe(false);
     });
 
     it("uart0RxNearFullStatus - clear", async () => {
@@ -908,7 +902,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart0RxNearFullStatus).toBe(false);
     });
 
-    it("uart0RxNearFullStatus - no clear with HW IM2", async () => {
+    it("uart0RxNearFullStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -919,7 +913,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x02);
 
       // --- Assert
-      expect(intDevice.uart0RxNearFullStatus).toBe(true);
+      expect(intDevice.uart0RxNearFullStatus).toBe(false);
     });
 
     it("uart0RxAvailableStatus - clear", async () => {
@@ -935,7 +929,7 @@ describe("Next - InterrputDevice", function () {
       expect(intDevice.uart0RxAvailableStatus).toBe(false);
     });
 
-    it("uart0RxAvailableStatus - no clear with HW IM2", async () => {
+    it("uart0RxAvailableStatus - clears in HW IM2 mode too (zxnext.vhd ~1908)", async () => {
       // --- Arrange
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
@@ -946,7 +940,7 @@ describe("Next - InterrputDevice", function () {
       writeNextReg(m, 0xca, 0x01);
 
       // --- Assert
-      expect(intDevice.uart0RxAvailableStatus).toBe(true);
+      expect(intDevice.uart0RxAvailableStatus).toBe(false);
     });
   });
 
@@ -999,7 +993,8 @@ describe("Next - InterrputDevice", function () {
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
 
-      intDevice.ulaInterruptStatus = true;
+      // --- im2_device o_dma_int: a device out of S_0 (pending in hardware IM2 mode)
+      intDevice.pending[11] = true;
       intDevice.enableUlaIntToIntDma = false;
       expect(intDevice.dmaInterruptRequestActive).toBe(false);
 
@@ -1011,7 +1006,7 @@ describe("Next - InterrputDevice", function () {
       const m = await createTestNextMachine();
       const intDevice = m.interruptDevice;
 
-      intDevice.ctcIntStatus[2] = true;
+      intDevice.pending[3 + 2] = true;
       intDevice.enableCtcToIntDma[1] = true;
       expect(intDevice.dmaInterruptRequestActive).toBe(false);
 

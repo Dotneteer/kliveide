@@ -1,22 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { CtcChannel } from "@emu/machines/zxNext/CtcDevice";
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { createTestZxNextWasmMachine, createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type CtcPortMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+// --- ctc_chan.vhd state machine: S_CONTROL_WORD = 0, S_TIME_CONSTANT = 1, S_WAIT = 2, S_RUNNING = 3
+const CTC_STATE_RUNNING = 3;
 
 describe("ZX Next WASM CTC device", () => {
-  it("matches TypeScript channel control/time-constant/run state", async () => {
+  it("steps one channel clock by clock through control word, time constant and run state", async () => {
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;
-    const oracle = new CtcChannel();
 
     const clock = (iowr: boolean, data: number, clkTrg = false, intEnWr = false, intEn = false): void => {
-      oracle.clock(iowr, data, clkTrg, intEnWr, intEn);
       exports.zxnextCtcClock(0, iowr ? 1 : 0, data, clkTrg ? 1 : 0, intEnWr ? 1 : 0, intEn ? 1 : 0);
     };
 
+    // --- Control word $05: timer, prescaler 16, D2 = time constant follows; then time constant 3
     clock(true, 0x05);
     clock(false, 0x05);
     clock(true, 0x03);
@@ -24,54 +21,18 @@ describe("ZX Next WASM CTC device", () => {
     for (let i = 0; i < 20; i++) clock(false, 0x00);
     clock(false, 0x00, false, true, true);
 
-    expect(exports.zxnextGetCtcState(0)).toBe(oracle.state);
-    expect(exports.zxnextGetCtcControlReg(0)).toBe(oracle.controlReg);
-    expect(exports.zxnextGetCtcTimeConstant(0)).toBe(oracle.timeConstantReg);
-    expect(exports.zxnextGetCtcCount(0)).toBe(oracle.count);
-    expect(Boolean(exports.zxnextGetCtcZcTo(0))).toBe(oracle.zcTo);
-    expect(Boolean(exports.zxnextGetCtcIntEnabled(0))).toBe(oracle.intEnabled);
-    expect(Boolean(exports.zxnextGetCtcExpectingTimeConstant(0))).toBe(oracle.expectingTimeConstant);
+    // --- The time constant loaded, so the channel runs; 20+ clocks at prescaler 16 count once: 3 -> 2
+    expect(exports.zxnextGetCtcState(0)).toBe(CTC_STATE_RUNNING);
+    expect(exports.zxnextGetCtcTimeConstant(0)).toBe(3);
+    expect(exports.zxnextGetCtcCount(0)).toBe(2);
+    expect(exports.zxnextGetCtcZcTo(0)).toBe(0);
+    // --- The int-enable write ($C5 path) sets the enable
+    expect(exports.zxnextGetCtcIntEnabled(0)).toBe(1);
+    expect(exports.zxnextGetCtcExpectingTimeConstant(0)).toBe(0);
+    // --- Pinned: the value both cores (TypeScript and WASM) agreed on at tag
+    // --- pre-zxnext-ts-removal-2026-09-19.
+    expect(exports.zxnextGetCtcControlReg(0)).toBe(0x20);
   });
 
-  it("routes public CTC ports with TypeScript-compatible gating", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.hardReset();
-    wasm.hardReset();
-
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x85, 0x08);
-      machine.doWritePort(0x183b, 0x05);
-      machine.doWritePort(0x183b, 0x40);
-    }
-
-    expect(wasm.doReadPort(0x183b)).toBe(oracle.doReadPort(0x183b));
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetCtcState(0)).toBe(oracle.ctcDevice.channels[0].state);
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetCtcCount(0)).toBe(oracle.ctcDevice.channels[0].count);
-
-    for (const machine of [oracle, wasm]) writeNextReg(machine, 0x85, 0x07);
-    expect(wasm.doReadPort(0x183b)).toBe(oracle.doReadPort(0x183b));
-  });
-
-  it("lazy-syncs timer-mode CTC advancement before public port reads", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.hardReset();
-    wasm.hardReset();
-
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x85, 0x08);
-      machine.doWritePort(0x183b, 0x05);
-      machine.doWritePort(0x183b, 0x01);
-    }
-
-    oracle.frameTacts = 24;
-    wasm.wasmV2Runtime!.exports.zxnextSetTacts(3);
-
-    expect(wasm.doReadPort(0x183b)).toBe(oracle.doReadPort(0x183b));
-    expect(wasm.wasmV2Runtime!.exports.zxnextGetCtcCount(0)).toBe(oracle.ctcDevice.channels[0].count);
-  });
+  // Ports, gating and timing on the machine: test/zxnext-hw/ctc/ctc.test.ts.
 });
-
-function writeNextReg(machine: CtcPortMachine, reg: number, value: number): void {
-  machine.nextRegDevice.setNextRegisterIndex(reg);
-  machine.nextRegDevice.setNextRegisterValue(value);
-}

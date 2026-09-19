@@ -11,7 +11,7 @@ describe("Step 13: Audio Debug Support", () => {
 
   // ==================== PSG Chip Debug Info ====================
 
-  describe("PsgChip Debug Info", () => {
+  describe("PSG chip (NextPsgChip) debug info", () => {
     it("should provide complete chip debug information", () => {
       const turbo = machine.audioControlDevice.getTurboSoundDevice();
       const chip = turbo.getChip(0);
@@ -90,7 +90,7 @@ describe("Step 13: Audio Debug Support", () => {
       const debug = chip.getDebugInfo();
       expect(debug.noise).toBeDefined();
       expect(debug.noise.frequency).toBe(0x1f);
-      expect(debug.noise.seed).toBe(1); // Hardware-correct initial seed (MAME-verified)
+      expect(debug.noise.seed).toBe(0); // ym2149.vhd: poly17 powers up as 0 (the zero detector feeds a 1 in)
       expect(debug.noise.counter).toBe(0);
     });
 

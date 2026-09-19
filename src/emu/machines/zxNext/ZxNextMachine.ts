@@ -2,11 +2,11 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
-import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import type { IZxNextIdeMachine } from "./IZxNextIdeMachine";
 import type { MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
@@ -15,17 +15,19 @@ import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 import { Z80NMachineBase } from "./Z80NMachineBase";
+import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { NextRegDevice } from "./NextRegDevice";
 import { PaletteDevice } from "./PaletteDevice";
 import { TilemapDevice } from "./TilemapDevice";
 import { SpriteDevice } from "./SpriteDevice";
 import { DmaDevice } from "./DmaDevice";
-import { CopperDevice, CopperStartMode } from "./CopperDevice";
+import { CopperDevice } from "./CopperDevice";
 import { CtcDevice } from "./CtcDevice";
 import { I2cDevice } from "./I2cDevice";
 import { UartDevice } from "./UartDevice";
-import { OFFS_NEXT_ROM, MemoryDevice, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./MemoryDevice";
+import { MemoryDevice } from "./MemoryDevice";
+import { OFFS_NEXT_ROM, OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM } from "./nextMemoryLayout";
 import { NextIoPortManager } from "./io-ports/NextIoPortManager";
 import { DivMmcDevice } from "./DivMmcDevice";
 import { MultifaceDevice } from "./MultifaceDevice";
@@ -34,18 +36,36 @@ import { InterruptDevice } from "./InterruptDevice";
 import { JoystickDevice } from "./JoystickDevice";
 import { NextSoundDevice } from "./NextSoundDevice";
 import { UlaDevice } from "./UlaDevice";
-import { convertAsciiStringToNextKeyCodes, NextKeyboardDevice } from "./NextKeyboardDevice";
+import { NextKeyboardDevice } from "./NextKeyboardDevice";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { SdCardDevice } from "./SdCardDevice";
-import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { createMainApi } from "@common/messaging/MainApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
-import { CpuState } from "@common/messaging/EmuApi";
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import {
+  CpuState,
+  ULA_BORDER_COLOR_NAMES,
+  type NextMemoryMapping,
+  type NextRegDescriptors,
+  type NextRegState,
+  type PaletteDeviceInfo,
+  type UlaState
+} from "@common/messaging/EmuApi";
+import { nextRasterPosition } from "./IZxNextIdeMachine";
+import {
+  buildNextCodeInjectionFlow,
+  NEXT_ROM_FLAGS,
+  nextDisassemblySections,
+  nextPartitionDescriptions,
+  nextPartitionGroups,
+  nextPartitionLabels,
+  parseNextPartitionLabel
+} from "./nextMachineInfo";
+import { applyNextRegReadMux } from "./nextRegReadMux";
+import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
+import { IMemorySection } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
-import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
 import { TurboSoundDevice } from "./TurboSoundDevice";
@@ -53,32 +73,11 @@ import { DacDevice } from "./DacDevice";
 import { AudioMixerDevice } from "./AudioMixerDevice";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
-const ZXNEXT_MAIN_WAITING_LOOP = 0x1202;
-
-/*
- * The bounds of NextZXOS's key-wait loop in ROM 0:
- *
- *   $1202: HALT
- *   $1203: LD HL,$5C3B      ; FLAGS
- *   $1206: BIT 5,(HL)       ; a key is available?
- *   $1208: JR Z,$11F4       ; no - keep waiting
- *   $120A: RES 5,(HL)       ; consume it
- *
- * with an outer `JR $11E5` at $1200. The OS parks here whenever it wants a key - during boot, at the
- * boot menu, at the BASIC prompt, inside the Calculator. That is precisely why reaching
- * `ZXNEXT_MAIN_WAITING_LOOP` once proves nothing about *which* program is waiting, and why the flow
- * below waits for the machine to settle in this range instead.
- * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.14.
- */
-const ZXNEXT_KEY_WAIT_LOOP_FROM = 0x11e5;
-const ZXNEXT_KEY_WAIT_LOOP_TO = 0x120b;
-const SP_KEY_WAIT = 250;
-const SP_KEY_WAIT_SHORT = 50;
 
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
  */
-export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
+export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZxNextIdeMachine {
   /**
    * The unique identifier of the machine type
    */
@@ -155,8 +154,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   expansionBusDevice: ExpansionBusDevice;
 
-  floppyDevice: IFloppyControllerDevice;
-
   // ─── NMI state machine ───────────────────────────────────────────────────
 
   private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
@@ -170,12 +167,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /** Set to true when a stackless NMI was processed; cleared after RETN fixes PC. */
   private _stacklessNmiProcessed: boolean = false;
 
-  /** D6: When true, DivMMC should not process the current RETN (MF was active). */
-  _suppressDivMmcRetn: boolean = false;
 
   // ─── Hot-path audio/screen caches ────────────────────────────────────────
 
   private _turboSoundDevice!: TurboSoundDevice;
+  // --- The audio sample clock, in 28 MHz frame tacts (see onTactIncremented)
+  private _audioRate = -1;
+  private _audioSampleLength28 = 0;
+  private _audioNextSample28 = 0;
+  private _audioLastFrame28 = 0;
   private _dacDevice!: DacDevice;
   private _audioMixerDevice!: AudioMixerDevice;
   /** Cached from composedScreenDevice.config.totalHC; refreshed on each new frame. */
@@ -206,7 +206,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.delayedAddressBus = true;
 
     this.expansionBusDevice = new ExpansionBusDevice(this);
-    this.floppyDevice = new FloppyControllerDevice(this);
     this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
@@ -247,6 +246,74 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._totalHC = this.composedScreenDevice.config.totalHC;
   }
 
+  // ─── IZxNextIdeMachine: what the IDE panels read ─────────────────────────
+
+  getNextRegDescriptors(): NextRegDescriptors["descriptors"] {
+    return NEXT_REG_DESCRIPTORS.slice();
+  }
+
+  getNextRegState(): NextRegState {
+    // --- The value shown is what a `$253B` read returns: through the FPGA read mux, as on the WASM
+    // --- core. (A never-written register without a read function reads as a `$253B` read does.)
+    const state = this.nextRegDevice.getNextRegDeviceState();
+    const writeOnly = new Set(this.getNextRegDescriptors().filter((d) => d?.isWriteOnly).map((d) => d.id));
+    return {
+      lastRegisterIndex: state.lastRegisterIndex,
+      regs: state.regs.map((reg) => ({
+        ...reg,
+        value: writeOnly.has(reg.id) ? undefined : applyNextRegReadMux(reg.id, reg.value ?? 0xff)
+      }))
+    };
+  }
+
+  getNextMemoryMapping(): NextMemoryMapping {
+    return this.memoryDevice.getMemoryMappings();
+  }
+
+  getPaletteDeviceInfo(): PaletteDeviceInfo {
+    const pd = this.paletteDevice;
+    return {
+      ulaFirst: pd.ulaFirst.slice(),
+      ulaSecond: pd.ulaSecond.slice(),
+      layer2First: pd.layer2First.slice(),
+      layer2Second: pd.layer2Second.slice(),
+      spriteFirst: pd.spriteFirst.slice(),
+      spriteSecond: pd.spriteSecond.slice(),
+      tilemapFirst: pd.tilemapFirst.slice(),
+      tilemapSecond: pd.tilemapSecond.slice(),
+      storedPaletteValue: pd.storedPaletteValue,
+      spriteTransparencyIndex: this.spriteDevice.transparencyIndex,
+      // --- `$4C` and `$6B` live on the composed screen (the `TilemapDevice` fields are not written)
+      tilemapTransparencyIndex: this.composedScreenDevice.tilemapTransparencyIndex,
+      reg43Value: pd.nextReg43Value,
+      reg6bValue:
+        this.composedScreenDevice.nextReg0x6bValue | (pd.secondTilemapPalette ? 0x10 : 0),
+      ulaNextFormat: this.composedScreenDevice.ulaNextFormat
+    };
+  }
+
+  getNextUlaState(): UlaState {
+    const { line, hc } = nextRasterPosition(this.currentFrameTact ?? 0, this.composedScreenDevice.config.totalHC);
+    return {
+      fcl: this.currentFrameTact ?? 0,
+      frm: this.frames,
+      ras: line,
+      pos: hc,
+      // --- Neither core keeps a per-tact rendering-phase table for the Next's composed screen
+      pix: "n/a",
+      bor: ULA_BORDER_COLOR_NAMES[this.composedScreenDevice.borderColor & 0x07],
+      // --- Sampling the floating bus is a port read; a polled panel must not perform one
+      flo: 0xff,
+      con: this.totalContentionDelaySinceStart,
+      lco: this.contentionDelaySincePause,
+      ear: this.beeperDevice.earBit,
+      mic: (this.beeperDevice as { micBit?: boolean }).micBit ?? false,
+      keyLines: Array.from({ length: 8 }, (_, i) => this.keyboardDevice.getKeyLineValue(i)),
+      romP: this.getSelectedRomPage(),
+      ramB: this.getSelectedRamBank()
+    };
+  }
+
   /**
    * Gets the current CPU state
    */
@@ -273,7 +340,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       iff2: this.iff2,
       sigINT: this.sigINT,
       halted: this.halted,
-      snoozed: this.isCpuSnoozed(),
+      snoozed: this._cpuHeldAtFrameEnd || this.isCpuSnoozed(),
       opStartAddress: this.opStartAddress,
       lastMemoryReads: this.lastMemoryReads,
       lastMemoryReadValue: this.lastMemoryReadValue,
@@ -287,6 +354,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   reset(): void {
+    // --- NextReg bits with no reset branch in the VHDL survive; the device resets below clear them
+    const resetSurvivors = this.nextRegDevice?.captureResetSurvivors();
     super.reset();
     this.cpuSpeedDevice.reset();
     this.memoryDevice.reset();
@@ -307,7 +376,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.audioControlDevice.reset();
-    this.floppyDevice.reset();
+    this._audioLastFrame28 = 0;
+    this._audioRate = -1;
+    // --- The PSG clock carries on across frames from the reset; it needs the frame length for the first
+    // --- frame's wrap too, or it restarts there and loses its phase against the other clocks
+    this._turboSoundDevice.onNewFrame(this.tactsInFrame);
     this.ulaDevice.reset();
     this.beeperDevice.reset();
 
@@ -325,12 +398,20 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- This device is the last to reset, as it may override the reset of other devices
     this.nextRegDevice.reset();
+    if (resetSurvivors) this.nextRegDevice.restoreResetSurvivors(resetSurvivors);
 
-    // --- Set default machine type
+    // --- Leave config mode; the $03 machine type and timing survive a soft reset (no reset branch)
     this.nextRegDevice.configMode = false;
-    this.composedScreenDevice.machineType = 0x03; // ZX Spectrum Next
     this._prevUlaIntPulse = false;
     this._prevLineIntPulse = false;
+    this._cpuHeldAtFrameEnd = false;
+    // --- The reset restarts the frame (tacts and frameTacts are 0): rewind the raster with it, or
+    // --- nothing is rendered - and no interrupt is captured - until the new frame reaches the tact
+    // --- the old one had got to (the WASM core already restarts both).
+    this.currentFrameTact = 0;
+    this.lastRenderedFrameTact = 0;
+    this._copperCurrentLine = 0;
+    this._copperCurrentColumn = 0;
   }
 
   /**
@@ -370,7 +451,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   hardReset(): void {
     super.hardReset();
+    // --- Palette contents first: a soft reset keeps them, and `reset` caches the border colour
+    this.paletteDevice.hardReset();
     this.reset();
+    // --- A hard reset reloads the FPGA core: the UART prescalers and frame registers start over
+    this.uartDevice.hardReset();
+    // --- ... and the key-joystick map RAM its initial contents
+    this.joystickDevice.hardReset();
+    // --- ... and the PS/2 mouse its power-on reset (m_reset)
+    this.mouseDevice.hardReset();
     this.nextRegDevice.hardReset();
     this.memoryDevice.hardReset();
     // --- Clear NMI state machine on hard reset
@@ -381,7 +470,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._pendingMfNmi = false;
     this._pendingDivMmcNmi = false;
     this._stacklessNmiProcessed = false;
-    this._suppressDivMmcRetn = false;
     this.sigNMI = false;
     // --- Enable NMI buttons by default (emulator convenience; hardware default is 0,
     //     but the emulator wants F9/F10 to work without explicit NR06 configuration)
@@ -447,6 +535,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
         expBus.expansionBusNmiPending = false;
       }
     }
+    // --- The button and software causes are pulses: one that lost the arbitration is gone
+    this._pendingMfNmi = false;
+    this._pendingDivMmcNmi = false;
   }
 
   /**
@@ -481,9 +572,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
       case 'HOLD': {
         this._nmiHoldTicks++;
+        // --- S_NMI_END lasts one CPU clock (no I/O write is in progress at an opcode fetch): pass
+        // --- through it at once, so a cause raised by the next instruction is accepted, as on the FPGA
         if (!this.nmiHold) {
           this._nmiHoldTicks = 0;
-          this._nmiState = 'END';
+          this._nmiSourceMf = false;
+          this._nmiSourceDivMmc = false;
+          this._nmiSourceExpBus = false;
+          this._nmiState = 'IDLE';
         }
         break;
       }
@@ -501,18 +597,64 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Called from nextreg 0x02 write when bit 3 is set and nmiAcceptCause is true.
    */
   requestMfNmiFromSoftware(): void {
-    if (this.nmiAcceptCause) {
+    this.assertMfNmi();
+  }
+
+  /**
+   * zxnext.vhd ~2046, ~2063: a Multiface NMI cause (the M1 button, `$02` bit 3, the I/O trap) is a
+   * one-cycle pulse, asserted only while `$06` bit 3 enables it, and latched only while no NMI source
+   * is active. A pulse that misses either condition is gone; it does not wait for the enable.
+   */
+  private assertMfNmi(): void {
+    if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableMultifaceNmiByM1Button) {
       this._pendingMfNmi = true;
+      // --- ~2051-2070: the source latches on the next 28 MHz clock, not at the next opcode fetch -
+      // --- which a DMA transfer holding the bus postpones (and $CC bit 7 lets the NMI stop it)
+      this.updateNmiSources();
+    }
+  }
+
+  /** The DivMMC counterpart of `assertMfNmi` (~2047, ~2065): the DRIVE button and `$02` bit 2, `$06` bit 4. */
+  private assertDivMmcNmi(): void {
+    if (this.nmiAcceptCause && !this.nmiActivated && this.divMmcDevice.enableDivMmcNmiByDriveButton) {
+      this._pendingDivMmcNmi = true;
+      this.updateNmiSources();
     }
   }
 
   /**
    * Called from nextreg 0x02 write when bit 2 is set and nmiAcceptCause is true.
    */
-  requestDivMmcNmiFromSoftware(): void {
+  private _pendingNextRegReset: "soft" | "hard" | undefined;
+
+  /**
+   * NextReg $02 bit 0 / bit 1: the reset is applied once the current instruction completes
+   * (afterInstructionExecuted), so the CPU does not restart in the middle of `NEXTREG`.
+   */
+  requestResetFromNextReg(hard: boolean): void {
+    this._pendingNextRegReset = hard || this._pendingNextRegReset === "hard" ? "hard" : "soft";
+  }
+
+  /**
+   * zxnext.vhd ~3815: `nmi_gen_iotrap` (already qualified by $D8 bit 0) feeds the Multiface NMI like
+   * $02 bit 3 does; ~3846-3865 record the cause in $DA (only while the NMI machine accepts a cause),
+   * ~3871 the written value in $D9. $02 bit 4 reads "cause != 0".
+   */
+  trapFdcPortAccess(cause: number, value?: number): boolean {
+    const nr = this.nextRegDevice;
+    if (!nr.fdcIoTrap) return false;
+    // --- zxnext.vhd ~3846-3877: $DA and $D9 change only while the NMI state machine accepts a cause
     if (this.nmiAcceptCause) {
-      this._pendingDivMmcNmi = true;
+      if (value !== undefined) nr.directSetRegValue(0xd9, value & 0xff);
+      nr.ioTrapCause = cause & 0x03;
+      this.interruptDevice.mfNmiByIoTrap = true;
     }
+    this.requestMfNmiFromSoftware();
+    return true;
+  }
+
+  requestDivMmcNmiFromSoftware(): void {
+    this.assertDivMmcNmi();
   }
 
   /**
@@ -532,8 +674,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   /**
    * Override the base Z80 NMI handler to support stackless NMI mode (nextreg 0xC0 bit 3).
-   * When `enableStacklessNmi` is true, SP is decremented by 2 but no stack writes occur;
-   * the return address is saved to `interruptDevice.nmiReturnAddress` instead.
+   *
+   * zxnext.vhd ~2008-2041, t80n_mcode.vhd ~828-848: the acknowledge always decrements SP by 2 and
+   * always stores the pushed return address in $C2/$C3 (nextreg.txt: "always stored in these
+   * registers"). With $C0 bit 3 the two write cycles are kept off the memory bus, and the first RETN
+   * after the acknowledge takes its address from $C2/$C3. Nothing in that path depends on the NMI
+   * source: the Multiface NMI is stackless too (its ROM restores SP to the NMI-time value before its
+   * RETN, so it works either way).
    */
   protected override processNmi(): void {
     // De-assert sigNMI immediately: the CPU has acknowledged the interrupt.
@@ -542,11 +689,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // a chance to run the state machine (which is the only other place that clears it).
     this.sigNMI = false;
 
-    // MF hardware predates stackless NMI — always use standard push for MF NMI
-    // so the MF ROM's RETN can pop the correct return address from the stack.
-    const useStackless = this.interruptDevice.enableStacklessNmi && !this._nmiSourceMf;
+    // --- The address the acknowledge pushes: past a HALT, as removeFromHaltedState does
+    const returnAddress = (this.pc + (this.halted ? 1 : 0)) & 0xffff;
 
-    if (useStackless) {
+    if (this.interruptDevice.enableStacklessNmi) {
       // Acknowledge NMI timing
       this.tactPlusN(4);
       this.removeFromHaltedState();
@@ -554,17 +700,32 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       // Save and clear interrupt flip-flops as normal
       this.iff2 = this.iff1;
       this.iff1 = false;
+      if (this.afterLdAIR) {
+        this.f &= ~FlagsSetMask.PV;
+        this.afterLdAIR = false;
+      }
 
-      // Decrement SP by 2 but suppress the memory writes; save return address in nextreg
+      // The push's cycles (1 + 3 + 3 T-states) run, but its writes do not reach memory
+      this.pushToStepOutStack(this.pc);
+      this.tactPlusN(7);
       this.sp = (this.sp - 2) & 0xffff;
-      this.interruptDevice.nmiReturnAddress = this.pc;
       this._stacklessNmiProcessed = true;
 
       this.refreshMemory();
       this.pc = 0x0066;
+      this.wz = 0x0066;
     } else {
       super.processNmi();
     }
+    this.interruptDevice.nmiReturnAddress = returnAddress;
+  }
+
+  /**
+   * zxnext.vhd ~2031: `z80_stackless_retn_en` is cleared while `$C0` bit 3 is 0, so clearing the bit
+   * between the acknowledge and the RETN makes that RETN pop the stack.
+   */
+  onStacklessNmiDisabled(): void {
+    this._stacklessNmiProcessed = false;
   }
 
   /**
@@ -584,7 +745,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   protected override getInterruptVector(): number {
     const id = this.interruptDevice;
-    if (!id.hwIm2Mode) return 0xff;
+    if (!id.hwIm2Mode || this.interruptMode !== 2) return 0xff;
     // --- D4: Daisy chain determines the vector in HW IM2 mode.
     // The actual acknowledge (Requesting → InService) happens in onInterruptAcknowledged().
     // Here we only peek at the winning device to return its vector.
@@ -605,7 +766,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   override onInterruptAcknowledged(): void {
     const id = this.interruptDevice;
-    if (!id.hwIm2Mode) return;
+    // --- im2_device S_REQ -> S_ACK needs a CPU in IM 2; an IM 0/1 acceptance (the ULA pulse) acks nothing
+    if (!id.hwIm2Mode || this.interruptMode !== 2) return;
     id.daisyAcknowledge();
   }
 
@@ -652,11 +814,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
           (this.composedScreenDevice.scanlineWeight + 1) % 4);
 
       case "multifaceNmi":
-        this._pendingMfNmi = true;
+        this.assertMfNmi();
         break;
 
       case "divmmcNmi":
-        this._pendingDivMmcNmi = true;
+        this.assertDivMmcNmi();
         break;
     }
   }
@@ -707,52 +869,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    // --- Normalize once and use the normalized value throughout. The `default:` branch used to
-    // --- test the *original* string (`label.startsWith("M")`) while the switch tested the
-    // --- uppercased one, and `BreakpointCommands` lowercases an address spec before parsing it —
-    // --- so `bp-set m0:$8000` fell through to the hex branch, failed, and reported "Invalid
-    // --- partition". Every DivMMC RAM partition was unreachable from every breakpoint command.
-    const normalized = (label ?? "").trim().toUpperCase();
-    switch (normalized) {
-      case "UN":
-        return undefined;
-      case "R0":
-        return -1;
-      case "R1":
-        return -2;
-      case "R2":
-        return -3;
-      case "R3":
-        return -4;
-      case "X0":
-        return -5;
-      case "X1":
-        return -6;
-      // --- `Q0`/`Q1` were the alternate ROMs' names before they were renamed to the slightly more
-      // --- suggestive `X0`/`X1` ("eXtra"). Still accepted so a script that names them keeps
-      // --- working; `getPartitionLabels` no longer returns them.
-      case "Q0":
-        return -5;
-      case "Q1":
-        return -6;
-      case "DM":
-        return -7;
-    }
-
-    // --- DivMMC RAM pages M0..MF occupy partitions -8..-23.
-    if (normalized.startsWith("M")) {
-      const page = normalized.substring(1);
-      return /^[0-9A-F]$/.test(page) ? -8 - parseInt(page, 16) : undefined;
-    }
-
-    // --- Everything else is a RAM bank, named by its hex index. Note this is what makes `A0` and
-    // --- `D0` mean banks $A0 and $D0 rather than the alt ROM and a DivMMC page: those spellings
-    // --- are ambiguous with the bank namespace, which is why the map does not use them.
-    if (/^[0-9A-F]{1,2}$/.test(normalized)) {
-      const bank = parseInt(normalized, 16);
-      return bank >= 0 && bank < 224 ? bank : undefined;
-    }
-    return undefined;
+    return parseNextPartitionLabel(label);
   }
 
   /**
@@ -760,22 +877,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param partition Partition index
    */
   getPartitionLabels(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "R0",
-      [-2]: "R1",
-      [-3]: "R2",
-      [-4]: "R3",
-      [-5]: "X0",
-      [-6]: "X1",
-      [-7]: "DM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = `M${i.toString(16).toUpperCase()}`;
-    }
-    for (let i = 0; i < 224; i++) {
-      result[i] = toHexa2(i).toUpperCase();
-    }
-    return result;
+    return nextPartitionLabels();
   }
 
   /**
@@ -786,22 +888,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * `parsePartitionLabel` rejected. They are descriptions now, and the label is what identifies.
    */
   getPartitionDescriptions(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "Next ROM 0",
-      [-2]: "Next ROM 1",
-      [-3]: "Next ROM 2",
-      [-4]: "Next ROM 3",
-      [-5]: "Alt ROM 0",
-      [-6]: "Alt ROM 1",
-      [-7]: "DivMMC ROM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = `DivMMC RAM ${i}`;
-    }
-    for (let i = 0; i < 224; i++) {
-      result[i] = `Bank $${toHexa2(i).toUpperCase()}`;
-    }
-    return result;
+    return nextPartitionDescriptions();
   }
 
   /**
@@ -811,31 +898,14 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * "DivMMC RAM" heading rather than spelling it out sixteen times.
    */
   getPartitionGroups(): Record<number, string> {
-    const result: Record<number, string> = {
-      [-1]: "Next ROM",
-      [-2]: "Next ROM",
-      [-3]: "Next ROM",
-      [-4]: "Next ROM",
-      [-5]: "Alt ROM",
-      [-6]: "Alt ROM",
-      [-7]: "DivMMC ROM"
-    };
-    for (let i = 0; i < 16; i++) {
-      result[-8 - i] = "DivMMC RAM";
-    }
-    // --- The bank grid's caption sits to its *left*, on the first row, so naming it costs no
-    // --- height — which was the only reason to leave it unlabelled.
-    for (let i = 0; i < 224; i++) {
-      result[i] = "RAM Banks";
-    }
-    return result;
+    return nextPartitionGroups();
   }
 
   /**
    * Gets a flag for each 8K page that indicates if the page is a ROM
    */
   getRomFlags(): boolean[] {
-    return [false, false, false, false, false, false, false, false];
+    return NEXT_ROM_FLAGS.slice();
   }
 
   /**
@@ -913,6 +983,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // TurboSoundDevice.setNextAudioSample per FPGA turbosound.vhd).
     const beeperSamples = this.beeperDevice.getAudioSamples();
     const turboSoundSamples = turboSound.getAudioSamples();
+    const dacSamples = this._dacDevice.getAudioSamples();
 
     // Both should have the same length, but handle mismatch gracefully
     const sampleCount = Math.max(beeperSamples.length, turboSoundSamples.length);
@@ -941,9 +1012,15 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       mixer.setEarLevel(beepExcl ? 0.0 : rawEarSample);
       mixer.setMicLevel(beepExcl ? 0.0 : rawMicSample);
 
-      // Get PSG sample (or 0 if out of range or disabled)
-      const psgSample = i < turboSoundSamples.length ? turboSoundSamples[i] : { left: 0, right: 0 };
+      // Get the PSG sample. Both clocks run on across frames, so the counts agree; should one frame
+      // still come up a sample short, hold the last PSG level rather than inserting silence.
+      const psgSample =
+        i < turboSoundSamples.length
+          ? turboSoundSamples[i]
+          : turboSoundSamples[turboSoundSamples.length - 1] ?? { left: 0, right: 0 };
       mixer.setPsgOutput(psgSample);
+      // The DAC level at this sample's time (the current level if the frame recorded none)
+      mixer.setDacOutput(dacSamples[i] ?? dacSamples[dacSamples.length - 1]);
 
       // Get the mixed output (includes EAR, MIC, PSG, DAC)
       const mixed = mixer.getMixedOutput();
@@ -961,6 +1038,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       }
     }
 
+    mixer.setDacOutput(undefined);
     return mixedSamples;
   }
 
@@ -989,6 +1067,37 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   }
 
   /**
+   * `p3_floating_bus_dat` (zxnext.vhd ~4478-4488): the last byte the CPU read or wrote in a contended
+   * bank. Only the +3 floating bus shows it, so it is tracked in +3 timing, where banks 4-7 are
+   * contended (~4472: pages $08-$0F). The page is the MMU's, whatever overlay answered.
+   */
+  p3FloatingBusValue = 0xff;
+
+  private latchP3FloatingBus(address: number, value: number): void {
+    if (this.composedScreenDevice.displayTiming !== 0b011) return;
+    const page = this.memoryDevice.mmuRegs[address >>> 13];
+    if ((page & 0xf8) === 0x08) this.p3FloatingBusValue = value;
+  }
+
+  override readMemory(address: number): number {
+    const value = super.readMemory(address);
+    this.latchP3FloatingBus(address, value);
+    return value;
+  }
+
+  override fetchCodeByte(): number {
+    const address = this.pc;
+    const value = super.fetchCodeByte();
+    this.latchP3FloatingBus(address, value);
+    return value;
+  }
+
+  override writeMemory(address: number, data: number): void {
+    super.writeMemory(address, data);
+    this.latchP3FloatingBus(address, data);
+  }
+
+  /**
    * This function implements the memory read delay of the CPU.
    * @param address Memory address to read
    *
@@ -1001,6 +1110,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * - All other memory (SRAM and Bank 5 BRAM) has 1 wait state due to scheduling/arbitration
    */
   delayMemoryRead(address: number): void {
+    this.delayContendedMemory(address, true);
     this.tactPlusN(3);
 
     // --- At 28 MHz (speed value 3), add 1 wait state for memory reads
@@ -1037,10 +1147,42 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Note: Write operations do NOT get the extra wait state at 28 MHz. The hardware uses a different timing
    * mechanism (5× 28MHz HDMI clock) to ensure proper write timing without requiring CPU wait states.
    */
-  delayMemoryWrite(_address: number): void {
+  delayMemoryWrite(address: number): void {
+    this.delayContendedMemory(address, true);
     this.tactPlusN(3);
     this.totalContentionDelaySinceStart += 3;
     this.contentionDelaySincePause += 3;
+  }
+
+  /**
+   * Contention of a T-state that only puts `address` on the bus (no MREQ): the Z80's internal cycles.
+   * The Z80 calls it before each such T-state while `delayedAddressBus` is set.
+   */
+  delayAddressBusAccess(address: number): void {
+    this.delayContendedMemory(address, false);
+  }
+
+  /**
+   * Memory contention (B26; zxnext.vhd ~4461-4473, zxula.vhd ~579-600). It is on only at 3.5 MHz, with
+   * NextReg $08 bit 6 clear and a non-Pentagon timing, and it depends on the 8K page the MMU maps at
+   * the address, not on the address: only pages $00-$0F (16K banks 0-7) - 48K timing bank 5, 128K odd
+   * banks, +3 banks 4-7. 48K / 128K stop the CPU clock at the start of every cycle with a contended
+   * address on the bus (`o_cpu_contend`: memory cycles and internal ones); +3 asserts WAIT, which only
+   * a memory cycle (MREQ) sees.
+   */
+  private delayContendedMemory(address: number, memoryCycle: boolean): void {
+    const screen = this.composedScreenDevice;
+    const timing = screen.contentionTiming;
+    if (timing === 0 || (timing === 3 && !memoryCycle)) return;
+    if (this.cpuSpeedDevice.effectiveSpeed !== 0 || this.nextRegDevice.disableRamPortContention) return;
+    const page = this.memoryDevice.mmuRegs[(address >>> 13) & 0x07];
+    if (page > 0x0f) return;
+    if (timing === 1 ? (page & 0x0e) !== 0x0a : timing === 2 ? (page & 0x02) === 0 : (page & 0x08) === 0) return;
+    const delay = screen.contentionDelayAt(this.currentFrameTact);
+    if (delay === 0) return;
+    this.tactPlusN(delay);
+    this.totalContentionDelaySinceStart += delay;
+    this.contentionDelaySincePause += delay;
   }
 
   /**
@@ -1073,8 +1215,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param value Register value;
    */
   tbblueOut(address: number, value: number): void {
-    this.nextRegDevice.setNextRegisterIndex(address);
-    this.nextRegDevice.setNextRegisterValue(value);
+    // --- NEXTREG leaves the $243B selection alone (zxnext.vhd ~4719-4725)
+    this.nextRegDevice.writeRegister(address, value);
   }
 
   /**
@@ -1136,7 +1278,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     // independently of the stackless NMI / MF / DivMMC handling.
     if (this.opCode === 0x4d && this.interruptDevice.hwIm2Mode) {
       this.interruptDevice.daisyReti();
-      this.dmaDevice.setDmaDelay(false);
     }
 
     // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
@@ -1146,11 +1287,13 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // FPGA: cpu_retn_seen unconditionally clears both nmi_active and mf_enable
     // (D7: no guard on nmiHold — RETN always clears MF state)
-    this.multifaceDevice.handleRetn();
+    // --- (only ED 45: im2_control o_retn_seen is S_ED45_T4 - not RETI, not the RETN aliases)
+    if (this.opCode === 0x45) this.multifaceDevice.handleRetn();
 
-    // D6: Suppress DivMMC RETN if multiface was active
-    if (mfWasActive) {
-      this._suppressDivMmcRetn = true;
+    // --- DivMMC unmaps here, before the next opcode fetch: only on ED 45 (im2_control o_retn_seen
+    // --- is S_ED45_T4 - not RETI, not the RETN aliases) and only when the Multiface was not active.
+    if (!mfWasActive && this.opCode === 0x45) {
+      this.divMmcDevice.handleRetnExecution();
     }
 
     if (this._stacklessNmiProcessed) {
@@ -1163,6 +1306,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * Execute this method before fetching the opcode of the next instruction
    */
   beforeOpcodeFetch(): void {
+    this._cpuHeldAtFrameEnd = false;
     this.divMmcDevice.beforeOpcodeFetch();
 
     // 1. Accept new NMI causes (only in IDLE or FETCH)
@@ -1192,10 +1336,10 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   /**
    * Runs any DMA work that owns, or is about to request, the CPU bus.
    *
-   * The FPGA zxnDMA is clocked from the 28 MHz system clock. In continuous mode
-   * it keeps BUSREQ asserted until the block finishes, so the CPU does not run a
-   * status-polling loop in parallel with the transfer. Account these clocks in
-   * the 28 MHz frame domain directly instead of scaling them as CPU T-states.
+   * The zxnDMA is clocked by the CPU clock (zxnext.vhd `clk_i => i_CLK_CPU`). In continuous
+   * mode it keeps BUSREQ asserted until the block finishes, so the CPU does not run a
+   * status-polling loop in parallel with the transfer. The DMA reports the 28 MHz clocks it
+   * held the bus for (CPU clocks x the tact scale).
    */
   private runDmaUntilCpuCanRun(): void {
     const maxDmaSteps = 0x20000;
@@ -1209,22 +1353,46 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       const dmaTicks = this.dmaDevice.stepDma();
       if (dmaTicks > 0) {
         this.tactPlusDmaTicks(dmaTicks);
-        if (this.interruptDevice.dmaInterruptRequestActive) {
-          this.dmaDevice.setDmaDelay(true);
-        }
       }
 
       const busAfter = this.dmaDevice.getBusControl();
       if (!busAfter.busRequested) {
         break;
       }
+
+      // --- The frame ended while the DMA had the bus: let the frame runner start the next frame
+      // --- (interrupt edges, the picture) without running an instruction, then go on.
+      if (this.frameCompleted) {
+        this._cpuHeldByDma = true;
+        break;
+      }
     }
   }
 
+  /** The DMA kept the bus across a frame end: the CPU runs no instruction in this loop pass. */
+  private _cpuHeldByDma = false;
+
+  /** The frame ended with the DMA holding the bus, and no opcode has been fetched since ("snoozed"). */
+  private _cpuHeldAtFrameEnd = false;
+
+  isCpuSnoozed(): boolean {
+    return this._cpuHeldByDma || super.isCpuSnoozed();
+  }
+
+  onSnooze(): void {
+    if (this._cpuHeldByDma) {
+      this._cpuHeldByDma = false;
+      // --- Still held (BUSREQ) when the frame stops here: what the CPU panel reports until an opcode is
+      // --- fetched again
+      this._cpuHeldAtFrameEnd = true;
+      return;
+    }
+    super.onSnooze();
+  }
+
   /**
-   * Advance by raw 28 MHz DMA clocks. Unlike tactPlusN(), this does not multiply
-   * by the current CPU speed because the DMA engine is already in the system-clock
-   * domain.
+   * Advance by DMA clocks given in 28 MHz ticks (the DMA's CPU clocks times the tact
+   * scale), so they are not multiplied again.
    */
   private tactPlusDmaTicks(ticks: number): void {
     this.tacts += Math.max(1, Math.ceil(ticks / this.cpuTactScale));
@@ -1460,138 +1628,8 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   async getCodeInjectionFlow(_model: string, additionalInfo: any): Promise<CodeInjectionFlow> {
     // --- Check for autoexec file
-    const mainApi = createMainApi(this.messenger);
-    const hasAutoExect = await mainApi.hasNextAutoExec();
-
-    // --- Create QueueKey steps for the prompt
-    const prompt = `.nexload ${additionalInfo}\n`;
-    const promtKeys = convertAsciiStringToNextKeyCodes(prompt);
-    const promptQueue: CodeInjectionStep[] = [];
-    for (const keyCode of promtKeys) {
-      if (keyCode.extMode) {
-        promptQueue.push({
-          type: "QueueKey",
-          primary: SpectrumKeyCode.CShift,
-          secondary: SpectrumKeyCode.CShift,
-          wait: SP_KEY_WAIT_SHORT
-        });
-      }
-      promptQueue.push({
-        type: "QueueKey",
-        primary: keyCode.primaryCode,
-        secondary: keyCode.secondaryCode,
-        wait: SP_KEY_WAIT_SHORT
-      });
-      promptQueue.push({
-        type: "Wait",
-        duration: SP_KEY_WAIT_SHORT
-      });
-    }
-
-    // --- Create the flow
-    const keys: CodeInjectionFlow = [
-      {
-        type: "KeepPc"
-      },
-      {
-        // --- The cold boot: from a hard reset all the way through NextZXOS coming up, and by far
-        // --- the longest step in this flow. Checkpointed so later runs start from the boot menu
-        // --- instead of booting again.
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-        checkpoint: "zxnext-boot",
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      },
-      {
-        type: "Start"
-      },
-      {
-        type: "Wait",
-        duration: 100
-      },
-      {
-        type: "ReachExecPoint",
-        rom: 0,
-        execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-        message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-      },
-      {
-        type: "Start"
-      }
-    ];
-    if (hasAutoExect) {
-      keys.push(
-        {
-          type: "QueueKey",
-          primary: SpectrumKeyCode.Space,
-          wait: SP_KEY_WAIT,
-          message: "Space"
-        },
-        {
-          type: "ReachExecPoint",
-          rom: 0,
-          execPoint: ZXNEXT_MAIN_WAITING_LOOP,
-          message: `Main execution cycle point reached (ROM0/$${toHexa4(ZXNEXT_MAIN_WAITING_LOOP)})`
-        }
-      );
-    }
-    keys.push(
-      {
-        type: "Start"
-      },
-      // --- Do not touch the menu until it is actually up and waiting.
-      //
-      // The boot sync above only proves the OS reached its key-wait loop once, which happens during
-      // startup too. Pressing the menu keys before the menu is drawn threw them away, and the
-      // `.nexload` text that followed was then typed into the menu instead - where `c` of
-      // `ScrollNutter` starts the Calculator.
-      {
-        type: "WaitIdle",
-        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
-        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
-        message: "Boot menu ready"
-      },
-      {
-        type: "QueueKey",
-        primary: SpectrumKeyCode.N6,
-        secondary: SpectrumKeyCode.CShift,
-        wait: SP_KEY_WAIT,
-        message: "Arrow down"
-      },
-      {
-        type: "QueueKey",
-        primary: SpectrumKeyCode.Enter,
-        wait: 0,
-        message: "Enter"
-      },
-      // --- Let the machine actually consume the Enter above before asking where it is.
-      //
-      // `QueueKey` only *queues*; `emulateKeystroke()` plays the key back over the following frames.
-      // Without this the `ReachExecPoint` below ran while the machine was still sitting in the boot
-      // menu's waiting loop — which is the very address it waits for — so it matched instantly and
-      // typing started anyway. See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.13.
-      {
-        type: "WaitKeyQueue"
-      },
-      // --- Wait for the command line to be up and idle before typing into it.
-      //
-      // Not `ReachExecPoint` on the key-wait loop: that address is where the OS waits for *any* key,
-      // so it matches while the boot menu is still up. Settling in the loop across consecutive
-      // samples is the difference between "something wants a key" and "the command line is ready" -
-      // while NextZXOS loads it, it is doing real work and cannot satisfy this.
-      {
-        type: "WaitIdle",
-        fromAddr: ZXNEXT_KEY_WAIT_LOOP_FROM,
-        toAddr: ZXNEXT_KEY_WAIT_LOOP_TO,
-        message: "Command line ready"
-      },
-      {
-        type: "Start"
-      },
-      ...promptQueue
-    );
-    return keys;
+    const hasAutoExec = await createMainApi(this.messenger).hasNextAutoExec();
+    return buildNextCodeInjectionFlow(hasAutoExec, additionalInfo);
   }
 
   /**
@@ -1641,6 +1679,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Prepare the screen device for the new machine frame
     this.composedScreenDevice.onNewFrame();
+    this.copperDevice.onNewFrame();
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
@@ -1655,18 +1694,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._copperCurrentColumn = 0;
 
     // --- Prepare audio devices for the new frame
-    this._turboSoundDevice.onNewFrame();
+    this._turboSoundDevice.onNewFrame(this.tactsInFrame);
     this._dacDevice.onNewFrame();
     this._audioMixerDevice.onNewFrame();
-
-    // --- Advance DS1307 RTC clock (1 Hz tick via frame counting)
-    this.i2cDevice.onNewFrame();
-
-    // --- Auto-drain UART TX FIFOs
-    this.uartDevice.onNewFrame();
-
-    // --- Advance floppy disk motor timing
-    this.floppyDevice.onFrameCompleted();
   }
 
   /**
@@ -1677,6 +1707,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._turboSoundDevice.calculateCurrentAudioValue(this.frameTacts);
     this._dacDevice.calculateCurrentAudioValue();
     this._audioMixerDevice.calculateCurrentAudioValue();
+    const pendingReset = this._pendingNextRegReset;
+    if (pendingReset) {
+      this._pendingNextRegReset = undefined;
+      pendingReset === "hard" ? this.hardReset() : this.reset();
+    }
   }
 
   /**
@@ -1685,12 +1720,32 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    */
   shouldRaiseInterrupt(): boolean {
     const id = this.interruptDevice;
+    // --- A CTC zero count requests its interrupt at once (ctc_zc_to), not at the next CTC port access
+    this.ctcDevice.sync();
+    // --- So do the UART FIFO levels (a byte received, the TX FIFO emptied)
+    this.uartDevice.sync();
 
     if (id.hwIm2Mode) {
-      return id.daisyUpdateIrqState();
+      // --- The daisy chain interrupts a CPU in IM 2 only; the ULA (the EXCEPTION generic) and requests
+      // --- raised while the CPU was not in IM 2 pulse instead.
+      return (
+        id.daisyUpdateIrqState() ||
+        (this.interruptMode !== 2 && this.composedScreenDevice.pulseIntActive && !id.ulaInterruptDisabled) ||
+        id.pulseActive
+      );
     }
 
-    return this.composedScreenDevice.pulseIntActive || (this.dmaDevice.getIp() === 1);
+    // --- Pulse ("legacy") mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`,
+    // --- zxnext.vhd `pulse_int_n`). The ULA frame interrupt obeys its disable bit ($22 bit 2 = port $FF
+    // --- bit 6 = not $C4 bit 0), and the line interrupt ($22 bit 1) raises INT too - it used to be
+    // --- captured into a status flag nothing read, so it never interrupted the CPU.
+    const screen = this.composedScreenDevice;
+    return (
+      (screen.pulseIntActive && !id.ulaInterruptDisabled) ||
+      (screen.lineIntActive && id.lineInterruptEnabled) ||
+      id.pulseActive ||
+      this.dmaDevice.getIp() === 1
+    );
   }
 
   /**
@@ -1698,15 +1753,54 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @param increment The tact increment value
    */
   onTactIncremented(): void {
-    if (this.frameCompleted) return;
-    while (this.lastRenderedFrameTact < this.currentFrameTact) {
-      // The copper compares against the rebased copper line (hardware `cvc`), not the raw
-      // ULA vertical counter. Guard on the start mode so a stopped copper costs nothing.
-      if (this.copperDevice.startMode !== CopperStartMode.FullyStopped) {
-        this.copperDevice.executeTick(
-          this.composedScreenDevice.vcToCopperLine(this._copperCurrentLine),
-          this._copperCurrentColumn
-        );
+    if (this.frameCompleted) {
+      // --- The frame ended inside this instruction: render its remaining tacts before the next frame
+      // --- starts. They carry pulses too - the Pentagon interrupt starts on the frame's last tact.
+      // --- The audio clocks keep running through the rest of the instruction: a sample boundary in
+      // --- those tacts closes now, into this frame's buffers, as the WASM core does. Deferring it to
+      // --- the next frame let the PSG run past the boundary first and restart its sample grid.
+      this.renderFrameTactsTo(this.tactsInFrame >>> 2);
+    } else {
+      this.renderFrameTactsTo(this.currentFrameTact);
+    }
+    // --- The audio sample clock runs on the 28 MHz clock, like the WASM mixer's: a sample lasts the same
+    // --- real time at every CPU speed. (Counted in CPU tacts, a sample that spanned a speed change was
+    // --- stretched or squeezed.) The beeper window closes that far back from the current tact; the
+    // --- PSG closes its window on the same grid, and the DAC is sampled now.
+    // --- The beeper's rate when the host set one; otherwise the PSG's default (48 kHz)
+    const rate = this.beeperDevice.getAudioSampleRate() || this._turboSoundDevice.getAudioSampleRate();
+    if (rate !== this._audioRate) {
+      // --- A new rate (or a reset): the grid starts a sample in, as the PSG's and the WASM mixer's do
+      this._audioRate = rate;
+      this._audioSampleLength28 = rate > 0 ? 28_000_000 / rate : 0;
+      this._audioNextSample28 = this._audioSampleLength28;
+    }
+    const frame28 = this.frameTacts;
+    if (frame28 < this._audioLastFrame28) this._audioNextSample28 -= this.tactsInFrame; // --- the frame wrapped
+    this._audioLastFrame28 = frame28;
+    while (this._audioSampleLength28 > 0 && frame28 >= this._audioNextSample28) {
+      this.beeperDevice.emitSampleAt(this.tacts - (frame28 - this._audioNextSample28) / this.cpuTactScale);
+      this._turboSoundDevice.emitAudioSample(frame28);
+      this._dacDevice.recordSample();
+      this._audioNextSample28 += this._audioSampleLength28;
+    }
+    this._dacDevice.setNextAudioSample();
+    this._audioMixerDevice.setNextAudioSample();
+  }
+
+  /** Renders the frame tacts (copper, raster, interrupt pulses) up to, not including, `endTact`. */
+  private renderFrameTactsTo(endTact: number): void {
+    while (this.lastRenderedFrameTact < endTact) {
+      // The copper sees the ULA beam - `cvc` and `hc_ula` (zxnext.vhd wires them to copper.vhd) - not
+      // the raw counters, and it runs on the 28 MHz clock: four ticks per horizontal position.
+      // A stopped copper with nothing left in its write pipeline costs nothing.
+      if (this.copperDevice.isActive) {
+        const screen = this.composedScreenDevice;
+        const cvc = screen.copperLineAt(this._copperCurrentLine, this._copperCurrentColumn);
+        const hcUla = screen.copperHcAt(this._copperCurrentColumn);
+        for (let tick = 0; tick < 4; tick++) {
+          this.copperDevice.executeTick(cvc, hcUla);
+        }
       }
       this._copperCurrentColumn++;
       if (this._copperCurrentColumn >= this._totalHC) {
@@ -1725,11 +1819,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
       this._prevUlaIntPulse = ulaIntPulse;
       this._prevLineIntPulse = lineIntPulse;
     }
-    this.beeperDevice.setNextAudioSample();
-    // --- Generate audio samples for all audio devices
-    this._turboSoundDevice.setNextAudioSample(this.frameTacts);
-    this._dacDevice.setNextAudioSample();
-    this._audioMixerDevice.setNextAudioSample();
   }
 
   /**
@@ -1879,46 +1968,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
    * @returns The disassembly section.
    */
   getDisassemblySections(options: Record<string, any>): IMemorySection[] {
-    const ram = !!options.ram;
-    const screen = !!options.screen;
-    const sections: IMemorySection[] = [];
-    if (!ram || !screen) {
-      // --- Use the memory segments according to the "ram" and "screen" flags
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0x3fff,
-        sectionType: MemorySectionType.Disassemble
-      });
-      if (ram) {
-        if (screen) {
-          sections.push({
-            startAddress: 0x4000,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        } else {
-          sections.push({
-            startAddress: 0x5b00,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        }
-      } else if (screen) {
-        sections.push({
-          startAddress: 0x4000,
-          endAddress: 0x5aff,
-          sectionType: MemorySectionType.Disassemble
-        });
-      }
-    } else {
-      // --- Disassemble the whole memory
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0xffff,
-        sectionType: MemorySectionType.Disassemble
-      });
-    }
-
-    return sections;
+    return nextDisassemblySections(options);
   }
 }

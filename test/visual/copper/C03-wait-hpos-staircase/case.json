@@ -1,0 +1,245 @@
+{
+  "id": "C03-wait-hpos-staircase",
+  "title": "WAIT horizontal position: colour changes start at paper x = 8*H",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000
+  ],
+  "expectIdenticalFrames": true,
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "probes": [
+    {
+      "name": "above",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        48,
+        143
+      ],
+      "rgb": "next8:0x00"
+    },
+    {
+      "name": "row 144 edge at H=8",
+      "kind": "columns",
+      "y": [
+        144,
+        144
+      ],
+      "bands": [
+        {
+          "x": [
+            96,
+            219
+          ],
+          "rgb": "next8:0x00"
+        },
+        {
+          "x": [
+            228,
+            607
+          ],
+          "rgb": "next8:0x1C"
+        }
+      ]
+    },
+    {
+      "name": "green rows",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        145,
+        151
+      ],
+      "rgb": "next8:0x1C"
+    },
+    {
+      "name": "row 152 edge at H=16",
+      "kind": "columns",
+      "y": [
+        152,
+        152
+      ],
+      "bands": [
+        {
+          "x": [
+            96,
+            347
+          ],
+          "rgb": "next8:0x1C"
+        },
+        {
+          "x": [
+            356,
+            607
+          ],
+          "rgb": "next8:0xE0"
+        }
+      ]
+    },
+    {
+      "name": "red rows",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        153,
+        159
+      ],
+      "rgb": "next8:0xE0"
+    },
+    {
+      "name": "row 160 edge at H=24",
+      "kind": "columns",
+      "y": [
+        160,
+        160
+      ],
+      "bands": [
+        {
+          "x": [
+            96,
+            475
+          ],
+          "rgb": "next8:0xE0"
+        },
+        {
+          "x": [
+            484,
+            607
+          ],
+          "rgb": "next8:0x03"
+        }
+      ]
+    },
+    {
+      "name": "blue rows",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        161,
+        167
+      ],
+      "rgb": "next8:0x03"
+    },
+    {
+      "name": "row 168 edge at H=31",
+      "kind": "columns",
+      "y": [
+        168,
+        168
+      ],
+      "bands": [
+        {
+          "x": [
+            96,
+            587
+          ],
+          "rgb": "next8:0x03"
+        },
+        {
+          "x": [
+            596,
+            607
+          ],
+          "rgb": "next8:0xFC"
+        }
+      ]
+    },
+    {
+      "name": "yellow rows",
+      "kind": "rect",
+      "x": [
+        96,
+        607
+      ],
+      "y": [
+        169,
+        175
+      ],
+      "rgb": "next8:0xFC"
+    },
+    {
+      "name": "below",
+      "kind": "rect",
+      "x": [
+        100,
+        607
+      ],
+      "y": [
+        176,
+        239
+      ],
+      "rgb": "next8:0x00"
+    },
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ]
+}

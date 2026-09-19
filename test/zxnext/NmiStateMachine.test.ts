@@ -37,16 +37,19 @@ describe("NmiStateMachine", async () => {
   //  Task 3 – custom commands set pending flags
   // ─────────────────────────────
 
-  it("executeCustomCommand('multifaceNmi') sets _pendingMfNmi", async () => {
-    expect((m as any)._pendingMfNmi).toBe(false);
+  // --- The source latches on the next 28 MHz clock (zxnext.vhd ~2051-2070), not at the next opcode fetch
+  it("executeCustomCommand('multifaceNmi') latches the Multiface NMI source", async () => {
+    expect(m.nmiActivated).toBe(false);
     await m.executeCustomCommand("multifaceNmi");
-    expect((m as any)._pendingMfNmi).toBe(true);
+    expect((m as any)._nmiSourceMf).toBe(true);
+    expect(m.nmiActivated).toBe(true);
   });
 
-  it("executeCustomCommand('divmmcNmi') sets _pendingDivMmcNmi", async () => {
-    expect((m as any)._pendingDivMmcNmi).toBe(false);
+  it("executeCustomCommand('divmmcNmi') latches the DivMMC NMI source", async () => {
+    expect(m.nmiActivated).toBe(false);
     await m.executeCustomCommand("divmmcNmi");
-    expect((m as any)._pendingDivMmcNmi).toBe(true);
+    expect((m as any)._nmiSourceDivMmc).toBe(true);
+    expect(m.nmiActivated).toBe(true);
   });
 
   // ─────────────────────────────
@@ -115,7 +118,8 @@ describe("NmiStateMachine", async () => {
   //  HOLD → END transition
   // ─────────────────────────────
 
-  it("HOLD→END when nmiHold drops false (MF: nmiHold cleared)", async () => {
+  // --- S_NMI_END lasts one CPU clock on the FPGA: at an opcode fetch the machine passes through it
+  it("HOLD→IDLE (through END) when nmiHold drops false (MF: nmiHold cleared)", async () => {
     await m.executeCustomCommand("multifaceNmi");
     m.beforeOpcodeFetch();   // IDLE→FETCH
     m.pc = 0x0066;
@@ -125,8 +129,8 @@ describe("NmiStateMachine", async () => {
     expect((m as any)._nmiState).toBe("HOLD");
     // Clear nmiActive — simulates RETN completion (nmiHold mirrors nmiActive)
     m.multifaceDevice.nmiActive = false;
-    m.beforeOpcodeFetch();   // HOLD→END
-    expect((m as any)._nmiState).toBe("END");
+    m.beforeOpcodeFetch();   // HOLD→END→IDLE
+    expect((m as any)._nmiState).toBe("IDLE");
   });
 
   it("HOLD stays in HOLD while nmiHold is true", async () => {
@@ -193,14 +197,14 @@ describe("NmiStateMachine", async () => {
     expect(m.nmiAcceptCause).toBe(false);
   });
 
-  it("nmiAcceptCause: false in END state", async () => {
+  it("nmiAcceptCause: true again as soon as the hold ends (END lasts one clock)", async () => {
     await m.executeCustomCommand("multifaceNmi");
     m.beforeOpcodeFetch();
     m.pc = 0x0066;
     m.beforeOpcodeFetch();
     m.multifaceDevice.nmiActive = false;
     m.beforeOpcodeFetch();
-    expect(m.nmiAcceptCause).toBe(false);
+    expect(m.nmiAcceptCause).toBe(true);
   });
 
   // ─────────────────────────────

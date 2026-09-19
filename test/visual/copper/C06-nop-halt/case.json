@@ -1,0 +1,95 @@
+{
+  "id": "C06-nop-halt",
+  "title": "NOP MOVEs are skipped; nothing after a HALT runs",
+  "capture": [
+    50,
+    100,
+    200
+  ],
+  "longCapture": [
+    1000
+  ],
+  "expectIdenticalFrames": true,
+  "tiers": [
+    "headless",
+    "browser"
+  ],
+  "probes": [
+    {
+      "name": "paper",
+      "kind": "bands",
+      "x": [
+        100,
+        607
+      ],
+      "bands": [
+        {
+          "y": [
+            48,
+            143
+          ],
+          "rgb": "next8:0x00"
+        },
+        {
+          "y": [
+            144,
+            239
+          ],
+          "rgb": "next8:0x1C"
+        }
+      ]
+    },
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ]
+}

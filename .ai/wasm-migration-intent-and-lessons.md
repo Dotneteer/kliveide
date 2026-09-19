@@ -52,7 +52,10 @@ that writes it.
 Step 29 completion on 2026-08-22 closed the binary-size/timing-depth blocker,
 but later ULA parity debugging proved the broader Next migration was
 overstated. The Next WASM diagnostics must not report full default readiness
-while ULA/screen parity is still incomplete.
+while ULA/screen parity is still incomplete. (The blockers were re-audited
+against the VHDL and closed with dual-core tests on 2026-09-19 -
+`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` Step 0 - after which the
+rollout constants and their diagnostics fields were removed in Step 10.)
 
 Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
 is now WASM. TypeScript remains explicitly selectable as the compatibility
@@ -65,9 +68,8 @@ ULANext, ULA+, Layer 2, tilemap, sprites, clipping, scrolling, transparency,
 blending, active-line interrupts, and floating-bus updates. The WASM ULA path
 currently covers only a subset: `$FE` keyboard/ULA behavior, basic standard
 ULA instant rendering, flash, standard colours, ULA scroll/clip registers, and
-the ULA INT pulse. Keep `defaultReady` false and exclude `ULA`/`screen` from
-`migratedSurfaces` until the timed composed screen pipeline is ported and
-oracle-tested.
+the ULA INT pulse. (Superseded: the timed composed pipeline was ported and
+the blockers closed on 2026-09-19.)
 
 CTC timing lesson: mirror the TypeScript CTC model as lazy 28 MHz frame-clock
 sync before CTC port access, not per-tact work in the CPU hot path. Port gating
@@ -160,7 +162,32 @@ needs to be extended.
 
 Keep the old TypeScript backend available as an explicit fallback and parity
 oracle until a separate deprecation plan removes it. Do not delete the fallback
-just because WASM becomes the default.
+just because WASM becomes the default. For the ZX Spectrum Next that plan is
+`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: separation and parity first,
+removal only after its gate.
+
+**A WASM machine must not subclass the TypeScript machine it replaces.** The Next
+WASM machine did (`ZxNextWasmV2Machine extends ZxNextMachine`), which meant every
+WASM machine built and reset the whole TypeScript device set, and quiet paths kept
+running TypeScript emulation on the production backend: the keyboard mirror, code
+injection through TypeScript contention, frame pacing from the TypeScript screen
+device, IDE panels reading TypeScript device fields WASM never updated (stale
+palettes, a wrong ULA panel, a status bar stuck at 3.5 MHz, `$0000` in the
+Breakpoints panel). Give the WASM machine its own host base on the shared
+`Z80MachineBase` (as `ZxSpectrum48WasmHost` and `ZxNextWasmHost` do), share only
+neutral metadata modules and logic both cores need (`next*.ts`,
+`nextMachineInfo.ts`), and let the IDE talk to an interface both implement
+(`IZxNextIdeMachine`) instead of casting to either class. Guard it with a test that
+walks the import graph, type imports included
+(`test/wasm/zxNext/wasm-next-separation.test.ts`): the leaks it found were type-only
+chains through the Spectrum device interfaces and a renderer helper module.
+
+**Parity checks the IDE too, not only the hardware.** A dual-core IDE-state test
+(`s.ideState()`; now IDE-001, WASM-only against the program's writes) found five
+panel differences - on *both* cores - that no hardware test could see. When the two cores disagree, the VHDL decides which one
+is wrong; in this migration the TypeScript "oracle" was the wrong side several
+times (a one-pixel-early half-pixel-scroll switch, dead tilemap fields behind the
+Palettes panel, a ULA panel that threw).
 
 Host-owned boundaries, such as UI policy, file/media persistence, Electron
 resource lookup, and test harness setup, can remain in TypeScript. Device,

@@ -25,7 +25,7 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
-import { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
+import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -38,7 +38,6 @@ import {
   ULA_BORDER_COLOR_NAMES,
   VicState
 } from "@common/messaging/EmuApi";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
@@ -288,6 +287,10 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine;
+    // --- The Next answers from its own state on either core (see IZxNextIdeMachine)
+    if (isZxNextIdeMachine(machine)) {
+      return machine.getNextUlaState();
+    }
     const screenDevice = (machine as ZxSpectrumBase).screenDevice;
     const kbDevice = (machine as ZxSpectrumBase).keyboardDevice;
     let romP = 0;
@@ -708,7 +711,7 @@ class EmuMessageProcessor {
     }
     const machine = controller.machine;
     return {
-      descriptors: (machine as IZxNextMachine)?.nextRegDevice?.getDescriptors()
+      descriptors: isZxNextIdeMachine(machine) ? machine.getNextRegDescriptors() : undefined
     };
   }
 
@@ -721,7 +724,7 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine;
-    const devState = (machine as IZxNextMachine)?.nextRegDevice?.getNextRegDeviceState();
+    const devState = isZxNextIdeMachine(machine) ? machine.getNextRegState() : undefined;
     return {
       lastRegisterIndex: devState?.lastRegisterIndex,
       regs: devState?.regs
@@ -736,8 +739,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine as IZxNextMachine;
-    return machine.memoryDevice.getMemoryMappings();
+    return requireZxNextIdeMachine(controller.machine).getNextMemoryMapping();
   }
 
   /**
@@ -817,24 +819,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const machine = controller.machine as ZxNextMachine;
-    const pd = machine.paletteDevice;
-    return {
-      ulaFirst: pd.ulaFirst,
-      ulaSecond: pd.ulaSecond,
-      layer2First: pd.layer2First,
-      layer2Second: pd.layer2Second,
-      spriteFirst: pd.spriteFirst,
-      spriteSecond: pd.spriteSecond,
-      tilemapFirst: pd.tilemapFirst,
-      tilemapSecond: pd.tilemapSecond,
-      storedPaletteValue: pd.storedPaletteValue,
-      spriteTransparencyIndex: machine.spriteDevice.transparencyIndex,
-      tilemapTransparencyIndex: machine.tilemapDevice.transparencyIndex,
-      reg43Value: pd.nextReg43Value,
-      reg6bValue: machine.tilemapDevice.nextReg6bValue,
-      ulaNextFormat: machine.composedScreenDevice.ulaNextFormat
-    };
+    return requireZxNextIdeMachine(controller.machine).getPaletteDeviceInfo();
   }
 
   /**
@@ -1293,4 +1278,15 @@ function getEmuScriptRunner(): EmuScriptRunner {
     emuScriptRunner = new EmuScriptRunner(getCachedStore(), getCachedMessenger());
   }
   return emuScriptRunner;
+}
+
+/**
+ * The running machine as a ZX Spectrum Next, for a request only the Next panels make.
+ * @param machine The running machine
+ */
+function requireZxNextIdeMachine(machine: unknown): IZxNextIdeMachine {
+  if (!isZxNextIdeMachine(machine)) {
+    throw new Error("This request needs a ZX Spectrum Next machine.");
+  }
+  return machine;
 }

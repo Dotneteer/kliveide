@@ -26,7 +26,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
   multifaceType: number;
   enableDivMmcNmiByDriveButton: boolean;
   enableMultifaceNmiByM1Button: boolean;
-  resetDivMmcMapramFlag: boolean;
 
   // Entry point registries for extensibility
   private customEntryPoints: Array<{
@@ -105,7 +104,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     }
     this.enableDivMmcNmiByDriveButton = false;
     this.enableMultifaceNmiByM1Button = false;
-    this.resetDivMmcMapramFlag = false;
   }
 
   // Is the DivMMC device enabled?
@@ -173,14 +171,17 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
 
     this._portLastE3Value = value;
     this._conmem = (value & 0x80) !== 0;
-    const mapramBit = (value & 0x40) !== 0;
-    if (!this._mapram) {
-      this._mapram = mapramBit;
-    } else if (!mapramBit && this.resetDivMmcMapramFlag) {
-      // --- Allow resetting MAPRAM only if the R09 register Bit 3 is set
-      this._mapram = false;
-    }
+    // --- zxnext.vhd ~4162: mapram is sticky - a write ORs it in; only a $09 bit 3 write clears it
+    this._mapram = this._mapram || (value & 0x40) !== 0;
     this._bank = value & 0x0f;
+    this.machine.memoryDevice.updateMemoryConfig();
+    this.machine.memoryDevice.updateFastPathFlags();
+  }
+
+  /** NextReg $09 written with bit 3 set: mapram is cleared (zxnext.vhd ~4164). */
+  clearMapram(): void {
+    if (!this._mapram) return;
+    this._mapram = false;
     this.machine.memoryDevice.updateMemoryConfig();
     this.machine.memoryDevice.updateFastPathFlags();
   }
@@ -308,19 +309,18 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
    *  - No expansion bus ROMCS
    *  - ROM 3 selected (via standard selection or alt ROM with 128K mode)
    */
-  private isRom3AutomapActive(): boolean {
+  private isRom3AutomapActive(pc: number): boolean {
     const mem = this.machine.memoryDevice;
+    // --- sram_pre_override(0): the ROM itself must be paged in at the fetch address (MMU = $FF)
+    if (mem.mmuRegs[(pc >> 13) & 0x07] !== 0xff) return false;
     // Check that ROM 3 is selected
     const rom3 = (mem.selectedRomMsb | mem.selectedRomLsb) === 0x03;
     if (!rom3) return false;
 
-    // Check Layer 2 is not mapped over the ROM area (page 0)
-    const screen = this.machine.composedScreenDevice;
-    if (screen?.layer2EnableMappingForReads) {
-      const mapSegment = screen.layer2Bank;
-      // Layer 2 segment 0 or segment 3 covers 0x0000-0x3FFF
-      if (mapSegment === 0 || mapSegment === 3) return false;
-    }
+    // --- Layer 2 must not be read-mapped over the ROM (zxnext.vhd ~3093 `not sram_layer2_map_en`). In
+    // --- the ROM area sram_pre_override is "111" for every segment (~3009-3012): segments 1 and 2 put
+    // --- Layer 2 at $0000-$3FFF just as 0 and 3 do, so any read mapping covers the fetch.
+    if (this.machine.composedScreenDevice?.layer2EnableMappingForReads) return false;
 
     return true;
   }
@@ -461,22 +461,6 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.machine.memoryDevice.updateFastPathFlags();
   }
 
-  /**
-   * Detects if the last instruction executed was RETN (0xED 0x45)
-   * If detected, clears automap and conmem flags
-   */
-  private checkAndHandleRetn(): void {
-    if (this.machine.retnExecuted) {
-      // FPGA (zxnext.vhd line 4091): divmmc_retn_seen <= z80_retn_seen_28 and not mf_is_active
-      // D6: When multiface was active, DivMMC does not see RETN.
-      if ((this.machine as any)._suppressDivMmcRetn) {
-        (this.machine as any)._suppressDivMmcRetn = false;
-        return;
-      }
-      this.handleRetnExecution();
-    }
-  }
-
   // --- Pages in ROM/RAM into the lower 16K, if requested so
   beforeOpcodeFetch(): void {
     const pc = this.machine.pc;
@@ -489,7 +473,7 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    const rom3Present = this.isRom3AutomapActive();
+    const rom3Present = this.isRom3AutomapActive(pc);
 
     // --- Check all entry points
     this.checkRstTraps(pc, rom3Present);
@@ -501,12 +485,9 @@ export class DivMmcDevice implements IGenericDevice<IZxNextMachine> {
     this.applyAutomapStateChanges();
   }
 
-  // --- Pages in and out ROM/RAM into the lower 16K, if requested so
+  // --- Pages in and out ROM/RAM into the lower 16K, if requested so. RETN is handled when it
+  // --- executes (ZxNextMachine.onRetnExecuted), before the next opcode fetch.
   afterOpcodeFetch(): void {
-    // --- Check for RETN instruction (0xED 0x45) - unmaps DivMMC
-    this.checkAndHandleRetn();
-
-    // --- Process delayed automap requests
     this.processDelayedAutomapRequests();
   }
 

@@ -1,0 +1,302 @@
+{
+  "id": "PAR-005-demo-raster",
+  "title": "Demo-style raster: copper border bars, a Layer 2 split by a line interrupt, a moving sprite",
+  "readyBy": 40,
+  "capture": [
+    60,
+    61,
+    62
+  ],
+  "probes": [
+    {
+      "name": "border bars (right)",
+      "kind": "bands",
+      "x": [
+        612,
+        715
+      ],
+      "bands": [
+        {
+          "y": [
+            48,
+            63
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            64,
+            79
+          ],
+          "rgb": "next8:0x13"
+        },
+        {
+          "y": [
+            80,
+            95
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            96,
+            111
+          ],
+          "rgb": "next8:0x13"
+        },
+        {
+          "y": [
+            112,
+            127
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            128,
+            143
+          ],
+          "rgb": "next8:0x13"
+        },
+        {
+          "y": [
+            144,
+            159
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            160,
+            175
+          ],
+          "rgb": "next8:0x13"
+        },
+        {
+          "y": [
+            176,
+            191
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            192,
+            207
+          ],
+          "rgb": "next8:0x13"
+        },
+        {
+          "y": [
+            208,
+            223
+          ],
+          "rgb": "next8:0xF3"
+        },
+        {
+          "y": [
+            224,
+            239
+          ],
+          "rgb": "next8:0x13"
+        }
+      ]
+    },
+    {
+      "name": "bottom border",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        241,
+        287
+      ],
+      "rgb": "next8:0x00"
+    },
+    {
+      "name": "bottom part: Layer 2 stripes, not scrolled, from line 96",
+      "kind": "columns",
+      "y": [
+        144,
+        239
+      ],
+      "bands": [
+        {
+          "x": [
+            100,
+            123
+          ],
+          "rgb": "next8:0xE0"
+        },
+        {
+          "x": [
+            132,
+            155
+          ],
+          "rgb": "next8:0x1C"
+        },
+        {
+          "x": [
+            164,
+            187
+          ],
+          "rgb": "next8:0x03"
+        },
+        {
+          "x": [
+            196,
+            219
+          ],
+          "rgb": "next8:0xFC"
+        },
+        {
+          "x": [
+            228,
+            251
+          ],
+          "rgb": "next8:0x1F"
+        },
+        {
+          "x": [
+            260,
+            283
+          ],
+          "rgb": "next8:0xE2"
+        },
+        {
+          "x": [
+            292,
+            315
+          ],
+          "rgb": "next8:0x92"
+        },
+        {
+          "x": [
+            324,
+            347
+          ],
+          "rgb": "next8:0x49"
+        },
+        {
+          "x": [
+            356,
+            379
+          ],
+          "rgb": "next8:0x6D"
+        },
+        {
+          "x": [
+            388,
+            411
+          ],
+          "rgb": "next8:0xB6"
+        },
+        {
+          "x": [
+            420,
+            443
+          ],
+          "rgb": "next8:0x24"
+        },
+        {
+          "x": [
+            452,
+            475
+          ],
+          "rgb": "next8:0xDB"
+        },
+        {
+          "x": [
+            484,
+            507
+          ],
+          "rgb": "next8:0x60"
+        },
+        {
+          "x": [
+            516,
+            539
+          ],
+          "rgb": "next8:0x0C"
+        },
+        {
+          "x": [
+            548,
+            571
+          ],
+          "rgb": "next8:0x81"
+        },
+        {
+          "x": [
+            580,
+            603
+          ],
+          "rgb": "next8:0xF0"
+        }
+      ]
+    },
+    {
+      "name": "bottom border, row 240 right of the WAIT",
+      "kind": "rect",
+      "x": [
+        100,
+        719
+      ],
+      "y": [
+        240,
+        240
+      ],
+      "rgb": "next8:0x00"
+    }
+  ],
+  "motion": [
+    {
+      "name": "sprite top",
+      "frames": [
+        60,
+        120
+      ],
+      "feature": {
+        "kind": "firstRow",
+        "x": 310,
+        "rgb": "next8:0xFF",
+        "y": [
+          48,
+          127
+        ]
+      },
+      "expect": {
+        "kind": "linear",
+        "start": "auto",
+        "startWithin": [
+          48,
+          111
+        ],
+        "step": 1,
+        "wrap": {
+          "min": 48,
+          "max": 111
+        }
+      }
+    }
+  ],
+  "contactSheet": {
+    "frames": [
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67
+    ],
+    "columns": 4
+  },
+  "tiers": [
+    "headless",
+    "browser"
+  ]
+}

@@ -1,8 +1,10 @@
 # Audio System Test Suite
 
-Audio coverage for shared audio primitives, the Spectrum beeper, the shared PSG
-chip used by ZX Spectrum Next, and Z88 beeper integration. Classic Spectrum
-128K/+3E PSG behavior is covered by the WASM Spectrum tests.
+Audio coverage for shared audio primitives, the Spectrum beeper, the ZX Spectrum Next's
+TurboSound/DAC/mixer devices, and Z88 beeper integration. Classic Spectrum 128K/+3E PSG
+behavior is covered by the WASM Spectrum tests. The Next's PSG itself (`zxNext/NextPsgChip.ts`,
+a port of `ym2149.vhd`) is tested against the hardware on both cores by
+`test/zxnext-hw/audio/ay-psg.test.ts`; the MAME-shaped `PsgChip` and its unit tests were retired.
 
 ## Test Statistics
 
@@ -10,7 +12,6 @@ chip used by ZX Spectrum Next, and Z88 beeper integration. Classic Spectrum
 |-----------|-------|--------|----------|
 | AudioDeviceBase | 21 | ✅ Passing | Sample rate math, tact-based timing, clock multipliers |
 | SpectrumBeeperDevice | 29 | ✅ Passing | EAR bit control, square waves, frame handling |
-| PsgChip | 30 | ✅ Passing | Registers, tone/noise channels, volume, envelope |
 | Z88 Audio Integration | 2 | ✅ Passing | Z88 beeper sample generation |
 
 ## File Descriptions
@@ -46,24 +47,6 @@ Tests the simple EAR bit-based beeper device.
 - `SpectrumBeeperDevice` implementation
 - `AudioDeviceBase` timing logic
 
-### PsgDevice.test.ts (30 tests)
-Tests the AY-3-8912/YM PSG chip implementation retained for ZX Spectrum Next.
-
-**Key Components:**
-
-**PsgChip Tests (30):**
-- Register operations: All 16 registers readable/writable
-- Tone channels (A/B/C): 12-bit frequency, square wave generation
-- Noise: 5-bit frequency, LFSR implementation
-- Mixer control: Channel enable/disable
-- Volume control: 16 levels (0-15)
-- Envelope: 16 shapes, timing, attack/decay
-- Audio output: Channel mixing and output
-- Reset behavior: Clear state
-
-**Key Insight:**
-PSG generates one output sample every 16 CPU tacts. Output values between audio samples are accumulated and averaged (orphan samples) to prevent aliasing.
-
 ### AudioIntegration.test.ts (2 tests)
 Tests Z88 beeper integration.
 
@@ -94,16 +77,6 @@ Timing: Sample generated every sampleLength tacts
 Frame: ~69,888 tacts → ~869 samples at 44.1kHz
 ```
 
-### PSG Device
-```
-Registers: 16 total (13 used: tones, noise, mixer, volume, envelope)
-Channels: 3 tone (A/B/C) + 1 noise
-Output: Generated every 16 tacts
-Mixing: Channel outputs OR'd with noise, then volume-scaled
-Orphan Samples: PSG outputs between audio samples accumulated & averaged
-Frame: Same as Beeper
-```
-
 ### Machine Audio Mixing
 ```typescript
 getAudioSamples(): number[] {
@@ -125,7 +98,6 @@ npm test -- test/audio/
 ```bash
 npm test -- test/audio/AudioDeviceBase.test.ts
 npm test -- test/audio/BeeperDevice.test.ts
-npm test -- test/audio/PsgDevice.test.ts
 npm test -- test/audio/AudioIntegration.test.ts
 ```
 
@@ -143,7 +115,7 @@ npm test -- test/audio/ --watch
 
 ✅ **Core Timing**: AudioDeviceBase ensures sample generation at correct intervals
 ✅ **Beeper Implementation**: EAR bit correctly produces 1.0/0.0 based on state
-✅ **PSG Implementation**: All 13 registers, 3 tones, noise, mixer, volume, envelope
+✅ **PSG Implementation**: see `test/zxnext-hw/audio/ay-psg.test.ts` (both Next cores)
 ✅ **Frame Handling**: Correct sample counts (~869/frame at 44.1kHz)
 ✅ **Clock Multipliers**: 1x, 2x, 4x supported across all devices
 ✅ **Multi-rate Support**: 11kHz, 22kHz, 44.1kHz, 48kHz validated
@@ -180,7 +152,7 @@ All tests pass consistently (212ms total execution time) and follow vitest best 
 **Source Files Tested:**
 - `src/emu/machines/AudioDeviceBase.ts`: Abstract base class
 - `src/emu/machines/BeeperDevice.ts`: Beeper implementation
-- `src/emu/machines/zxSpectrum128/PsgChip.ts`: PSG chip implementation
+- `src/emu/machines/zxNext/TurboSoundDevice.ts` / `NextPsgChip.ts`: the Next PSGs (TurboSound tests)
 - `src/emu/machines/z88/Z88BeeperDevice.ts`: Z88 beeper implementation
 
 **Test Infrastructure:**

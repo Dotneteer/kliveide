@@ -7,7 +7,24 @@
 #define ZXNEXT_PIXEL_COUNT (ZXNEXT_SCREEN_WIDTH * ZXNEXT_SCREEN_HEIGHT)
 #define ZXNEXT_KEYBOARD_LINE_COUNT 8
 #define ZXNEXT_NEXT_REG_COUNT 256
-#define ZXNEXT_RENDERING_TACTS_IN_FRAME (456 * 311)
+/*
+ * The raster of the current frame (zxula_timing.vhd, NextComposedScreenDevice's TimingConfig):
+ * line and frame length, the beam position of buffer pixel (0, 0), the display origin and the ULA
+ * interrupt window, in HC units. zxnextTimingSelect (zxnext-nextreg.c) sets them at every frame start
+ * from NextReg $03 display timing; the defaults are the +3 raster.
+ */
+static uint32_t zxnextTimingTotalHc = 456u;
+static uint32_t zxnextTimingTotalVc = 311u;
+static uint32_t zxnextTimingFirstVc = 16u;
+static uint32_t zxnextTimingFirstHc = 96u;
+static uint32_t zxnextTimingDisplayXStart = 144u;
+static uint32_t zxnextTimingDisplayYStart = 64u;
+static uint32_t zxnextTimingIntStart = 0x252u;
+/* INT pulse length in CPU cycles (zxnext.vhd ~1968-1990): 32 for 48K and +3, 36 for 128K and Pentagon */
+static uint32_t zxnextTimingIntPulseCycles = 32u;
+/* The memory contention pattern of the raster (NextComposedScreenDevice.contentionTiming): 0 none, 1 48K, 2 128K, 3 +3 */
+static uint32_t zxnextTimingContention = 3u;
+#define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
 #define ZXNEXT_TACTS_IN_FRAME (ZXNEXT_RENDERING_TACTS_IN_FRAME * 4)
 
 #define ZXNEXT_DIAGNOSTIC_IMPLEMENTATION_INCOMPLETE 1
@@ -16,6 +33,9 @@ static uint8_t zxnextMemory[ZXNEXT_MEMORY_SIZE];
 static uint32_t zxnextPixelBuffer[ZXNEXT_PIXEL_COUNT];
 static uint8_t zxnextKeyboardLines[ZXNEXT_KEYBOARD_LINE_COUNT];
 static uint8_t zxnextNextRegs[ZXNEXT_NEXT_REG_COUNT];
+/* The last value the CPU wrote to each NextReg ($253B or NEXTREG), for the IDE; never cleared, like the TypeScript core's */
+static uint8_t zxnextNextRegLastWrite[ZXNEXT_NEXT_REG_COUNT];
+static uint8_t zxnextNextRegWritten[ZXNEXT_NEXT_REG_COUNT];
 
 static uint16_t cpuAf;
 static uint16_t cpuBc;
@@ -47,6 +67,14 @@ static uint32_t contentionDelaySincePause;
 static uint8_t cpuProgrammedSpeed;
 static uint8_t cpuEffectiveSpeed;
 static uint32_t cpuTactScale;
+
+/*
+ * The INT pulse length in HC ticks. zxnext.vhd ~1968-2000 counts the pulse on the CPU clock, so it lasts
+ * 2 ticks per cycle at 3.5 MHz and halves with every speed step (8 ticks for 32 cycles at 28 MHz).
+ */
+static inline uint32_t zxnextTimingIntPulseLength(void) {
+  return (zxnextTimingIntPulseCycles * 2u) >> (cpuEffectiveSpeed & 0x03u);
+}
 static uint16_t lastMemoryAddress;
 static uint8_t lastMemoryValue;
 static uint8_t lastMemoryAccessed;
@@ -58,6 +86,11 @@ static uint8_t lastPortIsWrite;
 static uint8_t nextRegIndex;
 static uint8_t portFeValue;
 static uint8_t portTimexValue;
+/* NextReg $02 bit 0 / bit 1 (zxnext.vhd ~6316-6317): 1 = soft, 2 = hard reset requested. The frame
+   loop stops, and the TypeScript wrapper performs the reset (a hard reset reloads the ROMs there). */
+static uint8_t zxnextResetRequest;
+/* $02 bits 1-0: 1 after a hard reset (the firmware's soft reset after a core load), else soft. */
+static uint8_t zxnextLastResetWasHard;
 static uint8_t borderColor;
 static uint8_t earBit;
 static uint8_t micBit;
@@ -84,14 +117,15 @@ static uint8_t micBit;
 #include "zxnext-psg.c"
 #include "zxnext-audio-mixer.c"
 #include "zxnext-ctc.c"
+#include "zxnext-clock28.c"
 #include "zxnext-uart.c"
 #include "zxnext-i2c.c"
 #include "zxnext-input.c"
 #include "zxnext-expansion.c"
 #include "zxnext-dma.c"
-#include "zxnext-floppy.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
+#include "zxnext-multiface.c"
 #include "zxnext-cpu.c"
 #include "zxnext-trace.c"
 
@@ -106,26 +140,30 @@ static void clearMachineBuffers(void) {
   zxnextKeyboardReset();
   zxnextDivMmcReset();
   zxnextSdReset();
-  zxnextPaletteReset();
+  zxnextPaletteHardReset();
   zxnextLayer2Reset();
   zxnextTilemapReset();
   zxnextSpritesReset();
-  zxnextCopperReset();
+  zxnextCopperHardReset();
+  zxnextRasterReset();
   zxnextBeeperReset();
   zxnextDacReset();
   zxnextPsgReset();
   zxnextAudioMixerReset();
   zxnextCtcReset();
-  zxnextUartReset();
+  zxnextUartHardReset(); /* a hard reset reloads the FPGA core */
   zxnextI2cReset();
   zxnextInputReset();
+  zxnextJoystickHardReset(); /* a core load initialises the key-joystick map */
+  zxnextMouseHardReset(); /* the power-on m_reset */
   zxnextExpansionHardReset();
   zxnextDmaReset();
-  zxnextFloppyReset();
   zxnextNextRegHardReset();
 }
 
 void zxnextReset(void) {
+  /* NextReg $06 bits 4-3 live in the DivMMC module, which zxnextDivMmcReset clears */
+  uint32_t keptNr06 = zxnextNextRegGetDirect(0x06u);
   cpuAf = 0;
   cpuBc = 0;
   cpuDe = 0;
@@ -150,6 +188,7 @@ void zxnextReset(void) {
   zxnextTraceReset();
   zxnextCpuReset();
   zxnextNmiReset();
+  zxnextMultifaceReset();
   zxnextInterruptsReset();
   zxnextTapeReset();
   zxnextDivMmcReset();
@@ -159,6 +198,7 @@ void zxnextReset(void) {
   zxnextTilemapReset();
   zxnextSpritesReset();
   zxnextCopperReset();
+  zxnextRasterReset();
   zxnextBeeperReset();
   zxnextDacReset();
   zxnextPsgReset();
@@ -169,7 +209,8 @@ void zxnextReset(void) {
   zxnextInputReset();
   zxnextExpansionReset();
   zxnextDmaReset();
-  zxnextFloppyReset();
+  zxnextNextRegSoftReset(keptNr06);
+  zxnextPsgMode = (uint8_t)(keptNr06 & 0x03u); /* $06 is not in the reset branch */
   lastMemoryAddress = 0;
   lastMemoryValue = 0;
   lastMemoryAccessed = 0;
@@ -197,7 +238,15 @@ uint32_t zxnextExecuteInstruction(void) {
 }
 
 uint32_t zxnextRenderInstantScreen(void) {
-  return zxnextUlaRenderInstantScreen();
+  /* The paused view shows the current state: pending ULA latches included, without applying them */
+  uint8_t shown[ZXNEXT_ULA_LATCH_COUNT];
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) {
+    shown[i] = ulaShown[i];
+    if (ulaLatchPending[i]) ulaShown[i] = ulaLatchValue[i];
+  }
+  uint32_t result = zxnextUlaRenderInstantScreen();
+  for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) ulaShown[i] = shown[i];
+  return result;
 }
 
 uint32_t zxnextReadMemory(uint32_t address) {
@@ -215,6 +264,12 @@ uint32_t zxnextReadScreenMemoryOffset(uint32_t offset) {
 uint32_t zxnextGetMemoryPageReadOffset(uint32_t page) {
   return zxnextMemoryGetPageReadOffset(page);
 }
+
+/* The paging ports as stored (the Next Memory Mapping panel) */
+uint32_t zxnextGetMemoryPort7ffd(void) { return memPort7ffd; }
+uint32_t zxnextGetMemoryPortDffd(void) { return memPortDffd; }
+uint32_t zxnextGetMemoryPort1ffd(void) { return memPort1ffd; }
+uint32_t zxnextGetMemoryPortEff7(void) { return memPortEff7; }
 
 uint32_t zxnextGetMemoryPageWriteOffset(uint32_t page) {
   return zxnextMemoryGetPageWriteOffset(page);
@@ -259,6 +314,15 @@ uint32_t zxnextGetFrames(void) { return frames; }
 uint32_t zxnextGetTacts(void) { return tacts; }
 uint32_t zxnextGetCurrentFrameTact(void) { return currentFrameTact; }
 uint32_t zxnextGetTactsInFrame(void) { return ZXNEXT_TACTS_IN_FRAME; }
+/* The raster of the frame in progress: HCs per line (7 MHz) and lines (zxula_timing.vhd c_max_hc/vc + 1) */
+uint32_t zxnextGetTimingTotalHc(void) { return zxnextTimingTotalHc; }
+/* The INT line the CPU sampled before its last instruction (the CPU panel's INT) */
+uint32_t zxnextGetCpuSigInt(void) { return z80GetSigInt(); }
+uint32_t zxnextGetCpuHeldByDma(void) { return zxnextCpuHeldAtFrameEnd; }
+uint32_t zxnextGetTimingTotalVc(void) { return zxnextTimingTotalVc; }
+/* The contention the CPU has been held for, in CPU tacts: since the machine started / since the counter's last restart */
+uint32_t zxnextGetTotalContentionDelaySinceStart(void) { return totalContentionDelaySinceStart; }
+uint32_t zxnextGetContentionDelaySincePause(void) { return contentionDelaySincePause; }
 uint32_t zxnextGetFrameCompleted(void) { return frameCompleted; }
 
 void zxnextSetSignalNmi(uint32_t active) { zxnextNmiSetSignal(active); }
@@ -279,7 +343,7 @@ void zxnextSetTacts(uint32_t value) {
   frameTacts28 = (value * (8u >> cpuEffectiveSpeed)) % zxnextGetTactsInFrame();
   currentFrameTact = frameTacts28 >> 2;
   z80SetTacts(value);
-  zxnextBeeperSetTacts(value);
+  zxnextBeeperResyncWindow(value);
 }
 
 uint32_t zxnextGetCpuAf(void) { return z80GetAf(); }
@@ -347,8 +411,23 @@ void zxnextTraceFinishFrame(void) { zxnextTraceFinishFrameImpl(); }
 void zxnextSetNextRegisterIndex(uint32_t reg) { zxnextNextRegSetIndex(reg); }
 uint32_t zxnextGetNextRegisterIndex(void) { return zxnextNextRegGetIndex(); }
 void zxnextSetNextRegisterValue(uint32_t value) { zxnextNextRegSetValue(value); }
+void zxnextWriteNextRegister(uint32_t reg, uint32_t value) { zxnextNextRegCpuWrite(reg & 0xffu, value & 0xffu); }
+/* The IDE's Next Registers panel: the value the CPU last wrote, or 0x100 when it never wrote one */
+uint32_t zxnextGetNextRegisterLastWrite(uint32_t reg) {
+  return zxnextNextRegWritten[reg & 0xffu] ? zxnextNextRegLastWrite[reg & 0xffu] : 0x100u;
+}
+/* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
+void zxnextPressMultifaceNmiButton(void) { zxnextNmiRequestMultiface(); }
+void zxnextPressDivMmcNmiButton(void) { zxnextNmiRequestDivMmc(); }
+uint32_t zxnextTakeResetRequest(void) {
+  uint32_t request = zxnextResetRequest;
+  zxnextResetRequest = 0u;
+  return request;
+}
 uint32_t zxnextGetNextRegisterValue(void) { return zxnextNextRegGetValue(); }
 uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDirect(reg); }
+/* The IDE's Next Registers panel: a `$253B` read of `reg`, leaving the `$243B` selection alone */
+uint32_t zxnextPeekNextRegister(uint32_t reg) { return zxnextNextRegPeek(reg & 0xffu); }
 void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }
 
 void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
@@ -518,6 +597,13 @@ int32_t zxnextGetAudioMixerMixedLeftWord(void) { return zxnextAudioMixerGetMixed
 int32_t zxnextGetAudioMixerMixedRightWord(void) { return zxnextAudioMixerGetMixedRightWord(); }
 uint32_t zxnextAppendAudioMixerCurrentSample(void) { return zxnextAudioMixerAppendCurrentSample(); }
 void zxnextBeginAudioMixerFrame(void) { zxnextAudioMixerBeginFrame(); }
+/* A new frame's audio, as zxnextFrameExecute begins it: the host's per-instruction (debug) loop starts
+   frames itself, and without this the sample buffers filled in its first frame and stayed full */
+void zxnextBeginAudioFrame(void) {
+  zxnextBeeperBeginFrame();
+  zxnextPsgBeginFrame();
+  zxnextAudioMixerBeginFrame();
+}
 void zxnextSetNextAudioMixerSample(uint32_t frameTacts28) { zxnextAudioMixerSetNextSample(frameTacts28); }
 uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
 int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }

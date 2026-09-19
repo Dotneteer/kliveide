@@ -5,6 +5,7 @@
 
 static void zxnextAudioMixerReset(void);
 static void zxnextAudioMixerBeginFrame(void);
+static void zxnextAudioMixerOnFrameWrap(void);
 static void zxnextAudioMixerSetNextSample(uint32_t frameTacts28);
 static void zxnextAudioMixerSetSampleRate(uint32_t rate);
 static uint32_t zxnextAudioMixerGetSampleRate(void);

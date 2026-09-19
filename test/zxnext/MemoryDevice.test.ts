@@ -140,52 +140,27 @@ describe("Next - MemoryDevice", async function () {
     expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
   });
 
-  for (let i = 0; i < 8; i++) {
-    it(`ROM 0 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
-      io.writePort(0x7ffd, 0x00);
-      io.writePort(0x1ffd, 0x00);
-      nrDevice.directSetRegValue(0x8c, i << 4);
-      expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom0Signature0)).toBe(true);
-      expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom0Signature1)).toBe(true);
-    });
-  }
-
-  for (let i = 0; i < 8; i++) {
-    it(`ROM 1 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
-      io.writePort(0x7ffd, 0x10);
-      io.writePort(0x1ffd, 0x00);
-      nrDevice.directSetRegValue(0x8c, i << 4);
-      expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom1Signature0)).toBe(true);
-      expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom1Signature1)).toBe(true);
-    });
-  }
-
-  for (let i = 0; i < 8; i++) {
-    it(`ROM 2 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
-      io.writePort(0x7ffd, 0x00);
-      io.writePort(0x1ffd, 0x04);
-      nrDevice.directSetRegValue(0x8c, i << 4);
-      expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom2Signature0)).toBe(true);
-      expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom2Signature1)).toBe(true);
-    });
-  }
-
-  for (let i = 0; i < 8; i++) {
-    it(`ROM 3 keeps in with Alt ROM (R8C: ${(i << 4).toString(16)})`, async () => {
-      io.writePort(0x7ffd, 0x10);
-      io.writePort(0x1ffd, 0x04);
-      nrDevice.directSetRegValue(0x8c, i << 4);
-      expect(isRom(memDevice, 0)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 0, nextRom3Signature0)).toBe(true);
-      expect(isRom(memDevice, 1)).toBe(true);
-      expect(romSlotSignatureMatches(memDevice, 1, nextRom3Signature1)).toBe(true);
-    });
+  // --- zxnext.vhd ~2944-2947 (+3 machine type): with $8C bit 5 or 4 set, the ROM is bits 5-4 whether
+  // --- or not the Alt ROM is enabled; otherwise $1FFD bit 2 & $7FFD bit 4 select it.
+  const romSignatures = [
+    [nextRom0Signature0, nextRom0Signature1],
+    [nextRom1Signature0, nextRom1Signature1],
+    [nextRom2Signature0, nextRom2Signature1],
+    [nextRom3Signature0, nextRom3Signature1]
+  ];
+  for (let portRom = 0; portRom < 4; portRom++) {
+    for (let i = 0; i < 8; i++) {
+      const rom = i & 0x03 ? i & 0x03 : portRom;
+      it(`ports select ROM ${portRom}, R8C: ${(i << 4).toString(16)} -> ROM ${rom}`, async () => {
+        io.writePort(0x7ffd, (portRom & 1) << 4);
+        io.writePort(0x1ffd, (portRom >> 1) << 2);
+        nrDevice.directSetRegValue(0x8c, i << 4);
+        expect(isRom(memDevice, 0)).toBe(true);
+        expect(romSlotSignatureMatches(memDevice, 0, romSignatures[rom][0])).toBe(true);
+        expect(isRom(memDevice, 1)).toBe(true);
+        expect(romSlotSignatureMatches(memDevice, 1, romSignatures[rom][1])).toBe(true);
+      });
+    }
   }
 
   const altPages0 = [

@@ -57,45 +57,9 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
     this.onTactIncremented();
   }
 
-  /**
-   * This method increments the current CPU tacts by one, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus1WithAddress(_address: number): void {
-    this.tactPlusN(1);
-  }
-
-  /**
-   * This method increments the current CPU tacts by two, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus2WithAddress(_address: number): void {
-    this.tactPlusN(2);
-  }
-
-  /**
-   * This method increments the current CPU tacts by four, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus4WithAddress(_address: number): void {
-    this.tactPlusN(4);
-  }
-
-  /**
-   * This method increments the current CPU tacts by five, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus5WithAddress(_address: number): void {
-    this.tactPlusN(5);
-  }
-
-  /**
-   * This method increments the current CPU tacts by seven, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus7WithAddress(_address: number): void {
-    this.tactPlusN(7);
-  }
+  // --- The tactPlusNWithAddress methods are Z80Cpu's: they call delayAddressBusAccess before each
+  // --- T-state while delayedAddressBus is set, which is how the Next's 48K/128K memory contention
+  // --- (B26) reaches the Z80's internal cycles.
 }
 
 /**
@@ -231,19 +195,24 @@ function mulDE(cpu: Z80NCpu) {
   cpu.de = cpu.d * cpu.e;
 }
 
+// 0x31-0x33: ADD HL/DE/BC,A. t80n.vhd ~762-785 writes F(Flag_C) from bit 16 of a variable the 16-bit
+// sum never reaches (it is zeroed at T-state 3): carry is cleared, the other flags stay.
 // 0x31: ADD HL,A
 function addHLA(cpu: Z80NCpu) {
   cpu.hl = cpu.hl + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x32: ADD DE,A
 function addDEA(cpu: Z80NCpu) {
   cpu.de = cpu.de + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x33: ADD BC,A
 function addBCA(cpu: Z80NCpu) {
   cpu.bc = cpu.bc + cpu.a;
+  cpu.f &= 0xfe;
 }
 
 // 0x34: ADD HL,NNNN
@@ -345,7 +314,11 @@ function ldws(cpu: Z80NCpu) {
   const tmp = cpu.readMemory(cpu.hl);
   cpu.writeMemory(cpu.de, tmp);
   cpu.l++;
-  cpu.f = incFlags[cpu.d++] | cpu.flagCValue;
+  // --- t80n_mcode.vhd ~2140: the flags are INC D's, but without PreserveC (INC r sets it, ~762):
+  // --- carry is the carry out of D + 1.
+  const d = cpu.d;
+  cpu.d++;
+  cpu.f = incFlags[d] | (d === 0xff ? 0x01 : 0x00);
 }
 
 // 0xAC: LDDX

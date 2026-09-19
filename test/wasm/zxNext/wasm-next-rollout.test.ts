@@ -7,7 +7,6 @@ import {
   ZXNEXT_IMPLEMENTATION
 } from "@emu/machines/zxNext/ZxNextImplementation";
 import { MI_ZXNEXT, MC_ZXNEXT_IMPLEMENTATION } from "@common/machines/constants";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { createZxNextMachine } from "@emu/machines/zxNext/ZxNextMachineFactory";
 import { machineRegistry } from "@common/machines/machine-registry";
@@ -20,13 +19,10 @@ import {
 } from "../../../scripts/build-zxnext-wasm.cjs";
 
 describe("ZX Spectrum Next WASM rollout", () => {
-  it("uses WASM as the default while keeping TypeScript as an explicit fallback", () => {
+  it("creates the WASM machine by default and for an unknown implementation value", () => {
     expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
 
     expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "typescript" })).not.toBeInstanceOf(
-      ZxNextWasmV2Machine
-    );
     expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(
       ZxNextWasmV2Machine
     );

@@ -10,7 +10,7 @@ export function createZxNextMachine(
   model?: MachineModel,
   config?: MachineConfigSet,
   messenger?: MessengerBase
-): ZxNextMachine {
+): ZxNextMachine | ZxNextWasmV2Machine {
   const effectiveConfig = config ?? model?.config;
   const implementation = getZxNextImplementation(effectiveConfig);
   return implementation === "wasm"

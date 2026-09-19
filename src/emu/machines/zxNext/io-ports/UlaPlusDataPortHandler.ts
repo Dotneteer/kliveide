@@ -1,6 +1,14 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
 /**
+ * ULA+ palette reads and writes use the first or second ULA palette by the $43 *write* select bit 6
+ * (zxnext.vhd `nr_43_palette_write_select(2)`), not by the display select bit 1.
+ */
+function ulaPlusUsesSecondPalette(machine: IZxNextMachine): boolean {
+  return (machine.paletteDevice.nextReg43Value & 0x40) !== 0;
+}
+
+/**
  * Reads Port 0xFF3B (ULA+ Data/Enable Register)
  * 
  * Behavior depends on mode (from Port 0xBF3B bits [7:6]):
@@ -19,7 +27,9 @@ export function readUlaPlusDataPort(machine: IZxNextMachine): number {
     
     // ULA+ palette is stored at indices 192-255 of the ULA palette (64 colors)
     const paletteIndex = 192 + ulaPlusIndex;
-    const rgb333 = machine.paletteDevice.getUlaRgb333(paletteIndex);
+    const rgb333 = (ulaPlusUsesSecondPalette(machine)
+      ? machine.paletteDevice.ulaSecond
+      : machine.paletteDevice.ulaFirst)[paletteIndex];
     
     // Convert from internal 9-bit RGB333 to 8-bit GGGRRRBB format
     // Bit layout: RGB333 = [R2 R1 R0 G2 G1 G0 B2 B1 B0]
@@ -63,12 +73,13 @@ export function writeUlaPlusDataPort(machine: IZxNextMachine, value: number): vo
     const red = (value >> 2) & 0x07;   // Bits [4:2]
     const blue = value & 0x03;         // Bits [1:0]
     
-    // Replicate bit 0 as LSB for blue channel (as per VHDL)
-    const rgb333 = (red << 6) | (green << 3) | (blue << 1) | (blue & 0x01);
-    
-    // Write to the active ULA palette (respects first/second palette selection)
-    const palette = machine.paletteDevice.secondUlaPalette 
-      ? machine.paletteDevice.ulaSecond 
+    // 9th bit: B1 or B0, as a $41 write (zxnext.vhd `nr_palette_value <= nr_wr_dat & (nr_wr_dat(1) or nr_wr_dat(0))`)
+    const rgb333 = (red << 6) | (green << 3) | (blue << 1) | (blue !== 0 ? 1 : 0);
+
+    // The palette is chosen by the $43 write select bit 6, not the display select (zxnext.vhd
+    // `nr_palette_index_utm <= '0' & nr_43_palette_write_select(2) & "11" & port_bf3b_ulap_index`)
+    const palette = ulaPlusUsesSecondPalette(machine)
+      ? machine.paletteDevice.ulaSecond
       : machine.paletteDevice.ulaFirst;
     palette[paletteIndex] = rgb333;
     

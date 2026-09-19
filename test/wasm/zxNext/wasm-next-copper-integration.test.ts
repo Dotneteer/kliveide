@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { createTestNextMachine } from "../../zxnext/TestNextMachine";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 /*
  * The copper must run *during emulation*, not only when a test pokes its tick function.
  *
  * Before this suite existed, `zxnextCopperTick` was exported from the WASM core and
- * correctly implemented, `$60`-`$64` writes reached it, and the unit test in
- * `wasm-next-copper.test.ts` passed — but nothing in the core ever called the tick while a
+ * correctly implemented, `$60`-`$64` writes reached it, and a unit test that ticked it directly
+ * passed — but nothing in the core ever called the tick while a
  * frame ran, so the copper was inert in the emulator while looking healthy in tests. Every
  * assertion here therefore drives a real frame rather than calling the tick directly.
  *
@@ -39,51 +38,31 @@ const COPPER_VALUE = 0xab;
 const PROGRAM = [moveInstr(USER_REG, COPPER_VALUE), waitInstr(0, 400)];
 
 describe("ZX Next WASM copper — runs during emulation", () => {
-  it("executes the copper list while a frame runs, and matches the TypeScript core", async () => {
-    const oracle = await createTestNextMachine();
+  it("executes the copper list while a frame runs", async () => {
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;
 
-    const write = (reg: number, value: number): void => {
-      oracle.nextRegDevice.directSetRegValue(reg, value);
-      exports.zxnextSetNextRegisterDirect(reg, value);
-    };
-
     // Upload the list through the 8-bit path ($60 auto-increments), then start the copper.
-    write(0x61, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x61, 0x00);
     for (const word of PROGRAM) {
-      write(0x60, (word >> 8) & 0xff);
-      write(0x60, word & 0xff);
+      exports.zxnextSetNextRegisterDirect(0x60, (word >> 8) & 0xff);
+      exports.zxnextSetNextRegisterDirect(0x60, word & 0xff);
     }
-    write(0x61, 0x00);
-    write(0x62, 0x40); // start mode 0b01: start from zero and loop
+    exports.zxnextSetNextRegisterDirect(0x61, 0x00);
+    exports.zxnextSetNextRegisterDirect(0x62, 0x40); // start mode 0b01: start from zero and loop
 
     // Nothing has run yet.
     expect(exports.zxnextGetNextRegisterDirect(USER_REG)).not.toBe(COPPER_VALUE);
     expect(exports.zxnextGetCopperListAddress()).toBe(0);
 
-    // Two frames, because of a pre-existing quirk in the TypeScript core: `MachineFrameRunner`
-    // only calls `onInitNewFrame` once a previous frame has completed, and
-    // `lastRenderedFrameTact` is initialised nowhere else — so on a freshly built machine the
-    // whole of frame 1 has `undefined < currentFrameTact`, and neither the copper nor
-    // `renderTact` runs. The WASM core has no such gap and would pass with one frame.
-    oracle.executeMachineFrame();
-    oracle.executeMachineFrame();
     wasm.executeMachineFrame();
     wasm.executeMachineFrame();
 
     // The copper advanced its own program counter — it was actually ticked.
     expect(exports.zxnextGetCopperListAddress()).toBeGreaterThan(0);
-    expect((oracle.copperDevice as unknown as { _copperListAddr: number })._copperListAddr).toBeGreaterThan(0);
 
-    // And it delivered its MOVE to the NextReg, in both cores.
-    //
-    // The TypeScript side is checked through the stored field rather than a register read:
-    // its $7F entry has a `writeFn` but no `readFn` (NextRegDevice.ts:1692-1695), so reading
-    // it back yields $FF while the WASM core returns what was written. That read-back
-    // difference is a separate, unrelated divergence — noted, not relied on here.
+    // And it delivered its MOVE to the NextReg.
     expect(exports.zxnextGetNextRegisterDirect(USER_REG)).toBe(COPPER_VALUE);
-    expect(oracle.nextRegDevice.userRegister0).toBe(COPPER_VALUE);
   });
 
   it("does not run the copper list while the copper is stopped", async () => {

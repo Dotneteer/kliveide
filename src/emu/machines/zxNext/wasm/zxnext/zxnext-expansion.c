@@ -39,7 +39,14 @@ void zxnextExpansionHardReset(void) {
   zxnextExpansionRequestSpeedUpdate();
 }
 
+/* zxnext.vhd ~2142: a reset copies $80 bits 3-0 into 7-4. ~5039-5045: it sets the bus port enables
+ * ($86-$89) to 1s when the reset type ($89 bit 7) is 0 - the opposite sense to $85. $81 and $8A have no
+ * reset branch. */
 void zxnextExpansionReset(void) {
+  if ((zxnextExpansionBusPortEnables[3] & 0x80u) == 0u) {
+    zxnextExpansionBusPortEnables[0] = zxnextExpansionBusPortEnables[1] = zxnextExpansionBusPortEnables[2] = 0xffu;
+    zxnextExpansionBusPortEnables[3] = 0x0fu;
+  }
   uint8_t persistence = zxnextExpansionSoftResetPersistence & 0x0fu;
   zxnextExpansionEnabled = (persistence & 0x08u) != 0;
   zxnextExpansionRomcsReplacement = (persistence & 0x04u) != 0;
@@ -113,6 +120,14 @@ uint32_t zxnextExpansionEffectivePortEnable(uint32_t internalValue, uint32_t bus
   return (internalValue & zxnextExpansionBusPortEnables[busRegIndex & 3u]) & 0xffu;
 }
 
+/* internal_port_enable bit `bit` (zxnext.vhd ~2348-2349): $82-$85, ANDed with $86-$89 while the bus is on */
+uint32_t zxnextExpansionPortEnabled(uint32_t bit) {
+  uint32_t index = (bit >> 3) & 3u;
+  uint32_t enables = zxnextNextRegs[0x82u + index];
+  if (zxnextExpansionEnabled) enables &= zxnextExpansionBusPortEnables[index];
+  return (enables >> (bit & 7u)) & 1u;
+}
+
 uint32_t zxnextExpansionShouldPropagateIo(uint32_t portBit) {
   return zxnextExpansionEnabled && ((zxnextExpansionIoPropagate & (1u << (portBit & 7u))) != 0);
 }
@@ -130,5 +145,13 @@ uint32_t zxnextExpansionIsIntActive(uint32_t expBusInterruptEnabled) {
   return zxnextExpansionEnabled && !zxnextExpansionDisableIoCycles && expBusInterruptEnabled && zxnextExpansionIntPending;
 }
 uint32_t zxnextExpansionIsUlaOverride(uint32_t address) {
-  return zxnextExpansionEnabled && zxnextExpansionUlaOverrideEnabled && (((address >> 12) & 0x0fu) == 0);
+  return zxnextExpansionEnabled && zxnextExpansionUlaOverrideEnabled && (((address >> 4) & 0x0fu) == 0);
+}
+
+/* A port $FE read of the internal ULA (zxnext.vhd ~3450-3462): with the bus on and $FE propagated ($8A
+ * bit 0) the bus data (all 1s with nothing plugged in) is ANDed in, and the ULA override ($81 bit 6,
+ * A7-4 = 0000) replaces the ULA's value with 1s. */
+uint32_t zxnextExpansionApplyToPortFeRead(uint32_t address, uint32_t ulaValue) {
+  if (!zxnextExpansionShouldPropagateIo(0u)) return ulaValue & 0xffu;
+  return zxnextExpansionIsUlaOverride(address) ? 0xffu : (ulaValue & 0xffu);
 }

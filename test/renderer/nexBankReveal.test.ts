@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 
-import type { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 
 import { bank16kAtAddress } from "@renderer/appIde/DocumentPanels/Next/nextBankLocation";
 import {

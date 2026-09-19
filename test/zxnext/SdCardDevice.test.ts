@@ -655,17 +655,29 @@ describe("D7: CMD0 card-not-present detection", () => {
     expect(device.readMmcData()).toBe(0x01);
   });
 
-  it("card 0: CMD0 returns 0x00 (not idle) when no card image mounted", () => {
+  it("card 0: CMD0 returns 0x01 before the host has reported the size (the app always has a card)", () => {
     const machine = createMockMachineWithNextReg();
     const device = new SdCardDevice(machine);
-    // _totalSectors defaults to 0 (no card)
     device.writeMmcData(0x40);
     device.writeMmcData(0x00);
     device.writeMmcData(0x00);
     device.writeMmcData(0x00);
     device.writeMmcData(0x00);
     device.writeMmcData(0x95);
-    expect(device.readMmcData()).toBe(0x00); // no idle bit
+    expect(device.readMmcData()).toBe(0x01);
+  });
+
+  it("card 0: an empty slot (the host reports no sectors) never answers: $FF", () => {
+    const machine = createMockMachineWithNextReg();
+    const device = new SdCardDevice(machine);
+    device.setCardInfo(0);
+    device.writeMmcData(0x40);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x00);
+    device.writeMmcData(0x95);
+    expect(device.readMmcData()).toBe(0xff); // MISO pulled high
   });
 
   it("card 1: CMD0 returns 0x01 when card1 image is mounted", () => {
@@ -682,7 +694,7 @@ describe("D7: CMD0 card-not-present detection", () => {
     expect(device.readMmcData()).toBe(0x01);
   });
 
-  it("card 1: CMD0 returns 0x00 when no card1 image mounted", () => {
+  it("card 1: an empty slot (no card1 image) never answers: $FF", () => {
     const machine = createMockMachineWithNextReg();
     const device = new SdCardDevice(machine);
     // _totalSectors1 defaults to 0
@@ -693,6 +705,6 @@ describe("D7: CMD0 card-not-present detection", () => {
     device.writeMmcData(0x00);
     device.writeMmcData(0x00);
     device.writeMmcData(0x95);
-    expect(device.readMmcData()).toBe(0x00);
+    expect(device.readMmcData()).toBe(0xff); // MISO pulled high
   });
 });

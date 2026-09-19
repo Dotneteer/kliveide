@@ -23,5 +23,7 @@ static void zxnextMemorySetPortDffd(uint32_t value);
 static uint32_t zxnextMemoryGetPortDffd(void);
 static void zxnextMemorySetPort1ffd(uint32_t value);
 static uint32_t zxnextMemoryGetPort1ffd(void);
+static void zxnextMemorySetPortEff7(uint32_t value);
+static uint32_t zxnextMemoryGetPortEff7(void);
 
 #endif

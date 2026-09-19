@@ -1,0 +1,145 @@
+{
+  "id": "D05-moving-bar-long",
+  "title": "The D01 bar sampled every 100 frames up to frame 3000 (--long only)",
+  "longOnly": true,
+  "capture": [
+    100
+  ],
+  "motion": [
+    {
+      "name": "bar top",
+      "frames": [
+        100,
+        3000
+      ],
+      "every": 100,
+      "feature": {
+        "kind": "firstRow",
+        "x": 300,
+        "rgb": "next8:0xE0",
+        "y": [
+          48,
+          239
+        ]
+      },
+      "expect": {
+        "kind": "linear",
+        "start": "auto",
+        "startWithin": [
+          48,
+          231
+        ],
+        "step": 1,
+        "wrap": {
+          "min": 48,
+          "max": 231
+        }
+      }
+    },
+    {
+      "name": "bar bottom",
+      "frames": [
+        100,
+        3000
+      ],
+      "every": 100,
+      "feature": {
+        "kind": "lastRow",
+        "x": 300,
+        "rgb": "next8:0xE0",
+        "y": [
+          48,
+          239
+        ]
+      },
+      "expect": {
+        "kind": "linear",
+        "start": "auto",
+        "startWithin": [
+          55,
+          238
+        ],
+        "step": 1,
+        "wrap": {
+          "min": 55,
+          "max": 238
+        }
+      }
+    }
+  ],
+  "contactSheet": {
+    "frames": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800,
+      900,
+      1000,
+      1100,
+      1200,
+      1300,
+      1400,
+      1500,
+      1600
+    ],
+    "columns": 4
+  },
+  "probes": [
+    {
+      "name": "border top",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        0,
+        47
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border bottom",
+      "kind": "rect",
+      "x": [
+        0,
+        719
+      ],
+      "y": [
+        240,
+        287
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border left",
+      "kind": "rect",
+      "x": [
+        0,
+        95
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    },
+    {
+      "name": "border right",
+      "kind": "rect",
+      "x": [
+        608,
+        719
+      ],
+      "y": [
+        48,
+        239
+      ],
+      "rgb": "ula:7"
+    }
+  ]
+}

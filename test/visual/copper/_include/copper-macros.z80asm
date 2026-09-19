@@ -1,0 +1,37 @@
+; ============================================================================
+; Shared macros for the copper visual tests. Include at the TOP (macros must
+; be defined before use); emits no code. Routines: copper-routines.z80asm.
+;
+; Encodings (hardware: _input/next-fpga/src/.../copper.vhd):
+;   WAIT  1 HHHHHH LLLLLLLLL  fires when cvc = L and hc_ula >= H*8+12  (paper x >= 8H)
+;   MOVE  0 RRRRRRR VVVVVVVV  writes V to NextReg R ($00-$7F); R = 0 is a NOP
+; The list is big-endian: high byte first.
+; ============================================================================
+
+CuWait: .macro(cuLine, cuHpos)
+    .defb $80 | (({{cuHpos}}) << 1) | ((({{cuLine}}) >> 8) & 1), ({{cuLine}}) & $FF
+    .endm
+
+CuMove: .macro(cuReg, cuValue)
+    .defb ({{cuReg}}) & $7F, ({{cuValue}}) & $FF
+    .endm
+
+CuNop: .macro()
+    .defb $00, $00
+    .endm
+
+; WAIT for line 511: never matches, so the copper parks here
+CuHalt: .macro()
+    .defb $FF, $FF
+    .endm
+
+; Sets palette entry `index` of the first ULA palette to 8-bit RRRGGGBB `rgb` (two MOVEs)
+CuPalette: .macro(cuIndex, cuRgb)
+    .defb $40, ({{cuIndex}}) & $FF
+    .defb $41, ({{cuRgb}}) & $FF
+    .endm
+
+; Tell the harness setup is complete.
+SignalReady: .macro()
+    nextreg $7F,$A5
+    .endm

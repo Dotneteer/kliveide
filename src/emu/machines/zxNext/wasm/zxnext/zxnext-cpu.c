@@ -17,6 +17,15 @@ static inline void zxnextCpuDelayMemoryRead(uint32_t address);
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address);
 static inline void zxnextCpuDelayPortAccess(uint32_t address);
 static inline uint32_t zxnextCpuShouldRaiseInt(void);
+static inline void zxnextCpuCaptureVideoInterrupts(void);
+
+/* zxnext.vhd ~1784: during a stackless NMI acknowledge (`z80_stackless_nmi`) the CPU's push cycles run
+   with MREQ held high - SP moves and the cycles take their time, but no byte reaches memory. */
+static uint8_t zxnextCpuMreqSuppressed;
+
+/* The frame ended with the DMA holding the bus (BUSREQ) and no instruction has run since: the CPU
+   panel's "snoozed" */
+static uint8_t zxnextCpuHeldAtFrameEnd;
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() zxnextMemory
@@ -28,8 +37,12 @@ static inline uint32_t zxnextCpuShouldRaiseInt(void);
 #define Z80_WRITE_PORT(address, value) zxnextCpuSharedWritePort(address, value)
 #define Z80_WRITE_TBBLUE(address, value) zxnextCpuSharedWriteTbBlue(address, value)
 #define Z80_TACT_PLUS_N(value) zxnextCpuTactPlusN(value)
+/* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
+#define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
 #define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
+static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle);
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) zxnextCpuDelayContendedMemory((uint32_t)(address), 0u)
 #define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
 #define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
 
@@ -40,10 +53,14 @@ static inline uint32_t zxnextCpuTactScale(void) {
 }
 
 static inline void zxnextCpuMarkFrameCompleted(void) {
+  // --- The picture of the frame that just ended, before anything resets for the next one.
+  zxnextRasterFinishFrame();
   frames++;
   frameCompleted = 1;
   zxnextUlaOnFrameCompleted();
   zxnextCopperOnFrameCompleted();
+  /* The next frame runs on the raster NextReg $03 selects now (NextComposedScreenDevice.onNewFrame) */
+  zxnextTimingSelect();
 }
 
 static inline void zxnextCpuTactPlusN(uint32_t value) {
@@ -52,7 +69,9 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   frameTacts28 += value * zxnextCpuTactScale();
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
+    zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
@@ -61,6 +80,7 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   // can complete part-way through an instruction, and the remaining tact groups of that
   // instruction must not tick the copper into the next frame.
   if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextCpuCaptureVideoInterrupts();
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
@@ -79,11 +99,14 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   frameTacts28 += ticks;
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
+    zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
+    zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();
   }
   currentFrameTact = frameTacts28 >> 2;
   if (frameCompleted == 0u) zxnextCopperAdvanceTo(currentFrameTact);
+  zxnextCpuCaptureVideoInterrupts();
   zxnextBeeperSetTacts(tacts);
   zxnextAudioMixerSetNextSample(frameTacts28);
 }
@@ -92,20 +115,21 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
  * Run the DMA while it owns, or is about to request, the bus (ZxNextMachine.runDmaUntilCpuCanRun).
  *
  * Called before every instruction. The CPU grants a bus request at once, and a continuous transfer
- * keeps the bus until its block is done, so the whole block moves before the next instruction. Byte
- * mode and paced burst mode release the bus between bytes and let the CPU run in between.
+ * keeps the bus until its block is done, so the whole block moves before the next instruction. Paced
+ * burst mode releases the bus between bytes and lets the CPU run in between. Returns 1 when the frame
+ * ended while the DMA still had the bus: the CPU runs no instruction in this pass, the frame loop
+ * starts the next frame and the DMA goes on before the next instruction (ZxNextMachine isCpuSnoozed).
  */
-static void zxnextCpuRunDma(void) {
-  if (!zxnextDmaIsActive()) return;
+static uint32_t zxnextCpuRunDma(void) {
+  if (!zxnextDmaIsActive()) return 0;
   for (uint32_t step = 0; step < 0x20000u; step++) {
     zxnextDmaAcknowledgeBusIfRequested();
     const uint32_t ticks = zxnextDmaStep();
-    if (ticks > 0u) {
-      zxnextCpuTactPlusDmaTicks(ticks);
-      if (zxnextInterruptsDmaRequestActive()) zxnextDmaSetDelay(1u);
-    }
+    if (ticks > 0u) zxnextCpuTactPlusDmaTicks(ticks);
     if (!zxnextDmaBusRequested()) break;
+    if (frameCompleted) return 1;
   }
+  return 0;
 }
 
 static inline uint32_t zxnextCpuReadsBank7(uint32_t address) {
@@ -120,7 +144,48 @@ static inline uint32_t zxnextCpuIsContendedIoAddress(uint32_t address) {
   return page == 0x4000u || (page == 0xc000u && (zxnextMemoryGetSelectedRamBank() & 0x01u) != 0u);
 }
 
+/*
+ * The CPU T-states (3.5 MHz) a contended cycle starting at `frameTact` waits for the ULA (zxula.vhd
+ * ~579-600), as NextComposedScreenDevice.contentionDelayAt: `wait_s` holds the clock in the 256 x 192
+ * display for ULA hc with ((hc + 1) & 15) >= 4, and in +3 timing also for ((hc + 1) & 15) < 2.
+ */
+static inline uint32_t zxnextCpuContentionDelayAt(uint32_t frameTact) {
+  int32_t vc = (int32_t)(frameTact / zxnextTimingTotalHc) - (int32_t)zxnextTimingDisplayYStart;
+  if (vc < 0 || vc >= 192) return 0u;
+  int32_t hc = (int32_t)(frameTact % zxnextTimingTotalHc) - (int32_t)(zxnextTimingDisplayXStart - 12u);
+  const uint32_t p3 = zxnextTimingContention == 3u;
+  uint32_t delay = 0u;
+  while (hc >= 0 && hc < 256) {
+    const uint32_t adj = ((uint32_t)hc + 1u) & 0x0fu;
+    if (adj < 4u && !(p3 && adj < 2u)) break;
+    delay++;
+    hc += 2;
+  }
+  return delay;
+}
+
+/*
+ * Memory contention (B26; zxnext.vhd ~4461-4473), as ZxNextMachine.delayContendedMemory: only at
+ * 3.5 MHz, with NextReg $08 bit 6 clear and a non-Pentagon timing, for MMU pages $00-$0F - 48K bank 5,
+ * 128K odd banks, +3 banks 4-7. 48K / 128K contend memory and internal (address-only) cycles; +3's
+ * WAIT reaches memory cycles only.
+ */
+static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle) {
+  const uint32_t timing = zxnextTimingContention;
+  if (timing == 0u || (timing == 3u && memoryCycle == 0u)) return;
+  if (cpuEffectiveSpeed != 0u || (zxnextNextRegs[0x08u] & 0x40u) != 0u) return;
+  const uint32_t page = zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)];
+  if (page > 0x0fu) return;
+  if (timing == 1u ? (page & 0x0eu) != 0x0au : (timing == 2u ? (page & 0x02u) == 0u : (page & 0x08u) == 0u)) return;
+  const uint32_t delay = zxnextCpuContentionDelayAt(currentFrameTact);
+  if (delay == 0u) return;
+  zxnextCpuTactPlusN(delay);
+  totalContentionDelaySinceStart += delay;
+  contentionDelaySincePause += delay;
+}
+
 static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
+  zxnextCpuDelayContendedMemory(address, 1u);
   zxnextCpuTactPlusN(3u);
   if (cpuEffectiveSpeed == 3u && !zxnextCpuReadsBank7(address)) {
     zxnextCpuTactPlusN(1u);
@@ -130,7 +195,7 @@ static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
 }
 
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address) {
-  (void)address;
+  zxnextCpuDelayContendedMemory(address, 1u);
   zxnextCpuTactPlusN(3u);
   totalContentionDelaySinceStart += 3u;
   contentionDelaySincePause += 3u;
@@ -156,17 +221,67 @@ static inline void zxnextCpuDelayPortAccess(uint32_t address) {
   }
 }
 
-static inline uint32_t zxnextCpuShouldRaiseInt(void) {
-  if (zxnextInterruptsGetHardwareIm2Mode()) {
-    return zxnextInterruptsShouldAcceptInt();
-  }
+/*
+ * The video interrupt sources at the last rendered tact, and their status flags.
+ *
+ * Mirrors ZxNextMachine.onTactIncremented: the ULA and line pulses set their status flags on the rising
+ * edge (when the source is enabled), which is what hardware IM2 mode's daisy chain reads. Before this,
+ * nothing in the WASM core ever set them from the video timing.
+ */
+static uint8_t zxnextCpuPrevUlaPulse;
+static uint8_t zxnextCpuPrevLinePulse;
+
+static inline void zxnextCpuCaptureVideoInterrupts(void) {
   uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
-  return zxnextInterruptsGetSignalInt() || (frames != 0u && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+  uint8_t ulaPulse = (uint8_t)zxnextUlaGetPulseIntActive(renderedFrameTact);
+  uint8_t linePulse = (uint8_t)zxnextVideoLineIntActive(renderedFrameTact);
+  if (ulaPulse && !zxnextCpuPrevUlaPulse && !ulaInterruptDisabled) zxnextInterruptsRequest(ZXNEXT_INT_ULA, 1, 0);
+  if (linePulse && !zxnextCpuPrevLinePulse && lineInterruptEnabled) zxnextInterruptsRequest(ZXNEXT_INT_LINE, 1, 0);
+  zxnextCpuPrevUlaPulse = ulaPulse;
+  zxnextCpuPrevLinePulse = linePulse;
+}
+
+/*
+ * Whether the ULA frame interrupt can be active at this tact. The ULA counters restart with a reset and
+ * the interrupt is a compare against them (zxula_timing.vhd), so frame 0 has its interrupt like any
+ * other frame. Only the part of a pulse that wraps in from the previous frame - the Pentagon's starts
+ * at the frame's last tact - does not exist in frame 0, as no frame came before it.
+ */
+static inline uint32_t zxnextCpuFrameIntStarted(uint32_t renderedFrameTact) {
+  return frames != 0u || renderedFrameTact >= zxnextTimingIntStart;
+}
+
+static inline uint32_t zxnextCpuShouldRaiseInt(void) {
+  zxnextCtcSync();
+  /* a byte received or the TX FIFO emptied requests at once (nothing to do while both lines are idle) */
+  if (zxnextUartNextEvent != ZXNEXT_UART_NEVER) zxnextUartSync();
+  if (zxnextInterruptsGetHardwareIm2Mode()) {
+    /* The chain interrupts a CPU in IM 2 only; the ULA (EXCEPTION) and requests raised while the CPU was
+       not in IM 2 pulse instead */
+    uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+    return zxnextInterruptsShouldAcceptInt() ||
+      (z80GetInterruptMode() != 2u && zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+      zxnextInterruptsPulseActive();
+  }
+  // --- Pulse mode: any enabled source starts the INT pulse (peripherals.vhd `o_pulse_en`). The ULA frame
+  // --- interrupt obeys its disable bit; the line interrupt used to be missing altogether.
+  uint32_t renderedFrameTact = currentFrameTact == 0u ? 0u : currentFrameTact - 1u;
+  return zxnextInterruptsGetSignalInt() ||
+    (zxnextCpuFrameIntStarted(renderedFrameTact) && !ulaInterruptDisabled && zxnextUlaGetPulseIntActive(renderedFrameTact)) ||
+    (lineInterruptEnabled && zxnextVideoLineIntActive(renderedFrameTact)) ||
+    zxnextInterruptsPulseActive() ||
     zxnextDmaGetIpSignal();
+}
+
+/* ~4472: in +3 timing banks 4-7 (MMU pages $08-$0F) are contended; the page is the MMU's */
+static inline void zxnextCpuLatchP3FloatingBus(uint32_t address, uint32_t value) {
+  if (zxnextNextRegGetMachineTiming() != 3u) return;
+  if ((zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)] & 0xf8u) == 0x08u) zxnextP3FloatingBus = (uint8_t)value;
 }
 
 static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
   uint32_t value = zxnextMemoryReadMapped(address & 0xffffu);
+  zxnextCpuLatchP3FloatingBus(address, value);
   lastMemoryAddress = (uint16_t)address;
   lastMemoryValue = (uint8_t)value;
   lastMemoryAccessed = 1;
@@ -177,11 +292,15 @@ static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
 static uint32_t zxnextCpuSharedFetchCodeByte(uint32_t address) {
   const uint32_t normalized = address & 0xffffu;
   zxnextCpuDelayMemoryRead(normalized);
-  return zxnextMemoryPeekMapped(normalized);
+  uint32_t value = zxnextMemoryPeekMapped(normalized);
+  zxnextCpuLatchP3FloatingBus(normalized, value);
+  return value;
 }
 
 static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value) {
+  if (zxnextCpuMreqSuppressed) return;
   zxnextMemoryWriteMapped(address & 0xffffu, value & 0xffu);
+  zxnextCpuLatchP3FloatingBus(address, value);
   lastMemoryAddress = (uint16_t)address;
   lastMemoryValue = (uint8_t)value;
   lastMemoryAccessed = 1;
@@ -196,9 +315,10 @@ static void zxnextCpuSharedWritePort(uint32_t address, uint32_t value) {
   zxnextPortsWrite(address & 0xffffu, value & 0xffu);
 }
 
+/* NEXTREG n,v / n,A: zxnext.vhd ~4719-4725 requests the write with the instruction's own register
+   number; `nr_register` (the $243B selection) changes only on a $243B write. */
 static void zxnextCpuSharedWriteTbBlue(uint32_t address, uint32_t value) {
-  zxnextNextRegSetIndex(address & 0xffu);
-  zxnextNextRegSetValue(value & 0xffu);
+  zxnextNextRegCpuWrite(address & 0xffu, value & 0xffu);
 }
 
 static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTacts) {
@@ -219,29 +339,10 @@ static void zxnextCpuClearInstructionAccesses(void) {
 
 static void zxnextCpuReset(void) {
   zxnextSharedCpuExecutedInstructions = 0;
+  zxnextCpuHeldAtFrameEnd = 0u;
   z80Reset();
   z80SetZ80NMode(1);
   z80SetTacts(tacts);
-}
-
-static uint32_t zxnextCpuProcessStacklessNmi(void) {
-  uint32_t previousTacts = z80GetTacts();
-  uint32_t pc = z80GetPc();
-  uint32_t sp = z80GetSp();
-  z80TactPlusN(4);
-  if (z80GetHalted()) {
-    pc = (pc + 1u) & 0xffffu;
-  }
-  z80SetIff2(z80GetIff1());
-  z80SetIff1(0);
-  z80SetSp((sp - 2u) & 0xffffu);
-  z80SetWz(0);
-  z80SetPc(0x0066u);
-  zxnextNmiSetReturnAddress(pc);
-  zxnextNmiMarkAccepted();
-  zxnextSharedCpuExecutedInstructions++;
-  zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
-  return zxnextSharedCpuExecutedInstructions;
 }
 
 static uint32_t zxnextCpuExecuteInstruction(void) {
@@ -251,8 +352,6 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   uint8_t shouldAcceptInt = rawIntSignal && z80GetIff1();
   uint8_t nmiSignal = zxnextNmiGetSignal();
   uint8_t wasHalted = z80GetHalted() != 0u;
-  uint8_t isRetiInstruction = zxnextMemoryPeekMapped(pcBefore) == 0xedu &&
-    zxnextMemoryPeekMapped((pcBefore + 1u) & 0xffffu) == 0x4du;
   uint32_t cyclesExecuted = 0;
 
   frameCompleted = 0;
@@ -262,36 +361,65 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
 
   // --- The DMA goes first, after the INT line is sampled, as in ZxNextMachine.beforeInstructionExecuted.
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
-  zxnextCpuRunDma();
-  if (nmiSignal && zxnextNmiGetStacklessEnabled()) {
-    uint32_t executed = zxnextCpuProcessStacklessNmi();
-    zxnextTraceRecordInstruction(pcBefore);
-    return executed;
+  if (zxnextCpuRunDma()) {
+    zxnextCpuHeldAtFrameEnd = 1u;
+    return zxnextSharedCpuExecutedInstructions;
   }
+  zxnextCpuHeldAtFrameEnd = 0u;
+  /* zxnext.vhd ~2008-2041: the acknowledge's push always lands in $C2/$C3; with $C0 bit 3 it does not
+     reach memory. The pushed address is past a HALT, as removeFromHaltedState makes it. */
+  uint16_t nmiReturnAddress = (uint16_t)(pcBefore + (wasHalted ? 1u : 0u));
+  zxnextCpuMreqSuppressed = nmiSignal && zxnextNmiGetStacklessEnabled();
 
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
   zxnextDivMmcBeforeOpcodeFetch(pcBefore);
+  /* An NMI acknowledge fetches no opcode; the state machine steps at real opcode fetches only. */
+  if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
   z80SetSigNmi(nmiSignal);
   z80SetSigInt(rawIntSignal);
-  if (shouldAcceptInt) {
-    z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() ? zxnextInterruptsAcknowledge() : 0xffu);
+  /* The acknowledge moves a device to S_ACK, so it must happen only when the core really takes the
+     interrupt: not on the instruction after EI (the core decrements eiBacklog first), not with a prefix
+     pending or an NMI in front of it - and only a CPU in IM 2 acknowledges the chain (im2_device
+     i_im2_mode); an IM 0/1 acceptance of the ULA pulse leaves the chain alone. */
+  uint8_t intTaken = shouldAcceptInt && !nmiSignal && z80GetPrefix() == 0u && z80GetEiBacklog() <= 1u;
+  if (intTaken) {
+    z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() && z80GetInterruptMode() == 2u
+      ? zxnextInterruptsAcknowledge() : 0xffu);
   }
 
+  /* The opcode bytes the CPU fetched for this instruction - after any paging its own M1 cycle caused
+     (a DivMMC automap at $0066 supplies different code from the ROM that was there) - so RETI / RETN are
+     the instruction the CPU decoded, as the FPGA takes them (~1866-1882, ~4090), not the bytes that
+     happened to be in memory before the fetch. An interrupt acknowledge fetches no opcode. */
+  uint8_t firstOpcode = 0u;
+  uint8_t secondOpcode = 0u;
   do {
     z80ExecuteCpuCycle();
+    if (cyclesExecuted == 0u) firstOpcode = cpu.opCode;
+    else if (cyclesExecuted == 1u) secondOpcode = cpu.opCode;
     cyclesExecuted++;
   } while (z80GetPrefix() != 0 && cyclesExecuted < 4u);
+  uint8_t isRetiInstruction = firstOpcode == 0xedu && secondOpcode == 0x4du && cyclesExecuted == 2u;
+  /* im2_control o_retn_seen: exactly ED 45 (not RETI, not the RETN aliases) */
+  uint8_t isRetnInstruction = firstOpcode == 0xedu && secondOpcode == 0x45u && cyclesExecuted == 2u;
 
+  zxnextCpuMreqSuppressed = 0u;
   zxnextSharedCpuExecutedInstructions++;
   zxnextCpuSyncFrameState(previousTacts, z80GetTacts());
 
   if (nmiSignal) {
+    zxnextNmiSetReturnAddress(nmiReturnAddress);
     zxnextNmiMarkAccepted();
   }
   if (isRetiInstruction) {
     zxnextInterruptsReti();
-    // --- RETI in hardware IM2 mode also lifts the DMA's interrupt stall (ZxNextMachine.onRetnExecuted).
-    if (zxnextInterruptsGetHardwareIm2Mode()) zxnextDmaSetDelay(0u);
+  }
+  /* divmmc_retn_seen <= retn and not mf_is_active (~4091): a RETN that ends a Multiface NMI does not
+     reach DivMMC. cpu_retn_seen clears the Multiface state unconditionally. */
+  uint32_t mfWasActive = 0u;
+  if (z80GetRetnExecuted()) {
+    mfWasActive = zxnextMultifaceIsActive();
+    if (isRetnInstruction) zxnextMultifaceRetn();
   }
   if (z80GetRetnExecuted()) {
     uint8_t stacklessProcessed = zxnextNmiGetStacklessProcessed();
@@ -301,7 +429,7 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
       z80SetPc(stacklessReturnAddress);
     }
   }
-  zxnextDivMmcAfterOpcodeFetch(z80GetRetnExecuted(), 0);
+  if (isRetnInstruction && !mfWasActive) zxnextDivMmcRetn();
   if (z80GetRetExecuted()) {
     z80SetRetExecuted(0);
   }

@@ -11,7 +11,7 @@ import type {
   NexLineAnnotation
 } from "./nexAnnotations";
 
-import { getBankAnnotation, normalizeMultilineComment } from "./nexAnnotations";
+import { getBankAnnotation, normalizeMultilineComment, sameRegionLayout } from "./nexAnnotations";
 
 /*
  * The pure edits behind the NEX annotation UI: label bookkeeping, region algebra, and the operand
@@ -75,19 +75,12 @@ export function replaceAnnotationRegion(
       nextRegions.push({ ...region });
       continue;
     }
+    // --- The parts left either side keep everything about the region, its row size included.
     if (region.start < start) {
-      nextRegions.push({
-        start: region.start,
-        end: start - 1,
-        type: region.type
-      });
+      nextRegions.push({ ...region, end: start - 1 });
     }
     if (region.end > end) {
-      nextRegions.push({
-        start: end + 1,
-        end: region.end,
-        type: region.type
-      });
+      nextRegions.push({ ...region, start: end + 1 });
     }
   }
   nextRegions.push({ start, end, type });
@@ -120,7 +113,7 @@ export function mergeAnnotationRegions(regions: NexAnnotationRegion[]): NexAnnot
     const previousRegion = mergedRegions[mergedRegions.length - 1];
     if (
       previousRegion &&
-      previousRegion.type === region.type &&
+      sameRegionLayout(previousRegion, region) &&
       previousRegion.end + 1 >= region.start
     ) {
       previousRegion.end = Math.max(previousRegion.end, region.end);

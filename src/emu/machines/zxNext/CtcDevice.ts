@@ -72,6 +72,11 @@ export class CtcChannel {
   get zcTo(): boolean { return this._zcTo; }
   get intEnabled(): boolean { return !!(this._controlReg & 0x20); } // D7 = bit5 of controlReg
 
+  /** NextReg $C5 writes control_reg(7) directly (ctc_chan.vhd i_int_en_wr). */
+  setIntEnabled(enabled: boolean): void {
+    this._controlReg = enabled ? this._controlReg | 0x20 : this._controlReg & ~0x20;
+  }
+
   /**
    * Whether the channel expects a time constant on the next write.
    * Mirrors FPGA combinational: control_reg(2-2) = '1' and state /= S_CONTROL_WORD
@@ -238,6 +243,40 @@ export class CtcChannel {
    */
   get isCounterMode(): boolean {
     return !!(this._controlReg & 0x10); // D6 = bit4 of controlReg (after >>2)
+  }
+
+  /**
+   * Whether the channel moves only on its trigger input: a running counter, or a timer waiting for
+   * its trigger (state S_WAIT with D3 = 1).
+   */
+  get isTriggerDriven(): boolean {
+    if (this._state === CtcState.RUNNING) return this.isCounterMode;
+    return this._state === CtcState.WAIT && !this.isCounterMode && !!(this._controlReg & 0x02);
+  }
+
+  /** A trigger edge ends S_WAIT: the channel leaves soft reset with the prescaler at 0. */
+  startOnTrigger(): void {
+    this._state = CtcState.RUNNING;
+    this._prescalerCount = 0;
+    this._count = this._timeConstantReg;
+    this._countZeroD = false;
+  }
+
+  /**
+   * System clocks until a running timer's next ZC/TO (the counterpart of `advanceBySysClocks`).
+   */
+  firstZcToOffset(): number {
+    const div = (this._controlReg & 0x08) ? 256 : 16;
+    const mask = div - 1;
+    const firstFire = (mask - (this._prescalerCount & mask)) & mask;
+    let fires: number;
+    if (this._count === 0) {
+      if (!this._countZeroD) return 0;
+      fires = 256;
+    } else {
+      fires = this._count;
+    }
+    return firstFire + 1 + (fires - 1) * div;
   }
 
   /**
@@ -424,41 +463,55 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * Advance all CTC channels to the specified system clock using mathematical
    * batch computation. Handles ZC/TO chaining between channels.
    * Called from the machine on every tact increment and before port access.
+   *
+   * The trigger inputs form a ring (ctc_zc_to(2 downto 0) & ctc_zc_to(3)): channel n is clocked by
+   * channel n-1, channel 0 by channel 3. A channel whose input is a ZC/TO it must wait for - a running
+   * counter, or a timer waiting for its trigger (D3) - is processed after its upstream channel, walking
+   * the ring from a channel that runs on its own.
    */
   advanceToSysClock(currentSysClock: number): void {
     const elapsed = currentSysClock - this._lastSyncClock;
     if (elapsed <= 0) return;
     this._lastSyncClock = currentSysClock;
 
-    // --- Advance channels in chain order: 0 → 1 → 2 → 3
-    // Timer-mode channels advance by system clocks; counter-mode channels
-    // advance by the upstream ZC/TO count.
-    // Chaining: Ch0←Ch3, Ch1←Ch0, Ch2←Ch1, Ch3←Ch2
     const zcToCounts = [0, 0, 0, 0];
-    const triggerSrc = [3, 0, 1, 2]; // upstream channel index for each
+    // --- Clock offset of each channel's first ZC/TO in this window (elapsed when not known exactly)
+    const firstZcTo = [elapsed, elapsed, elapsed, elapsed];
 
-    // First pass: advance timer-mode channels by system clocks
+    // First pass: running timers advance by system clocks
     for (let i = 0; i < 4; i++) {
       const ch = this.channels[i];
       if (ch.state === 3 /* RUNNING */ && !ch.isCounterMode) {
+        firstZcTo[i] = ch.firstZcToOffset();
         zcToCounts[i] = ch.advanceBySysClocks(elapsed);
       }
     }
 
-    // Second pass: advance counter-mode channels by upstream ZC/TO counts
-    for (let i = 0; i < 4; i++) {
-      const ch = this.channels[i];
-      if (ch.state === 3 /* RUNNING */ && ch.isCounterMode) {
-        zcToCounts[i] = ch.advanceByTriggers(zcToCounts[triggerSrc[i]]);
+    // Second pass: the channels driven by their upstream ZC/TO, in ring order from an independent one
+    const root = this.channels.findIndex((ch) => !ch.isTriggerDriven);
+    if (root >= 0) {
+      for (let k = 1; k < 4; k++) {
+        const i = (root + k) & 0x03;
+        const up = (i + 3) & 0x03;
+        const ch = this.channels[i];
+        if (!ch.isTriggerDriven || zcToCounts[up] === 0) continue;
+        if (ch.isCounterMode) {
+          zcToCounts[i] = ch.advanceByTriggers(zcToCounts[up]);
+        } else {
+          // --- A timer waiting for its trigger starts at the upstream channel's first ZC/TO
+          const start = Math.min(firstZcTo[up], elapsed);
+          ch.startOnTrigger();
+          firstZcTo[i] = start + ch.firstZcToOffset();
+          zcToCounts[i] = ch.advanceBySysClocks(elapsed - start);
+        }
       }
     }
 
     // Set interrupt status for channels that generated ZC/TO events
+    // --- im2_peripheral: every zero count latches the status; the enable decides about the interrupt
     const intDev = this.machine.interruptDevice;
     for (let i = 0; i < 4; i++) {
-      if (zcToCounts[i] > 0 && this.channels[i].intEnabled) {
-        intDev.ctcIntStatus[i] = true;
-      }
+      if (zcToCounts[i] > 0) intDev.ctcZeroCount(i, this.channels[i].intEnabled);
     }
   }
 
@@ -490,9 +543,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
     // Set interrupt status for any ZC/TO that fired
     const intDev = this.machine.interruptDevice;
     for (let i = 0; i < 4; i++) {
-      if (this.channels[i].zcTo) {
-        intDev.ctcIntStatus[i] = true;
-      }
+      if (this.channels[i].zcTo) intDev.ctcZeroCount(i, this.channels[i].intEnabled);
     }
   }
 
@@ -502,7 +553,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * @param value - the byte being written
    */
   writePort(port: number, value: number): void {
-    if (!this.machine.nextRegDevice.portZ80CtcEnabled) return;
+    if (!this.machine.nextRegDevice.isPortGroupEnabled(3, 3)) return;
 
     const ch = (port >> 8) & 0x07;
     if (ch >= 4) return; // channels 4-7 not implemented
@@ -522,10 +573,38 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
 
     // Clock the channel with this write asserted for one cycle, then deasserted
     channel.clock(true, value, false, false, false);
+    let zeroCounts = channel.zcTo ? 1 : 0;
     channel.clock(false, value, false, false, false);
+    if (channel.zcTo) zeroCounts++;
 
     // Account for the 2 extra clock() calls so they aren't double-counted
     this._lastSyncClock += 2;
+
+    // --- A control word that flips D4 counts an edge (ctc_chan clk_edge_change); a zero count it
+    // --- reaches is a ZC/TO like any other (ctc_chan ~142-166): it latches the status and clocks the
+    // --- next channel of the ring (zxnext.vhd ~1897, ~4044-4073)
+    if (zeroCounts > 0) this.deliverZeroCounts(ch, zeroCounts);
+  }
+
+  /**
+   * Reports `count` zero counts of channel `i` outside the time advance: the interrupt status, and the
+   * trigger-driven channels downstream in ring order.
+   */
+  private deliverZeroCounts(i: number, count: number): void {
+    const intDev = this.machine.interruptDevice;
+    intDev.ctcZeroCount(i, this.channels[i].intEnabled);
+    for (let k = 1; k < 4 && count > 0; k++) {
+      const next = this.channels[(i + k) & 0x03];
+      if (!next.isTriggerDriven) break;
+      if (next.isCounterMode) {
+        count = next.advanceByTriggers(count);
+        if (count > 0) intDev.ctcZeroCount((i + k) & 0x03, next.intEnabled);
+      } else {
+        // --- A timer waiting for its trigger starts now; its zero counts come with time
+        next.startOnTrigger();
+        break;
+      }
+    }
   }
 
   /**
@@ -534,7 +613,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * @returns current counter value, or 0xFF if CTC ports are disabled
    */
   readPort(port: number): number {
-    if (!this.machine.nextRegDevice.portZ80CtcEnabled) return 0xff;
+    if (!this.machine.nextRegDevice.isPortGroupEnabled(3, 3)) return 0xff;
 
     const ch = (port >> 8) & 0x07;
     if (ch >= 4) return 0x00; // channels 4-7 hardwired to zero
@@ -561,5 +640,10 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    */
   private _syncFromMachine(): void {
     this.advanceToSysClock(this.machine.frameTacts);
+  }
+
+  /** Brings the CTC up to the current tact - before INT is sampled, so zero counts interrupt on time. */
+  sync(): void {
+    this._syncFromMachine();
   }
 }

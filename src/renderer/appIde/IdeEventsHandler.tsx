@@ -181,7 +181,7 @@ export const IdeEventsHandler = () => {
       execState !== MachineControllerState.Paused ||
       !compilation.result ||
       compilation.failed ||
-      compilation.result.errors.length > 0 ||
+      compilation.result.errors.some((e) => !e.isWarning) ||
       !isDebuggableCompilerOutput(compilation.result)
     ) {
       return;

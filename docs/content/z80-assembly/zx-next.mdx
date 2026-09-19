@@ -80,7 +80,7 @@ setborder:
     ret
 ```
 
-### Address Range Warning (Z0904)
+### Address Range Warning (Z0370)
 
 The assembler warns you if unbanked code exceeds the typical bank 2 range ($bfff):
 
@@ -89,7 +89,7 @@ The assembler warns you if unbanked code exceeds the typical bank 2 range ($bfff
 
 .savenex file "test.nex"
 
-.org $c000              ; ⚠️ Warning Z0904: Address $c000 exceeds $bfff
+.org $c000              ; ⚠️ Warning Z0370: Address $c000 exceeds $bfff
     ld a, 7
 trap:
     jr $
@@ -98,8 +98,8 @@ trap:
 The warning message is:
 
 ```
-Warning Z0904: Unbanked code address $c000 exceeds typical bank 2 range ($8000-$bfff). 
-Consider using .bank pragma for explicit memory layout.
+Z0370: Unbanked code address $C000 exceeds typical bank 2 range ($8000-$bfff). This will create a gap
+in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.
 ```
 
 **Note:** This is a warning, not an error. Your code will still compile and the NEX file will be generated, but you should review whether you intended to extend beyond the standard bank 2 range.
@@ -585,7 +585,7 @@ The assembler will generate errors if:
 
 The assembler will generate warnings if:
 
-- **Z0904**: Unbanked code address exceeds $bfff (typical bank 2 range)
+- **Z0370**: Unbanked code address exceeds $bfff (typical bank 2 range)
 
 ## Notes
 

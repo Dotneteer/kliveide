@@ -16,18 +16,18 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x00)).toBe(0x08);
     expect(d.directGetRegValue(0x01)).toBe(0x32);
     expect(d.directGetRegValue(0x02)).toBe(0x02);
-    expect(d.directGetRegValue(0x03)).toBe(0x03);
-    expect(d.directGetRegValue(0x04)).toBe(0x03);
+    expect(d.directGetRegValue(0x03)).toBe(0x33); // --- +3 display timing and machine type (post-firmware)
+    expect(d.directGetRegValue(0x04)).toBe(0x33); // --- write-only: returns the last value read ($03)
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0x80); // --- Hotkey CPU speed enabled on hard reset
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a); // --- bit 7: $7FFD not locked;
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
     expect(d.directGetRegValue(0x0e)).toBe(0x00);
     expect(d.directGetRegValue(0x0f)).toBe(0x02);
-    expect(d.directGetRegValue(0x10)).toBe(0xff);
+    expect(d.directGetRegValue(0x10)).toBe(0x04); // --- core ID 1, buttons idle (test/zxnext-hw/gpio)
     expect(d.directGetRegValue(0x11)).toBe(0x00);
     expect(d.directGetRegValue(0x12)).toBe(0x08);
     expect(d.directGetRegValue(0x13)).toBe(0x0b);
@@ -69,9 +69,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2c)).toBe(0x80); // --- the I2S sample with I2S off (zxnext.vhd ~2314, ~5952)
     expect(d.directGetRegValue(0x2d)).toBe(0x00);
-    expect(d.directGetRegValue(0x2e)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x80);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);
@@ -88,7 +88,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x42)).toBe(0x07);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
     expect(d.directGetRegValue(0x44)).toBe(0x00);
-    expect(d.directGetRegValue(0x4a)).toBe(0x00);
+    expect(d.directGetRegValue(0x4a)).toBe(0xe3); // --- zxnext.vhd reset: nr_4a_fallback_rgb <= X"E3"
     expect(d.directGetRegValue(0x4b)).toBe(0xe3);
     expect(d.directGetRegValue(0x4c)).toBe(0x0f);
     expect(d.directGetRegValue(0x50)).toBe(0xff);
@@ -103,14 +103,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
-    expect(d.directGetRegValue(0x64)).toBe(0xff);
+    expect(d.directGetRegValue(0x64)).toBe(0x00);
     expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
     expect(d.directGetRegValue(0x6c)).toBe(0x00);
-    expect(d.directGetRegValue(0x6e)).toBe(0x00);
-    expect(d.directGetRegValue(0x6f)).toBe(0x00);
+    expect(d.directGetRegValue(0x6e)).toBe(0x2c);
+    expect(d.directGetRegValue(0x6f)).toBe(0x0c);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
     expect(d.directGetRegValue(0x75)).toBe(0x00);
@@ -124,7 +124,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0x0f);
+    expect(d.directGetRegValue(0x85)).toBe(0x8f); // --- zxnext.vhd ~1222-1223: reset type 1
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);
@@ -133,14 +133,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
-    expect(d.directGetRegValue(0x90)).toBe(0xff);
-    expect(d.directGetRegValue(0x91)).toBe(0xff);
-    expect(d.directGetRegValue(0x92)).toBe(0xff);
+    expect(d.directGetRegValue(0x90)).toBe(0x00);
+    expect(d.directGetRegValue(0x91)).toBe(0x00);
+    expect(d.directGetRegValue(0x92)).toBe(0x00);
     expect(d.directGetRegValue(0x98)).toBe(0xff);
     expect(d.directGetRegValue(0x99)).toBe(0xff);
     expect(d.directGetRegValue(0x9a)).toBe(0xff);
-    expect(d.directGetRegValue(0x9b)).toBe(0x00);
-    expect(d.directGetRegValue(0xa0)).toBe(0xff);
+    expect(d.directGetRegValue(0x9b)).toBe(0x0f); // --- undriven pins read 1 (test/zxnext-hw/gpio)
+    expect(d.directGetRegValue(0xa0)).toBe(0x00);
     expect(d.directGetRegValue(0xa2)).toBe(0x02);
     expect(d.directGetRegValue(0xa8)).toBe(0x00);
     expect(d.directGetRegValue(0xa9)).toBe(0x05);
@@ -151,25 +151,27 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x01);
+    expect(d.directGetRegValue(0xc4)).toBe(0x81);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
     expect(d.directGetRegValue(0xc8)).toBe(0x00);
     expect(d.directGetRegValue(0xc9)).toBe(0x00);
-    expect(d.directGetRegValue(0xca)).toBe(0x00);
-    expect(d.directGetRegValue(0xcb)).toBe(0x00);
+    // --- im2_peripheral: int_req_d is 0 in reset, so both UARTs' TX-empty level latches its status
+    expect(d.directGetRegValue(0xca)).toBe(0x44);
+    // --- $CB is write-only: the direct read repeats the last value read ($CA's)
+    expect(d.directGetRegValue(0xcb)).toBe(0x44);
     expect(d.directGetRegValue(0xcc)).toBe(0x00);
     expect(d.directGetRegValue(0xcd)).toBe(0x00);
     expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0x00);
     expect(d.directGetRegValue(0xd8)).toBe(0x00);
-    expect(d.directGetRegValue(0xd9)).toBe(0xff);
+    expect(d.directGetRegValue(0xd9)).toBe(0x00);
     expect(d.directGetRegValue(0xda)).toBe(0x00);
-    expect(d.directGetRegValue(0xf0)).toBe(0xff);
-    expect(d.directGetRegValue(0xf8)).toBe(0xff);
-    expect(d.directGetRegValue(0xf9)).toBe(0xff);
-    expect(d.directGetRegValue(0xfa)).toBe(0xff);
+    expect(d.directGetRegValue(0xf0)).toBe(0x80); // --- select mode, no device
+    expect(d.directGetRegValue(0xf8)).toBe(0x00);
+    expect(d.directGetRegValue(0xf9)).toBe(0x00);
+    expect(d.directGetRegValue(0xfa)).toBe(0x00);
   });
 
   it("Hard reset & soft reset", async () => {
@@ -185,18 +187,18 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x00)).toBe(0x08);
     expect(d.directGetRegValue(0x01)).toBe(0x32);
     expect(d.directGetRegValue(0x02)).toBe(0x01);
-    expect(d.directGetRegValue(0x03)).toBe(0x03);
-    expect(d.directGetRegValue(0x04)).toBe(0x03);
+    expect(d.directGetRegValue(0x03)).toBe(0x33); // --- +3 display timing and machine type (post-firmware)
+    expect(d.directGetRegValue(0x04)).toBe(0x33); // --- write-only: returns the last value read ($03)
     expect(d.directGetRegValue(0x05)).toBe(0x41);
     expect(d.directGetRegValue(0x06)).toBe(0xa0);
     expect(d.directGetRegValue(0x07)).toBe(0x00);
-    expect(d.directGetRegValue(0x08)).toBe(0x1a);
+    expect(d.directGetRegValue(0x08)).toBe(0x9a); // --- bit 7: $7FFD not locked;
     expect(d.directGetRegValue(0x09)).toBe(0x00);
     expect(d.directGetRegValue(0x0a)).toBe(0x01);
     expect(d.directGetRegValue(0x0b)).toBe(0x01);
     expect(d.directGetRegValue(0x0e)).toBe(0x00);
     expect(d.directGetRegValue(0x0f)).toBe(0x02);
-    expect(d.directGetRegValue(0x10)).toBe(0xff);
+    expect(d.directGetRegValue(0x10)).toBe(0x04); // --- core ID 1, buttons idle (test/zxnext-hw/gpio)
     expect(d.directGetRegValue(0x11)).toBe(0x00);
     expect(d.directGetRegValue(0x12)).toBe(0x08);
     expect(d.directGetRegValue(0x13)).toBe(0x0b);
@@ -221,9 +223,9 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x29)).toBe(0xff);
     expect(d.directGetRegValue(0x2a)).toBe(0x00);
     expect(d.directGetRegValue(0x2b)).toBe(0x00);
-    expect(d.directGetRegValue(0x2c)).toBe(0x00);
+    expect(d.directGetRegValue(0x2c)).toBe(0x80); // --- the I2S sample with I2S off (zxnext.vhd ~2314, ~5952)
     expect(d.directGetRegValue(0x2d)).toBe(0x00);
-    expect(d.directGetRegValue(0x2e)).toBe(0x00);
+    expect(d.directGetRegValue(0x2e)).toBe(0x80);
     expect(d.directGetRegValue(0x2f)).toBe(0x00);
     expect(d.directGetRegValue(0x30)).toBe(0x00);
     expect(d.directGetRegValue(0x31)).toBe(0x00);
@@ -240,7 +242,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x42)).toBe(0x07);
     expect(d.directGetRegValue(0x43)).toBe(0x00);
     expect(d.directGetRegValue(0x44)).toBe(0x00);
-    expect(d.directGetRegValue(0x4a)).toBe(0x00);
+    expect(d.directGetRegValue(0x4a)).toBe(0xe3); // --- zxnext.vhd reset: nr_4a_fallback_rgb <= X"E3"
     expect(d.directGetRegValue(0x4b)).toBe(0xe3);
     expect(d.directGetRegValue(0x4c)).toBe(0x0f);
     expect(d.directGetRegValue(0x50)).toBe(0xff);
@@ -255,14 +257,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x61)).toBe(0x00);
     expect(d.directGetRegValue(0x62)).toBe(0x00);
     expect(d.directGetRegValue(0x63)).toBe(0x00);
-    expect(d.directGetRegValue(0x64)).toBe(0xff);
+    expect(d.directGetRegValue(0x64)).toBe(0x00);
     expect(d.directGetRegValue(0x68)).toBe(0x00);
     expect(d.directGetRegValue(0x69)).toBe(0x00);
     expect(d.directGetRegValue(0x6a)).toBe(0x00);
     expect(d.directGetRegValue(0x6b)).toBe(0x00);
     expect(d.directGetRegValue(0x6c)).toBe(0x00);
-    expect(d.directGetRegValue(0x6e)).toBe(0x00);
-    expect(d.directGetRegValue(0x6f)).toBe(0x00);
+    expect(d.directGetRegValue(0x6e)).toBe(0x2c);
+    expect(d.directGetRegValue(0x6f)).toBe(0x0c);
     expect(d.directGetRegValue(0x70)).toBe(0x00);
     expect(d.directGetRegValue(0x71)).toBe(0x00);
     expect(d.directGetRegValue(0x75)).toBe(0x00);
@@ -276,7 +278,7 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x82)).toBe(0xff);
     expect(d.directGetRegValue(0x83)).toBe(0xff);
     expect(d.directGetRegValue(0x84)).toBe(0xff);
-    expect(d.directGetRegValue(0x85)).toBe(0x0f);
+    expect(d.directGetRegValue(0x85)).toBe(0x8f); // --- zxnext.vhd ~1222-1223: reset type 1
     expect(d.directGetRegValue(0x86)).toBe(0xff);
     expect(d.directGetRegValue(0x87)).toBe(0xff);
     expect(d.directGetRegValue(0x88)).toBe(0xff);
@@ -285,14 +287,14 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0x8c)).toBe(0x00);
     expect(d.directGetRegValue(0x8e)).toBe(0x08);
     expect(d.directGetRegValue(0x8f)).toBe(0x00);
-    expect(d.directGetRegValue(0x90)).toBe(0xff);
-    expect(d.directGetRegValue(0x91)).toBe(0xff);
-    expect(d.directGetRegValue(0x92)).toBe(0xff);
+    expect(d.directGetRegValue(0x90)).toBe(0x00);
+    expect(d.directGetRegValue(0x91)).toBe(0x00);
+    expect(d.directGetRegValue(0x92)).toBe(0x00);
     expect(d.directGetRegValue(0x98)).toBe(0xff);
     expect(d.directGetRegValue(0x99)).toBe(0xff);
     expect(d.directGetRegValue(0x9a)).toBe(0xff);
-    expect(d.directGetRegValue(0x9b)).toBe(0x00);
-    expect(d.directGetRegValue(0xa0)).toBe(0xff);
+    expect(d.directGetRegValue(0x9b)).toBe(0x0f); // --- undriven pins read 1 (test/zxnext-hw/gpio)
+    expect(d.directGetRegValue(0xa0)).toBe(0x00);
     expect(d.directGetRegValue(0xa2)).toBe(0x02);
     expect(d.directGetRegValue(0xa8)).toBe(0x00);
     expect(d.directGetRegValue(0xa9)).toBe(0x05);
@@ -303,25 +305,27 @@ describe("Next - NextRegDevice", function () {
     expect(d.directGetRegValue(0xc0)).toBe(0x00);
     expect(d.directGetRegValue(0xc2)).toBe(0x00);
     expect(d.directGetRegValue(0xc3)).toBe(0x00);
-    expect(d.directGetRegValue(0xc4)).toBe(0x01);
+    expect(d.directGetRegValue(0xc4)).toBe(0x81);
     expect(d.directGetRegValue(0xc5)).toBe(0x00);
     expect(d.directGetRegValue(0xc6)).toBe(0x00);
     expect(d.directGetRegValue(0xc7)).toBe(0x00);
     expect(d.directGetRegValue(0xc8)).toBe(0x00);
     expect(d.directGetRegValue(0xc9)).toBe(0x00);
-    expect(d.directGetRegValue(0xca)).toBe(0x00);
-    expect(d.directGetRegValue(0xcb)).toBe(0x00);
+    // --- im2_peripheral: int_req_d is 0 in reset, so both UARTs' TX-empty level latches its status
+    expect(d.directGetRegValue(0xca)).toBe(0x44);
+    // --- $CB is write-only: the direct read repeats the last value read ($CA's)
+    expect(d.directGetRegValue(0xcb)).toBe(0x44);
     expect(d.directGetRegValue(0xcc)).toBe(0x00);
     expect(d.directGetRegValue(0xcd)).toBe(0x00);
     expect(d.directGetRegValue(0xce)).toBe(0x00);
     expect(d.directGetRegValue(0xcf)).toBe(0x00);
     expect(d.directGetRegValue(0xd8)).toBe(0x00);
-    expect(d.directGetRegValue(0xd9)).toBe(0xff);
+    expect(d.directGetRegValue(0xd9)).toBe(0x00);
     expect(d.directGetRegValue(0xda)).toBe(0x00);
-    expect(d.directGetRegValue(0xf0)).toBe(0xff);
-    expect(d.directGetRegValue(0xf8)).toBe(0xff);
-    expect(d.directGetRegValue(0xf9)).toBe(0xff);
-    expect(d.directGetRegValue(0xfa)).toBe(0xff);
+    expect(d.directGetRegValue(0xf0)).toBe(0x80); // --- select mode, no device
+    expect(d.directGetRegValue(0xf8)).toBe(0x00);
+    expect(d.directGetRegValue(0xf9)).toBe(0x00);
+    expect(d.directGetRegValue(0xfa)).toBe(0x00);
   });
 
   it("Soft reset sets reg $80", async () => {
@@ -346,8 +350,8 @@ describe("Next - NextRegDevice", function () {
     d.hardReset();
     d.directSetRegValue(0x8c, 0x05);
 
-    // --- Act
-    d.reset();
+    // --- Act (the copy happens in MemoryDevice.reset, so reset the machine)
+    m.reset();
     const value = readNextReg(m, 0x8c);
 
     // --- Assert
@@ -518,7 +522,7 @@ describe("Next - NextRegDevice", function () {
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0xff);
+    expect(value).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
   });
 
   it("Reg $04 read #2", async () => {
@@ -530,7 +534,7 @@ describe("Next - NextRegDevice", function () {
     const value = readNextReg(m, 0x04);
 
     // --- Assert
-    expect(value).toBe(0x05);
+    expect(value).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
   });
 
   const joystick1Modes = [
@@ -736,7 +740,8 @@ describe("Next - NextRegDevice", function () {
     const divMmcDevice = m.divMmcDevice;
     const nrDevice = m.nextRegDevice;
 
-    // --- Act
+    // --- Act (zxnext.vhd ~5145: bit 2 is written only in config mode)
+    writeNextReg(m, 0x03, 0x07);
     writeNextReg(m, 0x06, 0x04);
 
     // --- Assert
@@ -799,13 +804,13 @@ describe("Next - NextRegDevice", function () {
     // --- Act
     writeNextReg(m, 0x06, 0xff);
 
-    // --- Assert
+    // --- Assert (bit 2, the PS/2 mode, is written only in config mode: zxnext.vhd ~5145)
     expect(nrDevice.hotkeyCpuSpeedEnabled).toBe(true);
     expect(soundDevice.beepOnlyToInternalSpeaker).toBe(true);
     expect(nrDevice.hotkey50_60HzEnabled).toBe(true);
     expect(divMmcDevice.enableDivMmcNmiByDriveButton).toBe(true);
     expect(divMmcDevice.enableMultifaceNmiByM1Button).toBe(true);
-    expect(nrDevice.ps2Mode).toBe(true);
+    expect(nrDevice.ps2Mode).toBe(false);
     expect(soundDevice.psgMode).toBe(3);
   });
 
@@ -875,7 +880,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x80);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(true);
+    expect(m.memoryDevice.pagingEnabled).toBe(true);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -895,7 +900,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x40);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(true);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -915,7 +919,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x20);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(true);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -935,7 +938,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x10);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(true);
@@ -955,7 +957,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x08);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -975,7 +976,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x04);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -995,7 +995,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x02);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -1015,7 +1014,6 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x08, 0x01);
 
     // --- Assert
-    expect(nrDevice.unlockPort7ffd).toBe(false);
     expect(nrDevice.disableRamPortContention).toBe(false);
     expect(soundDevice.ayStereoMode).toBe(false);
     expect(soundDevice.enableInternalSpeaker).toBe(false);
@@ -1039,7 +1037,6 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay1Mono).toBe(false);
     expect(soundDevice.ay0Mono).toBe(false);
     expect(m.spriteDevice.mirrorTie).toBe(false);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
@@ -1058,7 +1055,6 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay1Mono).toBe(true);
     expect(soundDevice.ay0Mono).toBe(false);
     expect(m.spriteDevice.mirrorTie).toBe(false);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
@@ -1077,7 +1073,6 @@ describe("Next - NextRegDevice", function () {
     expect(soundDevice.ay1Mono).toBe(false);
     expect(soundDevice.ay0Mono).toBe(true);
     expect(m.spriteDevice.mirrorTie).toBe(false);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
@@ -1095,14 +1090,15 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
     expect(m.spriteDevice.mirrorTie).toBe(true);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(m.soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
 
-  it("Reg $09 resetDivMmcMapramFlag", async () => {
+  it("Reg $09 bit 3 clears the DivMMC mapram bit", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
+    m.divMmcDevice.port0xe3Value = 0x40;
+    expect(m.divMmcDevice.mapram).toBe(true);
 
     // --- Act
     writeNextReg(m, 0x09, 0x08);
@@ -1113,7 +1109,7 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
     expect(m.spriteDevice.mirrorTie).toBe(false);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(true);
+    expect(m.divMmcDevice.mapram).toBe(false);
     expect(m.soundDevice.silenceHdmiAudio).toBe(false);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
@@ -1131,7 +1127,6 @@ describe("Next - NextRegDevice", function () {
     expect(m.soundDevice.ay1Mono).toBe(false);
     expect(m.soundDevice.ay0Mono).toBe(false);
     expect(m.spriteDevice.mirrorTie).toBe(false);
-    expect(m.divMmcDevice.resetDivMmcMapramFlag).toBe(false);
     expect(m.soundDevice.silenceHdmiAudio).toBe(true);
     expect(m.composedScreenDevice.scanlineWeight).toBe(0);
   });
@@ -1300,7 +1295,8 @@ describe("Next - NextRegDevice", function () {
     // --- Arrange
     const m = await createTestNextMachine();
 
-    // --- Act
+    // --- Act: zxnext.vhd ~5186 - $11 is written only in config mode
+    writeNextReg(m, 0x03, 0x07);
     writeNextReg(m, 0x11, 0x26);
 
     // --- Assert
@@ -1627,7 +1623,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x29, 0x5a);
 
     // --- Assert
-    expect(readNextReg(m, 0x29)).toBe(0x5a);
+    expect(readNextReg(m, 0x29)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapAddressLsb).toBe(0x5a);
   });
 
@@ -1650,7 +1646,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x2b, 0xaa);
 
     // --- Assert
-    expect(readNextReg(m, 0x2b)).toBe(0xaa);
+    expect(readNextReg(m, 0x2b)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapDataLsb).toBe(0xaa);
   });
 
@@ -1662,7 +1658,7 @@ describe("Next - NextRegDevice", function () {
     writeNextReg(m, 0x2b, 0xaa);
 
     // --- Assert
-    expect(readNextReg(m, 0x2b)).toBe(0xaa);
+    expect(readNextReg(m, 0x2b)).toBe(0x00); // --- not in the zxnext.vhd read mux (~5830-6233): `when others` reads $00
     expect(m.nextRegDevice.ps2KeymapDataLsb).toBe(0xaa);
   });
 
@@ -2917,149 +2913,6 @@ describe("Next - NextRegDevice", function () {
     expect(m.memoryDevice.mappingMode).toBe(0x03);
   });
 
-  it("Reg $90 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x90, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x90)).toBe(0xa5);
-  });
-
-  it("Reg $91 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x91, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x91)).toBe(0xa5);
-  });
-
-  it("Reg $92 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x92, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x92)).toBe(0xa5);
-  });
-
-  it("Reg $93 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x93, 0xff);
-
-    // --- Assert
-    expect(readNextReg(m, 0x93)).toBe(0x0f);
-  });
-
-  it("Reg $98 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x98, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x98)).toBe(0xa5);
-  });
-
-  it("Reg $99 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x99, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x99)).toBe(0xa5);
-  });
-
-  it("Reg $9a write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x9a, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0x9a)).toBe(0xa5);
-  });
-
-  it("Reg $9b write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0x9b, 0xff);
-
-    // --- Assert
-    expect(readNextReg(m, 0x9b)).toBe(0x0f);
-  });
-
-  it("Reg $a0 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xa0, 0xa5);
-
-    // --- Assert
-    expect(readNextReg(m, 0xa0)).toBe(0xa5);
-  });
-
-  it("Reg $a2 write #1", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xa2, 0xff);
-
-    // --- Assert
-    expect(readNextReg(m, 0xa2)).toBe(0xdf);
-  });
-
-  it("Reg $a2 write #2", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xa2, 0x00);
-
-    // --- Assert
-    expect(readNextReg(m, 0xa2)).toBe(0x02);
-  });
-
-  it("Reg $a8 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xa8, 0xff);
-
-    // --- Assert
-    expect(readNextReg(m, 0xa8)).toBe(0x01);
-  });
-
-  it("Reg $a9 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xa9, 0xff);
-
-    // --- Assert
-    expect(readNextReg(m, 0xa9)).toBe(0x05);
-  });
-
   it("Reg $b8 write", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -3175,50 +3028,6 @@ describe("Next - NextRegDevice", function () {
     expect(readNextReg(m, 0xd9)).toBe(0xff);
   });
 
-  it("Reg $f0 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xf0, 0x5a);
-
-    // --- Assert
-    expect(readNextReg(m, 0xf0)).toBe(0x5a);
-  });
-
-  it("Reg $f8 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xf8, 0x5a);
-
-    // --- Assert
-    expect(readNextReg(m, 0xf8)).toBe(0x5a);
-  });
-
-  it("Reg $f9 write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xf9, 0x5a);
-
-    // --- Assert
-    expect(readNextReg(m, 0xf9)).toBe(0x5a);
-  });
-
-  it("Reg $fa write", async () => {
-    // --- Arrange
-    const m = await createTestNextMachine();
-
-    // --- Act
-    writeNextReg(m, 0xfa, 0x5a);
-
-    // --- Assert
-    expect(readNextReg(m, 0xfa)).toBe(0x5a);
-  });
-
   it("getDeviceState works", async () => {
     // --- Arrange
     const m = await createTestNextMachine();
@@ -3304,8 +3113,14 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     return (msb << 8) | lsb;
   }
 
-  it("50Hz: at tact 0 (blanking before display) CVC reflects vc=0 offset", async () => {
-    // vc=0, displayYStart=64, totalVC=311 → CVC = (0 - 64 + 311) % 311 = 247
+  // The first tact of copper line `line` (offset 0): `cvc` advances when `hc_ula` wraps, which is at
+  // raw HC `displayXStart - 12`, twelve pixels before paper x 0 (zxula_timing.vhd `ula_min_hactive`).
+  function lineStartTact(config: { totalHC: number; displayXStart: number }, rawLine: number): number {
+    return rawLine * config.totalHC + config.displayXStart - 12;
+  }
+
+  it("50Hz: at tact 0 the beam is still on the last copper line of the previous count", async () => {
+    // vc=0, hc=0 is before the hc_ula wrap, so the line is raw vc -1: CVC = (-1 - 64 + 311) % 311 = 246
     const m = await createTestNextMachine();
     const scrDevice = m.composedScreenDevice;
     m.nextRegDevice.setNextRegisterIndex(0x05);
@@ -3313,7 +3128,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
 
     scrDevice.renderTact(0);
 
-    expect(readCVC(m)).toBe(247);
+    expect(readCVC(m)).toBe(246);
   });
 
   it("50Hz: first tact of display line 0 yields CVC=0", async () => {
@@ -3324,8 +3139,23 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
+    expect(readCVC(m)).toBe(0);
+  });
+
+  it("50Hz: CVC changes at the hc_ula wrap, not at raw HC 0", async () => {
+    const m = await createTestNextMachine();
+    const scrDevice = m.composedScreenDevice;
+    m.nextRegDevice.setNextRegisterIndex(0x05);
+    m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
+    const config = scrDevice.config;
+
+    scrDevice.renderTact(config.displayYStart * config.totalHC); // raw HC 0 of the first paper line
+    expect(readCVC(m)).toBe(310);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart) - 1); // raw HC 131
+    expect(readCVC(m)).toBe(310);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart)); // raw HC 132: hc_ula = 0
     expect(readCVC(m)).toBe(0);
   });
 
@@ -3336,7 +3166,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 1) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 1));
 
     expect(readCVC(m)).toBe(1);
   });
@@ -3348,7 +3178,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 191) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 191));
 
     expect(readCVC(m)).toBe(191);
   });
@@ -3360,7 +3190,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 100) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 100));
 
     m.nextRegDevice.setNextRegisterIndex(0x1e);
     expect(m.nextRegDevice.getNextRegisterValue()).toBe(0); // MSB bit for CVC=100
@@ -3376,7 +3206,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
     expect(readCVC(m)).toBe(0);
   });
@@ -3388,7 +3218,7 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(0x04); // 60Hz
     const config = scrDevice.config;
 
-    scrDevice.renderTact((config.displayYStart + 50) * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart + 50));
 
     expect(readCVC(m)).toBe(50);
   });
@@ -3403,23 +3233,26 @@ describe("Next - NextReg 0x1E/0x1F active video line", () => {
     m.nextRegDevice.setNextRegisterValue(10);   // verticalLineOffset = 10
     const config = scrDevice.config;
 
-    scrDevice.renderTact(config.displayYStart * config.totalHC);
+    scrDevice.renderTact(lineStartTact(config, config.displayYStart));
 
     expect(readCVC(m)).toBe(10);
   });
 
   it("50Hz: copper offset wraps CVC correctly at frame boundary", async () => {
-    // With offset=5: vc=0 → CVC = (0 - 64 + 5 + 311) % 311 = 252
+    // With offset=5: vc=0, hc=0 is still raw line -1 → CVC = (-1 - 64 + 5 + 311) % 311 = 251
     const m = await createTestNextMachine();
     const scrDevice = m.composedScreenDevice;
     m.nextRegDevice.setNextRegisterIndex(0x05);
     m.nextRegDevice.setNextRegisterValue(0x00); // 50Hz
     m.nextRegDevice.setNextRegisterIndex(0x64);
     m.nextRegDevice.setNextRegisterValue(5);    // verticalLineOffset = 5
+    // --- cvc loads $64 at the first active line (zxula_timing.vhd ~457-468): the next frame starts
+    // --- with the offset this frame's reload loaded (test/zxnext-hw/copper/line-offset-latch)
+    m.copperDevice.onNewFrame();
 
     scrDevice.renderTact(0); // vc=0
 
-    expect(readCVC(m)).toBe(252);
+    expect(readCVC(m)).toBe(251);
   });
 
   it("NR $83 bit 5 = 0: isMouseEnabled() false, isPortDfKempstonAlias() true", async () => {

@@ -7,7 +7,7 @@ import { SysVar } from "@abstractions/SysVar";
 import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { FloppyLogEntry } from "@abstractions/FloppyLogEntry";
-import { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { IMemorySection } from "@abstractions/MemorySection";

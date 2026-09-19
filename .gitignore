@@ -48,3 +48,5 @@ _pagefind/
 
 # Staging output of scripts/doc-shots/run.cjs, reviewed before publishing into docs/
 .doc-shots/
+# Output of test/harness/zxnext (PNG frames, review prompts, verdicts); see .plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md
+.visual-tests/

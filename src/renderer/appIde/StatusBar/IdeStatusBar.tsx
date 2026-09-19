@@ -38,7 +38,8 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
   const { compileStatus, compileSuccess } = useMemo(() => {
     if (compilation.inProgress) return { compileStatus: "Compilation in progress...", compileSuccess: true };
     if (!compilation.result) return { compileStatus: "Not compiled yet", compileSuccess: true };
-    if (compilation.failed || compilation.result?.errors?.length > 0)
+    // --- Warnings are listed with the errors but do not fail the compilation
+    if (compilation.failed || compilation.result?.errors?.some((e) => !e.isWarning))
       return { compileStatus: "Compilation failed", compileSuccess: false };
     return { compileStatus: "Compilation successful", compileSuccess: true };
   }, [compilation]);

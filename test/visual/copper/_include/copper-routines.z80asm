@@ -1,0 +1,96 @@
+; ============================================================================
+; Shared routines for the copper visual tests. The cases include them at the END and start their own
+; code at $8000. (`.ent` also sets the NEX entry point now, so a program could include them first and
+; mark its entry with `.ent`.)
+; ============================================================================
+
+; ----------------------------------------------------------------------------
+; UploadCopper: HL = list, BC = length in bytes. Stops the copper, writes the
+; list from address 0 through NextReg $60 (8-bit path). Leaves it stopped.
+; ----------------------------------------------------------------------------
+UploadCopper:
+    nextreg $62,$00
+    nextreg $61,$00
+UploadCopperLoop:
+    ld a,(hl)
+    nextreg $60,a
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,UploadCopperLoop
+    ret
+
+; ----------------------------------------------------------------------------
+; WaitCvc: A = copper line (0-255). Busy-waits until NextReg $1F (cvc LSB)
+; reads A, then until it no longer does - so it returns once per frame, early
+; in line A. No interrupts involved.
+; ----------------------------------------------------------------------------
+WaitCvc:
+    ld e,a
+    ld bc,$243B
+    ld a,$1F
+    out (c),a
+    ld bc,$253B
+WaitCvcUntil:
+    in a,(c)
+    cp e
+    jr nz,WaitCvcUntil
+WaitCvcWhile:
+    in a,(c)
+    cp e
+    jr z,WaitCvcWhile
+    ret
+
+; ----------------------------------------------------------------------------
+; Common start: resets the video NextRegs a picture depends on, then border
+; colour B, PAPER/INK attribute C over the whole screen, bitmap cleared.
+; Clobbers AF, BC, DE, HL.
+;
+; A program must not assume reset values: after NextZXOS runs `.nexload` it
+; leaves e.g. $43 = $20 (palette writes go to the SPRITE palette), $07 = $33
+; (28 MHz) and $15 = $01 (sprites on). Found by the browser tier (real load).
+; ----------------------------------------------------------------------------
+ClearScreen:
+    nextreg $07,$00         ; 3.5 MHz, like a reset machine
+    nextreg $43,$00         ; ULA palette 1: $40/$41 write it, auto-increment on
+    nextreg $14,$E3         ; global transparency: the reset colour
+    nextreg $15,$00         ; sprites off, layer order SLU
+    nextreg $26,$00         ; no ULA scroll
+    nextreg $27,$00
+    nextreg $64,$00         ; no copper line offset
+    nextreg $68,$00         ; ULA output on
+    nextreg $62,$00         ; copper stopped
+    ld a,b
+    out ($FE),a
+    push bc
+    ld hl,$4000
+    ld de,$4001
+    ld bc,$17FF
+    ld (hl),0
+    ldir
+    pop bc
+    ld hl,$5800
+    ld (hl),c
+    ld de,$5801
+    ld bc,$02FF
+    ldir
+    ret
+
+; ----------------------------------------------------------------------------
+; UploadCopper16: like UploadCopper, but writes through NextReg $63 (16-bit
+; path): an even-address write only latches the byte, the odd-address write
+; commits both. BC must be even.
+; ----------------------------------------------------------------------------
+UploadCopper16:
+    nextreg $62,$00
+    nextreg $61,$00
+UploadCopper16Loop:
+    ld a,(hl)
+    nextreg $63,a
+    inc hl
+    dec bc
+    ld a,b
+    or c
+    jr nz,UploadCopper16Loop
+    ret

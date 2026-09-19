@@ -34,6 +34,11 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   private _blknext: number;
   // Tracks whether an IPC-backed response is ready to be read by the Z80
   private _responseReady: boolean;
+  // The host has reported card 0's size (0 = no card in the slot)
+  private _cardInfoKnown = false;
+  // CMD18's R1 still has to precede the first block
+  private _multiR1Pending = false;
+  private _multiR1Pending1 = false;
 
   // --- Card 1 independent state machine
   private _cid1: Uint8Array;
@@ -95,6 +100,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     this._dataIndex = 0;
     this._bACMD = false;
     this._blknext = 0;
+    this._multiR1Pending = false;
+    this._multiR1Pending1 = false;
 
     // --- Restore card 0 to TRAN (ready) if it was previously initialized; otherwise IDLE.
     if (savedSectors0 > 0) {
@@ -204,11 +211,22 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   /** Notify the device of the total number of 512-byte sectors on the SD image (card 0). */
   setCardInfo(totalSectors: number): void {
     this._totalSectors = totalSectors;
+    this._cardInfoKnown = true;
   }
 
-  /** True once setCardInfo has been called with a valid sector count. */
+  /** True once the host has reported card 0's size (setCardInfo). */
   get hasCardInfo(): boolean {
-    return this._totalSectors > 0;
+    return this._cardInfoKnown;
+  }
+
+  /**
+   * Whether a card sits in the slot. Card 0 is there unless the host reported no sectors (the app always
+   * has one; its size is fetched lazily at the first sector access). Card 1 has no image source in the
+   * app: it is there only once given a size. An empty slot never drives MISO - the bus reads $FF - and
+   * hears nothing.
+   */
+  private cardPresent(card: number): boolean {
+    return card === 0 ? !(this._cardInfoKnown && this._totalSectors === 0) : this._totalSectors1 > 0;
   }
 
   /** Notify the device of the total number of 512-byte sectors on card 1's SD image. */
@@ -246,6 +264,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   writeMmcData(data: number): void {
+    if (!this.cardPresent(this._selectedCard)) return;
     // Dispatch to the appropriate card's state machine
     if (this._selectedCard === 1) {
       this.writeMmcDataCard1(data);
@@ -297,8 +316,10 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    // --- Command byte reception
+    // --- Command byte reception: a command starts with bits 01; anything else (the $FF of an idle
+    // --- bus) is not a command
     if (this._commandIndex === 0) {
+      if ((data & 0xc0) !== 0x40) return;
       this._lastCommand = data;
       this._commandParams = [];
       this._commandIndex = 1;
@@ -311,13 +332,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // CMD0: GO_IDLE_STATE — R1 = 0x01 (idle) when card present; 0x00 (not idle) when absent
         if (this._commandIndex === 5) {
           this._commandIndex = 0;
-          if (this._totalSectors === 0) {
-            // No card image mounted — card not present
-            this.setMmcResponse(new Uint8Array([0x00]));
-          } else {
-            this._state = SdState.IDLE;
-            this.setMmcResponse(new Uint8Array([0x01]));
-          }
+          this._state = SdState.IDLE;
+          this.setMmcResponse(new Uint8Array([0x01]));
         } else {
           this._commandIndex++;
         }
@@ -451,6 +467,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             (this._commandParams[2] << 8) |
             this._commandParams[3];
           this._state = SdState.DATA_MULTI;
+          this._multiR1Pending = true;
           // Send R1 immediately, then kick off first sector read
           this.setMmcResponseIntermediate(new Uint8Array([0x00]));
           this.machine.setFrameCommand({
@@ -532,6 +549,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   readMmcData(): number {
+    if (!this.cardPresent(this._selectedCard)) return 0xff;
     if (this._selectedCard === 1) {
       return this.readMmcDataCard1();
     }
@@ -609,12 +627,15 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     const crc = calculateCRC16(data);
 
     if (this._state === SdState.DATA_MULTI) {
-      // Multi-block: token(0xfe) + data + CRC16 (no R1/dummy prefix)
-      const response = new Uint8Array(1 + BYTES_PER_SECTOR + 2);
-      response[0] = 0xfe;
-      response.set(data, 1);
-      response[1 + BYTES_PER_SECTOR] = (crc >> 8) & 0xff;
-      response[1 + BYTES_PER_SECTOR + 1] = crc & 0xff;
+      // Multi-block: token(0xfe) + data + CRC16; the first block still carries CMD18's R1 + a gap byte
+      const prefix = this._multiR1Pending ? [0x00, 0xff] : [];
+      this._multiR1Pending = false;
+      const response = new Uint8Array(prefix.length + 1 + BYTES_PER_SECTOR + 2);
+      response.set(prefix, 0);
+      response[prefix.length] = 0xfe;
+      response.set(data, prefix.length + 1);
+      response[prefix.length + 1 + BYTES_PER_SECTOR] = (crc >> 8) & 0xff;
+      response[prefix.length + 1 + BYTES_PER_SECTOR + 1] = crc & 0xff;
       this.setMmcResponse(response);
     } else {
       // Single-block: R1(0x00) + dummy(0xff) + token(0xfe) + data + CRC16
@@ -669,8 +690,9 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
       return;
     }
 
-    // --- Command byte reception
+    // --- Command byte reception: a command starts with bits 01
     if (this._commandIndex1 === 0) {
+      if ((data & 0xc0) !== 0x40) return;
       this._lastCommand1 = data;
       this._commandParams1 = [];
       this._commandIndex1 = 1;
@@ -683,13 +705,8 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
         // CMD0: GO_IDLE_STATE
         if (this._commandIndex1 === 5) {
           this._commandIndex1 = 0;
-          if (this._totalSectors1 === 0) {
-            // No card image mounted — card not present
-            this.setCard1Response(new Uint8Array([0x00]));
-          } else {
-            this._state1 = SdState.IDLE;
-            this.setCard1Response(new Uint8Array([0x01]));
-          }
+          this._state1 = SdState.IDLE;
+          this.setCard1Response(new Uint8Array([0x01]));
         } else {
           this._commandIndex1++;
         }
@@ -816,6 +833,7 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
             (this._commandParams1[2] << 8) |
             this._commandParams1[3];
           this._state1 = SdState.DATA_MULTI;
+          this._multiR1Pending1 = true;
           this.setCard1ResponseIntermediate(new Uint8Array([0x00]));
           this.machine.setFrameCommand({
             command: "sd-read-card1",
@@ -944,11 +962,14 @@ export class SdCardDevice implements IGenericDevice<IZxNextMachine> {
     const crc = calculateCRC16(data);
 
     if (this._state1 === SdState.DATA_MULTI) {
-      const response = new Uint8Array(1 + BYTES_PER_SECTOR + 2);
-      response[0] = 0xfe;
-      response.set(data, 1);
-      response[1 + BYTES_PER_SECTOR] = (crc >> 8) & 0xff;
-      response[1 + BYTES_PER_SECTOR + 1] = crc & 0xff;
+      const prefix = this._multiR1Pending1 ? [0x00, 0xff] : [];
+      this._multiR1Pending1 = false;
+      const response = new Uint8Array(prefix.length + 1 + BYTES_PER_SECTOR + 2);
+      response.set(prefix, 0);
+      response[prefix.length] = 0xfe;
+      response.set(data, prefix.length + 1);
+      response[prefix.length + 1 + BYTES_PER_SECTOR] = (crc >> 8) & 0xff;
+      response[prefix.length + 1 + BYTES_PER_SECTOR + 1] = crc & 0xff;
       this.setCard1Response(response);
     } else {
       const response = new Uint8Array(3 + BYTES_PER_SECTOR + 2);

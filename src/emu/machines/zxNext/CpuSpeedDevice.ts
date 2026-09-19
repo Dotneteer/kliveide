@@ -52,7 +52,11 @@ export class CpuSpeedDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   reset(): void {
-    // --- CPU speed is preserved
+    // --- zxnext.vhd ~5733: every reset sets nr_07_cpu_speed to "00" (3.5 MHz)
+    // --- (3.5 MHz is also the effective speed with or without the expansion bus)
+    this._programmedSpeed = 0x00;
+    this._effectiveSpeed = 0x00;
+    this._effectiveClockMultiplier = 1;
   }
 
   hardReset(): void {

@@ -1,4 +1,5 @@
 #include "zxnext-sd.h"
+#include "zxnext-nextreg.h"
 
 #define ZXNEXT_SD_BYTES_PER_SECTOR 512u
 #define ZXNEXT_SD_RESPONSE_CAPACITY 540u
@@ -32,6 +33,8 @@ typedef struct {
   uint8_t bACMD;
   uint32_t totalSectors;
   uint32_t blknext;
+  uint8_t infoKnown;       /* the host reported the size (0 = no card) */
+  uint8_t multiR1Pending;  /* CMD18's R1 still has to precede the first block */
 } ZxNextSdCard;
 
 static uint8_t sdSelectedCard;
@@ -136,6 +139,7 @@ static void zxnextSdResetCard(ZxNextSdCard *card, uint32_t index) {
   card->bACMD = 0;
   card->totalSectors = savedSectors;
   card->blknext = 0;
+  card->multiR1Pending = 0;
 }
 
 static void zxnextSdReset(void) {
@@ -151,12 +155,21 @@ static void zxnextSdReset(void) {
 
 static void zxnextSdSetCardInfo(uint32_t card, uint32_t totalSectors) {
   sdCards[card & 0x01u].totalSectors = totalSectors;
+  sdCards[card & 0x01u].infoKnown = 1;
+}
+
+/*
+ * Whether a card sits in the slot (SdCardDevice.cardPresent): card 0 unless the host reported no sectors
+ * (its size is fetched lazily at the first sector access); card 1 only once given a size. An empty slot
+ * never drives MISO - the bus reads $FF - and hears nothing.
+ */
+static uint32_t zxnextSdCardPresent(uint32_t cardIndex) {
+  const ZxNextSdCard *card = &sdCards[cardIndex & 0x01u];
+  return (cardIndex & 0x01u) == 0u ? !(card->infoKnown && card->totalSectors == 0u) : card->totalSectors > 0u;
 }
 
 static void zxnextSdSpiCsWrite(uint32_t value) {
   uint8_t data = (uint8_t)value;
-  uint8_t configMode = (zxnextNextRegs[0x14] & 0x80u) != 0;
-  uint8_t resetType2 = (zxnextNextRegs[0x02] & 0x04u) != 0;
   uint8_t reg;
   if ((data & 0x03u) == 0x02u) {
     reg = 0xfe;
@@ -164,7 +177,7 @@ static void zxnextSdSpiCsWrite(uint32_t value) {
     reg = 0xfd;
   } else if (data == 0xfbu || data == 0xf7u) {
     reg = data;
-  } else if (data == 0x7fu && (configMode || resetType2)) {
+  } else if (data == 0x7fu && zxnextNextRegConfigModeOrFlashReset()) {
     reg = 0x7f;
   } else {
     reg = 0xff;
@@ -177,8 +190,8 @@ static void zxnextSdCompleteCommand(ZxNextSdCard *card, uint32_t cardIndex) {
   uint8_t response[ZXNEXT_SD_RESPONSE_CAPACITY];
   switch (card->lastCommand) {
     case 0x40:
-      card->state = card->totalSectors == 0 ? card->state : ZXNEXT_SD_STATE_IDLE;
-      zxnextSdSetResponseBytes(card, card->totalSectors == 0 ? 0x00u : 0x01u);
+      card->state = ZXNEXT_SD_STATE_IDLE;
+      zxnextSdSetResponseBytes(card, 0x01u);
       break;
     case 0x41:
       card->state = ZXNEXT_SD_STATE_READY;
@@ -224,6 +237,7 @@ static void zxnextSdCompleteCommand(ZxNextSdCard *card, uint32_t cardIndex) {
       break;
     case 0x52:
       card->state = ZXNEXT_SD_STATE_DATA_MULTI;
+      card->multiR1Pending = 1;
       card->blknext = zxnextSdArg(card);
       response[0] = 0x00;
       zxnextSdSetResponse(card, response, 1, 0);
@@ -283,7 +297,9 @@ static void zxnextSdWriteCardData(uint32_t cardIndex, uint32_t value) {
     return;
   }
 
+  /* a command starts with bits 01; anything else (the $FF of an idle bus) is not a command */
   if (card->commandIndex == 0) {
+    if ((data & 0xc0u) != 0x40u) return;
     card->lastCommand = data;
     card->commandParamCount = 0;
     card->commandIndex = 1;
@@ -303,7 +319,7 @@ static void zxnextSdWriteCardData(uint32_t cardIndex, uint32_t value) {
 }
 
 static void zxnextSdWriteMmcData(uint32_t value) {
-  if (sdSelectedCard == 0xffu) return;
+  if (sdSelectedCard == 0xffu || !zxnextSdCardPresent(sdSelectedCard)) return;
   zxnextSdWriteCardData(sdSelectedCard & 0x01u, value);
 }
 
@@ -325,7 +341,7 @@ static uint32_t zxnextSdReadCardData(uint32_t cardIndex) {
 }
 
 static uint32_t zxnextSdReadMmcData(void) {
-  if (sdSelectedCard == 0xffu) return 0xffu;
+  if (sdSelectedCard == 0xffu || !zxnextSdCardPresent(sdSelectedCard)) return 0xffu;
   return zxnextSdReadCardData(sdSelectedCard & 0x01u);
 }
 
@@ -356,11 +372,18 @@ static void zxnextSdSetReadResponse(uint32_t cardIndex, uint32_t dataPtr, uint32
   uint32_t dataLength = length < ZXNEXT_SD_BYTES_PER_SECTOR ? length : ZXNEXT_SD_BYTES_PER_SECTOR;
   uint16_t crc = zxnextSdCrc16(data, dataLength);
   if (card->state == ZXNEXT_SD_STATE_DATA_MULTI) {
-    response[0] = 0xfe;
-    for (uint32_t i = 0; i < dataLength; i++) response[1u + i] = data[i];
-    response[1u + dataLength] = (uint8_t)(crc >> 8);
-    response[2u + dataLength] = (uint8_t)(crc & 0xffu);
-    zxnextSdSetResponse(card, response, 1u + dataLength + 2u, 1);
+    /* token + data + CRC16; the first block still carries CMD18's R1 + a gap byte */
+    uint32_t p = 0;
+    if (card->multiR1Pending) {
+      response[p++] = 0x00;
+      response[p++] = 0xff;
+      card->multiR1Pending = 0;
+    }
+    response[p] = 0xfe;
+    for (uint32_t i = 0; i < dataLength; i++) response[p + 1u + i] = data[i];
+    response[p + 1u + dataLength] = (uint8_t)(crc >> 8);
+    response[p + 2u + dataLength] = (uint8_t)(crc & 0xffu);
+    zxnextSdSetResponse(card, response, p + 1u + dataLength + 2u, 1);
   } else {
     response[0] = 0x00; response[1] = 0xff; response[2] = 0xfe;
     for (uint32_t i = 0; i < dataLength; i++) response[3u + i] = data[i];

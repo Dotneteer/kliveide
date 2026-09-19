@@ -4,6 +4,10 @@
 #include <stdint.h>
 
 static void zxnextNextRegHardReset(void);
+static void zxnextNextRegSoftReset(uint32_t keptNr06);
+static void zxnextNextRegApplyResetBranch(void);
+static void zxnextTimingSelect(void);
+static uint32_t zxnextNextRegConfigModeOrFlashReset(void);
 static void zxnextNextRegSetIndex(uint32_t reg);
 static uint32_t zxnextNextRegGetIndex(void);
 static void zxnextNextRegSetValue(uint32_t value);

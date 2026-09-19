@@ -15,5 +15,12 @@ static uint32_t zxnextNmiGetReturnAddress(void);
 static uint32_t zxnextNmiGetStacklessProcessed(void);
 static void zxnextNmiMarkAccepted(void);
 static void zxnextNmiAfterRetn(void);
+static uint32_t zxnextNmiAcceptCause(void);
+static void zxnextNmiRequestMultiface(void);
+static void zxnextNmiRequestDivMmc(void);
+static void zxnextNmiBeforeOpcodeFetch(uint32_t pc);
+static void zxnextNmiNextReg02Write(uint32_t value);
+static uint32_t zxnextNmiNextReg02Flags(void);
+static void zxnextNmiIoTrap(uint32_t cause, uint32_t value, uint32_t isWrite);
 
 #endif

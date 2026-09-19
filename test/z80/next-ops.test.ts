@@ -871,11 +871,14 @@ describe("Z80 next ops", () => {
 
     // --- Act
     m.cpu.a = 0xa2;
+    const fBefore = m.cpu.f;
     m.run();
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("HL");
+    m.shouldKeepRegisters("HL, F");
+    // --- t80n.vhd ~762-785: carry is cleared (bit 16 of a zeroed variable), the other flags stay
+    expect(cpu.f).toBe(fBefore & 0xfe);
     expect(cpu.hl).toBe(0x23a3);
     m.shouldKeepMemory();
 
@@ -916,11 +919,14 @@ describe("Z80 next ops", () => {
 
     // --- Act
     m.cpu.a = 0xa2;
+    const fBefore = m.cpu.f;
     m.run();
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("DE");
+    m.shouldKeepRegisters("DE, F");
+    // --- t80n.vhd ~762-785: carry is cleared (bit 16 of a zeroed variable), the other flags stay
+    expect(cpu.f).toBe(fBefore & 0xfe);
     expect(cpu.de).toBe(0x23a3);
     m.shouldKeepMemory();
 
@@ -961,11 +967,14 @@ describe("Z80 next ops", () => {
 
     // --- Act
     m.cpu.a = 0xa2;
+    const fBefore = m.cpu.f;
     m.run();
 
     // --- Assert
     const cpu = m.cpu;
-    m.shouldKeepRegisters("BC");
+    m.shouldKeepRegisters("BC, F");
+    // --- t80n.vhd ~762-785: carry is cleared (bit 16 of a zeroed variable), the other flags stay
+    expect(cpu.f).toBe(fBefore & 0xfe);
     expect(cpu.bc).toBe(0x23a3);
     m.shouldKeepMemory();
 
@@ -1873,9 +1882,10 @@ describe("Z80 next ops", () => {
     expect(cpu.tacts).toBe(14);
   });
 
-  it("0xA5: LDWS sets S,Z,H,PV,N=0 flags based on INC D; preserves C", () => {
+  it("0xA5: LDWS sets S,Z,H,PV,N=0 flags based on INC D; carry from D + 1", () => {
     // D1 fix: ldws must set flags using the incFlags table (same as INC D).
     // The test uses D=0x0F so that after increment D=0x10, triggering H flag.
+    // t80n_mcode.vhd ~2140: unlike INC r, LDWS does not set PreserveC, so C is the carry out of D + 1.
     // --- Arrange
     const m = new Z80TestMachine(RunMode.OneInstruction, true);
     m.initCode([
@@ -1884,7 +1894,7 @@ describe("Z80 next ops", () => {
     ]);
     m.cpu.hl = 0x1000;
     m.cpu.de = 0x0f00; // D=0x0F, E=0x00
-    m.cpu.f = 0x01;    // C flag set initially — must be preserved
+    m.cpu.f = 0x01;    // C flag set initially — cleared: no carry out of $0F + 1
     m.memory[m.cpu.hl] = 0x55;
 
     // --- Act
@@ -1897,8 +1907,7 @@ describe("Z80 next ops", () => {
     expect(cpu.isNFlagSet()).toBe(false);
     expect(cpu.isZFlagSet()).toBe(false);
     expect(cpu.isSFlagSet()).toBe(false);
-    // C preserved from initial F
-    expect(cpu.isCFlagSet()).toBe(true);
+    expect(cpu.isCFlagSet()).toBe(false);
     expect(cpu.de).toBe(0x1000); // D=0x10, E=0x00
     expect(cpu.tacts).toBe(14);
   });
@@ -1912,7 +1921,7 @@ describe("Z80 next ops", () => {
     ]);
     m.cpu.hl = 0x1000;
     m.cpu.de = 0xff01; // D=0xFF — will wrap to 0 on increment
-    m.cpu.f = 0x00;    // C clear — must stay clear
+    m.cpu.f = 0x00;    // C clear — set: $FF + 1 carries out (no PreserveC, t80n_mcode.vhd ~2140)
     m.memory[m.cpu.hl] = 0x55;
 
     // --- Act
@@ -1922,7 +1931,7 @@ describe("Z80 next ops", () => {
     const cpu = m.cpu;
     expect(cpu.isZFlagSet()).toBe(true);
     expect(cpu.isNFlagSet()).toBe(false);
-    expect(cpu.isCFlagSet()).toBe(false);
+    expect(cpu.isCFlagSet()).toBe(true);
     expect(cpu.de).toBe(0x0001); // D wrapped to 0x00
     expect(cpu.tacts).toBe(14);
   });
@@ -1936,7 +1945,7 @@ describe("Z80 next ops", () => {
     ]);
     m.cpu.hl = 0x1000;
     m.cpu.de = 0x7f00; // D=0x7F — overflow to 0x80 sets PV
-    m.cpu.f = 0x01;    // C set — must be preserved
+    m.cpu.f = 0x01;    // C set — cleared: no carry out of $7F + 1
     m.memory[m.cpu.hl] = 0x55;
 
     // --- Act
@@ -1947,7 +1956,7 @@ describe("Z80 next ops", () => {
     expect(cpu.isPvFlagSet()).toBe(true);
     expect(cpu.isSFlagSet()).toBe(true); // 0x80 has bit 7 set
     expect(cpu.isNFlagSet()).toBe(false);
-    expect(cpu.isCFlagSet()).toBe(true); // C preserved
+    expect(cpu.isCFlagSet()).toBe(false);
     expect(cpu.de).toBe(0x8000);
     expect(cpu.tacts).toBe(14);
   });

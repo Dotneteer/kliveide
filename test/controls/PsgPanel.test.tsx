@@ -67,7 +67,7 @@ describe("PsgPanel", () => {
 
   /*
    * The shipped bug: the row labelled `CntC` read `psgState.cntB`, so channel C's counter displayed
-   * channel B's value. `cntC` was populated all along (`emu/machines/zxSpectrum128/PsgChip.ts`).
+   * channel B's value. `cntC` was populated all along (`PsgChipState`, filled by `emu/machines/zxNext/NextPsgChip.ts`).
    */
   it("shows each channel's own counter", async () => {
     await render();

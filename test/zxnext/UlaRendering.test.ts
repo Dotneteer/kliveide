@@ -3,10 +3,13 @@
  *
  * D1 — Standard-mode paper palette index offset (+0x10)
  * D2 — ULANext default format NR 0x42 (soft reset = 0x07)
- * D3 — ULANext border uses paper path (palette 128+)
  * D4 — Blend modes (priority 6-7, NR 0x68 bits [6:5])
  * D5 — Stencil mode (NR 0x68 bit 0, AND of ULA & tilemap)
- * D6 — Half-pixel scroll (NR 0x68 bit 2)
+ *
+ * Moved to the real machine (test/zxnext-hw/ula/): the border colour mapping of D1 and D3
+ * (ula-colours ULA-001, ulanext-ulaplus) - the border colour now reaches the picture at the ULA's
+ * 8-pixel border latch, so a field write no longer updates the cache at once - D6 (scroll ULA-012) and
+ * the HiRes ink / paper indices (timex-modes TMX-005, looked up per pixel through the attribute decode).
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
@@ -24,36 +27,10 @@ function csd() {
   return m.composedScreenDevice;
 }
 
-// Helper: read a palette entry directly from the ULA palette array
-function getUlaFirstPaletteEntry(index: number): number {
-  return m.paletteDevice.ulaFirst[index & 0xff];
-}
-
 // ---------------------------------------------------------------------------
 // D1 — Standard paper palette index offset
 // ---------------------------------------------------------------------------
 describe("D1 — Standard paper palette index offset", () => {
-  it("standard mode paper indices are in range 16–31 (non-bright 16–23, bright 24–31)", () => {
-    // The attribute decode table maps attr bytes to palette indices.
-    // For standard mode, paper should use indices 16-31 (paper = 16 + bright*8 + paperColor).
-    // Set a known custom palette entry at index 16 (paper=0, non-bright) to verify
-    // that the border/paper lookups read from the paper region.
-
-    // Write a unique colour to ULA palette index 16 (paper 0, non-bright)
-    m.paletteDevice.ulaFirst[16] = 0x100; // arbitrary distinct 9-bit colour
-
-    // Standard border color 0 should now use palette index 16
-    csd().borderColor = 0;
-    // borderRgbCache should reflect the value at palette index 16
-    expect((csd() as any).borderRgbCache).toBe(0x100);
-  });
-
-  it("border color 3 maps to palette index 19 (16+3)", () => {
-    m.paletteDevice.ulaFirst[19] = 0x1ab;
-    csd().borderColor = 3;
-    expect((csd() as any).borderRgbCache).toBe(0x1ab);
-  });
-
   it("attribute decode tables: non-bright paper uses indices 16–23", () => {
     // attr = 0b00_PPP_III: non-flash, non-bright, paper PPP, ink III
     // For attr=0x08 (paper=1, ink=0, no flash, no bright):
@@ -85,20 +62,6 @@ describe("D1 — Standard paper palette index offset", () => {
     expect(flashOnInk).toBe(16); // ink display during flash-on = original paper index
   });
 
-  it("hi-res ink uses bright ink (8+color), paper uses bright paper (24+color)", () => {
-    // Set timex port to select mode 6 (hi-res), hiResColor = 2
-    // bits [5:3] = color, bits [2:0] = mode
-    // mode 6 = 0b110 → value = (2 << 3) | 6 = 0x16
-
-    // Write unique colours to expected indices
-    m.paletteDevice.ulaFirst[10] = 0x0aa; // bright ink 2: index 8+2=10
-    m.paletteDevice.ulaFirst[29] = 0x0bb; // bright paper 5: index 24+(7-2)=29
-
-    csd().timexPortValue = 0x16;
-
-    expect((csd() as any).ulaHiResInkRgb333).toBe(0x0aa);
-    expect((csd() as any).ulaHiResPaperRgb333).toBe(0x0bb);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -123,59 +86,20 @@ describe("D2 — ULANext default format NR 0x42", () => {
 });
 
 // ---------------------------------------------------------------------------
-// D3 — ULANext border colour
-// ---------------------------------------------------------------------------
-describe("D3 — ULANext border palette path (indices 128+)", () => {
-  it("ULANext border color 0 maps to palette index 128", () => {
-    m.paletteDevice.ulaFirst[128] = 0x1ee;
-    csd().nextReg0x43Value = 0x01; // enable ULANext
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x1ee);
-  });
-
-  it("ULANext border color 5 maps to palette index 133 (128+5)", () => {
-    m.paletteDevice.ulaFirst[133] = 0x155;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 5;
-    expect((csd() as any).borderRgbCache).toBe(0x155);
-  });
-
-  it("ULANext takes priority over ULA+ for border", () => {
-    m.paletteDevice.ulaFirst[128] = 0x111;
-    m.paletteDevice.ulaFirst[200] = 0x222; // ULA+ would use this
-    csd().ulaPlusEnabled = true;
-    csd().nextReg0x43Value = 0x01; // ULANext overrides ULA+
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x111);
-  });
-
-  it("border cache updates when ULANext format changes", () => {
-    m.paletteDevice.ulaFirst[128] = 0x1dd;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 0;
-    expect((csd() as any).borderRgbCache).toBe(0x1dd);
-
-    // Change format — cache should be refreshed
-    m.paletteDevice.ulaFirst[128] = 0x1cc;
-    csd().nextReg0x42Value = 0x0f; // triggers updateBorderRgbCache
-    expect((csd() as any).borderRgbCache).toBe(0x1cc);
-  });
-
-  it("disabling ULANext falls back to standard paper path", () => {
-    m.paletteDevice.ulaFirst[16] = 0x1aa;
-    csd().nextReg0x43Value = 0x01;
-    csd().borderColor = 0;
-    // Now disable ULANext
-    csd().nextReg0x43Value = 0x00;
-    // Should use standard paper index 16
-    expect((csd() as any).borderRgbCache).toBe(0x1aa);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // D4 — Blend modes (composeSinglePixel)
 // ---------------------------------------------------------------------------
 describe("D4 — Blend modes (priority 6-7)", () => {
+  // The RGBA a 9-bit colour becomes, taken from the non-blend (SLU) path. Expected pixels used to be built
+  // by composing the colour as a lone ULA pixel *in the blend mode*, which only worked while a lone ULA
+  // pixel showed in blend modes - it does not in zxnext.vhd (the ULA is only the `mix_rgb` operand).
+  function rgbaOf(rgb333: number): number {
+    const saved = csd().layerPriority;
+    csd().layerPriority = 0;
+    const rgba = (csd() as any).composeSinglePixel(rgb333, false, null, true, false, null, true);
+    csd().layerPriority = saved;
+    return rgba;
+  }
+
   it("blendRgb333 saturate-add (mode 0): channels clamped to 7", () => {
     // Test via composeSinglePixel with priority 6
     // ULA = R=3 G=2 B=1 = (3<<6)|(2<<3)|1 = 0xC9 = 0b011_010_001
@@ -198,9 +122,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     // Result should be the blended colour (0x1FF) converted via zxNextBgra
     // We can compare against composeSinglePixel with a known value
     const expectedBlend = (7 << 6) | (7 << 3) | 7; // 0x1FF
-    const expectedResult = (csd() as any).composeSinglePixel(
-      expectedBlend, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(expectedBlend);
     expect(result).toBe(expectedResult);
   });
 
@@ -218,27 +140,22 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     );
 
     const expectedBlend = (2 << 6) | (3 << 3) | 4; // 0x09C
-    const expectedResult = (csd() as any).composeSinglePixel(
-      expectedBlend, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(expectedBlend);
     expect(result).toBe(expectedResult);
   });
 
-  it("blend mode with ulaBlendingInSLUModes=01 still blends (D7 fix)", () => {
+  it("blend mode with ulaBlendingInSLUModes=01 does not blend: the ULA is drawn as a layer", () => {
     csd().layerPriority = 6;
     csd().ulaBlendingInSLUModes = 0b01;
 
-    // After D7: blend IS applied even with ulaBlendingInSLUModes=0b01
+    // zxnext.vhd `case ula_blend_mode_2`, `when others`: mix_rgb <= 0, mix_rgb_transparent <= '1', and the
+    // ULA becomes the top layer (the tilemap is off, so tm_pixel_below = not nr_6b(0) = 1). The earlier
+    // "D7 fix" expected a ULA + Layer 2 blend here, which is not what the hardware does.
     const result = (csd() as any).composeSinglePixel(
       0x0aa, false, 0x0bb, false, false, null, true
     );
 
-    // 0x0aa = R2 G5 B2, 0x0bb = R2 G7 B3; saturate-add → R4 G7 B5 = 0x13D
-    const blended = 0x13d;
-    const expectedResult = (csd() as any).composeSinglePixel(
-      blended, false, null, true, false, null, true
-    );
-    expect(result).toBe(expectedResult);
+    expect(result).toBe(rgbaOf(0x0aa));
   });
 
   it("sprites override blend result", () => {
@@ -250,9 +167,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     );
 
     // Sprites should win over blend result
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x038, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(0x038);
     expect(result).toBe(expectedResult);
   });
 
@@ -267,13 +182,11 @@ describe("D4 — Blend modes (priority 6-7)", () => {
     // After D6: L2 priority in blend mode → blend(ULA, L2), not short-circuit
     // 0x100 = R4 G0 B0, 0x038 = R0 G7 B0; saturate-add → R4 G7 B0 = 0x138
     const blended = 0x138;
-    const expectedResult = (csd() as any).composeSinglePixel(
-      blended, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(blended);
     expect(result).toBe(expectedResult);
   });
 
-  it("only ULA present in blend mode → ULA colour used", () => {
+  it("only ULA present in blend mode → fallback colour (zxnext.vhd: the ULA is only a blend operand)", () => {
     csd().layerPriority = 6;
     csd().ulaBlendingInSLUModes = 0b00;
 
@@ -281,10 +194,10 @@ describe("D4 — Blend modes (priority 6-7)", () => {
       0x0cc, false, null, true, false, null, true
     );
 
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x0cc, false, null, true, false, null, true
-    );
-    expect(result).toBe(expectedResult);
+    // Nothing opaque in the SLU sense: the fallback colour
+    const fallback = (csd() as any).composeSinglePixel(null, true, null, true, false, null, true);
+    expect(result).toBe(fallback);
+    expect(result).not.toBe(rgbaOf(0x0cc));
   });
 
   it("only L2 present in blend mode → L2 colour used", () => {
@@ -295,9 +208,7 @@ describe("D4 — Blend modes (priority 6-7)", () => {
       null, true, 0x0dd, false, false, null, true
     );
 
-    const expectedResult = (csd() as any).composeSinglePixel(
-      0x0dd, false, null, true, false, null, true
-    );
+    const expectedResult = rgbaOf(0x0dd);
     expect(result).toBe(expectedResult);
   });
 });
@@ -393,40 +304,6 @@ describe("D5 — Stencil mode (NR 0x68 bit 0)", () => {
     // Without stencil, tilemap replaces ULA
     expect((csd() as any).ulaPixel1Rgb333).toBe(0x173);
     expect((csd() as any).ulaPixel2Rgb333).toBe(0x173);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// D6 — Half-pixel scroll
-// ---------------------------------------------------------------------------
-describe("D6 — Half-pixel scroll (NR 0x68 bit 2)", () => {
-  it("ulaHalfPixelScroll is sampled into ulaHalfPixelScrollSampled", () => {
-    csd().ulaHalfPixelScroll = true;
-    (csd() as any).sampleNextRegistersForUlaMode();
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(true);
-
-    csd().ulaHalfPixelScroll = false;
-    (csd() as any).sampleNextRegistersForUlaMode();
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(false);
-  });
-
-  it("half-pixel scroll stores previous pixel for next tact", () => {
-    // Enable half-pixel scroll
-    (csd() as any).ulaHalfPixelScrollSampled = true;
-    (csd() as any).ulaPreviousPixelRgb333 = 0x111;
-    (csd() as any).ulaPreviousPixelTransparent = false;
-
-    // After rendering a pixel with value 0x222, pixel1 should be the
-    // previous value (0x111) and pixel2 should be the new value (0x222)
-    // Previous pixel should then update to 0x222
-
-    // We verify the field is initialized correctly
-    expect((csd() as any).ulaPreviousPixelRgb333).toBe(0x111);
-  });
-
-  it("half-pixel scroll fields default to safe values", () => {
-    expect((csd() as any).ulaHalfPixelScrollSampled).toBe(false);
-    expect((csd() as any).ulaPreviousPixelTransparent).toBe(true);
   });
 });
 

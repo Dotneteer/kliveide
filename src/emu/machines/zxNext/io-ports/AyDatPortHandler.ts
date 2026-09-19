@@ -17,7 +17,8 @@ import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 export function readAyDatPort(machine: IZxNextMachine, ulaPort: number): number {
   const turboSound = machine.audioControlDevice.getTurboSoundDevice();
 
-  if (ulaPort === 0xbff5) {
+  // --- zxnext.vhd ~2593: $BFF5 is $BFFD with A3 = 0
+  if ((ulaPort & 0x08) === 0) {
     // Info port - return AY_ID & '0' & addr (FPGA ym2149.vhd format)
     const chipId = turboSound.getSelectedChipId();
     const registerIndex = turboSound.getSelectedRegister();

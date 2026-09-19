@@ -8,17 +8,19 @@ import {
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
 
-import { createBootTrace, readZxNextBootRomImages } from "./wasm-next-boot-trace";
+import { readZxNextBootRomImages } from "./wasm-next-boot-trace";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 const START_MENU_MILESTONE_STEPS = 15;
 const POST_MILESTONE_FRAME_COUNT = 3;
 
+// --- The milestone the start-menu test pins (wasm-next-start-menu.test.ts): the values the TypeScript
+// --- and WASM cores agreed on at tag pre-zxnext-ts-removal-2026-09-19.
+const START_MENU_MILESTONE_PC = 0x0116;
+const START_MENU_MILESTONE_TACTS = 232;
+
 describe("ZX Spectrum Next WASM full boot smoke", () => {
   it("continues from the deterministic NextZXOS milestone into bounded app-level frames", async () => {
-    const trace = await createBootTrace(START_MENU_MILESTONE_STEPS);
-    expect(withoutTacts(trace.wasm)).toEqual(withoutTacts(trace.oracle));
-
     const machine = await createTestZxNextWasmMachine();
     machine.uploadWasmV2RomImages(readZxNextBootRomImages());
     machine.reset();
@@ -30,7 +32,8 @@ describe("ZX Spectrum Next WASM full boot smoke", () => {
     for (let i = 0; i < START_MENU_MILESTONE_STEPS; i++) {
       expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.DebugEvent);
     }
-    expect(machine.pc).toBe(trace.wasm.at(-1)!.pc);
+    expect(machine.pc).toBe(START_MENU_MILESTONE_PC);
+    expect(machine.getCpuState().tacts).toBe(START_MENU_MILESTONE_TACTS);
 
     const keyboardLineBeforeInput = machine.wasmV2Runtime!.exports.zxnextGetKeyboardLine(0);
     machine.setKeyStatus(0, true);
@@ -71,8 +74,4 @@ function countDistinctPixels(pixels: Uint32Array): number {
     if (distinct.size > 1) return distinct.size;
   }
   return distinct.size;
-}
-
-function withoutTacts<T extends { tacts: number }>(snapshots: T[]): Omit<T, "tacts">[] {
-  return snapshots.map(({ tacts: _tacts, ...snapshot }) => snapshot);
 }

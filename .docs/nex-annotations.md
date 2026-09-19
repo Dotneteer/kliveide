@@ -202,7 +202,8 @@ An operand the annotations cannot name falls through to the machine's own system
 variable table, so `ld hl,$5C08` reads `ld hl,LAST_K` in a bank listing exactly as
 it does in the live Disassembly view. Annotations always win: a label written
 about this program is a more specific claim than a fact about the machine. Only
-data operands are named this way — `jp`/`call` targets keep their `L` labels. See
+data operands are named this way — `jp`/`call`/`jr`/`djnz` targets keep their `L` labels
+unless an annotation names them. See
 `src/renderer/appIde/disassemblers/sys-var-operand-labels.ts`.
 
 ## Region Rules
@@ -214,6 +215,17 @@ Regions can be:
 - `bytes`: generate `.defb` lines with up to four values per line;
 - `words`: generate `.defw` lines with up to two words per line;
 - `skip`: generate a `.skip` line.
+
+Data rows normally start at a labelled byte, so a label inside a table gets a row
+of its own. A `bytes` region may instead set `rowBytes` (1–4) to lay its data out
+in fixed records — `{ "type": "bytes", "rowBytes": 2 }` puts each two-byte copper
+instruction on its own line. Its rows are never cut at a label: a label naming a
+byte inside a record (the operand a routine patches) still names that address in
+operands, but the record stays whole. `rowBytes` is valid only on `bytes` regions;
+the default of 4 is written as no field, and touching `bytes` regions with
+different row sizes are never merged. It is edited in the sidecar; the Memory
+Region dialog does not set it, but changing a region keeps it on the parts left
+either side.
 
 The Memory Region dialog validates ranges before applying them. Whole-bank
 changes require confirmation.

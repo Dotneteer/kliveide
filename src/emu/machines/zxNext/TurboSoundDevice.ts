@@ -1,6 +1,6 @@
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
-import { PsgChip } from "@emu/machines/zxSpectrum128/PsgChip";
+import { NextPsgChip } from "./NextPsgChip";
 
 export type TurboSoundFrameAudioDiagnostics = {
   sampleCount: number;
@@ -62,15 +62,14 @@ export type TurboSoundFrameAudioDiagnostics = {
  * ## References
  * - See AUDIO_ARCHITECTURE.md for complete system design
  * - See PORT_MAPPINGS.md for I/O port details (0xFFFD, 0xBFFD)
- * - See PsgChip class for individual chip register details
+ * - See NextPsgChip (a port of ym2149.vhd) for individual chip register details
  */
 export class TurboSoundDevice {
   // --- The three PSG chips
-  private readonly _chips: PsgChip[] = [
-    new PsgChip(0, 'YM'), // ZX Next uses YM2149
-    new PsgChip(1, 'YM'),
-    new PsgChip(2, 'YM'),
-  ];
+  private readonly _chips: NextPsgChip[] = [new NextPsgChip(0), new NextPsgChip(1), new NextPsgChip(2)];
+
+  // --- NextReg $06 bits 1-0 (zxnext.vhd ~6325-6335): bit 0 is `aymode_i`; 11 holds every PSG in reset
+  private _psgMode = 0;
 
   // --- Currently selected chip (0, 1, or 2)
   private _selectedChip = 0;
@@ -99,7 +98,9 @@ export class TurboSoundDevice {
   // --- PSG clock tracking (PSG runs at baseClockFrequency / 2 = 1.75 MHz)
   // --- But generateOutputValue() should be called at 1.75 MHz / 8 due to internal ÷8 prescaler.
   // --- Timing is tracked in the fixed 28 MHz frame-tact domain so CPU speed changes do not shift pitch.
-  private _psgClockDivisor = 128; // 28 MHz / 128 = 1.75 MHz / 8 PSG output steps
+  private _psgClockDivisor = 128;
+  // --- The frame length in 28 MHz ticks, once the machine reports it (onNewFrame)
+  private _frameLength28 = 0; // 28 MHz / 128 = 1.75 MHz / 8 PSG output steps
   private _psgNextClockFrameTact = this._psgClockDivisor;
   private _psgLastAccumulationFrameTact = 0;
   private _psgCurrentLeft = 0;
@@ -142,7 +143,7 @@ export class TurboSoundDevice {
    * Reset the device to its initial state
    */
   reset(): void {
-    this._chips.forEach((chip) => chip.reset());
+    this._chips.forEach((chip) => chip.hardReset());
     this._selectedChip = 0;
     this._chipPanning[0] = 0x3; // Stereo
     this._chipPanning[1] = 0x3; // Stereo
@@ -217,7 +218,7 @@ export class TurboSoundDevice {
    * @param chipId The chip ID (0-2)
    * @returns The PSG chip instance
    */
-  getChip(chipId: number): PsgChip {
+  getChip(chipId: number): NextPsgChip {
     const id = chipId & 0x03;
     return this._chips[id];
   }
@@ -225,7 +226,7 @@ export class TurboSoundDevice {
   /**
    * Gets the currently selected chip
    */
-  getSelectedChip(): PsgChip {
+  getSelectedChip(): NextPsgChip {
     return this._chips[this._selectedChip];
   }
 
@@ -268,8 +269,8 @@ export class TurboSoundDevice {
         this.refreshCurrentStereoOutput();
       }
     } else if ((value & 0xe0) === 0) {
-      // Register selection (bits 7:5 = 000)
-      this._chips[this._selectedChip].setPsgRegisterIndex(value & 0x0f);
+      // Register selection (bits 7:5 = 000): a 5-bit address (ym2149.vhd)
+      this.selectRegister(value & 0x1f);
     }
     // Ignore other bit patterns
   }
@@ -279,7 +280,31 @@ export class TurboSoundDevice {
    * @param value The value to write
    */
   writePsgRegisterValue(value: number): void {
-    this._chips[this._selectedChip].writePsgRegisterValue(value);
+    this.writeSelectedRegister(value);
+  }
+
+  /**
+   * NextReg $06 bits 1-0. Bit 0 is `aymode_i` (1 = AY: the 16-entry volume table and the AY read
+   * masks; 0 = YM, also for mode 10). Mode 11 holds every PSG in reset (`audio_ay_reset`): registers
+   * cleared, chip 0 selected with both sides on, writes ignored, output silent.
+   */
+  setPsgMode(mode: number): void {
+    this._psgMode = mode & 0x03;
+    this._chips.forEach((chip) => (chip.ayMode = (mode & 0x01) !== 0));
+    if (this.psgHeldInReset) {
+      this._chips.forEach((chip) => chip.reset());
+      this._selectedChip = 0;
+      this._chipPanning.fill(0x03);
+    }
+    this.refreshCurrentStereoOutput();
+  }
+
+  get psgMode(): number {
+    return this._psgMode;
+  }
+
+  get psgHeldInReset(): boolean {
+    return this._psgMode === 0x03;
   }
 
   /**
@@ -302,7 +327,7 @@ export class TurboSoundDevice {
    * @param chipId The chip ID (0-2)
    */
   generateChipOutputValue(chipId: number): void {
-    this._chips[chipId & 0x03].generateOutputValue();
+    if (!this.psgHeldInReset) this._chips[chipId & 0x03].tick();
     this.refreshCurrentStereoOutput();
   }
 
@@ -310,7 +335,7 @@ export class TurboSoundDevice {
    * Generates the next output value for all chips
    */
   generateAllOutputValues(): void {
-    this._chips.forEach((chip) => chip.generateOutputValue());
+    if (!this.psgHeldInReset) this._chips.forEach((chip) => chip.tick());
     this.refreshCurrentStereoOutput();
   }
 
@@ -350,11 +375,27 @@ export class TurboSoundDevice {
     this._psgLastAccumulationFrameTact = frameTact28;
   }
 
-  private advancePsgToFrameTact(frameTact28: number): void {
+  /** Moves the clocks back a frame when the frame counter has wrapped since the last advance. */
+  private followFrameWrap(frameTact28: number): void {
     if (frameTact28 < this._psgLastAccumulationFrameTact) {
-      this.resetPsgAudioWindow();
+      if (this._frameLength28 > 0 && this._psgLastAccumulationFrameTact - frameTact28 > this._frameLength28 / 2) {
+        // --- The frame counter wrapped: the PSG clock and the sample clock run on across the frame
+        // --- boundary, like the beeper's. Restarting them each frame dropped the fraction of a sample
+        // --- at every frame end, so the PSG gave fewer samples than the beeper and the mixer filled
+        // --- the gap with a silent PSG sample.
+        this._psgNextClockFrameTact -= this._frameLength28;
+        this._psgLastAccumulationFrameTact -= this._frameLength28;
+        this._audioNextSampleTact -= this._frameLength28;
+      } else {
+        // --- A restart (reset, or a wrap before the machine reported the frame length)
+        this.resetPsgAudioWindow();
+        this._audioNextSampleTact = this._audioSampleLength;
+      }
     }
+  }
 
+  private advancePsgToFrameTact(frameTact28: number): void {
+    this.followFrameWrap(frameTact28);
     while (this._psgNextClockFrameTact <= frameTact28) {
       this.accumulateCurrentOutputUntil(this._psgNextClockFrameTact);
       this.generateAllOutputValues();
@@ -370,24 +411,16 @@ export class TurboSoundDevice {
    * @param chipId The chip ID (0-2)
    * @returns Object with left and right channel samples (UNSIGNED 0-196605), with panning applied
    */
-  getChipStereoOutput(chipId: number, resetOrphans = true): { left: number; right: number } {
+  getChipStereoOutput(chipId: number, _resetOrphans = true): { left: number; right: number } {
     const id = chipId & 0x03;
     const chip = this._chips[id];
     const panning = this._chipPanning[id];
 
     // Use INSTANTANEOUS UNSIGNED values (matching VHDL hardware)
     // Hardware: tone bit HIGH = amplitude, LOW = 0 (DC-biased square wave)
-    let volA = chip.currentOutputA;  // 0-65535
-    let volB = chip.currentOutputB;  // 0-65535
-    let volC = chip.currentOutputC;  // 0-65535
-
-    if (resetOrphans) {
-      chip.orphanSum = 0;
-      chip.orphanSumA = 0;
-      chip.orphanSumB = 0;
-      chip.orphanSumC = 0;
-      chip.orphanSamples = 0;
-    }
+    const volA = chip.currentOutputA;  // 0-65535
+    const volB = chip.currentOutputB;  // 0-65535
+    const volC = chip.currentOutputC;  // 0-65535
 
     let left = 0;
     let right = 0;
@@ -436,45 +469,11 @@ export class TurboSoundDevice {
   }
 
   /**
-   * Gets the orphan samples for a specific chip
-   * @param chipId The chip ID (0-2)
-   */
-  getChipOrphanSamples(chipId: number): {
-    sum: number;
-    count: number;
-  } {
-    const chip = this._chips[chipId & 0x03];
-    return {
-      sum: chip.orphanSum,
-      count: chip.orphanSamples,
-    };
-  }
-
-  /**
-   * Clears the orphan samples for a specific chip
-   * @param chipId The chip ID (0-2)
-   */
-  clearChipOrphanSamples(chipId: number): void {
-    const chip = this._chips[chipId & 0x03];
-    chip.orphanSum = 0;
-    chip.orphanSamples = 0;
-  }
-
-  /**
-   * Clears orphan samples for all chips
-   */
-  clearAllOrphanSamples(): void {
-    this._chips.forEach((chip) => {
-      chip.orphanSum = 0;
-      chip.orphanSamples = 0;
-    });
-  }
-
-  /**
    * Selects a chip by ID (for port handler use)
    * @param chipId The chip ID (0-2)
    */
   selectChip(chipId: number): void {
+    if (this.psgHeldInReset) return;
     this._selectedChip = chipId & 0x03;
     this.refreshCurrentStereoOutput();
   }
@@ -484,6 +483,7 @@ export class TurboSoundDevice {
    * @param registerIndex The register index (0-15 for AY)
    */
   selectRegister(registerIndex: number): void {
+    if (this.psgHeldInReset) return;
     this._chips[this._selectedChip].setPsgRegisterIndex(registerIndex & 0x1f); // 5-bit (FPGA)
   }
 
@@ -493,6 +493,7 @@ export class TurboSoundDevice {
    * @param panControl Panning control value (0-3: muted, right, left, stereo)
    */
   setChipPanning(chipId: number, panControl: number): void {
+    if (this.psgHeldInReset) return;
     const id = chipId & 0x03;
     this._chipPanning[id] = panControl & 0x03;
     this.refreshCurrentStereoOutput();
@@ -516,7 +517,9 @@ export class TurboSoundDevice {
    * Writes to the currently selected register (for port handler use)
    */
   writeSelectedRegister(value: number): void {
+    if (this.psgHeldInReset) return;
     this._chips[this._selectedChip].writePsgRegisterValue(value);
+    this.refreshCurrentStereoOutput();
   }
 
   /**
@@ -613,11 +616,16 @@ export class TurboSoundDevice {
   /**
    * Called at the start of each frame to clear samples
    */
-  onNewFrame(): void {
+  onNewFrame(frameLength28?: number): void {
     // Clear frame samples for new frame
     this._audioSamples.length = 0;
-    this._audioNextSampleTact = this._audioSampleLength;
-    this.resetPsgAudioWindow();
+    if (frameLength28 === undefined) {
+      this._audioNextSampleTact = this._audioSampleLength;
+      this.resetPsgAudioWindow();
+    } else {
+      // --- The clocks carry on across the frame (see advancePsgToFrameTact)
+      this._frameLength28 = frameLength28;
+    }
     this.refreshCurrentStereoOutput();
   }
 
@@ -639,20 +647,37 @@ export class TurboSoundDevice {
   setNextAudioSample(frameTacts28: number): void {
     while (frameTacts28 >= this._audioNextSampleTact) {
       this.advancePsgToFrameTact(this._audioNextSampleTact);
-
-      const sample = this._psgAccumulatedTacts > 0
-        ? {
-          left: this._psgAccumulatedLeft / this._psgAccumulatedTacts,
-          right: this._psgAccumulatedRight / this._psgAccumulatedTacts
-        }
-        : { left: this._psgCurrentLeft, right: this._psgCurrentRight };
-      this._audioSamples.push(sample);
-
-      this._psgAccumulatedLeft = 0;
-      this._psgAccumulatedRight = 0;
-      this._psgAccumulatedTacts = 0;
+      this.pushAccumulatedSample();
       this._audioNextSampleTact += this._audioSampleLength;
     }
+  }
+
+  /**
+   * Closes the current sample window at `frameTact28`. ZxNextMachine calls it whenever the beeper
+   * emits a sample, so the PSG and beeper streams share one sample clock and always have the same
+   * number of samples in a frame (two clocks drifted a sample apart at frame ends, and the mixer
+   * filled the gap with a silent PSG sample or counted a sample twice).
+   */
+  emitAudioSample(frameTact28: number): void {
+    // --- The beeper notices a sample boundary at the first CPU tact past it; the PSG window closes at
+    // --- the boundary itself (on the 28 MHz sample grid), as the WASM mixer's does
+    this.followFrameWrap(frameTact28);
+    this.advancePsgToFrameTact(Math.min(this._audioNextSampleTact, frameTact28));
+    this.pushAccumulatedSample();
+    this._audioNextSampleTact += this._audioSampleLength;
+  }
+
+  private pushAccumulatedSample(): void {
+    const sample = this._psgAccumulatedTacts > 0
+      ? {
+        left: this._psgAccumulatedLeft / this._psgAccumulatedTacts,
+        right: this._psgAccumulatedRight / this._psgAccumulatedTacts
+      }
+      : { left: this._psgCurrentLeft, right: this._psgCurrentRight };
+    this._audioSamples.push(sample);
+    this._psgAccumulatedLeft = 0;
+    this._psgAccumulatedRight = 0;
+    this._psgAccumulatedTacts = 0;
   }
 
   /**

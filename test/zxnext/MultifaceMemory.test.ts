@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createTestNextMachine, TestZxNextMachine } from "./TestNextMachine";
-import { OFFS_MULTIFACE_MEM } from "@emu/machines/zxNext/MemoryDevice";
+import { OFFS_MULTIFACE_MEM } from "@emu/machines/zxNext/nextMemoryLayout";
 
 /**
  * Tests for Multiface memory mapping in MemoryDevice (Task 7).

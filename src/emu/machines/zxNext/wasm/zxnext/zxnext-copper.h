@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 static void zxnextCopperReset(void);
+static void zxnextCopperHardReset(void);
 static void zxnextCopperSetNextReg(uint32_t reg, uint32_t value);
 static uint32_t zxnextCopperGetNextReg(uint32_t reg);
 static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc);

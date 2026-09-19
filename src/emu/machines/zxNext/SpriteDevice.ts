@@ -75,7 +75,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       attributeFlag1: false, visible: false, has5AttributeBytes: false, patternIndex: 0,
       colorMode: 0, attributeFlag2: false, patternN6: false, scaleX: 0, scaleY: 0, pattern7Bit: 0,
       is4BitPattern: false, transformVariant: 0, patternVariantIndex: 0,
-      width: 16, height: 16, patternRelative: false
+      width: 16, height: 16, patternRelative: false, attr4: 0
     });
     this.attributes = new Array(128);
     this.resolvedAttributes = new Array(128);
@@ -114,6 +114,11 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.clipWindowY2 = 191;
     this.transparencyIndex = 0xe3;
     this.lastVisibileSpriteIndex = -1;
+    // --- sprites.vhd ~653-654, ~733-734: the reset clears the $57 and $5B upload positions
+    this.spriteIndex = 0;
+    this.spriteSubIndex = 0;
+    this.patternIndex = 0;
+    this.patternSubIndex = 0;
     
     // --- Reset all sprite attributes to default values
     for (let i = 0; i < 128; i++) {
@@ -126,6 +131,7 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
       this.attributes[i].attributeFlag1 = false;
       this.attributes[i].visible = false;
       this.attributes[i].has5AttributeBytes = false;
+      this.attributes[i].attr4 = 0;
       this.attributes[i].patternIndex = 0;
       this.attributes[i].colorMode = 0;
       this.attributes[i].attributeFlag2 = false;
@@ -209,6 +215,11 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.patternSubIndex = value & 0x80;
     this.spriteIndex = value & 0x7f;
     this.spriteSubIndex = 0;
+    // --- sprites.vhd: a $303B write raises attr_num_change; with the tie ($09 bit 4) the NextReg mirror
+    // --- ($34) follows it - sprite number, and bit 7 from the pattern index
+    if (this.mirrorTie) {
+      this.mirrorSpriteQ = (value & 0x80) | (value & 0x7f);
+    }
   }
 
   /**
@@ -254,7 +265,10 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
   }
 
   set nextReg34Value(value: number) {
-    // NR $34 write → mirror_data_w with current mirrorIndex
+    // --- zxnext.vhd ~4807/~4833: a $34 write always uses mirror index "111" (select the sprite). It
+    // --- used the index a previous $35-$39/$75-$79 write left behind, and wrote an attribute instead.
+    this.mirrorIndex = 7;
+    this.mirrorInc = false;
     this.mirrorDataW(value & 0xff);
   }
 
@@ -268,25 +282,77 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
    */
   mirrorDataW(data: number): void {
     if (this.mirrorIndex <= 4) {
-      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ, this.mirrorIndex, data);
+      this.writeIndexedSpriteAttribute(this.mirrorSpriteQ & 0x7f, this.mirrorIndex, data);
     }
 
+    // --- sprites.vhd mirror_sprite_q is 8 bits: 6-0 the sprite, 7 the pattern half (N6) for the tie
     let mirrorNumChange = false;
     if (this.mirrorIndex === 7) {
-      this.mirrorSpriteQ = data & 0x7f;
+      this.mirrorSpriteQ = data & 0xff;
       mirrorNumChange = true;
     } else if (this.mirrorInc) {
-      this.mirrorSpriteQ = (this.mirrorSpriteQ + 1) & 0x7f;
+      this.mirrorSpriteQ = ((this.mirrorSpriteQ + 1) & 0x7f) | this.patternSubIndex;
       mirrorNumChange = true;
     }
 
     if (mirrorNumChange && this.mirrorTie) {
-      // Sync main-port sprite+pattern indices from new mirrorSpriteQ
-      this.spriteIndex = this.mirrorSpriteQ;
+      // --- attr_index <= q(6:0) & "000"; pattern_index <= q(5:0) & q(7) & "0000000"
+      this.spriteIndex = this.mirrorSpriteQ & 0x7f;
       this.patternIndex = this.mirrorSpriteQ & 0x3f;
-      this.patternSubIndex = 0;
+      this.patternSubIndex = this.mirrorSpriteQ & 0x80;
       this.spriteSubIndex = 0;
     }
+  }
+
+  /**
+   * attr4, per the FPGA: anchor `H N6 T XX YY Y8`; relative `0 1 N6 0 XX YY PR`.
+   *
+   * - bit 7 (H) selects 4-bit patterns, bit 6 is N6 — the 7th pattern bit — for an anchor.
+   * - bit 5 is the relative type T for an anchor, and N6 for a relative sprite
+   *   (`attributeFlag2` holds it for both, and the resolver reads it per role).
+   * - bit 0 is Y's ninth bit for an anchor, and "pattern relative" for a relative sprite.
+   *
+   * N6 was read from bit 5 and X's ninth bit from bit 0 here; both were wrong.
+   */
+  private decodeAttr4(attributes: SpriteAttributes, value: number): void {
+    attributes.colorMode = (value & 0xc0) >> 6;
+    attributes.attributeFlag2 = (value & 0x20) !== 0;
+    attributes.patternN6 = (value & 0x40) !== 0;
+    attributes.is4BitPattern = (value & 0x80) !== 0;
+    attributes.scaleX = (value & 0x18) >> 3;
+    attributes.scaleY = (value & 0x06) >> 1;
+    attributes.pattern7Bit = spritePattern7Bit(attributes);
+    // --- Cache complete pattern variant index for direct memory lookup
+    this.updatePatternVariantIndex(attributes);
+    // --- Recalculate width and height
+    this.updateSpriteDimensions(attributes);
+    if (attributes.colorMode !== 0x01) {
+      // --- Y's ninth bit exists only for a sprite with five attribute bytes (FPGA `spr_y8`).
+      const yMsb = attributes.has5AttributeBytes ? value & 0x01 : 0;
+      attributes.y = ((yMsb << 8) | (attributes.y & 0xff)) & 0x1ff;
+      attributes.patternRelative = false;
+    } else {
+      // --- Relative sprite: bit 0 = pattern-relative flag (add anchor's pattern index)
+      attributes.patternRelative = (value & 0x01) !== 0;
+    }
+  }
+
+  /**
+   * A four-byte sprite's view of attr4: none of it applies. A 4-byte sprite is never 4-bit (FPGA
+   * `spr_cur_h <= attr_4(7) and attr_3(6)`), has no Y MSB, no scale and no relative role.
+   */
+  private applyFourByteDefaults(attributes: SpriteAttributes): void {
+    attributes.colorMode = 0x00;
+    attributes.attributeFlag2 = false;
+    attributes.patternN6 = false;
+    attributes.is4BitPattern = false;
+    attributes.patternRelative = false;
+    attributes.y &= 0xff;
+    attributes.scaleX = 0;
+    attributes.scaleY = 0;
+    attributes.pattern7Bit = spritePattern7Bit(attributes);
+    this.updatePatternVariantIndex(attributes);
+    this.updateSpriteDimensions(attributes);
   }
 
   writeSpriteAttribute(_port: number, value: number): void {
@@ -295,21 +361,9 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
     this.writeIndexedSpriteAttribute(this.spriteIndex, this.spriteSubIndex, value);
     const attributes = this.attributes[this.spriteIndex];
     if (this.spriteSubIndex === 3 && !attributes.has5AttributeBytes) {
+      // --- A 4-byte sprite: the index skips attr4 without writing it (sprites.vhd ~641, ~660-664,
+      // --- ~717); the attr3 write has already switched the sprite to its four-byte view
       this.spriteSubIndex++;
-      attributes.colorMode = 0x00;
-      attributes.attributeFlag2 = false;
-      attributes.patternN6 = false;
-      // --- A 4-byte sprite is never 4-bit (FPGA `spr_cur_h <= attr_4(7) and attr_3(6)`), and has no
-      // --- Y MSB; left set by an earlier five-byte write, both leaked into this sprite.
-      attributes.is4BitPattern = false;
-      attributes.patternRelative = false;
-      attributes.y &= 0xff;
-      attributes.scaleX = 0;
-      attributes.scaleY = 0;
-      attributes.pattern7Bit = spritePattern7Bit(attributes);
-      this.updatePatternVariantIndex(attributes);
-      // --- Update dimensions for 4-byte sprites (no scaling)
-      this.updateSpriteDimensions(attributes);
     }
 
     // --- Increment subindex and sprite index
@@ -429,42 +483,19 @@ export class SpriteDevice implements IGenericDevice<IZxNextMachine> {
         attributes.visible = (value & 0x80) !== 0;
         attributes.has5AttributeBytes = (value & 0x40) !== 0;
         attributes.patternIndex = value & 0x3f;
-        // --- Update computed 7-bit pattern index
-        attributes.pattern7Bit = spritePattern7Bit(attributes);
-        // --- Cache complete pattern variant index for direct memory lookup
-        this.updatePatternVariantIndex(attributes);
+        // --- attr3 bit 6 decides whether the stored attr4 counts (sprites.vhd: attr4 is RAM, written
+        // --- only at attr_id "100", and read through `attr_3(6)`), so switching it back on restores it
+        if (attributes.has5AttributeBytes) {
+          this.decodeAttr4(attributes, attributes.attr4);
+        } else {
+          this.applyFourByteDefaults(attributes);
+        }
         break;
       default:
-        // --- attr4 (5th attribute byte)
-        /*
-         * attr4, per the FPGA: anchor `H N6 T XX YY Y8`; relative `0 1 N6 0 XX YY PR`.
-         *
-         * - bit 7 (H) selects 4-bit patterns, bit 6 is N6 — the 7th pattern bit — for an anchor.
-         * - bit 5 is the relative type T for an anchor, and N6 for a relative sprite
-         *   (`attributeFlag2` holds it for both, and the resolver reads it per role).
-         * - bit 0 is Y's ninth bit for an anchor, and "pattern relative" for a relative sprite.
-         *
-         * N6 was read from bit 5 and X's ninth bit from bit 0 here; both were wrong.
-         */
-        attributes.colorMode = (value & 0xc0) >> 6;
-        attributes.attributeFlag2 = (value & 0x20) !== 0;
-        attributes.patternN6 = (value & 0x40) !== 0;
-        attributes.is4BitPattern = (value & 0x80) !== 0;
-        attributes.scaleX = (value & 0x18) >> 3;
-        attributes.scaleY = (value & 0x06) >> 1;
-        attributes.pattern7Bit = spritePattern7Bit(attributes);
-        // --- Cache complete pattern variant index for direct memory lookup
-        this.updatePatternVariantIndex(attributes);
-        // --- Recalculate width and height
-        this.updateSpriteDimensions(attributes);
-        if (attributes.colorMode !== 0x01) {
-          // --- Y's ninth bit exists only for a sprite with five attribute bytes (FPGA `spr_y8`).
-          const yMsb = attributes.has5AttributeBytes ? value & 0x01 : 0;
-          attributes.y = ((yMsb << 8) | (attributes.y & 0xff)) & 0x1ff;
-          attributes.patternRelative = false;
-        } else {
-          // --- Relative sprite: bit 0 = pattern-relative flag (add anchor's pattern index)
-          attributes.patternRelative = (value & 0x01) !== 0;
+        // --- attr4 (5th attribute byte): stored as written; it counts only for a five-byte sprite
+        attributes.attr4 = value & 0xff;
+        if (attributes.has5AttributeBytes) {
+          this.decodeAttr4(attributes, value);
         }
         break;
     }
@@ -689,6 +720,8 @@ export type SpriteAttributes = {
   width: number; // Sprite width in pixels after scaling (rotation does not swap it)
   height: number; // Sprite height in pixels after scaling (rotation does not swap it)
   patternRelative: boolean; // (relative sprites only) add anchor's pattern index to own
+  /** The attr4 byte as stored: kept while attr3 bit 6 says the sprite has four bytes (and ignored then). */
+  attr4: number;
 };
 
 export type SpriteInfo = {

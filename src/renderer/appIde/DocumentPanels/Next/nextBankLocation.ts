@@ -1,4 +1,4 @@
-import type { MemoryPageInfo } from "@emu/machines/zxNext/MemoryDevice";
+import type { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 

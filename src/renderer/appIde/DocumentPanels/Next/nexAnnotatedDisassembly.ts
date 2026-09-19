@@ -13,6 +13,7 @@ import {
   NexBankAnnotation,
   NexFileAnnotations,
   NEX_BANK_LAST_OFFSET,
+  NEX_MAX_ROW_BYTES,
   getBankAnnotation,
   getNexBankAddressOffset
 } from "./nexAnnotations";
@@ -197,7 +198,15 @@ export async function createAnnotatedNexDisassemblyItems({
 
       case "bytes":
         items.push(
-          ...createByteItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+          ...createByteItems(
+            contents,
+            start,
+            end,
+            decimalView,
+            addressOffset,
+            labelOffsets,
+            region.rowBytes
+          )
         );
         break;
 
@@ -290,7 +299,7 @@ function createAnnotationOperandLabelResolver(
 
 
 /** Most values a `.defb` / `.defw` row shows before starting a new row. */
-const DATA_ROW_BYTES = 4;
+const DATA_ROW_BYTES = NEX_MAX_ROW_BYTES;
 
 /**
  * The bank offsets that carry a label, global or local, in the bank being listed.
@@ -318,21 +327,24 @@ function getLabelBankOffsets(
 }
 
 /**
- * How many bytes the data row starting at `offset` takes: up to `DATA_ROW_BYTES`, stopping short of
- * the region end and of the next label, so the label starts a row of its own.
+ * How many bytes the data row starting at `offset` takes: up to `rowBytes`, stopping short of the
+ * region end and of the next label, so the label starts a row of its own.
  *
- * `step` is the item size. A word row only stops at a label on a word boundary of its region; a
- * label on the high byte of a word cannot start a row without splitting that word, so it stays
- * inside the row as before.
+ * `step` is the unit a row may not be split inside. A word row only stops at a label on a word
+ * boundary of its region; a label on the high byte of a word cannot start a row without splitting
+ * that word, so it stays inside the row. A `bytes` region with an explicit `rowBytes` is the same:
+ * its rows are records (a copper instruction, say), so a label naming a byte *inside* a record — the
+ * operand code patches — keeps the record whole. The label still names that address in operands.
  */
 function dataRowLength(
   offset: number,
   regionStart: number,
   end: number,
   step: number,
-  labelOffsets: number[]
+  labelOffsets: number[],
+  rowBytes = DATA_ROW_BYTES
 ): number {
-  let length = Math.min(DATA_ROW_BYTES, end - offset + 1);
+  let length = Math.min(rowBytes, end - offset + 1);
   for (const labelOffset of labelOffsets) {
     if (labelOffset <= offset) continue;
     if (labelOffset >= offset + length) break;
@@ -350,11 +362,15 @@ function createByteItems(
   end: number,
   decimalView: boolean,
   addressOffset: number,
-  labelOffsets: number[] = []
+  labelOffsets: number[] = [],
+  rowBytes?: number
 ): DisassemblyItem[] {
   const items: DisassemblyItem[] = [];
+  // --- An explicit row size makes each row a record that a label cannot split; the default keeps
+  // --- the long-standing behaviour of starting a row at any labelled byte.
+  const step = rowBytes ?? 1;
   for (let offset = start, rowLength = 0; offset <= end; offset += rowLength) {
-    rowLength = dataRowLength(offset, start, end, 1, labelOffsets);
+    rowLength = dataRowLength(offset, start, end, step, labelOffsets, rowBytes ?? DATA_ROW_BYTES);
     const values: string[] = [];
     for (let idx = 0; idx < rowLength; idx++) {
       const value = contents[offset + idx];

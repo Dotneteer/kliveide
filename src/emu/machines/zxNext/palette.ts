@@ -1,5 +1,5 @@
 import { toHexa6 } from "@renderer/appIde/services/ide-commands";
-import { zxNextRgb333Codes } from "./PaletteDevice";
+import { zxNextRgb333Codes } from "./nextColorTables";
 
 /**
  * The 3-bit component -> 8-bit expansion.
