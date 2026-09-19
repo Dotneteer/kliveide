@@ -110,6 +110,10 @@ type Z80WasmExports = WebAssembly.Exports & {
   z80GetLastTbBlueValue: WasmFn;
   z80GetLastTbBlueIsWrite: WasmFn;
   z80ClearBusEvents: WasmFn;
+  z80SnoozeCpu: WasmFn;
+  z80AwakeCpu: WasmFn;
+  z80IsCpuSnoozed: WasmFn;
+  z80SnoozeCycle: WasmFn;
 };
 
 let z80Module: WebAssembly.Module | undefined;
@@ -244,6 +248,22 @@ class Z80WasmTestCpu {
 
   tactPlus1WithAddress (_address: number): void {
     this.tactPlusN(1);
+  }
+
+  isCpuSnoozed (): boolean {
+    return this.exports.z80IsCpuSnoozed() !== 0;
+  }
+
+  snoozeCpu (): void {
+    this.exports.z80SnoozeCpu();
+  }
+
+  awakeCpu (): void {
+    this.exports.z80AwakeCpu();
+  }
+
+  onSnooze (): void {
+    this.exports.z80SnoozeCycle();
   }
 
   tactPlus2WithAddress (_address: number): void {

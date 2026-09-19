@@ -17,10 +17,7 @@ import { Store } from "@state/redux-light";
 import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
-import { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
-import { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
-import { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
+import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
@@ -364,49 +361,12 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    const blinkDevice = (controller.machine as any).blinkDevice as IZ88BlinkDevice;
-    const keyboardDevice = (controller.machine as any).keyboardDevice as IZ88KeyboardDevice;
-    const beeperDevice = (controller.machine as any).beeperDevice as IZ88BeeperDevice;
-    const screenDevice = (controller.machine as any).screenDevice as IZ88ScreenDevice;
-    if (!blinkDevice || !keyboardDevice || !beeperDevice || !screenDevice) {
+    // --- Either Z88 core answers from its own state (see IZ88IdeMachine)
+    const machine = controller.machine;
+    if (!isZ88IdeMachine(machine)) {
       throw new Error("BLINK device is not available");
     }
-    return {
-      SR0: blinkDevice.SR0,
-      SR1: blinkDevice.SR1,
-      SR2: blinkDevice.SR2,
-      SR3: blinkDevice.SR3,
-      TIM0: blinkDevice.TIM0,
-      TIM1: blinkDevice.TIM1,
-      TIM2: blinkDevice.TIM2,
-      TIM3: blinkDevice.TIM3,
-      TIM4: blinkDevice.TIM4,
-      TSTA: blinkDevice.TSTA,
-      TMK: blinkDevice.TMK,
-      INT: blinkDevice.INT,
-      STA: blinkDevice.STA,
-      COM: blinkDevice.COM,
-      EPR: blinkDevice.EPR,
-      keyLines: [
-        keyboardDevice.getKeyLineValue(0),
-        keyboardDevice.getKeyLineValue(1),
-        keyboardDevice.getKeyLineValue(2),
-        keyboardDevice.getKeyLineValue(3),
-        keyboardDevice.getKeyLineValue(4),
-        keyboardDevice.getKeyLineValue(5),
-        keyboardDevice.getKeyLineValue(6),
-        keyboardDevice.getKeyLineValue(7)
-      ],
-      oscBit: beeperDevice.oscillatorBit,
-      earBit: beeperDevice.earBit,
-      PB0: screenDevice.PB0,
-      PB1: screenDevice.PB1,
-      PB2: screenDevice.PB2,
-      PB3: screenDevice.PB3,
-      SBR: screenDevice.SBR,
-      SCW: screenDevice.SCW,
-      SCH: screenDevice.SCH
-    };
+    return machine.getBlinkState();
   }
 
   /**

@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
+import { Z88_BACKENDS } from "./z88-backends";
+import type { Z88TestBlink } from "./z88-test-surface";
 import { INTFlags, TMKFlags, TSTAFlags } from "@emu/machines/z88/IZ88BlinkDevice";
-import { IZ88BlinkTestDevice } from "@emu/machines/z88/IZ88BlinkTestDevice";
-import { Z88TestMachine } from "./Z88TestMachine";
 
-describe("Z88 - RTC", function () {
+describe.each(Z88_BACKENDS)("Z88 - RTC ($name)", function ({ create }) {
   it("blink reset", () => {
-    const m = new Z88TestMachine();
-    const b = m.blinkDevice;
+    const m = create();
+    const b = m.blink;
 
     expect(b.INT).toBe(0x23);
     expect(b.STA).toBe(0);
@@ -364,12 +364,11 @@ describe("Z88 - RTC", function () {
 
   tickSamples.forEach((smp) => {
     it(`tick ${smp.tick}/${smp.int}/${smp.tmk}`, () => {
-      const machine = new Z88TestMachine();  
-      const b = machine.blinkDevice;
-      const bt = b as unknown as IZ88BlinkTestDevice;
+      const machine = create();
+      const b = machine.blink;
       b.TMK = smp.tmk;
       b.setINT(smp.int);
-      incRtc(bt, smp.tick);
+      incRtc(b, smp.tick);
 
       expect(b.TIM0).toBe(smp.tim0);
       expect(b.TIM1).toBe(smp.tim1);
@@ -381,12 +380,11 @@ describe("Z88 - RTC", function () {
   });
 
   it("RTC reset requested", () => {
-    const machine = new Z88TestMachine();  
-    const b = machine.blinkDevice;
-    const bt = b as unknown as IZ88BlinkTestDevice;
-    incRtc(bt, 100);
+    const machine = create();
+    const b = machine.blink;
+    incRtc(b, 100);
     b.setCOM(0x10);
-    incRtc(bt, 1);
+    incRtc(b, 1);
 
     expect(b.INT).toBe(0x23);
     expect(b.STA).toBe(0x01);
@@ -401,7 +399,7 @@ describe("Z88 - RTC", function () {
   });
 });
 
-function incRtc(blink: IZ88BlinkTestDevice, ticks: number): void {
+function incRtc(blink: Z88TestBlink, ticks: number): void {
   for (let i = 0; i < ticks; i++) {
     blink.incrementRtc();
   }

@@ -198,9 +198,11 @@ src/emu/machines/z88/
   Z88Machine.ts                  TypeScript oracle (kept; imports the neutral modules below)
   Z88Implementation.ts           "typescript" | "wasm" switch, DEFAULT_Z88_IMPLEMENTATION
   Z88MachineFactory.ts           createZ88Machine(model, config, messenger)
-  z88MachineInfo.ts              neutral: clock, frame, partitions, disassembly sections, card codes
-  z88CardCatalog.ts              neutral: CardIds, CT_*/CARD_SIZE_*, CardType numeric codes, chip masks
-  IZ88IdeMachine.ts              neutral IDE interface: getBlinkState() and friends
+  z88MachineInfo.ts              neutral: clock, frame, ROM/keyboard defaults, partitions, disassembly sections
+  z88CardCatalog.ts              neutral: CardType codes, CT_*/CARD_SIZE_*, card sizes, chip masks, internal RAM size
+  memory/CardIds.ts, memory/CardSlotState.ts   neutral already (the dialogs use them); unchanged
+  IZ88IdeMachine.ts              neutral IDE interface: getBlinkState(), isZ88IdeMachine()
+  IZ88DeviceHost.ts              TypeScript-only: IZ88Machine + memory and devices, for the TS devices/cards
   Z88WasmHost.ts                 abstract host on Z80MachineBase (no TS Z88 device)
   Z88WasmV2Machine.ts            the adapter
   wasm/
@@ -218,9 +220,8 @@ scripts/build-z88-wasm.cjs, build-z88-wasm.d.cts, check-z88-wasm-size.cjs
 ```
 
 `CardType.ts` keeps only the TypeScript factory, `createZ88MemoryCard`, which imports the TS card
-classes. Everything neutral moves to `z88CardCatalog.ts`. That way the WASM side, and the renderer's
-`z88Cards.ts`, can use the card vocabulary without pulling TypeScript emulation into their import
-graph.
+classes. Everything neutral moves to `z88CardCatalog.ts` (done in Step 0.1). That way the WASM side
+can use the card vocabulary without pulling TypeScript emulation into its import graph.
 
 ### Class chain
 
@@ -238,9 +239,10 @@ Z80Cpu → Z80MachineBase → Z88Machine        (TypeScript oracle, unchanged ro
 it:
 
 - **Removed from the interface:** `memory: Z88BankedMemory` and the four device members. They stay
-  on `Z88Machine` as class members.
+  on `Z88Machine` as class members, and the TypeScript devices and cards reach them through
+  `IZ88DeviceHost` (`IZ88Machine` + those members), which only the TypeScript emulation uses.
 - **Kept:** `signalFlapOpened`, `signalFlapClosed`, `isInSleepMode`, `isOsInitialized`,
-  `directReadMemory`, `getAudioSamples`, `dynamicConfig`, `configure`.
+  `directReadMemory`, `getAudioSamples` (`dynamicConfig` and `configure` come from `IAnyMachine`).
 
 ### C machine shape (mirrors `sp48.c`)
 
@@ -300,7 +302,8 @@ It leaves the delay hooks at their defaults unless Step 5 shows the oracle adds 
 define `Z80_WRITE_TBBLUE`, `Z80_FETCH_CODE_BYTE` or `Z80_AFTER_OPCODE_FETCH` (Next only). It never
 calls `z80SetZ80NMode`.
 
-**The only planned core extension is snooze** (Step 0.4). Any other gap found later follows the
+**The only planned core extension is snooze** (Step 0.4, done: `z80SnoozeCpu`, `z80AwakeCpu`,
+`z80IsCpuSnoozed`, `z80SnoozeCycle`). Any other gap found later follows the
 same rule:
 
 1. Add it to `z80.c` as a generic facility that mirrors `Z80Cpu.ts`.
@@ -387,11 +390,14 @@ The user requirement is: *"the migrated machine has tests just like the old impl
      `directMemoryRead/Write`, the RTC hooks (`resetRtc`, `incrementRtc`) and the Blink register
      get/set members that `rtc.test.ts` touches.
    - It also defines `Z88_BACKENDS = [typescript, wasm]`.
-   - The TypeScript implementation wraps `Z88TestMachine`. The WASM one wraps a
-     `TestZ88WasmMachine`, which uses test-only core exports: `z88GetChipMask(slot)`,
-     `z88GetPageOffset(page)`, `z88GetPageCardType(page)`, `z88TestIncrementRtc`, and so on. These
-     are in the build allow-list but not in the loader's required list, following the `sp48`
-     diagnostic-export pattern.
+   - The TypeScript implementation wraps `Z88TestMachine` and hands out the real TypeScript card
+     classes (`m.cards.ram(size)`, `m.cards.intelFlash(size)`, ...) and Blink device (`m.blink`).
+     The WASM one will wrap a `TestZ88WasmMachine` whose card objects are handles on core state,
+     using test-only core exports: `z88GetChipMask(slot)`, `z88GetPageOffset(page)`,
+     `z88GetPageBank(page)`, `z88GetPageCardType(page)`, `z88GetSlotCardType(slot)`,
+     `z88GetFlashReadArrayMode(slot)`, `z88TestIncrementRtc`, and so on. These are in the build
+     allow-list but not in the loader's required list, following the `sp48` diagnostic-export
+     pattern.
    - Each suite's top-level `describe` becomes `describe.each(Z88_BACKENDS)`. **Assertions do not
      change.** The 887 cases become 1,774.
    - A case that cannot run on WASM must be listed in `test/z88/README.md` with its reason. The
@@ -445,7 +451,20 @@ stays `"typescript"` until Step 14. Status markers follow the 128K plan.
 
 ### Step 0.1 - Neutral modules and host fixes (TypeScript only)
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `z88MachineInfo.ts` and `z88CardCatalog.ts` exist; `Z88Machine`, `CardType.ts`, the card classes
+  and `Z88BankedMemory` use them. `CardIds.ts`/`CardSlotState.ts` were already neutral and stay.
+  The catalog also owns `z88InternalRamSizeInBytes` (the `MC_Z88_INTRAM` mask rule), which the
+  WASM setup needs too.
+- `getSelectedRomPage` / `getSelectedRamBank` answer 0, as the ZX Spectrum 48K does.
+- `configure()` settles only after every slot has settled (`Promise.allSettled`), then rethrows the
+  first failure. So one bad card file no longer leaves the other slots half-loaded, and a failed
+  hot-plug now reaches the insert-card dialog's controller instead of being an unhandled
+  rejection.
+- Tests: `test/z88/z88-host.test.ts`, `test/z88/z88-neutral-modules.test.ts`.
+
+Original scope:
 
 - Extract `z88MachineInfo.ts` (clock, tacts per frame, `uiFrameFrequency`, partition
   labels/groups/descriptions, `parsePartitionLabel`, disassembly sections verbatim) and
@@ -461,7 +480,18 @@ Status: Not started.
 
 ### Step 0.2 - Backend-neutral IDE surface
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `IZ88IdeMachine` / `isZ88IdeMachine` in `src/emu/machines/z88/IZ88IdeMachine.ts`;
+  `Z88Machine.getBlinkState()`; `MainToEmuProcessor.getBlinkState()` uses the guard and keeps the
+  "BLINK device is not available" error for other machines.
+- `IZ88Machine` no longer exposes memory or devices. The TypeScript devices and cards were typed on
+  `IZ88Machine` and reach `memory`/`blinkDevice`/... through it, so they now use the new
+  TypeScript-only `IZ88DeviceHost`. The renderer consumers (`Z88ToolArea`, `z88Cards`,
+  `useZ88Ports`) needed no change.
+- Tests: the Blink-state cases in `test/z88/z88-host.test.ts` (through the real message processor).
+
+Original scope:
 
 - Add `IZ88IdeMachine { getBlinkState(): BlinkState }`, implemented by `Z88Machine`.
   `MainToEmuProcessor.getBlinkState()` uses it instead of the `any` cast.
@@ -472,7 +502,26 @@ Status: Not started.
 
 ### Step 0.3 - Backend-parameterized tests and the Z88 session helper
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `test/z88/z88-test-surface.ts` (`Z88TestSurface`) and `test/z88/z88-backends.ts`
+  (`Z88_BACKENDS = [typescript]`). The six suites run through `describe.each`; still 887 cases.
+  No assertion changed except in the paging suite's "constructor works" test, which inspected
+  `instanceof`/`bankData` and now asks `slotCardType`/`pageBank`/`pageOffset`/`pageCardType`.
+- `Z88TestMachine` passes `(model, Z88_TEST_CONFIG, undefined)`: the same effective machine as
+  before, stated explicitly.
+- `test/harness/z88/` (README, `createZ88Session`, `Z88_HARNESS_BACKENDS = ["typescript"]`,
+  self-tests). New session suites, each looping over the harness backends: `z88-keyboard` (13),
+  `z88-interrupts` (10), `z88-lcd` (19), `z88-beeper` (6), `z88-sleep-and-boot` (14, including
+  all ten ROMs booting to the Index screen), plus `memory-amdflash-io` (13) on `Z88_BACKENDS`.
+- Z88 cases now: 887 original + 85 per-backend new (these will double when WASM joins) + 56
+  host/neutral-module cases = 1,028, all passing on TypeScript. `test/z88/README.md` lists cases
+  that do not run on a backend: none.
+- The suites pin three oracle behaviours the WASM core must reproduce: defect F1 (an open flap
+  with INT.KWAIT keeps the interrupt line active), the unpainted last 4 pixels of a 640-pixel row
+  of LORES cells, and the snoozing `$B2` read answering `$FF` at once.
+
+Original scope:
 
 - Add `Z88TestSurface`, with `Z88_BACKENDS` holding only `typescript` for now. Convert the six
   suites to `describe.each`, keeping assertions identical.
@@ -486,9 +535,26 @@ Status: Not started.
 
 ### Step 0.4 - Extend the shared Z80 core with snooze
 
-Status: Not started.
+Status: Done on 2026-09-19.
 
-- In `z80.c`, add `cpu.snoozed` plus `z80SnoozeCpu()`, `z80AwakeCpu()`, `z80IsSnoozed()` and
+- `z80.c`: `cpu.snoozed` (cleared by `z80Reset`), `z80SnoozeCpu`, `z80AwakeCpu`,
+  `z80IsCpuSnoozed`, `z80SnoozeCycle` (16 tacts through `tactPlusN`, as one step - the TypeScript
+  `tactPlusN(16)` also calls `onTactIncremented()` once). The core never sets or checks the flag
+  itself.
+- `test/z80/snooze.test.ts`, copied literally to `test/wasm/z80/snooze.test.ts`; the standalone
+  core exports the four functions and the WASM test CPU wrapper maps them to the `Z80Cpu` names.
+- `check-wasm-cpu-contract.cjs` requires the four signatures.
+- All four artifacts rebuilt under their ceilings (sp48 201,247; sp128 318,845; spp3e 225,236;
+  zxnext 419,586 bytes: the new functions are not exported, so the linker drops them). Green:
+  `test/z80`, `test/wasm`, `test/zxSpectrum`, `test/emu` (5,739), `test/zxnext-hw`,
+  `test/zxnext`, `test/harness/zxnext` (5,147), and the WASM Z80 corpus (1,470).
+- Found on the way: `test/wasm/z80/next-ops.test.ts` was a stale copy (#1355 had updated the
+  source to the VHDL carry behaviour of `ADD rr,A` and `LDWS`, and `z80.c` already implemented
+  it), so six corpus cases failed on `HEAD`. Re-copied; every corpus file matches its source again.
+
+Original scope:
+
+- In `z80.c`, add `cpu.snoozed` plus `z80SnoozeCpu()`, `z80AwakeCpu()`, `z80IsCpuSnoozed()` and
   `z80SnoozeCycle()`. The snooze cycle adds 16 tacts through the `Z80_TACT_PLUS_N` path, so
   per-tact hooks such as audio fire, exactly as `Z80Cpu.onSnooze()` → `tactPlusN(16)` does.
   `z80Reset` clears the flag, matching `Z80Cpu.reset()`.

@@ -1,10 +1,10 @@
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 
 /**
  * This interface defines the properties and operations of the Cambridge Z88 Blink device.
  */
-export interface IZ88BlinkDevice extends IGenericDevice<IZ88Machine> {
+export interface IZ88BlinkDevice extends IGenericDevice<IZ88DeviceHost> {
   /**
    * Segment register 0 (8-bit)
    */

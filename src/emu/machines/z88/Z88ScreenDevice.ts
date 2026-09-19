@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
@@ -34,7 +34,7 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
    * Initialize the screen device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZ88Machine) {}
+  constructor (public readonly machine: IZ88DeviceHost) {}
 
   /**
    * LORES0 (PB0, 16bits register). The 6 * 8 pixel per char User Defined Fonts.

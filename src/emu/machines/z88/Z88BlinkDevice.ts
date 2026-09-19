@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 
 import {
@@ -18,7 +18,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor(public readonly machine: IZ88Machine) {}
+  constructor(public readonly machine: IZ88DeviceHost) {}
 
   /**
    * Reset the device to its initial state.

@@ -1,7 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
-import { Z88TestMachine } from "./Z88TestMachine";
-import { Z88UvEpromMemoryCard } from "@emu/machines/z88/memory/Z88UvEpromMemoryCard";
+import { Z88_BACKENDS } from "./z88-backends";
 import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 
 const addr32K: number[] = [
@@ -13,22 +11,21 @@ const addrSR3: number[] = [
   0xc000, 0xc001, 0xcdef, 0xdfff, 0xefff, 0xfffe, 0xffff
 ];
 
-describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
+describe.each(Z88_BACKENDS)("Z88 - UV EPROM Card Read / Blow bytes ($name)", function ({ create }) {
   addr32K.forEach(addr => {
     it(`32K EPROM read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create 32K UV Eprom Card
-      const uvepr32k = new Z88UvEpromMemoryCard(m, 0x00_8000);
+      const uvepr32k = m.cards.uvEprom(0x00_8000);
       // --- Insert 32K Eprom card in slot 3 (reset to FFh)
       mem.insertCard(3, uvepr32k);
 
       // bind top-two banks of slot 3 into logical address space
-      m.blinkDevice.setSR2(0xfe);
-      m.blinkDevice.setSR3(0xff);
+      m.blink.setSR2(0xfe);
+      m.blink.setSR3(0xff);
 
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
@@ -38,35 +35,34 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
   addr32K.forEach(addr => {
     it(`32K EPROM blow content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create 32K UV Eprom Card
-      const uvepr32k = new Z88UvEpromMemoryCard(m, 0x00_8000);
+      const uvepr32k = m.cards.uvEprom(0x00_8000);
       // --- Insert 32K Eprom card in slot 3 (reset to FFh)
       mem.insertCard(3, uvepr32k);
 
       // bind top-two banks of slot 3 into logical address space
-      m.blinkDevice.setSR2(0xfe);
-      m.blinkDevice.setSR3(0xff);
+      m.blink.setSR2(0xfe);
+      m.blink.setSR3(0xff);
 
       // blowing 0 bits (from 1)...
       // (on real H/W, more than 70 iterations of PROGRAM and OVERP are done.
       //  here, we simply test that conditions are met, once)
 
       // VPP pin ON, then UV Eprom PROGRAM
-      m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.PROGRAM);
+      m.blink.setCOM(COMFlags.VPPON | COMFlags.PROGRAM);
 
       // define PROGRAM & OVERP characteristics for 32K UV EPROM
-      m.blinkDevice.EPR = 0x48;
+      m.blink.EPR = 0x48;
 
       m.memory.writeMemory(addr, 0xf0);
       const valuePROGRAM = m.memory.readMemory(addr);
       expect(valuePROGRAM).toBe(0xf0);
 
       // VPP pin ON, then UV Eprom OVERP
-      m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.OVERP);
+      m.blink.setCOM(COMFlags.VPPON | COMFlags.OVERP);
       m.memory.writeMemory(addr, 0x0f);
       const valueOVERP = m.memory.readMemory(addr);
       expect(valueOVERP).toBe(0x00);
@@ -76,18 +72,17 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
   addr32K.forEach(addr => {
     it(`32K EPROM blow content (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create 32K UV Eprom Card
-      const uvepr32k = new Z88UvEpromMemoryCard(m, 0x00_8000);
+      const uvepr32k = m.cards.uvEprom(0x00_8000);
       // --- Insert 32K Eprom card in slot 2 (reset to FFh)
       mem.insertCard(2, uvepr32k);
 
       // bind top-two banks of slot 2 into logical address space
-      m.blinkDevice.setSR2(0xbe);
-      m.blinkDevice.setSR3(0xbf);
+      m.blink.setSR2(0xbe);
+      m.blink.setSR3(0xbf);
 
       m.memory.writeMemory(addr, 0xf0);
       const valuePROGRAM = m.memory.readMemory(addr);
@@ -100,16 +95,15 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) read content (${addr}) in slot 3`, () => {
         // --- Create the machine
-        const m = new Z88TestMachine();
+        const m = create();
         const mem = m.memory;
-        const memt = mem as IZ88BankedMemoryTestSupport;
 
         // --- Create 128K UV Eprom Card
-        const uvepr128k = new Z88UvEpromMemoryCard(m, 0x02_0000);
+        const uvepr128k = m.cards.uvEprom(0x02_0000);
         // --- Insert 128K Eprom card in slot 3 (reset to FFh)
         mem.insertCard(3, uvepr128k);
 
-        m.blinkDevice.setSR3(bnk128K);
+        m.blink.setSR3(bnk128K);
         const value = m.memory.readMemory(addr);
         expect(value).toBe(0xff);
       });
@@ -121,29 +115,28 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) blow content (${addr}) in slot 3`, () => {
         // --- Create the machine
-        const m = new Z88TestMachine();
+        const m = create();
         const mem = m.memory;
-        const memt = mem as IZ88BankedMemoryTestSupport;
 
         // --- Create 128K UV Eprom Card
-        const uvepr128k = new Z88UvEpromMemoryCard(m, 0x02_0000);
+        const uvepr128k = m.cards.uvEprom(0x02_0000);
         // --- Insert 128K Eprom card in slot 3 (reset to FFh)
         mem.insertCard(3, uvepr128k);
 
-        m.blinkDevice.setSR3(bnk128K);
+        m.blink.setSR3(bnk128K);
 
         // VPP pin ON, then UV Eprom PROGRAM
-        m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.PROGRAM);
+        m.blink.setCOM(COMFlags.VPPON | COMFlags.PROGRAM);
 
         // define PROGRAM & OVERP characteristics for 128K UV EPROM
-        m.blinkDevice.EPR = 0x69;
+        m.blink.EPR = 0x69;
 
         m.memory.writeMemory(addr, 0xf0);
         const valuePROGRAM = m.memory.readMemory(addr);
         expect(valuePROGRAM).toBe(0xf0);
 
         // VPP pin ON, then UV Eprom OVERP
-        m.blinkDevice.setCOM(COMFlags.VPPON | COMFlags.OVERP);
+        m.blink.setCOM(COMFlags.VPPON | COMFlags.OVERP);
         m.memory.writeMemory(addr, 0x0f);
         const valueOVERP = m.memory.readMemory(addr);
         expect(valueOVERP).toBe(0x00);
@@ -156,16 +149,15 @@ describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) blow content (${addr}) in slot 2`, () => {
         // --- Create the machine
-        const m = new Z88TestMachine();
+        const m = create();
         const mem = m.memory;
-        const memt = mem as IZ88BankedMemoryTestSupport;
 
         // --- Create 128K UV Eprom Card
-        const uvepr128k = new Z88UvEpromMemoryCard(m, 0x02_0000);
+        const uvepr128k = m.cards.uvEprom(0x02_0000);
         // --- Insert 128K Eprom card in slot 2 (reset to FFh)
         mem.insertCard(2, uvepr128k);
 
-        m.blinkDevice.setSR3(bnk128K);
+        m.blink.setSR3(bnk128K);
 
         // UV Eprom is in slot 2, cannot blow bytes...
         m.memory.writeMemory(addr, 0xf0);

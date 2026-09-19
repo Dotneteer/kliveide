@@ -7,9 +7,9 @@
  * Suspend and Erase Resume commands are also not implemented.
  */
 
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
 
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 import { Z88AmdFlashMemoryCard } from "./Z88AmdFlashMemoryCard";
 
 export class Z88AmdFlash29F040B extends Z88AmdFlashMemoryCard {
@@ -18,7 +18,7 @@ export class Z88AmdFlash29F040B extends Z88AmdFlashMemoryCard {
    * Initializes the AMD Flash 29F040B chip (512K)
    */
   public constructor (
-    public readonly host: IZ88Machine,
+    public readonly host: IZ88DeviceHost,
   ) {
     super(host, 512*1024);
 

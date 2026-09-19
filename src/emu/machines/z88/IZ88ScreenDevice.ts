@@ -1,10 +1,10 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IGenericDevice } from "@emu/abstractions/IGenericDevice";
 
 /**
  * This interface defines the properties and operations of the ZX Spectrum's screen device.
  */
-export interface IZ88ScreenDevice extends IGenericDevice<IZ88Machine> {
+export interface IZ88ScreenDevice extends IGenericDevice<IZ88DeviceHost> {
   /**
    * LORES0 (PB0, 16bits register). The 6 * 8 pixel per char User Defined Fonts.
    */

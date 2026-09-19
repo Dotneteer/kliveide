@@ -7,9 +7,9 @@
  * https://gitlab.com/b4works/ozvm/-/blob/master/src/com/gitlab/z88/ozvm/EpromBank.java
  */
 
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
 import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
@@ -23,7 +23,7 @@ export class Z88UvEpromMemoryCard extends Z88MemoryCardBase {
   /**
    * Initializes the card with the specified size
    */
-  constructor (public readonly host: IZ88Machine, public readonly size: number) {
+  constructor (public readonly host: IZ88DeviceHost, public readonly size: number) {
     super(host, size);
 
     this.type =

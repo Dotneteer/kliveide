@@ -123,6 +123,21 @@ For Next, the existing working Z80N support must be reused. Do not implement a
 separate Next CPU unless there is a very explicit reason and an oracle test that
 proves the shared core cannot satisfy it.
 
+The same holds beyond the Spectrum family. The Cambridge Z88 migration
+(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) needed the Blink's CPU *snooze*,
+which only the TypeScript `Z80Cpu` modelled. It went into `z80.c` as a generic
+facility that mirrors `Z80Cpu` name for name (`z80SnoozeCpu`, `z80AwakeCpu`,
+`z80IsCpuSnoozed`, `z80SnoozeCycle`): the core carries the flag, the machine's
+frame loop decides what it means. A machine that never snoozes pays nothing, since
+unexported functions are dropped at link time. Extend the core this way: mirror the
+TypeScript member, test it with one test file that runs literally on both CPUs,
+add it to `check-wasm-cpu-contract.cjs`, and rebuild and test every artifact.
+
+The literal copies in `test/wasm/z80/` must be re-copied whenever their
+`test/z80/` source changes. A stale `next-ops.test.ts` copy once asserted the
+pre-VHDL `ADD rr,A`/`LDWS` flags and failed six cases against a correct core.
+Before blaming a core for a corpus failure, `cmp` the copy with its source.
+
 ## Correctness Before Confident Claims
 
 The TypeScript implementation is the oracle until the WASM implementation has

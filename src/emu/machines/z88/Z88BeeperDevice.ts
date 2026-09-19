@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
@@ -6,7 +6,7 @@ import { AudioDeviceBase } from "../AudioDeviceBase";
 import { COMFlags } from "./IZ88BlinkDevice";
 
 // --- This class implements the ZX Spectrum beeper device.
-export class Z88BeeperDevice extends AudioDeviceBase<IZ88Machine> implements IZ88BeeperDevice {
+export class Z88BeeperDevice extends AudioDeviceBase<IZ88DeviceHost> implements IZ88BeeperDevice {
   private _earBit = false;
   private _oscillatorBit = false;
 
@@ -14,7 +14,7 @@ export class Z88BeeperDevice extends AudioDeviceBase<IZ88Machine> implements IZ8
   /// Initialize the beeper device and assign it to its host machine.
   /// </summary>
   /// <param name="machine">The machine hosting this device</param>
-  constructor(public readonly machine: IZ88Machine) {
+  constructor(public readonly machine: IZ88DeviceHost) {
     super(machine);
   }
 

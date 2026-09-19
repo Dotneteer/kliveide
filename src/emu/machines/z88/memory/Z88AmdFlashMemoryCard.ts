@@ -11,9 +11,9 @@
  * Suspend and Erase Resume commands are also not implemented.
  */
 
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
 
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 class Stack<T> {
@@ -428,7 +428,7 @@ export class Z88AmdFlashMemoryCard extends Z88MemoryCardBase {
    * Type is defined by derived class.
    */
   public constructor (
-    public readonly host: IZ88Machine,
+    public readonly host: IZ88DeviceHost,
     public readonly size: number
   ) {
     super(host, size);

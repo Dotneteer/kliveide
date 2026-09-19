@@ -1,5 +1,7 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
+import type { IZ88IdeMachine } from "./IZ88IdeMachine";
+import type { BlinkState } from "@common/messaging/EmuApi";
 import type { IZ88BeeperDevice } from "./IZ88BeeperDevice";
 import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
@@ -32,23 +34,42 @@ import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
-import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
-import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
+import { IMemorySection } from "@abstractions/MemorySection";
 import { AudioSample } from "@emu/abstractions/IAudioDevice";
+import {
+  parseZ88PartitionLabel,
+  resolveZ88KeyboardLayout,
+  Z88_BASE_CLOCK_FREQUENCY,
+  Z88_DEFAULT_ROM,
+  Z88_TACTS_IN_FRAME,
+  Z88_UI_FRAME_FREQUENCY,
+  z88DisassemblySections,
+  z88PartitionDescriptions,
+  z88PartitionGroups,
+  z88PartitionLabels,
+  z88RomFlags
+} from "./z88MachineInfo";
 
-// --- Default ROM file
-const DEFAULT_ROM = "z88v50-r1f99aaae";
-
-export class Z88Machine extends Z80MachineBase implements IZ88Machine {
+export class Z88Machine extends Z80MachineBase implements IZ88DeviceHost, IZ88IdeMachine {
+  /**
+   * The Z88 has no Spectrum-style selected ROM page: its ROM is a card in slot 0. Answer 0, as the
+   * ZX Spectrum 48K does, rather than throwing: `getMemoryContents` asks every machine.
+   */
   getSelectedRomPage(): number {
-    throw new Error("Method not implemented.");
+    return 0;
   }
+
+  /**
+   * The Z88 has no Spectrum-style selected RAM bank (it pages banks through SR0-SR3). Answer 0, as
+   * the ZX Spectrum 48K does, rather than throwing: `getMemoryContents` asks every machine.
+   */
   getSelectedRamBank(): number {
-    throw new Error("Method not implemented.");
+    return 0;
   }
+
   private _emulatedKeyStrokes: EmulatedKeyStroke[] = [];
   private _shiftsReleased = false;
 
@@ -67,7 +88,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   /**
    * The number of consequtive frames after which the UI should be refreshed
    */
-  readonly uiFrameFrequency = 8;
+  readonly uiFrameFrequency = Z88_UI_FRAME_FREQUENCY;
 
   /**
    * The physical memory of the machine (memory card model)
@@ -117,7 +138,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.config = config ?? model?.config;
 
     // --- Set up machine attributes
-    this.baseClockFrequency = 3_276_800;
+    this.baseClockFrequency = Z88_BASE_CLOCK_FREQUENCY;
     this.clockMultiplier = 1;
 
     // --- Z88 address bus is not delayed?
@@ -154,7 +175,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * Gets a flag for each 8K page that indicates if the page is a ROM
    */
   getRomFlags(): boolean[] {
-    return [false, false, false, false, false, false, false, false];
+    return z88RomFlags();
   }
 
   /**
@@ -162,51 +183,25 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined {
-    if (!label) return undefined;
-    if (!label.match(/^[0-9a-fA-F]{1,2}$/)) {
-      return undefined;
-    }
-    let partition = parseInt(label, 16);
-    return partition >= 0 && partition < 256 ? partition : undefined;
+    return parseZ88PartitionLabel(label);
   }
 
   /**
-   * Gets the label of the specified partition
-   * @param partition Partition index
+   * Gets the labels of the partitions (banks)
    */
   getPartitionLabels(): Record<number, string> {
-    // --- A real `Record`, not a `string[]` returned as one. The array worked by index, but it made
-    // --- the Z88 the only machine whose map could not be enumerated with `Object.entries` the way
-    // --- every consumer does.
-    const labels: Record<number, string> = {};
-    for (let i = 0; i <= 0xff; i++) {
-      labels[i] = toHexa2(i);
-    }
-    return labels;
+    return z88PartitionLabels();
   }
 
-  /**
-   * The Z88 has no ROM partitions: its ROM is a card in slot 0 rather than a fixed page, so the
-   * bank map above is complete rather than missing entries. See
-   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 2.
-   */
   /**
    * The Z88's partitions are all RAM banks, so its chooser needs one caption beside the grid.
    */
   getPartitionGroups(): Record<number, string> {
-    const groups: Record<number, string> = {};
-    for (let i = 0; i <= 0xff; i++) {
-      groups[i] = "RAM Banks";
-    }
-    return groups;
+    return z88PartitionGroups();
   }
 
   getPartitionDescriptions(): Record<number, string> {
-    const descriptions: Record<number, string> = {};
-    for (let i = 0; i <= 0xff; i++) {
-      descriptions[i] = `Bank $${toHexa2(i)}`;
-    }
-    return descriptions;
+    return z88PartitionDescriptions();
   }
 
   /**
@@ -238,7 +233,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
         if (intRom) {
           romContents = await this.loadRomFromResource(intRom);
         } else {
-          romContents = await this.loadRomFromResource(DEFAULT_ROM);
+          romContents = await this.loadRomFromResource(Z88_DEFAULT_ROM);
         }
 
         // --- Initialize the Z88 machine's default ROM
@@ -251,11 +246,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
       this.setMachineProperty(MC_Z88_USE_DEFAULT_ROM, useDefaultRom);
 
       // --- Set up the default keyboard layout
-      let keyboardLayout = this.config?.[MC_Z88_KEYBOARD] ?? "uk";
-      const supported = ["uk", "de", "fr", "es", "it", "dk", "se"];
-      if (supported.indexOf(keyboardLayout) < 0) {
-        keyboardLayout = "uk";
-      }
+      const keyboardLayout = resolveZ88KeyboardLayout(this.config?.[MC_Z88_KEYBOARD]);
 
       await createMainApi(this.messenger).setGlobalSettingsValue(
         SETTING_EMU_KEYBOARD_LAYOUT,
@@ -279,17 +270,26 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
-   * Configures the machine after setting it up
+   * Configures the machine after setting it up. Resolves once every slot card is in place: a card
+   * is readable as soon as the returned promise settles.
    */
   async configure(): Promise<void> {
     // --- Use the dynamic configuration, too
     const config = { ...this.config, ...this.dynamicConfig };
 
-    // --- Configure Slots
+    // --- Configure Slots. They load independently (one failing card does not stop the others),
+    // --- and every one of them has settled by the time this method settles. The first failure,
+    // --- if any, is reported once all slots are done.
     const machine = this;
-    handleSlot(1, config?.[MC_Z88_SLOT1]);
-    handleSlot(2, config?.[MC_Z88_SLOT2]);
-    handleSlot(3, config?.[MC_Z88_SLOT3]);
+    const results = await Promise.allSettled([
+      handleSlot(1, config?.[MC_Z88_SLOT1]),
+      handleSlot(2, config?.[MC_Z88_SLOT2]),
+      handleSlot(3, config?.[MC_Z88_SLOT3])
+    ]);
+    const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
+    if (failed) {
+      throw failed.reason;
+    }
 
     // --- Handle the specified slot
     async function handleSlot(slotId: number, slot: CardSlotState): Promise<void> {
@@ -352,7 +352,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
     this.isInSleepMode = false;
 
     // --- Set up the machine frame length
-    this.setTactsInFrame(16384);
+    this.setTactsInFrame(Z88_TACTS_IN_FRAME);
   }
 
   /**
@@ -845,51 +845,48 @@ export class Z88Machine extends Z80MachineBase implements IZ88Machine {
   }
 
   /**
+   * The Blink panel's state, read from the TypeScript devices (see `IZ88IdeMachine`)
+   */
+  getBlinkState(): BlinkState {
+    const blink = this.blinkDevice;
+    const keyboard = this.keyboardDevice;
+    const beeper = this.beeperDevice;
+    const screen = this.screenDevice;
+    return {
+      SR0: blink.SR0,
+      SR1: blink.SR1,
+      SR2: blink.SR2,
+      SR3: blink.SR3,
+      TIM0: blink.TIM0,
+      TIM1: blink.TIM1,
+      TIM2: blink.TIM2,
+      TIM3: blink.TIM3,
+      TIM4: blink.TIM4,
+      TSTA: blink.TSTA,
+      TMK: blink.TMK,
+      INT: blink.INT,
+      STA: blink.STA,
+      COM: blink.COM,
+      EPR: blink.EPR,
+      keyLines: [0, 1, 2, 3, 4, 5, 6, 7].map((line) => keyboard.getKeyLineValue(line)),
+      oscBit: beeper.oscillatorBit,
+      earBit: beeper.earBit,
+      PB0: screen.PB0,
+      PB1: screen.PB1,
+      PB2: screen.PB2,
+      PB3: screen.PB3,
+      SBR: screen.SBR,
+      SCW: screen.SCW,
+      SCH: screen.SCH
+    };
+  }
+
+  /**
    * Gets a disassembly section of the machine with the specified options.
    * @param _options The options for the disassembly section.
    * @returns The disassembly section.
    */
   getDisassemblySections(options: Record<string, any>): IMemorySection[] {
-    const ram = !!options.ram;
-    const screen = !!options.screen;
-    const sections: IMemorySection[] = [];
-    if (!ram || !screen) {
-      // --- Use the memory segments according to the "ram" and "screen" flags
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0x3fff,
-        sectionType: MemorySectionType.Disassemble
-      });
-      if (ram) {
-        if (screen) {
-          sections.push({
-            startAddress: 0x4000,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        } else {
-          sections.push({
-            startAddress: 0x5b00,
-            endAddress: 0xffff,
-            sectionType: MemorySectionType.Disassemble
-          });
-        }
-      } else if (screen) {
-        sections.push({
-          startAddress: 0x4000,
-          endAddress: 0x5aff,
-          sectionType: MemorySectionType.Disassemble
-        });
-      }
-    } else {
-      // --- Disassemble the whole memory
-      sections.push({
-        startAddress: 0x0000,
-        endAddress: 0xffff,
-        sectionType: MemorySectionType.Disassemble
-      });
-    }
-
-    return sections;
+    return z88DisassemblySections(options);
   }
 }

@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { Z88BeeperDevice } from "@emu/machines/z88/Z88BeeperDevice";
 import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "@emu/machines/z88/IZ88DeviceHost";
 
 class MockZ88BlinkDevice implements Partial<IZ88BlinkDevice> {
   COM = 0x00;
 }
 
-class MockZ88Machine implements Partial<IZ88Machine> {
+class MockZ88Machine {
   baseClockFrequency = 3_276_800;
   tacts = 0;
   clockMultiplier = 1;
@@ -16,11 +16,7 @@ class MockZ88Machine implements Partial<IZ88Machine> {
   tactsInFrame = 65_536;
   frames = 0;
   uiFrameFrequency = 1;
-  blinkDevice: IZ88BlinkDevice;
-
-  constructor() {
-    this.blinkDevice = new MockZ88BlinkDevice() as IZ88BlinkDevice;
-  }
+  blinkDevice = new MockZ88BlinkDevice();
 
   advanceTacts(count: number): void {
     this.currentFrameTact += count;
@@ -35,7 +31,7 @@ describe("Audio Integration Tests", () => {
 
     beforeEach(() => {
       z88Machine = new MockZ88Machine();
-      z88Beeper = new Z88BeeperDevice(z88Machine as IZ88Machine);
+      z88Beeper = new Z88BeeperDevice(z88Machine as unknown as IZ88DeviceHost);
       z88Beeper.setAudioSampleRate(44100);
     });
 

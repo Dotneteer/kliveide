@@ -112,6 +112,16 @@ typedef struct Z80State {
   uint8_t lastTbBlueAddress;
   uint8_t lastTbBlueValue;
   uint8_t hasTbBlueEvent;
+  /*
+   * Snooze: the Cambridge Z88's Blink stops the CPU clock when software reads the keyboard with
+   * INT.KWAIT set and no key is down, until a key, an RTC event or the flap wakes it.
+   *
+   * Mirrors `Z80Cpu._snoozed` / `snoozeCpu` / `awakeCpu` / `onSnooze`. The core itself never sets
+   * or clears it and `z80ExecuteCpuCycle` ignores it: the machine's frame loop runs
+   * `z80SnoozeCycle` instead of an instruction while it is set, exactly as `MachineFrameRunner`
+   * calls `onSnooze()` instead of `executeCpuCycle()`. Machines that never snooze are unaffected.
+   */
+  uint8_t snoozed;
 } Z80State;
 
 // -----------------------------------------------------------------------------
@@ -798,6 +808,7 @@ void z80Reset(void) {
   cpu.lastPortIsWrite = 0;
   cpu.hasPortEvent = 0;
   cpu.portReadValue = 0;
+  cpu.snoozed = 0;
   cpu.z80nMode = 0;
   cpu.lastTbBlueAddress = 0;
   cpu.lastTbBlueValue = 0;
@@ -3230,6 +3241,19 @@ uint32_t z80GetStepOutAddress(void) {
 }
 void z80SetRetnExecuted(uint32_t value) { cpu.retnExecuted = value != 0; }
 void z80TactPlusN(uint32_t value) { tactPlusN(value); }
+
+/* Snooze (see `Z80State.snoozed`): `Z80Cpu.snoozeCpu`, `awakeCpu`, `isCpuSnoozed` */
+void z80SnoozeCpu(void) { cpu.snoozed = 1; }
+void z80AwakeCpu(void) { cpu.snoozed = 0; }
+uint32_t z80IsCpuSnoozed(void) { return cpu.snoozed; }
+
+/*
+ * One snoozed "instruction": nothing executes and 16 tacts pass, as `Z80Cpu.onSnooze()` does. The
+ * tacts go through `tactPlusN`, so a machine's `Z80_TACT_PLUS_N` hook (audio sampling, frame
+ * counting) sees them as one 16-tact step - the TypeScript `tactPlusN(16)` calls
+ * `onTactIncremented()` once, too.
+ */
+void z80SnoozeCycle(void) { tactPlusN(16); }
 
 uint32_t z80PeekMemory(uint32_t address) {
 #ifdef Z80_READ_MEMORY

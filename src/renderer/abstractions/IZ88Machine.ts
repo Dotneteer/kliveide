@@ -1,40 +1,13 @@
 import type { IZ80Machine } from "./IZ80Machine";
-import type { IZ88KeyboardDevice } from "@emu/machines/z88/IZ88KeyboardDevice";
-import type { IZ88ScreenDevice } from "@emu/machines/z88/IZ88ScreenDevice";
-import type { IZ88BeeperDevice } from "@emu/machines/z88/IZ88BeeperDevice";
-import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import type { Z88BankedMemory } from "@emu/machines/z88/memory/Z88BankedMemory";
 import { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 /**
- * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the emulator
+ * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the
+ * emulator, whichever core emulates it. It deliberately exposes no TypeScript device or memory
+ * object: a WASM machine has none. The TypeScript devices reach those through `IZ88DeviceHost`, and
+ * the IDE reads the Blink state through `IZ88IdeMachine`.
  */
 export interface IZ88Machine extends IZ80Machine {
-  /**
-   * The physical memory of the machine
-   */
-  readonly memory: Z88BankedMemory;
-
-  /**
-   * Represents the Blink device of Z88
-   */
-  blinkDevice: IZ88BlinkDevice;
-
-  /**
-   * Represents the keyboard device of Z88
-   */
-  keyboardDevice: IZ88KeyboardDevice;
-
-  /**
-   * Represents the screen device of Z88
-   */
-  screenDevice: IZ88ScreenDevice;
-
-  /**
-   * Represents the beeper device of Z88
-   */
-  beeperDevice: IZ88BeeperDevice;
-
   /**
    * Gets the audio samples rendered in the current frame
    * @returns Array with the audio samples
