@@ -602,8 +602,8 @@ Done when: a reader of the docs would build the next machine migration separated
 
 ## 7. GATE - Separation And Parity Sign-Off
 
-Status: Evidence gathered 2026-09-19; one item open (10: the manual app pass). **Phase B requires the
-project author's explicit go-ahead after this gate.**
+Status: **Passed 2026-09-19** - all ten conditions met; the project author did the manual app pass and
+gave the go-ahead for Phase B.
 
 | # | Condition | State 2026-09-19 |
 |---|---|---|
@@ -616,7 +616,7 @@ project author's explicit go-ahead after this gate.**
 | 7 | D6 closed, constants flipped | Met 2026-09-19 (the author's go-ahead): `ZXNEXT_WASM_V2_DEFAULT_READY = true`, `ZXNEXT_WASM_V2_DEFAULT_BLOCKERS = []`, `ULA` and `screen` among the migrated surfaces; the rollout guard and its tests follow |
 | 8 | IDE parity | Met: PAR-006 |
 | 9 | Coverage | Met: the Test Disposition Table is complete |
-| 10 | Green build and app smoke | Build met (node 705 files / 22074 tests, jsdom, `build:check`, lint, Vite). **Open: the manual app pass** of `.nexload`/code injection, the debugger, the Next panels, checkpoints and the F-keys on both models (boot, clock, pacing and keys were driven) |
+| 10 | Green build and app smoke | Met: build (node 706 files / 22077 tests, jsdom, `build:check`, lint, Vite) and the author's manual app pass on both models (project run, debugger, Next panels, checkpoints, F-keys). The pass also found P32 (no sound while debugging on WASM), fixed |
 
 All of the following must hold, with evidence recorded in this plan:
 
