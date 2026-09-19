@@ -10,12 +10,18 @@ import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
  * - ~4469-4473: whether an access is contended depends on the 8K *page* being accessed, not on the
  *   address: only pages $00-$0F (16K banks 0-7); 48K timing: bank 5; 128K: odd banks; +3: banks 4-7.
  *
- * A loop in bank 2 reads a byte through slot 3 once per iteration; slot 3 maps the page under test.
+ * A loop in bank 2 reads a byte through slot 3 twice per iteration; slot 3 maps the page under test.
  * The loop count per frame is compared with the same loop reading page $10 (bank 8), which is never
  * contended. Contention only stretches accesses during the 192 display lines, so a contended loop
  * loses a few percent, an uncontended one none.
  *
- * Neither core models memory contention yet (B26): the contended cases are known failures.
+ * The pass is 65 T-states on purpose. The ULA's wait pattern repeats every 8 T-states and the only
+ * contended accesses are the `ld a,($6000)` reads. A pass of a multiple of 8 T-states (the original
+ * 48 T loop) is phase-locked: after one wait every later read lands in a free slot and the loop loses
+ * nothing - on real hardware too. The `nop` breaks the lock, and the second read doubles the signal, so
+ * a contended loop loses ~3-3.5% (the uncontended ones lose none) against the 2% the test asks for.
+ *
+ * B26 (no memory contention in either core) is fixed: the contended cases pass in both cores.
  */
 
 const TIMING = { "48K": 0x90, "128K": 0xa0, "+3": 0xb0, Pentagon: 0xc0 } as const;
@@ -48,7 +54,9 @@ Start:
         ld b,a
         ld hl,0
 Count:  inc hl
-        ld a,($6000)             ; the access under test
+        nop                      ; 65 T per pass, not a multiple of 8 (see the header)
+        ld a,($6000)             ; the accesses under test
+        ld a,($6000)
         ld a,(Ticks)
         cp b
         jr z,Count
@@ -97,9 +105,7 @@ describe.each(ALL_CORES)("memory contention - %s core", (core) => {
       if (contended) expect(count, `${count} vs ${base} uncontended`).toBeLessThan(base * 0.98);
       else expect(Math.abs(count - base), `${count} vs ${base}`).toBeLessThanOrEqual(2);
     };
-    // --- B26: no memory contention in either core
-    if (contended) it.fails(title, test);
-    else it(title, test);
+    it(title, test);
   }
 
   it("MEM-023: $08 bit 6 turns contention off", async () => {

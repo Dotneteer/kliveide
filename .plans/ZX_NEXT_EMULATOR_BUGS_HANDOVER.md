@@ -538,15 +538,28 @@ Found by catalogue §4.4 (`test/zxnext-hw/speed/cpu-speed.test.ts`, SPD-003):
 - **Not checked:** `toggle5060Hz` (F3) and `toggleScandoubler` take the same base-class path on WASM;
   F3 belongs with B20.
 
-### B26 – No memory contention in either core – OPEN (found 2026-09-18)
+### B26 – No memory contention in either core – FIXED 2026-09-19
 
 - zxnext.vhd ~4461-4473: at 3.5 MHz, with `$08` bit 6 = 0 and a non-Pentagon timing, accesses to
   pages $00-$0F are contended by the ULA - 48K timing: bank 5; 128K: odd banks; +3: banks 4-7. It
-  depends on the page being accessed, not on the address. Neither core stretches memory accesses
-  (`ZxNextMachine.getContentionValue` is a TODO; only port I/O has the structural delay pattern).
-- Test: `test/zxnext-hw/memory/contention.test.ts` (MEM-023) - the six contended cases are
-  `it.fails`; the uncontended ones (other banks, `$08` bit 6, Pentagon, 7 MHz) pass. Implementing it
-  needs the ULA contention pattern per timing (zxula.vhd `o_cpu_wait_n`) and a decision on cost.
+  depends on the MMU page being accessed, not on the address. Neither core stretched memory accesses.
+- **Fixed (both cores):** the ULA wait pattern from zxula.vhd ~579-600 - `wait_s` in the 256 x 192
+  display for ULA hc with `((hc + 1) & 15) >= 4`, plus `< 2` in +3 timing; each held T-state moves the
+  beam 2 HC, which yields the classic 6,5,4,3,2,1,0,0 (48K/128K) and 1,0,7,6,5,4,3,2 (+3) tables.
+  48K/128K (`o_cpu_contend`) delay memory *and* internal address-only cycles; +3 (`o_cpu_wait_n`)
+  delays memory cycles only. The contention timing is latched at the frame start with the raster.
+  TS: `NextComposedScreenDevice.contentionDelayAt` / `contentionTiming`,
+  `ZxNextMachine.delayContendedMemory` (from `delayMemoryRead`/`Write`/`delayAddressBusAccess`);
+  `Z80NCpu` no longer overrides `tactPlusNWithAddress`, so the Z80 base's per-T-state address-bus
+  contention reaches the Next. WASM: `zxnextCpuContentionDelayAt` / `zxnextCpuDelayContendedMemory`
+  (`Z80_DELAY_ADDRESS_BUS_ACCESS`), `zxnextTimingContention` set in `zxnextTimingSelect`.
+- **Test fix:** MEM-023's loop was 48 T - a multiple of the 8-T wait pattern - so it phase-locked into
+  the free slots after one wait and lost nothing even with contention modelled (real hardware would
+  too). It now runs 65 T with two contended reads per pass: contended cases lose ~3-3.5%, uncontended
+  ones 0, identically in both cores.
+- Not modelled: the `$08` bit 6 / CPU-speed latching at `hc(8)` (zxnext.vhd ~5755-5770, applied at
+  once here), contention of DMA accesses, and I/O port contention delays (`delayContendedIo` still
+  only splits the 4 T-states; `isContendedIoAddress` uses the 128K address rule, not `port_contend`).
 
 ### B27 – Layer 2 memory paging hit the wrong RAM – FIXED 2026-09-18
 

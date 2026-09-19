@@ -225,7 +225,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | MEM-020 | Layer 2 paging offset `$123B` bit 4 | S | 2 | | Writing with bit 4 set stores the 3-bit bank offset in bits 2–0 (per VHDL); paging then uses bank + offset. | ✅ `memory/layer2-paging` (B27 fixed) |
 | MEM-021 | Memory priority: DivMMC > Layer 2 > MMU | S | 1 | | With DivMMC `conmem` and Layer 2 write paging both active, `$0000` access goes to the higher-priority source per VHDL. | ✅ `memory/layer2-paging` (B27 fixed) |
 | MEM-022 | ROM contents per ROM select | S | 2 | | Signature bytes of ROM 0–3 at known addresses differ as expected (48K, 128K editor, +3DOS, 48 BASIC). | ✅ `memory/alt-rom` |
-| MEM-023 | Contention disable `$08` bit 6 | S | 3 | | On 48K/128K timing, a timing-sensitive loop reading the frame counter at 3.5 MHz differs with contention on vs off (only if the emulator models contention; otherwise document). | ❌ (B26) `memory/contention` - no memory contention in either core; the uncontended cases pass |
+| MEM-023 | Contention disable `$08` bit 6 | S | 3 | | On 48K/128K timing, a timing-sensitive loop reading the frame counter at 3.5 MHz differs with contention on vs off (only if the emulator models contention; otherwise document). | ✅ `memory/contention` (B26 fixed: memory contention in both cores) |
 | MEM-024 | `$0000` write protection of ROM | S | 1 | | `LDIR` over `$0000–$3FFF` with ROM mapped leaves ROM unchanged; same block with RAM mapped is changed. | ✅ `memory/mmu` |
 | MEM-025 | Bank 5/7 shadow screen | P | 1 | | Write distinct patterns into bank 5 and bank 7 display files; `$7FFD` bit 3 (and `$69` bit 6) switches which one is displayed. | ✅ `memory/shadow-screen` |
 | MEM-026 | Config mode `$04` mapping | S | 2 | | In config mode ($03 low bits 111) `$0000-$3FFF` with the ROM paged shows SRAM 16K bank `$04` bits 6-0, writable (zxnext.vhd ~2994-3000); MMU RAM, DivMMC and Layer 2 go above it, the Alt ROM does not. Added 2026-09-18. | ✅ `memory/config-mode` (B85 fixed: `$04` was stored but never mapped) |
@@ -849,5 +849,4 @@ Every catalogue row carries a **Status** cell. Test files are named relative to 
 | ❌ (Bn) | The test exists and is a known failure (`it.fails` / `knownFailures`) on the named core, for the bug `Bn` in `.plans/ZX_NEXT_EMULATOR_BUGS_HANDOVER.md`. |
 | — | Not started. |
 
-When a test lands, update its row in the same change. Open known failures right now: B26
-(no memory contention, MEM-023).
+When a test lands, update its row in the same change. Open known failures right now: none.

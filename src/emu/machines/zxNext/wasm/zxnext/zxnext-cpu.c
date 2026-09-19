@@ -37,6 +37,8 @@ static uint8_t zxnextCpuMreqSuppressed;
 #define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
 #define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
 #define Z80_DELAY_MEMORY_WRITE(address) zxnextCpuDelayMemoryWrite(address)
+static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle);
+#define Z80_DELAY_ADDRESS_BUS_ACCESS(address) zxnextCpuDelayContendedMemory((uint32_t)(address), 0u)
 #define Z80_DELAY_PORT_READ(address) zxnextCpuDelayPortAccess(address)
 #define Z80_DELAY_PORT_WRITE(address) zxnextCpuDelayPortAccess(address)
 
@@ -138,7 +140,48 @@ static inline uint32_t zxnextCpuIsContendedIoAddress(uint32_t address) {
   return page == 0x4000u || (page == 0xc000u && (zxnextMemoryGetSelectedRamBank() & 0x01u) != 0u);
 }
 
+/*
+ * The CPU T-states (3.5 MHz) a contended cycle starting at `frameTact` waits for the ULA (zxula.vhd
+ * ~579-600), as NextComposedScreenDevice.contentionDelayAt: `wait_s` holds the clock in the 256 x 192
+ * display for ULA hc with ((hc + 1) & 15) >= 4, and in +3 timing also for ((hc + 1) & 15) < 2.
+ */
+static inline uint32_t zxnextCpuContentionDelayAt(uint32_t frameTact) {
+  int32_t vc = (int32_t)(frameTact / zxnextTimingTotalHc) - (int32_t)zxnextTimingDisplayYStart;
+  if (vc < 0 || vc >= 192) return 0u;
+  int32_t hc = (int32_t)(frameTact % zxnextTimingTotalHc) - (int32_t)(zxnextTimingDisplayXStart - 12u);
+  const uint32_t p3 = zxnextTimingContention == 3u;
+  uint32_t delay = 0u;
+  while (hc >= 0 && hc < 256) {
+    const uint32_t adj = ((uint32_t)hc + 1u) & 0x0fu;
+    if (adj < 4u && !(p3 && adj < 2u)) break;
+    delay++;
+    hc += 2;
+  }
+  return delay;
+}
+
+/*
+ * Memory contention (B26; zxnext.vhd ~4461-4473), as ZxNextMachine.delayContendedMemory: only at
+ * 3.5 MHz, with NextReg $08 bit 6 clear and a non-Pentagon timing, for MMU pages $00-$0F - 48K bank 5,
+ * 128K odd banks, +3 banks 4-7. 48K / 128K contend memory and internal (address-only) cycles; +3's
+ * WAIT reaches memory cycles only.
+ */
+static inline void zxnextCpuDelayContendedMemory(uint32_t address, uint32_t memoryCycle) {
+  const uint32_t timing = zxnextTimingContention;
+  if (timing == 0u || (timing == 3u && memoryCycle == 0u)) return;
+  if (cpuEffectiveSpeed != 0u || (zxnextNextRegs[0x08u] & 0x40u) != 0u) return;
+  const uint32_t page = zxnextNextRegs[0x50u + ((address >> 13) & 0x07u)];
+  if (page > 0x0fu) return;
+  if (timing == 1u ? (page & 0x0eu) != 0x0au : (timing == 2u ? (page & 0x02u) == 0u : (page & 0x08u) == 0u)) return;
+  const uint32_t delay = zxnextCpuContentionDelayAt(currentFrameTact);
+  if (delay == 0u) return;
+  zxnextCpuTactPlusN(delay);
+  totalContentionDelaySinceStart += delay;
+  contentionDelaySincePause += delay;
+}
+
 static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
+  zxnextCpuDelayContendedMemory(address, 1u);
   zxnextCpuTactPlusN(3u);
   if (cpuEffectiveSpeed == 3u && !zxnextCpuReadsBank7(address)) {
     zxnextCpuTactPlusN(1u);
@@ -148,7 +191,7 @@ static inline void zxnextCpuDelayMemoryRead(uint32_t address) {
 }
 
 static inline void zxnextCpuDelayMemoryWrite(uint32_t address) {
-  (void)address;
+  zxnextCpuDelayContendedMemory(address, 1u);
   zxnextCpuTactPlusN(3u);
   totalContentionDelaySinceStart += 3u;
   contentionDelaySincePause += 3u;

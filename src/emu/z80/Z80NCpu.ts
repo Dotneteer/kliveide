@@ -57,45 +57,9 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
     this.onTactIncremented();
   }
 
-  /**
-   * This method increments the current CPU tacts by one, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus1WithAddress(_address: number): void {
-    this.tactPlusN(1);
-  }
-
-  /**
-   * This method increments the current CPU tacts by two, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus2WithAddress(_address: number): void {
-    this.tactPlusN(2);
-  }
-
-  /**
-   * This method increments the current CPU tacts by four, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus4WithAddress(_address: number): void {
-    this.tactPlusN(4);
-  }
-
-  /**
-   * This method increments the current CPU tacts by five, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus5WithAddress(_address: number): void {
-    this.tactPlusN(5);
-  }
-
-  /**
-   * This method increments the current CPU tacts by seven, using memory contention with the provided address.
-   * @param _address
-   */
-  tactPlus7WithAddress(_address: number): void {
-    this.tactPlusN(7);
-  }
+  // --- The tactPlusNWithAddress methods are Z80Cpu's: they call delayAddressBusAccess before each
+  // --- T-state while delayedAddressBus is set, which is how the Next's 48K/128K memory contention
+  // --- (B26) reaches the Z80's internal cycles.
 }
 
 /**

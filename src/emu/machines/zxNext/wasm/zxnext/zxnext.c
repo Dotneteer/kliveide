@@ -22,6 +22,8 @@ static uint32_t zxnextTimingDisplayYStart = 64u;
 static uint32_t zxnextTimingIntStart = 0x252u;
 /* INT pulse length in CPU cycles (zxnext.vhd ~1968-1990): 32 for 48K and +3, 36 for 128K and Pentagon */
 static uint32_t zxnextTimingIntPulseCycles = 32u;
+/* The memory contention pattern of the raster (NextComposedScreenDevice.contentionTiming): 0 none, 1 48K, 2 128K, 3 +3 */
+static uint32_t zxnextTimingContention = 3u;
 #define ZXNEXT_RENDERING_TACTS_IN_FRAME (zxnextTimingTotalHc * zxnextTimingTotalVc)
 #define ZXNEXT_TACTS_IN_FRAME (ZXNEXT_RENDERING_TACTS_IN_FRAME * 4)
 

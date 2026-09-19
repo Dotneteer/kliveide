@@ -78,6 +78,11 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
   private borderColorLatched: number;
   // The raster in effect is Pentagon's (its border reloads every clock)
   private confPentagon = false;
+  /**
+   * The contention pattern of the raster in effect (zxnext.vhd ~4461-4473, `eff_nr_03_machine_timing`,
+   * latched at the frame start like the raster): 0 none (Pentagon), 1 48K, 2 128K, 3 +3.
+   */
+  contentionTiming = 0;
   // Reg $15 [4:2] - Layer priority (Sprites, Layer 2, ULA)
   layerPriority: number;
 
@@ -551,6 +556,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.confDisplayXStart = this.config.displayXStart;
     this.confDisplayYStart = this.config.displayYStart;
     this.confPentagon = this.config === Pentagon_50Hz;
+    const timing = this.displayTiming;
+    this.contentionTiming = timing & 0b100 ? 0 : timing === 0b010 ? 2 : timing === 0b011 ? 3 : 1;
     this.updateTilemapDisplayOrigin();
 
     this.renderingTacts = this.confTotalVC * this.confTotalHC;
@@ -700,6 +707,29 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    */
   get intPulseLength(): number {
     return (this.confIntPulseCycles * 2) >> this.machine.cpuSpeedDevice.effectiveSpeed;
+  }
+
+  /**
+   * The CPU T-states (3.5 MHz) a contended memory cycle starting at `frameTact` waits for the ULA
+   * (zxula.vhd ~579-600). `wait_s` holds the CPU clock in the 256 x 192 display for ULA hc with
+   * ((hc + 1) & 15) >= 4 - "contend 3-14" of every 16-HC (8 T-state) group -, and in +3 timing also for
+   * ((hc + 1) & 15) < 2. Each held T-state moves the beam 2 HC on, so the classic tables fall out:
+   * 6,5,4,3,2,1,0,0 (48K / 128K) and 1,0,7,6,5,4,3,2 (+3). hc_ula and vc_ula are as in
+   * `floatingBusAt`. Whether the accessed page is contended at all is the caller's decision.
+   */
+  contentionDelayAt(frameTact: number): number {
+    const vc = Math.floor(frameTact / this.confTotalHC) - this.confDisplayYStart;
+    if (vc < 0 || vc >= 192) return 0;
+    let hc = (frameTact % this.confTotalHC) - (this.confDisplayXStart - 12);
+    const p3 = this.contentionTiming === 3;
+    let delay = 0;
+    while (hc >= 0 && hc < 256) {
+      const adj = (hc + 1) & 0x0f;
+      if (adj < 4 && !(p3 && adj < 2)) break;
+      delay++;
+      hc += 2;
+    }
+    return delay;
   }
 
   /**

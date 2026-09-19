@@ -248,6 +248,8 @@ static void zxnextTimingSelect(void) {
     zxnextTimingDisplayXStart = 136u; zxnextTimingDisplayYStart = is60 ? 40u : 64u;
     zxnextTimingIntStart = 124u;
   }
+  /* ~4461-4473: the contention pattern follows the latched timing - 0 none (Pentagon), 1 48K, 2 128K, 3 +3 */
+  zxnextTimingContention = (t & 0x04u) != 0u ? 0u : (t == 2u ? 2u : (t == 3u ? 3u : 1u));
   /* ~1989: pulse_count_end - 36 CPU cycles for 128K and Pentagon, 32 for 48K and +3 */
   zxnextTimingIntPulseCycles = (t == 2u || (t & 0x04u) != 0u) ? 36u : 32u;
 }
