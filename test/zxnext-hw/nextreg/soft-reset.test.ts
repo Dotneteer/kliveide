@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * NextReg values across a reset (catalogue NR-012 / NR-013).
@@ -143,15 +143,15 @@ const HARD_RESET_MASK: Record<number, number> = {
   0x85: 0x0f // --- bit 7 (reset type) has no reset branch; the firmware owns it
 };
 
-async function readAfterReset(core: CoreName, row: Row, kind: ResetKind, mask: number) {
-  const s = await createSession(core);
+async function readAfterReset(row: Row, kind: ResetKind, mask: number) {
+  const s = await createSession();
   for (const [reg, value] of row.before ?? []) s.setNextReg(reg, value);
   s.setNextReg(row.reg, row.write);
   kind === "soft" ? s.reset() : s.hardReset();
   return s.readNextReg(row.reg) & mask;
 }
 
-describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
+describe("NextRegs across a reset", () => {
   const title = (row: Row) => `${hex(row.reg)} ${row.what}`;
 
   describe.each(["soft", "hard"] as const)("%s reset returns a reset-branch register to its reset value", (kind) => {
@@ -159,7 +159,7 @@ describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
       const mask = (row.mask ?? 0xff) & (kind === "hard" ? (HARD_RESET_MASK[row.reg] ?? 0xff) : 0xff);
       if (mask === 0) continue;
       it(`${title(row)} -> ${hex(row.expected & mask)}`, async () => {
-        expect(hex(await readAfterReset(core, row, kind, mask))).toBe(hex(row.expected & mask));
+        expect(hex(await readAfterReset(row, kind, mask))).toBe(hex(row.expected & mask));
       });
     }
   });
@@ -167,7 +167,7 @@ describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
   describe("soft reset copies the low nibble into the high nibble", () => {
     for (const row of COPY_LOW_NIBBLE) {
       it(`${title(row)}`, async () => {
-        expect(hex(await readAfterReset(core, row, "soft", 0xff))).toBe(hex(row.expected));
+        expect(hex(await readAfterReset(row, "soft", 0xff))).toBe(hex(row.expected));
       });
     }
   });
@@ -176,13 +176,13 @@ describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
     for (const row of KEPT) {
       it(`${title(row)}`, async () => {
         const mask = row.mask ?? 0xff;
-        expect(hex(await readAfterReset(core, row, "soft", mask))).toBe(hex(row.expected & mask));
+        expect(hex(await readAfterReset(row, "soft", mask))).toBe(hex(row.expected & mask));
       });
     }
   });
 
   it("soft reset keeps the internal port enables when $85 bit 7 is 0", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x85, 0x0a).setNextReg(0x82, 0x5a).setNextReg(0x83, 0xa5).setNextReg(0x84, 0x3c);
     s.reset();
     expect([0x82, 0x83, 0x84, 0x85].map((r) => hex(s.readNextReg(r)))).toEqual(["$5a", "$a5", "$3c", "$0a"]);
@@ -191,14 +191,14 @@ describe.each(ALL_CORES)("NextRegs across a reset - %s core", (core) => {
   it("the user register $7F powers on as $FF; a hard reset (a core reload) restores it", async () => {
     // --- zxnext.vhd:1210 nr_7f_user_register_0 := X"FF", no reset branch; a $02 hard reset reboots the
     // --- FPGA (zxnext_top ~1062), so only the power-on value applies
-    const s = await createSession(core);
+    const s = await createSession();
     expect(hex(s.readNextReg(0x7f)), "power-on").toBe("$ff");
     s.setNextReg(0x7f, 0xa5).hardReset();
     expect(hex(s.readNextReg(0x7f)), "hard reset").toBe("$ff");
   });
 
   it("soft reset clears the clip window indices ($1C)", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     // --- One write to each clip register moves each 2-bit index to 1.
     for (const reg of [0x18, 0x19, 0x1a, 0x1b]) s.setNextReg(reg, 0x10);
     expect(s.readNextReg(0x1c)).toBe(0x55);

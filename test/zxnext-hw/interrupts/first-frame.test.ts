@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * The ULA frame interrupt in the first frame after a reset (catalogue INT-020).
@@ -14,9 +14,9 @@ import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
  * every timing (the earliest, 48K, is at 7 MHz hc 124, 62 T-states in). The vector table and the
  * handler are poked in beforehand so no setup time is spent.
  */
-describe.each(ALL_CORES)("first-frame interrupt - %s core", (core: CoreName) => {
+describe("first-frame interrupt", () => {
   it("INT-020: the ULA frame interrupt ends a HALT already in frame 0 after a hard reset", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const program = await s.loadCode(`
         .org $8000
 Start:  ld a,$b0

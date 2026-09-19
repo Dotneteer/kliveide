@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress, type CoreName } from "../../harness/zxnext";
+import { createSession, displayFileAddress } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, writePalette } from "./_ula-helpers";
 
@@ -20,10 +20,10 @@ import { colours, hex8, PAPER_LEFT, PAPER_TOP, writePalette } from "./_ula-helpe
  *   cell, for the fetches of the next cell: a mode change shows from a cell boundary.
  */
 
-describe.each(ALL_CORES)("Timex port $FF - %s core", (core: CoreName) => {
+describe("Timex port $FF", () => {
   /** A session with an IM 2 handler that counts interrupts in `Ticks`. */
   async function ticking() {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di
@@ -79,7 +79,7 @@ Handler:
   });
 
   it("TMX-007: bit 7 is stored and read through port $FF; $69 has bits 5-0 only; no paging effect", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     const rom = s.peekBytes(0x0000, 16);
     const mmu = () => [0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57].map((r) => s.readNextReg(r));
@@ -102,7 +102,7 @@ Handler:
 
   for (const [timing, nr03] of [["48K", 0x90], ["128K", 0xa0], ["+3", 0xb0], ["Pentagon", 0xc0]] as const) {
     it(`TMX-012: ${timing} timing - port $FF writes need only the port enable ($82 bit 0)`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(" .org $8000\n di\n jr $");
       s.setNextReg(0x03, nr03).runFrames(2);
       s.out(0x00ff, 0x06);
@@ -123,7 +123,7 @@ Handler:
    * HiColor ones; row 96 (the switch line) is not checked.
    */
   it("TMX-008: a mode switch from 0 to 2 in mid-frame changes the rows drawn after it", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di
@@ -174,7 +174,7 @@ WaitUntil:
   it("TMX-009: a mid-line mode switch takes effect at an 8-pixel cell boundary", async () => {
     const ROW = PAPER_TOP + 100;
     async function edge(d: number): Promise<number> {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(" .org $8000\n di\n jr $");
       writePalette(s, [[1, 0xe0], [18, 0x1c]]);
       s.setNextReg(0x14, 0xe3).setNextReg(0x03, 0xb0);

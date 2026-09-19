@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 import { hex, results, romBytes, runCode } from "./_memory-helpers";
 
 /*
@@ -18,10 +18,10 @@ import { hex, results, romBytes, runCode } from "./_memory-helpers";
  * - ~4591-4598: MMU reset layout $FF $FF $0A $0B $04 $05 $00 $01 (MEM-001, tested elsewhere).
  */
 
-describe.each(ALL_CORES)("MMU - %s core", (core) => {
+describe("MMU", () => {
   // --- MEM-002: every slot 2-7 maps a page; another slot mapping the same page sees the same byte
   it("MEM-002: a byte written through one slot is read through another slot mapping that page", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const pages = [0x10, 0x23, 0x37, 0x4c, 0x61, 0xdf];
     for (let slot = 2; slot <= 7; slot++) {
       s.setNextReg(0x50 + slot, pages[slot - 2]).poke(slot * 0x2000, 0x40 + slot).poke(slot * 0x2000 + 0x1fff, 0x80 + slot);
@@ -40,7 +40,6 @@ describe.each(ALL_CORES)("MMU - %s core", (core) => {
   // --- MEM-004 / MEM-024: ROM is read-only; the same LDIR into RAM pages changes them
   it("MEM-004/MEM-024: LDIR over $0000-$3FFF leaves the ROM unchanged", async () => {
     const s = await runCode(
-      core,
       `
         ld hl,$c000              ; bank 0 at $C000: fill with $5A
         ld (hl),$5a
@@ -70,7 +69,6 @@ describe.each(ALL_CORES)("MMU - %s core", (core) => {
 
   it("MEM-005/MEM-024: with RAM pages in slots 0/1 the same LDIR writes RAM; $FF brings the ROM back", async () => {
     const s = await runCode(
-      core,
       `
         nextreg $50,$0a          ; slot 0 = page 10: bank 5, also visible at $4000
         nextreg $51,$1f
@@ -100,7 +98,6 @@ describe.each(ALL_CORES)("MMU - %s core", (core) => {
   // --- MEM-006: pages $E0-$FF have bit 8 of mmu_A21_A13 set
   it("MEM-006: page $DF is the last RAM page; $E0-$FE in slot 0 read the ROM like $FF", async () => {
     const s = await runCode(
-      core,
       `
         nextreg $57,$df
         ld a,$c6
@@ -125,7 +122,7 @@ describe.each(ALL_CORES)("MMU - %s core", (core) => {
     // --- Candidates a wrapping decoder would hit: the same low 5 bits in every 32-page group, and
     // --- the low 7 / low 6 bits of the page.
     const suspects = [0x00, 0x20, 0x40, 0x60, 0x80, 0xa0, 0xc0, 0x60 & 0x3f, 0xe0 & 0x7f];
-    const s = await createSession(core);
+    const s = await createSession();
     for (const p of suspects) s.setNextReg(0x57, p).poke(0xe000, 0x11);
     s.setNextReg(0x57, 0x01);
     for (const page of [0xe0, 0xef, 0xfe]) {

@@ -1,4 +1,4 @@
-import { createSession, displayFileAddress, next8ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, displayFileAddress, next8ToHex, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Shared setup for the ULA screen tests (catalogue §4.8).
@@ -11,8 +11,8 @@ export const PAPER_TOP = 48;
 export const PAPER_LEFT = 96;
 
 /** A session with the CPU parked (DI; JR $), so nothing but the test changes the hardware. */
-export async function parkedSession(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+export async function parkedSession(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s;
 }

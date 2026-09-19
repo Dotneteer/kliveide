@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type JoyButton, type JoySide, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type JoyButton, type JoySide, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Joysticks (catalogue JOY-001 - JOY-008) and the key joystick (KEY-007).
@@ -32,8 +32,8 @@ function nr05(left: number, right: number): number {
   return ((left & 3) << 6) | (((left >> 2) & 1) << 3) | ((right & 3) << 4) | (((right >> 2) & 1) << 1);
 }
 
-async function parked(core: CoreName, left = J.k1, right = J.s000): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(left = J.k1, right = J.s000): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.setNextReg(0x05, nr05(left, right)).runFrames(1);
 }
@@ -64,13 +64,13 @@ async function program(s: NextTestSession, side: JoySide, button: number, entrie
 
 const entry = (row: number, col: number) => (row << 3) | col;
 
-describe.each(ALL_CORES)("joysticks - %s core", (core) => {
+describe("joysticks", () => {
   // -------------------------------------------------------------------------------------------------
   // JOY-006 / JOY-008
   // -------------------------------------------------------------------------------------------------
 
   it("JOY-006: $05 holds a 3-bit mode per joystick in bits 7-6 + 3 and 5-4 + 1", async () => {
-    const s = await parked(core);
+    const s = await parked();
     for (const v of [0x00, 0xca, 0x7a, 0x48, 0x32, 0xfa]) {
       expect(s.setNextReg(0x05, v).readNextReg(0x05) & 0xfa, `$${v.toString(16)}`).toBe(v & 0xfa);
     }
@@ -81,7 +81,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   });
 
   it("JOY-008: with nothing pressed a Kempston port reads 0; a port no mode uses reads $FF", async () => {
-    const s = await parked(core, J.k1, J.k2);
+    const s = await parked(J.k1, J.k2);
     expect([s.in(0x1f), s.in(0x37)]).toEqual([0x00, 0x00]);
     s.setNextReg(0x05, nr05(J.s000, J.cursor));
     expect([s.in(0x1f), s.in(0x37)], "no Kempston / MD mode").toEqual([0xff, 0xff]);
@@ -92,7 +92,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("JOY-001: Kempston 1 on $1F: R L D U B C in bits 0-5; A and START do not show", async () => {
-    const s = await parked(core, J.k1, J.s000);
+    const s = await parked(J.k1, J.s000);
     const bits: Array<[JoyButton, number]> = [["RIGHT", 0x01], ["LEFT", 0x02], ["DOWN", 0x04], ["UP", 0x08], ["B", 0x10], ["C", 0x20], ["A", 0], ["START", 0]];
     for (const [button, bit] of bits) expect(s.joystick("left", button).in(0x1f), button).toBe(bit);
     expect(s.joystick("left", "UP", "RIGHT", "B").in(0x1f), "together").toBe(0x19);
@@ -103,7 +103,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   });
 
   it("JOY-002: Kempston 2 on $37, from either connector", async () => {
-    const s = await parked(core, J.s000, J.k2);
+    const s = await parked(J.s000, J.k2);
     s.joystick("right", "DOWN", "C");
     expect([s.in(0x37), s.in(0x1f)]).toEqual([0x24, 0xff]);
     s.setNextReg(0x05, nr05(J.k2, J.k1)).joystick("left", "UP");
@@ -115,7 +115,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("JOY-005: MD 1 / MD 2 add START and A in bits 7-6; X Y Z MODE are in $B2", async () => {
-    const s = await parked(core, J.md1, J.md2);
+    const s = await parked(J.md1, J.md2);
     s.joystick("left", "START", "A", "C", "B", "UP");
     expect(s.in(0x1f), "MD 1").toBe(0xf8);
     s.joystick("right", "START", "RIGHT");
@@ -132,7 +132,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("JOY-003: mode 011 presses 7 6 8 9 0, mode 000 presses 2 1 3 4 5 (R L D U fire)", async () => {
-    const s = await parked(core, J.s011, J.s000);
+    const s = await parked(J.s011, J.s000);
     const cases: Array<[JoySide, JoyButton, keyof typeof KEY]> = [
       ["left", "RIGHT", "7"], ["left", "LEFT", "6"], ["left", "DOWN", "8"], ["left", "UP", "9"], ["left", "B", "0"],
       ["right", "RIGHT", "2"], ["right", "LEFT", "1"], ["right", "DOWN", "3"], ["right", "UP", "4"], ["right", "B", "5"]
@@ -148,7 +148,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   });
 
   it("JOY-004: Cursor mode presses 8 5 6 7 0 (R L D U fire) without CAPS SHIFT", async () => {
-    const s = await parked(core, J.cursor, J.s000);
+    const s = await parked(J.cursor, J.s000);
     const cases: Array<[JoyButton, keyof typeof KEY]> = [["RIGHT", "8"], ["LEFT", "5"], ["DOWN", "6"], ["UP", "7"], ["B", "0"]];
     for (const [button, key] of cases) {
       s.joystick("left", button);
@@ -163,7 +163,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-007: mode 111 presses the keys programmed through $28/$29/$2B; unprogrammed, none", async () => {
-    const s = await parked(core, J.user, J.user);
+    const s = await parked(J.user, J.user);
     s.joystick("left", "RIGHT", "B", "START", "MODE");
     expect(hexes(rows(s)), "power-on joymap: no keys").toEqual(hexes(rowsWith()));
     // --- left buttons 0-4 (R L D U B): Q A SPACE ENTER SYM; button 7 (START): EDIT (row 3, column 6)
@@ -185,7 +185,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   });
 
   it("KEY-007: the Kempston and MD modes give their other buttons the user-defined keys", async () => {
-    const s = await parked(core, J.k1, J.md1);
+    const s = await parked(J.k1, J.md1);
     await program(s, "left", 6, [entry(6, 0)]); // --- A: ENTER
     await program(s, "right", 9, [entry(1, 0)]); // --- Z: A
     await program(s, "right", 6, [entry(2, 0)]); // --- A on an MD pad: bits 5-7 are port bits, not keys
@@ -196,7 +196,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   });
 
   it("KEY-007: a soft reset keeps the joymap; a hard reset (a core load) restores it", async () => {
-    const s = await parked(core, J.user, J.s000);
+    const s = await parked(J.user, J.s000);
     await program(s, "left", 0, [entry(2, 0)]);
     s.reset().setNextReg(0x05, nr05(J.user, J.s000)).joystick("left", "RIGHT");
     expect(hexes(rows(s)), "soft reset").toEqual(hexes(rowsWith(KEY.Q)));
@@ -211,7 +211,7 @@ describe.each(ALL_CORES)("joysticks - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("JOY-007: $0B reads en & 0 & mode & 000 & bit 0, resets to $01; I/O mode passes raw pins, no keys", async () => {
-    const s = await parked(core, J.md1, J.s011);
+    const s = await parked(J.md1, J.s011);
     expect(s.readNextReg(0x0b), "reset value").toBe(0x01);
     expect(s.setNextReg(0x0b, 0xff).readNextReg(0x0b), "unused bits").toBe(0xb1);
     s.setNextReg(0x0b, 0x80);

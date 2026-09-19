@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Internal port enables, NextRegs $82-$85 (catalogue PORT-001 - PORT-003).
@@ -204,40 +204,40 @@ const SCENARIOS: Scenario[] = [
 
 const enableReg = (bit: number) => 0x82 + (bit >> 3);
 
-async function session(core: CoreName, audio?: boolean): Promise<NextTestSession> {
-  return createSession(core, audio ? { audioSampleRate: 48000 } : {});
+async function session(audio?: boolean): Promise<NextTestSession> {
+  return createSession(audio ? { audioSampleRate: 48000 } : {});
 }
 
 function clearBits(s: NextTestSession, bits: number[]): void {
   for (const bit of bits) s.setNextReg(enableReg(bit), s.readNextReg(enableReg(bit)) & ~(1 << (bit & 7)) & (bit >= 24 ? 0x8f : 0xff));
 }
 
-describe.each(ALL_CORES)("internal port enables - %s core", (core) => {
+describe("internal port enables", () => {
   it("PORT-001: $82-$84 read $FF and $85 reads $8F after a hard reset", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     expect([0x82, 0x83, 0x84, 0x85].map((r) => s.readNextReg(r))).toEqual([0xff, 0xff, 0xff, 0x8f]);
   });
 
   for (const sc of SCENARIOS) {
     it(`PORT-002: bit ${sc.bit} gates ${sc.port}`, async () => {
-      const on = await session(core, sc.audio);
+      const on = await session(sc.audio);
       clearBits(on, sc.alsoClear ?? []);
       expect(await sc.observe(on), "enabled").toEqual(sc.enabled);
 
-      const off = await session(core, sc.audio);
+      const off = await session(sc.audio);
       clearBits(off, [...(sc.alsoClear ?? []), sc.bit]);
       expect(await sc.observe(off), "disabled").toEqual(sc.disabled);
     });
   }
 
   it("PORT-003: with $85 bit 7 set a soft reset re-enables every port", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x82, 0x00).setNextReg(0x83, 0x12).setNextReg(0x84, 0x34).setNextReg(0x85, 0x85).reset();
     expect([0x82, 0x83, 0x84, 0x85].map((r) => s.readNextReg(r))).toEqual([0xff, 0xff, 0xff, 0x8f]);
   });
 
   it("PORT-003: with $85 bit 7 clear a soft reset keeps the enables, and bit 7", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x82, 0x00).setNextReg(0x83, 0x12).setNextReg(0x84, 0x34).setNextReg(0x85, 0x05).reset();
     expect([0x82, 0x83, 0x84, 0x85].map((r) => s.readNextReg(r))).toEqual([0x00, 0x12, 0x34, 0x05]);
   });

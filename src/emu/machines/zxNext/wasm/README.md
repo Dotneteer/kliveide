@@ -37,9 +37,9 @@ The runtime switch has two supported values:
   remains available as a compatibility fallback and parity oracle.
 - `zxnextImplementation: "wasm"` selects the production WASM backend.
 
-Diagnostics from `ZxNextWasmV2Machine.getWasmV2Diagnostics()` report the
-migrated public surfaces, default readiness, and any future rollout blockers. Since 2026-09-19
-every surface is migrated, `defaultReady` is `true` and no blocker is left.
+Diagnostics from `ZxNextWasmV2Machine.getWasmV2Diagnostics()` report the runtime's sizes,
+frame and tact counters, and the last stop reason. (The rollout fields - migrated surfaces,
+default readiness, blockers - were removed with the TypeScript core's parity tests, 2026-09-19.)
 
 ## Maintenance Policy
 

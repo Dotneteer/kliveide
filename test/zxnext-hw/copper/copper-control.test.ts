@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, next8ToHex as next8, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { next8ToHex as next8, type NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -47,15 +47,15 @@ const TIMINGS: Timing[] = [
   { name: "Pentagon", nr03: 0xc0, nr05: 0x00, maxVc: 319, maxHc: 447 }
 ];
 
-async function timedSession(core: CoreName, t: Timing): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function timedSession(t: Timing): Promise<NextTestSession> {
+  const s = await parkedSession();
   // --- a timing change applies from the next frame
   return s.setNextReg(0x03, t.nr03).setNextReg(0x05, t.nr05).runFrames(2);
 }
 
-describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
+describe("copper control", () => {
   it("COP-002: $61/$62 read the 11-bit write address and the mode; $60 writes move it on", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x61, 0x34).setNextReg(0x62, 0x05);
     expect([s.readNextReg(0x61), s.readNextReg(0x62)]).toEqual([0x34, 0x05]);
     s.setNextReg(0x62, 0x3f); // --- bits 5-3 are not stored
@@ -70,7 +70,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   });
 
   it("COP-003: the write address wraps from $7FF (instruction 1023) to 0", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     upload(s, [MOVE(0x14, 0x11), HALT]);
     s.setNextReg(0x61, 0xfe).setNextReg(0x62, 0x07);
     for (const w of [MOVE(0x4a, 0x22), MOVE(0x14, 0x5a)]) s.setNextReg(0x60, w >> 8).setNextReg(0x60, w & 0xff);
@@ -81,7 +81,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
 
   for (const t of TIMINGS) {
     it(`COP-007: ${t.name}: WAIT line ${t.maxVc} matches, line ${t.maxVc + 1} and 400 never do`, async () => {
-      const s = await timedSession(core, t);
+      const s = await timedSession(t);
       const reached = (line: number) => {
         upload(s, [WAIT(line), MOVE(0x14, 0x5a), HALT]);
         s.setNextReg(0x14, 0xe3).setNextReg(0x62, 0xc0).runFrames(3);
@@ -92,7 +92,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
 
     const lastH = Math.floor((t.maxHc - 12) / 8);
     it(`COP-008: ${t.name}: WAIT H ${lastH} (hc ${lastH * 8 + 12}) matches; H ${lastH + 1} and 63 never do`, async () => {
-      const s = await timedSession(core, t);
+      const s = await timedSession(t);
       const reached = (h: number) => {
         upload(s, [WAIT(100, h), MOVE(0x14, 0x5a), HALT]);
         s.setNextReg(0x14, 0xe3).setNextReg(0x62, 0xc0).runFrames(3);
@@ -103,7 +103,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   }
 
   it("COP-009: mode 11 runs the list again every frame; 01 and 10 run it once", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     const again = (mode: number) => {
       upload(s, [MOVE(0x14, 0x5a), HALT]);
       s.setNextReg(0x14, 0xe3).setNextReg(0x62, mode).runFrames(2);
@@ -114,7 +114,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
     expect(again(0xc0), "11").toEqual([0x5a, 0x5a]);
     expect(again(0x40), "01").toEqual([0x5a, 0x33]);
     // --- a change to 10 keeps the address (COP-010), so 10 needs a copper that has not run: address 0
-    const f = await parkedSession(core);
+    const f = await parkedSession();
     upload(f, [MOVE(0x14, 0x5a), HALT]);
     f.setNextReg(0x14, 0xe3).setNextReg(0x62, 0x80).runFrames(2);
     const first = f.readNextReg(0x14);
@@ -123,7 +123,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   });
 
   it("COP-010: only a change of mode to 01 or 11 restarts the list; rewriting the mode, 00 and 10 keep the address", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     upload(s, [MOVE(0x14, 0x5a), HALT]);
     s.setNextReg(0x62, 0x40).runFrames(2); // --- ran once: the address is at the HALT
     const after = (mode: number) => {
@@ -147,7 +147,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
    * continues there.
    */
   it("COP-011: a copper MOVE to $62 stops the copper after one more MOVE; 10 continues from there", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     upload(s, [MOVE(0x62, 0x00), MOVE(0x14, 0x5a), MOVE(0x4a, 0x5a), HALT]);
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3).setNextReg(0x62, 0x40).runFrames(2);
     expect(
@@ -165,7 +165,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   for (const t of TIMINGS) {
     for (const offset of [0, 32]) {
       it(`COP-012${offset ? " / COP-013" : ""}: ${t.name}${offset ? `, $64 = ${offset}` : ""}: bands at the same display rows`, async () => {
-        const s = await timedSession(core, t);
+        const s = await timedSession(t);
         const colours = [0x00, 0xe0, 0x1c, 0x03, 0xfc, 0x1f, 0xa2, 0xff];
         const list: number[] = [];
         colours.forEach((c, k) => {
@@ -193,7 +193,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   }
 
   it("COP-014: a copper MOVE reaches any register below $80: MMU slot 6 and the CPU speed", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x56, 10).poke(0xc000, 0x5a).setNextReg(0x56, 0x00).poke(0xc000, 0x11);
     upload(s, [MOVE(0x56, 10), MOVE(0x07, 0x02), HALT]).setNextReg(0x07, 0x00).setNextReg(0x62, 0x40).runFrames(2);
     expect({ c000: s.peek(0xc000), mmu6: s.readNextReg(0x56), speed: s.readNextReg(0x07) & 0x03 }).toEqual({
@@ -204,7 +204,7 @@ describe.each(ALL_CORES)("copper control - %s core", (core: CoreName) => {
   });
 
   it("COP-015: CPU NextReg writes are not lost while the copper writes a register every other tick", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     // --- WAIT line 20, then 1000 MOVEs to $4A (one write every 2 ticks for ~2000 ticks), HALT
     const list = [WAIT(20)];
     for (let i = 0; i < 1000; i++) list.push(MOVE(0x4a, i & 0xff));

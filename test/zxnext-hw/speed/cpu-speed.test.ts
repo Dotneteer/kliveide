@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * CPU speed - NextReg $07, the expansion bus override and the $06 hotkey enable (catalogue
@@ -121,8 +121,8 @@ CounterEnd:
 }
 
 /** Runs `counterProgram` and returns the iteration count of the measured frame. */
-async function count(core: CoreName, opts: CounterOptions): Promise<number> {
-  const s = await createSession(core);
+async function count(opts: CounterOptions): Promise<number> {
+  const s = await createSession();
   await s.loadCode(counterProgram(opts), { entry: "Start" });
   s.runUntilReady({ maxFrames: 10 });
   return s.peekWord(s.symbol("Result"));
@@ -141,10 +141,10 @@ const READ_NEXTREG = (reg: number, store: string) => `
 const within = (actual: number, expected: number, fraction: number) =>
   Math.abs(actual - expected) <= expected * fraction;
 
-describe.each(ALL_CORES)("CPU speed - %s core", (core) => {
+describe("CPU speed", () => {
   // --- SPD-001: ~5849 - bits 1-0 the programmed speed, bits 5-4 the actual one, the rest 0
   it("SPD-001: $07 reads the programmed speed in bits 1-0 and the actual speed in bits 5-4", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const writes = [0x00, 0x01, 0x02, 0x03, 0xfd, 0xfe, 0x00];
     await s.loadCode(`
         .org $8000
@@ -168,7 +168,7 @@ ${writes
   });
 
   it("SPD-001: a soft reset returns the speed to 3.5 MHz", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x07, 0x03).reset();
     expect(s.readNextReg(0x07)).toBe(0x00);
   });
@@ -176,7 +176,7 @@ ${writes
   // --- SPD-002: the loop runs from bank 7 (no wait states) with 48K timing (not contended)
   it("SPD-002: the loop count per frame doubles with each speed step", async () => {
     const counts: number[] = [];
-    for (const speed of SPEEDS) counts.push(await count(core, { startSpeed: speed }));
+    for (const speed of SPEEDS) counts.push(await count({ startSpeed: speed }));
 
     // --- One frame minus the interrupt handling (~200 tacts) at 35 tacts per iteration
     expect(counts[0], "3.5 MHz iterations per 48K frame").toBeGreaterThan((FRAME_TACTS_48K - 400) / LOOP_TACTS);
@@ -188,8 +188,8 @@ ${writes
   });
 
   it("SPD-002: at 28 MHz every SRAM read adds a wait state", async () => {
-    const base = await count(core, { startSpeed: 0 });
-    const fast = await count(core, { startSpeed: 3, page: SRAM_PAGE });
+    const base = await count({ startSpeed: 0 });
+    const fast = await count({ startSpeed: 3, page: SRAM_PAGE });
     // --- 8x the clock, but 35 + 8 tacts per iteration instead of 35
     const expected = (base * 8 * LOOP_TACTS) / (LOOP_TACTS + LOOP_READS);
     expect(within(fast, expected, 0.01), `28 MHz from SRAM: ${fast}, expected ~${expected.toFixed(0)}`).toBe(true);
@@ -198,7 +198,7 @@ ${writes
   // --- SPD-003: the frame is 28 MHz clocks; the ULA interrupt comes once per frame at every speed
   for (const speed of SPEEDS) {
     it(`SPD-003: ${MHZ[speed]} MHz takes one ULA interrupt per frame`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(`
         .org $8000
 Start:
@@ -238,7 +238,7 @@ Ticks:  .defb 0
    */
   for (const speed of SPEEDS) {
     it(`SPD-003: ${MHZ[speed]} MHz never misses the pulse between 23-tact instructions`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(`
         .org $8000
 Start:
@@ -284,8 +284,8 @@ Ticks:  .defb 0
   ];
   for (const [from, to, delay] of SWITCHES) {
     it(`SPD-004: switching ${MHZ[from]} -> ${MHZ[to]} MHz mid-frame speeds up the rest of the frame`, async () => {
-      const base = await count(core, { startSpeed: 0 });
-      const measured = await count(core, {
+      const base = await count({ startSpeed: 0 });
+      const measured = await count({
         startSpeed: from,
         middle: `
         ld hl,${delay}
@@ -304,7 +304,7 @@ Delay:  dec hl                   ; 6 + 4 + 4 + 12 = 26 tacts
 
   // --- SPD-005: with $80 bit 7 set cpu_speed takes expbus_speed, which is always "00"
   it("SPD-005: the expansion bus forces the actual speed to 3.5 MHz", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         nextreg $80,$80          ; bus on, then ask for 28 MHz
@@ -325,14 +325,14 @@ Delay:  dec hl                   ; 6 + 4 + 4 + 12 = 26 tacts
   });
 
   it("SPD-005: with the expansion bus on, 28 MHz runs the loop at the 3.5 MHz rate", async () => {
-    const base = await count(core, { startSpeed: 0 });
-    const bus = await count(core, { startSpeed: 3, setup: "        nextreg $80,$80" });
+    const base = await count({ startSpeed: 0 });
+    const bus = await count({ startSpeed: 3, setup: "        nextreg $80,$80" });
     expect(within(bus, base, 0.01), `${bus} with the bus on, ${base} at 3.5 MHz`).toBe(true);
   });
 
   // --- SPD-006: $06 bit 7 is the F5/F6/F8 hotkey enable; ~5846 reads it back
   it("SPD-006: $06 bit 7 reads back and does not change the speed", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     expect(s.readNextReg(0x06) & 0x80, "hard reset").toBe(0x80);
     s.setNextReg(0x07, 0x02);
     const others = s.readNextReg(0x06) & 0x7f;
@@ -346,7 +346,7 @@ Delay:  dec hl                   ; 6 + 4 + 4 + 12 = 26 tacts
 
   // --- ~5736: F8 adds 1 to the 2-bit nr_07_cpu_speed, so 28 MHz wraps to 3.5 MHz
   it("SPD-006: with $06 bit 7 set, F8 steps the speed and wraps", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const seen: number[] = [];
     for (let i = 0; i < 5; i++) {
       await s.pressHotkey("F8");
@@ -357,7 +357,7 @@ Delay:  dec hl                   ; 6 + 4 + 4 + 12 = 26 tacts
 
   // --- ~6290-6293: F5, F6 and F8 are all ANDed with nr_06_hotkey_cpu_speed_en
   it("SPD-006: with $06 bit 7 clear, F5, F6 and F8 do nothing", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x06, s.readNextReg(0x06) & 0x7f);
     await s.pressHotkey("F8");
     await s.pressHotkey("F5");
@@ -375,11 +375,11 @@ Delay:  dec hl                   ; 6 + 4 + 4 + 12 = 26 tacts
  * SPD-007: the audio is sampled on the 28 MHz frame clock, so a frame yields the same number of
  * samples at every CPU speed.
  */
-describe.each(ALL_CORES)("CPU speed and audio - %s core", (core) => {
+describe("CPU speed and audio", () => {
   it("SPD-007: audio() returns the same number of samples per frame at every speed", async () => {
     const perFrame: number[] = [];
     for (const speed of SPEEDS) {
-      const s: NextTestSession = await createSession(core, { audioSampleRate: 48000 });
+      const s: NextTestSession = await createSession({ audioSampleRate: 48000 });
       await s.loadCode(`
         .org $8000
         nextreg $07,${speed}

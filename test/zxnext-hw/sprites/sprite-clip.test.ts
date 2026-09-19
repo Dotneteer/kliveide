@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 
 /*
@@ -22,8 +22,8 @@ import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 const SPRITE = 0x1c;
 const NONE = 0xe0;
 
-async function bigSprite(core: CoreName): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function bigSprite(): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, [[1, SPRITE]], 0x20);
   s.setNextReg(0x43, 0x00).setNextReg(0x4a, NONE).setNextReg(0x68, 0x80).setNextReg(0x4b, 0xe3);
   s.out(0x303b, 0x00);
@@ -58,21 +58,21 @@ function edges(s: NextTestSession, row: number, col: number) {
   return { x: xs.length ? [xs[0], xs[xs.length - 1]] : [], y: ys.length ? [ys[0], ys[ys.length - 1]] : [] };
 }
 
-describe.each(ALL_CORES)("sprite clip window edges - %s core", (core) => {
+describe("sprite clip window edges", () => {
   it("over the border, border clip: x from x1*2 to x2*2+1, y from y1 to y2", async () => {
-    const s = await bigSprite(core);
+    const s = await bigSprite();
     clip(s, 20, 40, 30, 90).setNextReg(0x15, 0x23).runFrames(2);
     expect(edges(s, 60, 60)).toEqual({ x: [40, 81], y: [30, 90] });
   });
 
   it("over the border, no border clip: the window registers do not apply", async () => {
-    const s = await bigSprite(core);
+    const s = await bigSprite();
     clip(s, 20, 40, 30, 90).setNextReg(0x15, 0x03).runFrames(2);
     expect(edges(s, 60, 60)).toEqual({ x: [8, 135], y: [8, 135] });
   });
 
   it("not over the border: the window + 32, and $15 bit 5 changes nothing", async () => {
-    const s = await bigSprite(core);
+    const s = await bigSprite();
     clip(s, 10, 40, 20, 60).setNextReg(0x15, 0x01).runFrames(2);
     expect(edges(s, 70, 60), "$15 = $01").toEqual({ x: [42, 72], y: [52, 92] });
     s.setNextReg(0x15, 0x21).runFrames(1);
@@ -80,13 +80,13 @@ describe.each(ALL_CORES)("sprite clip window edges - %s core", (core) => {
   });
 
   it("not over the border: an all-zero window leaves the single pixel (32, 32)", async () => {
-    const s = await bigSprite(core);
+    const s = await bigSprite();
     clip(s, 0, 0, 0, 0).setNextReg(0x15, 0x01).runFrames(2);
     expect(edges(s, 32, 32)).toEqual({ x: [32, 32], y: [32, 32] });
   });
 
   it("over the border, border clip: an all-$FF x2 / y2 reaches x 319 and y 255", async () => {
-    const s = await bigSprite(core);
+    const s = await bigSprite();
     // --- a sprite at the bottom right: (200, 136), 128 x 128 (clipped by the 320 x 256 area)
     s.out(0x303b, 0x00);
     for (const b of [200, 136, 0x00, 0xc0, 0x1e]) s.out(0x0057, b);

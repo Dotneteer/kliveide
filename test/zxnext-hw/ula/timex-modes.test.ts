@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, displayFileAddress, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 import { colours, DISTINCT_32, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -23,8 +23,8 @@ import { colours, DISTINCT_32, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSe
  *   by scroll_x(7:3): screen hires x (q + 2 * $26 + fine) mod 512 shows at display hires x q.
  */
 
-async function screen(core: CoreName, mode: number): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function screen(mode: number): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, DISTINCT_32.map((v, i) => [i, v]));
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
   fillScreen(s, 0x00, 0x38);
@@ -48,10 +48,10 @@ function xsOf(s: NextTestSession, line: number, c: string): number[] {
   return xs;
 }
 
-describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
+describe("Timex screen modes", () => {
   /** Distinct contents in all four areas: which one a mode shows is visible in cell (0, 0). */
   async function fourAreas(mode: number): Promise<NextTestSession> {
-    const s = await screen(core, mode);
+    const s = await screen(mode);
     for (let line = 0; line < 8; line++) {
       s.poke(displayFileAddress(line, 0), 0xf0); // --- $4000: ink left
       s.poke(displayFileAddress(line, 0) + 0x2000, 0x0f); // --- $6000: ink right
@@ -95,7 +95,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   });
 
   it("TMX-004: mode 6 (HiRes) shows the $4000 and $6000 bytes of each column side by side, one buffer pixel per bit", async () => {
-    const s = await screen(core, 6);
+    const s = await screen(6);
     s.poke(displayFileAddress(0, 0), 0x80).poke(displayFileAddress(0, 0) + 0x2000, 0x01);
     s.poke(displayFileAddress(0, 5), 0x10).poke(displayFileAddress(0, 5) + 0x2000, 0x40);
     s.poke(displayFileAddress(100, 31), 0x01).poke(displayFileAddress(100, 31) + 0x2000, 0x80);
@@ -108,7 +108,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
 
   for (const n of [0, 1, 2, 3, 4, 5, 6, 7]) {
     it(`TMX-005: mode 6 with ink ${n}: ink is BRIGHT ink ${n}, paper and border BRIGHT paper ${7 - n}`, async () => {
-      const s = await screen(core, 6 | (n << 3));
+      const s = await screen(6 | (n << 3));
       s.poke(displayFileAddress(0, 0), 0xff);
       s.runFrames(2);
       expect({
@@ -120,7 +120,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   }
 
   it("TMX-005: HiRes ink and paper follow palette writes made after the mode was set", async () => {
-    const s = await screen(core, 6 | (2 << 3)); // --- ink 2: palette 10 ink, 29 paper
+    const s = await screen(6 | (2 << 3)); // --- ink 2: palette 10 ink, 29 paper
     s.poke(displayFileAddress(0, 0), 0xff);
     writePalette(s, [[10, 0x1c], [29, 0xe0]]);
     s.runFrames(2);
@@ -135,7 +135,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   // --- the second byte from the attribute address ($5800 / $7800, or $6000 + pixel offset with bit 1)
   for (const [mode, second] of [[4, 0x5800], [5, 0x7800], [7, 0x6000]] as const) {
     it(`TMX-013: mode ${mode} (HiRes) shows the ${mode & 1 ? "$6000" : "$4000"} byte, then the ${second.toString(16).toUpperCase()} byte`, async () => {
-      const s = await screen(core, mode);
+      const s = await screen(mode);
       s.poke(0x5800, new Array(0x300).fill(0x00)).poke(0x7800, new Array(0x300).fill(0x00)); // --- no stray ink
       s.poke(displayFileAddress(0, 0), 0x80).poke(displayFileAddress(0, 0) + 0x2000, 0x40);
       if (second !== 0x6000) s.poke(second, 0x01);
@@ -148,7 +148,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
 
   for (const [scroll, fine] of [[0, 0], [1, 0], [3, 0], [8, 0], [255, 0], [0, 1], [1, 1]] as const) {
     it(`TMX-010: HiRes with $26 = ${scroll}${fine ? " and the half-pixel scroll" : ""} moves ${2 * scroll + fine} hires pixels`, async () => {
-      const s = await screen(core, 6);
+      const s = await screen(6);
       // --- screen hires x: 0 ($4000 col 0 bit 7), 15 ($6000 col 0 bit 0), 100 ($4000 col 6 bit 4), 505 ($6000 col 31 bit 1)
       s.poke(displayFileAddress(0, 0), 0x80).poke(displayFileAddress(0, 0) + 0x2000, 0x01);
       s.poke(displayFileAddress(0, 6), 0x08).poke(displayFileAddress(0, 31) + 0x2000, 0x40);
@@ -160,7 +160,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   }
 
   it("TMX-010: HiColor with the half-pixel scroll moves one buffer pixel left", async () => {
-    const s = await screen(core, 2);
+    const s = await screen(2);
     s.poke(displayFileAddress(10, 12), 0x08).poke(displayFileAddress(10, 12) + 0x2000, 0x38); // --- screen x 100
     s.runFrames(2);
     expect(xsOf(s, 10, ink(0)), "no fine scroll").toEqual([296, 297]);
@@ -169,7 +169,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   });
 
   it("TMX-011: HiColor attributes go through the ULANext format", async () => {
-    const s = await screen(core, 2);
+    const s = await screen(2);
     // --- format $07: ink = attr & 7, paper = $80 | attr >> 3; line 0 attr $5B -> ink 3, paper $8B;
     // --- line 1 attr $A7 -> ink 7, paper $94
     writePalette(s, [[3, 0xe0], [0x8b, 0x1c], [7, 0xfc], [0x94, 0x1f]]);
@@ -180,7 +180,7 @@ describe.each(ALL_CORES)("Timex screen modes - %s core", (core: CoreName) => {
   });
 
   it("TMX-013: the 128K shadow screen forces mode 0 (bank 7 has no second display file)", async () => {
-    const s = await screen(core, 1);
+    const s = await screen(1);
     // --- bank 7 at $C000: its cell (0, 0) ink left, attribute INK 5 PAPER 6
     s.out(0x7ffd, 0x07);
     for (let line = 0; line < 8; line++) s.poke(displayFileAddress(line, 0) + 0x8000, 0xf0);

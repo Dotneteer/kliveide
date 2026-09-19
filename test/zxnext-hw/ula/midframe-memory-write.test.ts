@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress } from "../../harness/zxnext";
+import { createSession, displayFileAddress } from "../../harness/zxnext";
 
 /*
  * B8 - screen memory written mid-frame shows from the beam position on ("racing the beam").
@@ -16,9 +16,9 @@ import { ALL_CORES, createSession, displayFileAddress } from "../../harness/zxne
  * So character rows 0-11 (buffer rows 48-143) show blue and rows 13-23 (buffer rows 152-239) red;
  * row 12 is written while it is being drawn and is not checked. Column 0 = buffer x 96-111.
  */
-describe.each(ALL_CORES)("mid-frame attribute writes - %s core", (core) => {
+describe("mid-frame attribute writes", () => {
   it("rows drawn before the write keep the old colour, rows after it show the new one", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         di
@@ -95,7 +95,7 @@ describe.each(ALL_CORES)("mid-frame attribute writes - %s core", (core) => {
    * reaches them: ink. Rows 96-139 are not checked.
    */
   it("ULA-009: bitmap rows drawn before the write stay blank, rows drawn after it show the new bytes", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         di

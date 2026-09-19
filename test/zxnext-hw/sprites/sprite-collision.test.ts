@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * Sprite collision flag, driven only through the hardware interface on the real machine (both cores).
@@ -13,7 +13,7 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
  * Replaces the engine-abstraction style of test/zxnext/sprite-collision-scenarios.ts: no
  * `completeFrame` stand-in - the frames run, and the program talks to the ports itself.
  */
-describe.each(ALL_CORES)("sprites: collision flag - %s core", (core) => {
+describe("sprites: collision flag", () => {
   const program = (secondX: number) => `
       .org $8000
       nextreg $15,$01          ; sprites visible, SLU
@@ -46,7 +46,7 @@ describe.each(ALL_CORES)("sprites: collision flag - %s core", (core) => {
   `;
 
   it("is set when two opaque sprites overlap, and reading $303B clears it", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(program(72)); // --- 8 pixels to the right: they overlap
     s.runUntilReady().runFrames(2);
     expect(s.in(0x303b) & 0x01).toBe(1);
@@ -54,7 +54,7 @@ describe.each(ALL_CORES)("sprites: collision flag - %s core", (core) => {
   });
 
   it("stays clear when the sprites do not overlap", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(program(96)); // --- 16-pixel sprites, 32 pixels apart
     s.runUntilReady().runFrames(2);
     expect(s.in(0x303b) & 0x01).toBe(0);

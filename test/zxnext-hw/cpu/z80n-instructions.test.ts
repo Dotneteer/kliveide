@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession, type WritableRegisters } from "../../harness/zxnext";
+import { createSession, type NextTestSession, type WritableRegisters } from "../../harness/zxnext";
 
 /*
  * The Z80N extended instructions on the whole machine (catalogue CPU-001 - CPU-017).
@@ -14,8 +14,8 @@ const FLAGS = 0xd7;
 const S = 0x80, Z = 0x40, H = 0x10, PV = 0x04, C = 0x01;
 
 /** Runs `code` from $8000 with the given registers until `Done`. */
-async function run(core: CoreName, code: string, regs: WritableRegisters = {}): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function run(code: string, regs: WritableRegisters = {}): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(`
         .org $8000
 ${code}
@@ -27,11 +27,11 @@ Done:   jr Done
 
 const hex16 = (v: number) => `$${v.toString(16).padStart(4, "0")}`;
 
-describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
+describe("Z80N instructions", () => {
   // --- CPU-001: ED 23, t80n.vhd ~700: A(3:0) & A(7:4); no flag change
   it("CPU-001: SWAPNIB swaps the nibbles of A and leaves the flags", async () => {
     for (const [a, expected] of [[0x1f, 0xf1], [0xa5, 0x5a], [0x00, 0x00]]) {
-      const r = (await run(core, "        swapnib", { a, f: 0xd7 })).registers();
+      const r = (await run("        swapnib", { a, f: 0xd7 })).registers();
       expect([r.a, r.f], `A=$${a.toString(16)}`).toEqual([expected, 0xd7]);
     }
   });
@@ -39,7 +39,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
   // --- CPU-002: ED 24, ~704: bit order reversed. (ED 26 MIRROR DE is commented out in the VHDL.)
   it("CPU-002: MIRROR A reverses the bits of A and leaves the flags", async () => {
     for (const [a, expected] of [[0x01, 0x80], [0xc3, 0xc3], [0x1e, 0x78]]) {
-      const r = (await run(core, "        mirror a", { a, f: 0x00 })).registers();
+      const r = (await run("        mirror a", { a, f: 0x00 })).registers();
       expect([r.a, r.f], `A=$${a.toString(16)}`).toEqual([expected, 0x00]);
     }
   });
@@ -53,7 +53,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
     ];
     cases[2][2] = H | PV;
     for (const [a, n, flags] of cases) {
-      const r = (await run(core, `        test $${n.toString(16)}`, { a, f: C })).registers();
+      const r = (await run(`        test $${n.toString(16)}`, { a, f: C })).registers();
       expect([r.a, r.f & FLAGS], `$${a.toString(16)} & $${n.toString(16)}`).toEqual([a, flags]);
     }
   });
@@ -75,7 +75,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
   ];
   for (const [op, de, b, expected] of SHIFTS) {
     it(`CPU-004: ${op.toUpperCase()} with DE=${hex16(de)}, B=${b} -> ${hex16(expected)}`, async () => {
-      const r = (await run(core, `        ${op}`, { de, bc: b << 8, f: 0x55 })).registers();
+      const r = (await run(`        ${op}`, { de, bc: b << 8, f: 0x55 })).registers();
       expect([hex16(r.de), r.f]).toEqual([hex16(expected), 0x55]);
     });
   }
@@ -83,7 +83,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
   // --- CPU-005: ED 30, ~727: DE = D * E; no flag change
   it("CPU-005: MUL D,E multiplies D by E into DE", async () => {
     for (const [de, expected] of [[0xffff, 0xfe01], [0x1234, 0x03a8], [0x00ff, 0x0000], [0x0101, 0x0001]]) {
-      const r = (await run(core, "        mul d,e", { de, f: 0xd7 })).registers();
+      const r = (await run("        mul d,e", { de, f: 0xd7 })).registers();
       expect([hex16(r.de), r.f], hex16(de)).toEqual([hex16(expected), 0xd7]);
     }
   });
@@ -102,14 +102,14 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
   ];
   for (const [pair, value, a, expected] of ADD_A) {
     it(`CPU-006: ADD ${pair.toUpperCase()},A: ${hex16(value)} + $${a.toString(16)} -> ${hex16(expected)}, carry cleared`, async () => {
-      const r = (await run(core, `        add ${pair},a`, { [pair]: value, a, f: 0xd7 })).registers();
+      const r = (await run(`        add ${pair},a`, { [pair]: value, a, f: 0xd7 })).registers();
       expect([hex16(r[pair]), r.f & FLAGS]).toEqual([hex16(expected), 0xd7 & ~C]);
     });
   }
 
   // --- CPU-007: ED 34-36 nn nn, ~1074-1115: rr + nn; no flag change
   it("CPU-007: ADD HL/DE/BC,nn add a 16-bit value, wrapping at $FFFF", async () => {
-    const r = (await run(core, "        add hl,$0020\n        add de,$1000\n        add bc,$ffff", {
+    const r = (await run("        add hl,$0020\n        add de,$1000\n        add bc,$ffff", {
       hl: 0xfff0, de: 0x1234, bc: 0x0001, f: 0xd7
     })).registers();
     expect([hex16(r.hl), hex16(r.de), hex16(r.bc), r.f]).toEqual(["$0010", "$2234", "$0000", 0xd7]);
@@ -117,7 +117,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
 
   // --- CPU-008: ED 8A hi lo, mcode ~1920: the high byte (first operand) is pushed first
   it("CPU-008: PUSH nn pushes a 16-bit immediate", async () => {
-    const s = await run(core, "        push $1234");
+    const s = await run("        push $1234");
     const r = s.registers();
     expect(hex16(r.sp)).toBe("$bfee");
     expect([s.peek(0xbfee), s.peek(0xbfef)]).toEqual([0x34, 0x12]);
@@ -125,7 +125,7 @@ describe.each(ALL_CORES)("Z80N instructions - %s core", (core) => {
 
   // --- CPU-009: ED 90, mcode ~2518: OUT (C),(HL); HL+1; no B decrement, no flag write
   it("CPU-009: OUTINB outputs (HL) to port BC and increments HL; B and the flags stay", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         outinb
@@ -140,7 +140,7 @@ Done:   jr Done
 
   // --- CPU-010: NEXTREG from a page mapped by the MMU behaves as from anywhere else
   it("CPU-010: NEXTREG n,v and NEXTREG n,A run from an MMU-paged bank", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.setNextReg(0x56, 0x20); // --- page $20 at $C000
     s.poke(0xc000, [0xed, 0x91, 0x7f, 0x42, 0xed, 0x92, 0x4a, 0x18, 0xfe]); // nextreg $7f,$42 / nextreg $4a,a / jr $
@@ -159,7 +159,7 @@ Done:   jr Done
   ];
   for (const [hl, expected] of PIXELDN) {
     it(`CPU-011: PIXELDN ${hex16(hl)} -> ${hex16(expected)}`, async () => {
-      const r = (await run(core, "        pixeldn", { hl, f: 0xd7 })).registers();
+      const r = (await run("        pixeldn", { hl, f: 0xd7 })).registers();
       expect([hex16(r.hl), r.f]).toEqual([hex16(expected), 0xd7]);
     });
   }
@@ -170,13 +170,13 @@ Done:   jr Done
   ];
   for (const [de, expected] of PIXELAD) {
     it(`CPU-011: PIXELAD with D=y, E=x = ${hex16(de)} -> ${hex16(expected)}`, async () => {
-      const r = (await run(core, "        pixelad", { de, f: 0xd7 })).registers();
+      const r = (await run("        pixelad", { de, f: 0xd7 })).registers();
       expect([hex16(r.hl), r.f]).toEqual([hex16(expected), 0xd7]);
     });
   }
   it("CPU-011: SETAE sets A to the pixel mask of E & 7", async () => {
     for (const [e, expected] of [[0, 0x80], [7, 0x01], [0xfb, 0x10]]) {
-      const r = (await run(core, "        setae", { de: e, f: 0xd7 })).registers();
+      const r = (await run("        setae", { de: e, f: 0xd7 })).registers();
       expect([r.a, r.f], `E=$${e.toString(16)}`).toEqual([expected, 0xd7]);
     }
   });
@@ -186,7 +186,7 @@ Done:   jr Done
    * are those of the next instruction's address. Port $243B reads back the selected register number.
    */
   it("CPU-012: JP (C) jumps inside the 16K block to (IN C) * 64", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         ld bc,$243b
@@ -202,7 +202,7 @@ Done:   jr Done
    */
   const SRC = [0x11, 0xaa, 0x22, 0xaa, 0x33];
   async function copy(op: string, hl: number, bc: number) {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n ${op}\nDone: jr Done`);
     s.poke(0xc000, SRC).poke(0xd000, [0xee, 0xee, 0xee, 0xee, 0xee]);
     s.setRegisters({ a: 0xaa, hl, de: 0xd000, bc, f: 0 }).runTo("Done");
@@ -234,7 +234,7 @@ Done:   jr Done
    * indexed by DE - writes it to (DE) unless it equals A, DE+1, BC-1, repeats while BC != 0; HL stays.
    */
   it("CPU-014: LDPIRX repeats an 8-byte pattern indexed by E, skipping A", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n ldpirx\nDone: jr Done`);
     s.poke(0xc000, [1, 2, 3, 4, 0xaa, 6, 7, 8]).poke(0xd000, new Array(10).fill(0xee));
     s.setRegisters({ a: 0xaa, hl: 0xc000, de: 0xd003, bc: 6 }).runTo("Done");
@@ -249,11 +249,11 @@ Done:   jr Done
    * carry is the carry out of D + 1.
    */
   it("CPU-015: LDWS copies (HL) to (DE), increments L and D; flags from INC D", async () => {
-    const a = await run(core, "        ldws", { hl: 0xc0ff, de: 0xd010, f: C });
+    const a = await run("        ldws", { hl: 0xc0ff, de: 0xd010, f: C });
     const r = a.registers();
     expect([hex16(r.hl), hex16(r.de), a.peek(0xd010)]).toEqual(["$c000", "$d110", a.peek(0xc0ff)]);
     expect(r.f & FLAGS, "D $D0 -> $D1: S; carry cleared").toBe(S);
-    const b = await run(core, "        ldws", { hl: 0xc000, de: 0xff10, f: 0 });
+    const b = await run("        ldws", { hl: 0xc000, de: 0xff10, f: 0 });
     expect(b.registers().f & FLAGS, "D $FF -> $00: Z, H, C").toBe(Z | H | C);
   });
 
@@ -261,7 +261,7 @@ Done:   jr Done
   const NOPS = [0x00, 0x20, 0x21, 0x22, 0x25, 0x26, 0x37, 0x3f, 0x80, 0x8b, 0x9f, 0xff];
   for (const op of NOPS) {
     it(`CPU-016: ED ${op.toString(16).padStart(2, "0").toUpperCase()} changes nothing but PC`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(` .org $8000\n .defb $ed, $${op.toString(16)}\nDone: jr Done`);
       const regs = { a: 0x5a, f: 0xd7, bc: 0x1234, de: 0x5678, hl: 0x9abc, ix: 0x1111, iy: 0x2222, sp: 0xbff0 };
       s.setRegisters(regs).step(1);
@@ -278,7 +278,7 @@ Done:   jr Done
    * the IM 2 handler records BC the first time it runs.
    */
   it("CPU-017: an interrupt is taken between LDIRX iterations and the copy completes", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         ld hl,$c000

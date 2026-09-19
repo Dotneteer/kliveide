@@ -1,16 +1,15 @@
 /*
  * ZX Spectrum Next test harness - the public surface. Import from here in tests:
  *
- *   import { createSession, ALL_CORES } from "../harness/zxnext";
+ *   import { createSession } from "../harness/zxnext";
  *
  * See README.md in this folder.
  */
 
-// --- Scripting: drive one real machine (TS or WASM core) from a vitest test
+// --- Scripting: drive one real machine (the WASM core) from a vitest test
 export {
   NextTestSession,
   createSession,
-  onEachCore,
   hex,
   READY_REG,
   READY_VALUE,
@@ -30,7 +29,7 @@ export { JOY_BUTTONS, type JoyButton, type JoySide } from "./script/joystick";
 export { MATRIX_KEYS, NEXT_EXTRA_KEYS, type ExtraKey, type MatrixKey, type NextKey } from "./script/keys";
 
 // --- Machines and low-level helpers
-export { ALL_CORES, createCore, readNextRegDirect, runDisplayedFrame, type CoreName, type NextMachine } from "./core/machines";
+export { createCore, readNextRegDirect, runDisplayedFrame, type NextMachine } from "./core/machines";
 export { captureFrame, pixelHex, rowRuns, summarizeRows, type Frame, type RowRun } from "./core/frame";
 export { frameHash, framePng } from "./core/capture";
 export { compileNexFile, type CompiledNex } from "./core/compile-nex";

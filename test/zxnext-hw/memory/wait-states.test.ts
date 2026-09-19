@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * 28 MHz memory wait states, by the page accessed (ported from the "Memory timing and wait states" part
@@ -25,8 +25,8 @@ const LD_A_NN = [0x3a, 0x00, 0x40];
 const LD_NN_A = [0x32, 0x00, 0x40];
 const NOP = [0x00];
 
-async function session(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function session(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s;
 }
@@ -44,9 +44,9 @@ const BANK7 = 0x0e;
 const BANK5 = 0x0a;
 const SRAM = 0x10;
 
-describe.each(ALL_CORES)("28 MHz wait states - %s core", (core) => {
+describe("28 MHz wait states", () => {
   it("reads from SRAM and bank 5 take one wait state at 28 MHz; bank 7 none", async () => {
-    const s = await session(core);
+    const s = await session();
     expect({
       bank7: measure(s, 3, BANK7, BANK7, LD_A_NN),
       bank5: measure(s, 3, BANK7, BANK5, LD_A_NN),
@@ -56,12 +56,12 @@ describe.each(ALL_CORES)("28 MHz wait states - %s core", (core) => {
   });
 
   it("writes take no wait state at 28 MHz", async () => {
-    const s = await session(core);
+    const s = await session();
     expect([BANK7, BANK5, SRAM].map((p) => measure(s, 3, BANK7, p, LD_NN_A))).toEqual([13, 13, 13]);
   });
 
   it("an opcode fetch from SRAM waits too; from bank 7 it does not", async () => {
-    const s = await session(core);
+    const s = await session();
     expect({
       nopBank7: measure(s, 3, BANK7, SRAM, NOP),
       nopSram: measure(s, 3, SRAM, SRAM, NOP),
@@ -71,7 +71,7 @@ describe.each(ALL_CORES)("28 MHz wait states - %s core", (core) => {
   });
 
   it("no wait state at 3.5, 7 and 14 MHz", async () => {
-    const s = await session(core);
+    const s = await session();
     s.setNextReg(0x08, s.readNextReg(0x08) | 0x40); // --- no contention (~4461), so only wait states count
     const got = [0, 1, 2].map((speed) => [BANK7, BANK5, SRAM].map((p) => measure(s, speed, SRAM, p, LD_A_NN)));
     expect(got.map((row) => row.join(","))).toEqual(["13,13,13", "13,13,13", "13,13,13"]);

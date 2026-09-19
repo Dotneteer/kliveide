@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress, type NextTestSession, type Probe } from "../../harness/zxnext";
+import { createSession, displayFileAddress, type NextTestSession, type Probe } from "../../harness/zxnext";
 
 /*
  * B7 - ULANext and ULA+ palette indexing of ink, paper and border.
@@ -24,10 +24,9 @@ import { ALL_CORES, createSession, displayFileAddress, type NextTestSession, typ
 const INK: Probe["kind"] = "rect";
 
 async function screenWith(
-  core: "ts" | "wasm",
   setup: { nextRegs: Array<[number, number]>; attr: number; border: number; palette: Array<[number, number]> }
 ): Promise<NextTestSession> {
-  const s = await createSession(core);
+  const s = await createSession();
   await s.loadCode(` .org $8000\n jr $`);
   s.setNextReg(0x43, 0x00); // --- first ULA palette, auto-increment on
   for (const [index, rgb] of setup.palette) s.setNextReg(0x40, index).setNextReg(0x41, rgb);
@@ -55,10 +54,10 @@ const cell = (s: NextTestSession, expected: { ink: string; paper: string; border
   });
 };
 
-describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
+describe("ULANext / ULA+ colours", () => {
   it("ULANext format $07: ink = attr & 7, paper = $80 | attr >> 3, border = $80 + border", async () => {
     // --- attr $5B: ink 3, paper $80 | $0B = $8B; border 2 -> $82
-    const s = await screenWith(core, {
+    const s = await screenWith({
       nextRegs: [[0x42, 0x07], [0x43, 0x01]],
       attr: 0x5b,
       border: 2,
@@ -69,7 +68,7 @@ describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
 
   it("ULANext format $0F: ink = attr & $0F, paper = $80 | attr >> 4", async () => {
     // --- attr $A7: ink 7, paper $80 | $0A = $8A; border 5 -> $85
-    const s = await screenWith(core, {
+    const s = await screenWith({
       nextRegs: [[0x42, 0x0f], [0x43, 0x01]],
       attr: 0xa7,
       border: 5,
@@ -80,7 +79,7 @@ describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
 
   it("ULANext format $FF: ink = attr, paper and border use the fallback colour", async () => {
     // --- attr $C5: ink $C5
-    const s = await screenWith(core, {
+    const s = await screenWith({
       nextRegs: [[0x42, 0xff], [0x43, 0x01]],
       attr: 0xc5,
       border: 1,
@@ -98,7 +97,7 @@ describe.each(ALL_CORES)("ULANext / ULA+ colours - %s core", (core) => {
   it(
     "ULANext format $FF: a fallback paper and border equal to $14 are transparent (B7 residual, fixed)",
     async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(`
         .org $8000
         nextreg $70,$10          ; Layer 2 320x256, palette offset 0
@@ -149,7 +148,7 @@ Fill:   nextreg $56,a
 
   it("ULA+: ink = $C0 + group*16 + ink, paper = $C8 + group*16 + paper, border = $C8 + border", async () => {
     // --- attr $9A = group 2, paper 3, ink 2: ink $E2, paper $EB; border 5 -> $CD
-    const s = await screenWith(core, {
+    const s = await screenWith({
       nextRegs: [[0x68, 0x08]],
       attr: 0x9a,
       border: 5,
@@ -167,7 +166,7 @@ Fill:   nextreg $56,a
     // --- attr $5B: ULANext $07 -> ink 3, paper $8B, border 2 -> $82
     // ---           ULA+ (group 1) -> ink $D3, paper $DB, border $CA
     // ---           standard (BRIGHT) -> ink 11, paper 27, border 18
-    const s = await screenWith(core, {
+    const s = await screenWith({
       nextRegs: [[0x42, 0x07], [0x68, 0x08], [0x43, 0x01]],
       attr: 0x5b,
       border: 2,

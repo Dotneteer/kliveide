@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { hex, results, romBytes, runCode } from "./_memory-helpers";
 
 /*
@@ -28,10 +28,10 @@ import { hex, results, romBytes, runCode } from "./_memory-helpers";
 
 const mmu = (s: NextTestSession) => Array.from({ length: 8 }, (_, i) => s.readNextReg(0x50 + i));
 
-describe.each(ALL_CORES)("128K paging - %s core", (core) => {
+describe("128K paging", () => {
   // --- MEM-003: 16K bank n = 8K pages 2n and 2n + 1
   it("MEM-003: the $7FFD bank at $C000 is MMU pages 2n / 2n + 1", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     for (let bank = 0; bank < 8; bank++) {
       s.out(0x7ffd, bank).poke(0xc000, 0x30 + bank).poke(0xffff, 0x70 + bank);
     }
@@ -46,7 +46,7 @@ describe.each(ALL_CORES)("128K paging - %s core", (core) => {
 
   // --- MEM-007
   it("MEM-007: $7FFD bits 2-0 set MMU6/7, and the write puts the ROM back in slots 0/1", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x50, 0x0a).setNextReg(0x51, 0x0b).setNextReg(0x53, 0x20);
     s.out(0x7ffd, 0x05);
     // --- MMU2-5 keep what they had (MMU3 = $20), MMU6/7 = bank 5
@@ -54,7 +54,7 @@ describe.each(ALL_CORES)("128K paging - %s core", (core) => {
   });
 
   it("MEM-007: $7FFD bit 4 selects ROM 0 or ROM 1", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x7ffd, 0x10);
     expect(hex(Array.from(s.peekBytes(0x0000, 16)))).toBe(hex(romBytes(1, 0, 16)));
     s.out(0x7ffd, 0x00);
@@ -63,7 +63,7 @@ describe.each(ALL_CORES)("128K paging - %s core", (core) => {
 
   // --- MEM-008
   it("MEM-008: $DFFD bits 3-0 extend the bank number", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0xdffd, 0x01);
     expect([s.readNextReg(0x56), s.readNextReg(0x57)], "$DFFD alone reloads MMU6/7 (bank 8)").toEqual([0x10, 0x11]);
     s.out(0x7ffd, 0x03);
@@ -75,7 +75,7 @@ describe.each(ALL_CORES)("128K paging - %s core", (core) => {
   });
 
   it("MEM-008: $DFFD is ignored while $7FFD is locked", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x7ffd, 0x23).out(0xdffd, 0x01);
     expect(s.readNextReg(0x56)).toBe(0x06);
   });
@@ -92,7 +92,6 @@ describe.each(ALL_CORES)("128K paging - %s core", (core) => {
       // --- Every bank n gets the signature $B0 + n at offset $3F00. The program first copies itself
       // --- into bank 6, because three of the layouts put bank 6 at $8000.
       const s = await runCode(
-        core,
         `
         nextreg $56,$0c
         nextreg $57,$0d
@@ -132,7 +131,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   }
 
   it("MEM-010: leaving special mode restores ROM, banks 5 and 2 and the $7FFD bank", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x7ffd, 0x03).out(0x1ffd, 0x07);
     expect(mmu(s)).toEqual([8, 9, 14, 15, 12, 13, 6, 7]);
     s.out(0x1ffd, 0x00);
@@ -142,7 +141,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   // --- MEM-011: ~2952, ROM = $1FFD bit 2 & $7FFD bit 4
   for (let rom = 0; rom < 4; rom++) {
     it(`MEM-011: $1FFD bit 2 = ${rom >> 1}, $7FFD bit 4 = ${rom & 1} select ROM ${rom}`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       s.out(0x7ffd, (rom & 1) << 4).out(0x1ffd, (rom >> 1) << 2);
       expect(hex(Array.from(s.peekBytes(0x0000, 16)))).toBe(hex(romBytes(rom, 0, 16)));
       expect(hex(Array.from(s.peekBytes(0x3ff0, 16)))).toBe(hex(romBytes(rom, 0x3ff0, 16)));
@@ -151,7 +150,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
 
   // --- MEM-012 / MEM-015: $8F
   it("MEM-012: Pentagon 512 ($8F = 2) takes bank bits 4-3 from $7FFD bits 7-6 and ignores $DFFD", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x8f, 0x02).out(0xdffd, 0x01).out(0x7ffd, 0xc3);
     expect(s.readNextReg(0x56), "bank 3 + 24").toBe(0x36);
     s.out(0x7ffd, 0xe3); // --- bit 5 is the lock in Pentagon 512, not a bank bit
@@ -161,7 +160,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   });
 
   it("MEM-012: Pentagon 1024 ($8F = 3) adds $7FFD bit 5 as bank bit 5 and has no lock", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x8f, 0x03).out(0x7ffd, 0xe3);
     expect(s.readNextReg(0x56), "bank 3 + 24 + 32").toBe(0x76);
     s.out(0x7ffd, 0x01);
@@ -169,13 +168,13 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   });
 
   it("MEM-012: $EFF7 bit 2 turns Pentagon 1024 back into standard paging", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x8f, 0x03).out(0xeff7, 0x04).out(0xdffd, 0x01).out(0x7ffd, 0xc3);
     expect(s.readNextReg(0x56), "$DFFD bank 8 + 3, $7FFD bits 7-6 ignored").toBe(0x16);
   });
 
   it("MEM-015: $8F reads back, survives a soft reset, and mode 1 (Profi, disabled) pages as standard", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     expect(s.readNextReg(0x8f)).toBe(0x00);
     s.setNextReg(0x8f, 0xfd);
     expect(s.readNextReg(0x8f)).toBe(0x01);
@@ -187,7 +186,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
 
   // --- MEM-013: ~4615-4619
   it("MEM-013: $EFF7 bit 3 maps RAM bank 0 at $0000", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0xeff7, 0x08);
     expect([s.readNextReg(0x50), s.readNextReg(0x51)]).toEqual([0x00, 0x01]);
     s.poke(0x0010, 0x5a);
@@ -201,7 +200,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
 
   // --- MEM-014
   it("MEM-014: a $8E write with bit 3 sets bank and ROM together", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x50, 0x0a);
     s.setNextReg(0x8e, 0xb9); // --- bit 7 + bits 6-4 = 011: bank 11; bit 3; bit 2 = 0; bit 0: ROM 1
     expect(mmu(s)).toEqual([0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x16, 0x17]);
@@ -209,7 +208,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   });
 
   it("MEM-014: without bit 3 a $8E write changes only the ROM", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x7ffd, 0x03);
     s.setNextReg(0x8e, 0x72); // --- bits 6-4 ignored; bit 1 -> $1FFD bit 2, bit 0 -> $7FFD bit 4: ROM 2
     expect([s.readNextReg(0x56), s.readNextReg(0x57)]).toEqual([0x06, 0x07]);
@@ -217,7 +216,7 @@ Sig:    ld a,b                   ; page 2n + 1 at $E000: offset $1F00 = bank off
   });
 
   it("MEM-014: a $8E write with bit 2 enters +3 special mode (bits 1-0 = layout)", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x8e, 0x05); // --- $1FFD = 011: banks 4-5-6-7
     expect(mmu(s)).toEqual([8, 9, 10, 11, 12, 13, 14, 15]);
   });

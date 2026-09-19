@@ -1,5 +1,4 @@
 import type { NextMachine } from "../core/machines";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
  * The two joystick connectors, as md6_joystick_connector_x2.vhd reports them to the core: 12 bits,
@@ -22,13 +21,7 @@ export function joyBits(buttons: JoyButton[]): number {
 }
 
 export function setJoystickState(machine: NextMachine, side: JoySide, bits: number): void {
-  if (machine instanceof ZxNextWasmV2Machine) {
-    const x = machine.wasmV2Runtime!.exports;
-    if (side === "left") x.zxnextSetJoystickLeftState(bits);
-    else x.zxnextSetJoystickRightState(bits);
-  } else if (side === "left") {
-    machine.joystickDevice.setLeftState(bits);
-  } else {
-    machine.joystickDevice.setRightState(bits);
-  }
+  const x = machine.wasmV2Runtime!.exports;
+  if (side === "left") x.zxnextSetJoystickLeftState(bits);
+  else x.zxnextSetJoystickRightState(bits);
 }

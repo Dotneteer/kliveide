@@ -55,7 +55,7 @@ Next:   in a,(c)                   ; leave line 0 before waiting for the next on
 `;
 
   const session = async (writes: boolean): Promise<NextTestSession> => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     await s.loadCode(program(writes));
     return s.runFrames(20); // --- warm-up: JIT, caches, the program past its setup
   };

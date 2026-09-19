@@ -4,7 +4,7 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 
-import { ALL_CORES, createSession, type NextMachine } from "../../harness/zxnext";
+import { createSession, type NextMachine } from "../../harness/zxnext";
 
 /*
  * Sound while debugging. With the debugger attached the IDE runs the WASM machine through its
@@ -34,10 +34,10 @@ function runFrame(m: NextMachine) {
   return { count: samples.length, min: Math.min(...samples), max: Math.max(...samples) };
 }
 
-describe.each(ALL_CORES)("ZX Next audio while debugging - %s core", (core) => {
+describe("ZX Next audio while debugging", () => {
   for (const debug of [false, true]) {
     it(`every frame brings fresh samples ${debug ? "in the debug loop" : "in the frame loop"}`, async () => {
-      const s = await createSession(core, { audioSampleRate: RATE });
+      const s = await createSession({ audioSampleRate: RATE });
       await s.loadCode(BEEPER, { entry: "Start" });
       const m = s.machine;
       if (debug) {

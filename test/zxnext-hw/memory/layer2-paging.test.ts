@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES } from "../../harness/zxnext";
 import { hex, results, romBytes, runCode } from "./_memory-helpers";
 
 /*
@@ -40,10 +39,9 @@ const writePage = (page: number, value: number, offset = 0) => `
         ld ($c000+${offset}),a
         nextreg $56,$00`;
 
-describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
+describe("Layer 2 paging", () => {
   it("MEM-017: bit 0 maps $0000-$3FFF writes to Layer 2; reads still see the ROM", async () => {
     const s = await runCode(
-      core,
       `
         ${L2}$01${OUT}
         in a,(c)
@@ -71,7 +69,6 @@ describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
 
   it("MEM-018: bit 2 maps reads; with bit 0 as well reads and writes both go to Layer 2", async () => {
     const s = await runCode(
-      core,
       `
         ${writePage(16, 0x77)}
         ${L2}$04${OUT}
@@ -105,7 +102,6 @@ describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
 
   it("MEM-019: bits 7-6 pick the 16K segment, 11 maps all 48K; bit 3 uses the shadow bank $13", async () => {
     const s = await runCode(
-      core,
       `
         ${L2}$41${OUT}           ; segment 01: $0000 -> bank 9 (page 18)
         ld a,$21
@@ -144,7 +140,6 @@ describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
 
   it("MEM-020: bit 4 stores a bank offset without touching the other bits", async () => {
     const s = await runCode(
-      core,
       `
         ${L2}$01${OUT}
         ld a,$11                 ; offset 1
@@ -173,7 +168,6 @@ describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
 
   it("MEM-019: NextReg $12 moves the mapped bank", async () => {
     const s = await runCode(
-      core,
       `
         nextreg $12,20
         ${L2}$01${OUT}
@@ -190,7 +184,6 @@ describe.each(ALL_CORES)("Layer 2 paging - %s core", (core) => {
   // --- MEM-021: all three claim $2000: DivMMC RAM (conmem), Layer 2 (write mapping), MMU1 (page 30)
   it("MEM-021: $0000-$3FFF priority is DivMMC, then Layer 2, then the MMU", async () => {
     const s = await runCode(
-      core,
       `
         ${writePage(17, 0x00)}
         ${writePage(30, 0x00)}

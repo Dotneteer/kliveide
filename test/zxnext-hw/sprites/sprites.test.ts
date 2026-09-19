@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 import { rng, spriteFrame, type SpriteAttrs } from "./_sprite-model";
 
@@ -70,8 +70,8 @@ function upload(s: NextTestSession, scene: Scene): NextTestSession {
 }
 
 /** A parked session: sprite palette i = colour i, ULA off, fallback $E3, the scene uploaded. */
-async function spriteScreen(core: CoreName, scene: Scene): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function spriteScreen(scene: Scene): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i] as [number, number]), 0x20);
   s.setNextReg(0x43, 0x00).setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3).setNextReg(0x68, 0x80);
   s.setNextReg(0x4b, scene.transparent);
@@ -107,47 +107,47 @@ function mismatches(
 const ALL = () => true;
 const DEBUG = process.env.SPR_DEBUG === "1";
 
-describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
+describe("Sprites", () => {
   for (const seed of [1, 2, 3, 4]) {
     it(`SPR-001 - SPR-005, SPR-008/009, SPR-014 - SPR-023, SPR-030/031, SPR-034/035: random 128-sprite scene ${seed}`, async () => {
       const scene = randomScene(seed);
-      const s = await spriteScreen(core, scene);
+      const s = await spriteScreen(scene);
       s.setNextReg(0x15, 0x03).runFrames(2); // --- visible, over the border
       const m = mismatches(s, scene, false, ALL);
-      if (DEBUG && m.length) console.log(core, seed, m.join(" | "));
+      if (DEBUG && m.length) console.log(seed, m.join(" | "));
       expect(m).toEqual([]);
     });
   }
 
   it("SPR-024: $15 bit 6 puts sprite 0 on top (a later sprite does not overwrite)", async () => {
     const scene = randomScene(7);
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     s.setNextReg(0x15, 0x43).runFrames(2);
     expect(mismatches(s, scene, true, ALL)).toEqual([]);
   });
 
   it("SPR-010: $15 bit 0 clear shows no sprite", async () => {
     const scene = randomScene(1);
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     s.setNextReg(0x15, 0x02).runFrames(2);
     expect(colours(s, [32, 671], [16, 271])).toBe(NONE);
   });
 
   it("SPR-011 / SPR-013: without over-border the $19 window + 32 applies (reset: the paper); y stays below 224", async () => {
     const scene = randomScene(2);
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     s.setNextReg(0x15, 0x01).runFrames(2);
     expect(mismatches(s, scene, false, (x, y) => x >= 32 && x <= 287 && y >= 32 && y <= 223), "reset window").toEqual([]);
     s.setNextReg(0x1c, 0x02).setNextReg(0x19, 16).setNextReg(0x19, 200).setNextReg(0x19, 8).setNextReg(0x19, 250).runFrames(1);
     expect(s.readNextReg(0x1c) & 0x0c, "$1C bits 3-2").toBe(0x00);
     const m = mismatches(s, scene, false, (x, y) => x >= 48 && x <= 232 && y >= 40 && y <= 223);
-    if (DEBUG && m.length) console.log(core, "clip", m.join(" | "));
+    if (DEBUG && m.length) console.log("clip", m.join(" | "));
     expect(m, "window 16-200 x 8-250").toEqual([]);
   });
 
   it("SPR-011 / SPR-012: over-border ignores the window; with $15 bit 5 it is x1*2 .. x2*2+1, y1 .. y2", async () => {
     const scene = randomScene(3);
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     s.setNextReg(0x1c, 0x02).setNextReg(0x19, 20).setNextReg(0x19, 100).setNextReg(0x19, 10).setNextReg(0x19, 200);
     s.setNextReg(0x15, 0x03).runFrames(2);
     expect(mismatches(s, scene, false, ALL), "over-border, no border clip").toEqual([]);
@@ -157,7 +157,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
 
   it("SPR-028: $43 bit 3 selects the second sprite palette", async () => {
     const scene = randomScene(4);
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i ^ 0x3c] as [number, number]), 0x60);
     s.setNextReg(0x43, 0x08).setNextReg(0x15, 0x03).runFrames(2);
     expect(mismatches(s, scene, false, ALL, (i) => hex8(i ^ 0x3c))).toEqual([]);
@@ -165,7 +165,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
 
   /** One 16x16 sprite 0 of pattern 0 at (x, y); pattern 0 all `pixel`. */
   async function oneSprite(pixel: number, x: number, y: number): Promise<NextTestSession> {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[pixel, 0x1c]], 0x20);
     s.setNextReg(0x43, 0x00).setNextReg(0x4a, 0xe0).setNextReg(0x68, 0x80);
     s.out(0x303b, 0);
@@ -184,7 +184,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
 
   /** Two sprites: 0 at (100, 100), 1 at (108, 104); the flag after a frame, read once. */
   async function collision(setup: (s: NextTestSession) => void, second = 0x05): Promise<number> {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.out(0x303b, 0);
     for (let i = 0; i < 256; i++) s.out(0x005b, 0x05); // --- pattern 0 opaque
     for (let i = 0; i < 256; i++) s.out(0x005b, second); // --- pattern 1
@@ -207,7 +207,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
   });
 
   it("SPR-026: a line with more sprite work than time sets $303B bit 1; a light frame does not", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.out(0x303b, 0);
     for (let i = 0; i < 256; i++) s.out(0x005b, 0x05);
     // --- 128 sprites at y 100, x 8 wide (128 pixels each): 128 x 129 clocks >> one line
@@ -227,7 +227,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
 
   it("SPR-007 / SPR-029: with $09 bit 4 (tie) $34 and $303B select the same sprite", async () => {
     // --- ($35-$39 are write-only: the result is checked on screen)
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[5, 0x1c]], 0x20);
     s.setNextReg(0x43, 0x00).setNextReg(0x4a, 0xe0).setNextReg(0x68, 0x80).setNextReg(0x4b, 0xe3);
     s.out(0x303b, 0);
@@ -245,7 +245,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
   });
 
   it("SPR-007: with the tie, $34 bit 7 selects the second half of the pattern for $5B (4-bit patterns)", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[0x02, 0x1c], [0x01, 0xfc]], 0x20);
     s.setNextReg(0x43, 0x00).setNextReg(0x4a, 0xe0).setNextReg(0x68, 0x80).setNextReg(0x4b, 0xff);
     s.out(0x303b, 0x03);
@@ -263,7 +263,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
     // --- sprite 0 relative and visible, sprite 1 a visible anchor far away
     scene.attrs[0] = [10, 10, 0x00, 0xc0 | 5, 0x40];
     scene.attrs[1] = [100, 100, 0x00, 0xc0 | 6, 0x00];
-    const s = await spriteScreen(core, scene);
+    const s = await spriteScreen(scene);
     s.setNextReg(0x15, 0x03).runFrames(2);
     expect(mismatches(s, scene, false, ALL)).toEqual([]);
   });
@@ -275,7 +275,7 @@ describe.each(ALL_CORES)("Sprites - %s core", (core: CoreName) => {
    * 40, rows after at 200. The engine builds line V during line V - 1: rows near 96 are not checked.
    */
   it("SPR-032: an attribute change in mid-frame moves the sprite from the next lines on", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di

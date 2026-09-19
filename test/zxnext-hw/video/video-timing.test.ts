@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 
 /*
@@ -104,11 +104,11 @@ async function interruptAt(s: NextTestSession, t: Timing): Promise<number> {
   return afterClear + CLEAR_AT + NEXTREG_TACTS;
 }
 
-describe.each(ALL_CORES)("video timing - %s core", (core: CoreName) => {
+describe("video timing", () => {
   for (const t of TIMINGS) {
     // --- VT-001 / VT-003 / VT-008
     it(`VT-001: ${t.name} runs ${t.lines} x ${t.tactsPerLine} tacts per frame`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(` .org $8000\n jr $`);
       s.setNextReg(0x03, t.nr03).setNextReg(0x05, t.hz60 ? 0x04 : 0x00).runFrames(2);
       const before = s.tacts;
@@ -119,7 +119,7 @@ describe.each(ALL_CORES)("video timing - %s core", (core: CoreName) => {
 
     // --- VT-002 / VT-005: every line number appears, the last is c_max_vc
     it(`VT-002: ${t.name} line counter $1E/$1F runs 0 - ${t.lines - 1}`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(`
         .org $8000
 Start:  di
@@ -163,7 +163,7 @@ Stop:   jr Stop
 
     // --- VT-004 / VT-006
     it(`VT-006: ${t.name} interrupt at line ${t.intLine}, ${t.intAfterLineChangeHc / 2} tacts after the line starts`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       const intAt = await interruptAt(s, t);
       // --- the line counter at that moment is the interrupt line ...
       expect(await probe(s, t, 0x1f, intAt), "line of the interrupt").toBe(t.intLine & 0xff);
@@ -175,7 +175,7 @@ Stop:   jr Stop
 
     // --- VT-007: $22 bit 7 is the pulse; it lasts pulseCycles CPU cycles
     it(`VT-007: ${t.name} INT pulse lasts ${t.pulseCycles} tacts`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       const intAt = await interruptAt(s, t);
       const pulse = async (d: number) => ((await probe(s, t, 0x22, d)) & 0x80) !== 0;
       const on = await threshold(intAt - 100, intAt + 16, pulse);
@@ -186,7 +186,7 @@ Stop:   jr Stop
 
   // --- VT-003: the readback and the frame follow the effective (next-frame) 50/60 Hz bit
   it("VT-003: $05 bit 2 reads the 50/60 Hz setting in effect, from the next frame", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.setNextReg(0x03, 0xb0).runFrames(1);
     s.setNextReg(0x05, 0x04);
@@ -196,7 +196,7 @@ Stop:   jr Stop
   });
 
   it("VT-008: Pentagon timing ignores the 60 Hz bit", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.setNextReg(0x03, 0xc0).setNextReg(0x05, 0x04).runFrames(2);
     expect(s.readNextReg(0x05) & 0x04).toBe(0x00);
@@ -208,7 +208,7 @@ Stop:   jr Stop
   // --- VT-009: ~5186-5193 - config mode only; 111 stores 000. Issue 2 boards (g_video_inc = "10")
   // --- keep bit 0 only, issue 4 all three, so only bit 0 values are written.
   it("VT-009: $11 is written only in config mode", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const initial = s.readNextReg(0x11) & 0x07;
     s.setNextReg(0x11, initial ^ 0x01);
     expect(s.readNextReg(0x11), "outside config mode").toBe(initial);
@@ -226,7 +226,7 @@ Stop:   jr Stop
    */
   for (const [label, nr05, paperRow] of [["50 Hz", 0x00, 48], ["60 Hz", 0x04, 24]] as const) {
     it(`VT-010: at ${label} the paper starts at buffer row ${paperRow} and is 192 rows tall`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(`
         .org $8000
         ld hl,$5800              ; attributes: paper 7 (white), ink 0
@@ -258,7 +258,7 @@ Stop:   jr Stop
 
   // --- A reset restarts the frame; the interrupt of the first frame after it must still come
   it("a soft reset in mid-frame keeps the next frame interrupt ($C8 latches it)", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n di\n jr $`);
     s.runFrames(1).step(2000).reset();
     await s.loadCode(` .org $8000\n di\n nextreg $22,0\n nextreg $c8,1\n jr $`);
@@ -268,7 +268,7 @@ Stop:   jr Stop
 
   // --- VT-011: effective values, from the next frame
   it("VT-011: $05 bit 0 and $09 bits 1-0 read back from the next frame", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.setNextReg(0x05, 0x01).setNextReg(0x09, 0x02).runFrames(1);
     expect(s.readNextReg(0x05) & 0x01).toBe(0x01);

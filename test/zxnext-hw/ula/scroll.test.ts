@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
@@ -25,8 +25,8 @@ const PAPER = 0xb6;
 const MARK = 0x1c; // --- green paper of one attribute cell
 const BORDER = 0xe0;
 
-async function screen(core: CoreName): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function screen(): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, [[0, INK], [23, PAPER], [20, MARK], [18, BORDER]]);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
   fillScreen(s, 0x00, 0x38); // --- INK 0, PAPER 7
@@ -55,10 +55,10 @@ const borderOk = (s: NextTestSession) => ({
 });
 const allBorder = { left: hex8(BORDER), right: hex8(BORDER), top: hex8(BORDER), bottom: hex8(BORDER) };
 
-describe.each(ALL_CORES)("ULA scroll - %s core", (core: CoreName) => {
+describe("ULA scroll", () => {
   for (const scroll of [0, 1, 7, 8, 100, 255]) {
     it(`ULA-010: $26 = ${scroll} shows screen x (p + ${scroll}) mod 256 at paper x p, border unaffected`, async () => {
-      const s = await screen(core);
+      const s = await screen();
       // --- row 10: single pixels at screen x 0 and 100; row 11 all ink bytes in column 31 (x 248-255)
       s.poke(displayFileAddress(10, 0), 0x80).poke(displayFileAddress(10, 12), 0x08);
       // --- character row 3 (paper rows 24-31): column 0 green paper
@@ -76,7 +76,7 @@ describe.each(ALL_CORES)("ULA scroll - %s core", (core: CoreName) => {
 
   for (const scroll of [0, 1, 191, 192, 200, 255]) {
     it(`ULA-011: $27 = ${scroll} shows screen row (r + ${scroll}) mod 192 on paper row r`, async () => {
-      const s = await screen(core);
+      const s = await screen();
       // --- one pixel per marked screen row, in a column that identifies it
       const rows: Array<[number, number]> = [[0, 1], [1, 2], [7, 3], [100, 4], [191, 5]];
       for (const [row, col] of rows) s.poke(displayFileAddress(row, col), 0x80);
@@ -98,7 +98,7 @@ describe.each(ALL_CORES)("ULA scroll - %s core", (core: CoreName) => {
   }
 
   it("ULA-012: $68 bit 2 shifts the picture one half pixel (one buffer pixel) left", async () => {
-    const s = await screen(core);
+    const s = await screen();
     s.poke(displayFileAddress(10, 12), 0x08); // --- screen x 100: buffer x 296-297
     s.runFrames(2);
     const run = () => {
@@ -130,7 +130,7 @@ describe.each(ALL_CORES)("ULA scroll - %s core", (core: CoreName) => {
     const RECOLOURED = 0x03;
 
     async function row(d: number): Promise<{ c: number; l: number }> {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(" .org $8000\n di\n jr $");
       writePalette(s, [[0, INK], [23, PAPER], [18, BORDER]]);
       s.setNextReg(0x14, 0xe3).setNextReg(0x03, 0xb0).out(0xfe, 2);
@@ -186,7 +186,7 @@ ${delay(d)}
     const ROW = 48 + LINE;
 
     async function firstShiftedOffset(d: number): Promise<number> {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(" .org $8000\n di\n jr $");
       writePalette(s, [[0, INK], [23, PAPER], [18, BORDER]]);
       s.setNextReg(0x14, 0xe3).setNextReg(0x03, 0xb0).setNextReg(0x68, 0x00).out(0xfe, 2);

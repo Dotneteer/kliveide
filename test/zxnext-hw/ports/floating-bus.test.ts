@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * Port $FF (ULA floating bus / Timex readback) and the +3 floating bus on $0FFD (catalogue PORT-006 -
@@ -76,8 +76,8 @@ Stop:   jr Stop
 `;
 }
 
-async function sample(core: CoreName, timing: number, port: number, setup = ""): Promise<number[]> {
-  const s = await createSession(core);
+async function sample(timing: number, port: number, setup = ""): Promise<number[]> {
+  const s = await createSession();
   await s.loadCode(samplerProgram(timing, port, setup), { entry: "Start" });
   s.runUntilReady({ maxFrames: 10 });
   return Array.from(s.peekBytes(0xc000, SAMPLES));
@@ -90,10 +90,10 @@ const TP3 = 0xb0;
 const histogram = (values: number[]) =>
   values.reduce<Record<string, number>>((h, v) => ((h[v.toString(16)] = (h[v.toString(16)] ?? 0) + 1), h), {});
 
-describe.each(ALL_CORES)("floating bus - %s core", (core) => {
+describe("floating bus", () => {
   for (const [name, timing] of [["48K", T48], ["128K", T128]] as const) {
     it(`PORT-006: in ${name} timing $FF reads the pixel and attribute bytes during the display, $FF elsewhere`, async () => {
-      const values = await sample(core, timing, 0x00ff);
+      const values = await sample(timing, 0x00ff);
       const h = histogram(values);
       expect(Object.keys(h).sort(), JSON.stringify(h)).toEqual(["38", "55", "ff"]);
       // --- ~64 top border lines come first: the first 250 samples (12750 tacts) are all $FF
@@ -106,12 +106,12 @@ describe.each(ALL_CORES)("floating bus - %s core", (core) => {
   }
 
   it("PORT-006: in +3 timing $FF reads $FF", async () => {
-    const values = await sample(core, TP3, 0x00ff);
+    const values = await sample(TP3, 0x00ff);
     expect(histogram(values)).toEqual({ ff: SAMPLES });
   });
 
   it("PORT-007: with $08 bit 2 set $FF reads the Timex register instead", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x03, T48).out(0x00ff, 0x3a);
     s.setNextReg(0x08, 0x04);
     expect(s.in(0x00ff)).toBe(0x3a);
@@ -122,14 +122,14 @@ describe.each(ALL_CORES)("floating bus - %s core", (core) => {
   // --- PORT-008
   it("PORT-008: in +3 timing $0FFD reads the display bytes (bit 0 set) and the last contended access", async () => {
     // --- The sampling loop writes to $C000 (bank 0, not contended); $4000 holds the pixels
-    const values = await sample(core, TP3, 0x0ffd);
+    const values = await sample(TP3, 0x0ffd);
     const h = histogram(values);
     // --- border: the last contended access was the attribute fill (LDIR into bank 5) = $38
     expect(Object.keys(h).sort(), JSON.stringify(h)).toEqual(["38", "39", "55"]);
   });
 
   it("PORT-008: $0FFD reads the last byte written to or read from a contended bank", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         ld a,$a7
@@ -156,7 +156,7 @@ describe.each(ALL_CORES)("floating bus - %s core", (core) => {
 
   it("PORT-008: $0FFD reads $FF while $7FFD is locked, when disabled, and outside +3 timing", async () => {
     const run = async (setup: (s: Awaited<ReturnType<typeof createSession>>) => void) => {
-      const s = await createSession(core);
+      const s = await createSession();
       setup(s);
       await s.loadCode(`
         .org $8000

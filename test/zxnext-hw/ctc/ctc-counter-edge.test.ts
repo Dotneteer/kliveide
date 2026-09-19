@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Z80 CTC: counter-mode clocking and the NextReg $C5 enable override (catalogue CTC-015 - CTC-017).
@@ -34,17 +34,17 @@ const RISING = 0x10;
 const TC = 0x04;
 const CW = 0x01;
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s;
 }
 
 const program = (s: NextTestSession, ch: number, control: number, tc: number) => s.out(CH[ch], control).out(CH[ch], tc);
 
-describe.each(ALL_CORES)("CTC counter edges - %s core", (core: CoreName) => {
+describe("CTC counter edges", () => {
   it("CTC-015: a counter never counts on the prescaler: without upstream ZC/TO it holds its constant", async () => {
-    const s = await parked(core);
+    const s = await parked();
     // --- channel 1 is clocked by channel 0's ZC/TO; channel 0 is still in hard reset (no ZC/TO)
     program(s, 1, COUNTER | P256 | TC | CW, 100);
     program(s, 2, COUNTER | TC | CW, 50);
@@ -54,7 +54,7 @@ describe.each(ALL_CORES)("CTC counter edges - %s core", (core: CoreName) => {
   });
 
   it("CTC-016: in counter mode a control word that flips D4 counts one edge; the same D4 does not", async () => {
-    const s = await parked(core);
+    const s = await parked();
     program(s, 1, COUNTER | TC | CW, 100);
     s.out(CH[1], COUNTER | RISING | CW); // --- D4 0 -> 1: clk_edge_change
     expect(s.in(CH[1]), "D4 changed").toBe(99);
@@ -74,7 +74,7 @@ describe.each(ALL_CORES)("CTC counter edges - %s core", (core: CoreName) => {
    * the interrupt device or the chain; the WASM core behaves the same.
    */
   it("CTC-016: D4 flips that reach zero give a zero count: $C9 latches it, the constant reloads, the next channel counts", async () => {
-    const s = await parked(core);
+    const s = await parked();
     program(s, 2, COUNTER | TC | CW, 5); // --- clocked by channel 1's ZC/TO
     program(s, 1, COUNTER | TC | CW, 2);
     s.setNextReg(0xc9, 0xff);
@@ -95,7 +95,7 @@ describe.each(ALL_CORES)("CTC counter edges - %s core", (core: CoreName) => {
 
   /** Hardware IM2 (vector base $A0), CTC 0 as a timer with D7 set (prescaler 256, constant 0). */
   async function interrupting(): Promise<NextTestSession> {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     await s.loadCode(
       `

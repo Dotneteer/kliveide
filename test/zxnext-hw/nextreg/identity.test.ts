@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 import { CORE_VERSION_MAJOR, CORE_VERSION_MINOR, CORE_VERSION_SUB_MINOR } from "@emu/machines/zxNext/nextCoreVersion";
 
 /*
@@ -19,10 +19,10 @@ const EXPECTED: Array<[reg: number, value: number, what: string]> = [
   [0x0e, CORE_VERSION_SUB_MINOR, "core version sub-minor"]
 ];
 
-describe.each(ALL_CORES)("machine identity registers - %s core", (core) => {
+describe("machine identity registers", () => {
   for (const [reg, value, what] of EXPECTED) {
     it(`$${reg.toString(16).padStart(2, "0")} ${what}: $${value.toString(16)}, read-only, kept across resets`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       expect(s.readNextReg(reg)).toBe(value);
       s.setNextReg(reg, value ^ 0xff);
       expect(s.readNextReg(reg), "after a write").toBe(value);
@@ -34,7 +34,7 @@ describe.each(ALL_CORES)("machine identity registers - %s core", (core) => {
   }
 
   it("$0F board ID: bits 7-4 read 0, read-only", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const board = s.readNextReg(0x0f);
     expect(board & 0xf0).toBe(0x00);
     s.setNextReg(0x0f, 0xff);

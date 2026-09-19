@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, MATRIX_KEYS, type CoreName, type MatrixKey, type NextTestSession } from "../../harness/zxnext";
+import { createSession, MATRIX_KEYS, type MatrixKey, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The emulated keystroke queue (`queueKeystroke` / `emulateKeystroke`) - ported from
@@ -67,8 +67,8 @@ function logged(s: NextTestSession): string[] {
   return out;
 }
 
-async function session(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function session(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(LOGGER);
   s.pokeWord(0x9ffe, 0xa000);
   return s.runFrames(1);
@@ -78,9 +78,9 @@ async function session(core: CoreName): Promise<NextTestSession> {
 const queue = (s: NextTestSession, frameOffset: number, frames: number, key: MatrixKey) =>
   s.machine.queueKeystroke(frameOffset, frames, MATRIX_KEYS.indexOf(key));
 
-describe.each(ALL_CORES)("emulated keystroke queue - %s core", (core) => {
+describe("emulated keystroke queue", () => {
   it("keys queued all at once are each pressed for their frames, in order, none lost", async () => {
-    const s = await session(core);
+    const s = await session();
     const keys: MatrixKey[] = ["1", "2", "3", "4", "5", "6", "7", "8"];
     for (const key of keys) queue(s, 0, 5, key); // --- all at the same machine time
     s.runFrames(keys.length * 8);
@@ -92,7 +92,7 @@ describe.each(ALL_CORES)("emulated keystroke queue - %s core", (core) => {
   });
 
   it("a keystroke queued on an empty queue is down in the next frame and up after its frames", async () => {
-    const s = await session(core);
+    const s = await session();
     queue(s, 0, 3, "5");
     s.runFrames(1);
     expect(s.in(0xf7fe) & 0x10, "5 held after one frame").toBe(0);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 
 /*
@@ -65,8 +65,8 @@ function frameAsm(uart: 0 | 1, frame: number): string {
 }
 
 /** A session with the CPU parked, for tests that drive the ports from outside. */
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   return s;
 }
@@ -136,11 +136,11 @@ const P = 800;
 const BIT_T = P / 8;
 const BASE = prescalerAsm(0, P);
 
-/** The 8N1 threshold at prescaler 800, per core (measured once; every timing check is relative to it). */
-const baseThreshold = new Map<CoreName, number>();
+/** The 8N1 threshold at prescaler 800 (measured once; every timing check is relative to it). */
+let baseThreshold: number | undefined;
 async function base(s: NextTestSession): Promise<number> {
-  if (!baseThreshold.has(s.core)) baseThreshold.set(s.core, await threshold(46, 1300, txEmpty(s, { setup: BASE })));
-  return baseThreshold.get(s.core)!;
+  baseThreshold ??= await threshold(46, 1300, txEmpty(s, { setup: BASE }));
+  return baseThreshold;
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -179,8 +179,8 @@ const log = (s: NextTestSession) => {
  * Hardware IM2 mode ($C0 = $01: vector = index * 2), the ULA interrupt off, `$C6` = `c6`, then `body`.
  * Common logs the vector and runs `handler` (default: read one RX byte and log it).
  */
-async function im2Session(core: CoreName, c6: number, body = "", handler?: string): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function im2Session(c6: number, body = "", handler?: string): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(
     `
         .org $8000
@@ -215,13 +215,13 @@ function drain(s: NextTestSession): number[] {
   return out;
 }
 
-describe.each(ALL_CORES)("UART - %s core", (core) => {
+describe("UART", () => {
   // -------------------------------------------------------------------------------------------------
   // UART-001 Select $153B
   // -------------------------------------------------------------------------------------------------
 
   it("UART-001: $153B bit 6 selects the UART; it reads back with that UART's prescaler MSB", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.in(SEL), "power-on").toBe(0x00);
     expect(s.out(SEL, 0x40).in(SEL), "UART 1: 01000 & MSB").toBe(0x40);
     expect(s.out(SEL, 0x00).in(SEL), "UART 0: 00000 & MSB").toBe(0x00);
@@ -236,7 +236,7 @@ describe.each(ALL_CORES)("UART - %s core", (core) => {
   });
 
   it("UART-001: the frame, RX and status registers address the selected UART", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(FRAME, 0x1b);
     expect(s.out(SEL, 0x40).in(FRAME), "UART 1 frame").toBe(0x18);
     s.out(FRAME, 0x1a);
@@ -250,7 +250,7 @@ describe.each(ALL_CORES)("UART - %s core", (core) => {
   });
 
   it("UART-001: a soft reset selects UART 0 and keeps both prescaler MSBs", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(SEL, 0x12).out(SEL, 0x53);
     s.reset();
     expect(s.in(SEL), "UART 0 selected, MSB 2").toBe(0x02);
@@ -264,7 +264,7 @@ describe.each(ALL_CORES)("UART - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("UART-002: one bit lasts prescaler 28 MHz clocks; the default is 243 (115200 baud)", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const b = await base(s);
     await expectThreshold(b - (10 * 400) / 8, txEmpty(s, { setup: prescalerAsm(0, 400) }), "prescaler 400");
     await expectThreshold(b + (10 * 800) / 8, txEmpty(s, { setup: prescalerAsm(0, 1600) }), "prescaler 1600");
@@ -272,7 +272,7 @@ describe.each(ALL_CORES)("UART - %s core", (core) => {
   });
 
   it("UART-002: $143B bit 7 picks the half of the 14-bit LSB it writes; $153B bit 4 the 3-bit MSB", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const b = await base(s);
     // --- 800 = 6 * 128 + 32; bits 6-0 := $10 gives 784, bits 13-7 := 3 gives 416
     const low = `${BASE}\n        ld a,$10\n        out (c),a`;
@@ -286,7 +286,7 @@ describe.each(ALL_CORES)("UART - %s core", (core) => {
   });
 
   it("UART-002: the prescaler belongs to the selected UART and survives a soft reset", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const b = await base(s);
     // --- UART 1 set to 400, then UART 0 selected: UART 0 still has its power-on 243
     const other = `${prescalerAsm(1, 400)}\n        ld bc,$153b\n        ld a,$00\n        out (c),a`;
@@ -320,7 +320,7 @@ ${delay(d)}
   // -------------------------------------------------------------------------------------------------
 
   it("UART-003: TX empty until a byte is written; TX full with 64 queued behind the one sending", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.in(TX), "power-on").toBe(0x10);
     expect(s.out(SEL, 0x40).in(TX), "UART 1 power-on").toBe(0x10);
     s.out(SEL, 0x00);
@@ -337,7 +337,7 @@ ${delay(d)}
   });
 
   it("UART-003: the framing error and the byte's error flag; a status read clears bits 6 and 2", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSend(0, [{ value: 0x10, error: "framing" }, 0x41]).runFrames(1);
     // --- The bad frame is thrown away; the next byte is stored with the error flag (bit 5)
     expect(s.in(TX), "framing error, flagged byte available").toBe(0x71);
@@ -358,7 +358,7 @@ ${delay(d)}
   // -------------------------------------------------------------------------------------------------
 
   it("UART-004: TX empty clears on the write and sets after start + data + parity + stop bits", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const b = await base(s);
     const cases: Array<[frame: number, bits: number]> = [
       [0x10, 9], // 7N1
@@ -377,7 +377,7 @@ ${delay(d)}
   });
 
   it("UART-004: the peer gets the data bits of the frame; the baud rate does not follow the CPU speed", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const sent = async (frame: number) => {
       s.hardReset();
       await s.loadCode(` .org $8000\n di\n${frameAsm(0, frame)}\n ld bc,$133b\n ld a,$ff\n out (c),a\n jr $`);
@@ -399,7 +399,7 @@ ${delay(d)}
   // -------------------------------------------------------------------------------------------------
 
   it("UART-005: bytes from the peer arrive in order; $143B reads 0 when the FIFO is empty", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSend(0, [0x41, 0x42, 0x43]);
     expect(s.in(TX), "nothing on the line yet").toBe(0x10);
     s.runFrames(1);
@@ -413,7 +413,7 @@ ${delay(d)}
   });
 
   it("UART-005: a byte is available half a bit before its frame ends (mid stop bit)", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const arrived = (p: number) => async (d: number) => {
       s.hardReset();
       await s.loadCode(`
@@ -435,7 +435,7 @@ Park:   jr Park`);
   });
 
   it("UART-005: near full at 384 bytes; 512 in the FIFO plus one held; the next one overflows", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSend(0, bytes(383)).runFrames(3);
     expect(s.in(TX), "383 bytes").toBe(0x11);
     s.uartSend(0, [0x7f]).runFrames(1);
@@ -451,7 +451,7 @@ Park:   jr Park`);
   });
 
   it("UART-005: a byte received after an overflow carries the error flag", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSend(0, bytes(514)).runFrames(4);
     // --- Read the 513 bytes without a status read: the overflow stays latched
     for (let i = 0; i < 513; i++) s.in(RX);
@@ -463,7 +463,7 @@ Park:   jr Park`);
   });
 
   it("UART-005: a wire from TX to RX brings the bytes back; UART 1 has its own lines", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartLoopback(0, true);
     for (const c of "HELLO") s.out(TX, c.charCodeAt(0));
     s.runFrames(1);
@@ -479,7 +479,7 @@ Park:   jr Park`);
   // -------------------------------------------------------------------------------------------------
 
   it("UART-006: $163B reads back all 8 bits; a soft reset keeps it, a hard reset restores $18", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.in(FRAME), "power-on").toBe(0x18);
     expect(s.out(FRAME, 0x5b).in(FRAME)).toBe(0x5b);
     expect(s.out(FRAME, 0x9f).in(FRAME), "bit 7 is stored").toBe(0x9f);
@@ -490,7 +490,7 @@ Park:   jr Park`);
   });
 
   it("UART-006: bit 7 holds both FIFOs and state machines in reset for as long as it is set", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSend(0, [1, 2, 3]).runFrames(1);
     expect(s.in(TX)).toBe(0x11);
     s.out(FRAME, 0x98);
@@ -513,7 +513,7 @@ Park:   jr Park`);
   // -------------------------------------------------------------------------------------------------
 
   it("UART-007: $C6 bit 0 interrupts on a received byte (vector index 1)", async () => {
-    const s = await im2Session(core, 0x01);
+    const s = await im2Session(0x01);
     s.uartSend(0, [0x41]).runFrames(1);
     expect(log(s)).toEqual([0x02, 0x41]);
     // --- The handler empties the FIFO before the next byte arrives: every byte raises the level again
@@ -522,7 +522,7 @@ Park:   jr Park`);
   });
 
   it("UART-007: the request is an edge of the level: bytes left in the FIFO raise no new one", async () => {
-    const s = await im2Session(core, 0x01, "", "");
+    const s = await im2Session(0x01, "", "");
     s.uartSend(0, [0x41, 0x42]).runFrames(1);
     expect(log(s), "the handler reads nothing").toEqual([0x02]);
     expect(drain(s)).toEqual([0x41, 0x42]);
@@ -531,7 +531,7 @@ Park:   jr Park`);
   });
 
   it("UART-007: with $C6 bit 1 only the near-full level (384 bytes) interrupts", async () => {
-    const s = await im2Session(core, 0x02);
+    const s = await im2Session(0x02);
     s.uartSend(0, [0x10]).runFrames(1);
     expect(log(s), "one byte").toEqual([]);
     s.uartSend(0, bytes(383, 0x11)).runFrames(3);
@@ -539,13 +539,13 @@ Park:   jr Park`);
   });
 
   it("UART-007: UART 1 interrupts with vector index 2 ($C6 bit 4)", async () => {
-    const s = await im2Session(core, 0x10, "        ld bc,$153b\n        ld a,$40\n        out (c),a");
+    const s = await im2Session(0x10, "        ld bc,$153b\n        ld a,$40\n        out (c),a");
     s.uartSend(1, [0x99]).uartSend(0, [0x98]).runFrames(1);
     expect(log(s)).toEqual([0x04, 0x99]);
   });
 
   it("UART-007: disabled, the request still latches $CA bits 1-0 (polled mode)", async () => {
-    const s = await im2Session(core, 0x00);
+    const s = await im2Session(0x00);
     s.uartSend(0, [0x41]).runFrames(1);
     expect(log(s)).toEqual([]);
     expect(s.readNextReg(0xca) & 0x33, "UART 0 RX status").toBe(0x03);
@@ -567,7 +567,7 @@ Park:   jr Park`);
   // -------------------------------------------------------------------------------------------------
 
   it("UART-008: a reset latches both TX empty status bits ($CA bits 6 and 2)", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.readNextReg(0xca), "power-on").toBe(0x44);
     s.setNextReg(0xca, 0x44);
     expect(s.readNextReg(0xca), "cleared").toBe(0x00);
@@ -576,7 +576,7 @@ Park:   jr Park`);
   });
 
   it("UART-008: the request is the TX FIFO emptying, not the transmitter finishing", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di
@@ -600,10 +600,10 @@ Park:   jr Park`);
   });
 
   it("UART-008: $C6 bit 2 / bit 6 interrupt with vector index 12 / 13", async () => {
-    const s = await im2Session(core, 0x04, "", "");
+    const s = await im2Session(0x04, "", "");
     s.out(TX, 0x55).runFrames(1);
     expect(log(s), "UART 0").toEqual([0x18]);
-    const s1 = await im2Session(core, 0x40, "        ld bc,$153b\n        ld a,$40\n        out (c),a", "");
+    const s1 = await im2Session(0x40, "        ld bc,$153b\n        ld a,$40\n        out (c),a", "");
     s1.out(TX, 0x55).runFrames(1);
     expect(log(s1), "UART 1").toEqual([0x1a]);
   });
@@ -613,7 +613,7 @@ Park:   jr Park`);
   // -------------------------------------------------------------------------------------------------
 
   it("UART-009: frame bit 6 holds TX in break: busy, nothing sent until released", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(FRAME, 0x58);
     expect(s.in(TX), "break").toBe(0x00);
     s.out(TX, 0x66).runFrames(2);
@@ -624,7 +624,7 @@ Park:   jr Park`);
   });
 
   it("UART-009: a break on the RX line: framing error, then status bit 7 while it lasts", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartBreak(0, true).runFrames(1);
     expect(s.in(TX), "break").toBe(0xd0);
     expect(s.in(TX), "framing error cleared, break still on").toBe(0x90);
@@ -635,7 +635,7 @@ Park:   jr Park`);
   });
 
   it("UART-009: with flow control ($163B bit 5) the transmitter waits for the peer's CTS", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.uartSetCts(0, false).out(FRAME, 0x38).out(TX, 0x77).runFrames(2);
     expect(s.uartOutput(0), "not clear to send").toEqual([]);
     expect(s.in(TX), "busy").toBe(0x00);
@@ -647,7 +647,7 @@ Park:   jr Park`);
   });
 
   it("UART-009: with flow control RTR stops the peer at 510 bytes: no overflow", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(FRAME, 0x38).uartSend(0, bytes(600)).runFrames(5);
     expect(s.uartReadyToReceive(0), "RTR").toBe(false);
     expect(s.in(TX), "near full, no overflow").toBe(0x19);
@@ -665,7 +665,7 @@ Park:   jr Park`);
   // -------------------------------------------------------------------------------------------------
 
   it("UART-010: with $83 bit 4 clear the four ports read $FF and ignore writes", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x83, s.readNextReg(0x83) & ~0x10);
     expect([TX, RX, SEL, FRAME].map((p) => s.in(p))).toEqual([0xff, 0xff, 0xff, 0xff]);
     s.out(SEL, 0x40).out(FRAME, 0x1b).out(TX, 0x55).runFrames(1);

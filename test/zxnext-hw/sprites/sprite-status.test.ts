@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -18,8 +18,8 @@ import { parkedSession } from "../ula/_ula-helpers";
  */
 
 /** Pattern 0 opaque (index 5), pattern 1 transparent ($E3); every sprite hidden; $15 as given. */
-async function statusSession(core: CoreName, nr15 = 0x03): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function statusSession(nr15 = 0x03): Promise<NextTestSession> {
+  const s = await parkedSession();
   s.setNextReg(0x4b, 0xe3);
   s.out(0x303b, 0x00);
   for (let i = 0; i < 256; i++) s.out(0x005b, 0x05);
@@ -61,9 +61,9 @@ function otherWrites(s: NextTestSession): NextTestSession {
   return s;
 }
 
-describe.each(ALL_CORES)("sprite status $303B - %s core", (core) => {
+describe("sprite status $303B", () => {
   it("a collision alone reads $01 (bits 7-2 zero); it stays set through writes and quiet frames until read", async () => {
-    const s = await statusSession(core);
+    const s = await statusSession();
     expect(s.in(0x303b), "nothing yet").toBe(0x00);
     overlap(s).runFrames(2);
     // --- stop colliding, then write every sprite port and register and run quiet frames
@@ -77,7 +77,7 @@ describe.each(ALL_CORES)("sprite status $303B - %s core", (core) => {
   });
 
   it("an overlong line alone reads $02: transparent pixels cost time but do not collide", async () => {
-    const s = await statusSession(core);
+    const s = await statusSession();
     heavy(s, 1).runFrames(2); // --- pattern 1 is all transparent
     hideAll(s);
     otherWrites(s);
@@ -89,7 +89,7 @@ describe.each(ALL_CORES)("sprite status $303B - %s core", (core) => {
   });
 
   it("both flags read together as $03, and one read clears both", async () => {
-    const s = await statusSession(core);
+    const s = await statusSession();
     heavy(s, 0).runFrames(2); // --- opaque: collisions and overtime
     hideAll(s).runFrames(1);
     expect(s.in(0x303b)).toBe(0x03);
@@ -97,7 +97,7 @@ describe.each(ALL_CORES)("sprite status $303B - %s core", (core) => {
   });
 
   it("the flag comes back when a collision happens again after a read", async () => {
-    const s = await statusSession(core);
+    const s = await statusSession();
     overlap(s).runFrames(2);
     expect(s.in(0x303b) & 0x01).toBe(0x01);
     s.runFrames(1); // --- the sprites still overlap: the next frame raises it again
@@ -106,7 +106,7 @@ describe.each(ALL_CORES)("sprite status $303B - %s core", (core) => {
 
   it("with sprite 0 on top ($15 bit 6) a collision still sets the flag", async () => {
     // --- ~1009 takes spr_line_we, not the zero-on-top gated spr_line_we_s (~979)
-    const s = await statusSession(core, 0x43);
+    const s = await statusSession(0x43);
     overlap(s).runFrames(2);
     expect(s.in(0x303b) & 0x01).toBe(0x01);
   });

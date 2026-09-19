@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 import { VOL_TABLE_YM, ay, magnitude, side, swing, toneHz } from "./_audio-helpers";
 
 /*
@@ -32,8 +32,8 @@ const TONE_ONLY = [0x3e, 0x3d, 0x3b];
 /** Select value %1pp111cc for chip 0/1/2 with pan `pan`. */
 const select = (chip: number, pan = 3) => 0x9c | (pan << 5) | [3, 2, 1][chip];
 
-async function psg(core: CoreName, nr08 = NR08 | TS): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: RATE });
+async function psg(nr08 = NR08 | TS): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: RATE });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   s.setNextReg(0x06, YM).setNextReg(0x08, nr08);
   return s;
@@ -57,10 +57,10 @@ const last = (s: NextTestSession): AudioSample => {
   return a[a.length - 1];
 };
 
-describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
+describe("TurboSound routing and levels", () => {
   it("TS-PAN-1: each chip keeps its own pan: chip 0 left only, chip 1 right only", async () => {
     // --- turbosound.vhd ~132-134: the select write sets only the chosen chip's pan; ~323-329
-    const s = await psg(core);
+    const s = await psg();
     tone(s.out(0xfffd, select(0, 0b10)), 1, 100); // --- chip 0, channel B (centre), pan left
     tone(s.out(0xfffd, select(1, 0b01)), 1, 210); // --- chip 1, channel B (centre), pan right
     const samples = record(s, 4);
@@ -74,7 +74,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-PAN-2: the pan acts after the mono mix: mono chip panned left plays on the left only", async () => {
     // --- turbosound.vhd ~186-192 (mono: L = R = A + B + C), then ~323/327 (pan gates L and R)
-    const s = await psg(core);
+    const s = await psg();
     s.out(0xfffd, select(0, 0b10));
     tone(s, 0, 0x0fe);
     s.setNextReg(0x09, 0x20);
@@ -85,7 +85,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-PAN-3: a pan survives stereo-mode and mono-mode changes", async () => {
     // --- turbosound.vhd ~129: only a select write changes a pan; $08/$09 writes do not
-    const s = await psg(core);
+    const s = await psg();
     s.out(0xfffd, select(0, 0b01)); // --- right only
     tone(s, 1, 0x0fe); // --- B: centre in ABC
     expect(sides(record(s)), "ABC").toEqual({ left: false, right: true });
@@ -95,7 +95,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-PAN-4: with TurboSound off a select value does not change the pan", async () => {
     // --- turbosound.vhd ~129: the select/pan branch needs turbosound_en_i = '1'
-    const s = await psg(core, NR08);
+    const s = await psg(NR08);
     tone(s, 1, 0x0fe);
     s.out(0xfffd, select(0, 0b00)); // --- would mute chip 0
     expect(sides(record(s))).toEqual({ left: true, right: true });
@@ -104,7 +104,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
   for (const chip of [1, 2]) {
     it(`TS-STEREO-1: $08 bit 5 applies to chip ${chip} too: ACB puts channel B on the right only`, async () => {
       // --- turbosound.vhd ~241 / ~296: stereo_mode_i is shared by all three PSGs
-      const s = await psg(core, NR08 | TS | ACB);
+      const s = await psg(NR08 | TS | ACB);
       tone(s.out(0xfffd, select(chip)), 1, 0x0fe);
       expect(sides(record(s)), "ACB").toEqual({ left: false, right: true });
       s.setNextReg(0x08, NR08 | TS);
@@ -114,7 +114,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-STEREO-2: switching $08 bit 5 while a tone plays moves channel C at once", async () => {
     // --- turbosound.vhd ~186: the mux is combinational on stereo_mode_i
-    const s = await psg(core);
+    const s = await psg();
     tone(s, 2, 0x0fe);
     expect(sides(record(s)), "ABC: C right only").toEqual({ left: false, right: true });
     s.setNextReg(0x08, NR08 | TS | ACB);
@@ -125,7 +125,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-MONO-1: mono overrides ACB: channel B, right only in ACB, plays equally on both sides", async () => {
     // --- turbosound.vhd ~186-192: with mono_mode_i(0) = '1' both sides are A + B + C
-    const s = await psg(core, NR08 | TS | ACB);
+    const s = await psg(NR08 | TS | ACB);
     tone(s, 1, 0x0fe);
     expect(sides(record(s)), "ACB stereo").toEqual({ left: false, right: true });
     s.setNextReg(0x09, 0x20);
@@ -136,7 +136,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-MONO-2: mono is per chip: chip 0 mono and chip 1 stereo at the same time", async () => {
     // --- turbosound.vhd ~186 / ~241: mono_mode_i(0) and mono_mode_i(1) are separate ($09 bits 5, 6)
-    const s = await psg(core);
+    const s = await psg();
     tone(s.out(0xfffd, select(0)), 0, 100); // --- chip 0 channel A
     tone(s.out(0xfffd, select(1)), 0, 210); // --- chip 1 channel A
     s.setNextReg(0x09, 0x20);
@@ -160,7 +160,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
   for (const [name, nr08, nr09, left, right] of LEVEL_CASES) {
     it(`TS-LEVEL-1: ${name}`, async () => {
       // --- turbosound.vhd ~186-192; units measured from channel A alone on the left in ABC
-      const s = await psg(core, NR08 | TS);
+      const s = await psg(NR08 | TS);
       ay(s, 7, MIXER_OFF);
       const silent = last(s);
       ay(s, 8, 0x0f);
@@ -178,7 +178,7 @@ describe.each(ALL_CORES)("TurboSound routing and levels - %s core", (core) => {
 
   it("TS-LEVEL-2: the three chips add: three channel A levels give three times one", async () => {
     // --- turbosound.vhd ~334: pcm_ay_L = psg0_L + psg1_L + psg2_L
-    const s = await psg(core);
+    const s = await psg();
     const silent = last(s);
     const levels: number[] = [];
     for (let chip = 0; chip < 3; chip++) {

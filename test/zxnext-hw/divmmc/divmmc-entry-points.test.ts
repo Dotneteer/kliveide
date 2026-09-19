@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * DivMMC automap entry points, ROM 3 gating, $1FF8 off, conmem sweep and the DivMMC NMI button
@@ -65,8 +65,8 @@ type Patch = Array<[addr: number, bytes: number[]]>;
  * at every entry point, page 5 at $2000 (zeroed, plus `page5` patches at their CPU addresses), ROM 3 or
  * ROM 0 selected, automap enabled ($0A bit 4), $E3 = mapram + page 5.
  */
-async function divmmc(core: CoreName, opts: { rom3?: boolean; page3?: Patch; page5?: Patch } = {}): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function divmmc(opts: { rom3?: boolean; page3?: Patch; page5?: Patch } = {}): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(PARK);
   const page3 = new Array(0x2000).fill(0x00);
   for (const e of PAGE3_ENTRIES) page3.splice(e, LD_BC_JP_AFTER.length, ...LD_BC_JP_AFTER);
@@ -133,7 +133,7 @@ const READ_02_BIT2 = `
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
+describe("DivMMC entry points", () => {
   // --- DIV-020: the RST matrix --------------------------------------------------------------------------
 
   /** $B8 / $B9 / $BA bit n, the ROM paged in, and what zxnext.vhd ~2841-2856 make of it. */
@@ -152,7 +152,7 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
       const got: Record<string, Kind> = {};
       const want: Record<string, Kind> = {};
       for (const c of RST_CASES) {
-        const s = await divmmc(core, { rom3: c.rom3 });
+        const s = await divmmc({ rom3: c.rom3 });
         const bit = 1 << n;
         s.setNextReg(0xb8, c.enabled ? bit : 0).setNextReg(0xb9, c.always ? bit : 0).setNextReg(0xba, c.instant ? bit : 0);
         got[c.name] = kind(await fetchAt(s, n * 8));
@@ -170,7 +170,7 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
     const want: Record<string, Kind> = {};
     for (const [e, bit] of [[0x04c6, 2], [0x0562, 3], [0x04d7, 4], [0x056a, 5]]) {
       for (const rom3 of [false, true]) {
-        const s = await divmmc(core, { rom3 });
+        const s = await divmmc({ rom3 });
         s.setNextReg(0xbb, 0x80 | (1 << bit));
         got[`${hex(e, 4)} ROM ${rom3 ? 3 : 0}`] = kind(await fetchAt(s, e));
         want[`${hex(e, 4)} ROM ${rom3 ? 3 : 0}`] = rom3 ? "delayed" : "none";
@@ -194,7 +194,7 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
       [0x3d80, 0x4d, "none"] // --- $BB bit 7 clear
     ];
     for (const [addr, bb, expected] of cases) {
-      const s = await divmmc(core, { page5: [[addr, LD_BC]] });
+      const s = await divmmc({ page5: [[addr, LD_BC]] });
       s.setNextReg(0xbb, bb);
       const key = `${hex(addr, 4)} $BB=${hex(bb)}`;
       got[key] = kind(await fetchAt(s, addr));
@@ -206,14 +206,14 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
   it("DIV-022: $3Dxx needs ROM 3: with ROM 0 paged in, no fetch in $3D00-$3DFF maps", async () => {
     const got: Kind[] = [];
     for (const addr of [0x3d00, 0x3d80, 0x3dff]) {
-      const s = await divmmc(core, { rom3: false, page5: [[addr, LD_BC]] });
+      const s = await divmmc({ rom3: false, page5: [[addr, LD_BC]] });
       got.push(kind(await fetchAt(s, addr)));
     }
     expect(got).toEqual(["none", "none", "none"]);
   });
 
   it("DIV-022: an instant $3Dxx mapping stays after the CPU leaves the range", async () => {
-    const s = await divmmc(core, { page5: [[0x3dfd, [0x00, 0x00, 0x00, ...LD_BC]]] }); // --- NOPs, then ld bc at $3E00
+    const s = await divmmc({ page5: [[0x3dfd, [0x00, 0x00, 0x00, ...LD_BC]]] }); // --- NOPs, then ld bc at $3E00
     await fetchAt(s, 0x3dfd);
     s.step(3); // --- $3DFE, $3DFF, then the ld bc at $3E00 - outside the range
     expect({ bc: s.registers().bc, pc: s.registers().pc, mapped: mapped(s) }).toEqual({ bc: BC_MARK, pc: 0x3e03, mapped: true });
@@ -225,7 +225,7 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
     it(`DIV-023: with ROM 0 paged in, a fetch at ${hex(addr, 4)} ${stays ? "keeps the DivMMC" : "unmaps after its opcode"}`, async () => {
       // --- zxnext.vhd ~2847: A7-3 = 11111 and $BB bit 6 (set after reset: $CD); it is an i_automap_active
       // --- term, not a ROM 3 one; divmmc.vhd ~168 + ~185: that opcode still comes from DivMMC (jp (hl))
-      const s = await divmmc(core, { rom3: false, page3: [[addr, [JP_HL]]] });
+      const s = await divmmc({ rom3: false, page3: [[addr, [JP_HL]]] });
       s.setNextReg(0xba, 0x01); // --- RST $00 instant
       const r = await fetchAt(s, 0x0000, ` ld hl,$8200\n jp $${addr.toString(16)}\n .org $8200\nBack: jr Back`);
       expect(kind(r), "RST $00 instant").toBe("instant");
@@ -245,7 +245,7 @@ describe.each(ALL_CORES)("DivMMC entry points - %s core", (core: CoreName) => {
    * every segment overrides (00/01/10 = the 1st/2nd/3rd 16K of Layer 2 there, 11 = the first 48K).
    */
   async function throughLayer2(target: number, port123b: number): Promise<boolean> {
-    const s = await divmmc(core);
+    const s = await divmmc();
     // --- The code runs from $C000: segment 3 maps Layer 2 over $0000-$BFFF for reads.
     await s.loadCode(
       `
@@ -313,7 +313,7 @@ Park:   jr Park`,
 
   it("DIV-025: without conmem no $E3 value pages anything in; with conmem every RAM bank value gives the DivMMC ROM", async () => {
     // --- divmmc.vhd ~131-133: page 0 is the ROM for conmem (or automap) and not mapram, whatever bits 3-0 say
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(PARK);
     const spectrum = Array.from(s.peekBytes(0x0000, 8));
     const spectrum2000 = Array.from(s.peekBytes(0x2000, 8));
@@ -339,7 +339,7 @@ Park:   jr Park`,
 
   it("DIV-030: without a DivMMC NMI, a fetch at $0066 does not map even with $BB bits 1 and 0", async () => {
     // --- divmmc.vhd ~157-158: the $0066 entry points are ANDed with button_nmi
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xbb, 0xcf);
     expect(kind(await fetchAt(s, 0x0066))).toBe("none");
   });
@@ -370,7 +370,7 @@ After:  jr After`,
   async function nmiEntries(rom3: boolean): Promise<Record<string, Kind>> {
     const got: Record<string, Kind> = {};
     for (const bits of [0b10, 0b01, 0b11, 0b00]) {
-      const s = await divmmc(core, { rom3 });
+      const s = await divmmc({ rom3 });
       s.setNextReg(0xbb, 0x4c | bits);
       got[`$BB bits 1-0 = ${bits.toString(2).padStart(2, "0")}`] = kind(await nmiFetch(s));
     }
@@ -400,7 +400,7 @@ After:  jr After`,
 
   it("DIV-031: the DRIVE button (F10) arms the $0066 entry point too", async () => {
     // --- zxnext.vhd ~2046: hotkey_drive and $06 bit 4 -> nmi_assert_divmmc -> nmi_divmmc_button (~2126)
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xbb, 0x4e);
     await s.loadCode(" .org $8000\nStart: di\n ld sp,$bff0\n ld bc,0\nWait: jr Wait\n .org $8100\nAfter: jr After", { entry: "Start" });
     s.setNextReg(0x06, 0x10).runFrames(1);
@@ -417,7 +417,7 @@ After:  jr After`,
    * again, i.e. the DivMMC no longer holds the NMI); `extra` runs before RETN. After RETN, main probes again.
    */
   async function buttonLatch(extra: string): Promise<{ inHold: number; inExtra: number; afterRetn: number }> {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xbb, 0x4c);
     await s.loadCode(
       `
@@ -483,7 +483,7 @@ ${READ_02_BIT2}
     it(`DIV-033: an automap taken at $0066 clears the button latch: ${offAt1ff8 ? "leaving at $1FF8 releases the NMI" : "while mapped the NMI stays held"}`, async () => {
       // --- divmmc.vhd ~149-150: automap_held clears button_nmi; ~168: $1FF8 ($BB bit 6) drops automap;
       // --- ~187: then nothing holds the NMI, HOLD -> END -> IDLE (zxnext.vhd ~2090-2100) and the $02 flag sets
-      const s = await divmmc(core, {
+      const s = await divmmc({
         page3: [
           [0x0066, [0x21, 0x00, 0x81, 0xc3, 0xf8, 0x1f]], // --- ld hl,$8100 / jp $1ff8
           [0x1ff8, [JP_HL]]
@@ -518,7 +518,7 @@ Flag:   .defb $ff`,
 
   it("DIV-034: while the DivMMC is automapped a Multiface NMI is refused; after RETN it is taken", async () => {
     // --- zxnext.vhd ~2063: nmi_mf only when divmmc_nmi_hold = 0; divmmc.vhd ~187: automap holds
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xba, 0x01); // --- RST $00 instant
     await s.loadCode(
       `
@@ -562,7 +562,7 @@ Go:     .defb 0`,
   it("DIV-035: a DivMMC NMI is accepted while conmem is set (unlike a Multiface one)", async () => {
     // --- zxnext.vhd ~2065: nmi_divmmc has no port_e3_reg(7) condition; conmem is not part of
     // --- divmmc_nmi_hold (divmmc.vhd ~187). With conmem + mapram, $0066 is page 3: ld bc,$1122.
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xbb, 0x4c); // --- no $0066 automap: the opcode comes through conmem
     await s.loadCode(
       `

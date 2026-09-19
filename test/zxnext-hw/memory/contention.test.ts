@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * Memory contention and NextReg $08 bit 6 (catalogue MEM-023).
@@ -27,8 +27,8 @@ import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
 const TIMING = { "48K": 0x90, "128K": 0xa0, "+3": 0xb0, Pentagon: 0xc0 } as const;
 type Timing = keyof typeof TIMING;
 
-async function loopCount(core: CoreName, timing: Timing, page: number, opts: { speed?: number; noContention?: boolean } = {}) {
-  const s = await createSession(core);
+async function loopCount(timing: Timing, page: number, opts: { speed?: number; noContention?: boolean } = {}) {
+  const s = await createSession();
   await s.loadCode(`
         .org $8000
 Start:
@@ -96,12 +96,12 @@ const MATRIX: Array<[Timing, number, boolean]> = [
   ["Pentagon", 5, false]
 ];
 
-describe.each(ALL_CORES)("memory contention - %s core", (core) => {
+describe("memory contention", () => {
   for (const [timing, bank, contended] of MATRIX) {
     const title = `MEM-023: ${timing} timing, bank ${bank} is ${contended ? "" : "not "}contended at 3.5 MHz`;
     const test = async () => {
-      const base = await loopCount(core, timing, UNCONTENDED_PAGE);
-      const count = await loopCount(core, timing, bank * 2);
+      const base = await loopCount(timing, UNCONTENDED_PAGE);
+      const count = await loopCount(timing, bank * 2);
       if (contended) expect(count, `${count} vs ${base} uncontended`).toBeLessThan(base * 0.98);
       else expect(Math.abs(count - base), `${count} vs ${base}`).toBeLessThanOrEqual(2);
     };
@@ -109,14 +109,14 @@ describe.each(ALL_CORES)("memory contention - %s core", (core) => {
   }
 
   it("MEM-023: $08 bit 6 turns contention off", async () => {
-    const base = await loopCount(core, "48K", UNCONTENDED_PAGE, { noContention: true });
-    const count = await loopCount(core, "48K", 10, { noContention: true });
+    const base = await loopCount("48K", UNCONTENDED_PAGE, { noContention: true });
+    const count = await loopCount("48K", 10, { noContention: true });
     expect(Math.abs(count - base), `${count} vs ${base}`).toBeLessThanOrEqual(2);
   });
 
   it("MEM-023: there is no contention at 7 MHz", async () => {
-    const base = await loopCount(core, "48K", UNCONTENDED_PAGE, { speed: 1 });
-    const count = await loopCount(core, "48K", 10, { speed: 1 });
+    const base = await loopCount("48K", UNCONTENDED_PAGE, { speed: 1 });
+    const count = await loopCount("48K", 10, { speed: 1 });
     expect(Math.abs(count - base), `${count} vs ${base}`).toBeLessThanOrEqual(2);
   });
 });

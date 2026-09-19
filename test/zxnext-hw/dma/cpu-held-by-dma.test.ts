@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import type { Z80CpuState } from "@common/messaging/EmuApi";
+
+import { createSession } from "../../harness/zxnext";
 
 /*
  * DMA-030: the CPU panel's "snoozed" flag while a DMA transfer holds the bus across a frame end.
@@ -37,18 +39,18 @@ DmaTable:
 DmaTableEnd:
 Fill:   .defb $77`;
 
-describe.each(ALL_CORES)("CPU held by the DMA - %s core", (core: CoreName) => {
+describe("CPU held by the DMA", () => {
   it("DMA-030: a transfer running across a frame end reports the CPU snoozed; after it, not", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(PROGRAM, { entry: "Start" });
     s.poke(0xc000, 0).poke(0xffff, 0);
 
     s.runFrames(1);
-    expect(s.machine.getCpuState().snoozed, "frame end inside the fill").toBe(true);
+    expect((s.machine.getCpuState() as Z80CpuState).snoozed, "frame end inside the fill").toBe(true);
     expect([s.peek(0xc000), s.peek(0xffff)], "the fill is under way").toEqual([0x77, 0x00]);
 
     s.runFrames(1);
     expect([s.peek(0xc000), s.peek(0xffff)], "the fill is done").toEqual([0x77, 0x77]);
-    expect(s.machine.getCpuState().snoozed, "the CPU runs again").toBe(false);
+    expect((s.machine.getCpuState() as Z80CpuState).snoozed, "the CPU runs again").toBe(false);
   });
 });

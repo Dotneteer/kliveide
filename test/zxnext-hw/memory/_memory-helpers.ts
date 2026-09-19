@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Shared helpers for the memory-management tests (catalogue §4.5).
@@ -23,8 +23,8 @@ export function romBytes(n: number, offset: number, length: number): number[] {
 }
 
 /** Loads `code` at $8000 (after DI), runs it to its end and returns the session. */
-export async function runCode(core: CoreName, code: string, maxFrames = 20): Promise<NextTestSession> {
-  const s = await createSession(core);
+export async function runCode(code: string, maxFrames = 20): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(`
         .org $8000
 ${code}

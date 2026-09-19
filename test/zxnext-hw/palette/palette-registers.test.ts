@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -42,9 +42,9 @@ const asRead = (colour9: number, prio = 0): [number, number] => [colour9 >> 1, (
 
 const subIndex = (s: NextTestSession) => s.readNextReg(0x03) >> 7;
 
-describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
+describe("palette registers", () => {
   it("PAL-001: $40 reads back; a $41 write moves it on by one", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00);
     for (const i of [0x00, 0x37, 0x80, 0xfe]) {
       s.setNextReg(0x40, i);
@@ -57,7 +57,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-002: every 8-bit $41 value: blue LSB = B1 or B0; $41 reads colour bits 8-1, $44 bit 0 the LSB", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x00);
     for (let v = 0; v < 256; v++) s.setNextReg(0x41, v); // --- autoincrement: entry v = v
     const bad: string[] = [];
@@ -70,7 +70,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-002: a $41 write clears the priority bits a $44 write set", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x10).setNextReg(0x40, 0x20).setNextReg(0x44, 0x55).setNextReg(0x44, 0xc1);
     expect(entry(s, 0x20), "after $44 $55,$C1").toEqual(asRead((0x55 << 1) | 1, 3));
     s.setNextReg(0x41, 0x55);
@@ -78,7 +78,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-003: $44 stores the first byte ($28, $03 bit 7 set), writes on the second byte, then moves on", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x05).setNextReg(0x41, 0x1c); // --- entry 5 = $1C
     s.setNextReg(0x40, 0x05).setNextReg(0x44, 0xa4);
     expect([s.readNextReg(0x28), subIndex(s), s.readNextReg(0x40)], "after the first byte: stored, pending, index kept").toEqual([
@@ -97,7 +97,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
 
   for (const second of [0x80, 0x40, 0xc1, 0x3e]) {
     it(`PAL-004: $44 reads back bits 7-6 and 0 of a second byte $${second.toString(16).padStart(2, "0")}, bits 5-1 as 0, for every palette`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       for (let sel = 0; sel < 8; sel++) {
         s.setNextReg(0x43, sel << 4).setNextReg(0x40, 0x42).setNextReg(0x44, 0x5a).setNextReg(0x44, second);
         expect(entry(s, 0x42), `write select ${sel}`).toEqual([0x5a, second & 0xc1]);
@@ -106,7 +106,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   }
 
   it("PAL-005: a $40 write between the two $44 bytes restarts the pair; so does a $43 write", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00);
     s.setNextReg(0x40, 10).setNextReg(0x41, 0x00).setNextReg(0x41, 0x00); // --- entries 10, 11 = 0
     s.setNextReg(0x40, 20).setNextReg(0x41, 0x00).setNextReg(0x41, 0x00); // --- entries 20, 21 = 0
@@ -127,7 +127,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-006: a $41 write between the two $44 bytes writes its entry and restarts the pair", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 10);
     for (let i = 0; i < 4; i++) s.setNextReg(0x41, 0x00); // --- entries 10-13 = 0
     s.setNextReg(0x40, 10).setNextReg(0x44, 0x11).setNextReg(0x41, 0x33);
@@ -141,7 +141,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-007: with $43 bit 7 repeated $41 writes and $44 pairs change one entry", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 7).setNextReg(0x41, 0x00).setNextReg(0x41, 0x00); // --- 7, 8 = 0
     s.setNextReg(0x43, 0x80).setNextReg(0x40, 7).setNextReg(0x41, 0xe0).setNextReg(0x41, 0x1c);
     expect(s.readNextReg(0x40), "index kept after two $41 writes").toBe(7);
@@ -154,7 +154,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-008: each of the eight write selections has its own entries; $41/$44 read the selected one", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     const colour = (sel: number) => 0x21 + sel * 0x1b; // --- eight distinct 8-bit values
     for (let sel = 0; sel < 8; sel++) {
       s.setNextReg(0x43, sel << 4).setNextReg(0x40, 0x99).setNextReg(0x44, colour(sel)).setNextReg(0x44, sel & 1);
@@ -169,7 +169,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-008: $43 stores all eight bits and reads them back", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     for (const v of [0xff, 0x00, 0xaa, 0x55, 0x7e, 0x81]) {
       s.setNextReg(0x43, v);
       expect(s.readNextReg(0x43), `$43 = $${v.toString(16)}`).toBe(v);
@@ -177,7 +177,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-012: the index wraps from 255 to 0 after a $41 write and after a $44 pair", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x00).setNextReg(0x41, 0x00).setNextReg(0x40, 0xff);
     s.setNextReg(0x41, 0xe7);
     expect(s.readNextReg(0x40), "after $41 at 255").toBe(0x00);
@@ -190,7 +190,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
   });
 
   it("PAL-013: a soft reset keeps the palette RAM and clears the index, $43, the pending byte and $28", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     const colour = (sel: number, i: number) => (sel * 37 + i * 11 + 5) & 0xff;
     const INDICES = [0x00, 0x01, 0x10, 0x80, 0xe3, 0xff];
     for (let sel = 0; sel < 8; sel++) {
@@ -220,7 +220,7 @@ describe.each(ALL_CORES)("palette registers - %s core", (core: CoreName) => {
    * them, now that a soft reset keeps the RAM (PAL-013).
    */
   it("Klive's hard reset reloads its default palettes", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     for (let sel = 0; sel < 8; sel++) s.setNextReg(0x43, sel << 4).setNextReg(0x40, 0x0b).setNextReg(0x41, 0x00);
     s.hardReset();
     const read = (sel: number, i: number) => (s.setNextReg(0x43, sel << 4), entry(s, i));

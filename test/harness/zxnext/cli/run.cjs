@@ -1,7 +1,7 @@
 /**
  * Visual test runner. See .plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md.
  *
- * Usage: npm run test:visual -- [case ...] [--tier headless|browser] [--core ts|wasm|both] [--long]
+ * Usage: npm run test:visual -- [case ...] [--tier headless|browser] [--long]
  *                                [--approve] [--list] [--verbose]
  */
 (async () => {

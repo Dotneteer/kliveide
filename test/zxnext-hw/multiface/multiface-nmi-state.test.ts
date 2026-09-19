@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Multiface NMI state, page-in rules and memory priority (catalogue MF-008 - MF-012). Ported from the
@@ -44,8 +44,8 @@ function setType(s: NextTestSession, type: number): NextTestSession {
 }
 
 /** A parked session with the Multiface type set; `body` runs first, then a Multiface NMI is requested. */
-async function mf(core: CoreName, type: number, body = ""): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function mf(type: number, body = ""): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nLoop: jr Loop");
   setType(s, type);
   await s.loadCode(
@@ -87,7 +87,7 @@ function retn(s: NextTestSession): NextTestSession {
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
+describe("Multiface NMI state", () => {
   // --- MF-008: port writes end the NMI --------------------------------------------------------------
 
   for (const type of [0, 1, 3]) {
@@ -98,7 +98,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
         [`out ($${en.toString(16)}),a`, [0xd3, en], true],
         [`out ($${dis.toString(16)}),a`, [0xd3, dis], true]
       ] as const) {
-        const s = await mf(core, type);
+        const s = await mf(type);
         takeNmi(s);
         expect(secondNmi(s, [...code]), what).toBe(expected);
       }
@@ -108,7 +108,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   // --- MF-009: after RETN ----------------------------------------------------------------------------
 
   it("MF-009: after RETN a new Multiface NMI is accepted", async () => {
-    const s = await mf(core, 0);
+    const s = await mf(0);
     takeNmi(s);
     retn(s);
     expect([pagedIn(s), s.registers().pc], "paged out, back in the program").toEqual([false, s.symbol("Loop")]);
@@ -120,7 +120,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   });
 
   it("MF-009: MF+3 after RETN: still visible - the enable port pages in and answers ($7FFD by A15-A12)", async () => {
-    const s = await mf(core, 0, `        ld bc,$7ffd\n        ld a,$10\n        out (c),a`);
+    const s = await mf(0, `        ld bc,$7ffd\n        ld a,$10\n        out (c),a`);
     takeNmi(s);
     retn(s);
     expect(pagedIn(s), "RETN paged out").toBe(false);
@@ -131,7 +131,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   });
 
   it("MF-009: MF128 after RETN: still visible - the enable port pages in and answers", async () => {
-    const s = await mf(core, 1, `        ld bc,$7ffd\n        ld a,$18\n        out (c),a`);
+    const s = await mf(1, `        ld bc,$7ffd\n        ld a,$18\n        out (c),a`);
     takeNmi(s);
     retn(s);
     expect(pagedIn(s), "RETN paged out").toBe(false);
@@ -141,7 +141,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
 
   it("MF-009: an MF+3 enable-port read at $Exxx returns $EFF7 bits 3-2 in place", async () => {
     // --- ~4295: "0000" & port_eff7_reg_3 & port_eff7_reg_2 & "00"
-    const s = await mf(core, 0, `        ld bc,$eff7\n        ld a,$0c\n        out (c),a`);
+    const s = await mf(0, `        ld bc,$eff7\n        ld a,$0c\n        out (c),a`);
     takeNmi(s);
     expect(s.in(0xef3f)).toBe(0x0c);
   });
@@ -149,7 +149,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   // --- MF-010: $0066 without an NMI ------------------------------------------------------------------
 
   it("MF-010: executing $0066 without a Multiface NMI does not page it in", async () => {
-    const s = await mf(core, 0);
+    const s = await mf(0);
     s.poke(0x8100, [0xc3, 0x66, 0x00]).setRegisters({ pc: 0x8100 }).step(1);
     expect(s.registers().pc).toBe(0x0066);
     s.step(1);
@@ -159,7 +159,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   // --- MF-011: write priority over DivMMC ------------------------------------------------------------
 
   it("MF-011: paged in above DivMMC conmem, writes to $2000-$3FFF go to the Multiface RAM, not DivMMC's", async () => {
-    const s = await mf(core, 3);
+    const s = await mf(3);
     s.out(0xe3, 0x80); // --- conmem: DivMMC ROM at $0000, DivMMC RAM bank 0 at $2000
     s.poke(0x2000, 0x11);
     expect(s.peek(0x2000), "DivMMC RAM").toBe(0x11);
@@ -176,7 +176,7 @@ describe.each(ALL_CORES)("Multiface NMI state - %s core", (core: CoreName) => {
   // --- MF-012: port enable off -----------------------------------------------------------------------
 
   it("MF-012: with $83 bit 1 off the Multiface NMI still reaches $0066, but the Multiface stays out", async () => {
-    const s = await mf(core, 0);
+    const s = await mf(0);
     s.setNextReg(0x83, s.readNextReg(0x83) & ~0x02);
     const rom = Array.from(s.peekBytes(0x0000, 16));
     s.runTo(0x0066, { maxFrames: 2 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress } from "../../harness/zxnext";
+import { createSession, displayFileAddress } from "../../harness/zxnext";
 
 /*
  * MEM-025 - $7FFD bit 3 displays bank 7 instead of bank 5 (the 128K shadow screen).
@@ -9,9 +9,9 @@ import { ALL_CORES, createSession, displayFileAddress } from "../../harness/zxne
  * ~3657) selects the bank the ULA fetches from. Cell (0,0) gets paper 1 in bank 5 and paper 2 in
  * bank 7, with an empty bitmap in both; bank 7 is paged at $C000 to write it.
  */
-describe.each(ALL_CORES)("shadow screen - %s core", (core) => {
+describe("shadow screen", () => {
   it("$7FFD bit 3 switches the display between bank 5 and bank 7", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x11).setNextReg(0x41, 0x03).setNextReg(0x41, 0xe0); // --- paper 1 blue, 2 red
     s.out(0x7ffd, 0x07); // --- bank 7 at $C000, bank 5 displayed

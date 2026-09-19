@@ -17,8 +17,8 @@ import { startVisualServer, type VisualServer } from "../server/http";
  * page boots NextZXOS from a clone of ~/Klive/ks2.cim, types `.nexload` exactly as `nex-run` does
  * (in frames, not milliseconds), and hands back the frames counted from the program's ready marker.
  *
- * The frames then go through the same oracles as Tier 1 (`evaluateFrames`) under the core name
- * `wasm` - the page runs the WASM core, so WASM known failures apply - plus two of its own:
+ * The frames then go through the same oracles as Tier 1 (`evaluateFrames`) - the page runs the same
+ * WASM core, so the case's known failures apply - plus two of its own:
  * `headless` (static screens: equal to the Tier 1 WASM frame, i.e. the direct loader hides nothing)
  * and `canvas` (what the page painted matches the pixel buffer).
  */
@@ -94,17 +94,17 @@ export async function launchBrowserTier(vite: ViteDevServer, options: { headed?:
         }
 
         checks.push(
-          judge(known, "ready", "wasm", undefined, st.readyFrame !== undefined,
+          judge(known, "ready", undefined, st.readyFrame !== undefined,
             `real .nexload of ${st.sdPath}: typed after ${st.bootFrames} frames, ready at frame ${st.readyFrame}`)
         );
 
-        const evaluated = await evaluateFrames(spec, "wasm", frames, plan.png, outDir, "browser");
+        const evaluated = await evaluateFrames(spec, frames, plan.png, outDir, "browser");
         checks.push(...evaluated.checks);
         images.push(...evaluated.images);
 
         if (spec.expectIdenticalFrames && frames.has(plan.png[0])) {
           const inPage = frames.get(plan.png[0])!;
-          const headless = await renderHeadlessFrame(loaded, "wasm", plan.png[0]);
+          const headless = await renderHeadlessFrame(loaded, plan.png[0]);
           const d = diffFrames(headless, inPage);
           if (d.differing) {
             const p = join(dir, "diff-headless-browser.png");
@@ -112,7 +112,7 @@ export async function launchBrowserTier(vite: ViteDevServer, options: { headed?:
             images.push(p);
           }
           checks.push(
-            judge(known, "headless", "wasm", undefined, d.differing === 0,
+            judge(known, "headless", undefined, d.differing === 0,
               d.differing === 0
                 ? `equals the Tier 1 WASM frame (${frameHash(inPage)}): the direct loader hides nothing here`
                 : `${d.differing} px differ from Tier 1 WASM in x${d.box?.x.join("-")} y${d.box?.y.join("-")}, first (${d.first?.x},${d.first?.y}) headless ${d.first?.a} browser ${d.first?.b}; NextRegs at ready ${JSON.stringify(st.nextRegsAtReady)}`)
@@ -124,9 +124,9 @@ export async function launchBrowserTier(vite: ViteDevServer, options: { headed?:
           writeFileSync(canvasPath, canvasPng);
           images.push(canvasPath);
           const cmp = await compareCanvas(canvasPng, inPage);
-          checks.push(judge(known, "canvas", "wasm", undefined, cmp.pass, cmp.detail));
+          checks.push(judge(known, "canvas", undefined, cmp.pass, cmp.detail));
         }
-        if (pageErrors.length) checks.push(judge(known, "ready", "wasm", "page errors", false, pageErrors.slice(0, 3).join(" | ")));
+        if (pageErrors.length) checks.push(judge(known, "ready", "page errors", false, pageErrors.slice(0, 3).join(" | ")));
 
         const hashes = { browser: evaluated.hashes };
         const golden = compareGolden(loaded, ["browser"], hashes);
@@ -137,7 +137,7 @@ export async function launchBrowserTier(vite: ViteDevServer, options: { headed?:
           status: failed ? "fail" : "pass",
           checks,
           golden,
-          hashes: hashes as never,
+          hashes,
           outDir: dir,
           images,
           directLoadDifferences: [

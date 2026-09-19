@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -22,8 +22,8 @@ const PAPER = 0x1c;
 const BORDER = 0xe0;
 const FALLBACK = 0x03;
 
-async function screen(core: CoreName): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function screen(): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, [[16 + 4, PAPER], [16 + 2, BORDER]]);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, FALLBACK);
   fillScreen(s, 0x00, 4 << 3); // --- PAPER 4 everywhere, no ink
@@ -37,9 +37,9 @@ const paper = (s: NextTestSession, x: [number, number], y: [number, number]) =>
 const clip = (s: NextTestSession, x1: number, x2: number, y1: number, y2: number) =>
   s.setNextReg(0x1c, 0x04).setNextReg(0x1a, x1).setNextReg(0x1a, x2).setNextReg(0x1a, y1).setNextReg(0x1a, y2);
 
-describe.each(ALL_CORES)("ULA clip window - %s core", (core: CoreName) => {
+describe("ULA clip window", () => {
   it("ULA-013: outside the inclusive window the ULA is transparent; the border is never clipped", async () => {
-    const s = await screen(core);
+    const s = await screen();
     clip(s, 16, 47, 8, 23).runFrames(2);
     expect({
       inside: paper(s, [16, 47], [8, 23]),
@@ -59,7 +59,7 @@ describe.each(ALL_CORES)("ULA clip window - %s core", (core: CoreName) => {
   });
 
   it("ULA-013: a y2 of $C0-$FF acts as $BF; x2 < x1 clips every paper pixel", async () => {
-    const s = await screen(core);
+    const s = await screen();
     clip(s, 0, 255, 100, 0xff).runFrames(2);
     expect({ top: paper(s, [0, 255], [0, 99]), bottom: paper(s, [0, 255], [100, 191]) }).toEqual({
       top: hex8(FALLBACK),
@@ -71,7 +71,7 @@ describe.each(ALL_CORES)("ULA clip window - %s core", (core: CoreName) => {
   });
 
   it("ULA-014: $1A writes cycle x1, x2, y1, y2 and wrap; $1C bit 2 resets the index", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     expect(s.readNextReg(0x1c) & 0x30, "index after reset").toBe(0x00);
     // --- reset values, read by walking the index with writes of the same value
     const values: number[] = [];

@@ -1,78 +1,55 @@
 import { describe, expect, it } from "vitest";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { ULA_BORDER_COLOR_NAMES } from "@common/messaging/EmuApi";
 
-const KEY_CASES = [0, 6, 14, 23, 39];
-const PORT_CASES = [0xfefe, 0xfdfe, 0xfbfe, 0x7ffe, 0x00fe];
-
+/*
+ * The keyboard matrix and the $FE read bits are covered by `test/zxnext-hw/keyboard/` and
+ * `test/zxnext-hw/ports/port-decode` (PORT-005). What stays here is the ULA panel state, the floating
+ * bus accessor and the analog EAR discharge, which the harness does not observe.
+ */
 describe("ZX Spectrum Next WASM keyboard and ULA ports", () => {
-  it("matches TypeScript keyboard row values and ULA port reads", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
+  it("reports issue 2/3 MIC contribution and border state through port $FE", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    for (const key of KEY_CASES) {
-      oracle.setKeyStatus(key, true);
-      wasm.setKeyStatus(key, true);
-    }
-
-    expect(Array.from({ length: 8 }, (_, line) => wasm.wasmV2Runtime!.exports.zxnextGetKeyboardLine(line))).toEqual(
-      Array.from({ length: 8 }, (_, line) => oracle.keyboardDevice.getKeyLineValue(line))
-    );
-    expect(PORT_CASES.map(port => wasm.doReadPort(port))).toEqual(PORT_CASES.map(port => oracle.doReadPort(port)));
-
-    for (const key of KEY_CASES) {
-      oracle.setKeyStatus(key, false);
-      wasm.setKeyStatus(key, false);
-    }
-    expect(PORT_CASES.map(port => wasm.doReadPort(port))).toEqual(PORT_CASES.map(port => oracle.doReadPort(port)));
-  });
-
-  it("matches issue 2/3 MIC contribution and border state through port $FE", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-
-    oracle.doWritePort(0x00fe, 0x08);
+    // --- zxnext.vhd ~3453-3465: $FE bit 6 is the last $FE bit 4 (issue 3), or bit 3 (MIC) with
+    // --- NextReg $08 bit 0 set (issue 2). Bits 7 and 5 read 1, no key pressed gives bits 4-0 = 1s.
     wasm.doWritePort(0x00fe, 0x08);
-    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
-    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x00);
+    expect(wasm.doReadPort(0x00fe)).toBe(0xbf);
 
-    oracle.tbblueOut(0x08, 0x1b);
     wasm.tbblueOut(0x08, 0x1b);
-    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
-    expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x40);
+    expect(wasm.doReadPort(0x00fe)).toBe(0xff);
 
-    oracle.doWritePort(0x00fe, 0x17);
     wasm.doWritePort(0x00fe, 0x17);
     expect(wasm.getWasmV2UlaState()).toMatchObject({
-      // --- Still a WASM-vs-TypeScript parity check; it now also pins the name mapping that
-      // --- `UlaState.bor` declares. See ULA_BORDER_COLOR_NAMES in @common/messaging/EmuApi.
-      bor: ULA_BORDER_COLOR_NAMES[oracle.composedScreenDevice.borderColor & 0x07],
+      // --- Border = $17 bits 2-0 = 7; `UlaState.bor` is its name (see ULA_BORDER_COLOR_NAMES)
+      bor: ULA_BORDER_COLOR_NAMES[0x17 & 0x07],
       ear: true,
       mic: false
     });
-    expect(wasm.floatingBusDevice.readFloatingBus()).toBe(oracle.doReadPort(0xffff));
+    // --- Pinned (the value both cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19`): the
+    // --- floating bus outside the display, as a port $FF read returns it
+    expect(wasm.floatingBusDevice.readFloatingBus()).toBe(0xff);
+    expect(wasm.doReadPort(0xffff)).toBe(0xff);
   });
 
-  it("matches TypeScript analog EAR discharge timing on port $FE bit 6", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
+  it("keeps port $FE bit 6 up for the analog EAR discharge time", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    oracle.setTacts(100);
     wasm.setTacts(100);
-    oracle.doWritePort(0x00fe, 0x10);
     wasm.doWritePort(0x00fe, 0x10);
 
-    oracle.setTacts(110);
     wasm.setTacts(110);
-    oracle.doWritePort(0x00fe, 0x00);
     wasm.doWritePort(0x00fe, 0x00);
 
-    oracle.setTacts(149);
+    // --- Pinned (the values both cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19`): after
+    // --- EAR goes low at tact 110, bit 6 still reads 1 at tact 149 and drops at tact 150.
     wasm.setTacts(149);
-    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
+    expect(wasm.doReadPort(0x00fe)).toBe(0xff);
     expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x40);
 
-    oracle.setTacts(150);
     wasm.setTacts(150);
-    expect(wasm.doReadPort(0x00fe)).toBe(oracle.doReadPort(0x00fe));
+    expect(wasm.doReadPort(0x00fe)).toBe(0xbf);
     expect(wasm.doReadPort(0x00fe) & 0x40).toBe(0x00);
   });
 });

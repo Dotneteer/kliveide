@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress, type NextTestSession } from "../../harness/zxnext";
+import { createSession, displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * B6 - layer mixing cases from zxnext.vhd stage 2 (~7060-7124 and the SLU ordering after it).
@@ -30,8 +30,8 @@ type Scene = {
   sprites?: Array<[x: number, y: number]>;
 };
 
-async function scene(core: "ts" | "wasm", sc: Scene): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function scene(sc: Scene): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(` .org $8000\n jr $`);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xa2).setNextReg(0x4b, 0xe3).setNextReg(0x4c, 0x00);
   // --- ULA: PAPER 2 red everywhere, bitmap clear, white border
@@ -80,7 +80,7 @@ const colourAt = (s: NextTestSession, region: { x: readonly [number, number]; y:
   return [...colours].join(",");
 };
 
-describe.each(ALL_CORES)("layer mixing (B6) - %s core", (core) => {
+describe("layer mixing (B6)", () => {
   describe("blend mode 6 with a tilemap above the ULA", () => {
     const cases: Array<[mode: number, expected: string, why: string]> = [
       [0x00, "#00FF00", "00: tilemap is the top layer"],
@@ -90,14 +90,14 @@ describe.each(ALL_CORES)("layer mixing (B6) - %s core", (core) => {
     ];
     for (const [mode, expected, why] of cases) {
       it(`$68 = $${mode.toString(16).padStart(2, "0")} - ${why}`, async () => {
-        const s = await scene(core, { priority: 6, nextReg68: mode, tilemap: true, layer2: true });
+        const s = await scene({ priority: 6, nextReg68: mode, tilemap: true, layer2: true });
         expect(colourAt(s, PAPER)).toBe(expected);
       });
     }
   });
 
   it("blend mode 6: a ULA disabled by $68 bit 7 is still the blend operand", async () => {
-    const s = await scene(core, { priority: 6, nextReg68: 0x80, layer2: true });
+    const s = await scene({ priority: 6, nextReg68: 0x80, layer2: true });
     expect(colourAt(s, PAPER)).toBe("#FF00FF"); // --- red + blue
   });
 
@@ -105,7 +105,7 @@ describe.each(ALL_CORES)("layer mixing (B6) - %s core", (core) => {
     it(`${name}: a sprite shows over the ULA border, not over the ULA paper`, async () => {
       // --- sprite x 16 -> buffer x 64-95 (left border); sprite x 64 -> buffer x 160-191 (paper);
       // --- sprite y 60 -> paper row 28 -> buffer rows 76-91
-      const s = await scene(core, { priority, sprites: [[16, 60], [64, 60]] });
+      const s = await scene({ priority, sprites: [[16, 60], [64, 60]] });
       expect({
         border: colourAt(s, { x: [66, 93], y: [78, 89] }),
         paper: colourAt(s, { x: [162, 189], y: [78, 89] })

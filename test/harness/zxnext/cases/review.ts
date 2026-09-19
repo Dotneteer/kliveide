@@ -7,8 +7,6 @@ import type { CaseResult } from "./run-case";
 /** What an AI (or human) reviewer writes next to `review.md`. */
 export type Verdict = {
   verdict: "pass" | "fail" | "unsure";
-  /** Per core (`ts`, `wasm`) or tier (`browser`): lets a correct core be approved while another shows a known bug. */
-  cores?: Record<string, "pass" | "fail" | "unsure">;
   reviewer: string;
   /** What the reviewer saw, in its own words, before comparing (guards against confirmation). */
   observations: string[];
@@ -56,7 +54,7 @@ export function writeReviewPrompt(loaded: LoadedCase, result: CaseResult): strin
   lines.push("## Expectation (expect.md)", "", loaded.expectMd.trim(), "");
   lines.push("## Automated oracle results", "");
   for (const c of result.checks) {
-    const who = [c.oracle, c.core, c.name].filter(Boolean).join(" / ");
+    const who = [c.oracle, c.name].filter(Boolean).join(" / ");
     lines.push(`- **${statusMark[c.status]}** ${who}: ${c.detail}${c.knownReason ? ` _(known: ${c.knownReason})_` : ""}`);
   }
   lines.push(`- golden: ${result.golden.state}${result.golden.changes.length ? ` - ${result.golden.changes.join("; ")}` : ""}`);
@@ -70,7 +68,6 @@ export function writeReviewPrompt(loaded: LoadedCase, result: CaseResult): strin
     JSON.stringify(
       {
         verdict: "pass | fail | unsure",
-        cores: Object.fromEntries(Object.keys(result.hashes).map((k) => [k, "pass | fail | unsure"])),
         reviewer: "claude-code",
         observations: ["what the images show, written before comparing"],
         discrepancies: [{ image: "wasm/frame-00050.png", region: "x 96-607, y 72-95", description: "..." }],
@@ -83,8 +80,7 @@ export function writeReviewPrompt(loaded: LoadedCase, result: CaseResult): strin
     "```",
     "",
     "The verdict is about the **picture against the hardware expectation**, not about the probes: a case",
-    "whose probes pass can still fail review, and a known (XFAIL) emulator bug is still a `fail` for",
-    "the core that shows it. Say which core in the discrepancy."
+    "whose probes pass can still fail review, and a known (XFAIL) emulator bug is still a `fail`."
   );
   const path = join(result.outDir, "review.md");
   writeFileSync(path, lines.join("\n") + "\n");

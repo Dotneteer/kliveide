@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * Selecting and writing NextRegs (catalogue NR-001 - NR-005).
@@ -14,9 +14,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
  *   touch `nr_register`.
  * `$7F` (user register) is a full 8-bit read/write register, used here as the neutral target.
  */
-describe.each(ALL_CORES)("NextReg select and write - %s core", (core) => {
+describe("NextReg select and write", () => {
   it("NR-001: $243B selects, $253B writes and reads back the selected register", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     for (const value of [0x00, 0x01, 0x55, 0x80, 0xaa, 0xff]) {
       s.out(0x243b, 0x7f).out(0x253b, value);
       expect(s.in(0x253b), `$${value.toString(16)}`).toBe(value);
@@ -24,7 +24,7 @@ describe.each(ALL_CORES)("NextReg select and write - %s core", (core) => {
   });
 
   it("NR-002: the selection survives writes to unrelated ports", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x243b, 0x7f).out(0x253b, 0x5a);
     s.out(0x00fe, 0x02).out(0x123b, 0x00).out(0xfffd, 0x07).out(0xbffd, 0x3f).out(0x7ffd, 0x00);
     expect(s.in(0x243b)).toBe(0x7f);
@@ -32,7 +32,7 @@ describe.each(ALL_CORES)("NextReg select and write - %s core", (core) => {
   });
 
   it("NR-003: reading $243B returns the selected register number", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     for (const reg of [0x00, 0x15, 0x7f, 0x80, 0xff]) {
       s.out(0x243b, reg);
       expect(s.in(0x243b), `$${reg.toString(16)}`).toBe(reg);
@@ -40,14 +40,14 @@ describe.each(ALL_CORES)("NextReg select and write - %s core", (core) => {
   });
 
   it.each(["soft", "hard"] as const)("NR-003: a %s reset selects register 0x24", async (kind) => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x243b, 0x7f);
     kind === "soft" ? s.reset() : s.hardReset();
     expect(s.in(0x243b)).toBe(0x24);
   });
 
   it("NR-004: NEXTREG n,v writes like the port path and leaves the $243B selection alone", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         nextreg $14,$5a          ; global transparency
@@ -63,7 +63,7 @@ Done:   jr Done
   });
 
   it("NR-005: NEXTREG n,A writes A to register n", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         ld a,$00

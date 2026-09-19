@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, rgb333ToHex, type CoreName } from "../../harness/zxnext";
+import { rgb333ToHex } from "../../harness/zxnext";
 import { colours, parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -26,9 +26,9 @@ const CASES: Array<[number, number, number, number]> = [
   [0x96, 4, 5, 0b101]
 ];
 
-describe.each(ALL_CORES)("$4A fallback colour - %s core", (core: CoreName) => {
+describe("$4A fallback colour", () => {
   it("the whole frame shows $4A with the low blue bit = B1 or B0 when $68 bit 7 hides the ULA", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     s.setNextReg(0x68, 0x80).runFrames(1);
     const got: string[] = [];
     for (const [value] of CASES) {

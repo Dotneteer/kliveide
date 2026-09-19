@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 import { MASTER_CLOCK, side } from "../audio/_audio-helpers";
 import { colours, hex8, writePalette } from "../ula/_ula-helpers";
@@ -120,8 +120,8 @@ function readBack(s: NextTestSession, port = ZXN) {
 
 const status = (s: NextTestSession, port = ZXN) => s.out(port, READ_STATUS).in(port);
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   return s;
 }
@@ -141,8 +141,8 @@ const otir = (label: string, port = ZXN) => `
  * A program that sends `bytes` (a setup) to the DMA, then enables it at `Enable`; `Done` follows one
  * NOP later. `between` runs after the enable. Returns the session, not yet run.
  */
-async function enableProgram(core: CoreName, bytes: number[], opts: { speed?: number; between?: string; extra?: string } = {}) {
-  const s = await createSession(core);
+async function enableProgram(bytes: number[], opts: { speed?: number; between?: string; extra?: string } = {}) {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   await s.loadCode(
     `
@@ -175,7 +175,7 @@ function timeEnable(s: NextTestSession): number {
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
+describe("DMA", () => {
   // --- DMA-001: the two ports --------------------------------------------------------------------------
 
   for (const [port, name, moved] of [
@@ -183,7 +183,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
     [Z80, "$0B (Z80 DMA)", 5]
   ] as const) {
     it(`DMA-001: through ${name} a block length of 4 moves ${moved} bytes`, async () => {
-      const s = await parked(core);
+      const s = await parked();
       numbered(s, 0xc000, 8);
       write(s, [...setup({ a: 0xc000, b: 0xc100, len: 4 }), ENABLE], port).runFrames(1);
       expect(Array.from(s.peekBytes(0xc100, 6))).toEqual([1, 2, 3, 4, 5, 6].map((v, i) => (i < moved ? v : 0)));
@@ -191,14 +191,14 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   }
 
   it("DMA-001: the mode is the port of the last access - a load through $0B counts from $FFFF", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 8);
     const bytes = setup({ a: 0xc000, b: 0xc100, len: 4 });
     write(s, bytes.slice(0, -1)); // --- everything but LOAD through $6B
     write(s, [LOAD], Z80).out(ZXN, ENABLE).runFrames(1); // --- $87 does not touch the counter
     expect(Array.from(s.peekBytes(0xc100, 6)), "Z80 load: 5 bytes").toEqual([1, 2, 3, 4, 5, 0]);
 
-    const t = await parked(core);
+    const t = await parked();
     numbered(t, 0xc000, 8);
     write(t, bytes.slice(0, -1), Z80);
     write(t, [LOAD]).out(Z80, ENABLE).runFrames(1);
@@ -208,7 +208,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   // --- DMA-002: WR0 and the read-back --------------------------------------------------------------------
 
   it("DMA-002: after a load the read sequence gives status, counter, port A and port B", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, setup({ a: 0x1234, b: 0x5678, len: 0x10 }));
     expect(reads(s, 8), "from reset: status first, mask $7F").toEqual([STATUS_IDLE, 0, 0, 0x34, 0x12, 0x78, 0x56, STATUS_IDLE]);
     write(s, setup({ a: 0x1234, b: 0x5678, len: 0x10, bToA: true }));
@@ -220,7 +220,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   // --- DMA-003 - DMA-005: memory to memory ----------------------------------------------------------------
 
   it("DMA-003: memory to memory copies 256 bytes; the source is unchanged", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const data = Array.from({ length: 256 }, (_, i) => (i * 37 + 11) & 0xff);
     s.poke(0xc000, data);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 256 }), ENABLE]).runFrames(1);
@@ -231,7 +231,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   });
 
   it("DMA-004: decrementing addresses copy downwards; an overlapping move up is correct", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const data = Array.from({ length: 256 }, (_, i) => (i * 13 + 5) & 0xff);
     s.poke(0xc000, data);
     write(s, [...setup({ a: 0xc0ff, b: 0xd0ff, len: 256, aMode: "dec", bMode: "dec" }), ENABLE]).runFrames(1);
@@ -246,7 +246,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   });
 
   it("DMA-005: a fixed source fills; a fixed destination keeps the last byte", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.poke(0xc000, 0xa5);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 256, aMode: "fixed" }), ENABLE]).runFrames(1);
     expect(Array.from(s.peekBytes(0xd000, 257))).toEqual([...new Array(256).fill(0xa5), 0]);
@@ -259,14 +259,14 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
   // --- DMA-006 / DMA-007: I/O ------------------------------------------------------------------------
 
   it("DMA-006: memory to I/O writes every byte to the port - the AY register keeps the last", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.poke(0xc000, [0x11, 0x22, 0x33, 0x44]).out(0xfffd, 0x00); // --- AY register 0 (8 bits)
     write(s, [...setup({ a: 0xc000, b: 0xbffd, len: 4, bIo: true, bMode: "fixed" }), ENABLE]).runFrames(1);
     expect(s.out(0xfffd, 0x00).in(0xfffd)).toBe(0x44);
   });
 
   it("DMA-007: I/O to memory reads the port repeatedly", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0xfffd, 0x00).out(0xbffd, 0x5a).out(0xfffd, 0x00);
     write(s, [...setup({ a: 0xfffd, b: 0xd000, len: 16, aIo: true, aMode: "fixed" }), ENABLE]).runFrames(1);
     expect(Array.from(s.peekBytes(0xd000, 17))).toEqual([...new Array(16).fill(0x5a), 0]);
@@ -279,7 +279,7 @@ describe.each(ALL_CORES)("DMA - %s core", (core: CoreName) => {
    * arrives. A prescaled 16-byte block lasts about 16 x 400 T-states.
    */
   async function passesDuringTransfer(mode: keyof typeof OP_MODE, prescaler: number) {
-    const s = await enableProgram(core, [...setup({ a: 0xc000, b: 0xd000, len: 16, mode, prescaler })], {
+    const s = await enableProgram([...setup({ a: 0xc000, b: 0xd000, len: 16, mode, prescaler })], {
       between: `
         ld hl,0
 Wait:   inc hl                   ; 6
@@ -308,7 +308,7 @@ Wait:   inc hl                   ; 6
 
   it("DMA-009: with prescaler 100 a byte moves every 400 T-states at 3.5 MHz (875 kHz / 100)", async () => {
     // --- continuous: the CPU waits for the whole block; one byte = 4 x 100 T-states + 2 clocks
-    const s = await enableProgram(core, setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }));
+    const s = await enableProgram(setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }));
     const t = timeEnable(s);
     expect(t, `${t} T-states for 20 bytes`).toBeGreaterThanOrEqual(20 * 400);
     expect(t).toBeLessThanOrEqual(20 * 404 + 20);
@@ -316,7 +316,7 @@ Wait:   inc hl                   ; 6
 
   it("DMA-009: burst mode paces at the same rate while the CPU runs", async () => {
     // --- read the byte counter after 40000 T-states of CPU time plus what the DMA took
-    const s = await enableProgram(core, [...setup({ a: 0xc000, b: 0xd000, len: 1000, mode: "burst", prescaler: 100 }), READ_MASK, 0x06], {
+    const s = await enableProgram([...setup({ a: 0xc000, b: 0xd000, len: 1000, mode: "burst", prescaler: 100 }), READ_MASK, 0x06], {
       between: `${delay(40000)}
 Read:   in a,(c)                 ; counter lo (c = $6B)
         ld (Count),a
@@ -335,7 +335,7 @@ Read:   in a,(c)                 ; counter lo (c = $6B)
   });
 
   it("DMA-009: the prescaler counts 28 MHz time, so at 28 MHz a byte takes 32 x prescaler CPU clocks", async () => {
-    const s = await enableProgram(core, setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }), { speed: 3 });
+    const s = await enableProgram(setup({ a: 0xc000, b: 0xd000, len: 20, prescaler: 100 }), { speed: 3 });
     const t = timeEnable(s);
     expect(t, `${t} T-states at 28 MHz`).toBeGreaterThanOrEqual(20 * 3200);
     expect(t).toBeLessThanOrEqual(20 * 3220 + 40);
@@ -344,7 +344,7 @@ Read:   in a,(c)                 ; counter lo (c = $6B)
   // --- DMA-010 - DMA-013: commands -------------------------------------------------------------------
 
   it("DMA-010: $83 stops a transfer where it is; $87 carries on from there", async () => {
-    const s = await enableProgram(core, [...setup({ a: 0xc000, b: 0xd000, len: 64, mode: "burst", prescaler: 100 }), READ_MASK, 0x02], {
+    const s = await enableProgram([...setup({ a: 0xc000, b: 0xd000, len: 64, mode: "burst", prescaler: 100 }), READ_MASK, 0x02], {
       between: `${delay(8000)}
         ld a,$83
         out (c),a                ; disable
@@ -370,7 +370,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-011: $CF loads the start addresses and clears the counter and end of block", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 32 }), ENABLE]).runFrames(1);
     expect(readBack(s)).toEqual({ status: STATUS_DONE, counter: 32, a: 0xc020, b: 0xd020 });
     s.out(ZXN, LOAD);
@@ -378,7 +378,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-012: $D3 restarts the counter but keeps the addresses", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 64);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 16 }), ENABLE]).runFrames(1);
     write(s, [CONTINUE]);
@@ -391,7 +391,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-013: with auto restart (WR5 D5) the block repeats from the start addresses", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.poke(0xc000, [1, 2, 3, 4]);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 4, mode: "burst", prescaler: 50, restart: true }), ENABLE]).runFrames(1);
     expect(Array.from(s.peekBytes(0xd000, 5)), "first blocks").toEqual([1, 2, 3, 4, 0]);
@@ -403,7 +403,7 @@ ${delay(40000)}`,
   // --- DMA-014 / DMA-015: status and read sequence ---------------------------------------------------
 
   it("DMA-014: status $3A idle, $3B while a transfer is under way, $1A at its end, $3A after $8B", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.in(ZXN), "after reset").toBe(STATUS_IDLE);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 8, mode: "burst", prescaler: 255 }), ENABLE]);
     expect(status(s), "loaded, enabled, nothing moved").toBe(STATUS_IDLE);
@@ -419,7 +419,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-015: $BB sets the read mask; reads cycle through the enabled entries", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, setup({ a: 0x1234, b: 0x5678, len: 0x10 }));
     write(s, [READ_MASK, 0x06]);
     expect(reads(s, 5), "counter lo, hi").toEqual([0, 0, 0, 0, 0]);
@@ -434,7 +434,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-015: $BF makes the next read the status, then the sequence carries on through the mask", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, setup({ a: 0x1234, b: 0x5678, len: 0x10 }));
     write(s, [READ_MASK, 0x7f]);
     expect(reads(s, 4)).toEqual([STATUS_IDLE, 0, 0, 0x34]);
@@ -445,7 +445,7 @@ ${delay(40000)}`,
   // --- DMA-016: reset --------------------------------------------------------------------------------
 
   it("DMA-016: $C3 stops a transfer and resets the status", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 200, mode: "burst", prescaler: 255 }), ENABLE]);
     s.step(3);
     write(s, [RESET]);
@@ -456,7 +456,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-016: $C3 clears auto restart and the prescaler but keeps addresses, length and read mask", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.poke(0xc000, [1, 2, 3, 4]);
     write(s, [...setup({ a: 0xc000, b: 0xd000, len: 4, mode: "burst", prescaler: 50, restart: true }), ENABLE]);
     s.runFrames(1);
@@ -470,7 +470,7 @@ ${delay(40000)}`,
   });
 
   it("DMA-016: $C3 keeps the read mask", async () => {
-    const s = await parked(core);
+    const s = await parked();
     write(s, setup({ a: 0x1234, b: 0x5678, len: 0x10 }));
     write(s, [READ_MASK, 0x18, RESET]);
     expect(reads(s, 3)).toEqual([0x34, 0x12, 0x34]);
@@ -479,7 +479,7 @@ ${delay(40000)}`,
   // --- DMA-017: the CPU while the DMA has the bus ----------------------------------------------------
 
   it("DMA-017: a continuous 256-byte copy stops the CPU for 6 T-states a byte at 3.5 MHz", async () => {
-    const s = await enableProgram(core, setup({ a: 0xc000, b: 0xd000, len: 256 }));
+    const s = await enableProgram(setup({ a: 0xc000, b: 0xd000, len: 256 }));
     const t = timeEnable(s);
     expect(t, `${t} T-states`).toBeGreaterThanOrEqual(256 * 6);
     expect(t).toBeLessThanOrEqual(256 * 6 + 12);
@@ -488,7 +488,7 @@ ${delay(40000)}`,
   it("DMA-017: 2-cycle timing (port timing bytes D1-D0 = 10) makes a byte 4 T-states", async () => {
     // --- WR1 / WR2 with timing bytes $02
     const bytes = [DISABLE, 0x7d, 0x00, 0xc0, 0x00, 0x01, 0x54, 0x02, 0x50, 0x02, 0xad, 0x00, 0xd0, 0x82, LOAD];
-    const s = await enableProgram(core, bytes);
+    const s = await enableProgram(bytes);
     const t = timeEnable(s);
     expect(t, `${t} T-states`).toBeGreaterThanOrEqual(256 * 4);
     expect(t).toBeLessThanOrEqual(256 * 4 + 12);
@@ -502,7 +502,7 @@ ${delay(40000)}`,
    * the enable and before the last byte ($FFFF) is written.
    */
   async function interruptsDuringFill(cc: number) {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\nPark: jr Park");
     await s.loadCode(
       `
@@ -571,7 +571,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   // --- DMA-019: Layer 2 ------------------------------------------------------------------------------
 
   it("DMA-019: a DMA fill of a paged-in Layer 2 bank shows on screen", async () => {
-    const s = await parked(core);
+    const s = await parked();
     writePalette(s, [[0x5a, 0x1c]], 0x10);
     s.setNextReg(0x56, 16); // --- MMU6: page 16, the first half of Layer 2 bank 8 (rows 0-31)
     s.poke(0xc000, new Array(512).fill(0)).poke(0x9000, 0x5a);
@@ -586,7 +586,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   it("DMA-020: burst mode to Specdrum $DF at prescaler 109 plays a 256-step ramp at ~8 kHz", async () => {
     const RATE = 48_000;
     const P = 109;
-    const s = await createSession(core, { audioSampleRate: RATE });
+    const s = await createSession({ audioSampleRate: RATE });
     await s.loadCode(" .org $8000\n di\nPark: jr Park");
     s.setNextReg(0x08, 0x18); // --- DACs on
     s.poke(0xc000, Array.from({ length: 256 }, (_, i) => i));
@@ -614,7 +614,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
     [Z80, "$0B"]
   ] as const) {
     it(`DMA-021: through ${name} a block length of 0 moves one byte`, async () => {
-      const s = await parked(core);
+      const s = await parked();
       numbered(s, 0xc000, 4);
       write(s, [...setup({ a: 0xc000, b: 0xc100, len: 0 }), ENABLE], port).runFrames(1);
       expect(Array.from(s.peekBytes(0xc100, 3))).toEqual([1, 0, 0]);
@@ -622,7 +622,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   }
 
   it("DMA-021: a block length of 1 moves one byte through $6B, two through $0B", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 4);
     write(s, [...setup({ a: 0xc000, b: 0xc100, len: 1 }), ENABLE]).runFrames(1);
     write(s, [...setup({ a: 0xc000, b: 0xc200, len: 1 }), ENABLE], Z80).runFrames(1);
@@ -635,7 +635,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   // --- DMA-022: port enables -------------------------------------------------------------------------
 
   it("DMA-022: $82 bit 5 gates $6B only, $85 bit 1 gates $0B only", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 4);
     const e82 = s.readNextReg(0x82);
     const e85 = s.readNextReg(0x85);
@@ -656,7 +656,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   // --- DMA-023: the write sequencer's corners --------------------------------------------------------
 
   it("DMA-023: WR3 mask/match bytes, WR1's second timing byte and the interrupt commands are swallowed", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 8);
     write(s, [
       DISABLE,
@@ -674,14 +674,14 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   });
 
   it("DMA-023: WR0 search bits (D1) do not stop the transfer - search is not implemented", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 8);
     write(s, [DISABLE, 0x7e, 0x00, 0xc0, 0x04, 0x00, 0x14, 0x10, 0xad, 0x00, 0xc1, 0x82, LOAD, ENABLE]).runFrames(1);
     expect(Array.from(s.peekBytes(0xc100, 5))).toEqual([1, 2, 3, 4, 0]);
   });
 
   it("DMA-023: after WR4 with port B address and D4, the next byte is a new register write", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 8);
     write(s, setup({ a: 0xc000, b: 0xc100, len: 4 }));
     // --- WR4 again, with interrupt control announced: VHDL takes only the address bytes; $87 enables
@@ -690,7 +690,7 @@ ${table("Setup", setup({ a: 0, b: 0xc000, len: 0x4000, aMode: "fixed" }))}`,
   });
 
   it("DMA-023: WR4 with D4 but no port B address leaves the DMA deaf until reset", async () => {
-    const s = await parked(core);
+    const s = await parked();
     numbered(s, 0xc000, 8);
     write(s, [0x91]); // --- WR4, byte mode, interrupt control announced
     write(s, [...setup({ a: 0xc000, b: 0xc100, len: 4 }), ENABLE]).runFrames(1);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 import { hex, NEXT_ROM, results, romBytes, runCode } from "./_memory-helpers";
 
 /*
@@ -38,9 +38,9 @@ const readRomArea = (dest: number) => `
 
 const seq = (start: number) => Array.from({ length: 16 }, (_, i) => (start + i) & 0xff);
 
-describe.each(ALL_CORES)("Alt ROM - %s core", (core) => {
+describe("Alt ROM", () => {
   it("MEM-016: $8C reads back whole; a soft reset copies bits 3-0 into bits 7-4", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x8c, 0x0a);
     expect(s.readNextReg(0x8c)).toBe(0x0a);
     s.reset();
@@ -51,7 +51,6 @@ describe.each(ALL_CORES)("Alt ROM - %s core", (core) => {
 
   it("MEM-016: with bit 6 writes go to the Alt ROM and reads to the ROM; without it reads come from the Alt ROM", async () => {
     const s = await runCode(
-      core,
       `
         nextreg $8c,$c0          ; enabled, writable: Alt ROM 0 ($7FFD bit 4 = 0)
         ${writeRomArea(0x40)}
@@ -81,7 +80,7 @@ describe.each(ALL_CORES)("Alt ROM - %s core", (core) => {
   // --- ~2944-2947: bits 5-4 select the ROM on the +3 machine type, Alt ROM enabled or not
   for (const [lock, rom] of [[0x10, 1], [0x20, 2], [0x30, 3]]) {
     it(`MEM-016: lock bits $${lock.toString(16)} force ROM ${rom} whatever $7FFD and $1FFD select`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       s.out(0x7ffd, 0x10).out(0x1ffd, 0x04); // --- ROM 3 selected by the ports
       s.setNextReg(0x8c, lock);
       expect(hex(Array.from(s.peekBytes(0x0000, 16)))).toBe(hex(romBytes(rom, 0, 16)));
@@ -92,7 +91,6 @@ describe.each(ALL_CORES)("Alt ROM - %s core", (core) => {
 
   it("MEM-016: with a lock bit set, bit 5 (not $7FFD bit 4) picks Alt ROM 0 or 1", async () => {
     const s = await runCode(
-      core,
       `
         nextreg $8c,$c0
         ${writeRomArea(0x10)}    ; Alt ROM 0
@@ -114,10 +112,10 @@ describe.each(ALL_CORES)("Alt ROM - %s core", (core) => {
   });
 });
 
-describe.each(ALL_CORES)("ROM contents - %s core", (core) => {
+describe("ROM contents", () => {
   // --- MEM-022: ROM n is the n-th 16K of the ROM image the firmware loads
   it("MEM-022: ROM 0-3 are the four 16K parts of the Next ROM image", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     for (let rom = 0; rom < 4; rom++) {
       s.out(0x7ffd, (rom & 1) << 4).out(0x1ffd, (rom >> 1) << 2);
       const seen = s.peekBytes(0x0000, 0x4000);

@@ -5,10 +5,9 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { OFFS_ALT_ROM_0, OFFS_DIVMMC_ROM, OFFS_MULTIFACE_MEM, OFFS_NEXT_ROM } from "@emu/machines/zxNext/nextMemoryLayout";
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 const BOOT_STEP_COUNT = 2;
 const ROM_SAMPLE_ADDRESSES = [0x0000, 0x0001, 0x0002, 0x0003, 0x00ef, 0x00f0];
@@ -16,8 +15,6 @@ const NEXT_REG_SAMPLE_IDS = [
   0x00, 0x01, 0x03, 0x07, 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x8a, 0x8c, 0x8e, 0x8f,
   0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0xc0
 ];
-
-type BootTraceMachine = TestZxNextMachine | ZxNextWasmV2Machine;
 
 export type ZxNextBootRomImages = ReturnType<typeof readZxNextBootRomImages>;
 
@@ -58,8 +55,7 @@ export type ZxNextBootTraceSnapshot = {
 };
 
 export type ZxNextBootTraceResult = {
-  oracle: ZxNextBootTraceSnapshot[];
-  wasm: ZxNextBootTraceSnapshot[];
+  snapshots: ZxNextBootTraceSnapshot[];
   wasmDiagnostics: {
     nextRomChecksum: number;
     divMmcRomChecksum: number;
@@ -75,18 +71,13 @@ export async function createEarlyBootTrace(): Promise<ZxNextBootTraceResult> {
 
 export async function createBootTrace(stepCount = BOOT_STEP_COUNT): Promise<ZxNextBootTraceResult> {
   const roms = readZxNextBootRomImages();
-  const { oracle, wasm } = await createZxNextOracleHarness();
+  const wasm = await createTestZxNextWasmMachine();
   wasm.uploadWasmV2RomImages(roms);
 
-  initializeBootTraceMachine(oracle);
-  initializeBootTraceMachine(wasm);
-
-  const oracleTrace = collectBootTrace(oracle, stepCount);
-  const wasmTrace = collectBootTrace(wasm, stepCount);
+  initializeZxNextWasmV2Machine(wasm);
 
   return {
-    oracle: oracleTrace,
-    wasm: wasmTrace,
+    snapshots: collectBootTrace(wasm, stepCount),
     wasmDiagnostics: {
       nextRomChecksum: wasm.wasmV2Runtime!.exports.zxnextChecksumPhysicalMemory(OFFS_NEXT_ROM, roms.nextRom.length) >>> 0,
       divMmcRomChecksum: wasm.wasmV2Runtime!.exports.zxnextChecksumPhysicalMemory(OFFS_DIVMMC_ROM, roms.divMmcRom.length) >>> 0,
@@ -121,7 +112,15 @@ export function checksumBytes(bytes: Uint8Array): number {
   return checksum >>> 0;
 }
 
-function initializeBootTraceMachine(machine: BootTraceMachine): void {
+/**
+ * FNV-1a over the JSON form of a boot trace, so a test can pin every captured field of every step
+ * (MMU pages, NextRegs, ROM reads, interrupt and SD state, screen checksum) as one number.
+ */
+export function checksumBootTrace(snapshots: ZxNextBootTraceSnapshot[]): number {
+  return checksumBytes(new TextEncoder().encode(JSON.stringify(snapshots)));
+}
+
+function initializeZxNextWasmV2Machine(machine: ZxNextWasmV2Machine): void {
   machine.reset();
   machine.executionContext.debugStepMode = DebugStepMode.StepInto;
   machine.executionContext.frameTerminationMode = FrameTerminationMode.Normal;
@@ -129,7 +128,7 @@ function initializeBootTraceMachine(machine: BootTraceMachine): void {
   machine.executionContext.lastTerminationReason = undefined;
 }
 
-function collectBootTrace(machine: BootTraceMachine, stepCount: number): ZxNextBootTraceSnapshot[] {
+function collectBootTrace(machine: ZxNextWasmV2Machine, stepCount: number): ZxNextBootTraceSnapshot[] {
   const snapshots = [captureBootSnapshot(machine, "reset")];
   for (let step = 1; step <= stepCount; step++) {
     const termination = machine.executeMachineFrame();
@@ -139,7 +138,7 @@ function collectBootTrace(machine: BootTraceMachine, stepCount: number): ZxNextB
 }
 
 function captureBootSnapshot(
-  machine: BootTraceMachine,
+  machine: ZxNextWasmV2Machine,
   label: string,
   termination?: FrameTerminationMode
 ): ZxNextBootTraceSnapshot {
@@ -174,28 +173,15 @@ function captureBootSnapshot(
   };
 }
 
-function captureActiveMmuPages(machine: BootTraceMachine): ZxNextBootTraceSnapshot["activeMmuPages"] {
-  if (machine instanceof ZxNextWasmV2Machine) {
-    const wasm = machine.wasmV2Runtime!.exports;
-    return Array.from({ length: 8 }, (_, page) => ({
-      page,
-      readOffset: wasm.zxnextGetMemoryPageReadOffset(page),
-      writeOffset: normalizeWasmOffset(wasm.zxnextGetMemoryPageWriteOffset(page)),
-      bank16k: wasm.zxnextGetMemoryPageBank16(page),
-      bank8k: wasm.zxnextGetMemoryPageBank8(page)
-    }));
-  }
-
-  return Array.from({ length: 8 }, (_, page) => {
-    const pageInfo = machine.memoryDevice.getPageInfo(page);
-    return {
-      page,
-      readOffset: pageInfo.readOffset,
-      writeOffset: pageInfo.writeOffset,
-      bank16k: pageInfo.bank16k ?? 0xff,
-      bank8k: pageInfo.bank8k ?? 0xff
-    };
-  });
+function captureActiveMmuPages(machine: ZxNextWasmV2Machine): ZxNextBootTraceSnapshot["activeMmuPages"] {
+  const wasm = machine.wasmV2Runtime!.exports;
+  return Array.from({ length: 8 }, (_, page) => ({
+    page,
+    readOffset: wasm.zxnextGetMemoryPageReadOffset(page),
+    writeOffset: normalizeWasmOffset(wasm.zxnextGetMemoryPageWriteOffset(page)),
+    bank16k: wasm.zxnextGetMemoryPageBank16(page),
+    bank8k: wasm.zxnextGetMemoryPageBank8(page)
+  }));
 }
 
 function hex(value: number, digits = 4): string {
@@ -207,40 +193,17 @@ function normalizeWasmOffset(offset: number): number | null {
   return normalized === 0xffffffff ? null : normalized;
 }
 
-function captureSdState(machine: BootTraceMachine): ZxNextBootTraceSnapshot["sdState"] {
-  if (machine instanceof ZxNextWasmV2Machine) {
-    const wasm = machine.wasmV2Runtime!.exports;
-    return {
-      selectedCard: wasm.zxnextGetSdSelectedCard(),
-      card0State: wasm.zxnextGetSdState(0),
-      card1State: wasm.zxnextGetSdState(1),
-      hostCommand: wasm.zxnextGetSdHostCommand(),
-      hostSector: wasm.zxnextGetSdHostSector(),
-      responseReady0: wasm.zxnextGetSdResponseReady(0) !== 0,
-      responseReady1: wasm.zxnextGetSdResponseReady(1) !== 0
-    };
-  }
-
-  const sdCardDevice = machine.sdCardDevice as any;
+function captureSdState(machine: ZxNextWasmV2Machine): ZxNextBootTraceSnapshot["sdState"] {
+  const wasm = machine.wasmV2Runtime!.exports;
   return {
-    selectedCard: sdCardDevice.selectedCard,
-    card0State: sdCardDevice._state,
-    card1State: sdCardDevice._state1,
-    hostCommand: storageCommandId(machine.getFrameCommand()?.command),
-    hostSector: machine.getFrameCommand()?.sector ?? 0,
-    responseReady0: sdCardDevice._responseReady,
-    responseReady1: sdCardDevice._responseReady1
+    selectedCard: wasm.zxnextGetSdSelectedCard(),
+    card0State: wasm.zxnextGetSdState(0),
+    card1State: wasm.zxnextGetSdState(1),
+    hostCommand: wasm.zxnextGetSdHostCommand(),
+    hostSector: wasm.zxnextGetSdHostSector(),
+    responseReady0: wasm.zxnextGetSdResponseReady(0) !== 0,
+    responseReady1: wasm.zxnextGetSdResponseReady(1) !== 0
   };
-}
-
-function storageCommandId(command: string | undefined): number {
-  switch (command) {
-    case "sd-read": return 1;
-    case "sd-write": return 2;
-    case "sd-read-card1": return 3;
-    case "sd-write-card1": return 4;
-    default: return 0;
-  }
 }
 
 function checksumWords(words: Uint32Array): number {
@@ -258,12 +221,12 @@ function checksumWords(words: Uint32Array): number {
   return checksum >>> 0;
 }
 
-function captureScreenChecksum(machine: BootTraceMachine): number {
+function captureScreenChecksum(machine: ZxNextWasmV2Machine): number {
   machine.renderInstantScreen();
   return checksumWords(machine.getPixelBuffer().subarray(0, 64));
 }
 
-function describeStopReason(machine: BootTraceMachine, termination?: FrameTerminationMode): string {
+function describeStopReason(machine: ZxNextWasmV2Machine, termination?: FrameTerminationMode): string {
   const frameCommand = machine.getFrameCommand();
   if (frameCommand != null) return `frame-command:${frameCommand.command}`;
   if (termination != null) return FrameTerminationMode[termination] ?? String(termination);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, rgb333ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { rgb333ToHex, type NextTestSession } from "../../harness/zxnext";
 import { pokeBank } from "../layer2/_layer2-helpers";
 import { parkedSession } from "../ula/_ula-helpers";
 import { mixPixel, type MixerConfig, type MixerPixel } from "./_mixer-model";
@@ -109,8 +109,8 @@ function writePal(s: NextTestSession, select: number, pal: number[]): void {
   for (const v of pal) s.setNextReg(0x44, (v >> 1) & 0xff).setNextReg(0x44, (v & 1) | (v & 0x200 ? 0x80 : 0));
 }
 
-async function sceneSession(core: CoreName, sc: Scene): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function sceneSession(sc: Scene): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePal(s, 0, sc.ulaPal);
   writePal(s, 1, sc.l2Pal);
   writePal(s, 2, sc.sprPal);
@@ -253,7 +253,7 @@ function runConfigs(s: NextTestSession, sc: Scene, list: Config[]): string[] {
   return bad;
 }
 
-describe.each(ALL_CORES)("layer compositing - %s core", (core: CoreName) => {
+describe("layer compositing", () => {
   for (let order = 0; order < 8; order++) {
     const ids =
       order < 6
@@ -261,14 +261,14 @@ describe.each(ALL_CORES)("layer compositing - %s core", (core: CoreName) => {
         : `${order === 6 ? "CMP-002" : "CMP-003"} / CMP-004 / CMP-005 / CMP-008 - CMP-010 / CMP-012`;
     it(`${ids}: $15 ${ORDER_NAMES[order]} - every cell matches the mixer, with and without stencil, ULA, tilemap`, async () => {
       const sc = makeScene(100 + order);
-      const s = await sceneSession(core, sc);
+      const s = await sceneSession(sc);
       expect(runConfigs(s, sc, configs(order))).toEqual([]);
     });
   }
 
   it("CMP-011: LoRes takes the ULA's place in every order and blend", async () => {
     const sc = makeScene(200);
-    const s = await sceneSession(core, sc);
+    const s = await sceneSession(sc);
     const list: Config[] = [];
     for (let order = 0; order < 8; order++) {
       for (const cfg of configs(order, true)) if (!cfg.tmOnTop && (order < 6 || cfg.blend === 0 || cfg.blend === 2)) list.push(cfg);
@@ -289,7 +289,7 @@ describe.each(ALL_CORES)("layer compositing - %s core", (core: CoreName) => {
    */
   for (const mode of [6, 7] as const) {
     it(`CMP-013: blend ${mode === 6 ? "add" : "add - 5"}: all 64 channel sums`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       const f = (v: number) => (mode === 6 ? Math.min(v, 7) : v <= 4 ? 0 : v >= 12 ? 7 : v - 5);
       const ula = (j: number) => (j << 6) | ((7 - j) << 3) | j;
       const l2 = (i: number) => (i << 6) | (i << 3) | (7 - i);
@@ -317,7 +317,7 @@ describe.each(ALL_CORES)("layer compositing - %s core", (core: CoreName) => {
 
   it("CMP-014: a $15 order change from the CPU at line 96 applies to the rows drawn after it", async () => {
     const sc = makeScene(300);
-    const s = await sceneSession(core, sc);
+    const s = await sceneSession(sc);
     const [a, b] = [configs(0)[0], configs(5)[0]];
     apply(s, a);
     await s.loadCode(

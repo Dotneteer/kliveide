@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
- * PAR-006: checkpoint restore parity - a WASM checkpoint captured mid-frame continues exactly as the
- * uninterrupted machine does: frames, tacts, registers, RAM, the displayed pictures and the audio.
+ * PAR-006: checkpoint restore - a checkpoint captured mid-frame continues exactly as the uninterrupted
+ * machine does: frames, tacts, registers, RAM, the displayed pictures and the audio.
  *
- * Only the WASM core has checkpoints (`captureCheckpoint` copies its linear memory; the TypeScript core
- * has none - the session methods throw there). The TypeScript core runs the same script without the
- * checkpoint, as the reference the restored run must also match.
+ * `captureCheckpoint` copies the core's linear memory. The run after the capture is recorded, the
+ * checkpoint restored and the run recorded again; a second session runs the same script without any
+ * checkpoint, as the reference both must match (so capturing has no side effect either).
  *
  * The program keeps state everywhere a checkpoint can lose it: IM2 with the ULA and a line interrupt,
  * CPU speed changes, a running copper, the AY, the beeper and the screen.
@@ -134,20 +134,20 @@ async function toMidFrame(s: NextTestSession) {
   s.runFrames(4).runTo("Fill");
 }
 
-describe("PAR-006: checkpoint restore parity", () => {
-  it(`a mid-frame WASM checkpoint continues as the uninterrupted machine for ${FRAMES} frames`, { timeout: 120_000 }, async () => {
-    const wasm = await createSession("wasm", { audioSampleRate: 43_750 });
+describe("PAR-006: checkpoint restore", () => {
+  it(`a mid-frame checkpoint continues as the uninterrupted machine for ${FRAMES} frames`, { timeout: 120_000 }, async () => {
+    const wasm = await createSession({ audioSampleRate: 43_750 });
     await toMidFrame(wasm);
     wasm.captureCheckpoint("mid");
     const first = record(wasm);
     wasm.restoreCheckpoint("mid");
     const restored = record(wasm);
 
-    const ts = await createSession("ts", { audioSampleRate: 43_750 });
-    await toMidFrame(ts);
-    const reference = record(ts);
+    const plain = await createSession({ audioSampleRate: 43_750 });
+    await toMidFrame(plain);
+    const reference = record(plain);
 
     expect(restored, "the restored run repeats the first").toEqual(first);
-    expect(first, "and matches the TypeScript core").toEqual(reference);
+    expect(first, "and matches a run that took no checkpoint").toEqual(reference);
   });
 });

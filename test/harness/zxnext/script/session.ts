@@ -3,9 +3,7 @@ import { readFile } from "node:fs/promises";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { DebugSupport } from "@emu/machines/DebugSupport";
 import type { NextMachine } from "../core/machines";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type {
@@ -23,7 +21,7 @@ import { framePng } from "../core/capture";
 import { compileNexFile } from "../core/compile-nex";
 import { captureFrame, pixelHex, rowRuns, type Frame, type RowRun } from "../core/frame";
 import { loadNexDirect, readNextReg, writeNextReg } from "../core/load-nex-direct";
-import { ALL_CORES, createCore, readNextRegDirect, type CoreName } from "../core/machines";
+import { createCore, readNextRegDirect } from "../core/machines";
 import { evaluateProbe, type Probe } from "../cases/probes";
 import { InMemorySdMessenger, MemorySdCard, type SdCardBacking } from "./sd-card";
 import { uartPeerOf, type UartFrame, type UartIndex } from "./uart-peer";
@@ -32,12 +30,11 @@ import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joyst
 import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
 
 /*
- * The scripting layer of the ZX Spectrum Next test harness: one real machine (TypeScript or WASM
- * core), driven only through what the hardware exposes - Z80 code, ports, NextRegs, memory - and
- * observed the same way, plus the picture and the audio the app would show and play.
+ * The scripting layer of the ZX Spectrum Next test harness: one real machine (the WASM core), driven
+ * only through what the hardware exposes - Z80 code, ports, NextRegs, memory - and observed the same
+ * way, plus the picture and the audio the app would show and play.
  *
  * Rules every method follows (keep them when adding one; see README.md "Adding a method"):
- * - It works on BOTH cores through the API both machines share, or branches explicitly per core.
  * - It never reaches into a device object to set state the hardware could not set. Reading device
  *   state for an assertion is allowed only when the method says so (`nextRegValue`).
  * - A wait never hangs: every run has a frame limit and fails with the PC and what it waited for.
@@ -52,7 +49,7 @@ const DEFAULT_MMU = [0xff, 0xff, 10, 11, 4, 5, 0, 1];
 const NEXT_MODEL = 4;
 
 export type SessionOptions = {
-  /** Enables `audio()`. Both cores read the rate at setup, so it cannot be switched on later. */
+  /** Enables `audio()`. The core reads the rate at setup, so it cannot be switched on later. */
   audioSampleRate?: number;
 };
 
@@ -113,14 +110,13 @@ export class NextTestSession {
   private checkpoint?: { key: string; frames: number; lastFrame?: Frame };
 
   private constructor(
-    readonly core: CoreName,
     /** Escape hatch. Prefer adding a session method over using it in a test; see README.md. */
     readonly machine: NextMachine,
     private readonly options: SessionOptions
   ) {}
 
-  static async create(core: CoreName, options: SessionOptions = {}): Promise<NextTestSession> {
-    return new NextTestSession(core, await createCore(core, { audioSampleRate: options.audioSampleRate, hardReset: true }), options);
+  static async create(options: SessionOptions = {}): Promise<NextTestSession> {
+    return new NextTestSession(await createCore({ audioSampleRate: options.audioSampleRate, hardReset: true }), options);
   }
 
   /** Power-on reset of the whole machine. */
@@ -164,24 +160,19 @@ export class NextTestSession {
 
   /**
    * Captures the whole machine under `key`, mid-frame or not, so `restoreCheckpoint` can put it back.
-   * **WASM core only**: `ZxNextWasmV2Machine.captureCheckpoint` copies the core's linear memory, which
-   * holds every device; the TypeScript core has no checkpoints, and this throws there. The core keeps
-   * one checkpoint: a new capture replaces the last. The session's frame count and last displayed
+   * `ZxNextWasmV2Machine.captureCheckpoint` copies the core's linear memory, which holds every device.
+   * The core keeps one checkpoint: a new capture replaces the last. The session's frame count and last displayed
    * frame are kept with it.
    */
   captureCheckpoint(key: string): this {
-    const m = this.machine;
-    if (!(m instanceof ZxNextWasmV2Machine)) throw new Error("Checkpoints exist on the WASM core only.");
-    m.captureCheckpoint(key);
+    this.machine.captureCheckpoint(key);
     this.checkpoint = { key, frames: this.frames, lastFrame: this.lastFrame };
     return this;
   }
 
-  /** Puts the machine back to the checkpoint captured under `key` (WASM core only; see captureCheckpoint). */
+  /** Puts the machine back to the checkpoint captured under `key` (see captureCheckpoint). */
   restoreCheckpoint(key: string): this {
-    const m = this.machine;
-    if (!(m instanceof ZxNextWasmV2Machine)) throw new Error("Checkpoints exist on the WASM core only.");
-    if (this.checkpoint?.key !== key || !m.tryRestoreCheckpoint(key)) throw new Error(`No checkpoint "${key}" to restore.`);
+    if (this.checkpoint?.key !== key || !this.machine.tryRestoreCheckpoint(key)) throw new Error(`No checkpoint "${key}" to restore.`);
     this.frames = this.checkpoint.frames;
     this.lastFrame = this.checkpoint.lastFrame;
     return this;
@@ -346,12 +337,8 @@ export class NextTestSession {
    */
   setRtcTime(t: RtcTime): this {
     const regs = [t.seconds, t.minutes, t.hours, -1, t.date, t.month, t.year % 100].map((v, i) => (i === 3 ? t.day & 0x07 : toBcd(v)));
-    if (this.machine instanceof ZxNextWasmV2Machine) {
-      const [sec, min, hour, day, date, month, year] = regs;
-      this.machine.wasmV2Runtime!.exports.zxnextRtcSetTime(sec, min, hour, day, date, month, year);
-    } else {
-      this.machine.i2cDevice.setRtcTime(regs);
-    }
+    const [sec, min, hour, day, date, month, year] = regs;
+    this.machine.wasmV2Runtime!.exports.zxnextRtcSetTime(sec, min, hour, day, date, month, year);
     return this;
   }
 
@@ -478,14 +465,11 @@ export class NextTestSession {
   /** Executes `count` Z80 instructions. */
   step(count = 1): this {
     const ctx = this.machine.executionContext;
-    const savedSupport = ctx.debugSupport;
-    ctx.debugSupport ??= new DebugSupport(); // --- the TypeScript core answers StepInto only with one
     ctx.debugStepMode = DebugStepMode.StepInto;
     try {
       for (let i = 0; i < count; i++) this.execute(true);
     } finally {
       ctx.debugStepMode = DebugStepMode.NoDebug;
-      ctx.debugSupport = savedSupport;
     }
     return this;
   }
@@ -582,12 +566,12 @@ export class NextTestSession {
 
   /**
    * What the IDE's Next panels would show now - Next Registers, Memory Mapping, Palettes, ULA & I/O -
-   * through `IZxNextIdeMachine`, the contract both cores implement for the IDE. Reading it has no
+   * through `IZxNextIdeMachine`, the machine's contract with the IDE. Reading it has no
    * side effects on the machine.
    */
   ideState(): IdeState {
     const m = this.machine;
-    if (!isZxNextIdeMachine(m)) throw new Error(`The ${this.core} core does not implement IZxNextIdeMachine`);
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return {
       descriptors: m.getNextRegDescriptors(),
       nextRegs: m.getNextRegState(),
@@ -636,7 +620,7 @@ export class NextTestSession {
   /** Throws with the probe's detail (first wrong pixel, colours seen) unless it passes. */
   expectProbe(probe: Probe): this {
     const r = evaluateProbe(probe, this.screen());
-    if (!r.pass) throw new Error(`Probe ${probe.name ?? probe.kind} failed on ${this.core}: ${r.detail}`);
+    if (!r.pass) throw new Error(`Probe ${probe.name ?? probe.kind} failed: ${r.detail}`);
     return this;
   }
   async saveScreenPng(path: string): Promise<void> {
@@ -659,22 +643,9 @@ export class NextTestSession {
   }
 }
 
-/** Creates a session on one core. */
-export function createSession(core: CoreName, options?: SessionOptions): Promise<NextTestSession> {
-  return NextTestSession.create(core, options);
-}
-
-/**
- * Runs the same script on each core and returns the results by core - for parity assertions such as
- * `expect(r.wasm).toEqual(r.ts)`.
- */
-export async function onEachCore<T>(
-  script: (s: NextTestSession) => Promise<T> | T,
-  options: SessionOptions & { cores?: CoreName[] } = {}
-): Promise<Record<CoreName, T>> {
-  const out = {} as Record<CoreName, T>;
-  for (const core of options.cores ?? ALL_CORES) out[core] = await script(await createSession(core, options));
-  return out;
+/** Creates a session: a freshly set up, hard-reset machine. */
+export function createSession(options?: SessionOptions): Promise<NextTestSession> {
+  return NextTestSession.create(options);
 }
 
 export function hex(value: number, digits = 2): string {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * Interrupt status in hardware IM2 mode, DMA break-in by CTC and NMI, and NextReg $02 bit 7
@@ -33,13 +33,13 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 const CTC0 = 0x183b;
 const TABLE = 0xbe00;
 
-describe.each(ALL_CORES)("interrupt status and DMA break-in - %s core", (core: CoreName) => {
+describe("interrupt status and DMA break-in", () => {
   // -------------------------------------------------------------------------------------------------
   // INT-024: $C9 in hardware IM2 mode
   // -------------------------------------------------------------------------------------------------
 
   it("INT-024: in hardware IM2 mode a disabled CTC channel's $C9 bit clears on a write; an enabled, pending one stays set", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $"); // --- DI: nothing is ever serviced
     s.setNextReg(0x22, 0x04).setNextReg(0xc0, 0x01).setNextReg(0xc5, 0x00).setNextReg(0xc9, 0xff);
     // --- channel 0: timer, prescaler 256, constant 0, no interrupt enable (D7 = 0)
@@ -100,7 +100,7 @@ Fill:   .defb $77`;
 NotDuring:`;
 
   async function ctcDuringFill(cd: number) {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     await s.loadCode(
       `
@@ -175,7 +175,7 @@ ${DMA_TABLE}`,
    * started just after line 200 has begun, so line 100 comes ~211 lines (~48000 T-states) into it.
    */
   async function nmiDuringFill(cc: number) {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     await s.loadCode(
       `
@@ -261,7 +261,7 @@ ${DMA_TABLE}`,
    * whose reset branch, ~4908-5090, does not assign it).
    */
   it("INT-027: $02 bit 7 (expansion bus reset) reads back, does not reset the Next, and survives a soft reset", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         di

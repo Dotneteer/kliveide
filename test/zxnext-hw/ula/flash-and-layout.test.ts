@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName } from "../../harness/zxnext";
+
 import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -16,9 +16,9 @@ import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writeP
 
 const PALETTE: Array<[number, number]> = [[0, 0x00], [7, 0xb6], [16, 0x00], [23, 0xb6], [2, 0xe0], [16 + 4, 0x1c]];
 
-describe.each(ALL_CORES)("ULA FLASH and layout - %s core", (core: CoreName) => {
+describe("ULA FLASH and layout", () => {
   it("ULA-004: a FLASH cell swaps ink and paper every 16 frames; a steady cell never does", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[2, 0xe0], [20, 0x1c], [3, 0x03], [21, 0xfc]]);
     s.setNextReg(0x14, 0x00).setNextReg(0x4a, 0x00);
     fillScreen(s, 0x00, 0x00);
@@ -50,7 +50,7 @@ describe.each(ALL_CORES)("ULA FLASH and layout - %s core", (core: CoreName) => {
   });
 
   it("ULA-005: display file and attribute bytes appear at the VHDL-computed positions", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, PALETTE);
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
     fillScreen(s, 0x00, 0x38); // --- PAPER 7, INK 0, blank bitmap

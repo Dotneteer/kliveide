@@ -1,7 +1,7 @@
 import type { NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 import type { NextMachine } from "./machines";
 
-/** NextReg select / data ports. Writing through them is the hardware path in both cores. */
+/** NextReg select / data ports. Writing through them is the hardware path. */
 const NEXTREG_SELECT = 0x243b;
 const NEXTREG_DATA = 0x253b;
 
@@ -33,7 +33,7 @@ export function readNextReg(machine: NextMachine, reg: number): number {
  * SD card image. For a pixel test the interesting part starts at the entry point, so this loader
  * puts the machine in the state the NEX format promises at that point: banks copied into RAM,
  * default MMU paging (with the entry bank at $C000), border, SP and PC. Everything goes through
- * the machine's public port/memory API, so the same code drives the TypeScript and WASM cores.
+ * the machine's public port/memory API, as the IDE's code injection does.
  *
  * What NextZXOS leaves behind that this does not (ROM selection, NextReg values the OS changes,
  * interrupt mode, sysvars) is listed in the result. Tier 2 runs the real `nex-run` path to catch

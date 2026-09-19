@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * DivMMC paging and automap (catalogue DIV-001 - DIV-013; DIV-014 is NMI-002).
@@ -56,8 +56,8 @@ const PAGE3_ENTRIES = [0x0000, 0x0008, 0x0010, 0x0038, 0x04c6, 0x04d7, 0x0562, 0
  * A parked session with RAM page 3 set up as a "DivMMC ROM" (mapram mode), page 5 at $2000 holding
  * `ld bc,$1122` at $3D00, the Spectrum ROM 3 or ROM 0 selected, automap enabled, $E3 = mapram + page 5.
  */
-async function divmmc(core: CoreName, opts: { rom3?: boolean } = {}): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function divmmc(opts: { rom3?: boolean } = {}): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   const page3 = new Array(0x2000).fill(0x00);
   for (const e of PAGE3_ENTRIES) page3.splice(e, 6, ...LD_BC, 0xc3, AFTER & 0xff, AFTER >> 8);
@@ -106,11 +106,11 @@ const isNone = (r: { before: boolean; bc: number; after: boolean }) => !r.before
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
+describe("DivMMC", () => {
   // --- DIV-001 - DIV-004: $E3 --------------------------------------------------------------------------
 
   it("DIV-001: conmem puts the DivMMC ROM (read-only) at $0000 and the selected RAM page at $2000", async () => {
-    const t = await createSession(core);
+    const t = await createSession();
     await t.loadCode(" .org $8000\n di\nPark: jr Park");
     const spectrum = Array.from(t.peekBytes(0x0000, 16));
     // --- The firmware's way to load the DivMMC ROM: config mode, $04 = 4 (SRAM 0x010000)
@@ -131,7 +131,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-001: $E3 reads bits 7-6 and 3-0", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\nPark: jr Park");
     s.out(E3, 0xb5);
     expect(s.in(E3)).toBe(0x85);
@@ -140,7 +140,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-002: the 16 RAM pages at $2000 are distinct", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\nPark: jr Park");
     for (let p = 0; p < 16; p++) s.out(E3, CONMEM | p).poke(0x2000, [p * 3 + 1, 0x80 | p]).poke(0x3fff, p * 5 + 2);
     const got = [];
@@ -152,7 +152,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-003: mapram puts RAM page 3 read-only at $0000; it is sticky until $09 bit 3", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.out(E3, CONMEM | MAPRAM | 0);
     s.poke(MARK_ADDR, 0x00);
     expect(s.peek(MARK_ADDR), "page 3 at $0000, read-only").toBe(MARK);
@@ -165,7 +165,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-004: with mapram, RAM page 3 is read-only at $2000 too; other pages stay writable", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.out(E3, CONMEM | MAPRAM | 3);
     s.poke(0x2000 + MARK_ADDR, 0x00);
     expect(s.peek(0x2000 + MARK_ADDR), "page 3 at $2000").toBe(MARK);
@@ -181,7 +181,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   // --- DIV-005 - DIV-011: automap ----------------------------------------------------------------------
 
   it("DIV-005: automap only with $0A bit 4; clearing it unmaps at once", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0x0a, s.readNextReg(0x0a) & ~0x10);
     expect(isNone(await fetchAt(s, 0x0000)), "off").toBe(true);
     s.setNextReg(0x0a, s.readNextReg(0x0a) | 0x10);
@@ -192,14 +192,14 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
 
   for (const e of [0x0000, 0x0008, 0x0038, 0x04c6, 0x0562]) {
     it(`DIV-006: the reset entry points map at $${e.toString(16).padStart(4, "0")}, delayed`, async () => {
-      const s = await divmmc(core);
+      const s = await divmmc();
       const r = await fetchAt(s, e);
       expect(isDelayed(r), JSON.stringify(r)).toBe(true);
     });
   }
 
   it("DIV-006: a delayed entry point takes only the opcode from ROM; its operands come from DivMMC", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     expect(s.peekBytes(0x0008, 1)[0], "ROM 3 at $0008: LD HL,(nn)").toBe(0x2a);
     // --- DivMMC page 3 holds $22,$11 at $0009: the operand address $1122 (page 3 again), marked $6677
     await fetchAt(s, 0x0008);
@@ -208,25 +208,25 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
 
   it("DIV-006: RST $10 - $30 are not entry points after reset", async () => {
     for (const e of [0x0010, 0x0018, 0x0020, 0x0028, 0x0030]) {
-      const s = await divmmc(core);
+      const s = await divmmc();
       expect(isNone(await fetchAt(s, e)), `$${e.toString(16)}`).toBe(true);
     }
   });
 
   it("DIV-007: a fetch in $3D00-$3DFF maps instantly with ROM 3, not with ROM 0", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     expect(await fetchAt(s, 0x3d00)).toEqual(INSTANT(0x3d00));
-    const t = await divmmc(core, { rom3: false });
+    const t = await divmmc({ rom3: false });
     expect(isNone(await fetchAt(t, 0x3d00)), "ROM 0").toBe(true);
   });
 
   it("DIV-008: with $BB bit 6 a fetch at $1FF8 unmaps after its opcode: the operands come from ROM", async () => {
-    const rom = await createSession(core);
+    const rom = await createSession();
     await rom.loadCode(" .org $8000\n di\nPark: jr Park");
     rom.out(0x7ffd, 0x10).out(0x1ffd, 0x04);
     const romWord = rom.peekWord(0x1ff9);
 
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xba, 0x01); // --- RST $00 instant: $0000 runs ld bc / jp $8100 from DivMMC
     const r = await fetchAt(s, 0x0000, " jp $1ff8");
     expect(r).toEqual(INSTANT(0x0000));
@@ -237,7 +237,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-008: without $BB bit 6 a fetch at $1FF8 keeps the DivMMC mapped", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xba, 0x01).setNextReg(0xbb, 0x8d);
     await fetchAt(s, 0x0000, " jp $1ff8");
     s.runTo(0x1ff8).step(1);
@@ -245,38 +245,38 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-009: $B8-$BA program the RST entry points: enable, instant, always/ROM 3 only", async () => {
-    let s = await divmmc(core);
+    let s = await divmmc();
     s.setNextReg(0xb8, 0x87).setNextReg(0xb9, 0x05).setNextReg(0xba, 0x04); // --- RST $10: on, always, instant
     expect(await fetchAt(s, 0x0010), "RST $10 instant").toEqual(INSTANT(0x0010));
-    s = await divmmc(core);
+    s = await divmmc();
     s.setNextReg(0xb8, 0x82);
     expect(isNone(await fetchAt(s, 0x0000)), "RST $00 disabled").toBe(true);
-    s = await divmmc(core, { rom3: false });
+    s = await divmmc({ rom3: false });
     s.setNextReg(0xb9, 0x00);
     expect(isNone(await fetchAt(s, 0x0000)), "RST $00 ROM 3 only, ROM 0 paged").toBe(true);
-    s = await divmmc(core, { rom3: false });
+    s = await divmmc({ rom3: false });
     expect(isDelayed(await fetchAt(s, 0x0000)), "RST $00 always (reset $B9)").toBe(true);
   });
 
   it("DIV-009: $BB bits 5/4 add $056A and $04D7; bits 3/2 remove $0562 and $04C6", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xbb, 0xf1);
     expect(isDelayed(await fetchAt(s, 0x056a)), "$056A").toBe(true);
-    const t = await divmmc(core);
+    const t = await divmmc();
     t.setNextReg(0xbb, 0xf1);
     expect(isDelayed(await fetchAt(t, 0x04d7)), "$04D7").toBe(true);
-    const u = await divmmc(core);
+    const u = await divmmc();
     u.setNextReg(0xbb, 0xf1);
     expect(isNone(await fetchAt(u, 0x0562)), "$0562").toBe(true);
-    const v = await divmmc(core);
+    const v = await divmmc();
     v.setNextReg(0xbb, 0xf1);
     expect(isNone(await fetchAt(v, 0x04c6)), "$04C6").toBe(true);
-    const w = await divmmc(core);
+    const w = await divmmc();
     expect(isNone(await fetchAt(w, 0x056a)), "$056A off after reset").toBe(true);
   });
 
   it("DIV-010: RETN unmaps before the next fetch; conmem stays", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xba, 0x01);
     await fetchAt(s, 0x0000, " ld hl,$8200\n push hl\n retn\n .org $8200\nBack: jr Back");
     s.runTo(0x8200);
@@ -288,7 +288,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-010: a RETN into $0000-$3FFF fetches its next opcode from ROM", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     s.setNextReg(0xba, 0x01);
     // --- RST $10 is not an entry point: page 3 holds ld bc,$1122 there, the ROM does not
     await fetchAt(s, 0x0000, " ld bc,0\n ld hl,$0010\n push hl\n retn");
@@ -300,7 +300,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
 
   it("DIV-010: RETI (ED 4D) and the RETN alias ED 55 do not unmap", async () => {
     for (const op of ["reti", ".defb $ed,$55"]) {
-      const s = await divmmc(core);
+      const s = await divmmc();
       s.setNextReg(0xba, 0x01);
       await fetchAt(s, 0x0000, ` ld hl,$8200\n push hl\n ${op}\n .org $8200\nBack: jr Back`);
       s.runTo(0x8200);
@@ -309,19 +309,19 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-011: ROM-3-only entry points need ROM 3 paged in at $0000; 'always' ones do not", async () => {
-    const s = await divmmc(core, { rom3: false });
+    const s = await divmmc({ rom3: false });
     expect(isNone(await fetchAt(s, 0x0008)), "RST $08, ROM 0").toBe(true);
     const ramAt0000 = (x: NextTestSession) => x.setNextReg(0x50, 0x20).setNextReg(0x51, 0x21); // --- zeroed RAM: NOPs
-    const t = await divmmc(core);
+    const t = await divmmc();
     expect(isNone(await fetchAt(t, 0x0008, " jr $", ramAt0000)), "RST $08, RAM paged").toBe(true);
-    const u = await divmmc(core);
+    const u = await divmmc();
     expect(isDelayed(await fetchAt(u, 0x0000, " jr $", ramAt0000)), "RST $00 (always), RAM paged").toBe(true);
   });
 
   // --- DIV-012 / DIV-013 --------------------------------------------------------------------------------
 
   it("DIV-012: with port enable bit 8 ($83 bit 0) off the DivMMC is gone and $E3 ignores writes", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     const spectrum = s.peekBytes(0x0000, 8);
     s.out(E3, CONMEM | MAPRAM | 5);
     expect(mapped(s)).toBe(true);
@@ -337,7 +337,7 @@ describe.each(ALL_CORES)("DivMMC - %s core", (core: CoreName) => {
   });
 
   it("DIV-013: a soft reset clears $E3, mapram included, and unmaps", async () => {
-    const s = await divmmc(core);
+    const s = await divmmc();
     await fetchAt(s, 0x0000);
     s.out(E3, CONMEM | MAPRAM | 9);
     s.reset();

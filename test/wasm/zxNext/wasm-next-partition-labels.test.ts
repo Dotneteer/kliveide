@@ -1,108 +1,152 @@
 import { describe, expect, it } from "vitest";
 
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type LabelMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+/*
+ * Partition labels and indexes are IDE-facing (breakpoints, the Memory view, the memory-mapping
+ * panel), so they are pinned here rather than covered by the hardware harness. Pinned values are the
+ * ones both cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19`.
+ *
+ * Partition vocabulary: 0..223 are 8K RAM pages ("00".."DF"); -1..-4 ROM 0-3 ("R0".."R3"); -5/-6
+ * Alt ROM 0/1 ("X0"/"X1"); -7 the DivMMC ROM ("DM"); -8..-23 DivMMC RAM pages 0-15 ("M0".."MF").
+ */
 
-describe("ZX Spectrum Next WASM partition label parity", () => {
-  it("matches reset, MMU RAM, system-region, alternate ROM, and all-RAM labels", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
+type ExpectedLabels = {
+  labels: string[];
+  partitions: number[];
+  /** getPartition at $0000, $2000, $4000, $8000, $C000, $E000 */
+  pagePartitions: number[];
+};
 
-    expectSameLabels(wasm, oracle);
+describe("ZX Spectrum Next WASM partition labels", () => {
+  it("labels the reset, MMU RAM, system-region, alternate ROM, and all-RAM mappings", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x50, 0x04);
-      writeNextReg(machine, 0x51, 0x05);
-      writeNextReg(machine, 0x52, 0xe0);
-    }
-    expectSameLabels(wasm, oracle);
+    // --- Reset MMU layout $FF,$FF,$0A,$0B,$04,$05,$00,$01 (catalogue MEM-001)
+    expectLabels(wasm, {
+      labels: ["R0", "R0", "0A", "0B", "04", "05", "00", "01"],
+      partitions: [0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x00, 0x01],
+      pagePartitions: [-1, -1, 0x0a, 0x04, 0x00, 0x01]
+    });
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x8c, 0x80);
-      writeNextReg(machine, 0x50, 0xff);
-      writeNextReg(machine, 0x51, 0xff);
-    }
-    expectSameLabels(wasm, oracle);
+    // --- RAM pages 4/5 in slots 0/1; page $E0 (past the last RAM page) in slot 2 shows as ROM 0
+    writeNextReg(wasm, 0x50, 0x04);
+    writeNextReg(wasm, 0x51, 0x05);
+    writeNextReg(wasm, 0x52, 0xe0);
+    expectLabels(wasm, {
+      labels: ["04", "05", "R0", "0B", "04", "05", "00", "01"],
+      partitions: [0x04, 0x05, 0xff, 0x0b, 0x04, 0x05, 0x00, 0x01],
+      pagePartitions: [0x04, 0x05, -1, 0x04, 0x00, 0x01]
+    });
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x8e, 0x07);
-    }
-    expectSameLabels(wasm, oracle);
+    // --- $8C bit 7 enables the Alt ROM: ROM slots 0/1 read Alt ROM 0 ("X0"); slot 2 keeps "R0"
+    writeNextReg(wasm, 0x8c, 0x80);
+    writeNextReg(wasm, 0x50, 0xff);
+    writeNextReg(wasm, 0x51, 0xff);
+    expectLabels(wasm, {
+      labels: ["X0", "X0", "R0", "0B", "04", "05", "00", "01"],
+      partitions: [0xff, 0xff, 0xff, 0x0b, 0x04, 0x05, 0x00, 0x01],
+      pagePartitions: [-5, -5, -1, 0x04, 0x00, 0x01]
+    });
+
+    // --- $8E = $07: +3 special mode, layout 11 = 16K banks 4-7-6-3 (catalogue MEM-010)
+    writeNextReg(wasm, 0x8e, 0x07);
+    expectLabels(wasm, {
+      labels: ["08", "09", "0E", "0F", "0C", "0D", "06", "07"],
+      partitions: [0x08, 0x09, 0x0e, 0x0f, 0x0c, 0x0d, 0x06, 0x07],
+      pagePartitions: [0x08, 0x09, 0x0e, 0x0c, 0x06, 0x07]
+    });
   });
 
   /*
-   * A positive partition index is the **8K page** the MMU names, on both cores.
+   * A positive partition index is the **8K page** the MMU names.
    *
    * The two sides of the system used to disagree about this: `getPartitionForPage` halved the MMU
    * value to a 16K bank, while `getMemoryPartition(index)` read an 8K slice at
    * `OFFS_NEXT_RAM + 0x2000 * index`. So `bp-set 0A:$C000` and selecting bank `0A` in the Memory
    * view named different memory. Four things already said 8K — the 224-entry label map,
    * `MF_BANK: 224`, `getMemoryPartition`, and the docs — so the resolver was the outlier.
-   *
-   * The sibling parity test above only asserts the two cores *agree*; this one pins the value they
-   * must agree on. See `.plans/NEX_DEBUGGING_PLAN.md` §4.1 (Q9).
+   * See `.plans/NEX_DEBUGGING_PLAN.md` §4.1 (Q9).
    */
   it("reports a positive partition as the 8K page the MMU names", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
+    const wasm = await createTestZxNextWasmMachine();
 
     // --- Distinct 8K banks, all below the 224 threshold that diverts to the ROM decode chain.
     // --- Pages 4 and 5 are deliberately the two halves of one 16K bank (2), and pages 0/1 and 6/7
     // --- likewise, so a resolver that answered in 16K banks would collapse each pair.
     const banks = [0x10, 0x11, 0x22, 0x23, 0x04, 0x05, 0x36, 0x37];
 
-    for (const machine of [oracle, wasm]) {
-      banks.forEach((bank, page) => writeNextReg(machine, 0x50 + page, bank));
-    }
+    banks.forEach((bank, page) => writeNextReg(wasm, 0x50 + page, bank));
 
-    for (const machine of [oracle, wasm]) {
-      banks.forEach((bank, page) => {
-        expect(machine.getPartition(page * 0x2000), `page ${page}`).toBe(bank);
-      });
-      expect(machine.getCurrentPartitions()).toEqual(banks);
-    }
+    banks.forEach((bank, page) => {
+      expect(wasm.getPartition(page * 0x2000), `page ${page}`).toBe(bank);
+    });
+    expect(wasm.getCurrentPartitions()).toEqual(banks);
   });
 
   it("gives the two 8K halves of one 16K bank different partitions", async () => {
     // --- This is the property bank-relative breakpoints rest on: an offset in a bank's low half
     // --- must not match a page holding its high half. Under the old 16K reading both halves
     // --- reported the same partition and the distinction was impossible.
-    const { oracle, wasm } = await createZxNextOracleHarness();
+    const wasm = await createTestZxNextWasmMachine();
 
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x54, 0x04); // --- 16K bank 2, low half, at $8000
-      writeNextReg(machine, 0x55, 0x05); // --- 16K bank 2, high half, at $A000
-    }
+    writeNextReg(wasm, 0x54, 0x04); // --- 16K bank 2, low half, at $8000
+    writeNextReg(wasm, 0x55, 0x05); // --- 16K bank 2, high half, at $A000
 
-    for (const machine of [oracle, wasm]) {
-      expect(machine.getPartition(0x8000)).toBe(0x04);
-      expect(machine.getPartition(0xa000)).toBe(0x05);
-      expect(machine.getPartition(0x8000)).not.toBe(machine.getPartition(0xa000));
-    }
+    expect(wasm.getPartition(0x8000)).toBe(0x04);
+    expect(wasm.getPartition(0xa000)).toBe(0x05);
+    expect(wasm.getPartition(0x8000)).not.toBe(wasm.getPartition(0xa000));
   });
 
-  it("keeps public label parsing compatible with TypeScript", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    const labels = ["UN", "R0", "R3", "X0", "X1", "Q0", "Q1", "DM", "M0", "MF", "00", "DF"];
+  it("parses partition labels and lists the full label map", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    for (const label of labels) {
-      expect(wasm.parsePartitionLabel(label), label).toBe(oracle.parsePartitionLabel(label));
+    // --- "UN" and "Q0"/"Q1" are not Next labels: "UN" gives undefined; the "Q" aliases are pinned
+    // --- (they resolve to the Alt ROM partitions).
+    const expected: Array<[string, number | undefined]> = [
+      ["UN", undefined],
+      ["R0", -1],
+      ["R3", -4],
+      ["X0", -5],
+      ["X1", -6],
+      ["Q0", -5],
+      ["Q1", -6],
+      ["DM", -7],
+      ["M0", -8],
+      ["MF", -23],
+      ["00", 0],
+      ["DF", 223]
+    ];
+    for (const [label, partition] of expected) {
+      expect(wasm.parsePartitionLabel(label), label).toBe(partition);
     }
-    expect(wasm.getPartitionLabels()).toEqual(oracle.getPartitionLabels());
+
+    const map = wasm.getPartitionLabels();
+    const expectedMap: Record<number, string> = {};
+    for (let page = 0; page < 224; page++) {
+      expectedMap[page] = page.toString(16).toUpperCase().padStart(2, "0");
+    }
+    for (let rom = 0; rom < 4; rom++) expectedMap[-1 - rom] = `R${rom}`;
+    expectedMap[-5] = "X0";
+    expectedMap[-6] = "X1";
+    expectedMap[-7] = "DM";
+    for (let page = 0; page < 16; page++) expectedMap[-8 - page] = `M${page.toString(16).toUpperCase()}`;
+    expect(map).toEqual(expectedMap);
   });
 });
 
-function expectSameLabels(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMachine): void {
-  expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
-  expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
-  for (const address of [0x0000, 0x2000, 0x4000, 0x8000, 0xc000, 0xe000]) {
-    expect(wasm.getPartition(address), address.toString(16)).toBe(oracle.getPartition(address));
-  }
+function expectLabels(wasm: ZxNextWasmV2Machine, expected: ExpectedLabels): void {
+  expect(wasm.getCurrentPartitionLabels()).toEqual(expected.labels);
+  expect(wasm.getCurrentPartitions()).toEqual(expected.partitions);
+  const pagePartitions = [0x0000, 0x2000, 0x4000, 0x8000, 0xc000, 0xe000].map((address) =>
+    wasm.getPartition(address)
+  );
+  expect(pagePartitions).toEqual(expected.pagePartitions);
 }
 
-function writeNextReg(machine: LabelMachine, reg: number, value: number): void {
+function writeNextReg(machine: ZxNextWasmV2Machine, reg: number, value: number): void {
   machine.doWritePort(0x243b, reg);
   machine.doWritePort(0x253b, value);
 }

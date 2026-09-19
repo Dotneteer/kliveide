@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, writePalette } from "./_ula-helpers";
 
 /*
@@ -34,13 +34,13 @@ function copyrightMessage(): number[] {
   return out;
 }
 
-describe.each(ALL_CORES)("48K ROM boot picture - %s core", (core: CoreName) => {
+describe("48K ROM boot picture", () => {
   it("ULA-021: a cold-started 48K ROM shows its copyright line in its own font, and nothing else", async () => {
     const message = copyrightMessage();
     expect(String.fromCharCode(...message.slice(1))).toBe(" 1982 Sinclair Research Ltd");
     expect(message[0], "the (c) sign").toBe(0x7f);
 
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0x56, 32).poke(0xc000, ROM.subarray(0, 0x2000)).setNextReg(0x56, 33).poke(0xc000, ROM.subarray(0x2000));
     s.setNextReg(0x56, 0x00);

@@ -63,12 +63,12 @@ merely uncoloured, which no route diff can see.
 ## ZX Spectrum Next Test Harness
 
 - **Test ZX Spectrum Next hardware behaviour with the harness in `test/harness/zxnext/`; read its
-  `README.md` first.** It runs the real machine (TypeScript and WASM cores) and drives it only through
+  `README.md` first.** It runs the real machine (the WASM core) and drives it only through
   ports, NextRegs, memory, registers, the displayed picture and audio - no mocks.
   - Scripted tests (`createSession`): any component - Copper, sprites, Layer 2, tilemap, palette,
     TurboSound, DAC, CTC, DMA, interrupts, MMU. They live in `test/zxnext-hw/<component>/`.
-  - Screen cases (`test/visual/<suite>/<case>/`): pixel tests judged by probes, core parity, goldens
-    and AI review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
+  - Screen cases (`test/visual/<suite>/<case>/`): pixel tests judged by probes, goldens and AI
+    review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
     Read `.ai/visual-tests-guide.md` before writing one.
 - New tests for Next devices use the harness, not device objects or `test/zxnext/TestNextMachine.ts`.
   When touching an old mock-based test in `test/zxnext/` or `test/wasm/zxNext/`, prefer migrating it

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 
 /*
@@ -23,8 +23,8 @@ const C3 = 0x03;
 const C4 = 0x1f;
 
 /** A parked session: sprite palette 1-4 = C1-C4, ULA off, fallback $E0, all 128 sprites invisible. */
-async function spriteSession(core: CoreName): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function spriteSession(): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, [[1, C1], [2, C2], [3, C3], [4, C4]], 0x20);
   s.setNextReg(0x43, 0x00).setNextReg(0x4a, 0xe0).setNextReg(0x68, 0x80).setNextReg(0x4b, 0xe3);
   // --- Attribute RAM has no reset contents on the FPGA: hide every sprite (4-byte form, attr3 = 0)
@@ -51,14 +51,14 @@ function attrs(s: NextTestSession, ...bytes: number[]): NextTestSession {
   return s;
 }
 
-describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
+describe("sprite ports", () => {
   /*
    * $303B write (~658, ~738): attr_index <= d(6:0) & "000" - the sprite for $57; pattern_index <=
    * d(5:0) & d(7) & "0000000" - the pattern for $5B, bit 7 selecting its second 128 bytes. $5B writes
    * auto-increment the 14-bit pattern address (~645-647, ~740), crossing into the next pattern.
    */
   it("$303B selects sprite d(6:0) and pattern d(5:0), d(7) its second half; $5B runs on into the next pattern", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x05);
     fill5b(s, 128, 3); // --- pattern 5, bytes 0-127 (rows 0-7)
     s.out(0x303b, 0xc5); // --- sprite $45; pattern 5 (d(5:0)), second half (d(7))
@@ -89,7 +89,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * constructor zeroes them), so after a soft reset $57 and $5B carry on where they were.
    */
   it("a reset sends $57 and $5B back to sprite 0 / pattern 0 and $34 to 0", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0xc5).out(0x0057, 0x11).out(0x0057, 0x22); // --- mid-way through sprite $45
     fill5b(s, 3, 0x00);
     s.setNextReg(0x34, 0x22);
@@ -108,7 +108,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * from $3FFF (pattern 63, byte 255) to $0000 (~645-647, ~740).
    */
   it("$5B wraps from the end of pattern 63 to pattern 0", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x3f);
     fill5b(s, 128, 3); // --- pattern 63 rows 0-7
     s.out(0x303b, 0x80);
@@ -131,7 +131,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * port_5b_lsb); $303B needs the high byte $30 (~2637).
    */
   it("$57 and $5B decode only the low address byte", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     for (let i = 0; i < 256; i++) s.out((i << 8) | 0x5b, 1);
     s.out(0x303b, 0x00);
@@ -145,7 +145,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * sprite: index_inc_out_s(6 downto 0) & "000" - the sprite number is 7 bits and wraps 127 -> 0.
    */
   it("$57 wraps from sprite 127 to sprite 0, after a 5-byte and after a 4-byte sprite 127", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     fill5b(s, 256, 1); // --- pattern 0 solid index 1
     s.out(0x303b, 0x7f);
@@ -180,7 +180,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * sprite 10 hides sprite 10.
    */
   it("a sprite made visible later does not hide higher-numbered visible sprites", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     fill5b(s, 256, 1);
     s.out(0x303b, 10);
@@ -196,7 +196,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * ~803 4-bit): rewritten as a 4-byte sprite, a scaled 5-byte sprite is 16 x 16 again.
    */
   it("a 4-byte sprite ignores the attr4 an earlier 5-byte write left", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     fill5b(s, 256, 1);
     s.out(0x303b, 0x00);
@@ -221,7 +221,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * writeSpriteAttribute clears scale / 4-bit / Y8), so the sprite stays 16 x 16.
    */
   it("a 4-byte write leaves attr4 in place: setting attr3 bit 6 again brings the old attr4 back", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     fill5b(s, 256, 1);
     s.out(0x303b, 0x00);
@@ -238,7 +238,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * next sprite (attr_num_change) mirror_sprite_q follows, so $34 reads it (zxnext.vhd ~5978).
    */
   it("with the tie, $34 follows $57 moving on to the next sprite; without it, it does not", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.setNextReg(0x09, 0x10);
     s.out(0x303b, 0x03);
     expect(s.readNextReg(0x34), "after $303B").toBe(0x03);
@@ -259,7 +259,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * $57 write goes to the new sprite. Without the tie $57 keeps its own index.
    */
   it("$75 advances the mirror sprite (127 wraps to 0); with the tie $57 follows it, without it does not", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.setNextReg(0x34, 0x7f).setNextReg(0x75, 0x00);
     expect(s.readNextReg(0x34), "127 + 1").toBe(0x00);
 
@@ -289,7 +289,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * $34 = $BF: sprite $3F, pattern 63 second half; $75 -> sprite $40, pattern $40(5:0) = 0, second half.
    */
   it("with the tie, $75 moves $57 to the next sprite and $5B to pattern (sprite & 63), keeping the half", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     fill5b(s, 256, 3); // --- pattern 0 all index 3
     s.setNextReg(0x09, 0x10).setNextReg(0x34, 0xbf).setNextReg(0x75, 0x00);
@@ -309,7 +309,7 @@ describe.each(ALL_CORES)("sprite ports - %s core", (core) => {
    * nr_sprite_mirror_inc = we and nr_wr_reg(6)); the pattern is read through them in one pass.
    */
   it("$75-$79 write attributes 0-4 of consecutive sprites", async () => {
-    const s = await spriteSession(core);
+    const s = await spriteSession();
     s.out(0x303b, 0x00);
     for (let i = 0; i < 256; i++) s.out(0x005b, 1);
     // --- sprite 8 through $35-$38 then $79 (attr4: X scale 2x) -> advances to 9

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The expansion bus registers with nothing plugged into the bus (catalogue BUS-001 - BUS-005).
@@ -28,8 +28,8 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 
 const hex = (v: number) => `$${v.toString(16).padStart(2, "0")}`;
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.runFrames(1);
 }
@@ -79,8 +79,8 @@ function clearEnable(s: NextTestSession, base: number, bit: number) {
   s.setNextReg(reg, s.readNextReg(reg) & ~(1 << (bit & 7)));
 }
 
-async function observeGate(core: CoreName, gate: Gate, setup: GateSetup) {
-  const s = await parked(core);
+async function observeGate(gate: Gate, setup: GateSetup) {
+  const s = await parked();
   // --- $83 bit 5 (mouse) also switches the $DF Kempston alias; turn the Specdrum port off so a
   // --- disabled mouse port has no other reader
   s.setNextReg(0x84, s.readNextReg(0x84) & 0x7f);
@@ -90,13 +90,13 @@ async function observeGate(core: CoreName, gate: Gate, setup: GateSetup) {
   return gate.observe(s);
 }
 
-describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
+describe("expansion bus", () => {
   // -------------------------------------------------------------------------------------------------
   // BUS-001: $80
   // -------------------------------------------------------------------------------------------------
 
   it("BUS-001: $80 powers on $00 and reads back every bit written", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(hex(s.readNextReg(0x80)), "power-on").toBe("$00");
     for (const v of [0xa5, 0x5a, 0xff, 0x0f, 0x00]) {
       expect(hex(s.setNextReg(0x80, v).readNextReg(0x80)), hex(v)).toBe(hex(v));
@@ -111,7 +111,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
       [0xa7, 0x77],
       [0x08, 0x88]
     ]) {
-      const s = await parked(core);
+      const s = await parked();
       s.setNextReg(0x80, write).reset();
       expect(hex(s.readNextReg(0x80)), `${hex(write)} then a soft reset`).toBe(hex(after));
       s.hardReset();
@@ -120,7 +120,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   });
 
   it("BUS-001: the bus on with nothing plugged in: the internal ROM, keyboard and ports answer; others read $FF", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const rom = s.peekBytes(0x0000, 64);
     s.setNextReg(0x80, 0x80);
     // --- ROMCS is not asserted: the ROM is still the internal one (~3139, ~3034)
@@ -139,7 +139,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("BUS-002: $81 stores bits 6-4; bits 3-0 read 0 and bit 7 (ROMCS) reads 0 with nothing plugged in", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(hex(s.readNextReg(0x81)), "power-on").toBe("$00");
     for (const [write, back] of [
       [0xff, 0x70],
@@ -156,7 +156,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   });
 
   it("BUS-002: a soft reset keeps $81; a hard reset clears it", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x81, 0x70).reset();
     expect(hex(s.readNextReg(0x81)), "soft reset").toBe("$70");
     s.hardReset();
@@ -165,7 +165,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
 
   it("BUS-002: $81 bit 6 (ULA override) makes even ports with A7-4 = 0000 read $FF when $FE propagates", async () => {
     const read = async (regs: { r80: number; r81: number; r8a: number }, port: number) => {
-      const s = await parked(core);
+      const s = await parked();
       s.setNextReg(0x80, regs.r80).setNextReg(0x81, regs.r81).setNextReg(0x8a, regs.r8a);
       s.keyDown("SPACE");
       return s.in(port);
@@ -186,7 +186,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("BUS-003: $86-$88 read back whole; $89 reads reset type & 000 & bits 3-0; all power on 1s", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect([0x86, 0x87, 0x88, 0x89].map((r) => hex(s.readNextReg(r))), "power-on").toEqual(["$ff", "$ff", "$ff", "$8f"]);
     s.setNextReg(0x86, 0x5a).setNextReg(0x87, 0xa5).setNextReg(0x88, 0x3c).setNextReg(0x89, 0xf3);
     expect([0x86, 0x87, 0x88, 0x89].map((r) => hex(s.readNextReg(r)))).toEqual(["$5a", "$a5", "$3c", "$83"]);
@@ -194,7 +194,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   });
 
   it("BUS-003: a soft reset sets $86-$89 to 1s when $89 bit 7 is 0, and keeps them when it is 1", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x86, 0x5a).setNextReg(0x87, 0xa5).setNextReg(0x88, 0x3c).setNextReg(0x89, 0x0a).reset();
     expect([0x86, 0x87, 0x88, 0x89].map((r) => hex(s.readNextReg(r))), "bit 7 = 0").toEqual(["$ff", "$ff", "$ff", "$0f"]);
     s.setNextReg(0x86, 0x5a).setNextReg(0x87, 0xa5).setNextReg(0x88, 0x3c).setNextReg(0x89, 0x8a).reset();
@@ -205,14 +205,14 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
 
   describe.each(GATES)("BUS-003: $what", (gate) => {
     it("with the bus on, clearing the $86-$89 bit disables the device like clearing the $82-$85 bit", async () => {
-      const enabled = await observeGate(core, gate, { busOn: true, internal: true, bus: true });
-      const internalOff = await observeGate(core, gate, { busOn: false, internal: false, bus: true });
+      const enabled = await observeGate(gate, { busOn: true, internal: true, bus: true });
+      const internalOff = await observeGate(gate, { busOn: false, internal: false, bus: true });
       expect(hex(internalOff), "the scenario tells enabled from disabled").not.toBe(hex(enabled));
-      expect(hex(await observeGate(core, gate, { busOn: true, internal: true, bus: false })), "bus bit clear").toBe(
+      expect(hex(await observeGate(gate, { busOn: true, internal: true, bus: false })), "bus bit clear").toBe(
         hex(internalOff)
       );
       // --- AND, not OR: a set bus bit does not re-enable a disabled internal port
-      expect(hex(await observeGate(core, gate, { busOn: true, internal: false, bus: true })), "internal bit clear").toBe(
+      expect(hex(await observeGate(gate, { busOn: true, internal: false, bus: true })), "internal bit clear").toBe(
         hex(internalOff)
       );
     });
@@ -222,13 +222,13 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
     // -----------------------------------------------------------------------------------------------
 
     it("BUS-005: with the bus off, a cleared $86-$89 bit has no effect", async () => {
-      const enabled = await observeGate(core, gate, { busOn: false, internal: true, bus: true });
-      expect(hex(await observeGate(core, gate, { busOn: false, internal: true, bus: false }))).toBe(hex(enabled));
+      const enabled = await observeGate(gate, { busOn: false, internal: true, bus: true });
+      expect(hex(await observeGate(gate, { busOn: false, internal: true, bus: false }))).toBe(hex(enabled));
     });
   });
 
   it("BUS-005: $80 bits 6-4 without bit 7 change nothing: ports and the ROM still answer", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const rom = s.peekBytes(0x0000, 64);
     s.setNextReg(0x80, 0x70);
     expect(s.peekBytes(0x0000, 64), "ROM").toEqual(rom);
@@ -242,7 +242,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("BUS-004: $8A stores bits 5-0; a soft reset keeps it, a hard reset clears it", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(hex(s.readNextReg(0x8a)), "power-on").toBe("$00");
     expect(hex(s.setNextReg(0x8a, 0xff).readNextReg(0x8a)), "$FF").toBe("$3f");
     expect(hex(s.setNextReg(0x8a, 0x95).readNextReg(0x8a)), "$95").toBe("$15");
@@ -253,7 +253,7 @@ describe.each(ALL_CORES)("expansion bus - %s core", (core) => {
   });
 
   it("BUS-004: propagated ports still answer internally", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x80, 0x80).setNextReg(0x8a, 0x3f);
     expect(hex(s.out(0x7ffd, 0x03).readNextReg(0x56)), "$7FFD").toBe("$06");
     // --- $FE ANDs in the bus data - $FF with nothing plugged in

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName } from "../../harness/zxnext";
+
 import { colours, DISTINCT_32, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, pokeCell, writePalette } from "./_ula-helpers";
 
 /*
@@ -24,9 +24,9 @@ const half = (charRow: number, col: number, part: "ink" | "paper") => {
   return { x: [x0, x0 + 7] as [number, number], y: [y0, y0 + 7] as [number, number] };
 };
 
-describe.each(ALL_CORES)("ULA colours - %s core", (core: CoreName) => {
+describe("ULA colours", () => {
   it("ULA-001: border colour n shows palette entry 16 + n", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, DISTINCT_32.map((v, i) => [i, v]));
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
     const seen: Record<number, string> = {};
@@ -43,7 +43,7 @@ describe.each(ALL_CORES)("ULA colours - %s core", (core: CoreName) => {
   // --- ULA-002 / ULA-003: 16 character rows x 8 columns: ink = row & 7, paper = column,
   // --- BRIGHT from row 8. Bitmap $F0: the left 4 pixels of each cell are ink, the right 4 paper.
   it("ULA-002 / ULA-003: ink 0-7 x paper 0-7, with and without BRIGHT, use palette 0-31", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, DISTINCT_32.map((v, i) => [i, v]));
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
     fillScreen(s, 0x00, 0x00);
@@ -68,7 +68,7 @@ describe.each(ALL_CORES)("ULA colours - %s core", (core: CoreName) => {
   });
 
   it("ULA-016: rewriting entries 16-23 changes paper and border, not ink", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, DISTINCT_32.map((v, i) => [i, v]));
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
     fillScreen(s, 0xf0, 0x13); // --- PAPER 2, INK 3
@@ -88,7 +88,7 @@ describe.each(ALL_CORES)("ULA colours - %s core", (core: CoreName) => {
   });
 
   it("ULA-017: $43 bit 1 shows the second ULA palette; bits 6-4 pick the one written", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     const first: Array<[number, number]> = [[3, 0xe0], [18, 0x1c], [21, 0x03]];
     const second: Array<[number, number]> = [[3, 0xfc], [18, 0x1f], [21, 0xa2]];
     writePalette(s, first, 0x00); // --- write the first ULA palette

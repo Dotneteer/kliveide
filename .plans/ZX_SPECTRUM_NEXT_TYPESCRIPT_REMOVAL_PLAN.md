@@ -663,7 +663,22 @@ git push origin pre-zxnext-ts-removal-<yyyy-mm-dd>
 
 ## 9. Make The Harness WASM-Only
 
-Status: Not started.
+Status: Done (2026-09-19).
+
+- `createSession({ audioSampleRate? })` and `createCore(options)` take no core; `CoreName`,
+  `ALL_CORES`, `onEachCore`, `s.core`, the parity oracle, `KnownFailure.core`, per-core review
+  verdicts and `--core` are gone. 110 test files were converted.
+- The case runner keeps one headless result under the key `wasm`, so the 22 goldens only lost their
+  `ts` entries. `approveCase` now refuses any run with an XFAIL (there is no second core to approve
+  instead); a self-test covers it.
+- `parity/`: PAR-001 - PAR-004 retired (their oracle was the other core; the catalogue records it).
+  PAR-006 moved to `checkpoint/checkpoint-restore` (reference: a second session with no checkpoint).
+  The IDE-state test became IDE-001 (`ide/ide-state`), with expectations derived from the program's
+  writes instead of the other core's panels - deleting it would have left `ideState()` untested.
+- `sd/nextzxos-boot` and KEY-006 boot one card clone; the cross-core pixel comparison is gone.
+- Verified: harness type-check 61 -> 30 errors (all `src/` / `import.meta` backlog), 181 files /
+  1776 tests in `test/zxnext-hw`, `test/harness`, `test/wasm`, `test/zxnext-shared`; visual 21/21
+  headless and 21/21 browser tier, every golden matching.
 
 - **Pass 1 (behavioural):** set `ALL_CORES = ["wasm"]`.
   - Remove the TypeScript branches in `core/machines.ts` (`createCore`, `readNextRegDirect`),
@@ -688,7 +703,54 @@ rg '"ts"|CoreName|ALL_CORES|onEachCore|coreParity' test/harness test/zxnext-hw t
 
 ## 10. Convert Or Delete The `test/wasm/zxNext` Oracle Tests
 
-Status: Not started.
+Status: Done (2026-09-19).
+
+- Every oracle test was decided per `it`: deleted when `test/zxnext-hw` covers the scenario (the
+  covering test is listed below), otherwise converted to fixed WASM
+  expectations - derived from the scenario or the VHDL where possible, else pinned to the value both
+  cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19` (each such file says so).
+- Deleted whole: `copper`, `dac-audio`, `interrupts`, `nmi`, `palette-ulaplus` (covered by the
+  hardware tests); `scaffold-diagnostics`, `test-helpers.test`, `oracle-types` (oracle machinery);
+  `full-matrix`, `device-completeness` (TS-to-WASM coverage matrices - the migration gate they served
+  has passed; the hardware catalogue is the coverage record). `full-matrix`'s factory/fetch setup
+  test moved to `wasm-next-factory-setup.test.ts`.
+- `frame-diff-runner` kept only the WASM trace layout and reset-state tests, renamed
+  `wasm-next-trace-layout.test.ts`. Finding: outside the diff runner the core's trace ring is used
+  only for sizing (loader) and exclusion (checkpoints); nothing reads the records, so after Step 13
+  `zxnext-trace.c` and its Clear/SetEnabled/FinishFrame exports are dead - a candidate for removal.
+- `wasm-next-test-helpers.ts` keeps `buildZxNextWasmArtifact` and `createTestZxNextWasmMachine`.
+  `wasm-next-boot-trace.ts` is WASM-only (with a trace checksum).
+- `rollout` / `public-adapter` / `ide-scaffold` lost their TypeScript-machine assertions (the
+  `compatibility` model assertions stay until Step 12). The rollout constants
+  (`ZXNEXT_WASM_V2_MIGRATED_SURFACES`, `_DEFAULT_READY`, `_DEFAULT_BLOCKERS`, their types) and the
+  `defaultReady` / `defaultBlockers` / `migratedSurfaces` diagnostics fields are deleted.
+- `shared-source-contract` lists each Next-specific device fork's tests (WASM and hardware) instead
+  of "oracle tests".
+- Deleted tests and what covers them (`test/zxnext-hw/...`):
+
+  | Old test (`wasm-next-*`) | Covered by |
+  |---|---|
+  | `interrupts`: IM1 acknowledge; IM2 vector + RETI | `interrupts/interrupts` INT-001, INT-023; INT-003, INT-016/017 |
+  | `nmi`: normal NMI; stackless NMI + RETN | `nmi/nmi` NMI-004, NMI-006 |
+  | `nextreg`: reset defaults; select/data; CPU speed; `$8E`/`$8C` | `nextreg/soft-reset`, `reset/soft-reset-memory`; `nextreg/register-select`; `speed/cpu-speed` SPD-001/005; `memory/paging-ports` MEM-014, `memory/alt-rom` MEM-016 |
+  | `ports`: `$DFFD`/`$1FFD`/`$82` gating; AY ports | `memory/paging-ports`, `ports/port-enables` PORT-002; `ports/port-decode` PORT-012 |
+  | `divmmc`: control port/MAPRAM; `$83`; RST, custom/NMI/1FF8 automap; delayed entry/exit | `divmmc/divmmc` DIV-001/003/013, DIV-012, DIV-011/020, DIV-008/021/031, DIV-006/008/010 |
+  | `keyboard-ula`: keyboard rows | `keyboard/keyboard` KEY-001-003 |
+  | `expansion-multiface`: expansion exports | `bus/expansion-bus` BUS-001-005 (the injected ROMCS/NMI/INT signal exports lost their only test) |
+  | `sd-spi`: chip select, immediate responses | `sd/sd-card` SPI-001/003 |
+  | `screen-ula`: blank/flash/scanline; doubled pixels; `$68`; scroll/clip registers | `ula/flash-and-layout` ULA-004/005, `video/video-timing` VT-001/002, `ula/ula-colours` ULA-002; `ula/scroll` ULA-010-012; `ula/clip` ULA-014 |
+  | `tilemap`: register state | `tilemap/tilemap` TM-001/003/015-017 |
+  | `copper` | `copper/copper-upload`, `copper/copper-tick-timing`, `copper/copper-control` COP-002 |
+  | `layer2-lores`: Layer 2 registers; clip index | `layer2/layer2` L2-002/008-014; `nextreg/composite-readbacks` NR-014 |
+  | `palette-ulaplus` | `palette/palette-registers` PAL-001-008 and its reset-palette test |
+  | `psg-audio`: chip select/panning/mono; tone/stereo; envelope/noise | `audio/ay-psg` AY-009/011/013, AY-001; AY-002/004, `audio/ay-stereo-mode`; AY-005, AY-007 |
+  | `dac-audio` | `audio/dac` DAC-011, DAC-007, DAC-002 |
+
+- **Before Step 11:** `scripts/benchmark-zxnext-wasm.cjs` still loads `test/zxnext/TestNextMachine.ts`
+  for its `typescript` backend, and `wasm-next-performance-boundary` runs that script - make the
+  benchmark WASM-only before `test/zxnext/` goes.
+- Verified: `test/wasm` 62 files / 263 tests; `build:check` no new errors; the only type errors in
+  `test/wasm/zxNext` are the pre-existing `CpuState`-union / `.cjs` / `RequestMessage` ones.
 
 - Replace the oracle helpers with WASM-only helpers, and replace the `TestZxNextMachine` type.
 - Pin valuable scenarios (boot traces, debug-step, partition labels, storage commands, tape, DMA) as

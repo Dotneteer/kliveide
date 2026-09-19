@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The +3 FDC ports and their I/O trap (catalogue FDC-001 - FDC-004; the trap's NMI, $DA and $02 bit 4
@@ -18,20 +18,20 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
  *   S_NMI_FETCH, ~2120). After the fetch at $0066 it holds (S_NMI_HOLD): later traps change neither.
  */
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.runFrames(1);
 }
 
 /** A session with the trap on (and the Multiface NMI enabled, as RST-006) and the CPU parked. */
-async function trapped(core: CoreName): Promise<NextTestSession> {
-  return (await parked(core)).setNextReg(0x06, 0x08).setNextReg(0xd8, 0x01);
+async function trapped(): Promise<NextTestSession> {
+  return (await parked()).setNextReg(0x06, 0x08).setNextReg(0xd8, 0x01);
 }
 
-describe.each(ALL_CORES)("+3 FDC ports - %s core", (core) => {
+describe("+3 FDC ports", () => {
   it("FDC-001: $D8 bit 0 reads back alone; a soft reset clears it", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.setNextReg(0xd8, 0xff).readNextReg(0xd8)).toBe(0x01);
     expect(s.setNextReg(0xd8, 0xfe).readNextReg(0xd8)).toBe(0x00);
     s.setNextReg(0xd8, 0x01).reset();
@@ -49,7 +49,7 @@ describe.each(ALL_CORES)("+3 FDC ports - %s core", (core) => {
       [0x3a41, true, 0x03]
     ];
     for (const [port, write, cause] of cases) {
-      const s = await trapped(core);
+      const s = await trapped();
       const what = `${write ? "write" : "read"} $${port.toString(16)}`;
       if (write) s.out(port, 0x5c);
       else expect(s.in(port), `${what}: the value`).toBe(0xff);
@@ -60,17 +60,17 @@ describe.each(ALL_CORES)("+3 FDC ports - %s core", (core) => {
 
   it("FDC-002: other addresses do not trap: $1FFD, $0FFD, $2FFF, $6FFD, $2FFE", async () => {
     for (const port of [0x1ffd, 0x0ffd, 0x2fff, 0x6ffd, 0x2ffe]) {
-      const s = await trapped(core);
+      const s = await trapped();
       s.in(port);
       expect(s.readNextReg(0xda), `read $${port.toString(16)}`).toBe(0x00);
     }
-    const s = await trapped(core);
+    const s = await trapped();
     s.out(0x2ffd, 0x11); // --- a $2FFD write is not a trap cause
     expect([s.readNextReg(0xda), s.readNextReg(0xd9)], "write $2ffd").toEqual([0x00, 0x00]);
   });
 
   it("FDC-002: with the trap off, $2FFD / $3FFD do not trap and nothing answers them", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x06, 0x08).setNextReg(0xd8, 0x00);
     expect([s.in(0x2ffd), s.in(0x3ffd)]).toEqual([0xff, 0xff]);
     s.out(0x3ffd, 0x44);
@@ -80,7 +80,7 @@ describe.each(ALL_CORES)("+3 FDC ports - %s core", (core) => {
   });
 
   it("FDC-003: $DA and $D9 change only while the NMI state machine accepts a cause", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         di
@@ -102,7 +102,7 @@ describe.each(ALL_CORES)("+3 FDC ports - %s core", (core) => {
   });
 
   it("FDC-004: the Next has no uPD765: its status and data ports read $FF", async () => {
-    const s = await parked(core);
+    const s = await parked();
     // --- A uPD765 would answer $80 (RQM) from its status register and a SENSE DRIVE STATUS result
     s.out(0x1ffd, 0x08); // --- the +3 motor bit
     expect(s.in(0x2ffd), "status").toBe(0xff);

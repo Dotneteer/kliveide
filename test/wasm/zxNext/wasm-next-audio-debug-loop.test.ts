@@ -12,7 +12,7 @@ import { createSession } from "../../harness/zxnext";
  */
 describe("ZX Next WASM audio - per-instruction frames", () => {
   it("stays fast with the sample buffer full", async () => {
-    const s = await createSession("wasm", { audioSampleRate: 48000 });
+    const s = await createSession({ audioSampleRate: 48000 });
     await s.loadCode(" .org $8000\n di\nLoop: ld a,(hl)\n jr Loop");
     const wasm = (s.machine as any).wasmV2Runtime.exports;
     const start = Date.now();

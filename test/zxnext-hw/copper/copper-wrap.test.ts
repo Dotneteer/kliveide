@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, next8ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { next8ToHex, type NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -45,10 +45,10 @@ function fullList(): number[] {
   return list;
 }
 
-describe.each(ALL_CORES)("copper list wrap - %s core", (core: CoreName) => {
+describe("copper list wrap", () => {
   for (const [mode, name] of [[0x40, "01"], [0x80, "10"]] as const) {
     it(`mode ${name}: a list without a HALT runs through instruction 1023 and starts again at 0`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       upload(s, fullList()).setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3);
       // --- the upload wrapped the write address to 0 as well; mode 10 starts at the current address (0)
       s.setNextReg(0x62, mode).runFrames(2);
@@ -69,7 +69,7 @@ describe.each(ALL_CORES)("copper list wrap - %s core", (core: CoreName) => {
       const OFFSET = 200;
       const restartRow = t.lines - OFFSET; // --- cvc = 0
       const waitLine = 150 + OFFSET - t.lines; // --- copper line of paper row 150
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       s.setNextReg(0x03, t.nr03).runFrames(2); // --- a timing change applies from the next frame
       // --- PAPER 0 = entry 16; the border (2 = entry 18) stays grey so the paper top can be found
       s.setNextReg(0x43, 0x00).setNextReg(0x40, 18).setNextReg(0x41, 0x49).setNextReg(0x14, 0xe3);

@@ -1,5 +1,5 @@
 import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
-import type { CoreName, NextTestSession } from "../../harness/zxnext";
+import type { NextTestSession } from "../../harness/zxnext";
 
 /*
  * A transcription of `_input/next-fpga/src/video/layer2.vhd` and a screen set up to check it pixel by
@@ -82,8 +82,8 @@ export function randomBank(seed: number): Uint8Array {
  * palette holding colour i at index i, the ULA off ($68 bit 7) and the fallback / global transparency both
  * $E3 - so an index-$E3 pixel is transparent and shows the same colour.
  */
-export async function layer2Screen(core: CoreName, first = 8, count = 5): Promise<{ s: NextTestSession; mem: Map<number, Uint8Array> }> {
-  const s = await parkedSession(core);
+export async function layer2Screen(first = 8, count = 5): Promise<{ s: NextTestSession; mem: Map<number, Uint8Array> }> {
+  const s = await parkedSession();
   const mem = new Map<number, Uint8Array>();
   for (let b = first; b < first + count; b++) {
     mem.set(b, randomBank(b));

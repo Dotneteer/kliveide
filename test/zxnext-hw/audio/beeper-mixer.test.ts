@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 import { ay, edgeStep, frequency, relativeError, side, swing } from "./_audio-helpers";
 
 /*
@@ -23,8 +23,8 @@ const NO_CONTENTION = 0x40;
 const SPEAKER = 0x10;
 const DAC_EN = 0x08;
 
-async function session(core: CoreName, rate = RATE): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: rate });
+async function session(rate = RATE): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: rate });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   return s;
 }
@@ -60,9 +60,9 @@ const beeperSwing = (s: NextTestSession) => {
   return swing(side(record(s, 2), "left"));
 };
 
-describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
+describe("Beeper and mixer", () => {
   it("BEEP-001: toggling $FE bit 4 plays a square wave at the toggle rate on both sides", async () => {
-    const s = await session(core);
+    const s = await session();
     await toggle(s, 0x10, 100, `        nextreg $08,$${(NO_CONTENTION | SPEAKER).toString(16)}`);
     s.runFrames(1);
     const samples = record(s, 4);
@@ -72,9 +72,9 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
   });
 
   it("BEEP-002: $FE bit 3 (MIC) alone plays a quarter of the EAR amplitude (128 vs 512)", async () => {
-    const ear = await session(core);
+    const ear = await session();
     await toggle(ear, 0x10, 100, `        nextreg $08,$${(NO_CONTENTION | SPEAKER).toString(16)}`);
-    const mic = await session(core);
+    const mic = await session();
     await toggle(mic, 0x08, 100, `        nextreg $08,$${(NO_CONTENTION | SPEAKER).toString(16)}`);
     const ratio = beeperSwing(mic) / beeperSwing(ear);
     expect(ratio).toBeGreaterThan(0.24);
@@ -82,7 +82,7 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
   });
 
   it("BEEP-003: $08 bit 4 and $06 bit 6 read back; hard reset values 1 and 0", async () => {
-    const s = await session(core);
+    const s = await session();
     expect([s.readNextReg(0x08) & 0x10, s.readNextReg(0x06) & 0x40]).toEqual([0x10, 0x00]);
     s.setNextReg(0x08, s.readNextReg(0x08) & ~0x10).setNextReg(0x06, s.readNextReg(0x06) | 0x40);
     expect([s.readNextReg(0x08) & 0x10, s.readNextReg(0x06) & 0x40]).toEqual([0x00, 0x40]);
@@ -96,7 +96,7 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
   for (const [bit6, speaker, heard] of EXCLUSION) {
     for (const [what, mask] of [["EAR", 0x10], ["MIC", 0x08]] as const) {
       it(`BEEP-003: $06 bit 6 = ${+bit6}, $08 bit 4 = ${+speaker}: ${what} ${heard ? "is" : "is not"} in the mix`, async () => {
-        const s = await session(core);
+        const s = await session();
         await toggle(
           s,
           mask,
@@ -115,18 +115,18 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
    * sums above ~1110 units clamp; the additivity check stays below that.
    */
   async function weights(): Promise<{ ear: number; ay: number; dac: number }> {
-    const e = await session(core);
+    const e = await session();
     await toggle(e, 0x10, 100, `        nextreg $08,$${(NO_CONTENTION | SPEAKER).toString(16)}`);
     const ear = edgeStep(side(record(e.runFrames(1), 2), "left"));
 
-    const a = await session(core);
+    const a = await session();
     a.setNextReg(0x06, 0x00).setNextReg(0x08, SPEAKER);
     ay(a, 0, 0xfe);
     ay(a, 8, 0x0f);
     ay(a, 7, 0x3e);
     const ayChannel = edgeStep(side(record(a.runFrames(1), 2), "left"));
 
-    const d = await session(core);
+    const d = await session();
     d.setNextReg(0x08, SPEAKER | DAC_EN);
     const dacLevel = (v: number) => {
       const samples = record(d.out(0x1f, v), 1);
@@ -147,7 +147,7 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
   it("BEEP-004: sources add: an AY level and a DAC level together are the sum of each alone", async () => {
     // --- Static (DC) levels: AY channels A and B at volume 12 (volTableYm[25] = $66 each: 204 on the
     // --- left) with tone and noise off, DAC A at $C0 (+64 * 4 = 256).
-    const s = await session(core);
+    const s = await session();
     s.setNextReg(0x06, 0x00).setNextReg(0x08, SPEAKER | DAC_EN);
     const levelNow = () => {
       const samples = record(s, 1);
@@ -169,7 +169,7 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
   });
 
   it("BEEP-007: after reset, with nothing playing, both sides hold one constant level", async () => {
-    const s = await session(core);
+    const s = await session();
     s.runFrames(2);
     const samples = record(s, 4);
     expect(swing(side(samples, "left"))).toBe(0);
@@ -178,7 +178,7 @@ describe.each(ALL_CORES)("Beeper and mixer - %s core", (core) => {
 
   for (const rate of [44_100, 48_000]) {
     it(`BEEP-008: at ${rate} Hz a frame yields rate * frame length / 28 MHz samples`, async () => {
-      const s = await session(core, rate);
+      const s = await session(rate);
       s.setNextReg(0x07, 0).runFrames(1);
       const t0 = s.tacts;
       s.runFrames(1);

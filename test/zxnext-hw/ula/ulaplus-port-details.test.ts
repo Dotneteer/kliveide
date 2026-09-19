@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * ULA+ port details ported from the "ULA+ Ports" part of test/zxnext/NextComposedScreenDevice.test.ts
@@ -22,8 +22,8 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 const grb = (r: number, g: number, b: number) => ((g & 7) << 5) | ((r & 7) << 2) | (b & 3);
 const rgb8 = (r: number, g: number, b: number) => ((r & 7) << 5) | ((g & 7) << 2) | (b & 3);
 
-async function session(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function session(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s;
 }
@@ -31,9 +31,9 @@ async function session(core: CoreName): Promise<NextTestSession> {
 /** The 8-bit value ($41 read) of entry `index` of the palette `select` ($43 bits 6-4 value). */
 const entry = (s: NextTestSession, select: number, index: number) => s.setNextReg(0x43, select).setNextReg(0x40, index).readNextReg(0x41);
 
-describe.each(ALL_CORES)("ULA+ port details - %s core", (core) => {
+describe("ULA+ port details", () => {
   it("$BF3B cannot be read: it returns $FF", async () => {
-    const s = await session(core);
+    const s = await session();
     s.out(0xbf3b, 0x05);
     expect(s.in(0xbf3b)).toBe(0xff);
     s.out(0xbf3b, 0x40);
@@ -41,7 +41,7 @@ describe.each(ALL_CORES)("ULA+ port details - %s core", (core) => {
   });
 
   it("$FF3B writes in mode groups 10 and 11 change nothing; reads there return the enable", async () => {
-    const s = await session(core);
+    const s = await session();
     s.out(0xbf3b, 0x40).out(0xff3b, 0x01); // --- ULA+ on
     s.out(0xbf3b, 0x80).out(0xff3b, 0x00);
     expect({ port: s.in(0xff3b), nr68: s.readNextReg(0x68) & 0x08 }, "group 10 write ignored").toEqual({ port: 0x01, nr68: 0x08 });
@@ -56,14 +56,14 @@ describe.each(ALL_CORES)("ULA+ port details - %s core", (core) => {
   it("$FF3B writes in groups 01, 10 and 11 never write the palette, whatever the index was", async () => {
     // --- (That a group-01 $BF3B write keeps the index is not observable: only a group-00 $BF3B write,
     // --- which sets the index again, makes $FF3B reach the palette.)
-    const s = await session(core);
+    const s = await session();
     for (const i of [0xc8, 0xcf]) s.setNextReg(0x43, 0x00).setNextReg(0x40, i).setNextReg(0x41, 0x00);
     s.out(0xbf3b, 0x08).out(0xbf3b, 0x4f).out(0xff3b, 0xff).out(0xbf3b, 0x8f).out(0xff3b, 0xff).out(0xbf3b, 0xc8).out(0xff3b, 0xff);
     expect([entry(s, 0x00, 0xc8), entry(s, 0x00, 0xcf)]).toEqual([0x00, 0x00]);
   });
 
   it("the index is 6 bits: index $3F writes entry $FF", async () => {
-    const s = await session(core);
+    const s = await session();
     s.out(0xbf3b, 0x3f).out(0xff3b, grb(6, 5, 2));
     expect(entry(s, 0x00, 0xff)).toBe(rgb8(6, 5, 2));
     s.out(0xbf3b, 0x00).out(0xff3b, grb(1, 2, 3));
@@ -71,7 +71,7 @@ describe.each(ALL_CORES)("ULA+ port details - %s core", (core) => {
   });
 
   it("$43 bit 6 alone picks the ULA palette a $FF3B write goes to; it never writes Layer 2, sprites or the tilemap", async () => {
-    const s = await session(core);
+    const s = await session();
     // --- clear entry $C5 in all eight palettes
     for (let sel = 0; sel < 8; sel++) s.setNextReg(0x43, sel << 4).setNextReg(0x40, 0xc5).setNextReg(0x41, 0x00);
     const all = () => Array.from({ length: 8 }, (_, sel) => entry(s, sel << 4, 0xc5));
@@ -89,7 +89,7 @@ describe.each(ALL_CORES)("ULA+ port details - %s core", (core) => {
   });
 
   it("group 00 reads return the entry of the ULA palette $43 bit 6 picks", async () => {
-    const s = await session(core);
+    const s = await session();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0xc9).setNextReg(0x41, rgb8(3, 4, 1));
     s.setNextReg(0x43, 0x40).setNextReg(0x40, 0xc9).setNextReg(0x41, rgb8(6, 1, 2));
     s.setNextReg(0x43, 0x00).out(0xbf3b, 0x09);

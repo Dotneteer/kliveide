@@ -5,18 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { CimHandler } from "@main/fat32/CimHandlers";
 
-import {
-  ALL_CORES,
-  createSession,
-  MATRIX_KEYS,
-  NEXT_EXTRA_KEYS,
-  ULA_COLORS,
-  type CoreName,
-  type ExtraKey,
-  type MatrixKey,
-  type NextKey,
-  type NextTestSession
-} from "../../harness/zxnext";
+import { createSession, MATRIX_KEYS, NEXT_EXTRA_KEYS, ULA_COLORS, type ExtraKey, type MatrixKey, type NextKey, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The keyboard (catalogue KEY-001 - KEY-006, KEY-008; KEY-007 needs the joystick input of §4.32).
@@ -74,8 +63,8 @@ const EXTRA: Record<ExtraKey, { reg: 0xb0 | 0xb1; bit: number; combo: [MatrixKey
   EXTEND: { reg: 0xb1, bit: 0, combo: ["CAPS", "SYM"] }
 };
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.runFrames(1);
 }
@@ -98,13 +87,13 @@ function expectedRows(keys: MatrixKey[]): number[] {
 
 const hexes = (values: number[]) => values.map((v) => "$" + v.toString(16).padStart(2, "0"));
 
-describe.each(ALL_CORES)("keyboard - %s core", (core) => {
+describe("keyboard", () => {
   // -------------------------------------------------------------------------------------------------
   // KEY-001 Matrix half-rows
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-001: each of the 40 keys alone clears exactly its bit in its half-row", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(hexes(halfRows(s)), "no key").toEqual(hexes(expectedRows([])));
     for (const key of MATRIX_KEYS) {
       s.keyDown(key).runFrames(1);
@@ -119,7 +108,7 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-002: keys in one row and in several rows combine; a rectangle of three shows no fourth", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.keyDown("CAPS", "Z", "V").runFrames(1);
     expect(hexes(halfRows(s)), "one row").toEqual(hexes(expectedRows(["CAPS", "Z", "V"])));
     s.keyUp("CAPS", "Z", "V");
@@ -135,7 +124,7 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-003: every address line at 0 selects its row and the rows AND; any even port reads it", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.keyDown("A", "Q", "Z", "P").runFrames(1);
     const cols = (port: number) => s.in(port) & 0x1f;
     expect(cols(0xf9fe), "A9 + A10: A and Q, both column 0").toBe(0x1e);
@@ -151,7 +140,7 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-004: each extra key sets its $B0/$B1 bit and enters its two matrix keys", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(hexes([s.readNextReg(0xb0), s.readNextReg(0xb1)]), "no key").toEqual(["$00", "$00"]);
     for (const key of NEXT_EXTRA_KEYS) {
       const { reg, bit, combo } = EXTRA[key];
@@ -171,7 +160,7 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-005: $68 bit 4 stops the matrix entries of the extra keys; $B0/$B1 still report them", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x68, s.readNextReg(0x68) | 0x10);
     expect(s.readNextReg(0x68) & 0x10, "read back").toBe(0x10);
     s.keyDown("UP", ",", "BREAK").runFrames(1);
@@ -193,7 +182,7 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("KEY-008: $06 bit 2 (PS/2 mode) changes only in config mode", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const before = s.readNextReg(0x06) & 0x04;
     s.setNextReg(0x06, s.readNextReg(0x06) ^ 0x04);
     expect(s.readNextReg(0x06) & 0x04, "outside config mode").toBe(before);
@@ -215,12 +204,12 @@ describe.each(ALL_CORES)("keyboard - %s core", (core) => {
 const CARD = process.env.KLIVE_SD_CARD ?? join(userInfo().homedir, "Klive", "ks2.cim");
 
 /** Boots NextZXOS from a clone of the card (as SPI-009) and runs until the menu is up. */
-async function bootNextZxos(core: CoreName, dir: string): Promise<{ s: NextTestSession; close: () => void }> {
-  const path = join(dir, `ks2-${core}.cim`);
+async function bootNextZxos(dir: string): Promise<{ s: NextTestSession; close: () => void }> {
+  const path = join(dir, "ks2.cim");
   copyFileSync(CARD, path, constants.COPYFILE_FICLONE);
   const handler = new CimHandler(path);
   const info = handler.cimInfo;
-  const s = await createSession(core);
+  const s = await createSession();
   s.setRtcTime({ year: 26, month: 9, date: 19, day: 7, hours: 10, minutes: 0, seconds: 0 });
   s.attachSdCard({
     totalSectors: (info.maxSize * 2048) / info.sectorSize,
@@ -243,11 +232,11 @@ async function type(s: NextTestSession, text: string): Promise<void> {
   for (const c of text) await tap(s, c === " " ? "SPACE" : (c as NextKey));
 }
 
-describe.skipIf(!existsSync(CARD))("KEY-006: the ROM reads the keyboard (NextZXOS, both cores)", () => {
-  it.each(ALL_CORES)("%s: the menu takes DOWN and ENTER; NextBASIC takes a typed BORDER and POKE", async (core) => {
+describe.skipIf(!existsSync(CARD))("KEY-006: the ROM reads the keyboard (NextZXOS)", () => {
+  it("the menu takes DOWN and ENTER; NextBASIC takes a typed BORDER and POKE", async () => {
     const dir = mkdtempSync(join(tmpdir(), "klive-key006-"));
     try {
-      const { s, close } = await bootNextZxos(core, dir);
+      const { s, close } = await bootNextZxos(dir);
       try {
         // --- DOWN twice (an extra key: CAPS + 6 in the matrix) from Browser to NextBASIC
         await tap(s, "DOWN");

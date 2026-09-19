@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * DAC port decoding details `dac.test.ts` does not list: the low address byte is decoded in full (an
@@ -22,8 +22,8 @@ import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTes
 const RATE = 48_000;
 const DAC_ON = 0x18; // --- $08: internal speaker + DACs
 
-async function dac(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: RATE });
+async function dac(): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: RATE });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   return s.setNextReg(0x08, DAC_ON);
 }
@@ -36,13 +36,13 @@ const level = (s: NextTestSession): AudioSample => {
 /** $84 with the given enable bits (16-23) cleared. */
 const without = (...bits: number[]) => bits.reduce((v, b) => v & ~(1 << (b - 16)), 0xff);
 
-describe.each(ALL_CORES)("DAC port decoding - %s core", (core) => {
+describe("DAC port decoding", () => {
   const DAC_PORTS = [0x0f, 0x1f, 0x3f, 0x4f, 0x5f, 0xb3, 0xdf, 0xf1, 0xf3, 0xf9, 0xfb];
   for (const port of DAC_PORTS) {
     const even = port & 0xfe;
     it(`DAC-DEC-1: $${even.toString(16).padStart(2, "0")} (A0 = 0) is not DAC port $${port.toString(16)}`, async () => {
       // --- zxnext.vhd ~2469-2518: the whole low byte is compared
-      const s = await dac(core);
+      const s = await dac();
       const base = level(s);
       s.out(even, 0x00);
       expect(level(s), "the even neighbour writes no DAC channel").toEqual(base);
@@ -53,7 +53,7 @@ describe.each(ALL_CORES)("DAC port decoding - %s core", (core) => {
 
   it("DAC-DEC-2: $5F writes D with Soundrive 1 on and Profi Covox off", async () => {
     // --- zxnext.vhd ~2620: port_5f and (sd1 enable or profi enable)
-    const s = await dac(core);
+    const s = await dac();
     s.setNextReg(0x84, without(19));
     const base = level(s);
     s.out(0x5f, 0xff);
@@ -63,7 +63,7 @@ describe.each(ALL_CORES)("DAC port decoding - %s core", (core) => {
 
   it("DAC-DEC-3: $3F writes A with Soundrive 1 off and Profi Covox on", async () => {
     // --- zxnext.vhd ~2617: port_3f and profi enable, independent of bit 17
-    const s = await dac(core);
+    const s = await dac();
     s.setNextReg(0x84, without(17));
     const base = level(s);
     s.out(0x3f, 0xff);
@@ -73,7 +73,7 @@ describe.each(ALL_CORES)("DAC port decoding - %s core", (core) => {
 
   it("DAC-EN-2: clearing and setting $08 bit 3 again leaves every channel at $80, not at its old value", async () => {
     // --- zxnext.vhd ~6382 (reset_i => reset or not nr_08_dac_en); soundrive.vhd ~70-76 (X"80")
-    const s = await dac(core);
+    const s = await dac();
     const centre = level(s);
     for (const port of [0x1f, 0x0f, 0x4f, 0x5f]) s.out(port, 0xff);
     expect(level(s), "the channels moved").not.toEqual(centre);

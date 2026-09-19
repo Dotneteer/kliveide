@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * NextReg $03 - machine type, display timing, user lock, config mode (catalogue RST-007 - RST-012).
@@ -18,9 +18,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
 const timing = (v: number) => (v >> 4) & 0x07;
 const type = (v: number) => v & 0x07;
 
-describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
+describe("NextReg 0x03 machine type", () => {
   it("RST-007: the machine type changes only in config mode", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const initial = type(s.readNextReg(0x03));
     s.setNextReg(0x03, 0x02);
     expect(type(s.readNextReg(0x03)), "outside config mode").toBe(initial);
@@ -37,14 +37,14 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   ];
   for (const [written, stored] of TIMINGS) {
     it(`RST-008: writing timing ${written} with bit 7 stores ${stored}`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       s.setNextReg(0x03, 0x80 | (written << 4));
       expect(timing(s.readNextReg(0x03))).toBe(stored);
     });
   }
 
   it("RST-008: without bit 7 the timing does not change", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x03, 0x80 | (2 << 4));
     s.setNextReg(0x03, 4 << 4);
     expect(timing(s.readNextReg(0x03))).toBe(2);
@@ -62,7 +62,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   ];
   for (const [name, t, tacts] of FRAMES) {
     it(`RST-008: ${name} timing runs ${tacts} tacts per frame`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(` .org $8000\n jr $`);
       s.setNextReg(0x07, 0x00).setNextReg(0x03, 0x80 | (t << 4));
       s.runFrames(2);
@@ -80,7 +80,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
    */
   for (const [name, t] of FRAMES) {
     it(`RST-008: ${name} timing draws paper and border in place`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(` .org $8000\n jr $`);
       s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x10).setNextReg(0x41, 0xe0).setNextReg(0x41, 0x1c); // --- paper 0 red, 1 green
       for (let row = 0; row < 8; row++) s.poke(0x4000 + (row << 8), 0x00);
@@ -94,7 +94,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   }
 
   it("RST-009: bit 3 toggles the user lock; while locked timing writes are ignored", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x03, 0x80 | (2 << 4));
     s.setNextReg(0x03, 0x08); // --- lock on
     expect(s.readNextReg(0x03) & 0x08).toBe(0x08);
@@ -110,7 +110,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   });
 
   it("RST-010: bit 7 reads 1 between the two bytes of a $44 write", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x40, 0x00);
     expect(s.readNextReg(0x03) & 0x80).toBe(0x00);
     s.setNextReg(0x44, 0x12);
@@ -120,7 +120,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   });
 
   it("RST-011: $0A bits 7-6 (Multiface type) change only in config mode", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const mf = () => (s.readNextReg(0x0a) >> 6) & 0x03;
     const initial = mf();
     s.setNextReg(0x0a, (initial ^ 0x03) << 6);
@@ -134,7 +134,7 @@ describe.each(ALL_CORES)("NextReg 0x03 machine type - %s core", (core) => {
   });
 
   it("RST-012: low bits 000 keep config mode, any other non-111 value leaves it", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x03, 0x07);
     s.setNextReg(0x03, 0x00); // --- still in config mode
     s.setNextReg(0x03, 0x04); // --- accepted, then config mode is left

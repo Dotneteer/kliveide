@@ -3,12 +3,7 @@ import { readFileSync } from "node:fs";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
-import {
-  ZXNEXT_WASM_V2_DEFAULT_BLOCKERS,
-  ZXNEXT_WASM_V2_MIGRATED_SURFACES,
-  ZxNextWasmV2Machine
-} from "@emu/machines/zxNext/ZxNextWasmV2Machine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import {
   ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE,
   ZXNEXT_WASM_V2_MEMORY_SIZE,
@@ -46,29 +41,16 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(diagnostics).toMatchObject({
       backend: "wasm",
       engine: "v2",
-      defaultReady: true,
       memoryBytes: ZXNEXT_WASM_V2_MEMORY_SIZE,
       flatMemoryBytes: ZXNEXT_WASM_V2_FLAT_MEMORY_SIZE,
       screenWidth: ZXNEXT_WASM_V2_SCREEN_WIDTH,
       screenHeight: ZXNEXT_WASM_V2_SCREEN_HEIGHT
     });
-    expect(diagnostics.defaultBlockers).toEqual(ZXNEXT_WASM_V2_DEFAULT_BLOCKERS);
-    expect(diagnostics.migratedSurfaces).toEqual(ZXNEXT_WASM_V2_MIGRATED_SURFACES);
-    expect(diagnostics.migratedSurfaces).toEqual(expect.arrayContaining([
-      "registers",
-      "memory",
-      "disassembly",
-      "debug",
-      "frame",
-      "ULA",
-      "screen"
-    ]));
-    expect(diagnostics.defaultBlockers).toEqual([]);
 
-    const oracle = new ZxNextMachine();
-    expect(machine.screenWidthInPixels).toBe(oracle.screenWidthInPixels);
-    expect(machine.screenHeightInPixels).toBe(oracle.screenHeightInPixels);
-    expect(machine.getAspectRatio()).toEqual(oracle.getAspectRatio());
+    // --- The 720x288 buffer doubles the horizontal resolution: a buffer pixel is half as wide as tall
+    expect(machine.screenWidthInPixels).toBe(720);
+    expect(machine.screenHeightInPixels).toBe(288);
+    expect(machine.getAspectRatio()).toEqual([0.5, 1]);
 
     const cpu = machine.getCpuState();
     expect(cpu.pc).toBe(0x0000);
@@ -120,7 +102,6 @@ describe("ZX Spectrum Next WASM v2 IDE integration", () => {
     expect(machine.executeMachineFrame()).toBe(FrameTerminationMode.Normal);
     expect(machine.executeWasmV2DebugStep()).toBe(FrameTerminationMode.DebugEvent);
     expect(machine.getWasmV2Diagnostics()).toMatchObject({
-      defaultReady: true,
       normalFrames: 1,
       debugSteps: 1
     });

@@ -1,19 +1,18 @@
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES } from "../core/machines";
-import { createSession, onEachCore } from "../script/session";
+import { createSession } from "../script/session";
 
 /*
- * The scripting layer on both cores. Every method a test may rely on is exercised here, so a method
- * that silently does nothing on one core fails in this file first.
+ * The scripting layer. Every method a test may rely on is exercised here, so a method that silently
+ * does nothing fails in this file first.
  */
 
 const VISUAL_CASES = resolve(__dirname, "../../../visual");
 
-describe.each(ALL_CORES)("harness session - %s core", (core) => {
+describe("harness session", () => {
   it("loadCode + runTo + registers: runs assembled code to a label", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const p = await s.loadCode(`
       .org $8000
     Start:
@@ -28,7 +27,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("step executes exactly one instruction per count", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
       .org $8000
       ld a,1
@@ -43,7 +42,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("call runs a routine and returns", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
       .org $8000
     Idle:
@@ -58,7 +57,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("memory, ports and NextRegs go through the hardware paths", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     s.poke(0xc000, [1, 2, 3]).pokeWord(0xc010, 0xbeef);
     expect(Array.from(s.peekBytes(0xc000, 3))).toEqual([1, 2, 3]);
@@ -75,7 +74,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("Z80 code writing a NextReg is visible, and runUntilReady waits for the marker", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
       .org $8000
       ld bc,$4000       ; ~26 T-states x 16384: a few frames at 3.5 MHz
@@ -93,7 +92,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("pressHotkey: F8 steps the CPU speed, F5/F6 switch the expansion bus", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.pressHotkey("F8");
     expect(s.readNextReg(0x07)).toBe(0x11);
     await s.pressHotkey("F5");
@@ -106,7 +105,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
 
   it("pressHotkey: F9 / F10 press the M1 / DRIVE NMI buttons", async () => {
     for (const [key, enable] of [["F9", 0x08], ["F10", 0x10]] as const) {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(` .org $8000\n jr $`);
       s.setNextReg(0x06, enable).runFrames(1);
       await s.pressHotkey(key);
@@ -116,7 +115,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);
     s.poke(0xc000, 0x5a).runFrames(1);
     s.reset();
@@ -126,14 +125,14 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("runs fail with the PC instead of hanging", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(` .org $8000\n jr $`);
     expect(() => s.runUntilReady({ maxFrames: 3 })).toThrow(/Timed out after 3 frames.*PC=\$8000/);
     expect(() => s.runTo(0x9000, { maxFrames: 2 })).toThrow(/running to \$9000/);
   });
 
   it("loadProgramFile + screen probes: the T00 picture", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadProgramFile(resolve(VISUAL_CASES, "copper/T00-static-ula/program.asm"));
     s.runUntilReady().runFrames(2);
     expect(s.pixel(0, 0)).toBe("#B60000"); // red border
@@ -142,7 +141,7 @@ describe.each(ALL_CORES)("harness session - %s core", (core) => {
   });
 
   it("audio: records the mixer's samples frame by frame", async () => {
-    const s = await createSession(core, { audioSampleRate: 44_100 });
+    const s = await createSession({ audioSampleRate: 44_100 });
     await s.loadCode(` .org $8000\n jr $`);
     s.startAudio().runFrames(5);
     const n = s.audio().length;
@@ -177,20 +176,20 @@ Cmd:    .defb $51,0,0,0,3,$01`;
     const image = new Uint8Array(16 * 512);
     for (let i = 0; i < 512; i++) image[3 * 512 + i] = (i * 5 + 1) & 0xff;
 
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(program);
     s.attachSdCard(image);
     await s.runUntilReadyAsync();
     expect(Array.from(s.peekBytes(0xa000, 512))).toEqual(Array.from(image.subarray(3 * 512, 4 * 512)));
     expect(s.sdCalls.readSdCardSector).toBe(1);
 
-    const t = await createSession(core);
+    const t = await createSession();
     await t.loadCode(program);
     expect(() => t.runUntilReady()).toThrow(/frame command/);
   });
 
   it("mouse: packets move the Kempston counters; buttons stay held until the next packet names them", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     expect([s.in(0xfbdf), s.in(0xffdf), s.in(0xfadf)], "power-on").toEqual([0x00, 0x00, 0x0f]);
     s.mouse({ dx: 3, dy: -2, wheel: 1, buttons: ["left"] });
@@ -201,7 +200,7 @@ Cmd:    .defb $51,0,0,0,3,$01`;
   });
 
   it("joystick: buttons reach the Kempston port, the MD pad's extra buttons $B2", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0x05, 0x48); // --- left: MD 1 on $1F
     expect(s.in(0x1f), "nothing pressed").toBe(0x00);
@@ -214,7 +213,7 @@ Cmd:    .defb $51,0,0,0,3,$01`;
   });
 
   it("keyDown / keyUp: matrix keys reach $xxFE, extra keys $B0 and their matrix combination", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     expect(s.in(0xfbfe) & 0x1f, "nothing pressed").toBe(0x1f);
     s.keyDown("Q").runFrames(1);
@@ -289,7 +288,7 @@ Bit:    ld b,$11
         out (c),a
         ret`;
     for (const year of [31, 2047]) {
-      const s = await createSession(core);
+      const s = await createSession();
       s.setRtcTime({ year, month: 1, date: 1, day: 1, hours: 0, minutes: 0, seconds: 0 });
       await s.loadCode(program);
       s.runUntilReady();
@@ -299,7 +298,7 @@ Bit:    ld b,$11
 
   it("UART peer: frames arrive with time, output collects what the Next sends, CTS/RTR/loopback/break act", async () => {
     // --- A Z80 echo: every received byte goes back out on UART 0
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         ld bc,$133b
@@ -318,7 +317,7 @@ Wait:   in a,(c)
     expect(s.uartOutput(1), "UART 1 untouched").toEqual([]);
 
     // --- A break sets status bit 7 (visible to the program as a pause in echoing)
-    const p = await createSession(core);
+    const p = await createSession();
     await p.loadCode(" .org $8000\n di\n jr $");
     p.uartBreak(0, true).runFrames(1);
     expect(p.in(0x133b) & 0x80, "break").toBe(0x80);
@@ -335,20 +334,9 @@ Wait:   in a,(c)
   });
 });
 
-describe("harness session - parity", () => {
-  it("onEachCore returns per-core results for comparison", async () => {
-    const r = await onEachCore(async (s) => {
-      await s.loadCode(` .org $8000\n ld a,7\n add a,a\n jr $`);
-      s.step(2);
-      return s.registers().a;
-    });
-    expect(r).toEqual({ ts: 14, wasm: 14 });
-  });
-});
-
 describe("NextTestSession: checkpoints", () => {
-  it("wasm: restoreCheckpoint puts back memory, registers, the beam and the frame count", async () => {
-    const s = await createSession("wasm");
+  it("restoreCheckpoint puts back memory, registers, the beam and the frame count", async () => {
+    const s = await createSession();
     await s.loadCode(` .org $8000\nLoop: inc (hl)\n inc hl\n jr Loop`);
     s.setRegisters({ hl: 0xc000 }).runFrames(2).step(1000);
     const before = { regs: s.registers(), tacts: s.tacts, frames: s.frames, ram: Array.from(s.peekBytes(0xc000, 64)) };
@@ -358,11 +346,5 @@ describe("NextTestSession: checkpoints", () => {
     s.restoreCheckpoint("mid");
     expect({ regs: s.registers(), tacts: s.tacts, frames: s.frames, ram: Array.from(s.peekBytes(0xc000, 64)) }).toEqual(before);
     expect(() => s.restoreCheckpoint("other"), "an unknown key").toThrow(/No checkpoint "other"/);
-  });
-
-  it("ts: checkpoints throw - the TypeScript core has none", async () => {
-    const s = await createSession("ts");
-    expect(() => s.captureCheckpoint("x")).toThrow(/WASM core only/);
-    expect(() => s.restoreCheckpoint("x")).toThrow(/WASM core only/);
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * DAC-001 - NextReg $08 bit 3 enables the 8-bit DACs.
@@ -28,27 +28,27 @@ function square(s: NextTestSession, frames = 4): NextTestSession {
   return s;
 }
 
-async function session(core: CoreName): Promise<NextTestSession> {
-  return createSession(core, { audioSampleRate: SAMPLE_RATE });
+async function session(): Promise<NextTestSession> {
+  return createSession({ audioSampleRate: SAMPLE_RATE });
 }
 
-describe.each(ALL_CORES)("DAC enable (NextReg 08 bit 3) - %s core", (core) => {
+describe("DAC enable (NextReg 08 bit 3)", () => {
   it("port writes are ignored while the DACs are disabled", async () => {
-    const s = await session(core);
+    const s = await session();
     s.setNextReg(0x08, DAC_OFF).startAudio();
     square(s);
     expect(swing(s.audio())).toBe(0);
   });
 
   it("port writes reach the left side once the DACs are enabled", async () => {
-    const s = await session(core);
+    const s = await session();
     s.setNextReg(0x08, DAC_ON).startAudio();
     square(s);
     expect(swing(s.audio())).toBeGreaterThan(0);
   });
 
   it("disabling the DACs holds the channels at the silent centre", async () => {
-    const s = await session(core);
+    const s = await session();
     // --- The level with every DAC channel at its $80 reset value
     s.setNextReg(0x08, DAC_OFF).startAudio().runFrames(2);
     const silent = level(s.audio());

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The Kempston mouse (catalogue MOU-001 - MOU-005).
@@ -23,8 +23,8 @@ const X = 0xfbdf;
 const Y = 0xffdf;
 const B = 0xfadf;
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.runFrames(1);
 }
@@ -36,13 +36,13 @@ function mouseControl(s: NextTestSession, reverse: boolean, dpi: number): NextTe
 
 const counters = (s: NextTestSession) => [s.in(X), s.in(Y)];
 
-describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
+describe("Kempston mouse", () => {
   // -------------------------------------------------------------------------------------------------
   // MOU-001 X / Y counters
   // -------------------------------------------------------------------------------------------------
 
   it("MOU-001: X and Y count the movement in 8 bits and wrap; reading does not change them", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(counters(s), "power-on").toEqual([0x00, 0x00]);
     s.mouse({ dx: 10, dy: 5 });
     expect(counters(s), "right 10, up 5").toEqual([10, 5]);
@@ -54,13 +54,13 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   });
 
   it("MOU-001: A15-12 do not take part in the decode", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.mouse({ dx: 0x21, dy: 0x42, buttons: ["left"] });
     expect([s.in(0x0bdf), s.in(0x7bdf), s.in(0x0fdf), s.in(0x3fdf), s.in(0x0adf), s.in(0x5adf)]).toEqual([0x21, 0x21, 0x42, 0x42, 0x0d, 0x0d]);
   });
 
   it("MOU-001: a Next reset keeps the counters; only power-on clears them", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.mouse({ dx: 33, dy: -7, wheel: 2, buttons: ["middle"] });
     s.reset();
     expect([...counters(s), s.in(B)], "soft reset").toEqual([33, 249, 0x2b]);
@@ -73,7 +73,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("MOU-002: $FADF: a pressed button reads 0 (bit 0 right, 1 left, 2 middle), bit 3 is 1", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.in(B), "power-on").toBe(0x0f);
     expect(s.mouse({ buttons: ["left"] }).in(B), "left").toBe(0x0d);
     expect(s.mouse({ buttons: ["right"] }).in(B), "right").toBe(0x0e);
@@ -84,7 +84,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   });
 
   it("MOU-002: the wheel adds its 4-bit delta; bits 7-4 wrap", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.mouse({ wheel: 3 }).in(B) >> 4, "+3").toBe(3);
     expect(s.mouse({ wheel: -5 }).in(B) >> 4, "-5").toBe(0x0e);
     expect(s.mouse({ wheel: 7 }).mouse({ wheel: 7 }).in(B) >> 4, "+14").toBe(0x0c);
@@ -95,7 +95,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("MOU-003: $0A bit 3 swaps left and right as each packet arrives", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(mouseControl(s, true, 1).readNextReg(0x0a) & 0x0b, "read back").toBe(0x09);
     expect(s.mouse({ buttons: ["left"] }).in(B), "left reads as right").toBe(0x0e);
     expect(s.mouse({ buttons: ["right"] }).in(B), "right reads as left").toBe(0x0d);
@@ -113,7 +113,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("MOU-004: DPI 00 doubles, 01 keeps, 10 and 11 shift the packet's byte right 1 and 2", async () => {
-    const s = await parked(core);
+    const s = await parked();
     expect(s.readNextReg(0x0a) & 0x0b, "power-on: DPI 01, no reverse").toBe(0x01);
     const move = (dpi: number, dx: number) => {
       const before = s.in(X);
@@ -142,7 +142,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("MOU-005: $83 bit 5 clear: the ports read $FF (no $DF reader either), the mouse keeps counting", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x83, s.readNextReg(0x83) & ~0x20).setNextReg(0x84, s.readNextReg(0x84) & ~0x80);
     s.mouse({ dx: 12, dy: 3, buttons: ["left"] });
     expect([s.in(X), s.in(Y), s.in(B)], "disabled").toEqual([0xff, 0xff, 0xff]);
@@ -151,7 +151,7 @@ describe.each(ALL_CORES)("Kempston mouse - %s core", (core) => {
   });
 
   it("MOU-005: with the mouse port off, $DF is Kempston joystick 1 (Specdrum port on)", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x05, 0x40).joystick("left", "UP"); // --- joystick 1: Kempston 1
     expect(s.in(0x00df), "mouse on: A11-8 = 0 is no mouse port").toBe(0xff);
     s.setNextReg(0x83, s.readNextReg(0x83) & ~0x20).setNextReg(0x84, s.readNextReg(0x84) | 0x80);

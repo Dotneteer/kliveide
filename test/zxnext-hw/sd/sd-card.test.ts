@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, MemorySdCard, type CoreName, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
+import { createSession, MemorySdCard, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
 
 /*
  * SPI master and SD card (catalogue SPI-001 - SPI-008; SPI-001's register-level half, the WASM `$E7`
@@ -99,8 +99,8 @@ const LOG = 0xa000;
 const logOf = (s: NextTestSession, n: number) => Array.from(s.peekBytes(LOG, n));
 
 /** Runs `body` (after selecting `select` on $E7) with the image attached; returns the session. */
-async function run(core: CoreName, body: string, opts: { select?: number; img?: Uint8Array | SdCardBacking; data?: string; maxFrames?: number } = {}) {
-  const s = await createSession(core);
+async function run(body: string, opts: { select?: number; img?: Uint8Array | SdCardBacking; data?: string; maxFrames?: number } = {}) {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   s.poke(LOG, new Array(0x1800).fill(0xee));
   s.attachSdCard(opts.img ?? image());
@@ -160,7 +160,7 @@ ${readMore(4)}`;
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("SPI / SD card - %s core", (core: CoreName) => {
+describe("SPI / SD card", () => {
   /*
    * SPI-001 through the card itself (both cores): only a value whose low bits are 10 selects card 0;
    * $FD selects the empty slot 1; the Pi, the flash (outside config mode) and every other value select
@@ -173,20 +173,19 @@ describe.each(ALL_CORES)("SPI / SD card - %s core", (core: CoreName) => {
   it("SPI-001: $E7 decode seen by the card: low bits 10 select card 0, nothing else does", async () => {
     const got: Record<string, number> = {};
     for (const [value] of SELECTS) {
-      const s = await run(core, send("Cmd0"), { select: value, data: INIT_DATA });
+      const s = await run(send("Cmd0"), { select: value, data: INIT_DATA });
       got[`$${value.toString(16)}`] = logOf(s, 1)[0];
     }
     expect(got).toEqual(Object.fromEntries(SELECTS.map(([v, a]) => [`$${v.toString(16)}`, a ? 0x01 : 0xff])));
   });
 
   it("SPI-002: with no slave selected every exchange reads $FF", async () => {
-    const s = await run(core, `${send("Cmd0")}\n${readMore(8)}`, { select: 0xff, data: INIT_DATA });
+    const s = await run(`${send("Cmd0")}\n${readMore(8)}`, { select: 0xff, data: INIT_DATA });
     expect(logOf(s, 9)).toEqual(new Array(9).fill(0xff));
   });
 
   it("SPI-002: with port enable bit 11 ($83 bit 3) off, $E7 and $EB do nothing: reads are $FF", async () => {
     const s = await run(
-      core,
       `
         ld bc,$243b
         ld a,$83
@@ -204,7 +203,7 @@ ${readMore(4)}`,
   });
 
   it("SPI-003: CMD0 idle, CMD8 echoes the check pattern, ACMD41 finishes, CMD58 reports an SDHC card", async () => {
-    const s = await run(core, INIT, { data: `${INIT_DATA}\nTries: .defb 0` });
+    const s = await run(INIT, { data: `${INIT_DATA}\nTries: .defb 0` });
     const log = logOf(s, 200);
     expect(log.slice(0, 6), "CMD0 R1, CMD8 R7").toEqual([0x01, 0x01, 0x00, 0x00, 0x01, 0xaa]);
     const end = log.indexOf(0xee);
@@ -218,7 +217,6 @@ ${readMore(4)}`,
 
   it("SPI-003: $FF bytes written between commands are not commands", async () => {
     const s = await run(
-      core,
       `
         ld a,$ff
         out (c),a
@@ -233,7 +231,6 @@ ${send("Cmd0")}`,
   it("SPI-004: CMD17 reads a sector: R1, $FE, the 512 image bytes, CRC16", async () => {
     const img = image();
     const s = await run(
-      core,
       `${INIT}
 ${send("Cmd17")}
         call WaitTok
@@ -259,7 +256,6 @@ ${readMore(2)}`,
     const block = Array.from({ length: 512 }, (_, i) => (i * 11 + 0x5a) & 0xff);
     const crc = crc16(block);
     const s = await run(
-      core,
       `${INIT}
 ${send("Cmd24")}
         ld a,$ff
@@ -326,7 +322,6 @@ ${readMore(2)}`
       )
       .join("\n");
     const s = await run(
-      core,
       `${INIT}
 ${send("Cmd18")}
 ${blocks}
@@ -347,13 +342,12 @@ ${send("Cmd12")}
   });
 
   it("SPI-007: selecting card 1 ($E7 = $FD) with only card 0 in its slot reads $FF", async () => {
-    const s = await run(core, `${send("Cmd0")}\n${readMore(4)}`, { select: 0xfd, data: INIT_DATA });
+    const s = await run(`${send("Cmd0")}\n${readMore(4)}`, { select: 0xfd, data: INIT_DATA });
     expect(logOf(s, 5)).toEqual(new Array(5).fill(0xff));
   });
 
   it("SPI-007: deselecting ($E7 = $FF) mid-conversation: the card no longer answers", async () => {
     const s = await run(
-      core,
       `
 ${send("Cmd0")}
         ld a,$ff
@@ -367,7 +361,6 @@ ${readMore(4)}`,
 
   it("SPI-008: the flash chip ($E7 = $7F, config mode) is not modelled: a JEDEC ID read gives $FF", async () => {
     const s = await run(
-      core,
       `
         nextreg $03,$07          ; config mode
         ld a,$7f
@@ -387,7 +380,6 @@ ${readMore(3)}`,
   it("SPI-010: once a response has been clocked out the card drives $FF (after R1, after a data block)", async () => {
     // --- SD Physical Layer spec, SPI mode: DO is high between responses; a data block ends with its CRC16
     const s = await run(
-      core,
       `
 ${send("Cmd0")}
 ${readMore(6)}
@@ -429,7 +421,6 @@ ${readMore(6)}`,
     const block = Array.from({ length: 512 }, (_, i) => (i * 5 + 0x33) & 0xff);
     const crc = crc16(block);
     const s = await run(
-      core,
       `${INIT}
 ${send("Cmd24")}
         ld a,$ff
@@ -477,13 +468,13 @@ ${send("Cmd17")}
   it("SPI-012: NextReg $0A bit 5 does not swap the SD cards: $E7 = $FE still reaches card 0", async () => {
     // --- nextreg.txt $0A bit 5 "Reserved, must be zero"; zxnext.vhd ~5171-5175 stores no bit 5 and the
     // --- $E7 decode (~3305-3321) looks at nothing else: there is no card swap on the Next.
-    const s = await run(core, `        nextreg $0a,$30\n${send("Cmd0")}`, { data: INIT_DATA });
+    const s = await run(`        nextreg $0a,$30\n${send("Cmd0")}`, { data: INIT_DATA });
     expect(logOf(s, 1)).toEqual([0x01]);
   });
 
   it("SPI-012: NextReg $0A bit 5 reads back 0", async () => {
     // --- zxnext.vhd ~5858: $0A reads mf_type & '0' & automap & reverse & '0' & dpi
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\nPark: jr Park");
     s.setNextReg(0x0a, 0x30);
     expect(s.readNextReg(0x0a) & 0x20).toBe(0x00);

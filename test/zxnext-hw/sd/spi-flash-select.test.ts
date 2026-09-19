@@ -24,7 +24,7 @@ describe("SPI chip select $7F (FPGA flash) - wasm core", () => {
     (s.machine as ZxNextWasmV2Machine).wasmV2Runtime!.exports.zxnextGetSdPortE7Value();
 
   it("is accepted after power-on (reset type bit 2), refused after a soft reset", async () => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     s.out(0xe7, 0x7f);
     expect(e7(s)).toBe(0x7f);
     s.reset();
@@ -35,7 +35,7 @@ describe("SPI chip select $7F (FPGA flash) - wasm core", () => {
   });
 
   it("is accepted in config mode ($03 low bits 111) and refused again after leaving it", async () => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     s.reset().setNextReg(0x14, 0x00);
     s.setNextReg(0x03, 0x07).out(0xe7, 0x7f);
     expect(e7(s)).toBe(0x7f);
@@ -75,12 +75,12 @@ describe("SPI chip select decode - wasm core", () => {
   ];
 
   it("starts with every slave deselected", async () => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     expect(e7(s)).toBe(0xff);
   });
 
   it.each(CASES)("$E7 <- %i latches the VHDL value", async (written, latched, why) => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     s.reset();
     // --- Start from a selected card so a "deselect" result is a change, not the reset value.
     s.out(0xe7, 0xfe);
@@ -89,7 +89,7 @@ describe("SPI chip select decode - wasm core", () => {
   });
 
   it("a soft reset deselects every slave", async () => {
-    const s = await createSession("wasm");
+    const s = await createSession();
     s.out(0xe7, 0xfd).reset();
     expect(e7(s)).toBe(0xff);
   });

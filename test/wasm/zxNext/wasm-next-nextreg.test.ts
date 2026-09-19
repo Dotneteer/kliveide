@@ -1,138 +1,39 @@
 import { describe, expect, it } from "vitest";
 
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
-type NextRegMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+describe("ZX Spectrum Next WASM NextReg $06 (Peripheral 2)", () => {
+  it("reads the firmware value after a hard reset and keeps bit 2 outside config mode", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+    wasm.hardReset();
 
-const RESET_NEXT_REGS = [
-  0x00,
-  0x01,
-  0x05,
-  0x06,
-  0x0e,
-  0x12,
-  0x13,
-  0x14,
-  0x15,
-  0x42,
-  0x4b,
-  0x4c,
-  0x50,
-  0x51,
-  0x52,
-  0x53,
-  0x54,
-  0x55,
-  0x56,
-  0x57,
-  0x82,
-  0x83,
-  0x84,
-  0x85,
-  0x8c,
-  0x8e
-];
-
-describe("ZX Spectrum Next WASM NextReg core parity", () => {
-  it("matches TypeScript hard-reset NextReg defaults used by memory and ports", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const reg of RESET_NEXT_REGS) {
-      expect(readNextReg(wasm, reg), `reg $${hex(reg)}`).toBe(readNextReg(oracle, reg));
-    }
-    expect(wasm.getNextRegState().lastRegisterIndex).toBe(
-      oracle.getNextRegState().lastRegisterIndex
-    );
-    expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
-    expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
-  });
-
-  it("matches TypeScript NextReg select/data port side effects", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const machine of [oracle, wasm]) {
-      machine.doWritePort(0x243b, 0x50);
-      machine.doWritePort(0x253b, 0x04);
-    }
-    const oracleRead = oracle.doReadPort(0x253b);
-    const wasmRead = wasm.doReadPort(0x253b);
-
-    expect(wasmRead).toBe(oracleRead);
-    expect(readNextReg(wasm, 0x50)).toBe(readNextReg(oracle, 0x50));
-    expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
-    expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
-    expect(wasm.lastIoReadPort).toBe(0x253b);
-    expect(wasm.lastIoReadValue).toBe(wasmRead);
-  });
-
-  it("matches TypeScript Peripheral 2 composed state", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
+    // --- Klive's hard reset models the firmware ("fast boot"), which leaves $06 = $98. The value
+    // --- both cores agreed on at tag `pre-zxnext-ts-removal-2026-09-19`; the VHDL reset alone does
+    // --- not decide it (see HARD_RESET_MASK in test/zxnext-hw/nextreg/soft-reset.test.ts).
     expect(readNextReg(wasm, 0x06)).toBe(0x98);
-    expect(readNextReg(wasm, 0x06)).toBe(readNextReg(oracle, 0x06));
 
-    for (const value of [0x00, 0xff, 0x24, 0x98]) {
-      writeNextReg(oracle, 0x06, value);
+    // --- zxnext.vhd ~5139-5148: bits 7-3 and 1-0 are stored as written; bit 2 (PS/2 mode) only in
+    // --- config mode, which the machine is not in after a hard reset. ~5845 reads the bits back.
+    for (const [value, expected] of [
+      [0x00, 0x00],
+      [0xff, 0xfb],
+      [0x24, 0x20],
+      [0x98, 0x98]
+    ]) {
       writeNextReg(wasm, 0x06, value);
-      expect(readNextReg(wasm, 0x06), `value $${hex(value)}`).toBe(readNextReg(oracle, 0x06));
+      expect(readNextReg(wasm, 0x06), `value $${hex(value)}`).toBe(expected);
     }
-  });
-
-  it("matches TypeScript CPU speed readback and expansion bus forcing", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    writeNextReg(oracle, 0x07, 0x03);
-    writeNextReg(wasm, 0x07, 0x03);
-    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
-    expect(readNextReg(wasm, 0x07)).toBe(0x33);
-
-    writeNextReg(oracle, 0x80, 0x80);
-    writeNextReg(wasm, 0x80, 0x80);
-    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
-    expect(readNextReg(wasm, 0x07)).toBe(0x03);
-
-    writeNextReg(oracle, 0x80, 0x00);
-    writeNextReg(wasm, 0x80, 0x00);
-    expect(readNextReg(wasm, 0x07)).toBe(readNextReg(oracle, 0x07));
-    expect(readNextReg(wasm, 0x07)).toBe(0x33);
-  });
-
-  it("matches TypeScript memory-affecting NextReg writes", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x8e, 0x8f);
-      writeNextReg(machine, 0x8c, 0x90);
-    }
-
-    for (const reg of [0x56, 0x57, 0x8c, 0x8e]) {
-      expect(readNextReg(wasm, reg), `reg $${hex(reg)}`).toBe(readNextReg(oracle, reg));
-    }
-    expect(wasm.getSelectedRomPage()).toBe(oracle.getSelectedRomPage());
-    expect(wasm.getSelectedRamBank()).toBe(oracle.getSelectedRamBank());
-    expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
   });
 });
 
-function hardResetBoth(oracle: TestZxNextMachine, wasm: ZxNextWasmV2Machine): void {
-  oracle.hardReset();
-  wasm.hardReset();
-}
-
-function writeNextReg(machine: NextRegMachine, reg: number, value: number): void {
+function writeNextReg(machine: ZxNextWasmV2Machine, reg: number, value: number): void {
   machine.doWritePort(0x243b, reg);
   machine.doWritePort(0x253b, value);
 }
 
-function readNextReg(machine: NextRegMachine, reg: number): number {
+function readNextReg(machine: ZxNextWasmV2Machine, reg: number): number {
   machine.doWritePort(0x243b, reg);
   return machine.doReadPort(0x253b);
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * NextReg $6E / $6F keep a 6-bit page offset plus the bank 7 flag.
@@ -9,10 +9,10 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
  * `nr_6e_tilemap_base <= nr_wr_dat(5 downto 0)`, bit 7 selects bank 7, bit 6 reads 0
  * (tilemap.vhd:57, "5:0 are offsets into 16K").
  */
-describe.each(ALL_CORES)("tilemap base address registers - %s core", (core) => {
+describe("tilemap base address registers", () => {
   for (const reg of [0x6e, 0x6f]) {
     it(`$${reg.toString(16)} keeps bits 5-0 and bit 7, drops bit 6`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       s.setNextReg(reg, 0x3f);
       expect(s.readNextReg(reg)).toBe(0x3f);
       s.setNextReg(reg, 0xff);
@@ -31,9 +31,9 @@ describe.each(ALL_CORES)("tilemap base address registers - %s core", (core) => {
  * The map (40x32, tile + attribute) is all tile 0; tile 0 is pixel index 1 everywhere. With the old
  * $00 defaults the map and the definitions both sat on the zeroed ULA screen at $4000: index 0.
  */
-describe.each(ALL_CORES)("tilemap default location after a reset - %s core", (core) => {
+describe("tilemap default location after a reset", () => {
   it.each(["hard", "soft"] as const)("after a %s reset the map is at $6C00 and the tiles at $4C00", async (kind) => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x6e, 0x80).setNextReg(0x6f, 0x80); // --- somewhere else first
     kind === "soft" ? s.reset() : s.hardReset();
     await s.loadCode(` .org $8000\n jr $`);

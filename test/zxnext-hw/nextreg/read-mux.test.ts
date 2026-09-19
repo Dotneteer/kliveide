@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * What a `$253B` read returns (catalogue NR-009 - NR-011).
@@ -75,9 +75,9 @@ const PADDED: PadRow[] = [
 
 const hex = (v: number) => `$${v.toString(16).padStart(2, "0")}`;
 
-describe.each(ALL_CORES)("NextReg read mux - %s core", (core) => {
+describe("NextReg read mux", () => {
   it("NR-009: registers the read mux does not list read $00, even after a write", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     for (const reg of UNLISTED) {
       // --- $02 (reset) is listed; none of the unlisted registers has a write that breaks the session,
       // --- except the sprite attribute/pattern registers, which are harmless with sprites off.
@@ -91,7 +91,7 @@ describe.each(ALL_CORES)("NextReg read mux - %s core", (core) => {
 
   for (const row of PADDED) {
     it(`NR-010: ${hex(row.reg)} hard-wires ${row.why}`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       if (!row.readOnly) {
         if (row.reg === 0x85 || row.reg === 0x89) s.setNextReg(row.reg, 0xff);
         else s.setNextReg(row.reg, 0xff);
@@ -103,7 +103,7 @@ describe.each(ALL_CORES)("NextReg read mux - %s core", (core) => {
   }
 
   it("NR-011: $7F holds all 256 values", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const wrong: string[] = [];
     for (let v = 0; v < 256; v++) {
       s.setNextReg(0x7f, v);

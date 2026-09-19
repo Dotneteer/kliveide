@@ -3,16 +3,13 @@ import { describe, expect, it } from "vitest";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import {
   ZXNEXT_WASM_V2_SCREEN_HEIGHT,
   ZXNEXT_WASM_V2_SCREEN_WIDTH
 } from "@emu/machines/zxNext/wasm/ZxNextWasmV2Loader";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
-
-type FrameRunnerMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 type FrameSnapshot = {
   termination: FrameTerminationMode;
@@ -24,20 +21,25 @@ type FrameSnapshot = {
   frameCompleted: boolean;
 };
 
+/**
+ * The frame runner's counters after each way a frame can end. The programs run NOPs from $8000 at
+ * 3.5 MHz (4 T-states each, `currentFrameTact` counts 7 MHz half-tacts). The full-frame end PC is
+ * pinned: it is the value both the TypeScript and the WASM core agreed on at tag
+ * `pre-zxnext-ts-removal-2026-09-19`.
+ */
 describe("ZX Spectrum Next WASM v2 frame runner", () => {
-  it("executes full frames with TypeScript-compatible tact and frame counters", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+  it("executes full frames with the frame's tact and frame counters", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
 
-    const oracleSnapshot = executeAndCaptureFrame(oracle);
-    const wasmSnapshot = executeAndCaptureFrame(wasm);
-
-    expect(wasmSnapshot).toEqual(oracleSnapshot);
-    expect(wasmSnapshot).toMatchObject({
+    expect(executeAndCaptureFrame(wasm)).toEqual({
       termination: FrameTerminationMode.Normal,
       lastTerminationReason: FrameTerminationMode.Normal,
+      // --- pinned: where a frame of NOPs from $8000 ends
+      pc: 0xc53f,
       frames: 1,
+      // --- 128K-timing frame: 311 lines x 228 T-states
+      tacts: 311 * 228,
       currentFrameTact: 0,
       frameCompleted: true
     });
@@ -46,7 +48,6 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
       lastWasmStopReason: "wasmFrameComplete"
     });
     expect(wasm.getWasmV2Diagnostics().lastWasmStopReason).not.toMatch(/scaffold/i);
-    expect(wasm.getWasmV2Diagnostics().migratedSurfaces).toContain("frame");
 
     const pixels = wasm.getPixelBuffer();
     expect(pixels.length).toBe(ZXNEXT_WASM_V2_SCREEN_WIDTH * ZXNEXT_WASM_V2_SCREEN_HEIGHT);
@@ -54,69 +55,66 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
     expect(wasm.renderInstantScreen().length).toBe(pixels.length);
   });
 
-  it("stops at execution points with TypeScript-compatible frame runner state", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+  it("stops at execution points with the frame runner state of that point", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    oracle.executionContext.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
     wasm.executionContext.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
-    oracle.executionContext.terminationPoint = 0x8002;
     wasm.executionContext.terminationPoint = 0x8002;
 
-    expect(executeAndCaptureFrame(wasm)).toEqual(executeAndCaptureFrame(oracle));
+    // --- two NOPs
+    expect(executeAndCaptureFrame(wasm)).toEqual({
+      termination: FrameTerminationMode.UntilExecutionPoint,
+      lastTerminationReason: FrameTerminationMode.UntilExecutionPoint,
+      pc: 0x8002,
+      frames: 0,
+      tacts: 8,
+      currentFrameTact: 16,
+      frameCompleted: false
+    });
   });
 
-  it("stops at breakpoints with TypeScript-compatible frame runner state", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+  it("stops at breakpoints with the frame runner state of the breakpoint", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    const oracleDebugSupport = new DebugSupport(undefined, [{ address: 0x8001, exec: true }]);
-    const wasmDebugSupport = new DebugSupport(undefined, [{ address: 0x8001, exec: true }]);
-    oracle.executionContext.debugSupport = oracleDebugSupport;
-    wasm.executionContext.debugSupport = wasmDebugSupport;
-    oracle.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    wasm.executionContext.debugSupport = new DebugSupport(undefined, [{ address: 0x8001, exec: true }]);
     wasm.executionContext.debugStepMode = DebugStepMode.StopAtBreakpoint;
 
-    expect(executeAndCaptureFrame(wasm)).toEqual(executeAndCaptureFrame(oracle));
+    // --- one NOP
+    expect(executeAndCaptureFrame(wasm)).toEqual(oneNopStop(FrameTerminationMode.DebugEvent));
   });
 
-  it("stops after a debug step with TypeScript-compatible frame runner state", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+  it("stops after a debug step with the frame runner state after one instruction", async () => {
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    oracle.executionContext.debugSupport = new DebugSupport(undefined, []);
     wasm.executionContext.debugSupport = new DebugSupport(undefined, []);
-    oracle.executionContext.debugStepMode = DebugStepMode.StepInto;
     wasm.executionContext.debugStepMode = DebugStepMode.StepInto;
 
-    expect(executeAndCaptureFrame(wasm)).toEqual(executeAndCaptureFrame(oracle));
+    expect(executeAndCaptureFrame(wasm)).toEqual(oneNopStop(FrameTerminationMode.DebugEvent));
   });
 
   it("stops when a frame command is queued without completing the frame", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    oracle.setFrameCommand({ command: "sd-read" });
     wasm.setFrameCommand({ command: "sd-read" });
 
-    expect(executeAndCaptureFrame(wasm)).toEqual(executeAndCaptureFrame(oracle));
+    // --- the command is noticed after the first instruction; the frame ends normally, incomplete
+    expect(executeAndCaptureFrame(wasm)).toEqual(oneNopStop(FrameTerminationMode.Normal));
   });
 
   it("stops the native WASM frame loop when an SD command is queued mid-frame", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    initializeFrameRunnerMachine(oracle);
+    const wasm = await createTestZxNextWasmMachine();
     initializeFrameRunnerMachine(wasm);
-    installSdReadProgram(oracle);
-    installSdReadProgram(wasm);
+    const programEnd = installSdReadProgram(wasm);
 
-    const oracleSnapshot = executeAndCaptureFrame(oracle);
-    const wasmSnapshot = executeAndCaptureFrame(wasm);
+    const snapshot = executeAndCaptureFrame(wasm);
 
-    expect(wasm.getFrameCommand()).toEqual(oracle.getFrameCommand());
-    expect(wasmSnapshot).toMatchObject({
+    // --- CMD17 (read single block) with argument $00000005
+    expect(wasm.getFrameCommand()).toEqual({ command: "sd-read", sector: 5 });
+    expect(snapshot).toMatchObject({
       termination: FrameTerminationMode.Normal,
       lastTerminationReason: FrameTerminationMode.Normal,
-      pc: oracleSnapshot.pc,
+      // --- right after the OUT that completes the CMD17 frame
+      pc: programEnd,
       frames: 0,
       frameCompleted: false
     });
@@ -127,7 +125,19 @@ describe("ZX Spectrum Next WASM v2 frame runner", () => {
   });
 });
 
-function initializeFrameRunnerMachine(machine: FrameRunnerMachine): void {
+function oneNopStop(termination: FrameTerminationMode): FrameSnapshot {
+  return {
+    termination,
+    lastTerminationReason: termination,
+    pc: 0x8001,
+    frames: 0,
+    tacts: 4,
+    currentFrameTact: 8,
+    frameCompleted: false
+  };
+}
+
+function initializeFrameRunnerMachine(machine: ZxNextWasmV2Machine): void {
   machine.hardReset();
   machine.pc = 0x8000;
   machine.setTacts(0);
@@ -143,7 +153,7 @@ function initializeFrameRunnerMachine(machine: FrameRunnerMachine): void {
   }
 }
 
-function executeAndCaptureFrame(machine: FrameRunnerMachine): FrameSnapshot {
+function executeAndCaptureFrame(machine: ZxNextWasmV2Machine): FrameSnapshot {
   const termination = machine.executeMachineFrame();
   return {
     termination,
@@ -152,13 +162,13 @@ function executeAndCaptureFrame(machine: FrameRunnerMachine): FrameSnapshot {
     frames: machine.frames,
     tacts: machine.tacts,
     currentFrameTact: machine.currentFrameTact,
-    // --- Not lastRenderedFrameTact: TS render bookkeeping (it renders the whole frame at the frame end);
-    // --- the WASM raster tracks rendered pixels instead and leaves the field 0
+    // --- Not lastRenderedFrameTact: the WASM raster tracks rendered pixels and leaves the field 0
     frameCompleted: machine.frameCompleted
   };
 }
 
-function installSdReadProgram(machine: FrameRunnerMachine): void {
+/** Installs the program at $8000 and returns the address after its last byte. */
+function installSdReadProgram(machine: ZxNextWasmV2Machine): number {
   const bytes = [
     0x01, 0xe7, 0xff,       // LD BC,$FFE7
     0x3e, 0x02,             // LD A,$02
@@ -172,4 +182,5 @@ function installSdReadProgram(machine: FrameRunnerMachine): void {
     0x3e, 0xff, 0xed, 0x79
   ];
   bytes.forEach((byte, offset) => machine.doWriteMemory(0x8000 + offset, byte));
+  return 0x8000 + bytes.length;
 }

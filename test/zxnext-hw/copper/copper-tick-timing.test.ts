@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, next8ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { next8ToHex, type NextTestSession } from "../../harness/zxnext";
 import { parkedSession } from "../ula/_ula-helpers";
 
 /*
@@ -34,8 +34,8 @@ function upload(s: NextTestSession, list: number[]): NextTestSession {
 }
 
 /** Buffer x of the first green pixel on paper row 96 with `padding` between the WAIT and the MOVE. */
-async function edge(core: CoreName, padding: number[]): Promise<number> {
-  const s = await parkedSession(core);
+async function edge(padding: number[]): Promise<number> {
+  const s = await parkedSession();
   s.setNextReg(0x43, 0x00).setNextReg(0x40, 16).setNextReg(0x41, 0x00).setNextReg(0x14, 0xe3);
   s.poke(0x4000, new Array(0x1800).fill(0)).poke(0x5800, new Array(768).fill(0)).out(0xfe, 7);
   const list = [MOVE(0x40, 0x10), MOVE(0x41, 0x00), WAIT(96), ...padding, MOVE(0x40, 0x10), MOVE(0x41, GREEN), 0xffff];
@@ -45,11 +45,11 @@ async function edge(core: CoreName, padding: number[]): Promise<number> {
   return -1;
 }
 
-describe.each(ALL_CORES)("copper tick timing - %s core", (core: CoreName) => {
+describe("copper tick timing", () => {
   it("a NOP takes one 28 MHz tick, a MOVE two: padding shifts the edge by ticks / 2 buffer pixels", async () => {
-    const base = await edge(core, []);
+    const base = await edge([]);
     expect(base, "edge found on the paper").toBeGreaterThanOrEqual(96);
-    const shift = async (padding: number[]) => (await edge(core, padding)) - base;
+    const shift = async (padding: number[]) => (await edge(padding)) - base;
     expect({
       nops200: await shift(new Array(200).fill(NOP)),
       nops400: await shift(new Array(400).fill(NOP)),

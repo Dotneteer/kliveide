@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
 import { L2_DEFAULT, layer2Index, layer2Mismatches, layer2Screen, pokeBank, type L2 } from "./_layer2-helpers";
 
@@ -24,10 +24,10 @@ const clip18 = (s: NextTestSession, c: [number, number, number, number]) =>
   s.setNextReg(0x1c, 0x01).setNextReg(0x18, c[0]).setNextReg(0x18, c[1]).setNextReg(0x18, c[2]).setNextReg(0x18, c[3]);
 const readL2 = (s: NextTestSession) => s.in(0x123b);
 
-describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
+describe("Layer 2", () => {
   // --- L2-001 / L2-005: the whole 256x192 picture, i.e. every pixel address
   it("L2-001 / L2-005: $123B bit 1 shows 256x192 from bank $12 (reset 8), every pixel at its address", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     expect([s.readNextReg(0x12), s.readNextReg(0x13)], "$12 / $13 reset values").toEqual([8, 11]);
     s.runFrames(1);
     expect(colours(s, [96, 607], [48, 239]), "off").toBe(NONE);
@@ -37,7 +37,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   });
 
   it("L2-002: $69 bit 7 enables it too, and each register reads the other's write", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     s.setNextReg(0x69, 0x80).runFrames(2);
     expect(readL2(s) & 0x02, "$123B after $69").toBe(0x02);
     expect(layer2Mismatches(s, mem, L2_DEFAULT, NONE)).toEqual([]);
@@ -48,7 +48,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   });
 
   it("L2-003: $12 moves the displayed bank; L2-004: $13 does not", async () => {
-    const { s, mem } = await layer2Screen(core, 8, 8); // --- banks 8-15
+    const { s, mem } = await layer2Screen(8, 8); // --- banks 8-15
     s.setNextReg(0x12, 12).out(0x123b, 0x02).runFrames(2);
     expect(s.readNextReg(0x12)).toBe(12);
     expect(layer2Mismatches(s, mem, { ...L2_DEFAULT, bank: 12 }, NONE), "$12 = 12").toEqual([]);
@@ -58,7 +58,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   });
 
   it("L2-006: 320x256 is column-major over five 16K banks and covers the side and top/bottom borders", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     s.setNextReg(0x70, 0x10).out(0x123b, 0x02).runFrames(2);
     expect(s.readNextReg(0x70)).toBe(0x10);
     expect(layer2Mismatches(s, mem, { ...L2_DEFAULT, resolution: 1 }, NONE), "reset clip: rows 192-255 clipped").toEqual([]);
@@ -67,14 +67,14 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   });
 
   it("L2-007: 640x256 shows two 4-bit pixels per byte, the high nibble first", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     clip18(s, WIDE_CLIP).setNextReg(0x70, 0x20).out(0x123b, 0x02).runFrames(2);
     expect(layer2Mismatches(s, mem, { ...L2_DEFAULT, resolution: 2, clip: WIDE_CLIP }, NONE)).toEqual([]);
   });
 
   for (const [resolution, offset] of [[0, 3], [1, 9], [2, 5]] as const) {
     it(`L2-008: palette offset ${offset} in ${["256x192", "320x256", "640x256"][resolution]} is added to the high nibble`, async () => {
-      const { s, mem } = await layer2Screen(core);
+      const { s, mem } = await layer2Screen();
       if (resolution) clip18(s, WIDE_CLIP);
       s.setNextReg(0x70, (resolution << 4) | offset).out(0x123b, 0x02).runFrames(2);
       expect(s.readNextReg(0x70)).toBe((resolution << 4) | offset);
@@ -85,7 +85,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
 
   for (const [sx, sy] of [[1, 0], [255, 0], [0, 1], [0, 191], [0, 200], [100, 150]]) {
     it(`L2-009 / L2-010: 256x192 scroll $16 = ${sx}, $17 = ${sy}`, async () => {
-      const { s, mem } = await layer2Screen(core);
+      const { s, mem } = await layer2Screen();
       s.setNextReg(0x16, sx).setNextReg(0x17, sy).out(0x123b, 0x02).runFrames(2);
       expect([s.readNextReg(0x16), s.readNextReg(0x17)]).toEqual([sx, sy]);
       expect(layer2Mismatches(s, mem, { ...L2_DEFAULT, sx, sy }, NONE)).toEqual([]);
@@ -94,7 +94,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
 
   for (const [resolution, sx, sy] of [[1, 1, 0], [1, 255, 0], [1, 256, 0], [1, 319, 0], [1, 511, 0], [1, 0, 1], [1, 0, 255], [2, 300, 100], [2, 1, 0]] as const) {
     it(`L2-011 / L2-012: ${resolution === 1 ? "320x256" : "640x256"} scroll X ${sx} ($71 = ${sx >> 8}), Y ${sy}`, async () => {
-      const { s, mem } = await layer2Screen(core);
+      const { s, mem } = await layer2Screen();
       clip18(s, WIDE_CLIP).setNextReg(0x70, resolution << 4).setNextReg(0x16, sx & 0xff).setNextReg(0x71, sx >> 8).setNextReg(0x17, sy);
       s.out(0x123b, 0x02).runFrames(2);
       expect(s.readNextReg(0x71)).toBe(sx >> 8);
@@ -103,7 +103,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   }
 
   it("L2-013: the clip window $18 in 256x192 (display pixels, inclusive); four writes cycle, $1C bit 0 resets", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     s.setNextReg(0x1c, 0x01).setNextReg(0x18, 16).setNextReg(0x18, 200).setNextReg(0x18, 10).setNextReg(0x18, 100);
     expect(s.readNextReg(0x1c) & 0x03, "$1C bits 1-0: index wrapped").toBe(0x00);
     expect(s.readNextReg(0x18), "x1 at index 0").toBe(16);
@@ -113,7 +113,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
 
   for (const resolution of [1, 2] as const) {
     it(`L2-014: in ${resolution === 1 ? "320x256" : "640x256"} the clip x values are doubled (x1*2 .. x2*2+1)`, async () => {
-      const { s, mem } = await layer2Screen(core);
+      const { s, mem } = await layer2Screen();
       s.setNextReg(0x70, resolution << 4);
       s.setNextReg(0x1c, 0x01).setNextReg(0x18, 10).setNextReg(0x18, 150).setNextReg(0x18, 20).setNextReg(0x18, 230);
       s.out(0x123b, 0x02).runFrames(2);
@@ -122,7 +122,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   }
 
   it("L2-015: transparency compares 8 bits: entries differing only in the blue LSB are both transparent; after the offset", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     // --- raw pixels $01 / $02 / $03 in rows 0-63 / 64-127 / 128-191; palette offset 2 makes them $21 /
     // --- $22 / $23. $21 and $22 hold $6D with blue LSB 0 and 1; $23 holds $6D; the raw indices are green.
     pokeBank(s, 8, new Uint8Array(0x4000).fill(0x01));
@@ -147,7 +147,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
    */
   for (const [order, name, top] of [[0, "SLU", "S"], [1, "LSU", "L"], [2, "SUL", "S"], [3, "LUS", "L"], [4, "USL", "U"], [5, "ULS", "U"]] as const) {
     it(`L2-016: $15 order ${name}: the priority bit puts Layer 2 on top (without it: ${top})`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       const COL = { S: 0xe0, L: 0x1c, U: 0x03 };
       // --- ULA: paper 2 everywhere
       s.poke(0x4000, new Array(0x1800).fill(0)).poke(0x5800, new Array(768).fill(2 << 3));
@@ -172,7 +172,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   }
 
   it("L2-017: $43 bit 2 selects the second Layer 2 palette", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i ^ 0xa5] as [number, number]), 0x50); // --- second L2 palette
     s.setNextReg(0x43, 0x04).out(0x123b, 0x02).runFrames(2);
     const bad: string[] = [];
@@ -188,7 +188,7 @@ describe.each(ALL_CORES)("Layer 2 - %s core", (core: CoreName) => {
   });
 
   it("L2-018: 256x192 stays inside the paper; the border shows the ULA border", async () => {
-    const { s } = await layer2Screen(core);
+    const { s } = await layer2Screen();
     writePalette(s, [[16 + 3, 0xfc]]);
     s.setNextReg(0x68, 0x00).out(0xfe, 3).out(0x123b, 0x02).runFrames(2);
     expect([colours(s, [0, 95], [0, 287]), colours(s, [608, 719], [0, 287]), colours(s, [0, 719], [0, 47]), colours(s, [0, 719], [240, 287])]).toEqual(
@@ -223,7 +223,7 @@ WaitUntil:
   `;
 
   it("L2-019: Layer 2 enabled in mid-frame covers the rows drawn after it", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     await s.loadCode(splitProgram("        nextreg $69,$00", "        nextreg $69,$80"), { entry: "Start" });
     s.runUntilReady().runFrames(3);
     expect(colours(s, [96, 607], [48, 48 + 95]), "rows 0-95").toBe(NONE);
@@ -231,7 +231,7 @@ WaitUntil:
   });
 
   it("L2-020: a scroll change in mid-frame splits the picture", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     await s.loadCode(splitProgram("        nextreg $16,0", "        nextreg $16,64"), { entry: "Start" });
     s.out(0x123b, 0x02).runUntilReady().runFrames(3);
     expect(layer2Mismatches(s, mem, L2_DEFAULT, NONE, [0, 95]), "rows 0-95").toEqual([]);
@@ -239,7 +239,7 @@ WaitUntil:
   });
 
   it("L2-022: a resolution change in mid-frame applies from the rows drawn after it", async () => {
-    const { s, mem } = await layer2Screen(core);
+    const { s, mem } = await layer2Screen();
     await s.loadCode(splitProgram("        nextreg $70,$00", "        nextreg $70,$10"), { entry: "Start" });
     clip18(s, WIDE_CLIP).out(0x123b, 0x02).runUntilReady().runFrames(3);
     expect(layer2Mismatches(s, mem, { ...L2_DEFAULT, clip: WIDE_CLIP }, NONE, [0, 95]), "256x192 above").toEqual([]);
@@ -253,7 +253,7 @@ WaitUntil:
    * the beam, rows from ~130 ahead of it).
    */
   it("L2-021: Layer 2 memory written in mid-frame shows below the beam in the same frame", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     for (const b of [8, 9, 10]) pokeBank(s, b, new Uint8Array(0x4000).fill(0x03));
     writePalette(s, [[0x03, 0x03], [0x1c, 0x1c]], 0x10);
     s.setNextReg(0x43, 0x00).setNextReg(0x14, 0xe3).setNextReg(0x68, 0x80);
@@ -309,7 +309,7 @@ WaitUntil:
   });
 
   it("L2-023: with $123B bits 0-1, writes to $0000 land in the displayed bank while reads still see the ROM", async () => {
-    const { s } = await layer2Screen(core);
+    const { s } = await layer2Screen();
     pokeBank(s, 8, new Uint8Array(0x4000).fill(0x00));
     const rom0 = s.peek(0x0000);
     await s.loadCode(`
@@ -334,7 +334,7 @@ Read:   .defb 0
   });
 
   it("L2-024: banks past the 2 MB SRAM (bank + 16 >= 128) show no pixel; $12 keeps 7 bits", async () => {
-    const { s, mem } = await layer2Screen(core, 110, 2); // --- banks 110, 111: the last two
+    const { s, mem } = await layer2Screen(110, 2); // --- banks 110, 111: the last two
     s.setNextReg(0x12, 0xee);
     expect(s.readNextReg(0x12), "7 bits").toBe(0x6e);
     s.out(0x123b, 0x02).runFrames(2);

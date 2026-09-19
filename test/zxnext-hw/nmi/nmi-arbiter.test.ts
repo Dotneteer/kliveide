@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * NMI arbitration and the $02 cause flags (catalogue NMI-008 - NMI-009). Ported from the
@@ -26,8 +26,8 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 const MF_ROM = readFileSync("src/public/roms/enNextMf.rom");
 const pagedIn = (s: NextTestSession) => Array.from(s.peekBytes(0x0000, 16)).join() === Array.from(MF_ROM.subarray(0, 16)).join();
 
-async function program(core: CoreName, body: string): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function program(body: string): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(`
         .org $8000
         di
@@ -36,10 +36,10 @@ Loop:   jr Loop`);
   return s;
 }
 
-describe.each(ALL_CORES)("NMI arbitration - %s core", (core: CoreName) => {
+describe("NMI arbitration", () => {
   it("NMI-008: a Multiface and a DivMMC request in one $02 write: the Multiface wins, the DivMMC request is lost", async () => {
     // --- DivMMC automap off, so a DivMMC NMI would not page DivMMC in either: only the Multiface can
-    const s = await program(core, "        nextreg $06,$18\n        nextreg $02,$0c");
+    const s = await program("        nextreg $06,$18\n        nextreg $02,$0c");
     s.setNextReg(0x0a, s.readNextReg(0x0a) & ~0x10);
     s.runTo(0x0066, { maxFrames: 2 });
     expect(s.readNextReg(0x02) & 0x0c, "~3820-3842: both causes were accepted into $02").toBe(0x0c);
@@ -54,7 +54,7 @@ describe.each(ALL_CORES)("NMI arbitration - %s core", (core: CoreName) => {
   });
 
   it("NMI-009: a $02 write with bit 4 = 1 keeps the I/O trap cause; bit 4 = 0 clears it", async () => {
-    const s = await program(core, "        nextreg $06,$08\n        nextreg $d8,$01\n        ld bc,$2ffd\n        in a,(c)");
+    const s = await program("        nextreg $06,$08\n        nextreg $d8,$01\n        ld bc,$2ffd\n        in a,(c)");
     s.runTo(0x0066, { maxFrames: 2 });
     expect([s.readNextReg(0x02) & 0x10, s.readNextReg(0xda)], "trapped").toEqual([0x10, 0x01]);
     s.setNextReg(0x02, 0x10);

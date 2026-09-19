@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * What the internal port enables ($82-$85) do *not* gate, and what a disabled port keeps
@@ -23,16 +23,16 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 
 const hex = (v: number) => `$${v.toString(16).padStart(2, "0")}`;
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   // --- Park the CPU: the ROM would rewrite the port enables and the border
   await s.loadCode(" .org $8000\n di\n jr $");
-  return s.runFrames(1); // --- the TS core shows a black first frame after a hard reset
+  return s.runFrames(1); // --- one settled frame after the hard reset
 }
 
-describe.each(ALL_CORES)("port enables: ungated ports and kept state - %s core", (core) => {
+describe("port enables: ungated ports and kept state", () => {
   it("PORT-014: with $82-$85 all 0 the NextReg ports and the ULA port $FE still work", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x82, 0x00).setNextReg(0x83, 0x00).setNextReg(0x84, 0x00).setNextReg(0x85, 0x00);
 
     // --- $243B / $253B (~2581-2582): select, write, read back, and $243B reads the selection
@@ -61,7 +61,7 @@ describe.each(ALL_CORES)("port enables: ungated ports and kept state - %s core",
   });
 
   it("PORT-015: a disabled port $FF keeps the Timex register and shows it again when re-enabled", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x08, 0x04); // --- $08 bit 2: $FF reads the Timex register (~2769)
     s.out(0x00ff, 0x3a);
     expect(hex(s.in(0x00ff)), "enabled").toBe("$3a");
@@ -76,7 +76,7 @@ describe.each(ALL_CORES)("port enables: ungated ports and kept state - %s core",
   });
 
   it("PORT-015: a disabled port $123B keeps the Layer 2 control and shows it again when re-enabled", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0x123b, 0x02); // --- Layer 2 visible
     expect(hex(s.in(0x123b)), "enabled").toBe("$02");
 
@@ -90,7 +90,7 @@ describe.each(ALL_CORES)("port enables: ungated ports and kept state - %s core",
   });
 
   it("PORT-016: a locked $7FFD ignores every bit of later writes: bank, shadow screen, ROM", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0x7ffd, 0x3f); // --- bank 7, shadow screen, ROM 1, lock
     const state = () => ({
       mmu6: hex(s.readNextReg(0x56)),

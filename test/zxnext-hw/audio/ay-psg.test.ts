@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 import {
   ALIGNED_RATE,
   MASTER_CLOCK,
@@ -61,8 +61,8 @@ const MIXER_OFF = 0x3f; // --- every tone and noise off: each channel outputs it
 const CHANNEL_SIDE: Array<"left" | "right"> = ["left", "left", "right"];
 
 /** A parked CPU and the PSG set up: `$06` mode, `$08`. */
-async function psg(core: CoreName, opts: { rate?: number; mode?: number; nr08?: number } = {}): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: opts.rate ?? RATE });
+async function psg(opts: { rate?: number; mode?: number; nr08?: number } = {}): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: opts.rate ?? RATE });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   s.setNextReg(0x06, opts.mode ?? YM).setNextReg(0x08, opts.nr08 ?? NR08);
   return s;
@@ -134,7 +134,7 @@ function envelopeLevels(shape: number, events: number): number[] {
   return out;
 }
 
-describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
+describe("AY / TurboSound", () => {
   // -------------------------------------------------------------------------------------------------
   // AY-001: register select, write, read
   // -------------------------------------------------------------------------------------------------
@@ -144,21 +144,21 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   const AY_READ_MASK = [0xff, 0x0f, 0xff, 0x0f, 0xff, 0x0f, 0x1f, 0xff, 0x1f, 0x1f, 0x1f, 0xff, 0xff, 0x0f, 0xff, 0xff];
 
   it("AY-001: YM mode: registers 0-15 read back every bit written", async () => {
-    const s = await psg(core, { mode: YM });
+    const s = await psg({ mode: YM });
     for (let r = 0; r < 16; r++) ay(s, r, pattern(r));
     const read = Array.from({ length: 16 }, (_, r) => ayRead(s, r));
     expect(read).toEqual(Array.from({ length: 16 }, (_, r) => pattern(r)));
   });
 
   it("AY-001: AY mode: R1/R3/R5/R13 read 4 bits, R6/R8/R9/R10 read 5 bits", async () => {
-    const s = await psg(core, { mode: AY });
+    const s = await psg({ mode: AY });
     for (let r = 0; r < 16; r++) ay(s, r, pattern(r));
     const read = Array.from({ length: 16 }, (_, r) => ayRead(s, r));
     expect(read).toEqual(Array.from({ length: 16 }, (_, r) => pattern(r) & AY_READ_MASK[r]));
   });
 
   it("AY-001: R14/R15 read the pulled-up port ($FF) while R7 makes it an input", async () => {
-    const s = await psg(core);
+    const s = await psg();
     ay(s, 14, 0x12);
     ay(s, 15, 0x34);
     ay(s, 7, 0x3f); // --- bits 6/7 = 0: both ports inputs
@@ -168,7 +168,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-001: only $FFFD values with bits 7-5 = 000 select a register", async () => {
-    const s = await psg(core);
+    const s = await psg();
     ay(s, 2, 0x5a);
     ay(s, 3, 0x0c);
     s.out(0xfffd, 0x02);
@@ -177,7 +177,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-001: registers 16-31 in YM mode: writes are dropped, reads give $FF (B33)", async () => {
-    const s = await psg(core, { mode: YM });
+    const s = await psg({ mode: YM });
     ay(s, 2, 0x11);
     ay(s, 0x12, 0x77);
     expect(s.in(0xfffd), "R18 reads $FF").toBe(0xff);
@@ -185,7 +185,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-001: registers 16-31 in AY mode: writes are dropped, reads give register n & 15 (B33)", async () => {
-    const s = await psg(core, { mode: AY });
+    const s = await psg({ mode: AY });
     ay(s, 2, 0x11);
     ay(s, 0x12, 0x77);
     expect(s.in(0xfffd), "R18 reads R2").toBe(0x11);
@@ -193,7 +193,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-001: $BFF5 reads the selected chip's id and register number", async () => {
-    const s = await psg(core, { nr08: NR08_TS });
+    const s = await psg({ nr08: NR08_TS });
     s.out(0xfffd, 0x05);
     expect(s.in(0xbff5), "chip 0: id 11").toBe(0xc5);
     s.out(0xfffd, 0xfe).out(0xfffd, 0x0b);
@@ -213,7 +213,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   ];
   for (const [channel, period] of TONES) {
     it(`AY-00${channel === 0 ? 2 : 3}: tone channel ${"ABC"[channel]} alone, period $${period.toString(16)}: f = 1.75 MHz / (16 * period)`, async () => {
-      const s = await psg(core);
+      const s = await psg();
       tone(s, channel, period);
       const values = side(record(s, 4), CHANNEL_SIDE[channel]);
       expect(relativeError(frequency(values, RATE), toneHz(period))).toBeLessThan(0.01);
@@ -221,7 +221,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   }
 
   it("AY-002: only bits 3-0 of the coarse register count", async () => {
-    const s = await psg(core);
+    const s = await psg();
     tone(s, 0, 0x110);
     ay(s, 1, 0xf1); // --- bits 7-4 set: the period stays $110
     const values = side(record(s, 4), "left");
@@ -230,7 +230,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   it("AY-017: tone period 0 plays exactly like period 1", async () => {
     const play = async (period: number) => {
-      const s = await psg(core);
+      const s = await psg();
       tone(s, 0, period);
       return side(record(s, 2), "left");
     };
@@ -238,7 +238,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-018: a steady tone keeps its half-period across frame boundaries", async () => {
-    const s = await psg(core);
+    const s = await psg();
     tone(s, 0, 0x0fe);
     const lengths = runs(side(record(s, 6), "left")).slice(1, -1).map((r) => r.length);
     const expected = (0x0fe * PSG_TICK * RATE) / MASTER_CLOCK; // --- 55.7 samples
@@ -248,7 +248,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   it("AY-019: the tone frequency does not depend on the CPU speed", async () => {
     for (const speed of [0, 3]) {
-      const s = await psg(core);
+      const s = await psg();
       s.setNextReg(0x07, speed);
       tone(s, 0, 0x0fe);
       const values = side(record(s, 4), "left");
@@ -262,7 +262,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   /** DC level of channel A for each fixed volume 0-15, as a fraction of volume 15. */
   async function volumeRatios(mode: number): Promise<number[]> {
-    const s = await psg(core, { mode });
+    const s = await psg({ mode });
     ay(s, 7, MIXER_OFF);
     const levels: number[] = [];
     for (let v = 0; v < 16; v++) {
@@ -295,7 +295,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-014: mode 11 holds every PSG in reset: silent, registers cleared, writes ignored", async () => {
-    const s = await psg(core, { nr08: NR08_TS });
+    const s = await psg({ nr08: NR08_TS });
     const silent = dcLevel(s);
     s.out(0xfffd, 0xfe); // --- chip 1 selected
     tone(s, 0, 0x0fe);
@@ -321,7 +321,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   /** Channel A noise at `period`, level 15. */
   async function noise(period: number, frames = 4, rate = RATE): Promise<number[]> {
-    const s = await psg(core, { rate });
+    const s = await psg({ rate });
     ay(s, 6, period);
     ay(s, 8, 0x0f);
     ay(s, 7, NOISE_ONLY[0]);
@@ -361,7 +361,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
     const which = CHANNEL_SIDE[channel];
     it(`AY-006: channel ${name}: R7 gives tone, noise, tone AND noise, or a steady level`, async () => {
       const play = async (mixer: number) => {
-        const s = await psg(core);
+        const s = await psg();
         ay(s, 2 * channel, 0x40); // --- 1709 Hz, 28 samples a cycle
         ay(s, 6, 31);
         ay(s, 8 + channel, 0x0f);
@@ -393,7 +393,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   /** Records `frames` frames of channel A on the envelope, with 5 samples per envelope step. */
   async function envelope(shape: number, mode = YM, frames = 1) {
-    const s = await psg(core, { rate: ALIGNED_RATE, mode });
+    const s = await psg({ rate: ALIGNED_RATE, mode });
     ay(s, 7, MIXER_OFF);
     const silent = dcLevel(s);
     ay(s, 8, 0x0f);
@@ -440,7 +440,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("AY-009: with TurboSound on, $FFFD %1111 11cc selects chip 0/1/2", async () => {
-    const s = await psg(core, { nr08: NR08_TS });
+    const s = await psg({ nr08: NR08_TS });
     const select = [0xff, 0xfe, 0xfd];
     select.forEach((sel, chip) => ay(s.out(0xfffd, sel), 0, 0x11 * (chip + 1)));
     const read = select.map((sel) => ayRead(s.out(0xfffd, sel), 0));
@@ -449,7 +449,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-009: with TurboSound off, the select value does nothing: every access is chip 0", async () => {
-    const s = await psg(core, { nr08: NR08 });
+    const s = await psg({ nr08: NR08 });
     ay(s.out(0xfffd, 0xfe), 0, 0x42); // --- would be chip 1
     s.setNextReg(0x08, NR08_TS);
     expect(ayRead(s.out(0xfffd, 0xff), 0), "landed in chip 0").toBe(0x42);
@@ -457,7 +457,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-010: three chips play three tones at once", async () => {
-    const s = await psg(core, { nr08: NR08_TS });
+    const s = await psg({ nr08: NR08_TS });
     const periods = [100, 150, 210];
     periods.forEach((p, chip) => tone(s.out(0xfffd, [0xff, 0xfe, 0xfd][chip]), 0, p));
     const left = side(record(s, 4), "left");
@@ -474,7 +474,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   ];
   for (const [pan, left, right] of PAN) {
     it(`AY-011: $FFFD bits 6-5 = ${pan.toString(2).padStart(2, "0")}: left ${left ? "on" : "off"}, right ${right ? "on" : "off"}`, async () => {
-      const s = await psg(core, { nr08: NR08_TS });
+      const s = await psg({ nr08: NR08_TS });
       s.out(0xfffd, 0x9f | (pan << 5)); // --- chip 0 with this pan
       tone(s, 1, 0x0fe); // --- channel B: the centre
       const samples = record(s, 2);
@@ -484,7 +484,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
 
   for (const [chip, bit] of [[0, 0x20], [1, 0x40], [2, 0x80]] as const) {
     it(`AY-013: $09 bit ${Math.log2(bit)} puts PSG ${chip} in mono: channel A on both sides`, async () => {
-      const s = await psg(core, { nr08: NR08_TS });
+      const s = await psg({ nr08: NR08_TS });
       s.out(0xfffd, [0xff, 0xfe, 0xfd][chip]);
       tone(s, 0, 0x0fe);
       const stereo = record(s, 2);
@@ -497,7 +497,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   }
 
   it("AY-015: with $84 bit 0 clear, $FFFD/$BFFD writes do not reach the PSG", async () => {
-    const s = await psg(core);
+    const s = await psg();
     s.setNextReg(0x84, 0xfe);
     tone(s, 0, 0x0fe);
     expect(swing(side(record(s, 2), "left")), "no tone").toBe(0);
@@ -506,7 +506,7 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
   });
 
   it("AY-016: turning TurboSound off freezes the selected chip: its registers and only its output", async () => {
-    const s = await psg(core, { nr08: NR08_TS });
+    const s = await psg({ nr08: NR08_TS });
     tone(s.out(0xfffd, 0xff), 0, 100); // --- chip 0
     tone(s.out(0xfffd, 0xfe), 0, 210); // --- chip 1, left selected
     s.setNextReg(0x08, NR08);

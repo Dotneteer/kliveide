@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName } from "../../harness/zxnext";
+import { createSession, type AudioSample } from "../../harness/zxnext";
 
 /*
  * AY-012 - NextReg $08 bit 5 selects the stereo arrangement of every PSG.
@@ -30,8 +30,8 @@ const swing = (samples: AudioSample[], side: "left" | "right") => {
 };
 
 /** Plays a tone on one PSG channel of chip 0 and returns the recorded frames. */
-async function tone(core: CoreName, nr08: number, channel: number): Promise<AudioSample[]> {
-  const s = await createSession(core, { audioSampleRate: SAMPLE_RATE });
+async function tone(nr08: number, channel: number): Promise<AudioSample[]> {
+  const s = await createSession({ audioSampleRate: SAMPLE_RATE });
   s.setNextReg(0x08, nr08);
   const ay = (reg: number, value: number) => s.out(0xfffd, reg).out(0xbffd, value);
   // --- Chip 0 is selected out of reset (turbosound.vhd ~123: ay_select <= "11").
@@ -54,10 +54,10 @@ const CASES: Array<[mode: string, nr08: number, channel: number, left: Side, rig
   ["ACB", ACB, 2, "swings", "swings"] // --- C: centre
 ];
 
-describe.each(ALL_CORES)("AY stereo mode (NextReg 08 bit 5) - %s core", (core) => {
+describe("AY stereo mode (NextReg 08 bit 5)", () => {
   for (const [mode, nr08, channel, left, right] of CASES) {
     it(`${mode}: channel ${"ABC"[channel]} -> left ${left}, right ${right}`, async () => {
-      const samples = await tone(core, nr08, channel);
+      const samples = await tone(nr08, channel);
       const swings = { left: swing(samples, "left"), right: swing(samples, "right") };
       const side = (s: number): Side => (s > 0 ? "swings" : "flat");
       expect({ left: side(swings.left), right: side(swings.right) }, JSON.stringify(swings)).toEqual({ left, right });
@@ -65,7 +65,7 @@ describe.each(ALL_CORES)("AY stereo mode (NextReg 08 bit 5) - %s core", (core) =
   }
 
   it("a silent PSG produces a constant level on both sides", async () => {
-    const s = await createSession(core, { audioSampleRate: SAMPLE_RATE });
+    const s = await createSession({ audioSampleRate: SAMPLE_RATE });
     const samples = s.setNextReg(0x08, ABC).startAudio().runFrames(4).audio();
     expect([swing(samples, "left"), swing(samples, "right")]).toEqual([0, 0]);
   });

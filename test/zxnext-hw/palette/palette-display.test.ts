@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, rgb333ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { rgb333ToHex, type NextTestSession } from "../../harness/zxnext";
 import { pokeBank } from "../layer2/_layer2-helpers";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "../ula/_ula-helpers";
 
@@ -48,8 +48,8 @@ const paper = (s: NextTestSession, x: [number, number], y: [number, number]) =>
  */
 const INDEX1 = [0x1c1, 0x039, 0x007, 0x0b7, 0x1f9, 0x125, 0x16d, 0x093]; // --- 9-bit, by write select
 
-async function fourLayers(core: CoreName, prio: number): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function fourLayers(prio: number): Promise<NextTestSession> {
+  const s = await parkedSession();
   for (let sel = 0; sel < 8; sel++) write9(s, sel, [[1, INDEX1[sel]]], sel === 1 || sel === 5 ? 0 : prio);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0x00).setNextReg(0x4b, 0xe3).setNextReg(0x4c, 0x0f);
   // --- ULA: every pixel ink 1
@@ -88,9 +88,9 @@ function expected(ula2: number, l22: number, spr2: number, tm2: number) {
   };
 }
 
-describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
+describe("palette display", () => {
   it("PAL-009: $43 bits 3-1 and $6B bit 4 pick the displayed palettes, whatever the write select", async () => {
-    const s = await fourLayers(core, 0);
+    const s = await fourLayers(0);
     const bad: string[] = [];
     for (let combo = 0; combo < 16; combo++) {
       const [ula2, l22, spr2, tm2] = [combo & 1, (combo >> 1) & 1, (combo >> 2) & 1, (combo >> 3) & 1];
@@ -105,7 +105,7 @@ describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
   });
 
   it("PAL-016: bits 7-6 of the second $44 byte do not change a ULA, sprite or tilemap colour", async () => {
-    const s = await fourLayers(core, 0xc0);
+    const s = await fourLayers(0xc0);
     for (const combo of [0, 15]) {
       const b = combo ? 1 : 0;
       s.setNextReg(0x43, (b << 3) | (b << 2) | (b << 1)).setNextReg(0x6b, 0x80 | (b << 4)).runFrames(2);
@@ -128,7 +128,7 @@ describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
     const tag = prio ? " (priority bits set on the entries)" : "";
 
     it(`PAL-010: ULA - both 9-bit colours with $14 in bits 8-1 are transparent, one differing in bit 1 is not${tag}`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       write9(s, 0, [[1, T9A], [16 + 2, T9B], [3, NEAR], [16 + 5, 0x1ff]], prio);
       s.setNextReg(0x43, 0x00).setNextReg(0x14, T).setNextReg(0x4a, FALLBACK);
       // --- bitmap $F0: ink on the left half of every cell; columns 0-15 ink 1, 16-31 ink 3, paper 2
@@ -145,7 +145,7 @@ describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
     });
 
     it(`PAL-010: LoRes - the same 8-bit compare${tag}`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       write9(s, 0, [[1, T9A], [2, T9B], [3, NEAR]], prio);
       s.setNextReg(0x43, 0x00).setNextReg(0x14, T).setNextReg(0x4a, FALLBACK);
       // --- 128 bytes a LoRes row: x 0-41 index 1, 42-83 index 2, 84-127 index 3 (rows 0-47 from $4000)
@@ -160,7 +160,7 @@ describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
     });
 
     it(`PAL-010: tilemap text mode - the same 8-bit compare${tag}`, async () => {
-      const s = await parkedSession(core);
+      const s = await parkedSession();
       // --- attribute 0: bit 1 -> index 1, bit 0 -> index 0; attribute 2: bit 1 -> index 3, bit 0 -> index 2
       write9(s, 3, [[0, T9A], [1, T9B], [2, T9A], [3, NEAR]], prio);
       s.setNextReg(0x43, 0x00).setNextReg(0x14, T).setNextReg(0x4a, FALLBACK).setNextReg(0x68, 0x80);
@@ -185,7 +185,7 @@ describe.each(ALL_CORES)("palette display - %s core", (core: CoreName) => {
   // -------------------------------------------------------------------------------------------------
 
   it("PAL-014: a ULA palette entry rewritten from the CPU at line 96 recolours the rows drawn after it", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[1, 0xe0]]);
     s.setNextReg(0x14, 0xe3).setNextReg(0x4a, 0x00);
     s.poke(0x4000, new Array(0x1800).fill(0xff)).poke(0x5800, new Array(768).fill(0x01));
@@ -231,7 +231,7 @@ WaitUntil:
   // -------------------------------------------------------------------------------------------------
 
   it("PAL-015: each of the 512 9-bit colours shows as its 3-to-8 bit expansion", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     // --- Layer 2 256x192: pixel (x, y) = index x; palette 1 entry i = colour i, palette 2 entry i = 256 + i
     const bank = new Uint8Array(0x4000).map((_, a) => a & 0xff);
     for (const b of [8, 9, 10]) pokeBank(s, b, bank);

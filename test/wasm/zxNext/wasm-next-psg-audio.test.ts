@@ -1,55 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { TurboSoundDevice } from "@emu/machines/zxNext/TurboSoundDevice";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 describe("ZX Next WASM PSG/TurboSound audio", () => {
-  it("matches TypeScript chip selection, panning, mono mode, and YM register readback", async () => {
-    const oracle = new TurboSoundDevice();
-    const wasm = await createTestZxNextWasmMachine();
-    const exports = wasm.wasmV2Runtime!.exports;
-
-    oracle.enableTurbosound = true;
-    exports.zxnextSetPsgTurbosoundEnabled(1);
-
-    oracle.setPsgRegisterIndex(0xfd);
-    exports.zxnextSetPsgRegisterIndex(0xfd);
-    oracle.setPsgRegisterIndex(0x01);
-    exports.zxnextSetPsgRegisterIndex(0x01);
-    oracle.writePsgRegisterValue(0xf5);
-    exports.zxnextWritePsgRegisterValue(0xf5);
-
-    oracle.setAyStereoMode(true);
-    oracle.setChipMonoMode(2, true);
-    exports.zxnextSetPsgAyStereoMode(1);
-    exports.zxnextSetPsgChipMonoMode(2, 1);
-
-    expect(exports.zxnextGetPsgSelectedChip()).toBe(oracle.getSelectedChipId());
-    expect(exports.zxnextGetPsgSelectedRegister()).toBe(oracle.getSelectedRegister());
-    expect(exports.zxnextGetPsgChipPanning(2)).toBe(oracle.getChipPanning(2));
-    expect(exports.zxnextGetPsgChipMonoMode(2)).toBe(oracle.getChipMonoMode(2) ? 1 : 0);
-    expect(exports.zxnextGetPsgRegister(2, 1)).toBe(oracle.getChip(2).readPsgRegisterValue());
-    expect(exports.zxnextReadPsgRegisterValue()).toBe(oracle.readPsgRegisterValue());
-  });
-
   it("selects a 5-bit YM register number; registers 16-31 take no write and read $FF", async () => {
-    const oracle = new TurboSoundDevice();
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports;
 
     // --- The $FFFD port path (AyRegPortHandler -> selectRegister): a 5-bit register number
     // --- (ym2149.vhd ~173). Registers 16-31 take no writes and read $FF in YM mode (~188, ~222).
-    oracle.selectRegister(0x11);
-    oracle.writeSelectedRegister(0xa5);
     exports.zxnextSetPsgRegisterIndex(0x11);
     exports.zxnextWritePsgRegisterValue(0xa5);
 
     expect(exports.zxnextGetPsgSelectedRegister()).toBe(0x11);
-    expect(exports.zxnextGetPsgSelectedRegister()).toBe(oracle.getSelectedRegister());
     expect(exports.zxnextGetPsgRegister(0, 1), "register 1 untouched").toBe(0);
     expect(exports.zxnextReadPsgRegisterValue()).toBe(0xff);
-    expect(oracle.readSelectedRegister()).toBe(0xff);
-    expect(oracle.getChip(0).getRegister(1)).toBe(0);
   });
 
   it("exposes deterministic noise/envelope movement and stereo samples", async () => {
@@ -77,26 +42,6 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextGetPsgStereoRight(0)).toBeGreaterThan(0);
   });
 
-  it("matches TypeScript YM tone output and TurboSound stereo routing", async () => {
-    const oracle = new TurboSoundDevice();
-    const wasm = await createTestZxNextWasmMachine();
-    const exports = wasm.wasmV2Runtime!.exports;
-
-    writePsgBoth(oracle, exports, 0x00, 0x01);
-    writePsgBoth(oracle, exports, 0x01, 0x00);
-    writePsgBoth(oracle, exports, 0x07, 0x3e);
-    writePsgBoth(oracle, exports, 0x08, 0x0f);
-
-    oracle.generateChipOutputValue(0);
-    exports.zxnextGeneratePsgOutput(0);
-
-    expect(exports.zxnextGetPsgOutputA(0)).toBe(oracle.getChip(0).currentOutputA);
-    expect(exports.zxnextGetPsgOutputB(0)).toBe(oracle.getChip(0).currentOutputB);
-    expect(exports.zxnextGetPsgOutputC(0)).toBe(oracle.getChip(0).currentOutputC);
-    expect(exports.zxnextGetPsgStereoLeft(0)).toBe(oracle.getChipStereoOutput(0).left);
-    expect(exports.zxnextGetPsgStereoRight(0)).toBe(oracle.getChipStereoOutput(0).right);
-  });
-
   it("averages PSG output over the exact WASM sample window", async () => {
     const wasm = await createTestZxNextWasmMachine();
     const exports = wasm.wasmV2Runtime!.exports as any;
@@ -116,29 +61,6 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(exports.zxnextGetPsgSampleRight()).toBe(0);
   });
 
-  it("matches TypeScript YM envelope and noise progression", async () => {
-    const oracle = new TurboSoundDevice();
-    const wasm = await createTestZxNextWasmMachine();
-    const exports = wasm.wasmV2Runtime!.exports;
-
-    writePsgBoth(oracle, exports, 0x06, 0x02);
-    writePsgBoth(oracle, exports, 0x07, 0x37);
-    writePsgBoth(oracle, exports, 0x08, 0x10);
-    writePsgBoth(oracle, exports, 0x0b, 0x01);
-    writePsgBoth(oracle, exports, 0x0c, 0x00);
-    writePsgBoth(oracle, exports, 0x0d, 0x0b);
-
-    for (let i = 0; i < 12; i++) {
-      oracle.generateChipOutputValue(0);
-      exports.zxnextGeneratePsgOutput(0);
-    }
-
-    const oracleState = oracle.getChipState(0);
-    expect(exports.zxnextGetPsgNoiseRng(0)).toBe(oracleState.noiseSeed);
-    expect(exports.zxnextGetPsgEnvelopeStep(0)).toBe((oracle.getChip(0).getState() as any).envVol);
-    expect(exports.zxnextGetPsgOutputA(0)).toBe(oracle.getChip(0).currentOutputA);
-  });
-
   it("advances PSG during normal WASM frame execution", async () => {
     const samples = await renderWasmToneFrame(0);
     expect(samples.length).toBeGreaterThan(10);
@@ -153,21 +75,6 @@ describe("ZX Next WASM PSG/TurboSound audio", () => {
     expect(Math.abs(fastEdges - baseEdges)).toBeLessThanOrEqual(1);
   });
 });
-
-function writePsgBoth(
-  oracle: TurboSoundDevice,
-  exports: {
-    zxnextSetPsgRegisterIndex: (value: number) => number;
-    zxnextWritePsgRegisterValue: (value: number) => number;
-  },
-  reg: number,
-  value: number
-): void {
-  oracle.setPsgRegisterIndex(reg);
-  oracle.writePsgRegisterValue(value);
-  exports.zxnextSetPsgRegisterIndex(reg);
-  exports.zxnextWritePsgRegisterValue(value);
-}
 
 async function renderWasmToneFrame(speed: number) {
   const wasm = await createTestZxNextWasmMachine();

@@ -1,5 +1,5 @@
 import { hex8, parkedSession, writePalette } from "../ula/_ula-helpers";
-import type { CoreName, NextTestSession } from "../../harness/zxnext";
+import type { NextTestSession } from "../../harness/zxnext";
 
 /*
  * A transcription of `_input/next-fpga/src/video/tilemap.vhd` and a screen set up to check it pixel by
@@ -105,8 +105,8 @@ export function randomBank5(seed: number): Uint8Array {
  * off, fallback and global transparency $E3 (an index-$E3 text pixel is transparent and shows the same
  * colour).
  */
-export async function tilemapScreen(core: CoreName, bank5: Uint8Array): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+export async function tilemapScreen(bank5: Uint8Array): Promise<NextTestSession> {
+  const s = await parkedSession();
   s.poke(0x4000, bank5);
   writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i] as [number, number]), 0x30);
   return s.setNextReg(0x43, 0x00).setNextReg(0x14, 0xe3).setNextReg(0x4a, 0xe3).setNextReg(0x68, 0x80);

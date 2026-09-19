@@ -40,45 +40,11 @@ import { AUDIO_SAMPLE_RATE } from "../machine-props";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
-export type ZxNextWasmV2MigrationSurface =
-  | "registers"
-  | "memory"
-  | "disassembly"
-  | "ULA"
-  | "screen"
-  | "frame"
-  | "debug";
-
-export type ZxNextWasmV2DefaultBlocker =
-  | "ula-screen-tact-pipeline-parity"
-  | "ula-timex-mode-rendering-parity"
-  | "ula-next-plus-rendering-parity"
-  | "screen-layer-composition-parity";
-
 export type ZxNextWasmV2StopReason =
   | "reset"
   | "debugStep"
   | "wasmFrameCommand"
   | "wasmFrameComplete";
-
-export const ZXNEXT_WASM_V2_MIGRATED_SURFACES: ZxNextWasmV2MigrationSurface[] = [
-  "registers",
-  "memory",
-  "disassembly",
-  "ULA",
-  "screen",
-  "frame",
-  "debug"
-];
-
-/*
- * Parity declared 2026-09-19. The four ULA/screen blockers were re-audited against the VHDL and closed,
- * each with dual-core tests (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 0), the WASM
- * machine no longer derives from the TypeScript one (Step 5), and every known TypeScript/WASM
- * difference in that plan's parity ledger is resolved.
- */
-export const ZXNEXT_WASM_V2_DEFAULT_READY = true;
-export const ZXNEXT_WASM_V2_DEFAULT_BLOCKERS: ZxNextWasmV2DefaultBlocker[] = [];
 
 const ZXNEXT_SD_HOST_COMMAND_READ = 1;
 const ZXNEXT_SD_HOST_COMMAND_WRITE = 2;
@@ -90,9 +56,6 @@ export type ZxNextWasmV2Diagnostics = {
   backend: "wasm";
   engine: "v2";
   artifactName: string;
-  defaultReady: boolean;
-  defaultBlockers: ZxNextWasmV2DefaultBlocker[];
-  migratedSurfaces: ZxNextWasmV2MigrationSurface[];
   memoryBytes: number;
   flatMemoryBytes: number;
   screenWidth: number;
@@ -1259,9 +1222,6 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
       backend: "wasm",
       engine: "v2",
       artifactName: runtime.artifactName,
-      defaultReady: ZXNEXT_WASM_V2_DEFAULT_READY,
-      defaultBlockers: ZXNEXT_WASM_V2_DEFAULT_BLOCKERS.slice(),
-      migratedSurfaces: ZXNEXT_WASM_V2_MIGRATED_SURFACES.slice(),
       memoryBytes: runtime.exports.zxnextGetMemorySize(),
       flatMemoryBytes: runtime.exports.zxnextGetFlatMemorySize(),
       screenWidth: runtime.exports.zxnextGetScreenWidth(),

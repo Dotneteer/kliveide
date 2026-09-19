@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -40,8 +40,8 @@ function loresIndex(mem: Uint8Array, p: LoRes, dx: number, dy: number): number {
 }
 
 /** Bank 5 filled with a fixed pseudo-random pattern; palette entry i holds colour i (every index distinct). */
-async function loresScreen(core: CoreName): Promise<{ s: NextTestSession; mem: Uint8Array }> {
-  const s = await parkedSession(core);
+async function loresScreen(): Promise<{ s: NextTestSession; mem: Uint8Array }> {
+  const s = await parkedSession();
   const mem = new Uint8Array(0x4000);
   let seed = 0x1234;
   for (let i = 0; i < mem.length; i++) {
@@ -70,10 +70,10 @@ function mismatches(s: NextTestSession, expected: (x: number, y: number) => stri
 
 const border = (s: NextTestSession) => colours(s, [0, 95], [0, 287]) + " " + colours(s, [0, 719], [0, 47]);
 
-describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
+describe("LoRes / Radastan", () => {
   for (const offset of [0, 5]) {
     it(`LOR-001 / LOR-002: $15 bit 7 shows 128x96 LoRes from $4000 / $6000${offset ? `, palette offset ${offset}` : ""}`, async () => {
-      const { s, mem } = await loresScreen(core);
+      const { s, mem } = await loresScreen();
       s.setNextReg(0x6a, offset).setNextReg(0x15, 0x80).runFrames(2);
       expect(s.readNextReg(0x15) & 0x80, "$15 bit 7").toBe(0x80);
       expect(s.readNextReg(0x6a), "$6A").toBe(offset);
@@ -84,7 +84,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
   }
 
   it("LOR-001: LoRes reads bank 5 even while the 128K shadow screen (bank 7) is displayed", async () => {
-    const { s, mem } = await loresScreen(core);
+    const { s, mem } = await loresScreen();
     // --- bank 7 at $C000 gets different contents, then is displayed
     s.out(0x7ffd, 0x07).poke(0xc000, new Array(0x4000).fill(0x77)).out(0x7ffd, 0x0f);
     s.setNextReg(0x15, 0x80).runFrames(2);
@@ -93,7 +93,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
   });
 
   it("LOR-002: LoRes uses the second ULA palette with $43 bit 1, and ignores ULANext", async () => {
-    const { s, mem } = await loresScreen(core);
+    const { s, mem } = await loresScreen();
     writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i ^ 0x5a] as [number, number]), 0x40); // --- second ULA palette
     s.setNextReg(0x42, 0x07).setNextReg(0x43, 0x03).setNextReg(0x15, 0x80).runFrames(2);
     expect(mismatches(s, (x, y) => {
@@ -104,7 +104,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
 
   for (const [sx, sy] of [[1, 0], [2, 0], [3, 0], [7, 0], [128, 0], [255, 0], [0, 1], [0, 95], [0, 96], [0, 191], [0, 200], [37, 150]]) {
     it(`LOR-003: scroll $32 = ${sx}, $33 = ${sy}`, async () => {
-      const { s, mem } = await loresScreen(core);
+      const { s, mem } = await loresScreen();
       s.setNextReg(0x32, sx).setNextReg(0x33, sy).setNextReg(0x15, 0x80).runFrames(2);
       expect([s.readNextReg(0x32), s.readNextReg(0x33)], "readback").toEqual([sx, sy]);
       const p = { ...PLAIN, sx, sy };
@@ -113,7 +113,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
   }
 
   it("LOR-004: the ULA clip window clips LoRes; outside it the fallback shows, the border stays", async () => {
-    const { s, mem } = await loresScreen(core);
+    const { s, mem } = await loresScreen();
     s.setNextReg(0x4a, 0x00); // --- the fallback is colour $00 (also index $00's colour: rare in the pattern)
     s.setNextReg(0x1c, 0x04).setNextReg(0x1a, 16).setNextReg(0x1a, 47).setNextReg(0x1a, 8).setNextReg(0x1a, 23);
     s.setNextReg(0x15, 0x80).runFrames(2);
@@ -123,7 +123,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
   });
 
   it("LOR-005: a LoRes colour equal to $14 is transparent; $68 bit 7 hides LoRes with the ULA", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     // --- top half all $12, bottom half all $34
     s.poke(0x4000, new Array(0x1800).fill(0x12)).poke(0x6000, new Array(0x1800).fill(0x34));
     writePalette(s, [[0x12, 0x1c], [0x34, 0x6d], [17, 0xe0]]);
@@ -137,7 +137,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
 
   for (const [offset, ulaPlus] of [[0, false], [3, false], [0x0e, false], [0x0e, true]] as const) {
     it(`LOR-006: Radastan, offset ${offset}${ulaPlus ? ", ULA+ on" : ""}`, async () => {
-      const { s, mem } = await loresScreen(core);
+      const { s, mem } = await loresScreen();
       if (ulaPlus) s.out(0xbf3b, 0x40).out(0xff3b, 0x01);
       s.setNextReg(0x6a, 0x20 | offset).setNextReg(0x15, 0x80).runFrames(2);
       expect(s.readNextReg(0x6a), "$6A").toBe(0x20 | offset);
@@ -148,7 +148,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
 
   // --- zxnext.vhd ~4226: Radastan's ULA+ input is ulap_en AND NOT ulanext_en
   it("LOR-006: Radastan with ULA+ and ULANext both on uses the plain offset", async () => {
-    const { s, mem } = await loresScreen(core);
+    const { s, mem } = await loresScreen();
     s.out(0xbf3b, 0x40).out(0xff3b, 0x01).setNextReg(0x43, 0x01);
     s.setNextReg(0x6a, 0x20 | 0x0e).setNextReg(0x15, 0x80).runFrames(2);
     const p = { ...PLAIN, radastan: true, offset: 0x0e, ulaPlus: false };
@@ -157,7 +157,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
 
   for (const [timex, xor] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
     it(`LOR-007: Radastan display file = port $FF bit 0 (${timex}) XOR $6A bit 4 (${xor})`, async () => {
-      const { s, mem } = await loresScreen(core);
+      const { s, mem } = await loresScreen();
       s.out(0x00ff, timex).setNextReg(0x6a, 0x20 | (xor << 4) | 2).setNextReg(0x15, 0x80).runFrames(2);
       expect(s.readNextReg(0x6a), "$6A").toBe(0x20 | (xor << 4) | 2);
       const p = { ...PLAIN, radastan: true, dfile: timex ^ xor, offset: 2 };
@@ -167,7 +167,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
 
   for (const timex of [1, 2, 6]) {
     it(`LOR-008: plain LoRes ignores the Timex screen mode (port $FF = ${timex})`, async () => {
-      const { s, mem } = await loresScreen(core);
+      const { s, mem } = await loresScreen();
       s.out(0x00ff, timex).setNextReg(0x15, 0x80).runFrames(2);
       expect(mismatches(s, (x, y) => hex8(loresIndex(mem, PLAIN, x, y)))).toEqual([]);
     });
@@ -179,7 +179,7 @@ describe.each(ALL_CORES)("LoRes / Radastan - %s core", (core: CoreName) => {
    * 97-191 LoRes; row 96 (the switch line) is not checked.
    */
   it("LOR-009: LoRes enabled in mid-frame covers the rows drawn after it", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     await s.loadCode(`
         .org $8000
 Start:  di

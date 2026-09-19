@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, displayFileAddress, type NextTestSession } from "../../harness/zxnext";
+import { createSession, displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * B12 - the ULA+ ports $BF3B (register select) and $FF3B (data).
@@ -23,15 +23,15 @@ import { ALL_CORES, createSession, displayFileAddress, type NextTestSession } fr
 
 const grb = (r: number, g: number, b: number) => ((g & 7) << 5) | ((r & 7) << 2) | (b & 3);
 
-async function session(core: "ts" | "wasm"): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function session(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(` .org $8000\n jr $`);
   return s;
 }
 
-describe.each(ALL_CORES)("ULA+ ports - %s core", (core) => {
+describe("ULA+ ports", () => {
   it("$FF3B in mode group 01 enables ULA+ and reads the enable back ($68 bit 3 too)", async () => {
-    const s = await session(core);
+    const s = await session();
     s.out(0xbf3b, 0x40);
     expect(s.in(0xff3b) & 0x01).toBe(0);
     s.out(0xff3b, 0x01);
@@ -41,7 +41,7 @@ describe.each(ALL_CORES)("ULA+ ports - %s core", (core) => {
   });
 
   it("$FF3B in mode group 00 writes and reads ULA palette entry $C0 + index in GRB order", async () => {
-    const s = await session(core);
+    const s = await session();
     const value = grb(5, 2, 1); // --- GGG RRR BB = 010 101 01
     s.out(0xbf3b, 0x22).out(0xff3b, value);
     s.out(0xbf3b, 0x22);
@@ -52,7 +52,7 @@ describe.each(ALL_CORES)("ULA+ ports - %s core", (core) => {
   });
 
   it("colours written through the ports show on a ULA+ screen", async () => {
-    const s = await session(core);
+    const s = await session();
     // --- border BB = 10: the 9th bit is B1 or B0 = 1, so blue 101 (#B6), not 100
     for (const [index, value] of [[0x22, grb(7, 0, 0)], [0x2b, grb(0, 7, 0)], [0x0d, grb(0, 0, 2)]]) {
       s.out(0xbf3b, index).out(0xff3b, value);

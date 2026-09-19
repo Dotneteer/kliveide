@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { hex8 } from "../ula/_ula-helpers";
 import { control6B, randomBank5, TM_DEFAULT, tilemapMismatches, tilemapScreen, type TM } from "./_tilemap-helpers";
 
@@ -32,8 +32,8 @@ IMAGE.set(P0E, 0);
 IMAGE.set(P0E, 0x2000);
 const NONE = hex8(0xe3);
 
-async function bank7Screen(core: CoreName): Promise<NextTestSession> {
-  const s = await tilemapScreen(core, randomBank5(70)); // --- bank 5 holds different bytes
+async function bank7Screen(): Promise<NextTestSession> {
+  const s = await tilemapScreen(randomBank5(70)); // --- bank 5 holds different bytes
   s.setNextReg(0x56, 0x0e).poke(0xc000, P0E).setNextReg(0x56, 0x0f).poke(0xc000, P0F).setNextReg(0x56, 0x00);
   return s;
 }
@@ -44,11 +44,11 @@ function show(s: NextTestSession, p: TM, map: number, tiles: number): NextTestSe
   return s.setNextReg(0x6b, control6B(p)).runFrames(2);
 }
 
-describe.each(ALL_CORES)("tilemap in bank 7 - %s core", (core: CoreName) => {
+describe("tilemap in bank 7", () => {
   it("bank 7 map and tiles come from page $0E; offsets $20-$3F are the same as $00-$1F", async () => {
     // --- tiles 0-127 from $10 or $30 stay inside the first 8K: this checks only the offset aliasing
     for (const [map, tiles] of [[0x00, 0x10], [0x20, 0x30]]) {
-      const s = await bank7Screen(core);
+      const s = await bank7Screen();
       const p: TM = { ...TM_DEFAULT, mapBase: map, tileBase: tiles };
       expect(tilemapMismatches(show(s, p, 0x80 | map, 0x80 | tiles), IMAGE, p, NONE), `$6E = $${(0x80 | map).toString(16)}`).toEqual([]);
     }
@@ -62,7 +62,7 @@ describe.each(ALL_CORES)("tilemap in bank 7 - %s core", (core: CoreName) => {
    */
   for (const map of [0x00, 0x20]) {
     it(`a tile table in bank 7 that runs past 8K wraps to the start of bank 7 ($6E = $${(0x80 | map).toString(16)})`, async () => {
-      const s = await bank7Screen(core);
+      const s = await bank7Screen();
       // --- tiles 128-255: set bit 7 of every map tile byte
       const map0e = P0E.slice(0, 40 * 32 * 2);
       for (let i = 0; i < map0e.length; i += 2) map0e[i] |= 0x80;
@@ -77,7 +77,7 @@ describe.each(ALL_CORES)("tilemap in bank 7 - %s core", (core: CoreName) => {
 
   it("the same offsets without bit 7 read bank 5", async () => {
     const bank5 = randomBank5(70);
-    const s = await bank7Screen(core);
+    const s = await bank7Screen();
     const p: TM = { ...TM_DEFAULT, mapBase: 0x20, tileBase: 0x30 };
     expect(tilemapMismatches(show(s, p, 0x20, 0x30), bank5, p, NONE)).toEqual([]);
   });

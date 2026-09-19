@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * NextReg $04 stores bits 6-0 only (catalogue NR-019; ported from test/zxnext/NextRegDevice.test.ts
@@ -15,15 +15,15 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
  *   observed through the memory it maps.
  */
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nLoop: jr Loop");
   return s;
 }
 
-describe.each(ALL_CORES)("NextReg $04 config-mode bank - %s core", (core) => {
+describe("NextReg $04 config-mode bank", () => {
   it("NR-019: $04 = $90 maps the same 16K SRAM bank as $10 (bit 7 is not stored)", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const type = s.readNextReg(0x03) & 0x07;
     s.setNextReg(0x03, 0x07); // --- config mode
     s.setNextReg(0x04, 0x90).poke(0x0000, [0x5a, 0x5b]).poke(0x2000, [0xa5, 0xa6]);

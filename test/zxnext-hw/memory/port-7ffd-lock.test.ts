@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * The $7FFD paging lock and NextReg $08 bit 7 (catalogue MEM-009, B13).
@@ -13,9 +13,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
  * - ~3645: any reset clears port_7ffd_reg, so the lock is gone after a reset.
  * The paged bank is observed through MMU6 ($56 = bank * 2).
  */
-describe.each(ALL_CORES)("$7FFD lock - %s core", (core) => {
+describe("$7FFD lock", () => {
   it("bit 5 locks $7FFD; $08 bit 7 reads the lock and writing it 1 unlocks", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     expect(s.readNextReg(0x08) & 0x80).toBe(0x80);
 
     s.out(0x7ffd, 0x21); // --- bank 1, lock
@@ -35,7 +35,7 @@ describe.each(ALL_CORES)("$7FFD lock - %s core", (core) => {
   });
 
   it("a soft reset clears the lock", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x7ffd, 0x21).reset();
     expect(s.readNextReg(0x08) & 0x80).toBe(0x80);
     s.out(0x7ffd, 0x03);

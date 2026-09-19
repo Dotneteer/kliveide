@@ -1,17 +1,16 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import type { CoreName } from "../core/machines";
 import type { MotionSpec } from "./motion";
 import type { Probe } from "./probes";
 
-export type OracleName = "ready" | "probes" | "motion" | "identical" | "parity" | "headless" | "canvas";
+export type OracleName = "ready" | "probes" | "motion" | "identical" | "headless" | "canvas";
 
 /**
  * A mismatch the case expects, with the reason. It is reported as XFAIL instead of failing the run,
  * and becomes a failure (XPASS) the moment it starts passing, so the entry cannot outlive the bug.
  */
-export type KnownFailure = { core?: CoreName; oracle: OracleName; /** probe or motion name */ name?: string; reason: string };
+export type KnownFailure = { oracle: OracleName; /** probe or motion name */ name?: string; reason: string };
 
 export type CaseSpec = {
   id: string;
@@ -28,12 +27,10 @@ export type CaseSpec = {
   readyBy?: number;
   probes?: Probe[];
   motion?: MotionSpec[];
-  /** Frames tiled into `contact-sheet-<core>.png` for review. */
+  /** Frames tiled into `contact-sheet-<tier key>.png` (`wasm`, `browser`) for review. */
   contactSheet?: { frames: number[]; columns?: number };
-  /** `exact` (default) or `skip`. */
-  coreParity?: "exact" | "skip";
   knownFailures?: KnownFailure[];
-  /** Only run with `--long` (e.g. thousands of frames on the slow TypeScript core). */
+  /** Only run with `--long` (e.g. thousands of frames). */
   longOnly?: boolean;
   /** Which tiers run this case. Default headless only. */
   tiers?: Array<"headless" | "browser">;
@@ -47,8 +44,8 @@ export type LoadedCase = {
   golden?: Golden;
 };
 
-/** Approved frame hashes per core. */
-export type Golden = Partial<Record<CoreName | "browser", Record<string, string>>>;
+/** Approved frame hashes per tier: `wasm` (headless) and `browser`. */
+export type Golden = Partial<Record<"wasm" | "browser", Record<string, string>>>;
 
 export const READY_REG = 0x7f;
 export const READY_VALUE = 0xa5;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 import { ay, ayRead, frequency, relativeError, side, swing, toneHz } from "./_audio-helpers";
 
 /*
@@ -26,8 +26,8 @@ const NR08_TS = 0x12; // --- internal speaker + TurboSound; ABC; DACs off
 
 const PARK = " .org $8000\n di\nPark: jr Park";
 
-async function psg(core: CoreName, nr08 = NR08_TS): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: RATE });
+async function psg(nr08 = NR08_TS): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: RATE });
   await s.loadCode(PARK);
   s.setNextReg(0x06, 0x00).setNextReg(0x08, nr08);
   return s;
@@ -35,10 +35,10 @@ async function psg(core: CoreName, nr08 = NR08_TS): Promise<NextTestSession> {
 
 const record = (s: NextTestSession, frames = 2): AudioSample[] => s.startAudio().runFrames(frames).audio().slice(2);
 
-describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
+describe("PSG bus and resets", () => {
   it("PSG-BUS-1: each chip keeps its own selected register number", async () => {
     // --- ym2149.vhd ~172-173 latches `addr` only on its own busctrl_addr (turbosound.vhd ~143-149)
-    const s = await psg(core);
+    const s = await psg();
     ay(s.out(0xfffd, 0xff), 2, 0x11); // --- chip 0: R2 selected
     ay(s.out(0xfffd, 0xfe), 5, 0x0a); // --- chip 1: R5 selected
     expect(s.out(0xfffd, 0xff).in(0xfffd), "chip 0 still on R2").toBe(0x11);
@@ -50,7 +50,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
 
   it("PSG-BUS-2: after a hard reset chip 0 and its register 0 are selected", async () => {
     // --- turbosound.vhd ~123 (ay_select "11"), ym2149.vhd ~170-171 (addr 0)
-    const s = await psg(core);
+    const s = await psg();
     s.out(0xbffd, 0x42); // --- no $FFFD write at all
     expect(s.in(0xfffd), "reads R0 of the selected chip").toBe(0x42);
     expect(ayRead(s.out(0xfffd, 0xff), 0), "chip 0 R0").toBe(0x42);
@@ -60,7 +60,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
 
   it("PSG-BUS-4: turning TurboSound off and on again keeps every chip's registers", async () => {
     // --- zxnext.vhd ~6325: only reset or $06 = 11 resets the PSGs, not $08 bit 1 (turbosound.vhd ~197)
-    const s = await psg(core);
+    const s = await psg();
     [0xff, 0xfe, 0xfd].forEach((sel, chip) => ay(s.out(0xfffd, sel), 0, 0x11 * (chip + 1)));
     s.setNextReg(0x08, 0x10).runFrames(1).setNextReg(0x08, NR08_TS);
     expect([0xff, 0xfe, 0xfd].map((sel) => ayRead(s.out(0xfffd, sel), 0))).toEqual([0x11, 0x22, 0x33]);
@@ -70,7 +70,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
     // --- zxnext.vhd ~1107-1116 (signal initial values), readback ~5846-5855. $08 bits 3 and 1 (DACs,
     // --- TurboSound) power up 0 in the VHDL, but both cores model the state *after the firmware*, which
     // --- sets $08 = $1A (NextRegDevice.ts hardReset, zxnext-nextreg.c) - README rule 6: not asserted.
-    const s = await createSession(core, { audioSampleRate: RATE });
+    const s = await createSession({ audioSampleRate: RATE });
     await s.loadCode(PARK);
     expect([s.readNextReg(0x06) & 0x03, s.readNextReg(0x08) & 0x20, s.readNextReg(0x09) & 0xe0]).toEqual([0, 0, 0]);
     s.setNextReg(0x06, 0x01).setNextReg(0x08, 0x2a).setNextReg(0x09, 0xe0);
@@ -81,7 +81,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
 
   it("PSG-RESET-1: a soft reset keeps the PSG mode, stereo mode, DAC enable, TurboSound and mono bits", async () => {
     // --- zxnext.vhd ~5138-5164 write them; the `reset = '1'` branch before ~5100 does not touch them
-    const s = await psg(core);
+    const s = await psg();
     s.setNextReg(0x06, 0x01).setNextReg(0x08, 0x2a | 0x10).setNextReg(0x09, 0xe0);
     s.reset();
     await s.loadCode(PARK);
@@ -90,7 +90,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
 
   it("PSG-RESET-2: a soft reset resets the PSGs: chip 0 and R0 selected, pans 11, registers cleared, R7 = $FF", async () => {
     // --- zxnext.vhd ~6325 (audio_ay_reset = reset ...); turbosound.vhd ~121-127; ym2149.vhd ~170-186
-    const s = await psg(core);
+    const s = await psg();
     for (const sel of [0xff, 0xfe, 0xfd]) {
       s.out(0xfffd, sel);
       for (let r = 0; r < 14; r++) ay(s, r, 0x05);
@@ -121,7 +121,7 @@ describe.each(ALL_CORES)("PSG bus and resets - %s core", (core) => {
 
   it("PSG-CPU-1: a Z80 program writing $FFFD/$BFFD with OUT (C),A plays the tone the registers define", async () => {
     // --- zxnext.vhd ~2603-2604 decode; ym2149.vhd tone: f = 1.75 MHz / (16 * period)
-    const s = await createSession(core, { audioSampleRate: RATE });
+    const s = await createSession({ audioSampleRate: RATE });
     await s.loadCode(`
         .org $8000
 Start:  di

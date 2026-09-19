@@ -2,19 +2,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import type { IFileProvider } from "@renderer/core/IFileProvider";
 
-export type CoreName = "ts" | "wasm";
-
-/**
- * A ZX Spectrum Next on either core. The WASM machine no longer derives from the TypeScript one, so
- * code that works on both uses what they have in common (the `IZ80Machine` API, `IZxNextIdeMachine`)
- * or narrows with `instanceof ZxNextWasmV2Machine`.
- */
-export type NextMachine = ZxNextMachine | ZxNextWasmV2Machine;
-export const ALL_CORES: CoreName[] = ["ts", "wasm"];
+/** The ZX Spectrum Next machine the harness drives: the production WASM core. */
+export type NextMachine = ZxNextWasmV2Machine;
 
 /**
  * The repo root. Both entry points (vitest and the Vite-SSR runner) start in it; `__dirname` is not
@@ -74,35 +66,29 @@ export function assertWasmArtifactFresh(): void {
 
 export type CreateCoreOptions = {
   /**
-   * Audio sample rate for `getAudioSamples()`. Both cores read it at setup/hard reset, so it has to
-   * be set before `setup()`; without it neither core produces audio samples.
+   * Audio sample rate for `getAudioSamples()`. The core reads it at setup/hard reset, so it has to
+   * be set before `setup()`; without it the core produces no audio samples.
    */
   audioSampleRate?: number;
   /** Hard-reset after setup, as the app's machine start does (`MachineService`). */
   hardReset?: boolean;
 };
 
-export async function createCore(core: CoreName, options: CreateCoreOptions = {}): Promise<NextMachine> {
-  const machine =
-    core === "ts"
-      ? new ZxNextMachine()
-      : new ZxNextWasmV2Machine(undefined, undefined, undefined, {
-          artifactName: "visual-tests.wasm",
-          readArtifact: async () => readFileSync(WASM_ARTIFACT)
-        });
+export async function createCore(options: CreateCoreOptions = {}): Promise<NextMachine> {
+  const machine = new ZxNextWasmV2Machine(undefined, undefined, undefined, {
+    artifactName: "visual-tests.wasm",
+    readArtifact: async () => readFileSync(WASM_ARTIFACT)
+  });
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
   if (options.audioSampleRate) machine.setMachineProperty(AUDIO_SAMPLE_RATE, options.audioSampleRate);
   await machine.setup();
-  // --- The TypeScript core hands the audio rate to its devices only in hardReset().
   if (options.hardReset || options.audioSampleRate) machine.hardReset();
   return machine;
 }
 
 /** A NextReg's stored value without the port side effects of reading it through $243B/$253B. */
 export function readNextRegDirect(machine: NextMachine, reg: number): number {
-  return machine instanceof ZxNextWasmV2Machine
-    ? machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(reg)
-    : machine.nextRegDevice.directGetRegValue(reg);
+  return machine.wasmV2Runtime!.exports.zxnextGetNextRegisterDirect(reg);
 }
 
 export { runDisplayedFrame } from "./frame";

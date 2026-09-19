@@ -101,7 +101,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `AY` | AY-3-8912 / TurboSound | `audio/turbosound.vhd`, `audio/ym2149.vhd` | `test/zxnext-hw/audio/ay-psg.test.ts`, `ay-stereo-mode.test.ts` (shared measurements in `audio/_audio-helpers.ts`) |
 | `DAC` | Soundrive / Covox / Specdrum DACs | `audio/soundrive.vhd` | `test/zxnext-hw/audio/dac.test.ts`, `dac-enable.test.ts` |
 | `BEEP` | Beeper, MIC, EAR, audio mixer | `audio/audio_mixer.vhd` | `test/zxnext-hw/audio/beeper-mixer.test.ts` |
-| `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock `CtcChannel` tests stay) |
+| `CTC` | Z80 CTC (4 channels) | `device/ctc*.vhd` | `test/zxnext-hw/ctc/ctc.test.ts` (replaced the machine-level half of the mock `test/zxnext/CtcDevice.test.ts` and two of the three `test/wasm/zxNext/wasm-next-ctc.test.ts` tests, 2026-09-18; the per-clock channel test stays in `wasm-next-ctc`, on the WASM CTC clock export since 2026-09-19) |
 | `DMA` | ZXN DMA / Z80 DMA | `device/dma.vhd` | `test/zxnext-hw/dma/dma.test.ts` (replaced the 30 MAME-model mocks `test/zxnext/DmaDevice*.test.ts`, 2026-09-18; bug B82) |
 | `DIV` | DivMMC paging and automap | `device/divmmc.vhd` | `test/zxnext-hw/divmmc/divmmc.test.ts` (2026-09-18, bug B83); the mocks `test/zxnext/DivMmcDevice-*.test.ts`, `DivMmmc.test.ts` still pass and stay (NMI/Multiface interplay) |
 | `MF` | Multiface | `device/multiface.vhd` | `test/zxnext-hw/multiface/multiface.test.ts` (2026-09-18, bug B84); the mocks `test/zxnext/Multiface*.test.ts` still pass and stay |
@@ -114,7 +114,8 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `FDC` | +3 FDC I/O traps | `zxnext.vhd` | `test/zxnext-hw/fdc/fdc-trap.test.ts` (2026-09-19, bug B93; replaced the Next port mocks `test/zxnext/FloppyControllerDevice.test.ts` and `test/wasm/zxNext/wasm-next-floppy.test.ts` - the uPD765 class keeps `test/disk/`) |
 | `BUS` | Expansion bus control | `zxnext.vhd` | `test/zxnext-hw/bus/expansion-bus.test.ts` (2026-09-19, bug B94; replaced the register, port-enable and ULA-override halves of the mock `test/zxnext/ExpansionBusDevice.test.ts` - its ROMCS / NMI / INT peripheral-signal tests stay, with `ExpansionBusNmi.test.ts`, as the harness has no bus peripheral) |
 | `GPIO` | Pi / ESP GPIO, XADC, misc board registers | `zxnext.vhd` | `test/zxnext-hw/gpio/board-registers.test.ts` (2026-09-19, bug B95; replaced the `$90`-`$A9` and `$F0`-`$FA` write/readback mocks of `test/zxnext/NextRegDevice.test.ts`) |
-| `PAR` | Long-running cross-core parity and soak | – | D05, `test/zxnext-hw/parity/*.test.ts`, visual `PAR-005` (2026-09-19, bugs B96-B99) |
+| `PAR` | Long-running cross-core parity and soak | – | D05, visual `PAR-005`, `checkpoint/checkpoint-restore` (2026-09-19, bugs B96-B99). The cross-core tests were retired with the TypeScript core (2026-09-19) |
+| `IDE` | What the IDE's Next panels show | `IZxNextIdeMachine` | `test/zxnext-hw/ide/ide-state.test.ts` |
 
 ---
 
@@ -796,15 +797,26 @@ Ports: `$133B` TX, `$143B` RX, `$153B` select, `$163B` frame.
 
 ### 4.37 `PAR` – Cross-core parity and soak
 
+PAR-001 - PAR-004 compared the TypeScript and WASM cores; their only oracle was the other core, so
+they were retired with the TypeScript core (2026-09-19, ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN Step 9)
+after passing on the tagged commit `pre-zxnext-ts-removal-2026-09-19`. The bugs they found (B96-B99)
+keep their hardware tests.
+
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| PAR-001 | NextReg state parity after random writes | S | 1 | | Seeded random writes to all writable registers via `onEachCore`; every readback equal. | ✅ `parity/nextreg-parity` (8 seeds x 1500 writes; all 256 registers read after the writes and after 3 frames - found B96, B97) |
-| PAR-002 | Screen parity for random layer setups | V | 2 | | Seeded random combinations of `$15`, `$68`, `$6B`, `$70`, scrolls and clips with fixed content; TS and WASM frames equal. | ✅ `parity/screen-parity` - scripted rather than a screen case (setups generated per seed; a failure prints the seed's registers): all eight palettes, ULA, Layer 2 banks 8-12, tilemap and 128 sprites as content, 16 seeds biased so the layers show - found B99 |
-| PAR-003 | Audio parity | A | 2 | | AY + DAC + beeper program; sample arrays equal on both cores (or within 1 LSB). | ✅ `parity/audio-parity` (to the bit at 43.75 kHz, within 1 LSB at 44.1 kHz - B98) |
-| PAR-004 | Long-run timing parity | S | 2 | | 3000 frames: `tacts`, `frames`, registers equal. | ✅ `parity/long-run-parity` (500 frames by default, 3000 with `ZXNEXT_LONG=1`: IM2 ULA + line interrupt, speed changes from the handler, contended writes, HALT; frames, tacts, registers and RAM every 100 / 250 frames), visual `D05` (`--long`) |
+| PAR-001 | NextReg state parity after random writes | S | 1 | | Seeded random writes to all writable registers; every readback equal on both cores. | Retired (found B96, B97; `copper/line-offset-latch` keeps COP-016) |
+| PAR-002 | Screen parity for random layer setups | V | 2 | | Seeded random combinations of `$15`, `$68`, `$6B`, `$70`, scrolls and clips with fixed content; TS and WASM frames equal. | Retired (found B99; `sprites/sprite-window` keeps SPR-036) |
+| PAR-003 | Audio parity | A | 2 | | AY + DAC + beeper program; sample arrays equal on both cores (or within 1 LSB). | Retired (found B98) |
+| PAR-004 | Long-run timing parity | S | 2 | | 3000 frames: `tacts`, `frames`, registers equal. | Retired; visual `D05` (`--long`) stays |
 | PAR-005 | Demo-style raster program | V | 2 | | Combination of line interrupts, copper, sprites and Layer 2 scroll; both tiers. | ✅ visual `PAR-005-demo-raster` (new suite `test/visual/parity/`; headless and browser tiers, reviewed and approved: copper border bars, a Layer 2 split by a line interrupt, a sprite moving from the frame interrupt) |
-| PAR-006 | Checkpoint restore parity | S | 3 | `ckpt` | Save/restore mid-frame continues identically. | ✅ `parity/checkpoint-parity` - WASM only (the TS core has no checkpoints; the new session methods `captureCheckpoint`/`restoreCheckpoint` throw there): a mid-frame checkpoint continues as the uninterrupted run, and matches the TS core's run - frames, tacts, registers, RAM, pictures and audio. Found the TS audio grid under speed changes (B98) |
+| PAR-006 | Checkpoint restore | S | 3 | `ckpt` | Save/restore mid-frame continues identically. | ✅ `checkpoint/checkpoint-restore`: a mid-frame checkpoint continues as the uninterrupted run, and matches a second session that took no checkpoint - frames, tacts, registers, RAM, pictures and audio. (As a parity test it found the TS audio grid under speed changes, B98) |
 | PAR-007 | Real-software smoke tests | V | 2 | `sd` | Browser tier `.nexload` of a set of freely distributable Next programs; golden frames at fixed frame numbers. | — blocked: needs the set of freely distributable Next programs to use (not chosen yet) |
+
+### 4.38 `IDE` – What the IDE's Next panels show
+
+| ID | Name | FE | Pri | Needs | Description | Status |
+|---|---|---|---|---|---|---|
+| IDE-001 | Panel state after a program | S | 2 | | A program writes every palette, the palette control and transparency registers, MMU slots 6-7, the border and EAR/MIC, and holds a key; `ideState()` (Next Registers, Memory Mapping, Palettes, ULA & I/O) shows exactly those writes. | ✅ `ide/ide-state` (until 2026-09-19 a cross-core comparison, which found P7, P9-P13 on both cores) |
 
 ---
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 import { colours, hex8, writePalette } from "./_ula-helpers";
 
@@ -24,14 +24,14 @@ const BORDER_PALETTE: Array<[number, number]> = [
   [16, 0x00], [17, 0x03], [18, 0xe0], [19, 0xe2], [20, 0x1c], [21, 0x1f], [22, 0xfc], [23, 0xb6]
 ];
 
-describe.each(ALL_CORES)("ULA border timing - %s core", (core: CoreName) => {
+describe("ULA border timing", () => {
   /*
    * ULA-006: a line-interrupt handler cycles the border through colours 0-7, one stripe per 32 lines:
    * stripe k (colour k) starts at line 8 + 32k. After stripe 7 (line 232) it restarts at line 8, so the
    * top border and lines 0-7 show colour 7.
    */
   it("ULA-006: a line interrupt every 32 lines paints horizontal border stripes at those lines", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di
@@ -96,7 +96,7 @@ Handler:
    * after a frame start on timing `nr03`. The border is colour 2 before, colour 4 after.
    */
   async function edge(nr03: number, d: number): Promise<{ row: number; x: number; rowBefore: string }> {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     writePalette(s, [[18, 0xe0], [20, 0x1c]]);
     s.setNextReg(0x14, 0x00).setNextReg(0x03, nr03).out(0xfe, 2).runFrames(3);
@@ -175,7 +175,7 @@ ${delay(d)}
     const NOPS = 16;
 
     async function row(d: number): Promise<Array<{ x: number; c: string }>> {
-      const s = await createSession(core);
+      const s = await createSession();
       await s.loadCode(" .org $8000\n di\n jr $");
       writePalette(s, [[18, OLD], [20, NEW]]);
       s.setNextReg(0x14, 0x00).setNextReg(0x03, 0xb0).out(0xfe, 2);

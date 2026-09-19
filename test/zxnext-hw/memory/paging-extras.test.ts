@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { hex, romBytes } from "./_memory-helpers";
 
 /*
@@ -22,15 +22,15 @@ import { hex, romBytes } from "./_memory-helpers";
 
 const mmu = (s: NextTestSession) => Array.from({ length: 8 }, (_, i) => s.readNextReg(0x50 + i));
 
-async function parked(core: "ts" | "wasm"): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s;
 }
 
-describe.each(ALL_CORES)("paging details - %s core", (core) => {
+describe("paging details", () => {
   it("MEM-009: $1FFD writes are ignored while $7FFD is locked", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0x7ffd, 0x20); // --- bank 0, lock
     s.out(0x1ffd, 0x01); // --- would enter special mode (banks 0-1-2-3)
     expect(mmu(s), "no special mode").toEqual([0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x00, 0x01]);
@@ -42,7 +42,7 @@ describe.each(ALL_CORES)("paging details - %s core", (core) => {
   });
 
   it("MEM-010: leaving special mode restores the $DFFD-extended $7FFD bank in MMU6/7", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0x7ffd, 0x03).out(0xdffd, 0x02); // --- bank 2 * 8 + 3 = 19: pages 38 / 39
     expect([s.readNextReg(0x56), s.readNextReg(0x57)]).toEqual([38, 39]);
     s.out(0x1ffd, 0x01);
@@ -52,7 +52,7 @@ describe.each(ALL_CORES)("paging details - %s core", (core) => {
   });
 
   it("MEM-014: a $8E write with bit 3 replaces the $DFFD bank bits", async () => {
-    const s = await parked(core);
+    const s = await parked();
     s.out(0xdffd, 0x0d).out(0x7ffd, 0x07); // --- bank 111: pages $DE / $DF
     expect(s.readNextReg(0x56)).toBe(0xde);
     s.setNextReg(0x8e, 0x98); // --- bit 7 = 1, bits 6-4 = 001, bit 3: bank %0001_001 = 9
@@ -63,7 +63,7 @@ describe.each(ALL_CORES)("paging details - %s core", (core) => {
 
   for (const extra of [0x00, 0x08, 0x80, 0x88, 0x78]) {
     it(`MEM-014: $8E bits 1-0 select ROM 0-3 (other bits $${extra.toString(16).padStart(2, "0")})`, async () => {
-      const s = await parked(core);
+      const s = await parked();
       for (let rom = 0; rom < 4; rom++) {
         s.setNextReg(0x8e, extra | rom);
         expect(hex(Array.from(s.peekBytes(0x0000, 16))), `ROM ${rom}`).toBe(hex(romBytes(rom, 0, 16)));
@@ -73,7 +73,7 @@ describe.each(ALL_CORES)("paging details - %s core", (core) => {
   }
 
   it("MEM-002: every page $00-$DF is its own 8K of RAM through each of slots 2-7", async () => {
-    const s = await parked(core);
+    const s = await parked();
     // --- Nothing runs between the pokes, so the program's own page (4) may be overwritten.
     for (let page = 0; page < 0xe0; page++) {
       const slot = 2 + (page % 6);

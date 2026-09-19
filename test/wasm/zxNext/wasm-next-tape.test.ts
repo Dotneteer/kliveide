@@ -1,47 +1,45 @@
 import { describe, expect, it } from "vitest";
 
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { TapeDevice } from "@emu/machines/tape/TapeDevice";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
+/*
+ * Tape state is host-facing (the tape device lives outside the core), so it is pinned here rather than
+ * covered by the hardware harness. Pinned values are the ones both cores agreed on at tag
+ * `pre-zxnext-ts-removal-2026-09-19`.
+ */
 describe("ZX Spectrum Next WASM tape state", () => {
-  it("matches passive tape EAR/MIC state and mode transitions used by ULA port writes", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.tapeDevice = new TapeDevice(oracle as any);
+  it("reports passive tape EAR/MIC state and mode transitions used by ULA port writes", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    expect(wasm.tapeDevice.tapeMode).toBe(oracle.tapeDevice.tapeMode);
-    expect(wasm.tapeDevice.getTapeEarBit()).toBe(oracle.tapeDevice.getTapeEarBit());
-    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+    // --- A fresh tape device is passive, with EAR high and MIC low
+    expect(wasm.tapeDevice.tapeMode).toBe(TapeMode.Passive);
+    expect(wasm.tapeDevice.getTapeEarBit()).toBe(true);
+    expect(wasm.tapeDevice.micBit).toBe(false);
 
-    oracle.tapeDevice.tapeMode = TapeMode.Save;
     wasm.tapeDevice.tapeMode = TapeMode.Save;
-    oracle.tapeDevice.processMicBit(true);
     wasm.tapeDevice.processMicBit(true);
-    expect(wasm.tapeDevice.tapeMode).toBe(oracle.tapeDevice.tapeMode);
-    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+    expect(wasm.tapeDevice.tapeMode).toBe(TapeMode.Save);
+    expect(wasm.tapeDevice.micBit).toBe(true);
 
-    oracle.tapeDevice.tapeMode = TapeMode.Passive;
+    // --- Back in passive mode the MIC bit keeps the value last processed
     wasm.tapeDevice.tapeMode = TapeMode.Passive;
-    oracle.tapeDevice.processMicBit(true);
     wasm.tapeDevice.processMicBit(true);
-    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+    expect(wasm.tapeDevice.micBit).toBe(true);
   });
 
-  it("matches TypeScript MIC handling through ULA port writes in save and passive modes", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    oracle.tapeDevice = new TapeDevice(oracle as any);
+  it("handles MIC through ULA port writes in save and passive modes", async () => {
+    const wasm = await createTestZxNextWasmMachine();
 
-    oracle.tapeDevice.tapeMode = TapeMode.Save;
+    // --- Pinned: a $FE write with bit 3 set leaves the tape MIC bit low in save mode, and a $FE
+    // --- write of 0 leaves it low in passive mode
     wasm.tapeDevice.tapeMode = TapeMode.Save;
-    oracle.doWritePort(0x00fe, 0x08);
     wasm.doWritePort(0x00fe, 0x08);
-    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+    expect(wasm.tapeDevice.micBit).toBe(false);
 
-    oracle.tapeDevice.tapeMode = TapeMode.Passive;
     wasm.tapeDevice.tapeMode = TapeMode.Passive;
-    oracle.doWritePort(0x00fe, 0x00);
     wasm.doWritePort(0x00fe, 0x00);
-    expect(wasm.tapeDevice.micBit).toBe(oracle.tapeDevice.micBit);
+    expect(wasm.tapeDevice.micBit).toBe(false);
   });
 });

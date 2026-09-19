@@ -1,7 +1,7 @@
 # Visual Tests (ZX Spectrum Next)
 
 Pixel-level tests of what the emulator *shows*: a Z80N program (`.savenex`) runs for known frames, the
-frames are saved as PNG and judged by probes, parity and an AI review. Built first for the Copper.
+frames are saved as PNG and judged by probes, golden hashes and an AI review. Built first for the Copper.
 Design, hardware facts and the findings so far: `.plans/COPPER_VISUAL_TEST_HARNESS_PLAN.md`.
 The cases run on the ZX Spectrum Next test harness (`test/harness/zxnext/`, see its `README.md`); for
 tests that assert on registers, ports, memory or audio rather than whole pictures, use its scripted
@@ -10,9 +10,8 @@ sessions instead.
 ## Commands
 
 ```bash
-npm run test:visual                         # Tier 1: all cases, TS + WASM cores in Node (~45 s)
+npm run test:visual                         # Tier 1: all cases, the WASM core in Node (~15 s)
 npm run test:visual -- C02 D0 --verbose     # by id or prefix; --verbose prints known failures
-npm run test:visual -- --core wasm          # one core (WASM is ~12x faster than TS)
 npm run test:visual -- --long               # adds longCapture frames and longOnly cases
 npm run test:visual -- --tier browser       # Tier 2: cases tagged "browser", in the installed Chrome
 npm run test:visual -- --tier browser --headed
@@ -23,13 +22,13 @@ npm test -- --project node test/harness/zxnext  # the harness's own tests (mutat
 ```
 
 Output goes to `.visual-tests/<timestamp>/` (gitignored; `.visual-tests/LATEST` names the newest):
-`<case>/{ts,wasm,browser}/frame-NNNNN.png`, `rows-NNNNN.json` (run-length colour spans per row - read
+`<case>/{wasm,browser}/frame-NNNNN.png`, `rows-NNNNN.json` (run-length colour spans per row - read
 these instead of counting pixels), contact sheets, `motion-*.json`, `result.json`, `review.md`.
 
 ## The two tiers
 
-- **Tier 1 (headless)** - `test/harness/zxnext/cli/run.ts` under Vite SSR. Both cores in-process, a
-  **test-only direct NEX loader** (`core/load-nex-direct.ts`), exact frame numbers from load.
+- **Tier 1 (headless)** - `test/harness/zxnext/cli/run.ts` under Vite SSR. The WASM core in-process,
+  a **test-only direct NEX loader** (`core/load-nex-direct.ts`), exact frame numbers from load.
 - **Tier 2 (browser)** - `server/` plays the main process (assembler, SD card, files); `browser/page.ts`
   runs the production WASM core in Chrome. It boots NextZXOS from a **clone** of `~/Klive/ks2.cim`
   (the real image is never written; the run checks its mtime) and runs the app's own
@@ -40,7 +39,7 @@ these instead of counting pixels), contact sheets, `motion-*.json`, `result.json
 ## Frames: capture exactly what the app shows
 
 `runDisplayedFrame` / `FrameRunner.step` capture right after `executeMachineFrame()`, like
-`EmulatorPanel`. Both cores draw the frame *during* execution: TS tact by tact, WASM with a beam-racing
+`EmulatorPanel`. The core draws the frame *during* execution, with a beam-racing
 raster (`zxnext-ula.c`: before a video NextReg/port write, or a screen *memory* write, render up to the
 beam with the old state - memory writes to the start of the current row; a `$26`/`$27` scroll, `$FE`
 border or `$FF` Timex mode value becomes a pending latch the raster applies at the next 8-pixel cell, where the ULA takes
@@ -61,8 +60,7 @@ end-of-frame render and is used only for the paused "instant screen" view.
 - Call `ClearScreen` first. It resets the NextRegs NextZXOS leaves changed (`$43=$20` sends palette
   writes to the sprite palette, `$07=$33` is 28 MHz, `$15=$01` sprites on) - a program that assumes
   reset values passes Tier 1 and fails the real load.
-- Write every palette entry the picture uses: FPGA palette RAM has no reset contents (firmware fills it),
-  and the cores' power-on palettes differ in the low blue bit.
+- Write every palette entry the picture uses: FPGA palette RAM has no reset contents (firmware fills it).
 - A setup that takes longer than 10 frames needs `readyBy` in `case.json`.
 - A raster effect a CPU handler makes mid-line (a line interrupt writing a scroll or palette register)
   shows the CPU's phase in the frame, which a real NextZXOS load does not fix to the T-state: the browser
@@ -81,7 +79,7 @@ end-of-frame render and is used only for the paused "instant screen" view.
 `case.json` essentials: `capture` (frames), `expectIdenticalFrames` (static screen), `probes`
 (`rect`, `bands`, `columns`, `pixel`, `colors`; colours as `#RRGGBB`, `ula:N`, `next8:0xNN`,
 `rgb333:R,G,B`), `motion` (`firstRow`/`lastRow`/`colorAt` with `linear`/`sequence`/`constant`/`follows`),
-`contactSheet`, `tiers` (`["headless","browser"]`), `knownFailures` (`{core?, oracle, name?, reason}`).
+`contactSheet`, `tiers` (`["headless","browser"]`), `knownFailures` (`{oracle, name?, reason}`).
 
 **Expectations come from hardware, never from emulator output.** Cite the VHDL in `expect.md`
 (`_input/next-fpga/src`: `copper.vhd`, `video/zxula_timing.vhd`, `zxnext.vhd`). Geometry: copper line L
@@ -98,8 +96,9 @@ for the wrong reason (e.g. a comparison that is trivially true on a constant scr
 
 `review.md` is the prompt: images, expectation, oracle results, rubric (describe first, then compare,
 look beyond the probes) and the `verdict.json` format. A reviewer that did not write the expectation
-is the better judge - delegate it. Approve only after a `pass` verdict; cores with a known failure are
-never approved; `verdict.json` may carry per-core verdicts (`cores: { ts: "pass", wasm: "fail" }`) so a correct core can be approved while another shows a known bug. Proven: a 16x16 block planted into one PNG where no probe looks was caught by a blind review alone - reviewers must open every image, not just trust `rows-*.json`.
+is the better judge - delegate it. Approve only after a `pass` verdict; a run with a known failure is
+never approved (that would freeze the bug as the reference picture). Headless hashes are stored under
+`wasm` in `golden.json`, browser-tier hashes under `browser`. Proven: a 16x16 block planted into one PNG where no probe looks was caught by a blind review alone - reviewers must open every image, not just trust `rows-*.json`.
 
 ## Browser tier internals
 

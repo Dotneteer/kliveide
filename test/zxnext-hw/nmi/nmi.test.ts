@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * NMI sources and the stackless NMI (catalogue NMI-003 - NMI-007; NMI-001/002 are RST-005/004 in
@@ -53,8 +53,8 @@ const STACK = 0xbff0;
  * pre-filled with the address of `StackPath` (so a pop from the stack is recognisable), and records in
  * the handler SP, $C2/$C3, and `A = I` (P/V = IFF2).
  */
-async function nmiProgram(core: CoreName, opts: { c0: number; handlerTail?: string; mainTail?: string }): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function nmiProgram(opts: { c0: number; handlerTail?: string; mainTail?: string }): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(
     `
         .org $8000
@@ -112,14 +112,14 @@ const byte = (s: NextTestSession, name: string) => s.peek(s.symbol(name));
 const word = (s: NextTestSession, name: string) => s.peekWord(s.symbol(name));
 const handlerSawReturn = (s: NextTestSession) => byte(s, "C2") | (byte(s, "C3") << 8);
 
-describe.each(ALL_CORES)("NMI - %s core", (core) => {
+describe("NMI", () => {
   // -------------------------------------------------------------------------------------------------
   // NMI-003: the M1 / DRIVE buttons and their $06 enables
   // -------------------------------------------------------------------------------------------------
 
   it("NMI-003: F9 raises a Multiface NMI when $06 bit 3 is set; the $02 flags stay clear", async () => {
     const mfRom = readFileSync("src/public/roms/enNextMf.rom");
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0x06, 0x08).runFrames(1);
     await s.pressHotkey("F9");
@@ -129,7 +129,7 @@ describe.each(ALL_CORES)("NMI - %s core", (core) => {
   });
 
   it("NMI-003: F10 raises a DivMMC NMI when $06 bit 4 is set", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0x06, 0x10).runFrames(1);
     await s.pressHotkey("F10");
@@ -139,7 +139,7 @@ describe.each(ALL_CORES)("NMI - %s core", (core) => {
   });
 
   it("NMI-003: F9 with $06 bit 3 clear does nothing - not even once the enable is set", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0x06, 0x00).runFrames(1);
     await s.pressHotkey("F9");
@@ -153,7 +153,7 @@ describe.each(ALL_CORES)("NMI - %s core", (core) => {
 
   /** A parked program with a RAM NMI handler that counts in `NmiCount`. */
   async function countingNmi(body = ""): Promise<NextTestSession> {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(
       `
         .org $8000
@@ -202,7 +202,7 @@ NmiCount: .defb 0
   // -------------------------------------------------------------------------------------------------
 
   it("NMI-004: stackless: SP goes down by 2, memory is untouched, $C2/$C3 hold the return address", async () => {
-    const s = await nmiProgram(core, { c0: 0x08 });
+    const s = await nmiProgram({ c0: 0x08 });
     s.runUntilReady({ maxFrames: 4 });
     const ret = handlerSawReturn(s);
     const after = s.symbol("After");
@@ -216,7 +216,7 @@ NmiCount: .defb 0
   });
 
   it("NMI-004: without $C0 bit 3 the NMI pushes as usual, and $C2/$C3 still record the return address", async () => {
-    const s = await nmiProgram(core, { c0: 0x00 });
+    const s = await nmiProgram({ c0: 0x00 });
     s.runUntilReady({ maxFrames: 4 });
     const ret = handlerSawReturn(s);
     expect(ret, "nextreg.txt: the return address is always stored in $C2/$C3").toBeGreaterThanOrEqual(s.symbol("After"));
@@ -228,7 +228,7 @@ NmiCount: .defb 0
   });
 
   it("NMI-004: only the first RETN after the acknowledge uses $C2/$C3", async () => {
-    const s = await nmiProgram(core, {
+    const s = await nmiProgram({
       c0: 0x08,
       mainTail: `
         call Sub                   ; a later RETN pops the stack normally
@@ -245,7 +245,7 @@ SubDone:`
   });
 
   it("NMI-004: clearing $C0 bit 3 in the handler makes its RETN pop the stack", async () => {
-    const s = await nmiProgram(core, { c0: 0x08, handlerTail: "        nextreg $c0,$00" });
+    const s = await nmiProgram({ c0: 0x08, handlerTail: "        nextreg $c0,$00" });
     s.runUntilReady({ maxFrames: 4 });
     // --- z80_stackless_retn_en is cleared with nr_c0_stackless_nmi: RETN reads the (unwritten) stack
     expect(byte(s, "ViaStack"), "returned to the address left on the stack").toBe(1);
@@ -253,7 +253,7 @@ SubDone:`
   });
 
   it("NMI-004: the Multiface NMI is stackless too", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         di
@@ -274,7 +274,7 @@ Loop:   jr Loop
   });
 
   it("NMI-005: the handler rewrites $C2/$C3 and RETN returns there", async () => {
-    const s = await nmiProgram(core, {
+    const s = await nmiProgram({
       c0: 0x08,
       handlerTail: `
         ld hl,Redirect
@@ -299,7 +299,7 @@ SkipRedirect:`
   });
 
   it("NMI-005: $C2/$C3 read back what was written; a soft reset clears them and $C0 bit 3", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0xc2, 0x34).setNextReg(0xc3, 0x12).setNextReg(0xc0, 0x08);
     expect([s.readNextReg(0xc2), s.readNextReg(0xc3), s.readNextReg(0xc0) & 0x08]).toEqual([0x34, 0x12, 0x08]);
@@ -312,7 +312,7 @@ SkipRedirect:`
   // -------------------------------------------------------------------------------------------------
 
   it("NMI-006: an NMI interrupts an IM 1 handler; IFF2 is clear inside it and RETN keeps interrupts off", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(
       `
         .org $8000
@@ -380,7 +380,7 @@ AfterNmiFlags: .defb 0
   });
 
   it("NMI-006: an NMI in EI code preserves IFF2; no maskable interrupt runs inside the NMI handler", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(
       `
         .org $8000
@@ -440,7 +440,7 @@ NmiFlags:   .defb 0
   });
 
   it("NMI-006: while DivMMC holds the NMI, another $02 request neither sets its flag nor nests", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n nextreg $06,$10\n nextreg $02,$04\nLoop: jr Loop");
     // --- DivMMC automap on: the NMI button latch holds the state machine in HOLD until RETN
     s.setNextReg(0x0a, s.readNextReg(0x0a) | 0x10);
@@ -460,7 +460,7 @@ NmiFlags:   .defb 0
   // -------------------------------------------------------------------------------------------------
 
   it("NMI-007: $81 stores bits 6-4, reads bits 1-0 as 0, and keeps them over a soft reset", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n jr $");
     s.setNextReg(0x81, 0x73);
     expect(s.readNextReg(0x81) & 0x7f).toBe(0x70);

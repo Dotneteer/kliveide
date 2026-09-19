@@ -31,9 +31,8 @@ export function captureFrame(machine: NextMachine): Frame {
  * Runs one frame the way the emulator panel does, and calls `onDisplayed` with the buffer at the
  * moment the panel would paint it.
  *
- * `EmulatorPanel.machineFrameCompleted` displays the pixel buffer after `executeMachineFrame()`. Both
- * cores draw the frame while it executes (the TypeScript core tact by tact, the WASM core with its
- * beam-racing raster). The panel used to call `renderInstantScreen()` after every frame as well - only
+ * `EmulatorPanel.machineFrameCompleted` displays the pixel buffer after `executeMachineFrame()`. The
+ * core draws the frame while it executes, with its beam-racing raster. The panel used to call `renderInstantScreen()` after every frame as well - only
  * to keep a copy of the displayed picture - which the harness mirrored; it no longer does (B11).
  */
 export function runDisplayedFrame(machine: NextMachine, onDisplayed?: () => void): void {

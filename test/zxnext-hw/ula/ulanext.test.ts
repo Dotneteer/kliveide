@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, displayFileAddress, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -22,8 +22,8 @@ import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } fro
 
 const FALLBACK = 0x4d;
 
-async function screen(core: CoreName, attr: number, border: number, palette: Array<[number, number]>): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function screen(attr: number, border: number, palette: Array<[number, number]>): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, palette);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, FALLBACK);
   s.poke(0x4000, new Array(0x1800).fill(0x00)).poke(0x5800, new Array(768).fill(attr));
@@ -39,9 +39,9 @@ const cell = (s: NextTestSession) => ({
 
 const bitsOf = (format: number) => format.toString(2).replace(/0/g, "").length;
 
-describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
+describe("ULANext", () => {
   it("ULN-001: $42 resets to $07 and $43 bit 0 to 0; both read back", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     expect([s.readNextReg(0x42), s.readNextReg(0x43) & 0x01], "after a hard reset").toEqual([0x07, 0x00]);
     s.setNextReg(0x42, 0x1f).setNextReg(0x43, 0x01);
     expect([s.readNextReg(0x42), s.readNextReg(0x43) & 0x01]).toEqual([0x1f, 0x01]);
@@ -56,7 +56,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
       const attr = 0xa5;
       const inkIndex = attr & format;
       const paperIndex = 0x80 | (attr >> bitsOf(format));
-      const s = await screen(core, attr, 3, [[inkIndex, 0xe0], [paperIndex, 0x1c], [0x83, 0x03]]);
+      const s = await screen(attr, 3, [[inkIndex, 0xe0], [paperIndex, 0x1c], [0x83, 0x03]]);
       s.setNextReg(0x42, format).setNextReg(0x43, 0x01).runFrames(2);
       expect(cell(s)).toEqual({ ink: hex8(0xe0), paper: hex8(0x1c), border: hex8(0x03) });
     });
@@ -65,7 +65,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
   for (const format of [0x05, 0x00, 0x80, 0xfe]) {
     it(`ULN-005: invalid format $${format.toString(16).padStart(2, "0")}: ink = attr & format, paper the fallback, border $80 + n`, async () => {
       const attr = 0xa5;
-      const s = await screen(core, attr, 3, [[attr & format, 0xe0], [0x83, 0x03]]);
+      const s = await screen(attr, 3, [[attr & format, 0xe0], [0x83, 0x03]]);
       s.setNextReg(0x42, format).setNextReg(0x43, 0x01).runFrames(2);
       expect(cell(s)).toEqual({ ink: hex8(0xe0), paper: hex8(FALLBACK), border: hex8(0x03) });
     });
@@ -73,7 +73,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
 
   it("ULN-006: no FLASH and no BRIGHT: bits 7-6 are part of the paper index", async () => {
     // --- attr $C5 (FLASH, BRIGHT, paper 0, ink 5), format $07: ink 5, paper $80 | $18 = $98
-    const s = await screen(core, 0xc5, 3, [[5, 0xe0], [13, 0xfc], [0x98, 0x1c], [0x83, 0x03]]);
+    const s = await screen(0xc5, 3, [[5, 0xe0], [13, 0xfc], [0x98, 0x1c], [0x83, 0x03]]);
     s.setNextReg(0x42, 0x07).setNextReg(0x43, 0x01).runFrames(2);
     const seen = new Set<string>();
     for (let f = 0; f < 40; f++) {
@@ -85,7 +85,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
 
   it("ULN-007: $43 bit 1 selects the second ULA palette for the 128+ entries too", async () => {
     // --- format $07, attr $5B: ink 3, paper $8B; border 2: $82
-    const s = await screen(core, 0x5b, 2, [[3, 0xe0], [0x8b, 0x1c], [0x82, 0x03]]);
+    const s = await screen(0x5b, 2, [[3, 0xe0], [0x8b, 0x1c], [0x82, 0x03]]);
     writePalette(s, [[3, 0xfc], [0x8b, 0x1f], [0x82, 0xa2]], 0x40); // --- second ULA palette
     s.setNextReg(0x42, 0x07).setNextReg(0x43, 0x01).runFrames(2);
     expect(cell(s), "first palette").toEqual({ ink: hex8(0xe0), paper: hex8(0x1c), border: hex8(0x03) });
@@ -97,7 +97,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
     const T = 0x6d;
     // --- format $07, attr $5B: ink 3, paper $8B; border 2: $82 - all three hold the $14 colour in turn
     for (const [index, part] of [[3, "ink"], [0x8b, "paper"], [0x82, "border"]] as const) {
-      const s = await screen(core, 0x5b, 2, [[3, 0xe0], [0x8b, 0x1c], [0x82, 0x03]]);
+      const s = await screen(0x5b, 2, [[3, 0xe0], [0x8b, 0x1c], [0x82, 0x03]]);
       writePalette(s, [[index, T]]);
       s.setNextReg(0x14, T).setNextReg(0x42, 0x07).setNextReg(0x43, 0x01).runFrames(2);
       const want = { ink: hex8(0xe0), paper: hex8(0x1c), border: hex8(0x03), [part]: hex8(FALLBACK) };
@@ -116,7 +116,7 @@ describe.each(ALL_CORES)("ULANext - %s core", (core: CoreName) => {
       const attr = 0x40 | ((7 - n) << 3) | n;
       const inkIndex = attr & format;
       const paperIndex = format === 0xff ? -1 : 0x80 | (attr >> bitsOf(format));
-      const s = await screen(core, 0x38, 0, [[inkIndex, 0xe0], ...(paperIndex >= 0 ? [[paperIndex, 0x1c] as [number, number]] : []), [0x80 + 7 - n, 0x03]]);
+      const s = await screen(0x38, 0, [[inkIndex, 0xe0], ...(paperIndex >= 0 ? [[paperIndex, 0x1c] as [number, number]] : []), [0x80 + 7 - n, 0x03]]);
       s.poke(0x6000, new Array(0x1800).fill(0x00)); // --- HiRes shows the $6000 bytes too
       s.poke(displayFileAddress(0, 0), 0xff).out(0x00ff, 0x06 | (n << 3));
       s.setNextReg(0x42, format).setNextReg(0x43, 0x01).runFrames(2);

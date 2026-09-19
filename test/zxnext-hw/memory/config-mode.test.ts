@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { romBytes } from "./_memory-helpers";
 
 /*
@@ -16,8 +16,8 @@ import { romBytes } from "./_memory-helpers";
  *   This is how the firmware loads the ROMs.
  */
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\nLoop: jr Loop");
   return s;
 }
@@ -29,9 +29,9 @@ function enter(s: NextTestSession): number {
   return type;
 }
 
-describe.each(ALL_CORES)("Config mode $04 mapping - %s core", (core: CoreName) => {
+describe("Config mode $04 mapping", () => {
   it("MEM-026: $04 = 16 maps Next RAM bank 0, writable; leaving config mode brings the ROM back", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const rom = Array.from(s.peekBytes(0x0000, 8));
     const type = enter(s);
     s.setNextReg(0x04, 16).poke(0x0000, [0x5a, 0x5b]).poke(0x2000, [0xa5, 0xa6]);
@@ -43,7 +43,7 @@ describe.each(ALL_CORES)("Config mode $04 mapping - %s core", (core: CoreName) =
   });
 
   it("MEM-026: $04 = 0-3 show the ROM images, and a write there changes the ROM", async () => {
-    const s = await parked(core);
+    const s = await parked();
     const type = enter(s);
     for (const n of [0, 1, 2, 3]) {
       s.setNextReg(0x04, n);
@@ -57,7 +57,7 @@ describe.each(ALL_CORES)("Config mode $04 mapping - %s core", (core: CoreName) =
   });
 
   it("MEM-026: an MMU RAM page in slot 0 goes above config mode; the Alt ROM does not", async () => {
-    const s = await parked(core);
+    const s = await parked();
     enter(s);
     s.setNextReg(0x04, 17).poke(0x0000, 0x11);
     s.setNextReg(0x50, 0x0a).poke(0x0000, 0x22);
@@ -69,7 +69,7 @@ describe.each(ALL_CORES)("Config mode $04 mapping - %s core", (core: CoreName) =
   });
 
   it("MEM-026: DivMMC conmem goes above config mode", async () => {
-    const s = await parked(core);
+    const s = await parked();
     enter(s);
     s.setNextReg(0x04, 4).poke(0x0000, [0xc3, 0x12, 0x34]); // --- SRAM 0x010000: the DivMMC ROM
     s.setNextReg(0x04, 17).poke(0x0000, [0x01, 0x02, 0x03]);

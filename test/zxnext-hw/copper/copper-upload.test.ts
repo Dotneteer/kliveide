@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * How bytes reach copper list RAM, observed by what the uploaded instruction does.
@@ -20,9 +20,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
 const MOVE_HI = 0x14;
 const MOVE_LO = 0x5a;
 
-describe.each(ALL_CORES)("copper list upload - %s core", (core) => {
+describe("copper list upload", () => {
   const runList = async (upload: string) => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
         nextreg $62,$00          ; copper stopped

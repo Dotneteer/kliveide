@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type AudioSample, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type AudioSample, type NextTestSession } from "../../harness/zxnext";
 import { MASTER_CLOCK } from "./_audio-helpers";
 
 /*
@@ -27,8 +27,8 @@ import { MASTER_CLOCK } from "./_audio-helpers";
 const RATE = 48_000;
 const DAC_ON = 0x18; // --- $08: internal speaker + DACs; TurboSound off
 
-async function dac(core: CoreName, nr08 = DAC_ON): Promise<NextTestSession> {
-  const s = await createSession(core, { audioSampleRate: RATE });
+async function dac(nr08 = DAC_ON): Promise<NextTestSession> {
+  const s = await createSession({ audioSampleRate: RATE });
   await s.loadCode(" .org $8000\n di\nPark: jr Park");
   return s.setNextReg(0x08, nr08);
 }
@@ -97,17 +97,17 @@ const PORTS: PortCase[] = [
   ["DAC-008", "bit 23 off: $DF", without(23), 0x00df, "-"]
 ];
 
-describe.each(ALL_CORES)("DACs - %s core", (core) => {
+describe("DACs", () => {
   for (const [id, what, nr84, port, expected] of PORTS) {
     it(`${id}: ${what} writes ${expected === "-" ? "no channel" : expected}`, async () => {
-      const s = await dac(core);
+      const s = await dac();
       s.setNextReg(0x84, nr84);
       expect(channels(s, port)).toBe(expected);
     });
   }
 
   it("DAC-002: A and B play on the left, C and D on the right, each at its own value", async () => {
-    const s = await dac(core);
+    const s = await dac();
     const base = level(s);
     s.out(0x1f, 0xff).out(0x0f, 0x00); // --- A +127, B -128: left moves by -1 unit
     s.out(0x4f, 0xc0).out(0x5f, 0xc0); // --- C +64, D +64: right moves by +128 units
@@ -118,7 +118,7 @@ describe.each(ALL_CORES)("DACs - %s core", (core) => {
   });
 
   it("DAC-003: while Soundrive 2 is on, $7FF1 is a DAC write and does not page like $7FFD", async () => {
-    const s = await dac(core);
+    const s = await dac();
     s.out(0x7ff1, 0x03);
     expect(s.readNextReg(0x56), "slot 6 unchanged").toBe(0x00);
     s.setNextReg(0x84, without(18));
@@ -127,7 +127,7 @@ describe.each(ALL_CORES)("DACs - %s core", (core) => {
   });
 
   it("DAC-008: with Specdrum on and the mouse ports off, $DF also reads Kempston $1F; DAC ports read $FF", async () => {
-    const s = await dac(core);
+    const s = await dac();
     s.setNextReg(0x05, 0x40); // --- joystick 1 = Kempston 1 (port $1F)
     const kempston = s.in(0x001f);
     expect(kempston, "Kempston answers").not.toBe(0xff);
@@ -138,7 +138,7 @@ describe.each(ALL_CORES)("DACs - %s core", (core) => {
   });
 
   it("DAC-009: the output moves in equal steps with the DAC value", async () => {
-    const s = await dac(core);
+    const s = await dac();
     const at = (v: number) => level(s.out(0x1f, v)).left;
     const values = [0x00, 0x40, 0x80, 0xc0, 0xff];
     const levels = values.map(at);
@@ -149,7 +149,7 @@ describe.each(ALL_CORES)("DACs - %s core", (core) => {
 
   it("DAC-010: a Z80 loop writing a ramp at a fixed rate plays that ramp in time", async () => {
     // --- One OUT every 400 T-states at 3.5 MHz (contention off): 256 steps take 102400 T-states.
-    const s = await dac(core, DAC_ON | 0x40);
+    const s = await dac(DAC_ON | 0x40);
     await s.loadCode(
       `
         .org $8000
@@ -185,7 +185,7 @@ Park:   jr Park
   });
 
   it("DAC-011: $2C writes B, $2D writes A and D, $2E writes C", async () => {
-    const s = await dac(core);
+    const s = await dac();
     const base = level(s);
     s.setNextReg(0x2c, 0xff);
     const b = level(s);
@@ -199,14 +199,14 @@ Park:   jr Park
   });
 
   it("DAC-011: the mirrors are ignored while the DACs are disabled", async () => {
-    const s = await dac(core, 0x10);
+    const s = await dac(0x10);
     const silent = level(s);
     s.setNextReg(0x2c, 0xff).setNextReg(0x2d, 0xff).setNextReg(0x2e, 0xff).setNextReg(0x08, DAC_ON);
     expect(level(s)).toEqual(silent);
   });
 
   it("DAC-011: reads of $2C/$2E give the I2S sample ($80 with I2S off), $2D its low bits", async () => {
-    const s = await dac(core);
+    const s = await dac();
     s.setNextReg(0x2c, 0x12).setNextReg(0x2d, 0x34).setNextReg(0x2e, 0x56);
     expect(s.readNextReg(0x2c)).toBe(0x80);
     expect(s.readNextReg(0x2d)).toBe(0x00);
@@ -214,7 +214,7 @@ Park:   jr Park
   });
 
   it("DAC-012: after a soft reset every channel is back at $80", async () => {
-    const s = await dac(core);
+    const s = await dac();
     const silent = level(s);
     for (const port of [0x1f, 0x0f, 0x4f, 0x5f]) s.out(port, 0xff);
     expect(level(s)).not.toEqual(silent);

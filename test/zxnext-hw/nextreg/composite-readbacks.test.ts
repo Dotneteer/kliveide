@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * NextRegs whose readback is assembled from other state (catalogue NR-014 - NR-018).
@@ -9,7 +9,7 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
 
 const hex = (v: number) => `$${v.toString(16).padStart(2, "0")}`;
 
-describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
+describe("composite NextReg readbacks", () => {
   /*
    * NR-014: each clip register ($18 Layer 2, $19 sprites, $1A ULA, $1B tilemap) writes x1, x2, y1, y2
    * in turn and advances a 2-bit index (~5218-5253); reading returns the value at the current index
@@ -24,7 +24,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
   ];
   for (const [reg, shift, reset] of CLIPS) {
     it(`NR-014: ${hex(reg)} reads its clip values in turn, $1C tracks the index`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       const seen: string[] = [];
       // --- Walk the reset values: writing back what was read keeps them, and advances the index.
       for (let i = 0; i < 4; i++) {
@@ -52,7 +52,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
    * '0' & the 7-bit sprite number (~5873; sprites.vhd ~602-616). Every $75-$79 write increments it.
    */
   it("NR-015: $34 reads the 7-bit sprite number; $75-$79 writes advance it", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x34, 0x85);
     expect(s.readNextReg(0x34)).toBe(0x05);
     s.setNextReg(0x34, 0x7f);
@@ -70,7 +70,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
    * reads (~5957); the second byte does not change it.
    */
   it("NR-016: $28 returns the first byte of the last $44 pair", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x10);
     s.setNextReg(0x44, 0xa5);
     expect(s.readNextReg(0x28)).toBe(0xa5);
@@ -86,7 +86,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
    * Port $FF is read back through `in $FF` with NextReg $08 bit 2 (Timex read) set.
    */
   it("NR-017: port $123B bit 1, $7FFD bit 3 and port $FF bits 5-0 show in $69", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.out(0x123b, 0x02);
     expect(s.readNextReg(0x69)).toBe(0x80);
     s.out(0x7ffd, 0x08);
@@ -98,7 +98,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
   });
 
   it("NR-017: a $69 write sets the Layer 2 enable, the shadow screen and port $FF", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x08, s.readNextReg(0x08) | 0x04); // --- port $FF reads the Timex register
     s.setNextReg(0x69, 0xc6);
     expect(s.in(0x123b) & 0x02, "$123B bit 1").toBe(0x02);
@@ -125,7 +125,7 @@ describe.each(ALL_CORES)("composite NextReg readbacks - %s core", (core) => {
   ];
   for (const [dffd, p7ffd, p1ffd, expected] of PAGING) {
     it(`NR-018: $DFFD=${hex(dffd)} $7FFD=${hex(p7ffd)} $1FFD=${hex(p1ffd)} -> $8E=${hex(expected)}`, async () => {
-      const s = await createSession(core);
+      const s = await createSession();
       s.out(0x1ffd, p1ffd).out(0xdffd, dffd).out(0x7ffd, p7ffd);
       expect(hex(s.readNextReg(0x8e))).toBe(hex(expected));
     });

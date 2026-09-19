@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, writePalette } from "../ula/_ula-helpers";
 import {
   control6B,
@@ -36,15 +36,15 @@ function apply(s: NextTestSession, p: TM, onTop = false, palette2 = false): Next
   return s.setNextReg(0x6b, control6B(p, onTop, palette2));
 }
 
-async function check(core: CoreName, p: TM, onTop = false): Promise<string[]> {
-  const s = await tilemapScreen(core, BANK);
+async function check(p: TM, onTop = false): Promise<string[]> {
+  const s = await tilemapScreen(BANK);
   apply(s, p, onTop).runFrames(2);
   return tilemapMismatches(s, BANK, p, NONE);
 }
 
-describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
+describe("Tilemap", () => {
   it("TM-001 / TM-003: 40x32 with attributes, the reset bases and clip; registers read back", async () => {
-    const s = await tilemapScreen(core, BANK);
+    const s = await tilemapScreen(BANK);
     expect([s.readNextReg(0x6e), s.readNextReg(0x6f), s.readNextReg(0x4c), s.readNextReg(0x6b)], "reset $6E $6F $4C $6B").toEqual([0x2c, 0x0c, 0x0f, 0x00]);
     s.setNextReg(0x6b, 0x80).runFrames(2);
     expect(s.readNextReg(0x6b)).toBe(0x80);
@@ -52,12 +52,12 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
   });
 
   it("TM-002: 80x32 - tiles 8 buffer pixels wide, 640 across", async () => {
-    expect(await check(core, { ...TM_DEFAULT, cols80: true })).toEqual([]);
+    expect(await check({ ...TM_DEFAULT, cols80: true })).toEqual([]);
   });
 
   for (const defaultAttr of [0x00, 0x5a, 0xa1]) {
     it(`TM-004 / TM-021: $6B bit 5 - one byte a tile, attribute $6C = $${defaultAttr.toString(16).padStart(2, "0")}`, async () => {
-      const s = await tilemapScreen(core, BANK);
+      const s = await tilemapScreen(BANK);
       const p = { ...TM_DEFAULT, noAttr: true, defaultAttr };
       apply(s, p).runFrames(2);
       expect(s.readNextReg(0x6c), "$6C").toBe(defaultAttr);
@@ -75,7 +75,7 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
       bank[0x2c00 + 2 * c] = 1;
       bank[0x2c00 + 2 * c + 1] = ((c + 1) << 4) | (c << 1);
     }
-    const s = await tilemapScreen(core, bank);
+    const s = await tilemapScreen(bank);
     apply(s, TM_DEFAULT).runFrames(2);
     expect(tilemapMismatches(s, bank, TM_DEFAULT, NONE, [0, 7])).toEqual([]);
     // --- the orientations really differ (the test would pass on a core that ignored the bits otherwise)
@@ -84,7 +84,7 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
   });
 
   it("TM-009 / TM-022: attribute bit 0 puts a tile below the ULA; the ULA shows where the tilemap is transparent", async () => {
-    const s = await tilemapScreen(core, BANK);
+    const s = await tilemapScreen(BANK);
     // --- ULA on: blank bitmap, PAPER 2 everywhere, border 5 (ULA palette)
     s.poke(0x4000, new Array(0x1800).fill(0x00)).poke(0x5800, new Array(768).fill(2 << 3));
     writePalette(s, [[18, 0x49], [21, 0x92]]);
@@ -109,12 +109,12 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
   });
 
   it("TM-010: 512-tile mode takes tile bit 8 from attribute bit 0", async () => {
-    expect(await check(core, { ...TM_DEFAULT, mode512: true, tileBase: 0x00 })).toEqual([]);
+    expect(await check({ ...TM_DEFAULT, mode512: true, tileBase: 0x00 })).toEqual([]);
   });
 
   it("TM-010 / TM-012: in 512-tile mode every tile is below the ULA unless $6B bit 0 puts the tilemap on top", async () => {
     for (const onTop of [false, true]) {
-      const s = await tilemapScreen(core, BANK);
+      const s = await tilemapScreen(BANK);
       s.setNextReg(0x68, 0x00).out(0xfe, 5);
       writePalette(s, [[21, 0x92]]); // --- border 5; the paper area shows BANK as ULA data - check the border only
       const p = { ...TM_DEFAULT, mode512: true, tileBase: 0x00 };
@@ -134,12 +134,12 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
 
   for (const [cols80, sx, sy] of [[false, 0, 0], [true, 0, 0], [false, 3, 5], [true, 5, 200]] as const) {
     it(`TM-011: text mode (1-bit tiles, attribute bits 7-1 the offset), ${cols80 ? 80 : 40} columns, scroll ${sx} / ${sy}`, async () => {
-      expect(await check(core, { ...TM_DEFAULT, text: true, cols80, sx, sy })).toEqual([]);
+      expect(await check({ ...TM_DEFAULT, text: true, cols80, sx, sy })).toEqual([]);
     });
   }
 
   it("TM-010: without attributes, 512-tile mode takes tile bit 8 from $6C bit 0", async () => {
-    expect(await check(core, { ...TM_DEFAULT, mode512: true, noAttr: true, defaultAttr: 0x31, tileBase: 0x00 })).toEqual([]);
+    expect(await check({ ...TM_DEFAULT, mode512: true, noAttr: true, defaultAttr: 0x31, tileBase: 0x00 })).toEqual([]);
   });
 
   it("TM-013: $4C compares the nibble before the offset; a standard pixel is not transparent by $14", async () => {
@@ -148,7 +148,7 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
     bank.fill(0x55, 0x0c00 + 32, 0x0c00 + 64);
     bank.fill(0x66, 0x0c00 + 64, 0x0c00 + 96);
     bank.set([1, 0x30, 2, 0x30], 0x2c00);
-    const s = await tilemapScreen(core, bank);
+    const s = await tilemapScreen(bank);
     s.setNextReg(0x14, 0x36).setNextReg(0x4a, 0xe0); // --- $14 = colour of index $36
     apply(s, { ...TM_DEFAULT, transparentIndex: 5 }).runFrames(2);
     expect({ nibble5: colours(s, [32, 47], [16, 23]), index36: colours(s, [48, 63], [16, 23]) }).toEqual({
@@ -162,7 +162,7 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
     // --- tile 1 all ones, tile 2 all zeros; attr $40: indices $41 (tile 1) and $40 (tile 2)
     bank.fill(0xff, 0x0c00 + 8, 0x0c00 + 16);
     bank.set([1, 0x40, 2, 0x40], 0x2c00);
-    const s = await tilemapScreen(core, bank);
+    const s = await tilemapScreen(bank);
     s.setNextReg(0x14, 0x41).setNextReg(0x4a, 0xe0);
     apply(s, { ...TM_DEFAULT, text: true, transparentIndex: 0 }).runFrames(2);
     expect({ ones: colours(s, [32, 47], [16, 23]), zeros: colours(s, [48, 63], [16, 23]) }).toEqual({
@@ -173,7 +173,7 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
 
   for (const [cols80, sx, sy] of [[false, 1, 0], [false, 7, 0], [false, 100, 0], [false, 319, 0], [false, 0, 1], [false, 0, 255], [false, 37, 99], [true, 1, 0], [true, 320, 0], [true, 639, 17]] as const) {
     it(`TM-015 / TM-016: ${cols80 ? 80 : 40} columns, scroll X ${sx}, Y ${sy}`, async () => {
-      const s = await tilemapScreen(core, BANK);
+      const s = await tilemapScreen(BANK);
       const p = { ...TM_DEFAULT, cols80, sx, sy };
       apply(s, p).runFrames(2);
       expect([s.readNextReg(0x2f), s.readNextReg(0x30), s.readNextReg(0x31)], "readback").toEqual([sx >> 8, sx & 0xff, sy]);
@@ -183,12 +183,12 @@ describe.each(ALL_CORES)("Tilemap - %s core", (core: CoreName) => {
 
   for (const cols80 of [false, true]) {
     it(`TM-017: the $1B clip window (x doubled) in ${cols80 ? 80 : 40} columns`, async () => {
-      expect(await check(core, { ...TM_DEFAULT, cols80, clip: [10, 100, 20, 200] })).toEqual([]);
+      expect(await check({ ...TM_DEFAULT, cols80, clip: [10, 100, 20, 200] })).toEqual([]);
     });
   }
 
   it("TM-020: $6B bit 4 selects the second tilemap palette", async () => {
-    const s = await tilemapScreen(core, BANK);
+    const s = await tilemapScreen(BANK);
     writePalette(s, Array.from({ length: 256 }, (_, i) => [i, i ^ 0x96] as [number, number]), 0x70);
     s.setNextReg(0x43, 0x00);
     apply(s, TM_DEFAULT, false, true).runFrames(2);
@@ -221,7 +221,7 @@ WaitUntil:
   `;
 
   it("TM-023: a scroll change in mid-frame splits the picture", async () => {
-    const s = await tilemapScreen(core, BANK);
+    const s = await tilemapScreen(BANK);
     await s.loadCode(splitProgram("        nextreg $30,0", "        nextreg $30,64"), { entry: "Start" });
     apply(s, TM_DEFAULT).runUntilReady().runFrames(3);
     expect(tilemapMismatches(s, BANK, TM_DEFAULT, NONE, [0, 127]), "above").toEqual([]);
@@ -229,7 +229,7 @@ WaitUntil:
   });
 
   it("TM-025: the tilemap enabled in mid-frame covers the rows drawn after it", async () => {
-    const s = await tilemapScreen(core, BANK);
+    const s = await tilemapScreen(BANK);
     await s.loadCode(splitProgram("        nextreg $6b,$00", "        nextreg $6b,$80"), { entry: "Start" });
     s.runUntilReady().runFrames(3);
     expect(colours(s, [32, 671], [16, 16 + 127]), "above").toBe(NONE);
@@ -244,7 +244,7 @@ WaitUntil:
     const bank = new Uint8Array(0x4000);
     bank.fill(0x11, 0x0c00, 0x0c00 + 32);
     bank.fill(0x22, 0x0c00 + 32, 0x0c00 + 64);
-    const s = await tilemapScreen(core, bank);
+    const s = await tilemapScreen(bank);
     await s.loadCode(`
         .org $8000
 Start:  di

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, displayFileAddress, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { displayFileAddress, type NextTestSession } from "../../harness/zxnext";
 import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } from "./_ula-helpers";
 
 /*
@@ -23,8 +23,8 @@ import { colours, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, writePalette } fro
 
 const FALLBACK = 0x4d;
 
-async function screen(core: CoreName, palette: Array<[number, number]>): Promise<NextTestSession> {
-  const s = await parkedSession(core);
+async function screen(palette: Array<[number, number]>): Promise<NextTestSession> {
+  const s = await parkedSession();
   writePalette(s, palette);
   s.setNextReg(0x14, 0xe3).setNextReg(0x4a, FALLBACK);
   s.poke(0x4000, new Array(0x1800).fill(0x00)).poke(0x6000, new Array(0x1800).fill(0x00));
@@ -42,11 +42,11 @@ const cell = (s: NextTestSession, line = 0) => ({
 /** $FF3B group 01 write: the ULA+ enable. */
 const ulaPlus = (s: NextTestSession, on: boolean) => s.out(0xbf3b, 0x40).out(0xff3b, on ? 0x01 : 0x00);
 
-describe.each(ALL_CORES)("ULA+ - %s core", (core: CoreName) => {
+describe("ULA+", () => {
   it("ULP-005: disabling ULA+ restores the standard colours and keeps the ULA+ palette entries", async () => {
     // --- attr $9A (group 2, paper 3, ink 2): ULA+ ink $E2, paper $EB; border 5 -> $CD.
     // --- Standard: ink 2, paper 16 + 3; border 16 + 5 (FLASH set: attr bit 7 - swapped every 16 frames)
-    const s = await screen(core, [[0xe2, 0xe0], [0xeb, 0x1c], [0xcd, 0x03], [2, 0xfc], [19, 0x1f], [21, 0xa2]]);
+    const s = await screen([[0xe2, 0xe0], [0xeb, 0x1c], [0xcd, 0x03], [2, 0xfc], [19, 0x1f], [21, 0xa2]]);
     s.poke(0x5800, new Array(768).fill(0x1a)).out(0xfe, 5); // --- $1A: no FLASH, group 0 - used for standard
     s.poke(0x5800, 0x9a);
     ulaPlus(s, true).runFrames(2);
@@ -65,7 +65,7 @@ describe.each(ALL_CORES)("ULA+ - %s core", (core: CoreName) => {
   });
 
   it("ULP-005: a soft reset turns ULA+ off and clears the $BF3B mode and index", async () => {
-    const s = await screen(core, []);
+    const s = await screen([]);
     ulaPlus(s, true);
     s.out(0xbf3b, 0x40); // --- mode group 01
     expect(s.in(0xff3b), "enabled").toBe(0x01);
@@ -78,7 +78,7 @@ describe.each(ALL_CORES)("ULA+ - %s core", (core: CoreName) => {
 
   it("ULP-006: in HiColor every line's attribute goes through the ULA+ mapping", async () => {
     // --- line 0 attr $9A: ink $E2, paper $EB; line 1 attr $47 (group 1, paper 0, ink 7): ink $D7, paper $D8
-    const s = await screen(core, [[0xe2, 0xe0], [0xeb, 0x1c], [0xd7, 0xfc], [0xd8, 0x1f], [0xcd, 0x03]]);
+    const s = await screen([[0xe2, 0xe0], [0xeb, 0x1c], [0xd7, 0xfc], [0xd8, 0x1f], [0xcd, 0x03]]);
     s.poke(displayFileAddress(0, 0) + 0x2000, 0x9a).poke(displayFileAddress(1, 0) + 0x2000, 0x47);
     s.out(0xfe, 5).out(0x00ff, 0x02);
     ulaPlus(s, true).runFrames(2);
@@ -89,7 +89,7 @@ describe.each(ALL_CORES)("ULA+ - %s core", (core: CoreName) => {
   });
 
   it("ULP-007: with $85 bit 0 clear the ULA+ ports do nothing; $68 bit 3 still enables ULA+", async () => {
-    const s = await screen(core, [[0xe2, 0x00]]);
+    const s = await screen([[0xe2, 0x00]]);
     const entryE2 = () => s.setNextReg(0x43, 0x00).setNextReg(0x40, 0xe2).readNextReg(0x41);
     s.setNextReg(0x85, 0x8e); // --- enable bits 27-24 = 1110, reset type 1
     expect(s.readNextReg(0x85), "$85 readback").toBe(0x8e);
@@ -108,7 +108,7 @@ describe.each(ALL_CORES)("ULA+ - %s core", (core: CoreName) => {
 
   for (const n of [0, 2, 7]) {
     it(`ULP-008: HiRes with ink ${n} and ULA+: ink $${(0xd8 + n).toString(16).toUpperCase()}, paper and border $${(0xd8 + 7 - n).toString(16).toUpperCase()}`, async () => {
-      const s = await screen(core, [[0xd8 + n, 0xe0], [0xd8 + 7 - n, 0x1c], [8 + n, 0xfc], [24 + 7 - n, 0x1f]]);
+      const s = await screen([[0xd8 + n, 0xe0], [0xd8 + 7 - n, 0x1c], [8 + n, 0xfc], [24 + 7 - n, 0x1f]]);
       s.poke(displayFileAddress(0, 0), 0xff).out(0x00ff, 0x06 | (n << 3));
       ulaPlus(s, true).runFrames(2);
       expect({

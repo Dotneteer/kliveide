@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession, type RtcTime } from "../../harness/zxnext";
+import { createSession, type NextTestSession, type RtcTime } from "../../harness/zxnext";
 
 /*
  * The I2C bus and the DS1307 real-time clock (catalogue I2C-001 - I2C-006).
@@ -215,8 +215,8 @@ async function boot(s: NextTestSession): Promise<NextTestSession> {
   return s.runUntilReady();
 }
 
-async function driver(core: CoreName): Promise<NextTestSession> {
-  return boot(await createSession(core));
+async function driver(): Promise<NextTestSession> {
+  return boot(await createSession());
 }
 
 function command(s: NextTestSession, cmd: number, ptr: number, cnt: number): void {
@@ -250,13 +250,13 @@ const hexes = (bytes: number[]) => bytes.map((b) => "$" + b.toString(16).padStar
 const UNDER_ONE_SECOND = 44;
 const OVER_ONE_SECOND = 55;
 
-describe.each(ALL_CORES)("I2C and the DS1307 - %s core", (core) => {
+describe("I2C and the DS1307", () => {
   // -------------------------------------------------------------------------------------------------
   // I2C-001 SCL/SDA ports
   // -------------------------------------------------------------------------------------------------
 
   it("I2C-001: bit 0 drives the open-drain line; the read is $FE | the line; a reset releases both", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     expect([s.in(SCL), s.in(SDA)], "power-on: released").toEqual([0xff, 0xff]);
     // --- SDA first, while SCL is high, is a START: the DS1307 only listens
@@ -275,14 +275,14 @@ describe.each(ALL_CORES)("I2C and the DS1307 - %s core", (core) => {
   // -------------------------------------------------------------------------------------------------
 
   it("I2C-002: the DS1307 acknowledges $D0 and $D1; after STOP the bus is released", async () => {
-    const s = await driver(core);
+    const s = await driver();
     expect(addressAck(s, 0xd0), "write address").toBe(0);
     expect(addressAck(s, 0xd1), "read address").toBe(0);
     expect([s.in(SCL), s.in(SDA)]).toEqual([0xff, 0xff]);
   });
 
   it("I2C-005: other addresses get no ACK, and what is sent to them does not reach the DS1307", async () => {
-    const s = await driver(core);
+    const s = await driver();
     rtcWrite(s, 0x08, [0x11]);
     for (const address of [0x00, 0xa0, 0xd2, 0xd3, 0xd8, 0x50]) expect(addressAck(s, address), hexes([address])[0]).toBe(1);
     expect(addressAck(s, 0xd0), "the bus still works").toBe(0);
@@ -310,7 +310,7 @@ Other:  call I2cStart
   // -------------------------------------------------------------------------------------------------
 
   it("I2C-003: registers 0-6 read back the set time in BCD, and it runs in whole seconds", async () => {
-    const s = await driver(core);
+    const s = await driver();
     const set: RtcTime = { year: 2026, month: 9, date: 18, day: 6, hours: 12, minutes: 34, seconds: 56 };
     s.setRtcTime(set);
     expect(hexes(rtcRead(s, 0, 7)), "at once").toEqual(hexes(regs(set)));
@@ -329,13 +329,13 @@ Other:  call I2cStart
     ["year 00 is leap", { year: 0, month: 2, date: 28, day: 2, hours: 23, minutes: 59, seconds: 59 }, { year: 0, month: 2, date: 29, day: 3, hours: 0, minutes: 0, seconds: 0 }],
     ["the century ends", { year: 99, month: 12, date: 31, day: 6, hours: 23, minutes: 59, seconds: 59 }, { year: 0, month: 1, date: 1, day: 7, hours: 0, minutes: 0, seconds: 0 }]
   ])("I2C-003: rollover when %s", async (_what, from, to) => {
-    const s = await driver(core);
+    const s = await driver();
     s.setRtcTime(from as RtcTime).runFrames(OVER_ONE_SECOND);
     expect(hexes(rtcRead(s, 0, 7))).toEqual(hexes(regs(to as RtcTime)));
   });
 
   it("I2C-003: 12-hour mode: 11 AM becomes 12 PM, 11 PM becomes 12 AM of the next day", async () => {
-    const s = await driver(core);
+    const s = await driver();
     s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 0, minutes: 0, seconds: 0 });
     // --- hours register: bit 6 = 12-hour mode, bit 5 = PM
     rtcWrite(s, 0, [0x59, 0x59, 0x51]);
@@ -350,7 +350,7 @@ Other:  call I2cStart
   });
 
   it("I2C-003: a read takes the time copied at its START, while the clock runs on", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     // --- The DS1307 fetches each byte at the master's ACK of the one before: the pause falls between
     // --- reading the minutes and fetching the hours, 12 -> 13 on the running clock
     s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 59, seconds: 59 });
@@ -410,7 +410,7 @@ Buf:    .defs 64`,
   // -------------------------------------------------------------------------------------------------
 
   it("I2C-004: a written time, the control register and the 56 RAM bytes read back", async () => {
-    const s = await driver(core);
+    const s = await driver();
     const time = regs({ year: 1, month: 2, date: 3, day: 4, hours: 5, minutes: 6, seconds: 7 });
     rtcWrite(s, 0, [...time, 0x10]);
     expect(hexes(rtcRead(s, 0, 8))).toEqual(hexes([...time, 0x10]));
@@ -420,7 +420,7 @@ Buf:    .defs 64`,
   });
 
   it("I2C-004: the register pointer wraps from $3F to $00 and stays between transactions", async () => {
-    const s = await driver(core);
+    const s = await driver();
     s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 34, seconds: 56 });
     rtcWrite(s, 0x3e, [0xaa, 0xbb]);
     expect(hexes(rtcRead(s, 0x3e, 4))).toEqual(hexes([0xaa, 0xbb, 0x56, 0x34]));
@@ -443,7 +443,7 @@ Current: call I2cStart
   });
 
   it("I2C-004: writing the seconds restarts the second", async () => {
-    const s = await driver(core);
+    const s = await driver();
     s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 0, seconds: 10 });
     s.runFrames(30); // --- 0.6 s into the second
     rtcWrite(s, 0, [0x30]);
@@ -454,7 +454,7 @@ Current: call I2cStart
   });
 
   it("I2C-004: CH (seconds bit 7) stops the clock; clearing it starts it again", async () => {
-    const s = await driver(core);
+    const s = await driver();
     s.setRtcTime({ year: 26, month: 9, date: 18, day: 6, hours: 12, minutes: 0, seconds: 0 });
     rtcWrite(s, 0, [0x80 | 0x15]);
     s.runFrames(2 * OVER_ONE_SECOND);
@@ -465,7 +465,7 @@ Current: call I2cStart
   });
 
   it("I2C-004: the DS1307 is battery backed: Next resets keep its RAM and its time", async () => {
-    const s = await driver(core);
+    const s = await driver();
     rtcWrite(s, 0, regs({ year: 1, month: 2, date: 3, day: 4, hours: 5, minutes: 6, seconds: 7 }));
     rtcWrite(s, 0x08, [0x5a, 0xa5]);
     s.reset();
@@ -483,7 +483,7 @@ Current: call I2cStart
   // -------------------------------------------------------------------------------------------------
 
   it("I2C-006: with $83 bit 2 clear both ports read $FF and ignore writes", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.out(SCL, 0);
     s.setNextReg(0x83, s.readNextReg(0x83) & ~0x04);

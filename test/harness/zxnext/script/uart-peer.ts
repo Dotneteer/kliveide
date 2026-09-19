@@ -1,10 +1,9 @@
 import type { NextMachine } from "../core/machines";
-import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
  * The device on the other end of a Next UART's serial lines (UART 0: the ESP socket, UART 1: the Pi
- * GPIO). Both cores model the lines a frame at a time on the 28 MHz clock (UartDevice.ts,
- * zxnext-uart.c); this adapter reaches the same peer API on either core.
+ * GPIO). The core models the lines a frame at a time on the 28 MHz clock (zxnext-uart.c); this adapter
+ * reaches its peer API.
  */
 
 /** A frame the peer sends: a byte, or a byte with a wrong parity bit or a low stop bit. */
@@ -28,29 +27,18 @@ function normalize(frame: UartFrame): { value: number; kind: "byte" | "parity" |
 }
 
 export function uartPeerOf(machine: NextMachine): UartPeer {
-  if (machine instanceof ZxNextWasmV2Machine) {
-    const x = machine.wasmV2Runtime!.exports;
-    return {
-      send: (uart, frames) => {
-        for (let i = 0; i < frames.length; i++) {
-          const f = normalize(frames[i]);
-          x.zxnextUartPeerSend(uart, f.value, KIND_CODES[f.kind]);
-        }
-      },
-      setBreak: (uart, on) => x.zxnextUartPeerBreak(uart, on ? 1 : 0),
-      setCts: (uart, clear) => x.zxnextUartPeerSetCts(uart, clear ? 1 : 0),
-      setLoopback: (uart, on) => x.zxnextUartPeerSetLoopback(uart, on ? 1 : 0),
-      readyToReceive: (uart) => x.zxnextUartPeerReadyToReceive(uart) !== 0,
-      output: (uart) => Array.from({ length: x.zxnextUartPeerOutputCount(uart) }, (_, i) => x.zxnextUartPeerOutputByte(uart, i))
-    };
-  }
-  const d = machine.uartDevice;
+  const x = machine.wasmV2Runtime!.exports;
   return {
-    send: (uart, frames) => d.peerSend(uart, Array.from(frames, normalize)),
-    setBreak: (uart, on) => d.peerBreak(uart, on),
-    setCts: (uart, clear) => d.peerSetCts(uart, clear),
-    setLoopback: (uart, on) => d.peerSetLoopback(uart, on),
-    readyToReceive: (uart) => d.peerReadyToReceive(uart),
-    output: (uart) => d.peerOutput(uart)
+    send: (uart, frames) => {
+      for (let i = 0; i < frames.length; i++) {
+        const f = normalize(frames[i]);
+        x.zxnextUartPeerSend(uart, f.value, KIND_CODES[f.kind]);
+      }
+    },
+    setBreak: (uart, on) => x.zxnextUartPeerBreak(uart, on ? 1 : 0),
+    setCts: (uart, clear) => x.zxnextUartPeerSetCts(uart, clear ? 1 : 0),
+    setLoopback: (uart, on) => x.zxnextUartPeerSetLoopback(uart, on ? 1 : 0),
+    readyToReceive: (uart) => x.zxnextUartPeerReadyToReceive(uart) !== 0,
+    output: (uart) => Array.from({ length: x.zxnextUartPeerOutputCount(uart) }, (_, i) => x.zxnextUartPeerOutputByte(uart, i))
   };
 }

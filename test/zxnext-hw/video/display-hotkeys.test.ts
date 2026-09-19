@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * The app's display hotkeys (Machine menu F2 / F3 / F7; catalogue HK-001 - HK-005).
@@ -20,8 +20,8 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 const TIMING_48K = 0x90;
 const TACTS_PER_LINE_48K = 224;
 
-async function idle(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function idle(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(` .org $8000\n jr $`);
   s.runFrames(1);
   return s;
@@ -33,9 +33,9 @@ function frameTacts(s: NextTestSession, frames = 10): number {
   return (s.tacts - before) / frames;
 }
 
-describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
+describe("display hotkeys", () => {
   it("HK-001: F2 toggles the scandoubler ($05 bit 0) from the next frame", async () => {
-    const s = await idle(core);
+    const s = await idle();
     const before = s.readNextReg(0x05) & 0x01;
 
     await s.pressHotkey("F2");
@@ -50,7 +50,7 @@ describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
   });
 
   it("HK-002: F3 switches 50/60 Hz ($05 bit 2) and the frame length, from the next frame", async () => {
-    const s = await idle(core);
+    const s = await idle();
     s.setNextReg(0x03, TIMING_48K).setNextReg(0x05, 0x00);
     s.setNextReg(0x06, s.readNextReg(0x06) | 0x20).runFrames(2);
     expect(Math.abs(frameTacts(s) - 312 * TACTS_PER_LINE_48K), "50 Hz frame").toBeLessThan(2);
@@ -68,7 +68,7 @@ describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
   });
 
   it("HK-006: two F2 presses in one frame cancel out (the stored bit toggles, not the readback)", async () => {
-    const s = await idle(core);
+    const s = await idle();
     const before = s.readNextReg(0x05) & 0x01;
     await s.pressHotkey("F2");
     await s.pressHotkey("F2");
@@ -78,7 +78,7 @@ describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
   });
 
   it("HK-003: F3 does nothing while $06 bit 5 disables the hotkey", async () => {
-    const s = await idle(core);
+    const s = await idle();
     s.setNextReg(0x03, TIMING_48K).setNextReg(0x05, 0x00);
     s.setNextReg(0x06, s.readNextReg(0x06) & ~0x20).runFrames(1);
 
@@ -89,7 +89,7 @@ describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
   });
 
   it("HK-004: F7 steps the scanline weight ($09 bits 1-0) through 0-3 and wraps", async () => {
-    const s = await idle(core);
+    const s = await idle();
     s.setNextReg(0x09, 0x00).runFrames(1);
     for (const expected of [1, 2, 3, 0, 1]) {
       await s.pressHotkey("F7");
@@ -100,7 +100,7 @@ describe.each(ALL_CORES)("display hotkeys - %s core", (core: CoreName) => {
   });
 
   it("HK-005: F7 leaves the other $09 bits alone", async () => {
-    const s = await idle(core);
+    const s = await idle();
     // --- AY mono bits 7-5 and the HDMI audio silence bit 2; bit 3 (clear mapram) is a strobe
     s.setNextReg(0x09, 0xe4).runFrames(1);
     await s.pressHotkey("F7");

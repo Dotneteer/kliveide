@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * RST-013 - a soft reset keeps RAM and resets the paging.
@@ -8,9 +8,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
  * Hardware (`_input/next-fpga/src/zxnext.vhd`): `reset` resets the MMU (~4590), port_7ffd_reg,
  * port_dffd_reg and port_1ffd_reg (~3645-3710); SRAM contents are not touched by any reset branch.
  */
-describe.each(ALL_CORES)("soft reset and memory - %s core", (core) => {
+describe("soft reset and memory", () => {
   it("RST-013: RAM survives, MMU and 128K/+3 paging return to their reset values", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     s.setNextReg(0x52, 0x20).poke(0x4000, 0xa5); // --- page $20
     s.setNextReg(0x57, 0x31).poke(0xe000, 0x5a); // --- page $31
     s.out(0x1ffd, 0x01).out(0xdffd, 0x01).out(0x7ffd, 0x05); // --- +3 all-RAM, bank 21

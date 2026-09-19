@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 import { delay } from "../_timing-helpers";
 
 /*
@@ -71,8 +71,8 @@ const log = (s: NextTestSession) => {
 };
 
 /** A session with `source` loaded (not yet run); `after` runs after the load, which resets the MMU. */
-async function session(core: CoreName, source: string, after?: (s: NextTestSession) => void): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function session(source: string, after?: (s: NextTestSession) => void): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   await s.loadCode(source, { entry: "Start" });
   installVectors(s);
@@ -119,12 +119,12 @@ ${LOG_LIB}
 
 // ---------------------------------------------------------------------------------------------------
 
-describe.each(ALL_CORES)("interrupts - %s core", (core: CoreName) => {
+describe("interrupts", () => {
   // --- ULA interrupt, IM 1 and IM 0 ------------------------------------------------------------------
 
   for (const mode of [1, 0] as const) {
     it(`${mode === 1 ? "INT-001" : "INT-020"}: IM ${mode} takes the ULA frame interrupt at $0038 once a frame`, async () => {
-      const s = await session(core, imProgram(mode), (x) => ramRst38(x));
+      const s = await session(imProgram(mode), (x) => ramRst38(x));
       s.runUntilReady().runFrames(1);
       const before = counter(s);
       s.runFrames(50);
@@ -133,7 +133,7 @@ describe.each(ALL_CORES)("interrupts - %s core", (core: CoreName) => {
   }
 
   it("INT-002: IM 2 in pulse mode reads its pointer at I * 256 + $FF", async () => {
-    const s = await session(core, im2Program("        nextreg $c0,$00\n        ei", "        ei\n        ret"));
+    const s = await session(im2Program("        nextreg $c0,$00\n        ei", "        ei\n        ret"));
     s.runUntilReady().runFrames(3);
     const got = log(s);
     expect(got.length, "one interrupt a frame").toBeGreaterThanOrEqual(3);
@@ -144,7 +144,6 @@ describe.each(ALL_CORES)("interrupts - %s core", (core: CoreName) => {
 
   it("INT-003: hardware IM2 vectors are $C0 bits 7-5 + index * 2: line $A0, ULA $B6", async () => {
     const s = await session(
-      core,
       im2Program(`
         nextreg $c0,$a1          ; vector base $A0, hardware IM2
         nextreg $23,100
@@ -159,7 +158,7 @@ describe.each(ALL_CORES)("interrupts - %s core", (core: CoreName) => {
   });
 
   it("INT-003: in hardware IM2 mode a CPU in IM 1 gets only the ULA interrupt (as a pulse), not the line", async () => {
-    const s = await session(core, imProgram(1, "        nextreg $c0,$01\n        nextreg $23,100\n        nextreg $22,$02"), (x) => ramRst38(x));
+    const s = await session(imProgram(1, "        nextreg $c0,$01\n        nextreg $23,100\n        nextreg $22,$02"), (x) => ramRst38(x));
     s.runUntilReady().runFrames(1);
     const before = counter(s);
     s.runFrames(20);
@@ -168,7 +167,6 @@ describe.each(ALL_CORES)("interrupts - %s core", (core: CoreName) => {
 
   it("INT-004: pending together, the sources are served in priority order: line, CTC 0-3, ULA", async () => {
     const s = await session(
-      core,
       im2Program(`
         nextreg $22,$04          ; the frame's own ULA and line interrupts off
         nextreg $c0,$01
@@ -205,20 +203,19 @@ Done:   ei
     );
 
   it("INT-016: a higher-priority interrupt nests inside a lower one's handler", async () => {
-    const s = await session(core, nesting(22, 0x80));
+    const s = await session(nesting(22, 0x80));
     s.runUntilReady().runFrames(1);
     expect(log(s)).toEqual([22, 0, 0xee]);
   });
 
   it("INT-016: a lower-priority interrupt waits for the higher one's RETI", async () => {
-    const s = await session(core, nesting(0, 0x40));
+    const s = await session(nesting(0, 0x40));
     s.runUntilReady().runFrames(1);
     expect(log(s)).toEqual([0, 0xee, 22]);
   });
 
   it("INT-017: RETN ends no service - the chain stays blocked until a RETI", async () => {
     const s = await session(
-      core,
       im2Program(
         `
         nextreg $22,$04
@@ -247,7 +244,7 @@ AfterReti:
   // --- Registers -------------------------------------------------------------------------------------
 
   it("INT-005: $C0 bits 2-1 read the IM the CPU last executed; bits 7-5, 3 and 0 read back, bit 4 is 0", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(`
         .org $8000
 Start:  di
@@ -268,7 +265,7 @@ Start:  di
   });
 
   it("INT-010: $C4 resets to $81; bit 1 is $22 bit 1, bit 0 is not $22 bit 2", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0xc4, 0x00).reset();
     expect(s.readNextReg(0xc4), "after a soft reset").toBe(0x81);
@@ -281,7 +278,7 @@ Start:  di
   });
 
   it("INT-011 / INT-012 / INT-018: $C5 has the four CTC channels; $C6 and $CC-$CE read back their bits", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     const rb = (r: number, v: number) => (s.setNextReg(r, v), s.readNextReg(r));
     expect({ c5: rb(0xc5, 0xff), c6: rb(0xc6, 0xff), cc: rb(0xcc, 0xff), cd: rb(0xcd, 0xff), ce: rb(0xce, 0xff) }).toEqual({
@@ -306,7 +303,6 @@ Start:  di
    */
   it("INT-011: a CTC channel interrupts only with its enable; its status latches either way", async () => {
     const s = await session(
-      core,
       im2Program(`
         nextreg $22,$04
         nextreg $c0,$01
@@ -329,7 +325,7 @@ Start:  di
   // --- Status ----------------------------------------------------------------------------------------
 
   it("INT-013: with interrupts off, $C8 latches the line and ULA interrupts; writing 1 clears", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0xc0, 0x00).setNextReg(0x23, 50).setNextReg(0x22, 0x02).setNextReg(0xc8, 0x03).runFrames(1);
     expect(s.readNextReg(0xc8), "both happened").toBe(0x03);
@@ -344,7 +340,6 @@ Start:  di
 
   it("INT-013: in hardware IM2 mode a cleared status reads set while the interrupt is pending and in service", async () => {
     const s = await session(
-      core,
       im2Program(
         `
         nextreg $22,$04
@@ -387,7 +382,6 @@ Start:  di
 ${Array.from({ length: 6 }, () => `        nextreg $20,$40\n${delay(200)}\n        nextreg $20,$80\n${delay(200)}`).join("\n")}
         di`;
     const t = await session(
-      core,
       `
         .org $8000
 Start:  di
@@ -404,7 +398,7 @@ ${LOG_LIB}`,
   });
 
   it("INT-015: $20 reads the line, ULA and CTC 0-3 status bits", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0xc0, 0x00).setNextReg(0x22, 0x04).setNextReg(0xc8, 0x03).setNextReg(0xc9, 0xff);
     expect(s.readNextReg(0x20), "clear").toBe(0x00);
@@ -419,7 +413,7 @@ ${LOG_LIB}`,
 
   /** 48K 50 Hz (c_max_vc 311): the $1F line value seen right after line interrupt `line` latches $C8 bit 1. */
   async function lineSeen(line: number): Promise<number | undefined> {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.setNextReg(0x03, 0x90).setNextReg(0x05, 0x00).runFrames(2);
     s.setNextReg(0x23, line & 0xff).setNextReg(0x22, 0x04 | 0x02 | (line >> 8));
@@ -475,7 +469,7 @@ Seen:   .defb 0`,
    * one IN; the line interrupt for line 100 is 255 hc_ula (127.5 tacts) after line 99 begins.
    */
   it("INT-009: the line interrupt is 127.5 tacts (hc_ula 255) into the line before it", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     const probe = async (reg: number, wait: number): Promise<number> => {
       s.hardReset();
       await s.loadCode(" .org $8000\n di\n jr $");
@@ -520,7 +514,6 @@ Result: .defb 0`,
 
   it("INT-023: a pending interrupt is taken after the instruction that follows EI", async () => {
     const s = await session(
-      core,
       im2Program(
         `
         nextreg $22,$04

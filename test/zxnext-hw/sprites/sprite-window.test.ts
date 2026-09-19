@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession } from "../../harness/zxnext";
+import { createSession } from "../../harness/zxnext";
 
 /*
  * SPR-036: the sprite layer is transparent outside its 320-pixel window.
@@ -20,9 +20,9 @@ import { ALL_CORES, createSession } from "../../harness/zxnext";
 
 const RED = 0xe0;
 
-describe.each(ALL_CORES)("sprite window - %s core", (core) => {
+describe("sprite window", () => {
   it("SPR-036: over the border, nothing of a sprite shows right of x 319 or in the next line's left border", async () => {
-    const s = await createSession(core);
+    const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
     s.runFrames(1);
     // --- Sprite palette entry 1 red; pattern 0 all index 1 (opaque: $4B stays $E3)

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, rgb333ToHex, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { rgb333ToHex, type NextTestSession } from "../../harness/zxnext";
 import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, pokeCell, writePalette } from "./_ula-helpers";
 
 /*
@@ -20,9 +20,9 @@ import { colours, fillScreen, hex8, PAPER_LEFT, PAPER_TOP, parkedSession, pokeCe
 const FALLBACK = 0x03;
 const TRANSPARENT = 0x6d;
 
-describe.each(ALL_CORES)("ULA transparency and stencil - %s core", (core: CoreName) => {
+describe("ULA transparency and stencil", () => {
   it("ULA-018: a ULA colour equal to $14 (by RGB, from any index) shows Layer 2 underneath", async () => {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     const L2 = 0xfc;
     // --- ULA: ink 1 and ink 3 both hold the $14 colour; paper 2 opaque; border 5 holds the $14 colour
     writePalette(s, [[1, TRANSPARENT], [3, TRANSPARENT], [16 + 2, 0xe0], [16 + 5, TRANSPARENT]]);
@@ -51,7 +51,7 @@ describe.each(ALL_CORES)("ULA transparency and stencil - %s core", (core: CoreNa
    * ULA paper is opaque on character rows 0-3 (paper rows 0-31) and equal to $14 on rows 4-7 (32-63).
    */
   async function stencilScreen(stencil: boolean): Promise<NextTestSession> {
-    const s = await parkedSession(core);
+    const s = await parkedSession();
     writePalette(s, [[16 + 6, 0xf3], [16 + 3, TRANSPARENT]]); // --- ULA PAPER 6 = $F3, PAPER 3 = $14
     writePalette(s, [[1, 0x5e]], 0x30); // --- first tilemap palette: index 1 = $5E
     s.setNextReg(0x43, 0x00).setNextReg(0x14, TRANSPARENT).setNextReg(0x4a, FALLBACK);

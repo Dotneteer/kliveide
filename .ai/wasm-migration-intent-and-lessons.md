@@ -52,10 +52,10 @@ that writes it.
 Step 29 completion on 2026-08-22 closed the binary-size/timing-depth blocker,
 but later ULA parity debugging proved the broader Next migration was
 overstated. The Next WASM diagnostics must not report full default readiness
-while ULA/screen parity is still incomplete. (They do since 2026-09-19: the
-blockers were re-audited against the VHDL and closed with dual-core tests -
-`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` Step 0 - and
-`ZXNEXT_WASM_V2_DEFAULT_READY` is `true` with no blockers.)
+while ULA/screen parity is still incomplete. (The blockers were re-audited
+against the VHDL and closed with dual-core tests on 2026-09-19 -
+`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` Step 0 - after which the
+rollout constants and their diagnostics fields were removed in Step 10.)
 
 Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
 is now WASM. TypeScript remains explicitly selectable as the compatibility
@@ -68,9 +68,8 @@ ULANext, ULA+, Layer 2, tilemap, sprites, clipping, scrolling, transparency,
 blending, active-line interrupts, and floating-bus updates. The WASM ULA path
 currently covers only a subset: `$FE` keyboard/ULA behavior, basic standard
 ULA instant rendering, flash, standard colours, ULA scroll/clip registers, and
-the ULA INT pulse. Keep `defaultReady` false and exclude `ULA`/`screen` from
-`migratedSurfaces` until the timed composed screen pipeline is ported and
-oracle-tested.
+the ULA INT pulse. (Superseded: the timed composed pipeline was ported and
+the blockers closed on 2026-09-19.)
 
 CTC timing lesson: mirror the TypeScript CTC model as lazy 28 MHz frame-clock
 sync before CTC port access, not per-tact work in the CPU hot path. Port gating
@@ -184,8 +183,8 @@ walks the import graph, type imports included
 chains through the Spectrum device interfaces and a renderer helper module.
 
 **Parity checks the IDE too, not only the hardware.** A dual-core IDE-state test
-(PAR-006, `s.ideState()`) found five panel differences - on *both* cores - that no
-hardware test could see. When the two cores disagree, the VHDL decides which one
+(`s.ideState()`; now IDE-001, WASM-only against the program's writes) found five
+panel differences - on *both* cores - that no hardware test could see. When the two cores disagree, the VHDL decides which one
 is wrong; in this migration the TypeScript "oracle" was the wrong side several
 times (a one-pixel-early half-pixel-scroll switch, dead tilemap fields behind the
 Palettes panel, a ULA panel that threw).

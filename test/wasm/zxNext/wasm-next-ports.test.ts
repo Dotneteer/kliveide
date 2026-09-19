@@ -1,151 +1,98 @@
 import { describe, expect, it } from "vitest";
 
-import { TestZxNextMachine } from "../../zxnext/TestNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { createZxNextOracleHarness } from "./wasm-next-test-helpers";
+import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { ULA_BORDER_COLOR_NAMES } from "@common/messaging/EmuApi";
 
-type PortMachine = TestZxNextMachine | ZxNextWasmV2Machine;
+/*
+ * What the IDE reads after port writes: the selected ROM/bank, the partition map and labels, the
+ * NextReg state, the ULA panel state and the last-I/O-access fields. The port behaviour itself is
+ * covered by `test/zxnext-hw/ports/` and `test/zxnext-hw/memory/`.
+ */
+describe("ZX Spectrum Next WASM port writes as the IDE sees them", () => {
+  it("reports 0x7ffd paging and ignores writes after the lock", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+    wasm.hardReset();
 
-describe("ZX Spectrum Next WASM port core parity", () => {
-  it("matches TypeScript 0x7ffd paging writes and lock behavior", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
+    // --- $7FFD = $13: bank 3 at $C000 (MMU6/7 = 6/7), bit 4 selects ROM 1 (catalogue MEM-003, MEM-007).
+    // --- $8E reads $DFFD bit 0, bank bits 2-0, 1, special-mode bits, ROM bit (zxnext.vhd ~6104; NR-018).
+    wasm.doWritePort(0x7ffd, 0x13);
+    expectMemoryPortState(wasm, 1, 3, [0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x06, 0x07], [
+      "R1", "R1", "0A", "0B", "04", "05", "06", "07"
+    ]);
+    expectNextRegs(wasm, { 0x56: 0x06, 0x57: 0x07, 0x8e: 0x39 });
+    expectLastWrite(wasm, 0x7ffd, 0x13);
 
-    for (const machine of [oracle, wasm]) machine.doWritePort(0x7ffd, 0x13);
+    // --- $3F sets bank 7 and the lock (bit 5); the two later writes are ignored (catalogue MEM-009)
+    wasm.doWritePort(0x7ffd, 0x3f);
+    wasm.doWritePort(0x7ffd, 0x00);
+    wasm.doWritePort(0x7ffd, 0x10);
 
-    expectSameMemoryPortState(wasm, oracle);
-    expectSameNextRegs(wasm, oracle, [0x56, 0x57, 0x8e]);
-    expectWasmLastWrite(wasm, 0x7ffd, 0x13);
-
-    for (const machine of [oracle, wasm]) {
-      machine.doWritePort(0x7ffd, 0x3f);
-      machine.doWritePort(0x7ffd, 0x00);
-      machine.doWritePort(0x7ffd, 0x10);
-    }
-
-    expectSameMemoryPortState(wasm, oracle);
-    expectSameNextRegs(wasm, oracle, [0x56, 0x57, 0x8e]);
+    expectMemoryPortState(wasm, 1, 7, [0xff, 0xff, 0x0a, 0x0b, 0x04, 0x05, 0x0e, 0x0f], [
+      "R1", "R1", "0A", "0B", "04", "05", "0E", "0F"
+    ]);
+    expectNextRegs(wasm, { 0x56: 0x0e, 0x57: 0x0f, 0x8e: 0x79 });
+    expectLastWrite(wasm, 0x7ffd, 0x10);
   });
 
-  it("matches TypeScript 0xdffd RAM bank extension writes", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
+  it("reports ULA port side effects and the read value", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+    wasm.hardReset();
 
-    for (const machine of [oracle, wasm]) {
-      machine.doWritePort(0x7ffd, 0x05);
-      machine.doWritePort(0xdffd, 0x01);
-    }
+    wasm.doWritePort(0x00fe, 0x18);
+    const read = wasm.doReadPort(0x00fe);
 
-    expectSameMemoryPortState(wasm, oracle);
-    expectSameNextRegs(wasm, oracle, [0x56, 0x57, 0x8e]);
-    expectWasmLastWrite(wasm, 0xdffd, 0x01);
-  });
-
-  it("matches TypeScript 0x1ffd all-RAM and ROM MSB writes", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const machine of [oracle, wasm]) machine.doWritePort(0x1ffd, 0x05);
-
-    expectSameMemoryPortState(wasm, oracle);
-    expectSameNextRegs(wasm, oracle, [0x50, 0x51, 0x52, 0x53, 0x56, 0x57, 0x8e]);
-    expectWasmLastWrite(wasm, 0x1ffd, 0x05);
-  });
-
-  it("matches TypeScript NR $82 gating for paging ports", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const machine of [oracle, wasm]) {
-      writeNextReg(machine, 0x82, 0xf1);
-      machine.doWritePort(0x7ffd, 0x07);
-      machine.doWritePort(0xdffd, 0x01);
-      machine.doWritePort(0x1ffd, 0x05);
-    }
-
-    expectSameMemoryPortState(wasm, oracle);
-    expectSameNextRegs(wasm, oracle, [0x56, 0x57, 0x82, 0x8e]);
-    expectWasmLastWrite(wasm, 0x1ffd, 0x05);
-  });
-
-  it("matches TypeScript ULA port side effects and read value", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    for (const machine of [oracle, wasm]) machine.doWritePort(0x00fe, 0x18);
-    const oracleRead = oracle.doReadPort(0x00fe);
-    const wasmRead = wasm.doReadPort(0x00fe);
-
-    expect(wasmRead).toBe(oracleRead);
-    // --- Parity plus the name mapping `UlaState.bor` declares (see ULA_BORDER_COLOR_NAMES).
-    expect(wasm.getWasmV2UlaState().bor).toBe(
-      ULA_BORDER_COLOR_NAMES[oracle.composedScreenDevice.borderColor & 0x07]
-    );
+    // --- zxnext.vhd ~3453-3465: bits 7 and 5 read 1, bit 6 is the last $FE bit 4 (EAR out, 1 here),
+    // --- bits 4-0 the keyboard columns (no key pressed: all 1s)
+    expect(read).toBe(0xff);
+    // --- Border = $FE bits 2-0 = 0; `UlaState.bor` is its name (see ULA_BORDER_COLOR_NAMES)
+    expect(wasm.getWasmV2UlaState().bor).toBe(ULA_BORDER_COLOR_NAMES[0x18 & 0x07]);
     expect(wasm.getWasmV2UlaState().ear).toBe(true);
     expect(wasm.getWasmV2UlaState().mic).toBe(true);
     expect(wasm.lastIoReadPort).toBe(0x00fe);
-    expect(wasm.lastIoReadValue).toBe(wasmRead);
+    expect(wasm.lastIoReadValue).toBe(read);
   });
 
-  it("matches TypeScript AY register, data, and info port reads", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
+  it("reads an open port as $FF and records the access", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+    wasm.hardReset();
 
-    for (const machine of [oracle, wasm]) {
-      machine.doWritePort(0xfffd, 0x01);
-      machine.doWritePort(0xbffd, 0xa5);
-    }
+    // --- $FFFF decodes as port $FF, which reads $FF in +3 timing (the machine after a hard reset;
+    // --- catalogue PORT-006)
+    const read = wasm.doReadPort(0xffff);
 
-    for (const port of [0xfffd, 0xbffd, 0xbff5]) {
-      expect(wasm.doReadPort(port)).toBe(oracle.doReadPort(port));
-    }
-  });
-
-  it("matches TypeScript floating/open-port read behavior separately from handled ports", async () => {
-    const { oracle, wasm } = await createZxNextOracleHarness();
-    hardResetBoth(oracle, wasm);
-
-    const oracleRead = oracle.doReadPort(0xffff);
-    const wasmRead = wasm.doReadPort(0xffff);
-
-    expect(wasmRead).toBe(oracleRead);
+    expect(read).toBe(0xff);
     expect(wasm.lastIoReadPort).toBe(0xffff);
-    expect(wasm.lastIoReadValue).toBe(wasmRead);
+    expect(wasm.lastIoReadValue).toBe(read);
   });
 });
 
-function hardResetBoth(oracle: TestZxNextMachine, wasm: ZxNextWasmV2Machine): void {
-  oracle.hardReset();
-  wasm.hardReset();
-}
-
-function writeNextReg(machine: PortMachine, reg: number, value: number): void {
-  machine.doWritePort(0x243b, reg);
-  machine.doWritePort(0x253b, value);
-}
-
 /**
- * Compares NextRegs as a `$253B` read returns them - but through the IDE interface, which reads without
- * touching the bus, so the last-I/O-access assertions that follow still see the test's own writes.
+ * Reads NextRegs through the IDE interface, which reads without touching the bus, so the
+ * last-I/O-access assertions that follow still see the test's own writes.
  */
-function expectSameNextRegs(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMachine, regs: number[]): void {
-  const value = (machine: PortMachine, reg: number) =>
-    machine.getNextRegState().regs.find((r) => r.id === reg)?.value;
-  for (const reg of regs) {
-    expect(value(wasm, reg), `reg $${reg.toString(16)}`).toBe(value(oracle, reg));
+function expectNextRegs(wasm: ZxNextWasmV2Machine, expected: Record<number, number>): void {
+  const regs = wasm.getNextRegState().regs;
+  for (const [reg, value] of Object.entries(expected)) {
+    expect(regs.find((r) => r.id === Number(reg))?.value, `reg $${Number(reg).toString(16)}`).toBe(value);
   }
 }
 
-function expectSameMemoryPortState(wasm: ZxNextWasmV2Machine, oracle: TestZxNextMachine): void {
-  expect(wasm.getSelectedRomPage()).toBe(oracle.getSelectedRomPage());
-  expect(wasm.getSelectedRamBank()).toBe(oracle.getSelectedRamBank());
-  expect(wasm.getCurrentPartitions()).toEqual(oracle.getCurrentPartitions());
-  expect(wasm.getCurrentPartitionLabels()).toEqual(oracle.getCurrentPartitionLabels());
+function expectMemoryPortState(
+  wasm: ZxNextWasmV2Machine,
+  rom: number,
+  bank: number,
+  partitions: number[],
+  labels: string[]
+): void {
+  expect(wasm.getSelectedRomPage()).toBe(rom);
+  expect(wasm.getSelectedRamBank()).toBe(bank);
+  expect(wasm.getCurrentPartitions()).toEqual(partitions);
+  expect(wasm.getCurrentPartitionLabels()).toEqual(labels);
 }
 
-function expectWasmLastWrite(wasm: ZxNextWasmV2Machine, port: number, value: number): void {
+function expectLastWrite(wasm: ZxNextWasmV2Machine, port: number, value: number): void {
   expect(wasm.lastIoWritePort).toBe(port);
   expect(wasm.lastIoWriteValue).toBe(value);
 }

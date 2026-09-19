@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ALL_CORES, createSession, type CoreName, type NextTestSession } from "../../harness/zxnext";
+import { createSession, type NextTestSession } from "../../harness/zxnext";
 
 /*
  * COP-016: NextReg $64 (copper line offset) takes effect when `cvc` reloads, not when it is written.
@@ -19,8 +19,8 @@ import { ALL_CORES, createSession, type CoreName, type NextTestSession } from ".
 const PAST_RELOAD = 2000;
 const OFFSET = 0x20;
 
-async function parked(core: CoreName): Promise<NextTestSession> {
-  const s = await createSession(core);
+async function parked(): Promise<NextTestSession> {
+  const s = await createSession();
   await s.loadCode(" .org $8000\n di\n jr $");
   return s.runFrames(2);
 }
@@ -28,15 +28,15 @@ async function parked(core: CoreName): Promise<NextTestSession> {
 /** `$1E`/`$1F` as one 9-bit line. */
 const line = (s: NextTestSession) => ((s.readNextReg(0x1e) & 0x01) << 8) | s.readNextReg(0x1f);
 
-describe.each(ALL_CORES)("copper line offset latch - %s core", (core) => {
+describe("copper line offset latch", () => {
   it("COP-016: a $64 write after the reload leaves this frame's lines alone and shows from the next frame", async () => {
-    const reference = await parked(core);
+    const reference = await parked();
     reference.step(PAST_RELOAD);
     const here = line(reference);
     reference.runFrames(1).step(PAST_RELOAD);
     const nextFrame = line(reference);
 
-    const s = await parked(core);
+    const s = await parked();
     s.step(PAST_RELOAD);
     s.setNextReg(0x64, OFFSET);
     expect(line(s), "straight after the write").toBe(here);
@@ -45,12 +45,12 @@ describe.each(ALL_CORES)("copper line offset latch - %s core", (core) => {
   });
 
   it("COP-016: a $64 write before the reload shows from this frame's first active line", async () => {
-    const reference = await parked(core);
+    const reference = await parked();
     const atFrameStart = line(reference);
     reference.step(PAST_RELOAD);
     const here = line(reference);
 
-    const s = await parked(core);
+    const s = await parked();
     s.setNextReg(0x64, OFFSET);
     // --- Before the reload the counter still carries the old offset
     expect(line(s), "before the reload").toBe(atFrameStart);
@@ -63,7 +63,7 @@ describe.each(ALL_CORES)("copper line offset latch - %s core", (core) => {
     // --- written after the reload, so this frame still sees line 100 where it was: a WAIT for line
     // --- 100 fires on the same raster line as without the write.
     const run = async (write: boolean) => {
-      const s = await parked(core);
+      const s = await parked();
       // --- WAIT line 100 ; MOVE $40,16 ; MOVE $41,$E0 (paper 0 - the border - red) ; HALT
       const list = [0x80 | (100 >> 8), 100 & 0xff, 0x40, 0x10, 0x41, 0xe0, 0xff, 0xff];
       s.setNextReg(0x43, 0x00).setNextReg(0x40, 0x10).setNextReg(0x41, 0x00); // --- border 0 black
