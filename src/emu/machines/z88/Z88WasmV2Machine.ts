@@ -8,6 +8,7 @@ import type { Z88WasmV2LoaderOptions, Z88WasmV2Runtime } from "./wasm/Z88WasmV2L
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MC_SCREEN_SIZE, MC_Z88_INTRAM } from "@common/machines/constants";
+import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { shouldStopAtDebugPoint } from "../DebugStepDecision";
 import { loadZ88WasmV2 } from "./wasm/Z88WasmV2Loader";
 import { z88LcdSizeRegisters } from "./z88MachineInfo";
@@ -30,32 +31,20 @@ const CARD_KIND_CODES: Record<Z88CardKind, number> = {
   AMD_FLASH_29F080B: 6
 };
 
+/** The beeper's DC filter cut-off (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
+const DC_FILTER_CUTOFF_HZ = 1.4;
+
 /* Local, so the machine does not depend on the renderer's command services */
 const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
 
 /**
- * Thrown by a machine surface the WASM core does not emulate yet. The message names the migration
- * step that adds it (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), so an early caller gets an
- * explicit answer instead of made-up machine state.
- */
-export class Z88WasmNotMigratedError extends Error {
-  constructor(
-    readonly feature: string,
-    readonly step: number
-  ) {
-    super(`The Cambridge Z88 WASM core does not emulate ${feature} yet (migration plan, Step ${step}).`);
-    this.name = "Z88WasmNotMigratedError";
-  }
-}
-
-/**
  * The Cambridge Z88 on the WASM core.
  *
- * Status (Step 6, 2026-09-19): the core emulates the memory map and RAM/ROM cards, runs the CPU frame
- * by frame (one boundary call per normal frame; instruction by instruction when debugging), and the
- * Blink: ports, RTC, interrupts, flap and battery. The keyboard (Step 7), the LCD renderer (Step 8),
- * the beeper (Step 9) and EPROM/flash programming (Step 10) are not migrated; the surfaces that need
- * them throw `Z88WasmNotMigratedError`.
+ * Status (Step 9, 2026-09-19): the core emulates the memory map and RAM/ROM cards, runs the CPU frame
+ * by frame (one boundary call per normal frame; instruction by instruction when debugging), the
+ * Blink (ports, RTC, interrupts, flap and battery), the keyboard and sleep detection, the LCD and the
+ * beeper. EPROM and flash cards read like ROM cards: their programming (Step 10) is not migrated,
+ * so the core ignores writes to them.
  *
  * It extends `Z88WasmHost`, never the TypeScript `Z88Machine` - see
  * `test/wasm/z88/wasm-z88-separation.test.ts`.
@@ -73,6 +62,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   /** The LCD's part of the pixel buffer, re-created when the LCD size changes */
   private lcdPixels?: Uint32Array;
   private lcdPixelBytes?: Uint8ClampedArray;
+
+  /** The frame's audio samples, reused from frame to frame */
+  private readonly wasmV2AudioSamples: AudioSample[] = [];
 
   /** The clock multiplier last handed to the core */
   private syncedTargetClockMultiplier = -1;
@@ -279,6 +271,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     if (runtime != null) {
       this.syncTargetClockMultiplier(runtime);
       runtime.exports.z88Reset();
+      this.syncAudioSampleRate(runtime);
       this.applyLcdSize(runtime);
       this.syncCpuFromWasmV2(runtime);
     }
@@ -588,18 +581,36 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   }
 
   // ==========================================================================================
-  // Not migrated yet
+  // Keyboard and beeper
 
-  setKeyStatus(_key: number, _isDown: boolean): void {
-    throw new Z88WasmNotMigratedError("the keyboard", 7);
+  /**
+   * Sets a key's state in the core's matrix; a pressed key raises the key interrupt (when enabled)
+   * and wakes a CPU snoozed by a KBD read, as `Z88KeyboardDevice.setKeyStatus` does.
+   */
+  setKeyStatus(key: number, isDown: boolean): void {
+    this.requireWasmV2Runtime().exports.z88SetKeyStatus(key, isDown ? 1 : 0);
   }
 
+  /**
+   * The current frame's samples, read from the core's double buffer - the same numbers the
+   * TypeScript beeper produces. The array and its objects are reused, as `AudioDeviceBase` reuses its.
+   */
   getAudioSamples(): AudioSample[] {
-    throw new Z88WasmNotMigratedError("the beeper", 9);
-  }
-
-  renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {
-    throw new Z88WasmNotMigratedError("the LCD renderer", 8);
+    const runtime = this.requireWasmV2Runtime();
+    const values = runtime.audioSamples;
+    const count = runtime.exports.z88GetAudioSampleCount();
+    const samples = this.wasmV2AudioSamples;
+    for (let i = 0; i < count; i++) {
+      const sample = samples[i];
+      if (sample) {
+        sample.left = values[i * 2];
+        sample.right = values[i * 2 + 1];
+      } else {
+        samples.push({ left: values[i * 2], right: values[i * 2 + 1] });
+      }
+    }
+    samples.length = count;
+    return samples;
   }
 
   // ==========================================================================================
@@ -619,6 +630,11 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     return this.lcdPixels!;
   }
 
+  /** The core renders the LCD at the start of every 8th frame; the current picture is the answer */
+  renderInstantScreen(_savedPixelBuffer?: Uint32Array): Uint32Array {
+    return this.getPixelBuffer();
+  }
+
   /** The LCD's pixels as RGBA bytes, for the renderer's zero-copy path */
   getPixelBufferBytes(): Uint8ClampedArray {
     this.requireWasmV2Runtime();
@@ -635,6 +651,14 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     if (this.lcdPixels?.length !== words) {
       this.lcdPixels = runtime.pixelBuffer.subarray(0, words);
       this.lcdPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
+    }
+  }
+
+  /** `Z88Machine.reset` hands the beeper the sample rate when the machine property holds one */
+  private syncAudioSampleRate(runtime: Z88WasmV2Runtime): void {
+    const rate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
+    if (typeof rate === "number" && rate > 0) {
+      runtime.exports.z88SetAudioSampleRate(rate, Math.exp((-2 * Math.PI * DC_FILTER_CUTOFF_HZ) / rate));
     }
   }
 
@@ -683,6 +707,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     this.tactsInCurrentFrame = w.z88GetTactsInCurrentFrame();
     this.frameTacts = w.z88GetFrameTacts();
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
+    this.isInSleepMode = w.z88GetSleepMode() !== 0;
   }
 
   private requireWasmV2Runtime(): Z88WasmV2Runtime {

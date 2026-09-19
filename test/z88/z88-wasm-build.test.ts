@@ -102,7 +102,7 @@ describe("Cambridge Z88 WASM build", () => {
     const folder = dirname(source);
     const cFunctions = readdirSync(folder)
       .filter((f) => f.endsWith(".c"))
-      .flatMap((f) => [...readFileSync(join(folder, f), "utf8").matchAll(/^(?:uint32_t|void) (z88[A-Za-z0-9]+)\(/gm)])
+      .flatMap((f) => [...readFileSync(join(folder, f), "utf8").matchAll(/^(?:uint32_t|void) (z88[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)])
       .map((m) => m[1])
       .sort();
     expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(cFunctions);

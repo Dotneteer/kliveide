@@ -1,4 +1,5 @@
-import type { MachineConfigSet, MachineInfo, MachineWithModel } from "./info-types";
+import type { MachineConfigSet, MachineInfo, MachineModel, MachineWithModel } from "./info-types";
+import { createModelTwins } from "./model-twins";
 
 import {
   MI_SPECTRUM_48,
@@ -15,6 +16,7 @@ import {
   MF_ULA,
   MF_BLINK,
   MF_PSG,
+  MC_Z88_IMPLEMENTATION,
   MC_Z88_INTRAM,
   MC_Z88_INTROM,
   CT_CUSTOM_DISASSEMBLER,
@@ -39,6 +41,160 @@ import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
+
+/**
+ * The Cambridge Z88 models. Their ids never change (saved projects refer to them) and they select no
+ * backend: they follow `DEFAULT_Z88_IMPLEMENTATION` (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`,
+ * "Machine menu during the comparison period").
+ */
+const Z88_MODELS: MachineModel[] = [
+  {
+    // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
+    modelId: "OZ50",
+    displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
+    config: {
+      [MC_Z88_INTRAM]: 0x1f, // 512K
+      [MC_Z88_INTROM]: "z88v50-r1f99aaae",
+      [MC_Z88_SLOT0]: {
+        size: 512,
+        cardType: "AMDF29F040B",
+        file: "z88v50-r1f99aaae"
+      }
+    }
+  },
+  {
+    // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
+    modelId: "OZ47",
+    displayName: "Cambridge Z88 (OZ v4.7)",
+    config: {
+      [MC_Z88_INTRAM]: 0x1f, // 512K
+      [MC_Z88_INTROM]: "z88v47",
+      [MC_Z88_SLOT0]: {
+        size: 512,
+        cardType: "AMDF29F040B",
+        file: "z88v47"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 128K RAM for slot 0, default UK KB Layout
+    modelId: "OZ40",
+    displayName: "Cambridge Z88 (OZ v4.0 UK)",
+    config: {
+      [MC_Z88_INTRAM]: 0x07, // 128K
+      [MC_Z88_INTROM]: "z88ukv40",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88ukv40"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 128K RAM for slot 0, default Swedish/Finish KB Layout
+    modelId: "OZ40FI",
+    displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
+    config: {
+      [MC_Z88_INTRAM]: 0x07, // 128K
+      [MC_Z88_INTROM]: "z88fiv401",
+      [MC_Z88_KEYBOARD]: "se",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88fiv401"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default UK KB Layout
+    modelId: "OZ30",
+    displayName: "Cambridge Z88 (OZ v3.0 UK)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88ukv30",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88ukv30"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default Italian KB Layout
+    modelId: "OZ323IT",
+    displayName: "Cambridge Z88 (OZ v3.23 IT)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88itv323",
+      [MC_Z88_KEYBOARD]: "it",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88itv323"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default French KB Layout
+    modelId: "OZ326FR",
+    displayName: "Cambridge Z88 (OZ v3.26 FR)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88frv326",
+      [MC_Z88_KEYBOARD]: "fr",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88frv326"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default Spanish KB Layout
+    modelId: "OZ319ES",
+    displayName: "Cambridge Z88 (OZ v3.19 ES)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88esv319",
+      [MC_Z88_KEYBOARD]: "es",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88esv319"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default Danish KB Layout
+    modelId: "OZ321DK",
+    displayName: "Cambridge Z88 (OZ v3.21 DK)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88dkv321",
+      [MC_Z88_KEYBOARD]: "dk",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88dkv321"
+      }
+    }
+  },
+  {
+    // Default ROM type for 128K image file, default 32K RAM for slot 0, default German KB Layout
+    modelId: "OZ318DE",
+    displayName: "Cambridge Z88 (OZ v3.18 DE)",
+    config: {
+      [MC_Z88_INTRAM]: 0x01, // 32K
+      [MC_Z88_INTROM]: "z88dev318",
+      [MC_Z88_KEYBOARD]: "de",
+      [MC_Z88_SLOT0]: {
+        size: 128,
+        cardType: "ROM",
+        file: "z88dev318"
+      }
+    }
+  }
+];
 
 /**
  * The registry of available machine types with their available models
@@ -213,152 +369,15 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_SCAN_LINES]: false
     },
     models: [
-      {
-        // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
-        modelId: "OZ50",
-        displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
-        config: {
-          [MC_Z88_INTRAM]: 0x1f, // 512K
-          [MC_Z88_INTROM]: "z88v50-r1f99aaae",
-          [MC_Z88_SLOT0]: {
-            size: 512,
-            cardType: "AMDF29F040B",
-            file: "z88v50-r1f99aaae"
-          }
-        }
-      },
-      {
-        // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
-        modelId: "OZ47",
-        displayName: "Cambridge Z88 (OZ v4.7)",
-        config: {
-          [MC_Z88_INTRAM]: 0x1f, // 512K
-          [MC_Z88_INTROM]: "z88v47",
-          [MC_Z88_SLOT0]: {
-            size: 512,
-            cardType: "AMDF29F040B",
-            file: "z88v47"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 128K RAM for slot 0, default UK KB Layout
-        modelId: "OZ40",
-        displayName: "Cambridge Z88 (OZ v4.0 UK)",
-        config: {
-          [MC_Z88_INTRAM]: 0x07, // 128K
-          [MC_Z88_INTROM]: "z88ukv40",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88ukv40"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 128K RAM for slot 0, default Swedish/Finish KB Layout
-        modelId: "OZ40FI",
-        displayName: "Cambridge Z88 (OZ v4.01 SE/FI)",
-        config: {
-          [MC_Z88_INTRAM]: 0x07, // 128K
-          [MC_Z88_INTROM]: "z88fiv401",
-          [MC_Z88_KEYBOARD]: "se",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88fiv401"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default UK KB Layout
-        modelId: "OZ30",
-        displayName: "Cambridge Z88 (OZ v3.0 UK)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88ukv30",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88ukv30"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Italian KB Layout
-        modelId: "OZ323IT",
-        displayName: "Cambridge Z88 (OZ v3.23 IT)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88itv323",
-          [MC_Z88_KEYBOARD]: "it",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88itv323"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default French KB Layout
-        modelId: "OZ326FR",
-        displayName: "Cambridge Z88 (OZ v3.26 FR)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88frv326",
-          [MC_Z88_KEYBOARD]: "fr",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88frv326"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Spanish KB Layout
-        modelId: "OZ319ES",
-        displayName: "Cambridge Z88 (OZ v3.19 ES)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88esv319",
-          [MC_Z88_KEYBOARD]: "es",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88esv319"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default Danish KB Layout
-        modelId: "OZ321DK",
-        displayName: "Cambridge Z88 (OZ v3.21 DK)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88dkv321",
-          [MC_Z88_KEYBOARD]: "dk",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88dkv321"
-          }
-        }
-      },
-      {
-        // Default ROM type for 128K image file, default 32K RAM for slot 0, default German KB Layout
-        modelId: "OZ318DE",
-        displayName: "Cambridge Z88 (OZ v3.18 DE)",
-        config: {
-          [MC_Z88_INTRAM]: 0x01, // 32K
-          [MC_Z88_INTROM]: "z88dev318",
-          [MC_Z88_KEYBOARD]: "de",
-          [MC_Z88_SLOT0]: {
-            size: 128,
-            cardType: "ROM",
-            file: "z88dev318"
-          }
-        }
-      }
+      ...Z88_MODELS,
+      // --- The comparison period of the WASM migration: every model on the WASM core, in a submenu
+      ...createModelTwins(Z88_MODELS, {
+        configKey: MC_Z88_IMPLEMENTATION,
+        implementation: "wasm",
+        menuGroup: "Cambridge Z88 (WASM preview)",
+        idSuffix: "-wasm",
+        nameSuffix: " - WASM preview"
+      })
     ],
     toolInfo: {
       [CT_CUSTOM_DISASSEMBLER]: () => new Z88CustomDisassembler(),
@@ -451,18 +470,20 @@ export function getAllMachineModels(): MachineWithModel[] {
 
 /**
  * Gets the configuration of the specified machine
+ *
+ * The result is a copy: callers build new configurations from it (the LCD menu sets the screen size,
+ * a new project stores it), and before this was a copy, such a change was written into the registry
+ * itself and stayed with the model. The copy is shallow; do not modify nested values (such as a slot
+ * state) in place.
  * @param machineId Machine ID
  * @param modelId Model ID
- * @returns Machine configuration
+ * @returns A copy of the machine configuration
  */
 export function getModelConfig(machineId: string, modelId?: string): MachineConfigSet | undefined {
   const machine = machineRegistry.find((m) => m.machineId === machineId);
   if (!machine) {
     return undefined;
   }
-  if (!modelId) {
-    return machine.config;
-  }
-  const model = machine.models?.find((m) => m.modelId === modelId);
-  return model?.config;
+  const config = modelId ? machine.models?.find((m) => m.modelId === modelId)?.config : machine.config;
+  return config ? { ...config } : undefined;
 }

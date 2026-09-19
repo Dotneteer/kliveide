@@ -13,24 +13,33 @@ import {
   MC_Z88_SLOT3,
   MC_Z88_USE_DEFAULT_ROM
 } from "@common/machines/constants";
-import { FILE_PROVIDER } from "@emu/machines/machine-props";
+import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
-import { Z88WasmNotMigratedError, Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
+import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { CardIds } from "@emu/machines/z88/memory/CardIds";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
 import { z88InternalRamSizeInBytes } from "@emu/machines/z88/z88CardCatalog";
-import { createHarnessZ88Machine, HarnessFileProvider, ResolvingMessenger, z88WasmArtifactBytes } from "../../harness/z88";
+import {
+  createHarnessZ88Machine,
+  createZ88Session,
+  HarnessFileProvider,
+  ResolvingMessenger,
+  z88WasmArtifactBytes
+} from "../../harness/z88";
 
 /*
- * The WASM Cambridge Z88 as a machine (Step 2 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the
- * host plumbing it shares with the TypeScript machine - compared with it side by side - and the
- * surfaces that are not migrated yet, which must say so rather than answer.
+ * The WASM Cambridge Z88 as a machine (Steps 2-9 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`):
+ * the host plumbing it shares with the TypeScript machine - compared with it side by side - and how
+ * the adapter hands keys, audio samples, the picture and the sleep state between the app and the core.
  */
 
 const SLOT = 0x10_0000;
 
 function models(): string[] {
-  return machineRegistry.find((m) => m.machineId === "z88").models.map((m) => m.modelId);
+  return machineRegistry
+    .find((m) => m.machineId === "z88")
+    .models.filter((m) => m.menuGroup === undefined) // the originals, not the backend twins
+    .map((m) => m.modelId);
 }
 
 function sentSettings(machine: Z88HarnessMachine): unknown[] {
@@ -38,7 +47,7 @@ function sentSettings(machine: Z88HarnessMachine): unknown[] {
   return messenger.sent.map((m) => (m as any).args);
 }
 
-/** A WASM machine whose not-yet-migrated key and Blink calls are recorded instead */
+/** A WASM machine whose key and Blink calls are recorded instead of reaching the core */
 class RecordingZ88WasmMachine extends Z88WasmV2Machine {
   readonly calls: string[] = [];
   override setKeyStatus(key: number, isDown: boolean): void {
@@ -357,24 +366,67 @@ describe("Cambridge Z88 WASM machine - host behaviour", () => {
   });
 });
 
-describe("Cambridge Z88 WASM machine - surfaces not migrated yet", () => {
-  it.each([
-    ["setKeyStatus", (m: Z88WasmV2Machine) => m.setKeyStatus(0, true), 7],
-    ["renderInstantScreen", (m: Z88WasmV2Machine) => m.renderInstantScreen(), 8],
-    ["getAudioSamples", (m: Z88WasmV2Machine) => m.getAudioSamples(), 9]
-  ] as const)("%s says it arrives in Step %i", async (_name, call, step) => {
+describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the core", () => {
+  it("a key sets its bit in the core's matrix and releasing clears it", async () => {
     const machine = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
-    let error: unknown;
-    try {
-      call(machine);
-    } catch (e) {
-      error = e;
-    }
-    expect(error).toBeInstanceOf(Z88WasmNotMigratedError);
-    expect((error as Z88WasmNotMigratedError).step).toBe(step);
-    expect((error as Error).message).toMatch(new RegExp(`Step ${step}\\)\\.$`));
+    const w = machine.wasmV2Runtime!.exports;
+    machine.setKeyStatus(Z88KeyCode.A, true);
+    expect(w.z88GetKeyLine(Z88KeyCode.A >> 3)).toBe(1 << (Z88KeyCode.A & 7));
+    expect(w.z88GetKeyPressed()).toBe(1);
+    machine.setKeyStatus(Z88KeyCode.A, false);
+    expect(w.z88GetKeyLine(Z88KeyCode.A >> 3)).toBe(0);
+    expect(w.z88GetKeyPressed()).toBe(0);
   });
 
+  it("the audio samples are one frame's worth, in an array reused from frame to frame", async () => {
+    const machine = (await createHarnessZ88Machine({ backend: "wasm", audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+    machine.executeMachineFrame();
+    const first = machine.getAudioSamples();
+    // --- 5 ms of 44.1 kHz: 220 or 221 samples
+    expect(first.length).toBeGreaterThanOrEqual(220);
+    expect(first.length).toBeLessThanOrEqual(221);
+    const firstSample = first[0];
+    machine.executeMachineFrame();
+    const second = machine.getAudioSamples();
+    expect(second).toBe(first);
+    expect(second[0]).toBe(firstSample);
+    expect(second.length).toBe(machine.wasmV2Runtime!.exports.z88GetAudioSampleCount());
+  });
+
+  it("the sample rate is handed to the core at reset, as the TypeScript machine hands it to its beeper", async () => {
+    const machine = (await createHarnessZ88Machine({ backend: "wasm", audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+    const w = machine.wasmV2Runtime!.exports;
+    expect(w.z88GetAudioSampleRate()).toBe(44_100);
+    machine.setMachineProperty(AUDIO_SAMPLE_RATE, 22_050);
+    expect(w.z88GetAudioSampleRate()).toBe(44_100);
+    machine.reset();
+    expect(w.z88GetAudioSampleRate()).toBe(22_050);
+  });
+
+  it("the instant screen is the current picture: the core's buffer, no copy", async () => {
+    const machine = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+    expect(machine.renderInstantScreen()).toBe(machine.getPixelBuffer());
+  });
+
+  it("the sleep state follows the core after every frame", async () => {
+    const session = await createZ88Session({ backend: "wasm" });
+    const machine = session.machine as Z88WasmV2Machine;
+    // --- HALT with I = $3F: sleep mode is detected at the start of the next frame
+    await session.loadCode(`
+      .org $8000
+start: di
+      halt
+    `, { entry: "start" });
+    session.setRegisters({ ir: 0x3f00 });
+    session.runFrames(2);
+    expect(machine.wasmV2Runtime!.exports.z88GetSleepMode()).toBe(1);
+    expect(machine.isInSleepMode).toBe(true);
+    machine.reset();
+    expect(machine.isInSleepMode).toBe(false);
+  });
+});
+
+describe("Cambridge Z88 WASM machine - lifecycle guard", () => {
   it("a machine that was never set up says so", () => {
     expect(() => new Z88WasmV2Machine().directReadMemory(0)).toThrow("call setup() first");
   });

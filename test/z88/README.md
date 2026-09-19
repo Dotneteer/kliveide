@@ -22,9 +22,9 @@ and the suites that were waiting for it start running on WASM with no other chan
 | `memory` - memory map, RAM/ROM cards | 4 | on WASM |
 | `cpu` - CPU and frame loop | 5 | on WASM |
 | `blink` - ports, RTC, interrupts, flap, battery | 6 | on WASM |
-| `keyboard` - key interrupt, sleep detection | 7 | TypeScript only |
-| `lcd` - LCD renderer | 8 | TypeScript only |
-| `beeper` - audio | 9 | TypeScript only |
+| `keyboard` - key interrupt, sleep detection | 7 | on WASM |
+| `lcd` - LCD renderer | 8 | on WASM |
+| `beeper` - audio | 9 | on WASM |
 | `flashCards` - UV EPROM and flash programming | 10 | TypeScript only |
 
 ## Two kinds of suites
@@ -50,6 +50,5 @@ TypeScript objects (`instanceof`, `bankData`) and now asks the same questions th
 ## Cases that do not run on a backend yet
 
 Only those whose feature the WASM core does not emulate yet - see the table above:
-`memory-eprom-io`, `memory-intflash-io`, `memory-amdflash-io` (`flashCards`); `z88-keyboard`,
-`z88-sleep-and-boot` (`keyboard`, `lcd`); `z88-lcd` (`lcd`); `z88-beeper` (`beeper`); and the harness
-self-tests for keys and audio. No case is excluded for any other reason.
+`memory-eprom-io`, `memory-intflash-io`, `memory-amdflash-io` (`flashCards`). No case is excluded for
+any other reason.

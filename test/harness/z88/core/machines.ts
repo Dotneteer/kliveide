@@ -46,7 +46,14 @@ export type Z88Feature =
  * What the WASM core emulates so far. Each migration step adds its feature here, and every Z88 suite
  * that needs no more than these starts running on the WASM core too.
  */
-export const Z88_WASM_FEATURES: ReadonlySet<Z88Feature> = new Set<Z88Feature>(["memory", "cpu", "blink"]);
+export const Z88_WASM_FEATURES: ReadonlySet<Z88Feature> = new Set<Z88Feature>([
+  "memory",
+  "cpu",
+  "blink",
+  "keyboard",
+  "lcd",
+  "beeper"
+]);
 
 /**
  * The backends a Z88 test runs on: the TypeScript machine always, the WASM machine once it emulates

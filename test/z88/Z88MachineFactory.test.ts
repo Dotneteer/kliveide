@@ -18,11 +18,14 @@ import { configWithSlot0 } from "@renderer/appEmu/dialogs/z88/insertCard/Z88Inse
 import { applyCardStateChange } from "@renderer/appEmu/machines/z88Cards";
 
 /*
- * The Cambridge Z88 backend switch, its factory and the model twins that will list the other
- * backend in the machine menu (Step 3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ * The Cambridge Z88 backend switch, its factory and the model twins that list the WASM backend in
+ * the machine menu (Steps 3 and 9 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
-const z88Models = () => machineRegistry.find((m) => m.machineId === "z88").models;
+const z88Entry = () => machineRegistry.find((m) => m.machineId === "z88");
+
+/** The original models: the ones that select no backend and have no menu group */
+const z88Models = () => z88Entry().models.filter((m) => m.menuGroup === undefined);
 
 const wasmTwins = () =>
   createModelTwins(z88Models(), {
@@ -122,9 +125,30 @@ describe("Cambridge Z88 models", () => {
     }
   });
 
-  it("no WASM preview entry is registered until the WASM core runs (Step 5)", () => {
-    // --- Flip this test when the preview twins are registered
-    expect(z88Models().some((m) => m.modelId.endsWith("-wasm"))).toBe(false);
+  it("the WASM preview twins are registered after the originals, one per model", () => {
+    const all = z88Entry().models;
+    const originals = z88Models();
+    expect(originals.map((m) => m.modelId)).toEqual([
+      "OZ50",
+      "OZ47",
+      "OZ40",
+      "OZ40FI",
+      "OZ30",
+      "OZ323IT",
+      "OZ326FR",
+      "OZ319ES",
+      "OZ321DK",
+      "OZ318DE"
+    ]);
+    expect(all).toEqual([...originals, ...wasmTwins()]);
+  });
+
+  it("each registered twin creates the WASM machine, each original the TypeScript one", () => {
+    const factory = machineRendererRegistry.find((r) => r.machineId === "z88").factory;
+    for (const model of z88Entry().models) {
+      const machine = factory(undefined, model, model.config, undefined);
+      expect(machine, model.modelId).toBeInstanceOf(model.menuGroup ? Z88WasmV2Machine : Z88Machine);
+    }
   });
 
   it("twins select their backend, keep the original configuration and join one menu group", () => {

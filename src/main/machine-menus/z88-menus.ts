@@ -90,8 +90,8 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
     const emulatorState = mainStore.getState()?.emulatorState;
     const machineId = emulatorState?.machineId;
     const modelId = emulatorState?.modelId;
-    const config = getModelConfig(machineId, modelId);
-    config[MC_SCREEN_SIZE] = lcdId;
+    // --- A new configuration: every key of the model's (e.g. the Z88 backend selection) plus the size
+    const config = { ...getModelConfig(machineId, modelId), [MC_SCREEN_SIZE]: lcdId };
     setMachineType(machineId, modelId, config);
     mainStore.dispatch(incMenuVersionAction());
   }

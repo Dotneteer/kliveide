@@ -681,7 +681,7 @@ Original scope:
 
 ### Step 3 - Implementation switch, factory and menu groups
 
-Status: Done on 2026-09-19 (the preview twins are deferred until after Step 9 - see Step 5).
+Status: Done on 2026-09-19 (the preview twins were registered with Step 9 - see there).
 
 - `MC_Z88_IMPLEMENTATION = "z88Implementation"` (`constants.ts`). `Z88Implementation.ts`:
   `DEFAULT_Z88_IMPLEMENTATION = "typescript"`, `getZ88Implementation(config, model)` with the
@@ -799,7 +799,7 @@ Status: Done on 2026-09-19.
   OZ ROMs boot identically on both backends** (registers, tacts, frames, Blink state, snooze, all
   4 MB, at frames 1-1700), a mixed program matches after each of 30,000 instructions, in whole
   frames, and across mid-frame stops.
-- **Preview menu entries: deferred again, to after Step 9.** The WASM machine runs, but the app's
+- **Preview menu entries: deferred again, to after Step 9** (registered then). The WASM machine runs, but the app's
   emulator loop also takes audio samples every frame and the keyboard panel sets keys, and those
   surfaces still throw `Z88WasmNotMigratedError` (Steps 7 and 9); without the LCD (Step 8) a preview
   would show nothing. Register the ten `-wasm` twins with `createModelTwins` once Steps 7-9 are done,
@@ -853,7 +853,24 @@ Original scope:
 
 ### Step 7 - Keyboard, snooze and sleep
 
-Status: Not started.
+Status: Done on 2026-09-19 (together with Steps 8 and 9).
+
+- `z88-keyboard.c`: `z88SetKeyStatus` (the matrix bit, the shift flags, "a key is pressed", then the
+  key interrupt - INT.KEY sets STA.KEY - and the KWAIT wake-up), `z88GetKeyLine`,
+  `z88GetKeyPressed`, and the sleep check of `onInitNewFrame` (`z88CheckSleepMode`, exported as
+  `z88GetSleepMode`). Kept for parity: the keyboard reset clears the matrix but not the "pressed"
+  and shift flags. The KBD read and its snooze were already in `z88-blink.c` (Step 6).
+- The frame start is the TypeScript order: RTC, the KWAIT wake-up while a key is down, the LCD, then
+  the sleep check - which, when both shifts wake the machine, returns before the beeper's new frame.
+- Adapter: `setKeyStatus` is one export call per key change (the app changes one key at a time, so
+  the "write only changed lines" batching was not needed); `isInSleepMode` is refreshed with the
+  frame counters after every frame and every debugger stop. `press_shifts` stays the host's timer.
+- Tests: `z88-keyboard.test.ts` and `z88-sleep-and-boot.test.ts` on both backends (the "keyboard"
+  feature); the harness key self-tests; adapter tests (the key reaches the core's matrix, the sleep
+  flag follows the core); parity: OZ50 and OZ40 driven by a 22-step typing script, compared after
+  every frame (registers, memory, Blink, picture, samples).
+
+Original scope:
 
 - `z88-keyboard.c`: the 8×8 matrix, `getKeyLineStatus(highByte)`, and `z88SetKeyStatus` with the
   STA.KEY interrupt and KWAIT awake. The `$B2` read snoozes the CPU when KWAIT is set and no key is
@@ -866,7 +883,22 @@ Status: Not started.
 
 ### Step 8 - LCD
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `z88-screen.c`: a port of `Z88ScreenDevice.renderScreen` - the PB0-PB3/SBR address shuffles,
+  LORES/HIRES/UDG cells, REV/FLS/GRY/UND, the cursor from TIM0, the null cell, the 200-frame text
+  flash, the right-edge fill, the one-off LCD-off fill, all five sizes. Every byte is read from
+  physical memory directly, so a flash card's command state never affects the picture. Kept: the
+  unpainted 4 pixels at the right of a LORES row.
+- `z88RenderScreen` is not exported: the instant render (`renderInstantScreen`) answers the current
+  picture, as the TypeScript machine's does (it returns its buffer without rendering).
+- The renderer's zero-copy byte path (`getPixelBufferBytes`) works unchanged: the buffer starts at
+  offset 0 with the LCD width as its stride, and the ABGR words are the TypeScript ones.
+- Tests: `z88-lcd.test.ts` on both backends (the "lcd" feature); parity: the ten OZ boots now
+  compare the picture at every checkpoint, and 64K of random screen memory and fonts renders
+  identically at all five sizes through two text-flash toggles, the cursor phases and LCD off/on.
+
+Original scope:
 
 - `z88-screen.c`, ported from `Z88ScreenDevice`:
   - address shuffles for PB0-3/SBR
@@ -887,7 +919,37 @@ Status: Not started.
 
 ### Step 9 - Beeper
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `z88-beeper.c`: the oscillator bit (after each instruction, from the tact count), the SRUN/SBIT/
+  ear selection, and the `AudioDeviceBase` sampler - one sample at most per clock step, the DC
+  high-pass filter, the clamp - **in doubles**. The decision: the samples are the oracle's numbers
+  exactly (the parity test compares with `toBe`), not int16. The loader's view is a `Float64Array`;
+  the adapter copies into a reused `AudioSample[]`. The host computes the filter alpha (no `exp` in
+  the core) and hands the rate over at reset, when `AUDIO_SAMPLE_RATE` holds a number - where the
+  TypeScript machine hands it to its beeper.
+- **Not shared with `zx-spectrum-beeper.c`**: its EAR/MIC semantics and `sp48*` names would need
+  aliasing, and the Z88 sampler is 40 lines. Kept local, per the "do not over-share" rule.
+- Kept different, on purpose: without a sample rate the TypeScript beeper emits a sample per clock
+  step, the core none (the app always sets one; the harness README says so).
+- The tact hook became `noinline` (`Z88_CPU_NOINLINE`, as `sp48CpuTactPlusN`): with the sampler
+  inlined into every opcode the artifact was 710 KB; now it is 198 KB.
+- Tests: `z88-beeper.test.ts` and the harness audio self-tests on both backends (the "beeper"
+  feature); adapter tests (the reused array, the rate at reset); parity: the OZ boots and the typing
+  sessions compare each frame's samples, and a Z80 beeper program (oscillator, SBIT gating, ear-bit
+  toggles at growing periods) matches exactly at 11,025-96,000 Hz and across rate changes.
+- **The preview entries are registered**: `machine-registry.ts` holds the ten models as `Z88_MODELS`
+  and adds their `createModelTwins` twins, `<modelId>-wasm`, in the "Cambridge Z88 (WASM preview)"
+  submenu. The tests that pinned "no preview entry yet" now pin the twins: their ids, names, group
+  and backend (`Z88MachineFactory.test.ts`), the submenu and its checked state
+  (`machine-types-menu.test.ts`). Tests that iterate the models filter the originals
+  (`menuGroup === undefined`). The twins also appear in the New Project dialog's model list.
+- `Z88WasmNotMigratedError` is gone: no surface throws it any more. EPROM and flash cards read like
+  ROM on the WASM core, and writes to them are ignored until Step 10.
+- Usable afterwards: the WASM Z88 in the machine menu, with picture, keyboard and sound, for side by
+  side comparison with the TypeScript one - except for programming EPROM/flash cards.
+
+Original scope:
 
 - `z88-beeper.c`: the oscillator (`floor(tacts / floor(clock * mult / 6400)) & 1`), SRUN/SBIT/ear
   selection, and per-tact sample scheduling matching `AudioDeviceBase` including its DC high-pass

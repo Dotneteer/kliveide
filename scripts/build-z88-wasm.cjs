@@ -37,6 +37,17 @@ const productionExports = [
   "z88AudioSamplesPtr",
   "z88GetAudioSampleCapacity",
   "z88KeyboardLinesPtr",
+  // --- Keyboard and sleep
+  "z88SetKeyStatus",
+  "z88GetKeyLine",
+  "z88GetKeyPressed",
+  "z88GetSleepMode",
+  // --- Audio
+  "z88SetAudioSampleRate",
+  "z88GetAudioSampleCount",
+  "z88GetAudioSampleRate",
+  "z88GetAudioOverflows",
+  "z88GetOscillatorBit",
   // --- Lifecycle and execution
   "z88Reset",
   "z88HardReset",
@@ -53,7 +64,6 @@ const productionExports = [
   "z88SetTacts",
   "z88GetClockMultiplier",
   "z88SetTargetClockMultiplier",
-  "z88GetOscillatorBit",
   // --- LCD shape
   "z88SetLcdSize",
   "z88GetScw",

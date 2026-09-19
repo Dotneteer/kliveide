@@ -52,8 +52,11 @@ export type Z88WasmV2Views = {
   /** The same pixel buffer as RGBA bytes, for the renderer's zero-copy path */
   readonly pixelBufferBytes: Uint8ClampedArray;
   readonly keyboardLines: Uint8Array;
-  /** Interleaved left/right int16 samples */
-  readonly audioSamples: Int16Array;
+  /**
+   * Interleaved left/right samples of the current frame, as doubles in [-1, 1] - the same numbers
+   * the TypeScript beeper produces; `z88GetAudioSampleCount()` of them are valid
+   */
+  readonly audioSamples: Float64Array;
 };
 
 export type Z88WasmV2Runtime = Z88WasmV2Views & {
@@ -74,6 +77,17 @@ export const z88WasmV2RequiredExports = [
   "z88AudioSamplesPtr",
   "z88GetAudioSampleCapacity",
   "z88KeyboardLinesPtr",
+  // --- Keyboard and sleep
+  "z88SetKeyStatus",
+  "z88GetKeyLine",
+  "z88GetKeyPressed",
+  "z88GetSleepMode",
+  // --- Audio
+  "z88SetAudioSampleRate",
+  "z88GetAudioSampleCount",
+  "z88GetAudioSampleRate",
+  "z88GetAudioOverflows",
+  "z88GetOscillatorBit",
   // --- Lifecycle and execution
   "z88Reset",
   "z88HardReset",
@@ -90,7 +104,6 @@ export const z88WasmV2RequiredExports = [
   "z88SetTacts",
   "z88GetClockMultiplier",
   "z88SetTargetClockMultiplier",
-  "z88GetOscillatorBit",
   // --- LCD shape
   "z88SetLcdSize",
   "z88GetScw",
@@ -248,7 +261,7 @@ export function createZ88WasmV2Views(
     Z88_WASM_V2_KEYBOARD_LINE_COUNT,
     memoryBuffer
   );
-  assertViewRange(artifactName, "audioSamples", exports.z88AudioSamplesPtr(), audioWords * 2, memoryBuffer);
+  assertViewRange(artifactName, "audioSamples", exports.z88AudioSamplesPtr(), audioWords * 8, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -256,7 +269,7 @@ export function createZ88WasmV2Views(
     pixelBuffer: new Uint32Array(memoryBuffer, exports.z88PixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.z88PixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.z88KeyboardLinesPtr(), Z88_WASM_V2_KEYBOARD_LINE_COUNT),
-    audioSamples: new Int16Array(memoryBuffer, exports.z88AudioSamplesPtr(), audioWords)
+    audioSamples: new Float64Array(memoryBuffer, exports.z88AudioSamplesPtr(), audioWords)
   };
 }
 

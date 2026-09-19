@@ -81,7 +81,10 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard", "lcd"))("
 });
 
 function z88Models(): string[] {
-  return machineRegistry.find((m) => m.machineId === "z88").models.map((m) => m.modelId);
+  return machineRegistry
+    .find((m) => m.machineId === "z88")
+    .models.filter((m) => m.menuGroup === undefined) // the originals, not the backend twins
+    .map((m) => m.modelId);
 }
 
 function litPixels(screen: Uint32Array): number {

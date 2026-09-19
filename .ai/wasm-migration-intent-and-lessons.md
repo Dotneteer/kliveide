@@ -80,6 +80,13 @@ Audio scheduling lesson: sample thresholds in the 28 MHz frame-clock domain
 overflow 32-bit arithmetic when multiplied by a 48 kHz sample rate. Use 64-bit
 scaled threshold math for `frameTacts28 * sampleRate` comparisons.
 
+Hook inlining lesson (Cambridge Z88): the shared core expands the tact hook
+(`Z80_TACT_PLUS_N`) inside every opcode. Whatever the hook calls is inlined at
+`-O3` into hundreds of sites, so a per-tact device (the audio sampler) grew the
+Z88 artifact from 266 KB to 710 KB. Mark the machine's tact hook `noinline`, as
+`sp48CpuTactPlusN` is; the whole artifact then shrank to 198 KB. A size jump after
+adding per-tact work is this, not the device's own code.
+
 ## Single-Source Device Intent
 
 Do not duplicate hardware devices per model when the behavior is common.
@@ -170,6 +177,17 @@ APIs wherever possible:
 - tape behavior
 - PSG/device register readback
 - disk or storage state where applicable
+
+Compare audio exactly when you can. The Z88 core runs the TypeScript
+`AudioDeviceBase` arithmetic (tact schedule, DC filter) in `double` and hands
+the doubles over in a `Float64Array`, so its parity test compares samples with
+`toBe` rather than a tolerance. Anything the core cannot compute (`exp` for the
+filter's alpha) is computed by the host and passed in.
+
+A parity test that passes the first time proves nothing until it has failed:
+change one colour constant and one filter constant, rebuild, and watch the
+pixel and sample comparisons fail, then restore. The Z88 LCD and beeper parity
+tests were checked this way.
 
 If a behavior is hard to reproduce with tests, still audit the exact TypeScript
 and WASM contracts. Games often reveal mid-frame timing bugs that ordinary unit
@@ -277,6 +295,13 @@ Plans must distinguish clearly between:
 Avoid long migrations that produce many files but leave the user uncertain
 about whether the emulator should actually work. Each step should say what
 surface is now expected to be usable and what is still missing.
+
+Comparison menu entries (the Z88's `-wasm` twins, `createModelTwins`) go in only
+when every surface the app's emulator loop touches each frame works: the frame,
+the picture, the key setter and the audio samples. A twin registered earlier
+creates a machine whose loop throws. Once twins exist, every test that iterates
+a machine's models must pick the originals (`menuGroup === undefined`), or it
+silently runs each case twice and counts the twins as models.
 
 When extending a plan, include explicit steps for moving from TypeScript to
 WASM as the actual selected implementation:

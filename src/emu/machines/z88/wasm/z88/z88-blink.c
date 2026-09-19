@@ -50,15 +50,8 @@ static uint16_t z88Sbr;
 static uint8_t z88EarBit;
 
 // -----------------------------------------------------------------------------
-// Keyboard matrix (the lines the host writes; the key interrupt arrives in Step 7)
+// Keyboard matrix (the key changes, the key interrupt and sleep are in z88-keyboard.c)
 // -----------------------------------------------------------------------------
-
-static uint8_t z88AnyKeyDown(void) {
-  for (uint32_t i = 0u; i < Z88_KEYBOARD_LINES; i++) {
-    if (z88KeyboardLines[i]) return 1u;
-  }
-  return 0u;
-}
 
 /* The KBD value for a row selection: the rows whose address line (A8-A15) is low, active low */
 static uint8_t z88KeyLineStatus(uint8_t selection) {
@@ -235,7 +228,7 @@ static uint32_t z88BlinkReadPort(uint32_t address) {
     case 0xb1u:
       return z88Sta;
     case 0xb2u:
-      if ((z88Int & Z88_INT_KWAIT) && !z88AnyKeyDown()) {
+      if ((z88Int & Z88_INT_KWAIT) && !z88KeyPressed) {
         z80SnoozeCpu();
         return 0xffu;
       }

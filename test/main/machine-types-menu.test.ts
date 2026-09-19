@@ -79,10 +79,32 @@ describe("createMachineTypesMenu", () => {
     expect(select).toHaveBeenLastCalledWith("multi", "b-alt");
   });
 
-  it("keeps the real machine menu flat today: no registered model has a menu group", () => {
+  it("lists the Z88's WASM preview twins in one submenu; every other machine stays flat", () => {
     const items = createMachineTypesMenu(machineRegistry, undefined, undefined, vi.fn());
-    expect(items.filter((i) => i.type === "submenu")).toEqual([]);
+    const submenus = items.filter((i) => i.type === "submenu");
+    expect(submenus.map((i) => [i.id, i.label])).toEqual([
+      ["machine_z88_group_cambridge_z88_wasm_preview", "Cambridge Z88 (WASM preview)"]
+    ]);
+
+    const z88 = machineRegistry.find((m) => m.machineId === "z88")!;
+    const originals = z88.models!.filter((m) => m.menuGroup === undefined);
+    const preview = submenus[0].submenu as MenuItemConstructorOptions[];
+    expect(preview.map((i) => i.id)).toEqual(originals.map((m) => `machine_z88_${m.modelId}-wasm`));
+    expect(preview.map((i) => i.label)).toEqual(originals.map((m) => `${m.displayName} - WASM preview`));
+
+    // --- The originals keep their flat items; every model has exactly one checkbox
+    const flat = items.filter((i) => i.type === "checkbox");
+    for (const model of originals) {
+      expect(flat.some((i) => i.id === `machine_z88_${model.modelId}`), model.modelId).toBe(true);
+    }
     const modelCount = machineRegistry.reduce((n, m) => n + (m.models?.length ?? 1), 0);
-    expect(items.filter((i) => i.type === "checkbox")).toHaveLength(modelCount);
+    expect(flat.length + preview.length).toBe(modelCount);
+  });
+
+  it("checks a running preview twin inside its submenu", () => {
+    const items = createMachineTypesMenu(machineRegistry, "z88", "OZ40-wasm", vi.fn());
+    const preview = items.find((i) => i.type === "submenu")!.submenu as MenuItemConstructorOptions[];
+    expect(preview.filter((i) => i.checked).map((i) => i.id)).toEqual(["machine_z88_OZ40-wasm"]);
+    expect(items.filter((i) => i.type === "checkbox" && i.checked)).toEqual([]);
   });
 });
