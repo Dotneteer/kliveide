@@ -143,3 +143,27 @@ export function z88DisassemblySections(options: Record<string, any>): IMemorySec
 
   return sections;
 }
+
+/** The LCD size registers (SCW, SCH) of the Blink */
+export type Z88LcdSizeRegisters = { scw: number; sch: number };
+
+/**
+ * Gets the LCD size registers an `MC_SCREEN_SIZE` configuration value selects. SCW is $FF for a
+ * 640-pixel LCD or the width in 8-pixel columns; SCH is the number of 8-line text rows. Unknown or
+ * missing values select the Z88's own 640x64 LCD.
+ * @param screenSize The `MC_SCREEN_SIZE` value: "640x320", "640x480", "800x320", "800x480"
+ */
+export function z88LcdSizeRegisters(screenSize: unknown): Z88LcdSizeRegisters {
+  switch (screenSize) {
+    case "640x320":
+      return { scw: 0xff, sch: 40 };
+    case "640x480":
+      return { scw: 0xff, sch: 60 };
+    case "800x320":
+      return { scw: 100, sch: 40 };
+    case "800x480":
+      return { scw: 100, sch: 60 };
+    default:
+      return { scw: 0xff, sch: 8 };
+  }
+}

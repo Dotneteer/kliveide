@@ -8,16 +8,24 @@ import {
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY,
   z88DisassemblySections,
+  z88LcdSizeRegisters,
   z88PartitionDescriptions,
   z88PartitionGroups,
   z88PartitionLabels,
   z88RomFlags
 } from "@emu/machines/z88/z88MachineInfo";
 import {
+  CardType,
   z88CardSizeInBytes,
+  z88CardSpec,
   z88ChipMaskForSize,
-  z88InternalRamSizeInBytes
+  z88InternalRamSizeInBytes,
+  z88RomImageCardSpec,
+  z88SlotHasCard
 } from "@emu/machines/z88/z88CardCatalog";
+import { createZ88MemoryCard } from "@emu/machines/z88/memory/CardType";
+import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { machineRegistry } from "@common/machines/machine-registry";
 
@@ -143,4 +151,73 @@ describe("Z88Machine uses the neutral modules", () => {
     expect(machine.getSelectedRomPage()).toBe(0);
     expect(machine.getSelectedRamBank()).toBe(0);
   });
+});
+
+describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules both hosts share)", () => {
+  const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
+  const host = new Z88Machine(model, model.config, undefined);
+
+  it.each(Object.values(CardIds).flatMap((id) => [32, 128, 256, 512, 1024, 48].map((size) => [id, size] as const)))(
+    "%s of %iK: the spec agrees with the TypeScript card factory",
+    (id, size) => {
+      let spec: ReturnType<typeof z88CardSpec> | Error;
+      let card: ReturnType<typeof createZ88MemoryCard> | Error;
+      try {
+        spec = z88CardSpec(id, size);
+      } catch (e) {
+        spec = e as Error;
+      }
+      try {
+        card = createZ88MemoryCard(host, size, id);
+      } catch (e) {
+        card = e as Error;
+      }
+      if (card instanceof Error) {
+        expect(spec).toBeInstanceOf(Error);
+        expect((spec as Error).message).toBe(card.message);
+        return;
+      }
+      expect(spec).not.toBeInstanceOf(Error);
+      const s = spec as Exclude<typeof spec, Error>;
+      expect(s.sizeInBytes).toBe(card.size);
+      const expectedKind = {
+        [CardType.Ram]: "RAM",
+        [CardType.Rom]: "ROM",
+        [CardType.EpromVpp32KB]: "UV_EPROM",
+        [CardType.EpromVpp128KB]: "UV_EPROM",
+        [CardType.FlashIntel28F004S5]: "INTEL_FLASH",
+        [CardType.FlashIntel28F008S5]: "INTEL_FLASH",
+        [CardType.FlashAmd29F040B]: "AMD_FLASH_29F040B",
+        [CardType.FlashAmd29F080B]: "AMD_FLASH_29F080B"
+      } as Record<number, string>;
+      expect(s.kind).toBe(expectedKind[card.type]);
+    }
+  );
+
+  it.each([
+    [undefined, false],
+    [null, false],
+    [{ cardType: "RAM32" }, false],
+    [{ size: 32, cardType: "-" }, false],
+    [{ size: 32, cardType: "RAM32" }, true],
+    [{ size: 0, cardType: "ROM" }, true]
+  ])("slot %j has a card: %s", (slot, expected) => {
+    expect(z88SlotHasCard(slot as any)).toBe(expected);
+  });
+
+  it("a ROM image without a slot-0 configuration is a ROM card of the image's size", () => {
+    expect(z88RomImageCardSpec(0x2_0000)).toEqual({ kind: "ROM", sizeInBytes: 0x2_0000 });
+    expect(() => z88RomImageCardSpec(0x2_0001)).toThrow("Invalid memory card size");
+  });
+});
+
+describe("z88LcdSizeRegisters (the LCD size rule both backends share)", () => {
+  it.each([undefined, "640x64", "640x320", "640x480", "800x320", "800x480", "1024x768"])(
+    "%s: the same SCW/SCH as the TypeScript screen device",
+    (size) => {
+      const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
+      const machine = new Z88Machine(model, { ...model.config, [MC_SCREEN_SIZE]: size }, undefined);
+      expect(z88LcdSizeRegisters(size)).toEqual({ scw: machine.screenDevice.SCW, sch: machine.screenDevice.SCH });
+    }
+  );
 });

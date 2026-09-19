@@ -34,6 +34,7 @@ import { MC_Z88_INTROM } from "@common/machines/constants";
 import { Z88BankedMemory } from "./memory/Z88BankedMemory";
 import { Z88RomMemoryCard } from "./memory/Z88RomMemoryCard";
 import { createZ88MemoryCard } from "./memory/CardType";
+import { z88SlotHasCard } from "./z88CardCatalog";
 import { MessengerBase } from "@common/messaging/MessengerBase";
 import { createMainApi } from "@common/messaging/MainApi";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
@@ -217,7 +218,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88DeviceHost, IZ88Id
       const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
       const intRom = this.config?.[MC_Z88_INTROM];
       let useDefaultRom = false;
-      if (slot0 && slot0.size !== undefined && slot0.cardType !== "-") {
+      if (z88SlotHasCard(slot0)) {
         // --- There is a card in slot 0
         romCard = createZ88MemoryCard(this, slot0.size, slot0.cardType);
         if (slot0.file) {
@@ -293,7 +294,7 @@ export class Z88Machine extends Z80MachineBase implements IZ88DeviceHost, IZ88Id
 
     // --- Handle the specified slot
     async function handleSlot(slotId: number, slot: CardSlotState): Promise<void> {
-      if (!slot || slot.cardType === "-" || slot.size === undefined) {
+      if (!z88SlotHasCard(slot)) {
         // --- No slot info
         machine.memory.removeCard(slotId);
         return;

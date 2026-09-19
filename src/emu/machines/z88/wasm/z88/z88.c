@@ -6,10 +6,10 @@
  * is a static array exposed through a pointer export. See
  * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` for the architecture and the step this file is at.
  *
- * Status (Step 1, 2026-09-19): scaffolding. The buffers, the reset, the LCD shape and the CPU
- * register getters exist. The memory map (Step 4), the frame loop (Step 5), the Blink (Step 6),
- * the keyboard (Step 7), the LCD renderer (Step 8), the beeper (Step 9) and the cards (Step 10) do
- * not. Nothing here emulates a Z88 yet.
+ * Status (Step 2, 2026-09-19): scaffolding. The buffers, the reset and power-on reset, the LCD shape
+ * and the CPU register getters exist. The memory map (Step 4), the frame loop (Step 5), the Blink
+ * (Step 6), the keyboard (Step 7), the LCD renderer (Step 8), the beeper (Step 9) and the cards
+ * (Step 10) do not. Nothing here emulates a Z88 yet.
  *
  * Every name is prefixed `z88`: `z80.c` defines register macros (`A`, `F`, `HL`, `IX`, ...) and
  * fixed `z80*` names, so bare Blink register names (`COM`, `INT`, `STA`) must never be used.
@@ -22,6 +22,8 @@
 
 /* 4 MB of physical memory: slot N (0-3) starts at N * 1 MB; internal RAM at $080000 */
 #define Z88_MEMORY_SIZE 0x400000u
+#define Z88_INTERNAL_RAM_START 0x080000u
+#define Z88_INTERNAL_RAM_END 0x100000u
 
 /* The LCD: 640 or 800 pixels wide, up to 60 text rows of 8 pixel lines */
 #define Z88_LCD_WIDTH_MAX 800u
@@ -159,9 +161,13 @@ void z88Reset(void) {
   for (uint32_t i = 0u; i < Z88_AUDIO_SAMPLE_CAPACITY * 2u; i++) z88AudioSamples[i] = 0;
 }
 
-/* Power on: everything, including the 4 MB of memory */
+/*
+ * Power on: the reset, and the internal RAM ($080000-$0FFFFF) cleared - exactly what
+ * `Z88BankedMemory.resetInternalRam()` clears. The cards keep their contents (a flash card's data
+ * survives a power cycle); the host re-inserts them after a hard reset, as `Z88Machine.setup()` does.
+ */
 void z88HardReset(void) {
-  for (uint32_t i = 0u; i < Z88_MEMORY_SIZE; i++) z88Memory[i] = 0u;
+  for (uint32_t i = Z88_INTERNAL_RAM_START; i < Z88_INTERNAL_RAM_END; i++) z88Memory[i] = 0u;
   z88Reset();
 }
 

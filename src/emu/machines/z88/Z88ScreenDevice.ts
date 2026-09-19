@@ -2,6 +2,7 @@ import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88ScreenDevice } from "./IZ88ScreenDevice";
 import { COMFlags } from "./IZ88BlinkDevice";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import { z88LcdSizeRegisters } from "./z88MachineInfo";
 
 const SBF_ROW_WIDTH = 256;
 const TEXT_FLASH_TOGGLE = 200;
@@ -110,27 +111,8 @@ export class Z88ScreenDevice implements IZ88ScreenDevice {
     this.PB3 = 0;
     this.SBR = 0;
 
-    // --- Set up the screen size
-    let scw = 0xff;
-    let sch = 8;
-    switch (this.machine.config?.[MC_SCREEN_SIZE]) {
-      case "640x320":
-        scw = 0xff;
-        sch = 40;
-        break;
-      case "640x480":
-        scw = 0xff;
-        sch = 60;
-        break;
-      case "800x320":
-        scw = 100;
-        sch = 40;
-        break;
-      case "800x480":
-        scw = 100;
-        sch = 60;
-        break;
-    }
+    // --- Set up the screen size (the rule both backends share)
+    const { scw, sch } = z88LcdSizeRegisters(this.machine.config?.[MC_SCREEN_SIZE]);
 
     this.SCH = sch;
     this.SCW = scw;

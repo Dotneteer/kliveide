@@ -7,6 +7,8 @@
  * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, "Target Architecture").
  */
 
+import { CardIds } from "./memory/CardIds";
+
 export const CARD_SIZE_EMPTY = "-";
 export const CARD_SIZE_32K = "32K";
 export const CARD_SIZE_64K = "64K";
@@ -122,4 +124,71 @@ export function z88InternalRamSizeInBytes(intRamMask: unknown): number {
     default:
       return 0x08_0000;
   }
+}
+
+/** How a card behaves: the kinds the card-type ids of a slot configuration map to */
+export type Z88CardKind =
+  | "RAM"
+  | "ROM"
+  | "UV_EPROM"
+  | "INTEL_FLASH"
+  | "AMD_FLASH_29F040B"
+  | "AMD_FLASH_29F080B";
+
+/** A card to insert: its kind and its size in bytes */
+export type Z88CardSpec = { readonly kind: Z88CardKind; readonly sizeInBytes: number };
+
+/**
+ * Resolves the card a slot configuration describes, with the rules `createZ88MemoryCard` has always
+ * applied: the size is validated first (even for AMD chips, whose size is fixed by the chip), then
+ * the card-type id. Both backends use it, so they accept and reject the same configurations.
+ * @param cardTypeId A `CardIds` value (`"ROM"` for a ROM card)
+ * @param sizeK The configured size in KB
+ * @throws "Invalid card size: ..." or "Unknown card type: ..." (e.g. `EPROMUV256`, follow-up F2)
+ */
+export function z88CardSpec(cardTypeId: string, sizeK: number): Z88CardSpec {
+  const sizeInBytes = z88CardSizeInBytes(sizeK);
+  switch (cardTypeId) {
+    case CardIds.RAM32:
+    case CardIds.RAM128:
+    case CardIds.RAM256:
+    case CardIds.RAM512:
+    case CardIds.RAM1024:
+      return { kind: "RAM", sizeInBytes };
+    case CT_ROM:
+      return { kind: "ROM", sizeInBytes };
+    case CardIds.EPROMUV32:
+    case CardIds.EPROMUV128:
+      return { kind: "UV_EPROM", sizeInBytes };
+    case CardIds.IF28F004S5:
+    case CardIds.IF28F008S5:
+      return { kind: "INTEL_FLASH", sizeInBytes };
+    // --- An AMD chip's size is the chip's, whatever the configuration says
+    case CardIds.AMDF29F040B:
+      return { kind: "AMD_FLASH_29F040B", sizeInBytes: 0x08_0000 };
+    case CardIds.AMDF29F080B:
+      return { kind: "AMD_FLASH_29F080B", sizeInBytes: 0x10_0000 };
+    default:
+      throw new Error(`Unknown card type: ${cardTypeId}`);
+  }
+}
+
+/**
+ * The card of a ROM image loaded without a slot-0 configuration: a ROM card as large as the image.
+ * @param sizeInBytes The image length, which must be a card size
+ * @throws "Invalid memory card size" for any other length
+ */
+export function z88RomImageCardSpec(sizeInBytes: number): Z88CardSpec {
+  z88ChipMaskForSize(sizeInBytes);
+  return { kind: "ROM", sizeInBytes };
+}
+
+/**
+ * Tells whether a slot configuration (`MC_Z88_SLOT0`..`MC_Z88_SLOT3`) holds a card: it must exist,
+ * have a size, and not be the "-" (empty) card type.
+ */
+export function z88SlotHasCard(
+  slot: { size?: number; cardType?: string } | undefined | null
+): boolean {
+  return !!slot && slot.size !== undefined && slot.cardType !== CARD_SIZE_EMPTY;
 }

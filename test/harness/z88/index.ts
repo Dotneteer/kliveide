@@ -3,7 +3,10 @@
  */
 export {
   createZ88Machine,
+  HarnessFileProvider,
+  ResolvingMessenger,
   z88Model,
+  z88WasmArtifactBytes,
   Z88_HARNESS_BACKENDS,
   type CreateZ88MachineOptions,
   type Z88HarnessBackend,

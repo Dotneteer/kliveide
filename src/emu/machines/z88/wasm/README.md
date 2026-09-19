@@ -4,8 +4,11 @@ The Cambridge Z88 WASM implementation is the full-machine C core under this fold
 `dist/cambridge-z88.wasm` and is loaded by `Z88WasmV2Loader.ts`. The migration is planned and
 tracked in `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
 
-**Status: scaffolding (Step 1).** The core has its buffers, reset, the LCD shape and the CPU register
-getters, and it includes the shared Z80 core. It does not emulate a Z88 yet: the TypeScript
+**Status: scaffolding (Step 2).** The core has its buffers, reset and power-on reset (which clears
+the internal RAM only, as the TypeScript machine does), the LCD shape and the CPU register getters,
+and it includes the shared Z80 core. `Z88WasmV2Machine` (on `Z88WasmHost`, never `Z88Machine`) loads
+it, sets it up exactly like the TypeScript machine and places the card images. It does not run a Z88
+yet - the surfaces that need later steps throw `Z88WasmNotMigratedError` - so the TypeScript
 `Z88Machine` is the only working backend.
 
 ## Layout

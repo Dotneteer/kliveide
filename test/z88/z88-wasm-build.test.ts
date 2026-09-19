@@ -19,7 +19,7 @@ import {
 } from "../../scripts/build-z88-wasm.cjs";
 import { checkZ88WasmSize, DEFAULT_MAX_BYTES, parseMaxBytes } from "../../scripts/check-z88-wasm-size.cjs";
 import { z88WasmV2RequiredExports } from "@emu/machines/z88/wasm/Z88WasmV2Loader";
-import { z88WasmArtifactBytes } from "./z88-wasm-test-helpers";
+import { z88WasmArtifactBytes } from "../harness/z88";
 
 /*
  * The Cambridge Z88 WASM build (Step 1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).

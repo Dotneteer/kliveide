@@ -12,7 +12,7 @@ import {
   type Z88WasmV2Exports
 } from "@emu/machines/z88/wasm/Z88WasmV2Loader";
 import { Z88_BASE_CLOCK_FREQUENCY, Z88_TACTS_IN_FRAME } from "@emu/machines/z88/z88MachineInfo";
-import { z88WasmArtifactBytes } from "./z88-wasm-test-helpers";
+import { z88WasmArtifactBytes } from "../harness/z88";
 
 /*
  * The Cambridge Z88 WASM loader and the core's Step 1 surface: buffers, reset, LCD shape, timing
@@ -63,15 +63,15 @@ describe("Cambridge Z88 WASM loader", () => {
     }
   });
 
-  it("hard reset clears the 4 MB memory; reset keeps it", async () => {
+  it("hard reset clears the internal RAM only, as the TypeScript Z88 does; reset clears nothing", async () => {
+    // --- Z88BankedMemory.resetInternalRam(): $080000-$0FFFFF; the cards keep their contents
     const runtime = await loadBuilt();
-    runtime.memory[0x08_0000] = 0xaa;
-    runtime.memory[Z88_WASM_V2_MEMORY_SIZE - 1] = 0x55;
+    const probes = [0x00_0000, 0x07_ffff, 0x08_0000, 0x0f_ffff, 0x10_0000, Z88_WASM_V2_MEMORY_SIZE - 1];
+    for (const a of probes) runtime.memory[a] = 0xaa;
     runtime.exports.z88Reset();
-    expect(runtime.memory[0x08_0000]).toBe(0xaa);
+    expect(probes.map((a) => runtime.memory[a])).toEqual(probes.map(() => 0xaa));
     runtime.exports.z88HardReset();
-    expect(runtime.memory[0x08_0000]).toBe(0x00);
-    expect(runtime.memory[Z88_WASM_V2_MEMORY_SIZE - 1]).toBe(0x00);
+    expect(probes.map((a) => runtime.memory[a])).toEqual([0xaa, 0xaa, 0x00, 0x00, 0xaa, 0xaa]);
   });
 
   it("reset clears the pixels, the key lines and the audio buffer", async () => {

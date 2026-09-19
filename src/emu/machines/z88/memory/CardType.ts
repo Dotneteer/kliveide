@@ -7,8 +7,7 @@ import { Z88UvEpromMemoryCard } from "./Z88UvEpromMemoryCard";
 import { Z88IntelFlashMemoryCard } from "./Z88IntelFlashMemoryCard";
 import { Z88AmdFlash29F040B } from "./Z88AmdFlash29F040B";
 import { Z88AmdFlash29F080B } from "./Z88AmdFlash29F080B";
-import { CardIds } from "./CardIds";
-import { CT_ROM, z88CardSizeInBytes } from "../z88CardCatalog";
+import { z88CardSpec } from "../z88CardCatalog";
 
 /**
  * Creates a new memory card for the Z88
@@ -22,38 +21,30 @@ export function createZ88MemoryCard (
   size: number,
   type: string
 ): IZ88MemoryCard {
-  // --- Get the physical size of the card
-  const cardSize = z88CardSizeInBytes(size);
+  // --- The shared rules: size first, then the card type (both backends use them)
+  const spec = z88CardSpec(type, size);
 
   // --- Instantiate the card
-  let card: IZ88MemoryCard | undefined;
-  switch (type) {
-    case CardIds.RAM32:
-    case CardIds.RAM128:
-    case CardIds.RAM256:
-    case CardIds.RAM512:
-    case CardIds.RAM1024:
-      card = new Z88RamMemoryCard(host, cardSize);
+  let card: IZ88MemoryCard;
+  switch (spec.kind) {
+    case "RAM":
+      card = new Z88RamMemoryCard(host, spec.sizeInBytes);
       break;
-    case CT_ROM:
-      card = new Z88RomMemoryCard(host, cardSize);
+    case "ROM":
+      card = new Z88RomMemoryCard(host, spec.sizeInBytes);
       break;
-    case CardIds.EPROMUV32:
-    case CardIds.EPROMUV128:
-      card = new Z88UvEpromMemoryCard(host, cardSize);
+    case "UV_EPROM":
+      card = new Z88UvEpromMemoryCard(host, spec.sizeInBytes);
       break;
-    case CardIds.IF28F004S5:
-    case CardIds.IF28F008S5:
-      card = new Z88IntelFlashMemoryCard(host, cardSize);
+    case "INTEL_FLASH":
+      card = new Z88IntelFlashMemoryCard(host, spec.sizeInBytes);
       break;
-    case CardIds.AMDF29F040B:
+    case "AMD_FLASH_29F040B":
       card = new Z88AmdFlash29F040B(host);
       break;
-    case CardIds.AMDF29F080B:
+    case "AMD_FLASH_29F080B":
       card = new Z88AmdFlash29F080B(host);
       break;
-    default:
-      throw new Error(`Unknown card type: ${type}`);
   }
   return card;
 }

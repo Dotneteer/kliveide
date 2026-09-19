@@ -13,6 +13,8 @@ import { MessengerBase } from "@messaging/MessengerBase";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
 import { Z88Machine } from "@emu/machines/z88/Z88Machine";
+import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
+import { buildZ88Wasm, productionOutput, waitForZ88WasmBuildLock } from "../../../../scripts/build-z88-wasm.cjs";
 
 /**
  * The Z88 machine the harness drives, whichever backend emulates it: only the backend-neutral
@@ -43,7 +45,7 @@ function findRepoRoot(start: string): string {
 }
 
 /** Read-only file provider: relative paths are relative to `src/public`, as in the app. */
-class HarnessFileProvider implements IFileProvider {
+export class HarnessFileProvider implements IFileProvider {
   async readTextFile(path: string, encoding?: string): Promise<string> {
     return readFileSync(this.resolvePath(path), { encoding: (encoding ?? "utf8") as BufferEncoding });
   }
@@ -65,7 +67,7 @@ class HarnessFileProvider implements IFileProvider {
  * Answers every request the machine sends to the main process (the Z88's setup stores the
  * keyboard layout as a global setting) with an empty result.
  */
-class ResolvingMessenger extends MessengerBase {
+export class ResolvingMessenger extends MessengerBase {
   readonly sent: RequestMessage[] = [];
 
   protected send(message: RequestMessage): void {
@@ -130,8 +132,14 @@ export async function createZ88Machine(options: CreateZ88MachineOptions = {}): P
     case "typescript":
       machine = new Z88Machine(model, config, new ResolvingMessenger());
       break;
+    case "wasm":
+      machine = new Z88WasmV2Machine(model, config, new ResolvingMessenger(), {
+        artifactName: "z88-harness.wasm",
+        readArtifact: async () => z88WasmArtifactBytes()
+      });
+      break;
     default:
-      throw new Error(`The Z88 ${backend} backend does not exist yet.`);
+      throw new Error(`Unknown Z88 backend '${backend}'.`);
   }
 
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
@@ -141,10 +149,28 @@ export async function createZ88Machine(options: CreateZ88MachineOptions = {}): P
   if ((options.rom ?? "blank") === "model") {
     await machine.setup();
     await machine.hardReset();
+  } else if (machine instanceof Z88WasmV2Machine) {
+    // --- A blank WASM machine still needs its core; it gets no ROM (slot 0 stays empty)
+    await machine.loadBlankCore();
   } else {
     // --- The constructor has reset the machine; apply the sample rate the reset reads
     machine.reset();
   }
   machine.executionContext.debugSupport = new DebugSupport(createAppStore("emu"));
   return machine;
+}
+
+let wasmArtifactBuilt = false;
+
+/**
+ * The bytes of the current Z88 WASM artifact. The first call in a test worker builds it from the C
+ * sources (under the build lock, so parallel workers do not race); later calls reuse that build.
+ */
+export function z88WasmArtifactBytes(): Uint8Array<ArrayBuffer> {
+  if (!wasmArtifactBuilt) {
+    buildZ88Wasm();
+    wasmArtifactBuilt = true;
+  }
+  waitForZ88WasmBuildLock();
+  return new Uint8Array(readFileSync(productionOutput));
 }

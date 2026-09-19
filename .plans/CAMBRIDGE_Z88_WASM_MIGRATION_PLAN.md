@@ -577,8 +577,8 @@ Status: Done on 2026-09-19.
 - **Build lock.** Test workers build the artifact in parallel, so real builds of the production
   artifact hold a lock file (`scripts/wasm-build-lock.cjs`, a neutral copy of the Next build's lock
   logic; the Next script keeps its own copy), and readers call `waitForZ88WasmBuildLock()`.
-  `test/z88/z88-wasm-test-helpers.ts` (`z88WasmArtifactBytes()`) builds once per worker and reads
-  under the lock.
+  `z88WasmArtifactBytes()` (in `test/harness/z88/core/machines.ts` since Step 2) builds once per
+  worker and reads under the lock.
 - `scripts/check-z88-wasm-size.cjs` (+ `.d.cts`): a **provisional** ceiling of 700,000 bytes (the
   Next's) until Step 12 measures the real machine. The skeleton is 1,479 bytes, because nothing
   calls the CPU yet, so the linker drops the shared core. The "larger than the standalone Z80 core"
@@ -626,7 +626,49 @@ Original scope:
 
 ### Step 2 - Host and adapter skeleton, with the separation guard
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- **Neutral rules, shared by both hosts** (and the TypeScript code now uses them too):
+  `z88LcdSizeRegisters` (`MC_SCREEN_SIZE` -> SCW/SCH; `Z88ScreenDevice.reset()` calls it),
+  `z88CardSpec` (card-type id + size -> kind and byte size, with `createZ88MemoryCard`'s order and
+  errors; the factory now switches on it), `z88RomImageCardSpec` and `z88SlotHasCard` (`Z88Machine`
+  uses it). A test checks `z88CardSpec` against the TypeScript card factory for every card id and
+  size, and `z88LcdSizeRegisters` against the TypeScript screen device.
+- `Z88WasmHost` (abstract, on `Z80MachineBase`, implements `IZ88Machine` and `IZ88IdeMachine`):
+  identity, clock and frame, `uiFrameFrequency`, `softResetOnFirstStart`, partitions, disassembly
+  sections, key codes and mapping, the keystroke queue (anchored to the current tact, as the
+  TypeScript Z88's is - not the Next's chained queue), the machine-menu commands, the code-injection
+  stub, and the whole setup/configure/hard-reset algorithm of `Z88Machine`: slot 0 (card or ROM
+  image), `MC_Z88_INTROM`/`MC_Z88_USE_DEFAULT_ROM`, the keyboard-layout setting, slots 1-3 with
+  `allSettled`, and the image-length check. The backend supplies `prepareBackend`,
+  `insertCardIntoBackend`, `removeCardFromBackend`, `raiseBatteryLow` and the device surfaces.
+- `Z88WasmV2Machine`: loads the core once; a new core starts with the blank 512K ROM card in
+  slot 0 (as `Z88BankedMemory` does); sizes the LCD from the configuration and exposes the LCD part
+  of the pixel buffer as zero-copy views; places card images in physical memory and records each
+  slot's card; records the internal-RAM size from `MC_Z88_INTRAM`; mirrors the registers the core
+  exports; `loadBlankCore()` for the harness's blank machines. Everything that needs later steps
+  throws `Z88WasmNotMigratedError` naming its step (memory map 4, frame loop 5, Blink/ports/flap/
+  battery 6, keyboard 7, instant render 8, beeper 9).
+- **Core fix found here:** `z88HardReset` cleared all 4 MB; the TypeScript hard reset clears only
+  the internal RAM (`resetInternalRam`: $080000-$0FFFFF) and card contents survive. The core now
+  matches, and the loader test says so.
+- The harness can create a WASM machine (`createZ88Machine({ backend: "wasm" })`), but
+  `Z88_HARNESS_BACKENDS` stays `["typescript"]` until the core runs code.
+- Tests: `test/wasm/z88/wasm-z88-separation.test.ts` (6: prototype chain, import graph from the
+  machine, host and loader, type imports included, neutral modules reached, the detector's own
+  positive check, no TypeScript device built; checked by planting a type import, which it caught
+  with the full chain), `test/wasm/z88/wasm-z88-machine.test.ts` (62: identity and metadata vs the
+  TypeScript machine, setup of all ten models vs the TypeScript machine - slot-0 banks, ROM
+  properties, keyboard-layout message - the five LCD sizes, card hot-plug/removal/errors vs the
+  TypeScript machine, hard reset and reset, keystroke queue and menu commands, and the table of
+  not-migrated surfaces), plus the new cases in `z88-neutral-modules.test.ts`.
+- Usable afterwards: a WASM Z88 that sets up exactly like the TypeScript one and says clearly what
+  it cannot do yet. It still does not run.
+- **Consequence for Step 3:** a preview menu entry would now create a machine whose frame loop
+  throws. Step 3 should build the switch, the factory and the grouped menu with their tests, but
+  register the `-wasm` preview twins only once Step 5 makes the machine run.
+
+Original scope:
 
 - `Z88WasmHost` on `Z80MachineBase`: machine id, clock, `uiFrameFrequency`,
   `softResetOnFirstStart`, partitions via `z88MachineInfo`, the keystroke queue, key code set and

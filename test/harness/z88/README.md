@@ -7,7 +7,9 @@ object, so **the same test runs on every backend**.
 
 The harness exists for the TypeScript-to-WASM migration
 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). `Z88_HARNESS_BACKENDS` lists the backends the
-tests run on: only `"typescript"` until the WASM core joins in Step 4, then both.
+tests run on: only `"typescript"` until the WASM core can run code, then both.
+`createZ88Machine({ backend: "wasm" })` already creates a `Z88WasmV2Machine` (the WASM machine
+tests use it), and `z88WasmArtifactBytes()` builds the core once per test worker.
 
 ```ts
 import { describe, expect, it } from "vitest";
