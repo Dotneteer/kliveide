@@ -33,9 +33,22 @@ static void zxnextBeeperReset(void) {
   zxnextBeeperCachedSampleValid = 0u;
 }
 
+/* The sample window and the pending transitions carry on across frames, as the TypeScript beeper's do
+   (AudioDeviceBase): restarting the window at the frame's first executed tact dropped the part of the
+   straddling sample - and any transition - before it, after an instruction had overrun the frame end. */
 static void zxnextBeeperBeginFrame(void) {
   zxnextBeeperFrameStartTact = (double)zxnextBeeperTacts;
-  zxnextBeeperSampleWindowStartTact = zxnextBeeperFrameStartTact;
+  zxnextBeeperCachedSampleValid = 0u;
+}
+
+/* The host set the tact counter. Moved back (a reset, a restored state), the open window and the
+   transitions lie in the future: start a fresh window there. Moved forward, they stay valid. */
+static void zxnextBeeperResyncWindow(uint32_t value) {
+  const uint32_t movedBack = value < zxnextBeeperTacts;
+  zxnextBeeperTacts = value;
+  if (!movedBack) return;
+  zxnextBeeperFrameStartTact = (double)value;
+  zxnextBeeperSampleWindowStartTact = (double)value;
   zxnextBeeperSampleWindowStartEar = zxnextBeeperEar;
   zxnextBeeperSampleWindowStartMic = zxnextBeeperMic;
   zxnextBeeperTransitionCount = 0u;
@@ -92,6 +105,11 @@ static inline uint32_t zxnextBeeperGetOutputLevelMilli(void) {
   }
 }
 
+/* The window's time-weighted EAR / MIC fractions, unrounded: the mixer filters and scales these
+   exactly as AudioDeviceBase / AudioMixerDevice do in the TypeScript core */
+static double zxnextBeeperCachedLeft;
+static double zxnextBeeperCachedRight;
+
 static inline void zxnextBeeperUpdateCachedSample(double sampleEndTact) {
   if (zxnextBeeperCachedSampleValid && zxnextBeeperCachedSampleEndTact == sampleEndTact) return;
 
@@ -99,6 +117,8 @@ static inline void zxnextBeeperUpdateCachedSample(double sampleEndTact) {
   if (sampleEndTact <= sampleStartTact) {
     zxnextBeeperCachedLeftMilli = zxnextBeeperEar ? 1000u : 0u;
     zxnextBeeperCachedRightMilli = zxnextBeeperMic ? 1000u : 0u;
+    zxnextBeeperCachedLeft = zxnextBeeperEar ? 1.0 : 0.0;
+    zxnextBeeperCachedRight = zxnextBeeperMic ? 1.0 : 0.0;
     zxnextBeeperCachedSampleEndTact = sampleEndTact;
     zxnextBeeperCachedSampleValid = 1u;
     return;
@@ -142,8 +162,20 @@ static inline void zxnextBeeperUpdateCachedSample(double sampleEndTact) {
   const double totalTacts = sampleEndTact - sampleStartTact;
   zxnextBeeperCachedLeftMilli = totalTacts > 0.0 ? (uint32_t)((totalEar * 1000.0) / totalTacts) : (ear ? 1000u : 0u);
   zxnextBeeperCachedRightMilli = totalTacts > 0.0 ? (uint32_t)((totalMic * 1000.0) / totalTacts) : (mic ? 1000u : 0u);
+  zxnextBeeperCachedLeft = totalTacts > 0.0 ? totalEar / totalTacts : (ear ? 1.0 : 0.0);
+  zxnextBeeperCachedRight = totalTacts > 0.0 ? totalMic / totalTacts : (mic ? 1.0 : 0.0);
   zxnextBeeperCachedSampleEndTact = sampleEndTact;
   zxnextBeeperCachedSampleValid = 1u;
+}
+
+static double zxnextBeeperGetSampleLeft(double sampleEndTact) {
+  zxnextBeeperUpdateCachedSample(sampleEndTact);
+  return zxnextBeeperCachedLeft;
+}
+
+static double zxnextBeeperGetSampleRight(double sampleEndTact) {
+  zxnextBeeperUpdateCachedSample(sampleEndTact);
+  return zxnextBeeperCachedRight;
 }
 
 static uint32_t zxnextBeeperGetSampleLeftMilli(double sampleEndTact) {

@@ -325,20 +325,6 @@ const productionExports = [
   "zxnextGetDmaAddressA",
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
-  "zxnextFloppyReadMainStatusRegister",
-  "zxnextFloppyReadDataRegister",
-  "zxnextFloppyWriteDataRegister",
-  "zxnextGetFloppyOperationPhase",
-  "zxnextGetFloppyCommandRegister",
-  "zxnextGetFloppyCommandBytesReceived",
-  "zxnextGetFloppySr0",
-  "zxnextGetFloppySr1",
-  "zxnextGetFloppySr2",
-  "zxnextGetFloppySr3",
-  "zxnextGetFloppyStepRate",
-  "zxnextGetFloppyHeadUnloadTime",
-  "zxnextGetFloppyHeadLoadTime",
-  "zxnextGetFloppyNonDmaMode"
 ];
 
 const buildModes = {

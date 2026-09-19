@@ -55,7 +55,7 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `uart` | A peer on the UART lines (loopback or scripted ESP/Pi responder). **Written 2026-09-18:** `uartSend`, `uartBreak`, `uartSetCts`, `uartLoopback`, `uartReadyToReceive`, `uartOutput`; both cores now time the lines a frame at a time on the 28 MHz clock. |
 | `rtc` | I2C RTC with a settable time. **Written 2026-09-18:** `setRtcTime`; both cores now emulate the DS1307. |
 | `tape` | EAR input (tape signal injection). |
-| `ckpt` | Checkpoints on both cores (`captureCheckpoint` is WASM-only today). |
+| `ckpt` | Checkpoints on both cores (`captureCheckpoint` is WASM-only today). **Partly written 2026-09-19:** `captureCheckpoint(key)`, `restoreCheckpoint(key)` on the WASM core; they throw on the TypeScript core, which has no checkpoint support yet. |
 
 ### 2.4 Standing rules for every test (from the harness README)
 
@@ -111,10 +111,10 @@ exists (add it per README "Adding a method", with a self-test on both cores).
 | `KEY` | Keyboard, extended keys | `input/membrane`, `input/keyboard` | `test/zxnext-hw/keyboard/keyboard.test.ts` (2026-09-19, bug B90) |
 | `JOY` | Joysticks, MD pads, I/O mode | `input/md6_joystick_connector_x2.vhd`, `input/membrane/membrane_stick.vhd` | `test/zxnext-hw/joystick/joystick.test.ts` (2026-09-19, bug B91; replaced the mock `test/zxnext/KempstonJoystick.test.ts` and the joystick half of `test/wasm/zxNext/wasm-next-input.test.ts`) |
 | `MOU` | Kempston mouse | `input/ps2_mouse.v` | `test/zxnext-hw/mouse/mouse.test.ts` (2026-09-19, bug B92; replaced the mock `test/zxnext/KempstonMouse.test.ts` and `test/wasm/zxNext/wasm-next-input.test.ts`) |
-| `FDC` | +3 FDC I/O traps | `zxnext.vhd` | – |
-| `BUS` | Expansion bus control | `zxnext.vhd` | `test/zxnext/ExpansionBus*.test.ts` (mock) |
-| `GPIO` | Pi / ESP GPIO, XADC, misc board registers | `zxnext.vhd` | – |
-| `PAR` | Long-running cross-core parity and soak | – | D05 |
+| `FDC` | +3 FDC I/O traps | `zxnext.vhd` | `test/zxnext-hw/fdc/fdc-trap.test.ts` (2026-09-19, bug B93; replaced the Next port mocks `test/zxnext/FloppyControllerDevice.test.ts` and `test/wasm/zxNext/wasm-next-floppy.test.ts` - the uPD765 class keeps `test/disk/`) |
+| `BUS` | Expansion bus control | `zxnext.vhd` | `test/zxnext-hw/bus/expansion-bus.test.ts` (2026-09-19, bug B94; replaced the register, port-enable and ULA-override halves of the mock `test/zxnext/ExpansionBusDevice.test.ts` - its ROMCS / NMI / INT peripheral-signal tests stay, with `ExpansionBusNmi.test.ts`, as the harness has no bus peripheral) |
+| `GPIO` | Pi / ESP GPIO, XADC, misc board registers | `zxnext.vhd` | `test/zxnext-hw/gpio/board-registers.test.ts` (2026-09-19, bug B95; replaced the `$90`-`$A9` and `$F0`-`$FA` write/readback mocks of `test/zxnext/NextRegDevice.test.ts`) |
+| `PAR` | Long-running cross-core parity and soak | – | D05, `test/zxnext-hw/parity/*.test.ts`, visual `PAR-005` (2026-09-19, bugs B96-B99) |
 
 ---
 
@@ -447,6 +447,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | SPR-033 | Sprite over layers per `$15` order | V | 1 | | See CMP-001; sprite visible above/below ULA and Layer 2 per order. | ✅ `layer2/layer2` (L2-016: all six orders with sprite, Layer 2 and ULA) |
 | SPR-034 | Negative/wrap coordinates | V | 2 | | Anchor at X=500 with relative −200 offset; wrap behaviour of 9-bit arithmetic per VHDL. | ✅ `sprites/sprites` (random 128-sprite scenes against a model of `sprites.vhd`) |
 | SPR-035 | Relative sprite without anchor | V | 3 | | Relative sprite as sprite 0: behaviour per VHDL (invisible). | ✅ `sprites/sprites` |
+| SPR-036 | Transparent outside the 320-pixel window | P | 2 | | With sprites over the border, nothing of a sprite shows right of sprite x 319 or in the left border before x 0 (`hcounter_i < 320`, sprites.vhd ~1019, ~1085). | ✅ `sprites/sprite-window` (found by PAR-002: the TS core smeared pixel 319 across the border - B99) |
 
 ### 4.16 `PAL` – Palettes and transparency
 
@@ -507,6 +508,7 @@ behaviour inside the whole machine on both cores (memory paging, contention off,
 | COP-013 | Copper `$64` offset with 60 Hz | V | 3 | | C07 at 60 Hz. | ✅ `copper/copper-control` (`$64` = 32 under every timing), visual `C07` |
 | COP-014 | Copper writes to `$07` / `$50` | S | 3 | | Copper can MOVE any register `$00`–`$7F` (e.g. MMU); program observes the change. | ✅ `copper/copper-control` |
 | COP-015 | Copper and CPU writing NextRegs together | S | 3 | | The copper wins a clash but the CPU's request is held, not lost (~4749): 64 CPU palette writes at 28 MHz during a 1000-MOVE copper burst all land. | ✅ `copper/copper-control` |
+| COP-016 | `$64` takes effect at the `cvc` reload | S | 2 | | `cvc` loads `$64` at the first active line (zxula_timing.vhd ~457-468): a write before that point shows this frame, a write after it only from the next; copper WAITs, the line interrupt and `$1E`/`$1F` follow. | ✅ `copper/line-offset-latch` (found by PAR-001; both cores applied a write at once - B97) |
 
 ### 4.19 `INT` – Interrupts
 
@@ -765,44 +767,44 @@ Ports: `$133B` TX, `$143B` RX, `$153B` select, `$163B` frame.
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| FDC-001 | `$D8` enable | S | 3 | | Readback. | ◐ `nextreg/read-mux` |
-| FDC-002 | Ports `$2FFD/$3FFD` decoded only when enabled | S | 3 | | | — |
-| FDC-003 | Trap generates NMI | S | 3 | | Access to `$2FFD/$3FFD` with trap enabled sets `$DA` cause, `$D9` write value, `$02` bit 4, and NMI. | ✅ `reset/reset-register` (RST-006) |
-| FDC-004 | +3 FDC emulation status | S | 3 | | If the emulator models a µPD765 (`SpectrumP3FdcStatusPortHandler`), status port reads idle `$80`. | — |
+| FDC-001 | `$D8` enable | S | 3 | | Readback. | ✅ `fdc/fdc-trap` (bit 0 alone, a soft reset clears it), `nextreg/read-mux`, `nextreg/soft-reset` |
+| FDC-002 | Ports `$2FFD/$3FFD` decoded only when enabled | S | 3 | | | ✅ `fdc/fdc-trap` (A15-14 = 00, A13-12 = 10/11, A1-0 = 01 with aliases; `$1FFD` `$0FFD` `$2FFF` `$6FFD` `$2FFE` and `$2FFD` writes do not trap; a trapped read is `$FF`; with the trap off nothing answers - B93) |
+| FDC-003 | Trap generates NMI | S | 3 | | Access to `$2FFD/$3FFD` with trap enabled sets `$DA` cause, `$D9` write value, `$02` bit 4, and NMI. | ✅ `reset/reset-register` (RST-006), `fdc/fdc-trap` (`$DA`/`$D9` only while the NMI state machine accepts a cause - B93) |
+| FDC-004 | +3 FDC emulation status | S | 3 | | If the emulator models a µPD765 (`SpectrumP3FdcStatusPortHandler`), status port reads idle `$80`. | ✅ `fdc/fdc-trap` - the Next has no µPD765 (the FPGA decodes the ports for the trap only): status and data read `$FF`, a command gets no result. The TS core's µPD765 answered `$80`; neither core models one any more - B93 |
 
 ### 4.35 `BUS` – Expansion bus
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| BUS-001 | `$80` enable and reset copy | S | 3 | | Bits 3–0 copy into 7–4 on soft reset. | — |
-| BUS-002 | `$81` bits | S | 3 | | ULA override bit 6, readback of ROMCS. | — |
-| BUS-003 | Bus port enables `$86`–`$89` | S | 3 | | Readback and effect when bus enabled (AND with internal enables). | — |
-| BUS-004 | `$8A` propagate | S | 3 | | Readback bits 5–0. | — |
-| BUS-005 | Bus disabled has no effect | S | 2 | | With `$80` bit 7 = 0, `$86`–`$89` do not gate internal ports. | — |
+| BUS-001 | `$80` enable and reset copy | S | 3 | | Bits 3–0 copy into 7–4 on soft reset. | ✅ `bus/expansion-bus` (whole-byte readback, power-on `$00`; with nothing plugged in the bus on keeps the internal ROM and keyboard and unanswered ports read `$FF`), `nextreg/soft-reset`; the 3.5 MHz override is SPD in `speed/cpu-speed` |
+| BUS-002 | `$81` bits | S | 3 | | ULA override bit 6, readback of ROMCS. | ✅ `bus/expansion-bus` (bits 6-4 stored, 3-0 read 0, ROMCS bit 7 reads 0 with nothing plugged in; a soft reset keeps it; the override makes even ports with A7-4 = 0000 read `$FF` while `$FE` propagates - missing on both cores, B94) |
+| BUS-003 | Bus port enables `$86`–`$89` | S | 3 | | Readback and effect when bus enabled (AND with internal enables). | ✅ `bus/expansion-bus` (`$89` = reset type & 000 & bits 3-0, power-on `$8F`; a soft reset sets them to 1s only with `$89` bit 7 = 0; ANDed with `$82`-`$85` for `$7FFD`, the mouse, the AY, ULA+ and the CTC - WASM never applied it, TS not to the mouse - B94). Not covered: the DivMMC / Multiface enable-difference hotkey freeze |
+| BUS-004 | `$8A` propagate | S | 3 | | Readback bits 5–0. | ✅ `bus/expansion-bus` (bits 5-0, kept by a soft reset; propagated ports still answer internally) |
+| BUS-005 | Bus disabled has no effect | S | 2 | | With `$80` bit 7 = 0, `$86`–`$89` do not gate internal ports. | ✅ `bus/expansion-bus` (the five port groups above; `$80` bits 6-4 without bit 7 change nothing) |
 
 ### 4.36 `GPIO` – Board registers
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| GPIO-001 | Pi GPIO output enables `$90`–`$93` | S | 3 | | `$90` bits 1–0 read 0. | — |
-| GPIO-002 | GPIO inputs `$98`–`$9B` | S | 3 | | Read idle value with nothing attached. | — |
-| GPIO-003 | Pi peripheral enable `$A0` | S | 3 | | Readback mask `00xxx00x`. | — |
-| GPIO-004 | Pi I2S `$A2` | S | 3 | | Readback with bits 5 = 0, 1 = 1. | — |
-| GPIO-005 | ESP GPIO `$A8/$A9` | S | 3 | | Readback formats. | — |
-| GPIO-006 | XADC `$F8`–`$FA` / XDEV `$F0` | S | 3 | | Readback behaviour the emulator chooses, documented. | — |
-| GPIO-007 | `$10` core ID / buttons | S | 3 | | Bit 7 = 0; button bits idle. | — |
+| GPIO-001 | Pi GPIO output enables `$90`–`$93` | S | 3 | | `$90` bits 1–0 read 0. | ✅ `gpio/board-registers` (`$90` bits 7-2, `$93` bits 3-0; power-on and soft reset 0), `nextreg/soft-reset` |
+| GPIO-002 | GPIO inputs `$98`–`$9B` | S | 3 | | Read idle value with nothing attached. | ✅ `gpio/board-registers` - the pins, not the latches: with nothing attached a pin reads its latch while its output is on, 1 otherwise (Klive's choice); a soft reset sets the latches to `$FF $01 $00 $0`. Both cores read the latches back (B95). Not modelled: the `$A0`/`$A2` peripherals taking over pins |
+| GPIO-003 | Pi peripheral enable `$A0` | S | 3 | | Readback mask `00xxx00x`. | ✅ `gpio/board-registers`, `nextreg/soft-reset` |
+| GPIO-004 | Pi I2S `$A2` | S | 3 | | Readback with bits 5 = 0, 1 = 1. | ✅ `gpio/board-registers`, `nextreg/soft-reset` |
+| GPIO-005 | ESP GPIO `$A8/$A9` | S | 3 | | Readback formats. | ✅ `gpio/board-registers` (`$A8` bit 0; `$A9` reads the pulled-up pins, GPIO0 its latch only while driven; a soft reset sets the latch to 1 - WASM read `$00`, TS the latch - B95) |
+| GPIO-006 | XADC `$F8`–`$FA` / XDEV `$F0` | S | 3 | | Readback behaviour the emulator chooses, documented. | ✅ `gpio/board-registers` - Issue 4 (`$0F` = 2; WASM read 0 - B95): the `$F0` select state machine (power-on / soft reset `$80`), device mode reads 0 (no DNA or XADC is modelled), `$F8` = 0 & DADDR, `$F9`/`$FA` whole bytes kept by a soft reset and untouched by a DRP read (B95) |
+| GPIO-007 | `$10` core ID / buttons | S | 3 | | Bit 7 = 0; button bits idle. | ✅ `gpio/board-registers` (core ID 1 at power-on: `$04`; written only in config mode, only 0-14; kept by a soft reset - both cores stored any write - B95). Buttons: bits 1-0 read 0; the harness presses DRIVE/M1 only as pulses, so a held button is not tested |
 
 ### 4.37 `PAR` – Cross-core parity and soak
 
 | ID | Name | FE | Pri | Needs | Description | Status |
 |---|---|---|---|---|---|---|
-| PAR-001 | NextReg state parity after random writes | S | 1 | | Seeded random writes to all writable registers via `onEachCore`; every readback equal. | — |
-| PAR-002 | Screen parity for random layer setups | V | 2 | | Seeded random combinations of `$15`, `$68`, `$6B`, `$70`, scrolls and clips with fixed content; TS and WASM frames equal. | — |
-| PAR-003 | Audio parity | A | 2 | | AY + DAC + beeper program; sample arrays equal on both cores (or within 1 LSB). | — |
-| PAR-004 | Long-run timing parity | S | 2 | | 3000 frames: `tacts`, `frames`, registers equal. | ◐ visual `D05` (`--long`) |
-| PAR-005 | Demo-style raster program | V | 2 | | Combination of line interrupts, copper, sprites and Layer 2 scroll; both tiers. | — |
-| PAR-006 | Checkpoint restore parity | S | 3 | `ckpt` | Save/restore mid-frame continues identically. | — |
-| PAR-007 | Real-software smoke tests | V | 2 | `sd` | Browser tier `.nexload` of a set of freely distributable Next programs; golden frames at fixed frame numbers. | — |
+| PAR-001 | NextReg state parity after random writes | S | 1 | | Seeded random writes to all writable registers via `onEachCore`; every readback equal. | ✅ `parity/nextreg-parity` (8 seeds x 1500 writes; all 256 registers read after the writes and after 3 frames - found B96, B97) |
+| PAR-002 | Screen parity for random layer setups | V | 2 | | Seeded random combinations of `$15`, `$68`, `$6B`, `$70`, scrolls and clips with fixed content; TS and WASM frames equal. | ✅ `parity/screen-parity` - scripted rather than a screen case (setups generated per seed; a failure prints the seed's registers): all eight palettes, ULA, Layer 2 banks 8-12, tilemap and 128 sprites as content, 16 seeds biased so the layers show - found B99 |
+| PAR-003 | Audio parity | A | 2 | | AY + DAC + beeper program; sample arrays equal on both cores (or within 1 LSB). | ✅ `parity/audio-parity` (to the bit at 43.75 kHz, within 1 LSB at 44.1 kHz - B98) |
+| PAR-004 | Long-run timing parity | S | 2 | | 3000 frames: `tacts`, `frames`, registers equal. | ✅ `parity/long-run-parity` (500 frames by default, 3000 with `ZXNEXT_LONG=1`: IM2 ULA + line interrupt, speed changes from the handler, contended writes, HALT; frames, tacts, registers and RAM every 100 / 250 frames), visual `D05` (`--long`) |
+| PAR-005 | Demo-style raster program | V | 2 | | Combination of line interrupts, copper, sprites and Layer 2 scroll; both tiers. | ✅ visual `PAR-005-demo-raster` (new suite `test/visual/parity/`; headless and browser tiers, reviewed and approved: copper border bars, a Layer 2 split by a line interrupt, a sprite moving from the frame interrupt) |
+| PAR-006 | Checkpoint restore parity | S | 3 | `ckpt` | Save/restore mid-frame continues identically. | ✅ `parity/checkpoint-parity` - WASM only (the TS core has no checkpoints; the new session methods `captureCheckpoint`/`restoreCheckpoint` throw there): a mid-frame checkpoint continues as the uninterrupted run, and matches the TS core's run - frames, tacts, registers, RAM, pictures and audio. Found the TS audio grid under speed changes (B98) |
+| PAR-007 | Real-software smoke tests | V | 2 | `sd` | Browser tier `.nexload` of a set of freely distributable Next programs; golden frames at fixed frame numbers. | — blocked: needs the set of freely distributable Next programs to use (not chosen yet) |
 
 ---
 
@@ -828,6 +830,8 @@ when the first test of that area lands.
 - Entries marked "per `x.vhd`" / "read before asserting" have not had their exact values extracted yet.
 - Whether the emulator intends to model memory contention (MEM-023), the µPD765 (FDC-004), flash
   (SPI-008), and board GPIO (GPIO-*). If not, those tests document the chosen behaviour instead.
+  Board GPIO **settled 2026-09-19** in `test/zxnext-hw/gpio/board-registers.test.ts`: nothing is attached
+  (undriven Pi pins read 1, the ESP pins their board pull-ups), no Xilinx DNA or XADC is modelled.
 - Audio tolerance policy - **settled 2026-09-18** in `test/zxnext-hw/audio/_audio-helpers.ts`: frequency
   within 1 %, levels as ratios against a full-scale level measured in the same session (so the mixer's
   scaling, a BEEP-area question, drops out) within 0.01 of the VHDL table ratio.

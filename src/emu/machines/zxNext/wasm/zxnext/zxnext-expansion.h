@@ -9,6 +9,8 @@ void zxnextExpansionSetNextReg(uint32_t reg, uint32_t value);
 uint32_t zxnextExpansionGetNextReg(uint32_t reg);
 uint32_t zxnextExpansionHandlesNextReg(uint32_t reg);
 uint32_t zxnextExpansionEffectivePortEnable(uint32_t internalValue, uint32_t busRegIndex);
+uint32_t zxnextExpansionPortEnabled(uint32_t bit);
+uint32_t zxnextExpansionApplyToPortFeRead(uint32_t address, uint32_t ulaValue);
 uint32_t zxnextExpansionShouldPropagateIo(uint32_t portBit);
 void zxnextExpansionSetSignals(uint32_t romcs, uint32_t iorqula, uint32_t nmi, uint32_t intr);
 uint32_t zxnextExpansionIsRomcsClaimed(void);

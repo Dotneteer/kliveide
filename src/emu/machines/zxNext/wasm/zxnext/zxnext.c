@@ -118,7 +118,6 @@ static uint8_t micBit;
 #include "zxnext-input.c"
 #include "zxnext-expansion.c"
 #include "zxnext-dma.c"
-#include "zxnext-floppy.c"
 #include "zxnext-nextreg.c"
 #include "zxnext-ports.c"
 #include "zxnext-multiface.c"
@@ -154,7 +153,6 @@ static void clearMachineBuffers(void) {
   zxnextMouseHardReset(); /* the power-on m_reset */
   zxnextExpansionHardReset();
   zxnextDmaReset();
-  zxnextFloppyReset();
   zxnextNextRegHardReset();
 }
 
@@ -206,7 +204,6 @@ void zxnextReset(void) {
   zxnextInputReset();
   zxnextExpansionReset();
   zxnextDmaReset();
-  zxnextFloppyReset();
   zxnextNextRegSoftReset(keptNr06);
   zxnextPsgMode = (uint8_t)(keptNr06 & 0x03u); /* $06 is not in the reset branch */
   lastMemoryAddress = 0;
@@ -326,7 +323,7 @@ void zxnextSetTacts(uint32_t value) {
   frameTacts28 = (value * (8u >> cpuEffectiveSpeed)) % zxnextGetTactsInFrame();
   currentFrameTact = frameTacts28 >> 2;
   z80SetTacts(value);
-  zxnextBeeperSetTacts(value);
+  zxnextBeeperResyncWindow(value);
 }
 
 uint32_t zxnextGetCpuAf(void) { return z80GetAf(); }

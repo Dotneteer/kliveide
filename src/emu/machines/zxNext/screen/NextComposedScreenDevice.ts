@@ -197,6 +197,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemap80x32Resolution = false;
     this.tilemapEliminateAttributes = false;
     this.tilemapTextMode = false;
+    this.tilemapControlBit2 = false;
     this.tilemap512TileMode = false;
     this.tilemapForceOnTopOfUla = false;
     this.tilemapTransparencyIndex = 0x0f;
@@ -425,10 +426,14 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
       (this.tilemap80x32Resolution ? 0x40 : 0) |
       (this.tilemapEliminateAttributes ? 0x20 : 0) |
       (this.tilemapTextMode ? 0x08 : 0) |
+      (this.tilemapControlBit2 ? 0x04 : 0) |
       (this.tilemap512TileMode ? 0x02 : 0) |
       (this.tilemapForceOnTopOfUla ? 0x01 : 0)
     );
   }
+
+  /** $6B bit 2: no function, but zxnext.vhd ~5439 stores bits 6-0 and ~6048 reads them back. */
+  private tilemapControlBit2 = false;
 
   /**
    * Sets the value of Next register 0x6B (Tilemap Control)
@@ -451,6 +456,7 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     this.tilemap80x32Resolution = (value & 0x40) !== 0;
     this.tilemapEliminateAttributes = (value & 0x20) !== 0;
     this.tilemapTextMode = (value & 0x08) !== 0;
+    this.tilemapControlBit2 = (value & 0x04) !== 0;
     this.tilemap512TileMode = (value & 0x02) !== 0;
     this.tilemapForceOnTopOfUla = (value & 0x01) !== 0;
   }
@@ -646,11 +652,22 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    *
    * See `.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.5.
    */
-  vcToCopperLine(vc: number): number {
-    return (
-      (vc - this.confDisplayYStart + this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
-      this.confTotalVC
-    );
+  vcToCopperLine(vc: number, offset = this.machine.copperDevice.offsetAfterReload): number {
+    return (vc - this.confDisplayYStart + offset + this.confTotalVC) % this.confTotalVC;
+  }
+
+  /**
+   * The frame tact at which `cvc` is loaded with NextReg $64: `hc_ula` 0 of the first active line
+   * (zxula_timing.vhd ~457-468, `ula_max_hc and ula_min_vactive`).
+   */
+  get cvcReloadTact(): number {
+    return this.confDisplayYStart * this.confTotalHC + this.confDisplayXStart - 12;
+  }
+
+  /** The $64 offset `cvc` counts from at a raw beam position: the one loaded at the last reload. */
+  private copperOffsetAt(vc: number, hc: number): number {
+    const copper = this.machine.copperDevice;
+    return vc * this.confTotalHC + hc >= this.cvcReloadTact ? copper.offsetAfterReload : copper.offsetBeforeReload;
   }
 
   /**
@@ -671,7 +688,8 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
    * previous copper line.
    */
   copperLineAt(vc: number, hc: number): number {
-    return hc >= this.confDisplayXStart - 12 ? this.vcToCopperLine(vc) : this.vcToCopperLine(vc - 1);
+    const offset = this.copperOffsetAt(vc, hc);
+    return hc >= this.confDisplayXStart - 12 ? this.vcToCopperLine(vc, offset) : this.vcToCopperLine(vc - 1, offset);
   }
 
   /**
@@ -726,10 +744,16 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     // --- int_line_num = line - 1 is compared with cvc (0 ... c_max_vc): lines past c_max_vc + 1 never fire
     if (line > this.confTotalVC) return -1;
     const targetCvc = line === 0 ? this.confTotalVC - 1 : line - 1;
-    const rawVc =
-      (targetCvc + this.confDisplayYStart - this.machine.copperDevice.verticalLineOffset + this.confTotalVC) %
-      this.confTotalVC;
-    return rawVc * this.confTotalHC + this.confDisplayXStart - 12 + 255;
+    // --- cvc counts from the offset loaded at the last reload: the match is where it reaches targetCvc
+    // --- under the offset in effect at that position (after this frame's reload, or before it)
+    const copper = this.machine.copperDevice;
+    const startFor = (offset: number) =>
+      ((targetCvc + this.confDisplayYStart - offset + this.confTotalVC) % this.confTotalVC) * this.confTotalHC +
+      this.confDisplayXStart - 12 + 255;
+    const after = startFor(copper.offsetAfterReload);
+    if (after >= this.cvcReloadTact) return after;
+    const before = startFor(copper.offsetBeforeReload);
+    return before < this.cvcReloadTact ? before : -1;
   }
 
   // Render the pixel pair belonging to the specified frame tact. This method is the core
@@ -2990,7 +3014,13 @@ export class NextComposedScreenDevice implements IGenericDevice<IZxNextMachine> 
     }
 
 
-    if ((cell & SCR_SPRITE_DISPLAY) !== 0) {
+    if ((cell & SCR_SPRITE_DISPLAY) === 0) {
+      // --- sprites.vhd ~1019, ~1085: pixel_en needs `hcounter_i < 320` - outside the 320-pixel window
+      // --- the layer is transparent. Keeping the last pixel smeared sprite x 319 across the right
+      // --- border and into the next line's left border whenever sprites went over the border.
+      this.spritesPixel1Rgb333 = this.spritesPixel2Rgb333 = 0;
+      this.spritesPixel1Transparent = this.spritesPixel2Transparent = true;
+    } else {
       const bufferX = this.spritesBufferPosition++;
       const bufferValue = this.spritesBuffer[bufferX];
       // --- The clip window applies here, per pixel, to what the line buffer holds — as on the FPGA.

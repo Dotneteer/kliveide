@@ -33,7 +33,7 @@ type Step24Domain =
   | "audio"
   | "storage"
   | "DMA"
-  | "floppy"
+  | "fdc trap"
   | "input"
   | "expansion"
   | "NMI/interrupt"
@@ -48,7 +48,7 @@ const REQUIRED_DOMAINS: Step24Domain[] = [
   "audio",
   "storage",
   "DMA",
-  "floppy",
+  "fdc trap",
   "input",
   "expansion",
   "NMI/interrupt",
@@ -170,12 +170,13 @@ const MATRIX: MatrixEntry[] = [
     reason: "wasm-suite"
   },
   {
-    category: "floppy",
-    requiredDomain: "floppy",
-    typeScriptTests: ["FloppyControllerDevice.test.ts"],
-    wasmSuites: ["wasm-next-floppy.test.ts"],
-    reason: "typescript-owned-host-boundary",
-    note: "Drive media image handoff remains TypeScript-owned; command/result phase state is covered in WASM."
+    category: "fdc trap",
+    requiredDomain: "fdc trap",
+    // --- The Next has no uPD765 (neither core models one any more): $2FFD/$3FFD are the $D8 I/O trap
+    // --- only, tested on both cores in test/zxnext-hw/fdc. The +3's uPD765 is tested in test/disk.
+    typeScriptTests: [],
+    wasmSuites: ["../../zxnext-hw/fdc/fdc-trap.test.ts"],
+    reason: "wasm-suite"
   },
   {
     category: "input",

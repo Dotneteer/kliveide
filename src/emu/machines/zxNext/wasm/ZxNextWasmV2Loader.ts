@@ -323,20 +323,6 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetDmaAddressA: ZxNextWasmV2ExportFunction;
   zxnextGetDmaAddressB: ZxNextWasmV2ExportFunction;
   zxnextGetDmaSeq: ZxNextWasmV2ExportFunction;
-  zxnextFloppyReadMainStatusRegister: ZxNextWasmV2ExportFunction;
-  zxnextFloppyReadDataRegister: ZxNextWasmV2ExportFunction;
-  zxnextFloppyWriteDataRegister: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyOperationPhase: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyCommandRegister: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyCommandBytesReceived: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppySr0: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppySr1: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppySr2: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppySr3: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyStepRate: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyHeadUnloadTime: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyHeadLoadTime: ZxNextWasmV2ExportFunction;
-  zxnextGetFloppyNonDmaMode: ZxNextWasmV2ExportFunction;
 };
 
 export type ZxNextWasmV2Instance = {
@@ -677,20 +663,6 @@ const requiredV2Exports = [
   "zxnextGetDmaAddressA",
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
-  "zxnextFloppyReadMainStatusRegister",
-  "zxnextFloppyReadDataRegister",
-  "zxnextFloppyWriteDataRegister",
-  "zxnextGetFloppyOperationPhase",
-  "zxnextGetFloppyCommandRegister",
-  "zxnextGetFloppyCommandBytesReceived",
-  "zxnextGetFloppySr0",
-  "zxnextGetFloppySr1",
-  "zxnextGetFloppySr2",
-  "zxnextGetFloppySr3",
-  "zxnextGetFloppyStepRate",
-  "zxnextGetFloppyHeadUnloadTime",
-  "zxnextGetFloppyHeadLoadTime",
-  "zxnextGetFloppyNonDmaMode"
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {

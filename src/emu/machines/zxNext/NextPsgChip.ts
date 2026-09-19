@@ -115,7 +115,10 @@ export class NextPsgChip {
     if (this._addr & 0x10) return;
     const index = this._addr & 0x0f;
     this._reg[index] = value & 0xff;
+    // --- ym2149.vhd ~476-515: the channel outputs are registered on every ENA (16 master clocks), so a
+    // --- level or mixer write is heard at once, not at the next `ena_div` tick (128 clocks)
     if (index === 13) this.restartEnvelope();
+    else this.updateOutputs();
   }
 
   /** The value of register `index` (0-15) as stored. */

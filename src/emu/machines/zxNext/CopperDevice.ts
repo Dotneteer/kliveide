@@ -43,7 +43,34 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
   private _req: boolean;
   private _reqData: number;
 
-  verticalLineOffset: number;
+  /** NextReg $64 as written. */
+  private _verticalLineOffset = 0;
+  /**
+   * zxula_timing.vhd ~457-468: `cvc` is a counter loaded with $64 only at the first active line
+   * (`ula_min_vactive`, at `hc_ula` 0) and counted on from there, so a $64 write takes effect at the
+   * next such reload. `offsetBeforeReload` is the offset `cvc` carries from the frame start up to this
+   * frame's reload, `offsetAfterReload` the one it is loaded with there.
+   */
+  offsetBeforeReload = 0;
+  offsetAfterReload = 0;
+
+  get verticalLineOffset(): number {
+    return this._verticalLineOffset;
+  }
+
+  set verticalLineOffset(value: number) {
+    this._verticalLineOffset = value & 0xff;
+    // --- A write before this frame's reload is what the reload loads
+    if (this.machine.currentFrameTact < this.machine.composedScreenDevice.cvcReloadTact) {
+      this.offsetAfterReload = this._verticalLineOffset;
+    }
+  }
+
+  /** A new frame: `cvc` carries the last loaded offset until this frame's reload loads $64 again. */
+  onNewFrame(): void {
+    this.offsetBeforeReload = this.offsetAfterReload;
+    this.offsetAfterReload = this._verticalLineOffset;
+  }
 
   constructor(public readonly machine: IZxNextMachine) {
     this.reset();
@@ -53,7 +80,9 @@ export class CopperDevice implements IGenericDevice<IZxNextMachine> {
     this._startMode = CopperStartMode.FullyStopped;
     this._instructionAddress = 0;
     this._storedByte = 0;
-    this.verticalLineOffset = 0;
+    this._verticalLineOffset = 0;
+    this.offsetBeforeReload = 0;
+    this.offsetAfterReload = 0;
     this._copperListAddr = 0;
     this._copperListData = 0;
     this._copperDout = false;

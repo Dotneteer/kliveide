@@ -1,4 +1,5 @@
 #include "zxnext-ctc.h"
+#include "zxnext-expansion.h"
 
 typedef struct {
   uint8_t state;
@@ -21,7 +22,7 @@ static ZxNextCtcChannel *zxnextCtcChannel(uint32_t channel) {
 }
 
 static inline uint32_t zxnextCtcPortsEnabled(void) {
-  return (zxnextNextRegs[0x85u] & 0x08u) != 0;
+  return zxnextExpansionPortEnabled(27u); /* $85 bit 3, ANDed with $89 bit 3 while the bus is on */
 }
 
 static inline uint32_t zxnextCtcPortChannel(uint32_t port) {

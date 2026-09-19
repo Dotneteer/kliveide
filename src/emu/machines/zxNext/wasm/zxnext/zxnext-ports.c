@@ -13,9 +13,9 @@
 #include "zxnext-dma.h"
 #include "zxnext-ctc.h"
 
+/* $82-$85, ANDed with $86-$89 while the expansion bus is on (zxnext.vhd ~2348-2349) */
 static inline uint8_t zxnextPortsGroupEnabled(uint32_t regIndex, uint32_t bit) {
-  uint32_t reg = 0x82u + (regIndex & 0x03u);
-  return (zxnextNextRegs[reg] & (1u << (bit & 0x07u))) != 0;
+  return (uint8_t)zxnextExpansionPortEnabled(((regIndex & 0x03u) << 3) | (bit & 0x07u));
 }
 
 static void zxnextPortsReset(void) {
@@ -118,7 +118,7 @@ static uint32_t zxnextPortsRead(uint32_t address) {
       lastPortValue = (t == 1u || t == 2u) ? zxnextUlaFloatingBus(currentFrameTact) : 0xffu;
     }
   } else if ((normalized & 0x0001u) == 0) {
-    lastPortValue = zxnextUlaReadPortFe(normalized);
+    lastPortValue = zxnextExpansionApplyToPortFeRead(normalized, zxnextUlaReadPortFe(normalized));
   } else {
     lastPortValue = 0xff;
   }

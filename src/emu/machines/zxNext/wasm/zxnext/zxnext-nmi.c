@@ -138,9 +138,12 @@ static uint32_t zxnextNmiNextReg02Flags(void) {
 }
 
 /* +3 FDC I/O trap (~3815, ~3846-3875): cause 1 $2FFD read, 2 $3FFD read, 3 $3FFD write. */
+/* zxnext.vhd ~3846-3877: $DA and $D9 take the cause and the written byte only while a cause is accepted */
 static void zxnextNmiIoTrap(uint32_t cause, uint32_t value, uint32_t isWrite) {
-  if (isWrite) zxnextNextRegs[0xd9u] = (uint8_t)value;
-  if (zxnextNmiAcceptCause()) zxnextNextRegs[0xdau] = (uint8_t)(cause & 0x03u);
+  if (zxnextNmiAcceptCause()) {
+    zxnextNextRegs[0xdau] = (uint8_t)(cause & 0x03u);
+    if (isWrite) zxnextNextRegs[0xd9u] = (uint8_t)value;
+  }
   zxnextNmiRequestMultiface();
 }
 

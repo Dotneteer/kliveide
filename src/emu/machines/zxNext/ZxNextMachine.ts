@@ -2,7 +2,6 @@ import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { SysVar } from "@abstractions/SysVar";
 import type { ISpectrumBeeperDevice } from "@emu/machines/zxSpectrum/ISpectrumBeeperDevice";
 import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
-import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { ITapeDevice } from "@emu/abstractions/ITapeDevice";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
@@ -46,7 +45,6 @@ import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 import { zxNextSysVars } from "./ZxNextSysVars";
 import { CpuSpeedDevice } from "./CpuSpeedDevice";
 import { ExpansionBusDevice } from "./ExpansionBusDevice";
-import { FloppyControllerDevice } from "../disk/FloppyControllerDevice";
 import { NextComposedScreenDevice } from "./screen/NextComposedScreenDevice";
 import { AudioControlDevice } from "./AudioControlDevice";
 import { TurboSoundDevice } from "./TurboSoundDevice";
@@ -156,8 +154,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
   expansionBusDevice: ExpansionBusDevice;
 
-  floppyDevice: IFloppyControllerDevice;
-
   // ─── NMI state machine ───────────────────────────────────────────────────
 
   private _nmiState: 'IDLE' | 'FETCH' | 'HOLD' | 'END' = 'IDLE';
@@ -175,6 +171,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   // ─── Hot-path audio/screen caches ────────────────────────────────────────
 
   private _turboSoundDevice!: TurboSoundDevice;
+  // --- The audio sample clock, in 28 MHz frame tacts (see onTactIncremented)
+  private _audioRate = -1;
+  private _audioSampleLength28 = 0;
+  private _audioNextSample28 = 0;
+  private _audioLastFrame28 = 0;
   private _dacDevice!: DacDevice;
   private _audioMixerDevice!: AudioMixerDevice;
   /** Cached from composedScreenDevice.config.totalHC; refreshed on each new frame. */
@@ -205,7 +206,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.delayedAddressBus = true;
 
     this.expansionBusDevice = new ExpansionBusDevice(this);
-    this.floppyDevice = new FloppyControllerDevice(this);
     this.cpuSpeedDevice = new CpuSpeedDevice(this);
 
     // --- Create and initialize the I/O port manager
@@ -308,7 +308,11 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this.joystickDevice.reset();
     this.soundDevice.reset();
     this.audioControlDevice.reset();
-    this.floppyDevice.reset();
+    this._audioLastFrame28 = 0;
+    this._audioRate = -1;
+    // --- The PSG clock carries on across frames from the reset; it needs the frame length for the first
+    // --- frame's wrap too, or it restarts there and loses its phase against the other clocks
+    this._turboSoundDevice.onNewFrame(this.tactsInFrame);
     this.ulaDevice.reset();
     this.beeperDevice.reset();
 
@@ -566,8 +570,9 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
   trapFdcPortAccess(cause: number, value?: number): boolean {
     const nr = this.nextRegDevice;
     if (!nr.fdcIoTrap) return false;
-    if (value !== undefined) nr.directSetRegValue(0xd9, value & 0xff);
+    // --- zxnext.vhd ~3846-3877: $DA and $D9 change only while the NMI state machine accepts a cause
     if (this.nmiAcceptCause) {
+      if (value !== undefined) nr.directSetRegValue(0xd9, value & 0xff);
       nr.ioTrapCause = cause & 0x03;
       this.interruptDevice.mfNmiByIoTrap = true;
     }
@@ -1783,6 +1788,7 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
 
     // --- Prepare the screen device for the new machine frame
     this.composedScreenDevice.onNewFrame();
+    this.copperDevice.onNewFrame();
 
     // --- Prepare the beeper device for the new frame
     this.beeperDevice.onNewFrame();
@@ -1800,9 +1806,6 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     this._turboSoundDevice.onNewFrame(this.tactsInFrame);
     this._dacDevice.onNewFrame();
     this._audioMixerDevice.onNewFrame();
-
-    // --- Advance floppy disk motor timing
-    this.floppyDevice.onFrameCompleted();
   }
 
   /**
@@ -1862,17 +1865,33 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine {
     if (this.frameCompleted) {
       // --- The frame ended inside this instruction: render its remaining tacts before the next frame
       // --- starts. They carry pulses too - the Pentagon interrupt starts on the frame's last tact.
+      // --- The audio clocks keep running through the rest of the instruction: a sample boundary in
+      // --- those tacts closes now, into this frame's buffers, as the WASM core does. Deferring it to
+      // --- the next frame let the PSG run past the boundary first and restart its sample grid.
       this.renderFrameTactsTo(this.tactsInFrame >>> 2);
-      return;
+    } else {
+      this.renderFrameTactsTo(this.currentFrameTact);
     }
-    this.renderFrameTactsTo(this.currentFrameTact);
-    const beeperSamples = this.beeperDevice.getAudioSamples().length;
-    this.beeperDevice.setNextAudioSample();
-    // --- Generate audio samples for all audio devices. The PSG closes its sample whenever the
-    // --- beeper emits one: one sample clock for both streams.
-    if (this.beeperDevice.getAudioSamples().length !== beeperSamples) {
-      this._turboSoundDevice.emitAudioSample(this.frameTacts);
+    // --- The audio sample clock runs on the 28 MHz clock, like the WASM mixer's: a sample lasts the same
+    // --- real time at every CPU speed. (Counted in CPU tacts, a sample that spanned a speed change was
+    // --- stretched or squeezed.) The beeper window closes that far back from the current tact; the
+    // --- PSG closes its window on the same grid, and the DAC is sampled now.
+    // --- The beeper's rate when the host set one; otherwise the PSG's default (48 kHz)
+    const rate = this.beeperDevice.getAudioSampleRate() || this._turboSoundDevice.getAudioSampleRate();
+    if (rate !== this._audioRate) {
+      // --- A new rate (or a reset): the grid starts a sample in, as the PSG's and the WASM mixer's do
+      this._audioRate = rate;
+      this._audioSampleLength28 = rate > 0 ? 28_000_000 / rate : 0;
+      this._audioNextSample28 = this._audioSampleLength28;
+    }
+    const frame28 = this.frameTacts;
+    if (frame28 < this._audioLastFrame28) this._audioNextSample28 -= this.tactsInFrame; // --- the frame wrapped
+    this._audioLastFrame28 = frame28;
+    while (this._audioSampleLength28 > 0 && frame28 >= this._audioNextSample28) {
+      this.beeperDevice.emitSampleAt(this.tacts - (frame28 - this._audioNextSample28) / this.cpuTactScale);
+      this._turboSoundDevice.emitAudioSample(frame28);
       this._dacDevice.recordSample();
+      this._audioNextSample28 += this._audioSampleLength28;
     }
     this._dacDevice.setNextAudioSample();
     this._audioMixerDevice.setNextAudioSample();

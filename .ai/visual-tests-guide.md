@@ -55,14 +55,19 @@ end-of-frame render and is used only for the paused "instant screen" view.
 (written by `--approve`). Start from an existing case.
 
 - Include `../_include/copper-macros.z80asm` right after `.model Next` (macros before use) and
-  `../_include/copper-routines.z80asm` at the end (the existing cases keep their code at `$8000`; since
-  `.ent` now sets the NEX entry point, a program may also put routines first and mark `Start: .ent $`).
+  `../_include/copper-routines.z80asm` at the end; a case in another suite (`test/visual/parity/`)
+  includes `../../copper/_include/...`. The existing cases keep their code at `$8000`; since `.ent`
+  now sets the NEX entry point, a program may also put routines first and mark `Start: .ent $`.
 - Call `ClearScreen` first. It resets the NextRegs NextZXOS leaves changed (`$43=$20` sends palette
   writes to the sprite palette, `$07=$33` is 28 MHz, `$15=$01` sprites on) - a program that assumes
   reset values passes Tier 1 and fails the real load.
 - Write every palette entry the picture uses: FPGA palette RAM has no reset contents (firmware fills it),
   and the cores' power-on palettes differ in the low blue bit.
 - A setup that takes longer than 10 frames needs `readyBy` in `case.json`.
+- A raster effect a CPU handler makes mid-line (a line interrupt writing a scroll or palette register)
+  shows the CPU's phase in the frame, which a real NextZXOS load does not fix to the T-state: the browser
+  tier's golden then changes from run to run. Run such a program at 28 MHz, so the write lands in the
+  horizontal blanking (`PAR-005`).
 - Signal ready with `SignalReady()` (`$A5` → NextReg `$7F`) once the picture is set up.
 - The display file is **not linear**: pixel row y is at `$4000 | third<<11 | scanline<<8 | charrow<<5`
   (ROM PIXEL-ADD). `core/beam.ts` has `displayFileAddress`.

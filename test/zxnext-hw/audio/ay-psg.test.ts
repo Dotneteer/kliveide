@@ -302,8 +302,10 @@ describe.each(ALL_CORES)("AY / TurboSound - %s core", (core) => {
     expect(swing(side(record(s, 1), "left")), "chip 1 plays").toBeGreaterThan(0);
 
     s.setNextReg(0x06, 0x03);
+    // --- The first sample's window opened before the hold (it straddles the frame boundary), so it
+    // --- still averages in the tone: every sample after it is silent
     const held = record(s, 2);
-    expect(swing(side(held, "left")), "silent while held").toBe(0);
+    expect(swing(side(held.slice(1), "left")), "silent while held").toBe(0);
     expect(held[held.length - 1].left, "at the silent level").toBe(silent);
     ay(s, 8, 0x0f); // --- ignored while held
     s.setNextReg(0x06, YM);

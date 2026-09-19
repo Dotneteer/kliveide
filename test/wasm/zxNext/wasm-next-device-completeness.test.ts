@@ -28,11 +28,12 @@ const DEVICE_COVERAGE: DeviceCoverage[] = [
     ]
   },
   {
-    device: "floppy",
-    wasmSuites: ["wasm-next-floppy.test.ts"],
-    typeScriptSuites: ["FloppyControllerDevice.test.ts"],
-    requiredSemantics: ["reset status", "command phase", "result phase", "SenseInterrupt"],
-    typeScriptOwnedBoundaries: ["disk image/media persistence", "host file handoff"]
+    // --- The Next has no uPD765 (zxnext.vhd decodes $2FFD/$3FFD only for the $D8 I/O trap); the
+    // --- hardware-interface tests of test/zxnext-hw/fdc run on both cores
+    device: "+3 FDC I/O trap",
+    wasmSuites: ["../../zxnext-hw/fdc/fdc-trap.test.ts"],
+    typeScriptSuites: ["../zxnext-hw/fdc/fdc-trap.test.ts"],
+    requiredSemantics: ["$D8 decode", "trap cause and written value", "no uPD765 on the Next"]
   },
   {
     device: "CTC",
@@ -97,6 +98,8 @@ describe("ZX Spectrum Next WASM device completeness contract", () => {
       (coverage.typeScriptOwnedBoundaries ?? []).map(boundary => `${coverage.device}: ${boundary}`)
     );
 
-    expect(hostOwned).toEqual(["floppy: disk image/media persistence", "floppy: host file handoff"]);
+    // --- The Next's only host-owned media is the SD card (processFrameCommand); it had a floppy entry
+    // --- while a uPD765 the hardware does not have was modelled on it
+    expect(hostOwned).toEqual([]);
   });
 });

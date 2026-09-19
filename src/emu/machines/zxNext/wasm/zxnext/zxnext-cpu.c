@@ -63,6 +63,7 @@ static inline void zxnextCpuTactPlusN(uint32_t value) {
   frameTacts28 += value * zxnextCpuTactScale();
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
+    zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
     zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();
@@ -92,6 +93,7 @@ static inline void zxnextCpuTactPlusDmaTicks(uint32_t ticks) {
   frameTacts28 += ticks;
   while (frameTacts28 >= ZXNEXT_TACTS_IN_FRAME) {
     zxnextCtcOnFrameCompleted();
+    zxnextPsgOnFrameWrap(ZXNEXT_TACTS_IN_FRAME);
     frameTacts28 -= ZXNEXT_TACTS_IN_FRAME;
     zxnextAudioMixerOnFrameWrap();
     zxnextCpuMarkFrameCompleted();

@@ -553,7 +553,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * @param value - the byte being written
    */
   writePort(port: number, value: number): void {
-    if (!this.machine.nextRegDevice.portZ80CtcEnabled) return;
+    if (!this.machine.nextRegDevice.isPortGroupEnabled(3, 3)) return;
 
     const ch = (port >> 8) & 0x07;
     if (ch >= 4) return; // channels 4-7 not implemented
@@ -585,7 +585,7 @@ export class CtcDevice implements IGenericDevice<IZxNextMachine> {
    * @returns current counter value, or 0xFF if CTC ports are disabled
    */
   readPort(port: number): number {
-    if (!this.machine.nextRegDevice.portZ80CtcEnabled) return 0xff;
+    if (!this.machine.nextRegDevice.isPortGroupEnabled(3, 3)) return 0xff;
 
     const ch = (port >> 8) & 0x07;
     if (ch >= 4) return 0x00; // channels 4-7 hardwired to zero

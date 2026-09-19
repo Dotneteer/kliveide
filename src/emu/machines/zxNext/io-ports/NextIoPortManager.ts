@@ -1,10 +1,5 @@
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 
-import { readSpectrumP3FdcStatusPort } from "./SpectrumP3FdcStatusPortHandler";
-import {
-  readSpectrumP3FdcControlPort,
-  writeSpectrumP3FdcControlPort
-} from "./SpectrumP3FdcControlPortHandler";
 import { readI2cSclPort, writeI2cSclPort } from "./I2cSclPortHandler";
 import { readI2cSdaPort, writeI2cSdaPort } from "./I2cSdaPortHandler";
 import { readUartTxPort, writeUartTxPort } from "./UartTxPortHandler";
@@ -152,32 +147,28 @@ export class NextIoPortManager {
       value: 0b0001_0000_0000_0001,
       writerFns: gW(0, 3, (p, v) => {
         if (fdConflict(p)) return;
+        // --- Bit 3 is the +3 disk motor; the Next has no uPD765 or drive (zxnext.vhd ~2554-2558)
         machine.memoryDevice.port1ffdValue = v;
-        if (v & 0x08) {
-          machine.floppyDevice.turnOnMotor();
-        } else {
-          machine.floppyDevice.turnOffMotor();
-        }
       })
     });
-    // --- The +3 FDC ports, unless the $D8 I/O trap takes them (zxnext.vhd ~2557-2558, ~3815)
-    const fdcStatus = gR(0, 4, readSpectrumP3FdcStatusPort(machine));
-    const fdcControlRead = gR(0, 4, readSpectrumP3FdcControlPort(machine));
-    const fdcControlWrite = gW(0, 4, writeSpectrumP3FdcControlPort(machine));
+    // --- zxnext.vhd ~2554-2558, ~3815: the +3 FDC ports exist only for the $D8 I/O trap. The Next has no
+    // --- uPD765: untrapped, nothing answers them. A trapped read is an internal response without data: $FF.
     r({
-      description: "ZX Spectrum +3 FDC status",
+      description: "+3 FDC status (I/O trap)",
       port: 0x2ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0010_0000_0000_0001,
-      readerFns: (p) => (machine.trapFdcPortAccess(1) ? 0xff : fdcStatus(p))
+      readerFns: (_) => (machine.trapFdcPortAccess(1) ? 0xff : NOT_HANDLED)
     });
     r({
-      description: "ZX Spectrum +3 FDC control",
+      description: "+3 FDC data (I/O trap)",
       port: 0x3ffd,
       pmask: 0b1111_0000_0000_0011,
       value: 0b0011_0000_0000_0001,
-      readerFns: (p) => (machine.trapFdcPortAccess(2) ? 0xff : fdcControlRead(p)),
-      writerFns: (p, v) => (fdConflict(p) || machine.trapFdcPortAccess(3, v) ? undefined : fdcControlWrite(p, v))
+      readerFns: (_) => (machine.trapFdcPortAccess(2) ? 0xff : NOT_HANDLED),
+      writerFns: (p, v) => {
+        if (!fdConflict(p)) machine.trapFdcPortAccess(3, v);
+      }
     });
     r({
       description: "Pentagon 1024K memory",

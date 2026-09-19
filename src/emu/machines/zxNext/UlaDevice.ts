@@ -56,7 +56,7 @@ export class UlaDevice implements IGenericDevice<IZxNextMachine> {
 
     // --- Merge bit 6 with port value
     portValue = ((portValue & 0xbf) | bit6Value) & 0xff;
-    return portValue;
+    return this.machine.expansionBusDevice.applyToPortFeRead(address, portValue);
   }
 
   /**

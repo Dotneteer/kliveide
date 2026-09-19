@@ -18,6 +18,10 @@ static uint8_t zxnextMachineTiming;
 static uint8_t zxnextMachineType;
 static uint8_t zxnextUserDtLock;
 static uint8_t zxnextResetType;
+/* NextReg $F0, Issue 4 (zxnext.vhd ~7386-7427): select mode, and the DNA / XADC device selected */
+static uint8_t zxnextXdevSelect;
+static uint8_t zxnextXdevDna;
+static uint8_t zxnextXdevAdc;
 
 static uint32_t zxnextNextRegGetMachineTiming(void) {
   return zxnextMachineTiming;
@@ -51,6 +55,8 @@ static void zxnextNextRegHardReset(void) {
   zxnextNextRegs[0x06] = 0x80;
   zxnextNextRegs[0x08] = 0x1a;
   zxnextNextRegs[0x0e] = 0x00;
+  zxnextNextRegs[0x0f] = 0x02; /* g_board_issue: an Issue 4 board, as the $11 and $F0 rules assume */
+  zxnextNextRegs[0x10] = 0x01; /* ~1127: nr_10_coreid := "00001", no reset branch */
   zxnextNextRegs[0x0a] = 0x01;
   zxnextNextRegs[0x12] = 0x08;
   zxnextNextRegs[0x13] = 0x0b;
@@ -135,6 +141,16 @@ static void zxnextNextRegApplyResetBranch(void) {
   zxnextNextRegs[0xa0] = 0x00;
   zxnextNextRegs[0xa2] = 0x00;
   zxnextNextRegs[0xa8] = 0x00;
+  /* ~5048-5051, ~5063: the Pi GPIO and ESP GPIO0 output latches */
+  zxnextNextRegs[0x98] = 0xff;
+  zxnextNextRegs[0x99] = 0x01;
+  zxnextNextRegs[0x9a] = 0x00;
+  zxnextNextRegs[0x9b] = 0x00;
+  zxnextNextRegs[0xa9] = 0x01;
+  /* ~7394, ~7405: $F0 back in select mode with no device */
+  zxnextXdevSelect = 1u;
+  zxnextXdevDna = 0u;
+  zxnextXdevAdc = 0u;
   /* UART and DMA interrupt enables, FDC I/O trap enable, I/O trap write value */
   zxnextNextRegs[0xc6] = 0x00;
   zxnextNextRegs[0xcc] = 0x00;
@@ -423,6 +439,25 @@ static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
     zxnextNextRegs[0x11u] = (uint8_t)((value & 0x07u) == 0x07u ? 0u : value & 0x07u);
     return;
   }
+  /* ~5667-5683 (Issue 4): $10 stores a core ID only in config mode, bit 4 = 0 and not 1111; bit 7
+     (boot the selected core) has nothing to boot */
+  if (normalized == 0x10u) {
+    if (zxnextConfigMode && (value & 0x10u) == 0u && (value & 0x0fu) != 0x0fu) zxnextNextRegs[0x10u] = (uint8_t)(value & 0x0fu);
+    return;
+  }
+  /* ~5512-5534: GPIO 1-0 cannot be outputs; $93 and $9B hold 4 bits; $A8 / $A9 hold bit 0 */
+  if (normalized == 0x90u) value &= 0xfcu;
+  if (normalized == 0x93u || normalized == 0x9bu) value &= 0x0fu;
+  if (normalized == 0xa8u || normalized == 0xa9u) value &= 0x01u;
+  /* ~7390-7410: any $F0 write sets select mode from bit 7; bits 7-6 = 11 also choose the device */
+  if (normalized == 0xf0u) {
+    zxnextXdevSelect = (value & 0x80u) != 0u;
+    if ((value & 0xc0u) == 0xc0u) {
+      zxnextXdevDna = (value & 0x03u) == 0x01u;
+      zxnextXdevAdc = (value & 0x03u) == 0x02u;
+    }
+    return;
+  }
   /* ~5781: Pentagon timing holds the 50/60 Hz bit at 0 */
   if (normalized == 0x05u && (zxnextMachineTiming & 0x04u) != 0u) value &= ~0x04u;
   if (normalized == 0x03u) {
@@ -521,6 +556,23 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
       return zxnextKeyboardGetNextRegB1();
     case 0xb2u:
       return zxnextJoystickGetNextRegB2();
+    /* ~5869: '0' & core ID & the DRIVE / M1 buttons (pressed only as pulses: 0) */
+    case 0x10u:
+      return (zxnextNextRegs[0x10u] & 0x1fu) << 2u;
+    /* ~6122-6132: the Pi GPIO pins. Nothing is attached: a driven pin reads its latch, others read 1 */
+    case 0x98u:
+    case 0x99u:
+    case 0x9au:
+    case 0x9bu: {
+      uint32_t en = zxnextNextRegs[(reg & 0xffu) - 0x08u];
+      return (zxnextNextRegs[reg & 0xffu] & en) | (~en & ((reg & 0xffu) == 0x9bu ? 0x0fu : 0xffu));
+    }
+    /* ~6146: "00000" & GPIO2 & '0' & GPIO0; both pulled up, GPIO0 driven by its latch with $A8 bit 0 */
+    case 0xa9u:
+      return 0x04u | ((zxnextNextRegs[0xa8u] & 0x01u) != 0u ? (zxnextNextRegs[0xa9u] & 0x01u) : 0x01u);
+    /* ~7418-7428: select mode shows the selection; no DNA or XADC is modelled, so device mode reads 0 */
+    case 0xf0u:
+      return zxnextXdevSelect ? (0x80u | (zxnextXdevAdc ? 0x02u : 0x00u) | (zxnextXdevDna ? 0x01u : 0x00u)) : 0x00u;
     // --- Active video line: the copper line (hardware `cvc`, $64 offset included) the beam is on.
     // --- Computed, not stored. Mirrors NextComposedScreenDevice.activeVideoLine, which is updated
     // --- as each tact renders, i.e. it holds the line of the last tact before currentFrameTact.
@@ -607,6 +659,8 @@ static uint32_t zxnextNextRegGetDirect(uint32_t reg) {
     case 0x30u:
     case 0x31u:
     case 0x4cu:
+      return zxnextTilemapGetNextReg(reg);
+    /* $6B bit 4 is the second tilemap palette, which the palette module keeps */
     case 0x6bu:
       return zxnextTilemapGetNextReg(reg) | (zxnextPaletteGetSecondTilemap() ? 0x10u : 0u);
     case 0x1cu:

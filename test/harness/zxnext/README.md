@@ -34,6 +34,7 @@ test/harness/zxnext/
 
 ```bash
 npm test -- --project node test/zxnext-hw               # scripted hardware tests
+ZXNEXT_LONG=1 npm test -- --project node test/zxnext-hw/parity  # adds the long runs (PAR-004: 3000 frames)
 npm test -- --project node test/harness/zxnext          # the harness's own tests
 npm run test:visual                                     # screen cases, both cores, headless
 npm run test:visual -- C02 --core wasm --verbose        # one case / prefix, one core
@@ -97,6 +98,7 @@ Every method runs on both cores; methods returning `this` chain.
 | Joysticks | `joystick(side, ...buttons)` | Holds exactly these buttons on the `"left"` / `"right"` connector (none: all released): `"UP"` `"DOWN"` `"LEFT"` `"RIGHT"` `"B"` (fire 1) `"C"` (fire 2) and the MD pad's `"A"` `"START"` `"X"` `"Y"` `"Z"` `"MODE"` - the connector's 12-bit output. NextReg `$05` decides what they do (Kempston / MD ports, keys). |
 | Mouse | `mouse({ dx, dy, wheel, buttons })` | One PS/2 packet: `dx` / `dy` -255..255 (right / up), `wheel` -8..7, `buttons` held (`"left"` `"right"` `"middle"`; left out, the last packet's stay held). `$0A`'s DPI and button reverse act on the packet as it arrives. |
 | RTC | `setRtcTime({ year, month, date, day, hours, minutes, seconds })` | Sets the DS1307 on the I2C bus (24-hour mode, running), as a clock set before the test and kept by its battery; the second starts now and the clock runs with the machine (28M clocks of 28 MHz per second). Tests read it through `$103B`/`$113B` like software does. |
+| Checkpoints | `captureCheckpoint(key)` `restoreCheckpoint(key)` | **WASM core only** (throws on the TypeScript core, which has none): the whole machine, mid-frame or not; one checkpoint at a time. |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` has 16-bit pairs (`bc`, not `b`). |
 | Screen | `screen()` `pixel(x, y)` `rowRuns(y)` `expectProbe(probe)` `saveScreenPng(path)` | The last *displayed* 720x288 frame. Probe and colour notation as in `case.json` (`ula:N`, `next8:0xNN`, `rgb333:R,G,B`, `#RRGGBB`). |
 | Audio | `startAudio()` `audio()` | Mixed left/right samples of each completed frame; needs `audioSampleRate`. |
@@ -157,8 +159,8 @@ When a test needs something the session cannot do, add it to `script/session.ts`
 5. **Export** new types from `index.ts` and **add a row** to the Session API table above.
 
 Candidates not written yet: observing the INT line
-and interrupt acknowledge, a port/memory write log for both cores, checkpoints
-(`captureCheckpoint` exists on the WASM core only).
+and interrupt acknowledge, a port/memory write log for both cores, checkpoints on the TypeScript core
+(`captureCheckpoint`/`restoreCheckpoint` work on the WASM core only).
 
 ## Declarative screen cases
 

@@ -1,4 +1,5 @@
 #include "zxnext-dac.h"
+#include "zxnext-expansion.h"
 
 static uint8_t zxnextDacChannels[4];
 /* zxnext.vhd ~6382: the soundrive module's reset is `reset or not nr_08_dac_en`, so while NextReg $08
@@ -54,7 +55,7 @@ static uint32_t zxnextDacGetNextReg(uint32_t reg) {
 
 /* internal_port_enable bit n: $82 + n / 8, bit n % 8 (zxnext.vhd ~2348) */
 static inline uint32_t zxnextDacPortEnabled(uint32_t bit) {
-  return (zxnextNextRegs[0x82u + (bit >> 3)] >> (bit & 0x07u)) & 0x01u;
+  return zxnextExpansionPortEnabled(bit);
 }
 
 /*

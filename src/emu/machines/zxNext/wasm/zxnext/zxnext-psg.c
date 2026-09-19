@@ -58,6 +58,9 @@ static double zxnextPsgAccumulatedTacts;
 static uint32_t zxnextPsgCurrentLeft;
 static uint32_t zxnextPsgCurrentRight;
 static uint32_t zxnextPsgSampleLeft;
+/* The sample's exact average (zxnextPsgSampleLeft/Right are it rounded, for the exports) */
+static double zxnextPsgSampleLeftExact;
+static double zxnextPsgSampleRightExact;
 static uint32_t zxnextPsgSampleRight;
 
 static void zxnextPsgRefreshCurrentStereoOutput(void);
@@ -111,12 +114,17 @@ static void zxnextPsgReset(void) {
   zxnextPsgCurrentLeft = 0u;
   zxnextPsgCurrentRight = 0u;
   zxnextPsgSampleLeft = 0u;
+  zxnextPsgSampleLeftExact = 0.0;
+  zxnextPsgSampleRightExact = 0.0;
   zxnextPsgSampleRight = 0u;
   zxnextPsgResetAudioWindow();
 }
 
+/* The PSG clock (ym2149 `ena_div`, every 128 master clocks from a free-running divider) runs on across
+   frames: a frame is not a whole number of PSG ticks (567264 = 4431 x 128 + 96 in +3 timing), so
+   restarting it each frame shifted its phase by up to a tick and dropped the frame's last part-tick.
+   Mirrors TurboSoundDevice.onNewFrame / advancePsgToFrameTact. */
 static void zxnextPsgBeginFrame(void) {
-  zxnextPsgResetAudioWindow();
   zxnextPsgRefreshCurrentStereoOutput();
 }
 
@@ -345,6 +353,14 @@ static void zxnextPsgAdvanceToFrameTact(double frameTact28) {
   zxnextPsgAccumulateCurrentOutputUntil(frameTact28);
 }
 
+/* The frame counter wraps: move the PSG clock and its sample window back a frame so they carry on
+   (see zxnextPsgBeginFrame). Nothing is advanced here: a sample whose boundary lies before the frame
+   end may still be open, and the mixer closes it at that boundary (TurboSoundDevice.followFrameWrap). */
+static void zxnextPsgOnFrameWrap(uint32_t frameLength28) {
+  zxnextPsgNextClockFrameTact -= (double)frameLength28;
+  zxnextPsgLastAccumulationFrameTact -= (double)frameLength28;
+}
+
 static void zxnextPsgCalculateCurrentAudioValue(uint32_t frameTact28) {
   zxnextPsgAdvanceToFrameTact((double)frameTact28);
 }
@@ -355,9 +371,13 @@ static void zxnextPsgPrepareAudioSample(double sampleEndFrameTact28) {
   if (zxnextPsgAccumulatedTacts > 0.0) {
     double left = zxnextPsgAccumulatedLeft / zxnextPsgAccumulatedTacts;
     double right = zxnextPsgAccumulatedRight / zxnextPsgAccumulatedTacts;
+    zxnextPsgSampleLeftExact = left;
+    zxnextPsgSampleRightExact = right;
     zxnextPsgSampleLeft = (uint32_t)(left >= 0.0 ? left + 0.5 : 0.0);
     zxnextPsgSampleRight = (uint32_t)(right >= 0.0 ? right + 0.5 : 0.0);
   } else {
+    zxnextPsgSampleLeftExact = (double)zxnextPsgCurrentLeft;
+    zxnextPsgSampleRightExact = (double)zxnextPsgCurrentRight;
     zxnextPsgSampleLeft = zxnextPsgCurrentLeft;
     zxnextPsgSampleRight = zxnextPsgCurrentRight;
   }
@@ -417,6 +437,8 @@ static void zxnextPsgRefreshCurrentStereoOutput(void) {
 }
 
 static uint32_t zxnextPsgGetSampleLeft(void) { return zxnextPsgSampleLeft; }
+static double zxnextPsgGetSampleLeftExact(void) { return zxnextPsgSampleLeftExact; }
+static double zxnextPsgGetSampleRightExact(void) { return zxnextPsgSampleRightExact; }
 static uint32_t zxnextPsgGetSampleRight(void) { return zxnextPsgSampleRight; }
 
 static uint32_t zxnextPsgGetNoiseRng(uint32_t chip) { return zxnextPsgChips[chip % 3u].poly17; }

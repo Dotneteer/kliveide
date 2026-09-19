@@ -56,16 +56,16 @@
                 "column": 0
               },
               "viewState": {
-                "scrollPosition": 200.3751678466797,
+                "scrollPosition": 294.4008483886719,
                 "bankExpanded": {
                   "0": true,
                   "2": false
                 },
-                "selectedBank": 2
+                "selectedBank": 12
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "memoryDump-bankDump/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex:12"
         }
       ]
     }

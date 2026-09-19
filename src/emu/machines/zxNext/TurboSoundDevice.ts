@@ -375,7 +375,8 @@ export class TurboSoundDevice {
     this._psgLastAccumulationFrameTact = frameTact28;
   }
 
-  private advancePsgToFrameTact(frameTact28: number): void {
+  /** Moves the clocks back a frame when the frame counter has wrapped since the last advance. */
+  private followFrameWrap(frameTact28: number): void {
     if (frameTact28 < this._psgLastAccumulationFrameTact) {
       if (this._frameLength28 > 0 && this._psgLastAccumulationFrameTact - frameTact28 > this._frameLength28 / 2) {
         // --- The frame counter wrapped: the PSG clock and the sample clock run on across the frame
@@ -391,7 +392,10 @@ export class TurboSoundDevice {
         this._audioNextSampleTact = this._audioSampleLength;
       }
     }
+  }
 
+  private advancePsgToFrameTact(frameTact28: number): void {
+    this.followFrameWrap(frameTact28);
     while (this._psgNextClockFrameTact <= frameTact28) {
       this.accumulateCurrentOutputUntil(this._psgNextClockFrameTact);
       this.generateAllOutputValues();
@@ -655,8 +659,12 @@ export class TurboSoundDevice {
    * filled the gap with a silent PSG sample or counted a sample twice).
    */
   emitAudioSample(frameTact28: number): void {
-    this.advancePsgToFrameTact(frameTact28);
+    // --- The beeper notices a sample boundary at the first CPU tact past it; the PSG window closes at
+    // --- the boundary itself (on the 28 MHz sample grid), as the WASM mixer's does
+    this.followFrameWrap(frameTact28);
+    this.advancePsgToFrameTact(Math.min(this._audioNextSampleTact, frameTact28));
     this.pushAccumulatedSample();
+    this._audioNextSampleTact += this._audioSampleLength;
   }
 
   private pushAccumulatedSample(): void {

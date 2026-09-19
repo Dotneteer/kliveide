@@ -345,3 +345,24 @@ describe("harness session - parity", () => {
     expect(r).toEqual({ ts: 14, wasm: 14 });
   });
 });
+
+describe("NextTestSession: checkpoints", () => {
+  it("wasm: restoreCheckpoint puts back memory, registers, the beam and the frame count", async () => {
+    const s = await createSession("wasm");
+    await s.loadCode(` .org $8000\nLoop: inc (hl)\n inc hl\n jr Loop`);
+    s.setRegisters({ hl: 0xc000 }).runFrames(2).step(1000);
+    const before = { regs: s.registers(), tacts: s.tacts, frames: s.frames, ram: Array.from(s.peekBytes(0xc000, 64)) };
+    s.captureCheckpoint("mid");
+    s.runFrames(3).poke(0xc000, 0x99);
+    expect(s.frames, "the run moved on").toBe(before.frames + 3);
+    s.restoreCheckpoint("mid");
+    expect({ regs: s.registers(), tacts: s.tacts, frames: s.frames, ram: Array.from(s.peekBytes(0xc000, 64)) }).toEqual(before);
+    expect(() => s.restoreCheckpoint("other"), "an unknown key").toThrow(/No checkpoint "other"/);
+  });
+
+  it("ts: checkpoints throw - the TypeScript core has none", async () => {
+    const s = await createSession("ts");
+    expect(() => s.captureCheckpoint("x")).toThrow(/WASM core only/);
+    expect(() => s.restoreCheckpoint("x")).toThrow(/WASM core only/);
+  });
+});

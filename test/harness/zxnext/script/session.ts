@@ -90,6 +90,7 @@ export class NextTestSession {
   private recording?: AudioSample[];
   private sd?: InMemorySdMessenger;
   private mouseButtons = 0;
+  private checkpoint?: { key: string; frames: number; lastFrame?: Frame };
 
   private constructor(
     readonly core: CoreName,
@@ -128,6 +129,34 @@ export class NextTestSession {
    */
   async pressHotkey(key: Hotkey): Promise<this> {
     await this.machine.executeCustomCommand(HOTKEY_COMMANDS[key]);
+    return this;
+  }
+
+  // ==========================================================================================
+  // Checkpoints
+
+  /**
+   * Captures the whole machine under `key`, mid-frame or not, so `restoreCheckpoint` can put it back.
+   * **WASM core only**: `ZxNextWasmV2Machine.captureCheckpoint` copies the core's linear memory, which
+   * holds every device; the TypeScript core has no checkpoints, and this throws there. The core keeps
+   * one checkpoint: a new capture replaces the last. The session's frame count and last displayed
+   * frame are kept with it.
+   */
+  captureCheckpoint(key: string): this {
+    const m = this.machine;
+    if (!(m instanceof ZxNextWasmV2Machine)) throw new Error("Checkpoints exist on the WASM core only.");
+    m.captureCheckpoint(key);
+    this.checkpoint = { key, frames: this.frames, lastFrame: this.lastFrame };
+    return this;
+  }
+
+  /** Puts the machine back to the checkpoint captured under `key` (WASM core only; see captureCheckpoint). */
+  restoreCheckpoint(key: string): this {
+    const m = this.machine;
+    if (!(m instanceof ZxNextWasmV2Machine)) throw new Error("Checkpoints exist on the WASM core only.");
+    if (this.checkpoint?.key !== key || !m.tryRestoreCheckpoint(key)) throw new Error(`No checkpoint "${key}" to restore.`);
+    this.frames = this.checkpoint.frames;
+    this.lastFrame = this.checkpoint.lastFrame;
     return this;
   }
 

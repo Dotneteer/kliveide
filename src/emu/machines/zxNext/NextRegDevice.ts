@@ -72,6 +72,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   private readonly regValues: number[] = [];
 
   configMode: boolean = false;
+  // --- $10 core ID (zxnext.vhd ~1127: "00001", no reset branch)
+  private coreId = 0x01;
+  // --- $F0 XDEV command, Issue 4 (~7386-7427): select mode and the selected DNA / XADC device
+  private xdevSelect = true;
+  private xdevDna = false;
+  private xdevAdc = false;
   lastReadValue: number;
 
   // --- Reg $06 state
@@ -762,7 +768,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x10,
       description: "Core Boot",
-      writeFn: () => {},
+      // --- ~5869: '0' & core ID & the DRIVE / M1 buttons (pressed only as pulses: 0)
+      readFn: () => (this.coreId & 0x1f) << 2,
+      // --- ~5667-5683 (Issue 4): a core ID only in config mode, bit 4 = 0 and not 1111; bit 7 (boot
+      // --- the selected core) has nothing to boot
+      writeFn: (v) => {
+        if (this.configMode && !(v & 0x10) && (v & 0x0f) !== 0x0f) this.coreId = v & 0x0f;
+      },
       slices: [
         {
           mask: 0x7c,
@@ -2393,22 +2405,25 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0x98,
       description: "PI GPIO #1 (LSB)",
+      readFn: () => this.piGpioPins(0x98),
       writeFn: () => {}
     });
     r({
       id: 0x99,
       description: "PI GPIO #2",
+      readFn: () => this.piGpioPins(0x99),
       writeFn: () => {}
     });
     r({
       id: 0x9a,
       description: "PI GPIO #3",
+      readFn: () => this.piGpioPins(0x9a),
       writeFn: () => {}
     });
     r({
       id: 0x9b,
       description: "PI GPIO #4 (LSB)",
-      readFn: () => (this.regValues[0x9b] ?? 0x00) & 0x0f,
+      readFn: () => this.piGpioPins(0x9b),
       writeFn: () => {}
     });
     r({
@@ -2497,7 +2512,9 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xa9,
       description: "ESP Wifi GPIO",
-      readFn: () => (this.regValues[0xa9] ?? 0x00) & 0x05,
+      // --- ~6146: "00000" & GPIO2 & '0' & GPIO0; both pulled up on the board, GPIO0 driven by its
+      // --- latch while $A8 bit 0 enables it
+      readFn: () => 0x04 | ((this.regValues[0xa8] ?? 0) & 0x01 ? (this.regValues[0xa9] ?? 1) & 0x01 : 0x01),
       writeFn: () => {},
       slices: [
         {
@@ -3220,7 +3237,17 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     r({
       id: 0xf0,
       description: "XDEV CMD",
-      writeFn: () => {}
+      // --- ~7418-7428: select mode shows the selection; no DNA or XADC is modelled: device mode reads 0
+      readFn: () =>
+        this.xdevSelect ? 0x80 | (this.xdevAdc ? 0x02 : 0x00) | (this.xdevDna ? 0x01 : 0x00) : 0x00,
+      // --- ~7390-7410: any write sets select mode from bit 7; bits 7-6 = 11 also choose the device
+      writeFn: (v) => {
+        this.xdevSelect = (v & 0x80) !== 0;
+        if ((v & 0xc0) === 0xc0) {
+          this.xdevDna = (v & 0x03) === 0x01;
+          this.xdevAdc = (v & 0x03) === 0x02;
+        }
+      }
     });
     r({
       id: 0xf8,
@@ -3311,6 +3338,27 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     for (const reg of [0x90, 0x91, 0x92, 0x93, 0xa0, 0xa2, 0xa8, 0xd9]) {
       this.directSetRegValue(reg, 0x00); // --- Pi GPIO/peripheral/I2S, ESP GPIO0 enable, I/O trap write
     }
+    // --- ~5048-5051, ~5063: the Pi GPIO and ESP GPIO0 output latches
+    this.directSetRegValue(0x98, 0xff);
+    this.directSetRegValue(0x99, 0x01);
+    this.directSetRegValue(0x9a, 0x00);
+    this.directSetRegValue(0x9b, 0x00);
+    this.directSetRegValue(0xa9, 0x01);
+    // --- ~7394, ~7405: $F0 back in select mode with no device
+    this.xdevSelect = true;
+    this.xdevDna = false;
+    this.xdevAdc = false;
+  }
+
+  /**
+   * A Pi GPIO pin register ($98-$9B) as zxnext.vhd ~6122-6132 reads it: the pins, not the latches.
+   * Nothing is attached, so a pin whose output is enabled ($90-$93; GPIO 1-0 never) reads its latch
+   * and an undriven pin reads 1. The Pi peripherals ($A0, $A2) do not take over the pins.
+   */
+  private piGpioPins(reg: number): number {
+    const width = reg === 0x9b ? 0x0f : 0xff;
+    const enable = (this.regValues[reg - 0x08] ?? 0) & (reg === 0x98 ? 0xfc : width);
+    return (((this.regValues[reg] ?? 0) & enable) | (~enable & width)) & 0xff;
   }
 
   /**
@@ -3351,12 +3399,13 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
   // --- NR $83 bit 5 enables mouse port decoding (0xfadf/0xfbdf/0xffdf).
   // --- When the bit is cleared the mouse ports go silent and port $DF
   // --- becomes a Kempston joy1 alias.
+  // --- Port enable bit 13, ANDed with $87 bit 5 while the expansion bus is on (zxnext.vhd ~2348)
   isMouseEnabled(): boolean {
-    return this.portMouseEnabled;
+    return this.isPortGroupEnabled(1, 5);
   }
 
   isPortDfKempstonAlias(): boolean {
-    return !this.portMouseEnabled;
+    return !this.isPortGroupEnabled(1, 5);
   }
 
   // --- Soft reset
@@ -3402,7 +3451,6 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
 
     machine.expansionBusDevice.reset(); // --- Reg 0x80 and 0x81
 
-    this.directSetRegValue(0xa9, 0x05); // --- Write ESP GPIO2, Write ESP GPIO0
     this.directSetRegValue(0xb8, 0x83); // --- Enable DivMMC automap for $0000, $0000, and $0038
     this.directSetRegValue(0xb9, 0x01); // --- Enable DivMMC automap for $0000 only when ROM3 is present
     this.directSetRegValue(0xba, 0x00); // --- Delayed mapping for all RSTs with DivMMC
@@ -3480,6 +3528,12 @@ export class NextRegDevice implements IGenericDevice<IZxNextMachine> {
     this.directSetRegValue(0x85, 0x8f); // --- Internal Port Decoding Enables #4
 
     this.directSetRegValue(0x8c, 0x00); // --- No alternate ROM
+
+    // --- Power-on values of registers without a reset branch: the core ID, XADC $F8-$FA
+    this.coreId = 0x01;
+    this.directSetRegValue(0xf8, 0x00);
+    this.directSetRegValue(0xf9, 0x00);
+    this.directSetRegValue(0xfa, 0x00);
 
     // --- Apply soft reset
     this.commonReset();

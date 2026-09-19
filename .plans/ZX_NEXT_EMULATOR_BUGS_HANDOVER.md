@@ -1288,6 +1288,115 @@ cores).
   replacing `addDelta` / `addWheelDelta` / `setButtons` and their exports. Harness: `mouse(...)`. The
   app has no mouse input yet (`src/emu/plan.md`).
 
+### B93 – +3 FDC ports: TS answered from a uPD765 the Next does not have; `$D9` taken in the NMI – FIXED 2026-09-19
+
+FDC-002 - FDC-004 (zxnext.vhd ~2554-2558, ~2759, ~3815-3877; both cores).
+- **The Next has no uPD765.** The FPGA decodes `$2FFD`/`$3FFD` only while `$D8` bit 0 enables the
+  I/O trap; otherwise nothing answers them and a read is `$FF`. The TS core wired its +3 floppy
+  controller behind them (status `$80`, command/result phases; an unknown command byte even threw in
+  its result code). The ports are now the trap only; `SpectrumP3FdcStatusPortHandler.ts` and
+  `SpectrumP3FdcControlPortHandler.ts` are deleted. WASM never wired its floppy module to a port.
+  The unreachable rest is gone too: `floppyDevice` on the TS Next machine (and `IZxNextMachine`), its
+  `$1FFD` bit 3 motor calls, and the WASM `zxnext-floppy.c/.h` with its 14 exports. The +3 machine's
+  uPD765 (`src/emu/machines/disk/`, tested in `test/disk/`) is untouched.
+- **`$D9` took a trapped `$3FFD` write at any time** (both cores); like `$DA` it changes only while
+  the NMI state machine accepts a cause (S_NMI_IDLE / S_NMI_FETCH, ~2120), not in the handler.
+- The mock tests of the Next's FDC ports (`test/zxnext/FloppyControllerDevice.test.ts`,
+  `test/wasm/zxNext/wasm-next-floppy.test.ts`) are retired; the shared uPD765 class keeps `test/disk/`.
+
+### B94 – Expansion bus: `$86`-`$89` gated nothing on WASM; no ULA override; no `$89` soft reset – FIXED 2026-09-19
+
+BUS-002 - BUS-005 (zxnext.vhd ~2348-2349, ~3450-3462, ~5039-5045; both cores).
+- **WASM never ANDed the bus port enables into the internal ones.** `zxnextExpansionEffectivePortEnable`
+  existed but nothing called it: every port read `$82`-`$85` alone. `zxnextExpansionPortEnabled(bit)` is
+  now the one place a port enable is decided - the port decoder, the DAC and the CTC use it. The TS core
+  applied the AND through `isPortGroupEnabled`, except for the Kempston mouse (and the CTC device's
+  own check), which read the `$83` flag directly.
+- **The ULA override (`$81` bit 6) did nothing on either core.** With the bus on and `$FE` propagated
+  (`$8A` bit 0), an even port whose A7-4 = 0000 reads the bus instead of the keyboard - all 1s with
+  nothing plugged in; the bus data is ANDed into every `$FE` read. `isUlaOverride` tested A15-12 and
+  was never called.
+- **A soft reset never touched `$86`-`$89`.** They reset to 1s when the reset type, `$89` bit 7, is 0 -
+  the opposite sense to `$85`'s.
+- The register and port-enable halves of `test/zxnext/ExpansionBusDevice.test.ts` are retired (one
+  encoded the A15-12 decode); its ROMCS / NMI / INT tests of the peripheral inputs stay with
+  `ExpansionBusNmi.test.ts`, since no harness method plugs a peripheral into the bus.
+
+### B95 – Board registers: GPIO read the latches, `$10` took any write, `$F0` stored bytes; WASM `$0F` = 0 – FIXED 2026-09-19
+
+GPIO-002, GPIO-005 - GPIO-007 (zxnext.vhd ~5048-5063, ~5667-5683, ~5869, ~6122-6146, ~7386-7530;
+both cores).
+- **`$98`-`$9B` and `$A9` read the pins, not the output latches.** Both cores read back the last value
+  written. Klive has nothing attached: a Pi GPIO pin reads its latch while `$90`-`$93` enable its
+  output and 1 otherwise; ESP GPIO0 / GPIO2 have board pull-ups, so they read 1 unless `$A8` bit 0
+  drives GPIO0. A reset sets the Pi latches to `$FF $01 $00 $0` and the GPIO0 latch to 1 (WASM read
+  `$A9` as `$00`).
+- **`$10` stored every write.** It reads '0' & core ID & buttons, with core ID 1 at power-on (`$04`);
+  the Issue 4 core takes a new ID only in config mode, bit 4 = 0 and not 15, and keeps it across a
+  soft reset.
+- **`$F0` was a plain byte.** It is the XDEV select state machine: select mode with no device after a
+  reset (`$80`), bits 7-6 = 11 pick DNA or XADC, bit 7 = 0 enters device mode. No DNA or XADC is
+  modelled, so device mode reads 0 and a DRP read leaves `$F9`/`$FA` alone. The TS core powered
+  `$F0`/`$F8`-`$FA` on as `$FF`; they are 0 (`$F0` `$80`).
+- **WASM reported board issue 0** in `$0F` while the TS core, and both cores' `$11` rule, are Issue 4
+  (2). It now reports 2.
+- The `$90`-`$A9` and `$F0`-`$FA` write/readback mocks of `test/zxnext/NextRegDevice.test.ts` are
+  retired; its hard-reset tables now expect `$10` = `$04`, `$9B` = `$0F`, `$F0` = `$80`, `$F8`-`$FA` = 0.
+
+### B96 – Readbacks: WASM ORed the tilemap palette bit into `$1B`/`$30`/`$31`; TS dropped `$6B` bit 2 – FIXED 2026-09-19
+
+PAR-001 (zxnext.vhd ~5246-5253, ~5307-5315, ~5437-5439, ~5917-5970, ~6047; both cores).
+- **WASM:** one case group read `$1B`, `$2F`, `$30`, `$31`, `$4C` and `$6B` and ORed the second tilemap
+  palette (`$6B` bit 4) into all of them: with it set, the tilemap clip window, scroll X LSB and scroll Y
+  read back with bit 4 set. Only `$6B` carries it now.
+- **TS:** `$6B` bit 2 has no function, but the VHDL stores bits 6-0 and reads them back; the composed
+  screen device dropped it.
+
+### B97 – NextReg `$64` took effect at once instead of at the `cvc` reload – FIXED 2026-09-19
+
+COP-016, PAR-001 (video/zxula_timing.vhd ~455-472; both cores).
+- `cvc` - the line the copper, the line interrupt and `$1E`/`$1F` read - is a counter loaded with `$64`
+  at `hc_ula` 0 of the first active line and counted on from there. Both cores computed it from the
+  current `$64` at every position, so a mid-frame write moved this frame's copper WAITs, line interrupt
+  and `$1F` at once; the WASM core's `$1F` (computed at read) showed a write before the TS core's (held
+  from the last rendered tact) did, which is how PAR-001 found it. Both cores now keep the offset before
+  and after the frame's reload: a write before the reload is what the reload loads; one after it waits
+  for the next frame (`CopperDevice.offsetBeforeReload/AfterReload`,
+  `zxnextCopperOffsetBeforeReload/AfterReload`; a copper `$64` write uses the copper's own tact).
+
+### B98 – Audio: the two cores' PSG, beeper and sample clocks disagreed – FIXED 2026-09-19
+
+PAR-003, PAR-006 (audio/ym2149.vhd ~255-280, ~476-515; zxnext_top ~1024-1048). The mixed output is now
+equal to the bit at 43.75 kHz, within 1 LSB at 44.1 kHz, at every CPU speed.
+- **PSG clock phase.** The ym2149 `ena_div` comes from a free-running divider (every 128 master clocks).
+  WASM restarted it at every frame (a frame is 4431.75 ticks in +3 timing), TS re-based it at the first
+  frame wrap (its frame length was still unknown). Both now tick at power-on clock 128k, carried across
+  frames (`zxnextPsgOnFrameWrap`; TS gets the frame length at reset).
+- **TS PSG outputs** changed only on the next `ena_div` (up to 128 clocks after a register write); the
+  VHDL registers them every `ENA` (16 clocks), as WASM did. `NextPsgChip` updates them on the write.
+- **Sample windows.** TS closed a PSG sample at the first CPU tact after its boundary, WASM at the
+  boundary; TS now closes it at the boundary. TS skipped audio in the tacts an instruction runs past the
+  frame end (the PSG then ran past a boundary and restarted its grid); it emits them like WASM.
+- **Beeper.** Both cores restarted the beeper's sample window (and dropped pending EAR/MIC changes) at
+  each frame start; the window carries on now (WASM re-syncs it only when the host moves the tact counter
+  back). WASM rounded the time-weighted EAR/MIC levels to whole milli-units and truncated x512/1000; it
+  keeps them exact and rounds x512 / x128 as the TS mixer does, and keeps the PSG sample unrounded. WASM
+  placed the beeper's sample end from the frame's first executed tact (off by the previous frame's
+  overrun and by speed changes); it is measured back from the current tact now.
+- **Sample clock under speed changes.** TS counted the sample length in CPU tacts at the speed of the
+  moment, so a sample spanning a speed change was stretched or squeezed; the Next's samples now run on the
+  28 MHz clock, like WASM's (`ZxNextMachine.onTactIncremented`, `AudioDeviceBase.emitSampleAt`).
+- AY-014 now skips the first held sample: its window opened before the hold, so it rightly averages in
+  the tone.
+
+### B99 – TS: the sprite layer smeared its last pixel across the border – FIXED 2026-09-19
+
+SPR-036, PAR-002 (video/sprites.vhd ~1019, ~1085).
+- Outside the 320-pixel sprite window the TS core left the sprite pixel output at its last value, so
+  with sprites over the border sprite x 319 was drawn across the right border and the next line's left
+  border (buffer x 672-719 and 0-31). `pixel_en` needs `hcounter_i < 320`: the layer is transparent
+  there now.
+
 ### B11 – `EmulatorPanel` renders an instant screen after every frame – FIXED 2026-09-17
 
 - **Fixed:** `machineFrameCompleted` keeps a copy of the displayed pixel buffer instead of calling
