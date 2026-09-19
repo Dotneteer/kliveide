@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { Z88_BACKENDS } from "./z88-backends";
+import { z88Backends } from "./z88-backends";
 import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
-describe.each(Z88_BACKENDS)("Z88 - Banked Memory ($name)", function ({ create }) {
+describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", function ({ create }) {
   it("constructor works", () => {
     // --- The expectations of the original TypeScript-only test (card objects and bank data read
     // --- through IZ88BankedMemoryTestSupport), asked through the backend-neutral surface

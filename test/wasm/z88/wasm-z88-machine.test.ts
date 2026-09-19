@@ -359,17 +359,6 @@ describe("Cambridge Z88 WASM machine - host behaviour", () => {
 
 describe("Cambridge Z88 WASM machine - surfaces not migrated yet", () => {
   it.each([
-    ["executeMachineFrame", (m: Z88WasmV2Machine) => m.executeMachineFrame(), 5],
-    ["doReadMemory", (m: Z88WasmV2Machine) => m.doReadMemory(0), 4],
-    ["doWriteMemory", (m: Z88WasmV2Machine) => m.doWriteMemory(0, 0), 4],
-    ["get64KFlatMemory", (m: Z88WasmV2Machine) => m.get64KFlatMemory(), 4],
-    ["getCurrentPartitions", (m: Z88WasmV2Machine) => m.getCurrentPartitions(), 4],
-    ["getCurrentPartitionLabels", (m: Z88WasmV2Machine) => m.getCurrentPartitionLabels(), 4],
-    ["doReadPort", (m: Z88WasmV2Machine) => m.doReadPort(0xb0), 6],
-    ["doWritePort", (m: Z88WasmV2Machine) => m.doWritePort(0xb0, 0), 6],
-    ["getBlinkState", (m: Z88WasmV2Machine) => m.getBlinkState(), 6],
-    ["signalFlapOpened", (m: Z88WasmV2Machine) => m.signalFlapOpened(), 6],
-    ["signalFlapClosed", (m: Z88WasmV2Machine) => m.signalFlapClosed(), 6],
     ["setKeyStatus", (m: Z88WasmV2Machine) => m.setKeyStatus(0, true), 7],
     ["renderInstantScreen", (m: Z88WasmV2Machine) => m.renderInstantScreen(), 8],
     ["getAudioSamples", (m: Z88WasmV2Machine) => m.getAudioSamples(), 9]

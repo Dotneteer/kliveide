@@ -6,16 +6,17 @@ the machine through the backend-neutral API (`IZ88Machine`, `IZ88IdeMachine`), n
 object, so **the same test runs on every backend**.
 
 The harness exists for the TypeScript-to-WASM migration
-(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). `Z88_HARNESS_BACKENDS` lists the backends the
-tests run on: only `"typescript"` until the WASM core can run code, then both.
-`createHarnessZ88Machine({ backend: "wasm" })` already creates a `Z88WasmV2Machine` (the WASM machine
-tests use it), and `z88WasmArtifactBytes()` builds the core once per test worker.
+(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). A suite names the features it needs, and
+`z88HarnessBackends(...features)` answers the backends it runs on: always `"typescript"`, and
+`"wasm"` once `Z88_WASM_FEATURES` has every feature it names (`test/z88/README.md` has the table).
+`Z88_HARNESS_BACKENDS` is every backend the harness can create. `z88WasmArtifactBytes()` builds the
+core once per test worker.
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createZ88Session, Z88_HARNESS_BACKENDS } from "../harness/z88";
+import { createZ88Session, z88HarnessBackends } from "../harness/z88";
 
-describe.each(Z88_HARNESS_BACKENDS)("keyboard (%s)", (backend) => {
+describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("keyboard (%s)", (backend) => {
   it("reads a key through $B2", async () => {
     const s = await createZ88Session({ backend });
     s.keyDown("A");
@@ -61,7 +62,8 @@ Methods returning `this` chain.
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current paging, like the CPU - a flash card sees them as bus cycles |
 | | `physPeek(abs)` | The 4 MB physical memory; slot N starts at N * $100000, internal RAM at $080000 |
 | I/O | `in(port)` `out(port, v)` | Full 16-bit port address: the KBD row select and the LCD registers' high byte come from B |
-| CPU | `registers()` `setRegisters({...})` `tacts` `frames` | |
+| CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` reads `getCpuState()`, the IDE's path (a lazily mirrored backend syncs first) |
+| Debugger | `breakpoint(addrOrLabel)` `debug("continue" \| "stepInto" \| "stepOver" \| "stepOut")` | As the IDE runs it (`MachineController.run`): a step wakes a snoozing CPU first, a step-out marks its target first. Returns the PC it stopped at. |
 | State | `snoozed` `sleeping` `blinkState()` | `blinkState()` is what the Blink panel shows |
 | Keys | `keyDown(...keys)` `keyUp(...keys)` | `Z88KeyCode` names: `"A"`, `"N1"`, `"Enter"`, `"ShiftL"`, `"Menu"`, ... |
 | Commands | `flapOpen()` `flapClose()` `await command(name)` | `battery_low`, `press_shifts`, `flap_open`, `flap_close` |
@@ -81,4 +83,9 @@ Methods returning `this` chain.
 ## Adding a backend
 
 Add the backend to `Z88HarnessBackend`, create its machine in `createHarnessZ88Machine`
-(`core/machines.ts`), and add it to `Z88_HARNESS_BACKENDS`. Every session test then runs on it.
+(`core/machines.ts`), and add it to `Z88_HARNESS_BACKENDS` and `z88HarnessBackends`.
+
+## Adding a WASM feature
+
+When a migration step makes the WASM core emulate a feature, add it to `Z88_WASM_FEATURES`. Every
+suite that needs no more than the features listed then runs on WASM too.

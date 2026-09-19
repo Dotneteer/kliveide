@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { Z88_BACKENDS } from "./z88-backends";
+import { z88Backends } from "./z88-backends";
 
 /**
  * Random sequences used for testing
  */
 const RANDOM_SEQ = [0xe2, 0xc5, 0x62];
 
-describe.each(Z88_BACKENDS)("Z88 - Memory read ($name)", function ({ create }) {
+describe.each(z88Backends("memory", "blink"))("Z88 - Memory read ($name)", function ({ create }) {
   const addresses: number[] = [
     0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
     0x4000, 0x5678, 0x5fff, 0x6000, 0x6789, 0x7fff, 0x8000, 0x89ab, 0x9fff,

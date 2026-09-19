@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
-import { createZ88Session, z88Model, Z88_HARNESS_BACKENDS, Z88_LCD, type Z88TestSession } from "../harness/z88";
+import { createZ88Session, z88Model, z88HarnessBackends, Z88_LCD, type Z88TestSession } from "../harness/z88";
 
 /*
  * The Z88 LCD: the Blink renders the screen map at SBR through the four font tables (PB0-PB3) every
@@ -84,7 +84,7 @@ function renderOnce(s: Z88TestSession): void {
   while (s.machine.frames % 8 !== 1) s.runFrames(1);
 }
 
-describe.each(Z88_HARNESS_BACKENDS)("Z88 LCD (%s)", (backend) => {
+describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)", (backend) => {
   it("the register values select the intended addresses", async () => {
     const s = await lcdSession(backend);
     expect(s.blinkState()).toMatchObject({ PB0: 0x420, PB1: 0x8c, PB2: 0x41, PB3: 0x10c, SBR: 0x110 });

@@ -1,6 +1,6 @@
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import type { BlinkState } from "@common/messaging/EmuApi";
+import type { BlinkState, Z80CpuState } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
@@ -205,6 +205,45 @@ export class Z88TestSession {
     return this;
   }
 
+  /**
+   * Runs the way the IDE's debugger does (`MachineController.run`): frames in debug mode until a
+   * debug event (a breakpoint, or the end of the step). A step wakes a snoozing CPU first and a
+   * step-out marks its target first, as `MachineController.stepInto/stepOver/stepOut` do.
+   * @returns The PC where the machine stopped
+   */
+  debug(action: "continue" | "stepInto" | "stepOver" | "stepOut", { maxFrames = 100 }: RunLimit = {}): number {
+    const modes = {
+      continue: DebugStepMode.StopAtBreakpoint,
+      stepInto: DebugStepMode.StepInto,
+      stepOver: DebugStepMode.StepOver,
+      stepOut: DebugStepMode.StepOut
+    };
+    const m = this.machine;
+    if (action !== "continue") m.awakeCpu();
+    if (action === "stepOut") m.markStepOutAddress();
+    const ctx = m.executionContext;
+    ctx.frameTerminationMode = FrameTerminationMode.DebugEvent;
+    ctx.debugStepMode = modes[action];
+    const limit = this.frames + maxFrames;
+    try {
+      while (this.execute() !== FrameTerminationMode.DebugEvent) {
+        if (this.frames >= limit) {
+          throw new Error(`Timed out after ${maxFrames} frames in debug ${action} (PC=${hex(m.pc, 4)})`);
+        }
+      }
+      return this.registers().pc;
+    } finally {
+      ctx.frameTerminationMode = FrameTerminationMode.Normal;
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /** Sets an execution breakpoint at an address or label */
+  breakpoint(where: number | string): this {
+    this.machine.executionContext.debugSupport.addBreakpoint({ address: this.address(where), exec: true });
+    return this;
+  }
+
   /** Power-on reset: memory is cleared and the machine set up again */
   async hardReset(): Promise<this> {
     await this.machine.hardReset();
@@ -281,21 +320,25 @@ export class Z88TestSession {
     return this;
   }
 
+  /**
+   * The CPU registers, through `getCpuState()` - the IDE's path, which makes a backend that mirrors
+   * its CPU lazily (the WASM core) bring the state up to date first.
+   */
   registers(): Z88Registers {
-    const m = this.machine;
+    const cpu = this.machine.getCpuState() as Z80CpuState;
     return {
-      af: m.af,
-      bc: m.bc,
-      de: m.de,
-      hl: m.hl,
-      ix: m.ix,
-      iy: m.iy,
-      sp: m.sp,
-      pc: m.pc,
-      i: m.i,
-      iff1: m.iff1,
-      interruptMode: m.interruptMode,
-      halted: m.halted
+      af: cpu.af,
+      bc: cpu.bc,
+      de: cpu.de,
+      hl: cpu.hl,
+      ix: cpu.ix,
+      iy: cpu.iy,
+      sp: cpu.sp,
+      pc: cpu.pc,
+      i: (cpu.ir >> 8) & 0xff,
+      iff1: cpu.iff1,
+      interruptMode: cpu.interruptMode,
+      halted: cpu.halted
     };
   }
 

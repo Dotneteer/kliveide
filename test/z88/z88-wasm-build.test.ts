@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import packageJson from "../../package.json";
@@ -95,6 +96,16 @@ describe("Cambridge Z88 WASM build", () => {
     expect(() => buildZ88Wasm({ compiler: "fake", run: () => ({ status: 1 }) })).toThrow(
       "Cambridge Z88 WASM compilation failed (1)"
     );
+  });
+
+  it("exports every non-static function of the C core, and nothing else", () => {
+    const folder = dirname(source);
+    const cFunctions = readdirSync(folder)
+      .filter((f) => f.endsWith(".c"))
+      .flatMap((f) => [...readFileSync(join(folder, f), "utf8").matchAll(/^(?:uint32_t|void) (z88[A-Za-z0-9]+)\(/gm)])
+      .map((m) => m[1])
+      .sort();
+    expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(cFunctions);
   });
 
   it("exports everything the loader requires", () => {

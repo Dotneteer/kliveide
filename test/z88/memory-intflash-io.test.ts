@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Z88_BACKENDS } from "./z88-backends";
+import { z88Backends } from "./z88-backends";
 import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
 const addrSR3: number[] = [
@@ -7,7 +7,7 @@ const addrSR3: number[] = [
   0xc000, 0xc001, 0xcdef, 0xdfff, 0xefff, 0xfffe, 0xffff
 ];
 
-describe.each(Z88_BACKENDS)("Z88 - Intel I28F00XS5 Card Read / flash bytes ($name)", function ({ create }) {
+describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00XS5 Card Read / flash bytes ($name)", function ({ create }) {
   addrSR3.forEach(addr => {
     it(`Intel i28F004S5 read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { Z88_BACKENDS } from "./z88-backends";
+import { z88Backends } from "./z88-backends";
 import type { Z88TestFlashCard, Z88TestSurface } from "./z88-test-surface";
 
 /*
@@ -33,7 +33,7 @@ function program(m: Z88TestSurface, address: number, value: number): void {
   m.memory.writeMemory(address, value);
 }
 
-describe.each(Z88_BACKENDS)("Z88 - AMD Flash Card Read / program / erase ($name)", function ({ create }) {
+describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - AMD Flash Card Read / program / erase ($name)", function ({ create }) {
   function setup(chip: "040" | "080" = "040"): { m: Z88TestSurface; card: Z88TestFlashCard } {
     const m = create();
     const card = chip === "040" ? m.cards.amdFlash29F040B() : m.cards.amdFlash29F080B();

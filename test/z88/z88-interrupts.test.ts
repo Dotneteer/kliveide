@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, Z88_HARNESS_BACKENDS, type Z88TestSession } from "../harness/z88";
+import { createZ88Session, z88HarnessBackends, type Z88TestSession } from "../harness/z88";
 
 /*
  * The Blink's maskable interrupt (IM 1, $0038): RTC events, the flap, battery low; and the flags
@@ -62,7 +62,7 @@ handler:
   `, { entry: "start" });
 }
 
-describe.each(Z88_HARNESS_BACKENDS)("Z88 interrupts (%s)", (backend) => {
+describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)", (backend) => {
   it("with INT.TIME and TMK.TICK, the RTC interrupts every 10 ms (every 2nd frame)", async () => {
     const s = await createZ88Session({ backend });
     await interruptCounter(s, INT_GINT | INT_TIME);
@@ -142,6 +142,33 @@ describe.each(Z88_HARNESS_BACKENDS)("Z88 interrupts (%s)", (backend) => {
     s.flapOpen();
     s.runFrames(2);
     expect(s.peekWord(0x9000)).toBeGreaterThan(10);
+  });
+
+  it("an enabled RTC event wakes a snoozing CPU; without INT.TIME it sleeps on", async () => {
+    for (const [intValue, wakes] of [
+      [0x80 | INT_TIME | INT_GINT, true],
+      [0x80 | INT_GINT, false]
+    ] as const) {
+      const s = await createZ88Session({ backend });
+      await s.loadCode(`
+      .org $8000
+      di
+      ld a,${intValue}
+      out ($b1),a          ; INT (KWAIT set)
+      ld a,$01
+      out ($b5),a          ; TMK = TICK
+      ld bc,$00b2
+      in a,(c)             ; no key down: snooze
+      ld a,$55
+      ld ($9000),a
+spin: jr spin
+      `);
+      s.runFrames(1);
+      expect(s.snoozed).toBe(true);
+      s.runFrames(4);
+      expect(s.snoozed).toBe(!wakes);
+      expect(s.peek(0x9000)).toBe(wakes ? 0x55 : 0x00);
+    }
   });
 
   it("battery_low sets STA.BTL", async () => {

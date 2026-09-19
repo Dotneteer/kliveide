@@ -133,6 +133,18 @@ unexported functions are dropped at link time. Extend the core this way: mirror 
 TypeScript member, test it with one test file that runs literally on both CPUs,
 add it to `check-wasm-cpu-contract.cjs`, and rebuild and test every artifact.
 
+**`z80Reset` is the power-on reset, not the reset button.** It matches `Z80Cpu.hardReset()`;
+`Z80Cpu.reset()` keeps BC, DE, HL, their alternates, IX and IY, as a real Z80 does. A lockstep
+parity test found the difference on the Z88 at the first `EXX` after a reset. The shared core now
+has `z80SoftReset()` for the reset button, and the WASM corpus wrapper's `reset()` runs it (its
+`hardReset()` runs `z80Reset`). A machine whose TypeScript oracle soft-resets must call
+`z80SoftReset` from its reset export, or the reset button clobbers registers the oracle keeps.
+
+**Read a WASM machine's CPU through `getCpuState()`, not its register fields.** An adapter mirrors
+the core's registers lazily (after a normal frame only PC and the frame counters), so a test or
+harness that reads `machine.interruptMode` directly sees stale values on WASM and current ones on
+TypeScript. `getCpuState()` is the IDE's path and syncs first.
+
 The literal copies in `test/wasm/z80/` must be re-copied whenever their
 `test/z80/` source changes. A stale `next-ops.test.ts` copy once asserted the
 pre-VHDL `ADD rr,A`/`LDWS` flags and failed six cases against a correct core.

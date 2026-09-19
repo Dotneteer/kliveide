@@ -815,6 +815,34 @@ void z80Reset(void) {
   cpu.hasTbBlueEvent = 0;
 }
 
+/*
+ * The reset button (`Z80Cpu.reset`): what `z80Reset` - the power-on reset, `Z80Cpu.hardReset` - does,
+ * except that BC, DE, HL, their alternates, IX and IY keep their values, as they do on a real Z80 and
+ * on the TypeScript CPU. The Z80N mode is kept too. Machines whose reset button must not clobber the
+ * general registers call this (the Cambridge Z88 does); `z80Reset` is unchanged for the others.
+ */
+void z80SoftReset(void) {
+  const uint16_t bc = BC;
+  const uint16_t de = DE;
+  const uint16_t hl = HL;
+  const uint16_t bcAlt = BC_ALT;
+  const uint16_t deAlt = DE_ALT;
+  const uint16_t hlAlt = HL_ALT;
+  const uint16_t ix = IX;
+  const uint16_t iy = IY;
+  const uint8_t z80nMode = cpu.z80nMode;
+  z80Reset();
+  BC = bc;
+  DE = de;
+  HL = hl;
+  BC_ALT = bcAlt;
+  DE_ALT = deAlt;
+  HL_ALT = hlAlt;
+  IX = ix;
+  IY = iy;
+  cpu.z80nMode = z80nMode;
+}
+
 uint8_t *z80MemoryPtr(void) {
 #ifdef Z80_EXTERNAL_BUS
   return Z80_MEMORY_PTR();

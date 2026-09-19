@@ -681,7 +681,7 @@ Original scope:
 
 ### Step 3 - Implementation switch, factory and menu groups
 
-Status: Done on 2026-09-19 (the preview twins are deferred to Step 5, as Step 2 recommended).
+Status: Done on 2026-09-19 (the preview twins are deferred until after Step 9 - see Step 5).
 
 - `MC_Z88_IMPLEMENTATION = "z88Implementation"` (`constants.ts`). `Z88Implementation.ts`:
   `DEFAULT_Z88_IMPLEMENTATION = "typescript"`, `getZ88Implementation(config, model)` with the
@@ -734,7 +734,25 @@ Original scope:
 
 ### Step 4 - Memory, paging and cards (RAM/ROM)
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `z88-memory.c`: the 8-page table (offset, bank, card), `z88SetMemoryPageInfo` /
+  `z88RecalculatePages` / `z88BankOffset` ported from `Z88BankedMemory` (COM.RAMS page 0 at a fixed
+  $080000, SR0's half-bank page 1, chip-mask mirroring), the empty-slot LFSR (seed $AC23, never
+  reset), RAM (read/write) and ROM (read-only) cards; UV EPROM and flash cards read like ROM and are
+  erased ($FF) on insertion, programming is Step 10. Card kind codes 1-6; the TypeScript `CardType`
+  code each card reports (`z88GetSlotCardType`, `z88GetPageCardType`). `z88SetInternalRamSize` does
+  not re-page, like `setRamCard`. Memory bus events are recorded for the debugger.
+- **Test backends are feature-gated.** `Z88_WASM_FEATURES` (`test/harness/z88/core/machines.ts`)
+  lists what the core emulates; `z88Backends(...features)` (core suites) and
+  `z88HarnessBackends(...features)` (session suites) add the WASM backend once every feature a suite
+  needs is listed. Steps 4-6 added `memory`, `cpu`, `blink`. The WASM core-suite backend
+  (`WasmZ88Surface` in `test/z88/z88-backends.ts`) drives a fresh core instance through its exports,
+  compiled synchronously once per worker.
+- **`memory-paging`, `memory-read`, `memory-write` (and `rtc`, Step 6) pass on both backends: 648
+  cases on WASM, unchanged.** The flash suites wait for `flashCards` (Step 10).
+
+Original scope:
 
 - `z88-memory.c`:
   - 4 MB physical memory and internal RAM sizing from the mask
@@ -750,12 +768,44 @@ Status: Not started.
 
 ### Step 5 - Z80 integration and the frame lifecycle
 
-Status: Not started.
+Status: Done on 2026-09-19.
 
-- When the machine runs frames: register the ten `-wasm` preview twins in `machine-registry.ts`
-  with `createModelTwins` (group "Cambridge Z88 (WASM preview)"), flip the "no WASM preview entry"
-  test in `Z88MachineFactory.test.ts`, and add the WASM backend to `Z88_HARNESS_BACKENDS` once the
-  session suites can run on it.
+- `z88.c`: `z88CpuTactPlusN` keeps `Z80Cpu.tactPlusN`'s frame accounting (a frame completes the
+  moment its last tact passes, mid-instruction if so); `z88BeginFrame` applies the clock multiplier,
+  then `onInitNewFrame`'s RTC tick and KWAIT wake-up; `z88ExecuteInstruction` is one whole
+  instruction as the frame runner executes it (interrupt line, CPU cycles until the prefix is done or
+  one 16-tact snooze cycle, then the key-down wake-up); `z88ExecuteFrame` runs to the frame's end with
+  bus-event capture off. `z88SetTacts` sets the tact counter only. 107 exports; the build test checks
+  that every non-static C function is in the allow-list and nothing else.
+- Timing confirmed against the oracle: default 3-tact memory and 4-tact port delays, no contention,
+  no delayed address bus - the lockstep parity below matches tact for tact.
+- **Core extension found by parity: `z80SoftReset`.** `z80Reset` is `Z80Cpu.hardReset`; the TypeScript
+  reset button (`Z80Cpu.reset`) keeps BC, DE, HL, their alternates, IX and IY. The shared core now has
+  `z80SoftReset` (mirroring `Z80Cpu.reset`, keeping the Z80N mode), in the CPU contract, with
+  `test/z80/soft-reset.test.ts` copied literally to `test/wasm/z80/` (the corpus wrapper's `reset()`
+  now runs the soft reset and `hardReset()` the full one, as the TypeScript `Z80Cpu` does).
+  `z88Reset` uses it; `z88HardReset` uses `z80Reset`.
+- Adapter: every register setter (pairs, alternates, IX/IY/IR/WZ/PC/SP, IFF1/2, IM), `setTacts` and
+  the snooze methods push into the core; mirrors are refreshed through `super` so they are not echoed
+  back. The normal frame is one `z88ExecuteFrame` call; the debug loop is the 48K's (shared
+  `shouldStopAtDebugPoint`, `z88GetStepOutAddress`, access-breakpoint-gated bus import).
+- The harness reads registers through `getCpuState()` (a lazily mirrored backend syncs first) and
+  gained `breakpoint()` and `debug(...)` (the IDE's `MachineController.run`, including the wake-up
+  before a step).
+- Tests: `test/wasm/z88/wasm-z88-debug-step.test.ts` (step-into incl. a prefixed instruction,
+  step-over on a CALL and landing on one, step-out incl. across RTC interrupts, breakpoints, snooze
+  stepping, the IDE step's wake-up - on both backends - plus four cases checking both backends stop at
+  the same PCs with identical registers and tacts); `test/wasm/z88/wasm-z88-parity.test.ts`: **all ten
+  OZ ROMs boot identically on both backends** (registers, tacts, frames, Blink state, snooze, all
+  4 MB, at frames 1-1700), a mixed program matches after each of 30,000 instructions, in whole
+  frames, and across mid-frame stops.
+- **Preview menu entries: deferred again, to after Step 9.** The WASM machine runs, but the app's
+  emulator loop also takes audio samples every frame and the keyboard panel sets keys, and those
+  surfaces still throw `Z88WasmNotMigratedError` (Steps 7 and 9); without the LCD (Step 8) a preview
+  would show nothing. Register the ten `-wasm` twins with `createModelTwins` once Steps 7-9 are done,
+  and flip the "no WASM preview entry" test in `Z88MachineFactory.test.ts` then.
+
+Original scope:
 
 - Include `z80.c` with the hook set above. Implement tacts/frames, the 16,384-tact frame,
   `z88ExecuteFrame` / `z88ExecuteInstruction`, overshoot, `z88SetTacts`, the snooze cycle, the
@@ -774,7 +824,25 @@ Status: Not started.
 
 ### Step 6 - Blink ports, interrupts and RTC
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- `z88-blink.c`: SR0-SR3 (with the RAMS re-page), COM (RESTIM, the SRUN/SBIT ear bit, re-page), INT,
+  STA, ACK, TACK, TMK, EPR, the interrupt line (defect F1 kept), the RTC tick with its gating order,
+  wrap values and wake-ups, the flap, battery low, the LCD registers PB0-PB3/SBR (B supplies the high
+  byte), and the whole `doReadPort`/`doWritePort` decoding, including the `$B2` keyboard read with
+  its snooze (the matrix is read from the key lines; the key interrupt itself is Step 7). Quirks kept
+  and named in the file: F1; the reset re-pages with the old COM and can leave the interrupt line
+  active; the ear bit survives a reset; the oscillator bit is computed from the tact count as the
+  TypeScript beeper computes it after each instruction.
+- Adapter: `getBlinkState()` from the core (the Blink panel works on WASM), ports, flap, battery,
+  partitions and the flat 64K view (with `get64KFlatMemory`'s bank-start quirk).
+- Tests: `rtc.test.ts` on both backends (32 WASM cases); `z88-interrupts.test.ts` on both (11 WASM
+  cases, including a new one: an enabled RTC event wakes a snoozing CPU, without INT.TIME it sleeps
+  on); the harness self-tests (8 WASM cases).
+- Usable afterwards: a WASM Z88 that boots OZ exactly like the TypeScript one, as far as CPU, memory
+  and Blink are concerned - but with no picture, keyboard or sound yet, so not in the menu.
+
+Original scope:
 
 - `z88-blink.c`: every port in the table above, with COM side effects (RESTIM, SRUN/SBIT → ear
   bit, SR0 re-apply), `setTACK`, `setACK`, `setINT`, `setSTA`, and the interrupt check **verbatim**

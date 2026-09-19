@@ -127,15 +127,17 @@ function validateSharedCpuSource() {
   if (!source.includes("uint32_t z80GetZ80NMode(void)")) {
     errors.push("shared CPU source does not export the Z80N mode getter");
   }
-  // --- The Cambridge Z88's Blink snoozes the CPU; the shared core carries it for every machine
+  // --- Facilities the Cambridge Z88 added to the shared core (snooze, the reset button)
   for (const snoozeApi of [
     "void z80SnoozeCpu(void)",
     "void z80AwakeCpu(void)",
     "uint32_t z80IsCpuSnoozed(void)",
-    "void z80SnoozeCycle(void)"
+    "void z80SnoozeCycle(void)",
+    // --- The reset button (`Z80Cpu.reset`), which keeps the general registers
+    "void z80SoftReset(void)"
   ]) {
     if (!source.includes(snoozeApi)) {
-      errors.push(`shared CPU source does not export the snooze API: ${snoozeApi}`);
+      errors.push(`shared CPU source does not export: ${snoozeApi}`);
     }
   }
   return {

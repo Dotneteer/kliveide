@@ -25,11 +25,40 @@ export type Z88HarnessMachine = IZ88Machine & IZ88IdeMachine;
 /** A backend the harness can create a Z88 on */
 export type Z88HarnessBackend = "typescript" | "wasm";
 
+/** What a Z88 test needs the machine to emulate */
+export type Z88Feature =
+  /** The memory map and RAM/ROM cards (Step 4 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) */
+  | "memory"
+  /** The CPU and the frame loop (Step 5) */
+  | "cpu"
+  /** The Blink: ports, RTC, interrupts, flap, battery (Step 6) */
+  | "blink"
+  /** The keyboard interrupt and sleep detection (Step 7) */
+  | "keyboard"
+  /** The LCD renderer (Step 8) */
+  | "lcd"
+  /** The beeper (Step 9) */
+  | "beeper"
+  /** UV EPROM and flash card programming (Step 10) */
+  | "flashCards";
+
 /**
- * The backends the dual-backend Z88 tests run on. The WASM backend joins in Step 4 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
+ * What the WASM core emulates so far. Each migration step adds its feature here, and every Z88 suite
+ * that needs no more than these starts running on the WASM core too.
  */
-export const Z88_HARNESS_BACKENDS: readonly Z88HarnessBackend[] = ["typescript"];
+export const Z88_WASM_FEATURES: ReadonlySet<Z88Feature> = new Set<Z88Feature>(["memory", "cpu", "blink"]);
+
+/**
+ * The backends a Z88 test runs on: the TypeScript machine always, the WASM machine once it emulates
+ * every feature the test needs.
+ * @param needs What the test needs the machine to emulate
+ */
+export function z88HarnessBackends(...needs: Z88Feature[]): Z88HarnessBackend[] {
+  return needs.every((feature) => Z88_WASM_FEATURES.has(feature)) ? ["typescript", "wasm"] : ["typescript"];
+}
+
+/** Every backend the harness can create */
+export const Z88_HARNESS_BACKENDS: readonly Z88HarnessBackend[] = ["typescript", "wasm"];
 
 /** The repo root; the tests start in it, and `__dirname` is not reliable under Vite's transform. */
 export const REPO_ROOT = findRepoRoot(process.cwd());

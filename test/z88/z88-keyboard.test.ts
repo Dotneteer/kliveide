@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, Z88_HARNESS_BACKENDS } from "../harness/z88";
+import { createZ88Session, z88HarnessBackends } from "../harness/z88";
 
 /*
  * The Z88 keyboard: the 8x8 matrix behind the Blink's KBD port ($B2), the key interrupt and snooze.
@@ -12,7 +12,7 @@ import { createZ88Session, Z88_HARNESS_BACKENDS } from "../harness/z88";
  * Where the TypeScript oracle simplifies the hardware, the test says so: it pins the oracle so the
  * WASM core reproduces it (Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
-describe.each(Z88_HARNESS_BACKENDS)("Z88 keyboard (%s)", (backend) => {
+describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 keyboard (%s)", (backend) => {
   it.each([
     // --- A: code 43 = line 5 (A13), bit 3
     ["A", 0xdf, 0xf7],

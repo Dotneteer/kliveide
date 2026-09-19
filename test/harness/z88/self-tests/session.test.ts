@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, Z88_HARNESS_BACKENDS, Z88_FLAT_RAM_LAYOUT } from "../index";
+import { createZ88Session, z88HarnessBackends, Z88_FLAT_RAM_LAYOUT } from "../index";
 import { REPO_ROOT } from "../core/machines";
 
 /*
  * The Z88 harness's own tests: every session method, on every backend.
  */
-describe.each(Z88_HARNESS_BACKENDS)("Z88 harness session (%s)", (backend) => {
+describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 harness session (%s)", (backend) => {
   it("creates a blank machine: nothing in slot 0 but a blank ROM card", async () => {
     const s = await createZ88Session({ backend });
     expect(s.backend).toBe(backend);
@@ -108,7 +108,9 @@ loop: jr loop
     expect(s.blinkState().SR3).toBe(0x40);
     expect(s.in(0xb0)).toBe(0x80); // MID: ZVM
   });
+});
 
+describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 harness session - keys (%s)", (backend) => {
   it("keyDown/keyUp drive the key matrix", async () => {
     const s = await createZ88Session({ backend });
     s.keyDown("A", "ShiftR");
@@ -119,7 +121,9 @@ loop: jr loop
     expect(s.blinkState().keyLines[5]).toBe(0x00);
     expect(() => s.keyDown("NoSuchKey" as any)).toThrow("Unknown Z88 key");
   });
+});
 
+describe.each(z88HarnessBackends("memory", "cpu", "blink", "beeper"))("Z88 harness session - audio (%s)", (backend) => {
   it("collects audio samples only after startAudio", async () => {
     const s = await createZ88Session({ backend, audioSampleRate: 48_000 });
     await s.loadCode(`

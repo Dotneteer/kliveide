@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { Z88_BACKENDS } from "./z88-backends";
+import { z88Backends } from "./z88-backends";
 import type { Z88TestBlink } from "./z88-test-surface";
 import { INTFlags, TMKFlags, TSTAFlags } from "@emu/machines/z88/IZ88BlinkDevice";
 
-describe.each(Z88_BACKENDS)("Z88 - RTC ($name)", function ({ create }) {
+describe.each(z88Backends("blink"))("Z88 - RTC ($name)", function ({ create }) {
   it("blink reset", () => {
     const m = create();
     const b = m.blink;

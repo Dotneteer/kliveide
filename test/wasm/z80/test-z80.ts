@@ -42,6 +42,7 @@ type WasmFn = (...args: number[]) => number;
 type Z80WasmExports = WebAssembly.Exports & {
   memory: WebAssembly.Memory;
   z80Reset: WasmFn;
+  z80SoftReset: WasmFn;
   z80ExecuteCpuCycle: WasmFn;
   z80GetAf: WasmFn;
   z80SetAf: WasmFn;
@@ -195,8 +196,19 @@ class Z80WasmTestCpu {
     this.reset();
   }
 
+  /** The reset button (`Z80Cpu.reset`): the general registers keep their values */
   reset (): void {
+    this.exports.z80SoftReset();
+    this.resetWrapperState();
+  }
+
+  /** Power on (`Z80Cpu.hardReset`) */
+  hardReset (): void {
     this.exports.z80Reset();
+    this.resetWrapperState();
+  }
+
+  private resetWrapperState (): void {
     this.exports.z80SetZ80NMode(this.allowExtendedInstructions ? 1 : 0);
     this.stepOutStack.length = 0;
     this.lastMemoryReads.length = 0;
@@ -204,10 +216,6 @@ class Z80WasmTestCpu {
     this.lastMemoryReadsCount = 0;
     this.lastMemoryWritesCount = 0;
     this._opCode = 0;
-  }
-
-  hardReset (): void {
-    this.reset();
   }
 
   executeCpuCycle (): void {

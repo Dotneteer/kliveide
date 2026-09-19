@@ -20,35 +20,12 @@ export type Z88WasmV2ExportFunction = (...args: number[]) => number;
 
 export type Z88WasmV2Exports = WebAssembly.Exports & {
   memory: WebAssembly.Memory;
-  // --- Buffers
-  z88MemoryPtr: Z88WasmV2ExportFunction;
-  z88GetMemorySize: Z88WasmV2ExportFunction;
-  z88PixelBufferPtr: Z88WasmV2ExportFunction;
-  z88GetPixelBufferCapacity: Z88WasmV2ExportFunction;
-  z88AudioSamplesPtr: Z88WasmV2ExportFunction;
-  z88GetAudioSampleCapacity: Z88WasmV2ExportFunction;
-  z88KeyboardLinesPtr: Z88WasmV2ExportFunction;
-  // --- Lifecycle
-  z88Reset: Z88WasmV2ExportFunction;
-  z88HardReset: Z88WasmV2ExportFunction;
-  // --- LCD shape
-  z88SetLcdSize: Z88WasmV2ExportFunction;
-  z88GetScw: Z88WasmV2ExportFunction;
-  z88GetSch: Z88WasmV2ExportFunction;
-  z88GetScreenWidth: Z88WasmV2ExportFunction;
-  z88GetScreenHeight: Z88WasmV2ExportFunction;
-  // --- Timing
-  z88GetBaseClockFrequency: Z88WasmV2ExportFunction;
-  z88GetTactsInFrame: Z88WasmV2ExportFunction;
-  z88GetFrames: Z88WasmV2ExportFunction;
-  z88GetTacts: Z88WasmV2ExportFunction;
-  // --- CPU
-  z88GetCpuAf: Z88WasmV2ExportFunction;
-  z88GetCpuBc: Z88WasmV2ExportFunction;
-  z88GetCpuDe: Z88WasmV2ExportFunction;
-  z88GetCpuHl: Z88WasmV2ExportFunction;
-  z88GetCpuPc: Z88WasmV2ExportFunction;
-  z88GetCpuSp: Z88WasmV2ExportFunction;
+} & {
+  [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory">]: Z88WasmV2ExportFunction;
+} & {
+  /** The RTC test hooks; in the build's allow-list, not required by the loader */
+  z88TestResetRtc?: Z88WasmV2ExportFunction;
+  z88TestIncrementRtc?: Z88WasmV2ExportFunction;
 };
 
 export type Z88WasmV2Instance = {
@@ -89,6 +66,7 @@ export type Z88WasmV2Runtime = Z88WasmV2Views & {
 /** Every export the machine needs; the build's allow-list must contain all of them */
 export const z88WasmV2RequiredExports = [
   "memory",
+  // --- Buffers
   "z88MemoryPtr",
   "z88GetMemorySize",
   "z88PixelBufferPtr",
@@ -96,24 +74,113 @@ export const z88WasmV2RequiredExports = [
   "z88AudioSamplesPtr",
   "z88GetAudioSampleCapacity",
   "z88KeyboardLinesPtr",
+  // --- Lifecycle and execution
   "z88Reset",
   "z88HardReset",
+  "z88ExecuteFrame",
+  "z88ExecuteInstruction",
+  // --- Timing
+  "z88GetBaseClockFrequency",
+  "z88GetTactsInFrame",
+  "z88GetTactsInCurrentFrame",
+  "z88GetFrames",
+  "z88GetFrameTacts",
+  "z88GetFrameCompleted",
+  "z88GetTacts",
+  "z88SetTacts",
+  "z88GetClockMultiplier",
+  "z88SetTargetClockMultiplier",
+  "z88GetOscillatorBit",
+  // --- LCD shape
   "z88SetLcdSize",
   "z88GetScw",
   "z88GetSch",
   "z88GetScreenWidth",
   "z88GetScreenHeight",
-  "z88GetBaseClockFrequency",
-  "z88GetTactsInFrame",
-  "z88GetFrames",
-  "z88GetTacts",
+  // --- Memory and cards
+  "z88ReadMemory",
+  "z88WriteMemory",
+  "z88InsertCard",
+  "z88RemoveCard",
+  "z88SetInternalRamSize",
+  "z88GetSlotCardType",
+  "z88GetSlotChipMask",
+  "z88GetPageBank",
+  "z88GetPageOffset",
+  "z88GetPageCardType",
+  // --- Blink
+  "z88SignalFlapOpened",
+  "z88SignalFlapClosed",
+  "z88RaiseBatteryLow",
+  "z88ReadPort",
+  "z88WritePort",
+  "z88GetSr",
+  "z88SetSr",
+  "z88GetTim",
+  "z88GetTsta",
+  "z88GetTmk",
+  "z88SetTmk",
+  "z88GetInt",
+  "z88SetInt",
+  "z88GetSta",
+  "z88SetSta",
+  "z88GetCom",
+  "z88SetCom",
+  "z88GetEpr",
+  "z88SetEpr",
+  "z88SetTack",
+  "z88SetAck",
+  "z88GetInterruptSignal",
+  "z88GetPb",
+  "z88GetSbr",
+  "z88GetEarBit",
+  // --- CPU and bus events
+  "z88GetLastMemoryAddress",
+  "z88GetLastMemoryValue",
+  "z88GetLastMemoryIsWrite",
   "z88GetCpuAf",
+  "z88SetCpuAf",
   "z88GetCpuBc",
+  "z88SetCpuBc",
   "z88GetCpuDe",
+  "z88SetCpuDe",
   "z88GetCpuHl",
+  "z88SetCpuHl",
+  "z88GetCpuAfAlt",
+  "z88SetCpuAfAlt",
+  "z88GetCpuBcAlt",
+  "z88SetCpuBcAlt",
+  "z88GetCpuDeAlt",
+  "z88SetCpuDeAlt",
+  "z88GetCpuHlAlt",
+  "z88SetCpuHlAlt",
+  "z88GetCpuIx",
+  "z88SetCpuIx",
+  "z88GetCpuIy",
+  "z88SetCpuIy",
+  "z88GetCpuIr",
+  "z88SetCpuIr",
+  "z88GetCpuWz",
+  "z88SetCpuWz",
   "z88GetCpuPc",
-  "z88GetCpuSp"
-] as const satisfies readonly (keyof Z88WasmV2Exports)[];
+  "z88SetCpuPc",
+  "z88GetCpuSp",
+  "z88SetCpuSp",
+  "z88GetCpuIff1",
+  "z88SetCpuIff1",
+  "z88GetCpuIff2",
+  "z88SetCpuIff2",
+  "z88GetCpuInterruptMode",
+  "z88SetCpuInterruptMode",
+  "z88GetCpuHalted",
+  "z88GetCpuPrefix",
+  "z88GetCpuSnoozed",
+  "z88SetCpuSnoozed",
+  "z88GetStepOutAddress",
+  "z88GetLastPortAddress",
+  "z88GetLastPortValue",
+  "z88GetLastPortIsWrite"
+] as const;
 
 let cachedModule: WebAssembly.Module | undefined;
 let cachedArtifactName: string | undefined;

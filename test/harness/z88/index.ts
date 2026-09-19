@@ -8,6 +8,9 @@ export {
   z88Model,
   z88WasmArtifactBytes,
   Z88_HARNESS_BACKENDS,
+  Z88_WASM_FEATURES,
+  z88HarnessBackends,
+  type Z88Feature,
   type CreateHarnessZ88MachineOptions,
   type Z88HarnessBackend,
   type Z88HarnessMachine
