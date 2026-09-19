@@ -1308,7 +1308,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
-    this.writeMemory(this.sp, this.pc);
+    this.writeMemory(this.sp, this.pc & 0xff);
     this.pc = this.wz;
   }
 
@@ -1322,7 +1322,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.sp--;
     this.writeMemory(this.sp, this.pc >>> 8);
     this.sp--;
-    this.writeMemory(this.sp, this.pc);
+    this.writeMemory(this.sp, this.pc & 0xff);
     this.pc = this.wz = addr;
   }
 

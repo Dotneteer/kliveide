@@ -4,6 +4,8 @@ import type { BlinkState, Z80CpuState } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
+import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import { MC_Z88_SLOT1, MC_Z88_SLOT2, MC_Z88_SLOT3 } from "@common/machines/constants";
 
 import {
   createHarnessZ88Machine,
@@ -244,6 +246,16 @@ export class Z88TestSession {
     return this;
   }
 
+  /**
+   * Sets a memory or I/O breakpoint, as the IDE's `bp-set` creates one: the debugger stops after the
+   * instruction that read or wrote the address (a memory address: a label or a number; a port: its
+   * 16-bit address)
+   */
+  watch(where: number | string, access: "memoryRead" | "memoryWrite" | "ioRead" | "ioWrite"): this {
+    this.machine.executionContext.debugSupport.addBreakpoint({ address: this.address(where), [access]: true });
+    return this;
+  }
+
   /** Power-on reset: memory is cleared and the machine set up again */
   async hardReset(): Promise<this> {
     await this.machine.hardReset();
@@ -393,6 +405,27 @@ export class Z88TestSession {
   /** Closes the flap */
   flapClose(): this {
     this.machine.signalFlapClosed();
+    return this;
+  }
+
+  /**
+   * Inserts a card into slot 1-3 while the machine runs - or, with `undefined`, removes it - the way
+   * the card dialogs do (`applyCardStateChange`): the slot's configuration changes and the machine
+   * configures its slots again. Configuring a slot re-inserts its card, so a flash card comes back
+   * erased.
+   * @param slot The slot (1-3)
+   * @param card The card: its `CardIds` type, its size in KB, and an optional image file
+   */
+  async plugCard(slot: 1 | 2 | 3, card: CardSlotState | undefined): Promise<this> {
+    const key = [MC_Z88_SLOT1, MC_Z88_SLOT2, MC_Z88_SLOT3][slot - 1];
+    const config = { ...(this.machine.dynamicConfig ?? this.machine.config) };
+    if (card) {
+      config[key] = card;
+    } else {
+      delete config[key];
+    }
+    this.machine.dynamicConfig = config;
+    await this.machine.configure();
     return this;
   }
 

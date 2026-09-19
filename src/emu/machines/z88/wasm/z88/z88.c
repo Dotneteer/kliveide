@@ -6,10 +6,10 @@
  * is a static array exposed through a pointer export. See
  * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` for the architecture and the step this file is at.
  *
- * Status (Step 9, 2026-09-19): the memory map and the RAM/ROM cards (Step 4), the CPU and the frame
+ * Status (Step 10, 2026-09-19): the memory map and the RAM/ROM cards (Step 4), the CPU and the frame
  * loop (Step 5), the Blink - ports, RTC, interrupts, flap, battery (Step 6) - the keyboard and sleep
- * detection (Step 7), the LCD (Step 8) and the beeper (Step 9) are emulated. EPROM/flash programming
- * (Step 10) is not.
+ * detection (Step 7), the LCD (Step 8), the beeper (Step 9) and the EPROM and flash cards (Step 10)
+ * are emulated.
  *
  * Every name is prefixed `z88`: `z80.c` defines register macros (`A`, `F`, `HL`, `IX`, ...) and
  * fixed `z80*` names, so bare Blink register names (`COM`, `INT`, `STA`) must never be used.
@@ -49,7 +49,7 @@
 #define Z88_WASM_RESERVED (512u * 1024u)
 
 _Static_assert(
-  Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + Z88_WASM_RESERVED <=
+  Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + 0x20000u + Z88_WASM_RESERVED <=
     Z88_WASM_LINEAR_MEMORY,
   "The Z88 buffers no longer fit the WASM linear memory; raise Z88_WASM_MEMORY_BYTES with a reason");
 
@@ -97,18 +97,24 @@ static void z88CpuWriteMemory(uint32_t address, uint32_t value);
 /* Not inlined: the hook runs the audio sampler, and inlining it into every opcode triples the code */
 static void Z88_CPU_NOINLINE z88CpuTactPlusN(uint32_t value);
 static uint8_t *z88CpuMemoryPtr(void);
-static uint32_t z88BlinkReadPort(uint32_t address);
-static void z88BlinkWritePort(uint32_t address, uint32_t value);
-static uint8_t z88CaptureBusEvents;
+static uint32_t z88CpuReadPort(uint32_t address);
+static void z88CpuWritePort(uint32_t address, uint32_t value);
+static void z88PokeMemory(uint32_t address, uint32_t value);
+static uint8_t z88FetchCodeByte(uint16_t address);
+static inline void z88BusNewInstruction(void);
 
 #define Z80_EXTERNAL_BUS 1
 #define Z80_MEMORY_PTR() z88CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) z88CpuReadMemory((uint32_t)(address))
 #define Z80_WRITE_MEMORY(address, value) z88CpuWriteMemory((uint32_t)(address), (uint32_t)(value))
-#define Z80_POKE_MEMORY(address, value) z88CpuWriteMemory((uint32_t)(address), (uint32_t)(value))
-#define Z80_READ_PORT(address) z88BlinkReadPort((uint32_t)(address))
-#define Z80_WRITE_PORT(address, value) z88BlinkWritePort((uint32_t)(address), (uint32_t)(value))
-#define Z80_CAPTURE_BUS_EVENTS() z88CaptureBusEvents
+#define Z80_POKE_MEMORY(address, value) z88PokeMemory((uint32_t)(address), (uint32_t)(value))
+#define Z80_READ_PORT(address) z88CpuReadPort((uint32_t)(address))
+#define Z80_WRITE_PORT(address, value) z88CpuWritePort((uint32_t)(address), (uint32_t)(value))
+/* The Z88 records the bus itself (z88-memory.c); the shared core's single port event is not used */
+#define Z80_CAPTURE_BUS_EVENTS() 0
+#define Z80_BEFORE_OPCODE_FETCH() z88BusNewInstruction()
+/* Operand bytes are read as `Z80Cpu.fetchCodeByte` reads them: timed, but not recorded */
+#define Z80_FETCH_CODE_BYTE(address) z88FetchCodeByte((uint16_t)(address))
 #define Z80_TACT_PLUS_N(value) z88CpuTactPlusN((uint32_t)(value))
 #include "../../../../z80/wasm/z80.c"
 
@@ -118,6 +124,7 @@ static uint8_t z88CaptureBusEvents;
 
 #include "z88-memory.c"
 #include "z88-blink.c"
+#include "z88-cards.c"
 #include "z88-keyboard.c"
 #include "z88-screen.c"
 #include "z88-beeper.c"
@@ -178,10 +185,6 @@ uint32_t z88ExecuteInstruction(void) {
   if (z88FrameCompleted) {
     z88BeginFrame();
   }
-  if (z88CaptureBusEvents) {
-    z88HasMemoryEvent = 0u;
-    z80ClearBusEvents();
-  }
   z80SetSigInt(z88InterruptSignal);
   do {
     if (z80IsCpuSnoozed()) {
@@ -198,17 +201,40 @@ uint32_t z88ExecuteInstruction(void) {
 }
 
 /*
+ * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
+ * when a debug run starts. The core does not interpret them beyond the mask it is given.
+ */
+static uint16_t z88BreakpointFlags[0x10000];
+
+uint32_t z88BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)z88BreakpointFlags; }
+
+/*
+ * The debugger's fast path: runs instructions until the frame completes or the PC reaches a place the
+ * stop policy may stop at - an address whose flags meet `mask`, or `extraStop` (a run-to point, a
+ * step-over or step-out target; any value above $FFFF means none). Returns how many instructions ran.
+ * The host then applies the whole stop policy at that PC, exactly as after a single instruction, so a
+ * candidate that is not a stop (a disabled breakpoint, another partition) only costs a boundary call.
+ */
+uint32_t z88ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
+  uint32_t executed = 0u;
+  do {
+    z88ExecuteInstruction();
+    executed++;
+    const uint16_t pc = (uint16_t)z80GetPc();
+    if ((z88BreakpointFlags[pc] & mask) || pc == extraStop) break;
+  } while (!z88FrameCompleted);
+  return executed;
+}
+
+/*
  * Runs until the current frame completes (a frame stopped midway is finished; a completed one
- * starts the next). Bus events are not recorded: only the debugger's instruction loop reads them.
+ * starts the next). The bus is recorded here too, so the CPU panel of a paused machine shows what
+ * the TypeScript one does.
  */
 uint32_t z88ExecuteFrame(void) {
-  z88CaptureBusEvents = 0u;
-  z88HasMemoryEvent = 0u;
-  z80ClearBusEvents();
   do {
     z88ExecuteInstruction();
   } while (!z88FrameCompleted);
-  z88CaptureBusEvents = 1u;
   return 0u;
 }
 
@@ -278,6 +304,7 @@ static void z88ResetMachine(void) {
  */
 void z88Reset(void) {
   z80SoftReset();
+  z88BusReset();
   z88ResetMachine();
 }
 
@@ -290,6 +317,7 @@ void z88Reset(void) {
 void z88HardReset(void) {
   for (uint32_t i = Z88_INTERNAL_RAM_START; i < Z88_INTERNAL_RAM_END; i++) z88Memory[i] = 0u;
   z80Reset();
+  z88BusReset();
   z88ResetMachine();
 }
 
@@ -358,6 +386,5 @@ void z88SetCpuSnoozed(uint32_t v) {
   }
 }
 uint32_t z88GetStepOutAddress(void) { return z80GetStepOutAddress(); }
-uint32_t z88GetLastPortAddress(void) { return z80GetLastPortAddress(); }
-uint32_t z88GetLastPortValue(void) { return z80GetLastPortValue(); }
-uint32_t z88GetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
+/* The INT line the CPU saw at the start of the last instruction (`Z80Cpu.sigINT`) */
+uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }

@@ -52,7 +52,8 @@ export const Z88_WASM_FEATURES: ReadonlySet<Z88Feature> = new Set<Z88Feature>([
   "blink",
   "keyboard",
   "lcd",
-  "beeper"
+  "beeper",
+  "flashCards"
 ]);
 
 /**

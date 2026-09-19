@@ -57,6 +57,8 @@ export type Z88WasmV2Views = {
    * the TypeScript beeper produces; `z88GetAudioSampleCount()` of them are valid
    */
   readonly audioSamples: Float64Array;
+  /** The debugger's breakpoint flags, one word per address (`DebugSupport.breakpointFlags`) */
+  readonly breakpointFlags: Uint16Array;
 };
 
 export type Z88WasmV2Runtime = Z88WasmV2Views & {
@@ -70,6 +72,7 @@ export type Z88WasmV2Runtime = Z88WasmV2Views & {
 export const z88WasmV2RequiredExports = [
   "memory",
   // --- Buffers
+  "z88BreakpointFlagsPtr",
   "z88MemoryPtr",
   "z88GetMemorySize",
   "z88PixelBufferPtr",
@@ -93,6 +96,7 @@ export const z88WasmV2RequiredExports = [
   "z88HardReset",
   "z88ExecuteFrame",
   "z88ExecuteInstruction",
+  "z88ExecuteUntilStop",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",
@@ -118,9 +122,23 @@ export const z88WasmV2RequiredExports = [
   "z88SetInternalRamSize",
   "z88GetSlotCardType",
   "z88GetSlotChipMask",
+  "z88GetCardReadArrayMode",
   "z88GetPageBank",
   "z88GetPageOffset",
   "z88GetPageCardType",
+  // --- Bus record
+  "z88GetBusReadAddress",
+  "z88GetBusWriteAddress",
+  "z88GetBusReadCount",
+  "z88GetBusWriteCount",
+  "z88GetBusReadValue",
+  "z88GetBusWriteValue",
+  "z88GetBusIoReadPort",
+  "z88GetBusIoReadValue",
+  "z88GetBusIoWritePort",
+  "z88GetBusIoWriteValue",
+  "z88GetBusFlags",
+  "z88GetOpStartAddress",
   // --- Blink
   "z88SignalFlapOpened",
   "z88SignalFlapClosed",
@@ -148,9 +166,6 @@ export const z88WasmV2RequiredExports = [
   "z88GetSbr",
   "z88GetEarBit",
   // --- CPU and bus events
-  "z88GetLastMemoryAddress",
-  "z88GetLastMemoryValue",
-  "z88GetLastMemoryIsWrite",
   "z88GetCpuAf",
   "z88SetCpuAf",
   "z88GetCpuBc",
@@ -190,9 +205,7 @@ export const z88WasmV2RequiredExports = [
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
   "z88GetStepOutAddress",
-  "z88GetLastPortAddress",
-  "z88GetLastPortValue",
-  "z88GetLastPortIsWrite"
+  "z88GetCpuSigInt"
 ] as const;
 
 let cachedModule: WebAssembly.Module | undefined;
@@ -262,6 +275,7 @@ export function createZ88WasmV2Views(
     memoryBuffer
   );
   assertViewRange(artifactName, "audioSamples", exports.z88AudioSamplesPtr(), audioWords * 8, memoryBuffer);
+  assertViewRange(artifactName, "breakpointFlags", exports.z88BreakpointFlagsPtr(), 0x1_0000 * 2, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -269,7 +283,8 @@ export function createZ88WasmV2Views(
     pixelBuffer: new Uint32Array(memoryBuffer, exports.z88PixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.z88PixelBufferPtr(), pixelWords * 4),
     keyboardLines: new Uint8Array(memoryBuffer, exports.z88KeyboardLinesPtr(), Z88_WASM_V2_KEYBOARD_LINE_COUNT),
-    audioSamples: new Float64Array(memoryBuffer, exports.z88AudioSamplesPtr(), audioWords)
+    audioSamples: new Float64Array(memoryBuffer, exports.z88AudioSamplesPtr(), audioWords),
+    breakpointFlags: new Uint16Array(memoryBuffer, exports.z88BreakpointFlagsPtr(), 0x1_0000)
   };
 }
 

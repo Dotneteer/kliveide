@@ -64,6 +64,13 @@ export interface IDebugSupport {
   hasIoWrite(port: number): boolean;
 
   /**
+   * The breakpoint flags of every address (`EXEC_BP`, `PART_BP`, ... in `DebugSupport`). Optional: a
+   * WASM machine copies them into its core to find candidate stops without leaving it for every
+   * instruction, and falls back to asking `shouldStopAt` per instruction without them.
+   */
+  readonly breakpointFlags?: Uint16Array;
+
+  /**
    * The last breakpoint we stopped in the frame
    */
   lastBreakpoint?: number;

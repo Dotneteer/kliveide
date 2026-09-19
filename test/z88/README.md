@@ -25,7 +25,7 @@ and the suites that were waiting for it start running on WASM with no other chan
 | `keyboard` - key interrupt, sleep detection | 7 | on WASM |
 | `lcd` - LCD renderer | 8 | on WASM |
 | `beeper` - audio | 9 | on WASM |
-| `flashCards` - UV EPROM and flash programming | 10 | TypeScript only |
+| `flashCards` - UV EPROM and flash programming | 10 | on WASM |
 
 ## Two kinds of suites
 
@@ -49,6 +49,4 @@ TypeScript objects (`instanceof`, `bankData`) and now asks the same questions th
 
 ## Cases that do not run on a backend yet
 
-Only those whose feature the WASM core does not emulate yet - see the table above:
-`memory-eprom-io`, `memory-intflash-io`, `memory-amdflash-io` (`flashCards`). No case is excluded for
-any other reason.
+None: since Step 10 every feature is in `Z88_WASM_FEATURES`, so every case runs on both backends.

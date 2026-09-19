@@ -10,6 +10,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MC_SCREEN_SIZE, MC_Z88_INTRAM } from "@common/machines/constants";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { shouldStopAtDebugPoint } from "../DebugStepDecision";
+import { EXEC_BP, PART_BP } from "../DebugSupport";
 import { loadZ88WasmV2 } from "./wasm/Z88WasmV2Loader";
 import { z88LcdSizeRegisters } from "./z88MachineInfo";
 import { z88InternalRamSizeInBytes } from "./z88CardCatalog";
@@ -31,6 +32,17 @@ const CARD_KIND_CODES: Record<Z88CardKind, number> = {
   AMD_FLASH_29F080B: 6
 };
 
+/** No extra stop address for `z88ExecuteUntilStop` */
+const NO_EXTRA_STOP = 0xffff_ffff;
+
+/** Which values and ports of the core's bus record are known (`z88GetBusFlags`, z88-memory.c) */
+const BUS_READ_VALUE = 0x01;
+const BUS_WRITE_VALUE = 0x02;
+const BUS_IO_READ_PORT = 0x04;
+const BUS_IO_READ_VALUE = 0x08;
+const BUS_IO_WRITE_PORT = 0x10;
+const BUS_IO_WRITE_VALUE = 0x20;
+
 /** The beeper's DC filter cut-off (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
 
@@ -40,11 +52,13 @@ const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, 
 /**
  * The Cambridge Z88 on the WASM core.
  *
- * Status (Step 9, 2026-09-19): the core emulates the memory map and RAM/ROM cards, runs the CPU frame
- * by frame (one boundary call per normal frame; instruction by instruction when debugging), the
- * Blink (ports, RTC, interrupts, flap and battery), the keyboard and sleep detection, the LCD and the
- * beeper. EPROM and flash cards read like ROM cards: their programming (Step 10) is not migrated,
- * so the core ignores writes to them.
+ * Status (Step 12, 2026-09-19): the whole machine - the memory map and every card type (RAM, ROM, UV
+ * EPROM, Intel and AMD flash with their command states), the CPU frame by frame (one boundary call per
+ * normal frame), the Blink (ports, RTC, interrupts, flap and battery), the keyboard and sleep
+ * detection, the LCD and the beeper - with the IDE surfaces the TypeScript machine has: the registers
+ * (read live from the core, every write pushed into it), the bus record the CPU panel and the memory
+ * and I/O breakpoints read, and the debugger (instruction by instruction, or - when the stop policy
+ * can only stop at known addresses - the core running on to the next candidate).
  *
  * It extends `Z88WasmHost`, never the TypeScript `Z88Machine` - see
  * `test/wasm/z88/wasm-z88-separation.test.ts`.
@@ -86,122 +100,227 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   }
 
   // ==========================================================================================
-  // CPU registers: the core owns them; every write is pushed into it
+  // CPU registers: the core owns them - reads come from it and every write is pushed into it, so a
+  // register is never stale, whether or not the frame just run synchronized the mirror
 
   override get af(): number {
-    return super.af;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuAf() : super.af;
   }
   override set af(value: number) {
     super.af = value;
     this.wasmV2Runtime?.exports.z88SetCpuAf(super.af);
   }
   override get bc(): number {
-    return super.bc;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuBc() : super.bc;
   }
   override set bc(value: number) {
     super.bc = value;
     this.wasmV2Runtime?.exports.z88SetCpuBc(super.bc);
   }
   override get de(): number {
-    return super.de;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuDe() : super.de;
   }
   override set de(value: number) {
     super.de = value;
     this.wasmV2Runtime?.exports.z88SetCpuDe(super.de);
   }
   override get hl(): number {
-    return super.hl;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuHl() : super.hl;
   }
   override set hl(value: number) {
     super.hl = value;
     this.wasmV2Runtime?.exports.z88SetCpuHl(super.hl);
   }
   override get af_(): number {
-    return super.af_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuAfAlt() : super.af_;
   }
   override set af_(value: number) {
     super.af_ = value;
     this.wasmV2Runtime?.exports.z88SetCpuAfAlt(super.af_);
   }
   override get bc_(): number {
-    return super.bc_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuBcAlt() : super.bc_;
   }
   override set bc_(value: number) {
     super.bc_ = value;
     this.wasmV2Runtime?.exports.z88SetCpuBcAlt(super.bc_);
   }
   override get de_(): number {
-    return super.de_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuDeAlt() : super.de_;
   }
   override set de_(value: number) {
     super.de_ = value;
     this.wasmV2Runtime?.exports.z88SetCpuDeAlt(super.de_);
   }
   override get hl_(): number {
-    return super.hl_;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuHlAlt() : super.hl_;
   }
   override set hl_(value: number) {
     super.hl_ = value;
     this.wasmV2Runtime?.exports.z88SetCpuHlAlt(super.hl_);
   }
   override get ix(): number {
-    return super.ix;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuIx() : super.ix;
   }
   override set ix(value: number) {
     super.ix = value;
     this.wasmV2Runtime?.exports.z88SetCpuIx(super.ix);
   }
   override get iy(): number {
-    return super.iy;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuIy() : super.iy;
   }
   override set iy(value: number) {
     super.iy = value;
     this.wasmV2Runtime?.exports.z88SetCpuIy(super.iy);
   }
   override get ir(): number {
-    return super.ir;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuIr() : super.ir;
   }
   override set ir(value: number) {
     super.ir = value;
     this.wasmV2Runtime?.exports.z88SetCpuIr(super.ir);
   }
   override get wz(): number {
-    return super.wz;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuWz() : super.wz;
   }
   override set wz(value: number) {
     super.wz = value;
     this.wasmV2Runtime?.exports.z88SetCpuWz(super.wz);
   }
   override get pc(): number {
-    return super.pc;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuPc() : super.pc;
   }
   override set pc(value: number) {
     super.pc = value;
     this.wasmV2Runtime?.exports.z88SetCpuPc(super.pc);
   }
   override get sp(): number {
-    return super.sp;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuSp() : super.sp;
   }
   override set sp(value: number) {
     super.sp = value;
     this.wasmV2Runtime?.exports.z88SetCpuSp(super.sp);
   }
+
+  // --- The 8-bit halves: `Z80Cpu` writes them into its own register views, which the core never
+  // --- sees - the IDE's register editor sets them one by one (`setRegisterValue`)
+  override get a(): number {
+    return this.af >> 8;
+  }
+  override set a(value: number) {
+    this.af = ((value & 0xff) << 8) | (this.af & 0xff);
+  }
+  override get f(): number {
+    return this.af & 0xff;
+  }
+  override set f(value: number) {
+    this.af = (this.af & 0xff00) | (value & 0xff);
+  }
+  override get b(): number {
+    return this.bc >> 8;
+  }
+  override set b(value: number) {
+    this.bc = ((value & 0xff) << 8) | (this.bc & 0xff);
+  }
+  override get c(): number {
+    return this.bc & 0xff;
+  }
+  override set c(value: number) {
+    this.bc = (this.bc & 0xff00) | (value & 0xff);
+  }
+  override get d(): number {
+    return this.de >> 8;
+  }
+  override set d(value: number) {
+    this.de = ((value & 0xff) << 8) | (this.de & 0xff);
+  }
+  override get e(): number {
+    return this.de & 0xff;
+  }
+  override set e(value: number) {
+    this.de = (this.de & 0xff00) | (value & 0xff);
+  }
+  override get h(): number {
+    return this.hl >> 8;
+  }
+  override set h(value: number) {
+    this.hl = ((value & 0xff) << 8) | (this.hl & 0xff);
+  }
+  override get l(): number {
+    return this.hl & 0xff;
+  }
+  override set l(value: number) {
+    this.hl = (this.hl & 0xff00) | (value & 0xff);
+  }
+  override get xh(): number {
+    return this.ix >> 8;
+  }
+  override set xh(value: number) {
+    this.ix = ((value & 0xff) << 8) | (this.ix & 0xff);
+  }
+  override get xl(): number {
+    return this.ix & 0xff;
+  }
+  override set xl(value: number) {
+    this.ix = (this.ix & 0xff00) | (value & 0xff);
+  }
+  override get yh(): number {
+    return this.iy >> 8;
+  }
+  override set yh(value: number) {
+    this.iy = ((value & 0xff) << 8) | (this.iy & 0xff);
+  }
+  override get yl(): number {
+    return this.iy & 0xff;
+  }
+  override set yl(value: number) {
+    this.iy = (this.iy & 0xff00) | (value & 0xff);
+  }
+  override get i(): number {
+    return this.ir >> 8;
+  }
+  override set i(value: number) {
+    this.ir = ((value & 0xff) << 8) | (this.ir & 0xff);
+  }
+  override get r(): number {
+    return this.ir & 0xff;
+  }
+  override set r(value: number) {
+    this.ir = (this.ir & 0xff00) | (value & 0xff);
+  }
   override get iff1(): boolean {
-    return super.iff1;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuIff1() !== 0 : super.iff1;
   }
   override set iff1(value: boolean) {
     super.iff1 = value;
     this.wasmV2Runtime?.exports.z88SetCpuIff1(value ? 1 : 0);
   }
   override get iff2(): boolean {
-    return super.iff2;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuIff2() !== 0 : super.iff2;
   }
   override set iff2(value: boolean) {
     super.iff2 = value;
     this.wasmV2Runtime?.exports.z88SetCpuIff2(value ? 1 : 0);
   }
   override get interruptMode(): number {
-    return super.interruptMode;
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetCpuInterruptMode() : super.interruptMode;
   }
   override set interruptMode(value: number) {
     super.interruptMode = value;
@@ -331,6 +450,18 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
     const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
+    // --- The fast path needs the breakpoint flags in the core, and no memory or I/O breakpoint (those
+    // --- are tested after every instruction); a step-into is one instruction, so it never uses it
+    const flags = debugSupport?.breakpointFlags;
+    const fastPath =
+      flags instanceof Uint16Array &&
+      flags.length === 0x1_0000 &&
+      !watchesBusAccess &&
+      this.executionContext.debugStepMode !== DebugStepMode.StepInto;
+    if (fastPath) {
+      runtime.breakpointFlags.set(flags);
+    }
+
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
         return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
@@ -341,8 +472,15 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     }
 
     while (!this.frameCompleted) {
-      this.frameCompleted = wasm.z88ExecuteInstruction() !== 0;
-      instructionsExecuted++;
+      const extraStop = fastPath ? this.wasmV2FastPathStop(instructionsExecuted) : undefined;
+      if (extraStop !== undefined) {
+        // --- Up to the next place the policy below may stop at, or the end of the frame
+        instructionsExecuted += wasm.z88ExecuteUntilStop(extraStop, EXEC_BP | PART_BP);
+        this.frameCompleted = wasm.z88GetFrameCompleted() !== 0;
+      } else {
+        this.frameCompleted = wasm.z88ExecuteInstruction() !== 0;
+        instructionsExecuted++;
+      }
 
       // --- Through `super`: the value was just read from the core, so it need not be pushed back
       super.pc = wasm.z88GetCpuPc();
@@ -372,6 +510,40 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     }
 
     return this.finishWasmV2DebugLoop(FrameTerminationMode.Normal);
+  }
+
+  /**
+   * Whether the debug loop may let the core run on to the next candidate stop, and the one address
+   * besides the breakpoints where the stop policy may stop (`NO_EXTRA_STOP` when there is none);
+   * `undefined` means one instruction at a time. The policy (`shouldStopAtDebugPoint`) stops only at
+   * a breakpoint or at that address in these cases: running to breakpoints, running to an execution
+   * point, a step-over already waiting for its return address, and a step-out (the WASM machines take
+   * its target from the core's shadow stack and pass `retExecuted: false`).
+   */
+  private wasmV2FastPathStop(instructionsExecuted: number): number | undefined {
+    if (this.getFrameCommand()) return undefined;
+    const context = this.executionContext;
+    let extra = NO_EXTRA_STOP;
+    if (context.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
+      if (context.terminationPoint == null) return undefined;
+      extra = context.terminationPoint & 0xffff;
+    }
+    const another = (address: number | undefined): number | undefined =>
+      address === undefined || address < 0 ? extra : extra === NO_EXTRA_STOP ? address & 0xffff : undefined;
+    switch (context.debugStepMode) {
+      case DebugStepMode.NoDebug:
+      case DebugStepMode.StopAtBreakpoint:
+        return extra;
+      case DebugStepMode.StepOver: {
+        // --- The first instruction decides whether this step waits for a return address
+        const imminent = context.debugSupport?.imminentBreakpoint;
+        return instructionsExecuted > 0 && imminent !== undefined ? another(imminent) : undefined;
+      }
+      case DebugStepMode.StepOut:
+        return another(this.stepOutAddress);
+      default:
+        return undefined;
+    }
   }
 
   /** The single exit of the debug loop: the TypeScript-visible state catches up with the core */
@@ -416,32 +588,26 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     );
   }
 
+  /**
+   * Copies the core's bus record into the fields `Z80Cpu` keeps: the eight-entry address lists with
+   * their counts, the last values, and the last ports - undefined where the TypeScript CPU has not
+   * set one (see z88-memory.c for the rules).
+   */
   private importWasmV2BusAccess(runtime: Z88WasmV2Runtime): void {
-    const wasm = runtime.exports;
-    this.lastMemoryReadsCount = 0;
-    this.lastMemoryWritesCount = 0;
-    this.lastIoReadPort = undefined;
-    this.lastIoWritePort = undefined;
-
-    const memoryAddress = wasm.z88GetLastMemoryAddress();
-    const memoryValue = wasm.z88GetLastMemoryValue();
-    if (wasm.z88GetLastMemoryIsWrite() !== 0) {
-      this.lastMemoryWrites[this.lastMemoryWritesCount++] = memoryAddress;
-      this.lastMemoryWriteValue = memoryValue;
-    } else if (memoryAddress !== 0 || memoryValue !== 0) {
-      this.lastMemoryReads[this.lastMemoryReadsCount++] = memoryAddress;
-      this.lastMemoryReadValue = memoryValue;
+    const w = runtime.exports;
+    for (let i = 0; i < 8; i++) {
+      this.lastMemoryReads[i] = w.z88GetBusReadAddress(i);
+      this.lastMemoryWrites[i] = w.z88GetBusWriteAddress(i);
     }
-
-    const portAddress = wasm.z88GetLastPortAddress();
-    const portValue = wasm.z88GetLastPortValue();
-    if (wasm.z88GetLastPortIsWrite() !== 0) {
-      this.lastIoWritePort = portAddress;
-      this.lastIoWriteValue = portValue;
-    } else if (portAddress !== 0 || portValue !== 0) {
-      this.lastIoReadPort = portAddress;
-      this.lastIoReadValue = portValue;
-    }
+    this.lastMemoryReadsCount = w.z88GetBusReadCount();
+    this.lastMemoryWritesCount = w.z88GetBusWriteCount();
+    const flags = w.z88GetBusFlags();
+    this.lastMemoryReadValue = flags & BUS_READ_VALUE ? w.z88GetBusReadValue() : undefined;
+    this.lastMemoryWriteValue = flags & BUS_WRITE_VALUE ? w.z88GetBusWriteValue() : undefined;
+    this.lastIoReadPort = flags & BUS_IO_READ_PORT ? w.z88GetBusIoReadPort() : undefined;
+    this.lastIoReadValue = flags & BUS_IO_READ_VALUE ? w.z88GetBusIoReadValue() : undefined;
+    this.lastIoWritePort = flags & BUS_IO_WRITE_PORT ? w.z88GetBusIoWritePort() : undefined;
+    this.lastIoWriteValue = flags & BUS_IO_WRITE_VALUE ? w.z88GetBusIoWriteValue() : undefined;
   }
 
   // ==========================================================================================
@@ -708,6 +874,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     this.frameTacts = w.z88GetFrameTacts();
     this.currentFrameTact = Math.floor(this.frameTacts / this.clockMultiplier);
     this.isInSleepMode = w.z88GetSleepMode() !== 0;
+    // --- The Breakpoints panel reads these without asking for the CPU state first
+    this.opStartAddress = w.z88GetOpStartAddress();
+    this.sigINT = w.z88GetCpuSigInt() !== 0;
   }
 
   private requireWasmV2Runtime(): Z88WasmV2Runtime {

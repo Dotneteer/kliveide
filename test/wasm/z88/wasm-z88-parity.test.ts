@@ -280,7 +280,12 @@ describe.runIf(runsOnWasm)("Z88 parity: OZ at the keyboard", () => {
     ["Index"]
   ];
 
-  it.each(["OZ50", "OZ40"])(
+  const models = machineRegistry
+    .find((m) => m.machineId === "z88")
+    .models.filter((m) => m.menuGroup === undefined)
+    .map((m) => m.modelId);
+
+  it.each(models)(
     "%s: the same machine after every frame of a typing session",
     async (model) => {
       const ts = await createZ88Session({ backend: "typescript", model, rom: "model", audioSampleRate: AUDIO_RATE });
@@ -470,4 +475,376 @@ spin: jr spin
     },
     60_000
   );
+});
+
+/*
+ * The cards, hot-plugged into slots 1-3 while a program runs, as the card dialogs insert them: the
+ * program waits, the card goes in, then Z80 code programs, identifies and erases it with the chip's
+ * own command sequences (and a UV EPROM with VPP and EPR) - including the failures (a 0 bit
+ * programmed back to 1, a write without VPP, the wrong EPR) and a sector erase through a mirrored
+ * bank. The whole machine, all 4 MB included, is compared after the plug, after the program and
+ * after the card is pulled out again.
+ */
+describe.runIf(runsOnWasm)("Z88 parity: cards hot-plugged and programmed from Z80 code", () => {
+  type Family = "amd" | "intel" | "eprom" | "plain";
+  const CARDS: { label: string; cardType: string; size: number; family: Family }[] = [
+    { label: "AMD 29F040B", cardType: "AMDF29F040B", size: 512, family: "amd" },
+    { label: "AMD 29F080B", cardType: "AMDF29F080B", size: 1024, family: "amd" },
+    { label: "Intel 28F004S5", cardType: "IF28F004S5", size: 512, family: "intel" },
+    { label: "Intel 28F008S5", cardType: "IF28F008S5", size: 1024, family: "intel" },
+    { label: "UV EPROM 32K", cardType: "EPROMUV32", size: 32, family: "eprom" },
+    { label: "UV EPROM 128K", cardType: "EPROMUV128", size: 128, family: "eprom" },
+    { label: "UV EPROM 256K", cardType: "EPROMUV128", size: 256, family: "eprom" },
+    { label: "RAM 128K", cardType: "RAM128", size: 128, family: "plain" },
+    { label: "RAM 1M", cardType: "RAM1024", size: 1024, family: "plain" },
+    { label: "ROM 128K", cardType: "ROM", size: 128, family: "plain" }
+  ];
+
+  /* The part every program shares: wait for the card, write 16 bytes to $C100 in two banks */
+  const prologue = `
+      .org $8000
+start:
+      ld sp,$bff0
+wait: ld a,(go)
+      or a
+      jr z,wait
+`;
+  const epilogue = `
+      ; --- what the CPU reads back, into RAM
+      ld a,BANK1
+      out ($d3),a
+      ld hl,$c100
+      ld de,back1
+      ld bc,16
+      ldir
+      ld a,BANK4
+      out ($d3),a
+      ld hl,$c100
+      ld de,back4
+      ld bc,16
+      ldir
+      ld a,$23
+      out ($d3),a
+done: di
+      halt
+      jr done
+
+go:     .defb 0
+ids:    .defs 4
+stat:   .defs 4
+back1:  .defs 16
+back4:  .defs 16
+data:   .defb $12,$34,$56,$78,$9a,$bc,$de,$f0,$0f,$1e,$2d,$3c,$4b,$5a,$69,$78
+`;
+
+  function writeBlock(bank: string): string {
+    return `
+      ld a,${bank}
+      out ($d3),a
+      ld hl,$c100
+      ld de,data
+      ld b,16
+`;
+  }
+
+  const AMD = `
+${prologue}
+      ; --- program 16 bytes in two sectors
+${writeBlock("BANK1")}
+      call aprog
+${writeBlock("BANK4")}
+      call aprog
+      ; --- a 0 bit cannot become 1: the error toggle, then the reset
+      ld a,BANK1
+      out ($d3),a
+      ld a,$a0
+      call cmd
+      ld a,$ff
+      ld ($c100),a
+      ld hl,$c100
+      ld a,(hl)
+      ld (stat),a
+      ld a,(hl)
+      ld (stat+1),a
+      call poll
+      ; --- autoselect
+      ld a,$90
+      call cmd
+      ld a,($c000)
+      ld (ids),a
+      ld a,($c001)
+      ld (ids+1),a
+      ld a,$f0
+      ld ($c000),a
+      ; --- a read aborts a command being accumulated
+      ld a,$aa
+      ld ($c555),a
+      ld a,($c000)
+      ld (ids+2),a
+      ; --- erase the sector of BANK1, then one through a mirrored bank
+      ld a,$80
+      call cmd
+      ld a,$30
+      call cmd
+      ld hl,$c000
+      call poll
+      ld a,BANK21
+      out ($d3),a
+      ld a,$80
+      call cmd
+      ld a,$30
+      call cmd
+      ld hl,$c000
+      call poll
+      ld a,BANK1
+      out ($d3),a
+      ; --- program one byte again after the erase
+      ld a,$a0
+      call cmd
+      ld a,$a5
+      ld ($c1ff),a
+      ld hl,$c1ff
+      call poll
+      jp finish
+
+aprog:
+      ld a,$a0
+      call cmd
+      ld a,(de)
+      ld (hl),a
+      call poll
+      inc hl
+      inc de
+      djnz aprog
+      ret
+
+cmd:  push af
+      ld a,$aa
+      ld ($c555),a
+      ld a,$55
+      ld ($c2aa),a
+      pop af
+      ld ($c555),a
+      ret
+
+; --- DQ6 toggle polling, bounded; on a persisting error the chip is reset
+poll: push bc
+      ld b,8
+pl:   ld a,(hl)
+      ld c,a
+      ld a,(hl)
+      xor c
+      and $40
+      jr z,pdone
+      djnz pl
+      ld a,$f0
+      ld (hl),a
+pdone:
+      pop bc
+      ret
+finish:
+${epilogue}`;
+
+  const INTEL = `
+${prologue}
+${writeBlock("BANK1")}
+      call iprog
+${writeBlock("BANK4")}
+      call iprog
+      ; --- a 0 bit cannot become 1: the status says so
+      ld a,BANK1
+      out ($d3),a
+      ld hl,$c100
+      ld a,$40
+      ld (hl),a
+      ld a,$ff
+      ld (hl),a
+      ld a,(hl)
+      ld (stat),a
+      ld a,$50
+      ld (hl),a
+      ld a,$ff
+      ld (hl),a
+      ; --- identification: in the card's bottom bank, and (unknown) in another one
+      ld a,BANK0
+      out ($d3),a
+      ld a,$90
+      ld ($c000),a
+      ld a,($c000)
+      ld (ids),a
+      ld a,($c001)
+      ld (ids+1),a
+      ld a,$ff
+      ld ($c000),a
+      ld a,BANK1
+      out ($d3),a
+      ld a,$90
+      ld ($c000),a
+      ld a,($c000)
+      ld (ids+2),a
+      ld a,$ff
+      ld ($c000),a
+      ; --- erase the sector of BANK1, then one through a mirrored bank
+      ld hl,$c000
+      call ierase
+      ld a,BANK21
+      out ($d3),a
+      call ierase
+      jp finish
+
+iprog:
+      ld a,$40
+      ld (hl),a
+      ld a,(de)
+      ld (hl),a
+ip:   ld a,(hl)
+      and $80
+      jr z,ip
+      ld a,$50
+      ld (hl),a
+      ld a,$ff
+      ld (hl),a
+      inc hl
+      inc de
+      djnz iprog
+      ret
+
+ierase:
+      ld a,$20
+      ld ($c000),a
+      ld a,$d0
+      ld ($c000),a
+ie:   ld a,($c000)
+      and $80
+      jr z,ie
+      ld (stat+1),a
+      ld a,$ff
+      ld ($c000),a
+      ret
+finish:
+${epilogue}`;
+
+  const EPROM = `
+${prologue}
+      ; --- blow 16 bytes: EPR for the chip, VPP on, PROGRAM (RAMS kept for the flat RAM)
+      ld a,EPR
+      out ($b3),a
+      ld a,$0e
+      out ($b0),a
+${writeBlock("BANK1")}
+      call blow
+      ; --- overprogramming (OVERP) in the other bank
+      ld a,$26
+      out ($b0),a
+${writeBlock("BANK4")}
+      call blow
+      ; --- without VPP, and with the wrong EPR, nothing is blown
+      ld a,$04
+      out ($b0),a
+      ld a,BANK1
+      out ($d3),a
+      xor a
+      ld ($c200),a
+      ld a,$00
+      out ($b3),a
+      ld a,$0e
+      out ($b0),a
+      xor a
+      ld ($c300),a
+      ld a,$04
+      out ($b0),a
+      jp finish
+
+blow: ld a,(de)
+      ld (hl),a
+      inc hl
+      inc de
+      djnz blow
+      ret
+finish:
+${epilogue}`;
+
+  const PLAIN = `
+${prologue}
+${writeBlock("BANK1")}
+      call copy
+${writeBlock("BANK4")}
+      call copy
+      jp finish
+
+copy: ld a,(de)
+      ld (hl),a
+      inc hl
+      inc de
+      djnz copy
+      ret
+finish:
+${epilogue}`;
+
+  const SOURCES: Record<Family, string> = { amd: AMD, intel: INTEL, eprom: EPROM, plain: PLAIN };
+
+  const cases = CARDS.flatMap((card) => ([1, 2, 3] as const).map((slot) => ({ ...card, slot })));
+
+  it.each(cases)("$label in slot $slot", async ({ cardType, size, family, slot }) => {
+    const base = slot * 0x40;
+    const source = SOURCES[family]
+      .replace(/\bBANK0\b/g, `$${base.toString(16)}`)
+      .replace(/\bBANK1\b/g, `$${(base + 1).toString(16)}`)
+      .replace(/\bBANK4\b/g, `$${(base + 4).toString(16)}`)
+      .replace(/\bBANK21\b/g, `$${(base + 0x21).toString(16)}`)
+      .replace(/\bEPR\b/g, size === 32 ? "$48" : "$69");
+
+    const ts = await createZ88Session({ backend: "typescript" });
+    const wasm = await createZ88Session({ backend: "wasm" });
+    for (const s of [ts, wasm]) {
+      await s.loadCode(source, { entry: "start" });
+      s.runFrames(3);
+      await s.plugCard(slot, { cardType, size });
+    }
+    expectSameState(ts, wasm, "after the card went in");
+
+    for (const s of [ts, wasm]) {
+      s.poke(s.symbol("go"), 1);
+      s.runTo("done", { maxFrames: 400 });
+    }
+    expectSameState(ts, wasm, "after the program");
+
+    // --- The program really reached the card as the chip documentation says (checked on the
+    // --- TypeScript side; the WASM side equals it)
+    const bytes = (name: string, length = 16) => [...ts.peekBytes(ts.symbol(name), length)];
+    const data = bytes("data");
+    const erased = new Array(16).fill(0xff);
+    const card = slot * 0x10_0000;
+    switch (family) {
+      case "amd":
+        expect(bytes("ids", 3)).toEqual([0x01, size === 512 ? 0xa4 : 0xd5, 0xff]);
+        expect(bytes("stat", 2)).toEqual([0x60, 0x20]);
+        expect(bytes("back1")).toEqual(erased);
+        expect(bytes("back4")).toEqual(data);
+        expect(ts.physPeek(card + 0x4000 + 0x1ff)).toBe(0xa5);
+        break;
+      case "intel":
+        expect(bytes("ids", 3)).toEqual([0x89, size === 512 ? 0xa7 : 0xa6, 0xff]);
+        expect(bytes("stat", 2)).toEqual([0x90, 0x80]);
+        expect(bytes("back1")).toEqual(erased);
+        expect(bytes("back4")).toEqual(data);
+        break;
+      case "eprom":
+        // --- Only slot 3 has the programming voltage
+        expect(bytes("back1")).toEqual(slot === 3 ? data : erased);
+        expect(bytes("back4")).toEqual(slot === 3 ? data : erased);
+        expect([ts.physPeek(card + 0x4000 + 0x200), ts.physPeek(card + 0x4000 + 0x300)]).toEqual([0xff, 0xff]);
+        break;
+      case "plain":
+        expect(bytes("back1")).toEqual(cardType === "ROM" ? new Array(16).fill(0) : data);
+        break;
+    }
+
+    for (const s of [ts, wasm]) {
+      s.runFrames(2);
+      await s.plugCard(slot, undefined);
+      s.runFrames(2);
+    }
+    expectSameState(ts, wasm, "after the card came out");
+  });
 });

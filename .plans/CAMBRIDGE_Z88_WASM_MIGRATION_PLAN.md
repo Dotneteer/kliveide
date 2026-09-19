@@ -963,7 +963,30 @@ Original scope:
 
 ### Step 10 - EPROM and flash cards, and hot-plug
 
-Status: Not started.
+Status: Done on 2026-09-19 (together with Steps 11 and 12).
+
+- `z88-cards.c`: a port of `Z88UvEpromMemoryCard`, `Z88IntelFlashMemoryCard` and
+  `Z88AmdFlashMemoryCard`, one chip state per slot. UV EPROM: slot 3 only, VPPON with PROGRAM or
+  OVERP, EPR $48 (32K) / $69 (128K/256K), `old & new`. Intel: byte program, block erase, status
+  register, identification (bottom bank only), clear status, read array. AMD: the two unlock cycles
+  on A0-A10, program, chip and sector erase, autoselect, reset, the success and failure status
+  sequences, and a read aborting a command being accumulated - the TypeScript stacks kept as small
+  arrays. Quirks kept (and named in the file): the sector erase's `(bank & $3C)` base, which on a
+  card smaller than its slot erases past the card; the AMD command cycle's address not checked.
+- The read-array state stays on the fast path: a read goes straight to physical memory unless the
+  slot's chip is in a command state (`z88CardCommandMode`); writes to EPROM/flash go to the cards.
+- Hot-plug needed no adapter work: `Z88WasmHost.configure()` was already the TypeScript algorithm,
+  and re-inserting a card resets its chip. The session got `plugCard(slot, card)` (the card dialogs'
+  `applyCardStateChange` path).
+- Tests: `memory-eprom-io` (209), `memory-intflash-io` (30) and `memory-amdflash-io` (13) run on both
+  backends - `flashCards` joined `Z88_WASM_FEATURES`, so no Z88 case is excluded from WASM any more.
+  Parity: each of ten card configurations (AMD 040/080, Intel 004/008, EPROM 32K/128K/256K, RAM
+  128K/1M, ROM) hot-plugged into slots 1-3 while a program waits (30 cases), then programmed,
+  identified, failed (0 to 1, no VPP, wrong EPR), sector-erased (also through a mirrored bank) from
+  Z80 code, and pulled out - all 4 MB compared at each point, with exact expected values. Checked
+  by mutation: a wrong AMD status, a wrong erase base and a wrong EPR each fail it.
+
+Original scope:
 
 - In `z88-cards.c`:
   - **UV EPROM:** slot-3-only programming, VPPON + PROGRAM/OVERP, EPR 0x48/0x69, `old & new`.
@@ -979,7 +1002,37 @@ Status: Not started.
 
 ### Step 11 - IDE surfaces
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- Most of the surface came with Steps 4-6 (Blink state, partitions, flat 64K, direct reads, ROM
+  flags, disassembly sections, custom commands). The test for this step -
+  `test/wasm/z88/wasm-z88-ide-parity.test.ts`, which drives the real `MainToEmuProcessor` against both
+  backends and compares every answer (CPU, Blink and memory panels, all 256 banks, partition labels,
+  disassembly sections, call stack, the register and memory editors) - found five real differences:
+  1. **The register editor's 8-bit writes never reached the core.** `setRegisterValue` sets `a`,
+     `f`, `xl`, `i`, ... and `Z80Cpu` implements them on its own register views. The adapter now
+     overrides every 8-bit half, and reads every register live from the core, so the mirror cannot be
+     stale after a normal frame (`getMemoryContents` reads `m.af`, ... without `getCpuState()`).
+  2. **The bus record.** The CPU panel shows the last memory/I/O values, and memory breakpoints test
+     the instruction's accesses. The core recorded one access, only in the debugger's loop; a
+     memory-read breakpoint on an opcode fetch could be missed. It now records exactly what `Z80Cpu`
+     records, always: two 8-entry lists (counts restart at each unprefixed M1, contents do not), the
+     operand bytes unrecorded (`fetchCodeByte`), the last values and ports. The shared core got a
+     no-op-by-default `Z80_BEFORE_OPCODE_FETCH` hook at the place `Z80Cpu.beforeOpcodeFetch` runs.
+  3. **`opStartAddress`** (the Breakpoints panel shows the bytes of the instruction that hit a memory
+     or I/O breakpoint) and **`sigINT`** were never mirrored; both now come from the core.
+  4. **A TypeScript defect:** CALL and RST pushed the whole 16-bit PC as their low byte, so the CPU
+     panel showed a 16-bit "last write value" and a card's write handler got a 16-bit byte. Fixed in
+     `Z80Cpu` (`& 0xff`), with `test/z80/call-push-bytes.test.ts`, per the Step 12 rule.
+- New session method `watch(where, access)` (memory/I/O breakpoints); debugger tests for breakpoints
+  on an opcode fetch, a data read and write, an indexed write, port reads and writes, and an operand
+  byte (which never fires).
+- Not verified here: the same panels in the running app - that is Step 13's manual pass.
+- Found on the way, outside this migration (offered as a separate task): the 48K and 128K WASM
+  adapters push only PC and SP into their cores, so the register editor's other edits may be lost
+  there too.
+
+Original scope:
 
 - The WASM machine implements `IZ88IdeMachine.getBlinkState()` from core getters: SR0-3, TIM0-4,
   TSTA, TMK, INT, STA, COM, EPR, key lines, oscillator/ear bit, PB0-3, SBR, SCW and SCH. It also
@@ -993,7 +1046,34 @@ Status: Not started.
 
 ### Step 12 - Full parity pass and benchmark
 
-Status: Not started.
+Status: Done on 2026-09-19.
+
+- ROM parity (`wasm-z88-parity.test.ts`, kept in one file rather than a separate
+  `wasm-z88-rom-parity.test.ts`): all ten models boot identically (state, 4 MB, picture, samples at
+  eight checkpoints to frame 1700), then each is driven by a 22-step typing script and compared after
+  every frame. LCD parity for all five sizes; card parity for every card type in slots 1-3 (Step 10);
+  IDE parity (Step 11).
+- **The benchmark found the debugger slower on WASM** than on TypeScript (0.27 vs 0.18 ms/frame
+  running with a breakpoint set): every instruction crossed the boundary and built the stop
+  policy's input. The fix: when the policy can only stop at a flagged address or one extra address
+  (running to breakpoints or an execution point, a step-over waiting for its return, a step-out),
+  the adapter copies `DebugSupport.breakpointFlags` into the core (128 KB, ~1 us; `IDebugSupport`
+  gained the optional field) and `z88ExecuteUntilStop(extraStop, mask)` runs on to the next candidate,
+  where the unchanged policy decides. Now 0.054 ms/frame. Tests: step-over/step-out across calls that
+  run for frames, a disabled breakpoint and another partition's breakpoint passed, a loop breakpoint
+  re-hit - all equal on both backends, and checked by mutation (ignoring the flags or the extra
+  address fails eleven cases).
+- `scripts/benchmark-z88-wasm.cjs` (`npm run benchmark:z88-wasm`): both backends through the harness,
+  eight scenarios. WASM is 9-22x faster in every frame-running scenario (numbers in
+  `src/emu/machines/z88/wasm/README.md`); a single step-into is slower (11 us, the full handover),
+  which never shows. `test/wasm/z88/wasm-z88-benchmark.perf.test.ts` keeps the gate (perf project).
+- Size: 151,854 bytes; ceiling 200,000 (was a provisional 700,000). Smaller than the 48K because the
+  Z88 has no contention hooks inlined into the opcodes, not because code is missing (1,025 functions,
+  the whole shared core) - recorded in `check-z88-wasm-size.cjs`.
+- Every disagreement was settled on the hardware's side: the one TypeScript defect found (CALL/RST
+  push) was fixed in TypeScript with a test.
+
+Original scope:
 
 - `test/wasm/z88/wasm-z88-rom-parity.test.ts`: for each of the ten models, boot N frames (long
   enough to reach the OZ index), compare the state at checkpoints, then type a keystroke sequence
@@ -1006,7 +1086,25 @@ Status: Not started.
 
 ### Step 13 - Manual app pass
 
-Status: Not started.
+Status: Done on 2026-09-19 for OZ 5.0 (the other nine models are covered by the lockstep parity tests
+of Steps 10-12, not by an app pass).
+
+- `scripts/z88-app-pass.cjs` drives the built app (`scripts/doc-shots/harness.cjs`) through one
+  session per model and puts the TypeScript and WASM pictures side by side in
+  `.doc-shots/z88-app-pass/compare/`. OZ 5.0 against `OZ50-wasm`: boot, typing (`PRINT 6*7` in BBC
+  BASIC), F6 sleep and wake, battery low, inserting and removing an AMD flash card through the slot
+  dialogs, pause, `dis`, step-into/over/out, a breakpoint (both stop with `Paused (PC: $CAC7)`), F8
+  and F9, the three LCD sizes, the DE keyboard layout and the RAM dialog - identical pictures, the
+  same stops, and the CPU, Blink, Memory and keyboard panels equal except for the time-dependent
+  values (R, the tact counter, TIM0: the two runs receive their keys on different frames). The
+  status bar still says "WASM preview" after every rebuild, so the backend selection survives.
+- The script is not reliable enough for all ten models in one run: the app rebuilds its menu after
+  state changes, and some runs missed an item despite the retry. Make it reliable before relying on
+  it at Step 14.
+- Found, outside this migration (offered as a separate task): an open Memory panel throws "Machine
+  controller not available" on every machine rebuild, on both backends.
+
+Original scope:
 
 Use `scripts/doc-shots/harness.cjs` (read `.ai/doc-screenshots-guide.md`) to drive each preview
 model:
@@ -1073,6 +1171,8 @@ npm run build:check
 npm run lint:renderer
 npx electron-vite build --config build/electron.vite.config.ts
 git diff --check
+npm run benchmark:z88-wasm
+npm run test:perf -- test/wasm/z88/wasm-z88-benchmark.perf.test.ts
 ```
 
 After touching `z80.c`, also run `npm run build:all-wasm` and the sp48/sp128/spp3e/zxnext test

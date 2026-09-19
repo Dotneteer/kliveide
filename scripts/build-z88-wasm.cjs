@@ -30,6 +30,7 @@ const optimizationProfiles = {
 const productionExports = [
   "memory",
   // --- Buffers
+  "z88BreakpointFlagsPtr",
   "z88MemoryPtr",
   "z88GetMemorySize",
   "z88PixelBufferPtr",
@@ -53,6 +54,7 @@ const productionExports = [
   "z88HardReset",
   "z88ExecuteFrame",
   "z88ExecuteInstruction",
+  "z88ExecuteUntilStop",
   // --- Timing
   "z88GetBaseClockFrequency",
   "z88GetTactsInFrame",
@@ -78,9 +80,23 @@ const productionExports = [
   "z88SetInternalRamSize",
   "z88GetSlotCardType",
   "z88GetSlotChipMask",
+  "z88GetCardReadArrayMode",
   "z88GetPageBank",
   "z88GetPageOffset",
   "z88GetPageCardType",
+  // --- Bus record
+  "z88GetBusReadAddress",
+  "z88GetBusWriteAddress",
+  "z88GetBusReadCount",
+  "z88GetBusWriteCount",
+  "z88GetBusReadValue",
+  "z88GetBusWriteValue",
+  "z88GetBusIoReadPort",
+  "z88GetBusIoReadValue",
+  "z88GetBusIoWritePort",
+  "z88GetBusIoWriteValue",
+  "z88GetBusFlags",
+  "z88GetOpStartAddress",
   // --- Blink
   "z88SignalFlapOpened",
   "z88SignalFlapClosed",
@@ -108,9 +124,6 @@ const productionExports = [
   "z88GetSbr",
   "z88GetEarBit",
   // --- CPU and bus events
-  "z88GetLastMemoryAddress",
-  "z88GetLastMemoryValue",
-  "z88GetLastMemoryIsWrite",
   "z88GetCpuAf",
   "z88SetCpuAf",
   "z88GetCpuBc",
@@ -150,9 +163,7 @@ const productionExports = [
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
   "z88GetStepOutAddress",
-  "z88GetLastPortAddress",
-  "z88GetLastPortValue",
-  "z88GetLastPortIsWrite",
+  "z88GetCpuSigInt",
   // --- Test hooks (in the allow-list, not required by the loader)
   "z88TestResetRtc",
   "z88TestIncrementRtc"

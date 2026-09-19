@@ -29,6 +29,14 @@
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) ((void)(address))
 #endif
 
+/*
+ * Runs at the M1 of an unprefixed opcode fetch, before the read - where `Z80Cpu.beforeOpcodeFetch`
+ * runs and where `Z80Cpu` starts a new instruction's bus-access record.
+ */
+#ifndef Z80_BEFORE_OPCODE_FETCH
+#define Z80_BEFORE_OPCODE_FETCH() ((void)0)
+#endif
+
 #ifndef Z80_AFTER_OPCODE_FETCH
 #define Z80_AFTER_OPCODE_FETCH() ((void)0)
 #endif
@@ -3124,6 +3132,9 @@ void z80ExecuteCpuCycle(void) {
   }
 
   uint8_t m1Active = cpu.prefix == PREFIX_NONE;
+  if (m1Active) {
+    Z80_BEFORE_OPCODE_FETCH();
+  }
   cpu.opCode = readMemory(cpu.pc);
   if (m1Active) {
     refreshMemory();

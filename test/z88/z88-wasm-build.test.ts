@@ -115,7 +115,7 @@ describe("Cambridge Z88 WASM build", () => {
   });
 
   it("declares the size ceiling", () => {
-    expect(DEFAULT_MAX_BYTES).toBe(700_000);
+    expect(DEFAULT_MAX_BYTES).toBe(200_000);
     expect(parseMaxBytes()).toBe(DEFAULT_MAX_BYTES);
     expect(parseMaxBytes("90000")).toBe(90_000);
     expect(() => parseMaxBytes("not-a-number")).toThrow("Invalid Z88_WASM_MAX_BYTES");

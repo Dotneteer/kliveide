@@ -147,10 +147,25 @@ has `z80SoftReset()` for the reset button, and the WASM corpus wrapper's `reset(
 `hardReset()` runs `z80Reset`). A machine whose TypeScript oracle soft-resets must call
 `z80SoftReset` from its reset export, or the reset button clobbers registers the oracle keeps.
 
-**Read a WASM machine's CPU through `getCpuState()`, not its register fields.** An adapter mirrors
-the core's registers lazily (after a normal frame only PC and the frame counters), so a test or
-harness that reads `machine.interruptMode` directly sees stale values on WASM and current ones on
-TypeScript. `getCpuState()` is the IDE's path and syncs first.
+**A lazily mirrored register is an IDE bug, not only a test hazard.** An adapter that mirrors the
+core's registers only on `getCpuState()` is stale after a normal frame, and the IDE does not always
+go through `getCpuState()`: `getMemoryContents` reads `m.af`, `m.hl`, ... directly, the register
+editor (`setRegisterValue`) writes the 8-bit halves `a`, `f`, `xl`, `i`, `r`, ..., and `Z80Cpu`
+implements those on its own register views, which the core never sees. The Z88 adapter overrides
+every accessor - the 16-bit pairs read live from the core and push every write, the 8-bit halves go
+through the pairs, and `iff1`/`iff2`/`interruptMode` read the core too. Override a getter with every
+setter: a setter-only accessor in a subclass hides the base getter. Fields that are not accessors
+(`opStartAddress`, `sigINT`) must be refreshed after every frame, because the Breakpoints panel
+reads them without asking for the CPU state.
+
+**Record what `Z80Cpu` records, when the IDE shows it.** The CPU panel shows the last memory and I/O
+values, and memory/I/O breakpoints test the instruction's accesses. `Z80Cpu` keeps two 8-entry
+address lists whose counts (not contents) restart at each unprefixed M1, records opcode fetches and
+data accesses but not operand bytes (`fetchCodeByte` reads through `doReadMemory`), and keeps the
+last values forever. A core that records only its last access, or only in the debugger's loop, shows
+different numbers on a paused machine and misses a read breakpoint on an opcode fetch. The shared
+core's `Z80_BEFORE_OPCODE_FETCH` hook (no-op by default) marks the M1 where `Z80Cpu.beforeOpcodeFetch`
+runs; `Z80_FETCH_CODE_BYTE` reads operands unrecorded (it must supply the read's delay itself).
 
 The literal copies in `test/wasm/z80/` must be re-copied whenever their
 `test/z80/` source changes. A stale `next-ops.test.ts` copy once asserted the
@@ -188,6 +203,13 @@ A parity test that passes the first time proves nothing until it has failed:
 change one colour constant and one filter constant, rebuild, and watch the
 pixel and sample comparisons fail, then restore. The Z88 LCD and beeper parity
 tests were checked this way.
+
+**Test the IDE through `MainToEmuProcessor`, not through the machine.** The IDE reaches the emulator
+only through that processor, and it reads fields no machine-level test looks at. The Z88's IDE parity
+test sends the same requests to both backends and compares the answers (CPU, Blink and memory
+panels, every bank, partition labels, disassembly sections, call stack, the register and memory
+editors); on its first run it found five differences, including register edits that never reached
+the core and a TypeScript CALL/RST defect.
 
 If a behavior is hard to reproduce with tests, still audit the exact TypeScript
 and WASM contracts. Games often reveal mid-frame timing bugs that ordinary unit
@@ -394,6 +416,15 @@ Three things to carry forward:
    reproducible in about a minute with `scripts/doc-shots/harness.cjs`: breakpoint, `em-debug`, a
    handful of `em-sto`, and read PC off the disassembly view after each. Emulation parity says
    nothing about whether stepping works.
+
+**Benchmark the debugger, not only the frame loop.** A WASM debug loop that crosses the boundary and
+builds the stop policy's input for every instruction made running under the debugger slower than
+the TypeScript machine on the Z88 (0.27 vs 0.18 ms/frame), while normal frames were 20x faster.
+When the policy can only stop at a breakpoint or at one known address (running to breakpoints or to
+an execution point, a step-over waiting for its return, a step-out), let the core run on to the next
+candidate: copy `DebugSupport.breakpointFlags` into it (128 KB, ~1 us per run) and apply the unchanged
+policy at the candidate (`Z88WasmV2Machine.wasmV2FastPathStop`, `z88ExecuteUntilStop`). Step-into
+and memory/I/O breakpoints stay per instruction.
 
 ## Recommended First Reading For Next Migration
 

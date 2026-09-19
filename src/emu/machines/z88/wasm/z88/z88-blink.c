@@ -326,6 +326,22 @@ void z88RaiseBatteryLow(void) {
 // Exports: ports and registers
 // -----------------------------------------------------------------------------
 
+/* The CPU's port cycles: recorded for the CPU panel and the I/O breakpoints (z88-memory.c) */
+static uint32_t z88CpuReadPort(uint32_t address) {
+  z88BusIoReadPort = (uint16_t)address;
+  const uint32_t value = z88BlinkReadPort(address);
+  z88BusIoReadValue = (uint8_t)value;
+  z88BusFlags |= Z88_BUS_IO_READ_PORT | Z88_BUS_IO_READ_VALUE;
+  return value;
+}
+
+static void z88CpuWritePort(uint32_t address, uint32_t value) {
+  z88BusIoWritePort = (uint16_t)address;
+  z88BusIoWriteValue = (uint8_t)value;
+  z88BusFlags |= Z88_BUS_IO_WRITE_PORT | Z88_BUS_IO_WRITE_VALUE;
+  z88BlinkWritePort(address, value);
+}
+
 uint32_t z88ReadPort(uint32_t address) { return z88BlinkReadPort(address & 0xffffu); }
 void z88WritePort(uint32_t address, uint32_t value) { z88BlinkWritePort(address & 0xffffu, value); }
 

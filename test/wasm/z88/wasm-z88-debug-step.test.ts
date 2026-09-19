@@ -170,6 +170,63 @@ after:
   });
 });
 
+/*
+ * Memory and I/O breakpoints test the instruction's bus accesses as `Z80Cpu` records them: every
+ * opcode fetch (prefix bytes included) and every data read or write - but not the operand bytes,
+ * which `fetchCodeByte` reads without recording. So a read breakpoint on an instruction's first byte
+ * stops after that instruction, one on its operand never does.
+ */
+const ACCESS = `
+      .org $8000
+start:
+      ld sp,$bff0
+      ld a,$47
+fetch:
+      ld a,($9000)
+      ld ($9001),a
+indexed:
+      ld (ix+$10),a
+      ld bc,$47b1
+      in a,(c)
+      ld c,$b5
+      out (c),a            ; port $47B5: B is the high byte
+done:
+      jr done
+
+      .org $9000
+      .defb $47,$00
+`;
+
+describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 memory and I/O breakpoints (%s)", (backend) => {
+  async function session(): Promise<Z88TestSession> {
+    const s = await createZ88Session({ backend: backend as Z88HarnessBackend });
+    await s.loadCode(ACCESS, { entry: "start" });
+    s.setRegisters({ ix: 0xa000 });
+    return s;
+  }
+
+  it.each([
+    ["an opcode fetch", "fetch", "memoryRead", "fetch+3"],
+    ["a data read", 0x9000, "memoryRead", "fetch+3"],
+    ["a data write", 0x9001, "memoryWrite", "indexed"],
+    ["an indexed write", 0xa010, "memoryWrite", "indexed+3"],
+    ["a port read (the 16-bit port address)", 0x47b1, "ioRead", "done-4"],
+    ["a port write", 0x47b5, "ioWrite", "done"]
+  ] as const)("stops after the instruction that makes %s", async (_what, where, access, expected) => {
+    const s = await session();
+    s.watch(where, access);
+    const [label, offset] = expected.split(/(?=[+-])/);
+    expect(s.debug("continue")).toBe(s.symbol(label) + Number(offset ?? 0));
+  });
+
+  it("an operand byte is not a recorded read: its breakpoint never fires", async () => {
+    const s = await session();
+    s.watch(s.symbol("fetch") + 1, "memoryRead");
+    s.breakpoint("done");
+    expect(s.debug("continue")).toBe(s.symbol("done"));
+  });
+});
+
 describe("Z88 debugger: both backends stop at the same places", () => {
   it.each([
     ["step-into", async (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepInto"), s.debug("stepInto")]],
@@ -184,5 +241,95 @@ describe("Z88 debugger: both backends stop at the same places", () => {
     expect(wasmStops).toEqual(tsStops);
     expect(wasm.registers()).toEqual(ts.registers());
     expect(wasm.tacts).toBe(ts.tacts);
+  });
+});
+
+/*
+ * The WASM debug loop lets the core run on to the next place the stop policy may stop at (a flagged
+ * address, a run-to point, a step-over or step-out target) instead of returning after every
+ * instruction. These cases cross several frames in one debugger command, and pass flagged addresses
+ * that are not stops - a disabled breakpoint, a breakpoint for a partition that is not paged in - and
+ * both backends must stop at the same instruction, with the same registers and tacts.
+ */
+const LONG = `
+      .org $8000
+start:
+      ld sp,$bff0
+      call long
+after:
+      nop
+passed:
+      ld a,1
+other:
+      nop
+done:
+      jr done
+
+long:
+      ld de,$0a00          ; about four 5 ms frames
+wait: dec de
+      ld a,d
+      or e
+      jr nz,wait
+      call inner
+      ret
+
+inner:
+      ld b,0
+spin: djnz spin
+      ret
+`;
+
+describe("Z88 debugger: long runs between stops, on both backends", () => {
+  async function both(): Promise<Z88TestSession[]> {
+    const sessions = await Promise.all(z88HarnessBackends("memory", "cpu", "blink").map((b) => createZ88Session({ backend: b })));
+    for (const s of sessions) await s.loadCode(LONG, { entry: "start" });
+    return sessions;
+  }
+
+  it.each([
+    [
+      "step-over a CALL that runs for frames",
+      (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepOver"), s.debug("stepOver")]
+    ],
+    [
+      "step-out of a routine that runs for frames",
+      (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepInto"), s.debug("stepOut")]
+    ],
+    [
+      "step-over a CALL inside the long routine, then step-out",
+      (s: Z88TestSession) => (s.breakpoint("wait"), [s.debug("continue"), (s.machine.executionContext.debugSupport.eraseAllBreakpoints(), s.debug("stepOut"))])
+    ],
+    [
+      "a disabled breakpoint and another partition's breakpoint are passed; the real one stops",
+      (s: Z88TestSession) => {
+        const debugSupport = s.machine.executionContext.debugSupport;
+        const disabled = { address: s.symbol("after"), exec: true };
+        debugSupport.addBreakpoint(disabled);
+        debugSupport.enableBreakpoint(disabled, false);
+        debugSupport.addBreakpoint({ address: s.symbol("passed"), partition: 0x99, exec: true });
+        s.breakpoint("other");
+        return [s.debug("continue")];
+      }
+    ],
+    [
+      "a breakpoint hit again on the next pass through a loop",
+      (s: Z88TestSession) => (s.breakpoint("spin"), [s.debug("continue"), s.debug("continue"), s.debug("continue")])
+    ]
+  ])("%s", async (_name, scenario) => {
+    const [ts, wasm] = await both();
+    if (!wasm) return;
+    const tsStops = scenario(ts);
+    const wasmStops = scenario(wasm);
+    expect(wasmStops).toEqual(tsStops);
+    expect(wasm.registers()).toEqual(ts.registers());
+    expect(wasm.tacts).toBe(ts.tacts);
+    expect(wasm.machine.frames).toBe(ts.machine.frames);
+  });
+
+  it("the stops are the ones the program implies", async () => {
+    const [s] = await both();
+    expect([s.debug("stepInto"), s.debug("stepOver")]).toEqual([s.symbol("start") + 3, s.symbol("after")]);
+    expect(s.machine.frames).toBeGreaterThanOrEqual(3);
   });
 });

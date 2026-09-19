@@ -212,6 +212,7 @@ const WASM_CARD_KIND = { RAM: 1, ROM: 2, UV_EPROM: 3, INTEL_FLASH: 4, AMD_040: 5
 /** A card of the WASM backend: what it is, and (once inserted) where */
 class WasmZ88TestCard implements Z88TestFlashCard {
   slot: number | undefined;
+  exports: Z88WasmV2Exports | undefined;
   readonly chipMask: number;
 
   constructor(
@@ -222,8 +223,10 @@ class WasmZ88TestCard implements Z88TestFlashCard {
     this.chipMask = z88ChipMaskForSize(size);
   }
 
+  /** The chip state of the slot the card is in; a card never inserted reads its array */
   readArrayModeState(): boolean {
-    throw new Error("The WASM core's flash cards arrive in Step 10 (the 'flashCards' feature).");
+    if (this.slot === undefined || !this.exports) return true;
+    return this.exports.z88GetCardReadArrayMode(this.slot) !== 0;
   }
 }
 
@@ -262,6 +265,7 @@ export class WasmZ88Surface implements Z88TestSurface {
         if (slot < 0 || slot > 3) throw new Error("Invalid slot index");
         const c = card as WasmZ88TestCard;
         c.slot = slot;
+        c.exports = e;
         e.z88InsertCard(slot, c.kindCode, c.size);
         if (content) {
           if (content.length !== c.size) {

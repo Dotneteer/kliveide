@@ -2,12 +2,15 @@ const { statSync } = require("node:fs");
 const { buildZ88Wasm, output } = require("./build-z88-wasm.cjs");
 
 /*
- * Provisional ceiling (2026-09-19, Step 1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the
- * skeleton links only buffers and register getters, so it is tiny. The ceiling matches the ZX
- * Spectrum Next's until the machine is complete; Step 12 replaces it with one measured on the real
- * build and records the reason here.
+ * The ceiling, measured on the complete machine (2026-09-19, Step 12 of
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`): the speed build is 151,854 bytes, 141 KB of it code
+ * (1,025 functions - the whole shared Z80 core). 200,000 leaves about 30% for fixes before a jump
+ * has to be explained. The Z88 is smaller than the 48K (201 KB) on purpose, not by omission: it has no
+ * contention, so none of the 48K's memory/port delay hooks is inlined into every opcode, and its one
+ * tact hook (the audio sampler) is `noinline`. A jump past the ceiling usually means something hot
+ * became inlined into the opcodes again (see `.ai/wasm-migration-intent-and-lessons.md`).
  */
-const DEFAULT_MAX_BYTES = 700_000;
+const DEFAULT_MAX_BYTES = 200_000;
 
 function parseMaxBytes(value = process.env.Z88_WASM_MAX_BYTES) {
   if (value == null || value === "") return DEFAULT_MAX_BYTES;

@@ -41,6 +41,7 @@
     "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
+    "benchmark:z88-wasm": "node scripts/benchmark-z88-wasm.cjs",
     "diff:zxnext-machine": "node scripts/run-zxnext-frame-diff.cjs",
     "test:visual": "node test/harness/zxnext/cli/run.cjs",
     "visual:serve": "node test/harness/zxnext/cli/serve.cjs",

@@ -8,8 +8,8 @@
  * SR0's bank; pages 2-7 are SR1-SR3's 16K banks. A card smaller than its slot is mirrored through
  * its chip mask; a page with no card reads the Blink's pseudo-random values and ignores writes.
  *
- * The card behaviour here is RAM (read/write) and ROM (read-only). UV EPROMs and flash cards read like
- * ROM and are erased ($FF) when inserted; their programming and command states arrive in Step 10.
+ * RAM is read/write and ROM read-only here. UV EPROMs and flash cards read like ROM while their chip
+ * is in read-array mode; their writes, and their reads in a command state, go to z88-cards.c.
  */
 
 /* Card kinds; the host maps `Z88CardKind` onto them */
@@ -46,12 +46,61 @@ static uint8_t z88PageCard[8] = {
 /* The empty-slot random generator; its seed is never reset (`new Z88BankedMemory(this, 0xAC23)`) */
 static uint32_t z88RndSeed = 0xac23u;
 
-/* The last memory access of the CPU, for the debugger's memory breakpoints */
-static uint8_t z88CaptureBusEvents = 1u;
-static uint8_t z88HasMemoryEvent;
-static uint16_t z88LastMemoryAddress;
-static uint8_t z88LastMemoryValue;
-static uint8_t z88LastMemoryIsWrite;
+/*
+ * The CPU's bus accesses, recorded exactly as `Z80Cpu` records them - the CPU panel shows them, and the
+ * debugger's memory and I/O breakpoints test them:
+ * - the addresses read and written by the current instruction, in two 8-entry lists whose counts (not
+ *   contents) restart at the M1 of each unprefixed opcode fetch (`Z80_BEFORE_OPCODE_FETCH`), so an
+ *   entry past the count is left from an earlier instruction, and an access past the eighth is
+ *   counted but not stored; an interrupt's pushes add to the previous instruction's list;
+ * - the last value read and written, and the last I/O port read and written with their values; the
+ *   ports are forgotten at the same M1, the values never (until then they are unknown).
+ * A reset restarts the counts and forgets the ports, as `Z80Cpu.reset` does.
+ */
+#define Z88_BUS_LIST_SIZE 8u
+#define Z88_BUS_READ_VALUE 0x01u
+#define Z88_BUS_WRITE_VALUE 0x02u
+#define Z88_BUS_IO_READ_PORT 0x04u
+#define Z88_BUS_IO_READ_VALUE 0x08u
+#define Z88_BUS_IO_WRITE_PORT 0x10u
+#define Z88_BUS_IO_WRITE_VALUE 0x20u
+
+static uint16_t z88BusReads[Z88_BUS_LIST_SIZE];
+static uint16_t z88BusWrites[Z88_BUS_LIST_SIZE];
+static uint32_t z88BusReadCount;
+static uint32_t z88BusWriteCount;
+static uint8_t z88BusReadValue;
+static uint8_t z88BusWriteValue;
+static uint16_t z88BusIoReadPort;
+static uint8_t z88BusIoReadValue;
+static uint16_t z88BusIoWritePort;
+static uint8_t z88BusIoWriteValue;
+static uint8_t z88BusFlags;
+
+/* The address of the last unprefixed opcode fetched (`Z80Cpu.opStartAddress`) */
+static uint16_t z88OpStartAddress;
+
+/* A new instruction's M1: the lists restart, the ports are forgotten, the instruction starts here */
+static inline void z88BusNewInstruction(void) {
+  z88BusReadCount = 0u;
+  z88BusWriteCount = 0u;
+  z88BusFlags &= (uint8_t)~(Z88_BUS_IO_READ_PORT | Z88_BUS_IO_WRITE_PORT);
+  z88OpStartAddress = cpu.pc;
+}
+
+/* `Z80Cpu.reset` and `hardReset`: the counts restart, the ports are forgotten, opStartAddress is 0 */
+static void z88BusReset(void) {
+  z88BusReadCount = 0u;
+  z88BusWriteCount = 0u;
+  z88BusFlags &= (uint8_t)~(Z88_BUS_IO_READ_PORT | Z88_BUS_IO_WRITE_PORT);
+  z88OpStartAddress = 0u;
+}
+
+/* The programmable cards (z88-cards.c) */
+static uint8_t z88CardCommandMode[5];
+static uint8_t z88CardCommandRead(uint32_t slot, uint8_t bank, uint32_t address);
+static void z88CardWrite(uint32_t slot, uint8_t bank, uint32_t address, uint8_t value);
+static void z88CardInserted(uint32_t slot);
 
 /* The Blink's COM register (defined in z88-blink.c's state, read here for COM.RAMS) */
 static uint8_t z88Com;
@@ -159,43 +208,62 @@ static uint8_t z88RandomRead(void) {
 
 static uint8_t z88MemoryRead(uint16_t address) {
   const uint32_t page = address >> 13;
-  if (z88PageCard[page] == Z88_PAGE_NO_CARD) {
+  const uint8_t card = z88PageCard[page];
+  if (card == Z88_PAGE_NO_CARD) {
     return z88RandomRead();
   }
-  return z88Memory[z88PageOffset[page] + (address & 0x1fffu)];
+  const uint32_t physical = z88PageOffset[page] + (address & 0x1fffu);
+  if (z88CardCommandMode[card]) {
+    return z88CardCommandRead(card, z88PageBank[page], physical);
+  }
+  return z88Memory[physical];
 }
 
 static void z88MemoryWrite(uint16_t address, uint8_t value) {
   const uint32_t page = address >> 13;
   const uint8_t card = z88PageCard[page];
   if (card == Z88_PAGE_NO_CARD) return;
-  if (z88Cards[card].kind == Z88_CARD_RAM) {
-    z88Memory[z88PageOffset[page] + (address & 0x1fffu)] = value;
+  const uint32_t physical = z88PageOffset[page] + (address & 0x1fffu);
+  switch (z88Cards[card].kind) {
+    case Z88_CARD_RAM:
+      z88Memory[physical] = value;
+      break;
+    case Z88_CARD_ROM:
+      break;
+    default:
+      z88CardWrite(card, z88PageBank[page], physical, value);
+      break;
   }
-  /* ROM ignores writes; EPROM and flash programming arrive in Step 10 */
 }
 
 static uint32_t z88CpuReadMemory(uint32_t address) {
   const uint16_t masked = (uint16_t)(address & 0xffffu);
+  if (z88BusReadCount < Z88_BUS_LIST_SIZE) z88BusReads[z88BusReadCount] = masked;
+  z88BusReadCount++;
   const uint8_t value = z88MemoryRead(masked);
-  if (z88CaptureBusEvents) {
-    z88LastMemoryAddress = masked;
-    z88LastMemoryValue = value;
-    z88LastMemoryIsWrite = 0u;
-    z88HasMemoryEvent = 1u;
-  }
+  z88BusReadValue = value;
+  z88BusFlags |= Z88_BUS_READ_VALUE;
   return value;
 }
 
 static void z88CpuWriteMemory(uint32_t address, uint32_t value) {
   const uint16_t masked = (uint16_t)(address & 0xffffu);
-  if (z88CaptureBusEvents) {
-    z88LastMemoryAddress = masked;
-    z88LastMemoryValue = (uint8_t)value;
-    z88LastMemoryIsWrite = 1u;
-    z88HasMemoryEvent = 1u;
-  }
+  if (z88BusWriteCount < Z88_BUS_LIST_SIZE) z88BusWrites[z88BusWriteCount] = masked;
+  z88BusWriteCount++;
+  z88BusWriteValue = (uint8_t)value;
+  z88BusFlags |= Z88_BUS_WRITE_VALUE;
   z88MemoryWrite(masked, (uint8_t)value);
+}
+
+/* An operand byte: the memory read's timing, but no record (`Z80Cpu.fetchCodeByte`) */
+static uint8_t z88FetchCodeByte(uint16_t address) {
+  delayMemoryRead(address);
+  return z88MemoryRead(address);
+}
+
+/* A write that is not a CPU bus cycle (`z80PokeMemory`): not recorded */
+static void z88PokeMemory(uint32_t address, uint32_t value) {
+  z88MemoryWrite((uint16_t)(address & 0xffffu), (uint8_t)value);
 }
 
 // -----------------------------------------------------------------------------
@@ -213,8 +281,8 @@ void z88WriteMemory(uint32_t address, uint32_t value) {
 }
 
 /*
- * Inserts a card: the paging is recalculated, EPROM and flash cards are erased, as their
- * `onInserted` does. The host copies the card image into the slot afterwards.
+ * Inserts a card: the paging is recalculated, then the card's `onInserted` - EPROM and flash cards are
+ * erased ($FF) and a flash chip starts in read-array mode. The host copies the card image afterwards.
  */
 void z88InsertCard(uint32_t slot, uint32_t kind, uint32_t size) {
   if (slot > 3u) return;
@@ -222,11 +290,7 @@ void z88InsertCard(uint32_t slot, uint32_t kind, uint32_t size) {
   z88Cards[slot].size = size;
   z88Cards[slot].chipMask = z88ChipMaskForSize(size);
   z88RecalculatePages();
-  if (kind == Z88_CARD_UV_EPROM || kind == Z88_CARD_INTEL_FLASH || kind == Z88_CARD_AMD_29F040B ||
-      kind == Z88_CARD_AMD_29F080B) {
-    const uint32_t base = slot * Z88_SLOT_SIZE;
-    for (uint32_t i = 0u; i < size && base + i < Z88_MEMORY_SIZE; i++) z88Memory[base + i] = 0xffu;
-  }
+  z88CardInserted(slot);
 }
 
 /* Removes a card; its bytes stay in physical memory */
@@ -235,6 +299,7 @@ void z88RemoveCard(uint32_t slot) {
   z88Cards[slot].kind = Z88_CARD_NONE;
   z88Cards[slot].size = 0u;
   z88Cards[slot].chipMask = 0u;
+  z88CardCommandMode[slot] = 0u;
   z88RecalculatePages();
 }
 
@@ -259,6 +324,16 @@ uint32_t z88GetPageCardType(uint32_t page) {
   return card == Z88_PAGE_NO_CARD ? 0u : z88CardTypeCode(&z88Cards[card]);
 }
 
-uint32_t z88GetLastMemoryAddress(void) { return z88HasMemoryEvent ? z88LastMemoryAddress : 0u; }
-uint32_t z88GetLastMemoryValue(void) { return z88HasMemoryEvent ? z88LastMemoryValue : 0u; }
-uint32_t z88GetLastMemoryIsWrite(void) { return z88HasMemoryEvent ? z88LastMemoryIsWrite : 0u; }
+/* The bus record (see above); `z88GetBusFlags` says which values and ports are known */
+uint32_t z88GetBusReadAddress(uint32_t index) { return z88BusReads[index & 7u]; }
+uint32_t z88GetBusWriteAddress(uint32_t index) { return z88BusWrites[index & 7u]; }
+uint32_t z88GetBusReadCount(void) { return z88BusReadCount; }
+uint32_t z88GetBusWriteCount(void) { return z88BusWriteCount; }
+uint32_t z88GetBusReadValue(void) { return z88BusReadValue; }
+uint32_t z88GetBusWriteValue(void) { return z88BusWriteValue; }
+uint32_t z88GetBusIoReadPort(void) { return z88BusIoReadPort; }
+uint32_t z88GetBusIoReadValue(void) { return z88BusIoReadValue; }
+uint32_t z88GetBusIoWritePort(void) { return z88BusIoWritePort; }
+uint32_t z88GetBusIoWriteValue(void) { return z88BusIoWriteValue; }
+uint32_t z88GetBusFlags(void) { return z88BusFlags; }
+uint32_t z88GetOpStartAddress(void) { return z88OpStartAddress; }
