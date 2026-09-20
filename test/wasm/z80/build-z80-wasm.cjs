@@ -9,6 +9,7 @@ const output = resolve(__dirname, "dist/z80-test.wasm");
 const productionExports = [
   "memory",
   "z80Reset",
+  "z80SoftReset",
   "z80ExecuteCpuCycle",
   "z80MemoryPtr",
   "z80GetAf",
@@ -65,6 +66,10 @@ const productionExports = [
   "z80GetRetnExecuted",
   "z80SetRetnExecuted",
   "z80TactPlusN",
+  "z80SnoozeCpu",
+  "z80AwakeCpu",
+  "z80IsCpuSnoozed",
+  "z80SnoozeCycle",
   "z80PeekMemory",
   "z80PokeMemory",
   "z80GetLastMemAddress",

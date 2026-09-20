@@ -29,6 +29,14 @@
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) ((void)(address))
 #endif
 
+/*
+ * Runs at the M1 of an unprefixed opcode fetch, before the read - where `Z80Cpu.beforeOpcodeFetch`
+ * runs and where `Z80Cpu` starts a new instruction's bus-access record.
+ */
+#ifndef Z80_BEFORE_OPCODE_FETCH
+#define Z80_BEFORE_OPCODE_FETCH() ((void)0)
+#endif
+
 #ifndef Z80_AFTER_OPCODE_FETCH
 #define Z80_AFTER_OPCODE_FETCH() ((void)0)
 #endif
@@ -112,6 +120,16 @@ typedef struct Z80State {
   uint8_t lastTbBlueAddress;
   uint8_t lastTbBlueValue;
   uint8_t hasTbBlueEvent;
+  /*
+   * Snooze: the Cambridge Z88's Blink stops the CPU clock when software reads the keyboard with
+   * INT.KWAIT set and no key is down, until a key, an RTC event or the flap wakes it.
+   *
+   * Mirrors `Z80Cpu._snoozed` / `snoozeCpu` / `awakeCpu` / `onSnooze`. The core itself never sets
+   * or clears it and `z80ExecuteCpuCycle` ignores it: the machine's frame loop runs
+   * `z80SnoozeCycle` instead of an instruction while it is set, exactly as `MachineFrameRunner`
+   * calls `onSnooze()` instead of `executeCpuCycle()`. Machines that never snooze are unaffected.
+   */
+  uint8_t snoozed;
 } Z80State;
 
 // -----------------------------------------------------------------------------
@@ -798,10 +816,39 @@ void z80Reset(void) {
   cpu.lastPortIsWrite = 0;
   cpu.hasPortEvent = 0;
   cpu.portReadValue = 0;
+  cpu.snoozed = 0;
   cpu.z80nMode = 0;
   cpu.lastTbBlueAddress = 0;
   cpu.lastTbBlueValue = 0;
   cpu.hasTbBlueEvent = 0;
+}
+
+/*
+ * The reset button (`Z80Cpu.reset`): what `z80Reset` - the power-on reset, `Z80Cpu.hardReset` - does,
+ * except that BC, DE, HL, their alternates, IX and IY keep their values, as they do on a real Z80 and
+ * on the TypeScript CPU. The Z80N mode is kept too. Machines whose reset button must not clobber the
+ * general registers call this (the Cambridge Z88 does); `z80Reset` is unchanged for the others.
+ */
+void z80SoftReset(void) {
+  const uint16_t bc = BC;
+  const uint16_t de = DE;
+  const uint16_t hl = HL;
+  const uint16_t bcAlt = BC_ALT;
+  const uint16_t deAlt = DE_ALT;
+  const uint16_t hlAlt = HL_ALT;
+  const uint16_t ix = IX;
+  const uint16_t iy = IY;
+  const uint8_t z80nMode = cpu.z80nMode;
+  z80Reset();
+  BC = bc;
+  DE = de;
+  HL = hl;
+  BC_ALT = bcAlt;
+  DE_ALT = deAlt;
+  HL_ALT = hlAlt;
+  IX = ix;
+  IY = iy;
+  cpu.z80nMode = z80nMode;
 }
 
 uint8_t *z80MemoryPtr(void) {
@@ -3085,6 +3132,9 @@ void z80ExecuteCpuCycle(void) {
   }
 
   uint8_t m1Active = cpu.prefix == PREFIX_NONE;
+  if (m1Active) {
+    Z80_BEFORE_OPCODE_FETCH();
+  }
   cpu.opCode = readMemory(cpu.pc);
   if (m1Active) {
     refreshMemory();
@@ -3230,6 +3280,19 @@ uint32_t z80GetStepOutAddress(void) {
 }
 void z80SetRetnExecuted(uint32_t value) { cpu.retnExecuted = value != 0; }
 void z80TactPlusN(uint32_t value) { tactPlusN(value); }
+
+/* Snooze (see `Z80State.snoozed`): `Z80Cpu.snoozeCpu`, `awakeCpu`, `isCpuSnoozed` */
+void z80SnoozeCpu(void) { cpu.snoozed = 1; }
+void z80AwakeCpu(void) { cpu.snoozed = 0; }
+uint32_t z80IsCpuSnoozed(void) { return cpu.snoozed; }
+
+/*
+ * One snoozed "instruction": nothing executes and 16 tacts pass, as `Z80Cpu.onSnooze()` does. The
+ * tacts go through `tactPlusN`, so a machine's `Z80_TACT_PLUS_N` hook (audio sampling, frame
+ * counting) sees them as one 16-tact step - the TypeScript `tactPlusN(16)` calls
+ * `onTactIncremented()` once, too.
+ */
+void z80SnoozeCycle(void) { tactPlusN(16); }
 
 uint32_t z80PeekMemory(uint32_t address) {
 #ifdef Z80_READ_MEMORY

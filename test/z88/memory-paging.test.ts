@@ -1,48 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
-import { Z88RomMemoryCard } from "@emu/machines/z88/memory/Z88RomMemoryCard";
-import { Z88TestMachine } from "./Z88TestMachine";
-import { Z88RamMemoryCard } from "@emu/machines/z88/memory/Z88RamMemoryCard";
+import { z88Backends } from "./z88-backends";
 import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
-describe("Z88 - Banked Memory", function () {
+describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", function ({ create }) {
   it("constructor works", () => {
-    const m = new Z88TestMachine().memory;
-    const mt = m as IZ88BankedMemoryTestSupport;
-    expect(m).toBeDefined();
+    // --- The expectations of the original TypeScript-only test (card objects and bank data read
+    // --- through IZ88BankedMemoryTestSupport), asked through the backend-neutral surface
+    const m = create();
+    expect(m.memory).toBeDefined();
 
-    expect(mt.cards).toHaveLength(4);
-    expect(mt.cards[0] instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.cards[1]).toBeNull();
-    expect(mt.cards[2]).toBeNull();
-    expect(mt.cards[3]).toBeNull();
+    expect(m.slotCardType(0)).toBe(CardType.Rom);
+    expect(m.slotCardType(1)).toBe(CardType.None);
+    expect(m.slotCardType(2)).toBe(CardType.None);
+    expect(m.slotCardType(3)).toBe(CardType.None);
 
-    expect(mt.bankData).toHaveLength(8);
-    expect(mt.bankData[0].bank).toBe(0);
-    expect(mt.bankData[0].offset).toBe(0);
-    expect(mt.bankData[0].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[1].bank).toBe(0);
-    expect(mt.bankData[1].offset).toBe(0);
-    expect(mt.bankData[1].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[2].bank).toBe(0);
-    expect(mt.bankData[2].offset).toBe(0);
-    expect(mt.bankData[2].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[3].bank).toBe(0);
-    expect(mt.bankData[3].offset).toBe(0x2000);
-    expect(mt.bankData[3].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[4].bank).toBe(0);
-    expect(mt.bankData[4].offset).toBe(0);
-    expect(mt.bankData[4].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[5].bank).toBe(0);
-    expect(mt.bankData[5].offset).toBe(0x2000);
-    expect(mt.bankData[5].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[6].bank).toBe(0);
-    expect(mt.bankData[6].offset).toBe(0);
-    expect(mt.bankData[6].handler instanceof Z88RomMemoryCard).toBeTruthy();
-    expect(mt.bankData[7].bank).toBe(0);
-    expect(mt.bankData[7].offset).toBe(0x2000);
-    expect(mt.bankData[7].handler instanceof Z88RomMemoryCard).toBeTruthy();
+    const expectedOffsets = [0, 0, 0, 0x2000, 0, 0x2000, 0, 0x2000];
+    for (let page = 0; page < 8; page++) {
+      expect(m.pageBank(page)).toBe(0);
+      expect(m.pageOffset(page)).toBe(expectedOffsets[page]);
+      expect(m.pageCardType(page)).toBe(CardType.Rom);
+    }
   });
 
   // --- We use these test patterns to test the memory configuration
@@ -373,22 +351,21 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
@@ -531,25 +508,24 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Set RAMS
-      m.blinkDevice.setCOM(COMFlags.RAMS);
+      m.blink.setCOM(COMFlags.RAMS);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
@@ -692,22 +668,21 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
@@ -840,22 +815,21 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
@@ -988,22 +962,21 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);
@@ -1136,25 +1109,24 @@ describe("Z88 - Banked Memory", function () {
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
 
       // --- Prepare memory cards
-      const card0 = new Z88RomMemoryCard(m, pat.c0);
-      const ramCard = new Z88RamMemoryCard(m, pat.c1);
-      const card1 = new Z88RomMemoryCard(m, pat.c2);
-      const card2 = new Z88RomMemoryCard(m, pat.c3);
+      const card0 = m.cards.rom(pat.c0);
+      const ramCard = m.cards.ram(pat.c1);
+      const card1 = m.cards.rom(pat.c2);
+      const card2 = m.cards.rom(pat.c3);
       const card3 = pat.c3Rom
-        ? new Z88RomMemoryCard(m, pat.c4)
-        : new Z88RamMemoryCard(m, pat.c4);
+        ? m.cards.rom(pat.c4)
+        : m.cards.ram(pat.c4);
 
       // --- Set RAMS
-      m.blinkDevice.setCOM(COMFlags.RAMS);
+      m.blink.setCOM(COMFlags.RAMS);
 
       // --- Insert cards
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
       mem.insertCard(0, card0);
-      memt.setRamCard(ramCard);
+      mem.setRamCard(ramCard);
       mem.insertCard(1, card1);
       mem.insertCard(2, card2);
       mem.insertCard(3, card3);

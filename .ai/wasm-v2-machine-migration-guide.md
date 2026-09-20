@@ -425,6 +425,35 @@ bounded append-only list of dirty ranges, drain it in the adapter on frame
 completion and lifecycle flush, then clear the journal after the ranges have
 been converted to `SectorChanges`.
 
+## A Non-Spectrum Machine: The Cambridge Z88
+
+The Z88 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, default since 2026-09-19) is the first
+machine migrated that shares nothing with the Spectrum but the Z80. What it established:
+
+- **Its own devices, the shared CPU.** The core includes none of `zxSpectrum/wasm/common/`
+  (`check-wasm-cpu-contract.cjs` forbids it) and uses `src/emu/z80/wasm/z80.c` through the `Z80_*`
+  hooks. Machine needs the core lacked were added to the shared core, mirroring `Z80Cpu` name for
+  name, with a no-op default and a test that runs on both CPUs: snooze (`z80SnoozeCpu`, ...), the
+  reset button (`z80SoftReset`), and the M1 hook (`Z80_BEFORE_OPCODE_FETCH`). Never a second Z80.
+- **A host class that is not the TypeScript machine** (`Z88WasmHost`), with an import-graph
+  separation test, so the WASM machine cannot quietly lean on TypeScript device objects.
+- **Test backends gated by feature.** Each suite declares what it needs (`z88Backends("memory",
+  "blink", ...)`); a migration step adds its feature to `Z88_WASM_FEATURES` and the waiting suites
+  start running on WASM with no other change. No case is ever excluded by hand.
+- **A per-key backend fallback**: `config[key] ?? model.config[key] ?? default`. The Z88's
+  configuration is rebuilt by several paths (LCD menu, RAM and slot-0 dialogs, hot-plug); a
+  `config ?? model.config` fallback loses the backend as soon as one of them omits the key.
+- **A comparison submenu instead of a product-only picker.** Unlike the 48K's single entry per
+  product, the Z88 listed the other backend's models as twins (`createModelTwins`,
+  `MachineModel.menuGroup`) in one submenu: "WASM preview" (`<id>-wasm`) before the default flip,
+  "TypeScript" (`<id>-ts`) after it. The original ids never changed; the preview ids resolve to the
+  originals through `resolveModelId` (`machine-registry.ts`), which `MachineService` applies to saved
+  projects and the last session. Tests that iterate a machine's models must pick the originals
+  (`menuGroup === undefined`). The removal plan drops the twins and maps `<id>-ts` the same way.
+- **Test the IDE through `MainToEmuProcessor`**, the debugger with a benchmark, audio exactly (in
+  doubles), and every first-time-green parity test by mutation. Details and numbers:
+  `wasm-migration-intent-and-lessons.md`.
+
 ## Migration Order
 
 Use small, manually checkable steps:

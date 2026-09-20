@@ -80,6 +80,13 @@ Audio scheduling lesson: sample thresholds in the 28 MHz frame-clock domain
 overflow 32-bit arithmetic when multiplied by a 48 kHz sample rate. Use 64-bit
 scaled threshold math for `frameTacts28 * sampleRate` comparisons.
 
+Hook inlining lesson (Cambridge Z88): the shared core expands the tact hook
+(`Z80_TACT_PLUS_N`) inside every opcode. Whatever the hook calls is inlined at
+`-O3` into hundreds of sites, so a per-tact device (the audio sampler) grew the
+Z88 artifact from 266 KB to 710 KB. Mark the machine's tact hook `noinline`, as
+`sp48CpuTactPlusN` is; the whole artifact then shrank to 198 KB. A size jump after
+adding per-tact work is this, not the device's own code.
+
 ## Single-Source Device Intent
 
 Do not duplicate hardware devices per model when the behavior is common.
@@ -123,6 +130,51 @@ For Next, the existing working Z80N support must be reused. Do not implement a
 separate Next CPU unless there is a very explicit reason and an oracle test that
 proves the shared core cannot satisfy it.
 
+The same holds beyond the Spectrum family. The Cambridge Z88 migration
+(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) needed the Blink's CPU *snooze*,
+which only the TypeScript `Z80Cpu` modelled. It went into `z80.c` as a generic
+facility that mirrors `Z80Cpu` name for name (`z80SnoozeCpu`, `z80AwakeCpu`,
+`z80IsCpuSnoozed`, `z80SnoozeCycle`): the core carries the flag, the machine's
+frame loop decides what it means. A machine that never snoozes pays nothing, since
+unexported functions are dropped at link time. Extend the core this way: mirror the
+TypeScript member, test it with one test file that runs literally on both CPUs,
+add it to `check-wasm-cpu-contract.cjs`, and rebuild and test every artifact.
+
+**`z80Reset` is the power-on reset, not the reset button.** It matches `Z80Cpu.hardReset()`;
+`Z80Cpu.reset()` keeps BC, DE, HL, their alternates, IX and IY, as a real Z80 does. A lockstep
+parity test found the difference on the Z88 at the first `EXX` after a reset. The shared core now
+has `z80SoftReset()` for the reset button, and the WASM corpus wrapper's `reset()` runs it (its
+`hardReset()` runs `z80Reset`). A machine whose TypeScript oracle soft-resets must call
+`z80SoftReset` from its reset export, or the reset button clobbers registers the oracle keeps.
+
+**A lazily mirrored register is an IDE bug, not only a test hazard.** An adapter that mirrors the
+core's registers only on `getCpuState()` is stale after a normal frame, and the IDE does not always
+go through `getCpuState()`: `getMemoryContents` reads `m.af`, `m.hl`, ... directly, the register
+editor (`setRegisterValue`) writes the 8-bit halves `a`, `f`, `xl`, `i`, `r`, ..., and `Z80Cpu`
+implements those on its own register views, which the core never sees. This hit every WASM adapter:
+the 48K and 128K pushed only PC and SP (the 128K did not even sync AF', BC', DE', HL', IR and WZ back),
+and the +3E pushed writes but returned the stale mirror after a normal frame
+(`test/wasm/zxSpectrum/wasm-register-editor.test.ts` drives the IDE's processor on all three). The
+Z88, 48K, 128K and +3E adapters now override every accessor - the 16-bit pairs read live from the core and push every write, the 8-bit halves go
+through the pairs, and `iff1`/`iff2`/`interruptMode` read the core too. Override a getter with every
+setter: a setter-only accessor in a subclass hides the base getter. Fields that are not accessors
+(`opStartAddress`, `sigINT`) must be refreshed after every frame, because the Breakpoints panel
+reads them without asking for the CPU state.
+
+**Record what `Z80Cpu` records, when the IDE shows it.** The CPU panel shows the last memory and I/O
+values, and memory/I/O breakpoints test the instruction's accesses. `Z80Cpu` keeps two 8-entry
+address lists whose counts (not contents) restart at each unprefixed M1, records opcode fetches and
+data accesses but not operand bytes (`fetchCodeByte` reads through `doReadMemory`), and keeps the
+last values forever. A core that records only its last access, or only in the debugger's loop, shows
+different numbers on a paused machine and misses a read breakpoint on an opcode fetch. The shared
+core's `Z80_BEFORE_OPCODE_FETCH` hook (no-op by default) marks the M1 where `Z80Cpu.beforeOpcodeFetch`
+runs; `Z80_FETCH_CODE_BYTE` reads operands unrecorded (it must supply the read's delay itself).
+
+The literal copies in `test/wasm/z80/` must be re-copied whenever their
+`test/z80/` source changes. A stale `next-ops.test.ts` copy once asserted the
+pre-VHDL `ADD rr,A`/`LDWS` flags and failed six cases against a correct core.
+Before blaming a core for a corpus failure, `cmp` the copy with its source.
+
 ## Correctness Before Confident Claims
 
 The TypeScript implementation is the oracle until the WASM implementation has
@@ -143,6 +195,31 @@ APIs wherever possible:
 - tape behavior
 - PSG/device register readback
 - disk or storage state where applicable
+
+Compare audio exactly when you can. The Z88 core runs the TypeScript
+`AudioDeviceBase` arithmetic (tact schedule, DC filter) in `double` and hands
+the doubles over in a `Float64Array`, so its parity test compares samples with
+`toBe` rather than a tolerance. Anything the core cannot compute (`exp` for the
+filter's alpha) is computed by the host and passed in.
+
+A parity test that passes the first time proves nothing until it has failed:
+change one colour constant and one filter constant, rebuild, and watch the
+pixel and sample comparisons fail, then restore. The Z88 LCD and beeper parity
+tests were checked this way.
+
+**Before fixing an oracle quirk, check whether the ROM relies on it.** The Z88 Blink's interrupt test
+(`INT & STA`) contradicts the documented bit layout, and OZvm - the emulator the TypeScript Blink
+came from - has the same test, which made it look deliberate. Running the scenario the quirk could
+matter for (OZ opening the flap, taking a card, closing it) under both checks, with the ROM, showed
+identical behaviour, and only then was it fixed in both cores. A quirk that a ROM does depend on is a
+finding about the hardware, not a bug to remove.
+
+**Test the IDE through `MainToEmuProcessor`, not through the machine.** The IDE reaches the emulator
+only through that processor, and it reads fields no machine-level test looks at. The Z88's IDE parity
+test sends the same requests to both backends and compares the answers (CPU, Blink and memory
+panels, every bank, partition labels, disassembly sections, call stack, the register and memory
+editors); on its first run it found five differences, including register edits that never reached
+the core and a TypeScript CALL/RST defect.
 
 If a behavior is hard to reproduce with tests, still audit the exact TypeScript
 and WASM contracts. Games often reveal mid-frame timing bugs that ordinary unit
@@ -251,6 +328,13 @@ Avoid long migrations that produce many files but leave the user uncertain
 about whether the emulator should actually work. Each step should say what
 surface is now expected to be usable and what is still missing.
 
+Comparison menu entries (the Z88's `-wasm` twins, `createModelTwins`) go in only
+when every surface the app's emulator loop touches each frame works: the frame,
+the picture, the key setter and the audio samples. A twin registered earlier
+creates a machine whose loop throws. Once twins exist, every test that iterates
+a machine's models must pick the originals (`menuGroup === undefined`), or it
+silently runs each case twice and counts the twins as models.
+
 When extending a plan, include explicit steps for moving from TypeScript to
 WASM as the actual selected implementation:
 
@@ -342,6 +426,15 @@ Three things to carry forward:
    reproducible in about a minute with `scripts/doc-shots/harness.cjs`: breakpoint, `em-debug`, a
    handful of `em-sto`, and read PC off the disassembly view after each. Emulation parity says
    nothing about whether stepping works.
+
+**Benchmark the debugger, not only the frame loop.** A WASM debug loop that crosses the boundary and
+builds the stop policy's input for every instruction made running under the debugger slower than
+the TypeScript machine on the Z88 (0.27 vs 0.18 ms/frame), while normal frames were 20x faster.
+When the policy can only stop at a breakpoint or at one known address (running to breakpoints or to
+an execution point, a step-over waiting for its return, a step-out), let the core run on to the next
+candidate: copy `DebugSupport.breakpointFlags` into it (128 KB, ~1 us per run) and apply the unchanged
+policy at the candidate (`Z88WasmV2Machine.wasmV2FastPathStop`, `z88ExecuteUntilStop`). Step-into
+and memory/I/O breakpoints stay per instruction.
 
 ## Recommended First Reading For Next Migration
 

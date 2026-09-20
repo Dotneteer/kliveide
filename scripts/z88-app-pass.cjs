@@ -1,0 +1,348 @@
+#!/usr/bin/env node
+
+/*
+ * The Cambridge Z88 manual app pass, scripted (Step 13 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
+ *
+ * Launches the built app (`out/`) under Playwright's Electron driver - `scripts/doc-shots/harness.cjs`,
+ * an isolated settings file - once per model, and drives the same session through the menus, the
+ * IDE's command prompt, the EMU window's keyboard and the card dialogs: boot, typing, sleep (F6) and
+ * wake, battery low, card insert/remove, pause and the debugger (panels, disassembly, step-into/over/out,
+ * a breakpoint), soft and hard reset (F8/F9), the LCD sizes, a keyboard layout and the RAM dialog.
+ *
+ * Each step records the LCD picture, the EMU status bar (which names the backend) and the IDE text it
+ * checks; console errors of both windows are collected. For a model (WASM, the default) and its
+ * TypeScript twin (`<id>-ts`) the pictures are put side by side (TypeScript left) in
+ * `.doc-shots/z88-app-pass/compare/`.
+ *
+ *   npx electron-vite build --config build/electron.vite.config.ts   # out/ must be current
+ *   node scripts/z88-app-pass.cjs [OZ50 OZ40 ...]                     # default: OZ50
+ */
+
+const path = require("path");
+const fs = require("fs");
+const { launchKlive, REPO } = require("./doc-shots/harness.cjs");
+
+const OUT = path.join(REPO, ".doc-shots", "z88-app-pass");
+
+function loadSharp() {
+  for (const base of [REPO, path.join(REPO, "docs")]) {
+    try {
+      return require(require.resolve("sharp", { paths: [base] }));
+    } catch {
+      /* next */
+    }
+  }
+  throw new Error("sharp not found - run `npm run doc:install` first.");
+}
+
+/* Host keys for a character (the Z88's UK mapping, `Z88KeyMappings.ts`) */
+function keysFor(ch) {
+  if (/[A-Z]/.test(ch)) return [`Key${ch}`];
+  if (/[a-z]/.test(ch)) return [`Key${ch.toUpperCase()}`];
+  if (/[0-9]/.test(ch)) return [`Digit${ch}`];
+  const special = {
+    " ": ["Space"],
+    "*": ["ShiftLeft", "Digit8"],
+    "+": ["ShiftLeft", "Equal"],
+    "=": ["Equal"],
+    "-": ["Minus"],
+    '"': ["ShiftLeft", "Quote"],
+    ".": ["Period"],
+    ",": ["Comma"]
+  };
+  if (!special[ch]) throw new Error(`No host key for '${ch}'`);
+  return special[ch];
+}
+
+async function runModel(modelId) {
+  const dir = path.join(OUT, modelId);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(dir, { recursive: true });
+  const k = await launchKlive({ home: path.join(OUT, "home", modelId), width: 1280, height: 820 });
+  const { app, ide, cmd, sleep } = k;
+  const emu = app.windows().find((w) => w.url().includes("?emu"));
+  const report = { modelId, steps: [], errors: [] };
+  for (const [name, page] of [
+    ["ide", ide],
+    ["emu", emu]
+  ]) {
+    page.on("console", (m) => {
+      if (m.type() === "error") report.errors.push(`${name}: ${m.text()}`);
+    });
+    page.on("pageerror", (e) => report.errors.push(`${name} pageerror: ${e.message}`));
+  }
+
+  const showEmu = () =>
+    app.evaluate(({ BrowserWindow }) => {
+      const w = BrowserWindow.getAllWindows().find((x) => x.webContents.getURL().includes("?emu"));
+      w.show();
+      w.setContentSize(1100, 760);
+      w.setPosition(700, 40);
+      w.focus();
+      w.webContents.focus();
+    });
+  // --- The app rebuilds its menu after state changes, so an item can be briefly missing or disabled
+  const menu = async (id, wait = 1500) => {
+    let found = "missing";
+    for (let attempt = 0; attempt < 20 && found !== "clicked"; attempt++) {
+      if (attempt) await sleep(500);
+      found = await app.evaluate(({ Menu }, itemId) => {
+        const item = Menu.getApplicationMenu().getMenuItemById(itemId);
+        if (!item) return "missing";
+        if (!item.enabled) return "disabled";
+        item.click();
+        return "clicked";
+      }, id);
+    }
+    if (found !== "clicked") throw new Error(`Menu item '${id}' is ${found}`);
+    await sleep(wait);
+  };
+  const tap = async (codes, hold = 120) => {
+    await showEmu();
+    for (const c of codes) await emu.keyboard.down(c);
+    await sleep(hold);
+    for (const c of [...codes].reverse()) await emu.keyboard.up(c);
+    await sleep(250);
+  };
+  const type = async (text) => {
+    for (const ch of text) await tap(keysFor(ch));
+  };
+  const status = () => emu.locator('[class*="_statusBar_"], [class*="statusBar"]').first().innerText().catch(() => "");
+  const lcd = async (name, extra = {}) => {
+    const file = path.join(dir, `${name}.png`);
+    await emu.locator("canvas").first().screenshot({ path: file });
+    const entry = { step: name, status: (await status()).replace(/\s+/g, " ").trim(), ...extra };
+    report.steps.push(entry);
+    console.log(`  ${modelId} ${name}: ${entry.status}${extra.note ? " | " + extra.note : ""}`);
+    return entry;
+  };
+  const lastOutput = async (lines = 12) => {
+    const text = await ide.locator('[class*="_commandPanel_"], [class*="_outputWrapper_"]').first().innerText().catch(() => "");
+    return text.split("\n").slice(-lines).join(" / ");
+  };
+  const dialogButton = async (labels) => {
+    for (const label of labels) {
+      const b = emu.getByRole("button", { name: label, exact: true });
+      if ((await b.count()) > 0) {
+        await b.first().click();
+        return label;
+      }
+    }
+    throw new Error(`No dialog button among ${labels.join(", ")}`);
+  };
+  const chooseOption = async (text) => {
+    await emu.getByRole("combobox").first().click();
+    await sleep(400);
+    await emu.getByRole("option", { name: text, exact: false }).first().click();
+    await sleep(300);
+  };
+  const start = async (wait = 12_000) => {
+    await cmd("em-start", wait);
+  };
+
+  try {
+    await showEmu();
+
+    // --- 1. Boot
+    await menu(`machine_z88_${modelId}`, 4000);
+    await start();
+    await lcd("01-boot");
+
+    // --- 2. Typing: the Index is up; BBC BASIC is the third application
+    await tap(["ArrowDown"]);
+    await tap(["ArrowDown"]);
+    await tap(["Enter"]);
+    await sleep(3000);
+    await type("PRINT 6*7");
+    await tap(["Enter"]);
+    await sleep(1500);
+    await lcd("02-basic");
+    await tap(["F2"]); // --- back to the Index
+    await sleep(2000);
+
+    // --- 3. Sleep (both shifts) and wake
+    await menu("z88_press_both_shifts", 3000);
+    await lcd("03-sleep");
+    await menu("z88_press_both_shifts", 3000);
+    await lcd("04-wake");
+
+    // --- 4. Battery low
+    await menu("z88_battery_low", 3000);
+    await lcd("05-battery-low");
+
+    // --- 5. Cards: insert an AMD flash card into slot 1, then remove it
+    const slot1 = emu.locator('[class*="_slotHandler_"]').nth(1);
+    await slot1.locator('[class*="_button_"]').last().click();
+    await sleep(1200);
+    await chooseOption("AMD Flash 29F040B");
+    await dialogButton(["Ok", "OK", "Insert"]);
+    await sleep(4000);
+    await lcd("06-card-in", { note: (await slot1.innerText()).replace(/\s+/g, " ") });
+    await slot1.locator('[class*="_button_"]').last().click();
+    await sleep(1200);
+    await dialogButton(["Ok", "OK", "Remove", "Yes"]);
+    await sleep(4000);
+    await lcd("07-card-out", { note: (await slot1.innerText()).replace(/\s+/g, " ") });
+
+    // --- 6. The debugger
+    await cmd("em-pause", 1500);
+    const paused = await lcd("08-paused");
+    const pcMatch = /PC:\s*([0-9A-F]{4})/i.exec(paused.status);
+    const pc = pcMatch ? parseInt(pcMatch[1], 16) : 0;
+    await cmd("cls", 500);
+    await cmd(`dis $${pc.toString(16)} $${(pc + 16).toString(16)}`, 1500);
+    report.steps.push({ step: "08-dis", output: await lastOutput(10) });
+    const pcs = [];
+    for (const step of ["em-sti", "em-sti", "em-sto", "em-sto", "em-out"]) {
+      await cmd(step, 1500);
+      pcs.push(`${step}=${/PC:\s*([0-9A-F]{4})/i.exec(await status())?.[1]}`);
+    }
+    report.steps.push({ step: "09-steps", pcs: pcs.join(" ") });
+    console.log(`  ${modelId} steps: ${pcs.join(" ")}`);
+    await ide.screenshot({ path: path.join(dir, "09-ide-paused.png") });
+
+    // --- The panels, paused: Debug (CPU, Blink, ...), Machine info, the memory view
+    await cmd("em-pause", 1000);
+    for (const [activity, name] of [
+      ["Debug", "09-panel-debug"],
+      ["Machine info", "09-panel-machine"]
+    ]) {
+      await ide.locator(`button[aria-label="${activity}"]`).first().click({ force: true });
+      await sleep(1500);
+      if (activity === "Debug") {
+        // --- Open the Blink panel too (the Z88's own)
+        await ide.getByText("BLINK", { exact: true }).first().click({ force: true });
+        await sleep(1500);
+      }
+      const panel = ide.locator('[class*="_sideBar_"]').first();
+      await panel.screenshot({ path: path.join(dir, `${name}.png`) }).catch(() => {});
+      report.steps.push({ step: name, text: await panel.innerText().catch(() => "") });
+    }
+    await ide.locator('button[aria-label="Show Memory Panel"]').first().click({ force: true });
+    await sleep(2000);
+    await ide.screenshot({ path: path.join(dir, "09-memory.png") });
+    await ide.locator('button[aria-label="Explorer"]').first().click({ force: true });
+    await cmd("cls", 500);
+    const bpPc = /PC:\s*([0-9A-F]{4})/i.exec(await status())?.[1];
+    await cmd(`bp-set $${bpPc}`, 800);
+    await cmd("em-debug", 3000);
+    const overlay = await emu.getByText(/Paused \(PC:/).first().innerText({ timeout: 5000 }).catch(() => "no pause overlay");
+    await lcd("10-breakpoint", { note: `bp at ${bpPc}; EMU: ${overlay}` });
+    await cmd(`bp-del $${bpPc}`, 800);
+    await cmd("em-start", 2000);
+
+    // --- 7. Soft and hard reset
+    await menu("z88_reset", 10_000);
+    await lcd("11-soft-reset");
+    await menu("z88_hard_reset", 14_000);
+    await lcd("12-hard-reset");
+
+    // --- 8. LCD sizes (each rebuilds the machine)
+    for (const size of ["640_320", "640_480", "640_64"]) {
+      await menu(`z88_${size}`, 4000);
+      await start();
+      await lcd(`13-lcd-${size}`);
+    }
+
+    // --- 9. A keyboard layout
+    await menu("z88_de_layout", 3000);
+    await start(3000);
+    await lcd("14-keyboard-de");
+    await emu.locator('button[aria-label="Show/Hide keyboard"]').first().click({ force: true });
+    await sleep(1500);
+    await emu.screenshot({ path: path.join(dir, "14-keyboard-panel.png") });
+    await emu.locator('button[aria-label="Show/Hide keyboard"]').first().click({ force: true });
+    await sleep(500);
+
+    // --- 10. The RAM dialog: 128K
+    const slot0 = emu.locator('[class*="_slotHandler_"]').nth(0);
+    await slot0.locator('[class*="_button_"]').first().click();
+    await sleep(1200);
+    await chooseOption("128K");
+    await dialogButton(["Ok", "OK", "Change"]);
+    await sleep(4000);
+    await start();
+    await lcd("15-ram-128k", { note: (await slot0.innerText()).replace(/\s+/g, " ") });
+  } catch (error) {
+    report.failure = `${error.message}`;
+    console.log(`  ${modelId} FAILED: ${error.message}`);
+    await emu.screenshot({ path: path.join(dir, "failure-emu.png") }).catch(() => {});
+    await ide.screenshot({ path: path.join(dir, "failure-ide.png") }).catch(() => {});
+  } finally {
+    fs.writeFileSync(path.join(dir, "report.json"), JSON.stringify(report, null, 2));
+    await k.close();
+  }
+  return report;
+}
+
+/* TypeScript model (left) and its WASM twin (right), step by step */
+async function compare(tsId, wasmId) {
+  const sharp = loadSharp();
+  const target = path.join(OUT, "compare", tsId);
+  fs.mkdirSync(target, { recursive: true });
+  const steps = fs.readdirSync(path.join(OUT, tsId)).filter((f) => /^\d\d-.*\.png$/.test(f));
+  // --- The panels' text, line by line: what differs between the backends
+  const text = (id) =>
+    Object.fromEntries(
+      JSON.parse(fs.readFileSync(path.join(OUT, id, "report.json"), "utf8"))
+        .steps.filter((s) => s.text)
+        .map((s) => [s.step, s.text.split("\n")])
+    );
+  const [ta, tb] = [text(tsId), text(wasmId)];
+  const diff = [];
+  for (const step of Object.keys(ta)) {
+    const a = ta[step] ?? [];
+    const b = tb[step] ?? [];
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if (a[i] !== b[i]) diff.push(`${step} line ${i}: TS "${a[i] ?? ""}" | WASM "${b[i] ?? ""}"`);
+    }
+  }
+  fs.writeFileSync(path.join(target, "panel-text-diff.txt"), diff.join("\n") + "\n");
+  console.log(`  ${tsId}: ${diff.length} panel text lines differ (${path.relative(REPO, target)}/panel-text-diff.txt)`);
+  for (const file of steps) {
+    const a = path.join(OUT, tsId, file);
+    const b = path.join(OUT, wasmId, file);
+    if (!fs.existsSync(b)) continue;
+    const [ma, mb] = await Promise.all([sharp(a).metadata(), sharp(b).metadata()]);
+    const gap = 16;
+    await sharp({
+      create: {
+        width: ma.width + mb.width + gap,
+        height: Math.max(ma.height, mb.height),
+        channels: 4,
+        background: { r: 255, g: 0, b: 255, alpha: 1 }
+      }
+    })
+      .composite([
+        { input: a, left: 0, top: 0 },
+        { input: b, left: ma.width + gap, top: 0 }
+      ])
+      .png()
+      .toFile(path.join(target, file));
+  }
+}
+
+async function main() {
+  const models = process.argv.slice(2);
+  const bases = models.length ? models : ["OZ50"];
+  const summary = [];
+  for (const base of bases) {
+    // --- Since Step 14 the original model runs on WASM; its "-ts" twin is the TypeScript machine
+    const ts = await runModel(`${base}-ts`);
+    const wasm = await runModel(base);
+    await compare(`${base}-ts`, base);
+    summary.push({ ts, wasm });
+  }
+  fs.writeFileSync(path.join(OUT, "summary.json"), JSON.stringify(summary, null, 2));
+  for (const { ts, wasm } of summary) {
+    for (const r of [ts, wasm]) {
+      console.log(`${r.modelId}: ${r.failure ? "FAILED " + r.failure : "completed"}; ${r.errors.length} console errors`);
+      for (const e of r.errors.slice(0, 10)) console.log(`   ${e}`);
+    }
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

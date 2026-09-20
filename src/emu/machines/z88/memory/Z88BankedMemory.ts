@@ -1,10 +1,11 @@
 import type { Z88PageInfo } from "./Z88PageInfo";
 import type { IZ88MemoryCard } from "./IZ88MemoryCard";
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
 
 import { toHexa2 } from "@renderer/appIde/services/ide-commands";
 import { Z88RomMemoryCard } from "./Z88RomMemoryCard";
 import { MC_Z88_INTRAM } from "@common/machines/constants";
+import { z88InternalRamSizeInBytes } from "../z88CardCatalog";
 import { Z88RamMemoryCard } from "./Z88RamMemoryCard";
 import { COMFlags } from "../IZ88BlinkDevice";
 
@@ -24,7 +25,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
   private readonly _bankData: Z88PageInfo[];
   private readonly _memory: Uint8Array;
 
-  constructor (public readonly machine: IZ88Machine, rndSeed = 0) {
+  constructor (public readonly machine: IZ88DeviceHost, rndSeed = 0) {
     // --- We allocate the entire 4MB memory
     this._memory = new Uint8Array(0x40_0000);
 
@@ -50,25 +51,7 @@ export class Z88BankedMemory implements IZ88BankedMemoryTestSupport {
     this._cards[0] = new Z88RomMemoryCard(this.machine, 0x08_0000);
 
     // --- Get the internal RAM size (assume 512K by default)
-    const intRamSize = this.machine.config?.[MC_Z88_INTRAM] ?? 0x1f;
-    let ramSizeInBytes = 0x08_0000;
-    switch (intRamSize) {
-      case 0x00:
-        ramSizeInBytes = 0x00_0000;
-        break;
-      case 0x01:
-        ramSizeInBytes = 0x00_8000;
-        break;
-      case 0x03:
-        ramSizeInBytes = 0x01_0000;
-        break;
-      case 0x07:
-        ramSizeInBytes = 0x02_0000;
-        break;
-      case 0x0f:
-        ramSizeInBytes = 0x04_0000;
-        break;
-    }
+    const ramSizeInBytes = z88InternalRamSizeInBytes(this.machine.config?.[MC_Z88_INTRAM] ?? 0x1f);
     this._intRamCard = new Z88RamMemoryCard(this.machine, ramSizeInBytes);
     this.reset();
   }

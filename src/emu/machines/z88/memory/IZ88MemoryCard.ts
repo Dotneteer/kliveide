@@ -1,5 +1,5 @@
 import type { IZ88MemoryOperation } from "./IZ88MemoryOperation";
-import type { CardType } from "./CardType";
+import type { CardType } from "../z88CardCatalog";
 
 /**
  * Repesents a Z88 memory card

@@ -1,0 +1,31 @@
+/*
+ * The Cambridge Z88 test harness - see README.md.
+ */
+export {
+  createHarnessZ88Machine,
+  HarnessFileProvider,
+  ResolvingMessenger,
+  z88Model,
+  z88WasmArtifactBytes,
+  Z88_HARNESS_BACKENDS,
+  Z88_WASM_FEATURES,
+  z88HarnessBackends,
+  type Z88Feature,
+  type CreateHarnessZ88MachineOptions,
+  type Z88HarnessBackend,
+  type Z88HarnessMachine
+} from "./core/machines";
+export {
+  createZ88Session,
+  hex,
+  keyCode,
+  Z88_FLAT_RAM_LAYOUT,
+  Z88_LCD,
+  Z88TestSession,
+  type CreateZ88SessionOptions,
+  type Program,
+  type RunLimit,
+  type Z88Key,
+  type Z88Registers,
+  type Z88Sample
+} from "./script/session";

@@ -66,6 +66,14 @@ export type MachineModel = {
    * The configuratiton of the machine
    */
   config: MachineConfigSet;
+
+  /**
+   * Optional submenu label: the machine menu lists models that share a group in one submenu after
+   * the machine's ungrouped models, rather than in the flat list. Used for the backend-comparison
+   * twins of a migrating machine (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), which would
+   * otherwise double the machine's entries.
+   */
+  menuGroup?: string;
 };
 
 /**

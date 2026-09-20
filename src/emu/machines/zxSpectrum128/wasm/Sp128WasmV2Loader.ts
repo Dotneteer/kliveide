@@ -77,6 +77,16 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128SetCpuAf: Sp128WasmV2ExportFunction;
   sp128GetCpuAfAlt: Sp128WasmV2ExportFunction;
   sp128SetCpuAfAlt: Sp128WasmV2ExportFunction;
+  sp128GetCpuBcAlt: Sp128WasmV2ExportFunction;
+  sp128SetCpuBcAlt: Sp128WasmV2ExportFunction;
+  sp128GetCpuDeAlt: Sp128WasmV2ExportFunction;
+  sp128SetCpuDeAlt: Sp128WasmV2ExportFunction;
+  sp128GetCpuHlAlt: Sp128WasmV2ExportFunction;
+  sp128SetCpuHlAlt: Sp128WasmV2ExportFunction;
+  sp128GetCpuIr: Sp128WasmV2ExportFunction;
+  sp128SetCpuIr: Sp128WasmV2ExportFunction;
+  sp128GetCpuWz: Sp128WasmV2ExportFunction;
+  sp128SetCpuWz: Sp128WasmV2ExportFunction;
   sp128GetCpuBc: Sp128WasmV2ExportFunction;
   sp128SetCpuBc: Sp128WasmV2ExportFunction;
   sp128GetCpuDe: Sp128WasmV2ExportFunction;
@@ -254,6 +264,16 @@ const requiredV2Exports = [
   "sp128SetCpuAf",
   "sp128GetCpuAfAlt",
   "sp128SetCpuAfAlt",
+  "sp128GetCpuBcAlt",
+  "sp128SetCpuBcAlt",
+  "sp128GetCpuDeAlt",
+  "sp128SetCpuDeAlt",
+  "sp128GetCpuHlAlt",
+  "sp128SetCpuHlAlt",
+  "sp128GetCpuIr",
+  "sp128SetCpuIr",
+  "sp128GetCpuWz",
+  "sp128SetCpuWz",
   "sp128GetCpuBc",
   "sp128SetCpuBc",
   "sp128GetCpuDe",

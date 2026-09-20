@@ -1,11 +1,11 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IGenericKeyboardDevice } from "@emu/abstractions/IGenericKeyboardDevice";
 
 /**
  * This interface defines the properties and operations of the Cambridge Z88 keyboard device.
  */
 export interface IZ88KeyboardDevice
-  extends IGenericKeyboardDevice<IZ88Machine> {
+  extends IGenericKeyboardDevice<IZ88DeviceHost> {
   /**
    * Indicates if there is any key pressed
    */  

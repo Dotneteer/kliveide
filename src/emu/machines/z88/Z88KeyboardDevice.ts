@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88KeyboardDevice } from "./IZ88KeyboardDevice";
 import { INTFlags, STAFlags } from "./IZ88BlinkDevice";
 
@@ -17,7 +17,7 @@ export class Z88KeyboardDevice implements IZ88KeyboardDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor (public readonly machine: IZ88Machine) {
+  constructor (public readonly machine: IZ88DeviceHost) {
     this.reset();
   }
 

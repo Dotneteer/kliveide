@@ -1,6 +1,6 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
 import { IZ88MemoryCard } from "./IZ88MemoryCard";
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import { CardType, z88ChipMaskForSize } from "@emu/machines/z88/z88CardCatalog";
 
 /**
  * The base class of all Z88 memory cards
@@ -13,33 +13,9 @@ export abstract class Z88MemoryCardBase implements IZ88MemoryCard {
    * @param host The host Z88 machine
    * @param size The size of the memory card in bytes
    */
-  constructor (public readonly host: IZ88Machine, public readonly size: number) {
+  constructor (public readonly host: IZ88DeviceHost, public readonly size: number) {
     // --- Calculate the chip (address line) mask
-    switch (size) {
-      case 0x00_0000:
-        this._chipMask = 0x00;
-        break;
-      case 0x00_8000:
-        this._chipMask = 0x01;
-        break;
-      case 0x01_0000:
-        this._chipMask = 0x03;
-        break;
-      case 0x02_0000:
-        this._chipMask = 0x07;
-        break;
-      case 0x04_0000:
-        this._chipMask = 0x0f;
-        break;
-      case 0x08_0000:
-        this._chipMask = 0x1f;
-        break;
-      case 0x10_0000:
-        this._chipMask = 0x3f;
-        break;
-      default:
-        throw new Error("Invalid memory card size");
-    }
+    this._chipMask = z88ChipMaskForSize(size);
   }
 
   /**

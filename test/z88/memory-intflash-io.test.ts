@@ -1,29 +1,26 @@
 import { describe, it, expect } from "vitest";
-import { IZ88BankedMemoryTestSupport } from "@emu/machines/z88/memory/Z88BankedMemory";
-import { Z88TestMachine } from "./Z88TestMachine";
-import { CardType } from "@emu/machines/z88/memory/CardType";
-import { Z88IntelFlashMemoryCard } from "@emu/machines/z88/memory/Z88IntelFlashMemoryCard";
+import { z88Backends } from "./z88-backends";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
 const addrSR3: number[] = [
   // logical addresses for SR3 (16K range)
   0xc000, 0xc001, 0xcdef, 0xdfff, 0xefff, 0xfffe, 0xffff
 ];
 
-describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
+describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00XS5 Card Read / flash bytes ($name)", function ({ create }) {
   addrSR3.forEach(addr => {
     it(`Intel i28F004S5 read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
-      const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+      const i28F004S5 = m.cards.intelFlash(0x8_0000);
       // --- Insert 512K card in slot 3 (reset to FFh)
       mem.insertCard(3, i28F004S5);
 
       // bind bottom bank of slot 3 into logical address space (SR3)
-      m.blinkDevice.setSR3(0xc0);
+      m.blink.setSR3(0xc0);
 
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
@@ -43,17 +40,16 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
   addrSR3.forEach(addr => {
     it(`Intel i28F008S5 read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create a 1Mb Intel 28F008S5 Flash Card
-      const i28F008S5 = new Z88IntelFlashMemoryCard(m, 0x10_0000);
+      const i28F008S5 = m.cards.intelFlash(0x10_0000);
       // --- Insert 1Mb card in slot 3 (reset to FFh)
       mem.insertCard(3, i28F008S5);
 
       // bind bottom bank of slot 3 into logical address space (SR3)
-      m.blinkDevice.setSR3(0xc0);
+      m.blink.setSR3(0xc0);
 
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
@@ -73,17 +69,16 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
   addrSR3.forEach(addr => {
     it(`Intel i28F004S5 read pristine content (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
-      const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+      const i28F004S5 = m.cards.intelFlash(0x8_0000);
       // --- Insert 512K card in slot 2 (reset to FFh)
       mem.insertCard(2, i28F004S5);
 
       // bind bottom bank of slot 2 into logical address space (SR3)
-      m.blinkDevice.setSR3(0x80);
+      m.blink.setSR3(0x80);
 
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
@@ -103,17 +98,16 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
   addrSR3.forEach(addr => {
     it(`Intel I28F00XS5 flash byte at (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = new Z88TestMachine();
+      const m = create();
       const mem = m.memory;
-      const memt = mem as IZ88BankedMemoryTestSupport;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
-      const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+      const i28F004S5 = m.cards.intelFlash(0x8_0000);
       // --- Insert 512K card in slot 2 (reset to FFh)
       mem.insertCard(2, i28F004S5);
 
       // bind bottom bank of slot 2 into logical address space (SR3)
-      m.blinkDevice.setSR3(0x80);
+      m.blink.setSR3(0x80);
 
       const value = m.memory.readMemory(addr);
       expect(value).toBe(0xff);
@@ -171,12 +165,11 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // --------------------------------------------------------------------------------------
 
     // --- Create the machine
-    const m = new Z88TestMachine();
+    const m = create();
     const mem = m.memory;
-    const memt = mem as IZ88BankedMemoryTestSupport;
 
     // --- Create a 512K Intel 28F004S5 Flash Card
-    const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+    const i28F004S5 = m.cards.intelFlash(0x8_0000);
     // --- Insert 512K card in slot 1 (reset to FFh)
     mem.insertCard(1, i28F004S5);
 
@@ -184,7 +177,7 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // Blow byte 0x55 at address 0x0001 (bottom of sector 0 of slot 1), from bits 1111 1111 -> 0101 0101
     // --------------------------------------------------------------------------------------
     // bind bottom bank of slot 1 (0x40) into logical address space (SR3)
-    m.blinkDevice.setSR3(0x40);
+    m.blink.setSR3(0x40);
 
     m.memory.writeMemory(0xc001,0x40); // at (address) execute Blow byte command
     expect(i28F004S5.readArrayModeState()).toBe(false);
@@ -201,7 +194,7 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // Blow byte 0x55 at address 0xffff (top of sector 0 of slot 1), from bits 1111 1111 -> 0101 0101
     // --------------------------------------------------------------------------------------
     // bind top bank of sector 0 in slot 1 (0x43) into logical address space (SR3)
-    m.blinkDevice.setSR3(0x43);
+    m.blink.setSR3(0x43);
     m.memory.writeMemory(0xffff,0x40); // at (top address in SR3, also top of sector) execute Blow byte command
     expect(i28F004S5.readArrayModeState()).toBe(false);
     m.memory.writeMemory(0xffff,0x55); // at (address) blow bits 0b01010101
@@ -226,12 +219,12 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     expect(i28F004S5.readArrayModeState()).toBe(true);
 
     // check previous flashed byte (in bottom address 0x0001 of sector 0) is now reset (from sector format)?
-    m.blinkDevice.setSR3(0x40);
+    m.blink.setSR3(0x40);
     const resetByte1 = m.memory.readMemory(0xc001);
     expect(resetByte1).toBe(0xff);
 
     // check previous flashed byte (in top address 0xffff of sector 0) is now reset (from sector format)?
-    m.blinkDevice.setSR3(0x43);
+    m.blink.setSR3(0x43);
     const resetByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load prev. flashed byte from memory
     expect(resetByte2).toBe(0xff); // which should be 0xff (from 0x55)
   });
@@ -245,12 +238,11 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // --------------------------------------------------------------------------------------
 
     // --- Create the machine
-    const m = new Z88TestMachine();
+    const m = create();
     const mem = m.memory;
-    const memt = mem as IZ88BankedMemoryTestSupport;
 
     // --- Create a 512K Intel 28F004S5 Flash Card
-    const i28F004S5 = new Z88IntelFlashMemoryCard(m, 0x8_0000);
+    const i28F004S5 = m.cards.intelFlash(0x8_0000);
     // --- Insert 512K card in slot 1 (reset to FFh)
     mem.insertCard(1, i28F004S5);
 
@@ -258,7 +250,7 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // Blow byte 0x55 at address 0x0001 (bottom of sector 7 of slot 1), from bits 1111 1111 -> 0101 0101
     // --------------------------------------------------------------------------------------
     // bind bottom bank of top sector slot 1 (0x5C) into logical address space (SR3)
-    m.blinkDevice.setSR3(0x5c);
+    m.blink.setSR3(0x5c);
 
     m.memory.writeMemory(0xc001,0x40); // at (address) execute Blow byte command
     expect(i28F004S5.readArrayModeState()).toBe(false);
@@ -275,7 +267,7 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     // Blow byte 0x55 at address 0xffff (top of sector 7 of slot 1), from bits 1111 1111 -> 0101 0101
     // --------------------------------------------------------------------------------------
     // bind top bank of sector 7 in slot 1 (0x5f) into logical address space (SR3)
-    m.blinkDevice.setSR3(0x5f);
+    m.blink.setSR3(0x5f);
     m.memory.writeMemory(0xffff,0x40); // at (top address in SR3, also top of sector) execute Blow byte command
     expect(i28F004S5.readArrayModeState()).toBe(false);
     m.memory.writeMemory(0xffff,0x55); // at (address) blow bits 0b01010101
@@ -300,12 +292,12 @@ describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
     expect(i28F004S5.readArrayModeState()).toBe(true);
 
     // check previous flashed byte (in bottom address 0x0001 of sector 0) is now reset (from sector format)?
-    m.blinkDevice.setSR3(0x5c);
+    m.blink.setSR3(0x5c);
     const resetByte1 = m.memory.readMemory(0xc001);
     expect(resetByte1).toBe(0xff);
 
     // check previous flashed byte (in top address 0xffff of sector 0) is now reset (from sector format)?
-    m.blinkDevice.setSR3(0x5f);
+    m.blink.setSR3(0x5f);
     const resetByte2 = m.memory.readMemory(0xffff); // back in read-array mode, load prev. flashed byte from memory
     expect(resetByte2).toBe(0xff); // which should be 0xff (from 0x55)
   });

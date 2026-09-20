@@ -103,6 +103,36 @@ far: `_toolArea_`, `_commandPanel_`, `_outputWrapper_`, `_prompt_`, `_sideBarPan
 Prefer `locator.screenshot()` over a clipped page shot: the crop then follows the layout
 instead of being a pixel rectangle that silently goes wrong.
 
+## Driving the emulator itself
+
+Learned scripting the Cambridge Z88 app pass (`scripts/z88-app-pass.cjs`), which drives both backends
+of a machine through the same session and compares them:
+
+- **The EMU window is a second `Page`.** `app.windows().find(w => w.url().includes("?emu"))`. Show
+  and focus it through `app.evaluate` on its `BrowserWindow` before sending keys; the harness hides it.
+- **Choose a machine or model through the application menu**, not the dialogs:
+  `Menu.getApplicationMenu().getMenuItemById("machine_z88_OZ50-wasm").click()` inside
+  `app.evaluate`. Machine-specific items (`z88_reset`, `z88_640_320`, `z88_de_layout`, ...) are there
+  too. **The app rebuilds its menu after state changes**, so an item can be missing or disabled for a
+  moment: poll for it (the pass retries for 10 s) instead of failing on the first look.
+- **Hold emulated keys for several frames.** `keyboard.press` releases at once, and a machine that
+  scans its keyboard on an interrupt (the Z88: every 10 ms) never sees it. `keyboard.down`, wait
+  ~120 ms, `keyboard.up`. Host keys map to machine keys through the machine's `KeyMappings`
+  (Z88: F1 Help, F2 Index, F3 Menu).
+- **The activity bar and the toolbars are found by `aria-label`**: `button[aria-label="Debug"]`,
+  `"Show Memory Panel"`, `"Show/Hide keyboard"`. `getByRole(..., { name })` clicks on them timed out
+  on actionability checks; `locator('button[aria-label="..."]').click({ force: true })` works.
+- **Dialogs use a combobox**: `getByRole("combobox")` opens it, `getByRole("option", { name })` picks,
+  then the button by its text (`Ok`).
+- **The EMU status bar names the model** (a backend twin's name says which: "... - TypeScript") and
+  shows the PC, so reading it
+  after each step proves a rebuild kept the selected backend. A paused machine shows a
+  `Paused (PC: $xxxx)` overlay on the screen - the proof a breakpoint stopped it.
+- **Two runs of the same script are not the same machine run.** Keys and menu clicks land on
+  different emulated frames, so timers, R and the tact counter differ a little between two runs even
+  on one backend. Compare pictures and panel text for equality, and read a difference as a bug only
+  when it is not time-dependent; exact state equality is the lockstep tests' job.
+
 ## Fixture projects live under `~/KliveProjects`, guarded
 
 Screenshots show absolute paths, so a temp-folder fixture puts

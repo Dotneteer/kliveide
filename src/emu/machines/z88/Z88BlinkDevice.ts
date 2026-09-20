@@ -1,4 +1,4 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
+import type { IZ88DeviceHost } from "./IZ88DeviceHost";
 import type { IZ88BlinkTestDevice } from "./IZ88BlinkTestDevice";
 
 import {
@@ -18,7 +18,7 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
    * Initialize the keyboard device and assign it to its host machine.
    * @param machine The machine hosting this device
    */
-  constructor(public readonly machine: IZ88Machine) {}
+  constructor(public readonly machine: IZ88DeviceHost) {}
 
   /**
    * Reset the device to its initial state.
@@ -371,17 +371,21 @@ export class Z88BlinkDevice implements IZ88BlinkDevice, IZ88BlinkTestDevice {
     this.setSR0(this.SR0);
   }
 
-  // --- Tests if the maskable interrupt has been requested
+  /**
+   * Tests if the maskable interrupt has been requested: with INT.GINT set, a pending STA source whose
+   * enable bit is set in INT.
+   *
+   * The two registers do not line up bit for bit (Z88 Developers' Notes, "Blink interrupts"): A19,
+   * FLAP, UART, BTL and KEY share bits 6-2, but STA.TIME (bit 0) is enabled by INT.TIME (bit 1) - bit 0
+   * of INT is GINT - and STA.FLAPOPEN (bit 7) is the flap's state, not a source, while INT.KWAIT (bit 7)
+   * is the snooze control, not an enable. Testing `INT & STA` (as OZvm's `intRequest` does) let a
+   * pending STA.TIME through with INT.TIME off, and an open flap interrupt forever with KWAIT set.
+   * Follow-up F1 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; the WASM core does the same.
+   */
   checkMaskableInterruptRequested(): void {
-    // --- Is the BM_INTGINT flag set?
-    if (this.INT & INTFlags.GINT) {
-      if (this.INT & this.STA) {
-        this.interruptSignalActive = true;
-        return;
-      }
-    }
-
-    // --- No interrupt
-    this.interruptSignalActive = false;
+    const sources = STAFlags.A19 | STAFlags.FLAP | STAFlags.UART | STAFlags.BTL | STAFlags.KEY;
+    this.interruptSignalActive =
+      !!(this.INT & INTFlags.GINT) &&
+      (!!(this.INT & this.STA & sources) || (!!(this.INT & INTFlags.TIME) && !!(this.STA & STAFlags.TIME)));
   }
 }

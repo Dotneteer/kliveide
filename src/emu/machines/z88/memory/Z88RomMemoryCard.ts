@@ -1,11 +1,11 @@
-import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
-import { CardType } from "@emu/machines/z88/memory/CardType";
+import type { IZ88DeviceHost } from "../IZ88DeviceHost";
+import { CardType } from "@emu/machines/z88/z88CardCatalog";
 import { Z88MemoryCardBase } from "./Z88MemoryCardBase";
 
 export class Z88RomMemoryCard extends Z88MemoryCardBase {
   type: CardType = CardType.Rom;
 
-  constructor (public readonly host: IZ88Machine, public readonly size: number) {
+  constructor (public readonly host: IZ88DeviceHost, public readonly size: number) {
     super(host, size);
   }
 

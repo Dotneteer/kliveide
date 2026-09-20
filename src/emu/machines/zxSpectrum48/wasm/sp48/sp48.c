@@ -821,12 +821,24 @@ uint32_t sp48GetCpuBcAlt(void) {
   return z80GetBcAlt();
 }
 
+void sp48SetCpuBcAlt(uint32_t value) {
+  z80SetBcAlt(value);
+}
+
 uint32_t sp48GetCpuDeAlt(void) {
   return z80GetDeAlt();
 }
 
+void sp48SetCpuDeAlt(uint32_t value) {
+  z80SetDeAlt(value);
+}
+
 uint32_t sp48GetCpuHlAlt(void) {
   return z80GetHlAlt();
+}
+
+void sp48SetCpuHlAlt(uint32_t value) {
+  z80SetHlAlt(value);
 }
 
 uint32_t sp48GetCpuIr(void) {
@@ -839,6 +851,10 @@ void sp48SetCpuIr(uint32_t value) {
 
 uint32_t sp48GetCpuWz(void) {
   return z80GetWz();
+}
+
+void sp48SetCpuWz(uint32_t value) {
+  z80SetWz(value);
 }
 
 /* --- The return address of the most recent CALL/RST, for step-out. See the shadow stack

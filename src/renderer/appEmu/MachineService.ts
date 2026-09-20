@@ -15,7 +15,7 @@ import {
 } from "../abstractions/IMachineService";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
@@ -56,6 +56,9 @@ class MachineService implements IMachineService {
     // --- otherwise `this._controller` could end up pointing at a machine whose WASM runtime never
     // --- finished loading, which crashes any code that reads machine state (e.g. EmulatorPanel).
     const generation = ++this._initGeneration;
+
+    // --- A model id that is gone (a saved project, the last session) names its replacement
+    modelId = resolveModelId(machineId, modelId);
 
     // --- Check if machine type is available
     const machineInfo = machineRegistry.find(

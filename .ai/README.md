@@ -7,7 +7,9 @@ This folder stores durable notes for future AI-assisted work in this repository.
 - For creating or updating IDE interactive commands, read
   `interactive-command-notes.md`.
 - For future full-machine WASM backend migrations, read
-  `wasm-v2-machine-migration-guide.md`.
+  `wasm-v2-machine-migration-guide.md`. Its Cambridge Z88 section covers a machine that shares only
+  the Z80 with the Spectrum: extending the shared core, feature-gated test backends, the per-key
+  backend switch and the comparison submenu (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
 - **Before disassembling Z80 code out of a `.nex` file, or writing anything into a
   `.nex.dis` annotation sidecar, read `nex-reverse-engineering-guide.md`.** It carries
   the bank/offset/address model that every offset depends on, the NEX container layout,
