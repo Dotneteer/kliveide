@@ -5,6 +5,7 @@ import {
   DEFAULT_PANEL_FONT_SIZE
 } from "@common/settings/font-sizes";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { DEFAULT_ZOOM_STEP } from "@common/settings/zoom-steps";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_KEYBOARD_LAYOUT,
@@ -14,6 +15,7 @@ import {
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_ZOOM_STEP,
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
@@ -88,6 +90,17 @@ const settingDefinitions: Setting[] = [
     description: "Intensity of the CRT scanline effect (off, 50%, 25%, or 12.5%).",
     type: "string",
     defaultValue: "off",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_ZOOM_STEP,
+    title: "Screen Zoom Steps",
+    description:
+      "Granularity of the emulator screen's fit to its panel: 1 (whole steps), 0.5 (half steps) " +
+      "or 0.25 (quarter steps).",
+    type: "number",
+    defaultValue: DEFAULT_ZOOM_STEP,
     saveWithIde: true,
     boundTo: "emu"
   },

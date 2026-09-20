@@ -2,7 +2,11 @@ import { MutableRefObject, useCallback, useEffect, useRef, useState } from "reac
 import { IMachineController } from "../../abstractions/IMachineController";
 import { useResizeObserver } from "@renderer/core/useResizeObserver";
 import { useGlobalSetting } from "@renderer/core/RendererProvider";
-import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_ZOOM_STEP
+} from "@common/settings/setting-const";
+import { normalizeZoomStep, snapToZoomStep } from "@common/settings/zoom-steps";
 import {
   applyScanlineEffectToCanvas,
   getScanlineDarkening,
@@ -30,6 +34,12 @@ export function useEmulatorScreen(
   reservedElement?: MutableRefObject<HTMLElement | undefined | null>
 ) {
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
+  /*
+   * How fine the fit below is allowed to be: whole, half or quarter multiples of the machine's
+   * screen. Normalized here rather than trusted, because the value comes from a settings file
+   * older versions never wrote.
+   */
+  const zoomStep = normalizeZoomStep(useGlobalSetting(SETTING_EMU_ZOOM_STEP));
 
   const screenElement = useRef<HTMLCanvasElement>();
   const [canvasWidth, setCanvasWidth] = useState(0);
@@ -102,14 +112,32 @@ export function useEmulatorScreen(
       reservedHeight;
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
-    let widthRatio = Math.floor((1 * clientWidth) / width) / 1 / xRatio.current;
+    /*
+     * The fit is snapped *down* to a multiple of the chosen zoom step, so the screen always lands
+     * on a rung the user asked for rather than on whatever fraction the panel happens to allow.
+     * At the coarsest step and a 1:1 aspect ratio this is the whole-pixel `Math.floor` that stood
+     * here before the setting existed.
+     *
+     * The snap must happen on the size the machine's picture actually *occupies*, which is why the
+     * aspect ratio is folded in before it rather than divided out after. The Next's pixels are
+     * half as wide as they are tall (a 640-wide buffer, `xRatio` 0.5): snapping the raw buffer
+     * multiple and then dividing by 0.5 doubles the grid back, so half steps came out as whole
+     * ones and quarter steps as halves. What the user sees stepping is this ratio, so this is what
+     * has to sit on the ladder.
+     */
+    let widthRatio = snapToZoomStep(clientWidth, width * xRatio.current, zoomStep);
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = Math.floor((1 * clientHeight) / height) / 1 / yRatio.current;
+    let heightRatio = snapToZoomStep(clientHeight, height * yRatio.current, zoomStep);
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
-    setCanvasWidth(width * ratio * xRatio.current);
-    setCanvasHeight(height * ratio * yRatio.current);
-  }, [reservedElement, screenArea]);
+    /*
+     * Rounded, because these become the canvas element's `width`/`height` attributes, which are
+     * integers: a fractional step on an axis with an odd size or a non-unit aspect ratio would
+     * otherwise be parsed rather than scaled. The correction is under half a device pixel.
+     */
+    setCanvasWidth(Math.round(width * ratio * xRatio.current));
+    setCanvasHeight(Math.round(height * ratio * yRatio.current));
+  }, [reservedElement, screenArea, zoomStep]);
 
   const updateScreenDimensions = useCallback((): void => {
     const ctrl = controllerRef.current;
@@ -255,6 +283,12 @@ export function useEmulatorScreen(
   useResizeObserver(screenArea, onAvailableSpaceChanged);
   // --- The reserved strip is content-sized, so its height can move independently of the area's
   useResizeObserver(reservedElement, onAvailableSpaceChanged);
+
+  // --- Choosing a different zoom step changes the fit exactly as a resize does, and a paused
+  // --- machine draws no further frames on its own, so the screen is re-rendered here too.
+  useEffect(() => {
+    onAvailableSpaceChanged();
+  }, [onAvailableSpaceChanged, zoomStep]);
 
   return {
     screenElement,
