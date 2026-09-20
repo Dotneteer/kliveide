@@ -7,7 +7,8 @@ import {
   Z88_CHANGE_RAM_DIALOG,
   Z88_EXPORT_CARD_DIALOG,
   Z88_INSERT_CARD_DIALOG,
-  Z88_REMOVE_CARD_DIALOG
+  Z88_REMOVE_CARD_DIALOG,
+  JOYSTICK_BINDINGS_DIALOG
 } from "@common/messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
@@ -35,8 +36,13 @@ import {
   Z88ChangeRamDialog,
   Z88ChangeRamDialogResult
 } from "./z88/changeRam/Z88ChangeRamDialog";
+import {
+  JoystickBindingsDialog,
+  JoystickBindingsDialogResult
+} from "./joystick/JoystickBindingsDialog";
 
 export type EmuDialogResult =
+  | JoystickBindingsDialogResult
   | FirstStartDialogResult
   | CreateDiskDialogResult
   | Z88RemoveCardDialogResult
@@ -51,6 +57,12 @@ export type EmuDialogRenderer = (
 ) => ReactElement;
 
 export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
+  [JOYSTICK_BINDINGS_DIALOG]: (_, controls) => (
+    <JoystickBindingsDialog
+      onSave={(result) => controls.close(result)}
+      onClose={controls.cancel}
+    />
+  ),
   [FIRST_STARTUP_DIALOG_EMU]: (_, controls) => (
     <FirstStartDialog onResolve={(result) => controls.close(result)} onClose={controls.cancel} />
   ),

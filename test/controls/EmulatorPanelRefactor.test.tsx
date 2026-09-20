@@ -198,7 +198,9 @@ describe("EmulatorPanel", () => {
       getGlobalSetting: () => true,
       useGlobalSetting: () => true,
       useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
-      useStore: () => store
+      useStore: () => store,
+      // --- EmulatorPanel mounts useEmulatorMouse, which dispatches the mouse-capture flag.
+      useDispatch: () => vi.fn()
     }));
     vi.doMock("@renderer/core/MainApi", () => ({
       useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
@@ -345,7 +347,9 @@ describe("EmulatorPanel", () => {
         useGlobalSetting: () => false,
         useSelector: (selector: (state: unknown) => unknown) =>
           useSyncExternalStore(store.subscribe, () => selector(store.getState())),
-        useStore: () => store
+        useStore: () => store,
+        // --- EmulatorPanel mounts useEmulatorMouse, which dispatches the capture flag.
+        useDispatch: () => vi.fn()
       };
     });
     vi.doMock("@renderer/core/MainApi", () => ({
@@ -484,7 +488,9 @@ describe("EmulatorPanel", () => {
       getGlobalSetting: () => false,
       useGlobalSetting: () => false,
       useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
-      useStore: () => store
+      useStore: () => store,
+      // --- EmulatorPanel mounts useEmulatorMouse, which dispatches the mouse-capture flag.
+      useDispatch: () => vi.fn()
     }));
     vi.doMock("@renderer/core/MainApi", () => ({
       useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })
@@ -594,7 +600,9 @@ describe("EmulatorPanel machine tool area", () => {
       getGlobalSetting: () => false,
       useGlobalSetting: () => false,
       useSelector: (selector: (state: unknown) => unknown) => selector(store.getState()),
-      useStore: () => store
+      useStore: () => store,
+      // --- EmulatorPanel mounts useEmulatorMouse, which dispatches the mouse-capture flag.
+      useDispatch: () => vi.fn()
     }));
     vi.doMock("@renderer/core/MainApi", () => ({
       useMainApi: () => ({ saveBinaryFile: vi.fn(), saveDiskChanges: vi.fn() })

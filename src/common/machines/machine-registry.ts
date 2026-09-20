@@ -6,6 +6,8 @@ import {
   MI_SPECTRUM_128,
   MI_Z88,
   MF_TAPE_SUPPORT,
+  MF_MOUSE_SUPPORT,
+  MF_JOYSTICK_SUPPORT,
   MF_INJECT_SUPPORT,
   MI_SPECTRUM_3E,
   MC_SCREEN_FREQ,
@@ -325,6 +327,10 @@ export const machineRegistry: MachineInfo[] = [
       // --- inject-into-memory path, so the Inject button is not offered for it.
       [MF_INJECT_SUPPORT]: false,
       [MF_ULA]: true,
+      // --- The only machine Klive emulates a pointing device for: the Next's Kempston mouse.
+      [MF_MOUSE_SUPPORT]: true,
+      // --- ...and the only one with joystick connectors of its own.
+      [MF_JOYSTICK_SUPPORT]: true,
       [MF_ROM]: 7,
       [MF_BANK]: 224,
       [MF_ALLOW_CLOCK_MULTIPLIER]: false,

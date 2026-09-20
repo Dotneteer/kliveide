@@ -208,6 +208,7 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.Z88_INSERT_CARD_DIALOG,
       dialogIds.Z88_EXPORT_CARD_DIALOG,
       dialogIds.Z88_CHANGE_RAM_DIALOG,
+      dialogIds.JOYSTICK_BINDINGS_DIALOG,
       dialogIds.ABOUT_DIALOG
     ];
 

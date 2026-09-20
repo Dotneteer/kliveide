@@ -146,6 +146,11 @@ export const setScreenRecordingStateAction: ActionCreator = (
   payload: { id: recordingState, value: file, text: fps }
 });
 
+export const setMouseCapturedAction: ActionCreator = (captured: boolean) => ({
+  type: "SET_MOUSE_CAPTURED",
+  payload: { flag: captured }
+});
+
 export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_SCREEN_RECORDING_AVAILABLE",
   payload: { flag: available }

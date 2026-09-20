@@ -4,12 +4,14 @@ import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { MutableRefObject, useCallback } from "react";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { MF_MOUSE_SUPPORT, MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
+import { requestMouseCapture } from "@renderer/features/emulator/mouseCaptureBridge";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_MOUSE_CAPTURE,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_STAY_ON_TOP
@@ -43,6 +45,9 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
     state !== MachineControllerState.Stopped &&
     state !== MachineControllerState.Paused;
   const tapeSupport = machineInfo?.features?.[MF_TAPE_SUPPORT] ?? false;
+  const mouseSupport = machineInfo?.features?.[MF_MOUSE_SUPPORT] ?? false;
+  const mouseCaptureEnabled = !!useGlobalSetting(SETTING_EMU_MOUSE_CAPTURE);
+  const mouseCaptured = useSelector((s) => s.emulatorState?.mouseCaptured ?? false);
 
   const saveProject = useCallback(async () => {
     await mainApi.saveProject();
@@ -72,6 +77,38 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_INSTANT_SCREEN, !showInstantScreen);
         }}
       />
+      {mouseSupport && (
+        <>
+          <ToolbarSeparator />
+          {/*
+            * Captures the mouse; it cannot release it. While the pointer is locked every mouse
+            * event goes to the locked element, so this button is unclickable until the user presses
+            * Esc - which is why the title names Esc instead of promising a toggle. The icon and the
+            * lit state still report which way round things are.
+            *
+            * The click has to reach the screen synchronously: pointer lock needs the transient
+            * activation of this very event, so the request goes through the bridge rather than the
+            * store.
+            */}
+          <IconButton
+            iconName={mouseCaptured ? "mouse" : "mouse-off"}
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton"
+            selected={mouseCaptured}
+            enable={mouseCaptureEnabled}
+            title={
+              mouseCaptureEnabled
+                ? mouseCaptured
+                  ? "Mouse captured \u2013 press Esc to release"
+                  : "Capture the mouse (Esc releases it)"
+                : "Mouse capture is switched off in the Machine | Mouse menu"
+            }
+            clicked={() => {
+              requestMouseCapture();
+            }}
+          />
+        </>
+      )}
       <ToolbarSeparator />
       <IconButton
         iconName="keyboard"

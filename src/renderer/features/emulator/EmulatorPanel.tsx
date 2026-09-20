@@ -12,11 +12,19 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { machineEmuToolRegistry } from "@renderer/appEmu/tool-registry";
 import { setClockMultiplierAction } from "@common/state/actions";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_EMU_FAST_LOAD, SETTING_EMU_SHOW_INSTANT_SCREEN } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_MOUSE_SHOW_POINTER,
+  SETTING_EMU_SHOW_INSTANT_SCREEN
+} from "@common/settings/setting-const";
 import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext";
 import { useEmulatorScreen } from "./useEmulatorScreen";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
+import { useEmulatorMouse } from "./useEmulatorMouse";
+import { useEmulatorJoystick } from "./useEmulatorJoystick";
+import { CapturedPointer } from "./CapturedPointer";
+import { normalizeMousePointerDisplay } from "@common/settings/mouse-capture";
 import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
 import { applySectorChangesToDiskContents } from "@emu/machines/disk/disk-changes";
@@ -90,8 +98,23 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Extracted audio hook
   const { beeperRenderer, initAudio } = useEmulatorAudio();
 
+  // --- Extracted mouse hook. It must be mounted *before* the keyboard hook: both listen for
+  // --- `keydown` on `window`, and the mouse hook's Ctrl+M handler relies on running first so it
+  // --- can stop the chord from also reaching the machine's M key.
+  const capturedPointer = useRef<HTMLDivElement>(null);
+  const { captured, captureRefused, requestCapture } = useEmulatorMouse(screenElement, {
+    indicatorRef: capturedPointer,
+    controllerRef
+  });
+  const showCapturedPointer =
+    normalizeMousePointerDisplay(useGlobalSetting(SETTING_EMU_MOUSE_SHOW_POINTER)) !== "never";
+
+  // --- Extracted joystick hook. Like the mouse hook it must come *before* the keyboard hook: it
+  // --- claims the host keys bound to a connector, and stops those events reaching anything else.
+  const { claimedCodes } = useEmulatorJoystick(controllerRef);
+
   // --- Extracted keyboard hook
-  const { setKeyData } = useEmulatorKeyboard(controllerRef, keyStatusSet);
+  const { setKeyData } = useEmulatorKeyboard(controllerRef, keyStatusSet, claimedCodes);
 
   // --- Sends disk changes to the main process
   const saveDiskChanges = useCallback(async (diskIndex: number, changes: SectorChanges): Promise<void> => {
@@ -376,13 +399,21 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               width: `${canvasWidth ?? 0}px`,
               height: `${canvasHeight ?? 0}px`
             }}
-            onClick={() => setShowOverlay(true)}
+            // --- Capturing the mouse takes over this click, but only when the user has
+            // --- asked for it: with capture off, the click keeps bringing the overlay
+            // --- back as it always has.
+            onClick={() => {
+              if (!requestCapture()) setShowOverlay(true);
+            }}
           >
             <EmulatorOverlay
               overlay={overlay}
               showOverlay={showOverlay}
               onDismiss={() => setShowOverlay(false)}
+              mouseCaptured={captured}
+              mouseCaptureRefused={captureRefused}
             />
+            {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
             <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
           </div>
           {machineTools && (

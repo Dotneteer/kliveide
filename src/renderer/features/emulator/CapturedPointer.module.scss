@@ -1,0 +1,83 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The captured-pointer indicator.
+ *
+ * The layer must not be part of `.overlayStack`: that is a flex column of pills anchored top-left
+ * whose children re-enable pointer events, so a marker placed in it could not be positioned freely
+ * and - worse - would swallow the very click that starts a capture. This is its own layer, inert
+ * all the way down.
+ */
+.layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.pointer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--space-4) * 1.5);
+  height: calc(var(--space-4) * 1.5);
+  /*
+   * `transform` carries the position, so the hot spot has to be the centre of the ring rather than
+   * its top-left corner: the translation the hook writes is prepended to this offset.
+   */
+  margin-left: calc(var(--space-4) * -0.75);
+  margin-top: calc(var(--space-4) * -0.75);
+  border: 2px solid var(--accent-text);
+  border-radius: 50%;
+  opacity: 0.85;
+  transition: opacity 120ms ease-out;
+
+
+  /* The crosshair: two hairlines through the centre, so a single pixel can still be aimed at. */
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    background-color: var(--accent-text);
+  }
+
+  &::before {
+    left: 50%;
+    top: -50%;
+    width: 1px;
+    height: 200%;
+    margin-left: -0.5px;
+  }
+
+  &::after {
+    top: 50%;
+    left: -50%;
+    height: 1px;
+    width: 200%;
+    margin-top: -0.5px;
+  }
+
+  /*
+   * A held button fills the ring. Until the packets are wired up this is the only confirmation that
+   * a click reached the emulator at all, and it stays useful afterwards whenever nothing on the
+   * machine happens to be reading the buttons.
+   */
+  &:not([data-buttons="0"]) {
+    background-color: var(--accent-solid);
+    opacity: 1;
+  }
+
+  /*
+   * Software is reading the mouse ports, so it is drawing its own pointer: ours would be a second
+   * one drifting away from it. Faded rather than unmounted, so it returns without a jump when the
+   * program stops polling.
+   *
+   * **Last on purpose.** It has the same specificity as the button rule above, so written earlier
+   * it lost to it - and a hidden indicator reappeared for exactly as long as a button was held,
+   * which reads as "the pointer only shows while I click".
+   */
+  &[data-consumed="true"] {
+    opacity: 0;
+  }
+}

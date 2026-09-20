@@ -78,16 +78,22 @@ export class MouseDevice implements IGenericDevice<IZxNextMachine> {
     this.wheelZ = (this.wheelZ + (nibble & 0x08 ? nibble | 0xf0 : nibble)) & 0xff;
   }
 
+  /** Reads of any mouse port; see `IZxNextHostInputMachine.mousePortReadCount`. */
+  portReads = 0;
+
   readPortFbdf(): number {
+    this.portReads++;
     return this.xPos;
   }
 
   readPortFfdf(): number {
+    this.portReads++;
     return this.yPos;
   }
 
   /** zxnext.vhd ~3557: wheel & '1' & not middle & not left & not right (0 = pressed). */
   readPortFadf(): number {
+    this.portReads++;
     return (
       ((this.wheelZ & 0x0f) << 4) |
       0x08 |

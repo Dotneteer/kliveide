@@ -97,6 +97,7 @@ export interface ActionTypes {
   SET_WATCHES: null;
 
   // --- Screen recording
+  SET_MOUSE_CAPTURED: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
   SET_SCREEN_RECORDING_STATE: null;
   SET_SCREEN_RECORDING_QUALITY: null;

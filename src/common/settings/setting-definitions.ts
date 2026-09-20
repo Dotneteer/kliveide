@@ -7,6 +7,12 @@ import {
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { DEFAULT_ZOOM_STEP } from "@common/settings/zoom-steps";
 import {
+  DEFAULT_MOUSE_CAPTURE_ENABLED,
+  DEFAULT_MOUSE_SENSITIVITY,
+  DEFAULT_MOUSE_POINTER_DISPLAY
+} from "@common/settings/mouse-capture";
+import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
+import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
@@ -16,6 +22,10 @@ import {
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_EMU_ZOOM_STEP,
+  SETTING_EMU_MOUSE_CAPTURE,
+  SETTING_EMU_MOUSE_SHOW_POINTER,
+  SETTING_EMU_MOUSE_SENSITIVITY,
+  SETTING_EMU_JOYSTICK_BINDINGS,
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
@@ -101,6 +111,50 @@ const settingDefinitions: Setting[] = [
       "or 0.25 (quarter steps).",
     type: "number",
     defaultValue: DEFAULT_ZOOM_STEP,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_MOUSE_CAPTURE,
+    title: "Capture the mouse",
+    description:
+      "Let the emulator take the host mouse, so it can drive the machine's own mouse. While " +
+      "captured the host cursor is hidden; press Esc to release it.",
+    type: "boolean",
+    defaultValue: DEFAULT_MOUSE_CAPTURE_ENABLED,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_MOUSE_SHOW_POINTER,
+    title: "Show the captured pointer",
+    description:
+      "When to draw Klive's own pointer over the screen while the mouse is captured: always, " +
+      "only while no program on the machine reads the mouse, or never.",
+    type: "string",
+    defaultValue: DEFAULT_MOUSE_POINTER_DISPLAY,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_MOUSE_SENSITIVITY,
+    title: "Mouse sensitivity",
+    description:
+      "How far the machine's pointer travels for a given movement of the host mouse. Separate " +
+      "from the machine's own DPI setting, which software controls.",
+    type: "number",
+    defaultValue: DEFAULT_MOUSE_SENSITIVITY,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_JOYSTICK_BINDINGS,
+    title: "Joystick bindings",
+    description:
+      "Which host key drives each pin of the machine's two joystick connectors, and whether each " +
+      "connector is driven by the keyboard, a gamepad, or nothing.",
+    type: "object",
+    defaultValue: DEFAULT_JOYSTICK_BINDINGS,
     saveWithIde: true,
     boundTo: "emu"
   },

@@ -8,7 +8,16 @@ import { useSelector } from "@renderer/core/RendererProvider";
 
 export function useEmulatorKeyboard(
   controllerRef: MutableRefObject<IMachineController>,
-  keyStatusSet?: (code: number, down: boolean) => void
+  keyStatusSet?: (code: number, down: boolean) => void,
+  /**
+   * Host keys a joystick connector has taken, from `useEmulatorJoystick`.
+   *
+   * Without this, one `ArrowUp` would press the joystick's UP pin *and* the machine's cursor key -
+   * and in a Sinclair or Cursor joystick mode the core would press a third key on top, because
+   * those modes make the pins press membrane keys themselves. A ref rather than a prop value so a
+   * change of bindings does not re-bind the listeners below.
+   */
+  claimedCodes?: MutableRefObject<Set<string>>
 ) {
   const keyMappings = useSelector((s) => s.keyMappings);
 
@@ -50,27 +59,21 @@ export function useEmulatorKeyboard(
   }, []);
 
   const handleMappedKey = useCallback((code: string, keyMapping: KeyMapping, isDown: boolean): void => {
+    // --- A key bound to a joystick pin belongs to the joystick and never to the keyboard matrix.
+    if (claimedCodes?.current?.has(code)) return;
     const mapping = keyMapping?.[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
-    if (typeof mapping === "string") {
-      machine?.setKeyStatus(keyCodeSet.current[mapping], isDown);
-      keyStatusSet?.(keyCodeSet.current[mapping], isDown);
-    } else {
-      if (mapping.length > 0) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[0]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[0]], isDown);
-      }
-      if (mapping.length > 1) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[1]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[1]], isDown);
-      }
-      if (mapping.length > 2) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[2]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[2]], isDown);
-      }
+    // --- A mapping is one key or a modifier plus a key. Iterating rather than unrolling a branch
+    // --- per position keeps this from drifting out of step with `KeySet` again: the arity lives in
+    // --- the type and in the mapping-file parser, not here.
+    const keys = typeof mapping === "string" ? [mapping] : mapping;
+    for (const key of keys) {
+      const keyCode = keyCodeSet.current[key];
+      machine?.setKeyStatus(keyCode, isDown);
+      keyStatusSet?.(keyCode, isDown);
     }
-  }, [controllerRef, keyStatusSet]);
+  }, [claimedCodes, controllerRef, keyStatusSet]);
 
   const handleKey = useCallback((
     e: KeyboardEvent,

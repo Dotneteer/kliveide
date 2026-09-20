@@ -7,6 +7,10 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { IZxNextIdeMachine } from "./IZxNextIdeMachine";
+import type {
+  IZxNextHostInputMachine,
+  JoystickConnector
+} from "./IZxNextHostInputMachine";
 import type { MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
@@ -77,7 +81,10 @@ import { AUDIO_SAMPLE_RATE } from "../machine-props";
 /**
  * The common core functionality of the ZX Spectrum Next virtual machine.
  */
-export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZxNextIdeMachine {
+export class ZxNextMachine
+  extends Z80NMachineBase
+  implements IZxNextMachine, IZxNextIdeMachine, IZxNextHostInputMachine
+{
   /**
    * The unique identifier of the machine type
    */
@@ -1536,6 +1543,32 @@ export class ZxNextMachine extends Z80NMachineBase implements IZxNextMachine, IZ
    */
   setKeyStatus(key: number, isDown: boolean): void {
     this.keyboardDevice.setKeyStatus(key, isDown);
+  }
+
+  /**
+   * Holds the given 12 bits on a joystick connector (`IZxNextHostInputMachine`).
+   *
+   * The same contract the WASM machine implements, so the host-input hooks work on either core and
+   * the Compatibility model is not silently input-dead.
+   */
+  setJoystickState(side: JoystickConnector, bits: number): void {
+    if (side === "left") this.joystickDevice.setLeftState(bits);
+    else this.joystickDevice.setRightState(bits);
+  }
+
+  /** Delivers one PS/2 mouse packet (`IZxNextHostInputMachine`). */
+  mousePacket(buttons: number, dx: number, dy: number, dz: number): void {
+    this.mouseDevice.receivePacket(buttons, dx, dy, dz);
+  }
+
+  /** How many times the CPU has read a mouse port (`IZxNextHostInputMachine`). */
+  mousePortReadCount(): number {
+    return this.mouseDevice.portReads;
+  }
+
+  /** The core's own DPI multiplier (`IZxNextHostInputMachine`). */
+  mouseDeltaScale(): number {
+    return [2, 1, 0.5, 0.25][this.mouseDevice.dpi & 0x03];
   }
 
   /**

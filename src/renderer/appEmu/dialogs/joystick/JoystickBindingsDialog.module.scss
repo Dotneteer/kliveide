@@ -1,0 +1,96 @@
+@use "@styles/core.scss" as *;
+
+.columns {
+  display: flex;
+  gap: var(--space-5);
+  align-items: flex-start;
+}
+
+.column {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.columnHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.sideName {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sourceRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.sourceLabel {
+  color: var(--text-secondary);
+}
+
+.select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.bindings {
+  width: 100%;
+  border-collapse: collapse;
+
+  td {
+    padding: var(--space-0_5) var(--space-1);
+    vertical-align: middle;
+  }
+}
+
+/* `ch`, not px: the column holds pin names, so it should scale with the type (mandate M2). */
+.pin {
+  width: 18ch;
+  color: var(--text-secondary);
+}
+
+.note {
+  color: var(--text-secondary);
+  font-size: var(--font-size-200);
+}
+
+%keyButton {
+  width: 100%;
+  padding: var(--space-0_5) var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.key {
+  @extend %keyButton;
+}
+
+/* Listening is a state the user must notice: the accent says "this row has your keyboard". */
+.keyListening {
+  @extend %keyButton;
+  border-color: var(--accent-border);
+  color: var(--accent-text);
+}
+
+.linkButton {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent-text);
+  cursor: pointer;
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
