@@ -1286,7 +1286,7 @@ both cores).
 - **`$0B` I/O mode** was stored only: a connector in I/O mode reports its six raw pins (C B U D L R)
   and the key joystick stops. Not modelled: pin 7 output, the UART on the joystick pins.
 - **A reset no longer releases the sticks** (they are physical); the TS joystick reset had cleared them.
-- Harness: `joystick(side, ...buttons)`. The app has no joystick input yet (`src/emu/plan.md`).
+- Harness: `joystick(side, ...buttons)`. The app has no joystick input yet (`.plans/ZX_SPECTRUM_NEXT_JOYSTICK_MOUSE_PLAN.md`).
 
 ### B92 – Mouse: reset cleared the counters; reverse at read time; DPI on the signed delta; `$DF` alias – FIXED 2026-09-19
 
@@ -1303,7 +1303,7 @@ cores).
   `test/zxnext/PortEnableGating.test.ts` asserted the opposite; that case was removed.
 - The host API is one PS/2 packet (`receivePacket` / `zxnextMousePacket`: buttons, dx, dy, wheel),
   replacing `addDelta` / `addWheelDelta` / `setButtons` and their exports. Harness: `mouse(...)`. The
-  app has no mouse input yet (`src/emu/plan.md`).
+  app has no mouse input yet (`.plans/ZX_SPECTRUM_NEXT_JOYSTICK_MOUSE_PLAN.md`).
 
 ### B93 – +3 FDC ports: TS answered from a uPD765 the Next does not have; `$D9` taken in the NMI – FIXED 2026-09-19
 

@@ -114,4 +114,80 @@ describe("useEmulatorScreen", () => {
     expect(screenDrawImage).toHaveBeenCalledTimes(1);
     expect(getContext).toHaveBeenCalled();
   });
+
+  /*
+   * The zoom step is a step of the ratio the *user sees*, not of the machine's raw buffer.
+   *
+   * The Next draws a 640-pixel-wide buffer whose pixels are half as wide as they are tall
+   * (`getAspectRatio` -> [0.5, 1]), so its picture occupies 320 screen pixels at 1x. A fit that
+   * snapped the raw 640 multiple and divided the aspect out afterwards put the rungs back on whole
+   * numbers - half steps behaved exactly like whole ones on every Next machine.
+   */
+  describe("zoom steps on a machine whose pixels are not square", () => {
+    const renderWithZoomStep = async (zoomStep: unknown, hostWidth: number) => {
+      vi.doMock("@renderer/core/RendererProvider", () => ({
+        useGlobalSetting: (id: string) => (id === "emuOptions.zoomStep" ? zoomStep : "off")
+      }));
+      vi.doMock("@renderer/core/useResizeObserver", () => ({
+        useResizeObserver: vi.fn()
+      }));
+
+      const controllerRef = {
+        current: {
+          machine: {
+            getAspectRatio: () => [0.5, 1] as [number, number],
+            getBufferStartOffset: () => 0,
+            getPixelBuffer: () => new Uint32Array(640 * 256),
+            screenHeightInPixels: 256,
+            screenWidthInPixels: 640
+          }
+        }
+      };
+
+      const hostDiv = document.createElement("div");
+      Object.defineProperty(hostDiv, "offsetWidth", { value: hostWidth });
+      // --- Generous, so the width is always the axis that binds
+      Object.defineProperty(hostDiv, "offsetHeight", { value: 4000 });
+      document.body.appendChild(hostDiv);
+
+      const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
+      const { result } = renderHook(() =>
+        useEmulatorScreen(
+          { current: hostDiv } as unknown as MutableRefObject<HTMLDivElement>,
+          controllerRef as any
+        )
+      );
+
+      const screenCanvas = document.createElement("canvas");
+      result.current.screenElement.current = screenCanvas;
+      act(() => {
+        result.current.updateScreenDimensions();
+      });
+      // --- Width in screen pixels / 320 is the ratio the user perceives
+      return { canvasWidth: result.current.canvasWidth, canvasHeight: result.current.canvasHeight };
+    };
+
+    it("reaches the half rungs a 640-wide buffer used to skip", async () => {
+      // --- 500px of panel fits 1.5x of the 320px-wide picture (480px), not 2x (640px)
+      const { canvasWidth, canvasHeight } = await renderWithZoomStep(0.5, 500);
+      expect(canvasWidth).toBe(480);
+      expect(canvasHeight).toBe(384);
+    });
+
+    it("reaches the quarter rungs too", async () => {
+      // --- 420px fits 1.25x (400px) but not 1.5x
+      const { canvasWidth } = await renderWithZoomStep(0.25, 420);
+      expect(canvasWidth).toBe(400);
+    });
+
+    it("still snaps to whole multiples of the picture at the coarsest step", async () => {
+      const { canvasWidth } = await renderWithZoomStep(1, 500);
+      expect(canvasWidth).toBe(320);
+    });
+
+    it("falls back to half steps when the setting is missing", async () => {
+      const { canvasWidth } = await renderWithZoomStep(undefined, 500);
+      expect(canvasWidth).toBe(480);
+    });
+  });
 });

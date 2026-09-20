@@ -19,6 +19,7 @@ import {
   PANEL_FONT_SIZES,
   type FontSizeOption
 } from "@common/settings/font-sizes";
+import { ZOOM_STEPS, normalizeZoomStep } from "@common/settings/zoom-steps";
 import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { mainStore } from "./main-store";
 import {
@@ -70,6 +71,7 @@ import {
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_ZOOM_STEP,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_NAV_RECORD_TAB_SWITCH,
   SETTING_EDITOR_FONT_SIZE,
@@ -122,6 +124,7 @@ const STEP_OUT = "step_out";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
 const SCANLINE_EFFECT = "scanline_effect";
+const EMU_ZOOM_STEP = "emu_zoom_step";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
 const RECORDING_MENU = "recording_menu";
@@ -516,6 +519,23 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     }
   );
 
+  // --- The emulator screen's zoom steps. The screen is auto-fitted to its panel and the fit is
+  // --- snapped down to a multiple of this step, so the menu offers the granularity of that snap
+  // --- (whole/half/quarter), not a zoom level. The ladder lives in @common/settings/zoom-steps,
+  // --- which the renderer reads too.
+  const currentZoomStep = normalizeZoomStep(getSettingValue(SETTING_EMU_ZOOM_STEP));
+  const zoomStepMenu: MenuItemConstructorOptions[] = ZOOM_STEPS.map((s) => ({
+    id: `${EMU_ZOOM_STEP}_${s.value}`,
+    label: s.label,
+    type: "checkbox",
+    checked: currentZoomStep === s.value,
+    click: async () => {
+      setSettingValue(SETTING_EMU_ZOOM_STEP, s.value);
+      await logEmuEvent(`Screen zoom steps set to ${s.label}`);
+      await saveKliveProject();
+    }
+  }));
+
   // --- Machine-specific view menu items
   let specificViewMenus: MenuItemConstructorOptions[] = [];
   if (machineMenus && machineMenus.viewItems) {
@@ -579,6 +599,14 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN),
+      {
+        id: EMU_ZOOM_STEP,
+        label: "Screen Zoom Steps",
+        // --- An emulator-window setting, shown like every other one: only while that window has
+        // --- the focus (what createBooleanSettingsMenu does for `boundTo: "emu"`).
+        visible: isEmuWindowFocused(),
+        submenu: zoomStepMenu
+      },
       createBooleanSettingsMenu(SETTING_EMU_STAY_ON_TOP),
       createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR),
       createBooleanSettingsMenu(SETTING_IDE_SIDEBAR_TO_RIGHT),

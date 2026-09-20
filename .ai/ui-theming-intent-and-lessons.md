@@ -1491,6 +1491,36 @@ verification failure recorded above.
 - **Then throw it away.** It is a design artefact, not evidence, and leaving it around invites the
   next session to treat it as a reference.
 
+## The Emulator Screen Is Fitted, Not Zoomed
+
+The machine's picture has no zoom level the user sets. `useEmulatorScreen` measures the panel's
+content box, takes the largest multiple of the machine's own screen that still fits on each axis,
+and uses the smaller of the two. **The user-facing knob is the granularity of that snap**, which is
+why View | Screen Zoom Steps offers *steps* (whole / half / quarter, default half) and names them
+with their rungs inline — `Half Steps (1x, 1.5x, 2x)`. A label that said only "Half" would leave the
+reader guessing half of *what*, and the menu is the only place it is ever explained. The ladder and
+the arithmetic live in `common/settings/zoom-steps.ts` so the menu and the renderer cannot drift;
+whole steps are that hook's original `Math.floor`, expressed as the coarsest rung rather than as a
+separate path.
+
+Two things follow for any later change here:
+
+- **Only whole steps are pixel-exact on every display.** Half steps are exact at a device pixel
+  ratio of 2, quarter steps only at 4; below that the intermediate rungs resample and read softer.
+  That is the trade the finer steps exist to offer, so keep the whole-step option listed first as
+  the one that never resamples — do not "improve" the default into a continuous fit.
+- **Snap the ratio the user sees, not the machine's buffer.** `getAspectRatio` is not decoration:
+  the Next's buffer is 640 pixels wide at an `xRatio` of 0.5, so its picture occupies 320. Snapping
+  the raw buffer multiple and dividing the aspect out afterwards multiplies the grid by `1/xRatio`
+  — half steps came out as whole ones on every Next machine, and the plain Spectrum (`[1, 1]`) was
+  the one place the bug could not be seen. Fold the aspect ratio in *before* the snap. Any later
+  quantization of this fit has the same trap waiting.
+- **A fractional rung must be rounded before it reaches the canvas.** `canvasWidth`/`canvasHeight`
+  become the element's `width`/`height` *attributes*, which are integers; an odd screen size or a
+  non-unit aspect ratio can land a half or quarter step on a fraction, and an attribute that has to
+  be parsed rather than scaled is a bug that only shows on one machine. Round at the point of
+  setting state, never at the point of drawing.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`
