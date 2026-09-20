@@ -102,7 +102,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- `keydown` on `window`, and the mouse hook's Ctrl+M handler relies on running first so it
   // --- can stop the chord from also reaching the machine's M key.
   const capturedPointer = useRef<HTMLDivElement>(null);
-  const { captured, captureRefused, requestCapture } = useEmulatorMouse(screenElement, {
+  const { captured, captureRefused } = useEmulatorMouse(screenElement, {
     indicatorRef: capturedPointer,
     controllerRef
   });
@@ -399,12 +399,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               width: `${canvasWidth ?? 0}px`,
               height: `${canvasHeight ?? 0}px`
             }}
-            // --- Capturing the mouse takes over this click, but only when the user has
-            // --- asked for it: with capture off, the click keeps bringing the overlay
-            // --- back as it always has.
-            onClick={() => {
-              if (!requestCapture()) setShowOverlay(true);
-            }}
+            /*
+             * A click on the screen restores the overlay and nothing else.
+             *
+             * Capturing the mouse from here was tried and removed: clicking the picture is what
+             * someone does to bring the status pill back or simply to focus the window, and losing
+             * the cursor to the machine for it is startling. Capture is now always something asked
+             * for explicitly - the toolbar button or Ctrl+M.
+             */
+            onClick={() => setShowOverlay(true)}
           >
             <EmulatorOverlay
               overlay={overlay}

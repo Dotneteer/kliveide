@@ -16,15 +16,15 @@ describe("MouseCaptureOverlay", () => {
     expect(screen.getByText(/Esc/)).toBeInTheDocument();
   });
 
-  it("asks for another click after a refusal, rather than looking dead", () => {
+  it("asks the user to try again after a refusal, rather than looking dead", () => {
     // --- The Esc lockout: a capture straight after an Esc release is rejected for about a second.
     render(<MouseCaptureOverlay captured={false} refused={true} />);
-    expect(screen.getByText(/click again/i)).toBeInTheDocument();
+    expect(screen.getByText(/try again/i)).toBeInTheDocument();
   });
 
   it("prefers the captured message when a refusal is still fading", () => {
     render(<MouseCaptureOverlay captured={true} refused={true} />);
     expect(screen.getByText(/Esc/)).toBeInTheDocument();
-    expect(screen.queryByText(/click again/i)).toBeNull();
+    expect(screen.queryByText(/try again/i)).toBeNull();
   });
 });

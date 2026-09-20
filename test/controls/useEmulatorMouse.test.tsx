@@ -228,7 +228,7 @@ describe("useEmulatorMouse", () => {
     expect(result.current.captureRefused).toBe(true);
   });
 
-  it("attempts nothing while capture is switched off, so the caller can fall back", () => {
+  it("attempts nothing while capture is switched off, and says so", () => {
     mocks.captureEnabled = false;
     const { result } = renderHook(() => useEmulatorMouse(targetRef));
 
@@ -237,7 +237,7 @@ describe("useEmulatorMouse", () => {
       attempted = result.current.requestCapture();
     });
 
-    // --- False is what keeps the screen's click showing the overlay as it always did.
+    // --- False tells the toolbar's bridge that nothing was attempted, rather than pretending.
     expect(attempted).toBe(false);
     expect(requestPointerLock).not.toHaveBeenCalled();
   });

@@ -9,7 +9,7 @@ type Props = {
   onDismiss: () => void;
   /** True while the screen holds the pointer lock. */
   mouseCaptured?: boolean;
-  /** True just after a capture was refused, so the pill can say to click again. */
+  /** True just after a capture was refused, so the pill can say to try again. */
   mouseCaptureRefused?: boolean;
 };
 

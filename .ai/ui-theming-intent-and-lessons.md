@@ -1532,8 +1532,11 @@ held: with the cursor hidden and the toolbar out of reach, that pill is the only
 user how to get out.
 
 **Where the capture can be triggered from is fixed by the browser, not by taste.** Pointer lock
-needs transient activation, so only a real DOM event in the emulator renderer can start it — a
-toolbar click or a renderer `keydown`. An Electron menu item or a main-process accelerator arrives
+needs transient activation, so only a real DOM event in the emulator renderer can start it — the
+toolbar button or a renderer `keydown`. **And taking the cursor is never incidental:** capturing on
+a click on the emulator picture was built and then removed, because clicking the picture is what
+someone does to focus the window or dismiss an overlay. An action that hides the user's cursor has
+to be one they aimed at. An Electron menu item or a main-process accelerator arrives
 over IPC with no activation and can never capture, however convenient it would be to put it there.
 For the same reason the toolbar reaches the screen through a module-level registration
 (`features/emulator/mouseCaptureBridge.ts`, the shape `controls/overlay/dialogRequestBridge.ts`
@@ -1542,12 +1545,12 @@ already uses) rather than a store round trip: the request has to run inside the 
 **Surface the re-capture lockout.** The spec rejects a capture made right after the user released
 one with Esc, for about a second, *even with a fresh activation* — so Esc followed immediately by a
 click always fails the first time. Swallowing that silently is what makes the app look broken; the
-pill says "click again to capture" instead.
+pill says "try again in a moment" instead.
 
 **An indicator drawn over the screen goes in its own inert layer, never in `.overlayStack`.** That
 stack is a flex column of pills anchored top-left whose children re-enable `pointer-events`; a freely
-positioned marker cannot live there, and putting one there would let it swallow the very click that
-starts a capture. Give it `position: absolute; inset: 0; pointer-events: none` of its own, and write
+positioned marker cannot live there, and putting one there would let it swallow the clicks meant for
+the screen underneath. Give it `position: absolute; inset: 0; pointer-events: none` of its own, and write
 its position straight to the node's `transform` — it updates at display rate and must not re-render
 React.
 

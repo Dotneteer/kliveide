@@ -28,12 +28,12 @@ import { getSettingValue, setSettingValue } from "@main/settings-utils";
  * The Machine | Mouse submenu.
  *
  * This is where the mouse feature is switched on at all, which is why it exists this early: with
- * capture off - the default, because turning it on changes what a click on the screen does - the
- * toolbar button is disabled and nothing else in the app can flip the setting.
+ * capture off by default, and with it off the toolbar button is disabled and Ctrl+M does nothing,
+ * so nothing else in the app can flip the setting.
  *
  * **It cannot capture the mouse, only arm it.** Pointer lock needs the transient activation of a
  * real DOM event in the emulator renderer, and a menu click runs in the main process and arrives
- * over IPC with none. The capture itself is the toolbar button, a click on the screen, or Ctrl+M.
+ * over IPC with none. The capture itself is the toolbar button or Ctrl+M.
  *
  * The menu is rebuilt on every store change, so `checked` follows the settings without any
  * bookkeeping here.
@@ -85,7 +85,7 @@ export const mouseMenuRenderer: MachineMenuRenderer = () => {
             await logEmuEvent(
               captureEnabled
                 ? "Mouse capture disabled"
-                : "Mouse capture enabled - click the screen, press Ctrl+M, or use the toolbar button"
+                : "Mouse capture enabled - press Ctrl+M or use the toolbar button"
             );
           }
         },
