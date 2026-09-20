@@ -127,6 +127,15 @@ export type EmulatorState = {
   audioSampleRate?: number;
   breakpointsVersion: number;
   emuViewVersion: number;
+  /**
+   * True while the host mouse is captured by the emulator screen (Pointer Lock).
+   *
+   * `useEmulatorMouse` owns the truth - it is the one watching `pointerlockchange` - and
+   * mirrors it here so the toolbar button, the overlay and the main-process menu can all see
+   * it. The browser can drop the lock on its own (Esc, focus loss), so nothing may treat this
+   * as a flag it set and therefore controls.
+   */
+  mouseCaptured?: boolean;
   screenRecordingAvailable?: boolean;
   screenRecordingState?: ScreenRecordingState;
   screenRecordingFile?: string;

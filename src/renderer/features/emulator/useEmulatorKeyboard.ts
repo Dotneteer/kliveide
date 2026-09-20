@@ -8,7 +8,16 @@ import { useSelector } from "@renderer/core/RendererProvider";
 
 export function useEmulatorKeyboard(
   controllerRef: MutableRefObject<IMachineController>,
-  keyStatusSet?: (code: number, down: boolean) => void
+  keyStatusSet?: (code: number, down: boolean) => void,
+  /**
+   * Host keys a joystick connector has taken, from `useEmulatorJoystick`.
+   *
+   * Without this, one `ArrowUp` would press the joystick's UP pin *and* the machine's cursor key -
+   * and in a Sinclair or Cursor joystick mode the core would press a third key on top, because
+   * those modes make the pins press membrane keys themselves. A ref rather than a prop value so a
+   * change of bindings does not re-bind the listeners below.
+   */
+  claimedCodes?: MutableRefObject<Set<string>>
 ) {
   const keyMappings = useSelector((s) => s.keyMappings);
 
@@ -50,6 +59,8 @@ export function useEmulatorKeyboard(
   }, []);
 
   const handleMappedKey = useCallback((code: string, keyMapping: KeyMapping, isDown: boolean): void => {
+    // --- A key bound to a joystick pin belongs to the joystick and never to the keyboard matrix.
+    if (claimedCodes?.current?.has(code)) return;
     const mapping = keyMapping?.[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
@@ -62,7 +73,7 @@ export function useEmulatorKeyboard(
       machine?.setKeyStatus(keyCode, isDown);
       keyStatusSet?.(keyCode, isDown);
     }
-  }, [controllerRef, keyStatusSet]);
+  }, [claimedCodes, controllerRef, keyStatusSet]);
 
   const handleKey = useCallback((
     e: KeyboardEvent,

@@ -321,6 +321,7 @@ const productionExports = [
   "zxnextMouseReadPortFbdf",
   "zxnextMouseReadPortFfdf",
   "zxnextMouseReadPortFadf",
+  "zxnextMousePortReadCount",
   "zxnextExpansionSetNextReg",
   "zxnextExpansionGetNextReg",
   "zxnextExpansionEffectivePortEnable",

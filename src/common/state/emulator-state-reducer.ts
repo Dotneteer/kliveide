@@ -68,6 +68,12 @@ export function emulatorStateReducer(
         isProjectDebugging: payload?.flag
       };
 
+    case "SET_MOUSE_CAPTURED":
+      return {
+        ...state,
+        mouseCaptured: payload?.flag
+      };
+
     case "SET_CLOCK_MULTIPLIER":
       return {
         ...state,

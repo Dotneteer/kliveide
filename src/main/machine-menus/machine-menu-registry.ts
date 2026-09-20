@@ -15,6 +15,7 @@ import {
   sdCardMenuRenderer,
   setupZxSpectrumNext
 } from "./zx-next-menus";
+import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 
 /**
  * Machine-specific menu information
@@ -76,6 +77,8 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     machineItems: (windowInfo, machine, model) => [
       ...hotkeyMenuRenderer(windowInfo, machine, model),
       ...sdCardMenuRenderer(windowInfo, machine, model),
+      ...joystickMenuRenderer(windowInfo, machine, model),
+      ...mouseMenuRenderer(windowInfo, machine, model),
     ],
     ideItems: spectrumIdeRenderer,
     initializer: initializeZxSpectrumNext,

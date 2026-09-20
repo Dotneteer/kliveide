@@ -1521,6 +1521,74 @@ Two things follow for any later change here:
   be parsed rather than scaled is a bug that only shows on one machine. Round at the point of
   setting state, never at the point of drawing.
 
+## Capturing The Mouse Over The Emulator Screen
+
+**A control that captures the pointer cannot release it, and must not be labelled as if it could.**
+While the pointer is locked every mouse event is delivered to the locked element, so the toolbar
+button is physically unclickable at that moment — the click lands on the machine's screen. The
+button captures and reports state; Esc and `Ctrl+M` release. Word it "Capture the mouse (Esc
+releases it)", never as a toggle, and keep the on-screen pill naming Esc for as long as the lock is
+held: with the cursor hidden and the toolbar out of reach, that pill is the only thing telling the
+user how to get out.
+
+**Where the capture can be triggered from is fixed by the browser, not by taste.** Pointer lock
+needs transient activation, so only a real DOM event in the emulator renderer can start it — a
+toolbar click or a renderer `keydown`. An Electron menu item or a main-process accelerator arrives
+over IPC with no activation and can never capture, however convenient it would be to put it there.
+For the same reason the toolbar reaches the screen through a module-level registration
+(`features/emulator/mouseCaptureBridge.ts`, the shape `controls/overlay/dialogRequestBridge.ts`
+already uses) rather than a store round trip: the request has to run inside the click being handled.
+
+**Surface the re-capture lockout.** The spec rejects a capture made right after the user released
+one with Esc, for about a second, *even with a fresh activation* — so Esc followed immediately by a
+click always fails the first time. Swallowing that silently is what makes the app look broken; the
+pill says "click again to capture" instead.
+
+**An indicator drawn over the screen goes in its own inert layer, never in `.overlayStack`.** That
+stack is a flex column of pills anchored top-left whose children re-enable `pointer-events`; a freely
+positioned marker cannot live there, and putting one there would let it swallow the very click that
+starts a capture. Give it `position: absolute; inset: 0; pointer-events: none` of its own, and write
+its position straight to the node's `transform` — it updates at display rate and must not re-render
+React.
+
+**Klive's pointer is not the machine's pointer, and must not be dressed as one.** While captured
+there is no host cursor position at all, only deltas, so the indicator is a position Klive invents.
+Software that reads the mouse draws its own pointer from its own counters and the two drift apart
+within seconds — the machine scales by its DPI register, starts from its own origin, and its
+counters wrap where this indicator clamps. Draw it as a ring and crosshair in the accent colour, not
+as an arrow, and keep it switchable off; the intended end state is that it hides itself whenever
+software is actually reading the mouse ports.
+
+**Two state rules that can both be true need an explicit winner — the specificity tie recorded
+above, in its visible form.** The captured-pointer indicator has "software is using the mouse, fade
+out" and "a button is held, fill in"; both are one class plus one attribute selector, so with the
+fade written first a hidden indicator reappeared for exactly as long as a button was held. Worth
+knowing because of how it presents: *the pointer only shows while I click*, which sounds like an
+event-handling bug and sends you to the wrong file. Order the rules by which state should outrank
+the other.
+
+**A clever default that hides information is usually the wrong default.** That same indicator
+originally hid itself whenever a program read the mouse ports, on the reasoning that the program
+draws its own pointer and two pointers that disagree are worse than one. But the disagreement is the
+thing a person is looking for when they suspect movement is being delivered wrongly, and an
+indicator that disappears whenever software runs cannot be told from a broken one. Ship the visible
+behaviour as the default and make the clever one an option.
+
+**A dialog earns MVC by having async orchestration, not by being big.** The joystick bindings
+dialog has two columns and twenty-four capture rows, which looks like the largest dialog in the app
+and is still a plain one: it reads a setting, captures keystrokes and writes once on Save, with no
+service calls to interleave or fail. `.docs/dialog-mvc-pattern.md` says the Intent/Event split is
+"pure ceremony" for such a dialog, and it is right. What *did* deserve isolating was the rules —
+which pin loses a key to which, what a binding costs the emulated keyboard, how far a reset reaches
+— and those are pure functions in `common/settings/`, tested in the fast `node` project. That gets
+the component down to a form with no decisions in it, which is what MVC is for, without the four
+extra files.
+
+**UI for a device belongs only to machines that have one.** The capture button is gated on
+`MF_MOUSE_SUPPORT` in the machine registry, beside `MF_TAPE_SUPPORT`, rather than on a machine id.
+A ZX Spectrum 48 has no pointing device, and a toolbar button offering to capture a mouse for it is
+a promise the machine cannot keep.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`

@@ -1,6 +1,7 @@
 # ZX Spectrum Next Joystick & Mouse — Implementation Plan
 
-**Status:** emulation done, host plumbing not started.
+**Status:** emulation done, host plumbing not started. **Start at §6 Milestone A** — the mouse
+capture experience is built and verified first, with the machine deliberately left unwired.
 **Rewritten 2026-09-20** against the WASM core. Supersedes the 2026-08-30 draft that lived in
 `src/emu/plan.md` + `src/emu/plan-steps.md` (the latter was a stale duplicate of the former's §8 and
 carried an inverted NR `$83` polarity; both are gone, the history is in git).
@@ -242,14 +243,136 @@ Pointer lock on the emulator canvas (`EmulatorPanel.tsx:386`). Relative motion i
 model: the emulated pointer is drawn by the *guest*, the counters wrap, and there is no coordinate
 system to map a host position onto.
 
-**Conflict to resolve first:** the screen wrapper already owns the click —
-`onClick={() => setShowOverlay(true)}` at `EmulatorPanel.tsx:379`. Decide deliberately: capture on
-double-click, or capture on click only while a "mouse enabled" setting is on, or capture from the
-menu / a `Ctrl+M` accelerator only. Recommend **menu + accelerator, plus click-to-capture when the
-mouse setting is on**, leaving the overlay click intact when it is off.
+**Transient activation is mandatory, and it decides the whole UI.** Per the Pointer Lock spec,
+"transient activation is required when calling `requestPointerLock()`". A capture therefore has to
+originate from a real DOM event **inside the emu renderer**.
 
-Escape releases the lock — the browser does this itself; the hook only has to notice
-`pointerlockchange`, zero the buttons and stop consuming deltas.
+> **An Electron menu item or a main-process accelerator cannot capture the mouse.** The F-key
+> "hotkeys" in `zx-next-menus.ts:84-175` carry no `accelerator`; they run in main and reach the
+> renderer over IPC (`getEmuApi().issueMachineCommand(...)`). A `requestPointerLock()` called from
+> such a handler has no transient activation and is rejected. An earlier draft of this plan
+> recommended "menu + `Ctrl+M` accelerator" — that does not work.
+
+Working triggers, all renderer-side:
+
+- **Click on the screen** — the natural one. Conflict to resolve: the wrapper already owns the click
+  (`onClick={() => setShowOverlay(true)}`, `EmulatorPanel.tsx:379`). Capture only while a "mouse
+  enabled" setting is on, and leave the overlay click alone when it is off.
+- **A renderer-level `keydown`** for `Ctrl+M` — a real key event *is* an activation, so handle it in
+  a hook beside `useEmulatorKeyboard`, never as an Electron accelerator.
+- A menu item may still *toggle the setting* ("Enable mouse capture") — it just cannot perform the
+  lock itself.
+
+Request raw input:
+
+```ts
+await canvas.requestPointerLock({ unadjustedMovement: true });
+```
+
+`unadjustedMovement` turns off OS pointer acceleration. It matters here more than in a game: the
+core already scales every packet by NR `$0A`'s DPI, and letting the OS curve compound with that
+would make the guest pointer non-linear in a way no real Next is.
+
+**Electron:** `pointerLock` is one of the permission types `setPermissionRequestHandler` /
+`setPermissionCheckHandler` cover. Klive sets neither, and Electron approves permission requests by
+default — but confirm the first `requestPointerLock()` actually resolves, and if a handler is ever
+added, allow `pointerLock` for the emu window.
+
+### 3.1.1 Release — four doors, one event
+
+| How | Who triggers it | Interceptable? |
+|---|---|---|
+| **Esc** | the user | **No.** The browser performs the default unlock gesture itself; you cannot `preventDefault` it |
+| `document.exitPointerLock()` | us — setting turned off, machine stopped, window closing | — |
+| Window focus lost / document hidden | the OS (Alt-Tab) | No |
+| Renderer reload or navigation | — | No |
+
+All four arrive as **one `pointerlockchange` on `document`** with `document.pointerLockElement` now
+null, so the hook has a single release path. On release it must:
+
+1. **Zero the buttons and send one final packet.** Buttons latch in the core until the next packet
+   (`zxnext-input.c:172-180`) — release while a button is down and the guest sees it held forever.
+2. Stop consuming `movementX/Y`, and drop the pending accumulators (§3.2) so nothing flushes after
+   the user has left.
+3. Clear the capture flag in `AppState`, which drops the overlay and unticks the menu.
+
+**The Esc re-capture lockout — plan for it, it looks like a bug.** The spec is explicit: calling
+`requestPointerLock()` "immediately after releasing the pointer lock via the default unlock gesture
+(instead of through an `exitPointerLock()` call) ... will fail, even if a transient activation is
+available." So Esc followed by an immediate click does nothing for about a second. Catch the
+rejection rather than letting it look broken: leave the overlay up saying *click to capture* and let
+the next click succeed.
+
+**One consequence to document for users:** while captured, Esc belongs to the browser, so it can
+never reach the guest. Harmless on the Next (BREAK is CAPS SHIFT + SPACE), but it is a real
+limitation if this hook is ever reused for the Z88, which has a genuine ESC key.
+
+### 3.1.2 The toolbar button
+
+A toolbar click *is* a real DOM event in the emu renderer, so unlike the Electron menu it carries
+transient activation and **can** perform the capture. It belongs in `ViewControls.tsx` — the
+`!ide` toolbar group — built exactly like the Stay-on-top button beside it
+(`iconName={stayOnTop ? "pinned" : "pin"}` + `selected`), so the icon and the lit state both follow
+the capture flag in `AppState`.
+
+> **It cannot be a two-way switch.** While the pointer is locked, every mouse event is delivered to
+> the locked element, so the button is physically unclickable — the click lands on the Next's
+> screen. The button captures and reports state; **releasing stays Esc or `Ctrl+M`**. Word the
+> tooltip accordingly ("Capture mouse — Esc to release"), not as a toggle.
+
+Icons: drop `mouse.svg` and `mouse-off.svg` (Lucide) into `src/renderer/assets/icons/`. The filename
+is the icon id and Lucide art paints with `currentColor`, which `Icon` wires to the theme colour —
+no entry in `icon-defs.ts` (see that folder's `README.md`).
+
+### 3.1.3 The capture indicator pointer
+
+While captured there is **no pointer position to draw** — the cursor is hidden and only deltas
+arrive. So Klive keeps its own: seed it at the centre of the screen rectangle on capture, move it by
+the same (sensitivity-scaled) deltas being fed to the machine, clamp it to that rectangle, drop it
+on release.
+
+**It moves by what the machine receives, not by the raw hand movement.** The core multiplies every
+packet by NextReg `$0A`'s DPI before adding it to its counters, so at DPI `00` a program's pointer
+travels exactly twice as far as the hand did. An indicator that ignored that would sit at half speed
+beside the machine's own pointer and read as a delivery bug. `mouseDeltaScale()` on
+`IZxNextHostInputMachine` reports the factor; it is read per frame, because software changes `$0A`
+whenever it likes. The *packets* stay unscaled — the core applies the DPI itself, and doing it here
+too would double it twice.
+
+This is also the line between the two knobs, worth stating in the UI: **host sensitivity scales the
+hand** and moves the indicator and the machine's pointer together, so it can never change the ratio
+between them; **NextReg `$0A` is what sets that ratio**, and it belongs to the guest.
+
+**Be clear about what it is.** This is *Klive's* pointer, not the Next's. When an app is reading the
+mouse it draws its own, and the two diverge within seconds: the guest applies its own NR `$0A` DPI
+scaling, starts from its own origin, and its counters wrap where this indicator clamps. Two pointers
+that disagree are worse than none.
+
+Hiding it while software is consuming the coordinates is therefore *offered*, not imposed. The
+detection is a read counter on `zxnextMouseReadPortFbdf` / `...Ffdf` / `...Fadf` in `zxnext-input.c`
+with one export (new exports also go in `scripts/build-zxnext-wasm.cjs` and
+`ZxNextWasmV2Loader.ts`, then `npm run build:zxnext-wasm`); if the guest has read those ports within
+roughly the last second, an app owns the mouse.
+
+**But `always` is the default, and hiding is the option.** Auto-hide shipped as the only behaviour
+first and was wrong twice over: the drift between the two pointers is exactly what someone wants to
+*watch* when checking whether movement is being delivered correctly, and an indicator that vanishes
+whenever software is running is indistinguishable from one that is broken. The setting is a three-way
+choice — *Always* / *Only while no program reads the mouse* / *Never* — and it accepts the boolean it
+used to be (`true` → always, `false` → never).
+
+Drawing it:
+
+- **Its own absolutely-positioned layer inside `.display`, `pointer-events: none`.** Not inside
+  `.overlayStack` (`EmulatorPanel.module.scss:109-124`): that is a flex column of pills anchored
+  top-left whose children re-enable pointer events, which would let the indicator swallow the very
+  click that starts capture.
+- Make it obviously **not** an OS cursor — a crosshair or ring in the accent colour, not an arrow —
+  so a user never reads it as their real pointer being stuck.
+- Fill or flash it while a mouse button is held: that is the only feedback that clicks are reaching
+  the machine when nothing consumes them.
+- Colours from tokens, no literals; and per the standing rule the change updates
+  `.ai/ui-theming-intent-and-lessons.md` in the same commit.
 
 For the "captured — press Esc to release" indicator, note what the overlay stack actually is.
 `EmulatorOverlay` (`EmulatorOverlay.tsx:5-16`) holds two pills: `ExecutionStateOverlay`, whose text
@@ -365,8 +488,26 @@ rather than inventing a shape.
 | Checkbox item | `createBooleanSettingsMenu(settingId, { enabledFn?, visibleFn? })` (`app-menu.ts:1487-1514`) — used from a machine renderer at `zx-specrum-menus.ts:39` (with the `as any` cast) |
 | Radio group | `z88-menus.ts:27-54` is the template: read with `getSettingValue`, emit `type: "radio"` items whose `checked` compares against it, `click` calls `setSettingValue` |
 | Next-only items | `machine-menu-registry.ts:73-81` `MI_ZXNEXT.machineItems` — add a `nextInputMenuRenderer` beside `hotkeyMenuRenderer` and `sdCardMenuRenderer` |
-| Bindings dialog | MVC per `.docs/dialog-mvc-pattern.md` (read `.ai/ui-mvc-guide.md` first), reference impl `src/renderer/appIde/dialogs/sjasmplus/`. It belongs to the **emu** renderer: `src/renderer/appEmu/dialogs/`, an id from `EMU_DIALOG_BASE = 1000` (`dialog-ids.ts:10`), opened from main with `emuApi.displayDialog(id)` (`MainToEmuProcessor.ts:121-125`) |
+| Toolbar button | `ViewControls.tsx` (the `!ide` group), an `IconButton` like Stay-on-top: `iconName` follows the capture flag, `selected` lights it. §3.1.2 — **captures only, never releases** |
+| Toolbar icons | `mouse.svg` / `mouse-off.svg` (Lucide) dropped into `src/renderer/assets/icons/`; the filename is the id, never an `icon-defs.ts` entry (that folder's `README.md`) |
+| Bindings dialog | **Plain pattern** (`.docs/dialog-pattern.md`), not MVC — see §5.1. It belongs to the **emu** renderer: `src/renderer/appEmu/dialogs/joystick/`, an id from `EMU_DIALOG_BASE` (`dialog-ids.ts`), opened from main with `emuApi.displayDialog(id)`. Adding an id means updating the registry guard in `test/controls/AppShellStartup.test.tsx` |
 | Dialog styling | tokens only, no colour literals; and per the standing rule, any visual change updates `.ai/ui-theming-intent-and-lessons.md` in the same commit |
+
+### 5.1 Why the bindings dialog is not an MVC dialog
+
+`.docs/dialog-mvc-pattern.md` is explicit about when it applies: **async orchestration plus derived
+display rules** — several service calls that can interleave or fail. It says in as many words that
+for a dialog without orchestration the Intent/Event split "would be pure ceremony".
+
+The bindings dialog has none. It reads a setting, captures keystrokes, and writes once on Save. An
+earlier draft of this plan specified MVC for it anyway, which would have bought four extra files and
+no testability that mattered.
+
+What it does have is *rules* worth testing without React — which key a binding takes from which pin,
+what an assignment costs the emulated keyboard, how a reset is scoped. Those live in
+`common/settings/joystick-binding-edit.ts` as pure functions and are tested in the fast `node`
+project. The component is then a form with no decisions in it, which is the outcome MVC exists to
+produce, reached without the ceremony.
 
 Two menu mechanics worth knowing before writing the renderer:
 
@@ -390,9 +531,11 @@ Machine ▸
     Joystick 2 ▸  (same)
     Configure bindings…
   Mouse ▸
-    Enable mouse capture        (checkbox)
-    Capture now                 (Ctrl/Cmd+M)
-    Sensitivity ▸ (radio: 0.25 · 0.5 · 1.0 · 1.5 · 2.0 · 4.0)
+    Enable mouse capture         (checkbox — arms the toolbar button and click-to-capture)
+    Show pointer indicator       (checkbox — §3.1.3; auto once step 7 lands)
+    Sensitivity ▸ (radio: 0.25 · 0.5 · 1.0 · 1.5 · 2.0 — the guest's DPI multiplies on top)
+    (the capture itself is the toolbar button, a click on the screen, or Ctrl+M —
+     a menu item cannot do it, §3.1)
 ```
 
 ---
@@ -402,19 +545,37 @@ Machine ▸
 Each step: implement, `npm run lint:renderer` when renderer React is touched, tests,
 `npm run build:check`, commit alone.
 
+**Milestone A — capture, with the machine left alone (steps 1-4).** The whole capture experience is
+host-side and owes the Next nothing, so build it first and *do not wire it to the machine*. At the
+end of step 3 you can press the toolbar button, watch the cursor vanish, move an indicator around
+the Next's screen, press Esc and get everything back — with the emulated machine entirely unaware a
+mouse exists. That is a real, demonstrable slice, it makes every pointer-lock quirk in §3.1 visible
+early (the Esc lockout above all), and it is the part most likely to need hands-on iteration.
+Keeping the machine out of it means nothing here can be blamed on packet arithmetic.
+
+**The Mouse menu belongs to this milestone, not to step 13.** Capture is off by default, and with it
+off the toolbar button is disabled - so with no menu there is no way to switch the feature on at
+all, and Milestone A cannot even be tried. This was found the hard way: steps 1-3 were built with a
+toolbar tooltip pointing at a menu that did not exist yet. A step that makes a feature reachable
+belongs with the feature, not with the menu work for a different device.
+
 | # | Step | Tests |
 |---|---|---|
-| 1 | `setJoystickState` / `mousePacket` on `ZxNextWasmV2Machine` (+ the host-input interface, + the TS machine's forwarders) | `test/zxnext-hw/joystick/` and `mouse/` already prove the core; add one harness self-test that the *machine method* reaches it — see §7 |
-| 2 | `@common/settings/next-input.ts`: binding types, defaults, `normalize*` | plain vitest, no machine |
-| 3 | Settings ids + definitions | round-trip through `appSettings` |
-| 4 | `useEmulatorJoystick` — keyboard only, both connectors, blur/stop clearing | jsdom: keydown/keyup → the right bits on the right side; blur clears |
-| 5 | `claimedCodes` arbitration in `useEmulatorKeyboard`; mount both hooks in `EmulatorPanel` | jsdom: a bound arrow does **not** call `setKeyStatus`; an unbound one still does |
-| 6 | `useEmulatorMouse` — pointer lock, accumulate, ±63 chunking, Y inversion, sensitivity remainder | jsdom: 200 px of movement in one frame emits ≥4 packets, all within ±63, summing to 200 |
-| 7 | Mouse buttons, wheel, `contextmenu` suppression, capture overlay | jsdom |
-| 8 | Gamepad polling ORed into the same word | jsdom with a fake `getGamepads` |
-| 9 | Menu renderers + `Ctrl/Cmd+M` accelerator | menu-renderer output assertions |
-| 10 | Bindings dialog (MVC) | model/controller tests without rendering |
-| 11 | End-to-end by hand — §7.2 | — |
+| **1** ✅ | **Capture state + pointer lock, no machine.** The three mouse settings first (`enable capture`, `show pointer`, `sensitivity`) in `setting-const.ts` / `setting-definitions.ts`, since Milestone A is gated on them. Then `useEmulatorMouse` requests the lock on the screen element and handles the single `pointerlockchange` release path (§3.1.1); a `mouseCaptured` flag in `AppState` (+ `initialAppState`); `Ctrl+M` as a **renderer** `keydown`; the Esc re-capture lockout caught and reported rather than swallowed. Deltas are accumulated and **discarded**. | jsdom: click requests the lock; `pointerlockchange` to unlocked clears the flag; a rejected request leaves the flag false and does not throw |
+| **2** ✅ | **Toolbar button + overlay message** (§3.1.2). `mouse.svg` / `mouse-off.svg` in `assets/icons/`, an `IconButton` in `ViewControls.tsx` bound to the flag, tooltip worded as capture-only, and the *captured — Esc to release* pill driven from `AppState` like `RecordingStateOverlay`. | jsdom: the button reflects the flag; clicking it while released asks for the lock |
+| **3** ✅ | **Indicator pointer** (§3.1.3) — own `pointer-events: none` layer in `.display`, centred on capture, moved by the scaled deltas, clamped, dropped on release; button-held styling. Gated on the `show pointer` setting from step 1. | jsdom: centred on capture; clamps at the rectangle's edges; hidden when released |
+| **4** ✅ | **Machine ▸ Mouse menu** — `zx-next-input-menus.ts`, registered in `MI_ZXNEXT.machineItems`: capture on/off, show pointer, sensitivity. The only way to arm the feature; it cannot perform the capture itself (§3.1). | menu-renderer assertions: the checkbox writes the setting, the rest grey out while capture is off |
+| **5** ✅ | `setJoystickState` / `mousePacket` on `ZxNextWasmV2Machine` via the neutral `IZxNextHostInputMachine` (+ the TS machine's forwarders) | `test/zxnext-hw/joystick/` and `mouse/` already prove the core; add one harness self-test that the *machine method* reaches it — see §7 |
+| **6** ✅ | **Feed the machine**: the accumulate-and-chunk flush from §3.2 replaces step 1's discard — ±63 chunking, Y inversion, sensitivity remainder | jsdom: 200 px of movement in one frame emits ≥4 packets, all within ±63, summing to 200 |
+| **7** ✅ | Mouse buttons (immediate zero-motion packet), wheel notches, `contextmenu` suppression, and the release packet (§3.1.1) | jsdom |
+| **8** ✅ | Mouse-port read counter in the core + export; the indicator auto-hides while an app is consuming (§3.1.3) | harness: the counter rises after a program reads `$FBDF`, and not otherwise |
+| **9** ✅ | `@common/settings/joystick-bindings.ts`: pin names, defaults, `normalize*`, the key→pin lookup, and the setting | plain vitest; round-trip through `appSettings` |
+| **10** ✅ | `useEmulatorJoystick` — both connectors, blur/stop/dialog clearing | jsdom: keydown/keyup → the right bits on the right side; blur clears |
+| **11** ✅ | `claimedCodes` arbitration in `useEmulatorKeyboard`; hooks mounted in order in `EmulatorPanel` | jsdom: a bound arrow does **not** call `setKeyStatus`; an unbound one still does |
+| **12** ✅ | Gamepad polling into the same connector word | jsdom with a fake `getGamepads` |
+| **13** ✅ | **Joystick** menu: source per connector, NextReg `$05` mode, and the bindings dialog | menu-renderer output assertions |
+| **14** ✅ | Bindings dialog — **plain pattern, not MVC** (§5.1): the rules are pure functions, so there is no orchestration to isolate | the rules in the `node` project; capture and save rendered |
+| 15 | End-to-end by hand — §7.2 | — |
 
 ---
 
@@ -438,6 +599,25 @@ exports are already reachable; what is worth one self-test in
 counters the harness's `mouse()` does, so the two paths cannot drift.
 
 ### 7.2 Hands-on checklist
+
+**After Milestone A (steps 1-4), with the machine still unwired.** Everything here is checkable
+before a single packet exists, which is the point of ordering it this way:
+
+- **Machine ▸ Mouse ▸ Capture the mouse.** Until this is ticked the toolbar button is greyed
+  out and a click on the screen still just restores the overlay - that is the intended default.
+- Click the toolbar button: cursor vanishes, the pill says *captured — Esc to release*, the button
+  lights, the indicator appears centred on the Next's screen.
+- Move the mouse in circles: the indicator follows and stops at the screen edges rather than
+  escaping the panel. Push hard into a corner and back out — it must come straight back, not lag by
+  the distance you overshot.
+- Press Esc: cursor returns, pill and indicator disappear, button unlights.
+- **Press Esc and immediately click back in.** Nothing should happen the first time — verify the
+  pill says *click to capture* rather than the app looking dead. Click again: it captures.
+- `Ctrl+M` captures and releases; Alt-Tab away while captured releases cleanly.
+- Confirm the indicator never eats the capture click (that is the `pointer-events: none` layer) and
+  that the keyboard still reaches the emulator while captured.
+
+**After the machine is wired (step 5 onwards):**
 
 - Bind arrows, set joy 1 to Kempston 1, run something that polls `$1F`.
 - Switch joy 1 to Sinclair 2 **without touching the host bindings** — a game prompting "1=left"

@@ -1,0 +1,33 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The mouse-capture pill. Same shape as the recording pill beside it in the overlay stack, which
+ * positions both - nothing here sets its own offset.
+ */
+.mouseOverlay {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+%pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bgcolor-emuoverlay);
+  opacity: 0.85;
+  font-size: var(--font-size-200);
+  padding: 3px var(--space-3) 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+/* Captured is a state the user chose and is in control of: accent, not a warning. */
+.captured {
+  @extend %pill;
+  color: var(--accent-text);
+}
+
+/* A refusal is a nudge to click again, not an error the user caused. */
+.refused {
+  @extend %pill;
+  color: var(--text-secondary);
+}

@@ -10,6 +10,15 @@ static uint8_t zxnextMouseY;
 static uint8_t zxnextMouseWheel;
 /* {mthird, mright, mleft}: bit 2 middle, bit 1 right, bit 0 left (1 = pressed) */
 static uint8_t zxnextMouseButtons;
+/*
+ * How many times the CPU has read a mouse port.
+ *
+ * Not hardware: the emulator uses it to tell whether software is actually using the mouse, so the
+ * host can stop drawing its own pointer once a program is drawing one from these counters. Free -
+ * the ports are only reachable through an IN - and monotonic, so the host compares it with what it
+ * saw last frame. A hard reset reloads the core, which zeroes it with everything else.
+ */
+static uint32_t zxnextMousePortReads;
 
 /*
  * Joysticks (zxnext.vhd ~3426-3496, membrane_stick.vhd, md6_joystick_connector_x2.vhd). The modes come
@@ -183,13 +192,23 @@ void zxnextMousePacket(uint32_t buttons, int32_t dx, int32_t dy, int32_t dz) {
   zxnextMouseWheel = (uint8_t)(zxnextMouseWheel + ((nibble & 0x08u) ? (nibble | 0xf0u) : nibble));
 }
 
-uint32_t zxnextMouseReadPortFbdf(void) { return zxnextMouseX; }
-uint32_t zxnextMouseReadPortFfdf(void) { return zxnextMouseY; }
+uint32_t zxnextMouseReadPortFbdf(void) {
+  zxnextMousePortReads++;
+  return zxnextMouseX;
+}
+
+uint32_t zxnextMouseReadPortFfdf(void) {
+  zxnextMousePortReads++;
+  return zxnextMouseY;
+}
 /* zxnext.vhd ~3557: wheel & '1' & not middle & not left & not right (0 = pressed) */
 uint32_t zxnextMouseReadPortFadf(void) {
+  zxnextMousePortReads++;
   return ((uint32_t)(zxnextMouseWheel & 0x0fu) << 4) | 0x08u | (~(((zxnextMouseButtons & 0x04u)) |
     ((zxnextMouseButtons & 0x01u) << 1) | ((zxnextMouseButtons & 0x02u) >> 1)) & 0x07u);
 }
+
+uint32_t zxnextMousePortReadCount(void) { return zxnextMousePortReads; }
 
 uint32_t zxnextInputReadPort(uint32_t address) {
   switch (address & 0xffffu) {

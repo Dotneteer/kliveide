@@ -61,7 +61,8 @@
                   "0": true,
                   "2": false
                 },
-                "selectedBank": 12
+                "selectedBank": 12,
+                "headerAttrExpanded": false
               }
             }
           ],

@@ -9,6 +9,10 @@ import {
   type UlaState
 } from "@common/messaging/EmuApi";
 import { nextRasterPosition, type IZxNextIdeMachine } from "./IZxNextIdeMachine";
+import type {
+  IZxNextHostInputMachine,
+  JoystickConnector
+} from "./IZxNextHostInputMachine";
 import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
@@ -122,7 +126,10 @@ type ZxNextWasmV2Checkpoint = {
   lastRenderedFrameTact: number;
 };
 
-export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMachine {
+export class ZxNextWasmV2Machine
+  extends ZxNextWasmHost
+  implements IZxNextIdeMachine, IZxNextHostInputMachine
+{
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
   public readonly screenDevice: {
@@ -946,6 +953,26 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
     // --- returns the new setting for the menu to report; F3 is gated by `$06` bit 5.
     // --- `nextRegs` holds the *stored* bits: the `$05` readback shows the effective ones, which
     // --- only change at the frame start, so two presses within a frame would read the same value.
+    /*
+     * `joystickMode:<side>:<mode>` - the Machine menu attaching a joystick.
+     *
+     * The payload rides in the command string because `executeCustomCommand` takes nothing else;
+     * that is the seam every Next hotkey already uses. It writes NextReg `$05` exactly as a program
+     * would, which is the *only* way to choose a mode - and means NextZXOS will overwrite it from
+     * its own configuration at boot. The menu says so.
+     */
+    if (runtime != null && command.startsWith("joystickMode:")) {
+      const [, side, mode] = command.split(":");
+      const value = Number.parseInt(mode, 10) & 0x07;
+      const nr05 = runtime.exports.zxnextGetNextRegisterDirect(0x05);
+      // --- zxnext-input.c:34-37: joystick 1 is bit 3 + bits 7-6, joystick 2 is bit 1 + bits 5-4.
+      const next =
+        side === "left"
+          ? (nr05 & 0x37) | ((value & 0x04) << 1) | ((value & 0x03) << 6)
+          : (nr05 & 0xcd) | ((value & 0x04) >> 1) | ((value & 0x03) << 4);
+      runtime.exports.zxnextSetNextRegisterDirect(0x05, next);
+      return next;
+    }
     if (runtime != null && command === "toggleScandoubler") {
       const nr05 = runtime.nextRegs[0x05] ^ 0x01;
       runtime.exports.zxnextSetNextRegisterDirect(0x05, nr05);
@@ -980,6 +1007,47 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
    */
   setKeyStatus(key: number, isDown: boolean): void {
     this.wasmV2Runtime?.exports.zxnextSetKeyStatus(key & 0xff, isDown ? 1 : 0);
+  }
+
+  /**
+   * Holds the given 12 bits on a joystick connector (`IZxNextHostInputMachine`).
+   *
+   * Nothing is interpreted here. NextReg `$05` decides whether these pins show up on a Kempston
+   * port, in NextReg `$B2`, or as membrane key presses through the joymap - all inside the core,
+   * exactly as the FPGA does it.
+   */
+  setJoystickState(side: JoystickConnector, bits: number): void {
+    const exports = this.wasmV2Runtime?.exports;
+    if (side === "left") exports?.zxnextSetJoystickLeftState(bits & 0xfff);
+    else exports?.zxnextSetJoystickRightState(bits & 0xfff);
+  }
+
+  /**
+   * Delivers one PS/2 mouse packet (`IZxNextHostInputMachine`).
+   *
+   * The deltas are clamped to a signed byte rather than allowed to alias. The core takes
+   * `(uint8_t)delta`, so 200 would arrive as -56 and the guest's pointer would jump *backwards*;
+   * clamping keeps the direction right and merely makes an over-large movement short. It is a
+   * guard, not the useful limit - see the note on `mousePacket` in the interface.
+   */
+  mousePacket(buttons: number, dx: number, dy: number, dz: number): void {
+    this.wasmV2Runtime?.exports.zxnextMousePacket(
+      buttons & 0x07,
+      clampToSignedByte(dx),
+      clampToSignedByte(dy),
+      clampWheel(dz)
+    );
+  }
+
+  /** How many times the CPU has read a mouse port (`IZxNextHostInputMachine`). */
+  mousePortReadCount(): number {
+    return this.wasmV2Runtime?.exports.zxnextMousePortReadCount() ?? 0;
+  }
+
+  /** The core's own DPI multiplier (`IZxNextHostInputMachine`). */
+  mouseDeltaScale(): number {
+    const nr0a = this.wasmV2Runtime?.exports.zxnextGetNextRegisterDirect(0x0a) ?? 0x01;
+    return MOUSE_DPI_SCALE[nr0a & 0x03];
   }
 
   override setTacts(value: number): void {
@@ -1520,3 +1588,18 @@ export class ZxNextWasmV2Machine extends ZxNextWasmHost implements IZxNextIdeMac
     return this.wasmV2Runtime;
   }
 }
+
+/** A PS/2 packet carries each axis in one signed byte. */
+function clampToSignedByte(value: number): number {
+  const whole = Math.trunc(value) || 0;
+  return whole < -128 ? -128 : whole > 127 ? 127 : whole;
+}
+
+/** The wheel is a 4-bit signed field. */
+function clampWheel(value: number): number {
+  const whole = Math.trunc(value) || 0;
+  return whole < -8 ? -8 : whole > 7 ? 7 : whole;
+}
+
+/** NextReg `$0A` bits 1-0, as `ps2_mouse.v` applies them: doubled, as is, halved, quartered. */
+const MOUSE_DPI_SCALE = [2, 1, 0.5, 0.25];

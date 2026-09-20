@@ -315,6 +315,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextMouseReadPortFbdf: ZxNextWasmV2ExportFunction;
   zxnextMouseReadPortFfdf: ZxNextWasmV2ExportFunction;
   zxnextMouseReadPortFadf: ZxNextWasmV2ExportFunction;
+  zxnextMousePortReadCount: ZxNextWasmV2ExportFunction;
   zxnextExpansionSetNextReg: ZxNextWasmV2ExportFunction;
   zxnextExpansionGetNextReg: ZxNextWasmV2ExportFunction;
   zxnextExpansionEffectivePortEnable: ZxNextWasmV2ExportFunction;
@@ -668,6 +669,7 @@ const requiredV2Exports = [
   "zxnextMouseReadPortFbdf",
   "zxnextMouseReadPortFfdf",
   "zxnextMouseReadPortFadf",
+  "zxnextMousePortReadCount",
   "zxnextExpansionSetNextReg",
   "zxnextExpansionGetNextReg",
   "zxnextExpansionEffectivePortEnable",

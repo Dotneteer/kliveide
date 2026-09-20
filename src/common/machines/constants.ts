@@ -28,6 +28,8 @@ export const MC_Z88_IMPLEMENTATION = "z88Implementation";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";
+export const MF_MOUSE_SUPPORT = "mouseSupport";
+export const MF_JOYSTICK_SUPPORT = "joystickSupport";
 export const MF_ROM = "rom";
 export const MF_BANK = "bank";
 export const MF_ULA = "ula";

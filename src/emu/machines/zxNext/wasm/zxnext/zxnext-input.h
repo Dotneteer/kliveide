@@ -13,5 +13,6 @@ void zxnextMousePacket(uint32_t buttons, int32_t dx, int32_t dy, int32_t dz);
 uint32_t zxnextMouseReadPortFbdf(void);
 uint32_t zxnextMouseReadPortFfdf(void);
 uint32_t zxnextMouseReadPortFadf(void);
+uint32_t zxnextMousePortReadCount(void);
 
 #endif

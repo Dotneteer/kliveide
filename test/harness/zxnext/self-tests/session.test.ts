@@ -199,6 +199,101 @@ Cmd:    .defb $51,0,0,0,3,$01`;
     expect(() => s.mouse({ dx: 300 }), "a PS/2 packet's range").toThrow(/-255..255/);
   });
 
+  /*
+   * The app does not use `s.mouse()` / `s.joystick()`; it calls the machine's own
+   * `mousePacket` / `setJoystickState` (`IZxNextHostInputMachine`). These two tests reach into
+   * `s.machine` - which a hardware test must never do - precisely because that machine-level API is
+   * what is under test: without them the harness could keep passing while the only path the user
+   * ever exercises was broken.
+   */
+  it("mousePacket on the machine moves the same counters as the harness's own mouse()", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+
+    s.mouse({ dx: 5, dy: 0 });
+    const viaHarness = s.in(0xfbdf);
+
+    s.machine.mousePacket(0, 5, 0, 0);
+    expect(s.in(0xfbdf), "the app's path adds the same 5").toBe((viaHarness + 5) & 0xff);
+
+    // --- Buttons are active low at the port, and the machine method must not "helpfully" invert.
+    s.machine.mousePacket(0x01, 0, 0, 0);
+    expect(s.in(0xfadf) & 0x07, "left held").toBe(0x05);
+  });
+
+  it("mousePacket clamps a delta instead of letting it wrap the wrong way", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+
+    // --- 200 as a signed byte is -56: unclamped, the guest's pointer would jump backwards.
+    s.machine.mousePacket(0, 200, 0, 0);
+    expect(s.in(0xfbdf), "clamped to +127, still rightwards").toBe(127);
+  });
+
+  it("the joystickMode custom command packs NextReg $05 the way the core decodes it", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+
+    // --- The Machine menu's only way to choose a mode. The encoding is awkward enough to be worth
+    // --- checking against the core rather than against the comment that describes it: joystick 1
+    // --- is bit 3 plus bits 7-6, joystick 2 is bit 1 plus bits 5-4.
+    await s.machine.executeCustomCommand("joystickMode:left:1"); // --- Kempston 1, port $1F
+    await s.machine.executeCustomCommand("joystickMode:right:4"); // --- Kempston 2, port $37
+
+    s.joystick("left", "UP");
+    s.joystick("right", "LEFT");
+    expect([s.in(0x1f), s.in(0x37)], "each connector on its own port").toEqual([0x08, 0x02]);
+
+    // --- MD 1 puts the same connector on $1F but adds START and A.
+    await s.machine.executeCustomCommand("joystickMode:left:5");
+    s.joystick("left", "UP", "START");
+    expect(s.in(0x1f)).toBe(0x88);
+
+    // --- Setting one side must not disturb the other.
+    expect(s.in(0x37), "joystick 2 still Kempston 2").toBe(0x02);
+  });
+
+  it("mousePortReadCount rises only when the machine actually reads a mouse port", async () => {
+    const s = await createSession();
+    await s.loadCode(`
+      .org $8000
+      di
+    Wait:
+      jr Wait
+    ReadMouse:
+      ld bc,$fbdf
+      in a,(c)
+      ret
+    `);
+
+    // --- Frames of ordinary code must not look like a program using the mouse: if they did, the
+    // --- emulator would hide its own pointer for ever and the indicator would be pointless.
+    s.runFrames(2);
+    expect(s.machine.mousePortReadCount(), "nothing has read the mouse").toBe(0);
+
+    s.call("ReadMouse");
+    expect(s.machine.mousePortReadCount(), "one IN from $FBDF").toBe(1);
+
+    s.call("ReadMouse");
+    expect(s.machine.mousePortReadCount()).toBe(2);
+  });
+
+  it("setJoystickState on the machine reaches the Kempston port like the harness's joystick()", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\n di\n jr $");
+    s.setNextReg(0x05, 0x48); // --- left: MD 1 on $1F
+
+    s.joystick("left", "UP", "B");
+    const viaHarness = s.in(0x1f);
+
+    s.joystick("left");
+    s.machine.setJoystickState("left", 0x008 | 0x010); // --- JOY_UP | JOY_B
+    expect(s.in(0x1f), "the app's path sets the same pins").toBe(viaHarness);
+
+    s.machine.setJoystickState("left", 0);
+    expect(s.in(0x1f), "released").toBe(0x00);
+  });
+
   it("joystick: buttons reach the Kempston port, the MD pad's extra buttons $B2", async () => {
     const s = await createSession();
     await s.loadCode(" .org $8000\n di\n jr $");
