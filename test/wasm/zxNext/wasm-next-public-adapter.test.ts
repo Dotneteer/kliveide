@@ -5,19 +5,13 @@ import { DebugSupport } from "@emu/machines/DebugSupport";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { createZxNextMachine } from "@emu/machines/zxNext/ZxNextMachineFactory";
-import {
-  DEFAULT_ZXNEXT_IMPLEMENTATION,
-  ZXNEXT_IMPLEMENTATION
-} from "@emu/machines/zxNext/ZxNextImplementation";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 describe("ZX Spectrum Next WASM public adapter", () => {
-  it("creates the WASM machine from the factory by default and on request", () => {
-    expect(DEFAULT_ZXNEXT_IMPLEMENTATION).toBe("wasm");
+  it("creates the WASM machine from the factory", () => {
     expect(createZxNextMachine()).toBeInstanceOf(ZxNextWasmV2Machine);
-    expect(createZxNextMachine(undefined, { [ZXNEXT_IMPLEMENTATION]: "wasm" })).toBeInstanceOf(ZxNextWasmV2Machine);
   });
 
   it("reports OS initialization from live WASM CPU state", async () => {

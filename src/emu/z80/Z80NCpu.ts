@@ -6,7 +6,7 @@ import { FlagsSetMask } from "@emu/abstractions/FlagSetMask";
 export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
   // --- Scale factor converting one Z80 T-state to 28 MHz ticks.
   // --- Values: 8 (3.5 MHz), 4 (7 MHz), 2 (14 MHz), 1 (28 MHz).
-  // --- Updated by ZxNextMachine.beforeInstructionExecuted via CpuSpeedDevice.
+  // --- Kept in step with NextReg $07 by whatever machine hosts this CPU.
   cpuTactScale = 8;
 
   readonly mergedOps: Z80Operation[];
@@ -43,7 +43,7 @@ export class Z80NCpu extends Z80Cpu implements IZ80NCpu {
    * tacts counts Z80 T-states (unchanged, used by unit tests).
    * frameTacts counts 28 MHz ticks: n * cpuTactScale (8/4/2/1 for 3.5/7/14/28 MHz).
    * currentFrameTact is converted back to CLK_7 for screen rendering: frameTacts >>> 2.
-   * tactsInFrame is now in the 28 MHz domain (set by Z80NMachineBase.setTactsInFrame × 4).
+   * tactsInFrame is in the 28 MHz domain (the host machine sets it to the T-state count × 4).
    */
   tactPlusN(n: number): void {
     this.tacts += n;

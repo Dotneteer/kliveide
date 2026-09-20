@@ -8,7 +8,7 @@ import {
   productionOutput,
   waitForZxNextWasmBuildLock
 } from "../../../scripts/build-zxnext-wasm.cjs";
-import { FileProvider } from "../../zxnext/FileProvider";
+import { FileProvider } from "./FileProvider";
 
 let zxNextWasmBuilt = false;
 

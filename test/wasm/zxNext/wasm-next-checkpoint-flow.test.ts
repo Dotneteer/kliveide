@@ -20,7 +20,7 @@ import {
   waitForZxNextWasmBuildLock
 } from "../../../scripts/build-zxnext-wasm.cjs";
 import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
-import { FileProvider } from "../../zxnext/FileProvider";
+import { FileProvider } from "./FileProvider";
 
 const CHECKPOINT_KEY = "test-boot";
 

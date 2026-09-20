@@ -3,7 +3,9 @@
  * that emulates it: the partition names, the disassembly sections, the code-injection flow that boots
  * NextZXOS and types `.nexload`, and the length of a CALL-like instruction for step-over.
  *
- * Neutral: both the TypeScript `ZxNextMachine` and the WASM machine use these functions.
+ * Neutral: no emulation, only what the machine tells the IDE and the debugger about itself. It
+ * was extracted so the TypeScript and WASM Next machines could not drift apart; the WASM machine
+ * is the only one left, and the split still keeps this description out of the core's way.
  */
 import type { CodeInjectionFlow, CodeInjectionStep } from "@emu/abstractions/CodeInjectionFlow";
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";

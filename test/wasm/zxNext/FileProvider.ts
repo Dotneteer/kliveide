@@ -34,7 +34,7 @@ export class FileProvider implements IFileProvider {
   private resolvePath(inputPath: string, resolveIn?: string): string {
     if (path.isAbsolute(inputPath)) return inputPath;
 
-    inputPath = path.join(__dirname, "../../src/public", inputPath);
+    inputPath = path.join(__dirname, "../../../src/public", inputPath);
     return inputPath;
   }
 }

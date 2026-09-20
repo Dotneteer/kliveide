@@ -8,14 +8,13 @@ import {
 
 /*
  * ZX Spectrum Next sprites against the FPGA (`_input/next-fpga/src/video/sprites.vhd`), as scenarios
- * any sprite engine can be run through: the WASM engine in `test/wasm/zxNext/wasm-next-sprites-fpga`
- * and the TypeScript one in `test/zxnext/SpriteDevice-fpga`.
+ * a sprite engine can be run through: the WASM engine in `test/wasm/zxNext/wasm-next-sprites-fpga`.
+ * (A TypeScript engine was the second consumer until that backend was removed, which is why the
+ * scenarios are still written against an engine abstraction.)
  *
  * The expected pixels are computed here from the VHDL's *read* path — the pattern address a screen
- * pixel fetches — rather than from either engine's precomputed-variant tables, which are its inverse.
- * A mistake in an engine does not then hide in the test.
- *
- * Both engines render into the same 207,360-pixel buffer layout, so one pixel mapping serves both.
+ * pixel fetches — rather than from the engine's precomputed-variant tables, which are its inverse.
+ * A mistake in the engine does not then hide in the test.
  */
 
 const STANDARD_SCREEN_HEIGHT = 192;

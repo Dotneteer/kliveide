@@ -1,6 +1,5 @@
 import type { ISpectrumBeeperDevice } from "./zxSpectrum/ISpectrumBeeperDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
-import type { IZxNextMachine } from "@renderer/abstractions/IZxNextMachine";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import { BEEPER_LEVELS } from "@emu/abstractions/IGenericBeeperDevice";
 
@@ -14,7 +13,7 @@ export type BeeperTransition = {
 
 // --- This class implements the ZX Spectrum beeper device.
 export class SpectrumBeeperDevice
-  extends AudioDeviceBase<IZxSpectrumMachine | IZxNextMachine>
+  extends AudioDeviceBase<IZxSpectrumMachine>
   implements ISpectrumBeeperDevice
 {
   private _earBit = false;
@@ -28,7 +27,7 @@ export class SpectrumBeeperDevice
   private _sampleWindowStartMic = false;
   private readonly _transitions: BeeperTransition[] = [];
 
-  constructor(public readonly machine: IZxSpectrumMachine | IZxNextMachine) {
+  constructor(public readonly machine: IZxSpectrumMachine) {
     super(machine);
   }
 
@@ -85,24 +84,20 @@ export class SpectrumBeeperDevice
 
   /**
    * Gets the current sound sample using transition-weighted averaging.
-   * ZX Next returns independent EAR/MIC duties. Classic Spectrum machines return
-   * the resistor-mixed mono beeper level duplicated to both channels.
+   *
+   * A classic Spectrum machine returns the resistor-mixed mono beeper level, duplicated to both
+   * channels. (The ZX Next used to take the other branch here and return independent EAR/MIC
+   * duties; its beeper is emulated in C now - see `zxNext/wasm/zxnext/zxnext-beeper.c`.)
    */
   getCurrentSampleValue(sampleEndTact = this.machine.tacts): AudioSample {
-    const keepSignalsSeparate = this.machine.machineId === "zxnext";
     const sampleStartTact = this._sampleWindowStartTact;
     if (sampleEndTact <= sampleStartTact) {
-      if (keepSignalsSeparate) {
-        return { left: this._earBit ? 1.0 : 0.0, right: this._micBit ? 1.0 : 0.0 };
-      }
       return { left: this._outputLevel, right: this._outputLevel };
     }
 
     let cursor = sampleStartTact;
     let ear = this._sampleWindowStartEar;
     let mic = this._sampleWindowStartMic;
-    let totalEar = 0.0;
-    let totalMic = 0.0;
     let totalMixed = 0.0;
     let consumed = 0;
 
@@ -113,8 +108,6 @@ export class SpectrumBeeperDevice
       const transitionTact = Math.max(cursor, transition.tact);
       const duration = transitionTact - cursor;
       if (duration > 0) {
-        totalEar += (ear ? 1.0 : 0.0) * duration;
-        totalMic += (mic ? 1.0 : 0.0) * duration;
         totalMixed += BEEPER_LEVELS[(mic ? 1 : 0) | (ear ? 2 : 0)] * duration;
       }
       cursor = transitionTact;
@@ -125,8 +118,6 @@ export class SpectrumBeeperDevice
 
     const finalDuration = sampleEndTact - cursor;
     if (finalDuration > 0) {
-      totalEar += (ear ? 1.0 : 0.0) * finalDuration;
-      totalMic += (mic ? 1.0 : 0.0) * finalDuration;
       totalMixed += BEEPER_LEVELS[(mic ? 1 : 0) | (ear ? 2 : 0)] * finalDuration;
     }
 
@@ -139,20 +130,14 @@ export class SpectrumBeeperDevice
     this._sampleWindowStartMic = mic;
 
     const totalTacts = sampleEndTact - sampleStartTact;
-    if (!keepSignalsSeparate) {
-      const mixed = totalTacts > 0 ? totalMixed / totalTacts : BEEPER_LEVELS[(mic ? 1 : 0) | (ear ? 2 : 0)];
-      return { left: mixed, right: mixed };
-    }
-
-    return {
-      left: totalTacts > 0 ? totalEar / totalTacts : (ear ? 1.0 : 0.0),
-      right: totalTacts > 0 ? totalMic / totalTacts : (mic ? 1.0 : 0.0)
-    };
+    const mixed =
+      totalTacts > 0 ? totalMixed / totalTacts : BEEPER_LEVELS[(mic ? 1 : 0) | (ear ? 2 : 0)];
+    return { left: mixed, right: mixed };
   }
 
   /**
    * Replays a tact-ordered EAR/MIC transition trace and renders audio samples
-   * through the same time-weighted beeper model used by the TypeScript backend.
+   * through this device's time-weighted beeper model.
    * @param transitions Frame-relative transition records
    * @param frameStartTact Absolute tact at which the C execution slice started
    * @param frameStartOffset Frame tact at which the C execution slice started

@@ -7,8 +7,8 @@ import { beforeEach, describe, expect, it } from "vitest";
  *
  * i.e. set when a sprite writes an opaque pixel into a line-buffer position another sprite already
  * wrote, whatever the clip window or "sprite 0 on top" say (both act after that write), and cleared by
- * reading the port. Shared by the WASM (`test/wasm/zxNext/wasm-next-sprites-collision`) and TypeScript
- * (`test/zxnext/SpriteDevice-collision`) engines.
+ * reading the port. Driven by `test/wasm/zxNext/wasm-next-sprites-collision`. (It used to be shared
+ * with a TypeScript sprite engine, which is why it is still written against an engine abstraction.)
  */
 
 const TRANSPARENT = 0xe3;

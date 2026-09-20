@@ -15,15 +15,16 @@ const root = resolve(__dirname, "..");
 const DEFAULT_FRAMES = 10;
 const DEFAULT_RUNS = 3;
 const DEFAULT_WARMUP = 2;
-const MIN_WASM_SPEED_RATIO_FOR_DEFAULT = 1.0;
-const MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT = 0.1;
+// --- Absolute budgets in milliseconds per operation. They replaced the TypeScript-relative speed
+// --- ratios when the TypeScript Next backend was removed: there is no second backend left to
+// --- measure against, so the guard is a wall-clock ceiling instead of a comparison. The numbers are
+// --- deliberately loose - roughly an order of magnitude above what a development machine measures
+// --- (2026-09-20: ~5 ms/frame, ~0.01 ms/control operation) - because this guard exists to catch a
+// --- collapse, not to police run-to-run noise on slower CI hardware.
+// --- See .plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md, step 13.
+const MAX_MS_PER_FRAME_FOR_DEFAULT = 50;
+const MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT = 5;
 const SAFETY_GUARD_STOP_REASONS = new Set(["safetyGuard", "frameSafetyGuard", "instructionSafetyGuard"]);
-
-const FRAME_TERMINATION_NAMES = {
-  0: "Normal",
-  1: "DebugEvent",
-  2: "UntilExecutionPoint"
-};
 
 const DEFAULT_SCENARIOS = [
   "nextzxos-idle",
@@ -194,8 +195,8 @@ async function benchmarkZxNextWasm(options = {}) {
     runs: normalized.runs,
     warmup: normalized.warmup,
     threshold: {
-      minWasmSpeedRatioForDefault: MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
-      minWasmControlSpeedRatioForDefault: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
+      maxMillisecondsPerFrameForDefault: MAX_MS_PER_FRAME_FOR_DEFAULT,
+      maxMillisecondsPerControlOperationForDefault: MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
       met: scenarioReports.every(report => report.thresholdMet)
     },
     scenarios: scenarioReports,
@@ -205,40 +206,35 @@ async function benchmarkZxNextWasm(options = {}) {
 }
 
 async function benchmarkScenario(scenario, options) {
-  const typeScriptResult = await benchmarkBackend("typescript", scenario, options);
-  const wasmResult = await benchmarkBackend("wasm", scenario, options);
-  const speedRatio = wasmResult.metrics.operationsPerSecond.median /
-    Math.max(typeScriptResult.metrics.operationsPerSecond.median, Number.EPSILON);
+  const wasmResult = await benchmarkBackend(scenario, options);
+  const millisecondsPerOperation = wasmResult.metrics.millisecondsPerOperation.median;
 
   return {
     id: scenario.id,
     name: scenario.name,
     unit: scenario.unit,
     operations: options.frames,
-    minWasmSpeedRatio: scenario.minWasmSpeedRatio,
-    speedRatio,
-    thresholdMet: speedRatio >= scenario.minWasmSpeedRatio,
-    typescript: typeScriptResult,
+    maxMillisecondsPerOperation: scenario.maxMillisecondsPerOperation,
+    millisecondsPerOperation,
+    thresholdMet: millisecondsPerOperation <= scenario.maxMillisecondsPerOperation,
     wasm: wasmResult
   };
 }
 
-async function benchmarkBackend(backend, scenario, options) {
-  const machine = backend === "typescript"
-    ? await createTypeScriptMachine()
-    : await createWasmMachine(options.artifact);
+async function benchmarkBackend(scenario, options) {
+  const machine = await createWasmMachine(options.artifact);
   const runs = [];
   const aggregateStopReasons = {};
 
   for (let i = 0; i < options.runs; i++) {
-    scenario.setup(machine, backend);
-    runScenarioOperations(machine, backend, scenario, options.warmup, {});
+    scenario.setup(machine);
+    runScenarioOperations(machine, scenario, options.warmup, {});
 
     const startFrames = machine.frames ?? 0;
     const startTacts = machine.tacts ?? 0;
     const stopReasons = {};
     const start = performance.now();
-    runScenarioOperations(machine, backend, scenario, options.frames, stopReasons);
+    runScenarioOperations(machine, scenario, options.frames, stopReasons);
     const elapsedMs = performance.now() - start;
     const endFrames = machine.frames ?? 0;
     const endTacts = machine.tacts ?? 0;
@@ -259,30 +255,23 @@ async function benchmarkBackend(backend, scenario, options) {
   }
 
   return {
-    backend,
     stopReasons: aggregateStopReasons,
     metrics: summarizeRuns(runs)
   };
 }
 
-function runScenarioOperations(machine, backend, scenario, count, stopReasons) {
+function runScenarioOperations(machine, scenario, count, stopReasons) {
   for (let i = 0; i < count; i++) {
-    const reason = scenario.run(machine, backend, i);
+    const reason = scenario.run(machine, i);
     addStopReason(stopReasons, reason);
   }
-}
-
-async function createTypeScriptMachine() {
-  registerTsRuntime();
-  const { createTestNextMachine } = require("../test/zxnext/TestNextMachine.ts");
-  return createTestNextMachine();
 }
 
 async function createWasmMachine(artifact = productionOutput) {
   registerTsRuntime();
   const { ZxNextWasmV2Machine } = require("../src/emu/machines/zxNext/ZxNextWasmV2Machine.ts");
   const { FILE_PROVIDER } = require("../src/emu/machines/machine-props.ts");
-  const { FileProvider } = require("../test/zxnext/FileProvider.ts");
+  const { FileProvider } = require("../test/wasm/zxNext/FileProvider.ts");
   const machine = new ZxNextWasmV2Machine(
     undefined,
     undefined,
@@ -442,72 +431,68 @@ function createScenarioMap() {
       id: "nextzxos-idle",
       name: "NextZXOS boot/idle frames",
       unit: "frame",
-      minWasmSpeedRatio: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
+      maxMillisecondsPerOperation: MAX_MS_PER_FRAME_FOR_DEFAULT,
       setup(machine) {
         machine.reset();
       },
-      run(machine, backend) {
-        const termination = machine.executeMachineFrame();
-        return stopReasonForMachine(machine, backend, termination);
+      run(machine) {
+        machine.executeMachineFrame();
+        return stopReasonForMachine(machine);
       }
     },
     {
       id: "screen-heavy",
       name: "screen memory and render frames",
       unit: "frame",
-      minWasmSpeedRatio: MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
+      maxMillisecondsPerOperation: MAX_MS_PER_FRAME_FOR_DEFAULT,
       setup(machine) {
         setupNopLoop(machine);
         seedScreenMemory(machine);
       },
-      run(machine, backend, index) {
+      run(machine, index) {
         machine.doWriteMemory(0x4000 + (index & 0x17ff), (index * 17) & 0xff);
-        const termination = machine.executeMachineFrame();
+        machine.executeMachineFrame();
         machine.renderInstantScreen();
-        return stopReasonForMachine(machine, backend, termination);
+        return stopReasonForMachine(machine);
       }
     },
     {
       id: "audio-heavy",
       name: "beeper and PSG frames",
       unit: "frame",
-      minWasmSpeedRatio: MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
+      maxMillisecondsPerOperation: MAX_MS_PER_FRAME_FOR_DEFAULT,
       setup(machine) {
         setupNopLoop(machine);
         configurePsg(machine);
       },
-      run(machine, backend, index) {
+      run(machine, index) {
         machine.doWritePort(0x00fe, (index & 1) === 0 ? 0x18 : 0x00);
         writePsgRegister(machine, 0x08, 0x08 | (index & 0x07));
-        const termination = machine.executeMachineFrame();
-        return stopReasonForMachine(machine, backend, termination);
+        machine.executeMachineFrame();
+        return stopReasonForMachine(machine);
       }
     },
     {
       id: "storage-command",
       name: "SD storage command handoff",
       unit: "command",
-      minWasmSpeedRatio: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
-      setup(machine, backend) {
+      maxMillisecondsPerOperation: MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
+      setup(machine) {
         setupNopLoop(machine);
-        if (backend === "wasm") {
-          machine.wasmV2Runtime.exports.zxnextSetSdCardInfo(0, 4096);
-        } else {
-          machine.sdCardDevice.setCardInfo(4096);
-        }
+        machine.wasmV2Runtime.exports.zxnextSetSdCardInfo(0, 4096);
       },
-      run(machine, backend, index) {
+      run(machine, index) {
         issueSdReadCommand(machine, index & 0x1f);
-        const termination = machine.executeMachineFrame();
-        clearStorageCommand(machine, backend);
-        return stopReasonForMachine(machine, backend, termination);
+        machine.executeMachineFrame();
+        clearStorageCommand(machine);
+        return stopReasonForMachine(machine);
       }
     },
     {
       id: "debug-step",
       name: "debugger step operations",
       unit: "step",
-      minWasmSpeedRatio: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
+      maxMillisecondsPerOperation: MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
       setup(machine) {
         setupNopLoop(machine);
         const { DebugStepMode } = require("../src/emu/abstractions/DebugStepMode.ts");
@@ -515,9 +500,9 @@ function createScenarioMap() {
         machine.executionContext.debugStepMode = DebugStepMode.StepInto;
         machine.executionContext.debugSupport = new DebugSupport(undefined, []);
       },
-      run(machine, backend) {
-        const termination = machine.executeMachineFrame();
-        return stopReasonForMachine(machine, backend, termination);
+      run(machine) {
+        machine.executeMachineFrame();
+        return stopReasonForMachine(machine);
       }
     }
   ];
@@ -564,26 +549,17 @@ function issueSdReadCommand(machine, sector) {
   }
 }
 
-function clearStorageCommand(machine, backend) {
+function clearStorageCommand(machine) {
   machine.setFrameCommand(null);
-  if (backend === "wasm") {
-    machine.wasmV2Runtime.exports.zxnextClearSdHostCommand();
-  }
+  machine.wasmV2Runtime.exports.zxnextClearSdHostCommand();
 }
 
-function stopReasonForMachine(machine, backend, termination) {
-  if (backend === "wasm") {
-    return machine.getWasmV2Diagnostics().lastWasmStopReason;
-  }
-  return FRAME_TERMINATION_NAMES[termination] ?? `Termination${termination}`;
+function stopReasonForMachine(machine) {
+  return machine.getWasmV2Diagnostics().lastWasmStopReason;
 }
 
 function readAudioSampleCount(machine) {
-  if (machine.wasmV2Runtime != null) {
-    return machine.wasmV2Runtime.exports.zxnextGetAudioMixerSampleCount();
-  }
-  const mixer = machine.audioControlDevice?.getAudioMixerDevice?.();
-  return typeof mixer?.getAudioSamples === "function" ? mixer.getAudioSamples().length : 0;
+  return machine.wasmV2Runtime.exports.zxnextGetAudioMixerSampleCount();
 }
 
 function summarizeRuns(runs) {
@@ -627,17 +603,14 @@ function printTable(report) {
   console.log(`  artifact: ${report.artifact}`);
   console.log(`  size: ${report.artifactBytes.toLocaleString("en-US")} bytes`);
   console.log(`  build profile: ${report.buildProfile.optimization} ${report.buildProfile.flags.join(" ")}`);
-  console.log(`  default threshold: per-scenario speed floor (${report.threshold.met ? "met" : "not met"})`);
+  console.log(`  default threshold: per-scenario time budget (${report.threshold.met ? "met" : "not met"})`);
   for (const scenario of report.scenarios) {
-    const tsMs = scenario.typescript.metrics.millisecondsPerOperation;
     const wasmMs = scenario.wasm.metrics.millisecondsPerOperation;
     console.log("");
     console.log(`${scenario.id} - ${scenario.name}`);
-    console.log(`  TypeScript ms/${scenario.unit} median [min..max]: ${formatNumber(tsMs.median)} [${formatNumber(tsMs.min)}..${formatNumber(tsMs.max)}]`);
-    console.log(`  WASM       ms/${scenario.unit} median [min..max]: ${formatNumber(wasmMs.median)} [${formatNumber(wasmMs.min)}..${formatNumber(wasmMs.max)}]`);
-    console.log(`  WASM speed ratio: ${formatNumber(scenario.speedRatio)}x (${scenario.thresholdMet ? "met" : "below"} ${formatNumber(scenario.minWasmSpeedRatio)}x threshold)`);
-    console.log(`  TypeScript stop reasons: ${JSON.stringify(scenario.typescript.stopReasons)}`);
-    console.log(`  WASM stop reasons:       ${JSON.stringify(scenario.wasm.stopReasons)}`);
+    console.log(`  ms/${scenario.unit} median [min..max]: ${formatNumber(wasmMs.median)} [${formatNumber(wasmMs.min)}..${formatNumber(wasmMs.max)}]`);
+    console.log(`  budget: ${formatNumber(scenario.maxMillisecondsPerOperation)} ms/${scenario.unit} (${scenario.thresholdMet ? "met" : "exceeded"})`);
+    console.log(`  stop reasons: ${JSON.stringify(scenario.wasm.stopReasons)}`);
   }
 }
 
@@ -664,8 +637,8 @@ if (require.main === module) {
 
 module.exports = {
   DEFAULT_SCENARIOS,
-  MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
-  MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
+  MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
+  MAX_MS_PER_FRAME_FOR_DEFAULT,
   SAFETY_GUARD_STOP_REASONS,
   assertNoSafetyGuardStops,
   benchmarkZxNextWasm,

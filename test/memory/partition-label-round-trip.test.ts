@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory";
 import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 /*
  * The invariant this whole naming unification exists to establish:
@@ -26,7 +26,7 @@ type LabelledMachine = {
 const machines: [string, () => LabelledMachine][] = [
   ["ZX Spectrum 128K", () => createZxSpectrum128Machine() as unknown as LabelledMachine],
   ["ZX Spectrum +2/+3E", () => createZxSpectrumP3eMachine() as unknown as LabelledMachine],
-  ["ZX Spectrum Next", () => new ZxNextMachine() as unknown as LabelledMachine]
+  ["ZX Spectrum Next", () => new ZxNextWasmV2Machine() as unknown as LabelledMachine]
 ];
 
 describe.each(machines)("%s partition labels", (_name, create) => {
@@ -65,7 +65,7 @@ describe.each(machines)("%s partition labels", (_name, create) => {
 });
 
 describe("ZX Spectrum Next partition labels", () => {
-  const machine = () => new ZxNextMachine();
+  const machine = () => new ZxNextWasmV2Machine();
 
   it("covers every partition the machine claims to have", () => {
     // --- 4 Next ROMs + 2 alt ROMs + DivMMC ROM + 16 DivMMC RAM pages + 224 banks.
@@ -109,66 +109,14 @@ describe("ZX Spectrum Next partition labels", () => {
   });
 });
 
-describe("ZX Spectrum Next paged-in page labels", () => {
-  /** Pages the alternate ROM in, the state that used to surface the `A0`/`A1` names. */
-  const withAltRom = (m: ZxNextMachine) => {
-    m.nextRegDevice.setNextRegisterIndex(0x8c);
-    m.nextRegDevice.setNextRegisterValue(0x80);
-    return m;
-  };
-
-  const states: [string, () => ZxNextMachine][] = [
-    ["after reset", () => new ZxNextMachine()],
-    ["with the alternate ROM paged in", () => withAltRom(new ZxNextMachine())]
-  ];
-
-  it.each(states)("names every page %s with a label the machine parses back", (_when, create) => {
-    // --- The bug this replaces: the disassembly bank column showed `A0` for the alternate ROM,
-    // --- which `parsePartitionLabel` rejected — a name on screen that could not be typed into
-    // --- `bp-set`.
-    const m = create();
-
-    for (const label of m.getCurrentPartitionLabels()) {
-      if (label === "UN") continue;
-      expect(m.parsePartitionLabel(label), label).toBeDefined();
-    }
-  });
-
-  it.each(states)("agrees with getPartition() about every page %s", (_when, create) => {
-    // --- `getPartition` feeds `shouldStopAt`, so a disagreement here is a partitioned breakpoint
-    // --- matching the wrong partition. Both now read the same offset-to-index function.
-    const m = create();
-    const labels = m.getCurrentPartitionLabels();
-
-    for (let page = 0; page < 8; page++) {
-      const fromLabel = labels[page] === "UN" ? undefined : m.parsePartitionLabel(labels[page]);
-      expect(m.getPartition(page * 0x2000), `page ${page} (${labels[page]})`).toBe(fromLabel);
-    }
-  });
-
-  it("names the alternate ROM X0, the name the map and the parser both use", () => {
-    // --- The regression, stated directly. This page reported `A0` — a spelling `parsePartitionLabel`
-    // --- rejects, and which is anyway ambiguous with RAM bank $A0. Asserting the *absence* of the
-    // --- old names would be unsound for exactly that reason: `A0` and `D5` are legitimate bank
-    // --- labels, so a page showing bank $A0 is indistinguishable from the retired alt-ROM name by
-    // --- string alone. `X0` is not, because `X` is not a hex digit.
-    const m = withAltRom(new ZxNextMachine());
-
-    expect(m.getCurrentPartitionLabels()[0]).toBe("X0");
-    expect(m.getPartition(0x0000)).toBe(-5);
-    expect(m.parsePartitionLabel("X0")).toBe(-5);
-  });
-
-  it.each(states)("keeps page labels within the column budget %s", (_when, create) => {
-    // --- The TS path used to emit `D10`..`D15` for DivMMC RAM — three characters into a 2ch box.
-    for (const label of create().getCurrentPartitionLabels()) {
-      expect(label.length, label).toBeLessThanOrEqual(2);
-    }
-  });
-});
+/*
+ * The paged-in page labels - `getCurrentPartitionLabels()` and `getPartition()` - need a running
+ * memory mapping, so they live with the machine that owns one:
+ * `test/wasm/zxNext/wasm-next-partition-labels.test.ts`.
+ */
 
 describe("ZX Spectrum Next retired partition names", () => {
-  const machine = () => new ZxNextMachine();
+  const machine = () => new ZxNextWasmV2Machine();
 
   it("still parses the alternate ROMs' former names", () => {
     // --- `Q0`/`Q1` named the alternate ROMs before `X0`/`X1`. A script that uses them keeps

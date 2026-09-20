@@ -6,7 +6,7 @@ import { FILE_PROVIDER } from "@emu/machines/machine-props";
 import { createZxNextMachine } from "@emu/machines/zxNext/ZxNextMachineFactory";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
-import { FileProvider } from "../../zxnext/FileProvider";
+import { FileProvider } from "./FileProvider";
 
 /*
  * The machine the app gets: created by the factory, its core loaded the way the renderer loads it
@@ -14,7 +14,7 @@ import { FileProvider } from "../../zxnext/FileProvider";
  */
 describe("ZX Spectrum Next WASM factory setup", () => {
   it("loads the core through fetch and runs a Z80N NEXTREG instruction", async () => {
-    const machine = createZxNextMachine(undefined, { zxnextImplementation: "wasm" } as any);
+    const machine = createZxNextMachine();
     expect(machine).toBeInstanceOf(ZxNextWasmV2Machine);
     machine.setMachineProperty(FILE_PROVIDER, new FileProvider());
     const restoreFetch = installFileFetchForFactoryWasmSetup();

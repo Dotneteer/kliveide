@@ -32,8 +32,7 @@ import {
   MF_M6510,
   CT_DISASSEMBLER,
   MF_VIC,
-  MF_ALLOW_SCAN_LINES,
-  MC_ZXNEXT_IMPLEMENTATION
+  MF_ALLOW_SCAN_LINES
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -340,16 +339,7 @@ export const machineRegistry: MachineInfo[] = [
       {
         modelId: "standard",
         displayName: "ZX Spectrum Next",
-        config: {
-          [MC_ZXNEXT_IMPLEMENTATION]: "wasm"
-        }
-      },
-      {
-        modelId: "compatibility",
-        displayName: "ZX Spectrum Next Compatibility",
-        config: {
-          [MC_ZXNEXT_IMPLEMENTATION]: "typescript"
-        }
+        config: {}
       }
     ],
     mediaIds: [MEDIA_TAPE],
@@ -460,9 +450,15 @@ export function getMachineName(machineId: string, modelId?: string): string {
  *
  * The Cambridge Z88's "WASM preview" twins (`<id>-wasm`, Steps 9-13 of
  * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default.
+ *
+ * The ZX Spectrum Next's "compatibility" model selected the TypeScript emulator, which was removed
+ * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4). A
+ * project or a last session saved with it opens on the one remaining Next model rather than failing
+ * to find its machine.
  */
 export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  [MI_Z88]: Object.fromEntries(Z88_MODELS.map((m) => [`${m.modelId}-wasm`, m.modelId]))
+  [MI_Z88]: Object.fromEntries(Z88_MODELS.map((m) => [`${m.modelId}-wasm`, m.modelId])),
+  [MI_ZXNEXT]: { compatibility: "standard" }
 };
 
 /**

@@ -12,12 +12,12 @@ import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machi
  *   (rt(1) or rt(0))`), so bit 2 is set only until the first soft reset. Writes to $02 do not change it.
  * - Config mode is entered by writing `111` to NextReg $03's low bits and left by any other non-zero
  *   value (~5125-5129). Klive starts after the firmware, so both cores start (and soft-reset) with
- *   config mode off - the TypeScript core's `NextRegDevice.configMode`, mirrored here.
+ *   config mode off.
  * - NextReg $14 (global transparency) has nothing to do with any of it.
  *
- * WASM only, and through the core's `zxnextGetSdPortE7Value` export: port $E7 is write-only and
- * neither core emulates the flash chip, so no program can see the difference yet. The TypeScript
- * core keeps no chip-select latch, only the selected SD card (covered in test/zxnext/SdCardDevice).
+ * Through the core's `zxnextGetSdPortE7Value` export rather than a session method: port $E7 is
+ * write-only and the core does not emulate the flash chip, so no program can see the difference
+ * yet.
  */
 describe("SPI chip select $7F (FPGA flash) - wasm core", () => {
   const e7 = (s: Awaited<ReturnType<typeof createSession>>) =>

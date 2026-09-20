@@ -5,10 +5,10 @@
  * until this contract existed nothing in `src/` could drive them: the only callers of the WASM
  * exports were the test harness. These two methods are the whole host-input surface.
  *
- * Deliberately **not** part of `IZxNextIdeMachine` (what the IDE panels *read*) and not part of
- * `IZxNextMachine` (the TypeScript machine's own contract). This file imports nothing, so a renderer
- * hook can type against it without dragging a TypeScript Next device into the WASM machine's import
- * graph - which `test/wasm/zxNext/wasm-next-separation.test.ts` fails on, even for a type import.
+ * Deliberately **not** part of `IZxNextIdeMachine`, which is what the IDE panels *read*. This file
+ * imports nothing, so a renderer hook can type against it without pulling emulation into the WASM
+ * machine's import graph - which `test/wasm/zxNext/wasm-next-separation.test.ts` fails on, even for
+ * a type import.
  */
 
 /** The two joystick sockets. `left` is joystick 1 in NextReg `$05`, `right` is joystick 2. */

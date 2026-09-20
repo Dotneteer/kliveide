@@ -15,8 +15,8 @@ import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 import { checkZxNextWasmSize, DEFAULT_MAX_BYTES } from "../../../scripts/check-zxnext-wasm-size.cjs";
 import {
   assertNoSafetyGuardStops,
-  MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT,
-  MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
+  MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT,
+  MAX_MS_PER_FRAME_FOR_DEFAULT,
   benchmarkZxNextWasm,
   summarizeRuns
 } from "../../../scripts/benchmark-zxnext-wasm.cjs";
@@ -93,15 +93,15 @@ describe("ZX Spectrum Next WASM performance and boundary audit", () => {
       flags: expect.arrayContaining(["-O3"])
     });
     expect(report.threshold).toMatchObject({
-      minWasmSpeedRatioForDefault: MIN_WASM_SPEED_RATIO_FOR_DEFAULT,
-      minWasmControlSpeedRatioForDefault: MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT
+      maxMillisecondsPerFrameForDefault: MAX_MS_PER_FRAME_FOR_DEFAULT,
+      maxMillisecondsPerControlOperationForDefault: MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT
     });
     expect(typeof report.threshold.met).toBe("boolean");
     expect(report.scenarios.map((scenario: any) => scenario.id)).toEqual(["debug-step"]);
     for (const scenario of report.scenarios) {
       expect(scenario.wasm.metrics.operations).toBe(2);
       expect(scenario.wasm.metrics.millisecondsPerOperation.median).toBeGreaterThanOrEqual(0);
-      expect(scenario.minWasmSpeedRatio).toBe(MIN_WASM_CONTROL_SPEED_RATIO_FOR_DEFAULT);
+      expect(scenario.maxMillisecondsPerOperation).toBe(MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT);
       expect(typeof scenario.thresholdMet).toBe("boolean");
       assertNoSafetyGuardStops(scenario.wasm.stopReasons);
     }

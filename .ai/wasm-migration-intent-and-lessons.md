@@ -58,8 +58,10 @@ against the VHDL and closed with dual-core tests on 2026-09-19 -
 rollout constants and their diagnostics fields were removed in Step 10.)
 
 Rollout completion on 2026-08-22: the normal ZX Spectrum Next factory default
-is now WASM. TypeScript remains explicitly selectable as the compatibility
-fallback and parity oracle.
+is now WASM. (Superseded 2026-09-20: the TypeScript Next backend, its
+"ZX Spectrum Next Compatibility" model and the `zxnextImplementation` switch are
+gone. There is one Next machine, and the reference for its behaviour is the VHDL
+in `_input/next-fpga/`, not another emulator.)
 
 ULA audit correction on 2026-08-22: the WASM backend still has open ULA/screen
 blockers. The TypeScript renderer performs tact-by-tact composed rendering and
@@ -239,9 +241,24 @@ needs to be extended.
 
 Keep the old TypeScript backend available as an explicit fallback and parity
 oracle until a separate deprecation plan removes it. Do not delete the fallback
-just because WASM becomes the default. For the ZX Spectrum Next that plan is
-`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: separation and parity first,
-removal only after its gate.
+just because WASM becomes the default. For the ZX Spectrum Next that plan was
+`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, and it is done: separation
+first, then a ten-condition parity gate, then removal. Two things about it are
+worth carrying to the next machine.
+
+**Separation was most of the work, and it has to come first.** Nothing could be
+deleted while the WASM machine still inherited from the TypeScript one, so the
+plan spent six of its fifteen steps adding and rewiring without deleting a line
+of the implementation being replaced - and kept both backends green throughout,
+because the old one was the measuring instrument.
+
+**The oracle is scaffolding; the hardware description is the reference.** Once
+the TypeScript core is gone there is nothing left to compare against, so every
+test that was a comparison has to become a claim: derived from the VHDL where the
+VHDL answers it, derived from the scenario where it does not, and otherwise
+pinned to the value both cores agreed on at the tag - *saying in the file that
+that is what it is*. Tag the last commit that has both (here
+`pre-zxnext-ts-removal-2026-09-19`) before the first deletion.
 
 **A WASM machine must not subclass the TypeScript machine it replaces.** The Next
 WASM machine did (`ZxNextWasmV2Machine extends ZxNextMachine`), which meant every

@@ -76,7 +76,7 @@ describe("NextReg 0x03 machine type", () => {
 
   /*
    * The picture follows the raster: every timing shows the paper at buffer (96, 48) and the border
-   * around it (TimingConfig's framing), whatever the line and frame length.
+   * around it, whatever the line and frame length.
    */
   for (const [name, t] of FRAMES) {
     it(`RST-008: ${name} timing draws paper and border in place`, async () => {

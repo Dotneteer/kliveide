@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { createTestNextMachine } from "../zxnext/TestNextMachine";
+import { createTestZxNextWasmMachine } from "../wasm/zxNext/wasm-next-test-helpers";
 import { renderMachineAudioFrame } from "@renderer/features/emulator/audioFrameRendering";
 import { AudioRenderer } from "@renderer/features/emulator/AudioRenderer";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 describe("emulator audio frame rendering", () => {
   it("passes real non-zero ZX Next TurboSound samples from the machine to the renderer", async () => {
-    const machine = await createTestNextMachine();
+    const machine = await createTestZxNextWasmMachine();
     const rendererSamples: AudioSample[][] = [];
     const recorderSamples: AudioSample[][] = [];
     const renderer = {
@@ -27,16 +27,18 @@ describe("emulator audio frame rendering", () => {
       machine.doWritePort(0xbffd, value);
     };
 
-    machine.onInitNewFrame(false);
+    // --- A HALT at $8000 keeps the CPU out of the way; the PSG plays a channel-A tone at full
+    // --- volume, so the frame's samples must be audibly non-zero.
+    machine.hardReset();
+    machine.doWriteMemory(0x8000, 0x76);
+    machine.pc = 0x8000;
     writeAy(0, 0x20);
     writeAy(1, 0x00);
     writeAy(7, 0x3e);
     writeAy(8, 0x0f);
 
-    for (let i = 0; i < 3000 && !machine.frameCompleted; i++) {
-      machine.tactPlusN(16);
-      machine.afterInstructionExecuted();
-    }
+    machine.executeMachineFrame();
+    expect(machine.frameCompleted).toBe(true);
 
     const samples = await renderMachineAudioFrame(machine, renderer, 0.5, recorder);
 

@@ -21,7 +21,6 @@ export const MC_Z88_SLOT2 = "slot2";
 export const MC_Z88_SLOT3 = "slot3";
 export const MC_Z88_KEYBOARD = "keyboard";
 export const MC_SP48_ROM_FILE = "sp48RomFile";
-export const MC_ZXNEXT_IMPLEMENTATION = "zxnextImplementation";
 
 // --- Selects the Cambridge Z88 backend: "typescript" or "wasm" (see Z88Implementation.ts)
 export const MC_Z88_IMPLEMENTATION = "z88Implementation";

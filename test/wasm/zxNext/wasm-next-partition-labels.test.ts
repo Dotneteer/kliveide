@@ -100,6 +100,40 @@ describe("ZX Spectrum Next WASM partition labels", () => {
     expect(wasm.getPartition(0x8000)).not.toBe(wasm.getPartition(0xa000));
   });
 
+  /*
+   * Moved here from `test/memory/partition-label-round-trip.test.ts` with the TypeScript Next's
+   * removal: these are properties of the *paged-in* labels, which need a live memory mapping.
+   *
+   * The bug they replace: the disassembly bank column showed `A0` for the alternate ROM - a
+   * spelling `parsePartitionLabel` rejects, and one that is anyway ambiguous with RAM bank $A0.
+   */
+  it("names every paged-in page with a label it parses back, inside the 2ch column budget", async () => {
+    const wasm = await createTestZxNextWasmMachine();
+
+    for (const pageAltRom of [false, true]) {
+      // --- $8C bit 7 pages the Alt ROM in, the state that used to surface the `A0`/`A1` names.
+      if (pageAltRom) writeNextReg(wasm, 0x8c, 0x80);
+      const where = pageAltRom ? "with the alternate ROM paged in" : "after reset";
+      const labels = wasm.getCurrentPartitionLabels();
+
+      for (const label of labels) {
+        // --- `UN` is the unpaged marker, not a partition name.
+        expect(label.length, `${label} ${where}`).toBeLessThanOrEqual(2);
+        if (label === "UN") continue;
+        expect(wasm.parsePartitionLabel(label), `${label} ${where}`).toBeDefined();
+      }
+
+      // --- `getPartition` feeds `shouldStopAt`, so a disagreement with the shown label is a
+      // --- partitioned breakpoint matching the wrong partition.
+      for (let page = 0; page < 8; page++) {
+        const fromLabel = labels[page] === "UN" ? undefined : wasm.parsePartitionLabel(labels[page]);
+        expect(wasm.getPartition(page * 0x2000), `page ${page} (${labels[page]}) ${where}`).toBe(
+          fromLabel
+        );
+      }
+    }
+  });
+
   it("parses partition labels and lists the full label map", async () => {
     const wasm = await createTestZxNextWasmMachine();
 

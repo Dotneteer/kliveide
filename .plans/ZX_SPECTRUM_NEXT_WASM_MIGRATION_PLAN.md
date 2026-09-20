@@ -1,8 +1,10 @@
 # ZX Spectrum Next WASM Migration Plan
 
-> **Status 2026-09-19:** the WASM machine no longer derives from the TypeScript `ZxNextMachine`
-> (`ZxNextWasmHost`), and the ULA/screen blockers are closed. The TypeScript backend's deprecation plan
-> (the one Step 28 asks for) is `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`.
+> **Status 2026-09-20: done.** The WASM machine stands on its own (`ZxNextWasmHost`), the ULA/screen
+> blockers are closed, and the TypeScript Next backend has been removed - machine, devices, port
+> handlers, the `zxnextImplementation` switch and the "ZX Spectrum Next Compatibility" model. The
+> deprecation plan Step 28 asks for was `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, and it is
+> complete. Everything below that speaks of a TypeScript oracle or fallback is history.
 
 Created: 2026-08-16
 
