@@ -53,22 +53,14 @@ export function useEmulatorKeyboard(
     const mapping = keyMapping?.[code];
     if (!mapping) return;
     const machine = controllerRef.current?.machine;
-    if (typeof mapping === "string") {
-      machine?.setKeyStatus(keyCodeSet.current[mapping], isDown);
-      keyStatusSet?.(keyCodeSet.current[mapping], isDown);
-    } else {
-      if (mapping.length > 0) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[0]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[0]], isDown);
-      }
-      if (mapping.length > 1) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[1]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[1]], isDown);
-      }
-      if (mapping.length > 2) {
-        machine?.setKeyStatus(keyCodeSet.current[mapping[2]], isDown);
-        keyStatusSet?.(keyCodeSet.current[mapping[2]], isDown);
-      }
+    // --- A mapping is one key or a modifier plus a key. Iterating rather than unrolling a branch
+    // --- per position keeps this from drifting out of step with `KeySet` again: the arity lives in
+    // --- the type and in the mapping-file parser, not here.
+    const keys = typeof mapping === "string" ? [mapping] : mapping;
+    for (const key of keys) {
+      const keyCode = keyCodeSet.current[key];
+      machine?.setKeyStatus(keyCode, isDown);
+      keyStatusSet?.(keyCode, isDown);
     }
   }, [controllerRef, keyStatusSet]);
 
