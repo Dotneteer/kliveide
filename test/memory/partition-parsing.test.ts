@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
 import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory";
 import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 
 describe("Memory partitions", () => {
   it("ZX Spectrum 48 works #1", () => {
@@ -105,7 +105,7 @@ describe("Memory partitions", () => {
 
   spNextCases.forEach((c) => {
     it(`ZX Spectrum Next works #1 (${c.l})`, () => {
-      const machine = new ZxNextMachine();
+      const machine = new ZxNextWasmV2Machine();
       const partition = machine.parsePartitionLabel(c.l);
       expect(partition).toEqual(c.p);
     });

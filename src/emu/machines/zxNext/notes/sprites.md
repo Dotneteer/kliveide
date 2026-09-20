@@ -4,6 +4,15 @@
 
 The ZX Spectrum Next sprite engine is a high-performance hardware renderer supporting up to 128 sprites with sophisticated transformation capabilities. The architecture uses a state machine-driven approach with double-buffered line buffers to efficiently process sprites during frame rendering. This document describes the algorithm for emulation implementation.
 
+> **How to read this document.** It is a hardware description, verified against
+> `_input/next-fpga/src/video/sprites.vhd`, and that is what to trust in it. Parts of it are written
+> as implementation guidance for the TypeScript sprite renderer that Klive used to have — TypeScript
+> pseudo-code against `SpriteDevice`, `patternMemory8bit[]`, `NextComposedScreenDevice`, references
+> to pre-transformed pattern variants. That renderer was removed
+> (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`); the sprite engine is
+> `wasm/zxnext/zxnext-sprites.c`. Read those passages as one worked way of implementing the
+> hardware, not as a description of the code.
+
 **Key Characteristics**:
 - **128 hardware sprites** (16×16 pixels base size)
 - **64 sprite patterns** (expandable via relative sprites)
@@ -20,7 +29,7 @@ The ZX Spectrum Next sprite engine is a high-performance hardware renderer suppo
   - WHC 320–511: Horizontal blanking interval (192 values, but spans 136 machine cycles)
 - **VC (Vertical Counter)**: 0–311 (50Hz) or 0–263 (60Hz) per frame
 
-**Emulator Coordinate System** (NextComposedScreenDevice):
+**Emulator Coordinate System** (the buffer the core renders into):
 - **HC (emulator)**: 0–455 per scanline, where:
   - HC 0–95: Left blanking (96 clocks, not rendered)
   - HC 96–455: Visible area starts at `firstVisibleHC` = 96
@@ -117,33 +126,25 @@ These hardware characteristics enable the Next's sprite engine to process 128 sp
 
 ### Hardware Pattern and Attribute Model (FPGA, authoritative)
 
-Verified against `_input/next-fpga/src/video/sprites.vhd`. Both engines follow this model — the WASM
-engine (`wasm/zxnext/zxnext-sprites.c`, `zxnext-ula.c`) and the TypeScript `SpriteDevice` — and both
-run the same pixel-level scenarios in `test/zxnext/sprite-fpga-scenarios.ts`
-(`test/wasm/zxNext/wasm-next-sprites-fpga.test.ts`, `test/zxnext/SpriteDevice-fpga.test.ts`).
+Verified against `_input/next-fpga/src/video/sprites.vhd`. The engine
+(`wasm/zxnext/zxnext-sprites.c`, `zxnext-ula.c`) follows this model, and is run through the
+pixel-level scenarios in `test/wasm/zxNext/sprite-fpga-scenarios.ts`
+(`test/wasm/zxNext/wasm-next-sprites-fpga.test.ts`). A second, TypeScript engine used to run the
+same scenarios; it was removed with the TypeScript Next backend, which is why they are still
+written against an engine abstraction.
 
 **Status register (port `$303B`)**, cleared by reading it:
 
 - **bit 0, collision** — set when a sprite writes an opaque pixel into a line-buffer position another
   sprite already wrote (`spr_line_data_o(8) and spr_line_we`). That write happens *before* clipping and
   before "sprite 0 on top" decides what is shown, so overlaps outside the clip window count, and so do
-  overlaps hidden by zero-on-top. The WASM engine detects it once per emulated frame, at frame
+  overlaps hidden by zero-on-top. The engine detects it once per emulated frame, at frame
   completion — not when the display is drawn, which only happens when a display asks for it. The
-  TypeScript renderer detects it as it fills its line buffer, which now also takes sprites outside
-  the clip window; the clip is applied per pixel when the buffer is displayed (it used to skip only
-  sprites entirely outside the window, drawing partly clipped ones in full). Both engines run the
-  same scenarios in `test/zxnext/sprite-collision-scenarios.ts`.
-- **bit 1, too many sprites per line** — set when the sprite engine runs out of time on a line
-  (`sprites_overtime`). The TypeScript renderer sets it when a line's sprites do not fit its blanking
-  interval (an approximation of the FPGA's `spr_cur_notime` rule, not a cycle-exact copy). The
-  whole-frame WASM engine has no per-line time budget and never sets it.
-
-**TypeScript renderer per-line budget:** `NextComposedScreenDevice` fills a line's sprite buffer
-during the whole horizontal blanking interval — every tact outside the 320-pixel display window, 136
-tacts or 544 CLK_28 cycles — and gives up on that line (raising status bit 1) when the next sprite no
-longer fits. It used to render only in the 16 tacts before the window (64 cycles), which cut off a
-second 32-pixel-wide sprite on the same line. Blanking tacts run only the sprite engine; nothing is
-composed or written to the bitmap for them. The WASM engine has no per-line budget.
+  scenarios are `test/wasm/zxNext/sprite-collision-scenarios.ts`.
+- **bit 1, too many sprites per line** — set by the hardware when the sprite engine runs out of time
+  on a line (`sprites_overtime`). The whole-frame engine has no per-line time budget and never sets
+  it. The per-line budget described under *Performance Optimizations* below is the FPGA's, and was
+  also modelled by the removed TypeScript renderer; it is not emulated today.
 
 **Pattern memory** is one 16K block written through port `$5B`, one byte per address, at
 `patternIndex << 8 | subIndex` (port `$303B` sets the index and, with bit 7, sub-index `$80`).

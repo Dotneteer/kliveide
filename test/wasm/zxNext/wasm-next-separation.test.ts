@@ -10,9 +10,15 @@ import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
  *
  * `ZxNextWasmV2Machine` used to extend the TypeScript `ZxNextMachine`, so every WASM machine built -
  * and reset - all ~25 TypeScript devices, and several paths quietly ran TypeScript emulation (the
- * keyboard, code injection, frame pacing). The two cores now share only neutral modules (the
- * `next*.ts` metadata, `nextMachineInfo.ts`) and the IDE contract (`IZxNextIdeMachine`). These tests
- * keep it that way. See `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 5.
+ * keyboard, code injection, frame pacing). Separating them (Step 5 of
+ * `.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`) was what made removing the TypeScript
+ * machine possible at all.
+ *
+ * The TypeScript files are deleted now (Step 13), so these tests read as an architecture guard: the
+ * shapes they forbid are the ones a reintroduced TypeScript device would take, and the module graph
+ * of the WASM machine must stay clear of them. What the WASM machine may share is the neutral
+ * metadata (the `next*.ts` modules, `nextMachineInfo.ts`) and the IDE contract
+ * (`IZxNextIdeMachine`).
  */
 
 const REPO = resolve(__dirname, "../../..");
@@ -30,7 +36,7 @@ const ALIASES: Record<string, string> = {
   "@mvc": "src/renderer/mvc"
 };
 
-/** The TypeScript Next emulation: the machine, its base and CPU, the devices, the port handlers. */
+/** What the TypeScript Next emulation was: the machine, its base and CPU, the devices, the ports. */
 const ZXNEXT = "src/emu/machines/zxNext/";
 function isTypeScriptNextEmulation(file: string): boolean {
   if (file === "src/emu/z80/Z80NCpu.ts") return true;
@@ -113,9 +119,55 @@ describe("ZX Spectrum Next WASM machine separation", () => {
     }
   });
 
-  it("the graph check would see a leak (the TypeScript machine is reachable from its own module)", () => {
-    const graph = importGraph("src/emu/machines/zxNext/ZxNextMachine.ts");
-    expect([...graph.keys()].filter(isTypeScriptNextEmulation)).toContain("src/emu/machines/zxNext/NextRegDevice.ts");
+  it("the TypeScript Next emulation is gone from the tree", () => {
+    // --- Step 13. Left behind, any of these would be dead weight that the import-graph check
+    // --- above passes over in silence, because nothing reaches it.
+    for (const file of [
+      "src/emu/machines/zxNext/ZxNextMachine.ts",
+      "src/emu/machines/zxNext/Z80NMachineBase.ts",
+      "src/emu/machines/zxNext/NextRegDevice.ts",
+      "src/emu/machines/zxNext/MemoryDevice.ts",
+      "src/emu/machines/zxNext/nextRegReadMux.ts",
+      "src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts",
+      "src/emu/machines/zxNext/io-ports/NextIoPortManager.ts",
+      "src/emu/machines/zxNext/storage/DivMmcDevice.ts",
+      "src/emu/machines/zxNext/diagnostics/ZxNextFrameTrace.ts",
+      "src/renderer/abstractions/IZxNextMachine.ts"
+    ]) {
+      expect(existsSync(resolve(REPO, file)), file).toBe(false);
+    }
+  });
+
+  it("recognizes a TypeScript Next emulation file by its path, so the graph check can see one", () => {
+    // --- The detector above decides the whole guard. With the files deleted there is no live
+    // --- positive case left, so it is exercised against the names they had - and against the
+    // --- neutral modules and the WASM machine, which must stay allowed.
+    for (const file of [
+      "src/emu/machines/zxNext/ZxNextMachine.ts",
+      "src/emu/machines/zxNext/Z80NMachineBase.ts",
+      "src/emu/machines/zxNext/SpriteDevice.ts",
+      "src/emu/machines/zxNext/nextRegReadMux.ts",
+      "src/emu/machines/zxNext/Clock28.ts",
+      "src/emu/machines/zxNext/NextPsgChip.ts",
+      "src/emu/machines/zxNext/io-ports/AyRegPortHandler.ts",
+      "src/emu/machines/zxNext/screen/NextComposedScreenDevice.ts",
+      "src/emu/machines/zxNext/storage/DivMmcDevice.ts",
+      "src/emu/machines/zxNext/diagnostics/ZxNextFrameTrace.ts",
+      "src/emu/z80/Z80NCpu.ts"
+    ]) {
+      expect(isTypeScriptNextEmulation(file), file).toBe(true);
+    }
+    for (const file of [
+      "src/emu/machines/zxNext/ZxNextWasmV2Machine.ts",
+      "src/emu/machines/zxNext/ZxNextWasmHost.ts",
+      "src/emu/machines/zxNext/nextMachineInfo.ts",
+      "src/emu/machines/zxNext/nextRegDescriptors.ts",
+      "src/emu/machines/zxNext/IZxNextIdeMachine.ts",
+      "src/emu/machines/zxNext/wasm/ZxNextWasmV2Loader.ts",
+      "src/emu/machines/BeeperDevice.ts"
+    ]) {
+      expect(isTypeScriptNextEmulation(file), file).toBe(false);
+    }
   });
 
   it("builds no TypeScript Next device", () => {

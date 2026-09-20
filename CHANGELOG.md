@@ -7,8 +7,9 @@
 - **ZX Spectrum Next panels showed stale data.** On the standard (WASM) Next the Palettes panel and
   the sprite editor's palette showed power-on colours whatever a program had written, the ULA & I/O
   panel read values the emulator never updated, and the Memory Mapping panel showed logical instead of
-  physical page offsets and zero for the paging and DivMMC ports. On the Next Compatibility model the
-  ULA & I/O panel failed outright, and the memory editor treated the ROM pages as RAM.
+  physical page offsets and zero for the paging and DivMMC ports. (On the now-removed Next
+  Compatibility model the ULA & I/O panel failed outright, and the memory editor treated the ROM
+  pages as RAM.)
 - **No sound while debugging the ZX Spectrum Next.** With the debugger attached, the standard model
   played nothing after its first frame; it now sounds as it does without the debugger.
 - The ZX Spectrum Next's **F2 (scandoubler), F3 (50/60 Hz) and F7 (scanline weight)** menu items had no
@@ -90,6 +91,14 @@
   breakpoint, preferring an enabled one.
 
 ### Breaking changes
+
+- **The "ZX Spectrum Next Compatibility" machine model is gone.** It ran a second, TypeScript
+  implementation of the Next, which existed to check the current emulator against while that one was
+  being written. The two now agree everywhere they were measured &mdash; the whole hardware test
+  suite, every pixel test, and a 1500-frame instruction-by-instruction comparison of the NextZXOS
+  boot &mdash; so the old one has been removed, and with it the last places where the Next quietly
+  ran two emulators at once. A project or a session saved with the Compatibility model opens on
+  **ZX Spectrum Next**; nothing else about it changes.
 
 - **On the ZX Spectrum Next, a positive memory partition index now means an 8K page rather than a
   16K bank.** Everything else already described these as 8K pages &mdash; the 224-entry partition

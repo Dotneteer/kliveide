@@ -70,10 +70,13 @@ merely uncoloured, which no route diff can see.
   - Screen cases (`test/visual/<suite>/<case>/`): pixel tests judged by probes, goldens and AI
     review, optionally through real NextZXOS `.nexload` in Chrome - `npm run test:visual`.
     Read `.ai/visual-tests-guide.md` before writing one.
-- New tests for Next devices use the harness, not device objects or `test/zxnext/TestNextMachine.ts`.
-  When touching an old mock-based test in `test/zxnext/` or `test/wasm/zxNext/`, prefer migrating it
-  (README: "Replacing a mock-based unit test"). Missing a capability? Add a session method
-  (README: "Adding a method"), do not reach into `session.machine`.
+- New tests for Next hardware behaviour go in `test/zxnext-hw/` through the harness. The mock-based
+  device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL in
+  `_input/next-fpga/`, not a second emulator (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
+  `test/wasm/zxNext/` keeps what the harness cannot reach - the loader, the machine lifecycle,
+  checkpoints, the debug loop, boot traces, IDE-facing state.
+- Missing a capability? Add a session method (README: "Adding a method"), do not reach into
+  `session.machine`.
 
 ## Current Useful Commands
 

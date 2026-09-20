@@ -1,19 +1,19 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 
-import { getZxNextImplementation } from "./ZxNextImplementation";
-import { ZxNextMachine } from "./ZxNextMachine";
 import { ZxNextWasmV2Machine } from "./ZxNextWasmV2Machine";
 
-/** Creates a ZX Spectrum Next machine. */
+/**
+ * Creates a ZX Spectrum Next machine.
+ *
+ * There is one backend: the WASM core. The TypeScript emulator that used to sit behind a
+ * `zxnextImplementation` config key was removed once the WASM core reached parity
+ * (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
+ */
 export function createZxNextMachine(
   model?: MachineModel,
   config?: MachineConfigSet,
   messenger?: MessengerBase
-): ZxNextMachine | ZxNextWasmV2Machine {
-  const effectiveConfig = config ?? model?.config;
-  const implementation = getZxNextImplementation(effectiveConfig);
-  return implementation === "wasm"
-    ? new ZxNextWasmV2Machine(model, config, messenger)
-    : new ZxNextMachine(model, messenger);
+): ZxNextWasmV2Machine {
+  return new ZxNextWasmV2Machine(model, config, messenger);
 }

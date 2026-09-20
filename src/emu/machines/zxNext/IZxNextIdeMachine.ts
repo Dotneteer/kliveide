@@ -7,14 +7,14 @@ import type {
 } from "@common/messaging/EmuApi";
 
 /**
- * What the IDE reads from a ZX Spectrum Next, whichever core runs it.
+ * What the IDE reads from a ZX Spectrum Next.
  *
  * The Next panels (Next Registers, Memory Mapping, Palettes, ULA & I/O, the sprite editor's
  * palette) used to cast the running machine to the TypeScript `ZxNextMachine` and read its device
- * objects. The WASM machine inherited those objects without ever updating them, so on the production
- * backend the panels showed power-on state. Both machines now answer the same questions from their
- * own state - the TypeScript core from its devices, the WASM core from its exports - and the IDE
- * never needs to know which one is running.
+ * objects. The WASM machine inherited those objects without ever updating them, so on the
+ * production backend the panels showed power-on state. This interface is what replaced the casts:
+ * the machine answers each question from its own state, and `MainToEmuProcessor` reaches no
+ * further into it than these methods.
  */
 export interface IZxNextIdeMachine {
   readonly machineId: "zxnext";

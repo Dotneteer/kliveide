@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import {
   buildNextCodeInjectionFlow,
@@ -11,27 +10,29 @@ import {
 } from "@emu/machines/zxNext/nextMachineInfo";
 
 /*
- * `nextMachineInfo.ts` is what both ZX Spectrum Next machines tell the IDE and the debugger about
- * themselves: partition names, disassembly sections, the code-injection flow, step-over lengths. The
- * WASM host and the TypeScript machine both delegate to it, so they cannot drift apart; this pins that
- * they do, and the functions' own behaviour.
+ * `nextMachineInfo.ts` is what the ZX Spectrum Next machine tells the IDE and the debugger about
+ * itself: partition names, disassembly sections, the code-injection flow, step-over lengths. It was
+ * extracted so the WASM host and the TypeScript machine could not drift apart; the TypeScript
+ * machine is gone, and the module stays as the machine's own description, pinned here.
  */
 
 describe("nextMachineInfo", () => {
-  const ts = new ZxNextMachine();
   const wasm = new ZxNextWasmV2Machine();
 
-  it("both machines name, describe and group partitions the same way", () => {
-    expect(wasm.getPartitionLabels()).toEqual(ts.getPartitionLabels());
-    expect(wasm.getPartitionDescriptions()).toEqual(ts.getPartitionDescriptions());
-    expect(wasm.getPartitionGroups()).toEqual(ts.getPartitionGroups());
-    for (const label of ["R0", "x1", "dm", "m0", "MF", "0A", "df", "E0", "UN", "Q1", "zz"]) {
-      expect(wasm.parsePartitionLabel(label), label).toBe(ts.parsePartitionLabel(label));
-    }
+  it("names, describes and groups the same set of partitions", () => {
+    // --- 4 Next ROMs + 2 alt ROMs + DivMMC ROM + 16 DivMMC RAM pages + 224 banks. A partition the
+    // --- machine names but does not describe or group leaves a blank cell in the bank chooser.
+    const labels = wasm.getPartitionLabels();
+    expect(Object.keys(labels)).toHaveLength(4 + 2 + 1 + 16 + 224);
+    expect(Object.keys(wasm.getPartitionDescriptions()).sort()).toEqual(Object.keys(labels).sort());
+    expect(Object.keys(wasm.getPartitionGroups()).sort()).toEqual(Object.keys(labels).sort());
+    const parsed = ["R0", "x1", "dm", "m0", "MF", "0A", "df", "E0", "UN", "Q1", "zz"].map((l) =>
+      wasm.parsePartitionLabel(l)
+    );
+    expect(parsed).toEqual([-1, -6, -7, -8, -23, 0x0a, 0xdf, undefined, undefined, -6, undefined]);
   });
 
-  it("both machines report the Next ROM at pages 0-1 to the memory view", () => {
-    expect(wasm.getRomFlags()).toEqual(ts.getRomFlags());
+  it("reports the Next ROM at pages 0-1 to the memory view", () => {
     expect(wasm.getRomFlags()).toEqual([true, true, false, false, false, false, false, false]);
   });
 
@@ -41,12 +42,16 @@ describe("nextMachineInfo", () => {
     }
   });
 
-  it("both machines offer the same disassembly sections", () => {
+  it("offers a disassembly section for every combination of the RAM and screen options", () => {
     for (const ram of [false, true]) {
       for (const screen of [false, true]) {
-        expect(wasm.getDisassemblySections({ ram, screen }), `ram=${ram} screen=${screen}`).toEqual(
-          ts.getDisassemblySections({ ram, screen })
-        );
+        const sections = wasm.getDisassemblySections({ ram, screen });
+        expect(sections.length, `ram=${ram} screen=${screen}`).toBeGreaterThan(0);
+        for (const section of sections) {
+          expect(section.startAddress, `ram=${ram} screen=${screen}`).toBeLessThanOrEqual(
+            section.endAddress
+          );
+        }
       }
     }
   });

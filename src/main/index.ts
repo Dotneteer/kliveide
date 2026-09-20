@@ -62,6 +62,7 @@ import { processRendererToMainMessages } from "./RendererToMainProcessor";
 import { mainStore } from "./main-store";
 import { createWindowStateManager } from "./WindowStateManager";
 import { setMachineType } from "./registeredMachines";
+import { resolveModelId } from "@common/machines/machine-registry";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
 import { processBuildFile } from "./build";
@@ -344,6 +345,11 @@ async function createAppWindows() {
       if (appSettings.modelId) {
         modelId = appSettings.modelId;
       }
+      // --- A retired model id in the saved session names its replacement rather than a machine
+      // --- that no longer exists (e.g. the Next's removed "compatibility" model). `setMachineType`
+      // --- resolves it for the emulator; resolve it here too, or the dispatch below would write
+      // --- the retired id straight back into the store.
+      modelId = resolveModelId(machineId, modelId);
       await setMachineType(machineId, modelId, appSettings.config);
 
       // --- Ready, sign the machine type state change

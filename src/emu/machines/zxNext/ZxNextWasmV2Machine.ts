@@ -1141,7 +1141,7 @@ export class ZxNextWasmV2Machine
     return this.requireWasmV2Runtime().exports.zxnextGetScreenWidth();
   }
 
-  /** The width of a screen line, as the TypeScript core reports it (the composed screen's width). */
+  /** The width of a screen line: the composed screen's width, in 7 MHz tacts. */
   override get tactsInDisplayLine(): number {
     return this.requireWasmV2Runtime().exports.zxnextGetScreenWidth();
   }
@@ -1389,8 +1389,7 @@ export class ZxNextWasmV2Machine
 
 
   /**
-   * The Next Memory Mapping panel's state, from the core's own paging registers and page table -
-   * the same fields `MemoryDevice.getMemoryMappings` reports on the TypeScript core.
+   * The Next Memory Mapping panel's state, from the core's own paging registers and page table.
    */
   private getWasmMemoryMappings(): NextMemoryMapping {
     const ex = this.requireWasmV2Runtime().exports;
@@ -1460,9 +1459,9 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * The Next Registers panel's values, the way the TypeScript core's `getNextRegDeviceState` reports
-   * them: one entry per documented register, what a `$253B` read returns (not for write-only
-   * registers) and the last value the CPU wrote to it (not for read-only ones, nor before a write).
+   * The Next Registers panel's values: one entry per documented register, what a `$253B` read
+   * returns (not for write-only registers) and the last value the CPU wrote to it (not for
+   * read-only ones, nor before a write).
    */
   private getWasmNextRegDeviceState(): NextRegDeviceState {
     const ex = this.requireWasmV2Runtime().exports;

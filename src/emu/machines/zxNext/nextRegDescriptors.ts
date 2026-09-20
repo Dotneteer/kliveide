@@ -2,11 +2,11 @@
  * The ZX Spectrum Next registers as the IDE documents them: name, read/write-only flags and the bit
  * slices the Next Registers panel breaks a value into.
  *
- * Neutral data, shared by both cores' `IZxNextIdeMachine.getNextRegDescriptors()`, the disassembler's
- * NEXTREG comments and the tests. It was built inside the TypeScript `NextRegDevice` constructor,
- * next to the read/write closures, which meant every consumer had to construct a TypeScript device to
- * read documentation. Generated from that constructor on 2026-09-19;
- * `test/zxnext/nextRegDescriptors.test.ts` keeps the two in step while the TypeScript core exists.
+ * Neutral data, read by `IZxNextIdeMachine.getNextRegDescriptors()`, the disassembler's NEXTREG
+ * comments and the tests. It used to be built inside the TypeScript `NextRegDevice` constructor,
+ * next to the read/write closures, so every consumer had to construct an emulated device to read
+ * documentation. Generated from that constructor on 2026-09-19 and the single source since that
+ * device was deleted; `test/zxnext-shared/nextRegDescriptors.test.ts` pins its shape.
  */
 
 /** A bit field of a NextReg value, as the Next Registers panel shows it. */

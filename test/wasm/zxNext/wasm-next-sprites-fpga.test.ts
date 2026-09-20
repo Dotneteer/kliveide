@@ -1,5 +1,5 @@
 import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { defineSpriteFpgaTests } from "../../zxnext/sprite-fpga-scenarios";
+import { defineSpriteFpgaTests } from "./sprite-fpga-scenarios";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 /* The WASM sprite engine against the FPGA. The scenarios and their reference model are shared. */

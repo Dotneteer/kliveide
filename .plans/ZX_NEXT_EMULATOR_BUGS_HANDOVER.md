@@ -1,8 +1,11 @@
 # ZX Spectrum Next Emulator – Bug Handover
 
-> **Status 2026-09-19:** B8's open part (the mid-line `$68` half-pixel scroll) is fixed in both cores
-> (`test/zxnext-hw/ula/scroll.test.ts` ULA-013); further TypeScript/WASM differences are tracked in the
-> parity ledger of `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`.
+> **Status 2026-09-20:** B8's open part (the mid-line `$68` half-pixel scroll) is fixed
+> (`test/zxnext-hw/ula/scroll.test.ts` ULA-013). The TypeScript Next core is gone, so there is no
+> second core to diff against any more: the parity ledger in
+> `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md` records the 30-odd differences it found and how each
+> was settled against the VHDL, and new findings are settled the same way - against
+> `_input/next-fpga/`.
 
 Created: 2026-09-17, at the end of a session that built the visual test harness and fixed nine emulator
 bugs with it. This file is written for a **new AI session** picking up the remaining work.

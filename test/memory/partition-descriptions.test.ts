@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128MachineFactory";
 import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
 import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
-import { ZxNextMachine } from "@emu/machines/zxNext/ZxNextMachine";
+import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
 import { Z88TestMachine } from "../z88/Z88TestMachine";
 import {
   derivePartitionOptions,
@@ -28,7 +28,7 @@ type DescribedMachine = {
 const machines: [string, () => DescribedMachine][] = [
   ["ZX Spectrum 128K", () => createZxSpectrum128Machine() as unknown as DescribedMachine],
   ["ZX Spectrum +2/+3E", () => createZxSpectrumP3eMachine() as unknown as DescribedMachine],
-  ["ZX Spectrum Next", () => new ZxNextMachine() as unknown as DescribedMachine],
+  ["ZX Spectrum Next", () => new ZxNextWasmV2Machine() as unknown as DescribedMachine],
   ["Cambridge Z88", () => new Z88TestMachine() as unknown as DescribedMachine]
 ];
 
@@ -81,7 +81,7 @@ describe("ZX Spectrum +2/+3E descriptions", () => {
 });
 
 describe("ZX Spectrum Next descriptions", () => {
-  const next = () => new ZxNextMachine() as unknown as DescribedMachine;
+  const next = () => new ZxNextWasmV2Machine() as unknown as DescribedMachine;
 
   it("spells out the names the bank chooser used to use as labels", () => {
     // --- `NROM0`, `ALTR0` and `DivMR` were names; they are glosses now.
@@ -134,7 +134,7 @@ describe("derivePartitionOptions", () => {
   });
 
   it("groups a real machine's partitions the way a chooser lays them out", () => {
-    const machine = new ZxNextMachine() as unknown as DescribedMachine;
+    const machine = new ZxNextWasmV2Machine() as unknown as DescribedMachine;
     const options = derivePartitionOptions(
       machine.getPartitionLabels(),
       machine.getPartitionDescriptions()
@@ -173,7 +173,7 @@ describe("Cambridge Z88 descriptions", () => {
 });
 
 describe("ZX Spectrum Next partition groups", () => {
-  const next = () => new ZxNextMachine() as unknown as DescribedMachine;
+  const next = () => new ZxNextWasmV2Machine() as unknown as DescribedMachine;
 
   it("puts the special partitions into four captioned blocks", () => {
     const groups = next().getPartitionGroups();

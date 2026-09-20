@@ -1,7 +1,14 @@
 # ZX Spectrum Next TypeScript Removal Plan
 
+> **Status 2026-09-20: complete.** All fifteen steps are done. The ZX Spectrum Next runs on the
+> WASM core alone; the TypeScript machine, its devices, the backend switch and the
+> "ZX Spectrum Next Compatibility" model are gone, and a saved `modelId: "compatibility"` opens on
+> the standard model. The last commit with both implementations is tagged
+> `pre-zxnext-ts-removal-2026-09-19`. Outstanding: the project author's manual app pass (Step 15).
+
 Created: 2026-09-19
 Revised: 2026-09-19 (separation-first rule, decisions D1-D7 resolved)
+Completed: 2026-09-20
 
 ## Governing Rule
 
@@ -649,7 +656,9 @@ Done when: all ten points hold and the project author has approved moving to Pha
 
 ## 8. Tag The Last Commit With The TypeScript Next
 
-Status: Not started.
+Status: Done (2026-09-19). `pre-zxnext-ts-removal-2026-09-19` points at the gate commit and is
+pushed (`refs/tags/pre-zxnext-ts-removal-2026-09-19` -> `824f046e9`). Both cores pass there; it is
+the reference for any expectation this plan says was "pinned to the value both cores agreed on".
 
 - Commit Phase A and check the tag name for collisions.
 - Create and push `pre-zxnext-ts-removal-<yyyy-mm-dd>`, pointing at the gate commit, where both cores
@@ -768,7 +777,25 @@ npm test -- --project node test/wasm/zxNext
 
 ## 11. Delete The Remaining TypeScript-Only Tests
 
-Status: Not started.
+Status: Done (2026-09-20).
+
+- `FileProvider.ts`, `sprite-collision-scenarios.ts` and `sprite-fpga-scenarios.ts` moved to
+  `test/wasm/zxNext/` first; `test/zxnext/` (40 files) and the 23 Next files in `test/audio/` are
+  deleted. `test/audio/` keeps `AudioDeviceBase`, `BeeperDevice` and `AudioIntegration` (Z88), and
+  its README now says where the machine audio tests live.
+- `scripts/benchmark-zxnext-wasm.cjs` is WASM-only **first**, because it loaded `TestNextMachine`:
+  the TypeScript backend, the `backend` parameter threaded through every scenario and the speed
+  ratios are gone, replaced by absolute per-operation budgets (`MAX_MS_PER_FRAME_FOR_DEFAULT` 50 ms,
+  `MAX_MS_PER_CONTROL_OPERATION_FOR_DEFAULT` 5 ms; measured 2026-09-20: ~5 ms/frame, ~0.01 ms for a
+  control operation). `wasm-next-performance-boundary` follows.
+- `test/memory/partition-*.test.ts` construct `ZxNextWasmV2Machine` (the static partition methods
+  need no runtime). The "paged-in page labels" suite does need one, so its two properties moved to
+  `wasm-next-partition-labels.test.ts`, whose pinned label tables already covered the rest.
+- `test/controls/EmulatorAudioRendering.test.ts` runs a PSG tone frame on the WASM machine.
+- `test:zxnext-wasm-acceptance` lost `ZxNextMachineFactory.test.ts` (and its no-fallback-removal
+  guard, which this plan discharges) and gained `wasm-next-factory-setup.test.ts`; both it and
+  `test:zxnext-wasm-matrix` now say `--project node`, so they run at all. `wasm-next-rollout` pins
+  that.
 
 - Move `FileProvider.ts` and the two sprite scenario files to the WASM test helpers first.
 - Following the disposition table, delete the `test/zxnext/` tests and `TestNextMachine.ts`, and the
@@ -785,7 +812,18 @@ npm test -- --project jsdom test/controls
 
 ## 12. Remove The Implementation Switch And The Compatibility Model
 
-Status: Not started.
+Status: Done (2026-09-20). `ZxNextImplementation.ts` and `MC_ZXNEXT_IMPLEMENTATION` are gone;
+`createZxNextMachine` returns `ZxNextWasmV2Machine` and ignores any stale `zxnextImplementation`
+key a saved project still carries. The `compatibility` model is deleted and `standard` carries an
+empty config.
+
+D4 reuses the existing retirement mechanism rather than a new one: `modelIdAliases[MI_ZXNEXT] =
+{ compatibility: "standard" }`, which `resolveModelId` applies in `MachineService.setMachineType`
+and `getMachineName`. `main/index.ts` also resolves the saved id *before* `setModelTypeAction`,
+which it did not do - the main process was dispatching the raw id back over the renderer's resolved
+one, so an aliased model (the Z88's `-wasm` twins too) stayed retired in the store. Tests:
+`wasm-next-rollout.test.ts` (alias, `getMachineName`, other machines untouched, and a project saved
+with `modelId: "compatibility"` opening on `standard` with its configuration kept).
 
 - Delete `ZxNextImplementation.ts` and `MC_ZXNEXT_IMPLEMENTATION`. `createZxNextMachine` always returns
   the WASM machine, and its return type changes accordingly.
@@ -800,7 +838,24 @@ npm run build:check
 
 ## 13. Delete The TypeScript Next Implementation
 
-Status: Not started.
+Status: Done (2026-09-20).
+
+- Deleted: `ZxNextMachine.ts`, `Z80NMachineBase.ts`, the 29 device classes, `nextRegReadMux.ts`,
+  `io-ports/`, `storage/`, `screen/` (`NextComposedScreenDevice.ts` and `TimingConfig.ts`, which
+  nothing else read), `diagnostics/ZxNextFrameTrace.ts`, `IZxNextMachine.ts`,
+  `scripts/run-zxnext-frame-diff.{ts,cjs}` and `diff:zxnext-machine`.
+- `BeeperDevice`, `ISpectrumBeeperDevice`, `ISpectrumKeyboardDevice` and `SpectrumKeyboardDevice`
+  lost the `IZxNextMachine` half of their machine type, and `SpectrumBeeperDevice` lost the
+  `machineId === "zxnext"` branch that returned separate EAR/MIC duties (with the one test that
+  exercised it: the Next's beeper is `zxnext-beeper.c`, covered by `audio/beeper-levels`).
+- D7: the hardware notes moved to `src/emu/machines/zxNext/notes/`; `tilemap-plan.md` (a
+  MAME-vs-TypeScript diff) is deleted.
+- The Step 3 descriptor-equivalence test had lost its other side, so it became a shape test of
+  `NEXT_REG_DESCRIPTORS` (count, ids, slice masks/shifts, every slice explained); `nextMachineInfo`
+  and the Step 5 separation guards were retargeted the same way. The separation test now also
+  asserts the deleted files are *absent* - an import-graph check says nothing about a file nothing
+  imports - and self-tests its path detector, which no longer has a live positive case.
+- `Z80NCpu` stays (D2). `build/type-errors-baseline.json`: 121 -> 117.
 
 - Delete everything listed under *Keep Boundaries -> Removed in Phase B only*.
 - Delete `IZxNextMachine` and remove it from `BeeperDevice`, `ISpectrumBeeperDevice`,
@@ -820,7 +875,20 @@ npx electron-vite build --config build/electron.vite.config.ts
 
 ## 14. Documentation, Plans And Changelog
 
-Status: Not started.
+Status: Done (2026-09-20). `wasm/README.md` rewritten (one backend, why the host split exists, where
+each kind of test goes); `.ai/wasm-migration-intent-and-lessons.md` gains the two durable lessons -
+separation is most of the work and comes first, and an oracle test is scaffolding that must be
+written so it can become a claim; `.ai/wasm-v2-machine-migration-guide.md` says the same at its
+oracle and implementation-switch sections, including the `modelIdAliases` obligation;
+`.ai/zx-spectrum-next-wasm-parity-audit.md` deleted (a migration map, fully consumed); AGENTS.md's
+harness section no longer points at `TestNextMachine`; status notes on the four related plans (the
+frame-diff runner is marked retired); `CHANGELOG.md` gets the breaking change.
+
+A text pass fixed the comments that named the removed core as a *live* reference (`Z80NCpu`,
+`nextMachineInfo`, `nextRegDescriptors`, `IZxNextIdeMachine`, `IZxNextHostInputMachine`,
+`audio.md`, `zxnext-nextreg.c`'s read-mux note, three harness-test headers). Comments that record
+where a test or a C routine *came from* are left: they are provenance, and they are why a reader can
+still find the reasoning.
 
 - Rewrite `wasm/README.md` for the WASM-only Next.
 - Update the `.ai/` files, and delete or fold `.ai/zx-spectrum-next-wasm-parity-audit.md`.
@@ -833,7 +901,26 @@ returns only intentional historical mentions.
 
 ## 15. Final Full Verification
 
-Status: Not started.
+Status: Done (2026-09-20), except the manual app pass, which is the project author's.
+
+| Check | Result |
+|---|---|
+| `vitest run --project=node` | 680 files, 17,780 passed, 118 skipped |
+| `vitest run --project=jsdom` | 118 files, 1,154 passed |
+| `npm run test:visual` | 21/21, every golden matching |
+| `npm run build:check` | no new type errors; baseline 121 -> 117 |
+| `npm run lint:renderer` | 0 errors (44 pre-existing warnings) |
+| `npx electron-vite build` | clean |
+| `npm run benchmark:zxnext-wasm` | every scenario inside its budget |
+| `git diff --check` | clean |
+
+**Note:** `npm test -- --project node` does *not* select the node project - `test:unit` already
+passes `--project=!perf`, so `node` arrives as a positional name filter. Use
+`npx vitest run --config build/vitest.config.ts --project=node` to run the whole project.
+
+Left for the author: the app pass on the Next model - boot NextZXOS, `.nexload` a project, the
+debugger, the Next panels, checkpoints, the F-keys - plus switching to a classic machine and back,
+and opening a project saved with the old Compatibility model.
 
 ```sh
 npm test -- --project node
@@ -851,16 +938,36 @@ machines, and open a project saved with the old Compatibility model.
 
 ## Completion Criteria
 
-- The Step 7 gate passed, with recorded evidence and the author's approval, before any removal.
-- The `pre-zxnext-ts-removal-*` tag is pushed and points at the gate commit.
-- `createZxNextMachine` always returns the WASM machine; there is no backend switch or Compatibility
-  model, and saved selections fall back cleanly.
-- No TypeScript Next machine, device or port handler remains in `src/`, and `Z80NCpu` remains as a
-  standalone CPU.
-- The IDE reads WASM state through `IZxNextIdeMachine` (or its successor); the F2/F3/F7 toggles work.
-- The harness, `test/zxnext-hw` and the visual cases are WASM-only.
-- Every deleted TypeScript-only test is covered by a harness/WASM test or recorded as obsolete.
-- Docs, `.ai` notes, AGENTS.md, plans and the changelog describe the WASM-only Next.
+All met on 2026-09-20 (the manual app pass excepted; it is the author's).
+
+- ✅ The Step 7 gate passed, with recorded evidence and the author's approval, before any removal.
+- ✅ The `pre-zxnext-ts-removal-2026-09-19` tag is pushed and points at the gate commit.
+- ✅ `createZxNextMachine` always returns the WASM machine; there is no backend switch or
+  Compatibility model, and a saved `compatibility` selection resolves to `standard`.
+- ✅ No TypeScript Next machine, device or port handler remains in `src/`; `Z80NCpu` remains as a
+  standalone CPU (D2).
+- ✅ The IDE reads WASM state through `IZxNextIdeMachine`; the F2/F3/F7 toggles work.
+- ✅ The harness, `test/zxnext-hw` and the visual cases are WASM-only.
+- ✅ Every deleted TypeScript-only test is covered by a harness/WASM test or recorded as obsolete
+  (the *Test Disposition Table*, and Step 10's table of deleted oracle tests).
+- ✅ Docs, `.ai` notes, AGENTS.md, plans and the changelog describe the WASM-only Next.
+
+### What This Plan Would Tell The Next One
+
+- **Separation is the work; deletion is the epilogue.** Six of fifteen steps deleted nothing, and
+  they were the hard ones. Nothing could go while the WASM machine inherited from the TypeScript
+  one, and the old implementation had to stay green throughout, because it was the instrument
+  measuring the new one.
+- **A WASM machine must never subclass the machine it replaces.** Here it did, so the production
+  backend quietly ran TypeScript emulation in four IDE panels, the keyboard, code injection and the
+  frame pacing - shipped bugs that the parity suite could not see, because both sides of the
+  comparison were the same object.
+- **An oracle test is scaffolding with a known end.** "The two agree" stops meaning anything when
+  one is deleted. Every one of the 37 oracle tests had to be decided individually; write them from
+  the start so they can become claims about the machine.
+- **Removal finds bugs in the survivor.** The parity ledger has 32 rows and most were fixed in the
+  *WASM* core; several were fixed in TypeScript, because the VHDL - not the older implementation -
+  decides who is right.
 
 ## Parity Ledger
 

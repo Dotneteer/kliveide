@@ -15,7 +15,7 @@ import {
   waitForZxNextWasmBuildLock
 } from "../../../scripts/build-zxnext-wasm.cjs";
 import { buildZxNextWasmArtifact } from "./wasm-next-test-helpers";
-import { FileProvider } from "../../zxnext/FileProvider";
+import { FileProvider } from "./FileProvider";
 import { describe, expect, it } from "vitest";
 
 describe("ZX Spectrum Next WASM v2 IDE integration", () => {

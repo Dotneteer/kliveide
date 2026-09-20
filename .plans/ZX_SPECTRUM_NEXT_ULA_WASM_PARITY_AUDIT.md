@@ -3,6 +3,9 @@
 > **Status 2026-09-19: superseded.** Every gap below was re-audited against the VHDL and the current
 > C core in Step 0 of `ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`: all are closed, each with dual-core
 > tests (table there). The last one, the mid-line `$68` half-pixel scroll, was fixed in both cores.
+>
+> **2026-09-20:** the TypeScript core those tests compared against is gone, so nothing here can be
+> re-run as written. The audit is kept for the ULA facts it records, not as a work item.
 
 Created: 2026-08-22
 

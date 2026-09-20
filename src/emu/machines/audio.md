@@ -6,9 +6,11 @@ Core audio components have dedicated unit coverage:
 - `SpectrumBeeperDevice`
 
 Classic ZX Spectrum PSG device integration now lives in the WASM machine
-implementations. The ZX Spectrum Next's TurboSound uses `zxNext/NextPsgChip.ts`, a port of
-`ym2149.vhd` (2026-09-18, bug B73), tested on both cores by `test/zxnext-hw/audio/ay-psg.test.ts`.
-The MAME-shaped TypeScript `PsgChip` (and its unit tests) was retired once nothing used it.
+implementations. The ZX Spectrum Next's TurboSound is emulated in C, a port of `ym2149.vhd`
+(2026-09-18, bug B73), tested at the hardware boundary by `test/zxnext-hw/audio/ay-psg.test.ts`.
+The MAME-shaped TypeScript `PsgChip` (and its unit tests) was retired once nothing used it, and the
+TypeScript Next audio devices went with the TypeScript Next backend
+(`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
 
 ## Test Gaps
 

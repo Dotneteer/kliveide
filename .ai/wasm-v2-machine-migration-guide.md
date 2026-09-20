@@ -180,6 +180,19 @@ current TypeScript oracle.
 Use the TypeScript machine as the oracle while migrating the WASM backend. Static
 table parity is necessary, but it is not enough.
 
+**An oracle test is scaffolding with a known end.** It says "the two agree", which
+stops meaning anything the moment one of them is deleted, and deleting the old
+implementation is the point of the migration. Write each one so it can be
+converted later: if the hardware description answers the question, assert the
+value and cite the source, and keep the comparison as a second assertion. What
+survives the removal is a claim about the machine; what does not is the
+comparison. When the ZX Spectrum Next's TypeScript core went
+(`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, Step 10), every one of its
+37 oracle tests had to be decided one `it` at a time - deleted where the hardware
+harness already covered the scenario, otherwise converted to a fixed expectation
+derived from the VHDL, from the scenario, or (saying so in the file) pinned to
+the value both cores agreed on at the pre-removal tag.
+
 Add timing-table comparisons for a representative frame:
 
 - TypeScript `screenDevice.renderingTactTable[tact].phase`
@@ -308,6 +321,12 @@ Use a two-value switch per machine family:
 
 - `"wasm"` means the current WASM V2 backend
 - `"typescript"` means the TypeScript backend
+
+The switch is temporary too. When the TypeScript backend goes, the switch, its
+config key and the model that selected it all go with it - and the retired model
+id must keep opening: map it to its replacement in `modelIdAliases`
+(`machine-registry.ts`) so a saved project or last session names a machine that
+still exists, instead of failing at startup.
 
 Avoid exposing versioned implementation strings such as `"wasm-v2"` in product
 model configs after rollout. Version details can remain in class names or

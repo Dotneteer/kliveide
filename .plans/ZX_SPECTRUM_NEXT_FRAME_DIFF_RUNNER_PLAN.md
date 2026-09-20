@@ -1,8 +1,15 @@
 # ZX Spectrum Next Frame Diff Runner Plan
 
+> **Status 2026-09-20: retired.** The runner compared the TypeScript and WASM Next cores
+> instruction by instruction, and the TypeScript core has been removed
+> (`ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`). `scripts/run-zxnext-frame-diff.{ts,cjs}` and the
+> `diff:zxnext-machine` command are deleted; `test/wasm/zxNext/wasm-next-trace-layout.test.ts` keeps
+> what was worth keeping (the core's trace ring layout and reset state). It did its job first: on
+> the standard boot it found P20 at frame 0, instruction 100, and then ran 1500 frames clean.
+
 Created: 2026-08-22
 
-Status: Implemented on 2026-08-22.
+Status: Implemented on 2026-08-22; retired 2026-09-20.
 
 ## Implementation Result
 

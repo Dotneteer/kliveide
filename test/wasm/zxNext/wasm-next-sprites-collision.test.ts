@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { defineSpriteCollisionTests } from "../../zxnext/sprite-collision-scenarios";
+import { defineSpriteCollisionTests } from "./sprite-collision-scenarios";
 import { createTestZxNextWasmMachine } from "./wasm-next-test-helpers";
 
 /* The WASM engine's sprite collisions: the shared scenarios, plus when the flag is raised. */

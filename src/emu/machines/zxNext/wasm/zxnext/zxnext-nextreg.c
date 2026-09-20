@@ -270,8 +270,8 @@ static void zxnextNextRegSetValue(uint32_t value) {
 
 /*
  * The FPGA read mux (zxnext.vhd ~5830-6233): the bits of a `$253B` read that are hard-wired to 0.
- * Registers the mux does not list read $00 (`when others`), so their mask is $FF. Mirrors
- * nextRegReadMux.ts in the TypeScript core; test/zxnext-hw/nextreg/read-mux.test.ts checks both.
+ * Registers the mux does not list read $00 (`when others`), so their mask is $FF.
+ * test/zxnext-hw/nextreg/read-mux.test.ts checks it.
  */
 static uint32_t zxnextNextRegReadZeroMask(uint32_t reg) {
   switch (reg & 0xffu) {
