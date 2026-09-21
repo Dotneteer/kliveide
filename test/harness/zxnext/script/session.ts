@@ -53,6 +53,16 @@ export type SessionOptions = {
   audioSampleRate?: number;
 };
 
+/** A NextReg write the core caught for an armed watch, as `takeNextRegHit` reports it. */
+export type NextRegHit = {
+  reg: number;
+  /** What the register held immediately before the write. */
+  oldValue: number;
+  newValue: number;
+  /** Which writer performed it. Copper writes are only ever caught when the watch asked for them. */
+  origin: "cpu" | "copper";
+};
+
 export type Registers = {
   a: number; f: number; bc: number; de: number; hl: number;
   af_: number; bc_: number; de_: number; hl_: number;
@@ -562,6 +572,62 @@ export class NextTestSession {
   /** The stored NextReg value, with no port side effects. For assertions and wait conditions. */
   nextRegValue(reg: number): number {
     return readNextRegDirect(this.machine, reg);
+  }
+
+  /**
+   * Arms the core's NextReg write watch for one register, the way a NextReg write breakpoint does.
+   *
+   * Not "setting device state the hardware could not set": the watch table is the debugger's, not
+   * the machine's - the emulated Next cannot see it and behaves identically either way. It is here
+   * for the same reason `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2 puts the matching in the
+   * core: several NextReg writes can happen inside one Z80 instruction, and only the core sees
+   * them all.
+   *
+   * **This arms the core directly, and the debug loop owns that table.** `ZxNextWasmV2Machine`
+   * pushes it from `DebugSupport` on entry, or clears it when no NextReg breakpoint is armed - so a
+   * run that goes through the loop (`call`, `runTo`, `step`) wipes what this set. Drive a watched
+   * program with `runFrames`, which takes the non-debug path. The host-level route, where a real
+   * `BreakpointInfo` arms the same table, is covered by
+   * `test/wasm/zxNext/wasm-next-nextreg-breakpoint.test.ts`.
+   *
+   * @param reg The register to watch, `$00..$FF`
+   * @param options `copper` also watches Copper writes; `value` (with an optional `mask`) matches
+   *   only that value. A zero or absent mask matches any value.
+   */
+  watchNextRegWrite(
+    reg: number,
+    { copper = false, value, mask = 0xff }: { copper?: boolean; value?: number; mask?: number } = {}
+  ): this {
+    const watch = this.machine.wasmV2Runtime!.nextRegWatch;
+    const index = reg & 0xff;
+    watch[index] = 0x01 | (copper ? 0x02 : 0x00);
+    watch[0x100 + index] = (value ?? 0) & 0xff;
+    watch[0x200 + index] = value === undefined ? 0 : mask & 0xff;
+    return this;
+  }
+
+  /** Clears every armed NextReg write watch and any latched hit. */
+  clearNextRegWatches(): this {
+    this.machine.wasmV2Runtime!.exports.zxnextClearNextRegWatch();
+    return this;
+  }
+
+  /**
+   * Takes the latched NextReg write, if a watched one has happened, and clears the latch.
+   *
+   * Returns `undefined` when nothing was caught. The latch holds the **first** watched write since
+   * it was last taken, with the value the register held before it - which is what lets the IDE
+   * report `$00 -> $03` for a stop that physically happens after the write has landed.
+   */
+  takeNextRegHit(): NextRegHit | undefined {
+    const packed = this.machine.wasmV2Runtime!.exports.zxnextTakeNextRegHit();
+    if ((packed & 0x8000_0000) === 0) return undefined;
+    return {
+      reg: packed & 0xff,
+      oldValue: (packed >>> 8) & 0xff,
+      newValue: (packed >>> 16) & 0xff,
+      origin: ((packed >>> 24) & 0x03) === 2 ? "copper" : "cpu"
+    };
   }
 
   /**

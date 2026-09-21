@@ -1,4 +1,13 @@
+/*
+ * The explanatory line under a field.
+ *
+ * The top margin is the point: `TextInput` carries no bottom margin of its own - `DialogRow` owns
+ * the gap between a label and its field, and the control's own block margins were removed so the
+ * two would stop fighting. That leaves a hint placed directly beneath a field sitting on it, which
+ * reads as part of the control rather than as a note about it.
+ */
 .hint {
+  margin-top: var(--space-1_5);
   color: var(--color-secondary-label);
   font-size: var(--font-size-100);
 }
@@ -6,4 +15,42 @@
 .error {
   color: var(--status-error);
   font-size: var(--font-size-100);
+}
+
+/*
+ * The value filter's two fields, laid out the way its key reads: `$03 / $0F`.
+ *
+ * Stacked, they were two unlabelled boxes with one hint under them and nothing saying which was
+ * which. Side by side with the separator between them, the row *is* the notation the breakpoint's
+ * key uses (`NR:$07=$03/$0F`) and the command accepts, so it needs no label to be unambiguous.
+ */
+.filterFields {
+  display: flex;
+  /*
+   * Not `center`: `TextInput` renders its validation message *inside* its own column, below the
+   * input, so a mask that fails to parse would make its box taller and drag the value field and the
+   * separator downwards with it. Top-aligned, an error grows downwards and disturbs nothing.
+   */
+  align-items: flex-start;
+  gap: var(--space-1_5);
+}
+
+/*
+ * `TextInput` fills whatever contains it - `.inputContainer` is `width: 100%` with `flex-grow: 1` -
+ * so in a flex row the two wrappers would share the whole width and push the separator to the far
+ * edge, however narrow the inputs inside them are. The `width` prop sizes the `<input>`; this sizes
+ * the wrapper around it.
+ */
+.filterFields > div {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.filterSeparator {
+  /* Centred against the input rather than the column, which may have grown an error message. */
+  display: flex;
+  align-items: center;
+  height: var(--size-controlSm);
+  color: var(--color-secondary-label);
+  font-family: var(--monospace-font);
 }

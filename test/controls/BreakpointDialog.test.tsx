@@ -432,3 +432,203 @@ describe("BreakpointDialog - editing", () => {
     expect(screen.getByText("Hit count: 42")).toBeTruthy();
   });
 });
+
+/*
+ * The sixth type. What matters here is what the *view* does when it is chosen: the address field
+ * is replaced rather than re-labelled, the partition row disappears, and two controls the other
+ * five never show appear. The rules behind them live in `breakpoint-form.ts`.
+ */
+
+const aNextEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>
+  anEnv({ supportsPartitions: true, supportsNextRegBreakpoints: true, ...over });
+
+const chooseNextReg = () => fireEvent.click(screen.getByLabelText("NextReg write"));
+const typeInto = (index: number, value: string) =>
+  fireEvent.change(screen.getAllByRole("textbox")[index], { target: { value } });
+/*
+ * The two filter fields have no visible label of their own - the `/` between them is what tells a
+ * sighted reader which is which - so they carry an accessible name, and these address them by it
+ * rather than by position.
+ */
+const typeNamed = (name: string, value: string) =>
+  fireEvent.change(screen.getByLabelText(name), { target: { value } });
+
+describe("BreakpointDialog - NextReg write breakpoints", () => {
+  it("offers the type only on a machine that has Next Registers", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("NextReg write")).toBeNull();
+
+    cleanup();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("NextReg write")).not.toBeNull();
+  });
+
+  it("replaces the address field and hides the partition row", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    expect(screen.queryByText("Break only in a specific partition")).not.toBeNull();
+
+    chooseNextReg();
+
+    expect(screen.queryByText(/^Address/)).toBeNull();
+    // --- Hidden, not disabled: a register has no location, so there is no "why not" to explain.
+    expect(screen.queryByText("Break only in a specific partition")).toBeNull();
+    expect(screen.queryByText("Register *")).not.toBeNull();
+  });
+
+  it("names the register as it is typed", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    chooseNextReg();
+
+    typeInto(0, "$07");
+    expect(screen.queryByText(/\$07 — CPU speed/)).not.toBeNull();
+
+    // --- 256 registers are addressable but only 141 documented; the undocumented ones say so
+    // --- rather than silently showing nothing.
+    typeInto(0, "$7f");
+    expect(screen.queryByText(/\$7F — /)).not.toBeNull();
+  });
+
+  it("states the timing contract, so the feature does not read as a write-veto", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    chooseNextReg();
+
+    expect(screen.queryByText(/Stops after the instruction that wrote the register/)).not.toBeNull();
+  });
+
+  it("reveals the value and mask fields only once the filter is ticked", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    chooseNextReg();
+
+    // --- Register only.
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+
+    fireEvent.click(screen.getByLabelText("Break only on a specific value"));
+
+    expect(screen.getAllByRole("textbox")).toHaveLength(3);
+    // --- Side by side, in the notation the key and the command both use: `=$03/$0F`.
+    expect(screen.getByLabelText("Value")).toBeDefined();
+    expect(screen.getByLabelText("Mask")).toBeDefined();
+  });
+
+  it("emits a bare NextReg breakpoint", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+
+    chooseNextReg();
+    typeInto(0, "$07");
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: expect.objectContaining({ nextReg: 0x07, exec: false }),
+        replaces: undefined
+      })
+    );
+  });
+
+  it("emits the filter and the copper opt-in when they are set", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+
+    chooseNextReg();
+    typeInto(0, "$07");
+    fireEvent.click(screen.getByLabelText("Break only on a specific value"));
+    typeNamed("Value", "$03");
+    typeNamed("Mask", "$0f");
+    fireEvent.click(screen.getByLabelText("Also break on copper writes"));
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith(
+        expect.objectContaining({
+          breakpoint: expect.objectContaining({
+            nextReg: 0x07,
+            nextRegValue: 0x03,
+            nextRegMask: 0x0f,
+            nextRegCopper: true
+          })
+        })
+      )
+    );
+  });
+
+  it("drops an abandoned filter instead of leaving it to fail out of sight", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+
+    chooseNextReg();
+    typeInto(0, "$07");
+    const filter = screen.getByLabelText("Break only on a specific value");
+    fireEvent.click(filter);
+    typeNamed("Value", "$03");
+    fireEvent.click(filter);
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith(
+        expect.objectContaining({
+          breakpoint: expect.objectContaining({ nextReg: 0x07, nextRegValue: undefined })
+        })
+      )
+    );
+  });
+
+  it("opens an existing NextReg breakpoint on the right type, with its fields filled", () => {
+    renderWithProviders(
+      <BreakpointDialog
+        env={aNextEnv()}
+        machineSetup={aMatrixMachine}
+        controls={someControls()}
+        initial={{ nextReg: 0x07, nextRegValue: 0x03, nextRegMask: 0x0f, nextRegCopper: true }}
+      />
+    );
+
+    expect((screen.getByLabelText("NextReg write") as HTMLInputElement).checked).toBe(true);
+    expect((screen.getAllByRole("textbox")[0] as HTMLInputElement).value).toBe("$07");
+    expect((screen.getByLabelText("Value") as HTMLInputElement).value).toBe("$03");
+    expect((screen.getByLabelText("Mask") as HTMLInputElement).value).toBe("$0F");
+    expect((screen.getByLabelText("Also break on copper writes") as HTMLInputElement).checked).toBe(
+      true
+    );
+  });
+
+  it("clears the register when the type changes away, and the address when it changes back", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+
+    typeAddress("$8000");
+    chooseNextReg();
+    typeInto(0, "$07");
+    submit();
+
+    await waitFor(() => expect(controls.close).toHaveBeenCalled());
+
+    // --- The address typed before the switch must not travel with the register. Asserted on the
+    // --- field directly: `objectContaining` treats an absent key and an undefined one differently,
+    // --- and "absent" is exactly what this is checking for.
+    const { breakpoint } = controls.close.mock.calls[0][0];
+    expect(breakpoint).toMatchObject({ nextReg: 0x07 });
+    expect(breakpoint.address).toBeUndefined();
+    expect(breakpoint.partition).toBeUndefined();
+  });
+});

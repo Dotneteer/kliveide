@@ -5,14 +5,14 @@ import { Value } from "@renderer/controls/layout/Value";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
-import { toHexa4 } from "../services/ide-commands";
+import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { CpuState } from "@common/messaging/EmuApi";
+import { CpuState, NextRegWriteEvent } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
@@ -20,7 +20,16 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { MemorySection } from "../disassemblers/common-types";
 import { Z80Disassembler } from "../disassemblers/z80-disassembler/z80-disassembler";
 import { MemorySectionType } from "@abstractions/MemorySection";
-import { DataRow, EmptyState } from "@renderer/controls/data";
+import { DataRow, EmptyState, SectionHeader } from "@renderer/controls/data";
+import { Icon } from "@renderer/controls/Icon";
+import { useGlobalSetting } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import { SETTING_IDE_BP_GROUP_BY_KIND } from "@common/settings/setting-const";
+import {
+  BREAKPOINT_GROUP_ICONS,
+  BREAKPOINT_GROUP_TITLES,
+  groupBreakpoints
+} from "../utils/breakpoint-grouping";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import {
@@ -32,7 +41,9 @@ import {
 import { IconButton } from "@renderer/controls/IconButton";
 import { useConfirmPort } from "@mvc/dialogs/useDialogPorts";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
-import { isBinaryBreakpoint } from "../utils/breakpoint-form";
+import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
+import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 
 /*
  * M2: `ch`, not px. Capacity preserved from the px widths at the panel's old 12.8px size (px / 6.4),
@@ -49,22 +60,65 @@ const OP_ADDR_WIDTH = "8ch"; // 52px / 6.4 = 8.125
  * the "go to source" hint that used to live on the address label alone, because the row now owns the
  * tooltip and two nested tooltips would both try to show.
  */
+/**
+ * The NextReg write the machine last stopped on, or `undefined`.
+ *
+ * `CpuState` is a union and only its Z80 member carries this - a C64 has no Next Registers, so
+ * widening the 6510 shape to keep the compiler quiet would be stating something false. The `in`
+ * test narrows the union honestly, in the one place that needs it.
+ */
+const nextRegWriteOf = (state?: CpuState) =>
+  state && "lastNextRegWrite" in state ? state.lastNextRegWrite : undefined;
+
+/** A Next Register's documented name, for the row and the tooltip. */
+const nextRegName = (reg: number | undefined): string => {
+  if (reg === undefined) return "";
+  const described = NEXT_REG_DESCRIPTORS.find((d) => d.id === reg);
+  return described ? described.description : "Undocumented register";
+};
+
 const breakpointTooltip = (
   bp: BreakpointInfo,
   addrKey: string,
   instruction: string,
-  isWatchpoint: boolean
+  isWatchpoint: boolean,
+  lastWrite?: NextRegWriteEvent,
+  partitionLabels?: Record<number, string>
 ): string => {
-  const kind = bp.memoryRead
-    ? "Memory read"
-    : bp.memoryWrite
-      ? "Memory write"
-      : bp.ioRead
-        ? "I/O read"
-        : bp.ioWrite
-          ? "I/O write"
-          : "Execution";
-  const lines = [`${kind} breakpoint at ${addrKey}`];
+  const nextRegKind = isNextRegBreakpoint(bp);
+  const kind = nextRegKind
+    ? "NextReg write"
+    : bp.memoryRead
+      ? "Memory read"
+      : bp.memoryWrite
+        ? "Memory write"
+        : bp.ioRead
+          ? "I/O read"
+          : bp.ioWrite
+            ? "I/O write"
+            : "Execution";
+  // --- "at" reads wrong for a shape that is not at anywhere.
+  const lines = [`${kind} breakpoint ${nextRegKind ? "on" : "at"} ${addrKey}`];
+  if (nextRegKind) {
+    lines.push(nextRegName(bp.nextReg));
+    lines.push(bp.nextRegCopper ? "Breaks on CPU and copper writes" : "Breaks on CPU writes");
+    // --- The contract, in the second place a user can meet it. The dialog says the same.
+    lines.push("Stops after the instruction that wrote the register");
+    if (lastWrite?.reg === bp.nextReg) {
+      // --- Where it came from, while the row is still showing the hit. On `$02` this is the only
+      // --- place it survives: resuming applies the reset and takes the address and paging with it.
+      const where = `$${toHexa4(lastWrite.pc)}`;
+      const paged =
+        lastWrite.partition === undefined
+          ? ""
+          : ` in ${partitionLabels?.[lastWrite.partition] ?? lastWrite.partition}`;
+      lines.push(
+        lastWrite.origin === "copper"
+          ? `Written by the copper, CPU at ${where}${paged}`
+          : `Written at ${where}${paged}`
+      );
+    }
+  }
   if (bp.disabled) lines.push("Disabled");
   if (bp.resolvedAddress !== undefined) {
     lines.push(`Resolves to $${toHexa4(bp.resolvedAddress)} (${bp.resolvedAddress})`);
@@ -80,10 +134,10 @@ const breakpointTooltip = (
   // --- The row's own gestures. Only a binary breakpoint is editable here; a source-bound one is
   // --- placed and moved from the editor's glyph margin.
   lines.push("Right-click the row for more actions");
-  // --- `isBinaryBreakpoint`, not `bp.address !== undefined`: the same predicate the row's own
+  // --- `isAuthorableBreakpoint`, not `bp.address !== undefined`: the same predicate the row's own
   // --- double-click and the context menu use. A bank-relative breakpoint has no address and is
   // --- editable, so the raw test promised no edit on a row that offers one.
-  if (isBinaryBreakpoint(bp)) lines.push("Double-click the row to edit");
+  if (isAuthorableBreakpoint(bp)) lines.push("Double-click the row to edit");
   return lines.join("\n");
 };
 
@@ -145,6 +199,8 @@ export const BreakpointsPanel = () => {
   // --- The row the context menu was opened on. A breakpoint has no id, so the row itself is held
   // --- rather than a key that the next refresh could invalidate.
   const [menuTarget, setMenuTarget] = useState<BreakpointInfo>();
+  const mainApi = useMainApi();
+  const grouped = useGlobalSetting(SETTING_IDE_BP_GROUP_BY_KIND) as boolean;
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
@@ -243,7 +299,7 @@ export const BreakpointsPanel = () => {
     // --- This keeps `bp-ea`'s semantics: it erases every breakpoint, source-bound ones included.
     // --- That is the one place the panel does something the dialog's binary-only scope would not
     // --- predict, so the question names the source count rather than asking a bare "Are you sure?".
-    const sourceCount = bps.filter((bp) => !isBinaryBreakpoint(bp)).length;
+    const sourceCount = bps.filter((bp) => !isAuthorableBreakpoint(bp)).length;
     const confirmed = await confirmPort.confirm({
       title: "Remove all breakpoints",
       lines: [
@@ -279,7 +335,18 @@ export const BreakpointsPanel = () => {
 
   // --- Source-bound breakpoints appear in this list but cannot be authored here; the editor's
   // --- glyph margin owns them. Everything that is a *set* operation still applies to them.
-  const menuTargetIsEditable = isBinaryBreakpoint(menuTarget);
+  const menuTargetIsEditable = isAuthorableBreakpoint(menuTarget);
+
+  /*
+   * The rows the list actually renders: always sorted, with headers when grouping is on.
+   *
+   * Sorting matters even ungrouped. Before this the panel rendered `breakpointDefs` insertion
+   * order, so the list reshuffled every time a breakpoint was added or removed.
+   */
+  const listItems = useMemo(
+    () => groupBreakpoints(bps, partitionLabels, grouped !== false),
+    [bps, partitionLabels, grouped]
+  );
 
   return (
     <div className={styles.breakpointsPanel}>
@@ -292,6 +359,18 @@ export const BreakpointsPanel = () => {
           buttonHeight={22}
           fill="--color-command-icon"
           clicked={() => void editBreakpoint()}
+        />
+        <IconButton
+          iconName="list-tree"
+          title={grouped !== false ? "Ungroup breakpoints" : "Group breakpoints by kind"}
+          iconSize={16}
+          buttonWidth={22}
+          buttonHeight={22}
+          selected={grouped !== false}
+          fill="--color-command-icon"
+          clicked={() =>
+            void mainApi.setGlobalSettingsValue(SETTING_IDE_BP_GROUP_BY_KIND, grouped === false)
+          }
         />
         <IconButton
           iconName="clear-all"
@@ -334,13 +413,37 @@ export const BreakpointsPanel = () => {
           clicked={runFromMenu(removeAllBreakpoints)}
         />
       </ContextMenu>
+      {/*
+        * The empty test runs on the breakpoints, not on the flattened items: a list of six headers
+        * and no rows would otherwise count as a populated panel.
+        */}
       {bps.length === 0 && <EmptyState message="No breakpoints defined" />}
       {bps.length > 0 && (
         <VirtualizedList
-          items={bps}
+          items={listItems}
           renderItem={(idx) => {
             try {
-              const bp = bps[idx];
+              const item = listItems[idx];
+              if (item.kind === "header") {
+                /*
+                 * A heading *within* panel content, so `SectionHeader` - `PanelHeader` is a panel's
+                 * own chrome and stacking a second strip of it under the first reads as two titles.
+                 * It binds no gestures: a header is not a breakpoint and has nothing to remove.
+                 */
+                return (
+                  <SectionHeader>
+                    <Icon
+                      iconName={BREAKPOINT_GROUP_ICONS[item.group]}
+                      fill="--color-breakpoint-type"
+                      width={16}
+                      height={16}
+                    />
+                    <span>{BREAKPOINT_GROUP_TITLES[item.group]}</span>
+                    <span>{item.count}</span>
+                  </SectionHeader>
+                );
+              }
+              const bp = item.bp;
               // --- The address *spec*, not the display key: the key ends in `:R`/`:W` for a
               // --- watchpoint, and `BreakpointIndicator` builds `bp-*` commands from this string,
               // --- which take the kind as an option instead. This panel cleared the kind flags
@@ -364,6 +467,10 @@ export const BreakpointsPanel = () => {
                   isCurrent = !!(lastCpuState?.lastIoReadPort === addr);
                 } else if (bp.ioWrite) {
                   isCurrent = !!(lastCpuState?.lastIoWritePort === addr);
+                } else if (isNextRegBreakpoint(bp)) {
+                  // --- This shape has no address, so it is "current" when the write the machine
+                  // --- stopped on was to its register.
+                  isCurrent = nextRegWriteOf(lastCpuState)?.reg === bp.nextReg;
                 }
               }
 
@@ -372,12 +479,19 @@ export const BreakpointsPanel = () => {
 
               return (
                 <BreakpointRow
-                  tooltip={breakpointTooltip(bp, addrKey, instruction, isWatchpoint)}
+                  tooltip={breakpointTooltip(
+                    bp,
+                    addrKey,
+                    instruction,
+                    isWatchpoint,
+                    nextRegWriteOf(lastCpuState),
+                    partitionLabels
+                  )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
                   onDoubleClick={
                     // --- Only a binary breakpoint has anything to open; a source-bound one is the
                     // --- editor's to edit.
-                    isBinaryBreakpoint(bp) ? () => void editBreakpoint(bp) : undefined
+                    isAuthorableBreakpoint(bp) ? () => void editBreakpoint(bp) : undefined
                   }
                 >
                   <BreakpointIndicator
@@ -389,6 +503,14 @@ export const BreakpointsPanel = () => {
                     current={isCurrent}
                     hasBreakpoint={true}
                     disabled={disabled}
+                    nextReg={bp.nextReg}
+                    /*
+                     * Told rather than inferred from the type of `address`. Every shape the panel
+                     * lists is armed except an unresolved source breakpoint, which is the one the
+                     * amber colour is for - and before this, a bank-relative or NextReg row wore
+                     * that colour while being perfectly able to fire.
+                     */
+                    armed={bp.resource === undefined}
                     memoryRead={bp.memoryRead}
                     memoryWrite={bp.memoryWrite}
                     ioRead={bp.ioRead}
@@ -418,6 +540,55 @@ export const BreakpointsPanel = () => {
                       className={styles.bpCell}
                     />
                   )}
+                  {isNextRegBreakpoint(bp) &&
+                    (() => {
+                      const hit =
+                        machineState === MachineControllerState.Paused &&
+                        nextRegWriteOf(lastCpuState)?.reg === bp.nextReg
+                          ? nextRegWriteOf(lastCpuState)
+                          : undefined;
+                      /*
+                       * Order matters here, and it is not the order the cells were written in.
+                       *
+                       * While the breakpoint is merely listed, the register's documented name is
+                       * the useful thing. The moment it *fires*, the useful thing is where the
+                       * write came from - and on `$02` it is the only chance to see it, because
+                       * resuming carries out the reset and takes the address and the paging with
+                       * it. So the live facts come first and the name last, which is what makes
+                       * the name the cell that truncates in a narrow sidebar rather than the
+                       * address.
+                       */
+                      return (
+                        <>
+                          {hit && (
+                            <>
+                              {/*
+                                * The pair that makes the stop readable as "before", and the site
+                                * that says who did it. Both take the *secondary* accent, as every
+                                * supporting value beside a headline in this panel does.
+                                */}
+                              <Value
+                                text={`$${toHexa2(hit.oldValue)} \u2192 $${toHexa2(hit.newValue)}`}
+                                width="auto"
+                                className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                              />
+                              <Value
+                                text={
+                                  `${hit.origin === "copper" ? "copper, PC " : "@"}` +
+                                  `$${toHexa4(hit.pc)}` +
+                                  (hit.partition === undefined
+                                    ? ""
+                                    : ` ${partitionLabels?.[hit.partition] ?? hit.partition}`)
+                                }
+                                width="auto"
+                                className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                              />
+                            </>
+                          )}
+                          <Secondary text={nextRegName(bp.nextReg)} width="auto" />
+                        </>
+                      );
+                    })()}
                   {isWatchpoint && machineState === MachineControllerState.Paused && (
                     <>
                       <Secondary

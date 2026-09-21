@@ -37,6 +37,56 @@ static uint8_t zxnextNextRegs[ZXNEXT_NEXT_REG_COUNT];
 static uint8_t zxnextNextRegLastWrite[ZXNEXT_NEXT_REG_COUNT];
 static uint8_t zxnextNextRegWritten[ZXNEXT_NEXT_REG_COUNT];
 
+/*
+ * The NextReg write-breakpoint watch table, pushed whole from the host, and the latch a watched
+ * write leaves behind. See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.2.
+ *
+ * The core does the matching rather than mirroring every write out for the host to test, because a
+ * single instruction can write NextRegs many times - `OTIR` to `$253B` is the palette-upload idiom -
+ * and the host's bus mirror holds only one access per instruction. Modelled on the Z88 core's
+ * `z88BreakpointFlags`, the one other in-core breakpoint table.
+ *
+ * One two-dimensional array rather than three separate ones: the host pushes the whole thing in a
+ * single `.set()`, and separate statics have no guaranteed relative layout. Row 0 is the per-register
+ * flag byte, row 1 the value to match, row 2 the mask.
+ *
+ * A zero mask matches any value. That is also how the host collapses two breakpoints watching one
+ * register with different filters: the core over-approximates and `DebugSupport.hasNextRegWrite`
+ * makes the exact decision, exactly as `PART_BP` defers a partitioned execution breakpoint.
+ */
+#define ZXNEXT_NEXTREG_WATCH_FLAGS 0
+#define ZXNEXT_NEXTREG_WATCH_VALUE 1
+#define ZXNEXT_NEXTREG_WATCH_MASK 2
+#define ZXNEXT_NEXTREG_WATCH_CPU 0x01u
+#define ZXNEXT_NEXTREG_WATCH_COPPER 0x02u
+static uint8_t zxnextNextRegWatch[3][ZXNEXT_NEXT_REG_COUNT];
+
+/*
+ * Who is performing the write in progress, so the one hook in `zxnextNextRegSetDirect` can tell a
+ * CPU write from a Copper one without a second hook site.
+ *
+ * `NONE` covers the reset branches and the IDE's own hotkeys (`zxnextSetNextRegisterDirect`), which
+ * are deliberately never reported: a soft reset writes a dozen registers, and a register changing
+ * because the user pressed a key is not a program event worth stopping for.
+ */
+#define ZXNEXT_NEXTREG_ORIGIN_NONE 0u
+#define ZXNEXT_NEXTREG_ORIGIN_CPU 1u
+#define ZXNEXT_NEXTREG_ORIGIN_COPPER 2u
+static uint8_t zxnextNextRegWriteOrigin;
+
+/*
+ * The first watched write since the host last took one, with the register's previous value.
+ *
+ * "First", not "last": a block write that hits two watched registers reports the earlier one, the
+ * host stops after that instruction, and the second is reported on the next run. Latching the last
+ * instead would lose the write the user was actually waiting for.
+ */
+static uint8_t zxnextNextRegHit;
+static uint8_t zxnextNextRegHitReg;
+static uint8_t zxnextNextRegHitOld;
+static uint8_t zxnextNextRegHitNew;
+static uint8_t zxnextNextRegHitOrigin;
+
 static uint16_t cpuAf;
 static uint16_t cpuBc;
 static uint16_t cpuDe;
@@ -429,6 +479,44 @@ uint32_t zxnextGetNextRegisterDirect(uint32_t reg) { return zxnextNextRegGetDire
 /* The IDE's Next Registers panel: a `$253B` read of `reg`, leaving the `$243B` selection alone */
 uint32_t zxnextPeekNextRegister(uint32_t reg) { return zxnextNextRegPeek(reg & 0xffu); }
 void zxnextSetNextRegisterDirect(uint32_t reg, uint32_t value) { zxnextNextRegSetDirect(reg, value); }
+
+/*
+ * The NextReg write-breakpoint watch table and its latch. See §4.2 of the plan.
+ *
+ * The host owns the table: it pushes all three rows in one `.set()` when it enters the debug loop
+ * with a NextReg breakpoint armed, and calls `zxnextClearNextRegWatch` when it enters with none -
+ * without that second call a table left over from a deleted breakpoint would keep stopping the
+ * machine.
+ */
+uint32_t zxnextNextRegWatchPtr(void) { return (uint32_t)(uintptr_t)zxnextNextRegWatch; }
+
+void zxnextClearNextRegWatch(void) {
+  for (uint32_t row = 0; row < 3u; row++) {
+    for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegWatch[row][i] = 0u;
+  }
+  zxnextNextRegHit = 0u;
+}
+
+/*
+ * Take the latched hit, if there is one, and clear it.
+ *
+ * Packed into one word so the debug loop pays a single boundary crossing per instruction rather
+ * than five: bit 31 says a hit is present, bits 24-25 the origin (1 CPU, 2 Copper), bits 16-23 the
+ * value written, bits 8-15 the value the register held before, bits 0-7 the register.
+ *
+ * Returning 0 for "nothing" is unambiguous because the presence bit is what is tested - a genuine
+ * hit on register $00 writing $00 from the CPU still has bit 31 set.
+ */
+uint32_t zxnextTakeNextRegHit(void) {
+  if (!zxnextNextRegHit) return 0u;
+  uint32_t packed = 0x80000000u
+    | ((uint32_t)zxnextNextRegHitOrigin << 24)
+    | ((uint32_t)zxnextNextRegHitNew << 16)
+    | ((uint32_t)zxnextNextRegHitOld << 8)
+    | (uint32_t)zxnextNextRegHitReg;
+  zxnextNextRegHit = 0u;
+  return packed;
+}
 
 void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
 void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxnextDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }

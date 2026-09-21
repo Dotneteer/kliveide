@@ -34,7 +34,19 @@
  * Z80 CPU, ULA, Next and Call Stack panels stacked around it.
  */
 span.bpLabel {
-  margin-inline: 0;
+  /*
+   * Nothing on the left, one character on the right.
+   *
+   * The right margin is what *guarantees* the gap after the key, and it is separate from the
+   * `min-width` below on purpose: a minimum width only separates the columns while the content is
+   * narrower than it, so a key that outgrows the box abuts the next cell with no space at all. That
+   * is not hypothetical - `NR:$4C=$0B` is ten characters and ran straight into the register's name
+   * in the shipped panel, and a bank-relative `0A:+$0100` is nine.
+   *
+   * Two jobs, two properties: `min-width` aligns the common cases into a column, the margin keeps
+   * the columns apart whatever the key turns out to be.
+   */
+  margin-inline: 0 1ch;
   /*
    * One column wide enough for both forms the key takes — `$00EA` and the partitioned
    * `R0:$00EA` (8 characters; the panel strips the `:R`/`:IW` suffix before building it). `min-width`
@@ -44,11 +56,11 @@ span.bpLabel {
    * This replaces a 6ch box *plus* a separate 6ch spacer, which together put roughly eight
    * characters of air between the address and the instruction.
    *
-   * 9ch, not 8: at 8 the partitioned key fills the box exactly and the instruction ends up under a
-   * character away from it, which reads as cramped next to the plain `$XXXX` rows. The extra
-   * character guarantees separation in the worst case and still roughly halves the old gap.
+   * 8ch plus the 1ch margin above, which is the 9ch this was before the two jobs were separated:
+   * the partitioned key fills the box exactly at 8, and the margin is what keeps the instruction
+   * off it. The old single 9ch did both jobs only for keys shorter than the box.
    */
-  min-width: 9ch;
+  min-width: 8ch;
   /*
    * The breakpoint's address is the row's headline, so it takes the primary accent — not the
    * `--data-label` grey a `Label` would otherwise give it. The disassembled instruction below it

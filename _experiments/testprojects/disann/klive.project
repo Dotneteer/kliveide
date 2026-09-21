@@ -27,6 +27,17 @@
         "bankOffset": 4604,
         "exec": true,
         "ioMask": 65535
+      },
+      {
+        "exec": false,
+        "memoryRead": false,
+        "memoryWrite": false,
+        "ioRead": false,
+        "ioWrite": false,
+        "ioMask": 65535,
+        "nextReg": 2,
+        "nextRegCopper": false,
+        "disabled": false
       }
     ],
     "watchExpressions": []
@@ -66,27 +77,46 @@
               }
             },
             {
-              "type": "Disassembly",
-              "id": "$disassembly",
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm",
               "position": {
-                "line": 0,
-                "column": 0
+                "line": 23,
+                "column": 33
               },
               "viewState": {
-                "topAddress": 12987,
-                "isFullView": true,
-                "currentSegment": 0,
-                "decimalView": false,
-                "bankLabel": true,
-                "autoRefresh": true,
-                "ram": true,
-                "screen": false,
-                "disassOffset": 0,
-                "sysVarNames": true
+                "cursorState": [
+                  {
+                    "inSelectionMode": true,
+                    "selectionStart": {
+                      "lineNumber": 1,
+                      "column": 1
+                    },
+                    "position": {
+                      "lineNumber": 23,
+                      "column": 33
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 23,
+                    "provider": "syntax",
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
               }
             }
           ],
-          "activeDocumentId": "$disassembly"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
         }
       ]
     }

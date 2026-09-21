@@ -501,6 +501,83 @@ own content size into that track**, and the damage shows up somewhere else entir
   columns: fractional cells put every edge and hairline off the device pixel grid and the mosaic
   goes faintly soft at *every* size. Floor the division, clamp it, and re-measure on resize.
 
+## An Indicator's State Is Told, Never Inferred From A Prop's Type
+
+`BreakpointIndicator` chose its dot colour from the **type** of its `address` prop: a number meant
+"armed" and took `--color-breakpoint-binary`, anything else fell through to the amber
+`--color-debug-unreachable-bp` that means "this cannot fire yet". That was only ever right by
+coincidence. Every breakpoint shape added since passes a *string* — a bank-relative site
+(`05:+$0100`), a NextReg register (`NR:$07`) — and each one was painted as an unresolved source
+breakpoint while being perfectly able to fire. Nobody noticed, because a wrong colour still looks
+like a colour.
+
+The fix is a boolean prop the caller sets, not a cleverer inference. **A component that renders
+state must be handed that state**; deriving it from the shape or type of some other prop makes every
+future shape a silent bug, and the derivation is invisible at the call site where the mistake is
+made.
+
+## A Dialog Field Is As Wide As Its Widest Legal Value
+
+A `TextInput` fills its row unless told otherwise, and in a dialog that is almost never right. A
+full-width box **promises room the value can never use** — the widest literal the breakpoint
+dialog's address parser accepts is `%1000000000000000`, seventeen characters, in a field that ran
+the whole width of the modal.
+
+Size each field from the longest thing it can legally hold, in `ch` (mandate M2, and the mono stack
+has changed advance width before — Menlo's 0.6em to Iosevka's 0.5em — silently mistuning every
+pixel width tuned to the old one). Two constants are usually enough: one for 16-bit fields, one for
+byte fields.
+
+The second gain is free and matters more than the first: **unequal widths tell the fields apart.**
+A register, a port mask and an address are different quantities, and boxes of identical width say
+they are the same kind of thing.
+
+## A Hint Under A Field Needs Its Own Top Margin
+
+`TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and
+the control's own block margins were removed so the two would stop fighting. The consequence is
+easy to miss when adding a field: **anything placed directly beneath a field sits on it**, and an
+explanatory line that touches the box it explains reads as part of the control rather than as a note
+about it.
+
+## A `min-width` Is A Column, Not A Gap
+
+`.bpLabel` used one `min-width: 9ch` to do two jobs — line the keys up into a column, *and* keep the
+next cell off them — with a comment claiming the extra character "guarantees separation in the worst
+case". It guarantees nothing of the sort: a minimum width only separates anything while the content
+is **narrower** than it. The moment a key outgrew the box it abutted the next cell with no space at
+all, which is what `NR:$4C=$0B` (ten characters) did to a register's name, and what a bank-relative
+`0A:+$0100` (nine) was one character away from doing.
+
+Two jobs, two properties: `min-width` aligns the common cases, a `margin-inline-end` keeps the
+columns apart whatever the content turns out to be. The general form of the mistake is worth
+recognising — **a property chosen for one effect that happens to produce a second one is a
+coincidence with a deadline**, and the deadline is the first piece of content that does not fit the
+author's idea of the worst case.
+
+## A New Row Type Reuses The Panel's Accent Split
+
+Adding a row to a data panel is not an occasion for a new hue. Each of these panels already divides
+its colour two ways, and a new row states which half each of its cells belongs to:
+
+- the **headline** — the thing the row is *about*, and the thing a user scans the column for — takes
+  the primary `--color-state-value`;
+- a **supporting value** beside it takes the secondary `--color-state-value-alt`.
+
+The Breakpoints panel had two of these pairs before and now has three, all following the same split:
+a resolved address beside a source breakpoint's key, an op address beside a watchpoint's, and a
+NextReg breakpoint's `$00 → $03` beside its register. Context that is neither — a disassembled
+instruction, a register's documented name — stays on `Value`/`Secondary`'s neutral `--data-value`.
+Three pairs reading the same way is the point; a fourth hue would have made the panel a legend.
+
+## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
+
+`PanelHeader` is a *panel's own chrome* — a chrome surface with a bottom border. Dropping one into
+the middle of a listing reads as a second title, which is what made `DskViewerPanel`'s nested
+headings look like strips of chrome in the content. `SectionHeader` is the primitive for a heading
+*within* content: a disk track, a memory bank, a breakpoint group. Its own doc comment says so; the
+mistake recurs anyway, which is why it is here too.
+
 ## Verify Geometry In The Running App, Never In A Replica
 
 This is the process lesson from the same work, and it cost two rounds of shipping a "fix" the user
@@ -527,6 +604,17 @@ recipe that can. Keep the two apart:
 A prototype that is honest about being a prototype is fine. A prototype standing in for verification
 is the same mistake twice. If the app is already running without `--remoteDebuggingPort=9222`, that
 is a reason to ask the author to relaunch it — not a reason to skip the check.
+
+**The line falls between *geometry* and *rasterisation*, and it is worth being exact about which
+side a question is on.** "Is this row aligned?" depends on the wrappers around it, so only the
+running app can answer it. "Does this 24×24 stroke glyph survive being drawn at 16px?" depends on
+nothing but the SVG, the size and the rasteriser — and Chromium is the rasteriser either way, so a
+page that draws the *actual file* at the *actual size* beside the icons it must be told apart from
+answers it faithfully and in a fraction of the time. That is how the NextReg breakpoint glyph was
+settled: three variants at 16 and 32px next to `bp-mem-write` and `bp-io-write`, which showed the
+first draft's shortened arrow was the weakest in a family whose whole grammar rests on that arrow.
+Say which of the two you did. The temptation is to let a cheap rasterisation check stand in for the
+geometry check it cannot make.
 
 Drive the real thing instead — `.plans/baseline/drive.mjs` against a CDP-enabled launch:
 

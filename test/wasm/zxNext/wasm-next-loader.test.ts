@@ -25,12 +25,14 @@ describe("ZX Spectrum Next WASM v2 loader", () => {
     const pixelOffset = ZXNEXT_WASM_V2_MEMORY_SIZE;
     const keyboardOffset = pixelOffset + ZXNEXT_WASM_V2_SCREEN_WIDTH * ZXNEXT_WASM_V2_SCREEN_HEIGHT * 4;
     const nextRegsOffset = keyboardOffset + ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT;
-    const traceOffset = nextRegsOffset + ZXNEXT_WASM_V2_NEXT_REG_COUNT;
+    const nextRegWatchOffset = nextRegsOffset + ZXNEXT_WASM_V2_NEXT_REG_COUNT;
+    const traceOffset = nextRegWatchOffset + ZXNEXT_WASM_V2_NEXT_REG_COUNT * 3;
     const exports = createViewExports(memory, {
       memoryOffset: 0,
       pixelOffset,
       keyboardOffset,
       nextRegsOffset,
+      nextRegWatchOffset,
       traceOffset
     });
 
@@ -43,6 +45,8 @@ describe("ZX Spectrum Next WASM v2 loader", () => {
     expect(views.pixelBufferBytes.byteLength).toBe(views.pixelBuffer.length * 4);
     expect(views.keyboardLines.byteLength).toBe(ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT);
     expect(views.nextRegs.byteLength).toBe(ZXNEXT_WASM_V2_NEXT_REG_COUNT);
+    // --- Three rows of one byte per register: flags, value, mask.
+    expect(views.nextRegWatch.byteLength).toBe(ZXNEXT_WASM_V2_NEXT_REG_COUNT * 3);
     expect(views.frameTrace.byteLength).toBe(
       ZXNEXT_FRAME_TRACE_HEADER_SIZE + ZXNEXT_FRAME_TRACE_CAPACITY * ZXNEXT_FRAME_TRACE_RECORD_SIZE
     );
@@ -55,7 +59,8 @@ describe("ZX Spectrum Next WASM v2 loader", () => {
       pixelOffset: 0x10000,
       keyboardOffset: 0x10000,
       nextRegsOffset: 0x10008,
-      traceOffset: 0x10108,
+      nextRegWatchOffset: 0x10108,
+      traceOffset: 0x10408,
       memorySize: 0x10000
     });
 
@@ -70,6 +75,7 @@ function createViewExports(
     pixelOffset: number;
     keyboardOffset: number;
     nextRegsOffset: number;
+    nextRegWatchOffset?: number;
     traceOffset?: number;
     memorySize?: number;
   }
@@ -81,6 +87,9 @@ function createViewExports(
     zxnextPixelBufferPtr: () => options.pixelOffset,
     zxnextKeyboardLinesPtr: () => options.keyboardOffset,
     zxnextNextRegsPtr: () => options.nextRegsOffset,
+    zxnextNextRegWatchPtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextClearNextRegWatch: fn,
+    zxnextTakeNextRegHit: fn,
     zxnextTraceGetStartOffset: () => options.traceOffset ?? 0,
     zxnextTraceGetHeaderSize: () => ZXNEXT_FRAME_TRACE_HEADER_SIZE,
     zxnextTraceGetRecordSize: () => ZXNEXT_FRAME_TRACE_RECORD_SIZE,

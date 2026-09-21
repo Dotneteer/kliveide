@@ -2,6 +2,7 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import {
   ULA_BORDER_COLOR_NAMES,
   type CpuState,
+  type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
   type NextRegState,
@@ -693,6 +694,39 @@ export class ZxNextWasmV2Machine
     // --- ever read by the memory/IO breakpoint test, so decide once whether it is needed at all.
     const watchesBusAccess = debugSupport?.hasAccessBreakpoints() ?? false;
 
+    /*
+     * The NextReg watch table is the core's copy of what this machine's NextReg breakpoints want.
+     * Pushed whole on entry rather than kept in step with every edit - the same arrangement the Z88
+     * core's breakpoint flags use, and correct because every breakpoint edit either pauses the
+     * machine or precedes the next run.
+     *
+     * The `else` matters as much as the `if`: a table left in the core after the last NextReg
+     * breakpoint was deleted would go on stopping the machine forever.
+     */
+    const watchesNextReg = debugSupport?.hasNextRegBreakpoints() ?? false;
+    if (watchesNextReg) {
+      runtime.nextRegWatch.set(debugSupport!.buildNextRegWatch());
+    } else {
+      wasm.zxnextClearNextRegWatch();
+    }
+    // --- Resuming starts a new search; the write the user already looked at is not a current one.
+    this.lastNextRegWrite = undefined;
+
+    /*
+     * Finish a reset the last run stopped in front of.
+     *
+     * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
+     * before the reset is carried out, so the user can see who asked (below). The request is left
+     * standing in the core, and this is where it is honoured - before another instruction runs, or
+     * the machine would execute one more instruction than the program did.
+     *
+     * A no-op when nothing is pending, which is every other entry.
+     */
+    if (this.applyWasmV2ResetRequest(runtime)) {
+      super.pc = wasm.zxnextGetCpuPc();
+      this.frameCompleted = false;
+    }
+
     if (debugSupport && this.pc !== debugSupport.lastStartupBreakpoint) {
       if (this.shouldStopAtWasmV2Breakpoint(instructionsExecuted)) {
         return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
@@ -705,7 +739,11 @@ export class ZxNextWasmV2Machine
     while (!this.frameCompleted) {
       // --- The instruction a memory/I/O breakpoint hit is reported against (the Breakpoints panel):
       // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
-      if (watchesBusAccess && wasm.zxnextGetCpuPrefix() === 0) this.opStartAddress = this.pc;
+      // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
+      // --- same way a watchpoint hit is, so it needs this tracked too.
+      if ((watchesBusAccess || watchesNextReg) && wasm.zxnextGetCpuPrefix() === 0) {
+        this.opStartAddress = this.pc;
+      }
       wasm.zxnextExecuteInstruction();
       instructionsExecuted++;
       this.wasmV2DebugSteps++;
@@ -719,6 +757,23 @@ export class ZxNextWasmV2Machine
       }
       this.syncWasmV2StorageFrameCommand(runtime);
       this.wasmV2LastStopReason = "debugStep";
+
+      /*
+       * The NextReg test runs **before** the reset request is applied, and that ordering is the
+       * whole value of a breakpoint on `$02`.
+       *
+       * Writing `$02` bit 0 or 1 asks the machine to reset. The core only raises the request; the
+       * reset itself happens in `applyWasmV2ResetRequest` below, and it throws away the two things
+       * the user set the breakpoint to find out - the address of the instruction that wrote, and
+       * the paging it wrote under. Worse, a *hard* reset re-initialises the core's NextReg state
+       * and clears the latch with it, so the breakpoint did not fire at all.
+       *
+       * Stopping first leaves the request standing; the loop entry above honours it on resume.
+       */
+      if (watchesNextReg && this.acceptWasmV2NextRegHit(wasm.zxnextTakeNextRegHit())) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
+      }
+
       if (this.applyWasmV2ResetRequest(runtime)) {
         super.pc = wasm.zxnextGetCpuPc();
         this.frameCompleted = false;
@@ -801,6 +856,46 @@ export class ZxNextWasmV2Machine
        */
       retExecuted: false
     });
+  }
+
+  /**
+   * Unpacks a hit the core latched and asks whether any breakpoint actually wants it.
+   *
+   * The core's watch table over-approximates - one slot per register cannot hold two different
+   * value filters - so a hit is a candidate, not a verdict. A rejected one costs the single
+   * boundary crossing that fetched it and the loop carries on.
+   *
+   * @param packed `zxnextTakeNextRegHit`'s word: bit 31 presence, 24-25 origin, 16-23 new value,
+   *   8-15 old value, 0-7 register.
+   */
+  private acceptWasmV2NextRegHit(packed: number): boolean {
+    if ((packed & 0x8000_0000) === 0) return false;
+    const debugSupport = this.executionContext.debugSupport;
+    if (!debugSupport) return false;
+
+    const reg = packed & 0xff;
+    const newValue = (packed >>> 16) & 0xff;
+    const origin = ((packed >>> 24) & 0x03) === 2 ? "copper" : "cpu";
+    if (!debugSupport.hasNextRegWrite(reg, newValue, origin)) return false;
+
+    /*
+     * The context is captured here, not read off the machine later: a write to `$02` is about to
+     * reset it, and the loop stops in front of that reset precisely so these two values still
+     * describe the moment of the write.
+     *
+     * `opStartAddress` rather than `pc`, for the same reason a watchpoint reports it: `pc` has
+     * already moved past the instruction that did the writing.
+     */
+    const pc = this.opStartAddress;
+    this.lastNextRegWrite = {
+      reg,
+      oldValue: (packed >>> 8) & 0xff,
+      newValue,
+      origin,
+      pc,
+      partition: this.getPartition(pc)
+    };
+    return true;
   }
 
   private hasWasmV2AccessBreakpoint(): boolean {
@@ -1197,13 +1292,21 @@ export class ZxNextWasmV2Machine
     return (this.wasmV2Runtime?.exports.zxnextGetCpuHeldByDma() ?? 0) !== 0;
   }
 
+  /**
+   * The NextReg write a breakpoint last stopped on, with the value the register held before it.
+   *
+   * Set by the debug loop when a watched write is accepted, and cleared when the machine resumes,
+   * so the Breakpoints panel can highlight the row that fired and show `$00 -> $03` beside it.
+   */
+  lastNextRegWrite?: NextRegWriteEvent;
+
   override getCpuState(): CpuState {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncCpuFromWasmV2(runtime);
       this.importWasmV2BusAccess(runtime);
     }
-    return super.getCpuState();
+    return { ...super.getCpuState(), lastNextRegWrite: this.lastNextRegWrite };
   }
 
   override getDisassemblySections(options: Record<string, any>) {

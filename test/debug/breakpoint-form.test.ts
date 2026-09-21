@@ -8,7 +8,7 @@ import {
   applyKindChange,
   createEmptyForm,
   formToBreakpointInfo,
-  isBinaryBreakpoint,
+  isAuthorableBreakpoint,
   isFormValid,
   isKnownPartition,
   parseBankRelativeInput,
@@ -364,25 +364,25 @@ describe("breakpointToForm", () => {
   });
 });
 
-describe("isBinaryBreakpoint", () => {
+describe("isAuthorableBreakpoint", () => {
   it("accepts an address-bound breakpoint", () => {
-    expect(isBinaryBreakpoint({ address: 0x8000, exec: true })).toBe(true);
-    expect(isBinaryBreakpoint({ address: 0 })).toBe(true);
+    expect(isAuthorableBreakpoint({ address: 0x8000, exec: true })).toBe(true);
+    expect(isAuthorableBreakpoint({ address: 0 })).toBe(true);
   });
 
   it("rejects a source-bound breakpoint", () => {
     // --- This is the guard that keeps a source breakpoint out of the dialog entirely.
-    expect(isBinaryBreakpoint({ resource: "code/code.kz80.asm", line: 12 })).toBe(false);
+    expect(isAuthorableBreakpoint({ resource: "code/code.kz80.asm", line: 12 })).toBe(false);
   });
 
   it("rejects a source-bound breakpoint even once it has resolved to an address", () => {
     expect(
-      isBinaryBreakpoint({ resource: "code/code.kz80.asm", line: 12, resolvedAddress: 0x8000 })
+      isAuthorableBreakpoint({ resource: "code/code.kz80.asm", line: 12, resolvedAddress: 0x8000 })
     ).toBe(false);
   });
 
   it("rejects nothing at all", () => {
-    expect(isBinaryBreakpoint(undefined)).toBe(false);
+    expect(isAuthorableBreakpoint(undefined)).toBe(false);
   });
 });
 
@@ -393,6 +393,11 @@ describe("helpers", () => {
       address: "",
       partition: undefined,
       ioMask: "",
+      nextReg: "",
+      filterValue: false,
+      nextRegValue: "",
+      nextRegMask: "",
+      nextRegCopper: false,
       disabled: false
     });
   });
@@ -531,17 +536,17 @@ describe("parseBankRelativeInput", () => {
   });
 });
 
-describe("isBinaryBreakpoint with bank-relative breakpoints", () => {
+describe("isAuthorableBreakpoint with bank-relative breakpoints", () => {
   it("accepts one, so the dialog can edit it", () => {
-    expect(isBinaryBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true })).toEqual(true);
+    expect(isAuthorableBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true })).toEqual(true);
   });
 
   it("still refuses a source-bound one", () => {
-    expect(isBinaryBreakpoint({ resource: "a.asm", line: 12 })).toEqual(false);
+    expect(isAuthorableBreakpoint({ resource: "a.asm", line: 12 })).toEqual(false);
   });
 
   it("accepts bank 0 at offset 0", () => {
-    expect(isBinaryBreakpoint({ bank: 0, bankOffset: 0, exec: true })).toEqual(true);
+    expect(isAuthorableBreakpoint({ bank: 0, bankOffset: 0, exec: true })).toEqual(true);
   });
 });
 
@@ -704,5 +709,255 @@ describe("the dialog and bp-set agree on a bank-relative address", () => {
       bank: fromForm.bank,
       bankOffset: fromForm.bankOffset
     });
+  });
+});
+
+/*
+ * NextReg write breakpoints: the sixth kind, and the first bound to a machine event rather than a
+ * place. It shares no field with the other five, which is why `validateBreakpointForm` and
+ * `formToBreakpointInfo` both branch out of the address rules entirely instead of suppressing them
+ * one at a time.
+ *
+ * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.8.
+ */
+
+const nextRegEnv = (over: Partial<BreakpointEnvironment> = {}): BreakpointEnvironment =>
+  nextEnv({ supportsNextRegBreakpoints: true, ...over });
+
+const nextRegForm = (over: Partial<BreakpointFormState> = {}): BreakpointFormState => ({
+  ...createEmptyForm(),
+  kind: "nextRegWrite",
+  nextReg: "$07",
+  ...over
+});
+
+describe("NextReg breakpoints - validation", () => {
+  it("accepts a bare register", () => {
+    expect(validateBreakpointForm(nextRegForm(), nextRegEnv())).toEqual({});
+  });
+
+  it.each(["$07", "7", "%00000111", "$ff", "0"])("accepts the register spelled %s", (text) => {
+    expect(validateBreakpointForm(nextRegForm({ nextReg: text }), nextRegEnv())).toEqual({});
+  });
+
+  it("refuses the kind on a machine that is not a ZX Spectrum Next", () => {
+    const errors = validateBreakpointForm(nextRegForm(), nextEnv());
+    expect(errors.nextReg).toMatch(/ZX Spectrum Next only/);
+  });
+
+  it("asks for a register when the field is empty", () => {
+    const errors = validateBreakpointForm(nextRegForm({ nextReg: "" }), nextRegEnv());
+    expect(errors.nextReg).toMatch(/Enter a Next Register number/);
+  });
+
+  it("reports an unparseable register and one out of range differently", () => {
+    expect(validateBreakpointForm(nextRegForm({ nextReg: "zz" }), nextRegEnv()).nextReg).toMatch(
+      /valid register/
+    );
+    expect(validateBreakpointForm(nextRegForm({ nextReg: "$100" }), nextRegEnv()).nextReg).toMatch(
+      /between \$00 and \$FF/
+    );
+  });
+
+  it("ignores the address, partition and port mask this kind does not have", () => {
+    // --- A stale value from a previous kind must not fail validation against a field the user can
+    // --- no longer see. `applyKindChange` clears them, and this is the belt to that braces.
+    const errors = validateBreakpointForm(
+      nextRegForm({ address: "nonsense", partition: 99, ioMask: "zz" }),
+      nextRegEnv()
+    );
+    expect(errors).toEqual({});
+  });
+
+  describe("the value filter", () => {
+    it("asks for a value once the filter is switched on", () => {
+      const errors = validateBreakpointForm(
+        nextRegForm({ filterValue: true, nextRegValue: "" }),
+        nextRegEnv()
+      );
+      expect(errors.nextRegValue).toMatch(/Enter the value to break on/);
+    });
+
+    it("accepts a value, and a value with a mask", () => {
+      expect(
+        validateBreakpointForm(
+          nextRegForm({ filterValue: true, nextRegValue: "$03" }),
+          nextRegEnv()
+        )
+      ).toEqual({});
+      expect(
+        validateBreakpointForm(
+          nextRegForm({ filterValue: true, nextRegValue: "$03", nextRegMask: "$0f" }),
+          nextRegEnv()
+        )
+      ).toEqual({});
+    });
+
+    it("keeps the value and the mask inside a byte", () => {
+      expect(
+        validateBreakpointForm(
+          nextRegForm({ filterValue: true, nextRegValue: "$100" }),
+          nextRegEnv()
+        ).nextRegValue
+      ).toMatch(/between \$00 and \$FF/);
+      expect(
+        validateBreakpointForm(
+          nextRegForm({ filterValue: true, nextRegValue: "$03", nextRegMask: "$100" }),
+          nextRegEnv()
+        ).nextRegMask
+      ).toMatch(/between \$00 and \$FF/);
+    });
+
+    it("refuses a mask with the filter switched off", () => {
+      const errors = validateBreakpointForm(
+        nextRegForm({ filterValue: false, nextRegMask: "$0f" }),
+        nextRegEnv()
+      );
+      expect(errors.nextRegMask).toMatch(/needs a value to mask/);
+    });
+  });
+
+  it("still refuses a duplicate key", () => {
+    const env = nextRegEnv({ existingKeys: ["NR:$07"] });
+    expect(validateBreakpointForm(nextRegForm(), env).form).toMatch(/already exists at NR:\$07/);
+  });
+
+  it("lets a filtered breakpoint coexist with an unfiltered one on the same register", () => {
+    // --- The filter is part of the key, which is the whole reason it is: `NR:$07` and
+    // --- `NR:$07=$03` are two useful breakpoints, not one being overwritten.
+    const env = nextRegEnv({ existingKeys: ["NR:$07"] });
+    const filtered = nextRegForm({ filterValue: true, nextRegValue: "$03" });
+    expect(validateBreakpointForm(filtered, env)).toEqual({});
+  });
+
+  it("exempts the breakpoint being edited from the duplicate check", () => {
+    const env = nextRegEnv({ existingKeys: ["NR:$07"], editingKey: "NR:$07" });
+    expect(validateBreakpointForm(nextRegForm({ nextRegCopper: true }), env)).toEqual({});
+  });
+});
+
+describe("NextReg breakpoints - the breakpoint the form builds", () => {
+  it("carries the register and nothing that belongs to a place", () => {
+    const bp = formToBreakpointInfo(nextRegForm());
+    expect(bp).toMatchObject({ nextReg: 0x07, exec: false });
+    expect(bp.address).toBeUndefined();
+    expect(bp.partition).toBeUndefined();
+    expect(bp.ioMask).toBeUndefined();
+    expect(bp.bank).toBeUndefined();
+  });
+
+  it("does not leak a stale address or partition from a previous kind", () => {
+    const bp = formToBreakpointInfo(nextRegForm({ address: "$8000", partition: 3 }));
+    expect(bp.address).toBeUndefined();
+    expect(bp.partition).toBeUndefined();
+  });
+
+  it("carries the filter and the copper opt-in", () => {
+    expect(
+      formToBreakpointInfo(
+        nextRegForm({
+          filterValue: true,
+          nextRegValue: "$03",
+          nextRegMask: "$0f",
+          nextRegCopper: true
+        })
+      )
+    ).toMatchObject({ nextRegValue: 0x03, nextRegMask: 0x0f, nextRegCopper: true });
+  });
+
+  it("drops the filter entirely when it is switched off", () => {
+    const bp = formToBreakpointInfo(
+      nextRegForm({ filterValue: false, nextRegValue: "$03", nextRegMask: "$0f" })
+    );
+    expect(bp.nextRegValue).toBeUndefined();
+    expect(bp.nextRegMask).toBeUndefined();
+  });
+
+  it("omits a mask that has no value to mask", () => {
+    const bp = formToBreakpointInfo(
+      nextRegForm({ filterValue: true, nextRegValue: "", nextRegMask: "$0f" })
+    );
+    expect(bp.nextRegMask).toBeUndefined();
+  });
+
+  it("produces the key the commands print and accept back", () => {
+    const env = nextRegEnv();
+    expect(breakpointKeyOf(nextRegForm(), env)).toBe("NR:$07");
+    expect(
+      breakpointKeyOf(nextRegForm({ filterValue: true, nextRegValue: "$03" }), env)
+    ).toBe("NR:$07=$03");
+    expect(
+      breakpointKeyOf(
+        nextRegForm({ filterValue: true, nextRegValue: "$03", nextRegMask: "$0f" }),
+        env
+      )
+    ).toBe("NR:$07=$03/$0F");
+  });
+});
+
+describe("NextReg breakpoints - round trip", () => {
+  it.each([
+    ["a bare register", { nextReg: 0x07 }],
+    ["a filtered write", { nextReg: 0x07, nextRegValue: 0x03 }],
+    ["a masked filter", { nextReg: 0x07, nextRegValue: 0x03, nextRegMask: 0x0f }],
+    ["a copper watcher", { nextReg: 0x4c, nextRegCopper: true }],
+    ["a disabled one", { nextReg: 0x07, disabled: true }]
+  ])("survives breakpointToForm then formToBreakpointInfo: %s", (_what, stored) => {
+    const rebuilt = formToBreakpointInfo(breakpointToForm(stored as BreakpointInfo));
+    expect(rebuilt).toMatchObject(stored);
+    expect(breakpointKeyOf(breakpointToForm(stored as BreakpointInfo), nextRegEnv())).toBe(
+      breakpointKeyOf(breakpointToForm(rebuilt), nextRegEnv())
+    );
+  });
+
+  it("opens the Edit flow on the right kind", () => {
+    expect(breakpointToForm({ nextReg: 0x07 }).kind).toBe("nextRegWrite");
+    // --- The register decides before any flag is read, as it does in the key builder.
+    expect(breakpointToForm({ nextReg: 0x07, exec: true } as BreakpointInfo).kind).toBe(
+      "nextRegWrite"
+    );
+  });
+
+  it("is authorable, so the panel offers Edit on it", () => {
+    expect(isAuthorableBreakpoint({ nextReg: 0x07 })).toBe(true);
+    // --- Still false for the one shape the editor's margin owns.
+    expect(isAuthorableBreakpoint({ resource: "a.asm", line: 1 })).toBe(false);
+  });
+});
+
+describe("NextReg breakpoints - switching type", () => {
+  it("clears the register fields when the kind stops being NextReg", () => {
+    const form = nextRegForm({
+      filterValue: true,
+      nextRegValue: "$03",
+      nextRegMask: "$0f",
+      nextRegCopper: true
+    });
+    expect(applyKindChange(form, "exec")).toMatchObject({
+      nextReg: "",
+      filterValue: false,
+      nextRegValue: "",
+      nextRegMask: "",
+      nextRegCopper: false
+    });
+  });
+
+  it("clears the address and partition when the kind becomes NextReg", () => {
+    // --- The address field is replaced, not re-labelled, so a value left behind would be both
+    // --- invisible and unreachable - the dead end `applyKindChange` exists to prevent.
+    const form = aForm({ kind: "exec", address: "$8000", partition: 3 });
+    expect(applyKindChange(form, "nextRegWrite")).toMatchObject({
+      address: "",
+      partition: undefined
+    });
+  });
+
+  it("leaves a form valid after any switch into and back out of the kind", () => {
+    for (const kind of ALL_KINDS) {
+      const there = applyKindChange(aForm({ address: "$8000" }), "nextRegWrite");
+      const back = applyKindChange({ ...there, nextReg: "$07" }, kind);
+      expect(back.nextReg, kind).toBe("");
+      expect(back.ioMask, kind).toBe("");
+    }
   });
 });

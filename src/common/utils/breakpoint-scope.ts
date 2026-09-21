@@ -133,6 +133,19 @@ export function isLabelAnchored(bp: BreakpointInfo): boolean {
 }
 
 /**
+ * Is this breakpoint watching a Next Register write?
+ *
+ * The register is the binding, so this reads `nextReg` rather than a kind flag — there is no
+ * `nextRegWrite` field, and `BreakpointInfo.nextReg` explains why. Written here, beside
+ * `isBankRelative` and `isLabelAnchored`, because this module imports nothing but the breakpoint
+ * types: the main process needs the predicate when it filters a project save, and must not pull in
+ * `@renderer/...` to get it.
+ */
+export function isNextRegBreakpoint(bp: BreakpointInfo): boolean {
+  return bp?.nextReg !== undefined;
+}
+
+/**
  * The 8K partition a bank-relative breakpoint must match.
  *
  * A NEX bank is 16K and a Next partition is an 8K page, so the offset decides which half of the

@@ -285,7 +285,11 @@ static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
   /* the NextReg process writes on this edge; the copper lags the CPU, so it writes at its own tact */
   if (write) {
     zxnextNextRegWriteTactOverride = zxnextCopperFrameTact;
+    /* Labelled so a NextReg write breakpoint can choose to watch copper writes: off by default,
+       because a copper list runs every frame and a user debugging their own code means the CPU. */
+    zxnextNextRegWriteOrigin = ZXNEXT_NEXTREG_ORIGIN_COPPER;
     zxnextNextRegSetDirect((writeData >> 8u) & 0x7fu, writeData & 0xffu);
+    zxnextNextRegWriteOrigin = ZXNEXT_NEXTREG_ORIGIN_NONE;
     zxnextNextRegWriteTactOverride = 0xffffffffu;
   }
 }

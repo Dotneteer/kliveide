@@ -52,6 +52,32 @@ export interface IDebugSupport {
   hasAccessBreakpoints(): boolean;
 
   /**
+   * Does any breakpoint watch a Next Register write?
+   *
+   * The ZX Spectrum Next counterpart of `hasAccessBreakpoints`, asked once per debug-loop entry for
+   * the same reason: pushing the watch table into the core is pure overhead when nothing is armed.
+   */
+  hasNextRegBreakpoints(): boolean;
+
+  /**
+   * The watch table to push into the ZX Spectrum Next core: three 256-byte rows - flags, value,
+   * mask - rebuilt from the current definitions on each call.
+   *
+   * The core matches approximately against this (one slot per register cannot hold two value
+   * filters) and reports what it catches; `hasNextRegWrite` then makes the exact decision.
+   */
+  buildNextRegWatch(): Uint8Array;
+
+  /**
+   * Does any breakpoint want to stop on this NextReg write?
+   *
+   * @param reg The register written
+   * @param value The value written
+   * @param origin Which writer performed it; copper writes are opt-in per breakpoint
+   */
+  hasNextRegWrite(reg: number, value: number, origin: "cpu" | "copper"): boolean;
+
+  /**
    * Gets IO read breakpoint information for the specified port
    * @param port Port read during the current instruction
    */

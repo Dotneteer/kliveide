@@ -158,6 +158,52 @@ export type BreakpointInfo = {
   resolvedBankOffset?: number;
 
   /**
+   * The Next Register this breakpoint watches for writes, `$00..$FF`. ZX Spectrum Next only.
+   *
+   * The fifth binding shape, and the first that is not a **place**. An address breakpoint, a
+   * bank-relative one and a label-anchored one all name somewhere in memory; this one names a
+   * machine *event* — "whenever register $07 is written" — so it has no address, no partition and
+   * nothing for the disassembler to annotate. `buildBreakpointKey` branches on it before the
+   * address branch, for the same reason the label branch comes first: the register is the identity.
+   *
+   * **There is deliberately no `nextRegWrite` kind flag beside it.** Writes are the only thing
+   * watched — a NextReg *read* breakpoint is ruled out, because a read of `$253B` is common and
+   * undiagnostic — so a flag would be true for exactly the breakpoints carrying a `nextReg` and
+   * false for the rest. That is not a discriminator, it is a second copy of one, and the two can
+   * fall out of step. Use `isNextRegBreakpoint` in `@common/utils/breakpoint-scope`.
+   *
+   * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.1.
+   */
+  nextReg?: number;
+
+  /**
+   * Break only when the written value, masked by `nextRegMask`, equals this. Absent means any write.
+   *
+   * **Part of the breakpoint's identity**, so `NR:$07=$00` and `NR:$07=$03` can both exist — which
+   * is the case that motivates having a filter at all. Deliberately unlike `ioMask`, which is *not*
+   * in the key and therefore makes two I/O breakpoints on one port with different masks
+   * unrepresentable. `ioMask` is the older precedent and the worse one; do not copy it here, and do
+   * not "fix" it there as part of this feature.
+   */
+  nextRegValue?: number;
+
+  /** The mask applied to both the written value and `nextRegValue` before comparing. Default $FF. */
+  nextRegMask?: number;
+
+  /**
+   * Also break when the **Copper** writes this register, not only when the CPU does.
+   *
+   * Off by default: the CPU write paths — port `$253B` and the `NEXTREG` opcodes — are what a
+   * programmer debugging their own code means. Reset branches and the IDE's own hotkeys are never
+   * reported whatever this says.
+   *
+   * Deliberately **not** part of the identity. A CPU-only and a CPU-plus-Copper breakpoint on one
+   * register are not two useful breakpoints — the second subsumes the first — so this behaves like
+   * `disabled`: a property `bp-set` updates in place rather than a second breakpoint.
+   */
+  nextRegCopper?: boolean;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

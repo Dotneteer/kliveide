@@ -45,6 +45,10 @@ static void zxnextNextRegHardReset(void) {
   zxnextTimingSelect();
   zxnextResetRequest = 0u;
   for (uint32_t i = 0; i < ZXNEXT_NEXT_REG_COUNT; i++) zxnextNextRegs[i] = 0;
+  /* The watch table is the host's and survives; a latched hit describes a machine that no longer
+     exists, so it does not. */
+  zxnextNextRegHit = 0u;
+  zxnextNextRegWriteOrigin = ZXNEXT_NEXTREG_ORIGIN_NONE;
   cpuProgrammedSpeed = 0;
   cpuEffectiveSpeed = 0;
   cpuTactScale = 8;
@@ -424,18 +428,64 @@ static uint32_t zxnextNextRegGetValue(void) {
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value);
 
 /*
+ * Does this write trip a NextReg write breakpoint? If so, latch it for the host.
+ *
+ * Called from the very top of `zxnextNextRegSetDirect`, which is deliberate on two counts:
+ *
+ *   - It is the single sink every write reaches, so one hook covers `$253B`, the NEXTREG opcodes,
+ *     DMA and the Copper. `zxnextNextRegWriteOrigin` is what separates them.
+ *   - It runs *before* the read-only rejections below, so a program writing `$00`, `$01`, `$0E`,
+ *     `$0F` or `$DA` still reports. A write the hardware ignores is exactly the kind of bug this
+ *     feature exists to find, and saying nothing about it would be the wrong silence.
+ *
+ * The previous value comes from `zxnextNextRegGetDirect`, never `zxnextNextRegPeek`: peek applies
+ * the `$253B` read mux's zero and one masks, so for a register like `$02` (mask `$60`) it would
+ * report an "old value" the register never actually held.
+ */
+static void zxnextNextRegCheckWatch(uint32_t reg, uint32_t value) {
+  uint8_t originBit =
+      zxnextNextRegWriteOrigin == ZXNEXT_NEXTREG_ORIGIN_CPU      ? ZXNEXT_NEXTREG_WATCH_CPU
+    : zxnextNextRegWriteOrigin == ZXNEXT_NEXTREG_ORIGIN_COPPER   ? ZXNEXT_NEXTREG_WATCH_COPPER
+    : 0u;
+  if (originBit == 0u) return;
+  if ((zxnextNextRegWatch[ZXNEXT_NEXTREG_WATCH_FLAGS][reg] & originBit) == 0u) return;
+
+  /* A zero mask matches any value; otherwise only the masked bits have to agree. */
+  uint8_t mask = zxnextNextRegWatch[ZXNEXT_NEXTREG_WATCH_MASK][reg];
+  if (mask != 0u && (((uint8_t)value ^ zxnextNextRegWatch[ZXNEXT_NEXTREG_WATCH_VALUE][reg]) & mask) != 0u) {
+    return;
+  }
+
+  /* Latch the first hit and keep it: see the note on `zxnextNextRegHit` in zxnext.c. */
+  if (zxnextNextRegHit) return;
+  zxnextNextRegHit = 1u;
+  zxnextNextRegHitReg = (uint8_t)reg;
+  zxnextNextRegHitOld = (uint8_t)zxnextNextRegGetDirect(reg);
+  zxnextNextRegHitNew = (uint8_t)value;
+  zxnextNextRegHitOrigin = zxnextNextRegWriteOrigin;
+}
+
+/*
  * A CPU write - `$253B`, or NEXTREG - recorded as the last write for the IDE (as the TypeScript
  * core's `NextRegDevice.writeRegister` does). Copper writes, reset branches and the app's hotkeys go
  * straight to `zxnextNextRegSetDirect` and are not recorded.
+ *
+ * The origin is raised around the call rather than passed as an argument, so that `SetDirect` keeps
+ * the one signature every other caller already uses. Cleared to `NONE` afterwards, as the Copper
+ * site does with `zxnextNextRegWriteTactOverride`: an unlabelled write must never inherit the last
+ * labelled one's origin.
  */
 static void zxnextNextRegCpuWrite(uint32_t reg, uint32_t value) {
   zxnextNextRegLastWrite[reg & 0xffu] = (uint8_t)value;
   zxnextNextRegWritten[reg & 0xffu] = 1u;
+  zxnextNextRegWriteOrigin = ZXNEXT_NEXTREG_ORIGIN_CPU;
   zxnextNextRegSetDirect(reg, value);
+  zxnextNextRegWriteOrigin = ZXNEXT_NEXTREG_ORIGIN_NONE;
 }
 
 static void zxnextNextRegSetDirect(uint32_t reg, uint32_t value) {
   uint32_t normalized = reg & 0xffu;
+  zxnextNextRegCheckWatch(normalized, value & 0xffu);
   if (zxnextRasterIsVideoNextReg(normalized)) {
     uint32_t writeTact = zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
     /* $26 / $27 then show from the next 8-pixel cell: a pending latch (zxnextUlaSetNextReg) */
