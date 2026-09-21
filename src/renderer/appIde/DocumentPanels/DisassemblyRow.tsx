@@ -12,7 +12,7 @@ import { Value } from "@renderer/controls/layout/Value";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
-import { isBinaryBreakpoint } from "@renderer/appIde/utils/breakpoint-form";
+import { isAuthorableBreakpoint } from "@renderer/appIde/utils/breakpoint-form";
 import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
@@ -402,9 +402,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   const breakpoint = viewModelParams.breakpoint;
   // --- Address-bound and bank-relative breakpoints are both editable: the dialog authors either
   // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
-  // --- and moves it by line. `isBinaryBreakpoint` is the same gate the dialog's opener uses, so
+  // --- and moves it by line. `isAuthorableBreakpoint` is the same gate the dialog's opener uses, so
   // --- the row cannot offer an edit the dialog would refuse.
-  const editable = onEditBreakpoint && breakpoint && isBinaryBreakpoint(breakpoint);
+  const editable = onEditBreakpoint && breakpoint && isAuthorableBreakpoint(breakpoint);
   // --- A synopsis row stands in for a comment above the code, not for an instruction: it has no
   // --- address, so there is no view model to derive and no instruction columns to render.
   const isPrefixComment = item.prefixComment !== undefined;

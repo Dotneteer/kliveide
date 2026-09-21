@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import {
+  getBreakpointAddressSpec,
   getBreakpointDisplayKey,
   getBreakpointStorageKey
 } from "@common/utils/breakpoints";
@@ -113,6 +114,97 @@ describe("breakpoint keys - the round trip bp-list used to break", () => {
     // --- `-1:$8000` is what `bp-list` used to emit, and `bp-set -1:$8000` rejects it.
     for (const partition of [-2, -1, 0, 1, 7]) {
       expect(parses(getBreakpointStorageKey(exec({ partition })))).toBe(false);
+    }
+  });
+});
+
+describe("breakpoint keys - NextReg write breakpoints", () => {
+  /*
+   * The fifth binding shape, and the first that is not a place. It carries no address and no
+   * partition, so the two key forms coincide and the label map is never consulted — which is what
+   * every case below asserts by checking both forms against one string.
+   *
+   * See `.plans/NEXTREG_WRITE_BREAKPOINTS_PLAN.md` §4.3.
+   */
+  const bothForms = (bp: BreakpointInfo): string => {
+    const storage = getBreakpointStorageKey(bp);
+    expect(getBreakpointDisplayKey(bp, LABELS)).toBe(storage);
+    return storage;
+  };
+
+  it.each([
+    ["any write to a register", { nextReg: 0x07 }, "NR:$07"],
+    ["a filtered write", { nextReg: 0x07, nextRegValue: 0x03 }, "NR:$07=$03"],
+    [
+      "a masked filtered write",
+      { nextReg: 0x07, nextRegValue: 0x03, nextRegMask: 0x0f },
+      "NR:$07=$03/$0F"
+    ]
+  ])("names %s", (_what, bp, expected) => {
+    expect(bothForms(bp)).toBe(expected);
+  });
+
+  it("pads and upper-cases the register number", () => {
+    expect(bothForms({ nextReg: 0x0a })).toBe("NR:$0A");
+    expect(bothForms({ nextReg: 0xff })).toBe("NR:$FF");
+    expect(bothForms({ nextReg: 0x00 })).toBe("NR:$00");
+  });
+
+  it("treats a $FF mask as no mask at all", () => {
+    // --- Comparing all eight bits is what "no mask" means, so the two spellings are one
+    // --- breakpoint and must not produce two keys.
+    expect(bothForms({ nextReg: 0x07, nextRegValue: 0x03, nextRegMask: 0xff })).toBe(
+      bothForms({ nextReg: 0x07, nextRegValue: 0x03 })
+    );
+  });
+
+  it("ignores a mask that has no value to mask", () => {
+    // --- The command layer and the dialog both reject this, so it should be unreachable. If it
+    // --- arrives anyway, the key must stay one a user can type back.
+    expect(bothForms({ nextReg: 0x07, nextRegMask: 0x0f })).toBe("NR:$07");
+  });
+
+  it("keeps the Copper opt-in out of the key", () => {
+    // --- `nextRegCopper` is a property, not an identity: a CPU-only and a CPU-plus-Copper
+    // --- breakpoint on one register are not two breakpoints, the second subsumes the first. So
+    // --- `bp-set nr:$07 -c` must update the existing breakpoint rather than add a second one.
+    expect(bothForms({ nextReg: 0x07, nextRegCopper: true })).toBe("NR:$07");
+    expect(bothForms({ nextReg: 0x07, nextRegValue: 0x03, nextRegCopper: true })).toBe(
+      "NR:$07=$03"
+    );
+  });
+
+  it("keeps `disabled` and `hitCount` out of the key, as every other shape does", () => {
+    expect(bothForms({ nextReg: 0x07, disabled: true, hitCount: 12 })).toBe("NR:$07");
+  });
+
+  it("names the register before the address branch, so a stray address cannot win", () => {
+    // --- Not a shape anything should build, but the branch order is load-bearing: were it
+    // --- reversed, resolution or a careless spread could silently turn a register breakpoint
+    // --- into an address one under the same identity.
+    expect(bothForms({ nextReg: 0x07, address: 0x8000 })).toBe("NR:$07");
+  });
+
+  it("refuses a value filter with no register", () => {
+    // --- The register is the binding. Without it there is nothing to name, exactly as for a
+    // --- breakpoint with neither an address nor a resource.
+    expect(() => getBreakpointStorageKey({ nextRegValue: 0x03 })).toThrow();
+    expect(() => getBreakpointDisplayKey({ nextRegValue: 0x03 }, LABELS)).toThrow();
+  });
+});
+
+describe("breakpoint keys - the address spec a `bp-*` command takes back", () => {
+  it("returns a NextReg key unchanged, because its shape is its kind", () => {
+    // --- `getBreakpointAddressSpec` rebuilds the key with the kind flags cleared, so that
+    // --- `BreakpointIndicator` can splice it into `bp-del <spec> -w`. A NextReg breakpoint has no
+    // --- kind flag to clear and no `:R`/`:W` suffix to lose, so the spec is the key.
+    for (const bp of [
+      { nextReg: 0x07 },
+      { nextReg: 0x07, nextRegValue: 0x03 },
+      { nextReg: 0x07, nextRegValue: 0x03, nextRegMask: 0x0f },
+      { nextReg: 0x07, nextRegCopper: true }
+    ]) {
+      expect(getBreakpointAddressSpec(bp, LABELS)).toBe(getBreakpointDisplayKey(bp, LABELS));
     }
   });
 });

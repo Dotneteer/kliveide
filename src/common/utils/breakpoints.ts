@@ -6,6 +6,7 @@ import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
+import { isNextRegBreakpoint } from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
 import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 
@@ -39,6 +40,24 @@ import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-util
  */
 function labelBankText(bank: number): string {
   return toHexa2(bank).toUpperCase();
+}
+
+/**
+ * The `=$03` / `=$03/$0F` tail of a NextReg breakpoint's key: the value it filters on.
+ *
+ * Part of the key, so `NR:$07=$00` and `NR:$07=$03` are two breakpoints rather than one that keeps
+ * overwriting itself. An absent or `$FF` mask contributes nothing, because comparing all eight bits
+ * is what "no mask" means — the two spellings must not produce two keys for one breakpoint.
+ *
+ * A mask with no value is ignored rather than rendered. The command layer and the dialog both
+ * reject that combination, so reaching here with one means something upstream is wrong; emitting
+ * `/$0F` with nothing to mask would turn that into a breakpoint nobody can name back.
+ */
+function nextRegFilterText(bp: BreakpointInfo): string {
+  if (bp.nextRegValue === undefined) return "";
+  const mask = bp.nextRegMask;
+  const maskPart = mask === undefined || mask === 0xff ? "" : `/$${toHexa2(mask)}`;
+  return `=$${toHexa2(bp.nextRegValue)}${maskPart}`;
 }
 
 /** The `:R`/`:W`/`:IR`/`:IW` suffix that distinguishes a watchpoint from an execution breakpoint. */
@@ -75,6 +94,26 @@ function buildBreakpointKey(
   if (bp.label && bp.labelFile) {
     const bankPart = bp.bank === undefined ? "" : `${labelBankText(bp.bank)}:`;
     return `[${bp.labelFile}]:${bankPart}${bp.label}${suffix}`;
+  }
+
+  /*
+   * A NextReg write breakpoint is named by its register, and named before the address branch.
+   *
+   * It carries no address at all, so the order is not strictly forced the way the label branch's
+   * is — but grouping it with the other bindings that are not plain addresses is what keeps this
+   * function readable, and it documents that `nextReg` is a *binding*, not a modifier on one.
+   *
+   * No kind suffix. The shape is the kind here: writes are the only thing a NextReg breakpoint
+   * watches, so there is no `:R`/`:W` distinction to draw, exactly as with the source branch. That
+   * is also what makes `getBreakpointAddressSpec` — which rebuilds the key with the kind flags
+   * cleared — return this same string, so the `bp-*` commands built from it parse.
+   *
+   * The partition label map is unused, so the storage and display forms coincide. A register index
+   * is not a partition index and must never be routed through those labels; the same trap the bank
+   * branch below documents.
+   */
+  if (isNextRegBreakpoint(bp)) {
+    return `NR:$${toHexa2(bp.nextReg)}${nextRegFilterText(bp)}`;
   }
 
   if (bp.address !== undefined) {

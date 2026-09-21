@@ -41,6 +41,13 @@ Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Ena
 directly. You can also double-click a breakpoint's indicator in the
 [Disassembly View](./disassembly) to edit it there.
 
+The view is **grouped by kind**, under a header carrying that kind's icon and a count; a kind with
+no breakpoints gets no header. The third toolbar button turns the grouping off, which hides the
+headers &mdash; useful when you are watching a handful of breakpoints in one routine and the header
+is a row that tells you nothing. It does not reorder the rows: within a kind they are sorted by
+address, and that sorting applies either way, so the list no longer reshuffles as you add and remove
+breakpoints.
+
 ## Running To A Line
 
 Holding <kbd>Ctrl</kbd> (<kbd>Cmd</kbd> on macOS) and clicking the breakpoint margin beside a line
@@ -58,8 +65,11 @@ when the machine is running rather than paused.
 The **Add breakpoint** button and the **Edit breakpoint** command both open a dialog that offers
 every option the `bp-set` command accepts, without the flag syntax:
 
-- **Type** &mdash; execution, memory read, memory write, I/O read or I/O write. A breakpoint has
-  exactly one type, so choosing one here replaces the last.
+- **Type** &mdash; execution, memory read, memory write, I/O read, I/O write, or, on the ZX Spectrum
+  Next, NextReg write. A breakpoint has exactly one type, so choosing one here replaces the last.
+  Choosing **NextReg write** replaces the address field with a register chooser and hides the
+  partition row, because that type names no place; it adds a value filter and a copper checkbox of
+  its own. See [NextReg Write Breakpoints](#nextreg-write-breakpoints).
 - **Break only in a specific partition** &mdash; shown only on machines that page ROMs or banks,
   and not available for I/O breakpoints, which watch a port rather than a partition. Ticking it
   reveals the same partition chooser the [Memory View](./memory) uses: a short list on a machine
@@ -197,6 +207,98 @@ watchpoint shows the execution one. Both are always listed in the Breakpoints pa
 towards the bank heading's total.
 </Callout>
 
+## NextReg Write Breakpoints (ZX Spectrum Next)
+
+Every other breakpoint names a **place** &mdash; an address, an offset in a bank, a source line. A
+NextReg write breakpoint names an **event**: stop when a particular Next Register is written.
+
+```
+bp-set nr:$07
+```
+
+The Next's registers are where the machine's behaviour actually lives: the CPU speed, the MMU slots,
+the Layer 2 base, sprite control, the interrupt configuration. When something writes one of them
+unexpectedly, the alternatives are an I/O write breakpoint on port `$253B`, which fires on *every*
+NextReg write in the system including NextZXOS's own, or reading the disassembly until you spot the
+`NEXTREG` instruction. Neither works well on a `.nex` file you did not write.
+
+The breakpoint catches a write from the CPU whichever way it arrives: through port `$253B`, through
+the `NEXTREG` instructions, or from a DMA transfer the program set up.
+
+### Breaking On One Value
+
+Add `=` and a value to break only when that value is written, and `/` and a mask to compare only some
+of the bits:
+
+```
+bp-set nr:$07=$03        ; only when $07 is set to $03
+bp-set nr:$07=$03/$0f    ; only when its low nibble becomes $3
+```
+
+The value is part of the breakpoint's identity, so `nr:$07` and `nr:$07=$03` are two breakpoints and
+both can be set at once. The same thing can be typed as options &mdash; `bp-set nr:$07 -v $03 -m $0f`
+&mdash; which is what the [Breakpoint Dialog](#the-breakpoint-dialog) writes for you.
+
+### Copper Writes
+
+By default only CPU writes break. A copper list runs every frame, so a breakpoint that fired on its
+writes would stop the machine constantly. Add `-c` when the copper is what you are chasing:
+
+```
+bp-set nr:$40 -c
+```
+
+The row and its tooltip say which of the two the breakpoint is watching. Writes performed by a reset
+or by Klive's own display hotkeys are never reported.
+
+### What You See When It Fires
+
+<Callout type="warning">
+**The machine stops *after* the instruction that wrote the register, not before it.** A Z80
+instruction cannot be interrupted part-way, and several NextReg writes can happen inside one of them
+&mdash; a DMA burst to `$253B`, or a busy copper list &mdash; so a breakpoint that tried to withhold
+the write would have to drop or duplicate some of them.
+
+Nothing is lost by this. The breakpoint reports the value the register held **and** the value just
+written, so the row reads `$00 → $03`: you see both sides of the change rather than only the one a
+stop-before would have shown.
+</Callout>
+
+The Breakpoints view shows the register's documented name beside its key, and the old and new values
+once the machine has stopped on it. The output pane says the same thing in words:
+
+```
+NextReg breakpoint: $07 (CPU speed) $00 -> $03 at PC=$8005
+```
+
+The row and the message both name **where the write came from** — the address of the instruction
+that did it, and the partition that address was paged from. On a Next the same address means
+different code depending on what is paged there, so the address alone does not identify the
+instruction.
+
+### Breaking On A Reset
+
+Writing NextReg `$02` asks the machine to reset: bit 0 for a soft reset, bit 1 for a hard one. That
+makes `nr:$02` the most useful breakpoint of the lot and the one with the most to go wrong, because
+a reset discards exactly the two things you set the breakpoint to find out.
+
+```
+bp-set nr:$02
+```
+
+Klive stops **before carrying the reset out**. The machine is still standing where the write
+happened: the program counter, the MMU slots and every other register are as the program left them,
+and the Memory view shows the paging that was in force. The reset is performed when you resume.
+
+<Callout type="info">
+This is the one place where a NextReg breakpoint changes *when* the machine does something, rather
+than only watching. Without a breakpoint on `$02`, or with one that is disabled, the reset happens
+exactly as it always did.
+</Callout>
+
+These breakpoints are stored in the project, not in a `.nex.dis` sidecar: they watch a hardware
+register, so they mean the same thing whichever NEX file is loaded.
+
 ## Resolved Source Code Breakpoints
 
 When you open a project or modify an assembly source code file, the source code breakpoint addresses are not resolved to an actual physical address. The orange color of a source code breakpoint indicates this status:
@@ -209,7 +311,7 @@ Source code breakpoints are resolved to a CPU address after compilation, and thi
 
 ## Breakpoint Types
 
-The second icon of the breakpoint item displays its type. There are five types of breakpoints (depending on the operation triggering the machine to pause), as the following figure shows:
+The second icon of the breakpoint item displays its type. There are six types of breakpoints (depending on the operation triggering the machine to pause). Five of them are shown in the following figure:
 
 <ClickableImage src="/images/working-with-ide/bp-types.png" width={128} />
 
@@ -218,4 +320,9 @@ These are the available breakpoint types (from top to bottom in the figure):
 - **I/O write**. This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address.
 - **Execution**. This breakpoint is triggered when the PC register reaches the specified address.
 - **Memory read**. This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read. 
-- **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written. 
+- **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written.
+
+The sixth is the ZX Spectrum Next's **NextReg write**, which is triggered when a Next Register is
+written rather than when a place in memory is touched. Because it names no address, it is the one
+type with no margin to click and no disassembly beside it &mdash; see
+[NextReg Write Breakpoints](#nextreg-write-breakpoints). 

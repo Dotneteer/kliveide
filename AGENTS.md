@@ -72,7 +72,7 @@ merely uncoloured, which no route diff can see.
     Read `.ai/visual-tests-guide.md` before writing one.
 - New tests for Next hardware behaviour go in `test/zxnext-hw/` through the harness. The mock-based
   device tests are gone: there is one Next machine, the WASM core, and its reference is the VHDL in
-  `_input/next-fpga/`, not a second emulator (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`).
+  `_input/next-fpga/`, not a second emulator.
   `test/wasm/zxNext/` keeps what the harness cannot reach - the loader, the machine lifecycle,
   checkpoints, the debug loop, boot traces, IDE-facing state.
 - Missing a capability? Add a session method (README: "Adding a method"), do not reach into
@@ -126,8 +126,13 @@ merely uncoloured, which no route diff can see.
   case is a *type* problem, not a lint one. The test's header explains what was tried and rejected.
   **Note `controls/layout`'s `width` prop is px for a number and a CSS length for a string**, so a
   column wants `width="7ch"`, never `width={7}`.
-- The Monaco syntax palette is mid-revision: **read `.plans/SYNTAX_PALETTE_REVISION_PLAN.md`**
-  before changing `theming/tokens/syntax.ts`. It supersedes §8.1 of the modernization plan.
+- The Monaco syntax palette is settled: a **fixed multi-hue table** in which only *keyword* follows
+  the accent. It replaced the accent-derived scheme of §8.1 of `.plans/UI_MODERNIZATION_PLAN.md`,
+  which put nine of eleven classes in one blue and comments in neutral grey. Before changing
+  `theming/tokens/syntax.ts`, read its own header comment (which records the per-class hue
+  choices and why `keyword`/`error` are absent from the table) and the Monaco entry in
+  `.ai/ui-theming-intent-and-lessons.md`. Three tests guard it: a comment saturation floor, hue
+  spread, and every class held clear of the keyword for all six accents.
 - **Any style, theming or visual change must update `.ai/ui-theming-intent-and-lessons.md` in the
   same change** — a standing instruction from the project author. Record the durable rule the change
   taught, not what happened: fold it into the existing sections, replace anything it supersedes, and

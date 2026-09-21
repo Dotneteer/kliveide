@@ -1,7 +1,7 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
-import { isBankRelative } from "@common/utils/breakpoint-scope";
+import { isBankRelative, isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 // --- The Next's bank limits, from the module that owns the NEX bank facts. `BreakpointCommands`
@@ -33,8 +33,24 @@ import {
  * pages — which is the confusion §4.1 exists to have settled.
  */
 
-/** The five mutually exclusive breakpoint types, one per `-r`/`-w`/`-i`/`-o` (or none, for exec). */
-export type BreakpointKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
+/**
+ * The six mutually exclusive breakpoint types.
+ *
+ * The first five are the `-r`/`-w`/`-i`/`-o` options (or none, for exec). `nextRegWrite` is the
+ * ZX Spectrum Next's `nr:<register>` spec, and is the odd one out: the other five name a place to
+ * watch, it names a machine event. That is why choosing it replaces the address field rather than
+ * merely re-labelling it.
+ *
+ * This is the *form's* vocabulary. `BreakpointInfo` carries no `nextRegWrite` flag - a register in
+ * `nextReg` is what makes a breakpoint one - so the two need not line up field for field.
+ */
+export type BreakpointKind =
+  | "exec"
+  | "memRead"
+  | "memWrite"
+  | "ioRead"
+  | "ioWrite"
+  | "nextRegWrite";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -56,6 +72,22 @@ export type BreakpointFormState = {
   partition?: number;
   /** Raw input, I/O kinds only. Empty means no mask. */
   ioMask: string;
+  /** Raw input, NextReg kind only: the register to watch, `$00`..`$FF`. */
+  nextReg: string;
+  /**
+   * Whether the NextReg breakpoint filters on the written value.
+   *
+   * Explicit rather than derived from `nextRegValue` being non-empty, so that ticking the box
+   * reveals an *empty* field the user must fill - which validation can then ask for. Deriving it
+   * would force the box to author some default value the user never chose just to stay ticked.
+   */
+  filterValue: boolean;
+  /** Raw input, NextReg kind only. Meaningful only while `filterValue` is set. */
+  nextRegValue: string;
+  /** Raw input, NextReg kind only. Empty means compare every bit. */
+  nextRegMask: string;
+  /** Also break when the copper writes the register, not only when the CPU does. */
+  nextRegCopper: boolean;
   disabled: boolean;
 };
 
@@ -79,6 +111,14 @@ export type BreakpointEnvironment = {
    * bypasses that rejection.
    */
   supportsBankRelative?: boolean;
+  /**
+   * Whether `nr:<register>` means anything on this machine - the ZX Spectrum Next only.
+   *
+   * Enforced here and not merely in the UI, for the same reason as `supportsBankRelative`: a dialog
+   * that authored what `bp-set` rejects would be bypassing the command layer's rule, not offering
+   * a convenience.
+   */
+  supportsNextRegBreakpoints?: boolean;
   /**
    * `getBreakpointDisplayKey(bp, partitionLabels)` for every breakpoint currently set — **built with the
    * same `partitionLabels` map above**, or the duplicate check silently stops matching.
@@ -110,16 +150,30 @@ export type NumericParseResult = {
 };
 
 const ADDRESS_MAX = 0xffff;
+const BYTE_MAX = 0xff;
 
 /** What the address field says when handed a `[file]:line` spec. */
 export const SOURCE_SPEC_MESSAGE =
   "Set source-code breakpoints from the editor's left margin.";
 
 const NUMBER_HINT = "for example $8000, 32768, or %1000000000000000";
+const BYTE_HINT = "for example $07, 7, or %00000111";
 
-/** True for a breakpoint this dialog can edit. Source-bound breakpoints must not reach it. */
-export function isBinaryBreakpoint(bp: BreakpointInfo | undefined): boolean {
-  return bp?.address !== undefined || isBankRelative(bp ?? {});
+/**
+ * True for a breakpoint this dialog can author or edit.
+ *
+ * False only for source-bound breakpoints, which the editor's glyph margin owns: it places them by
+ * clicking a line, tracks them as lines move, and has its own undo/redo. Every call site asks the
+ * same question - may this breakpoint be opened in the dialog - so the name says that.
+ *
+ * It was `isBinaryBreakpoint` until NextReg breakpoints arrived. "Binary" meant "bound to an address
+ * rather than to source", which already stopped being true when a bank-relative breakpoint qualified
+ * and is plainly wrong for one bound to a register.
+ */
+export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean {
+  return (
+    bp?.address !== undefined || isNextRegBreakpoint(bp ?? {}) || isBankRelative(bp ?? {})
+  );
 }
 
 /** The `<bank>:+<offset>` separator. `+` cannot begin an address literal, which is why it works. */
@@ -170,11 +224,27 @@ export function parseBankRelativeInput(text: string | undefined): {
 
 /** The blank form the Add flow starts from. */
 export function createEmptyForm(): BreakpointFormState {
-  return { kind: "exec", address: "", partition: undefined, ioMask: "", disabled: false };
+  return {
+    kind: "exec",
+    address: "",
+    partition: undefined,
+    ioMask: "",
+    nextReg: "",
+    filterValue: false,
+    nextRegValue: "",
+    nextRegMask: "",
+    nextRegCopper: false,
+    disabled: false
+  };
 }
 
 function isIoKind(kind: BreakpointKind): boolean {
   return kind === "ioRead" || kind === "ioWrite";
+}
+
+/** True for the one kind bound to a register rather than to a place. */
+export function isNextRegKind(kind: BreakpointKind): boolean {
+  return kind === "nextRegWrite";
 }
 
 /**
@@ -190,11 +260,21 @@ export function applyKindChange(
   form: BreakpointFormState,
   kind: BreakpointKind
 ): BreakpointFormState {
+  const nextReg = isNextRegKind(kind);
   return {
     ...form,
     kind,
-    partition: isIoKind(kind) ? undefined : form.partition,
-    ioMask: isIoKind(kind) ? form.ioMask : ""
+    // --- A NextReg breakpoint has no address and no partition; the address field is not merely
+    // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
+    // --- unreachable.
+    address: nextReg ? "" : form.address,
+    partition: isIoKind(kind) || nextReg ? undefined : form.partition,
+    ioMask: isIoKind(kind) ? form.ioMask : "",
+    nextReg: nextReg ? form.nextReg : "",
+    filterValue: nextReg ? form.filterValue : false,
+    nextRegValue: nextReg ? form.nextRegValue : "",
+    nextRegMask: nextReg ? form.nextRegMask : "",
+    nextRegCopper: nextReg ? form.nextRegCopper : false
   };
 }
 
@@ -234,6 +314,33 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
+  /*
+   * A NextReg breakpoint, first and on its own branch.
+   *
+   * It shares no field with the other five: no address, no partition, no port mask. Emitting any of
+   * them would build a breakpoint `DebugSupport` arms in two places at once - the register watch and
+   * the address flags - so the branch returns rather than falling through.
+   */
+  if (isNextRegKind(form.kind)) {
+    const reg = parseNumericInput(form.nextReg);
+    const value = form.filterValue ? parseNumericInput(form.nextRegValue) : undefined;
+    const mask = form.filterValue ? parseNumericInput(form.nextRegMask) : undefined;
+    return {
+      nextReg: reg.ok ? reg.value & BYTE_MAX : undefined,
+      nextRegValue: value?.ok ? value.value & BYTE_MAX : undefined,
+      // --- Only with a value: a mask alone masks nothing, and it is part of the key, so emitting
+      // --- a stray one would name a breakpoint the user did not describe.
+      nextRegMask: value?.ok && mask?.ok ? mask.value & BYTE_MAX : undefined,
+      nextRegCopper: form.nextRegCopper,
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   const mask = isIoKind(form.kind) ? parseNumericInput(form.ioMask) : undefined;
 
   // --- A bank-relative site instead of an address. Not for the I/O kinds, which watch a port and
@@ -279,18 +386,27 @@ export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo 
  * needs the label map to translate.
  */
 export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
-  const kind: BreakpointKind = bp.memoryRead
-    ? "memRead"
-    : bp.memoryWrite
-      ? "memWrite"
-      : bp.ioRead
-        ? "ioRead"
-        : bp.ioWrite
-          ? "ioWrite"
-          : "exec";
+  // --- The register is the binding, so it decides the kind before any flag is consulted - the
+  // --- same order `buildBreakpointKey` uses, and for the same reason.
+  const kind: BreakpointKind = isNextRegBreakpoint(bp)
+    ? "nextRegWrite"
+    : bp.memoryRead
+      ? "memRead"
+      : bp.memoryWrite
+        ? "memWrite"
+        : bp.ioRead
+          ? "ioRead"
+          : bp.ioWrite
+            ? "ioWrite"
+            : "exec";
 
   return {
     kind,
+    nextReg: bp.nextReg === undefined ? "" : `$${toHexa2(bp.nextReg)}`,
+    filterValue: bp.nextRegValue !== undefined,
+    nextRegValue: bp.nextRegValue === undefined ? "" : `$${toHexa2(bp.nextRegValue)}`,
+    nextRegMask: bp.nextRegMask === undefined ? "" : `$${toHexa2(bp.nextRegMask)}`,
+    nextRegCopper: bp.nextRegCopper ?? false,
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -318,6 +434,59 @@ export function validateBreakpointForm(
   env: BreakpointEnvironment
 ): FieldErrors {
   const errors: FieldErrors = {};
+
+  /*
+   * The NextReg rules, on their own path.
+   *
+   * Not folded into the checks below with extra conditions: this kind has no address, no partition
+   * and no port mask, so every one of those rules would have to be suppressed for it, and a rule
+   * that is skipped is one more thing to get wrong than a rule that is not reached.
+   */
+  if (isNextRegKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.nextReg = "NextReg breakpoints are supported on the ZX Spectrum Next only.";
+    } else {
+      const reg = parseNumericInput(form.nextReg);
+      if (!reg.ok) {
+        errors.nextReg =
+          reg.reason === "empty"
+            ? "Enter a Next Register number."
+            : `Enter a valid register, ${BYTE_HINT}.`;
+      } else if (reg.value < 0 || reg.value > BYTE_MAX) {
+        errors.nextReg = "A Next Register number is between $00 and $FF.";
+      }
+    }
+
+    if (form.filterValue) {
+      const value = parseNumericInput(form.nextRegValue);
+      if (!value.ok) {
+        errors.nextRegValue =
+          value.reason === "empty"
+            ? "Enter the value to break on."
+            : `Enter a valid value, ${BYTE_HINT}.`;
+      } else if (value.value < 0 || value.value > BYTE_MAX) {
+        errors.nextRegValue = "A value is between $00 and $FF.";
+      }
+
+      const maskText = (form.nextRegMask ?? "").trim();
+      if (maskText) {
+        const mask = parseNumericInput(maskText);
+        if (!mask.ok) {
+          errors.nextRegMask = `Enter a valid mask, ${BYTE_HINT}.`;
+        } else if (mask.value < 0 || mask.value > BYTE_MAX) {
+          errors.nextRegMask = "A mask is between $00 and $FF.";
+        }
+      }
+    } else if ((form.nextRegMask ?? "").trim()) {
+      // --- Unreachable through the UI, which hides the field; checked because this module must be
+      // --- correct against a hand-built state, as the header says.
+      errors.nextRegMask = "A mask needs a value to mask.";
+    }
+
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
   const addressLabel = isIoKind(form.kind) ? "port" : "address";
 
   // --- Address (a port, for I/O kinds; or a bank-relative site)
@@ -384,17 +553,27 @@ export function validateBreakpointForm(
     }
   }
 
-  // --- Duplicate key. Only checkable once the parts the key is built from are sound.
-  if (!errors.address && !errors.partition && !errors.ioMask) {
-    const key = breakpointKeyOf(form, env);
-    if (key !== undefined && key !== env.editingKey && env.existingKeys.includes(key)) {
-      // --- `bp-set` silently merges onto an existing key, which reads as an update on the command
-      // --- line but would look like a rename here. Refuse instead.
-      errors.form = `A breakpoint already exists at ${key}.`;
-    }
-  }
+  addDuplicateKeyError(errors, form, env);
 
   return errors;
+}
+
+/**
+ * The one rule both validation paths share, applied only once every field the key is built from is
+ * sound - a key derived from a field that did not parse names some other breakpoint.
+ */
+function addDuplicateKeyError(
+  errors: FieldErrors,
+  form: BreakpointFormState,
+  env: BreakpointEnvironment
+): void {
+  if (Object.keys(errors).length > 0) return;
+  const key = breakpointKeyOf(form, env);
+  if (key !== undefined && key !== env.editingKey && env.existingKeys.includes(key)) {
+    // --- `bp-set` silently merges onto an existing key, which reads as an update on the command
+    // --- line but would look like a rename here. Refuse instead.
+    errors.form = `A breakpoint already exists at ${key}.`;
+  }
 }
 
 /** The key this form would produce, or `undefined` if it does not describe a breakpoint yet. */

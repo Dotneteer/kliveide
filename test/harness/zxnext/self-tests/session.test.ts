@@ -91,6 +91,30 @@ describe("harness session", () => {
     expect(s.frames).toBeGreaterThanOrEqual(3);
   });
 
+  it("watchNextRegWrite arms the core's watch; takeNextRegHit drains it once", async () => {
+    const s = await createSession();
+    s.setNextReg(0x7f, 0x11);
+
+    // --- Nothing armed: the latch stays empty however many writes happen.
+    s.setNextReg(0x7f, 0x22);
+    expect(s.takeNextRegHit()).toBeUndefined();
+
+    s.watchNextRegWrite(0x7f);
+    s.setNextReg(0x7f, 0x33);
+
+    expect(s.takeNextRegHit()).toEqual({
+      reg: 0x7f,
+      oldValue: 0x22,
+      newValue: 0x33,
+      origin: "cpu"
+    });
+    // --- Draining is destructive, and clearing really disarms.
+    expect(s.takeNextRegHit()).toBeUndefined();
+    s.clearNextRegWatches();
+    s.setNextReg(0x7f, 0x44);
+    expect(s.takeNextRegHit()).toBeUndefined();
+  });
+
   it("pressHotkey: F8 steps the CPU speed, F5/F6 switch the expansion bus", async () => {
     const s = await createSession();
     await s.pressHotkey("F8");

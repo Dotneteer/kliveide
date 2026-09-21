@@ -44,7 +44,7 @@ describe("SetBreakpointCommand", () => {
 
     it("should have correct usage string", () => {
       expect(command.usage).toContain("bp-set");
-      expect(command.usage).toContain("<address>");
+      expect(command.usage).toContain("<address-spec>");
       expect(command.usage).toContain("[-r]");
       expect(command.usage).toContain("[-w]");
       expect(command.usage).toContain("[-i]");

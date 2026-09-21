@@ -50,9 +50,11 @@ export const DEFAULT_MOUSE_SENSITIVITY: MouseSensitivity = 1;
 /**
  * Capture is opt-in.
  *
- * With it on, clicking the emulator screen takes the cursor away until Esc is pressed. That is the
- * right behaviour for someone running a mouse-aware program and a baffling one for someone who
- * clicked the screen to dismiss an overlay, so the default leaves the existing click alone.
+ * Capture hides the host cursor and gives it to the machine until Esc is pressed, so it is never
+ * something to spring on someone: it is off until asked for, and even then it only ever happens on
+ * an explicit action - the toolbar button or Ctrl+M. Capturing on a click on the picture was tried
+ * and removed, because clicking the screen is what someone does to focus the window or bring the
+ * status pill back.
  */
 export const DEFAULT_MOUSE_CAPTURE_ENABLED = false;
 

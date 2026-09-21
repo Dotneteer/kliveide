@@ -48,7 +48,7 @@ describe("RemoveBreakpointCommand", () => {
 
     it("should have correct usage string", () => {
       expect(command.usage).toContain("bp-del");
-      expect(command.usage).toContain("<address>");
+      expect(command.usage).toContain("<address-spec>");
     });
 
     it("should have alias 'bd'", () => {
@@ -246,7 +246,7 @@ describe("EnableBreakpointCommand", () => {
 
     it("should have correct usage string", () => {
       expect(command.usage).toContain("bp-en");
-      expect(command.usage).toContain("<address>");
+      expect(command.usage).toContain("<address-spec>");
       expect(command.usage).toContain("[-d]");
     });
 

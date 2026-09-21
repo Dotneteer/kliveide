@@ -16,8 +16,8 @@ type Props = {
  *
  * **Refused** exists because of a rule in the Pointer Lock spec: a capture requested straight after
  * the user released one with Esc is rejected for about a second, "even if a transient activation is
- * available". Pressing Esc and clicking back in therefore always fails the first time. Saying so is
- * the difference between a quirk and an app that looks broken.
+ * available". So pressing Esc and reaching straight back for the toolbar button or Ctrl+M always
+ * fails the first time. Saying so is the difference between a quirk and an app that looks broken.
  */
 export const MouseCaptureOverlay = ({ captured, refused }: Props) => {
   if (!captured && !refused) return null;
@@ -26,7 +26,9 @@ export const MouseCaptureOverlay = ({ captured, refused }: Props) => {
     <div className={styles.mouseOverlay}>
       <div className={captured ? styles.captured : styles.refused}>
         <span>
-          {captured ? "Mouse captured – press Esc to release" : "Click again to capture the mouse"}
+          {captured
+            ? "Mouse captured – press Esc to release"
+            : "Mouse capture refused – try again in a moment"}
         </span>
       </div>
     </div>

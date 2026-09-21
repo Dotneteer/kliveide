@@ -4,7 +4,10 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { createMockStore, renderWithProviders } from "../react-test-utils";
 import { setMachineTypeAction } from "@state/actions";
-import { MI_SPECTRUM_128 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_ZXNEXT } from "@common/machines/constants";
+import { setMachineStateAction, setGlobalSettingAction } from "@state/actions";
+import { SETTING_IDE_BP_GROUP_BY_KIND } from "@common/settings/setting-const";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 /*
  * What the *panel* decides: which actions a row offers, which API call each one makes, and that the
@@ -46,10 +49,12 @@ const emuApi = vi.hoisted(() => ({
 }));
 
 const dialogs = vi.hoisted(() => ({ open: vi.fn() }));
+const mainApi = vi.hoisted(() => ({ setGlobalSettingsValue: vi.fn() }));
 const confirmPort = vi.hoisted(() => ({ confirm: vi.fn() }));
 
 
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emuApi }));
+vi.mock("@renderer/core/MainApi", () => ({ useMainApi: () => mainApi }));
 vi.mock("@renderer/appIde/useStateRefresh", () => ({
   useEmuStateListener: (): void => undefined
 }));
@@ -111,6 +116,7 @@ beforeEach(() => {
   dialogs.open.mockResolvedValue(undefined);
   confirmPort.confirm.mockResolvedValue(false);
   emuApi.getRomFlags.mockResolvedValue([]);
+  mainApi.setGlobalSettingsValue.mockResolvedValue(undefined);
 });
 
 afterEach(cleanup);
@@ -384,5 +390,167 @@ describe("BreakpointsPanel - editing opens on a double-click", () => {
 
     await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
     expect(dialogs.open.mock.calls[0][1].initial).toMatchObject({ address: 0x8000 });
+  });
+});
+
+/*
+ * A NextReg write breakpoint in the list. It is the first shape with no address at all, so what
+ * matters here is that the panel treats it as a first-class row rather than as a source breakpoint
+ * that has not resolved: it is editable, it reports its register, and the machine's last write
+ * reaches it.
+ */
+
+const NEXT_REG_BP: BreakpointInfo = { nextReg: 0x07 };
+
+describe("BreakpointsPanel - NextReg write breakpoints", () => {
+  it("lists it by its key and names the register beside it", async () => {
+    await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+
+    expect(screen.queryByText("NR:$07")).not.toBeNull();
+    // --- The documented name, from the same table the Next Registers panel reads.
+    expect(screen.queryByText("CPU speed")).not.toBeNull();
+  });
+
+  it("says so when the register has no documentation", async () => {
+    await renderPanel([{ nextReg: 0xfe }], MI_ZXNEXT);
+
+    expect(screen.queryByText("Undocumented register")).not.toBeNull();
+  });
+
+  it("offers Edit and honours a double-click, unlike a source breakpoint", async () => {
+    await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+
+    await openRowMenu("NR:$07");
+    expect(menuItem("Edit breakpoint...")).toBeDefined();
+
+    fireEvent.click(menuItem("Edit breakpoint...")!);
+    await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
+    const [, props] = dialogs.open.mock.calls[0];
+    expect(props.initial).toMatchObject({ nextReg: 0x07 });
+  });
+
+  it("opens the editor on a double-click of the row", async () => {
+    await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+
+    fireEvent.doubleClick(screen.getByText("NR:$07"));
+
+    await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
+  });
+
+  it("removes and disables it like any other breakpoint", async () => {
+    await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+
+    await openRowMenu("NR:$07");
+    fireEvent.click(menuItem("Remove breakpoint")!);
+
+    await waitFor(() =>
+      expect(emuApi.removeBreakpoint).toHaveBeenCalledWith(
+        expect.objectContaining({ nextReg: 0x07 })
+      )
+    );
+  });
+
+  it("shows the previous and new values once the machine has stopped on it", async () => {
+    emuApi.getCpuState.mockResolvedValue({
+      pc: 0x8005,
+      lastNextRegWrite: {
+        reg: 0x07,
+        oldValue: 0x00,
+        newValue: 0x03,
+        origin: "cpu",
+        // --- Required on the event: the breakpoint records where the write came from, because
+        // --- on `$02` the reset that follows takes it away.
+        pc: 0x8002,
+        partition: 0
+      }
+    });
+    const { store } = await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+    store.dispatch(setMachineStateAction(MachineControllerState.Paused));
+
+    // --- The pair is what makes a stop that physically happens *after* the write read as "before".
+    await waitFor(() => expect(screen.queryByText("$00 → $03")).not.toBeNull());
+    // --- And the site it came from, which on `$02` is the only chance to see it: resuming applies
+    // --- the reset and takes the address and the paging with it.
+    expect(screen.queryByText(/@\$8002/)).not.toBeNull();
+  });
+
+  it("says nothing about a write to some other register", async () => {
+    emuApi.getCpuState.mockResolvedValue({
+      pc: 0x8005,
+      lastNextRegWrite: {
+        reg: 0x4c,
+        oldValue: 0x00,
+        newValue: 0x03,
+        origin: "cpu",
+        pc: 0x8002,
+        partition: 0
+      }
+    });
+    const { store } = await renderPanel([NEXT_REG_BP], MI_ZXNEXT);
+    store.dispatch(setMachineStateAction(MachineControllerState.Paused));
+
+    await waitFor(() => expect(screen.queryByText("NR:$07")).not.toBeNull());
+    expect(screen.queryByText("$00 → $03")).toBeNull();
+  });
+});
+
+/*
+ * Grouping. The rule itself - what order, which headers - is tested without a DOM in
+ * `test/debug/breakpoint-grouping.test.ts`; this is about what the panel does with the result.
+ */
+describe("BreakpointsPanel - grouping", () => {
+  it("heads each kind present, and only those", async () => {
+    await renderPanel([
+      execAt(0x8000),
+      { address: 0x9000, memoryWrite: true },
+      { nextReg: 0x07 }
+    ], MI_ZXNEXT);
+
+    expect(screen.queryByText("Execution")).not.toBeNull();
+    expect(screen.queryByText("Memory write")).not.toBeNull();
+    expect(screen.queryByText("NextReg write")).not.toBeNull();
+    // --- Nothing is an I/O breakpoint here, so no header for one.
+    expect(screen.queryByText("I/O read")).toBeNull();
+    expect(screen.queryByText("I/O write")).toBeNull();
+  });
+
+  it("opens no menu on a header, which is not a breakpoint", async () => {
+    await renderPanel([execAt(0x8000)]);
+
+    fireEvent.contextMenu(screen.getByText("Execution"));
+
+    // --- A header has nothing to edit, disable or remove; binding the row menu to one would offer
+    // --- actions with no subject.
+    expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
+  });
+
+  it("turns grouping off through the setting, not through local state", async () => {
+    // --- A view preference held in the component resets on every remount, which is an annoyance
+    // --- rather than a preference.
+    await renderPanel([execAt(0x8000)]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Ungroup breakpoints" }));
+
+    await waitFor(() =>
+      expect(mainApi.setGlobalSettingsValue).toHaveBeenCalledWith(
+        SETTING_IDE_BP_GROUP_BY_KIND,
+        false
+      )
+    );
+  });
+
+  it("still lists every breakpoint when the headers are gone", async () => {
+    const store = createMockStore();
+    store.dispatch(setGlobalSettingAction(SETTING_IDE_BP_GROUP_BY_KIND, false));
+    emuApi.listBreakpoints.mockResolvedValue({
+      breakpoints: [execAt(0x8000), { address: 0x9000, memoryWrite: true }],
+      memorySegments: [new Uint8Array([0x00]), new Uint8Array([0x00])]
+    });
+    renderWithProviders(<BreakpointsPanel />, { store });
+
+    await waitFor(() => expect(screen.queryByText("$8000")).not.toBeNull());
+    expect(screen.queryByText("$9000")).not.toBeNull();
+    expect(screen.queryByText("Execution")).toBeNull();
+    expect(screen.getByRole("button", { name: "Group breakpoints by kind" })).toBeDefined();
   });
 });

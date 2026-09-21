@@ -71,6 +71,22 @@ describe("toSidecarBreakpoints", () => {
     expect(toSidecarBreakpoints([owned({ exec: undefined, ioRead: true })], SIDECAR)).toEqual([]);
   });
 
+  it("skips a NextReg write breakpoint, which belongs to the machine and not to a file", () => {
+    /*
+     * A NextReg breakpoint watches a hardware register, so it means the same thing whichever `.nex`
+     * is loaded - it belongs in the project, not in a sidecar that travels with one file.
+     *
+     * The filter already excludes it, because it has no stated `bank`/`bankOffset`. This pins that:
+     * the exclusion is silent, so a later change to the filter could start writing these into every
+     * sidecar without anything failing.
+     */
+    const nextRegBp = owned({ bank: undefined, bankOffset: undefined, exec: undefined, nextReg: 0x07 });
+    expect(toSidecarBreakpoints([nextRegBp], SIDECAR)).toEqual([]);
+
+    // --- Not even when it carries a bank it has no business having.
+    expect(toSidecarBreakpoints([owned({ exec: undefined, nextReg: 0x07 })], SIDECAR)).toEqual([]);
+  });
+
   it("records the disabled flag, and only when set", () => {
     expect(toSidecarBreakpoints([owned({ disabled: true })], SIDECAR)[0]).toEqual({
       bank: 5,

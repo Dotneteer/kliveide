@@ -485,6 +485,42 @@ export type Z80CpuState = {
   lastIoReadValue: number;
   lastIoWritePort: number;
   lastIoWriteValue: number;
+  /**
+   * The NextReg write the machine last stopped on. ZX Spectrum Next only, and absent until a
+   * NextReg write breakpoint fires.
+   *
+   * Carries the value the register held *before* the write as well as the one written: the machine
+   * stops at the end of the instruction that performed it, so showing both is what makes a NextReg
+   * breakpoint read as "before" without the core having to withhold the write.
+   */
+  lastNextRegWrite?: NextRegWriteEvent;
+};
+
+/** A NextReg write a breakpoint stopped on; see `Z80CpuState.lastNextRegWrite`. */
+export type NextRegWriteEvent = {
+  reg: number;
+  oldValue: number;
+  newValue: number;
+  origin: "cpu" | "copper";
+  /**
+   * The first byte of the instruction that performed the write.
+   *
+   * Carried on the event rather than left to be read off the paused machine, because for the one
+   * register where it matters most it cannot be: writing `$02` asks the machine to reset, and the
+   * reset discards both the program counter and the paging. The breakpoint stops before the reset
+   * is applied and records this then.
+   *
+   * For a copper write there is no writing instruction; this is where the CPU happened to be.
+   */
+  pc: number;
+  /**
+   * The memory partition `pc` was in when the write happened, or `undefined` on a machine with no
+   * partitions.
+   *
+   * The other half of "who wrote this": on a Next, the same address means different code depending
+   * on what is paged there, so an address alone does not identify the instruction.
+   */
+  partition?: number;
 };
 
 // --- The response with the CPU state information

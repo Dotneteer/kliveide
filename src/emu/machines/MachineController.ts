@@ -14,9 +14,11 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
+import type { NextRegWriteEvent } from "@common/messaging/EmuApi";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
+import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { LiteEvent } from "@emu/utils/lite-event";
@@ -771,10 +773,7 @@ export class MachineController implements IMachineController {
           this.context.canceled = true;
 
           if (termination === FrameTerminationMode.DebugEvent) {
-            await this.sendOutput(
-              `Breakpoint reached at PC=${this.machine.pc.toString(16).padStart(4, "0")}`,
-              "cyan"
-            );
+            await this.sendOutput(this.describeDebugStop(), "cyan");
           }
           return;
         }
@@ -981,4 +980,44 @@ export class MachineController implements IMachineController {
       }
     ]);
   }
+
+  /**
+   * What the output pane says when a debug event pauses the machine.
+   *
+   * A NextReg write breakpoint gets its own sentence rather than the generic one: "Breakpoint
+   * reached at PC=$8005" says nothing about *which* register moved or what it moved to, and that
+   * is the entire content of the stop. The register's documented name comes from the same table
+   * the Next Registers panel reads.
+   */
+  private describeDebugStop(): string {
+    const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
+    if (!write) {
+      return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;
+    }
+
+    const hex2 = (value: number) => `$${value.toString(16).toUpperCase().padStart(2, "0")}`;
+    const name = NEXT_REG_DESCRIPTORS.find((d) => d.id === write.reg)?.description;
+    const named = name ? `${hex2(write.reg)} (${name})` : hex2(write.reg);
+
+    /*
+     * Where the write came from, named as precisely as the origin allows.
+     *
+     * This half of the message is the point of it. A NextReg write breakpoint is most useful on
+     * `$02`, where the write resets the machine - and once the user resumes, the address and the
+     * paging are gone for good. The output pane is the only durable record of them, so it carries
+     * both rather than leaving the user to read them off a machine that has moved on.
+     */
+    const site = `$${toHexa4(write.pc)}`;
+    const paged =
+      write.partition === undefined
+        ? ""
+        : ` in ${this.machine.getPartitionLabels?.()?.[write.partition] ?? write.partition}`;
+    const from =
+      write.origin === "copper"
+        ? `by the copper, with the CPU at ${site}${paged}`
+        : `written at ${site}${paged}`;
+
+    return `NextReg breakpoint: ${named} ${hex2(write.oldValue)} -> ${hex2(write.newValue)}, ${from}`;
+  }
+
 }

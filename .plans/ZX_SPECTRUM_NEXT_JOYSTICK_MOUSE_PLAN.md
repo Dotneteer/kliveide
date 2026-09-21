@@ -253,15 +253,19 @@ originate from a real DOM event **inside the emu renderer**.
 > such a handler has no transient activation and is rejected. An earlier draft of this plan
 > recommended "menu + `Ctrl+M` accelerator" — that does not work.
 
-Working triggers, all renderer-side:
+Working triggers, both renderer-side and both **explicit**:
 
-- **Click on the screen** — the natural one. Conflict to resolve: the wrapper already owns the click
-  (`onClick={() => setShowOverlay(true)}`, `EmulatorPanel.tsx:379`). Capture only while a "mouse
-  enabled" setting is on, and leave the overlay click alone when it is off.
+- **The toolbar button** (§3.1.2).
 - **A renderer-level `keydown`** for `Ctrl+M` — a real key event *is* an activation, so handle it in
   a hook beside `useEmulatorKeyboard`, never as an Electron accelerator.
-- A menu item may still *toggle the setting* ("Enable mouse capture") — it just cannot perform the
-  lock itself.
+
+A menu item may still *toggle the setting* ("Capture the mouse") — it just cannot perform the lock
+itself.
+
+**Clicking the screen does not capture.** It was built that way and taken out: a click on the
+picture is what someone does to focus the window or bring the status pill back, and losing the
+cursor to the machine for it is startling. The screen's click keeps restoring the overlay, as it
+always did, and capture is never incidental.
 
 Request raw input:
 
@@ -534,8 +538,8 @@ Machine ▸
     Enable mouse capture         (checkbox — arms the toolbar button and click-to-capture)
     Show pointer indicator       (checkbox — §3.1.3; auto once step 7 lands)
     Sensitivity ▸ (radio: 0.25 · 0.5 · 1.0 · 1.5 · 2.0 — the guest's DPI multiplies on top)
-    (the capture itself is the toolbar button, a click on the screen, or Ctrl+M —
-     a menu item cannot do it, §3.1)
+    (the capture itself is the toolbar button or Ctrl+M — a menu item
+     cannot do it, and clicking the screen deliberately does not, §3.1)
 ```
 
 ---
@@ -603,19 +607,20 @@ counters the harness's `mouse()` does, so the two paths cannot drift.
 **After Milestone A (steps 1-4), with the machine still unwired.** Everything here is checkable
 before a single packet exists, which is the point of ordering it this way:
 
-- **Machine ▸ Mouse ▸ Capture the mouse.** Until this is ticked the toolbar button is greyed
-  out and a click on the screen still just restores the overlay - that is the intended default.
-- Click the toolbar button: cursor vanishes, the pill says *captured — Esc to release*, the button
+- **Machine ▸ Mouse ▸ Capture the mouse.** Until this is ticked the toolbar button is greyed out
+  and Ctrl+M does nothing - that is the intended default.
+- Press the toolbar button: cursor vanishes, the pill says *captured — Esc to release*, the button
   lights, the indicator appears centred on the Next's screen.
 - Move the mouse in circles: the indicator follows and stops at the screen edges rather than
   escaping the panel. Push hard into a corner and back out — it must come straight back, not lag by
   the distance you overshot.
 - Press Esc: cursor returns, pill and indicator disappear, button unlights.
-- **Press Esc and immediately click back in.** Nothing should happen the first time — verify the
-  pill says *click to capture* rather than the app looking dead. Click again: it captures.
+- **Press Esc and reach straight back for the toolbar button.** Nothing should happen the first
+  time — verify the pill says *try again in a moment* rather than the app looking dead. A second
+  press captures.
 - `Ctrl+M` captures and releases; Alt-Tab away while captured releases cleanly.
-- Confirm the indicator never eats the capture click (that is the `pointer-events: none` layer) and
-  that the keyboard still reaches the emulator while captured.
+- Confirm the indicator never swallows a click on the screen (that is the `pointer-events: none`
+  layer) and that the keyboard still reaches the emulator while captured.
 
 **After the machine is wired (step 5 onwards):**
 

@@ -39,7 +39,7 @@ Available aliases: `bpl`
 This command removes a breakpoint.
 
 ```
-bp-del <address-spec>
+bp-del <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>]
 ```
 
 Available aliases: `bd`
@@ -47,6 +47,11 @@ Available aliases: `bd`
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
 - an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in) &mdash; see [Machine-Specific Memory Partitions](/working-with-ide/memory#machine-specific-memory-partitions) for the names each machine uses;
+- a **NextReg write** on the ZX Spectrum Next (`nr:` then the register number), for example,
+  `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
+  that does not name a place: it watches a machine event, so it has no address, no partition and no
+  disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 ## `w-add`
@@ -120,7 +125,7 @@ This command displays all defined watchpoints with their symbol names, data type
 This command turns a breakpoint already set on or off.
 
 ```
-bp-en <address-spec> [-d]
+bp-en <address-spec> [-r] [-w] [-i] [-o] [-d] [-c] [-m <mask>] [-v <value>]
 ```
 
 Available aliases: `bd`
@@ -128,6 +133,11 @@ Available aliases: `bd`
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
 - an address with a partition (the partition and the address separated with a colon), for example, `r1:$32ac` (meaning $32ac, provided ROM 1 is paged in) &mdash; see [Machine-Specific Memory Partitions](/working-with-ide/memory#machine-specific-memory-partitions) for the names each machine uses;
+- a **NextReg write** on the ZX Spectrum Next (`nr:` then the register number), for example,
+  `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
+  that does not name a place: it watches a machine event, so it has no address, no partition and no
+  disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 The `-d` option disables the breakpoint.
@@ -137,10 +147,18 @@ The `-d` option disables the breakpoint.
 This command sets a breakpoint.
 
 ```
-bp-set <address-spec>
+bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>]
 ```
 
 Available aliases: `bp`
+
+The type options are mutually exclusive: `-r` watches memory reads, `-w` memory writes, `-i` I/O
+reads and `-o` I/O writes. With none of them, the breakpoint is an execution breakpoint.
+
+- `-m <mask>` is the port mask for `-i` and `-o`, and the value mask for a `nr:` breakpoint.
+- `-v <value>` breaks only when that value is written; `nr:` breakpoints only.
+- `-c` also breaks when the **copper** writes the register, not only when the CPU does; `nr:`
+  breakpoints only, and off by default.
 
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
@@ -152,6 +170,11 @@ The `address-spec` parameter can be
   follows its bank rather than sitting at one Z80 address, which is what makes it useful for code
   that pages banks in and out. Not available for the `-i` and `-o` (I/O) breakpoint types, which
   watch a port rather than memory;
+- a **NextReg write** on the ZX Spectrum Next (`nr:` then the register number), for example,
+  `nr:$07` &mdash; meaning "stop when Next Register `$07` is written". This is the one breakpoint
+  that does not name a place: it watches a machine event, so it has no address, no partition and no
+  disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
+  some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
 - or a source code line specification, for example, `[code/code.kz80.asm]`
 
 ## `close`

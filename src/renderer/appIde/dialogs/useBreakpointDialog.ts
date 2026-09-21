@@ -37,7 +37,7 @@ export function useBreakpointDialog() {
   return useCallback(
     /**
      * @param initial The breakpoint to edit. Omit to add a new one. Must be address-bound —
-     *   `isBinaryBreakpoint` is the caller's gate, because a source-bound breakpoint belongs to the
+     *   `isAuthorableBreakpoint` is the caller's gate, because a source-bound breakpoint belongs to the
      *   editor's glyph margin.
      * @returns Whether anything was installed; false when the dialog was cancelled.
      */
@@ -90,6 +90,9 @@ export function useBreakpointDialog() {
         supportsPartitions: machineSetup.banksView,
         // --- Next-only, matching `bp-set`'s own guard on the grammar.
         supportsBankRelative: machineId === MI_ZXNEXT,
+        // --- Same gate, same reason: both forms are ZX Spectrum Next only, and this flag, the
+        // --- command layer's check and `breakpoint-form.ts`'s rule must stay in step.
+        supportsNextRegBreakpoints: machineId === MI_ZXNEXT,
         existingKeys: (bpState?.breakpoints ?? []).map((bp) =>
           getBreakpointDisplayKey(bp, partitionLabels)
         ),

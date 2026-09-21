@@ -1,3 +1,4 @@
+import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import type {
@@ -24,6 +25,11 @@ export function sidecarKindOf(bp: BreakpointInfo): NexSidecarBreakpointKind | un
   // --- `exec` is the default, but only for a breakpoint that is not an I/O one — a port has no bank
   // --- and cannot be stored here at all.
   if (bp.ioRead || bp.ioWrite) return undefined;
+  // --- Nor a NextReg write breakpoint. It watches a hardware register, so it means the same thing
+  // --- whichever `.nex` is loaded and belongs in the project rather than in a sidecar that travels
+  // --- with one file. It is already excluded by having no bank, but so is an I/O breakpoint, and
+  // --- that one is named here too: a kind this file cannot represent says so in one place.
+  if (isNextRegBreakpoint(bp)) return undefined;
   return "exec";
 }
 

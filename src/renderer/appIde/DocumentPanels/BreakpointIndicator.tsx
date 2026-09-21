@@ -21,6 +21,14 @@ type Props = {
   hasBreakpoint: boolean;
   disabled: boolean;
   current: boolean;
+  /**
+   * The Next Register a NextReg write breakpoint watches, when this row is one.
+   *
+   * The binding, not a kind flag, matching `BreakpointInfo.nextReg` - `!== undefined` is the kind
+   * test. It is here because this shape has no address, and two of the gestures below build
+   * address-taking commands.
+   */
+  nextReg?: number;
   memoryRead?: boolean;
   memoryWrite?: boolean;
   ioRead?: boolean;
@@ -28,6 +36,19 @@ type Props = {
   ioMask?: number;
   showType?: boolean;
   resolvedAddress?: number;
+  /**
+   * Whether this breakpoint can fire where it stands.
+   *
+   * Told, not inferred. The dot's colour used to be chosen by the *type* of the `address` prop - a
+   * number meant "armed", anything else fell through to the unresolved-source colour - which was
+   * only ever right by coincidence. A bank-relative breakpoint passes the string `05:+$0100` and a
+   * NextReg one passes `NR:$07`; both are fully armed, and both were painted as source breakpoints
+   * waiting for a compilation that is never coming.
+   *
+   * Left unset, the old inference still applies, so callers that have not been taught this keep
+   * their present behaviour.
+   */
+  armed?: boolean;
   /**
    * Suppress this component's own tooltips.
    *
@@ -51,12 +72,14 @@ export const BreakpointIndicator = ({
   hasBreakpoint,
   disabled,
   current,
+  nextReg,
   memoryRead,
   memoryWrite,
   ioRead,
   ioWrite,
   ioMask,
   showType,
+  armed,
   resolvedAddress,
   noTooltip,
   onEdit
@@ -92,19 +115,30 @@ export const BreakpointIndicator = ({
   } else if (ioWrite) {
     bpType = "I/O write";
     typeIcon = "bp-io-write";
+  } else if (nextReg !== undefined) {
+    // --- The sliders glyph carries the family's standard downward write arrow, so "write" reads
+    // --- without learning a new sign; only the target below it is new.
+    bpType = "NextReg write";
+    typeIcon = "bp-nextreg";
   }
   // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
   // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.
   const typeColor = "--color-breakpoint-type";
 
   const tooltipCommon = `${addrLabel}${(ioRead || ioWrite) && ioMask ? " /$" + toHexa4(ioMask) : ""} (${bpType})`;
+  /*
+   * A NextReg breakpoint names an event, not a place, so there is nowhere to "run to": `run-to
+   * NR:$07` is not a spec any command accepts. The gesture is withdrawn rather than left to fail,
+   * and the tooltip stops advertising it.
+   */
+  const canRunTo = nextReg === undefined;
   const tooltip =
     `${tooltipCommon})\n` +
     (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint") +
     (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "") +
     // --- The gesture is only discoverable from here, which is why it is listed rather than left to
     // --- be found. See `runToHere`.
-    `\n${runToModifierLabel}-click to run here`;
+    (canRunTo ? `\n${runToModifierLabel}-click to run here` : "");
   const tooltipCheckbox =
     `${tooltipCommon})\n` +
     (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
@@ -117,9 +151,11 @@ export const BreakpointIndicator = ({
     fill = "--color-breakpoint-current";
   } else if (hasBreakpoint) {
     iconName = "circle-filled";
+    // --- `armed` first, then the old inference for callers that do not pass it. A breakpoint that
+    // --- can fire is never painted the colour that means "this cannot fire yet".
     fill = disabled
       ? "--color-breakpoint-disabled"
-      : typeof address === "number"
+      : armed || typeof address === "number"
         ? "--color-breakpoint-binary"
         : resolvedAddress
           ? "--color-breakpoint-code"
@@ -159,6 +195,7 @@ export const BreakpointIndicator = ({
    * eventually; see `.plans/NEX_DEBUGGING_PLAN.md` §10.4.
    */
   const runToHere = async () => {
+    if (!canRunTo) return;
     await ideCommandsService.executeCommand(`run-to ${addrLabel}`);
   };
 

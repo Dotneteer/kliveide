@@ -138,6 +138,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & {
   zxnextGetNextRegisterValue: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegisterDirect: ZxNextWasmV2ExportFunction;
   zxnextSetNextRegisterDirect: ZxNextWasmV2ExportFunction;
+  zxnextNextRegWatchPtr: ZxNextWasmV2ExportFunction;
+  zxnextClearNextRegWatch: ZxNextWasmV2ExportFunction;
+  zxnextTakeNextRegHit: ZxNextWasmV2ExportFunction;
   zxnextGetPortFeValue: ZxNextWasmV2ExportFunction;
   zxnextGetBorderColor: ZxNextWasmV2ExportFunction;
   zxnextGetEarBit: ZxNextWasmV2ExportFunction;
@@ -362,6 +365,14 @@ export type ZxNextWasmV2Runtime = {
   readonly pixelBufferBytes: Uint8ClampedArray;
   readonly keyboardLines: Uint8Array;
   readonly nextRegs: Uint8Array;
+  /**
+   * The core's NextReg write-breakpoint watch table: three 256-byte rows - flags, value, mask.
+   *
+   * A view over the core's own memory, so the debug loop arms every watched register with one
+   * `.set()` per loop entry rather than one call per breakpoint. Same arrangement as the Z88
+   * core's `breakpointFlags`.
+   */
+  readonly nextRegWatch: Uint8Array;
   readonly frameTrace: Uint8Array;
 };
 
@@ -492,6 +503,9 @@ const requiredV2Exports = [
   "zxnextGetNextRegisterValue",
   "zxnextGetNextRegisterDirect",
   "zxnextSetNextRegisterDirect",
+  "zxnextNextRegWatchPtr",
+  "zxnextClearNextRegWatch",
+  "zxnextTakeNextRegHit",
   "zxnextGetPortFeValue",
   "zxnextGetBorderColor",
   "zxnextGetEarBit",
@@ -760,6 +774,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "pixelBuffer", exports.zxnextPixelBufferPtr(), pixelBytes, memoryBuffer);
   assertViewRange(artifactName, "keyboardLines", exports.zxnextKeyboardLinesPtr(), keyboardLineCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegs", exports.zxnextNextRegsPtr(), nextRegCount, memoryBuffer);
+  assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
 
   return {
@@ -770,6 +785,7 @@ export function createZxNextWasmV2Views(
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.zxnextPixelBufferPtr(), pixelBytes),
     keyboardLines: new Uint8Array(memoryBuffer, exports.zxnextKeyboardLinesPtr(), keyboardLineCount),
     nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount),
+    nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
     frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes)
   };
 }

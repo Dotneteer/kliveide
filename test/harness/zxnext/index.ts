@@ -17,6 +17,7 @@ export {
   type Hotkey,
   type IdeState,
   type Program,
+  type NextRegHit,
   type Registers,
   type RtcTime,
   type SessionOptions,

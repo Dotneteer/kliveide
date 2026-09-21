@@ -11,6 +11,7 @@ import {
   breakpointMatchesScope,
   effectiveBankSite,
   isBankRelative,
+  isNextRegBreakpoint,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
 
@@ -40,6 +41,19 @@ export const DIS_IOR_BP = 0x400;
 // --- I/O write breakpoint disabled?
 export const DIS_IOW_BP = 0x800;
 
+/*
+ * The NextReg write watch table, a second registry beside `breakpointFlags`.
+ *
+ * It cannot live in `breakpointFlags`: that array is indexed by 16-bit address, and a NextReg
+ * breakpoint has no address at all. Three 256-byte rows - flags, value, mask - laid out exactly as
+ * the ZX Spectrum Next core's `zxnextNextRegWatch` expects, so the whole thing crosses the WASM
+ * boundary in one `.set()`.
+ */
+export const NEXTREG_WATCH_CPU = 0x01;
+export const NEXTREG_WATCH_COPPER = 0x02;
+const NEXTREG_WATCH_ROW = 0x100;
+const NEXTREG_WATCH_SIZE = NEXTREG_WATCH_ROW * 3;
+
 /**
  * This class implement support functions for debugging
  */
@@ -48,6 +62,14 @@ export class DebugSupport implements IDebugSupport {
   breakpointDefs = new Map<string, BreakpointInfo>();
   breakpointFlags = new Uint16Array(0x1_0000);
   breakpointData = new Map<number, BreakpointData>();
+
+  /** The NextReg write watch table; see `buildNextRegWatch`. One block, so one `.set()` pushes it. */
+  readonly nextRegWatch = new Uint8Array(NEXTREG_WATCH_SIZE);
+  // --- Named windows onto the single block above. `subarray` shares the buffer, so writing through
+  // --- these lands in `nextRegWatch` itself - the readable names cost nothing.
+  private readonly nextRegWatchFlags = this.nextRegWatch.subarray(0, NEXTREG_WATCH_ROW);
+  private readonly nextRegWatchValue = this.nextRegWatch.subarray(NEXTREG_WATCH_ROW, NEXTREG_WATCH_ROW * 2);
+  private readonly nextRegWatchMask = this.nextRegWatch.subarray(NEXTREG_WATCH_ROW * 2, NEXTREG_WATCH_SIZE);
 
   private suspendVersionIncrement = false;
 
@@ -226,6 +248,102 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any breakpoint watch a Next Register write?
+   *
+   * The ZX Spectrum Next debug loop asks once per entry, as it does with `hasAccessBreakpoints`,
+   * to decide whether to push the watch table into the core at all. On every other machine this is
+   * always false and costs one walk of a handful of definitions.
+   */
+  hasNextRegBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (isNextRegBreakpoint(bp) && !bp.disabled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The watch table to hand the core: three 256-byte rows - flags, value, mask - laid out exactly
+   * as `zxnextNextRegWatch` expects, so the caller pushes it with one `.set()`.
+   *
+   * **Rebuilt on every call rather than kept in step with edits.** Every other derived structure
+   * here is invalidated from the fifteen places that mutate the set, and this file's own comments
+   * record three bugs caused by one of those places forgetting. The debug loop asks for this once
+   * per entry - fifty times a second at worst - and the walk is over a handful of definitions, so
+   * paying for a rebuild buys away a whole class of missed-invalidation bug.
+   *
+   * **The table over-approximates on purpose.** One slot per register cannot hold two different
+   * value filters, so when a register carries more than one the mask collapses to zero (match any)
+   * and `hasNextRegWrite` makes the exact decision on the way back. This is the same deferral
+   * `PART_BP` uses: the flag says "something here, ask properly".
+   */
+  buildNextRegWatch(): Uint8Array {
+    this.nextRegWatch.fill(0);
+
+    // --- `undefined` = nothing watches this register yet, `"any"` = it is already unfiltered.
+    const filters = new Map<number, { value: number; mask: number } | "any">();
+
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isNextRegBreakpoint(bp) || bp.disabled) continue;
+      const reg = bp.nextReg! & 0xff;
+
+      this.nextRegWatchFlags[reg] |= NEXTREG_WATCH_CPU;
+      if (bp.nextRegCopper) this.nextRegWatchFlags[reg] |= NEXTREG_WATCH_COPPER;
+
+      const wanted =
+        bp.nextRegValue === undefined
+          ? ("any" as const)
+          : { value: bp.nextRegValue & 0xff, mask: (bp.nextRegMask ?? 0xff) & 0xff };
+      const held = filters.get(reg);
+
+      if (held === "any") continue;
+      if (held === undefined) {
+        filters.set(reg, wanted);
+      } else if (wanted === "any" || held.value !== wanted.value || held.mask !== wanted.mask) {
+        // --- Two filters, one slot: widen to match any write and let the exact test sort it out.
+        filters.set(reg, "any");
+      }
+    }
+
+    for (const [reg, filter] of filters) {
+      if (filter === "any") continue;
+      this.nextRegWatchValue[reg] = filter.value;
+      // --- A zero mask is the core's "match any value", so a filter that genuinely masks nothing
+      // --- must not be written as zero. It cannot be: `nextRegMask` defaults to $FF above, and a
+      // --- user-supplied zero mask means "any value", which is what a zero here already says.
+      this.nextRegWatchMask[reg] = filter.mask;
+    }
+
+    return this.nextRegWatch;
+  }
+
+  /**
+   * Does any breakpoint want to stop on this NextReg write?
+   *
+   * The exact test behind the core's approximate one (`buildNextRegWatch`). Called only when the
+   * core reports a hit, so it runs at most once per instruction and only while something is armed.
+   *
+   * @param reg The register that was written
+   * @param value The value written
+   * @param origin Which writer performed it
+   */
+  hasNextRegWrite(reg: number, value: number, origin: "cpu" | "copper"): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isNextRegBreakpoint(bp) || bp.disabled) continue;
+      if ((bp.nextReg! & 0xff) !== (reg & 0xff)) continue;
+      // --- Copper writes are opt-in per breakpoint; a CPU write satisfies every one of them.
+      if (origin === "copper" && !bp.nextRegCopper) continue;
+      if (bp.nextRegValue !== undefined) {
+        const mask = (bp.nextRegMask ?? 0xff) & 0xff;
+        if (mask !== 0 && (((value ^ bp.nextRegValue) & mask) & 0xff) !== 0) continue;
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -293,7 +411,19 @@ export class DebugSupport implements IDebugSupport {
         oneShot: bp.oneShot,
         resource: bp.resource,
         line: bp.line,
-        exec: !(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite),
+        /*
+         * `isNextRegBreakpoint` sits among four kind flags because a NextReg breakpoint has no kind
+         * flag of its own - the register is its binding (see `BreakpointInfo.nextReg`). Without it
+         * a NextReg breakpoint would be stored claiming `exec: true`, and the panel would render it
+         * as an execution breakpoint with a disassembly cell it has no address to fill.
+         */
+        exec: !(
+          bp.memoryRead ||
+          bp.memoryWrite ||
+          bp.ioRead ||
+          bp.ioWrite ||
+          isNextRegBreakpoint(bp)
+        ),
         resolvedAddress: bp.resolvedAddress,
         resolvedPartition: bp.resolvedPartition,
         // --- Same reason as `owner` and `bank` above: this literal rebuilds the definition field
@@ -309,6 +439,13 @@ export class DebugSupport implements IDebugSupport {
         ioRead: bp.ioRead,
         ioWrite: bp.ioWrite,
         ioMask: bp.ioMask ?? 0xffff,
+        // --- Same reason as `owner`, `bank` and `label` above: this literal rebuilds the
+        // --- definition field by field, so a NextReg breakpoint would lose the register that
+        // --- identifies it and the filter that narrows it.
+        nextReg: bp.nextReg,
+        nextRegValue: bp.nextRegValue,
+        nextRegMask: bp.nextRegMask,
+        nextRegCopper: bp.nextRegCopper,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.

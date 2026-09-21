@@ -43,6 +43,7 @@ import {
   SETTING_IDE_SIDEBAR_TO_RIGHT,
   SETTING_IDE_SIDEBAR_WIDTH,
   SETTING_IDE_SYNC_BREAKPOINTS,
+  SETTING_IDE_BP_GROUP_BY_KIND,
   SETTING_IDE_TOOLPANEL_HEIGHT,
   SETTING_IDE_TOOLS_ON_TOP,
   SETTING_EDITOR_AUTOCOMPLETE,
@@ -262,6 +263,22 @@ const settingDefinitions: Setting[] = [
     description: "Sync the source with the current breakpoint in the IDE view.",
     type: "boolean",
     defaultValue: false,
+    saveWithIde: true,
+    boundTo: "ide"
+  },
+  {
+    id: SETTING_IDE_BP_GROUP_BY_KIND,
+    title: "Group Breakpoints by Kind",
+    description:
+      "Show the Breakpoints view grouped under a header per breakpoint kind. Turning this off " +
+      "hides the headers; it does not change the order of the rows.",
+    type: "boolean",
+    // --- On by default: grouping is the right shape for a mixed set, and it is also what makes
+    // --- the six type icons learnable. The toggle is for someone watching one routine, where the
+    // --- single header costs a row and says nothing.
+    defaultValue: true,
+    // --- Bound to the IDE, not to a project: a view preference that travelled in `.kliveproject`
+    // --- would be shared through source control.
     saveWithIde: true,
     boundTo: "ide"
   },
