@@ -93,7 +93,7 @@
     "@types/react-dom": "^18.0.8",
     "@typescript-eslint/parser": "^8.70.0",
     "@vitejs/plugin-react": "^5.0.4",
-    "electron": "^44.3.0",
+    "electron": "^44.4.2",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "eslint": "^10.10.0",
