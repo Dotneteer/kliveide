@@ -60,6 +60,7 @@ import { applyMonacoUserOptions } from "./monacoEditorOptions";
 import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
 import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
+import { pasteTextIntoEditor } from "./monacoClipboard";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -560,9 +561,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           const text = ed.getModel()?.getValueInRange(selection);
           if (text) navigator.clipboard.writeText(text);
         } else if (key === "v") {
-          let text = await navigator.clipboard.readText();
-          text = text.replace(/\r?\n/g, "\r");
-          ed.trigger("keyboard", "type", { text });
+          pasteTextIntoEditor(ed, await navigator.clipboard.readText());
         } else if (key === "x") {
           const selection = ed.getSelection();
           const text = ed.getModel()?.getValueInRange(selection);
