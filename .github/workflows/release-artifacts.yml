@@ -18,11 +18,49 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
-      - name: Build Electron app on Windows
+      - name: Build WASM cores and app bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
-        run: npm run build:win
+        run: npm run build:all-wasm && npm run build:app
+
+      # electron-builder downloads the Electron zip and its packaging tools from
+      # GitHub release assets, which intermittently answer 504. Keep them in a
+      # cache keyed on the Electron version so most runs download nothing.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v6
+        with:
+          # The OS-default cache folders of @electron/get (the Electron zip) and
+          # electron-builder (NSIS, AppImage and other packaging tools). Only the
+          # folders of the runner's OS exist; actions/cache skips the others.
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-builder-${{ runner.os }}-${{ github.job }}-${{ steps.electron.outputs.version }}
+
+      - name: Package Electron app on Windows
+        shell: bash
+        # Retry only the packaging step: a failed download should not cost a
+        # full rebuild, and an outage usually clears within a minute or two.
+        run: |
+          for attempt in 1 2 3 4; do
+            npm run package:win && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 30))
+              echo "::warning::Packaging attempt $attempt failed; retrying in ${delay}s"
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Packaging failed after 4 attempts"
+          exit 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
@@ -47,11 +85,49 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
-      - name: Build Electron app on linux
+      - name: Build WASM cores and app bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
-        run: npm run build:linux
+        run: npm run build:all-wasm && npm run build:app
+
+      # electron-builder downloads the Electron zip and its packaging tools from
+      # GitHub release assets, which intermittently answer 504. Keep them in a
+      # cache keyed on the Electron version so most runs download nothing.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v6
+        with:
+          # The OS-default cache folders of @electron/get (the Electron zip) and
+          # electron-builder (NSIS, AppImage and other packaging tools). Only the
+          # folders of the runner's OS exist; actions/cache skips the others.
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-builder-${{ runner.os }}-${{ github.job }}-${{ steps.electron.outputs.version }}
+
+      - name: Package Electron app on linux
+        shell: bash
+        # Retry only the packaging step: a failed download should not cost a
+        # full rebuild, and an outage usually clears within a minute or two.
+        run: |
+          for attempt in 1 2 3 4; do
+            npm run package:linux && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 30))
+              echo "::warning::Packaging attempt $attempt failed; retrying in ${delay}s"
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Packaging failed after 4 attempts"
+          exit 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
@@ -74,11 +150,49 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
-      - name: Build Electron app on linux ARM64
+      - name: Build WASM cores and app bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
-        run: npm run build:linux:arm64
+        run: npm run build:all-wasm && npm run build:app
+
+      # electron-builder downloads the Electron zip and its packaging tools from
+      # GitHub release assets, which intermittently answer 504. Keep them in a
+      # cache keyed on the Electron version so most runs download nothing.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v6
+        with:
+          # The OS-default cache folders of @electron/get (the Electron zip) and
+          # electron-builder (NSIS, AppImage and other packaging tools). Only the
+          # folders of the runner's OS exist; actions/cache skips the others.
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-builder-${{ runner.os }}-${{ github.job }}-${{ steps.electron.outputs.version }}
+
+      - name: Package Electron app on linux ARM64
+        shell: bash
+        # Retry only the packaging step: a failed download should not cost a
+        # full rebuild, and an outage usually clears within a minute or two.
+        run: |
+          for attempt in 1 2 3 4; do
+            npm run package:linux:arm64 && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 30))
+              echo "::warning::Packaging attempt $attempt failed; retrying in ${delay}s"
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Packaging failed after 4 attempts"
+          exit 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
@@ -173,11 +287,49 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
-      - name: Build Electron app on Mac
+      - name: Build WASM cores and app bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
-        run: npm run build:mac
+        run: npm run build:all-wasm && npm run build:app
+
+      # electron-builder downloads the Electron zip and its packaging tools from
+      # GitHub release assets, which intermittently answer 504. Keep them in a
+      # cache keyed on the Electron version so most runs download nothing.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v6
+        with:
+          # The OS-default cache folders of @electron/get (the Electron zip) and
+          # electron-builder (NSIS, AppImage and other packaging tools). Only the
+          # folders of the runner's OS exist; actions/cache skips the others.
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-builder-${{ runner.os }}-${{ github.job }}-${{ steps.electron.outputs.version }}
+
+      - name: Package Electron app on Mac
+        shell: bash
+        # Retry only the packaging step: a failed download should not cost a
+        # full rebuild, and an outage usually clears within a minute or two.
+        run: |
+          for attempt in 1 2 3 4; do
+            npm run package:mac && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 30))
+              echo "::warning::Packaging attempt $attempt failed; retrying in ${delay}s"
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Packaging failed after 4 attempts"
+          exit 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
@@ -272,11 +424,49 @@ jobs:
       - name: Install npm dependencies
         run: npm run bootstrap:ci
 
-      - name: Build Electron app on Mac ARM64
+      - name: Build WASM cores and app bundle
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_OPTIONS: --max-old-space-size=8192
-        run: npm run build:mac:arm64
+        run: npm run build:all-wasm && npm run build:app
+
+      # electron-builder downloads the Electron zip and its packaging tools from
+      # GitHub release assets, which intermittently answer 504. Keep them in a
+      # cache keyed on the Electron version so most runs download nothing.
+      - name: Resolve Electron version
+        id: electron
+        shell: bash
+        run: echo "version=$(node -p "require('electron/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Electron downloads
+        uses: actions/cache@v6
+        with:
+          # The OS-default cache folders of @electron/get (the Electron zip) and
+          # electron-builder (NSIS, AppImage and other packaging tools). Only the
+          # folders of the runner's OS exist; actions/cache skips the others.
+          path: |
+            ~/.cache/electron
+            ~/.cache/electron-builder
+            ~/Library/Caches/electron
+            ~/Library/Caches/electron-builder
+            ~/AppData/Local/electron/Cache
+            ~/AppData/Local/electron-builder/Cache
+          key: electron-builder-${{ runner.os }}-${{ github.job }}-${{ steps.electron.outputs.version }}
+
+      - name: Package Electron app on Mac ARM64
+        shell: bash
+        # Retry only the packaging step: a failed download should not cost a
+        # full rebuild, and an outage usually clears within a minute or two.
+        run: |
+          for attempt in 1 2 3 4; do
+            npm run package:mac:arm64 && exit 0
+            if [ "$attempt" -lt 4 ]; then
+              delay=$((attempt * 30))
+              echo "::warning::Packaging attempt $attempt failed; retrying in ${delay}s"
+              sleep "$delay"
+            fi
+          done
+          echo "::error::Packaging failed after 4 attempts"
+          exit 1
 
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
