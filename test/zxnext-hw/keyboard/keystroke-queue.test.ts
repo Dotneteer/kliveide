@@ -91,6 +91,40 @@ describe("emulated keystroke queue", () => {
     expect(logged(s).every((k) => !k.includes("+"))).toBe(true);
   });
 
+  /*
+   * Across the edges of the core's 32-bit T-state counter (issue #1374). The core keeps `tacts` as
+   * `uint32_t` and exports it as a signed i32, so the host's `tacts` jumps from +2^31 - 1 to -2^31
+   * at 2^31 T-states (about 10 minutes at 3.5 MHz, 80 seconds at 28 MHz) and runs on through
+   * 2^32. The queue used to compare its points with it by value: a key pressed before the jump was
+   * never released, and one starting after it never began. The core itself runs straight through
+   * both edges, so these are real frames, observed by the logger.
+   */
+  for (const [edgeName, edge] of [["signed 2^31 turn", 2 ** 31], ["2^32 wrap", 2 ** 32]] as const) {
+    it(`a keystroke pressed before the ${edgeName} is released after it`, async () => {
+      const s = await session();
+      const frameTacts = s.machine.tactsInFrame / s.machine.frameTactMultiplier;
+      s.machine.setTacts((edge - frameTacts / 2) >>> 0);
+      queue(s, 0, 3, "5");
+      s.runFrames(1);
+      expect(s.in(0xf7fe) & 0x10, "5 held").toBe(0);
+      s.runFrames(5);
+      expect(s.in(0xf7fe) & 0x10, "released after the edge").toBe(0x10);
+      expect(s.machine.getKeyQueueLength()).toBe(0);
+      expect(logged(s).filter((k) => k !== "")).toEqual(["5"]);
+    });
+
+    it(`a keystroke starting after the ${edgeName} is played, not stuck in the queue`, async () => {
+      const s = await session();
+      const frameTacts = s.machine.tactsInFrame / s.machine.frameTactMultiplier;
+      s.machine.setTacts((edge - frameTacts / 2) >>> 0);
+      queue(s, 1, 2, "5"); // --- starts a frame on, past the edge
+      queue(s, 0, 2, "6"); // --- and must not be blocked behind it
+      s.runFrames(12);
+      expect(s.machine.getKeyQueueLength(), "queue drained").toBe(0);
+      expect(logged(s).filter((k) => k !== "")).toEqual(["5", "6"]);
+    });
+  }
+
   it("a keystroke queued on an empty queue is down in the next frame and up after its frames", async () => {
     const s = await session();
     queue(s, 0, 3, "5");

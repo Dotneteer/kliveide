@@ -260,7 +260,9 @@ describe("EmulatorPanel", () => {
       25,
       2,
       3,
-      44_100
+      44_100,
+      // --- No surround: this machine's picture has its own border
+      undefined
     );
     expect(screen.getByText("Debug mode")).toBeInTheDocument();
 

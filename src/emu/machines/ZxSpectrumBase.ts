@@ -11,7 +11,7 @@ import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { KeyCodeSet } from "@emu/abstractions/IGenericKeyboardDevice";
 
-import { EmulatedKeyStroke } from "../structs/EmulatedKeyStroke";
+import { EmulatedKeyStroke, laterTact, tactsPast, toTactCounter } from "../structs/EmulatedKeyStroke";
 import { TapeMode } from "../abstractions/TapeMode";
 import { Z80MachineBase } from "./Z80MachineBase";
 import { SpectrumKeyCode } from "./zxSpectrum/SpectrumKeyCode";
@@ -438,10 +438,11 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     // --- Check the next keystroke
     const keyStroke = this.emulatedKeyStrokes[0];
 
-    // --- Time has not come
-    if (keyStroke.startTact > this.tacts) return;
+    // --- Time has not come. The core's tact counter is 32 bits and wraps, so both points are
+    // --- compared by their distance from it, never by value (issue #1374).
+    if (tactsPast(this.tacts, keyStroke.startTact) < 0) return;
 
-    if (keyStroke.endTact < this.tacts) {
+    if (tactsPast(this.tacts, keyStroke.endTact) > 0) {
       // --- End emulation of this very keystroke
       this.keyboardDevice.setKeyStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
@@ -479,8 +480,9 @@ export abstract class ZxSpectrumBase extends Z80MachineBase implements IZxSpectr
     const tactsPerFrame = this.tactsInFrame * this.clockMultiplier;
     const queue = this.emulatedKeyStrokes;
     const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
-    const startTact = Math.max(this.tacts, lastEndTact) + frameOffset * tactsPerFrame;
-    const endTact = startTact + frames * tactsPerFrame;
+    // --- In the 32-bit counter's range, as the core reports the tacts that reach them
+    const startTact = toTactCounter(laterTact(this.tacts, lastEndTact) + frameOffset * tactsPerFrame);
+    const endTact = toTactCounter(startTact + frames * tactsPerFrame);
     const keypress = new EmulatedKeyStroke(startTact, endTact, primary, secondary);
     queue.push(keypress);
   }

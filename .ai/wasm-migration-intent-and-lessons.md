@@ -230,6 +230,14 @@ different half of the RTC. A behaviour change the goldens contradict is re-recor
 (`Z88_GOLDENS_RECORD=1`) only after it is settled. The diff is then reviewed by field, and a change
 to a field the fix cannot reach (here, any LCD picture) means stop.
 
+**Know how each core survives its 32-bit tact counter wrapping.** The Z88 and Next frame loops count
+per frame (`z88FrameTacts`, `frameTacts28`) and run straight through the wrap. The Spectrum cores
+compared absolute tacts and froze at about 20 minutes, which no test saw because nothing ran that
+long. They now rebase to an epoch the exports add back (see `src/emu/machines/zxSpectrum48/wasm/README.md`).
+The exports return i32, so the host's `tacts` jumps at **2^31**, not 2^32: host code compares tact
+points with `tactsPast`, never by value. A long-run property needs a test that gets there on
+purpose: a hook that moves time forward, or a counter set just short of the edge.
+
 **Size the audio worklet in bursts, not frames.** The controller runs `uiFrameFrequency` frames back
 to back before it sleeps, so their samples reach the worklet together. The worklet bounds its lag in
 units of what `initAudio` passes; passing one machine frame broke the Z88 (8 × 5 ms frames per

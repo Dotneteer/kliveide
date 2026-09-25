@@ -202,7 +202,11 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               ),
               xRatio.current,
               yRatio.current,
-              audioSampleRate ?? 44100
+              audioSampleRate ?? 44100,
+              // --- A picture with no border of its own is recorded in its surround (issue #1374)
+              currentController.machine.getScreenSurroundColor
+                ? () => controllerRef.current?.machine?.getScreenSurroundColor?.()
+                : undefined
             );
             break;
 

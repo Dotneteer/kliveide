@@ -154,6 +154,9 @@ const productionExports = [
   "spp3eGetCurrentFrameTact",
   "spp3eGetFrameCompleted",
   "spp3eSetTacts",
+  // --- Test hooks: move the tact origin, to reach the counter's rebase quickly
+  "spp3eTestAdvanceTacts",
+  "spp3eTestGetTactEpoch",
   "spp3eGetSelectedRom",
   "spp3eGetSelectedBank",
   "spp3eGetPagingEnabled",

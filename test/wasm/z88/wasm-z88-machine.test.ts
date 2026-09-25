@@ -347,6 +347,24 @@ describe("Cambridge Z88 WASM machine - host behaviour", () => {
     expect(machine.getKeyQueueLength()).toBe(0);
   });
 
+  it("plays a keystroke across the signed 2^31 turn the host actually sees", () => {
+    // --- `z88GetTacts` returns an i32, so the host's `tacts` jumps from +2^31 - 1 to -2^31 at 2^31
+    // --- T-states: about 11 minutes at 3.2768 MHz. That, not 2^32, is where the old comparison
+    // --- broke on a running machine.
+    const machine = new RecordingZ88WasmMachine();
+    const reported = (counter: number) => counter | 0;
+    const start = 2 ** 31 - 16384 / 2;
+    machine.tacts = reported(start);
+    machine.queueKeystroke(0, 2, Z88KeyCode.A);
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    machine.tacts = reported(start + 2 * 16384 + 1); // --- negative now
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+    expect(machine.getKeyQueueLength()).toBe(0);
+  });
+
   it("releases a keystroke pressed before the wrap once the counter has wrapped", () => {
     const machine = new RecordingZ88WasmMachine();
     const WRAP = 2 ** 32;

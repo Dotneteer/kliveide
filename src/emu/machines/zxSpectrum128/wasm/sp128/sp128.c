@@ -150,6 +150,8 @@ static uint8_t sp128TapeSaveData[SP128_TAPE_SAVE_DATA_CAPACITY];
 
 static uint32_t sp128Frames;
 static uint32_t sp128Tacts;
+/* What the host's tact counter is ahead of the internal one (see `sp128ShiftTactOrigin`) */
+static uint32_t sp128TactEpoch;
 static uint32_t sp128TactsInFrame = SP128_TACTS_PER_FRAME;
 static uint32_t sp128ClockMultiplier = 1u;
 static uint32_t sp128TargetClockMultiplier = 1u;
@@ -1108,6 +1110,49 @@ static void beginMachineFrame(void) {
   sp128CpuFrameSliceInstructions = 0u;
 }
 
+/*
+ * The tact counter's origin: see `sp48ShiftTactOrigin` in the ZX Spectrum 48 core, which this
+ * mirrors (issue #1374). At 2^32 T-states the frame loop's `frameEndTact` wrapped while the counter
+ * did not, and the machine stopped for good. Once a frame starts past SP128_TACT_REBASE_THRESHOLD,
+ * every absolute tact point - the PSG's clock included - moves back by that frame's start, and the
+ * epoch the exports add back keeps the host's counter continuous.
+ */
+#define SP128_TACT_REBASE_THRESHOLD 0x40000000u
+
+/* Moves every absolute tact point back by `amount` (forward when negative) */
+static void sp128ShiftTactOrigin(int64_t amount) {
+  const uint32_t by = (uint32_t)amount;
+  const double byDouble = (double)amount;
+  sp128Tacts -= by;
+  cpu.tacts -= by;
+  sp128NextFrameStartTact -= by;
+  sp128BorderFrameStartTact -= by;
+  sp128AudioNextSampleTact -= byDouble;
+  sp128AudioNextSampleTactFloor = sp128AudioNextSampleTact >= 4294967295.0
+    ? 0xffffffffu
+    : (uint32_t)sp128AudioNextSampleTact;
+  sp128AudioLastLevelChangeTact -= by;
+  sp128AudioSampleWindowStartTact -= byDouble;
+  for (uint32_t i = 0u; i < sp128AudioTransitionCount; i++) sp128AudioTransitionTacts[i] -= by;
+  sp128EarBitChangedFrom0Tacts -= by;
+  sp128EarBitChangedFrom1Tacts -= by;
+  sp128TapeStartTact -= by;
+  sp128TapeLastModeChangeTact -= by;
+  sp128TapeSaveLastMicBitTact -= by;
+  sp128PsgNextClockTact -= by;
+  sp128PsgLastAccumulationTact -= byDouble;
+}
+
+/* Test hook: as if `amount` tacts passed with nothing happening (see `sp48TestAdvanceTacts`) */
+void sp128TestAdvanceTacts(uint32_t amount) {
+  sp128ShiftTactOrigin(-(int64_t)amount);
+}
+
+/* Test hook: what the host counter is ahead of the internal one */
+uint32_t sp128TestGetTactEpoch(void) {
+  return sp128TactEpoch;
+}
+
 static void completeMachineFrame(void) {
   if (sp128FrameCompleted == 0u) {
     return;
@@ -1116,6 +1161,11 @@ static void completeMachineFrame(void) {
   sp128UlaRenderUntilCurrentTact();
   sp128NextFrameStartTact += sp128TactsInCurrentFrame;
   sp128Frames++;
+  if (sp128NextFrameStartTact >= SP128_TACT_REBASE_THRESHOLD) {
+    const uint32_t rebase = sp128NextFrameStartTact;
+    sp128ShiftTactOrigin(rebase);
+    sp128TactEpoch += rebase;
+  }
 }
 
 void sp128Reset(void) {
@@ -1125,6 +1175,7 @@ void sp128Reset(void) {
   z80Reset();
   sp128Frames = 0u;
   sp128Tacts = 0u;
+  sp128TactEpoch = 0u;
   sp128ClockMultiplier = 1u;
   sp128TargetClockMultiplier = 1u;
   sp128TactsInCurrentFrame = sp128TactsInFrame;
@@ -1166,9 +1217,14 @@ uint32_t sp128ExecuteFrame(void) {
   sp128HasMemoryEvent = 0u;
   z80ClearBusEvents();
 
+  /*
+   * The frame's completion ends the loop as well as its end tact: a completion that rebases the
+   * counter moves it back below the end tact computed here (see `sp48ExecuteFrame`).
+   */
   const uint32_t frameEndTact = sp128NextFrameStartTact + sp128TactsInCurrentFrame;
   while (sp128Tacts < frameEndTact) {
     sp128ExecuteInstruction();
+    if (sp128FrameCompleted != 0u) break;
   }
   sp128CaptureBusEvents = 1u;
   return 0u;
@@ -1581,7 +1637,7 @@ uint32_t sp128TapeGetCurrentBitMask(void) {
 }
 
 uint32_t sp128TapeGetStartTact(void) {
-  return sp128TapeStartTact;
+  return sp128TapeStartTact + sp128TactEpoch;
 }
 
 uint32_t sp128TapeGetModeChangeCount(void) {
@@ -1589,7 +1645,7 @@ uint32_t sp128TapeGetModeChangeCount(void) {
 }
 
 uint32_t sp128TapeGetLastModeChangeTact(void) {
-  return sp128TapeLastModeChangeTact;
+  return sp128TapeLastModeChangeTact + sp128TactEpoch;
 }
 
 uint32_t sp128TapeGetLastModeChangePc(void) {
@@ -1617,7 +1673,7 @@ uint32_t sp128TapeGetSaveMicBit(void) {
 }
 
 uint32_t sp128TapeGetSaveLastMicBitTact(void) {
-  return sp128TapeSaveLastMicBitTact;
+  return sp128TapeSaveLastMicBitTact + sp128TactEpoch;
 }
 
 uint32_t sp128TapeGetSavePilotPulseCount(void) {
@@ -1767,7 +1823,7 @@ uint32_t sp128GetFrames(void) {
 }
 
 uint32_t sp128GetTacts(void) {
-  return sp128Tacts;
+  return sp128Tacts + sp128TactEpoch;
 }
 
 uint32_t sp128GetCurrentFrameTact(void) {
@@ -1803,7 +1859,7 @@ uint32_t sp128GetFirstVisibleBorderTact(void) {
 }
 
 uint32_t sp128GetNextFrameStartTact(void) {
-  return sp128NextFrameStartTact;
+  return sp128NextFrameStartTact + sp128TactEpoch;
 }
 
 uint32_t sp128GetFrameCompleted(void) {
@@ -1811,8 +1867,8 @@ uint32_t sp128GetFrameCompleted(void) {
 }
 
 void sp128SetTacts(uint32_t value) {
-  sp128Tacts = value;
-  z80SetTacts(value);
+  sp128Tacts = value - sp128TactEpoch;
+  z80SetTacts(sp128Tacts);
 }
 
 uint32_t sp128GetSelectedRom(void) {
@@ -1893,7 +1949,7 @@ uint32_t sp128GetInterruptLineActive(void) {
 }
 
 uint32_t sp128GetCpuTacts(void) {
-  return z80GetTacts();
+  return z80GetTacts() + sp128TactEpoch;
 }
 
 uint32_t sp128GetCpuAf(void) {

@@ -37,3 +37,14 @@ export function toTactCounter(tact: number): number {
 export function tactsPast(now: number, point: number): number {
   return (toTactCounter(now) - toTactCounter(point)) | 0;
 }
+
+/**
+ * The later of two points on a wrapping 32-bit tact counter, in the counter's range.
+ *
+ * The Spectrum and Next queues chain a keystroke onto the end of the previous one, or onto "now"
+ * when the queue has fallen behind. `Math.max` picks the wrong one across the wrap: a queue ending
+ * just before 2^32 beats a counter that already reads a small number.
+ */
+export function laterTact(a: number, b: number): number {
+  return tactsPast(a, b) >= 0 ? toTactCounter(a) : toTactCounter(b);
+}

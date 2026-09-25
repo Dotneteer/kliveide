@@ -383,3 +383,112 @@ only a console line, so "nothing happened" can never be silent again.
   wraps after about 20 min) and `ZxNextWasmHost.emulateKeystroke` (28 MHz, wraps about every
   2.5 min). They have the same comparison and can adopt the same helpers.
 
+## Follow-up: recorded Z88 sound was a thump
+
+**Done 2026-09-25**, reported by the author after Step 5.
+- **Symptom:** the emulator played a short single-frequency beep, and the recording had a "thump".
+- **Cause:** `renderMachineAudioFrame` copied the sample array with `slice()` but kept the machine's
+  sample objects, which the Z88 core reuses every frame.
+  - The speaker got each frame synchronously.
+  - The recorder got it after `await play()`. By then the controller's eight-frame burst had
+    overwritten the objects, so every frame recorded the burst's last 5 ms.
+- **Fix:** snapshot the values before the first await.
+- **Tests** (`test/controls/EmulatorAudioRendering.test.ts`), both confirmed to fail on the old
+  hand-off:
+  - reused sample objects;
+  - the real Z88 core playing an SBIT square wave through an eight-frame burst, where the recording
+    must equal what the speaker got.
+- **Also fixed, on the author's request:** in "half fps" recording mode,
+  `RecordingManager.submitAudioSamples` dropped the audio of every skipped video frame.
+  - Measured with the real FFmpeg: 2 s of half-fps video carried 0.98 s of audio (2.00/1.98 s with
+    all the audio kept).
+  - Now every frame's audio is sent.
+  - Tests in `test/recording/RecordingManager.test.ts` (including eight audio frames per video frame,
+    as on the Z88) replace the one that asserted the drop, and fail on the old recorder.
+  - `holdFrame()` (re-sending the last frame and audio chunk while paused) has no caller, so pausing
+    adds no padding and needs no change.
+
+## Follow-up: Spectrum and Next keystroke queue
+
+**Done 2026-09-25.**
+- **Fix:** `ZxSpectrumBase` (48/128/+3E) and `ZxNextWasmHost` now use `tactsPast` and
+  `toTactCounter` like the Z88, plus a new `laterTact` for the queue's chaining step. Their
+  `queueKeystroke` anchored a key to `Math.max(this.tacts, lastEndTact)`, which picks the wrong point
+  across the edge.
+- **The real edge is 2^31, not 2^32.**
+  - The cores export the `uint32_t` counter as an i32, so the host's `tacts` runs smoothly through
+    2^32 (-1, 0, 1) but jumps from +2^31 - 1 to -2^31.
+  - For the Z88 that is about 11 minutes, for a Spectrum or a Next at 3.5 MHz about 10, and for a
+    Next at 28 MHz about 80 seconds. The Next's `tacts` counts CPU T-states, and the queued points
+    (`tactsInFrame / 8` per frame) are T-states too, so the two are in one domain.
+  - The Z88 fix already handled both edges. Its changelog line said 22 minutes and now says 11.
+- **Tests,** each confirmed to fail on the old host at the signed turn:
+  - `test/wasm/zxSpectrum/wasm-keystroke-wrap.test.ts`: all three cores, both edges, plus chaining
+    after the turn. These are host level, because the core cannot run across 2^32 (see below).
+  - `test/zxnext-hw/keyboard/keystroke-queue.test.ts`: real frames across both edges, observed by
+    the Z80 logger.
+  - A signed-turn case in `test/wasm/z88/wasm-z88-machine.test.ts`.
+  - `laterTact` and signed-input cases in `test/emu/emulated-keystroke-tacts.test.ts`.
+  - The 2^32 cases pass on the old code too, as the signed export predicts. They are kept for the
+    helpers.
+- **C64:** not affected. `M6510VaCpu` counts `this.tacts++` in a JS number.
+- **Found: the ZX Spectrum 48 core froze at the 2^32 wrap.** Fixed, see "Follow-up: Spectrum
+  cores freeze at the tact wrap".
+
+## Follow-up: Spectrum cores freeze at the tact wrap
+
+**Done 2026-09-25.**
+- **Symptom:** run naturally with a NOP ROM, the 48 stopped at frame 61,455 (about 20.5 minutes).
+  `sp48Tacts` stuck at 4,294,967,041, the frame counter stopped, and the PC did not move.
+- **Cause:** the frame loop (`frameEndTact = NextFrameStartTact + TactsInCurrentFrame; while (Tacts
+  < frameEndTact)`) wraps `frameEndTact` while `Tacts` does not. The frame position, the beeper's
+  `double` sample schedule and window, and the PSG clock compare absolute points too.
+- **Approach: rebase with an epoch,** not wrap-safe comparisons, so that the beeper's window
+  integration and the PSG, shared through macros by three cores, need no rewrite.
+  - `<core>ShiftTactOrigin(amount)` moves every absolute tact point back:
+    - the counter and the Z80's `cpu.tacts`;
+    - the frame and border starts;
+    - the beeper's next-sample point, floor, last level change, window start and pending transitions;
+    - the ear-bit change points;
+    - the three tape points;
+    - on the 128 and +3E, the PSG's next clock and last accumulation.
+  - Found by listing every tact-typed static *and* every assignment from the counter. The +3E disk
+    controller runs per frame and has none.
+  - Once a frame starts past 2^30, the completion rebases by that start and adds it to
+    `<core>TactEpoch`.
+  - The seven absolute exports add the epoch (`GetTacts`, `GetCpuTacts`, `GetNextFrameStartTact`,
+    the three `TapeGet...Tact`), and `SetTacts` subtracts it. So the host sees the same continuous
+    counter as before, and the queue fix above still applies.
+  - Differences between points stay correct through a shift in `uint32` arithmetic. Order
+    comparisons only involve recent points, now far below 2^31.
+- **Also changed:** `ExecuteFrame`'s loop now also stops when the frame completes. It had cached
+  `frameEndTact`, and after a mid-loop rebase it ran about 15,000 extra frames. The instruction that
+  reaches `frameEndTact` is the one that completes the frame, so nothing else changes.
+- **Test hooks** (in the build allow-lists, not the loaders'): `<core>TestAdvanceTacts` and
+  `<core>TestGetTactEpoch`.
+- **Verified:**
+  - `test/wasm/zxSpectrum/wasm-tact-rebase.test.ts`: all three cores through five rebases, with the
+    host counter crossing 2^31 and 2^32. Every frame completes, advances the host counter by one
+    frame, runs the CPU and yields a full frame of beeper audio with the tone.
+  - A natural run of the 48 without hooks: 61,476 frames, none irregular, one host wrap, four
+    rebases. The old core froze at 61,455.
+  - All Spectrum, emulator, audio, command, control, debug, memory, WASM and main suites pass.
+
+## Follow-up: the surround in Z88 recordings
+
+**Done 2026-09-25**, reported by the author after Step 3.
+- **Symptom:** played on a Mac, a Z88 recording had rounded corners.
+- **Checked the file:** `recording_20260925_152243.mp4` is 640×64 with square corners; pixel (0,0) is
+  plain LCD green. The rounding is the player's window. As on the emulator display, it clipped an
+  LCD that runs to the edge of the picture.
+- **Fix:** `RecordingManager.onMachineRunning` takes the machine's `getScreenSurroundColor` (only
+  when the machine has one). The recording is then started `2 × RECORDING_SURROUND` (4) pixels
+  wider and taller, and each frame is copied into a reused buffer filled with the colour read for
+  that frame. A Z88 at 640×64 records 648×72, and the surround turns grey with the LCD.
+  - Machines without a surround (the Spectrum family, per the author) record exactly as before.
+  - A side effect: a Z88 frame now crosses IPC as a compact buffer rather than a view into the
+    core's memory.
+- **Tests:** in `test/recording/RecordingManager.test.ts`, "the surround of a picture with no border
+  of its own". Size, colour, picture and colour changes are confirmed to fail on the old recorder.
+  The Spectrum case passes on both.
+

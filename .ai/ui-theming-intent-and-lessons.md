@@ -1620,7 +1620,9 @@ Two things follow for any later change here:
   its corner pixels. Such a machine implements `getScreenSurroundColor()`. The display is then
   padded by `--radius-md` itself (`.surround`), the one amount that keeps the curve off the picture
   at any radius, in the colour the machine reports. `calculateDimensions` reads the same token and
-  keeps the padding out of the fit.
+  keeps the padding out of the fit. **Recordings carry it too**, as `RECORDING_SURROUND` machine
+  pixels (`RecordingManager`), because video players round their windows' corners as well. The
+  file's frame is what gets clipped there, so the surround has to be part of it.
 - **`.display` is `content-box`, and must stay so.** Its inline `width`/`height` are the canvas's.
   Under the app-wide `border-box`, its 1px bezel border and any padding went *inside* that size, and
   the canvas overflowed its own clipping box. On every machine one picture pixel was lost on each
