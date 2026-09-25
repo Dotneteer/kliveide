@@ -8,7 +8,7 @@ export type KeyMapping = Record<string, KeySet>;
  *
  * At most **two** keys: every machine presses a character as a primary key plus an optional
  * modifier (`NextKeyCode`'s `primaryCode` / `secondaryCode`, honoured by `ZxSpectrumBase`,
- * `Z88Machine`, `Z88WasmHost` and `C64Machine`), and the Next's membrane holds its extra keys down
+ * `Z88WasmHost` and `C64Machine`), and the Next's membrane holds its extra keys down
  * as exactly two matrix keys (`EXTRA_KEY_COMBOS`). A third simultaneous key has no meaning on any
  * of them — extended mode is a *latch* entered by a prior keystroke (`NextKeyCode.extMode`), not a
  * key held alongside the other two. `keymapping-parser.ts` has always rejected three-item lists, so

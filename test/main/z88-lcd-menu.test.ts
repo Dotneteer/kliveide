@@ -27,7 +27,7 @@ vi.mock("@main/settings-utils", () => ({ getSettingValue: vi.fn(), setSettingVal
 vi.mock("@common/messaging/MainToEmuMessenger", () => ({ getEmuApi: vi.fn() }));
 
 import { machineRegistry, getModelConfig } from "@common/machines/machine-registry";
-import { MC_SCREEN_SIZE, MC_Z88_IMPLEMENTATION } from "@common/machines/constants";
+import { MC_SCREEN_SIZE, MC_Z88_INTRAM } from "@common/machines/constants";
 import { z88LcdRenderer } from "@main/machine-menus/z88-menus";
 
 function lcdItem(label: string): MenuItemConstructorOptions {
@@ -67,15 +67,14 @@ describe("Z88 LCD resolution menu", () => {
     expect(config).not.toBe(oz40().config);
   });
 
-  it("keeps every other key of the model's configuration, such as the Z88 backend selection", async () => {
-    // --- The Z88 WASM migration's comparison models carry z88Implementation in their config
+  it("keeps every other key of the model's configuration", async () => {
     const model = oz40();
     const original = model.config;
-    model.config = { ...original, [MC_Z88_IMPLEMENTATION]: "wasm" };
+    model.config = { ...original, [MC_Z88_INTRAM]: 0x07 };
     try {
       await lcdItem("640 x 320").click!({} as any, undefined, {} as any);
       const [, , config] = setMachineType.mock.calls[0] as unknown as [string, string, any];
-      expect(config).toEqual({ ...original, [MC_Z88_IMPLEMENTATION]: "wasm", [MC_SCREEN_SIZE]: "640x320" });
+      expect(config).toEqual({ ...original, [MC_Z88_INTRAM]: 0x07, [MC_SCREEN_SIZE]: "640x320" });
       expect(model.config[MC_SCREEN_SIZE]).toBeUndefined();
     } finally {
       model.config = original;

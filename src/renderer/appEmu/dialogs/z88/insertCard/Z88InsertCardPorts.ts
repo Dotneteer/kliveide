@@ -1,4 +1,4 @@
-import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 
 import type { Z88MachinePort } from "../Z88Ports";
 import type { Z88CardCheckResult } from "./Z88InsertCardModel";

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
-import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
+import { createZ88TestSurface } from "./z88-test-surface";
+import { COMFlags } from "./z88-blink-flags";
 
-describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", function ({ create }) {
+describe("Z88 - Memory write", function () {
   const addresses: number[] = [
     0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
     0x4000, 0x5678, 0x5fff, 0x6000, 0x6789, 0x7fff, 0x8000, 0x89ab, 0x9fff,
@@ -12,7 +12,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`ROM (${addr}) cannot be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -39,7 +39,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`RAMS turned on (${addr})`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -74,7 +74,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Internal RAM (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -109,7 +109,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Card 1 RAM (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -144,7 +144,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Card 2 RAM (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -179,7 +179,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Card 3 RAM (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -214,7 +214,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Card 2 RAM in slot 3 (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -249,7 +249,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Card 3 ROM/EPROM (${addr}) cannot be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -278,7 +278,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
   addresses.forEach(addr => {
     it(`Multiple paged-in RAM (${addr}) can be written`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Create cards
       const card0 = m.cards.rom(0x08_0000);
@@ -320,7 +320,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Memory write ($name)", func
     repeatingAddresses.forEach(addr => {
       it(`Write/read repeats in internal RAM ${size}/(${addr})`, () => {
         // --- Create the machine
-        const m = create();
+        const m = createZ88TestSurface();
 
         let cardSize = 0x10_0000; // --- 1M
         switch (size) {

@@ -2,23 +2,21 @@
 
 Tests of the Z88 emulator on the **real machine**, driven only through what the hardware exposes:
 memory, the Blink's ports, CPU registers, keys, the LCD picture and the beeper. The session talks to
-the machine through the backend-neutral API (`IZ88Machine`, `IZ88IdeMachine`), never a device
-object, so **the same test runs on every backend**.
+the machine through its API (`IZ88Machine`, `IZ88IdeMachine`), never the core's exports.
 
-The harness exists for the TypeScript-to-WASM migration
-(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). A suite names the features it needs, and
-`z88HarnessBackends(...features)` answers the backends it runs on: always `"typescript"`, and
-`"wasm"` once `Z88_WASM_FEATURES` has every feature it names (`test/z88/README.md` has the table).
-`Z88_HARNESS_BACKENDS` is every backend the harness can create. `z88WasmArtifactBytes()` builds the
-core once per test worker.
+The machine is the WASM core (`Z88WasmV2Machine`). `z88WasmArtifactBytes()` rebuilds the artifact
+from the C sources when it is missing or older than any of them (or the build script), and otherwise
+uses the one on disk. The harness was built for the TypeScript-to-WASM migration
+(`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) and ran every test on both machines until the
+TypeScript one was removed (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { createZ88Session, z88HarnessBackends } from "../harness/z88";
+import { createZ88Session } from "../harness/z88";
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("keyboard (%s)", (backend) => {
+describe("keyboard", () => {
   it("reads a key through $B2", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.keyDown("A");
     expect(s.in(0xdfb2)).toBe(0xf7); // line 5 (A13 low), bit 3
   });
@@ -39,11 +37,10 @@ sample rate, setup and hard reset) and attaches a `DebugSupport` (step-into need
 
 | Option | Default | Meaning |
 |---|---|---|
-| `backend` | `"typescript"` | The emulation backend |
 | `model` | first registered | A model id: `OZ50`, `OZ47`, `OZ40`, `OZ40FI`, `OZ30`, ... |
 | `config` | the model's | A configuration override, e.g. `{ ...model.config, screenSize: "640x480" }` |
 | `rom` | `"blank"` | `"blank"`: no setup, slot 0 holds a blank 512K ROM card - nothing runs until you load code. `"model"`: load the model's ROM and cards and hard reset, as the app does. |
-| `audioSampleRate` | none | Set it for any audio test. Without it the backends differ: the TypeScript beeper emits a sample at every clock step, the WASM one none (the app always sets a rate). |
+| `audioSampleRate` | none | Set it for any audio test. Without it the beeper emits no samples (the app always sets a rate). |
 
 ## Session API
 
@@ -62,7 +59,7 @@ Methods returning `this` chain.
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current paging, like the CPU - a flash card sees them as bus cycles |
 | | `physPeek(abs)` | The 4 MB physical memory; slot N starts at N * $100000, internal RAM at $080000 |
 | I/O | `in(port)` `out(port, v)` | Full 16-bit port address: the KBD row select and the LCD registers' high byte come from B |
-| CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` reads `getCpuState()`, the IDE's path (a lazily mirrored backend syncs first) |
+| CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` reads `getCpuState()`, the IDE's path (the machine syncs its lazily mirrored CPU first) |
 | Debugger | `breakpoint(addrOrLabel)` `watch(addrOrLabel \| port, "memoryRead" \| "memoryWrite" \| "ioRead" \| "ioWrite")` `debug("continue" \| "stepInto" \| "stepOver" \| "stepOut")` | As the IDE runs it (`MachineController.run`): a step wakes a snoozing CPU first, a step-out marks its target first. Returns the PC it stopped at. |
 | State | `snoozed` `sleeping` `blinkState()` | `blinkState()` is what the Blink panel shows |
 | Keys | `keyDown(...keys)` `keyUp(...keys)` | `Z88KeyCode` names: `"A"`, `"N1"`, `"Enter"`, `"ShiftL"`, `"Menu"`, ... |
@@ -75,18 +72,9 @@ Methods returning `this` chain.
 ## Rules
 
 1. **Say where an expectation comes from.** The Blink and card documentation where it exists;
-   otherwise the TypeScript oracle, and then say so in a comment - the WASM core must reproduce the
-   oracle, quirks included, until a documented fix changes both.
+   otherwise the TypeScript machine the core was ported from, and then say so in a comment - its
+   values at every checkpoint of the former lockstep suites are the goldens in
+   `test/wasm/z88/goldens/` (`test/z88/README.md`).
 2. **Drive and observe through the hardware interface**: code, ports, keys, memory, pixels, audio.
-3. **Only backend-neutral calls.** If a test needs something the session cannot do, add a session
-   method that uses the machine API, not a device object.
-
-## Adding a backend
-
-Add the backend to `Z88HarnessBackend`, create its machine in `createHarnessZ88Machine`
-(`core/machines.ts`), and add it to `Z88_HARNESS_BACKENDS` and `z88HarnessBackends`.
-
-## Adding a WASM feature
-
-When a migration step makes the WASM core emulate a feature, add it to `Z88_WASM_FEATURES`. Every
-suite that needs no more than the features listed then runs on WASM too.
+3. **Only machine-API calls.** If a test needs something the session cannot do, add a session
+   method that uses the machine API, not the core's exports.

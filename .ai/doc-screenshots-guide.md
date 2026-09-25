@@ -124,14 +124,13 @@ of a machine through the same session and compares them:
   on actionability checks; `locator('button[aria-label="..."]').click({ force: true })` works.
 - **Dialogs use a combobox**: `getByRole("combobox")` opens it, `getByRole("option", { name })` picks,
   then the button by its text (`Ok`).
-- **The EMU status bar names the model** (a backend twin's name says which: "... - TypeScript") and
-  shows the PC, so reading it
-  after each step proves a rebuild kept the selected backend. A paused machine shows a
+- **The EMU status bar names the model** and shows the PC, so reading it after each step proves a
+  rebuild kept the selected model. A paused machine shows a
   `Paused (PC: $xxxx)` overlay on the screen - the proof a breakpoint stopped it.
 - **Two runs of the same script are not the same machine run.** Keys and menu clicks land on
-  different emulated frames, so timers, R and the tact counter differ a little between two runs even
-  on one backend. Compare pictures and panel text for equality, and read a difference as a bug only
-  when it is not time-dependent; exact state equality is the lockstep tests' job.
+  different emulated frames, so timers, R and the tact counter differ a little between two runs.
+  Compare pictures and panel text for equality, and read a difference as a bug only
+  when it is not time-dependent; exact machine state is the golden tests' job (`test/wasm/z88/`).
 
 ## Fixture projects live under `~/KliveProjects`, guarded
 

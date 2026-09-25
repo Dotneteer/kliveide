@@ -3,13 +3,13 @@ import { describe, expect, it } from "vitest";
 import type { ResponseMessage } from "@messaging/messages-core";
 
 import createAppStore from "@state/store";
-import { machineRegistry } from "@common/machines/machine-registry";
 import { MC_Z88_SLOT1, MC_Z88_SLOT2 } from "@common/machines/constants";
 import { FILE_PROVIDER } from "@emu/machines/machine-props";
-import { Z88Machine } from "@emu/machines/z88/Z88Machine";
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { processMainToEmuMessages } from "@renderer/appEmu/MainToEmuProcessor";
+import { createHarnessZ88Machine } from "../harness/z88";
 
 /*
  * Host-level behaviour of the Cambridge Z88 machine: what the IDE and the card dialogs rely on,
@@ -19,9 +19,9 @@ import { processMainToEmuMessages } from "@renderer/appEmu/MainToEmuProcessor";
 
 const SLOT_BASE = 0x10_0000;
 
-function createZ88(): Z88Machine {
-  const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-  return new Z88Machine(model, model.config, undefined);
+/** A Z88 on a blank core: no ROM, nothing running - the host plumbing alone */
+async function createZ88(): Promise<Z88WasmV2Machine> {
+  return (await createHarnessZ88Machine()) as Z88WasmV2Machine;
 }
 
 /**
@@ -39,7 +39,7 @@ function delayedFileProvider(files: Record<string, Uint8Array>) {
 
 describe("Z88 host - memory contents", () => {
   it("getMemoryContents answers for a Z88 (selected ROM page and RAM bank are not applicable)", async () => {
-    const machine = createZ88();
+    const machine = await createZ88();
     const store = createAppStore("emu");
     const response = (await processMainToEmuMessages(
       { type: "ApiMethodRequest", method: "getMemoryContents", args: [] },
@@ -61,7 +61,7 @@ describe("Z88 host - memory contents", () => {
 
 describe("Z88 host - configure()", () => {
   it("resolves only after the slot cards have been loaded and inserted", async () => {
-    const machine = createZ88();
+    const machine = await createZ88();
     const card = new Uint8Array(0x8000).fill(0x5a);
     machine.setMachineProperty(FILE_PROVIDER, delayedFileProvider({ "ram.bin": card }));
     machine.dynamicConfig = {
@@ -75,7 +75,7 @@ describe("Z88 host - configure()", () => {
   });
 
   it("inserts the other slots even when one card file cannot be read", async () => {
-    const machine = createZ88();
+    const machine = await createZ88();
     const card = new Uint8Array(0x8000).fill(0xa5);
     machine.setMachineProperty(FILE_PROVIDER, delayedFileProvider({ "ok.bin": card }));
     machine.dynamicConfig = {
@@ -104,15 +104,15 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
     )) as ResponseMessage & { result?: any; message?: string };
   }
 
-  it("the TypeScript Z88 is an IZ88IdeMachine; other machines are not", () => {
-    expect(isZ88IdeMachine(createZ88())).toBe(true);
+  it("the Z88 is an IZ88IdeMachine; other machines are not", async () => {
+    expect(isZ88IdeMachine(await createZ88())).toBe(true);
     expect(isZ88IdeMachine({ machineId: "sp48" })).toBe(false);
     expect(isZ88IdeMachine({ machineId: "z88" })).toBe(false);
     expect(isZ88IdeMachine(undefined)).toBe(false);
   });
 
   it("reports the Blink, keyboard, beeper and LCD registers written through the ports", async () => {
-    const machine = createZ88();
+    const machine = await createZ88();
     // --- Blink registers, through the ports Z80 code would use
     machine.doWritePort(0x00d1, 0x21); // SR1
     machine.doWritePort(0x00d2, 0x22); // SR2
@@ -151,7 +151,7 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
   });
 
   it("reading the state has no side effects", async () => {
-    const machine = createZ88();
+    const machine = await createZ88();
     const before = machine.getBlinkState();
     await requestBlinkState(machine);
     await requestBlinkState(machine);

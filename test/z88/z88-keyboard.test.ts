@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, z88HarnessBackends } from "../harness/z88";
+import { createZ88Session } from "../harness/z88";
 
 /*
  * The Z88 keyboard: the 8x8 matrix behind the Blink's KBD port ($B2), the key interrupt and snooze.
@@ -12,7 +12,7 @@ import { createZ88Session, z88HarnessBackends } from "../harness/z88";
  * Where the TypeScript oracle simplifies the hardware, the test says so: it pins the oracle so the
  * WASM core reproduces it (Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 keyboard (%s)", (backend) => {
+describe("Z88 keyboard", () => {
   it.each([
     // --- A: code 43 = line 5 (A13), bit 3
     ["A", 0xdf, 0xf7],
@@ -24,14 +24,14 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 key
     ["ShiftR", 0x7f, 0x7f],
     ["ShiftR", 0xbf, 0xff]
   ] as const)("KBD: key %s read with high byte $%s gives $%s", async (key, high, expected) => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.keyDown(key);
     expect(s.in((high << 8) | 0xb2)).toBe(expected);
     expect(s.snoozed).toBe(false);
   });
 
   it("KBD: several rows selected at once combine their columns", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.keyDown("Enter", "A");
     // --- lines 0 and 5 selected
     expect(s.in(0xdeb2)).toBe(0xbf & 0xf7);
@@ -42,24 +42,24 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 key
   });
 
   it("KBD: no key down reads $FF", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     expect(s.in(0x00b2)).toBe(0xff);
   });
 
   it("with INT.KEY set, a key press sets STA.KEY; without it, it does not", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, 0x05); // INT = KEY | GINT
     s.keyDown("Q");
     expect(s.blinkState().STA & 0x04).toBe(0x04);
 
-    const t = await createZ88Session({ backend });
+    const t = await createZ88Session();
     t.out(0xb1, 0x01); // INT = GINT
     t.keyDown("Q");
     expect(t.blinkState().STA & 0x04).toBe(0x00);
   });
 
   it("with INT.KWAIT set, reading $B2 with no key down snoozes the CPU; a key press wakes it", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, 0x81); // INT = KWAIT | GINT
     // --- The oracle answers the snoozing read with $FF at once (the hardware holds the read)
     expect(s.in(0x00b2)).toBe(0xff);
@@ -69,7 +69,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 key
   });
 
   it("with INT.KWAIT set and a key down, reading $B2 does not snooze", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, 0x81);
     s.keyDown("Z");
     expect(s.in(0x00b2)).not.toBe(0xff);
@@ -77,7 +77,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 key
   });
 
   it("a snoozed CPU does not execute: each step is a 16-tact pause at the same PC", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
       ld a,$81
@@ -113,7 +113,7 @@ done:
   });
 
   it("the queued keystrokes of the IDE reach the matrix", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
 loop: jr loop

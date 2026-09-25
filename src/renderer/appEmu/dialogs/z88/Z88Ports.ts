@@ -1,5 +1,5 @@
 import type { MachineConfigSet } from "@common/machines/info-types";
-import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 import type { MachineControllerState } from "@abstractions/MachineControllerState";
 
 /**

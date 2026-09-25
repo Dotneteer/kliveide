@@ -1,49 +1,33 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { Z88BeeperDevice } from "@emu/machines/z88/Z88BeeperDevice";
-import type { IZ88BlinkDevice } from "@emu/machines/z88/IZ88BlinkDevice";
-import type { IZ88DeviceHost } from "@emu/machines/z88/IZ88DeviceHost";
+import { createZ88Session, type Z88TestSession } from "../harness/z88";
 
-class MockZ88BlinkDevice implements Partial<IZ88BlinkDevice> {
-  COM = 0x00;
-}
+/*
+ * The Cambridge Z88 beeper, as the app's audio pipeline receives it: the machine's samples of the
+ * last frame. The ear bit is COM.SBIT (port $B0 bit 6) with the 3200 Hz oscillator (SRUN) off.
+ */
 
-class MockZ88Machine {
-  baseClockFrequency = 3_276_800;
-  tacts = 0;
-  clockMultiplier = 1;
-  currentFrameTact = 0;
-  tactsInFrame = 65_536;
-  frames = 0;
-  uiFrameFrequency = 1;
-  blinkDevice = new MockZ88BlinkDevice();
+/** COM = RAMS | LCDON, plus SBIT when the ear bit is set */
+const COM_EAR_OFF = 0x05;
+const COM_EAR_ON = 0x45;
 
-  advanceTacts(count: number): void {
-    this.currentFrameTact += count;
-    this.tacts += count;
-  }
+async function beeperSession(): Promise<Z88TestSession> {
+  const s = await createZ88Session({ audioSampleRate: 44_100 });
+  await s.loadCode(`
+      .org $8000
+spin: jr spin
+  `);
+  return s;
 }
 
 describe("Audio Integration Tests", () => {
-  describe("Z88BeeperDevice", () => {
-    let z88Machine: MockZ88Machine;
-    let z88Beeper: Z88BeeperDevice;
+  describe("Cambridge Z88 beeper", () => {
+    it("should collect audio samples with correct type", async () => {
+      const s = await beeperSession();
+      s.out(0xb0, COM_EAR_ON);
+      s.runFrames(1);
 
-    beforeEach(() => {
-      z88Machine = new MockZ88Machine();
-      z88Beeper = new Z88BeeperDevice(z88Machine as unknown as IZ88DeviceHost);
-      z88Beeper.setAudioSampleRate(44100);
-    });
-
-    it("should collect audio samples with correct type", () => {
-      z88Beeper.setEarBit(true);
-
-      for (let tact = 0; tact < z88Machine.tactsInFrame; tact += 16) {
-        z88Machine.advanceTacts(16);
-        z88Beeper.setNextAudioSample();
-      }
-
-      const samples = z88Beeper.getAudioSamples();
+      const samples = s.machine.getAudioSamples();
       expect(samples.length).toBeGreaterThan(0);
 
       for (const sample of samples) {
@@ -54,29 +38,23 @@ describe("Audio Integration Tests", () => {
       }
     });
 
-    it("should generate samples when EAR bit changes", () => {
-      z88Beeper.setEarBit(false);
+    it("should generate samples when EAR bit changes", async () => {
+      const s = await beeperSession();
+      s.out(0xb0, COM_EAR_OFF);
+      s.runFrames(1);
+      // --- The machine reuses its sample objects frame by frame: keep the values
+      const samplesOff = s.machine.getAudioSamples().map(({ left, right }) => ({ left, right }));
 
-      for (let tact = 0; tact < 2000; tact += 16) {
-        z88Machine.advanceTacts(16);
-        z88Beeper.setNextAudioSample();
-      }
+      s.out(0xb0, COM_EAR_ON);
+      s.runFrames(1);
+      const samplesOn = s.machine.getAudioSamples().map(({ left, right }) => ({ left, right }));
 
-      const samplesOff = z88Beeper.getAudioSamples().length;
-
-      z88Machine.blinkDevice.COM = 0x00;
-      z88Beeper.onNewFrame();
-      z88Beeper.setEarBit(true);
-
-      for (let tact = 0; tact < 2000; tact += 16) {
-        z88Machine.advanceTacts(16);
-        z88Beeper.setNextAudioSample();
-      }
-
-      const samplesOn = z88Beeper.getAudioSamples().length;
-
-      expect(samplesOff).toBeGreaterThan(0);
-      expect(samplesOn).toBeGreaterThan(0);
+      expect(samplesOff.length).toBeGreaterThan(0);
+      expect(samplesOn.length).toBeGreaterThan(0);
+      // --- A frame is 5 ms: 220.5 samples at 44.1 kHz
+      expect(samplesOff.length + samplesOn.length).toBeGreaterThanOrEqual(440);
+      expect(samplesOff.every((sample) => sample.left === 0)).toBe(true);
+      expect(samplesOn.some((sample) => sample.left !== 0)).toBe(true);
     });
   });
 });

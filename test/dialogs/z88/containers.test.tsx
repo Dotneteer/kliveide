@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MC_Z88_INTRAM, MC_Z88_SLOT0 } from "@common/machines/constants";
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { Z88ChangeRamDialog } from "@renderer/appEmu/dialogs/z88/changeRam/Z88ChangeRamDialog";
 import { Z88InsertCardDialog } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardDialog";
 import { Z88RemoveCardDialog } from "@renderer/appEmu/dialogs/z88/removeCard/Z88RemoveCardDialog";

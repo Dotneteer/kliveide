@@ -3,9 +3,9 @@
  * emulates it: the clock and frame units, the ROM and keyboard-layout defaults, the partition names
  * and the disassembly sections.
  *
- * Neutral: the TypeScript `Z88Machine` uses these values, and the WASM Z88 machine will. It must not
- * import any TypeScript Z88 device or card class, nor the renderer's command services (see
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, "Target Architecture").
+ * Shared by the machine (`Z88WasmHost`, `Z88WasmV2Machine`) and the renderer, so it must not import
+ * the machine nor the renderer's command services (see `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`,
+ * "Target Architecture").
  */
 import { IMemorySection, MemorySectionType } from "@abstractions/MemorySection";
 

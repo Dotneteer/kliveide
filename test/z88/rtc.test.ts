@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
+import { createZ88TestSurface } from "./z88-test-surface";
 import type { Z88TestBlink } from "./z88-test-surface";
-import { INTFlags, TMKFlags, TSTAFlags } from "@emu/machines/z88/IZ88BlinkDevice";
+import { INTFlags, TMKFlags, TSTAFlags } from "./z88-blink-flags";
 
-describe.each(z88Backends("blink"))("Z88 - RTC ($name)", function ({ create }) {
+describe("Z88 - RTC", function () {
   it("blink reset", () => {
-    const m = create();
+    const m = createZ88TestSurface();
     const b = m.blink;
 
     expect(b.INT).toBe(0x23);
@@ -364,7 +364,7 @@ describe.each(z88Backends("blink"))("Z88 - RTC ($name)", function ({ create }) {
 
   tickSamples.forEach((smp) => {
     it(`tick ${smp.tick}/${smp.int}/${smp.tmk}`, () => {
-      const machine = create();
+      const machine = createZ88TestSurface();
       const b = machine.blink;
       b.TMK = smp.tmk;
       b.setINT(smp.int);
@@ -380,7 +380,7 @@ describe.each(z88Backends("blink"))("Z88 - RTC ($name)", function ({ create }) {
   });
 
   it("RTC reset requested", () => {
-    const machine = create();
+    const machine = createZ88TestSurface();
     const b = machine.blink;
     incRtc(b, 100);
     b.setCOM(0x10);

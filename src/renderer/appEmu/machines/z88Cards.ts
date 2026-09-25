@@ -1,5 +1,5 @@
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
-import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import { CardIds } from "@emu/machines/z88/CardIds";
+import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 import type { IMachineController } from "@renderer/abstractions/IMachineController";
 import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import type { AppState } from "@common/state/AppState";

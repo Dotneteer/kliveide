@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
+import { createZ88TestSurface } from "./z88-test-surface";
 import type { Z88TestFlashCard, Z88TestSurface } from "./z88-test-surface";
 
 /*
@@ -11,8 +11,9 @@ import type { Z88TestFlashCard, Z88TestSurface } from "./z88-test-surface";
  * (64K sector). $90 is autoselect (manufacturer code at XX00, device code at XX01) and $F0 returns
  * to read-array mode. A 0 bit cannot be programmed back to 1.
  *
- * The status reads (DQ6 toggle sequences) are the TypeScript oracle's model: two $40 reads on
- * success, then read-array mode again; $60/$20 repeating on failure until $F0 is written.
+ * The status reads (DQ6 toggle sequences) are the model the TypeScript card had, which the core
+ * keeps: two $40 reads on success, then read-array mode again; $60/$20 repeating on failure until
+ * $F0 is written.
  *
  * Added in Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`; there was no AMD flash test.
  */
@@ -33,9 +34,9 @@ function program(m: Z88TestSurface, address: number, value: number): void {
   m.memory.writeMemory(address, value);
 }
 
-describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - AMD Flash Card Read / program / erase ($name)", function ({ create }) {
+describe("Z88 - AMD Flash Card Read / program / erase", function () {
   function setup(chip: "040" | "080" = "040"): { m: Z88TestSurface; card: Z88TestFlashCard } {
-    const m = create();
+    const m = createZ88TestSurface();
     const card = chip === "040" ? m.cards.amdFlash29F040B() : m.cards.amdFlash29F080B();
     m.memory.insertCard(SLOT, card);
     m.setSR3(BANK_BASE);
@@ -181,7 +182,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - AMD Flash Car
   });
 
   it("is writable in slot 3 as well", () => {
-    const m = create();
+    const m = createZ88TestSurface();
     const card = m.cards.amdFlash29F040B();
     m.memory.insertCard(3, card);
     m.setSR3(0xc0);

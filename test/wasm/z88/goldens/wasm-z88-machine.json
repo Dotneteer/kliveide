@@ -1,0 +1,674 @@
+{
+ "setup OZ50": {
+  "intRom": 524288,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "df9b2b77f392ce9c03a9e78e6b696f7313e1afcd11b4e4bd723ca06396da9c0b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "1a36f453f059c4cc1c36c5729c88c527183d58c2db50edb69a98fabd6d8275ed"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "a2aa0457f9ae5423ab9f8fba935c57a19a9ed963ccb785309dfd6ade6a1174b5"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "f545a0b44c6710d3466baca418e5d9faba80677252e995a6dae519bcd6b308b2"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "86d85bc2da1f652dec503259812b710072bbddb4754606772d09eef740889a17"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5fd3e4af62ec8de23b2b65f04f6dcdfda06bd4299e2d1178ea8bec63abdd531d"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "a17322ff50ab4e5a3457c01cc104432cf27bf4c2d984d58592cc1efbfcf08c1e"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "356c452ef3f0876efc56e215b0597c60826d0e46a665ee02368d593cd2761993"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c5bf49cd2b9199bec3cb61257f6af4250e3b1da5f0eb5505311ede455378a7dd"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "3414c89042ef192295dd62e7f4c1dc10f0dcb19a0e45db01fb2a8e9dee7cfaa5"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "278003ddc6e07e10a9bf8a874fa952e7cde6952b4016f03e2b656e96f6528789"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "92c32fa0ec7cef393088dd23fb5fecc3a11279ea0df82e2654bf9c07dfb9becd"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "23546bb6c6493fee16b7991e8f823a5c2b1175c831a8d94d9b12ebd6915e4f03"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c6dee0912dfb5e09f4394efa46d78d96de866e09b5c625b2b60560b85981e12e"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "8b0581548f09c1e2829df21834cb41807c4b53bccd7a84cb46e2ab7cf72a690c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "ebb47ed07828610bb6c9b7291d7d9efcdc5ae9cf5c86fccb28fc227b2327ab60"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "b7918a430dfe70a85cea47ce0d036c7741ab075c07eee9dd3b3c86cdea4140ea"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "32bc5d7c0bc6feeedc2e2d39072fc2a1ea50b7b08d6f089ca5fb0d154aa87512"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "19f87526892c87d5fc13bdee536f09d09caa391f3d9cd47305ca0974491ad8b7"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "4aa0b5e12333608391eb949c4befaa63a7f04b2f5c060ce493e37dafbaded4f7"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "f19a6ebab98efe53e5641a87b50ed19089ab45bd9513aac36f9584c0aba0fd62"
+   }
+  ]
+ },
+ "setup OZ47": {
+  "intRom": 524288,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "ec0ba74f18196ab42d8e584c19f6302b7b8416183d5e596e80d5abb6da8b7607"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9f493ec2ffbd57093ec1520d6d228d8bab5831b8833d3c8a3d5063a505f72f94"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "96f59828e6bf46b06eb19822cdb80c6d237d1e5f9dbc1830ca71793cd8b02d03"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "86da698b5286677c4c00a20dcc8197eb263963f9063cfa11dd824039266a3651"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "e84f354871a93c71600957e4b8ce37e6f1867222cc190ccc4afebccbb42c401b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "e811a8ade5b44463c8373d16cc32dcc4ad226f2f0179dae4ca80c23e467a1f22"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "efabdf770bc5f2efbf386d19ac4d26ea6b2a6ae644c03bd9f09325757f866132"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "1c954a67692a90e1e891966becaca69a16c0aa25c81a69b63061fd459a4bb02e"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c95482c93ca9567d275842c268a87733f8cff0bc46ac0f68daa3ecdb2037039b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "ba3ac28397a9e581b09462f0ce8502bea0dc70cb6d735254f116bb4bf76081af"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "3db07d866704c06877a60981c859af1145cf4233175e8e95163f6e36aaf43ebb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "4b4bcf250442c0bce16e7038cae76465821eb17957f130d42d5b89e94fcedd1c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "d5fd35ac1a07c1da13f52121066617b3652dcd7712c711a29ddfc0d66eef73c6"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0f3e88c0e84acddf32c9ee3a421add421248bdc561d492acd46e8e9d32f4e83d"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "db0a5f4e1bf3bd07c2f3460eeb12d6afb0f8c764542614111e9bf2dbf562b21b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "0fbba07a833d4dcfc7024eaf313661a0ba8f80a05c6d29b8801c612e10e60dee"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "3ac8ba08ce83627d7714d28210a831b362c84b0cbc4cb82a81b81456703a74b2"
+   }
+  ]
+ },
+ "setup OZ40": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "30cc8c99d9cc0db75ff8811d06406af3153ea27f555e647d6ae5e90cf1555915"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "722ad14fcd83098bf1e1aa39fd5ce9613c2711d09e97e72a804f68916f8be84d"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "ba0d642b8f28b57d5dc213945b3b8b0a41311ccfe444c2692d3bc3dd09127741"
+   }
+  ]
+ },
+ "setup OZ40FI": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "se"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "se"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "de1090323aca0daec933cc03293bb9a78baedd598af944302817e63b951ce889"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "bfa8eae65b2e34c7b8513a8eb8fcc29e28d76ca6c591e8e96ef77f82dbacaede"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "722ad14fcd83098bf1e1aa39fd5ce9613c2711d09e97e72a804f68916f8be84d"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c9af373f676cad5ec42802738ca8064a312d5121fce3b2a3ef78c114d18f85a0"
+   }
+  ]
+ },
+ "setup OZ30": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "uk"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "cef736e83416ed0990a0663f907d2f3a27ed5b844df5622bd36c050acc5d7555"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "94554fb774dd2c5d0af86bdef0876b9afab6df6551b407b6044e72355deb64bc"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "e1d3ae13273f09402f7fbe2feb381df79d9183fea56ab594c3e9de2f665e9311"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "929fe196c88f61e57d15bab15078c2b9f8be2dca6a8c1b5c74a08a7140ab6456"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "937b646e51239d47eed55457e2a2bc7dbb1afd56361b8b3fd00f5f8dc4479694"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "7d180498b831b3e6060f1d50b606dcf8554e84e953c5a361e3605ea792a3ac5a"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "ce8daacf68971bd1a560e9c0195faecdd9c1f14993f992781d2e6a7286309725"
+   }
+  ]
+ },
+ "setup OZ323IT": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "it"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "it"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "fd714e7ac9e3609ebfff0fb2b319295464237ebb5e41227f87ade203e968950b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5c012c3a8568cb1b69cbfd9a692cf1e38121555ee9e6e251fc261ee65a83ab7c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "3f7aa360ce62cafe0f2c7356167faaacbf5bbf52df67e433948d7ca4e98fb0e5"
+   }
+  ]
+ },
+ "setup OZ326FR": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "fr"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "fr"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "97fc9afa2819c5c5f6317c35d62326ac3a16dc8648cf47165855a296fa375c62"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5c012c3a8568cb1b69cbfd9a692cf1e38121555ee9e6e251fc261ee65a83ab7c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "7648d66e047974e4ef0550bc8ec67f3df133a0a1df6837b095a700a3d1d5e40d"
+   }
+  ]
+ },
+ "setup OZ319ES": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "es"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "es"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "d9f1a03e17982e7136eaa248b4a15b965d57cc47b1134e5925605e24d1eb3441"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5c012c3a8568cb1b69cbfd9a692cf1e38121555ee9e6e251fc261ee65a83ab7c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "3c4f18f6431d8bff82ccd0907adf7d806d51f28f652ba35425666669203634bb"
+   }
+  ]
+ },
+ "setup OZ321DK": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "dk"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "dk"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "01e70c7a542dd0bf51658dc0c13fd385e9513d9b27afb23bf74057ad8c70112c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "00e430af3d58da060867337f4a27967f09719e3ae04983e57b5f226922fdd931"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "72a91943018c83fadb350e1227f06f16a25ba2c2a84f3720d983a5ba4e69532b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "b34064c5a4031641b1be8f24fd19a6168eefc364e890ede39de21c60f2fff149"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5c012c3a8568cb1b69cbfd9a692cf1e38121555ee9e6e251fc261ee65a83ab7c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "aff463848f4713b49c31a1b126aa3a2423f03d7398836dbbd932290bd11013bb"
+   }
+  ]
+ },
+ "setup OZ318DE": {
+  "intRom": 131072,
+  "useDefaultRom": true,
+  "settings": [
+   [
+    "emuOptions.keyboardLayout",
+    "de"
+   ],
+   [
+    "emuOptions.keyboardLayout",
+    "de"
+   ]
+  ],
+  "romBanks": [
+   {
+    "byteLength": 16384,
+    "sha256": "f30ea338c60b63cbbd8941981b669d341781c1b7610e779454af367580418b5c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "c97ea937cf281fe744dcbca6555500bd6260e5e59a64f381601a47257b72b437"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "808b955ef8b2a84c201df77c148305618ef6badec9759ece6f7b6b3bc4fd1d27"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "9bdbbd7a1309e44c7f0d4a5526870bf7a5d94a43dfc5382400e51729974c47fb"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "6e68016cb7da16c2896588f9263d55b3383eb822c4b7a18e87f0a3041803744b"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "78ca466687c5190aef35e4db417d9420b9eaa963b85112878d3dc279819ab638"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "5c012c3a8568cb1b69cbfd9a692cf1e38121555ee9e6e251fc261ee65a83ab7c"
+   },
+   {
+    "byteLength": 16384,
+    "sha256": "8bf6def0d11332d4580213f553d1c8be7c9fc1e378d5ebdff3d925cf7706f250"
+   }
+  ]
+ }
+}

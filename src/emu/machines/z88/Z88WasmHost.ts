@@ -8,7 +8,7 @@ import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { BlinkState } from "@common/messaging/EmuApi";
 import type { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import type { IZ88IdeMachine } from "./IZ88IdeMachine";
-import type { CardSlotState } from "./memory/CardSlotState";
+import type { CardSlotState } from "./CardSlotState";
 import type { Z88CardSpec } from "./z88CardCatalog";
 
 import { IMemorySection } from "@abstractions/MemorySection";
@@ -49,10 +49,12 @@ import {
  * Everything here is machine *plumbing* that does not depend on how the hardware is emulated: the
  * clock and frame units for the frame pacing, the partition names, the keyboard mapping and the
  * emulated keystroke queue, the machine-menu commands, and the ROM/card files: which card each slot
- * holds and what its image is. The rules come from the neutral `z88MachineInfo.ts` and
- * `z88CardCatalog.ts`, which the TypeScript `Z88Machine` uses too, so both backends read a
- * configuration the same way. It constructs no TypeScript Z88 device and never falls back to
- * TypeScript emulation (see `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, Step 2).
+ * holds and what its image is. The rules come from `z88MachineInfo.ts` and `z88CardCatalog.ts`, which
+ * the renderer shares.
+ *
+ * `Z88Machine`, `Z88BankedMemory` and the `Z88...Device` classes named below are the TypeScript Z88
+ * this host was ported from, to the letter; they were removed once the WASM core had matched them
+ * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) and live on at the tag `z88-typescript-last`.
  *
  * The emulating subclass supplies memory, ports, keys, the Blink, the LCD, audio and the frame loop.
  */
@@ -107,9 +109,9 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   // Setup, configuration and the cards
 
   /**
-   * Sets up the machine as `Z88Machine.setup()` does: the slot-0 card (the configured one, or the
+   * Sets up the machine as `Z88Machine.setup()` did: the slot-0 card (the configured one, or the
    * configured/default ROM image as a ROM card), the ROM machine properties, the keyboard layout
-   * setting, then the other slots. An error is logged, not thrown - as the TypeScript machine does.
+   * setting, then the other slots. An error is logged, not thrown - as the TypeScript machine did.
    */
   async setup(): Promise<void> {
     await this.prepareBackend();
@@ -157,7 +159,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   /**
    * Inserts or removes the cards of slots 1-3 as the configuration (and the dynamic configuration of
    * the card dialogs) says. Every slot settles before this method does; the first failure, if any,
-   * is reported afterwards - as `Z88Machine.configure()` does.
+   * is reported afterwards - as `Z88Machine.configure()` did.
    */
   async configure(): Promise<void> {
     const config = { ...this.config, ...this.dynamicConfig };
@@ -183,7 +185,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   }
 
   /**
-   * Inserts a card after the check `Z88BankedMemory.insertCard` makes: an image must be exactly as
+   * Inserts a card after the check `Z88BankedMemory.insertCard` made: an image must be exactly as
    * long as the card.
    */
   protected insertCard(slot: number, card: Z88CardSpec, contents?: Uint8Array): void {
@@ -198,7 +200,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
 
   /**
    * Emulates turning the machine on: CPU registers to their power-on values, then the setup (which
-   * re-inserts the cards) and a reset - the order `Z88Machine.hardReset()` uses.
+   * re-inserts the cards) and a reset - the order `Z88Machine.hardReset()` used.
    */
   async hardReset(): Promise<void> {
     super.hardReset();
@@ -225,7 +227,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
     return this.machineId;
   }
 
-  /** OZ is not probed; the TypeScript machine answers `true` too */
+  /** OZ is not probed; the TypeScript machine answered `true` too */
   get isOsInitialized(): boolean {
     return true;
   }
@@ -281,7 +283,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   }
 
   /**
-   * Plays the queued key strokes as `Z88Machine.emulateKeystroke()` does: one entry at a time,
+   * Plays the queued key strokes as `Z88Machine.emulateKeystroke()` did: one entry at a time,
    * pressed (with its secondary and ternary keys) from its start tact to its end tact.
    */
   emulateKeystroke(): void {
@@ -316,7 +318,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
 
   /**
    * Adds an emulated keypress to the queue, anchored to the current tact as
-   * `Z88Machine.queueKeystroke()` does.
+   * `Z88Machine.queueKeystroke()` did.
    * @param frameOffset Number of frames to start the keypress emulation
    * @param frames Number of frames to hold the emulation
    * @param primary Primary key code
@@ -336,7 +338,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   // Machine-menu commands
 
   /**
-   * Executes a Z88 machine-menu command, as `Z88Machine.executeCustomCommand()` does.
+   * Executes a Z88 machine-menu command, as `Z88Machine.executeCustomCommand()` did.
    * @param command `battery_low`, `press_shifts`, `flap_open` or `flap_close`
    */
   async executeCustomCommand(command: string): Promise<any> {
@@ -369,7 +371,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   }
 
   // ==========================================================================================
-  // Code injection (a stub on both backends - follow-up F4)
+  // Code injection (refused - follow-up F4)
 
   /** There is no Z88 code injection flow (follow-up F4 of the Z88 WASM migration plan) */
   async getCodeInjectionFlow(_model: string): Promise<CodeInjectionFlow> {

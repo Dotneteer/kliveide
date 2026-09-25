@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
-import { createZ88Session, z88Model, z88HarnessBackends, Z88_LCD, type Z88TestSession } from "../harness/z88";
+import { createZ88Session, z88Model, Z88_LCD, type Z88TestSession } from "../harness/z88";
 
 /*
  * The Z88 LCD: the Blink renders the screen map at SBR through the four font tables (PB0-PB3) every
@@ -51,10 +51,10 @@ function outWord(s: Z88TestSession, port: number, value: number): void {
   s.out(((value >> 8) << 8) | port, value & 0xff);
 }
 
-async function lcdSession(backend: any, options: { size?: string; lcdOn?: boolean } = {}) {
+async function lcdSession(options: { size?: string; lcdOn?: boolean } = {}) {
   const model = z88Model();
   const config = options.size ? { ...model.config, [MC_SCREEN_SIZE]: options.size } : undefined;
-  const s = await createZ88Session({ backend, config });
+  const s = await createZ88Session({ config });
   await s.loadCode(`
       .org $f000
 spin: jr spin
@@ -84,20 +84,20 @@ function renderOnce(s: Z88TestSession): void {
   while (s.machine.frames % 8 !== 1) s.runFrames(1);
 }
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)", (backend) => {
+describe("Z88 LCD", () => {
   it("the register values select the intended addresses", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     expect(s.blinkState()).toMatchObject({ PB0: 0x420, PB1: 0x8c, PB2: 0x41, PB3: 0x10c, SBR: 0x110 });
   });
 
   it("with COM.LCDON clear, the whole LCD shows the off colour", async () => {
-    const s = await lcdSession(backend, { lcdOn: false });
+    const s = await lcdSession({ lcdOn: false });
     renderOnce(s);
     expect(s.screen().every((p) => p === SCREEN_OFF)).toBe(true);
   });
 
   it("a LORES character: 6 pixels from bits 5-0 of LORES1 font bytes", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x21, 0x00, 0x3f, 0x12, 0, 0, 0, 0x1e]);
     cell(s, 0, 0, 0x41, 0x00);
     renderOnce(s);
@@ -111,7 +111,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("attribute bit 0 is bit 8 of the LORES code", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x141 * 8, [0x30]);
     cell(s, 0, 0, 0x41, 0x01);
     renderOnce(s);
@@ -119,7 +119,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("LORES codes $1C0 and up are user-defined graphics from LORES0", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES0 + 0x05 * 8, [0x2a]);
     cell(s, 0, 0, 0xc5, 0x01);
     renderOnce(s);
@@ -127,7 +127,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("REV inverts, GRY greys, UND underlines", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x21, 0, 0, 0, 0, 0, 0, 0x00]);
     cell(s, 0, 0, 0x41, ATTR_REV);
     cell(s, 0, 1, 0x41, ATTR_GRY);
@@ -141,7 +141,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("a HIRES character: 8 pixels from HIRES0; the next cell starts 8 pixels on", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(HIRES0 + 0x05 * 8, [0x81, 0xff]);
     s.poke(LORES1 + 0x41 * 8, [0x20]);
     cell(s, 0, 0, 0x05, ATTR_HRS);
@@ -153,7 +153,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("HIRES codes $300 and up come from HIRES1 (the OZ window font)", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(HIRES1 + 0x02 * 8, [0xf0]);
     cell(s, 0, 0, 0x02, ATTR_HRS | 0x03);
     renderOnce(s);
@@ -161,7 +161,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("a null cell (HRS|REV|GRY) takes no space", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x3f]);
     cell(s, 0, 0, 0x41, ATTR_HRS | ATTR_REV | ATTR_GRY);
     cell(s, 0, 1, 0x41, 0x00);
@@ -170,7 +170,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("after null cells, the rest of the row is unlit", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x3f]);
     cell(s, 0, 0, 0x41, 0x00);
     for (let c = 1; c < 108; c++) cell(s, 0, c, 0x00, ATTR_HRS | ATTR_REV | ATTR_GRY);
@@ -184,14 +184,14 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   it("a row of LORES cells leaves the last 4 pixels of a 640-pixel row unpainted (oracle quirk)", async () => {
     // --- 107 + 1 cells are scanned; the 107th starts at x = 636 and does not fit, and the fill
     // --- after the last cell starts beyond the row. A fresh LCD buffer is 0 there.
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     renderOnce(s);
     expect(s.pixel(635, 0)).toBe(OFF);
     expect(rowPixels(s, 636, 0, 4)).toEqual([0, 0, 0, 0]);
   });
 
   it("the cursor (HRS|REV|FLS) is a LORES character inverted while TIM0 <= 120", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x21]);
     cell(s, 0, 0, 0x41, ATTR_HRS | ATTR_REV | ATTR_FLS);
     renderOnce(s);
@@ -203,7 +203,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("FLS characters vanish for 200 frames (1 second) every other second", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x3f]);
     cell(s, 0, 0, 0x41, ATTR_FLS);
     renderOnce(s);
@@ -217,7 +217,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
   });
 
   it("renders only every 8th frame", async () => {
-    const s = await lcdSession(backend);
+    const s = await lcdSession();
     s.poke(LORES1 + 0x41 * 8, [0x3f]);
     renderOnce(s);
     expect(s.pixel(0, 0)).toBe(OFF);
@@ -236,7 +236,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "lcd"))("Z88 LCD (%s)
     ["800x320", 800, 320, 100, 40],
     ["800x480", 800, 480, 100, 60]
   ] as const)("LCD size %s is %ix%i (SCW %i, SCH %i), every text row rendered", async (size, w, h, scw, sch) => {
-    const s = await lcdSession(backend, { size });
+    const s = await lcdSession({ size });
     expect(s.lcdWidth).toBe(w);
     expect(s.lcdHeight).toBe(h);
     expect(s.blinkState()).toMatchObject({ SCW: scw, SCH: sch });

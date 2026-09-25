@@ -1,0 +1,301 @@
+{
+ "ROM 32K": {
+  "kind": "ROM",
+  "sizeInBytes": 32768
+ },
+ "ROM 128K": {
+  "kind": "ROM",
+  "sizeInBytes": 131072
+ },
+ "ROM 256K": {
+  "kind": "ROM",
+  "sizeInBytes": 262144
+ },
+ "ROM 512K": {
+  "kind": "ROM",
+  "sizeInBytes": 524288
+ },
+ "ROM 1024K": {
+  "kind": "ROM",
+  "sizeInBytes": 1048576
+ },
+ "ROM 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "RAM32 32K": {
+  "kind": "RAM",
+  "sizeInBytes": 32768
+ },
+ "RAM32 128K": {
+  "kind": "RAM",
+  "sizeInBytes": 131072
+ },
+ "RAM32 256K": {
+  "kind": "RAM",
+  "sizeInBytes": 262144
+ },
+ "RAM32 512K": {
+  "kind": "RAM",
+  "sizeInBytes": 524288
+ },
+ "RAM32 1024K": {
+  "kind": "RAM",
+  "sizeInBytes": 1048576
+ },
+ "RAM32 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "RAM128 32K": {
+  "kind": "RAM",
+  "sizeInBytes": 32768
+ },
+ "RAM128 128K": {
+  "kind": "RAM",
+  "sizeInBytes": 131072
+ },
+ "RAM128 256K": {
+  "kind": "RAM",
+  "sizeInBytes": 262144
+ },
+ "RAM128 512K": {
+  "kind": "RAM",
+  "sizeInBytes": 524288
+ },
+ "RAM128 1024K": {
+  "kind": "RAM",
+  "sizeInBytes": 1048576
+ },
+ "RAM128 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "RAM256 32K": {
+  "kind": "RAM",
+  "sizeInBytes": 32768
+ },
+ "RAM256 128K": {
+  "kind": "RAM",
+  "sizeInBytes": 131072
+ },
+ "RAM256 256K": {
+  "kind": "RAM",
+  "sizeInBytes": 262144
+ },
+ "RAM256 512K": {
+  "kind": "RAM",
+  "sizeInBytes": 524288
+ },
+ "RAM256 1024K": {
+  "kind": "RAM",
+  "sizeInBytes": 1048576
+ },
+ "RAM256 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "RAM512 32K": {
+  "kind": "RAM",
+  "sizeInBytes": 32768
+ },
+ "RAM512 128K": {
+  "kind": "RAM",
+  "sizeInBytes": 131072
+ },
+ "RAM512 256K": {
+  "kind": "RAM",
+  "sizeInBytes": 262144
+ },
+ "RAM512 512K": {
+  "kind": "RAM",
+  "sizeInBytes": 524288
+ },
+ "RAM512 1024K": {
+  "kind": "RAM",
+  "sizeInBytes": 1048576
+ },
+ "RAM512 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "RAM1024 32K": {
+  "kind": "RAM",
+  "sizeInBytes": 32768
+ },
+ "RAM1024 128K": {
+  "kind": "RAM",
+  "sizeInBytes": 131072
+ },
+ "RAM1024 256K": {
+  "kind": "RAM",
+  "sizeInBytes": 262144
+ },
+ "RAM1024 512K": {
+  "kind": "RAM",
+  "sizeInBytes": 524288
+ },
+ "RAM1024 1024K": {
+  "kind": "RAM",
+  "sizeInBytes": 1048576
+ },
+ "RAM1024 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "EPROMUV32 32K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 32768
+ },
+ "EPROMUV32 128K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 131072
+ },
+ "EPROMUV32 256K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 262144
+ },
+ "EPROMUV32 512K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 524288
+ },
+ "EPROMUV32 1024K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 1048576
+ },
+ "EPROMUV32 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "EPROMUV128 32K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 32768
+ },
+ "EPROMUV128 128K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 131072
+ },
+ "EPROMUV128 256K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 262144
+ },
+ "EPROMUV128 512K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 524288
+ },
+ "EPROMUV128 1024K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 1048576
+ },
+ "EPROMUV128 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "EPROMUV256 32K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 32768
+ },
+ "EPROMUV256 128K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 131072
+ },
+ "EPROMUV256 256K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 262144
+ },
+ "EPROMUV256 512K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 524288
+ },
+ "EPROMUV256 1024K": {
+  "kind": "UV_EPROM",
+  "sizeInBytes": 1048576
+ },
+ "EPROMUV256 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "IF28F004S5 32K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 32768
+ },
+ "IF28F004S5 128K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 131072
+ },
+ "IF28F004S5 256K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 262144
+ },
+ "IF28F004S5 512K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 524288
+ },
+ "IF28F004S5 1024K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 1048576
+ },
+ "IF28F004S5 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "IF28F008S5 32K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 32768
+ },
+ "IF28F008S5 128K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 131072
+ },
+ "IF28F008S5 256K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 262144
+ },
+ "IF28F008S5 512K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 524288
+ },
+ "IF28F008S5 1024K": {
+  "kind": "INTEL_FLASH",
+  "sizeInBytes": 1048576
+ },
+ "IF28F008S5 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "AMDF29F040B 32K": {
+  "kind": "AMD_FLASH_29F040B",
+  "sizeInBytes": 524288
+ },
+ "AMDF29F040B 128K": {
+  "kind": "AMD_FLASH_29F040B",
+  "sizeInBytes": 524288
+ },
+ "AMDF29F040B 256K": {
+  "kind": "AMD_FLASH_29F040B",
+  "sizeInBytes": 524288
+ },
+ "AMDF29F040B 512K": {
+  "kind": "AMD_FLASH_29F040B",
+  "sizeInBytes": 524288
+ },
+ "AMDF29F040B 1024K": {
+  "kind": "AMD_FLASH_29F040B",
+  "sizeInBytes": 524288
+ },
+ "AMDF29F040B 48K": {
+  "error": "Invalid card size: 48"
+ },
+ "AMDF29F080B 32K": {
+  "kind": "AMD_FLASH_29F080B",
+  "sizeInBytes": 1048576
+ },
+ "AMDF29F080B 128K": {
+  "kind": "AMD_FLASH_29F080B",
+  "sizeInBytes": 1048576
+ },
+ "AMDF29F080B 256K": {
+  "kind": "AMD_FLASH_29F080B",
+  "sizeInBytes": 1048576
+ },
+ "AMDF29F080B 512K": {
+  "kind": "AMD_FLASH_29F080B",
+  "sizeInBytes": 1048576
+ },
+ "AMDF29F080B 1024K": {
+  "kind": "AMD_FLASH_29F080B",
+  "sizeInBytes": 1048576
+ },
+ "AMDF29F080B 48K": {
+  "error": "Invalid card size: 48"
+ }
+}

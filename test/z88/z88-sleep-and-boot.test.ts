@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { machineRegistry } from "@common/machines/machine-registry";
-import { createZ88Session, z88HarnessBackends, Z88_LCD } from "../harness/z88";
+import { createZ88Session, Z88_LCD } from "../harness/z88";
 
 /*
  * Sleep-mode detection and booting the real OZ ROMs.
@@ -13,9 +13,9 @@ import { createZ88Session, z88HarnessBackends, Z88_LCD } from "../harness/z88";
  *
  * Step 0.3 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 sleep mode (%s)", (backend) => {
+describe("Z88 sleep mode", () => {
   async function haltWithI(i: number) {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
       ld a,${i}
@@ -58,11 +58,11 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 sle
   });
 });
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard", "lcd"))("Z88 OZ boot (%s)", (backend) => {
+describe("Z88 OZ boot", () => {
   it.each(z88Models())(
     "%s boots to its Index screen and waits for a key (snoozing on the keyboard)",
     async (model) => {
-      const s = await createZ88Session({ backend, model, rom: "model" });
+      const s = await createZ88Session({ model, rom: "model" });
       // --- Measured on the TypeScript core (2026-09-19): OZ 3.x/4.0 settle in 600-800 frames,
       // --- OZ 5.0 in about 1600 (8 seconds of Z88 time)
       s.runUntil((t) => t.snoozed && litPixels(t.screen()) > 4000, "the Index screen, waiting for a key", {
@@ -83,8 +83,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard", "lcd"))("
 function z88Models(): string[] {
   return machineRegistry
     .find((m) => m.machineId === "z88")
-    .models.filter((m) => m.menuGroup === undefined) // the originals, not the backend twins
-    .map((m) => m.modelId);
+    .models.map((m) => m.modelId);
 }
 
 function litPixels(screen: Uint32Array): number {

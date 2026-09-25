@@ -1,0 +1,201 @@
+{
+ "short: step-into": {
+  "stops": [
+   32771,
+   32779,
+   32783
+  ],
+  "registers": {
+   "af": 65535,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 4660,
+   "iy": 0,
+   "sp": 49134,
+   "pc": 32783,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 41
+ },
+ "short: step-over": {
+  "stops": [
+   32771,
+   32774,
+   32775
+  ],
+  "registers": {
+   "af": 65535,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 4660,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32775,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 189
+ },
+ "short: step-out": {
+  "stops": [
+   32771,
+   32779,
+   32774
+  ],
+  "registers": {
+   "af": 65535,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 4660,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32774,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 185
+ },
+ "short: breakpoints": {
+  "stops": [
+   32791,
+   32791
+  ],
+  "registers": {
+   "af": 65535,
+   "bc": 512,
+   "de": 0,
+   "hl": 0,
+   "ix": 4660,
+   "iy": 0,
+   "sp": 49132,
+   "pc": 32791,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 109
+ },
+ "long: step-over a CALL that runs for frames": {
+  "stops": [
+   32771,
+   32774,
+   32775
+  ],
+  "registers": {
+   "af": 68,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 0,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32775,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 69963,
+  "frames": 4
+ },
+ "long: step-out of a routine that runs for frames": {
+  "stops": [
+   32771,
+   32780,
+   32774
+  ],
+  "registers": {
+   "af": 68,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 0,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32774,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 69959,
+  "frames": 4
+ },
+ "long: step-over a CALL inside the long routine, then step-out": {
+  "stops": [
+   32783,
+   32774
+  ],
+  "registers": {
+   "af": 68,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 0,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32774,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 69959,
+  "frames": 4
+ },
+ "long: a disabled breakpoint and another partition's breakpoint are passed; the real one stops": {
+  "stops": [
+   32777
+  ],
+  "registers": {
+   "af": 324,
+   "bc": 0,
+   "de": 0,
+   "hl": 0,
+   "ix": 0,
+   "iy": 0,
+   "sp": 49136,
+   "pc": 32777,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 69970,
+  "frames": 4
+ },
+ "long: a breakpoint hit again on the next pass through a loop": {
+  "stops": [
+   32794,
+   32794,
+   32794
+  ],
+  "registers": {
+   "af": 68,
+   "bc": 65024,
+   "de": 0,
+   "hl": 0,
+   "ix": 0,
+   "iy": 0,
+   "sp": 49132,
+   "pc": 32794,
+   "i": 0,
+   "iff1": false,
+   "interruptMode": 0,
+   "halted": false
+  },
+  "tacts": 66642,
+  "frames": 4
+ }
+}

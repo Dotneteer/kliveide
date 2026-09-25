@@ -1,13 +1,13 @@
 import type { BlinkState } from "@common/messaging/EmuApi";
 
 /**
- * What the IDE reads from a Cambridge Z88, whichever core runs it.
+ * What the IDE reads from a Cambridge Z88.
  *
  * The Blink panel used to cast the running machine to `any` and read the TypeScript device objects
  * (`blinkDevice`, `keyboardDevice`, `beeperDevice`, `screenDevice`). A WASM machine has no such
- * objects, so the machine now answers from its own state - the TypeScript core from its devices, the
- * WASM core from its exports - and the IDE never needs to know which one is running (the lesson of
- * `IZxNextIdeMachine`; see `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, Step 0.2).
+ * objects, so the machine answers from its own state - the core's exports - and the IDE never reaches
+ * into the emulation (the lesson of `IZxNextIdeMachine`; see
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, Step 0.2).
  */
 export interface IZ88IdeMachine {
   readonly machineId: "z88";

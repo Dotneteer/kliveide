@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
-import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
+import { createZ88TestSurface } from "./z88-test-surface";
+import { COMFlags } from "./z88-blink-flags";
 
 const addr32K: number[] = [
   // logical addresses for SR2, SR3 (32K range)
@@ -11,11 +11,11 @@ const addrSR3: number[] = [
   0xc000, 0xc001, 0xcdef, 0xdfff, 0xefff, 0xfffe, 0xffff
 ];
 
-describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card Read / Blow bytes ($name)", function ({ create }) {
+describe("Z88 - UV EPROM Card Read / Blow bytes", function () {
   addr32K.forEach(addr => {
     it(`32K EPROM read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create 32K UV Eprom Card
@@ -35,7 +35,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card
   addr32K.forEach(addr => {
     it(`32K EPROM blow content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create 32K UV Eprom Card
@@ -72,7 +72,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card
   addr32K.forEach(addr => {
     it(`32K EPROM blow content (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create 32K UV Eprom Card
@@ -95,7 +95,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) read content (${addr}) in slot 3`, () => {
         // --- Create the machine
-        const m = create();
+        const m = createZ88TestSurface();
         const mem = m.memory;
 
         // --- Create 128K UV Eprom Card
@@ -115,7 +115,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) blow content (${addr}) in slot 3`, () => {
         // --- Create the machine
-        const m = create();
+        const m = createZ88TestSurface();
         const mem = m.memory;
 
         // --- Create 128K UV Eprom Card
@@ -149,7 +149,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - UV EPROM Card
     addrSR3.forEach(addr => {
       it(`128K EPROM (Bank ${bnk128K}) blow content (${addr}) in slot 2`, () => {
         // --- Create the machine
-        const m = create();
+        const m = createZ88TestSurface();
         const mem = m.memory;
 
         // --- Create 128K UV Eprom Card

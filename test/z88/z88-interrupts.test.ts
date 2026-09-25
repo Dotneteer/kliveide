@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, z88HarnessBackends, type Z88TestSession } from "../harness/z88";
+import { createZ88Session, type Z88TestSession } from "../harness/z88";
 
 /*
  * The Blink's maskable interrupt (IM 1, $0038): RTC events, the flap, battery low; and the flags
@@ -62,9 +62,9 @@ handler:
   `, { entry: "start" });
 }
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)", (backend) => {
+describe("Z88 interrupts", () => {
   it("with INT.TIME and TMK.TICK, the RTC interrupts every 10 ms (every 2nd frame)", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await interruptCounter(s, INT_GINT | INT_TIME);
     s.runFrames(20);
     const count = s.peekWord(0x9000);
@@ -74,14 +74,14 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   });
 
   it("without INT.GINT, no RTC interrupt comes out", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await interruptCounter(s, INT_TIME);
     s.runFrames(20);
     expect(s.peekWord(0x9000)).toBe(0);
   });
 
   it("without INT.TIME, the RTC counts but does not interrupt", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await interruptCounter(s, INT_GINT);
     s.runFrames(20);
     expect(s.peekWord(0x9000)).toBe(0);
@@ -90,7 +90,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   });
 
   it("opening the flap (INT.FLAP) sets STA.FLAP and STA.FLAPOPEN; closing clears FLAPOPEN only", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, INT_GINT | INT_FLAP);
     s.flapOpen();
     expect(s.blinkState().STA & (STA_FLAP | STA_FLAPOPEN)).toBe(STA_FLAP | STA_FLAPOPEN);
@@ -101,14 +101,14 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   });
 
   it("the flap is ignored without INT.FLAP", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, INT_GINT);
     s.flapOpen();
     expect(s.blinkState().STA & (STA_FLAP | STA_FLAPOPEN)).toBe(0);
   });
 
   it("the flap commands of the machine menu do the same", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xb1, INT_GINT | INT_FLAP);
     await s.command("flap_open");
     expect(s.blinkState().STA & STA_FLAPOPEN).toBe(STA_FLAPOPEN);
@@ -117,7 +117,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   });
 
   it("opening the flap interrupts once; while it is open, no RTC interrupt comes out", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await interruptCounter(s, INT_GINT | INT_TIME | INT_FLAP);
     s.runFrames(1);
     const before = s.peekWord(0x9000);
@@ -135,7 +135,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   it("an open flap is a state, not a source: with INT.KWAIT set, it interrupts once (FLAP)", async () => {
     // --- STA.FLAPOPEN and INT.KWAIT share bit 7, but neither is an interrupt source or enable (Blink
     // --- documentation). Testing INT & STA interrupted for as long as the flap was open (F1).
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await interruptCounter(s, INT_GINT | INT_FLAP | INT_KWAIT);
     s.runFrames(1);
     s.flapOpen();
@@ -147,7 +147,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 interrupts (%s)
   it("a pending STA.TIME does not interrupt once INT.TIME is off (TIME is INT bit 1, STA bit 0)", async () => {
     // --- Testing INT & STA paired STA.TIME with INT.GINT, so a pending RTC event interrupted with
     // --- INT.TIME off (F1). The handler acknowledges nothing: every interrupt would repeat.
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $0038
       jp handler
@@ -192,7 +192,7 @@ pending: .defb 0
       [0x80 | INT_TIME | INT_GINT, true],
       [0x80 | INT_GINT, false]
     ] as const) {
-      const s = await createZ88Session({ backend });
+      const s = await createZ88Session();
       await s.loadCode(`
       .org $8000
       di
@@ -215,14 +215,14 @@ spin: jr spin
   });
 
   it("battery_low sets STA.BTL", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     expect(s.blinkState().STA & STA_BTL).toBe(0);
     await s.command("battery_low");
     expect(s.blinkState().STA & STA_BTL).toBe(STA_BTL);
   });
 
   it("COM.RESTIM stops and clears the RTC", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
 spin: jr spin

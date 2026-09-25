@@ -1,5 +1,5 @@
 import { MC_Z88_SLOT0 } from "@common/machines/constants";
-import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 import type { MachineConfigSet } from "@common/machines/info-types";
 import type { UiReducer } from "@mvc/core/types";
 

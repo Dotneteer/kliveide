@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, z88HarnessBackends, type Z88Sample } from "../harness/z88";
+import { createZ88Session, type Z88Sample } from "../harness/z88";
 
 /*
  * The Z88 beeper, driven by the Blink's COM register.
@@ -28,9 +28,9 @@ function levelChanges(samples: Z88Sample[]): number {
   return changes;
 }
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "beeper"))("Z88 beeper (%s)", (backend) => {
+describe("Z88 beeper", () => {
   async function spinning() {
-    const s = await createZ88Session({ backend, audioSampleRate: SAMPLE_RATE });
+    const s = await createZ88Session({ audioSampleRate: SAMPLE_RATE });
     await s.loadCode(`
       .org $8000
 spin: jr spin

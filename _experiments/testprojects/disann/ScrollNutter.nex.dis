@@ -656,154 +656,14 @@
         "4612": {
           "comment": "First line is 32 ($20): records cover ULA pixel rows 32-127"
         },
-        "4617": {
-          "comment": "12 bytes per record"
-        },
-        "5221": {
-          "synopsis": "CopperLines: the working copper table, 96 records of 12 bytes (six copper\ninstructions each), one record per ULA pixel row 32-127:\n  WAIT  line 32+i, h=32  - fires at pixel column 256, in the right border\n  MOVE  $40,$00          - palette index := 0\n  MOVE  $41,colour  x4   - palette entries 0, 1, 2, 3 (index auto-increments)\nCopper instructions are two bytes, most significant first:\n  WAIT  %1hhhhhhv vvvvvvvv - hold until raster line v, pixel column >= h*8\n  MOVE  %0rrrrrrr vvvvvvvv - write v to Next register r\nThe line bytes are 0 in the file; InitCopperLines writes 32+i into them.\nUpdateCopperBars sets nextreg $43 = $00, so $41 writes the ULA first palette\nand entries 0-3 are INK 0-3: each record recolours inks 0-3 from the next row\ndown. Rebuilt every frame from CopperLinesReset, then painted with the bars.\nUploaded into the copper list in three $180-byte blocks; this first block,\nrows 32-63, goes to CopperListRows ($9EAA).",
-          "comment": "WAIT line 32, pixel column 256 (right border)"
-        },
-        "6373": {
-          "synopsis": "CopperLinesReset: the clean copy of CopperLines, in the same 12-byte format.\nEvery record sets palette entries 0-3 (INK 0-3) to $00, $20, $40, $60 -\nblack and red at 1/7, 2/7 and 3/7 intensity (colours are RRRGGGBB).\nInitCopperLines fills in its line numbers too. CopperBarsFrame copies it back\nover CopperLines ($480 bytes) every frame before the bars are painted.",
-          "comment": "WAIT line 32, pixel column 256 (right border)"
-        },
-        "7816": {
-          "comment": "Load the copper list: $540 bytes from $9E94 into register $60"
-        },
-        "9728": {
-          "comment": "Use Layer 2 first palette"
-        },
-        "9732": {
-          "comment": "Reset Layer 2 palette index"
-        },
-        "9736": {
-          "comment": "Fill the Layer 2 palette"
-        },
-        "9739": {
-          "comment": "Use Sprites first palette"
-        },
-        "9743": {
-          "comment": "Reset Sprites palette index"
-        },
-        "9747": {
-          "comment": "TAIL CALL: InitPaletteRamp's RET returns to InitPalettes' caller"
-        },
-        "9750": {
-          "synopsis": "Fill the currently selected palette with an identity ramp.\nWrites entries 0..255, each set to its own index. The palette must already\nbe selected via nextreg $43. Destroys A."
-        },
-        "9764": {
-          "synopsis": "Demo setup, entered from EntryPoint. Runs with interrupts off.\nInitialises palettes and layers, chooses the tune set, clears the clip\nwindows, copies the two ULA screens in, loads sprites and tiles, starts the\nmusic and installs the frame interrupt. Falls through to the main loop\nonce EI is reached."
-        },
-        "9765": {
-          "comment": "Identity-ramp the Layer 2 and Sprite palettes"
-        },
-        "9768": {
-          "comment": "$85: lores on, layer order L-S-U, sprites enabled"
-        },
-        "9773": {
-          "comment": "Tune-set selector; 0 in this build"
-        },
-        "9780": {
-          "synopsis": "Default tune set: both players get the tune at $8893."
-        },
-        "9783": {
-          "comment": "Patches the LD HL operand at $5C6A"
-        },
-        "9789": {
-          "comment": "Patches the LD HL operand at $5C83"
-        },
-        "9795": {
-          "synopsis": "Alternative tune set, selected when ConfigFlag is non-zero."
-        },
-        "9807": {
-          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes — X1, X2, Y1, Y2 — and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
-        },
-        "9873": {
-          "comment": "Four-colour LoRes palette"
-        },
-        "9876": {
-          "comment": "Black border"
-        },
-        "9880": {
-          "comment": "$E3 = transparent: empty Layer 2"
-        },
-        "9885": {
-          "comment": "Hide sprites 0-64"
-        },
-        "9888": {
-          "comment": "A = 2*26: page 16K bank 26 into $C000-$FFFF"
-        },
-        "9898": {
-          "synopsis": "Copy the two ULA screen bitmaps from bank 26 into place.\n$1800 bytes each: the first to $4000 and the second to $6000, the two\ndisplay banks Timex mode alternates between."
-        },
-        "9922": {
-          "comment": "A = 2*12: page 16K bank 12 into $C000-$FFFF"
-        },
-        "9932": {
-          "comment": "$303B: select sprite 0 and pattern 0"
-        },
-        "9943": {
-          "comment": "Length is BC, still $303B from the port write: 48 patterns + 59 bytes"
-        },
-        "9946": {
-          "comment": "Scanline numbers for the copper tables"
-        },
-        "9949": {
-          "comment": "Four corner sprites"
-        },
-        "9952": {
-          "comment": "Start both tunes"
-        },
-        "9955": {
-          "synopsis": "Print the two title lines into the tilemap."
-        },
-        "9961": {
-          "comment": "16 characters; B = row, C = column"
-        },
-        "9977": {
-          "comment": "Install the frame interrupt (still disabled)"
-        },
-        "9980": {
-          "comment": "Interrupts on — the demo is now running"
-        },
-        "9981": {
-          "comment": "$03: 28 MHz"
-        },
-        "10204": {
-          "synopsis": "Set ULA palette entries 0-3 to a four-step red ramp.\nEntries: $00, $20, $40, $60 (RRRGGGBB). The LoRes picture only uses\npixel values 0-3, so these are its whole palette. The copper list\n(CopperLines) rewrites the same four entries on each scanline later.",
-          "comment": "Edit the ULA first palette, ULANext off"
-        },
-        "10208": {
-          "comment": "Start at palette entry 0"
-        },
-        "10212": {
-          "comment": "Entries 0-3 = $00, $20, $40, $60; the index advances after each write"
-        },
-        "10229": {
-          "synopsis": "Tune-set selector read by Start. 0 = default tunes."
-        },
-        "10230": {
-          "synopsis": "Title line 1, exactly 16 characters: \"  SCROLLNUTTER  \"."
-        },
-        "10246": {
-          "synopsis": "Title line 2, exactly 16 characters: \"   NEXT  DEMO   \"."
-        },
-        "10262": {
-          "synopsis": "Unidentified data table, 15 bytes then zero padding.\nNot reached as code by the entry flow; purpose not yet established.\n$A81D-$A81E is CopperBarsWait, the frames before the copper bars start."
-        },
-        "5605": {
-          "synopsis": "Second upload block: records 32-63, rows 64-95. Goes to $A030.",
-          "comment": "WAIT line 64, pixel column 256 (right border)"
-        },
-        "5989": {
-          "synopsis": "Third upload block: records 64-95, rows 96-127. Goes to $A1B6.",
-          "comment": "WAIT line 96, pixel column 256 (right border)"
-        },
         "4614": {
           "comment": "Same line number into both tables"
         },
         "4616": {
           "comment": "Next record, next line"
+        },
+        "4617": {
+          "comment": "12 bytes per record"
         },
         "4625": {
           "comment": "Until all 96 records carry their line"
@@ -1253,6 +1113,10 @@
         "5213": {
           "comment": "Unused scheme 5: same colours as scheme 1"
         },
+        "5221": {
+          "synopsis": "CopperLines: the working copper table, 96 records of 12 bytes (six copper\ninstructions each), one record per ULA pixel row 32-127:\n  WAIT  line 32+i, h=32  - fires at pixel column 256, in the right border\n  MOVE  $40,$00          - palette index := 0\n  MOVE  $41,colour  x4   - palette entries 0, 1, 2, 3 (index auto-increments)\nCopper instructions are two bytes, most significant first:\n  WAIT  %1hhhhhhv vvvvvvvv - hold until raster line v, pixel column >= h*8\n  MOVE  %0rrrrrrr vvvvvvvv - write v to Next register r\nThe line bytes are 0 in the file; InitCopperLines writes 32+i into them.\nUpdateCopperBars sets nextreg $43 = $00, so $41 writes the ULA first palette\nand entries 0-3 are INK 0-3: each record recolours inks 0-3 from the next row\ndown. Rebuilt every frame from CopperLinesReset, then painted with the bars.\nUploaded into the copper list in three $180-byte blocks; this first block,\nrows 32-63, goes to CopperListRows ($9EAA).",
+          "comment": "WAIT line 32, pixel column 256 (right border)"
+        },
         "5223": {
           "comment": "MOVE $40,$00: select palette entry 0"
         },
@@ -1267,21 +1131,6 @@
         },
         "5231": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6375": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6377": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6379": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6381": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6383": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5233": {
           "comment": "WAIT line 33, pixel column 256 (right border)"
@@ -1301,24 +1150,6 @@
         "5243": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6385": {
-          "comment": "WAIT line 33, pixel column 256 (right border)"
-        },
-        "6387": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6389": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6391": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6393": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6395": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5245": {
           "comment": "WAIT line 34, pixel column 256 (right border)"
         },
@@ -1336,24 +1167,6 @@
         },
         "5255": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6397": {
-          "comment": "WAIT line 34, pixel column 256 (right border)"
-        },
-        "6399": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6401": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6403": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6405": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6407": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5257": {
           "comment": "WAIT line 35, pixel column 256 (right border)"
@@ -1373,24 +1186,6 @@
         "5267": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6409": {
-          "comment": "WAIT line 35, pixel column 256 (right border)"
-        },
-        "6411": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6413": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6415": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6417": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6419": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5269": {
           "comment": "WAIT line 36, pixel column 256 (right border)"
         },
@@ -1408,24 +1203,6 @@
         },
         "5279": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6421": {
-          "comment": "WAIT line 36, pixel column 256 (right border)"
-        },
-        "6423": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6425": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6427": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6429": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6431": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5281": {
           "comment": "WAIT line 37, pixel column 256 (right border)"
@@ -1445,24 +1222,6 @@
         "5291": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6433": {
-          "comment": "WAIT line 37, pixel column 256 (right border)"
-        },
-        "6435": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6437": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6439": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6441": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6443": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5293": {
           "comment": "WAIT line 38, pixel column 256 (right border)"
         },
@@ -1480,24 +1239,6 @@
         },
         "5303": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6445": {
-          "comment": "WAIT line 38, pixel column 256 (right border)"
-        },
-        "6447": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6449": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6451": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6453": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6455": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5305": {
           "comment": "WAIT line 39, pixel column 256 (right border)"
@@ -1517,24 +1258,6 @@
         "5315": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6457": {
-          "comment": "WAIT line 39, pixel column 256 (right border)"
-        },
-        "6459": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6461": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6463": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6465": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6467": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5317": {
           "comment": "WAIT line 40, pixel column 256 (right border)"
         },
@@ -1552,24 +1275,6 @@
         },
         "5327": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6469": {
-          "comment": "WAIT line 40, pixel column 256 (right border)"
-        },
-        "6471": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6473": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6475": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6477": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6479": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5329": {
           "comment": "WAIT line 41, pixel column 256 (right border)"
@@ -1589,24 +1294,6 @@
         "5339": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6481": {
-          "comment": "WAIT line 41, pixel column 256 (right border)"
-        },
-        "6483": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6485": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6487": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6489": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6491": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5341": {
           "comment": "WAIT line 42, pixel column 256 (right border)"
         },
@@ -1624,24 +1311,6 @@
         },
         "5351": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6493": {
-          "comment": "WAIT line 42, pixel column 256 (right border)"
-        },
-        "6495": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6497": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6499": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6501": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6503": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5353": {
           "comment": "WAIT line 43, pixel column 256 (right border)"
@@ -1661,24 +1330,6 @@
         "5363": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6505": {
-          "comment": "WAIT line 43, pixel column 256 (right border)"
-        },
-        "6507": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6509": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6511": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6513": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6515": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5365": {
           "comment": "WAIT line 44, pixel column 256 (right border)"
         },
@@ -1696,24 +1347,6 @@
         },
         "5375": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6517": {
-          "comment": "WAIT line 44, pixel column 256 (right border)"
-        },
-        "6519": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6521": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6523": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6525": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6527": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5377": {
           "comment": "WAIT line 45, pixel column 256 (right border)"
@@ -1733,24 +1366,6 @@
         "5387": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6529": {
-          "comment": "WAIT line 45, pixel column 256 (right border)"
-        },
-        "6531": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6533": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6535": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6537": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6539": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5389": {
           "comment": "WAIT line 46, pixel column 256 (right border)"
         },
@@ -1768,24 +1383,6 @@
         },
         "5399": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6541": {
-          "comment": "WAIT line 46, pixel column 256 (right border)"
-        },
-        "6543": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6545": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6547": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6549": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6551": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5401": {
           "comment": "WAIT line 47, pixel column 256 (right border)"
@@ -1805,24 +1402,6 @@
         "5411": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6553": {
-          "comment": "WAIT line 47, pixel column 256 (right border)"
-        },
-        "6555": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6557": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6559": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6561": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6563": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5413": {
           "comment": "WAIT line 48, pixel column 256 (right border)"
         },
@@ -1840,24 +1419,6 @@
         },
         "5423": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6565": {
-          "comment": "WAIT line 48, pixel column 256 (right border)"
-        },
-        "6567": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6569": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6571": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6573": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6575": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5425": {
           "comment": "WAIT line 49, pixel column 256 (right border)"
@@ -1877,24 +1438,6 @@
         "5435": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6577": {
-          "comment": "WAIT line 49, pixel column 256 (right border)"
-        },
-        "6579": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6581": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6583": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6585": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6587": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5437": {
           "comment": "WAIT line 50, pixel column 256 (right border)"
         },
@@ -1912,24 +1455,6 @@
         },
         "5447": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6589": {
-          "comment": "WAIT line 50, pixel column 256 (right border)"
-        },
-        "6591": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6593": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6595": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6597": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6599": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5449": {
           "comment": "WAIT line 51, pixel column 256 (right border)"
@@ -1949,24 +1474,6 @@
         "5459": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6601": {
-          "comment": "WAIT line 51, pixel column 256 (right border)"
-        },
-        "6603": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6605": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6607": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6609": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6611": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5461": {
           "comment": "WAIT line 52, pixel column 256 (right border)"
         },
@@ -1984,24 +1491,6 @@
         },
         "5471": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6613": {
-          "comment": "WAIT line 52, pixel column 256 (right border)"
-        },
-        "6615": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6617": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6619": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6621": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6623": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5473": {
           "comment": "WAIT line 53, pixel column 256 (right border)"
@@ -2021,24 +1510,6 @@
         "5483": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6625": {
-          "comment": "WAIT line 53, pixel column 256 (right border)"
-        },
-        "6627": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6629": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6631": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6633": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6635": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5485": {
           "comment": "WAIT line 54, pixel column 256 (right border)"
         },
@@ -2056,24 +1527,6 @@
         },
         "5495": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6637": {
-          "comment": "WAIT line 54, pixel column 256 (right border)"
-        },
-        "6639": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6641": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6643": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6645": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6647": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5497": {
           "comment": "WAIT line 55, pixel column 256 (right border)"
@@ -2093,24 +1546,6 @@
         "5507": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6649": {
-          "comment": "WAIT line 55, pixel column 256 (right border)"
-        },
-        "6651": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6653": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6655": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6657": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6659": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5509": {
           "comment": "WAIT line 56, pixel column 256 (right border)"
         },
@@ -2128,24 +1563,6 @@
         },
         "5519": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6661": {
-          "comment": "WAIT line 56, pixel column 256 (right border)"
-        },
-        "6663": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6665": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6667": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6669": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6671": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5521": {
           "comment": "WAIT line 57, pixel column 256 (right border)"
@@ -2165,24 +1582,6 @@
         "5531": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6673": {
-          "comment": "WAIT line 57, pixel column 256 (right border)"
-        },
-        "6675": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6677": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6679": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6681": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6683": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5533": {
           "comment": "WAIT line 58, pixel column 256 (right border)"
         },
@@ -2200,24 +1599,6 @@
         },
         "5543": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6685": {
-          "comment": "WAIT line 58, pixel column 256 (right border)"
-        },
-        "6687": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6689": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6691": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6693": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6695": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5545": {
           "comment": "WAIT line 59, pixel column 256 (right border)"
@@ -2237,24 +1618,6 @@
         "5555": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6697": {
-          "comment": "WAIT line 59, pixel column 256 (right border)"
-        },
-        "6699": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6701": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6703": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6705": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6707": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5557": {
           "comment": "WAIT line 60, pixel column 256 (right border)"
         },
@@ -2272,24 +1635,6 @@
         },
         "5567": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6709": {
-          "comment": "WAIT line 60, pixel column 256 (right border)"
-        },
-        "6711": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6713": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6715": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6717": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6719": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5569": {
           "comment": "WAIT line 61, pixel column 256 (right border)"
@@ -2309,24 +1654,6 @@
         "5579": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6721": {
-          "comment": "WAIT line 61, pixel column 256 (right border)"
-        },
-        "6723": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6725": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6727": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6729": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6731": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5581": {
           "comment": "WAIT line 62, pixel column 256 (right border)"
         },
@@ -2344,24 +1671,6 @@
         },
         "5591": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6733": {
-          "comment": "WAIT line 62, pixel column 256 (right border)"
-        },
-        "6735": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6737": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6739": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6741": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6743": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5593": {
           "comment": "WAIT line 63, pixel column 256 (right border)"
@@ -2381,23 +1690,9 @@
         "5603": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6745": {
-          "comment": "WAIT line 63, pixel column 256 (right border)"
-        },
-        "6747": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6749": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6751": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6753": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6755": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        "5605": {
+          "synopsis": "Second upload block: records 32-63, rows 64-95. Goes to $A030.",
+          "comment": "WAIT line 64, pixel column 256 (right border)"
         },
         "5607": {
           "comment": "MOVE $40,$00: select palette entry 0"
@@ -2413,24 +1708,6 @@
         },
         "5615": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6757": {
-          "comment": "WAIT line 64, pixel column 256 (right border)"
-        },
-        "6759": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6761": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6763": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6765": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6767": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5617": {
           "comment": "WAIT line 65, pixel column 256 (right border)"
@@ -2450,24 +1727,6 @@
         "5627": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6769": {
-          "comment": "WAIT line 65, pixel column 256 (right border)"
-        },
-        "6771": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6773": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6775": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6777": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6779": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5629": {
           "comment": "WAIT line 66, pixel column 256 (right border)"
         },
@@ -2485,24 +1744,6 @@
         },
         "5639": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6781": {
-          "comment": "WAIT line 66, pixel column 256 (right border)"
-        },
-        "6783": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6785": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6787": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6789": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6791": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5641": {
           "comment": "WAIT line 67, pixel column 256 (right border)"
@@ -2522,24 +1763,6 @@
         "5651": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6793": {
-          "comment": "WAIT line 67, pixel column 256 (right border)"
-        },
-        "6795": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6797": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6799": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6801": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6803": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5653": {
           "comment": "WAIT line 68, pixel column 256 (right border)"
         },
@@ -2557,24 +1780,6 @@
         },
         "5663": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6805": {
-          "comment": "WAIT line 68, pixel column 256 (right border)"
-        },
-        "6807": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6809": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6811": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6813": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6815": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5665": {
           "comment": "WAIT line 69, pixel column 256 (right border)"
@@ -2594,24 +1799,6 @@
         "5675": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6817": {
-          "comment": "WAIT line 69, pixel column 256 (right border)"
-        },
-        "6819": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6821": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6823": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6825": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6827": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5677": {
           "comment": "WAIT line 70, pixel column 256 (right border)"
         },
@@ -2629,24 +1816,6 @@
         },
         "5687": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6829": {
-          "comment": "WAIT line 70, pixel column 256 (right border)"
-        },
-        "6831": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6833": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6835": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6837": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6839": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5689": {
           "comment": "WAIT line 71, pixel column 256 (right border)"
@@ -2666,24 +1835,6 @@
         "5699": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6841": {
-          "comment": "WAIT line 71, pixel column 256 (right border)"
-        },
-        "6843": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6845": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6847": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6849": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6851": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5701": {
           "comment": "WAIT line 72, pixel column 256 (right border)"
         },
@@ -2701,24 +1852,6 @@
         },
         "5711": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6853": {
-          "comment": "WAIT line 72, pixel column 256 (right border)"
-        },
-        "6855": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6857": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6859": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6861": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6863": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5713": {
           "comment": "WAIT line 73, pixel column 256 (right border)"
@@ -2738,24 +1871,6 @@
         "5723": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6865": {
-          "comment": "WAIT line 73, pixel column 256 (right border)"
-        },
-        "6867": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6869": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6871": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6873": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6875": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5725": {
           "comment": "WAIT line 74, pixel column 256 (right border)"
         },
@@ -2773,24 +1888,6 @@
         },
         "5735": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6877": {
-          "comment": "WAIT line 74, pixel column 256 (right border)"
-        },
-        "6879": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6881": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6883": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6885": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6887": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5737": {
           "comment": "WAIT line 75, pixel column 256 (right border)"
@@ -2810,24 +1907,6 @@
         "5747": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6889": {
-          "comment": "WAIT line 75, pixel column 256 (right border)"
-        },
-        "6891": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6893": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6895": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6897": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6899": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5749": {
           "comment": "WAIT line 76, pixel column 256 (right border)"
         },
@@ -2845,24 +1924,6 @@
         },
         "5759": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6901": {
-          "comment": "WAIT line 76, pixel column 256 (right border)"
-        },
-        "6903": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6905": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6907": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6909": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6911": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5761": {
           "comment": "WAIT line 77, pixel column 256 (right border)"
@@ -2882,24 +1943,6 @@
         "5771": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6913": {
-          "comment": "WAIT line 77, pixel column 256 (right border)"
-        },
-        "6915": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6917": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6919": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6921": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6923": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5773": {
           "comment": "WAIT line 78, pixel column 256 (right border)"
         },
@@ -2917,24 +1960,6 @@
         },
         "5783": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6925": {
-          "comment": "WAIT line 78, pixel column 256 (right border)"
-        },
-        "6927": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6929": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6931": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6933": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6935": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5785": {
           "comment": "WAIT line 79, pixel column 256 (right border)"
@@ -2954,24 +1979,6 @@
         "5795": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6937": {
-          "comment": "WAIT line 79, pixel column 256 (right border)"
-        },
-        "6939": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6941": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6943": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6945": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6947": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5797": {
           "comment": "WAIT line 80, pixel column 256 (right border)"
         },
@@ -2989,24 +1996,6 @@
         },
         "5807": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6949": {
-          "comment": "WAIT line 80, pixel column 256 (right border)"
-        },
-        "6951": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6953": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6955": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6957": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6959": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5809": {
           "comment": "WAIT line 81, pixel column 256 (right border)"
@@ -3026,24 +2015,6 @@
         "5819": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6961": {
-          "comment": "WAIT line 81, pixel column 256 (right border)"
-        },
-        "6963": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6965": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6967": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6969": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6971": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5821": {
           "comment": "WAIT line 82, pixel column 256 (right border)"
         },
@@ -3061,24 +2032,6 @@
         },
         "5831": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6973": {
-          "comment": "WAIT line 82, pixel column 256 (right border)"
-        },
-        "6975": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6977": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6979": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6981": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6983": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5833": {
           "comment": "WAIT line 83, pixel column 256 (right border)"
@@ -3098,24 +2051,6 @@
         "5843": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "6985": {
-          "comment": "WAIT line 83, pixel column 256 (right border)"
-        },
-        "6987": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "6989": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "6991": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "6993": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "6995": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5845": {
           "comment": "WAIT line 84, pixel column 256 (right border)"
         },
@@ -3133,24 +2068,6 @@
         },
         "5855": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "6997": {
-          "comment": "WAIT line 84, pixel column 256 (right border)"
-        },
-        "6999": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7001": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7003": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7005": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7007": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5857": {
           "comment": "WAIT line 85, pixel column 256 (right border)"
@@ -3170,24 +2087,6 @@
         "5867": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7009": {
-          "comment": "WAIT line 85, pixel column 256 (right border)"
-        },
-        "7011": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7013": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7015": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7017": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7019": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5869": {
           "comment": "WAIT line 86, pixel column 256 (right border)"
         },
@@ -3205,24 +2104,6 @@
         },
         "5879": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7021": {
-          "comment": "WAIT line 86, pixel column 256 (right border)"
-        },
-        "7023": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7025": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7027": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7029": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7031": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5881": {
           "comment": "WAIT line 87, pixel column 256 (right border)"
@@ -3242,24 +2123,6 @@
         "5891": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7033": {
-          "comment": "WAIT line 87, pixel column 256 (right border)"
-        },
-        "7035": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7037": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7039": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7041": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7043": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5893": {
           "comment": "WAIT line 88, pixel column 256 (right border)"
         },
@@ -3277,24 +2140,6 @@
         },
         "5903": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7045": {
-          "comment": "WAIT line 88, pixel column 256 (right border)"
-        },
-        "7047": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7049": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7051": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7053": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7055": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5905": {
           "comment": "WAIT line 89, pixel column 256 (right border)"
@@ -3314,24 +2159,6 @@
         "5915": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7057": {
-          "comment": "WAIT line 89, pixel column 256 (right border)"
-        },
-        "7059": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7061": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7063": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7065": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7067": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5917": {
           "comment": "WAIT line 90, pixel column 256 (right border)"
         },
@@ -3349,24 +2176,6 @@
         },
         "5927": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7069": {
-          "comment": "WAIT line 90, pixel column 256 (right border)"
-        },
-        "7071": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7073": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7075": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7077": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7079": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5929": {
           "comment": "WAIT line 91, pixel column 256 (right border)"
@@ -3386,24 +2195,6 @@
         "5939": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7081": {
-          "comment": "WAIT line 91, pixel column 256 (right border)"
-        },
-        "7083": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7085": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7087": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7089": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7091": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5941": {
           "comment": "WAIT line 92, pixel column 256 (right border)"
         },
@@ -3421,24 +2212,6 @@
         },
         "5951": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7093": {
-          "comment": "WAIT line 92, pixel column 256 (right border)"
-        },
-        "7095": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7097": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7099": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7101": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7103": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5953": {
           "comment": "WAIT line 93, pixel column 256 (right border)"
@@ -3458,24 +2231,6 @@
         "5963": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7105": {
-          "comment": "WAIT line 93, pixel column 256 (right border)"
-        },
-        "7107": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7109": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7111": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7113": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7115": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "5965": {
           "comment": "WAIT line 94, pixel column 256 (right border)"
         },
@@ -3493,24 +2248,6 @@
         },
         "5975": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7117": {
-          "comment": "WAIT line 94, pixel column 256 (right border)"
-        },
-        "7119": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7121": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7123": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7125": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7127": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "5977": {
           "comment": "WAIT line 95, pixel column 256 (right border)"
@@ -3530,23 +2267,9 @@
         "5987": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7129": {
-          "comment": "WAIT line 95, pixel column 256 (right border)"
-        },
-        "7131": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7133": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7135": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7137": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7139": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        "5989": {
+          "synopsis": "Third upload block: records 64-95, rows 96-127. Goes to $A1B6.",
+          "comment": "WAIT line 96, pixel column 256 (right border)"
         },
         "5991": {
           "comment": "MOVE $40,$00: select palette entry 0"
@@ -3562,24 +2285,6 @@
         },
         "5999": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7141": {
-          "comment": "WAIT line 96, pixel column 256 (right border)"
-        },
-        "7143": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7145": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7147": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7149": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7151": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6001": {
           "comment": "WAIT line 97, pixel column 256 (right border)"
@@ -3599,24 +2304,6 @@
         "6011": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7153": {
-          "comment": "WAIT line 97, pixel column 256 (right border)"
-        },
-        "7155": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7157": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7159": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7161": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7163": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6013": {
           "comment": "WAIT line 98, pixel column 256 (right border)"
         },
@@ -3634,24 +2321,6 @@
         },
         "6023": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7165": {
-          "comment": "WAIT line 98, pixel column 256 (right border)"
-        },
-        "7167": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7169": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7171": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7173": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7175": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6025": {
           "comment": "WAIT line 99, pixel column 256 (right border)"
@@ -3671,24 +2340,6 @@
         "6035": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7177": {
-          "comment": "WAIT line 99, pixel column 256 (right border)"
-        },
-        "7179": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7181": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7183": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7185": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7187": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6037": {
           "comment": "WAIT line 100, pixel column 256 (right border)"
         },
@@ -3706,24 +2357,6 @@
         },
         "6047": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7189": {
-          "comment": "WAIT line 100, pixel column 256 (right border)"
-        },
-        "7191": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7193": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7195": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7197": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7199": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6049": {
           "comment": "WAIT line 101, pixel column 256 (right border)"
@@ -3743,24 +2376,6 @@
         "6059": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7201": {
-          "comment": "WAIT line 101, pixel column 256 (right border)"
-        },
-        "7203": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7205": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7207": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7209": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7211": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6061": {
           "comment": "WAIT line 102, pixel column 256 (right border)"
         },
@@ -3778,24 +2393,6 @@
         },
         "6071": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7213": {
-          "comment": "WAIT line 102, pixel column 256 (right border)"
-        },
-        "7215": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7217": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7219": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7221": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7223": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6073": {
           "comment": "WAIT line 103, pixel column 256 (right border)"
@@ -3815,24 +2412,6 @@
         "6083": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7225": {
-          "comment": "WAIT line 103, pixel column 256 (right border)"
-        },
-        "7227": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7229": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7231": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7233": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7235": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6085": {
           "comment": "WAIT line 104, pixel column 256 (right border)"
         },
@@ -3850,24 +2429,6 @@
         },
         "6095": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7237": {
-          "comment": "WAIT line 104, pixel column 256 (right border)"
-        },
-        "7239": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7241": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7243": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7245": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7247": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6097": {
           "comment": "WAIT line 105, pixel column 256 (right border)"
@@ -3887,24 +2448,6 @@
         "6107": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7249": {
-          "comment": "WAIT line 105, pixel column 256 (right border)"
-        },
-        "7251": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7253": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7255": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7257": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7259": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6109": {
           "comment": "WAIT line 106, pixel column 256 (right border)"
         },
@@ -3922,24 +2465,6 @@
         },
         "6119": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7261": {
-          "comment": "WAIT line 106, pixel column 256 (right border)"
-        },
-        "7263": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7265": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7267": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7269": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7271": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6121": {
           "comment": "WAIT line 107, pixel column 256 (right border)"
@@ -3959,24 +2484,6 @@
         "6131": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7273": {
-          "comment": "WAIT line 107, pixel column 256 (right border)"
-        },
-        "7275": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7277": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7279": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7281": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7283": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6133": {
           "comment": "WAIT line 108, pixel column 256 (right border)"
         },
@@ -3994,24 +2501,6 @@
         },
         "6143": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7285": {
-          "comment": "WAIT line 108, pixel column 256 (right border)"
-        },
-        "7287": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7289": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7291": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7293": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7295": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6145": {
           "comment": "WAIT line 109, pixel column 256 (right border)"
@@ -4031,24 +2520,6 @@
         "6155": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7297": {
-          "comment": "WAIT line 109, pixel column 256 (right border)"
-        },
-        "7299": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7301": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7303": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7305": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7307": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6157": {
           "comment": "WAIT line 110, pixel column 256 (right border)"
         },
@@ -4066,24 +2537,6 @@
         },
         "6167": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7309": {
-          "comment": "WAIT line 110, pixel column 256 (right border)"
-        },
-        "7311": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7313": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7315": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7317": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7319": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6169": {
           "comment": "WAIT line 111, pixel column 256 (right border)"
@@ -4103,24 +2556,6 @@
         "6179": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7321": {
-          "comment": "WAIT line 111, pixel column 256 (right border)"
-        },
-        "7323": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7325": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7327": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7329": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7331": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6181": {
           "comment": "WAIT line 112, pixel column 256 (right border)"
         },
@@ -4138,24 +2573,6 @@
         },
         "6191": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7333": {
-          "comment": "WAIT line 112, pixel column 256 (right border)"
-        },
-        "7335": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7337": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7339": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7341": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7343": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6193": {
           "comment": "WAIT line 113, pixel column 256 (right border)"
@@ -4175,24 +2592,6 @@
         "6203": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7345": {
-          "comment": "WAIT line 113, pixel column 256 (right border)"
-        },
-        "7347": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7349": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7351": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7353": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7355": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6205": {
           "comment": "WAIT line 114, pixel column 256 (right border)"
         },
@@ -4210,24 +2609,6 @@
         },
         "6215": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7357": {
-          "comment": "WAIT line 114, pixel column 256 (right border)"
-        },
-        "7359": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7361": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7363": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7365": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7367": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6217": {
           "comment": "WAIT line 115, pixel column 256 (right border)"
@@ -4247,24 +2628,6 @@
         "6227": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7369": {
-          "comment": "WAIT line 115, pixel column 256 (right border)"
-        },
-        "7371": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7373": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7375": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7377": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7379": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6229": {
           "comment": "WAIT line 116, pixel column 256 (right border)"
         },
@@ -4282,24 +2645,6 @@
         },
         "6239": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7381": {
-          "comment": "WAIT line 116, pixel column 256 (right border)"
-        },
-        "7383": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7385": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7387": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7389": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7391": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6241": {
           "comment": "WAIT line 117, pixel column 256 (right border)"
@@ -4319,24 +2664,6 @@
         "6251": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7393": {
-          "comment": "WAIT line 117, pixel column 256 (right border)"
-        },
-        "7395": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7397": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7399": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7401": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7403": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6253": {
           "comment": "WAIT line 118, pixel column 256 (right border)"
         },
@@ -4354,24 +2681,6 @@
         },
         "6263": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7405": {
-          "comment": "WAIT line 118, pixel column 256 (right border)"
-        },
-        "7407": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7409": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7411": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7413": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7415": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6265": {
           "comment": "WAIT line 119, pixel column 256 (right border)"
@@ -4391,24 +2700,6 @@
         "6275": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7417": {
-          "comment": "WAIT line 119, pixel column 256 (right border)"
-        },
-        "7419": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7421": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7423": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7425": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7427": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6277": {
           "comment": "WAIT line 120, pixel column 256 (right border)"
         },
@@ -4426,24 +2717,6 @@
         },
         "6287": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7429": {
-          "comment": "WAIT line 120, pixel column 256 (right border)"
-        },
-        "7431": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7433": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7435": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7437": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7439": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6289": {
           "comment": "WAIT line 121, pixel column 256 (right border)"
@@ -4463,24 +2736,6 @@
         "6299": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7441": {
-          "comment": "WAIT line 121, pixel column 256 (right border)"
-        },
-        "7443": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7445": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7447": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7449": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7451": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6301": {
           "comment": "WAIT line 122, pixel column 256 (right border)"
         },
@@ -4498,24 +2753,6 @@
         },
         "6311": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7453": {
-          "comment": "WAIT line 122, pixel column 256 (right border)"
-        },
-        "7455": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7457": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7459": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7461": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7463": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6313": {
           "comment": "WAIT line 123, pixel column 256 (right border)"
@@ -4535,24 +2772,6 @@
         "6323": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7465": {
-          "comment": "WAIT line 123, pixel column 256 (right border)"
-        },
-        "7467": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7469": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7471": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7473": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7475": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6325": {
           "comment": "WAIT line 124, pixel column 256 (right border)"
         },
@@ -4570,24 +2789,6 @@
         },
         "6335": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
-        },
-        "7477": {
-          "comment": "WAIT line 124, pixel column 256 (right border)"
-        },
-        "7479": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7481": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7483": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7485": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7487": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "6337": {
           "comment": "WAIT line 125, pixel column 256 (right border)"
@@ -4607,24 +2808,6 @@
         "6347": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7489": {
-          "comment": "WAIT line 125, pixel column 256 (right border)"
-        },
-        "7491": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7493": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7495": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7497": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7499": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6349": {
           "comment": "WAIT line 126, pixel column 256 (right border)"
         },
@@ -4643,24 +2826,6 @@
         "6359": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
         },
-        "7501": {
-          "comment": "WAIT line 126, pixel column 256 (right border)"
-        },
-        "7503": {
-          "comment": "MOVE $40,$00: select palette entry 0"
-        },
-        "7505": {
-          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
-        },
-        "7507": {
-          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
-        },
-        "7509": {
-          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
-        },
-        "7511": {
-          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
-        },
         "6361": {
           "comment": "WAIT line 127, pixel column 256 (right border)"
         },
@@ -4678,6 +2843,1717 @@
         },
         "6371": {
           "comment": "MOVE $41: colour of entry 3 (INK 3), set per frame"
+        },
+        "6373": {
+          "synopsis": "CopperLinesReset: the clean copy of CopperLines, in the same 12-byte format.\nEvery record sets palette entries 0-3 (INK 0-3) to $00, $20, $40, $60 -\nblack and red at 1/7, 2/7 and 3/7 intensity (colours are RRRGGGBB).\nInitCopperLines fills in its line numbers too. CopperBarsFrame copies it back\nover CopperLines ($480 bytes) every frame before the bars are painted.",
+          "comment": "WAIT line 32, pixel column 256 (right border)"
+        },
+        "6375": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6377": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6379": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6381": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6383": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6385": {
+          "comment": "WAIT line 33, pixel column 256 (right border)"
+        },
+        "6387": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6389": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6391": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6393": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6395": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6397": {
+          "comment": "WAIT line 34, pixel column 256 (right border)"
+        },
+        "6399": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6401": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6403": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6405": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6407": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6409": {
+          "comment": "WAIT line 35, pixel column 256 (right border)"
+        },
+        "6411": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6413": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6415": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6417": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6419": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6421": {
+          "comment": "WAIT line 36, pixel column 256 (right border)"
+        },
+        "6423": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6425": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6427": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6429": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6431": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6433": {
+          "comment": "WAIT line 37, pixel column 256 (right border)"
+        },
+        "6435": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6437": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6439": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6441": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6443": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6445": {
+          "comment": "WAIT line 38, pixel column 256 (right border)"
+        },
+        "6447": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6449": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6451": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6453": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6455": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6457": {
+          "comment": "WAIT line 39, pixel column 256 (right border)"
+        },
+        "6459": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6461": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6463": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6465": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6467": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6469": {
+          "comment": "WAIT line 40, pixel column 256 (right border)"
+        },
+        "6471": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6473": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6475": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6477": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6479": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6481": {
+          "comment": "WAIT line 41, pixel column 256 (right border)"
+        },
+        "6483": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6485": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6487": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6489": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6491": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6493": {
+          "comment": "WAIT line 42, pixel column 256 (right border)"
+        },
+        "6495": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6497": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6499": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6501": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6503": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6505": {
+          "comment": "WAIT line 43, pixel column 256 (right border)"
+        },
+        "6507": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6509": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6511": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6513": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6515": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6517": {
+          "comment": "WAIT line 44, pixel column 256 (right border)"
+        },
+        "6519": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6521": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6523": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6525": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6527": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6529": {
+          "comment": "WAIT line 45, pixel column 256 (right border)"
+        },
+        "6531": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6533": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6535": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6537": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6539": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6541": {
+          "comment": "WAIT line 46, pixel column 256 (right border)"
+        },
+        "6543": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6545": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6547": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6549": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6551": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6553": {
+          "comment": "WAIT line 47, pixel column 256 (right border)"
+        },
+        "6555": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6557": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6559": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6561": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6563": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6565": {
+          "comment": "WAIT line 48, pixel column 256 (right border)"
+        },
+        "6567": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6569": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6571": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6573": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6575": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6577": {
+          "comment": "WAIT line 49, pixel column 256 (right border)"
+        },
+        "6579": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6581": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6583": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6585": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6587": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6589": {
+          "comment": "WAIT line 50, pixel column 256 (right border)"
+        },
+        "6591": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6593": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6595": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6597": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6599": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6601": {
+          "comment": "WAIT line 51, pixel column 256 (right border)"
+        },
+        "6603": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6605": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6607": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6609": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6611": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6613": {
+          "comment": "WAIT line 52, pixel column 256 (right border)"
+        },
+        "6615": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6617": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6619": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6621": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6623": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6625": {
+          "comment": "WAIT line 53, pixel column 256 (right border)"
+        },
+        "6627": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6629": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6631": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6633": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6635": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6637": {
+          "comment": "WAIT line 54, pixel column 256 (right border)"
+        },
+        "6639": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6641": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6643": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6645": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6647": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6649": {
+          "comment": "WAIT line 55, pixel column 256 (right border)"
+        },
+        "6651": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6653": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6655": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6657": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6659": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6661": {
+          "comment": "WAIT line 56, pixel column 256 (right border)"
+        },
+        "6663": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6665": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6667": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6669": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6671": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6673": {
+          "comment": "WAIT line 57, pixel column 256 (right border)"
+        },
+        "6675": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6677": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6679": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6681": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6683": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6685": {
+          "comment": "WAIT line 58, pixel column 256 (right border)"
+        },
+        "6687": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6689": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6691": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6693": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6695": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6697": {
+          "comment": "WAIT line 59, pixel column 256 (right border)"
+        },
+        "6699": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6701": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6703": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6705": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6707": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6709": {
+          "comment": "WAIT line 60, pixel column 256 (right border)"
+        },
+        "6711": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6713": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6715": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6717": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6719": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6721": {
+          "comment": "WAIT line 61, pixel column 256 (right border)"
+        },
+        "6723": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6725": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6727": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6729": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6731": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6733": {
+          "comment": "WAIT line 62, pixel column 256 (right border)"
+        },
+        "6735": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6737": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6739": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6741": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6743": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6745": {
+          "comment": "WAIT line 63, pixel column 256 (right border)"
+        },
+        "6747": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6749": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6751": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6753": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6755": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6757": {
+          "comment": "WAIT line 64, pixel column 256 (right border)"
+        },
+        "6759": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6761": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6763": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6765": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6767": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6769": {
+          "comment": "WAIT line 65, pixel column 256 (right border)"
+        },
+        "6771": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6773": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6775": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6777": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6779": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6781": {
+          "comment": "WAIT line 66, pixel column 256 (right border)"
+        },
+        "6783": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6785": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6787": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6789": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6791": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6793": {
+          "comment": "WAIT line 67, pixel column 256 (right border)"
+        },
+        "6795": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6797": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6799": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6801": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6803": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6805": {
+          "comment": "WAIT line 68, pixel column 256 (right border)"
+        },
+        "6807": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6809": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6811": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6813": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6815": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6817": {
+          "comment": "WAIT line 69, pixel column 256 (right border)"
+        },
+        "6819": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6821": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6823": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6825": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6827": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6829": {
+          "comment": "WAIT line 70, pixel column 256 (right border)"
+        },
+        "6831": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6833": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6835": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6837": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6839": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6841": {
+          "comment": "WAIT line 71, pixel column 256 (right border)"
+        },
+        "6843": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6845": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6847": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6849": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6851": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6853": {
+          "comment": "WAIT line 72, pixel column 256 (right border)"
+        },
+        "6855": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6857": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6859": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6861": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6863": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6865": {
+          "comment": "WAIT line 73, pixel column 256 (right border)"
+        },
+        "6867": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6869": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6871": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6873": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6875": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6877": {
+          "comment": "WAIT line 74, pixel column 256 (right border)"
+        },
+        "6879": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6881": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6883": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6885": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6887": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6889": {
+          "comment": "WAIT line 75, pixel column 256 (right border)"
+        },
+        "6891": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6893": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6895": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6897": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6899": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6901": {
+          "comment": "WAIT line 76, pixel column 256 (right border)"
+        },
+        "6903": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6905": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6907": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6909": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6911": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6913": {
+          "comment": "WAIT line 77, pixel column 256 (right border)"
+        },
+        "6915": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6917": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6919": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6921": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6923": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6925": {
+          "comment": "WAIT line 78, pixel column 256 (right border)"
+        },
+        "6927": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6929": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6931": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6933": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6935": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6937": {
+          "comment": "WAIT line 79, pixel column 256 (right border)"
+        },
+        "6939": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6941": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6943": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6945": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6947": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6949": {
+          "comment": "WAIT line 80, pixel column 256 (right border)"
+        },
+        "6951": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6953": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6955": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6957": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6959": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6961": {
+          "comment": "WAIT line 81, pixel column 256 (right border)"
+        },
+        "6963": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6965": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6967": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6969": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6971": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6973": {
+          "comment": "WAIT line 82, pixel column 256 (right border)"
+        },
+        "6975": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6977": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6979": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6981": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6983": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6985": {
+          "comment": "WAIT line 83, pixel column 256 (right border)"
+        },
+        "6987": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "6989": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "6991": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "6993": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "6995": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "6997": {
+          "comment": "WAIT line 84, pixel column 256 (right border)"
+        },
+        "6999": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7001": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7003": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7005": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7007": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7009": {
+          "comment": "WAIT line 85, pixel column 256 (right border)"
+        },
+        "7011": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7013": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7015": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7017": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7019": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7021": {
+          "comment": "WAIT line 86, pixel column 256 (right border)"
+        },
+        "7023": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7025": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7027": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7029": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7031": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7033": {
+          "comment": "WAIT line 87, pixel column 256 (right border)"
+        },
+        "7035": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7037": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7039": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7041": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7043": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7045": {
+          "comment": "WAIT line 88, pixel column 256 (right border)"
+        },
+        "7047": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7049": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7051": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7053": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7055": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7057": {
+          "comment": "WAIT line 89, pixel column 256 (right border)"
+        },
+        "7059": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7061": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7063": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7065": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7067": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7069": {
+          "comment": "WAIT line 90, pixel column 256 (right border)"
+        },
+        "7071": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7073": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7075": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7077": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7079": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7081": {
+          "comment": "WAIT line 91, pixel column 256 (right border)"
+        },
+        "7083": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7085": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7087": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7089": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7091": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7093": {
+          "comment": "WAIT line 92, pixel column 256 (right border)"
+        },
+        "7095": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7097": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7099": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7101": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7103": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7105": {
+          "comment": "WAIT line 93, pixel column 256 (right border)"
+        },
+        "7107": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7109": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7111": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7113": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7115": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7117": {
+          "comment": "WAIT line 94, pixel column 256 (right border)"
+        },
+        "7119": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7121": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7123": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7125": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7127": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7129": {
+          "comment": "WAIT line 95, pixel column 256 (right border)"
+        },
+        "7131": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7133": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7135": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7137": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7139": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7141": {
+          "comment": "WAIT line 96, pixel column 256 (right border)"
+        },
+        "7143": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7145": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7147": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7149": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7151": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7153": {
+          "comment": "WAIT line 97, pixel column 256 (right border)"
+        },
+        "7155": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7157": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7159": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7161": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7163": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7165": {
+          "comment": "WAIT line 98, pixel column 256 (right border)"
+        },
+        "7167": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7169": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7171": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7173": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7175": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7177": {
+          "comment": "WAIT line 99, pixel column 256 (right border)"
+        },
+        "7179": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7181": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7183": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7185": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7187": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7189": {
+          "comment": "WAIT line 100, pixel column 256 (right border)"
+        },
+        "7191": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7193": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7195": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7197": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7199": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7201": {
+          "comment": "WAIT line 101, pixel column 256 (right border)"
+        },
+        "7203": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7205": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7207": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7209": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7211": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7213": {
+          "comment": "WAIT line 102, pixel column 256 (right border)"
+        },
+        "7215": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7217": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7219": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7221": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7223": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7225": {
+          "comment": "WAIT line 103, pixel column 256 (right border)"
+        },
+        "7227": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7229": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7231": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7233": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7235": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7237": {
+          "comment": "WAIT line 104, pixel column 256 (right border)"
+        },
+        "7239": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7241": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7243": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7245": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7247": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7249": {
+          "comment": "WAIT line 105, pixel column 256 (right border)"
+        },
+        "7251": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7253": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7255": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7257": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7259": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7261": {
+          "comment": "WAIT line 106, pixel column 256 (right border)"
+        },
+        "7263": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7265": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7267": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7269": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7271": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7273": {
+          "comment": "WAIT line 107, pixel column 256 (right border)"
+        },
+        "7275": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7277": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7279": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7281": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7283": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7285": {
+          "comment": "WAIT line 108, pixel column 256 (right border)"
+        },
+        "7287": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7289": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7291": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7293": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7295": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7297": {
+          "comment": "WAIT line 109, pixel column 256 (right border)"
+        },
+        "7299": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7301": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7303": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7305": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7307": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7309": {
+          "comment": "WAIT line 110, pixel column 256 (right border)"
+        },
+        "7311": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7313": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7315": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7317": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7319": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7321": {
+          "comment": "WAIT line 111, pixel column 256 (right border)"
+        },
+        "7323": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7325": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7327": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7329": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7331": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7333": {
+          "comment": "WAIT line 112, pixel column 256 (right border)"
+        },
+        "7335": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7337": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7339": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7341": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7343": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7345": {
+          "comment": "WAIT line 113, pixel column 256 (right border)"
+        },
+        "7347": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7349": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7351": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7353": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7355": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7357": {
+          "comment": "WAIT line 114, pixel column 256 (right border)"
+        },
+        "7359": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7361": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7363": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7365": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7367": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7369": {
+          "comment": "WAIT line 115, pixel column 256 (right border)"
+        },
+        "7371": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7373": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7375": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7377": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7379": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7381": {
+          "comment": "WAIT line 116, pixel column 256 (right border)"
+        },
+        "7383": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7385": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7387": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7389": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7391": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7393": {
+          "comment": "WAIT line 117, pixel column 256 (right border)"
+        },
+        "7395": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7397": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7399": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7401": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7403": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7405": {
+          "comment": "WAIT line 118, pixel column 256 (right border)"
+        },
+        "7407": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7409": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7411": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7413": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7415": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7417": {
+          "comment": "WAIT line 119, pixel column 256 (right border)"
+        },
+        "7419": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7421": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7423": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7425": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7427": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7429": {
+          "comment": "WAIT line 120, pixel column 256 (right border)"
+        },
+        "7431": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7433": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7435": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7437": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7439": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7441": {
+          "comment": "WAIT line 121, pixel column 256 (right border)"
+        },
+        "7443": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7445": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7447": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7449": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7451": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7453": {
+          "comment": "WAIT line 122, pixel column 256 (right border)"
+        },
+        "7455": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7457": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7459": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7461": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7463": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7465": {
+          "comment": "WAIT line 123, pixel column 256 (right border)"
+        },
+        "7467": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7469": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7471": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7473": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7475": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7477": {
+          "comment": "WAIT line 124, pixel column 256 (right border)"
+        },
+        "7479": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7481": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7483": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7485": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7487": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7489": {
+          "comment": "WAIT line 125, pixel column 256 (right border)"
+        },
+        "7491": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7493": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7495": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7497": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7499": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
+        },
+        "7501": {
+          "comment": "WAIT line 126, pixel column 256 (right border)"
+        },
+        "7503": {
+          "comment": "MOVE $40,$00: select palette entry 0"
+        },
+        "7505": {
+          "comment": "MOVE $41,$00: entry 0 (INK 0) = black"
+        },
+        "7507": {
+          "comment": "MOVE $41,$20: entry 1 (INK 1) = red 1/7"
+        },
+        "7509": {
+          "comment": "MOVE $41,$40: entry 2 (INK 2) = red 2/7"
+        },
+        "7511": {
+          "comment": "MOVE $41,$60: entry 3 (INK 3) = red 3/7"
         },
         "7513": {
           "comment": "WAIT line 127, pixel column 256 (right border)"
@@ -4699,6 +4575,130 @@
         },
         "7525": {
           "synopsis": "BarSineTable: 256 top rows for a bar, indexed by its phase. Values run\n0..80 ($50) in a sine wave, so a 16-row bar stays inside rows 0-95 of\nCopperLines (screen rows 32-127)."
+        },
+        "7816": {
+          "comment": "Load the copper list: $540 bytes from $9E94 into register $60"
+        },
+        "9728": {
+          "comment": "Use Layer 2 first palette"
+        },
+        "9732": {
+          "comment": "Reset Layer 2 palette index"
+        },
+        "9736": {
+          "comment": "Fill the Layer 2 palette"
+        },
+        "9739": {
+          "comment": "Use Sprites first palette"
+        },
+        "9743": {
+          "comment": "Reset Sprites palette index"
+        },
+        "9747": {
+          "comment": "TAIL CALL: InitPaletteRamp's RET returns to InitPalettes' caller"
+        },
+        "9750": {
+          "synopsis": "Fill the currently selected palette with an identity ramp.\nWrites entries 0..255, each set to its own index. The palette must already\nbe selected via nextreg $43. Destroys A."
+        },
+        "9764": {
+          "synopsis": "Demo setup, entered from EntryPoint. Runs with interrupts off.\nInitialises palettes and layers, chooses the tune set, clears the clip\nwindows, copies the two ULA screens in, loads sprites and tiles, starts the\nmusic and installs the frame interrupt. Falls through to the main loop\nonce EI is reached."
+        },
+        "9765": {
+          "comment": "Identity-ramp the Layer 2 and Sprite palettes"
+        },
+        "9768": {
+          "comment": "$85: lores on, layer order L-S-U, sprites enabled"
+        },
+        "9773": {
+          "comment": "Tune-set selector; 0 in this build"
+        },
+        "9780": {
+          "synopsis": "Default tune set: both players get the tune at $8893."
+        },
+        "9783": {
+          "comment": "Patches the LD HL operand at $5C6A"
+        },
+        "9789": {
+          "comment": "Patches the LD HL operand at $5C83"
+        },
+        "9795": {
+          "synopsis": "Alternative tune set, selected when ConfigFlag is non-zero."
+        },
+        "9807": {
+          "synopsis": "Collapse the Layer 2, Sprite and ULA clip windows to a single pixel.\nEach register takes four successive writes — X1, X2, Y1, Y2 — and all four\nare zero here, so nothing from these layers is drawn while setup runs.\nThe write index is not reset first, but with four identical values the\nstarting position does not matter."
+        },
+        "9873": {
+          "comment": "Four-colour LoRes palette"
+        },
+        "9876": {
+          "comment": "Black border"
+        },
+        "9880": {
+          "comment": "$E3 = transparent: empty Layer 2"
+        },
+        "9885": {
+          "comment": "Hide sprites 0-64"
+        },
+        "9888": {
+          "comment": "A = 2*26: page 16K bank 26 into $C000-$FFFF"
+        },
+        "9898": {
+          "synopsis": "Copy the two ULA screen bitmaps from bank 26 into place.\n$1800 bytes each: the first to $4000 and the second to $6000, the two\ndisplay banks Timex mode alternates between."
+        },
+        "9922": {
+          "comment": "A = 2*12: page 16K bank 12 into $C000-$FFFF"
+        },
+        "9932": {
+          "comment": "$303B: select sprite 0 and pattern 0"
+        },
+        "9943": {
+          "comment": "Length is BC, still $303B from the port write: 48 patterns + 59 bytes"
+        },
+        "9946": {
+          "comment": "Scanline numbers for the copper tables"
+        },
+        "9949": {
+          "comment": "Four corner sprites"
+        },
+        "9952": {
+          "comment": "Start both tunes"
+        },
+        "9955": {
+          "synopsis": "Print the two title lines into the tilemap."
+        },
+        "9961": {
+          "comment": "16 characters; B = row, C = column"
+        },
+        "9977": {
+          "comment": "Install the frame interrupt (still disabled)"
+        },
+        "9980": {
+          "comment": "Interrupts on — the demo is now running"
+        },
+        "9981": {
+          "comment": "$03: 28 MHz"
+        },
+        "10204": {
+          "synopsis": "Set ULA palette entries 0-3 to a four-step red ramp.\nEntries: $00, $20, $40, $60 (RRRGGGBB). The LoRes picture only uses\npixel values 0-3, so these are its whole palette. The copper list\n(CopperLines) rewrites the same four entries on each scanline later.",
+          "comment": "Edit the ULA first palette, ULANext off"
+        },
+        "10208": {
+          "comment": "Start at palette entry 0"
+        },
+        "10212": {
+          "comment": "Entries 0-3 = $00, $20, $40, $60; the index advances after each write"
+        },
+        "10229": {
+          "synopsis": "Tune-set selector read by Start. 0 = default tunes."
+        },
+        "10230": {
+          "synopsis": "Title line 1, exactly 16 characters: \"  SCROLLNUTTER  \"."
+        },
+        "10246": {
+          "synopsis": "Title line 2, exactly 16 characters: \"   NEXT  DEMO   \"."
+        },
+        "10262": {
+          "synopsis": "Unidentified data table, 15 bytes then zero padding.\nNot reached as code by the entry flow; purpose not yet established.\n$A81D-$A81E is CopperBarsWait, the frames before the copper bars start."
         },
         "10269": {
           "comment": "CopperBarsWait: $0966 = 2406 frames before the bars start"
@@ -4831,7 +4831,7 @@
           "type": "disassemble"
         }
       ],
-      "lastView": "disassembly",
+      "lastView": "memory",
       "decimalView": false,
       "comment": "This bank contains the sprite patters used during the startup.",
       "sprites": {

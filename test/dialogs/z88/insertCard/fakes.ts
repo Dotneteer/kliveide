@@ -1,6 +1,6 @@
 import { vi, type Mock } from "vitest";
 
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { Z88InsertCardController } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardController";
 import type { Z88InsertCardIntent } from "@renderer/appEmu/dialogs/z88/insertCard/Z88InsertCardIntents";
 import {

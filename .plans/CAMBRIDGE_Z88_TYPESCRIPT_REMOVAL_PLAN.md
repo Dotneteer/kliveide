@@ -1,7 +1,7 @@
 # Cambridge Z88 TypeScript Removal Plan
 
-Status: **Written, not started.** Start only when the author ends the comparison period of
-`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md` (Step 15).
+Status: **Done on 2026-09-25** (started on the author's request, which ended the comparison period of
+`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). The outcome is at the end ("Result").
 
 ## Goal
 
@@ -147,3 +147,48 @@ git diff --check
 
 Compare the case counts with Step 0's: the Z88 suites lose only their TypeScript runs, never a
 WASM case.
+
+## Result (2026-09-25)
+
+**Step 0.** Tag `z88-typescript-last` = `79cf5300c` (the last commit with the TypeScript Z88).
+Baseline, all green: node project 17,931 passed / 118 skipped (18,049); jsdom 1,181; z80 corpus 1,473.
+The migration plan had already been deleted from `.plans/` (in #1371), so only this plan is marked
+done here.
+
+**Step 1.** Goldens recorded from the TypeScript machine alone, then asserted on WASM while both
+existed; the core matched all of them first time, and corrupting a golden made its test fail.
+`test/wasm/z88/goldens/`: `wasm-z88-parity.json` (758 checkpoints: 10 OZ boots x 9, 10 typing
+sessions x 46 digests, 30000-instruction lockstep in 30 digests, frames and runTo, 5 beeper rates
+and a rate change, 5 LCD sizes, 30 card scenarios x 3), `wasm-z88-ide-parity.json`,
+`wasm-z88-debug-step.json` (the stop lists), `wasm-z88-machine.json` (setup per model),
+`z88-card-factory.json` (the card factory's answer for every id and size). Identity, partition,
+LCD-size and card-file comparisons became literal expectations. `AudioIntegration.test.ts`,
+`z88-host.test.ts` and `partition-descriptions.test.ts` run on the WASM machine.
+
+**Step 2.** No other machine used `createModelTwins` or `menuGroup`: both are deleted with their
+tests, and the machine menu is flat again. `<id>-ts` joined `<id>-wasm` in `modelIdAliases`.
+
+**Step 3.** `CardIds.ts` and `CardSlotState.ts` moved to `src/emu/machines/z88/`. The Blink flag enums
+the core suites use moved to `test/z88/z88-blink-flags.ts` (no source needs them).
+`wasm-z88-separation.test.ts` became `test/z88/z88-typescript-removed.test.ts` (the deleted modules
+stay deleted and unimported, alias and relative, type imports included). The benchmark keeps the
+WASM figures; the perf test's speed-up gate became an absolute budget (0.5 ms per frame, 10 ms per
+200 debugger steps). `z88-app-pass.cjs` stays as a single-model smoke test (one model per run is
+reliable; all ten in one run still are not) without the comparison.
+
+Found by the removal: the harness rebuilt the WASM artifact on first use in every test file (each
+file has a fresh module scope). While the TypeScript cases ran first in each file the builds were
+spread out; without them about 45 builds of 1.5 s queued on the build lock at the start of a run and
+timed out the first test of the files at the back. `z88WasmArtifactBytes()` now builds only when the
+artifact is missing or older than its C sources or the build script.
+
+**Validation.** All green. node project 16,925 passed / 118 skipped (17,043); jsdom 1,181; z80
+corpus 1,473; `build:check` (baseline lowered by the two deleted files' entries), `lint:renderer`,
+the electron-vite build, `build:z88-wasm`, `check:z88-wasm-size`, `check:wasm-cpu-contract`,
+`git diff --check`. Every suite that ran per backend kept exactly its WASM cases (for example
+`memory-write` 522 -> 261, `z88-lcd` 38 -> 19, the harness self-tests 20 -> 10, the debugger
+40 -> 25): 989 TypeScript runs in all. The other 20 cases that went (3 new ones came) tested what
+was removed: the backend switch and twins
+(`Z88MachineFactory` 20 -> 10), the menu groups (6 -> 4), the separation test (6, replaced by 3),
+the per-backend code-injection case and the TypeScript machine's use of the shared modules (covered
+on WASM by `wasm-z88-machine.test.ts`).
