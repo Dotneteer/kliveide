@@ -1,6 +1,6 @@
 # Cambridge Z88 Issue #1374 Plan
 
-Status: **Planned 2026-09-25.** Source: https://github.com/Dotneteer/kliveide/issues/1374
+Status: **Done 2026-09-25** (all five steps, plus the OZ 4.7 keyboard freeze found on the way). Source: https://github.com/Dotneteer/kliveide/issues/1374
 ("Review of Cambridge Z88 WASM implementation", bits4fun).
 
 The TypeScript Z88 is gone (`CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`), so every fix lands in the
@@ -143,6 +143,29 @@ host arrow keys had never reached the Z88 before it.
 
 ## Step 3 - LCD corners clipped by the rounded display
 
+**Done 2026-09-25.**
+- **Machine side:** an optional `getScreenSurroundColor()` on `IAnyMachine` (ABGR, the machine's
+  colour). The Z88 implements it through a new core export `z88GetLcdSurroundColor` (unlit
+  `Z88_PX_OFF`, or `Z88_PX_SCREEN_OFF` once the LCD was painted off).
+- **Renderer (`useEmulatorScreen`):**
+  - adds `.surround` (padding `--radius-md`) and paints the colour on every shown picture;
+  - keeps the padding and the display's border out of the zoom fit.
+- **Changed from the plan:**
+  - The colour comes from the core instead of an L1/L2 token. It is a machine colour, per "Colour
+    That Belongs To The Machine".
+  - The margin is the corner radius, not a fixed 4px.
+- **Found by verifying in the running app:**
+  - `.display` was `border-box`, so the canvas overflowed its box. On every machine the 1px border
+    already clipped a pixel per edge. `.display` is `content-box` now.
+  - Switching from the Z88 to a Spectrum left the green behind. The per-machine reset now uses a
+    sentinel.
+- **Verified in the app:**
+  - Z88 640×64: display 974×110 around a 960×96 canvas.
+  - Z88 640×320 and with the LCD off: correct.
+  - Spectrum 48: no padding, bezel background, canvas 352×288 inside 354×290.
+- **Tests:** `test/controls/useEmulatorScreen.test.tsx`, "a machine that reports a surround
+  colour" (fit, colour, colour following the LCD, machine switch).
+
 **Cause.**
 - `.display` in `EmulatorPanel.module.scss:82-100` has `border-radius: var(--radius-md)` (6px) and
   `overflow: hidden`, and the canvas fills it edge to edge.
@@ -179,6 +202,48 @@ Not in a standalone replica.
 ---
 
 ## Step 4 - No automatic coma after the OZ timeout
+
+**Done 2026-09-25.** Reproduced in the harness: none of OZ 5.0, 4.7 and 4.0 switched off after
+7 idle minutes (default timeout 5). Three different stories, two Blink bugs:
+
+- **OZ 4.0** was fine. Its idle countdown (`$0264`) is loaded from the Panel timeout (`$0201`) only
+  once a key is seen down. Idle from boot it never starts; after one key it counts 6→0 and sleeps.
+  Not a bug.
+- **OZ 5.0: COM.RESTIM reset TMK.**
+  - OZ 5.0's TICK/SEC/MIN handler reads `TSTA & (TMK softcopy $04B5)`, handles TICK first, and only
+    then SEC (`$D6CE`) or MIN (`$D68D`, which decrements the idle minutes at `$0505` and sets bit 2
+    of `$0503`).
+  - It writes TMK = `$07` once at `$805F`, then COM = `$15` (RESTIM) at `$C6A2` while booting.
+    `z88BlinkResetRtc` also set TMK = TICK, and nothing ever enabled MIN again.
+  - The Developers' Notes say RESTIM resets the clock to zero and hold it there. TMK is the
+    software's mask.
+  - **Fix:** RESTIM resets TIM0–4 and TSTA only; the power-on reset sets TMK.
+- **OZ 4.7: TSTA was overwritten.**
+  - OZ 4.7 keeps TMK = TICK while idle and sees the minute only as a MIN bit still in TSTA when its
+    TICK handler runs.
+  - `z88Tsta = tickEvent` replaced MIN with the next TICK 5 ms later (and a minute replaced its
+    SEC).
+  - **Fix:** TSTA accumulates (`|=`, SEC | MIN together). TACK clears named bits, and STA.TIME
+    drops only when `TSTA & TMK` is empty.
+  - The Developers' Notes ("Blink interrupts") say an enabled event must be acknowledged before a
+    new similar one fires. They don't state the latching of disabled events outright; the ROM
+    evidence decides it.
+- **Each fix alone cures one ROM** (checked by building each separately). OZ 4.0 keeps working
+  with both.
+- **The stuck-key suspects** (no key release on blur, etc.) turned out not to be involved.
+- **Goldens:** by the author's decision, re-recorded with a new opt-in `Z88_GOLDENS_RECORD=1`
+  (`test/wasm/z88/z88-goldens.ts`) and reviewed.
+  - 495/758 parity keys and 15/121 IDE-parity keys changed. That is the typing sessions and running
+    digests, the boots from frame 200 (TSTA 1→3 first, then a few tacts), and the random-LCD runs
+    (TSTA 1→3 only).
+  - No `lcd.sha256` changed.
+- **Tests:**
+  - `test/z88/rtc.test.ts`: the table expects latched TSTA, plus three new cases (latching and
+    TACK, STA.TIME while an enabled event is pending, RESTIM keeps TMK).
+  - `test/z88/z88-timeout-coma.test.ts`: OZ 5.0/4.7/4.0 are on at 4 idle minutes and off at 6.
+  - On the old Blink, the RTC table fails and the coma test fails for OZ 5.0 and 4.7.
+- **Found on the way:** `Z88WasmHost.emulateKeystroke` compared absolute tacts (from Step 2). Fixed
+  after Step 5, see "Follow-up: keystroke queue across the tact wrap".
 
 **What is known.**
 - OZ 4.0 decrements its inactivity counter (`$0264`) on the RTC MIN interrupt and sets the timeout
@@ -227,6 +292,30 @@ the CPU is snoozed. Place it in `test/wasm/z88/` or `test/z88/`, next to
 
 ## Step 5 - Screen recording never produces a file
 
+**Done 2026-09-25.** Not a Z88 fault.
+- **The Z88 records fine in a development build.** A scripted run recorded 5 s of OZ 5.0: 640×64,
+  25 fps, 125 frames, with AAC audio. A Spectrum 48 recorded 352×288 at 50 fps.
+- **The reporter's symptom is the packaged app.**
+  - `@ffmpeg-installer/ffmpeg` computes its binary's path from its own `__dirname`, which in a
+    package is inside `app.asar`. Electron's `fs` says it exists, so the menu shows recording, but
+    `spawn` cannot execute a file inside an archive.
+  - `asarUnpack` (`build/electron-builder.json5`) already puts the binary under
+    `app.asar.unpacked`, and the installed 0.58.2 has it there. Nothing mapped the path, as the
+    package's README says to.
+  - Starting a recording created `~/KliveExports/video`, then the spawn failed. `finish()` still
+    returned the path, and the failure only reached the main-process console.
+- **Fixes:**
+  - `toUnpackedAsarPath` in `ffmpegAvailable.ts`.
+  - `FfmpegRecordingBackend` keeps the reason (spawn error, or exit code plus the last stderr lines)
+    and `finish()` rejects with it.
+  - `stopScreenRecording` shows it in an error box.
+- **Tests:**
+  - `test/recording/ffmpegAvailable.test.ts`.
+  - Four failure cases in `FfmpegRecordingBackend.test.ts`, confirmed to fail on the old backend.
+- **Not verified:** a packaged build, which the author should check with `npm run build:mac`.
+- **Not needed:** the plan's other suspects (a whole WASM memory per frame, 200 audio IPCs per
+  second). The development recording kept up without them.
+
 **What is known.**
 - The empty `~/KliveExports/video` folder proves `startScreenRecording` ran:
   `resolveRecordingPath` created the folder, and ffmpeg was spawned (or its spawn was attempted).
@@ -273,3 +362,24 @@ only a console line, so "nothing happened" can never be silent again.
   lesson) and `.ai/ui-theming-intent-and-lessons.md` (Step 3).
 - Reply on the issue with per-item status. Ask the reporter for the recording details (Step 5) and
   their Panel timeout setting (Step 4) if the repro is inconclusive.
+
+## Follow-up: keystroke queue across the tact wrap
+
+**Done 2026-09-25.**
+- **Cause:**
+  - `queueKeystroke` computed a keystroke's start and end in JS numbers, past 2^32.
+  - `emulateKeystroke` compared them by value with the core's 32-bit counter.
+  - Across the wrap (about 22 minutes on the Z88), a key queued just before it stayed pressed for
+    good (a stuck key, which would also block OZ's idle timeout), and one starting past 2^32 never
+    began and blocked the queue.
+  - The on-screen keyboard uses this queue.
+- **Fix:** `toTactCounter` and `tactsPast` in `src/emu/structs/EmulatedKeyStroke.ts`, which keep
+  the points in the counter's range and compare by signed 32-bit distance. `Z88WasmHost` uses them.
+- **Tests:**
+  - `test/emu/emulated-keystroke-tacts.test.ts`.
+  - Two wrap cases in `test/wasm/z88/wasm-z88-machine.test.ts`, confirmed to fail on the old
+    comparison.
+- **Not changed:** `ZxSpectrumBase.emulateKeystroke` (Spectrum 48/128/+3E, 32-bit counter at 3.5 MHz,
+  wraps after about 20 min) and `ZxNextWasmHost.emulateKeystroke` (28 MHz, wraps about every
+  2.5 min). They have the same comparison and can adopt the same helpers.
+

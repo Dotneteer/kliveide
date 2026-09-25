@@ -14,14 +14,22 @@ vi.mock("@main/recording/ffmpegAvailable", () => ({
 // Mock child_process.spawn.
 // The fake process auto-resolves the exit promise via a microtask when
 // stdin.end() is called, so `await backend.finish()` works naturally.
+const failures = vi.hoisted(() => ({
+  exit: null as ((code: number | null, signal?: string) => void) | null,
+  error: null as ((err: Error) => void) | null,
+  stderr: null as ((chunk: string) => void) | null,
+  /** When set, closing stdin exits FFmpeg with this code instead of 0 */
+  exitCodeOnEnd: 0
+}));
+
 vi.mock("child_process", () => {
   let _exitCb: ((code: number | null) => void) | null = null;
 
   const mockStdin = {
     write: vi.fn(() => true),
     end: vi.fn(() => {
-      // Simulate FFmpeg exiting cleanly after stdin is closed.
-      Promise.resolve().then(() => _exitCb?.(0));
+      // Simulate FFmpeg exiting (cleanly, unless a test says otherwise) after stdin is closed.
+      Promise.resolve().then(() => _exitCb?.(failures.exitCodeOnEnd));
     }),
     on: vi.fn(),
   };
@@ -34,15 +42,21 @@ vi.mock("child_process", () => {
 
   const mockStderr = {
     setEncoding: vi.fn(),
-    on: vi.fn(),
+    on: vi.fn((event: string, cb: (chunk: string) => void) => {
+      if (event === "data") failures.stderr = cb;
+    }),
   };
 
   const mockProcess = {
     stdin: mockStdin,
     stdio: [mockStdin, undefined, mockStderr, mockAudioPipe],
     stderr: mockStderr,
-    once: vi.fn((event: string, cb: (code: number | null) => void) => {
-      if (event === "exit") _exitCb = cb;
+    once: vi.fn((event: string, cb: (arg: any) => void) => {
+      if (event === "exit") {
+        _exitCb = cb;
+        failures.exit = cb;
+      }
+      if (event === "error") failures.error = cb;
     }),
   };
 
@@ -68,6 +82,7 @@ describe("FfmpegRecordingBackend", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    failures.exitCodeOnEnd = 0;
     backend = new FfmpegRecordingBackend();
   });
 
@@ -255,5 +270,37 @@ describe("FfmpegRecordingBackend", () => {
 
   it("finish() before start() returns empty string without throwing", async () => {
     await expect(backend.finish()).resolves.toBe("");
+  });
+
+  // ---- B6: a recording that wrote nothing says so (issue #1374) -----------
+
+  it("finish() rejects with the reason when FFmpeg could not be started", async () => {
+    // --- A packaged build spawning the binary's path inside app.asar: the folder was created and
+    // --- nothing else, and finish() used to report success
+    backend.start(OUTPUT, W, H, FPS);
+    failures.error!(Object.assign(new Error("spawn ENOTDIR"), { code: "ENOTDIR" }));
+    backend.appendFrame(RGBA); // --- ignored once FFmpeg is gone
+    await expect(backend.finish()).rejects.toThrow(/could not be started \(\/fake\/ffmpeg\): spawn ENOTDIR/);
+  });
+
+  it("finish() rejects with FFmpeg's last words when it exits early", async () => {
+    backend.start(OUTPUT, W, H, FPS);
+    failures.stderr!("Input #0, rawvideo\nSomething odd\n[aac] Too many bits\n");
+    failures.exit!(1);
+    await expect(backend.finish()).rejects.toThrow(/exited with code 1:[\s\S]*Too many bits/);
+  });
+
+  it("finish() rejects when FFmpeg fails while finishing the file", async () => {
+    backend.start(OUTPUT, W, H, FPS);
+    failures.exitCodeOnEnd = 1;
+    await expect(backend.finish()).rejects.toThrow(/exited with code 1/);
+  });
+
+  it("a failure does not leak into the next recording", async () => {
+    backend.start(OUTPUT, W, H, FPS);
+    failures.exit!(1);
+    await expect(backend.finish()).rejects.toThrow();
+    backend.start(OUTPUT, W, H, FPS);
+    await expect(backend.finish()).resolves.toBe(OUTPUT);
   });
 });

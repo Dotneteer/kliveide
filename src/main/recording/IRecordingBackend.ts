@@ -39,6 +39,7 @@ export interface IRecordingBackend {
   /**
    * Finalise the recording and flush/close the file.
    * @returns The absolute path of the finished file.
+   * @throws When no file could be written; the message says why, for the user.
    */
   finish(): Promise<string>;
 }

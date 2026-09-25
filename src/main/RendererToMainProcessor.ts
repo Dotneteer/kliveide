@@ -1015,6 +1015,12 @@ class MainMessageProcessor {
       return filePath;
     } catch (err) {
       _recordingBackend = null;
+      // --- A recording that produced no file must not end as quietly as one that did (issue #1374)
+      await this.displayMessageBox(
+        "error",
+        "Screen recording failed",
+        `The recording could not be saved.\n\n${(err as Error)?.message ?? err}`
+      );
       return "";
     }
   }

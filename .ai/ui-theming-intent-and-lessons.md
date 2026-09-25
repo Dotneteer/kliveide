@@ -376,6 +376,12 @@ perfectly editable with the emulator stopped — fall back, but **say so where t
 `--status-warning`: a silently-wrong palette still looks like a palette, which is exactly how the
 rotation bug above survived.
 
+**The same holds for the frame around a machine's picture.** The Z88's LCD surround is unlit
+green, and grey while the LCD is off. The core reports it (`z88GetLcdSurroundColor`, following
+what it last painted rather than COM.LCDON, so frame and picture never disagree) through
+`getScreenSurroundColor()`, in the pixel buffer's ABGR packing. It is not a token. It is the
+machine's colour, the same in both themes, and changes with the machine's state.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the
@@ -1608,6 +1614,24 @@ Two things follow for any later change here:
   non-unit aspect ratio can land a half or quarter step on a fraction, and an attribute that has to
   be parsed rather than scaled is a bug that only shows on one machine. Round at the point of
   setting state, never at the point of drawing.
+- **The rounded display clip must never land on picture pixels.** `.display` has `--radius-md`
+  corners and `overflow: hidden`. On a Spectrum the clip only eats emulated border, because the
+  border is part of the picture. A picture with no border of its own (the Cambridge Z88's LCD) lost
+  its corner pixels. Such a machine implements `getScreenSurroundColor()`. The display is then
+  padded by `--radius-md` itself (`.surround`), the one amount that keeps the curve off the picture
+  at any radius, in the colour the machine reports. `calculateDimensions` reads the same token and
+  keeps the padding out of the fit.
+- **`.display` is `content-box`, and must stay so.** Its inline `width`/`height` are the canvas's.
+  Under the app-wide `border-box`, its 1px bezel border and any padding went *inside* that size, and
+  the canvas overflowed its own clipping box. On every machine one picture pixel was lost on each
+  edge, unnoticed for as long as the border was 1px. Anything added around the canvas goes outside
+  the canvas size and is subtracted in the fit. The fit reads the border from the element; it is
+  not a constant.
+- **Reset per-machine display state to a sentinel, not to "none".** The surround colour is
+  remembered so the DOM is only touched on a change. Resetting it to `undefined` on a machine switch
+  meant a Spectrum, whose colour *is* `undefined`, never cleared the Z88's green. Only the running
+  app showed it, in the Spectrum's corners. A value that can legitimately be absent needs a
+  distinct "unknown".
 
 ## Capturing The Mouse Over The Emulator Screen
 

@@ -86,6 +86,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   // --- Extracted screen hook
   const {
     screenElement,
+    displayElement,
+    hasSurround,
     canvasWidth,
     canvasHeight,
     imageBuffer8,
@@ -399,7 +401,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       <div className={styles.screenArea} ref={screenArea}>
         <div className={styles.machineStack}>
           <div
-            className={styles.display}
+            ref={displayElement}
+            className={hasSurround ? `${styles.display} ${styles.surround}` : styles.display}
             style={{
               width: `${canvasWidth ?? 0}px`,
               height: `${canvasHeight ?? 0}px`

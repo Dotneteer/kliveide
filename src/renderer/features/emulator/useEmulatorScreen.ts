@@ -60,6 +60,21 @@ export function useEmulatorScreen(
   const directScreenImageDataRef = useRef<ImageData | null>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  /*
+   * The display box around the canvas, and the surround a borderless picture gets inside it.
+   *
+   * The display has rounded corners and clips to them. A Spectrum's picture carries its own
+   * emulated border, so the clip only ever takes border pixels; a Cambridge Z88's LCD is picture to
+   * the edge, and lost its corner pixels (issue #1374). A machine that reports
+   * `getScreenSurroundColor` is padded by the display's own corner radius - the one amount that
+   * keeps the curve off the picture at any radius - in the colour it reports.
+   */
+  const displayElement = useRef<HTMLDivElement>(null);
+  const [hasSurround, setHasSurround] = useState(false);
+  const hasSurroundRef = useRef(false);
+  /** The colour last painted; `null` means "not painted for this machine yet", forcing the next paint */
+  const surroundColor = useRef<number | undefined | null>(null);
+
   useEffect(() => {
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
   }, [scanlineEffect]);
@@ -110,6 +125,22 @@ export function useEmulatorScreen(
       pad(hostStyle?.paddingTop) -
       pad(hostStyle?.paddingBottom) -
       reservedHeight;
+    /*
+     * The surround sits inside the display box, around the canvas, so it is space the picture
+     * cannot have. It is the display's `--radius-md` padding (`.surround` in the stylesheet), read
+     * from the token rather than repeated here, and read from the screen area because the class
+     * may not be on the display yet: this runs as the machine changes, before React re-renders.
+     */
+    const surround = hasSurroundRef.current
+      ? pad(getComputedStyle(host).getPropertyValue("--radius-md"))
+      : 0;
+    // --- The display is `content-box`: its bezel border lies outside the canvas too
+    const display = displayElement.current;
+    const displayStyle = display instanceof Element ? getComputedStyle(display) : undefined;
+    const frameWidth =
+      2 * surround + pad(displayStyle?.borderLeftWidth) + pad(displayStyle?.borderRightWidth);
+    const frameHeight =
+      2 * surround + pad(displayStyle?.borderTopWidth) + pad(displayStyle?.borderBottomWidth);
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
     /*
@@ -125,9 +156,9 @@ export function useEmulatorScreen(
      * ones and quarter steps as halves. What the user sees stepping is this ratio, so this is what
      * has to sit on the ladder.
      */
-    let widthRatio = snapToZoomStep(clientWidth, width * xRatio.current, zoomStep);
+    let widthRatio = snapToZoomStep(clientWidth - frameWidth, width * xRatio.current, zoomStep);
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = snapToZoomStep(clientHeight, height * yRatio.current, zoomStep);
+    let heightRatio = snapToZoomStep(clientHeight - frameHeight, height * yRatio.current, zoomStep);
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
     /*
@@ -139,8 +170,27 @@ export function useEmulatorScreen(
     setCanvasHeight(Math.round(height * ratio * yRatio.current));
   }, [reservedElement, screenArea, zoomStep]);
 
+  /**
+   * Paints the surround in the machine's current colour, touching the DOM only when it changes.
+   * Called for every picture shown, because the colour is the machine's and can change with it
+   * (the Z88's LCD turns grey when it is off).
+   */
+  const syncSurroundColor = useCallback((): void => {
+    const color = controllerRef.current?.machine?.getScreenSurroundColor?.();
+    const element = displayElement.current;
+    if (color === surroundColor.current || !element) return;
+    surroundColor.current = color;
+    element.style.backgroundColor = color === undefined ? "" : abgrToCssColor(color);
+  }, [controllerRef]);
+
   const updateScreenDimensions = useCallback((): void => {
     const ctrl = controllerRef.current;
+    const surround = typeof ctrl?.machine?.getScreenSurroundColor === "function";
+    hasSurroundRef.current = surround;
+    setHasSurround(surround);
+    // --- A new machine: paint (or clear) whatever the last one left, even if the value is "none"
+    surroundColor.current = null;
+    syncSurroundColor();
     shadowCanvasWidth.current = ctrl?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = ctrl?.machine?.screenHeightInPixels;
     if (ctrl?.machine?.getAspectRatio) {
@@ -153,7 +203,7 @@ export function useEmulatorScreen(
     }
     configureScreen();
     calculateDimensions();
-  }, [calculateDimensions, configureScreen, controllerRef]);
+  }, [calculateDimensions, configureScreen, controllerRef, syncSurroundColor]);
 
   const renderWithoutScanlines = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -202,6 +252,7 @@ export function useEmulatorScreen(
   }, []);
 
   const displayScreenData = useCallback((): void => {
+    syncSurroundColor();
     if (!pixelData.current) return;
     const screenEl = screenElement.current;
     if (!screenEl) return;
@@ -273,7 +324,7 @@ export function useEmulatorScreen(
     } else {
       renderWithScanlines(screenCtx, screenEl, screenImageData, tempCanvas, scanlineIntensity);
     }
-  }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines]);
+  }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines, syncSurroundColor]);
 
   const onAvailableSpaceChanged = useCallback(() => {
     calculateDimensions();
@@ -292,6 +343,8 @@ export function useEmulatorScreen(
 
   return {
     screenElement,
+    displayElement,
+    hasSurround,
     canvasWidth,
     canvasHeight,
     imageBuffer8,
@@ -302,4 +355,11 @@ export function useEmulatorScreen(
     calculateDimensions,
     updateScreenDimensions
   };
+}
+
+/**
+ * A pixel-buffer colour as CSS: the words are ABGR, so their bytes read R, G, B, A in memory order.
+ */
+export function abgrToCssColor(color: number): string {
+  return `rgb(${color & 0xff}, ${(color >>> 8) & 0xff}, ${(color >>> 16) & 0xff})`;
 }

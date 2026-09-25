@@ -33,6 +33,12 @@ frames, the Blink state, and hashes of the 4 MB, the picture and the samples. A 
 stops matching is a finding: settle it against the hardware documentation (the Blink documentation,
 OZvm), never by editing the golden to fit.
 
+Once a finding *is* settled as a behaviour change, re-record with `Z88_GOLDENS_RECORD=1` and review
+the JSON diff key by key before committing. That has happened once: the RTC fixes of issue #1374
+(TSTA latching, TMK kept across RESTIM). Those changed Blink TSTA/TMK values, the OZ execution that
+follows from them, and every running digest over them. They changed no LCD picture. The evidence is
+in `.plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md`, Step 4.
+
 ## Baseline
 
 The six original core suites ran 887 cases on 2026-09-19. They were parameterized in Step 0.3 of the

@@ -126,6 +126,18 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getAspectRatio?: () => [number, number];
 
   /**
+   * The colour around the picture, for a machine whose picture has no border of its own.
+   *
+   * The emulator display has rounded corners, which would otherwise clip the picture's corner
+   * pixels. A Spectrum's picture includes its emulated border, so its corners are border and it
+   * leaves this undefined. The Cambridge Z88's LCD is picture edge to edge, so it reports the colour
+   * the glass shows around it (issue #1374). A machine colour, not a theme colour: it is in the
+   * pixel buffer's own packing (ABGR words, the bytes read as RGBA), may change from frame to frame
+   * (the Z88's LCD turns grey when it is off), and is shown as it is in both themes.
+   */
+  getScreenSurroundColor?(): number;
+
+  /**
    * Gets the buffer that stores the rendered pixels
    */
   getPixelBuffer(): Uint32Array;

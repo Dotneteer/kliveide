@@ -81,6 +81,14 @@
  */
 .display {
   position: relative;
+  /*
+   * The inline width and height are the canvas's, so the bezel border and a surround's padding must
+   * go *outside* them. Under the app-wide `border-box` they went inside, and the canvas overflowed
+   * its own box: the 1px border clipped one picture pixel on every edge of every machine, and a
+   * surround clipped as many pixels as it was wide (issue #1374). `useEmulatorScreen` keeps both out
+   * of the zoom fit.
+   */
+  box-sizing: content-box;
   background-color: var(--bgcolor-display);
   border: 1px solid var(--device-bezel);
   border-radius: var(--radius-md);
@@ -97,6 +105,17 @@
     display: block;
     image-rendering: pixelated;
   }
+}
+
+/*
+ * A picture with no border of its own (the Cambridge Z88's LCD) is padded by the corner radius, so
+ * the rounded clip above lands on the padding instead of on picture pixels. The padding's colour is
+ * the machine's, set inline by `useEmulatorScreen` - hardware colour, theme-invariant like
+ * `--device-bezel`. `useEmulatorScreen.calculateDimensions` reads the same token to keep the padding
+ * out of the zoom fit.
+ */
+.display.surround {
+  padding: var(--radius-md);
 }
 
 /*

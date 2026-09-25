@@ -319,6 +319,49 @@ describe("Cambridge Z88 WASM machine - reset and power-on", () => {
 });
 
 describe("Cambridge Z88 WASM machine - host behaviour", () => {
+  /*
+   * The core's tact counter is 32 bits and wraps after about 22 minutes. A keystroke queued just
+   * before the wrap used to stay pressed for good - its end tact, computed in JS numbers, stayed
+   * "ahead" of the wrapped counter - and one starting past 2^32 never began, blocking the queue
+   * (issue #1374). The test machine's `tacts` is set to what the core's counter reports.
+   */
+  it("plays a keystroke across the 32-bit tact counter wrap", () => {
+    const machine = new RecordingZ88WasmMachine();
+    const WRAP = 2 ** 32;
+    const start = WRAP - 16384 / 2; // --- half a frame before the wrap
+    machine.tacts = start;
+    machine.queueKeystroke(1, 2, Z88KeyCode.A);
+
+    // --- Pressed from start + 1 frame (past the wrap), released after start + 3 frames
+    machine.tacts = start + 16384 - 1 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([]);
+
+    machine.tacts = start + 16384 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    machine.tacts = start + 3 * 16384 + 1 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+    expect(machine.getKeyQueueLength()).toBe(0);
+  });
+
+  it("releases a keystroke pressed before the wrap once the counter has wrapped", () => {
+    const machine = new RecordingZ88WasmMachine();
+    const WRAP = 2 ** 32;
+    const start = WRAP - 3 * 16384;
+    machine.tacts = start;
+    machine.queueKeystroke(0, 2, Z88KeyCode.A);
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    // --- The end (start + 2 frames) is before the wrap; the counter reads small numbers now
+    machine.tacts = 100;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+  });
+
   it("queues and plays keystrokes (primary, secondary, release)", () => {
     const machine = new RecordingZ88WasmMachine();
     machine.queueKeystroke(1, 2, Z88KeyCode.A, Z88KeyCode.ShiftL);

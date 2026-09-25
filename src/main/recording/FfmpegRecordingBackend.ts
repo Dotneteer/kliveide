@@ -31,6 +31,12 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   private _scaleY = 1;
   // Set to true when FFmpeg exits early; suppresses further writes
   private _dead = false;
+  /*
+   * Why FFmpeg stopped early, for `finish()` to report. A recording that failed used to end exactly
+   * like one that worked - `finish()` returned the path of a file that was never written - so a
+   * packaged build that could not start FFmpeg at all only ever left an empty folder (issue #1374).
+   */
+  private _failure: string | null = null;
 
   /**
    * Compute integer scale factors so that the smaller ratio becomes 1.
@@ -39,6 +45,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    */
   start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): void {
     this._dead = false;
+    this._failure = null;
     // Replace file extension based on format
     const dirName = path.dirname(outputPath);
     const baseName = path.basename(outputPath, path.extname(outputPath));
@@ -88,13 +95,19 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
           this._process = null;
           const msg = `FFmpeg exited with code ${code ?? signal}`;
           console.error(`[FFmpegBackend] ${msg}`);
-          if (stderrLines.length) console.error("[FFmpegBackend] stderr:", stderrLines.join(""));
+          const stderr = stderrLines.join("");
+          if (stderr) console.error("[FFmpegBackend] stderr:", stderr);
+          // --- FFmpeg names the problem in its last lines
+          const tail = stderr.trim().split("\n").slice(-3).join("\n");
+          this._failure = tail ? `${msg}:\n${tail}` : msg;
           reject(new Error(msg));
         }
       });
       this._process!.once("error", (err) => {
         this._dead = true;
         this._process = null;
+        this._failure = `FFmpeg could not be started (${getFFmpegPath()}): ${err.message}`;
+        console.error(`[FFmpegBackend] ${this._failure}`);
         reject(err);
       });
     });
@@ -245,12 +258,16 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   /**
    * Close FFmpeg's stdin and await clean process exit.
    * @returns The absolute path of the finished MP4 file.
+   * @throws When FFmpeg failed to start or stopped early; the message says why.
    */
   async finish(): Promise<string> {
     if (!this._process || this._dead) {
+      const failure = this._dead ? this._failure ?? "FFmpeg stopped early" : null;
       this._process = null;
       this._exitPromise = null;
       this._dead = false;
+      this._failure = null;
+      if (failure) throw new Error(failure);
       return this._outputPath;
     }
     // Close both the video pipe (stdin/fd 0) and the audio pipe (fd 3) so
@@ -260,8 +277,14 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
     audioPipe?.end();
     try {
       await this._exitPromise;
-    } catch {
-      // FFmpeg exited non-zero; error already logged in the exit handler
+    } catch (err) {
+      // --- FFmpeg exited non-zero while finishing: no usable file
+      const failure = this._failure ?? (err as Error)?.message ?? "FFmpeg failed";
+      this._process = null;
+      this._exitPromise = null;
+      this._dead = false;
+      this._failure = null;
+      throw new Error(failure);
     }
     this._process = null;
     this._exitPromise = null;

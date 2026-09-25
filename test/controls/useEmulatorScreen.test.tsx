@@ -190,4 +190,102 @@ describe("useEmulatorScreen", () => {
       expect(canvasWidth).toBe(480);
     });
   });
+
+  /*
+   * A picture with no border of its own (issue #1374).
+   *
+   * The display's rounded corners clipped the Cambridge Z88 LCD's corner pixels: its 640x64 buffer
+   * is picture to the edge. A machine that reports `getScreenSurroundColor` gets the display's
+   * corner radius as padding, in that colour, and the fit leaves room for it.
+   */
+  describe("a machine that reports a surround colour", () => {
+    const LCD_UNLIT = 0xffb9e0d2; // --- the Z88 core's unlit pixel, ABGR
+    const LCD_OFF = 0xffa0a0a0;
+
+    const renderLcd = async (hostWidth: number, surround: boolean) => {
+      vi.doMock("@renderer/core/RendererProvider", () => ({
+        useGlobalSetting: (id: string) => (id === "emuOptions.zoomStep" ? 1 : "off")
+      }));
+      vi.doMock("@renderer/core/useResizeObserver", () => ({
+        useResizeObserver: vi.fn()
+      }));
+      let color = LCD_UNLIT;
+      const machine: Record<string, unknown> = {
+        getBufferStartOffset: () => 0,
+        getPixelBuffer: () => new Uint32Array(640 * 64),
+        screenHeightInPixels: 64,
+        screenWidthInPixels: 640
+      };
+      if (surround) machine.getScreenSurroundColor = () => color;
+      const controller: { machine: Record<string, unknown> } = { machine };
+
+      const hostDiv = document.createElement("div");
+      hostDiv.style.setProperty("--radius-md", "6px");
+      Object.defineProperty(hostDiv, "offsetWidth", { value: hostWidth });
+      Object.defineProperty(hostDiv, "offsetHeight", { value: 4000 });
+      document.body.appendChild(hostDiv);
+
+      const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
+      const { result } = renderHook(() =>
+        useEmulatorScreen(
+          { current: hostDiv } as unknown as MutableRefObject<HTMLDivElement>,
+          { current: controller } as any
+        )
+      );
+      const display = document.createElement("div");
+      result.current.displayElement.current = display;
+      result.current.screenElement.current = document.createElement("canvas");
+      act(() => {
+        result.current.updateScreenDimensions();
+      });
+      return { result, display, controller, setColor: (c: number) => (color = c) };
+    };
+
+    it("keeps the padding out of the fit", async () => {
+      // --- 1284px holds 2x (1280) of a bare picture, but not 2x plus 6px on each side
+      const bare = await renderLcd(1284, false);
+      expect(bare.result.current.canvasWidth).toBe(1280);
+      expect(bare.result.current.hasSurround).toBe(false);
+
+      vi.resetModules();
+      const padded = await renderLcd(1284, true);
+      expect(padded.result.current.canvasWidth).toBe(640);
+      expect(padded.result.current.hasSurround).toBe(true);
+
+      vi.resetModules();
+      expect((await renderLcd(1292, true)).result.current.canvasWidth).toBe(1280);
+    });
+
+    it("paints the surround in the machine's colour and follows it", async () => {
+      const { result, display, setColor } = await renderLcd(1400, true);
+      expect(display.style.backgroundColor).toBe("rgb(210, 224, 185)");
+
+      // --- The LCD switched off: the next picture shown brings the surround along
+      setColor(LCD_OFF);
+      act(() => result.current.displayScreenData());
+      expect(display.style.backgroundColor).toBe("rgb(160, 160, 160)");
+    });
+
+    it("clears the surround when the next machine has its own border", async () => {
+      // --- Found in the running app: switching from the Z88 to a Spectrum left the LCD green behind
+      // --- the Spectrum's picture, showing in its rounded corners
+      const { result, display, controller } = await renderLcd(1400, true);
+      expect(display.style.backgroundColor).toBe("rgb(210, 224, 185)");
+
+      controller.machine = {
+        getBufferStartOffset: () => 0,
+        getPixelBuffer: () => new Uint32Array(352 * 288),
+        screenHeightInPixels: 288,
+        screenWidthInPixels: 352
+      };
+      act(() => result.current.updateScreenDimensions());
+      expect(display.style.backgroundColor).toBe("");
+      expect(result.current.hasSurround).toBe(false);
+    });
+
+    it("leaves a machine with its own border alone", async () => {
+      const { display } = await renderLcd(1400, false);
+      expect(display.style.backgroundColor).toBe("");
+    });
+  });
 });

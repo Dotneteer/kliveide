@@ -103,10 +103,15 @@ static void z88BlinkSetSr(uint32_t index, uint8_t bank) {
   z88SetMemoryPageInfo(index, bank, 0u);
 }
 
+/*
+ * COM.RESTIM: the clock back to zero (Developers' Notes, "the clock is reset to zero ... held in reset
+ * until RESTIM is cleared"). TMK is the software's interrupt mask and is not part of the clock: OZ 5.0
+ * writes it once, then resets the clock while booting, and never timed out while this reset put TMK
+ * back to TICK (issue #1374). Only the power-on reset (`z88BlinkReset`) sets TMK.
+ */
 static void z88BlinkResetRtc(void) {
   for (uint32_t i = 0u; i < 5u; i++) z88Tim[i] = 0u;
   z88Tsta = 0u;
-  z88Tmk = Z88_TSTA_TICK;
 }
 
 static void z88BlinkSetCom(uint8_t value) {
@@ -121,11 +126,12 @@ static void z88BlinkSetCom(uint8_t value) {
   z88BlinkSetSr0(z88Sr[0]);
 }
 
+/* TACK: clears the named TSTA events; STA.TIME stays up while an enabled one is still pending */
 static void z88BlinkSetTack(uint8_t value) {
   if (value & Z88_TSTA_TICK) z88Tsta &= 0xfeu;
   if (value & Z88_TSTA_SEC) z88Tsta &= 0xfdu;
   if (value & Z88_TSTA_MIN) z88Tsta &= 0xfbu;
-  if (!z88Tsta) {
+  if (!(z88Tsta & z88Tmk)) {
     z88BlinkSetSta(z88Sta & 0xfeu);
   }
 }
@@ -138,6 +144,7 @@ static void z88BlinkSetAck(uint8_t value) {
 static void z88BlinkReset(void) {
   for (uint32_t i = 0u; i < 4u; i++) z88BlinkSetSr(i, 0u);
   z88BlinkResetRtc();
+  z88Tmk = Z88_TSTA_TICK;
   z88BlinkSetAck(0u);
   z88Com = 0u;
   z88Epr = 0u;
@@ -183,7 +190,7 @@ static void z88BlinkIncrementRtc(void) {
         }
       }
       if (z88Tim[1] == 32u) {
-        tickEvent = Z88_TSTA_MIN;
+        tickEvent |= Z88_TSTA_MIN;
       }
     }
   }
@@ -212,8 +219,16 @@ static void z88BlinkIncrementRtc(void) {
     return;
   }
 
+  /*
+   * TSTA latches: an event's bit stays set until TACK clears it, whether TMK lets it interrupt or not
+   * (an event must be acknowledged before the next of its kind, Developers' Notes "Blink
+   * interrupts"). OZ 4.7 enables only TICK and finds the minute as a MIN bit still set when its TICK
+   * handler reads TSTA. Replacing TSTA with the latest event - OZvm's and the TypeScript machine's
+   * behaviour - lost MIN to the next TICK 5 ms later, and OZ 4.7 never timed out (issue #1374).
+   * For the same reason a minute also keeps its second (SEC | MIN).
+   */
   if (tickEvent) {
-    z88Tsta = tickEvent;
+    z88Tsta |= tickEvent;
     if (z88Tmk & tickEvent) {
       z88BlinkSetSta(z88Sta | Z88_STA_TIME);
       z80AwakeCpu();

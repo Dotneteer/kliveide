@@ -12,10 +12,24 @@
   frames, and the audio buffer, sized for a single frame, dropped over half of every burst. The
   beeper and the 3200 Hz tone now play smoothly again. The Z88 also no longer goes silent after
   about 22 minutes of running.
+- **Cambridge Z88 on-screen keyboard keys could stick after about 22 minutes** (#1374). A key queued
+  around the moment the machine's 32-bit cycle counter wrapped stayed pressed for good, or never
+  started and blocked every key after it.
 - **The Cambridge Z88 keyboard could go dead under OZ 4.7** (#1374). With Keyclick on, a key press in
   the Index moved the highlight once, then no key worked while the machine kept running. The
   emulated Z80 had an NMOS chip quirk the Z88's CMOS Z80 does not have, and OZ 4.7 read it as
   "interrupts off". The Z88 now emulates the CMOS behaviour; the ZX Spectrum machines are unchanged.
+- **The Cambridge Z88 screen lost its corner pixels** to the emulator display's rounded corners
+  (#1374). The LCD now sits in a narrow surround in its own colour: unlit green, or grey while the
+  LCD is off. The display's 1px frame also no longer hides one pixel on each edge of every machine's
+  picture.
+- **The Cambridge Z88 never switched itself off** after the Panel's idle timeout (#1374). Two faults
+  in the emulated real-time clock hid the passing minutes from OZ 4.7 and OZ 5.0. Both now go into
+  coma on time, as OZ 4.0 already did.
+- **Screen recording never produced a file in the installed app** (#1374), on any machine. The app
+  looked for its bundled FFmpeg inside the app archive, where it cannot run, and only an empty
+  `KliveExports/video` folder was left. A recording that fails now says why, instead of ending as
+  if it had worked.
 - **ZX Spectrum Next panels showed stale data.** On the standard (WASM) Next the Palettes panel and
   the sprite editor's palette showed power-on colours whatever a program had written, the ULA & I/O
   panel read values the emulator never updated, and the Memory Mapping panel showed logical instead of

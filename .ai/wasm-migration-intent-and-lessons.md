@@ -221,6 +221,15 @@ When a machine's CPU is a different part, set its option and test the variant wi
 forces the case (see "the Z80 is a CMOS part" in `test/z88/z88-interrupts.test.ts`). When
 reproducing a race, try both whole-frame and stepped driving before concluding it does not happen.
 
+**A golden from a ported oracle records the oracle's bugs too.** The Z88 goldens came from the
+TypeScript machine, itself a port of OZvm. Its RTC replaced TSTA with the latest event, and reset TMK
+on COM.RESTIM, and no parity test could notice because both machines agreed. The bug showed only as
+behaviour over minutes: OZ 4.7 and 5.0 never timed out. When one ROM version works and another does
+not, trace how each one reads the device before blaming the ROM. Each of those two ROMs broke on a
+different half of the RTC. A behaviour change the goldens contradict is re-recorded
+(`Z88_GOLDENS_RECORD=1`) only after it is settled. The diff is then reviewed by field, and a change
+to a field the fix cannot reach (here, any LCD picture) means stop.
+
 **Size the audio worklet in bursts, not frames.** The controller runs `uiFrameFrequency` frames back
 to back before it sleeps, so their samples reach the worklet together. The worklet bounds its lag in
 units of what `initAudio` passes; passing one machine frame broke the Z88 (8 × 5 ms frames per

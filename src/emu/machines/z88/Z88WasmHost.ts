@@ -23,7 +23,7 @@ import {
   MC_Z88_USE_DEFAULT_ROM
 } from "@common/machines/constants";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
-import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
+import { EmulatedKeyStroke, tactsPast, toTactCounter } from "@emu/structs/EmulatedKeyStroke";
 import { Z80MachineBase } from "../Z80MachineBase";
 import { Z88KeyCode } from "./Z88KeyCode";
 import { z88KeyMappings } from "./Z88KeyMappings";
@@ -285,15 +285,18 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   /**
    * Plays the queued key strokes as `Z88Machine.emulateKeystroke()` did: one entry at a time,
    * pressed (with its secondary and ternary keys) from its start tact to its end tact.
+   *
+   * The core's tact counter is 32 bits and wraps after about 22 minutes, so both points are compared
+   * by their distance from it (`tactsPast`), never by value (issue #1374).
    */
   emulateKeystroke(): void {
     if (this.emulatedKeyStrokes.length === 0) return;
     const keyStroke = this.emulatedKeyStrokes[0];
 
     // --- Time has not come
-    if (keyStroke.startTact > this.tacts) return;
+    if (tactsPast(this.tacts, keyStroke.startTact) < 0) return;
 
-    if (keyStroke.endTact < this.tacts) {
+    if (tactsPast(this.tacts, keyStroke.endTact) > 0) {
       // --- End emulation of this very keystroke
       this.setKeyStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
@@ -327,7 +330,10 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   queueKeystroke(frameOffset: number, frames: number, primary: number, secondary?: number): void {
     const startTact = this.tacts + frameOffset * this.tactsInFrame * this.clockMultiplier;
     const endTact = startTact + frames * this.tactsInFrame * this.clockMultiplier;
-    this.emulatedKeyStrokes.push(new EmulatedKeyStroke(startTact, endTact, primary, secondary));
+    // --- In the counter's own range, as the core will report the tacts that reach them
+    this.emulatedKeyStrokes.push(
+      new EmulatedKeyStroke(toTactCounter(startTact), toTactCounter(endTact), primary, secondary)
+    );
   }
 
   getKeyQueueLength(): number {

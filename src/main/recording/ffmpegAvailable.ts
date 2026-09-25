@@ -18,8 +18,9 @@ function _init(): void {
     const installer = require("@ffmpeg-installer/ffmpeg") as FfmpegInstaller;
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { existsSync } = require("fs") as typeof import("fs");
-    _available = !!installer?.path && existsSync(installer.path);
-    _path = installer.path ?? "";
+    const binary = installer?.path ? toUnpackedAsarPath(installer.path) : "";
+    _available = !!binary && existsSync(binary);
+    _path = binary;
   } catch {
     _available = false;
     _path = "";
@@ -36,4 +37,18 @@ export function isFFmpegAvailable(): boolean {
 export function getFFmpegPath(): string {
   _init();
   return _path;
+}
+
+/**
+ * The path of a file `asarUnpack` copied out of the app archive.
+ *
+ * In a packaged app `@ffmpeg-installer/ffmpeg` computes its binary's path from its own location,
+ * which is inside `app.asar`. Electron's `fs` answers for that path, so the binary looked present, but
+ * `spawn` cannot execute a file inside an archive. Every recording in a packaged build therefore
+ * created its folder and nothing else (issue #1374). `electron-builder.json5` unpacks the package to
+ * `app.asar.unpacked`, as the package's own README asks. In a development run there is no archive
+ * and the path is returned unchanged.
+ */
+export function toUnpackedAsarPath(filePath: string): string {
+  return filePath.replace(/([\\/])app\.asar([\\/])/, "$1app.asar.unpacked$2");
 }
