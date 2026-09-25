@@ -9,10 +9,15 @@
  * wake, battery low, card insert/remove, pause and the debugger (panels, disassembly, step-into/over/out,
  * a breakpoint), soft and hard reset (F8/F9), the LCD sizes, a keyboard layout and the RAM dialog.
  *
- * Each step records the LCD picture, the EMU status bar (which names the backend) and the IDE text it
- * checks; console errors of both windows are collected. For a model (WASM, the default) and its
- * TypeScript twin (`<id>-ts`) the pictures are put side by side (TypeScript left) in
- * `.doc-shots/z88-app-pass/compare/`.
+ * Each step records the LCD picture, the EMU status bar (which names the model) and the IDE text it
+ * checks; console errors of both windows are collected, and each model's pictures and
+ * `report.json` land in `.doc-shots/z88-app-pass/<model>/`. It is a smoke test of the app around the
+ * one Z88 machine: until the TypeScript machine was removed
+ * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`) it also ran each model's TypeScript twin and put
+ * the two side by side.
+ *
+ * One model per run is reliable; all ten in one run are not yet - the app rebuilds its menu after
+ * state changes, and some runs missed an item despite the retry.
  *
  *   npx electron-vite build --config build/electron.vite.config.ts   # out/ must be current
  *   node scripts/z88-app-pass.cjs [OZ50 OZ40 ...]                     # default: OZ50
@@ -23,17 +28,6 @@ const fs = require("fs");
 const { launchKlive, REPO } = require("./doc-shots/harness.cjs");
 
 const OUT = path.join(REPO, ".doc-shots", "z88-app-pass");
-
-function loadSharp() {
-  for (const base of [REPO, path.join(REPO, "docs")]) {
-    try {
-      return require(require.resolve("sharp", { paths: [base] }));
-    } catch {
-      /* next */
-    }
-  }
-  throw new Error("sharp not found - run `npm run doc:install` first.");
-}
 
 /* Host keys for a character (the Z88's UK mapping, `Z88KeyMappings.ts`) */
 function keysFor(ch) {
@@ -275,71 +269,17 @@ async function runModel(modelId) {
   return report;
 }
 
-/* TypeScript model (left) and its WASM twin (right), step by step */
-async function compare(tsId, wasmId) {
-  const sharp = loadSharp();
-  const target = path.join(OUT, "compare", tsId);
-  fs.mkdirSync(target, { recursive: true });
-  const steps = fs.readdirSync(path.join(OUT, tsId)).filter((f) => /^\d\d-.*\.png$/.test(f));
-  // --- The panels' text, line by line: what differs between the backends
-  const text = (id) =>
-    Object.fromEntries(
-      JSON.parse(fs.readFileSync(path.join(OUT, id, "report.json"), "utf8"))
-        .steps.filter((s) => s.text)
-        .map((s) => [s.step, s.text.split("\n")])
-    );
-  const [ta, tb] = [text(tsId), text(wasmId)];
-  const diff = [];
-  for (const step of Object.keys(ta)) {
-    const a = ta[step] ?? [];
-    const b = tb[step] ?? [];
-    for (let i = 0; i < Math.max(a.length, b.length); i++) {
-      if (a[i] !== b[i]) diff.push(`${step} line ${i}: TS "${a[i] ?? ""}" | WASM "${b[i] ?? ""}"`);
-    }
-  }
-  fs.writeFileSync(path.join(target, "panel-text-diff.txt"), diff.join("\n") + "\n");
-  console.log(`  ${tsId}: ${diff.length} panel text lines differ (${path.relative(REPO, target)}/panel-text-diff.txt)`);
-  for (const file of steps) {
-    const a = path.join(OUT, tsId, file);
-    const b = path.join(OUT, wasmId, file);
-    if (!fs.existsSync(b)) continue;
-    const [ma, mb] = await Promise.all([sharp(a).metadata(), sharp(b).metadata()]);
-    const gap = 16;
-    await sharp({
-      create: {
-        width: ma.width + mb.width + gap,
-        height: Math.max(ma.height, mb.height),
-        channels: 4,
-        background: { r: 255, g: 0, b: 255, alpha: 1 }
-      }
-    })
-      .composite([
-        { input: a, left: 0, top: 0 },
-        { input: b, left: ma.width + gap, top: 0 }
-      ])
-      .png()
-      .toFile(path.join(target, file));
-  }
-}
-
 async function main() {
   const models = process.argv.slice(2);
   const bases = models.length ? models : ["OZ50"];
   const summary = [];
-  for (const base of bases) {
-    // --- Since Step 14 the original model runs on WASM; its "-ts" twin is the TypeScript machine
-    const ts = await runModel(`${base}-ts`);
-    const wasm = await runModel(base);
-    await compare(`${base}-ts`, base);
-    summary.push({ ts, wasm });
-  }
+  for (const base of bases) summary.push(await runModel(base));
   fs.writeFileSync(path.join(OUT, "summary.json"), JSON.stringify(summary, null, 2));
-  for (const { ts, wasm } of summary) {
-    for (const r of [ts, wasm]) {
-      console.log(`${r.modelId}: ${r.failure ? "FAILED " + r.failure : "completed"}; ${r.errors.length} console errors`);
-      for (const e of r.errors.slice(0, 10)) console.log(`   ${e}`);
-    }
+  for (const r of summary) {
+    console.log(`${r.modelId}: ${r.failure ? "FAILED " + r.failure : "completed"}; ${r.errors.length} console errors`);
+    for (const e of r.errors.slice(0, 10)) console.log(`   ${e}`);
   }
+  if (summary.some((r) => r.failure)) process.exitCode = 1;
 }
 
 main().catch((error) => {

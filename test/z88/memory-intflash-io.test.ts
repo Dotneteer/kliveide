@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
+import { createZ88TestSurface } from "./z88-test-surface";
 import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
 const addrSR3: number[] = [
@@ -7,11 +7,11 @@ const addrSR3: number[] = [
   0xc000, 0xc001, 0xcdef, 0xdfff, 0xefff, 0xfffe, 0xffff
 ];
 
-describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00XS5 Card Read / flash bytes ($name)", function ({ create }) {
+describe("Z88 - Intel I28F00XS5 Card Read / flash bytes", function () {
   addrSR3.forEach(addr => {
     it(`Intel i28F004S5 read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
@@ -40,7 +40,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00X
   addrSR3.forEach(addr => {
     it(`Intel i28F008S5 read pristine content (${addr}) in slot 3`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create a 1Mb Intel 28F008S5 Flash Card
@@ -69,7 +69,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00X
   addrSR3.forEach(addr => {
     it(`Intel i28F004S5 read pristine content (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
@@ -98,7 +98,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00X
   addrSR3.forEach(addr => {
     it(`Intel I28F00XS5 flash byte at (${addr}) in slot 2`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
       const mem = m.memory;
 
       // --- Create a 512K Intel 28F004S5 Flash Card
@@ -165,7 +165,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00X
     // --------------------------------------------------------------------------------------
 
     // --- Create the machine
-    const m = create();
+    const m = createZ88TestSurface();
     const mem = m.memory;
 
     // --- Create a 512K Intel 28F004S5 Flash Card
@@ -238,7 +238,7 @@ describe.each(z88Backends("memory", "blink", "flashCards"))("Z88 - Intel I28F00X
     // --------------------------------------------------------------------------------------
 
     // --- Create the machine
-    const m = create();
+    const m = createZ88TestSurface();
     const mem = m.memory;
 
     // --- Create a 512K Intel 28F004S5 Flash Card

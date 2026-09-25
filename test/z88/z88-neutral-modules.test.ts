@@ -15,7 +15,6 @@ import {
   z88RomFlags
 } from "@emu/machines/z88/z88MachineInfo";
 import {
-  CardType,
   z88CardSizeInBytes,
   z88CardSpec,
   z88ChipMaskForSize,
@@ -23,15 +22,12 @@ import {
   z88RomImageCardSpec,
   z88SlotHasCard
 } from "@emu/machines/z88/z88CardCatalog";
-import { createZ88MemoryCard } from "@emu/machines/z88/memory/CardType";
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
-import { MC_SCREEN_SIZE } from "@common/machines/constants";
-import { Z88Machine } from "@emu/machines/z88/Z88Machine";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { CardIds } from "@emu/machines/z88/CardIds";
+import { goldens } from "../wasm/z88/z88-goldens";
 
 /*
- * The neutral Z88 modules both backends share (Step 0.1 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), and the TypeScript machine's use of them.
+ * The Z88 machine info and card catalog the machine and the renderer share (Step 0.1 of
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`).
  */
 
 describe("z88MachineInfo", () => {
@@ -131,66 +127,29 @@ describe("z88CardCatalog", () => {
   });
 });
 
-describe("Z88Machine uses the neutral modules", () => {
-  it("takes its clock, frame, UI cadence and partition answers from them", () => {
-    const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-    const machine = new Z88Machine(model, model.config, undefined);
-    expect(machine.baseClockFrequency).toBe(Z88_BASE_CLOCK_FREQUENCY);
-    expect(machine.tactsInFrame).toBe(Z88_TACTS_IN_FRAME);
-    expect(machine.uiFrameFrequency).toBe(Z88_UI_FRAME_FREQUENCY);
-    expect(machine.getPartitionLabels()).toEqual(z88PartitionLabels());
-    expect(machine.parsePartitionLabel("2a")).toBe(0x2a);
-    expect(machine.getRomFlags()).toEqual(z88RomFlags());
-    expect(machine.getSelectedRomPage()).toBe(0);
-    expect(machine.getSelectedRamBank()).toBe(0);
-  });
-});
-
-describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules both hosts share)", () => {
-  const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-  const host = new Z88Machine(model, model.config, undefined);
+describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules)", () => {
+  /*
+   * What the TypeScript card factory (`createZ88MemoryCard`) made of every card id and size - the
+   * card kind and size, or its error - recorded before it was removed
+   * (`test/wasm/z88/goldens/z88-card-factory.json`, `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
+   */
+  const factory = goldens("z88-card-factory");
 
   it.each(Object.values(CardIds).flatMap((id) => [32, 128, 256, 512, 1024, 48].map((size) => [id, size] as const)))(
-    "%s of %iK: the spec agrees with the TypeScript card factory",
+    "%s of %iK: the spec is the card the TypeScript factory made",
     (id, size) => {
-      let spec: ReturnType<typeof z88CardSpec> | Error;
-      let card: ReturnType<typeof createZ88MemoryCard> | Error;
+      let spec: unknown;
       try {
         spec = z88CardSpec(id, size);
       } catch (e) {
-        spec = e as Error;
+        spec = { error: (e as Error).message };
       }
-      try {
-        card = createZ88MemoryCard(host, size, id);
-      } catch (e) {
-        card = e as Error;
-      }
-      if (card instanceof Error) {
-        expect(spec).toBeInstanceOf(Error);
-        expect((spec as Error).message).toBe(card.message);
-        return;
-      }
-      expect(spec).not.toBeInstanceOf(Error);
-      const s = spec as Exclude<typeof spec, Error>;
-      expect(s.sizeInBytes).toBe(card.size);
-      const expectedKind = {
-        [CardType.Ram]: "RAM",
-        [CardType.Rom]: "ROM",
-        [CardType.EpromVpp32KB]: "UV_EPROM",
-        [CardType.EpromVpp128KB]: "UV_EPROM",
-        [CardType.FlashIntel28F004S5]: "INTEL_FLASH",
-        [CardType.FlashIntel28F008S5]: "INTEL_FLASH",
-        [CardType.FlashAmd29F040B]: "AMD_FLASH_29F040B",
-        [CardType.FlashAmd29F080B]: "AMD_FLASH_29F080B"
-      } as Record<number, string>;
-      expect(s.kind).toBe(expectedKind[card.type]);
+      factory.expect(`${id} ${size}K`, spec);
     }
   );
 
-  it("the card dialog's 256K UV EPROM (EPROMUV256) is a 256K UV EPROM on both backends (F2)", () => {
+  it("the card dialog's 256K UV EPROM (EPROMUV256) is a 256K UV EPROM (F2)", () => {
     expect(z88CardSpec(CardIds.EPROMUV256, 256)).toEqual({ kind: "UV_EPROM", sizeInBytes: 0x4_0000 });
-    const card = createZ88MemoryCard(host, 256, CardIds.EPROMUV256);
-    expect([card.size, card.type]).toEqual([0x4_0000, CardType.EpromVpp128KB]);
   });
 
   it.each([
@@ -210,13 +169,17 @@ describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules bot
   });
 });
 
-describe("z88LcdSizeRegisters (the LCD size rule both backends share)", () => {
-  it.each([undefined, "640x64", "640x320", "640x480", "800x320", "800x480", "1024x768"])(
-    "%s: the same SCW/SCH as the TypeScript screen device",
-    (size) => {
-      const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-      const machine = new Z88Machine(model, { ...model.config, [MC_SCREEN_SIZE]: size }, undefined);
-      expect(z88LcdSizeRegisters(size)).toEqual({ scw: machine.screenDevice.SCW, sch: machine.screenDevice.SCH });
-    }
-  );
+describe("z88LcdSizeRegisters (the LCD size rule)", () => {
+  // --- The SCW/SCH the TypeScript screen device set for each configured size
+  it.each([
+    [undefined, 0xff, 8],
+    ["640x64", 0xff, 8],
+    ["640x320", 0xff, 40],
+    ["640x480", 0xff, 60],
+    ["800x320", 100, 40],
+    ["800x480", 100, 60],
+    ["1024x768", 0xff, 8]
+  ])("%s: SCW %i, SCH %i", (size, scw, sch) => {
+    expect(z88LcdSizeRegisters(size)).toEqual({ scw, sch });
+  });
 });

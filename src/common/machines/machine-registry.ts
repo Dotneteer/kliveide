@@ -1,5 +1,4 @@
 import type { MachineConfigSet, MachineInfo, MachineModel, MachineWithModel } from "./info-types";
-import { createModelTwins } from "./model-twins";
 
 import {
   MI_SPECTRUM_48,
@@ -18,7 +17,6 @@ import {
   MF_ULA,
   MF_BLINK,
   MF_PSG,
-  MC_Z88_IMPLEMENTATION,
   MC_Z88_INTRAM,
   MC_Z88_INTROM,
   CT_CUSTOM_DISASSEMBLER,
@@ -366,18 +364,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BLINK]: true,
       [MF_ALLOW_SCAN_LINES]: false
     },
-    models: [
-      ...Z88_MODELS,
-      // --- The comparison period of the WASM migration: every model on the TypeScript backend, in a
-      // --- submenu (the originals run on WASM, the default)
-      ...createModelTwins(Z88_MODELS, {
-        configKey: MC_Z88_IMPLEMENTATION,
-        implementation: "typescript",
-        menuGroup: "Cambridge Z88 (TypeScript)",
-        idSuffix: "-ts",
-        nameSuffix: " - TypeScript"
-      })
-    ],
+    models: [...Z88_MODELS],
     toolInfo: {
       [CT_CUSTOM_DISASSEMBLER]: () => new Z88CustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
@@ -449,7 +436,10 @@ export function getMachineName(machineId: string, modelId?: string): string {
  * session can still name one; `resolveModelId` maps it before the registry is searched.
  *
  * The Cambridge Z88's "WASM preview" twins (`<id>-wasm`, Steps 9-13 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default.
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) became the originals when WASM became the default,
+ * and its "TypeScript" twins (`<id>-ts`) went with the TypeScript emulation
+ * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`). A leftover `z88Implementation` key in a saved
+ * configuration is ignored.
  *
  * The ZX Spectrum Next's "compatibility" model selected the TypeScript emulator, which was removed
  * once the WASM core reached parity (`.plans/ZX_SPECTRUM_NEXT_TYPESCRIPT_REMOVAL_PLAN.md`, D4). A
@@ -457,7 +447,12 @@ export function getMachineName(machineId: string, modelId?: string): string {
  * to find its machine.
  */
 export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, string>>>> = {
-  [MI_Z88]: Object.fromEntries(Z88_MODELS.map((m) => [`${m.modelId}-wasm`, m.modelId])),
+  [MI_Z88]: Object.fromEntries(
+    Z88_MODELS.flatMap((m) => [
+      [`${m.modelId}-wasm`, m.modelId],
+      [`${m.modelId}-ts`, m.modelId]
+    ])
+  ),
   [MI_ZXNEXT]: { compatibility: "standard" }
 };
 

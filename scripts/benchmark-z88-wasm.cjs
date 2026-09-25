@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 /*
- * Cambridge Z88: TypeScript vs WASM, milliseconds per 5 ms machine frame.
+ * Cambridge Z88 (the WASM core): milliseconds per 5 ms machine frame, a regression benchmark.
  *
- * Both backends are driven through the Z88 test harness (`test/harness/z88`) - the same public machine
+ * The machine is driven through the Z88 test harness (`test/harness/z88`) - the same public machine
  * API the app's emulator loop uses (`executeMachineFrame`, keys, audio, the LCD), so a figure includes
- * the adapter's work, not only the core's. Step 12 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`;
- * the results are recorded in `src/emu/machines/z88/wasm/README.md`.
+ * the adapter's work, not only the core's. Step 12 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`
+ * compared it with the TypeScript machine until that was removed
+ * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the results are recorded in
+ * `src/emu/machines/z88/wasm/README.md`.
  *
  *   node scripts/benchmark-z88-wasm.cjs [--frames 200] [--runs 5] [--scenario id] [--json]
  */
@@ -97,8 +99,8 @@ const SCENARIOS = [
   {
     id: "oz-idle",
     label: "OZ 5.0 booted, idle (snoozing)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, model: "OZ50", rom: "model", audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ model: "OZ50", rom: "model", audioSampleRate: 44100 });
       s.runFrames(1700);
       return s;
     },
@@ -107,8 +109,8 @@ const SCENARIOS = [
   {
     id: "oz-typing",
     label: "OZ 5.0 at the keyboard",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, model: "OZ50", rom: "model", audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ model: "OZ50", rom: "model", audioSampleRate: 44100 });
       s.runFrames(1700);
       s.keyDown("Index").runFrames(6).keyUp("Index").runFrames(30);
       return s;
@@ -124,8 +126,8 @@ const SCENARIOS = [
   {
     id: "cpu-loop",
     label: "CPU-heavy loop (flat RAM)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ audioSampleRate: 44100 });
       await s.loadCode(CPU_LOOP, { entry: "start" });
       return s;
     },
@@ -134,10 +136,10 @@ const SCENARIOS = [
   {
     id: "lcd-800x480",
     label: "800x480 LCD drawing changing screen memory",
-    async setup(h, backend) {
+    async setup(h) {
       const model = h.z88Model();
       const config = { ...model.config, screenSize: "800x480" };
-      const s = await h.createZ88Session({ backend, config, audioSampleRate: 44100 });
+      const s = await h.createZ88Session({ config, audioSampleRate: 44100 });
       await s.loadCode(LCD, { entry: "start" });
       outWord(s, 0x70, (0x21 << 5) | (0x1200 >> 9));
       outWord(s, 0x71, (0x21 << 2) | (0x1000 >> 12));
@@ -152,8 +154,8 @@ const SCENARIOS = [
   {
     id: "beeper",
     label: "Beeper toggling (44.1 kHz)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ audioSampleRate: 44100 });
       await s.loadCode(BEEPER, { entry: "start" });
       return s;
     },
@@ -165,8 +167,8 @@ const SCENARIOS = [
   {
     id: "flash-program",
     label: "AMD flash programming loop (slot 1)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ audioSampleRate: 44100 });
       await s.loadCode(FLASH, { entry: "start" });
       await s.plugCard(1, { cardType: "AMDF29F040B", size: 512 });
       return s;
@@ -176,8 +178,8 @@ const SCENARIOS = [
   {
     id: "debug-run",
     label: "Running under the debugger, a breakpoint set (never hit)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ audioSampleRate: 44100 });
       await s.loadCode(CPU_LOOP, { entry: "start" });
       s.breakpoint(0x7000);
       const ctx = s.machine.executionContext;
@@ -192,8 +194,8 @@ const SCENARIOS = [
   {
     id: "debug-step",
     label: "Debugger step-into x 200 (per frame of steps)",
-    async setup(h, backend) {
-      const s = await h.createZ88Session({ backend, audioSampleRate: 44100 });
+    async setup(h) {
+      const s = await h.createZ88Session({ audioSampleRate: 44100 });
       await s.loadCode(CPU_LOOP, { entry: "start" });
       return s;
     },
@@ -237,10 +239,10 @@ function parseArgs(argv) {
   return options;
 }
 
-async function measure(h, scenario, backend, options) {
+async function measure(h, scenario, options) {
   const values = [];
   for (let run = 0; run < options.runs; run++) {
-    const s = await scenario.setup(h, backend);
+    const s = await scenario.setup(h);
     for (let i = 0; i < options.warmup; i++) scenario.frame(s, i);
     const start = performance.now();
     for (let i = 0; i < options.frames; i++) scenario.frame(s, i);
@@ -251,7 +253,7 @@ async function measure(h, scenario, backend, options) {
 }
 
 /**
- * Runs the scenarios on both backends.
+ * Runs the scenarios.
  * @param options `parseArgs` options (frames, runs, warmup, scenario)
  * @param harness The Z88 test harness module; loaded here (with a TypeScript hook) when not given,
  * which is how a test runner that already compiles TypeScript passes its own
@@ -264,9 +266,7 @@ async function benchmarkZ88(options, harness) {
   }
   const results = [];
   for (const scenario of SCENARIOS.filter((s) => !options.scenario || s.id === options.scenario)) {
-    const typescript = await measure(h, scenario, "typescript", options);
-    const wasm = await measure(h, scenario, "wasm", options);
-    results.push({ id: scenario.id, label: scenario.label, typescript, wasm, speedup: typescript.median / wasm.median });
+    results.push({ id: scenario.id, label: scenario.label, ...(await measure(h, scenario, options)) });
   }
   const artifact = resolve(root, "src/emu/machines/z88/wasm/dist/cambridge-z88.wasm");
   return { options, artifactBytes: existsSync(artifact) ? readFileSync(artifact).length : null, results };
@@ -275,13 +275,11 @@ async function benchmarkZ88(options, harness) {
 function printTable(report) {
   const { options, results, artifactBytes } = report;
   const f = (v) => v.toFixed(3).padStart(8);
-  console.log(
-    `Cambridge Z88: TypeScript vs WASM (${options.frames} frames/run, ${options.warmup} warmup, ${options.runs} runs)`
-  );
+  console.log(`Cambridge Z88 (${options.frames} frames/run, ${options.warmup} warmup, ${options.runs} runs)`);
   console.log(`WASM artifact: ${artifactBytes?.toLocaleString("en-US") ?? "?"} bytes`);
-  console.log("scenario          TS ms/frame   WASM ms/frame   WASM faster by");
+  console.log("scenario          ms/frame (median)      min       max");
   for (const r of results) {
-    console.log(`${r.id.padEnd(17)} ${f(r.typescript.median)}      ${f(r.wasm.median)}        ${r.speedup.toFixed(1)}x`);
+    console.log(`${r.id.padEnd(17)} ${f(r.median)}           ${f(r.min)}  ${f(r.max)}`);
   }
 }
 

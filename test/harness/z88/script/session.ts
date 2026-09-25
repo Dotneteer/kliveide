@@ -4,13 +4,12 @@ import type { BlinkState, Z80CpuState } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
-import type { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
+import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 import { MC_Z88_SLOT1, MC_Z88_SLOT2, MC_Z88_SLOT3 } from "@common/machines/constants";
 
 import {
   createHarnessZ88Machine,
   type CreateHarnessZ88MachineOptions,
-  type Z88HarnessBackend,
   type Z88HarnessMachine
 } from "../core/machines";
 
@@ -69,18 +68,16 @@ export type Z88Sample = { left: number; right: number };
 export type CreateZ88SessionOptions = CreateHarnessZ88MachineOptions;
 
 /**
- * Creates a Z88 test session: a machine on the requested backend (TypeScript by default), wired the
- * way the app wires it. See `test/harness/z88/README.md`.
+ * Creates a Z88 test session: a machine wired the way the app wires it. See
+ * `test/harness/z88/README.md`.
  */
 export async function createZ88Session(options: CreateZ88SessionOptions = {}): Promise<Z88TestSession> {
-  const machine = await createHarnessZ88Machine(options);
-  return new Z88TestSession(machine, options.backend ?? "typescript");
+  return new Z88TestSession(await createHarnessZ88Machine(options));
 }
 
 /**
  * Scripts a Cambridge Z88 through what the hardware exposes: memory, ports, CPU registers, keys, the
- * LCD picture and the beeper. It talks to the machine only through the backend-neutral machine API,
- * so the same test runs on every backend.
+ * LCD picture and the beeper. It talks to the machine only through the machine API.
  */
 export class Z88TestSession {
   private program: Program | undefined;
@@ -91,8 +88,7 @@ export class Z88TestSession {
 
   constructor(
     /** Escape hatch; tests should use (or add) session methods instead */
-    readonly machine: Z88HarnessMachine,
-    readonly backend: Z88HarnessBackend
+    readonly machine: Z88HarnessMachine
   ) {}
 
   // ==========================================================================================
@@ -333,8 +329,8 @@ export class Z88TestSession {
   }
 
   /**
-   * The CPU registers, through `getCpuState()` - the IDE's path, which makes a backend that mirrors
-   * its CPU lazily (the WASM core) bring the state up to date first.
+   * The CPU registers, through `getCpuState()` - the IDE's path, which makes the machine bring its
+   * lazily mirrored CPU state up to date from the core first.
    */
   registers(): Z88Registers {
     const cpu = this.machine.getCpuState() as Z80CpuState;

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
@@ -12,61 +12,14 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
-import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import { buildZ88Wasm, productionOutput, waitForZ88WasmBuildLock } from "../../../../scripts/build-z88-wasm.cjs";
 
 /**
- * The Z88 machine the harness drives, whichever backend emulates it: only the backend-neutral
- * machine API (`IZ88Machine`) and the IDE surface (`IZ88IdeMachine`), never a device object.
+ * The Z88 machine the harness drives: only the machine API (`IZ88Machine`) and the IDE surface
+ * (`IZ88IdeMachine`), never the core's exports directly.
  */
 export type Z88HarnessMachine = IZ88Machine & IZ88IdeMachine;
-
-/** A backend the harness can create a Z88 on */
-export type Z88HarnessBackend = "typescript" | "wasm";
-
-/** What a Z88 test needs the machine to emulate */
-export type Z88Feature =
-  /** The memory map and RAM/ROM cards (Step 4 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`) */
-  | "memory"
-  /** The CPU and the frame loop (Step 5) */
-  | "cpu"
-  /** The Blink: ports, RTC, interrupts, flap, battery (Step 6) */
-  | "blink"
-  /** The keyboard interrupt and sleep detection (Step 7) */
-  | "keyboard"
-  /** The LCD renderer (Step 8) */
-  | "lcd"
-  /** The beeper (Step 9) */
-  | "beeper"
-  /** UV EPROM and flash card programming (Step 10) */
-  | "flashCards";
-
-/**
- * What the WASM core emulates so far. Each migration step adds its feature here, and every Z88 suite
- * that needs no more than these starts running on the WASM core too.
- */
-export const Z88_WASM_FEATURES: ReadonlySet<Z88Feature> = new Set<Z88Feature>([
-  "memory",
-  "cpu",
-  "blink",
-  "keyboard",
-  "lcd",
-  "beeper",
-  "flashCards"
-]);
-
-/**
- * The backends a Z88 test runs on: the TypeScript machine always, the WASM machine once it emulates
- * every feature the test needs.
- * @param needs What the test needs the machine to emulate
- */
-export function z88HarnessBackends(...needs: Z88Feature[]): Z88HarnessBackend[] {
-  return needs.every((feature) => Z88_WASM_FEATURES.has(feature)) ? ["typescript", "wasm"] : ["typescript"];
-}
-
-/** Every backend the harness can create */
-export const Z88_HARNESS_BACKENDS: readonly Z88HarnessBackend[] = ["typescript", "wasm"];
 
 /** The repo root; the tests start in it, and `__dirname` is not reliable under Vite's transform. */
 export const REPO_ROOT = findRepoRoot(process.cwd());
@@ -128,8 +81,6 @@ export class ResolvingMessenger extends MessengerBase {
 }
 
 export type CreateHarnessZ88MachineOptions = {
-  /** The backend; "typescript" by default */
-  backend?: Z88HarnessBackend;
   /** The machine model id (`OZ50`, `OZ40`, ...); the first registered model by default */
   model?: string;
   /** Overrides the model's configuration (as the app's config changes do) */
@@ -155,29 +106,19 @@ export function z88Model(modelId?: string): MachineModel {
 }
 
 /**
- * Creates a Z88 on the requested backend, wired the way `MachineService` wires a machine: file
- * provider, audio sample rate, and (for `rom: "model"`) setup followed by a hard reset. A
- * `DebugSupport` is attached, because the step-into and breakpoint paths need one.
+ * Creates a Z88, wired the way `MachineService` wires a machine: file provider, audio sample rate,
+ * and (for `rom: "model"`) setup followed by a hard reset. A `DebugSupport` is attached, because the
+ * step-into and breakpoint paths need one. The machine runs the current WASM artifact, built from the
+ * C sources (`z88WasmArtifactBytes`).
  */
-export async function createHarnessZ88Machine(options: CreateHarnessZ88MachineOptions = {}): Promise<Z88HarnessMachine> {
-  const backend = options.backend ?? "typescript";
+export async function createHarnessZ88Machine(options: CreateHarnessZ88MachineOptions = {}): Promise<Z88WasmV2Machine> {
   const model = z88Model(options.model);
   const config = options.config ?? model.config;
 
-  let machine: Z88HarnessMachine;
-  switch (backend) {
-    case "typescript":
-      machine = new Z88Machine(model, config, new ResolvingMessenger());
-      break;
-    case "wasm":
-      machine = new Z88WasmV2Machine(model, config, new ResolvingMessenger(), {
-        artifactName: "z88-harness.wasm",
-        readArtifact: async () => z88WasmArtifactBytes()
-      });
-      break;
-    default:
-      throw new Error(`Unknown Z88 backend '${backend}'.`);
-  }
+  const machine = new Z88WasmV2Machine(model, config, new ResolvingMessenger(), {
+    artifactName: "z88-harness.wasm",
+    readArtifact: async () => z88WasmArtifactBytes()
+  });
 
   machine.setMachineProperty(FILE_PROVIDER, new HarnessFileProvider());
   if (options.audioSampleRate !== undefined) {
@@ -186,27 +127,49 @@ export async function createHarnessZ88Machine(options: CreateHarnessZ88MachineOp
   if ((options.rom ?? "blank") === "model") {
     await machine.setup();
     await machine.hardReset();
-  } else if (machine instanceof Z88WasmV2Machine) {
-    // --- A blank WASM machine still needs its core; it gets no ROM (slot 0 stays empty)
-    await machine.loadBlankCore();
   } else {
-    // --- The constructor has reset the machine; apply the sample rate the reset reads
-    machine.reset();
+    // --- A blank machine still needs its core; it gets no ROM (slot 0 holds a blank 512K ROM card)
+    await machine.loadBlankCore();
   }
   machine.executionContext.debugSupport = new DebugSupport(createAppStore("emu"));
   return machine;
 }
 
-let wasmArtifactBuilt = false;
+let wasmArtifactChecked = false;
+
+/** What the artifact is built from: the Z88 core, the shared Z80 core it includes, the build script */
+const WASM_INPUTS = ["src/emu/machines/z88/wasm/z88", "src/emu/z80/wasm"];
+const WASM_BUILD_SCRIPT = "scripts/build-z88-wasm.cjs";
+
+/** The inputs newer than the production artifact (all of them when there is none) */
+function staleZ88WasmInputs(): string[] {
+  const inputs = [
+    ...WASM_INPUTS.flatMap((dir) =>
+      readdirSync(join(REPO_ROOT, dir))
+        .filter((f) => f.endsWith(".c") || f.endsWith(".h"))
+        .map((f) => join(dir, f))
+    ),
+    WASM_BUILD_SCRIPT
+  ];
+  if (!existsSync(productionOutput)) return inputs;
+  const built = statSync(productionOutput).mtimeMs;
+  return inputs.filter((f) => statSync(join(REPO_ROOT, f)).mtimeMs > built);
+}
 
 /**
- * The bytes of the current Z88 WASM artifact. The first call in a test worker builds it from the C
- * sources (under the build lock, so parallel workers do not race); later calls reuse that build.
+ * The bytes of the current Z88 WASM artifact. The first call in a test file builds it from the C
+ * sources when it is missing or older than any of them (under the build lock, so parallel workers do
+ * not race); otherwise, and in later calls, the artifact on disk is used.
+ *
+ * Building only when stale matters: every test file starts in a fresh module scope, so an
+ * unconditional build ran once per file - about 45 builds of 1.5 s queued on the lock at the start
+ * of a run, which timed out the first test of the files at the back of the queue.
  */
 export function z88WasmArtifactBytes(): Uint8Array<ArrayBuffer> {
-  if (!wasmArtifactBuilt) {
-    buildZ88Wasm();
-    wasmArtifactBuilt = true;
+  if (!wasmArtifactChecked) {
+    waitForZ88WasmBuildLock();
+    if (staleZ88WasmInputs().length) buildZ88Wasm();
+    wasmArtifactChecked = true;
   }
   waitForZ88WasmBuildLock();
   return new Uint8Array(readFileSync(productionOutput));

@@ -2,16 +2,15 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, z88HarnessBackends, Z88_FLAT_RAM_LAYOUT } from "../index";
+import { createZ88Session, Z88_FLAT_RAM_LAYOUT } from "../index";
 import { REPO_ROOT } from "../core/machines";
 
 /*
- * The Z88 harness's own tests: every session method, on every backend.
+ * The Z88 harness's own tests: every session method.
  */
-describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 harness session (%s)", (backend) => {
+describe("Z88 harness session", () => {
   it("creates a blank machine: nothing in slot 0 but a blank ROM card", async () => {
-    const s = await createZ88Session({ backend });
-    expect(s.backend).toBe(backend);
+    const s = await createZ88Session();
     expect(s.physPeek(0x00_0000)).toBe(0x00);
     expect(s.registers().pc).toBe(0x0000);
     expect(s.lcdWidth).toBe(640);
@@ -19,7 +18,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 harness session
   });
 
   it("with rom: 'model' loads the model's ROM into slot 0", async () => {
-    const s = await createZ88Session({ backend, model: "OZ40", rom: "model" });
+    const s = await createZ88Session({ model: "OZ40", rom: "model" });
     const rom = readFileSync(join(REPO_ROOT, "src/public/roms/z88ukv40.rom"));
     for (const offset of [0x0000, 0x0001, 0x1234, 0x1_fffe]) {
       expect(s.physPeek(offset)).toBe(rom[offset]);
@@ -27,7 +26,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 harness session
   });
 
   it("loadCode maps flat internal RAM, places the code and sets PC/SP", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     const p = await s.loadCode(`
       .org $8000
 start:
@@ -57,7 +56,7 @@ done:
   });
 
   it("the flat layout makes $0000-$3FFF bank $20, writable", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.mapFlatRam().poke(0x0038, 0xc9).poke(0x3fff, 0x77);
     expect(s.peek(0x0038)).toBe(0xc9);
     expect(s.physPeek(0x08_0000 + 0x0038)).toBe(0xc9);
@@ -65,7 +64,7 @@ done:
   });
 
   it("step executes one instruction; runFrames counts 16384-tact frames", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
       nop
@@ -86,7 +85,7 @@ loop: jr loop
   });
 
   it("runUntil fails with the PC when the condition never holds", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
 loop: jr loop
@@ -95,7 +94,7 @@ loop: jr loop
   });
 
   it("setRegisters and peekWord/pokeWord round-trip", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.mapFlatRam().pokeWord(0x9000, 0xbeef).setRegisters({ hl: 0x1234, sp: 0x9000 });
     expect(s.peekWord(0x9000)).toBe(0xbeef);
     expect(s.peekBytes(0x9000, 2)).toEqual(new Uint8Array([0xef, 0xbe]));
@@ -103,16 +102,16 @@ loop: jr loop
   });
 
   it("out/in go through the Blink ports", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.out(0xd3, 0x40);
     expect(s.blinkState().SR3).toBe(0x40);
     expect(s.in(0xb0)).toBe(0x80); // MID: ZVM
   });
 });
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 harness session - keys (%s)", (backend) => {
+describe("Z88 harness session - keys", () => {
   it("keyDown/keyUp drive the key matrix", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     s.keyDown("A", "ShiftR");
     // --- A is code 43 (line 5, bit 3); ShiftR is 63 (line 7, bit 7)
     expect(s.blinkState().keyLines[5]).toBe(0x08);
@@ -123,9 +122,9 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink", "keyboard"))("Z88 har
   });
 });
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink", "beeper"))("Z88 harness session - audio (%s)", (backend) => {
+describe("Z88 harness session - audio", () => {
   it("collects audio samples only after startAudio", async () => {
-    const s = await createZ88Session({ backend, audioSampleRate: 48_000 });
+    const s = await createZ88Session({ audioSampleRate: 48_000 });
     await s.loadCode(`
       .org $8000
 loop: jr loop

@@ -3,103 +3,40 @@ import { describe, expect, it } from "vitest";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
-import {
-  createZ88Session,
-  z88HarnessBackends,
-  z88Model,
-  type Z88Key,
-  type Z88TestSession
-} from "../../harness/z88";
+import { createZ88Session, z88Model, type Z88Key, type Z88TestSession } from "../../harness/z88";
+import { audioDigest, Digest, goldens, machineState, sha256 } from "./z88-goldens";
 
 /*
- * Parity of the WASM Cambridge Z88 with the TypeScript oracle, in lockstep: the same program on both
- * backends, compared through the public machine API - CPU registers, tacts and frames, the Blink state
- * the IDE shows, the snooze and sleep state, all 4 MB of physical memory, the LCD picture and the
- * current frame's audio samples.
+ * The Cambridge Z88 against fixed goldens: OZ booting and at the keyboard on every model, a mixed
+ * program instruction by instruction, the beeper at several sample rates, the LCD from random screen
+ * memory at every size, and the cards programmed from Z80 code.
  *
- * Covers what the core emulates so far (Steps 4-9 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`):
- * the memory map, the CPU and the frame loop, the Blink (ports, RTC, interrupts), the keyboard and
- * sleep, the LCD and the beeper. The samples are compared exactly: the core computes them in doubles
- * with the TypeScript beeper's arithmetic.
+ * Until the TypeScript machine was removed these suites ran it and the WASM core in lockstep and
+ * compared them (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`); the TypeScript side's values
+ * at every checkpoint - CPU registers, tacts and frames, the Blink state, snooze and sleep, and the
+ * hashes of all 4 MB of memory, the LCD picture and the frame's audio samples - are the goldens in
+ * `goldens/wasm-z88-parity.json` (`z88-goldens.ts`). Checkpoints that were compared after every frame
+ * or instruction are digests of that whole stretch.
  */
 
-const runsOnWasm = z88HarnessBackends("memory", "cpu", "blink", "keyboard", "lcd", "beeper").includes("wasm");
+const golden = goldens("wasm-z88-parity");
 
-/** The app's usual rate; without one the TypeScript beeper emits a sample at every clock step */
+/** The app's usual rate; without one the beeper emits a sample at every clock step */
 const AUDIO_RATE = 44_100;
 
-/** Compares the pictures; the message names the first differing pixel */
-function expectSamePicture(ts: Z88TestSession, wasm: Z88TestSession, where: string): void {
-  expect([wasm.lcdWidth, wasm.lcdHeight], `LCD size ${where}`).toEqual([ts.lcdWidth, ts.lcdHeight]);
-  const a = ts.screen();
-  const b = wasm.screen();
-  const index = a.findIndex((v, i) => v !== b[i]);
-  if (index >= 0) {
-    const x = index % ts.lcdWidth;
-    const y = Math.floor(index / ts.lcdWidth);
-    throw new Error(
-      `LCD differs ${where}: pixel (${x}, ${y}) (typescript $${a[index].toString(16)}, wasm $${b[index].toString(16)})`
-    );
-  }
-}
+const MODELS = machineRegistry
+  .find((m) => m.machineId === "z88")
+  .models.map((m) => m.modelId);
 
-/** Compares the samples of the last completed frame */
-function expectSameAudio(ts: Z88TestSession, wasm: Z88TestSession, where: string): void {
-  const a = ts.machine.getAudioSamples();
-  const b = wasm.machine.getAudioSamples();
-  expect(b.length, `sample count ${where}`).toBe(a.length);
-  const index = a.findIndex((v, i) => v.left !== b[i].left || v.right !== b[i].right);
-  if (index >= 0) {
-    throw new Error(
-      `Audio differs ${where}: sample ${index} (typescript ${JSON.stringify(a[index])}, wasm ${JSON.stringify(b[index])})`
-    );
-  }
-}
-
-/** Compares the two machines; the message names the first difference */
-function expectSameState(
-  ts: Z88TestSession,
-  wasm: Z88TestSession,
-  where: string,
-  { audio = false }: { audio?: boolean } = {}
-): void {
-  expect(wasm.registers(), `registers ${where}`).toEqual(ts.registers());
-  expect(wasm.tacts, `tacts ${where}`).toBe(ts.tacts);
-  expect(wasm.machine.frames, `frames ${where}`).toBe(ts.machine.frames);
-  expect(wasm.snoozed, `snoozed ${where}`).toBe(ts.snoozed);
-  expect(wasm.sleeping, `sleep mode ${where}`).toBe(ts.sleeping);
-  expect(wasm.blinkState(), `Blink ${where}`).toEqual(ts.blinkState());
-  expectSamePicture(ts, wasm, where);
-  if (audio) expectSameAudio(ts, wasm, where);
-  for (let bank = 0; bank < 256; bank++) {
-    const a = ts.machine.getMemoryPartition(bank);
-    const b = wasm.machine.getMemoryPartition(bank);
-    if (Buffer.compare(Buffer.from(a), Buffer.from(b)) !== 0) {
-      const offset = a.findIndex((v, i) => v !== b[i]);
-      throw new Error(
-        `Memory differs ${where}: bank $${bank.toString(16)} offset $${offset.toString(16)} ` +
-          `(typescript $${a[offset].toString(16)}, wasm $${b[offset].toString(16)})`
-      );
-    }
-  }
-}
-
-describe.runIf(runsOnWasm)("Z88 parity: OZ boots identically on both backends", () => {
-  const models = machineRegistry
-    .find((m) => m.machineId === "z88")
-    .models.filter((m) => m.menuGroup === undefined) // the originals, not the backend twins
-    .map((m) => m.modelId);
-
-  it.each(models)(
+describe("Z88 goldens: OZ boots", () => {
+  it.each(MODELS)(
     "%s",
     async (model) => {
-      const ts = await createZ88Session({ backend: "typescript", model, rom: "model", audioSampleRate: AUDIO_RATE });
-      const wasm = await createZ88Session({ backend: "wasm", model, rom: "model", audioSampleRate: AUDIO_RATE });
-      expectSameState(ts, wasm, "after the hard reset");
+      const s = await createZ88Session({ model, rom: "model", audioSampleRate: AUDIO_RATE });
+      golden.expect(`boot ${model}: after the hard reset`, machineState(s));
       for (const checkpoint of [1, 7, 8, 9, 50, 200, 600, 1700]) {
-        ts.runFrames(checkpoint - ts.frames);
-        wasm.runFrames(checkpoint - wasm.frames);
-        expectSameState(ts, wasm, `at frame ${checkpoint}`, { audio: true });
+        s.runFrames(checkpoint - s.frames);
+        golden.expect(`boot ${model}: at frame ${checkpoint}`, machineState(s, { audio: true }));
       }
     },
     60_000
@@ -199,61 +136,51 @@ ticks:   .defb 0
 table:   .defb $11,$22,$33,$44,$55,$66,$77,$88
 `;
 
-describe.runIf(runsOnWasm)("Z88 parity: a mixed program, instruction by instruction", () => {
-  it("30000 instructions: the same registers and tacts after each, the same machine at the end", async () => {
-    const ts = await createZ88Session({ backend: "typescript" });
-    const wasm = await createZ88Session({ backend: "wasm" });
-    await ts.loadCode(MIXED, { entry: "start" });
-    await wasm.loadCode(MIXED, { entry: "start" });
+describe("Z88 goldens: a mixed program, instruction by instruction", () => {
+  it("30000 instructions: the registers and tacts after each, the machine at the end", async () => {
+    const s = await createZ88Session();
+    await s.loadCode(MIXED, { entry: "start" });
 
     // --- HALT waits for the next RTC tick (a 4-tact step each), so it takes this many to cross
     // --- several interrupts and frames
+    const digest = new Digest();
     for (let i = 0; i < 30000; i++) {
-      ts.step();
-      wasm.step();
-      const where = `after instruction ${i + 1} (PC $${ts.registers().pc.toString(16)})`;
-      expect(wasm.registers(), where).toEqual(ts.registers());
-      expect(wasm.tacts, where).toBe(ts.tacts);
+      s.step();
+      digest.add({ registers: s.registers(), tacts: s.tacts });
+      if ((i + 1) % 1000 === 0) golden.expect(`mixed: instructions ${i - 998}-${i + 1}`, digest.take());
     }
-    expectSameState(ts, wasm, "after 30000 instructions");
+    golden.expect("mixed: after 30000 instructions", machineState(s));
     // --- The program really went through interrupts and frames
-    expect(ts.peek(ts.symbol("ticks"))).toBeGreaterThanOrEqual(3);
-    expect(ts.machine.frames).toBeGreaterThanOrEqual(6);
+    expect(s.peek(s.symbol("ticks"))).toBeGreaterThanOrEqual(3);
+    expect(s.machine.frames).toBeGreaterThanOrEqual(6);
   });
 
-  it("the same program in whole frames reaches the same state", async () => {
-    const ts = await createZ88Session({ backend: "typescript" });
-    const wasm = await createZ88Session({ backend: "wasm" });
-    await ts.loadCode(MIXED, { entry: "start" });
-    await wasm.loadCode(MIXED, { entry: "start" });
+  it("the same program in whole frames", async () => {
+    const s = await createZ88Session();
+    await s.loadCode(MIXED, { entry: "start" });
     for (const frames of [1, 3, 20, 100]) {
-      ts.runFrames(frames);
-      wasm.runFrames(frames);
-      expectSameState(ts, wasm, `after ${frames} more frames`);
+      s.runFrames(frames);
+      golden.expect(`mixed frames: after ${frames} more frames`, machineState(s));
     }
   });
 
-  it("a frame stopped midway (runTo) finishes identically", async () => {
-    const ts = await createZ88Session({ backend: "typescript" });
-    const wasm = await createZ88Session({ backend: "wasm" });
-    await ts.loadCode(MIXED, { entry: "start" });
-    await wasm.loadCode(MIXED, { entry: "start" });
+  it("a frame stopped midway (runTo), then finished", async () => {
+    const s = await createZ88Session();
+    await s.loadCode(MIXED, { entry: "start" });
     for (let round = 0; round < 5; round++) {
-      ts.runTo("irq");
-      wasm.runTo("irq");
-      expectSameState(ts, wasm, `at the interrupt handler, round ${round}`);
-      ts.runFrames(1);
-      wasm.runFrames(1);
-      expectSameState(ts, wasm, `after finishing the frame, round ${round}`);
+      s.runTo("irq");
+      golden.expect(`mixed runTo: at the interrupt handler, round ${round}`, machineState(s));
+      s.runFrames(1);
+      golden.expect(`mixed runTo: after finishing the frame, round ${round}`, machineState(s));
     }
   });
 });
 
 /*
  * OZ driven from the keyboard: the key interrupt, the KWAIT snooze and wake-up, the screens OZ draws
- * in response, and whatever it beeps - compared after every frame.
+ * in response, and whatever it beeps - after every frame.
  */
-describe.runIf(runsOnWasm)("Z88 parity: OZ at the keyboard", () => {
+describe("Z88 goldens: OZ at the keyboard", () => {
   // --- Each entry is held for a few frames, then released for a few; a chord is pressed together
   const SCRIPT: Z88Key[][] = [
     ["Index"],
@@ -280,42 +207,27 @@ describe.runIf(runsOnWasm)("Z88 parity: OZ at the keyboard", () => {
     ["Index"]
   ];
 
-  const models = machineRegistry
-    .find((m) => m.machineId === "z88")
-    .models.filter((m) => m.menuGroup === undefined)
-    .map((m) => m.modelId);
-
-  it.each(models)(
-    "%s: the same machine after every frame of a typing session",
+  it.each(MODELS)(
+    "%s: the machine after every frame of a typing session",
     async (model) => {
-      const ts = await createZ88Session({ backend: "typescript", model, rom: "model", audioSampleRate: AUDIO_RATE });
-      const wasm = await createZ88Session({ backend: "wasm", model, rom: "model", audioSampleRate: AUDIO_RATE });
-      ts.runFrames(1700);
-      wasm.runFrames(1700);
-      expectSameState(ts, wasm, "after booting");
-      const bootPicture = ts.screen();
+      const s = await createZ88Session({ model, rom: "model", audioSampleRate: AUDIO_RATE });
+      s.runFrames(1700);
+      golden.expect(`typing ${model}: after booting`, machineState(s));
+      const bootPicture = s.screen();
 
-      let frame = 0;
-      const both = (fn: (s: Z88TestSession) => void) => {
-        fn(ts);
-        fn(wasm);
-      };
+      // --- Every frame's whole machine goes into the digest of the key's hold or release
+      const digest = new Digest();
       for (const [index, keys] of SCRIPT.entries()) {
-        both((s) => s.keyDown(...keys));
-        for (let i = 0; i < 6; i++, frame++) {
-          both((s) => s.runFrames(1));
-          expectSameState(ts, wasm, `while holding ${keys.join("+")} (#${index}, frame ${frame})`, { audio: true });
-        }
-        both((s) => s.keyUp(...keys));
-        for (let i = 0; i < 18; i++, frame++) {
-          both((s) => s.runFrames(1));
-          expectSameState(ts, wasm, `after releasing ${keys.join("+")} (#${index}, frame ${frame})`, {
-            audio: true
-          });
-        }
+        s.keyDown(...keys);
+        for (let i = 0; i < 6; i++) digest.add(machineState(s.runFrames(1), { audio: true }));
+        golden.expect(`typing ${model}: holding ${keys.join("+")} (#${index})`, digest.take());
+        s.keyUp(...keys);
+        for (let i = 0; i < 18; i++) digest.add(machineState(s.runFrames(1), { audio: true }));
+        golden.expect(`typing ${model}: after releasing ${keys.join("+")} (#${index})`, digest.take());
       }
+      golden.expect(`typing ${model}: at the end`, machineState(s, { audio: true }));
       // --- The keys really reached OZ: the picture is not the one it booted to
-      expect(ts.screen()).not.toEqual(bootPicture);
+      expect(s.screen()).not.toEqual(bootPicture);
     },
     120_000
   );
@@ -371,43 +283,37 @@ w2:   djnz w2
       jr next
 `;
 
-describe.runIf(runsOnWasm)("Z88 parity: the beeper", () => {
+describe("Z88 goldens: the beeper", () => {
   it.each([44_100, 48_000, 22_050, 11_025, 96_000])(
-    "at %i Hz: the same samples in every frame",
+    "at %i Hz: the samples of every frame",
     async (rate) => {
-      const ts = await createZ88Session({ backend: "typescript", audioSampleRate: rate });
-      const wasm = await createZ88Session({ backend: "wasm", audioSampleRate: rate });
-      await ts.loadCode(BEEPER, { entry: "start" });
-      await wasm.loadCode(BEEPER, { entry: "start" });
+      const s = await createZ88Session({ audioSampleRate: rate });
+      await s.loadCode(BEEPER, { entry: "start" });
       let nonZero = 0;
+      const digest = new Digest();
       for (let frame = 0; frame < 120; frame++) {
-        ts.runFrames(1);
-        wasm.runFrames(1);
-        expectSameAudio(ts, wasm, `in frame ${frame}`);
-        nonZero += ts.machine.getAudioSamples().filter((sample) => sample.left !== 0).length;
+        s.runFrames(1);
+        const samples = s.machine.getAudioSamples();
+        digest.add(audioDigest(samples));
+        if ((frame + 1) % 20 === 0) golden.expect(`beeper ${rate} Hz: frames ${frame - 19}-${frame}`, digest.take());
+        nonZero += samples.filter((sample) => sample.left !== 0).length;
       }
-      expectSameState(ts, wasm, "after 120 frames", { audio: true });
+      golden.expect(`beeper ${rate} Hz: after 120 frames`, machineState(s, { audio: true }));
       // --- The program really made sound
       expect(nonZero).toBeGreaterThan(1000);
     },
     60_000
   );
 
-  it("a rate change (set, then a reset) takes effect the same way on both", async () => {
-    const ts = await createZ88Session({ backend: "typescript", audioSampleRate: 44_100 });
-    const wasm = await createZ88Session({ backend: "wasm", audioSampleRate: 44_100 });
+  it("a rate change (set, then a reset) takes effect", async () => {
+    const s = await createZ88Session({ audioSampleRate: 44_100 });
+    const digest = new Digest();
     for (const rate of [44_100, 32_000, 8_000]) {
-      for (const s of [ts, wasm]) {
-        s.machine.setMachineProperty(AUDIO_SAMPLE_RATE, rate);
-        s.reset();
-      }
-      await ts.loadCode(BEEPER, { entry: "start" });
-      await wasm.loadCode(BEEPER, { entry: "start" });
-      for (let frame = 0; frame < 30; frame++) {
-        ts.runFrames(1);
-        wasm.runFrames(1);
-        expectSameAudio(ts, wasm, `at ${rate} Hz, frame ${frame}`);
-      }
+      s.machine.setMachineProperty(AUDIO_SAMPLE_RATE, rate);
+      s.reset();
+      await s.loadCode(BEEPER, { entry: "start" });
+      for (let frame = 0; frame < 30; frame++) digest.add(audioDigest(s.runFrames(1).machine.getAudioSamples()));
+      golden.expect(`beeper rate change: 30 frames at ${rate} Hz`, digest.take());
     }
   });
 });
@@ -417,7 +323,7 @@ describe.runIf(runsOnWasm)("Z88 parity: the beeper", () => {
  * combination turns up in a 64K of random bytes, for all five LCD sizes, through the text flash and
  * cursor phases, and with the LCD switched off and on again.
  */
-describe.runIf(runsOnWasm)("Z88 parity: the LCD from random screen memory", () => {
+describe("Z88 goldens: the LCD from random screen memory", () => {
   /** A small deterministic generator, so a failure reproduces */
   function random(seed: number): () => number {
     let x = seed >>> 0 || 1;
@@ -439,39 +345,32 @@ describe.runIf(runsOnWasm)("Z88 parity: the LCD from random screen memory", () =
     async (size) => {
       const model = z88Model();
       const config = size ? { ...model.config, [MC_SCREEN_SIZE]: size } : undefined;
-      const ts = await createZ88Session({ backend: "typescript", config });
-      const wasm = await createZ88Session({ backend: "wasm", config });
+      const s = await createZ88Session({ config });
       const next = random(size ? size.length * 7919 + size.charCodeAt(4) : 88);
       const bytes = Array.from({ length: 0xf000 }, next);
-      for (const s of [ts, wasm]) {
-        await s.loadCode(`
+      await s.loadCode(`
       .org $f000
 spin: jr spin
-        `);
-        s.poke(0x0000, bytes);
-        // --- The screen map in bank $22, the fonts spread over banks $20-$23
-        outWord(s, 0x70, (0x21 << 5) | (0x1200 >> 9)); // PB0: LORES0 (UDGs)
-        outWord(s, 0x71, (0x23 << 2) | (0x1000 >> 12)); // PB1: LORES1
-        outWord(s, 0x72, (0x20 << 1) | (0x2000 >> 13)); // PB2: HIRES0
-        outWord(s, 0x73, (0x21 << 3) | (0x2800 >> 11)); // PB3: HIRES1
-        outWord(s, 0x74, (0x22 << 3) | (0x0000 >> 11)); // SBR
-        s.out(0xb0, 0x05); // RAMS | LCDON
-      }
-      // --- Past two text flash toggles (every 200 frames), through the cursor phases of TIM0
+      `);
+      s.poke(0x0000, bytes);
+      // --- The screen map in bank $22, the fonts spread over banks $20-$23
+      outWord(s, 0x70, (0x21 << 5) | (0x1200 >> 9)); // PB0: LORES0 (UDGs)
+      outWord(s, 0x71, (0x23 << 2) | (0x1000 >> 12)); // PB1: LORES1
+      outWord(s, 0x72, (0x20 << 1) | (0x2000 >> 13)); // PB2: HIRES0
+      outWord(s, 0x73, (0x21 << 3) | (0x2800 >> 11)); // PB3: HIRES1
+      outWord(s, 0x74, (0x22 << 3) | (0x0000 >> 11)); // SBR
+      s.out(0xb0, 0x05); // RAMS | LCDON
+      // --- Past two text flash toggles (every 200 frames), through the cursor phases of TIM0; the
+      // --- picture every 8th frame goes into the digest of each 80 frames
+      const digest = new Digest();
       for (let frame = 1; frame <= 480; frame++) {
-        ts.runFrames(1);
-        wasm.runFrames(1);
-        if (frame % 8 === 1) expectSamePicture(ts, wasm, `after frame ${frame}`);
-        if (frame === 240) {
-          ts.out(0xb0, 0x04);
-          wasm.out(0xb0, 0x04);
-        }
-        if (frame === 264) {
-          ts.out(0xb0, 0x05);
-          wasm.out(0xb0, 0x05);
-        }
+        s.runFrames(1);
+        if (frame % 8 === 1) digest.add({ width: s.lcdWidth, height: s.lcdHeight, sha256: sha256(s.screen()) });
+        if (frame % 80 === 0) golden.expect(`lcd ${size ?? "default"}: frames ${frame - 79}-${frame}`, digest.take());
+        if (frame === 240) s.out(0xb0, 0x04);
+        if (frame === 264) s.out(0xb0, 0x05);
       }
-      expectSameState(ts, wasm, "at the end");
+      golden.expect(`lcd ${size ?? "default"}: at the end`, machineState(s));
     },
     60_000
   );
@@ -485,7 +384,7 @@ spin: jr spin
  * bank. The whole machine, all 4 MB included, is compared after the plug, after the program and
  * after the card is pulled out again.
  */
-describe.runIf(runsOnWasm)("Z88 parity: cards hot-plugged and programmed from Z80 code", () => {
+describe("Z88 goldens: cards hot-plugged and programmed from Z80 code", () => {
   type Family = "amd" | "intel" | "eprom" | "plain";
   const CARDS: { label: string; cardType: string; size: number; family: Family }[] = [
     { label: "AMD 29F040B", cardType: "AMDF29F040B", size: 512, family: "amd" },
@@ -785,7 +684,7 @@ ${epilogue}`;
 
   const cases = CARDS.flatMap((card) => ([1, 2, 3] as const).map((slot) => ({ ...card, slot })));
 
-  it.each(cases)("$label in slot $slot", async ({ cardType, size, family, slot }) => {
+  it.each(cases)("$label in slot $slot", async ({ label, cardType, size, family, slot }) => {
     const base = slot * 0x40;
     const source = SOURCES[family]
       .replace(/\bBANK0\b/g, `$${base.toString(16)}`)
@@ -794,24 +693,19 @@ ${epilogue}`;
       .replace(/\bBANK21\b/g, `$${(base + 0x21).toString(16)}`)
       .replace(/\bEPR\b/g, size === 32 ? "$48" : "$69");
 
-    const ts = await createZ88Session({ backend: "typescript" });
-    const wasm = await createZ88Session({ backend: "wasm" });
-    for (const s of [ts, wasm]) {
-      await s.loadCode(source, { entry: "start" });
-      s.runFrames(3);
-      await s.plugCard(slot, { cardType, size });
-    }
-    expectSameState(ts, wasm, "after the card went in");
+    const where = `${label} in slot ${slot}`;
+    const s = await createZ88Session();
+    await s.loadCode(source, { entry: "start" });
+    s.runFrames(3);
+    await s.plugCard(slot, { cardType, size });
+    golden.expect(`${where}: after the card went in`, machineState(s));
 
-    for (const s of [ts, wasm]) {
-      s.poke(s.symbol("go"), 1);
-      s.runTo("done", { maxFrames: 400 });
-    }
-    expectSameState(ts, wasm, "after the program");
+    s.poke(s.symbol("go"), 1);
+    s.runTo("done", { maxFrames: 400 });
+    golden.expect(`${where}: after the program`, machineState(s));
 
-    // --- The program really reached the card as the chip documentation says (checked on the
-    // --- TypeScript side; the WASM side equals it)
-    const bytes = (name: string, length = 16) => [...ts.peekBytes(ts.symbol(name), length)];
+    // --- The program really reached the card as the chip documentation says
+    const bytes = (name: string, length = 16) => [...s.peekBytes(s.symbol(name), length)];
     const data = bytes("data");
     const erased = new Array(16).fill(0xff);
     const card = slot * 0x10_0000;
@@ -821,7 +715,7 @@ ${epilogue}`;
         expect(bytes("stat", 2)).toEqual([0x60, 0x20]);
         expect(bytes("back1")).toEqual(erased);
         expect(bytes("back4")).toEqual(data);
-        expect(ts.physPeek(card + 0x4000 + 0x1ff)).toBe(0xa5);
+        expect(s.physPeek(card + 0x4000 + 0x1ff)).toBe(0xa5);
         break;
       case "intel":
         expect(bytes("ids", 3)).toEqual([0x89, size === 512 ? 0xa7 : 0xa6, 0xff]);
@@ -833,18 +727,16 @@ ${epilogue}`;
         // --- Only slot 3 has the programming voltage
         expect(bytes("back1")).toEqual(slot === 3 ? data : erased);
         expect(bytes("back4")).toEqual(slot === 3 ? data : erased);
-        expect([ts.physPeek(card + 0x4000 + 0x200), ts.physPeek(card + 0x4000 + 0x300)]).toEqual([0xff, 0xff]);
+        expect([s.physPeek(card + 0x4000 + 0x200), s.physPeek(card + 0x4000 + 0x300)]).toEqual([0xff, 0xff]);
         break;
       case "plain":
         expect(bytes("back1")).toEqual(cardType === "ROM" ? new Array(16).fill(0) : data);
         break;
     }
 
-    for (const s of [ts, wasm]) {
-      s.runFrames(2);
-      await s.plugCard(slot, undefined);
-      s.runFrames(2);
-    }
-    expectSameState(ts, wasm, "after the card came out");
+    s.runFrames(2);
+    await s.plugCard(slot, undefined);
+    s.runFrames(2);
+    golden.expect(`${where}: after the card came out`, machineState(s));
   });
 });

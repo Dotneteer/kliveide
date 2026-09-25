@@ -14,11 +14,19 @@ import {
   MC_Z88_USE_DEFAULT_ROM
 } from "@common/machines/constants";
 import { AUDIO_SAMPLE_RATE, FILE_PROVIDER } from "@emu/machines/machine-props";
-import { Z88Machine } from "@emu/machines/z88/Z88Machine";
 import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
-import { Z88_NO_CODE_INJECTION } from "@emu/machines/z88/z88MachineInfo";
+import { z88KeyMappings } from "@emu/machines/z88/Z88KeyMappings";
+import {
+  parseZ88PartitionLabel,
+  Z88_NO_CODE_INJECTION,
+  z88DisassemblySections,
+  z88PartitionDescriptions,
+  z88PartitionGroups,
+  z88PartitionLabels,
+  z88RomFlags
+} from "@emu/machines/z88/z88MachineInfo";
 import { z88InternalRamSizeInBytes } from "@emu/machines/z88/z88CardCatalog";
 import {
   createHarnessZ88Machine,
@@ -27,20 +35,25 @@ import {
   ResolvingMessenger,
   z88WasmArtifactBytes
 } from "../../harness/z88";
+import { goldens } from "./z88-goldens";
 
 /*
  * The WASM Cambridge Z88 as a machine (Steps 2-9 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`):
- * the host plumbing it shares with the TypeScript machine - compared with it side by side - and how
- * the adapter hands keys, audio samples, the picture and the sleep state between the app and the core.
+ * the host plumbing - identity, setup, cards, the IDE's questions - and how the adapter hands keys,
+ * audio samples, the picture and the sleep state between the app and the core.
+ *
+ * Until the TypeScript machine was removed these were compared with it side by side; its answers are
+ * now fixed values, or the goldens in `goldens/wasm-z88-machine.json` (`z88-goldens.ts`).
  */
+
+const golden = goldens("wasm-z88-machine");
 
 const SLOT = 0x10_0000;
 
 function models(): string[] {
   return machineRegistry
     .find((m) => m.machineId === "z88")
-    .models.filter((m) => m.menuGroup === undefined) // the originals, not the backend twins
-    .map((m) => m.modelId);
+    .models.map((m) => m.modelId);
 }
 
 function sentSettings(machine: Z88HarnessMachine): unknown[] {
@@ -65,54 +78,59 @@ class RecordingZ88WasmMachine extends Z88WasmV2Machine {
   }
 }
 
-describe("Cambridge Z88 WASM machine - identity and metadata (same as the TypeScript machine)", () => {
+describe("Cambridge Z88 WASM machine - identity and metadata", () => {
   const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-  const ts = new Z88Machine(model, model.config, undefined);
   const wasm = new Z88WasmV2Machine(model, model.config);
 
   it.each([
-    "machineId",
-    "romId",
-    "uiFrameFrequency",
-    "softResetOnFirstStart",
-    "baseClockFrequency",
-    "clockMultiplier",
-    "delayedAddressBus",
-    "tactsInFrame",
-    "isOsInitialized",
-    "isInSleepMode"
-  ])("%s", (member) => {
-    expect((wasm as any)[member]).toEqual((ts as any)[member]);
+    ["machineId", "z88"],
+    ["romId", "z88"],
+    ["uiFrameFrequency", 8],
+    ["softResetOnFirstStart", true],
+    ["baseClockFrequency", 3_276_800],
+    ["clockMultiplier", 1],
+    ["delayedAddressBus", false],
+    ["tactsInFrame", 16_384],
+    ["isOsInitialized", true],
+    ["isInSleepMode", false]
+  ])("%s", (member, expected) => {
+    expect((wasm as any)[member]).toEqual(expected);
   });
 
-  it("answers the partition, ROM-page and disassembly questions the same way", () => {
-    expect(wasm.getPartitionLabels()).toEqual(ts.getPartitionLabels());
-    expect(wasm.getPartitionGroups()).toEqual(ts.getPartitionGroups());
-    expect(wasm.getPartitionDescriptions()).toEqual(ts.getPartitionDescriptions());
-    for (const label of ["0", "3f", "FF", "100", "x"]) {
-      expect(wasm.parsePartitionLabel(label)).toBe(ts.parsePartitionLabel(label));
+  it("answers the partition, ROM-page and disassembly questions from the shared machine info", () => {
+    expect(wasm.getPartitionLabels()).toEqual(z88PartitionLabels());
+    expect(wasm.getPartitionGroups()).toEqual(z88PartitionGroups());
+    expect(wasm.getPartitionDescriptions()).toEqual(z88PartitionDescriptions());
+    for (const [label, bank] of [
+      ["0", 0x00],
+      ["3f", 0x3f],
+      ["FF", 0xff],
+      ["100", undefined],
+      ["x", undefined]
+    ] as const) {
+      expect(wasm.parsePartitionLabel(label)).toBe(bank);
+      expect(parseZ88PartitionLabel(label)).toBe(bank);
     }
-    expect(wasm.getRomFlags()).toEqual(ts.getRomFlags());
-    expect(wasm.getSelectedRomPage()).toBe(ts.getSelectedRomPage());
-    expect(wasm.getSelectedRamBank()).toBe(ts.getSelectedRamBank());
+    expect(wasm.getRomFlags()).toEqual(z88RomFlags());
+    expect(wasm.getSelectedRomPage()).toBe(0);
+    expect(wasm.getSelectedRamBank()).toBe(0);
     for (const options of [{}, { ram: true }, { screen: true }, { ram: true, screen: true }]) {
-      expect(wasm.getDisassemblySections(options)).toEqual(ts.getDisassemblySections(options));
+      expect(wasm.getDisassemblySections(options)).toEqual(z88DisassemblySections(options));
+      expect(wasm.getDisassemblySections(options)).toEqual([{ startAddress: 0x0000, endAddress: 0xffff, sectionType: 1 }]);
     }
   });
 
-  it("uses the same key codes and default key mapping", () => {
-    expect(wasm.getKeyCodeSet()).toBe(ts.getKeyCodeSet());
-    expect(wasm.getDefaultKeyMapping()).toBe(ts.getDefaultKeyMapping());
+  it("uses the Z88 key codes and default key mapping", () => {
+    expect(wasm.getKeyCodeSet()).toBe(Z88KeyCode);
+    expect(wasm.getDefaultKeyMapping()).toBe(z88KeyMappings);
   });
 
-  it("refuses code injection the same way (follow-up F4: no delivery route on the Z88)", async () => {
-    for (const machine of [ts, wasm]) {
-      await expect(machine.getCodeInjectionFlow("OZ50")).rejects.toThrow(Z88_NO_CODE_INJECTION);
-      expect(() => machine.injectCodeToRun({} as any)).toThrow(Z88_NO_CODE_INJECTION);
-    }
+  it("refuses code injection (follow-up F4: no delivery route on the Z88)", async () => {
+    await expect(wasm.getCodeInjectionFlow("OZ50")).rejects.toThrow(Z88_NO_CODE_INJECTION);
+    expect(() => wasm.injectCodeToRun({} as any)).toThrow(Z88_NO_CODE_INJECTION);
   });
 
-  it("sizes the internal RAM from MC_Z88_INTRAM as the TypeScript banked memory does", () => {
+  it("sizes the internal RAM from MC_Z88_INTRAM", () => {
     for (const mask of [0x01, 0x07, 0x1f, undefined]) {
       const machine = new Z88WasmV2Machine(model, { [MC_Z88_INTRAM]: mask });
       expect(machine.internalRam).toEqual({ kind: "RAM", sizeInBytes: z88InternalRamSizeInBytes(mask ?? 0x1f) });
@@ -120,19 +138,17 @@ describe("Cambridge Z88 WASM machine - identity and metadata (same as the TypeSc
   });
 });
 
-describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", () => {
-  it.each(models())("%s: loads the same slot-0 image, ROM properties and keyboard layout", async (model) => {
-    const ts = await createHarnessZ88Machine({ backend: "typescript", model, rom: "model" });
-    const wasm = await createHarnessZ88Machine({ backend: "wasm", model, rom: "model" });
+describe("Cambridge Z88 WASM machine - setup", () => {
+  it.each(models())("%s: loads the recorded slot-0 image, ROM properties and keyboard layout", async (model) => {
+    const machine = await createHarnessZ88Machine({ model, rom: "model" });
 
-    expect(wasm.getMachineProperty(MC_Z88_INTROM)).toBe(ts.getMachineProperty(MC_Z88_INTROM));
-    expect(wasm.getMachineProperty(MC_Z88_USE_DEFAULT_ROM)).toBe(ts.getMachineProperty(MC_Z88_USE_DEFAULT_ROM));
-    expect(sentSettings(wasm)).toEqual(sentSettings(ts));
-
-    const romSize = wasm.getMachineProperty(MC_Z88_INTROM) as number;
-    for (let bank = 0; bank < romSize / 0x4000; bank++) {
-      expect(wasm.getMemoryPartition(bank), `bank ${bank}`).toEqual(ts.getMemoryPartition(bank));
-    }
+    const romSize = machine.getMachineProperty(MC_Z88_INTROM) as number;
+    golden.expect(`setup ${model}`, {
+      intRom: romSize,
+      useDefaultRom: machine.getMachineProperty(MC_Z88_USE_DEFAULT_ROM),
+      settings: sentSettings(machine),
+      romBanks: Array.from({ length: romSize / 0x4000 }, (_, bank) => machine.getMemoryPartition(bank))
+    });
   });
 
   it("loads the core once, however often it is set up", async () => {
@@ -153,8 +169,8 @@ describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", 
     expect(reads).toBe(1);
   });
 
-  it("a blank core holds the blank 512K ROM card in slot 0, as a constructed TypeScript machine does", async () => {
-    const wasm = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+  it("a blank core holds the blank 512K ROM card in slot 0", async () => {
+    const wasm = (await createHarnessZ88Machine()) as Z88WasmV2Machine;
     expect(wasm.getInsertedCard(0)).toEqual({ kind: "ROM", sizeInBytes: 0x08_0000 });
     for (const slot of [1, 2, 3]) expect(wasm.getInsertedCard(slot)).toBeUndefined();
     expect(wasm.directReadMemory(0)).toBe(0);
@@ -169,14 +185,9 @@ describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", 
   ])("LCD size %s: %i x %i, and the pixel buffer is exactly the LCD", async (size, width, height) => {
     const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
     const config = { ...model.config, [MC_SCREEN_SIZE]: size };
-    const ts = await createHarnessZ88Machine({ backend: "typescript", config, rom: "model" });
-    const wasm = (await createHarnessZ88Machine({ backend: "wasm", config, rom: "model" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ config, rom: "model" })) as Z88WasmV2Machine;
 
     expect([wasm.screenWidthInPixels, wasm.screenHeightInPixels]).toEqual([width, height]);
-    expect([wasm.screenWidthInPixels, wasm.screenHeightInPixels]).toEqual([
-      ts.screenWidthInPixels,
-      ts.screenHeightInPixels
-    ]);
     expect(wasm.getPixelBuffer()).toHaveLength(width * height);
     expect(wasm.getPixelBufferBytes()).toHaveLength(width * height * 4);
     // --- A view of the core's buffer, not a copy
@@ -184,7 +195,7 @@ describe("Cambridge Z88 WASM machine - setup (same as the TypeScript machine)", 
   });
 });
 
-describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", () => {
+describe("Cambridge Z88 WASM machine - cards", () => {
   /** A file provider that also serves card images by name */
   class CardFiles extends HarnessFileProvider {
     constructor(private readonly files: Record<string, Uint8Array>) {
@@ -195,49 +206,45 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
     }
   }
 
-  async function both(slots: Record<string, unknown>, files: Record<string, Uint8Array>) {
+  async function machineWith(slots: Record<string, unknown>, files: Record<string, Uint8Array>) {
     const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
-    const results: Z88HarnessMachine[] = [];
-    for (const backend of ["typescript", "wasm"] as const) {
-      const machine = await createHarnessZ88Machine({ backend, model: model.modelId, rom: "model" });
-      machine.setMachineProperty(FILE_PROVIDER, new CardFiles(files));
-      machine.dynamicConfig = slots;
-      results.push(machine);
-    }
-    return results;
+    const machine = (await createHarnessZ88Machine({
+      model: model.modelId,
+      rom: "model"
+    })) as Z88WasmV2Machine;
+    machine.setMachineProperty(FILE_PROVIDER, new CardFiles(files));
+    machine.dynamicConfig = slots;
+    return machine;
   }
 
   it("hot-plugs card images into the same physical memory", async () => {
     const ram = new Uint8Array(0x8000).map((_, i) => (i * 7) & 0xff);
     const rom = new Uint8Array(0x2_0000).map((_, i) => (i * 13 + 1) & 0xff);
-    const [ts, wasm] = await both(
+    const wasm = await machineWith(
       {
         [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" },
         [MC_Z88_SLOT2]: { size: 128, cardType: "ROM", file: "rom.bin" }
       },
       { "ram.bin": ram, "rom.bin": rom }
     );
-    await ts.configure();
     await wasm.configure();
 
     for (const offset of [0, 1, 0x1234, 0x7fff]) {
       expect(wasm.directReadMemory(SLOT + offset)).toBe(ram[offset]);
-      expect(wasm.directReadMemory(SLOT + offset)).toBe(ts.directReadMemory(SLOT + offset));
     }
     for (const offset of [0, 0x1_0000, 0x1_ffff]) {
       expect(wasm.directReadMemory(2 * SLOT + offset)).toBe(rom[offset]);
-      expect(wasm.directReadMemory(2 * SLOT + offset)).toBe(ts.directReadMemory(2 * SLOT + offset));
     }
-    const w = wasm as Z88WasmV2Machine;
+    const w = wasm;
     expect(w.getInsertedCard(1)).toEqual({ kind: "RAM", sizeInBytes: 0x8000 });
     expect(w.getInsertedCard(2)).toEqual({ kind: "ROM", sizeInBytes: 0x2_0000 });
     expect(w.getInsertedCard(3)).toBeUndefined();
   });
 
   it("an AMD flash card takes the chip's size, whatever the configuration says", async () => {
-    const [, wasm] = await both({ [MC_Z88_SLOT3]: { size: 512, cardType: CardIds.AMDF29F080B } }, {});
+    const wasm = await machineWith({ [MC_Z88_SLOT3]: { size: 512, cardType: CardIds.AMDF29F080B } }, {});
     await wasm.configure();
-    expect((wasm as Z88WasmV2Machine).getInsertedCard(3)).toEqual({
+    expect(wasm.getInsertedCard(3)).toEqual({
       kind: "AMD_FLASH_29F080B",
       sizeInBytes: 0x10_0000
     });
@@ -245,17 +252,14 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
 
   it("removing a card keeps its bytes in physical memory", async () => {
     const ram = new Uint8Array(0x8000).fill(0x5a);
-    const [ts, wasm] = await both({ [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" } }, {
+    const wasm = await machineWith({ [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" } }, {
       "ram.bin": ram
     });
-    for (const machine of [ts, wasm]) {
-      await machine.configure();
-      machine.dynamicConfig = { [MC_Z88_SLOT1]: { size: 0, cardType: "-" } };
-      await machine.configure();
-    }
-    expect((wasm as Z88WasmV2Machine).getInsertedCard(1)).toBeUndefined();
+    await wasm.configure();
+    wasm.dynamicConfig = { [MC_Z88_SLOT1]: { size: 0, cardType: "-" } };
+    await wasm.configure();
+    expect(wasm.getInsertedCard(1)).toBeUndefined();
     expect(wasm.directReadMemory(SLOT)).toBe(0x5a);
-    expect(wasm.directReadMemory(SLOT)).toBe(ts.directReadMemory(SLOT));
   });
 
   it.each([
@@ -274,16 +278,15 @@ describe("Cambridge Z88 WASM machine - cards (same as the TypeScript machine)", 
       { [MC_Z88_SLOT2]: { size: 48, cardType: CardIds.RAM32 } },
       "Invalid card size: 48"
     ]
-  ])("rejects %s with the TypeScript machine's error", async (_what, slots, message) => {
-    const [ts, wasm] = await both(slots, { "short.bin": new Uint8Array(100) });
-    await expect(ts.configure()).rejects.toThrow(message);
+  ])("rejects %s", async (_what, slots, message) => {
+    const wasm = await machineWith(slots, { "short.bin": new Uint8Array(100) });
     await expect(wasm.configure()).rejects.toThrow(message);
   });
 });
 
 describe("Cambridge Z88 WASM machine - reset and power-on", () => {
   it("hard reset clears the internal RAM, keeps and re-inserts the cards", async () => {
-    const wasm = (await createHarnessZ88Machine({ backend: "wasm", model: "OZ40", rom: "model" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ model: "OZ40", rom: "model" })) as Z88WasmV2Machine;
     const memory = wasm.wasmV2Runtime!.memory;
     const romByte = memory[0x1234];
     memory[0x08_0100] = 0x55;
@@ -298,7 +301,7 @@ describe("Cambridge Z88 WASM machine - reset and power-on", () => {
   });
 
   it("reset keeps memory, clears the keystroke queue and the sleep flag, and resets the CPU", async () => {
-    const wasm = (await createHarnessZ88Machine({ backend: "wasm", rom: "model" })) as Z88WasmV2Machine;
+    const wasm = (await createHarnessZ88Machine({ rom: "model" })) as Z88WasmV2Machine;
     const memory = wasm.wasmV2Runtime!.memory;
     memory[0x08_0100] = 0x55;
     wasm.queueKeystroke(1, 2, Z88KeyCode.A);
@@ -316,7 +319,7 @@ describe("Cambridge Z88 WASM machine - reset and power-on", () => {
 });
 
 describe("Cambridge Z88 WASM machine - host behaviour", () => {
-  it("queues and plays keystrokes as the TypeScript machine does (primary, secondary, release)", () => {
+  it("queues and plays keystrokes (primary, secondary, release)", () => {
     const machine = new RecordingZ88WasmMachine();
     machine.queueKeystroke(1, 2, Z88KeyCode.A, Z88KeyCode.ShiftL);
     expect(machine.getKeyQueueLength()).toBe(1);
@@ -371,7 +374,7 @@ describe("Cambridge Z88 WASM machine - host behaviour", () => {
 
 describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the core", () => {
   it("a key sets its bit in the core's matrix and releasing clears it", async () => {
-    const machine = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+    const machine = (await createHarnessZ88Machine()) as Z88WasmV2Machine;
     const w = machine.wasmV2Runtime!.exports;
     machine.setKeyStatus(Z88KeyCode.A, true);
     expect(w.z88GetKeyLine(Z88KeyCode.A >> 3)).toBe(1 << (Z88KeyCode.A & 7));
@@ -382,7 +385,7 @@ describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the 
   });
 
   it("the audio samples are one frame's worth, in an array reused from frame to frame", async () => {
-    const machine = (await createHarnessZ88Machine({ backend: "wasm", audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+    const machine = (await createHarnessZ88Machine({ audioSampleRate: 44_100 })) as Z88WasmV2Machine;
     machine.executeMachineFrame();
     const first = machine.getAudioSamples();
     // --- 5 ms of 44.1 kHz: 220 or 221 samples
@@ -396,8 +399,8 @@ describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the 
     expect(second.length).toBe(machine.wasmV2Runtime!.exports.z88GetAudioSampleCount());
   });
 
-  it("the sample rate is handed to the core at reset, as the TypeScript machine hands it to its beeper", async () => {
-    const machine = (await createHarnessZ88Machine({ backend: "wasm", audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+  it("the sample rate is handed to the core at reset", async () => {
+    const machine = (await createHarnessZ88Machine({ audioSampleRate: 44_100 })) as Z88WasmV2Machine;
     const w = machine.wasmV2Runtime!.exports;
     expect(w.z88GetAudioSampleRate()).toBe(44_100);
     machine.setMachineProperty(AUDIO_SAMPLE_RATE, 22_050);
@@ -407,12 +410,12 @@ describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the 
   });
 
   it("the instant screen is the current picture: the core's buffer, no copy", async () => {
-    const machine = (await createHarnessZ88Machine({ backend: "wasm" })) as Z88WasmV2Machine;
+    const machine = (await createHarnessZ88Machine()) as Z88WasmV2Machine;
     expect(machine.renderInstantScreen()).toBe(machine.getPixelBuffer());
   });
 
   it("the sleep state follows the core after every frame", async () => {
-    const session = await createZ88Session({ backend: "wasm" });
+    const session = await createZ88Session();
     const machine = session.machine as Z88WasmV2Machine;
     // --- HALT with I = $3F: sleep mode is detected at the start of the next frame
     await session.loadCode(`

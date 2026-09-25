@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { z88Backends } from "./z88-backends";
-import { COMFlags } from "@emu/machines/z88/IZ88BlinkDevice";
+import { createZ88TestSurface } from "./z88-test-surface";
+import { COMFlags } from "./z88-blink-flags";
 import { CardType } from "@emu/machines/z88/z88CardCatalog";
 
-describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", function ({ create }) {
+describe("Z88 - Banked Memory", function () {
   it("constructor works", () => {
-    // --- The expectations of the original TypeScript-only test (card objects and bank data read
-    // --- through IZ88BankedMemoryTestSupport), asked through the backend-neutral surface
-    const m = create();
+    // --- The expectations of the original test of the TypeScript banked memory (card objects and
+    // --- bank data), asked through the test surface
+    const m = createZ88TestSurface();
     expect(m.memory).toBeDefined();
 
     expect(m.slotCardType(0)).toBe(CardType.Rom);
@@ -351,7 +351,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);
@@ -508,7 +508,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);
@@ -668,7 +668,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);
@@ -815,7 +815,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);
@@ -962,7 +962,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);
@@ -1109,7 +1109,7 @@ describe.each(z88Backends("memory", "blink"))("Z88 - Banked Memory ($name)", fun
       pat.c3Rom ? "c3: ROM" : ""
     }`, () => {
       // --- Create the machine
-      const m = create();
+      const m = createZ88TestSurface();
 
       // --- Prepare memory cards
       const card0 = m.cards.rom(pat.c0);

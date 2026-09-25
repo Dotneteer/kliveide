@@ -4,7 +4,7 @@ import { createZxSpectrum128Machine } from "@emu/machines/zxSpectrum128/ZxSpectr
 import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eMachineFactory";
 import { createZxSpectrum48Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48MachineFactory";
 import { ZxNextWasmV2Machine } from "@emu/machines/zxNext/ZxNextWasmV2Machine";
-import { Z88TestMachine } from "../z88/Z88TestMachine";
+import { Z88WasmV2Machine } from "@emu/machines/z88/Z88WasmV2Machine";
 import {
   derivePartitionOptions,
   toCaptionedBlocks
@@ -29,7 +29,7 @@ const machines: [string, () => DescribedMachine][] = [
   ["ZX Spectrum 128K", () => createZxSpectrum128Machine() as unknown as DescribedMachine],
   ["ZX Spectrum +2/+3E", () => createZxSpectrumP3eMachine() as unknown as DescribedMachine],
   ["ZX Spectrum Next", () => new ZxNextWasmV2Machine() as unknown as DescribedMachine],
-  ["Cambridge Z88", () => new Z88TestMachine() as unknown as DescribedMachine]
+  ["Cambridge Z88", () => new Z88WasmV2Machine() as unknown as DescribedMachine]
 ];
 
 describe.each(machines)("%s partition descriptions", (_name, create) => {
@@ -151,7 +151,7 @@ describe("Cambridge Z88 descriptions", () => {
   it("describes its 256 banks and claims no ROM partitions", () => {
     // --- The Z88's ROM is a card in slot 0, not a fixed page, so a bank-only map is complete
     // --- rather than missing entries. See the plan's §8, decision 2.
-    const machine = new Z88TestMachine() as unknown as DescribedMachine;
+    const machine = new Z88WasmV2Machine() as unknown as DescribedMachine;
     const labels = machine.getPartitionLabels();
     const descriptions = machine.getPartitionDescriptions();
 
@@ -164,7 +164,7 @@ describe("Cambridge Z88 descriptions", () => {
   it("returns a real record, not an array wearing one as a type", () => {
     // --- `getPartitionLabels` used to build a `string[]` and return it as a `Record`. It worked by
     // --- index, but it made the Z88 the one machine whose map behaved differently from its type.
-    const labels = (new Z88TestMachine() as unknown as DescribedMachine).getPartitionLabels();
+    const labels = (new Z88WasmV2Machine() as unknown as DescribedMachine).getPartitionLabels();
 
     expect(Array.isArray(labels)).toBe(false);
     expect(labels[0]).toBe("00");

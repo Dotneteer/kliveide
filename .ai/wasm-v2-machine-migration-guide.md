@@ -446,8 +446,10 @@ been converted to `SectorChanges`.
 
 ## A Non-Spectrum Machine: The Cambridge Z88
 
-The Z88 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, default since 2026-09-19) is the first
-machine migrated that shares nothing with the Spectrum but the Z80. What it established:
+The Z88 (`.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, default since 2026-09-19; the TypeScript
+machine removed on 2026-09-25 by `.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
+`z88-typescript-last`) is the first machine migrated that shares nothing with the Spectrum but the
+Z80. What it established:
 
 - **Its own devices, the shared CPU.** The core includes none of `zxSpectrum/wasm/common/`
   (`check-wasm-cpu-contract.cjs` forbids it) and uses `src/emu/z80/wasm/z80.c` through the `Z80_*`
@@ -455,10 +457,13 @@ machine migrated that shares nothing with the Spectrum but the Z80. What it esta
   name, with a no-op default and a test that runs on both CPUs: snooze (`z80SnoozeCpu`, ...), the
   reset button (`z80SoftReset`), and the M1 hook (`Z80_BEFORE_OPCODE_FETCH`). Never a second Z80.
 - **A host class that is not the TypeScript machine** (`Z88WasmHost`), with an import-graph
-  separation test, so the WASM machine cannot quietly lean on TypeScript device objects.
-- **Test backends gated by feature.** Each suite declares what it needs (`z88Backends("memory",
-  "blink", ...)`); a migration step adds its feature to `Z88_WASM_FEATURES` and the waiting suites
-  start running on WASM with no other change. No case is ever excluded by hand.
+  separation test, so the WASM machine cannot quietly lean on TypeScript device objects. Because of
+  it the removal deleted files and rewired tests; the WASM machine changed only in comments and one
+  import path.
+- **Test backends gated by feature.** Each suite declared what it needed (`z88Backends("memory",
+  "blink", ...)`); a migration step added its feature to `Z88_WASM_FEATURES` and the waiting suites
+  started running on WASM with no other change. No case was ever excluded by hand, so at the removal
+  every suite kept exactly its WASM cases.
 - **A per-key backend fallback**: `config[key] ?? model.config[key] ?? default`. The Z88's
   configuration is rebuilt by several paths (LCD menu, RAM and slot-0 dialogs, hot-plug); a
   `config ?? model.config` fallback loses the backend as soon as one of them omits the key.
@@ -467,8 +472,17 @@ machine migrated that shares nothing with the Spectrum but the Z80. What it esta
   `MachineModel.menuGroup`) in one submenu: "WASM preview" (`<id>-wasm`) before the default flip,
   "TypeScript" (`<id>-ts`) after it. The original ids never changed; the preview ids resolve to the
   originals through `resolveModelId` (`machine-registry.ts`), which `MachineService` applies to saved
-  projects and the last session. Tests that iterate a machine's models must pick the originals
-  (`menuGroup === undefined`). The removal plan drops the twins and maps `<id>-ts` the same way.
+  projects and the last session. The removal dropped the twins, `createModelTwins` and `menuGroup`
+  (no other machine used them) and maps `<id>-ts` the same way; a leftover `z88Implementation` key
+  in a saved configuration is ignored.
+- **Lockstep comparisons become goldens before the oracle goes.** Every Z88 comparison (OZ boots and
+  typing on ten models, the LCD sizes, the beeper rates, 30 card scenarios, a 30000-instruction
+  lockstep, the IDE's answers, the debugger's stops) was re-run on the TypeScript machine alone,
+  recording its state at each checkpoint - registers, tacts, frames, the Blink, and SHA-256 hashes
+  of the 4 MB, the picture and the samples - into `test/wasm/z88/goldens/`, and the WASM side was
+  asserted against the recording while both machines still existed. Per-frame or per-instruction
+  comparisons became one digest per stretch. The WASM core matched every golden first time; a
+  corrupted golden was then checked to fail. See `test/wasm/z88/z88-goldens.ts`.
 - **Test the IDE through `MainToEmuProcessor`**, the debugger with a benchmark, audio exactly (in
   doubles), and every first-time-green parity test by mutation. Details and numbers:
   `wasm-migration-intent-and-lessons.md`.

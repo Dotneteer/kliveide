@@ -1,13 +1,11 @@
 {
-  "kliveVersion": "0.59.0",
+  "kliveVersion": "0.60.0",
   "machineType": "zxnext",
   "modelId": "standard",
-  "config": {
-    "zxnextImplementation": "wasm"
-  },
+  "config": {},
   "clockMultiplier": 1,
-  "soundLevel": 0.8,
-  "soundMuted": false,
+  "soundLevel": 0,
+  "soundMuted": true,
   "savedSoundLevel": 0.8,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
@@ -67,7 +65,7 @@
                 "column": 0
               },
               "viewState": {
-                "scrollPosition": 294.4008483886719,
+                "scrollPosition": 0,
                 "bankExpanded": {
                   "0": true,
                   "2": false
@@ -80,20 +78,20 @@
               "type": "CodeEditor",
               "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm",
               "position": {
-                "line": 23,
-                "column": 33
+                "line": 16,
+                "column": 32
               },
               "viewState": {
                 "cursorState": [
                   {
-                    "inSelectionMode": true,
+                    "inSelectionMode": false,
                     "selectionStart": {
-                      "lineNumber": 1,
-                      "column": 1
+                      "lineNumber": 16,
+                      "column": 32
                     },
                     "position": {
-                      "lineNumber": 23,
-                      "column": 33
+                      "lineNumber": 16,
+                      "column": 32
                     }
                   }
                 ],
@@ -116,7 +114,7 @@
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
         }
       ]
     }

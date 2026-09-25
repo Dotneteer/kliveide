@@ -260,6 +260,20 @@ pinned to the value both cores agreed on at the tag - *saying in the file that
 that is what it is*. Tag the last commit that has both (here
 `pre-zxnext-ts-removal-2026-09-19`) before the first deletion.
 
+**Where no hardware description settles a value, record the oracle's.** The Cambridge Z88 has no
+VHDL, so its removal (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag `z88-typescript-last`)
+turned every lockstep comparison into goldens: the TypeScript machine alone re-ran each scenario and
+its state at every checkpoint went into `test/wasm/z88/goldens/` (hashes for the 4 MB, the picture
+and the samples; one digest per stretch where the comparison ran every frame or instruction). Record
+them *before* deleting anything, and assert the WASM side against the recording while the oracle can
+still be asked; then corrupt one golden and watch it fail. Two things bit on the way: `undefined`
+does not survive JSON (store it as `null`, or an answer silently has no golden), and the Z88's audio
+samples - array and objects - are reused frame to frame, so a test that keeps them across frames
+must copy the values. A golden the core later stops matching is a finding to settle against the
+Blink documentation and OZvm, never a file to regenerate. Removing the oracle's runs can also expose timing it hid: the
+Z88 harness rebuilt its artifact once per test file, which only stopped fitting in the test timeout
+once no TypeScript cases ran ahead of the builds; build only a stale artifact.
+
 **A WASM machine must not subclass the TypeScript machine it replaces.** The Next
 WASM machine did (`ZxNextWasmV2Machine extends ZxNextMachine`), which meant every
 WASM machine built and reset the whole TypeScript device set, and quiet paths kept
@@ -345,12 +359,14 @@ Avoid long migrations that produce many files but leave the user uncertain
 about whether the emulator should actually work. Each step should say what
 surface is now expected to be usable and what is still missing.
 
-Comparison menu entries (the Z88's `-wasm` twins, `createModelTwins`) go in only
-when every surface the app's emulator loop touches each frame works: the frame,
-the picture, the key setter and the audio samples. A twin registered earlier
-creates a machine whose loop throws. Once twins exist, every test that iterates
-a machine's models must pick the originals (`menuGroup === undefined`), or it
-silently runs each case twice and counts the twins as models.
+Comparison menu entries (the Z88's `-wasm` and `-ts` twins, built by a
+`createModelTwins` helper and a `MachineModel.menuGroup` submenu, both deleted with
+the TypeScript Z88) go in only when every surface the app's emulator loop touches
+each frame works: the frame, the picture, the key setter and the audio samples. A
+twin registered earlier creates a machine whose loop throws. While twins exist,
+every test that iterates a machine's models must pick the originals, or it
+silently runs each case twice and counts the twins as models. When they go, keep
+their ids as aliases (`modelIdAliases`), so saved projects still open.
 
 When extending a plan, include explicit steps for moving from TypeScript to
 WASM as the actual selected implementation:

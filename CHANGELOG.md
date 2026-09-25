@@ -100,6 +100,13 @@
   ran two emulators at once. A project or a session saved with the Compatibility model opens on
   **ZX Spectrum Next**; nothing else about it changes.
 
+- **The "Cambridge Z88 (TypeScript)" machine models are gone.** The Cambridge Z88 runs on its
+  WebAssembly emulator, and the older TypeScript one stayed in the Machine menu, in its own submenu,
+  only to compare the two. They agreed on every OZ version booting and typing, every LCD size, the
+  beeper, every card type being programmed, the IDE's panels and the debugger, so the TypeScript Z88
+  has been removed and the submenu with it. A project or a session saved with one of those models
+  (or with an earlier "WASM preview" model) opens on the same Z88 model in the main list.
+
 - **On the ZX Spectrum Next, a positive memory partition index now means an 8K page rather than a
   16K bank.** Everything else already described these as 8K pages &mdash; the 224-entry partition
   list, the Memory view's bank chooser and the documentation &mdash; but the breakpoint and

@@ -1,13 +1,13 @@
 # Audio System Test Suite
 
 What is left here is the audio code that is **not** emulated inside a WASM core: the shared
-sample-timing base class, the Spectrum beeper device, and the Z88 beeper integration.
+sample-timing base class, the Spectrum beeper device, and the samples the Z88 hands the app.
 
 | File | Subject |
 |---|---|
 | `AudioDeviceBase.test.ts` | `src/emu/machines/AudioDeviceBase.ts` - sample-rate math, tact-based sample generation, clock multipliers, frame boundaries |
 | `BeeperDevice.test.ts` | `src/emu/machines/BeeperDevice.ts` - EAR-bit output, square waves, per-frame sample counts, reset |
-| `AudioIntegration.test.ts` | `src/emu/machines/z88/Z88BeeperDevice.ts` - Z88 beeper sample shape |
+| `AudioIntegration.test.ts` | The Cambridge Z88 machine's beeper samples (the WASM core, through the Z88 test harness) - their shape, and the ear bit's silence and level |
 
 ## Where The Machine Audio Tests Live Now
 

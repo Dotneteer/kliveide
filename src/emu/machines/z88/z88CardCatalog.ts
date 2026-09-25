@@ -2,12 +2,12 @@
  * The Cambridge Z88 memory-card vocabulary, independent of the core that emulates the cards: the
  * hardware card type codes, the card size rules and the chip (address line) mask a size implies.
  *
- * Neutral: the TypeScript `Z88Machine` and its card classes use it, and the WASM Z88 machine will.
- * It must not import any TypeScript card or device class (see
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`, "Target Architecture").
+ * Shared by the machine (`Z88WasmHost`) and the renderer's card dialogs, so it imports neither the
+ * machine nor the renderer. It began as the neutral half of the TypeScript card classes, removed with
+ * the TypeScript Z88 (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`).
  */
 
-import { CardIds } from "./memory/CardIds";
+import { CardIds } from "./CardIds";
 
 export const CARD_SIZE_EMPTY = "-";
 export const CARD_SIZE_32K = "32K";
@@ -139,9 +139,10 @@ export type Z88CardKind =
 export type Z88CardSpec = { readonly kind: Z88CardKind; readonly sizeInBytes: number };
 
 /**
- * Resolves the card a slot configuration describes, with the rules `createZ88MemoryCard` has always
- * applied: the size is validated first (even for AMD chips, whose size is fixed by the chip), then
- * the card-type id. Both backends use it, so they accept and reject the same configurations.
+ * Resolves the card a slot configuration describes, with the rules the TypeScript card factory
+ * (`createZ88MemoryCard`, removed) always applied: the size is validated first (even for AMD chips,
+ * whose size is fixed by the chip), then the card-type id. `test/z88/z88-neutral-modules.test.ts`
+ * holds it to every answer that factory gave.
  * @param cardTypeId A `CardIds` value (`"ROM"` for a ROM card)
  * @param sizeK The configured size in KB
  * @throws "Invalid card size: ..." or "Unknown card type: ..." (e.g. `EPROMUV256`, follow-up F2)

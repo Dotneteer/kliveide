@@ -3,9 +3,8 @@ import { AudioSample } from "@emu/abstractions/IAudioDevice";
 
 /**
  * This interface defines the behavior of a Cambridge Z88 virtual machine that integrates the
- * emulator, whichever core emulates it. It deliberately exposes no TypeScript device or memory
- * object: a WASM machine has none. The TypeScript devices reach those through `IZ88DeviceHost`, and
- * the IDE reads the Blink state through `IZ88IdeMachine`.
+ * emulator. It deliberately exposes no device or memory object: the WASM core has none; the IDE
+ * reads the Blink state through `IZ88IdeMachine`.
  */
 export interface IZ88Machine extends IZ80Machine {
   /**

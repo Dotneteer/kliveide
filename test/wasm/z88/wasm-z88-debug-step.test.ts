@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { createZ88Session, z88HarnessBackends, type Z88HarnessBackend, type Z88TestSession } from "../../harness/z88";
+import { createZ88Session, type Z88TestSession } from "../../harness/z88";
+import { goldens } from "./z88-goldens";
+
+const golden = goldens("wasm-z88-debug-step");
 
 /*
- * The debugger on the Cambridge Z88, on every backend that runs the CPU: step-into, step-over (on a
+ * The debugger on the Cambridge Z88: step-into, step-over (on a
  * CALL, and landing on one), step-out (also across an interrupt), breakpoints, and stepping a
  * snoozing CPU. Driven as the IDE drives it (`Z88TestSession.debug` = `MachineController.run`).
  *
@@ -72,15 +75,15 @@ afterSlow:
       jr afterSlow
 `;
 
-async function session(backend: Z88HarnessBackend, entry = "start"): Promise<Z88TestSession> {
-  const s = await createZ88Session({ backend });
+async function session(entry = "start"): Promise<Z88TestSession> {
+  const s = await createZ88Session();
   await s.loadCode(PROGRAM, { entry });
   return s;
 }
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 debugger (%s)", (backend) => {
+describe("Z88 debugger", () => {
   it("step-into executes exactly one instruction, prefixed ones included", async () => {
-    const s = await session(backend);
+    const s = await session();
     expect(s.debug("stepInto")).toBe(0x8003);
     expect(s.registers().sp).toBe(0xbff0);
     expect(s.debug("stepInto")).toBe(s.symbol("routine"));
@@ -91,14 +94,14 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 debugger (%s)",
   });
 
   it("step-over a CALL runs the whole routine and stops after it", async () => {
-    const s = await session(backend);
+    const s = await session();
     s.debug("stepInto");
     expect(s.debug("stepOver")).toBe(s.symbol("after"));
     expect((s.registers().bc >> 8) & 0xff).toBe(0);
   });
 
   it("step-over stops on the instruction it lands on (the `imminentJustCreated` guard)", async () => {
-    const s = await session(backend);
+    const s = await session();
     s.debug("stepInto"); // at CALL routine
     s.debug("stepInto"); // at LD IX,nn (routine)
     s.debug("stepInto"); // at LD B,3
@@ -107,7 +110,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 debugger (%s)",
   });
 
   it("step-out returns to the routine's caller, not to an inner return", async () => {
-    const s = await session(backend);
+    const s = await session();
     s.debug("stepInto");
     s.debug("stepInto"); // in routine
     s.debug("stepInto");
@@ -116,13 +119,13 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 debugger (%s)",
   });
 
   it("step-out lands on the caller even when interrupts enter and leave meanwhile", async () => {
-    const s = await session(backend, "callSlow");
+    const s = await session("callSlow");
     s.runTo("slowLoop");
     expect(s.debug("stepOut", { maxFrames: 400 })).toBe(s.symbol("afterSlow"));
   });
 
   it("stops at a breakpoint each time the code reaches it", async () => {
-    const s = await session(backend);
+    const s = await session();
     s.breakpoint("leaf");
     expect(s.debug("continue")).toBe(s.symbol("leaf"));
     expect(s.debug("continue")).toBe(s.symbol("leaf"));
@@ -131,7 +134,7 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 debugger (%s)",
   });
 
   it("stepping a snoozed CPU without waking it is a 16-tact pause at the same PC", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
       ld a,$81
@@ -151,7 +154,7 @@ after:
   });
 
   it("the IDE's step wakes a snoozed CPU first (MachineController does)", async () => {
-    const s = await createZ88Session({ backend });
+    const s = await createZ88Session();
     await s.loadCode(`
       .org $8000
       ld a,$81
@@ -197,9 +200,9 @@ done:
       .defb $47,$00
 `;
 
-describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 memory and I/O breakpoints (%s)", (backend) => {
+describe("Z88 memory and I/O breakpoints", () => {
   async function session(): Promise<Z88TestSession> {
-    const s = await createZ88Session({ backend: backend as Z88HarnessBackend });
+    const s = await createZ88Session();
     await s.loadCode(ACCESS, { entry: "start" });
     s.setRegisters({ ix: 0xa000 });
     return s;
@@ -227,20 +230,20 @@ describe.each(z88HarnessBackends("memory", "cpu", "blink"))("Z88 memory and I/O 
   });
 });
 
-describe("Z88 debugger: both backends stop at the same places", () => {
+/*
+ * Where the debugger stops, with the registers and tacts there: the stops the TypeScript machine made
+ * before it was removed (`goldens/wasm-z88-debug-step.json`, `z88-goldens.ts`).
+ */
+describe("Z88 debugger: the recorded stops", () => {
   it.each([
     ["step-into", async (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepInto"), s.debug("stepInto")]],
     ["step-over", async (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepOver"), s.debug("stepOver")]],
     ["step-out", async (s: Z88TestSession) => [s.debug("stepInto"), s.debug("stepInto"), s.debug("stepOut")]],
     ["breakpoints", async (s: Z88TestSession) => (s.breakpoint("leaf"), [s.debug("continue"), s.debug("continue")])]
-  ])("%s", async (_name, scenario) => {
-    const [ts, wasm] = await Promise.all(z88HarnessBackends("memory", "cpu", "blink").map((b) => session(b)));
-    if (!wasm) return; // --- the WASM core does not run the CPU yet
-    const tsStops = await scenario(ts);
-    const wasmStops = await scenario(wasm);
-    expect(wasmStops).toEqual(tsStops);
-    expect(wasm.registers()).toEqual(ts.registers());
-    expect(wasm.tacts).toBe(ts.tacts);
+  ])("%s", async (name, scenario) => {
+    const s = await session();
+    const stops = await scenario(s);
+    golden.expect(`short: ${name}`, { stops, registers: s.registers(), tacts: s.tacts });
   });
 });
 
@@ -249,7 +252,7 @@ describe("Z88 debugger: both backends stop at the same places", () => {
  * address, a run-to point, a step-over or step-out target) instead of returning after every
  * instruction. These cases cross several frames in one debugger command, and pass flagged addresses
  * that are not stops - a disabled breakpoint, a breakpoint for a partition that is not paged in - and
- * both backends must stop at the same instruction, with the same registers and tacts.
+ * must stop at the recorded instruction, with the recorded registers, tacts and frames.
  */
 const LONG = `
       .org $8000
@@ -280,11 +283,11 @@ spin: djnz spin
       ret
 `;
 
-describe("Z88 debugger: long runs between stops, on both backends", () => {
-  async function both(): Promise<Z88TestSession[]> {
-    const sessions = await Promise.all(z88HarnessBackends("memory", "cpu", "blink").map((b) => createZ88Session({ backend: b })));
-    for (const s of sessions) await s.loadCode(LONG, { entry: "start" });
-    return sessions;
+describe("Z88 debugger: long runs between stops", () => {
+  async function longSession(): Promise<Z88TestSession> {
+    const s = await createZ88Session();
+    await s.loadCode(LONG, { entry: "start" });
+    return s;
   }
 
   it.each([
@@ -316,19 +319,14 @@ describe("Z88 debugger: long runs between stops, on both backends", () => {
       "a breakpoint hit again on the next pass through a loop",
       (s: Z88TestSession) => (s.breakpoint("spin"), [s.debug("continue"), s.debug("continue"), s.debug("continue")])
     ]
-  ])("%s", async (_name, scenario) => {
-    const [ts, wasm] = await both();
-    if (!wasm) return;
-    const tsStops = scenario(ts);
-    const wasmStops = scenario(wasm);
-    expect(wasmStops).toEqual(tsStops);
-    expect(wasm.registers()).toEqual(ts.registers());
-    expect(wasm.tacts).toBe(ts.tacts);
-    expect(wasm.machine.frames).toBe(ts.machine.frames);
+  ])("%s", async (name, scenario) => {
+    const s = await longSession();
+    const stops = scenario(s);
+    golden.expect(`long: ${name}`, { stops, registers: s.registers(), tacts: s.tacts, frames: s.machine.frames });
   });
 
   it("the stops are the ones the program implies", async () => {
-    const [s] = await both();
+    const s = await longSession();
     expect([s.debug("stepInto"), s.debug("stepOver")]).toEqual([s.symbol("start") + 3, s.symbol("after")]);
     expect(s.machine.frames).toBeGreaterThanOrEqual(3);
   });

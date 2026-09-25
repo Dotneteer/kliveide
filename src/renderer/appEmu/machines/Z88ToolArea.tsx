@@ -20,8 +20,8 @@ import {
 } from "@common/messaging/dialog-ids";
 import { IZ88Machine } from "@renderer/abstractions/IZ88Machine";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
-import { CardSlotState } from "@emu/machines/z88/memory/CardSlotState";
-import { CardIds } from "@emu/machines/z88/memory/CardIds";
+import { CardSlotState } from "@emu/machines/z88/CardSlotState";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
 import {
   emuDialogRegistry,

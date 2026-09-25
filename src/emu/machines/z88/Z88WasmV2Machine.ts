@@ -55,13 +55,15 @@ const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, 
  * Status (Step 12, 2026-09-19): the whole machine - the memory map and every card type (RAM, ROM, UV
  * EPROM, Intel and AMD flash with their command states), the CPU frame by frame (one boundary call per
  * normal frame), the Blink (ports, RTC, interrupts, flap and battery), the keyboard and sleep
- * detection, the LCD and the beeper - with the IDE surfaces the TypeScript machine has: the registers
+ * detection, the LCD and the beeper - with the IDE surfaces the TypeScript machine had: the registers
  * (read live from the core, every write pushed into it), the bus record the CPU panel and the memory
  * and I/O breakpoints read, and the debugger (instruction by instruction, or - when the stop policy
  * can only stop at known addresses - the core running on to the next candidate).
  *
- * It extends `Z88WasmHost`, never the TypeScript `Z88Machine` - see
- * `test/wasm/z88/wasm-z88-separation.test.ts`.
+ * It is the only Z88 emulation: the TypeScript `Z88Machine` it was held to in lockstep - named in the
+ * comments below with its `Z88BankedMemory`, devices and `AudioDeviceBase` beeper - was removed once
+ * the core had matched it (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, tag
+ * `z88-typescript-last`); its recorded behaviour is in `test/wasm/z88/goldens/`.
  */
 export class Z88WasmV2Machine extends Z88WasmHost {
   public readonly implementation = "wasm" as const;
@@ -95,7 +97,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
       sizeInBytes: z88InternalRamSizeInBytes(this.config?.[MC_Z88_INTRAM] ?? 0x1f)
     };
 
-    // --- As the TypeScript machine's constructor does: the Z88 frame length from the start
+    // --- As the TypeScript machine's constructor did: the Z88 frame length from the start
     this.reset();
   }
 
@@ -351,7 +353,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   /**
    * Loads the core once, and applies the configured LCD size. A freshly loaded core starts the way
-   * a constructed `Z88Machine` does: the internal RAM sized by `MC_Z88_INTRAM`, a blank 512K ROM
+   * a constructed `Z88Machine` did: the internal RAM sized by `MC_Z88_INTRAM`, a blank 512K ROM
    * card in slot 0 (which `setup()` then replaces), and a reset (which pages SR0-SR3 to bank 0).
    */
   protected async prepareBackend(): Promise<void> {
@@ -367,7 +369,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   /**
    * Loads the core without setting the machine up: no ROM file is read, slot 0 holds the blank 512K
-   * ROM card - the state of a TypeScript `Z88Machine` that was constructed but never set up. The
+   * ROM card - the state a TypeScript `Z88Machine` had when constructed but never set up. The
    * test harness's "blank" machines use it.
    */
   async loadBlankCore(): Promise<void> {
@@ -751,7 +753,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   /**
    * Sets a key's state in the core's matrix; a pressed key raises the key interrupt (when enabled)
-   * and wakes a CPU snoozed by a KBD read, as `Z88KeyboardDevice.setKeyStatus` does.
+   * and wakes a CPU snoozed by a KBD read, as `Z88KeyboardDevice.setKeyStatus` did.
    */
   setKeyStatus(key: number, isDown: boolean): void {
     this.requireWasmV2Runtime().exports.z88SetKeyStatus(key, isDown ? 1 : 0);
@@ -759,7 +761,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   /**
    * The current frame's samples, read from the core's double buffer - the same numbers the
-   * TypeScript beeper produces. The array and its objects are reused, as `AudioDeviceBase` reuses its.
+   * TypeScript beeper produced. The array and its objects are reused, as `AudioDeviceBase` reuses its.
    */
   getAudioSamples(): AudioSample[] {
     const runtime = this.requireWasmV2Runtime();
@@ -820,7 +822,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     }
   }
 
-  /** `Z88Machine.reset` hands the beeper the sample rate when the machine property holds one */
+  /** `Z88Machine.reset` handed the beeper the sample rate when the machine property holds one */
   private syncAudioSampleRate(runtime: Z88WasmV2Runtime): void {
     const rate = this.getMachineProperty(AUDIO_SAMPLE_RATE);
     if (typeof rate === "number" && rate > 0) {
