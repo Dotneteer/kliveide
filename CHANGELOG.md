@@ -4,6 +4,18 @@
 
 ### Fixes
 
+- **Host cursor keys did nothing on the Cambridge Z88** (#1374). The joystick key bindings took the
+  arrow keys, right Shift, right Ctrl, `\` and NumpadEnter on every machine, not just the ZX Spectrum
+  Next. They now belong to the emulated keyboard on any machine without joystick connectors, which
+  also restores the ZX Spectrum's arrow keys and the Z88's two-Shift sleep/wake from the keyboard.
+- **Choppy Cambridge Z88 sound** (#1374). The Z88 delivers its sound in 40 ms bursts of eight short
+  frames, and the audio buffer, sized for a single frame, dropped over half of every burst. The
+  beeper and the 3200 Hz tone now play smoothly again. The Z88 also no longer goes silent after
+  about 22 minutes of running.
+- **The Cambridge Z88 keyboard could go dead under OZ 4.7** (#1374). With Keyclick on, a key press in
+  the Index moved the highlight once, then no key worked while the machine kept running. The
+  emulated Z80 had an NMOS chip quirk the Z88's CMOS Z80 does not have, and OZ 4.7 read it as
+  "interrupts off". The Z88 now emulates the CMOS behaviour; the ZX Spectrum machines are unchanged.
 - **ZX Spectrum Next panels showed stale data.** On the standard (WASM) Next the Palettes panel and
   the sprite editor's palette showed power-on colours whatever a program had written, the ULA & I/O
   panel read values the emulator never updated, and the Memory Mapping panel showed logical instead of

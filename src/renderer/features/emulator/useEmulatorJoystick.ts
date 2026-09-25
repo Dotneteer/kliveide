@@ -21,19 +21,26 @@ import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
  * per-mode code here, and why a program switching `$05` mid-game needs no cooperation from the
  * host: the same pins simply mean something else.
  *
- * Mounted *before* `useEmulatorKeyboard` in `EmulatorPanel`, and it hands that hook the set of key
- * codes it has claimed - see `claimedCodes`.
+ * Mounted *before* `useEmulatorKeyboard` in `EmulatorPanel`, and it hands that hook a test for the
+ * key codes it has claimed - see `claimsKey`.
+ *
+ * Only a machine with joystick connectors (one implementing `setJoystickState`) claims anything.
+ * The bindings are a global setting, so on any other machine - a Spectrum, a Cambridge Z88 - the
+ * same arrow keys, right Shift and right Ctrl belong to the emulated keyboard. Claiming them there
+ * swallowed the Z88's cursor keys and its right Shift (issue #1374).
  */
 
 export type EmulatorJoystickApi = {
   /**
-   * The host keys currently bound to a live connector.
+   * Whether a host key is bound to a live connector of the *current* machine.
    *
-   * `useEmulatorKeyboard` skips them, so a key cannot press a joystick pin *and* a Spectrum key at
-   * once. A ref rather than state: the keyboard hook reads it inside an event handler, and a new
-   * Set on every binding change would re-bind its listeners for nothing.
+   * `useEmulatorKeyboard` skips such keys, so a key cannot press a joystick pin *and* a Spectrum
+   * key at once. Asked at event time, never cached: the machine can change under a mounted panel
+   * (a machine-type switch), and whether it has connectors is only known by looking at it. The
+   * function is stable across renders, so a change of bindings does not re-bind the keyboard
+   * hook's listeners.
    */
-  claimedCodes: MutableRefObject<Set<string>>;
+  claimsKey: (code: string) => boolean;
 };
 
 export function useEmulatorJoystick(
@@ -50,12 +57,8 @@ export function useEmulatorJoystick(
   );
 
   const state = useRef<Record<JoystickSide, number>>({ left: 0, right: 0 });
-  const claimedCodes = useRef<Set<string>>(new Set());
-
-  claimedCodes.current = useMemo(
-    () => new Set([...keyMaps.left.keys(), ...keyMaps.right.keys()]),
-    [keyMaps]
-  );
+  const keyMapsRef = useRef(keyMaps);
+  keyMapsRef.current = keyMaps;
 
   const machine = useCallback((): IZxNextHostInputMachine | undefined => {
     const current = controllerRef.current?.machine as Partial<IZxNextHostInputMachine> | undefined;
@@ -63,6 +66,13 @@ export function useEmulatorJoystick(
       ? (current as IZxNextHostInputMachine)
       : undefined;
   }, [controllerRef]);
+
+  const claimsKey = useCallback(
+    (code: string): boolean =>
+      machine() !== undefined &&
+      (keyMapsRef.current.left.has(code) || keyMapsRef.current.right.has(code)),
+    [machine]
+  );
 
   const applyPins = useCallback(
     (side: JoystickSide, pins: number): void => {
@@ -92,6 +102,8 @@ export function useEmulatorJoystick(
     }
 
     const handle = (e: KeyboardEvent, down: boolean): void => {
+      // --- No connectors, no claim: the key is the emulated keyboard's (see the header comment).
+      if (!machine()) return;
       let claimed = false;
       for (const side of JOYSTICK_SIDES) {
         const pins = keyMaps[side].get(e.code);
@@ -101,7 +113,7 @@ export function useEmulatorJoystick(
       }
       /*
        * A bound key belongs to the joystick and nothing else. `useEmulatorKeyboard` checks
-       * `claimedCodes` for the same reason, but stopping the event here as well keeps anything else
+       * `claimsKey` for the same reason, but stopping the event here as well keeps anything else
        * on `window` - now or later - from seeing a keystroke the user aimed at a joystick.
        */
       if (claimed) {
@@ -122,7 +134,7 @@ export function useEmulatorJoystick(
       window.removeEventListener("blur", releaseAll);
       releaseAll();
     };
-  }, [applyPins, keyMaps, machineState, modalOpen, releaseAll]);
+  }, [applyPins, keyMaps, machine, machineState, modalOpen, releaseAll]);
 
   /*
    * Gamepads, polled rather than delivered: the Gamepad API has no input events, so the only way to
@@ -153,7 +165,7 @@ export function useEmulatorJoystick(
   // --- A binding change can strand a pin that was down under the old table.
   useEffect(() => releaseAll(), [keyMaps, releaseAll]);
 
-  return { claimedCodes };
+  return { claimsKey };
 }
 
 /** Past this, a stick counts as pushed. Generous: a worn analogue stick rarely reaches its edge. */

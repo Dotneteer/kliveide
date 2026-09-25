@@ -16,6 +16,9 @@
  */
 
 #define Z88_SAMPLE_TACT_EPSILON 1.0e-7
+/* The CPU's tact counter is 32 bits: it wraps after 2^32 tacts, about 22 minutes at 1x */
+#define Z88_TACT_WRAP 4294967296.0
+#define Z88_TACT_HALF_WRAP 2147483648.0
 
 static double z88AudioSamples[Z88_AUDIO_SAMPLE_CAPACITY * 2u];
 static uint32_t z88AudioSampleCount;
@@ -50,10 +53,23 @@ static void z88CalculateOscillatorBit(void) {
   z88OscillatorBit = (uint8_t)((cpu.tacts / period) & 0x01u);
 }
 
-/* `setNextAudioSample`: at most one sample per clock step, when the next sample point is reached */
+/*
+ * `setNextAudioSample`: at most one sample per clock step, when the next sample point is reached.
+ *
+ * The next sample point is kept in the counter's own range, [0, 2^32), and compared by the signed
+ * distance to it, so the schedule survives `cpu.tacts` wrapping. Comparing the raw values stopped
+ * the samples for good after about 22 minutes: the wrapped counter never caught up with a point
+ * past 2^32 again (issue #1374). The TypeScript device counted tacts in a JS number and never wrapped.
+ */
 static void z88SetNextAudioSample(void) {
   if (z88AudioSampleLength <= 0.0) return;
-  if ((double)cpu.tacts + Z88_SAMPLE_TACT_EPSILON < z88AudioNextSampleTact) return;
+  double ahead = z88AudioNextSampleTact - (double)cpu.tacts;
+  if (ahead >= Z88_TACT_HALF_WRAP) {
+    ahead -= Z88_TACT_WRAP;
+  } else if (ahead < -Z88_TACT_HALF_WRAP) {
+    ahead += Z88_TACT_WRAP;
+  }
+  if (ahead > Z88_SAMPLE_TACT_EPSILON) return;
 
   const double raw = (z88Com & Z88_COM_SRUN) ? ((z88Com & Z88_COM_SBIT) ? 0.0 : (z88OscillatorBit ? 1.0 : 0.0))
                                              : (z88EarBit ? 1.0 : 0.0);
@@ -71,16 +87,26 @@ static void z88SetNextAudioSample(void) {
     z88AudioOverflows++;
   }
   z88AudioNextSampleTact += z88AudioSampleLength * (double)z88ClockMultiplier;
+  if (z88AudioNextSampleTact >= Z88_TACT_WRAP) {
+    z88AudioNextSampleTact -= Z88_TACT_WRAP;
+  }
 }
 
 /*
  * `setAudioSampleRate`: the sample length in tacts and the DC filter's alpha
  * (`exp(-2 * pi * 1.4 / rate)`, computed by the host). A rate of 0 stops the samples.
+ *
+ * The first sample point is one sample length after the current tact. The host sets the rate at
+ * reset, where that is the TypeScript device's point (the counter is 0); counting from 0 anywhere
+ * else would put the point up to half the counter's range behind it.
  */
 void z88SetAudioSampleRate(uint32_t rate, double dcAlpha) {
   z88AudioSampleRate = rate;
   z88AudioSampleLength = rate ? (double)Z88_BASE_CLOCK_FREQUENCY / (double)rate : 0.0;
-  z88AudioNextSampleTact = z88AudioSampleLength * (double)z88ClockMultiplier;
+  z88AudioNextSampleTact = (double)cpu.tacts + z88AudioSampleLength * (double)z88ClockMultiplier;
+  if (z88AudioNextSampleTact >= Z88_TACT_WRAP) {
+    z88AudioNextSampleTact -= Z88_TACT_WRAP;
+  }
   z88DcAlpha = rate ? dcAlpha : 0.0;
 }
 

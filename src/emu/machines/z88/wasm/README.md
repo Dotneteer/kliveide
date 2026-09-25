@@ -127,6 +127,20 @@ as the low byte they push, so the CPU panel showed a 16-bit "last write value" a
 so the samples were bit-for-bit the TypeScript machine's and the goldens hash them exactly. The host
 computes the filter's alpha (`exp` is not available to the core) and passes it with the rate.
 
+**The Z80 is a CMOS part** (`#define Z80_CMOS 1` before `z80.c` is included). The shared core
+emulates the NMOS glitch that clears the P/V copy of IFF2 when an interrupt is accepted right after
+LD A,I / LD A,R; the CMOS Z80 fixed it, and OZ 4.7 cannot survive it. Its "save interrupt state and
+DI" routine ($003B) read the glitch as "interrupts were off", and the key-wait routine returned
+without EI, so the keyboard went dead after a key press with Keyclick on (issue #1374,
+`test/z88/z88-oz47-keyclick.test.ts`). The Spectrum-family cores keep the NMOS behaviour.
+
+**The sample schedule survives the tact counter wrapping.** `cpu.tacts` is 32 bits and wraps after
+2^32 tacts, about 22 minutes at 1x. The next sample point is kept in [0, 2^32) and reached by its
+signed distance from `cpu.tacts`. The TypeScript device counted tacts in a JS number, never wrapped,
+and so never needed this: a port that kept its plain `tacts < next` comparison went silent for good
+after 22 minutes (issue #1374). `z88SetAudioSampleRate` also schedules from the current tact, not
+from 0. Any other code that compares absolute tacts has the same trap.
+
 **The tact hook is `noinline`** (`Z88_CPU_NOINLINE`), as `sp48CpuTactPlusN` is: it runs the sampler,
 and inlined into every opcode it would more than triple the code (710 KB against 198 KB).
 

@@ -104,6 +104,8 @@ static uint8_t z88FetchCodeByte(uint16_t address);
 static inline void z88BusNewInstruction(void);
 
 #define Z80_EXTERNAL_BUS 1
+/* The Z88's Z80 is a CMOS part: no LD A,I / LD A,R interrupt glitch (see `Z80_CMOS` in z80.c) */
+#define Z80_CMOS 1
 #define Z80_MEMORY_PTR() z88CpuMemoryPtr()
 #define Z80_READ_MEMORY(address) z88CpuReadMemory((uint32_t)(address))
 #define Z80_WRITE_MEMORY(address, value) z88CpuWriteMemory((uint32_t)(address), (uint32_t)(value))

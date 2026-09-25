@@ -399,6 +399,23 @@ describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the 
     expect(second.length).toBe(machine.wasmV2Runtime!.exports.z88GetAudioSampleCount());
   });
 
+  it("the samples keep coming when the 32-bit tact counter wraps (issue #1374)", async () => {
+    // --- 2^32 tacts is about 22 minutes at 1x. Start the schedule just short of the wrap, as it
+    // --- stands after that long a session, and run across it.
+    const machine = (await createHarnessZ88Machine({ audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+    const w = machine.wasmV2Runtime!.exports;
+    w.z88SetTacts(2 ** 32 - 3 * 16_384);
+    w.z88SetAudioSampleRate(44_100, Math.exp((-2 * Math.PI * 1.4) / 44_100));
+    for (let frame = 0; frame < 8; frame++) {
+      machine.executeMachineFrame();
+      const count = w.z88GetAudioSampleCount();
+      expect(count, `frame ${frame}`).toBeGreaterThanOrEqual(220);
+      expect(count, `frame ${frame}`).toBeLessThanOrEqual(221);
+    }
+    expect(w.z88GetTacts(), "the counter did wrap").toBeLessThan(8 * 16_384);
+    expect(w.z88GetAudioOverflows()).toBe(0);
+  });
+
   it("the sample rate is handed to the core at reset", async () => {
     const machine = (await createHarnessZ88Machine({ audioSampleRate: 44_100 })) as Z88WasmV2Machine;
     const w = machine.wasmV2Runtime!.exports;

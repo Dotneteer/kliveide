@@ -204,6 +204,31 @@ the doubles over in a `Float64Array`, so its parity test compares samples with
 `toBe` rather than a tolerance. Anything the core cannot compute (`exp` for the
 filter's alpha) is computed by the host and passed in.
 
+A 32-bit core counter is a behaviour change from a TypeScript oracle that counted in a JS number.
+Parity tests run for seconds, so they cannot see a wrap that comes after 2^32 tacts (22 minutes on
+the Z88, 20 on a 3.5 MHz Spectrum). Anything that schedules against absolute tacts - an audio sample
+point, a keystroke release - must compare by signed distance, and needs a test that sets the counter
+just short of the wrap and runs across it.
+
+**A CPU quirk added for one machine is a behaviour change for every machine that shares the core.**
+The NMOS Z80's LD A,I / LD A,R interrupt glitch went into the shared `z80.c` during a ZX Spectrum
+Next device review, and so reached the Cambridge Z88, whose CMOS Z80 does not have it. OZ 4.7 then
+lost its keyboard for good after a key press with Keyclick on (issue #1374). It took a
+timing-dependent race to show: an interrupt had to land exactly after one instruction. Whole-frame
+key presses hit it every time, while an instruction-stepped trace of the same presses did not.
+Silicon variants are therefore compile-time options with the old behaviour as default (`Z80_CMOS`).
+When a machine's CPU is a different part, set its option and test the variant with a program that
+forces the case (see "the Z80 is a CMOS part" in `test/z88/z88-interrupts.test.ts`). When
+reproducing a race, try both whole-frame and stepped driving before concluding it does not happen.
+
+**Size the audio worklet in bursts, not frames.** The controller runs `uiFrameFrequency` frames back
+to back before it sleeps, so their samples reach the worklet together. The worklet bounds its lag in
+units of what `initAudio` passes; passing one machine frame broke the Z88 (8 × 5 ms frames per
+burst), where the lag bound dropped over half of every burst and the sound came out choppy (issue
+#1374). `initAudio` now takes `uiFrameFrequency` and passes a whole burst. The two are the same for
+every machine that delivers one frame per wake-up. `test/controls/SamplingWorklet.test.ts` plays
+bursts against an output clock; add a case there for any machine with a new delivery pattern.
+
 A parity test that passes the first time proves nothing until it has failed:
 change one colour constant and one filter constant, rebuild, and watch the
 pixel and sample comparisons fail, then restore. The Z88 LCD and beeper parity

@@ -111,10 +111,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Extracted joystick hook. Like the mouse hook it must come *before* the keyboard hook: it
   // --- claims the host keys bound to a connector, and stops those events reaching anything else.
-  const { claimedCodes } = useEmulatorJoystick(controllerRef);
+  const { claimsKey } = useEmulatorJoystick(controllerRef);
 
   // --- Extracted keyboard hook
-  const { setKeyData } = useEmulatorKeyboard(controllerRef, keyStatusSet, claimedCodes);
+  const { setKeyData } = useEmulatorKeyboard(controllerRef, keyStatusSet, claimsKey);
 
   // --- Sends disk changes to the main process
   const saveDiskChanges = useCallback(async (diskIndex: number, changes: SectorChanges): Promise<void> => {
@@ -154,7 +154,12 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     setOverlay("Not yet started. Press F5 to start or Ctrl+F5 to debug machine.");
 
-    await initAudio(ctrl.machine.tactsInFrame, ctrl.machine.baseClockFrequency, audioSampleRate);
+    await initAudio(
+      ctrl.machine.tactsInFrame,
+      ctrl.machine.baseClockFrequency,
+      audioSampleRate,
+      ctrl.machine.uiFrameFrequency
+    );
 
     updateScreenDimensions();
 

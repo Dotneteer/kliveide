@@ -242,7 +242,7 @@ describe("EmulatorPanel", () => {
       await captured.controllerChanged(controller);
     });
 
-    expect(initAudio).toHaveBeenCalledWith(70_000, 3_500_000, 44_100);
+    expect(initAudio).toHaveBeenCalledWith(70_000, 3_500_000, 44_100, 2);
     expect(updateScreenDimensions).toHaveBeenCalled();
     expect(setKeyData).toHaveBeenCalledWith({ A: 10 }, { KeyA: "A" });
 
