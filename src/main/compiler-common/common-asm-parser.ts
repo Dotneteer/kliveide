@@ -5,6 +5,7 @@ import {
   AlignPragma,
   AssemblyLine,
   BankPragma,
+  PagePragma,
   BinaryExpression,
   BreakStatement,
   CompareBinPragma,
@@ -561,6 +562,15 @@ export abstract class CommonAsmParser<
           offset: bankOffsExpr,
           noexport
         } as BankPragma<TInstruction, TToken>;
+      case CommonTokens.PagePragma: {
+        const pageExpr = this.getExpression();
+        const pageAddrExpr = this.getExpression(true, true);
+        return {
+          type: "PagePragma",
+          page: pageExpr,
+          address: pageAddrExpr
+        } as PagePragma<TInstruction, TToken>;
+      }
       case CommonTokens.XorgPragma:
         const xorgExpr = this.getExpression();
         return {

@@ -69,6 +69,10 @@ export type ErrorCodes =
   | "Z0329"
   | "Z0330"
   | "Z0331"
+  | "Z0332"
+  | "Z0333"
+  | "Z0334"
+  | "Z0335"
   
   // --- SaveNex pragma errors
   | "Z0340"
@@ -261,6 +265,10 @@ export const errorMessages: Record<string, string> = {
   Z0329: "Cannot open file '{0}' used in .comparebin pragma ({1}).",
   Z0330: ".comparebin fails: {0}.",
   Z0331: "The 'noexport' flag in .bank pragma can only be used with .model Next.",
+  Z0332: "The .page pragma cannot have a label.",
+  Z0333: "The .page pragma can only be used with .model Next.",
+  Z0334: "The .page pragma's page must be between 0 and 223.",
+  Z0335: "The .page pragma's address must be between 0 and #ffff.",
 
   // --- SaveNex pragma errors
   Z0340: "The .savenex pragma can only be used with .model Next.",

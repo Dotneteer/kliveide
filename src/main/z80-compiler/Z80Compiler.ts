@@ -85,6 +85,7 @@ const restrictedNodes: Z80Node["type"][] = [
   "XentPragma",
   "DispPragma",
   "BankPragma",
+  "PagePragma",
   "EquPragma",
   "VarPragma",
   "InjectOptPragma",

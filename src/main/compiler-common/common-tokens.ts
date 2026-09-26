@@ -140,7 +140,9 @@ export const CommonTokens = {
   HexadecimalLiteral: 123,
   RealLiteral: 124,
   CharLiteral: 125,
-  StringLiteral: 126
+  StringLiteral: 126,
+
+  PagePragma: 127
 }
 
 export type CommonTokenType = typeof CommonTokens[keyof typeof CommonTokens];
@@ -155,6 +157,9 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".BANK": CommonTokens.BankPragma,
   bank: CommonTokens.BankPragma,
   BANK: CommonTokens.BankPragma,
+
+  ".page": CommonTokens.PagePragma,
+  ".PAGE": CommonTokens.PagePragma,
 
   ".xorg": CommonTokens.XorgPragma,
   ".XORG": CommonTokens.XorgPragma,
@@ -852,5 +857,6 @@ commonTokenTraits.set(CommonTokens.While, { statement: true });
 // ----------------------------------------------------------------------------
 // X
 commonTokenTraits.set(CommonTokens.XentPragma, { pragma: true });
+commonTokenTraits.set(CommonTokens.PagePragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.XorgPragma, { pragma: true });
 

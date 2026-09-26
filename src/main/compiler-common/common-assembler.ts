@@ -50,6 +50,7 @@ import {
   AssemblyLine,
   BankPragma,
   BreakStatement,
+  PagePragma,
   CompareBinPragma,
   ContinueStatement,
   DefBPragma,
@@ -1770,6 +1771,10 @@ export abstract class CommonAssembler<
       case "BankPragma":
         this.processBankPragma(pragmaLine, label);
         break;
+
+      case "PagePragma":
+        this.processPagePragma(pragmaLine, label);
+        break;
       case "XorgPragma":
         this.processXorgPragma(pragmaLine);
         break;
@@ -2100,6 +2105,63 @@ export abstract class CommonAssembler<
     this._currentSegment.bankOffset = offset;
     this._currentSegment.nexExport = !pragma.noexport; // Default true, set to false if noexport flag present
     this._currentSegment.maxCodeLength = 0x4000 - offset;
+  }
+
+  /**
+   * Processes the .page pragma: the code that follows is assembled for `address` (by default
+   * $C000 for an even page, $E000 for an odd one) and stored in the 8K `page`, that is, in 16K bank
+   * `page >> 1` from offset `(page & 1) * $2000` plus the address's offset within its 8K slot.
+   * @param pragma Pragma to process
+   * @param label Label information
+   */
+  processPagePragma(pragma: PagePragma<TInstruction, TToken>, label: string | null): void {
+    if (label) {
+      this.reportAssemblyError("Z0332", pragma);
+      return;
+    }
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
+      // SpectrumModelType.Next
+      this.reportAssemblyError("Z0333", pragma);
+      return;
+    }
+
+    const pageValue = this.evaluateExprImmediate(pragma.page);
+    if (!pageValue.isValid) {
+      return;
+    }
+    const page = pageValue.asLong();
+    if (page < 0 || page > 223) {
+      this.reportAssemblyError("Z0334", pragma);
+      return;
+    }
+
+    let address = page & 1 ? 0xe000 : 0xc000;
+    if (pragma.address) {
+      const addressValue = this.evaluateExprImmediate(pragma.address);
+      if (!addressValue.isValid) {
+        return;
+      }
+      address = addressValue.asLong();
+      if (address < 0 || address > 0xffff) {
+        this.reportAssemblyError("Z0335", pragma);
+        return;
+      }
+    }
+
+    this.ensureCodeSegment(address);
+    if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
+      this._currentSegment = new BinarySegment();
+      this._output.segments.push(this._currentSegment);
+    }
+    const offsetInPage = address & 0x1fff;
+    this._currentSegment.startAddress = address;
+    this._currentSegment.bank = page >> 1;
+    this._currentSegment.bankOffset = (page & 1) * 0x2000 + offsetInPage;
+    this._currentSegment.maxCodeLength = 0x2000 - offsetInPage;
+    if (this._output.unbankedSegments) {
+      const index = this._output.unbankedSegments.indexOf(this._currentSegment);
+      if (index >= 0) this._output.unbankedSegments.splice(index, 1);
+    }
   }
 
   /**

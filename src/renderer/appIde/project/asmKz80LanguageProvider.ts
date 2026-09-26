@@ -314,6 +314,8 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".DMA",
       "dma",
       "DMA",
+      ".page",
+      ".PAGE",
       ".xorg",
       ".XORG",
       "xorg",

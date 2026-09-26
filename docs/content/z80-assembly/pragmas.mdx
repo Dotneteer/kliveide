@@ -279,6 +279,32 @@ You can also combine the `noexport` flag with the offset parameter:
 - For ZX Spectrum Next: You can reuse the same bank multiple times to create multiple segments within the same bank
 - The `noexport` flag can only be used with the ZX Spectrum Next model
 
+## The PAGE pragma
+
+The ZX Spectrum Next pages memory in 8K units: every 16K bank is two 8K pages (bank _n_ holds pages _2n_ and _2n+1_), and any page can be mapped into any of the eight 8K slots of the Z80 address space. The __PAGE__ pragma puts the code that follows into one 8K page and assembles it for the address where the program will map that page, which does not have to be `$C000`.
+
+The __PAGE__ pragma accepts two parameters. The first is the 8K page number (0-223). The second is an optional address the code is assembled for; if you omit it, it is `$C000` for an even page and `$E000` for an odd one — where the page sits when its bank is paged into slot 3 with `.bank`.
+
+```z80klive
+.model Next
+.page 40, $6000   ; stored in page 40 (bank 20, lower half), runs at $6000
+FarRoutine:
+  ld a,2
+  ret
+.page 41, $6000   ; stored in page 41 (bank 20, upper half), also runs at $6000
+OtherRoutine:
+  ret
+```
+
+The code is stored in bank `page >> 1`, starting at `$0000` for an even page and `$2000` for an odd one, plus the address's offset within its 8K slot: `.page 41, $6100` stores the code at offset `$2100` of bank 20. The NEX export places it there, and source breakpoints in it fire only while that page is mapped in.
+
+### Restrictions with PAGE
+
+- `PAGE` cannot have a label.
+- `PAGE` can be used only with the ZX Spectrum Next model.
+- The page must be between 0 and 223, and the address between 0 and `$FFFF`.
+- The code must fit into the rest of the 8K page.
+
 ## The EQU pragma
 
 The __EQU__ pragma allows you to assign a value to an identifier. The label before __EQU__ is the name of the identifier (or symbol), and the expression used in __EQU__ is the variable's value. Here is a short example:

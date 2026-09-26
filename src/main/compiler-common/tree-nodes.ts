@@ -47,6 +47,7 @@ export type ByteEmittingPragma<TInstruction extends TypedObject, TToken extends 
 export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | OrgPragma<TInstruction, TToken>
   | BankPragma<TInstruction, TToken>
+  | PagePragma<TInstruction, TToken>
   | XorgPragma<TInstruction, TToken>
   | EntPragma<TInstruction, TToken>
   | XentPragma<TInstruction, TToken>
@@ -640,6 +641,21 @@ export interface OrgPragma<TNode extends TypedObject, TToken extends CommonToken
    * Origin address
    */
   address: Expression<TNode, TToken>;
+}
+
+export interface PagePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "PagePragma";
+
+  /**
+   * The 8K page that stores the code
+   */
+  page: Expression<TNode, TToken>;
+
+  /**
+   * The address the code is assembled for
+   */
+  address?: Expression<TNode, TToken>;
 }
 
 export interface BankPragma<TNode extends TypedObject, TToken extends CommonTokenType>
