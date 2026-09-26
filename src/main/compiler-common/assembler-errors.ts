@@ -35,6 +35,7 @@ export type ErrorCodes =
   | "Z0206"
   | "Z0207"
   | "Z0208"
+  | "Z0209"
 
   // --- Pragma messages
   | "Z0302"
@@ -225,6 +226,7 @@ export const errorMessages: Record<string, string> = {
     "An #ifmod or #ifnmod directive cen be used only with these identifiers: 'SPECTRUM48', 'SPECTRUM128', 'SPECTRUMP3', 'NEXT'.",
   Z0207: "Unexpected #else directive",
   Z0208: "Unexpected #endif directive",
+  Z0209: "The #line directive needs a positive integer line number.",
 
   // --- Pragma messages
   Z0302: "A .model pragma can be used only once.",

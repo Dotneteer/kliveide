@@ -30,6 +30,7 @@ import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
   FixupType,
+  IAssemblerErrorInfo,
   IEvaluationContext,
   IExpressionValue,
   IfDefinition,
@@ -74,6 +75,7 @@ import {
   IncBinPragma,
   IncludeDirective,
   InjectOptPragma,
+  LineDirective,
   LabelOnlyLine,
   LoopStatement,
   MacroOrStructInvocation,
@@ -141,6 +143,20 @@ const NO_FILE_ITEM = "#";
  * JavaScript event loop process messages
  */
 const ASSEMBLY_BATCH_SIZE = 1000;
+
+/**
+ * One parsed and preprocessed source file, ready for `compileProgram`
+ */
+export type ParsedSourceUnit<TInstruction extends TypedObject> = {
+  /** The unit's own file first, then the files it included; `fileIndex` of `lines` indexes this list. */
+  files: SourceFileItem[];
+  /** The lines to assemble, after `#include`, `#if`-family and `#define` processing. */
+  lines: AssemblyLine<TInstruction>[];
+  /** The unit's first `.model` pragma, applied when the unit is assembled. */
+  modelPragma?: ModelPragma<TInstruction>;
+  /** Errors and warnings found while parsing; copied into every output the unit is part of. */
+  errors: IAssemblerErrorInfo[];
+};
 
 /**
  * This class provides the functionality of the Z80 Assembler
@@ -260,6 +276,9 @@ export abstract class CommonAssembler<
   // --- True once a `.savenex border` pragma set the border, so the Next auto-mode default does not override it
   private _nexBorderSetExplicitly = false;
 
+  // --- The `.model` pragmas met while parsing, in source order
+  private _modelPragmas: ModelPragma<TInstruction>[] = [];
+
   /**
    * Store the handler of trace messages
    */
@@ -330,6 +349,82 @@ export abstract class CommonAssembler<
     sourceText: string,
     options?: AssemblerOptions
   ): Promise<AssemblerOutput<TInstruction, TToken>> {
+    this.initCompilation(sourceItem, options);
+    const parseResult = await this.executeParse(0, sourceItem, sourceText);
+    return await this.assembleParsedLines(parseResult.parsedLines);
+  }
+
+  /**
+   * Parses and preprocesses one source file into a unit that `compileProgram` can assemble, any
+   * number of times and together with other units. Parsing is the expensive part of a build, so a
+   * caller may cache the unit and reuse it across builds, as long as the text and the options that
+   * affect preprocessing (`predefinedSymbols`, `currentModel`, case sensitivity) are unchanged.
+   * @param filename The (possibly virtual) file name the unit's lines and errors refer to
+   * @param sourceText Z80 assembly source code text
+   * @param options Compiler options used for preprocessing
+   */
+  async parseSourceUnit(
+    filename: string,
+    sourceText: string,
+    options?: AssemblerOptions
+  ): Promise<ParsedSourceUnit<TInstruction>> {
+    const sourceItem = new SourceFileItem(filename);
+    this.initCompilation(sourceItem, options);
+    const parseResult = await this.executeParse(0, sourceItem, sourceText);
+    return {
+      files: this._output.sourceFileList.slice() as SourceFileItem[],
+      lines: parseResult.parsedLines,
+      modelPragma: this._modelPragmas[0],
+      errors: this._output.errors.slice()
+    };
+  }
+
+  /**
+   * Assembles a program made of parsed units (see `parseSourceUnit`) as one compilation, as if the
+   * units were concatenated in order. The first unit's first file is the output's `sourceItem`. The
+   * units' files are appended to `sourceFileList` in order, and every line's `fileIndex` is shifted
+   * accordingly, so list items, the source map and errors refer to the right virtual file.
+   *
+   * Each unit is preprocessed on its own: a `#define` in one unit is not visible in the next.
+   * @param program The units of the program, in assembly order
+   * @param options Compiler options. If not defined, the compiler uses the default options.
+   */
+  async compileProgram(
+    program: ParsedSourceUnit<TInstruction>[],
+    options?: AssemblerOptions
+  ): Promise<AssemblerOutput<TInstruction, TToken>> {
+    if (program.length === 0 || program[0].files.length === 0) {
+      throw new Error("compileProgram needs at least one unit with a source file.");
+    }
+    this.initCompilation(program[0].files[0], options);
+    const fileList = this._output.sourceFileList;
+    fileList.length = 0;
+
+    const lines: AssemblyLine<TInstruction>[] = [];
+    for (const unit of program) {
+      const offset = fileList.length;
+      fileList.push(...unit.files);
+      this._output.errors.push(...unit.errors);
+      for (const line of unit.lines) {
+        // --- Units are shared between builds: never mutate their lines
+        lines.push({ ...line, fileIndex: line.fileIndex + offset });
+      }
+      if (unit.modelPragma) {
+        const pragma = {
+          ...unit.modelPragma,
+          fileIndex: (unit.modelPragma as unknown as AssemblyLine<TInstruction>).fileIndex + offset
+        };
+        this.setSourceLine(pragma as unknown as AssemblyLine<TInstruction>);
+        this.processModelPragma(pragma);
+      }
+    }
+    return await this.assembleParsedLines(lines);
+  }
+
+  /**
+   * Resets the assembler's state for a new compilation
+   */
+  private initCompilation(sourceItem: SourceFileItem, options?: AssemblerOptions): void {
     this._options = options ?? new AssemblerOptions();
 
     this._currentModule = this._output = new AssemblerOutput<TInstruction, TToken>(
@@ -337,6 +432,7 @@ export abstract class CommonAssembler<
       options?.useCaseSensitiveSymbols ?? false
     );
     this.compareBins = [];
+    this._modelPragmas = [];
     this._nexBorderSetExplicitly = false;
 
     // --- Prepare pre-defined symbols
@@ -351,17 +447,22 @@ export abstract class CommonAssembler<
         isUsed: false
       };
     }
+  }
 
-    // --- Execute the compilation phases
+  /**
+   * Emits code for preprocessed lines and resolves fixups: the stages after parsing
+   */
+  private async assembleParsedLines(
+    parsedLines: AssemblyLine<TInstruction>[]
+  ): Promise<AssemblerOutput<TInstruction, TToken>> {
     let emitSuccess = false;
-    const parseResult = await this.executeParse(0, sourceItem, sourceText);
-    this.preprocessedLines = parseResult.parsedLines;
-    
+    this.preprocessedLines = parsedLines;
+
     // --- Set up unbanked code defaults if using Next auto mode
     if (this._output.isNextAutoMode) {
       this.setupNextUnbankedCodeDefaults();
     }
-    
+
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
       emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
@@ -423,6 +524,10 @@ export abstract class CommonAssembler<
     let processOps: ProcessOps = { ops: true };
     const visitedLines = parsed.assemblyLines;
 
+    // --- Where `#line` redirects the lines that follow it
+    let lineFileIndex = fileIndex;
+    let lineDelta = 0;
+
     // --- Traverse through parsed lines
     while (currentLineIndex < visitedLines.length) {
       const line = visitedLines[currentLineIndex];
@@ -431,6 +536,7 @@ export abstract class CommonAssembler<
         const typedLine = line as any;
         switch (typedLine.type) {
           case "ModelPragma":
+            this._modelPragmas.push(typedLine);
             this.processModelPragma(typedLine);
             break;
 
@@ -452,9 +558,14 @@ export abstract class CommonAssembler<
             delete this.conditionSymbols[typedLine.identifier.name];
             break;
 
-          case "LineDirective":
-            // TODO: Process a #line directive
+          case "LineDirective": {
+            const target = this.applyLineDirective(typedLine, sourceItem);
+            if (target) {
+              lineFileIndex = target.fileIndex ?? lineFileIndex;
+              lineDelta = target.nextLine - (typedLine.line + 1);
+            }
             break;
+          }
 
           default: {
             if (
@@ -464,11 +575,14 @@ export abstract class CommonAssembler<
                 processOps
               )
             ) {
-              line.fileIndex = fileIndex;
               line.sourceText = sourceText.substr(
                 line.startPosition,
                 line.endPosition - line.startPosition + 1
               );
+              line.fileIndex = lineFileIndex;
+              if (lineDelta) {
+                line.line += lineDelta;
+              }
               parsedLines.push(line);
             }
             break;
@@ -695,6 +809,43 @@ export abstract class CommonAssembler<
 
   // ==========================================================================
   // Process directives
+
+  /**
+   * Evaluates a `#line <number> ["<file>"]` directive: the line after it is reported as line
+   * `<number>` of `<file>` (of the current file when omitted). A relative file name is resolved like
+   * an `#include`; a file not yet in the source file list is added to it without being read.
+   * @returns The line number of the next line and the file index to report, or null on error
+   */
+  private applyLineDirective(
+    lineDir: LineDirective<TInstruction, TToken>,
+    sourceItem: SourceFileItem
+  ): { nextLine: number; fileIndex?: number } | null {
+    const value = this.evaluateExprImmediate(lineDir.lineNumber);
+    if (!value.isValid) {
+      return null;
+    }
+    if (value.type !== ExpressionValueType.Integer || value.asLong() < 1) {
+      this.reportAssemblyError("Z0209", lineDir);
+      return null;
+    }
+    const nextLine = value.asLong();
+    if (lineDir.filename === null || lineDir.filename === undefined) {
+      return { nextLine };
+    }
+
+    let filename = lineDir.filename.trim();
+    if (sourceItem.filename !== NO_FILE_ITEM && !path.isAbsolute(filename)) {
+      filename = path.join(path.dirname(sourceItem.filename) ?? "", filename);
+    }
+    const fileItem = new SourceFileItem(filename);
+    const fileList = this._output.sourceFileList;
+    let fileIndex = fileList.findIndex((f) => f.filename === fileItem.filename);
+    if (fileIndex < 0) {
+      fileList.push(fileItem);
+      fileIndex = fileList.length - 1;
+    }
+    return { nextLine, fileIndex };
+  }
 
   /**
    * Apply the #include directive
