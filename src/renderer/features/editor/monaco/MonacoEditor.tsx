@@ -16,6 +16,7 @@ import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
+  resetBackgroundCompileAction,
   startBackgroundCompileAction,
   setCursorPositionAction
 } from "@common/state/actions";
@@ -63,6 +64,7 @@ import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
 import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 import { pasteTextIntoEditor } from "./monacoClipboard";
+import { BackgroundCompileScheduler } from "./monacoBackgroundCompile";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -193,11 +195,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
   const refreshEditorBreakpoints = useRef<() => Promise<void>>(async () => undefined);
 
-  // --- Debounce timer for background compilation (1200ms)
-  const compileDebounce = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // --- True when a compile was requested while one was already in progress
-  const pendingCompile = useRef(false);
+  // --- Background compiles: debounced after edits, one at a time, none lost (see the helper)
+  const compileScheduler = useRef<BackgroundCompileScheduler>(null);
 
   // --- Line-number clicks select the right text, but Monaco leaves the active
   // --- cursor on the next line. Keep the clicked line until mouse-up, then
@@ -226,6 +225,25 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Background compilation
   const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
   const backgroundInProgress = useSelector((s) => s.compilation.backgroundInProgress ?? false);
+
+  // --- The scheduler reads these when a request fires, so it always sees the current values
+  const compileContext = useRef({ store, mainApi, allowBackgroundCompile });
+  compileContext.current = { store, mainApi, allowBackgroundCompile };
+  if (!compileScheduler.current) {
+    compileScheduler.current = new BackgroundCompileScheduler({
+      isRunning: () => compileContext.current.store.getState().compilation?.backgroundInProgress ?? false,
+      start: () => {
+        const { store, mainApi, allowBackgroundCompile } = compileContext.current;
+        return startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+      }
+    });
+  }
+  useEffect(() => () => compileScheduler.current?.dispose(), []);
+
+  // --- A compile finished, with any result: run the one requested while it ran
+  useEffect(() => {
+    if (!backgroundInProgress) compileScheduler.current?.compileFinished();
+  }, [backgroundInProgress]);
 
   // --- Language intelligence data (updated after each background compile)
   const languageIntel = useSelector((s) => s.compilation.languageIntel);
@@ -494,25 +512,10 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (afterDecorations.length > 0) {
       errorWarningDecorations.current = editor.current.createDecorationsCollection(afterDecorations);
     }
-
-    // --- If a compile was requested while this one was in progress, start it now
-    if (pendingCompile.current) {
-      pendingCompile.current = false;
-      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-    }
-  }, [
-    backgroundResult,
-    document.node?.projectPath,
-    document.language,
-    allowBackgroundCompile,
-    mainApi,
-    store
-  ]);
+  }, [backgroundResult, document.node?.projectPath, document.language, allowBackgroundCompile]);
 
   useEffect(() => {
-    if (store && mainApi) {
-      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-    }
+    if (store && mainApi) void compileScheduler.current?.requestNow();
   }, [store, mainApi, allowBackgroundCompile]);
 
   // --- Initializes the editor when mounted
@@ -743,7 +746,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     setTimeout(() => notifySemanticTokensChanged(), 0);
 
     // --- Start background compilation
-    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+    void compileScheduler.current?.requestNow();
 
     // --- Show breakpoints and other decorations when initially displaying the editor
     (async () => {
@@ -908,17 +911,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       }
     );
 
-    // --- Start background compilation (debounced to prevent multiple rapid compilations)
-    clearTimeout(compileDebounce.current);
-    compileDebounce.current = setTimeout(() => {
-      if (backgroundInProgress) {
-        // A compile is already running — mark that we need another one when it finishes
-        pendingCompile.current = true;
-      } else {
-        pendingCompile.current = false;
-        startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-      }
-    }, 1200);
+    // --- Compile once the typing pauses (after any compile that is running now)
+    compileScheduler.current?.requestAfterEdit();
   };
 
   // --- render the editor when monaco has been initialized
@@ -1395,7 +1389,11 @@ function createCurrentMacroInvocationBreakpointDecoration(
   };
 }
 
-// --- Compile the current project's code
+/**
+ * Starts a background compile of the current project's build root. Resolves to false only when the
+ * main process refuses because a compile is already running (the scheduler then retries after it);
+ * true otherwise, including when there is nothing to compile.
+ */
 async function startBackgroundCompile(
   store: Store<AppState>,
   mainApi: ReturnType<typeof createMainApi>,
@@ -1404,11 +1402,11 @@ async function startBackgroundCompile(
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
-    return false;
+    return true;
   }
   const buildRoot = state.project.buildRoots?.[0];
   if (!buildRoot) {
-    return false;
+    return true;
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, store)?.subType;
@@ -1423,11 +1421,17 @@ async function startBackgroundCompile(
       `${createSettingsReader(state).readSetting(ZXBC_COMPILER) ?? ""}`.trim().toLowerCase() ===
         "klive");
   if (!allowCompile && !isBuiltInCompiler) {
-    return false;
+    return true;
   }
 
-  // --- Compile the build root
+  // --- Compile the build root. A refusal leaves the flag to the compile that is running, whose
+  // --- end clears it; a failed request clears it here, or no later request would ever start.
   store.dispatch(startBackgroundCompileAction());
-  mainApi.startBackgroundCompile(fullPath, language);
-  return true;
+  try {
+    return await mainApi.startBackgroundCompile(fullPath, language);
+  } catch (err) {
+    store.dispatch(resetBackgroundCompileAction());
+    reportError(err);
+    return true;
+  }
 }

@@ -43,6 +43,13 @@ integration changes.
   assembler, and `zxbas` while `zxbasic.compiler` is `klive`, always run (the assembler's result
   feeds language intelligence). Markers, however, are drawn **only** with that setting on, for
   every language (it defaults to off).
+- One background compile runs at a time. `BackgroundCompileScheduler`
+  (`src/renderer/features/editor/monaco/monacoBackgroundCompile.ts`) debounces edits (1200 ms, after
+  the 1 s as-you-type save), reads the in-progress flag when a request fires, and keeps a request
+  made while a compile runs, or one main refused, until that compile ends (with any result). The
+  main process sets `backgroundInProgress` itself when it accepts a compile
+  (`RendererToMainProcessor.startBackgroundCompile`); the renderer's own START action is local and
+  is never forwarded, since the renderer forwards only actions dispatched with the `ide` source.
 
 ## 2. Klive's assembler
 

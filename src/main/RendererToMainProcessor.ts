@@ -31,7 +31,8 @@ import {
   refreshExcludedProjectItemsAction,
   saveProjectSettingAction,
   saveUserSettingAction,
-  setBuildRootAction
+  setBuildRootAction,
+  startBackgroundCompileAction
 } from "@state/actions";
 import { createCompilerRegistry } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
@@ -721,10 +722,14 @@ class MainMessageProcessor {
     language: string,
     options?: CompilerOptions
   ): Promise<boolean> {
-    // --- Do not strat,if already in progress
+    // --- One background compile at a time: the caller retries when the running one ends
     if (mainStore.getState().compilation?.backgroundInProgress) {
       return false;
     }
+
+    // --- Mark it running here, where the flag is checked: the renderer's own START is local to it.
+    // --- The worker's END (success, error or exit) clears it.
+    mainStore.dispatch(startBackgroundCompileAction());
 
     // --- We start the background compilation in a fire-and-forget way.
     // --- The result will be sent to the store by the worker
@@ -734,6 +739,8 @@ class MainMessageProcessor {
       filePath: filename,
       language,
       options
+    }).catch(() => {
+      // --- A failed worker has already ended the compile in the store
     });
     return true;
   }
