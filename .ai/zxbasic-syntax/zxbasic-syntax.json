@@ -2687,11 +2687,20 @@
       {
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
-        "decision": "It wraps to the first item.",
-        "status": "open",
+        "decision": "It wraps to the first item. With no DATA at all, or after RESTORE to a label with no DATA after it, READ stops with E Out of DATA.",
+        "status": "provisional",
         "source": "docs",
         "phase": 4,
-        "test": null
+        "test": "test/kbasic/codegen/data.test.ts"
+      },
+      {
+        "name": "read-type-mismatch",
+        "question": "What does READ do when a String item meets a numeric target, or a number meets a String target?",
+        "decision": "It stops with C Nonsense in BASIC. Numeric items reach numeric targets through Float (exact for every integer type), then convert as an assignment would.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/codegen/data.test.ts"
       },
       {
         "name": "shr-signed",

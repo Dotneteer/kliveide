@@ -1,7 +1,7 @@
 ; @module   float
 ; @summary  Float arithmetic, comparison, maths and text through the ROM calculator; integer conversions.
 ; @exports  FBinary, FMod, FCompare, FUnary, FFromU32, FFromI32, FToI32, FToText, FStr, PrintFloat, FVal
-; @exports  FText, FTextLen, FNormalise, FFromFixed, FToFixed
+; @exports  FText, FTextLen, FNormalise, FFromFixed, FToFixed, FStack, FFetch
 ; @requires rom, strings, print
 ;
 ; A Float is the ROM's five-byte number (runtime-abi.md §2.1), in registers as A = exponent, E, D, C,
@@ -110,6 +110,7 @@ FCalcOp:
     pop iy
     ret
 
+; Stacks A-E-D-C-B on the calculator stack (FStack), or unstacks it (FFetch).
 FStack:
     call RomCall
     .defw $2ab6             ; STK-STORE

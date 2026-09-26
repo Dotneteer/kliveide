@@ -68,6 +68,16 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.PrintFloat": ["aedcb"],
   "core.FVal": ["hl", "a"],
   "core.Rnd": [],
+  "core.Plot": ["c", "b"],
+  "core.TapeSave": ["hl", "a", "de", "bc"],
+  "core.TapeLoad": ["hl", "a", "de", "bc"],
+  "core.Beep": ["stack", "aedcb"],
+  "core.DrawLine": ["de", "hl"],
+  "core.Circle": ["d", "e", "c"],
+  "core.DataPutNumber": ["aedcb"],
+  "core.DataPutString": ["hl"],
+  "core.DataNumber": [],
+  "core.DataString": [],
   "core.Usr": ["hl"],
   "core.UsrString": ["hl", "a"],
   "core.Randomize": ["dehl"],
@@ -120,7 +130,7 @@ class Selector {
     this.acc = undefined;
     this.stack = [];
     this.out.push(label(b.label, b.instrs[0]?.sid ?? b.term?.sid ?? -1));
-    if (b === this.fn.blocks[0] && this.fn.kind !== "main") this.prologue();
+    if (b === this.fn.blocks[0] && (this.fn.kind === "sub" || this.fn.kind === "function")) this.prologue();
     for (const i of b.instrs) {
       this.sid = i.sid;
       this.instruction(i);
@@ -886,7 +896,7 @@ class Selector {
         this.emit(`jp ${t.next}`);
         return;
       case "ret":
-        if (this.fn.kind === "main") this.emit("ret");
+        if (this.fn.kind === "main" || this.fn.kind === "data") this.emit("ret");
         else this.epilogue(t.value);
         return;
       case "end": {

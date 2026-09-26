@@ -2,6 +2,7 @@
 ; @summary  Text PRINT to the ULA screen: characters, control codes, numbers, AT, TAB, comma, CLS.
 ; @exports  PrintInit, PrintChar, PrintStr, PrintNewline, PrintComma, PrintAt, PrintTab, PrintReset
 ; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, Cls, PrintRow, PrintCol, PrintColour
+; @exports  PrintApplyAttr
 ; @requires heap, errors
 ; @init     PrintInit
 ;
@@ -225,6 +226,17 @@ PrintGlyphPut:
     inc h
     djnz PrintGlyphLoop
     call PrintAttrAddr      ; HL = the cell's attribute
+    call PrintApplyAttr
+    ld hl,PrintCol
+    inc (hl)
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; Gives the attribute at HL the current colours: the fields the mask keeps stay, INK 9 and PAPER 9
+; contrast. PRINT and the graphics statements share it. Changes AF, BC, DE.
+PrintApplyAttr:
+    ld a,(PrintFlags)
+    ld c,a
     ld de,(PrintAttr)       ; E = attribute, D = mask
     ld a,d
     and (hl)
@@ -234,22 +246,20 @@ PrintGlyphPut:
     and e
     or b
     bit 4,c
-    jr z,PrintGlyphPaper9
+    jr z,PrintApplyPaper9
     and $f8                 ; INK 9: white on a dark paper, black on a light one
     bit 5,a
-    jr nz,PrintGlyphPaper9
+    jr nz,PrintApplyPaper9
     or $07
-PrintGlyphPaper9:
+PrintApplyPaper9:
     bit 5,c
-    jr z,PrintGlyphAttr
+    jr z,PrintApplyDone
     and $c7                 ; PAPER 9: white under a dark ink, black under a light one
     bit 2,a
-    jr nz,PrintGlyphAttr
+    jr nz,PrintApplyDone
     or $38
-PrintGlyphAttr:
+PrintApplyDone:
     ld (hl),a
-    ld hl,PrintCol
-    inc (hl)
     ret
 
 ; DE = the pixel rows of printable character A. Changes AF, BC, HL.

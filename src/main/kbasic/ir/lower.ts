@@ -55,6 +55,11 @@ const ATTR_CODES: Record<AttrName, number> = { INK: 16, PAPER: 17, FLASH: 18, BR
 /** The labels of an array's static tables (runtime-abi.md §2.3). */
 type ArrayTables = { dims: string; lower?: string; upper?: string };
 
+type DataStatement = Extract<BoundStatement, { kind: "data" }>;
+
+/** The label of DATA item n (in source order); `__data_next` holds the next one READ takes. */
+const dataItemLabel = (n: number) => `__data${n}`;
+
 type LoopTargets = { kind: "FOR" | "WHILE" | "DO"; exit: string; next: string };
 
 class Lowering {
@@ -87,11 +92,19 @@ class Lowering {
   private copyBorrowed = false;
   /** UBOUND is asked at run time somewhere: every array gets an upper-bound table (runtime-abi §2.3). */
   private upperTables = false;
+  /** The DATA statements in source order, and the item each starts with (their code is generated only when READ or RESTORE is used). */
+  private readonly dataStatements: DataStatement[] = [];
+  private readonly dataFirstItem = new Map<DataStatement, string>();
+  /** RESTORE label: the first item of the DATA statement after the label. */
+  private readonly restoreTargets = new Map<LabelSymbol, string>();
+  private dataRead = false;
 
   constructor(private readonly diagnostics: DiagnosticBag) {}
 
   run(program: BoundProgram, globals: Scope): MModule {
     this.upperTables = containsBuiltin(program.statements, "UBOUND");
+    this.collectData(program.statements, []);
+    this.dataRead = containsKind(program.statements, "read") || containsKind(program.statements, "restore");
     this.globalData(globals);
     this.fn = { label: "_main", name: "main", kind: "main", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
     this.module.functions.push(this.fn);
@@ -101,6 +114,7 @@ class Lowering {
     this.endStatement();
     this.terminate({ op: "end", code: imm("u16", 0), sid: -1 });
     for (const s of routinesOf(program.statements)) this.lowerRoutine(s);
+    if (this.dataRead) this.lowerData();
     this.module.data.push(...this.staticSlots);
     return this.module;
   }
@@ -319,6 +333,44 @@ class Lowering {
         this.beginStatement(s.span, "other", [s.value]);
         this.emit({ op: "rtcall", name: this.rt("Pause"), args: [this.value(s.value)], sid: this.sid });
         return;
+      case "data":
+        // --- Not executed where it stands: its items' code runs when READ takes them (lowerData)
+        return;
+      case "read":
+        this.beginStatement(s.span, "call", [s.targets]);
+        for (const target of s.targets) this.readInto(target);
+        return;
+      case "restore": {
+        this.beginStatement(s.span, "other");
+        const first = s.label ? this.restoreTargets.get(s.label) : this.dataFirstItem.get(this.dataStatements[0]);
+        const target: SymRef = { kind: "sym", type: "ptr", name: first ?? this.rt("DataNone"), offset: 0 };
+        this.emit({ op: "store", type: "ptr", slot: { kind: "global", name: "__data_next" }, src: target, sid: this.sid });
+        return;
+      }
+      case "tape":
+        this.beginStatement(s.span, "other", [s.name, s.target]);
+        this.tape(s);
+        return;
+      case "beep":
+        this.beginStatement(s.span, "other", [s.duration, s.pitch]);
+        this.emit({ op: "rtcall", name: this.rt("Beep"), args: [this.value(s.duration), this.value(s.pitch)], sid: this.sid });
+        return;
+      case "plot":
+        this.beginStatement(s.span, "other", [s.attrs, s.x, s.y]);
+        this.graphics(s.attrs, () => ({ name: "Plot", args: [this.value(s.x), this.value(s.y)] }));
+        return;
+      case "draw":
+        this.beginStatement(s.span, "other", [s.attrs, s.x, s.y, s.angle]);
+        if (s.angle) {
+          this.unsupported("DRAW with an arc", s.angle.span);
+          return;
+        }
+        this.graphics(s.attrs, () => ({ name: "DrawLine", args: [this.value(s.x), this.value(s.y)] }));
+        return;
+      case "circle":
+        this.beginStatement(s.span, "other", [s.attrs, s.x, s.y, s.radius]);
+        this.graphics(s.attrs, () => ({ name: "Circle", args: [this.value(s.x), this.value(s.y), this.value(s.radius)] }));
+        return;
       case "randomize":
         this.beginStatement(s.span, "other", [s.seed]);
         if (s.seed) this.emit({ op: "rtcall", name: this.rt("Randomize"), args: [this.value(s.seed)], sid: this.sid });
@@ -436,8 +488,11 @@ class Lowering {
         if (value) this.consume(value, "free");
         return;
       }
-      default:
-        this.unsupported(`${s.kind.toUpperCase()}`, s.span);
+      default: {
+        // --- Every kind is handled; a new one reaches here until it is
+        const other = s as { kind: string; span: Span };
+        this.unsupported(other.kind.toUpperCase(), other.span);
+      }
     }
   }
 
@@ -540,7 +595,11 @@ class Lowering {
 
   /** `s$ = expr`: an owned value (a copy of a borrowed one), stored with StrStore (string note §3). */
   private storeString(slot: Slot, valueExpr: BoundExpr): void {
-    const value = this.ownedString(valueExpr);
+    this.storeOwnedString(slot, this.ownedString(valueExpr));
+  }
+
+  /** Stores an owned String value into a variable's slot, freeing the value it held. */
+  private storeOwnedString(slot: Slot, value: Value): void {
     if (slot.kind === "deref") {
       // --- A BYREF String: its address was loaded before the value was computed
       this.rt("StrStore");
@@ -580,6 +639,148 @@ class Lowering {
   }
 
   // ----------------------------------------------------------------------------------------------
+  // DATA, READ, RESTORE (data.kz80.asm)
+
+  /** The DATA statements in source order, and which labels come before which (for RESTORE). */
+  private collectData(list: BoundStatement[], pending: LabelSymbol[]): LabelSymbol[] {
+    for (const s of list) {
+      if (s.kind === "label") pending.push(s.label);
+      else if (s.kind === "data") {
+        const first = dataItemLabel(this.dataStatements.reduce((n, d) => n + d.items.length, 0));
+        this.dataStatements.push(s);
+        this.dataFirstItem.set(s, first);
+        for (const label of pending) this.restoreTargets.set(label, first);
+        pending = [];
+      } else if (s.kind === "if") {
+        for (const b of s.branches) pending = this.collectData(b.body, pending);
+        if (s.else) pending = this.collectData(s.else, pending);
+      } else if (s.kind === "for" || s.kind === "while" || s.kind === "do") pending = this.collectData(s.body, pending);
+    }
+    return pending;
+  }
+
+  /** READ into one target: the next item (a call into the DATA code), converted to the target's type. */
+  private readInto(target: BoundExpr): void {
+    const site: CallSite = { kind: "read", moreCallsFollow: false, order: this.statementCalls.length };
+    this.statementCalls.push(site);
+    this.emit({ op: "call", target: "__data_read", convention: "stdcall", args: [], site, sid: this.sid });
+    const type = mtypeOf(target.type);
+    const slot: Slot | undefined =
+      target.kind === "element"
+        ? { kind: "deref", ptr: this.elementAddress(target.symbol, target.indices, target.span) }
+        : target.kind === "variable"
+          ? this.variableSlot(target.symbol, target.span)
+          : undefined;
+    if (!slot || !this.supportedType(type)) {
+      this.unsupported(`READ into a ${target.type}`, target.span);
+      return;
+    }
+    if (type === "str") {
+      const v = this.vreg("str");
+      this.emit({ op: "rtcall", name: this.rt("DataString"), dst: v, args: [], sid: this.sid });
+      this.owned.add(v.id);
+      this.storeOwnedString(slot, v);
+      return;
+    }
+    const f = this.vreg("flt");
+    this.emit({ op: "rtcall", name: this.rt("DataNumber"), dst: f, args: [], sid: this.sid });
+    let value: Value = f;
+    if (type !== "flt") {
+      value = this.vreg(type);
+      this.emit({ op: "conv", dst: value, a: f, sid: this.sid });
+    }
+    this.emit({ op: "store", type, slot, src: value, sid: this.sid });
+  }
+
+  /**
+   * The DATA items' code: `__data_read` jumps to the item `__data_next` names; each item computes its
+   * value (a number as a Float, a String as an owned String), hands it to the data module, points
+   * `__data_next` at the next item (the last at the first: READ wraps round) and returns. Each DATA
+   * statement's items run under that statement's id, so a breakpoint on a DATA line stops when READ
+   * takes its first item.
+   */
+  private lowerData(): void {
+    this.fn = { label: "__data_read", name: "DATA", kind: "data", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
+    this.fnIndex = this.module.functions.length;
+    this.module.functions.push(this.fn);
+    this.routine = undefined;
+    this.frameSlots = new Map();
+    this.sid = -1;
+    this.startBlock("__data_read");
+    this.emit({ op: "asm", lines: ["ld hl,(__data_next)", "jp (hl)"], sid: -1 });
+    this.terminate({ op: "ret", sid: -1 });
+    const count = this.dataStatements.reduce((n, d) => n + d.items.length, 0);
+    let n = 0;
+    for (const s of this.dataStatements) {
+      s.items.forEach((item, k) => {
+        this.startBlock(dataItemLabel(n));
+        if (k === 0) this.beginStatement(s.span, "other", [s.items]);
+        if (mtypeOf(item.type) === "str") {
+          const v = this.ownedString(item);
+          this.owned.delete((v as VReg).id);
+          this.emit({ op: "rtcall", name: this.rt("DataPutString"), args: [v], sid: this.sid });
+        } else {
+          let v = this.value(item);
+          if (v.type !== "flt") {
+            const f = this.vreg("flt");
+            this.emit({ op: "conv", dst: f, a: this.inVReg(v), sid: this.sid });
+            v = f;
+          }
+          this.emit({ op: "rtcall", name: this.rt("DataPutNumber"), args: [v], sid: this.sid });
+        }
+        const next: SymRef = { kind: "sym", type: "ptr", name: dataItemLabel((n + 1) % count), offset: 0 };
+        this.emit({ op: "store", type: "ptr", slot: { kind: "global", name: "__data_next" }, src: next, sid: this.sid });
+        this.terminate({ op: "ret", sid: this.sid });
+        n++;
+      });
+    }
+    this.endStatement();
+    this.module.data.push({ kind: "raw", label: "__data_next", lines: [`    .defw ${count ? dataItemLabel(0) : this.rt("DataNone")}`] });
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Tape (tape.kz80.asm)
+
+  /** SAVE, LOAD and VERIFY of CODE and SCREEN$ (SCREEN$ is CODE 16384, 6912). */
+  private tape(s: Extract<BoundStatement, { kind: "tape" }>): void {
+    if (s.target.kind === "data") {
+      this.unsupported(`${s.operation} DATA`, s.span);
+      return;
+    }
+    const name = this.value(s.name);
+    const code = s.target.kind === "code" ? s.target : undefined;
+    const start = s.target.kind === "screen" ? imm("u16", 16384) : code?.start ? this.value(code.start) : imm("u16", 0);
+    const length = s.target.kind === "screen" ? imm("u16", 6912) : code?.length ? this.value(code.length) : imm("u16", 0);
+    let flags = this.consumeFlag(name);
+    if (s.operation === "SAVE") {
+      this.emit({ op: "rtcall", name: this.rt("TapeSave"), args: [name, imm("u8", flags), start, length], sid: this.sid });
+      return;
+    }
+    if (s.operation === "VERIFY") flags |= 2;
+    if (s.target.kind === "screen" || code?.start) flags |= 4;
+    if (s.target.kind === "screen" || code?.length) flags |= 8;
+    this.emit({ op: "rtcall", name: this.rt("TapeLoad"), args: [name, imm("u8", flags), start, length], sid: this.sid });
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Graphics (graphics.kz80.asm)
+
+  /** A graphics statement: its colour modifiers as temporary colours (like PRINT's), then the call. */
+  private graphics(attrs: Extract<BoundStatement, { kind: "plot" }>["attrs"], call: () => { name: string; args: Value[] }): void {
+    for (const a of attrs) this.colourItem(a.attr, a.value);
+    const { name, args } = call();
+    this.emit({ op: "rtcall", name: this.rt(name), args, sid: this.sid });
+    if (attrs.length) this.emit({ op: "rtcall", name: this.rt("PrintReset"), args: [], sid: this.sid });
+  }
+
+  /** A temporary colour (PrintColour), as a PRINT item or a graphics modifier gives it. */
+  private colourItem(attr: AttrName, value: BoundExpr): boolean {
+    const code = ATTR_CODES[attr];
+    this.emit({ op: "rtcall", name: this.rt("PrintColour"), args: [imm("u8", code), this.value(value)], sid: this.sid });
+    return true;
+  }
+
+  // ----------------------------------------------------------------------------------------------
   // PRINT (runtime-abi.md; print.kz80.asm)
 
   private print(items: Extract<BoundStatement, { kind: "print" }>["items"]): void {
@@ -595,16 +796,9 @@ class Lowering {
         case "tab":
           this.emit({ op: "rtcall", name: this.rt("PrintTab"), args: [this.value(item.column)], sid: this.sid });
           break;
-        case "attr": {
-          const code = ATTR_CODES[item.attr];
-          if (!code) {
-            this.unsupported(item.attr, item.value.span);
-            break;
-          }
-          colours = true;
-          this.emit({ op: "rtcall", name: this.rt("PrintColour"), args: [imm("u8", code), this.value(item.value)], sid: this.sid });
+        case "attr":
+          colours = this.colourItem(item.attr, item.value);
           break;
-        }
         case "expr":
           this.printValue(item.value);
           break;
@@ -1423,6 +1617,16 @@ function containsCall(node: unknown): boolean {
     if (containsCall(value)) return true;
   }
   return false;
+}
+
+/** Whether a statement list holds a statement of a kind, at any depth (routines included). */
+function containsKind(list: BoundStatement[], kind: string): boolean {
+  return list.some((s) => {
+    if (s.kind === kind) return true;
+    const o = s as unknown as Record<string, unknown>;
+    const nested = [o.body, o.else, ...(Array.isArray(o.branches) ? (o.branches as { body: BoundStatement[] }[]).map((b) => b.body) : [])];
+    return nested.some((b) => Array.isArray(b) && containsKind(b as BoundStatement[], kind));
+  });
 }
 
 /** Whether a piece of the typed tree calls a builtin function. */

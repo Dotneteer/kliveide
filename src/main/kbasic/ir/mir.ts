@@ -102,7 +102,7 @@ export const COMPARISONS: ReadonlySet<BinOp> = new Set(["eq", "ne", "lt", "le", 
 
 /** Debugger facts about one user call (plan §8.4 `CallSiteDebugInfo`, G5). */
 export type CallSite = {
-  kind: "sub" | "function" | "gosub" | "on-gosub" | "far";
+  kind: "sub" | "function" | "gosub" | "on-gosub" | "far" | "read";
   callee?: string;
   /** The statement makes further user calls after this one. */
   moreCallsFollow: boolean;
@@ -152,7 +152,8 @@ export type MFunction = {
   /** The routine's assembler label (`_name`), or `_main`. */
   label: string;
   name: string;
-  kind: "main" | "sub" | "function";
+  /** `data`: the DATA items' code, which READ calls (no frame, a plain `ret`). */
+  kind: "main" | "sub" | "function" | "data";
   convention: "stdcall" | "fastcall";
   params: FrameSlot[];
   /** Locals (user and hidden) below IX; `frameSize` bytes in all. */
