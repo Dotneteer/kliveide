@@ -1,7 +1,7 @@
 ; @module   strings
 ; @summary  Core String routines: allocation, length, copy, concatenation, store and comparison.
 ; @exports  StrAlloc, StrLen, StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
-; @exports  StrSlice, StrLength, StrCode, StrChr
+; @exports  StrSlice, StrLength, StrCode, StrChr, StrOverwrite
 ; @requires heap
 ;
 ; A String value is a pointer to a heap block [length:2][characters], or 0 for the empty string
@@ -362,3 +362,86 @@ StrChr:
     dec hl
     dec hl
     ret
+
+; ------------------------------------------------------------------------------------------------
+; Substring assignment, in place: characters BC to DE (0-based, inclusive; DE = $FFFF for "to the
+; end") of String HL take the value's characters. The range is clipped to the String; a shorter
+; value is padded with spaces, a longer one cut; the String's length never changes. In: HL = the
+; target String, BC, DE, A = free flags (bit 0 frees the value), the value String under the return
+; address (removed). Changes AF, BC, DE, HL.
+StrOverwrite:
+    ld (StrOvFlags),a
+    ld (StrOvFrom),bc
+    ld (StrOvTo),de
+    ld (StrOvTarget),hl
+    pop hl
+    ex (sp),hl              ; HL = the value                        S: [ret]
+    ld (StrOvValue),hl
+    ld hl,(StrOvTarget)
+    call StrLen             ; BC = the target's length
+    ld a,b
+    or c
+    jr z,StrOvDone
+    dec bc                  ; BC = the last index
+    ld hl,(StrOvTo)
+    or a
+    sbc hl,bc
+    jr c,StrOvToKept
+    ld (StrOvTo),bc         ; to = last
+StrOvToKept:
+    ld hl,(StrOvTo)
+    ld de,(StrOvFrom)
+    or a
+    sbc hl,de
+    jr c,StrOvDone          ; from > to: nothing to write
+    inc hl
+    ld b,h
+    ld c,l                  ; BC = the characters to write
+    ld hl,(StrOvTarget)
+    inc hl
+    inc hl
+    add hl,de
+    ex de,hl                ; DE = the first character to write
+    ld hl,(StrOvValue)
+    push bc                 ; S: [count]
+    call StrLen             ; BC = the value's length
+    inc hl
+    inc hl                  ; HL = its characters
+    ex (sp),hl              ; HL = count                            S: [value chars]
+StrOvLoop:
+    ld a,h
+    or l
+    jr z,StrOvCopied
+    ld a,b
+    or c
+    ld a,' '
+    jr z,StrOvPut           ; the value has run out: a space
+    ex (sp),hl
+    ld a,(hl)
+    inc hl
+    ex (sp),hl
+    dec bc
+StrOvPut:
+    ld (de),a
+    inc de
+    dec hl
+    jr StrOvLoop
+StrOvCopied:
+    pop hl                  ; S: [ret]
+StrOvDone:
+    ld a,(StrOvFlags)
+    rra
+    ret nc
+    ld hl,(StrOvValue)
+    jp Free
+
+StrOvFlags:
+    .defb 0
+StrOvFrom:
+    .defw 0
+StrOvTo:
+    .defw 0
+StrOvTarget:
+    .defw 0
+StrOvValue:
+    .defw 0

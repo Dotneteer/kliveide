@@ -49,7 +49,8 @@ export function globalName(name: string): string {
   return `_${name}`;
 }
 
-const ATTR_CODES: Record<AttrName, number> = { INK: 16, PAPER: 17, FLASH: 18, BRIGHT: 19, INVERSE: 20, OVER: 21, BOLD: 0, ITALIC: 0 };
+/** PrintColour's codes: the ROM's control codes 16-21, and Klive's own 26 BOLD and 27 ITALIC (print.kz80.asm). */
+const ATTR_CODES: Record<AttrName, number> = { INK: 16, PAPER: 17, FLASH: 18, BRIGHT: 19, INVERSE: 20, OVER: 21, BOLD: 26, ITALIC: 27 };
 
 /** The labels of an array's static tables (runtime-abi.md §2.3). */
 type ArrayTables = { dims: string; lower?: string; upper?: string };
@@ -198,7 +199,8 @@ class Lowering {
 
   /** A number of a type: an immediate, or a loaded constant for a Float. */
   private numberValue(type: MType, n: number): Value {
-    return type === "flt" ? this.floatConstant(f40.fromNumber(n)) : imm(type, n);
+    if (type === "flt") return this.floatConstant(f40.fromNumber(n));
+    return imm(type, type === "fix" ? Math.round(n * 65536) : n);
   }
 
   /** A hidden variable: a frame slot in a routine, a static one in the main program. */
@@ -271,7 +273,7 @@ class Lowering {
   }
 
   private supportedType(t: MType): boolean {
-    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "u32" || t === "i32" || t === "bool" || t === "ptr" || t === "str" || t === "flt";
+    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "u32" || t === "i32" || t === "bool" || t === "ptr" || t === "str" || t === "flt" || t === "fix";
   }
 
   private rt(name: string): string {
@@ -452,8 +454,16 @@ class Lowering {
       else this.emit({ op: "store", type, slot, src: this.value(valueExpr), sid: this.sid });
       return;
     }
+    if (target.kind === "slice") {
+      this.assignSubstring(target, valueExpr);
+      return;
+    }
+    if (target.kind === "array" && valueExpr.kind === "array") {
+      this.copyArray(target.symbol, valueExpr.symbol, span);
+      return;
+    }
     if (target.kind !== "variable") {
-      this.unsupported(`Assignment to ${target.kind === "slice" ? "a substring" : target.kind === "array" ? "a whole array" : "this target"}`, span);
+      this.unsupported("Assignment to this target", span);
       return;
     }
     const slot = this.variableSlot(target.symbol, span);
@@ -468,6 +478,64 @@ class Lowering {
     }
     const value = this.value(valueExpr);
     this.emit({ op: "store", type, slot, src: value, sid: this.sid });
+  }
+
+  /**
+   * `s$(a TO b) = v` and `s$(i) = v`: characters overwritten in place (strings.kz80.asm's
+   * StrOverwrite). The value is an owned copy, computed first, so that neither a slice of the target
+   * itself nor a FUNCTION that reassigns it can disturb the copy; the target's pointer is loaded last.
+   */
+  private assignSubstring(target: Extract<BoundExpr, { kind: "slice" }>, valueExpr: BoundExpr): void {
+    const value = this.ownedString(valueExpr);
+    this.owned.delete((value as VReg).id);
+    let from: Value;
+    let to: Value;
+    if (target.single) {
+      // --- One character: the same index as both bounds, evaluated once
+      const index = this.value(target.from!);
+      if (index.kind !== "vreg") from = to = index;
+      else {
+        const slot = this.hiddenSlot("u16", "chr");
+        this.emit({ op: "store", type: "u16", slot, src: index, sid: this.sid });
+        from = this.load("u16", slot);
+        to = this.load("u16", slot);
+      }
+    } else {
+      from = target.from ? this.value(target.from) : imm("u16", 0);
+      to = target.to ? this.value(target.to) : imm("u16", 0xffff);
+    }
+    const pointer = this.stringPointer(target.target);
+    this.emit({ op: "rtcall", name: this.rt("StrOverwrite"), args: [value, from, to, pointer, imm("u8", 1)], sid: this.sid });
+  }
+
+  /** The heap block a String variable or element holds, never a copy (it is changed in place). */
+  private stringPointer(e: BoundExpr): Value {
+    if (e.kind === "element") return this.load("str", { kind: "deref", ptr: this.elementAddress(e.symbol, e.indices, e.span) });
+    if (e.kind === "variable") {
+      const slot = this.variableSlot(e.symbol, e.span);
+      if (slot) return this.load("str", slot);
+    }
+    this.unsupported("Substring assignment to this target", e.span);
+    return imm("str", 0);
+  }
+
+  /** `a = b` for whole arrays of the same element type and size: the data copied, Strings duplicated. */
+  private copyArray(target: ArraySymbol, source: ArraySymbol, span: Span): void {
+    if (target.param || source.param) {
+      this.unsupported("Copying an array parameter", span);
+      return;
+    }
+    const src = this.arrayData(source);
+    const dst = this.arrayData(target);
+    if (target.elementType === "String") {
+      this.emit({ op: "rtcall", name: this.rt("ArrayCopyStrings"), args: [src, dst, imm("u16", arrayCount(target))], sid: this.sid });
+    } else this.emit({ op: "rtcall", name: this.rt("ArrayInit"), args: [src, dst, imm("u16", arrayBytes(target))], sid: this.sid });
+  }
+
+  /** The address of an array's data, as a value (a global's label, a local's from its descriptor). */
+  private arrayData(symbol: ArraySymbol): Value {
+    if (symbol.storage === "global") return { kind: "sym", type: "ptr", name: `${globalName(symbol.name)}.data`, offset: 0 };
+    return this.load("ptr", this.dataSlot(symbol));
   }
 
   /** `s$ = expr`: an owned value (a copy of a borrowed one), stored with StrStore (string note §3). */
@@ -549,6 +617,13 @@ class Lowering {
 
   private printValue(e: BoundExpr): void {
     const type = mtypeOf(e.type);
+    if (type === "fix") {
+      // --- A Fixed prints as the Float of the same value
+      const f = this.vreg("flt");
+      this.emit({ op: "conv", dst: f, a: this.value(e), sid: this.sid });
+      this.emit({ op: "rtcall", name: this.rt("PrintFloat"), args: [f], sid: this.sid });
+      return;
+    }
     if (type === "str") {
       if (e.constant?.value.kind === "string" && e.constant.value.value === "") return;
       const v = this.value(e);
@@ -1310,7 +1385,7 @@ class Lowering {
       this.emit({ op: "conv", dst: r, a: nonZero, sid: this.sid });
       return r;
     }
-    const width = { i8: "I8", i16: "I16", i32: "I32" }[argType as "i8"];
+    const width = { i8: "I8", i16: "I16", i32: "I32", fix: "I32" }[argType as "i8"];
     const r = this.vreg(name === "ABS" ? type : "i8");
     this.emit({ op: "rtcall", name: this.rt(`${name === "ABS" ? "Abs" : "Sgn"}${width}`), dst: r, args: [a], sid: this.sid });
     return r;
@@ -1328,6 +1403,8 @@ class Lowering {
         return this.stringLiteral(v.value);
       case "float":
         return this.floatConstant(v.value);
+      case "fixed":
+        return imm(type, v.raw);
       default:
         this.unsupported(`${c.type} constants`, span);
         return imm(type, 0);
@@ -1429,6 +1506,7 @@ function arrayBytes(symbol: ArraySymbol): number {
 /** A constant STEP's value, for its sign; undefined when the step is computed at run time. */
 function stepConstant(step: BoundExpr): number | undefined {
   const v = step.constant?.value;
+  if (v?.kind === "fixed") return v.raw / 65536;
   return v?.kind === "int" ? Number(v.value) : v?.kind === "float" ? f40.toNumber(v.value) : undefined;
 }
 
@@ -1439,6 +1517,7 @@ function bytesOf(c: Constant, type: MType): number[] | undefined {
     if (c.value.kind === "int") return [...f40.fromInteger(Number(c.value.value))];
     return undefined;
   }
+  if (c.value.kind === "fixed") c = { ...c, value: { kind: "int", value: BigInt(c.value.raw) } };
   if (c.value.kind !== "int") return undefined;
   const size = mtypeSize(type);
   let v = BigInt.asUintN(size * 8, c.value.value);

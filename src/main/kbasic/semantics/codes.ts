@@ -65,7 +65,8 @@ export const SEMANTIC_WARNINGS = {
   K404: "a whole-array copy between arrays of different dimension shapes",
   K405: "a definition whose parameter names differ from its DECLARE",
   K406: "a constant integer division by zero",
-  K407: "VAL of a constant string that is not a number"
+  K407: "VAL of a constant string that is not a number",
+  K408: "an integer FOR loop that cannot count past its limit"
 } as const;
 
 export type SemanticCode = keyof typeof SEMANTIC_ERRORS | keyof typeof SEMANTIC_WARNINGS;

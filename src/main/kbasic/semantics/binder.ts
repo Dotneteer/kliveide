@@ -29,7 +29,7 @@ import {
   type RoutineSymbol,
   type VariableSymbol
 } from "./symbols";
-import { commonType, isNumeric, typeOfName, typeOfSigil, type KType } from "./types";
+import { commonType, integralRange, isIntegral, isNumeric, typeOfName, typeOfSigil, type KType } from "./types";
 
 export type BindResult = {
   program: BoundProgram;
@@ -738,7 +738,7 @@ class Binder extends ExpressionBinder {
     const f = this.convert(from, type, true);
     const t = this.convert(to, type, true);
     const st = step ? this.convert(step, type, true) : undefined;
-    this.checkForRange(f, t, st, s.span);
+    this.checkForRange(f, t, st, s.span, type);
     const body = this.loopBody("FOR", s.body, s.span);
     if (!variable) return undefined;
     const header = { ...s.span, end: (s.step ?? s.to).span.end };
@@ -749,8 +749,12 @@ class Binder extends ExpressionBinder {
     return this.settings.caseInsensitive ? a.name.toLowerCase() === b.name.toLowerCase() : a.name === b.name;
   }
 
-  /** The spec's uncoded FOR warnings: STEP 0 (K401) and a range that never runs (K402). */
-  private checkForRange(from: BoundExpr, to: BoundExpr, step: BoundExpr | undefined, span: Span): void {
+  /**
+   * The spec's uncoded FOR warnings: STEP 0 (K401) and a range that never runs (K402); and Klive's
+   * K408, an integer loop that cannot pass its limit: the variable wraps before it gets past, so the
+   * loop never ends (R8 for-loop-evaluation).
+   */
+  private checkForRange(from: BoundExpr, to: BoundExpr, step: BoundExpr | undefined, span: Span, type: KType): void {
     const num = (e: BoundExpr | undefined) =>
       e?.constant && e.constant.value.kind !== "address" && e.constant.value.kind !== "string" ? Number(constantText(e.constant)) : undefined;
     const s = step ? num(step) : 1;
@@ -762,6 +766,13 @@ class Binder extends ExpressionBinder {
     const t = num(to);
     if (s !== undefined && f !== undefined && t !== undefined && (s > 0 ? f > t : f < t)) {
       this.warning("K402", `The FOR loop never runs: it counts from ${f} ${s > 0 ? "up" : "down"} to ${t}`, span);
+      return;
+    }
+    if (s !== undefined && t !== undefined && isIntegral(type) && type !== "Boolean") {
+      const { min, max } = integralRange(type);
+      if (s > 0 ? t + s > Number(max) : t + s < Number(min)) {
+        this.warning("K408", `The FOR loop never ends: a ${type} cannot count past ${t}, it wraps round first`, to.span);
+      }
     }
   }
 

@@ -2570,11 +2570,11 @@
       {
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
-        "decision": null,
-        "status": "open",
-        "source": "oracle",
+        "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
+        "status": "provisional",
+        "source": "klive-decision",
         "phase": 4,
-        "test": null
+        "test": "test/kbasic/corpus/control/for-evaluation.zxbas"
       },
       {
         "name": "forward-function-call",
@@ -2719,6 +2719,15 @@
         "source": "klive-decision",
         "phase": 1,
         "test": "test/kbasic/syntax/lexer.test.ts"
+      },
+      {
+        "name": "substring-assignment",
+        "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
+        "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target. Awaits the oracle.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/codegen/strings.test.ts"
       },
       {
         "name": "truncation-warning-w200",

@@ -76,3 +76,20 @@ describe("ports", () => {
     expect(r.screen(1)[0]).toBe("0");
   });
 });
+
+describe("BOLD, ITALIC and contrast", () => {
+  const cell = (r: Awaited<ReturnType<typeof runBasic>>, col: number) => Array.from({ length: 8 }, (_, line) => r.session.peek(0x4000 + (line << 8) + col));
+
+  it("thickens with BOLD and slants with ITALIC", async () => {
+    const r = await runBasic('PRINT "I"; BOLD 1; "I"; BOLD 0; ITALIC 1; "I"\n');
+    const [plain, bold, italic] = [cell(r, 0), cell(r, 1), cell(r, 2)];
+    expect(bold).toEqual(plain.map((row) => row | (row >> 1)));
+    expect(italic).toEqual(plain.map((row, line) => (line < 3 ? row >> 1 : line > 4 ? (row << 1) & 0xff : row)));
+  });
+
+  it("chooses a contrasting INK or PAPER with 9", async () => {
+    const r = await runBasic('PAPER 1: INK 9\nPRINT "a";\nPAPER 6\nPRINT "b";\nINK 2: PAPER 9\nPRINT "c"\n');
+    expect([attr(r, 0, 0), attr(r, 0, 1), attr(r, 0, 2)]).toEqual([(1 << 3) | 7, (6 << 3) | 0, (7 << 3) | 2]);
+    expect(r.session.peek(0x5c91) & 0xf0, "P_FLAG: PAPER 9 now, INK 9 no longer").toBe(0xc0);
+  });
+});

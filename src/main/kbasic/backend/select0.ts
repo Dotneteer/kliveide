@@ -55,6 +55,9 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.ArrayAlloc": ["hl"],
   "core.ArrayFreeStrings": ["hl", "bc"],
   "core.ArrayInit": ["hl", "de", "bc"],
+  "core.ArrayCopyStrings": ["hl", "de", "bc"],
+  /** "stack": the argument stays on the Z80 stack (the routine removes it); only leading arguments. */
+  "core.StrOverwrite": ["stack", "bc", "de", "hl", "a"],
   "core.ArrayLBound": ["hl", "de"],
   "core.ArrayUBound": ["hl", "de"],
   "core.ColourPermanent": ["c", "a"],
@@ -584,6 +587,11 @@ class Selector {
     if (place !== "acc") this.loadImmediate(a.type, place);
     const from = regClassOf(a.type);
     const to = regClassOf(dst.type);
+    if ((a.type === "fix") !== (dst.type === "fix")) {
+      this.convFixed(a.type, dst.type);
+      this.produce(dst);
+      return;
+    }
     if (from === "r8" && to === "r16") {
       if (isSignedM(a.type)) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a");
       else this.emit("ld l,a", "ld h,0");
@@ -604,6 +612,26 @@ class Selector {
       if (to === "r8") this.emit("ld a,l");
     } else if (from !== to) throw new CodegenError(`Level 0 cannot convert ${a.type} to ${dst.type} yet`);
     this.produce(dst);
+  }
+
+  /**
+   * To or from Fixed (16.16 in DE:HL): an integer n is n * 65536 modulo 2^32 (its low word in DE); a
+   * Fixed as an integer is its integer part, DE, which rounds towards minus infinity; Floats go
+   * through the float module.
+   */
+  private convFixed(from: MType, to: MType): void {
+    if (to === "fix") {
+      if (from === "flt") return this.emit(`call ${this.rt("core.FToFixed")}`);
+      const cls = regClassOf(from);
+      if (cls === "r8") this.emit(...(isSignedM(from) ? ["ld e,a", "add a,a", "sbc a,a", "ld d,a"] : ["ld e,a", "ld d,0"]));
+      else this.emit("ex de,hl");
+      return this.emit("ld hl,0");
+    }
+    if (to === "flt") return this.emit(`call ${this.rt("core.FFromFixed")}`);
+    const cls = regClassOf(to);
+    if (cls === "r8") return this.emit("ld a,e");
+    this.emit("ex de,hl");
+    if (cls === "r32") this.emit("ld a,h", "add a,a", "sbc a,a", "ld e,a", "ld d,a");
   }
 
   /**
@@ -642,7 +670,11 @@ class Selector {
         const place = places[k];
         const reg = regs[k];
         const cls = regClassOf(args[k].type);
-        if (place === "stack" && cls === "rflt") {
+        if (reg === "stack") {
+          // --- Left where it is: the routine removes it. Only leading arguments can be, so that
+          // --- everything pushed after them has been popped already.
+          if (place !== "stack" || !regs.slice(0, k).every((r) => r === "stack")) throw new CodegenError(`${name}: argument ${k + 1} must be on the stack`);
+        } else if (place === "stack" && cls === "rflt") {
           if (reg !== "aedcb" || placed.size) throw new CodegenError(`${name}: a Float argument goes in A-E-D-C-B, before any other`);
           this.emit("pop af", "pop de", "pop bc");
         } else if (place === "stack" && cls === "r32") {
@@ -753,9 +785,9 @@ class Selector {
       case "xor":
         return bytewise(op);
       case "mul":
-        return this.emit(`call ${this.rt("core.Mul32")}`);
+        return this.emit(`call ${this.rt(type === "fix" ? "core.FixMul" : "core.Mul32")}`);
       case "div":
-        return this.emit(`call ${this.rt(signed ? "core.DivI32" : "core.DivU32")}`);
+        return this.emit(`call ${this.rt(type === "fix" ? "core.FixDiv" : signed ? "core.DivI32" : "core.DivU32")}`);
       case "mod":
         return this.emit(`call ${this.rt(signed ? "core.ModI32" : "core.ModU32")}`);
       default:
@@ -912,3 +944,4 @@ function pushOf(cls: RegClass): string[] {
 /** The ROM calculator's operations (float.kz80.asm). */
 const FLOAT_BINARY: Partial<Record<BinOp, string>> = { add: "$0f", sub: "$03", mul: "$04", div: "$05", pow: "$06" };
 const FLOAT_COMPARE: Partial<Record<BinOp, string>> = { le: "$09", ge: "$0a", ne: "$0b", gt: "$0c", lt: "$0d", eq: "$0e" };
+

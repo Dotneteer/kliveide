@@ -121,3 +121,46 @@ describe("String ownership", () => {
     expect((await runChecked(source, ["w"]))[0]).toBe("hey!!");
   });
 });
+
+describe("substring assignment", () => {
+  it("overwrites in place: a short value is padded with spaces, a long one cut, the length kept", async () => {
+    const source = [
+      'a$ = "abcdefgh"',
+      'a$(1 TO 3) = "XY"',
+      "PRINT a$; \"|\";",
+      'a$(5 TO) = "123456789"',
+      "PRINT a$; \"|\";",
+      'a$(0) = "Q"',
+      'a$( TO 1) = a$(6 TO 7)',
+      "PRINT a$; \"|\"; LEN(a$)",
+      ""
+    ].join("\n");
+    expect((await runChecked(source, ["a"]))[0]).toBe("aXY efgh|aXY e123|23Y e123|8");
+  });
+
+  it("works on a String array element, and on an empty String", async () => {
+    const source = 'DIM w$(1)\nw$(1) = "hello"\nw$(1)(0 TO 0) = "J"\nw$(0)(0 TO 3) = "xyz"\nPRINT w$(1); "|"; w$(0); "|"\n';
+    const r = await runBasic(source);
+    expect(r.screen(1)[0]).toBe("Jello||");
+  });
+});
+
+describe("whole-array copy", () => {
+  it("copies numbers and duplicates Strings", async () => {
+    const source = [
+      "DIM a(2) AS UInteger => {1, 2, 3}",
+      "DIM b(2) AS UInteger",
+      "DIM s$(1)",
+      "DIM t$(1)",
+      "b = a",
+      "a(0) = 99",
+      's$(0) = "x": s$(1) = "y"',
+      "t$ = s$",
+      's$(0) = "changed"',
+      "PRINT b(0); b(1); b(2); \" \"; t$(0); t$(1); \" \"; s$(0)",
+      ""
+    ].join("\n");
+    const r = await runBasic(source);
+    expect(r.screen(1)[0]).toBe("123 xy changed");
+  });
+});

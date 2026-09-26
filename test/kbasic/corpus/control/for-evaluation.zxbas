@@ -1,0 +1,17 @@
+' FOR evaluates its limit and step once, before the first test; afterwards the variable holds the
+' first value past the limit (semantics annex: for-loop-evaluation)
+'@expect screen 0 "5 11"
+'@expect screen 1 "3 -2"
+DIM i, lim, st, n AS Integer
+lim = 10: st = 2
+FOR i = 1 TO lim STEP st
+ lim = 0
+ st = 100
+ n = n + 1
+NEXT i
+PRINT n; " "; i
+n = 0
+FOR i = 4 TO 0 STEP -2
+ n = n + 1
+NEXT i
+PRINT n; " "; i

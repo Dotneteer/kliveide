@@ -187,7 +187,11 @@ const WARNINGS: Record<keyof typeof SEMANTIC_WARNINGS, Case[]> = {
   K404: [{ source: "DIM a(3) AS UByte\nDIM b(1, 1) AS UByte\na = b\n", text: "a = b" }],
   K405: [{ source: "DECLARE SUB s(a AS UByte)\nSUB s(b AS UByte)\nEND SUB\ns 1\n", text: "b" }],
   K406: [{ source: "PRINT 5 / 0\n", text: "5 / 0" }],
-  K407: [{ source: 'PRINT VAL("abc")\n', text: 'VAL("abc")' }]
+  K407: [{ source: 'PRINT VAL("abc")\n', text: 'VAL("abc")' }],
+  K408: [
+    { source: "DIM i AS UByte\nFOR i = 250 TO 255\nNEXT i\n", text: "255" },
+    { source: "DIM i AS Byte\nFOR i = 0 TO -128 STEP -1\nNEXT i\n", text: "-128" }
+  ]
 };
 
 function expectCode(code: string, c: Case) {

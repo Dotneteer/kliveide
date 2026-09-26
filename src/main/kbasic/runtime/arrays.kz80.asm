@@ -1,7 +1,8 @@
 ; @module   arrays
 ; @summary  Array element addresses from descriptors, and local arrays' data on the heap.
 ; @exports  ArrayAddress, ArrayAlloc, ArrayInit, ArrayFreeStrings, ArrayLBound, ArrayUBound
-; @requires arith16, heap, errors
+; @exports  ArrayCopyStrings
+; @requires arith16, heap, errors, strings
 ;
 ; A descriptor is four words (runtime-abi.md §2.3): the dimension table, the data, the lower-bound
 ; table (or 0: every lower bound is 0), the upper-bound table (or 0). The dimension table holds the
@@ -110,6 +111,36 @@ ArrayAddressDone:           ; the element number is in ArrOffset
     ld de,(ArrReturn)
     push de
     ret
+
+; ------------------------------------------------------------------------------------------------
+; A whole String array copied onto another of the same size: each of the BC target elements at DE
+; is freed and becomes a copy of the source element at HL. Changes AF, BC, DE, HL.
+ArrayCopyStrings:
+    ld a,b
+    or c
+    ret z
+    push bc                 ; S: [count]
+    push de                 ; S: [dst][count]
+    push hl                 ; S: [src][dst][count]
+    ld a,(hl)
+    inc hl
+    ld h,(hl)
+    ld l,a
+    call StrDup             ; HL = a copy of the source element
+    pop bc                  ; BC = src                              S: [dst][count]
+    pop de                  ; DE = dst                              S: [count]
+    push de
+    push bc                 ; S: [src][dst][count]
+    call StrStore           ; the target element takes the copy and frees its old value
+    pop hl                  ; S: [dst][count]
+    pop de                  ; S: [count]
+    pop bc                  ; S: []
+    inc hl
+    inc hl
+    inc de
+    inc de
+    dec bc
+    jr ArrayCopyStrings
 
 ; ------------------------------------------------------------------------------------------------
 ; LBOUND and UBOUND of the array whose descriptor is HL, for dimension DE (from 1); dimension 0 gives

@@ -18,22 +18,33 @@ ColourPermanent:
     ld ($5c8d),hl           ; ATTR_P, MASK_P
     ld a,(PrintFlags)
     ld (PrintFlagsP),a
-    ; --- P_FLAG: OVER in bits 0 (temporary) and 1 (permanent), INVERSE in bits 2 and 3
-    ld c,0
-    rra
-    jr nc,ColourPermanentInverse
-    ld c,$03
+    ; --- P_FLAG, temporary and permanent bit pairs: OVER 0-1, INVERSE 2-3, INK 9 4-5, PAPER 9 6-7
+    ld c,a                  ; C = PrintFlags
+    ld b,0
+    bit 0,c
+    jr z,ColourPermanentInverse
+    ld b,$03
 ColourPermanentInverse:
-    rra
-    jr nc,ColourPermanentFlags
-    ld a,c
+    bit 1,c
+    jr z,ColourPermanentInk9
+    ld a,b
     or $0c
-    ld c,a
+    ld b,a
+ColourPermanentInk9:
+    bit 4,c
+    jr z,ColourPermanentPaper9
+    ld a,b
+    or $30
+    ld b,a
+ColourPermanentPaper9:
+    bit 5,c
+    jr z,ColourPermanentFlags
+    ld a,b
+    or $c0
+    ld b,a
 ColourPermanentFlags:
-    ld a,($5c91)            ; P_FLAG
-    and $f0
-    or c
-    ld ($5c91),a
+    ld a,b
+    ld ($5c91),a            ; P_FLAG
     ret
 
 ; ------------------------------------------------------------------------------------------------

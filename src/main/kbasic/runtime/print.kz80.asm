@@ -15,8 +15,7 @@
 ; from UDG. Control codes: 6 comma, 8 left, 9 right, 13 new line, 16-21 INK, PAPER, FLASH, BRIGHT,
 ; INVERSE, OVER (one argument each), 22 AT (row, column), 23 TAB (column low, high); any other code
 ; below 32 prints "?". Colour codes are temporary: PrintReset, at the end of a PRINT, restores the
-; permanent colours. INK 9 and PAPER 9 (contrast) are not supported yet and stop with "K Invalid
-; colour".
+; permanent colours.
 
 ; ------------------------------------------------------------------------------------------------
 ; Takes the cursor and the permanent colours from the ROM's system variables. Changes AF, BC, HL.
@@ -48,6 +47,14 @@ PrintInitInverse:
     jr z,PrintInitFlags
     set 1,c
 PrintInitFlags:
+    bit 5,a
+    jr z,PrintInitInk9
+    set 4,c
+PrintInitInk9:
+    bit 7,a
+    jr z,PrintInitPaper9
+    set 5,c
+PrintInitPaper9:
     ld a,c
     ld (PrintFlagsP),a
     xor a
@@ -77,7 +84,7 @@ PrintAttrP:
 PrintMaskP:
     .defb 0
 PrintFlags:
-    .defb 0                 ; bit 0 OVER, bit 1 INVERSE
+    .defb 0                 ; bit 0 OVER, 1 INVERSE, 2 BOLD, 3 ITALIC, 4 INK 9, 5 PAPER 9
 PrintFlagsP:
     .defb 0
 PrintCtl:
@@ -85,7 +92,9 @@ PrintCtl:
 PrintCtlArg:
     .defb 0                 ; its first argument
 PrintBlockBuf:
-    .defs 8                 ; the pixels of a block graphics character
+    .defs 8
+PrintBoldRow:
+    .defb 0                 ; the pixels of a block graphics character
 
 ; ------------------------------------------------------------------------------------------------
 ; Prints character or control code A. Changes AF, BC, DE, HL.
@@ -176,6 +185,33 @@ PrintGlyph:
     ld b,8
 PrintGlyphLoop:
     ld a,(de)
+    bit 2,c
+    jr z,PrintGlyphItalic
+    ld (PrintBoldRow),a     ; BOLD: each row ORed with itself one pixel to the right
+    srl a
+    push hl
+    ld hl,PrintBoldRow
+    or (hl)
+    pop hl
+PrintGlyphItalic:
+    bit 3,c
+    jr z,PrintGlyphInverse
+    ex af,af'               ; ITALIC: the top three rows one pixel right, the bottom three left
+    ld a,b
+    cp 6
+    jr nc,PrintGlyphRight
+    cp 4
+    jr c,PrintGlyphLeft
+    ex af,af'
+    jr PrintGlyphInverse
+PrintGlyphRight:
+    ex af,af'
+    srl a
+    jr PrintGlyphInverse
+PrintGlyphLeft:
+    ex af,af'
+    sla a
+PrintGlyphInverse:
     bit 1,c
     jr z,PrintGlyphOver
     cpl                     ; INVERSE
@@ -197,6 +233,20 @@ PrintGlyphPut:
     cpl
     and e
     or b
+    bit 4,c
+    jr z,PrintGlyphPaper9
+    and $f8                 ; INK 9: white on a dark paper, black on a light one
+    bit 5,a
+    jr nz,PrintGlyphPaper9
+    or $07
+PrintGlyphPaper9:
+    bit 5,c
+    jr z,PrintGlyphAttr
+    and $c7                 ; PAPER 9: white under a dark ink, black under a light one
+    bit 2,a
+    jr nz,PrintGlyphAttr
+    or $38
+PrintGlyphAttr:
     ld (hl),a
     ld hl,PrintCol
     inc (hl)
@@ -411,8 +461,10 @@ PrintAtOut:
     jp RaiseError
 
 ; ------------------------------------------------------------------------------------------------
-; A colour code's argument: C = the code (16 INK, 17 PAPER, 18 FLASH, 19 BRIGHT, 20 INVERSE, 21 OVER),
-; A = the value. Stops with "K Invalid colour" for a value the code does not take. Changes AF, BC, HL.
+; A colour code's argument: C = the code (16 INK, 17 PAPER, 18 FLASH, 19 BRIGHT, 20 INVERSE, 21 OVER,
+; and, as PRINT items only, 26 BOLD, 27 ITALIC), A = the value. INK and PAPER take 0-7, 8 (keep the
+; screen's) and 9 (contrast: white on a dark colour, black on a light one); FLASH and BRIGHT 0, 1
+; and 8; the others 0 and 1. Anything else stops with "K Invalid colour". Changes AF, BC, HL.
 PrintColour:
     ld b,a                  ; B = the value
     ld a,c
@@ -422,6 +474,12 @@ PrintColour:
     jr z,PrintColourFlag
     cp 21
     ld c,1                  ; OVER: bit 0
+    jr z,PrintColourFlag
+    cp 26
+    ld c,4                  ; BOLD: bit 2
+    jr z,PrintColourFlag
+    cp 27
+    ld c,8                  ; ITALIC: bit 3
     jr z,PrintColourFlag
     ld hl,PrintAttr
     cp 18
@@ -437,6 +495,8 @@ PrintColour:
     ld c,$38                ; PAPER
     cp 8
     jr z,PrintColourKeep
+    cp 9
+    jr z,PrintColourContrast
     jr nc,PrintColourBad
     rlca
     rlca
@@ -445,6 +505,8 @@ PrintColour:
 PrintColourField:           ; A = the value
     cp 8
     jr z,PrintColourKeep
+    cp 9
+    jr z,PrintColourContrast
     jr nc,PrintColourBad
 PrintColourSet:             ; A = the value in the field's position, C = the field, HL = PrintAttr
     ld b,a
@@ -458,11 +520,23 @@ PrintColourSet:             ; A = the value in the field's position, C = the fie
     cpl
     and (hl)
     ld (hl),a               ; the field is no longer kept from the screen
+PrintColourNoContrast:      ; C = the field: INK and PAPER stop contrasting
+    call PrintContrastBit
+    cpl
+    ld hl,PrintFlags
+    and (hl)
+    ld (hl),a
     ret
 PrintColourKeep:            ; 8: keep the field from the screen
     inc hl
     ld a,(hl)
     or c
+    ld (hl),a
+    jr PrintColourNoContrast
+PrintColourContrast:        ; 9: INK or PAPER contrasts with the other one
+    call PrintContrastBit
+    ld hl,PrintFlags
+    or (hl)
     ld (hl),a
     ret
 PrintColourBit:             ; FLASH, BRIGHT: B = 0, 1 or 8
@@ -474,7 +548,7 @@ PrintColourBit:             ; FLASH, BRIGHT: B = 0, 1 or 8
     neg                     ; 0 -> 0, 1 -> $FF
     and c
     jr PrintColourSet
-PrintColourFlag:            ; INVERSE, OVER: B = 0 or 1, C = the flag, HL = PrintFlags
+PrintColourFlag:            ; B = 0 or 1, C = the flag, HL = PrintFlags
     ld a,b
     cp 2
     jr nc,PrintColourBad
@@ -490,6 +564,20 @@ PrintColourFlag:            ; INVERSE, OVER: B = 0 or 1, C = the flag, HL = Prin
 PrintColourBad:
     ld a,19
     jp RaiseError
+
+; A = the PrintFlags bit of field C's contrast: bit 4 for INK ($07), bit 5 for PAPER ($38), none for
+; the others. Changes F.
+PrintContrastBit:
+    ld a,c
+    cp $07
+    ld a,$10
+    ret z
+    ld a,c
+    cp $38
+    ld a,$20
+    ret z
+    xor a
+    ret
 
 ; ------------------------------------------------------------------------------------------------
 ; Prints String HL. In: A bit 0 set frees the String afterwards. Changes AF, BC, DE, HL.

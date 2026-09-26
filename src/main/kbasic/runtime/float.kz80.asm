@@ -1,7 +1,7 @@
 ; @module   float
 ; @summary  Float arithmetic, comparison, maths and text through the ROM calculator; integer conversions.
 ; @exports  FBinary, FMod, FCompare, FUnary, FFromU32, FFromI32, FToI32, FToText, FStr, PrintFloat, FVal
-; @exports  FText, FTextLen, FNormalise
+; @exports  FText, FTextLen, FNormalise, FFromFixed, FToFixed
 ; @requires rom, strings, print
 ;
 ; A Float is the ROM's five-byte number (runtime-abi.md §2.1), in registers as A = exponent, E, D, C,
@@ -189,6 +189,60 @@ FFromU32Done:
     ld l,e
     ld e,d
     ld d,l
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; A Fixed (16.16 in DE:HL) as a Float, exactly. Out: A-E-D-C-B. Changes F, HL.
+FFromFixed:
+    ld a,d
+    or e
+    or h
+    or l
+    jr z,FZero
+    bit 7,d
+    jr z,FFromFixedPositive
+    xor a                   ; the magnitude
+    sub l
+    ld l,a
+    ld a,0
+    sbc a,h
+    ld h,a
+    ld a,0
+    sbc a,e
+    ld e,a
+    ld a,0
+    sbc a,d
+    ld d,a
+    ld a,144                ; bit 31 of the raw value is worth 2^15
+    call FNormalise
+    set 7,e
+    ret
+FFromFixedPositive:
+    ld a,144
+    jp FNormalise
+FZero:
+    xor a
+    ld e,a
+    ld d,a
+    ld c,a
+    ld b,a
+    ret
+
+; A Float as a Fixed: the value times 65536, rounded towards minus infinity and taken modulo 2^32
+; (types.conversions). In: A-E-D-C-B. Out: DE:HL. Changes AF, BC.
+FToFixed:
+    or a
+    jr nz,FToFixedFull
+    call FToI32             ; the small-integer form: a whole number, the integer part
+    ex de,hl
+    ld hl,0
+    ret
+FToFixedFull:
+    add a,16                ; times 65536
+    jr nc,FToI32            ; (FToI32 rounds down and keeps the low 32 bits)
+    ld hl,0                 ; 2^111 or more: no bits below 2^32 are left
+    ld d,h
+    ld e,l
     ret
 
 ; ------------------------------------------------------------------------------------------------
