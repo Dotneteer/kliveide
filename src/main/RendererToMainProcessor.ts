@@ -73,6 +73,9 @@ import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
 import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
+import { applyEmuContentSizeHints } from "./emu-window-sizing";
+import { emuMachineSizeStore } from "./emu-machine-sizes";
+import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import type {
   SjasmplusIntegrationApplyRequest,
   SjasmplusReleaseDownloadRequest,
@@ -943,6 +946,14 @@ class MainMessageProcessor {
    */
   async setGlobalSettingsValue(settingId: string, value: any): Promise<void> {
     setSettingValue(settingId, value);
+  }
+
+  /**
+   * Applies the emulator window's content size hints (issue #1377).
+   * @param hints The sizes, in CSS pixels, and the machine they are for
+   */
+  async setEmuContentSizeHints(hints: EmuContentSizeHints): Promise<void> {
+    applyEmuContentSizeHints(this.window, hints, emuMachineSizeStore);
   }
 
 

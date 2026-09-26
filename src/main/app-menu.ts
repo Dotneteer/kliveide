@@ -7,6 +7,7 @@ import {
   MenuItemConstructorOptions,
   shell
 } from "electron";
+import { fitEmuWindowToScreen } from "./emu-window-sizing";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -68,6 +69,7 @@ import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_PERFORMANCE_INFO,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
@@ -125,6 +127,8 @@ const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
 const SCANLINE_EFFECT = "scanline_effect";
 const EMU_ZOOM_STEP = "emu_zoom_step";
+const EMU_FIT_WINDOW = "emu_fit_window";
+const EMU_FIT_WINDOW_1X = "emu_fit_window_1x";
 const SELECT_KEY_MAPPING = "select_key_mapping";
 const RESET_KEY_MAPPING = "reset_key_mapping";
 const RECORDING_MENU = "recording_menu";
@@ -593,6 +597,10 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       createBooleanSettingsMenu(SETTING_EMU_SHOW_TOOLBAR),
       createBooleanSettingsMenu(SETTING_IDE_SHOW_TOOLBAR),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_STATUS_BAR),
+      // --- The performance info lives inside the status bar, so it means nothing while that is off
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_PERFORMANCE_INFO, {
+        enabledFn: () => !!getSettingValue(SETTING_EMU_SHOW_STATUS_BAR)
+      }),
       createBooleanSettingsMenu(SETTING_IDE_SHOW_STATUS_BAR),
       {
         type: "separator"
@@ -606,6 +614,24 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         // --- the focus (what createBooleanSettingsMenu does for `boundTo: "emu"`).
         visible: isEmuWindowFocused(),
         submenu: zoomStepMenu
+      },
+      {
+        // --- Shrinks the window around the machine's picture: a Z88 hugs its LCD (issue #1377)
+        id: EMU_FIT_WINDOW,
+        label: "Fit Window to Screen",
+        visible: isEmuWindowFocused(),
+        // --- Hints arrive outside the store, so the menu cannot track them; the command no-ops
+        // --- until the renderer has reported, which happens as soon as a machine is shown
+        enabled: !emuWindow?.isDestroyed() && !emuWindow?.isFullScreen(),
+        click: () => fitEmuWindowToScreen(emuWindow)
+      },
+      {
+        // --- The most compact window for the machine, whatever zoom step it shows now
+        id: EMU_FIT_WINDOW_1X,
+        label: "Fit Window to Screen at 1x",
+        visible: isEmuWindowFocused(),
+        enabled: !emuWindow?.isDestroyed() && !emuWindow?.isFullScreen(),
+        click: () => fitEmuWindowToScreen(emuWindow, "1x")
       },
       createBooleanSettingsMenu(SETTING_EMU_STAY_ON_TOP),
       createBooleanSettingsMenu(SETTING_IDE_SHOW_SIDEBAR),

@@ -19,6 +19,7 @@ import {
 } from "@common/settings/setting-const";
 import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext";
 import { useEmulatorScreen } from "./useEmulatorScreen";
+import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import { useEmulatorAudio } from "./useEmulatorAudio";
 import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
 import { useEmulatorMouse } from "./useEmulatorMouse";
@@ -83,6 +84,16 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   const [machineTools, setMachineTools] = useState<ReactNode>();
   const recordingManagerRef = useRecordingManager();
 
+  // --- The window's minimum size, Fit Window to Screen and per-machine sizes (issue #1377)
+  const onContentSizeHintsChanged = useCallback(
+    (hints: EmuContentSizeHints) => {
+      mainApi.setEmuContentSizeHints(hints).catch((err) => {
+        reportMessagingError(`Sending the emulator window's size hints failed: ${err}.`);
+      });
+    },
+    [mainApi]
+  );
+
   // --- Extracted screen hook
   const {
     screenElement,
@@ -94,8 +105,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     xRatio,
     yRatio,
     displayScreenData,
+    calculateDimensions,
     updateScreenDimensions
-  } = useEmulatorScreen(screenArea, controllerRef, toolArea);
+  } = useEmulatorScreen(screenArea, controllerRef, toolArea, onContentSizeHintsChanged);
 
   // --- Extracted audio hook
   const { beeperRenderer, initAudio } = useEmulatorAudio();
@@ -349,6 +361,19 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     controller?.machine?.getAspectRatio,
     updateScreenDimensions
   ]);
+
+  /*
+   * Refit once the machine's tool strip (the Z88 slot cards) is in the DOM.
+   *
+   * The strip mounts after the fit that `machineControllerChanged` runs, and the hook's resize
+   * observer on it cannot attach in that same render (the ref is still empty when its dependency is
+   * read). Until something else resized, the fit and the window's minimum size ignored the strip:
+   * a Z88 window could be shrunk until the strip was pushed over the status bar (issue #1377).
+   */
+  useEffect(() => {
+    calculateDimensions();
+    displayScreenData();
+  }, [machineTools, calculateDimensions, displayScreenData]);
 
   // --- Respond to the FAST LOAD flag changes
   useEffect(() => {

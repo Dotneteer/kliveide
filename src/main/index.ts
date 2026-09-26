@@ -77,6 +77,8 @@ import {
 } from "./settings-utils";
 import { KLIVE_HOME_FOLDER } from "./settings";
 import { KLIVE_APP_VERSION } from "./app-version";
+import { EMU_INITIAL_MIN_HEIGHT, EMU_MIN_CONTENT_WIDTH } from "@common/utils/emu-window-size";
+import { emuMachineSizeStore } from "./emu-machine-sizes";
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -203,7 +205,14 @@ async function createAppWindows() {
     stateSaver: (state) => {
       appSettings.windowStates ??= {};
       appSettings.windowStates.emuWindow = state;
-      saveAppSettings();
+      // --- The window's normal size is also the current machine's own (issue #1377).
+      // --- `emuMachineSizeStore.save` writes the settings file too.
+      const machineId = mainStore.getState().emulatorState?.machineId;
+      if (machineId) {
+        emuMachineSizeStore.save(machineId, { width: state.width, height: state.height });
+      } else {
+        saveAppSettings();
+      }
     }
   });
 
@@ -211,8 +220,10 @@ async function createAppWindows() {
   emuWindow = new BrowserWindow({
     title: "Emu window",
     icon: join(process.env.PUBLIC, "images/klive-logo.png"),
-    minWidth: 640,
-    minHeight: 480,
+    // --- The emulator panel replaces this minimum with one that fits the current machine's picture
+    // --- (issue #1377). It starts low so a compact saved window (a Z88) is not stretched at startup.
+    minWidth: EMU_MIN_CONTENT_WIDTH,
+    minHeight: EMU_INITIAL_MIN_HEIGHT,
     x: emuWindowStateManager.x,
     y: emuWindowStateManager.y,
     width: emuWindowStateManager.width,

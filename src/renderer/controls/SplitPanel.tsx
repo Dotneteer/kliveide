@@ -79,6 +79,12 @@ export const SplitPanel = ({
 
   useLayoutEffect(() => {
     setPrimarySize(secondaryVisible ? resolveSize(initialPrimarySize) : "100%");
+    // --- A new requested size is also the one to come back to: if it arrives while the primary
+    // --- panel is hidden (the emulator keyboard, when the machine changes), showing the panel must
+    // --- not restore the size from before
+    if (!initialLayout.current && initialPrimarySize !== undefined) {
+      savedPrimarySize.current = resolveSize(initialPrimarySize);
+    }
   }, [initialPrimarySize, secondaryVisible]);
 
   // --- Respond to panel visibility changes

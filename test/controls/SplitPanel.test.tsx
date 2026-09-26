@@ -143,3 +143,36 @@ describe("SplitPanel — Step 1.7: drag listener cleanup via refs", () => {
     removeSpy.mockRestore();
   });
 });
+
+/*
+ * Issue #1377: each machine has its own keyboard height. When the machine changes while the
+ * keyboard (the primary panel) is hidden, showing it must use the new machine's height, not the
+ * height from before it was hidden.
+ */
+describe("SplitPanel — a new size while the primary panel is hidden", () => {
+  const panel = (size: string, visible: boolean) => (
+    <SplitPanel primaryLocation="bottom" initialPrimarySize={size} primaryVisible={visible}>
+      <div data-testid="primary">Keyboard</div>
+      <div data-testid="secondary">Screen</div>
+    </SplitPanel>
+  );
+
+  it("is the size the panel comes back at", () => {
+    const { rerender, getByTestId, queryByTestId } = renderWithProviders(panel("100px", true));
+    expect(getByTestId("primary").parentElement.style.height).toBe("100px");
+
+    rerender(panel("100px", false));
+    expect(queryByTestId("primary")).toBeNull();
+
+    rerender(panel("250px", false));
+    rerender(panel("250px", true));
+    expect(getByTestId("primary").parentElement.style.height).toBe("250px");
+  });
+
+  it("still restores the old size when the requested one did not change", () => {
+    const { rerender, getByTestId } = renderWithProviders(panel("100px", true));
+    rerender(panel("100px", false));
+    rerender(panel("100px", true));
+    expect(getByTestId("primary").parentElement.style.height).toBe("100px");
+  });
+});

@@ -155,6 +155,7 @@ describe("EmulatorPanel", () => {
     };
     const displayScreenData = vi.fn();
     const updateScreenDimensions = vi.fn();
+    const calculateDimensions = vi.fn();
     const initAudio = vi.fn(() => Promise.resolve());
     const setKeyData = vi.fn();
     const beeperRenderer = {
@@ -213,6 +214,7 @@ describe("EmulatorPanel", () => {
         canvasHeight: 192,
         canvasWidth: 256,
         displayScreenData,
+        calculateDimensions,
         imageBuffer8: { current: new Uint8Array([1]) },
         screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
         updateScreenDimensions,
@@ -266,6 +268,8 @@ describe("EmulatorPanel", () => {
     );
     expect(screen.getByText("Debug mode")).toBeInTheDocument();
 
+    // --- The panel also repaints when its tool strip changes; only the pause's repaint counts here
+    displayScreenData.mockClear();
     await act(async () => {
       await captured.stateChanged({
         oldState: MachineControllerState.Running,
@@ -367,6 +371,7 @@ describe("EmulatorPanel", () => {
         canvasHeight: 192,
         canvasWidth: 256,
         displayScreenData: vi.fn(),
+        calculateDimensions: vi.fn(),
         imageBuffer8: { current: new Uint8Array([1]) },
         screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
         updateScreenDimensions: vi.fn(),
@@ -505,6 +510,7 @@ describe("EmulatorPanel", () => {
         canvasHeight: 192,
         canvasWidth: 256,
         displayScreenData: vi.fn(),
+        calculateDimensions: vi.fn(),
         imageBuffer8: { current: new Uint8Array([1]) },
         screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
         updateScreenDimensions: vi.fn(),
@@ -612,11 +618,17 @@ describe("EmulatorPanel machine tool area", () => {
     vi.doMock("@renderer/appEmu/recording/RecordingContext", () => ({
       useRecordingManager: () => ({ current: undefined })
     }));
+    // --- Records whether the strip was in the DOM each time the panel asked for a refit
+    const fitsWithStrip: boolean[] = [];
+    const calculateDimensions = vi.fn(() => {
+      fitsWithStrip.push(!!document.querySelector('[data-testid="machine-tools"]'));
+    });
     vi.doMock("@renderer/features/emulator/useEmulatorScreen", () => ({
       useEmulatorScreen: () => ({
         canvasHeight: 192,
         canvasWidth: 256,
         displayScreenData: vi.fn(),
+        calculateDimensions,
         imageBuffer8: { current: new Uint8Array([1]) },
         screenElement: { current: null } as MutableRefObject<HTMLCanvasElement>,
         updateScreenDimensions: vi.fn(),
@@ -669,6 +681,10 @@ describe("EmulatorPanel machine tool area", () => {
     const stack = displayBox.parentElement;
     expect(stack.firstElementChild).toBe(displayBox);
     expect(stack.lastElementChild.contains(tools)).toBe(true);
+
+    // --- Once mounted, the strip is fitted around: its resize observer cannot attach in the render
+    // --- that mounts it, so without this refit the screen and the window minimum ignored it
+    expect(fitsWithStrip).toContain(true);
   });
 });
 

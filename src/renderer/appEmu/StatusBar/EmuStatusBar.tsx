@@ -11,9 +11,14 @@ import { FrameCompletedArgs } from "@renderer/abstractions/IMachineController";
 
 type EmuStatusBarProps = {
   show: boolean;
+  /**
+   * Whether to show the frame times, frame count and PC on the left (issue #1377). They are
+   * debugging aids that change every few frames, which is noise to someone just using the machine.
+   */
+  showPerformanceInfo?: boolean;
 }
 
-export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
+export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarProps) => {
   const { machineService } = useAppServices();
   const controller = useMachineController();
   const [frameStats, setFrameStats] = useState<FrameStats>();
@@ -23,7 +28,13 @@ export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
   const clockMultiplier = useSelector(s => s.emulatorState.clockMultiplier);
   const counter = useRef(0);
 
+  // --- Read by the frame handler, which is subscribed once per controller: a ref keeps it current
+  // --- without resubscribing, and lets it skip the re-render while nothing would show the stats.
+  const statsVisible = useRef(false);
+  statsVisible.current = show && showPerformanceInfo;
+
   const onFrameCompleted = (completed: FrameCompletedArgs) => {
+    if (!statsVisible.current) return;
     if (!completed || counter.current++ % 10) {
       setFrameStats({ ...controller.frameStats });
     }
@@ -55,46 +66,50 @@ export const EmuStatusBar = ({show}:EmuStatusBarProps) => {
   return (
     <div className={styles.statusBar}>
       <div className={styles.sectionWrapper}>
-        <Section>
-          <Icon
-            iconName='vm-running'
-            width={16}
-            height={16}
-            fill='--color-statusbar-icon'
-          />
-          <LabelSeparator />
-          <DataLabel value={frameStats?.lastFrameTimeInMs ?? 0.0} />
-          <Label text='/' />
-          <DataLabel value={frameStats?.avgFrameTimeInMs ?? 0.0} />
-        </Section>
-        <SectionSeparator />
-        <Section>
-          <Icon
-            iconName='window'
-            width={16}
-            height={16}
-            fill='--color-statusbar-icon'
-          />
-          <LabelSeparator />
-          <DataLabel
-            value={frameStats?.frameCount ?? 0}
-            minimumFractionDigits={0}
-            maximumFractionDigits={0}
-            minimumIntegerDigits={1}
-          />
-        </Section>
-        <SectionSeparator />
-        <Section>
-          <Label text='PC:' />
-          <LabelSeparator />
-          <Label
-            text={(controller?.machine?.pc ?? 0)
-              .toString(16)
-              .toUpperCase()
-              .padStart(4, "0")}
-            isMonospace={true}
-          />
-        </Section>
+        {showPerformanceInfo && (
+          <>
+            <Section>
+              <Icon
+                iconName='vm-running'
+                width={16}
+                height={16}
+                fill='--color-statusbar-icon'
+              />
+              <LabelSeparator />
+              <DataLabel value={frameStats?.lastFrameTimeInMs ?? 0.0} />
+              <Label text='/' />
+              <DataLabel value={frameStats?.avgFrameTimeInMs ?? 0.0} />
+            </Section>
+            <SectionSeparator />
+            <Section>
+              <Icon
+                iconName='window'
+                width={16}
+                height={16}
+                fill='--color-statusbar-icon'
+              />
+              <LabelSeparator />
+              <DataLabel
+                value={frameStats?.frameCount ?? 0}
+                minimumFractionDigits={0}
+                maximumFractionDigits={0}
+                minimumIntegerDigits={1}
+              />
+            </Section>
+            <SectionSeparator />
+            <Section>
+              <Label text='PC:' />
+              <LabelSeparator />
+              <Label
+                text={(controller?.machine?.pc ?? 0)
+                  .toString(16)
+                  .toUpperCase()
+                  .padStart(4, "0")}
+                isMonospace={true}
+              />
+            </Section>
+          </>
+        )}
         <SpaceFiller />
         <Label text={machineName} />
         <LabelSeparator />

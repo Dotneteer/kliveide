@@ -1634,6 +1634,33 @@ Two things follow for any later change here:
   meant a Spectrum, whose colour *is* `undefined`, never cleared the Z88's green. Only the running
   app showed it, in the Spectrum's corners. A value that can legitimately be absent needs a
   distinct "unknown".
+- **The emulator window is sized from what the renderer measures; never pin it to a constant.**
+  The old fixed 640x480 minimum kept a Z88 (a 640x64 LCD) from ever being compact. After each fit,
+  `calculateDimensions` reports *hints*: the content needed for the picture at 1x (the
+  minimum, since the fit never drops below 1x) and at the ratio just chosen (the *fit*). The chrome
+  is the viewport minus the room the picture has now, so the toolbar, status bar, keyboard and slot
+  strip are *measured*, and toggling any of them needs no code here. The main process adds page
+  zoom and frame (`common/utils/emu-window-size.ts`, `main/emu-window-sizing.ts`) and uses the hints
+  for the window's minimum, for View | Fit Window to Screen (the fit) and Fit Window to Screen at 1x
+  (the minimum), and for per-machine sizes. Only the width keeps a floor (640, for the toolbar).
+  - **The hints carry the machine ID, and a change of ID is the machine switch.** Main saves the
+    window's normal size for the old machine and restores the new one's
+    (`windowStates.emuMachineSizes`, also written on close). Switch detection lives on the report,
+    not on a store subscription: only the report knows the renderer has laid the new machine out.
+    So the hook re-reports on every `updateScreenDimensions` even when the sizes did not change.
+  - **Hints are debounced.** A switch fits the new picture while the old machine's slot strip is
+    still mounted, then refits. Sending the first fit would size the window for a strip about to go.
+  - Electron sets a minimum but never grows a window already below it, so main grows it, and keeps
+    any grown or restored window inside the display's work area.
+- **Each machine has its own keyboard height** (`emuOptions.keyboardPanelHeights`, falling back to
+  the last height set on any machine). `SplitPanel` takes a changed `initialPrimarySize` as the
+  size to *restore* to as well: a size arriving while the panel is hidden used to be dropped.
+- **A ref-held element that mounts late is invisible to `useResizeObserver`.** The hook depends on
+  `[ref.current]`, read *during* render, so an element that first mounts in that same commit (the
+  Z88 slot strip, set after the machine initializes) is not observed until some later re-render.
+  The fit and the minimum ignored the strip until the user resized. `EmulatorPanel` refits in an
+  effect keyed on the strip's content. Do the same for anything else conditionally rendered into
+  the measured area.
 
 ## Capturing The Mouse Over The Emulator Screen
 

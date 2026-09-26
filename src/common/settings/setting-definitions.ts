@@ -54,6 +54,8 @@ import {
   SETTING_EDITOR_SELECTION_HIGHLIGHT,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EMU_KEYBOARD_HEIGHT,
+  SETTING_EMU_KEYBOARD_HEIGHTS,
+  SETTING_EMU_SHOW_PERFORMANCE_INFO,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
   SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
 } from "@common/settings/setting-const";
@@ -72,6 +74,17 @@ const settingDefinitions: Setting[] = [
     id: SETTING_EMU_SHOW_STATUS_BAR,
     title: "Show the Status Bar",
     description: "Show or hide the status bar in the Emulator view.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SHOW_PERFORMANCE_INFO,
+    title: "Show Performance Info in the Status Bar",
+    description:
+      "Show or hide the frame times, frame count and PC value on the left of the Emulator " +
+      "view's status bar. The machine name and clock frequency stay visible either way.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,
@@ -191,6 +204,16 @@ const settingDefinitions: Setting[] = [
     title: "(keyboard height)",
     type: "string",
     defaultValue: "33%",
+    saveWithIde: true,
+    volatile: true
+  },
+  {
+    // --- Each machine's keyboard height, keyed by machine ID (issue #1377). A machine with no
+    // --- entry yet uses SETTING_EMU_KEYBOARD_HEIGHT, the height last set on any machine.
+    id: SETTING_EMU_KEYBOARD_HEIGHTS,
+    title: "(keyboard height per machine)",
+    type: "object",
+    defaultValue: {},
     saveWithIde: true,
     volatile: true
   },

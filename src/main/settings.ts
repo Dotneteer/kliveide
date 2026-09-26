@@ -30,6 +30,8 @@ export type AppSettings = {
     showIdeOnStartup?: boolean;
     emuZoomFactor?: number;
     ideZoomFactor?: number;
+    /** Each machine's emulator window size, keyed by machine ID (issue #1377) */
+    emuMachineSizes?: Record<string, { width: number; height: number }>;
   };
   globalSettings?: typeof KliveGlobalSettings;
   ideSettings?: IdeSettings;

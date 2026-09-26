@@ -6,6 +6,7 @@ import { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import { AppSettings } from "@main/settings";
+import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import type {
   SjasmplusIntegrationApplyRequest,
   SjasmplusProbeResult,
@@ -550,6 +551,17 @@ class MainApiImpl {
    * @param _value The value to set.
    */
   async setGlobalSettingsValue(_settingId: string, _value: any): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Reports the window content the emulator needs for the current machine (issue #1377): the
+   * minimum (the picture at 1x) and the fit (the picture at its current zoom step). The main
+   * process uses them for the window's minimum size, View | Fit Window to Screen, and restoring
+   * each machine's own window size.
+   * @param _hints The sizes, in CSS pixels, and the machine they are for
+   */
+  async setEmuContentSizeHints(_hints: EmuContentSizeHints): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
