@@ -584,3 +584,67 @@ After:  jr After`,
     expect(s.registers().bc).toBe(BC_MARK);
   });
 });
+
+// ---------------------------------------------------------------------------------------------------
+// DIV-036: an interrupt acknowledge at an entry point is not an opcode fetch
+// ---------------------------------------------------------------------------------------------------
+
+describe("DivMMC entry points: interrupt acknowledge", () => {
+  /*
+   * divmmc.vhd ~163-169: `automap_hold` is evaluated on an M1 cycle with MREQ - an opcode fetch. An
+   * interrupt acknowledge is an M1 cycle with IORQ, and zxnext.vhd ~4098-4112 clears the entry-point
+   * `_q` latches as soon as M1 ends, so an interrupt accepted while PC sits on an entry point leaves the
+   * automap alone: the trap belongs to the opcode fetch that happens there after the ISR returns.
+   *
+   * Found with nxmodplayer: its `rst $08` reached $0008 with a CTC interrupt pending; the core armed the
+   * delayed $0008 trap on the acknowledge, mapped the DivMMC during the ISR, and the RETI then fetched
+   * the DivMMC ROM's own $0008 (`jp $0512`, esxDOS's HL-based entry) instead of ROM 3's opcode - every
+   * F_READ after that went to HL and the player overwrote its own code.
+   */
+  it("DIV-036: an interrupt accepted at a delayed entry point does not map the DivMMC; the fetch after RETI does", async () => {
+    const s = await divmmc({ rom3: false });
+    s.setNextReg(0xb8, 0x04).setNextReg(0xb9, 0x04).setNextReg(0xba, 0x00); // RST $10: always, delayed
+    await s.loadCode(
+      `
+        .org $8000
+Start:  di
+        ld a,$90
+        ld i,a
+        im 2
+        ld hl,$9000             ; IM2 table: every entry -> $9191
+        ld (hl),$91
+        ld de,$9001
+        ld bc,$0100
+        ldir
+        nextreg $c0,$01         ; hardware IM2: a request stays pending until acknowledged
+        nextreg $c4,$02         ; line interrupt on, ULA interrupt off
+        nextreg $23,$40         ; line 64
+        nextreg $22,$06         ; line interrupt on, ULA interrupt stays off ($22 bit 2)
+        ld de,0                 ; ~20 frames with DI: the line interrupt is pending by then
+Wait:   dec de
+        ld a,d
+        or e
+        jr nz,Wait
+        ld bc,0
+        ei
+        jp $0010                ; accepted right after the jump: the acknowledge happens at PC = $0010
+        .org $9191
+Isr:    ei
+        reti`,
+      { entry: "Start" }
+    );
+    s.runTo(0x0010);
+    expect(mapped(s)).toBe(false);
+    s.step(1); // the acknowledge
+    expect(s.registers().pc).toBe(0x9191);
+    s.runTo(0x0010); // RETI brings PC back to the entry point
+    const before = mapped(s);
+    s.step(1); // the real opcode fetch at $0010
+    const r = s.registers();
+    expect({ before, opcodeFromDivMmc: r.bc === BC_MARK, after: mapped(s) }).toEqual({
+      before: false,
+      opcodeFromDivMmc: false,
+      after: true
+    });
+  });
+});
