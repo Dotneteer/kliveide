@@ -248,7 +248,7 @@ class Lowering {
   }
 
   private supportedType(t: MType): boolean {
-    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "bool" || t === "ptr" || t === "str";
+    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "u32" || t === "i32" || t === "bool" || t === "ptr" || t === "str";
   }
 
   private rt(name: string): string {
@@ -504,7 +504,7 @@ class Lowering {
       this.emit({ op: "rtcall", name: this.rt("PrintStr"), args: [v, imm("u8", this.consumeFlag(v))], sid: this.sid });
       return;
     }
-    const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16" }[type as "u8"];
+    const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16", u32: "PrintU32", i32: "PrintI32" }[type as "u8"];
     if (!name) {
       this.unsupported(`PRINT of a ${e.type}`, e.span);
       return;
@@ -696,10 +696,11 @@ class Lowering {
       }
       if (fastcall && i === 0) {
         this.fn.registerParam = type;
-        this.fn.frameSize = 2;
-        const slot: Slot = { kind: "frame", offset: mtypeSize(type) === 1 ? -1 : -2 };
+        // --- Pushed at entry: a word (A in its high byte) or, for 32 bits, DE then HL
+        this.fn.frameSize = mtypeSize(type) === 4 ? 4 : 2;
+        const slot: Slot = { kind: "frame", offset: mtypeSize(type) === 1 ? -1 : -this.fn.frameSize };
         if (p.symbol) this.frameSlots.set(p.symbol, { slot, byref });
-        this.fn.params.push({ name: p.name, type, offset: -2 });
+        this.fn.params.push({ name: p.name, type, offset: -this.fn.frameSize });
         return;
       }
       const size = mtypeSize(type);

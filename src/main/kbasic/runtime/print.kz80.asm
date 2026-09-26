@@ -1,7 +1,7 @@
 ; @module   print
 ; @summary  Text PRINT to the ULA screen: characters, control codes, numbers, AT, TAB, comma, CLS.
 ; @exports  PrintInit, PrintChar, PrintStr, PrintNewline, PrintComma, PrintAt, PrintTab, PrintReset
-; @exports  PrintU8, PrintI8, PrintU16, PrintI16, Cls, PrintRow, PrintCol, PrintColour
+; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, Cls, PrintRow, PrintCol, PrintColour
 ; @requires heap, errors
 ; @init     PrintInit
 ;
@@ -585,6 +585,77 @@ PrintDigitOut:
     pop bc
     pop hl
     ret
+
+; ------------------------------------------------------------------------------------------------
+; Prints DE:HL (DE = the high word) as a signed (PrintI32) or unsigned (PrintU32) decimal number.
+; Changes AF, BC, DE, HL.
+PrintI32:
+    bit 7,d
+    jr z,PrintU32
+    push de
+    push hl
+    ld a,'-'
+    call PrintChar
+    pop hl
+    pop de
+    xor a
+    sub l
+    ld l,a
+    ld a,0
+    sbc a,h
+    ld h,a
+    ld a,0
+    sbc a,e
+    ld e,a
+    ld a,0
+    sbc a,d
+    ld d,a
+PrintU32:
+    ld (Print32Value),hl
+    ld (Print32Value+2),de
+    ld b,0                  ; B = the number of digits
+Print32Divide:              ; Print32Value /= 10, the byte-wise long division from the top byte
+    push bc
+    ld hl,Print32Value+3
+    ld c,4
+    xor a                   ; A = the remainder so far
+Print32Byte:
+    ld e,(hl)
+    ld b,8
+Print32Bit:                 ; A:E <<= 1; a quotient bit into E when A reaches 10
+    sla e
+    rla
+    cp 10
+    jr c,Print32Zero
+    sub 10
+    inc e
+Print32Zero:
+    djnz Print32Bit
+    ld (hl),e
+    dec hl
+    dec c
+    jr nz,Print32Byte
+    pop bc
+    add a,'0'
+    push af                 ; the digits go on the stack, the last first
+    inc b
+    ld hl,(Print32Value)
+    ld a,h
+    or l
+    ld hl,(Print32Value+2)
+    or h
+    or l
+    jr nz,Print32Divide
+Print32Out:
+    pop af
+    push bc
+    call PrintChar
+    pop bc
+    djnz Print32Out
+    ret
+
+Print32Value:
+    .defs 4
 
 ; ------------------------------------------------------------------------------------------------
 ; CLS: clears the screen to the permanent attribute and moves the cursor to the top left.

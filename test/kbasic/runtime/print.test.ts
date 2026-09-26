@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createRuntimeRig, heapUsed, makeString, type RuntimeRig } from "./runtime-kit";
 
-const USES = ["PrintStr", "PrintChar", "PrintNewline", "PrintReset", "PrintU16", "PrintI16", "PrintU8", "PrintI8", "Cls"];
+const USES = ["PrintStr", "PrintChar", "PrintNewline", "PrintReset", "PrintU16", "PrintI16", "PrintU8", "PrintI8", "PrintU32", "PrintI32", "Cls"];
 
 /** A String literal in the program image: [length][bytes]. */
 function literal(label: string, ...parts: (string | number)[]): string {
@@ -109,6 +109,21 @@ describe("Klive BASIC runtime - print", () => {
     const rig = await printRig(main);
     // --- 34 characters: the last two numbers wrap onto row 1
     expect(rig.session.screenLine(0) + rig.session.screenLine(1)).toBe("0 10 65535 -32768 -1 1234 255 -128 7");
+  });
+
+  it("prints 32-bit numbers, signed and unsigned", async () => {
+    const cases: [string, number][] = [
+      ["core.PrintU32", 0],
+      ["core.PrintU32", 4294967295],
+      ["core.PrintI32", 0x80000000],
+      ["core.PrintI32", 0xffffffff],
+      ["core.PrintU32", 100000]
+    ];
+    const main = cases
+      .map(([routine, v]) => `    ld hl,${v & 0xffff}\n    ld de,${v >>> 16}\n    call ${routine}\n    ld a,' '\n    call core.PrintChar`)
+      .join("\n");
+    const rig = await printRig(main);
+    expect(rig.session.screenLine(0) + rig.session.screenLine(1)).toBe("0 4294967295 -2147483648 -1 100000");
   });
 
   it("applies temporary colours until PrintReset", async () => {

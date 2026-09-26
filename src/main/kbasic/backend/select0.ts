@@ -35,6 +35,8 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.PrintI8": ["a"],
   "core.PrintU16": ["hl"],
   "core.PrintI16": ["hl"],
+  "core.PrintU32": ["dehl"],
+  "core.PrintI32": ["dehl"],
   "core.PrintStr": ["hl", "a"],
   "core.PrintTab": ["a"],
   "core.PrintAt": ["b", "c"],
@@ -128,6 +130,7 @@ class Selector {
     const cls = regClassOf(this.acc.type);
     if (cls === "r8") this.emit("push af");
     else if (cls === "r16") this.emit("push hl");
+    else if (cls === "r32") this.emit("push de", "push hl");
     else throw new CodegenError(`Cannot push a ${this.acc.type} yet`);
     this.stack.push(this.acc);
     this.acc = undefined;
@@ -219,7 +222,10 @@ class Selector {
     const cls = regClassOf(type);
     if (cls === "r8") this.emit(text === "0" ? "xor a" : `ld a,${text}`);
     else if (cls === "r16") this.emit(`ld hl,${text}`);
-    else throw new CodegenError(`Cannot load a ${type} immediate yet`);
+    else if (cls === "r32") {
+      const [low, high] = words32(text);
+      this.emit(`ld hl,${low}`, `ld de,${high}`);
+    } else throw new CodegenError(`Cannot load a ${type} immediate yet`);
   }
 
   /** The address text of a slot that has a fixed address, or undefined for one that needs a pointer. */
@@ -236,6 +242,7 @@ class Selector {
       this.spill();
       if (cls === "r8") this.emit(`ld a,(${fixed})`);
       else if (cls === "r16") this.emit(`ld hl,(${fixed})`);
+      else if (cls === "r32") this.emit(`ld hl,(${fixed})`, `ld de,(${fixed}+2)`);
       else throw new CodegenError(`Cannot load a ${dst.type} yet`);
       this.produce(dst);
       return;
@@ -244,6 +251,7 @@ class Selector {
       this.take([slot.ptr]);
       if (cls === "r8") this.emit("ld a,(hl)");
       else if (cls === "r16") this.emit("ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a");
+      else if (cls === "r32") this.emit("ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a", "ex de,hl");
       else throw new CodegenError(`Cannot load a ${dst.type} yet`);
       this.produce(dst);
       return;
@@ -253,6 +261,7 @@ class Selector {
     const d = (slot as { offset: number }).offset;
     if (cls === "r8") this.emit(`ld a,${ixd(d)}`);
     else if (cls === "r16") this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`);
+    else if (cls === "r32") this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`, `ld e,${ixd(d + 2)}`, `ld d,${ixd(d + 3)}`);
     else throw new CodegenError(`Cannot load a ${dst.type} yet`);
     this.produce(dst);
   }
@@ -265,6 +274,7 @@ class Selector {
       if (place !== "acc") this.loadImmediate(type, place);
       if (cls === "r8") this.emit(`ld (${fixed}),a`);
       else if (cls === "r16") this.emit(`ld (${fixed}),hl`);
+      else if (cls === "r32") this.emit(`ld (${fixed}),hl`, `ld (${fixed}+2),de`);
       else throw new CodegenError(`Cannot store a ${type} yet`);
       return;
     }
@@ -279,6 +289,12 @@ class Selector {
       } else if (cls === "r16") {
         if (value === "acc") this.emit("ex de,hl", "pop hl", "ld (hl),e", "inc hl", "ld (hl),d");
         else this.emit(`ld de,${value}`, "ld (hl),e", "inc hl", "ld (hl),d");
+      } else if (cls === "r32") {
+        if (value === "acc") this.emit("ld b,h", "ld c,l", "pop hl", "ld (hl),c", "inc hl", "ld (hl),b", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d");
+        else {
+          const [low, high] = words32(value);
+          this.emit(`ld bc,${low}`, `ld de,${high}`, "ld (hl),c", "inc hl", "ld (hl),b", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d");
+        }
       } else throw new CodegenError(`Cannot store a ${type} yet`);
       return;
     }
@@ -286,9 +302,10 @@ class Selector {
     const [place] = this.take([src]);
     const d = (slot as { offset: number }).offset;
     if (cls === "r8") this.emit(place === "acc" ? `ld ${ixd(d)},a` : `ld ${ixd(d)},${place}`);
-    else if (cls === "r16") {
+    else if (cls === "r16" || cls === "r32") {
       if (place !== "acc") this.loadImmediate(type, place);
       this.emit(`ld ${ixd(d)},l`, `ld ${ixd(d + 1)},h`);
+      if (cls === "r32") this.emit(`ld ${ixd(d + 2)},e`, `ld ${ixd(d + 3)},d`);
     } else throw new CodegenError(`Cannot store a ${type} yet`);
   }
 
@@ -304,8 +321,9 @@ class Selector {
     this.emit("push ix", "ld ix,0", "add ix,sp");
     let size = this.fn.frameSize;
     if (this.fn.registerParam) {
-      this.emit(regClassOf(this.fn.registerParam) === "r8" ? "push af" : "push hl");
-      size -= 2;
+      const cls = regClassOf(this.fn.registerParam);
+      this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
+      size -= cls === "r32" ? 4 : 2;
     }
     const words = Math.ceil(Math.max(0, size) / 2);
     if (words > 0) {
@@ -351,7 +369,7 @@ class Selector {
       // --- The first argument is in the accumulator: STDCALL pushes it too, FASTCALL keeps it there
       if (i.convention === "stdcall") {
         const cls = regClassOf(i.args[0].type);
-        this.emit(cls === "r8" ? "push af" : "push hl");
+        this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
       }
     } else this.spill();
     this.out.push(instr(`call ${i.target}`, this.sid, i.site));
@@ -386,6 +404,12 @@ class Selector {
     const type = a.type;
     const cls = regClassOf(type);
     const shift = op === "shl" || op === "shr";
+    if (cls === "r32") {
+      if (shift) this.shift32(op, type, a, b);
+      else this.binary32(op, type, a, b);
+      this.produce(dst);
+      return;
+    }
     if (cls !== "r8" && cls !== "r16") throw new CodegenError(`Level 0 cannot select ${op} on ${type} yet`);
     // --- a > b is b < a, a <= b is b >= a: compare with the operands the other way round
     if (op === "gt" || op === "le") {
@@ -509,6 +533,8 @@ class Selector {
     if (place !== "acc") this.loadImmediate(a.type, place);
     if (op === "lnot") this.emit("xor 1");
     else if (cls === "r8") this.emit(op === "neg" ? "neg" : "cpl");
+    else if (cls === "r32" && op === "neg") this.emit("xor a", "sub l", "ld l,a", "ld a,0", "sbc a,h", "ld h,a", "ld a,0", "sbc a,e", "ld e,a", "ld a,0", "sbc a,d", "ld d,a");
+    else if (cls === "r32") this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a", "ld a,d", "cpl", "ld d,a", "ld a,e", "cpl", "ld e,a");
     else if (op === "neg") this.emit("xor a", "sub l", "ld l,a", "sbc a,a", "sub h", "ld h,a");
     else this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a");
     this.produce(dst);
@@ -523,6 +549,15 @@ class Selector {
       if (isSignedM(a.type)) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a");
       else this.emit("ld l,a", "ld h,0");
     } else if (from === "r16" && to === "r8") this.emit("ld a,l");
+    else if (from === "r8" && to === "r32") {
+      if (isSignedM(a.type)) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a", "ld e,a", "ld d,a");
+      else this.emit("ld l,a", "ld h,0", "ld de,0");
+    } else if (from === "r16" && to === "r32") {
+      if (isSignedM(a.type)) this.emit("ld a,h", "add a,a", "sbc a,a", "ld e,a", "ld d,a");
+      else this.emit("ld de,0");
+    } else if (from === "r32" && to === "r16") {
+      // --- The low word is already in HL
+    } else if (from === "r32" && to === "r8") this.emit("ld a,l");
     else if (from !== to) throw new CodegenError(`Level 0 cannot convert ${a.type} to ${dst.type} yet`);
     this.produce(dst);
   }
@@ -549,7 +584,10 @@ class Selector {
         const place = places[k];
         const reg = regs[k];
         const cls = regClassOf(args[k].type);
-        if (place === "stack" && cls === "r16") {
+        if (place === "stack" && cls === "r32") {
+          if (reg !== "dehl" || placed.size) throw new CodegenError(`${name}: a 32-bit argument goes in DE:HL, before any other`);
+          this.emit("pop hl", "pop de");
+        } else if (place === "stack" && cls === "r16") {
           // --- A word is popped straight into its pair
           if ([...reg].some((r) => placed.has(r))) throw new CodegenError(`${name}: argument ${k + 1} would overwrite ${[...placed].join("")}`);
           this.emit(`pop ${reg}`);
@@ -562,11 +600,11 @@ class Selector {
       }
       // --- Immediates last: nothing popped after them can overwrite them
       places.forEach((place, k) => {
-        if (place !== "acc" && place !== "stack") this.emit(`ld ${regs[k]},${place}`);
+        if (place !== "acc" && place !== "stack") this.loadRegister(regs[k], place);
       });
     } else {
       this.spill();
-      args.forEach((a, k) => this.emit(`ld ${regs[k]},${immText(a)}`));
+      args.forEach((a, k) => this.loadRegister(regs[k], immText(a)));
     }
     this.emit(`call ${this.rt(routine)}`);
     if (dst) this.produce(dst);
@@ -581,6 +619,111 @@ class Selector {
     if (args.some((a) => a.kind !== "vreg" || regClassOf(a.type) !== "r16")) throw new CodegenError("ArrayAddress takes word vregs");
     this.take(args);
     this.emit(`ld a,${args.length - 1}`, `call ${this.rt("core.ArrayAddress")}`);
+  }
+
+  /** Loads an immediate into a runtime argument's register (DE:HL takes two words). */
+  private loadRegister(reg: string, text: string): void {
+    if (reg !== "dehl") {
+      this.emit(`ld ${reg},${text}`);
+      return;
+    }
+    const [low, high] = words32(text);
+    this.emit(`ld hl,${low}`, `ld de,${high}`);
+  }
+
+  /**
+   * The operands of a 32-bit operator where the arith32 routines want them: the left on the stack
+   * (low word on top), the right in DE:HL.
+   */
+  private operands32(a: Value, b: Value): void {
+    const [pa, pb] = this.take([a, b]);
+    if (pa === "stack") return;
+    if (pa === "acc") {
+      // --- The right operand is an immediate
+      this.emit("push de", "push hl");
+      this.loadImmediate(b.type, pb);
+      return;
+    }
+    // --- The left operand is an immediate: push it without disturbing DE:HL
+    const [low, high] = words32(pa);
+    this.emit(`ld bc,${high}`, "push bc", `ld bc,${low}`, "push bc");
+    if (pb !== "acc") this.loadImmediate(b.type, pb);
+  }
+
+  private binary32(op: BinOp, type: MType, a: Value, b: Value): void {
+    const signed = isSignedM(type);
+    if (op === "gt" || op === "le") {
+      // --- a > b is b < a: swap the operands, the right one onto the stack
+      this.operands32(a, b);
+      this.emit("ex (sp),hl", "pop bc", "ex de,hl", "ex (sp),hl", "push bc", "ex de,hl");
+      this.compare32(op === "gt" ? "lt" : "ge", signed);
+      return;
+    }
+    this.operands32(a, b);
+    if (COMPARISONS.has(op)) {
+      this.compare32(op, signed);
+      return;
+    }
+    const bytewise = (alu: string) =>
+      this.emit("pop bc", "ld a,l", `${alu} c`, "ld l,a", "ld a,h", `${alu} b`, "ld h,a", "pop bc", "ld a,e", `${alu} c`, "ld e,a", "ld a,d", `${alu} b`, "ld d,a");
+    switch (op) {
+      case "add":
+        return this.emit("pop bc", "add hl,bc", "ex de,hl", "pop bc", "adc hl,bc", "ex de,hl");
+      case "sub":
+        return this.emit("ld b,d", "ld c,e", "ex de,hl", "pop hl", "and a", "sbc hl,de", "ex (sp),hl", "sbc hl,bc", "ex de,hl", "pop hl");
+      case "and":
+      case "or":
+      case "xor":
+        return bytewise(op);
+      case "mul":
+        return this.emit(`call ${this.rt("core.Mul32")}`);
+      case "div":
+        return this.emit(`call ${this.rt(signed ? "core.DivI32" : "core.DivU32")}`);
+      case "mod":
+        return this.emit(`call ${this.rt(signed ? "core.ModI32" : "core.ModU32")}`);
+      default:
+        throw new CodegenError(`Level 0 cannot select ${op} on ${type} yet`);
+    }
+  }
+
+  /**
+   * Compares the left operand (on the stack) with the right (DE:HL) by subtracting, and leaves the
+   * bool in A. Signed operands have their sign bits flipped first, which makes the comparison an
+   * unsigned one.
+   */
+  private compare32(op: BinOp, signed: boolean): void {
+    const ordered = op !== "eq" && op !== "ne";
+    if (signed && ordered) this.emit("ld a,d", "xor $80", "ld d,a");
+    this.emit("ld b,d", "ld c,e", "ex de,hl", "pop hl");
+    if (signed && ordered) this.emit("ex (sp),hl", "ld a,h", "xor $80", "ld h,a", "ex (sp),hl");
+    this.emit("and a", "sbc hl,de", "ex (sp),hl", "sbc hl,bc", "pop de");
+    // --- HL:DE = left - right; carry = left < right
+    if (!ordered) this.emit("ld a,h", "or l", "or d", "or e");
+    const skip = this.local();
+    const falseWhen = { eq: "nz", ne: "z", lt: "nc", ge: "c" }[op as "eq"];
+    this.emit("ld a,0", `jr ${falseWhen},${skip}`, "inc a");
+    this.placeLabel(skip);
+  }
+
+  /** A 32-bit shift by a byte count: one bit at a time. */
+  private shift32(op: BinOp, type: MType, a: Value, b: Value): void {
+    const [pa, pb] = this.take([a, b]);
+    if (pb === "acc") {
+      this.emit("ld b,a");
+      if (pa === "stack") this.emit("pop hl", "pop de");
+      else this.loadImmediate(type, pa);
+    } else {
+      if (pa !== "acc") this.loadImmediate(type, pa);
+      this.emit(`ld b,${pb}`);
+    }
+    const loop = this.local();
+    const test = this.local();
+    this.emit("inc b", `jr ${test}`);
+    this.placeLabel(loop);
+    if (op === "shl") this.emit("add hl,hl", "ex de,hl", "adc hl,hl", "ex de,hl");
+    else this.emit(isSignedM(type) ? "sra d" : "srl d", "rr e", "rr h", "rr l");
+    this.placeLabel(test);
+    this.emit(`djnz ${loop}`);
   }
 
   /** Copies the accumulator of a class to a register. */
@@ -667,4 +810,11 @@ function immText(v: Value): string {
   if (v.kind === "imm") return String(v.type === "bool" ? v.value & 1 : v.value);
   if (v.kind === "sym") return symText(v);
   throw new CodegenError("A vreg is not an immediate");
+}
+
+/** The low and high words of a 32-bit immediate's text. */
+function words32(text: string): [number, number] {
+  const v = Number(text);
+  if (!Number.isFinite(v)) throw new CodegenError(`'${text}' is not a 32-bit immediate`);
+  return [v & 0xffff, (v >>> 16) & 0xffff];
 }
