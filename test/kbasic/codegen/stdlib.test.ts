@@ -160,6 +160,60 @@ describe("standard library", () => {
     });
   });
 
+  describe("print42.bas and print64.bas", () => {
+    // --- The screen byte of a character cell's pixel row
+    const at = (row: number, byte: number, line: number) => 0x4000 + ((row & 0x18) << 8) + ((row & 7) << 5) + (line << 8) + byte;
+
+    it("print42 squeezes the ROM font to 6 pixels a character, in the permanent colours", async () => {
+      const source = '#include <print42.bas>\nPAPER 1\nprintat42(2, 0)\nprint42("AMA")\nprint42(CHR$(13) + "x")\n';
+      const r = await runBasic(source);
+      const font = (code: number, line: number) => r.session.peek(0x3d00 + (code - 32) * 8 + line);
+      const squeeze = (g: number) => ((g & 0x70) << 1) | ((g & 0x0e) << 2);
+      for (let line = 0; line < 8; line++) {
+        // --- A at pixels 0-5, M at 6-11, A at 12-17
+        const bits = (squeeze(font(65, line)) << 16) | (squeeze(font(77, line)) << 10) | (squeeze(font(65, line)) << 4);
+        expect([r.session.peek(at(2, 0, line)), r.session.peek(at(2, 1, line)), r.session.peek(at(2, 2, line))]).toEqual([
+          (bits >> 16) & 0xff,
+          (bits >> 8) & 0xff,
+          bits & 0xff
+        ]);
+        expect(r.session.peek(at(3, 0, line))).toBe(squeeze(font(120, line)));
+      }
+      expect([r.session.peek(0x5800 + 64), r.session.peek(0x5800 + 66), r.session.peek(0x5800 + 67)]).toEqual([0x08, 0x08, 0x38]);
+    });
+
+    it("print64 prints Klive's 4-pixel font at its own cursor", async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const font64 = require("../../../scripts/kbasic-font64.cjs");
+      const bytes: number[] = font64.pack();
+      const glyph = (code: number, line: number) => {
+        const b = bytes[((code - 32) >> 1) * 8 + line];
+        return code & 1 ? (b << 4) & 0xf0 : b & 0xf0;
+      };
+      const r = await runBasic('#include <print64.bas>\nprintat64(5, 3)\nprint64("Hi!")\nPRINT AT 0, 0; "ok"\n');
+      for (let line = 0; line < 8; line++) {
+        // --- Column 3 is byte 1's low nibble; columns 4 and 5 share byte 2
+        expect(r.session.peek(at(5, 1, line)) & 0x0f).toBe(glyph(72, line) >> 4);
+        expect(r.session.peek(at(5, 2, line))).toBe(glyph(105, line) | (glyph(33, line) >> 4));
+      }
+      expect(r.screen(1)[0]).toBe("ok");
+    });
+
+    it("the 64-column font table is the one scripts/kbasic-font64.cjs designs", () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const font64 = require("../../../scripts/kbasic-font64.cjs");
+      const text = runtimeBundle.stdlib.find((f) => f.name === "print64.bas")!.text;
+      expect(text).toContain(font64.table(font64.pack()));
+    });
+
+    it("printat42 and printat64 stop with 5 Out of screen past the edge", async () => {
+      for (const call of ["#include <print64.bas>\nprintat64(24, 0)\n", "#include <print42.bas>\nprintat42(0, 42)\n"]) {
+        const r = await runBasic(call, { expectEnd: false, frames: 60 });
+        expect(r.session.screenLine(23)).toMatch(/^5 Out of screen/);
+      }
+    });
+  });
+
   describe("DRAW with an arc (__drawarc.bas)", () => {
     it("ends on the target, turning left (anticlockwise) for a positive angle", async () => {
       const source = [

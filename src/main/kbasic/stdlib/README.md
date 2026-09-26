@@ -29,4 +29,8 @@ every `*.bas` file here into `runtime/generated/runtime-bundle.ts`; they are ser
 - Inline asm may name runtime labels as `core.Label`; the block links the module that exports it.
   A FUNCTION with no locals keeps its result at `IX-1` (UByte) or `IX-2` (UInteger), which `pos.bas`
   and `csrlin.bas` rely on; `test/kbasic/codegen/stdlib.test.ts` would catch a change of frame.
+- Data goes in a global array with explicit bounds (`DIM t(0 TO n) AS UByte => {...}`), so the
+  program's `array_base` does not move it. `print64.bas`'s font is Klive's own 3 x 7 design, kept in
+  `scripts/kbasic-font64.cjs`, which rewrites the table (`--check` verifies it). `print42.bas` needs no
+  font: it squeezes the machine's own (CHARS) from six columns to five.
 - Test each routine in `test/kbasic/codegen/stdlib.test.ts` on the 48K harness.
