@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { createRuntimeRig, heapUsed, makeString, readString, type RuntimeRig } from "./runtime-kit";
 
-const USES = ["StrAlloc", "StrLen", "StrDup", "StrConcat", "StrStore", "StrCompare", "Free"];
+const USES = ["StrAlloc", "StrLen", "StrDup", "StrConcat", "StrStore", "StrCompare", "Free", "StrSlice", "StrLength", "StrCode", "StrChr"];
 
 describe("Klive BASIC runtime - strings", () => {
   let rig: RuntimeRig;
@@ -99,5 +99,43 @@ describe("Klive BASIC runtime - strings", () => {
       }
     }
     expect(heapUsed(rig), "both operands freed every time").toBe(0);
+  });
+
+  it("StrSlice takes inclusive, clipped ranges and frees its source on request", () => {
+    const cases: [number, number, string][] = [
+      [0, 4, "Klive"],
+      [1, 3, "liv"],
+      [2, 2, "i"],
+      [3, 0xffff, "ve"],
+      [0, 99, "Klive"],
+      [3, 1, ""],
+      [7, 9, ""]
+    ];
+    for (const [from, to, expected] of cases) {
+      const p = makeString(rig, "Klive");
+      const r = rig.call("core.StrSlice", { hl: p, bc: from, de: to, a: 1 }).hl;
+      expect(readString(rig, r), `${from} TO ${to}`).toBe(expected);
+      rig.call("core.Free", { hl: r });
+    }
+    expect(rig.call("core.StrSlice", { hl: 0, bc: 0, de: 3, a: 1 }).hl).toBe(0);
+    expect(heapUsed(rig), "every source freed").toBe(0);
+    const kept = makeString(rig, "abc");
+    rig.call("core.Free", { hl: rig.call("core.StrSlice", { hl: kept, bc: 0, de: 0, a: 0 }).hl });
+    expect(readString(rig, kept), "a source without the flag survives").toBe("abc");
+  });
+
+  it("StrLength and StrCode read and free on request", () => {
+    expect(rig.call("core.StrLength", { hl: makeString(rig, "four"), a: 1 }).hl).toBe(4);
+    expect(rig.call("core.StrLength", { hl: 0, a: 1 }).hl).toBe(0);
+    expect(rig.call("core.StrCode", { hl: makeString(rig, "A!"), a: 1 }).a).toBe(65);
+    expect(rig.call("core.StrCode", { hl: 0, a: 1 }).a).toBe(0);
+    expect(heapUsed(rig)).toBe(0);
+  });
+
+  it("StrChr makes a one-character String", () => {
+    const p = rig.call("core.StrChr", { a: 72 }).hl;
+    expect(readString(rig, p)).toBe("H");
+    rig.call("core.Free", { hl: p });
+    expect(heapUsed(rig)).toBe(0);
   });
 });

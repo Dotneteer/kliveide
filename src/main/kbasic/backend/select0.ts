@@ -38,6 +38,17 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.PrintTab": ["a"],
   "core.PrintAt": ["b", "c"],
   "core.PrintColour": ["c", "a"],
+  "core.StrConcat": ["hl", "de", "a"],
+  "core.StrCompare": ["hl", "de", "a"],
+  "core.StrSlice": ["hl", "bc", "de", "a"],
+  "core.StrLength": ["hl", "a"],
+  "core.StrCode": ["hl", "a"],
+  "core.StrChr": ["a"],
+  "core.StrDup": ["hl"],
+  "core.StrStore": ["hl", "de"],
+  /** StrStore when the variable's address was computed before the value (a BYREF String). */
+  "core.StrStore!addressFirst": ["de", "hl"],
+  "core.Free": ["hl"],
   "core.PrintComma": [],
   "core.PrintNewline": [],
   "core.PrintReset": [],
@@ -516,18 +527,27 @@ class Selector {
   private rtcall(name: string, args: Value[], dst: VReg | undefined): void {
     const regs = RUNTIME_ARGS[name];
     if (!regs) throw new CodegenError(`No register contract for ${name}`);
+    // --- "core.X!variant" is core.X with its arguments in another evaluation order
+    const routine = name.split("!")[0];
     if (args.some((a) => a.kind === "vreg")) {
       const places = this.take(args);
-      // --- From the last argument back: the accumulator first, then the stack in pop order
+      // --- From the last argument back: the accumulator first, then the stack in pop order. Each
+      // --- pop goes through the accumulator, so it must not overwrite a register already set.
+      const placed = new Set<string>();
       for (let k = args.length - 1; k >= 0; k--) {
         const place = places[k];
         const reg = regs[k];
         const cls = regClassOf(args[k].type);
-        if (place === "acc") this.move(reg, cls);
-        else if (place === "stack") {
-          this.emit(cls === "r8" ? "pop af" : "pop hl");
+        if (place === "stack" && cls === "r16") {
+          // --- A word is popped straight into its pair
+          if ([...reg].some((r) => placed.has(r))) throw new CodegenError(`${name}: argument ${k + 1} would overwrite ${[...placed].join("")}`);
+          this.emit(`pop ${reg}`);
+        } else if (place === "stack") {
+          if (placed.has("a")) throw new CodegenError(`${name}: argument ${k + 1} would overwrite A`);
+          this.emit("pop af");
           this.move(reg, cls);
-        }
+        } else if (place === "acc") this.move(reg, cls);
+        if (place === "acc" || place === "stack") for (const r of reg) placed.add(r);
       }
       // --- Immediates last: nothing popped after them can overwrite them
       places.forEach((place, k) => {
@@ -537,7 +557,7 @@ class Selector {
       this.spill();
       args.forEach((a, k) => this.emit(`ld ${regs[k]},${immText(a)}`));
     }
-    this.emit(`call ${this.rt(name)}`);
+    this.emit(`call ${this.rt(routine)}`);
     if (dst) this.produce(dst);
   }
 

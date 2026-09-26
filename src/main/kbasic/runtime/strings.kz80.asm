@@ -1,6 +1,7 @@
 ; @module   strings
 ; @summary  Core String routines: allocation, length, copy, concatenation, store and comparison.
 ; @exports  StrAlloc, StrLen, StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
+; @exports  StrSlice, StrLength, StrCode, StrChr
 ; @requires heap
 ;
 ; A String value is a pointer to a heap block [length:2][characters], or 0 for the empty string
@@ -235,4 +236,129 @@ StrCompareDone:             ; A = result                           S: [first][se
     call StrFreeOperands
     pop af                  ; A = result                           S: []
     or a
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; A substring of String HL: characters BC to DE (0-based, inclusive; DE = $FFFF for "to the end").
+; The upper bound is clipped to the last character; a lower bound past it gives the empty String.
+; In: A = free flags (bit 0 frees HL). Out: HL = the new String; 0 when it is empty or the heap is
+; full. Changes AF, BC, DE.
+StrSlice:
+    push af                 ; S: [flags]
+    push hl                 ; S: [src][flags]
+    push bc                 ; S: [from][src][flags]
+    call StrLen             ; BC = length
+    ld a,b
+    or c
+    jr z,StrSliceNone       ; the empty String
+    dec bc                  ; BC = the last index
+    ld h,d
+    ld l,e
+    or a
+    sbc hl,bc
+    jr c,StrSliceTo         ; to < last: keep it
+    ld d,b
+    ld e,c                  ; DE = to = last
+StrSliceTo:
+    pop bc                  ; BC = from                            S: [src][flags]
+    ex de,hl                ; HL = to
+    or a
+    sbc hl,bc               ; HL = to - from
+    jr c,StrSliceEmpty      ; from > to
+    inc hl                  ; HL = the number of characters
+    push bc                 ; S: [from][src][flags]
+    push hl                 ; S: [count][from][src][flags]
+    ld b,h
+    ld c,l
+    call StrAlloc           ; HL = the new String
+    pop bc                  ; BC = count                           S: [from][src][flags]
+    pop de                  ; DE = from                            S: [src][flags]
+    ld a,h
+    or l
+    jr z,StrSliceDone       ; heap full: the empty String
+    push hl                 ; S: [new][src][flags]
+    push de                 ; S: [from][new][src][flags]
+    ld hl,4
+    add hl,sp
+    ld e,(hl)
+    inc hl
+    ld d,(hl)               ; DE = src
+    pop hl                  ; HL = from                            S: [new][src][flags]
+    add hl,de
+    inc hl
+    inc hl                  ; HL = the first character to copy
+    pop de                  ; DE = new                             S: [src][flags]
+    push de                 ; S: [new][src][flags]
+    inc de
+    inc de
+    ldir
+    pop hl                  ; HL = new                             S: [src][flags]
+    jr StrSliceDone
+StrSliceNone:               ; S: [from][src][flags]
+    pop bc
+StrSliceEmpty:              ; S: [src][flags]
+    ld hl,0
+StrSliceDone:               ; HL = result                          S: [src][flags]
+    pop de                  ; DE = src
+    pop af                  ; A = flags                            S: []
+    push hl                 ; S: [result]
+    ex de,hl                ; HL = src
+    rra                     ; carry = bit 0
+    call c,Free
+    pop hl                  ; HL = result                          S: []
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; LEN: the length of String HL. In: A = free flags (bit 0 frees HL). Out: HL = the length.
+; Changes AF, BC, DE.
+StrLength:
+    push af                 ; S: [flags]
+    call StrLen             ; BC = length
+    pop af                  ; S: []
+    push bc                 ; S: [length]
+    rra                     ; carry = bit 0
+    call c,Free
+    pop hl                  ; HL = length                          S: []
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; CODE: the code of String HL's first character, 0 for the empty String. In: A = free flags (bit 0
+; frees HL). Out: A. Changes F, BC, DE, HL.
+StrCode:
+    push af                 ; S: [flags]
+    call StrLen
+    ld e,0
+    ld a,b
+    or c
+    jr z,StrCodeFree
+    inc hl
+    inc hl
+    ld e,(hl)
+    dec hl
+    dec hl
+StrCodeFree:
+    pop af                  ; S: []
+    push de                 ; S: [code]
+    rra                     ; carry = bit 0
+    call c,Free
+    pop de                  ; S: []
+    ld a,e
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; CHR$: a String of the one character A. Out: HL; 0 when the heap is full. Changes AF, BC, DE.
+StrChr:
+    push af                 ; S: [char]
+    ld bc,1
+    call StrAlloc
+    pop af                  ; A = char                             S: []
+    ld c,a
+    ld a,h
+    or l
+    ret z
+    inc hl
+    inc hl
+    ld (hl),c
+    dec hl
+    dec hl
     ret

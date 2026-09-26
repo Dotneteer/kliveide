@@ -67,6 +67,10 @@ class Lowering {
   private resultSlot: Slot | undefined;
   /** The call sites of the current statement, to fill in `moreCallsFollow` when it ends. */
   private statementCalls: CallSite[] = [];
+  /** String vregs that are owned (must be consumed once); every other String value is borrowed. */
+  private readonly owned = new Set<number>();
+  /** Rule B1 of the string note: the statement calls a FUNCTION while it evaluates. */
+  private copyBorrowed = false;
 
   constructor(private readonly diagnostics: DiagnosticBag) {}
 
@@ -151,8 +155,9 @@ class Lowering {
   }
 
   /** Starts a statement (or statement part): a new sid with its span, and its entry marker. */
-  private beginStatement(span: Span, kind: StatementKind): void {
+  private beginStatement(span: Span, kind: StatementKind, evaluates: unknown[] = []): void {
     this.endStatement();
+    this.copyBorrowed = evaluates.some(containsCall);
     this.sid = this.module.statements.length;
     this.module.statements.push({ sid: this.sid, span, kind, functionIndex: this.fnIndex });
     this.emit({ op: "stmt", sid: this.sid });
@@ -169,7 +174,7 @@ class Lowering {
   }
 
   private supportedType(t: MType): boolean {
-    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "bool" || t === "ptr";
+    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "bool" || t === "ptr" || t === "str";
   }
 
   private rt(name: string): string {
@@ -190,7 +195,7 @@ class Lowering {
         this.continueAt(labelName(s.label));
         return;
       case "print":
-        this.beginStatement(s.span, "other");
+        this.beginStatement(s.span, "other", [s.items]);
         this.print(s.items);
         return;
       case "cls":
@@ -198,12 +203,12 @@ class Lowering {
         this.emit({ op: "rtcall", name: this.rt("Cls"), args: [], sid: this.sid });
         return;
       case "assign":
-        this.beginStatement(s.span, "assignment");
+        this.beginStatement(s.span, "assignment", [s.value, s.target]);
         this.assign(s.target, s.value, s.span);
         return;
       case "dim":
         if (!s.value) return;
-        this.beginStatement(s.span, "declaration");
+        this.beginStatement(s.span, "declaration", [s.value]);
         this.assign({ kind: "variable", span: s.span, type: (s.symbol as VariableSymbol).type, symbol: s.symbol as VariableSymbol }, s.value, s.span);
         return;
       case "if":
@@ -247,11 +252,13 @@ class Lowering {
         return;
       }
       case "return":
-        this.beginStatement(s.span, "return");
+        this.beginStatement(s.span, "return", [s.value]);
         if (this.routine) {
           if (s.value && this.resultSlot) {
             const type = mtypeOf(this.routine.returnType ?? "Float");
-            this.emit({ op: "store", type, slot: this.resultSlot, src: this.value(s.value), sid: this.sid });
+            // --- A returned String belongs to the caller: never a borrowed one (string note §3)
+            const value = type === "str" ? this.ownedString(s.value) : this.value(s.value);
+            this.emit({ op: "store", type, slot: this.resultSlot, src: value, sid: this.sid });
           }
           this.terminate({ op: "jmp", target: this.fn.epilogue!, sid: this.sid });
         } else this.terminate({ op: "ret", sid: this.sid });
@@ -290,10 +297,14 @@ class Lowering {
         return;
       case "routine":
         return;
-      case "call":
-        this.beginStatement(s.span, "call");
-        this.call(s.routine, s.args, undefined);
+      case "call": {
+        this.beginStatement(s.span, "call", [s.args]);
+        const result = s.routine.kind === "function" ? mtypeOf(s.routine.returnType ?? "Float") : undefined;
+        const value = this.call(s.routine, s.args, result === "str" ? "str" : undefined);
+        // --- A String result nobody uses is freed at once
+        if (value) this.consume(value, "free");
         return;
+      }
       default:
         this.unsupported(`${s.kind.toUpperCase()}`, s.span);
     }
@@ -310,8 +321,35 @@ class Lowering {
       if (slot) this.unsupported(`${target.type} variables`, span);
       return;
     }
+    if (type === "str") {
+      this.storeString(slot, valueExpr);
+      return;
+    }
     const value = this.value(valueExpr);
     this.emit({ op: "store", type, slot, src: value, sid: this.sid });
+  }
+
+  /** `s$ = expr`: an owned value (a copy of a borrowed one), stored with StrStore (string note §3). */
+  private storeString(slot: Slot, valueExpr: BoundExpr): void {
+    const value = this.ownedString(valueExpr);
+    if (slot.kind === "deref") {
+      // --- A BYREF String: its address was loaded before the value was computed
+      this.rt("StrStore");
+      this.emit({ op: "rtcall", name: "core.StrStore!addressFirst", args: [slot.ptr, value], sid: this.sid });
+    } else {
+      const address = this.slotAddress(slot);
+      this.emit({ op: "rtcall", name: this.rt("StrStore"), args: [value, address], sid: this.sid });
+    }
+    this.owned.delete((value as VReg).id);
+  }
+
+  /** The address of a variable's slot, as a value. */
+  private slotAddress(slot: Slot): Value {
+    if (slot.kind === "global") return { kind: "sym", type: "ptr", name: slot.name, offset: 0 };
+    if (slot.kind === "deref") return slot.ptr;
+    const r = this.vreg("ptr");
+    this.emit({ op: "addr", dst: r, slot, sid: this.sid });
+    return r;
   }
 
   private variableSlot(symbol: VariableSymbol, span: Span): Slot | undefined {
@@ -371,12 +409,9 @@ class Lowering {
   private printValue(e: BoundExpr): void {
     const type = mtypeOf(e.type);
     if (type === "str") {
-      if (e.constant?.value.kind !== "string") {
-        this.unsupported("PRINT of a String expression", e.span);
-        return;
-      }
-      if (e.constant.value.value === "") return;
-      this.emit({ op: "rtcall", name: this.rt("PrintStr"), args: [this.stringLiteral(e.constant.value.value), imm("u8", 0)], sid: this.sid });
+      if (e.constant?.value.kind === "string" && e.constant.value.value === "") return;
+      const v = this.value(e);
+      this.emit({ op: "rtcall", name: this.rt("PrintStr"), args: [v, imm("u8", this.consumeFlag(v))], sid: this.sid });
       return;
     }
     const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16" }[type as "u8"];
@@ -606,6 +641,12 @@ class Lowering {
     this.continueAt(this.fn.epilogue!);
     this.beginStatement(s.end, "return");
     this.emit({ op: "epilogue.begin", sid: this.sid });
+    // --- Local Strings and by-value String parameters belong to this activation
+    for (const [symbol, { slot, byref }] of this.frameSlots) {
+      if (symbol.kind === "variable" && symbol.type === "String" && !byref) {
+        this.emit({ op: "rtcall", name: this.rt("Free"), args: [this.load("str", slot)], sid: this.sid });
+      }
+    }
     const value = this.resultSlot && returnType ? this.load(returnType, this.resultSlot) : undefined;
     this.endStatement();
     this.terminate({ op: "ret", ...(value ? { value } : {}), sid: this.sid });
@@ -623,6 +664,7 @@ class Lowering {
     const site: CallSite = { kind: routine.kind, callee: routine.name, moreCallsFollow: false, order: this.statementCalls.length };
     this.statementCalls.push(site);
     const dst = resultType ? this.vreg(resultType) : undefined;
+    if (dst?.type === "str") this.owned.add(dst.id);
     this.emit({
       op: "call",
       ...(dst ? { dst } : {}),
@@ -642,6 +684,10 @@ class Lowering {
       v = c ? this.constantValue(c, mtypeOf(a.param.type), a.param.span) : imm(mtypeOf(a.param.type), 0);
     } else if (a.byref) {
       v = this.address(a.value);
+    } else if (mtypeOf(a.param.type) === "str") {
+      // --- A by-value String argument is a copy the callee frees (plan §6.7)
+      v = this.ownedString(a.value);
+      if (v.kind === "vreg") this.owned.delete(v.id);
     } else v = this.value(a.value);
     // --- Every argument is computed into a vreg, so that it is pushed in its turn
     if (v.kind === "vreg") return v;
@@ -698,8 +744,14 @@ class Lowering {
     switch (e.kind) {
       case "variable": {
         const slot = this.variableSlot(e.symbol, e.span);
-        return slot ? this.load(type, slot) : imm(type, 0);
+        if (!slot) return imm(type, 0);
+        const v = this.load(type, slot);
+        // --- B1: a global or BYREF String that a FUNCTION called later in the statement could change
+        if (type === "str" && this.copyBorrowed && (e.symbol.storage === "global" || e.symbol.byref)) return this.dup(v);
+        return v;
       }
+      case "slice":
+        return this.slice(e);
       case "convert": {
         const a = this.value(e.operand);
         const r = this.vreg(type);
@@ -743,11 +795,87 @@ class Lowering {
       this.emit({ op: "bin", bop: op, dst: r, a, b, sid: this.sid });
       return r;
     }
+    if (e.operandType === "String") return this.stringBinary(op, e);
     const a = this.value(e.left);
     const b = this.value(e.right);
     const r = this.vreg(COMPARISONS.has(op) ? "bool" : mtypeOf(e.type));
     this.emit({ op: "bin", bop: op, dst: r, a, b, sid: this.sid });
     return r;
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Strings (.docs/kbasic-string-ownership.md)
+
+  /** 1 when the value is owned (a runtime routine should free it after use), else 0. */
+  private consumeFlag(v: Value): number {
+    if (v.kind !== "vreg" || !this.owned.has(v.id)) return 0;
+    this.owned.delete(v.id);
+    return 1;
+  }
+
+  /** Consumes an owned value by freeing it. */
+  private consume(v: Value, how: "free"): void {
+    if (how === "free" && v.kind === "vreg" && this.owned.delete(v.id)) {
+      this.emit({ op: "rtcall", name: this.rt("Free"), args: [v], sid: this.sid });
+    }
+  }
+
+  private dup(v: Value): VReg {
+    const r = this.vreg("str");
+    this.emit({ op: "rtcall", name: this.rt("StrDup"), dst: r, args: [v], sid: this.sid });
+    this.owned.add(r.id);
+    return r;
+  }
+
+  /** A String value that is owned: a copy of a borrowed one. */
+  private ownedString(e: BoundExpr): Value {
+    const v = this.value(e);
+    if (v.kind === "vreg" && this.owned.has(v.id)) return v;
+    return this.dup(v);
+  }
+
+  private owns(v: Value): VReg {
+    const r = v as VReg;
+    this.owned.add(r.id);
+    return r;
+  }
+
+  private stringBinary(op: BinOp, e: Extract<BoundExpr, { kind: "binary" }>): Value {
+    const a = this.value(e.left);
+    const b = this.value(e.right);
+    const flags = imm("u8", this.consumeFlag(a) | (this.consumeFlag(b) << 1));
+    if (op === "add") {
+      const r = this.vreg("str");
+      this.emit({ op: "rtcall", name: this.rt("StrConcat"), dst: r, args: [a, b, flags], sid: this.sid });
+      return this.owns(r);
+    }
+    // --- StrCompare gives -1, 0 or 1; the comparison is then that against 0
+    const order = this.vreg("i8");
+    this.emit({ op: "rtcall", name: this.rt("StrCompare"), dst: order, args: [a, b, flags], sid: this.sid });
+    const r = this.vreg("bool");
+    this.emit({ op: "bin", bop: op, dst: r, a: order, b: imm("i8", 0), sid: this.sid });
+    return r;
+  }
+
+  /** `s(from TO to)` and `s(i)`: bounds already 0-based (the binder rebased them). */
+  private slice(e: Extract<BoundExpr, { kind: "slice" }>): Value {
+    const target = this.value(e.target);
+    const from = e.from ? this.value(e.from) : imm("u16", 0);
+    const to = e.single ? undefined : e.to ? this.value(e.to) : imm("u16", 0xffff);
+    const r = this.vreg("str");
+    const flags = imm("u8", this.consumeFlag(target));
+    if (e.single) {
+      // --- One character: the same index as both bounds, evaluated once
+      if (from.kind !== "vreg") this.emit({ op: "rtcall", name: this.rt("StrSlice"), dst: r, args: [target, from, from, flags], sid: this.sid });
+      else {
+        const index = this.hiddenSlot("u16", "chr");
+        this.emit({ op: "store", type: "u16", slot: index, src: from, sid: this.sid });
+        const low = this.load("u16", index);
+        const high = this.load("u16", index);
+        this.emit({ op: "rtcall", name: this.rt("StrSlice"), dst: r, args: [target, low, high, flags], sid: this.sid });
+      }
+    } else this.emit({ op: "rtcall", name: this.rt("StrSlice"), dst: r, args: [target, from, to!, flags], sid: this.sid });
+    return this.owns(r);
   }
 
   private builtin(e: Extract<BoundExpr, { kind: "builtin" }>, type: MType): Value {
@@ -756,6 +884,27 @@ class Lowering {
         const address = this.value(e.args[0]);
         const r = this.vreg(type);
         this.emit({ op: "load", dst: r, slot: { kind: "deref", ptr: address }, sid: this.sid });
+        return r;
+      }
+      case "CHR": {
+        let result: Value | undefined;
+        for (const arg of e.args) {
+          const ch = this.vreg("str");
+          this.emit({ op: "rtcall", name: this.rt("StrChr"), dst: ch, args: [this.value(arg)], sid: this.sid });
+          if (!result) result = ch;
+          else {
+            const joined = this.vreg("str");
+            this.emit({ op: "rtcall", name: this.rt("StrConcat"), dst: joined, args: [result, ch, imm("u8", 3)], sid: this.sid });
+            result = joined;
+          }
+        }
+        return this.owns(result!);
+      }
+      case "LEN":
+      case "CODE": {
+        const v = this.value(e.args[0]);
+        const r = this.vreg(type);
+        this.emit({ op: "rtcall", name: this.rt(e.name === "LEN" ? "StrLength" : "StrCode"), dst: r, args: [v, imm("u8", this.consumeFlag(v))], sid: this.sid });
         return r;
       }
       default:
@@ -778,6 +927,19 @@ class Lowering {
         return imm(type, 0);
     }
   }
+}
+
+/** Whether a piece of the typed tree calls a user routine (rule B1 of the string note). */
+function containsCall(node: unknown): boolean {
+  if (!node || typeof node !== "object") return false;
+  if (Array.isArray(node)) return node.some(containsCall);
+  const o = node as Record<string, unknown>;
+  if (o.kind === "call" && o.routine) return true;
+  for (const [key, value] of Object.entries(o)) {
+    if (key === "symbol" || key === "routine" || key === "constant" || key === "span") continue;
+    if (containsCall(value)) return true;
+  }
+  return false;
 }
 
 /** The routine definitions of a program, including those inside CODEBANK blocks. */
