@@ -1744,6 +1744,15 @@ a squiggle under the wrong token misleads more than one under the whole line. Th
 badge is an `after` decoration and always sits at the line's end, whatever the squiggle covers — a
 badge anchored to a narrowed range lands in the middle of the code.
 
+**Monaco cuts any text run longer than 50 characters into separate spans**
+(`splitLargeTokens` in `viewLineRenderer.js`, unconditional for left-to-right text), and every
+piece carries the decoration's class. Styled as a pill, a long message therefore renders as several
+pills, split mid-word. The stylesheet joins a piece to the same-class piece before it (no gap,
+padding or rounding at the joint, via `+` and `:has(+ …)`), which is only safe because a line gets
+**one badge per severity**, its messages joined with " • ": two separate badges of the same
+severity side by side would fuse into one pill with no separator. Any inline decoration that styles
+its text as a shape has the same problem.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`

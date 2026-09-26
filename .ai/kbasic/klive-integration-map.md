@@ -40,7 +40,9 @@ integration changes.
   return errors instead.
 - Background builds of external compilers only run when the editor setting
   `allowBackgroundCompile` is on (`startBackgroundCompile` in `MonacoEditor.tsx`); the Klive
-  assembler, and `zxbas` while `zxbasic.compiler` is `klive`, always run.
+  assembler, and `zxbas` while `zxbasic.compiler` is `klive`, always run (the assembler's result
+  feeds language intelligence). Markers, however, are drawn **only** with that setting on, for
+  every language (it defaults to off).
 
 ## 2. Klive's assembler
 
@@ -117,7 +119,9 @@ integration changes.
   compiler's `lineCanHaveBreakpoint` over IPC), markers from background compiles only (~337). Error
   columns mark the error's range only for a language with `exactErrorColumns` (`zxbas`), and only
   when the error has `endColumn > startColumn`; other languages still mark from the first
-  non-blank character to the end of the line. The inline message badge stays at the line's end.
+  non-blank character to the end of the line. The inline message badge stays at the line's end;
+  a line gets one badge per severity, its messages joined with " • " (see the badge note in
+  `.ai/ui-theming-intent-and-lessons.md`).
 - Auto-navigation to the PC: `src/renderer/appIde/IdeEventsHandler.tsx` `refreshCodeLocation`
   (~177), from `sourceMap[pc]`.
 - Watch panel: `src/renderer/appIde/SideBarPanels/WatchPanel.tsx` — assembler symbols only, flat

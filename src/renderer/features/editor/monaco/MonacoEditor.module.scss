@@ -189,3 +189,21 @@
 .warningIcon {
   background-color: var(--status-warning);
 }
+
+/*
+ * Monaco renders a long text run as pieces of at most 50 characters, each its own span carrying
+ * the decoration's class — so a long message would show as several pills, split mid-word. A piece
+ * that follows another of the same pill joins it seamlessly: no gap, no padding, no rounding at the
+ * joint.
+ */
+.errorIcon + .errorIcon,
+.warningIcon + .warningIcon {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  border-radius: 0;
+}
+
+.errorIcon:has(+ .errorIcon),
+.warningIcon:has(+ .warningIcon) {
+  padding-right: 0 !important;
+}

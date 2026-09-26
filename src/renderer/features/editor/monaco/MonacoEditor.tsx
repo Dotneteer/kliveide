@@ -426,11 +426,21 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         : getLineCols(err.line || 1);
     };
 
+    // --- Monaco renders a long text run as several spans, each with the decoration's class, and the
+    // --- stylesheet joins adjacent same-class spans into one pill. So a line gets one badge per
+    // --- severity, its messages joined, or two messages would fuse into one pill with no separator.
+    const badges = new Map<string, { lineNo: number; messages: string[]; isWarning: boolean }>();
+    const addBadge = (lineNo: number, message: string, isWarning: boolean | undefined) => {
+      const key = `${lineNo}:${!!isWarning}`;
+      const badge = badges.get(key) ?? { lineNo, messages: [], isWarning: !!isWarning };
+      if (!badge.messages.includes(message)) badge.messages.push(message);
+      badges.set(key, badge);
+    };
+
     fileErrors.forEach((err) => {
       const lineNo = err.line || 1;
       const isWarning = err.isWarning;
       const { startCol, endCol } = getErrorCols(err);
-      const lineCols = getLineCols(lineNo);
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
       markers.push({
@@ -444,17 +454,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         endColumn: endCol
       });
 
-      // Custom inline pill/badge displayed after the line content
-      afterDecorations.push({
-        range: new monacoEditor.Range(lineNo, lineCols.startCol, lineNo, lineCols.endCol),
-        options: {
-          after: {
-            content: err.message || "Issue detected",
-            inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
-          },
-          isWholeLine: false
-        }
-      });
+      addBadge(lineNo, err.message || "Issue detected", isWarning);
     });
 
     // Add markers for invocation sites found in macro error message prefixes
@@ -472,11 +472,17 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         endLineNumber: lineNo,
         endColumn: endCol
       });
+      addBadge(lineNo, message, isWarning);
+    });
+
+    // Custom inline pill/badge displayed after the line content: one per line and severity
+    badges.forEach(({ lineNo, messages, isWarning }) => {
+      const { startCol, endCol } = getLineCols(lineNo);
       afterDecorations.push({
-        range: new monacoEditor.Range(lineNo, col, lineNo, endCol),
+        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
         options: {
           after: {
-            content: message,
+            content: messages.join("  \u2022  "),
             inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
           },
           isWholeLine: false

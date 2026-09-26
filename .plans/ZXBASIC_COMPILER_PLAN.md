@@ -12,9 +12,10 @@ compiles is still called "ZX BASIC", and documentation says "compatible with Bor
 foundations with their 48K runtime tests; `float40`, bit-exact against the ROM; the Next harness's
 BASIC-ready mode. **Phase 1 done** (2026-09-26): header options, lexer, preprocessor, parser (every
 spec EBNF form has a test), `KBasicCompiler` behind the `zxbasic.compiler` dispatcher, background
-diagnostics with exact columns, lexer-based breakpoint lines. Not yet checked by hand in the
-running IDE: the first session with a display should open a `.bas` project, `set zxbasic.compiler
-klive`, and watch the squiggles follow typing. **Phase 2 (semantics, §14) is next.** Decisions
+diagnostics with exact columns, lexer-based breakpoint lines — verified in the running IDE (driven
+headless under Xvfb through `scripts/doc-shots/harness.cjs`): squiggles and badges follow typing
+about 2.5 s after the last keystroke, a build lists the diagnostics and K001, and the gutter sets
+breakpoints only on statement lines. **Phase 2 (semantics, §14) is next.** Decisions
 D1–D12 settled (§0.2–§0.3). See **Handoff**, immediately below, before doing anything else.
 
 ---
@@ -97,6 +98,13 @@ module.
   error), other block headers accept `:`.
 - Background compiles call `IKliveCompiler.checkFile` when it exists; never pass a flag through
   `compileFile`'s options (the Z80 assembler treats that object as its full option set).
+- Editor markers appear only with **Allow Background Compile** on (`editorOptions.allowBackgroundCompile`,
+  default off) — true of every language, the Z80 assembler included. To check diagnostics in the
+  app, seed it in the harness's settings file (`globalSettings.editorOptions`), open a folder with
+  a `klive.project` whose build root is a `.zxbas` file, and `set -p zxbasic.compiler klive`.
+  (`newp`'s template argument is currently ignored, so `newp … zx-basic` makes an assembly
+  project.) Markers follow the file on disk, which the editor saves 1 s after typing stops, then
+  compiles after a further 1.2 s.
 
 **Phase 0 facts a later phase must know:**
 
