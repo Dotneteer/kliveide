@@ -1,0 +1,728 @@
+{
+  "$comment": "Upstream snapshot the spec in zxbasic-syntax.json describes. Hashes only; see scripts/zxbasic-syntax-check.cjs.",
+  "repo": "boriel-basic/zxbasic",
+  "snapshot": {
+    "ref": "v1.19.0",
+    "commit": "b8d3cd706b07620f4366418fb78f1ac43076da92",
+    "date": "2026-08-03T11:33:18Z",
+    "version": "1.19.0"
+  },
+  "watched": {
+    "folders": [
+      {
+        "folder": "src/zxbc/",
+        "extensions": [
+          ".py"
+        ]
+      },
+      {
+        "folder": "src/zxbpp/",
+        "extensions": [
+          ".py"
+        ]
+      },
+      {
+        "folder": "src/zxbasm/",
+        "extensions": [
+          ".py"
+        ]
+      },
+      {
+        "folder": "docs/",
+        "extensions": [
+          ".md"
+        ]
+      },
+      {
+        "folder": "docs/library/",
+        "extensions": [
+          ".md"
+        ],
+        "recursive": true
+      }
+    ],
+    "files": [
+      "CHANGELOG.md",
+      "pyproject.toml",
+      "src/api/config.py",
+      "src/api/constants.py",
+      "src/api/errmsg.py",
+      "src/api/global_.py",
+      "src/api/options.py"
+    ]
+  },
+  "files": {
+    "CHANGELOG.md": {
+      "sha": "d8c5daeb7119c4c2647f0c1b67aa6ce57c28445c",
+      "size": 32362
+    },
+    "docs/abs.md": {
+      "sha": "54946053163261ede0f40eb92890403218813883",
+      "size": 402
+    },
+    "docs/acs.md": {
+      "sha": "bd757033c12b127bd9f52d36e2134fc652dad427",
+      "size": 563
+    },
+    "docs/asm.md": {
+      "sha": "4d74d96fa85ba74ac38e3110e67a7830db53577e",
+      "size": 611
+    },
+    "docs/asn.md": {
+      "sha": "8853bee9e7aee802bf4ed4c4bf41fcd1594e65ed",
+      "size": 557
+    },
+    "docs/at.md": {
+      "sha": "9b50697ba960c541a55b7efaa5a3b5539061e68b",
+      "size": 659
+    },
+    "docs/atn.md": {
+      "sha": "f0ea7f54c783b7e3f64b74f9430065e6af655a63",
+      "size": 567
+    },
+    "docs/beep.md": {
+      "sha": "bf56a5de3bbbcfcbfc8a59fa822147096d3c8425",
+      "size": 405
+    },
+    "docs/bin.md": {
+      "sha": "d37e002d78d99d8f77046b5d530553ae547c47e6",
+      "size": 580
+    },
+    "docs/bitwiselogic.md": {
+      "sha": "70ca42b848137087e979afb30758aa8affe8e043",
+      "size": 1998
+    },
+    "docs/bold.md": {
+      "sha": "6c60e23f578fdbcfc9cef4b5e851ea9b31b7108f",
+      "size": 853
+    },
+    "docs/border.md": {
+      "sha": "1b3b732625c74ed8213215fc6e7158da3eaa74a0",
+      "size": 539
+    },
+    "docs/bright.md": {
+      "sha": "918d28c591b35fe1affaa1f29e59ddb61a15b831",
+      "size": 1024
+    },
+    "docs/byref.md": {
+      "sha": "659f7ed966186329cddeaf93cdaeefc0ebbc9756",
+      "size": 2514
+    },
+    "docs/byval.md": {
+      "sha": "98e5b4c4aee513fe106dd16ad8938d6007995c45",
+      "size": 961
+    },
+    "docs/cast.md": {
+      "sha": "f3a8fcbac38ab067b8ab28863f3f902ce813ade6",
+      "size": 468
+    },
+    "docs/chr.md": {
+      "sha": "313dc68a08b0453e0481ffcf1c7029f5cc72faa3",
+      "size": 1364
+    },
+    "docs/circle.md": {
+      "sha": "d284f81a6b7aeb87e5753cf562072a7213de2b08",
+      "size": 1223
+    },
+    "docs/cls.md": {
+      "sha": "d8cd8abc29943e8bd38006202a4750cd7f2c731a",
+      "size": 646
+    },
+    "docs/code.md": {
+      "sha": "837213a6ff30ab6f8e25101424ac38ef507d1158",
+      "size": 513
+    },
+    "docs/comments.md": {
+      "sha": "b696aac0f48d7404e76a0612bc7753422dcb66fc",
+      "size": 1949
+    },
+    "docs/const.md": {
+      "sha": "538122d1f45a7b663f377f2e860258f7a71b86f5",
+      "size": 394
+    },
+    "docs/continue.md": {
+      "sha": "8dd3f839d40fd344a7fe6e5799e8a7db5b13d4d6",
+      "size": 586
+    },
+    "docs/cos.md": {
+      "sha": "7a2c34e81d43a1da83dcd7c7cec45ac062e1287c",
+      "size": 671
+    },
+    "docs/data.md": {
+      "sha": "8d58b0a8db1239105be0277b9b742600896b57c3",
+      "size": 1188
+    },
+    "docs/declare.md": {
+      "sha": "36eab8708618d2402a24771cf46835e6c68d75b5",
+      "size": 2280
+    },
+    "docs/dim.md": {
+      "sha": "5a65225bdd4732d8aa62e7adfbdb7e5edcb68067",
+      "size": 6610
+    },
+    "docs/do.md": {
+      "sha": "01b5b7a10522cf30bbbbef412fb164024056fc3a",
+      "size": 2784
+    },
+    "docs/draw.md": {
+      "sha": "c4b169574cd8442ffbabdf733d4cf14c77357ddb",
+      "size": 2245
+    },
+    "docs/end.md": {
+      "sha": "318fe5f125901dc665d37a8e3a02205fde829c20",
+      "size": 515
+    },
+    "docs/exit.md": {
+      "sha": "b2cd359523b7e3b11a7d32d1601e2e88cda2677a",
+      "size": 401
+    },
+    "docs/exp.md": {
+      "sha": "263440467525c6912a7d0140ccf97dc975d64e30",
+      "size": 511
+    },
+    "docs/fastcall.md": {
+      "sha": "be1adb00a446522fec287ad4d5cf4381fd483818",
+      "size": 2483
+    },
+    "docs/flash.md": {
+      "sha": "b7d54f89a5f95eea6ff4963c32e5454c8070ef08",
+      "size": 988
+    },
+    "docs/for.md": {
+      "sha": "5fbc1dc7ae83b1e0a94fb9b91110f6fcc96d4f62",
+      "size": 2388
+    },
+    "docs/function.md": {
+      "sha": "5a009d3099f7085165c0a365c91f76a42f8073e6",
+      "size": 2446
+    },
+    "docs/gosub.md": {
+      "sha": "fde3fe08972d933caf89174a0c5405021aa0520d",
+      "size": 1555
+    },
+    "docs/goto.md": {
+      "sha": "fb4bed8afb27d8a0ad188e437b7ddf44d55251e1",
+      "size": 688
+    },
+    "docs/identifier.md": {
+      "sha": "2fa82fb4ca3ff98a274a29ae34ffb21dea18a5e7",
+      "size": 7242
+    },
+    "docs/if.md": {
+      "sha": "c49b00735b6ace3bd1e89544aa33bd4d721eb07b",
+      "size": 2041
+    },
+    "docs/in.md": {
+      "sha": "c983f225365e144623e8b2ea7f01168992ccca11",
+      "size": 569
+    },
+    "docs/ink.md": {
+      "sha": "1db465e1f579c5fb7ecb6d4100fcba2da016c86d",
+      "size": 1123
+    },
+    "docs/inkey.md": {
+      "sha": "b00f3ed45c3fadc13ddcef6924c48880c674fe6b",
+      "size": 1038
+    },
+    "docs/input.md": {
+      "sha": "76d58c69a2fb81a36b89c8447004556b17a7d82b",
+      "size": 900
+    },
+    "docs/int.md": {
+      "sha": "077e93cb84718475f833fcaa40337106efc23a02",
+      "size": 491
+    },
+    "docs/inverse.md": {
+      "sha": "e194f7fe28033986ff75ef0293eb2c4259ca989f",
+      "size": 1023
+    },
+    "docs/italic.md": {
+      "sha": "a01349df7753ae78f2ab30676879fe6e6cfbad40",
+      "size": 905
+    },
+    "docs/labels.md": {
+      "sha": "df8f6ac4fe583b3b9e6873035d87d416639ead2b",
+      "size": 1314
+    },
+    "docs/lbound.md": {
+      "sha": "7273652465f3b23484bd78a0cf082908ad408d60",
+      "size": 821
+    },
+    "docs/let.md": {
+      "sha": "5c96dd7d9e42fc6c3fe747fe343c6da50423af9f",
+      "size": 227
+    },
+    "docs/library.md": {
+      "sha": "ca1e6d93ed053d7a5d07edfc2124d13af2528115",
+      "size": 6625
+    },
+    "docs/library/asc.bas.md": {
+      "sha": "c4d08bb8128d94fd0edd464fad2b14ad81be2309",
+      "size": 783
+    },
+    "docs/library/attr.md": {
+      "sha": "51bcbf5b52c37d7c561b6f35cfe82b0b3f321e0a",
+      "size": 614
+    },
+    "docs/library/attraddress.md": {
+      "sha": "9bc441975c86a02fc372666549b725018210ec74",
+      "size": 1234
+    },
+    "docs/library/clearbox.md": {
+      "sha": "7c963892802102e4a30f846e9c655348f154709b",
+      "size": 1925
+    },
+    "docs/library/csrlin.md": {
+      "sha": "c31d13479744af3a6bb93e31bfc54efd291271a8",
+      "size": 414
+    },
+    "docs/library/distance.bas.md": {
+      "sha": "2ef6e4f96a2e60f84be8b3d5917ff6ac0e307721",
+      "size": 2203
+    },
+    "docs/library/doublesizeprint.bas.md": {
+      "sha": "3c5736a082abe911523b7fff9ea8c6b8842f221a",
+      "size": 4090
+    },
+    "docs/library/fastplot.md": {
+      "sha": "e7f0c721d1c6b22d957f0b2d1ba763b72bf90318",
+      "size": 1708
+    },
+    "docs/library/fsin.bas.md": {
+      "sha": "aa6c3d27c30c491187ff7a33b5efb8ea6e3309c8",
+      "size": 2799
+    },
+    "docs/library/fsqrt.bas.md": {
+      "sha": "5a127887a3414759a2cd2fed2e920ce01a73bf42",
+      "size": 3429
+    },
+    "docs/library/hex.md": {
+      "sha": "e04868855c7d67bb0b5c1c641d2684c443c6ff9e",
+      "size": 906
+    },
+    "docs/library/hmirror.bas.md": {
+      "sha": "d30ce763868eff5c9d505ce4e15c24e6e6d6688a",
+      "size": 1475
+    },
+    "docs/library/hrprint.bas.md": {
+      "sha": "ef687bbaf2ffe55b9e5671d99f45a408bd53776f",
+      "size": 8634
+    },
+    "docs/library/hrprintfast.bas.md": {
+      "sha": "2841e3b6dc6ea991266877f957fc7c7e8acda07a",
+      "size": 10091
+    },
+    "docs/library/input42.md": {
+      "sha": "59a6debe60f23ad394d2ed2281c938db5cd329d4",
+      "size": 1182
+    },
+    "docs/library/isqrt.bas.md": {
+      "sha": "bd3db8a42c26db07af068d3677d63cd02dcc7e23",
+      "size": 4698
+    },
+    "docs/library/keys.bas.md": {
+      "sha": "f96eadce290011fc28b526a85b6cfb2124650908",
+      "size": 2835
+    },
+    "docs/library/keys/getkey.md": {
+      "sha": "d5a3819aed1b8282990d280b480723d925403cbe",
+      "size": 749
+    },
+    "docs/library/keys/getkeyscancode.md": {
+      "sha": "3a1b9c51ec6793e7162549ecaaa418c0487a1425",
+      "size": 874
+    },
+    "docs/library/keys/multikeys.md": {
+      "sha": "49659665548677e17d2a3370a1afafdd2028c73a",
+      "size": 1115
+    },
+    "docs/library/megalz.bas.md": {
+      "sha": "c71dccb0d643426276d3cc2becdec92260ca3f8a",
+      "size": 3800
+    },
+    "docs/library/memorybank.md": {
+      "sha": "aeb9f5f48eeb29f3855c1af41a9e9bf0f326b0f5",
+      "size": 1058
+    },
+    "docs/library/memorybank/getbank.md": {
+      "sha": "c04692d055ea67eaa17ad5cb4eed8830b419168a",
+      "size": 1038
+    },
+    "docs/library/memorybank/setbank.md": {
+      "sha": "52a88e9db3fcff13451d796714f3df7d8efa8095",
+      "size": 1024
+    },
+    "docs/library/memorybank/setcodebank.md": {
+      "sha": "27e9cf28b1134636e9022153736d9d17d36fd748",
+      "size": 1453
+    },
+    "docs/library/pixelscroll.md": {
+      "sha": "f0f70e8043a2ee0b5edd4412f9d21a92f55b2740",
+      "size": 2226
+    },
+    "docs/library/point.md": {
+      "sha": "001df7477d3863c71db8cc42750008a79714a86b",
+      "size": 779
+    },
+    "docs/library/pos.md": {
+      "sha": "c1793dd0345236424391468a6cb4e82ded6d9baf",
+      "size": 381
+    },
+    "docs/library/print42.bas.md": {
+      "sha": "372dccca81e0b1cfa9ad5ce84a54c16c368375ff",
+      "size": 940
+    },
+    "docs/library/print64.bas.md": {
+      "sha": "5425c27b5274f0504ee34777bf8900100e3b6eed",
+      "size": 12205
+    },
+    "docs/library/print64x32.bas.md": {
+      "sha": "4fff115fefeaf7fa4bbeddeeb7bc8b7acb142fb3",
+      "size": 8806
+    },
+    "docs/library/propprint.bas.md": {
+      "sha": "bd82a37ffb897c9c48ee2b738d6030bf39ba6aaa",
+      "size": 12424
+    },
+    "docs/library/putchars.bas.md": {
+      "sha": "38480509a38e9569110b68dcdab698db33cd179b",
+      "size": 8264
+    },
+    "docs/library/puttile.md": {
+      "sha": "e9b514744d2019d7b2db14fa23fb409fb3837abb",
+      "size": 7725
+    },
+    "docs/library/randomstream.bas.md": {
+      "sha": "230236a29241c6a543a8378c5d98bbcdd3044708",
+      "size": 4024
+    },
+    "docs/library/scraddress.md": {
+      "sha": "2053e10b56402bfdf91e2fa2492c99514ec1a8f3",
+      "size": 1714
+    },
+    "docs/library/screen.md": {
+      "sha": "01340ff921a496583f7e0966caa5d5ea8fa6719f",
+      "size": 900
+    },
+    "docs/library/stdlib.md": {
+      "sha": "db2de8012e3566b58ed568a020fc78fd2d936429",
+      "size": 393
+    },
+    "docs/library/string.bas.md": {
+      "sha": "46ee13f8b118111d2183c815b6b93cff5467f716",
+      "size": 508
+    },
+    "docs/library/string/left.md": {
+      "sha": "eb36b273f7d9a723d82aaf2da9dbee492b9b5bf3",
+      "size": 762
+    },
+    "docs/library/string/mid.md": {
+      "sha": "d8170d0285d723a98de8104200e36522649b39ab",
+      "size": 1167
+    },
+    "docs/library/string/right.md": {
+      "sha": "3daf8e8cd69b4d911fbf8993eafa9daa1b33df01",
+      "size": 774
+    },
+    "docs/library/windowattrscrollup.md": {
+      "sha": "a67feffee445ed4535aaf263f84f25ce58059fd1",
+      "size": 2618
+    },
+    "docs/library/windowpaint.md": {
+      "sha": "a185b879c6a7264787d2d7a345a321e97cd7a491",
+      "size": 3118
+    },
+    "docs/library/windowscrollup.md": {
+      "sha": "191aba1e98a2a4f5d7eeefeffebf060be9631c53",
+      "size": 3763
+    },
+    "docs/library/zx0.md": {
+      "sha": "cbe86a38f5d3522ed1588fdb1241dc374455913e",
+      "size": 1383
+    },
+    "docs/ln.md": {
+      "sha": "85d93360e282e33821aa0ca772fe8f6bac225bca",
+      "size": 745
+    },
+    "docs/load.md": {
+      "sha": "0493c9a4ae1c861dbad2992e212b47d1720a230f",
+      "size": 1748
+    },
+    "docs/on_gosub.md": {
+      "sha": "d6ccd1f132a8b8e42ffcba85ac68adc79df3fcdd",
+      "size": 2249
+    },
+    "docs/on_goto.md": {
+      "sha": "952026c09f8463fd7b4903043e72d5248843b94b",
+      "size": 1943
+    },
+    "docs/operators.md": {
+      "sha": "0e5106ed76395f670ddf09ac6eb9c04ec2a8ecec",
+      "size": 2626
+    },
+    "docs/other_architectures.md": {
+      "sha": "ad7ab8ca4bea61a3fd7bafa7201686169dac3b4d",
+      "size": 9019
+    },
+    "docs/out.md": {
+      "sha": "5b33212057c55a62154e2438ecaa69c78470849d",
+      "size": 651
+    },
+    "docs/over.md": {
+      "sha": "5ff12072e5e76ca8125fdd4fc2b9f671d436a5cd",
+      "size": 1821
+    },
+    "docs/paper.md": {
+      "sha": "90d30e73b5e694fedade39423cb7906921b8ba61",
+      "size": 1104
+    },
+    "docs/pause.md": {
+      "sha": "daa589a6f63ecc888193f0182662febc045ac628",
+      "size": 603
+    },
+    "docs/peek.md": {
+      "sha": "7b4098be2691676a7b20c1ff2e58626a88a4de86",
+      "size": 1057
+    },
+    "docs/pi.md": {
+      "sha": "bb92dfc19dc7db1235525575d4e53c9432fdab0c",
+      "size": 429
+    },
+    "docs/plot.md": {
+      "sha": "10a25648d5f872c30fbdece7e0515331c16c05a9",
+      "size": 925
+    },
+    "docs/poke.md": {
+      "sha": "467d2c23a150529f0627b1e6dabc98ab1f442479",
+      "size": 1204
+    },
+    "docs/print.md": {
+      "sha": "16c9846de7fa1f20b55ea4e1f5ef6555bea95146",
+      "size": 3594
+    },
+    "docs/randomize.md": {
+      "sha": "25bccfa18a27af7862c95338cbf923052f1047c9",
+      "size": 850
+    },
+    "docs/read.md": {
+      "sha": "598207d9c337ee2bc8f8311809f06578e5bed226",
+      "size": 1305
+    },
+    "docs/restore.md": {
+      "sha": "039bf01b5d0257c20a5869638d8a87b3df253dc1",
+      "size": 813
+    },
+    "docs/return.md": {
+      "sha": "02a13c454362e0039c97188eadecff16a0d39b95",
+      "size": 1253
+    },
+    "docs/rnd.md": {
+      "sha": "cd905fb5a79696716be499dbcb346cfa42aa60dd",
+      "size": 1520
+    },
+    "docs/sgn.md": {
+      "sha": "f4cc952472956ad73294fb2af47317d326b9c81a",
+      "size": 698
+    },
+    "docs/shl.md": {
+      "sha": "a1ac5de137b17228ce8dbf3950271fbf94eec508",
+      "size": 1008
+    },
+    "docs/sin.md": {
+      "sha": "7d68c967d63a63b4384c025e8cadaccd082553ff",
+      "size": 657
+    },
+    "docs/sqr.md": {
+      "sha": "dc7ac586e7af903491e5528e7b884668efb2ae02",
+      "size": 975
+    },
+    "docs/stdcall.md": {
+      "sha": "bbac8d22b64c7bdf2bac1fd0a191eccc01f8a456",
+      "size": 1166
+    },
+    "docs/stop.md": {
+      "sha": "a790844295ff42126ea5a999854da77227079b86",
+      "size": 202
+    },
+    "docs/str.md": {
+      "sha": "ca23138bf2fead7785891938989eda118ec582c6",
+      "size": 417
+    },
+    "docs/sub.md": {
+      "sha": "1905a5df748bc8ef451779151a1b9f5defe86b37",
+      "size": 2064
+    },
+    "docs/syntax.md": {
+      "sha": "ef34de12e9bc8a01c3fa37dec2b1a7d59600c74f",
+      "size": 7774
+    },
+    "docs/tab.md": {
+      "sha": "adf4041547ad22c2904be1ef402a97303da23d56",
+      "size": 718
+    },
+    "docs/tan.md": {
+      "sha": "09689637017d88bc3403e7e9f762f58da8c28609",
+      "size": 667
+    },
+    "docs/to.md": {
+      "sha": "eef3c9218d216d82589474f21465e826a95301cf",
+      "size": 943
+    },
+    "docs/types.md": {
+      "sha": "cee879016dade098982284c9b18592829626a684",
+      "size": 5589
+    },
+    "docs/ubound.md": {
+      "sha": "f7ab4b22f25319b4984718a267354988c7f28dad",
+      "size": 824
+    },
+    "docs/usr.md": {
+      "sha": "66d193edd3005f255d28ba163b38cfdaae9cc7ae",
+      "size": 1194
+    },
+    "docs/val.md": {
+      "sha": "288bbb15ab927571843dc80fc5fd66ad763b4568",
+      "size": 849
+    },
+    "docs/while.md": {
+      "sha": "0cd92128223ae2d54ef054a38363ded6a55332f4",
+      "size": 922
+    },
+    "docs/zxb.md": {
+      "sha": "2a2bd20879bf92cc4f046aedc35c93e1b25a5e41",
+      "size": 13269
+    },
+    "pyproject.toml": {
+      "sha": "6908cdb54db2d009d0cd653e466d4216964a0b8b",
+      "size": 3780
+    },
+    "src/api/config.py": {
+      "sha": "7321fed465bae62ffa9259b58ec542c3e512c22a",
+      "size": 8994
+    },
+    "src/api/constants.py": {
+      "sha": "d02632c0bd7d7dc2dcf21c579e704ce99d0be25c",
+      "size": 6219
+    },
+    "src/api/errmsg.py": {
+      "sha": "97ccbca989da483f51121082ba804c4653b5a650",
+      "size": 12317
+    },
+    "src/api/global_.py": {
+      "sha": "c432a4ed835f7fa260c4211753d059999f7e4477",
+      "size": 9613
+    },
+    "src/api/options.py": {
+      "sha": "943be16d320c6db9c630df9368d597ae2d3ea369",
+      "size": 9559
+    },
+    "src/zxbasm/__init__.py": {
+      "sha": "45476f4fb64bb9bdaaa07c1e3e402af47e750966",
+      "size": 415
+    },
+    "src/zxbasm/asm_instruction.py": {
+      "sha": "42e4c4fa2cad620ec5e683a7717020410e9dca34",
+      "size": 4515
+    },
+    "src/zxbasm/asm.py": {
+      "sha": "3782720f4231a6ab7ad03fca78ceb5b4863ebf15",
+      "size": 3930
+    },
+    "src/zxbasm/asmlex.py": {
+      "sha": "d3a782ef9b00ca69cbd8a6c20528245ec9bb6fce",
+      "size": 10834
+    },
+    "src/zxbasm/asmparse.py": {
+      "sha": "58a7ff267be5f7e1c26789fa5f6913184611f4c6",
+      "size": 21026
+    },
+    "src/zxbasm/basic.py": {
+      "sha": "5fd8bea2e10f81d90c80444a9d5db83c9f39f305",
+      "size": 5596
+    },
+    "src/zxbasm/expr.py": {
+      "sha": "536dc2b4d4e120f427b76c712b3c04af8f80bf0f",
+      "size": 3825
+    },
+    "src/zxbasm/global_.py": {
+      "sha": "0fe9fa3edcefa33244c7c3a5fa9fadb82dd3424b",
+      "size": 1141
+    },
+    "src/zxbasm/label.py": {
+      "sha": "e4e09dbbadd7a80a2e68abc5672c65686976b05e",
+      "size": 2595
+    },
+    "src/zxbasm/memory.py": {
+      "sha": "60341889613fdd8a43f55dc7345d7a077988c26a",
+      "size": 11680
+    },
+    "src/zxbasm/version.py": {
+      "sha": "98aad338807539bde00f7db097d2e6e3e9811e65",
+      "size": 401
+    },
+    "src/zxbasm/z80.py": {
+      "sha": "3a9aaa37f513fba1a2f33af8794115f898bd9820",
+      "size": 42330
+    },
+    "src/zxbasm/zxbasm.py": {
+      "sha": "8ee1451c6352878b2d048f71beb732d7cc59a677",
+      "size": 6733
+    },
+    "src/zxbasm/zxnext.py": {
+      "sha": "145abbb6ad8711a1860328a76614d8b9fab7eaf1",
+      "size": 2679
+    },
+    "src/zxbc/__init__.py": {
+      "sha": "8d3e3909dd100159d81d88f1f2239767a67f2e92",
+      "size": 457
+    },
+    "src/zxbc/args_config.py": {
+      "sha": "5e8f5d19ab9d6fcb4fe16e3ca65706418201bf38",
+      "size": 7038
+    },
+    "src/zxbc/args_parser.py": {
+      "sha": "1cbd91564423bf35627f1ad25f19a798945c8cf3",
+      "size": 8103
+    },
+    "src/zxbc/keywords.py": {
+      "sha": "5dec3d46d6a34ee47bdab32f87fdd0140811c1e2",
+      "size": 2746
+    },
+    "src/zxbc/version.py": {
+      "sha": "d6dad9cf0bcb7a12b029f47c62f73a56b67d8f5f",
+      "size": 439
+    },
+    "src/zxbc/zxbc.py": {
+      "sha": "97b07aec85d60289fb6631248d3d30e9daf8ed61",
+      "size": 8054
+    },
+    "src/zxbc/zxblex.py": {
+      "sha": "b92f960b4548026d0f20e2af71f50d398fdc681c",
+      "size": 11654
+    },
+    "src/zxbc/zxbparser.py": {
+      "sha": "a9cd319f7a4f8d9bed6547f06fcbef312ac653f7",
+      "size": 111191
+    },
+    "src/zxbpp/__init__.py": {
+      "sha": "b467db136e2a91b00e429f24f45b070fa021e9eb",
+      "size": 421
+    },
+    "src/zxbpp/base_pplex.py": {
+      "sha": "cf5c799590df6879872fa5f583fdc3e18536d962",
+      "size": 7944
+    },
+    "src/zxbpp/zxbasmpplex.py": {
+      "sha": "2aceac0bd6b2b0ad698c501832b875385413ee5c",
+      "size": 9248
+    },
+    "src/zxbpp/zxbpp.py": {
+      "sha": "7d9010058bebcffeea58429185f9c845fe08f3d9",
+      "size": 27480
+    },
+    "src/zxbpp/zxbpplex.py": {
+      "sha": "a3e34d5c64f063b0a7d8630bcc4af1cb787d7c24",
+      "size": 10953
+    }
+  }
+}

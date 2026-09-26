@@ -60,6 +60,22 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
+## Klive BASIC (the ZX BASIC compiler)
+
+- The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
+  (readiness) before any work on it.
+- **Provenance rule — a hard requirement of the project author:** no code from upstream
+  `boriel-basic/zxbasic` (AGPL compiler, runtime, libraries) or from NextBuild's compiler fork is
+  copied, converted or translated into Klive, and the upstream compiler is never read for design.
+  Upstream may be read only to discover language and interface facts, recorded in Klive's own words.
+  **Running** an installed upstream `zxbc` as a behavioural oracle is allowed (plan D12): only the
+  observed results of Klive's own test programs are recorded, never generated code, and never in CI.
+- References: `.ai/zxbasic-syntax/` (the language spec, the only language reference; refresh with
+  `node scripts/zxbasic-syntax-check.cjs`) and `.ai/kbasic/` (runtime ABI, CODEBANK contract,
+  integration map, documented library API).
+- Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
+  to BASIC; read its README) and `test/harness/zxnext/`.
+
 ## ZX Spectrum Next Test Harness
 
 - **Test ZX Spectrum Next hardware behaviour with the harness in `test/harness/zxnext/`; read its

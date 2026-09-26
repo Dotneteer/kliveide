@@ -1,0 +1,2080 @@
+{
+  "$comment": "Documented API of upstream ZX BASIC #include libraries (upstream v1.19.0). Derived from the upstream documentation, CC BY 4.0, (c) Jose Rodriguez-Rosa (Boriel) and contributors; summaries paraphrased. This is the contract Klive BASIC implements in its own standard library; no library code is taken from upstream. See .ai/kbasic/README.md.",
+  "upstream": {
+    "repo": "boriel-basic/zxbasic",
+    "tag": "v1.19.0",
+    "commit": "b8d3cd706b07620f4366418fb78f1ac43076da92"
+  },
+  "libraries": [
+    {
+      "name": "asc.bas",
+      "docs": "docs/library/asc.bas.md",
+      "include": "#include <asc.bas>",
+      "provides": [
+        "asc"
+      ],
+      "summary": "ASCII code of the n-th character of a string; FreeBASIC compatible; 0 beyond end.",
+      "arch": "all"
+    },
+    {
+      "name": "attr.bas",
+      "docs": "docs/library/attr.md",
+      "include": "#include <attr.bas>",
+      "provides": [
+        "ATTR"
+      ],
+      "summary": "Attribute byte at (row, col); rows 22/23 allowed; auto with --sinclair.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "attrAddress.bas",
+      "docs": "docs/library/attraddress.md",
+      "include": null,
+      "provides": [
+        "attrAddress"
+      ],
+      "summary": "Attribute memory address for a character position (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "clearBox.bas",
+      "docs": "docs/library/clearbox.md",
+      "include": null,
+      "provides": [
+        "clearBox"
+      ],
+      "summary": "Blank the pixels of a character-square rectangle (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "csrlin.bas",
+      "docs": "docs/library/csrlin.md",
+      "include": "#include <csrlin.bas>",
+      "provides": [
+        "CSRLIN"
+      ],
+      "summary": "Row of the text cursor.",
+      "arch": "all"
+    },
+    {
+      "name": "distance.bas",
+      "docs": "docs/library/distance.bas.md",
+      "include": null,
+      "provides": [
+        "distance"
+      ],
+      "summary": "Fast approximate SQR(x^2+y^2) for bytes (copy listing).",
+      "arch": "all"
+    },
+    {
+      "name": "doubleSizePrint.bas",
+      "docs": "docs/library/doublesizeprint.bas.md",
+      "include": null,
+      "provides": [
+        "doubleSizePrintChar",
+        "doubleSizePrint"
+      ],
+      "summary": "Double-size character/string printing (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "fastPlot.bas",
+      "docs": "docs/library/fastplot.md",
+      "include": null,
+      "provides": [
+        "fastPlot"
+      ],
+      "summary": "Fast OVER 0 pixel plot without attributes; optional screen-tables variant (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "fsin.bas / fmath.bas",
+      "docs": "docs/library/fsin.bas.md",
+      "include": "#include <fmath.bas>",
+      "provides": [
+        "fSin",
+        "fCos",
+        "fTan"
+      ],
+      "summary": "Fast Fixed-point trig in degrees, ~0.25% accuracy; page says bundled as fmath.bas.",
+      "arch": "all"
+    },
+    {
+      "name": "fSqrt.bas",
+      "docs": "docs/library/fsqrt.bas.md",
+      "include": null,
+      "provides": [
+        "fSqrt"
+      ],
+      "summary": "Newton-Raphson Float square root, ~6x faster than ROM SQR, same accuracy.",
+      "arch": "ZX Spectrum (ROM calculator)"
+    },
+    {
+      "name": "hex.bas",
+      "docs": "docs/library/hex.md",
+      "include": "#include <hex.bas>",
+      "provides": [
+        "hex",
+        "hex16",
+        "hex8"
+      ],
+      "summary": "Hexadecimal string conversion for 32/16/8-bit unsigned values.",
+      "arch": "all"
+    },
+    {
+      "name": "hMirror.bas",
+      "docs": "docs/library/hmirror.bas.md",
+      "include": null,
+      "provides": [
+        "hMirror"
+      ],
+      "summary": "Reverse bit order of a byte (copy listing; use the second, faster version).",
+      "arch": "all"
+    },
+    {
+      "name": "HRPrint.bas",
+      "docs": "docs/library/hrprint.bas.md",
+      "include": "#include \"hrprint.bas\" (local copy)",
+      "provides": [
+        "HRPrint"
+      ],
+      "summary": "Print a character at any pixel position with attributes and OVER modes.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "HRPrintFast.bas",
+      "docs": "docs/library/hrprintfast.bas.md",
+      "include": null,
+      "provides": [
+        "HRPrintFast"
+      ],
+      "summary": "Table-driven HRPrint, ~20% faster; needs Screentables.asm/RotateTables.asm from forum.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "input42.bas",
+      "docs": "docs/library/input42.md",
+      "include": "#include <input42.bas>",
+      "provides": [
+        "INPUT42"
+      ],
+      "summary": "Line input echoed through print42; always returns a string.",
+      "arch": "ZX Spectrum (uses ROM)"
+    },
+    {
+      "name": "iSqrt.bas",
+      "docs": "docs/library/isqrt.bas.md",
+      "include": null,
+      "provides": [
+        "iSqrt"
+      ],
+      "summary": "Integer square root of a uLong, 50-100x faster than ROM (copy listing).",
+      "arch": "all"
+    },
+    {
+      "name": "keys.bas",
+      "docs": "docs/library/keys.bas.md",
+      "include": "#include <keys.bas>",
+      "provides": [
+        "GetKey",
+        "GetKeyScanCode",
+        "MultiKeys",
+        "KEY* scan code constants"
+      ],
+      "summary": "Standard library: fast keyboard scanning without the ROM; scan-code constants per row half.",
+      "arch": "ZX Spectrum keyboard; no ROM needed"
+    },
+    {
+      "name": "keys.bas (GetKey)",
+      "docs": "docs/library/keys/getkey.md",
+      "include": "#include <keys.bas>",
+      "provides": [
+        "GetKey"
+      ],
+      "summary": "Wait for a key and return its ASCII code (UByte).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "keys.bas (GetKeyScanCode)",
+      "docs": "docs/library/keys/getkeyscancode.md",
+      "include": "#include <keys.bas>",
+      "provides": [
+        "GetKeyScanCode"
+      ],
+      "summary": "Scan code of pressed key(s) ORed, 0 if none; no wait.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "keys.bas (MultiKeys)",
+      "docs": "docs/library/keys/multikeys.md",
+      "include": "#include <keys.bas>",
+      "provides": [
+        "MultiKeys"
+      ],
+      "summary": "Test several keys at once (same row half).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "megalz.bas",
+      "docs": "docs/library/megalz.bas.md",
+      "include": "#include <megalz.bas>",
+      "provides": [
+        "megaLZDepack"
+      ],
+      "summary": "MegaLZ v4 decompressor wrapper (110-byte relocatable depacker).",
+      "arch": "all (Z80)"
+    },
+    {
+      "name": "memorybank.bas",
+      "docs": "docs/library/memorybank.md",
+      "include": "#include <memorybank.bas>",
+      "provides": [
+        "SetBank",
+        "GetBank",
+        "SetCodeBank"
+      ],
+      "summary": "Paged RAM management at $c000 (and copy-to-$8000) for 128K models.",
+      "arch": "ZX Spectrum 128K and compatibles only"
+    },
+    {
+      "name": "memorybank.bas (GetBank)",
+      "docs": "docs/library/memorybank/getbank.md",
+      "include": "#include <memorybank.bas>",
+      "provides": [
+        "GetBank"
+      ],
+      "summary": "Bank currently at $c000 (from BANKM).",
+      "arch": "128K"
+    },
+    {
+      "name": "memorybank.bas (SetBank)",
+      "docs": "docs/library/memorybank/setbank.md",
+      "include": "#include <memorybank.bas>",
+      "provides": [
+        "SetBank"
+      ],
+      "summary": "Page a bank into $c000-$ffff and update BANKM.",
+      "arch": "128K"
+    },
+    {
+      "name": "memorybank.bas (SetCodeBank)",
+      "docs": "docs/library/memorybank/setcodebank.md",
+      "include": "#include <memorybank.bas>",
+      "provides": [
+        "SetCodeBank"
+      ],
+      "summary": "Copy a bank to $8000 (per memorybank.md); destroys bank 2; book chapter 14 architecture.",
+      "arch": "128K"
+    },
+    {
+      "name": "pixelScroll.bas",
+      "docs": "docs/library/pixelscroll.md",
+      "include": null,
+      "provides": [
+        "PixelScrollUp"
+      ],
+      "summary": "Scroll the pixel screen up N rows (attributes untouched); needs ScreenTables.bas.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "point.bas",
+      "docs": "docs/library/point.md",
+      "include": "#include <point.bas>",
+      "provides": [
+        "POINT"
+      ],
+      "summary": "Pixel test at (x, y); auto with --sinclair.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "pos.bas",
+      "docs": "docs/library/pos.md",
+      "include": "#include <pos.bas>",
+      "provides": [
+        "POS"
+      ],
+      "summary": "Column of the text cursor.",
+      "arch": "all"
+    },
+    {
+      "name": "print42.bas",
+      "docs": "docs/library/print42.bas.md",
+      "include": "#include <print42.bas>",
+      "provides": [
+        "print42",
+        "printat42"
+      ],
+      "summary": "42-column (6 px) fixed-width text printing.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "print64.bas",
+      "docs": "docs/library/print64.bas.md",
+      "include": "#include <print64.bas>",
+      "provides": [
+        "print64",
+        "printat64"
+      ],
+      "summary": "64-column (4 px) fixed-width text printing with its own cursor.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "Print64x32.bas",
+      "docs": "docs/library/print64x32.bas.md",
+      "include": null,
+      "provides": [
+        "Print64x32",
+        "Print64x32At",
+        "Print64x32StringAt"
+      ],
+      "summary": "64x32 grid text (2048 positions), no attributes; needs ScreenTables.asm from forum.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "propPrint.bas",
+      "docs": "docs/library/propprint.bas.md",
+      "include": null,
+      "provides": [
+        "propPrint"
+      ],
+      "summary": "Proportional text printing at pixel positions (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "putchars.bas",
+      "docs": "docs/library/putchars.bas.md",
+      "include": null,
+      "provides": [
+        "putChars",
+        "paint",
+        "paintData"
+      ],
+      "summary": "Block graphics and attribute painting at character coordinates; no bounds checks (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "putTile.bas",
+      "docs": "docs/library/puttile.md",
+      "include": null,
+      "provides": [
+        "putTile"
+      ],
+      "summary": "PUSH/POP-based 2x2 character tile blit with attributes; disables interrupts (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "randomStream.bas",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "provides": [
+        "randomBase",
+        "updateSeed",
+        "time",
+        "randomLimit",
+        "randomFixed"
+      ],
+      "summary": "Integer/Fixed random numbers from Patrik Rak's stream generator (copy listing).",
+      "arch": "ZX Spectrum (FRAMES sysvar for seeding)"
+    },
+    {
+      "name": "scrAddress.bas",
+      "docs": "docs/library/scraddress.md",
+      "include": null,
+      "provides": [
+        "scrAddress",
+        "attrAddress"
+      ],
+      "summary": "Screen and attribute addresses for a character cell (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "screen.bas",
+      "docs": "docs/library/screen.md",
+      "include": "#include <screen.bas>",
+      "provides": [
+        "SCREEN$"
+      ],
+      "summary": "Character at (row, col); auto with --sinclair.",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "stdlib (index)",
+      "docs": "docs/library/stdlib.md",
+      "include": null,
+      "provides": [],
+      "summary": "Index of bundled standard libraries: keys.bas and string.bas; some libraries may be architecture-specific (none flagged).",
+      "arch": "all"
+    },
+    {
+      "name": "string.bas",
+      "docs": "docs/library/string.bas.md",
+      "include": "#include <string.bas>",
+      "provides": [
+        "left",
+        "mid",
+        "right"
+      ],
+      "summary": "Standard library string slicing; strings are 0-based unless --string-base=1.",
+      "arch": "all"
+    },
+    {
+      "name": "string.bas (left)",
+      "docs": "docs/library/string/left.md",
+      "include": "#include <string.bas>",
+      "provides": [
+        "left"
+      ],
+      "summary": "First N chars.",
+      "arch": "all"
+    },
+    {
+      "name": "string.bas (mid)",
+      "docs": "docs/library/string/mid.md",
+      "include": "#include <string.bas>",
+      "provides": [
+        "mid"
+      ],
+      "summary": "N chars from a 0-based start.",
+      "arch": "all"
+    },
+    {
+      "name": "string.bas (right)",
+      "docs": "docs/library/string/right.md",
+      "include": "#include <string.bas>",
+      "provides": [
+        "right"
+      ],
+      "summary": "Last N chars.",
+      "arch": "all"
+    },
+    {
+      "name": "windowAttrScrollUP.bas",
+      "docs": "docs/library/windowattrscrollup.md",
+      "include": null,
+      "provides": [
+        "BLAttrWindowScrollUp"
+      ],
+      "summary": "Scroll a window's attributes up one row (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "windowPaint.bas",
+      "docs": "docs/library/windowpaint.md",
+      "include": null,
+      "provides": [
+        "windowPaint",
+        "paint"
+      ],
+      "summary": "Set attributes of a rectangle without touching pixels (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "windowScrollUP.bas",
+      "docs": "docs/library/windowscrollup.md",
+      "include": null,
+      "provides": [
+        "BLWindowScrollUp"
+      ],
+      "summary": "Scroll a window's pixels up one character row (copy listing).",
+      "arch": "ZX Spectrum"
+    },
+    {
+      "name": "zx0.bas",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "provides": [
+        "dzx0Standard",
+        "dzx0StandardBack",
+        "dzx0Turbo",
+        "dzx0TurboBack",
+        "dzx0Mega",
+        "dzx0MegaBack",
+        "dzx0SmartRCS",
+        "dzx0SmartRCSBack",
+        "dzx0AgileRCS"
+      ],
+      "summary": "Einar Saukas' ZX0 decompressors (src, dst); free to use, credit requested.",
+      "arch": "all (Z80)"
+    }
+  ],
+  "routines": [
+    {
+      "name": "ASC",
+      "kind": "function",
+      "docs": "docs/library/asc.bas.md",
+      "include": "#include <asc.bas>",
+      "syntax": [
+        "asc(A$, n)"
+      ],
+      "returns": "UByte (implied; same as CODE(A$(n)))",
+      "parameters": [
+        {
+          "name": "A$",
+          "type": "String",
+          "notes": null
+        },
+        {
+          "name": "n",
+          "type": "numeric",
+          "notes": "character index"
+        }
+      ],
+      "summary": "ASCII code of the n-th character of a string (FreeBASIC compatibility).",
+      "notes": "Returns 0 rather than an error when n is beyond the string length. Library function; must be included."
+    },
+    {
+      "name": "ATTR",
+      "kind": "function",
+      "docs": "docs/library/attr.md",
+      "include": "#include <attr.bas>",
+      "syntax": [
+        "ATTR(row, col)"
+      ],
+      "returns": "attribute byte (type not stated)",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "numeric",
+          "notes": null
+        },
+        {
+          "name": "col",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "Returns the colour attribute byte of the screen cell at (row, col).",
+      "notes": "Extends Sinclair BASIC: rows 22 and 23 allowed. Available without #include when compiling with -Z/--sinclair (zxb.md). Sample on page calls ATTR$(9, 10), inconsistent with the documented ATTR(row, col)."
+    },
+    {
+      "name": "attrAddress",
+      "kind": "function",
+      "docs": "docs/library/attraddress.md",
+      "include": null,
+      "syntax": [
+        "attrAddress(x as uByte, y as uByte) as uInteger"
+      ],
+      "returns": "uInteger",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "column"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "row"
+        }
+      ],
+      "summary": "Returns the address of the attribute byte for character position (x, y).",
+      "notes": "Not bundled: copy the listing (also repeated in docs/library/scraddress.md). Example: poke attrAddress(10,10),43."
+    },
+    {
+      "name": "BLAttrWindowScrollUp",
+      "kind": "statement",
+      "docs": "docs/library/windowattrscrollup.md",
+      "include": null,
+      "syntax": [
+        "BLAttrWindowScrollUp(X AS UBYTE, Y AS UBYTE, Width AS UBYTE, Height AS UBYTE)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "X",
+          "type": "UBYTE",
+          "notes": "top-left column"
+        },
+        {
+          "name": "Y",
+          "type": "UBYTE",
+          "notes": "top-left row"
+        },
+        {
+          "name": "Width",
+          "type": "UBYTE",
+          "notes": "chars"
+        },
+        {
+          "name": "Height",
+          "type": "UBYTE",
+          "notes": "chars"
+        }
+      ],
+      "summary": "Scrolls the colour attributes of a character window up by one row.",
+      "notes": "Companion to BLWindowScrollUp; leaves the last line's attributes untouched. Not bundled (copy listing)."
+    },
+    {
+      "name": "BLWindowScrollUp",
+      "kind": "statement",
+      "docs": "docs/library/windowscrollup.md",
+      "include": null,
+      "syntax": [
+        "BLWindowScrollUp(X as uByte, Y as uByte, Width as uByte, Height as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "X",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "Y",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "Width",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "Height",
+          "type": "uByte",
+          "notes": null
+        }
+      ],
+      "summary": "Scrolls a rectangular character window of the pixel screen up by one character row and blanks the last row.",
+      "notes": "Intended for text windows (e.g. adventures); attributes not scrolled. Not bundled."
+    },
+    {
+      "name": "clearBox",
+      "kind": "statement",
+      "docs": "docs/library/clearbox.md",
+      "include": null,
+      "syntax": [
+        "clearBox(x as uByte, y as uByte, width as uByte, height as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "0<x<32"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "0<y<23"
+        },
+        {
+          "name": "width",
+          "type": "uByte",
+          "notes": "x+width<32"
+        },
+        {
+          "name": "height",
+          "type": "uByte",
+          "notes": "y+height<23"
+        }
+      ],
+      "summary": "Blanks the pixels of a rectangle measured in character squares.",
+      "notes": "No error checking at all. Attributes untouched. Not bundled."
+    },
+    {
+      "name": "CSRLIN",
+      "kind": "function",
+      "docs": "docs/library/csrlin.md",
+      "include": "#include <csrlin.bas>",
+      "syntax": [
+        "CSRLIN()"
+      ],
+      "returns": "row number (type not stated)",
+      "parameters": null,
+      "summary": "Row (line) of the text cursor, 0 = top.",
+      "notes": "Not in Sinclair BASIC."
+    },
+    {
+      "name": "distance",
+      "kind": "function",
+      "docs": "docs/library/distance.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION fastcall distance(a as ubyte, b as ubyte) as uInteger"
+      ],
+      "returns": "uInteger",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "ubyte",
+          "notes": null
+        },
+        {
+          "name": "b",
+          "type": "ubyte",
+          "notes": null
+        }
+      ],
+      "summary": "Very fast integer approximation of SQR(a^2 + b^2).",
+      "notes": "Error up to ~10% as inputs approach 255. Benchmark on page: distance 8.98 s vs iSqrt 50.1 s vs fSqrt 2625 s vs ROM SQR 7337 s. Not bundled."
+    },
+    {
+      "name": "doubleSizePrint",
+      "kind": "statement",
+      "docs": "docs/library/doublesizeprint.bas.md",
+      "include": null,
+      "syntax": [
+        "doubleSizePrint(y as uByte, x as uByte, thingToPrint$ as String)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "thingToPrint$",
+          "type": "String",
+          "notes": null
+        }
+      ],
+      "summary": "Prints a string in double-size characters starting at (y, x).",
+      "notes": "Stops at screen edge; no wrapping. Not bundled."
+    },
+    {
+      "name": "doubleSizePrintChar",
+      "kind": "statement",
+      "docs": "docs/library/doublesizeprint.bas.md",
+      "include": null,
+      "syntax": [
+        "doubleSizePrintChar(y as uByte, x as uByte, thingToPrint as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "<22"
+        },
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "<30"
+        },
+        {
+          "name": "thingToPrint",
+          "type": "uByte",
+          "notes": "code 32..164"
+        }
+      ],
+      "summary": "Prints one character (ASCII code, incl. UDGs 144-164) at double size.",
+      "notes": "143 bytes; silently ignores out-of-range input. Not bundled."
+    },
+    {
+      "name": "dzx0AgileRCS",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0AgileRCS(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": "compressed data"
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": "destination"
+        }
+      ],
+      "summary": "ZX0 decompressor variant (agile, RCS screen layout).",
+      "notes": "Example decompresses an RCS+ZX0 image straight to 16384. Mention ZX0 in your docs as requested by its author."
+    },
+    {
+      "name": "dzx0Mega",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0Mega(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "ZX0 decompressor, mega (fastest/largest) variant.",
+      "notes": null
+    },
+    {
+      "name": "dzx0MegaBack",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0MegaBack(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "Backwards variant of dzx0Mega.",
+      "notes": null
+    },
+    {
+      "name": "dzx0SmartRCS",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0SmartRCS(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "ZX0 decompressor for RCS-encoded screens (smart variant).",
+      "notes": null
+    },
+    {
+      "name": "dzx0SmartRCSBack",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0SmartRCSBack(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "Backwards variant of dzx0SmartRCS.",
+      "notes": null
+    },
+    {
+      "name": "dzx0Standard",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0Standard(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "ZX0 decompressor, standard (smallest) variant.",
+      "notes": null
+    },
+    {
+      "name": "dzx0StandardBack",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0StandardBack(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "Backwards variant of dzx0Standard.",
+      "notes": null
+    },
+    {
+      "name": "dzx0Turbo",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0Turbo(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "ZX0 decompressor, turbo variant.",
+      "notes": "Example: dzx0Turbo(51200, 16384)."
+    },
+    {
+      "name": "dzx0TurboBack",
+      "kind": "statement",
+      "docs": "docs/library/zx0.md",
+      "include": "#include <zx0.bas>",
+      "syntax": [
+        "dzx0TurboBack(src, dst)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "address",
+          "notes": null
+        },
+        {
+          "name": "dst",
+          "type": "address",
+          "notes": null
+        }
+      ],
+      "summary": "Backwards variant of dzx0Turbo.",
+      "notes": null
+    },
+    {
+      "name": "fastPlot",
+      "kind": "statement",
+      "docs": "docs/library/fastplot.md",
+      "include": null,
+      "syntax": [
+        "fastPlot(x as uByte, y as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "y>191 ignored"
+        }
+      ],
+      "summary": "Plots one pixel in OVER 0 mode at high speed, ignoring attributes.",
+      "notes": "Two versions: plain (~8,500 px/s) and a screen-tables version (~10,000 px/s) that needs the ScreenTables label included once. Not bundled."
+    },
+    {
+      "name": "fCos",
+      "kind": "function",
+      "docs": "docs/library/fsin.bas.md",
+      "include": "#include <fmath.bas>",
+      "syntax": [
+        "fCos(num as FIXED) as FIXED"
+      ],
+      "returns": "FIXED",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "FIXED",
+          "notes": "degrees"
+        }
+      ],
+      "summary": "Fast Fixed-point cosine in DEGREES, implemented as fSin(90 - num).",
+      "notes": "About 0.25% accuracy; requires fSin. Page says the library is bundled as fmath.bas although the page is named fsin.bas."
+    },
+    {
+      "name": "fSin",
+      "kind": "function",
+      "docs": "docs/library/fsin.bas.md",
+      "include": "#include <fmath.bas>",
+      "syntax": [
+        "fSin(num as FIXED) as FIXED"
+      ],
+      "returns": "FIXED",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "FIXED",
+          "notes": "degrees; any range (reduced with MOD 360)"
+        }
+      ],
+      "summary": "Fast Fixed-point sine in DEGREES using a 46-entry lookup table with interpolation.",
+      "notes": "About 0.25% accurate; basis for fCos/fTan. Bundled per page as fmath.bas."
+    },
+    {
+      "name": "fSqrt",
+      "kind": "function",
+      "docs": "docs/library/fsqrt.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION FASTCALL fSqrt(radicand as FLOAT) as FLOAT"
+      ],
+      "returns": "FLOAT",
+      "parameters": [
+        {
+          "name": "radicand",
+          "type": "FLOAT",
+          "notes": "sign bit cleared, so negatives are treated as positive"
+        }
+      ],
+      "summary": "Float square root by Newton-Raphson, same result as ROM SQR but about 6x faster.",
+      "notes": "Bundling status not stated on the page (listed as non-standard in library.md)."
+    },
+    {
+      "name": "fTan",
+      "kind": "function",
+      "docs": "docs/library/fsin.bas.md",
+      "include": "#include <fmath.bas>",
+      "syntax": [
+        "fTan(num as FIXED) as FIXED"
+      ],
+      "returns": "FIXED",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "FIXED",
+          "notes": "degrees"
+        }
+      ],
+      "summary": "Fast Fixed-point tangent in DEGREES: fSin(num) / fSin(90 - num).",
+      "notes": "Requires fSin."
+    },
+    {
+      "name": "GetBank",
+      "kind": "function",
+      "docs": "docs/library/memorybank/getbank.md",
+      "include": "#include <memorybank.bas>",
+      "syntax": [
+        "GetBank()"
+      ],
+      "returns": "bank number 0-7 (type not stated)",
+      "parameters": null,
+      "summary": "Returns the RAM bank currently paged at $c000, read from system variable BANKM.",
+      "notes": "Danger: programs extending past $c000 may break."
+    },
+    {
+      "name": "GetKey",
+      "kind": "function",
+      "docs": "docs/library/keys/getkey.md",
+      "include": "#include <keys.bas>",
+      "syntax": [
+        "GetKey()"
+      ],
+      "returns": "UByte",
+      "parameters": null,
+      "summary": "Waits for a key press and returns its ASCII code.",
+      "notes": "Cannot detect multiple keys; more efficient than INKEY$ strings. Example calls it as GetKey without parentheses."
+    },
+    {
+      "name": "GetKeyScanCode",
+      "kind": "function",
+      "docs": "docs/library/keys/getkeyscancode.md",
+      "include": "#include <keys.bas>",
+      "syntax": [
+        "GetKeyScanCode()"
+      ],
+      "returns": "UInteger scan code (0 if none)",
+      "parameters": null,
+      "summary": "Returns the scan code(s) of the currently pressed key(s) bitwise-ORed, or 0; does not wait.",
+      "notes": "Multiple keys only detectable within the same keyboard row half. Page title mistakenly says GetKey."
+    },
+    {
+      "name": "HEX",
+      "kind": "function",
+      "docs": "docs/library/hex.md",
+      "include": "#include <hex.bas>",
+      "syntax": [
+        "A$ = hex(n32)"
+      ],
+      "returns": "String (8 chars)",
+      "parameters": [
+        {
+          "name": "n32",
+          "type": "ULong",
+          "notes": null
+        }
+      ],
+      "summary": "8-character hexadecimal string of a 32-bit unsigned value.",
+      "notes": "Not in Sinclair BASIC; avoid multiple inclusion."
+    },
+    {
+      "name": "HEX16",
+      "kind": "function",
+      "docs": "docs/library/hex.md",
+      "include": "#include <hex.bas>",
+      "syntax": [
+        "B$ = hex16(n16)"
+      ],
+      "returns": "String (4 chars)",
+      "parameters": [
+        {
+          "name": "n16",
+          "type": "UInteger",
+          "notes": null
+        }
+      ],
+      "summary": "4-character hex string of a 16-bit unsigned value (calls HEX).",
+      "notes": null
+    },
+    {
+      "name": "HEX8",
+      "kind": "function",
+      "docs": "docs/library/hex.md",
+      "include": "#include <hex.bas>",
+      "syntax": [
+        "C$ = hex8(n8)"
+      ],
+      "returns": "String (2 chars)",
+      "parameters": [
+        {
+          "name": "n8",
+          "type": "UByte",
+          "notes": null
+        }
+      ],
+      "summary": "2-character hex string of an 8-bit unsigned value (calls HEX).",
+      "notes": "Not listed in identifier.md's library-name list (only HEX/HEX16 are)."
+    },
+    {
+      "name": "hMirror",
+      "kind": "function",
+      "docs": "docs/library/hmirror.bas.md",
+      "include": null,
+      "syntax": [
+        "Function fastcall hMirror(number as uByte) as uByte"
+      ],
+      "returns": "uByte",
+      "parameters": [
+        {
+          "name": "number",
+          "type": "uByte",
+          "notes": null
+        }
+      ],
+      "summary": "Reverses the bit order of a byte (bit 7 to bit 0), e.g. to mirror sprite graphics.",
+      "notes": "Two listings: the first (unrolled loop, 25 bytes/96 T) is described as basically deprecated; use the second (17 bytes/66 T). Not bundled."
+    },
+    {
+      "name": "HRPrint",
+      "kind": "statement",
+      "docs": "docs/library/hrprint.bas.md",
+      "include": null,
+      "syntax": [
+        "HRPrint(x as uByte, y as uByte, char as uInteger, attribute as uByte, overprint as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "pixel column"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "pixel row (>191 skipped)"
+        },
+        {
+          "name": "char",
+          "type": "uInteger",
+          "notes": "address of 8 UDG-style bytes; values <256 are taken as ROM charset codes"
+        },
+        {
+          "name": "attribute",
+          "type": "uByte",
+          "notes": "attribute byte; 0 = do not touch attributes"
+        },
+        {
+          "name": "overprint",
+          "type": "uByte",
+          "notes": "doc says 0/1; code comments: 0 direct, 0xB6 OR, 0xAE XOR"
+        }
+      ],
+      "summary": "Prints an 8x8 character at any pixel position, optionally setting attributes.",
+      "notes": "Attribute blocks cannot align with off-grid characters, so neighbouring cells change colour. Example includes it as #include \"hrprint.bas\". Not bundled."
+    },
+    {
+      "name": "HRPrintFast",
+      "kind": "statement",
+      "docs": "docs/library/hrprintfast.bas.md",
+      "include": null,
+      "syntax": [
+        "HRPrintFast(x AS UBYTE, y AS UBYTE, char AS UInteger, attribute AS UBYTE, overprint AS UBYTE)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "UBYTE",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "UBYTE",
+          "notes": null
+        },
+        {
+          "name": "char",
+          "type": "UInteger",
+          "notes": "data address or charset code"
+        },
+        {
+          "name": "attribute",
+          "type": "UBYTE",
+          "notes": "0 = none"
+        },
+        {
+          "name": "overprint",
+          "type": "UBYTE",
+          "notes": "0 or non-zero (OR)"
+        }
+      ],
+      "summary": "Table-driven variant of HRPrint, ~20% faster per character but much larger.",
+      "notes": "Needs Screentables.asm and RotateTables.asm (download from forum; not on the wiki). The doc's usage line still says HRPrint(...)."
+    },
+    {
+      "name": "INPUT",
+      "kind": "function",
+      "docs": "docs/input.md",
+      "include": "#include <input.bas>",
+      "syntax": [
+        "variable = INPUT(max_length)"
+      ],
+      "returns": "String (always)",
+      "parameters": [
+        {
+          "name": "max_length",
+          "type": "numeric",
+          "notes": "maximum characters accepted"
+        }
+      ],
+      "summary": "Library function: shows a cursor, reads a line and returns it as a String when ENTER is pressed.",
+      "notes": "Not equivalent to Sinclair's INPUT statement: it is a function returning a string, and the cursor appears at the last print position (use PRINT AT to place it)."
+    },
+    {
+      "name": "INPUT42",
+      "kind": "function",
+      "docs": "docs/library/input42.md",
+      "include": "#include <input42.bas>",
+      "syntax": [
+        "A$ = INPUT42(MaxChars)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "MaxChars",
+          "type": "UINTEGER",
+          "notes": "max 65535"
+        }
+      ],
+      "summary": "Simple INPUT that echoes through the 42-column PRINT42 routine.",
+      "notes": "Always returns a string; cursor at last print position; avoid multiple inclusion; not like Sinclair INPUT."
+    },
+    {
+      "name": "iSqrt",
+      "kind": "function",
+      "docs": "docs/library/isqrt.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION FASTCALL iSqrt(num as uLong) as uInteger"
+      ],
+      "returns": "uInteger (in HL)",
+      "parameters": [
+        {
+          "name": "num",
+          "type": "uLong",
+          "notes": "arrives in DEHL"
+        }
+      ],
+      "summary": "Integer square root (floor), 50-100x faster than ROM SQR.",
+      "notes": "16-bit fast path for num < 65536 (~100x), 32-bit path otherwise (~50x). Same result as INT(SQR(x)). Not bundled."
+    },
+    {
+      "name": "KEYS.BAS SCAN CODES",
+      "kind": "concept",
+      "docs": "docs/library/keys.bas.md",
+      "include": "#include <keys.bas>",
+      "syntax": [
+        "const KEYx AS UInteger = 0xxxxh"
+      ],
+      "returns": null,
+      "parameters": null,
+      "summary": "Global UInteger constants KEYA..KEYZ, KEY0..KEY9, KEYSPACE, KEYENTER, KEYSYMBOL, KEYCAPS encoding row-half and bit for each Spectrum key.",
+      "notes": "Values listed on page (e.g. KEYH = 0BF10h, KEYSPACE = 07F01h). Faster and smaller than INKEY$; no ROM needed."
+    },
+    {
+      "name": "LEFT",
+      "kind": "function",
+      "docs": "docs/library/string/left.md",
+      "include": "#include <string.bas>",
+      "syntax": [
+        "left(s$, N)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "s$",
+          "type": "String",
+          "notes": null
+        },
+        {
+          "name": "N",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "First N characters of a string (whole string if shorter).",
+      "notes": "Equivalent to s$(TO N - 1) with 0-based strings. No padding."
+    },
+    {
+      "name": "megaLZDepack",
+      "kind": "statement",
+      "docs": "docs/library/megalz.bas.md",
+      "include": "#include <megalz.bas>",
+      "syntax": [
+        "megaLZDepack(source as uInteger, dest as uInteger)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "source",
+          "type": "uInteger",
+          "notes": "packed data address"
+        },
+        {
+          "name": "dest",
+          "type": "uInteger",
+          "notes": "destination"
+        }
+      ],
+      "summary": "Decompresses a MegaLZ (v4) packed block from source to dest.",
+      "notes": "Depacker is 110 bytes, relocatable, interrupt-safe. Beware overlapping packed/unpacked areas (put packed block at highest addresses, leave a gap). Use asm incbin to embed data."
+    },
+    {
+      "name": "MID",
+      "kind": "function",
+      "docs": "docs/library/string/mid.md",
+      "include": "#include <string.bas>",
+      "syntax": [
+        "mid(s$, start, N)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "s$",
+          "type": "String",
+          "notes": null
+        },
+        {
+          "name": "start",
+          "type": "numeric",
+          "notes": "0-based"
+        },
+        {
+          "name": "N",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "Up to N characters of a string starting at position start (0-based).",
+      "notes": "Equivalent to s$(start TO start + N - 1); truncated at end of string; empty if start is past the end."
+    },
+    {
+      "name": "MultiKeys",
+      "kind": "function",
+      "docs": "docs/library/keys/multikeys.md",
+      "include": "#include <keys.bas>",
+      "syntax": [
+        "MultiKeys(KeyCode1 bOR KeyCode2 bOR ...)"
+      ],
+      "returns": "0 if none, else pressed keys' bits",
+      "parameters": [
+        {
+          "name": "keycodes",
+          "type": "UInteger",
+          "notes": "scan codes ORed together, same row half"
+        }
+      ],
+      "summary": "Tests whether any of the given keys is pressed; result can be decoded with bAND to see which.",
+      "notes": "Multiple keys only within the same row half (same row, same 5-key group)."
+    },
+    {
+      "name": "paint",
+      "kind": "statement",
+      "docs": "docs/library/putchars.bas.md",
+      "include": null,
+      "syntax": [
+        "paint(x as uByte, y as uByte, width as uByte, height as uByte, attribute as ubyte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "width",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "height",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "attribute",
+          "type": "uByte",
+          "notes": "as from ATTR"
+        }
+      ],
+      "summary": "Fills a character rectangle of the attribute area with one attribute byte.",
+      "notes": "Also listed in docs/library/windowpaint.md. No bounds checking. Not bundled."
+    },
+    {
+      "name": "paintData",
+      "kind": "statement",
+      "docs": "docs/library/putchars.bas.md",
+      "include": null,
+      "syntax": [
+        "paintData(x as uByte, y as uByte, width as uByte, height as uByte, address as uInteger)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "width",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "height",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "address",
+          "type": "uInteger",
+          "notes": "source attribute data, rows then columns"
+        }
+      ],
+      "summary": "Copies a block of attribute bytes (row-major) to a character rectangle.",
+      "notes": "Data order is rows-then-columns, opposite to putChars' pixel data. No bounds checking."
+    },
+    {
+      "name": "PixelScrollUp",
+      "kind": "statement",
+      "docs": "docs/library/pixelscroll.md",
+      "include": null,
+      "syntax": [
+        "PixelScrollUp(numOfLines as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "numOfLines",
+          "type": "uByte",
+          "notes": "1..191; 0 or >=192 does nothing"
+        }
+      ],
+      "summary": "Scrolls the whole pixel screen up by N pixel rows, blanking the rows uncovered; attributes untouched.",
+      "notes": "Requires the ScreenTables.bas file (Dropbox link on page) via #include once. Uses 32 unrolled LDIs (a smaller LDIR variant is commented)."
+    },
+    {
+      "name": "POINT",
+      "kind": "function",
+      "docs": "docs/library/point.md",
+      "include": "#include <point.bas>",
+      "syntax": [
+        "POINT(x, y)"
+      ],
+      "returns": "0 or 1",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "numeric",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "1 if the pixel at (x, y) is set, else 0.",
+      "notes": "Extends Sinclair (rows 22/23 allowed). Included automatically with -Z/--sinclair."
+    },
+    {
+      "name": "POS",
+      "kind": "function",
+      "docs": "docs/library/pos.md",
+      "include": "#include <pos.bas>",
+      "syntax": [
+        "POS()"
+      ],
+      "returns": "column (type not stated)",
+      "parameters": null,
+      "summary": "Horizontal (column) position of the text cursor, 0 = leftmost.",
+      "notes": "Not in Sinclair BASIC. Page gives no explicit syntax line; name overlaps user identifiers (identifier.md)."
+    },
+    {
+      "name": "print42",
+      "kind": "statement",
+      "docs": "docs/library/print42.bas.md",
+      "include": "#include <print42.bas>",
+      "syntax": [
+        "print42(STRING)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "STRING",
+          "type": "String",
+          "notes": null
+        }
+      ],
+      "summary": "Prints a string in 6-pixel-wide (42 column) characters at the print42 cursor using permanent colours.",
+      "notes": "Fixed-width, not proportional; attribute grid mismatch makes paper/bright/flash look imperfect."
+    },
+    {
+      "name": "print64",
+      "kind": "statement",
+      "docs": "docs/library/print64.bas.md",
+      "include": "#include <print64.bas>",
+      "syntax": [
+        "print64(characters$ as String)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "characters$",
+          "type": "String",
+          "notes": "codes >127 skipped, 13 = newline"
+        }
+      ],
+      "summary": "Prints a string in 4-pixel-wide (64 column) characters at the print64 cursor.",
+      "notes": "Cursor independent of PRINT/print42. Doc's usage section mislabels the print call as printat64(STRING). Attributes written from system variable 23693."
+    },
+    {
+      "name": "Print64x32",
+      "kind": "statement",
+      "docs": "docs/library/print64x32.bas.md",
+      "include": null,
+      "syntax": [
+        "Print64x32(info as String)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "info",
+          "type": "String",
+          "notes": null
+        }
+      ],
+      "summary": "Prints a string on a 64x32 grid (4x6 pixel cells, 2048 positions).",
+      "notes": "Does not touch attributes. Needs ScreenTables.asm from the forum. Wraps to top when past row 31."
+    },
+    {
+      "name": "Print64x32At",
+      "kind": "statement",
+      "docs": "docs/library/print64x32.bas.md",
+      "include": null,
+      "syntax": [
+        "Print64x32At(y as uByte, x as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "0-31"
+        },
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "0-63"
+        }
+      ],
+      "summary": "Sets the 64x32 print cursor (y 0-31, x 0-63).",
+      "notes": null
+    },
+    {
+      "name": "Print64x32StringAt",
+      "kind": "statement",
+      "docs": "docs/library/print64x32.bas.md",
+      "include": null,
+      "syntax": [
+        "Print64x32StringAt(y as ubyte, x as ubyte, text$ as string)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "ubyte",
+          "notes": null
+        },
+        {
+          "name": "x",
+          "type": "ubyte",
+          "notes": null
+        },
+        {
+          "name": "text$",
+          "type": "string",
+          "notes": null
+        }
+      ],
+      "summary": "Combines Print64x32At and Print64x32.",
+      "notes": null
+    },
+    {
+      "name": "printat42",
+      "kind": "statement",
+      "docs": "docs/library/print42.bas.md",
+      "include": "#include <print42.bas>",
+      "syntax": [
+        "printat42(y, x)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "numeric",
+          "notes": "0-23"
+        },
+        {
+          "name": "x",
+          "type": "numeric",
+          "notes": "0-41"
+        }
+      ],
+      "summary": "Moves the print42 cursor to row y (0-23), column x (0-41).",
+      "notes": null
+    },
+    {
+      "name": "printat64",
+      "kind": "statement",
+      "docs": "docs/library/print64.bas.md",
+      "include": "#include <print64.bas>",
+      "syntax": [
+        "printat64(y as uByte, x as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "0-23"
+        },
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "0-63"
+        }
+      ],
+      "summary": "Moves the print64 cursor to row y (0-23), column x (0-63).",
+      "notes": "Out-of-range values raise ROM error '5 Out of screen' (rst 8)."
+    },
+    {
+      "name": "propPrint",
+      "kind": "statement",
+      "docs": "docs/library/propprint.bas.md",
+      "include": null,
+      "syntax": [
+        "propPrint(x as ubyte, y as ubyte, spacesize as ubyte, xgap as ubyte, txt$ as string)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "ubyte",
+          "notes": "pixel X (note x,y order, unlike PRINT)"
+        },
+        {
+          "name": "y",
+          "type": "ubyte",
+          "notes": "pixel Y (clamped to 184)"
+        },
+        {
+          "name": "spacesize",
+          "type": "ubyte",
+          "notes": "width of a space"
+        },
+        {
+          "name": "xgap",
+          "type": "ubyte",
+          "notes": "pixels between letters; 1 typical"
+        },
+        {
+          "name": "txt$",
+          "type": "string",
+          "notes": null
+        }
+      ],
+      "summary": "Proportional-width text printing at any pixel position.",
+      "notes": "Not for tables (letter positions vary). Draws with XOR. By Odenthal/LCD. Not bundled."
+    },
+    {
+      "name": "putChars",
+      "kind": "statement",
+      "docs": "docs/library/putchars.bas.md",
+      "include": null,
+      "syntax": [
+        "putChars(x as uByte, y as uByte, width as uByte, height as uByte, dataAddress as uInteger)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "char column"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "char row"
+        },
+        {
+          "name": "width",
+          "type": "uByte",
+          "notes": "chars"
+        },
+        {
+          "name": "height",
+          "type": "uByte",
+          "notes": "chars"
+        },
+        {
+          "name": "dataAddress",
+          "type": "uInteger",
+          "notes": "8 bytes per char, top-left to bottom-right, first column then next"
+        }
+      ],
+      "summary": "Copies a block of 8-byte character bitmaps to the screen at character coordinates (column-major data).",
+      "notes": "WARNING: no screen-edge checking. Usable for character-based sprites. Not bundled."
+    },
+    {
+      "name": "putTile",
+      "kind": "statement",
+      "docs": "docs/library/puttile.md",
+      "include": null,
+      "syntax": [
+        "putTile(x as uByte, y as uByte, graphicsAddr as uInteger)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "0-31"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": "0-23"
+        },
+        {
+          "name": "graphicsAddr",
+          "type": "uInteger",
+          "notes": "36 bytes: 16 rows x 2 bytes, then 2+2 attribute bytes"
+        }
+      ],
+      "summary": "Copies a 16x16 pixel (2x2 char) tile plus its 4 attributes to character position (x, y) using PUSH/POP.",
+      "notes": "Uses all registers incl. alternates, IX/IY and SP; disables interrupts during copy and restores their state. Not bundled."
+    },
+    {
+      "name": "randomBase",
+      "kind": "function",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION FASTCALL randomBase() AS UBYTE"
+      ],
+      "returns": "UBYTE",
+      "parameters": null,
+      "summary": "Patrik Rak's stream generator core: pseudo-random byte 0-255 (same generator ZX BASIC uses internally).",
+      "notes": "Other routines CALL the asm label 'random' inside it; keep that label. Not bundled."
+    },
+    {
+      "name": "randomFixed",
+      "kind": "function",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION FASTCALL randomFixed() as FIXED"
+      ],
+      "returns": "FIXED",
+      "parameters": null,
+      "summary": "Random Fixed value between 0 and 1, faster than Float RND.",
+      "notes": null
+    },
+    {
+      "name": "randomLimit",
+      "kind": "function",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION fastcall randomLimit(limit as uByte) as uByte"
+      ],
+      "returns": "uByte",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "uByte",
+          "notes": "0 returns 0"
+        }
+      ],
+      "summary": "Random integer from 0 to limit inclusive (e.g. randomLimit(5)+1 for a die).",
+      "notes": "Rejection sampling: ~1.5 draws on average, not constant time."
+    },
+    {
+      "name": "RIGHT",
+      "kind": "function",
+      "docs": "docs/library/string/right.md",
+      "include": "#include <string.bas>",
+      "syntax": [
+        "right(s$, N)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "s$",
+          "type": "String",
+          "notes": null
+        },
+        {
+          "name": "N",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "Last N characters of a string (whole string if shorter).",
+      "notes": "Page gives equivalence s$(len(s$) - N - 1 TO), which looks off by one; second example wrongly uses left()."
+    },
+    {
+      "name": "scrAddress",
+      "kind": "function",
+      "docs": "docs/library/scraddress.md",
+      "include": null,
+      "syntax": [
+        "scrAddress(x as uByte, y as uByte) as UInteger"
+      ],
+      "returns": "UInteger",
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": "masked to 0-31"
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": null
+        }
+      ],
+      "summary": "Address of the top pixel line of character cell (x, y); following lines are +256 each.",
+      "notes": "Page also repeats attrAddress. Not bundled."
+    },
+    {
+      "name": "SCREEN$",
+      "kind": "function",
+      "docs": "docs/library/screen.md",
+      "include": "#include <screen.bas>",
+      "syntax": [
+        "SCREEN$(row, col)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "row",
+          "type": "numeric",
+          "notes": null
+        },
+        {
+          "name": "col",
+          "type": "numeric",
+          "notes": null
+        }
+      ],
+      "summary": "Returns the character displayed at (row, col) if it matches the current font.",
+      "notes": "Rows 22/23 allowed. Auto-available with -Z/--sinclair. identifier.md lists it as SCREEN."
+    },
+    {
+      "name": "SetBank",
+      "kind": "statement",
+      "docs": "docs/library/memorybank/setbank.md",
+      "include": "#include <memorybank.bas>",
+      "syntax": [
+        "SetBank(bankNumber)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "bankNumber",
+          "type": "0..7",
+          "notes": null
+        }
+      ],
+      "summary": "Pages RAM bank 0-7 into $c000-$ffff and updates BANKM.",
+      "notes": "Danger if the program extends past $c000."
+    },
+    {
+      "name": "SetCodeBank",
+      "kind": "statement",
+      "docs": "docs/library/memorybank/setcodebank.md",
+      "include": "#include <memorybank.bas>",
+      "syntax": [
+        "SetCodeBank(bankNumber)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "bankNumber",
+          "type": "0..7",
+          "notes": "bank 2 is destroyed/skipped"
+        }
+      ],
+      "summary": "Copies the given bank into the $8000 slot (memorybank.md), for the architecture in chapter 14 of the Boriel BASIC book.",
+      "notes": "Its own page's description repeats SetBank's text ('places the bank at $c000'), contradicting memorybank.md's 'copies to $8000'; example verifies via PEEK($8000). Bank 2 contents beyond $8000-$bfff are destroyed."
+    },
+    {
+      "name": "time",
+      "kind": "function",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "syntax": [
+        "FUNCTION FASTCALL time() as uLong"
+      ],
+      "returns": "uLong (in DEHL)",
+      "parameters": null,
+      "summary": "Returns the ROM FRAMES counter (23672-23674) as a uLong.",
+      "notes": null
+    },
+    {
+      "name": "updateSeed",
+      "kind": "statement",
+      "docs": "docs/library/randomstream.bas.md",
+      "include": null,
+      "syntax": [
+        "SUB FASTCALL updateSeed()"
+      ],
+      "returns": null,
+      "parameters": null,
+      "summary": "Re-seeds randomBase from the FRAMES counter.",
+      "notes": "Requires the time() function; call after some user interaction for better entropy."
+    },
+    {
+      "name": "windowPaint",
+      "kind": "statement",
+      "docs": "docs/library/windowpaint.md",
+      "include": null,
+      "syntax": [
+        "windowPaint(x as uByte, y as uByte, width as uByte, height as uByte, inkCol as ubyte, paperCol as uByte, isBright as uByte, isFlash as uByte)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "x",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "y",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "width",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "height",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "inkCol",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "paperCol",
+          "type": "uByte",
+          "notes": null
+        },
+        {
+          "name": "isBright",
+          "type": "uByte",
+          "notes": "0/1"
+        },
+        {
+          "name": "isFlash",
+          "type": "uByte",
+          "notes": "0/1"
+        }
+      ],
+      "summary": "Sets attributes for a character rectangle from separate ink/paper/bright/flash values (wraps paint).",
+      "notes": "WARNING: no edge checking. Bitmap untouched. Not bundled."
+    }
+  ]
+}
