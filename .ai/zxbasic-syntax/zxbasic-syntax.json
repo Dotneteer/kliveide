@@ -2514,6 +2514,15 @@
     "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it.",
     "entries": [
       {
+        "name": "argument-evaluation-order",
+        "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
+        "decision": null,
+        "status": "open",
+        "source": "oracle",
+        "phase": 3,
+        "test": null
+      },
+      {
         "name": "constant-arithmetic-literal",
         "question": "What type does arithmetic on number literals alone have?",
         "decision": "Literal-only arithmetic stays exact and takes the smallest type that holds the result: 200 + 100 is 300, a UInteger; 1 - 2 is -1, a Byte.",
@@ -2620,6 +2629,15 @@
         "source": "docs",
         "phase": 2,
         "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "logical-operators-short-circuit",
+        "question": "Do AND and OR skip their right operand when the left one decides the result?",
+        "decision": null,
+        "status": "open",
+        "source": "oracle",
+        "phase": 3,
+        "test": null
       },
       {
         "name": "mod-sign",
