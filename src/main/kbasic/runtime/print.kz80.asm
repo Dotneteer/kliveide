@@ -1,7 +1,7 @@
 ; @module   print
 ; @summary  Text PRINT to the ULA screen: characters, control codes, numbers, AT, TAB, comma, CLS.
 ; @exports  PrintInit, PrintChar, PrintStr, PrintNewline, PrintComma, PrintAt, PrintTab, PrintReset
-; @exports  PrintU8, PrintI8, PrintU16, PrintI16, Cls, PrintRow, PrintCol
+; @exports  PrintU8, PrintI8, PrintU16, PrintI16, Cls, PrintRow, PrintCol, PrintColour
 ; @requires heap, errors
 ; @init     PrintInit
 ;

@@ -269,12 +269,14 @@ class Binder extends ExpressionBinder {
       case "while": {
         const condition = this.condition(s.condition);
         const body = this.loopBody("WHILE", s.body, span);
-        return { kind: "while", span, condition, body };
+        return { kind: "while", span, header: { ...span, end: s.condition.span.end }, condition, body };
       }
       case "do": {
         const condition = s.condition ? this.condition(s.condition) : undefined;
         const body = this.loopBody("DO", s.body, span);
-        return { kind: "do", span, test: s.test, ...(condition ? { condition } : {}), body };
+        const pre = s.test === "preUntil" || s.test === "preWhile";
+        const doSpan = pre && s.condition ? { ...span, end: s.condition.span.end } : { ...span, end: span.start + 2 };
+        return { kind: "do", span, test: s.test, ...(condition ? { condition } : {}), body, loop: s.loop.span, doSpan };
       }
       case "exit":
       case "continue":
@@ -323,7 +325,7 @@ class Binder extends ExpressionBinder {
       case "tape":
         return this.tape(s);
       case "routine":
-        return this.routineDefinition(s.header, s.body, span);
+        return this.routineDefinition(s.header, s.body, span, s.end.span);
       case "declare":
         return undefined;
       case "asm":
@@ -683,9 +685,11 @@ class Binder extends ExpressionBinder {
   }
 
   private ifStatement(s: Extract<Statement, { kind: "if" }>): BoundStatement | undefined {
-    const branches: { condition: BoundExpr; body: BoundStatement[] }[] = [];
-    branches.push({ condition: this.condition(s.condition), body: this.block(s.then) });
-    for (const e of s.elseIfs) branches.push({ condition: this.condition(e.condition), body: this.block(e.body) });
+    const branches: { header: Span; condition: BoundExpr; body: BoundStatement[] }[] = [];
+    branches.push({ header: { ...s.span, end: s.condition.span.end }, condition: this.condition(s.condition), body: this.block(s.then) });
+    for (const e of s.elseIfs) {
+      branches.push({ header: { ...e.span, end: e.condition.span.end }, condition: this.condition(e.condition), body: this.block(e.body) });
+    }
     const otherwise = s.else ? this.block(s.else) : undefined;
     const empty = branches.every((b) => b.body.length === 0) && (!otherwise || otherwise.length === 0);
     if (empty) {
@@ -737,7 +741,8 @@ class Binder extends ExpressionBinder {
     this.checkForRange(f, t, st, s.span);
     const body = this.loopBody("FOR", s.body, s.span);
     if (!variable) return undefined;
-    return { kind: "for", span: s.span, variable, from: f, to: t, ...(st ? { step: st } : {}), body };
+    const header = { ...s.span, end: (s.step ?? s.to).span.end };
+    return { kind: "for", span: s.span, header, variable, from: f, to: t, ...(st ? { step: st } : {}), body, next: s.next.span };
   }
 
   private sameVariable(a: NameRef, b: NameRef): boolean {
@@ -837,7 +842,7 @@ class Binder extends ExpressionBinder {
   // ----------------------------------------------------------------------------------------------
   // Routines
 
-  private routineDefinition(header: RoutineHeader, body: Statement[], span: Span): BoundStatement | undefined {
+  private routineDefinition(header: RoutineHeader, body: Statement[], span: Span, end: Span): BoundStatement | undefined {
     const routine = this.headerSymbols.get(header);
     if (!routine) return undefined;
     this.checkHeader(header, routine);
@@ -861,7 +866,7 @@ class Binder extends ExpressionBinder {
     this.scope = outer.scope;
     this.routine = outer.routine;
     this.loops = outer.loops;
-    return { kind: "routine", span, routine, body: bound };
+    return { kind: "routine", span, routine, body: bound, end };
   }
 
   /** The checks on a header that need binding: defaults, parameter rules, W100 and W160. */

@@ -2,6 +2,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { DebuggableOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
 import { KBasicCompiler, runFrontEnd, toErrorInfo } from "@main/kbasic/KBasicCompiler";
@@ -184,14 +185,26 @@ describe("the zxbas compiler", () => {
     expect(output.errors?.map((e) => e.errorCode)).toEqual(["K010"]);
   });
 
-  it("says in a build that it cannot generate code yet", async () => {
+  it("builds code for the 48K with the classic debug tables", async () => {
     const compiler = new KBasicCompiler();
     compiler.setAppState(state({}));
+    const output = (await compiler.compileFile(path.join(folder, "good.bas"))) as DebuggableOutput & { entryAddress: number; modelType: number };
+    expect(output.errors?.map((e) => [e.errorCode, !!e.isWarning])).toEqual([["K010", true]]);
+    expect(output.segments[0].startAddress).toBe(0x8000);
+    expect(output.entryAddress).toBe(0x8000);
+    expect(output.modelType).toBe(1);
+    expect(output.injectOptions).toEqual({ subroutine: true });
+    expect(output.sourceFileList.map((f) => f.filename)).toEqual([path.join(folder, "good.bas")]);
+    expect(output.listFileItems).toHaveLength(1);
+    expect(output.listFileItems[0]).toMatchObject({ fileIndex: 0, lineNumber: 2 });
+    expect(output.sourceMap[output.listFileItems[0].address]).toMatchObject({ fileIndex: 0, line: 2, startColumn: 0, endColumn: 7 });
+  });
+
+  it("does not build for a target it has no code generator for yet", async () => {
+    const compiler = new KBasicCompiler();
+    compiler.setAppState(state({}, "zxnext"));
     const output = await compiler.compileFile(path.join(folder, "good.bas"));
-    expect(output.errors?.map((e) => [e.errorCode, !!e.isWarning])).toEqual([
-      ["K010", true],
-      ["K001", false]
-    ]);
+    expect(output.errors?.map((e) => e.errorCode)).toContain("E502");
   });
 
   it("reports only the program's errors when it has some", async () => {
@@ -199,7 +212,6 @@ describe("the zxbas compiler", () => {
     compiler.setAppState(state({}));
     const output = await compiler.compileFile(path.join(folder, "bad.bas"));
     expect(output.errors?.length).toBeGreaterThan(0);
-    expect(output.errors?.some((e) => e.errorCode === "K001")).toBe(false);
     expect(output.errors?.[0].line).toBe(2);
     expect(output.errors?.[0].isWarning).toBeFalsy();
   });

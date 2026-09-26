@@ -87,14 +87,29 @@ export type BoundStatement = StatementBase &
     | { kind: "call"; routine: RoutineSymbol; args: BoundArgument[] }
     /** A DIM that runs code: a local's allocation, or an initial value that is not a constant. */
     | { kind: "dim"; symbol: VariableSymbol | ArraySymbol; value?: BoundExpr }
-    | { kind: "if"; branches: { condition: BoundExpr; body: BoundStatement[] }[]; else?: BoundStatement[] }
-    | { kind: "for"; variable: BoundExpr; from: BoundExpr; to: BoundExpr; step?: BoundExpr; body: BoundStatement[] }
-    | { kind: "while"; condition: BoundExpr; body: BoundStatement[] }
+    /** Each branch's `header` is its own statement for the debugger: `IF c` / `ELSEIF c` (plan §8.2). */
+    | { kind: "if"; branches: { header: Span; condition: BoundExpr; body: BoundStatement[] }[]; else?: BoundStatement[] }
+    | {
+        kind: "for";
+        /** `FOR i = a TO b [STEP s]`: initialisation and first test. */
+        header: Span;
+        variable: BoundExpr;
+        from: BoundExpr;
+        to: BoundExpr;
+        step?: BoundExpr;
+        body: BoundStatement[];
+        /** `NEXT [i]`: increment and test. */
+        next: Span;
+      }
+    | { kind: "while"; header: Span; condition: BoundExpr; body: BoundStatement[] }
     | {
         kind: "do";
         test: "none" | "preUntil" | "preWhile" | "postUntil" | "postWhile";
         condition?: BoundExpr;
         body: BoundStatement[];
+        /** `DO WHILE c` / `DO UNTIL c` for a pre-test; the `LOOP ...` line otherwise. */
+        loop: Span;
+        doSpan: Span;
       }
     | { kind: "exit" | "continue"; loop: LoopKind }
     | { kind: "goto" | "gosub"; label: LabelSymbol }
@@ -118,7 +133,7 @@ export type BoundStatement = StatementBase &
           | { kind: "screen" }
           | { kind: "data"; target?: BoundExpr };
       }
-    | { kind: "routine"; routine: RoutineSymbol; body: BoundStatement[] }
+    | { kind: "routine"; routine: RoutineSymbol; body: BoundStatement[]; end: Span }
     | { kind: "asm"; lines: { text: string; span: Span }[] }
     | { kind: "codebank"; bank: number; body: BoundStatement[] }
   );

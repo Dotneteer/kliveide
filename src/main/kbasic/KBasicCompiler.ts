@@ -1,9 +1,11 @@
 import fs from "fs";
 
-import type { AssemblerErrorInfo, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
+import type { AssemblerErrorInfo, DebuggableOutput, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 
 import { createSettingsReader } from "@common/utils/SettingsReader";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { generateProgram } from "./codegen";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
 import { parseProgram, type FrontEndResult } from "./front-end";
@@ -54,27 +56,40 @@ export class KBasicCompiler implements IKliveCompiler {
     } catch (err) {
       return { errors: [fileError(filename, "K002", `Cannot read the file: ${(err as Error).message}`)] };
     }
-    let errors: AssemblerErrorInfo[];
-    let hasErrors: boolean;
     try {
       const result = runFrontEnd(filename, text, fileSystemReader, base);
-      errors = toErrorInfo(result.diagnostics.items, result.sources);
-      hasErrors = result.diagnostics.hasErrors;
+      if (background || result.diagnostics.hasErrors || !result.bound) {
+        return { errors: toErrorInfo(result.diagnostics.items, result.sources) };
+      }
+      return await this.build(filename, result);
     } catch (err) {
       // --- A worker that throws is reported as a success (plan §2.1), so a compiler bug is an error
       return { errors: [fileError(filename, "K000", `Internal compiler error: ${(err as Error).message}`)] };
     }
-    if (!background && !hasErrors) {
-      errors.push(
-        fileError(
-          filename,
-          "K001",
-          "Klive BASIC checks the program but cannot generate code yet; " +
-            "use 'set zxbasic.compiler zxbc' to build with the external ZX BASIC compiler"
-        )
-      );
+  }
+
+  /** Code generation (Phase 3: the 48K target, optimisation level 0). */
+  private async build(filename: string, front: KBasicFrontEndResult): Promise<SimpleAssemblerOutput | DebuggableOutput> {
+    const diagnostics = front.diagnostics;
+    if (front.options.target !== "zx48k") {
+      diagnostics.error("E502", `Klive BASIC generates code for the ZX Spectrum 48K only so far, not for target '${front.options.target}'`, { file: 0, start: 0, end: 0 });
+      return { errors: toErrorInfo(diagnostics.items, front.sources) };
     }
-    return { errors };
+    const generated = await generateProgram(front.bound!, front.sources, front.options, programName(filename), diagnostics);
+    const errors = toErrorInfo(diagnostics.items, front.sources);
+    if (!generated) return { errors };
+    const classic = generated.debug.classic;
+    return {
+      errors,
+      traceOutput: [`Klive BASIC: code generated at optimisation level 0 (the only level so far)`],
+      segments: generated.output.segments.map((s) => ({ startAddress: s.startAddress, emittedCode: s.emittedCode })),
+      injectOptions: { subroutine: true },
+      sourceFileList: classic.sourceFileList,
+      sourceMap: classic.sourceMap,
+      listFileItems: classic.listFileItems,
+      modelType: SpectrumModelType.Spectrum48,
+      entryAddress: generated.entryAddress
+    } as DebuggableOutput & { modelType: number; entryAddress: number };
   }
 
   async lineCanHaveBreakpoint(line: string): Promise<boolean> {
@@ -170,6 +185,12 @@ function fileError(filename: string, errorCode: string, message: string): Assemb
     endColumn: null,
     message
   };
+}
+
+/** The build root's name without folder and extension: the generated program's file name. */
+function programName(path: string): string {
+  const base = path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
+  return base.replace(/\.[^.]*$/, "") || "program";
 }
 
 function folderOf(path: string): string {
