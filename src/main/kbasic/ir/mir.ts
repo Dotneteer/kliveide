@@ -183,6 +183,8 @@ export type StatementEntry = {
   kind: StatementKind;
   /** The index of the function (in MModule.functions) the statement belongs to. */
   functionIndex: number;
+  /** An ASM block: the span of each of its lines, to report the assembler's errors against. */
+  asmLines?: Span[];
 };
 
 export type MModule = {

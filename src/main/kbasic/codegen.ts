@@ -4,7 +4,7 @@ import { ExpressionValue } from "@main/compiler-common/expressions";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
-import type { DiagnosticBag } from "./diagnostics";
+import type { DiagnosticBag, Span } from "./diagnostics";
 import { emitProgram, type EmittedProgram } from "./backend/emit";
 import { CodegenError, type LirLine } from "./backend/lir";
 import { selectFunction } from "./backend/select0";
@@ -60,18 +60,37 @@ export async function generateProgram(
 
   const assemblerOptions = assemblerOptionsFor(options);
   const assembler = new Z80Assembler();
-  const programUnit = await assembler.parseSourceUnit(`${programName}.kbasic.asm`, emitted.text, assemblerOptions);
+  const programFile = `${programName}.kbasic.asm`;
+  const programUnit = await assembler.parseSourceUnit(programFile, emitted.text, assemblerOptions);
   const units = [programUnit, ...(await runtimeUnits(modules, assemblerOptions, { heapSize: options.heapSize, ...(options.heapAddress !== undefined ? { heapAddress: options.heapAddress } : {}) }))];
   const output = await new Z80Assembler().compileProgram(units, assemblerOptions);
   const errors = output.errors.filter((e) => !e.isWarning);
   if (errors.length) {
-    const e = errors[0];
-    diagnostics.error("E599", `Internal code generator error: the generated program does not assemble (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
+    // --- An error in the user's inline asm is theirs, at its BASIC line; any other is the compiler's
+    const internal = errors.filter((e) => {
+      const span = e.filename === programFile ? asmLineSpan(mir, emitted, e.line) : undefined;
+      if (span) diagnostics.error("E503", `Inline assembly: ${e.message}`, span);
+      return !span;
+    });
+    if (internal.length) {
+      const e = internal[0];
+      diagnostics.error("E599", `Internal code generator error: the generated program does not assemble (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
+    }
     return undefined;
   }
 
   const debug = buildDebugInfo({ statements: mir.statements, lines: emitted.lines, listFileItems: output.listFileItems, programFileIndex: 0, sources });
   return { mir, emitted, output, debug, entryAddress: options.origin };
+}
+
+/** The BASIC span of an emitted line (1-based) that came from an ASM block, or undefined. */
+function asmLineSpan(mir: MModule, emitted: EmittedProgram, line: number): Span | undefined {
+  const info = emitted.lines[line - 1];
+  const asmLines = info && info.sid >= 0 && !info.marker ? mir.statements[info.sid]?.asmLines : undefined;
+  if (!asmLines) return undefined;
+  // --- The block's lines are emitted one each, straight after its statement marker
+  const first = emitted.lines.findIndex((l) => l.sid === info.sid && !l.marker);
+  return asmLines[line - 1 - first];
 }
 
 function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {

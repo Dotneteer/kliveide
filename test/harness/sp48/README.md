@@ -39,6 +39,7 @@ it("prints through the ROM", async () => {
 | Call | `call(addressOrLabel, { returnTo? })` | Pushes a return address (default: the current PC, `$12AC` after boot), jumps, runs until the routine returns there — the way `USR` calls machine code. |
 | Debug | `attachDebugSupport()` → `DebugSupport` | Attaches the emulator's own breakpoint store, so tests add address breakpoints or resolve source breakpoints as the IDE does. |
 | | `callToBreakpoint(where)`, `continueToBreakpoint()` | Run in debug mode (`StopAtBreakpoint`) until a breakpoint stops the machine; return the PC. Throw if the routine returns first. |
+| Keys | `keyDown(...keys)`, `keyUp(...keys)` | Hold / release keys by `SpectrumKeyCode` name (`"A"`, `"N1"`, `"Enter"`, `"Space"`, `"CShift"`, `"SShift"`); the matrix is read from the next frame. |
 | Memory | `peek`, `peekWord`, `poke`, `pokeWord` | Through the machine's memory API. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
 

@@ -206,6 +206,12 @@ describe("applyHeader", () => {
     expect(options.optimize).toBe(defaultOptions().optimize);
   });
 
+  it("ignores the test corpus's '@expect lines", () => {
+    const { diagnostics, options } = compile("'@expect screen 0 \"Hi\"\n'@optimize 1");
+    expect(diagnostics.items).toEqual([]);
+    expect(options.optimize).toBe(1);
+  });
+
   it("gives no suggestion when nothing is close", () => {
     const { diagnostics } = compile("'@wibble 3");
     expect(diagnostics.items[0].message).not.toContain("did you mean");

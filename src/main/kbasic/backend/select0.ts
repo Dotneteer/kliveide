@@ -57,10 +57,23 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.ArrayInit": ["hl", "de", "bc"],
   "core.ArrayLBound": ["hl", "de"],
   "core.ArrayUBound": ["hl", "de"],
+  "core.ColourPermanent": ["c", "a"],
+  "core.Border": ["a"],
+  "core.Pause": ["hl"],
+  "core.Inkey": [],
+  /** Inline code, not a call: see INLINE. */
+  "inline.Out": ["bc", "a"],
+  "inline.In": ["bc"],
   "core.PrintComma": [],
   "core.PrintNewline": [],
   "core.PrintReset": [],
   "core.Cls": []
+};
+
+/** The code of the `inline.X` pseudo-routines, in place of a call (runtime-abi.md: IN/OUT inline). */
+const INLINE: Record<string, string[]> = {
+  "inline.Out": ["out (c),a"],
+  "inline.In": ["in a,(c)"]
 };
 
 /** Where a value of each class lives while it is the current value. */
@@ -606,7 +619,8 @@ class Selector {
       this.spill();
       args.forEach((a, k) => this.loadRegister(regs[k], immText(a)));
     }
-    this.emit(`call ${this.rt(routine)}`);
+    if (INLINE[routine]) this.emit(...INLINE[routine]);
+    else this.emit(`call ${this.rt(routine)}`);
     if (dst) this.produce(dst);
   }
 

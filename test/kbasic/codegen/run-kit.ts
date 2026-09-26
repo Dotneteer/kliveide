@@ -41,7 +41,10 @@ const STUB = 0xff00;
  * programs that stop with an error report). The program is called like `USR` from a running BASIC
  * line, so error reports print as they would.
  */
-export async function runBasic(source: string, options: Partial<KBasicOptions> & { frames?: number; expectEnd?: boolean } = {}): Promise<Run> {
+export async function runBasic(
+  source: string,
+  options: Partial<KBasicOptions> & { frames?: number; expectEnd?: boolean; before?: (session: Sp48TestSession) => void } = {}
+): Promise<Run> {
   const { generated } = await compileBasic(source, options);
   const session = await createSp48Session();
   session.bootToBasic();
@@ -51,6 +54,7 @@ export async function runBasic(source: string, options: Partial<KBasicOptions> &
   const done = STUB + 11;
   session.poke(STUB, [0x21, 0x03, 0x13, 0xe5, 0xed, 0x73, 0x3d, 0x5c, 0xcd, entry & 0xff, entry >> 8, 0x18, 0xfe]);
   session.machine.pc = STUB;
+  options.before?.(session);
   if (options.expectEnd === false) session.runFrames(options.frames ?? 50);
   else session.runTo(done, { maxFrames: options.frames ?? 500 });
   const symbol = (name: string) => program.symbol(`_${name}`);

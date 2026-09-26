@@ -6,6 +6,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
@@ -228,6 +229,23 @@ export class Sp48TestSession {
   }
 
   // ==========================================================================================
+  // Keyboard
+
+  /**
+   * Holds keys down: `SpectrumKeyCode` names (`"A"`, `"N1"`, `"Enter"`, `"Space"`, `"CShift"`,
+   * `"SShift"`, ...). The machine reads the matrix at the next frame.
+   */
+  keyDown(...keys: string[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), true);
+    return this;
+  }
+
+  keyUp(...keys: string[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), false);
+    return this;
+  }
+
+  // ==========================================================================================
   // Memory and screen
 
   peek(address: number): number {
@@ -303,4 +321,10 @@ export class Sp48TestSession {
 
 function hex4(value: number): string {
   return "$" + (value & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
+function keyCode(key: string): number {
+  const code = SpectrumKeyCode[key];
+  if (code === undefined) throw new Error(`Unknown 48K key '${key}'`);
+  return code;
 }

@@ -276,6 +276,28 @@ class Lowering {
         this.beginStatement(s.span, "other");
         this.emit({ op: "rtcall", name: this.rt("Cls"), args: [], sid: this.sid });
         return;
+      case "attribute": {
+        this.beginStatement(s.span, "other", [s.value]);
+        const code = ATTR_CODES[s.attr];
+        if (!code) {
+          this.unsupported(s.attr, s.span);
+          return;
+        }
+        this.emit({ op: "rtcall", name: this.rt("ColourPermanent"), args: [imm("u8", code), this.value(s.value)], sid: this.sid });
+        return;
+      }
+      case "border":
+        this.beginStatement(s.span, "other", [s.value]);
+        this.emit({ op: "rtcall", name: this.rt("Border"), args: [this.value(s.value)], sid: this.sid });
+        return;
+      case "pause":
+        this.beginStatement(s.span, "other", [s.value]);
+        this.emit({ op: "rtcall", name: this.rt("Pause"), args: [this.value(s.value)], sid: this.sid });
+        return;
+      case "out":
+        this.beginStatement(s.span, "other", [s.port, s.value]);
+        this.emit({ op: "rtcall", name: "inline.Out", args: [this.value(s.port), this.value(s.value)], sid: this.sid });
+        return;
       case "assign":
         this.beginStatement(s.span, "assignment", [s.value, s.target]);
         this.assign(s.target, s.value, s.span);
@@ -368,6 +390,7 @@ class Lowering {
       }
       case "asm":
         this.beginStatement(s.span, "asm");
+        this.module.statements[this.sid].asmLines = s.lines.map((l) => l.span);
         this.emit({ op: "asm", lines: s.lines.map((l) => l.text), sid: this.sid });
         return;
       case "codebank":
@@ -1157,6 +1180,16 @@ class Lowering {
           }
         }
         return this.owns(result!);
+      }
+      case "INKEY": {
+        const r = this.vreg("str");
+        this.emit({ op: "rtcall", name: this.rt("Inkey"), dst: r, args: [], sid: this.sid });
+        return this.owns(r);
+      }
+      case "IN": {
+        const r = this.vreg(type);
+        this.emit({ op: "rtcall", name: "inline.In", dst: r, args: [this.value(e.args[0])], sid: this.sid });
+        return r;
       }
       case "LBOUND":
       case "UBOUND": {

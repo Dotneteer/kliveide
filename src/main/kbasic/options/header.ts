@@ -113,12 +113,19 @@ function stripComment(value: string): string {
 }
 
 /**
+ * `'@expect ...` lines are the test corpus's expectations (plan R10): the compiler ignores them and
+ * the corpus runner reads them.
+ */
+export const TEST_ONLY_OPTIONS = new Set(["expect"]);
+
+/**
  * Applies header options to a copy of `base`. An unknown name is a warning with a suggestion; a bad
  * value is an error and leaves the option as it was.
  */
 export function applyHeader(base: KBasicOptions, header: HeaderOption[], diagnostics: DiagnosticBag): KBasicOptions {
   const options = cloneOptions(base);
   for (const h of header) {
+    if (TEST_ONLY_OPTIONS.has(h.name)) continue;
     const spec = OPTIONS_BY_NAME.get(h.name);
     if (!spec) {
       const guess = suggestion(h.name);
