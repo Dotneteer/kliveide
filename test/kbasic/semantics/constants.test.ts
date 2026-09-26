@@ -166,6 +166,11 @@ describe("foldBinary", () => {
     expect(foldBinary("SHR", typed(-8, "Byte"), lit(1), "Byte", "Byte")?.value).toMatchObject({ value: -4n });
   });
 
+  it("folds a power to the nearest Float of the exact result (provisional, R8 constant-power)", () => {
+    expect(numericValue(foldBinary("^", lit(2), lit(10), "Float", "Float")!)).toBe(1024);
+    expect(foldBinary("^", lit(2), lit(0.5, "0.5"), "Float", "Float")?.value).toEqual({ kind: "float", value: f40.fromNumber(Math.SQRT2) });
+  });
+
   it("offsets an address by a constant and leaves anything else to the program", () => {
     const address: Constant = { type: "UInteger", value: { kind: "address", symbol: "table", offset: 0 } };
     expect(foldBinary("+", address, lit(3), "UInteger", "UInteger")?.value).toEqual({ kind: "address", symbol: "table", offset: 3 });

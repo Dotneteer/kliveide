@@ -51,6 +51,7 @@ every item is one object so that a change touches one hunk.
 | `extensions` | Syntax that is not upstream: currently `codebank` (NextBuild's `CODEBANK … END CODEBANK`, `#pragma codebank`, `FARPTR`, `<farmem.bas>`, CLI flags, `banks.json`). Each extension names its origin and version. |
 | `changes` | A log of upstream releases reviewed, newest first: release, date, and the syntax-relevant changes found (or "none"). This is how a session sees what changed since the spec was last touched without reading upstream's changelog again. |
 | `docs_errata` | Places where upstream's documentation disagrees with itself or with the implementation (for example the Float return registers). The spec follows the implementation; this list stops a later session from "correcting" the spec back to a wrong docs page. |
+| `semantics` | The semantics annex (plan R8): behaviour questions the syntax leaves open (literal types, constant folding, division by zero, FOR details...), each with a `status` (`decided`, `provisional` until the zxbc oracle confirms it, or `open` until a named `phase`), a `source` (`docs`, `oracle`, `klive-decision`), the decision, and the test that pins it. Not an upstream description: it records what Klive BASIC does and why. |
 
 ## Refreshing the spec when upstream releases
 

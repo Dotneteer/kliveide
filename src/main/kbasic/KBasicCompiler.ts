@@ -9,10 +9,15 @@ import { DiagnosticBag, type Diagnostic } from "./diagnostics";
 import { parseProgram, type FrontEndResult } from "./front-end";
 import { applyHeader, optionsFromSettings, readHeader, reportIgnoredHeader } from "./options/header";
 import type { KBasicOptions } from "./options/options";
+import { bind, type BindResult } from "./semantics/binder";
 import type { FileReader } from "./syntax/preprocessor";
 import { SourceFile, type SourceSet } from "./syntax/source";
 
-export type KBasicFrontEndResult = FrontEndResult & { options: KBasicOptions };
+export type KBasicFrontEndResult = FrontEndResult & {
+  options: KBasicOptions;
+  /** The typed program; undefined when the source has syntax errors, which would only cascade. */
+  bound?: BindResult;
+};
 
 /**
  * Klive BASIC, Klive's own ZX BASIC compiler (plan §3). Phase 1 runs the front end only: header
@@ -90,7 +95,8 @@ const fileSystemReader: FileReader = {
 
 /**
  * The front end of one build: the build root's header over the settings (plan §5.2), then
- * preprocessing and parsing with the options that result.
+ * preprocessing and parsing with the options that result, then binding (Phase 2) when the source
+ * parsed cleanly. Warnings the options disable are dropped at the end.
  */
 export function runFrontEnd(
   rootPath: string,
@@ -118,7 +124,17 @@ export function runFrontEnd(
   for (const file of result.sources.files.slice(1)) {
     if (!file.name.startsWith("<")) reportIgnoredHeader(file, diagnostics);
   }
-  return { ...result, options };
+  const bound = diagnostics.hasErrors ? undefined : bind(result.program, options, diagnostics, result.preprocessed.inits);
+  dropDisabledWarnings(diagnostics, options);
+  return { ...result, options, ...(bound ? { bound } : {}) };
+}
+
+/** `'@disable-warning W150, 170`: those warnings are not reported. */
+function dropDisabledWarnings(diagnostics: DiagnosticBag, options: KBasicOptions): void {
+  if (!options.disabledWarnings.length) return;
+  const disabled = new Set(options.disabledWarnings);
+  const kept = diagnostics.items.filter((d) => d.severity === "error" || !disabled.has(d.code));
+  diagnostics.items.splice(0, diagnostics.items.length, ...kept);
 }
 
 /** Diagnostics as the IDE shows them: `#line`-mapped file and line, 0-based columns. */

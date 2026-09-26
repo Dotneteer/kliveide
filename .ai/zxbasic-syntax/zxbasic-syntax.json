@@ -2509,5 +2509,226 @@
       "rnd.md's example uses FreeBASIC-style 'As Double' and 'Function = ...', neither of which is ZX BASIC syntax.",
       "Pages linked but missing from the docs set: memory_heap.md, zxbasm.md, pragma.md, zxbpp.md, addroperator.md, scope.md, len.md."
     ]
+  },
+  "semantics": {
+    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it.",
+    "entries": [
+      {
+        "name": "constant-arithmetic-literal",
+        "question": "What type does arithmetic on number literals alone have?",
+        "decision": "Literal-only arithmetic stays exact and takes the smallest type that holds the result: 200 + 100 is 300, a UInteger; 1 - 2 is -1, a Byte.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "constant-arithmetic-typed",
+        "question": "Does constant arithmetic on typed values wrap to the type's width?",
+        "decision": "Yes: folding computes what the program would, so a typed operand (a DIMmed constant, a CAST) wraps in its type; 200 in a UByte plus 100 is 44.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "constant-integer-division-by-zero",
+        "question": "What does a constant integer division or MOD by zero fold to?",
+        "decision": "The runtime's result (every bit set; MOD gives the dividend), with warning K406. A Float or Fixed constant division by zero is error E425.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "constant-power",
+        "question": "How is a constant x ^ y folded?",
+        "decision": "As the exact power rounded to the nearest Float. The ROM computes EXP(y * LN x), which can differ in the last bit.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "elif-directive",
+        "question": "Is #elif accepted by the preprocessor?",
+        "decision": "Yes.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 1,
+        "test": "test/kbasic/syntax/preprocessor.test.ts"
+      },
+      {
+        "name": "for-loop-evaluation",
+        "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
+        "decision": null,
+        "status": "open",
+        "source": "oracle",
+        "phase": 4,
+        "test": null
+      },
+      {
+        "name": "forward-function-call",
+        "question": "What signature does a FUNCTION called before its definition have when there is no DECLARE?",
+        "decision": "Its definition's signature: routine headers are collected before binding. Upstream assumes a Float return until the definition; Klive accepts every program upstream accepts here, and a few it rejects.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/binder.test.ts"
+      },
+      {
+        "name": "implicit-type-from-context",
+        "question": "Does a variable typed by its first assignment, FOR values or READ raise W100?",
+        "decision": "No: W100 is raised only when nothing determines the type and it becomes Float. Under strict typing any undeclared variable is error E426.",
+        "status": "provisional",
+        "source": "docs",
+        "phase": 2,
+        "test": "test/kbasic/semantics/binder.test.ts"
+      },
+      {
+        "name": "implicit-variable-in-routine",
+        "question": "Is an undeclared variable used inside a SUB or FUNCTION local or global?",
+        "decision": "Global when a global of that name exists at that point; otherwise local to the routine.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/binder.test.ts"
+      },
+      {
+        "name": "integer-division-by-zero",
+        "question": "What does integer division or MOD by zero give at run time?",
+        "decision": "A quotient with every bit set; MOD gives the dividend.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/runtime/arith16.test.ts"
+      },
+      {
+        "name": "keyword-macro-names",
+        "question": "May a #define use a keyword as its name?",
+        "decision": "Yes.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 1,
+        "test": "test/kbasic/syntax/preprocessor.test.ts"
+      },
+      {
+        "name": "literal-integer-type",
+        "question": "What type does an integer literal have?",
+        "decision": "The smallest type that holds it, unsigned when it is not negative (0..255 UByte, 256..65535 UInteger, -128..-1 Byte, ...); Float beyond 32 bits. This gives the spec's FOR examples: FOR i = 1 TO 10 counts in UByte, FOR i = -1 TO 10 in Byte.",
+        "status": "decided",
+        "source": "docs",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "mod-sign",
+        "question": "Which sign does the remainder of MOD take?",
+        "decision": "The dividend's (the quotient truncates towards zero), in folding and at run time.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "on-goto-out-of-range",
+        "question": "What does ON ... GOTO/GOSUB do with a value outside its target list?",
+        "decision": "Nothing: execution continues after the statement.",
+        "status": "open",
+        "source": "docs",
+        "phase": 4,
+        "test": null
+      },
+      {
+        "name": "operator-precedence",
+        "question": "Does the 1.19 parser keep the precedence table recorded in operators.precedence?",
+        "decision": "Klive implements the recorded table.",
+        "status": "provisional",
+        "source": "docs",
+        "phase": 1,
+        "test": "test/kbasic/syntax/parser.test.ts"
+      },
+      {
+        "name": "print-position",
+        "question": "Where does PRINT start, and does it prompt 'scroll?'?",
+        "decision": "It starts at BASIC's print position (S_POSN) and scrolls all 24 rows without a prompt.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/runtime/print.test.ts"
+      },
+      {
+        "name": "print-udg-codes",
+        "question": "What do character codes 165-255 print?",
+        "decision": "The UDG area's glyphs.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/runtime/print.test.ts"
+      },
+      {
+        "name": "read-past-end",
+        "question": "What does READ do after the last DATA item?",
+        "decision": "It wraps to the first item.",
+        "status": "open",
+        "source": "docs",
+        "phase": 4,
+        "test": null
+      },
+      {
+        "name": "shr-signed",
+        "question": "Is SHR on a signed type arithmetic or logical?",
+        "decision": "Arithmetic (the sign is kept) for signed types, logical for unsigned ones.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/constants.test.ts"
+      },
+      {
+        "name": "string-concatenation-overflow",
+        "question": "What does a concatenation longer than 65535 characters give?",
+        "decision": "The empty String.",
+        "status": "open",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": null
+      },
+      {
+        "name": "string-escape-unknown",
+        "question": "What does an unknown backslash escape in a string literal give?",
+        "decision": "The backslash and the character, as written.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 1,
+        "test": "test/kbasic/syntax/lexer.test.ts"
+      },
+      {
+        "name": "truncation-warning-w200",
+        "question": "Which conversions raise W200 ('a value will be truncated')?",
+        "decision": "A Fixed or Float value that is not a constant, converted to an integral type by an assignment, an argument, a RETURN or a POKE.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "name": "unused-warning-w150",
+        "question": "When is a variable 'never used' (W150)?",
+        "decision": "When it is never mentioned after its declaration: no read, no assignment, no address taken; mapped variables and BYREF parameters are exempt. Reported, like W170, only at optimisation levels above 0.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "name": "val-constant-invalid",
+        "question": "What does VAL of a constant string that is not a number give?",
+        "decision": "0, with warning K407.",
+        "status": "provisional",
+        "source": "docs",
+        "phase": 2,
+        "test": "test/kbasic/semantics/diagnostics.test.ts"
+      }
+    ]
   }
 }

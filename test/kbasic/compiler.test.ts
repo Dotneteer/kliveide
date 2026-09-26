@@ -38,7 +38,7 @@ describe("runFrontEnd", () => {
 
   it("ignores an included file's header with info K012", () => {
     const reader = files({ "/p/util.bas": "'@optimize 0\nSUB f\nEND SUB\n" });
-    const result = runFrontEnd("/p/main.bas", '#include "util.bas"\n', reader, defaultOptions());
+    const result = runFrontEnd("/p/main.bas", '#include "util.bas"\nf\n', reader, defaultOptions());
     expect(result.options.optimize).toBe(defaultOptions().optimize);
     expect(result.diagnostics.items.map((d) => [d.code, d.severity])).toEqual([["K012", "info"]]);
   });
@@ -52,6 +52,32 @@ describe("runFrontEnd", () => {
     const result = runFrontEnd("/p/main.bas", "'@optimize 1\r\nPRINT 1\r\n", files({}), defaultOptions());
     expect(result.options.optimize).toBe(1);
     expect(result.diagnostics.items).toEqual([]);
+  });
+});
+
+describe("runFrontEnd: binding (Phase 2)", () => {
+  it("binds a program that parses and reports its semantic errors", () => {
+    const result = runFrontEnd("/p/main.bas", "DIM a AS UByte\nDIM a AS UByte\n", files({}), defaultOptions());
+    expect(result.bound).toBeDefined();
+    expect(result.diagnostics.items.map((d) => d.code)).toContain("E403");
+  });
+
+  it("does not bind a program with syntax errors", () => {
+    const result = runFrontEnd("/p/main.bas", "GOTO\nPRINT undeclaredArray(1)\n", files({}), defaultOptions());
+    expect(result.bound).toBeUndefined();
+    expect(result.diagnostics.items.map((d) => d.code)).toEqual(["E302"]);
+  });
+
+  it("drops the warnings the header disables", () => {
+    const text = "'@disable-warning 100, W110\nPRINT q\nIF 1 THEN PRINT 2\n";
+    const result = runFrontEnd("/p/main.bas", text, files({}), defaultOptions());
+    expect(result.diagnostics.items).toEqual([]);
+  });
+
+  it("reports a banked #init routine (E453)", () => {
+    const text = "#init setup\nCODEBANK 1\nSUB setup()\nEND SUB\nEND CODEBANK\n";
+    const result = runFrontEnd("/p/main.bas", text, files({}), { ...defaultOptions(), optimize: 0 });
+    expect(result.diagnostics.items.map((d) => d.code)).toEqual(["E453"]);
   });
 });
 

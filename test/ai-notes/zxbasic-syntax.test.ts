@@ -14,7 +14,9 @@
  *   code has a meaning, every CLI option has a long form and a meaning;
  * - every docs page referenced from the spec is one the fingerprint watches, so a page rename
  *   upstream is noticed;
- * - the `changes` log is newest-first and its newest entry is the fingerprinted release.
+ * - the `changes` log is newest-first and its newest entry is the fingerprinted release;
+ * - every `semantics` (plan R8) entry that is decided or provisional names its decision and a test
+ *   file that exists, and every open one names the phase that must settle it.
  */
 import { describe, expect, it } from "vitest";
 import fs from "fs";
@@ -38,7 +40,8 @@ const SECTIONS = [
   "cli",
   "diagnostics",
   "extensions",
-  "changes"
+  "changes",
+  "semantics"
 ];
 
 const KEYWORD_KINDS = new Set([
@@ -134,6 +137,22 @@ describe("ZX BASIC syntax reference", () => {
     collect(spec.keywords, "keyword");
     collect(spec.statements, "statement");
     collect(spec.functions, "function");
+  });
+
+  it("gives every semantics entry a decision and a test, or the phase that settles it", () => {
+    type Entry = { name: string; question: string; decision: string | null; status: string; source: string; phase: number; test: string | null };
+    const entries: Entry[] = spec.semantics.entries;
+    expectSortedByName(entries, "semantics.entries");
+    for (const e of entries) {
+      expect(e.question.length, `${e.name} has no question`).toBeGreaterThan(0);
+      expect(["decided", "provisional", "open"], `${e.name} has status '${e.status}'`).toContain(e.status);
+      expect(["docs", "oracle", "klive-decision"], `${e.name} has source '${e.source}'`).toContain(e.source);
+      expect(Number.isInteger(e.phase), `${e.name} names no phase`).toBe(true);
+      if (e.status === "open") continue;
+      expect(e.decision, `${e.name} is ${e.status} but has no decision`).toBeTruthy();
+      expect(e.test, `${e.name} is ${e.status} but names no test`).toBeTruthy();
+      expect(fs.existsSync(path.join(__dirname, "..", "..", e.test!)), `${e.name}: test ${e.test} does not exist`).toBe(true);
+    }
   });
 
   it("logs upstream reviews newest first, starting with the pinned release", () => {
