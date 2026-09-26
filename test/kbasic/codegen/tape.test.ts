@@ -69,3 +69,17 @@ function corrupt(): TapeDataBlock {
   b.data[b.data.length - 1] ^= 0x55;
   return b;
 }
+
+describe("tape DATA", () => {
+  it("LOADs the bytes of a numeric array or variable", async () => {
+    const tape = [header("arr", 6, 0), block([0xff, 1, 0, 2, 0, 3, 0]), header("num", 2, 0), block([0xff, 0x39, 0x30])];
+    const r = await runBasic('DIM a(2) AS UInteger\nDIM n AS UInteger\nLOAD "arr" DATA a()\nLOAD "num" DATA n\nPRINT a(0); a(1); a(2); " "; n\n', {
+      before: (s) => {
+        s.machine.setMachineProperty(MEDIA_TAPE, tape);
+        s.machine.setMachineProperty(FAST_LOAD, true);
+      },
+      frames: 1500
+    });
+    expect(r.screen(1)[0]).toBe("123 12345");
+  });
+});

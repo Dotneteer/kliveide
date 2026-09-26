@@ -741,24 +741,45 @@ class Lowering {
   // ----------------------------------------------------------------------------------------------
   // Tape (tape.kz80.asm)
 
-  /** SAVE, LOAD and VERIFY of CODE and SCREEN$ (SCREEN$ is CODE 16384, 6912). */
+  /**
+   * SAVE, LOAD and VERIFY of CODE, SCREEN$ (CODE 16384, 6912) and DATA of one numeric variable or
+   * array (a CODE block of its bytes).
+   */
   private tape(s: Extract<BoundStatement, { kind: "tape" }>): void {
+    let block: { start: BoundExpr | Value; length: BoundExpr | Value } | undefined;
     if (s.target.kind === "data") {
-      this.unsupported(`${s.operation} DATA`, s.span);
-      return;
-    }
+      const v = s.target.target;
+      if (!v || (v.kind !== "variable" && v.kind !== "array") || v.type === "String") {
+        this.unsupported(`${s.operation} DATA ${v ? "of a String" : "without a name"}`, s.span);
+        return;
+      }
+      if (v.kind === "array" && (v.symbol.param || v.symbol.storage !== "global")) {
+        this.unsupported(`${s.operation} DATA of a local array`, s.span);
+        return;
+      }
+      if (v.kind === "variable" && v.symbol.storage !== "global") {
+        this.unsupported(`${s.operation} DATA of a local variable`, s.span);
+        return;
+      }
+      const start: Value =
+        v.kind === "array"
+          ? { kind: "sym", type: "ptr", name: `${globalName(v.symbol.name)}.data`, offset: 0 }
+          : { kind: "sym", type: "ptr", name: (this.variableSlot(v.symbol, v.span) as { name: string }).name, offset: 0 };
+      block = { start, length: imm("u16", v.kind === "array" ? arrayBytes(v.symbol) : mtypeSize(mtypeOf(v.type))) };
+    } else if (s.target.kind === "screen") block = { start: imm("u16", 16384), length: imm("u16", 6912) };
     const name = this.value(s.name);
     const code = s.target.kind === "code" ? s.target : undefined;
-    const start = s.target.kind === "screen" ? imm("u16", 16384) : code?.start ? this.value(code.start) : imm("u16", 0);
-    const length = s.target.kind === "screen" ? imm("u16", 6912) : code?.length ? this.value(code.length) : imm("u16", 0);
+    const given = (x: BoundExpr | Value | undefined): Value => (!x ? imm("u16", 0) : "span" in x ? this.value(x) : x);
+    const start = given(block?.start ?? code?.start);
+    const length = given(block?.length ?? code?.length);
     let flags = this.consumeFlag(name);
     if (s.operation === "SAVE") {
       this.emit({ op: "rtcall", name: this.rt("TapeSave"), args: [name, imm("u8", flags), start, length], sid: this.sid });
       return;
     }
     if (s.operation === "VERIFY") flags |= 2;
-    if (s.target.kind === "screen" || code?.start) flags |= 4;
-    if (s.target.kind === "screen" || code?.length) flags |= 8;
+    if (block || code?.start) flags |= 4;
+    if (block || code?.length) flags |= 8;
     this.emit({ op: "rtcall", name: this.rt("TapeLoad"), args: [name, imm("u8", flags), start, length], sid: this.sid });
   }
 
