@@ -145,7 +145,7 @@ export class ExpressionBinder {
       assigned: false,
       read: false
     };
-    this.scope.add(symbol);
+    this.scope.add(symbol, this.settings.caseInsensitive);
     return symbol;
   }
 

@@ -71,7 +71,12 @@ class Binder extends ExpressionBinder {
   }
 
   run(program: Program): BindResult {
+    // --- Pass 1 follows the pragmas too (a header under default_byref, a library's names under
+    // --- case_insensitive); pass 2 starts again from the options
+    const settings = { ...this.settings };
     this.hoist(program.statements, undefined, 0);
+    Object.assign(this.settings, settings);
+    this.pragmaStacks.clear();
     const statements = this.block(program.statements);
     this.finish();
     return { program: { statements, routines: this.routines, labels: [...this.labels.values()] }, globals: this.globals };
@@ -111,6 +116,7 @@ class Binder extends ExpressionBinder {
           break;
         case "pragma":
           if (s.name === "codebank" && s.action === "set" && s.value && /^\d+$/.test(s.value)) bank = Number(s.value);
+          else this.pragma(s.name, s.action, s.value);
           break;
       }
     }
@@ -163,7 +169,7 @@ class Binder extends ExpressionBinder {
       ...(isDeclare ? { declaredAt: header.span } : { definedAt: header.span }),
       called: false
     };
-    if (!existing) this.globals.add(symbol);
+    if (!existing) this.globals.add(symbol, this.settings.caseInsensitive);
     this.routines.push(symbol);
     this.headerSymbols.set(header, symbol);
     return symbol;
@@ -235,15 +241,19 @@ class Binder extends ExpressionBinder {
         return { kind: "cls", span };
       case "plot":
         return { kind: "plot", span, attrs: this.attrs(s.attrs), x: this.valueAs(s.x, "UByte"), y: this.valueAs(s.y, "UByte") };
-      case "draw":
+      case "draw": {
+        const arc = s.angle ? this.globals.lookupLocal(DRAW_ARC_ROUTINE, false) : undefined;
+        if (arc?.kind === "sub") arc.called = true;
         return {
           kind: "draw",
           span,
           attrs: this.attrs(s.attrs),
           x: this.valueAs(s.x, "Integer"),
           y: this.valueAs(s.y, "Integer"),
-          ...(s.angle ? { angle: this.valueAs(s.angle, "Float") } : {})
+          ...(s.angle ? { angle: this.valueAs(s.angle, "Float") } : {}),
+          ...(arc?.kind === "sub" ? { arc } : {})
         };
+      }
       case "circle":
         return {
           kind: "circle",
@@ -554,7 +564,7 @@ class Binder extends ExpressionBinder {
       assigned: false,
       read: false
     };
-    this.scope.add(symbol);
+    this.scope.add(symbol, this.settings.caseInsensitive);
     return symbol;
   }
 
@@ -601,7 +611,7 @@ class Binder extends ExpressionBinder {
       bounds,
       read: false
     };
-    this.scope.add(symbol);
+    this.scope.add(symbol, this.settings.caseInsensitive);
     if (at) {
       const address = this.address(at);
       if (address) symbol.at = address;
@@ -670,7 +680,7 @@ class Binder extends ExpressionBinder {
     }
     const symbol: ConstSymbol = { kind: "const", name: ref.name, span: ref.span, uses: [], bank: this.settings.bank, type, value: { ...constant, type, literal: declaredType ? undefined : constant.literal } };
     if (!symbol.value.literal) delete symbol.value.literal;
-    this.scope.add(symbol);
+    this.scope.add(symbol, this.settings.caseInsensitive);
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -870,7 +880,7 @@ class Binder extends ExpressionBinder {
         this.error("E403", `Parameter '${p.name}' is already declared`, p.span);
         continue;
       }
-      this.scope.add(symbol);
+      this.scope.add(symbol, this.settings.caseInsensitive);
       p.symbol = symbol;
     }
     const bound = this.block(body);
@@ -948,6 +958,9 @@ class Binder extends ExpressionBinder {
     }
   }
 }
+
+/** The library SUB (`__drawarc.bas`) that draws DRAW's arc: (dx AS Integer, dy AS Integer, angle AS Float). */
+const DRAW_ARC_ROUTINE = "__kbDrawArc";
 
 /** The pragmas that change binding, and the setting each one drives. */
 const PRAGMA_SETTINGS: Record<string, keyof BindSettings> = {

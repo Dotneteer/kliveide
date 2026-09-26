@@ -110,10 +110,12 @@ export type LabelSymbol = {
 /**
  * One level of names: the program's globals, or a routine's parameters and locals. Lookup falls back
  * to the parent. Names match exactly; while `case_insensitive` is on, a name that has no exact match
- * matches one that differs only in case.
+ * matches one that differs only in case. A name declared while it was on (the standard library's,
+ * which switches it on for its own scope) matches in any case from anywhere.
  */
 export class Scope {
   private readonly names = new Map<string, Symbol>();
+  private readonly anyCase = new Set<Symbol>();
 
   constructor(
     readonly parent?: Scope,
@@ -127,9 +129,11 @@ export class Scope {
 
   lookupLocal(name: string, caseInsensitive: boolean): Symbol | undefined {
     const exact = this.names.get(name);
-    if (exact || !caseInsensitive) return exact;
+    if (exact || (!caseInsensitive && !this.anyCase.size)) return exact;
     const lower = name.toLowerCase();
-    for (const [key, symbol] of this.names) if (key.toLowerCase() === lower) return symbol;
+    for (const [key, symbol] of this.names) {
+      if (key.toLowerCase() === lower && (caseInsensitive || this.anyCase.has(symbol))) return symbol;
+    }
     return undefined;
   }
 
@@ -137,8 +141,10 @@ export class Scope {
     return this.lookupLocal(name, caseInsensitive) ?? this.parent?.lookup(name, caseInsensitive);
   }
 
-  add(symbol: Symbol): void {
+  /** `anyCase`: declared while `case_insensitive` was on. */
+  add(symbol: Symbol, anyCase = false): void {
     this.names.set(symbol.name, symbol);
+    if (anyCase) this.anyCase.add(symbol);
   }
 }
 

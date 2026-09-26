@@ -334,5 +334,99 @@ export const runtimeBundle: RuntimeBundle = {
       "text": "; @module   usr\n; @summary  USR: calling machine code, and the UDG address of a character.\n; @exports  Usr, UsrString\n; @requires strings, errors\n\n; ------------------------------------------------------------------------------------------------\n; USR address: calls the machine code at HL; its BC is the result. IX is kept for the caller.\n; Out: HL. Changes everything else.\nUsr:\n    push ix\n    call UsrJump\n    pop ix\n    ld h,b\n    ld l,c\n    ret\nUsrJump:\n    jp (hl)\n\n; ------------------------------------------------------------------------------------------------\n; USR \"a\": the address of the user-defined graphic of the String's first character, a-u in either\n; case (UDG + 8 * its place). Anything else stops with \"A Invalid argument\". In: HL = the String,\n; A = free flags (bit 0 frees it). Out: HL. Changes AF, BC, DE.\nUsrString:\n    push af                 ; S: [flags]\n    call StrLen\n    ld e,0\n    ld a,b\n    or c\n    jr z,UsrStringFree\n    inc hl\n    inc hl\n    ld e,(hl)\n    dec hl\n    dec hl\nUsrStringFree:\n    pop af                  ; S: []\n    push de                 ; S: [character]\n    rra\n    call c,Free\n    pop de                  ; S: []\n    ld a,e\n    or $20                  ; lower case\n    sub 'a'\n    jr c,UsrStringBad\n    cp 21\n    jr nc,UsrStringBad\n    ld l,a\n    ld h,0\n    add hl,hl\n    add hl,hl\n    add hl,hl\n    ld de,($5c7b)           ; UDG\n    add hl,de\n    ret\nUsrStringBad:\n    ld a,9                  ; \"A Invalid argument\"\n    jp RaiseError\n"
     }
   ],
-  "stdlib": []
+  "stdlib": [
+    {
+      "name": "__drawarc.bas",
+      "text": "' Klive BASIC standard library - __drawarc.bas: the arc of DRAW x, y, angle.\n' Klive's own code (plan §6.4). The compiler includes it when a program uses DRAW and calls it for\n' DRAW's three-operand form; a program does not call it itself.\n#pragma once\n\n' An arc from the last point plotted to the point (dx, dy) away from it, turning through angle\n' radians: a positive angle turns left (anticlockwise) as the arc is drawn, so the arc bulges to the\n' right of the line from start to end. It is drawn as straight segments of about four pixels. The\n' segments are the chord scaled by sin(d/2)/sin(angle/2) and turned by d = angle/n each time, the\n' first one turned back by (n-1)*d/2 so that the last ends on the target. The running position is\n' kept as a Float, so rounding does not add up along the arc.\nSUB __kbDrawArc(BYVAL dx AS Integer, BYVAL dy AS Integer, BYVAL angle AS Float)\n    DIM half AS Float\n    DIM segments AS UInteger\n    DIM n AS Float\n    DIM d AS Float\n    DIM scale AS Float\n    DIM vx AS Float\n    DIM vy AS Float\n    DIM t AS Float\n    DIM c AS Float\n    DIM s AS Float\n    DIM px AS Float\n    DIM py AS Float\n    DIM i AS UInteger\n    half = SIN(angle / 2)\n    IF ABS(half) < 0.00001 THEN\n        DRAW dx, dy\n        RETURN\n    END IF\n    ' --- About one segment per four pixels of arc (the arc is |chord * angle / (2 sin(angle/2))|)\n    n = INT(ABS(SQR(CAST(Float, dx) * dx + CAST(Float, dy) * dy) * angle / (8 * half))) + 4\n    IF n > 250 THEN n = 250\n    segments = n\n    d = angle / n\n    scale = SIN(d / 2) / half\n    t = (1 - n) * d / 2\n    c = COS(t)\n    s = SIN(t)\n    vx = (dx * c - dy * s) * scale\n    vy = (dx * s + dy * c) * scale\n    c = COS(d)\n    s = SIN(d)\n    px = PEEK(23677)\n    py = PEEK(23678)\n    FOR i = 1 TO segments\n        px = px + vx\n        py = py + vy\n        DRAW INT(px + 0.5) - PEEK(23677), INT(py + 0.5) - PEEK(23678)\n        t = vx * c - vy * s\n        vy = vx * s + vy * c\n        vx = t\n    NEXT i\nEND SUB\n"
+    },
+    {
+      "name": "__kbase.bas",
+      "text": "' Klive BASIC standard library - __kbase.bas: what the other library files share.\n' Klive's own code (plan §6.4).\n#pragma once\n\n' The program's string base: \"ab\"(1) is \"b\" (98) when strings count from 0 and \"a\" (97) when they\n' count from 1, so library code indexes strings the way the program that includes it does.\nCONST __kbStringBase AS UByte = 98 - CODE(\"ab\"(1))\n"
+    },
+    {
+      "name": "asc.bas",
+      "text": "' Klive BASIC standard library - asc.bas: asc.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#include <__kbase.bas>\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The code of the n-th character of s (counted from the string base); 0 past the end.\nFUNCTION asc(BYVAL s AS String, BYVAL n AS UInteger) AS UByte\n    IF n - __kbStringBase >= LEN(s) THEN RETURN 0\n    RETURN CODE(s(n))\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "attr.bas",
+      "text": "' Klive BASIC standard library - attr.bas: ATTR.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The attribute byte of the character cell at (row, col); all 24 rows can be read. Like the rest of\n' the library it does not check its arguments.\nFUNCTION ATTR(BYVAL row AS UByte, BYVAL col AS UByte) AS UByte\n    RETURN PEEK(22528 + CAST(UInteger, row) * 32 + col)\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "csrlin.bas",
+      "text": "' Klive BASIC standard library - csrlin.bas: CSRLIN.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The PRINT cursor's row: 0 at the top, 23 at the bottom. (A FUNCTION with no locals keeps a UByte\n' result at IX-1.)\nFUNCTION CSRLIN() AS UByte\n    ASM\n        ld a,(core.PrintRow)\n        ld (ix-1),a\n    END ASM\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "hex.bas",
+      "text": "' Klive BASIC standard library - hex.bas: hex, hex16 and hex8.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The low `digits` hexadecimal digits of n, upper case, with leading zeros.\nFUNCTION __kbHexDigits(BYVAL n AS ULong, BYVAL digits AS UByte) AS String\n    DIM result AS String\n    DIM d AS UByte\n    result = \"\"\n    WHILE digits > 0\n        d = CAST(UByte, n BAND 15)\n        IF d < 10 THEN\n            result = CHR$(48 + d) + result\n        ELSE\n            result = CHR$(55 + d) + result\n        END IF\n        n = n SHR 4\n        digits = digits - 1\n    WEND\n    RETURN result\nEND FUNCTION\n\n' 8 hexadecimal digits of a 32-bit value.\nFUNCTION hex(BYVAL n AS ULong) AS String\n    RETURN __kbHexDigits(n, 8)\nEND FUNCTION\n\n' 4 hexadecimal digits of a 16-bit value.\nFUNCTION hex16(BYVAL n AS UInteger) AS String\n    RETURN __kbHexDigits(n, 4)\nEND FUNCTION\n\n' 2 hexadecimal digits of an 8-bit value.\nFUNCTION hex8(BYVAL n AS UByte) AS String\n    RETURN __kbHexDigits(n, 2)\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "input.bas",
+      "text": "' Klive BASIC standard library - input.bas: INPUT.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#include <__kbase.bas>\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' Reads a line of at most maxLength characters at the PRINT position, with a flashing cursor, and\n' gives it when ENTER is pressed. DELETE (CAPS SHIFT + 0) removes the last character. Each key is\n' taken once: it must be let go before the next one counts.\nFUNCTION INPUT(BYVAL maxLength AS UByte) AS String\n    DIM result AS String\n    DIM k AS String\n    DIM c AS UByte\n    result = \"\"\n    DO\n        PRINT FLASH 1; \" \"; CHR$(8);\n        DO\n        LOOP UNTIL INKEY$ = \"\"\n        DO\n            k = INKEY$\n        LOOP WHILE k = \"\"\n        c = CODE(k)\n        IF c = 13 THEN EXIT DO\n        IF c = 12 THEN\n            IF LEN(result) > 0 THEN\n                IF LEN(result) = 1 THEN\n                    result = \"\"\n                ELSE\n                    result = result( TO __kbStringBase + LEN(result) - 2)\n                END IF\n                PRINT \" \"; CHR$(8); CHR$(8);\n            END IF\n        ELSEIF c >= 32 AND c < 128 AND LEN(result) < maxLength THEN\n            result = result + k\n            PRINT k;\n        END IF\n    LOOP\n    PRINT \" \"; CHR$(8);\n    RETURN result\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "keys.bas",
+      "text": "' Klive BASIC standard library - keys.bas: GetKey, GetKeyScanCode, MultiKeys and the KEY constants.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). The keyboard is\n' read through port $FE, without the ROM.\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' A key's scan code: the high byte selects its half-row (the port's high address byte), the low byte\n' is its bit there. Codes of one half-row can be combined with BOR.\nCONST KEYCAPS AS UInteger = 0FE01h\nCONST KEYZ AS UInteger = 0FE02h\nCONST KEYX AS UInteger = 0FE04h\nCONST KEYC AS UInteger = 0FE08h\nCONST KEYV AS UInteger = 0FE10h\n\nCONST KEYA AS UInteger = 0FD01h\nCONST KEYS AS UInteger = 0FD02h\nCONST KEYD AS UInteger = 0FD04h\nCONST KEYF AS UInteger = 0FD08h\nCONST KEYG AS UInteger = 0FD10h\n\nCONST KEYQ AS UInteger = 0FB01h\nCONST KEYW AS UInteger = 0FB02h\nCONST KEYE AS UInteger = 0FB04h\nCONST KEYR AS UInteger = 0FB08h\nCONST KEYT AS UInteger = 0FB10h\n\nCONST KEY1 AS UInteger = 0F701h\nCONST KEY2 AS UInteger = 0F702h\nCONST KEY3 AS UInteger = 0F704h\nCONST KEY4 AS UInteger = 0F708h\nCONST KEY5 AS UInteger = 0F710h\n\nCONST KEY0 AS UInteger = 0EF01h\nCONST KEY9 AS UInteger = 0EF02h\nCONST KEY8 AS UInteger = 0EF04h\nCONST KEY7 AS UInteger = 0EF08h\nCONST KEY6 AS UInteger = 0EF10h\n\nCONST KEYP AS UInteger = 0DF01h\nCONST KEYO AS UInteger = 0DF02h\nCONST KEYI AS UInteger = 0DF04h\nCONST KEYU AS UInteger = 0DF08h\nCONST KEYY AS UInteger = 0DF10h\n\nCONST KEYENTER AS UInteger = 0BF01h\nCONST KEYL AS UInteger = 0BF02h\nCONST KEYK AS UInteger = 0BF04h\nCONST KEYJ AS UInteger = 0BF08h\nCONST KEYH AS UInteger = 0BF10h\n\nCONST KEYSPACE AS UInteger = 07F01h\nCONST KEYSYMBOL AS UInteger = 07F02h\nCONST KEYM AS UInteger = 07F04h\nCONST KEYN AS UInteger = 07F08h\nCONST KEYB AS UInteger = 07F10h\n\n' Waits for a key and gives its character code (as INKEY$ reads it).\nFUNCTION GetKey() AS UByte\n    DIM k AS String\n    DO\n        k = INKEY$\n    LOOP WHILE k = \"\"\n    RETURN CODE(k)\nEND FUNCTION\n\n' The scan code of the keys held down in the first half-row (from CAPS SHIFT's to SPACE's) that has\n' any, their bits combined; 0 when no key is down. Does not wait.\nFUNCTION GetKeyScanCode() AS UInteger\n    DIM half AS UByte\n    DIM bits AS UByte\n    DIM i AS UByte\n    half = 0FEh\n    FOR i = 1 TO 8\n        bits = (IN((CAST(UInteger, half) SHL 8) BOR 0FEh) BXOR 0FFh) BAND 1Fh\n        IF bits <> 0 THEN RETURN (CAST(UInteger, half) SHL 8) BOR bits\n        half = (half SHL 1) BOR 1\n    NEXT i\n    RETURN 0\nEND FUNCTION\n\n' The bits of the given keys (scan codes of one half-row, combined) that are held down; 0 for none.\nFUNCTION MultiKeys(BYVAL scanCode AS UInteger) AS UByte\n    RETURN (IN((scanCode BAND 0FF00h) BOR 0FEh) BXOR 0FFh) BAND CAST(UByte, scanCode BAND 1Fh)\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "point.bas",
+      "text": "' Klive BASIC standard library - point.bas: POINT.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' 1 when the pixel at (x, y) is set, else 0. (0, 0) is the bottom left, as PLOT counts, and all 192\n' rows can be tested; a y past the top gives 0.\nFUNCTION POINT(BYVAL x AS UByte, BYVAL y AS UByte) AS UByte\n    DIM row AS UByte\n    DIM address AS UInteger\n    IF y > 191 THEN RETURN 0\n    row = 191 - y\n    address = 16384 + (CAST(UInteger, row BAND 192) SHL 5) + (CAST(UInteger, row BAND 7) SHL 8)\n    address = address + (CAST(UInteger, row BAND 56) SHL 2) + (x SHR 3)\n    IF (PEEK(address) BAND (128 SHR (x BAND 7))) <> 0 THEN RETURN 1\n    RETURN 0\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "pos.bas",
+      "text": "' Klive BASIC standard library - pos.bas: POS.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The PRINT cursor's column: 0 at the left, 32 when the line is full and the next character goes to\n' the next line. (A FUNCTION with no locals keeps a UByte result at IX-1.)\nFUNCTION POS() AS UByte\n    ASM\n        ld a,(core.PrintCol)\n        ld (ix-1),a\n    END ASM\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "putchars.bas",
+      "text": "' Klive BASIC standard library - putchars.bas: putChars, paint and paintData.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). x is the column,\n' y the row, both in character cells; nothing is checked against the screen's edges.\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' Copies width x height character bitmaps (8 bytes each) from dataAddress to the screen at (x, y).\n' The data goes column by column: the cells of the first column top to bottom, then the next column.\nSUB putChars(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL dataAddress AS UInteger)\n    DIM c AS UByte\n    DIM r AS UByte\n    DIM i AS UByte\n    DIM row AS UByte\n    DIM cell AS UInteger\n    IF width = 0 OR height = 0 THEN RETURN\n    FOR c = 0 TO width - 1\n        FOR r = 0 TO height - 1\n            row = y + r\n            cell = 16384 + (CAST(UInteger, row BAND 24) SHL 8) + (CAST(UInteger, row BAND 7) SHL 5) + x + c\n            FOR i = 0 TO 7\n                POKE cell, PEEK(dataAddress)\n                dataAddress = dataAddress + 1\n                cell = cell + 256\n            NEXT i\n        NEXT r\n    NEXT c\nEND SUB\n\n' Gives every cell of the width x height rectangle at (x, y) the attribute byte attribute.\nSUB paint(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL attribute AS UByte)\n    DIM r AS UByte\n    DIM c AS UByte\n    DIM address AS UInteger\n    IF width = 0 OR height = 0 THEN RETURN\n    FOR r = 0 TO height - 1\n        address = 22528 + CAST(UInteger, y + r) * 32 + x\n        FOR c = 0 TO width - 1\n            POKE address + c, attribute\n        NEXT c\n    NEXT r\nEND SUB\n\n' Copies width x height attribute bytes from address to the rectangle at (x, y), row by row.\nSUB paintData(BYVAL x AS UByte, BYVAL y AS UByte, BYVAL width AS UByte, BYVAL height AS UByte, BYVAL address AS UInteger)\n    DIM r AS UByte\n    DIM c AS UByte\n    DIM target AS UInteger\n    IF width = 0 OR height = 0 THEN RETURN\n    FOR r = 0 TO height - 1\n        target = 22528 + CAST(UInteger, y + r) * 32 + x\n        FOR c = 0 TO width - 1\n            POKE target + c, PEEK(address)\n            address = address + 1\n        NEXT c\n    NEXT r\nEND SUB\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "screen.bas",
+      "text": "' Klive BASIC standard library - screen.bas: SCREEN$.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json).\n#pragma once\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The character shown at (row, col) when it is one of the font's (32-127, from CHARS), normal or\n' inverse; otherwise an empty string. All 24 rows can be read.\nFUNCTION SCREEN$(BYVAL row AS UByte, BYVAL col AS UByte) AS String\n    DIM cell AS UInteger\n    DIM glyph AS UInteger\n    DIM ch AS UByte\n    DIM r AS UByte\n    DIM mask AS UByte\n    DIM same AS UByte\n    IF row > 23 OR col > 31 THEN RETURN \"\"\n    cell = 16384 + (CAST(UInteger, row BAND 24) SHL 8) + (CAST(UInteger, row BAND 7) SHL 5) + col\n    glyph = PEEK(UInteger, 23606) + 256\n    FOR ch = 32 TO 127\n        mask = PEEK(cell) BXOR PEEK(glyph)\n        IF mask = 0 OR mask = 255 THEN\n            same = 1\n            r = 1\n            WHILE same = 1 AND r < 8\n                IF (PEEK(cell + (CAST(UInteger, r) SHL 8)) BXOR PEEK(glyph + r)) <> mask THEN same = 0\n                r = r + 1\n            WEND\n            IF same = 1 THEN RETURN CHR$(ch)\n        END IF\n        glyph = glyph + 8\n    NEXT ch\n    RETURN \"\"\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    },
+    {
+      "name": "sinclair.bas",
+      "text": "' Klive BASIC standard library - sinclair.bas: the Sinclair BASIC functions that are library code\n' here (ATTR, POINT and SCREEN$). `sinclair-compatible` includes it before the program's first line.\n' Klive's own code (plan §6.4).\n#pragma once\n#include <attr.bas>\n#include <point.bas>\n#include <screen.bas>\n"
+    },
+    {
+      "name": "string.bas",
+      "text": "' Klive BASIC standard library - string.bas: left, mid and right.\n' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). Positions count\n' from the program's string base, as the program's own slices do.\n#pragma once\n#include <__kbase.bas>\n#pragma push(case_insensitive)\n#pragma case_insensitive = true\n\n' The first n characters of s (all of s when it is shorter).\nFUNCTION left(BYVAL s AS String, BYVAL n AS UInteger) AS String\n    IF n >= LEN(s) THEN RETURN s\n    IF n = 0 THEN RETURN \"\"\n    RETURN s( TO __kbStringBase + n - 1)\nEND FUNCTION\n\n' The last n characters of s (all of s when it is shorter).\nFUNCTION right(BYVAL s AS String, BYVAL n AS UInteger) AS String\n    IF n >= LEN(s) THEN RETURN s\n    IF n = 0 THEN RETURN \"\"\n    RETURN s(__kbStringBase + LEN(s) - n TO )\nEND FUNCTION\n\n' Up to n characters of s from position start; empty when start is past the end.\nFUNCTION mid(BYVAL s AS String, BYVAL start AS UInteger, BYVAL n AS UInteger) AS String\n    DIM first AS UInteger\n    DIM available AS UInteger\n    first = start - __kbStringBase\n    IF n = 0 OR first >= LEN(s) THEN RETURN \"\"\n    available = LEN(s) - first\n    IF n > available THEN n = available\n    RETURN s(start TO start + n - 1)\nEND FUNCTION\n\n#pragma pop(case_insensitive)\n"
+    }
+  ],
+  "documented": [
+    "HRPrint.bas",
+    "HRPrintFast.bas",
+    "Print64x32.bas",
+    "asc.bas",
+    "attr.bas",
+    "attrAddress.bas",
+    "clearBox.bas",
+    "csrlin.bas",
+    "distance.bas",
+    "doubleSizePrint.bas",
+    "fSqrt.bas",
+    "fastPlot.bas",
+    "hMirror.bas",
+    "hex.bas",
+    "iSqrt.bas",
+    "input42.bas",
+    "keys.bas",
+    "megalz.bas",
+    "memorybank.bas",
+    "pixelScroll.bas",
+    "point.bas",
+    "pos.bas",
+    "print42.bas",
+    "print64.bas",
+    "propPrint.bas",
+    "putTile.bas",
+    "putchars.bas",
+    "randomStream.bas",
+    "scrAddress.bas",
+    "screen.bas",
+    "string.bas",
+    "windowAttrScrollUP.bas",
+    "windowPaint.bas",
+    "windowScrollUP.bas",
+    "zx0.bas"
+  ]
 };

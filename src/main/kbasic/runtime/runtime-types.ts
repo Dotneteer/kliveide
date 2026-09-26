@@ -31,4 +31,6 @@ export type StdlibFile = {
 export type RuntimeBundle = {
   modules: RuntimeModule[];
   stdlib: StdlibFile[];
+  /** The library files upstream documents (`.ai/kbasic/stdlib-api.json`), written or not. */
+  documented: string[];
 };

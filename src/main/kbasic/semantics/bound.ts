@@ -80,7 +80,15 @@ export type BoundStatement = StatementBase &
     | { kind: "beep"; duration: BoundExpr; pitch: BoundExpr }
     | { kind: "cls" }
     | { kind: "plot"; attrs: BoundAttr[]; x: BoundExpr; y: BoundExpr }
-    | { kind: "draw"; attrs: BoundAttr[]; x: BoundExpr; y: BoundExpr; angle?: BoundExpr }
+    | {
+        kind: "draw";
+        attrs: BoundAttr[];
+        x: BoundExpr;
+        y: BoundExpr;
+        angle?: BoundExpr;
+        /** With an angle: the library routine that draws the arc (`__drawarc.bas`). */
+        arc?: RoutineSymbol;
+      }
     | { kind: "circle"; attrs: BoundAttr[]; x: BoundExpr; y: BoundExpr; radius: BoundExpr }
     /** `target = value`; value is converted to the target's type (whole arrays: same element type). */
     | { kind: "assign"; target: BoundExpr; value: BoundExpr }

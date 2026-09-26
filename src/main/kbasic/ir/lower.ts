@@ -1,4 +1,5 @@
 import type { StatementKind } from "@abstractions/CompilerInfo";
+import { runtimeBundle } from "../runtime/generated/runtime-bundle";
 import type { DiagnosticBag, Span } from "../diagnostics";
 import type { AttrName } from "../syntax/ast";
 import type { AddressTarget, BoundArgument, BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
@@ -35,9 +36,17 @@ import {
  * What the code generator does not handle yet is reported as E501 and left out, so the rest of the
  * program still gets its diagnostics.
  */
-export function lowerProgram(program: BoundProgram, globals: Scope, diagnostics: DiagnosticBag): MModule {
-  return new Lowering(diagnostics).run(program, globals);
+export function lowerProgram(
+  program: BoundProgram,
+  globals: Scope,
+  diagnostics: DiagnosticBag,
+  isLibraryFile: (fileIndex: number) => boolean = () => false
+): MModule {
+  return new Lowering(diagnostics, isLibraryFile).run(program, globals);
 }
+
+/** The labels the runtime modules export (an asm block's `core.X` that is one links its module). */
+const RUNTIME_EXPORTS = new Set(runtimeBundle.modules.flatMap((m) => m.exports));
 
 /** The label of a BASIC label or line number. */
 export function labelName(label: LabelSymbol): string {
@@ -99,7 +108,10 @@ class Lowering {
   private readonly restoreTargets = new Map<LabelSymbol, string>();
   private dataRead = false;
 
-  constructor(private readonly diagnostics: DiagnosticBag) {}
+  constructor(
+    private readonly diagnostics: DiagnosticBag,
+    private readonly isLibraryFile: (fileIndex: number) => boolean
+  ) {}
 
   run(program: BoundProgram, globals: Scope): MModule {
     this.upperTables = containsBuiltin(program.statements, "UBOUND");
@@ -113,7 +125,13 @@ class Lowering {
     // --- Falling off the end of the main program is END 0
     this.endStatement();
     this.terminate({ op: "end", code: imm("u16", 0), sid: -1 });
-    for (const s of routinesOf(program.statements)) this.lowerRoutine(s);
+    const reachable = reachableRoutines(program.statements);
+    for (const s of routinesOf(program.statements)) {
+      // --- A library routine the program never reaches is left out (a user's is kept: inline asm
+      // --- may call it by name)
+      if (this.isLibraryFile(s.routine.span.file) && !reachable.has(s.routine)) continue;
+      this.lowerRoutine(s);
+    }
     if (this.dataRead) this.lowerData();
     this.module.data.push(...this.staticSlots);
     return this.module;
@@ -362,7 +380,18 @@ class Lowering {
       case "draw":
         this.beginStatement(s.span, "other", [s.attrs, s.x, s.y, s.angle]);
         if (s.angle) {
-          this.unsupported("DRAW with an arc", s.angle.span);
+          const { arc, angle } = s;
+          if (!arc) {
+            this.unsupported("DRAW with an arc", angle.span);
+            return;
+          }
+          for (const a of s.attrs) this.colourItem(a.attr, a.value);
+          // --- A call's arguments are computed last first, each into a vreg (as `call` does)
+          const a = this.inVReg(this.value(angle));
+          const y = this.inVReg(this.value(s.y));
+          const x = this.inVReg(this.value(s.x));
+          this.callValues(arc, [x, y, a], undefined);
+          if (s.attrs.length) this.emit({ op: "rtcall", name: this.rt("PrintReset"), args: [], sid: this.sid });
           return;
         }
         this.graphics(s.attrs, () => ({ name: "DrawLine", args: [this.value(s.x), this.value(s.y)] }));
@@ -473,6 +502,9 @@ class Lowering {
       case "asm":
         this.beginStatement(s.span, "asm");
         this.module.statements[this.sid].asmLines = s.lines.map((l) => l.span);
+        // --- A runtime label the block names links its module (the library's asm uses core.PrintCol...)
+        for (const line of s.lines)
+          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME_EXPORTS.has(m[1])) this.rt(m[1]);
         this.emit({ op: "asm", lines: s.lines.map((l) => l.text), sid: this.sid });
         return;
       case "codebank":
@@ -1264,6 +1296,11 @@ class Lowering {
   private call(routine: RoutineSymbol, args: BoundArgument[], resultType: MType | undefined): Value | undefined {
     const values: Value[] = new Array(args.length);
     for (let i = args.length - 1; i >= 0; i--) values[i] = this.argument(args[i]);
+    return this.callValues(routine, values, resultType);
+  }
+
+  /** A call with its arguments already in vregs, computed last first (by value, none a String). */
+  private callValues(routine: RoutineSymbol, values: Value[], resultType: MType | undefined): Value | undefined {
     const site: CallSite = { kind: routine.kind, callee: routine.name, moreCallsFollow: false, order: this.statementCalls.length };
     this.statementCalls.push(site);
     const dst = resultType ? this.vreg(resultType) : undefined;
@@ -1661,6 +1698,36 @@ function containsBuiltin(node: unknown, name: string): boolean {
     if (containsBuiltin(value, name)) return true;
   }
   return false;
+}
+
+/**
+ * The routines the program can reach: those its main code calls or takes the address of, then those
+ * they call, and so on.
+ */
+function reachableRoutines(statements: BoundStatement[]): Set<RoutineSymbol> {
+  const bodies = new Map(routinesOf(statements).map((r) => [r.routine, r.body]));
+  const reached = new Set<RoutineSymbol>();
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) {
+      node.forEach(visit);
+      return;
+    }
+    const o = node as Record<string, unknown>;
+    if (o.kind === "routine" && o.body) return; // a definition: reached only through a call
+    const target =
+      o.kind === "call" ? o.routine : o.kind === "address" ? (o.target as { routine?: unknown }).routine : o.kind === "draw" ? o.arc : undefined;
+    if (target && !reached.has(target as RoutineSymbol)) {
+      reached.add(target as RoutineSymbol);
+      visit(bodies.get(target as RoutineSymbol));
+    }
+    for (const [key, value] of Object.entries(o)) {
+      if (key === "symbol" || key === "routine" || key === "arc" || key === "constant" || key === "span" || key === "label") continue;
+      visit(value);
+    }
+  };
+  visit(statements);
+  return reached;
 }
 
 /** The routine definitions of a program, including those inside CODEBANK blocks. */

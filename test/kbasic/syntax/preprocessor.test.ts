@@ -122,8 +122,9 @@ describe("Klive BASIC preprocessor", () => {
 
   it("reports a missing file, an unavailable library and self-inclusion", () => {
     expect(run('#include "none.bas"').codes).toEqual(["E216"]);
-    const lib = run("#include <print64.bas>");
-    expect(lib.diagnostics[0].message).toMatch(/not in Klive BASIC's library/);
+    const lib = run("#include <zx0.bas>");
+    expect(lib.diagnostics[0].message).toBe("<zx0.bas> is not available in Klive BASIC yet");
+    expect(run("#include <nowhere.bas>").diagnostics[0].message).toMatch(/not in Klive BASIC's library, nor in the include path/);
     const loop = { "/p/loop.bas": '#include "main.zxbas"', "/p/main.zxbas": "" };
     expect(run('#include "loop.bas"', loop).codes).toEqual(["K216"]);
   });

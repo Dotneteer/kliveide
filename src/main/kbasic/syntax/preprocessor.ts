@@ -1,4 +1,5 @@
 import { DiagnosticBag, type Span } from "../diagnostics";
+import { isDocumentedLibrary, libraryFile } from "../stdlib";
 import { lex, lexFragment } from "./lexer";
 import type { SourceFile, SourceSet } from "./source";
 import type { ExpansionStep, Token } from "./tokens";
@@ -12,8 +13,12 @@ export interface FileReader {
 export type PreprocessorOptions = {
   /** Macros defined before the first line (-D, the header's `define`, option macros): name -> value. */
   defines?: Record<string, string>;
-  /** Folders searched for `#include <file>`, and for `"file"` after the including file's folder. */
+  /** Folders searched for `#include <file>` (after Klive's own library), and for `"file"` after the including file's folder. */
   includePaths?: string[];
+  /** Library files included before the build root's first line (`sinclair.bas` for `sinclair-compatible`). */
+  autoIncludes?: string[];
+  /** Library files included after the build root when the program uses a keyword (DRAW's arc routine). */
+  onDemandIncludes?: { keyword: string; file: string }[];
 };
 
 export type PreprocessResult = {
@@ -96,7 +101,24 @@ class Preprocessor {
   }
 
   run(): PreprocessResult {
+    for (const name of this.options.autoIncludes ?? []) {
+      const library = libraryFile(name);
+      if (!library || this.includedOnce.has(library.path)) continue;
+      this.includedOnce.add(library.path);
+      this.processFile(this.sources.add(library.path, library.text));
+    }
     this.processFile(this.root);
+    for (const { keyword, file } of this.options.onDemandIncludes ?? []) {
+      const library = libraryFile(file);
+      if (!library || this.includedOnce.has(library.path)) continue;
+      if (!this.out.some((t) => t.kind === "keyword" && t.keyword === keyword)) continue;
+      this.includedOnce.add(library.path);
+      const end = this.root.text.length;
+      if (this.out.length && this.out[this.out.length - 1].kind !== "newline") {
+        this.out.push({ kind: "newline", text: "", span: { file: this.root.index, start: end, end } });
+      }
+      this.processFile(this.sources.add(library.path, library.text));
+    }
     this.out.push({ kind: "eof", text: "", span: { file: this.root.index, start: this.root.text.length, end: this.root.text.length } });
     return { tokens: this.out, comments: this.comments, requires: this.requires, inits: this.inits };
   }
@@ -340,9 +362,11 @@ class Preprocessor {
     const name = (m[1] ?? m[2]).trim();
     const resolved = this.resolveInclude(name, file.name, system);
     if (!resolved) {
-      const message = system
-        ? `<${name}> is not in Klive BASIC's library (yet), nor in the include path`
-        : `Cannot find the included file "${name}"`;
+      const message = !system
+        ? `Cannot find the included file "${name}"`
+        : isDocumentedLibrary(name)
+          ? `<${name}> is not available in Klive BASIC yet`
+          : `<${name}> is not in Klive BASIC's library, nor in the include path`;
       this.error("E216", message, span);
       return;
     }
@@ -360,6 +384,11 @@ class Preprocessor {
   }
 
   private resolveInclude(name: string, from: string, system: boolean): { path: string; text: string } | undefined {
+    // --- <file>: Klive BASIC's own library first (plan §6.4)
+    if (system) {
+      const library = libraryFile(name);
+      if (library) return library;
+    }
     const candidates: string[] = [];
     if (isAbsolute(name)) candidates.push(name);
     else {

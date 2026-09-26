@@ -1,6 +1,7 @@
 import type { FileLine, ListFileItem } from "@abstractions/CompilerInfo";
 import type { StatementEntry } from "../ir/mir";
 import type { LineInfo } from "../backend/emit";
+import { isLibraryPath } from "../stdlib";
 import type { SourceSet } from "../syntax/source";
 
 /**
@@ -196,6 +197,8 @@ function classicTables(input: DebugBuildInput, addresses: StatementAddresses[]):
     if (a.elided) continue;
     const s = bySid.get(a.sid)!;
     const file = input.sources.get(s.span.file);
+    // --- Klive's library is not the user's source: the IDE treats its code like the runtime's
+    if (isLibraryPath(file.name)) continue;
     const start = file.location(s.span.start);
     const end = file.location(Math.max(s.span.start, s.span.end));
     const index = fileIndex(start.fileName);

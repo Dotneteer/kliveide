@@ -14,6 +14,7 @@ import type { KBasicOptions } from "./options/options";
 import { bind, type BindResult } from "./semantics/binder";
 import type { FileReader } from "./syntax/preprocessor";
 import { SourceFile, type SourceSet } from "./syntax/source";
+import { isLibraryPath } from "./stdlib";
 
 export type KBasicFrontEndResult = FrontEndResult & {
   options: KBasicOptions;
@@ -133,7 +134,11 @@ export function runFrontEnd(
     reader,
     {
       defines,
-      includePaths: options.includePaths.map((p) => (isAbsolutePath(p) || !rootFolder ? p : `${rootFolder}/${p}`))
+      includePaths: options.includePaths.map((p) => (isAbsolutePath(p) || !rootFolder ? p : `${rootFolder}/${p}`)),
+      // --- sinclair-compatible brings the Sinclair functions in (the spec's --sinclair)
+      ...(options.sinclairCompatible ? { autoIncludes: ["sinclair.bas"] } : {}),
+      // --- DRAW x, y, angle draws its arc through a library routine
+      onDemandIncludes: [{ keyword: "DRAW", file: "__drawarc.bas" }]
     },
     diagnostics
   );
@@ -142,7 +147,14 @@ export function runFrontEnd(
   }
   const bound = diagnostics.hasErrors ? undefined : bind(result.program, options, diagnostics, result.preprocessed.inits);
   dropDisabledWarnings(diagnostics, options);
+  dropLibraryWarnings(diagnostics, result.sources);
   return { ...result, options, ...(bound ? { bound } : {}) };
+}
+
+/** Warnings about Klive's own library code (an unused library FUNCTION, say) are not the user's. */
+function dropLibraryWarnings(diagnostics: DiagnosticBag, sources: SourceSet): void {
+  const kept = diagnostics.items.filter((d) => d.severity === "error" || !isLibraryPath(sources.get(d.span.file).name));
+  diagnostics.items.splice(0, diagnostics.items.length, ...kept);
 }
 
 /** `'@disable-warning W150, 170`: those warnings are not reported. */

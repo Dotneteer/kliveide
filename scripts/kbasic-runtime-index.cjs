@@ -19,6 +19,8 @@ const ROOT = path.join(__dirname, "..");
 const RUNTIME_DIR = path.join(ROOT, "src/main/kbasic/runtime");
 const STDLIB_DIR = path.join(ROOT, "src/main/kbasic/stdlib");
 const BUNDLE_FILE = path.join(RUNTIME_DIR, "generated/runtime-bundle.ts");
+// --- The documented library API (upstream's library names), for "not available yet" diagnostics
+const STDLIB_API = path.join(ROOT, ".ai/kbasic/stdlib-api.json");
 const MODULE_SUFFIX = ".kz80.asm";
 const LIST_TAGS = ["exports", "requires", "symbols"];
 const SINGLE_TAGS = ["module", "summary", "init"];
@@ -155,7 +157,11 @@ function buildBundle(runtimeDir = RUNTIME_DIR, stdlibDir = STDLIB_DIR) {
     text: readText(path.join(stdlibDir, file))
   }));
 
-  return { bundle: { modules, stdlib }, errors };
+  const documented = fs.existsSync(STDLIB_API)
+    ? [...new Set(JSON.parse(readText(STDLIB_API)).libraries.map((l) => l.name).filter((n) => /^[\w.-]+\.bas$/.test(n)))].sort()
+    : [];
+
+  return { bundle: { modules, stdlib, documented }, errors };
 }
 
 function renderBundle(bundle) {

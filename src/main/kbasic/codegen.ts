@@ -14,6 +14,7 @@ import type { MModule } from "./ir/mir";
 import type { KBasicOptions } from "./options/options";
 import { prologueSource, resolveRuntimeModules, runtimeInitialisers, runtimeUnits } from "./runtime/runtime-linker";
 import type { BindResult } from "./semantics/binder";
+import { isLibraryPath } from "./stdlib";
 import type { SourceSet } from "./syntax/source";
 
 export type GeneratedProgram = {
@@ -37,7 +38,7 @@ export async function generateProgram(
   programName: string,
   diagnostics: DiagnosticBag
 ): Promise<GeneratedProgram | undefined> {
-  const mir = lowerProgram(bound.program, bound.globals, diagnostics);
+  const mir = lowerProgram(bound.program, bound.globals, diagnostics, (file) => isLibraryPath(sources.get(file).name));
   if (diagnostics.hasErrors) return undefined;
 
   // --- Instruction selection adds the runtime routines it calls (multiply, divide, ...)
