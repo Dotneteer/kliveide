@@ -73,6 +73,9 @@ merely uncoloured, which no route diff can see.
 - References: `.ai/zxbasic-syntax/` (the language spec, the only language reference; refresh with
   `node scripts/zxbasic-syntax-check.cjs`) and `.ai/kbasic/` (runtime ABI, CODEBANK contract,
   integration map, documented library API).
+- The standard library is Klive BASIC source in `src/main/kbasic/stdlib/` (read its `README.md`),
+  written only from the documented API in `.ai/kbasic/stdlib-api.json`. Regenerate the bundle with
+  `npm run kbasic:runtime` after changing it.
 - Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
   to BASIC; read its README) and `test/harness/zxnext/`.
 - New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,

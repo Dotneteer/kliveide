@@ -27,8 +27,15 @@ flow, SUB/FUNCTION in both conventions, arrays (global, parameter, local), inlin
 INKEY$, PAUSE, IN/OUT, for the 48K; new runtime modules `arrays`, `arith32`, `attributes`,
 `keyboard`. The 61-program corpus (R10) runs on the 48K harness with the validator and a dynamic G4
 check; breakpoints and the execution point work in the running IDE with no debugger changes
-(`scripts/kbasic-ide-check.cjs`). The walking skeleton is retired. **Phase 4 (full language) is
-next.** Decisions D1–D12 settled (§0.2–§0.3). See **Handoff**, immediately below, before doing
+(`scripts/kbasic-ide-check.cjs`). The walking skeleton is retired. **Phase 4 done** (2026-09-26):
+Float through the ROM calculator and Fixed (16.16); every built-in; DATA/READ/RESTORE; PLOT, DRAW
+(with arcs), CIRCLE, BEEP, SAVE/LOAD/VERIFY; RANDOMIZE/RND; substring and whole-array assignment;
+the 128K and +3 targets (ROM paging); `sinclair-compatible`; new runtime modules `float`, `fixed`,
+`random`, `usr`, `data`, `graphics`, `sound`, `tape`. The standard library's documented priority
+set (§6.4) is written in Klive BASIC. The corpus has 159 programs, all passing; the behavioural
+oracle script exists (`scripts/kbasic-oracle.cjs`, to run where zxbc is installed); `zxbasic.compiler`
+now defaults to `klive`. **Phase 5 (source-level debugger) is next.** Decisions D1–D12 settled
+(§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
 ---
@@ -72,7 +79,11 @@ self-contained; read it in full, then continue in this order:
 | Phase 3: code generation — MIR (`ir/mir.ts`) and lowering (`ir/lower.ts`), level-0 instruction selection (`backend/select0.ts`), the emitter (`backend/emit.ts`), the driver (`codegen.ts`), the debug-info builder and validator (`debug/builder.ts`); the design notes `.docs/kbasic-{mir,lir-regalloc,string-ownership,debug-builder}.md` (approved, each with its Phase 3 state) | `src/main/kbasic/`; tests `test/kbasic/codegen/` (execution on the 48K harness, `debugger.test.ts` resolves breakpoints as the IDE does), `test/kbasic/runtime/` | those tests |
 | Phase 3: the test corpus (R10) — 61 programs with `'@expect` header lines; the runner checks them, the validator's problems and G4 on every run | `test/kbasic/corpus/` (the runner's header comment lists the expectation vocabulary) | `npx vitest run --config build/vitest.config.ts --project node test/kbasic/corpus` |
 | Phase 3: the IDE check (exit criterion) | `scripts/kbasic-ide-check.cjs`: a Klive BASIC project in the running app, two source breakpoints, `debug`, the stops and the execution point | build `out/` first, then `xvfb-run -a node scripts/kbasic-ide-check.cjs` (no `xvfb-run` on a machine with a display) |
-| Upstream `zxbc` 1.19.0, installed for the D12 oracle (§17.2, R9) | `~/zxbasic` (**outside this repository**, on the project author's machine only), its own Python 3.14 virtual environment at `~/zxbasic/.venv` | `~/zxbasic/.venv/bin/zxbc --version` → `zxbc 1.19.0`. Installed on the author's machine; a cloud session's fresh container does not have it (nothing before Phase 2 needs it). Only the oracle script (`scripts/kbasic-oracle.cjs`) remains to be written. |
+| Phase 4: the full language — Float (`float` module: the ROM calculator through `rst $28`, Float in A-E-D-C-B), Fixed (`fixed`), DATA/READ/RESTORE (`data`), graphics (`graphics`), BEEP (`sound`), tape (`tape`), RND (`random`), USR (`usr`); 128K/+3 (`rom`'s RomIn/RomOut page the 48K BASIC ROM) | `src/main/kbasic/runtime/`, `ir/lower.ts`, `backend/select0.ts`; tests `test/kbasic/codegen/{float,fixed,data,graphics,tape,targets}.test.ts`, `test/kbasic/runtime/` | those tests |
+| Phase 4: the standard library (§6.4) — Klive BASIC files, bundled, found first by `#include <...>` | `src/main/kbasic/stdlib/` (read its `README.md`), `src/main/kbasic/stdlib.ts`; `scripts/kbasic-font64.cjs` (print64's font); test `test/kbasic/codegen/stdlib.test.ts` | that test |
+| Phase 4: the corpus — 159 programs | `test/kbasic/corpus/` | the corpus command above |
+| Upstream `zxbc` 1.19.0, installed for the D12 oracle (§17.2, R9) | `~/zxbasic` (**outside this repository**, on the project author's machine only), its own Python 3.14 virtual environment at `~/zxbasic/.venv` | `~/zxbasic/.venv/bin/zxbc --version` → `zxbc 1.19.0`. Installed on the author's machine; a cloud session's fresh container does not have it. |
+| The behavioural oracle (D12, R9) | `scripts/kbasic-oracle.cjs` (compiles with zxbc into a temporary folder, runs on the 48K harness, writes only `test/kbasic/oracle/<area>/<name>.json`); `test/kbasic/oracle/`; the corpus runner compares with those files | `node scripts/kbasic-oracle.cjs` where zxbc is installed; `test/kbasic/oracle/oracle-script.test.ts` everywhere |
 
 Run before starting work, to confirm the environment matches this description:
 
@@ -94,15 +105,47 @@ not committed; the 48K core builds itself); `zxbasic-syntax-check.cjs` cannot re
 there (the container's `GITHUB_TOKEN` is refused, and unauthenticated calls hit the shared IP's rate
 limit) — run it on a developer machine; and `zxbc` is not installed.
 
-**Where to start:** Phase 4 in §14. Everything Phase 3 does not generate yet is reported as E501
-("... is not supported by the Klive BASIC code generator yet") at its BASIC span, so the E501s are
-Phase 4's work list: Float and Fixed (the ROM calculator, §7), DATA/READ/RESTORE, graphics, BEEP,
-RANDOMIZE/RND, tape, the remaining built-ins (STR$, VAL, ABS, SGN, INT, USR, the maths functions),
-substring and whole-array assignment, `^`, BOLD/ITALIC, CODEBANK (Phase 6), and the targets beyond
-the 48K (E502). Settle R8's open `for-loop-evaluation` question with the oracle before generating
-more FOR code: today a UByte loop to 255 wraps and never ends. Add a corpus program for each
-feature (Phase 4's R10 target is +90), and read `src/main/kbasic/runtime/README.md` before adding a
-runtime module.
+**Where to start:** Phase 5 in §14 (the source-level debugger, §10.2–§10.8). Three things are
+open from Phase 4 and need the project author's machine or decision:
+
+1. **Run the oracle** (`node scripts/kbasic-oracle.cjs`, zxbc installed): commit the results, then
+   settle every R8 entry still `provisional` — confirm it (`source: "oracle"`) or record the
+   difference as a Klive decision and mark the program `'@expect oracle-differs <entry>`. Programs
+   that name Klive-only library globals (`__kbP42Row` in `stdlib/print42-lib`) will be rejected by
+   zxbc; that is expected.
+2. **The rest of §6.4's priority list has no documented API.** `stdlib-api.json` does not cover
+   `alloc.bas`, `memcopy.bas`, `random.bas`, `scroll.bas`, `esxdos.bas`, `IM2.bas`, or `string.bas`'s
+   INSTR/case/trim; their interfaces must be recorded from upstream's documentation (never its
+   library source) before they are written. Everything documented in the priority set is done.
+3. What is still E501: SAVE/LOAD DATA of a String array or a local, an initialiser on an array
+   placed `AT` an address, CODEBANK (Phase 6); the Next target is E502 (Phase 6).
+
+**Phase 4 facts a later phase must know:**
+
+- Float lives in A-E-D-C-B (the ROM's order: exponent, then the mantissa, sign in E's bit 7); a
+  spilled Float is `push bc; push de; push af`. Float constants are 5-byte data (`__flt<n>`), never
+  immediates. Binary Float, 32-bit and Fixed runtime routines take the left operand on the stack
+  (callee removes it) and the right in registers; `RUNTIME_ARGS` in `select0.ts` is the table.
+- The ROM calculator runs with IY = $5C3A and, on the 128K/+3, with the 48K BASIC ROM paged in:
+  runtime code calls `RomIn`/`RomOut` (a nesting counter) around it; `RaiseError` pages it too.
+  Comparisons load B with the operation (BREG). Float to integer rounds towards minus infinity,
+  then wraps; MOD is `a - trunc(a / b) * b`.
+- Literal-only division is integer division when both sides are integral (`1 / 8` is 0), and `^`
+  is right-associative: both are the spec's rules, and corpus programs pin them.
+- A FOR loop's signed STEP of an unsigned variable keeps its sign (the signed type of the
+  variable's width); a loop that must pass 0 or its type's top still wraps and never ends (K408).
+- DATA is a generated function `__data_read` of per-item blocks; READ is a MIR call with a `read`
+  call site; `__data_next` is a raw pointer.
+- The library: `#include <x.bas>` finds `src/main/kbasic/stdlib/` first (path `<kbasic-stdlib>/x.bas`);
+  library code's warnings are dropped, its statements stay out of the IDE's tables, unreached
+  library routines are not generated, and names declared under `case_insensitive` match in any
+  case. `sinclair-compatible` auto-includes `sinclair.bas`; a program with DRAW gets `__drawarc.bas`
+  after its last line (DRAW's arc calls `__kbDrawArc`). An asm block's `core.X` links X's module.
+- The binder's first pass (labels and routine headers) now follows pragmas, then starts again from
+  the options for the second.
+- The 48K harness: a stub at $FF00 calls the program; a deep stack can overwrite the stub after the
+  program returns, so stop at the return (`runTo(done)`), never run on past it. Pressing two keys
+  in the same frame can lose one (queued as a separate task); press them a frame apart.
 
 **Phase 3 facts a later phase must know:**
 
@@ -637,6 +680,11 @@ This lets NextBuild projects be opened and built with at most header edits.
   CODEBANK (§9).
 - A library not yet written gives a clear diagnostic ("`<print64.bas>` is not available in Klive
   BASIC yet") instead of a missing-file error.
+- **Phase 4 state:** written — `string.bas` (left, mid, right), `attr.bas`, `screen.bas`,
+  `point.bas`, `input.bas`, `keys.bas`, `hex.bas`, `putchars.bas`, `print42.bas`, `print64.bas`,
+  `sinclair.bas`, and `asc.bas`, `pos.bas`, `csrlin.bas`; `__drawarc.bas` serves DRAW's arc. Not
+  written for want of a documented API: `alloc`, `memcopy`, `random`, `scroll`, `esxdos`, `IM2`, and
+  INSTR/case/trim in `string.bas` (see the Handoff).
 
 ### 6.5 zxbasm-dialect libraries (D10)
 
@@ -1311,7 +1359,9 @@ have statements.
 
 `KBasicCompiler` registers for language `zxbas`. A setting `zxbasic.compiler` = `klive` | `zxbc`
 selects the implementation; `zxbc` keeps today's external integration. Default `zxbc` until the
-compatibility milestone (end of Phase 4), `klive` after.
+compatibility milestone (end of Phase 4), `klive` after. **Done (Phase 4):** unset or anything but
+`zxbc` selects Klive BASIC; `selectedZxBasicCompiler` in `zxb-config.ts` is the one place both the
+dispatcher and the renderer's background compile ask.
 
 ### 12.2 Output per target
 
@@ -1491,11 +1541,11 @@ they are done.
 | R6 | **Debug-info transport to the emulator.** Stepping decisions run in the emulator process; debug info is produced in the main process. | Phase 5 (first use in Phase 3 for the classic tables, which already travel) | 1. Define the payload `SourceDebugPayload = {version, programHash, info}` in `src/common/abstractions/SourceDebugInfo.ts` (JSON only). 2. Encode the big tables compactly: `addressToStatement` and per-partition maps as run-length pairs in a `Uint32Array`, sent as base64. 3. Add `emuApi.setSourceDebugInfo(payload \| null)` → `MainToEmuProcessor` → `MachineController`, stored with its version. 4. Send it after every foreground compile that produced source-level info, and clear it when the machine type changes or another build root is compiled. 5. Build the statement locator (§10.2.1) lazily in the emulator process on first use; drop it when the payload changes. 6. Guard: a step started under one version and finished under another ends as a plain stop, never a wrong one. | A round-trip test (payload → decode → locator answers); a size-budget test: a generated 5,000-statement program's payload stays under 300 KB; a stale-version test. |
 | R7 | **Packaging of the runtime and standard library.** **Done 2026-09-26** (Phase 0): as below; the bundle is `src/main/kbasic/runtime/generated/runtime-bundle.ts`, `npm run kbasic:runtime` regenerates it, `build:check` runs the staleness check. The worker-side check waits for the compiler (Phase 1). | Phase 0 | 1. Runtime sources as `src/main/kbasic/runtime/*.kz80.asm` (editor highlighting for free), stdlib as `src/main/kbasic/stdlib/*.bas`. 2. `scripts/kbasic-runtime-index.cjs` reads the module headers and writes `src/main/kbasic/runtime/generated/runtime-bundle.ts` exporting the index and the text of every module and library file. 3. The compiler imports the bundle: no file I/O, identical in the main process, the worker and tests. 4. `npm run build:check` fails when the bundle is stale (the script runs in check mode and compares), the same ratchet style as the type baseline. | The compiler links a module in the worker and in the main process from the bundle; the staleness check fails on an edited-but-not-regenerated module. |
 | R8 | **Semantics annex to the spec.** The spec records syntax; behaviour is partly open. | Phases 2–4 | **Steps 1–2 done 2026-09-26 (Phase 2):** `semantics.entries` holds 24 questions, each with `status` (`decided` / `provisional` / `open`), `source`, `phase` and, unless open, its decision and pinning test; the contract test enforces that. The front-end questions are decided or provisional; the runtime ones stay open or provisional for Phase 4. `provisional` means implemented and tested but not yet confirmed against the zxbc oracle (not installable in the cloud container: PyPI stops at 1.18.7 and GitHub archives outside the session's repositories are blocked) — confirm them on the author's machine, where zxbc 1.19.0 is installed. 1. Add a `semantics` section to `.ai/zxbasic-syntax/zxbasic-syntax.json` (and to its contract test): one entry per question, with `decision`, `source` (`docs`, `oracle`, `klive-decision`) and `test` (the corpus test that pins it). 2. Seed it with the known questions: operand and argument evaluation order; integer overflow and wrap-around per type; integer division by zero; `MOD` sign; `FOR` (limit and step evaluated once or per iteration, the variable's value after the loop, negative and zero `STEP`, wrap-around of the loop variable's type); `PRINT` number formatting for every type and Fixed; `STR` and `VAL` edge cases; `INPUT` behaviour; string comparison of different lengths; heap exhaustion with and without memory checking; `RND` sequence after `RANDOMIZE n`; `READ` past the end; `ON … GOTO` out of range; the spec's "unverified" items (precedence under the 1.19 parser, `#elif`, multi-line strings, the \`` escape). Phase 0's runtime already chose, provisionally, for these (each stated in its module's header, to be confirmed or changed here): integer division by zero gives an all-ones quotient and the dividend as remainder; the remainder takes the dividend's sign; PRINT starts from BASIC's print position (S_POSN) and scrolls all 24 rows without a "scroll?" prompt; codes 165-255 print from the UDG area; INK 9 / PAPER 9 stop with "K Invalid colour"; a String concatenation longer than 65535 characters gives the empty String. Phase 1's front end also chose, provisionally: `#elif` is accepted; a `#define` may use a keyword as its name; an unknown `\` escape in a string literal is kept as written (backslash and character). 3. Resolve each before the phase that implements it (Phase 2: front-end questions; Phase 4: runtime questions). | Every seeded question has a decision and a test; the contract test fails on an entry without them. |
-| R9 | **A behavioural oracle.** Settling R8 honestly needs observed behaviour. | Phases 2–4 | **Decided: yes (D12). Step 1 done 2026-09-26:** upstream `zxbc` 1.19.0 (commit `b8d3cd7`, matching the pinned spec) is installed at `~/zxbasic` (outside the repository) in its own Python 3.14 virtual environment, with no changes to the machine's other Python installs; `~/zxbasic/.venv/bin/zxbc` is verified working (compiled and ran a test program). See `.ai/kbasic/README.md` for the exact setup. **Remaining:** 2. Write `scripts/kbasic-oracle.cjs`, reading the install path from `KBASIC_ORACLE_ZXBC` (default `~/zxbasic/.venv/bin/zxbc`): for each corpus program (or the ones named on the command line), compile with `zxbc` to a `.bin` at `$8000` using the options mapped from the program's header (§5.3), load it on the 48K harness, run it with the same expectations runner as the corpus (R10), and write the **observed results** to `test/kbasic/oracle/<program>.json` (screen rows, peeked values, error report, `zxbc` version). 3. The corpus runner compares Klive BASIC's results with the oracle file when one exists and reports differences; a difference is either a Klive bug or a deliberate deviation recorded in R8 with `source: "klive-decision"`. 4. Guard rails: the script refuses to run in CI (`CI` set), never writes anything but the results JSON, and the results never contain generated code. | The script exists, oracle results are committed for the Phase 3 corpus, and at least the R8 questions tagged `oracle` are settled through it. |
-| R10 | **The test corpus**, written from scratch (upstream's tests are AGPL). | Phase 3 onward | 1. Layout `test/kbasic/corpus/<area>/<name>.zxbas`, each with expectation lines in its header comment block (a test-only `'@expect` option family: `'@expect screen 0 "Hello"`, `'@expect peek $9000 42`, `'@expect error 2`). 2. One runner test that compiles every program at every optimisation level and checks the expectations on the 48K harness (Next-only programs on the Next harness). 3. Targets: Phase 3 — 60 programs (integers, strings, PRINT, control flow, SUB/FUNCTION, arrays); Phase 4 — +90 (Float, Fixed, DATA, graphics, sound, built-ins, stdlib); Phase 6 — the CODEBANK scenarios of `.ai/kbasic/codebank-contract.md` §6; plus three larger programs (a game loop, a text adventure, a banked program). 4. Every R8 decision points at a corpus program. | The runner exists and the Phase 3 target is met at the end of Phase 3. **Phase 3: done** — the runner is `test/kbasic/corpus/corpus.test.ts` and 61 programs pass (level 0 only until Phase 7). Decided R8 entries that code generation settles point at them; entries still `open` are not pinned by any program. |
+| R9 | **A behavioural oracle.** Settling R8 honestly needs observed behaviour. | Phases 2–4 | **Decided: yes (D12). Step 1 done 2026-09-26:** upstream `zxbc` 1.19.0 (commit `b8d3cd7`, matching the pinned spec) is installed at `~/zxbasic` (outside the repository) in its own Python 3.14 virtual environment, with no changes to the machine's other Python installs; `~/zxbasic/.venv/bin/zxbc` is verified working (compiled and ran a test program). See `.ai/kbasic/README.md` for the exact setup. **Remaining:** 2. Write `scripts/kbasic-oracle.cjs`, reading the install path from `KBASIC_ORACLE_ZXBC` (default `~/zxbasic/.venv/bin/zxbc`): for each corpus program (or the ones named on the command line), compile with `zxbc` to a `.bin` at `$8000` using the options mapped from the program's header (§5.3), load it on the 48K harness, run it with the same expectations runner as the corpus (R10), and write the **observed results** to `test/kbasic/oracle/<program>.json` (screen rows, peeked values, error report, `zxbc` version). 3. The corpus runner compares Klive BASIC's results with the oracle file when one exists and reports differences; a difference is either a Klive bug or a deliberate deviation recorded in R8 with `source: "klive-decision"`. 4. Guard rails: the script refuses to run in CI (`CI` set), never writes anything but the results JSON, and the results never contain generated code. **Steps 2–4 done (Phase 4):** `scripts/kbasic-oracle.cjs` and its runner `test/kbasic/oracle/oracle-run.test.ts` (skipped unless the script starts it), the comparison in the corpus runner with `'@expect oracle-differs <entry>` for deliberate differences, and the guard rails with tests (`oracle-script.test.ts`). Not yet run: it needs the author's machine. | The script exists, oracle results are committed for the Phase 3 corpus, and at least the R8 questions tagged `oracle` are settled through it. |
+| R10 | **The test corpus**, written from scratch (upstream's tests are AGPL). | Phase 3 onward | 1. Layout `test/kbasic/corpus/<area>/<name>.zxbas`, each with expectation lines in its header comment block (a test-only `'@expect` option family: `'@expect screen 0 "Hello"`, `'@expect peek $9000 42`, `'@expect error 2`). 2. One runner test that compiles every program at every optimisation level and checks the expectations on the 48K harness (Next-only programs on the Next harness). 3. Targets: Phase 3 — 60 programs (integers, strings, PRINT, control flow, SUB/FUNCTION, arrays); Phase 4 — +90 (Float, Fixed, DATA, graphics, sound, built-ins, stdlib); Phase 6 — the CODEBANK scenarios of `.ai/kbasic/codebank-contract.md` §6; plus three larger programs (a game loop, a text adventure, a banked program). 4. Every R8 decision points at a corpus program. | The runner exists and the Phase 3 target is met at the end of Phase 3. **Phase 3: done** — the runner is `test/kbasic/corpus/corpus.test.ts` and 61 programs pass (level 0 only until Phase 7). Decided R8 entries that code generation settles point at them; entries still `open` are not pinned by any program. **Phase 4: done** — 159 programs (97 new: Float, Fixed, DATA, graphics, BEEP, built-ins, control flow, the library, 32-bit, Strings, classic listings), expectations checked by hand against the spec and the annex; writing them found the unsigned-FOR-with-negative-STEP bug. |
 | R11 | **Stage design notes.** | Phase 3 (MIR, LIR, allocation, strings, debug builder); Phase 7 (optimiser) | **Approved 2026-09-26 and implemented in Phase 3** (each note ends with its Phase 3 state): `.docs/kbasic-mir.md`, `.docs/kbasic-lir-regalloc.md`, `.docs/kbasic-string-ownership.md`, `.docs/kbasic-debug-builder.md`, each ending with its open decisions (Q1–Q6, L1–L5, O1–O4, D1–D4). Before coding each stage, write a short design note in `.docs/` (the implementation-pattern docs folder): `kbasic-mir.md` (instruction set, types, SSA form, statement-id rules), `kbasic-lir-regalloc.md` (instruction objects, register classes, allocation, spill slots, the level-0 stack scheme), `kbasic-string-ownership.md` (temporaries, free points, by-value parameters, returned strings — the part most likely to leak), `kbasic-debug-builder.md` (joining list items and tags, the §8.2 guarantees and their validator). Each note is reviewed by the project author before its code starts. | The four notes exist and are approved before Phase 3 coding. |
 | R12 | **UI within Klive's rules.** | Phase 5 | 1. Read `.ai/ui-theming-intent-and-lessons.md` first. 2. Build the Variables panel, return-value rows, the Source/Z80 toggle, inline statement-breakpoint markers and the Program Map on the data-panel primitives (`@renderer/controls/data`: `DataPanel`, `DataRow`, `HexValue`, …) and theme tokens; no colour literals, no `em` font sizes, `ch` column widths, row heights from `rowSizes.ts` (the M1–M3 tests). 3. Verify geometry in the running app (the CDP recipe in the theming file), not in a replica. 4. Update the theming file with the durable rules the work teaches, in the same change. | The panels pass the mandate tests and the theming file records the new rules. |
-| R13 | **Settings and templates.** | Phases 3–6 | 1. `zxbasic.compiler` (`klive` \| `zxbc`) in the settings UI and `zxb-config.ts`; the dispatcher registered under `zxbas` (D9). 2. `zxbas` language provider: `supportsBreakpoints: true`, `instantSyntaxCheck: true`, `ASM` blocks embed `kz80-asm`. 3. Templates: header option blocks in `sp48/zx-basic` and `sp128/zx-basic`; a new `zxnext/zx-basic` (Phase 6). 4. The docs site page for ZX BASIC (`docs/content/working-with-ide/zxb.mdx`) gains a Klive BASIC section. | A new ZX BASIC project on each machine builds and debugs with Klive BASIC by default after Phase 4. |
+| R13 | **Settings and templates.** | Phases 3–6 | 1. `zxbasic.compiler` (`klive` \| `zxbc`) in the settings UI and `zxb-config.ts`; the dispatcher registered under `zxbas` (D9). 2. `zxbas` language provider: `supportsBreakpoints: true`, `instantSyntaxCheck: true`, `ASM` blocks embed `kz80-asm`. 3. Templates: header option blocks in `sp48/zx-basic` and `sp128/zx-basic`; a new `zxnext/zx-basic` (Phase 6). 4. The docs site page for ZX BASIC (`docs/content/working-with-ide/zxb.mdx`) gains a Klive BASIC section. | A new ZX BASIC project on each machine builds and debugs with Klive BASIC by default after Phase 4. **Phase 4:** the default is `klive` (step 1's setting; it has no settings-UI entry yet, only `set zxbasic.compiler`); steps 3 and 4 (templates, docs page) are open. |
 
 ### 17.3 Before the first release
 

@@ -17,8 +17,9 @@ integration changes.
   `createCompilerRegistry()` hard-codes Z80Compiler (`kz80-asm`), `ZxBasicDispatcher` (`zxbas`),
   SjasmPCompiler (`sjasmp`), Pasta80Compiler (`pasta80`). The dispatcher
   (`src/main/zxb-integration/ZxBasicDispatcher.ts`, plan D9) hands each request to
-  `KBasicCompiler` (`src/main/kbasic/KBasicCompiler.ts`) when `zxbasic.compiler` is `klive`, else
-  to the external `ZxBasicCompiler` (the default until Phase 4).
+  `KBasicCompiler` (`src/main/kbasic/KBasicCompiler.ts`) unless `zxbasic.compiler` is `zxbc`, which
+  selects the external `ZxBasicCompiler`. Klive BASIC is the default since Phase 4;
+  `selectedZxBasicCompiler` in `zxb-config.ts` decides, for the main process and the renderer alike.
 - Output types (same file): `SimpleAssemblerOutput` → `InjectableOutput` (segments,
   `injectOptions`) → `DebuggableOutput` (`sourceFileList`, `sourceMap: Record<address, FileLine>`,
   `listFileItems`, optional `sourceLevelDebug`) and the full `CompilerOutput` (adds `symbols`,
@@ -40,7 +41,7 @@ integration changes.
   return errors instead.
 - Background builds of external compilers only run when the editor setting
   `allowBackgroundCompile` is on (`startBackgroundCompile` in `MonacoEditor.tsx`); the Klive
-  assembler, and `zxbas` while `zxbasic.compiler` is `klive`, always run (the assembler's result
+  assembler, and `zxbas` unless `zxbasic.compiler` is `zxbc`, always run (the assembler's result
   feeds language intelligence). Markers, however, are drawn **only** with that setting on, for
   every language (it defaults to off).
 - One background compile runs at a time. `BackgroundCompileScheduler`

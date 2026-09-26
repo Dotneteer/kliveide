@@ -26,14 +26,17 @@ The language itself is described in `../zxbasic-syntax/` (read its README first)
 - **Running upstream is allowed; reading its code for design is not.** A locally installed `zxbc`
   may compile Klive's own test programs so their observable behaviour (screen, memory, error
   reports) can be recorded as an oracle (plan D12, R9, `scripts/kbasic-oracle.cjs`). Commit only
-  those results — never the generated code — and never run it in CI.
+  those results — never the generated code — and never run it in CI. Run it as
+  `node scripts/kbasic-oracle.cjs [area/name ...]`: results land in `test/kbasic/oracle/`, and the
+  corpus runner then fails on any expectation upstream does not share, unless the program names the
+  annex entry that decides the difference (`'@expect oracle-differs <entry>`).
 - **Installed oracle (the project author's machine, 2026-09-26; a cloud container does not have it):** `~/zxbasic` is a clone of
   `boriel-basic/zxbasic` at commit `b8d3cd706b07620f4366418fb78f1ac43076da92` (tag `v1.19.0`) —
   the exact commit `../zxbasic-syntax/upstream-fingerprint.json` pins. It needs Python ≥ 3.14
   (installed via `brew install python@3.14`, since the machine's default `python3` was 3.12); the
   package is installed into its own virtual environment at `~/zxbasic/.venv`, isolated from the
   system Python. `KBASIC_ORACLE_ZXBC=~/zxbasic/.venv/bin/zxbc` is the path `scripts/kbasic-oracle.cjs`
-  (R9, not yet written) should use; `zxbasm` and `zxbpp` live alongside it. A prior 1.17.1 checkout
+  (R9) uses; `zxbasm` and `zxbpp` live alongside it. A prior 1.17.1 checkout
   was moved to `~/zxbasic-1.17.1.bak`. Nothing under `~/zxbasic` is part of this repository.
 - **The notes describe upstream as of v1.19.0** (the release `../zxbasic-syntax/` is pinned to)
   and NextBuild's fork `1.18.7-nb10`. Items marked *(unverified)* were not confirmed directly.
