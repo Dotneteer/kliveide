@@ -1733,6 +1733,17 @@ extra files.
 A ZX Spectrum 48 has no pointing device, and a toolbar button offering to capture a mouse for it is
 a promise the machine cannot keep.
 
+## An Editor Diagnostic Marks The Text Its Compiler Can Vouch For
+
+A compile error's squiggle covers the exact range only when the language says its compiler's
+columns are exact (`exactErrorColumns` on the language provider, today `zxbas` for Klive BASIC) and
+the error carries a real range (`endColumn > startColumn`). Every other error keeps the whole-line
+mark, from the first non-blank character to the line's end: the Z80 assembler and the external
+tools fill the column fields with values of mixed meaning (zero, end-inclusive, end-exclusive), and
+a squiggle under the wrong token misleads more than one under the whole line. The inline message
+badge is an `after` decoration and always sits at the line's end, whatever the squiggle covers — a
+badge anchored to a narrowed range lands in the middle of the code.
+
 ## Recommended First Reading For UI Work
 
 1. `../AGENTS.md`

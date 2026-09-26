@@ -8,11 +8,17 @@ integration changes.
 
 - `IKliveCompiler` — `src/common/abstractions/CompilerInfo.ts` (~864): `id`, `language`,
   `providesKliveOutput`, `compileFile(filename, options?)`, `lineCanHaveBreakpoint(line)`,
-  optional `setAppState(state)` (the only way settings reach a compiler, also in the worker).
+  optional `setAppState(state)` (the only way settings reach a compiler, also in the worker),
+  optional `checkFile(filename, options?)` — the background worker calls it instead of
+  `compileFile` when a compiler has it (Klive BASIC's diagnostics-only check). Do not signal a
+  background compile through `options`: the Z80 assembler takes a non-empty options object as its
+  complete `AssemblerOptions`.
 - Registry — `src/main/compiler-integration/compiler-registry.ts`: keyed by **language id**;
-  `createCompilerRegistry()` hard-codes Z80Compiler (`kz80-asm`), ZxBasicCompiler (`zxbas`,
-  external zxbc), SjasmPCompiler (`sjasmp`), Pasta80Compiler (`pasta80`). Klive BASIC replaces the
-  `zxbas` entry with a dispatcher honouring `zxbasic.compiler` (plan D9).
+  `createCompilerRegistry()` hard-codes Z80Compiler (`kz80-asm`), `ZxBasicDispatcher` (`zxbas`),
+  SjasmPCompiler (`sjasmp`), Pasta80Compiler (`pasta80`). The dispatcher
+  (`src/main/zxb-integration/ZxBasicDispatcher.ts`, plan D9) hands each request to
+  `KBasicCompiler` (`src/main/kbasic/KBasicCompiler.ts`) when `zxbasic.compiler` is `klive`, else
+  to the external `ZxBasicCompiler` (the default until Phase 4).
 - Output types (same file): `SimpleAssemblerOutput` → `InjectableOutput` (segments,
   `injectOptions`) → `DebuggableOutput` (`sourceFileList`, `sourceMap: Record<address, FileLine>`,
   `listFileItems`, optional `sourceLevelDebug`) and the full `CompilerOutput` (adds `symbols`,
@@ -32,8 +38,9 @@ integration changes.
   builds its own registry and receives an `AppState` snapshot. Results cross IPC / MessagePort:
   structured-clone-safe only. A compiler that **throws** in the worker is reported as success —
   return errors instead.
-- Background builds of non-`kz80-asm` languages only run when the editor setting
-  `allowBackgroundCompile` is on (`MonacoEditor.tsx` ~1384).
+- Background builds of external compilers only run when the editor setting
+  `allowBackgroundCompile` is on (`startBackgroundCompile` in `MonacoEditor.tsx`); the Klive
+  assembler, and `zxbas` while `zxbasic.compiler` is `klive`, always run.
 
 ## 2. Klive's assembler
 
@@ -47,9 +54,11 @@ integration changes.
   with dotted resolution and `::` for root-qualified names, `.proc`, macros, structs, `#if`
   family, `.bank N[,offset]` (16K bank assembled at `$C000+offset`), `.savenex …`, NEX V1.2 writer
   (`src/main/z80-compiler/nex-file-writer.ts`; unbanked code must be ≥ `$8000`, goes to bank 2;
-  banked segments placed at `startAddress % 16384`).
-- Missing: numeric temporary labels, 8K-page placement at an arbitrary address (plan §4.2), `#line`
-  (parsed, no-op).
+  banked segments placed at `bankOffset`, falling back to `startAddress % 16384`).
+- Programmatic entry (plan §4.1): `parseSourceUnit` parses one unit, `compileProgram` assembles
+  several parsed units as one program. `.page N` places code in an 8K Next page (§4.2); `#line`
+  remaps reported lines (§4.4). The NEX writer places a banked segment by its `bankOffset`.
+- Missing: numeric temporary labels.
 - Source map: every code-emitting line sets `sourceMap[addr]` and pushes a `listFileItems` entry
   (`fileIndex`, `lineNumber`, `address`, `segmentIndex`, `codeLength`, `sourceText`). Pragma,
   label-only and comment lines get none.
@@ -105,8 +114,10 @@ integration changes.
   (`refreshCurrentBreakpoint` ~1150; matches `address === pc` only — **not partition-aware**;
   column range from `sourceMap[pc]` via `createCurrentBreakpointDecoration`), breakpoint glyphs
   (~932), gutter clicks (~1060, need `supportsBreakpoints`; with `instantSyntaxCheck` they ask the
-  compiler's `lineCanHaveBreakpoint` over IPC), markers from background compiles only (~337; error
-  columns ignored).
+  compiler's `lineCanHaveBreakpoint` over IPC), markers from background compiles only (~337). Error
+  columns mark the error's range only for a language with `exactErrorColumns` (`zxbas`), and only
+  when the error has `endColumn > startColumn`; other languages still mark from the first
+  non-blank character to the end of the line. The inline message badge stays at the line's end.
 - Auto-navigation to the PC: `src/renderer/appIde/IdeEventsHandler.tsx` `refreshCodeLocation`
   (~177), from `sourceMap[pc]`.
 - Watch panel: `src/renderer/appIde/SideBarPanels/WatchPanel.tsx` — assembler symbols only, flat
@@ -118,7 +129,10 @@ integration changes.
 
 - Language providers: `src/renderer/appIde/project/*LanguageProvider.ts`, registered in
   `src/renderer/registry.ts` (`customLanguagesRegistry`, `fileTypeRegistry`). `zxbas`:
-  `.zxbas`/`.bas`, `supportsBreakpoints: false`, `ASM` blocks embed `zxbasm`.
+  `.zxbas`/`.bas`, `supportsBreakpoints: true`, `instantSyntaxCheck: true` (gutter clicks ask the
+  dispatcher: Klive BASIC answers from its lexer, zxbc always refuses), `exactErrorColumns: true`;
+  `ASM` blocks still embed `zxbasm`, which becomes `kz80-asm` when the default flips to Klive
+  BASIC (Phase 4).
 - Templates: `src/public/project-templates/<machine>/<template>/` with `build.ksx`
   (`buildCode` → `klive.compile`, …) and `__$klive.project` (build roots). ZX BASIC templates
   exist for sp48 and sp128; `zxnext` has only `default`.

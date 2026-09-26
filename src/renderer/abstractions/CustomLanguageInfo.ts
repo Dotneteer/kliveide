@@ -21,6 +21,8 @@ type CustomLanguageInfo = {
   supportsBreakpoints?: boolean;
   instantSyntaxCheck?: boolean;
   fullLineBreakpoints?: boolean;
+  /** The compiler's error columns are exact: the editor marks the error's range, not its whole line. */
+  exactErrorColumns?: boolean;
   compiler?: string;
 };
 

@@ -887,6 +887,14 @@ export interface IKliveCompiler {
   compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
 
   /**
+   * Optionally checks the file for the editor's background diagnostics without building it; the
+   * background compile uses `compileFile` when a compiler does not have this.
+   * @param filename Build root file (absolute path)
+   * @param options Compiler options. If not defined, the compiler uses the default options.
+   */
+  checkFile?(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
+
+  /**
    * Checks if the specified file can have a breakpoint
    * @param line The line content to check
    */

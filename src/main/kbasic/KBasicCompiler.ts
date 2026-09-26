@@ -1,0 +1,166 @@
+import fs from "fs";
+
+import type { AssemblerErrorInfo, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
+import type { AppState } from "@common/state/AppState";
+
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { lineCanHaveBreakpoint } from "./breakpoints";
+import { DiagnosticBag, type Diagnostic } from "./diagnostics";
+import { parseProgram, type FrontEndResult } from "./front-end";
+import { applyHeader, optionsFromSettings, readHeader, reportIgnoredHeader } from "./options/header";
+import type { KBasicOptions } from "./options/options";
+import type { FileReader } from "./syntax/preprocessor";
+import { SourceFile, type SourceSet } from "./syntax/source";
+
+export type KBasicFrontEndResult = FrontEndResult & { options: KBasicOptions };
+
+/**
+ * Klive BASIC, Klive's own ZX BASIC compiler (plan §3). Phase 1 runs the front end only: header
+ * options, preprocessor and parser. Its diagnostics feed the editor; a foreground build reports
+ * them and then that code generation is not available yet.
+ */
+export class KBasicCompiler implements IKliveCompiler {
+  private state: AppState | undefined;
+
+  readonly id = "KBasicCompiler";
+  readonly language = "zxbas";
+  readonly providesKliveOutput = true;
+
+  setAppState(state: AppState): void {
+    this.state = state;
+  }
+
+  /** A build: until code generation exists, the front end's diagnostics and a note saying so. */
+  compileFile(filename: string): Promise<SimpleAssemblerOutput> {
+    return this.run(filename, false);
+  }
+
+  /** The editor's background diagnostics. */
+  checkFile(filename: string): Promise<SimpleAssemblerOutput> {
+    return this.run(filename, true);
+  }
+
+  private async run(filename: string, background: boolean): Promise<SimpleAssemblerOutput> {
+    const settings = this.state ? createSettingsReader(this.state) : undefined;
+    const base = optionsFromSettings((key) => settings?.readSetting(key), this.state?.emulatorState?.machineId);
+    let text: string;
+    try {
+      text = fs.readFileSync(filename, "utf8");
+    } catch (err) {
+      return { errors: [fileError(filename, "K002", `Cannot read the file: ${(err as Error).message}`)] };
+    }
+    let errors: AssemblerErrorInfo[];
+    let hasErrors: boolean;
+    try {
+      const result = runFrontEnd(filename, text, fileSystemReader, base);
+      errors = toErrorInfo(result.diagnostics.items, result.sources);
+      hasErrors = result.diagnostics.hasErrors;
+    } catch (err) {
+      // --- A worker that throws is reported as a success (plan §2.1), so a compiler bug is an error
+      return { errors: [fileError(filename, "K000", `Internal compiler error: ${(err as Error).message}`)] };
+    }
+    if (!background && !hasErrors) {
+      errors.push(
+        fileError(
+          filename,
+          "K001",
+          "Klive BASIC checks the program but cannot generate code yet; " +
+            "use 'set zxbasic.compiler zxbc' to build with the external ZX BASIC compiler"
+        )
+      );
+    }
+    return { errors };
+  }
+
+  async lineCanHaveBreakpoint(line: string): Promise<boolean> {
+    return lineCanHaveBreakpoint(line);
+  }
+}
+
+/** Reads `#include`d files from the disk; a missing or unreadable file is undefined. */
+const fileSystemReader: FileReader = {
+  read(path: string): string | undefined {
+    try {
+      return fs.readFileSync(path, "utf8");
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+/**
+ * The front end of one build: the build root's header over the settings (plan §5.2), then
+ * preprocessing and parsing with the options that result.
+ */
+export function runFrontEnd(
+  rootPath: string,
+  rootText: string,
+  reader: FileReader,
+  base: KBasicOptions,
+  diagnostics = new DiagnosticBag()
+): KBasicFrontEndResult {
+  const normalised = rootText.replace(/\r\n?/g, "\n");
+  const header = readHeader(new SourceFile(0, rootPath, normalised), diagnostics);
+  const options = applyHeader(base, header, diagnostics);
+  const rootFolder = folderOf(rootPath);
+  const defines: Record<string, string> = {};
+  for (const d of options.defines) defines[d.name] = d.value ?? "";
+  const result = parseProgram(
+    rootPath,
+    normalised,
+    reader,
+    {
+      defines,
+      includePaths: options.includePaths.map((p) => (isAbsolutePath(p) || !rootFolder ? p : `${rootFolder}/${p}`))
+    },
+    diagnostics
+  );
+  for (const file of result.sources.files.slice(1)) {
+    if (!file.name.startsWith("<")) reportIgnoredHeader(file, diagnostics);
+  }
+  return { ...result, options };
+}
+
+/** Diagnostics as the IDE shows them: `#line`-mapped file and line, 0-based columns. */
+export function toErrorInfo(diagnostics: Diagnostic[], sources: SourceSet): AssemblerErrorInfo[] {
+  return diagnostics.map((d) => {
+    const file = sources.get(d.span.file);
+    const start = file.location(d.span.start);
+    const end = file.location(Math.max(d.span.start, d.span.end));
+    const sameLine = end.line === start.line && end.fileName === start.fileName;
+    return {
+      errorCode: d.code,
+      filename: start.fileName,
+      line: start.line,
+      startPosition: d.span.start,
+      endPosition: d.span.end,
+      startColumn: start.column,
+      endColumn: sameLine && end.column > start.column ? end.column : null,
+      message: d.message,
+      ...(d.severity !== "error" ? { isWarning: true } : {})
+    };
+  });
+}
+
+/** An error about the whole file, reported on its first line. */
+function fileError(filename: string, errorCode: string, message: string): AssemblerErrorInfo {
+  return {
+    errorCode,
+    filename,
+    line: 1,
+    startPosition: 0,
+    endPosition: null,
+    startColumn: 0,
+    endColumn: null,
+    message
+  };
+}
+
+function folderOf(path: string): string {
+  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return i < 0 ? "" : path.slice(0, i);
+}
+
+function isAbsolutePath(path: string): boolean {
+  return /^([A-Za-z]:)?[\\/]/.test(path);
+}

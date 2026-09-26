@@ -14,3 +14,5 @@ export const ZXBC_EXPLICIT_VARIABLES = "zxbasic.explicitVariables";
 export const ZXBC_STRICT_MODE = "zxbasic.strictMode";
 export const ZXBC_STRICT_BOOL = "zxbasic.strictBoolean";
 export const ZXBC_STORE_GENERATED_ASM = "zxbasic.storeGeneratedAsm";
+/** Which compiler builds `.bas` files: "zxbc" (the external ZX BASIC compiler) or "klive" (Klive BASIC). */
+export const ZXBC_COMPILER = "zxbasic.compiler";

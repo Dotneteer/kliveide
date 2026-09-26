@@ -16,7 +16,9 @@ async function compileFile(state: AppState, filename: string, language: string, 
   }
 
   compiler?.setAppState(state);
-  const result = (await compiler.compileFile(filename, options)) as Promise<KliveCompilerOutput>;
+  const result = (await (compiler.checkFile
+    ? compiler.checkFile(filename, options)
+    : compiler.compileFile(filename, options))) as KliveCompilerOutput;
   return result;
 }
 

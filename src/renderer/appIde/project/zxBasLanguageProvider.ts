@@ -12,7 +12,10 @@ export const zxBasLanguageProvider: MonacoAwareCustomLanguageInfo = {
   supportsKlive: true,
   options: {
   },
-  supportsBreakpoints: false,
+  supportsBreakpoints: true,
+  // --- The compiler (Klive BASIC or zxbc, as `zxbasic.compiler` says) decides which lines can hold one
+  instantSyntaxCheck: true,
+  exactErrorColumns: true,
   fullLineBreakpoints: true,
   languageDef: {
     ignoreCase: true,

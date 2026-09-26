@@ -5,6 +5,8 @@ import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { createSettingsReader } from "@common/utils/SettingsReader";
+import { ZXBC_COMPILER } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -409,10 +411,26 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       return { startCol, endCol };
     };
 
+    // --- A compiler whose language says its columns are exact marks just the offending text
+    const exactColumns = !!customLanguagesRegistry.find((l) => l.id === document.language)
+      ?.exactErrorColumns;
+    const getErrorCols = (err: (typeof fileErrors)[number]): { startCol: number; endCol: number } => {
+      const hasRange =
+        exactColumns &&
+        typeof err.startColumn === "number" &&
+        typeof err.endColumn === "number" &&
+        err.endColumn > err.startColumn;
+      // --- 0-based in the error, 1-based in Monaco
+      return hasRange
+        ? { startCol: err.startColumn + 1, endCol: err.endColumn + 1 }
+        : getLineCols(err.line || 1);
+    };
+
     fileErrors.forEach((err) => {
       const lineNo = err.line || 1;
       const isWarning = err.isWarning;
-      const { startCol, endCol } = getLineCols(lineNo);
+      const { startCol, endCol } = getErrorCols(err);
+      const lineCols = getLineCols(lineNo);
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
       markers.push({
@@ -428,7 +446,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // Custom inline pill/badge displayed after the line content
       afterDecorations.push({
-        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
+        range: new monacoEditor.Range(lineNo, lineCols.startCol, lineNo, lineCols.endCol),
         options: {
           after: {
             content: err.message || "Issue detected",
@@ -476,7 +494,14 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       pendingCompile.current = false;
       startBackgroundCompile(store, mainApi, allowBackgroundCompile);
     }
-  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile, mainApi, store]);
+  }, [
+    backgroundResult,
+    document.node?.projectPath,
+    document.language,
+    allowBackgroundCompile,
+    mainApi,
+    store
+  ]);
 
   useEffect(() => {
     if (store && mainApi) {
@@ -1382,10 +1407,15 @@ async function startBackgroundCompile(
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, store)?.subType;
 
-  // --- The built-in Klive Z80 assembler always runs background compilation;
-  // --- the flag only gates external compilers (ZxBasic, SjasmPlus, etc.)
+  // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC when `zxbasic.compiler`
+  // --- selects it) always run background compilation; the flag only gates external compilers
+  // --- (zxbc, SjasmPlus, etc.)
   const langInfo = customLanguagesRegistry.find((l) => l.id === language);
-  const isBuiltInCompiler = langInfo?.compiler === "Z80Compiler";
+  const isBuiltInCompiler =
+    langInfo?.compiler === "Z80Compiler" ||
+    (language === "zxbas" &&
+      `${createSettingsReader(state).readSetting(ZXBC_COMPILER) ?? ""}`.trim().toLowerCase() ===
+        "klive");
   if (!allowCompile && !isBuiltInCompiler) {
     return false;
   }
