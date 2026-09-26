@@ -264,10 +264,9 @@ export function foldBinary(
     }
   }
 
-  if (operandType !== "Float" && operandType !== "String") {
-    a = convertConstant(a, operandType)!.constant;
-    b = convertConstant(b, operandType)!.constant;
-  }
+  // --- Fixed and integral operations read their operands in the operand type
+  a = convertConstant(a, operandType)!.constant;
+  b = convertConstant(b, operandType)!.constant;
 
   if (operandType === "Fixed") {
     const x = BigInt((a.value as { raw: number }).raw);
