@@ -8,7 +8,8 @@ import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
 import { KBasicCompiler, runFrontEnd, toErrorInfo } from "@main/kbasic/KBasicCompiler";
 import { defaultOptions } from "@main/kbasic/options/options";
 import type { FileReader } from "@main/kbasic/syntax/preprocessor";
-import { selectedZxBasicCompiler, ZxBasicDispatcher } from "@main/zxb-integration/ZxBasicDispatcher";
+import { ZxBasicDispatcher } from "@main/zxb-integration/ZxBasicDispatcher";
+import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 
 const files = (entries: Record<string, string>): FileReader => ({ read: (p) => entries[p] });
 
@@ -171,11 +172,12 @@ describe("the zxbas compiler", () => {
   });
   afterAll(() => fs.rmSync(folder, { recursive: true, force: true }));
 
-  it("defaults to zxbc; 'klive' selects Klive BASIC", () => {
-    expect(selectedZxBasicCompiler(undefined)).toBe("zxbc");
-    expect(selectedZxBasicCompiler(state({}))).toBe("zxbc");
-    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "zxbc" } }))).toBe("zxbc");
-    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: " Klive " } }))).toBe("klive");
+  it("defaults to Klive BASIC; 'zxbc' selects the external compiler", () => {
+    expect(selectedZxBasicCompiler(undefined)).toBe("klive");
+    expect(selectedZxBasicCompiler(state({}))).toBe("klive");
+    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "klive" } }))).toBe("klive");
+    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: " ZXBC " } }))).toBe("zxbc");
+    expect(selectedZxBasicCompiler(state({ zxbasic: { compiler: "something" } }))).toBe("klive");
   });
 
   it("checks in the background: diagnostics only", async () => {
@@ -232,9 +234,9 @@ describe("the zxbas compiler", () => {
     expect(output.errors?.map((e) => e.errorCode)).toEqual(["K002"]);
   });
 
-  it("dispatches to Klive BASIC when selected", async () => {
+  it("dispatches to Klive BASIC by default", async () => {
     const dispatcher = new ZxBasicDispatcher();
-    dispatcher.setAppState(state({ zxbasic: { compiler: "klive" } }));
+    dispatcher.setAppState(state({}));
     expect(dispatcher.language).toBe("zxbas");
     const output = await dispatcher.checkFile(path.join(folder, "bad.bas"));
     expect(output.errors?.[0].line).toBe(2);
@@ -243,7 +245,7 @@ describe("the zxbas compiler", () => {
 
   it("keeps zxbc's answers when zxbc is selected", async () => {
     const dispatcher = new ZxBasicDispatcher();
-    dispatcher.setAppState(state({}));
+    dispatcher.setAppState(state({ zxbasic: { compiler: "zxbc" } }));
     expect(await dispatcher.lineCanHaveBreakpoint("PRINT 1")).toBe(false);
   });
 });

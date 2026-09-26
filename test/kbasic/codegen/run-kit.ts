@@ -51,11 +51,39 @@ export async function startBasic(source: string, options: Partial<KBasicOptions>
   const session = await createSp48Session();
   session.bootToBasic();
   const program = session.loadOutput(generated.output, { entry: generated.entryAddress });
-  const entry = generated.entryAddress;
+  return { session, program, generated, done: callFromStub(session, generated.entryAddress) };
+}
+
+/** Puts PC at a stub that calls `entry` as a running BASIC line would; gives the address after the call. */
+function callFromStub(session: Sp48TestSession, entry: number): number {
   // --- ld hl,$1303 : push hl : ld ($5c3d),sp : call entry : jr $
   session.poke(STUB, [0x21, 0x03, 0x13, 0xe5, 0xed, 0x73, 0x3d, 0x5c, 0xcd, entry & 0xff, entry >> 8, 0x18, 0xfe]);
   session.machine.pc = STUB;
-  return { session, program, generated, done: STUB + 11 };
+  return STUB + 11;
+}
+
+/**
+ * Runs a machine-code program (another compiler's `.bin`, for the behavioural oracle) on a freshly
+ * booted 48K as `runBasic` runs a Klive BASIC one: loaded at `org`, called from the same stub, until
+ * it returns or `frames` pass. `ended` says whether it returned.
+ */
+export async function runBinary(
+  bytes: Uint8Array,
+  org: number,
+  options: { frames?: number; before?: (session: Sp48TestSession) => void } = {}
+): Promise<{ session: Sp48TestSession; ended: boolean }> {
+  const session = await createSp48Session();
+  session.bootToBasic();
+  session.poke(org, [...bytes]);
+  const done = callFromStub(session, org);
+  options.before?.(session);
+  try {
+    session.runTo(done, { maxFrames: options.frames ?? 500 });
+    return { session, ended: true };
+  } catch (e) {
+    if (!/Timed out/.test((e as Error).message)) throw e;
+    return { session, ended: false };
+  }
 }
 
 /**

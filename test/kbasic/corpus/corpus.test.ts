@@ -1,9 +1,11 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
 import { runBasic, type Run } from "../codegen/run-kit";
+
+import { oracleDifferences, programs, readExpectations, reportChar, type OracleResult } from "./expectations";
 
 /**
  * The Klive BASIC test corpus (plan R10): every `<area>/<name>.zxbas` below this folder is compiled,
@@ -19,79 +21,24 @@ import { runBasic, type Run } from "../codegen/run-kit";
  * | `'@expect heap <name> ...` | when the program ends the heap holds only these global Strings' values |
  * | `'@expect frames <n>` | run for at most n frames (default 500) |
  * | `'@expect keys <key> ...` | hold these keys (`SpectrumKeyCode` names) from the start |
+ * | `'@expect oracle-differs <entry>` | the upstream oracle's result differs on purpose: the semantics annex entry that decides it |
+ *
+ * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `scripts/kbasic-oracle.cjs` from a
+ * locally installed `zxbc`, plan D12), the screen rows, error report and peeks the program expects
+ * must be what upstream showed too, unless the program names the annex entry that differs.
  *
  * Numbers may be decimal or `$` hexadecimal.
  */
 const ROOT = __dirname;
+const ORACLE = join(__dirname, "..", "oracle");
+
+/** The semantics annex entries (`.ai/zxbasic-syntax`), which `oracle-differs` must name. */
+const ANNEX = new Set<string>(
+  JSON.parse(readFileSync(join(__dirname, "../../../.ai/zxbasic-syntax/zxbasic-syntax.json"), "utf8")).semantics.entries.map((e: { name: string }) => e.name)
+);
 
 /** Optimisation levels to run: only level 0 exists until Phase 7 adds 1-3. */
 const LEVELS = [0];
-
-type Expectation =
-  | { kind: "screen"; row: number; text: string }
-  | { kind: "byte" | "word"; name: string; value: number }
-  | { kind: "peek" | "peekw"; address: number; value: number }
-  | { kind: "error"; code: number }
-  | { kind: "heap"; names: string[] }
-  | { kind: "frames"; count: number }
-  | { kind: "keys"; keys: string[] };
-
-function programs(dir: string): string[] {
-  return readdirSync(dir, { withFileTypes: true })
-    .flatMap((e) => (e.isDirectory() ? programs(join(dir, e.name)) : e.name.endsWith(".zxbas") ? [join(dir, e.name)] : []))
-    .sort();
-}
-
-const num = (text: string) => (text.startsWith("$") ? parseInt(text.slice(1), 16) : Number(text));
-
-export function readExpectations(source: string): Expectation[] {
-  const out: Expectation[] = [];
-  for (const line of source.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed === "") continue;
-    if (!trimmed.startsWith("'")) break;
-    const m = /^'\s*@expect\s+(\S+)\s*(.*)$/.exec(trimmed);
-    if (!m) continue;
-    const [, kind, rest] = m;
-    const words = rest.split(/\s+/).filter(Boolean);
-    switch (kind) {
-      case "screen": {
-        const s = /^(\d+)\s+"(.*)"$/.exec(rest);
-        if (!s) throw new Error(`Bad screen expectation: ${trimmed}`);
-        out.push({ kind, row: Number(s[1]), text: s[2] });
-        break;
-      }
-      case "byte":
-      case "word":
-        out.push({ kind, name: words[0], value: num(words[1]) });
-        break;
-      case "peek":
-      case "peekw":
-        out.push({ kind, address: num(words[0]), value: num(words[1]) });
-        break;
-      case "error":
-        out.push({ kind, code: num(words[0]) });
-        break;
-      case "heap":
-        out.push({ kind, names: words });
-        break;
-      case "frames":
-        out.push({ kind, count: num(words[0]) });
-        break;
-      case "keys":
-        out.push({ kind, keys: words });
-        break;
-      default:
-        throw new Error(`Unknown expectation '${kind}'`);
-    }
-  }
-  return out;
-}
-
-/** The report character of an ERR_NR code: 0-8 are the digits 1-9, 9 onwards the letters A, B, ... */
-function reportChar(code: number): string {
-  return code < 9 ? String(code + 1) : String.fromCharCode(65 + code - 9);
-}
 
 function heapUsed(r: Run): number {
   const s = r.session;
@@ -159,6 +106,13 @@ describe("Klive BASIC corpus", () => {
         });
         expect(g4Problems(r), "G4: SP at statement entries").toEqual([]);
         expect(r.generated.debug.problems, "the debug-info validator").toEqual([]);
+        const oracleFile = join(ORACLE, name.replace(/\.zxbas$/, ".json"));
+        const differs = expectations.find((e) => e.kind === "oracle-differs");
+        if (differs) expect(ANNEX.has(differs.entry), `oracle-differs names the annex entry ${differs.entry}`).toBe(true);
+        if (existsSync(oracleFile) && !differs) {
+          const oracle = JSON.parse(readFileSync(oracleFile, "utf8")) as OracleResult;
+          expect(oracleDifferences(expectations, oracle), "the upstream oracle's result").toEqual([]);
+        }
         for (const e of expectations) {
           switch (e.kind) {
             case "screen":

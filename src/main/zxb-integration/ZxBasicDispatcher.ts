@@ -1,18 +1,9 @@
 import type { IKliveCompiler, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 
-import { createSettingsReader } from "@common/utils/SettingsReader";
 import { KBasicCompiler } from "@main/kbasic/KBasicCompiler";
 import { ZxBasicCompiler } from "./ZxBasicCompiler";
-import { ZXBC_COMPILER } from "./zxb-config";
-
-export type ZxBasicCompilerChoice = "klive" | "zxbc";
-
-/** The compiler the `zxbasic.compiler` setting selects; the external `zxbc` until Klive BASIC is complete (plan §12.1, D9). */
-export function selectedZxBasicCompiler(state: AppState | undefined): ZxBasicCompilerChoice {
-  const value = state ? createSettingsReader(state).readSetting(ZXBC_COMPILER) : undefined;
-  return typeof value === "string" && value.trim().toLowerCase() === "klive" ? "klive" : "zxbc";
-}
+import { selectedZxBasicCompiler } from "./zxb-config";
 
 /**
  * Registered for `zxbas`: hands each request to Klive BASIC or to the external ZX BASIC compiler,

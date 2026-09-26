@@ -5,8 +5,7 @@ import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
 import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
-import { createSettingsReader } from "@common/utils/SettingsReader";
-import { ZXBC_COMPILER } from "@main/zxb-integration/zxb-config";
+import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -1411,15 +1410,13 @@ async function startBackgroundCompile(
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, store)?.subType;
 
-  // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC when `zxbasic.compiler`
-  // --- selects it) always run background compilation; the flag only gates external compilers
+  // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC unless `zxbasic.compiler`
+  // --- selects zxbc) always run background compilation; the flag only gates external compilers
   // --- (zxbc, SjasmPlus, etc.)
   const langInfo = customLanguagesRegistry.find((l) => l.id === language);
   const isBuiltInCompiler =
     langInfo?.compiler === "Z80Compiler" ||
-    (language === "zxbas" &&
-      `${createSettingsReader(state).readSetting(ZXBC_COMPILER) ?? ""}`.trim().toLowerCase() ===
-        "klive");
+    (language === "zxbas" && selectedZxBasicCompiler(state) === "klive");
   if (!allowCompile && !isBuiltInCompiler) {
     return true;
   }
