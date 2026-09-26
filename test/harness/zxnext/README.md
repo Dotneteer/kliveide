@@ -160,7 +160,16 @@ When a test needs something the session cannot do, add it to `script/session.ts`
 5. **Export** new types from `index.ts` and **add a row** to the Session API table above.
 
 Candidates not written yet: observing the INT line and interrupt acknowledge, a port/memory write
-log.
+log, and **booting NextZXOS from a cloned CIM in node**. The last already works ad hoc and found the
+nxmodplayer esxDOS bug: wrap `@main/fat32/CimHandlers`' `CimHandler` (on a `cp -c` clone, never the
+real card) as an `SdCardBacking`, `attachSdCard` it, run `buildNextCodeInjectionFlow(hasAutoExec,
+"_klive/<file>.nex")` from `nextMachineInfo.ts` the way `browser/frame-runner.ts` interprets it
+(`ReachExecPoint` via `executionContext.frameTerminationMode = UntilExecutionPoint`, keys via
+`machine.queueKeystroke`, SD commands via `processFrameCommand`), then drive the program with
+`queueKeystroke`. `zxnextTraceSetEnabled(1)` + `zxnextTraceClear`/`zxnextTraceFinishFrame` around each
+`executeMachineFrame` gives a per-instruction trace (`frameTraceLayout.ts`; 128-byte records with
+registers, MMU, last memory/port access) to search for the first bad write. Wrap
+`applyWasmV2ResetRequest` on the machine to observe a NextReg `$02` reset without losing the trace.
 
 ## Declarative screen cases
 

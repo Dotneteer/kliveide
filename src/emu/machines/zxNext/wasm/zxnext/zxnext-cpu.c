@@ -372,16 +372,28 @@ static uint32_t zxnextCpuExecuteInstruction(void) {
   zxnextCpuMreqSuppressed = nmiSignal && zxnextNmiGetStacklessEnabled();
 
   cpuTactScale = 8u >> (cpuEffectiveSpeed & 0x03u);
-  zxnextDivMmcBeforeOpcodeFetch(pcBefore);
-  /* An NMI acknowledge fetches no opcode; the state machine steps at real opcode fetches only. */
-  if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
-  z80SetSigNmi(nmiSignal);
-  z80SetSigInt(rawIntSignal);
   /* The acknowledge moves a device to S_ACK, so it must happen only when the core really takes the
      interrupt: not on the instruction after EI (the core decrements eiBacklog first), not with a prefix
      pending or an NMI in front of it - and only a CPU in IM 2 acknowledges the chain (im2_device
      i_im2_mode); an IM 0/1 acceptance of the ULA pulse leaves the chain alone. */
   uint8_t intTaken = shouldAcceptInt && !nmiSignal && z80GetPrefix() == 0u && z80GetEiBacklog() <= 1u;
+  /*
+   * The DivMMC entry points are decoded on an M1 cycle WITH MREQ - an opcode fetch (divmmc.vhd:
+   * automap_hold updates only while mreq_n = 0 and m1_n = 0, and the zxnext.vhd `_q` latches are
+   * cleared as soon as M1 ends). An interrupt or NMI acknowledge is an M1 cycle without MREQ, so a
+   * `rst $08` whose entry address is reached with an interrupt pending must NOT arm the trap: the
+   * trap belongs to the opcode fetch at $0008 that happens after the ISR returns. Arming it here mapped
+   * the DivMMC during the ISR, and the RETI then fetched the DivMMC ROM's own $0008 (`jp $0512`, the
+   * HL-based esxDOS entry) instead of ROM 3's `ld hl,(CH_ADD)` that starts the delayed, IX-based entry -
+   * which sent every following F_READ to the caller's HL (nxmodplayer overwrote its own code page).
+   * The manual conmem check is not an entry point and still runs every instruction.
+   */
+  if (nmiSignal || intTaken) zxnextDivMmcCheckManualConmem();
+  else zxnextDivMmcBeforeOpcodeFetch(pcBefore);
+  /* An NMI acknowledge fetches no opcode; the state machine steps at real opcode fetches only. */
+  if (!nmiSignal) zxnextNmiBeforeOpcodeFetch(pcBefore);
+  z80SetSigNmi(nmiSignal);
+  z80SetSigInt(rawIntSignal);
   if (intTaken) {
     z80SetInterruptVector(zxnextInterruptsGetHardwareIm2Mode() && z80GetInterruptMode() == 2u
       ? zxnextInterruptsAcknowledge() : 0xffu);

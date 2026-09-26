@@ -172,6 +172,21 @@ different numbers on a paused machine and misses a read breakpoint on an opcode 
 core's `Z80_BEFORE_OPCODE_FETCH` hook (no-op by default) marks the M1 where `Z80Cpu.beforeOpcodeFetch`
 runs; `Z80_FETCH_CODE_BYTE` reads operands unrecorded (it must supply the read's delay itself).
 
+**An interrupt or NMI acknowledge is an M1 cycle, but not an opcode fetch.** Anything the machine
+decodes from "the opcode fetch at address X" - the DivMMC automap entry points, the NMI state
+machine, address-triggered traps - must be evaluated only when the cycle really fetches an opcode.
+`zxnextCpuExecuteInstruction` ran the DivMMC entry-point check on `pcBefore` before it knew the cycle
+would be an acknowledge; a `rst $08` reached with a CTC interrupt pending armed the delayed `$0008`
+trap on the acknowledge, the ISR's first fetch consumed it, and the `RETI` fetched the DivMMC ROM's
+own `$0008` (esxDOS's HL-based entry) instead of ROM 3's `ld hl,(CH_ADD)` that starts the delayed,
+IX-based one. Every `F_READ` then wrote to the caller's HL, and nxmodplayer overwrote its own code
+page and reset. The FPGA never sees this: `automap_hold` (divmmc.vhd) updates only on M1 *with MREQ*,
+and the zxnext.vhd `_q` latches are cleared when M1 ends. Decide `intTaken`/`nmiSignal` first, then run
+the fetch-address checks only for a real fetch (`divmmc-entry-points.test.ts` DIV-036 guards it).
+Interrupt-at-entry-point is also the shape to suspect for any "works on hardware, derails under
+interrupt load" report: it needs a pending interrupt exactly at the RST, so it is timing-dependent
+and self-perpetuating (the HL-based exit leaves conmem set).
+
 The literal copies in `test/wasm/z80/` must be re-copied whenever their
 `test/z80/` source changes. A stale `next-ops.test.ts` copy once asserted the
 pre-VHDL `ADD rr,A`/`LDWS` flags and failed six cases against a correct core.
