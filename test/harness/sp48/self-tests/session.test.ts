@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
+
 import { createSp48Session } from "..";
 
 describe("ZX Spectrum 48K harness", () => {
@@ -55,6 +57,23 @@ describe("ZX Spectrum 48K harness", () => {
     s.call("Main");
 
     expect(s.screenLine(0)).toBe("Hello, 48K");
+  });
+
+  it("loads a program assembled from several units and resolves module symbols", async () => {
+    const s = await createSp48Session();
+    s.bootToBasic();
+    const assembler = new Z80Assembler();
+    const output = await assembler.compileProgram([
+      await assembler.parseSourceUnit("main.asm", "  .org $8000\nMain:\n  call lib.Store\n  ret\n"),
+      await assembler.parseSourceUnit("lib.asm", "  .module lib\nStore:\n  ld (Value),a\n  ret\nValue:\n  .defb 0\n  .moduleend\n")
+    ]);
+    const program = s.loadOutput(output);
+
+    s.machine.a = 0x5a;
+    s.call("Main");
+
+    expect(program.entry).toBe(0x8000);
+    expect(s.peek(program.symbol("lib.Value"))).toBe(0x5a);
   });
 
   it("stops at an address breakpoint and continues to the next one", async () => {

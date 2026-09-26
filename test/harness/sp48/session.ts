@@ -87,12 +87,19 @@ export class Sp48TestSession {
     const text = /^\s*\.model\b/im.test(source) ? source : `  .model Spectrum48\n${source}`;
     const assemblerOptions = new AssemblerOptions();
     assemblerOptions.currentModel = SpectrumModelType.Spectrum48;
-    const output = await new Z80Assembler().compile(text, assemblerOptions);
+    return this.loadOutput(await new Z80Assembler().compile(text, assemblerOptions), options);
+  }
+
+  /**
+   * Writes an assembler output into RAM - one built with `compileProgram`, for example. Throws on
+   * assembly errors and on banked segments. Does not change PC or SP.
+   */
+  loadOutput(output: Sp48Program["output"], options: { entry?: number | string } = {}): Sp48Program {
     const errors = output.errors.filter((e) => !e.isWarning);
     if (errors.length) {
       throw new Error(
         "Assembly failed:\n" +
-          errors.map((e) => `  line ${e.line}:${e.startColumn} ${e.errorCode}: ${e.message}`).join("\n")
+          errors.map((e) => `  ${e.filename} line ${e.line}:${e.startColumn} ${e.errorCode}: ${e.message}`).join("\n")
       );
     }
     const segments = output.segments.filter((s) => s.emittedCode.length);
@@ -101,7 +108,11 @@ export class Sp48TestSession {
     for (const s of segments) this.poke(s.startAddress, s.emittedCode);
 
     const symbol = (name: string): number => {
-      const s = output.getSymbol(name);
+      // --- getSymbol does not follow dotted module names: walk the nested modules for "core.X"
+      const parts = name.split(".");
+      let module: Pick<Sp48Program["output"], "getSymbol" | "getNestedModule"> | undefined = output;
+      for (const part of parts.slice(0, -1)) module = module?.getNestedModule(part);
+      const s = module?.getSymbol(parts[parts.length - 1]);
       if (!s?.value) throw new Error(`Unknown symbol '${name}'`);
       return s.value.value as number;
     };

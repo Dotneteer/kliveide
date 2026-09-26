@@ -1,0 +1,238 @@
+; @module   strings
+; @summary  Core String routines: allocation, length, copy, concatenation, store and comparison.
+; @exports  StrAlloc, StrLen, StrDup, StrConcat, StrStore, StrCompare, StrCopyChars
+; @requires heap
+;
+; A String value is a pointer to a heap block [length:2][characters], or 0 for the empty string
+; (runtime-abi.md §2.2). A String produced by an expression is a temporary: whoever consumes it frees
+; it. The routines that take two Strings take "free after use" flags in A: bit 0 frees the first
+; operand (HL), bit 1 the second (DE), after the result has been built.
+
+; ------------------------------------------------------------------------------------------------
+; Allocates a String of BC characters and sets its length; the characters are not set.
+; Out: HL = the String, or 0 when the heap is full. Changes AF, BC, DE.
+StrAlloc:
+    push bc
+    ld hl,2
+    add hl,bc
+    ld b,h
+    ld c,l                  ; BC = block payload size
+    pop de                  ; DE = length
+    jp c,AllocFailed        ; longer than a block can hold
+    push de
+    call Alloc
+    pop bc                  ; BC = length
+    ld a,h
+    or l
+    ret z
+    ld (hl),c
+    inc hl
+    ld (hl),b
+    dec hl
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; The length of String HL (0 for the empty String). Out: BC. Changes AF only.
+StrLen:
+    ld bc,0
+    ld a,h
+    or l
+    ret z
+    ld c,(hl)
+    inc hl
+    ld b,(hl)
+    dec hl
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; Copies the characters of String HL to DE. Out: DE = the address after the copy. Changes AF, BC, HL.
+StrCopyChars:
+    call StrLen
+    ld a,b
+    or c
+    ret z
+    inc hl
+    inc hl
+    ldir
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; A new copy of String HL (which is left alone). Out: HL = the copy; 0 for the empty String or when
+; the heap is full. Changes AF, BC, DE.
+StrDup:
+    call StrLen
+    ld a,b
+    or c
+    jr z,StrDupEmpty
+    push hl                 ; S: [source]
+    call StrAlloc
+    pop de                  ; DE = source                          S: []
+    ld a,h
+    or l
+    ret z
+    push hl                 ; S: [copy]
+    ex de,hl                ; HL = source, DE = copy
+    inc de
+    inc de
+    call StrCopyChars
+    pop hl                  ; HL = copy                            S: []
+    ret
+StrDupEmpty:
+    ld hl,0
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; Concatenates Strings HL and DE. In: A = free flags. Out: HL = the new String; 0 when it is empty,
+; longer than 65535 characters, or the heap is full. Changes AF, BC, DE.
+StrConcat:
+    push af                 ; S: [flags]
+    push de                 ; S: [second][flags]
+    push hl                 ; S: [first][second][flags]
+    call StrLen             ; BC = first's length
+    ex de,hl                ; HL = second
+    push bc                 ; S: [len1][first][second][flags]
+    call StrLen             ; BC = second's length
+    pop hl                  ; HL = len1                            S: [first][second][flags]
+    add hl,bc
+    ld b,h
+    ld c,l                  ; BC = total length
+    ld hl,0
+    jr c,StrConcatFree      ; too long
+    ld a,b
+    or c
+    jr z,StrConcatFree      ; empty
+    call StrAlloc
+    ld a,h
+    or l
+    jr z,StrConcatFree      ; heap full
+    ex de,hl                ; DE = result
+    pop hl                  ; HL = first                           S: [second][flags]
+    push hl                 ; S: [first][second][flags]
+    push de                 ; S: [result][first][second][flags]
+    inc de
+    inc de
+    call StrCopyChars
+    ld hl,4
+    add hl,sp
+    ld a,(hl)
+    inc hl
+    ld h,(hl)
+    ld l,a                  ; HL = second
+    call StrCopyChars
+    pop hl                  ; HL = result                          S: [first][second][flags]
+StrConcatFree:              ; HL = result                          S: [first][second][flags]
+    pop de                  ; DE = first
+    pop bc                  ; BC = second
+    ex (sp),hl              ; H = flags                            S: [result]
+    ld a,h
+    push bc                 ; S: [second][result]
+    ex de,hl                ; HL = first
+    call StrFreeOperands
+    pop hl                  ; HL = result                          S: []
+    ret
+
+; Frees HL if bit 0 of A is set and the String under the return address if bit 1 is set, then drops
+; that String from the stack. Changes AF, BC, DE, HL.
+StrFreeOperands:
+    pop bc                  ; BC = return address                  S: [second]
+    ex (sp),hl              ; HL = second                          S: [first]
+    push bc                 ; S: [ret][first]
+    rra
+    rra                     ; carry = bit 1
+    push af                 ; S: [flags][ret][first]
+    call c,Free             ; the second operand
+    pop af                  ; S: [ret][first]
+    pop bc                  ; BC = return address                  S: [first]
+    pop hl                  ; HL = first                           S: []
+    push bc                 ; S: [ret]
+    rla                     ; carry = bit 0 (A was rotated right twice)
+    ret nc
+    jp Free                 ; the first operand
+
+; ------------------------------------------------------------------------------------------------
+; Stores String HL into the String variable at DE, taking ownership of HL, and frees the value the
+; variable held. Changes AF, BC, DE, HL.
+StrStore:
+    ex de,hl                ; HL = variable, DE = new value
+    ld c,(hl)
+    ld (hl),e
+    inc hl
+    ld b,(hl)
+    ld (hl),d               ; BC = old value
+    ld h,b
+    ld l,c
+    jp Free
+
+; ------------------------------------------------------------------------------------------------
+; Compares Strings HL and DE character by character (unsigned); a String that is a prefix of the
+; other is the smaller. In: A = free flags. Out: A = $FF (HL < DE), 0 (equal) or 1 (HL > DE), with
+; the flags of "or a": Z when equal, S when less. Changes BC, DE, HL.
+StrCompare:
+    push af                 ; S: [flags]
+    push de                 ; S: [second][flags]
+    push hl                 ; S: [first][second][flags]
+    call StrLen             ; BC = len1
+    push bc                 ; S: [len1][first][second][flags]
+    ex de,hl                ; HL = second, DE = first
+    call StrLen             ; BC = len2
+    pop hl                  ; HL = len1                            S: [first][second][flags]
+    push hl                 ; S: [len1][first][second][flags]
+    push bc                 ; S: [len2][len1][first][second][flags]
+    or a
+    sbc hl,bc
+    jr nc,StrCompareN       ; len1 >= len2: compare len2 characters
+    add hl,bc
+    ld b,h
+    ld c,l                  ; BC = len1
+StrCompareN:                ; BC = characters to compare
+    ld hl,4
+    add hl,sp
+    ld e,(hl)
+    inc hl
+    ld d,(hl)               ; DE = first
+    inc hl
+    ld a,(hl)
+    inc hl
+    ld h,(hl)
+    ld l,a                  ; HL = second
+    inc de
+    inc de
+    inc hl
+    inc hl
+StrCompareLoop:
+    ld a,b
+    or c
+    jr z,StrCompareLengths
+    ld a,(de)
+    cp (hl)
+    jr nz,StrCompareDiffer
+    inc de
+    inc hl
+    dec bc
+    jr StrCompareLoop
+StrCompareDiffer:           ; carry: first < second
+    sbc a,a                 ; A = $FF when less, else 0
+    or 1                    ; A = $FF or 1
+    pop bc
+    pop bc                  ;                                      S: [first][second][flags]
+    jr StrCompareDone
+StrCompareLengths:
+    pop bc                  ; BC = len2
+    pop hl                  ; HL = len1                            S: [first][second][flags]
+    or a
+    sbc hl,bc
+    ld a,0
+    jr z,StrCompareDone
+    sbc a,a                 ; $FF when len1 < len2
+    or 1
+StrCompareDone:             ; A = result                           S: [first][second][flags]
+    pop hl                  ; HL = first
+    pop de                  ; DE = second
+    pop bc                  ; B = flags                            S: []
+    push af                 ; S: [result]
+    push de                 ; S: [second][result]
+    ld a,b
+    call StrFreeOperands
+    pop af                  ; A = result                           S: []
+    or a
+    ret

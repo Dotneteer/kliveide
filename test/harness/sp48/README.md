@@ -34,6 +34,7 @@ it("prints through the ROM", async () => {
 | Create | `createSp48Session()` | Builds the 48K WASM core if needed (`scripts/build-sp48-wasm.cjs`), creates the machine with the real ROM, sets it up. |
 | Boot | `bootToBasic({ maxFrames })` | Runs from reset to the BASIC main entry `$12AC` (`SP48_MAIN_ENTRY`): system variables initialised, IY = `$5C3A`, IM 1 interrupts running. About 90 frames. |
 | Load | `loadCode(source, { entry? })` → `Sp48Program` | Assembles Klive Z80 source in memory (`.model Spectrum48` added if missing) and writes it to RAM. Leaves PC and SP alone. `program.symbol(name)`, `program.entry`, `program.output` (the assembler output, with source map and list items). No `#include`, no banks. |
+| | `loadOutput(output, { entry? })` → `Sp48Program` | Writes an assembler output that is already built (for example by `compileProgram` from several units) into RAM. `program.symbol` resolves dotted module names such as `core.Alloc`. |
 | Run | `runFrames(n)`, `runTo(addressOrLabel)`, `step(n)` | Whole frames; run until PC reaches an address (stops before executing it); single instructions. |
 | Call | `call(addressOrLabel, { returnTo? })` | Pushes a return address (default: the current PC, `$12AC` after boot), jumps, runs until the routine returns there — the way `USR` calls machine code. |
 | Debug | `attachDebugSupport()` → `DebugSupport` | Attaches the emulator's own breakpoint store, so tests add address breakpoints or resolve source breakpoints as the IDE does. |
