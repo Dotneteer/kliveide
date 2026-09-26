@@ -27,7 +27,7 @@ The language itself is described in `../zxbasic-syntax/` (read its README first)
   may compile Klive's own test programs so their observable behaviour (screen, memory, error
   reports) can be recorded as an oracle (plan D12, R9, `scripts/kbasic-oracle.cjs`). Commit only
   those results — never the generated code — and never run it in CI.
-- **Installed oracle (this machine, 2026-09-26):** `~/zxbasic` is a clone of
+- **Installed oracle (the project author's machine, 2026-09-26; a cloud container does not have it):** `~/zxbasic` is a clone of
   `boriel-basic/zxbasic` at commit `b8d3cd706b07620f4366418fb78f1ac43076da92` (tag `v1.19.0`) —
   the exact commit `../zxbasic-syntax/upstream-fingerprint.json` pins. It needs Python ≥ 3.14
   (installed via `brew install python@3.14`, since the machine's default `python3` was 3.12); the
