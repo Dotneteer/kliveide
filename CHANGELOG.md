@@ -1,6 +1,47 @@
 # Klive IDE Changelog
 
-## Unreleased
+## 0.61.0
+
+### Highlights
+
+- **All emulated machines run on a WebAssembly core** &mdash; the ZX Spectrum 48K, 128K, +2/+3, the
+  ZX Spectrum Next and the Cambridge Z88. The older TypeScript emulators are gone; projects saved with
+  the "ZX Spectrum Next Compatibility" or "Cambridge Z88 (TypeScript)" models open on the matching
+  standard model (see *Breaking changes*).
+- **A modernized IDE.** A new look and fonts; restyled context menus, dialogs and sidebar panels; a
+  reworked sprite and palette editor; and clearer memory, disassembly and register panels. Documents
+  can be split into multiple hubs through *Split Right* / *Split Down* on a document tab.
+- **Debug `.nex` files directly.** Run or debug any NEX file without a project, break at its entry
+  point, and pop out banks with their own breakpoint gutter and live, PC-aligned disassembly. Also
+  new: bank-relative breakpoints and watchpoints (`05:+$0100`), `nex-label` for naming code while
+  debugging, NEX labels in the live disassembly, *Go to Definition*, a sprite view, and header checks
+  before a file runs.
+- **More debugging tools:** *Run to a line* (`run-to`, or Ctrl/Cmd-click the margin), Next register
+  write breakpoints, conditional branch prediction in the disassembly, and *Go Back* / *Go Forward*
+  navigation history across editors, views and breakpoints.
+- **ZX Spectrum Next:** initial mouse and joystick emulation, and many hardware accuracy fixes
+  checked against the FPGA source (DMA, CTC, DivMMC, sprites, tilemap, scroll register), backed by a
+  new hardware test harness.
+- **Cambridge Z88:** a new OZ v5.0 beta ROM, working cursor keys, smooth sound, a reliable keyboard
+  under OZ 4.7, a working auto power-off, and corrected Help menu links.
+- **Better sound:** improved beeper and PSG (AY) generation, no audio echo or silence while debugging
+  the Next, and no lost audio in half-fps recordings.
+- **Emulator window:** a finer zoom menu, *Fit Window to Screen* commands, a window size remembered
+  per machine, and an option to hide the performance info in the status bar.
+- **SjasmPlus integration dialog**, and an updated +2/+3 SjasmPlus project template.
+- **Editor:** pasting a large source file is now instant (one edit instead of one per character), and
+  Monaco refactoring is improved.
+
+### Key fixes
+
+- Long-running sessions no longer freeze: the ZX Spectrum froze after about 20 minutes, and queued
+  keys could stick after about 10 minutes.
+- Breakpoints are reliable again: no more breakpoints firing in the wrong bank, phantom breakpoints
+  after a rebuild, breakpoints on the same address disarming each other, or *Step Out* running away
+  after tail calls.
+- Screen recording produces a file in the installed app.
+- Reopening a project restores every document, not just source files.
+- Stability fixes on Windows.
 
 ### Changes
 
@@ -168,6 +209,9 @@
 
 ### Features
 
+- Multiple document hubs are available through the *Split Right* and *Split Down* document tab
+  context menus.
+- Context menus and modal dialogs are restyled.
 - **Fixed-size data rows in NEX annotations.** A `bytes` region in a `.nex.dis` file can set
   `rowBytes` (1&ndash;4), so a table of records lists one record per `.defb` line &mdash; each two-byte
   copper instruction on its own line, for example &mdash; with its own comment.
@@ -259,13 +303,6 @@
   including the Next's bank-relative `05:+$0100` form, so you can run to an offset inside a bank that
   is not paged in yet. Hold <kbd>Ctrl</kbd> (<kbd>Cmd</kbd> on macOS) and click the breakpoint margin
   in the Disassembly view or a popped-out NEX bank to do the same thing without typing a command.
-
-## 0.58.0
-
-### Features
-
-- Multiple document hubs are avaliable through Split Right and Split Down document tab context menus
-- Context menus and modal dialogs re-styled
 
 ## 0.57.1
 
