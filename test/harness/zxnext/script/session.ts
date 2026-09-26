@@ -28,6 +28,7 @@ import { uartPeerOf, type UartFrame, type UartIndex } from "./uart-peer";
 import { keyCode, type NextKey } from "./keys";
 import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joystick";
 import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
+import { createSp48Session } from "../../sp48";
 
 /*
  * The scripting layer of the ZX Spectrum Next test harness: one real machine (the WASM core), driven
@@ -400,6 +401,27 @@ export class NextTestSession {
   }
 
   /**
+   * Makes the machine ready for code that calls the 48K BASIC ROM, as a program started by
+   * `.nexload` finds it: ROM 3 (48K BASIC) in slots 0-1, selected through `$1FFD` bit 2 and `$7FFD`
+   * bit 4 as the ROM paging does, and a 48K BASIC system-variable area, calculator workspace and
+   * machine stack, copied from the 48K harness after `bootToBasic()` (`$5C00-$5FFF`, `$FF00-$FFFF`).
+   * IY is `$5C3A` and the interrupt mode is 1; interrupts stay disabled. Sets the NEX MMU layout, so
+   * call it before or after `loadCode`. An approximation of what NextZXOS leaves: see README.md
+   * "Direct load".
+   */
+  async prepareBasic(): Promise<this> {
+    const snapshot = await basicSnapshot();
+    DEFAULT_MMU.forEach((page, slot) => writeNextReg(this.machine, 0x50 + slot, page));
+    this.out(0x1ffd, 0x04); // ROM select high bit, no special paging
+    this.out(0x7ffd, 0x10); // ROM select low bit, bank 0 at $C000
+    DEFAULT_MMU.forEach((page, slot) => writeNextReg(this.machine, 0x50 + slot, page)); // $7FFD set MMU 6-7
+    for (const [start, bytes] of snapshot) this.poke(start, bytes);
+    this.machine.iy = 0x5c3a;
+    this.machine.interruptMode = 1;
+    return this;
+  }
+
+  /**
    * Loads a `.nex` file, or compiles an `.asm` file with `.savenex` pragmas first, with the harness's
    * direct NEX loader (banks, MMU, border, SP, PC). No NextZXOS: see README.md "Direct load".
    */
@@ -716,4 +738,20 @@ export function createSession(options?: SessionOptions): Promise<NextTestSession
 
 export function hex(value: number, digits = 2): string {
   return "$" + value.toString(16).toUpperCase().padStart(digits, "0");
+}
+
+/** The 48K BASIC state `prepareBasic` installs, read once from a booted 48K harness. */
+let basicSnapshotPromise: Promise<Array<[number, Uint8Array]>> | undefined;
+
+function basicSnapshot(): Promise<Array<[number, Uint8Array]>> {
+  basicSnapshotPromise ??= (async () => {
+    const sp48 = await createSp48Session();
+    sp48.bootToBasic();
+    const region = (start: number, end: number): [number, Uint8Array] => [
+      start,
+      Uint8Array.from({ length: end - start + 1 }, (_, i) => sp48.peek(start + i))
+    ];
+    return [region(0x5c00, 0x5fff), region(0xff00, 0xffff)];
+  })();
+  return basicSnapshotPromise;
 }

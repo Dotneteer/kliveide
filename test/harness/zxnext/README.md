@@ -80,6 +80,7 @@ Methods returning `this` chain.
 | Load | `loadCode(source, { entry?, sp? })` → `Program` | Assembles Klive Z80N source in memory. NEX MMU layout (ROM, bank 5, bank 2, bank 0), DI, SP `$BFF0`, PC = `.ent` / `entry` / first segment. `.model Next` added if missing. No `#include`, no `.bank`. |
 | | `loadProgramFile(path)` | `.asm` with `.savenex` pragmas (includes work) or a `.nex`; direct NEX loader, no NextZXOS. |
 | | `symbol(name)` | A label or `.equ` of the last `loadCode` program. |
+| | `await prepareBasic()` | BASIC-ready mode: ROM 3 (48K BASIC) in slots 0-1 through `$1FFD`/`$7FFD`, and the 48K harness's system variables, calculator workspace and machine stack after `bootToBasic()` copied in (`$5C00-$5FFF`, `$FF00-$FFFF`); IY `$5C3A`, IM 1, interrupts still off. For code that calls the ROM (Klive BASIC's Float runtime). Before or after `loadCode`. See "Direct load". |
 | Run | `runFrames(n = 1)` | Whole frames exactly as the emulator panel runs them. Finishes a frame stopped midway first. |
 | | `runUntil(pred, what, { maxFrames })` | Frame granularity; fails with PC and `what` on timeout. |
 | | `runUntilReady({ maxFrames = 50 })` | Until the program writes `$A5` to NextReg `$7F`. |
@@ -207,3 +208,11 @@ subtract the CPU's own timing out. `test/zxnext-hw/_timing-helpers.ts` has the e
 entry state, but without NextZXOS: ROM selection, the NextRegs the OS changes, the interrupt mode and
 system variables stay at hard-reset values. A test that depends on any of that belongs in a screen
 case with `"tiers": ["headless", "browser"]`.
+
+`prepareBasic()` narrows the gap for code that calls the 48K BASIC ROM: it pages ROM 3 in and
+installs a 48K BASIC system-variable area, as `.nexload` hands over. It is an approximation, not
+NextZXOS: the system variables are the 48K ROM's after boot (not NextZXOS's, which sets more of
+them, the Next's channels and its own RAMTOP among them), the NextRegs stay at reset values, and
+interrupts stay off. ROM 3 matches the 48K ROM at the entry points Klive BASIC uses (the calculator,
+CHAN-OPEN, PR-STRING, the error restart, the font), but not everywhere. A test that needs the real
+thing boots NextZXOS from a cloned CIM (see "Adding a method", Candidates).
