@@ -1,0 +1,4 @@
+' PRINT AT outside the screen stops with "5 Out of screen"
+'@expect error 4
+DIM r AS UByte = 24
+PRINT AT r, 0; "x"

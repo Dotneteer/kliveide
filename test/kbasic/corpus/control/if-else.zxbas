@@ -1,0 +1,12 @@
+' IF, ELSEIF and ELSE: the first true branch runs
+'@expect screen 0 "small medium large"
+SUB classify(n AS UByte)
+ IF n < 10 THEN
+  PRINT "small";
+ ELSEIF n < 100 THEN
+  PRINT "medium";
+ ELSE
+  PRINT "large";
+ END IF
+END SUB
+classify 5: PRINT " ";: classify 50: PRINT " ";: classify 200

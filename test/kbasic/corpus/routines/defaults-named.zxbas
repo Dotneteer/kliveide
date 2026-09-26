@@ -1,0 +1,8 @@
+' Default parameter values and named arguments
+'@expect screen 0 "1-2-3 1-9-3 5-2-7"
+SUB show(a AS UByte, b AS UByte = 2, c AS UByte = 3)
+ PRINT a; "-"; b; "-"; c; " ";
+END SUB
+show 1
+show 1, 9
+show(c := 7, a := 5)

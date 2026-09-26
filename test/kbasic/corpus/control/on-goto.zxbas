@@ -1,0 +1,17 @@
+' ON GOTO and ON GOSUB pick a target by number; out of range falls through
+'@expect screen 0 "two one-sub past"
+DIM k AS UByte = 1
+ON k GOTO one, two
+one:
+PRINT "one";
+two:
+PRINT "two ";
+k = 0
+ON k GOSUB osub
+k = 7
+ON k GOTO one
+PRINT "past"
+END
+osub:
+PRINT "one-sub ";
+RETURN

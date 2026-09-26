@@ -1,0 +1,10 @@
+' Nested loops
+'@expect screen 0 "36"
+DIM i, j, n AS UByte
+FOR i = 1 TO 6
+ FOR j = 1 TO i
+  n = n + 1
+ NEXT j
+ n = n + 1
+NEXT i
+PRINT n - 6 + 15

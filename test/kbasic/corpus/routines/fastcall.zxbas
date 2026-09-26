@@ -1,0 +1,12 @@
+' FASTCALL routines take their first parameter in a register
+'@expect screen 0 "84 13 65536"
+FUNCTION FASTCALL dbl(n AS UInteger) AS UInteger
+ RETURN n * 2
+END FUNCTION
+FUNCTION FASTCALL addb(a AS UByte, b AS UByte) AS UByte
+ RETURN a + b
+END FUNCTION
+FUNCTION FASTCALL big(n AS ULong) AS ULong
+ RETURN n + 1
+END FUNCTION
+PRINT dbl(42); " "; addb(6, 7); " "; big(65535)

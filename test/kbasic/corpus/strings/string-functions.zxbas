@@ -1,0 +1,14 @@
+' A FUNCTION returning a String, with by-value String parameters and a local String
+'@expect screen 0 "[ab][ab][ab]"
+'@expect heap r
+FUNCTION rep(s AS String, n AS UByte) AS String
+ DIM acc AS String
+ DIM i AS UByte
+ FOR i = 1 TO n
+  acc = acc + "[" + s + "]"
+ NEXT i
+ RETURN acc
+END FUNCTION
+DIM r$ AS String
+r$ = rep("ab", 3)
+PRINT r$

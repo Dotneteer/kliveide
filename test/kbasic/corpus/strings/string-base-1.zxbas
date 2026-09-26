@@ -1,0 +1,5 @@
+' #pragma string_base = 1 makes the first character 1
+'@expect screen 0 "Kl|e|ive"
+#pragma string_base = 1
+DIM s$ AS String = "Klive"
+PRINT s$(1 TO 2); "|"; s$(5); "|"; s$(3 TO)

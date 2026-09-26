@@ -1,0 +1,8 @@
+' Long division truncates towards zero; ULong divides unsigned
+'@expect screen 0 "-14285 -5 14285 5"
+'@expect screen 1 "429496729 5"
+DIM a, b AS Long
+a = -100000: b = 7
+PRINT a / b; " "; a MOD b; " "; -a / b; " "; -a MOD b
+DIM u AS ULong = 4294967295
+PRINT u / 10; " "; u MOD 10

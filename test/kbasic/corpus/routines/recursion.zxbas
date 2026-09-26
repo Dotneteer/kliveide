@@ -1,0 +1,11 @@
+' Recursion: every activation has its own frame
+'@expect screen 0 "3628800 55"
+FUNCTION fact(n AS ULong) AS ULong
+ IF n < 2 THEN RETURN 1
+ RETURN n * fact(n - 1)
+END FUNCTION
+FUNCTION fib(n AS UByte) AS UInteger
+ IF n < 2 THEN RETURN n
+ RETURN fib(n - 1) + fib(n - 2)
+END FUNCTION
+PRINT fact(10); " "; fib(10)

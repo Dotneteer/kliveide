@@ -1,0 +1,10 @@
+' UByte arithmetic stays in 8 bits: the common type of two UBytes is UByte
+'@expect screen 0 "44 255 1"
+'@expect byte a 44
+DIM a, b AS UByte
+a = 200
+b = 100
+a = a + b
+b = 0
+b = b - 1
+PRINT a; " "; b; " "; b + 2

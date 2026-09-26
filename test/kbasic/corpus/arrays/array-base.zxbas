@@ -1,0 +1,10 @@
+' #pragma array_base = 1 makes DIM a(3) run from 1 to 3
+'@expect screen 0 "3 1 6"
+#pragma array_base = 1
+DIM a(3) AS UByte => {1, 2, 3}
+DIM i AS UByte
+DIM s AS UByte
+FOR i = 1 TO 3
+ s = s + a(i)
+NEXT i
+PRINT UBOUND(a, 1); " "; LBOUND(a, 1); " "; s

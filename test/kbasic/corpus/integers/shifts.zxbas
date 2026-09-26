@@ -1,0 +1,7 @@
+' SHL and SHR: logical for unsigned types, arithmetic for signed ones. The literal 5 is a UByte,
+' so 5 SHL 8 is 0.
+'@expect screen 0 "40 5 0 -4 32752"
+DIM a AS UByte = 10
+DIM i AS Integer = -32
+DIM n AS UByte = 2
+PRINT a SHL n; " "; a SHR 1; " "; 5 SHL 8; " "; i SHR 3; " "; $FFE0 SHR 1

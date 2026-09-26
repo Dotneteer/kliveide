@@ -1,0 +1,9 @@
+' Signed 16-bit division truncates towards zero; MOD takes the dividend's sign
+'@expect screen 0 "-33 -1 33 1 -33 1"
+DIM a, b AS Integer
+a = -100: b = 3
+PRINT a / b; " "; a MOD b; " ";
+a = 100
+PRINT a / b; " "; a MOD b; " ";
+b = -3
+PRINT a / b; " "; a MOD b

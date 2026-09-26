@@ -1,0 +1,5 @@
+' An array initialiser, with lower bounds
+'@expect screen 0 "10 30 90"
+DIM p(1 TO 3) AS UInteger => {10, 20, 30}
+DIM q(1, 1) AS UByte => {{1, 2}, {3, 4}}
+PRINT p(1); " "; p(3); " "; q(0, 0) * 10 + q(0, 1) * 10 + q(1, 0) * 10 + q(1, 1) * 0 + p(3)

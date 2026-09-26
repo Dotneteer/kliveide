@@ -1,0 +1,7 @@
+' Printing past the last row scrolls the whole screen up
+'@expect screen 0 "Line 7"
+'@expect screen 22 "Line 29"
+DIM i AS UByte
+FOR i = 0 TO 29
+ PRINT "Line "; i
+NEXT i

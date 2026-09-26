@@ -1,0 +1,10 @@
+' A BYREF String parameter changes the caller's variable
+'@expect screen 0 "<<x>>"
+'@expect heap w
+SUB wrap(BYREF s AS String)
+ s = "<" + s + ">"
+END SUB
+DIM w$ AS String = "x"
+wrap w$
+wrap w$
+PRINT w$

@@ -1,0 +1,10 @@
+' DO ... LOOP in its five forms
+'@expect screen 0 "3 3 1 1 3"
+DIM i AS UByte
+i = 0: DO WHILE i < 3: i = i + 1: LOOP: PRINT i; " ";
+i = 0: DO UNTIL i = 3: i = i + 1: LOOP: PRINT i; " ";
+i = 0: DO: i = i + 1: LOOP WHILE i > 5: PRINT i; " ";
+i = 0: DO: i = i + 1: LOOP UNTIL i > 0: PRINT i; " ";
+i = 0: DO: i = i + 1: IF i = 3 THEN EXIT DO
+LOOP
+PRINT i

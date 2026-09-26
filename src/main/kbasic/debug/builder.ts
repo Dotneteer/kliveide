@@ -26,6 +26,8 @@ export type ClassicTables = {
 export type DebugBuildInput = {
   statements: StatementEntry[];
   lines: LineInfo[];
+  /** The generated program's text, one entry per line table entry (for the branch checks). */
+  text: string[];
   /** The assembler's list items; those of the generated program have `programFileIndex`. */
   listFileItems: ListFileItem[];
   programFileIndex: number;
@@ -87,7 +89,93 @@ export function buildDebugInfo(input: DebugBuildInput): DebugBuild {
     addresses.push({ sid: s.sid, start: first.address, end, elided });
   }
 
+  validate(input, byLine, addresses, problems);
   return { classic: classicTables(input, addresses), addresses, problems };
+}
+
+// =================================================================================================
+// The validator (§7): the static checks
+
+const LABEL_LINE = /^([A-Za-z_][\w.]*):$/;
+const BRANCH = /^\s+(jp|jr|djnz|call)\s+(?:(?:nz|z|nc|c|po|pe|p|m),\s*)?([A-Za-z_][\w.]*)\s*$/;
+
+function validate(input: DebugBuildInput, byLine: Map<number, ListFileItem>, addresses: StatementAddresses[], problems: string[]): void {
+  const lineCount = input.lines.length;
+  const codeAt = (from: number): ListFileItem | undefined => {
+    for (let n = from; n <= lineCount; n++) {
+      const item = byLine.get(n);
+      if (item) return item;
+    }
+    return undefined;
+  };
+
+  // --- G1 (levels 0-1): after its first run, a statement has no more code
+  const ranges = addresses.filter((a) => !a.elided);
+  const bySid = new Map(ranges.map((a) => [a.sid, a]));
+  input.lines.forEach((info, i) => {
+    const item = byLine.get(i + 1);
+    const range = bySid.get(info.sid);
+    if (item && range && (item.address < range.start || item.address >= range.end)) {
+      problems.push(`G1: statement ${info.sid} has code outside its run at line ${i + 1}`);
+    }
+  });
+
+  // --- Statement ranges must not overlap: every code byte belongs to one statement at most
+  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  for (let k = 1; k < sorted.length; k++) {
+    if (sorted[k].start < sorted[k - 1].end) problems.push(`G1: statements ${sorted[k - 1].sid} and ${sorted[k].sid} overlap`);
+  }
+  const statementAt = (address: number) => sorted.find((a) => address >= a.start && address < a.end);
+
+  // --- G2: a branch from outside a statement lands on its entry; G5: every user call is a call site
+  const labels = new Map<string, number>();
+  input.text.forEach((line, i) => {
+    const m = LABEL_LINE.exec(line);
+    const item = m ? codeAt(i + 2) : undefined;
+    if (m && item) labels.set(m[1], item.address);
+  });
+  input.text.forEach((line, i) => {
+    const m = BRANCH.exec(line);
+    if (!m) return;
+    const [, op, target] = m;
+    const info = input.lines[i];
+    if (op === "call" && !target.startsWith("core.") && !info.site) problems.push(`G5: the call to ${target} at line ${i + 1} has no call-site record`);
+    const address = labels.get(target);
+    if (address === undefined) return;
+    const into = statementAt(address);
+    if (into && into.sid !== info.sid && address !== into.start) {
+      problems.push(`G2: ${op} ${target} at line ${i + 1} branches into the middle of statement ${into.sid}`);
+    }
+  });
+
+  // --- Spans: inside their file, not empty, not starting or ending with a separator, and statements
+  // --- sharing a line do not overlap
+  const onLine = new Map<string, { start: number; end: number; sid: number }[]>();
+  for (const s of input.statements) {
+    const file = input.sources.get(s.span.file);
+    const text = file.text.slice(s.span.start, s.span.end);
+    if (s.span.end <= s.span.start || text.trim() !== text || text.startsWith(":") || text.endsWith(":")) {
+      problems.push(`span: statement ${s.sid} has the span ${JSON.stringify(text)}`);
+    }
+    const key = `${s.span.file}:${file.location(s.span.start).line}`;
+    const list = onLine.get(key) ?? [];
+    for (const other of list) {
+      if (s.span.start < other.end && other.start < s.span.end && !nested(s.span, other)) {
+        problems.push(`span: statements ${other.sid} and ${s.sid} overlap`);
+      }
+    }
+    list.push({ start: s.span.start, end: s.span.end, sid: s.sid });
+    onLine.set(key, list);
+  }
+}
+
+/**
+ * A block statement's parts can share a line with the statements they contain (`IF a THEN PRINT 1`:
+ * the IF header's span holds only `IF a THEN`), so an overlap is a problem only between two spans
+ * neither of which contains the other.
+ */
+function nested(a: { start: number; end: number }, b: { start: number; end: number }): boolean {
+  return (a.start <= b.start && b.end <= a.end) || (b.start <= a.start && a.end <= b.end);
 }
 
 /** §5: one list item per statement, the BASIC files only, statement entry → line and columns. */

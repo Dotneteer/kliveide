@@ -1,0 +1,8 @@
+' A SUB with parameters of several types, called with and without parentheses
+'@expect screen 0 "7 -2 300"
+'@expect screen 1 "1 -1 1"
+SUB show(a AS UByte, b AS Integer, c AS UInteger)
+ PRINT a; " "; b; " "; c
+END SUB
+show 7, -2, 300
+show(1, -1, 1)

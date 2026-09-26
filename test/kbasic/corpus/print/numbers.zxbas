@@ -1,0 +1,11 @@
+' PRINT of every integer type, no padding
+'@expect screen 0 "255 -128 65535 -32768 0"
+'@expect screen 1 "4294967295 -2147483648"
+DIM a AS UByte = 255
+DIM b AS Byte = -128
+DIM c AS UInteger = 65535
+DIM d AS Integer = -32768
+DIM e AS ULong = 4294967295
+DIM f AS Long = -2147483648
+PRINT a; " "; b; " "; c; " "; d; " "; 0
+PRINT e; " "; f

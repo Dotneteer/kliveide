@@ -79,7 +79,14 @@ export async function generateProgram(
     return undefined;
   }
 
-  const debug = buildDebugInfo({ statements: mir.statements, lines: emitted.lines, listFileItems: output.listFileItems, programFileIndex: 0, sources });
+  const debug = buildDebugInfo({
+    statements: mir.statements,
+    lines: emitted.lines,
+    text: emitted.text.split("\n"),
+    listFileItems: output.listFileItems,
+    programFileIndex: 0,
+    sources
+  });
   return { mir, emitted, output, debug, entryAddress: options.origin };
 }
 

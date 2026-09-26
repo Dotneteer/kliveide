@@ -1,0 +1,7 @@
+' CLS clears the screen and homes the cursor
+'@expect screen 0 "after"
+'@expect screen 1 ""
+PRINT "before"
+PRINT "more"
+CLS
+PRINT "after"

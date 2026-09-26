@@ -1,0 +1,7 @@
+' AND, OR, XOR and NOT on truth values
+'@expect screen 0 "0111 0110 10"
+DIM t, f AS UByte
+t = 5: f = 0
+PRINT t AND f; t OR f; t AND t; NOT f; " ";
+PRINT t XOR t; t XOR f; f XOR t; f OR f; " ";
+PRINT NOT (t = 4); NOT t

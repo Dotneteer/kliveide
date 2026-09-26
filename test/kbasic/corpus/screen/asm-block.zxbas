@@ -1,0 +1,9 @@
+' An ASM block works on the program's variables by their fixed names
+'@expect screen 0 "43"
+'@expect byte n 43
+DIM n AS UByte = 42
+ASM
+    ld hl,_n
+    inc (hl)
+END ASM
+PRINT n

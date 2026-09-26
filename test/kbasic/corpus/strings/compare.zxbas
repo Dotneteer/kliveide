@@ -1,0 +1,4 @@
+' Comparison is by character code; a prefix is the smaller
+'@expect screen 0 "1 0 1 1 0 1"
+DIM a$ AS String = "apple"
+PRINT a$ = "apple"; " "; a$ = "Apple"; " "; a$ > "Apple"; " "; "app" < a$; " "; a$ < "app"; " "; "" < "a"

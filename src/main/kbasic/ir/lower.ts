@@ -211,7 +211,9 @@ class Lowering {
       // --- Code after a jump: unreachable, but it still needs a block of its own
       this.startBlock(this.newLabel());
     }
-    this.block.term = t;
+    // --- A block with nothing but its jump (the join after an IF, a loop's way back) is reached only
+    // --- by branches: its jump belongs to no statement (glue), or a branch would land inside one (G2)
+    this.block.term = this.block.instrs.length ? t : { ...t, sid: -1 };
   }
 
   private emit(i: Instr): void {

@@ -9,9 +9,8 @@ plan §10.1), the **source-level tables** (`SourceLevelDebugInfo`, `CompilerInfo
 BASIC **extensions** (plan §8.4) that Phase 5's stepping needs. It also runs the **validator** that
 checks the code generator kept the plan's guarantees G1–G6.
 
-The approach is the one the walking skeleton proved (plan §17.1, R3,
-`test/kbasic/skeleton/walking-skeleton.ts`): tag every generated line with a statement id, assemble,
-join the list items with the tags.
+The approach is the one the walking skeleton proved (plan §17.1, R3; the spike was retired in
+Phase 3): tag every generated line with a statement id, assemble, join the list items with the tags.
 
 ## 1. Inputs
 
@@ -137,6 +136,20 @@ Run on every compiled test program, and in the compiler's debug builds. Checks:
 Static checks (G1–G3, G5, spans, sorting) report `problems`; a test fails on any. The dynamic
 checks (G4, G6) belong to the harness-based tests of plan §13.5.
 
+**Phase 3 state.** `buildDebugInfo` checks G1 (one marker, one run, no overlapping runs), G2 (every
+branch to a program label, from the emitted text), G3 (by construction), G5 (every `call` to a
+non-runtime label carries a call-site record) and the spans (non-empty, no leading or trailing
+blank or `:`, and statements on one line either apart or nested — a one-line `IF a THEN PRINT 1`'s
+header shares its line with the statements it holds). The corpus runner
+(`test/kbasic/corpus/corpus.test.ts`) fails on any problem and checks G4 on every run: it stops at
+every statement entry (a breakpoint each) and requires SP = IX − frame inside routines, and the main
+baseline minus two bytes per pending GOSUB in the main program. The sorting and `addressToStatement`
+checks wait for the source-level tables (Phase 5), G6 for the tracing hook of §13.5.
+
+G2 taught one lowering rule: a block that holds nothing but its jump (the join after an IF, a
+loop's way back after an `EXIT`) is reached only by branches, so its jump is glue (sid −1). Tagged
+with the statement before it, it put a branch target in the middle of that statement.
+
 ## 8. Tests
 
 - Builder unit tests on hand-made inputs: runs, elided statements, partitions, sorting, the
@@ -144,8 +157,8 @@ checks (G4, G6) belong to the harness-based tests of plan §13.5.
 - End to end on the 48K harness (Phase 3's exit criterion): a program with several statements per
   line; a **line** breakpoint resolved exactly as `refreshSourceCodeBreakpoints` does stops at the
   line's first statement with the right columns; a program stopped at each statement shows the
-  statement's own column range. The walking-skeleton test already does this for its toy language;
-  it is retired when these pass (plan R3).
+  statement's own column range. `test/kbasic/codegen/debugger.test.ts` does this (it replaced the
+  walking skeleton's test).
 - The validator on every corpus program at every level.
 
 ## 9. Decisions (approved as proposed)

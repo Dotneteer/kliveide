@@ -1,0 +1,9 @@
+' Byte values keep their sign through arithmetic and division
+'@expect screen 0 "-128 127 -3 -1"
+DIM a, b AS Byte
+a = 127
+a = a + 1
+b = a - 1
+PRINT a; " "; b; " ";
+a = -7
+PRINT a / 2; " "; a MOD 2

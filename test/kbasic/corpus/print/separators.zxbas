@@ -1,0 +1,10 @@
+' ";" joins, "," moves to the next 16-column field, a trailing separator keeps the line
+'@expect screen 0 "ab              c"
+'@expect screen 1 "de"
+'@expect screen 2 ""
+'@expect screen 3 "f"
+PRINT "a"; "b", "c"
+PRINT "d";
+PRINT "e"
+PRINT
+PRINT "f"

@@ -1,0 +1,6 @@
+' STOP ends the program with its report; the rest is not run
+'@expect error 8
+'@expect screen 0 "before"
+PRINT "before"
+STOP
+PRINT "after"

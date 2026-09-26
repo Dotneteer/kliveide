@@ -1,0 +1,13 @@
+' A one-dimensional array, filled and summed
+'@expect screen 0 "285"
+'@expect word s 285
+DIM a(9) AS UInteger
+DIM i AS UByte
+DIM s AS UInteger
+FOR i = 0 TO 9
+ a(i) = i * i
+NEXT i
+FOR i = 0 TO 9
+ s = s + a(i)
+NEXT i
+PRINT s

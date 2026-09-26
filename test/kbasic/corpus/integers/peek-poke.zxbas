@@ -1,0 +1,7 @@
+' POKE and PEEK of bytes and words
+'@expect peek 40000 42
+'@expect peekw 40002 $1234
+'@expect screen 0 "42 4660 70"
+POKE 40000, 42
+POKE UInteger 40002, $1234
+PRINT PEEK 40000; " "; PEEK(UInteger, 40002); " "; PEEK 40003 + PEEK 40002

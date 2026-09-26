@@ -1,0 +1,5 @@
+' LEN and CODE, of variables, literals and the empty String
+'@expect screen 0 "5 0 75 0 3"
+'@expect heap s
+DIM s$ AS String = "Klive"
+PRINT LEN(s$); " "; LEN(""); " "; CODE(s$); " "; CODE(""); " "; LEN(s$ + "abc" + "") - 5

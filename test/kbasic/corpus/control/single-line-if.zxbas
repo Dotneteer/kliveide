@@ -1,0 +1,7 @@
+' A one-line IF with several statements after THEN
+'@expect screen 0 "yes 2"
+DIM a AS UByte = 1
+DIM b AS UByte
+IF a THEN PRINT "yes"; : b = 2
+IF NOT a THEN b = 9
+PRINT " "; b

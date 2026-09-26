@@ -93,7 +93,10 @@ A **sid** identifies one BASIC statement, or one separately executing part of a 
 | everything else | the statement |
 
 Special values: **`-1`** = compiler glue and runtime (prologue, the jump from a statement into a
-shared epilogue, trampolines); **`-2`** = shared by several statements after optimisation (§7).
+shared epilogue, trampolines, and the jump of a block that holds nothing else, such as the join
+after an IF or a loop's way back after an `EXIT`: only branches reach it, so tagging it with the
+statement before it would put a branch target inside that statement); **`-2`** = shared by several
+statements after optimisation (§7).
 
 Rules every pass must keep (the verifier checks them):
 

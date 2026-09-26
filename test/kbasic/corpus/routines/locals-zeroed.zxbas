@@ -1,0 +1,13 @@
+' Locals start at zero in every call, and are separate from globals of other names
+'@expect screen 0 "0 0 0"
+'@expect word total 30
+DIM total AS UInteger
+SUB add10()
+ DIM t AS UInteger
+ PRINT t; " ";
+ t = t + 10
+ total = total + t
+END SUB
+add10
+add10
+add10

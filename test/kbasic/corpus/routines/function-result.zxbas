@@ -1,0 +1,9 @@
+' FUNCTION results in expressions; a FUNCTION that falls off its end returns 0
+'@expect screen 0 "25 0 26"
+FUNCTION sq(n AS UInteger) AS UInteger
+ RETURN n * n
+END FUNCTION
+FUNCTION maybe(n AS UByte) AS UByte
+ IF n > 5 THEN RETURN n
+END FUNCTION
+PRINT sq(5); " "; maybe(3); " "; sq(5) + maybe(1) + 1

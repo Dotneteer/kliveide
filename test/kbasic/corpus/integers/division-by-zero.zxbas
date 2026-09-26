@@ -1,0 +1,6 @@
+' Integer division by zero gives every bit set; MOD gives the dividend (semantics annex)
+'@expect screen 0 "65535 1234 255"
+DIM a, z AS UInteger
+DIM c, zb AS UByte
+a = 1234: z = 0: c = 7: zb = 0
+PRINT a / z; " "; a MOD z; " "; c / zb

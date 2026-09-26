@@ -1,0 +1,11 @@
+' Long arithmetic across 16 bits; 32-bit results wrap
+'@expect screen 0 "150000 -50000 705032704"
+'@expect screen 1 "-2147483648 2147483647"
+DIM a, b AS Long
+a = 100000: b = 50000
+PRINT a + b; " "; b - a; " "; 
+DIM u AS ULong = 2500000000
+PRINT u * 2
+a = 2147483647
+b = a + 1
+PRINT b; " "; a

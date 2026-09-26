@@ -1,0 +1,8 @@
+' BAND, BOR, BXOR, BNOT on 8 and 16 bits
+'@expect screen 0 "8 238 230 181"
+'@expect screen 1 "4096 65279 61455"
+DIM a, b AS UByte
+a = $AC: b = $4A
+PRINT a BAND b; " "; a BOR b; " "; a BXOR b; " "; BNOT b
+DIM w AS UInteger = $F00F
+PRINT w BAND $1FF0; " "; BNOT $100; " "; w BOR $F

@@ -1,0 +1,9 @@
+' A variable assigned from itself, a slice of itself or a sum with itself
+'@expect screen 0 "xyzxyz|zxy"
+'@expect heap s
+DIM s$ AS String = "xyz"
+s$ = s$
+s$ = s$ + s$
+PRINT s$; "|";
+s$ = s$(2 TO 4)
+PRINT s$

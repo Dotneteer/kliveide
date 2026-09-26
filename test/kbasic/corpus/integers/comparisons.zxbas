@@ -1,0 +1,8 @@
+' Comparisons give 1 or 0; signed and unsigned operands compare as their types say
+'@expect screen 0 "1010 0110 1"
+DIM s AS Integer = -1
+DIM u AS UInteger = 1
+DIM b AS Byte = -5
+DIM c AS UByte = 250
+PRINT s < 0; s > 0; b < 0; c < 10; " ";
+PRINT b > 0; c > 200; u = 1; s = u; " "; s <> u

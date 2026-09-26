@@ -1,0 +1,10 @@
+' UInteger arithmetic across the byte boundary, with wrap-around at 65536
+'@expect screen 0 "65535 0 12345 31"
+'@expect word x 12345
+DIM x, y AS UInteger
+y = 65535
+x = y + 1
+PRINT y; " "; x; " ";
+x = 12345
+y = x MOD 1000
+PRINT x; " "; y / 11
