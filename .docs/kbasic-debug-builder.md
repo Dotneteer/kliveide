@@ -1,7 +1,6 @@
 # Klive BASIC: the debug-info builder
 
-Design note R11-4 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§8, §10.1–§10.3, §13.5). **Status: draft,
-awaiting the project author's approval. No Phase 3 code before that.**
+Design note R11-4 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§8, §10.1–§10.3, §13.5). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The builder runs after assembly. It turns "which generated line belongs to which statement" plus
 the assembler's addresses into the debug information the IDE reads: the **classic tables** that
@@ -149,7 +148,7 @@ checks (G4, G6) belong to the harness-based tests of plan §13.5.
   it is retired when these pass (plan R3).
 - The validator on every corpus program at every level.
 
-## 9. Decisions for the author
+## 9. Decisions (approved as proposed)
 
 | # | Question | Proposal |
 | --- | --- | --- |

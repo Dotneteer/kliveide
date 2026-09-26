@@ -35,6 +35,7 @@ export const SEMANTIC_ERRORS = {
   E428: "the wrong number of subscripts for an array",
   E429: "a SUB used as a value, or a call of something that is not a routine",
   E430: "a jump to a label inside a SUB or FUNCTION from outside it",
+  E431: "a local variable or array in a FASTCALL routine (it has no stack frame)",
   E450: "a CODEBANK bank number that is not a constant from 1 to 255",
   E451: "a direct GOTO or GOSUB between different banks",
   E452: "a reference into a bank from outside it (other than a call or FARPTR)",

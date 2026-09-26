@@ -1,7 +1,6 @@
 # Klive BASIC: String ownership
 
-Design note R11-3 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§6.7, §17.2 R11). **Status: draft,
-awaiting the project author's approval. No Phase 3 code before that.**
+Design note R11-3 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§6.7, §17.2 R11). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 Strings are the one part of Klive BASIC where a code-generation mistake does not show up as a
 wrong value but as a slow leak, a double free, or a read of freed memory that corrupts the heap
@@ -120,7 +119,7 @@ each B1 case, recursion with local Strings, and early `RETURN`s from nested loop
   invalidate a borrowed value of the interrupted statement. B1 does not cover this; the stdlib's
   IM2 documentation will say that handlers must not assign Strings the main program uses.
 
-## 8. Decisions for the author
+## 8. Decisions (approved as proposed)
 
 | # | Question | Proposal |
 | --- | --- | --- |

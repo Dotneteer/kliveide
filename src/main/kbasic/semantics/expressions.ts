@@ -132,6 +132,7 @@ export class ExpressionBinder {
       type = contextType === "Boolean" ? "UByte" : contextType;
       if (this.settings.strict) this.error("E426", `Variable '${ref.name}' needs a type (DIM ... AS): strict typing is on`, ref.span);
     } else type = this.settings.explicit ? "Float" : this.defaultType(ref.name, ref.span);
+    this.checkFastcallLocal(ref.name, ref.span);
     const symbol: VariableSymbol = {
       kind: "variable",
       name: ref.name,
@@ -146,6 +147,13 @@ export class ExpressionBinder {
     };
     this.scope.add(symbol);
     return symbol;
+  }
+
+  /** E431: a FASTCALL routine has no stack frame, so it cannot have locals (spec subprograms.conventions). */
+  protected checkFastcallLocal(name: string, span: Span): void {
+    if (this.routine?.convention === "FASTCALL") {
+      this.error("E431", `FASTCALL ${this.routine.name} cannot have the local '${name}': it has no stack frame (use STDCALL, or a global)`, span);
+    }
   }
 
   /** Checks a name's sigil against the symbol's type (E422). */

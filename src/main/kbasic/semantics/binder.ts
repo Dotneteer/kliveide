@@ -539,6 +539,7 @@ class Binder extends ExpressionBinder {
       this.error("E403", `'${ref.name}' is already declared as ${kindText(existing)}${existing.kind === "variable" && existing.storage === "param" ? " (a parameter)" : ""}`, ref.span);
       return undefined;
     }
+    this.checkFastcallLocal(ref.name, ref.span);
     const symbol: VariableSymbol = {
       kind: "variable",
       name: ref.name,
@@ -586,6 +587,7 @@ class Binder extends ExpressionBinder {
       this.error(existing.kind === "variable" && !existing.declared ? "E404" : "E403", `'${ref.name}' is already ${existing.kind === "variable" && !existing.declared ? "used as a variable" : `declared as ${kindText(existing)}`}`, ref.span);
       return undefined;
     }
+    this.checkFastcallLocal(ref.name, ref.span);
     const symbol: ArraySymbol = {
       kind: "array",
       name: ref.name,

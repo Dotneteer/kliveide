@@ -126,6 +126,10 @@ const ERRORS: Record<keyof typeof SEMANTIC_ERRORS, Case[]> = {
     { source: "DIM n AS UByte\nn\n", text: "n" }
   ],
   E430: [{ source: "SUB s()\ninside: PRINT 1\nEND SUB\nGOTO inside\n", text: "inside" }],
+  E431: [
+    { source: "SUB FASTCALL s(a AS UByte)\n DIM t AS UByte\nEND SUB\ns 1\n", text: "t" },
+    { source: "SUB FASTCALL s(a AS UByte)\n x = a\nEND SUB\ns 1\n", text: "x" }
+  ],
   E450: [
     { source: "DIM b AS UByte = 1\nCODEBANK b\nSUB s()\nEND SUB\nEND CODEBANK\n", text: "b" },
     { source: "CODEBANK 300\nSUB s()\nEND SUB\nEND CODEBANK\n", text: "300" }

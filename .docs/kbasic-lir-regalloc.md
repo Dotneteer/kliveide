@@ -1,7 +1,7 @@
 # Klive BASIC: LIR, instruction selection and register allocation
 
 Design note R11-2 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §3.2, §6.7, §7.1, §7.3).
-**Status: draft, awaiting the project author's approval. No Phase 3 code before that.**
+**Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The LIR (low-level IR) is Z80 code as objects: the output of instruction selection, the input of
 the peephole optimiser and of the emitter that hands the program to Klive's assembler. This note
@@ -139,11 +139,11 @@ direct tree construction as an optimisation for later (question L1):
   recovers everything (`kbasic-debug-builder.md` §3).
 - The text **is** what `'@emit-asm` shows, so the dump and the build can never disagree.
 - The runtime modules are already parsed once and cached (`RuntimeUnitCache`); only the program
-  itself is parsed per build. Whether that fits plan §12.3's budget (a 2,000-line program in under
-  a second at level 2) is **not yet measured**: level-0 code is several assembly lines per BASIC
-  statement, so Phase 3's first task is to time `parseSourceUnit` on a generated program of that
-  size. If it does not fit, the emitter builds `AssemblyLine` objects directly instead, with the
-  same line-index bookkeeping.
+  itself is parsed per build. **Measured 2026-09-26** (cloud container, 4 cores): 15,700 lines of
+  level-0-style assembly — about what a 2,000-line BASIC program produces — parse in ~200 ms and
+  assemble in ~220 ms. That leaves more than half of plan §12.3's one-second budget for the front
+  end and code generation, so text emission stays. If a later measurement misses the budget, the
+  emitter builds `AssemblyLine` objects directly instead, with the same line-index bookkeeping.
 
 Layout of the emitted program:
 
@@ -172,7 +172,7 @@ use a `__k` prefix that BASIC names cannot produce.
   every level.
 - A G4 check on every compiled test program (debug builder's validator, run with a tracing hook).
 
-## 9. Decisions for the author
+## 9. Decisions (approved as proposed)
 
 | # | Question | Proposal |
 | --- | --- | --- |

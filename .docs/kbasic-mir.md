@@ -1,7 +1,6 @@
 # Klive BASIC: the MIR (mid-level intermediate representation)
 
-Design note R11-1 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §7, §8.2). **Status: draft, awaiting
-the project author's approval. No Phase 3 code before that.**
+Design note R11-1 of `.plans/ZXBASIC_COMPILER_PLAN.md` (§3.1, §7, §8.2). **Status: approved by the project author on 2026-09-26, with every proposal in the decisions table below.**
 
 The MIR sits between the typed tree the binder produces (`src/main/kbasic/semantics/bound.ts`)
 and instruction selection (`kbasic-lir-regalloc.md`). Lowering turns each routine into a MIR
@@ -292,7 +291,7 @@ b1:
 Tests (plan §13.1): a golden per construct (BASIC → MIR text), per-pass before/after goldens, and
 the verifier run on every compiled test program.
 
-## 10. Decisions for the author
+## 10. Decisions (approved as proposed)
 
 | # | Question | Proposal |
 | --- | --- | --- |
