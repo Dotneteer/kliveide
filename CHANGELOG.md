@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changes
+
+- **New Cambridge Z88 OZ v5.0 beta ROM** (#1376). The `OZ50` model now runs the V5.0B international
+  ROM built in September 2026, replacing the 2023 build, and the Machine menu lists it as
+  "Cambridge Z88 (OZ v5.0B Int.)". Existing projects that use this model load the new ROM.
+
 ### Fixes
 
 - **Host cursor keys did nothing on the Cambridge Z88** (#1374). The joystick key bindings took the

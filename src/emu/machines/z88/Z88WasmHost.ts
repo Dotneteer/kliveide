@@ -31,6 +31,7 @@ import { z88CardSpec, z88RomImageCardSpec, z88SlotHasCard } from "./z88CardCatal
 import {
   parseZ88PartitionLabel,
   resolveZ88KeyboardLayout,
+  resolveZ88RomName,
   Z88_BASE_CLOCK_FREQUENCY,
   Z88_DEFAULT_ROM,
   Z88_NO_CODE_INJECTION,
@@ -119,8 +120,12 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
       let romContents: Uint8Array | undefined;
       let romCard: Z88CardSpec;
 
-      const slot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
-      const intRom = this.config?.[MC_Z88_INTROM];
+      // --- A stored configuration may name a ROM resource that has since been renamed
+      const configuredSlot0 = this.config?.[MC_Z88_SLOT0] as CardSlotState;
+      const slot0 = configuredSlot0?.file
+        ? { ...configuredSlot0, file: resolveZ88RomName(configuredSlot0.file) }
+        : configuredSlot0;
+      const intRom = resolveZ88RomName(this.config?.[MC_Z88_INTROM] as string | undefined);
       let useDefaultRom = false;
       if (z88SlotHasCard(slot0)) {
         // --- There is a card in slot 0

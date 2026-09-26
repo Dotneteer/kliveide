@@ -59,18 +59,18 @@
    "height": 64,
    "sha256": "6cdd259c8ecbe61fbc369f3293c1961541386954a223b17a37899d7fd9ad42da"
   },
-  "memory": "5398037020e4afa4da61dbb05336782d3dbf9974128946f7e6fe33c55703f871"
+  "memory": "724aedd58d197c3ff7abc09ab48413c77003a7163451ac6ea5aab516d1f84f2c"
  },
  "boot OZ50: at frame 1": {
   "registers": {
    "af": 836,
    "bc": 0,
    "de": 0,
-   "hl": 52217,
+   "hl": 52150,
    "ix": 0,
    "iy": 0,
    "sp": 23,
-   "pc": 52214,
+   "pc": 52147,
    "i": 0,
    "iff1": true,
    "interruptMode": 1,
@@ -125,7 +125,7 @@
    "count": 220,
    "sha256": "36a26ecce01fa5b0397415be067d3d275359a48fce772eb50a916862e0bec1d6"
   },
-  "memory": "5398037020e4afa4da61dbb05336782d3dbf9974128946f7e6fe33c55703f871"
+  "memory": "724aedd58d197c3ff7abc09ab48413c77003a7163451ac6ea5aab516d1f84f2c"
  },
  "boot OZ50: at frame 7": {
   "registers": {
@@ -191,7 +191,7 @@
    "count": 220,
    "sha256": "36a26ecce01fa5b0397415be067d3d275359a48fce772eb50a916862e0bec1d6"
   },
-  "memory": "5398037020e4afa4da61dbb05336782d3dbf9974128946f7e6fe33c55703f871"
+  "memory": "724aedd58d197c3ff7abc09ab48413c77003a7163451ac6ea5aab516d1f84f2c"
  },
  "boot OZ50: at frame 8": {
   "registers": {
@@ -257,7 +257,7 @@
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "5398037020e4afa4da61dbb05336782d3dbf9974128946f7e6fe33c55703f871"
+  "memory": "724aedd58d197c3ff7abc09ab48413c77003a7163451ac6ea5aab516d1f84f2c"
  },
  "boot OZ50: at frame 9": {
   "registers": {
@@ -323,7 +323,7 @@
    "count": 220,
    "sha256": "36a26ecce01fa5b0397415be067d3d275359a48fce772eb50a916862e0bec1d6"
   },
-  "memory": "5398037020e4afa4da61dbb05336782d3dbf9974128946f7e6fe33c55703f871"
+  "memory": "724aedd58d197c3ff7abc09ab48413c77003a7163451ac6ea5aab516d1f84f2c"
  },
  "boot OZ50: at frame 50": {
   "registers": {
@@ -334,7 +334,7 @@
    "ix": 30950,
    "iy": 8174,
    "sp": 8144,
-   "pc": 62062,
+   "pc": 62252,
    "i": 0,
    "iff1": false,
    "interruptMode": 1,
@@ -389,24 +389,24 @@
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "20fd2695c12ab0ef427c17f78c7cfdb5a0e41469032e9524a1abd5d0f1a20078"
+  "memory": "ad9648ceb91c55b44ad4930d4efe8dc83ab60de7cea84ed88ee56468e3f240c8"
  },
  "boot OZ50: at frame 200": {
   "registers": {
    "af": 62373,
-   "bc": 9466,
-   "de": 39686,
-   "hl": 39685,
+   "bc": 9460,
+   "de": 39692,
+   "hl": 39691,
    "ix": 1291,
    "iy": 0,
    "sp": 8176,
-   "pc": 58376,
+   "pc": 58459,
    "i": 0,
    "iff1": false,
    "interruptMode": 1,
    "halted": false
   },
-  "tacts": 3276820,
+  "tacts": 3276819,
   "frames": 200,
   "snoozed": false,
   "sleeping": false,
@@ -455,24 +455,24 @@
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "604c917e32557ce4205aa1340be59f44c89548005a1e6ad7dc5ae8b570d2df72"
+  "memory": "35d1d7cf63e33aa098f3708424ed984585057cb1444851e37a0547cc0019b2a3"
  },
  "boot OZ50: at frame 600": {
   "registers": {
    "af": 62373,
-   "bc": 9050,
-   "de": 40102,
-   "hl": 40101,
+   "bc": 9044,
+   "de": 40108,
+   "hl": 40107,
    "ix": 1291,
    "iy": 0,
    "sp": 8176,
-   "pc": 58376,
+   "pc": 58459,
    "i": 0,
    "iff1": false,
    "interruptMode": 1,
    "halted": false
   },
-  "tacts": 9830410,
+  "tacts": 9830409,
   "frames": 600,
   "snoozed": false,
   "sleeping": false,
@@ -521,7 +521,7 @@
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "c738916a1a9b2b8d37c5a780e77f2600831911242dddae3ed70356f879582628"
+  "memory": "75403c5c6fabb9f838d86fdeeb0adfc19139071482848f3a396e1796669424ca"
  },
  "boot OZ50: at frame 1700": {
   "registers": {
@@ -530,15 +530,15 @@
    "de": 1536,
    "hl": 1283,
    "ix": 7,
-   "iy": 7729,
-   "sp": 7717,
-   "pc": 51911,
+   "iy": 7727,
+   "sp": 7715,
+   "pc": 51837,
    "i": 0,
    "iff1": false,
    "interruptMode": 1,
    "halted": false
   },
-  "tacts": 27852812,
+  "tacts": 27852806,
   "frames": 1700,
   "snoozed": true,
   "sleeping": false,
@@ -581,13 +581,13 @@
   "lcd": {
    "width": 640,
    "height": 64,
-   "sha256": "656048a2f1803214cf5eb34c300c4036e007d4d2162d1be82c3ebc892c941019"
+   "sha256": "2ffbdcb162df9ab12a1c063647a7612c9be38f31b787603aa0a0df5b20888978"
   },
   "audio": {
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "1babdac564e420422ec84238e7c6aca7e6de02c1e56504ac887ccc4235d09435"
+  "memory": "bd08a1991b6735b6dc22ea1b9c3cb62b16aa0e772e8361dad2204ff6a3044354"
  },
  "boot OZ47: after the hard reset": {
   "registers": {
@@ -6956,15 +6956,15 @@
    "de": 1536,
    "hl": 1283,
    "ix": 7,
-   "iy": 7729,
-   "sp": 7717,
-   "pc": 51911,
+   "iy": 7727,
+   "sp": 7715,
+   "pc": 51837,
    "i": 0,
    "iff1": false,
    "interruptMode": 1,
    "halted": false
   },
-  "tacts": 27852812,
+  "tacts": 27852806,
   "frames": 1700,
   "snoozed": true,
   "sleeping": false,
@@ -7007,202 +7007,202 @@
   "lcd": {
    "width": 640,
    "height": 64,
-   "sha256": "656048a2f1803214cf5eb34c300c4036e007d4d2162d1be82c3ebc892c941019"
+   "sha256": "2ffbdcb162df9ab12a1c063647a7612c9be38f31b787603aa0a0df5b20888978"
   },
-  "memory": "1babdac564e420422ec84238e7c6aca7e6de02c1e56504ac887ccc4235d09435"
+  "memory": "bd08a1991b6735b6dc22ea1b9c3cb62b16aa0e772e8361dad2204ff6a3044354"
  },
  "typing OZ50: holding Index (#0)": {
   "steps": 6,
-  "sha256": "65b20f870443cb61d5d7595e778694d75487428b4c5fdaa1524e1e56434220a8"
+  "sha256": "1d53ba86cfd8ed38e4ddd9883f13ec3e691252fcca3862e5c3e79a72c96e1eb4"
  },
  "typing OZ50: after releasing Index (#0)": {
   "steps": 18,
-  "sha256": "5d1aeed405aa2aa3f448c2975510c285547bb4113a555b64731f6638d601ed3e"
+  "sha256": "46b44ec540c1d1e81f8a6e871dbc7590e46147ca2bee9fac641c8da39fb8a98e"
  },
  "typing OZ50: holding Down (#1)": {
   "steps": 6,
-  "sha256": "71374c3c0d92a3ce9ce6584eb3588b7f2b31442a163b29dd18180862bd62902c"
+  "sha256": "55e3bc1e520b512fd8c870cdc6eb6f906e4768416babc97d640762861a554c4a"
  },
  "typing OZ50: after releasing Down (#1)": {
   "steps": 18,
-  "sha256": "4cf44fbaebfe851528a392af87d1adf858a6c3a468571d67dfd8207b5d2a6a86"
+  "sha256": "db57f0a9132780509874ecb5a1efcf70b5916ebbd5ad013693e1e4076a2c32ba"
  },
  "typing OZ50: holding Down (#2)": {
   "steps": 6,
-  "sha256": "8d8a0788ca682888e890b7f24bf47b4e0ff1a39d154b0b53f59fb7dc6c797d66"
+  "sha256": "df71439924e33f2c4c9264c86b5da4b82da6a77a0e5b85ee41dde0cae45bcf03"
  },
  "typing OZ50: after releasing Down (#2)": {
   "steps": 18,
-  "sha256": "927b2155a632b261cebf3ec4929483753b2b2ca3b9119cd74ae7a60fdb90e2ea"
+  "sha256": "f7d5fd3544a69b0e910c65520abf4eed53f1112c3410016e9248b703af554cb3"
  },
  "typing OZ50: holding Menu (#3)": {
   "steps": 6,
-  "sha256": "3d97ce5e7f7474605f3bc2f4c7c86ce84a9346b9a5847dce71fa4bb62c9a4dad"
+  "sha256": "076d4102d1f0fc69ec091bab908a295059fb5aff5c6fa26f081ac0df54562ac2"
  },
  "typing OZ50: after releasing Menu (#3)": {
   "steps": 18,
-  "sha256": "16162298f221d3e8f9259ea7b64eebd523536f0ba2a0d5f9ada2f60f7ea6face"
+  "sha256": "b9ecf63bf95c062393d25a901090e1a08949ca7bd12c82161b83c7dbdb92a103"
  },
  "typing OZ50: holding Escape (#4)": {
   "steps": 6,
-  "sha256": "d6c7ce47b43688761af9000e87c41c5324712f4836653e17b15c78a1d1ce2c9d"
+  "sha256": "df164f07b5a08116ad6e72f894eea70d7a13fff7588334b1cfae3939ea6ac9e0"
  },
  "typing OZ50: after releasing Escape (#4)": {
   "steps": 18,
-  "sha256": "a3a02359a8e925794c71f70fc3231b57dfe769b6e5cbc52a14472e6b96f7bd67"
+  "sha256": "e1d65f454fb0f937bf071150e6fc64aee61b2e54b8dce3c4901fc6be8ddb0cf3"
  },
  "typing OZ50: holding Diamond+P (#5)": {
   "steps": 6,
-  "sha256": "dd1f14fd62cefaf01573f8e9d9f2fa43f7dc03a9b5848824020c1c27554a85c7"
+  "sha256": "ce84dd6b388da4ea9c5fb592efcaac5c51973825880e7f4dae5938710a11d84a"
  },
  "typing OZ50: after releasing Diamond+P (#5)": {
   "steps": 18,
-  "sha256": "6da16b2d5a9e44caab0e611a2fb8306ee0d5720358d4cf2bae0765108c4095d4"
+  "sha256": "6305ff71f0a94343b3f6f62af154b72f817decd37c7097c839a30604a180b24c"
  },
  "typing OZ50: holding H (#6)": {
   "steps": 6,
-  "sha256": "156b83e0094630442e28e207a7f8fb9acf91e34217670b50b737d063efb32147"
+  "sha256": "e9cca0ffb563ad44cbb8dc6058d2188e82ac2eb694c5cc4e3ae9614cab861f84"
  },
  "typing OZ50: after releasing H (#6)": {
   "steps": 18,
-  "sha256": "0e170d0401449ff2e1abaebaa4cd0bb028278399afc504a8b7d9422ff374cdd2"
+  "sha256": "594e7047ccccc01315f38636c22910ef5a71bfeb37eec1daa108c2a841190d18"
  },
  "typing OZ50: holding E (#7)": {
   "steps": 6,
-  "sha256": "b7fc351ec35e94f62c0d39b6c1b769f756de29d05a1a8e42b1cd06b3b79188e4"
+  "sha256": "38a81af6a40dd95db2f35f7bb06e90d78a5a0dfc3d29dff23752041d05660136"
  },
  "typing OZ50: after releasing E (#7)": {
   "steps": 18,
-  "sha256": "cc15c105e306f2f23e69259e2053ebd68f323b877888ee2616812cc64883a0dd"
+  "sha256": "a718720aba46aed676eca763e957e0cf4b37b713233e812475677bd24bf325e1"
  },
  "typing OZ50: holding L (#8)": {
   "steps": 6,
-  "sha256": "06adaf75603da1f79be28bd71ae786f86d2480dbe0940779e54dc6be2b002c16"
+  "sha256": "3d02230cd2ba012d786716681e61e981aff02692732432c3757b3d36d17e2773"
  },
  "typing OZ50: after releasing L (#8)": {
   "steps": 18,
-  "sha256": "b2b285e9200f263397b77a3a90517c83ddd4669e8571097f28676e169e1cfd09"
+  "sha256": "7af2444f4121aecda46a50ebe6a1b67c15152268507714f768da769ef0116478"
  },
  "typing OZ50: holding L (#9)": {
   "steps": 6,
-  "sha256": "ecdcfda7cc1e0a03f6c9c2888167ec57c4a301e327b4e4d65b30998640f4962b"
+  "sha256": "540dd044aa75100426566c2829526fb7aba20f2a02cbfbf4e76bee02b52b5fb5"
  },
  "typing OZ50: after releasing L (#9)": {
   "steps": 18,
-  "sha256": "c2f453a73a1fb25681fd0bcf2aa70d0cd9f1b48e54f527c1aa6293ac530fded2"
+  "sha256": "3653ebe1e77dcec1adeddc8529a25b95eabd041727bf002f4ae632f9f42def5b"
  },
  "typing OZ50: holding O (#10)": {
   "steps": 6,
-  "sha256": "78667b904e72e606c91d743457afc76930e805638dfb4b884bfb854600de6b21"
+  "sha256": "7bb50c32ad6ba1020b358835020a0cb3efb77b98351f2c15f550a727c2837b23"
  },
  "typing OZ50: after releasing O (#10)": {
   "steps": 18,
-  "sha256": "4c34d16d75d4f38fcbed9488bc4504a6f9535a290ef4437f7196b1d6866e0b35"
+  "sha256": "3c35ee49ed1170031c7971ffd5ca6e175dc9c63033d157a96de152039252c437"
  },
  "typing OZ50: holding Enter (#11)": {
   "steps": 6,
-  "sha256": "7e942ac7745bc00753b3d056576701abe00d187ce7224fa821a42994e4c55233"
+  "sha256": "c2539650d8d4e4f8ef774694e0f29269c884661617dc5da2001365ba59b9ed11"
  },
  "typing OZ50: after releasing Enter (#11)": {
   "steps": 18,
-  "sha256": "f3ee3537bd3e43c5be184c3929f11b7dd6e595f472f55280c8ad66bb1e648d35"
+  "sha256": "d5d30421dfa20487912108ec212fa6d04805d970a7c7494c098c328043f742ef"
  },
  "typing OZ50: holding ShiftL+N1 (#12)": {
   "steps": 6,
-  "sha256": "2ebd1409ed9f2feb80b47551bc708432bd7d8cbd8d6f8a2a7ace14d8dbad9cf7"
+  "sha256": "50457dd1049f0e42653fe4e0c3f1ef7cef889cb3bc55b2888f33f07eed064ab1"
  },
  "typing OZ50: after releasing ShiftL+N1 (#12)": {
   "steps": 18,
-  "sha256": "67866b81e142776f91bcd121d909d883185c6f5c67500dcefedd69fd68e7a891"
+  "sha256": "4bcc31da13bb70fe6686b9b36617b887d7318a66a2ee55616fcbe6491ca1169e"
  },
  "typing OZ50: holding CapsLock (#13)": {
   "steps": 6,
-  "sha256": "c041472db480a5fb00fd4bff4e325a33092edcad78c97952c2d6ff8aaef54b10"
+  "sha256": "8d025d6f7156490c3b20f01291ac7ce69fae45dc3d6f468fac4640cd1fef4078"
  },
  "typing OZ50: after releasing CapsLock (#13)": {
   "steps": 18,
-  "sha256": "7640a987a70308c8dc8faf08d9803fa2017db25b5c830357ef97a685d4de06b1"
+  "sha256": "f851b673617acd63aa5e214df845e2433c7b457a58af000ca9bc2ca7fd769f9b"
  },
  "typing OZ50: holding Q (#14)": {
   "steps": 6,
-  "sha256": "529075c78246051acdf3c4939ebaeafa60a1e076bf93dba1a499401fb65e05f0"
+  "sha256": "76c71f379e94cec32f6cb964ba56c57b4215dca8382e4cc14927dbd15402be66"
  },
  "typing OZ50: after releasing Q (#14)": {
   "steps": 18,
-  "sha256": "bc1d653e36ec41fdd42c34c1ead7b06f75d5afd61f2aabe13b41ad22f0948acb"
+  "sha256": "ea98e7ada7e0900a00119448f7b44d4416f97ecce79be3ed84e4e1ba997041ac"
  },
  "typing OZ50: holding Delete (#15)": {
   "steps": 6,
-  "sha256": "83ebb2b76cb4af2c724733c3dfdf2a0910ebc64a5287562c5c1bceb80b079053"
+  "sha256": "28eb1a6fe54b0e3bc0d0c121a85242d98b4869788dac77f7a4df57680cd1ff22"
  },
  "typing OZ50: after releasing Delete (#15)": {
   "steps": 18,
-  "sha256": "e1c0ab1c7bb39bed51e90a33cfeaeac6b51977a32d75dda2e8b1b6d3df2a7b11"
+  "sha256": "7fb3e2f95343705b2bceb85c57060a72a23604e293e473296f2348a2ca2ce19c"
  },
  "typing OZ50: holding Left (#16)": {
   "steps": 6,
-  "sha256": "03cdc565410c64575532b02448df8f134bc6a22c8dca1266ac0dd51d44762977"
+  "sha256": "241cd5945e56a17d46c4f9ec8d85fc737aa9076413c20c37e5cc802d6f2eba6b"
  },
  "typing OZ50: after releasing Left (#16)": {
   "steps": 18,
-  "sha256": "843fe7a8cb12989740191215b2c6534084d4762dcf6c37a7dee8fb47aadf49e4"
+  "sha256": "ebdb2189364985e069f9087520f63244d74c011e62f8baf11b94e88d8b7ff803"
  },
  "typing OZ50: holding Help (#17)": {
   "steps": 6,
-  "sha256": "f3a1f45761393664d899c4ec501b11359121aca4601f12c1c081182085aab062"
+  "sha256": "e7d02489158e735800350f408e432cbecee438b6e86416810d99e80a0d7fcfe5"
  },
  "typing OZ50: after releasing Help (#17)": {
   "steps": 18,
-  "sha256": "e5eaebaf6fb51597ee66f42546b83ba76338533141aad64e139bba00445e508e"
+  "sha256": "dd52385d010aa0eff06eeca2bcb32e7af48342e73339d763651f04bea288de40"
  },
  "typing OZ50: holding Escape (#18)": {
   "steps": 6,
-  "sha256": "d8d8c5eae14e82cda5bf06657f018432546feb1d04b50ba2794caa47a120db17"
+  "sha256": "7c2b43644ff1e412ab0917aeea5f38d9f3bbe79519ea00089253250413dec368"
  },
  "typing OZ50: after releasing Escape (#18)": {
   "steps": 18,
-  "sha256": "8eac8a9bd40a9c188d0fa608dedf22d5538b51067540cc4c1b6283d892dce9b7"
+  "sha256": "6ddade8270ee3309b6e8bcaddb13fa108bef52911857116db3261ae287e288dc"
  },
  "typing OZ50: holding Square+Index (#19)": {
   "steps": 6,
-  "sha256": "87a070ae20879aeb0b235fe3f1c02aac5fc81f0e3493ac541395da623242df79"
+  "sha256": "849895682448f3265ea05d58e23f54abde5f31953fb00da91fbb9fd98a05f658"
  },
  "typing OZ50: after releasing Square+Index (#19)": {
   "steps": 18,
-  "sha256": "370a9a137544a8255fcf8c383d18fb39e947c39e1d3d465d42fc676c96618dfc"
+  "sha256": "940e780fbfd2c26b245a2cc810497124e0b76c5c62de710f458688be91890fb3"
  },
  "typing OZ50: holding Escape (#20)": {
   "steps": 6,
-  "sha256": "d9e0300a56eac0352f48febf42503b7281c0302f3c2f0c184f095796dd746bf4"
+  "sha256": "25363a0f903fe27871a32d1962c8f996e1a9791895031b2d3ad021be111e55eb"
  },
  "typing OZ50: after releasing Escape (#20)": {
   "steps": 18,
-  "sha256": "83dcd4d0cb90c1886afed38972ffac356d35131d35e5f03649a53d1f1ffe471f"
+  "sha256": "e0b9c632cf1d3b5fe20623380f032e610489dc9d0c98dd2532fd63f2e417e821"
  },
  "typing OZ50: holding Index (#21)": {
   "steps": 6,
-  "sha256": "49a9c55a5a176f9785fae491891d9cd43b91887b13bdc01efc830806810ac7e0"
+  "sha256": "9733c650d6a0cc88810aaf43a44c69d611642a69681129d1fbde3e0870be783f"
  },
  "typing OZ50: after releasing Index (#21)": {
   "steps": 18,
-  "sha256": "498667edf35bdcb9f31f9100909c247ac072f5fc979a9a4173e8ed3e2e38ae18"
+  "sha256": "e4a7307ac7011b982ae3f9bcc0b44dcc88b54321ec4a5103e3486ea7052a9c6b"
  },
  "typing OZ50: at the end": {
   "registers": {
-   "af": 64520,
-   "bc": 35,
-   "de": 33427,
-   "hl": 1289,
+   "af": 8705,
+   "bc": 8482,
+   "de": 49464,
+   "hl": 8482,
    "ix": 4128,
-   "iy": 7966,
-   "sp": 7636,
-   "pc": 56725,
+   "iy": 7886,
+   "sp": 7562,
+   "pc": 54453,
    "i": 0,
    "iff1": true,
    "interruptMode": 1,
    "halted": false
   },
-  "tacts": 36503562,
+  "tacts": 36503553,
   "frames": 2228,
   "snoozed": false,
   "sleeping": false,
@@ -7245,13 +7245,13 @@
   "lcd": {
    "width": 640,
    "height": 64,
-   "sha256": "003c8bc2a9ab5b4d1e46096d8b4229061e74e12631075cc9485b085cfc6c9718"
+   "sha256": "8de98b9426e2adf271dad28f4191ba01b51e34258a812b272d77d734435e3db6"
   },
   "audio": {
    "count": 221,
    "sha256": "4bcd1d733a353b8de5512ea22b608ebc74c4a818fe00663ff32ea4f7a3dd808a"
   },
-  "memory": "96cae0e892727358dcd969a2dcd197c773086cda0b5d83c40dc47ddfa2659a28"
+  "memory": "ead0d7caad1a74d062844ef1d2bb7786c5c0349332c43b4cb4e255b96a6ca064"
  },
  "typing OZ47: after booting": {
   "registers": {
