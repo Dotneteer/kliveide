@@ -75,6 +75,10 @@ merely uncoloured, which no route diff can see.
   integration map, documented library API).
 - Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
   to BASIC; read its README) and `test/harness/zxnext/`.
+- New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,
+  with `'@expect` header lines (the runner's header comment lists them); the runner also fails on
+  the debug-info validator's problems and checks SP at every statement entry (G4).
+  `scripts/kbasic-ide-check.cjs` checks breakpoints and the execution point in the running IDE.
 
 ## ZX Spectrum Next Test Harness
 

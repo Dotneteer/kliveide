@@ -45,3 +45,8 @@ listed and never tested).
   use `#ifdef` on the compiler's `KB_*` symbols.
 - ROM calls go through a wrapper that sets IY to `$5C3A` and restores the caller's IY (plan §6.3).
 - Every module has runtime-level tests on the 48K harness in `test/kbasic/runtime/`.
+- A routine that takes operands on the stack says so (`ArrayAddress`: the indices; the `arith32`
+  routines: the left operand, removed by the callee), because that is where the compiler's level-0
+  stack machine has them. A routine that keeps working values in static memory (`ArrayAddress`,
+  `arith32`, `PrintU32`) is not re-entrant and says so: an interrupt handler must not call it while
+  the interrupted program is inside it.

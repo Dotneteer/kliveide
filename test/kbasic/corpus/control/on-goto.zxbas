@@ -1,4 +1,5 @@
-' ON GOTO and ON GOSUB pick a target by number; out of range falls through
+' ON GOTO and ON GOSUB pick a target by number; out of range continues after the statement
+' (semantics annex: on-goto-out-of-range)
 '@expect screen 0 "two one-sub past"
 DIM k AS UByte = 1
 ON k GOTO one, two

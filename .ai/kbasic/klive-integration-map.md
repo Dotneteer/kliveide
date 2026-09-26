@@ -84,6 +84,11 @@ integration changes.
 - `MachineController.runCode` (`src/emu/machines/MachineController.ts`) executes the machine's
   `CodeInjectionFlow` (keep PC, reach an execution point, inject, set return, start).
 - 48K: the injection flow reaches `SP48_MAIN_ENTRY = $12AC` (`src/emu/machines/ZxSpectrumBase.ts`).
+- **Klive BASIC builds** (Phase 3): `KBasicCompiler.compileFile` returns the segments of the program
+  and its runtime closure, `injectOptions: { subroutine: true }` (the program returns to BASIC, like
+  `USR`), `modelType` 1 (48K; any other target is E502), `entryAddress` = the origin, and the
+  classic tables below. From the IDE's command prompt use `debug` / `run` (what the menu calls);
+  `klive.debug` and `klive.run` refuse interactive use.
 
 ## 4. Breakpoints
 
@@ -101,6 +106,12 @@ integration changes.
   partitionResolver)` over a 64K flag array plus per-address partition lists. Tests construct it
   as `new DebugSupport(undefined, [])`.
 - Persistence: `.kliveproject` `debugger.breakpoints`; NEX-owned ones in `.nex.dis` sidecars.
+- **Klive BASIC's classic tables** (`src/main/kbasic/debug/builder.ts`, `.docs/kbasic-debug-builder.md`
+  §5): `sourceFileList` holds the BASIC files only; `listFileItems` has one item per statement (so a
+  line breakpoint resolves to the line's first statement); `sourceMap` maps each statement entry to
+  its line and columns (0-based start, exclusive end, the assembler's convention). The `zxbas`
+  provider has `fullLineBreakpoints: true`, so the execution point is drawn on the whole line.
+  Verified in the running app by `scripts/kbasic-ide-check.cjs`.
 
 ## 5. Stepping
 

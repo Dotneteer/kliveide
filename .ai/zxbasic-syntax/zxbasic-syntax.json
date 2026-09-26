@@ -2516,11 +2516,11 @@
       {
         "name": "argument-evaluation-order",
         "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
-        "decision": null,
-        "status": "open",
-        "source": "oracle",
+        "decision": "A call's arguments last first, so the stack machine leaves them where STDCALL wants them; a binary operator's left operand before its right. Awaits the oracle.",
+        "status": "provisional",
+        "source": "klive-decision",
         "phase": 3,
-        "test": null
+        "test": "test/kbasic/corpus/routines/call-order.zxbas"
       },
       {
         "name": "constant-arithmetic-literal",
@@ -2633,11 +2633,11 @@
       {
         "name": "logical-operators-short-circuit",
         "question": "Do AND and OR skip their right operand when the left one decides the result?",
-        "decision": null,
-        "status": "open",
-        "source": "oracle",
+        "decision": "No: both operands are always evaluated, the left first. Awaits the oracle.",
+        "status": "provisional",
+        "source": "klive-decision",
         "phase": 3,
-        "test": null
+        "test": "test/kbasic/corpus/control/logic-evaluation.zxbas"
       },
       {
         "name": "mod-sign",
@@ -2652,10 +2652,10 @@
         "name": "on-goto-out-of-range",
         "question": "What does ON ... GOTO/GOSUB do with a value outside its target list?",
         "decision": "Nothing: execution continues after the statement.",
-        "status": "open",
+        "status": "provisional",
         "source": "docs",
-        "phase": 4,
-        "test": null
+        "phase": 3,
+        "test": "test/kbasic/corpus/control/on-goto.zxbas"
       },
       {
         "name": "operator-precedence",
