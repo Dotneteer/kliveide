@@ -1,6 +1,6 @@
 ; @module   arith32
 ; @summary  32-bit multiply, divide and modulo (Long and ULong).
-; @exports  Mul32, DivU32, ModU32, DivI32, ModI32
+; @exports  Mul32, DivU32, ModU32, DivI32, ModI32, AbsI32, SgnI32
 ;
 ; Every routine takes its left operand on the stack under the return address (pushed high word
 ; first, so the low word is on top) and its right operand in DE:HL (DE = the high word); it removes
@@ -180,6 +180,39 @@ Neg32Mem:
     ld a,0
     sbc a,(hl)
     ld (hl),a
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; ABS of a signed DE:HL (-2^31 stays). Out: DE:HL. Changes AF.
+AbsI32:
+    bit 7,d
+    ret z
+    xor a
+    sub l
+    ld l,a
+    ld a,0
+    sbc a,h
+    ld h,a
+    ld a,0
+    sbc a,e
+    ld e,a
+    ld a,0
+    sbc a,d
+    ld d,a
+    ret
+
+; SGN of a signed DE:HL: -1, 0 or 1. Out: A. Changes F.
+SgnI32:
+    ld a,d
+    or a
+    ld a,$ff
+    ret m
+    ld a,d
+    or e
+    or h
+    or l
+    ret z
+    ld a,1
     ret
 
 Arith32A:

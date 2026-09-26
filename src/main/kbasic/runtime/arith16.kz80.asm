@@ -1,6 +1,7 @@
 ; @module   arith16
 ; @summary  8- and 16-bit multiply, divide and modulo.
 ; @exports  Mul8, DivModU8, DivModI8, Mul16, DivModU16, DivModI16
+; @exports  AbsI8, AbsI16, SgnI8, SgnI16
 ;
 ; Operands follow runtime-abi.md §7: 8-bit in A and H, 16-bit in HL and DE. A product keeps its low
 ; 8 or 16 bits, the same for signed and unsigned operands. Signed division truncates towards zero
@@ -160,4 +161,39 @@ DivModNegHL:
     sbc a,a
     sub h
     ld h,a
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; ABS of a signed byte A (-128 stays -128, as its negation wraps). Out: A. Changes F.
+AbsI8:
+    or a
+    ret p
+    neg
+    ret
+
+; ABS of a signed word HL (-32768 stays). Out: HL. Changes AF.
+AbsI16:
+    bit 7,h
+    ret z
+    jp DivModNegHL
+
+; SGN of a signed byte A: -1, 0 or 1. Out: A. Changes F.
+SgnI8:
+    or a
+    ret z
+    ld a,1
+    ret p
+    ld a,$ff
+    ret
+
+; SGN of a signed word HL: -1, 0 or 1. Out: A. Changes F.
+SgnI16:
+    ld a,h
+    or a
+    ld a,$ff
+    ret m
+    ld a,h
+    or l
+    ret z
+    ld a,1
     ret

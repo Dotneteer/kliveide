@@ -171,6 +171,6 @@ describe("code generation facts", () => {
   });
 
   it("reports what the code generator cannot do yet (E501) instead of generating wrong code", async () => {
-    await expect(compileBasic("DIM f AS Float = 1.5\nPRINT f\n")).rejects.toThrow(/E501/);
+    await expect(compileBasic("DIM f AS Fixed = 1.5\nPRINT f\n")).rejects.toThrow(/E501/);
   });
 });

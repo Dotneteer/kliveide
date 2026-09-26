@@ -93,7 +93,7 @@ export type Slot =
 // Instructions
 
 export type BinOp =
-  | "add" | "sub" | "mul" | "div" | "mod"
+  | "add" | "sub" | "mul" | "div" | "mod" | "pow"
   | "and" | "or" | "xor" | "shl" | "shr"
   | "eq" | "ne" | "lt" | "le" | "gt" | "ge"
   | "land" | "lor" | "lxor";

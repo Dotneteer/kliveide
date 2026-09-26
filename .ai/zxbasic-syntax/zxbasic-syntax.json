@@ -2746,6 +2746,15 @@
         "source": "docs",
         "phase": 2,
         "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "name": "val-runtime",
+        "question": "What does VAL accept at run time, and how does it round?",
+        "decision": "Spaces, an optional sign, a decimal number as BASIC writes it (read by the ROM's DEC-TO-FP, so the result can differ in the last bit from the same literal folded at compile time, which rounds to nearest), then spaces. Anything else gives 0 and sets ERR_NR to 11 without stopping the program.",
+        "status": "provisional",
+        "source": "klive-decision",
+        "phase": 4,
+        "test": "test/kbasic/runtime/float.test.ts"
       }
     ]
   }

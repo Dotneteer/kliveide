@@ -3,11 +3,13 @@ import type { DiagnosticBag, Span } from "../diagnostics";
 import type { AttrName } from "../syntax/ast";
 import type { AddressTarget, BoundArgument, BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
 import type { Constant } from "../semantics/constants";
+import * as f40 from "../semantics/float40";
 import type { ArraySymbol, LabelSymbol, RoutineSymbol, Scope, VariableSymbol } from "../semantics/symbols";
 import {
   COMPARISONS,
   mtypeOf,
   mtypeSize,
+  isSignedM,
   type BinOp,
   type Block,
   type CallSite,
@@ -64,6 +66,8 @@ class Lowering {
   private sid = -1;
   private loops: LoopTargets[] = [];
   private readonly strings = new Map<string, string>();
+  /** Float constants by their bytes: each is five bytes of data, loaded like a variable. */
+  private readonly floats = new Map<string, string>();
   private readonly staticSlots: DataItem[] = [];
   /**
    * The current routine's variables: where each parameter and local lives. An array parameter's
@@ -180,6 +184,23 @@ class Lowering {
     return { kind: "sym", type: "str", name: label, offset: 0 };
   }
 
+  /** A Float constant: a load of its five bytes (a Float is never an immediate at level 0). */
+  private floatConstant(value: f40.Float40): VReg {
+    const key = value.join(",");
+    let label = this.floats.get(key);
+    if (!label) {
+      label = `__flt${this.floats.size}`;
+      this.floats.set(key, label);
+      this.module.data.push({ kind: "var", label, size: 5, init: [...value] });
+    }
+    return this.load("flt", { kind: "global", name: label });
+  }
+
+  /** A number of a type: an immediate, or a loaded constant for a Float. */
+  private numberValue(type: MType, n: number): Value {
+    return type === "flt" ? this.floatConstant(f40.fromNumber(n)) : imm(type, n);
+  }
+
   /** A hidden variable: a frame slot in a routine, a static one in the main program. */
   private hiddenSlot(type: MType, what: string): Slot {
     if (this.routine) return this.allocateLocal(type);
@@ -250,7 +271,7 @@ class Lowering {
   }
 
   private supportedType(t: MType): boolean {
-    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "u32" || t === "i32" || t === "bool" || t === "ptr" || t === "str";
+    return t === "u8" || t === "i8" || t === "u16" || t === "i16" || t === "u32" || t === "i32" || t === "bool" || t === "ptr" || t === "str" || t === "flt";
   }
 
   private rt(name: string): string {
@@ -295,6 +316,11 @@ class Lowering {
       case "pause":
         this.beginStatement(s.span, "other", [s.value]);
         this.emit({ op: "rtcall", name: this.rt("Pause"), args: [this.value(s.value)], sid: this.sid });
+        return;
+      case "randomize":
+        this.beginStatement(s.span, "other", [s.seed]);
+        if (s.seed) this.emit({ op: "rtcall", name: this.rt("Randomize"), args: [this.value(s.seed)], sid: this.sid });
+        else this.emit({ op: "rtcall", name: this.rt("RandomizeFrames"), args: [], sid: this.sid });
         return;
       case "out":
         this.beginStatement(s.span, "other", [s.port, s.value]);
@@ -529,7 +555,7 @@ class Lowering {
       this.emit({ op: "rtcall", name: this.rt("PrintStr"), args: [v, imm("u8", this.consumeFlag(v))], sid: this.sid });
       return;
     }
-    const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16", u32: "PrintU32", i32: "PrintI32" }[type as "u8"];
+    const name = { u8: "PrintU8", bool: "PrintU8", i8: "PrintI8", u16: "PrintU16", i16: "PrintI16", u32: "PrintU32", i32: "PrintI32", flt: "PrintFloat" }[type as "u8"];
     if (!name) {
       this.unsupported(`PRINT of a ${e.type}`, e.span);
       return;
@@ -591,7 +617,7 @@ class Lowering {
     this.continueAt(next);
     this.beginStatement(s.next, "loop");
     const i = this.load(type, slot);
-    const step = stepSlot ? this.load(type, stepSlot) : imm(type, constantStep ?? 1);
+    const step = stepSlot ? this.load(type, stepSlot) : s.step ? this.value(s.step) : this.numberValue(type, 1);
     const sum = this.vreg(type);
     this.emit({ op: "bin", bop: "add", dst: sum, a: i, b: step, sid: this.sid });
     this.emit({ op: "store", type, slot, src: sum, sid: this.sid });
@@ -609,12 +635,14 @@ class Lowering {
     if (step !== undefined) return compare(step >= 0 ? "gt" : "lt");
     // --- (step < 0 AND i < limit) OR (step >= 0 AND i > limit)
     const negative = this.vreg("bool");
-    this.emit({ op: "bin", bop: "lt", dst: negative, a: this.load(type, stepSlot!), b: imm(type, 0), sid: this.sid });
+    const stepValue = this.load(type, stepSlot!);
+    this.emit({ op: "bin", bop: "lt", dst: negative, a: stepValue, b: this.numberValue(type, 0), sid: this.sid });
     const below = compare("lt");
     const down = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: down, a: negative, b: below, sid: this.sid });
     const positive = this.vreg("bool");
-    this.emit({ op: "bin", bop: "ge", dst: positive, a: this.load(type, stepSlot!), b: imm(type, 0), sid: this.sid });
+    const stepAgain = this.load(type, stepSlot!);
+    this.emit({ op: "bin", bop: "ge", dst: positive, a: stepAgain, b: this.numberValue(type, 0), sid: this.sid });
     const above = compare("gt");
     const up = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: up, a: positive, b: above, sid: this.sid });
@@ -721,16 +749,18 @@ class Lowering {
       }
       if (fastcall && i === 0) {
         this.fn.registerParam = type;
-        // --- Pushed at entry: a word (A in its high byte) or, for 32 bits, DE then HL
-        this.fn.frameSize = mtypeSize(type) === 4 ? 4 : 2;
-        const slot: Slot = { kind: "frame", offset: mtypeSize(type) === 1 ? -1 : -this.fn.frameSize };
+        // --- Pushed at entry: a word (A in its high byte); for 32 bits DE then HL; a Float's six bytes
+        this.fn.frameSize = mtypeSize(type) === 4 ? 4 : mtypeSize(type) === 5 ? 6 : 2;
+        const slot: Slot = { kind: "frame", offset: mtypeSize(type) === 1 ? -1 : mtypeSize(type) === 5 ? -5 : -this.fn.frameSize };
         if (p.symbol) this.frameSlots.set(p.symbol, { slot, byref });
         this.fn.params.push({ name: p.name, type, offset: -this.fn.frameSize });
         return;
       }
+      // --- Parameters take whole words: a byte is the high byte of its word, a Float the five bytes
+      // --- after a padding byte (runtime-abi.md §3.1)
       const size = mtypeSize(type);
-      const slotSize = size === 1 ? 2 : size;
-      const slot: Slot = { kind: "frame", offset: size === 1 ? offset + 1 : offset };
+      const slotSize = size === 1 ? 2 : size === 5 ? 6 : size;
+      const slot: Slot = { kind: "frame", offset: size === 1 || size === 5 ? offset + 1 : offset };
       if (p.symbol) this.frameSlots.set(p.symbol, { slot, byref });
       this.fn.params.push({ name: p.name, type, offset });
       offset += slotSize;
@@ -1006,7 +1036,7 @@ class Lowering {
     if (v.type === "bool") return v;
     if (v.kind === "imm") return imm("bool", v.value !== 0 ? 1 : 0);
     const r = this.vreg("bool");
-    this.emit({ op: "bin", bop: "ne", dst: r, a: v, b: imm(v.type, 0), sid: this.sid });
+    this.emit({ op: "bin", bop: "ne", dst: r, a: v, b: this.numberValue(v.type, 0), sid: this.sid });
     return r;
   }
 
@@ -1067,10 +1097,6 @@ class Lowering {
 
   private binary(e: Extract<BoundExpr, { kind: "binary" }>): Value {
     const op = BINARY_OPS[e.op];
-    if (e.op === "^") {
-      this.unsupported("^", e.span);
-      return imm(mtypeOf(e.type), 0);
-    }
     if (op === "land" || op === "lor" || op === "lxor") {
       const a = this.toBool(this.value(e.left));
       const b = this.toBool(this.value(e.right));
@@ -1183,6 +1209,49 @@ class Lowering {
         }
         return this.owns(result!);
       }
+      case "ACS":
+      case "ASN":
+      case "ATN":
+      case "COS":
+      case "EXP":
+      case "LN":
+      case "SIN":
+      case "SQR":
+      case "TAN":
+        return this.floatUnary(FLOAT_FUNCTIONS[e.name], this.value(e.args[0]));
+      case "ABS":
+      case "SGN":
+        return this.absSgn(e.name, e.args[0], type);
+      case "INT": {
+        // --- Rounded towards minus infinity, as a Long: a Float through the ROM's INT, an integer as it is
+        const a = this.value(e.args[0]);
+        const r = this.vreg("i32");
+        this.emit({ op: "conv", dst: r, a, sid: this.sid });
+        return r;
+      }
+      case "STR": {
+        const r = this.vreg("str");
+        this.emit({ op: "rtcall", name: this.rt("FStr"), dst: r, args: [this.value(e.args[0])], sid: this.sid });
+        return this.owns(r);
+      }
+      case "VAL": {
+        const v = this.value(e.args[0]);
+        const r = this.vreg("flt");
+        this.emit({ op: "rtcall", name: this.rt("FVal"), dst: r, args: [v, imm("u8", this.consumeFlag(v))], sid: this.sid });
+        return r;
+      }
+      case "USR": {
+        const a = this.value(e.args[0]);
+        const r = this.vreg("u16");
+        if (a.type === "str") this.emit({ op: "rtcall", name: this.rt("UsrString"), dst: r, args: [a, imm("u8", this.consumeFlag(a))], sid: this.sid });
+        else this.emit({ op: "rtcall", name: this.rt("Usr"), dst: r, args: [a], sid: this.sid });
+        return r;
+      }
+      case "RND": {
+        const r = this.vreg("flt");
+        this.emit({ op: "rtcall", name: this.rt("Rnd"), dst: r, args: [], sid: this.sid });
+        return r;
+      }
       case "INKEY": {
         const r = this.vreg("str");
         this.emit({ op: "rtcall", name: this.rt("Inkey"), dst: r, args: [], sid: this.sid });
@@ -1216,15 +1285,49 @@ class Lowering {
     }
   }
 
+  /** A Float function of the ROM calculator (float.kz80.asm's FUnary). */
+  private floatUnary(operation: number, a: Value): VReg {
+    const r = this.vreg("flt");
+    this.emit({ op: "rtcall", name: this.rt("FUnary"), dst: r, args: [a, imm("u8", operation)], sid: this.sid });
+    return r;
+  }
+
+  /** ABS keeps its argument's type; SGN is a Byte. Unsigned values need no code for ABS. */
+  private absSgn(name: string, arg: BoundExpr, type: MType): Value {
+    const argType = mtypeOf(arg.type);
+    const a = this.value(arg);
+    if (argType === "flt") {
+      const f = this.floatUnary(name === "ABS" ? 0x2a : 0x29, a);
+      if (name === "ABS") return f;
+      const r = this.vreg("i8");
+      this.emit({ op: "conv", dst: r, a: f, sid: this.sid });
+      return r;
+    }
+    if (!isSignedM(argType)) {
+      if (name === "ABS") return a;
+      const nonZero = this.toBool(a);
+      const r = this.vreg("i8");
+      this.emit({ op: "conv", dst: r, a: nonZero, sid: this.sid });
+      return r;
+    }
+    const width = { i8: "I8", i16: "I16", i32: "I32" }[argType as "i8"];
+    const r = this.vreg(name === "ABS" ? type : "i8");
+    this.emit({ op: "rtcall", name: this.rt(`${name === "ABS" ? "Abs" : "Sgn"}${width}`), dst: r, args: [a], sid: this.sid });
+    return r;
+  }
+
   private constantValue(c: Constant, type: MType, span: Span): Value {
     const v = c.value;
     switch (v.kind) {
       case "int":
+        if (type === "flt") return this.floatConstant(f40.fromInteger(Number(v.value)));
         return imm(type, Number(BigInt.asIntN(64, v.value)));
       case "address":
         return { kind: "sym", type: "ptr", name: addressLabel(v.symbol), offset: v.offset };
       case "string":
         return this.stringLiteral(v.value);
+      case "float":
+        return this.floatConstant(v.value);
       default:
         this.unsupported(`${c.type} constants`, span);
         return imm(type, 0);
@@ -1274,6 +1377,7 @@ const BINARY_OPS: Record<string, BinOp> = {
   "*": "mul",
   "/": "div",
   MOD: "mod",
+  "^": "pow",
   BAND: "and",
   BOR: "or",
   BXOR: "xor",
@@ -1289,6 +1393,9 @@ const BINARY_OPS: Record<string, BinOp> = {
   OR: "lor",
   XOR: "lxor"
 };
+
+/** The ROM calculator operation of each Float function. */
+const FLOAT_FUNCTIONS: Record<string, number> = { SIN: 0x1f, COS: 0x20, TAN: 0x21, ASN: 0x22, ACS: 0x23, ATN: 0x24, LN: 0x25, EXP: 0x26, SQR: 0x28 };
 
 function imm(type: MType, value: number): Imm {
   return { kind: "imm", type, value };
@@ -1319,13 +1426,19 @@ function arrayBytes(symbol: ArraySymbol): number {
   return arrayCount(symbol) * mtypeSize(mtypeOf(symbol.elementType));
 }
 
+/** A constant STEP's value, for its sign; undefined when the step is computed at run time. */
 function stepConstant(step: BoundExpr): number | undefined {
   const v = step.constant?.value;
-  return v?.kind === "int" ? Number(v.value) : undefined;
+  return v?.kind === "int" ? Number(v.value) : v?.kind === "float" ? f40.toNumber(v.value) : undefined;
 }
 
-/** The little-endian bytes of an integral constant. */
+/** The bytes of a constant in memory: little-endian for an integer, the five bytes of a Float. */
 function bytesOf(c: Constant, type: MType): number[] | undefined {
+  if (type === "flt") {
+    if (c.value.kind === "float") return [...c.value.value];
+    if (c.value.kind === "int") return [...f40.fromInteger(Number(c.value.value))];
+    return undefined;
+  }
   if (c.value.kind !== "int") return undefined;
   const size = mtypeSize(type);
   let v = BigInt.asUintN(size * 8, c.value.value);

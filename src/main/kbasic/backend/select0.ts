@@ -60,6 +60,21 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   "core.ColourPermanent": ["c", "a"],
   "core.Border": ["a"],
   "core.Pause": ["hl"],
+  "core.FUnary": ["aedcb", "l"],
+  "core.FStr": ["aedcb"],
+  "core.PrintFloat": ["aedcb"],
+  "core.FVal": ["hl", "a"],
+  "core.Rnd": [],
+  "core.Usr": ["hl"],
+  "core.UsrString": ["hl", "a"],
+  "core.Randomize": ["dehl"],
+  "core.RandomizeFrames": [],
+  "core.AbsI8": ["a"],
+  "core.AbsI16": ["hl"],
+  "core.AbsI32": ["dehl"],
+  "core.SgnI8": ["a"],
+  "core.SgnI16": ["hl"],
+  "core.SgnI32": ["dehl"],
   "core.Inkey": [],
   /** Inline code, not a call: see INLINE. */
   "inline.Out": ["bc", "a"],
@@ -144,7 +159,7 @@ class Selector {
     if (cls === "r8") this.emit("push af");
     else if (cls === "r16") this.emit("push hl");
     else if (cls === "r32") this.emit("push de", "push hl");
-    else throw new CodegenError(`Cannot push a ${this.acc.type} yet`);
+    else this.emit(...PUSH_FLOAT);
     this.stack.push(this.acc);
     this.acc = undefined;
   }
@@ -256,7 +271,7 @@ class Selector {
       if (cls === "r8") this.emit(`ld a,(${fixed})`);
       else if (cls === "r16") this.emit(`ld hl,(${fixed})`);
       else if (cls === "r32") this.emit(`ld hl,(${fixed})`, `ld de,(${fixed}+2)`);
-      else throw new CodegenError(`Cannot load a ${dst.type} yet`);
+      else this.emit(`ld hl,${fixed}`, ...LOAD_FLOAT_HL);
       this.produce(dst);
       return;
     }
@@ -265,7 +280,7 @@ class Selector {
       if (cls === "r8") this.emit("ld a,(hl)");
       else if (cls === "r16") this.emit("ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a");
       else if (cls === "r32") this.emit("ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a", "ex de,hl");
-      else throw new CodegenError(`Cannot load a ${dst.type} yet`);
+      else this.emit(...LOAD_FLOAT_HL);
       this.produce(dst);
       return;
     }
@@ -275,7 +290,7 @@ class Selector {
     if (cls === "r8") this.emit(`ld a,${ixd(d)}`);
     else if (cls === "r16") this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`);
     else if (cls === "r32") this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`, `ld e,${ixd(d + 2)}`, `ld d,${ixd(d + 3)}`);
-    else throw new CodegenError(`Cannot load a ${dst.type} yet`);
+    else this.emit(...FLOAT_REGS.map((r, k) => `ld ${r},${ixd(d + k)}`));
     this.produce(dst);
   }
 
@@ -288,7 +303,7 @@ class Selector {
       if (cls === "r8") this.emit(`ld (${fixed}),a`);
       else if (cls === "r16") this.emit(`ld (${fixed}),hl`);
       else if (cls === "r32") this.emit(`ld (${fixed}),hl`, `ld (${fixed}+2),de`);
-      else throw new CodegenError(`Cannot store a ${type} yet`);
+      else this.emit(`ld hl,${fixed}`, ...STORE_FLOAT_HL);
       return;
     }
     if (slot.kind === "deref") {
@@ -308,7 +323,8 @@ class Selector {
           const [low, high] = words32(value);
           this.emit(`ld bc,${low}`, `ld de,${high}`, "ld (hl),c", "inc hl", "ld (hl),b", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d");
         }
-      } else throw new CodegenError(`Cannot store a ${type} yet`);
+      } else if (value === "acc") this.emit("pop hl", ...STORE_FLOAT_HL);
+      else throw new CodegenError("A Float value is never an immediate");
       return;
     }
     // --- A frame slot
@@ -319,7 +335,10 @@ class Selector {
       if (place !== "acc") this.loadImmediate(type, place);
       this.emit(`ld ${ixd(d)},l`, `ld ${ixd(d + 1)},h`);
       if (cls === "r32") this.emit(`ld ${ixd(d + 2)},e`, `ld ${ixd(d + 3)},d`);
-    } else throw new CodegenError(`Cannot store a ${type} yet`);
+    } else {
+      if (place !== "acc") throw new CodegenError("A Float value is never an immediate");
+      this.emit(...FLOAT_REGS.map((r, k) => `ld ${ixd(d + k)},${r}`));
+    }
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -335,8 +354,8 @@ class Selector {
     let size = this.fn.frameSize;
     if (this.fn.registerParam) {
       const cls = regClassOf(this.fn.registerParam);
-      this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
-      size -= cls === "r32" ? 4 : 2;
+      this.emit(...pushOf(cls));
+      size -= cls === "r32" ? 4 : cls === "rflt" ? 6 : 2;
     }
     const words = Math.ceil(Math.max(0, size) / 2);
     if (words > 0) {
@@ -382,7 +401,7 @@ class Selector {
       // --- The first argument is in the accumulator: STDCALL pushes it too, FASTCALL keeps it there
       if (i.convention === "stdcall") {
         const cls = regClassOf(i.args[0].type);
-        this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
+        this.emit(...pushOf(cls));
       }
     } else this.spill();
     this.out.push(instr(`call ${i.target}`, this.sid, i.site));
@@ -420,6 +439,11 @@ class Selector {
     if (cls === "r32") {
       if (shift) this.shift32(op, type, a, b);
       else this.binary32(op, type, a, b);
+      this.produce(dst);
+      return;
+    }
+    if (cls === "rflt") {
+      this.binaryFloat(op, a, b);
       this.produce(dst);
       return;
     }
@@ -545,6 +569,8 @@ class Selector {
     const [place] = this.take([a]);
     if (place !== "acc") this.loadImmediate(a.type, place);
     if (op === "lnot") this.emit("xor 1");
+    else if (cls === "rflt" && op === "neg") this.emit("ld l,$1b", `call ${this.rt("core.FUnary")}`);
+    else if (cls === "rflt") throw new CodegenError("BNOT of a Float");
     else if (cls === "r8") this.emit(op === "neg" ? "neg" : "cpl");
     else if (cls === "r32" && op === "neg") this.emit("xor a", "sub l", "ld l,a", "ld a,0", "sbc a,h", "ld h,a", "ld a,0", "sbc a,e", "ld e,a", "ld a,0", "sbc a,d", "ld d,a");
     else if (cls === "r32") this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a", "ld a,d", "cpl", "ld d,a", "ld a,e", "cpl", "ld e,a");
@@ -571,8 +597,27 @@ class Selector {
     } else if (from === "r32" && to === "r16") {
       // --- The low word is already in HL
     } else if (from === "r32" && to === "r8") this.emit("ld a,l");
-    else if (from !== to) throw new CodegenError(`Level 0 cannot convert ${a.type} to ${dst.type} yet`);
+    else if (to === "rflt" && from !== "rflt") this.toFloat(a.type, from);
+    else if (from === "rflt" && to !== "rflt") {
+      // --- Rounded towards minus infinity and taken modulo 2^32, then narrowed (types.conversions)
+      this.emit(`call ${this.rt("core.FToI32")}`);
+      if (to === "r8") this.emit("ld a,l");
+    } else if (from !== to) throw new CodegenError(`Level 0 cannot convert ${a.type} to ${dst.type} yet`);
     this.produce(dst);
+  }
+
+  /**
+   * An integer as a Float. 8- and 16-bit values fit the ROM's small-integer form, built inline
+   * (A = 0, E = the sign byte, D-C = the value, B = 0); 32-bit ones go through the float module.
+   */
+  private toFloat(type: MType, from: RegClass): void {
+    const signed = isSignedM(type);
+    if (from === "r32") {
+      this.emit(`call ${this.rt(signed ? "core.FFromI32" : "core.FFromU32")}`);
+      return;
+    }
+    if (from === "r8") this.emit(...(signed ? ["ld l,a", "add a,a", "sbc a,a", "ld h,a"] : ["ld l,a", "ld h,0"]));
+    this.emit(...(signed ? ["ld a,h", "add a,a", "sbc a,a", "ld e,a"] : ["ld e,0"]), "ld d,l", "ld c,h", "xor a", "ld b,a");
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -597,7 +642,10 @@ class Selector {
         const place = places[k];
         const reg = regs[k];
         const cls = regClassOf(args[k].type);
-        if (place === "stack" && cls === "r32") {
+        if (place === "stack" && cls === "rflt") {
+          if (reg !== "aedcb" || placed.size) throw new CodegenError(`${name}: a Float argument goes in A-E-D-C-B, before any other`);
+          this.emit("pop af", "pop de", "pop bc");
+        } else if (place === "stack" && cls === "r32") {
           if (reg !== "dehl" || placed.size) throw new CodegenError(`${name}: a 32-bit argument goes in DE:HL, before any other`);
           this.emit("pop hl", "pop de");
         } else if (place === "stack" && cls === "r16") {
@@ -643,6 +691,21 @@ class Selector {
     }
     const [low, high] = words32(text);
     this.emit(`ld hl,${low}`, `ld de,${high}`);
+  }
+
+  /**
+   * A Float operator: the left operand on the stack, the right in A-E-D-C-B (both are vregs: a Float
+   * constant is loaded from memory), the calculator operation in L (float.kz80.asm).
+   */
+  private binaryFloat(op: BinOp, a: Value, b: Value): void {
+    const places = this.take([a, b]);
+    if (places[0] !== "stack" || places[1] !== "acc") throw new CodegenError("Float operands are always computed values");
+    if (op === "mod") return this.emit(`call ${this.rt("core.FMod")}`);
+    const compare = FLOAT_COMPARE[op];
+    if (compare !== undefined) return this.emit(`ld l,${compare}`, `call ${this.rt("core.FCompare")}`);
+    const binary = FLOAT_BINARY[op];
+    if (binary === undefined) throw new CodegenError(`Level 0 cannot select ${op} on Float`);
+    this.emit(`ld l,${binary}`, `call ${this.rt("core.FBinary")}`);
   }
 
   /**
@@ -832,3 +895,20 @@ function words32(text: string): [number, number] {
   if (!Number.isFinite(v)) throw new CodegenError(`'${text}' is not a 32-bit immediate`);
   return [v & 0xffff, (v >>> 16) & 0xffff];
 }
+
+/** A Float's registers in memory order: exponent, then the mantissa (sign in E). */
+const FLOAT_REGS = ["a", "e", "d", "c", "b"];
+
+/** The six-byte stack image of a Float: [pad][A][E][D][C][B] at ascending addresses. */
+const PUSH_FLOAT = ["push bc", "push de", "push af"];
+
+const LOAD_FLOAT_HL = ["ld a,(hl)", "inc hl", "ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld c,(hl)", "inc hl", "ld b,(hl)"];
+const STORE_FLOAT_HL = ["ld (hl),a", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d", "inc hl", "ld (hl),c", "inc hl", "ld (hl),b"];
+
+function pushOf(cls: RegClass): string[] {
+  return cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : cls === "rflt" ? PUSH_FLOAT : ["push hl"];
+}
+
+/** The ROM calculator's operations (float.kz80.asm). */
+const FLOAT_BINARY: Partial<Record<BinOp, string>> = { add: "$0f", sub: "$03", mul: "$04", div: "$05", pow: "$06" };
+const FLOAT_COMPARE: Partial<Record<BinOp, string>> = { le: "$09", ge: "$0a", ne: "$0b", gt: "$0c", lt: "$0d", eq: "$0e" };
