@@ -1,0 +1,11 @@
+' READ into String variables; DATA mixes strings and numbers
+'@expect screen 0 "Ann=31 Bob=27 Cy=45"
+DIM n$ AS String
+DIM age AS UByte
+DIM i AS UByte
+FOR i = 1 TO 3
+  READ n$, age
+  PRINT n$; "="; age; " ";
+NEXT i
+DATA "Ann", 31, "Bob", 27
+DATA "Cy", 45

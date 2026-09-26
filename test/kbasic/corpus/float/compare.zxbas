@@ -1,0 +1,5 @@
+' Float comparisons
+'@expect screen 0 "1011101"
+DIM a, b AS Float
+a = 0.1: b = 0.2
+PRINT a < b; a > b; a = a; a <> b; a + b >= 0.3 - 1E-9; b <= a; -a < a

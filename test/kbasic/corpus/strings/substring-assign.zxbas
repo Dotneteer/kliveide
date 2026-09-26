@@ -1,0 +1,10 @@
+' Assigning to a slice overwrites characters in place (semantics annex: substring-assignment)
+'@expect screen 0 "Howdy World|Howdy Earth|Jowdy Ea"
+'@expect screen 1 "rth"
+DIM s AS String = "Hello World"
+s(0 TO 4) = "Howdy"
+PRINT s; "|";
+s(6 TO) = "Earth"
+PRINT s; "|";
+s(0) = "J"
+PRINT s

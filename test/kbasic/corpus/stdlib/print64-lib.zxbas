@@ -1,0 +1,6 @@
+' print64.bas: 64 columns, two characters to a byte
+'@expect screen 2 "1,0 1"
+#include <print64.bas>
+printat64(0, 62)
+print64("ab")
+PRINT AT 2, 0; __kbP64Row; ","; __kbP64Col; " "; PEEK(16384 + 256 + 31) BAND 15 <> 0

@@ -1,0 +1,8 @@
+' DRAW with an angle draws an arc; a half turn ends on the target
+'@expect screen 0 "140,60"
+'@expect screen 1 "100,100"
+PLOT 60, 60
+DRAW 80, 0, PI
+PRINT PEEK 23677; ","; PEEK 23678
+DRAW -40, 40, -PI / 2
+PRINT PEEK 23677; ","; PEEK 23678

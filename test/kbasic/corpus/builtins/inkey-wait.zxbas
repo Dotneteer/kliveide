@@ -1,0 +1,8 @@
+' A loop waiting for INKEY$
+'@expect keys N5
+'@expect screen 0 "key 5"
+DIM k$ AS String
+DO
+  k$ = INKEY$
+LOOP WHILE k$ = ""
+PRINT "key "; k$

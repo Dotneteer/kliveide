@@ -1,0 +1,5 @@
+' PLOT with a colour sets the pixel's cell attribute; the permanent colours stay
+'@expect screen 10 "1 56"
+PLOT INK 2; PAPER 6; 16, 175
+' --- y = 175 is pixel row 16 from the top: character row 2, column 2
+PRINT AT 10, 0; PEEK(22528 + 2 * 32 + 2) BAND 63 = 6 * 8 + 2; " "; PEEK 23693

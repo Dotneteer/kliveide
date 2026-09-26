@@ -1,0 +1,6 @@
+' A point off the screen stops with "B Integer out of range"
+'@expect screen 0 "go"
+'@expect error 10
+PLOT 10, 10
+PRINT "go"
+DRAW 250, 0

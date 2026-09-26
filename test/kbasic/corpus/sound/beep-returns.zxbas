@@ -1,0 +1,7 @@
+' BEEP plays and returns; the border stays as BORDCR says
+'@expect screen 0 "done 5"
+BORDER 5
+BEEP 0.05, 12
+BEEP 0.02, -12
+BEEP 0, 0
+PRINT "done "; (PEEK 23624 SHR 3) BAND 7

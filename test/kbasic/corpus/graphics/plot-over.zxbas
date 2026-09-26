@@ -1,0 +1,10 @@
+' PLOT OVER 1 flips a pixel; PLOT INVERSE 1 clears it
+'@expect screen 0 "100"
+#include <point.bas>
+PLOT 20, 20
+PRINT POINT(20, 20);
+PLOT OVER 1; 20, 20
+PRINT POINT(20, 20);
+PLOT 20, 20
+PLOT INVERSE 1; 20, 20
+PRINT POINT(20, 20)

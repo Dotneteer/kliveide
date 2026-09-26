@@ -1,0 +1,6 @@
+' CLS clears the pixels and paints the permanent colours
+'@expect screen 5 "0 49 49"
+INK 1: PAPER 6
+PLOT 0, 0
+CLS
+PRINT AT 5, 0; PEEK(16384 + 6144 - 256); " "; PEEK 23040; " "; PEEK 22528

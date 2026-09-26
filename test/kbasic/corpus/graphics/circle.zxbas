@@ -1,0 +1,5 @@
+' CIRCLE plots its extreme points and leaves the centre alone
+'@expect screen 0 "11110"
+#include <point.bas>
+CIRCLE 128, 88, 30
+PRINT POINT(158, 88); POINT(98, 88); POINT(128, 118); POINT(128, 58); POINT(128, 88)

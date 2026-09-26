@@ -1,0 +1,8 @@
+' Summing a Fixed step: 0.25 is exact in 16.16
+'@expect screen 0 "3 9"
+DIM x, total AS Fixed
+DIM i AS UByte
+FOR i = 1 TO 12
+  total = total + 0.25
+NEXT i
+PRINT total; " "; total * total

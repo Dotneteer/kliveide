@@ -1,0 +1,11 @@
+' ON ... GOSUB picks a subroutine by index, counting from 0; RETURN comes back after it
+'@expect screen 0 "abc"
+DIM i AS UByte
+FOR i = 0 TO 3
+  ON i GOSUB one, two, three
+NEXT i
+PRINT
+END
+one: PRINT "a"; : RETURN
+two: PRINT "b"; : RETURN
+three: PRINT "c"; : RETURN

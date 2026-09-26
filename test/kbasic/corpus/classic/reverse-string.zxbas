@@ -1,0 +1,9 @@
+' Reversing a String one character at a time
+'@expect screen 0 "MURTCEPS"
+DIM s, r AS String
+DIM i AS UByte
+s = "SPECTRUM"
+FOR i = LEN(s) TO 1 STEP -1
+  r = r + s(i - 1)
+NEXT i
+PRINT r

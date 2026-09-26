@@ -923,12 +923,15 @@ class Lowering {
     const limit = this.hiddenSlot(type, "forlim");
     this.emit({ op: "store", type, slot: limit, src: this.value(s.to), sid: this.sid });
     const constantStep = s.step ? stepConstant(s.step) : 1;
+    // --- The step may be the signed counterpart of an unsigned variable (same width): its sign
+    // --- decides the direction, and its bits are added as the variable's type
+    const stepType = s.step ? mtypeOf(s.step.type) : type;
     let stepSlot: Slot | undefined;
     if (s.step && constantStep === undefined) {
-      stepSlot = this.hiddenSlot(type, "forstep");
-      this.emit({ op: "store", type, slot: stepSlot, src: this.value(s.step), sid: this.sid });
+      stepSlot = this.hiddenSlot(stepType, "forstep");
+      this.emit({ op: "store", type: stepType, slot: stepSlot, src: this.value(s.step), sid: this.sid });
     }
-    const beyond = () => this.forBeyond(slot, limit, type, constantStep, stepSlot);
+    const beyond = () => this.forBeyond(slot, limit, type, constantStep, stepSlot, stepType);
     this.terminate({ op: "br", cond: beyond(), ifTrue: exit, ifFalse: body, sid: this.sid });
 
     this.startBlock(body);
@@ -939,7 +942,11 @@ class Lowering {
     this.continueAt(next);
     this.beginStatement(s.next, "loop");
     const i = this.load(type, slot);
-    const step = stepSlot ? this.load(type, stepSlot) : s.step ? this.value(s.step) : this.numberValue(type, 1);
+    const step = stepSlot
+      ? this.load(type, stepSlot)
+      : s.step && stepType === type
+        ? this.value(s.step)
+        : this.numberValue(type, wrapTo(type, constantStep ?? 1));
     const sum = this.vreg(type);
     this.emit({ op: "bin", bop: "add", dst: sum, a: i, b: step, sid: this.sid });
     this.emit({ op: "store", type, slot, src: sum, sid: this.sid });
@@ -948,7 +955,7 @@ class Lowering {
   }
 
   /** `i > limit` for a positive step, `i < limit` for a negative one; tested at run time when unknown. */
-  private forBeyond(slot: Slot, limit: Slot, type: MType, step: number | undefined, stepSlot: Slot | undefined): Value {
+  private forBeyond(slot: Slot, limit: Slot, type: MType, step: number | undefined, stepSlot: Slot | undefined, stepType: MType): Value {
     const compare = (op: BinOp) => {
       const r = this.vreg("bool");
       this.emit({ op: "bin", bop: op, dst: r, a: this.load(type, slot), b: this.load(type, limit), sid: this.sid });
@@ -957,14 +964,14 @@ class Lowering {
     if (step !== undefined) return compare(step >= 0 ? "gt" : "lt");
     // --- (step < 0 AND i < limit) OR (step >= 0 AND i > limit)
     const negative = this.vreg("bool");
-    const stepValue = this.load(type, stepSlot!);
-    this.emit({ op: "bin", bop: "lt", dst: negative, a: stepValue, b: this.numberValue(type, 0), sid: this.sid });
+    const stepValue = this.load(stepType, stepSlot!);
+    this.emit({ op: "bin", bop: "lt", dst: negative, a: stepValue, b: this.numberValue(stepType, 0), sid: this.sid });
     const below = compare("lt");
     const down = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: down, a: negative, b: below, sid: this.sid });
     const positive = this.vreg("bool");
-    const stepAgain = this.load(type, stepSlot!);
-    this.emit({ op: "bin", bop: "ge", dst: positive, a: stepAgain, b: this.numberValue(type, 0), sid: this.sid });
+    const stepAgain = this.load(stepType, stepSlot!);
+    this.emit({ op: "bin", bop: "ge", dst: positive, a: stepAgain, b: this.numberValue(stepType, 0), sid: this.sid });
     const above = compare("gt");
     const up = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: up, a: positive, b: above, sid: this.sid });
@@ -1796,6 +1803,12 @@ function arrayBytes(symbol: ArraySymbol): number {
 }
 
 /** A constant STEP's value, for its sign; undefined when the step is computed at run time. */
+/** An integer step as the bits of an unsigned type of its width (a signed step of an unsigned variable). */
+function wrapTo(type: MType, n: number): number {
+  const bits = type === "u8" || type === "i8" ? 8 : type === "u16" || type === "i16" ? 16 : type === "u32" || type === "i32" ? 32 : 0;
+  return bits ? ((n % 2 ** bits) + 2 ** bits) % 2 ** bits : n;
+}
+
 function stepConstant(step: BoundExpr): number | undefined {
   const v = step.constant?.value;
   if (v?.kind === "fixed") return v.raw / 65536;

@@ -1,0 +1,9 @@
+' Binary digits of a number by repeated division
+'@expect screen 0 "11111101000"
+DIM n AS UInteger = 2024
+DIM s AS String
+WHILE n > 0
+  s = STR$(n MOD 2) + s
+  n = n / 2
+WEND
+PRINT s

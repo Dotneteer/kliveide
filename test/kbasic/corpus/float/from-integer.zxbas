@@ -1,0 +1,10 @@
+' Integers widen to Float exactly, signed and unsigned
+'@expect screen 0 "-100 65535 -2000000 32767"
+DIM b AS Byte = -100
+DIM u AS UInteger = 65535
+DIM l AS Long = -2000000
+DIM f AS Float
+f = b: PRINT f; " ";
+f = u: PRINT f; " ";
+f = l: PRINT f; " ";
+f = u / 2: PRINT f

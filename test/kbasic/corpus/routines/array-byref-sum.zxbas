@@ -1,0 +1,15 @@
+' Arrays pass by reference: a SUB fills one, a FUNCTION sums it
+'@expect screen 0 "385 100"
+SUB fill(a() AS UInteger)
+  DIM i AS UByte
+  FOR i = LBOUND(a, 1) TO UBOUND(a, 1): a(i) = i * i: NEXT i
+END SUB
+FUNCTION total(a() AS UInteger) AS UInteger
+  DIM i AS UByte
+  DIM t AS UInteger
+  FOR i = LBOUND(a, 1) TO UBOUND(a, 1): t = t + a(i): NEXT i
+  RETURN t
+END FUNCTION
+DIM v(1 TO 10) AS UInteger
+fill(v)
+PRINT total(v); " "; v(10)

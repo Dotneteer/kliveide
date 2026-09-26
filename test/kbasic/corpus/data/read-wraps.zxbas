@@ -1,0 +1,8 @@
+' READ past the last DATA item starts again at the first (semantics annex: read-past-end)
+'@expect screen 0 "2 1"
+DIM x AS UByte
+READ x, x
+PRINT x; " ";
+READ x
+PRINT x
+DATA 1, 2

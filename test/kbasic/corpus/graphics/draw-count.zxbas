@@ -1,0 +1,12 @@
+' A DRAW of n steps sets n pixels, every one but its start: PLOT and DRAW 40 set 41, counted with
+' POINT
+'@expect screen 0 "41"
+#include <point.bas>
+DIM x AS UByte
+DIM n AS UByte
+PLOT 10, 50
+DRAW 40, 0
+FOR x = 0 TO 60
+  n = n + POINT(x, 50)
+NEXT x
+PRINT n

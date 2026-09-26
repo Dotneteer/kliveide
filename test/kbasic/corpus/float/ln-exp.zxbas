@@ -1,0 +1,3 @@
+' LN and EXP
+'@expect screen 0 "0 1 27182 3000 23025"
+PRINT LN(1); " "; EXP(0); " "; INT(EXP(1) * 10000); " "; INT(LN(EXP(3)) * 1000 + 0.5); " "; INT(LN(10) * 10000)

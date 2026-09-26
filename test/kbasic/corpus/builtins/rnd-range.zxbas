@@ -1,0 +1,15 @@
+' INT(RND * n) stays in 0..n-1 and reaches every value
+'@expect screen 0 "1"
+DIM seen(5) AS UByte
+DIM i AS UInteger
+DIM k AS UByte
+DIM all AS UByte = 1
+RANDOMIZE 7
+FOR i = 1 TO 300
+  k = INT(RND * 6)
+  seen(k) = 1
+NEXT i
+FOR k = 0 TO 5
+  IF seen(k) = 0 THEN all = 0
+NEXT k
+PRINT all

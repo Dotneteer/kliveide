@@ -1,0 +1,7 @@
+' READ of a String item into a number stops with "C Nonsense in BASIC"
+'@expect screen 0 "go"
+'@expect error 11
+DIM x AS UByte
+PRINT "go"
+READ x
+DATA "text"

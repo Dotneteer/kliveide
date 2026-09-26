@@ -1,0 +1,5 @@
+' CAST converts between types explicitly
+'@expect screen 0 "3 65535 -56 3.5"
+DIM f AS Float = 3.99
+DIM i AS Integer = -1
+PRINT CAST(UByte, f); " "; CAST(UInteger, i); " "; CAST(Byte, 200); " "; CAST(Float, 7) / 2

@@ -1,0 +1,5 @@
+' string.bas: left, mid and right
+'@expect screen 0 "ZX|Spectrum|Spec|ZX Spectrum"
+#include <string.bas>
+DIM s AS String = "ZX Spectrum"
+PRINT left(s, 2); "|"; right(s, 8); "|"; mid(s, 3, 4); "|"; LEFT(s, 99)

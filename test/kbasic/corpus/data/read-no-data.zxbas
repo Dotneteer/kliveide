@@ -1,0 +1,7 @@
+' READ in a program without DATA stops with "E Out of DATA"
+'@expect screen 0 "go"
+'@expect error 13
+DIM x AS UByte
+PRINT "go"
+READ x
+PRINT "not reached"

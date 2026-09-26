@@ -1,0 +1,12 @@
+' A classic program with line numbers and GO SUB. t and i are not declared: each takes its type
+' from its first value (spec types.default_type), so t is a UByte and the sum of squares, 385, wraps
+'@expect screen 0 "129"
+'@expect error 8
+10 LET t = 0
+20 FOR i = 1 TO 10
+30 GO SUB 100
+40 NEXT i
+50 PRINT t
+60 STOP
+100 LET t = t + i * i
+110 RETURN

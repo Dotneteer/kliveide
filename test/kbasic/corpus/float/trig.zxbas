@@ -1,0 +1,5 @@
+' SIN, COS and TAN at exact angles, and PI
+'@expect screen 0 "0 1 1000 -1001"
+'@expect screen 1 "1000 31415"
+PRINT SIN(0); " "; COS(0); " "; INT(SIN(PI / 2) * 1000 + 0.5); " "; INT(COS(PI) * 1000 - 0.5)
+PRINT INT(TAN(PI / 4) * 1000 + 0.5); " "; INT(PI * 10000)

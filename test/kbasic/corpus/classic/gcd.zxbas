@@ -1,0 +1,10 @@
+' Euclid's greatest common divisor, iterative and recursive
+'@expect screen 0 "21 21 1"
+FUNCTION gcd(a AS UInteger, b AS UInteger) AS UInteger
+  IF b = 0 THEN RETURN a
+  RETURN gcd(b, a MOD b)
+END FUNCTION
+DIM a, b, t AS UInteger
+a = 1071: b = 462
+WHILE b <> 0: t = b: b = a MOD b: a = t: WEND
+PRINT a; " "; gcd(1071, 462); " "; gcd(17, 5)

@@ -1,0 +1,13 @@
+' The sieve of Eratosthenes up to 60
+'@expect screen 0 "2 3 5 7 11 13 17 19 23 29 31 37"
+'@expect screen 1 "41 43 47 53 59"
+DIM sieve(60) AS UByte
+DIM i, j AS UByte
+FOR i = 2 TO 60
+  IF sieve(i) = 0 THEN
+    PRINT i; " ";
+    FOR j = i * 2 TO 60 STEP i
+      sieve(j) = 1
+    NEXT j
+  END IF
+NEXT i

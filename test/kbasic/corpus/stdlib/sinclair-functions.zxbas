@@ -1,0 +1,6 @@
+' sinclair-compatible brings ATTR, POINT and SCREEN$ without an #include
+'@sinclair-compatible
+'@expect screen 0 "S156"
+PLOT 5, 5
+PRINT AT 1, 1; "S"
+PRINT AT 0, 0; SCREEN$(1, 1); POINT(5, 5); ATTR(1, 1)

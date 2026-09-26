@@ -1,0 +1,8 @@
+' Float addition, subtraction, multiplication and division; 1 / 8 divides two integers, so it is
+' integer division (the spec's / on integral operands)
+'@expect screen 0 "10 5 18.75 3"
+'@expect screen 1 "-5 -18.75 0"
+DIM a, b AS Float
+a = 7.5: b = 2.5
+PRINT a + b; " "; a - b; " "; a * b; " "; a / b
+PRINT b - a; " "; -a * b; " "; 1 / 8

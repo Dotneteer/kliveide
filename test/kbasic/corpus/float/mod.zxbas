@@ -1,0 +1,3 @@
+' MOD of Floats keeps the dividend's sign
+'@expect screen 0 "1.5 -1.5 3"
+PRINT 7.5 MOD 2; " "; -7.5 MOD 2; " "; 10 MOD 3.5

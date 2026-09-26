@@ -1,0 +1,11 @@
+' The Collatz sequence of 27 takes 111 steps and peaks at 9232
+'@expect screen 0 "111 9232"
+DIM n, peak AS ULong
+DIM steps AS UInteger
+n = 27: peak = n
+WHILE n <> 1
+  IF n MOD 2 = 0 THEN n = n / 2 ELSE n = 3 * n + 1
+  IF n > peak THEN peak = n
+  steps = steps + 1
+WEND
+PRINT steps; " "; peak

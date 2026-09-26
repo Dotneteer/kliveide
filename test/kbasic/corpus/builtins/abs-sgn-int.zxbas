@@ -1,0 +1,6 @@
+' ABS and SGN of integer types
+'@expect screen 0 "300 -1 70000 -1 0 127"
+DIM b AS Byte = -128
+DIM i AS Integer = -300
+DIM l AS Long = -70000
+PRINT ABS(i); " "; SGN(i); " "; ABS(l); " "; SGN(l); " "; SGN(0); " "; ABS(b + 1)

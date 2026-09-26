@@ -1,0 +1,13 @@
+' Bubble sort of DATA values
+'@expect screen 0 "-300 -7 0 3 3 12 42 1000"
+DIM v(7) AS Integer
+DIM i, j AS UByte
+DIM t AS Integer
+FOR i = 0 TO 7: READ v(i): NEXT i
+FOR i = 0 TO 6
+  FOR j = 0 TO 6 - i
+    IF v(j) > v(j + 1) THEN t = v(j): v(j) = v(j + 1): v(j + 1) = t
+  NEXT j
+NEXT i
+FOR i = 0 TO 7: PRINT v(i); " ";: NEXT i
+DATA 42, -7, 1000, 3, 3, -300, 0, 12

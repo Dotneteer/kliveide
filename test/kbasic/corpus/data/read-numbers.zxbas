@@ -1,0 +1,8 @@
+' READ takes DATA items in order, converting each to the variable's type
+'@expect screen 0 "200 -1234 2.5"
+DIM a AS UByte
+DIM b AS Integer
+DIM c AS Float
+READ a, b, c
+PRINT a; " "; b; " "; c
+DATA 200, -1234, 2.5

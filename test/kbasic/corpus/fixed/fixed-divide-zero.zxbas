@@ -1,0 +1,7 @@
+' Fixed division by zero stops with "6 Number too big"
+'@expect screen 0 "go"
+'@expect error 5
+DIM a, b AS Fixed
+a = 1: b = 0
+PRINT "go"
+PRINT a / b

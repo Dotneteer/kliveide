@@ -1,0 +1,5 @@
+' Fixed comparisons
+'@expect screen 0 "101110"
+DIM a, b AS Fixed
+a = 1.5: b = -0.5
+PRINT a > b; a < b; a = 1.5; b <> 0; b >= -0.5; a <= b

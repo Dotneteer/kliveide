@@ -1,0 +1,5 @@
+' OUT sets the border, IN reads a keyboard half-row
+'@expect keys Q
+'@expect screen 0 "30 31 56"
+OUT 254, 2
+PRINT IN(64510) BAND 31; " "; IN(32766) BAND 31; " "; PEEK 23624

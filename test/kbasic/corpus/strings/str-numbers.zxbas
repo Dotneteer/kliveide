@@ -1,0 +1,9 @@
+' STR$ of each numeric type goes through the ROM's number format (4000000000 is 4E+9); PRINT of a
+' ULong is exact
+'@expect screen 0 "-5,4E+9,0.125,65535"
+'@expect screen 1 "4000000000"
+DIM b AS Byte = -5
+DIM l AS ULong = 4000000000
+DIM f AS Float = 0.125
+PRINT STR$(b) + "," + STR$(l) + "," + STR$(f) + "," + STR$(65535)
+PRINT l

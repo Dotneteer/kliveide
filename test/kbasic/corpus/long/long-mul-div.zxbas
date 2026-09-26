@@ -1,0 +1,5 @@
+' 32-bit multiply, divide and MOD, signed and unsigned
+'@expect screen 0 "-97406784 -156 -372 428571428"
+DIM a, b AS Long
+a = -123456: b = 789
+PRINT a * b; " "; a / b; " "; a MOD b; " "; CAST(ULong, 3000000000) / 7

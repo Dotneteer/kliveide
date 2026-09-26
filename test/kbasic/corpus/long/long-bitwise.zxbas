@@ -1,0 +1,5 @@
+' Bitwise operators and shifts on 32-bit values; a shift keeps its left operand's type, so 1 SHL 8
+' (a UByte 1) is 0
+'@expect screen 0 "22136 4660 127 1 0"
+DIM a AS ULong = 305419896
+PRINT (a BAND 65535); " "; (a SHR 16); " "; (a BOR 15) BAND 255; " "; (CAST(ULong, 1) SHL 31) = 2147483648; " "; 1 SHL 8

@@ -1,0 +1,7 @@
+' A times table with TAB
+'@expect screen 0 "1   7     12"
+'@expect screen 3 "4   28    48"
+DIM i AS UByte
+FOR i = 1 TO 4
+  PRINT i; TAB 4; i * 7; TAB 10; i * 12
+NEXT i

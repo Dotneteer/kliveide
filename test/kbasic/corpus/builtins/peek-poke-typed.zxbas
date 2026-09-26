@@ -1,0 +1,6 @@
+' PEEK and POKE of UByte, UInteger and ULong
+'@expect screen 0 "255 4660 305419896 52"
+POKE 40000, 255
+POKE UInteger 40001, 4660
+POKE ULong 40003, 305419896
+PRINT PEEK 40000; " "; PEEK(UInteger, 40001); " "; PEEK(ULong, 40003); " "; PEEK 40001

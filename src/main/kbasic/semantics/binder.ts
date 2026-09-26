@@ -747,7 +747,9 @@ class Binder extends ExpressionBinder {
     const type = variable?.type ?? "Float";
     const f = this.convert(from, type, true);
     const t = this.convert(to, type, true);
-    const st = step ? this.convert(step, type, true) : undefined;
+    // --- A signed STEP of an unsigned variable stays signed (the same width), so that STEP -1
+    // --- counts a UByte down rather than up by 255
+    const st = step ? this.convert(step, UNSIGNED_TO_SIGNED[type] && SIGNED_STEP_TYPES.has(step.type) ? UNSIGNED_TO_SIGNED[type] : type, true) : undefined;
     this.checkForRange(f, t, st, s.span, type);
     const body = this.loopBody("FOR", s.body, s.span);
     if (!variable) return undefined;
@@ -958,6 +960,10 @@ class Binder extends ExpressionBinder {
     }
   }
 }
+
+/** The signed type of an unsigned integer's width (a FOR loop's STEP). */
+const UNSIGNED_TO_SIGNED: Partial<Record<KType, KType>> = { UByte: "Byte", UInteger: "Integer", ULong: "Long" };
+const SIGNED_STEP_TYPES = new Set<KType>(["Byte", "Integer", "Long", "Fixed", "Float"]);
 
 /** The library SUB (`__drawarc.bas`) that draws DRAW's arc: (dx AS Integer, dy AS Integer, angle AS Float). */
 const DRAW_ARC_ROUTINE = "__kbDrawArc";

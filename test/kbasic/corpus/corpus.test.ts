@@ -136,8 +136,8 @@ function g4Problems(r: Run): string[] {
 const files = programs(ROOT);
 
 describe("Klive BASIC corpus", () => {
-  it("has the Phase 3 programs", () => {
-    expect(files.length).toBeGreaterThanOrEqual(60);
+  it("has the Phase 4 programs (60 from Phase 3, and 90 more)", () => {
+    expect(files.length).toBeGreaterThanOrEqual(150);
   });
 
   for (const file of files) {

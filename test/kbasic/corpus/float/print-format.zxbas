@@ -1,0 +1,5 @@
+' How PRINT writes Floats: the ROM's number format
+'@expect screen 0 "0.5 -0.25 1000000 123456789 .001"
+'@expect screen 1 "1E+10 .000015 0.33333333"
+PRINT 0.5; " "; -0.25; " "; 1E6; " "; 123456789; " "; 0.001
+PRINT 1E10; " "; 1.5E-5; " "; 1 / 3.0

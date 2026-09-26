@@ -1,0 +1,12 @@
+' An unsigned FOR variable counts down with a negative STEP, constant or computed (the STEP keeps
+' its sign; the variable adds its bits). Each limit is reached without wrapping below 0.
+'@expect screen 0 "5 3 |1|1000 700 400 |100|321|0"
+DIM b AS UByte
+DIM u AS UInteger
+DIM s AS Integer = -300
+FOR b = 5 TO 2 STEP -2: PRINT b; " ";: NEXT b
+PRINT "|"; b; "|";
+FOR u = 1000 TO 150 STEP s: PRINT u; " ";: NEXT u
+PRINT "|"; u; "|";
+FOR b = 3 TO 1 STEP -1: PRINT b;: NEXT b
+PRINT "|"; b

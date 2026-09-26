@@ -1,0 +1,6 @@
+' Fixed (16.16) addition, subtraction, multiplication and division; 3.5 / 1.25 is 2.8 truncated
+' to 65536ths
+'@expect screen 0 "4.75 2.25 4.375 2.7999878"
+DIM a, b AS Fixed
+a = 3.5: b = 1.25
+PRINT a + b; " "; a - b; " "; a * b; " "; a / b

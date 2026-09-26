@@ -1,0 +1,17 @@
+' Float parameters and results
+'@expect screen 0 "5 6.5 1.5 2 2"
+FUNCTION hyp(a AS Float, b AS Float) AS Float
+  RETURN SQR(a * a + b * b)
+END FUNCTION
+FUNCTION half(x AS Float) AS Float
+  RETURN x / 2
+END FUNCTION
+SUB show(BYREF x AS Float)
+  x = x + 0.5
+  PRINT x; " ";
+END SUB
+DIM f AS Float = 1
+PRINT hyp(3, 4); " "; half(hyp(5, 12)); " ";
+show f
+show f
+PRINT f

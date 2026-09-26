@@ -2570,7 +2570,7 @@
       {
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
-        "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
+        "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. A signed STEP of an unsigned variable keeps its sign (it is held in the signed type of the variable's width), so FOR i = 5 TO 1 STEP -1 counts a UByte down. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
         "status": "provisional",
         "source": "klive-decision",
         "phase": 4,

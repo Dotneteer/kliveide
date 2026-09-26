@@ -1,0 +1,11 @@
+' The towers of Hanoi: a recursive SUB counts the moves
+'@expect screen 0 "255"
+DIM moves AS UInteger
+SUB hanoi(n AS UByte, from AS UByte, dest AS UByte, via AS UByte)
+  IF n = 0 THEN RETURN
+  hanoi(n - 1, from, via, dest)
+  moves = moves + 1
+  hanoi(n - 1, via, dest, from)
+END SUB
+hanoi(8, 1, 3, 2)
+PRINT moves

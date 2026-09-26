@@ -1,0 +1,11 @@
+' READ fills an array element by element
+'@expect screen 0 "2500 1000"
+DIM t(5) AS UInteger
+DIM i AS UByte
+DIM total AS UInteger
+FOR i = 0 TO 5
+  READ t(i)
+  total = total + t(i)
+NEXT i
+PRINT total; " "; t(5)
+DATA 100, 200, 300, 400, 500, 1000
