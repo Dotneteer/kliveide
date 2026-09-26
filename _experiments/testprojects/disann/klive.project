@@ -1,11 +1,11 @@
 {
-  "kliveVersion": "0.60.0",
+  "kliveVersion": "0.61.0",
   "machineType": "zxnext",
   "modelId": "standard",
   "config": {},
   "clockMultiplier": 1,
-  "soundLevel": 0,
-  "soundMuted": true,
+  "soundLevel": 0.8,
+  "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
     "sdCard": "/Users/dotneteer/Klive/ks2.cim"
@@ -20,6 +20,11 @@
   "debugger": {
     "schemaVersion": 1,
     "breakpoints": [
+      {
+        "address": 56,
+        "exec": true,
+        "ioMask": 65535
+      },
       {
         "bank": 2,
         "bankOffset": 4604,
@@ -71,7 +76,8 @@
                   "2": false
                 },
                 "selectedBank": 12,
-                "headerAttrExpanded": false
+                "headerAttrExpanded": false,
+                "bankFilter": "nonEmpty"
               }
             },
             {
@@ -111,6 +117,14 @@
                   },
                   "editor.contrib.wordHighlighter": false
                 }
+              }
+            },
+            {
+              "type": "NexViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/nxmodplayer.nex",
+              "position": {
+                "line": 0,
+                "column": 0
               }
             }
           ],
