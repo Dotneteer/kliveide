@@ -13,18 +13,19 @@ import {
 } from "../services/ide-commands";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 
+// --- Field names are the `argumentInfo` names: `extractArguments` stores each argument under its name
 type NewProjectCommandArgs = {
   machineId: string;
   projectName: string;
-  templateId?: string;
-  projectFolder?: string;
+  template?: string;
+  "-p"?: string;
   "-o"?: boolean;
 };
 
 export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
   readonly id = "newp";
   readonly description = "Creates a new Klive project.";
-  readonly usage = "newp <machine ID> <project name> [<template>] [<project folder>]";
+  readonly usage = "newp <machine ID> <project name> [<template>] [-p <project folder>] [-o]";
   readonly aliases = ["np"];
 
   readonly argumentInfo: CommandArgumentInfo = {
@@ -47,7 +48,7 @@ export class NewProjectCommand extends IdeCommandBase<NewProjectCommandArgs> {
         args.projectName,
         args["-p"],
         modelId,
-        args.templateId ?? "default"
+        args.template ?? "default"
       );
       if (args["-o"]) {
         const errorMessage = await context.mainApi.openFolder(responsePath);

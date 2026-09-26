@@ -82,7 +82,7 @@ typed commands rather than a pile of coordinates that rot when the layout moves:
 
 | Command | Does |
 |---|---|
-| `newp <machineId> <name> -p <folder> -o` | Creates a project and opens it. The folder is the **named option `-p`**, not positional — the usage string's `[<project folder>]` is misleading. `-o` is what opens it. |
+| `newp <machineId> <name> [<template>] -p <folder> -o` | Creates a project and opens it. The folder is the **named option `-p`**, not positional. The template is a folder name under `src/public/project-templates/<machineId>/` (`zx-basic`, `sjasmplus`, …; `default` when omitted). `-o` is what opens it. |
 | `open <folder>` | Opens an existing folder |
 | `outp <paneId>` | Selects an output pane *and* switches the tool area to the OUTPUT tab. Pane ids: `emu`, `build`, `scripting` — **not** the `SCRIPT_OUTPUT_VIEWER` constant, which is a document id. |
 | `script-run <path>` | Runs a script |

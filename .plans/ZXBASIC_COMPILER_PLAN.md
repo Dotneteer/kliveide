@@ -100,11 +100,10 @@ module.
   `compileFile`'s options (the Z80 assembler treats that object as its full option set).
 - Editor markers appear only with **Allow Background Compile** on (`editorOptions.allowBackgroundCompile`,
   default off) — true of every language, the Z80 assembler included. To check diagnostics in the
-  app, seed it in the harness's settings file (`globalSettings.editorOptions`), open a folder with
-  a `klive.project` whose build root is a `.zxbas` file, and `set -p zxbasic.compiler klive`.
-  (`newp`'s template argument is currently ignored, so `newp … zx-basic` makes an assembly
-  project.) Markers follow the file on disk, which the editor saves 1 s after typing stops, then
-  compiles after a further 1.2 s.
+  app, seed it in the harness's settings file (`globalSettings.editorOptions`), create the project
+  with `newp sp48 <name> zx-basic -p <folder> -o`, and `set -p zxbasic.compiler klive`. Markers
+  follow the file on disk, which the editor saves 1 s after typing stops, then compiles after a
+  further 1.2 s.
 
 **Phase 0 facts a later phase must know:**
 
