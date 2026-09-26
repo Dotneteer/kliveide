@@ -200,6 +200,17 @@ describe("the zxbas compiler", () => {
     expect(output.sourceMap[output.listFileItems[0].address]).toMatchObject({ fileIndex: 0, line: 2, startColumn: 0, endColumn: 7 });
   });
 
+  it.each([
+    ["sp128", 2],
+    ["spp3e", 3]
+  ])("builds for the machine %s (model type %i)", async (machineId, modelType) => {
+    const compiler = new KBasicCompiler();
+    compiler.setAppState(state({}, machineId));
+    const output = (await compiler.compileFile(path.join(folder, "good.bas"))) as DebuggableOutput & { modelType: number };
+    expect(output.errors?.filter((e) => !e.isWarning)).toEqual([]);
+    expect(output.modelType).toBe(modelType);
+  });
+
   it("does not build for a target it has no code generator for yet", async () => {
     const compiler = new KBasicCompiler();
     compiler.setAppState(state({}, "zxnext"));

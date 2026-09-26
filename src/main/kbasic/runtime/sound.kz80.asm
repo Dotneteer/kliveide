@@ -1,7 +1,7 @@
 ; @module   sound
 ; @summary  BEEP: Klive's own beeper loop, timed from the duration and pitch by the ROM calculator.
 ; @exports  Beep
-; @requires float
+; @requires float, rom
 ;
 ; BEEP duration, pitch: duration in seconds, pitch in semitones from middle C (261.63 Hz). The
 ; calculator turns them into the number of speaker toggles (2 * duration * frequency) and the delay
@@ -20,6 +20,7 @@ Beep:
     pop de
     pop bc                  ; A-E-D-C-B = the duration
     push hl
+    call RomIn
     push iy
     ld iy,$5c3a
     call FStack             ;                                  [duration]
@@ -71,6 +72,7 @@ Beep:
     call FFetch
     call FToI32
     pop iy
+    call RomOut
     ; --- The wait: at least 1 and at most 65535 iterations
     ld a,d
     or e

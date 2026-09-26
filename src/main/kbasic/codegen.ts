@@ -53,7 +53,7 @@ export async function generateProgram(
 
   const modules = resolveRuntimeModules(runtime, ["program"]);
   const emitted = emitProgram({
-    header: ["    .model Spectrum48", `    .org ${options.origin}`, "__kbasic_start:", ...prologueSource(runtimeInitialisers(modules)).split("\n")],
+    header: [`    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`, `    .org ${options.origin}`, "__kbasic_start:", ...prologueSource(runtimeInitialisers(modules)).split("\n")],
     functions,
     data: mir.data
   });
@@ -100,9 +100,12 @@ function asmLineSpan(mir: MModule, emitted: EmittedProgram, line: number): Span 
   return asmLines[line - 1 - first];
 }
 
+/** The `.model` of each target (the runtime pages the 48K BASIC ROM with `#ifmod` on it). */
+const MODEL_NAMES: Record<string, string> = { zx48k: "Spectrum48", zx128k: "Spectrum128", zxplus3: "SpectrumP3" };
+
 function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {
   const a = new AssemblerOptions();
-  a.currentModel = SpectrumModelType.Spectrum48;
+  a.currentModel = { zx128k: SpectrumModelType.Spectrum128, zxplus3: SpectrumModelType.SpectrumP3 }[options.target as "zx128k"] ?? SpectrumModelType.Spectrum48;
   // --- BASIC identifiers are case-sensitive, so their labels must be too
   a.useCaseSensitiveSymbols = true;
   if (options.checkMemory) a.predefinedSymbols["KB_CHECK_MEMORY"] = new ExpressionValue(true);

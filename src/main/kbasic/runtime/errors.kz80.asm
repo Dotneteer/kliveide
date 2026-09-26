@@ -1,7 +1,7 @@
 ; @module   errors
 ; @summary  Runtime error reports: the program stops with the ROM's familiar report.
 ; @exports  RaiseError
-; @requires program
+; @requires program, rom
 ;
 ; The report codes are the ROM's ERR_NR values, one less than the report's number or letter:
 ; 2 Subscript wrong, 3 Out of memory, 4 Out of screen, 5 Number too big, 9 Invalid argument,
@@ -15,6 +15,7 @@
 ; ERR_NR, resets SP from ERR_SP and shows the report. X_PTR is set from CH_ADD as RST 8 does. HL'
 ; and IX are restored first, because the report returns to BASIC.
 RaiseError:
+    call RomIn              ; the report is the 48K BASIC ROM's (the program does not come back)
     ld iy,$5c3a
     ld ix,(SavedIX)
     exx

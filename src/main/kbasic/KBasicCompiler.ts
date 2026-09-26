@@ -68,11 +68,12 @@ export class KBasicCompiler implements IKliveCompiler {
     }
   }
 
-  /** Code generation (Phase 3: the 48K target, optimisation level 0). */
+  /** Code generation (the 48K, 128K and +3 targets, optimisation level 0). */
   private async build(filename: string, front: KBasicFrontEndResult): Promise<SimpleAssemblerOutput | DebuggableOutput> {
     const diagnostics = front.diagnostics;
-    if (front.options.target !== "zx48k") {
-      diagnostics.error("E502", `Klive BASIC generates code for the ZX Spectrum 48K only so far, not for target '${front.options.target}'`, { file: 0, start: 0, end: 0 });
+    const model = targetModel(front.options.target);
+    if (model === undefined) {
+      diagnostics.error("E502", `Klive BASIC does not generate code for target '${front.options.target}' yet (the ZX Spectrum Next comes with Phase 6)`, { file: 0, start: 0, end: 0 });
       return { errors: toErrorInfo(diagnostics.items, front.sources) };
     }
     const generated = await generateProgram(front.bound!, front.sources, front.options, programName(filename), diagnostics);
@@ -87,7 +88,7 @@ export class KBasicCompiler implements IKliveCompiler {
       sourceFileList: classic.sourceFileList,
       sourceMap: classic.sourceMap,
       listFileItems: classic.listFileItems,
-      modelType: SpectrumModelType.Spectrum48,
+      modelType: model,
       entryAddress: generated.entryAddress
     } as DebuggableOutput & { modelType: number; entryAddress: number };
   }
@@ -200,4 +201,9 @@ function folderOf(path: string): string {
 
 function isAbsolutePath(path: string): boolean {
   return /^([A-Za-z]:)?[\\/]/.test(path);
+}
+
+/** The Spectrum model a target builds for; undefined for a target without code generation yet. */
+export function targetModel(target: string): SpectrumModelType | undefined {
+  return { zx48k: SpectrumModelType.Spectrum48, zx128k: SpectrumModelType.Spectrum128, zxplus3: SpectrumModelType.SpectrumP3 }[target as "zx48k"];
 }

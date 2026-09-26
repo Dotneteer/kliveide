@@ -32,6 +32,7 @@ FBinary:
 ; operand on the stack, the right one in A-E-D-C-B. Out: A-E-D-C-B. Changes F, HL.
 FMod:
     call FTwoOperands
+    call RomIn
     push iy
     ld iy,$5c3a
     rst $28
@@ -48,6 +49,7 @@ FMod:
     .defb $03               ; subtract
     .defb $38               ; end-calc
     pop iy
+    call RomOut
     jp FFetch
 
 ; left <op> right, a comparison. In: L = the calculator operation ($09 <=, $0A >=, $0B <>, $0C >,
@@ -99,6 +101,7 @@ FTwoOperands:
 ; The calculator on what is stacked: FCalcOp, end-calc. B is the operation too, for the comparisons,
 ; which take it from BREG.
 FCalc:
+    call RomIn
     push iy
     ld iy,$5c3a
     ld a,(FCalcOp)
@@ -108,7 +111,7 @@ FCalcOp:
     .defb $0f
     .defb $38               ; end-calc
     pop iy
-    ret
+    jp RomOut
 
 ; Stacks A-E-D-C-B on the calculator stack (FStack), or unstacks it (FFetch).
 FStack:
