@@ -36,6 +36,9 @@ const productionExports = [
   "sp48DelayPortWrite",
   "sp48ResetContentionCounters",
   "sp48SetTacts",
+  // --- Test hook: advances every absolute tact point, to reach the counter's rebase quickly
+  "sp48TestAdvanceTacts",
+  "sp48TestGetTactEpoch",
   "sp48UploadRomByte",
   "sp48ReadMemory",
   "sp48WriteMemory",

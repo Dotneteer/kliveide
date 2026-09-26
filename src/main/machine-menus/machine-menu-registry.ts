@@ -60,16 +60,20 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       },
       {},
       {
-        label: "Cambridge Z88 ROM && 3rd party application source code",
-        url: "https://bitbucket.org/cambridge/"
+        label: "Cambridge Z88 ROM source code",
+        url: "https://bitbucket.org/cambridge/oz/"
+      },
+      {
+        label: "Cambridge Z88 3rd party apps",
+        url: "https://bitbucket.org/cambridge/z88/"
+      },
+      {
+        label: "Cambridge Z88 tools and games",
+        url: "https://gitlab.com/b4works"
       },
       {
         label: "Cambridge Z88 on Wikipedia",
         url: "https://en.wikipedia.org/wiki/Cambridge_Z88"
-      },
-      {
-        label: "Cambridge Z88 assembler tools and utilities",
-        url: "https://gitlab.com/bits4fun"
       }
     ]
   },

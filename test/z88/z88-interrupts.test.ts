@@ -221,6 +221,58 @@ spin: jr spin
     expect(s.blinkState().STA & STA_BTL).toBe(STA_BTL);
   });
 
+  it("the Z80 is a CMOS part: an interrupt right after LD A,I keeps its P/V (issue #1374)", async () => {
+    // --- The NMOS Z80 clears the P/V copy of IFF2 when an interrupt is accepted right after
+    // --- LD A,I / LD A,R; the CMOS part fixed that (MAME `z80.cpp`: the Z80 types' differences).
+    // --- The Z88's Z80 is CMOS, and OZ 4.7 depends on it: with the glitch its "save interrupt
+    // --- state and DI" routine ($003B) decided interrupts had been off, the key-wait routine
+    // --- returned without EI and the keyboard went dead. The main loop is almost all LD A,I, so
+    // --- nearly every RTC interrupt lands right after one; the handler counts those whose F, as
+    // --- the CPU left it on acceptance, has P/V clear.
+    const s = await createZ88Session();
+    await s.loadCode(`
+      .org $0038
+      jp handler
+
+      .org $8000
+start:
+      im 1
+      ld a,$03
+      out ($b1),a         ; INT = GINT | TIME
+      ld a,$01
+      out ($b5),a         ; TMK = TICK
+      ld a,$07
+      out ($b4),a
+      ei
+block:
+${"      ld a,i\n".repeat(64)}      jp block
+
+handler:
+      push af
+      push hl
+      push af
+      pop hl              ; L = F as the interrupt found it
+      bit 2,l             ; P/V
+      jr nz,counted
+      ld hl,($9002)
+      inc hl
+      ld ($9002),hl       ; accepted with P/V clear
+counted:
+      ld hl,($9000)
+      inc hl
+      ld ($9000),hl
+      ld a,$07
+      out ($b4),a
+      pop hl
+      pop af
+      ei
+      ret
+  `, { entry: "start" });
+    s.runFrames(40);
+    expect(s.peekWord(0x9000), "interrupts taken").toBeGreaterThanOrEqual(19);
+    expect(s.peekWord(0x9002), "interrupts that found P/V clear").toBe(0);
+  });
+
   it("COM.RESTIM stops and clears the RTC", async () => {
     const s = await createZ88Session();
     await s.loadCode(`

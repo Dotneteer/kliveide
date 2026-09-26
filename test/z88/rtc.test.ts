@@ -21,6 +21,13 @@ describe("Z88 - RTC", function () {
     expect(b.TMK).toBe(0x01);
   });
 
+  /*
+   * TSTA latches: every RTC event sets its bit and it stays set until TACK clears it, so a clock run
+   * with no acknowledgement shows every event so far (issue #1374). The old table held only the
+   * latest one, a TypeScript/OZvm port detail OZ 4.7 cannot survive: it sees the minute only as a
+   * MIN bit still set when its TICK handler reads TSTA. No event is latched without GINT, INT.TIME
+   * and a non-zero TMK.
+   */
   const tickSamples = [
     // 1 tick
     {
@@ -167,7 +174,7 @@ describe("Z88 - RTC", function () {
       tim2: 0x00,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.SEC,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC,
     },
     {
       tick: 128,
@@ -178,7 +185,7 @@ describe("Z88 - RTC", function () {
       tim2: 0x00,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.SEC,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC,
     },
     // 129 ticks
     {
@@ -223,7 +230,7 @@ describe("Z88 - RTC", function () {
       tim2: 0x00,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.TICK,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC,
     },
     // 32 * 200 + 128 (6328) ticks
     {
@@ -257,7 +264,7 @@ describe("Z88 - RTC", function () {
       tim2: 0x00,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.MIN,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     {
       tick: 6328,
@@ -268,7 +275,7 @@ describe("Z88 - RTC", function () {
       tim2: 0x00,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.MIN,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     // 32 * 200 + 128 + 250 * 60 * 200 (6328) ticks
     // 49 + 128 + 59 * 200 + 250 * 60 * 200 (3_006_328) ticks
@@ -314,7 +321,7 @@ describe("Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.MIN,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     {
       tick: 3006328,
@@ -325,7 +332,7 @@ describe("Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.MIN,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     {
       tick: 3006328,
@@ -336,7 +343,7 @@ describe("Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.MIN,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     {
       tick: 3006329,
@@ -347,7 +354,7 @@ describe("Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.TICK,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
     {
       tick: 3006329,
@@ -358,7 +365,7 @@ describe("Z88 - RTC", function () {
       tim2: 250,
       tim3: 0x00,
       tim4: 0x00,
-      tsta: TSTAFlags.TICK,
+      tsta: TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN,
     },
   ];
 
@@ -377,6 +384,48 @@ describe("Z88 - RTC", function () {
       expect(b.TIM4).toBe(smp.tim4);
       expect(b.TSTA).toBe(smp.tsta);
     });
+  });
+
+  it("an RTC event stays in TSTA until TACK clears it, whatever TMK enables", () => {
+    const b = createZ88TestSurface().blink;
+    b.setINT(INTFlags.TIME | INTFlags.GINT);
+    b.TMK = TMKFlags.TICK;
+    incRtc(b, 6328); // --- past the first MIN (TIM1 reaches 32 at TIM0 $80)
+    expect(b.TSTA).toBe(TSTAFlags.TICK | TSTAFlags.SEC | TSTAFlags.MIN);
+
+    // --- TACK clears only what it names; with no enabled event left, STA.TIME drops
+    b.setTACK(TSTAFlags.TICK);
+    expect(b.TSTA).toBe(TSTAFlags.SEC | TSTAFlags.MIN);
+    expect(b.STA & 0x01).toBe(0);
+    b.setTACK(TSTAFlags.SEC | TSTAFlags.MIN);
+    expect(b.TSTA).toBe(0);
+  });
+
+  it("STA.TIME stays up while an enabled event is still unacknowledged", () => {
+    const b = createZ88TestSurface().blink;
+    b.setINT(INTFlags.TIME | INTFlags.GINT);
+    b.TMK = TMKFlags.TICK | TMKFlags.MIN;
+    incRtc(b, 6328);
+    expect(b.STA & 0x01).toBe(1);
+    b.setTACK(TSTAFlags.TICK);
+    // --- MIN is enabled and pending: the interrupt must come back for it (OZ 5.0 services MIN only
+    // --- on an interrupt without TICK)
+    expect(b.STA & 0x01).toBe(1);
+    b.setTACK(TSTAFlags.MIN);
+    expect(b.STA & 0x01).toBe(0);
+  });
+
+  it("COM.RESTIM resets the clock but keeps TMK", () => {
+    // --- OZ 5.0 writes TMK = $07 once, then resets the clock through RESTIM while booting. Resetting
+    // --- TMK with the clock left the minute interrupt off for good, and OZ never timed out (issue
+    // --- #1374). The Developers' Notes: RESTIM resets the clock to zero and holds it there.
+    const b = createZ88TestSurface().blink;
+    b.TMK = TMKFlags.TICK | TMKFlags.SEC | TMKFlags.MIN;
+    incRtc(b, 300);
+    b.setCOM(0x10);
+    incRtc(b, 1);
+    expect(b.TIM0).toBe(0);
+    expect(b.TMK).toBe(TMKFlags.TICK | TMKFlags.SEC | TMKFlags.MIN);
   });
 
   it("RTC reset requested", () => {

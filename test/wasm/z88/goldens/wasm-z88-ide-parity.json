@@ -1,20 +1,20 @@
 {
  "OZ50 after booting and a few keys: getCpuState()": {
-  "af": 8752,
+  "af": 19068,
   "bc": 0,
   "de": 30720,
-  "hl": 31266,
+  "hl": 31306,
   "af_": 256,
   "bc_": 20494,
   "de_": 12,
   "hl_": 48531,
-  "pc": 61865,
+  "pc": 62043,
   "sp": 6806,
   "ix": 30950,
   "iy": 9370,
-  "ir": 96,
-  "wz": 30937,
-  "tacts": 30212097,
+  "ir": 40,
+  "wz": 62042,
+  "tacts": 30212100,
   "tactsAtLastStart": 0,
   "interruptMode": 1,
   "iff1": true,
@@ -22,15 +22,15 @@
   "sigINT": false,
   "halted": false,
   "snoozed": false,
-  "opStartAddress": 61862,
+  "opStartAddress": 62042,
   "lastMemoryReads": {
    "byteLength": 16,
-   "sha256": "0047ab59d20ada713bc564e333cee26c09ef05cafeb26fca12ff7d6adb70ceb3"
+   "sha256": "5a1e83bf60f6f9656a1affe9f6937c57823b7b4f3f2e7944a7726cb82801a3e5"
   },
-  "lastMemoryReadValue": 243,
+  "lastMemoryReadValue": 113,
   "lastMemoryWrites": {
    "byteLength": 16,
-   "sha256": "ba37be11a884e9d12cfc08764202c24a65e0c181b54bbcb9e23087bb00044667"
+   "sha256": "f758f6e65612384428ee2f552f5231746899255ddd81377623f2b8883373db36"
   },
   "lastMemoryWriteValue": 0,
   "lastIoReadValue": 255,
@@ -38,8 +38,8 @@
  },
  "OZ50 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
-  "pcValue": 61865,
-  "tacts": 30212097
+  "pcValue": 62043,
+  "tacts": 30212100
  },
  "OZ50 after booting and a few keys: getBlinkState()": {
   "SR0": 33,
@@ -52,7 +52,7 @@
   "TIM3": 0,
   "TIM4": 0,
   "TSTA": 0,
-  "TMK": 1,
+  "TMK": 7,
   "INT": 59,
   "STA": 0,
   "COM": 5,
@@ -881,10 +881,10 @@
   "sp": 6806,
   "frames": [
    31252,
-   61730,
-   62599,
-   62202,
-   41030,
+   61928,
+   62789,
+   62392,
+   41015,
    3908,
    8366,
    50105,
@@ -893,7 +893,7 @@
    3120,
    10284,
    3340,
-   57410,
+   57395,
    48535,
    32815
   ]
@@ -901,13 +901,13 @@
  "OZ50 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "b6f036b9a882f1de766887faa217ee5e3f3bfdb32f20627f5c49fc3b9d7fbcbd"
+   "sha256": "2c9cab61f8c2d5ed04a70beb28f26adf39ddedbd80c31815eb34f02650430f11"
   },
-  "pc": 61865,
-  "af": 8752,
+  "pc": 62043,
+  "af": 19068,
   "bc": 0,
   "de": 30720,
-  "hl": 31266,
+  "hl": 31306,
   "af_": 256,
   "bc_": 20494,
   "de_": 12,
@@ -915,8 +915,8 @@
   "sp": 6806,
   "ix": 30950,
   "iy": 9370,
-  "ir": 96,
-  "wz": 30937,
+  "ir": 40,
+  "wz": 62042,
   "partitionLabels": [
    "20",
    "21",
@@ -934,10 +934,10 @@
  },
  "OZ50 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "80450051369259b5917223ddcf24c5c134ad52cf02f7aa9ce9a2e29cca9dce8f"
+  "sha256": "4bb3427655aaaa5a34983a160ca0e23e1766f7785c6341e6e27c608ae82b6263"
  },
  "OZ40 after booting and a few keys: getCpuState()": {
-  "af": 84,
+  "af": 1860,
   "bc": 1,
   "de": 7,
   "hl": 44149,
@@ -945,13 +945,13 @@
   "bc_": 7,
   "de_": 59330,
   "hl_": 50252,
-  "pc": 64247,
-  "sp": 7418,
+  "pc": 64248,
+  "sp": 7420,
   "ix": 31206,
   "iy": 7424,
-  "ir": 93,
+  "ir": 86,
   "wz": 64246,
-  "tacts": 30212099,
+  "tacts": 30212103,
   "tactsAtLastStart": 0,
   "interruptMode": 1,
   "iff1": true,
@@ -959,15 +959,15 @@
   "sigINT": false,
   "halted": false,
   "snoozed": false,
-  "opStartAddress": 64246,
+  "opStartAddress": 64247,
   "lastMemoryReads": {
    "byteLength": 16,
-   "sha256": "3e87253a81bc431b3228ca041dcbdbbaf0a4ae7fbf890172ab93a3c7cdff713d"
+   "sha256": "caec2c64f6fe103e0e27e749eafc0308c3383386d03778aa3f77b3b0bd92e700"
   },
-  "lastMemoryReadValue": 172,
+  "lastMemoryReadValue": 7,
   "lastMemoryWrites": {
    "byteLength": 16,
-   "sha256": "c988d2954380291ac8492fc114a68d11e1a9be664aa9f6886d51912c198cc223"
+   "sha256": "e085f1a4516235ab799b5d6eca88381b5b6c6582add10bde3291455f3a0fb040"
   },
   "lastMemoryWriteValue": 117,
   "lastIoReadValue": 255,
@@ -975,8 +975,8 @@
  },
  "OZ40 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
-  "pcValue": 64247,
-  "tacts": 30212099
+  "pcValue": 64248,
+  "tacts": 30212103
  },
  "OZ40 after booting and a few keys: getBlinkState()": {
   "SR0": 0,
@@ -1815,9 +1815,8 @@
   }
  ],
  "OZ40 after booting and a few keys: getCallStack()": {
-  "sp": 7418,
+  "sp": 7420,
   "frames": [
-   1860,
    2752,
    50268,
    7460,
@@ -1832,16 +1831,17 @@
    42349,
    1793,
    2752,
-   12822
+   12822,
+   51087
   ]
  },
  "OZ40 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "cd09d3587d98db6c724913431e606facd6747ad053c3c0ba42ae55e95966068f"
+   "sha256": "3e7468d48bb1e0b1e817cceab86e1e99a1fbd6813bfa0674b11f0802673fec0d"
   },
-  "pc": 64247,
-  "af": 84,
+  "pc": 64248,
+  "af": 1860,
   "bc": 1,
   "de": 7,
   "hl": 44149,
@@ -1849,10 +1849,10 @@
   "bc_": 7,
   "de_": 59330,
   "hl_": 50252,
-  "sp": 7418,
+  "sp": 7420,
   "ix": 31206,
   "iy": 7424,
-  "ir": 93,
+  "ir": 86,
   "wz": 64246,
   "partitionLabels": [
    "20",
@@ -1871,7 +1871,7 @@
  },
  "OZ40 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "9210fe19499f223a4740399f3661e5eb232091817a337f4b9c05bdb077579f19"
+  "sha256": "c8b1bbdc3dc9c42846c29dd16c7b4fb054c220902f8307a94c452d89423c1b7a"
  },
  "OZ30 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -1886,9 +1886,9 @@
   "sp": 7420,
   "ix": 32486,
   "iy": 7424,
-  "ir": 71,
+  "ir": 90,
   "wz": 64206,
-  "tacts": 30212103,
+  "tacts": 30212106,
   "tactsAtLastStart": 0,
   "interruptMode": 1,
   "iff1": true,
@@ -1904,7 +1904,7 @@
   "lastMemoryReadValue": 24,
   "lastMemoryWrites": {
    "byteLength": 16,
-   "sha256": "95273ec1dc5ff28deeee9b80250e5a95c5feca8812280e1c1630c8f8a65c7896"
+   "sha256": "bc1a60a4ec10b418726deaa7919db8b5d84927b69e86fc2c25e6810bae699a08"
   },
   "lastMemoryWriteValue": 188,
   "lastIoReadValue": 255,
@@ -1913,7 +1913,7 @@
  "OZ30 after booting and a few keys: getCpuStateChunk()": {
   "state": 0,
   "pcValue": 64206,
-  "tacts": 30212103
+  "tacts": 30212106
  },
  "OZ30 after booting and a few keys: getBlinkState()": {
   "SR0": 0,
@@ -2775,7 +2775,7 @@
  "OZ30 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "90ed131baa07991b4ca3f1b9048ade68ee4d564a63dd408e53812625a68a4497"
+   "sha256": "c8e9b85c8671d7cda6e5f2a6f25744ff6fa767892b78fd00722c19f33a7b11f1"
   },
   "pc": 64206,
   "af": 1860,
@@ -2789,7 +2789,7 @@
   "sp": 7420,
   "ix": 32486,
   "iy": 7424,
-  "ir": 71,
+  "ir": 90,
   "wz": 64206,
   "partitionLabels": [
    "20",
@@ -2808,7 +2808,7 @@
  },
  "OZ30 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "a7cb380839b2e8531e27cf98e1319a4997c8ff277b6a7a4e13c01b26ba46867b"
+  "sha256": "592ea35cc0b31be13d4a294c770192dd88201aec44494fc16c5d4a17d0f1b2dc"
  },
  "stopped mid-frame, a card in command mode: getCpuState()": {
   "af": 65535,

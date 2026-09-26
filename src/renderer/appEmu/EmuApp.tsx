@@ -14,6 +14,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import { FullPanel } from "@renderer/controls/layout/Panels";
 import {
   SETTING_EMU_SHOW_STATUS_BAR,
+  SETTING_EMU_SHOW_PERFORMANCE_INFO,
   SETTING_EMU_SHOW_TOOLBAR
 } from "@common/settings/setting-const";
 import { EmuDialogBridge } from "./EmuDialogBridge";
@@ -31,6 +32,7 @@ const EmuApp = () => {
   // --- Visual state
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);
   const showStatusBar = useGlobalSetting(SETTING_EMU_SHOW_STATUS_BAR);
+  const showPerformanceInfo = useGlobalSetting(SETTING_EMU_SHOW_PERFORMANCE_INFO);
   const kliveProjectLoaded = useSelector((s) => s.project?.isKliveProject ?? false);
   const emuLoaded = useSelector((s) => s.emuLoaded ?? false);
   const dimmed = useSelector((s) => s.dimMenu ?? false);
@@ -44,7 +46,7 @@ const EmuApp = () => {
       <EmuDialogBridge />
       {showToolbar && <Toolbar ide={false} kliveProjectLoaded={kliveProjectLoaded} recordingManagerRef={recordingManagerRef} />}
       <EmulatorArea />
-      <EmuStatusBar show={showStatusBar} />
+      <EmuStatusBar show={showStatusBar} showPerformanceInfo={showPerformanceInfo} />
       <BackDrop visible={dimmed} />
     </FullPanel>
     </RecordingContext.Provider>

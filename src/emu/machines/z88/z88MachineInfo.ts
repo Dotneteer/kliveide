@@ -18,7 +18,27 @@ export const Z88_NO_CODE_INJECTION =
   "there is no delivery route. Put the program on a card instead.";
 
 /** The ROM loaded into slot 0 when the configuration names none */
-export const Z88_DEFAULT_ROM = "z88v50-r1f99aaae";
+export const Z88_DEFAULT_ROM = "z88v50b";
+
+/**
+ * Bundled ROM resources that were renamed. Projects and app settings persist the model's whole
+ * configuration, ROM names included, so a stored configuration may still name the old resource.
+ */
+const Z88_RENAMED_ROMS: Record<string, string> = {
+  // --- OZ v5.0 beta: the 2023 build was replaced by the V5.0B build (issue #1376)
+  "z88v50-r1f99aaae": "z88v50b"
+};
+
+/**
+ * Maps a ROM name taken from a (possibly stored) configuration to the bundled resource that now
+ * carries it; any other name, including a file path, is returned unchanged.
+ * @param romName The `MC_Z88_INTROM` value or the slot-0 card's `file`
+ */
+export function resolveZ88RomName<T extends string | undefined>(romName: T): T {
+  return (romName !== undefined && Object.prototype.hasOwnProperty.call(Z88_RENAMED_ROMS, romName)
+    ? Z88_RENAMED_ROMS[romName]
+    : romName) as T;
+}
 
 /** The Z88's CPU clock: 3.2768 MHz */
 export const Z88_BASE_CLOCK_FREQUENCY = 3_276_800;

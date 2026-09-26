@@ -116,9 +116,9 @@ describe("useEmulatorJoystick", () => {
 
   it("claims its keys so the emulated keyboard cannot also see them", () => {
     const { result } = render();
-    expect(result.current.claimedCodes.current.has("ArrowRight")).toBe(true);
+    expect(result.current.claimsKey("ArrowRight")).toBe(true);
     // --- Joystick 2 is off, so its keys are still the keyboard's.
-    expect(result.current.claimedCodes.current.has("KeyD")).toBe(false);
+    expect(result.current.claimsKey("KeyD")).toBe(false);
   });
 
   it("stops a claimed key from travelling any further", () => {
@@ -176,6 +176,70 @@ describe("useEmulatorJoystick", () => {
     const notANext = { current: { machine: {} } };
     renderHook(() => useEmulatorJoystick(notANext as never));
     expect(() => press("ArrowRight")).not.toThrow();
+  });
+
+  describe("on a machine with no joystick connectors (issue #1374)", () => {
+    // --- A Cambridge Z88 or a ZX Spectrum: bound keys are the emulated keyboard's there.
+    const noConnectors = () => ({ current: { machine: { setKeyStatus: vi.fn() } } });
+
+    it("claims no key, bound or not", () => {
+      const { result } = renderHook(() => useEmulatorJoystick(noConnectors() as never));
+      for (const code of ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ShiftRight", "ControlRight"]) {
+        expect(result.current.claimsKey(code), code).toBe(false);
+      }
+    });
+
+    it("lets a bound key travel on to the keyboard hook", () => {
+      renderHook(() => useEmulatorJoystick(noConnectors() as never));
+      const event = new KeyboardEvent("keydown", { code: "ArrowLeft", cancelable: true });
+      const stopped = vi.spyOn(event, "stopImmediatePropagation");
+      act(() => {
+        window.dispatchEvent(event);
+      });
+      expect(stopped).not.toHaveBeenCalled();
+      expect(event.defaultPrevented).toBe(false);
+    });
+
+    it("starts claiming once the panel's machine gains connectors", () => {
+      // --- A machine-type switch replaces the machine under a mounted panel.
+      const ref = noConnectors() as { current: { machine: object } };
+      const { result } = renderHook(() => useEmulatorJoystick(ref as never));
+      expect(result.current.claimsKey("ArrowRight")).toBe(false);
+
+      ref.current.machine = controllerRef.current.machine;
+      expect(result.current.claimsKey("ArrowRight")).toBe(true);
+      press("ArrowRight");
+      expect(lastPins("left")).toBe(0x001);
+    });
+
+    it("hands the cursor keys to the machine's keyboard matrix", async () => {
+      const { useEmulatorKeyboard } = await import(
+        "@renderer/features/emulator/useEmulatorKeyboard"
+      );
+      const setKeyStatus = vi.fn();
+      const ref = {
+        current: { machine: { setKeyStatus }, state: MachineControllerState.Running }
+      };
+      const { result } = renderHook(() => {
+        const { claimsKey } = useEmulatorJoystick(ref as never);
+        return useEmulatorKeyboard(ref as never, undefined, claimsKey);
+      });
+      act(() => {
+        result.current.setKeyData(
+          { Left: 38, ShRight: 1 } as never,
+          { ArrowLeft: "Left", ShiftRight: "ShRight" } as never
+        );
+      });
+
+      press("ArrowLeft");
+      press("ArrowLeft", false);
+      press("ShiftRight");
+      expect(setKeyStatus.mock.calls).toEqual([
+        [38, true],
+        [38, false],
+        [1, true]
+      ]);
+    });
   });
 
   describe("gamepads", () => {

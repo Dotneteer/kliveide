@@ -45,6 +45,20 @@
 #define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
 #endif
 
+/*
+ * 1 for a machine built around a CMOS Z80. The only difference modelled is the LD A,I / LD A,R
+ * glitch: on the NMOS Z80, an interrupt accepted right after either instruction clears the P/V copy
+ * of IFF2 it just made; the CMOS part fixed it (MAME's `z80.cpp` lists it among the Z80 types'
+ * differences). The Cambridge Z88 has a CMOS Z80, and OZ 4.7 tells the two apart the hard way: its
+ * "save the interrupt state and DI" routine ($003B) reads the glitch as "interrupts were off", and
+ * the key-wait routine that called it then returns without EI - the keyboard stays dead for good
+ * (issue #1374; most often with Keyclick on, which moves the race into reach). The default is the
+ * NMOS behaviour, which the Spectrum-family machines keep.
+ */
+#ifndef Z80_CMOS
+#define Z80_CMOS 0
+#endif
+
 // -----------------------------------------------------------------------------
 // Types
 // -----------------------------------------------------------------------------
@@ -737,7 +751,8 @@ static inline void pushPcForInterrupt(void) {
 
 static inline void applyAfterLdAIRInterruptQuirk(void) {
   if (cpu.afterLdAIR) {
-    F &= (uint8_t) ~FLAG_PV;
+    /* The NMOS glitch only; see Z80_CMOS */
+    if (!Z80_CMOS) F &= (uint8_t) ~FLAG_PV;
     cpu.afterLdAIR = 0;
   }
 }

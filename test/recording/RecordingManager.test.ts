@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
+import { RECORDING_SURROUND, RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
 
 // ---------------------------------------------------------------------------
 // Minimal mock for MainApi — only the three recording methods are needed
@@ -276,20 +276,36 @@ describe("RecordingManager — submitAudioSamples", () => {
     expect(mainApi.appendRecordingAudio).not.toHaveBeenCalled();
   });
 
-  it("half fps: audio skipped when video frame was skipped", async () => {
+  it("half fps: every frame's audio is kept, even when its video frame is skipped", async () => {
+    // --- Half fps halves the frames *and* the frame rate, so the video keeps its duration. Dropping
+    // --- the skipped frames' audio left a recording with half its sound: with the real FFmpeg,
+    // --- 2 s of half-fps video carried 0.98 s of audio (issue #1374).
     const { manager, mainApi } = makeManager();
     manager.arm("half");
     await manager.onMachineRunning(W, H, FPS);
-    // Frame 1: captureCount=1 (odd) — video skipped, audio should also be skipped
+    // Frame 1: captureCount=1 (odd) - video skipped, audio kept
     await manager.submitFrame(RGBA);
     await manager.submitAudioSamples(AUDIO_SAMPLES);
     expect(mainApi.appendRecordingFrame).not.toHaveBeenCalled();
-    expect(mainApi.appendRecordingAudio).not.toHaveBeenCalled();
-    // Frame 2: captureCount=2 (even) — video sent, audio should also be sent
+    expect(mainApi.appendRecordingAudio).toHaveBeenCalledOnce();
+    // Frame 2: captureCount=2 (even) - both sent
     await manager.submitFrame(RGBA);
     await manager.submitAudioSamples(AUDIO_SAMPLES);
     expect(mainApi.appendRecordingFrame).toHaveBeenCalledOnce();
-    expect(mainApi.appendRecordingAudio).toHaveBeenCalledOnce();
+    expect(mainApi.appendRecordingAudio).toHaveBeenCalledTimes(2);
+  });
+
+  it("half fps: a machine sending audio for several frames per video frame keeps all of it", async () => {
+    // --- The Cambridge Z88: eight 5 ms audio frames per displayed (and captured) frame
+    const { manager, mainApi } = makeManager();
+    manager.arm("half");
+    await manager.onMachineRunning(W, H, 25);
+    for (let uiFrame = 0; uiFrame < 4; uiFrame++) {
+      for (let i = 0; i < 8; i++) await manager.submitAudioSamples(AUDIO_SAMPLES);
+      await manager.submitFrame(RGBA);
+    }
+    expect(mainApi.appendRecordingFrame).toHaveBeenCalledTimes(2);
+    expect(mainApi.appendRecordingAudio).toHaveBeenCalledTimes(32);
   });
 
   it("submitAudioSamples with empty array is a no-op", async () => {
@@ -299,5 +315,61 @@ describe("RecordingManager — submitAudioSamples", () => {
     await manager.submitFrame(RGBA);
     await manager.submitAudioSamples([]);
     expect(mainApi.appendRecordingAudio).not.toHaveBeenCalled();
+  });
+
+  // ---- A picture with no border of its own (the Cambridge Z88's LCD, issue #1374) --------------
+
+  describe("the surround of a picture with no border of its own", () => {
+    const LW = 4;
+    const LH = 2;
+    const LCD_UNLIT = 0xffb9e0d2; // --- ABGR: the Z88 core's unlit pixel, bytes 210,224,185,255
+    const LCD_OFF = 0xffa0a0a0;
+    const picture = new Uint8Array(LW * LH * 4).map((_, i) => (i % 4 === 3 ? 255 : 7));
+
+    it("records the picture inside a RECORDING_SURROUND-pixel surround in the machine's colour", async () => {
+      const { manager, mainApi } = makeManager();
+      manager.arm("native");
+      await manager.onMachineRunning(LW, LH, 25, 1, 1, 44100, () => LCD_UNLIT);
+      const outW = LW + 2 * RECORDING_SURROUND;
+      const outH = LH + 2 * RECORDING_SURROUND;
+      expect(mainApi.startScreenRecording.mock.calls[0].slice(0, 2)).toEqual([outW, outH]);
+
+      await manager.submitFrame(picture);
+      const sent: Uint8Array = mainApi.appendRecordingFrame.mock.calls[0][0];
+      expect(sent.length).toBe(outW * outH * 4);
+      const px = (x: number, y: number) => Array.from(sent.subarray((y * outW + x) * 4, (y * outW + x) * 4 + 4));
+      // --- The corners the player rounds are surround...
+      expect(px(0, 0)).toEqual([210, 224, 185, 255]);
+      expect(px(outW - 1, outH - 1)).toEqual([210, 224, 185, 255]);
+      // --- ...and the picture is unchanged inside it
+      for (let y = 0; y < LH; y++) {
+        for (let x = 0; x < LW; x++) {
+          expect(px(x + RECORDING_SURROUND, y + RECORDING_SURROUND)).toEqual([7, 7, 7, 255]);
+        }
+      }
+    });
+
+    it("follows the machine's colour from frame to frame (the LCD switched off)", async () => {
+      const { manager, mainApi } = makeManager();
+      let color = LCD_UNLIT;
+      manager.arm("native");
+      await manager.onMachineRunning(LW, LH, 25, 1, 1, 44100, () => color);
+      await manager.submitFrame(picture);
+      const first = Array.from((mainApi.appendRecordingFrame.mock.calls[0][0] as Uint8Array).subarray(0, 4));
+      color = LCD_OFF;
+      await manager.submitFrame(picture);
+      const second = Array.from((mainApi.appendRecordingFrame.mock.calls[1][0] as Uint8Array).subarray(0, 4));
+      expect(first).toEqual([210, 224, 185, 255]);
+      expect(second).toEqual([160, 160, 160, 255]);
+    });
+
+    it("records a machine with its own border (a Spectrum) exactly as before", async () => {
+      const { manager, mainApi } = makeManager();
+      manager.arm("native");
+      await manager.onMachineRunning(W, H, FPS);
+      expect(mainApi.startScreenRecording.mock.calls[0].slice(0, 2)).toEqual([W, H]);
+      await manager.submitFrame(RGBA);
+      expect(mainApi.appendRecordingFrame).toHaveBeenCalledWith(RGBA);
+    });
   });
 });

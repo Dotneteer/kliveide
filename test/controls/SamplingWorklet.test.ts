@@ -120,3 +120,59 @@ describe("Sampling.worklet", () => {
     expect(out.some((v) => v === 0.25)).toBe(true);
   });
 });
+
+/*
+ * A Cambridge Z88 runs eight 5 ms frames back to back, then its controller sleeps 40 ms: the
+ * worklet gets eight small frames at once, then nothing for 40 ms. `useEmulatorAudio` sizes the
+ * worklet in these bursts (issue #1374). Played against a clock - a burst due every 40 ms of
+ * output - nothing may be dropped and, once the first burst is queued, the output must never run dry.
+ */
+describe("Sampling.worklet - a machine that delivers in bursts (Cambridge Z88)", () => {
+  const RATE = 44_100;
+  /** 16384 tacts at 3.2768 MHz: 5 ms */
+  const Z88_FRAME = (16_384 * RATE) / 3_276_800;
+  const FRAMES_PER_BURST = 8;
+
+  /** Plays `bursts` bursts on schedule and returns every left-channel value from the first on */
+  function playBursts(initialize: number, bursts: number): number[] {
+    const worklet = loadWorklet();
+    worklet.post({ initialize });
+    const out: number[] = [];
+    let produced = 0; // --- fractional sample schedule, as the core keeps it
+    let played = 0;
+    for (let burst = 0; burst < bursts; burst++) {
+      // --- The burst is due at this point of the output clock; render until then
+      const due = burst * FRAMES_PER_BURST * Z88_FRAME;
+      while (played + QUANTUM <= due) {
+        out.push(...worklet.render());
+        played += QUANTUM;
+      }
+      for (let frame = 0; frame < FRAMES_PER_BURST; frame++) {
+        const count = Math.floor(produced + Z88_FRAME) - Math.floor(produced);
+        produced += Z88_FRAME;
+        worklet.post({ samples: new Array(count * 2).fill(0.5) });
+      }
+    }
+    return out;
+  }
+
+  it("plays every sample of every burst, with no gaps", () => {
+    const bursts = 25; // --- one second
+    const out = playBursts(Z88_FRAME * FRAMES_PER_BURST, bursts);
+    const firstSound = out.indexOf(0.5);
+    expect(firstSound).toBeGreaterThanOrEqual(0);
+    const afterStart = out.slice(firstSound);
+    // --- Everything up to the last burst's arrival is sound: not one dry sample in between
+    const lastDue = (bursts - 1) * FRAMES_PER_BURST * Z88_FRAME;
+    const gaps = afterStart.slice(0, Math.floor(lastDue) - firstSound).filter((v) => v !== 0.5);
+    expect(gaps.length).toBe(0);
+  });
+
+  it("chopped the sound when sized in machine frames (the bug this guards)", () => {
+    const out = playBursts(Z88_FRAME, 25);
+    const firstSound = out.indexOf(0.5);
+    const silent = out.slice(firstSound).filter((v) => v !== 0.5).length;
+    // --- Over half of the second after the first sound was silence
+    expect(silent).toBeGreaterThan(out.length / 2);
+  });
+});

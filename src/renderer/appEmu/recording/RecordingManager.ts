@@ -14,6 +14,17 @@ import {
 type Dispatch = (action: any) => void;
 
 /**
+ * The surround recorded around a picture that has no border of its own, in machine pixels.
+ *
+ * The emulator display frames such a picture (the Cambridge Z88's LCD) in its own colour so its
+ * rounded corners never clip picture pixels. A recording needs the same: macOS players show video
+ * in windows with rounded corners, and a Z88 recording, LCD to the edge, lost its corners there
+ * (issue #1374). Four pixels is what the issue asked for; with the frame's even width and height it
+ * keeps the dimensions even, as the encoders want.
+ */
+export const RECORDING_SURROUND = 4;
+
+/**
  * Framework-agnostic state machine that coordinates screen recording.
  *
  * Lifecycle:
@@ -36,6 +47,10 @@ export class RecordingManager {
   private _yRatio = 1;
   private _sampleRate = 44100;
   private _captureCount = 0; // increments every submitFrame call; used for half-fps skipping
+  /** The machine's surround colour (ABGR, as its pixel buffer), when its picture has no border */
+  private _surroundColor: (() => number | undefined) | undefined;
+  /** The frame with its surround, reused from frame to frame */
+  private _surroundFrame: Uint8Array | undefined;
 
   constructor(
     private readonly mainApi: MainApi,
@@ -123,10 +138,17 @@ export class RecordingManager {
     nativeFps: number,
     xRatio = 1,
     yRatio = 1,
-    sampleRate = 44100
+    sampleRate = 44100,
+    /**
+     * The machine's `getScreenSurroundColor`, when its picture has no border of its own. The
+     * recording then carries a RECORDING_SURROUND-pixel surround in that colour, read per frame.
+     */
+    surroundColor?: () => number | undefined
   ): Promise<void> {
     this._width = width;
     this._height = height;
+    this._surroundColor = surroundColor;
+    this._surroundFrame = undefined;
     this._nativeFps = nativeFps;
     this._xRatio = xRatio;
     this._yRatio = yRatio;
@@ -198,22 +220,47 @@ export class RecordingManager {
     this._captureCount++;
     // For half fps, skip odd-numbered capture frames
     if (this._fps === "half" && this._captureCount % 2 !== 0) return;
-    await this.mainApi.appendRecordingFrame(rgba);
+    await this.mainApi.appendRecordingFrame(this._withSurround(rgba));
+  }
+
+  /** The frame as recorded: the picture itself, or the picture inside its surround */
+  private _withSurround(rgba: Uint8Array): Uint8Array {
+    const color = this._surroundColor?.();
+    if (color === undefined) return rgba;
+
+    const border = RECORDING_SURROUND;
+    const width = this._width;
+    const height = this._height;
+    const outWidth = width + 2 * border;
+    const outHeight = height + 2 * border;
+    let frame = this._surroundFrame;
+    if (!frame || frame.length !== outWidth * outHeight * 4) {
+      frame = this._surroundFrame = new Uint8Array(outWidth * outHeight * 4);
+    }
+    // --- ABGR words, so the bytes in memory order are R, G, B, A
+    new Uint32Array(frame.buffer, frame.byteOffset, outWidth * outHeight).fill(color >>> 0);
+    const rowBytes = width * 4;
+    for (let y = 0; y < height; y++) {
+      const from = y * rowBytes;
+      frame.set(rgba.subarray(from, from + rowBytes), ((y + border) * outWidth + border) * 4);
+    }
+    return frame;
   }
 
   /**
    * Submits a batch of audio samples to the recording.
    * The samples are expected as an AudioSample[] (stereo float pairs).
    * They are converted to interleaved f32le before being sent over IPC.
-   * Skipping is kept in sync with submitFrame: when half-fps is active and
-   * the current capture count is odd (the video frame was skipped), the
-   * audio is also dropped.
+   *
+   * Every sample is sent, whatever the video rate. Half fps halves the *frames* and the frame rate
+   * together, so the video keeps its duration; the audio is a continuous signal at its own sample
+   * rate and must keep all of it. This used to drop the audio of every skipped video frame, which
+   * left a half-fps recording with half its sound, squeezed together: 2 s of video carried 1 s of
+   * audio (issue #1374). On the Cambridge Z88, whose audio arrives per 5 ms frame and its video
+   * per eight of them, it dropped whole 40 ms stretches.
    */
   async submitAudioSamples(samples: { left: number; right: number }[]): Promise<void> {
     if (this._state !== "recording") return;
-    // Mirror the half-fps skip: _captureCount was already incremented by
-    // submitFrame for this logical frame. Odd counts are the skipped ones.
-    if (this._fps === "half" && this._captureCount % 2 !== 0) return;
     if (!samples || samples.length === 0) {
       return;
     }
@@ -236,9 +283,10 @@ export class RecordingManager {
 
     this._captureCount = 0;
     try {
+      const surround = this._surroundColor ? 2 * RECORDING_SURROUND : 0;
       const filePath = await this.mainApi.startScreenRecording(
-        this._width,
-        this._height,
+        this._width + surround,
+        this._height + surround,
         effectiveFps,
         this._xRatio,
         this._yRatio,

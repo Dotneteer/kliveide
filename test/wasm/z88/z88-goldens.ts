@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect } from "vitest";
 
@@ -94,6 +94,15 @@ export class Digest {
   }
 }
 
+/**
+ * Re-records instead of asserting: `Z88_GOLDENS_RECORD=1`.
+ *
+ * Only for a behaviour change already settled as a finding (see the header): the Blink RTC fixes of
+ * issue #1374 were the first. Run the affected suites with it once, then review the JSON diff key by
+ * key - every changed entry must follow from the settled change - and run them again without it.
+ */
+const RECORD = process.env.Z88_GOLDENS_RECORD === "1";
+
 /** The goldens of one suite (`goldens/<name>.json`) */
 export function goldens(name: string) {
   const file = join(REPO_ROOT, "test/wasm/z88/goldens", `${name}.json`);
@@ -102,6 +111,11 @@ export function goldens(name: string) {
     /** Asserts `actual` equals the golden stored under `key` */
     expect(key: string, actual: unknown): void {
       expect(key in stored, `no golden '${key}' in ${name}.json`).toBe(true);
+      if (RECORD) {
+        stored[key] = toGolden(actual);
+        writeFileSync(file, JSON.stringify(stored, null, 1) + "\n");
+        return;
+      }
       expect(toGolden(actual), key).toEqual(stored[key]);
     }
   };

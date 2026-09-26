@@ -376,6 +376,12 @@ perfectly editable with the emulator stopped — fall back, but **say so where t
 `--status-warning`: a silently-wrong palette still looks like a palette, which is exactly how the
 rotation bug above survived.
 
+**The same holds for the frame around a machine's picture.** The Z88's LCD surround is unlit
+green, and grey while the LCD is off. The core reports it (`z88GetLcdSurroundColor`, following
+what it last painted rather than COM.LCDON, so frame and picture never disagree) through
+`getScreenSurroundColor()`, in the pixel buffer's ABGR packing. It is not a token. It is the
+machine's colour, the same in both themes, and changes with the machine's state.
+
 **A user who has learned one control should not have to learn it twice.** The sprite editor's bank
 switch is the sidebar's, deliberately — same two segments, same meaning (*the fill is the bank you
 are looking at, the ring is the bank the machine is drawing with*), same default of following the
@@ -1608,6 +1614,53 @@ Two things follow for any later change here:
   non-unit aspect ratio can land a half or quarter step on a fraction, and an attribute that has to
   be parsed rather than scaled is a bug that only shows on one machine. Round at the point of
   setting state, never at the point of drawing.
+- **The rounded display clip must never land on picture pixels.** `.display` has `--radius-md`
+  corners and `overflow: hidden`. On a Spectrum the clip only eats emulated border, because the
+  border is part of the picture. A picture with no border of its own (the Cambridge Z88's LCD) lost
+  its corner pixels. Such a machine implements `getScreenSurroundColor()`. The display is then
+  padded by `--radius-md` itself (`.surround`), the one amount that keeps the curve off the picture
+  at any radius, in the colour the machine reports. `calculateDimensions` reads the same token and
+  keeps the padding out of the fit. **Recordings carry it too**, as `RECORDING_SURROUND` machine
+  pixels (`RecordingManager`), because video players round their windows' corners as well. The
+  file's frame is what gets clipped there, so the surround has to be part of it.
+- **`.display` is `content-box`, and must stay so.** Its inline `width`/`height` are the canvas's.
+  Under the app-wide `border-box`, its 1px bezel border and any padding went *inside* that size, and
+  the canvas overflowed its own clipping box. On every machine one picture pixel was lost on each
+  edge, unnoticed for as long as the border was 1px. Anything added around the canvas goes outside
+  the canvas size and is subtracted in the fit. The fit reads the border from the element; it is
+  not a constant.
+- **Reset per-machine display state to a sentinel, not to "none".** The surround colour is
+  remembered so the DOM is only touched on a change. Resetting it to `undefined` on a machine switch
+  meant a Spectrum, whose colour *is* `undefined`, never cleared the Z88's green. Only the running
+  app showed it, in the Spectrum's corners. A value that can legitimately be absent needs a
+  distinct "unknown".
+- **The emulator window is sized from what the renderer measures; never pin it to a constant.**
+  The old fixed 640x480 minimum kept a Z88 (a 640x64 LCD) from ever being compact. After each fit,
+  `calculateDimensions` reports *hints*: the content needed for the picture at 1x (the
+  minimum, since the fit never drops below 1x) and at the ratio just chosen (the *fit*). The chrome
+  is the viewport minus the room the picture has now, so the toolbar, status bar, keyboard and slot
+  strip are *measured*, and toggling any of them needs no code here. The main process adds page
+  zoom and frame (`common/utils/emu-window-size.ts`, `main/emu-window-sizing.ts`) and uses the hints
+  for the window's minimum, for View | Fit Window to Screen (the fit) and Fit Window to Screen at 1x
+  (the minimum), and for per-machine sizes. Only the width keeps a floor (640, for the toolbar).
+  - **The hints carry the machine ID, and a change of ID is the machine switch.** Main saves the
+    window's normal size for the old machine and restores the new one's
+    (`windowStates.emuMachineSizes`, also written on close). Switch detection lives on the report,
+    not on a store subscription: only the report knows the renderer has laid the new machine out.
+    So the hook re-reports on every `updateScreenDimensions` even when the sizes did not change.
+  - **Hints are debounced.** A switch fits the new picture while the old machine's slot strip is
+    still mounted, then refits. Sending the first fit would size the window for a strip about to go.
+  - Electron sets a minimum but never grows a window already below it, so main grows it, and keeps
+    any grown or restored window inside the display's work area.
+- **Each machine has its own keyboard height** (`emuOptions.keyboardPanelHeights`, falling back to
+  the last height set on any machine). `SplitPanel` takes a changed `initialPrimarySize` as the
+  size to *restore* to as well: a size arriving while the panel is hidden used to be dropped.
+- **A ref-held element that mounts late is invisible to `useResizeObserver`.** The hook depends on
+  `[ref.current]`, read *during* render, so an element that first mounts in that same commit (the
+  Z88 slot strip, set after the machine initializes) is not observed until some later re-render.
+  The fit and the minimum ignored the strip until the user resized. `EmulatorPanel` refits in an
+  effect keyed on the strip's content. Do the same for anything else conditionally rendered into
+  the measured area.
 
 ## Capturing The Mouse Over The Emulator Screen
 

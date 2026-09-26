@@ -73,6 +73,9 @@ import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
 import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
+import { applyEmuContentSizeHints } from "./emu-window-sizing";
+import { emuMachineSizeStore } from "./emu-machine-sizes";
+import type { EmuContentSizeHints } from "@common/utils/emu-window-size";
 import type {
   SjasmplusIntegrationApplyRequest,
   SjasmplusReleaseDownloadRequest,
@@ -945,6 +948,14 @@ class MainMessageProcessor {
     setSettingValue(settingId, value);
   }
 
+  /**
+   * Applies the emulator window's content size hints (issue #1377).
+   * @param hints The sizes, in CSS pixels, and the machine they are for
+   */
+  async setEmuContentSizeHints(hints: EmuContentSizeHints): Promise<void> {
+    applyEmuContentSizeHints(this.window, hints, emuMachineSizeStore);
+  }
+
 
   /**
    * Checks if the ZX Spectrum Next files system has an "autoexec.1st" file.
@@ -1015,6 +1026,12 @@ class MainMessageProcessor {
       return filePath;
     } catch (err) {
       _recordingBackend = null;
+      // --- A recording that produced no file must not end as quietly as one that did (issue #1374)
+      await this.displayMessageBox(
+        "error",
+        "Screen recording failed",
+        `The recording could not be saved.\n\n${(err as Error)?.message ?? err}`
+      );
       return "";
     }
   }

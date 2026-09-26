@@ -792,6 +792,11 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     return this.requireWasmV2Runtime().exports.z88GetScreenHeight();
   }
 
+  /** The glass around the LCD: unlit green, or grey once the LCD was painted off (see `IAnyMachine`) */
+  getScreenSurroundColor(): number {
+    return this.requireWasmV2Runtime().exports.z88GetLcdSurroundColor() >>> 0;
+  }
+
   /** The LCD's pixels: the first width x height words of the core's pixel buffer (no copy) */
   getPixelBuffer(): Uint32Array {
     this.requireWasmV2Runtime();

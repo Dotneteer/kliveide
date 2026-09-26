@@ -149,6 +149,16 @@ static void z88DrawHiResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr)
   }
 }
 
+/*
+ * The colour around the LCD: what the glass shows where no pixel is lit - unlit green, or grey once
+ * the LCD was painted off. The picture has no border of its own, so the renderer pads it with this
+ * colour to keep the display's rounded corners off the pixels (issue #1374). It follows the last
+ * paint, not COM.LCDON, so the surround never disagrees with the picture it frames.
+ */
+uint32_t z88GetLcdSurroundColor(void) {
+  return z88LcdWentOff ? Z88_PX_SCREEN_OFF : Z88_PX_OFF;
+}
+
 static void z88RenderScreenOff(void) {
   const uint32_t words = z88GetScreenWidth() * z88GetScreenHeight();
   for (uint32_t i = 0u; i < words; i++) z88PixelBuffer[i] = Z88_PX_SCREEN_OFF;

@@ -72,6 +72,7 @@ const productionExports = [
   "z88GetSch",
   "z88GetScreenWidth",
   "z88GetScreenHeight",
+  "z88GetLcdSurroundColor",
   // --- Memory and cards
   "z88ReadMemory",
   "z88WriteMemory",

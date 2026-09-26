@@ -319,6 +319,67 @@ describe("Cambridge Z88 WASM machine - reset and power-on", () => {
 });
 
 describe("Cambridge Z88 WASM machine - host behaviour", () => {
+  /*
+   * The core's tact counter is 32 bits and wraps after about 22 minutes. A keystroke queued just
+   * before the wrap used to stay pressed for good - its end tact, computed in JS numbers, stayed
+   * "ahead" of the wrapped counter - and one starting past 2^32 never began, blocking the queue
+   * (issue #1374). The test machine's `tacts` is set to what the core's counter reports.
+   */
+  it("plays a keystroke across the 32-bit tact counter wrap", () => {
+    const machine = new RecordingZ88WasmMachine();
+    const WRAP = 2 ** 32;
+    const start = WRAP - 16384 / 2; // --- half a frame before the wrap
+    machine.tacts = start;
+    machine.queueKeystroke(1, 2, Z88KeyCode.A);
+
+    // --- Pressed from start + 1 frame (past the wrap), released after start + 3 frames
+    machine.tacts = start + 16384 - 1 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([]);
+
+    machine.tacts = start + 16384 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    machine.tacts = start + 3 * 16384 + 1 - WRAP;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+    expect(machine.getKeyQueueLength()).toBe(0);
+  });
+
+  it("plays a keystroke across the signed 2^31 turn the host actually sees", () => {
+    // --- `z88GetTacts` returns an i32, so the host's `tacts` jumps from +2^31 - 1 to -2^31 at 2^31
+    // --- T-states: about 11 minutes at 3.2768 MHz. That, not 2^32, is where the old comparison
+    // --- broke on a running machine.
+    const machine = new RecordingZ88WasmMachine();
+    const reported = (counter: number) => counter | 0;
+    const start = 2 ** 31 - 16384 / 2;
+    machine.tacts = reported(start);
+    machine.queueKeystroke(0, 2, Z88KeyCode.A);
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    machine.tacts = reported(start + 2 * 16384 + 1); // --- negative now
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+    expect(machine.getKeyQueueLength()).toBe(0);
+  });
+
+  it("releases a keystroke pressed before the wrap once the counter has wrapped", () => {
+    const machine = new RecordingZ88WasmMachine();
+    const WRAP = 2 ** 32;
+    const start = WRAP - 3 * 16384;
+    machine.tacts = start;
+    machine.queueKeystroke(0, 2, Z88KeyCode.A);
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`]);
+
+    // --- The end (start + 2 frames) is before the wrap; the counter reads small numbers now
+    machine.tacts = 100;
+    machine.emulateKeystroke();
+    expect(machine.calls).toEqual([`key ${Z88KeyCode.A} down`, `key ${Z88KeyCode.A} up`]);
+  });
+
   it("queues and plays keystrokes (primary, secondary, release)", () => {
     const machine = new RecordingZ88WasmMachine();
     machine.queueKeystroke(1, 2, Z88KeyCode.A, Z88KeyCode.ShiftL);
@@ -397,6 +458,23 @@ describe("Cambridge Z88 WASM machine - keys, audio, picture and sleep reach the 
     expect(second).toBe(first);
     expect(second[0]).toBe(firstSample);
     expect(second.length).toBe(machine.wasmV2Runtime!.exports.z88GetAudioSampleCount());
+  });
+
+  it("the samples keep coming when the 32-bit tact counter wraps (issue #1374)", async () => {
+    // --- 2^32 tacts is about 22 minutes at 1x. Start the schedule just short of the wrap, as it
+    // --- stands after that long a session, and run across it.
+    const machine = (await createHarnessZ88Machine({ audioSampleRate: 44_100 })) as Z88WasmV2Machine;
+    const w = machine.wasmV2Runtime!.exports;
+    w.z88SetTacts(2 ** 32 - 3 * 16_384);
+    w.z88SetAudioSampleRate(44_100, Math.exp((-2 * Math.PI * 1.4) / 44_100));
+    for (let frame = 0; frame < 8; frame++) {
+      machine.executeMachineFrame();
+      const count = w.z88GetAudioSampleCount();
+      expect(count, `frame ${frame}`).toBeGreaterThanOrEqual(220);
+      expect(count, `frame ${frame}`).toBeLessThanOrEqual(221);
+    }
+    expect(w.z88GetTacts(), "the counter did wrap").toBeLessThan(8 * 16_384);
+    expect(w.z88GetAudioOverflows()).toBe(0);
   });
 
   it("the sample rate is handed to the core at reset", async () => {

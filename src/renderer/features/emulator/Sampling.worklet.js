@@ -1,8 +1,15 @@
-// Total ring buffer capacity in frames. Small enough to bound maximum latency.
+/*
+ * A "frame" here is one *burst*: the samples the machine delivers between two sleeps of its
+ * controller. That is one machine frame on most machines, but a Cambridge Z88 runs eight 5 ms frames
+ * back to back and then sleeps 40 ms, so its samples arrive eight frames at a time.
+ * `useEmulatorAudio` passes the burst size. Sized in machine frames, the lag bound below dropped
+ * over half of every Z88 burst and the rest played as short blips between silences (issue #1374).
+ */
+// Total ring buffer capacity in bursts. Small enough to bound maximum latency.
 const FRAMES_BUFFERED = 6;
-// Frames to hold back before playing (at start and after running dry) to absorb scheduling jitter.
+// Bursts to hold back before playing (at start and after running dry) to absorb scheduling jitter.
 const FRAMES_DELAYED = 1;
-// If the buffer fills beyond this many frames, skip ahead to stay in sync.
+// If the buffer fills beyond this many bursts, skip ahead to stay in sync.
 const MAX_LAG_FRAMES = 3;
 // Per-sample decay of the held value while dry: fades any DC level out over a few milliseconds
 // instead of cutting it to zero, which would click.
@@ -46,7 +53,7 @@ class SamplingGenerator extends AudioWorkletProcessor {
 
   /**
    * Initializes sample buffer
-   * @param samplesPerFrame Samples in a single screen frame
+   * @param samplesPerFrame Samples in a single burst (see the header comment); may be fractional
    */
   initSampleBuffer (samplesPerFrame) {
     // Buffer size for stereo: 2 values per sample (left + right)

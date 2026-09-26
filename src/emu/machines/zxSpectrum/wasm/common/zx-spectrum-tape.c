@@ -1,6 +1,14 @@
 // ----------------------------------------------------------------------------
 // Static tape media upload and diagnostics
 
+/*
+ * A tape tact point as the host sees it. A core that rebases its tact counter (see
+ * `sp48ShiftTactOrigin`) defines this to add its epoch; the default is the point itself.
+ */
+#ifndef SP48_EXTERNAL_TACT
+#define SP48_EXTERNAL_TACT(tact) (tact)
+#endif
+
 static void clearTapeFileName(void) {
   for (uint32_t i = 0u; i < SP48_TAPE_FILENAME_CAPACITY; i++) {
     sp48TapeFileName[i] = 0u;
@@ -728,7 +736,7 @@ uint32_t sp48TapeGetCurrentBitMask(void) {
 }
 
 uint32_t sp48TapeGetStartTact(void) {
-  return sp48TapeStartTact;
+  return SP48_EXTERNAL_TACT(sp48TapeStartTact);
 }
 
 uint32_t sp48TapeGetModeChangeCount(void) {
@@ -736,7 +744,7 @@ uint32_t sp48TapeGetModeChangeCount(void) {
 }
 
 uint32_t sp48TapeGetLastModeChangeTact(void) {
-  return sp48TapeLastModeChangeTact;
+  return SP48_EXTERNAL_TACT(sp48TapeLastModeChangeTact);
 }
 
 uint32_t sp48TapeGetLastModeChangePc(void) {
@@ -764,7 +772,7 @@ uint32_t sp48TapeGetSaveMicBit(void) {
 }
 
 uint32_t sp48TapeGetSaveLastMicBitTact(void) {
-  return sp48TapeSaveLastMicBitTact;
+  return SP48_EXTERNAL_TACT(sp48TapeSaveLastMicBitTact);
 }
 
 uint32_t sp48TapeGetSavePilotPulseCount(void) {

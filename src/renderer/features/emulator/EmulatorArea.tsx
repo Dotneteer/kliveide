@@ -6,21 +6,25 @@ import styles from "./EmulatorArea.module.scss";
 import { useLayoutEffect, useRef } from "react";
 import {
   SETTING_EMU_KEYBOARD_HEIGHT,
+  SETTING_EMU_KEYBOARD_HEIGHTS,
   SETTING_EMU_SHOW_KEYBOARD
 } from "@common/settings/setting-const";
 import { useMainApi } from "@renderer/core/MainApi";
 import { incProjectFileVersionAction } from "@common/state/actions";
+import { isHeightMap, keyboardHeightFor } from "./keyboardHeight";
 
 export const EmulatorArea = () => {
   const dispatch = useDispatch();
   const mainApi = useMainApi();
 
   const keyboardVisible = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
-  const keyboardPanelHeight = useGlobalSetting(SETTING_EMU_KEYBOARD_HEIGHT);
+  const lastKeyboardHeight = useGlobalSetting(SETTING_EMU_KEYBOARD_HEIGHT);
+  const keyboardHeights = useGlobalSetting(SETTING_EMU_KEYBOARD_HEIGHTS);
 
   let api = useRef<KeyboardApi>();
 
   const machineType = useSelector((s) => s.emulatorState?.machineId);
+  const keyboardPanelHeight = keyboardHeightFor(keyboardHeights, machineType, lastKeyboardHeight);
 
   return (
     <div className={styles.emulatorArea}>
@@ -32,6 +36,13 @@ export const EmulatorArea = () => {
         minSize={120}
         onPrimarySizeUpdateCompleted={(size: string) => {
           (async () => {
+            // --- Kept for this machine, and as the starting height for machines not yet adjusted
+            if (machineType) {
+              await mainApi.setGlobalSettingsValue(SETTING_EMU_KEYBOARD_HEIGHTS, {
+                ...(isHeightMap(keyboardHeights) ? keyboardHeights : {}),
+                [machineType]: size
+              });
+            }
             await mainApi.setGlobalSettingsValue(SETTING_EMU_KEYBOARD_HEIGHT, size);
             dispatch(incProjectFileVersionAction());
           })();

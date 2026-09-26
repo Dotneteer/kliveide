@@ -50,14 +50,14 @@ const Z88_MODELS: MachineModel[] = [
   {
     // Default Intel 4S5 chip type for 512K image file, default 512K RAM for slot 0, default UK KB Layout
     modelId: "OZ50",
-    displayName: "Cambridge Z88 (OZ v5.0 r1f99aaae)",
+    displayName: "Cambridge Z88 (OZ v5.0B Int.)",
     config: {
       [MC_Z88_INTRAM]: 0x1f, // 512K
-      [MC_Z88_INTROM]: "z88v50-r1f99aaae",
+      [MC_Z88_INTROM]: "z88v50b",
       [MC_Z88_SLOT0]: {
         size: 512,
         cardType: "AMDF29F040B",
-        file: "z88v50-r1f99aaae"
+        file: "z88v50b"
       }
     }
   },

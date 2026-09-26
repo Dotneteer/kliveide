@@ -1,9 +1,13 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { MemorySectionType } from "@abstractions/MemorySection";
 import {
   parseZ88PartitionLabel,
   resolveZ88KeyboardLayout,
+  resolveZ88RomName,
+  Z88_DEFAULT_ROM,
   Z88_BASE_CLOCK_FREQUENCY,
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY,
@@ -51,6 +55,21 @@ describe("z88MachineInfo", () => {
     [42, "uk"]
   ])("keyboard layout %s resolves to %s", (configured, expected) => {
     expect(resolveZ88KeyboardLayout(configured)).toBe(expected);
+  });
+
+  it.each([
+    ["z88v50-r1f99aaae", "z88v50b"],
+    ["z88v50b", "z88v50b"],
+    ["z88v47", "z88v47"],
+    ["/Users/me/roms/custom.rom", "/Users/me/roms/custom.rom"],
+    ["toString", "toString"],
+    [undefined, undefined]
+  ])("ROM name %s resolves to %s", (configured, expected) => {
+    expect(resolveZ88RomName(configured)).toBe(expected);
+  });
+
+  it("the default ROM is bundled", () => {
+    expect(existsSync(join(__dirname, "../../src/public/roms", `${Z88_DEFAULT_ROM}.rom`))).toBe(true);
   });
 
   it("names all 256 banks with two hex digits", () => {

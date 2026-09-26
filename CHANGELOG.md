@@ -2,8 +2,54 @@
 
 ## Unreleased
 
+### Changes
+
+- **New Cambridge Z88 OZ v5.0 beta ROM** (#1376). The `OZ50` model now runs the V5.0B international
+  ROM built in September 2026, replacing the 2023 build, and the Machine menu lists it as
+  "Cambridge Z88 (OZ v5.0B Int.)". Existing projects that use this model load the new ROM.
+
 ### Fixes
 
+- **Host cursor keys did nothing on the Cambridge Z88** (#1374). The joystick key bindings took the
+  arrow keys, right Shift, right Ctrl, `\` and NumpadEnter on every machine, not just the ZX Spectrum
+  Next. They now belong to the emulated keyboard on any machine without joystick connectors, which
+  also restores the ZX Spectrum's arrow keys and the Z88's two-Shift sleep/wake from the keyboard.
+- **Choppy Cambridge Z88 sound** (#1374). The Z88 delivers its sound in 40 ms bursts of eight short
+  frames, and the audio buffer, sized for a single frame, dropped over half of every burst. The
+  beeper and the 3200 Hz tone now play smoothly again. The Z88 also no longer goes silent after
+  about 22 minutes of running.
+- **Queued keys could stick after about 10 minutes of running** (#1374), on the Cambridge Z88, the
+  ZX Spectrum 48/128/+3E and the ZX Spectrum Next. These are the keys the on-screen keyboard and
+  code injection type. A key queued as the machine's cycle counter passed 2^31 stayed pressed for
+  good, or never started and blocked every key after it. That point comes after about 10 minutes
+  at 3.5 MHz (11 on the Z88), and after 80 seconds on a Next running at 28 MHz.
+- **The ZX Spectrum 48, 128 and +3E froze after about 20 minutes of running** (#1374). When the
+  machine's 32-bit cycle counter wrapped, the frame loop stopped running instructions and the
+  machine hung for good. The cores now keep their internal counter well away from the wrap, and
+  the counter the IDE shows carries on as before.
+- **The Cambridge Z88 keyboard could go dead under OZ 4.7** (#1374). With Keyclick on, a key press in
+  the Index moved the highlight once, then no key worked while the machine kept running. The
+  emulated Z80 had an NMOS chip quirk the Z88's CMOS Z80 does not have, and OZ 4.7 read it as
+  "interrupts off". The Z88 now emulates the CMOS behaviour; the ZX Spectrum machines are unchanged.
+- **The Cambridge Z88 screen lost its corner pixels** to the emulator display's rounded corners
+  (#1374). The LCD now sits in a narrow surround in its own colour: unlit green, or grey while the
+  LCD is off. The display's 1px frame also no longer hides one pixel on each edge of every machine's
+  picture. Z88 screen recordings carry the same surround (4 pixels), so a player that rounds its
+  window's corners no longer clips the LCD either.
+- **The Cambridge Z88 never switched itself off** after the Panel's idle timeout (#1374). Two faults
+  in the emulated real-time clock hid the passing minutes from OZ 4.7 and OZ 5.0. Both now go into
+  coma on time, as OZ 4.0 already did.
+- **Screen recording never produced a file in the installed app** (#1374), on any machine. The app
+  looked for its bundled FFmpeg inside the app archive, where it cannot run, and only an empty
+  `KliveExports/video` folder was left. A recording that fails now says why, instead of ending as
+  if it had worked.
+- **Cambridge Z88 recordings had the wrong sound** (#1374): a beep recorded as a dull thump. The
+  recorder took each frame's sound only after the next frames had already overwritten it, so
+  every 40 ms of recorded audio repeated the same 5 ms slice. Recordings now carry exactly what
+  the speaker plays.
+- **Half-fps recordings lost half their sound**, on every machine. The audio of each skipped video
+  frame was thrown away, so 2 seconds of video carried about 1 second of squeezed-together audio.
+  All of the audio is now kept.
 - **ZX Spectrum Next panels showed stale data.** On the standard (WASM) Next the Palettes panel and
   the sprite editor's palette showed power-on colours whatever a program had written, the ULA & I/O
   panel read values the emulator never updated, and the Memory Mapping panel showed logical instead of

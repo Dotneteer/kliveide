@@ -8,7 +8,7 @@ import type { MessengerBase } from "@common/messaging/MessengerBase";
 
 import { IMemorySection } from "@abstractions/MemorySection";
 import { createMainApi } from "@common/messaging/MainApi";
-import { EmulatedKeyStroke } from "@emu/structs/EmulatedKeyStroke";
+import { EmulatedKeyStroke, laterTact, tactsPast, toTactCounter } from "@emu/structs/EmulatedKeyStroke";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
 import { spectrumKeyMappings } from "@emu/machines/zxSpectrum/SpectrumKeyMappings";
 import { Z80MachineBase } from "../Z80MachineBase";
@@ -163,10 +163,11 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
     // --- Check the next keystroke
     const keyStroke = this.emulatedKeyStrokes[0];
 
-    // --- Time has not come
-    if (keyStroke.startTact > this.tacts) return;
+    // --- Time has not come. The core's tact counter is 32 bits and wraps, so both points are
+    // --- compared by their distance from it, never by value (issue #1374).
+    if (tactsPast(this.tacts, keyStroke.startTact) < 0) return;
 
-    if (keyStroke.endTact < this.tacts) {
+    if (tactsPast(this.tacts, keyStroke.endTact) > 0) {
       // --- End emulation of this very keystroke
       this.setKeyStatus(keyStroke.primaryCode, false);
       if (keyStroke.secondaryCode !== undefined) {
@@ -202,8 +203,9 @@ export abstract class ZxNextWasmHost extends Z80MachineBase {
     // --- expires unplayed (`.plans/CSPECT_DIFFERENTIAL_DEBUGGING_PLAN.md` §15.12).
     const queue = this.emulatedKeyStrokes;
     const lastEndTact = queue.length > 0 ? queue[queue.length - 1].endTact : this.tacts;
-    const startTact = Math.max(this.tacts, lastEndTact) + frameOffset * tactsPerFrame;
-    const endTact = startTact + frames * tactsPerFrame;
+    // --- In the 32-bit counter's range, as the core reports the tacts that reach them
+    const startTact = toTactCounter(laterTact(this.tacts, lastEndTact) + frameOffset * tactsPerFrame);
+    const endTact = toTactCounter(startTact + frames * tactsPerFrame);
     queue.push(new EmulatedKeyStroke(startTact, endTact, primary, secondary));
   }
 

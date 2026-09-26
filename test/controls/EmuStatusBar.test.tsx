@@ -22,7 +22,7 @@ const mockFrameCompleted = {
 const mockController = {
   frameCompleted: mockFrameCompleted,
   frameStats: { lastFrameTimeInMs: 0, avgFrameTimeInMs: 0, frameCount: 0 },
-  machine: { baseClockFrequency: 3_500_000 }
+  machine: { baseClockFrequency: 3_500_000, pc: 0x8000 }
 };
 
 vi.mock("@renderer/core/useMachineController", () => ({
@@ -79,5 +79,62 @@ describe("EmuStatusBar — Step 1.4: frameCompleted listener cleanup", () => {
     const subscribedFn = mockFrameCompleted.on.mock.calls[0][0];
     const unsubscribedFn = mockFrameCompleted.off.mock.calls[0][0];
     expect(subscribedFn).toBe(unsubscribedFn);
+  });
+});
+
+/*
+ * Issue #1377: the frame times, frame count and PC are debugging aids that change every few frames.
+ * They can be switched off; the machine name and clock frequency stay.
+ */
+describe("EmuStatusBar — performance info", () => {
+  it("shows the frame stats and PC by default", async () => {
+    let container: HTMLElement;
+    await act(async () => {
+      ({ container } = renderWithProviders(<EmuStatusBar show={true} />));
+    });
+    expect(container.textContent).toContain("PC:");
+    expect(container.textContent).toContain("8000");
+    expect(container.textContent).toContain("MHz");
+  });
+
+  it("hides them, keeping the clock frequency, when switched off", async () => {
+    let container: HTMLElement;
+    await act(async () => {
+      ({ container } = renderWithProviders(
+        <EmuStatusBar show={true} showPerformanceInfo={false} />
+      ));
+    });
+    expect(container.textContent).not.toContain("PC:");
+    expect(container.textContent).not.toContain("8000");
+    expect(container.textContent).toContain("MHz");
+  });
+
+  it("does not re-render on frames while the stats are hidden", async () => {
+    mockFrameCompleted.on.mockClear();
+    let container: HTMLElement;
+    await act(async () => {
+      ({ container } = renderWithProviders(
+        <EmuStatusBar show={true} showPerformanceInfo={false} />
+      ));
+    });
+    const handler = mockFrameCompleted.on.mock.calls[0][0];
+    // --- The handler copies `controller.frameStats` whenever it updates the display
+    const stats = mockController.frameStats;
+    const reads = vi.fn(() => stats);
+    Object.defineProperty(mockController, "frameStats", { get: reads, configurable: true });
+    try {
+      await act(async () => {
+        handler({});
+        handler(undefined);
+      });
+    } finally {
+      Object.defineProperty(mockController, "frameStats", {
+        value: stats,
+        writable: true,
+        configurable: true
+      });
+    }
+    expect(reads).not.toHaveBeenCalled();
+    expect(container.textContent).not.toContain("PC:");
   });
 });

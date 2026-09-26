@@ -8,10 +8,20 @@ import {
 } from "@common/settings/setting-const";
 import { normalizeZoomStep, snapToZoomStep } from "@common/settings/zoom-steps";
 import {
+  emuContentSizeForPicture,
+  sameSize,
+  type EmuContentSizeHints
+} from "@common/utils/emu-window-size";
+import {
   applyScanlineEffectToCanvas,
   getScanlineDarkening,
   type ScanlineIntensity
 } from "./scanlineEffect";
+
+/**
+ * How long the layout must be still before the window size hints are sent (see `scheduleHints`)
+ */
+export const HINTS_SETTLE_DELAY = 60;
 
 export function useEmulatorScreen(
   /*
@@ -31,7 +41,15 @@ export function useEmulatorScreen(
    * held back here rather than guessed at: the strip's size follows its own type and spacing, and
    * a constant would go stale the first time either changes.
    */
-  reservedElement?: MutableRefObject<HTMLElement | undefined | null>
+  reservedElement?: MutableRefObject<HTMLElement | undefined | null>,
+  /*
+   * Receives the window content this machine needs, in CSS pixels (issue #1377): the minimum (the
+   * picture at 1x) and the fit (the picture at its current zoom step, no slack). Called only when
+   * they change, and once more for every machine, so the main process can tell machines apart.
+   * The panel forwards them to the main process: they are the window's minimum size, the size
+   * View | Fit Window to Screen picks, and what restores each machine's own window size.
+   */
+  onContentSizeHintsChanged?: (hints: EmuContentSizeHints) => void
 ) {
   const scanlineEffect = useGlobalSetting(SETTING_EMU_SCANLINE_EFFECT);
   /*
@@ -49,6 +67,12 @@ export function useEmulatorScreen(
   const xRatio = useRef(1);
   const yRatio = useRef(1);
   const hostRectangle = useRef<DOMRect>();
+  // --- Held in a ref so a new callback identity does not rebuild the sizing callbacks
+  const hintsListener = useRef(onContentSizeHintsChanged);
+  hintsListener.current = onContentSizeHintsChanged;
+  const lastHints = useRef<EmuContentSizeHints | null>(null);
+  const pendingHints = useRef<EmuContentSizeHints | null>(null);
+  const hintsTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const screenRectangle = useRef<DOMRect>();
 
   const imageBuffer = useRef<ArrayBuffer>();
@@ -59,6 +83,21 @@ export function useEmulatorScreen(
   const screenImageDataRef = useRef<ImageData | null>(null);
   const directScreenImageDataRef = useRef<ImageData | null>(null);
   const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  /*
+   * The display box around the canvas, and the surround a borderless picture gets inside it.
+   *
+   * The display has rounded corners and clips to them. A Spectrum's picture carries its own
+   * emulated border, so the clip only ever takes border pixels; a Cambridge Z88's LCD is picture to
+   * the edge, and lost its corner pixels (issue #1374). A machine that reports
+   * `getScreenSurroundColor` is padded by the display's own corner radius - the one amount that
+   * keeps the curve off the picture at any radius - in the colour it reports.
+   */
+  const displayElement = useRef<HTMLDivElement>(null);
+  const [hasSurround, setHasSurround] = useState(false);
+  const hasSurroundRef = useRef(false);
+  /** The colour last painted; `null` means "not painted for this machine yet", forcing the next paint */
+  const surroundColor = useRef<number | undefined | null>(null);
 
   useEffect(() => {
     currentScanlineEffect.current = (scanlineEffect || "off") as ScanlineIntensity;
@@ -74,6 +113,35 @@ export function useEmulatorScreen(
     directScreenImageDataRef.current = null;
     tempCanvasRef.current = null;
   }, []);
+
+  /*
+   * Sends the hints once the layout has settled. A machine switch fits the new picture while the
+   * old machine's tool strip is still mounted, then refits when the strip changes; reporting the
+   * first fit would size the window for a strip that is about to go. Only the last hints within
+   * the delay are sent, and only if they differ from the last ones sent.
+   */
+  const scheduleHints = useCallback((hints: EmuContentSizeHints): void => {
+    pendingHints.current = hints;
+    clearTimeout(hintsTimer.current);
+    hintsTimer.current = setTimeout(() => {
+      const next = pendingHints.current;
+      const last = lastHints.current;
+      pendingHints.current = null;
+      if (!next) return;
+      if (
+        last &&
+        last.machineId === next.machineId &&
+        sameSize(last.minimum, next.minimum) &&
+        sameSize(last.fit, next.fit)
+      ) {
+        return;
+      }
+      lastHints.current = next;
+      hintsListener.current?.(next);
+    }, HINTS_SETTLE_DELAY);
+  }, []);
+
+  useEffect(() => () => clearTimeout(hintsTimer.current), []);
 
   const calculateDimensions = useCallback((): void => {
     if (!screenArea?.current || !screenElement?.current) return;
@@ -110,6 +178,22 @@ export function useEmulatorScreen(
       pad(hostStyle?.paddingTop) -
       pad(hostStyle?.paddingBottom) -
       reservedHeight;
+    /*
+     * The surround sits inside the display box, around the canvas, so it is space the picture
+     * cannot have. It is the display's `--radius-md` padding (`.surround` in the stylesheet), read
+     * from the token rather than repeated here, and read from the screen area because the class
+     * may not be on the display yet: this runs as the machine changes, before React re-renders.
+     */
+    const surround = hasSurroundRef.current
+      ? pad(getComputedStyle(host).getPropertyValue("--radius-md"))
+      : 0;
+    // --- The display is `content-box`: its bezel border lies outside the canvas too
+    const display = displayElement.current;
+    const displayStyle = display instanceof Element ? getComputedStyle(display) : undefined;
+    const frameWidth =
+      2 * surround + pad(displayStyle?.borderLeftWidth) + pad(displayStyle?.borderRightWidth);
+    const frameHeight =
+      2 * surround + pad(displayStyle?.borderTopWidth) + pad(displayStyle?.borderBottomWidth);
     const width = shadowCanvasWidth.current ?? 1;
     const height = shadowCanvasHeight.current ?? 1;
     /*
@@ -125,9 +209,9 @@ export function useEmulatorScreen(
      * ones and quarter steps as halves. What the user sees stepping is this ratio, so this is what
      * has to sit on the ladder.
      */
-    let widthRatio = snapToZoomStep(clientWidth, width * xRatio.current, zoomStep);
+    let widthRatio = snapToZoomStep(clientWidth - frameWidth, width * xRatio.current, zoomStep);
     if (widthRatio < 1) widthRatio = 1;
-    let heightRatio = snapToZoomStep(clientHeight, height * yRatio.current, zoomStep);
+    let heightRatio = snapToZoomStep(clientHeight - frameHeight, height * yRatio.current, zoomStep);
     if (heightRatio < 1) heightRatio = 1;
     const ratio = Math.min(widthRatio, heightRatio);
     /*
@@ -137,10 +221,54 @@ export function useEmulatorScreen(
      */
     setCanvasWidth(Math.round(width * ratio * xRatio.current));
     setCanvasHeight(Math.round(height * ratio * yRatio.current));
-  }, [reservedElement, screenArea, zoomStep]);
+
+    /*
+     * What the window needs for this picture (issue #1377): at 1x (the minimum, since the ratio
+     * above never drops below 1) and at the ratio just chosen (the fit). Skipped while the area
+     * has no layout (hidden, or not yet laid out), or before the machine has reported its screen
+     * size, as either would report a meaningless size.
+     */
+    const hostWidth = host.clientWidth || host.offsetWidth;
+    const hostHeight = host.clientHeight || host.offsetHeight;
+    if (hintsListener.current && hostWidth > 0 && hostHeight > 0 && width > 1 && height > 1) {
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const available = { width: clientWidth - frameWidth, height: clientHeight - frameHeight };
+      // --- The slot-card strip may be wider than the picture; it must fit too
+      const reservedWidth = reserved ? reserved.offsetWidth - frameWidth : 0;
+      const pictureAt = (scale: number) => ({
+        // --- Rounded up, so the fit is never a fraction short of the rung it was taken at
+        width: Math.max(Math.ceil(width * scale * xRatio.current), reservedWidth),
+        height: Math.ceil(height * scale * yRatio.current)
+      });
+      scheduleHints({
+        machineId: controllerRef.current?.machine?.machineId,
+        minimum: emuContentSizeForPicture(viewport, available, pictureAt(1)),
+        fit: emuContentSizeForPicture(viewport, available, pictureAt(ratio))
+      });
+    }
+  }, [controllerRef, reservedElement, scheduleHints, screenArea, zoomStep]);
+
+  /**
+   * Paints the surround in the machine's current colour, touching the DOM only when it changes.
+   * Called for every picture shown, because the colour is the machine's and can change with it
+   * (the Z88's LCD turns grey when it is off).
+   */
+  const syncSurroundColor = useCallback((): void => {
+    const color = controllerRef.current?.machine?.getScreenSurroundColor?.();
+    const element = displayElement.current;
+    if (color === surroundColor.current || !element) return;
+    surroundColor.current = color;
+    element.style.backgroundColor = color === undefined ? "" : abgrToCssColor(color);
+  }, [controllerRef]);
 
   const updateScreenDimensions = useCallback((): void => {
     const ctrl = controllerRef.current;
+    const surround = typeof ctrl?.machine?.getScreenSurroundColor === "function";
+    hasSurroundRef.current = surround;
+    setHasSurround(surround);
+    // --- A new machine: paint (or clear) whatever the last one left, even if the value is "none"
+    surroundColor.current = null;
+    syncSurroundColor();
     shadowCanvasWidth.current = ctrl?.machine?.screenWidthInPixels;
     shadowCanvasHeight.current = ctrl?.machine?.screenHeightInPixels;
     if (ctrl?.machine?.getAspectRatio) {
@@ -152,8 +280,11 @@ export function useEmulatorScreen(
       yRatio.current = 1;
     }
     configureScreen();
+    // --- Report this machine's hints even if they equal the last machine's: the main process
+    // --- restores each machine's own window size when the machine in the hints changes
+    lastHints.current = null;
     calculateDimensions();
-  }, [calculateDimensions, configureScreen, controllerRef]);
+  }, [calculateDimensions, configureScreen, controllerRef, syncSurroundColor]);
 
   const renderWithoutScanlines = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -202,6 +333,7 @@ export function useEmulatorScreen(
   }, []);
 
   const displayScreenData = useCallback((): void => {
+    syncSurroundColor();
     if (!pixelData.current) return;
     const screenEl = screenElement.current;
     if (!screenEl) return;
@@ -273,7 +405,7 @@ export function useEmulatorScreen(
     } else {
       renderWithScanlines(screenCtx, screenEl, screenImageData, tempCanvas, scanlineIntensity);
     }
-  }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines]);
+  }, [controllerRef, getTempCanvas, renderWithScanlines, renderWithoutScanlines, syncSurroundColor]);
 
   const onAvailableSpaceChanged = useCallback(() => {
     calculateDimensions();
@@ -292,6 +424,8 @@ export function useEmulatorScreen(
 
   return {
     screenElement,
+    displayElement,
+    hasSurround,
     canvasWidth,
     canvasHeight,
     imageBuffer8,
@@ -302,4 +436,11 @@ export function useEmulatorScreen(
     calculateDimensions,
     updateScreenDimensions
   };
+}
+
+/**
+ * A pixel-buffer colour as CSS: the words are ABGR, so their bytes read R, G, B, A in memory order.
+ */
+export function abgrToCssColor(color: number): string {
+  return `rgb(${color & 0xff}, ${(color >>> 8) & 0xff}, ${(color >>> 16) & 0xff})`;
 }

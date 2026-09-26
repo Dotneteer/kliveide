@@ -194,6 +194,8 @@ static uint16_t spp3eRenderingAttributeAddress[SPP3E_TACTS_PER_FRAME];
 static uint32_t spp3eRenderingPixelIndex[SPP3E_TACTS_PER_FRAME];
 static uint32_t spp3eFrames;
 static uint32_t spp3eTacts;
+/* What the host's tact counter is ahead of the internal one (see `spp3eShiftTactOrigin`) */
+static uint32_t spp3eTactEpoch;
 static uint32_t spp3eNextFrameStartTact;
 static uint32_t spp3eTotalContentionDelaySinceStart;
 static uint32_t spp3eContentionDelaySincePause;
@@ -1703,6 +1705,49 @@ static void spp3eBeginMachineFrame(void) {
   spp3eCpuFrameSliceInstructions = 0u;
 }
 
+/*
+ * The tact counter's origin: see `sp48ShiftTactOrigin` in the ZX Spectrum 48 core, which this
+ * mirrors (issue #1374). At 2^32 T-states the frame loop's `frameEndTact` wrapped while the counter
+ * did not, and the machine stopped for good. Once a frame starts past SPP3E_TACT_REBASE_THRESHOLD,
+ * every absolute tact point - the PSG's clock included - moves back by that frame's start, and the
+ * epoch the exports add back keeps the host's counter continuous.
+ */
+#define SPP3E_TACT_REBASE_THRESHOLD 0x40000000u
+
+/* Moves every absolute tact point back by `amount` (forward when negative) */
+static void spp3eShiftTactOrigin(int64_t amount) {
+  const uint32_t by = (uint32_t)amount;
+  const double byDouble = (double)amount;
+  spp3eTacts -= by;
+  cpu.tacts -= by;
+  spp3eNextFrameStartTact -= by;
+  spp3eBorderFrameStartTact -= by;
+  spp3eAudioNextSampleTact -= byDouble;
+  spp3eAudioNextSampleTactFloor = spp3eAudioNextSampleTact >= 4294967295.0
+    ? 0xffffffffu
+    : (uint32_t)spp3eAudioNextSampleTact;
+  spp3eAudioLastLevelChangeTact -= by;
+  spp3eAudioSampleWindowStartTact -= byDouble;
+  for (uint32_t i = 0u; i < spp3eAudioTransitionCount; i++) spp3eAudioTransitionTacts[i] -= by;
+  spp3eEarBitChangedFrom0Tacts -= by;
+  spp3eEarBitChangedFrom1Tacts -= by;
+  spp3eTapeStartTact -= by;
+  spp3eTapeLastModeChangeTact -= by;
+  spp3eTapeSaveLastMicBitTact -= by;
+  sp128PsgNextClockTact -= by;
+  sp128PsgLastAccumulationTact -= byDouble;
+}
+
+/* Test hook: as if `amount` tacts passed with nothing happening (see `sp48TestAdvanceTacts`) */
+void spp3eTestAdvanceTacts(uint32_t amount) {
+  spp3eShiftTactOrigin(-(int64_t)amount);
+}
+
+/* Test hook: what the host counter is ahead of the internal one */
+uint32_t spp3eTestGetTactEpoch(void) {
+  return spp3eTactEpoch;
+}
+
 static void spp3eCompleteMachineFrame(void) {
   if (spp3eFrameCompleted == 0u) {
     return;
@@ -1713,6 +1758,11 @@ static void spp3eCompleteMachineFrame(void) {
   spp3eFrames++;
   spp3eCpuFrameSliceInstructions = 0u;
   spp3eFdcOnFrameCompleted();
+  if (spp3eNextFrameStartTact >= SPP3E_TACT_REBASE_THRESHOLD) {
+    const uint32_t rebase = spp3eNextFrameStartTact;
+    spp3eShiftTactOrigin(rebase);
+    spp3eTactEpoch += rebase;
+  }
 }
 
 void spp3eReset(void) {
@@ -1720,6 +1770,7 @@ void spp3eReset(void) {
   z80Reset();
   spp3eFrames = 0;
   spp3eTacts = 0;
+  spp3eTactEpoch = 0u;
   spp3eNextFrameStartTact = 0u;
   spp3eTotalContentionDelaySinceStart = 0u;
   spp3eContentionDelaySincePause = 0u;
@@ -1770,9 +1821,14 @@ uint32_t spp3eExecuteFrame(void) {
   spp3eHasMemoryEvent = 0u;
   z80ClearBusEvents();
 
+  /*
+   * The frame's completion ends the loop as well as its end tact: a completion that rebases the
+   * counter moves it back below the end tact computed here (see `sp48ExecuteFrame`).
+   */
   const uint32_t frameEndTact = spp3eNextFrameStartTact + spp3eTactsInFrame;
   while (spp3eTacts < frameEndTact) {
     spp3eExecuteInstruction();
+    if (spp3eFrameCompleted != 0u) break;
   }
   spp3eCaptureBusEvents = 1u;
   return 0;
@@ -2264,12 +2320,12 @@ int32_t spp3eGetPsgCurrentOutput(void) {
 }
 uint32_t spp3eGetTactsInFrame(void) { return spp3eTactsInFrame; }
 uint32_t spp3eGetFrames(void) { return spp3eFrames; }
-uint32_t spp3eGetTacts(void) { return spp3eTacts; }
+uint32_t spp3eGetTacts(void) { return spp3eTacts + spp3eTactEpoch; }
 uint32_t spp3eGetCurrentFrameTact(void) { return spp3eUlaCurrentFrameTact(); }
 uint32_t spp3eGetFrameCompleted(void) { return spp3eFrameCompleted; }
 void spp3eSetTacts(uint32_t value) {
-  spp3eTacts = value;
-  z80SetTacts(value);
+  spp3eTacts = value - spp3eTactEpoch;
+  z80SetTacts(spp3eTacts);
   spp3eSetNextAudioSample();
 }
 uint32_t spp3eGetSelectedRom(void) { return spp3eSelectedRom; }
@@ -2311,7 +2367,7 @@ uint32_t spp3eGetCpuInstructionsExecuted(void) { return spp3eCpuInstructionsExec
 uint32_t spp3eGetCpuFrameSliceInstructions(void) { return spp3eCpuFrameSliceInstructions; }
 uint32_t spp3eGetInterruptsRaised(void) { return spp3eInterruptsRaised; }
 uint32_t spp3eGetInterruptLineActive(void) { return spp3eInterruptLineActive; }
-uint32_t spp3eGetCpuTacts(void) { return z80GetTacts(); }
+uint32_t spp3eGetCpuTacts(void) { return z80GetTacts() + spp3eTactEpoch; }
 uint32_t spp3eGetCpuAf(void) { return z80GetAf(); }
 void spp3eSetCpuAf(uint32_t value) { z80SetAf(value); }
 uint32_t spp3eGetCpuAfAlt(void) { return z80GetAfAlt(); }

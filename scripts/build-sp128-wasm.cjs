@@ -73,6 +73,9 @@ const productionExports = [
   "sp128GetFirstVisibleLine",
   "sp128GetFirstVisibleBorderTact",
   "sp128SetTacts",
+  // --- Test hooks: move the tact origin, to reach the counter's rebase quickly
+  "sp128TestAdvanceTacts",
+  "sp128TestGetTactEpoch",
   "sp128GetNextFrameStartTact",
   "sp128GetFrameCompleted",
   "sp128GetSelectedRom",

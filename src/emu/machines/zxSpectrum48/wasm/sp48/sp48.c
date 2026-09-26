@@ -147,6 +147,12 @@ static uint8_t sp48TapeSaveData[SP48_TAPE_SAVE_DATA_CAPACITY];
 
 static uint32_t sp48Frames;
 static uint32_t sp48Tacts;
+/*
+ * What the host's tact counter is ahead of the internal one (see `sp48ShiftTactOrigin`). Every
+ * export that hands out or takes an absolute tact adds or removes it, so the host sees one
+ * continuous 32-bit counter, as before.
+ */
+static uint32_t sp48TactEpoch;
 static uint32_t sp48TactsInFrame = SP48_TACTS_PER_FRAME_PAL;
 static uint32_t sp48ClockMultiplier = 1u;
 static uint32_t sp48TargetClockMultiplier = 1u;
@@ -392,6 +398,7 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"
+#define SP48_EXTERNAL_TACT(tact) ((uint32_t)((tact) + sp48TactEpoch))
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"
 
 // ----------------------------------------------------------------------------
@@ -433,6 +440,44 @@ static void beginMachineFrame(void) {
   sp48CpuFrameSliceInstructions = 0u;
 }
 
+/*
+ * The tact counter's origin.
+ *
+ * The counter is 32 bits, and the frame loop, the frame position, the beeper's sample schedule and
+ * the PSG compare absolute tact points by value (`sp48Tacts < frameEndTact`, doubles against the
+ * counter). At the 2^32 wrap - about 20 minutes at 3.5 MHz - `frameEndTact` wrapped to a small
+ * number while the counter did not, and the machine stopped for good: no instruction ran, no frame
+ * completed (issue #1374).
+ *
+ * So the counter never gets there. Once a frame starts past SP48_TACT_REBASE_THRESHOLD, every
+ * absolute tact point moves back by that frame's start, and the epoch keeps what was taken off.
+ * Differences between points (a tape pulse's length, a sample window) are unchanged, and so is
+ * everything the host sees: the exports add the epoch back.
+ */
+#define SP48_TACT_REBASE_THRESHOLD 0x40000000u
+
+/* Moves every absolute tact point back by `amount` (forward when negative) */
+static void sp48ShiftTactOrigin(int64_t amount) {
+  const uint32_t by = (uint32_t)amount;
+  const double byDouble = (double)amount;
+  sp48Tacts -= by;
+  cpu.tacts -= by;
+  sp48NextFrameStartTact -= by;
+  sp48BorderFrameStartTact -= by;
+  sp48AudioNextSampleTact -= byDouble;
+  sp48AudioNextSampleTactFloor = sp48AudioNextSampleTact >= 4294967295.0
+    ? 0xffffffffu
+    : (uint32_t)sp48AudioNextSampleTact;
+  sp48AudioLastLevelChangeTact -= by;
+  sp48AudioSampleWindowStartTact -= byDouble;
+  for (uint32_t i = 0u; i < sp48AudioTransitionCount; i++) sp48AudioTransitionTacts[i] -= by;
+  sp48EarBitChangedFrom0Tacts -= by;
+  sp48EarBitChangedFrom1Tacts -= by;
+  sp48TapeStartTact -= by;
+  sp48TapeLastModeChangeTact -= by;
+  sp48TapeSaveLastMicBitTact -= by;
+}
+
 static void completeMachineFrame(void) {
   if (sp48FrameCompleted == 0u) {
     return;
@@ -441,6 +486,25 @@ static void completeMachineFrame(void) {
   renderUlaUntilCurrentTact();
   sp48NextFrameStartTact += sp48TactsInCurrentFrame;
   sp48Frames++;
+  if (sp48NextFrameStartTact >= SP48_TACT_REBASE_THRESHOLD) {
+    const uint32_t rebase = sp48NextFrameStartTact;
+    sp48ShiftTactOrigin(rebase);
+    sp48TactEpoch += rebase;
+  }
+}
+
+/*
+ * Test hook: as if `amount` tacts passed with nothing happening - every absolute point moves
+ * forward. With the threshold at 2^30, a test reaches the rebase (and, over a few, the host
+ * counter's 2^31 and 2^32 edges) in a handful of frames instead of 20 minutes.
+ */
+void sp48TestAdvanceTacts(uint32_t amount) {
+  sp48ShiftTactOrigin(-(int64_t)amount);
+}
+
+/* Test hook: what the host counter is ahead of the internal one */
+uint32_t sp48TestGetTactEpoch(void) {
+  return sp48TactEpoch;
 }
 
 void sp48Reset(void) {
@@ -452,6 +516,7 @@ void sp48Reset(void) {
   resetPortFe();
   sp48Frames = 0u;
   sp48Tacts = 0u;
+  sp48TactEpoch = 0u;
   sp48ClockMultiplier = 1u;
   sp48TactsInCurrentFrame = sp48TactsInFrame;
   sp48DiagnosticFlags = 0u;
@@ -484,9 +549,15 @@ uint32_t sp48ExecuteFrame(void) {
   sp48HasMemoryEvent = 0u;
   z80ClearBusEvents();
 
+  /*
+   * The frame's completion ends the loop as well as its end tact: the instruction that reaches the
+   * end tact is the one that completes the frame, and a completion that rebases the counter (see
+   * `sp48ShiftTactOrigin`) moves the counter back below the end tact computed here.
+   */
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
+    if (sp48FrameCompleted != 0u) break;
   }
   sp48CaptureBusEvents = 1u;
   return 0u;
@@ -580,7 +651,7 @@ void sp48ResetContentionCounters(void) {
 }
 
 void sp48SetTacts(uint32_t value) {
-  sp48Tacts = value;
+  sp48Tacts = value - sp48TactEpoch;
 }
 
 // ----------------------------------------------------------------------------
@@ -666,7 +737,7 @@ uint32_t sp48GetFrames(void) {
 }
 
 uint32_t sp48GetTacts(void) {
-  return sp48Tacts;
+  return sp48Tacts + sp48TactEpoch;
 }
 
 uint32_t sp48GetCurrentFrameTact(void) {
@@ -734,7 +805,7 @@ uint32_t sp48GetContentionDelaySincePause(void) {
 }
 
 uint32_t sp48GetNextFrameStartTact(void) {
-  return sp48NextFrameStartTact;
+  return sp48NextFrameStartTact + sp48TactEpoch;
 }
 
 uint32_t sp48GetFrameCompleted(void) {
@@ -758,7 +829,7 @@ uint32_t sp48GetCpuFrameSliceInstructions(void) {
 }
 
 uint32_t sp48GetCpuTacts(void) {
-  return z80GetTacts();
+  return z80GetTacts() + sp48TactEpoch;
 }
 
 uint32_t sp48GetCpuAf(void) {

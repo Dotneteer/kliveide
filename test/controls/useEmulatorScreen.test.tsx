@@ -190,4 +190,229 @@ describe("useEmulatorScreen", () => {
       expect(canvasWidth).toBe(480);
     });
   });
+
+  /*
+   * A picture with no border of its own (issue #1374).
+   *
+   * The display's rounded corners clipped the Cambridge Z88 LCD's corner pixels: its 640x64 buffer
+   * is picture to the edge. A machine that reports `getScreenSurroundColor` gets the display's
+   * corner radius as padding, in that colour, and the fit leaves room for it.
+   */
+  describe("a machine that reports a surround colour", () => {
+    const LCD_UNLIT = 0xffb9e0d2; // --- the Z88 core's unlit pixel, ABGR
+    const LCD_OFF = 0xffa0a0a0;
+
+    const renderLcd = async (hostWidth: number, surround: boolean) => {
+      vi.doMock("@renderer/core/RendererProvider", () => ({
+        useGlobalSetting: (id: string) => (id === "emuOptions.zoomStep" ? 1 : "off")
+      }));
+      vi.doMock("@renderer/core/useResizeObserver", () => ({
+        useResizeObserver: vi.fn()
+      }));
+      let color = LCD_UNLIT;
+      const machine: Record<string, unknown> = {
+        getBufferStartOffset: () => 0,
+        getPixelBuffer: () => new Uint32Array(640 * 64),
+        screenHeightInPixels: 64,
+        screenWidthInPixels: 640
+      };
+      if (surround) machine.getScreenSurroundColor = () => color;
+      const controller: { machine: Record<string, unknown> } = { machine };
+
+      const hostDiv = document.createElement("div");
+      hostDiv.style.setProperty("--radius-md", "6px");
+      Object.defineProperty(hostDiv, "offsetWidth", { value: hostWidth });
+      Object.defineProperty(hostDiv, "offsetHeight", { value: 4000 });
+      document.body.appendChild(hostDiv);
+
+      const { useEmulatorScreen } = await import("@renderer/features/emulator/useEmulatorScreen");
+      const { result } = renderHook(() =>
+        useEmulatorScreen(
+          { current: hostDiv } as unknown as MutableRefObject<HTMLDivElement>,
+          { current: controller } as any
+        )
+      );
+      const display = document.createElement("div");
+      result.current.displayElement.current = display;
+      result.current.screenElement.current = document.createElement("canvas");
+      act(() => {
+        result.current.updateScreenDimensions();
+      });
+      return { result, display, controller, setColor: (c: number) => (color = c) };
+    };
+
+    it("keeps the padding out of the fit", async () => {
+      // --- 1284px holds 2x (1280) of a bare picture, but not 2x plus 6px on each side
+      const bare = await renderLcd(1284, false);
+      expect(bare.result.current.canvasWidth).toBe(1280);
+      expect(bare.result.current.hasSurround).toBe(false);
+
+      vi.resetModules();
+      const padded = await renderLcd(1284, true);
+      expect(padded.result.current.canvasWidth).toBe(640);
+      expect(padded.result.current.hasSurround).toBe(true);
+
+      vi.resetModules();
+      expect((await renderLcd(1292, true)).result.current.canvasWidth).toBe(1280);
+    });
+
+    it("paints the surround in the machine's colour and follows it", async () => {
+      const { result, display, setColor } = await renderLcd(1400, true);
+      expect(display.style.backgroundColor).toBe("rgb(210, 224, 185)");
+
+      // --- The LCD switched off: the next picture shown brings the surround along
+      setColor(LCD_OFF);
+      act(() => result.current.displayScreenData());
+      expect(display.style.backgroundColor).toBe("rgb(160, 160, 160)");
+    });
+
+    it("clears the surround when the next machine has its own border", async () => {
+      // --- Found in the running app: switching from the Z88 to a Spectrum left the LCD green behind
+      // --- the Spectrum's picture, showing in its rounded corners
+      const { result, display, controller } = await renderLcd(1400, true);
+      expect(display.style.backgroundColor).toBe("rgb(210, 224, 185)");
+
+      controller.machine = {
+        getBufferStartOffset: () => 0,
+        getPixelBuffer: () => new Uint32Array(352 * 288),
+        screenHeightInPixels: 288,
+        screenWidthInPixels: 352
+      };
+      act(() => result.current.updateScreenDimensions());
+      expect(display.style.backgroundColor).toBe("");
+      expect(result.current.hasSurround).toBe(false);
+    });
+
+    it("leaves a machine with its own border alone", async () => {
+      const { display } = await renderLcd(1400, false);
+      expect(display.style.backgroundColor).toBe("");
+    });
+  });
+
+  /*
+   * The window's size hints (issue #1377).
+   *
+   * The window was held at 640x480 for every machine, so a Z88 (a 640x64 LCD) could not be made
+   * compact. The hook reports what the window needs: whatever of the viewport is not the picture's
+   * room, plus the picture at 1x (the minimum) and at the current ratio (the fit).
+   */
+  describe("the window size hints it reports", () => {
+    const Z88 = {
+      machineId: "z88",
+      getBufferStartOffset: () => 0,
+      getPixelBuffer: () => new Uint32Array(640 * 64),
+      screenHeightInPixels: 64,
+      screenWidthInPixels: 640
+    };
+    const SP48 = {
+      machineId: "sp48",
+      getBufferStartOffset: () => 0,
+      getPixelBuffer: () => new Uint32Array(352 * 296),
+      screenHeightInPixels: 296,
+      screenWidthInPixels: 352
+    };
+
+    const render = async (
+      opts: {
+        machine?: Record<string, unknown>;
+        host?: { width: number; height: number };
+        strip?: { width: number; height: number };
+      } = {}
+    ) => {
+      vi.useFakeTimers();
+      vi.doMock("@renderer/core/RendererProvider", () => ({
+        useGlobalSetting: (id: string) => (id === "emuOptions.zoomStep" ? 1 : "off")
+      }));
+      vi.doMock("@renderer/core/useResizeObserver", () => ({
+        useResizeObserver: vi.fn()
+      }));
+      const controller = { machine: (opts.machine ?? Z88) as Record<string, unknown> };
+      const hostDiv = document.createElement("div");
+      Object.defineProperty(hostDiv, "offsetWidth", { value: opts.host?.width ?? 700 });
+      Object.defineProperty(hostDiv, "offsetHeight", { value: opts.host?.height ?? 300 });
+      document.body.appendChild(hostDiv);
+      let stripRef: MutableRefObject<HTMLElement> | undefined;
+      if (opts.strip) {
+        const strip = document.createElement("div");
+        Object.defineProperty(strip, "offsetWidth", { value: opts.strip.width });
+        Object.defineProperty(strip, "offsetHeight", { value: opts.strip.height });
+        stripRef = { current: strip };
+      }
+      // --- jsdom's viewport
+      vi.spyOn(window, "innerWidth", "get").mockReturnValue(1024);
+      vi.spyOn(window, "innerHeight", "get").mockReturnValue(768);
+
+      const onHints = vi.fn();
+      const { useEmulatorScreen, HINTS_SETTLE_DELAY } = await import(
+        "@renderer/features/emulator/useEmulatorScreen"
+      );
+      const { result } = renderHook(() =>
+        useEmulatorScreen(
+          { current: hostDiv } as unknown as MutableRefObject<HTMLDivElement>,
+          { current: controller } as any,
+          stripRef,
+          onHints
+        )
+      );
+      result.current.screenElement.current = document.createElement("canvas");
+      const settle = () => act(() => vi.advanceTimersByTime(HINTS_SETTLE_DELAY + 1));
+      act(() => result.current.updateScreenDimensions());
+      settle();
+      return { result, onHints, controller, settle };
+    };
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("is the chrome plus the picture at 1x, for the minimum and the fit alike at 1x", async () => {
+      // --- 1024x768 viewport, 700x300 for the picture: 324x468 of chrome, plus 640x64
+      const { onHints } = await render();
+      expect(onHints).toHaveBeenCalledTimes(1);
+      expect(onHints).toHaveBeenCalledWith({
+        machineId: "z88",
+        minimum: { width: 964, height: 532 },
+        fit: { width: 964, height: 532 }
+      });
+    });
+
+    it("fits the current zoom step, not 1x, when the window holds more", async () => {
+      // --- 800x700 holds a 352x296 Spectrum picture at 2x (704x592)
+      const { onHints } = await render({ machine: SP48, host: { width: 800, height: 700 } });
+      expect(onHints).toHaveBeenCalledWith({
+        machineId: "sp48",
+        minimum: { width: 640, height: 364 },
+        fit: { width: 928, height: 660 }
+      });
+    });
+
+    it("keeps room for the slot-card strip, and its width when that is wider", async () => {
+      const { onHints } = await render({ strip: { width: 800, height: 40 } });
+      expect(onHints.mock.calls[0][0].minimum).toEqual({ width: 1124, height: 572 });
+    });
+
+    it("reports only when the hints change, and only once the layout settles", async () => {
+      const { result, onHints, settle } = await render();
+      act(() => result.current.calculateDimensions());
+      settle();
+      expect(onHints).toHaveBeenCalledTimes(1);
+
+      // --- Several fits in a row send only the last
+      act(() => {
+        result.current.calculateDimensions();
+        result.current.calculateDimensions();
+      });
+      expect(onHints).toHaveBeenCalledTimes(1);
+    });
+
+    it("reports again for a new machine, even when its sizes are the same", async () => {
+      const { result, onHints, controller, settle } = await render({ machine: SP48 });
+      controller.machine = { ...SP48, machineId: "sp128" };
+      act(() => result.current.updateScreenDimensions());
+      settle();
+      expect(onHints).toHaveBeenCalledTimes(2);
+      expect(onHints.mock.calls[1][0].machineId).toBe("sp128");
+      expect(onHints.mock.calls[1][0].minimum).toEqual(onHints.mock.calls[0][0].minimum);
+    });
+  });
 });

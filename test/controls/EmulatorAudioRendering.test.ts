@@ -3,6 +3,7 @@ import { createTestZxNextWasmMachine } from "../wasm/zxNext/wasm-next-test-helpe
 import { renderMachineAudioFrame } from "@renderer/features/emulator/audioFrameRendering";
 import { AudioRenderer } from "@renderer/features/emulator/AudioRenderer";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
+import { createZ88Session } from "../harness/z88";
 
 describe("emulator audio frame rendering", () => {
   it("passes real non-zero ZX Next TurboSound samples from the machine to the renderer", async () => {
@@ -49,6 +50,74 @@ describe("emulator audio frame rendering", () => {
     expect(recorder.submitAudioSamples).toHaveBeenCalledWith(samples);
     expect(rendererSamples[0].some(isNonZeroSample)).toBe(true);
     expect(recorderSamples[0].some(isNonZeroSample)).toBe(true);
+  });
+
+  it("records each frame's samples even when the machine reuses its sample objects", async () => {
+    // --- The Cambridge Z88 reuses its sample objects, and its eight-frame burst runs the next
+    // --- frames while `play()` is pending. The recorder used to see the last frame's values for
+    // --- every frame (issue #1374).
+    const shared: AudioSample[] = [
+      { left: 0.5, right: 0.5 },
+      { left: -0.5, right: -0.5 }
+    ];
+    const machine = { getAudioSamples: () => shared };
+    const recorded: number[][] = [];
+    const renderer = {
+      storeSamples: vi.fn(),
+      play: vi.fn(async () => {
+        // --- The next frame overwrites the objects before this frame's await resumes
+        shared[0].left = shared[0].right = 0;
+        shared[1].left = shared[1].right = 0;
+      })
+    };
+    const recorder = {
+      submitAudioSamples: vi.fn(async (samples: AudioSample[]) => {
+        recorded.push(samples.map((sample) => sample.left));
+      })
+    };
+
+    await renderMachineAudioFrame(machine, renderer, 1, recorder);
+
+    expect(recorded).toEqual([[0.5, -0.5]]);
+  });
+
+  it("records a Cambridge Z88 beep as the speaker plays it, through an eight-frame burst", async () => {
+    // --- The real core and the controller's pattern: eight frames back to back, each handing its
+    // --- samples over without the burst waiting for the hand-off to finish (issue #1374)
+    const s = await createZ88Session({ audioSampleRate: 44_100 });
+    await s.loadCode(`
+      .org $8000
+start: ld a,$04           ; COM.RAMS, as loadCode maps it; SRUN clear, so SBIT drives the speaker
+beep:  xor $40            ; toggle SBIT
+      out ($b0),a
+      ld b,60
+wait:  djnz wait
+      jr beep
+    `, { entry: "start" });
+    s.runFrames(2);
+
+    const played: number[] = [];
+    const recorded: number[] = [];
+    const renderer = {
+      storeSamples: (samples: AudioSample[]) => played.push(...samples.map((x) => x.left)),
+      play: () => Promise.resolve()
+    };
+    const recorder = {
+      submitAudioSamples: async (samples: AudioSample[]) => {
+        recorded.push(...samples.map((x) => x.left));
+      }
+    };
+    const handOffs: Promise<unknown>[] = [];
+    for (let frame = 0; frame < 8; frame++) {
+      s.machine.executeMachineFrame();
+      handOffs.push(renderMachineAudioFrame(s.machine, renderer, 1, recorder));
+    }
+    await Promise.all(handOffs);
+
+    // --- A square wave: plenty of level changes, and the recording is the very same signal
+    expect(played.length).toBeGreaterThan(8 * 200);
+    expect(new Set(played.map((v) => v.toFixed(3))).size).toBeGreaterThan(20);
+    expect(recorded).toEqual(played);
   });
 
   it("posts non-zero interleaved float samples to the audio worklet", () => {

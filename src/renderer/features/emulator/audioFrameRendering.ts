@@ -23,7 +23,17 @@ export async function renderMachineAudioFrame(
     return [];
   }
 
-  const samples = sampleGetter.call(machine).slice();
+  /*
+   * A snapshot of the *values*, taken before the first await.
+   *
+   * A machine may reuse its sample objects from frame to frame (the Cambridge Z88 does), and the
+   * controller runs `uiFrameFrequency` frames back to back without yielding - eight on the Z88. The
+   * speaker got each frame's samples synchronously, but the recorder got them after `play()`, by
+   * which time every frame of the burst had been overwritten by the last one. A copy of the array
+   * alone (`slice()`) kept those shared objects, so a recorded beep was one 5 ms slice repeated: a
+   * thump instead of the tone (issue #1374).
+   */
+  const samples = sampleGetter.call(machine).map(({ left, right }) => ({ left, right }));
   audioRenderer.storeSamples(samples, soundLevel);
   await audioRenderer.play();
   await recordingManager?.submitAudioSamples?.(samples);
