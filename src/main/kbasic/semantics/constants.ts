@@ -12,7 +12,10 @@ export type ConstValue =
   | { kind: "fixed"; raw: number }
   | { kind: "float"; value: Float40 }
   | { kind: "string"; value: string }
-  /** An address the assembler resolves: `@label`, `@global`, `@array(1, 2)`. */
+  /**
+   * An address the assembler resolves: `@global`, `@array` (its descriptor), `label:x` for `@x` of
+   * a label, `array:a` for the data of array `a` (`@a(1, 2)` is that plus the element's offset).
+   */
   | { kind: "address"; symbol: string; offset: number };
 
 export type Constant = {
@@ -103,7 +106,7 @@ export function constantText(c: Constant): string {
     case "string":
       return JSON.stringify(v.value);
     case "address":
-      return `@${v.symbol}${v.offset ? `+${v.offset}` : ""}`;
+      return `@${v.symbol.startsWith("array:") ? `${v.symbol.slice(6)}.data` : v.symbol}${v.offset ? `+${v.offset}` : ""}`;
     default:
       return String(numericValue(c));
   }

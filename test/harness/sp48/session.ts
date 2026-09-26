@@ -108,11 +108,12 @@ export class Sp48TestSession {
     for (const s of segments) this.poke(s.startAddress, s.emittedCode);
 
     const symbol = (name: string): number => {
-      // --- getSymbol does not follow dotted module names: walk the nested modules for "core.X"
+      // --- getSymbol does not follow dotted module names: walk the nested modules for "core.X"; a
+      // --- dotted name of the program's own (`_a.data`) is a symbol as it is
       const parts = name.split(".");
       let module: Pick<Sp48Program["output"], "getSymbol" | "getNestedModule"> | undefined = output;
       for (const part of parts.slice(0, -1)) module = module?.getNestedModule(part);
-      const s = module?.getSymbol(parts[parts.length - 1]);
+      const s = module?.getSymbol(parts[parts.length - 1]) ?? output.getSymbol(name);
       if (!s?.value) throw new Error(`Unknown symbol '${name}'`);
       return s.value.value as number;
     };

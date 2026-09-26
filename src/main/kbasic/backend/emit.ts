@@ -74,7 +74,11 @@ function dropJumpsToNext(fn: LirLine[]): LirLine[] {
 function dataLines(d: DataItem): string[] {
   switch (d.kind) {
     case "var":
-      if (d.init) return [`${d.label}:`, `    .defb ${d.init.join(",")}`];
+      if (d.init) {
+        const out = [`${d.label}:`];
+        for (let i = 0; i < d.init.length; i += 16) out.push(`    .defb ${d.init.slice(i, i + 16).join(",")}`);
+        return out;
+      }
       return [`${d.label}:`, `    .defs ${d.size}`];
     case "string": {
       const codes = [...d.text].map((c) => c.charCodeAt(0) & 0xff);
@@ -84,5 +88,7 @@ function dataLines(d: DataItem): string[] {
     }
     case "raw":
       return [`${d.label}:`, ...d.lines];
+    case "equ":
+      return [`${d.label} .equ ${d.value}`];
   }
 }

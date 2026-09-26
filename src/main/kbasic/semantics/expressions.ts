@@ -674,7 +674,8 @@ export class ExpressionBinder {
       if (element.kind !== "element") return this.errorExpr(span, "UInteger");
       const constantIndex = element.indices.every((i) => i.constant?.value.kind === "int");
       const offset = constantIndex && symbol.storage === "global" && !symbol.param ? this.elementOffset(symbol, element.indices) : undefined;
-      return make({ kind: "element", symbol, indices: element.indices }, offset !== undefined ? address(symbol.name, offset) : undefined);
+      // --- `array:a` is the array's data; a bare `@a` below is its descriptor (runtime-abi.md §2.3)
+      return make({ kind: "element", symbol, indices: element.indices }, offset !== undefined ? address(`array:${symbol.name}`, offset) : undefined);
     }
     if (target.kind !== "name") {
       this.error("E302", "Expected a name after '@'", target.span);

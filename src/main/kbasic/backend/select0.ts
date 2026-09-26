@@ -2,6 +2,7 @@ import {
   COMPARISONS,
   isSignedM,
   regClassOf,
+  symText,
   type BinOp,
   type Block,
   type Instr,
@@ -49,6 +50,11 @@ const RUNTIME_ARGS: Record<string, string[]> = {
   /** StrStore when the variable's address was computed before the value (a BYREF String). */
   "core.StrStore!addressFirst": ["de", "hl"],
   "core.Free": ["hl"],
+  "core.ArrayAlloc": ["hl"],
+  "core.ArrayFreeStrings": ["hl", "bc"],
+  "core.ArrayInit": ["hl", "de", "bc"],
+  "core.ArrayLBound": ["hl", "de"],
+  "core.ArrayUBound": ["hl", "de"],
   "core.PrintComma": [],
   "core.PrintNewline": [],
   "core.PrintReset": [],
@@ -525,6 +531,11 @@ class Selector {
   // Runtime calls
 
   private rtcall(name: string, args: Value[], dst: VReg | undefined): void {
+    if (name === "core.ArrayAddress") {
+      this.arrayAddress(args);
+      if (dst) this.produce(dst);
+      return;
+    }
     const regs = RUNTIME_ARGS[name];
     if (!regs) throw new CodegenError(`No register contract for ${name}`);
     // --- "core.X!variant" is core.X with its arguments in another evaluation order
@@ -559,6 +570,17 @@ class Selector {
     }
     this.emit(`call ${this.rt(routine)}`);
     if (dst) this.produce(dst);
+  }
+
+  /**
+   * ArrayAddress takes its indices on the stack, the first pushed first, and the descriptor in HL
+   * (arrays.kz80.asm): the arguments are the indices then the descriptor, every one a word vreg, so
+   * the stack machine has them exactly there. The routine removes the indices.
+   */
+  private arrayAddress(args: Value[]): void {
+    if (args.some((a) => a.kind !== "vreg" || regClassOf(a.type) !== "r16")) throw new CodegenError("ArrayAddress takes word vregs");
+    this.take(args);
+    this.emit(`ld a,${args.length - 1}`, `call ${this.rt("core.ArrayAddress")}`);
   }
 
   /** Copies the accumulator of a class to a register. */
@@ -643,6 +665,6 @@ function ixd(d: number): string {
 
 function immText(v: Value): string {
   if (v.kind === "imm") return String(v.type === "bool" ? v.value & 1 : v.value);
-  if (v.kind === "sym") return v.offset ? `${v.name}+${v.offset}` : v.name;
+  if (v.kind === "sym") return symText(v);
   throw new CodegenError("A vreg is not an immediate");
 }

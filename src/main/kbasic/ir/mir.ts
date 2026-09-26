@@ -172,7 +172,9 @@ export type MFunction = {
 export type DataItem =
   | { kind: "var"; label: string; size: number; init?: number[] }
   | { kind: "string"; label: string; text: string }
-  | { kind: "raw"; label: string; lines: string[] };
+  | { kind: "raw"; label: string; lines: string[] }
+  /** A label for a fixed address (`DIM ... AT`). */
+  | { kind: "equ"; label: string; value: string };
 
 /** One statement (or statement part) for the debugger. */
 export type StatementEntry = {
@@ -198,6 +200,11 @@ export function vregText(v: Value): string {
     case "imm":
       return `${v.value}`;
     case "sym":
-      return `@${v.name}${v.offset ? `+${v.offset}` : ""}`;
+      return `@${symText(v)}`;
   }
+}
+
+/** A symbol with its offset, as assembly text (`_a.data`, `_a.data+4`, `_a.data-2`). */
+export function symText(v: SymRef): string {
+  return v.offset > 0 ? `${v.name}+${v.offset}` : v.offset < 0 ? `${v.name}${v.offset}` : v.name;
 }
