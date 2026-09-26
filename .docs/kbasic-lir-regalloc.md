@@ -120,7 +120,7 @@ Properties that matter:
 | --- | --- |
 | main program | none; the baseline SP is stored by the prologue in `core.ProgramSP` (`mainBaselineSymbol`) |
 | STDCALL SUB/FUNCTION | `push ix; ld ix,0; add ix,sp`; locals, hidden locals (FOR limits, the result slot) and spill slots below IX, zeroed at entry; `prologue.end` after the zeroing |
-| FASTCALL | none, and no locals (spec `subprograms.conventions`). The first parameter arrives in its register; if the body needs it after something clobbers that register, instruction selection keeps it on the stack within the statement. Further parameters are on the stack above the return address, and the routine removes them itself. |
+| FASTCALL | **Implementation (Phase 3):** the same IX frame as STDCALL, built inside the routine. The first parameter, which arrives in A or HL, is pushed as the frame's first slot (`(ix-1)` / `(ix-2)`); further parameters are at `(ix+4)`… as for STDCALL, and the epilogue removes them. Callers see exactly the FASTCALL ABI (register parameter, IX preserved, arguments removed by the routine); only the inside changed, so parameters and hidden slots are addressed one way. Locals stay forbidden (E431), as the spec says. |
 
 The epilogue (`_name.leave`, plan §8.4 naming) frees local Strings, by-value String parameters and
 local arrays (string note), keeps the result in its registers using the alternate set if needed

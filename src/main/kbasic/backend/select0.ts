@@ -70,6 +70,7 @@ class Selector {
     this.acc = undefined;
     this.stack = [];
     this.out.push(label(b.label, b.instrs[0]?.sid ?? b.term?.sid ?? -1));
+    if (b === this.fn.blocks[0] && this.fn.kind !== "main") this.prologue();
     for (const i of b.instrs) {
       this.sid = i.sid;
       this.instruction(i);
@@ -186,8 +187,14 @@ class Selector {
       case "rtcall":
         this.rtcall(i.name, i.args, i.dst);
         return;
+      case "addr":
+        this.addr(i.dst, i.slot);
+        return;
+      case "call":
+        this.call(i);
+        return;
       default:
-        throw new CodegenError(`Level 0 cannot select '${i.op}' yet`);
+        throw new CodegenError(`Level 0 cannot select '${(i as { op: string }).op}' yet`);
     }
   }
 
@@ -224,7 +231,13 @@ class Selector {
       this.produce(dst);
       return;
     }
-    throw new CodegenError("Frame slots are not supported yet");
+    // --- A frame slot
+    this.spill();
+    const d = (slot as { offset: number }).offset;
+    if (cls === "r8") this.emit(`ld a,${ixd(d)}`);
+    else if (cls === "r16") this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`);
+    else throw new CodegenError(`Cannot load a ${dst.type} yet`);
+    this.produce(dst);
   }
 
   private store(type: MType, slot: Slot, src: Value): void {
@@ -252,7 +265,80 @@ class Selector {
       } else throw new CodegenError(`Cannot store a ${type} yet`);
       return;
     }
-    throw new CodegenError("Frame slots are not supported yet");
+    // --- A frame slot
+    const [place] = this.take([src]);
+    const d = (slot as { offset: number }).offset;
+    if (cls === "r8") this.emit(place === "acc" ? `ld ${ixd(d)},a` : `ld ${ixd(d)},${place}`);
+    else if (cls === "r16") {
+      if (place !== "acc") this.loadImmediate(type, place);
+      this.emit(`ld ${ixd(d)},l`, `ld ${ixd(d + 1)},h`);
+    } else throw new CodegenError(`Cannot store a ${type} yet`);
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Frames and calls (.docs/kbasic-lir-regalloc.md §6)
+
+  /**
+   * STDCALL and FASTCALL alike: `push ix; ld ix,0; add ix,sp`, then the frame below IX, zeroed. A
+   * FASTCALL routine's register parameter is pushed first, so it is the frame's first slot.
+   */
+  private prologue(): void {
+    this.sid = -1;
+    this.emit("push ix", "ld ix,0", "add ix,sp");
+    let size = this.fn.frameSize;
+    if (this.fn.registerParam) {
+      this.emit(regClassOf(this.fn.registerParam) === "r8" ? "push af" : "push hl");
+      size -= 2;
+    }
+    const words = Math.ceil(Math.max(0, size) / 2);
+    if (words > 0) {
+      this.emit("ld hl,0");
+      if (words <= 4) for (let i = 0; i < words; i++) this.emit("push hl");
+      else {
+        const loop = this.local();
+        this.emit(`ld b,${words}`);
+        this.placeLabel(loop);
+        this.emit("push hl", `djnz ${loop}`);
+      }
+    }
+    if (this.fn.frameSize > 127) throw new CodegenError(`The frame of ${this.fn.name} is larger than 127 bytes`);
+  }
+
+  /** The epilogue's end: the result stays in A / HL; IX restored, the arguments removed, return. */
+  private epilogue(value: Value | undefined): void {
+    if (value) {
+      const [place] = this.take([value]);
+      if (place !== "acc") this.loadImmediate(value.type, place);
+    }
+    this.emit("ld sp,ix", "pop ix");
+    if (this.fn.argBytes) {
+      // --- The alternate set keeps HL (a result) intact; AF is not touched
+      this.emit("exx", "pop bc", `ld hl,${this.fn.argBytes}`, "add hl,sp", "ld sp,hl", "push bc", "exx");
+    }
+    this.emit("ret");
+  }
+
+  private addr(dst: VReg, slot: Slot): void {
+    this.spill();
+    const fixed = this.fixedAddress(slot);
+    if (fixed !== undefined) this.emit(`ld hl,${fixed}`);
+    else if (slot.kind === "frame") this.emit("push ix", "pop hl", `ld de,${slot.offset}`, "add hl,de");
+    else throw new CodegenError("The address of a pointer slot is the pointer itself");
+    this.produce(dst);
+  }
+
+  /** A user call: arguments are vregs evaluated last first, so they are on the stack in ABI order. */
+  private call(i: Extract<Instr, { op: "call" }>): void {
+    if (i.args.length) {
+      this.take([...i.args].reverse());
+      // --- The first argument is in the accumulator: STDCALL pushes it too, FASTCALL keeps it there
+      if (i.convention === "stdcall") {
+        const cls = regClassOf(i.args[0].type);
+        this.emit(cls === "r8" ? "push af" : "push hl");
+      }
+    } else this.spill();
+    this.out.push(instr(`call ${i.target}`, this.sid, i.site));
+    if (i.dst) this.produce(i.dst);
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -506,7 +592,8 @@ class Selector {
         this.emit(`jp ${t.next}`);
         return;
       case "ret":
-        this.emit("ret");
+        if (this.fn.kind === "main") this.emit("ret");
+        else this.epilogue(t.value);
         return;
       case "end": {
         const [place] = this.take([t.code]);
@@ -527,6 +614,11 @@ class Selector {
       }
     }
   }
+}
+
+/** `(ix+d)` / `(ix-d)`. */
+function ixd(d: number): string {
+  return d < 0 ? `(ix-${-d})` : `(ix+${d})`;
 }
 
 function immText(v: Value): string {

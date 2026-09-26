@@ -138,7 +138,8 @@ export type Terminator = { sid: number } & (
   | { op: "gosub"; target: string; next: string; site: CallSite }
   /** ON ... GOSUB: the compiler's own dispatch, so each target is a recorded call. */
   | { op: "ongosub"; sel: Value; targets: string[]; next: string; site: CallSite }
-  | { op: "ret" }
+  /** From a routine (through its epilogue, with the FUNCTION's result), or from a GOSUB. */
+  | { op: "ret"; value?: Value }
   | { op: "end"; code: Value }
   | { op: "raise"; code: Value }
 );
@@ -157,8 +158,10 @@ export type MFunction = {
   /** Locals (user and hidden) below IX; `frameSize` bytes in all. */
   locals: FrameSlot[];
   frameSize: number;
-  /** Bytes of arguments the callee removes at its return (STDCALL). */
+  /** Bytes of arguments on the stack, which the routine removes when it returns. */
   argBytes: number;
+  /** FASTCALL: the first parameter arrives in A / HL and is pushed as the frame's first slot. */
+  registerParam?: MType;
   returnType?: MType;
   blocks: Block[];
   /** The shared epilogue's label (`_name.leave`). */

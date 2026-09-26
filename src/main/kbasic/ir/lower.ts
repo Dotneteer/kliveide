@@ -1,15 +1,16 @@
 import type { StatementKind } from "@abstractions/CompilerInfo";
 import type { DiagnosticBag, Span } from "../diagnostics";
 import type { AttrName } from "../syntax/ast";
-import type { BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
+import type { BoundArgument, BoundExpr, BoundProgram, BoundStatement } from "../semantics/bound";
 import type { Constant } from "../semantics/constants";
-import type { LabelSymbol, Scope, VariableSymbol } from "../semantics/symbols";
+import type { ArraySymbol, LabelSymbol, RoutineSymbol, Scope, VariableSymbol } from "../semantics/symbols";
 import {
   COMPARISONS,
   mtypeOf,
   mtypeSize,
   type BinOp,
   type Block,
+  type CallSite,
   type DataItem,
   type Imm,
   type Instr,
@@ -60,6 +61,12 @@ class Lowering {
   private loops: LoopTargets[] = [];
   private readonly strings = new Map<string, string>();
   private readonly staticSlots: DataItem[] = [];
+  /** The current routine's variables: where each parameter and local lives. */
+  private frameSlots = new Map<VariableSymbol | ArraySymbol, { slot: Slot; byref: boolean }>();
+  private routine: RoutineSymbol | undefined;
+  private resultSlot: Slot | undefined;
+  /** The call sites of the current statement, to fill in `moreCallsFollow` when it ends. */
+  private statementCalls: CallSite[] = [];
 
   constructor(private readonly diagnostics: DiagnosticBag) {}
 
@@ -68,12 +75,11 @@ class Lowering {
     this.fn = { label: "_main", name: "main", kind: "main", convention: "stdcall", params: [], locals: [], frameSize: 0, argBytes: 0, blocks: [] };
     this.module.functions.push(this.fn);
     this.startBlock("_main");
-    this.statements(program.statements.filter((s) => s.kind !== "routine"));
+    this.statements(program.statements);
     // --- Falling off the end of the main program is END 0
+    this.endStatement();
     this.terminate({ op: "end", code: imm("u16", 0), sid: -1 });
-    for (const s of program.statements) {
-      if (s.kind === "routine") this.unsupported("SUB and FUNCTION", s.span);
-    }
+    for (const s of routinesOf(program.statements)) this.lowerRoutine(s);
     this.module.data.push(...this.staticSlots);
     return this.module;
   }
@@ -103,6 +109,7 @@ class Lowering {
 
   /** A hidden variable: a frame slot in a routine, a static one in the main program. */
   private hiddenSlot(type: MType, what: string): Slot {
+    if (this.routine) return this.allocateLocal(type);
     const label = `__${what}${this.labels++}`;
     this.staticSlots.push({ kind: "var", label, size: mtypeSize(type) });
     return { kind: "global", name: label };
@@ -145,9 +152,16 @@ class Lowering {
 
   /** Starts a statement (or statement part): a new sid with its span, and its entry marker. */
   private beginStatement(span: Span, kind: StatementKind): void {
+    this.endStatement();
     this.sid = this.module.statements.length;
     this.module.statements.push({ sid: this.sid, span, kind, functionIndex: this.fnIndex });
     this.emit({ op: "stmt", sid: this.sid });
+  }
+
+  /** Marks every user call of the statement but its last as followed by more calls (plan §10.2.3). */
+  private endStatement(): void {
+    this.statementCalls.forEach((site, i) => (site.moreCallsFollow = i < this.statementCalls.length - 1));
+    this.statementCalls = [];
   }
 
   private unsupported(what: string, span: Span): void {
@@ -234,8 +248,13 @@ class Lowering {
       }
       case "return":
         this.beginStatement(s.span, "return");
-        if (s.value) this.unsupported("RETURN with a value", s.span);
-        this.terminate({ op: "ret", sid: this.sid });
+        if (this.routine) {
+          if (s.value && this.resultSlot) {
+            const type = mtypeOf(this.routine.returnType ?? "Float");
+            this.emit({ op: "store", type, slot: this.resultSlot, src: this.value(s.value), sid: this.sid });
+          }
+          this.terminate({ op: "jmp", target: this.fn.epilogue!, sid: this.sid });
+        } else this.terminate({ op: "ret", sid: this.sid });
         return;
       case "end":
         this.beginStatement(s.span, "return");
@@ -271,6 +290,10 @@ class Lowering {
         return;
       case "routine":
         return;
+      case "call":
+        this.beginStatement(s.span, "call");
+        this.call(s.routine, s.args, undefined);
+        return;
       default:
         this.unsupported(`${s.kind.toUpperCase()}`, s.span);
     }
@@ -293,8 +316,13 @@ class Lowering {
 
   private variableSlot(symbol: VariableSymbol, span: Span): Slot | undefined {
     if (symbol.storage !== "global") {
-      this.unsupported("Local variables and parameters", span);
-      return undefined;
+      const local = this.frameSlots.get(symbol);
+      if (!local) {
+        this.unsupported(`The local '${symbol.name}'`, span);
+        return undefined;
+      }
+      // --- A BYREF parameter holds the address of the caller's variable
+      return local.byref ? { kind: "deref", ptr: this.load("ptr", local.slot) } : local.slot;
     }
     if (symbol.at) {
       const v = symbol.at.value;
@@ -494,6 +522,150 @@ class Lowering {
   }
 
   // ===============================================================================================
+  // Routines (.docs/kbasic-mir.md §8.8, .docs/kbasic-lir-regalloc.md §6)
+
+  private allocateLocal(type: MType): Slot {
+    const size = mtypeSize(type);
+    this.fn.frameSize += size;
+    return { kind: "frame", offset: -this.fn.frameSize };
+  }
+
+  private lowerRoutine(s: Extract<BoundStatement, { kind: "routine" }>): void {
+    const r = s.routine;
+    const fastcall = r.convention === "FASTCALL";
+    const returnType = r.kind === "function" ? mtypeOf(r.returnType ?? "Float") : undefined;
+    this.fn = {
+      label: globalName(r.name),
+      name: r.name,
+      kind: r.kind,
+      convention: fastcall ? "fastcall" : "stdcall",
+      params: [],
+      locals: [],
+      frameSize: 0,
+      argBytes: 0,
+      ...(returnType ? { returnType } : {}),
+      blocks: [],
+      epilogue: `${globalName(r.name)}.leave`
+    };
+    this.fnIndex = this.module.functions.length;
+    this.module.functions.push(this.fn);
+    this.routine = r;
+    this.frameSlots = new Map();
+    this.loops = [];
+    const unsupportedType = (t: MType) => !this.supportedType(t) && t !== "ptr";
+
+    // --- Parameters: the stack ones from IX+4 (the first nearest), 8-bit values in their slot's
+    // --- high byte; a FASTCALL routine's first one arrives in a register and becomes the first local
+    let offset = 4;
+    r.params.forEach((p, i) => {
+      const byref = p.byref || p.isArray;
+      const type: MType = byref ? "ptr" : mtypeOf(p.type);
+      if (p.isArray || unsupportedType(type)) {
+        this.unsupported(p.isArray ? "Array parameters" : `${p.type} parameters`, p.span);
+        return;
+      }
+      if (fastcall && i === 0) {
+        this.fn.registerParam = type;
+        this.fn.frameSize = 2;
+        const slot: Slot = { kind: "frame", offset: mtypeSize(type) === 1 ? -1 : -2 };
+        if (p.symbol) this.frameSlots.set(p.symbol, { slot, byref });
+        this.fn.params.push({ name: p.name, type, offset: -2 });
+        return;
+      }
+      const size = mtypeSize(type);
+      const slotSize = size === 1 ? 2 : size;
+      const slot: Slot = { kind: "frame", offset: size === 1 ? offset + 1 : offset };
+      if (p.symbol) this.frameSlots.set(p.symbol, { slot, byref });
+      this.fn.params.push({ name: p.name, type, offset });
+      offset += slotSize;
+      this.fn.argBytes += slotSize;
+    });
+
+    // --- Locals: every variable of the routine's scope that is not a parameter
+    for (const symbol of r.scope?.symbols ?? []) {
+      if (symbol.kind === "array" && symbol.storage === "local") {
+        this.unsupported("Local arrays", symbol.span);
+        continue;
+      }
+      if (symbol.kind !== "variable" || symbol.storage !== "local") continue;
+      const type = mtypeOf(symbol.type);
+      if (!this.supportedType(type)) {
+        this.unsupported(`${symbol.type} local variables`, symbol.span);
+        continue;
+      }
+      const slot = this.allocateLocal(type);
+      this.frameSlots.set(symbol, { slot, byref: false });
+      this.fn.locals.push({ name: symbol.name, type, offset: (slot as { offset: number }).offset });
+    }
+    this.resultSlot = returnType ? this.allocateLocal(returnType) : undefined;
+    if (returnType && !this.supportedType(returnType)) this.unsupported(`${r.returnType} FUNCTION results`, r.span);
+
+    this.startBlock(this.fn.label);
+    this.block.instrs.push({ op: "prologue.end", sid: -1 });
+    this.statements(s.body);
+    this.continueAt(this.fn.epilogue!);
+    this.beginStatement(s.end, "return");
+    this.emit({ op: "epilogue.begin", sid: this.sid });
+    const value = this.resultSlot && returnType ? this.load(returnType, this.resultSlot) : undefined;
+    this.endStatement();
+    this.terminate({ op: "ret", ...(value ? { value } : {}), sid: this.sid });
+    this.routine = undefined;
+    this.resultSlot = undefined;
+  }
+
+  /**
+   * A SUB or FUNCTION call. Arguments are evaluated last first (.docs/kbasic-mir.md Q1), so the
+   * stack machine leaves them where STDCALL wants them; each is a vreg, so each is pushed in turn.
+   */
+  private call(routine: RoutineSymbol, args: BoundArgument[], resultType: MType | undefined): Value | undefined {
+    const values: Value[] = new Array(args.length);
+    for (let i = args.length - 1; i >= 0; i--) values[i] = this.argument(args[i]);
+    const site: CallSite = { kind: routine.kind, callee: routine.name, moreCallsFollow: false, order: this.statementCalls.length };
+    this.statementCalls.push(site);
+    const dst = resultType ? this.vreg(resultType) : undefined;
+    this.emit({
+      op: "call",
+      ...(dst ? { dst } : {}),
+      target: globalName(routine.name),
+      convention: routine.convention === "FASTCALL" ? "fastcall" : "stdcall",
+      args: values,
+      site,
+      sid: this.sid
+    });
+    return dst;
+  }
+
+  private argument(a: BoundArgument): Value {
+    let v: Value;
+    if (!a.value) {
+      const c = a.param.defaultValue;
+      v = c ? this.constantValue(c, mtypeOf(a.param.type), a.param.span) : imm(mtypeOf(a.param.type), 0);
+    } else if (a.byref) {
+      v = this.address(a.value);
+    } else v = this.value(a.value);
+    // --- Every argument is computed into a vreg, so that it is pushed in its turn
+    if (v.kind === "vreg") return v;
+    const r = this.vreg(v.type);
+    this.emit({ op: "const", dst: r, value: v, sid: this.sid });
+    return r;
+  }
+
+  /** The address of a variable (a BYREF argument). */
+  private address(e: BoundExpr): Value {
+    if (e.kind !== "variable") {
+      this.unsupported("Passing an array element BYREF", e.span);
+      return imm("ptr", 0);
+    }
+    const slot = this.variableSlot(e.symbol, e.span);
+    if (!slot) return imm("ptr", 0);
+    if (slot.kind === "global") return { kind: "sym", type: "ptr", name: slot.name, offset: 0 };
+    if (slot.kind === "deref") return slot.ptr;
+    const r = this.vreg("ptr");
+    this.emit({ op: "addr", dst: r, slot, sid: this.sid });
+    return r;
+  }
+
+  // ===============================================================================================
   // Expressions
 
   /** A condition as a bool (non-zero is true). */
@@ -544,6 +716,8 @@ class Lowering {
         return this.binary(e);
       case "builtin":
         return this.builtin(e, type);
+      case "call":
+        return this.call(e.routine, e.args, type) ?? imm(type, 0);
       case "address":
         if (e.target.kind === "variable" && e.target.symbol.storage === "global") {
           return { kind: "sym", type: "ptr", name: globalName(e.target.symbol.name), offset: 0 };
@@ -604,6 +778,16 @@ class Lowering {
         return imm(type, 0);
     }
   }
+}
+
+/** The routine definitions of a program, including those inside CODEBANK blocks. */
+function routinesOf(statements: BoundStatement[]): Extract<BoundStatement, { kind: "routine" }>[] {
+  const out: Extract<BoundStatement, { kind: "routine" }>[] = [];
+  for (const s of statements) {
+    if (s.kind === "routine") out.push(s);
+    else if (s.kind === "codebank") out.push(...routinesOf(s.body));
+  }
+  return out;
 }
 
 const BINARY_OPS: Record<string, BinOp> = {
