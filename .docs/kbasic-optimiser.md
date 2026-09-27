@@ -263,3 +263,24 @@ Not done in 7b, and why:
   in the MIR; narrowing mixed 8/16-bit arithmetic needs the value ranges that SCCP (7c) provides.
 - The tree selector declines Float, 32-bit, Fixed and String values and FUNCTION calls: those still
   get level-0 code (plus the 7a rules). They are most of what is left at level 1.
+
+## 12. Stage 7c-1, and a change of order (2026-09-27, decided by the project author)
+
+**7c-1 is done:** level 2 = the level-1 rules, then `opt/available.ts` (a forward pass that knows which
+registers hold a variable's value or a constant and drops loads of values already held; facts are
+forgotten at labels something refers to and at every store but its own; only program variables and
+frame slots are tracked; stores are never removed), then the rules again without statement barriers.
+Level 3 generates level-2 code. Figures: level 2 28,159 bytes (level 1 28,608).
+
+**The order changed.** The measurements showed that what is left is mostly Float, String and 32-bit
+code, which the tree selector declines, and that `promote` reaches only SUB/FUNCTION locals (O9 keeps
+the main program's variables in memory). So:
+
+1. **Next: widen the tree selector** to FUNCTION calls in expressions, 32-bit and Fixed values and
+   Float, which pays at levels 1 and 2 alike.
+2. **Then 7c's MIR passes** (promote, SCCP, CSE, branch folding) — **with write-back instead of the
+   routine-wide linear scan of §4.1**: after the passes, a value that crosses a statement is written
+   to a memory home (a promoted variable's own frame slot, else a hidden slot), so both existing
+   selectors keep working unchanged and `available.ts` removes most of the reloads. Promoted
+   variables then stay current in memory, so the Variables panel stays exact at level 2 (this
+   supersedes O3's "optimised" rows). A linear-scan allocator for hot values can come later.
