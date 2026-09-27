@@ -159,7 +159,7 @@ const CODEGEN_ERRORS: Record<string, Case[]> = {
     { source: BANKED_SUB, options: { target: "next", codebankWindow: 0xe000, codebankWindowSize: "16k" } },
     { source: BANKED_SUB, options: { target: "next", codebankWindowSize: "16k", codebankFirstPage: 31 } }
   ],
-  E458: [{ source: BANKED_SUB }]
+  E458: [{ source: BANKED_SUB }, { source: "#include <farmem.bas>\nDIM g AS UByte\nPRINT FarPeek(FARPTR g)\n" }]
 };
 
 const WARNINGS: Record<keyof typeof SEMANTIC_WARNINGS, Case[]> = {

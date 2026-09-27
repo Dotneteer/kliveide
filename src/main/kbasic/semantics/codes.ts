@@ -44,7 +44,7 @@ export const SEMANTIC_ERRORS = {
   E455: "a CODEBANK bank that does not fit its window",
   E456: "a CODEBANK window that overlaps the resident program",
   E457: "an invalid CODEBANK window or page list (size, alignment, past $FFFF, an odd page for a 16K window)",
-  E458: "CODEBANK on a target other than the ZX Spectrum Next"
+  E458: "CODEBANK or far memory (farmem.bas) on a target other than the ZX Spectrum Next"
 } as const;
 
 export const SEMANTIC_WARNINGS = {

@@ -42,4 +42,10 @@ describe("CODEBANK code generation", () => {
       [0x6000, 15, 0x2000]
     ]);
   });
+
+  it("gives far memory the far-call runtime without a bank of the program's own", async () => {
+    const r = await runBasicNext("#include <farmem.bas>\nDIM g AS UInteger = 500\nFarPokeW(FARPTR g, FarPeekW(FARPTR g) + 1)\nPRINT g\n");
+    expect(r.screen()[0]).toBe("501");
+    expect(r.session.mmuPage(3)).toBe(11);
+  });
 });

@@ -273,20 +273,26 @@ Done in the same session, after that:
 - **Templates (R13):** `zxnext/zx-basic` (a CODEBANK example); the sp48/sp128 templates got a header
   block. All three build without diagnostics (`compiler.test.ts`), the Next one runs (`next-target.test.ts`).
 
+- **`farmem.bas`**: the API is in `stdlib-api.json` (from `codebank-contract.md` §1); the project
+  author chose the contract's parameter order, `FarCopy(fp, dest, count)` / `FarCopyTo(fp, src,
+  count)`, and the spec's `farmem_api` summary now says so. Runtime `FarAccess`/`FarRelease`
+  (banking module) map a bank for one access and put back whatever the window held (read through
+  the NextReg ports), so the accessors work from resident and banked code and never change
+  `FarBank`. A program with far memory but no bank of its own still gets the runtime's layout; off
+  the Next it is E458. `FarStr` builds its String at full length by doubling, then copies the
+  characters. Tests: corpus `codebank/farmem.zxbas` (all seven, from resident code and from another
+  bank, zero counts, bank 0), `codebank.test.ts`, an E458 case.
+
 Next steps, in order:
 
-1. `farmem.bas` (FarPeek/FarPeekW/FarPoke/FarPokeW/FarCopy/FarCopyTo/FarStr), written for Klive:
-   map the bank's page(s) into the window temporarily (read the slot's current page back through
-   the NextReg ports), access, restore — and it has to be in `stdlib-api.json` first, or recorded
-   from upstream's documentation (never its source).
-2. Extend `scripts/kbasic-ide-check.cjs` to a Next project with CODEBANK (NEX launch via `.nexload`
+1. Extend `scripts/kbasic-ide-check.cjs` to a Next project with CODEBANK (NEX launch via `.nexload`
    needs NextZXOS on the SD image the IDE uses): breakpoints in a bank, the execution point in the
    editor (§10.4), the Call Stack and Variables panels; and `nex-run -d` of the exported NEX with
    its sidecar. Decide whether `nex-run` with a sidecar should also give the renderer the program's
    tables (today they come only from a build).
-3. The docs page (R13 step 4): a Klive BASIC section in `docs/content/working-with-ide/zxb.mdx`,
+2. The docs page (R13 step 4): a Klive BASIC section in `docs/content/working-with-ide/zxb.mdx`,
    including CODEBANK, the header options and the emitted files.
-4. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
+3. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
 block) stays resident — only CODEBANK blocks move ASM into banks; FARPTR with constant subscripts
@@ -903,7 +909,7 @@ This lets NextBuild projects be opened and built with at most header edits.
   `point.bas`, `input.bas`, `keys.bas`, `hex.bas`, `putchars.bas`, `print42.bas`, `print64.bas`,
   `sinclair.bas`, and `asc.bas`, `pos.bas`, `csrlin.bas`; `__drawarc.bas` serves DRAW's arc. Not
   written for want of a documented API: `alloc`, `memcopy`, `random`, `scroll`, `esxdos`, `IM2`, and
-  INSTR/case/trim in `string.bas` (see the Handoff).
+  INSTR/case/trim in `string.bas` (see the Handoff). **Phase 6:** `farmem.bas` (CODEBANK far memory).
 
 ### 6.5 zxbasm-dialect libraries (D10)
 

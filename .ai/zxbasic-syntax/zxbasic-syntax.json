@@ -2418,7 +2418,7 @@
         "farptr = \"FARPTR\" identifier ;   (* ULong: bank in bits 16..23, address in bits 0..15; for an array, the data address *)",
         "asm-pseudo-op = \"CODEBANK\" const-expr ;   (* inside ASM: switch the bank of following asm lines *)"
       ],
-      "farmem_api": "#include <farmem.bas>: FarPeek(p), FarPeekW(p), FarPoke(p, v), FarPokeW(p, v), FarCopy(dst, src, len), FarCopyTo(dst, src, len), FarStr(p) - each takes FARPTR values (ULong)",
+      "farmem_api": "#include <farmem.bas>: FarPeek(p), FarPeekW(p), FarPoke(p, v), FarPokeW(p, v), FarCopy(fp, dest, count) (bank to resident), FarCopyTo(fp, src, count) (resident to bank), FarStr(p) - p and fp are FARPTR values (ULong); dest, src and count UInteger (see .ai/kbasic/codebank-contract.md §1)",
       "semantics": "SUB and FUNCTION bodies inside a bank are compiled into an 8K page that is paged into a code window (default $6000-$7FFF, MMU slot 3 via NextReg $53; a 16K window is optional). Call sites are unchanged: each banked routine keeps a 6-byte resident trampoline (call far-call helper, bank byte, body address) that pages the bank in, keeps a 3-byte-per-level shadow stack and redirects the return through a far-return helper, so stack frames and argument offsets are unchanged. Same-bank calls take a fast path. Bank-local data: DIMs inside the block, module-level asm and labels, INCBIN; reachable from outside only through FARPTR and the farmem API. Resident: ordinary statements, the runtime, string literals, DATA, the heap, non-bank globals.",
       "rules": {
         "errors": [

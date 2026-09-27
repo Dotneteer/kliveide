@@ -1,6 +1,6 @@
 ; @module   banking
 ; @summary  CODEBANK far calls (the ZX Spectrum Next): trampolines enter banked routines through here.
-; @exports  FarCall, FarReturn, FarInit, FarMap, FarBank, FarSP
+; @exports  FarCall, FarReturn, FarInit, FarMap, FarBank, FarSP, FarAccess, FarRelease
 ; @init     FarInit
 ;
 ; Klive's own implementation of the contract in .ai/kbasic/codebank-contract.md §4. A banked
@@ -112,6 +112,45 @@ FarMapOne:
     ret
 
 ; ------------------------------------------------------------------------------------------------
+; Far-memory access (farmem.bas): maps logical bank A into the window for a moment, keeping the
+; page(s) the window holds now, whatever they are - the boot page, or the bank of the banked routine
+; that called - for FarRelease to put back. The current bank (FarBank) does not change. Bank 0 maps
+; nothing (a FARPTR of resident data is not in the window). Not re-entrant. Changes AF, BC, DE, HL.
+FarAccess:
+    ld e,a
+    ld bc,$243b
+    ld a,FarReg
+    out (c),a
+    inc b
+    in a,(c)
+    ld (FarKeep),a
+    ld a,FarSlots
+    dec a
+    jr z,FarAccessMap
+    dec b
+    ld a,FarReg+1
+    out (c),a
+    inc b
+    in a,(c)
+    ld (FarKeep+1),a
+FarAccessMap:
+    ld a,e
+    or a
+    ret z
+    jp FarMap
+
+; Puts back the page(s) FarAccess found in the window. Changes AF.
+FarRelease:
+    ld a,(FarKeep)
+    nextreg FarReg,a
+    ld a,FarSlots
+    dec a
+    ret z
+    ld a,(FarKeep+1)
+    nextreg FarReg+1,a
+    ret
+
+; ------------------------------------------------------------------------------------------------
 ; Start-up: no bank is current, the shadow stack is empty, and the window's page(s) now are
 ; "bank 0", so returning to resident code restores what the loader mapped.
 FarInit:
@@ -148,3 +187,5 @@ FarSaveDE:
     .defw 0
 FarSaveHL:
     .defw 0
+FarKeep:
+    .defw 0                 ; FarAccess: the window's page(s) to put back

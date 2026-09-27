@@ -495,6 +495,22 @@
       ],
       "summary": "Einar Saukas' ZX0 decompressors (src, dst); free to use, credit requested.",
       "arch": "all (Z80)"
+    },
+    {
+      "name": "farmem.bas",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "provides": [
+        "FarPeek",
+        "FarPeekW",
+        "FarPoke",
+        "FarPokeW",
+        "FarCopy",
+        "FarCopyTo",
+        "FarStr"
+      ],
+      "summary": "Reads and writes CODEBANK bank-local data through FARPTR values, from anywhere, without changing the current bank.",
+      "arch": "zxnext (CODEBANK); not upstream: NextBuild's extension, recorded in codebank-contract.md §1"
     }
   ],
   "routines": [
@@ -2075,6 +2091,169 @@
       ],
       "summary": "Sets attributes for a character rectangle from separate ink/paper/bright/flash values (wraps paint).",
       "notes": "WARNING: no edge checking. Bitmap untouched. Not bundled."
+    },
+    {
+      "name": "FarPeek",
+      "kind": "function",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarPeek(fp)"
+      ],
+      "returns": "UByte",
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        }
+      ],
+      "summary": "The byte at a FARPTR.",
+      "notes": null
+    },
+    {
+      "name": "FarPeekW",
+      "kind": "function",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarPeekW(fp)"
+      ],
+      "returns": "UInteger",
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        }
+      ],
+      "summary": "The word at a FARPTR.",
+      "notes": "FASTCALL (fp arrives in DE:HL)."
+    },
+    {
+      "name": "FarPoke",
+      "kind": "statement",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarPoke(fp, v)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        },
+        {
+          "name": "v",
+          "type": "UByte",
+          "notes": null
+        }
+      ],
+      "summary": "Writes a byte at a FARPTR.",
+      "notes": null
+    },
+    {
+      "name": "FarPokeW",
+      "kind": "statement",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarPokeW(fp, v)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        },
+        {
+          "name": "v",
+          "type": "UInteger",
+          "notes": null
+        }
+      ],
+      "summary": "Writes a word at a FARPTR.",
+      "notes": null
+    },
+    {
+      "name": "FarCopy",
+      "kind": "statement",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarCopy(fp, dest, count)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        },
+        {
+          "name": "dest",
+          "type": "UInteger",
+          "notes": "resident address; must not be in the window"
+        },
+        {
+          "name": "count",
+          "type": "UInteger",
+          "notes": "0 copies nothing"
+        }
+      ],
+      "summary": "Copies count bytes from a bank (at fp) to resident memory.",
+      "notes": "Parameter order decided 2026-09-27 by the project author (the contract's order)."
+    },
+    {
+      "name": "FarCopyTo",
+      "kind": "statement",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarCopyTo(fp, src, count)"
+      ],
+      "returns": null,
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        },
+        {
+          "name": "src",
+          "type": "UInteger",
+          "notes": "resident address; must not be in the window"
+        },
+        {
+          "name": "count",
+          "type": "UInteger",
+          "notes": "0 copies nothing"
+        }
+      ],
+      "summary": "Copies count bytes from resident memory into a bank (at fp).",
+      "notes": "Parameter order decided 2026-09-27 by the project author (the contract's order)."
+    },
+    {
+      "name": "FarStr",
+      "kind": "function",
+      "docs": ".ai/kbasic/codebank-contract.md",
+      "include": "#include <farmem.bas>",
+      "syntax": [
+        "FarStr(fp)"
+      ],
+      "returns": "String",
+      "parameters": [
+        {
+          "name": "fp",
+          "type": "ULong",
+          "notes": "a FARPTR value: logical bank in bits 16-23, address in bits 0-15 (bank 0: resident)"
+        }
+      ],
+      "summary": "A String read from a bank: the image at fp is [length:2][characters].",
+      "notes": "FASTCALL. The empty String when the heap is full."
     }
   ]
 }

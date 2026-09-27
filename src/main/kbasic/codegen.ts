@@ -76,6 +76,20 @@ export async function generateProgram(
 
   // --- The Next's start stub reports errors through the errors module, which prints them
   const modules = resolveRuntimeModules(runtime, options.target === "next" ? ["program", "errors", "print"] : ["program"]);
+  // --- Far memory (farmem.bas) links the far-call runtime without a bank of the program's own: it
+  // --- still needs the window and the page table, and the Next
+  if (!banking && modules.some((m) => m.name === "banking")) {
+    if (options.target !== "next") {
+      diagnostics.error("E458", "Far memory (farmem.bas) needs the ZX Spectrum Next target (it pages banks in through the Next's MMU)", { file: 0, start: 0, end: 0 });
+      return undefined;
+    }
+    const plan = planBanks([], options);
+    if (typeof plan === "string") {
+      diagnostics.error("E457", plan, { file: 0, start: 0, end: 0 });
+      return undefined;
+    }
+    banking = plan;
+  }
   const emitted = emitProgram({
     header: [
       `    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`,
@@ -266,7 +280,7 @@ function planBanks(banks: number[], options: KBasicOptions): BankPlan | string {
       : listed.length
         ? listed[listed.length - 1] + (bank - listed.length) * slots
         : options.codebankFirstPage + (bank - 1) * slots;
-  const maxBank = banks[banks.length - 1];
+  const maxBank = banks.length ? banks[banks.length - 1] : 0;
   const pages = [0];
   for (let bank = 1; bank <= maxBank; bank++) pages.push(pageOf(bank));
   for (const bank of banks) {
