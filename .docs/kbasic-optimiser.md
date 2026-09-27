@@ -1,0 +1,194 @@
+# Klive BASIC: the optimiser (Phase 7)
+
+Design note for plan §7 (optimisation), §8.6 (the debug profile) and §7.5 / §10.3 (optimisation and
+debug information), written before any Phase 7 code as R11 asks. It builds on the approved notes:
+the MIR's memory form, `promote` and the statement-id rules S1–S5 (`kbasic-mir.md` §1, §4, §7),
+and the LIR, the level-0 stack machine and linear-scan allocation (`kbasic-lir-regalloc.md` §4–§5).
+Section 9 lists the decisions this note asks the project author to approve.
+
+## 1. What must not change
+
+Every level produces a program that behaves exactly as level 0 does — the same screen, memory,
+errors and heap — and that the debugger can still follow. Level 0 stays the reference and is never
+optimised. The debugger relies on these facts (Phase 5, Phase 6), so each is a hard constraint on
+every pass, checked by tests rather than by review:
+
+| Fact | Relied on by | Kept at |
+| --- | --- | --- |
+| **G1/G2** — one entry per statement, reached only by entering it | breakpoints, stepping, the validator | all levels; a statement that loses its entry is `merged` (§5) |
+| **G4** — SP is the activation's baseline at every statement entry | Step Over/Out, the frame locator | all levels |
+| **G5** — every user call is one Z80 `call` with a call-site record | stepping over calls, the call stack | all levels (no inlining of a call without removing its site, §4.3) |
+| **G6** — a FUNCTION's result is in its ABI registers at the `ret` | returned values | all levels |
+| **Every SUB and FUNCTION builds an IX frame** (`push ix; ld ix,0; add ix,sp`) | the locator (`IX + 2` is the return slot), Variables (locals at `IX + offset`) | all levels (O2) |
+| **Frame layout** — `returnSlotOffset = frame + 2`, `argBytes`, locals at their recorded offsets | the locator, Variables | all levels; spill slots are added *below* the locals |
+| **Variables in memory at their recorded addresses** | Variables panel, watches, data breakpoints later | levels 0–1 always; level 2–3 per §5.2 |
+| **Runtime and CODEBANK conventions** (trampolines, `FarCall`, `core.X` register contracts) | everything | untouched: the optimiser works on user code only |
+
+## 2. Levels (plan §7.1, made concrete)
+
+| Level | MIR | LIR | Boundary rule |
+| --- | --- | --- | --- |
+| 0 | none | the stack machine (unchanged) | — |
+| 1 | per statement: fold, algebraic simplification, strength reduction, narrowing, dead code inside a statement | per-statement register allocation; peephole rules that do not cross a `stmt` marker; branch shaping | statement boundaries are barriers (S2) |
+| 2 | promote (locals and by-value parameters of STDCALL routines), then SSA passes over the routine: constant/copy propagation (SCCP), CSE, dead code and dead stores, branch folding, jump threading, simple LICM, unused routines and globals | routine-wide linear scan; all peephole rules, cross-statement ones included; tail calls | a value may live in a register across statements; statements keep their entries unless merged (§5) |
+| 3 | adds inlining of small leaf FUNCTIONs and SUBs, loop strength reduction, FASTCALL conversion of internal leaf routines whose address is never taken | cross-block peephole | as level 2 |
+
+`optimize-for` (`size` / `speed` / `balanced`) is an input to the rule cost model (§4.2) and to the
+inlining threshold (level 3), not a separate pass list.
+
+## 3. MIR passes
+
+Each pass is a function `(fn: MFunction, ctx) => boolean` (changed or not) in `src/main/kbasic/opt/`,
+with a table of passes per level in `opt/pipeline.ts`. The MIR verifier (`kbasic-mir.md` §7) runs
+after every pass in tests and debug builds, so a pass that breaks S1–S5, SSA or types fails at once
+with the pass's name.
+
+- **Level 1 passes see one statement at a time**: they get the instructions between two `stmt`
+  markers and may not move anything across one. That is what keeps level 1 "debug-friendly" without
+  extra bookkeeping.
+- **`promote` (level 2)** exactly as `kbasic-mir.md` §7 defines it, with one addition: a promoted
+  variable keeps its frame slot, and the pass records for the debug builder which statements hold
+  its current value only in a vreg (§5.2).
+- **Type narrowing** (plan §7.2 step 5) is a MIR pass: an operation whose operands and result
+  provably fit in 8 bits is rewritten in `u8`/`i8`, with a `conv` at the edges. FOR loops over UByte,
+  attribute arithmetic and array indices are the targets.
+- **Unused-routine removal** reuses the reachability the library already has (plan Phase 4: unreached
+  library routines are not generated) and extends it to the user's routines at level 2; W170 is
+  already reported by the binder.
+- **Folding** reuses the binder's constant evaluator (and `float40` for Float, bit-exact with the ROM),
+  so folded and run-time results agree by construction.
+
+## 4. LIR: allocation, rules, branch shaping
+
+### 4.1 Allocation
+
+As `kbasic-lir-regalloc.md` §5 describes; the frame keeps its IX (O2), spill slots go below the
+locals and are zeroed with them, and the main program and FASTCALL routines use in-statement
+`push`/`pop` at level 1 (G4 holds because every push has its pop inside the statement). The level-0
+stack machine stays as the code generator of last resort: an expression the level-1 selector does not
+cover falls back to it, statement by statement, so Phase 7 can grow coverage gradually and every
+program always builds.
+
+### 4.2 The peephole rule engine
+
+Rules are data in TypeScript, one file per group (`opt/rules/loads.ts`, `branches.ts`, `flags.ts`,
+`z80n.ts`, …):
+
+```ts
+type Rule = {
+  name: string;                     // "ld-store-reload": ld (x),a ; ld a,(x) → ld (x),a
+  levels: 1 | 2;                    // 1: may run at level 1 (never across a stmt marker)
+  targets?: ("z80" | "z80n")[];     // z80n-only rules (mul d,e, add hl,a, ...) for target next
+  match: LirPattern[];              // instruction shapes, with named operand captures
+  when?: (m: Match, ctx: RuleContext) => boolean;   // liveness of registers and flags, ranges
+  replace: (m: Match) => LirInstr[];                // sids: the first matched instruction's (S4)
+  cost?: (before: LirInstr[], after: LirInstr[]) => { bytes: number; tstates: number };
+};
+```
+
+- `RuleContext` gives register and flag liveness after the window (computed once per function, updated
+  as rules fire), the target, and `optimize-for`.
+- The engine applies rules to a fixed point per basic block; a rule fires only when its replacement
+  is not worse under the strategy's cost (size: bytes, then T-states; speed: the reverse; balanced:
+  a weighted sum).
+- **A rule may never** drop or move a `stmt` marker, a call carrying a call-site record, a
+  `prologue.end`/`epilogue.begin` marker, or an instruction of the epilogue before `ret` that G6
+  depends on. The engine enforces this (such instructions are "pinned" and a pattern cannot consume
+  them), so individual rules need not remember it.
+- Each rule has a before/after unit test and one corpus-style execution check (plan §7.3, §13.1).
+
+### 4.3 Tail calls and inlining versus G5
+
+A tail call (`call f; ret` → `jp f`) removes a return address the debugger would find, so it is done
+only at level 3 and only when the calling routine's `ret` has no call-site record — never for a
+user call (G5); in practice it applies to calls of runtime routines. Inlining (level 3) removes the
+call site together with the call: the inlined statements keep their own sids, flagged `inlined` with
+the callee's callable index, so the call stack can show a synthetic frame for them (§5.3).
+
+### 4.4 Branch shaping
+
+After allocation and rules, instruction sizes are known exactly (the instruction-length table
+already covers Z80N), so `jp` → `jr` and `djnz` are decided before assembly, iterating to a fixed
+point because shortening one branch can bring another in range. Branches to a statement's entry keep
+targeting the entry (G2).
+
+## 5. Debug information at levels 1–3 (plan §7.5, §10.3)
+
+### 5.1 Statements
+
+- Levels 0–1: unchanged; every statement has its own entry.
+- Levels 2–3: a statement whose code was merged into a neighbour's or removed keeps a zero-length
+  `stmt` marker; the builder records it `elided` (no code) or `merged` (its entry is shared). Stepping
+  stops at the first surviving entry; the status bar says "optimised: statements merged" while
+  paused in such code (plan §10.3). Code shared by several statements has sid `-2`, which the
+  debugger treats like runtime code.
+- Hoisted code (LICM) keeps its sid with a `hoisted` flag; it is not an entry.
+
+### 5.2 Variables
+
+At levels 0–1 every variable is in memory at its recorded address whenever a statement starts, as
+today. At level 2 a promoted local may live only in a register for a range of statements. This note
+proposes **not** to build location lists in Phase 7: a promoted local's Variables row says "optimised"
+(with the value when the builder can prove the slot is current, which it records per statement), and
+the debug profile (§6) keeps debug builds at level 1, where the question does not arise. Location
+lists can come later if level-2 debugging turns out to matter (O3).
+
+### 5.3 Call stack
+
+G4 and IX frames hold at every level, so the frame locator is unchanged. Inlined callees (level 3)
+appear as synthetic frames without a return slot, taken from the `inlined` flag of the statement PC
+is in.
+
+## 6. The debug profile (plan §8.6, D11)
+
+`klive.debug` (and `debug` from the IDE) compiles with optimisation capped at 1 unless the header
+sets `'@optimize` explicitly; `run`, `inject` and export use the level as it is. The build output
+states the effective level ("code generated at optimisation level 1 (the debug profile; the header
+does not set '@optimize)"). The compiler learns the purpose through a new, optional
+`IKliveCompiler.compileFile(filename, options?, profile?: "debug" | "build")` argument passed down
+from the IDE's compile command (never inside `options`, which the Z80 assembler takes whole —
+Phase 1 facts); compilers that do not know it ignore it (O6).
+
+## 7. Tests and measurement
+
+- **The level matrix** (plan §13.2): the corpus runner's `LEVELS` becomes `[0, 1, 2, 3]` as each
+  level lands; every program meets its expectations, passes the debug-info validator and G4 at every
+  level. The Next runner and the debugger corpus run at levels 0 and 1 (the debug profile's range),
+  and the debugger corpus also at 2 for the checks that hold there (entries, call stack).
+- **Per pass**: MIR before/after goldens; the verifier after every pass.
+- **Per rule**: before/after LIR and an execution check.
+- **The §10.2/§10.3 step scenarios** run at levels 0 and 1 (they already run at 0).
+- **Measurement**: a script (`scripts/kbasic-opt-report.cjs`) builds every corpus program at each
+  level and records code size and the T-states to the program's end on the harness into
+  `test/kbasic/opt-baseline.json`; a test fails when a level gets worse than the recorded figures
+  (a ratchet, like the type-error baseline). The plan's exit criterion "measurable size/speed gains
+  on the corpus" is this report.
+
+## 8. Staging
+
+Each stage ends green (all execution tests at every level that exists, `build:check`, the IDE check)
+and is committed on its own:
+
+1. **7a — the framework**: `opt/` pipeline and the verifier hook, the rule engine with the load/store
+   and branch groups, branch shaping, the measurement script and baseline; level 1 = level 0 code +
+   peephole rules within statements.
+2. **7b — level 1 proper**: the per-statement MIR passes, the level-1 selector with per-statement
+   allocation (falling back to the stack machine per statement), the debug profile (§6).
+3. **7c — level 2**: promote, the SSA passes, routine-wide allocation, cross-statement rules,
+   `merged`/`elided`/`hoisted` in the debug info and the IDE's "optimised" states.
+4. **7d — level 3**: inlining, loop strength reduction, FASTCALL conversion, tail calls of runtime
+   calls, cross-block rules; the Z80N rule group (and, optionally, plan §6.2's Z80N runtime variants).
+
+## 9. Decisions for approval
+
+| # | Question | Proposal |
+| --- | --- | --- |
+| O1 | Staging | 7a–7d as §8, each stage green on its own; level 1 first, since the debug profile uses it. |
+| O2 | Frame pointer | Keep the IX frame for every SUB and FUNCTION at every level: the locator and the Variables panel depend on it, and IX-relative access is what the code already uses. Frame-pointer omission is not planned. |
+| O3 | Variables at level 2 | No location lists in Phase 7: promoted locals show "optimised" where their slot is not current; debug builds stay at level 1 through the profile. |
+| O4 | Rule format | TypeScript rule objects with pattern shapes and a `when` predicate (§4.2), not a text DSL: typed, testable, no parser to maintain. |
+| O5 | Pinned instructions | The engine, not each rule, protects `stmt` markers, call sites, frame markers and the epilogue's result registers. |
+| O6 | Debug profile transport | A new optional `profile` argument on `IKliveCompiler.compileFile`, set by the IDE's debug command; never inside `options`. |
+| O7 | Measurement | A committed size/T-state baseline per corpus program and level, with a ratchet test (§7). |
+| O8 | Stack-machine fallback | The level-1 selector falls back to the level-0 scheme per statement for anything it does not cover yet, so every program builds at every level throughout Phase 7. |
+| O9 | Main-program globals (MIR Q5) | Stay in memory at every level in Phase 7: inline asm, interrupts and `USR` code can see them. A narrower promotion for globals no asm, call or handler can reach is left for later. |

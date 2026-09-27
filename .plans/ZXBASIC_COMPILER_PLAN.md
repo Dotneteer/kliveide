@@ -315,9 +315,9 @@ debuggable at source level, in the emulator tests and in the running IDE.
 
 **Phase 6 is complete.** Next steps, in order:
 
-1. Phase 7 (optimiser, §7, §8.6): its design note goes to the project author for approval before
-   any code (R11: `.docs/kbasic-optimiser.md` — MIR passes per level, the LIR rule engine and its
-   rule format, how statement ids and G4/G5/G6 survive each pass, the debug profile).
+1. Phase 7 (optimiser, §7, §8.6): **the design note `.docs/kbasic-optimiser.md` is written and
+   awaits the project author's approval (its §9, decisions O1–O9)**; no Phase 7 code before that.
+   Then its stages 7a–7d in order.
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
