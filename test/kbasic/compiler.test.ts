@@ -296,7 +296,7 @@ describe("the zxbas compiler", () => {
       ((await compiler.compileFile(path.join(folder, file), undefined, profile)) as { traceOutput: string[] }).traceOutput[0];
     expect(await trace("plain.bas", "debug")).toMatch(/level 1 \(the debug profile/);
     expect(await trace("plain.bas", "build")).toMatch(/level 2$/);
-    expect(await trace("pinned.bas", "debug")).toMatch(/level 2 \(level 3 was asked for/);
+    expect(await trace("pinned.bas", "debug")).toMatch(/level 3$/);
     expect(headerSetsOptimize("x.bas", "' a comment\n'!opt=2\nPRINT 1\n")).toBe(true);
     expect(headerSetsOptimize("x.bas", "PRINT 1\n'@optimize 2\n")).toBe(false);
   });

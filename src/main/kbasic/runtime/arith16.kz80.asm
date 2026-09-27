@@ -10,6 +10,17 @@
 
 ; ------------------------------------------------------------------------------------------------
 ; A * H. Out: A. Changes F, B, H, L.
+#ifmod Next
+; --- The Next: the Z80N's 8x8 multiply (DE kept, as the contract promises)
+Mul8:
+    push de
+    ld d,a
+    ld e,h
+    mul d,e
+    ld a,e
+    pop de
+    ret
+#else
 Mul8:
     ld l,a
     xor a
@@ -22,6 +33,7 @@ Mul8Loop:
 Mul8Next:
     djnz Mul8Loop
     ret
+#endif
 
 ; ------------------------------------------------------------------------------------------------
 ; A / H, unsigned. Out: A = quotient, L = remainder. Changes F, B, C.
@@ -81,6 +93,30 @@ DivModI8Done:
 
 ; ------------------------------------------------------------------------------------------------
 ; HL * DE. Out: HL. Changes AF, BC, DE.
+#ifmod Next
+; --- The Next: the low 16 bits of the product from three 8x8 multiplies,
+; --- aL*bL + ((aH*bL + aL*bH) << 8)
+Mul16:
+    ld b,h                  ; B = aH
+    ld c,l                  ; C = aL
+    ld h,d                  ; H = bH
+    ld l,e                  ; L = bL
+    ld d,c                  ; DE = aL, bL
+    mul d,e                 ; DE = aL*bL
+    push de
+    ld d,b
+    ld e,l
+    mul d,e                 ; E = low(aH*bL)
+    ld a,e
+    ld d,c
+    ld e,h
+    mul d,e                 ; E = low(aL*bH)
+    add a,e
+    pop hl                  ; HL = aL*bL
+    add a,h
+    ld h,a
+    ret
+#else
 Mul16:
     ld b,h
     ld c,l                  ; BC = multiplicand
@@ -97,6 +133,7 @@ Mul16Next:
     dec a
     jr nz,Mul16Loop
     ret
+#endif
 
 ; ------------------------------------------------------------------------------------------------
 ; HL / DE, unsigned. Out: HL = quotient, DE = remainder. Changes AF, BC.

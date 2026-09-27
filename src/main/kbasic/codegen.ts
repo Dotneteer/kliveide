@@ -51,7 +51,7 @@ export async function generateProgram(
 
   // --- Instruction selection adds the runtime routines it calls (multiply, divide, ...)
   const runtime = new Set(mir.runtime);
-  // --- Level 3 has no passes of its own yet (stage 7d): it generates level-2 code
+  // --- The level the code is generated at
   const level = effectiveLevel(options.optimize);
   // --- The MIR verifier (.docs/kbasic-optimiser.md §3): an optimised build checks its input first
   if (level >= 1) {
@@ -350,9 +350,9 @@ function codebankDebugInfo(banking: BankPlan, options: KBasicOptions, symbol: (n
   };
 }
 
-/** The optimisation level code is generated at: level 3 gives level-2 code until stage 7d. */
+/** The optimisation level code is generated at (0-3). */
 export function effectiveLevel(requested: number): number {
-  return Math.min(requested, 2);
+  return Math.min(requested, 3);
 }
 
 /** The bank whose section holds a line of the generated program (its `__kbBank<n>:` label above it). */

@@ -11,6 +11,10 @@
   "2": {
    "bytes": 81,
    "tstates": 11462
+  },
+  "3": {
+   "bytes": 81,
+   "tstates": 11462
   }
  },
  "arrays/array-parameter.zxbas": {
@@ -23,6 +27,10 @@
    "tstates": 34151
   },
   "2": {
+   "bytes": 197,
+   "tstates": 34151
+  },
+  "3": {
    "bytes": 197,
    "tstates": 34151
   }
@@ -39,6 +47,10 @@
   "2": {
    "bytes": 82,
    "tstates": 17619
+  },
+  "3": {
+   "bytes": 82,
+   "tstates": 17619
   }
  },
  "arrays/local-array.zxbas": {
@@ -51,6 +63,10 @@
    "tstates": 42867
   },
   "2": {
+   "bytes": 317,
+   "tstates": 42025
+  },
+  "3": {
    "bytes": 317,
    "tstates": 42025
   }
@@ -67,6 +83,10 @@
   "2": {
    "bytes": 103,
    "tstates": 13610
+  },
+  "3": {
+   "bytes": 103,
+   "tstates": 13610
   }
  },
  "arrays/string-array.zxbas": {
@@ -79,6 +99,10 @@
    "tstates": 21398
   },
   "2": {
+   "bytes": 90,
+   "tstates": 21398
+  },
+  "3": {
    "bytes": 90,
    "tstates": 21398
   }
@@ -95,6 +119,10 @@
   "2": {
    "bytes": 123,
    "tstates": 19582
+  },
+  "3": {
+   "bytes": 123,
+   "tstates": 19582
   }
  },
  "builtins/abs-sgn-int.zxbas": {
@@ -107,6 +135,10 @@
    "tstates": 49450
   },
   "2": {
+   "bytes": 110,
+   "tstates": 49450
+  },
+  "3": {
    "bytes": 110,
    "tstates": 49450
   }
@@ -123,6 +155,10 @@
   "2": {
    "bytes": 57,
    "tstates": 15014
+  },
+  "3": {
+   "bytes": 57,
+   "tstates": 15014
   }
  },
  "builtins/cast.zxbas": {
@@ -135,6 +171,10 @@
    "tstates": 63682
   },
   "2": {
+   "bytes": 78,
+   "tstates": 63682
+  },
+  "3": {
    "bytes": 78,
    "tstates": 63682
   }
@@ -151,6 +191,10 @@
   "2": {
    "bytes": 72,
    "tstates": 25551
+  },
+  "3": {
+   "bytes": 72,
+   "tstates": 25551
   }
  },
  "builtins/len-str.zxbas": {
@@ -163,6 +207,10 @@
    "tstates": 80470
   },
   "2": {
+   "bytes": 86,
+   "tstates": 80470
+  },
+  "3": {
    "bytes": 86,
    "tstates": 80470
   }
@@ -179,6 +227,10 @@
   "2": {
    "bytes": 85,
    "tstates": 55514
+  },
+  "3": {
+   "bytes": 85,
+   "tstates": 55514
   }
  },
  "builtins/rnd-range.zxbas": {
@@ -191,6 +243,10 @@
    "tstates": 6008203
   },
   "2": {
+   "bytes": 129,
+   "tstates": 5995754
+  },
+  "3": {
    "bytes": 129,
    "tstates": 5995754
   }
@@ -207,6 +263,10 @@
   "2": {
    "bytes": 100,
    "tstates": 16467
+  },
+  "3": {
+   "bytes": 100,
+   "tstates": 16467
   }
  },
  "builtins/usr.zxbas": {
@@ -219,6 +279,10 @@
    "tstates": 10235
   },
   "2": {
+   "bytes": 38,
+   "tstates": 10235
+  },
+  "3": {
    "bytes": 38,
    "tstates": 10235
   }
@@ -235,6 +299,10 @@
   "2": {
    "bytes": 93,
    "tstates": 108797
+  },
+  "3": {
+   "bytes": 93,
+   "tstates": 108797
   }
  },
  "classic/binary.zxbas": {
@@ -247,6 +315,10 @@
    "tstates": 291166
   },
   "2": {
+   "bytes": 69,
+   "tstates": 290889
+  },
+  "3": {
    "bytes": 69,
    "tstates": 290889
   }
@@ -263,6 +335,10 @@
   "2": {
    "bytes": 272,
    "tstates": 109749
+  },
+  "3": {
+   "bytes": 272,
+   "tstates": 109749
   }
  },
  "classic/collatz.zxbas": {
@@ -275,6 +351,10 @@
    "tstates": 337463
   },
   "2": {
+   "bytes": 214,
+   "tstates": 335223
+  },
+  "3": {
    "bytes": 214,
    "tstates": 335223
   }
@@ -291,6 +371,10 @@
   "2": {
    "bytes": 205,
    "tstates": 275294
+  },
+  "3": {
+   "bytes": 205,
+   "tstates": 275294
   }
  },
  "classic/fibonacci.zxbas": {
@@ -303,6 +387,10 @@
    "tstates": 60853
   },
   "2": {
+   "bytes": 73,
+   "tstates": 60535
+  },
+  "3": {
    "bytes": 73,
    "tstates": 60535
   }
@@ -319,6 +407,10 @@
   "2": {
    "bytes": 192,
    "tstates": 30430
+  },
+  "3": {
+   "bytes": 192,
+   "tstates": 30430
   }
  },
  "classic/hanoi.zxbas": {
@@ -331,6 +423,10 @@
    "tstates": 179033
   },
   "2": {
+   "bytes": 107,
+   "tstates": 179033
+  },
+  "3": {
    "bytes": 107,
    "tstates": 179033
   }
@@ -347,6 +443,10 @@
   "2": {
    "bytes": 153,
    "tstates": 60644
+  },
+  "3": {
+   "bytes": 153,
+   "tstates": 60644
   }
  },
  "classic/primes-sieve.zxbas": {
@@ -359,6 +459,10 @@
    "tstates": 134891
   },
   "2": {
+   "bytes": 187,
+   "tstates": 131594
+  },
+  "3": {
    "bytes": 187,
    "tstates": 131594
   }
@@ -375,6 +479,10 @@
   "2": {
    "bytes": 102,
    "tstates": 53409
+  },
+  "3": {
+   "bytes": 102,
+   "tstates": 53409
   }
  },
  "classic/sqr-newton.zxbas": {
@@ -387,6 +495,10 @@
    "tstates": 575791
   },
   "2": {
+   "bytes": 272,
+   "tstates": 575791
+  },
+  "3": {
    "bytes": 272,
    "tstates": 575791
   }
@@ -403,6 +515,10 @@
   "2": {
    "bytes": 136,
    "tstates": 193975
+  },
+  "3": {
+   "bytes": 136,
+   "tstates": 193975
   }
  },
  "classic/times-table.zxbas": {
@@ -415,6 +531,10 @@
    "tstates": 89087
   },
   "2": {
+   "bytes": 67,
+   "tstates": 88984
+  },
+  "3": {
    "bytes": 67,
    "tstates": 88984
   }
@@ -431,6 +551,10 @@
   "2": {
    "bytes": 162,
    "tstates": 19868
+  },
+  "3": {
+   "bytes": 162,
+   "tstates": 19868
   }
  },
  "control/exit-continue.zxbas": {
@@ -443,6 +567,10 @@
    "tstates": 21231
   },
   "2": {
+   "bytes": 96,
+   "tstates": 20920
+  },
+  "3": {
    "bytes": 96,
    "tstates": 20920
   }
@@ -459,6 +587,10 @@
   "2": {
    "bytes": 73,
    "tstates": 4171
+  },
+  "3": {
+   "bytes": 73,
+   "tstates": 4171
   }
  },
  "control/for-evaluation.zxbas": {
@@ -471,6 +603,10 @@
    "tstates": 21084
   },
   "2": {
+   "bytes": 365,
+   "tstates": 20988
+  },
+  "3": {
    "bytes": 365,
    "tstates": 20988
   }
@@ -487,6 +623,10 @@
   "2": {
    "bytes": 129,
    "tstates": 14738
+  },
+  "3": {
+   "bytes": 129,
+   "tstates": 14738
   }
  },
  "control/for-steps.zxbas": {
@@ -499,6 +639,10 @@
    "tstates": 60093
   },
   "2": {
+   "bytes": 433,
+   "tstates": 59740
+  },
+  "3": {
    "bytes": 433,
    "tstates": 59740
   }
@@ -515,6 +659,10 @@
   "2": {
    "bytes": 325,
    "tstates": 61438
+  },
+  "3": {
+   "bytes": 325,
+   "tstates": 61438
   }
  },
  "control/gosub-nested.zxbas": {
@@ -527,6 +675,10 @@
    "tstates": 10409
   },
   "2": {
+   "bytes": 63,
+   "tstates": 10409
+  },
+  "3": {
    "bytes": 63,
    "tstates": 10409
   }
@@ -543,6 +695,10 @@
   "2": {
    "bytes": 64,
    "tstates": 13761
+  },
+  "3": {
+   "bytes": 64,
+   "tstates": 13761
   }
  },
  "control/if-else.zxbas": {
@@ -555,6 +711,10 @@
    "tstates": 34238
   },
   "2": {
+   "bytes": 104,
+   "tstates": 34238
+  },
+  "3": {
    "bytes": 104,
    "tstates": 34238
   }
@@ -571,6 +731,10 @@
   "2": {
    "bytes": 491,
    "tstates": 75956
+  },
+  "3": {
+   "bytes": 491,
+   "tstates": 75956
   }
  },
  "control/logic-evaluation.zxbas": {
@@ -583,6 +747,10 @@
    "tstates": 22620
   },
   "2": {
+   "bytes": 170,
+   "tstates": 22607
+  },
+  "3": {
    "bytes": 170,
    "tstates": 22607
   }
@@ -599,6 +767,10 @@
   "2": {
    "bytes": 86,
    "tstates": 7854
+  },
+  "3": {
+   "bytes": 86,
+   "tstates": 7854
   }
  },
  "control/on-gosub.zxbas": {
@@ -611,6 +783,10 @@
    "tstates": 7367
   },
   "2": {
+   "bytes": 93,
+   "tstates": 7252
+  },
+  "3": {
    "bytes": 93,
    "tstates": 7252
   }
@@ -627,6 +803,10 @@
   "2": {
    "bytes": 88,
    "tstates": 6581
+  },
+  "3": {
+   "bytes": 88,
+   "tstates": 6581
   }
  },
  "control/on-goto.zxbas": {
@@ -639,6 +819,10 @@
    "tstates": 29322
   },
   "2": {
+   "bytes": 125,
+   "tstates": 29293
+  },
+  "3": {
    "bytes": 125,
    "tstates": 29293
   }
@@ -655,6 +839,10 @@
   "2": {
    "bytes": 61,
    "tstates": 10387
+  },
+  "3": {
+   "bytes": 61,
+   "tstates": 10387
   }
  },
  "control/while-float.zxbas": {
@@ -667,6 +855,10 @@
    "tstates": 291607
   },
   "2": {
+   "bytes": 129,
+   "tstates": 291607
+  },
+  "3": {
    "bytes": 129,
    "tstates": 291607
   }
@@ -683,6 +875,10 @@
   "2": {
    "bytes": 62,
    "tstates": 9626
+  },
+  "3": {
+   "bytes": 62,
+   "tstates": 9626
   }
  },
  "data/data-expressions.zxbas": {
@@ -695,6 +891,10 @@
    "tstates": 82991
   },
   "2": {
+   "bytes": 94,
+   "tstates": 82991
+  },
+  "3": {
    "bytes": 94,
    "tstates": 82991
   }
@@ -711,6 +911,10 @@
   "2": {
    "bytes": 104,
    "tstates": 45093
+  },
+  "3": {
+   "bytes": 104,
+   "tstates": 45093
   }
  },
  "data/read-numbers.zxbas": {
@@ -723,6 +927,10 @@
    "tstates": 68418
   },
   "2": {
+   "bytes": 95,
+   "tstates": 68418
+  },
+  "3": {
    "bytes": 95,
    "tstates": 68418
   }
@@ -739,6 +947,10 @@
   "2": {
    "bytes": 81,
    "tstates": 56691
+  },
+  "3": {
+   "bytes": 81,
+   "tstates": 56691
   }
  },
  "data/read-wraps.zxbas": {
@@ -751,6 +963,10 @@
    "tstates": 19800
   },
   "2": {
+   "bytes": 62,
+   "tstates": 19763
+  },
+  "3": {
    "bytes": 62,
    "tstates": 19763
   }
@@ -767,6 +983,10 @@
   "2": {
    "bytes": 111,
    "tstates": 32619
+  },
+  "3": {
+   "bytes": 111,
+   "tstates": 32619
   }
  },
  "data/restore-line.zxbas": {
@@ -779,6 +999,10 @@
    "tstates": 23642
   },
   "2": {
+   "bytes": 87,
+   "tstates": 23613
+  },
+  "3": {
    "bytes": 87,
    "tstates": 23613
   }
@@ -795,6 +1019,10 @@
   "2": {
    "bytes": 172,
    "tstates": 214186
+  },
+  "3": {
+   "bytes": 172,
+   "tstates": 214186
   }
  },
  "fixed/fixed-compare.zxbas": {
@@ -807,6 +1035,10 @@
    "tstates": 34996
   },
   "2": {
+   "bytes": 271,
+   "tstates": 34986
+  },
+  "3": {
    "bytes": 271,
    "tstates": 34986
   }
@@ -823,6 +1055,10 @@
   "2": {
    "bytes": 153,
    "tstates": 116679
+  },
+  "3": {
+   "bytes": 153,
+   "tstates": 116679
   }
  },
  "fixed/fixed-loop.zxbas": {
@@ -835,6 +1071,10 @@
    "tstates": 212666
   },
   "2": {
+   "bytes": 108,
+   "tstates": 212442
+  },
+  "3": {
    "bytes": 108,
    "tstates": 212442
   }
@@ -851,6 +1091,10 @@
   "2": {
    "bytes": 155,
    "tstates": 236751
+  },
+  "3": {
+   "bytes": 155,
+   "tstates": 236751
   }
  },
  "float/arithmetic.zxbas": {
@@ -863,6 +1107,10 @@
    "tstates": 274398
   },
   "2": {
+   "bytes": 320,
+   "tstates": 274398
+  },
+  "3": {
    "bytes": 320,
    "tstates": 274398
   }
@@ -879,6 +1127,10 @@
   "2": {
    "bytes": 327,
    "tstates": 68835
+  },
+  "3": {
+   "bytes": 327,
+   "tstates": 68835
   }
  },
  "float/float-array.zxbas": {
@@ -891,6 +1143,10 @@
    "tstates": 142978
   },
   "2": {
+   "bytes": 204,
+   "tstates": 142978
+  },
+  "3": {
    "bytes": 204,
    "tstates": 142978
   }
@@ -907,6 +1163,10 @@
   "2": {
    "bytes": 436,
    "tstates": 1024170
+  },
+  "3": {
+   "bytes": 436,
+   "tstates": 1024170
   }
  },
  "float/for-step.zxbas": {
@@ -919,6 +1179,10 @@
    "tstates": 512280
   },
   "2": {
+   "bytes": 379,
+   "tstates": 512280
+  },
+  "3": {
    "bytes": 379,
    "tstates": 512280
   }
@@ -935,6 +1199,10 @@
   "2": {
    "bytes": 188,
    "tstates": 161487
+  },
+  "3": {
+   "bytes": 188,
+   "tstates": 161487
   }
  },
  "float/int-abs-sgn.zxbas": {
@@ -947,6 +1215,10 @@
    "tstates": 96313
   },
   "2": {
+   "bytes": 171,
+   "tstates": 96313
+  },
+  "3": {
    "bytes": 171,
    "tstates": 96313
   }
@@ -963,6 +1235,10 @@
   "2": {
    "bytes": 322,
    "tstates": 1456127
+  },
+  "3": {
+   "bytes": 322,
+   "tstates": 1456127
   }
  },
  "float/level1-float-shapes.zxbas": {
@@ -975,6 +1251,10 @@
    "tstates": 735875
   },
   "2": {
+   "bytes": 1165,
+   "tstates": 735651
+  },
+  "3": {
    "bytes": 1165,
    "tstates": 735651
   }
@@ -991,6 +1271,10 @@
   "2": {
    "bytes": 235,
    "tstates": 1294492
+  },
+  "3": {
+   "bytes": 235,
+   "tstates": 1294492
   }
  },
  "float/mod.zxbas": {
@@ -1003,6 +1287,10 @@
    "tstates": 176718
   },
   "2": {
+   "bytes": 124,
+   "tstates": 176718
+  },
+  "3": {
    "bytes": 124,
    "tstates": 176718
   }
@@ -1019,6 +1307,10 @@
   "2": {
    "bytes": 260,
    "tstates": 2111714
+  },
+  "3": {
+   "bytes": 260,
+   "tstates": 2111714
   }
  },
  "float/precedence.zxbas": {
@@ -1031,6 +1323,10 @@
    "tstates": 1091527
   },
   "2": {
+   "bytes": 382,
+   "tstates": 1091527
+  },
+  "3": {
    "bytes": 382,
    "tstates": 1091527
   }
@@ -1047,6 +1343,10 @@
   "2": {
    "bytes": 174,
    "tstates": 553631
+  },
+  "3": {
+   "bytes": 174,
+   "tstates": 553631
   }
  },
  "float/rnd-seed.zxbas": {
@@ -1059,6 +1359,10 @@
    "tstates": 1026586
   },
   "2": {
+   "bytes": 192,
+   "tstates": 1025418
+  },
+  "3": {
    "bytes": 192,
    "tstates": 1025418
   }
@@ -1075,6 +1379,10 @@
   "2": {
    "bytes": 131,
    "tstates": 150885
+  },
+  "3": {
+   "bytes": 131,
+   "tstates": 150885
   }
  },
  "float/to-integer.zxbas": {
@@ -1087,6 +1395,10 @@
    "tstates": 55754
   },
   "2": {
+   "bytes": 202,
+   "tstates": 55754
+  },
+  "3": {
    "bytes": 202,
    "tstates": 55754
   }
@@ -1103,6 +1415,10 @@
   "2": {
    "bytes": 282,
    "tstates": 1034042
+  },
+  "3": {
+   "bytes": 282,
+   "tstates": 1034042
   }
  },
  "graphics/border.zxbas": {
@@ -1115,6 +1431,10 @@
    "tstates": 3174
   },
   "2": {
+   "bytes": 28,
+   "tstates": 3174
+  },
+  "3": {
    "bytes": 28,
    "tstates": 3174
   }
@@ -1131,6 +1451,10 @@
   "2": {
    "bytes": 235,
    "tstates": 163858
+  },
+  "3": {
+   "bytes": 235,
+   "tstates": 163858
   }
  },
  "graphics/cls-attr.zxbas": {
@@ -1143,6 +1467,10 @@
    "tstates": 199659
   },
   "2": {
+   "bytes": 74,
+   "tstates": 199659
+  },
+  "3": {
    "bytes": 74,
    "tstates": 199659
   }
@@ -1159,6 +1487,10 @@
   "2": {
    "bytes": 1690,
    "tstates": 6955085
+  },
+  "3": {
+   "bytes": 1690,
+   "tstates": 6955085
   }
  },
  "graphics/draw-count.zxbas": {
@@ -1171,6 +1503,10 @@
    "tstates": 107228
   },
   "2": {
+   "bytes": 227,
+   "tstates": 103059
+  },
+  "3": {
    "bytes": 227,
    "tstates": 103059
   }
@@ -1187,6 +1523,10 @@
   "2": {
    "bytes": 104,
    "tstates": 125470
+  },
+  "3": {
+   "bytes": 104,
+   "tstates": 125470
   }
  },
  "graphics/plot-colour.zxbas": {
@@ -1199,6 +1539,10 @@
    "tstates": 10411
   },
   "2": {
+   "bytes": 70,
+   "tstates": 10411
+  },
+  "3": {
    "bytes": 70,
    "tstates": 10411
   }
@@ -1215,6 +1559,10 @@
   "2": {
    "bytes": 244,
    "tstates": 13014
+  },
+  "3": {
+   "bytes": 244,
+   "tstates": 13014
   }
  },
  "graphics/plot-pixel.zxbas": {
@@ -1227,6 +1575,10 @@
    "tstates": 23357
   },
   "2": {
+   "bytes": 84,
+   "tstates": 23357
+  },
+  "3": {
    "bytes": 84,
    "tstates": 23357
   }
@@ -1243,6 +1595,10 @@
   "2": {
    "bytes": 144,
    "tstates": 56787
+  },
+  "3": {
+   "bytes": 144,
+   "tstates": 56787
   }
  },
  "integers/byte-signed.zxbas": {
@@ -1255,6 +1611,10 @@
    "tstates": 28406
   },
   "2": {
+   "bytes": 83,
+   "tstates": 28369
+  },
+  "3": {
    "bytes": 83,
    "tstates": 28369
   }
@@ -1271,6 +1631,10 @@
   "2": {
    "bytes": 211,
    "tstates": 24373
+  },
+  "3": {
+   "bytes": 211,
+   "tstates": 24373
   }
  },
  "integers/division-by-zero.zxbas": {
@@ -1283,6 +1647,10 @@
    "tstates": 30247
   },
   "2": {
+   "bytes": 92,
+   "tstates": 30247
+  },
+  "3": {
    "bytes": 92,
    "tstates": 30247
   }
@@ -1299,6 +1667,10 @@
   "2": {
    "bytes": 163,
    "tstates": 43782
+  },
+  "3": {
+   "bytes": 163,
+   "tstates": 43782
   }
  },
  "integers/level1-shapes.zxbas": {
@@ -1311,6 +1683,10 @@
    "tstates": 225200
   },
   "2": {
+   "bytes": 909,
+   "tstates": 224683
+  },
+  "3": {
    "bytes": 909,
    "tstates": 224683
   }
@@ -1327,6 +1703,10 @@
   "2": {
    "bytes": 268,
    "tstates": 26690
+  },
+  "3": {
+   "bytes": 268,
+   "tstates": 26690
   }
  },
  "integers/peek-poke.zxbas": {
@@ -1339,6 +1719,10 @@
    "tstates": 20327
   },
   "2": {
+   "bytes": 61,
+   "tstates": 20327
+  },
+  "3": {
    "bytes": 61,
    "tstates": 20327
   }
@@ -1355,6 +1739,10 @@
   "2": {
    "bytes": 104,
    "tstates": 29967
+  },
+  "3": {
+   "bytes": 104,
+   "tstates": 29967
   }
  },
  "integers/ubyte-wraps.zxbas": {
@@ -1367,6 +1755,10 @@
    "tstates": 16622
   },
   "2": {
+   "bytes": 74,
+   "tstates": 16614
+  },
+  "3": {
    "bytes": 74,
    "tstates": 16614
   }
@@ -1383,6 +1775,10 @@
   "2": {
    "bytes": 89,
    "tstates": 34638
+  },
+  "3": {
+   "bytes": 89,
+   "tstates": 34638
   }
  },
  "long/level1-long-shapes.zxbas": {
@@ -1395,6 +1791,10 @@
    "tstates": 612036
   },
   "2": {
+   "bytes": 1300,
+   "tstates": 611999
+  },
+  "3": {
    "bytes": 1300,
    "tstates": 611999
   }
@@ -1411,6 +1811,10 @@
   "2": {
    "bytes": 184,
    "tstates": 148810
+  },
+  "3": {
+   "bytes": 184,
+   "tstates": 148810
   }
  },
  "long/long-bitwise.zxbas": {
@@ -1423,6 +1827,10 @@
    "tstates": 55403
   },
   "2": {
+   "bytes": 162,
+   "tstates": 55403
+  },
+  "3": {
    "bytes": 162,
    "tstates": 55403
   }
@@ -1439,6 +1847,10 @@
   "2": {
    "bytes": 431,
    "tstates": 28093
+  },
+  "3": {
+   "bytes": 431,
+   "tstates": 28093
   }
  },
  "long/long-conversions.zxbas": {
@@ -1451,6 +1863,10 @@
    "tstates": 51435
   },
   "2": {
+   "bytes": 125,
+   "tstates": 51411
+  },
+  "3": {
    "bytes": 125,
    "tstates": 51411
   }
@@ -1467,6 +1883,10 @@
   "2": {
    "bytes": 230,
    "tstates": 161595
+  },
+  "3": {
+   "bytes": 230,
+   "tstates": 161595
   }
  },
  "long/long-loop.zxbas": {
@@ -1479,6 +1899,10 @@
    "tstates": 45035
   },
   "2": {
+   "bytes": 236,
+   "tstates": 43930
+  },
+  "3": {
    "bytes": 236,
    "tstates": 43930
   }
@@ -1495,6 +1919,10 @@
   "2": {
    "bytes": 134,
    "tstates": 122023
+  },
+  "3": {
+   "bytes": 134,
+   "tstates": 122023
   }
  },
  "long/ulong-wrap.zxbas": {
@@ -1507,6 +1935,10 @@
    "tstates": 47123
   },
   "2": {
+   "bytes": 100,
+   "tstates": 47123
+  },
+  "3": {
    "bytes": 100,
    "tstates": 47123
   }
@@ -1523,6 +1955,10 @@
   "2": {
    "bytes": 60,
    "tstates": 21997
+  },
+  "3": {
+   "bytes": 60,
+   "tstates": 21997
   }
  },
  "print/cls.zxbas": {
@@ -1535,6 +1971,10 @@
    "tstates": 211038
   },
   "2": {
+   "bytes": 42,
+   "tstates": 211038
+  },
+  "3": {
    "bytes": 42,
    "tstates": 211038
   }
@@ -1551,6 +1991,10 @@
   "2": {
    "bytes": 52,
    "tstates": 5782
+  },
+  "3": {
+   "bytes": 52,
+   "tstates": 5782
   }
  },
  "print/numbers.zxbas": {
@@ -1563,6 +2007,10 @@
    "tstates": 117495
   },
   "2": {
+   "bytes": 101,
+   "tstates": 117495
+  },
+  "3": {
    "bytes": 101,
    "tstates": 117495
   }
@@ -1579,6 +2027,10 @@
   "2": {
    "bytes": 42,
    "tstates": 1844887
+  },
+  "3": {
+   "bytes": 42,
+   "tstates": 1844887
   }
  },
  "print/separators.zxbas": {
@@ -1591,6 +2043,10 @@
    "tstates": 36550
   },
   "2": {
+   "bytes": 69,
+   "tstates": 36550
+  },
+  "3": {
    "bytes": 69,
    "tstates": 36550
   }
@@ -1607,6 +2063,10 @@
   "2": {
    "bytes": 316,
    "tstates": 77722
+  },
+  "3": {
+   "bytes": 316,
+   "tstates": 77722
   }
  },
  "routines/byref.zxbas": {
@@ -1619,6 +2079,10 @@
    "tstates": 10685
   },
   "2": {
+   "bytes": 164,
+   "tstates": 10685
+  },
+  "3": {
    "bytes": 164,
    "tstates": 10685
   }
@@ -1635,6 +2099,10 @@
   "2": {
    "bytes": 339,
    "tstates": 55179
+  },
+  "3": {
+   "bytes": 339,
+   "tstates": 55179
   }
  },
  "routines/call-order.zxbas": {
@@ -1647,6 +2115,10 @@
    "tstates": 14981
   },
   "2": {
+   "bytes": 135,
+   "tstates": 14957
+  },
+  "3": {
    "bytes": 135,
    "tstates": 14957
   }
@@ -1663,6 +2135,10 @@
   "2": {
    "bytes": 106,
    "tstates": 38358
+  },
+  "3": {
+   "bytes": 106,
+   "tstates": 38358
   }
  },
  "routines/fastcall.zxbas": {
@@ -1675,6 +2151,10 @@
    "tstates": 30437
   },
   "2": {
+   "bytes": 200,
+   "tstates": 30437
+  },
+  "3": {
    "bytes": 200,
    "tstates": 30437
   }
@@ -1691,6 +2171,10 @@
   "2": {
    "bytes": 159,
    "tstates": 17682
+  },
+  "3": {
+   "bytes": 159,
+   "tstates": 17682
   }
  },
  "routines/level2-unused.zxbas": {
@@ -1703,6 +2187,10 @@
    "tstates": 26401
   },
   "2": {
+   "bytes": 102,
+   "tstates": 26401
+  },
+  "3": {
    "bytes": 102,
    "tstates": 26401
   }
@@ -1719,6 +2207,10 @@
   "2": {
    "bytes": 78,
    "tstates": 13780
+  },
+  "3": {
+   "bytes": 78,
+   "tstates": 13780
   }
  },
  "routines/recursion-float.zxbas": {
@@ -1731,6 +2223,10 @@
    "tstates": 237039
   },
   "2": {
+   "bytes": 204,
+   "tstates": 235714
+  },
+  "3": {
    "bytes": 204,
    "tstates": 235714
   }
@@ -1747,6 +2243,10 @@
   "2": {
    "bytes": 245,
    "tstates": 152986
+  },
+  "3": {
+   "bytes": 245,
+   "tstates": 152986
   }
  },
  "routines/string-locals.zxbas": {
@@ -1759,6 +2259,10 @@
    "tstates": 637376
   },
   "2": {
+   "bytes": 124,
+   "tstates": 636689
+  },
+  "3": {
    "bytes": 124,
    "tstates": 636689
   }
@@ -1775,6 +2279,10 @@
   "2": {
    "bytes": 99,
    "tstates": 28555
+  },
+  "3": {
+   "bytes": 99,
+   "tstates": 28555
   }
  },
  "screen/asm-block.zxbas": {
@@ -1787,6 +2295,10 @@
    "tstates": 4851
   },
   "2": {
+   "bytes": 19,
+   "tstates": 4851
+  },
+  "3": {
    "bytes": 19,
    "tstates": 4851
   }
@@ -1803,6 +2315,10 @@
   "2": {
    "bytes": 72,
    "tstates": 8565
+  },
+  "3": {
+   "bytes": 72,
+   "tstates": 8565
   }
  },
  "sound/beep-returns.zxbas": {
@@ -1815,6 +2331,10 @@
    "tstates": 1594462
   },
   "2": {
+   "bytes": 131,
+   "tstates": 1594462
+  },
+  "3": {
    "bytes": 131,
    "tstates": 1594462
   }
@@ -1831,6 +2351,10 @@
   "2": {
    "bytes": 495,
    "tstates": 74445
+  },
+  "3": {
+   "bytes": 495,
+   "tstates": 74445
   }
  },
  "stdlib/hex-lib.zxbas": {
@@ -1843,6 +2367,10 @@
    "tstates": 106456
   },
   "2": {
+   "bytes": 463,
+   "tstates": 106044
+  },
+  "3": {
    "bytes": 463,
    "tstates": 106044
   }
@@ -1859,6 +2387,10 @@
   "2": {
    "bytes": 224,
    "tstates": 21959
+  },
+  "3": {
+   "bytes": 224,
+   "tstates": 21959
   }
  },
  "stdlib/pos-csrlin.zxbas": {
@@ -1871,6 +2403,10 @@
    "tstates": 14738
   },
   "2": {
+   "bytes": 115,
+   "tstates": 14738
+  },
+  "3": {
    "bytes": 115,
    "tstates": 14738
   }
@@ -1887,6 +2423,10 @@
   "2": {
    "bytes": 804,
    "tstates": 58682
+  },
+  "3": {
+   "bytes": 804,
+   "tstates": 58682
   }
  },
  "stdlib/print64-lib.zxbas": {
@@ -1899,6 +2439,10 @@
    "tstates": 31951
   },
   "2": {
+   "bytes": 619,
+   "tstates": 29817
+  },
+  "3": {
    "bytes": 619,
    "tstates": 29817
   }
@@ -1915,6 +2459,10 @@
   "2": {
    "bytes": 228,
    "tstates": 19400
+  },
+  "3": {
+   "bytes": 228,
+   "tstates": 19400
   }
  },
  "stdlib/sinclair-functions.zxbas": {
@@ -1927,6 +2475,10 @@
    "tstates": 80842
   },
   "2": {
+   "bytes": 617,
+   "tstates": 78214
+  },
+  "3": {
    "bytes": 617,
    "tstates": 78214
   }
@@ -1943,6 +2495,10 @@
   "2": {
    "bytes": 645,
    "tstates": 71816
+  },
+  "3": {
+   "bytes": 645,
+   "tstates": 71816
   }
  },
  "strings/byref-string.zxbas": {
@@ -1955,6 +2511,10 @@
    "tstates": 20677
   },
   "2": {
+   "bytes": 97,
+   "tstates": 20605
+  },
+  "3": {
    "bytes": 97,
    "tstates": 20605
   }
@@ -1971,6 +2531,10 @@
   "2": {
    "bytes": 41,
    "tstates": 13686
+  },
+  "3": {
+   "bytes": 41,
+   "tstates": 13686
   }
  },
  "strings/compare.zxbas": {
@@ -1983,6 +2547,10 @@
    "tstates": 28503
   },
   "2": {
+   "bytes": 204,
+   "tstates": 28503
+  },
+  "3": {
    "bytes": 204,
    "tstates": 28503
   }
@@ -1999,6 +2567,10 @@
   "2": {
    "bytes": 71,
    "tstates": 31937
+  },
+  "3": {
+   "bytes": 71,
+   "tstates": 31937
   }
  },
  "strings/length-code.zxbas": {
@@ -2011,6 +2583,10 @@
    "tstates": 27226
   },
   "2": {
+   "bytes": 119,
+   "tstates": 27226
+  },
+  "3": {
    "bytes": 119,
    "tstates": 27226
   }
@@ -2027,6 +2603,10 @@
   "2": {
    "bytes": 135,
    "tstates": 498570
+  },
+  "3": {
+   "bytes": 135,
+   "tstates": 498570
   }
  },
  "strings/ordering.zxbas": {
@@ -2039,6 +2619,10 @@
    "tstates": 15763
   },
   "2": {
+   "bytes": 44,
+   "tstates": 15763
+  },
+  "3": {
    "bytes": 44,
    "tstates": 15763
   }
@@ -2055,6 +2639,10 @@
   "2": {
    "bytes": 94,
    "tstates": 25883
+  },
+  "3": {
+   "bytes": 94,
+   "tstates": 25883
   }
  },
  "strings/slices.zxbas": {
@@ -2067,6 +2655,10 @@
    "tstates": 48838
   },
   "2": {
+   "bytes": 175,
+   "tstates": 48838
+  },
+  "3": {
    "bytes": 175,
    "tstates": 48838
   }
@@ -2083,6 +2675,10 @@
   "2": {
    "bytes": 136,
    "tstates": 266215
+  },
+  "3": {
+   "bytes": 136,
+   "tstates": 266215
   }
  },
  "strings/string-base-1.zxbas": {
@@ -2095,6 +2691,10 @@
    "tstates": 22188
   },
   "2": {
+   "bytes": 94,
+   "tstates": 22188
+  },
+  "3": {
    "bytes": 94,
    "tstates": 22188
   }
@@ -2111,6 +2711,10 @@
   "2": {
    "bytes": 219,
    "tstates": 80571
+  },
+  "3": {
+   "bytes": 219,
+   "tstates": 80571
   }
  },
  "strings/string-functions.zxbas": {
@@ -2125,6 +2729,10 @@
   "2": {
    "bytes": 182,
    "tstates": 48661
+  },
+  "3": {
+   "bytes": 182,
+   "tstates": 48661
   }
  },
  "strings/substring-assign.zxbas": {
@@ -2137,6 +2745,10 @@
    "tstates": 72814
   },
   "2": {
+   "bytes": 124,
+   "tstates": 72814
+  },
+  "3": {
    "bytes": 124,
    "tstates": 72814
   }

@@ -101,3 +101,49 @@ describe("the ZX Spectrum Next project template", () => {
     expect(r.generated.debug.sourceLevel.extensions?.codebank?.banks).toEqual([{ bank: 1, pages: [30] }]);
   });
 });
+
+describe("the Next runtime's Z80N multiplies (plan §6.2)", () => {
+  it("multiply 8- and 16-bit values as the Z80 routines do, signed and unsigned, wrapping", async () => {
+    const bytes = [0, 1, 2, 3, 7, 15, 16, 100, 127, 128, 200, 255];
+    const words = [0, 1, 2, 255, 256, 1000, 12345, 32767, 32768, 40000, 65535];
+    const source = [
+      `DIM a8(${bytes.length - 1}) AS UByte => {${bytes.join(", ")}}`,
+      `DIM a16(${words.length - 1}) AS UInteger => {${words.join(", ")}}`,
+      `DIM r8(${bytes.length * bytes.length - 1}) AS UByte`,
+      `DIM r16(${words.length * words.length - 1}) AS UInteger`,
+      `DIM s16(${words.length * words.length - 1}) AS Integer`,
+      "DIM i, j AS UByte",
+      "DIM x, y AS UByte",
+      "DIM p, q AS UInteger",
+      `FOR i = 0 TO ${bytes.length - 1} : FOR j = 0 TO ${bytes.length - 1}`,
+      `  x = a8(i) : y = a8(j) : r8(i * ${bytes.length} + j) = x * y`,
+      "NEXT j : NEXT i",
+      `FOR i = 0 TO ${words.length - 1} : FOR j = 0 TO ${words.length - 1}`,
+      `  p = a16(i) : q = a16(j) : r16(i * ${words.length} + j) = p * q`,
+      `  s16(i * ${words.length} + j) = CAST(Integer, p) * CAST(Integer, q)`,
+      "NEXT j : NEXT i",
+      ""
+    ].join("\n");
+    for (const optimize of [0, 1]) {
+      const r = await runBasicNext(source, { optimize, frames: 3000 });
+      const s = r.session;
+      const r8 = r.program.symbol("_r8.data");
+      const r16 = r.program.symbol("_r16.data");
+      const s16 = r.program.symbol("_s16.data");
+      bytes.forEach((x, i) => bytes.forEach((y, j) => expect(s.peek(r8 + i * bytes.length + j), `${x}*${y}`).toBe((x * y) & 0xff)));
+      words.forEach((x, i) =>
+        words.forEach((y, j) => {
+          const k = i * words.length + j;
+          expect(s.peekWord(r16 + 2 * k), `${x}*${y}`).toBe(Number((BigInt(x) * BigInt(y)) & 0xffffn));
+          const sx = x >= 32768 ? x - 65536 : x;
+          const sy = y >= 32768 ? y - 65536 : y;
+          expect(s.peekWord(s16 + 2 * k), `${sx}*${sy}`).toBe(Number(BigInt.asUintN(16, BigInt(sx) * BigInt(sy))));
+        })
+      );
+      expect(r.generated.emitted.text).toMatch(/call core\.Mul16/);
+      // --- The Next's own routine is the one linked: push de / ld d,a / ld e,h / mul d,e
+      const mul8 = r.program.symbol("core.Mul8");
+      expect([0, 1, 2, 3, 4].map((k) => s.peek(mul8 + k))).toEqual([0xd5, 0x57, 0x5c, 0xed, 0x30]);
+    }
+  });
+});

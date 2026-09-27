@@ -23,7 +23,7 @@ describe("Klive BASIC corpus on the ZX Spectrum Next", () => {
     const source = readFileSync(file, "utf8");
     const expectations = readExpectations(source);
     if (expectations.some((e) => e.kind === "keys")) continue;
-    for (const level of [0, 1, 2])
+    for (const level of [0, 1, 2, 3])
       it(`${name} (optimize ${level})`, async () => {
         const error = expectations.find((e) => e.kind === "error");
         const frames = expectations.find((e) => e.kind === "frames");
