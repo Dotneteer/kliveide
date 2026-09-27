@@ -1,0 +1,110 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "PRINT Float 0": {
+   "out": "0"
+  },
+  "PRINT Float 1": {
+   "out": "1"
+  },
+  "PRINT Float -1": {
+   "out": "-1"
+  },
+  "PRINT Float 0.5": {
+   "out": "0.5"
+  },
+  "PRINT Float 0.001": {
+   "out": ".001"
+  },
+  "PRINT Float 1E-5": {
+   "out": ".00001"
+  },
+  "PRINT Float 1.5E-5": {
+   "out": ".000015"
+  },
+  "PRINT Float 123456789": {
+   "out": "1.2345679E+8"
+  },
+  "PRINT Float 1234567890": {
+   "out": "1.2345679E+9"
+  },
+  "PRINT Float 1E10": {
+   "out": "1E+10"
+  },
+  "PRINT Float -1E10": {
+   "out": "-1E+10"
+  },
+  "PRINT Float 2147483648": {
+   "out": "2.1474836E+9"
+  },
+  "PRINT Float 1E38": {
+   "out": "1E+38"
+  },
+  "PRINT Float 1E-38": {
+   "out": "1E-38"
+  },
+  "PRINT Float 3.14159265": {
+   "out": "3.1415926"
+  },
+  "PRINT Float 99999999": {
+   "out": "99999999"
+  },
+  "PRINT Float 100000000": {
+   "out": "1E+8"
+  },
+  "PRINT Float 0.1": {
+   "out": "0.1"
+  },
+  "PRINT Fixed 0.5": {
+   "out": "0.5"
+  },
+  "PRINT Fixed -0.5": {
+   "out": "-0.5"
+  },
+  "PRINT Fixed 32767.5": {
+   "out": "32767.5"
+  },
+  "PRINT Fixed -32768": {
+   "out": "-32768"
+  },
+  "PRINT Fixed 0.0001": {
+   "out": "0.000091552734375"
+  },
+  "PRINT Fixed 1.1": {
+   "out": "1.0999908447265625"
+  },
+  "PRINT Fixed -0.1": {
+   "out": "-0.0999908447265625"
+  },
+  "PRINT UByte 0": {
+   "out": "0"
+  },
+  "PRINT UByte 255": {
+   "out": "255"
+  },
+  "PRINT Byte -128": {
+   "out": "-128"
+  },
+  "PRINT Byte 127": {
+   "out": "127"
+  },
+  "PRINT UInteger 65535": {
+   "out": "65535"
+  },
+  "PRINT Integer -32768": {
+   "out": "-32768"
+  },
+  "PRINT Integer 32767": {
+   "out": "32767"
+  },
+  "PRINT ULong 4294967295": {
+   "out": "4294967295"
+  },
+  "PRINT Long -2147483648": {
+   "out": "-2147483648"
+  },
+  "PRINT Long 2147483647": {
+   "out": "2147483647"
+  }
+ }
+}

@@ -1,0 +1,1446 @@
+{
+ "suite": "shifts",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 200 SHL 1",
+   "decl": [
+    "DIM v993 AS UByte = 200"
+   ],
+   "expr": "v993 SHL 1"
+  },
+  {
+   "id": "UByte 200 SHL UByte 1",
+   "decl": [
+    "DIM v993s AS UByte = 200",
+    "DIM v994 AS UByte = 1"
+   ],
+   "expr": "v993s SHL v994"
+  },
+  {
+   "id": "UByte 200 SHR 1",
+   "decl": [
+    "DIM v995 AS UByte = 200"
+   ],
+   "expr": "v995 SHR 1"
+  },
+  {
+   "id": "UByte 200 SHR UByte 1",
+   "decl": [
+    "DIM v995s AS UByte = 200",
+    "DIM v996 AS UByte = 1"
+   ],
+   "expr": "v995s SHR v996"
+  },
+  {
+   "id": "UByte 200 SHL 3",
+   "decl": [
+    "DIM v997 AS UByte = 200"
+   ],
+   "expr": "v997 SHL 3"
+  },
+  {
+   "id": "UByte 200 SHL UByte 3",
+   "decl": [
+    "DIM v997s AS UByte = 200",
+    "DIM v998 AS UByte = 3"
+   ],
+   "expr": "v997s SHL v998"
+  },
+  {
+   "id": "UByte 200 SHR 3",
+   "decl": [
+    "DIM v999 AS UByte = 200"
+   ],
+   "expr": "v999 SHR 3"
+  },
+  {
+   "id": "UByte 200 SHR UByte 3",
+   "decl": [
+    "DIM v999s AS UByte = 200",
+    "DIM v1000 AS UByte = 3"
+   ],
+   "expr": "v999s SHR v1000"
+  },
+  {
+   "id": "UByte 200 SHL 8",
+   "decl": [
+    "DIM v1001 AS UByte = 200"
+   ],
+   "expr": "v1001 SHL 8"
+  },
+  {
+   "id": "UByte 200 SHL UByte 8",
+   "decl": [
+    "DIM v1001s AS UByte = 200",
+    "DIM v1002 AS UByte = 8"
+   ],
+   "expr": "v1001s SHL v1002"
+  },
+  {
+   "id": "UByte 200 SHR 8",
+   "decl": [
+    "DIM v1003 AS UByte = 200"
+   ],
+   "expr": "v1003 SHR 8"
+  },
+  {
+   "id": "UByte 200 SHR UByte 8",
+   "decl": [
+    "DIM v1003s AS UByte = 200",
+    "DIM v1004 AS UByte = 8"
+   ],
+   "expr": "v1003s SHR v1004"
+  },
+  {
+   "id": "UByte 200 SHL 17",
+   "decl": [
+    "DIM v1005 AS UByte = 200"
+   ],
+   "expr": "v1005 SHL 17"
+  },
+  {
+   "id": "UByte 200 SHL UByte 17",
+   "decl": [
+    "DIM v1005s AS UByte = 200",
+    "DIM v1006 AS UByte = 17"
+   ],
+   "expr": "v1005s SHL v1006"
+  },
+  {
+   "id": "UByte 200 SHR 17",
+   "decl": [
+    "DIM v1007 AS UByte = 200"
+   ],
+   "expr": "v1007 SHR 17"
+  },
+  {
+   "id": "UByte 200 SHR UByte 17",
+   "decl": [
+    "DIM v1007s AS UByte = 200",
+    "DIM v1008 AS UByte = 17"
+   ],
+   "expr": "v1007s SHR v1008"
+  },
+  {
+   "id": "UByte 7 SHL 1",
+   "decl": [
+    "DIM v1009 AS UByte = 7"
+   ],
+   "expr": "v1009 SHL 1"
+  },
+  {
+   "id": "UByte 7 SHL UByte 1",
+   "decl": [
+    "DIM v1009s AS UByte = 7",
+    "DIM v1010 AS UByte = 1"
+   ],
+   "expr": "v1009s SHL v1010"
+  },
+  {
+   "id": "UByte 7 SHR 1",
+   "decl": [
+    "DIM v1011 AS UByte = 7"
+   ],
+   "expr": "v1011 SHR 1"
+  },
+  {
+   "id": "UByte 7 SHR UByte 1",
+   "decl": [
+    "DIM v1011s AS UByte = 7",
+    "DIM v1012 AS UByte = 1"
+   ],
+   "expr": "v1011s SHR v1012"
+  },
+  {
+   "id": "UByte 7 SHL 3",
+   "decl": [
+    "DIM v1013 AS UByte = 7"
+   ],
+   "expr": "v1013 SHL 3"
+  },
+  {
+   "id": "UByte 7 SHL UByte 3",
+   "decl": [
+    "DIM v1013s AS UByte = 7",
+    "DIM v1014 AS UByte = 3"
+   ],
+   "expr": "v1013s SHL v1014"
+  },
+  {
+   "id": "UByte 7 SHR 3",
+   "decl": [
+    "DIM v1015 AS UByte = 7"
+   ],
+   "expr": "v1015 SHR 3"
+  },
+  {
+   "id": "UByte 7 SHR UByte 3",
+   "decl": [
+    "DIM v1015s AS UByte = 7",
+    "DIM v1016 AS UByte = 3"
+   ],
+   "expr": "v1015s SHR v1016"
+  },
+  {
+   "id": "UByte 7 SHL 8",
+   "decl": [
+    "DIM v1017 AS UByte = 7"
+   ],
+   "expr": "v1017 SHL 8"
+  },
+  {
+   "id": "UByte 7 SHL UByte 8",
+   "decl": [
+    "DIM v1017s AS UByte = 7",
+    "DIM v1018 AS UByte = 8"
+   ],
+   "expr": "v1017s SHL v1018"
+  },
+  {
+   "id": "UByte 7 SHR 8",
+   "decl": [
+    "DIM v1019 AS UByte = 7"
+   ],
+   "expr": "v1019 SHR 8"
+  },
+  {
+   "id": "UByte 7 SHR UByte 8",
+   "decl": [
+    "DIM v1019s AS UByte = 7",
+    "DIM v1020 AS UByte = 8"
+   ],
+   "expr": "v1019s SHR v1020"
+  },
+  {
+   "id": "UByte 7 SHL 17",
+   "decl": [
+    "DIM v1021 AS UByte = 7"
+   ],
+   "expr": "v1021 SHL 17"
+  },
+  {
+   "id": "UByte 7 SHL UByte 17",
+   "decl": [
+    "DIM v1021s AS UByte = 7",
+    "DIM v1022 AS UByte = 17"
+   ],
+   "expr": "v1021s SHL v1022"
+  },
+  {
+   "id": "UByte 7 SHR 17",
+   "decl": [
+    "DIM v1023 AS UByte = 7"
+   ],
+   "expr": "v1023 SHR 17"
+  },
+  {
+   "id": "UByte 7 SHR UByte 17",
+   "decl": [
+    "DIM v1023s AS UByte = 7",
+    "DIM v1024 AS UByte = 17"
+   ],
+   "expr": "v1023s SHR v1024"
+  },
+  {
+   "id": "Byte -7 SHL 1",
+   "decl": [
+    "DIM v1025 AS Byte = -7"
+   ],
+   "expr": "v1025 SHL 1"
+  },
+  {
+   "id": "Byte -7 SHL UByte 1",
+   "decl": [
+    "DIM v1025s AS Byte = -7",
+    "DIM v1026 AS UByte = 1"
+   ],
+   "expr": "v1025s SHL v1026"
+  },
+  {
+   "id": "Byte -7 SHR 1",
+   "decl": [
+    "DIM v1027 AS Byte = -7"
+   ],
+   "expr": "v1027 SHR 1"
+  },
+  {
+   "id": "Byte -7 SHR UByte 1",
+   "decl": [
+    "DIM v1027s AS Byte = -7",
+    "DIM v1028 AS UByte = 1"
+   ],
+   "expr": "v1027s SHR v1028"
+  },
+  {
+   "id": "Byte -7 SHL 3",
+   "decl": [
+    "DIM v1029 AS Byte = -7"
+   ],
+   "expr": "v1029 SHL 3"
+  },
+  {
+   "id": "Byte -7 SHL UByte 3",
+   "decl": [
+    "DIM v1029s AS Byte = -7",
+    "DIM v1030 AS UByte = 3"
+   ],
+   "expr": "v1029s SHL v1030"
+  },
+  {
+   "id": "Byte -7 SHR 3",
+   "decl": [
+    "DIM v1031 AS Byte = -7"
+   ],
+   "expr": "v1031 SHR 3"
+  },
+  {
+   "id": "Byte -7 SHR UByte 3",
+   "decl": [
+    "DIM v1031s AS Byte = -7",
+    "DIM v1032 AS UByte = 3"
+   ],
+   "expr": "v1031s SHR v1032"
+  },
+  {
+   "id": "Byte -7 SHL 8",
+   "decl": [
+    "DIM v1033 AS Byte = -7"
+   ],
+   "expr": "v1033 SHL 8"
+  },
+  {
+   "id": "Byte -7 SHL UByte 8",
+   "decl": [
+    "DIM v1033s AS Byte = -7",
+    "DIM v1034 AS UByte = 8"
+   ],
+   "expr": "v1033s SHL v1034"
+  },
+  {
+   "id": "Byte -7 SHR 8",
+   "decl": [
+    "DIM v1035 AS Byte = -7"
+   ],
+   "expr": "v1035 SHR 8"
+  },
+  {
+   "id": "Byte -7 SHR UByte 8",
+   "decl": [
+    "DIM v1035s AS Byte = -7",
+    "DIM v1036 AS UByte = 8"
+   ],
+   "expr": "v1035s SHR v1036"
+  },
+  {
+   "id": "Byte -7 SHL 17",
+   "decl": [
+    "DIM v1037 AS Byte = -7"
+   ],
+   "expr": "v1037 SHL 17"
+  },
+  {
+   "id": "Byte -7 SHL UByte 17",
+   "decl": [
+    "DIM v1037s AS Byte = -7",
+    "DIM v1038 AS UByte = 17"
+   ],
+   "expr": "v1037s SHL v1038"
+  },
+  {
+   "id": "Byte -7 SHR 17",
+   "decl": [
+    "DIM v1039 AS Byte = -7"
+   ],
+   "expr": "v1039 SHR 17"
+  },
+  {
+   "id": "Byte -7 SHR UByte 17",
+   "decl": [
+    "DIM v1039s AS Byte = -7",
+    "DIM v1040 AS UByte = 17"
+   ],
+   "expr": "v1039s SHR v1040"
+  },
+  {
+   "id": "Byte 7 SHL 1",
+   "decl": [
+    "DIM v1041 AS Byte = 7"
+   ],
+   "expr": "v1041 SHL 1"
+  },
+  {
+   "id": "Byte 7 SHL UByte 1",
+   "decl": [
+    "DIM v1041s AS Byte = 7",
+    "DIM v1042 AS UByte = 1"
+   ],
+   "expr": "v1041s SHL v1042"
+  },
+  {
+   "id": "Byte 7 SHR 1",
+   "decl": [
+    "DIM v1043 AS Byte = 7"
+   ],
+   "expr": "v1043 SHR 1"
+  },
+  {
+   "id": "Byte 7 SHR UByte 1",
+   "decl": [
+    "DIM v1043s AS Byte = 7",
+    "DIM v1044 AS UByte = 1"
+   ],
+   "expr": "v1043s SHR v1044"
+  },
+  {
+   "id": "Byte 7 SHL 3",
+   "decl": [
+    "DIM v1045 AS Byte = 7"
+   ],
+   "expr": "v1045 SHL 3"
+  },
+  {
+   "id": "Byte 7 SHL UByte 3",
+   "decl": [
+    "DIM v1045s AS Byte = 7",
+    "DIM v1046 AS UByte = 3"
+   ],
+   "expr": "v1045s SHL v1046"
+  },
+  {
+   "id": "Byte 7 SHR 3",
+   "decl": [
+    "DIM v1047 AS Byte = 7"
+   ],
+   "expr": "v1047 SHR 3"
+  },
+  {
+   "id": "Byte 7 SHR UByte 3",
+   "decl": [
+    "DIM v1047s AS Byte = 7",
+    "DIM v1048 AS UByte = 3"
+   ],
+   "expr": "v1047s SHR v1048"
+  },
+  {
+   "id": "Byte 7 SHL 8",
+   "decl": [
+    "DIM v1049 AS Byte = 7"
+   ],
+   "expr": "v1049 SHL 8"
+  },
+  {
+   "id": "Byte 7 SHL UByte 8",
+   "decl": [
+    "DIM v1049s AS Byte = 7",
+    "DIM v1050 AS UByte = 8"
+   ],
+   "expr": "v1049s SHL v1050"
+  },
+  {
+   "id": "Byte 7 SHR 8",
+   "decl": [
+    "DIM v1051 AS Byte = 7"
+   ],
+   "expr": "v1051 SHR 8"
+  },
+  {
+   "id": "Byte 7 SHR UByte 8",
+   "decl": [
+    "DIM v1051s AS Byte = 7",
+    "DIM v1052 AS UByte = 8"
+   ],
+   "expr": "v1051s SHR v1052"
+  },
+  {
+   "id": "Byte 7 SHL 17",
+   "decl": [
+    "DIM v1053 AS Byte = 7"
+   ],
+   "expr": "v1053 SHL 17"
+  },
+  {
+   "id": "Byte 7 SHL UByte 17",
+   "decl": [
+    "DIM v1053s AS Byte = 7",
+    "DIM v1054 AS UByte = 17"
+   ],
+   "expr": "v1053s SHL v1054"
+  },
+  {
+   "id": "Byte 7 SHR 17",
+   "decl": [
+    "DIM v1055 AS Byte = 7"
+   ],
+   "expr": "v1055 SHR 17"
+  },
+  {
+   "id": "Byte 7 SHR UByte 17",
+   "decl": [
+    "DIM v1055s AS Byte = 7",
+    "DIM v1056 AS UByte = 17"
+   ],
+   "expr": "v1055s SHR v1056"
+  },
+  {
+   "id": "UInteger 60000 SHL 1",
+   "decl": [
+    "DIM v1057 AS UInteger = 60000"
+   ],
+   "expr": "v1057 SHL 1"
+  },
+  {
+   "id": "UInteger 60000 SHL UByte 1",
+   "decl": [
+    "DIM v1057s AS UInteger = 60000",
+    "DIM v1058 AS UByte = 1"
+   ],
+   "expr": "v1057s SHL v1058"
+  },
+  {
+   "id": "UInteger 60000 SHR 1",
+   "decl": [
+    "DIM v1059 AS UInteger = 60000"
+   ],
+   "expr": "v1059 SHR 1"
+  },
+  {
+   "id": "UInteger 60000 SHR UByte 1",
+   "decl": [
+    "DIM v1059s AS UInteger = 60000",
+    "DIM v1060 AS UByte = 1"
+   ],
+   "expr": "v1059s SHR v1060"
+  },
+  {
+   "id": "UInteger 60000 SHL 3",
+   "decl": [
+    "DIM v1061 AS UInteger = 60000"
+   ],
+   "expr": "v1061 SHL 3"
+  },
+  {
+   "id": "UInteger 60000 SHL UByte 3",
+   "decl": [
+    "DIM v1061s AS UInteger = 60000",
+    "DIM v1062 AS UByte = 3"
+   ],
+   "expr": "v1061s SHL v1062"
+  },
+  {
+   "id": "UInteger 60000 SHR 3",
+   "decl": [
+    "DIM v1063 AS UInteger = 60000"
+   ],
+   "expr": "v1063 SHR 3"
+  },
+  {
+   "id": "UInteger 60000 SHR UByte 3",
+   "decl": [
+    "DIM v1063s AS UInteger = 60000",
+    "DIM v1064 AS UByte = 3"
+   ],
+   "expr": "v1063s SHR v1064"
+  },
+  {
+   "id": "UInteger 60000 SHL 8",
+   "decl": [
+    "DIM v1065 AS UInteger = 60000"
+   ],
+   "expr": "v1065 SHL 8"
+  },
+  {
+   "id": "UInteger 60000 SHL UByte 8",
+   "decl": [
+    "DIM v1065s AS UInteger = 60000",
+    "DIM v1066 AS UByte = 8"
+   ],
+   "expr": "v1065s SHL v1066"
+  },
+  {
+   "id": "UInteger 60000 SHR 8",
+   "decl": [
+    "DIM v1067 AS UInteger = 60000"
+   ],
+   "expr": "v1067 SHR 8"
+  },
+  {
+   "id": "UInteger 60000 SHR UByte 8",
+   "decl": [
+    "DIM v1067s AS UInteger = 60000",
+    "DIM v1068 AS UByte = 8"
+   ],
+   "expr": "v1067s SHR v1068"
+  },
+  {
+   "id": "UInteger 60000 SHL 17",
+   "decl": [
+    "DIM v1069 AS UInteger = 60000"
+   ],
+   "expr": "v1069 SHL 17"
+  },
+  {
+   "id": "UInteger 60000 SHL UByte 17",
+   "decl": [
+    "DIM v1069s AS UInteger = 60000",
+    "DIM v1070 AS UByte = 17"
+   ],
+   "expr": "v1069s SHL v1070"
+  },
+  {
+   "id": "UInteger 60000 SHR 17",
+   "decl": [
+    "DIM v1071 AS UInteger = 60000"
+   ],
+   "expr": "v1071 SHR 17"
+  },
+  {
+   "id": "UInteger 60000 SHR UByte 17",
+   "decl": [
+    "DIM v1071s AS UInteger = 60000",
+    "DIM v1072 AS UByte = 17"
+   ],
+   "expr": "v1071s SHR v1072"
+  },
+  {
+   "id": "UInteger 7 SHL 1",
+   "decl": [
+    "DIM v1073 AS UInteger = 7"
+   ],
+   "expr": "v1073 SHL 1"
+  },
+  {
+   "id": "UInteger 7 SHL UByte 1",
+   "decl": [
+    "DIM v1073s AS UInteger = 7",
+    "DIM v1074 AS UByte = 1"
+   ],
+   "expr": "v1073s SHL v1074"
+  },
+  {
+   "id": "UInteger 7 SHR 1",
+   "decl": [
+    "DIM v1075 AS UInteger = 7"
+   ],
+   "expr": "v1075 SHR 1"
+  },
+  {
+   "id": "UInteger 7 SHR UByte 1",
+   "decl": [
+    "DIM v1075s AS UInteger = 7",
+    "DIM v1076 AS UByte = 1"
+   ],
+   "expr": "v1075s SHR v1076"
+  },
+  {
+   "id": "UInteger 7 SHL 3",
+   "decl": [
+    "DIM v1077 AS UInteger = 7"
+   ],
+   "expr": "v1077 SHL 3"
+  },
+  {
+   "id": "UInteger 7 SHL UByte 3",
+   "decl": [
+    "DIM v1077s AS UInteger = 7",
+    "DIM v1078 AS UByte = 3"
+   ],
+   "expr": "v1077s SHL v1078"
+  },
+  {
+   "id": "UInteger 7 SHR 3",
+   "decl": [
+    "DIM v1079 AS UInteger = 7"
+   ],
+   "expr": "v1079 SHR 3"
+  },
+  {
+   "id": "UInteger 7 SHR UByte 3",
+   "decl": [
+    "DIM v1079s AS UInteger = 7",
+    "DIM v1080 AS UByte = 3"
+   ],
+   "expr": "v1079s SHR v1080"
+  },
+  {
+   "id": "UInteger 7 SHL 8",
+   "decl": [
+    "DIM v1081 AS UInteger = 7"
+   ],
+   "expr": "v1081 SHL 8"
+  },
+  {
+   "id": "UInteger 7 SHL UByte 8",
+   "decl": [
+    "DIM v1081s AS UInteger = 7",
+    "DIM v1082 AS UByte = 8"
+   ],
+   "expr": "v1081s SHL v1082"
+  },
+  {
+   "id": "UInteger 7 SHR 8",
+   "decl": [
+    "DIM v1083 AS UInteger = 7"
+   ],
+   "expr": "v1083 SHR 8"
+  },
+  {
+   "id": "UInteger 7 SHR UByte 8",
+   "decl": [
+    "DIM v1083s AS UInteger = 7",
+    "DIM v1084 AS UByte = 8"
+   ],
+   "expr": "v1083s SHR v1084"
+  },
+  {
+   "id": "UInteger 7 SHL 17",
+   "decl": [
+    "DIM v1085 AS UInteger = 7"
+   ],
+   "expr": "v1085 SHL 17"
+  },
+  {
+   "id": "UInteger 7 SHL UByte 17",
+   "decl": [
+    "DIM v1085s AS UInteger = 7",
+    "DIM v1086 AS UByte = 17"
+   ],
+   "expr": "v1085s SHL v1086"
+  },
+  {
+   "id": "UInteger 7 SHR 17",
+   "decl": [
+    "DIM v1087 AS UInteger = 7"
+   ],
+   "expr": "v1087 SHR 17"
+  },
+  {
+   "id": "UInteger 7 SHR UByte 17",
+   "decl": [
+    "DIM v1087s AS UInteger = 7",
+    "DIM v1088 AS UByte = 17"
+   ],
+   "expr": "v1087s SHR v1088"
+  },
+  {
+   "id": "Integer -100 SHL 1",
+   "decl": [
+    "DIM v1089 AS Integer = -100"
+   ],
+   "expr": "v1089 SHL 1"
+  },
+  {
+   "id": "Integer -100 SHL UByte 1",
+   "decl": [
+    "DIM v1089s AS Integer = -100",
+    "DIM v1090 AS UByte = 1"
+   ],
+   "expr": "v1089s SHL v1090"
+  },
+  {
+   "id": "Integer -100 SHR 1",
+   "decl": [
+    "DIM v1091 AS Integer = -100"
+   ],
+   "expr": "v1091 SHR 1"
+  },
+  {
+   "id": "Integer -100 SHR UByte 1",
+   "decl": [
+    "DIM v1091s AS Integer = -100",
+    "DIM v1092 AS UByte = 1"
+   ],
+   "expr": "v1091s SHR v1092"
+  },
+  {
+   "id": "Integer -100 SHL 3",
+   "decl": [
+    "DIM v1093 AS Integer = -100"
+   ],
+   "expr": "v1093 SHL 3"
+  },
+  {
+   "id": "Integer -100 SHL UByte 3",
+   "decl": [
+    "DIM v1093s AS Integer = -100",
+    "DIM v1094 AS UByte = 3"
+   ],
+   "expr": "v1093s SHL v1094"
+  },
+  {
+   "id": "Integer -100 SHR 3",
+   "decl": [
+    "DIM v1095 AS Integer = -100"
+   ],
+   "expr": "v1095 SHR 3"
+  },
+  {
+   "id": "Integer -100 SHR UByte 3",
+   "decl": [
+    "DIM v1095s AS Integer = -100",
+    "DIM v1096 AS UByte = 3"
+   ],
+   "expr": "v1095s SHR v1096"
+  },
+  {
+   "id": "Integer -100 SHL 8",
+   "decl": [
+    "DIM v1097 AS Integer = -100"
+   ],
+   "expr": "v1097 SHL 8"
+  },
+  {
+   "id": "Integer -100 SHL UByte 8",
+   "decl": [
+    "DIM v1097s AS Integer = -100",
+    "DIM v1098 AS UByte = 8"
+   ],
+   "expr": "v1097s SHL v1098"
+  },
+  {
+   "id": "Integer -100 SHR 8",
+   "decl": [
+    "DIM v1099 AS Integer = -100"
+   ],
+   "expr": "v1099 SHR 8"
+  },
+  {
+   "id": "Integer -100 SHR UByte 8",
+   "decl": [
+    "DIM v1099s AS Integer = -100",
+    "DIM v1100 AS UByte = 8"
+   ],
+   "expr": "v1099s SHR v1100"
+  },
+  {
+   "id": "Integer -100 SHL 17",
+   "decl": [
+    "DIM v1101 AS Integer = -100"
+   ],
+   "expr": "v1101 SHL 17"
+  },
+  {
+   "id": "Integer -100 SHL UByte 17",
+   "decl": [
+    "DIM v1101s AS Integer = -100",
+    "DIM v1102 AS UByte = 17"
+   ],
+   "expr": "v1101s SHL v1102"
+  },
+  {
+   "id": "Integer -100 SHR 17",
+   "decl": [
+    "DIM v1103 AS Integer = -100"
+   ],
+   "expr": "v1103 SHR 17"
+  },
+  {
+   "id": "Integer -100 SHR UByte 17",
+   "decl": [
+    "DIM v1103s AS Integer = -100",
+    "DIM v1104 AS UByte = 17"
+   ],
+   "expr": "v1103s SHR v1104"
+  },
+  {
+   "id": "Integer 100 SHL 1",
+   "decl": [
+    "DIM v1105 AS Integer = 100"
+   ],
+   "expr": "v1105 SHL 1"
+  },
+  {
+   "id": "Integer 100 SHL UByte 1",
+   "decl": [
+    "DIM v1105s AS Integer = 100",
+    "DIM v1106 AS UByte = 1"
+   ],
+   "expr": "v1105s SHL v1106"
+  },
+  {
+   "id": "Integer 100 SHR 1",
+   "decl": [
+    "DIM v1107 AS Integer = 100"
+   ],
+   "expr": "v1107 SHR 1"
+  },
+  {
+   "id": "Integer 100 SHR UByte 1",
+   "decl": [
+    "DIM v1107s AS Integer = 100",
+    "DIM v1108 AS UByte = 1"
+   ],
+   "expr": "v1107s SHR v1108"
+  },
+  {
+   "id": "Integer 100 SHL 3",
+   "decl": [
+    "DIM v1109 AS Integer = 100"
+   ],
+   "expr": "v1109 SHL 3"
+  },
+  {
+   "id": "Integer 100 SHL UByte 3",
+   "decl": [
+    "DIM v1109s AS Integer = 100",
+    "DIM v1110 AS UByte = 3"
+   ],
+   "expr": "v1109s SHL v1110"
+  },
+  {
+   "id": "Integer 100 SHR 3",
+   "decl": [
+    "DIM v1111 AS Integer = 100"
+   ],
+   "expr": "v1111 SHR 3"
+  },
+  {
+   "id": "Integer 100 SHR UByte 3",
+   "decl": [
+    "DIM v1111s AS Integer = 100",
+    "DIM v1112 AS UByte = 3"
+   ],
+   "expr": "v1111s SHR v1112"
+  },
+  {
+   "id": "Integer 100 SHL 8",
+   "decl": [
+    "DIM v1113 AS Integer = 100"
+   ],
+   "expr": "v1113 SHL 8"
+  },
+  {
+   "id": "Integer 100 SHL UByte 8",
+   "decl": [
+    "DIM v1113s AS Integer = 100",
+    "DIM v1114 AS UByte = 8"
+   ],
+   "expr": "v1113s SHL v1114"
+  },
+  {
+   "id": "Integer 100 SHR 8",
+   "decl": [
+    "DIM v1115 AS Integer = 100"
+   ],
+   "expr": "v1115 SHR 8"
+  },
+  {
+   "id": "Integer 100 SHR UByte 8",
+   "decl": [
+    "DIM v1115s AS Integer = 100",
+    "DIM v1116 AS UByte = 8"
+   ],
+   "expr": "v1115s SHR v1116"
+  },
+  {
+   "id": "Integer 100 SHL 17",
+   "decl": [
+    "DIM v1117 AS Integer = 100"
+   ],
+   "expr": "v1117 SHL 17"
+  },
+  {
+   "id": "Integer 100 SHL UByte 17",
+   "decl": [
+    "DIM v1117s AS Integer = 100",
+    "DIM v1118 AS UByte = 17"
+   ],
+   "expr": "v1117s SHL v1118"
+  },
+  {
+   "id": "Integer 100 SHR 17",
+   "decl": [
+    "DIM v1119 AS Integer = 100"
+   ],
+   "expr": "v1119 SHR 17"
+  },
+  {
+   "id": "Integer 100 SHR UByte 17",
+   "decl": [
+    "DIM v1119s AS Integer = 100",
+    "DIM v1120 AS UByte = 17"
+   ],
+   "expr": "v1119s SHR v1120"
+  },
+  {
+   "id": "ULong 4000000000 SHL 1",
+   "decl": [
+    "DIM v1121 AS ULong = 4000000000"
+   ],
+   "expr": "v1121 SHL 1"
+  },
+  {
+   "id": "ULong 4000000000 SHL UByte 1",
+   "decl": [
+    "DIM v1121s AS ULong = 4000000000",
+    "DIM v1122 AS UByte = 1"
+   ],
+   "expr": "v1121s SHL v1122"
+  },
+  {
+   "id": "ULong 4000000000 SHR 1",
+   "decl": [
+    "DIM v1123 AS ULong = 4000000000"
+   ],
+   "expr": "v1123 SHR 1"
+  },
+  {
+   "id": "ULong 4000000000 SHR UByte 1",
+   "decl": [
+    "DIM v1123s AS ULong = 4000000000",
+    "DIM v1124 AS UByte = 1"
+   ],
+   "expr": "v1123s SHR v1124"
+  },
+  {
+   "id": "ULong 4000000000 SHL 3",
+   "decl": [
+    "DIM v1125 AS ULong = 4000000000"
+   ],
+   "expr": "v1125 SHL 3"
+  },
+  {
+   "id": "ULong 4000000000 SHL UByte 3",
+   "decl": [
+    "DIM v1125s AS ULong = 4000000000",
+    "DIM v1126 AS UByte = 3"
+   ],
+   "expr": "v1125s SHL v1126"
+  },
+  {
+   "id": "ULong 4000000000 SHR 3",
+   "decl": [
+    "DIM v1127 AS ULong = 4000000000"
+   ],
+   "expr": "v1127 SHR 3"
+  },
+  {
+   "id": "ULong 4000000000 SHR UByte 3",
+   "decl": [
+    "DIM v1127s AS ULong = 4000000000",
+    "DIM v1128 AS UByte = 3"
+   ],
+   "expr": "v1127s SHR v1128"
+  },
+  {
+   "id": "ULong 4000000000 SHL 8",
+   "decl": [
+    "DIM v1129 AS ULong = 4000000000"
+   ],
+   "expr": "v1129 SHL 8"
+  },
+  {
+   "id": "ULong 4000000000 SHL UByte 8",
+   "decl": [
+    "DIM v1129s AS ULong = 4000000000",
+    "DIM v1130 AS UByte = 8"
+   ],
+   "expr": "v1129s SHL v1130"
+  },
+  {
+   "id": "ULong 4000000000 SHR 8",
+   "decl": [
+    "DIM v1131 AS ULong = 4000000000"
+   ],
+   "expr": "v1131 SHR 8"
+  },
+  {
+   "id": "ULong 4000000000 SHR UByte 8",
+   "decl": [
+    "DIM v1131s AS ULong = 4000000000",
+    "DIM v1132 AS UByte = 8"
+   ],
+   "expr": "v1131s SHR v1132"
+  },
+  {
+   "id": "ULong 4000000000 SHL 17",
+   "decl": [
+    "DIM v1133 AS ULong = 4000000000"
+   ],
+   "expr": "v1133 SHL 17"
+  },
+  {
+   "id": "ULong 4000000000 SHL UByte 17",
+   "decl": [
+    "DIM v1133s AS ULong = 4000000000",
+    "DIM v1134 AS UByte = 17"
+   ],
+   "expr": "v1133s SHL v1134"
+  },
+  {
+   "id": "ULong 4000000000 SHR 17",
+   "decl": [
+    "DIM v1135 AS ULong = 4000000000"
+   ],
+   "expr": "v1135 SHR 17"
+  },
+  {
+   "id": "ULong 4000000000 SHR UByte 17",
+   "decl": [
+    "DIM v1135s AS ULong = 4000000000",
+    "DIM v1136 AS UByte = 17"
+   ],
+   "expr": "v1135s SHR v1136"
+  },
+  {
+   "id": "ULong 7 SHL 1",
+   "decl": [
+    "DIM v1137 AS ULong = 7"
+   ],
+   "expr": "v1137 SHL 1"
+  },
+  {
+   "id": "ULong 7 SHL UByte 1",
+   "decl": [
+    "DIM v1137s AS ULong = 7",
+    "DIM v1138 AS UByte = 1"
+   ],
+   "expr": "v1137s SHL v1138"
+  },
+  {
+   "id": "ULong 7 SHR 1",
+   "decl": [
+    "DIM v1139 AS ULong = 7"
+   ],
+   "expr": "v1139 SHR 1"
+  },
+  {
+   "id": "ULong 7 SHR UByte 1",
+   "decl": [
+    "DIM v1139s AS ULong = 7",
+    "DIM v1140 AS UByte = 1"
+   ],
+   "expr": "v1139s SHR v1140"
+  },
+  {
+   "id": "ULong 7 SHL 3",
+   "decl": [
+    "DIM v1141 AS ULong = 7"
+   ],
+   "expr": "v1141 SHL 3"
+  },
+  {
+   "id": "ULong 7 SHL UByte 3",
+   "decl": [
+    "DIM v1141s AS ULong = 7",
+    "DIM v1142 AS UByte = 3"
+   ],
+   "expr": "v1141s SHL v1142"
+  },
+  {
+   "id": "ULong 7 SHR 3",
+   "decl": [
+    "DIM v1143 AS ULong = 7"
+   ],
+   "expr": "v1143 SHR 3"
+  },
+  {
+   "id": "ULong 7 SHR UByte 3",
+   "decl": [
+    "DIM v1143s AS ULong = 7",
+    "DIM v1144 AS UByte = 3"
+   ],
+   "expr": "v1143s SHR v1144"
+  },
+  {
+   "id": "ULong 7 SHL 8",
+   "decl": [
+    "DIM v1145 AS ULong = 7"
+   ],
+   "expr": "v1145 SHL 8"
+  },
+  {
+   "id": "ULong 7 SHL UByte 8",
+   "decl": [
+    "DIM v1145s AS ULong = 7",
+    "DIM v1146 AS UByte = 8"
+   ],
+   "expr": "v1145s SHL v1146"
+  },
+  {
+   "id": "ULong 7 SHR 8",
+   "decl": [
+    "DIM v1147 AS ULong = 7"
+   ],
+   "expr": "v1147 SHR 8"
+  },
+  {
+   "id": "ULong 7 SHR UByte 8",
+   "decl": [
+    "DIM v1147s AS ULong = 7",
+    "DIM v1148 AS UByte = 8"
+   ],
+   "expr": "v1147s SHR v1148"
+  },
+  {
+   "id": "ULong 7 SHL 17",
+   "decl": [
+    "DIM v1149 AS ULong = 7"
+   ],
+   "expr": "v1149 SHL 17"
+  },
+  {
+   "id": "ULong 7 SHL UByte 17",
+   "decl": [
+    "DIM v1149s AS ULong = 7",
+    "DIM v1150 AS UByte = 17"
+   ],
+   "expr": "v1149s SHL v1150"
+  },
+  {
+   "id": "ULong 7 SHR 17",
+   "decl": [
+    "DIM v1151 AS ULong = 7"
+   ],
+   "expr": "v1151 SHR 17"
+  },
+  {
+   "id": "ULong 7 SHR UByte 17",
+   "decl": [
+    "DIM v1151s AS ULong = 7",
+    "DIM v1152 AS UByte = 17"
+   ],
+   "expr": "v1151s SHR v1152"
+  },
+  {
+   "id": "Long -100000 SHL 1",
+   "decl": [
+    "DIM v1153 AS Long = -100000"
+   ],
+   "expr": "v1153 SHL 1"
+  },
+  {
+   "id": "Long -100000 SHL UByte 1",
+   "decl": [
+    "DIM v1153s AS Long = -100000",
+    "DIM v1154 AS UByte = 1"
+   ],
+   "expr": "v1153s SHL v1154"
+  },
+  {
+   "id": "Long -100000 SHR 1",
+   "decl": [
+    "DIM v1155 AS Long = -100000"
+   ],
+   "expr": "v1155 SHR 1"
+  },
+  {
+   "id": "Long -100000 SHR UByte 1",
+   "decl": [
+    "DIM v1155s AS Long = -100000",
+    "DIM v1156 AS UByte = 1"
+   ],
+   "expr": "v1155s SHR v1156"
+  },
+  {
+   "id": "Long -100000 SHL 3",
+   "decl": [
+    "DIM v1157 AS Long = -100000"
+   ],
+   "expr": "v1157 SHL 3"
+  },
+  {
+   "id": "Long -100000 SHL UByte 3",
+   "decl": [
+    "DIM v1157s AS Long = -100000",
+    "DIM v1158 AS UByte = 3"
+   ],
+   "expr": "v1157s SHL v1158"
+  },
+  {
+   "id": "Long -100000 SHR 3",
+   "decl": [
+    "DIM v1159 AS Long = -100000"
+   ],
+   "expr": "v1159 SHR 3"
+  },
+  {
+   "id": "Long -100000 SHR UByte 3",
+   "decl": [
+    "DIM v1159s AS Long = -100000",
+    "DIM v1160 AS UByte = 3"
+   ],
+   "expr": "v1159s SHR v1160"
+  },
+  {
+   "id": "Long -100000 SHL 8",
+   "decl": [
+    "DIM v1161 AS Long = -100000"
+   ],
+   "expr": "v1161 SHL 8"
+  },
+  {
+   "id": "Long -100000 SHL UByte 8",
+   "decl": [
+    "DIM v1161s AS Long = -100000",
+    "DIM v1162 AS UByte = 8"
+   ],
+   "expr": "v1161s SHL v1162"
+  },
+  {
+   "id": "Long -100000 SHR 8",
+   "decl": [
+    "DIM v1163 AS Long = -100000"
+   ],
+   "expr": "v1163 SHR 8"
+  },
+  {
+   "id": "Long -100000 SHR UByte 8",
+   "decl": [
+    "DIM v1163s AS Long = -100000",
+    "DIM v1164 AS UByte = 8"
+   ],
+   "expr": "v1163s SHR v1164"
+  },
+  {
+   "id": "Long -100000 SHL 17",
+   "decl": [
+    "DIM v1165 AS Long = -100000"
+   ],
+   "expr": "v1165 SHL 17"
+  },
+  {
+   "id": "Long -100000 SHL UByte 17",
+   "decl": [
+    "DIM v1165s AS Long = -100000",
+    "DIM v1166 AS UByte = 17"
+   ],
+   "expr": "v1165s SHL v1166"
+  },
+  {
+   "id": "Long -100000 SHR 17",
+   "decl": [
+    "DIM v1167 AS Long = -100000"
+   ],
+   "expr": "v1167 SHR 17"
+  },
+  {
+   "id": "Long -100000 SHR UByte 17",
+   "decl": [
+    "DIM v1167s AS Long = -100000",
+    "DIM v1168 AS UByte = 17"
+   ],
+   "expr": "v1167s SHR v1168"
+  },
+  {
+   "id": "Long 100000 SHL 1",
+   "decl": [
+    "DIM v1169 AS Long = 100000"
+   ],
+   "expr": "v1169 SHL 1"
+  },
+  {
+   "id": "Long 100000 SHL UByte 1",
+   "decl": [
+    "DIM v1169s AS Long = 100000",
+    "DIM v1170 AS UByte = 1"
+   ],
+   "expr": "v1169s SHL v1170"
+  },
+  {
+   "id": "Long 100000 SHR 1",
+   "decl": [
+    "DIM v1171 AS Long = 100000"
+   ],
+   "expr": "v1171 SHR 1"
+  },
+  {
+   "id": "Long 100000 SHR UByte 1",
+   "decl": [
+    "DIM v1171s AS Long = 100000",
+    "DIM v1172 AS UByte = 1"
+   ],
+   "expr": "v1171s SHR v1172"
+  },
+  {
+   "id": "Long 100000 SHL 3",
+   "decl": [
+    "DIM v1173 AS Long = 100000"
+   ],
+   "expr": "v1173 SHL 3"
+  },
+  {
+   "id": "Long 100000 SHL UByte 3",
+   "decl": [
+    "DIM v1173s AS Long = 100000",
+    "DIM v1174 AS UByte = 3"
+   ],
+   "expr": "v1173s SHL v1174"
+  },
+  {
+   "id": "Long 100000 SHR 3",
+   "decl": [
+    "DIM v1175 AS Long = 100000"
+   ],
+   "expr": "v1175 SHR 3"
+  },
+  {
+   "id": "Long 100000 SHR UByte 3",
+   "decl": [
+    "DIM v1175s AS Long = 100000",
+    "DIM v1176 AS UByte = 3"
+   ],
+   "expr": "v1175s SHR v1176"
+  },
+  {
+   "id": "Long 100000 SHL 8",
+   "decl": [
+    "DIM v1177 AS Long = 100000"
+   ],
+   "expr": "v1177 SHL 8"
+  },
+  {
+   "id": "Long 100000 SHL UByte 8",
+   "decl": [
+    "DIM v1177s AS Long = 100000",
+    "DIM v1178 AS UByte = 8"
+   ],
+   "expr": "v1177s SHL v1178"
+  },
+  {
+   "id": "Long 100000 SHR 8",
+   "decl": [
+    "DIM v1179 AS Long = 100000"
+   ],
+   "expr": "v1179 SHR 8"
+  },
+  {
+   "id": "Long 100000 SHR UByte 8",
+   "decl": [
+    "DIM v1179s AS Long = 100000",
+    "DIM v1180 AS UByte = 8"
+   ],
+   "expr": "v1179s SHR v1180"
+  },
+  {
+   "id": "Long 100000 SHL 17",
+   "decl": [
+    "DIM v1181 AS Long = 100000"
+   ],
+   "expr": "v1181 SHL 17"
+  },
+  {
+   "id": "Long 100000 SHL UByte 17",
+   "decl": [
+    "DIM v1181s AS Long = 100000",
+    "DIM v1182 AS UByte = 17"
+   ],
+   "expr": "v1181s SHL v1182"
+  },
+  {
+   "id": "Long 100000 SHR 17",
+   "decl": [
+    "DIM v1183 AS Long = 100000"
+   ],
+   "expr": "v1183 SHR 17"
+  },
+  {
+   "id": "Long 100000 SHR UByte 17",
+   "decl": [
+    "DIM v1183s AS Long = 100000",
+    "DIM v1184 AS UByte = 17"
+   ],
+   "expr": "v1183s SHR v1184"
+  }
+ ]
+}

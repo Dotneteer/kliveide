@@ -1,0 +1,251 @@
+{
+ "suite": "print",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "PRINT Float 0",
+   "decl": [
+    "DIM v1663 AS Float = 0"
+   ],
+   "expr": "v1663"
+  },
+  {
+   "id": "PRINT Float 1",
+   "decl": [
+    "DIM v1664 AS Float = 1"
+   ],
+   "expr": "v1664"
+  },
+  {
+   "id": "PRINT Float -1",
+   "decl": [
+    "DIM v1665 AS Float = -1"
+   ],
+   "expr": "v1665"
+  },
+  {
+   "id": "PRINT Float 0.5",
+   "decl": [
+    "DIM v1666 AS Float = 0.5"
+   ],
+   "expr": "v1666"
+  },
+  {
+   "id": "PRINT Float 0.001",
+   "decl": [
+    "DIM v1667 AS Float = 0.001"
+   ],
+   "expr": "v1667"
+  },
+  {
+   "id": "PRINT Float 1E-5",
+   "decl": [
+    "DIM v1668 AS Float = 1E-5"
+   ],
+   "expr": "v1668"
+  },
+  {
+   "id": "PRINT Float 1.5E-5",
+   "decl": [
+    "DIM v1669 AS Float = 1.5E-5"
+   ],
+   "expr": "v1669"
+  },
+  {
+   "id": "PRINT Float 123456789",
+   "decl": [
+    "DIM v1670 AS Float = 123456789"
+   ],
+   "expr": "v1670"
+  },
+  {
+   "id": "PRINT Float 1234567890",
+   "decl": [
+    "DIM v1671 AS Float = 1234567890"
+   ],
+   "expr": "v1671"
+  },
+  {
+   "id": "PRINT Float 1E10",
+   "decl": [
+    "DIM v1672 AS Float = 1E10"
+   ],
+   "expr": "v1672"
+  },
+  {
+   "id": "PRINT Float -1E10",
+   "decl": [
+    "DIM v1673 AS Float = -1E10"
+   ],
+   "expr": "v1673"
+  },
+  {
+   "id": "PRINT Float 2147483648",
+   "decl": [
+    "DIM v1674 AS Float = 2147483648"
+   ],
+   "expr": "v1674"
+  },
+  {
+   "id": "PRINT Float 1E38",
+   "decl": [
+    "DIM v1675 AS Float = 1E38"
+   ],
+   "expr": "v1675"
+  },
+  {
+   "id": "PRINT Float 1E-38",
+   "decl": [
+    "DIM v1676 AS Float = 1E-38"
+   ],
+   "expr": "v1676"
+  },
+  {
+   "id": "PRINT Float 3.14159265",
+   "decl": [
+    "DIM v1677 AS Float = 3.14159265"
+   ],
+   "expr": "v1677"
+  },
+  {
+   "id": "PRINT Float 99999999",
+   "decl": [
+    "DIM v1678 AS Float = 99999999"
+   ],
+   "expr": "v1678"
+  },
+  {
+   "id": "PRINT Float 100000000",
+   "decl": [
+    "DIM v1679 AS Float = 100000000"
+   ],
+   "expr": "v1679"
+  },
+  {
+   "id": "PRINT Float 0.1",
+   "decl": [
+    "DIM v1680 AS Float = 0.1"
+   ],
+   "expr": "v1680"
+  },
+  {
+   "id": "PRINT Fixed 0.5",
+   "decl": [
+    "DIM v1681 AS Fixed = 0.5"
+   ],
+   "expr": "v1681"
+  },
+  {
+   "id": "PRINT Fixed -0.5",
+   "decl": [
+    "DIM v1682 AS Fixed = -0.5"
+   ],
+   "expr": "v1682"
+  },
+  {
+   "id": "PRINT Fixed 32767.5",
+   "decl": [
+    "DIM v1683 AS Fixed = 32767.5"
+   ],
+   "expr": "v1683"
+  },
+  {
+   "id": "PRINT Fixed -32768",
+   "decl": [
+    "DIM v1684 AS Fixed = -32768"
+   ],
+   "expr": "v1684"
+  },
+  {
+   "id": "PRINT Fixed 0.0001",
+   "decl": [
+    "DIM v1685 AS Fixed = 0.0001"
+   ],
+   "expr": "v1685"
+  },
+  {
+   "id": "PRINT Fixed 1.1",
+   "decl": [
+    "DIM v1686 AS Fixed = 1.1"
+   ],
+   "expr": "v1686"
+  },
+  {
+   "id": "PRINT Fixed -0.1",
+   "decl": [
+    "DIM v1687 AS Fixed = -0.1"
+   ],
+   "expr": "v1687"
+  },
+  {
+   "id": "PRINT UByte 0",
+   "decl": [
+    "DIM v1688 AS UByte = 0"
+   ],
+   "expr": "v1688"
+  },
+  {
+   "id": "PRINT UByte 255",
+   "decl": [
+    "DIM v1689 AS UByte = 255"
+   ],
+   "expr": "v1689"
+  },
+  {
+   "id": "PRINT Byte -128",
+   "decl": [
+    "DIM v1690 AS Byte = -128"
+   ],
+   "expr": "v1690"
+  },
+  {
+   "id": "PRINT Byte 127",
+   "decl": [
+    "DIM v1691 AS Byte = 127"
+   ],
+   "expr": "v1691"
+  },
+  {
+   "id": "PRINT UInteger 65535",
+   "decl": [
+    "DIM v1692 AS UInteger = 65535"
+   ],
+   "expr": "v1692"
+  },
+  {
+   "id": "PRINT Integer -32768",
+   "decl": [
+    "DIM v1693 AS Integer = -32768"
+   ],
+   "expr": "v1693"
+  },
+  {
+   "id": "PRINT Integer 32767",
+   "decl": [
+    "DIM v1694 AS Integer = 32767"
+   ],
+   "expr": "v1694"
+  },
+  {
+   "id": "PRINT ULong 4294967295",
+   "decl": [
+    "DIM v1695 AS ULong = 4294967295"
+   ],
+   "expr": "v1695"
+  },
+  {
+   "id": "PRINT Long -2147483648",
+   "decl": [
+    "DIM v1696 AS Long = -2147483648"
+   ],
+   "expr": "v1696"
+  },
+  {
+   "id": "PRINT Long 2147483647",
+   "decl": [
+    "DIM v1697 AS Long = 2147483647"
+   ],
+   "expr": "v1697"
+  }
+ ]
+}

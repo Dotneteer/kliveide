@@ -1,0 +1,2054 @@
+{
+ "suite": "convert",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 200 -> UByte (assignment)",
+   "decl": [
+    "DIM v1311 AS UByte = 200",
+    "DIM v1312 AS UByte",
+    "v1312 = v1311"
+   ],
+   "expr": "v1312"
+  },
+  {
+   "id": "CAST(UByte, UByte 200)",
+   "decl": [
+    "DIM v1311c AS UByte = 200"
+   ],
+   "expr": "CAST(UByte, v1311c)"
+  },
+  {
+   "id": "UByte 200 -> Byte (assignment)",
+   "decl": [
+    "DIM v1313 AS UByte = 200",
+    "DIM v1314 AS Byte",
+    "v1314 = v1313"
+   ],
+   "expr": "v1314"
+  },
+  {
+   "id": "CAST(Byte, UByte 200)",
+   "decl": [
+    "DIM v1313c AS UByte = 200"
+   ],
+   "expr": "CAST(Byte, v1313c)"
+  },
+  {
+   "id": "UByte 200 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1315 AS UByte = 200",
+    "DIM v1316 AS UInteger",
+    "v1316 = v1315"
+   ],
+   "expr": "v1316"
+  },
+  {
+   "id": "CAST(UInteger, UByte 200)",
+   "decl": [
+    "DIM v1315c AS UByte = 200"
+   ],
+   "expr": "CAST(UInteger, v1315c)"
+  },
+  {
+   "id": "UByte 200 -> Integer (assignment)",
+   "decl": [
+    "DIM v1317 AS UByte = 200",
+    "DIM v1318 AS Integer",
+    "v1318 = v1317"
+   ],
+   "expr": "v1318"
+  },
+  {
+   "id": "CAST(Integer, UByte 200)",
+   "decl": [
+    "DIM v1317c AS UByte = 200"
+   ],
+   "expr": "CAST(Integer, v1317c)"
+  },
+  {
+   "id": "UByte 200 -> ULong (assignment)",
+   "decl": [
+    "DIM v1319 AS UByte = 200",
+    "DIM v1320 AS ULong",
+    "v1320 = v1319"
+   ],
+   "expr": "v1320"
+  },
+  {
+   "id": "CAST(ULong, UByte 200)",
+   "decl": [
+    "DIM v1319c AS UByte = 200"
+   ],
+   "expr": "CAST(ULong, v1319c)"
+  },
+  {
+   "id": "UByte 200 -> Long (assignment)",
+   "decl": [
+    "DIM v1321 AS UByte = 200",
+    "DIM v1322 AS Long",
+    "v1322 = v1321"
+   ],
+   "expr": "v1322"
+  },
+  {
+   "id": "CAST(Long, UByte 200)",
+   "decl": [
+    "DIM v1321c AS UByte = 200"
+   ],
+   "expr": "CAST(Long, v1321c)"
+  },
+  {
+   "id": "UByte 200 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1323 AS UByte = 200",
+    "DIM v1324 AS Fixed",
+    "v1324 = v1323"
+   ],
+   "expr": "v1324"
+  },
+  {
+   "id": "CAST(Fixed, UByte 200)",
+   "decl": [
+    "DIM v1323c AS UByte = 200"
+   ],
+   "expr": "CAST(Fixed, v1323c)"
+  },
+  {
+   "id": "UByte 200 -> Float (assignment)",
+   "decl": [
+    "DIM v1325 AS UByte = 200",
+    "DIM v1326 AS Float",
+    "v1326 = v1325"
+   ],
+   "expr": "v1326"
+  },
+  {
+   "id": "CAST(Float, UByte 200)",
+   "decl": [
+    "DIM v1325c AS UByte = 200"
+   ],
+   "expr": "CAST(Float, v1325c)"
+  },
+  {
+   "id": "UByte 7 -> UByte (assignment)",
+   "decl": [
+    "DIM v1327 AS UByte = 7",
+    "DIM v1328 AS UByte",
+    "v1328 = v1327"
+   ],
+   "expr": "v1328"
+  },
+  {
+   "id": "CAST(UByte, UByte 7)",
+   "decl": [
+    "DIM v1327c AS UByte = 7"
+   ],
+   "expr": "CAST(UByte, v1327c)"
+  },
+  {
+   "id": "UByte 7 -> Byte (assignment)",
+   "decl": [
+    "DIM v1329 AS UByte = 7",
+    "DIM v1330 AS Byte",
+    "v1330 = v1329"
+   ],
+   "expr": "v1330"
+  },
+  {
+   "id": "CAST(Byte, UByte 7)",
+   "decl": [
+    "DIM v1329c AS UByte = 7"
+   ],
+   "expr": "CAST(Byte, v1329c)"
+  },
+  {
+   "id": "UByte 7 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1331 AS UByte = 7",
+    "DIM v1332 AS UInteger",
+    "v1332 = v1331"
+   ],
+   "expr": "v1332"
+  },
+  {
+   "id": "CAST(UInteger, UByte 7)",
+   "decl": [
+    "DIM v1331c AS UByte = 7"
+   ],
+   "expr": "CAST(UInteger, v1331c)"
+  },
+  {
+   "id": "UByte 7 -> Integer (assignment)",
+   "decl": [
+    "DIM v1333 AS UByte = 7",
+    "DIM v1334 AS Integer",
+    "v1334 = v1333"
+   ],
+   "expr": "v1334"
+  },
+  {
+   "id": "CAST(Integer, UByte 7)",
+   "decl": [
+    "DIM v1333c AS UByte = 7"
+   ],
+   "expr": "CAST(Integer, v1333c)"
+  },
+  {
+   "id": "UByte 7 -> ULong (assignment)",
+   "decl": [
+    "DIM v1335 AS UByte = 7",
+    "DIM v1336 AS ULong",
+    "v1336 = v1335"
+   ],
+   "expr": "v1336"
+  },
+  {
+   "id": "CAST(ULong, UByte 7)",
+   "decl": [
+    "DIM v1335c AS UByte = 7"
+   ],
+   "expr": "CAST(ULong, v1335c)"
+  },
+  {
+   "id": "UByte 7 -> Long (assignment)",
+   "decl": [
+    "DIM v1337 AS UByte = 7",
+    "DIM v1338 AS Long",
+    "v1338 = v1337"
+   ],
+   "expr": "v1338"
+  },
+  {
+   "id": "CAST(Long, UByte 7)",
+   "decl": [
+    "DIM v1337c AS UByte = 7"
+   ],
+   "expr": "CAST(Long, v1337c)"
+  },
+  {
+   "id": "UByte 7 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1339 AS UByte = 7",
+    "DIM v1340 AS Fixed",
+    "v1340 = v1339"
+   ],
+   "expr": "v1340"
+  },
+  {
+   "id": "CAST(Fixed, UByte 7)",
+   "decl": [
+    "DIM v1339c AS UByte = 7"
+   ],
+   "expr": "CAST(Fixed, v1339c)"
+  },
+  {
+   "id": "UByte 7 -> Float (assignment)",
+   "decl": [
+    "DIM v1341 AS UByte = 7",
+    "DIM v1342 AS Float",
+    "v1342 = v1341"
+   ],
+   "expr": "v1342"
+  },
+  {
+   "id": "CAST(Float, UByte 7)",
+   "decl": [
+    "DIM v1341c AS UByte = 7"
+   ],
+   "expr": "CAST(Float, v1341c)"
+  },
+  {
+   "id": "Byte -7 -> UByte (assignment)",
+   "decl": [
+    "DIM v1343 AS Byte = -7",
+    "DIM v1344 AS UByte",
+    "v1344 = v1343"
+   ],
+   "expr": "v1344"
+  },
+  {
+   "id": "CAST(UByte, Byte -7)",
+   "decl": [
+    "DIM v1343c AS Byte = -7"
+   ],
+   "expr": "CAST(UByte, v1343c)"
+  },
+  {
+   "id": "Byte -7 -> Byte (assignment)",
+   "decl": [
+    "DIM v1345 AS Byte = -7",
+    "DIM v1346 AS Byte",
+    "v1346 = v1345"
+   ],
+   "expr": "v1346"
+  },
+  {
+   "id": "CAST(Byte, Byte -7)",
+   "decl": [
+    "DIM v1345c AS Byte = -7"
+   ],
+   "expr": "CAST(Byte, v1345c)"
+  },
+  {
+   "id": "Byte -7 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1347 AS Byte = -7",
+    "DIM v1348 AS UInteger",
+    "v1348 = v1347"
+   ],
+   "expr": "v1348"
+  },
+  {
+   "id": "CAST(UInteger, Byte -7)",
+   "decl": [
+    "DIM v1347c AS Byte = -7"
+   ],
+   "expr": "CAST(UInteger, v1347c)"
+  },
+  {
+   "id": "Byte -7 -> Integer (assignment)",
+   "decl": [
+    "DIM v1349 AS Byte = -7",
+    "DIM v1350 AS Integer",
+    "v1350 = v1349"
+   ],
+   "expr": "v1350"
+  },
+  {
+   "id": "CAST(Integer, Byte -7)",
+   "decl": [
+    "DIM v1349c AS Byte = -7"
+   ],
+   "expr": "CAST(Integer, v1349c)"
+  },
+  {
+   "id": "Byte -7 -> ULong (assignment)",
+   "decl": [
+    "DIM v1351 AS Byte = -7",
+    "DIM v1352 AS ULong",
+    "v1352 = v1351"
+   ],
+   "expr": "v1352"
+  },
+  {
+   "id": "CAST(ULong, Byte -7)",
+   "decl": [
+    "DIM v1351c AS Byte = -7"
+   ],
+   "expr": "CAST(ULong, v1351c)"
+  },
+  {
+   "id": "Byte -7 -> Long (assignment)",
+   "decl": [
+    "DIM v1353 AS Byte = -7",
+    "DIM v1354 AS Long",
+    "v1354 = v1353"
+   ],
+   "expr": "v1354"
+  },
+  {
+   "id": "CAST(Long, Byte -7)",
+   "decl": [
+    "DIM v1353c AS Byte = -7"
+   ],
+   "expr": "CAST(Long, v1353c)"
+  },
+  {
+   "id": "Byte -7 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1355 AS Byte = -7",
+    "DIM v1356 AS Fixed",
+    "v1356 = v1355"
+   ],
+   "expr": "v1356"
+  },
+  {
+   "id": "CAST(Fixed, Byte -7)",
+   "decl": [
+    "DIM v1355c AS Byte = -7"
+   ],
+   "expr": "CAST(Fixed, v1355c)"
+  },
+  {
+   "id": "Byte -7 -> Float (assignment)",
+   "decl": [
+    "DIM v1357 AS Byte = -7",
+    "DIM v1358 AS Float",
+    "v1358 = v1357"
+   ],
+   "expr": "v1358"
+  },
+  {
+   "id": "CAST(Float, Byte -7)",
+   "decl": [
+    "DIM v1357c AS Byte = -7"
+   ],
+   "expr": "CAST(Float, v1357c)"
+  },
+  {
+   "id": "Byte 7 -> UByte (assignment)",
+   "decl": [
+    "DIM v1359 AS Byte = 7",
+    "DIM v1360 AS UByte",
+    "v1360 = v1359"
+   ],
+   "expr": "v1360"
+  },
+  {
+   "id": "CAST(UByte, Byte 7)",
+   "decl": [
+    "DIM v1359c AS Byte = 7"
+   ],
+   "expr": "CAST(UByte, v1359c)"
+  },
+  {
+   "id": "Byte 7 -> Byte (assignment)",
+   "decl": [
+    "DIM v1361 AS Byte = 7",
+    "DIM v1362 AS Byte",
+    "v1362 = v1361"
+   ],
+   "expr": "v1362"
+  },
+  {
+   "id": "CAST(Byte, Byte 7)",
+   "decl": [
+    "DIM v1361c AS Byte = 7"
+   ],
+   "expr": "CAST(Byte, v1361c)"
+  },
+  {
+   "id": "Byte 7 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1363 AS Byte = 7",
+    "DIM v1364 AS UInteger",
+    "v1364 = v1363"
+   ],
+   "expr": "v1364"
+  },
+  {
+   "id": "CAST(UInteger, Byte 7)",
+   "decl": [
+    "DIM v1363c AS Byte = 7"
+   ],
+   "expr": "CAST(UInteger, v1363c)"
+  },
+  {
+   "id": "Byte 7 -> Integer (assignment)",
+   "decl": [
+    "DIM v1365 AS Byte = 7",
+    "DIM v1366 AS Integer",
+    "v1366 = v1365"
+   ],
+   "expr": "v1366"
+  },
+  {
+   "id": "CAST(Integer, Byte 7)",
+   "decl": [
+    "DIM v1365c AS Byte = 7"
+   ],
+   "expr": "CAST(Integer, v1365c)"
+  },
+  {
+   "id": "Byte 7 -> ULong (assignment)",
+   "decl": [
+    "DIM v1367 AS Byte = 7",
+    "DIM v1368 AS ULong",
+    "v1368 = v1367"
+   ],
+   "expr": "v1368"
+  },
+  {
+   "id": "CAST(ULong, Byte 7)",
+   "decl": [
+    "DIM v1367c AS Byte = 7"
+   ],
+   "expr": "CAST(ULong, v1367c)"
+  },
+  {
+   "id": "Byte 7 -> Long (assignment)",
+   "decl": [
+    "DIM v1369 AS Byte = 7",
+    "DIM v1370 AS Long",
+    "v1370 = v1369"
+   ],
+   "expr": "v1370"
+  },
+  {
+   "id": "CAST(Long, Byte 7)",
+   "decl": [
+    "DIM v1369c AS Byte = 7"
+   ],
+   "expr": "CAST(Long, v1369c)"
+  },
+  {
+   "id": "Byte 7 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1371 AS Byte = 7",
+    "DIM v1372 AS Fixed",
+    "v1372 = v1371"
+   ],
+   "expr": "v1372"
+  },
+  {
+   "id": "CAST(Fixed, Byte 7)",
+   "decl": [
+    "DIM v1371c AS Byte = 7"
+   ],
+   "expr": "CAST(Fixed, v1371c)"
+  },
+  {
+   "id": "Byte 7 -> Float (assignment)",
+   "decl": [
+    "DIM v1373 AS Byte = 7",
+    "DIM v1374 AS Float",
+    "v1374 = v1373"
+   ],
+   "expr": "v1374"
+  },
+  {
+   "id": "CAST(Float, Byte 7)",
+   "decl": [
+    "DIM v1373c AS Byte = 7"
+   ],
+   "expr": "CAST(Float, v1373c)"
+  },
+  {
+   "id": "UInteger 60000 -> UByte (assignment)",
+   "decl": [
+    "DIM v1375 AS UInteger = 60000",
+    "DIM v1376 AS UByte",
+    "v1376 = v1375"
+   ],
+   "expr": "v1376"
+  },
+  {
+   "id": "CAST(UByte, UInteger 60000)",
+   "decl": [
+    "DIM v1375c AS UInteger = 60000"
+   ],
+   "expr": "CAST(UByte, v1375c)"
+  },
+  {
+   "id": "UInteger 60000 -> Byte (assignment)",
+   "decl": [
+    "DIM v1377 AS UInteger = 60000",
+    "DIM v1378 AS Byte",
+    "v1378 = v1377"
+   ],
+   "expr": "v1378"
+  },
+  {
+   "id": "CAST(Byte, UInteger 60000)",
+   "decl": [
+    "DIM v1377c AS UInteger = 60000"
+   ],
+   "expr": "CAST(Byte, v1377c)"
+  },
+  {
+   "id": "UInteger 60000 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1379 AS UInteger = 60000",
+    "DIM v1380 AS UInteger",
+    "v1380 = v1379"
+   ],
+   "expr": "v1380"
+  },
+  {
+   "id": "CAST(UInteger, UInteger 60000)",
+   "decl": [
+    "DIM v1379c AS UInteger = 60000"
+   ],
+   "expr": "CAST(UInteger, v1379c)"
+  },
+  {
+   "id": "UInteger 60000 -> Integer (assignment)",
+   "decl": [
+    "DIM v1381 AS UInteger = 60000",
+    "DIM v1382 AS Integer",
+    "v1382 = v1381"
+   ],
+   "expr": "v1382"
+  },
+  {
+   "id": "CAST(Integer, UInteger 60000)",
+   "decl": [
+    "DIM v1381c AS UInteger = 60000"
+   ],
+   "expr": "CAST(Integer, v1381c)"
+  },
+  {
+   "id": "UInteger 60000 -> ULong (assignment)",
+   "decl": [
+    "DIM v1383 AS UInteger = 60000",
+    "DIM v1384 AS ULong",
+    "v1384 = v1383"
+   ],
+   "expr": "v1384"
+  },
+  {
+   "id": "CAST(ULong, UInteger 60000)",
+   "decl": [
+    "DIM v1383c AS UInteger = 60000"
+   ],
+   "expr": "CAST(ULong, v1383c)"
+  },
+  {
+   "id": "UInteger 60000 -> Long (assignment)",
+   "decl": [
+    "DIM v1385 AS UInteger = 60000",
+    "DIM v1386 AS Long",
+    "v1386 = v1385"
+   ],
+   "expr": "v1386"
+  },
+  {
+   "id": "CAST(Long, UInteger 60000)",
+   "decl": [
+    "DIM v1385c AS UInteger = 60000"
+   ],
+   "expr": "CAST(Long, v1385c)"
+  },
+  {
+   "id": "UInteger 60000 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1387 AS UInteger = 60000",
+    "DIM v1388 AS Fixed",
+    "v1388 = v1387"
+   ],
+   "expr": "v1388"
+  },
+  {
+   "id": "CAST(Fixed, UInteger 60000)",
+   "decl": [
+    "DIM v1387c AS UInteger = 60000"
+   ],
+   "expr": "CAST(Fixed, v1387c)"
+  },
+  {
+   "id": "UInteger 60000 -> Float (assignment)",
+   "decl": [
+    "DIM v1389 AS UInteger = 60000",
+    "DIM v1390 AS Float",
+    "v1390 = v1389"
+   ],
+   "expr": "v1390"
+  },
+  {
+   "id": "CAST(Float, UInteger 60000)",
+   "decl": [
+    "DIM v1389c AS UInteger = 60000"
+   ],
+   "expr": "CAST(Float, v1389c)"
+  },
+  {
+   "id": "UInteger 7 -> UByte (assignment)",
+   "decl": [
+    "DIM v1391 AS UInteger = 7",
+    "DIM v1392 AS UByte",
+    "v1392 = v1391"
+   ],
+   "expr": "v1392"
+  },
+  {
+   "id": "CAST(UByte, UInteger 7)",
+   "decl": [
+    "DIM v1391c AS UInteger = 7"
+   ],
+   "expr": "CAST(UByte, v1391c)"
+  },
+  {
+   "id": "UInteger 7 -> Byte (assignment)",
+   "decl": [
+    "DIM v1393 AS UInteger = 7",
+    "DIM v1394 AS Byte",
+    "v1394 = v1393"
+   ],
+   "expr": "v1394"
+  },
+  {
+   "id": "CAST(Byte, UInteger 7)",
+   "decl": [
+    "DIM v1393c AS UInteger = 7"
+   ],
+   "expr": "CAST(Byte, v1393c)"
+  },
+  {
+   "id": "UInteger 7 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1395 AS UInteger = 7",
+    "DIM v1396 AS UInteger",
+    "v1396 = v1395"
+   ],
+   "expr": "v1396"
+  },
+  {
+   "id": "CAST(UInteger, UInteger 7)",
+   "decl": [
+    "DIM v1395c AS UInteger = 7"
+   ],
+   "expr": "CAST(UInteger, v1395c)"
+  },
+  {
+   "id": "UInteger 7 -> Integer (assignment)",
+   "decl": [
+    "DIM v1397 AS UInteger = 7",
+    "DIM v1398 AS Integer",
+    "v1398 = v1397"
+   ],
+   "expr": "v1398"
+  },
+  {
+   "id": "CAST(Integer, UInteger 7)",
+   "decl": [
+    "DIM v1397c AS UInteger = 7"
+   ],
+   "expr": "CAST(Integer, v1397c)"
+  },
+  {
+   "id": "UInteger 7 -> ULong (assignment)",
+   "decl": [
+    "DIM v1399 AS UInteger = 7",
+    "DIM v1400 AS ULong",
+    "v1400 = v1399"
+   ],
+   "expr": "v1400"
+  },
+  {
+   "id": "CAST(ULong, UInteger 7)",
+   "decl": [
+    "DIM v1399c AS UInteger = 7"
+   ],
+   "expr": "CAST(ULong, v1399c)"
+  },
+  {
+   "id": "UInteger 7 -> Long (assignment)",
+   "decl": [
+    "DIM v1401 AS UInteger = 7",
+    "DIM v1402 AS Long",
+    "v1402 = v1401"
+   ],
+   "expr": "v1402"
+  },
+  {
+   "id": "CAST(Long, UInteger 7)",
+   "decl": [
+    "DIM v1401c AS UInteger = 7"
+   ],
+   "expr": "CAST(Long, v1401c)"
+  },
+  {
+   "id": "UInteger 7 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1403 AS UInteger = 7",
+    "DIM v1404 AS Fixed",
+    "v1404 = v1403"
+   ],
+   "expr": "v1404"
+  },
+  {
+   "id": "CAST(Fixed, UInteger 7)",
+   "decl": [
+    "DIM v1403c AS UInteger = 7"
+   ],
+   "expr": "CAST(Fixed, v1403c)"
+  },
+  {
+   "id": "UInteger 7 -> Float (assignment)",
+   "decl": [
+    "DIM v1405 AS UInteger = 7",
+    "DIM v1406 AS Float",
+    "v1406 = v1405"
+   ],
+   "expr": "v1406"
+  },
+  {
+   "id": "CAST(Float, UInteger 7)",
+   "decl": [
+    "DIM v1405c AS UInteger = 7"
+   ],
+   "expr": "CAST(Float, v1405c)"
+  },
+  {
+   "id": "Integer -100 -> UByte (assignment)",
+   "decl": [
+    "DIM v1407 AS Integer = -100",
+    "DIM v1408 AS UByte",
+    "v1408 = v1407"
+   ],
+   "expr": "v1408"
+  },
+  {
+   "id": "CAST(UByte, Integer -100)",
+   "decl": [
+    "DIM v1407c AS Integer = -100"
+   ],
+   "expr": "CAST(UByte, v1407c)"
+  },
+  {
+   "id": "Integer -100 -> Byte (assignment)",
+   "decl": [
+    "DIM v1409 AS Integer = -100",
+    "DIM v1410 AS Byte",
+    "v1410 = v1409"
+   ],
+   "expr": "v1410"
+  },
+  {
+   "id": "CAST(Byte, Integer -100)",
+   "decl": [
+    "DIM v1409c AS Integer = -100"
+   ],
+   "expr": "CAST(Byte, v1409c)"
+  },
+  {
+   "id": "Integer -100 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1411 AS Integer = -100",
+    "DIM v1412 AS UInteger",
+    "v1412 = v1411"
+   ],
+   "expr": "v1412"
+  },
+  {
+   "id": "CAST(UInteger, Integer -100)",
+   "decl": [
+    "DIM v1411c AS Integer = -100"
+   ],
+   "expr": "CAST(UInteger, v1411c)"
+  },
+  {
+   "id": "Integer -100 -> Integer (assignment)",
+   "decl": [
+    "DIM v1413 AS Integer = -100",
+    "DIM v1414 AS Integer",
+    "v1414 = v1413"
+   ],
+   "expr": "v1414"
+  },
+  {
+   "id": "CAST(Integer, Integer -100)",
+   "decl": [
+    "DIM v1413c AS Integer = -100"
+   ],
+   "expr": "CAST(Integer, v1413c)"
+  },
+  {
+   "id": "Integer -100 -> ULong (assignment)",
+   "decl": [
+    "DIM v1415 AS Integer = -100",
+    "DIM v1416 AS ULong",
+    "v1416 = v1415"
+   ],
+   "expr": "v1416"
+  },
+  {
+   "id": "CAST(ULong, Integer -100)",
+   "decl": [
+    "DIM v1415c AS Integer = -100"
+   ],
+   "expr": "CAST(ULong, v1415c)"
+  },
+  {
+   "id": "Integer -100 -> Long (assignment)",
+   "decl": [
+    "DIM v1417 AS Integer = -100",
+    "DIM v1418 AS Long",
+    "v1418 = v1417"
+   ],
+   "expr": "v1418"
+  },
+  {
+   "id": "CAST(Long, Integer -100)",
+   "decl": [
+    "DIM v1417c AS Integer = -100"
+   ],
+   "expr": "CAST(Long, v1417c)"
+  },
+  {
+   "id": "Integer -100 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1419 AS Integer = -100",
+    "DIM v1420 AS Fixed",
+    "v1420 = v1419"
+   ],
+   "expr": "v1420"
+  },
+  {
+   "id": "CAST(Fixed, Integer -100)",
+   "decl": [
+    "DIM v1419c AS Integer = -100"
+   ],
+   "expr": "CAST(Fixed, v1419c)"
+  },
+  {
+   "id": "Integer -100 -> Float (assignment)",
+   "decl": [
+    "DIM v1421 AS Integer = -100",
+    "DIM v1422 AS Float",
+    "v1422 = v1421"
+   ],
+   "expr": "v1422"
+  },
+  {
+   "id": "CAST(Float, Integer -100)",
+   "decl": [
+    "DIM v1421c AS Integer = -100"
+   ],
+   "expr": "CAST(Float, v1421c)"
+  },
+  {
+   "id": "Integer 100 -> UByte (assignment)",
+   "decl": [
+    "DIM v1423 AS Integer = 100",
+    "DIM v1424 AS UByte",
+    "v1424 = v1423"
+   ],
+   "expr": "v1424"
+  },
+  {
+   "id": "CAST(UByte, Integer 100)",
+   "decl": [
+    "DIM v1423c AS Integer = 100"
+   ],
+   "expr": "CAST(UByte, v1423c)"
+  },
+  {
+   "id": "Integer 100 -> Byte (assignment)",
+   "decl": [
+    "DIM v1425 AS Integer = 100",
+    "DIM v1426 AS Byte",
+    "v1426 = v1425"
+   ],
+   "expr": "v1426"
+  },
+  {
+   "id": "CAST(Byte, Integer 100)",
+   "decl": [
+    "DIM v1425c AS Integer = 100"
+   ],
+   "expr": "CAST(Byte, v1425c)"
+  },
+  {
+   "id": "Integer 100 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1427 AS Integer = 100",
+    "DIM v1428 AS UInteger",
+    "v1428 = v1427"
+   ],
+   "expr": "v1428"
+  },
+  {
+   "id": "CAST(UInteger, Integer 100)",
+   "decl": [
+    "DIM v1427c AS Integer = 100"
+   ],
+   "expr": "CAST(UInteger, v1427c)"
+  },
+  {
+   "id": "Integer 100 -> Integer (assignment)",
+   "decl": [
+    "DIM v1429 AS Integer = 100",
+    "DIM v1430 AS Integer",
+    "v1430 = v1429"
+   ],
+   "expr": "v1430"
+  },
+  {
+   "id": "CAST(Integer, Integer 100)",
+   "decl": [
+    "DIM v1429c AS Integer = 100"
+   ],
+   "expr": "CAST(Integer, v1429c)"
+  },
+  {
+   "id": "Integer 100 -> ULong (assignment)",
+   "decl": [
+    "DIM v1431 AS Integer = 100",
+    "DIM v1432 AS ULong",
+    "v1432 = v1431"
+   ],
+   "expr": "v1432"
+  },
+  {
+   "id": "CAST(ULong, Integer 100)",
+   "decl": [
+    "DIM v1431c AS Integer = 100"
+   ],
+   "expr": "CAST(ULong, v1431c)"
+  },
+  {
+   "id": "Integer 100 -> Long (assignment)",
+   "decl": [
+    "DIM v1433 AS Integer = 100",
+    "DIM v1434 AS Long",
+    "v1434 = v1433"
+   ],
+   "expr": "v1434"
+  },
+  {
+   "id": "CAST(Long, Integer 100)",
+   "decl": [
+    "DIM v1433c AS Integer = 100"
+   ],
+   "expr": "CAST(Long, v1433c)"
+  },
+  {
+   "id": "Integer 100 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1435 AS Integer = 100",
+    "DIM v1436 AS Fixed",
+    "v1436 = v1435"
+   ],
+   "expr": "v1436"
+  },
+  {
+   "id": "CAST(Fixed, Integer 100)",
+   "decl": [
+    "DIM v1435c AS Integer = 100"
+   ],
+   "expr": "CAST(Fixed, v1435c)"
+  },
+  {
+   "id": "Integer 100 -> Float (assignment)",
+   "decl": [
+    "DIM v1437 AS Integer = 100",
+    "DIM v1438 AS Float",
+    "v1438 = v1437"
+   ],
+   "expr": "v1438"
+  },
+  {
+   "id": "CAST(Float, Integer 100)",
+   "decl": [
+    "DIM v1437c AS Integer = 100"
+   ],
+   "expr": "CAST(Float, v1437c)"
+  },
+  {
+   "id": "ULong 4000000000 -> UByte (assignment)",
+   "decl": [
+    "DIM v1439 AS ULong = 4000000000",
+    "DIM v1440 AS UByte",
+    "v1440 = v1439"
+   ],
+   "expr": "v1440"
+  },
+  {
+   "id": "CAST(UByte, ULong 4000000000)",
+   "decl": [
+    "DIM v1439c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(UByte, v1439c)"
+  },
+  {
+   "id": "ULong 4000000000 -> Byte (assignment)",
+   "decl": [
+    "DIM v1441 AS ULong = 4000000000",
+    "DIM v1442 AS Byte",
+    "v1442 = v1441"
+   ],
+   "expr": "v1442"
+  },
+  {
+   "id": "CAST(Byte, ULong 4000000000)",
+   "decl": [
+    "DIM v1441c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(Byte, v1441c)"
+  },
+  {
+   "id": "ULong 4000000000 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1443 AS ULong = 4000000000",
+    "DIM v1444 AS UInteger",
+    "v1444 = v1443"
+   ],
+   "expr": "v1444"
+  },
+  {
+   "id": "CAST(UInteger, ULong 4000000000)",
+   "decl": [
+    "DIM v1443c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(UInteger, v1443c)"
+  },
+  {
+   "id": "ULong 4000000000 -> Integer (assignment)",
+   "decl": [
+    "DIM v1445 AS ULong = 4000000000",
+    "DIM v1446 AS Integer",
+    "v1446 = v1445"
+   ],
+   "expr": "v1446"
+  },
+  {
+   "id": "CAST(Integer, ULong 4000000000)",
+   "decl": [
+    "DIM v1445c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(Integer, v1445c)"
+  },
+  {
+   "id": "ULong 4000000000 -> ULong (assignment)",
+   "decl": [
+    "DIM v1447 AS ULong = 4000000000",
+    "DIM v1448 AS ULong",
+    "v1448 = v1447"
+   ],
+   "expr": "v1448"
+  },
+  {
+   "id": "CAST(ULong, ULong 4000000000)",
+   "decl": [
+    "DIM v1447c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(ULong, v1447c)"
+  },
+  {
+   "id": "ULong 4000000000 -> Long (assignment)",
+   "decl": [
+    "DIM v1449 AS ULong = 4000000000",
+    "DIM v1450 AS Long",
+    "v1450 = v1449"
+   ],
+   "expr": "v1450"
+  },
+  {
+   "id": "CAST(Long, ULong 4000000000)",
+   "decl": [
+    "DIM v1449c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(Long, v1449c)"
+  },
+  {
+   "id": "ULong 4000000000 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1451 AS ULong = 4000000000",
+    "DIM v1452 AS Fixed",
+    "v1452 = v1451"
+   ],
+   "expr": "v1452"
+  },
+  {
+   "id": "CAST(Fixed, ULong 4000000000)",
+   "decl": [
+    "DIM v1451c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(Fixed, v1451c)"
+  },
+  {
+   "id": "ULong 4000000000 -> Float (assignment)",
+   "decl": [
+    "DIM v1453 AS ULong = 4000000000",
+    "DIM v1454 AS Float",
+    "v1454 = v1453"
+   ],
+   "expr": "v1454"
+  },
+  {
+   "id": "CAST(Float, ULong 4000000000)",
+   "decl": [
+    "DIM v1453c AS ULong = 4000000000"
+   ],
+   "expr": "CAST(Float, v1453c)"
+  },
+  {
+   "id": "ULong 7 -> UByte (assignment)",
+   "decl": [
+    "DIM v1455 AS ULong = 7",
+    "DIM v1456 AS UByte",
+    "v1456 = v1455"
+   ],
+   "expr": "v1456"
+  },
+  {
+   "id": "CAST(UByte, ULong 7)",
+   "decl": [
+    "DIM v1455c AS ULong = 7"
+   ],
+   "expr": "CAST(UByte, v1455c)"
+  },
+  {
+   "id": "ULong 7 -> Byte (assignment)",
+   "decl": [
+    "DIM v1457 AS ULong = 7",
+    "DIM v1458 AS Byte",
+    "v1458 = v1457"
+   ],
+   "expr": "v1458"
+  },
+  {
+   "id": "CAST(Byte, ULong 7)",
+   "decl": [
+    "DIM v1457c AS ULong = 7"
+   ],
+   "expr": "CAST(Byte, v1457c)"
+  },
+  {
+   "id": "ULong 7 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1459 AS ULong = 7",
+    "DIM v1460 AS UInteger",
+    "v1460 = v1459"
+   ],
+   "expr": "v1460"
+  },
+  {
+   "id": "CAST(UInteger, ULong 7)",
+   "decl": [
+    "DIM v1459c AS ULong = 7"
+   ],
+   "expr": "CAST(UInteger, v1459c)"
+  },
+  {
+   "id": "ULong 7 -> Integer (assignment)",
+   "decl": [
+    "DIM v1461 AS ULong = 7",
+    "DIM v1462 AS Integer",
+    "v1462 = v1461"
+   ],
+   "expr": "v1462"
+  },
+  {
+   "id": "CAST(Integer, ULong 7)",
+   "decl": [
+    "DIM v1461c AS ULong = 7"
+   ],
+   "expr": "CAST(Integer, v1461c)"
+  },
+  {
+   "id": "ULong 7 -> ULong (assignment)",
+   "decl": [
+    "DIM v1463 AS ULong = 7",
+    "DIM v1464 AS ULong",
+    "v1464 = v1463"
+   ],
+   "expr": "v1464"
+  },
+  {
+   "id": "CAST(ULong, ULong 7)",
+   "decl": [
+    "DIM v1463c AS ULong = 7"
+   ],
+   "expr": "CAST(ULong, v1463c)"
+  },
+  {
+   "id": "ULong 7 -> Long (assignment)",
+   "decl": [
+    "DIM v1465 AS ULong = 7",
+    "DIM v1466 AS Long",
+    "v1466 = v1465"
+   ],
+   "expr": "v1466"
+  },
+  {
+   "id": "CAST(Long, ULong 7)",
+   "decl": [
+    "DIM v1465c AS ULong = 7"
+   ],
+   "expr": "CAST(Long, v1465c)"
+  },
+  {
+   "id": "ULong 7 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1467 AS ULong = 7",
+    "DIM v1468 AS Fixed",
+    "v1468 = v1467"
+   ],
+   "expr": "v1468"
+  },
+  {
+   "id": "CAST(Fixed, ULong 7)",
+   "decl": [
+    "DIM v1467c AS ULong = 7"
+   ],
+   "expr": "CAST(Fixed, v1467c)"
+  },
+  {
+   "id": "ULong 7 -> Float (assignment)",
+   "decl": [
+    "DIM v1469 AS ULong = 7",
+    "DIM v1470 AS Float",
+    "v1470 = v1469"
+   ],
+   "expr": "v1470"
+  },
+  {
+   "id": "CAST(Float, ULong 7)",
+   "decl": [
+    "DIM v1469c AS ULong = 7"
+   ],
+   "expr": "CAST(Float, v1469c)"
+  },
+  {
+   "id": "Long -100000 -> UByte (assignment)",
+   "decl": [
+    "DIM v1471 AS Long = -100000",
+    "DIM v1472 AS UByte",
+    "v1472 = v1471"
+   ],
+   "expr": "v1472"
+  },
+  {
+   "id": "CAST(UByte, Long -100000)",
+   "decl": [
+    "DIM v1471c AS Long = -100000"
+   ],
+   "expr": "CAST(UByte, v1471c)"
+  },
+  {
+   "id": "Long -100000 -> Byte (assignment)",
+   "decl": [
+    "DIM v1473 AS Long = -100000",
+    "DIM v1474 AS Byte",
+    "v1474 = v1473"
+   ],
+   "expr": "v1474"
+  },
+  {
+   "id": "CAST(Byte, Long -100000)",
+   "decl": [
+    "DIM v1473c AS Long = -100000"
+   ],
+   "expr": "CAST(Byte, v1473c)"
+  },
+  {
+   "id": "Long -100000 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1475 AS Long = -100000",
+    "DIM v1476 AS UInteger",
+    "v1476 = v1475"
+   ],
+   "expr": "v1476"
+  },
+  {
+   "id": "CAST(UInteger, Long -100000)",
+   "decl": [
+    "DIM v1475c AS Long = -100000"
+   ],
+   "expr": "CAST(UInteger, v1475c)"
+  },
+  {
+   "id": "Long -100000 -> Integer (assignment)",
+   "decl": [
+    "DIM v1477 AS Long = -100000",
+    "DIM v1478 AS Integer",
+    "v1478 = v1477"
+   ],
+   "expr": "v1478"
+  },
+  {
+   "id": "CAST(Integer, Long -100000)",
+   "decl": [
+    "DIM v1477c AS Long = -100000"
+   ],
+   "expr": "CAST(Integer, v1477c)"
+  },
+  {
+   "id": "Long -100000 -> ULong (assignment)",
+   "decl": [
+    "DIM v1479 AS Long = -100000",
+    "DIM v1480 AS ULong",
+    "v1480 = v1479"
+   ],
+   "expr": "v1480"
+  },
+  {
+   "id": "CAST(ULong, Long -100000)",
+   "decl": [
+    "DIM v1479c AS Long = -100000"
+   ],
+   "expr": "CAST(ULong, v1479c)"
+  },
+  {
+   "id": "Long -100000 -> Long (assignment)",
+   "decl": [
+    "DIM v1481 AS Long = -100000",
+    "DIM v1482 AS Long",
+    "v1482 = v1481"
+   ],
+   "expr": "v1482"
+  },
+  {
+   "id": "CAST(Long, Long -100000)",
+   "decl": [
+    "DIM v1481c AS Long = -100000"
+   ],
+   "expr": "CAST(Long, v1481c)"
+  },
+  {
+   "id": "Long -100000 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1483 AS Long = -100000",
+    "DIM v1484 AS Fixed",
+    "v1484 = v1483"
+   ],
+   "expr": "v1484"
+  },
+  {
+   "id": "CAST(Fixed, Long -100000)",
+   "decl": [
+    "DIM v1483c AS Long = -100000"
+   ],
+   "expr": "CAST(Fixed, v1483c)"
+  },
+  {
+   "id": "Long -100000 -> Float (assignment)",
+   "decl": [
+    "DIM v1485 AS Long = -100000",
+    "DIM v1486 AS Float",
+    "v1486 = v1485"
+   ],
+   "expr": "v1486"
+  },
+  {
+   "id": "CAST(Float, Long -100000)",
+   "decl": [
+    "DIM v1485c AS Long = -100000"
+   ],
+   "expr": "CAST(Float, v1485c)"
+  },
+  {
+   "id": "Long 100000 -> UByte (assignment)",
+   "decl": [
+    "DIM v1487 AS Long = 100000",
+    "DIM v1488 AS UByte",
+    "v1488 = v1487"
+   ],
+   "expr": "v1488"
+  },
+  {
+   "id": "CAST(UByte, Long 100000)",
+   "decl": [
+    "DIM v1487c AS Long = 100000"
+   ],
+   "expr": "CAST(UByte, v1487c)"
+  },
+  {
+   "id": "Long 100000 -> Byte (assignment)",
+   "decl": [
+    "DIM v1489 AS Long = 100000",
+    "DIM v1490 AS Byte",
+    "v1490 = v1489"
+   ],
+   "expr": "v1490"
+  },
+  {
+   "id": "CAST(Byte, Long 100000)",
+   "decl": [
+    "DIM v1489c AS Long = 100000"
+   ],
+   "expr": "CAST(Byte, v1489c)"
+  },
+  {
+   "id": "Long 100000 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1491 AS Long = 100000",
+    "DIM v1492 AS UInteger",
+    "v1492 = v1491"
+   ],
+   "expr": "v1492"
+  },
+  {
+   "id": "CAST(UInteger, Long 100000)",
+   "decl": [
+    "DIM v1491c AS Long = 100000"
+   ],
+   "expr": "CAST(UInteger, v1491c)"
+  },
+  {
+   "id": "Long 100000 -> Integer (assignment)",
+   "decl": [
+    "DIM v1493 AS Long = 100000",
+    "DIM v1494 AS Integer",
+    "v1494 = v1493"
+   ],
+   "expr": "v1494"
+  },
+  {
+   "id": "CAST(Integer, Long 100000)",
+   "decl": [
+    "DIM v1493c AS Long = 100000"
+   ],
+   "expr": "CAST(Integer, v1493c)"
+  },
+  {
+   "id": "Long 100000 -> ULong (assignment)",
+   "decl": [
+    "DIM v1495 AS Long = 100000",
+    "DIM v1496 AS ULong",
+    "v1496 = v1495"
+   ],
+   "expr": "v1496"
+  },
+  {
+   "id": "CAST(ULong, Long 100000)",
+   "decl": [
+    "DIM v1495c AS Long = 100000"
+   ],
+   "expr": "CAST(ULong, v1495c)"
+  },
+  {
+   "id": "Long 100000 -> Long (assignment)",
+   "decl": [
+    "DIM v1497 AS Long = 100000",
+    "DIM v1498 AS Long",
+    "v1498 = v1497"
+   ],
+   "expr": "v1498"
+  },
+  {
+   "id": "CAST(Long, Long 100000)",
+   "decl": [
+    "DIM v1497c AS Long = 100000"
+   ],
+   "expr": "CAST(Long, v1497c)"
+  },
+  {
+   "id": "Long 100000 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1499 AS Long = 100000",
+    "DIM v1500 AS Fixed",
+    "v1500 = v1499"
+   ],
+   "expr": "v1500"
+  },
+  {
+   "id": "CAST(Fixed, Long 100000)",
+   "decl": [
+    "DIM v1499c AS Long = 100000"
+   ],
+   "expr": "CAST(Fixed, v1499c)"
+  },
+  {
+   "id": "Long 100000 -> Float (assignment)",
+   "decl": [
+    "DIM v1501 AS Long = 100000",
+    "DIM v1502 AS Float",
+    "v1502 = v1501"
+   ],
+   "expr": "v1502"
+  },
+  {
+   "id": "CAST(Float, Long 100000)",
+   "decl": [
+    "DIM v1501c AS Long = 100000"
+   ],
+   "expr": "CAST(Float, v1501c)"
+  },
+  {
+   "id": "Fixed 3.5 -> UByte (assignment)",
+   "decl": [
+    "DIM v1503 AS Fixed = 3.5",
+    "DIM v1504 AS UByte",
+    "v1504 = v1503"
+   ],
+   "expr": "v1504"
+  },
+  {
+   "id": "CAST(UByte, Fixed 3.5)",
+   "decl": [
+    "DIM v1503c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(UByte, v1503c)"
+  },
+  {
+   "id": "Fixed 3.5 -> Byte (assignment)",
+   "decl": [
+    "DIM v1505 AS Fixed = 3.5",
+    "DIM v1506 AS Byte",
+    "v1506 = v1505"
+   ],
+   "expr": "v1506"
+  },
+  {
+   "id": "CAST(Byte, Fixed 3.5)",
+   "decl": [
+    "DIM v1505c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(Byte, v1505c)"
+  },
+  {
+   "id": "Fixed 3.5 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1507 AS Fixed = 3.5",
+    "DIM v1508 AS UInteger",
+    "v1508 = v1507"
+   ],
+   "expr": "v1508"
+  },
+  {
+   "id": "CAST(UInteger, Fixed 3.5)",
+   "decl": [
+    "DIM v1507c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(UInteger, v1507c)"
+  },
+  {
+   "id": "Fixed 3.5 -> Integer (assignment)",
+   "decl": [
+    "DIM v1509 AS Fixed = 3.5",
+    "DIM v1510 AS Integer",
+    "v1510 = v1509"
+   ],
+   "expr": "v1510"
+  },
+  {
+   "id": "CAST(Integer, Fixed 3.5)",
+   "decl": [
+    "DIM v1509c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(Integer, v1509c)"
+  },
+  {
+   "id": "Fixed 3.5 -> ULong (assignment)",
+   "decl": [
+    "DIM v1511 AS Fixed = 3.5",
+    "DIM v1512 AS ULong",
+    "v1512 = v1511"
+   ],
+   "expr": "v1512"
+  },
+  {
+   "id": "CAST(ULong, Fixed 3.5)",
+   "decl": [
+    "DIM v1511c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(ULong, v1511c)"
+  },
+  {
+   "id": "Fixed 3.5 -> Long (assignment)",
+   "decl": [
+    "DIM v1513 AS Fixed = 3.5",
+    "DIM v1514 AS Long",
+    "v1514 = v1513"
+   ],
+   "expr": "v1514"
+  },
+  {
+   "id": "CAST(Long, Fixed 3.5)",
+   "decl": [
+    "DIM v1513c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(Long, v1513c)"
+  },
+  {
+   "id": "Fixed 3.5 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1515 AS Fixed = 3.5",
+    "DIM v1516 AS Fixed",
+    "v1516 = v1515"
+   ],
+   "expr": "v1516"
+  },
+  {
+   "id": "CAST(Fixed, Fixed 3.5)",
+   "decl": [
+    "DIM v1515c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(Fixed, v1515c)"
+  },
+  {
+   "id": "Fixed 3.5 -> Float (assignment)",
+   "decl": [
+    "DIM v1517 AS Fixed = 3.5",
+    "DIM v1518 AS Float",
+    "v1518 = v1517"
+   ],
+   "expr": "v1518"
+  },
+  {
+   "id": "CAST(Float, Fixed 3.5)",
+   "decl": [
+    "DIM v1517c AS Fixed = 3.5"
+   ],
+   "expr": "CAST(Float, v1517c)"
+  },
+  {
+   "id": "Fixed -7.5 -> UByte (assignment)",
+   "decl": [
+    "DIM v1519 AS Fixed = -7.5",
+    "DIM v1520 AS UByte",
+    "v1520 = v1519"
+   ],
+   "expr": "v1520"
+  },
+  {
+   "id": "CAST(UByte, Fixed -7.5)",
+   "decl": [
+    "DIM v1519c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(UByte, v1519c)"
+  },
+  {
+   "id": "Fixed -7.5 -> Byte (assignment)",
+   "decl": [
+    "DIM v1521 AS Fixed = -7.5",
+    "DIM v1522 AS Byte",
+    "v1522 = v1521"
+   ],
+   "expr": "v1522"
+  },
+  {
+   "id": "CAST(Byte, Fixed -7.5)",
+   "decl": [
+    "DIM v1521c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(Byte, v1521c)"
+  },
+  {
+   "id": "Fixed -7.5 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1523 AS Fixed = -7.5",
+    "DIM v1524 AS UInteger",
+    "v1524 = v1523"
+   ],
+   "expr": "v1524"
+  },
+  {
+   "id": "CAST(UInteger, Fixed -7.5)",
+   "decl": [
+    "DIM v1523c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(UInteger, v1523c)"
+  },
+  {
+   "id": "Fixed -7.5 -> Integer (assignment)",
+   "decl": [
+    "DIM v1525 AS Fixed = -7.5",
+    "DIM v1526 AS Integer",
+    "v1526 = v1525"
+   ],
+   "expr": "v1526"
+  },
+  {
+   "id": "CAST(Integer, Fixed -7.5)",
+   "decl": [
+    "DIM v1525c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(Integer, v1525c)"
+  },
+  {
+   "id": "Fixed -7.5 -> ULong (assignment)",
+   "decl": [
+    "DIM v1527 AS Fixed = -7.5",
+    "DIM v1528 AS ULong",
+    "v1528 = v1527"
+   ],
+   "expr": "v1528"
+  },
+  {
+   "id": "CAST(ULong, Fixed -7.5)",
+   "decl": [
+    "DIM v1527c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(ULong, v1527c)"
+  },
+  {
+   "id": "Fixed -7.5 -> Long (assignment)",
+   "decl": [
+    "DIM v1529 AS Fixed = -7.5",
+    "DIM v1530 AS Long",
+    "v1530 = v1529"
+   ],
+   "expr": "v1530"
+  },
+  {
+   "id": "CAST(Long, Fixed -7.5)",
+   "decl": [
+    "DIM v1529c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(Long, v1529c)"
+  },
+  {
+   "id": "Fixed -7.5 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1531 AS Fixed = -7.5",
+    "DIM v1532 AS Fixed",
+    "v1532 = v1531"
+   ],
+   "expr": "v1532"
+  },
+  {
+   "id": "CAST(Fixed, Fixed -7.5)",
+   "decl": [
+    "DIM v1531c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(Fixed, v1531c)"
+  },
+  {
+   "id": "Fixed -7.5 -> Float (assignment)",
+   "decl": [
+    "DIM v1533 AS Fixed = -7.5",
+    "DIM v1534 AS Float",
+    "v1534 = v1533"
+   ],
+   "expr": "v1534"
+  },
+  {
+   "id": "CAST(Float, Fixed -7.5)",
+   "decl": [
+    "DIM v1533c AS Fixed = -7.5"
+   ],
+   "expr": "CAST(Float, v1533c)"
+  },
+  {
+   "id": "Float 7.5 -> UByte (assignment)",
+   "decl": [
+    "DIM v1535 AS Float = 7.5",
+    "DIM v1536 AS UByte",
+    "v1536 = v1535"
+   ],
+   "expr": "v1536"
+  },
+  {
+   "id": "CAST(UByte, Float 7.5)",
+   "decl": [
+    "DIM v1535c AS Float = 7.5"
+   ],
+   "expr": "CAST(UByte, v1535c)"
+  },
+  {
+   "id": "Float 7.5 -> Byte (assignment)",
+   "decl": [
+    "DIM v1537 AS Float = 7.5",
+    "DIM v1538 AS Byte",
+    "v1538 = v1537"
+   ],
+   "expr": "v1538"
+  },
+  {
+   "id": "CAST(Byte, Float 7.5)",
+   "decl": [
+    "DIM v1537c AS Float = 7.5"
+   ],
+   "expr": "CAST(Byte, v1537c)"
+  },
+  {
+   "id": "Float 7.5 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1539 AS Float = 7.5",
+    "DIM v1540 AS UInteger",
+    "v1540 = v1539"
+   ],
+   "expr": "v1540"
+  },
+  {
+   "id": "CAST(UInteger, Float 7.5)",
+   "decl": [
+    "DIM v1539c AS Float = 7.5"
+   ],
+   "expr": "CAST(UInteger, v1539c)"
+  },
+  {
+   "id": "Float 7.5 -> Integer (assignment)",
+   "decl": [
+    "DIM v1541 AS Float = 7.5",
+    "DIM v1542 AS Integer",
+    "v1542 = v1541"
+   ],
+   "expr": "v1542"
+  },
+  {
+   "id": "CAST(Integer, Float 7.5)",
+   "decl": [
+    "DIM v1541c AS Float = 7.5"
+   ],
+   "expr": "CAST(Integer, v1541c)"
+  },
+  {
+   "id": "Float 7.5 -> ULong (assignment)",
+   "decl": [
+    "DIM v1543 AS Float = 7.5",
+    "DIM v1544 AS ULong",
+    "v1544 = v1543"
+   ],
+   "expr": "v1544"
+  },
+  {
+   "id": "CAST(ULong, Float 7.5)",
+   "decl": [
+    "DIM v1543c AS Float = 7.5"
+   ],
+   "expr": "CAST(ULong, v1543c)"
+  },
+  {
+   "id": "Float 7.5 -> Long (assignment)",
+   "decl": [
+    "DIM v1545 AS Float = 7.5",
+    "DIM v1546 AS Long",
+    "v1546 = v1545"
+   ],
+   "expr": "v1546"
+  },
+  {
+   "id": "CAST(Long, Float 7.5)",
+   "decl": [
+    "DIM v1545c AS Float = 7.5"
+   ],
+   "expr": "CAST(Long, v1545c)"
+  },
+  {
+   "id": "Float 7.5 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1547 AS Float = 7.5",
+    "DIM v1548 AS Fixed",
+    "v1548 = v1547"
+   ],
+   "expr": "v1548"
+  },
+  {
+   "id": "CAST(Fixed, Float 7.5)",
+   "decl": [
+    "DIM v1547c AS Float = 7.5"
+   ],
+   "expr": "CAST(Fixed, v1547c)"
+  },
+  {
+   "id": "Float 7.5 -> Float (assignment)",
+   "decl": [
+    "DIM v1549 AS Float = 7.5",
+    "DIM v1550 AS Float",
+    "v1550 = v1549"
+   ],
+   "expr": "v1550"
+  },
+  {
+   "id": "CAST(Float, Float 7.5)",
+   "decl": [
+    "DIM v1549c AS Float = 7.5"
+   ],
+   "expr": "CAST(Float, v1549c)"
+  },
+  {
+   "id": "Float -7.5 -> UByte (assignment)",
+   "decl": [
+    "DIM v1551 AS Float = -7.5",
+    "DIM v1552 AS UByte",
+    "v1552 = v1551"
+   ],
+   "expr": "v1552"
+  },
+  {
+   "id": "CAST(UByte, Float -7.5)",
+   "decl": [
+    "DIM v1551c AS Float = -7.5"
+   ],
+   "expr": "CAST(UByte, v1551c)"
+  },
+  {
+   "id": "Float -7.5 -> Byte (assignment)",
+   "decl": [
+    "DIM v1553 AS Float = -7.5",
+    "DIM v1554 AS Byte",
+    "v1554 = v1553"
+   ],
+   "expr": "v1554"
+  },
+  {
+   "id": "CAST(Byte, Float -7.5)",
+   "decl": [
+    "DIM v1553c AS Float = -7.5"
+   ],
+   "expr": "CAST(Byte, v1553c)"
+  },
+  {
+   "id": "Float -7.5 -> UInteger (assignment)",
+   "decl": [
+    "DIM v1555 AS Float = -7.5",
+    "DIM v1556 AS UInteger",
+    "v1556 = v1555"
+   ],
+   "expr": "v1556"
+  },
+  {
+   "id": "CAST(UInteger, Float -7.5)",
+   "decl": [
+    "DIM v1555c AS Float = -7.5"
+   ],
+   "expr": "CAST(UInteger, v1555c)"
+  },
+  {
+   "id": "Float -7.5 -> Integer (assignment)",
+   "decl": [
+    "DIM v1557 AS Float = -7.5",
+    "DIM v1558 AS Integer",
+    "v1558 = v1557"
+   ],
+   "expr": "v1558"
+  },
+  {
+   "id": "CAST(Integer, Float -7.5)",
+   "decl": [
+    "DIM v1557c AS Float = -7.5"
+   ],
+   "expr": "CAST(Integer, v1557c)"
+  },
+  {
+   "id": "Float -7.5 -> ULong (assignment)",
+   "decl": [
+    "DIM v1559 AS Float = -7.5",
+    "DIM v1560 AS ULong",
+    "v1560 = v1559"
+   ],
+   "expr": "v1560"
+  },
+  {
+   "id": "CAST(ULong, Float -7.5)",
+   "decl": [
+    "DIM v1559c AS Float = -7.5"
+   ],
+   "expr": "CAST(ULong, v1559c)"
+  },
+  {
+   "id": "Float -7.5 -> Long (assignment)",
+   "decl": [
+    "DIM v1561 AS Float = -7.5",
+    "DIM v1562 AS Long",
+    "v1562 = v1561"
+   ],
+   "expr": "v1562"
+  },
+  {
+   "id": "CAST(Long, Float -7.5)",
+   "decl": [
+    "DIM v1561c AS Float = -7.5"
+   ],
+   "expr": "CAST(Long, v1561c)"
+  },
+  {
+   "id": "Float -7.5 -> Fixed (assignment)",
+   "decl": [
+    "DIM v1563 AS Float = -7.5",
+    "DIM v1564 AS Fixed",
+    "v1564 = v1563"
+   ],
+   "expr": "v1564"
+  },
+  {
+   "id": "CAST(Fixed, Float -7.5)",
+   "decl": [
+    "DIM v1563c AS Float = -7.5"
+   ],
+   "expr": "CAST(Fixed, v1563c)"
+  },
+  {
+   "id": "Float -7.5 -> Float (assignment)",
+   "decl": [
+    "DIM v1565 AS Float = -7.5",
+    "DIM v1566 AS Float",
+    "v1566 = v1565"
+   ],
+   "expr": "v1566"
+  },
+  {
+   "id": "CAST(Float, Float -7.5)",
+   "decl": [
+    "DIM v1565c AS Float = -7.5"
+   ],
+   "expr": "CAST(Float, v1565c)"
+  }
+ ]
+}

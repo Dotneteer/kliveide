@@ -1,0 +1,678 @@
+{
+ "suite": "unary",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 200: -a",
+   "decl": [
+    "DIM v1567 AS UByte = 200"
+   ],
+   "expr": "-v1567"
+  },
+  {
+   "id": "UByte 200: BNOT a",
+   "decl": [
+    "DIM v1568 AS UByte = 200"
+   ],
+   "expr": "BNOT v1568"
+  },
+  {
+   "id": "UByte 200: NOT a",
+   "decl": [
+    "DIM v1569 AS UByte = 200"
+   ],
+   "expr": "NOT v1569"
+  },
+  {
+   "id": "UByte 200: ABS(a)",
+   "decl": [
+    "DIM v1570 AS UByte = 200"
+   ],
+   "expr": "ABS(v1570)"
+  },
+  {
+   "id": "UByte 200: SGN(a)",
+   "decl": [
+    "DIM v1571 AS UByte = 200"
+   ],
+   "expr": "SGN(v1571)"
+  },
+  {
+   "id": "UByte 200: INT(a)",
+   "decl": [
+    "DIM v1572 AS UByte = 200"
+   ],
+   "expr": "INT(v1572)"
+  },
+  {
+   "id": "UByte 7: -a",
+   "decl": [
+    "DIM v1573 AS UByte = 7"
+   ],
+   "expr": "-v1573"
+  },
+  {
+   "id": "UByte 7: BNOT a",
+   "decl": [
+    "DIM v1574 AS UByte = 7"
+   ],
+   "expr": "BNOT v1574"
+  },
+  {
+   "id": "UByte 7: NOT a",
+   "decl": [
+    "DIM v1575 AS UByte = 7"
+   ],
+   "expr": "NOT v1575"
+  },
+  {
+   "id": "UByte 7: ABS(a)",
+   "decl": [
+    "DIM v1576 AS UByte = 7"
+   ],
+   "expr": "ABS(v1576)"
+  },
+  {
+   "id": "UByte 7: SGN(a)",
+   "decl": [
+    "DIM v1577 AS UByte = 7"
+   ],
+   "expr": "SGN(v1577)"
+  },
+  {
+   "id": "UByte 7: INT(a)",
+   "decl": [
+    "DIM v1578 AS UByte = 7"
+   ],
+   "expr": "INT(v1578)"
+  },
+  {
+   "id": "Byte -7: -a",
+   "decl": [
+    "DIM v1579 AS Byte = -7"
+   ],
+   "expr": "-v1579"
+  },
+  {
+   "id": "Byte -7: BNOT a",
+   "decl": [
+    "DIM v1580 AS Byte = -7"
+   ],
+   "expr": "BNOT v1580"
+  },
+  {
+   "id": "Byte -7: NOT a",
+   "decl": [
+    "DIM v1581 AS Byte = -7"
+   ],
+   "expr": "NOT v1581"
+  },
+  {
+   "id": "Byte -7: ABS(a)",
+   "decl": [
+    "DIM v1582 AS Byte = -7"
+   ],
+   "expr": "ABS(v1582)"
+  },
+  {
+   "id": "Byte -7: SGN(a)",
+   "decl": [
+    "DIM v1583 AS Byte = -7"
+   ],
+   "expr": "SGN(v1583)"
+  },
+  {
+   "id": "Byte -7: INT(a)",
+   "decl": [
+    "DIM v1584 AS Byte = -7"
+   ],
+   "expr": "INT(v1584)"
+  },
+  {
+   "id": "Byte 7: -a",
+   "decl": [
+    "DIM v1585 AS Byte = 7"
+   ],
+   "expr": "-v1585"
+  },
+  {
+   "id": "Byte 7: BNOT a",
+   "decl": [
+    "DIM v1586 AS Byte = 7"
+   ],
+   "expr": "BNOT v1586"
+  },
+  {
+   "id": "Byte 7: NOT a",
+   "decl": [
+    "DIM v1587 AS Byte = 7"
+   ],
+   "expr": "NOT v1587"
+  },
+  {
+   "id": "Byte 7: ABS(a)",
+   "decl": [
+    "DIM v1588 AS Byte = 7"
+   ],
+   "expr": "ABS(v1588)"
+  },
+  {
+   "id": "Byte 7: SGN(a)",
+   "decl": [
+    "DIM v1589 AS Byte = 7"
+   ],
+   "expr": "SGN(v1589)"
+  },
+  {
+   "id": "Byte 7: INT(a)",
+   "decl": [
+    "DIM v1590 AS Byte = 7"
+   ],
+   "expr": "INT(v1590)"
+  },
+  {
+   "id": "UInteger 60000: -a",
+   "decl": [
+    "DIM v1591 AS UInteger = 60000"
+   ],
+   "expr": "-v1591"
+  },
+  {
+   "id": "UInteger 60000: BNOT a",
+   "decl": [
+    "DIM v1592 AS UInteger = 60000"
+   ],
+   "expr": "BNOT v1592"
+  },
+  {
+   "id": "UInteger 60000: NOT a",
+   "decl": [
+    "DIM v1593 AS UInteger = 60000"
+   ],
+   "expr": "NOT v1593"
+  },
+  {
+   "id": "UInteger 60000: ABS(a)",
+   "decl": [
+    "DIM v1594 AS UInteger = 60000"
+   ],
+   "expr": "ABS(v1594)"
+  },
+  {
+   "id": "UInteger 60000: SGN(a)",
+   "decl": [
+    "DIM v1595 AS UInteger = 60000"
+   ],
+   "expr": "SGN(v1595)"
+  },
+  {
+   "id": "UInteger 60000: INT(a)",
+   "decl": [
+    "DIM v1596 AS UInteger = 60000"
+   ],
+   "expr": "INT(v1596)"
+  },
+  {
+   "id": "UInteger 7: -a",
+   "decl": [
+    "DIM v1597 AS UInteger = 7"
+   ],
+   "expr": "-v1597"
+  },
+  {
+   "id": "UInteger 7: BNOT a",
+   "decl": [
+    "DIM v1598 AS UInteger = 7"
+   ],
+   "expr": "BNOT v1598"
+  },
+  {
+   "id": "UInteger 7: NOT a",
+   "decl": [
+    "DIM v1599 AS UInteger = 7"
+   ],
+   "expr": "NOT v1599"
+  },
+  {
+   "id": "UInteger 7: ABS(a)",
+   "decl": [
+    "DIM v1600 AS UInteger = 7"
+   ],
+   "expr": "ABS(v1600)"
+  },
+  {
+   "id": "UInteger 7: SGN(a)",
+   "decl": [
+    "DIM v1601 AS UInteger = 7"
+   ],
+   "expr": "SGN(v1601)"
+  },
+  {
+   "id": "UInteger 7: INT(a)",
+   "decl": [
+    "DIM v1602 AS UInteger = 7"
+   ],
+   "expr": "INT(v1602)"
+  },
+  {
+   "id": "Integer -100: -a",
+   "decl": [
+    "DIM v1603 AS Integer = -100"
+   ],
+   "expr": "-v1603"
+  },
+  {
+   "id": "Integer -100: BNOT a",
+   "decl": [
+    "DIM v1604 AS Integer = -100"
+   ],
+   "expr": "BNOT v1604"
+  },
+  {
+   "id": "Integer -100: NOT a",
+   "decl": [
+    "DIM v1605 AS Integer = -100"
+   ],
+   "expr": "NOT v1605"
+  },
+  {
+   "id": "Integer -100: ABS(a)",
+   "decl": [
+    "DIM v1606 AS Integer = -100"
+   ],
+   "expr": "ABS(v1606)"
+  },
+  {
+   "id": "Integer -100: SGN(a)",
+   "decl": [
+    "DIM v1607 AS Integer = -100"
+   ],
+   "expr": "SGN(v1607)"
+  },
+  {
+   "id": "Integer -100: INT(a)",
+   "decl": [
+    "DIM v1608 AS Integer = -100"
+   ],
+   "expr": "INT(v1608)"
+  },
+  {
+   "id": "Integer 100: -a",
+   "decl": [
+    "DIM v1609 AS Integer = 100"
+   ],
+   "expr": "-v1609"
+  },
+  {
+   "id": "Integer 100: BNOT a",
+   "decl": [
+    "DIM v1610 AS Integer = 100"
+   ],
+   "expr": "BNOT v1610"
+  },
+  {
+   "id": "Integer 100: NOT a",
+   "decl": [
+    "DIM v1611 AS Integer = 100"
+   ],
+   "expr": "NOT v1611"
+  },
+  {
+   "id": "Integer 100: ABS(a)",
+   "decl": [
+    "DIM v1612 AS Integer = 100"
+   ],
+   "expr": "ABS(v1612)"
+  },
+  {
+   "id": "Integer 100: SGN(a)",
+   "decl": [
+    "DIM v1613 AS Integer = 100"
+   ],
+   "expr": "SGN(v1613)"
+  },
+  {
+   "id": "Integer 100: INT(a)",
+   "decl": [
+    "DIM v1614 AS Integer = 100"
+   ],
+   "expr": "INT(v1614)"
+  },
+  {
+   "id": "ULong 4000000000: -a",
+   "decl": [
+    "DIM v1615 AS ULong = 4000000000"
+   ],
+   "expr": "-v1615"
+  },
+  {
+   "id": "ULong 4000000000: BNOT a",
+   "decl": [
+    "DIM v1616 AS ULong = 4000000000"
+   ],
+   "expr": "BNOT v1616"
+  },
+  {
+   "id": "ULong 4000000000: NOT a",
+   "decl": [
+    "DIM v1617 AS ULong = 4000000000"
+   ],
+   "expr": "NOT v1617"
+  },
+  {
+   "id": "ULong 4000000000: ABS(a)",
+   "decl": [
+    "DIM v1618 AS ULong = 4000000000"
+   ],
+   "expr": "ABS(v1618)"
+  },
+  {
+   "id": "ULong 4000000000: SGN(a)",
+   "decl": [
+    "DIM v1619 AS ULong = 4000000000"
+   ],
+   "expr": "SGN(v1619)"
+  },
+  {
+   "id": "ULong 4000000000: INT(a)",
+   "decl": [
+    "DIM v1620 AS ULong = 4000000000"
+   ],
+   "expr": "INT(v1620)"
+  },
+  {
+   "id": "ULong 7: -a",
+   "decl": [
+    "DIM v1621 AS ULong = 7"
+   ],
+   "expr": "-v1621"
+  },
+  {
+   "id": "ULong 7: BNOT a",
+   "decl": [
+    "DIM v1622 AS ULong = 7"
+   ],
+   "expr": "BNOT v1622"
+  },
+  {
+   "id": "ULong 7: NOT a",
+   "decl": [
+    "DIM v1623 AS ULong = 7"
+   ],
+   "expr": "NOT v1623"
+  },
+  {
+   "id": "ULong 7: ABS(a)",
+   "decl": [
+    "DIM v1624 AS ULong = 7"
+   ],
+   "expr": "ABS(v1624)"
+  },
+  {
+   "id": "ULong 7: SGN(a)",
+   "decl": [
+    "DIM v1625 AS ULong = 7"
+   ],
+   "expr": "SGN(v1625)"
+  },
+  {
+   "id": "ULong 7: INT(a)",
+   "decl": [
+    "DIM v1626 AS ULong = 7"
+   ],
+   "expr": "INT(v1626)"
+  },
+  {
+   "id": "Long -100000: -a",
+   "decl": [
+    "DIM v1627 AS Long = -100000"
+   ],
+   "expr": "-v1627"
+  },
+  {
+   "id": "Long -100000: BNOT a",
+   "decl": [
+    "DIM v1628 AS Long = -100000"
+   ],
+   "expr": "BNOT v1628"
+  },
+  {
+   "id": "Long -100000: NOT a",
+   "decl": [
+    "DIM v1629 AS Long = -100000"
+   ],
+   "expr": "NOT v1629"
+  },
+  {
+   "id": "Long -100000: ABS(a)",
+   "decl": [
+    "DIM v1630 AS Long = -100000"
+   ],
+   "expr": "ABS(v1630)"
+  },
+  {
+   "id": "Long -100000: SGN(a)",
+   "decl": [
+    "DIM v1631 AS Long = -100000"
+   ],
+   "expr": "SGN(v1631)"
+  },
+  {
+   "id": "Long -100000: INT(a)",
+   "decl": [
+    "DIM v1632 AS Long = -100000"
+   ],
+   "expr": "INT(v1632)"
+  },
+  {
+   "id": "Long 100000: -a",
+   "decl": [
+    "DIM v1633 AS Long = 100000"
+   ],
+   "expr": "-v1633"
+  },
+  {
+   "id": "Long 100000: BNOT a",
+   "decl": [
+    "DIM v1634 AS Long = 100000"
+   ],
+   "expr": "BNOT v1634"
+  },
+  {
+   "id": "Long 100000: NOT a",
+   "decl": [
+    "DIM v1635 AS Long = 100000"
+   ],
+   "expr": "NOT v1635"
+  },
+  {
+   "id": "Long 100000: ABS(a)",
+   "decl": [
+    "DIM v1636 AS Long = 100000"
+   ],
+   "expr": "ABS(v1636)"
+  },
+  {
+   "id": "Long 100000: SGN(a)",
+   "decl": [
+    "DIM v1637 AS Long = 100000"
+   ],
+   "expr": "SGN(v1637)"
+  },
+  {
+   "id": "Long 100000: INT(a)",
+   "decl": [
+    "DIM v1638 AS Long = 100000"
+   ],
+   "expr": "INT(v1638)"
+  },
+  {
+   "id": "Fixed 3.5: -a",
+   "decl": [
+    "DIM v1639 AS Fixed = 3.5"
+   ],
+   "expr": "-v1639"
+  },
+  {
+   "id": "Fixed 3.5: BNOT a",
+   "decl": [
+    "DIM v1640 AS Fixed = 3.5"
+   ],
+   "expr": "BNOT v1640"
+  },
+  {
+   "id": "Fixed 3.5: NOT a",
+   "decl": [
+    "DIM v1641 AS Fixed = 3.5"
+   ],
+   "expr": "NOT v1641"
+  },
+  {
+   "id": "Fixed 3.5: ABS(a)",
+   "decl": [
+    "DIM v1642 AS Fixed = 3.5"
+   ],
+   "expr": "ABS(v1642)"
+  },
+  {
+   "id": "Fixed 3.5: SGN(a)",
+   "decl": [
+    "DIM v1643 AS Fixed = 3.5"
+   ],
+   "expr": "SGN(v1643)"
+  },
+  {
+   "id": "Fixed 3.5: INT(a)",
+   "decl": [
+    "DIM v1644 AS Fixed = 3.5"
+   ],
+   "expr": "INT(v1644)"
+  },
+  {
+   "id": "Fixed -7.5: -a",
+   "decl": [
+    "DIM v1645 AS Fixed = -7.5"
+   ],
+   "expr": "-v1645"
+  },
+  {
+   "id": "Fixed -7.5: BNOT a",
+   "decl": [
+    "DIM v1646 AS Fixed = -7.5"
+   ],
+   "expr": "BNOT v1646"
+  },
+  {
+   "id": "Fixed -7.5: NOT a",
+   "decl": [
+    "DIM v1647 AS Fixed = -7.5"
+   ],
+   "expr": "NOT v1647"
+  },
+  {
+   "id": "Fixed -7.5: ABS(a)",
+   "decl": [
+    "DIM v1648 AS Fixed = -7.5"
+   ],
+   "expr": "ABS(v1648)"
+  },
+  {
+   "id": "Fixed -7.5: SGN(a)",
+   "decl": [
+    "DIM v1649 AS Fixed = -7.5"
+   ],
+   "expr": "SGN(v1649)"
+  },
+  {
+   "id": "Fixed -7.5: INT(a)",
+   "decl": [
+    "DIM v1650 AS Fixed = -7.5"
+   ],
+   "expr": "INT(v1650)"
+  },
+  {
+   "id": "Float 7.5: -a",
+   "decl": [
+    "DIM v1651 AS Float = 7.5"
+   ],
+   "expr": "-v1651"
+  },
+  {
+   "id": "Float 7.5: BNOT a",
+   "decl": [
+    "DIM v1652 AS Float = 7.5"
+   ],
+   "expr": "BNOT v1652"
+  },
+  {
+   "id": "Float 7.5: NOT a",
+   "decl": [
+    "DIM v1653 AS Float = 7.5"
+   ],
+   "expr": "NOT v1653"
+  },
+  {
+   "id": "Float 7.5: ABS(a)",
+   "decl": [
+    "DIM v1654 AS Float = 7.5"
+   ],
+   "expr": "ABS(v1654)"
+  },
+  {
+   "id": "Float 7.5: SGN(a)",
+   "decl": [
+    "DIM v1655 AS Float = 7.5"
+   ],
+   "expr": "SGN(v1655)"
+  },
+  {
+   "id": "Float 7.5: INT(a)",
+   "decl": [
+    "DIM v1656 AS Float = 7.5"
+   ],
+   "expr": "INT(v1656)"
+  },
+  {
+   "id": "Float -7.5: -a",
+   "decl": [
+    "DIM v1657 AS Float = -7.5"
+   ],
+   "expr": "-v1657"
+  },
+  {
+   "id": "Float -7.5: BNOT a",
+   "decl": [
+    "DIM v1658 AS Float = -7.5"
+   ],
+   "expr": "BNOT v1658"
+  },
+  {
+   "id": "Float -7.5: NOT a",
+   "decl": [
+    "DIM v1659 AS Float = -7.5"
+   ],
+   "expr": "NOT v1659"
+  },
+  {
+   "id": "Float -7.5: ABS(a)",
+   "decl": [
+    "DIM v1660 AS Float = -7.5"
+   ],
+   "expr": "ABS(v1660)"
+  },
+  {
+   "id": "Float -7.5: SGN(a)",
+   "decl": [
+    "DIM v1661 AS Float = -7.5"
+   ],
+   "expr": "SGN(v1661)"
+  },
+  {
+   "id": "Float -7.5: INT(a)",
+   "decl": [
+    "DIM v1662 AS Float = -7.5"
+   ],
+   "expr": "INT(v1662)"
+  }
+ ]
+}

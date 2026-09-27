@@ -1,0 +1,134 @@
+{
+ "suite": "divzero",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "UByte 7 / 0",
+   "decl": [
+    "DIM v1698 AS UByte = 7",
+    "DIM v1699 AS UByte"
+   ],
+   "expr": "v1698 / v1699"
+  },
+  {
+   "id": "UByte 7 MOD 0",
+   "decl": [
+    "DIM v1700 AS UByte = 7",
+    "DIM v1701 AS UByte"
+   ],
+   "expr": "v1700 MOD v1701"
+  },
+  {
+   "id": "Byte 7 / 0",
+   "decl": [
+    "DIM v1702 AS Byte = 7",
+    "DIM v1703 AS Byte"
+   ],
+   "expr": "v1702 / v1703"
+  },
+  {
+   "id": "Byte 7 MOD 0",
+   "decl": [
+    "DIM v1704 AS Byte = 7",
+    "DIM v1705 AS Byte"
+   ],
+   "expr": "v1704 MOD v1705"
+  },
+  {
+   "id": "UInteger 7 / 0",
+   "decl": [
+    "DIM v1706 AS UInteger = 7",
+    "DIM v1707 AS UInteger"
+   ],
+   "expr": "v1706 / v1707"
+  },
+  {
+   "id": "UInteger 7 MOD 0",
+   "decl": [
+    "DIM v1708 AS UInteger = 7",
+    "DIM v1709 AS UInteger"
+   ],
+   "expr": "v1708 MOD v1709"
+  },
+  {
+   "id": "Integer 100 / 0",
+   "decl": [
+    "DIM v1710 AS Integer = 100",
+    "DIM v1711 AS Integer"
+   ],
+   "expr": "v1710 / v1711"
+  },
+  {
+   "id": "Integer 100 MOD 0",
+   "decl": [
+    "DIM v1712 AS Integer = 100",
+    "DIM v1713 AS Integer"
+   ],
+   "expr": "v1712 MOD v1713"
+  },
+  {
+   "id": "ULong 7 / 0",
+   "decl": [
+    "DIM v1714 AS ULong = 7",
+    "DIM v1715 AS ULong"
+   ],
+   "expr": "v1714 / v1715"
+  },
+  {
+   "id": "ULong 7 MOD 0",
+   "decl": [
+    "DIM v1716 AS ULong = 7",
+    "DIM v1717 AS ULong"
+   ],
+   "expr": "v1716 MOD v1717"
+  },
+  {
+   "id": "Long 100000 / 0",
+   "decl": [
+    "DIM v1718 AS Long = 100000",
+    "DIM v1719 AS Long"
+   ],
+   "expr": "v1718 / v1719"
+  },
+  {
+   "id": "Long 100000 MOD 0",
+   "decl": [
+    "DIM v1720 AS Long = 100000",
+    "DIM v1721 AS Long"
+   ],
+   "expr": "v1720 MOD v1721"
+  },
+  {
+   "id": "Fixed -7.5 / 0",
+   "decl": [
+    "DIM v1722 AS Fixed = -7.5",
+    "DIM v1723 AS Fixed"
+   ],
+   "expr": "v1722 / v1723"
+  },
+  {
+   "id": "Fixed -7.5 MOD 0",
+   "decl": [
+    "DIM v1724 AS Fixed = -7.5",
+    "DIM v1725 AS Fixed"
+   ],
+   "expr": "v1724 MOD v1725"
+  },
+  {
+   "id": "Float -7.5 / 0",
+   "decl": [
+    "DIM v1726 AS Float = -7.5",
+    "DIM v1727 AS Float"
+   ],
+   "expr": "v1726 / v1727"
+  },
+  {
+   "id": "Float -7.5 MOD 0",
+   "decl": [
+    "DIM v1728 AS Float = -7.5",
+    "DIM v1729 AS Float"
+   ],
+   "expr": "v1728 MOD v1729"
+  }
+ ]
+}

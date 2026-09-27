@@ -1,0 +1,511 @@
+{
+ "binary": {
+  "Byte -7 / 2": {
+   "klive": "-3",
+   "zxbc": "3"
+  },
+  "Byte -7 MOD 2": {
+   "klive": "-1",
+   "zxbc": "1"
+  },
+  "Integer -100 MOD 3": {
+   "klive": "-1",
+   "zxbc": "1"
+  },
+  "Long -100000 MOD 7": {
+   "klive": "-5",
+   "zxbc": "5"
+  },
+  "Fixed 3.5 MOD 1.25": {
+   "klive": "1",
+   "zxbc": "0.9999847412109375"
+  },
+  "Fixed 0.1 MOD 3": {
+   "klive": "0.0999908447265625",
+   "zxbc": "0"
+  },
+  "Float -7.5 MOD 2": {
+   "klive": "-1.5",
+   "zxbc": "-19.5"
+  }
+ },
+ "consts": {
+  "CONST AS UByte 200: k + k": {
+   "klive": "144",
+   "zxbc": "400"
+  },
+  "CONST AS UByte 200: k * 3": {
+   "klive": "88",
+   "zxbc": "600"
+  },
+  "CONST AS UByte 200: k - 300": {
+   "klive": "65436",
+   "zxbc": "-100"
+  },
+  "CONST AS UByte 200: -k": {
+   "klive": "56",
+   "zxbc": "-200"
+  },
+  "CONST AS UByte 200: k / 7": {
+   "klive": "28",
+   "zxbc": "28.5714263916015625"
+  },
+  "CONST AS UByte 7: k - 300": {
+   "klive": "65243",
+   "zxbc": "-293"
+  },
+  "CONST AS UInteger 60000: k + k": {
+   "klive": "54464",
+   "zxbc": "120000"
+  },
+  "CONST AS UInteger 60000: k * 3": {
+   "klive": "48928",
+   "zxbc": "180000"
+  },
+  "CONST AS UInteger 60000: -k": {
+   "klive": "5536",
+   "zxbc": "-60000"
+  },
+  "CONST AS UInteger 60000: k / 7": {
+   "klive": "8571",
+   "zxbc": "8571.428558349609375"
+  },
+  "CONST AS UInteger 7: k - 300": {
+   "klive": "65243",
+   "zxbc": "-293"
+  },
+  "CONST AS Integer -100: k / 7": {
+   "klive": "-14",
+   "zxbc": "-14.28570556640625"
+  },
+  "CONST AS Integer -100: k MOD 7": {
+   "klive": "-2",
+   "zxbc": "5"
+  },
+  "CONST AS Integer 100: k / 7": {
+   "klive": "14",
+   "zxbc": "14.28570556640625"
+  },
+  "CONST AS ULong 4000000000: k / 7": {
+   "klive": "571428571",
+   "zxbc": "5.7142857E+8"
+  },
+  "CONST AS ULong 7: k - 300": {
+   "klive": "4294967003",
+   "zxbc": "-293"
+  },
+  "CONST AS Long -100000: k / 7": {
+   "klive": "-14285",
+   "zxbc": "-14285.7142791748046875"
+  },
+  "CONST AS Long -100000: k MOD 7": {
+   "klive": "-5",
+   "zxbc": "2"
+  },
+  "CONST AS Long 100000: k / 7": {
+   "klive": "14285",
+   "zxbc": "14285.7142791748046875"
+  },
+  "CONST AS Fixed -7.5: k MOD 7": {
+   "klive": "-0.5",
+   "zxbc": "6.5"
+  },
+  "CONST AS Float 7.5: k / 7": {
+   "klive": "1.0714286",
+   "zxbc": "1.0714263916015625"
+  },
+  "CONST AS Float -7.5: k / 7": {
+   "klive": "-1.0714286",
+   "zxbc": "-1.0714263916015625"
+  },
+  "CONST AS Float -7.5: k MOD 7": {
+   "klive": "-0.5",
+   "zxbc": "6.5"
+  },
+  "CONST (untyped) -100: k / 7": {
+   "klive": "-14",
+   "zxbc": "-14.28570556640625"
+  },
+  "CONST (untyped) -100: k MOD 7": {
+   "klive": "-2",
+   "zxbc": "5"
+  },
+  "CONST (untyped) 100: k / 7": {
+   "klive": "14",
+   "zxbc": "14.28570556640625"
+  }
+ },
+ "convert": {},
+ "divzero": {
+  "Fixed -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0.0000152587890625"
+  },
+  "Fixed -7.5 MOD 0": {
+   "klive": "-7.5",
+   "zxbc": "0"
+  },
+  "Float -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0"
+  }
+ },
+ "literals": {
+  "BNOT 0": {
+   "klive": "255",
+   "zxbc": "-1"
+  },
+  "BNOT 1": {
+   "klive": "254",
+   "zxbc": "-2"
+  },
+  "1 / 2": {
+   "klive": "0",
+   "zxbc": "0.5"
+  },
+  "1 / 8": {
+   "klive": "0",
+   "zxbc": "0.125"
+  },
+  "BNOT 5": {
+   "klive": "250",
+   "zxbc": "-6"
+  },
+  "5 / 2": {
+   "klive": "2",
+   "zxbc": "2.5"
+  },
+  "5 / 8": {
+   "klive": "0",
+   "zxbc": "0.625"
+  },
+  "BNOT 127": {
+   "klive": "128",
+   "zxbc": "-128"
+  },
+  "127 / 2": {
+   "klive": "63",
+   "zxbc": "63.5"
+  },
+  "127 / 8": {
+   "klive": "15",
+   "zxbc": "15.875"
+  },
+  "BNOT 128": {
+   "klive": "127",
+   "zxbc": "-129"
+  },
+  "BNOT 200": {
+   "klive": "55",
+   "zxbc": "-201"
+  },
+  "BNOT 255": {
+   "klive": "0",
+   "zxbc": "-256"
+  },
+  "255 / 2": {
+   "klive": "127",
+   "zxbc": "127.5"
+  },
+  "255 / 8": {
+   "klive": "31",
+   "zxbc": "31.875"
+  },
+  "BNOT 256": {
+   "klive": "65279",
+   "zxbc": "-257"
+  },
+  "BNOT 1000": {
+   "klive": "64535",
+   "zxbc": "-1001"
+  },
+  "BNOT 32767": {
+   "klive": "32768",
+   "zxbc": "-32768"
+  },
+  "32767 / 2": {
+   "klive": "16383",
+   "zxbc": "16383.5"
+  },
+  "32767 / 8": {
+   "klive": "4095",
+   "zxbc": "4095.875"
+  },
+  "BNOT 32768": {
+   "klive": "32767",
+   "zxbc": "-32769"
+  },
+  "BNOT 40000": {
+   "klive": "25535",
+   "zxbc": "-40001"
+  },
+  "BNOT 65535": {
+   "klive": "0",
+   "zxbc": "-65536"
+  },
+  "65535 / 2": {
+   "klive": "32767",
+   "zxbc": "32767.5"
+  },
+  "65535 / 8": {
+   "klive": "8191",
+   "zxbc": "8191.875"
+  },
+  "BNOT 65536": {
+   "klive": "4294901759",
+   "zxbc": "-65537"
+  },
+  "65536 * 65536": {
+   "klive": "4.2949673E+9",
+   "zxbc": "0"
+  },
+  "BNOT 100000": {
+   "klive": "4294867295",
+   "zxbc": "-100001"
+  },
+  "100000 * 100000": {
+   "klive": "1E+10",
+   "zxbc": "1410065408"
+  },
+  "-1 / 2": {
+   "klive": "0",
+   "zxbc": "-0.5"
+  },
+  "-1 / 8": {
+   "klive": "0",
+   "zxbc": "-0.125"
+  },
+  "-1 MOD 3": {
+   "klive": "-1",
+   "zxbc": "2"
+  },
+  "-5 / 2": {
+   "klive": "-2",
+   "zxbc": "-2.5"
+  },
+  "-5 / 8": {
+   "klive": "0",
+   "zxbc": "-0.625"
+  },
+  "-5 MOD 3": {
+   "klive": "-2",
+   "zxbc": "1"
+  },
+  "-128 MOD 3": {
+   "klive": "-2",
+   "zxbc": "1"
+  },
+  "-129 / 2": {
+   "klive": "-64",
+   "zxbc": "-64.5"
+  },
+  "-129 / 8": {
+   "klive": "-16",
+   "zxbc": "-16.125"
+  },
+  "-200 MOD 3": {
+   "klive": "-2",
+   "zxbc": "1"
+  },
+  "-32768 MOD 3": {
+   "klive": "-2",
+   "zxbc": "1"
+  },
+  "-32769 / 2": {
+   "klive": "-16384",
+   "zxbc": "-16384.5"
+  },
+  "-32769 / 8": {
+   "klive": "-4096",
+   "zxbc": "-4096.125"
+  },
+  "BNOT $FF": {
+   "klive": "0",
+   "zxbc": "-256"
+  },
+  "$FF / 2": {
+   "klive": "127",
+   "zxbc": "127.5"
+  },
+  "$FF / 8": {
+   "klive": "31",
+   "zxbc": "31.875"
+  },
+  "BNOT $100": {
+   "klive": "65279",
+   "zxbc": "-257"
+  },
+  "BNOT 0.5": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'"
+  },
+  "0.5 / 8": {
+   "klive": ".0625",
+   "zxbc": "0.0625"
+  },
+  "BNOT 2.5": {
+   "klive": "-3",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'"
+  },
+  "0.001": {
+   "klive": ".001",
+   "zxbc": "0.0009918212890625"
+  },
+  "-(0.001)": {
+   "klive": "-.001",
+   "zxbc": "-0.0009918212890625"
+  },
+  "BNOT 0.001": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'"
+  },
+  "0.001 + 1": {
+   "klive": "1.001",
+   "zxbc": "1.0009918212890625"
+  },
+  "0.001 - 1": {
+   "klive": "-0.999",
+   "zxbc": "-0.998992919921875"
+  },
+  "0.001 * 2": {
+   "klive": ".002",
+   "zxbc": "0.0019989013671875"
+  },
+  "0.001 / 2": {
+   "klive": ".0005",
+   "zxbc": "0.00048828125"
+  },
+  "0.001 / 8": {
+   "klive": ".000125",
+   "zxbc": "0.0001220703125"
+  },
+  "0.001 MOD 3": {
+   "klive": ".001",
+   "zxbc": "0.0009918212890625"
+  },
+  "0.001 + 0.001": {
+   "klive": ".002",
+   "zxbc": "0.0019989013671875"
+  },
+  "0.001 * 0.001": {
+   "klive": "1E-6",
+   "zxbc": "0"
+  },
+  "1E10": {
+   "klive": "1E+10",
+   "zxbc": "1410065408"
+  },
+  "-(1E10)": {
+   "klive": "-1E+10",
+   "zxbc": "-1410065408"
+  },
+  "1E10 + 1": {
+   "klive": "1E+10",
+   "zxbc": "1410065409"
+  },
+  "1E10 - 1": {
+   "klive": "1E+10",
+   "zxbc": "1410065407"
+  },
+  "1E10 * 2": {
+   "klive": "2E+10",
+   "zxbc": "2820130816"
+  },
+  "1E10 / 2": {
+   "klive": "5E+9",
+   "zxbc": "705032704"
+  },
+  "1E10 / 8": {
+   "klive": "1.25E+9",
+   "zxbc": "1250000000"
+  },
+  "1E10 MOD 3": {
+   "klive": "0",
+   "zxbc": "1"
+  },
+  "1E10 + 1E10": {
+   "klive": "2E+10",
+   "zxbc": "2820130816"
+  },
+  "1E10 * 1E10": {
+   "klive": "1E+20",
+   "zxbc": "1661992960"
+  }
+ },
+ "mixed": {
+  "UByte 200 / Byte 2": {
+   "klive": "-28",
+   "zxbc": "28"
+  },
+  "Byte -7 MOD UInteger 1000": {
+   "klive": "-7",
+   "zxbc": "7"
+  },
+  "Integer -100 MOD UInteger 1000": {
+   "klive": "-100",
+   "zxbc": "100"
+  },
+  "Integer -100 MOD Long 7": {
+   "klive": "-2",
+   "zxbc": "2"
+  },
+  "Long -100000 MOD ULong 7": {
+   "klive": "-5",
+   "zxbc": "5"
+  },
+  "Integer -100 MOD Fixed 1.25": {
+   "klive": "0",
+   "zxbc": "-1.25"
+  },
+  "Integer 100 MOD Fixed 100.25": {
+   "klive": "100",
+   "zxbc": "99.9991302490234375"
+  },
+  "Long -100000 / Fixed 1.25": {
+   "klive": "24857.5999908447265625",
+   "zxbc": "24857.5999755859375"
+  },
+  "Long -100000 MOD Fixed 1.25": {
+   "klive": "0.75",
+   "zxbc": "0.749969482421875"
+  },
+  "Long 100000 MOD Fixed 100.25": {
+   "klive": "-94.75",
+   "zxbc": "-94.7492218017578125"
+  },
+  "Integer -100 MOD Float 2.5": {
+   "klive": "0",
+   "zxbc": "-1700"
+  }
+ },
+ "print": {
+  "PRINT Fixed -0.1": {
+   "klive": "-0.100006103515625",
+   "zxbc": "-0.0999908447265625"
+  }
+ },
+ "shifts": {
+  "Integer -100 SHR 1": {
+   "klive": "-50",
+   "zxbc": "32718"
+  }
+ },
+ "unary": {
+  "Fixed 3.5: BNOT a": {
+   "klive": "-4",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'"
+  },
+  "Fixed -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'"
+  },
+  "Float 7.5: BNOT a": {
+   "klive": "-8",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'"
+  },
+  "Float -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'"
+  }
+ }
+}

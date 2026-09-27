@@ -217,4 +217,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { headerOptions, zxbcArguments, failureKind };
+module.exports = { headerOptions, zxbcArguments, failureKind, compileWithZxbc };

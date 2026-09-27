@@ -1,0 +1,53 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "UByte 7 / 0": {
+   "out": "255"
+  },
+  "UByte 7 MOD 0": {
+   "out": "7"
+  },
+  "Byte 7 / 0": {
+   "out": "-1"
+  },
+  "Byte 7 MOD 0": {
+   "out": "7"
+  },
+  "UInteger 7 / 0": {
+   "out": "65535"
+  },
+  "UInteger 7 MOD 0": {
+   "out": "7"
+  },
+  "Integer 100 / 0": {
+   "out": "-1"
+  },
+  "Integer 100 MOD 0": {
+   "out": "100"
+  },
+  "ULong 7 / 0": {
+   "out": "4294967295"
+  },
+  "ULong 7 MOD 0": {
+   "out": "7"
+  },
+  "Long 100000 / 0": {
+   "out": "-1"
+  },
+  "Long 100000 MOD 0": {
+   "out": "100000"
+  },
+  "Fixed -7.5 / 0": {
+   "out": "0.0000152587890625"
+  },
+  "Fixed -7.5 MOD 0": {
+   "out": "0"
+  },
+  "Float -7.5 / 0": {
+   "out": "0"
+  },
+  "Float -7.5 MOD 0": {
+   "out": ""
+  }
+ }
+}
