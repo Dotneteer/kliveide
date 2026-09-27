@@ -1,5 +1,6 @@
 ' Float parameters and results
 '@expect screen 0 "5 6.5 1.5 2 2"
+'@expect oracle-differs byref-float-parameter
 FUNCTION hyp(a AS Float, b AS Float) AS Float
   RETURN SQR(a * a + b * b)
 END FUNCTION

@@ -1,0 +1,5 @@
+' Codes 144-164 print the user-defined graphics, which start as copies of A-U; codes 165-255 print
+' one glyph each from past the UDG area, not the ROM's keyword text (the screen reader shows it as
+' "?") (semantics annex: print-udg-codes)
+'@expect screen 0 "AU[?][?]"
+PRINT CHR$(144); CHR$(164); "["; CHR$(165); "]["; CHR$(255); "]"

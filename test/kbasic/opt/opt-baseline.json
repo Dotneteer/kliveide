@@ -2,2773 +2,2989 @@
  "arrays/array-base.zxbas": {
   "0": {
    "bytes": 130,
-   "tstates": 11926
+   "tstates": 12042
   },
   "1": {
    "bytes": 93,
-   "tstates": 11507
+   "tstates": 11723
   },
   "2": {
    "bytes": 81,
-   "tstates": 11462
+   "tstates": 11555
   },
   "3": {
    "bytes": 81,
-   "tstates": 11462
+   "tstates": 11555
   }
  },
  "arrays/array-parameter.zxbas": {
   "0": {
    "bytes": 223,
-   "tstates": 34680
+   "tstates": 34900
   },
   "1": {
    "bytes": 197,
-   "tstates": 34151
+   "tstates": 34387
   },
   "2": {
    "bytes": 197,
-   "tstates": 34151
+   "tstates": 34387
   },
   "3": {
    "bytes": 197,
-   "tstates": 34151
+   "tstates": 34387
   }
  },
  "arrays/initialiser.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 18003
+   "tstates": 18227
   },
   "1": {
    "bytes": 82,
-   "tstates": 17619
+   "tstates": 17843
   },
   "2": {
    "bytes": 82,
-   "tstates": 17619
+   "tstates": 17843
   },
   "3": {
    "bytes": 82,
-   "tstates": 17619
+   "tstates": 17843
   }
  },
  "arrays/local-array.zxbas": {
   "0": {
    "bytes": 389,
-   "tstates": 45787
+   "tstates": 46027
   },
   "1": {
    "bytes": 334,
-   "tstates": 42867
+   "tstates": 43150
   },
   "2": {
    "bytes": 317,
-   "tstates": 42025
+   "tstates": 42296
   },
   "3": {
    "bytes": 317,
-   "tstates": 42025
+   "tstates": 42296
   }
  },
  "arrays/one-dim.zxbas": {
   "0": {
    "bytes": 216,
-   "tstates": 17171
+   "tstates": 17262
   },
   "1": {
    "bytes": 129,
-   "tstates": 14195
+   "tstates": 14306
   },
   "2": {
    "bytes": 103,
-   "tstates": 13610
+   "tstates": 13694
   },
   "3": {
    "bytes": 103,
-   "tstates": 13610
+   "tstates": 13694
   }
  },
  "arrays/string-array.zxbas": {
   "0": {
    "bytes": 90,
-   "tstates": 21398
+   "tstates": 21667
   },
   "1": {
    "bytes": 90,
-   "tstates": 21398
+   "tstates": 21667
   },
   "2": {
    "bytes": 90,
-   "tstates": 21398
+   "tstates": 21667
   },
   "3": {
    "bytes": 90,
-   "tstates": 21398
+   "tstates": 21667
   }
  },
  "arrays/two-dim.zxbas": {
   "0": {
    "bytes": 231,
-   "tstates": 26478
+   "tstates": 26707
   },
   "1": {
    "bytes": 149,
-   "tstates": 20135
+   "tstates": 20385
   },
   "2": {
    "bytes": 123,
-   "tstates": 19582
+   "tstates": 19838
   },
   "3": {
    "bytes": 123,
-   "tstates": 19582
+   "tstates": 19838
   }
  },
  "builtins/abs-sgn-int.zxbas": {
   "0": {
    "bytes": 110,
-   "tstates": 49450
+   "tstates": 50130
   },
   "1": {
    "bytes": 110,
-   "tstates": 49450
+   "tstates": 50130
   },
   "2": {
    "bytes": 110,
-   "tstates": 49450
+   "tstates": 50130
   },
   "3": {
    "bytes": 110,
-   "tstates": 49450
+   "tstates": 50130
   }
  },
  "builtins/bounds.zxbas": {
   "0": {
    "bytes": 57,
-   "tstates": 15014
+   "tstates": 15186
   },
   "1": {
    "bytes": 57,
-   "tstates": 15014
+   "tstates": 15186
   },
   "2": {
    "bytes": 57,
-   "tstates": 15014
+   "tstates": 15186
   },
   "3": {
    "bytes": 57,
-   "tstates": 15014
+   "tstates": 15186
   }
  },
  "builtins/cast.zxbas": {
   "0": {
    "bytes": 78,
-   "tstates": 63682
+   "tstates": 64231
   },
   "1": {
    "bytes": 78,
-   "tstates": 63682
+   "tstates": 64231
   },
   "2": {
    "bytes": 78,
-   "tstates": 63682
+   "tstates": 64231
   },
   "3": {
    "bytes": 78,
-   "tstates": 63682
+   "tstates": 64231
   }
  },
  "builtins/chr-code.zxbas": {
   "0": {
    "bytes": 72,
-   "tstates": 25551
+   "tstates": 25971
   },
   "1": {
    "bytes": 72,
-   "tstates": 25551
+   "tstates": 25971
   },
   "2": {
    "bytes": 72,
-   "tstates": 25551
+   "tstates": 25971
   },
   "3": {
    "bytes": 72,
-   "tstates": 25551
+   "tstates": 25971
   }
  },
  "builtins/len-str.zxbas": {
   "0": {
    "bytes": 86,
-   "tstates": 80470
+   "tstates": 80947
   },
   "1": {
    "bytes": 86,
-   "tstates": 80470
+   "tstates": 80947
   },
   "2": {
    "bytes": 86,
-   "tstates": 80470
+   "tstates": 80947
   },
   "3": {
    "bytes": 86,
-   "tstates": 80470
+   "tstates": 80947
   }
  },
  "builtins/peek-poke-typed.zxbas": {
   "0": {
    "bytes": 85,
-   "tstates": 55514
+   "tstates": 56202
   },
   "1": {
    "bytes": 85,
-   "tstates": 55514
+   "tstates": 56202
   },
   "2": {
    "bytes": 85,
-   "tstates": 55514
+   "tstates": 56202
   },
   "3": {
    "bytes": 85,
-   "tstates": 55514
+   "tstates": 56202
   }
  },
  "builtins/rnd-range.zxbas": {
   "0": {
    "bytes": 233,
-   "tstates": 6031216
+   "tstates": 6031248
   },
   "1": {
    "bytes": 155,
-   "tstates": 6008203
+   "tstates": 6008219
   },
   "2": {
    "bytes": 129,
-   "tstates": 5995754
+   "tstates": 5995794
   },
   "3": {
    "bytes": 129,
-   "tstates": 5995754
+   "tstates": 5995794
   }
  },
  "builtins/usr-udg.zxbas": {
   "0": {
    "bytes": 100,
-   "tstates": 16467
+   "tstates": 16707
   },
   "1": {
    "bytes": 100,
-   "tstates": 16467
+   "tstates": 16707
   },
   "2": {
    "bytes": 100,
-   "tstates": 16467
+   "tstates": 16707
   },
   "3": {
    "bytes": 100,
-   "tstates": 16467
+   "tstates": 16707
   }
  },
  "builtins/usr.zxbas": {
   "0": {
    "bytes": 38,
-   "tstates": 10235
+   "tstates": 10387
   },
   "1": {
    "bytes": 38,
-   "tstates": 10235
+   "tstates": 10387
   },
   "2": {
    "bytes": 38,
-   "tstates": 10235
+   "tstates": 10387
   },
   "3": {
    "bytes": 38,
-   "tstates": 10235
+   "tstates": 10387
+  }
+ },
+ "builtins/val-error.zxbas": {
+  "0": {
+   "bytes": 180,
+   "tstates": 2035803
+  },
+  "1": {
+   "bytes": 146,
+   "tstates": 2027739
+  },
+  "2": {
+   "bytes": 134,
+   "tstates": 2026074
+  },
+  "3": {
+   "bytes": 134,
+   "tstates": 2026074
   }
  },
  "builtins/val.zxbas": {
   "0": {
-   "bytes": 93,
-   "tstates": 108797
+   "bytes": 89,
+   "tstates": 172497
   },
   "1": {
-   "bytes": 93,
-   "tstates": 108797
+   "bytes": 89,
+   "tstates": 172497
   },
   "2": {
-   "bytes": 93,
-   "tstates": 108797
+   "bytes": 89,
+   "tstates": 172497
   },
   "3": {
-   "bytes": 93,
-   "tstates": 108797
+   "bytes": 89,
+   "tstates": 172497
   }
  },
  "classic/binary.zxbas": {
   "0": {
    "bytes": 90,
-   "tstates": 306920
+   "tstates": 307261
   },
   "1": {
    "bytes": 72,
-   "tstates": 291166
+   "tstates": 291537
   },
   "2": {
    "bytes": 69,
-   "tstates": 290889
+   "tstates": 291253
   },
   "3": {
    "bytes": 69,
-   "tstates": 290889
+   "tstates": 291253
   }
  },
  "classic/bubble-sort.zxbas": {
   "0": {
    "bytes": 518,
-   "tstates": 122824
+   "tstates": 123648
   },
   "1": {
    "bytes": 319,
-   "tstates": 111092
+   "tstates": 111945
   },
   "2": {
    "bytes": 272,
-   "tstates": 109749
+   "tstates": 110541
   },
   "3": {
    "bytes": 272,
-   "tstates": 109749
+   "tstates": 110541
   }
  },
  "classic/collatz.zxbas": {
   "0": {
    "bytes": 298,
-   "tstates": 2487422
+   "tstates": 2487678
   },
   "1": {
    "bytes": 224,
-   "tstates": 337463
+   "tstates": 337719
   },
   "2": {
    "bytes": 214,
-   "tstates": 335223
+   "tstates": 335479
   },
   "3": {
    "bytes": 214,
-   "tstates": 335223
+   "tstates": 335479
   }
  },
  "classic/factorial.zxbas": {
   "0": {
    "bytes": 269,
-   "tstates": 277503
+   "tstates": 278351
   },
   "1": {
    "bytes": 219,
-   "tstates": 275719
+   "tstates": 276506
   },
   "2": {
    "bytes": 205,
-   "tstates": 275294
+   "tstates": 276095
   },
   "3": {
    "bytes": 205,
-   "tstates": 275294
+   "tstates": 276095
   }
  },
  "classic/fibonacci.zxbas": {
   "0": {
    "bytes": 120,
-   "tstates": 61944
+   "tstates": 62872
   },
   "1": {
    "bytes": 85,
-   "tstates": 60853
+   "tstates": 61817
   },
   "2": {
    "bytes": 73,
-   "tstates": 60535
+   "tstates": 61554
   },
   "3": {
    "bytes": 73,
-   "tstates": 60535
+   "tstates": 61554
   }
  },
  "classic/gcd.zxbas": {
   "0": {
    "bytes": 230,
-   "tstates": 32189
+   "tstates": 32398
   },
   "1": {
    "bytes": 195,
-   "tstates": 30486
+   "tstates": 31615
   },
   "2": {
    "bytes": 192,
-   "tstates": 30430
+   "tstates": 31570
   },
   "3": {
    "bytes": 192,
-   "tstates": 30430
+   "tstates": 31570
   }
  },
  "classic/hanoi.zxbas": {
   "0": {
    "bytes": 127,
-   "tstates": 203878
+   "tstates": 203979
   },
   "1": {
    "bytes": 107,
-   "tstates": 179033
+   "tstates": 179129
   },
   "2": {
    "bytes": 107,
-   "tstates": 179033
+   "tstates": 179129
   },
   "3": {
    "bytes": 107,
-   "tstates": 179033
+   "tstates": 179129
   }
  },
  "classic/pascal.zxbas": {
   "0": {
    "bytes": 312,
-   "tstates": 71912
+   "tstates": 72679
   },
   "1": {
    "bytes": 192,
-   "tstates": 62166
+   "tstates": 62883
   },
   "2": {
    "bytes": 153,
-   "tstates": 60644
+   "tstates": 61419
   },
   "3": {
    "bytes": 153,
-   "tstates": 60644
+   "tstates": 61419
   }
  },
  "classic/primes-sieve.zxbas": {
   "0": {
    "bytes": 307,
-   "tstates": 159219
+   "tstates": 160728
   },
   "1": {
    "bytes": 210,
-   "tstates": 134891
+   "tstates": 136436
   },
   "2": {
    "bytes": 187,
-   "tstates": 131594
+   "tstates": 133130
   },
   "3": {
    "bytes": 187,
-   "tstates": 131594
+   "tstates": 133130
   }
  },
  "classic/reverse-string.zxbas": {
   "0": {
    "bytes": 144,
-   "tstates": 54430
+   "tstates": 54709
   },
   "1": {
    "bytes": 116,
-   "tstates": 53673
+   "tstates": 53913
   },
   "2": {
    "bytes": 102,
-   "tstates": 53409
+   "tstates": 53673
   },
   "3": {
    "bytes": 102,
-   "tstates": 53409
+   "tstates": 53673
   }
  },
  "classic/sqr-newton.zxbas": {
   "0": {
    "bytes": 318,
-   "tstates": 576239
+   "tstates": 576463
   },
   "1": {
    "bytes": 284,
-   "tstates": 575791
+   "tstates": 576015
   },
   "2": {
    "bytes": 272,
-   "tstates": 575791
+   "tstates": 576015
   },
   "3": {
    "bytes": 272,
-   "tstates": 575791
+   "tstates": 576015
   }
  },
  "classic/temperature.zxbas": {
   "0": {
    "bytes": 173,
-   "tstates": 194051
+   "tstates": 194886
   },
   "1": {
    "bytes": 147,
-   "tstates": 194001
+   "tstates": 194836
   },
   "2": {
    "bytes": 136,
-   "tstates": 193975
+   "tstates": 194586
   },
   "3": {
    "bytes": 136,
-   "tstates": 193975
+   "tstates": 194586
   }
  },
  "classic/times-table.zxbas": {
   "0": {
    "bytes": 113,
-   "tstates": 92019
+   "tstates": 93510
   },
   "1": {
    "bytes": 79,
-   "tstates": 89087
+   "tstates": 90665
   },
   "2": {
    "bytes": 67,
-   "tstates": 88984
+   "tstates": 90496
   },
   "3": {
    "bytes": 67,
-   "tstates": 88984
+   "tstates": 90496
   }
  },
  "control/do-loops.zxbas": {
   "0": {
    "bytes": 238,
-   "tstates": 20477
+   "tstates": 20749
   },
   "1": {
    "bytes": 168,
-   "tstates": 19976
+   "tstates": 20272
   },
   "2": {
    "bytes": 162,
-   "tstates": 19868
+   "tstates": 20188
   },
   "3": {
    "bytes": 162,
-   "tstates": 19868
+   "tstates": 20188
   }
  },
  "control/exit-continue.zxbas": {
   "0": {
    "bytes": 196,
-   "tstates": 27640
+   "tstates": 27920
   },
   "1": {
    "bytes": 111,
-   "tstates": 21231
+   "tstates": 21513
   },
   "2": {
    "bytes": 96,
-   "tstates": 20920
+   "tstates": 21186
   },
   "3": {
    "bytes": 96,
-   "tstates": 20920
+   "tstates": 21186
   }
  },
  "control/exit-nested.zxbas": {
   "0": {
    "bytes": 184,
-   "tstates": 6110
+   "tstates": 6131
   },
   "1": {
    "bytes": 97,
-   "tstates": 4510
+   "tstates": 4542
   },
   "2": {
    "bytes": 73,
-   "tstates": 4171
+   "tstates": 4210
   },
   "3": {
    "bytes": 73,
-   "tstates": 4171
+   "tstates": 4210
   }
  },
  "control/for-evaluation.zxbas": {
   "0": {
    "bytes": 441,
-   "tstates": 22032
+   "tstates": 22256
   },
   "1": {
    "bytes": 376,
-   "tstates": 21084
+   "tstates": 21286
   },
   "2": {
    "bytes": 365,
-   "tstates": 20988
+   "tstates": 21225
   },
   "3": {
    "bytes": 365,
-   "tstates": 20988
+   "tstates": 21225
   }
  },
  "control/for-integer.zxbas": {
   "0": {
    "bytes": 186,
-   "tstates": 15890
+   "tstates": 16122
   },
   "1": {
    "bytes": 140,
-   "tstates": 14962
+   "tstates": 15115
   },
   "2": {
    "bytes": 129,
-   "tstates": 14738
+   "tstates": 14891
   },
   "3": {
    "bytes": 129,
-   "tstates": 14738
+   "tstates": 14891
   }
  },
  "control/for-steps.zxbas": {
   "0": {
    "bytes": 589,
-   "tstates": 61181
+   "tstates": 62069
   },
   "1": {
    "bytes": 474,
-   "tstates": 60093
+   "tstates": 61020
   },
   "2": {
    "bytes": 433,
-   "tstates": 59740
+   "tstates": 60652
   },
   "3": {
    "bytes": 433,
-   "tstates": 59740
+   "tstates": 60652
   }
  },
  "control/for-unsigned-down.zxbas": {
   "0": {
    "bytes": 445,
-   "tstates": 62534
+   "tstates": 63475
   },
   "1": {
    "bytes": 357,
-   "tstates": 61770
+   "tstates": 62674
   },
   "2": {
    "bytes": 325,
-   "tstates": 61438
+   "tstates": 62427
   },
   "3": {
    "bytes": 325,
-   "tstates": 61438
+   "tstates": 62427
   }
  },
  "control/gosub-nested.zxbas": {
   "0": {
    "bytes": 63,
-   "tstates": 10409
+   "tstates": 10573
   },
   "1": {
    "bytes": 63,
-   "tstates": 10409
+   "tstates": 10573
   },
   "2": {
    "bytes": 63,
-   "tstates": 10409
+   "tstates": 10573
   },
   "3": {
    "bytes": 63,
-   "tstates": 10409
+   "tstates": 10573
   }
  },
  "control/goto-gosub.zxbas": {
   "0": {
    "bytes": 66,
-   "tstates": 13761
+   "tstates": 13981
   },
   "1": {
    "bytes": 64,
-   "tstates": 13761
+   "tstates": 13981
   },
   "2": {
    "bytes": 64,
-   "tstates": 13761
+   "tstates": 13981
   },
   "3": {
    "bytes": 64,
-   "tstates": 13761
+   "tstates": 13981
   }
  },
  "control/if-else.zxbas": {
   "0": {
    "bytes": 128,
-   "tstates": 34391
+   "tstates": 34965
   },
   "1": {
    "bytes": 104,
-   "tstates": 34238
+   "tstates": 34805
   },
   "2": {
    "bytes": 104,
-   "tstates": 34238
+   "tstates": 34805
   },
   "3": {
    "bytes": 104,
-   "tstates": 34238
+   "tstates": 34805
   }
  },
  "control/level2-constant-slots.zxbas": {
   "0": {
    "bytes": 720,
-   "tstates": 96240
+   "tstates": 96935
   },
   "1": {
    "bytes": 560,
-   "tstates": 84220
+   "tstates": 84944
   },
   "2": {
    "bytes": 491,
-   "tstates": 75956
+   "tstates": 76656
   },
   "3": {
    "bytes": 403,
-   "tstates": 64914
+   "tstates": 65626
   }
  },
  "control/logic-evaluation.zxbas": {
   "0": {
    "bytes": 180,
-   "tstates": 22628
+   "tstates": 22876
   },
   "1": {
    "bytes": 176,
-   "tstates": 22620
+   "tstates": 22864
   },
   "2": {
    "bytes": 170,
-   "tstates": 22607
+   "tstates": 22835
   },
   "3": {
    "bytes": 170,
-   "tstates": 22607
+   "tstates": 22835
   }
  },
  "control/nested-for.zxbas": {
   "0": {
    "bytes": 172,
-   "tstates": 10738
+   "tstates": 10798
   },
   "1": {
    "bytes": 98,
-   "tstates": 8026
+   "tstates": 8086
   },
   "2": {
    "bytes": 86,
-   "tstates": 7854
+   "tstates": 7915
   },
   "3": {
    "bytes": 86,
-   "tstates": 7854
+   "tstates": 7915
   }
  },
  "control/on-gosub.zxbas": {
   "0": {
    "bytes": 141,
-   "tstates": 7747
+   "tstates": 7846
   },
   "1": {
    "bytes": 105,
-   "tstates": 7367
+   "tstates": 7466
   },
   "2": {
    "bytes": 93,
-   "tstates": 7252
+   "tstates": 7345
   },
   "3": {
    "bytes": 93,
-   "tstates": 7252
+   "tstates": 7345
   }
  },
  "control/on-goto-range.zxbas": {
   "0": {
    "bytes": 96,
-   "tstates": 6601
+   "tstates": 6678
   },
   "1": {
    "bytes": 94,
-   "tstates": 6601
+   "tstates": 6678
   },
   "2": {
    "bytes": 88,
-   "tstates": 6581
+   "tstates": 6670
   },
   "3": {
    "bytes": 88,
-   "tstates": 6581
+   "tstates": 6670
   }
  },
  "control/on-goto.zxbas": {
   "0": {
    "bytes": 135,
-   "tstates": 29326
+   "tstates": 29829
   },
   "1": {
    "bytes": 131,
-   "tstates": 29322
+   "tstates": 29833
   },
   "2": {
    "bytes": 125,
-   "tstates": 29293
+   "tstates": 29804
   },
   "3": {
    "bytes": 125,
-   "tstates": 29293
+   "tstates": 29804
   }
  },
  "control/single-line-if.zxbas": {
   "0": {
    "bytes": 85,
-   "tstates": 10443
+   "tstates": 10611
   },
   "1": {
    "bytes": 61,
-   "tstates": 10387
+   "tstates": 10574
   },
   "2": {
    "bytes": 61,
-   "tstates": 10387
+   "tstates": 10574
   },
   "3": {
    "bytes": 61,
-   "tstates": 10387
+   "tstates": 10574
   }
  },
  "control/while-float.zxbas": {
   "0": {
    "bytes": 136,
-   "tstates": 291682
+   "tstates": 291922
   },
   "1": {
    "bytes": 129,
-   "tstates": 291607
+   "tstates": 291854
   },
   "2": {
    "bytes": 129,
-   "tstates": 291607
+   "tstates": 291854
   },
   "3": {
    "bytes": 129,
-   "tstates": 291607
+   "tstates": 291854
   }
  },
  "control/while.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 15726
+   "tstates": 15827
   },
   "1": {
    "bytes": 62,
-   "tstates": 9626
+   "tstates": 9731
   },
   "2": {
    "bytes": 62,
-   "tstates": 9626
+   "tstates": 9731
   },
   "3": {
    "bytes": 62,
-   "tstates": 9626
+   "tstates": 9731
   }
  },
  "data/data-expressions.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 82991
+   "tstates": 83342
   },
   "1": {
    "bytes": 94,
-   "tstates": 82991
+   "tstates": 83342
   },
   "2": {
    "bytes": 94,
-   "tstates": 82991
+   "tstates": 83342
   },
   "3": {
    "bytes": 94,
-   "tstates": 82991
+   "tstates": 83342
   }
  },
  "data/read-array.zxbas": {
   "0": {
    "bytes": 159,
-   "tstates": 46106
+   "tstates": 46390
   },
   "1": {
    "bytes": 116,
-   "tstates": 45226
+   "tstates": 45510
   },
   "2": {
    "bytes": 104,
-   "tstates": 45093
+   "tstates": 45386
   },
   "3": {
    "bytes": 104,
-   "tstates": 45093
+   "tstates": 45386
   }
  },
  "data/read-numbers.zxbas": {
   "0": {
    "bytes": 95,
-   "tstates": 68418
+   "tstates": 68850
   },
   "1": {
    "bytes": 95,
-   "tstates": 68418
+   "tstates": 68850
   },
   "2": {
    "bytes": 95,
-   "tstates": 68418
+   "tstates": 68850
   },
   "3": {
    "bytes": 95,
-   "tstates": 68418
+   "tstates": 68850
   }
  },
  "data/read-strings.zxbas": {
   "0": {
    "bytes": 127,
-   "tstates": 57112
+   "tstates": 57771
   },
   "1": {
    "bytes": 93,
-   "tstates": 56750
+   "tstates": 57454
   },
   "2": {
    "bytes": 81,
-   "tstates": 56691
+   "tstates": 57316
   },
   "3": {
    "bytes": 81,
-   "tstates": 56691
+   "tstates": 57316
   }
  },
  "data/read-wraps.zxbas": {
   "0": {
    "bytes": 68,
-   "tstates": 19800
+   "tstates": 19856
   },
   "1": {
    "bytes": 68,
-   "tstates": 19800
+   "tstates": 19856
   },
   "2": {
    "bytes": 62,
-   "tstates": 19763
+   "tstates": 19827
   },
   "3": {
    "bytes": 62,
-   "tstates": 19763
+   "tstates": 19827
   }
  },
  "data/restore-label.zxbas": {
   "0": {
    "bytes": 121,
-   "tstates": 32649
+   "tstates": 32856
   },
   "1": {
    "bytes": 123,
-   "tstates": 32661
+   "tstates": 32868
   },
   "2": {
    "bytes": 111,
-   "tstates": 32619
+   "tstates": 32802
   },
   "3": {
    "bytes": 111,
-   "tstates": 32619
+   "tstates": 32802
   }
  },
  "data/restore-line.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 23642
+   "tstates": 23821
   },
   "1": {
    "bytes": 96,
-   "tstates": 23642
+   "tstates": 23821
   },
   "2": {
    "bytes": 87,
-   "tstates": 23613
+   "tstates": 23756
   },
   "3": {
    "bytes": 87,
-   "tstates": 23613
+   "tstates": 23756
   }
  },
  "fixed/fixed-arith.zxbas": {
   "0": {
-   "bytes": 172,
-   "tstates": 214186
+   "bytes": 160,
+   "tstates": 103085
   },
   "1": {
-   "bytes": 172,
-   "tstates": 214186
+   "bytes": 160,
+   "tstates": 103085
   },
   "2": {
-   "bytes": 172,
-   "tstates": 214186
+   "bytes": 160,
+   "tstates": 103085
   },
   "3": {
-   "bytes": 172,
-   "tstates": 214186
+   "bytes": 160,
+   "tstates": 103085
   }
  },
  "fixed/fixed-compare.zxbas": {
   "0": {
    "bytes": 286,
-   "tstates": 35080
+   "tstates": 35285
   },
   "1": {
    "bytes": 274,
-   "tstates": 34996
+   "tstates": 35189
   },
   "2": {
    "bytes": 271,
-   "tstates": 34986
+   "tstates": 35179
   },
   "3": {
    "bytes": 271,
-   "tstates": 34986
+   "tstates": 35179
   }
  },
  "fixed/fixed-conversions.zxbas": {
   "0": {
-   "bytes": 174,
-   "tstates": 116778
+   "bytes": 171,
+   "tstates": 87022
   },
   "1": {
-   "bytes": 174,
-   "tstates": 116778
+   "bytes": 171,
+   "tstates": 87022
   },
   "2": {
-   "bytes": 153,
-   "tstates": 116679
+   "bytes": 150,
+   "tstates": 87009
   },
   "3": {
-   "bytes": 153,
-   "tstates": 116679
+   "bytes": 150,
+   "tstates": 87009
   }
  },
  "fixed/fixed-loop.zxbas": {
   "0": {
-   "bytes": 161,
-   "tstates": 213647
+   "bytes": 155,
+   "tstates": 146479
   },
   "1": {
-   "bytes": 127,
-   "tstates": 212666
+   "bytes": 121,
+   "tstates": 145744
   },
   "2": {
-   "bytes": 108,
-   "tstates": 212442
+   "bytes": 102,
+   "tstates": 145480
   },
   "3": {
-   "bytes": 108,
-   "tstates": 212442
+   "bytes": 102,
+   "tstates": 145480
   }
  },
  "fixed/fixed-negative.zxbas": {
   "0": {
-   "bytes": 162,
-   "tstates": 236751
+   "bytes": 150,
+   "tstates": 93593
   },
   "1": {
-   "bytes": 162,
-   "tstates": 236751
+   "bytes": 150,
+   "tstates": 93593
   },
   "2": {
-   "bytes": 155,
-   "tstates": 236751
+   "bytes": 143,
+   "tstates": 93556
   },
   "3": {
-   "bytes": 155,
-   "tstates": 236751
+   "bytes": 143,
+   "tstates": 93556
   }
  },
  "float/arithmetic.zxbas": {
   "0": {
-   "bytes": 320,
-   "tstates": 274398
+   "bytes": 307,
+   "tstates": 271231
   },
   "1": {
-   "bytes": 320,
-   "tstates": 274398
+   "bytes": 307,
+   "tstates": 271231
   },
   "2": {
-   "bytes": 320,
-   "tstates": 274398
+   "bytes": 307,
+   "tstates": 271231
   },
   "3": {
-   "bytes": 320,
-   "tstates": 274398
+   "bytes": 307,
+   "tstates": 271231
   }
  },
  "float/compare.zxbas": {
   "0": {
    "bytes": 327,
-   "tstates": 68835
+   "tstates": 69162
   },
   "1": {
    "bytes": 327,
-   "tstates": 68835
+   "tstates": 69162
   },
   "2": {
    "bytes": 327,
-   "tstates": 68835
+   "tstates": 69162
   },
   "3": {
    "bytes": 327,
-   "tstates": 68835
+   "tstates": 69162
   }
  },
  "float/float-array.zxbas": {
   "0": {
    "bytes": 251,
-   "tstates": 148570
+   "tstates": 148863
   },
   "1": {
    "bytes": 216,
-   "tstates": 142978
+   "tstates": 143263
   },
   "2": {
    "bytes": 204,
-   "tstates": 142978
+   "tstates": 143263
   },
   "3": {
    "bytes": 204,
-   "tstates": 142978
+   "tstates": 143263
   }
  },
  "float/float-routines.zxbas": {
   "0": {
    "bytes": 472,
-   "tstates": 1024822
+   "tstates": 1025074
   },
   "1": {
    "bytes": 472,
-   "tstates": 1024822
+   "tstates": 1025074
   },
   "2": {
    "bytes": 436,
-   "tstates": 1024170
+   "tstates": 1024634
   },
   "3": {
    "bytes": 405,
-   "tstates": 1023986
+   "tstates": 1024418
   }
  },
  "float/for-step.zxbas": {
   "0": {
    "bytes": 389,
-   "tstates": 512507
+   "tstates": 513816
   },
   "1": {
    "bytes": 379,
-   "tstates": 512280
+   "tstates": 513777
   },
   "2": {
    "bytes": 379,
-   "tstates": 512280
+   "tstates": 513777
   },
   "3": {
    "bytes": 379,
-   "tstates": 512280
+   "tstates": 513777
   }
  },
  "float/from-integer.zxbas": {
   "0": {
    "bytes": 190,
-   "tstates": 162642
+   "tstates": 163677
   },
   "1": {
    "bytes": 188,
-   "tstates": 161487
+   "tstates": 162352
   },
   "2": {
    "bytes": 188,
-   "tstates": 161487
+   "tstates": 162352
   },
   "3": {
    "bytes": 188,
-   "tstates": 161487
+   "tstates": 162352
   }
  },
  "float/int-abs-sgn.zxbas": {
   "0": {
    "bytes": 171,
-   "tstates": 96313
+   "tstates": 96925
   },
   "1": {
    "bytes": 171,
-   "tstates": 96313
+   "tstates": 96925
   },
   "2": {
    "bytes": 171,
-   "tstates": 96313
+   "tstates": 96925
   },
   "3": {
    "bytes": 171,
-   "tstates": 96313
+   "tstates": 96925
   }
  },
  "float/inverse-trig.zxbas": {
   "0": {
    "bytes": 322,
-   "tstates": 1456127
+   "tstates": 1456383
   },
   "1": {
    "bytes": 322,
-   "tstates": 1456127
+   "tstates": 1456383
   },
   "2": {
    "bytes": 322,
-   "tstates": 1456127
+   "tstates": 1456383
   },
   "3": {
    "bytes": 322,
-   "tstates": 1456127
+   "tstates": 1456383
   }
  },
  "float/level1-float-shapes.zxbas": {
   "0": {
    "bytes": 1235,
-   "tstates": 740082
+   "tstates": 742442
   },
   "1": {
    "bytes": 1188,
-   "tstates": 735875
+   "tstates": 738059
   },
   "2": {
    "bytes": 1165,
-   "tstates": 735651
+   "tstates": 737662
   },
   "3": {
    "bytes": 1165,
-   "tstates": 735651
+   "tstates": 737662
   }
  },
  "float/ln-exp.zxbas": {
   "0": {
    "bytes": 235,
-   "tstates": 1294492
+   "tstates": 1295485
   },
   "1": {
    "bytes": 235,
-   "tstates": 1294492
+   "tstates": 1295485
   },
   "2": {
    "bytes": 235,
-   "tstates": 1294492
+   "tstates": 1295485
   },
   "3": {
    "bytes": 235,
-   "tstates": 1294492
+   "tstates": 1295485
   }
  },
  "float/mod.zxbas": {
   "0": {
    "bytes": 124,
-   "tstates": 176718
+   "tstates": 177176
   },
   "1": {
    "bytes": 124,
-   "tstates": 176718
+   "tstates": 177176
   },
   "2": {
    "bytes": 124,
-   "tstates": 176718
+   "tstates": 177176
   },
   "3": {
    "bytes": 124,
-   "tstates": 176718
+   "tstates": 177176
+  }
+ },
+ "float/power-constant.zxbas": {
+  "0": {
+   "bytes": 97,
+   "tstates": 415379
+  },
+  "1": {
+   "bytes": 97,
+   "tstates": 415379
+  },
+  "2": {
+   "bytes": 97,
+   "tstates": 415379
+  },
+  "3": {
+   "bytes": 97,
+   "tstates": 415379
   }
  },
  "float/power-roots.zxbas": {
   "0": {
    "bytes": 260,
-   "tstates": 2111714
+   "tstates": 2112039
   },
   "1": {
    "bytes": 260,
-   "tstates": 2111714
+   "tstates": 2112039
   },
   "2": {
    "bytes": 260,
-   "tstates": 2111714
+   "tstates": 2112039
   },
   "3": {
    "bytes": 260,
-   "tstates": 2111714
+   "tstates": 2112039
   }
  },
  "float/precedence.zxbas": {
   "0": {
    "bytes": 382,
-   "tstates": 1091527
+   "tstates": 1091831
   },
   "1": {
    "bytes": 382,
-   "tstates": 1091527
+   "tstates": 1091831
   },
   "2": {
    "bytes": 382,
-   "tstates": 1091527
+   "tstates": 1091831
   },
   "3": {
    "bytes": 382,
-   "tstates": 1091527
+   "tstates": 1091831
   }
  },
  "float/print-format.zxbas": {
   "0": {
-   "bytes": 174,
-   "tstates": 553631
+   "bytes": 387,
+   "tstates": 590663
   },
   "1": {
-   "bytes": 174,
-   "tstates": 553631
+   "bytes": 387,
+   "tstates": 590663
   },
   "2": {
-   "bytes": 174,
-   "tstates": 553631
+   "bytes": 387,
+   "tstates": 590663
   },
   "3": {
-   "bytes": 174,
-   "tstates": 553631
+   "bytes": 387,
+   "tstates": 590663
   }
  },
  "float/rnd-seed.zxbas": {
   "0": {
    "bytes": 245,
-   "tstates": 1030251
+   "tstates": 1030331
   },
   "1": {
    "bytes": 204,
-   "tstates": 1026586
+   "tstates": 1026675
   },
   "2": {
    "bytes": 192,
-   "tstates": 1025418
+   "tstates": 1025518
   },
   "3": {
    "bytes": 192,
-   "tstates": 1025418
+   "tstates": 1025518
   }
  },
  "float/str-val.zxbas": {
   "0": {
    "bytes": 131,
-   "tstates": 150885
+   "tstates": 151248
   },
   "1": {
    "bytes": 131,
-   "tstates": 150885
+   "tstates": 151248
   },
   "2": {
    "bytes": 131,
-   "tstates": 150885
+   "tstates": 151248
   },
   "3": {
    "bytes": 131,
-   "tstates": 150885
+   "tstates": 151248
   }
  },
  "float/to-integer.zxbas": {
   "0": {
    "bytes": 202,
-   "tstates": 55754
+   "tstates": 56218
   },
   "1": {
    "bytes": 202,
-   "tstates": 55754
+   "tstates": 56218
   },
   "2": {
    "bytes": 202,
-   "tstates": 55754
+   "tstates": 56218
   },
   "3": {
    "bytes": 202,
-   "tstates": 55754
+   "tstates": 56218
   }
  },
  "float/trig.zxbas": {
   "0": {
    "bytes": 282,
-   "tstates": 1034042
+   "tstates": 1035110
   },
   "1": {
    "bytes": 282,
-   "tstates": 1034042
+   "tstates": 1035110
   },
   "2": {
    "bytes": 282,
-   "tstates": 1034042
+   "tstates": 1035110
   },
   "3": {
    "bytes": 282,
-   "tstates": 1034042
+   "tstates": 1035110
   }
  },
  "graphics/border.zxbas": {
   "0": {
    "bytes": 33,
-   "tstates": 3235
+   "tstates": 3267
   },
   "1": {
    "bytes": 28,
-   "tstates": 3174
+   "tstates": 3203
   },
   "2": {
    "bytes": 28,
-   "tstates": 3174
+   "tstates": 3203
   },
   "3": {
    "bytes": 28,
-   "tstates": 3174
+   "tstates": 3203
   }
  },
  "graphics/circle.zxbas": {
   "0": {
    "bytes": 302,
-   "tstates": 166974
+   "tstates": 167142
   },
   "1": {
    "bytes": 243,
-   "tstates": 164084
+   "tstates": 164247
   },
   "2": {
    "bytes": 235,
-   "tstates": 163858
+   "tstates": 164021
   },
   "3": {
    "bytes": 235,
-   "tstates": 163858
+   "tstates": 164021
   }
  },
  "graphics/cls-attr.zxbas": {
   "0": {
    "bytes": 74,
-   "tstates": 199659
+   "tstates": 199846
   },
   "1": {
    "bytes": 74,
-   "tstates": 199659
+   "tstates": 199846
   },
   "2": {
    "bytes": 74,
-   "tstates": 199659
+   "tstates": 199846
   },
   "3": {
    "bytes": 74,
-   "tstates": 199659
+   "tstates": 199846
   }
  },
  "graphics/draw-arc.zxbas": {
   "0": {
    "bytes": 1766,
-   "tstates": 6960500
+   "tstates": 6960948
   },
   "1": {
    "bytes": 1720,
-   "tstates": 6955085
+   "tstates": 6955572
   },
   "2": {
    "bytes": 1690,
-   "tstates": 6955085
+   "tstates": 6955309
   },
   "3": {
    "bytes": 1690,
-   "tstates": 6955085
+   "tstates": 6955309
   }
  },
  "graphics/draw-count.zxbas": {
   "0": {
    "bytes": 340,
-   "tstates": 147523
+   "tstates": 147602
   },
   "1": {
    "bytes": 247,
-   "tstates": 107228
+   "tstates": 107292
   },
   "2": {
    "bytes": 227,
-   "tstates": 103059
+   "tstates": 103123
   },
   "3": {
    "bytes": 227,
-   "tstates": 103059
+   "tstates": 103123
   }
  },
  "graphics/draw-lines.zxbas": {
   "0": {
    "bytes": 104,
-   "tstates": 125470
+   "tstates": 125950
   },
   "1": {
    "bytes": 104,
-   "tstates": 125470
+   "tstates": 125950
   },
   "2": {
    "bytes": 104,
-   "tstates": 125470
+   "tstates": 125950
   },
   "3": {
    "bytes": 104,
-   "tstates": 125470
+   "tstates": 125950
   }
  },
  "graphics/plot-colour.zxbas": {
   "0": {
    "bytes": 71,
-   "tstates": 10411
+   "tstates": 10542
   },
   "1": {
    "bytes": 70,
-   "tstates": 10411
+   "tstates": 10542
   },
   "2": {
    "bytes": 70,
-   "tstates": 10411
+   "tstates": 10542
   },
   "3": {
    "bytes": 70,
-   "tstates": 10411
+   "tstates": 10542
   }
  },
  "graphics/plot-over.zxbas": {
   "0": {
    "bytes": 317,
-   "tstates": 14931
+   "tstates": 15022
   },
   "1": {
    "bytes": 258,
-   "tstates": 13147
+   "tstates": 13270
   },
   "2": {
    "bytes": 244,
-   "tstates": 13014
+   "tstates": 13083
   },
   "3": {
    "bytes": 244,
-   "tstates": 13014
+   "tstates": 13083
   }
  },
  "graphics/plot-pixel.zxbas": {
   "0": {
    "bytes": 85,
-   "tstates": 23361
+   "tstates": 23744
   },
   "1": {
    "bytes": 84,
-   "tstates": 23357
+   "tstates": 23740
   },
   "2": {
    "bytes": 84,
-   "tstates": 23357
+   "tstates": 23740
   },
   "3": {
    "bytes": 84,
-   "tstates": 23357
+   "tstates": 23740
   }
  },
  "integers/bitwise.zxbas": {
   "0": {
-   "bytes": 144,
-   "tstates": 56787
+   "bytes": 150,
+   "tstates": 55790
   },
   "1": {
-   "bytes": 144,
-   "tstates": 56787
+   "bytes": 150,
+   "tstates": 55790
   },
   "2": {
-   "bytes": 144,
-   "tstates": 56787
+   "bytes": 150,
+   "tstates": 55790
   },
   "3": {
-   "bytes": 144,
-   "tstates": 56787
+   "bytes": 150,
+   "tstates": 55790
   }
  },
  "integers/byte-signed.zxbas": {
   "0": {
    "bytes": 96,
-   "tstates": 28430
+   "tstates": 28845
   },
   "1": {
    "bytes": 92,
-   "tstates": 28406
+   "tstates": 28837
   },
   "2": {
    "bytes": 83,
-   "tstates": 28369
+   "tstates": 28769
   },
   "3": {
    "bytes": 83,
-   "tstates": 28369
+   "tstates": 28769
   }
  },
  "integers/comparisons.zxbas": {
   "0": {
    "bytes": 211,
-   "tstates": 24373
+   "tstates": 24729
   },
   "1": {
    "bytes": 211,
-   "tstates": 24373
+   "tstates": 24729
   },
   "2": {
    "bytes": 211,
-   "tstates": 24373
+   "tstates": 24729
   },
   "3": {
    "bytes": 211,
-   "tstates": 24373
+   "tstates": 24729
+  }
+ },
+ "integers/constant-divide-by-zero.zxbas": {
+  "0": {
+   "bytes": 27,
+   "tstates": 12358
+  },
+  "1": {
+   "bytes": 27,
+   "tstates": 12358
+  },
+  "2": {
+   "bytes": 27,
+   "tstates": 12358
+  },
+  "3": {
+   "bytes": 27,
+   "tstates": 12358
+  }
+ },
+ "integers/constant-typed.zxbas": {
+  "0": {
+   "bytes": 31,
+   "tstates": 14334
+  },
+  "1": {
+   "bytes": 31,
+   "tstates": 14334
+  },
+  "2": {
+   "bytes": 31,
+   "tstates": 14334
+  },
+  "3": {
+   "bytes": 31,
+   "tstates": 14334
+  }
+ },
+ "integers/divide-by-zero.zxbas": {
+  "0": {
+   "bytes": 124,
+   "tstates": 34586
+  },
+  "1": {
+   "bytes": 124,
+   "tstates": 34586
+  },
+  "2": {
+   "bytes": 124,
+   "tstates": 34586
+  },
+  "3": {
+   "bytes": 124,
+   "tstates": 34586
   }
  },
  "integers/division-by-zero.zxbas": {
   "0": {
    "bytes": 92,
-   "tstates": 30247
+   "tstates": 31613
   },
   "1": {
    "bytes": 92,
-   "tstates": 30247
+   "tstates": 31613
   },
   "2": {
    "bytes": 92,
-   "tstates": 30247
+   "tstates": 31613
   },
   "3": {
    "bytes": 92,
-   "tstates": 30247
+   "tstates": 31613
   }
  },
  "integers/integer-division.zxbas": {
   "0": {
    "bytes": 166,
-   "tstates": 43798
+   "tstates": 44358
   },
   "1": {
    "bytes": 166,
-   "tstates": 43798
+   "tstates": 44358
   },
   "2": {
    "bytes": 163,
-   "tstates": 43782
+   "tstates": 44342
   },
   "3": {
    "bytes": 163,
-   "tstates": 43782
+   "tstates": 44342
   }
  },
  "integers/level1-shapes.zxbas": {
   "0": {
    "bytes": 1115,
-   "tstates": 238903
+   "tstates": 243030
   },
   "1": {
    "bytes": 940,
-   "tstates": 225200
+   "tstates": 228493
   },
   "2": {
    "bytes": 909,
-   "tstates": 224683
+   "tstates": 227983
   },
   "3": {
    "bytes": 909,
-   "tstates": 224683
+   "tstates": 227983
+  }
+ },
+ "integers/literal-typing.zxbas": {
+  "0": {
+   "bytes": 72,
+   "tstates": 113887
+  },
+  "1": {
+   "bytes": 72,
+   "tstates": 113887
+  },
+  "2": {
+   "bytes": 72,
+   "tstates": 113887
+  },
+  "3": {
+   "bytes": 72,
+   "tstates": 113887
   }
  },
  "integers/logic.zxbas": {
   "0": {
    "bytes": 285,
-   "tstates": 26773
+   "tstates": 27111
   },
   "1": {
    "bytes": 268,
-   "tstates": 26690
+   "tstates": 27068
   },
   "2": {
    "bytes": 268,
-   "tstates": 26690
+   "tstates": 27068
   },
   "3": {
    "bytes": 268,
-   "tstates": 26690
+   "tstates": 27068
   }
  },
  "integers/peek-poke.zxbas": {
   "0": {
    "bytes": 61,
-   "tstates": 20327
+   "tstates": 20625
   },
   "1": {
    "bytes": 61,
-   "tstates": 20327
+   "tstates": 20625
   },
   "2": {
    "bytes": 61,
-   "tstates": 20327
+   "tstates": 20625
   },
   "3": {
    "bytes": 61,
-   "tstates": 20327
+   "tstates": 20625
+  }
+ },
+ "integers/precedence.zxbas": {
+  "0": {
+   "bytes": 123,
+   "tstates": 480698
+  },
+  "1": {
+   "bytes": 123,
+   "tstates": 480698
+  },
+  "2": {
+   "bytes": 123,
+   "tstates": 480698
+  },
+  "3": {
+   "bytes": 123,
+   "tstates": 480698
   }
  },
  "integers/shifts.zxbas": {
   "0": {
-   "bytes": 104,
-   "tstates": 29967
+   "bytes": 91,
+   "tstates": 26373
   },
   "1": {
-   "bytes": 104,
-   "tstates": 29967
+   "bytes": 91,
+   "tstates": 26373
   },
   "2": {
-   "bytes": 104,
-   "tstates": 29967
+   "bytes": 91,
+   "tstates": 26373
   },
   "3": {
-   "bytes": 104,
-   "tstates": 29967
+   "bytes": 91,
+   "tstates": 26373
   }
  },
  "integers/ubyte-wraps.zxbas": {
   "0": {
    "bytes": 82,
-   "tstates": 16643
+   "tstates": 16883
   },
   "1": {
    "bytes": 77,
-   "tstates": 16622
+   "tstates": 16846
   },
   "2": {
    "bytes": 74,
-   "tstates": 16614
+   "tstates": 16846
   },
   "3": {
    "bytes": 74,
-   "tstates": 16614
+   "tstates": 16846
   }
  },
  "integers/uinteger.zxbas": {
   "0": {
    "bytes": 98,
-   "tstates": 34670
+   "tstates": 35179
   },
   "1": {
    "bytes": 95,
-   "tstates": 34662
+   "tstates": 35171
   },
   "2": {
    "bytes": 89,
-   "tstates": 34638
+   "tstates": 35155
   },
   "3": {
    "bytes": 89,
-   "tstates": 34638
+   "tstates": 35155
   }
  },
  "long/level1-long-shapes.zxbas": {
   "0": {
-   "bytes": 1429,
-   "tstates": 613218
+   "bytes": 1423,
+   "tstates": 534286
   },
   "1": {
-   "bytes": 1313,
-   "tstates": 612036
+   "bytes": 1307,
+   "tstates": 533137
   },
   "2": {
-   "bytes": 1300,
-   "tstates": 611999
+   "bytes": 1294,
+   "tstates": 533113
   },
   "3": {
-   "bytes": 1300,
-   "tstates": 611999
+   "bytes": 1294,
+   "tstates": 533113
   }
  },
  "long/long-arith.zxbas": {
   "0": {
    "bytes": 202,
-   "tstates": 154679
+   "tstates": 156142
   },
   "1": {
    "bytes": 192,
-   "tstates": 148871
+   "tstates": 150318
   },
   "2": {
    "bytes": 184,
-   "tstates": 148810
+   "tstates": 150278
   },
   "3": {
    "bytes": 184,
-   "tstates": 148810
+   "tstates": 150278
   }
  },
  "long/long-bitwise.zxbas": {
   "0": {
-   "bytes": 162,
-   "tstates": 55403
+   "bytes": 149,
+   "tstates": 51914
   },
   "1": {
-   "bytes": 162,
-   "tstates": 55403
+   "bytes": 149,
+   "tstates": 51914
   },
   "2": {
-   "bytes": 162,
-   "tstates": 55403
+   "bytes": 149,
+   "tstates": 51914
   },
   "3": {
-   "bytes": 162,
-   "tstates": 55403
+   "bytes": 149,
+   "tstates": 51914
   }
  },
  "long/long-compare.zxbas": {
   "0": {
    "bytes": 445,
-   "tstates": 28231
+   "tstates": 28647
   },
   "1": {
    "bytes": 431,
-   "tstates": 28093
+   "tstates": 28509
   },
   "2": {
    "bytes": 431,
-   "tstates": 28093
+   "tstates": 28509
   },
   "3": {
    "bytes": 431,
-   "tstates": 28093
+   "tstates": 28509
   }
  },
  "long/long-conversions.zxbas": {
   "0": {
    "bytes": 139,
-   "tstates": 51482
+   "tstates": 52146
   },
   "1": {
    "bytes": 131,
-   "tstates": 51435
+   "tstates": 52107
   },
   "2": {
    "bytes": 125,
-   "tstates": 51411
+   "tstates": 52059
   },
   "3": {
    "bytes": 125,
-   "tstates": 51411
+   "tstates": 52059
   }
  },
  "long/long-divide.zxbas": {
   "0": {
    "bytes": 230,
-   "tstates": 161595
+   "tstates": 162515
   },
   "1": {
    "bytes": 230,
-   "tstates": 161595
+   "tstates": 162515
   },
   "2": {
    "bytes": 230,
-   "tstates": 161595
+   "tstates": 162515
   },
   "3": {
    "bytes": 230,
-   "tstates": 161595
+   "tstates": 162515
   }
  },
  "long/long-loop.zxbas": {
   "0": {
    "bytes": 358,
-   "tstates": 45539
+   "tstates": 45966
   },
   "1": {
    "bytes": 314,
-   "tstates": 45035
+   "tstates": 45450
   },
   "2": {
    "bytes": 236,
-   "tstates": 43930
+   "tstates": 44354
   },
   "3": {
    "bytes": 236,
-   "tstates": 43930
+   "tstates": 44354
   }
  },
  "long/long-mul-div.zxbas": {
   "0": {
-   "bytes": 134,
-   "tstates": 122023
+   "bytes": 146,
+   "tstates": 135086
   },
   "1": {
-   "bytes": 134,
-   "tstates": 122023
+   "bytes": 146,
+   "tstates": 135086
   },
   "2": {
-   "bytes": 134,
-   "tstates": 122023
+   "bytes": 146,
+   "tstates": 135086
   },
   "3": {
-   "bytes": 134,
-   "tstates": 122023
+   "bytes": 146,
+   "tstates": 135086
   }
  },
  "long/ulong-wrap.zxbas": {
   "0": {
    "bytes": 108,
-   "tstates": 47242
+   "tstates": 47710
   },
   "1": {
    "bytes": 100,
-   "tstates": 47123
+   "tstates": 47619
   },
   "2": {
    "bytes": 100,
-   "tstates": 47123
+   "tstates": 47619
   },
   "3": {
    "bytes": 100,
-   "tstates": 47123
+   "tstates": 47619
+  }
+ },
+ "preprocessor/elif.zxbas": {
+  "0": {
+   "bytes": 17,
+   "tstates": 6377
+  },
+  "1": {
+   "bytes": 17,
+   "tstates": 6377
+  },
+  "2": {
+   "bytes": 17,
+   "tstates": 6377
+  },
+  "3": {
+   "bytes": 17,
+   "tstates": 6377
+  }
+ },
+ "preprocessor/keyword-macro.zxbas": {
+  "0": {
+   "bytes": 14,
+   "tstates": 3051
+  },
+  "1": {
+   "bytes": 14,
+   "tstates": 3051
+  },
+  "2": {
+   "bytes": 14,
+   "tstates": 3051
+  },
+  "3": {
+   "bytes": 14,
+   "tstates": 3051
   }
  },
  "print/at-tab.zxbas": {
   "0": {
    "bytes": 60,
-   "tstates": 21997
+   "tstates": 22367
   },
   "1": {
    "bytes": 60,
-   "tstates": 21997
+   "tstates": 22367
   },
   "2": {
    "bytes": 60,
-   "tstates": 21997
+   "tstates": 22367
   },
   "3": {
    "bytes": 60,
-   "tstates": 21997
+   "tstates": 22367
   }
  },
  "print/cls.zxbas": {
   "0": {
    "bytes": 42,
-   "tstates": 211038
+   "tstates": 211725
   },
   "1": {
    "bytes": 42,
-   "tstates": 211038
+   "tstates": 211725
   },
   "2": {
    "bytes": 42,
-   "tstates": 211038
+   "tstates": 211725
   },
   "3": {
    "bytes": 42,
-   "tstates": 211038
+   "tstates": 211725
   }
  },
  "print/colour-items.zxbas": {
   "0": {
    "bytes": 52,
-   "tstates": 5782
+   "tstates": 5854
   },
   "1": {
    "bytes": 52,
-   "tstates": 5782
+   "tstates": 5854
   },
   "2": {
    "bytes": 52,
-   "tstates": 5782
+   "tstates": 5854
   },
   "3": {
    "bytes": 52,
-   "tstates": 5782
+   "tstates": 5854
   }
  },
  "print/numbers.zxbas": {
   "0": {
    "bytes": 101,
-   "tstates": 117495
+   "tstates": 118994
   },
   "1": {
    "bytes": 101,
-   "tstates": 117495
+   "tstates": 118994
   },
   "2": {
    "bytes": 101,
-   "tstates": 117495
+   "tstates": 118994
   },
   "3": {
    "bytes": 101,
-   "tstates": 117495
+   "tstates": 118994
   }
  },
  "print/scroll.zxbas": {
   "0": {
    "bytes": 88,
-   "tstates": 1847625
+   "tstates": 1644562
   },
   "1": {
    "bytes": 54,
-   "tstates": 1845351
+   "tstates": 1642667
   },
   "2": {
    "bytes": 42,
-   "tstates": 1844887
+   "tstates": 1641262
   },
   "3": {
    "bytes": 42,
-   "tstates": 1844887
+   "tstates": 1641262
   }
  },
  "print/separators.zxbas": {
   "0": {
    "bytes": 69,
-   "tstates": 36550
+   "tstates": 37209
   },
   "1": {
    "bytes": 69,
-   "tstates": 36550
+   "tstates": 37209
   },
   "2": {
    "bytes": 69,
-   "tstates": 36550
+   "tstates": 37209
   },
   "3": {
    "bytes": 69,
-   "tstates": 36550
+   "tstates": 37209
+  }
+ },
+ "print/udg-codes.zxbas": {
+  "0": {
+   "bytes": 65,
+   "tstates": 16249
+  },
+  "1": {
+   "bytes": 65,
+   "tstates": 16249
+  },
+  "2": {
+   "bytes": 65,
+   "tstates": 16249
+  },
+  "3": {
+   "bytes": 65,
+   "tstates": 16249
   }
  },
  "routines/array-byref-sum.zxbas": {
   "0": {
    "bytes": 365,
-   "tstates": 79514
+   "tstates": 79742
   },
   "1": {
    "bytes": 319,
-   "tstates": 77914
+   "tstates": 78162
   },
   "2": {
    "bytes": 316,
-   "tstates": 77722
+   "tstates": 77950
   },
   "3": {
    "bytes": 316,
-   "tstates": 77722
+   "tstates": 77950
   }
  },
  "routines/byref.zxbas": {
   "0": {
    "bytes": 169,
-   "tstates": 10764
+   "tstates": 10869
   },
   "1": {
    "bytes": 164,
-   "tstates": 10685
+   "tstates": 10800
   },
   "2": {
    "bytes": 164,
-   "tstates": 10685
+   "tstates": 10800
   },
   "3": {
    "bytes": 164,
-   "tstates": 10685
+   "tstates": 10800
   }
  },
  "routines/call-order-effects.zxbas": {
   "0": {
    "bytes": 385,
-   "tstates": 56587
+   "tstates": 57451
   },
   "1": {
    "bytes": 367,
-   "tstates": 55435
+   "tstates": 56291
   },
   "2": {
    "bytes": 339,
-   "tstates": 55179
+   "tstates": 56038
   },
   "3": {
    "bytes": 339,
-   "tstates": 55179
+   "tstates": 56038
   }
  },
  "routines/call-order.zxbas": {
   "0": {
    "bytes": 140,
-   "tstates": 14989
+   "tstates": 15136
   },
   "1": {
    "bytes": 138,
-   "tstates": 14981
+   "tstates": 15120
   },
   "2": {
    "bytes": 135,
-   "tstates": 14957
+   "tstates": 15104
   },
   "3": {
    "bytes": 114,
-   "tstates": 14782
+   "tstates": 14954
   }
  },
  "routines/defaults-named.zxbas": {
   "0": {
    "bytes": 106,
-   "tstates": 38358
+   "tstates": 38887
   },
   "1": {
    "bytes": 106,
-   "tstates": 38358
+   "tstates": 38887
   },
   "2": {
    "bytes": 106,
-   "tstates": 38358
+   "tstates": 38887
   },
   "3": {
    "bytes": 106,
-   "tstates": 38358
+   "tstates": 38887
   }
  },
  "routines/fastcall.zxbas": {
   "0": {
    "bytes": 213,
-   "tstates": 32355
+   "tstates": 32723
   },
   "1": {
    "bytes": 200,
-   "tstates": 30437
+   "tstates": 31664
   },
   "2": {
    "bytes": 200,
-   "tstates": 30437
+   "tstates": 31664
   },
   "3": {
    "bytes": 71,
-   "tstates": 29618
+   "tstates": 29907
   }
  },
  "routines/function-result.zxbas": {
   "0": {
    "bytes": 186,
-   "tstates": 17843
+   "tstates": 18098
   },
   "1": {
    "bytes": 166,
-   "tstates": 17734
+   "tstates": 17914
   },
   "2": {
    "bytes": 159,
-   "tstates": 17682
+   "tstates": 17851
   },
   "3": {
    "bytes": 159,
-   "tstates": 17682
+   "tstates": 17851
+  }
+ },
+ "routines/implicit-global.zxbas": {
+  "0": {
+   "bytes": 36,
+   "tstates": 3182
+  },
+  "1": {
+   "bytes": 36,
+   "tstates": 3182
+  },
+  "2": {
+   "bytes": 36,
+   "tstates": 3182
+  },
+  "3": {
+   "bytes": 20,
+   "tstates": 3082
   }
  },
  "routines/level2-unused.zxbas": {
   "0": {
    "bytes": 168,
-   "tstates": 26732
+   "tstates": 27192
   },
   "1": {
    "bytes": 163,
-   "tstates": 26401
+   "tstates": 26854
   },
   "2": {
    "bytes": 102,
-   "tstates": 26401
+   "tstates": 26854
   },
   "3": {
    "bytes": 50,
-   "tstates": 26029
+   "tstates": 26492
   }
  },
  "routines/level3-inline.zxbas": {
   "0": {
    "bytes": 759,
-   "tstates": 92229
+   "tstates": 92943
   },
   "1": {
    "bytes": 685,
-   "tstates": 91381
+   "tstates": 92008
   },
   "2": {
    "bytes": 660,
-   "tstates": 91134
+   "tstates": 91817
   },
   "3": {
    "bytes": 488,
-   "tstates": 89715
+   "tstates": 90496
   }
  },
  "routines/locals-zeroed.zxbas": {
   "0": {
    "bytes": 81,
-   "tstates": 13860
+   "tstates": 14037
   },
   "1": {
    "bytes": 78,
-   "tstates": 13780
+   "tstates": 13972
   },
   "2": {
    "bytes": 78,
-   "tstates": 13780
+   "tstates": 13972
   },
   "3": {
    "bytes": 78,
-   "tstates": 13780
+   "tstates": 13972
   }
  },
  "routines/recursion-float.zxbas": {
   "0": {
    "bytes": 238,
-   "tstates": 237917
+   "tstates": 238109
   },
   "1": {
    "bytes": 219,
-   "tstates": 237039
+   "tstates": 237228
   },
   "2": {
    "bytes": 204,
-   "tstates": 235714
+   "tstates": 235902
   },
   "3": {
    "bytes": 204,
-   "tstates": 235714
+   "tstates": 235902
   }
  },
  "routines/recursion.zxbas": {
   "0": {
    "bytes": 304,
-   "tstates": 164000
+   "tstates": 164317
   },
   "1": {
    "bytes": 262,
-   "tstates": 155987
+   "tstates": 156322
   },
   "2": {
    "bytes": 245,
-   "tstates": 152986
+   "tstates": 153299
   },
   "3": {
    "bytes": 245,
-   "tstates": 152986
+   "tstates": 153299
   }
  },
  "routines/string-locals.zxbas": {
   "0": {
    "bytes": 186,
-   "tstates": 639527
+   "tstates": 639658
   },
   "1": {
    "bytes": 138,
-   "tstates": 637376
+   "tstates": 637523
   },
   "2": {
    "bytes": 124,
-   "tstates": 636689
+   "tstates": 636844
   },
   "3": {
    "bytes": 124,
-   "tstates": 636689
+   "tstates": 636844
   }
  },
  "routines/sub-params.zxbas": {
   "0": {
    "bytes": 99,
-   "tstates": 28555
+   "tstates": 28965
   },
   "1": {
    "bytes": 99,
-   "tstates": 28555
+   "tstates": 28965
   },
   "2": {
    "bytes": 99,
-   "tstates": 28555
+   "tstates": 28965
   },
   "3": {
    "bytes": 99,
-   "tstates": 28555
+   "tstates": 28965
   }
  },
  "screen/asm-block.zxbas": {
   "0": {
    "bytes": 19,
-   "tstates": 4851
+   "tstates": 4926
   },
   "1": {
    "bytes": 19,
-   "tstates": 4851
+   "tstates": 4926
   },
   "2": {
    "bytes": 19,
-   "tstates": 4851
+   "tstates": 4926
   },
   "3": {
    "bytes": 19,
-   "tstates": 4851
+   "tstates": 4926
   }
  },
  "screen/colours.zxbas": {
   "0": {
    "bytes": 72,
-   "tstates": 8565
+   "tstates": 8619
   },
   "1": {
    "bytes": 72,
-   "tstates": 8565
+   "tstates": 8619
   },
   "2": {
    "bytes": 72,
-   "tstates": 8565
+   "tstates": 8619
   },
   "3": {
    "bytes": 72,
-   "tstates": 8565
+   "tstates": 8619
   }
  },
  "sound/beep-returns.zxbas": {
   "0": {
    "bytes": 131,
-   "tstates": 1594462
+   "tstates": 1594642
   },
   "1": {
    "bytes": 131,
-   "tstates": 1594462
+   "tstates": 1594642
   },
   "2": {
    "bytes": 131,
-   "tstates": 1594462
+   "tstates": 1594642
   },
   "3": {
    "bytes": 131,
-   "tstates": 1594462
+   "tstates": 1594642
   }
  },
  "stdlib/attr-screen.zxbas": {
   "0": {
    "bytes": 641,
-   "tstates": 106550
+   "tstates": 106788
   },
   "1": {
    "bytes": 513,
-   "tstates": 76713
+   "tstates": 76953
   },
   "2": {
    "bytes": 495,
-   "tstates": 74445
+   "tstates": 74745
   },
   "3": {
    "bytes": 461,
-   "tstates": 74221
+   "tstates": 74521
   }
  },
  "stdlib/hex-lib.zxbas": {
   "0": {
    "bytes": 514,
-   "tstates": 108773
+   "tstates": 109340
   },
   "1": {
    "bytes": 471,
-   "tstates": 106456
+   "tstates": 107044
   },
   "2": {
    "bytes": 463,
-   "tstates": 106044
+   "tstates": 106596
   },
   "3": {
    "bytes": 463,
-   "tstates": 106044
+   "tstates": 106596
   }
  },
  "stdlib/point-lib.zxbas": {
   "0": {
    "bytes": 297,
-   "tstates": 24477
+   "tstates": 24609
   },
   "1": {
    "bytes": 238,
-   "tstates": 22153
+   "tstates": 22270
   },
   "2": {
    "bytes": 224,
-   "tstates": 21959
+   "tstates": 22068
   },
   "3": {
    "bytes": 224,
-   "tstates": 21959
+   "tstates": 22068
   }
  },
  "stdlib/pos-csrlin.zxbas": {
   "0": {
-   "bytes": 115,
-   "tstates": 14738
+   "bytes": 119,
+   "tstates": 14923
   },
   "1": {
-   "bytes": 115,
-   "tstates": 14738
+   "bytes": 119,
+   "tstates": 14923
   },
   "2": {
-   "bytes": 115,
-   "tstates": 14738
+   "bytes": 119,
+   "tstates": 14923
   },
   "3": {
-   "bytes": 115,
-   "tstates": 14738
+   "bytes": 119,
+   "tstates": 14923
   }
  },
  "stdlib/print42-lib.zxbas": {
   "0": {
    "bytes": 1100,
-   "tstates": 90257
+   "tstates": 90441
   },
   "1": {
    "bytes": 837,
-   "tstates": 60542
+   "tstates": 60779
   },
   "2": {
    "bytes": 804,
-   "tstates": 58682
+   "tstates": 58835
   },
   "3": {
    "bytes": 804,
-   "tstates": 58682
+   "tstates": 58835
   }
  },
  "stdlib/print64-lib.zxbas": {
   "0": {
    "bytes": 895,
-   "tstates": 43175
+   "tstates": 43335
   },
   "1": {
    "bytes": 643,
-   "tstates": 31951
+   "tstates": 32111
   },
   "2": {
    "bytes": 619,
-   "tstates": 29817
+   "tstates": 29977
   },
   "3": {
    "bytes": 619,
-   "tstates": 29817
+   "tstates": 29977
   }
  },
  "stdlib/putchars-lib.zxbas": {
   "0": {
    "bytes": 325,
-   "tstates": 22583
+   "tstates": 22804
   },
   "1": {
    "bytes": 230,
-   "tstates": 19400
+   "tstates": 19648
   },
   "2": {
    "bytes": 228,
-   "tstates": 19400
+   "tstates": 19640
   },
   "3": {
    "bytes": 228,
-   "tstates": 19400
+   "tstates": 19640
   }
  },
  "stdlib/sinclair-functions.zxbas": {
   "0": {
    "bytes": 832,
-   "tstates": 117370
+   "tstates": 117515
   },
   "1": {
    "bytes": 645,
-   "tstates": 80842
+   "tstates": 80995
   },
   "2": {
    "bytes": 617,
-   "tstates": 78214
+   "tstates": 78378
   },
   "3": {
    "bytes": 581,
-   "tstates": 77974
+   "tstates": 78130
   }
  },
  "stdlib/string-lib.zxbas": {
   "0": {
    "bytes": 740,
-   "tstates": 72195
+   "tstates": 73115
   },
   "1": {
    "bytes": 660,
-   "tstates": 71927
+   "tstates": 72807
   },
   "2": {
    "bytes": 645,
-   "tstates": 71816
+   "tstates": 72696
   },
   "3": {
    "bytes": 645,
-   "tstates": 71816
+   "tstates": 72696
   }
  },
  "strings/byref-string.zxbas": {
   "0": {
    "bytes": 103,
-   "tstates": 20677
+   "tstates": 20850
   },
   "1": {
    "bytes": 103,
-   "tstates": 20677
+   "tstates": 20850
   },
   "2": {
    "bytes": 97,
-   "tstates": 20605
+   "tstates": 20733
   },
   "3": {
    "bytes": 97,
-   "tstates": 20605
+   "tstates": 20733
   }
  },
  "strings/chr.zxbas": {
   "0": {
    "bytes": 41,
-   "tstates": 13686
+   "tstates": 13894
   },
   "1": {
    "bytes": 41,
-   "tstates": 13686
+   "tstates": 13894
   },
   "2": {
    "bytes": 41,
-   "tstates": 13686
+   "tstates": 13894
   },
   "3": {
    "bytes": 41,
-   "tstates": 13686
+   "tstates": 13894
   }
  },
  "strings/compare.zxbas": {
   "0": {
    "bytes": 204,
-   "tstates": 28503
+   "tstates": 28871
   },
   "1": {
    "bytes": 204,
-   "tstates": 28503
+   "tstates": 28871
   },
   "2": {
    "bytes": 204,
-   "tstates": 28503
+   "tstates": 28871
   },
   "3": {
    "bytes": 204,
-   "tstates": 28503
+   "tstates": 28871
   }
  },
  "strings/concat.zxbas": {
   "0": {
    "bytes": 71,
-   "tstates": 31937
+   "tstates": 32347
   },
   "1": {
    "bytes": 71,
-   "tstates": 31937
+   "tstates": 32347
   },
   "2": {
    "bytes": 71,
-   "tstates": 31937
+   "tstates": 32347
   },
   "3": {
    "bytes": 71,
-   "tstates": 31937
+   "tstates": 32347
+  }
+ },
+ "strings/escape-unknown.zxbas": {
+  "0": {
+   "bytes": 17,
+   "tstates": 11733
+  },
+  "1": {
+   "bytes": 17,
+   "tstates": 11733
+  },
+  "2": {
+   "bytes": 17,
+   "tstates": 11733
+  },
+  "3": {
+   "bytes": 17,
+   "tstates": 11733
   }
  },
  "strings/length-code.zxbas": {
   "0": {
    "bytes": 119,
-   "tstates": 27226
+   "tstates": 27620
   },
   "1": {
    "bytes": 119,
-   "tstates": 27226
+   "tstates": 27620
   },
   "2": {
    "bytes": 119,
-   "tstates": 27226
+   "tstates": 27620
   },
   "3": {
    "bytes": 119,
-   "tstates": 27226
+   "tstates": 27620
   }
  },
  "strings/loop-temporaries.zxbas": {
   "0": {
    "bytes": 181,
-   "tstates": 503558
+   "tstates": 503691
   },
   "1": {
    "bytes": 147,
-   "tstates": 499738
+   "tstates": 499867
   },
   "2": {
    "bytes": 135,
-   "tstates": 498570
+   "tstates": 498686
   },
   "3": {
    "bytes": 135,
-   "tstates": 498570
+   "tstates": 498686
   }
  },
  "strings/ordering.zxbas": {
   "0": {
    "bytes": 44,
-   "tstates": 15763
+   "tstates": 16011
   },
   "1": {
    "bytes": 44,
-   "tstates": 15763
+   "tstates": 16011
   },
   "2": {
    "bytes": 44,
-   "tstates": 15763
+   "tstates": 16011
   },
   "3": {
    "bytes": 44,
-   "tstates": 15763
+   "tstates": 16011
   }
  },
  "strings/self-assign.zxbas": {
   "0": {
    "bytes": 97,
-   "tstates": 25891
+   "tstates": 26221
   },
   "1": {
    "bytes": 97,
-   "tstates": 25891
+   "tstates": 26221
   },
   "2": {
    "bytes": 94,
-   "tstates": 25883
+   "tstates": 26197
   },
   "3": {
    "bytes": 94,
-   "tstates": 25883
+   "tstates": 26197
   }
  },
  "strings/slices.zxbas": {
   "0": {
    "bytes": 175,
-   "tstates": 48838
+   "tstates": 49526
   },
   "1": {
    "bytes": 175,
-   "tstates": 48838
+   "tstates": 49526
   },
   "2": {
    "bytes": 175,
-   "tstates": 48838
+   "tstates": 49526
   },
   "3": {
    "bytes": 175,
-   "tstates": 48838
+   "tstates": 49526
   }
  },
  "strings/str-numbers.zxbas": {
   "0": {
    "bytes": 136,
-   "tstates": 266215
+   "tstates": 267167
   },
   "1": {
    "bytes": 136,
-   "tstates": 266215
+   "tstates": 267167
   },
   "2": {
    "bytes": 136,
-   "tstates": 266215
+   "tstates": 267167
   },
   "3": {
    "bytes": 136,
-   "tstates": 266215
+   "tstates": 267167
   }
  },
  "strings/string-base-1.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 22188
+   "tstates": 22405
   },
   "1": {
    "bytes": 94,
-   "tstates": 22188
+   "tstates": 22405
   },
   "2": {
    "bytes": 94,
-   "tstates": 22188
+   "tstates": 22405
   },
   "3": {
    "bytes": 94,
-   "tstates": 22188
+   "tstates": 22405
   }
  },
  "strings/string-function-result.zxbas": {
   "0": {
    "bytes": 255,
-   "tstates": 82006
+   "tstates": 82355
   },
   "1": {
    "bytes": 219,
-   "tstates": 80571
+   "tstates": 80926
   },
   "2": {
    "bytes": 219,
-   "tstates": 80571
+   "tstates": 80926
   },
   "3": {
    "bytes": 219,
-   "tstates": 80571
+   "tstates": 80926
   }
  },
  "strings/string-functions.zxbas": {
   "0": {
    "bytes": 218,
-   "tstates": 48977
+   "tstates": 49377
   },
   "1": {
    "bytes": 182,
-   "tstates": 48661
+   "tstates": 49022
   },
   "2": {
    "bytes": 182,
-   "tstates": 48661
+   "tstates": 49022
   },
   "3": {
    "bytes": 182,
-   "tstates": 48661
+   "tstates": 49022
   }
  },
  "strings/substring-assign.zxbas": {
   "0": {
    "bytes": 124,
-   "tstates": 72814
+   "tstates": 73878
   },
   "1": {
    "bytes": 124,
-   "tstates": 72814
+   "tstates": 73878
   },
   "2": {
    "bytes": 124,
-   "tstates": 72814
+   "tstates": 73878
   },
   "3": {
    "bytes": 124,
-   "tstates": 72814
+   "tstates": 73878
   }
  }
 }

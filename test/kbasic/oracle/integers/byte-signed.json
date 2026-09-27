@@ -1,0 +1,32 @@
+{
+  "program": "integers/byte-signed.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "-128 127 -4 1",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0
+}

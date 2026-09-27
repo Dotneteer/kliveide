@@ -1,0 +1,32 @@
+{
+  "program": "stdlib/putchars-lib.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "17 17 56",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0
+}

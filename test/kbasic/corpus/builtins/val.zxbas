@@ -1,3 +1,4 @@
-' VAL reads a number in a String; anything else gives 0 (semantics annex: val-runtime)
-'@expect screen 0 "43 -7 7 0"
+' VAL evaluates a String as BASIC's VAL does: a number, or a numeric expression (semantics annex:
+' val-runtime)
+'@expect screen 0 "43 -7 7 6"
 PRINT VAL("42") + 1; " "; VAL("-3.5") * 2; " "; VAL("  7 "); " "; VAL("2*3")

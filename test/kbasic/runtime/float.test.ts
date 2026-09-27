@@ -189,7 +189,7 @@ describe("Klive BASIC runtime - float", () => {
     expect([str("123"), str("-0.5"), str("0.1"), str("1e10"), str("3.14159265"), str("0")]).toEqual(["123", "-0.5", "0.1", "1E+10", "3.1415926", "0"]);
   });
 
-  it("reads a number from a String (VAL), and sets ERR_NR for anything else", () => {
+  it("evaluates a String as BASIC's VAL does: a number or a numeric expression", () => {
     const val = (text: string) => {
       rig.session.poke(0x5c3a, [0xff]);
       rig.session.pokeWord(rig.program.symbol("Right"), makeString(rig, text));
@@ -199,12 +199,32 @@ describe("Klive BASIC runtime - float", () => {
     expect(val("12.5")).toEqual({ value: 12.5, err: 0xff });
     expect(val("  -3 ")).toEqual({ value: -3, err: 0xff });
     expect(val("1e3")).toEqual({ value: 1000, err: 0xff });
+    expect(val("2*3")).toEqual({ value: 6, err: 0xff });
+    // --- ^ is the ROM's EXP(y * LN x): close to 9, not exactly 9
+    expect(val("(1+2)^2").value).toBeCloseTo(9, 7);
     // --- The ROM's decimal reader is not correctly rounded: ".25" is a little below 0.25
     const quarter = val(".25");
     expect(quarter.err).toBe(0xff);
     expect(quarter.value).toBeCloseTo(0.25, 9);
-    expect(val("abc")).toEqual({ value: 0, err: 11 });
-    expect(val("12x")).toEqual({ value: 0, err: 11 });
-    expect(val("")).toEqual({ value: 0, err: 11 });
+  });
+
+  it("gives 0 and sets ERR_NR to 9 for a String BASIC rejects, and leaves BASIC's state as it was", () => {
+    // --- The ROM's error path empties the calculator stack (STKEND = STKBOT): compiled code keeps
+    // --- nothing there between runtime calls
+    const sysvars = () => ({ stkbot: rig.session.peekWord(0x5c63), chAdd: rig.session.peekWord(0x5c5d), errSp: rig.session.peekWord(0x5c3d) });
+    const val = (text: string) => {
+      rig.session.poke(0x5c3a, [0xff]);
+      rig.session.pokeWord(rig.program.symbol("Right"), makeString(rig, text));
+      rig.call("Val");
+      return { value: toNumber(result()), err: rig.session.peek(0x5c3a) };
+    };
+    const before = sysvars();
+    // --- bad syntax, an unknown variable, an arithmetic error, overflow, nothing at all
+    for (const text of ["2+", "abc", "1/0", "1E99*1E99", ""]) {
+      expect(val(text), text).toEqual({ value: 0, err: 9 });
+      expect(sysvars(), text).toEqual(before);
+      expect(rig.session.peekWord(0x5c65), text).toBe(before.stkbot);
+    }
+    expect(val("7")).toEqual({ value: 7, err: 0xff });
   });
 });

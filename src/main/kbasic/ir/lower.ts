@@ -881,10 +881,8 @@ class Lowering {
   private printValue(e: BoundExpr): void {
     const type = mtypeOf(e.type);
     if (type === "fix") {
-      // --- A Fixed prints as the Float of the same value
-      const f = this.vreg("flt");
-      this.emit({ op: "conv", dst: f, a: this.value(e), sid: this.sid });
-      this.emit({ op: "rtcall", name: this.rt("PrintFloat"), args: [f], sid: this.sid });
+      // --- A Fixed prints exactly, every decimal digit (as upstream does; STR$ keeps the ROM's format)
+      this.emit({ op: "rtcall", name: this.rt("PrintFixed"), args: [this.value(e)], sid: this.sid });
       return;
     }
     if (type === "str") {

@@ -1,0 +1,37 @@
+{
+  "program": "screen/colours.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "ab",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0,
+  "peeks": {
+    "peek 22528": 98,
+    "peek 22529": 12,
+    "peek 23624": 23
+  }
+}

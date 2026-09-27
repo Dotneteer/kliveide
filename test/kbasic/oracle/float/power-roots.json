@@ -1,0 +1,5 @@
+{
+  "program": "float/power-roots.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "float__power-roots.bas:5: error: Syntax Error. Unexpected token '-' <MINUS>"
+}

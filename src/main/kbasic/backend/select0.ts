@@ -38,6 +38,7 @@ export const RUNTIME_ARGS: Record<string, string[]> = {
   "core.PrintI16": ["hl"],
   "core.PrintU32": ["dehl"],
   "core.PrintI32": ["dehl"],
+  "core.PrintFixed": ["dehl"],
   "core.PrintStr": ["hl", "a"],
   "core.PrintTab": ["a"],
   "core.PrintAt": ["b", "c"],

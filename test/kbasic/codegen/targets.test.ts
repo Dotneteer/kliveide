@@ -42,4 +42,26 @@ describe("the 128K target", () => {
     expect(session.screenLine(0).slice(0, 19)).toBe("1414.2136 3.1415927");
     expect(session.peek(0x5b5c), "BANKM is as the program found it").toBe(bankm);
   });
+  it("pages the ROM back out after VAL fails inside it", async () => {
+    const machine = await createTestSp128WasmMachine(rom("sp128-0.rom"), rom("sp128-1.rom"));
+    machine.hardReset();
+    const session = new Sp48TestSession(machine as never);
+    session.runTo(SP128_MAIN_WAITING_LOOP, { maxFrames: 600 });
+    const bankm = session.peek(0x5b5c);
+
+    // --- "1+" fails in the ROM's syntax check, "1/0" in its calculator, both with the ROM paged in
+    const source = 'DIM s AS String = "1+"\nDIM f AS Float\nf = VAL(s)\nf = f + VAL("1/0")\nPRINT AT 0, 0; f; " "; PEEK 23610; " "; VAL("2*3")\n';
+    const { generated } = await compileBasic(source, { target: "zx128k" });
+    session.loadOutput(generated.output, { entry: generated.entryAddress });
+    const entry = generated.entryAddress;
+    const stub = 0xbf00;
+    session.poke(stub, [0xcd, entry & 0xff, entry >> 8, 0x18, 0xfe]);
+    machine.pc = stub;
+    machine.sp = 0xbef0;
+    session.pokeWord(0x5c68, 0x5c92);
+    session.runTo(stub + 3, { maxFrames: 200 });
+
+    expect(session.screenLine(0).slice(0, 5)).toBe("0 9 6");
+    expect(session.peek(0x5b5c), "BANKM is as the program found it").toBe(bankm);
+  });
 });

@@ -6,7 +6,7 @@
 ; The compiler turns every DATA item into code that computes it (items may be expressions, evaluated
 ; when READ runs) and hands the value over here: a number as a Float, a String as a String the item
 ; owns. READ then takes it in the form its target needs; a String read into a number or a number
-; into a String stops with "C Nonsense in BASIC". A program with no DATA left to read ends up at
+; into a String stops with "A Invalid argument" (as upstream's runtime does). A program with no DATA left to read ends up at
 ; DataNone: "E Out of DATA".
 
 ; ------------------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ DataString:
     ret
 
 DataMismatch:
-    ld a,11                 ; "C Nonsense in BASIC"
+    ld a,9                  ; "A Invalid argument"
     jp RaiseError
 
 ; ------------------------------------------------------------------------------------------------

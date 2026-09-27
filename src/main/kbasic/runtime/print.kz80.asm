@@ -1,15 +1,17 @@
 ; @module   print
 ; @summary  Text PRINT to the ULA screen: characters, control codes, numbers, AT, TAB, comma, CLS.
 ; @exports  PrintInit, PrintChar, PrintStr, PrintNewline, PrintComma, PrintAt, PrintTab, PrintReset
-; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, Cls, PrintRow, PrintCol, PrintColour
+; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, PrintFixed, Cls, PrintRow, PrintCol
+; @exports  PrintColour
 ; @exports  PrintApplyAttr
 ; @requires heap, errors
 ; @init     PrintInit
 ;
-; Klive's own printing (plan §6.3): no ROM calls, all 24 rows, the whole screen scrolls up when a
-; line feed passes row 23. The cursor is PrintRow (0-23) and PrintCol (0-32; 32 means the line is
-; full and the next character goes to the next line, so 32 characters followed by a line feed leave
-; no empty line). Start-up takes the cursor and the permanent colours from the ROM's S_POSN, ATTR_P,
+; Klive's own printing (plan §6.3): no ROM calls, all 24 rows. The cursor is PrintRow (0-24) and
+; PrintCol (0-32; 32 means the line is full and the next character goes to the next line, so 32
+; characters followed by a line feed leave no empty line). Scrolling waits, as upstream's does: a line
+; feed on row 23 leaves the cursor below the screen (row 24), and the whole screen scrolls up only
+; when something is printed there - so a program's last line stays on row 23. Start-up takes the cursor and the permanent colours from the ROM's S_POSN, ATTR_P,
 ; MASK_P and P_FLAG, so a program's output continues where BASIC's left off.
 ;
 ; Characters 32-127 come from the font at CHARS, 128-143 are the block graphics, 144 and above come
@@ -174,6 +176,13 @@ PrintGlyph:
     ld a,(PrintCol)
     cp 32
     call nc,PrintNewline    ; the line is full: continue on the next one
+    ld a,(PrintRow)
+    cp 24
+    jr c,PrintGlyphOnScreen
+    call PrintScroll        ; the cursor waits below the screen: make room on row 23
+    ld a,23
+    ld (PrintRow),a
+PrintGlyphOnScreen:
     pop af
     call PrintGlyphAddr     ; DE = the character's eight pixel rows
     ld a,(PrintRow)
@@ -346,17 +355,21 @@ PrintAttrAddr:
     ret
 
 ; ------------------------------------------------------------------------------------------------
-; Moves the cursor to the start of the next line, scrolling the screen when it is on row 23.
-; Changes AF, BC, DE, HL.
+; Moves the cursor to the start of the next line. From row 23 it goes below the screen (row 24)
+; without scrolling; a line feed there scrolls one line and stays below. Changes AF, BC, DE, HL.
 PrintNewline:
     xor a
     ld (PrintCol),a
     ld hl,PrintRow
     ld a,(hl)
     cp 23
-    jr nc,PrintScroll
+    jr nc,PrintNewlineLast
     inc (hl)
     ret
+PrintNewlineLast:
+    ld (hl),24
+    ret z                   ; it was on row 23
+    jr PrintScroll
 
 ; Scrolls the whole screen up one character row and clears row 23 with the permanent attribute.
 PrintScroll:
@@ -682,6 +695,64 @@ PrintDigitOut:
     call PrintChar
     pop bc
     pop hl
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; Prints a Fixed (16.16 in DE:HL) exactly, as upstream does: the sign, the integer part, and when
+; there is a fraction, a point and every decimal digit of it (at most 16: 1/65536 has 16) -
+; 2.79998779296875, -0.5, 0. Not the ROM's Float format, which STR$ keeps. Changes AF, BC, DE, HL.
+PrintFixed:
+    bit 7,d
+    jr z,PrintFixedPositive
+    push de
+    push hl
+    ld a,'-'
+    call PrintChar
+    pop hl
+    pop de
+    xor a                   ; DE:HL = -DE:HL (-32768 becomes 32768, which the integer part holds)
+    sub l
+    ld l,a
+    ld a,0
+    sbc a,h
+    ld h,a
+    ld a,0
+    sbc a,e
+    ld e,a
+    ld a,0
+    sbc a,d
+    ld d,a
+PrintFixedPositive:
+    push hl                 ; S: [fraction]
+    ex de,hl
+    call PrintU16           ; the integer part
+    pop hl                  ; S: []
+    ld a,h
+    or l
+    ret z
+    push hl
+    ld a,'.'
+    call PrintChar
+    pop hl
+PrintFixedDigit:            ; A:HL = HL * 10: A is the next digit, HL the fraction left
+    ld d,h
+    ld e,l
+    xor a
+    add hl,hl
+    adc a,a
+    add hl,hl
+    adc a,a
+    add hl,de
+    adc a,0
+    add hl,hl
+    adc a,a
+    add a,'0'
+    push hl
+    call PrintChar
+    pop hl
+    ld a,h
+    or l
+    jr nz,PrintFixedDigit
     ret
 
 ; ------------------------------------------------------------------------------------------------

@@ -1,0 +1,7 @@
+' Folding computes what the program would: a typed constant keeps its type, so a UByte sum wraps
+' (semantics annex: constant-arithmetic-typed)
+'@expect screen 0 "144 144"
+'@expect oracle-differs constant-arithmetic-typed
+CONST k AS UByte = 200
+DIM a AS UByte = 200
+PRINT k + k; " "; a + 200

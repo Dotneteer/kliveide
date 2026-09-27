@@ -1,0 +1,5 @@
+{
+  "program": "preprocessor/elif.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "preprocessor__elif.bas:6: error: Syntax error. Unexpected token 'elif' [ELIF]"
+}

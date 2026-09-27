@@ -1,0 +1,32 @@
+{
+  "program": "print/separators.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "ab              c",
+    "de",
+    "",
+    "f",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0
+}

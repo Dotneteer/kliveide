@@ -7,6 +7,7 @@
 '@expect screen 3 "9"
 '@expect screen 4 "5 19 17"
 '@expect screen 5 "0 1"
+'@expect oracle-differs argument-evaluation-order
 DIM g AS UInteger
 DIM b AS UByte
 DIM r AS UInteger

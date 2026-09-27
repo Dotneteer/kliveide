@@ -1,0 +1,5 @@
+{
+  "program": "strings/ordering.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'text'"
+}

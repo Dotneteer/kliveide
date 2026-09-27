@@ -1,6 +1,6 @@
-' READ of a String item into a number stops with "C Nonsense in BASIC"
+' READ of a String item into a number stops with "A Invalid argument" (semantics annex: read-type-mismatch)
 '@expect screen 0 "go"
-'@expect error 11
+'@expect error 9
 DIM x AS UByte
 PRINT "go"
 READ x

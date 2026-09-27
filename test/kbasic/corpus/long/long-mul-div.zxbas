@@ -1,5 +1,7 @@
 ' 32-bit multiply, divide and MOD, signed and unsigned
 '@expect screen 0 "-97406784 -156 -372 428571428"
+'@expect oracle-differs mod-sign
 DIM a, b AS Long
+DIM u AS ULong = 3000000000
 a = -123456: b = 789
-PRINT a * b; " "; a / b; " "; a MOD b; " "; CAST(ULong, 3000000000) / 7
+PRINT a * b; " "; a / b; " "; a MOD b; " "; u / 7

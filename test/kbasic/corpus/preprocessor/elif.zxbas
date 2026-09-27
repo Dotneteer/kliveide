@@ -1,0 +1,10 @@
+' #elif chooses the first branch whose condition holds (semantics annex: elif-directive)
+'@expect screen 0 "two"
+#define LEVEL 2
+#if LEVEL == 1
+PRINT "one"
+#elif LEVEL == 2
+PRINT "two"
+#else
+PRINT "other"
+#endif

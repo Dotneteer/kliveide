@@ -4,11 +4,14 @@
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
 
-' The PRINT cursor's row: 0 at the top, 23 at the bottom. (A FUNCTION with no locals keeps a UByte
-' result at IX-1.)
+' The PRINT cursor's row: 0 at the top, 23 at the bottom - also after a line feed on row 23, when the
+' cursor waits below the screen (row 24) for the scroll the next character makes. (A FUNCTION with no
+' locals keeps a UByte result at IX-1.)
 FUNCTION CSRLIN() AS UByte
     ASM
         ld a,(core.PrintRow)
+        cp 24
+        adc a,$ff               ; 24 -> 23, below 24 unchanged (the carry adds the 1 back)
         ld (ix-1),a
     END ASM
 END FUNCTION

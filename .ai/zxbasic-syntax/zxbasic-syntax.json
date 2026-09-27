@@ -1764,7 +1764,7 @@
         "syntax": [
           "\"#if\" pp-expr"
         ],
-        "semantics": "Conditional compilation. pp-expr uses macro names, integers, strings, parentheses, ==, != or <>, <, <=, >, >=, && and ||. Equality compares expanded text; ordering compares integer values (non-numeric counts as 0); a bare name is true when it expands to a non-zero integer or, failing that, when it is defined. Whether #elif is implemented is unverified."
+        "semantics": "Conditional compilation. pp-expr uses macro names, integers, strings, parentheses, ==, != or <>, <, <=, >, >=, && and ||. Equality compares expanded text; ordering compares integer values (non-numeric counts as 0); a bare name is true when it expands to a non-zero integer or, failing that, when it is defined. zxbc 1.19 does not implement #elif: it is a syntax error there (observed through the oracle; Klive accepts it, semantics annex elif-directive)."
       },
       {
         "name": "#ifdef",
@@ -2511,70 +2511,125 @@
     ]
   },
   "semantics": {
-    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it.",
+    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
     "entries": [
       {
         "name": "argument-evaluation-order",
         "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
-        "decision": "A call's arguments last first, so the stack machine leaves them where STDCALL wants them; a binary operator's left operand before its right. Awaits the oracle.",
-        "status": "provisional",
+        "decision": "A call's arguments last first, so the stack machine leaves them where STDCALL wants them; a binary operator's left operand before its right, and an assigned array element's index before the value.",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 3,
-        "test": "test/kbasic/corpus/routines/call-order.zxbas"
+        "test": "test/kbasic/corpus/routines/call-order.zxbas",
+        "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Klive keeps left to right (project author, 2026-09-27)."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "byref-float-parameter",
+        "question": "What does a BYREF Float parameter read and write?",
+        "decision": "The caller's variable, through its address: reads see its value and writes change it.",
+        "test": "test/kbasic/corpus/float/float-routines.zxbas",
+        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault)."
       },
       {
         "name": "constant-arithmetic-literal",
         "question": "What type does arithmetic on number literals alone have?",
         "decision": "Literal-only arithmetic stays exact and takes the smallest type that holds the result: 200 + 100 is 300, a UInteger; 1 - 2 is -1, a Byte.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/semantics/constants.test.ts",
+        "oracle": "Upstream folds / of integer literals to a Float (1 / 8 = 0.125), against its documentation's integer division. Klive keeps the documented rule (project author, 2026-09-27; integers/literal-typing.zxbas)."
       },
       {
         "name": "constant-arithmetic-typed",
         "question": "Does constant arithmetic on typed values wrap to the type's width?",
         "decision": "Yes: folding computes what the program would, so a typed operand (a DIMmed constant, a CAST) wraps in its type; 200 in a UByte plus 100 is 44.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/corpus/integers/constant-typed.zxbas",
+        "oracle": "Upstream folds a typed CONST without its type: CONST k AS UByte = 200, k + k is 400."
       },
       {
         "name": "constant-integer-division-by-zero",
         "question": "What does a constant integer division or MOD by zero fold to?",
         "decision": "The runtime's result (every bit set; MOD gives the dividend), with warning K406. A Float or Fixed constant division by zero is error E425.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError)."
       },
       {
         "name": "constant-power",
         "question": "How is a constant x ^ y folded?",
         "decision": "As the exact power rounded to the nearest Float. The ROM computes EXP(y * LN x), which can differ in the last bit.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/corpus/float/power-constant.zxbas"
       },
       {
         "name": "elif-directive",
         "question": "Is #elif accepted by the preprocessor?",
         "decision": "Yes.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 1,
-        "test": "test/kbasic/syntax/preprocessor.test.ts"
+        "test": "test/kbasic/corpus/preprocessor/elif.zxbas",
+        "oracle": "zxbc 1.19 rejects #elif (a syntax error): Klive accepts it as an extension."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "fastcall-basic-body",
+        "question": "Can a FASTCALL routine with a BASIC body use its first parameter?",
+        "decision": "Yes: it arrives in registers and the prologue stores it in the frame, so the body reads it like any parameter.",
+        "test": "test/kbasic/corpus/routines/fastcall.zxbas",
+        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814)."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "fixed-division-by-zero",
+        "question": "What does a Fixed division by zero do?",
+        "decision": "It stops with 6 Number too big.",
+        "test": "test/kbasic/corpus/fixed/fixed-divide-zero.zxbas",
+        "oracle": "Upstream gives -0.0000152587890625 and goes on."
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "fixed-print",
+        "question": "How does PRINT write a Fixed?",
+        "decision": "Exactly: the sign, the integer part, and when there is a fraction a point and every decimal digit of it (3.5 / 1.25 prints 2.79998779296875). STR$ writes the ROM's Float format.",
+        "test": "test/kbasic/corpus/fixed/fixed-arith.zxbas"
       },
       {
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
         "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. A signed STEP of an unsigned variable keeps its sign (it is held in the signed type of the variable's width), so FOR i = 5 TO 1 STEP -1 counts a UByte down. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 4,
-        "test": "test/kbasic/corpus/control/for-evaluation.zxbas"
+        "test": "test/kbasic/corpus/control/for-evaluation.zxbas",
+        "oracle": "Upstream re-evaluates the limit and STEP on every pass. Klive keeps Sinclair BASIC's once (project author, 2026-09-27)."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "for-unsigned-negative-step",
+        "question": "How does an unsigned FOR variable count with a negative STEP held in a signed variable?",
+        "decision": "Down: the STEP keeps its sign, and the loop stops at its limit without wrapping below 0.",
+        "test": "test/kbasic/corpus/control/for-unsigned-down.zxbas",
+        "oracle": "Upstream treats the STEP as unsigned and runs no iteration."
       },
       {
         "name": "forward-function-call",
@@ -2586,10 +2641,20 @@
         "test": "test/kbasic/semantics/binder.test.ts"
       },
       {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "function-without-return",
+        "question": "What does a FUNCTION give when it ends without RETURN?",
+        "decision": "0 (the empty String for a String FUNCTION): the result is zeroed on entry.",
+        "test": "test/kbasic/corpus/routines/function-result.zxbas",
+        "oracle": "Upstream gives whatever its result register held."
+      },
+      {
         "name": "implicit-type-from-context",
         "question": "Does a variable typed by its first assignment, FOR values or READ raise W100?",
         "decision": "No: W100 is raised only when nothing determines the type and it becomes Float. Under strict typing any undeclared variable is error E426.",
-        "status": "provisional",
+        "status": "decided",
         "source": "docs",
         "phase": 2,
         "test": "test/kbasic/semantics/binder.test.ts"
@@ -2598,28 +2663,29 @@
         "name": "implicit-variable-in-routine",
         "question": "Is an undeclared variable used inside a SUB or FUNCTION local or global?",
         "decision": "Global when a global of that name exists at that point; otherwise local to the routine.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 2,
-        "test": "test/kbasic/semantics/binder.test.ts"
+        "test": "test/kbasic/corpus/routines/implicit-global.zxbas"
       },
       {
         "name": "integer-division-by-zero",
         "question": "What does integer division or MOD by zero give at run time?",
-        "decision": "A quotient with every bit set; MOD gives the dividend.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "The quotient of the magnitudes has every bit set and takes the quotient's sign (100 / 0 = 65535, -7 / 0 = 1, 7 / 0 = -1); MOD gives the dividend.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/runtime/arith16.test.ts"
+        "test": "test/kbasic/corpus/integers/divide-by-zero.zxbas",
+        "oracle": "Upstream's quotients agree; its MOD by zero follows its own MOD sign rule (see mod-sign)."
       },
       {
         "name": "keyword-macro-names",
         "question": "May a #define use a keyword as its name?",
         "decision": "Yes.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 1,
-        "test": "test/kbasic/syntax/preprocessor.test.ts"
+        "test": "test/kbasic/corpus/preprocessor/keyword-macro.zxbas"
       },
       {
         "name": "literal-integer-type",
@@ -2628,14 +2694,15 @@
         "status": "decided",
         "source": "docs",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/semantics/constants.test.ts",
+        "oracle": "Upstream retypes literals in places: BNOT $100 = -257, 5 SHL 8 = 1280, 1 SHL 8 = 256, and PRINT 0.001 prints 0.0009918212890625 (a Fixed). Klive keeps the documented rules (project author, 2026-09-27; integers/literal-typing.zxbas)."
       },
       {
         "name": "logical-operators-short-circuit",
         "question": "Do AND and OR skip their right operand when the left one decides the result?",
-        "decision": "No: both operands are always evaluated, the left first. Awaits the oracle.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "No: both operands are always evaluated, the left first.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 3,
         "test": "test/kbasic/corpus/control/logic-evaluation.zxbas"
       },
@@ -2643,17 +2710,28 @@
         "name": "mod-sign",
         "question": "Which sign does the remainder of MOD take?",
         "decision": "The dividend's (the quotient truncates towards zero), in folding and at run time.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/semantics/constants.test.ts",
+        "oracle": "Upstream: integer MOD is never negative (-100 MOD 3 = 1), Float MOD floors (-7.5 MOD 2 = 0.5), and Byte division floors (-7 / 2 = -4) while Integer and Long division truncate. Klive keeps one rule for every type (project author, 2026-09-27)."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "named-arguments",
+        "question": "How are named arguments (name := value) matched to parameters?",
+        "decision": "By name; parameters left out take their defaults.",
+        "test": "test/kbasic/corpus/routines/defaults-named.zxbas",
+        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position."
       },
       {
         "name": "on-goto-out-of-range",
         "question": "What does ON ... GOTO/GOSUB do with a value outside its target list?",
         "decision": "Nothing: execution continues after the statement.",
-        "status": "provisional",
-        "source": "docs",
+        "status": "decided",
+        "source": "oracle",
         "phase": 3,
         "test": "test/kbasic/corpus/control/on-goto.zxbas"
       },
@@ -2661,55 +2739,86 @@
         "name": "operator-precedence",
         "question": "Does the 1.19 parser keep the precedence table recorded in operators.precedence?",
         "decision": "Klive implements the recorded table.",
-        "status": "provisional",
-        "source": "docs",
+        "status": "decided",
+        "source": "oracle",
         "phase": 1,
-        "test": "test/kbasic/syntax/parser.test.ts"
+        "test": "test/kbasic/corpus/integers/precedence.zxbas"
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "plot-off-screen",
+        "question": "What do PLOT and DRAW do with a point off the screen?",
+        "decision": "They stop with B Integer out of range, as the ROM's PLOT and DRAW do.",
+        "test": "test/kbasic/corpus/graphics/plot-range.zxbas",
+        "oracle": "Upstream stops with 5 Out of screen."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "point-coordinates",
+        "question": "Which coordinates does POINT use?",
+        "decision": "PLOT's: (0,0) at the bottom left and all 192 rows, so POINT(x, y) is 1 after PLOT x, y.",
+        "test": "test/kbasic/corpus/stdlib/sinclair-functions.zxbas",
+        "oracle": "Upstream's POINT (sinclair-compatible) gives 0 after PLOT 5, 5."
       },
       {
         "name": "print-position",
         "question": "Where does PRINT start, and does it prompt 'scroll?'?",
-        "decision": "It starts at BASIC's print position (S_POSN) and scrolls all 24 rows without a prompt.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "It starts at BASIC's print position (S_POSN) and uses all 24 rows without a scroll prompt. Scrolling waits: a line feed on row 23 leaves the cursor below the screen, and the screen scrolls when something is printed there, so the last line printed stays on row 23.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/runtime/print.test.ts"
+        "test": "test/kbasic/corpus/print/scroll.zxbas"
       },
       {
         "name": "print-udg-codes",
         "question": "What do character codes 165-255 print?",
-        "decision": "The UDG area's glyphs.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "One glyph each from the UDG area (codes 165-255 read past its 21 characters), not the ROM's keyword text.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/runtime/print.test.ts"
+        "test": "test/kbasic/corpus/print/udg-codes.zxbas"
       },
       {
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
         "decision": "It wraps to the first item. With no DATA at all, or after RESTORE to a label with no DATA after it, READ stops with E Out of DATA.",
-        "status": "provisional",
-        "source": "docs",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/codegen/data.test.ts"
+        "test": "test/kbasic/codegen/data.test.ts",
+        "oracle": "Upstream agrees on wrapping; a program with no DATA at all is a compile error there (\"No DATA defined\"), where Klive stops at run time."
       },
       {
         "name": "read-type-mismatch",
         "question": "What does READ do when a String item meets a numeric target, or a number meets a String target?",
-        "decision": "It stops with C Nonsense in BASIC. Numeric items reach numeric targets through Float (exact for every integer type), then convert as an assignment would.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "It stops with A Invalid argument. Numeric items reach numeric targets through Float (exact for every integer type).",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/codegen/data.test.ts"
+        "test": "test/kbasic/corpus/data/read-mismatch.zxbas"
       },
       {
         "name": "shr-signed",
         "question": "Is SHR on a signed type arithmetic or logical?",
         "decision": "Arithmetic (the sign is kept) for signed types, logical for unsigned ones.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 2,
-        "test": "test/kbasic/semantics/constants.test.ts"
+        "test": "test/kbasic/corpus/integers/shifts.zxbas"
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "stdlib-internals",
+        "question": "Is the standard library's internal state part of its interface?",
+        "decision": "No: it is Klive's own (print42.bas and print64.bas keep their cursors in __kbP42Row/__kbP42Col and __kbP64Row/__kbP64Col, which the corpus reads to test them).",
+        "test": "test/kbasic/corpus/stdlib/print42-lib.zxbas",
+        "oracle": "Upstream's library has no such variables: zxbc takes the names as new variables (0)."
       },
       {
         "name": "string-concatenation-overflow",
@@ -2724,25 +2833,26 @@
         "name": "string-escape-unknown",
         "question": "What does an unknown backslash escape in a string literal give?",
         "decision": "The backslash and the character, as written.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 1,
-        "test": "test/kbasic/syntax/lexer.test.ts"
+        "test": "test/kbasic/corpus/strings/escape-unknown.zxbas"
       },
       {
         "name": "substring-assignment",
         "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
         "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target. Awaits the oracle.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 4,
-        "test": "test/kbasic/codegen/strings.test.ts"
+        "test": "test/kbasic/codegen/strings.test.ts",
+        "oracle": "zxbc 1.19 stops strings/substring-assign.zxbas with B Integer out of range."
       },
       {
         "name": "truncation-warning-w200",
         "question": "Which conversions raise W200 ('a value will be truncated')?",
         "decision": "A Fixed or Float value that is not a constant, converted to an integral type by an assignment, an argument, a RETURN or a POKE.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
         "test": "test/kbasic/semantics/diagnostics.test.ts"
@@ -2751,7 +2861,7 @@
         "name": "unused-warning-w150",
         "question": "When is a variable 'never used' (W150)?",
         "decision": "When it is never mentioned after its declaration: no read, no assignment, no address taken; mapped variables and BYREF parameters are exempt. Reported, like W170, only at optimisation levels above 0.",
-        "status": "provisional",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 2,
         "test": "test/kbasic/semantics/diagnostics.test.ts"
@@ -2759,20 +2869,20 @@
       {
         "name": "val-constant-invalid",
         "question": "What does VAL of a constant string that is not a number give?",
-        "decision": "0, with warning K407.",
-        "status": "provisional",
-        "source": "docs",
+        "decision": "A constant String that is a plain number folds; any other constant is evaluated at run time like every VAL (0 and ERR_NR 9 when BASIC rejects it). No warning.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 2,
-        "test": "test/kbasic/semantics/diagnostics.test.ts"
+        "test": "test/kbasic/corpus/builtins/val.zxbas"
       },
       {
         "name": "val-runtime",
         "question": "What does VAL accept at run time, and how does it round?",
-        "decision": "Spaces, an optional sign, a decimal number as BASIC writes it (read by the ROM's DEC-TO-FP, so the result can differ in the last bit from the same literal folded at compile time, which rounds to nearest), then spaces. Anything else gives 0 and sets ERR_NR to 11 without stopping the program.",
-        "status": "provisional",
-        "source": "klive-decision",
+        "decision": "BASIC's own VAL, through the ROM calculator: the String is evaluated as a numeric expression (VAL(\"2*3\") = 6; names are BASIC's variables). A String BASIC rejects gives 0 and sets ERR_NR to 9 (A Invalid argument) without stopping the program.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/runtime/float.test.ts"
+        "test": "test/kbasic/corpus/builtins/val-error.zxbas"
       }
     ]
   }

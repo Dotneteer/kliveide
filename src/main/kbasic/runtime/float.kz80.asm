@@ -17,7 +17,7 @@
 ;
 ; The ROM entry points used, all documented 48K ROM routines: STK-STORE $2AB6 (stacks A-E-D-C-B),
 ; STK-FETCH $2BF1 (unstacks them), PRINT-FP $2DE3 (prints the top of the stack through the current
-; channel), DEC-TO-FP $2C9B (reads a decimal number at CH_ADD).
+; channel), STK-STO-$ $2AB2 (stacks a String for the calculator's val).
 
 ; ------------------------------------------------------------------------------------------------
 ; left <op> right. In: L = the calculator operation ($0F addition, $03 subtract, $04 multiply,
@@ -401,98 +401,83 @@ PrintFloatLoop:
     ret
 
 ; ------------------------------------------------------------------------------------------------
-; VAL: the number a String holds (spaces, an optional sign, then a decimal number as BASIC writes
-; it, then spaces). A String that holds anything else gives 0 and sets ERR_NR to 11 ("C Nonsense in
-; BASIC") without stopping the program. In: HL = the String, A = free flags (bit 0 frees it).
-; Out: A-E-D-C-B. Changes F, HL.
+; VAL: BASIC's own VAL - the calculator's val operation evaluates the String as a numeric expression,
+; so VAL("2*3") is 6, as in Sinclair BASIC and upstream (the semantics annex's val-runtime). A String
+; the ROM rejects (bad syntax, an unknown variable, an arithmetic error) does not stop the program: VAL
+; gives 0 and sets ERR_NR to 9 ("A Invalid argument"), as upstream does. The ROM's error path comes
+; back here through ERR_SP, and FValFailed puts back what the ROM left half done: the paging depth
+; and CH_ADD. Either way the workspace that holds the ROM's copy of the String is given back. In: HL = the String, A = free
+; flags (bit 0 frees it). Out: A-E-D-C-B. Changes F, HL.
 FVal:
     push af                 ; S: [flags]
     push hl                 ; S: [string][flags]
     call StrLen             ; BC = the length
-    ld de,FText
-    ld a,b
-    or a
-    jr nz,FValTooLong
-    ld a,c
-    cp 22
-    jr nc,FValTooLong       ; FText holds 22 characters and the terminator
-    or a
-    jr z,FValCopied
     inc hl
     inc hl
-    ldir
-FValCopied:
-    ld a,$0d
-    ld (de),a
+    ex de,hl                ; DE = the characters (any address for the empty String)
+    ld a,(RomDepth)
+    ld (FValDepth),a
+    ld (FValIY),iy
+    ld hl,($5c5d)           ; CH_ADD
+    ld (FValChAdd),hl
+    ld hl,($5c63)           ; STKBOT: where the ROM puts its copy of the String
+    ld (FValStkBot),hl
+    ld hl,($5c3d)           ; ERR_SP
+    push hl                 ; S: [ERR_SP][string][flags]
+    ld hl,FValFailed
+    push hl                 ; S: [FValFailed][ERR_SP][string][flags]
+    ld ($5c3d),sp           ; an error inside VAL returns to FValFailed
+    xor a
+    call RomCall
+    .defw $2ab2             ; STK-STO-$: the String on the calculator stack
+    ld a,$1d                ; val
+    ld (FCalcOp),a
+    call FCalc              ; the number replaces the String on the calculator stack
+    pop hl                  ; S: [ERR_SP][string][flags]
+    pop hl                  ; S: [string][flags]
+    ld ($5c3d),hl
+    pop hl                  ; S: [flags]
+    pop af                  ; S: []
+    rra
+    call c,Free             ; the ROM has its own copy: the String can go
+    call FFetch
+    ld hl,(FValStkBot)      ; the ROM's copy goes too: BASIC clears its workspace between
+    ld ($5c63),hl           ; statements, a compiled program never does
+    ld ($5c65),hl           ; STKEND: the calculator stack is empty
+    ret
+
+; The ROM's error path: it stored the report in ERR_NR, reset SP from ERR_SP and emptied the
+; calculator stack, then returned here.                             S: [ERR_SP][string][flags]
+FValFailed:
+    pop hl                  ; S: [string][flags]
+    ld ($5c3d),hl
+FValUnwind:                 ; the ROM calls the error cut short leave the ROM paged in
+    ld a,(FValDepth)
+    ld hl,RomDepth
+    cp (hl)
+    jr z,FValUnwound
+    call RomOut
+    jr FValUnwind
+FValUnwound:
+    ld iy,(FValIY)
+    ld hl,(FValChAdd)
+    ld ($5c5d),hl
+    ld hl,(FValStkBot)      ; the ROM's copy of the String goes: it was made at STKBOT, and the
+    ld ($5c63),hl           ; calculator stack above it is empty
+    ld ($5c65),hl           ; STKEND
+    ld a,9                  ; "A Invalid argument"
+    ld ($5c3a),a            ; ERR_NR
     pop hl                  ; S: [flags]
     pop af                  ; S: []
     rra
     call c,Free
-    ; --- Skip spaces and the sign
-    ld hl,FText
-    ld c,0                  ; C = 1 for a minus sign
-FValSpaces:
-    ld a,(hl)
-    cp ' '
-    jr nz,FValSign
-    inc hl
-    jr FValSpaces
-FValSign:
-    cp '+'
-    jr z,FValSigned
-    cp '-'
-    jr nz,FValNumber
-    inc c
-FValSigned:
-    inc hl
-    ld a,(hl)
-FValNumber:
-    cp '.'
-    jr z,FValParse
-    cp '0'
-    jr c,FValBad
-    cp '9'+1
-    jr nc,FValBad
-FValParse:
-    push bc                 ; S: [sign]
-    ld de,($5c5d)           ; CH_ADD: BASIC's own place in its running line
-    push de                 ; S: [CH_ADD][sign]
-    ld ($5c5d),hl
-    call RomCall
-    .defw $2c9b             ; DEC-TO-FP: A = the first character, CH_ADD at it
-    ld hl,($5c5d)
-    pop de                  ; S: [sign]
-    ld ($5c5d),de
-    ; --- Only spaces may follow the number
-FValTail:
-    ld a,(hl)
-    cp ' '
-    jr nz,FValEnd
-    inc hl
-    jr FValTail
-FValEnd:
-    cp $0d
-    call FFetch
-    pop hl                  ; L = the sign                          S: []
-    jr nz,FValDrop
-    dec l
-    ret nz
-    ld l,$1b                ; negate
-    jp FUnary
-FValDrop:
-    ld (iy+0),11
-    jr FValZero
-FValTooLong:
-    pop hl
-    pop af
-    rra
-    call c,Free
-FValBad:
-    ld (iy+0),11            ; ERR_NR: "C Nonsense in BASIC"
-FValZero:
-    xor a
-    ld e,a
-    ld d,a
-    ld c,a
-    ld b,a
-    ret
+    jp FZero
+
+FValDepth:
+    .defb 0
+FValIY:
+    .defw 0
+FValChAdd:
+    .defw 0
+FValStkBot:
+    .defw 0

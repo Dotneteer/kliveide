@@ -1,5 +1,6 @@
 ' print64.bas: 64 columns, two characters to a byte
 '@expect screen 2 "1,0 1"
+'@expect oracle-differs stdlib-internals
 #include <print64.bas>
 printat64(0, 62)
 print64("ab")

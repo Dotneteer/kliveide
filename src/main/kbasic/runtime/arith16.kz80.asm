@@ -5,8 +5,9 @@
 ;
 ; Operands follow runtime-abi.md §7: 8-bit in A and H, 16-bit in HL and DE. A product keeps its low
 ; 8 or 16 bits, the same for signed and unsigned operands. Signed division truncates towards zero
-; and the remainder takes the dividend's sign. Division by zero gives a quotient with every bit set
-; and the dividend as the remainder (to be settled against the spec's semantics annex, plan R8).
+; and the remainder takes the dividend's sign. Division by zero gives the dividend as the remainder
+; and a quotient of the magnitudes with every bit set, then given the quotient's sign: -7 / 0 is 1,
+; as upstream gives (the semantics annex's integer-division-by-zero and mod-sign).
 
 ; ------------------------------------------------------------------------------------------------
 ; A * H. Out: A. Changes F, B, H, L.

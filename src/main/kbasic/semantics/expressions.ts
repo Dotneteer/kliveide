@@ -841,13 +841,13 @@ export class ExpressionBinder {
       }
       case "VAL": {
         const a = this.valueAs(args[0], "String");
+        // --- A constant number folds; anything else is an expression BASIC's VAL evaluates at run
+        // --- time (the semantics annex's val-runtime), which is where its errors belong too
         if (a.constant?.value.kind === "string") {
-          const text = a.constant.value.value.trim();
           try {
-            return this.constantExpr({ type: "Float", value: { kind: "float", value: f40.fromDecimal(text) } }, span);
+            return this.constantExpr({ type: "Float", value: { kind: "float", value: f40.fromDecimal(a.constant.value.value.trim()) } }, span);
           } catch {
-            this.warning("K407", `VAL of "${a.constant.value.value}" is not a number; it gives 0`, span);
-            return this.constantExpr({ type: "Float", value: { kind: "float", value: f40.fromInteger(0) } }, span);
+            // --- not a plain number
           }
         }
         return make("Float", [a]);

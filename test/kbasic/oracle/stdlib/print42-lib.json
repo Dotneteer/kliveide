@@ -1,0 +1,32 @@
+{
+  "program": "stdlib/print42-lib.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "xy   2 0,0",
+    "",
+    "",
+    "                              ??",
+    "c",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0
+}

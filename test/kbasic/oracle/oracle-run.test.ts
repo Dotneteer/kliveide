@@ -37,6 +37,8 @@ describe.skipIf(!MANIFEST)("behavioural oracle (zxbc)", () => {
         });
         result.ended = ended;
         result.screen = Array.from({ length: 24 }, (_, row) => session.screenLine(row).trimEnd());
+        // --- ERR_NR (255: no error): a report the program raised but the ROM did not print
+        result.errNr = session.peek(23610);
         const peeks: Record<string, number> = {};
         for (const e of expectations) {
           if (e.kind === "peek") peeks[`peek ${e.address}`] = session.peek(e.address);

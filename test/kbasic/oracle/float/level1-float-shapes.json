@@ -1,0 +1,32 @@
+{
+  "program": "float/level1-float-shapes.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": true,
+  "screen": [
+    "-0.75 -3.375 0.5 3.75 -1.5",
+    "01111",
+    "0 4.5 4.5",
+    "15 -3 -9",
+    "-0.375",
+    "small3",
+    "big30",
+    "both",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    " 1982 Sinclair Research Ltd"
+  ],
+  "errNr": 0
+}

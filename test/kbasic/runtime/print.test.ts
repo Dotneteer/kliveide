@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createRuntimeRig, heapUsed, makeString, type RuntimeRig } from "./runtime-kit";
 
-const USES = ["PrintStr", "PrintChar", "PrintNewline", "PrintReset", "PrintU16", "PrintI16", "PrintU8", "PrintI8", "PrintU32", "PrintI32", "Cls"];
+const USES = ["PrintStr", "PrintChar", "PrintNewline", "PrintReset", "PrintU16", "PrintI16", "PrintU8", "PrintI8", "PrintU32", "PrintI32", "PrintFixed", "Cls"];
 
 /** A String literal in the program image: [length][bytes]. */
 function literal(label: string, ...parts: (string | number)[]): string {
@@ -74,17 +74,29 @@ describe("Klive BASIC runtime - print", () => {
     expect(s.screenLine(8)).toBe("  G");
   });
 
-  it("scrolls the whole screen when a line feed passes row 23", async () => {
-    const lines: string[] = ["    call core.Cls"];
-    const extra: string[] = [];
-    for (let k = 0; k < 30; k++) {
-      lines.push(printLit(`L${k}`), "    call core.PrintNewline");
-      extra.push(literal(`L${k}`, `Line ${k}`));
-    }
-    const rig = await printRig(lines.join("\n"), extra.join("\n"));
+  it("scrolls the whole screen only when something is printed below row 23", async () => {
+    const program = (tail: string[]) => {
+      const lines: string[] = ["    call core.Cls"];
+      const extra: string[] = [literal("X", "X")];
+      for (let k = 0; k < 30; k++) {
+        lines.push(printLit(`L${k}`), "    call core.PrintNewline");
+        extra.push(literal(`L${k}`, `Line ${k}`));
+      }
+      return printRig([...lines, ...tail].join("\n"), extra.join("\n"));
+    };
+    // --- The line feed after "Line 29" leaves the cursor below the screen: nothing scrolls yet
+    let rig = await program([]);
+    for (let row = 0; row < 24; row++) expect(rig.session.screenLine(row)).toBe(`Line ${row + 6}`);
+    // --- The next character scrolls first, onto a row 23 in the permanent colours
+    rig = await program([printLit("X")]);
     for (let row = 0; row < 23; row++) expect(rig.session.screenLine(row)).toBe(`Line ${row + 7}`);
-    expect(rig.session.screenLine(23)).toBe("");
+    expect(rig.session.screenLine(23)).toBe("X");
     expect(attr(rig, 23, 5)).toBe(0x38);
+    // --- A line feed below the screen scrolls one line and stays below
+    rig = await program(["    call core.PrintNewline", printLit("X")]);
+    for (let row = 0; row < 22; row++) expect(rig.session.screenLine(row)).toBe(`Line ${row + 8}`);
+    expect(rig.session.screenLine(22)).toBe("");
+    expect(rig.session.screenLine(23)).toBe("X");
   });
 
   it("prints 8- and 16-bit numbers, signed and unsigned", async () => {
@@ -124,6 +136,17 @@ describe("Klive BASIC runtime - print", () => {
       .join("\n");
     const rig = await printRig(main);
     expect(rig.session.screenLine(0) + rig.session.screenLine(1)).toBe("0 4294967295 -2147483648 -1 100000");
+  });
+
+  it("prints a Fixed exactly: the sign, the integer part and every digit of the fraction", async () => {
+    // --- raw 16.16 values: 0, 0.5, -0.5, 5, -3.25, the smallest step, the extremes
+    const cases = [0, 0x8000, 0xffff8000, 0x50000, 0xfffcc000, 1, 0x7fffffff, 0x80000000, 0xffffffff];
+    const main = cases
+      .map((v) => `    ld hl,${v & 0xffff}\n    ld de,${v >>> 16}\n    call core.PrintFixed\n    ld a,'|'\n    call core.PrintChar`)
+      .join("\n");
+    const rig = await printRig(main);
+    const text = [0, 1, 2, 3].map((r) => rig.session.screenLine(r)).join("").trim();
+    expect(text).toBe("0|0.5|-0.5|5|-3.25|0.0000152587890625|32767.9999847412109375|-32768|-0.0000152587890625|");
   });
 
   it("applies temporary colours until PrintReset", async () => {

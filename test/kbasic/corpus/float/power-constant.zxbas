@@ -1,0 +1,5 @@
+' A constant power folds to the exact result; at run time the ROM computes EXP(y * LN x), which is
+' not exact (semantics annex: constant-power)
+'@expect screen 0 "1 0"
+DIM x AS Float = 2
+PRINT 3 ^ 2 = 9; " "; (x + 1) ^ 2 = 9

@@ -1,0 +1,4 @@
+' Operator precedence as the recorded table gives it (semantics annex: operator-precedence)
+'@expect screen 0 "50 -4 9 1 0 1"
+DIM a AS Integer = 2
+PRINT 2 + 3 * 4 ^ 2; " "; -a ^ 2; " "; 1 + 2 * 3 + 2; " "; 3 > 2 AND 1 < 2; " "; NOT 1 = 1; " "; 7 BAND 3 = 3

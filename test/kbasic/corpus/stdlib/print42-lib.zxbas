@@ -1,5 +1,6 @@
 ' print42.bas: its cursor moves 42 columns to a row and wraps, apart from PRINT's
 '@expect screen 0 "xy   2 4,1"
+'@expect oracle-differs stdlib-internals
 #include <print42.bas>
 #include <pos.bas>
 DIM c AS UByte

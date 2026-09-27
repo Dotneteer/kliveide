@@ -21,7 +21,7 @@ import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, 
  * | `'@expect heap <name> ...` | when the program ends the heap holds only these global Strings' values |
  * | `'@expect frames <n>` | run for at most n frames (default 500) |
  * | `'@expect keys <key> ...` | hold these keys (`SpectrumKeyCode` names) from the start |
- * | `'@expect oracle-differs <entry>` | the upstream oracle's result differs on purpose: the semantics annex entry that decides it |
+ * | `'@expect oracle-differs <entry>` | the upstream oracle's result differs on purpose: the semantics annex entry that decides it (one line per entry; a mark on a program upstream agrees with fails) |
  *
  * When `test/kbasic/oracle/<area>/<name>.json` exists (written by `scripts/kbasic-oracle.cjs` from a
  * locally installed `zxbc`, plan D12), the screen rows, error report and peeks the program expects
@@ -110,11 +110,14 @@ describe("Klive BASIC corpus", () => {
         expect(g4Problems(r), "G4: SP at statement entries").toEqual([]);
         expect(r.generated.debug.problems, "the debug-info validator").toEqual([]);
         const oracleFile = join(ORACLE, name.replace(/\.zxbas$/, ".json"));
-        const differs = expectations.find((e) => e.kind === "oracle-differs");
-        if (differs) expect(ANNEX.has(differs.entry), `oracle-differs names the annex entry ${differs.entry}`).toBe(true);
-        if (existsSync(oracleFile) && !differs) {
+        const differs = expectations.flatMap((e) => (e.kind === "oracle-differs" ? [e.entry] : []));
+        for (const entry of differs) expect(ANNEX.has(entry), `oracle-differs names the annex entry ${entry}`).toBe(true);
+        if (existsSync(oracleFile)) {
           const oracle = JSON.parse(readFileSync(oracleFile, "utf8")) as OracleResult;
-          expect(oracleDifferences(expectations, oracle), "the upstream oracle's result").toEqual([]);
+          const found = oracleDifferences(expectations, oracle);
+          if (!differs.length) expect(found, "the upstream oracle's result").toEqual([]);
+          // --- A mark that no longer differs would hide the next real difference
+          else if (!oracle.compileError) expect(found.length, `oracle-differs ${differs.join(", ")}: upstream now agrees`).toBeGreaterThan(0);
         }
         for (const e of expectations) {
           switch (e.kind) {

@@ -100,6 +100,9 @@ export type OracleResult = {
   screen?: string[];
   /** Whether the program returned (false: it stopped with a report or was still running). */
   ended?: boolean;
+  /** ERR_NR (23610) when the run stopped: an error upstream's runtime raised, whether or not the ROM
+   *  printed its report. */
+  errNr?: number;
   /** The bytes and words the program's `peek` / `peekw` expectations name. */
   peeks?: Record<string, number>;
 };
@@ -115,8 +118,11 @@ export function oracleDifferences(expectations: Expectation[], oracle: OracleRes
   for (const e of expectations) {
     if (e.kind === "screen" && oracle.screen[e.row] !== e.text) {
       out.push(`screen row ${e.row}: Klive "${e.text}", zxbc "${oracle.screen[e.row]}"`);
-    } else if (e.kind === "error" && !oracle.screen[23]?.startsWith(`${reportChar(e.code)} `)) {
-      out.push(`error: Klive ${reportChar(e.code)}, zxbc "${oracle.screen[23]}"`);
+    } else if (e.kind === "error" && !oracle.screen[23]?.startsWith(`${reportChar(e.code)} `) && oracle.errNr !== e.code) {
+      // --- Upstream's runtime errors return to the caller with ERR_NR set (the ROM would print the
+      // --- report), so ERR_NR is what tells; the screen expectations say whether the program went on
+      const zxbc = oracle.errNr === undefined ? `"${oracle.screen[23]}"` : `ERR_NR ${oracle.errNr} (${reportChar(oracle.errNr)})`;
+      out.push(`error: Klive ${reportChar(e.code)}, zxbc ${zxbc}`);
     } else if ((e.kind === "peek" || e.kind === "peekw") && oracle.peeks?.[`${e.kind} ${e.address}`] !== e.value) {
       out.push(`${e.kind} ${e.address}: Klive ${e.value}, zxbc ${oracle.peeks?.[`${e.kind} ${e.address}`]}`);
     }

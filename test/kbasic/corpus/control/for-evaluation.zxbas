@@ -2,6 +2,7 @@
 ' first value past the limit (semantics annex: for-loop-evaluation)
 '@expect screen 0 "5 11"
 '@expect screen 1 "3 -2"
+'@expect oracle-differs for-loop-evaluation
 DIM i, lim, st, n AS Integer
 lim = 10: st = 2
 FOR i = 1 TO lim STEP st

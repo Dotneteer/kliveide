@@ -1,0 +1,32 @@
+{
+  "program": "float/overflow.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "ended": false,
+  "screen": [
+    "before",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "6 Number too big, 0:0"
+  ],
+  "errNr": 5
+}

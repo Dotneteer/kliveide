@@ -1,5 +1,6 @@
 ' FUNCTION results in expressions; a FUNCTION that falls off its end returns 0
 '@expect screen 0 "25 0 26"
+'@expect oracle-differs function-without-return
 FUNCTION sq(n AS UInteger) AS UInteger
  RETURN n * n
 END FUNCTION

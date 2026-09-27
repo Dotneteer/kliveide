@@ -127,8 +127,12 @@ function main() {
       });
       const entry = { program, source: file, org: plan.org };
       if (run.status !== 0 || !fs.existsSync(`${base}.bin`)) {
-        const message = `${run.stderr || run.stdout || run.error || ""}`.split(/\r?\n/).find((l) => l.trim()) || `exit code ${run.status}`;
-        entry.compileError = message.replace(work, "").replace(/^[\\/]+/, "");
+        // --- A diagnostic is zxbc's first line; a crash records only the exception's message (the
+        // --- last line), never the traceback's lines, which quote upstream's source
+        const lines = `${run.stderr || run.stdout || run.error || ""}`.split(/\r?\n/).filter((l) => l.trim());
+        const crashed = lines[0]?.startsWith("Traceback");
+        const message = crashed ? `zxbc crashed: ${lines[lines.length - 1]}` : lines[0] || `exit code ${run.status}`;
+        entry.compileError = message.split(work).join("").replace(/^[\\/]+/, "");
       } else entry.bin = `${base}.bin`;
       entries.push(entry);
       console.log(`${entry.bin ? "built" : "rejected"} ${program}`);

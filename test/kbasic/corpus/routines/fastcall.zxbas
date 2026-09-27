@@ -1,5 +1,6 @@
 ' FASTCALL routines take their first parameter in a register
 '@expect screen 0 "84 13 65536"
+'@expect oracle-differs fastcall-basic-body
 FUNCTION FASTCALL dbl(n AS UInteger) AS UInteger
  RETURN n * 2
 END FUNCTION

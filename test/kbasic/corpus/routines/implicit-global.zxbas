@@ -1,0 +1,9 @@
+' An undeclared name in a routine is the global of that name when one exists (semantics annex:
+' implicit-variable-in-routine)
+'@expect screen 0 "7"
+DIM x AS UByte = 5
+SUB s()
+  x = 7
+END SUB
+s()
+PRINT x

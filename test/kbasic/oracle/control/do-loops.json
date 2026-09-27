@@ -1,0 +1,5 @@
+{
+  "program": "control/do-loops.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "control__do-loops.bas:6: error: Syntax Error. Unexpected token 'LOOP' <LOOP>"
+}

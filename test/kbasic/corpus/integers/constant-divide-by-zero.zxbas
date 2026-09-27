@@ -1,0 +1,4 @@
+' A constant integer division by zero folds to what the run time gives (semantics annex:
+' constant-integer-division-by-zero)
+'@expect screen 0 "-1 100"
+PRINT 100 / 0; " "; 100 MOD 0

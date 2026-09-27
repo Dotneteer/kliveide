@@ -46,6 +46,10 @@ describe("behavioural oracle", () => {
       'error: Klive 6, zxbc "B Integer out of range, 0:1"',
       "peek 40000: Klive 7, zxbc 8"
     ]);
+    // --- Upstream's runtime returns with ERR_NR set and no report printed: the error still matches
+    const returned = { ...same, screen: [...screen.slice(0, 23), ""], errNr: 5 };
+    expect(oracleDifferences(expectations, returned)).toEqual([]);
+    expect(oracleDifferences(expectations, { ...returned, errNr: 9 })).toEqual(["error: Klive 6, zxbc ERR_NR 9 (A)"]);
     expect(oracleDifferences(expectations, { program: "p", zxbc: "z", compileError: "x.bas:1: error: nope" })).toEqual([]);
   });
 

@@ -1,0 +1,5 @@
+{
+  "program": "data/read-no-data.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "data__read-no-data.bas:6: error: No DATA defined"
+}

@@ -50,7 +50,8 @@ describe("Fixed", () => {
       "f = 0.5: x = f * 3: PRINT x; \" \"; INT(f); \" \"; ABS(-f); \" \"; SGN(-f)",
       ""
     ].join("\n");
-    expect((await runBasic(source)).screen(1)[0]).toBe("-3 -3 -3 0.33332825 1.5 0 0.5 -1");
+    // --- PRINT writes a Fixed exactly: 1/3 to 65536ths is 0.3333282470703125
+    expect((await runBasic(source)).screen(2)).toEqual(["-3 -3 -3 0.3333282470703125 1.5", "0 0.5 -1"]);
   });
 
   it("stops with 6 Number too big when dividing by zero", async () => {

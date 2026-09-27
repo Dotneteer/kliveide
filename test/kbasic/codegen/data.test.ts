@@ -72,9 +72,9 @@ describe("DATA and READ", () => {
     expect(await firstLine(source)).toBe("-1 2 -3");
   });
 
-  it("stops with C Nonsense in BASIC when a String meets a number", async () => {
+  it("stops with A Invalid argument when a String meets a number", async () => {
     const r = await runBasic('DIM x AS UByte\nREAD x\nDATA "text"\n', { expectEnd: false, frames: 100 });
-    expect(r.session.screenLine(23)).toMatch(/^C Nonsense in BASIC/);
+    expect(r.session.screenLine(23)).toMatch(/^A Invalid argument/);
   });
 
   it("stops with E Out of DATA when there is none", async () => {

@@ -1,0 +1,10 @@
+' Literals follow the documented rules: an integer literal takes the smallest type that holds it,
+' unsigned when not negative; a shift keeps its left operand's type; / of two integral operands is
+' integer division; a real literal is a Float. Upstream widens or retypes literals in these places
+' (semantics annex: literal-integer-type, constant-arithmetic-literal)
+'@expect screen 0 "0 0 65279 0"
+'@expect screen 1 ".001"
+'@expect oracle-differs literal-integer-type
+'@expect oracle-differs constant-arithmetic-literal
+PRINT 5 SHL 8; " "; 1 SHL 8; " "; BNOT $100; " "; 1 / 8
+PRINT 0.001

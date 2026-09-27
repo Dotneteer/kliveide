@@ -1,0 +1,4 @@
+' A #define may use a keyword as its name, and then replaces it (semantics annex: keyword-macro-names)
+'@expect screen 0 "4"
+#define PI 4
+PRINT PI
