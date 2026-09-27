@@ -410,6 +410,7 @@ class Selector {
    */
   private prologue(): void {
     this.sid = -1;
+    if (this.fn.naked) return;
     this.emit("push ix", "ld ix,0", "add ix,sp");
     let size = this.fn.frameSize;
     if (this.fn.registerParam) {
@@ -433,6 +434,10 @@ class Selector {
 
   /** The epilogue's end: the result stays in A / HL; IX restored, the arguments removed, return. */
   private epilogue(value: Value | undefined): void {
+    if (this.fn.naked) {
+      this.emit("ret");
+      return;
+    }
     if (value) {
       const [place] = this.take([value]);
       if (place !== "acc") this.loadImmediate(value.type, place);

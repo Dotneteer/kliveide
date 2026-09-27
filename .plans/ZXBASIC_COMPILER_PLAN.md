@@ -582,7 +582,7 @@ preference.
 | --- | --- | --- |
 | D8 (was P1) | Header options use the `'@name value` form (§5.1). | `'!` belongs to NextBuild and is kept as a compatibility alias; `'#` looks like a preprocessor line. |
 | D9 (was P2) | Klive BASIC takes over the `zxbas` language id; the external `zxbc` integration stays selectable through a setting (§12.1). | One file type, one editor, no user migration. |
-| D10 (was P3) | Stdlib `.bas` files and user inline asm written in zxbasm dialect are accepted through the same converter that imports the runtime, behind `'@asm-dialect zxbasm` (§6.5). | Keeps D4 while still compiling existing libraries such as NextBuild's `nextlib`. |
+| D10 (was P3) | Stdlib `.bas` files and user inline asm written in zxbasm dialect are accepted through the same converter that imports the runtime, behind `'@asm-dialect zxbasm` (§6.5). **Superseded by D-C4 of `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`: zxbasm is the default, Klive's dialect is opted into.** | Keeps D4 while still compiling existing libraries such as NextBuild's `nextlib`. |
 | D11 (was P4) | `klive.debug` compiles with a **debug profile** that caps optimisation at level 1 unless the source asks otherwise (§8.6). | Source stepping stays trustworthy by default. |
 | D12 | **Upstream `zxbc` may be run as a behavioural oracle** (2026-09-26, resolves R9). A developer may run a locally installed `zxbc` on Klive's own test programs and record the **observable results** (screen text, memory values, error reports). Running the tool is allowed; reading its source for design, or copying its output code, tests or libraries into Klive, is not. The oracle never runs in CI. |
 
@@ -896,7 +896,7 @@ Every `zxbc` option from the spec is mapped, dropped with a reason, or replaced 
 | `emit-ir` | flag | `-E`, `-f ir` | Writes the MIR dump; for compiler developers. |
 | `emit-map` | flag | `-M/--mmap` | Label map; Klive's own format plus a CSpect-compatible one. |
 | `debug-info` | `full` \| `lines` \| `none` (full) | — | New (§8). |
-| `asm-dialect` | `klive` \| `zxbasm` (klive) | — | New (D10, §6.5). |
+| `asm-dialect` | `klive` \| `zxbasm` (zxbasm since compatibility plan D-C4; `#pragma asm_dialect`) | — | New (D10, §6.5). |
 | `codebank-window` | address (`$6000`) | `--code-window` (fork) | §9. |
 | `codebank-window-size` | `8k` \| `16k` (8k) | `--code-window-size` | |
 | `codebank-first-page` | 8K page (30) | `--code-bank-base` | |

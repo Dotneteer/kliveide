@@ -1,3 +1,4 @@
+import { convertZxbasmBlocks } from "../asm/zxbasm";
 import type { DiagnosticBag, Span } from "../diagnostics";
 import type { KBasicOptions } from "../options/options";
 import type {
@@ -68,6 +69,8 @@ class Binder extends ExpressionBinder {
   private sawData = false;
   /** Routine headers by their syntax node, from pass 1. */
   private readonly headerSymbols = new Map<RoutineHeader, RoutineSymbol>();
+  /** The ASM blocks in zxbasm's dialect, converted together once binding is done (plan C5). */
+  private readonly zxbasmBlocks: { lines: { text: string; span: Span }[] }[] = [];
 
   constructor(options: KBasicOptions, diagnostics: DiagnosticBag) {
     super(options, diagnostics);
@@ -82,6 +85,11 @@ class Binder extends ExpressionBinder {
     this.pragmaStacks.clear();
     const statements = this.block(program.statements);
     this.finish();
+    const converted = convertZxbasmBlocks(
+      this.zxbasmBlocks.map((b) => b.lines),
+      (span, message) => this.error("E503", `Inline assembly: ${message}`, span as Span)
+    );
+    this.zxbasmBlocks.forEach((b, k) => (b.lines = converted[k] as { text: string; span: Span }[]));
     return { program: { statements, routines: this.routines, labels: [...this.labels.values()] }, globals: this.globals };
   }
 
@@ -350,8 +358,12 @@ class Binder extends ExpressionBinder {
         return this.routineDefinition(s.header, s.body, span, s.end.span);
       case "declare":
         return undefined;
-      case "asm":
-        return { kind: "asm", span, lines: s.lines.map((l) => ({ text: l.text, span: l.span })) };
+      case "asm": {
+        const zxbasm = this.settings.asmDialect === "zxbasm";
+        const node = { kind: "asm" as const, span, lines: s.lines.map((l) => ({ text: l.text, span: l.span })), ...(zxbasm ? { zxbasm } : {}) };
+        if (zxbasm) this.zxbasmBlocks.push(node);
+        return node;
+      }
       case "codebank":
         return this.codebank(s.bank, s.body, span);
     }
@@ -376,6 +388,10 @@ class Binder extends ExpressionBinder {
       return;
     }
     const v = (value ?? "").trim().toLowerCase();
+    if (key === "asmDialect") {
+      if (v === "klive" || v === "zxbasm") this.settings.asmDialect = v;
+      return;
+    }
     const current = this.settings[key];
     (this.settings as Record<string, unknown>)[key] =
       typeof current === "boolean" ? ["", "true", "on", "yes", "+", "1"].includes(v) : Number.parseInt(v.replace(/^\$/, "0x"), v.startsWith("$") ? 16 : 10) || 0;
@@ -1007,5 +1023,6 @@ const PRAGMA_SETTINGS: Record<string, keyof BindSettings> = {
   explicit: "explicit",
   strict: "strict",
   default_byref: "defaultByref",
-  codebank: "bank"
+  codebank: "bank",
+  asm_dialect: "asmDialect"
 };

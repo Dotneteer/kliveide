@@ -557,5 +557,42 @@
    "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'",
    "fault": "bnot-decimal"
   }
+ },
+ "asm": {
+  "asm: a global by _name": {
+   "klive": "501",
+   "zxbc": "rejected: error: Undefined GLOBAL label '._gv2879'",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a local through IX": {
+   "klive": "14",
+   "zxbc": "28",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a byte local at IX-2": {
+   "klive": "0",
+   "zxbc": "6",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a byte local at IX-3": {
+   "klive": "21",
+   "zxbc": "80",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a word local at IX-2": {
+   "klive": "1234",
+   "zxbc": "60",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a word local at IX-4": {
+   "klive": "0",
+   "zxbc": "16962",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: two byte locals": {
+   "klive": "775",
+   "zxbc": "15360",
+   "fault": "asm-unused-variable"
+  }
  }
 }

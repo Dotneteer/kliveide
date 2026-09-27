@@ -3,6 +3,8 @@
 #pragma once
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
+#pragma push(asm_dialect)
+#pragma asm_dialect = klive
 
 ' The PRINT cursor's row: 0 at the top, 23 at the bottom - also after a line feed on row 23, when the
 ' cursor waits below the screen (row 24) for the scroll the next character makes. (A FUNCTION with no
@@ -16,4 +18,5 @@ FUNCTION CSRLIN() AS UByte
     END ASM
 END FUNCTION
 
+#pragma pop(asm_dialect)
 #pragma pop(case_insensitive)

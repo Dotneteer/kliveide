@@ -224,7 +224,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     frames.push({
       callableIndex: index,
       convention: fn.kind === "main" ? "entrypoint" : "frame",
-      ...(fn.kind === "main" ? {} : { returnSlotOffset: 2 * Math.ceil(fn.frameSize / 2) + 2, argBytes: fn.argBytes }),
+      ...(fn.kind === "main" ? {} : { returnSlotOffset: fn.naked ? 0 : 2 * Math.ceil(fn.frameSize / 2) + 2, argBytes: fn.argBytes }),
       startAddress: first,
       bodyStart,
       epilogueStart,

@@ -1,0 +1,713 @@
+{
+ "suite": "asm",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "asm: number $hex",
+   "decl": [
+    "DIM rv2849 AS UInteger",
+    "DIM gv2849 AS UInteger = 500",
+    "ASM",
+    "ld hl,$1234",
+    "ld (_rv2849),hl",
+    "END ASM"
+   ],
+   "expr": "rv2849"
+  },
+  {
+   "id": "asm: number h suffix",
+   "decl": [
+    "DIM rv2850 AS UInteger",
+    "DIM gv2850 AS UInteger = 500",
+    "ASM",
+    "ld hl,1234h",
+    "ld (_rv2850),hl",
+    "END ASM"
+   ],
+   "expr": "rv2850"
+  },
+  {
+   "id": "asm: number 0x",
+   "decl": [
+    "DIM rv2851 AS UInteger",
+    "DIM gv2851 AS UInteger = 500",
+    "ASM",
+    "ld hl,0x1234",
+    "ld (_rv2851),hl",
+    "END ASM"
+   ],
+   "expr": "rv2851"
+  },
+  {
+   "id": "asm: number %bin",
+   "decl": [
+    "DIM rv2852 AS UInteger",
+    "DIM gv2852 AS UInteger = 500",
+    "ASM",
+    "ld hl,%1010",
+    "ld (_rv2852),hl",
+    "END ASM"
+   ],
+   "expr": "rv2852"
+  },
+  {
+   "id": "asm: number b suffix",
+   "decl": [
+    "DIM rv2853 AS UInteger",
+    "DIM gv2853 AS UInteger = 500",
+    "ASM",
+    "ld hl,1010b",
+    "ld (_rv2853),hl",
+    "END ASM"
+   ],
+   "expr": "rv2853"
+  },
+  {
+   "id": "asm: char literal",
+   "decl": [
+    "DIM rv2854 AS UInteger",
+    "DIM gv2854 AS UInteger = 500",
+    "ASM",
+    "ld hl,'A'",
+    "ld (_rv2854),hl",
+    "END ASM"
+   ],
+   "expr": "rv2854"
+  },
+  {
+   "id": "asm: expression precedence",
+   "decl": [
+    "DIM rv2855 AS UInteger",
+    "DIM gv2855 AS UInteger = 500",
+    "ASM",
+    "ld hl,2+3*4",
+    "ld (_rv2855),hl",
+    "END ASM"
+   ],
+   "expr": "rv2855"
+  },
+  {
+   "id": "asm: expression parens",
+   "decl": [
+    "DIM rv2856 AS UInteger",
+    "DIM gv2856 AS UInteger = 500",
+    "ASM",
+    "ld hl,(2+3)*4",
+    "ld (_rv2856),hl",
+    "END ASM"
+   ],
+   "expr": "rv2856"
+  },
+  {
+   "id": "asm: division",
+   "decl": [
+    "DIM rv2857 AS UInteger",
+    "DIM gv2857 AS UInteger = 500",
+    "ASM",
+    "ld hl,100/7",
+    "ld (_rv2857),hl",
+    "END ASM"
+   ],
+   "expr": "rv2857"
+  },
+  {
+   "id": "asm: shift",
+   "decl": [
+    "DIM rv2858 AS UInteger",
+    "DIM gv2858 AS UInteger = 500",
+    "ASM",
+    "ld hl,1 << 4",
+    "ld (_rv2858),hl",
+    "END ASM"
+   ],
+   "expr": "rv2858"
+  },
+  {
+   "id": "asm: and or",
+   "decl": [
+    "DIM rv2859 AS UInteger",
+    "DIM gv2859 AS UInteger = 500",
+    "ASM",
+    "ld hl,($F0 & $3C) | 1",
+    "ld (_rv2859),hl",
+    "END ASM"
+   ],
+   "expr": "rv2859"
+  },
+  {
+   "id": "asm: negative",
+   "decl": [
+    "DIM rv2860 AS UInteger",
+    "DIM gv2860 AS UInteger = 500",
+    "ASM",
+    "ld hl,-5",
+    "ld (_rv2860),hl",
+    "END ASM"
+   ],
+   "expr": "rv2860"
+  },
+  {
+   "id": "asm: DEFW and a label",
+   "decl": [
+    "DIM rv2861 AS UInteger",
+    "DIM gv2861 AS UInteger = 500",
+    "ASM",
+    "ld hl,(datav2861)",
+    "jr skipv2861",
+    "datav2861: DEFW 1234",
+    "skipv2861:",
+    "ld (_rv2861),hl",
+    "END ASM"
+   ],
+   "expr": "rv2861"
+  },
+  {
+   "id": "asm: DW",
+   "decl": [
+    "DIM rv2862 AS UInteger",
+    "DIM gv2862 AS UInteger = 500",
+    "ASM",
+    "ld hl,(datav2862)",
+    "jr skipv2862",
+    "datav2862: DW 4321",
+    "skipv2862:",
+    "ld (_rv2862),hl",
+    "END ASM"
+   ],
+   "expr": "rv2862"
+  },
+  {
+   "id": "asm: DEFB doubled quote",
+   "decl": [
+    "DIM rv2863 AS UInteger",
+    "DIM gv2863 AS UInteger = 500",
+    "ASM",
+    "ld a,(strv2863+1)",
+    "ld l,a",
+    "ld h,0",
+    "jr skipv2863",
+    "strv2863: DEFB \"a\"\"b\"",
+    "skipv2863:",
+    "ld (_rv2863),hl",
+    "END ASM"
+   ],
+   "expr": "rv2863"
+  },
+  {
+   "id": "asm: DB string and number",
+   "decl": [
+    "DIM rv2864 AS UInteger",
+    "DIM gv2864 AS UInteger = 500",
+    "ASM",
+    "ld a,(strv2864+2)",
+    "ld l,a",
+    "ld h,0",
+    "jr skipv2864",
+    "strv2864: DB \"ab\",7",
+    "skipv2864:",
+    "ld (_rv2864),hl",
+    "END ASM"
+   ],
+   "expr": "rv2864"
+  },
+  {
+   "id": "asm: DEFS size",
+   "decl": [
+    "DIM rv2865 AS UInteger",
+    "DIM gv2865 AS UInteger = 500",
+    "ASM",
+    "ld hl,endv2865-startv2865",
+    "jr skipv2865",
+    "startv2865: DEFS 5",
+    "endv2865:",
+    "skipv2865:",
+    "ld (_rv2865),hl",
+    "END ASM"
+   ],
+   "expr": "rv2865"
+  },
+  {
+   "id": "asm: DS with fill",
+   "decl": [
+    "DIM rv2866 AS UInteger",
+    "DIM gv2866 AS UInteger = 500",
+    "ASM",
+    "ld a,(startv2866+2)",
+    "ld l,a",
+    "ld h,0",
+    "jr skipv2866",
+    "startv2866: DS 3,9",
+    "skipv2866:",
+    "ld (_rv2866),hl",
+    "END ASM"
+   ],
+   "expr": "rv2866"
+  },
+  {
+   "id": "asm: several instructions on a line",
+   "decl": [
+    "DIM rv2867 AS UInteger",
+    "DIM gv2867 AS UInteger = 500",
+    "ASM",
+    "ld hl,1 : inc hl : inc hl",
+    "ld (_rv2867),hl",
+    "END ASM"
+   ],
+   "expr": "rv2867"
+  },
+  {
+   "id": "asm: label then instructions",
+   "decl": [
+    "DIM rv2868 AS UInteger",
+    "DIM gv2868 AS UInteger = 500",
+    "ASM",
+    "jr gov2868",
+    "gov2868: ld hl,5 : inc hl",
+    "ld (_rv2868),hl",
+    "END ASM"
+   ],
+   "expr": "rv2868"
+  },
+  {
+   "id": "asm: EQU",
+   "decl": [
+    "DIM rv2869 AS UInteger",
+    "DIM gv2869 AS UInteger = 500",
+    "ASM",
+    "valv2869 EQU 42",
+    "ld hl,valv2869",
+    "ld (_rv2869),hl",
+    "END ASM"
+   ],
+   "expr": "rv2869"
+  },
+  {
+   "id": "asm: EQU with colon",
+   "decl": [
+    "DIM rv2870 AS UInteger",
+    "DIM gv2870 AS UInteger = 500",
+    "ASM",
+    "valv2870: EQU 40+3",
+    "ld hl,valv2870",
+    "ld (_rv2870),hl",
+    "END ASM"
+   ],
+   "expr": "rv2870"
+  },
+  {
+   "id": "asm: mixed case",
+   "decl": [
+    "DIM rv2871 AS UInteger",
+    "DIM gv2871 AS UInteger = 500",
+    "ASM",
+    "Ld Hl,7 : INC hl",
+    "ld (_rv2871),hl",
+    "END ASM"
+   ],
+   "expr": "rv2871"
+  },
+  {
+   "id": "asm: PROC LOCAL",
+   "decl": [
+    "DIM rv2872 AS UInteger",
+    "DIM gv2872 AS UInteger = 500",
+    "ASM",
+    "PROC",
+    "LOCAL lp",
+    "ld b,3 : ld hl,0",
+    "lp: inc hl : djnz lp",
+    "ENDP",
+    "ld (_rv2872),hl",
+    "END ASM"
+   ],
+   "expr": "rv2872"
+  },
+  {
+   "id": "asm: two PROCs with one LOCAL name",
+   "decl": [
+    "DIM rv2873 AS UInteger",
+    "DIM gv2873 AS UInteger = 500",
+    "ASM",
+    "PROC",
+    "LOCAL lp",
+    "ld b,2 : ld hl,0",
+    "lp: inc hl : djnz lp",
+    "ENDP",
+    "PROC",
+    "LOCAL lp",
+    "ld b,3",
+    "lp: inc hl : djnz lp",
+    "ENDP",
+    "ld (_rv2873),hl",
+    "END ASM"
+   ],
+   "expr": "rv2873"
+  },
+  {
+   "id": "asm: a label in a PROC not LOCAL",
+   "decl": [
+    "DIM rv2874 AS UInteger",
+    "DIM gv2874 AS UInteger = 500",
+    "ASM",
+    "jr inv2874",
+    "PROC",
+    "inv2874: ld hl,11",
+    "ENDP",
+    "ld (_rv2874),hl",
+    "END ASM"
+   ],
+   "expr": "rv2874"
+  },
+  {
+   "id": "asm: temporary labels",
+   "decl": [
+    "DIM rv2875 AS UInteger",
+    "DIM gv2875 AS UInteger = 500",
+    "ASM",
+    "ld hl,0 : ld b,3",
+    "1: inc hl",
+    "djnz 1b",
+    "jr 1f",
+    "ld hl,99",
+    "1:",
+    "ld (_rv2875),hl",
+    "END ASM"
+   ],
+   "expr": "rv2875"
+  },
+  {
+   "id": "asm: dotted label",
+   "decl": [
+    "DIM rv2876 AS UInteger",
+    "DIM gv2876 AS UInteger = 500",
+    "ASM",
+    "ld hl,1",
+    "jr .skv2876",
+    "ld hl,2",
+    ".skv2876:",
+    "inc hl",
+    "ld (_rv2876),hl",
+    "END ASM"
+   ],
+   "expr": "rv2876"
+  },
+  {
+   "id": "asm: current address",
+   "decl": [
+    "DIM rv2877 AS UInteger",
+    "DIM gv2877 AS UInteger = 500",
+    "ASM",
+    "ld hl,$-$",
+    "ld (_rv2877),hl",
+    "END ASM"
+   ],
+   "expr": "rv2877"
+  },
+  {
+   "id": "asm: jr $+3",
+   "decl": [
+    "DIM rv2878 AS UInteger",
+    "DIM gv2878 AS UInteger = 500",
+    "ASM",
+    "ld hl,5",
+    "jr $+3",
+    "inc hl",
+    "inc hl",
+    "ld (_rv2878),hl",
+    "END ASM"
+   ],
+   "expr": "rv2878"
+  },
+  {
+   "id": "asm: a global by _name",
+   "decl": [
+    "DIM rv2879 AS UInteger",
+    "DIM gv2879 AS UInteger = 500",
+    "ASM",
+    "ld hl,(_gv2879)",
+    "inc hl",
+    "ld (_rv2879),hl",
+    "END ASM"
+   ],
+   "expr": "rv2879"
+  },
+  {
+   "id": "asm: comment after code",
+   "decl": [
+    "DIM rv2880 AS UInteger",
+    "DIM gv2880 AS UInteger = 500",
+    "ASM",
+    "ld hl,8 ; a comment : ld hl,9",
+    "ld (_rv2880),hl",
+    "END ASM"
+   ],
+   "expr": "rv2880"
+  },
+  {
+   "id": "asm: ALIGN",
+   "decl": [
+    "DIM rv2881 AS UInteger",
+    "DIM gv2881 AS UInteger = 500",
+    "ASM",
+    "jr skipv2881",
+    "ALIGN 4",
+    "datav2881: DB 1",
+    "skipv2881:",
+    "ld hl,datav2881 & 3",
+    "ld (_rv2881),hl",
+    "END ASM"
+   ],
+   "expr": "rv2881"
+  },
+  {
+   "id": "asm frame: STDCALL byte and word parameters",
+   "decl": [
+    "FUNCTION fv2882(a AS UByte, b AS UInteger) AS UInteger",
+    "ASM",
+    "ld l,(ix+5)",
+    "ld h,0",
+    "ld e,(ix+6)",
+    "ld d,(ix+7)",
+    "add hl,de",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2882(3, 1000)"
+  },
+  {
+   "id": "asm frame: STDCALL three parameters",
+   "decl": [
+    "FUNCTION fv2883(a AS UInteger, b AS UInteger, c AS UByte) AS UInteger",
+    "ASM",
+    "ld l,(ix+4)",
+    "ld h,(ix+5)",
+    "ld e,(ix+6)",
+    "ld d,(ix+7)",
+    "or a",
+    "sbc hl,de",
+    "ld e,(ix+9)",
+    "ld d,0",
+    "add hl,de",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2883(1000, 30, 4)"
+  },
+  {
+   "id": "asm frame: FASTCALL byte",
+   "decl": [
+    "FUNCTION FASTCALL fv2884(a AS UByte) AS UByte",
+    "ASM",
+    "add a,a",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2884(21)"
+  },
+  {
+   "id": "asm frame: FASTCALL word",
+   "decl": [
+    "FUNCTION FASTCALL fv2885(a AS UInteger) AS UInteger",
+    "ASM",
+    "add hl,hl",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2885(1234)"
+  },
+  {
+   "id": "asm frame: FASTCALL Long",
+   "decl": [
+    "FUNCTION FASTCALL fv2886(a AS ULong) AS ULong",
+    "ASM",
+    "inc hl",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2886(70000)"
+  },
+  {
+   "id": "asm frame: a local through IX",
+   "decl": [
+    "FUNCTION fv2887(a AS UByte) AS UByte",
+    "DIM t AS UByte = 9",
+    "ASM",
+    "ld a,(ix-1)",
+    "add a,(ix+5)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2887(5)"
+  },
+  {
+   "id": "asm frame: a byte local at IX-2",
+   "decl": [
+    "FUNCTION fv2888(a AS UByte) AS UByte",
+    "DIM t AS UByte = 9",
+    "ASM",
+    "ld a,(ix-2)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2888(5)"
+  },
+  {
+   "id": "asm frame: a byte local at IX-3",
+   "decl": [
+    "FUNCTION fv2889(a AS UByte) AS UByte",
+    "DIM t AS UByte = 9",
+    "ASM",
+    "ld a,(ix-3)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2889(5)"
+  },
+  {
+   "id": "asm frame: a word local at IX-2",
+   "decl": [
+    "FUNCTION fv2890() AS UInteger",
+    "DIM t AS UInteger = 1234",
+    "ASM",
+    "ld l,(ix-2)",
+    "ld h,(ix-1)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2890()"
+  },
+  {
+   "id": "asm frame: a word local at IX-4",
+   "decl": [
+    "FUNCTION fv2891() AS UInteger",
+    "DIM t AS UInteger = 1234",
+    "ASM",
+    "ld l,(ix-4)",
+    "ld h,(ix-3)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2891()"
+  },
+  {
+   "id": "asm frame: two byte locals",
+   "decl": [
+    "FUNCTION fv2892() AS UInteger",
+    "DIM t AS UByte = 7",
+    "DIM u AS UByte = 3",
+    "ASM",
+    "ld l,(ix-1)",
+    "ld h,(ix-2)",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2892()"
+  },
+  {
+   "id": "asm frame: FUNCTION Float result",
+   "decl": [
+    "FUNCTION fv2893() AS Float",
+    "ASM",
+    "ld a,$82",
+    "ld e,$20",
+    "ld d,0",
+    "ld c,0",
+    "ld b,0",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2893()"
+  },
+  {
+   "id": "asm frame: FASTCALL byte in A, two statements",
+   "decl": [
+    "FUNCTION FASTCALL fv2894(a AS UByte) AS UByte",
+    "ASM",
+    "ld b,a",
+    "END ASM",
+    "ASM",
+    "ld a,b",
+    "inc a",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2894(8)"
+  },
+  {
+   "id": "asm frame: FASTCALL popping a byte parameter",
+   "decl": [
+    "FUNCTION FASTCALL fv2895(a AS UByte, b AS UByte) AS UByte",
+    "ASM",
+    "pop hl",
+    "ld e,a",
+    "pop af",
+    "add a,e",
+    "push hl",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2895(30, 12)"
+  },
+  {
+   "id": "asm frame: FASTCALL popping a word parameter",
+   "decl": [
+    "FUNCTION FASTCALL fv2896(a AS UInteger, b AS UInteger) AS UInteger",
+    "ASM",
+    "pop bc",
+    "pop de",
+    "add hl,de",
+    "push bc",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2896(1000, 234)"
+  },
+  {
+   "id": "asm frame: FASTCALL ret inside the asm",
+   "decl": [
+    "FUNCTION FASTCALL fv2897(a AS UByte) AS UByte",
+    "ASM",
+    "or a",
+    "jr z,zerov2897",
+    "ld a,5",
+    "ret",
+    "zerov2897:",
+    "ld a,7",
+    "END ASM",
+    "END FUNCTION"
+   ],
+   "expr": "fv2897(0) * 10 + fv2897(1)"
+  },
+  {
+   "id": "asm frame: FASTCALL SUB with a parameter popped",
+   "decl": [
+    "DIM r3v2898 AS UInteger",
+    "SUB FASTCALL sv2898(a AS UByte, b AS UInteger)",
+    "ASM",
+    "pop hl",
+    "pop de",
+    "ld (_r3v2898),de",
+    "push hl",
+    "END ASM",
+    "END SUB",
+    "FUNCTION tv2898() AS UInteger",
+    "sv2898(1, 4321)",
+    "RETURN r3v2898",
+    "END FUNCTION"
+   ],
+   "expr": "tv2898()"
+  },
+  {
+   "id": "asm frame: a result by RETURN after asm",
+   "decl": [
+    "FUNCTION fv2899(a AS UByte) AS UByte",
+    "ASM",
+    "ld a,77",
+    "END ASM",
+    "RETURN a + 1",
+    "END FUNCTION"
+   ],
+   "expr": "fv2899(4)"
+  }
+ ]
+}

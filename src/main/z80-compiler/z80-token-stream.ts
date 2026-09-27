@@ -198,6 +198,11 @@ export const Z80Tokens = {
 export type Z80TokenType = (typeof Z80Tokens)[keyof typeof Z80Tokens];
 
 // A hash of keyword-like tokens starting with a dot
+/** Whether Klive's Z80 assembler reads a word as a keyword (an instruction, register, pragma...). */
+export function isZ80Keyword(word: string): boolean {
+  return Object.prototype.hasOwnProperty.call(resolverHash, word) || Object.prototype.hasOwnProperty.call(resolverHash, word.toLowerCase());
+}
+
 const resolverHash: Record<string, Z80TokenType> = {
   ...commonResolverHash,
   a: Z80Tokens.A,

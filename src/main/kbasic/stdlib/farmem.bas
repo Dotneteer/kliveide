@@ -14,6 +14,8 @@
 #pragma once
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
+#pragma push(asm_dialect)
+#pragma asm_dialect = klive
 #include <__kbase.bas>
 
 ' Maps a logical bank into the window, keeping what it held for __kbFarRelease.
@@ -120,4 +122,5 @@ FUNCTION FASTCALL FarStr(BYVAL fp AS ULong) AS String
     RETURN __kbFarStr(fp)
 END FUNCTION
 
+#pragma pop(asm_dialect)
 #pragma pop(case_insensitive)

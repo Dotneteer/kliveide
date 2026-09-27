@@ -142,7 +142,12 @@ export type BoundStatement = StatementBase &
           | { kind: "data"; target?: BoundExpr };
       }
     | { kind: "routine"; routine: RoutineSymbol; body: BoundStatement[]; end: Span }
-    | { kind: "asm"; lines: { text: string; span: Span }[] }
+    | {
+        kind: "asm";
+        lines: { text: string; span: Span }[];
+        /** zxbasm's dialect: a FUNCTION whose body ends here returns what the registers hold (plan C5). */
+        zxbasm?: boolean;
+      }
     | { kind: "codebank"; bank: number; body: BoundStatement[] }
   );
 

@@ -62,6 +62,14 @@ describe("Klive BASIC preprocessor", () => {
     expect(run("#define LONG 1 + \\\n  2 + _\n  3\nPRINT LONG").out).toBe("PRINT 1 + 2 + 3");
   });
 
+  it("ends a continued #define at the first line without a continuation, even after a blank one", () => {
+    expect(run("#define M \\\n  1 \\\n\nPRINT M").out).toBe("PRINT 1");
+  });
+
+  it("starts an ASM block after ASM followed by a ';' comment", () => {
+    expect(run("ASM ; set up\n  nop\nEND ASM").out).toBe("ASM\n  nop\nEND ASM");
+  });
+
   it("undefines", () => {
     expect(run("#define A 1\n#undef A\nPRINT A").out).toBe("PRINT A");
   });
@@ -169,6 +177,11 @@ describe("Klive BASIC preprocessor", () => {
 
   it("keeps ASM lines and handles directives inside ASM blocks", () => {
     expect(run("ASM\n#ifdef NOPE\n  halt\n#endif\n  nop\nEND ASM").out).toBe("ASM\n  nop\nEND ASM");
+  });
+
+  it("expands macros in ASM lines as text, outside strings and comments (compatibility plan C5)", () => {
+    const r = run('#define ESXDOS rst 8\n#define getreg(R) db $3e,R\nASM\n  ESXDOS : getreg($52)\n  db "ESXDOS" ; ESXDOS\n  ld a,ESXDOSX\nEND ASM');
+    expect(r.out).toBe('ASM\n  rst 8 : db $3e,$52\n  db "ESXDOS" ; ESXDOS\n  ld a,ESXDOSX\nEND ASM');
   });
 
   it("accepts macro names that are BASIC keywords, matching their exact spelling", () => {

@@ -474,6 +474,54 @@ function generate() {
     items: NOPAREN.map((expr) => ({ id: expr, decl: [], expr }))
   };
 
+  // --- Inline asm in zxbasm's dialect (C5): each item computes HL in an ASM block and stores it in a
+  // --- BASIC variable; `@` becomes the item's own suffix
+  const ASM = [
+    ["number $hex", ["ld hl,$1234"]], ["number h suffix", ["ld hl,1234h"]], ["number 0x", ["ld hl,0x1234"]], ["number %bin", ["ld hl,%1010"]],
+    ["number b suffix", ["ld hl,1010b"]], ["char literal", ["ld hl,'A'"]], ["expression precedence", ["ld hl,2+3*4"]], ["expression parens", ["ld hl,(2+3)*4"]],
+    ["division", ["ld hl,100/7"]], ["shift", ["ld hl,1 << 4"]], ["and or", ["ld hl,($F0 & $3C) | 1"]], ["negative", ["ld hl,-5"]],
+    ["DEFW and a label", ["ld hl,(data@)", "jr skip@", "data@: DEFW 1234", "skip@:"]], ["DW", ["ld hl,(data@)", "jr skip@", "data@: DW 4321", "skip@:"]],
+    ["DEFB doubled quote", ["ld a,(str@+1)", "ld l,a", "ld h,0", "jr skip@", 'str@: DEFB "a""b"', "skip@:"]], ["DB string and number", ["ld a,(str@+2)", "ld l,a", "ld h,0", "jr skip@", 'str@: DB "ab",7', "skip@:"]],
+    ["DEFS size", ["ld hl,end@-start@", "jr skip@", "start@: DEFS 5", "end@:", "skip@:"]], ["DS with fill", ["ld a,(start@+2)", "ld l,a", "ld h,0", "jr skip@", "start@: DS 3,9", "skip@:"]],
+    ["several instructions on a line", ["ld hl,1 : inc hl : inc hl"]], ["label then instructions", ["jr go@", "go@: ld hl,5 : inc hl"]],
+    ["EQU", ["val@ EQU 42", "ld hl,val@"]], ["EQU with colon", ["val@: EQU 40+3", "ld hl,val@"]], ["mixed case", ["Ld Hl,7 : INC hl"]],
+    ["PROC LOCAL", ["PROC", "LOCAL lp", "ld b,3 : ld hl,0", "lp: inc hl : djnz lp", "ENDP"]],
+    ["two PROCs with one LOCAL name", ["PROC", "LOCAL lp", "ld b,2 : ld hl,0", "lp: inc hl : djnz lp", "ENDP", "PROC", "LOCAL lp", "ld b,3", "lp: inc hl : djnz lp", "ENDP"]],
+    ["a label in a PROC not LOCAL", ["jr in@", "PROC", "in@: ld hl,11", "ENDP"]],
+    ["temporary labels", ["ld hl,0 : ld b,3", "1: inc hl", "djnz 1b", "jr 1f", "ld hl,99", "1:"]],
+    ["dotted label", ["ld hl,1", "jr .sk@", "ld hl,2", ".sk@:", "inc hl"]],
+    ["current address", ["ld hl,$-$"]], ["jr $+3", ["ld hl,5", "jr $+3", "inc hl", "inc hl"]],
+    ["a global by _name", ["ld hl,(_g@)", "inc hl"]], ["comment after code", ["ld hl,8 ; a comment : ld hl,9"]],
+    ["ALIGN", ["jr skip@", "ALIGN 4", "data@: DB 1", "skip@:", "ld hl,data@ & 3"]]
+  ].map(([id, body]) => ({ id: `asm: ${id}`, decl: ["DIM r@ AS UInteger", "DIM g@ AS UInteger = 500", "ASM", ...body, "ld (_r@),hl", "END ASM"], expr: "r@" }));
+  const FRAMES = [
+    ["STDCALL byte and word parameters", "FUNCTION f@(a AS UByte, b AS UInteger) AS UInteger\nASM\nld l,(ix+5)\nld h,0\nld e,(ix+6)\nld d,(ix+7)\nadd hl,de\nEND ASM\nEND FUNCTION", "f@(3, 1000)"],
+    ["STDCALL three parameters", "FUNCTION f@(a AS UInteger, b AS UInteger, c AS UByte) AS UInteger\nASM\nld l,(ix+4)\nld h,(ix+5)\nld e,(ix+6)\nld d,(ix+7)\nor a\nsbc hl,de\nld e,(ix+9)\nld d,0\nadd hl,de\nEND ASM\nEND FUNCTION", "f@(1000, 30, 4)"],
+    ["FASTCALL byte", "FUNCTION FASTCALL f@(a AS UByte) AS UByte\nASM\nadd a,a\nEND ASM\nEND FUNCTION", "f@(21)"],
+    ["FASTCALL word", "FUNCTION FASTCALL f@(a AS UInteger) AS UInteger\nASM\nadd hl,hl\nEND ASM\nEND FUNCTION", "f@(1234)"],
+    ["FASTCALL Long", "FUNCTION FASTCALL f@(a AS ULong) AS ULong\nASM\ninc hl\nEND ASM\nEND FUNCTION", "f@(70000)"],
+    ["a local through IX", "FUNCTION f@(a AS UByte) AS UByte\nDIM t AS UByte = 9\nASM\nld a,(ix-1)\nadd a,(ix+5)\nEND ASM\nEND FUNCTION", "f@(5)"],
+    ["a byte local at IX-2", "FUNCTION f@(a AS UByte) AS UByte\nDIM t AS UByte = 9\nASM\nld a,(ix-2)\nEND ASM\nEND FUNCTION", "f@(5)"],
+    ["a byte local at IX-3", "FUNCTION f@(a AS UByte) AS UByte\nDIM t AS UByte = 9\nASM\nld a,(ix-3)\nEND ASM\nEND FUNCTION", "f@(5)"],
+    ["a word local at IX-2", "FUNCTION f@() AS UInteger\nDIM t AS UInteger = 1234\nASM\nld l,(ix-2)\nld h,(ix-1)\nEND ASM\nEND FUNCTION", "f@()"],
+    ["a word local at IX-4", "FUNCTION f@() AS UInteger\nDIM t AS UInteger = 1234\nASM\nld l,(ix-4)\nld h,(ix-3)\nEND ASM\nEND FUNCTION", "f@()"],
+    ["two byte locals", "FUNCTION f@() AS UInteger\nDIM t AS UByte = 7\nDIM u AS UByte = 3\nASM\nld l,(ix-1)\nld h,(ix-2)\nEND ASM\nEND FUNCTION", "f@()"],
+    ["FUNCTION Float result", "FUNCTION f@() AS Float\nASM\nld a,$82\nld e,$20\nld d,0\nld c,0\nld b,0\nEND ASM\nEND FUNCTION", "f@()"],
+    ["FASTCALL byte in A, two statements", "FUNCTION FASTCALL f@(a AS UByte) AS UByte\nASM\nld b,a\nEND ASM\nASM\nld a,b\ninc a\nEND ASM\nEND FUNCTION", "f@(8)"],
+    ["FASTCALL popping a byte parameter", "FUNCTION FASTCALL f@(a AS UByte, b AS UByte) AS UByte\nASM\npop hl\nld e,a\npop af\nadd a,e\npush hl\nEND ASM\nEND FUNCTION", "f@(30, 12)"],
+    ["FASTCALL popping a word parameter", "FUNCTION FASTCALL f@(a AS UInteger, b AS UInteger) AS UInteger\nASM\npop bc\npop de\nadd hl,de\npush bc\nEND ASM\nEND FUNCTION", "f@(1000, 234)"],
+    ["FASTCALL ret inside the asm", "FUNCTION FASTCALL f@(a AS UByte) AS UByte\nASM\nor a\njr z,zero@\nld a,5\nret\nzero@:\nld a,7\nEND ASM\nEND FUNCTION", "f@(0) * 10 + f@(1)"],
+    ["FASTCALL SUB with a parameter popped", "DIM r3@ AS UInteger\nSUB FASTCALL s@(a AS UByte, b AS UInteger)\nASM\npop hl\npop de\nld (_r3@),de\npush hl\nEND ASM\nEND SUB\nFUNCTION t@() AS UInteger\ns@(1, 4321)\nRETURN r3@\nEND FUNCTION", "t@()"],
+    ["a result by RETURN after asm", "FUNCTION f@(a AS UByte) AS UByte\nASM\nld a,77\nEND ASM\nRETURN a + 1\nEND FUNCTION", "f@(4)"]
+  ].map(([id, fn, call]) => ({ id: `asm frame: ${id}`, decl: fn.split("\n"), expr: call }));
+  suites.asm = {
+    perProgram: 1,
+    items: [...ASM, ...FRAMES].map((item) => {
+      const suffix = name();
+      return { ...item, decl: item.decl.map((d) => d.replace(/@/g, suffix)), expr: item.expr.replace(/@/g, suffix) };
+    })
+  };
+
   // --- Acceptance (C4): whole programs that are only compiled - the spec's accepting and rejecting
   // --- cases for every EBNF form (test/kbasic/syntax/spec-cases.ts), and known edges
   const specCases = loadSpecCases();

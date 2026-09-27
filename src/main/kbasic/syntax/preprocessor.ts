@@ -269,7 +269,8 @@ class Preprocessor {
       i = 2;
       while (i < tokens.length && tokens[i].text !== ")") {
         const p = tokens[i];
-        if (p.kind !== "identifier") {
+        // --- A keyword may name a parameter too (#define NextReg(REG, VAL)), as zxbc allows (C5)
+        if (p.kind !== "identifier" && p.kind !== "keyword") {
           this.error("E210", "A macro parameter must be a name", p.span);
           return;
         }
@@ -406,6 +407,12 @@ class Preprocessor {
     let i = 0;
     while (i < tokens.length) {
       const t = tokens[i];
+      if (t.kind === "asm") {
+        const text = this.expandAsm(t.text, new Set());
+        result.push(text === t.text ? t : { ...t, text });
+        i++;
+        continue;
+      }
       const macro = (t.kind === "identifier" && !t.sigil) || t.kind === "keyword" ? this.macros.get(t.text) : undefined;
       if (!macro || t.expansion?.some((e) => e.macro === macro.name)) {
         result.push(t);
@@ -451,6 +458,69 @@ class Preprocessor {
       i = call.end + 1;
     }
     return result;
+  }
+
+  /**
+   * Macros in an ASM line (compatibility plan C5): zxbc expands them there as text, which is how
+   * libraries such as NextLib name instruction sequences (`#define ESXDOS rst 8`). Names match
+   * exactly, outside strings and the `;` comment; a macro is not expanded inside its own expansion.
+   */
+  private expandAsm(text: string, active: Set<string>): string {
+    let out = "";
+    let i = 0;
+    while (i < text.length) {
+      const c = text[i];
+      if (c === ";") return out + text.slice(i);
+      if (c === '"') {
+        const close = text.indexOf('"', i + 1);
+        const end = close < 0 ? text.length : close + 1;
+        out += text.slice(i, end);
+        i = end;
+        continue;
+      }
+      const word = /^[A-Za-z_]\w*/.exec(text.slice(i));
+      if (!word || (i > 0 && /[\w.$]/.test(text[i - 1]))) {
+        out += c;
+        i++;
+        continue;
+      }
+      const name = word[0];
+      const macro = this.macros.get(name);
+      i += name.length;
+      if (!macro || macro.builtin || active.has(name)) {
+        out += name;
+        continue;
+      }
+      let body = macro.text;
+      if (macro.params) {
+        const call = /^\s*\(/.exec(text.slice(i));
+        if (!call) {
+          out += name;
+          continue;
+        }
+        // --- The arguments, split at top-level commas
+        const args: string[] = [""];
+        let depth = 0;
+        let k = i + call[0].length;
+        for (; k < text.length; k++) {
+          const ch = text[k];
+          if (ch === "(") depth++;
+          else if (ch === ")") {
+            if (depth === 0) break;
+            depth--;
+          } else if (ch === "," && depth === 0) {
+            args.push("");
+            continue;
+          }
+          args[args.length - 1] += ch;
+        }
+        i = k + 1;
+        const values = args.map((a) => a.trim());
+        body = body.replace(/[A-Za-z_]\w*/g, (w) => (macro.params!.includes(w) ? (values[macro.params!.indexOf(w)] ?? "") : w));
+      }
+      out += this.expandAsm(body, new Set([...active, name]));
+    }
+    return out;
   }
 
   /** The body of a macro with its parameters replaced, # and ## applied, tagged with the expansion. */

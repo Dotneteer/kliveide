@@ -130,12 +130,18 @@ routines and libraries that call BASIC SUBs/FUNCTIONs (or are called by them) wo
   `.core.__START_PROGRAM`, `.core.__MAIN_PROGRAM__`, `.core.__END_PROGRAM`, `.core.__CALL_BACK__`,
   `.core.ZXBASIC_USER_DATA`, `…_END`, `…_LEN`, `.core.ZXBASIC_MEM_HEAP`, `.core.ZXBASIC_HEAP_SIZE`.
 
-**Klive BASIC:** inline asm is Klive dialect (plan D4), so Klive defines its own names (plan §8.4:
-`_name` for globals and routines, `_label.x`, `_name.leave`, runtime in module `core`). Keeping
-`_name` for globals and routines preserves the most common inline-asm idiom. For D10
-(zxbasm-dialect libraries), the converter maps upstream names to Klive's, and the runtime exports
-**aliases** for the upstream entry points such libraries actually call (decided per library when
-it is supported).
+**Klive BASIC:** inline asm is in zxbasm's dialect by default (compatibility plan D-C4);
+`src/main/kbasic/asm/zxbasm.ts` converts it to Klive's assembler dialect, and
+`'@asm-dialect klive` or `#pragma asm_dialect = klive` (push/pop) keeps Klive's own, which the
+standard library declares. Klive's names (plan §8.4): `_name` for globals and routines, `_label.x`,
+`_name.leave`, the runtime in module `core`. The converter maps `.LABEL._x` to `_label.x`, `._name`
+to `_name` and `.core.X` through its alias table (`RUNTIME_ALIASES`), which holds only the entry
+points a supported library calls: NextLib 8 calls none, so the table is empty. Observed with zxbc
+(the `asm` compatibility suite): a variable no BASIC code uses is removed even when asm names it
+(Klive keeps it: annex `asm-unused-variable`); `#define` macros expand inside ASM lines as text;
+registers carry from one ASM block to the next; a FASTCALL body that starts with ASM finds the
+parameter in A / HL / DE:HL, and a FUNCTION that ends with ASM returns A / HL / DE:HL, or A,E,D,C,B
+for a Float (annex `inline-asm-registers`).
 
 ## 5. Program layout and start-up
 
@@ -250,7 +256,11 @@ initialiser registration collected into the prologue, conditional assembly on co
 `EQU`, `DEFB/DEFW/DEFS/DEFM` (strings with doubled quotes), `ALIGN`, and `(ix+n)` operands.
 
 **Klive BASIC:** irrelevant for its own runtime (written in Klive's dialect with `.module`,
-`.proc`, `#if`). Relevant only to the zxbasm-dialect converter for user libraries (plan D10).
+`.proc`, `#if`). The zxbasm converter handles them for user asm (annex `inline-asm-dialect`): zxbc
+assembles all ASM blocks as one file, so a PROC and its LOCAL names may span blocks, and LOCAL
+covers its whole PROC; labels are case-sensitive, mnemonics and registers are not; `NNNb`/`NNNf`
+always name temporary labels; parentheses around a whole operand address memory and group
+elsewhere (Klive groups with `[ ]`); `name: EQU` is an error.
 
 ## 11. Debug-relevant upstream behaviour
 

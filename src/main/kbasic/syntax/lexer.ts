@@ -204,7 +204,11 @@ class Lexer {
     const name = this.text.slice(nameStart, p).toLowerCase();
     let end = this.restOfLine(start);
     if (name === "define") {
-      while (end < this.end && /[\\_]\s*$/.test(this.text.slice(start, end).replace(/\s*'.*$/, ""))) {
+      // --- Only the last physical line decides: a blank line after a `\` ends the body (it used to
+      // --- match the `\` of the line before, and a macro swallowed the rest of the file)
+      let lineStart = start;
+      while (end < this.end && /[\\_][ \t\r]*$/.test(this.text.slice(lineStart, end).replace(/\s*'.*$/, ""))) {
+        lineStart = end + 1;
         end = this.restOfLine(end + 1);
       }
     }
@@ -321,7 +325,14 @@ class Lexer {
       if (sigil) this.error("E106", `'${name}' is a reserved word and cannot take a '${sigil}'`, start, end);
       const previous = this.lastOnLine;
       this.emit("keyword", start, end, { keyword });
-      if (keyword === "ASM" && previous?.keyword !== "END" && this.onlyCommentFollows(end)) this.asmPending = true;
+      if (keyword === "ASM" && previous?.keyword !== "END") {
+        if (this.onlyCommentFollows(end)) this.asmPending = true;
+        else if (this.text.slice(end, this.restOfLine(end)).trim().startsWith(";")) {
+          // --- `ASM ; comment`: an assembler comment may follow ASM on its line, as zxbc allows (C5)
+          this.asmPending = true;
+          this.pos = this.restOfLine(end);
+        }
+      }
       return;
     }
     this.emit("identifier", start, end, { name, ...(sigil ? { sigil } : {}) });

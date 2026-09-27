@@ -93,6 +93,8 @@ class Lowering {
   private localArrays = new Map<ArraySymbol, ArrayTables & { image?: string }>();
   private routine: RoutineSymbol | undefined;
   private resultSlot: Slot | undefined;
+  /** A FASTCALL routine's first statement when it is zxbasm-dialect asm: it gets the parameter's registers. */
+  private fastcallAsm: BoundStatement | undefined;
   /** The call sites of the current statement, to fill in `moreCallsFollow` when it ends. */
   private statementCalls: CallSite[] = [];
   /** String vregs that are owned (must be consumed once); every other String value is borrowed. */
@@ -522,6 +524,7 @@ class Lowering {
       case "asm":
         this.beginStatement(s.span, "asm");
         this.module.statements[this.sid].asmLines = s.lines.map((l) => l.span);
+        if (s === this.fastcallAsm) this.reloadFastcallParam();
         // --- A runtime label the block names links its module (the library's asm uses core.PrintCol...)
         for (const line of s.lines)
           for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME_EXPORTS.has(m[1])) this.rt(m[1]);
@@ -1190,6 +1193,40 @@ class Lowering {
     return this.load("u32", { kind: "global", name: label });
   }
 
+  /**
+   * zxbc's idiom for a FUNCTION written in asm (plan C5): when the body ends with a zxbasm-dialect
+   * ASM block and control falls off the end, the result is what the registers hold - A for 8 bits,
+   * HL for 16, DE:HL for 32 (and Fixed), A,E,D,C,B for a Float (runtime-abi.md).
+   */
+  /**
+   * zxbc's FASTCALL contract (plan C5): an asm body that starts the routine finds the parameter in
+   * A, HL or DE:HL. The prologue has saved it in the frame and may have used the registers since.
+   */
+  private reloadFastcallParam(): void {
+    const type = this.fn.registerParam;
+    if (!type) return;
+    const size = mtypeSize(type);
+    const lines =
+      size === 1
+        ? ["ld a,(ix-1)"]
+        : size === 2
+          ? ["ld l,(ix-2)", "ld h,(ix-1)"]
+          : size === 4
+            ? ["ld l,(ix-4)", "ld h,(ix-3)", "ld e,(ix-2)", "ld d,(ix-1)"]
+            : [];
+    if (lines.length) this.emit({ op: "asm", lines, sid: this.sid });
+  }
+
+  private registersResult(last: BoundStatement | undefined, returnType: MType | undefined): void {
+    if (last?.kind !== "asm" || !last.zxbasm || !returnType || this.block.term || this.resultSlot?.kind !== "frame") return;
+    const base = this.resultSlot.offset;
+    const at = (k: number) => `(ix${base + k < 0 ? base + k : `+${base + k}`})`;
+    const regs: Partial<Record<MType, string[]>> = { u8: ["a"], i8: ["a"], bool: ["a"], u16: ["l", "h"], i16: ["l", "h"], u32: ["l", "h", "e", "d"], i32: ["l", "h", "e", "d"], fix: ["l", "h", "e", "d"], flt: ["a", "e", "d", "c", "b"] };
+    const order = regs[returnType];
+    if (!order) return;
+    this.emit({ op: "asm", lines: order.map((r, k) => `ld ${at(k)},${r}`), sid: this.sid });
+  }
+
   private lowerRoutine(s: Extract<BoundStatement, { kind: "routine" }>): void {
     const r = s.routine;
     const fastcall = r.convention === "FASTCALL";
@@ -1271,6 +1308,14 @@ class Lowering {
     }
     this.resultSlot = returnType ? this.allocateLocal(returnType) : undefined;
     if (returnType && !this.supportedType(returnType)) this.unsupported(`${r.returnType} FUNCTION results`, r.span);
+    if (fastcall && s.body.length && s.body.some((b) => b.kind === "asm") && s.body.every((b) => (b.kind === "asm" && b.zxbasm) || b.kind === "label") && !this.fn.locals.length && !this.localArrays.size) {
+      this.fn.naked = true;
+      this.fn.frameSize = 0;
+      this.fn.argBytes = 0;
+      delete this.fn.registerParam;
+      this.frameSlots = new Map();
+      this.resultSlot = undefined;
+    }
     // --- For the debugger: where each parameter and local lives
     const params = new Set(r.params.map((p) => p.symbol));
     this.fn.vars = [...this.frameSlots].flatMap(([symbol, { slot, byref }]) =>
@@ -1280,7 +1325,11 @@ class Lowering {
     this.startBlock(this.fn.label);
     this.block.instrs.push({ op: "prologue.end", sid: -1 });
     this.setUpLocalArrays();
+    const first = s.body[0];
+    this.fastcallAsm = fastcall && first?.kind === "asm" && first.zxbasm ? first : undefined;
     this.statements(s.body);
+    this.fastcallAsm = undefined;
+    this.registersResult(s.body[s.body.length - 1], returnType);
     this.continueAt(this.fn.epilogue!);
     this.beginStatement(s.end, "return");
     this.emit({ op: "epilogue.begin", sid: this.sid });

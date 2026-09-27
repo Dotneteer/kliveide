@@ -78,7 +78,7 @@ export function defaultOptions(target: Target = "zx48k"): KBasicOptions {
     emitIr: false,
     emitMap: false,
     debugInfo: "full",
-    asmDialect: "klive",
+    asmDialect: "zxbasm",
     codebankWindow: 0x6000,
     codebankWindowSize: "8k",
     codebankFirstPage: 30,

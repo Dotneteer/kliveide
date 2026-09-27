@@ -164,6 +164,13 @@ export type MFunction = {
   argBytes: number;
   /** FASTCALL: the first parameter arrives in A / HL and is pushed as the frame's first slot. */
   registerParam?: MType;
+  /**
+   * zxbc's frameless FASTCALL (compatibility plan C5): a FASTCALL routine whose body is only
+   * zxbasm-dialect asm (and labels) has no prologue, and its end is a bare `ret`. The asm finds the first
+   * parameter in A / HL / DE:HL and the return address at SP, removes the stack parameters itself and
+   * leaves the result in the registers.
+   */
+  naked?: boolean;
   returnType?: MType;
   blocks: Block[];
   /** The shared epilogue's label (`_name.leave`). */

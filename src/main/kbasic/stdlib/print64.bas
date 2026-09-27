@@ -5,6 +5,8 @@
 #include <__kbase.bas>
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
+#pragma push(asm_dialect)
+#pragma asm_dialect = klive
 
 ' The print64 cursor: row 0-23, column 0-63. It is print64's own, apart from PRINT's and print42's.
 DIM __kbP64Row AS UByte
@@ -92,4 +94,5 @@ SUB print64(BYVAL s AS String)
     NEXT i
 END SUB
 
+#pragma pop(asm_dialect)
 #pragma pop(case_insensitive)

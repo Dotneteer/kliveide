@@ -2532,6 +2532,16 @@
         "source": "oracle"
       },
       {
+        "name": "asm-unused-variable",
+        "question": "Does a variable that only inline asm names exist?",
+        "decision": "Yes. Klive keeps it: a global is reachable as _name and a local at its frame offset (the first byte local at IX-1).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 removes a variable that no BASIC code uses even when inline asm names it: '_name' of such a global is an undefined label, and a local's frame bytes hold leftover values. Klive keeps the variable (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "beep-limits",
         "question": "Which BEEP durations and pitches are allowed?",
         "decision": "The ROM limits, as ZX BASIC has them: a duration from 0 to 10 seconds (rounded down) and a pitch from -60 to 69 (rounded down); anything else stops with B Integer out of range. A duration too short for one cycle makes no sound. Constant arguments are checked when compiling, as zxbc does: a duration outside 0-10 or a pitch outside -60..127 is E433.",
@@ -2843,6 +2853,33 @@
         "source": "oracle",
         "phase": 2,
         "test": "test/kbasic/corpus/routines/implicit-global.zxbas"
+      },
+      {
+        "name": "inline-asm-dialect",
+        "question": "Which assembler dialect do ASM blocks use?",
+        "decision": "zxbasm's, by default: ':' separates instructions, ';' starts a comment, mnemonics, registers and directives ignore case while labels do not, $1F / 0x1F / 1Fh / %101 / 'A' are numbers, a number ending in b or f names a temporary label (1: ... 1b / 1f), parentheses around a whole operand are a memory reference and elsewhere group, 'name EQU value' (a colon before EQU is an error), DEFB/DB, DEFW/DW, DEFS/DS with a fill, DEFM/DM and ALIGN. PROC ... ENDP makes only the names its LOCAL lines list local, over the whole PROC even when it spans ASM blocks; every other label stays global. '.LABEL._name' is a BASIC label and '._name' a global. '@asm-dialect klive or '#pragma asm_dialect = klive' (push/pop) selects Klive's own assembler dialect; the standard library declares it.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "inline-asm-macros",
+        "question": "Are #define macros expanded inside ASM blocks?",
+        "decision": "Yes, as text: a macro name (exact case) outside strings and the ';' comment is replaced by its body, with a function-like macro's arguments substituted. Libraries name instruction sequences this way (#define ESXDOS rst 8).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/syntax/preprocessor.test.ts"
+      },
+      {
+        "name": "inline-asm-registers",
+        "question": "How does asm in a FUNCTION see a FASTCALL parameter and give the result?",
+        "decision": "A FASTCALL routine whose body starts with an ASM block finds its parameter in A (8 bits), HL (16) or DE:HL (32 bits and Fixed). A FUNCTION whose body ends with an ASM block and falls off its end returns what the registers hold: A, HL, DE:HL, or A,E,D,C,B for a Float. Registers carry from one ASM block to the next. STDCALL parameters are on the frame: the first at IX+4 (a byte in IX+5), each taking whole words.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "integer-division-by-zero",

@@ -10,11 +10,12 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 **Status:** stage C0 done (2026-09-27): the DO…LOOP acceptance fixes. The §5 decisions are taken
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
 helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated items over numbers, Strings
-and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3 in
+and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3
 done** (2026-09-27, §4.3): evaluation order, named arguments, FOR, the runtime error model, the print
 position on return, colours, POINT, USR of a String; PRINT's layout and the graphics agreed as they
 were. **C4 done** (2026-09-27, §4.4): acceptance agrees with zxbc on 506 programs apart from recorded
-faults. Next: C5.
+faults. **C5 done** (2026-09-27, §4.5): zxbasm is the default inline-asm dialect, zxbc's FASTCALL
+and register contracts hold, and NextLib compiles and runs as zxbc builds it. Next: C6.
 
 ---
 
@@ -245,6 +246,37 @@ program that pins them. Target: every generated program agrees.
 - **Left:** SAVE/LOAD DATA without a name (whole-memory tape blocks, E501) stays in `baseline.json`
   for C8. Faults: 29 acceptance items (crashes, silent repairs, CODEBANK as NextBuild's, a degenerate
   #ifdef program, a Float constant past the range).
+
+### 4.5 C5 state (2026-09-27)
+
+- **zxbasm is the default dialect.** `src/main/kbasic/asm/zxbasm.ts` converts every zxbasm-dialect
+  block of a program together, after binding (zxbc assembles the blocks as one file): `:` statements,
+  `;` comments, case (keywords fold, labels keep theirs), numbers and characters, `NNNb`/`NNNf`
+  temporary labels, PROC/LOCAL/ENDP by renaming (LOCAL covers its whole PROC, across blocks; other
+  labels stay global), grouping parentheses to `[ ]`, the data directives, dotted names
+  (`.LABEL._x`, `._name`, `.core.X` through `RUNTIME_ALIASES` - empty: NextLib 8 calls no runtime
+  entry), and labels that are keywords of Klive's assembler (`bank`). It rejects what zxbasm rejects
+  (`name: EQU`, an undefined temporary label). `'@asm-dialect klive` / `#pragma asm_dialect = klive`
+  (push/pop) keep Klive's own; the five standard-library files with asm declare it. The corpus's asm
+  programs needed no change. Annex `inline-asm-dialect`.
+- **The preprocessor expands macros inside ASM lines**, as text (NextLib's `#define ESXDOS rst 8`,
+  `getreg(R)`); two lexer fixes on the way (an ASM followed by a `;` comment, a `#define`
+  continuation after a blank continued line) and keyword macro parameters. Annex `inline-asm-macros`.
+- **zxbc's register contracts** (annex `inline-asm-registers`): a FASTCALL routine whose body is only
+  zxbasm asm and labels, with no locals, is **frameless** (`naked` in MIR: no prologue, a bare `ret`;
+  the asm pops the return address and the stack parameters itself, and may `ret` mid-body); a FASTCALL
+  body that starts with asm otherwise finds its parameter reloaded into A / HL / DE:HL; a FUNCTION that
+  ends with zxbasm asm returns A / HL / DE:HL / A,E,D,C,B. This is a documented idiom, not the leftover
+  state D-C2 keeps Klive's results for: a FUNCTION that ends without RETURN after BASIC code still
+  returns its zeroed result.
+- **The `asm` suite** (51 items: dialect features and frame/register contracts) agrees with zxbc except
+  7 faults, all annex `asm-unused-variable`: zxbc drops a variable only asm names (the global's `_name`
+  is undefined, a local's frame bytes hold leftovers); Klive keeps it.
+- **NextLib 8** (read locally, never committed): the whole library compiles for the Next at -O2 (at
+  -O0/-O1 zxbc rejects it too: DoTile8 and DoTileBank8 both define `PlotTile8`, which only unused-SUB
+  removal hides). A demo using NextRegA, GetReg, ScrollLayer, ShowLayer2, GetMMU, checkints,
+  ClipLayer2, PlotL2 and CLS256, built by both compilers and run on the Next harness, leaves the same
+  NextRegs, memory and Layer 2 pages.
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

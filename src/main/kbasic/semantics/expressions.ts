@@ -53,6 +53,8 @@ export type BindSettings = {
   defaultByref: boolean;
   /** `#pragma codebank = n`: the bank of the declarations that follow. */
   bank: number;
+  /** `#pragma asm_dialect = zxbasm|klive`: the dialect of the ASM blocks that follow (plan D-C4). */
+  asmDialect: "klive" | "zxbasm";
 };
 
 /** A place a name refers to a banked symbol, checked once every bank is known (E452, W920). */
@@ -82,7 +84,8 @@ export class ExpressionBinder {
       explicit: options.requireDeclarations,
       strict: options.requireTypes,
       defaultByref: options.defaultByref,
-      bank: 0
+      bank: 0,
+      asmDialect: options.asmDialect
     };
   }
 
