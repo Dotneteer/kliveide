@@ -984,19 +984,19 @@ function words32(text: string): [number, number] {
 }
 
 /** A Float's registers in memory order: exponent, then the mantissa (sign in E). */
-const FLOAT_REGS = ["a", "e", "d", "c", "b"];
+export const FLOAT_REGS = ["a", "e", "d", "c", "b"];
 
 /** The six-byte stack image of a Float: [pad][A][E][D][C][B] at ascending addresses. */
-const PUSH_FLOAT = ["push bc", "push de", "push af"];
+export const PUSH_FLOAT = ["push bc", "push de", "push af"];
 
-const LOAD_FLOAT_HL = ["ld a,(hl)", "inc hl", "ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld c,(hl)", "inc hl", "ld b,(hl)"];
-const STORE_FLOAT_HL = ["ld (hl),a", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d", "inc hl", "ld (hl),c", "inc hl", "ld (hl),b"];
+export const LOAD_FLOAT_HL = ["ld a,(hl)", "inc hl", "ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld c,(hl)", "inc hl", "ld b,(hl)"];
+export const STORE_FLOAT_HL = ["ld (hl),a", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d", "inc hl", "ld (hl),c", "inc hl", "ld (hl),b"];
 
 function pushOf(cls: RegClass): string[] {
   return cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : cls === "rflt" ? PUSH_FLOAT : ["push hl"];
 }
 
 /** The ROM calculator's operations (float.kz80.asm). */
-const FLOAT_BINARY: Partial<Record<BinOp, string>> = { add: "$0f", sub: "$03", mul: "$04", div: "$05", pow: "$06" };
-const FLOAT_COMPARE: Partial<Record<BinOp, string>> = { le: "$09", ge: "$0a", ne: "$0b", gt: "$0c", lt: "$0d", eq: "$0e" };
+export const FLOAT_BINARY: Partial<Record<BinOp, string>> = { add: "$0f", sub: "$03", mul: "$04", div: "$05", pow: "$06" };
+export const FLOAT_COMPARE: Partial<Record<BinOp, string>> = { le: "$09", ge: "$0a", ne: "$0b", gt: "$0c", lt: "$0d", eq: "$0e" };
 

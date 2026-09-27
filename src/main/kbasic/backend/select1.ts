@@ -13,7 +13,7 @@ import {
   type VReg
 } from "../ir/mir";
 import { CodegenError } from "./lir";
-import { RUNTIME_ARGS } from "./select0";
+import { FLOAT_BINARY, FLOAT_COMPARE, FLOAT_REGS, LOAD_FLOAT_HL, PUSH_FLOAT, RUNTIME_ARGS, STORE_FLOAT_HL } from "./select0";
 
 /**
  * Level-1 instruction selection (`.docs/kbasic-optimiser.md` §4.1, O8): expression trees instead of a
@@ -62,7 +62,7 @@ type Sink = {
 
 type Node = { instr: Instr; dst: VReg };
 
-const SUPPORTED_TYPES = new Set<MType>(["i8", "u8", "i16", "u16", "bool", "ptr", "i32", "u32", "fix"]);
+const SUPPORTED_TYPES = new Set<MType>(["i8", "u8", "i16", "u16", "bool", "ptr", "i32", "u32", "fix", "flt"]);
 const isSupportedType = (t: MType) => SUPPORTED_TYPES.has(t);
 
 /** Selects a run, or returns false (nothing emitted) when level 0 must. */
@@ -160,7 +160,7 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
       case "rtcall": {
         if (i.dst) return undefined;
         const regs = RUNTIME_ARGS[i.name];
-        if (!regs || i.name.startsWith("inline.") || regs.length !== i.args.length || regs.some((r) => r === "stack" || r === "aedcb")) return undefined;
+        if (!regs || i.name.startsWith("inline.") || regs.length !== i.args.length || regs.includes("stack")) return undefined;
         break;
       }
       default:
@@ -417,6 +417,15 @@ class TreeGen {
   private load(dst: VReg, slot: Slot): void {
     const cls = regClassOf(dst.type);
     const fixed = fixedAddress(slot);
+    if (cls === "rflt") {
+      if (fixed !== undefined) this.emit(`ld hl,${fixed}`, ...LOAD_FLOAT_HL);
+      else if (slot.kind === "frame") this.emit(...FLOAT_REGS.map((r, k) => `ld ${r},${ixd(slot.offset + k)}`));
+      else if (slot.kind === "deref") {
+        this.gen(slot.ptr);
+        this.emit(...LOAD_FLOAT_HL);
+      } else decline();
+      return;
+    }
     if (cls === "r32") {
       if (fixed !== undefined) this.emit(`ld hl,(${fixed})`, `ld de,(${fixed}+2)`);
       else if (slot.kind === "frame") {
@@ -460,6 +469,7 @@ class TreeGen {
     const cls = regClassOf(i.type);
     const fixed = fixedAddress(i.slot);
     if (cls === "r32") return this.store32(i.slot, i.src);
+    if (cls === "rflt") return this.storeFloat(i.slot, i.src);
     if (i.slot.kind === "frame") {
       const d = i.slot.offset;
       const imm = this.constant(i.src);
@@ -520,6 +530,26 @@ class TreeGen {
     this.emit("ld (hl),e", "inc hl", "ld (hl),d");
   }
 
+  /** A Float store: A-E-D-C-B to a global, a frame slot or through a pointer (MIR order). */
+  private storeFloat(slot: Slot, src: Value): void {
+    const fixed = fixedAddress(slot);
+    if (fixed !== undefined) {
+      this.gen(src);
+      this.emit(`ld hl,${fixed}`, ...STORE_FLOAT_HL);
+      return;
+    }
+    if (slot.kind === "frame") {
+      this.gen(src);
+      this.emit(...FLOAT_REGS.map((r, k) => `ld ${ixd(slot.offset + k)},${r}`));
+      return;
+    }
+    if (slot.kind !== "deref") return decline();
+    this.gen(slot.ptr);
+    this.emit("push hl");
+    this.gen(src);
+    this.emit("pop hl", ...STORE_FLOAT_HL);
+  }
+
   /** A 32-bit (or Fixed) store: DE:HL to a global, a frame slot or through a pointer (MIR order). */
   private store32(slot: Slot, src: Value): void {
     const fixed = fixedAddress(slot);
@@ -557,7 +587,7 @@ class TreeGen {
       this.gen(i.args[k]);
       if (k > 0 || i.convention === "stdcall") {
         const cls = regClassOf(i.args[k].type);
-        this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
+        this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : cls === "rflt" ? PUSH_FLOAT : ["push hl"]));
       }
     }
     this.ctx.emitCall(`call ${i.target}`, i.site);
@@ -584,11 +614,12 @@ class TreeGen {
         else if (reg === "bc") this.emit("ld b,h", "ld c,l");
         else return decline();
       } else if (cls === "r32" && reg !== "dehl") return decline();
-      else if (cls !== "r8" && cls !== "r16" && cls !== "r32") return decline();
+      else if (cls === "rflt" && reg !== "aedcb") return decline();
     }
     i.args.forEach((a, k) => {
       if (computed.some((c) => c.k === k)) return;
       const value = this.constant(a) ?? (a.kind !== "vreg" ? immText(a) : decline());
+      if (regs[k] === "aedcb") decline();
       if (regs[k] === "dehl") {
         const [low, high] = words32(String(value));
         this.emit(`ld hl,${low}`, `ld de,${high}`);
@@ -622,6 +653,7 @@ class TreeGen {
     const cls = regClassOf(a.type);
     if (!isSupportedType(a.type)) return decline();
     if (cls === "r32") return this.binary32(op, a, b);
+    if (cls === "rflt") return this.binaryFloat(op, a, b);
     if (cls !== "r8" && cls !== "r16") return decline();
     if (COMPARISONS.has(op)) {
       const cc = this.compare(op, a, b);
@@ -792,24 +824,18 @@ class TreeGen {
       this.emit(`ld hl,${global}`, "ld h,(hl)");
       return;
     }
-    if (!this.mayReorder(a, b)) {
-      // --- In MIR order: the left saved while the right is computed
-      this.gen(a);
-      this.emit("push af");
+    // --- A leaf left operand waits: the right is computed first and kept in `reg`
+    if (this.isLeaf8(a) && !this.global8(a) && this.mayReorder(a, b)) {
       this.gen(b);
-      this.emit(`ld ${reg},a`, "pop af");
-      return;
-    }
-    // --- The right first, then the left: the right waits in `reg` if the left is a leaf
-    this.gen(b);
-    if (this.isLeaf8(a) && !this.global8(a)) {
       this.emit(`ld ${reg},a`);
       this.gen(a);
       return;
     }
-    this.emit("push af");
+    // --- Otherwise MIR order, the left saved while the right is computed (also the shorter way)
     this.gen(a);
-    this.emit(`ld l,a`, "pop af", `ld ${reg},a`, "ld a,l");
+    this.emit("push af");
+    this.gen(b);
+    this.emit(`ld ${reg},a`, "pop af");
   }
 
   private binary16(op: BinOp, dst: VReg, a: Value, b: Value): void {
@@ -886,6 +912,11 @@ class TreeGen {
   private compare(op: BinOp, a: Value, b: Value): string {
     const cls = regClassOf(a.type);
     if (cls === "r32") return this.compare32(op, a, b);
+    if (cls === "rflt") {
+      this.binaryFloat(op, a, b);
+      this.emit("or a");
+      return "nz";
+    }
     let left = a;
     let right = b;
     let cmp = op;
@@ -951,6 +982,8 @@ class TreeGen {
     const cls = regClassOf(a.type);
     this.gen(a);
     if (op === "lnot") this.emit("xor 1");
+    else if (cls === "rflt" && op === "neg") this.emit("ld l,$1b", `call ${this.ctx.rt("core.FUnary")}`);
+    else if (cls === "rflt") return decline();
     else if (cls === "r32" && op === "neg") this.emit("xor a", "sub l", "ld l,a", "ld a,0", "sbc a,h", "ld h,a", "ld a,0", "sbc a,e", "ld e,a", "ld a,0", "sbc a,d", "ld d,a");
     else if (cls === "r32") this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a", "ld a,d", "cpl", "ld d,a", "ld a,e", "cpl", "ld e,a");
     else if (cls === "r8") this.emit(op === "neg" ? "neg" : "cpl");
@@ -962,8 +995,17 @@ class TreeGen {
     const from = regClassOf(a.type);
     const to = regClassOf(dst.type);
     this.gen(a);
+    if (a.type === "fix" && dst.type === "flt") return this.emit(`call ${this.ctx.rt("core.FFromFixed")}`);
+    if (a.type === "flt" && dst.type === "fix") return this.emit(`call ${this.ctx.rt("core.FToFixed")}`);
     if ((a.type === "fix") !== (dst.type === "fix")) return this.convFixed(a.type, dst.type);
     if (from === to) return;
+    if (to === "rflt") return this.toFloat(a.type);
+    if (from === "rflt") {
+      // --- Rounded towards minus infinity, taken modulo 2^32, then narrowed (as level 0)
+      this.emit(`call ${this.ctx.rt("core.FToI32")}`);
+      if (to === "r8") this.emit("ld a,l");
+      return;
+    }
     const signed = isSignedM(a.type);
     if (from === "r8" && to === "r16") {
       if (signed) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a");
@@ -996,6 +1038,34 @@ class TreeGen {
     if (cls === "r8") return this.emit("ld a,e");
     this.emit("ex de,hl");
     if (cls === "r32") this.emit("ld a,h", "add a,a", "sbc a,a", "ld e,a", "ld d,a");
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Float (A-E-D-C-B, through the ROM calculator)
+
+  /**
+   * A Float operator as level 0 does it (the ROM calculator gives no better way): the left operand
+   * on the stack, the right in A-E-D-C-B, the operation in L. A comparison leaves its bool in A.
+   */
+  private binaryFloat(op: BinOp, a: Value, b: Value): void {
+    this.gen(a);
+    this.emit(...PUSH_FLOAT);
+    this.gen(b);
+    if (op === "mod") return this.emit(`call ${this.ctx.rt("core.FMod")}`);
+    const compare = FLOAT_COMPARE[op];
+    if (compare !== undefined) return this.emit(`ld l,${compare}`, `call ${this.ctx.rt("core.FCompare")}`);
+    const binary = FLOAT_BINARY[op];
+    if (binary === undefined) return decline();
+    this.emit(`ld l,${binary}`, `call ${this.ctx.rt("core.FBinary")}`);
+  }
+
+  /** An integer as a Float: 8- and 16-bit values in the ROM's small-integer form, built inline; 32-bit through the runtime. */
+  private toFloat(type: MType): void {
+    const cls = regClassOf(type);
+    const signed = isSignedM(type);
+    if (cls === "r32") return this.emit(`call ${this.ctx.rt(signed ? "core.FFromI32" : "core.FFromU32")}`);
+    if (cls === "r8") this.emit(...(signed ? ["ld l,a", "add a,a", "sbc a,a", "ld h,a"] : ["ld l,a", "ld h,0"]));
+    this.emit(...(signed ? ["ld a,h", "add a,a", "sbc a,a", "ld e,a"] : ["ld e,0"]), "ld d,l", "ld c,h", "xor a", "ld b,a");
   }
 
   // ----------------------------------------------------------------------------------------------

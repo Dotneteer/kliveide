@@ -285,12 +285,12 @@
    "tstates": 277503
   },
   "1": {
-   "bytes": 221,
-   "tstates": 275927
-  },
-  "2": {
    "bytes": 219,
    "tstates": 275719
+  },
+  "2": {
+   "bytes": 217,
+   "tstates": 275495
   }
  },
  "classic/fibonacci.zxbas": {
@@ -355,12 +355,12 @@
    "tstates": 159219
   },
   "1": {
-   "bytes": 225,
-   "tstates": 137452
+   "bytes": 210,
+   "tstates": 134891
   },
   "2": {
-   "bytes": 225,
-   "tstates": 137452
+   "bytes": 210,
+   "tstates": 134891
   }
  },
  "classic/reverse-string.zxbas": {
@@ -467,12 +467,12 @@
    "tstates": 22032
   },
   "1": {
-   "bytes": 392,
-   "tstates": 21209
+   "bytes": 376,
+   "tstates": 21084
   },
   "2": {
-   "bytes": 392,
-   "tstates": 21209
+   "bytes": 376,
+   "tstates": 21084
   }
  },
  "control/for-integer.zxbas": {
@@ -495,12 +495,12 @@
    "tstates": 61181
   },
   "1": {
-   "bytes": 491,
-   "tstates": 60232
+   "bytes": 474,
+   "tstates": 60093
   },
   "2": {
-   "bytes": 491,
-   "tstates": 60232
+   "bytes": 474,
+   "tstates": 60093
   }
  },
  "control/for-unsigned-down.zxbas": {
@@ -509,12 +509,12 @@
    "tstates": 62534
   },
   "1": {
-   "bytes": 372,
-   "tstates": 61886
+   "bytes": 357,
+   "tstates": 61770
   },
   "2": {
-   "bytes": 372,
-   "tstates": 61886
+   "bytes": 357,
+   "tstates": 61770
   }
  },
  "control/gosub-nested.zxbas": {
@@ -789,12 +789,12 @@
    "tstates": 35080
   },
   "1": {
-   "bytes": 286,
-   "tstates": 35080
+   "bytes": 274,
+   "tstates": 34996
   },
   "2": {
-   "bytes": 286,
-   "tstates": 35080
+   "bytes": 271,
+   "tstates": 34986
   }
  },
  "fixed/fixed-conversions.zxbas": {
@@ -873,12 +873,12 @@
    "tstates": 148570
   },
   "1": {
-   "bytes": 217,
-   "tstates": 147906
+   "bytes": 216,
+   "tstates": 142978
   },
   "2": {
-   "bytes": 217,
-   "tstates": 147906
+   "bytes": 216,
+   "tstates": 142978
   }
  },
  "float/float-routines.zxbas": {
@@ -915,12 +915,12 @@
    "tstates": 162642
   },
   "1": {
-   "bytes": 190,
-   "tstates": 162642
+   "bytes": 188,
+   "tstates": 161487
   },
   "2": {
-   "bytes": 190,
-   "tstates": 162642
+   "bytes": 188,
+   "tstates": 161487
   }
  },
  "float/int-abs-sgn.zxbas": {
@@ -949,6 +949,20 @@
   "2": {
    "bytes": 322,
    "tstates": 1456127
+  }
+ },
+ "float/level1-float-shapes.zxbas": {
+  "0": {
+   "bytes": 1235,
+   "tstates": 740082
+  },
+  "1": {
+   "bytes": 1188,
+   "tstates": 735875
+  },
+  "2": {
+   "bytes": 1177,
+   "tstates": 735875
   }
  },
  "float/ln-exp.zxbas": {
@@ -1279,12 +1293,12 @@
    "tstates": 238903
   },
   "1": {
-   "bytes": 944,
-   "tstates": 225376
+   "bytes": 942,
+   "tstates": 225295
   },
   "2": {
-   "bytes": 937,
-   "tstates": 225287
+   "bytes": 935,
+   "tstates": 225168
   }
  },
  "integers/logic.zxbas": {
@@ -1685,11 +1699,11 @@
    "tstates": 237917
   },
   "1": {
-   "bytes": 222,
+   "bytes": 219,
    "tstates": 237039
   },
   "2": {
-   "bytes": 207,
+   "bytes": 204,
    "tstates": 235714
   }
  },
@@ -1783,12 +1797,12 @@
    "tstates": 106550
   },
   "1": {
-   "bytes": 523,
-   "tstates": 78622
+   "bytes": 513,
+   "tstates": 76713
   },
   "2": {
-   "bytes": 510,
-   "tstates": 77742
+   "bytes": 500,
+   "tstates": 75805
   }
  },
  "stdlib/hex-lib.zxbas": {
@@ -1839,12 +1853,12 @@
    "tstates": 90257
   },
   "1": {
-   "bytes": 851,
-   "tstates": 61035
+   "bytes": 839,
+   "tstates": 60547
   },
   "2": {
-   "bytes": 826,
-   "tstates": 59854
+   "bytes": 814,
+   "tstates": 59435
   }
  },
  "stdlib/print64-lib.zxbas": {
@@ -1853,12 +1867,12 @@
    "tstates": 43175
   },
   "1": {
-   "bytes": 649,
-   "tstates": 31987
+   "bytes": 645,
+   "tstates": 31959
   },
   "2": {
-   "bytes": 633,
-   "tstates": 30353
+   "bytes": 629,
+   "tstates": 30337
   }
  },
  "stdlib/putchars-lib.zxbas": {
@@ -1867,11 +1881,11 @@
    "tstates": 22583
   },
   "1": {
-   "bytes": 232,
+   "bytes": 230,
    "tstates": 19400
   },
   "2": {
-   "bytes": 230,
+   "bytes": 228,
    "tstates": 19400
   }
  },
@@ -1881,12 +1895,12 @@
    "tstates": 117370
   },
   "1": {
-   "bytes": 655,
-   "tstates": 83219
+   "bytes": 645,
+   "tstates": 80842
   },
   "2": {
-   "bytes": 632,
-   "tstates": 82206
+   "bytes": 622,
+   "tstates": 79750
   }
  },
  "stdlib/string-lib.zxbas": {

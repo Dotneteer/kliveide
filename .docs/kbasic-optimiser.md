@@ -284,3 +284,28 @@ the main program's variables in memory). So:
    selectors keep working unchanged and `available.ts` removes most of the reloads. Promoted
    variables then stay current in memory, so the Variables panel stays exact at level 2 (this
    supersedes O3's "optimised" rows). A linear-scan allocator for hot values can come later.
+
+## 13. The tree selector widened (2026-09-27)
+
+Step 1 of §12 is done. The tree selector (`backend/select1.ts`) now also takes:
+
+- **FUNCTION calls in expressions** (a call is a node of the tree that uses its result). Wherever it
+  would evaluate operands out of MIR order to keep a leaf in place — commutative swaps, `gt`/`le`
+  swaps, two computed operands, stores through a pointer — it keeps MIR order when one side calls a
+  FUNCTION and the other reads memory (`mayReorder`); `gt`/`le` then swap the registers, not the
+  evaluation. Pinned by `routines/call-order-effects.zxbas`.
+- **32-bit and Fixed values** in DE:HL: add/subtract with a leaf operand in place through BC, the left
+  on the stack otherwise (as the arith32 routines take it), comparisons as flags, constant shifts,
+  unsigned div/MOD by powers of two, conversions. A signed comparison with a variable on the right
+  goes the stack way: flipping its sign bit between the two word subtractions would clear the low
+  word's borrow (the bug `long/long-loop.zxbas` caught). Pinned by `long/level1-long-shapes.zxbas`.
+- **Float** as level 0 computes it (the ROM calculator gives no better way), so runs holding Float
+  values no longer fall back whole. Pinned by `float/level1-float-shapes.zxbas`.
+- Two computed 8-bit operands are evaluated in MIR order (the left pushed): shorter than computing
+  the right first, and never out of order. Right shifts past two bits (16/32-bit) use a `djnz` loop:
+  straight-line code there costs more bytes than it saves time.
+
+Figures (151 48K programs): level 0 35,524 bytes / 41.55M T-states; level 1 31,242 bytes (−12.1%) /
+39.01M T-states (−6.1%); level 2 30,733 bytes / 38.99M T-states. Strings are the one value type still
+left to level 0 (their ownership rules live in the runtime calls). Next: step 2 of §12, 7c's MIR
+passes with write-back.

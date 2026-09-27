@@ -324,9 +324,10 @@ debuggable at source level, in the emulator tests and in the running IDE.
    flag branches, the level-1 MIR passes, the debug profile (`compileFile`'s `profile`); level 1 is
    11.9% smaller than level 0 on the corpus. Deferred to 7c with reasons: linear-scan allocation
    across a statement's trees, type narrowing. **7c-1 is done** (§12: redundant loads across
-   statements). **The order changed** (project author, 2026-09-27, §12 of the note): next the tree
-   selector is widened to FUNCTION calls, 32-bit/Fixed and Float; then 7c's MIR passes with
-   write-back to memory homes instead of a linear-scan allocator.
+   statements). **The order changed** (project author, 2026-09-27, §12 of the note): the tree
+   selector is **widened** (§13: FUNCTION calls with order-safe evaluation, 32-bit/Fixed, Float;
+   level 1 is 12.1% smaller and 6.1% faster than level 0). Next: 7c's MIR passes (promote, SCCP,
+   CSE, branch folding) with write-back to memory homes instead of a linear-scan allocator.
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
