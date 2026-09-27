@@ -438,4 +438,4 @@ function scenarios(level: number) {
   });
 }
 
-for (const level of [0, 1]) describe(`optimize ${level}`, () => scenarios(level));
+for (const level of [0, 1, 2]) describe(`optimize ${level}`, () => scenarios(level));

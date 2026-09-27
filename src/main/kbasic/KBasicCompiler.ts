@@ -93,7 +93,7 @@ export class KBasicCompiler implements IKliveCompiler {
         debugProfile
           ? " (the debug profile: debug builds use at most level 1 unless the header sets '@optimize)"
           : level !== requested
-            ? ` (level ${requested} was asked for; levels 2-3 generate level-1 code for now)`
+            ? ` (level ${requested} was asked for; level 3 generates level-2 code for now)`
             : ""
       }`
     ];

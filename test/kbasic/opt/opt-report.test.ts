@@ -17,7 +17,7 @@ import { isNextOnly, programs, readExpectations } from "../corpus/expectations";
  * `KBASIC_OPT_UPDATE=1` rewrites the baseline (`node scripts/kbasic-opt-report.cjs` does, and prints
  * the totals); lowering a figure is the normal way a baseline changes, raising one needs a reason.
  */
-const LEVELS = [0, 1];
+const LEVELS = [0, 1, 2];
 const ROOT = join(__dirname, "..", "corpus");
 const BASELINE = join(__dirname, "opt-baseline.json");
 const FRAME = 69888;

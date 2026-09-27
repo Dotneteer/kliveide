@@ -88,7 +88,7 @@ function context(lines: LirLine[], options: EngineOptions): RuleContext {
 }
 
 /** Lines no rule may touch (see the header). */
-function pinnedLines(lines: LirLine[], asmStatements: ReadonlySet<number>): boolean[] {
+export function pinnedLines(lines: LirLine[], asmStatements: ReadonlySet<number>): boolean[] {
   const hasPrologue = lines.some((l) => l.kind === "marker" && l.marker === "prologue.end");
   let inPrologue = hasPrologue;
   let inEpilogue = false;

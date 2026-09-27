@@ -2,6 +2,7 @@ import type { ListFileItem } from "@abstractions/CompilerInfo";
 import type { LirLine } from "../backend/lir";
 import type { MModule } from "../ir/mir";
 import type { EmittedProgram } from "../backend/emit";
+import { removeRedundantLoads } from "./available";
 import { runRules, type Rule } from "./engine";
 import { BRANCH_RULES } from "./rules/branches";
 import { LOAD_RULES } from "./rules/loads";
@@ -23,11 +24,16 @@ export type LirOptions = {
 export function optimizeLir(mir: MModule, functions: LirLine[][], options: LirOptions): LirLine[][] {
   if (options.level < 1) return functions;
   const asmStatements = new Set(mir.statements.filter((s) => s.asmLines?.length).map((s) => s.sid));
-  return functions.map((fn, i) =>
-    mir.functions[i].kind === "data"
-      ? fn
-      : runRules(fn, RULES, { level: options.level, target: options.target, asmStatements, ...(options.onFire ? { onFire: options.onFire } : {}) })
-  );
+  const onFire = options.onFire ? { onFire: options.onFire } : {};
+  return functions.map((fn, i) => {
+    if (mir.functions[i].kind === "data") return fn;
+    // --- Level-1 rules first: the code is still level-1 shaped (no value crosses a statement)
+    let lines = runRules(fn, RULES, { level: 1, target: options.target, asmStatements, ...onFire });
+    if (options.level < 2) return lines;
+    // --- Level 2: values may now cross statements, so the rules run again without the barriers
+    lines = removeRedundantLoads(lines, asmStatements);
+    return runRules(lines, RULES, { level: options.level, target: options.target, asmStatements, ...onFire });
+  });
 }
 
 const JP = /^(\s+)jp(\s+)((?:nz|z|nc|c)\s*,\s*)?([A-Za-z_][\w.]*)\s*$/;
