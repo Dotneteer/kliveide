@@ -45,6 +45,7 @@ export interface ActionTypes {
 
   SET_IDE_STATUS_MESSAGE: null;
   SET_CURSOR_POSITION: null;
+  SET_SOURCE_FRAME: null;
   INC_BPS_VERSION: null;
   INC_TOOL_CMD_SEQ: null;
 
@@ -95,6 +96,9 @@ export interface ActionTypes {
   REMOVE_WATCH: null;
   CLEAR_WATCH: null;
   SET_WATCHES: null;
+  ADD_BASIC_WATCH: null;
+  REMOVE_BASIC_WATCH: null;
+  SET_BASIC_WATCHES: null;
 
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;

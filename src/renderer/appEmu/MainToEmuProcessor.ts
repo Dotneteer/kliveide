@@ -777,6 +777,14 @@ class EmuMessageProcessor {
     if (stopInInterrupts !== undefined) controller.stopInInterrupts = stopInInterrupts;
   }
 
+  setSourceErrorStops(on: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.setStopOnErrors(on);
+  }
+
   getSourceStepping() {
     const controller = this.machineService.getMachineController();
     if (!controller) {

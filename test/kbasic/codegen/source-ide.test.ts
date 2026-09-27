@@ -101,6 +101,20 @@ describe("the execution point's source location (§10.4, §10.5)", () => {
     expect(locateSource(out, 0x1234, { kind: "returnPoint", pc: 0x1234, statementIndex: call.index, returnedFromGosub: true, returned: [] })?.returnedFrom).toBe("GOSUB");
   });
 
+  it("shows an error stop on the statement that raised it, with the report", async () => {
+    const out = await output();
+    const s = out.sourceLevelDebug.statements.find((x) => x.startLine === 6 && x.startColumn === 14)!;
+    const stop = {
+      kind: "error" as const,
+      pc: 0x9000,
+      statementIndex: -1,
+      userStatementIndex: s.index,
+      error: { code: 2, report: "3 Subscript wrong" },
+      returned: []
+    };
+    expect(locateSource(out, 0x9000, stop)).toMatchObject({ line: 6, startColumn: 14, kind: "error", error: "3 Subscript wrong" });
+  });
+
   it("falls back to the classic source map without a stop report", async () => {
     const out = await output();
     const s = out.sourceLevelDebug.statements.find((x) => x.startLine === 7)!;

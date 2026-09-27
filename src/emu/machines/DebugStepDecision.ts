@@ -106,6 +106,8 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
     retExecuted
   } = input;
 
+  debugSupport.statementTracker?.observe(pc);
+
   /*
    * A real breakpoint always wins.
    *
@@ -131,6 +133,16 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
      * one-shot the machine never actually stopped at.
      */
     debugSupport.consumeOneShotsAt(pc, getPartition(pc));
+    return true;
+  }
+
+  /*
+   * A runtime-error stop (plan §10.10) wins over every step, like a breakpoint: the program is about
+   * to leave for the ROM's report. Not on the instruction a run resumes from, so continuing from
+   * the stop goes on to the report.
+   */
+  if (debugSupport.errorStopAddress === pc && instructionsExecuted > 0) {
+    debugSupport.imminentBreakpoint = undefined;
     return true;
   }
 

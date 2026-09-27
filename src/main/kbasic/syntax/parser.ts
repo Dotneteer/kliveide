@@ -28,6 +28,14 @@ export function parse(input: PreprocessResult, diagnostics: DiagnosticBag): Prog
   return new Parser(input.tokens, input.comments, diagnostics).program();
 }
 
+/**
+ * Parses one expression and nothing else: a debugger watch (plan §10.8). The tokens come from
+ * `lex`; anything left after the expression is reported. Undefined when there are errors.
+ */
+export function parseExpression(tokens: Token[], diagnostics: DiagnosticBag): Expression | undefined {
+  return new Parser(tokens, [], diagnostics).standaloneExpression();
+}
+
 const ATTRS: AttrName[] = ["INK", "PAPER", "FLASH", "BRIGHT", "INVERSE", "OVER", "BOLD", "ITALIC"];
 
 /** Binary operators: binding power (higher binds tighter) and associativity, from the spec's table. */
@@ -119,6 +127,19 @@ class Parser {
       comments: this.comments,
       span: { file: first.span.file, start: 0, end: last.span.end }
     };
+  }
+
+  standaloneExpression(): Expression | undefined {
+    const errorsBefore = this.diagnostics.items.length;
+    let expression: Expression;
+    try {
+      expression = this.expression();
+      if (!this.at("newline") && !this.at("eof")) this.fail("E302", "Unexpected text after the expression");
+    } catch (e) {
+      if (!(e instanceof ParseError)) throw e;
+      return undefined;
+    }
+    return this.diagnostics.items.slice(errorsBefore).some((d) => d.severity === "error") ? undefined : expression;
   }
 
   // ==============================================================================================

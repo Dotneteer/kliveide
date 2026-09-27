@@ -378,6 +378,8 @@ export class DebugSupport implements IDebugSupport {
    */
   imminentBreakpoint?: number;
   sourceStep?: SourceStep;
+  errorStopAddress?: number;
+  statementTracker?: { observe(pc: number): void; current: number };
 
   /**
    * Erases all breakpoints

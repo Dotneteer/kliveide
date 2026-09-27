@@ -369,6 +369,11 @@ class EmuApiImpl {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
+  /** Whether debug runs stop at a compiled program's runtime-error routine (plan §10.10). */
+  async setSourceErrorStops(_on: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   /** Whether Step Into/Over/Out step source statements (true) or Z80 instructions (false). */
   async getSourceStepping(): Promise<boolean> {
     return Promise.reject(new Error(NO_PROXY_ERROR));

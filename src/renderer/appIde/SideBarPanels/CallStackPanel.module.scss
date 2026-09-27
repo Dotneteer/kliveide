@@ -69,3 +69,28 @@ span.csIndex {
 span.csCell {
   margin-inline-end: 0;
 }
+
+/*
+ * The symbolic call stack of a Klive BASIC program (`SourceCallStack`): a row is a frame the user
+ * can select, so it takes the pointer and shows the selection with the same `--surface-selected`
+ * the explorer uses. The Run to Frame button sits at the row's end and only appears on hover or on
+ * the selected row, so the frame names stay the thing the eye lands on.
+ */
+.sourceFrame {
+  cursor: pointer;
+}
+
+.selectedFrame,
+.selectedFrame:hover {
+  background-color: var(--surface-selected);
+}
+
+.frameAction {
+  margin-inline-start: auto;
+  visibility: hidden;
+}
+
+.sourceFrame:hover .frameAction,
+.selectedFrame .frameAction {
+  visibility: visible;
+}

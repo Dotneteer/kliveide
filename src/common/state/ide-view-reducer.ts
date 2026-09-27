@@ -65,6 +65,12 @@ export function ideViewReducer (
         statusSuccess: payload?.flag
       };
 
+    case "SET_SOURCE_FRAME":
+      return {
+        ...state,
+        sourceFrame: payload?.index
+      };
+
     case "SET_CURSOR_POSITION":
       return {
         ...state,

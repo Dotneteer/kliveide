@@ -14,10 +14,15 @@ export type SourceLocation = {
   endLine: number;
   startColumn?: number;
   endColumn?: number;
-  /** `returnPoint`: control came back from a call in the middle of this statement (§10.2.6). */
-  kind: "statement" | "returnPoint" | "other";
+  /**
+   * `returnPoint`: control came back from a call in the middle of this statement (§10.2.6);
+   * `error`: this statement raised a runtime error, and the machine stopped before the report.
+   */
+  kind: "statement" | "returnPoint" | "error" | "other";
   /** A return point: the routine that returned. */
   returnedFrom?: string;
+  /** An error stop: the ROM report (`3 Subscript wrong`). */
+  error?: string;
   /** Whether the location comes from source-level debug info (statement columns are exact). */
   sourceLevel: boolean;
 };
@@ -37,7 +42,9 @@ export function locateSource(
   if (!isDebuggableCompilerOutput(result)) return undefined;
   if (hasSourceLevelDebug(result) && stop) {
     const info = result.sourceLevelDebug;
-    const s = stop.statementIndex >= 0 ? info.statements[stop.statementIndex] : undefined;
+    // --- An error stop is in the runtime: it shows the user statement that raised the error
+    const statementIndex = stop.kind === "error" ? (stop.userStatementIndex ?? -1) : stop.statementIndex;
+    const s = statementIndex >= 0 ? info.statements[statementIndex] : undefined;
     if (s) {
       const filename = info.files[s.fileIndex]?.filename ?? result.sourceFileList[s.fileIndex]?.filename;
       if (filename === undefined) return undefined;
@@ -51,6 +58,7 @@ export function locateSource(
         endColumn: s.endColumn,
         kind: stop.kind,
         ...(from !== undefined ? { returnedFrom: from } : {}),
+        ...(stop.error ? { error: stop.error.report } : {}),
         sourceLevel: true
       };
     }

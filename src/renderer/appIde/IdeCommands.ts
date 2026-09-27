@@ -28,7 +28,8 @@ import {
   StepOverLineMachineCommand,
   StepIntoTargetMachineCommand,
   RunToFrameMachineCommand,
-  SourceSteppingMachineCommand
+  SourceSteppingMachineCommand,
+  ErrorStopsMachineCommand
 } from "./commands/MachineCommands";
 import { NewProjectCommand } from "./commands/NewProjectCommand";
 import {
@@ -118,6 +119,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepIntoTargetMachineCommand());
   cmdSrv.registerCommand(new RunToFrameMachineCommand());
   cmdSrv.registerCommand(new SourceSteppingMachineCommand());
+  cmdSrv.registerCommand(new ErrorStopsMachineCommand());
 
   cmdSrv.registerCommand(new NavigateToDocumentCommand());
   cmdSrv.registerCommand(new NavigateBackCommand());

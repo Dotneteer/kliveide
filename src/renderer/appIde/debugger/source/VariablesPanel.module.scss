@@ -1,0 +1,32 @@
+/*
+ * The Variables panel (plan §10.7): a tree of data rows. Values use the shared
+ * `--color-state-value` of the converted register/state panels, so a variable reads like a register
+ * does; an evaluation error in a watch uses the status error ink.
+ */
+.variablesPanel {
+  overflow: auto;
+}
+
+/* The tree's indent: one `--space-3` per level, set inline as `calc(var(--space-3) * depth)`. */
+.indent {
+  flex: 0 0 auto;
+}
+
+/* The expander column is there on every row, so names line up whether or not a row expands. */
+.expander {
+  display: inline-flex;
+  flex: 0 0 auto;
+  inline-size: var(--icon-sm);
+}
+
+.value {
+  color: var(--color-state-value);
+}
+
+.watchError {
+  color: var(--status-error);
+}
+
+.rowAction {
+  margin-inline-start: auto;
+}

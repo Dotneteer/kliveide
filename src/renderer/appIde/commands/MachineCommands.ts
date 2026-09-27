@@ -270,6 +270,28 @@ export class RunToFrameMachineCommand extends IdeCommandBase<RunToFrameArgs> {
   }
 }
 
+type ErrorStopArgs = { mode: string };
+
+export class ErrorStopsMachineCommand extends IdeCommandBase<ErrorStopArgs> {
+  readonly id = "em-err";
+  readonly description =
+    "Turns runtime-error stops on or off: a debug run of a Klive BASIC program stops where it raises a BASIC error";
+  readonly usage = "em-err <on|off>";
+  readonly aliases = [];
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "mode" }]
+  };
+
+  async execute(context: IdeCommandContext, args: ErrorStopArgs): Promise<IdeCommandResult> {
+    const mode = `${args.mode}`.toLowerCase();
+    if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
+    await context.emuApi.setSourceErrorStops(mode === "on");
+    writeSuccessMessage(context.output, mode === "on" ? "Debug runs stop at runtime errors" : "Runtime errors go to the ROM's report");
+    return commandSuccess;
+  }
+}
+
 type SourceSteppingArgs = { mode: string; "-i"?: boolean };
 
 export class SourceSteppingMachineCommand extends IdeCommandBase<SourceSteppingArgs> {

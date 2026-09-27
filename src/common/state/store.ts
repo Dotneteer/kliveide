@@ -10,7 +10,7 @@ import { mediaReducer } from "./media-reducer";
 import { scriptsReducer } from "./scripts-reducer";
 import { workspaceSettingsReducer } from "./workspace-settings-reducer";
 import { globalSettingsReducer } from "./global-settings-reducer";
-import { watchReducer } from "./watch-reducer";
+import { basicWatchReducer, watchReducer } from "./watch-reducer";
 
 /**
  * Implements the reducer for managing the application state
@@ -33,6 +33,7 @@ function appReducer(state: AppState, action: Action): AppState {
     (a, n) => (a.workspaceSettings = n)
   );
   invokeReducer(state.watchExpressions, watchReducer, (a, n) => (a.watchExpressions = n));
+  invokeReducer(state.basicWatches, basicWatchReducer, (a, n) => (a.basicWatches = n));
   return state;
 
   /**

@@ -99,6 +99,13 @@
   font-style: italic;
 }
 
+.errorStopNote {
+  /* A runtime-error stop's "✖ 3 Subscript wrong" (plan §10.10): unlike a return point this *is* a
+     state — the program failed here — so it takes the status error ink */
+  color: var(--status-error);
+  font-style: italic;
+}
+
 .activeMacroInvocationLine {
   background: var(--bgcolor-debug-macro-bp);
   border: 1px solid var(--bgcolor-debug-macro-bp);

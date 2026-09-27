@@ -41,3 +41,19 @@ export function watchReducer(
       return state;
   }
 }
+
+/** The BASIC watch expressions of the Variables panel (plan §10.8). */
+export function basicWatchReducer(state: string[] = [], { type, payload }: Action): string[] {
+  switch (type) {
+    case "ADD_BASIC_WATCH": {
+      const text = payload?.text?.trim();
+      return !text || state.includes(text) ? state : [...state, text];
+    }
+    case "REMOVE_BASIC_WATCH":
+      return payload?.index === undefined ? state : state.filter((_, i) => i !== payload.index);
+    case "SET_BASIC_WATCHES":
+      return payload?.value ?? [];
+    default:
+      return state;
+  }
+}

@@ -1503,6 +1503,7 @@ function createCurrentStatementDecoration(location: SourceLocation, activeBp?: B
   const endColumn = location.endColumn !== undefined ? location.endColumn + 1 : startColumn;
   const returnPoint = location.kind === "returnPoint";
   const note = returnPoint ? `returned from ${location.returnedFrom ?? "a call"}` : undefined;
+  const error = location.kind === "error" ? (location.error ?? "runtime error") : undefined;
   return {
     range: new monacoEditor.Range(location.line, startColumn, location.endLine, endColumn),
     options: {
@@ -1516,6 +1517,12 @@ function createCurrentStatementDecoration(location: SourceLocation, activeBp?: B
         ? {
             hoverMessage: { value: `Execution returned here: ${note}` },
             after: { content: `  \u2190 ${note}`, inlineClassName: styles.returnPointNote }
+          }
+        : {}),
+      ...(error
+        ? {
+            hoverMessage: { value: `The program stopped on a runtime error: ${error}. Continue to let the ROM report it.` },
+            after: { content: `  \u2716 ${error}`, inlineClassName: styles.errorStopNote }
           }
         : {})
     }

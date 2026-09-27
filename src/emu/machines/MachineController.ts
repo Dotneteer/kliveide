@@ -49,8 +49,11 @@ import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import {
+  basicErrorReport,
   beginSourceStep,
   canStepOut,
+  CurrentStatementTracker,
+  innermostUserStatement,
   locateActivations,
   SourceDebugIndex,
   type MachineView,
@@ -345,10 +348,37 @@ export class MachineController implements IMachineController {
   /** Statement entries inside interrupt handlers stop a source step (§10.2.7; off by default). */
   stopInInterrupts = false;
 
+  /** Debug runs stop at the program's runtime-error routine (§10.10; on by default). */
+  stopOnErrors = true;
+
   /** The injected program's source-level debug info; undefined for a program without it. */
   setSourceDebugInfo(info?: SourceLevelDebugInfo): void {
-    this.sourceIndex = info?.extensions ? new SourceDebugIndex(info) : undefined;
-    if (this.debugSupport) this.debugSupport.sourceStep = undefined;
+    const index = info?.extensions ? new SourceDebugIndex(info) : undefined;
+    this.sourceIndex = index;
+    if (this.debugSupport) {
+      this.debugSupport.sourceStep = undefined;
+      this.debugSupport.statementTracker = index ? new CurrentStatementTracker(index) : undefined;
+    }
+    this.setStopOnErrors(this.stopOnErrors);
+  }
+
+  /** Turns runtime-error stops on or off (§10.10). */
+  setStopOnErrors(on: boolean): void {
+    this.stopOnErrors = on;
+    const entry = this.sourceIndex?.info.extensions?.errorEntry;
+    if (this.debugSupport) this.debugSupport.errorStopAddress = on ? entry : undefined;
+  }
+
+  /**
+   * The user statement running when PC is outside the user's statements: at an error stop the
+   * statement tracker knows it best (the error routine is often reached by a `jp`); otherwise the
+   * stack's innermost return address into a statement, then the tracker.
+   */
+  private userStatement(index: SourceDebugIndex, preferTracker: boolean): number {
+    const tracked = this.debugSupport?.statementTracker?.current ?? -1;
+    if (preferTracker && tracked >= 0) return tracked;
+    const scanned = innermostUserStatement(index, this.machineView());
+    return scanned >= 0 ? scanned : tracked;
   }
 
   /** Whether Step Into/Over/Out step statements now. */
@@ -415,7 +445,25 @@ export class MachineController implements IMachineController {
         returned: step.returned
       };
     }
-    return { kind: "other", pc, statementIndex: index.statementAt(pc), returned: step?.returned ?? [] };
+    if (this.debugSupport?.errorStopAddress === pc) {
+      const code = ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+      return {
+        kind: "error",
+        pc,
+        statementIndex: -1,
+        userStatementIndex: this.userStatement(index, true),
+        error: { code, report: basicErrorReport(code) },
+        returned: step?.returned ?? []
+      };
+    }
+    const statementIndex = index.statementAt(pc);
+    return {
+      kind: "other",
+      pc,
+      statementIndex,
+      ...(statementIndex < 0 ? { userStatementIndex: this.userStatement(index, false) } : {}),
+      returned: step?.returned ?? []
+    };
   }
 
   /** The symbolic call stack (§10.6), innermost first; undefined without source-level info. */
@@ -1095,6 +1143,12 @@ export class MachineController implements IMachineController {
    * the Next Registers panel reads.
    */
   private describeDebugStop(): string {
+    if (this.sourceIndex && this.debugSupport?.errorStopAddress === this.machine.pc) {
+      const stop = this.getSourceStopInfo();
+      const s = stop?.userStatementIndex !== undefined ? this.sourceIndex.statements[stop.userStatementIndex] : undefined;
+      const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;
+      return `Runtime error ${stop?.error?.report ?? ""}${s ? ` at ${file}:${s.startLine}` : ""} (continue to let the ROM report it)`;
+    }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {
       return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;

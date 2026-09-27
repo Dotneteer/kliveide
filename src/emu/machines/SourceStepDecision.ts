@@ -193,6 +193,82 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   return out;
 }
 
+/**
+ * Follows the running statement through a debug run: the last statement entry passed, or the
+ * statement a call returned into. It answers "which statement was running" where the stack cannot:
+ * a runtime error raised by a `jp` from the statement itself (`ERROR n`), or from a runtime routine
+ * that keeps its return address off the stack (`ArrayAddress`). Two map lookups per instruction.
+ */
+export class CurrentStatementTracker {
+  current = -1;
+
+  constructor(private readonly index: SourceDebugIndex) {}
+
+  observe(pc: number): void {
+    const entry = this.index.entryAt(pc);
+    if (entry >= 0) {
+      this.current = entry;
+      return;
+    }
+    const site = this.index.returnSiteAt(pc);
+    if (site && site.statementIndex >= 0) this.current = site.statementIndex;
+  }
+}
+
+/** The ROM's reports by ERR_NR (the report's number or letter, less one): what an error stop names. */
+const REPORTS = [
+  "0 OK",
+  "1 NEXT without FOR",
+  "2 Variable not found",
+  "3 Subscript wrong",
+  "4 Out of memory",
+  "5 Out of screen",
+  "6 Number too big",
+  "7 RETURN without GOSUB",
+  "8 End of file",
+  "9 STOP statement",
+  "A Invalid argument",
+  "B Integer out of range",
+  "C Nonsense in BASIC",
+  "D BREAK - CONT repeats",
+  "E Out of DATA",
+  "F Invalid file name",
+  "G No room for line",
+  "H STOP in INPUT",
+  "I FOR without NEXT",
+  "J Invalid I/O device",
+  "K Invalid colour",
+  "L BREAK into program",
+  "M RAMTOP no good",
+  "N Statement lost",
+  "O Invalid stream",
+  "P FN without DEF",
+  "Q Parameter error",
+  "R Tape loading error"
+];
+
+/** The report text of an ERR_NR code (runtime `RaiseError`: A = the code). */
+export function basicErrorReport(code: number): string {
+  return REPORTS[code + 1] ?? `Error ${code}`;
+}
+
+/**
+ * The user statement that is running when PC is in runtime code (a runtime error, a Z80-level step
+ * into a routine): the first stack word above SP that returns into the middle of a statement — the
+ * return address of the statement's call into the runtime. -1 when there is none.
+ */
+export function innermostUserStatement(index: SourceDebugIndex, m: MachineView): number {
+  const here = index.statementAt(m.pc);
+  if (here >= 0) return here;
+  const limit = index.mainBaseline(m);
+  for (let p = m.sp, n = 0; p < limit && n < 256; p += 2, n++) {
+    const w = m.readWord(p);
+    const s = index.statementAt(w);
+    if (s >= 0 && w > index.statements[s].startAddress) return s;
+  }
+  return -1;
+}
+
 // =================================================================================================
 // The step
 

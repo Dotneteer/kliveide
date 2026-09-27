@@ -19,6 +19,7 @@ import {
   setExportDialogInfoAction,
   setWorkspaceSettingsAction,
   setWatchesAction,
+  setBasicWatchesAction,
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -189,6 +190,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- `?? []` matters — a project without saved watches must *clear* the list, otherwise the
       // --- previously open project's watches would leak into this one.
       disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
+      disp(setBasicWatchesAction(projectStruct.debugger?.basicWatches ?? []));
 
       // --- Restore breakpoints, but only onto the machine this project actually installed. If a
       // --- concurrent machine change superseded ours, the live machine is somebody else's and
@@ -396,7 +398,8 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       breakpoints,
       // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
       // --- they are read straight from the state snapshot instead of over IPC.
-      watchExpressions: state.watchExpressions ?? []
+      watchExpressions: state.watchExpressions ?? [],
+      basicWatches: state.basicWatches ?? []
     },
     builder: {
       roots: state.project?.buildRoots ?? []
@@ -548,6 +551,8 @@ type DebuggerState = {
    * restore an empty list.
    */
   watchExpressions?: WatchInfo[];
+  /** BASIC watch expressions (the Variables panel); optional for the same reason. */
+  basicWatches?: string[];
 };
 
 // --- Represents the state of the builder

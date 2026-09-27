@@ -113,6 +113,15 @@ export interface IDebugSupport {
   sourceStep?: SourceStep;
 
   /**
+   * A runtime-error stop (plan §10.10): the address of a compiled program's error routine. Every
+   * debug run stops when execution reaches it, before the ROM prints the report.
+   */
+  errorStopAddress?: number;
+
+  /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
+  statementTracker?: { observe(pc: number): void; current: number };
+
+  /**
    * Erases all breakpoints
    */
   eraseAllBreakpoints(): void;

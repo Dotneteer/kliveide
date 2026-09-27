@@ -289,6 +289,17 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   here" mark reuses its family's tokens at reduced strength: the inline statement-breakpoint marker
   is `--color-breakpoint-disabled` at 50% where a breakpoint can go and `--color-breakpoint-code`
   where one is set — the same pair the gutter uses, so a statement breakpoint reads as a breakpoint.
+  The test is "is this a second state?": a runtime-error stop *is* one — the program failed on that
+  statement — so its note (`.errorStopNote`, "✖ 3 Subscript wrong") takes `--status-error`, while a
+  return point's does not.
+- **Source-level debug panels follow the converted state panels.** The Variables panel's values use
+  `--color-state-value`, like a register, and a watch that fails to evaluate shows its message in
+  `--status-error` in the value column rather than a hue on the row. The symbolic Call Stack's
+  selected frame is `--surface-selected`, the explorer's selection, because selecting a frame is
+  choosing what the Variables panel shows — a selection, not a debug state; its per-row action
+  (Run to this frame) appears only on hover or on the selected row, so the frame names stay what
+  the eye lands on. Tree indentation is `calc(var(--space-3) * depth)`, and the expander column is
+  present on every row so names align whether or not a row expands.
 - **Certainty is carried by strength, not by hue.** The same branch gutter draws the same glyph in
   the same colour on every row, and dims it to 45% everywhere except the execution point. Away from
   PC the verdict was computed from *today's* flags rather than the ones that will hold when the CPU

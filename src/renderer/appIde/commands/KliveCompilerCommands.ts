@@ -1145,6 +1145,19 @@ export async function injectCode(
   const dispatch = context.store.dispatch;
   let returnMessage = "";
 
+  // --- Source-level debug info (plan §10.2) goes to the emulator before a debug run starts, so its
+  // --- error stop and statement tracking (§10.10) are armed from the first instruction, and again
+  // --- after the injection, which may have replaced the machine controller; a program without it
+  // --- clears the previous one's
+  const sendSourceDebugInfo = async () => {
+    try {
+      await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
+    } catch {
+      // --- An emulator without source stepping keeps instruction stepping
+    }
+  };
+  if (operationType === "debug") await sendSourceDebugInfo();
+
   switch (operationType) {
     case "inject":
       await context.emuApi.injectCodeCommand(codeToInject);
@@ -1181,13 +1194,7 @@ export async function injectCode(
     }
   }
 
-  // --- Source-level debug info (plan §10.2) goes to the emulator after the injection, which may
-  // --- have replaced the machine controller; a program without it clears the previous one's
-  try {
-    await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
-  } catch {
-    // --- An emulator without source stepping keeps instruction stepping
-  }
+  await sendSourceDebugInfo();
 
   // --- Injection done
   dispatch(incInjectionVersionAction());

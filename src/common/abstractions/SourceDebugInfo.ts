@@ -117,10 +117,15 @@ export type SourceReturnRegisters = { af: number; bc: number; de: number; hl: nu
  * results that returned during the last source step.
  */
 export type SourceStopInfo = {
-  kind: "statement" | "returnPoint" | "other";
+  /** `error`: stopped at the runtime's error routine (§10.10), before the ROM's report. */
+  kind: "statement" | "returnPoint" | "error" | "other";
   pc: number;
   /** Index into `SourceLevelDebugInfo.statements`, or -1 (runtime code, the ROM). */
   statementIndex: number;
+  /** In runtime code: the user statement that called into it (-1 when none is found). */
+  userStatementIndex?: number;
+  /** An error stop: the ERR_NR code and the ROM report it names (`3 Subscript wrong`). */
+  error?: { code: number; report: string };
   /** A return point: the SUB or FUNCTION that just returned. */
   returnedFrom?: number;
   /** A return point: a GOSUB subroutine just returned. */

@@ -280,3 +280,21 @@ describe("shouldStopAtDebugPoint — source steps", () => {
     expect(debugSupport.sourceStep!.stoppedAt).toBeUndefined();
   });
 });
+
+describe("shouldStopAtDebugPoint — runtime-error stops (plan §10.10)", () => {
+  it("stops at the error routine in every debug mode, but not on the instruction a run resumes from", () => {
+    for (const mode of [DebugStepMode.StopAtBreakpoint, DebugStepMode.StepOver, DebugStepMode.StepOut]) {
+      const debugSupport = support([], { errorStopAddress: 0x9000 });
+      expect(decide({ debugSupport, debugStepMode: mode, pc: 0x9000, instructionsExecuted: 5 }).stop).toBe(true);
+      expect(decide({ debugSupport, debugStepMode: mode, pc: 0x9000, instructionsExecuted: 0 }).stop).toBe(false);
+    }
+    expect(decide({ debugSupport: support(), debugStepMode: DebugStepMode.StopAtBreakpoint, pc: 0x9000, instructionsExecuted: 5 }).stop).toBe(false);
+  });
+
+  it("lets the statement tracker see every instruction", () => {
+    const observe = vi.fn();
+    const debugSupport = support([], { statementTracker: { observe, current: -1 } });
+    decide({ debugSupport, debugStepMode: DebugStepMode.StopAtBreakpoint, pc: 0x8123, instructionsExecuted: 1 });
+    expect(observe).toHaveBeenCalledWith(0x8123);
+  });
+});

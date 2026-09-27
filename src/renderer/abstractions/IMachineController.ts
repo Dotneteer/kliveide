@@ -130,6 +130,9 @@ export interface IMachineController {
   /** The injected program's source-level debug info (plan §10.2); undefined for none. */
   setSourceDebugInfo(info?: SourceLevelDebugInfo): void;
 
+  /** Debug runs stop at the program's runtime-error routine (plan §10.10; on by default). */
+  setStopOnErrors(on: boolean): void;
+
   /** A source-level step (`SourceStepDecision.ts`). */
   sourceStep(kind: SourceStepKind, options?: { targetFrame?: number; targetCallable?: number }): Promise<void>;
 
