@@ -38,7 +38,7 @@ const ANNEX = new Set<string>(
 );
 
 /** Optimisation levels to run: only level 0 exists until Phase 7 adds 1-3. */
-const LEVELS = [0];
+const LEVELS = [0, 1];
 
 function heapUsed(r: Run): number {
   const s = r.session;

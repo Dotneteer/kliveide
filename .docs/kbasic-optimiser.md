@@ -192,3 +192,31 @@ and is committed on its own:
 | O7 | Measurement | A committed size/T-state baseline per corpus program and level, with a ratchet test (§7). |
 | O8 | Stack-machine fallback | The level-1 selector falls back to the level-0 scheme per statement for anything it does not cover yet, so every program builds at every level throughout Phase 7. |
 | O9 | Main-program globals (MIR Q5) | Stay in memory at every level in Phase 7: inline asm, interrupts and `USR` code can see them. A narrower promotion for globals no asm, call or handler can reach is left for later. |
+
+## 10. State after stage 7a (2026-09-27)
+
+Approved as proposed (O1–O9). Done:
+
+- `src/main/kbasic/opt/`: `lir.ts` (parses LIR text into opcode, operands, register uses/defs and
+  side effects; anything unknown is conservative), `liveness.ts` (per-function control flow; at
+  levels 0–1 nothing is live at a statement entry, except the `END SUB`/`END FUNCTION` entry, which a
+  `RETURN` reaches with the result in registers), `engine.ts` (the rule engine and its protections),
+  `rules/loads.ts` (store-reload, store-reload pair, immediate operand, dead instruction),
+  `rules/branches.ts` (bool-branch, jump over jump, jump threading through glue, unreachable code),
+  `pipeline.ts` (the rules per function, and branch shaping), `verify.ts` (the MIR verifier: S1,
+  SSA, S2, jump targets).
+- `codegen.ts`: from level 1 the MIR is verified, the rules run, and after the first assembly
+  `jp` → `jr` where in reach, then the program is assembled again. `effectiveLevel` clamps levels 2–3
+  to 1 until 7c/7d; the build output says so. The default level is 2, so default builds now get
+  level-1 code.
+- Tests: the corpus (48K and Next), the debugger corpus, the §10.2/§10.3 step scenarios and the
+  CODEBANK step tests run at levels 0 and 1; `test/kbasic/opt/rules.test.ts` (each rule, the engine's
+  protections, the MIR verifier on the corpus, every rule fires somewhere in it — the two rules that
+  never did, `ld r,r` and push/pop folding, were dropped); `test/kbasic/opt/opt-report.test.ts` with
+  `opt-baseline.json` and `scripts/kbasic-opt-report.cjs`; the IDE check passes on level-1 code.
+- First figures (147 48K programs): level 0 31,360 bytes, level 1 29,283 bytes (−6.6%); T-states
+  −0.3% (these programs spend their time in the runtime, the ROM and waits).
+
+Learned: the level-0 selector's comparisons build a 0/1 in A through a stack round trip
+(`push af … pop af ; ld l,a ; ld a,h ; ld h,l ; cp h`); the rules cannot reach that shape well —
+the level-1 selector (7b) should produce the flags directly.

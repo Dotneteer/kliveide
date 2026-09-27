@@ -5,7 +5,7 @@ import type { AppState } from "@common/state/AppState";
 
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
-import { generateProgram } from "./codegen";
+import { effectiveLevel, generateProgram } from "./codegen";
 import { emittedFiles } from "./emit-files";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
@@ -83,7 +83,11 @@ export class KBasicCompiler implements IKliveCompiler {
     if (!generated) return { errors };
     const classic = generated.debug.classic;
     // --- '@emit-asm, '@emit-ir, '@emit-map: files beside the source (a failed write is a warning, not a failed build)
-    const traceOutput = [`Klive BASIC: code generated at optimisation level 0 (the only level so far)`];
+    const requested = front.options.optimize;
+    const level = effectiveLevel(requested);
+    const traceOutput = [
+      `Klive BASIC: code generated at optimisation level ${level}${level !== requested ? ` (level ${requested} was asked for; levels 2-3 generate level-1 code for now)` : ""}`
+    ];
     const name = programName(filename);
     for (const file of emittedFiles(generated, front.options, name)) {
       const folder = folderOf(filename);

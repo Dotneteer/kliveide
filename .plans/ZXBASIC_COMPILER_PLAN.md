@@ -315,9 +315,13 @@ debuggable at source level, in the emulator tests and in the running IDE.
 
 **Phase 6 is complete.** Next steps, in order:
 
-1. Phase 7 (optimiser, §7, §8.6): **the design note `.docs/kbasic-optimiser.md` is written and
-   awaits the project author's approval (its §9, decisions O1–O9)**; no Phase 7 code before that.
-   Then its stages 7a–7d in order.
+1. Phase 7 (optimiser, §7, §8.6): the design note `.docs/kbasic-optimiser.md` is **approved**
+   (O1–O9). **Stage 7a is done** (its §10 records the state): the rule engine, liveness, the load and
+   branch rules, branch shaping, the MIR verifier, the measurement baseline; level 1 = level-0 code
+   with the rules inside statements, verified at levels 0 and 1 by the corpus, the debugger corpus,
+   the step scenarios and the IDE check. Next: **stage 7b** — the per-statement MIR passes, the
+   level-1 selector with per-statement allocation (falling back to the stack machine per statement,
+   O8), comparisons that produce flags directly, and the debug profile (§6, O6).
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

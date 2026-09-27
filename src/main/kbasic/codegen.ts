@@ -15,6 +15,8 @@ import { selectFunction } from "./backend/select0";
 import { buildDebugInfo, type DebugBuild } from "./debug/builder";
 import { buildSourceLevel } from "./debug/source-level";
 import { lowerProgram } from "./ir/lower";
+import { optimizeLir, shapeBranches } from "./opt/pipeline";
+import { verifyModule } from "./opt/verify";
 import type { MModule } from "./ir/mir";
 import type { KBasicOptions } from "./options/options";
 import { prologueSource, resolveRuntimeModules, runtimeInitialisers, runtimeUnits } from "./runtime/runtime-linker";
@@ -48,9 +50,20 @@ export async function generateProgram(
 
   // --- Instruction selection adds the runtime routines it calls (multiply, divide, ...)
   const runtime = new Set(mir.runtime);
-  const functions: LirLine[][] = [];
+  // --- Levels 2 and 3 have no passes of their own yet (stages 7c/7d): they generate level-1 code
+  const level = effectiveLevel(options.optimize);
+  // --- The MIR verifier (.docs/kbasic-optimiser.md §3): an optimised build checks its input first
+  if (level >= 1) {
+    const problems = verifyModule(mir, level);
+    if (problems.length) {
+      diagnostics.error("E599", `Internal code generator error: the MIR is invalid (${problems.slice(0, 3).join("; ")})`, { file: 0, start: 0, end: 0 });
+      return undefined;
+    }
+  }
+  let functions: LirLine[][] = [];
   try {
     for (const fn of mir.functions) functions.push(selectFunction(fn, runtime));
+    functions = optimizeLir(mir, functions, { level, target: options.target === "next" ? "z80n" : "z80" });
   } catch (e) {
     if (!(e instanceof CodegenError)) throw e;
     diagnostics.error("E599", `Internal code generator error: ${e.message}`, { file: 0, start: 0, end: 0 });
@@ -90,7 +103,7 @@ export async function generateProgram(
     }
     banking = plan;
   }
-  const emitted = emitProgram({
+  let emitted = emitProgram({
     header: [
       `    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`,
       ...nexHeader(options, programName),
@@ -114,7 +127,7 @@ export async function generateProgram(
       ...(banking ? { codebank: banking.layout } : {})
     }))
   ];
-  const output = await new Z80Assembler().compileProgram(units, assemblerOptions);
+  let output = await new Z80Assembler().compileProgram(units, assemblerOptions);
   const errors = output.errors.filter((e) => !e.isWarning);
   if (errors.length) {
     // --- A bank that overflows its page(s): the program's, reported with what the bank holds
@@ -141,6 +154,24 @@ export async function generateProgram(
       diagnostics.error("E599", `Internal code generator error: the generated program does not assemble (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
     }
     return undefined;
+  }
+
+  // --- Branch shaping (.docs/kbasic-optimiser.md §4.4): jp -> jr where the first assembly shows the
+  // --- target in reach, then assemble again (every change shortens the code, so the reach holds)
+  if (level >= 1) {
+    const asmStatements = new Set(mir.statements.filter((st) => st.asmLines?.length).map((st) => st.sid));
+    const shaped = shapeBranches(emitted, output.listFileItems, 0, asmStatements);
+    if (shaped !== undefined) {
+      emitted = { ...emitted, text: shaped };
+      const shapedUnit = await new Z80Assembler().parseSourceUnit(programFile, shaped, assemblerOptions);
+      output = await new Z80Assembler().compileProgram([shapedUnit, ...units.slice(1)], assemblerOptions);
+      const shapedErrors = output.errors.filter((e) => !e.isWarning);
+      if (shapedErrors.length) {
+        const e = shapedErrors[0];
+        diagnostics.error("E599", `Internal code generator error: branch shaping broke the program (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
+        return undefined;
+      }
+    }
   }
 
   // --- The window must not hide part of the resident program (codebank-contract.md §3)
@@ -310,6 +341,11 @@ function codebankDebugInfo(banking: BankPlan, options: KBasicOptions, symbol: (n
       pages: Array.from({ length: place.pages }, (_, i) => place.page + i)
     }))
   };
+}
+
+/** The optimisation level code is generated at: levels 2-3 give level-1 code until stages 7c/7d. */
+export function effectiveLevel(requested: number): number {
+  return Math.min(requested, 1);
 }
 
 /** The bank whose section holds a line of the generated program (its `__kbBank<n>:` label above it). */
