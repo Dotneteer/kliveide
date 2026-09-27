@@ -44,9 +44,9 @@ Just My Code with stepping into the standard library (§10.12); the three debugg
 stack, the Variables panel and watches are checked against each other on all 159 corpus programs;
 the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). **Phase 6 in progress**
 (2026-09-27): the Next target; CODEBANK (12 corpus programs, E455–E458, `farmem.bas`) debuggable
-across banks at source level, checked in the running IDE through NextZXOS; the NEX debug sidecar,
-the `emit-*` files, the Next template, the docs section. The exit criterion is met; two small items
-remain — see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
+across banks at source level, checked in the running IDE through NextZXOS; the NEX debug sidecar
+(`nex-run -d` debugs an exported NEX at source level without a build), the `emit-*` files, the Next
+template, the docs section. **Phase 6 done** — see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -303,10 +303,21 @@ Done in the same session, after that:
 Phase 6's exit criterion is met: the CODEBANK scenarios pass on the Next harness, and banked code is
 debuggable at source level, in the emulator tests and in the running IDE.
 
-Next steps, in order:
+- **`nex-run -d` with a sidecar, in the IDE:** the sidecar also carries the build's classic tables
+  (`program`: source files, list items, source map, segment placement); `nex-run -d` makes them the
+  IDE's current build (`END_COMPILE`), resolves source breakpoints, then launches — so BASIC
+  breakpoints set in the editor fire in a launched NEX and the editor and panels show its program
+  (decided by default in this session: the panels follow the launched NEX when its sidecar matches).
+  The IDE check's third part opens the Next project without building and runs the exported NEX:
+  34 checks pass. The NEX launch opens its bank views in front of the source tab.
+- **Statement (column) breakpoints in banked code** now carry the statement's partition
+  (`refreshSourceCodeBreakpoints`); `codebank-breakpoints.test.ts` drives the real function.
 
-1. `nex-run -d` of an exported NEX with its sidecar in the running IDE, and whether `nex-run` with a
-   sidecar should also give the renderer the program's tables (today they come only from a build).
+**Phase 6 is complete.** Next steps, in order:
+
+1. Phase 7 (optimiser, §7, §8.6): its design note goes to the project author for approval before
+   any code (R11: `.docs/kbasic-optimiser.md` — MIR passes per level, the LIR rule engine and its
+   rule format, how statement ids and G4/G5/G6 survive each pass, the debug profile).
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

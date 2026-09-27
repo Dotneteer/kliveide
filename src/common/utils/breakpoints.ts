@@ -260,7 +260,14 @@ export async function refreshSourceCodeBreakpoints(
       if (fileIndex >= 0 && bp.column !== undefined) {
         const statement = sourceLevel ? statementAtColumn(sourceLevel, fileIndex, bp.line!, bp.column) : undefined;
         if (statement) {
-          resolvedBp.push({ resource: bp.resource, line: bp.line!, column: bp.column, address: statement.startAddress });
+          // --- A banked statement (CODEBANK) shares its address with the other banks: its page decides
+          resolvedBp.push({
+            resource: bp.resource,
+            line: bp.line!,
+            column: bp.column,
+            address: statement.startAddress,
+            ...(statement.partition !== undefined ? { partition: statement.partition } : {})
+          });
         }
         continue;
       }

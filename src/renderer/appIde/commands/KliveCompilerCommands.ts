@@ -31,7 +31,7 @@ import {
 } from "@common/state/actions";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { hasSourceLevelDebug, isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
-import { createSourceDebugSidecar, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
+import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
@@ -994,7 +994,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       if (hasSourceLevelDebug(output)) {
         sidecarPath = await context.mainApi.saveTextFile(
           sourceDebugSidecarPath(filePath),
-          createSourceDebugSidecar(nexData, output.sourceLevelDebug)
+          createSourceDebugSidecar(nexData, output.sourceLevelDebug, sidecarProgramOf(output))
         );
       }
 

@@ -6,7 +6,10 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { NexHeader } from "../DocumentPanels/Next/nexFileLoader";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
-import { readSourceDebugSidecar, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
+import { readSourceDebugSidecar, sourceDebugSidecarPath, type SidecarProgram } from "@common/utils/source-debug-sidecar";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import { endCompileAction, incBreakpointsVersionAction } from "@common/state/actions";
+import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import { isNexFilePath, nexSdCardTarget } from "@common/utils/nex-launch-paths";
 import { loadNexFileContents } from "../DocumentPanels/Next/nexFileLoader";
 import { getEntryPointBreakpointSite } from "../DocumentPanels/Next/nexEntryState";
@@ -158,7 +161,11 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
     // --- Source-level debug info from the NEX's sidecar (plan §8.5), before the run and again after
     // --- it (the launch may replace the machine controller). Without a usable sidecar, the previous
     // --- program's info is cleared: it would step this one by another's statements.
-    const sourceDebug = debug ? await this.readSourceDebug(context, hostPath) : undefined;
+    const sidecar = debug ? await this.readSourceDebug(context, hostPath) : undefined;
+    const sourceDebug = sidecar?.info;
+    // --- The sidecar's program becomes the IDE's current build: source breakpoints resolve through
+    // --- its tables, and the editor and the source-level panels show this program
+    if (sidecar?.program) await this.showProgram(context, sidecar.info, sidecar.program);
     const sendSourceDebug = async () => {
       try {
         await context.emuApi.setSourceDebugInfo(sourceDebug);
@@ -180,7 +187,10 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
    * The source-level debug info of the NEX's sidecar (`<name>.nex.kbasic-debug.json`), when there
    * is one written for this very build; a sidecar that is there but unusable is reported.
    */
-  private async readSourceDebug(context: IdeCommandContext, hostPath: string) {
+  private async readSourceDebug(
+    context: IdeCommandContext,
+    hostPath: string
+  ): Promise<{ info: SourceLevelDebugInfo; program?: SidecarProgram } | undefined> {
     const sidecarPath = sourceDebugSidecarPath(hostPath);
     let text: string;
     try {
@@ -196,11 +206,29 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
         return undefined;
       }
       writeMessage(context.output, `Source-level debug info loaded from ${sidecarPath}.`, "green");
-      return read.info;
+      return read;
     } catch (err) {
       writeMessage(context.output, `Could not read ${hostPath}: ${err instanceof Error ? err.message : String(err)}`, "yellow");
       return undefined;
     }
+  }
+
+  /**
+   * Makes the sidecar's program the IDE's current build, as if it had just been compiled: its
+   * source breakpoints are resolved (partition-qualified, for banked code) before the launch.
+   */
+  private async showProgram(context: IdeCommandContext, info: SourceLevelDebugInfo, program: SidecarProgram) {
+    const result = {
+      errors: [],
+      traceOutput: [],
+      injectOptions: {},
+      ...program,
+      segments: program.segments.map((s) => ({ ...s, emittedCode: [] as number[] })),
+      sourceLevelDebug: info
+    };
+    context.store.dispatch(endCompileAction(result as never));
+    await refreshSourceCodeBreakpoints(context.store, context.messenger);
+    context.store.dispatch(incBreakpointsVersionAction());
   }
 
   /**

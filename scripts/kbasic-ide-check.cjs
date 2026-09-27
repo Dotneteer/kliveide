@@ -24,6 +24,9 @@
  * real `~/Klive/ks2.cim` (or `KBASIC_IDE_CARD=<file>`) is **copied** into the run's own home (the app
  * runs with `HOME` there), so the user's card is never written. Without one the scenario is skipped.
  *
+ * Then the NEX debug sidecar (plan §8.5): a fresh Klive opens that project without building it and
+ * runs the exported NEX with `nex-run -d`; its breakpoint and the panels come from the sidecar.
+ *
  * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop;
  * `KBASIC_IDE_ONLY=next` (or `classic`) runs only that part; each part runs in a fresh Klive.
  */
@@ -39,6 +42,19 @@ const STOPS = [
 ];
 
 const JMC = ["#include <hex.bas>", "DIM s AS String", "s = hex8(255)", "PRINT s", ""];
+
+/** The first file named `name` below `dir`, or undefined. */
+function findFile(dir, name) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isFile() && entry.name === name) return full;
+    if (entry.isDirectory()) {
+      const found = findFile(full, name);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
 
 const NEXT_PROGRAM = [
   "DIM total AS UInteger = 5", // 1
@@ -311,15 +327,50 @@ const DEBUGGER = [
       check(/total\s*17\s*UInteger/.test(await sideBarText()), "the Variables panel shows total = 17");
       await shot("next-return");
     }
+
+    // --- The NEX debug sidecar (plan §8.5): a fresh Klive opens the Next project without building it
+    // --- and `nex-run -d`s the NEX the previous part exported; the breakpoint in the bank resolves
+    // --- through the sidecar's tables and the panels show the program
+    if (part === "nex") {
+      const nextFolder = path.join(projects, "kbnext");
+      const nex = findFile(userHome, "banked.nex");
+      check(!!nex && fs.existsSync(`${nex}.kbasic-debug.json`), `the export wrote the NEX and its sidecar (${nex})`);
+      await cmd(`open "${nextFolder}"`, 8000);
+      await cmd("nav code/banked.zxbas", 3000);
+      for (let t = Date.now(); !/ZX Spectrum Next/.test(await emuText()) && Date.now() - t < 30000; ) await sleep(500);
+      await sleep(3000);
+      await cmd("bp-set [code/banked.zxbas]:5", 1200);
+      await cmd(`nex-run "${nex}" -d`, 5000);
+      let paused = false;
+      for (let t = Date.now(); !paused && Date.now() - t < 120000; ) paused = await waitPaused();
+      check(paused, "the launched NEX paused at the breakpoint in its bank");
+      await sleep(2000);
+      // --- The NEX launch opens its bank views in front of the source: bring the source back
+      await cmd("nav code/banked.zxbas", 2000);
+      check((await waitLine((l) => l === NEXT_PROGRAM[4])) === NEXT_PROGRAM[4], `the execution point is on ${JSON.stringify(NEXT_PROGRAM[4])}`);
+      await ide.locator('button[aria-label="Debug"]').click({ force: true });
+      await sleep(1000);
+      await expandPanel("Call Stack", "Top:");
+      await expandPanel("Variables", "Globals");
+      await sleep(1500);
+      const panels = await sideBarText();
+      check(/Top:\s*Scale\s*banked\.zxbas:5/.test(panels), "the Call Stack shows Scale, from the sidecar");
+      check(/factor\s*3\s*UByte/.test(panels), "the Variables panel reads the bank-local factor, from the sidecar");
+      await cmd("em-out", 1000);
+      await cmd("nav code/banked.zxbas", 2000);
+      const back = await waitLine((l) => l.startsWith(NEXT_PROGRAM[7]));
+      check(back.includes("returned from Scale"), `Step Out returns to the caller (${JSON.stringify(back)})`);
+      await shot("nex-sidecar");
+    }
   } catch (e) {
     failures.push(e.message.split("\n")[0]);
   } finally {
     await Promise.race([klive.close(), new Promise((r) => setTimeout(r, 10000))]);
   }
   };
-  const parts = only === "next" ? ["next"] : only === "classic" ? ["classic"] : ["classic", "next"];
+  const parts = only === "next" ? ["next", "nex"] : only === "classic" ? ["classic"] : ["classic", "next", "nex"];
   for (const part of parts) {
-    if (part === "next" && !hasCard) console.log(`skip the Next scenario: no NextZXOS SD card image at ${card}`);
+    if (part !== "classic" && !hasCard) console.log(`skip the ${part} scenario: no NextZXOS SD card image at ${card}`);
     else await runPart(part);
   }
   fs.rmSync(work, { recursive: true, force: true });

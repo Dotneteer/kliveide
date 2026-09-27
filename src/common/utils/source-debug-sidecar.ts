@@ -1,4 +1,4 @@
-import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { FileLine, ListFileItem, SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 
 /**
  * The source-level debug sidecar of a NEX (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §8.5):
@@ -25,7 +25,44 @@ export type SourceDebugSidecar = {
   nexLength: number;
   nexChecksum: number;
   sourceLevelDebug: SourceLevelDebugInfo;
+  /**
+   * The build's classic tables, so the IDE can show the launched program as if it had just built it:
+   * source breakpoints resolve through them, and the editor and the source-level panels follow them.
+   * Segments keep only their placement (the code is in the NEX).
+   */
+  program?: SidecarProgram;
 };
+
+export type SidecarProgram = {
+  sourceFileList: { filename: string; includes: unknown[] }[];
+  listFileItems: ListFileItem[];
+  sourceMap: Record<number, FileLine>;
+  segments: { startAddress: number; bank?: number; bankOffset?: number }[];
+  modelType?: number;
+  entryAddress?: number;
+};
+
+/** The tables of a build the sidecar keeps (segment placement only). */
+export function sidecarProgramOf(output: {
+  sourceFileList: { filename: string; includes?: unknown[] }[];
+  listFileItems: ListFileItem[];
+  sourceMap: Record<number, FileLine>;
+  segments: { startAddress: number; bank?: number; bankOffset?: number }[];
+  modelType?: number;
+  entryAddress?: number;
+}): SidecarProgram {
+  return {
+    sourceFileList: output.sourceFileList.map((f) => ({ filename: f.filename, includes: f.includes ?? [] })),
+    listFileItems: output.listFileItems,
+    sourceMap: output.sourceMap,
+    segments: output.segments.map((seg) => ({
+      startAddress: seg.startAddress,
+      ...(seg.bank !== undefined ? { bank: seg.bank, bankOffset: seg.bankOffset ?? 0 } : {})
+    })),
+    ...(output.modelType !== undefined ? { modelType: output.modelType } : {}),
+    ...(output.entryAddress !== undefined ? { entryAddress: output.entryAddress } : {})
+  };
+}
 
 /** The sidecar's path for a NEX file's path. */
 export function sourceDebugSidecarPath(nexPath: string): string {
@@ -43,13 +80,14 @@ export function nexChecksum(data: Uint8Array): number {
 }
 
 /** The sidecar's text for a NEX and the source-level info of the build that produced it. */
-export function createSourceDebugSidecar(nex: Uint8Array, info: SourceLevelDebugInfo): string {
+export function createSourceDebugSidecar(nex: Uint8Array, info: SourceLevelDebugInfo, program?: SidecarProgram): string {
   const sidecar: SourceDebugSidecar = {
     format: FORMAT,
     version: VERSION,
     nexLength: nex.length,
     nexChecksum: nexChecksum(nex),
-    sourceLevelDebug: info
+    sourceLevelDebug: info,
+    ...(program ? { program } : {})
   };
   return JSON.stringify(sidecar);
 }
@@ -58,7 +96,10 @@ export function createSourceDebugSidecar(nex: Uint8Array, info: SourceLevelDebug
  * The source-level info of a sidecar, when it belongs to this NEX; otherwise why it cannot be used
  * (not a sidecar, a newer format, or another build of the NEX).
  */
-export function readSourceDebugSidecar(text: string, nex: Uint8Array): { info: SourceLevelDebugInfo } | { error: string } {
+export function readSourceDebugSidecar(
+  text: string,
+  nex: Uint8Array
+): { info: SourceLevelDebugInfo; program?: SidecarProgram } | { error: string } {
   let parsed: Partial<SourceDebugSidecar>;
   try {
     parsed = JSON.parse(text);
@@ -72,5 +113,5 @@ export function readSourceDebugSidecar(text: string, nex: Uint8Array): { info: S
   if (parsed.nexLength !== nex.length || parsed.nexChecksum !== nexChecksum(nex)) {
     return { error: "it was written for another build of this NEX" };
   }
-  return { info: parsed.sourceLevelDebug };
+  return { info: parsed.sourceLevelDebug, ...(parsed.program ? { program: parsed.program } : {}) };
 }
