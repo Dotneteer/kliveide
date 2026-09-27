@@ -11,7 +11,8 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
 helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated items over numbers, Strings
 and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3 in
-progress** (§4.3): evaluation order, named arguments and FOR done.
+progress** (§4.3): C3a (evaluation order, named arguments, FOR) and C3b (the error model, the print
+position on return) done.
 
 ---
 
@@ -193,8 +194,20 @@ program that pins them. Target: every generated program agrees.
   - **FOR** (annex `for-loop-evaluation`, `for-unsigned-negative-step`): the limit, and a non-constant
     STEP whose sign decides, are evaluated at every test; NEXT evaluates the STEP again; a
     non-constant STEP takes the variable's type. Loops with an expression as the limit grew a little.
-- **Next:** C3b (the runtime error model, the print position on return), then C3c (graphics, slice
-  assignment, PRINT's edge cases).
+- **C3b done.** The suite `errors` (23 items, one program each: the statement, then `"after";
+  PEEK 23610`) classifies each runtime error; probes through the oracle gave the details.
+  - **Stop at once** (as before): ERROR n, the ROM calculator's errors, BEEP out of the ROM's range
+    (new: duration 0-10, pitch -60..69, rounded down; annex `beep-limits`).
+  - **Set ERR_NR and carry on** (annex `runtime-error-model`): PRINT AT off the screen (the cursor
+    stays), PLOT/DRAW/CIRCLE off the screen (nothing drawn; DRAW checks its end first), READ of the
+    wrong kind (0 or ""; the next READ reads on). READ with no DATA left reads 0 with no error.
+  - **STOP** returns with ERR_NR 8 (`StopProgram`): BASIC shows the report when its line ends.
+  - **The print position** (annex `print-position-on-return`): End calls `EndHook`, which the print
+    module sets to `PrintSave`: S_POSN and DF_CC from the cursor, so BASIC prints on after the output.
+  - Kept as faults: heap exhaustion (zxbc overwrites memory), Fixed division by zero. Left for C4:
+    constant BEEP out of range and a program without DATA (compile-time rejections in zxbc). Left for
+    C3c: invalid colours (zxbc masks them to 3 bits, INK 9 included), USR of a String.
+- **Next:** C3c (colours, graphics details, slice assignment, PRINT's edge cases, USR of a String).
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

@@ -4,7 +4,7 @@
   "ended": true,
   "screen": [
     "go",
-    "",
+    "0 5",
     "",
     "",
     "",
@@ -29,11 +29,14 @@
     " 1982 Sinclair Research Ltd"
   ],
   "errNr": 9,
+  "peeks": {
+    "peek 23610": 9
+  },
   "basic": {
     "report": "A Invalid argument, 0:1",
     "screen": [
       "go",
-      "",
+      "0 5",
       "",
       "",
       "",

@@ -135,6 +135,18 @@
    "fault": "fixed-division-by-zero"
   }
  },
+ "errors": {
+  "String heap full": {
+   "klive": "after 0",
+   "zxbc": "",
+   "fault": "heap-exhaustion"
+  },
+  "Fixed division by zero": {
+   "klive": "",
+   "zxbc": "after 0",
+   "fault": "fixed-division-by-zero"
+  }
+ },
  "literals": {
   "BNOT 0.5": {
    "klive": "-1",

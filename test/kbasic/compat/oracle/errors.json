@@ -1,0 +1,74 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "BEEP too long": {
+   "error": "zxbc crashed: src.arch.z80.beep.BeepError: Invalid duration: must be between [0, 10]"
+  },
+  "PRINT AT row 30": {
+   "out": "after 4"
+  },
+  "PRINT AT column 40": {
+   "out": "after 4"
+  },
+  "INK 10": {
+   "out": "after 0"
+  },
+  "PAPER 12": {
+   "out": "after 0"
+  },
+  "PRINT INK 10": {
+   "out": "after 0"
+  },
+  "BORDER 9": {
+   "out": "after 0"
+  },
+  "PLOT off the screen": {
+   "out": "after 4"
+  },
+  "DRAW off the screen": {
+   "out": "after 4"
+  },
+  "CIRCLE off the screen": {
+   "out": "after 4"
+  },
+  "READ of the wrong kind": {
+   "out": "after 9"
+  },
+  "READ after RESTORE to no DATA": {
+   "out": "after 0"
+  },
+  "STOP": {
+   "out": ""
+  },
+  "ERROR 3": {
+   "out": ""
+  },
+  "SQR(-1)": {
+   "out": ""
+  },
+  "Float overflow": {
+   "out": ""
+  },
+  "LN(0)": {
+   "out": ""
+  },
+  "BEEP too high": {
+   "out": ""
+  },
+  "String heap full": {
+   "out": ""
+  },
+  "CHR$ of 300": {
+   "out": "after 0"
+  },
+  "USR of a String": {
+   "out": "after 0"
+  },
+  "END": {
+   "out": ""
+  },
+  "Fixed division by zero": {
+   "out": "after 0"
+  }
+ }
+}

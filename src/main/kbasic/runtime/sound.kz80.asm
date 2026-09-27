@@ -1,12 +1,14 @@
 ; @module   sound
 ; @summary  BEEP: Klive's own beeper loop, timed from the duration and pitch by the ROM calculator.
 ; @exports  Beep
-; @requires float, rom
+; @requires float, rom, errors
 ;
 ; BEEP duration, pitch: duration in seconds, pitch in semitones from middle C (261.63 Hz). The
 ; calculator turns them into the number of speaker toggles (2 * duration * frequency) and the delay
 ; between toggles; the loop then runs with interrupts disabled, the border kept as BORDCR says. A
-; duration of 0 or less, or one too short for a single cycle, makes no sound.
+; duration too short for a single cycle makes no sound. The ROM's limits apply, as in ZX BASIC (the
+; compatibility plan C3): a duration below 0 or rounding down above 10, or a pitch rounding down below
+; -60 or above 69, stops the program with "B Integer out of range".
 
 ; ------------------------------------------------------------------------------------------------
 ; In: A-E-D-C-B = the pitch, the duration (a Float) under the return address, removed. Changes AF,
@@ -20,6 +22,44 @@ Beep:
     pop de
     pop bc                  ; A-E-D-C-B = the duration
     push hl
+    ld (BeepDuration),a
+    ld (BeepDuration+1),de
+    ld (BeepDuration+3),bc
+    call FToI32             ; DE:HL = the duration rounded down
+    ld a,d
+    or e
+    or h
+    jp nz,BeepRange         ; negative, or 65536 or more
+    ld a,l
+    cp 11
+    jp nc,BeepRange
+    ld a,(BeepPitch)
+    ld de,(BeepPitch+1)
+    ld bc,(BeepPitch+3)
+    call FToI32             ; DE:HL = the pitch rounded down
+    ld a,d
+    and e
+    inc a
+    jr z,BeepBelow          ; DE = $FFFF: -65536..-1
+    ld a,d
+    or e
+    or h
+    jp nz,BeepRange
+    ld a,l
+    cp 70
+    jp nc,BeepRange
+    jr BeepInRange
+BeepBelow:
+    ld a,h
+    inc a
+    jp nz,BeepRange         ; below -256
+    ld a,l
+    cp $c4
+    jp c,BeepRange          ; below -60
+BeepInRange:
+    ld a,(BeepDuration)
+    ld de,(BeepDuration+1)
+    ld bc,(BeepDuration+3)
     call RomIn
     push iy
     ld iy,$5c3a
@@ -168,3 +208,10 @@ BeepOverhead:
     .defb $00, $00, $78, $00, $00     ; 120: the loop's T-states besides the wait
 BeepIteration:
     .defb $00, $00, $1a, $00, $00     ; 26: the wait's T-states an iteration
+
+BeepRange:
+    ld a,10                 ; "B Integer out of range"
+    jp RaiseError
+
+BeepDuration:
+    .defs 5

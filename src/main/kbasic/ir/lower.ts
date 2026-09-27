@@ -496,8 +496,10 @@ class Lowering {
         return;
       case "stop":
         this.beginStatement(s.span, "return");
-        // --- ERR_NR 8: "9 STOP statement"
-        this.terminate({ op: "raise", code: s.value ? this.value(s.value) : imm("u8", 8), sid: this.sid });
+        // --- ERR_NR 8: "9 STOP statement". The program returns with it set, and BASIC shows the
+        // --- report when its own statement ends (ZX BASIC; compatibility plan C3)
+        this.emit({ op: "rtcall", name: this.rt("StopProgram"), args: [s.value ? this.value(s.value) : imm("u8", 8)], sid: this.sid });
+        this.terminate({ op: "end", code: imm("u16", 0), sid: this.sid });
         return;
       case "error":
         this.beginStatement(s.span, "return");

@@ -147,10 +147,10 @@ describe("memory, END and errors", () => {
     expect(r.screen(1)).toEqual(["x"]);
   });
 
-  it("stops with the STOP report", async () => {
-    const r = await runBasic('PRINT "a"\nSTOP\nPRINT "b"\n', { expectEnd: false, frames: 60 });
+  it("ends with STOP: the program returns with ERR_NR 8 (ZX BASIC)", async () => {
+    const r = await runBasic('PRINT "a"\nSTOP\nPRINT "b"\n');
     expect(r.screen(1)).toEqual(["a"]);
-    expect(r.session.screenLine(23)).toMatch(/^9 STOP statement/);
+    expect(r.session.peek(23610)).toBe(8);
   });
 
   it("raises an error report with ERROR", async () => {

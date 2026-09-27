@@ -6,8 +6,10 @@
 ; The screen is 256 x 192 pixels with (0,0) at the bottom left; all 192 rows are usable (the ROM
 ; keeps the bottom 16 for its editor). A pixel follows the current colours: OVER flips it, INVERSE
 ; clears it, both leave it alone; its cell takes the colours as PRINT gives them (PrintApplyAttr).
-; COORDS ($5C7D x, $5C7E y) is the last point plotted: DRAW starts there. A point off the screen
-; stops the program with "B Integer out of range", as the ROM's statements do.
+; COORDS ($5C7D x, $5C7E y) is the last point plotted: DRAW starts there. A point off the screen is
+; not drawn - PLOT plots nothing, DRAW nothing at all when its end is off, CIRCLE skips it - and
+; ERR_NR becomes 4 ("5 Out of screen") while the program carries on, as ZX BASIC does
+; (compatibility plan C3).
 
 ; ------------------------------------------------------------------------------------------------
 ; PLOT: C = x, B = y. Changes AF, BC, DE, HL.
@@ -48,9 +50,10 @@ PlotAttr:
     ld h,a
     jp PrintApplyAttr
 
-GraphicsRange:
-    ld a,10                 ; "B Integer out of range"
-    jp RaiseError
+GraphicsRange:              ; reached before anything is pushed: returns to the statement
+    ld a,4                  ; "5 Out of screen"
+    ld ($5c3a),a            ; ERR_NR
+    ret
 
 ; HL = the screen byte of pixel (C, B), y counted from the bottom (0-191); A = its bit. Keeps BC.
 ; Changes F, DE.

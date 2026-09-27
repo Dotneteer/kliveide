@@ -74,6 +74,7 @@ export const RUNTIME_ARGS: Record<string, string[]> = {
   "core.TapeSave": ["hl", "a", "de", "bc"],
   "core.TapeLoad": ["hl", "a", "de", "bc"],
   "core.Beep": ["stack", "aedcb"],
+  "core.StopProgram": ["a"],
   "core.DrawLine": ["de", "hl"],
   "core.Circle": ["d", "e", "c"],
   "core.DataPutNumber": ["aedcb"],

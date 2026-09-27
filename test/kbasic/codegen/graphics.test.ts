@@ -46,9 +46,10 @@ describe("graphics", () => {
     expect(points.size).toBeGreaterThan(40);
   });
 
-  it("stops with B Integer out of range off the screen", async () => {
-    const r = await runBasic("CLS\nPLOT 10, 10\nDRAW 0, 190\n", { expectEnd: false, frames: 100 });
-    expect(r.session.screenLine(23)).toMatch(/^B Integer out of range/);
+  it("draws nothing off the screen, sets ERR_NR to 4 and carries on (ZX BASIC)", async () => {
+    const r = await runBasic("CLS\nPLOT 10, 10\nDRAW 0, 190\nPLOT 20, 200\nPLOT 30, 30\n");
+    expect(lit(r)).toEqual(["10,10", "30,30"]);
+    expect(r.session.peek(23610)).toBe(4);
   });
 
   it("unplots with INVERSE and flips with OVER", async () => {

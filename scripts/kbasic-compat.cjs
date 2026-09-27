@@ -388,6 +388,27 @@ function generate() {
     })
   };
 
+  // --- Runtime errors (C3): does the program stop, or set ERR_NR and carry on? One program each; the
+  // --- row reads "after <ERR_NR>" when it carried on, and stays empty when it stopped
+  const ERRORS = [
+    ["PRINT AT row 30", 'PRINT AT 30, 0; "y";'], ["PRINT AT column 40", 'PRINT AT 0, 40; "y";'],
+    ["INK 10", "INK 10"], ["PAPER 12", "PAPER 12"], ["PRINT INK 10", 'PRINT INK 10; "y";'], ["BORDER 9", "BORDER 9"],
+    ["PLOT off the screen", "PLOT 10, 200"], ["DRAW off the screen", "PLOT 10, 10: DRAW 250, 0"], ["CIRCLE off the screen", "CIRCLE 250, 100, 20"],
+    ["READ of the wrong kind", 'DIM x@ AS UByte\nREAD x@\nDATA "t"'], ["READ after RESTORE to no DATA", "DIM x@ AS UByte\nDATA 1\nRESTORE fin@\nREAD x@\nfin@:"],
+    ["STOP", "STOP"], ["ERROR 3", "ERROR 3"], ["SQR(-1)", "DIM f@ AS Float = -1\nf@ = SQR(f@)"], ["Float overflow", "DIM f@ AS Float = 1E38\nf@ = f@ * f@"],
+    ["LN(0)", "DIM f@ AS Float\nf@ = LN(f@)"], ["BEEP too long", "BEEP 100, 0"], ["BEEP too high", "BEEP 0.01, 100"],
+    ["String heap full", 'DIM s@ AS String\nDIM i@ AS UInteger\nFOR i@ = 1 TO 300: s@ = s@ + "0123456789012345678901234567890123456789": NEXT i@'],
+    ["CHR$ of 300", "DIM c@ AS UInteger = 300\nDIM s@ AS String\ns@ = CHR$(c@)"], ["USR of a String", 'DIM u@ AS UInteger\nu@ = USR "zz"'],
+    ["END", "END"], ["Fixed division by zero", "DIM a@, z@ AS Fixed\na@ = 1\na@ = a@ / z@"]
+  ];
+  suites.errors = {
+    perProgram: 1,
+    items: ERRORS.map(([id, stmt]) => {
+      const suffix = name();
+      return { id, decl: stmt.replace(/@/g, suffix).split("\n"), expr: '"after "; PEEK 23610' };
+    })
+  };
+
   for (const [suite, data] of Object.entries(suites)) {
     const ids = new Set();
     for (const item of data.items) {

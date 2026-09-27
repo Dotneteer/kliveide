@@ -72,14 +72,16 @@ describe("DATA and READ", () => {
     expect(await firstLine(source)).toBe("-1 2 -3");
   });
 
-  it("stops with A Invalid argument when a String meets a number", async () => {
-    const r = await runBasic('DIM x AS UByte\nREAD x\nDATA "text"\n', { expectEnd: false, frames: 100 });
-    expect(r.session.screenLine(23)).toMatch(/^A Invalid argument/);
+  it("reads 0 and sets ERR_NR to 9 when a String meets a number, and carries on (ZX BASIC)", async () => {
+    const r = await runBasic('DIM x AS UByte = 7\nDIM s AS String = "keep"\nREAD x\nREAD s\nPRINT x; " "; s; "|"\nDATA "text", 5\n');
+    expect(r.screen(1)).toEqual(["0 |"]);
+    expect(r.session.peek(23610)).toBe(9);
   });
 
-  it("stops with E Out of DATA when there is none", async () => {
-    const r = await runBasic("DIM x AS UByte\nREAD x\n", { expectEnd: false, frames: 100 });
-    expect(r.session.screenLine(23)).toMatch(/^E Out of DATA/);
+  it("reads 0 or the empty String, with no error, when there is no DATA left", async () => {
+    const r = await runBasic('DIM x AS UByte = 7\nDIM s AS String = "keep"\nREAD x\nREAD s\nPRINT x; " "; s; "|"\n');
+    expect(r.screen(1)).toEqual(["0 |"]);
+    expect(r.session.peek(23610)).not.toBe(13);
   });
 
   it("gives a DATA line a breakpoint that stops when READ takes its first item", async () => {

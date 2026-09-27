@@ -1,1 +1,28 @@
-{}
+{
+ "errors": {
+  "INK 10": {
+   "klive": "",
+   "zxbc": "after 0"
+  },
+  "PAPER 12": {
+   "klive": "",
+   "zxbc": "after 0"
+  },
+  "PRINT INK 10": {
+   "klive": "",
+   "zxbc": "after 0"
+  },
+  "BORDER 9": {
+   "klive": "",
+   "zxbc": "after 0"
+  },
+  "BEEP too long": {
+   "klive": "",
+   "zxbc": "rejected: zxbc crashed: src.arch.z80.beep.BeepError: Invalid duration: must be between [0, 10]"
+  },
+  "USR of a String": {
+   "klive": "",
+   "zxbc": "after 0"
+  }
+ }
+}

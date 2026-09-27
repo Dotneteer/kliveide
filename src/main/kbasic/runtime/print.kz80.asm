@@ -3,7 +3,7 @@
 ; @exports  PrintInit, PrintChar, PrintStr, PrintNewline, PrintComma, PrintAt, PrintTab, PrintReset
 ; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, PrintFixed, Cls, PrintRow, PrintCol
 ; @exports  PrintColour
-; @exports  PrintApplyAttr
+; @exports  PrintApplyAttr, PrintSave
 ; @requires heap, errors
 ; @init     PrintInit
 ;
@@ -23,6 +23,8 @@
 ; ------------------------------------------------------------------------------------------------
 ; Takes the cursor and the permanent colours from the ROM's system variables. Changes AF, BC, HL.
 PrintInit:
+    ld hl,PrintSave         ; the program's end leaves BASIC printing where the program stopped
+    ld (EndHook),hl
     ld hl,($5c88)           ; S_POSN: L = 33 - column, H = 24 - row
     ld a,33
     sub l
@@ -466,8 +468,9 @@ PrintTab:
     jr PrintSpacesTo
 
 ; ------------------------------------------------------------------------------------------------
-; AT: moves the cursor to row B, column C; stops with "5 Out of screen" when either is outside the
-; 24 x 32 screen. Changes AF.
+; AT: moves the cursor to row B, column C. When either is outside the 24 x 32 screen, the cursor stays
+; and ERR_NR becomes 4 ("5 Out of screen") while the program carries on, as ZX BASIC does
+; (compatibility plan C3). Changes AF.
 PrintAt:
     ld a,b
     cp 24
@@ -481,7 +484,42 @@ PrintAt:
     ret
 PrintAtOut:
     ld a,4
-    jp RaiseError
+    ld ($5c3a),a            ; ERR_NR
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; Leaves BASIC printing where the program stopped, as ZX BASIC does: S_POSN and DF_CC from the
+; cursor (a full line goes on at the next one; below the screen, the last row). End calls it
+; through EndHook. Changes AF, BC, HL.
+PrintSave:
+    ld a,(PrintRow)
+    ld b,a
+    ld a,(PrintCol)
+    ld c,a
+    cp 32
+    jr c,PrintSaveRow
+    ld c,0                  ; a full line
+    inc b
+PrintSaveRow:
+    ld a,b
+    cp 24
+    jr c,PrintSavePosn
+    ld bc,$1700             ; below the screen: row 23, column 0
+PrintSavePosn:
+    ld a,33
+    sub c
+    ld l,a
+    ld a,24
+    sub b
+    ld h,a
+    ld ($5c88),hl           ; S_POSN
+    ld a,b
+    call PrintRowAddr       ; HL = the row's first pixel line
+    ld a,l
+    or c
+    ld l,a
+    ld ($5c84),hl           ; DF_CC
+    ret
 
 ; ------------------------------------------------------------------------------------------------
 ; A colour code's argument: C = the code (16 INK, 17 PAPER, 18 FLASH, 19 BRIGHT, 20 INVERSE, 21 OVER,

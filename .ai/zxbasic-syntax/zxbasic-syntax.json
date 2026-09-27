@@ -2523,6 +2523,16 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
+        "name": "beep-limits",
+        "question": "Which BEEP durations and pitches are allowed?",
+        "decision": "The ROM limits, as ZX BASIC has them: a duration from 0 to 10 seconds (rounded down) and a pitch from -60 to 69 (rounded down); anything else stops with B Integer out of range. A duration too short for one cycle makes no sound.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "With constant arguments out of range zxbc 1.19 crashes compiling (BeepError): Klive is to reject them at compile time in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+      },
+      {
         "phase": 8,
         "status": "decided",
         "name": "bnot-decimal",
@@ -2725,6 +2735,16 @@
         "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
+        "name": "heap-exhaustion",
+        "question": "What happens when the String heap is full?",
+        "decision": "The String that does not fit is the empty String and the program goes on (with check-memory, it stops with 4 Out of memory).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 without --debug-memory writes past the heap (the screen fills with garbage and the program stops): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "implicit-type-from-context",
         "question": "Does a variable typed by its first assignment, FOR values or READ raise W100?",
         "decision": "No: W100 is raised only when nothing determines the type and it becomes Float. Under strict typing any undeclared variable is error E426.",
@@ -2816,14 +2836,13 @@
         "test": "test/kbasic/corpus/integers/precedence.zxbas"
       },
       {
-        "status": "open",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
         "name": "plot-off-screen",
-        "question": "What do PLOT and DRAW do with a point off the screen?",
-        "decision": "They stop with B Integer out of range, as the ROM's PLOT and DRAW do.",
-        "test": "test/kbasic/corpus/graphics/plot-range.zxbas",
-        "oracle": "Upstream stops with 5 Out of screen. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "question": "What do PLOT, DRAW and CIRCLE do with a point off the screen?",
+        "decision": "The point is not drawn - PLOT plots nothing, DRAW draws nothing at all when its end is off the screen, CIRCLE skips the points off it - the last point plotted stays, and ERR_NR becomes 4 (5 Out of screen) while the program carries on.",
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "status": "open",
@@ -2858,10 +2877,10 @@
         "phase": 8,
         "name": "print-position-on-return",
         "question": "Where does BASIC print after the program returns?",
-        "decision": "Klive today: where BASIC last printed; Klive keeps its own cursor and does not write it back.",
-        "status": "open",
+        "decision": "Where the program stopped: the program end leaves S_POSN and DF_CC at its cursor (PrintSave), so BASIC goes on printing after the program output (STOP then PRINT 7 gives a7).",
+        "status": "decided",
         "source": "oracle",
-        "oracle": "zxbc leaves BASIC printing after the program output (STOP then PRINT 7 gives a7 on the program line). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "print-udg-codes",
@@ -2875,31 +2894,30 @@
       {
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
-        "decision": "It wraps to the first item. With no DATA at all, or after RESTORE to a label with no DATA after it, READ stops with E Out of DATA.",
+        "decision": "It wraps to the first item. After RESTORE to a label with no DATA after it, READ reads 0 (or the empty String) with no error; so does a program with no DATA at all.",
         "status": "open",
         "source": "oracle",
         "phase": 8,
         "test": "test/kbasic/codegen/data.test.ts",
-        "oracle": "Upstream agrees on wrapping; a program with no DATA at all is a compile error there (\"No DATA defined\"), where Klive stops at run time. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "zxbc rejects a program with no DATA at all at compile time (\"No DATA defined\"): to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "read-type-mismatch",
         "question": "What does READ do when a String item meets a numeric target, or a number meets a String target?",
-        "decision": "Klive today: it stops with A Invalid argument.",
-        "status": "open",
+        "decision": "READ of a String item into a number reads 0 (of a number into a String, the empty String), sets ERR_NR to 9 (A Invalid argument) and the program carries on; the next READ reads the next item.",
+        "status": "decided",
         "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/corpus/data/read-mismatch.zxbas",
-        "oracle": "zxbc sets ERR_NR to 9 (A Invalid argument) and carries on: the READ and the rest of the program run (see runtime-error-model). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/corpus/data/read-mismatch.zxbas"
       },
       {
         "phase": 8,
         "name": "runtime-error-model",
         "question": "What does a runtime error do to the program and to BASIC after it?",
-        "decision": "Klive today: every runtime error stops at once with the ROM report, at the RANDOMIZE USR statement.",
-        "status": "open",
+        "decision": "As ZX BASIC does: ERROR n, the ROM calculator errors (SQR(-1), LN(0), overflow) and BEEP out of range stop at once with the ROM report. PRINT AT off the screen, PLOT/DRAW/CIRCLE off the screen and READ of the wrong kind set ERR_NR and carry on. STOP ends the program by returning with ERR_NR 8; BASIC runs the rest of its line and its report shows the leftover ERR_NR. Invalid colours and USR of a String raise no error (C3c). The debugger stops on the errors that stop.",
+        "status": "decided",
         "source": "oracle",
-        "oracle": "zxbc 1.19, run as a user runs it (RANDOMIZE USR <org>: PRINT 7 typed at the keyboard): ERROR n and the ROM calculator errors stop at once (report at statement 1, PRINT 7 not run). READ of the wrong kind and PRINT AT off the screen set ERR_NR and carry on; STOP ends the program by returning with ERR_NR 8. BASIC then runs PRINT 7 and its final report shows the leftover ERR_NR (e.g. 9 STOP statement, 0:2). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md (D-C5)."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "shr-signed",

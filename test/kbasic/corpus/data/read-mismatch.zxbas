@@ -1,7 +1,12 @@
-' READ of a String item into a number stops with "A Invalid argument" (semantics annex: read-type-mismatch)
+' READ of a String item into a number reads 0, sets ERR_NR to 9 ("A Invalid argument") and the
+' program carries on (semantics annex: read-type-mismatch, runtime-error-model)
 '@expect screen 0 "go"
-'@expect error 9
-DIM x AS UByte
+'@expect screen 1 "0 5"
+'@expect peek 23610 9
+DIM x, y AS UByte
+x = 77
 PRINT "go"
 READ x
-DATA "text"
+READ y
+PRINT x; " "; y
+DATA "text", 5

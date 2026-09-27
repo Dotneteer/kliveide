@@ -1,4 +1,7 @@
-' PRINT AT outside the screen stops with "5 Out of screen"
-'@expect error 4
+' PRINT AT outside the screen leaves the cursor where it is, sets ERR_NR to 4 ("5 Out of screen")
+' and the program carries on (semantics annex: runtime-error-model)
+'@expect screen 0 "ax"
+'@expect peek 23610 4
 DIM r AS UByte = 24
+PRINT "a";
 PRINT AT r, 0; "x"

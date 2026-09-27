@@ -63,10 +63,12 @@ describe("behavioural oracle", () => {
     const ok = await run('PRINT "hi";\n');
     expect(ok.report).toBe("0 OK, 0:2");
     expect(ok.session.screenLine(0)).toContain("7");
-    // --- A Klive runtime error stops at the USR statement
-    const stopped = await run('PRINT "x";\nPRINT AT 30, 0; "y"\n');
-    expect(stopped.report).toBe("5 Out of screen, 0:1");
-    expect(stopped.session.screenLine(0).trimEnd()).toBe("x");
+    // --- ERROR stops at the USR statement; STOP returns, and BASIC reports it after PRINT 7
+    const stopped = await run('PRINT "x";\nERROR 3\n');
+    expect(stopped.report).toBe("4 Out of memory, 0:1");
+    const stop = await run('PRINT "x";\nSTOP\n');
+    expect(stop.report).toBe("9 STOP statement, 0:2");
+    expect(stop.session.screenLine(0).trimEnd()).toBe("x7");
   });
 
   it("names a zxbc failure without where it happened, so a bisect can keep it", () => {

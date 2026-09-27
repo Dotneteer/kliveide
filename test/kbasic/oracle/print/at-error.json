@@ -3,7 +3,7 @@
   "zxbc": "zxbc 1.19.0",
   "ended": true,
   "screen": [
-    "x",
+    "ax",
     "",
     "",
     "",
@@ -29,10 +29,13 @@
     " 1982 Sinclair Research Ltd"
   ],
   "errNr": 4,
+  "peeks": {
+    "peek 23610": 4
+  },
   "basic": {
     "report": "5 Out of screen, 0:1",
     "screen": [
-      "x",
+      "ax",
       "",
       "",
       "",

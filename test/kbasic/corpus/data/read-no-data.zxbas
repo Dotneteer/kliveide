@@ -1,7 +1,8 @@
-' READ in a program without DATA stops with "E Out of DATA"
+' READ in a program without DATA reads 0 (semantics annex: read-past-end)
 '@expect screen 0 "go"
-'@expect error 13
+'@expect screen 1 "0 read"
 DIM x AS UByte
+x = 7
 PRINT "go"
 READ x
-PRINT "not reached"
+PRINT x; " read"
