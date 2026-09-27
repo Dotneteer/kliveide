@@ -2110,7 +2110,9 @@ export abstract class CommonAssembler<
   /**
    * Processes the .page pragma: the code that follows is assembled for `address` (by default
    * $C000 for an even page, $E000 for an odd one) and stored in the 8K `page`, that is, in 16K bank
-   * `page >> 1` from offset `(page & 1) * $2000` plus the address's offset within its 8K slot.
+   * `page >> 1` from offset `(page & 1) * $2000` plus the address's offset within its 8K slot. With a
+   * count of 2 (an even page, an address on an 8K boundary) the code may fill `page` and `page + 1`:
+   * the whole 16K bank, for code that runs in a 16K window.
    * @param pragma Pragma to process
    * @param label Label information
    */
@@ -2148,6 +2150,23 @@ export abstract class CommonAssembler<
       }
     }
 
+    let count = 1;
+    if (pragma.count) {
+      const countValue = this.evaluateExprImmediate(pragma.count);
+      if (!countValue.isValid) {
+        return;
+      }
+      count = countValue.asLong();
+      if (count !== 1 && count !== 2) {
+        this.reportAssemblyError("Z0336", pragma);
+        return;
+      }
+      if (count === 2 && ((page & 1) !== 0 || (address & 0x1fff) !== 0 || address > 0xc000)) {
+        this.reportAssemblyError("Z0337", pragma);
+        return;
+      }
+    }
+
     this.ensureCodeSegment(address);
     if (this._currentSegment.currentOffset !== 0 || this._currentSegment.bank !== undefined) {
       this._currentSegment = new BinarySegment();
@@ -2157,7 +2176,7 @@ export abstract class CommonAssembler<
     this._currentSegment.startAddress = address;
     this._currentSegment.bank = page >> 1;
     this._currentSegment.bankOffset = (page & 1) * 0x2000 + offsetInPage;
-    this._currentSegment.maxCodeLength = 0x2000 - offsetInPage;
+    this._currentSegment.maxCodeLength = count * 0x2000 - offsetInPage;
     if (this._output.unbankedSegments) {
       const index = this._output.unbankedSegments.indexOf(this._currentSegment);
       if (index >= 0) this._output.unbankedSegments.splice(index, 1);

@@ -107,6 +107,10 @@ class Lowering {
   /** RESTORE label: the first item of the DATA statement after the label. */
   private readonly restoreTargets = new Map<LabelSymbol, string>();
   private dataRead = false;
+  /** Bank-local DIMs whose value is computed at run time: each runs as a small routine in its bank. */
+  private readonly bankInits: { name: string; bank: number; statement: Extract<BoundStatement, { kind: "dim" }> }[] = [];
+  /** FARPTR constants by their text. */
+  private readonly farConstants = new Map<string, string>();
 
   constructor(
     private readonly diagnostics: DiagnosticBag,
@@ -132,6 +136,7 @@ class Lowering {
       if (this.isLibraryFile(s.routine.span.file) && !reachable.has(s.routine)) continue;
       this.lowerRoutine(s);
     }
+    for (const init of this.bankInits) this.lowerBankInitialiser(init);
     if (this.dataRead) this.lowerData();
     this.module.data.push(...this.staticSlots);
     return this.module;
@@ -150,7 +155,7 @@ class Lowering {
       const type = mtypeOf(symbol.type);
       if (!this.supportedType(type)) continue;
       const init = symbol.initial ? bytesOf(symbol.initial, type) : undefined;
-      this.module.data.push({ kind: "var", label: globalName(symbol.name), size: mtypeSize(type), ...(init ? { init } : {}) });
+      this.module.data.push({ kind: "var", label: globalName(symbol.name), size: mtypeSize(type), ...(init ? { init } : {}), ...this.inBank(symbol.bank) });
     }
   }
 
@@ -167,15 +172,17 @@ class Lowering {
     const name = globalName(symbol.name);
     const tables = this.arrayTables(symbol, name);
     const at = symbol.at ? atText(symbol.at) : undefined;
-    this.module.data.push({ kind: "raw", label: name, lines: [`    .defw ${tables.dims},${name}.data,${tables.lower ?? 0},${tables.upper ?? 0}`] });
+    // --- A bank-local array (CODEBANK): its descriptor, data and tables all live in the bank
+    const bank = this.inBank(symbol.bank);
+    this.module.data.push({ kind: "raw", label: name, lines: [`    .defw ${tables.dims},${name}.data,${tables.lower ?? 0},${tables.upper ?? 0}`], ...bank });
     if (at !== undefined) {
       if (symbol.initial) this.unsupported("An initialiser for an array placed AT an address", symbol.span);
-      this.module.data.push({ kind: "equ", label: `${name}.data`, value: at });
+      this.module.data.push({ kind: "equ", label: `${name}.data`, value: at, ...bank });
     } else {
       const init = symbol.initial ? this.arrayImage(symbol, type) : undefined;
-      this.module.data.push({ kind: "var", label: `${name}.data`, size: arrayBytes(symbol), ...(init ? { init } : {}) });
+      this.module.data.push({ kind: "var", label: `${name}.data`, size: arrayBytes(symbol), ...(init ? { init } : {}), ...bank });
     }
-    this.module.data.push(...tables.items);
+    this.module.data.push(...tables.items.map((item) => ({ ...item, ...bank })));
   }
 
   /**
@@ -205,6 +212,11 @@ class Lowering {
   private arrayImage(symbol: ArraySymbol, type: MType): number[] {
     const size = mtypeSize(type);
     return (symbol.initial ?? []).flatMap((c) => bytesOf(c, type) ?? new Array<number>(size).fill(0));
+  }
+
+  /** `{ bank }` for bank-local things (CODEBANK), nothing for resident ones. */
+  private inBank(bank: number | undefined): { bank?: number } {
+    return bank ? { bank } : {};
   }
 
   private stringLiteral(text: string): SymRef {
@@ -419,6 +431,10 @@ class Lowering {
           return;
         }
         if (!s.value) return;
+        if (s.symbol.bank) {
+          this.bankedInitialiserCall(s);
+          return;
+        }
         this.beginStatement(s.span, "declaration", [s.value]);
         this.assign({ kind: "variable", span: s.span, type: (s.symbol as VariableSymbol).type, symbol: s.symbol as VariableSymbol }, s.value, s.span);
         return;
@@ -508,7 +524,7 @@ class Lowering {
         this.emit({ op: "asm", lines: s.lines.map((l) => l.text), sid: this.sid });
         return;
       case "codebank":
-        this.unsupported("CODEBANK", s.span);
+        this.codebankBody(s.body, s.bank);
         return;
       case "routine":
         return;
@@ -1040,12 +1056,122 @@ class Lowering {
     return { kind: "frame", offset: -this.fn.frameSize };
   }
 
+  // ===============================================================================================
+  // CODEBANK (plan §9)
+
+  /**
+   * A banked routine's resident trampoline, at its public label: a call into the far-call runtime
+   * followed by the bank and the body's address. Call sites, `@routine` and inline asm call it as if
+   * it were the routine (codebank-contract.md §4).
+   */
+  private trampoline(label: string, bank: number): void {
+    this.rt("FarCall");
+    this.module.data.push({ kind: "raw", label, lines: [`    call ${this.rt("FarCall")}`, `    .defb ${bank}`, `    .defw ${label}.__far`] });
+  }
+
+  /**
+   * A CODEBANK block's body: module-level ASM blocks and the labels naming them go into the bank
+   * (they are data or subroutines, not executed in place); every other statement stays resident and
+   * runs where it stands. Routines and DIMs get their bank from their symbols.
+   */
+  private codebankBody(body: BoundStatement[], bank: number): void {
+    for (const st of body) {
+      this.module.codebankSpan ??= st.span;
+      if (st.kind === "asm") {
+        for (const line of st.lines)
+          for (const m of line.text.matchAll(/\bcore\.([A-Za-z_]\w*)/g)) if (RUNTIME_EXPORTS.has(m[1])) this.rt(m[1]);
+        this.module.data.push({ kind: "raw", label: `__kbasm${this.labels++}`, lines: st.lines.map((l) => l.text), bank });
+      } else if (st.kind === "label" && st.label.bank === bank) {
+        this.module.data.push({ kind: "raw", label: labelName(st.label), lines: [], bank });
+      } else if (st.kind === "codebank") {
+        this.codebankBody(st.body, st.bank);
+      } else {
+        this.statement(st);
+      }
+    }
+  }
+
+  /** A bank-local DIM with a value computed at run time: a call of its initialiser, which runs in the bank. */
+  private bankedInitialiserCall(s: Extract<BoundStatement, { kind: "dim" }>): void {
+    const name = `__kbinit${this.bankInits.length}`;
+    this.bankInits.push({ name, bank: s.symbol.bank, statement: s });
+    this.beginStatement(s.span, "declaration");
+    const site: CallSite = { kind: "sub", callee: name, moreCallsFollow: false, order: this.statementCalls.length };
+    this.statementCalls.push(site);
+    this.emit({ op: "call", target: globalName(name), convention: "stdcall", args: [], site, sid: this.sid });
+  }
+
+  /** The initialiser routine of a bank-local DIM: the assignment, in the bank, as one statement. */
+  private lowerBankInitialiser(init: { name: string; bank: number; statement: Extract<BoundStatement, { kind: "dim" }> }): void {
+    const s = init.statement;
+    const label = globalName(init.name);
+    this.fn = {
+      label: `${label}.__far`,
+      name: init.name,
+      kind: "sub",
+      convention: "stdcall",
+      params: [],
+      locals: [],
+      frameSize: 0,
+      argBytes: 0,
+      blocks: [],
+      epilogue: `${label}.leave`,
+      span: s.span,
+      bank: init.bank,
+      vars: []
+    };
+    this.fnIndex = this.module.functions.length;
+    this.module.functions.push(this.fn);
+    this.trampoline(label, init.bank);
+    this.routine = undefined;
+    this.frameSlots = new Map();
+    this.localArrays = new Map();
+    this.loops = [];
+    this.sid = -1;
+    this.startBlock(this.fn.label);
+    this.block.instrs.push({ op: "prologue.end", sid: -1 });
+    this.beginStatement(s.span, "declaration", [s.value]);
+    this.assign({ kind: "variable", span: s.span, type: (s.symbol as VariableSymbol).type, symbol: s.symbol as VariableSymbol }, s.value!, s.span);
+    this.continueAt(this.fn.epilogue!);
+    this.emit({ op: "epilogue.begin", sid: this.sid });
+    this.endStatement();
+    this.terminate({ op: "ret", sid: this.sid });
+  }
+
+  /** FARPTR x (plan §9.1): a ULong, the logical bank in bits 16-23 and the address in bits 0-15. */
+  private farPointer(e: Extract<BoundExpr, { kind: "farptr" }>): Value {
+    const t = e.target;
+    let address: string;
+    switch (t.kind) {
+      case "variable":
+        address = globalName(t.name);
+        break;
+      case "array":
+        address = `${globalName(t.name)}.data`;
+        break;
+      case "label":
+        address = labelName(t);
+        break;
+      default:
+        return this.unsupportedValue("FARPTR of a routine", e.span);
+    }
+    const text = `${address}/${t.bank}`;
+    let label = this.farConstants.get(text);
+    if (!label) {
+      label = `__far${this.farConstants.size}`;
+      this.farConstants.set(text, label);
+      this.module.data.push({ kind: "raw", label, lines: [`    .defw ${address}`, `    .defw ${t.bank}`] });
+    }
+    return this.load("u32", { kind: "global", name: label });
+  }
+
   private lowerRoutine(s: Extract<BoundStatement, { kind: "routine" }>): void {
     const r = s.routine;
     const fastcall = r.convention === "FASTCALL";
     const returnType = r.kind === "function" ? mtypeOf(r.returnType ?? "Float") : undefined;
     this.fn = {
-      label: globalName(r.name),
+      // --- A banked routine's body is `_name.__far` in its bank; `_name` is its resident trampoline
+      label: r.bank ? `${globalName(r.name)}.__far` : globalName(r.name),
       name: r.name,
       kind: r.kind,
       convention: fastcall ? "fastcall" : "stdcall",
@@ -1056,8 +1182,13 @@ class Lowering {
       ...(returnType ? { returnType } : {}),
       blocks: [],
       epilogue: `${globalName(r.name)}.leave`,
-      span: s.span
+      span: s.span,
+      ...this.inBank(r.bank)
     };
+    if (r.bank) {
+      this.module.codebankSpan ??= r.span;
+      this.trampoline(globalName(r.name), r.bank);
+    }
     this.fnIndex = this.module.functions.length;
     this.module.functions.push(this.fn);
     this.routine = r;
@@ -1429,6 +1560,8 @@ class Lowering {
         return this.call(e.routine, e.args, type) ?? imm(type, 0);
       case "address":
         return this.address(e.target, e.span);
+      case "farptr":
+        return this.farPointer(e);
       default:
         this.unsupported(`This ${e.kind} expression`, e.span);
         return imm(type, 0);

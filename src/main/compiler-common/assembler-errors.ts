@@ -73,6 +73,8 @@ export type ErrorCodes =
   | "Z0333"
   | "Z0334"
   | "Z0335"
+  | "Z0336"
+  | "Z0337"
   
   // --- SaveNex pragma errors
   | "Z0340"
@@ -269,6 +271,8 @@ export const errorMessages: Record<string, string> = {
   Z0333: "The .page pragma can only be used with .model Next.",
   Z0334: "The .page pragma's page must be between 0 and 223.",
   Z0335: "The .page pragma's address must be between 0 and #ffff.",
+  Z0336: "The .page pragma's page count must be 1 or 2.",
+  Z0337: "A two-page .page must start on an even page, at an address on an 8K boundary no higher than #c000.",
 
   // --- SaveNex pragma errors
   Z0340: "The .savenex pragma can only be used with .model Next.",

@@ -54,6 +54,23 @@ export async function generateProgram(
     return undefined;
   }
 
+  // --- CODEBANK (plan §9): where each bank goes, and the far-call runtime's parameters
+  const banks = [...new Set([...mir.functions, ...mir.data].flatMap((x) => (x.bank ? [x.bank] : [])))].sort((a, b) => a - b);
+  let banking: BankPlan | undefined;
+  if (banks.length) {
+    const span = mir.codebankSpan ?? { file: 0, start: 0, end: 0 };
+    if (options.target !== "next") {
+      diagnostics.error("E458", "CODEBANK needs the ZX Spectrum Next target (it pages banks in through the Next's MMU)", span);
+      return undefined;
+    }
+    const plan = planBanks(banks, options);
+    if (typeof plan === "string") {
+      diagnostics.error("E457", plan, span);
+      return undefined;
+    }
+    banking = plan;
+  }
+
   // --- The Next's start stub reports errors through the errors module, which prints them
   const modules = resolveRuntimeModules(runtime, options.target === "next" ? ["program", "errors", "print"] : ["program"]);
   const emitted = emitProgram({
@@ -64,17 +81,38 @@ export async function generateProgram(
       ...prologueSource(runtimeInitialisers(modules)).split("\n")
     ],
     functions,
-    data: mir.data
+    data: mir.data,
+    ...(banking ? { functionBanks: mir.functions.map((f) => f.bank), bankPlacement: banking.placement } : {})
   });
 
   const assemblerOptions = assemblerOptionsFor(options);
   const assembler = new Z80Assembler();
   const programFile = `${programName}.kbasic.asm`;
   const programUnit = await assembler.parseSourceUnit(programFile, emitted.text, assemblerOptions);
-  const units = [programUnit, ...(await runtimeUnits(modules, assemblerOptions, { heapSize: options.heapSize, ...(options.heapAddress !== undefined ? { heapAddress: options.heapAddress } : {}) }))];
+  const units = [
+    programUnit,
+    ...(await runtimeUnits(modules, assemblerOptions, {
+      heapSize: options.heapSize,
+      ...(options.heapAddress !== undefined ? { heapAddress: options.heapAddress } : {}),
+      ...(banking ? { codebank: banking.layout } : {})
+    }))
+  ];
   const output = await new Z80Assembler().compileProgram(units, assemblerOptions);
   const errors = output.errors.filter((e) => !e.isWarning);
   if (errors.length) {
+    // --- A bank that overflows its page(s): the program's, reported with what the bank holds
+    const overflow = banking && errors.find((e) => e.errorCode === "Z0411" && e.filename === programFile);
+    if (overflow) {
+      const bank = bankAtLine(emitted, overflow.line);
+      const names = mir.functions.filter((f) => f.bank === bank && !f.name.startsWith("__")).map((f) => f.name);
+      const size = banking!.layout.slots * 8;
+      diagnostics.error(
+        "E455",
+        `CODEBANK ${bank} does not fit its ${size}K window${names.length ? ` (it holds ${names.slice(0, 12).join(", ")})` : ""}: move routines or data to another bank${size === 8 ? " or use a 16K window" : ""}`,
+        mir.codebankSpan ?? { file: 0, start: 0, end: 0 }
+      );
+      return undefined;
+    }
     // --- An error in the user's inline asm is theirs, at its BASIC line; any other is the compiler's
     const internal = errors.filter((e) => {
       const span = e.filename === programFile ? asmLineSpan(mir, emitted, e.line) : undefined;
@@ -86,6 +124,24 @@ export async function generateProgram(
       diagnostics.error("E599", `Internal code generator error: the generated program does not assemble (${e.filename}:${e.line}: ${e.message})`, { file: 0, start: 0, end: 0 });
     }
     return undefined;
+  }
+
+  // --- The window must not hide part of the resident program (codebank-contract.md §3)
+  if (banking) {
+    const low = options.codebankWindow;
+    const high = low + banking.layout.slots * 0x2000;
+    const clash = output.segments.find(
+      (s) => s.bank === undefined && s.emittedCode.length && s.startAddress < high && s.startAddress + s.emittedCode.length > low
+    );
+    if (clash) {
+      const hex = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
+      diagnostics.error(
+        "E456",
+        `The CODEBANK window ${hex(low)}-${hex(high - 1)} overlaps the resident program (${hex(clash.startAddress)}-${hex(clash.startAddress + clash.emittedCode.length - 1)}): move the window (codebank-window) or the program (origin)`,
+        mir.codebankSpan ?? { file: 0, start: 0, end: 0 }
+      );
+      return undefined;
+    }
   }
 
   const debug = buildDebugInfo({
@@ -173,4 +229,52 @@ function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {
   a.useCaseSensitiveSymbols = true;
   if (options.checkMemory) a.predefinedSymbols["KB_CHECK_MEMORY"] = new ExpressionValue(true);
   return a;
+}
+
+/** Where CODEBANK's banks go (plan §9.2): each bank's page(s) at the window, and the runtime's table. */
+type BankPlan = {
+  placement: Map<number, { page: number; address: number; pages: number }>;
+  layout: { slot: number; slots: number; depth: number; pages: number[] };
+};
+
+/**
+ * Places the banks: logical bank n in `codebank-first-page + (n - 1) * slots`, or at the n-th entry
+ * of `codebank-pages` (past its end, allocation goes on after its last page). A string is the
+ * reason the window or the pages are invalid (E457).
+ */
+function planBanks(banks: number[], options: KBasicOptions): BankPlan | string {
+  const slots = options.codebankWindowSize === "16k" ? 2 : 1;
+  const window = options.codebankWindow;
+  const hex = (n: number) => `$${n.toString(16).toUpperCase().padStart(4, "0")}`;
+  if (window % 0x2000 !== 0) return `The CODEBANK window (${hex(window)}) must start on an 8K boundary`;
+  if (window + slots * 0x2000 > 0x10000) return `The ${slots * 8}K CODEBANK window at ${hex(window)} runs past $FFFF`;
+  const listed = options.codebankPages ?? [];
+  const pageOf = (bank: number) =>
+    bank <= listed.length
+      ? listed[bank - 1]
+      : listed.length
+        ? listed[listed.length - 1] + (bank - listed.length) * slots
+        : options.codebankFirstPage + (bank - 1) * slots;
+  const maxBank = banks[banks.length - 1];
+  const pages = [0];
+  for (let bank = 1; bank <= maxBank; bank++) pages.push(pageOf(bank));
+  for (const bank of banks) {
+    const page = pageOf(bank);
+    if (page < 0 || page + slots - 1 > 223) return `CODEBANK ${bank}'s page (${page}) is not an 8K page of the Next (0-223)`;
+    if (slots === 2 && page % 2 !== 0) return `A 16K CODEBANK window needs even pages; bank ${bank} would start on page ${page}`;
+  }
+  return {
+    placement: new Map(banks.map((bank) => [bank, { page: pageOf(bank), address: window, pages: slots }])),
+    layout: { slot: window >> 13, slots, depth: options.codebankDepth, pages }
+  };
+}
+
+/** The bank whose section holds a line of the generated program (its `__kbBank<n>:` label above it). */
+function bankAtLine(emitted: EmittedProgram, line: number): number | undefined {
+  const text = emitted.text.split("\n");
+  for (let n = Math.min(line, text.length) - 1; n >= 0; n--) {
+    const m = /^__kbBank(\d+):/.exec(text[n]);
+    if (m) return Number(m[1]);
+  }
+  return undefined;
 }

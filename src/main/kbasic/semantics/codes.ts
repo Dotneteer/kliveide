@@ -40,7 +40,11 @@ export const SEMANTIC_ERRORS = {
   E451: "a direct GOTO or GOSUB between different banks",
   E452: "a reference into a bank from outside it (other than a call or FARPTR)",
   E453: "a banked #init routine",
-  E454: "an ASM block that switches bank and does not switch back"
+  E454: "an ASM block that switches bank and does not switch back",
+  E455: "a CODEBANK bank that does not fit its window",
+  E456: "a CODEBANK window that overlaps the resident program",
+  E457: "an invalid CODEBANK window or page list (size, alignment, past $FFFF, an odd page for a 16K window)",
+  E458: "CODEBANK on a target other than the ZX Spectrum Next"
 } as const;
 
 export const SEMANTIC_WARNINGS = {

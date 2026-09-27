@@ -172,6 +172,11 @@ export type MFunction = {
   span?: Span;
   /** A SUB or FUNCTION: its parameters and locals and where each lives in the frame (the debugger). */
   vars?: FrameVariable[];
+  /**
+   * CODEBANK (plan §9): the logical bank the body lives in. Its label is then `_name.__far`, and a
+   * resident trampoline at `_name` enters it through the far-call runtime.
+   */
+  bank?: number;
 };
 
 /** A parameter or local of a routine as the debugger reads it: `offset` from IX (the value's first byte). */
@@ -183,13 +188,14 @@ export type FrameVariable = {
   param: boolean;
 };
 
-/** Data the program image holds: globals, string literals, the DATA table. */
-export type DataItem =
+/** Data the program image holds: globals, string literals, the DATA table. `bank`: bank-local (CODEBANK). */
+export type DataItem = { bank?: number } & (
   | { kind: "var"; label: string; size: number; init?: number[] }
   | { kind: "string"; label: string; text: string }
   | { kind: "raw"; label: string; lines: string[] }
   /** A label for a fixed address (`DIM ... AT`). */
-  | { kind: "equ"; label: string; value: string };
+  | { kind: "equ"; label: string; value: string }
+);
 
 /** One statement (or statement part) for the debugger. */
 export type StatementEntry = {
@@ -208,6 +214,8 @@ export type MModule = {
   statements: StatementEntry[];
   /** Runtime labels the program calls (`core.X`), for linking. */
   runtime: Set<string>;
+  /** CODEBANK: where the program first puts something into a bank (errors about banks point here). */
+  codebankSpan?: Span;
 };
 
 export function vregText(v: Value): string {

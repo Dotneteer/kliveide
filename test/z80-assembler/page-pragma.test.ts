@@ -143,3 +143,31 @@ describe("NEX export - placement by bank offset", () => {
     expect(banks.get(20)![0]).toBe(0);
   });
 });
+
+describe("the .page pragma with two pages (a 16K window)", () => {
+  it("lets the code fill both pages of the bank, and maps each half to its page", async () => {
+    const output = await compile(".model next\n.page 40, $6000, 2\n  .defs $2000, 1\n  .defb 2\n");
+    expect(output.errorCount).toBe(0);
+    const [segment] = codeSegments(output);
+    expect(segment).toMatchObject({ bank: 20, bankOffset: 0, startAddress: 0x6000, maxCodeLength: 0x4000 });
+    expect(resolvedPartitionFor(segment, 0x6000, MI_ZXNEXT)).toBe(40);
+    expect(resolvedPartitionFor(segment, 0x8000, MI_ZXNEXT)).toBe(41);
+  });
+
+  it("is placed across the bank by the NEX export", async () => {
+    const output = await compile('.model next\n.savenex file "t.nex"\n.page 40, $6000, 2\n  .defs $2000, 1\n  .defb 2\n');
+    const bank20 = nexBanks(await NexFileWriter.fromAssemblerOutput(output, "/tmp")).get(20)!;
+    expect([bank20[0], bank20[0x1fff], bank20[0x2000]]).toEqual([1, 1, 2]);
+  });
+
+  it("refuses a count other than 1 or 2, an odd page, and an address off an 8K boundary", async () => {
+    expect((await compile(".model next\n.page 40, $6000, 3\n")).errors[0]?.errorCode).toBe("Z0336");
+    expect((await compile(".model next\n.page 41, $6000, 2\n")).errors[0]?.errorCode).toBe("Z0337");
+    expect((await compile(".model next\n.page 40, $6100, 2\n")).errors[0]?.errorCode).toBe("Z0337");
+  });
+
+  it("still limits one page to 8K", async () => {
+    const output = await compile(".model next\n.page 40, $6000\n  .defs $2001, 1\n");
+    expect(output.errorCount).toBeGreaterThan(0);
+  });
+});

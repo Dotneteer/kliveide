@@ -298,6 +298,8 @@ OtherRoutine:
 
 The code is stored in bank `page >> 1`, starting at `$0000` for an even page and `$2000` for an odd one, plus the address's offset within its 8K slot: `.page 41, $6100` stores the code at offset `$2100` of bank 20. The NEX export places it there, and source breakpoints in it fire only while that page is mapped in.
 
+A third operand, the page count, lets the code fill two pages: `.page 40, $6000, 2` stores up to 16K in pages 40 and 41 (the whole of bank 20) for code that runs with both pages mapped into two neighbouring slots, `$6000-$9FFF` here. The page must be even and the address on an 8K boundary no higher than `$C000`.
+
 ### Restrictions with PAGE
 
 - `PAGE` cannot have a label.

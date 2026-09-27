@@ -22,7 +22,14 @@ export type EmitInput = {
   header: string[];
   functions: LirLine[][];
   data: DataItem[];
+  /** CODEBANK: each function's bank (undefined: resident), in `functions` order. */
+  functionBanks?: (number | undefined)[];
+  /** CODEBANK: where each bank goes, by logical bank: its first 8K page, the window, the page count. */
+  bankPlacement?: Map<number, { page: number; address: number; pages: number }>;
 };
+
+/** The label that ends the resident part of a banked program: the runtime continues there. */
+export const RESIDENT_END = "__kbResidentEnd";
 
 /**
  * Writes the program (`.docs/kbasic-lir-regalloc.md` §7): one assembler line per LIR line, with the
@@ -37,10 +44,11 @@ export function emitProgram(input: EmitInput): EmittedProgram {
     lines.push(info);
   };
   for (const h of input.header) add(h, { sid: -1 });
-  const functionLines: { start: number; end: number }[] = [];
-  for (const fn of input.functions) {
+  const functionLines: { start: number; end: number }[] = new Array(input.functions.length);
+  const bankOf = (i: number) => input.functionBanks?.[i];
+  const emitFunction = (i: number) => {
     const start = text.length + 1;
-    const kept = dropJumpsToNext(fn);
+    const kept = dropJumpsToNext(input.functions[i]);
     for (const l of kept) {
       switch (l.kind) {
         case "label":
@@ -57,9 +65,25 @@ export function emitProgram(input: EmitInput): EmittedProgram {
           break;
       }
     }
-    functionLines.push({ start, end: text.length + 1 });
+    functionLines[i] = { start, end: text.length + 1 };
+  };
+  // --- The resident program: its code, then its data
+  input.functions.forEach((_, i) => bankOf(i) === undefined && emitFunction(i));
+  for (const d of input.data) if (!d.bank) for (const line of dataLines(d)) add(line, { sid: -1 });
+  // --- CODEBANK: each bank in its page(s), assembled for the window; the runtime goes on after the
+  // --- resident part
+  const banks = [...(input.bankPlacement?.keys() ?? [])].sort((a, b) => a - b);
+  if (banks.length) {
+    add(`${RESIDENT_END}:`, { sid: -1 });
+    for (const bank of banks) {
+      const place = input.bankPlacement!.get(bank)!;
+      add(`    .page ${place.page}, ${place.address}${place.pages > 1 ? `, ${place.pages}` : ""}`, { sid: -1 });
+      add(`__kbBank${bank}:`, { sid: -1 });
+      input.functions.forEach((_, i) => bankOf(i) === bank && emitFunction(i));
+      for (const d of input.data) if (d.bank === bank) for (const line of dataLines(d)) add(line, { sid: -1 });
+    }
+    add(`    .org ${RESIDENT_END}`, { sid: -1 });
   }
-  for (const d of input.data) for (const line of dataLines(d)) add(line, { sid: -1 });
   return { text: text.join("\n"), lines, functionLines };
 }
 

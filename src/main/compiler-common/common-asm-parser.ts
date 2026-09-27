@@ -565,10 +565,12 @@ export abstract class CommonAsmParser<
       case CommonTokens.PagePragma: {
         const pageExpr = this.getExpression();
         const pageAddrExpr = this.getExpression(true, true);
+        const pageCountExpr = pageAddrExpr ? this.getExpression(true, true) : undefined;
         return {
           type: "PagePragma",
           page: pageExpr,
-          address: pageAddrExpr
+          address: pageAddrExpr,
+          ...(pageCountExpr ? { count: pageCountExpr } : {})
         } as PagePragma<TInstruction, TToken>;
       }
       case CommonTokens.XorgPragma:

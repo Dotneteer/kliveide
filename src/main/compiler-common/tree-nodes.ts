@@ -656,6 +656,11 @@ export interface PagePragma<TNode extends TypedObject, TToken extends CommonToke
    * The address the code is assembled for
    */
   address?: Expression<TNode, TToken>;
+
+  /**
+   * How many 8K pages the code may fill (1 or 2): two, from an even page, for a 16K window
+   */
+  count?: Expression<TNode, TToken>;
 }
 
 export interface BankPragma<TNode extends TypedObject, TToken extends CommonTokenType>

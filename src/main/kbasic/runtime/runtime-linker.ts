@@ -16,6 +16,12 @@ export const DEFAULT_HEAP_SIZE = 4768;
 export type RuntimeLayout = {
   heapSize?: number;
   heapAddress?: number;
+  /**
+   * CODEBANK (plan §9): the far-call runtime's parameters — the window's first MMU slot and its
+   * size in 8K slots, the nesting depth, and each logical bank's first 8K page (index 0 is the
+   * resident "bank", whose page(s) `FarInit` reads at start-up).
+   */
+  codebank?: { slot: number; slots: number; depth: number; pages: number[] };
 };
 
 const modulesByName = new Map(runtimeBundle.modules.map((m) => [m.name, m]));
@@ -89,11 +95,19 @@ export function endSource(value = 0): string {
 function coreOpenSource(layout: RuntimeLayout): string {
   const lines = ["    .module core", `HeapSize .equ ${layout.heapSize ?? DEFAULT_HEAP_SIZE}`];
   if (layout.heapAddress !== undefined) lines.push(`HeapStart .equ ${layout.heapAddress}`);
+  const cb = layout.codebank;
+  if (cb) lines.push(`FarReg .equ ${0x50 + cb.slot}`, `FarSlots .equ ${cb.slots}`, `FarDepth .equ ${cb.depth}`);
   return lines.join("\n");
 }
 
 function coreCloseSource(layout: RuntimeLayout): string {
   const lines: string[] = [];
+  const cb = layout.codebank;
+  if (cb) {
+    // --- The page table: a row per logical bank (one byte, two for a 16K window), then the shadow stack
+    const rows = cb.pages.flatMap((page) => (cb.slots === 2 ? [page, page + 1] : [page]));
+    lines.push("FarPages:", `    .defb ${rows.join(",")}`, "FarStack:", `    .defs ${3 * cb.depth}`);
+  }
   if (layout.heapAddress === undefined) lines.push("HeapStart:", "    .defs HeapSize");
   lines.push("    .moduleend");
   return lines.join("\n");
