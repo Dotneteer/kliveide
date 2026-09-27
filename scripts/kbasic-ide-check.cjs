@@ -10,6 +10,11 @@
  *   npx electron-vite build --config build/electron.vite.config.ts   # out/ must be current
  *   xvfb-run -a node scripts/kbasic-ide-check.cjs                     # (xvfb-run only without a display)
  *
+ * Then the source-level debugger (plan Phase 5): a second program stops in a SUB; the Call Stack
+ * panel must show the SUB and the main program, the Variables panel the parameter and the global;
+ * Step Over moves to the next statement, Step Out stops at the calling statement as a return point,
+ * and continuing stops at the runtime error the program raises, before the ROM's report.
+ *
  * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop.
  */
 const fs = require("fs");
@@ -21,6 +26,20 @@ const PROGRAM = ['PRINT "one" : PRINT "two"', "SUB greet()", ' PRINT "in sub"', 
 const STOPS = [
   { line: 1, text: PROGRAM[0] },
   { line: 3, text: PROGRAM[2] }
+];
+
+const DEBUGGER = [
+  "DIM total AS UInteger = 5", // 1
+  "FUNCTION Twice(n AS UByte) AS UByte", // 2
+  "  RETURN n * 2", // 3
+  "END FUNCTION", // 4
+  "SUB Show(v AS UByte)", // 5
+  "  total = total + v", // 6
+  "  PRINT total", // 7
+  "END SUB", // 8
+  "Show Twice(4)", // 9
+  "ERROR 2", // 10
+  ""
 ];
 
 (async () => {
@@ -79,6 +98,68 @@ const STOPS = [
     const after = await emuText();
     if (/Paused/i.test(after)) failures.push("the program did not run to its end after the last stop");
     else console.log("ok   the program ran to its end after the last stop");
+
+    // --- The source-level debugger (Phase 5)
+    const check = (ok, what) => {
+      console.log(`${ok ? "ok  " : "FAIL"} ${what}`);
+      if (!ok) failures.push(what);
+    };
+    const sideBarText = () => ide.evaluate(() => document.querySelector('[class*="_sideBar_"]')?.innerText ?? document.body.innerText);
+    const expandPanel = async (title, probe) => {
+      if ((await sideBarText()).includes(probe)) return;
+      await ide.locator('[class*="_headerText_"]', { hasText: new RegExp(`^${title}$`, "i") }).first().click({ force: true });
+      await sleep(1200);
+    };
+    const shot = async (name) => shots && (await ide.screenshot({ path: path.join(shots, `kbasic-${name}.png`) }));
+    const waitPaused = async () => {
+      const start = Date.now();
+      while (Date.now() - start < 20000) {
+        if (/Paused \(PC:/i.test(await emuText())) return true;
+        await sleep(250);
+      }
+      return false;
+    };
+    // --- A project of its own: the IDE keeps an open document's text across a reopen of its folder
+    await cmd("em-stop", 1500);
+    await cmd("bp-ea", 800);
+    await cmd(`newp sp48 kbdebug zx-basic -p "${projects}"`, 5000);
+    const debugFolder = path.join(projects, "kbdebug");
+    fs.writeFileSync(path.join(debugFolder, "code", "program.zxbas"), DEBUGGER.join("\n"));
+    await cmd(`open "${debugFolder}"`, 8000);
+    await cmd("set -p zxbasic.compiler klive", 1500);
+    await cmd("nav code/program.zxbas", 3000);
+    await cmd("bp-set [code/program.zxbas]:6", 1200);
+    await cmd("debug", 5000);
+    check(await waitPaused(), "the debugger program paused at its breakpoint");
+    await sleep(1500);
+    check((await executionLine()) === DEBUGGER[5], `the execution point is on ${JSON.stringify(DEBUGGER[5])}`);
+    await ide.locator('button[aria-label="Debug"]').click({ force: true });
+    await sleep(1000);
+    await expandPanel("Call Stack", "Top:");
+    await expandPanel("Variables", "Globals");
+    await sleep(1500);
+    const panels = await sideBarText();
+    check(/Top:\s*Show\s*program\.zxbas:6/.test(panels), "the Call Stack shows Show at line 6");
+    check(/1:\s*main\s*program\.zxbas:9/.test(panels), "the Call Stack shows the main program at line 9");
+    check(/Locals — Show\s*v\s*8/.test(panels), "the Variables panel shows the parameter v = 8");
+    check(/total\s*5\s*UInteger/.test(panels), "the Variables panel shows the global total = 5");
+    await shot("variables");
+
+    await cmd("em-sto", 2500);
+    check((await executionLine()) === DEBUGGER[6], `Step Over moves to ${JSON.stringify(DEBUGGER[6])}`);
+    check(/total\s*13\s*UInteger/.test(await sideBarText()), "the Variables panel follows the step (total = 13)");
+    await cmd("em-out", 2500);
+    const returned = (await executionLine()) ?? "";
+    check(returned.startsWith(DEBUGGER[8]) && returned.includes("returned from Show"), `Step Out stops at the call as a return point (${JSON.stringify(returned)})`);
+    await shot("return-point");
+
+    await cmd("em-debug", 2500);
+    check(await waitPaused(), "the machine paused at the runtime error");
+    await sleep(1500);
+    const errorLine = (await executionLine()) ?? "";
+    check(errorLine.startsWith(DEBUGGER[9]) && errorLine.includes("3 Subscript wrong"), `the error stop marks ${JSON.stringify(DEBUGGER[9])} (${JSON.stringify(errorLine)})`);
+    check(/runtime error: 3 Subscript wrong/.test(await sideBarText()), "the Call Stack names the error");
+    await shot("error-stop");
   } catch (e) {
     failures.push(e.message.split("\n")[0]);
   } finally {
@@ -89,6 +170,6 @@ const STOPS = [
     console.log(`\n${failures.length} problem(s):\n  ${failures.join("\n  ")}`);
     process.exit(1);
   }
-  console.log("\nKlive BASIC breakpoints and execution point work in the IDE.");
+  console.log("\nKlive BASIC breakpoints, the execution point and the source-level debugger work in the IDE.");
   process.exit(0);
 })();

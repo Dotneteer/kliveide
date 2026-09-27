@@ -81,7 +81,8 @@ merely uncoloured, which no route diff can see.
 - New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,
   with `'@expect` header lines (the runner's header comment lists them); the runner also fails on
   the debug-info validator's problems and checks SP at every statement entry (G4).
-  `scripts/kbasic-ide-check.cjs` checks breakpoints and the execution point in the running IDE.
+  `scripts/kbasic-ide-check.cjs` checks breakpoints, the execution point and the source-level debugger
+  (stepping, return points, the Call Stack and Variables panels, error stops) in the running IDE.
 
 ## ZX Spectrum Next Test Harness
 

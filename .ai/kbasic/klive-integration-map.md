@@ -113,6 +113,11 @@ integration changes.
   its line and columns (0-based start, exclusive end, the assembler's convention). The `zxbas`
   provider has `fullLineBreakpoints: true`, so the execution point is drawn on the whole line.
   Verified in the running app by `scripts/kbasic-ide-check.cjs`.
+- **Statement breakpoints** (Phase 5, plan §10.3): `BreakpointInfo.column` (0-based) makes a
+  source breakpoint a statement's; its key is `[resource]:line:column`. `refreshSourceCodeBreakpoints`
+  resolves it with `statementAtColumn` (the statement holding the column, else the next one on the
+  line) against `sourceLevelDebug`. The editor draws an inline marker before each further statement
+  of a line (`features/editor/monaco/statementBreakpoints.ts`); the gutter still sets line breakpoints.
 
 ## 5. Stepping
 
@@ -128,6 +133,19 @@ integration changes.
   interrupt entry, popped on taken RET), exposed as e.g. `zxnextGetStepOutAddress`.
 - `FrameTerminationMode.UntilExecutionPoint` + `executionContext.terminationPoint` runs until PC
   reaches an address — what test harnesses use to run a routine to its return.
+- **Source stepping** (Phase 5): `DebugStepMode.SourceStep` hands the decision to
+  `shouldStopAtSourceStep` (`src/emu/machines/SourceStepDecision.ts`), which reads SP, the registers
+  and the core's interrupt depth (`<m>GetInterruptDepth`) through callbacks, only at statement entries
+  and call-site return addresses. The same file has the frame locator (`locateActivations`), the
+  statement index, the `CurrentStatementTracker` and the ROM report names. `MachineController`
+  holds the index (`setSourceDebugInfo`, sent by `injectCode` before a debug run and after the
+  injection), routes Step Into/Over/Out to source steps while `sourceStepping` is on, and answers
+  `getSourceStopInfo` / `getSourceCallStack`. EmuApi: `setSourceDebugInfo`, `setSourceStepping`,
+  `sourceStep`, `getSourceStepping`, `getSourceStopInfo`, `getSourceCallStack`, `setSourceErrorStops`.
+  Commands: `em-stl` (Step Over Line), `em-sit`, `em-rtf`, `em-src`, `em-err`.
+- **Runtime-error stops** (§10.10): `IDebugSupport.errorStopAddress` (the program's `core.RaiseError`)
+  stops every debug run there, before the ROM's report; `statementTracker` follows the running
+  statement through the debug loop so the stop can name it even when the routine was reached by a `jp`.
 
 ## 6. Editor, highlighting, panels
 
@@ -141,11 +159,20 @@ integration changes.
   non-blank character to the end of the line. The inline message badge stays at the line's end;
   a line gets one badge per severity, its messages joined with " • " (see the badge note in
   `.ai/ui-theming-intent-and-lessons.md`).
-- Auto-navigation to the PC: `src/renderer/appIde/IdeEventsHandler.tsx` `refreshCodeLocation`
-  (~177), from `sourceMap[pc]`.
+- Auto-navigation to the PC: `src/renderer/appIde/IdeEventsHandler.tsx` `refreshCodeLocation`,
+  through `locateSource` (`appIde/utils/source-location.ts`): with source-level info the emulator's
+  stop report decides (a return point shows the calling statement, an error stop the statement that
+  raised it), otherwise `sourceMap[pc]`. `MonacoEditor` draws the statement's range and a return
+  point's or error's note (`createCurrentStatementDecoration`).
 - Watch panel: `src/renderer/appIde/SideBarPanels/WatchPanel.tsx` — assembler symbols only, flat
   64K, no types. Call stack: `CallStackPanel.tsx` → `Z80MachineBase.getCallStack()` = 16 raw words
-  from SP.
+  from SP, or for a program with source-level info the symbolic frames
+  (`appIde/debugger/source/SourceCallStack.tsx`; selecting one sets `ideView.sourceFrame`).
+- **Variables panel** (Phase 5, §10.7–§10.8): `appIde/debugger/source/VariablesPanel.tsx` on a memory
+  snapshot; the models beside it (`variables-model.ts`, `value-decoder.ts`, `watch-expression.ts`,
+  `call-stack-model.ts`) are pure and tested on the 48K harness. BASIC watches are
+  `AppState.basicWatches`, saved with the project (`debugger.basicWatches`); they parse with the
+  compiler's `parseExpression` (`src/main/kbasic/syntax/parser.ts`).
 - Execution controls: `ExecutionControls.tsx`; debug shortcuts: `monacoDebugShortcuts.ts`.
 
 ## 7. Languages, templates, harnesses

@@ -89,6 +89,28 @@ The extensions (plan §8.4, type `KBasicDebugExtensions` in the new
 | `codebank` | the far-call runtime's symbols and the bank manifest | 6 |
 | `optimizationLevel` | the options | 3 |
 
+**Phase 5 state.** `buildSourceLevel` (`src/main/kbasic/debug/source-level.ts`, called from
+`codegen.ts` after `buildDebugInfo`) produces the whole table above except `codebank`, and
+`KBasicCompiler` ships it as `sourceLevelDebug`. Where it differs from the plan's letter:
+
+- `statements` holds the **user's** statements only. Library statements (`#include <...>`) and DATA
+  items are left out, so stepping runs through library code as through the runtime (plan §10.12's
+  Just My Code, always on: library files are virtual and the editor cannot show them).
+  `addressToStatement` maps library code to −1 accordingly.
+- `callables` has one entry per generated function except the DATA reader; a routine's `exits` are
+  its `ret` lines. `frames` carries `startAddress`/`endAddress` too, so the frame locator can find
+  the innermost callable from PC.
+- `variables`: globals by address (a `CONST` by value), parameters and locals by IX offset from the
+  MIR function's `vars` (the frame layout lowering built); a BYREF parameter and an array parameter
+  hold an address (`byRef`). A byte parameter's offset points at its value byte (slot + 1), a Float
+  parameter's at its exponent. Declared bounds go with every array but an array parameter, whose
+  first dimension's length only its upper-bound table can tell (when the program keeps one).
+- The payload travels as plain JSON through `emuApi.setSourceDebugInfo` (R6's compact encoding and
+  version guard are not needed at this size: the corpus's largest program is a few KB).
+
+Sorting and `addressToStatement` hold by construction; the corpus debugger check
+(`test/kbasic/corpus/corpus-debugger.test.ts`) exercises every table on every corpus program.
+
 ## 5. The classic tables (Phase 3's exit criterion)
 
 The IDE's existing breakpoint and execution-point code (`refreshSourceCodeBreakpoints`,
@@ -143,8 +165,8 @@ blank or `:`, and statements on one line either apart or nested — a one-line `
 header shares its line with the statements it holds). The corpus runner
 (`test/kbasic/corpus/corpus.test.ts`) fails on any problem and checks G4 on every run: it stops at
 every statement entry (a breakpoint each) and requires SP = IX − frame inside routines, and the main
-baseline minus two bytes per pending GOSUB in the main program. The sorting and `addressToStatement`
-checks wait for the source-level tables (Phase 5), G6 for the tracing hook of §13.5.
+baseline minus two bytes per pending GOSUB in the main program. G6 waits for the tracing hook of §13.5
+(Phase 5's step tests check FUNCTION results at return points, `test/kbasic/codegen/source-step.test.ts`).
 
 G2 taught one lowering rule: a block that holds nothing but its jump (the join after an IF, a
 loop's way back after an `EXIT`) is reached only by branches, so its jump is glue (sid −1). Tagged

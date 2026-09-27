@@ -34,7 +34,15 @@ the 128K and +3 targets (ROM paging); `sinclair-compatible`; new runtime modules
 `random`, `usr`, `data`, `graphics`, `sound`, `tape`. The standard library's documented priority
 set (§6.4) is written in Klive BASIC. The corpus has 159 programs, all passing; the behavioural
 oracle script exists (`scripts/kbasic-oracle.cjs`, to run where zxbc is installed); `zxbasic.compiler`
-now defaults to `klive`. **Phase 5 (source-level debugger) is next.** Decisions D1–D12 settled
+now defaults to `klive`. **Phase 5 done** (2026-09-27): the source-level debug tables (§8.4);
+statement stepping, Step Over Line and statement breakpoints (§10.3); step over, into and out across
+SUB, FUNCTION, GOSUB and recursion with return-point stops, Step Into Target, Run to Frame and
+returned values (§10.2); the interrupt-depth signal in every Z80 core (§10.2.7); the symbolic call
+stack (§10.6), the Variables panel (§10.7) and BASIC watch expressions (§10.8); runtime-error stops
+(§10.10). Every row of the §10.2/§10.3 scenario tables is an emulator test on the 48K; the call
+stack, the Variables panel and watches are checked against each other on all 159 corpus programs;
+the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). Just My Code
+(§10.12) is always on (see the Phase 5 facts). **Phase 6 (the Next and CODEBANK) is next.** Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -42,7 +50,8 @@ anything else.
 
 ## Handoff
 
-Written 2026-09-26 for a new AI session with no prior context on this work. This plan is
+Written 2026-09-26 for a new AI session with no prior context on this work; updated 2026-09-27
+after Phase 5. This plan is
 self-contained; read it in full, then continue in this order:
 
 1. **This file, start to finish.** It supersedes any summary of it you might be given.
@@ -82,6 +91,11 @@ self-contained; read it in full, then continue in this order:
 | Phase 4: the full language — Float (`float` module: the ROM calculator through `rst $28`, Float in A-E-D-C-B), Fixed (`fixed`), DATA/READ/RESTORE (`data`), graphics (`graphics`), BEEP (`sound`), tape (`tape`), RND (`random`), USR (`usr`); 128K/+3 (`rom`'s RomIn/RomOut page the 48K BASIC ROM) | `src/main/kbasic/runtime/`, `ir/lower.ts`, `backend/select0.ts`; tests `test/kbasic/codegen/{float,fixed,data,graphics,tape,targets}.test.ts`, `test/kbasic/runtime/` | those tests |
 | Phase 4: the standard library (§6.4) — Klive BASIC files, bundled, found first by `#include <...>` | `src/main/kbasic/stdlib/` (read its `README.md`), `src/main/kbasic/stdlib.ts`; `scripts/kbasic-font64.cjs` (print64's font); test `test/kbasic/codegen/stdlib.test.ts` | that test |
 | Phase 4: the corpus — 159 programs | `test/kbasic/corpus/` | the corpus command above |
+| Phase 5: the source-level debug tables — `SourceLevelDebugInfo` with its extensions (`variables`, `callSites`, `frames`, `errorEntry`, …) | `src/main/kbasic/debug/source-level.ts`, `src/common/abstractions/SourceDebugInfo.ts`; `.docs/kbasic-debug-builder.md` §4 "Phase 5 state"; test `test/kbasic/codegen/source-level.test.ts` | that test |
+| Phase 5: source stepping in the emulator — the frame locator, the step decision, the statement tracker, the interrupt-depth signal | `src/emu/machines/SourceStepDecision.ts`, `DebugStepDecision.ts`, `MachineController.ts`, `z80.c` (`interruptDepth`); tests `test/kbasic/codegen/source-step.test.ts` (every §10.2/§10.3 table row), `test/emu/debug-step-decision.test.ts`, `test/emu/step-out-stack.test.ts` | those tests |
+| Phase 5: the IDE — execution point and return points, statement breakpoints, Step Over Line and the Source/Z80 toggle, the symbolic Call Stack, the Variables panel and BASIC watches, runtime-error stops | `src/renderer/appIde/debugger/source/`, `appIde/utils/source-location.ts`, `features/editor/monaco/statementBreakpoints.ts`, `MonacoEditor.tsx`, `ExecutionControls.tsx`, `MachineCommands.ts` (`em-stl`, `em-sit`, `em-rtf`, `em-src`, `em-err`); tests `test/kbasic/codegen/source-{ide,variables,errors}.test.ts`, `test/controls/{SourceDebugPanels,ExecutionControlsSourceStepping}.test.tsx` | those tests |
+| Phase 5: the debugger on the corpus (exit criterion) | `test/kbasic/corpus/corpus-debugger.test.ts` | the corpus command above |
+| Phase 5: the IDE check, extended | `scripts/kbasic-ide-check.cjs`: a stop in a SUB, the Call Stack and Variables panels, Step Over, Step Out to a return point, the error stop | as for Phase 3 |
 | Upstream `zxbc` 1.19.0, installed for the D12 oracle (§17.2, R9) | `~/zxbasic` (**outside this repository**, on the project author's machine only), its own Python 3.14 virtual environment at `~/zxbasic/.venv` | `~/zxbasic/.venv/bin/zxbc --version` → `zxbc 1.19.0`. Installed on the author's machine; a cloud session's fresh container does not have it. |
 | The behavioural oracle (D12, R9) | `scripts/kbasic-oracle.cjs` (compiles with zxbc into a temporary folder, runs on the 48K harness, writes only `test/kbasic/oracle/<area>/<name>.json`); `test/kbasic/oracle/`; the corpus runner compares with those files | `node scripts/kbasic-oracle.cjs` where zxbc is installed; `test/kbasic/oracle/oracle-script.test.ts` everywhere |
 
@@ -105,8 +119,8 @@ not committed; the 48K core builds itself); `zxbasic-syntax-check.cjs` cannot re
 there (the container's `GITHUB_TOKEN` is refused, and unauthenticated calls hit the shared IP's rate
 limit) — run it on a developer machine; and `zxbc` is not installed.
 
-**Where to start:** Phase 5 in §14 (the source-level debugger, §10.2–§10.8). Three things are
-open from Phase 4 and need the project author's machine or decision:
+**Where to start:** Phase 6 in §14 (the Next target, NEX output, CODEBANK and its debugger
+support). Three things are still open from Phase 4 and need the project author's machine or decision:
 
 1. **Run the oracle** (`node scripts/kbasic-oracle.cjs`, zxbc installed): commit the results, then
    settle every R8 entry still `provisional` — confirm it (`source: "oracle"`) or record the
@@ -119,6 +133,35 @@ open from Phase 4 and need the project author's machine or decision:
    library source) before they are written. Everything documented in the priority set is done.
 3. What is still E501: SAVE/LOAD DATA of a String array or a local, an initialiser on an array
    placed `AT` an address, CODEBANK (Phase 6); the Next target is E502 (Phase 6).
+
+**Phase 5 facts a later phase must know:**
+
+- Source-level info reaches the emulator as plain JSON (`emuApi.setSourceDebugInfo`), sent before a
+  debug run and again after the injection (which may replace the machine controller); R6's compact
+  encoding and version guard were not needed at the sizes seen. The emulator builds a
+  `SourceDebugIndex` from it; the IDE keeps the same object in its compilation result.
+- A step is a `SourceStep` object on `DebugSupport`; `shouldStopAtSourceStep` reads SP and the
+  registers only at statement entries and call-site return addresses, so a step costs two map
+  lookups per instruction. The frame locator (`locateActivations`) needs G4 and an IX frame for every
+  routine (FASTCALL builds one too); the optimiser (Phase 7) must keep both, or give the locator
+  another way to find return slots.
+- When a call is the last thing in its statement, its return address is the next statement's entry.
+  A step then stops at the *calling* statement as a return point (`stopStatement`) and the next step
+  stops at once on the following statement (`stopAtStart`).
+- Interrupts: every core's shadow step-out stack marks interrupt entries; a step ignores stops while
+  the interrupt depth is above the one it started at, unless `em-src on -i`.
+- **Just My Code is always on.** Library statements are not in the tables (their files are virtual
+  and the editor cannot open them), so stepping runs through library code as through the runtime;
+  §10.12's "step into a stdlib routine" needs library files the editor can show first.
+- Runtime errors: `core.RaiseError` is the one error routine the program's own code reaches; errors
+  the ROM raises itself (inside the calculator) go through RST 8 and are not stopped at yet.
+- Not done in Phase 5, deliberately: editing a value in the Variables panel (§10.7's last bullet),
+  re-anchoring a statement breakpoint's column when its line is edited, bank-local reads by
+  partition (Phase 6, with CODEBANK), data breakpoints (§10.9, Phase 8).
+- Known IDE quirk met by the IDE check: a document open in the editor keeps its text when its file is
+  rewritten on disk and the same project folder is opened again; the check uses a second project.
+- The 48K harness builds its WASM core once per test process (it used to run clang for every
+  session, 2.3 s each).
 
 **Phase 4 facts a later phase must know:**
 
