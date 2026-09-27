@@ -244,25 +244,48 @@ What the second session found and did:
   Step Over of cross-bank recursion, a partition-qualified breakpoint, and the call stack's real
   callers through the shadow stack. `codebank.test.ts` passes.
 
+Done in the same session, after that:
+
+- **Variables and watches across banks:** `MemoryView.inBank(bank)` reads the window's addresses
+  from a bank's pages (`bankedMemoryView`, `memoryFor`, `bankPagesOf` in `value-decoder.ts`); the
+  panel fetches the pages with `getMemoryContents(page)`. Bank-local rows (and their children) carry
+  `bank` and are read-only — a 64K write would land in whatever the window holds.
+- **Runtime-error stops** in a banked routine name the banked statement and its callers (tested).
+- **The far-call runtime and the locator:** `FarCall` writes its shadow record *before* it replaces
+  the return slot (`ex (sp),hl`), and `stackReader` pairs far-return slots with records from the
+  oldest end, so a record without its slot (paused inside `FarCall`/`FarReturn`) is always the
+  newest. A test walks every instruction of a cross-bank call and return. Known gap, on every
+  machine: inside an epilogue, between `pop bc` and `push bc`, the return address is in BC' and the
+  locator cannot find that activation (the test skips epilogues).
+- **§8.5 sidecar:** `src/common/utils/source-debug-sidecar.ts` — `<name>.nex.kbasic-debug.json`
+  (format `klive-source-debug` v1, the NEX's length and FNV-1a checksum, the `SourceLevelDebugInfo`).
+  `exportNexFile` writes it beside every NEX of a program with source-level info; `nex-run -d`
+  reads it and sends it through `emuApi.setSourceDebugInfo` before and after the launch, clears the
+  previous info when there is no matching sidecar, and says in the output why a sidecar is unused.
+  A Next build now names its NEX `<program>.nex` (`.savenex file`). The renderer's panels still read
+  `compilation.result`, so a NEX launched without a build steps at source level in the emulator but
+  the editor, Call Stack and Variables panels show the last *build*'s program.
+- **`'@emit-asm`, `'@emit-ir`, `'@emit-map`** (they were parsed and ignored): `src/main/kbasic/emit-files.ts`
+  produces `<name>.kbasic.asm`, `<name>.kbasic.ir` (a MIR dump), `<name>.kbasic.map` (`$ADDR name`,
+  banked labels `B<n>:`), and with CODEBANK `<name>.banks.json` (NextBuild's manifest shape) and
+  `<name>.bank<n>.bin`; a foreground build writes them beside the source. The CSpect map format of
+  §5.3 is not written.
+- **Templates (R13):** `zxnext/zx-basic` (a CODEBANK example); the sp48/sp128 templates got a header
+  block. All three build without diagnostics (`compiler.test.ts`), the Next one runs (`next-target.test.ts`).
+
 Next steps, in order:
 
-1. Finish the debugger across banks: the **Variables panel and watches** read bank-local data from
-   the bank's pages, not the window (`VariableDebugInfo.bank`/`location.partition`): fetch those
-   pages with `emuApi.getMemoryContents(page)` in `VariablesPanel.tsx` and give `MemoryView` a bank
-   overlay for the window; editing a bank-local value must write to its page (or be refused). Check
-   runtime-error stops inside a banked routine, and `locateSource` / the editor's execution point in
-   the running IDE with a banked program (§10.4). Stepping inside `FarCall`/`FarReturn` at Z80 level
-   and then resuming source stepping is untested (the shadow record is written after the return
-   slot is replaced).
-2. `farmem.bas` (FarPeek/FarPeekW/FarPoke/FarPokeW/FarCopy/FarCopyTo/FarStr), written for Klive:
+1. `farmem.bas` (FarPeek/FarPeekW/FarPoke/FarPokeW/FarCopy/FarCopyTo/FarStr), written for Klive:
    map the bank's page(s) into the window temporarily (read the slot's current page back through
    the NextReg ports), access, restore — and it has to be in `stdlib-api.json` first, or recorded
    from upstream's documentation (never its source).
-3. §8.5 NEX sidecar `<name>.nex.kbasic-debug.json` beside NEX exports, loaded by `nex-run`
-   (`NexLaunchCommand.execute`, before `runCodeCommand`) through `emuApi.setSourceDebugInfo`; the
-   `'@emit-map` banks manifest (§9.3); the `zxnext/zx-basic` project template (R13); extend
-   `scripts/kbasic-ide-check.cjs` to a Next project (NEX launch via `.nexload` needs NextZXOS on the
-   SD image the IDE uses).
+2. Extend `scripts/kbasic-ide-check.cjs` to a Next project with CODEBANK (NEX launch via `.nexload`
+   needs NextZXOS on the SD image the IDE uses): breakpoints in a bank, the execution point in the
+   editor (§10.4), the Call Stack and Variables panels; and `nex-run -d` of the exported NEX with
+   its sidecar. Decide whether `nex-run` with a sidecar should also give the renderer the program's
+   tables (today they come only from a build).
+3. The docs page (R13 step 4): a Klive BASIC section in `docs/content/working-with-ide/zxb.mdx`,
+   including CODEBANK, the header options and the emitted files.
 4. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
@@ -1741,7 +1764,7 @@ they are done.
 | R10 | **The test corpus**, written from scratch (upstream's tests are AGPL). | Phase 3 onward | 1. Layout `test/kbasic/corpus/<area>/<name>.zxbas`, each with expectation lines in its header comment block (a test-only `'@expect` option family: `'@expect screen 0 "Hello"`, `'@expect peek $9000 42`, `'@expect error 2`). 2. One runner test that compiles every program at every optimisation level and checks the expectations on the 48K harness (Next-only programs on the Next harness). 3. Targets: Phase 3 — 60 programs (integers, strings, PRINT, control flow, SUB/FUNCTION, arrays); Phase 4 — +90 (Float, Fixed, DATA, graphics, sound, built-ins, stdlib); Phase 6 — the CODEBANK scenarios of `.ai/kbasic/codebank-contract.md` §6; plus three larger programs (a game loop, a text adventure, a banked program). 4. Every R8 decision points at a corpus program. | The runner exists and the Phase 3 target is met at the end of Phase 3. **Phase 3: done** — the runner is `test/kbasic/corpus/corpus.test.ts` and 61 programs pass (level 0 only until Phase 7). Decided R8 entries that code generation settles point at them; entries still `open` are not pinned by any program. **Phase 4: done** — 159 programs (97 new: Float, Fixed, DATA, graphics, BEEP, built-ins, control flow, the library, 32-bit, Strings, classic listings), expectations checked by hand against the spec and the annex; writing them found the unsigned-FOR-with-negative-STEP bug. |
 | R11 | **Stage design notes.** | Phase 3 (MIR, LIR, allocation, strings, debug builder); Phase 7 (optimiser) | **Approved 2026-09-26 and implemented in Phase 3** (each note ends with its Phase 3 state): `.docs/kbasic-mir.md`, `.docs/kbasic-lir-regalloc.md`, `.docs/kbasic-string-ownership.md`, `.docs/kbasic-debug-builder.md`, each ending with its open decisions (Q1–Q6, L1–L5, O1–O4, D1–D4). Before coding each stage, write a short design note in `.docs/` (the implementation-pattern docs folder): `kbasic-mir.md` (instruction set, types, SSA form, statement-id rules), `kbasic-lir-regalloc.md` (instruction objects, register classes, allocation, spill slots, the level-0 stack scheme), `kbasic-string-ownership.md` (temporaries, free points, by-value parameters, returned strings — the part most likely to leak), `kbasic-debug-builder.md` (joining list items and tags, the §8.2 guarantees and their validator). Each note is reviewed by the project author before its code starts. | The four notes exist and are approved before Phase 3 coding. |
 | R12 | **UI within Klive's rules.** | Phase 5 | 1. Read `.ai/ui-theming-intent-and-lessons.md` first. 2. Build the Variables panel, return-value rows, the Source/Z80 toggle, inline statement-breakpoint markers and the Program Map on the data-panel primitives (`@renderer/controls/data`: `DataPanel`, `DataRow`, `HexValue`, …) and theme tokens; no colour literals, no `em` font sizes, `ch` column widths, row heights from `rowSizes.ts` (the M1–M3 tests). 3. Verify geometry in the running app (the CDP recipe in the theming file), not in a replica. 4. Update the theming file with the durable rules the work teaches, in the same change. | The panels pass the mandate tests and the theming file records the new rules. |
-| R13 | **Settings and templates.** | Phases 3–6 | 1. `zxbasic.compiler` (`klive` \| `zxbc`) in the settings UI and `zxb-config.ts`; the dispatcher registered under `zxbas` (D9). 2. `zxbas` language provider: `supportsBreakpoints: true`, `instantSyntaxCheck: true`, `ASM` blocks embed `kz80-asm`. 3. Templates: header option blocks in `sp48/zx-basic` and `sp128/zx-basic`; a new `zxnext/zx-basic` (Phase 6). 4. The docs site page for ZX BASIC (`docs/content/working-with-ide/zxb.mdx`) gains a Klive BASIC section. | A new ZX BASIC project on each machine builds and debugs with Klive BASIC by default after Phase 4. **Phase 4:** the default is `klive` (step 1's setting; it has no settings-UI entry yet, only `set zxbasic.compiler`); steps 3 and 4 (templates, docs page) are open. |
+| R13 | **Settings and templates.** | Phases 3–6 | 1. `zxbasic.compiler` (`klive` \| `zxbc`) in the settings UI and `zxb-config.ts`; the dispatcher registered under `zxbas` (D9). 2. `zxbas` language provider: `supportsBreakpoints: true`, `instantSyntaxCheck: true`, `ASM` blocks embed `kz80-asm`. 3. Templates: header option blocks in `sp48/zx-basic` and `sp128/zx-basic`; a new `zxnext/zx-basic` (Phase 6). 4. The docs site page for ZX BASIC (`docs/content/working-with-ide/zxb.mdx`) gains a Klive BASIC section. | A new ZX BASIC project on each machine builds and debugs with Klive BASIC by default after Phase 4. **Phase 4:** the default is `klive` (step 1's setting; it has no settings-UI entry yet, only `set zxbasic.compiler`); step 3 done in Phase 6 (a `zxnext/zx-basic` template; header blocks in sp48/sp128); step 4 (docs page) is open. |
 
 ### 17.3 Before the first release
 

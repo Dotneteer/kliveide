@@ -1,0 +1,18 @@
+' Klive BASIC for the ZX Spectrum Next (compatible with Boriel ZX BASIC).
+'
+' Build options go in this header, one per line, as '@name value. For example:
+'@optimize 0
+'@heap-size 4768
+'
+' CODEBANK blocks put routines and data into 8K pages that the program pages into a
+' window ($6000-$7FFF by default) when it calls them; a call from anywhere just works.
+' Options such as codebank-window and codebank-first-page choose where they go.
+
+CODEBANK 1
+SUB Greet(row AS UByte)
+  PRINT AT row, 5; PAPER 4; BRIGHT 1; "   (Klive BASIC)    "
+END SUB
+END CODEBANK
+
+PRINT AT 10, 5; PAPER 4; BRIGHT 0; "Welcome to Klive IDE"
+Greet 11

@@ -6,6 +6,7 @@ import type { AppState } from "@common/state/AppState";
 import { createSettingsReader } from "@common/utils/SettingsReader";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { generateProgram } from "./codegen";
+import { emittedFiles } from "./emit-files";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
 import { parseProgram, type FrontEndResult } from "./front-end";
@@ -81,9 +82,22 @@ export class KBasicCompiler implements IKliveCompiler {
     const errors = toErrorInfo(diagnostics.items, front.sources);
     if (!generated) return { errors };
     const classic = generated.debug.classic;
+    // --- '@emit-asm, '@emit-ir, '@emit-map: files beside the source (a failed write is a warning, not a failed build)
+    const traceOutput = [`Klive BASIC: code generated at optimisation level 0 (the only level so far)`];
+    const name = programName(filename);
+    for (const file of emittedFiles(generated, front.options, name)) {
+      const folder = folderOf(filename);
+      const target = folder ? `${folder}/${name}${file.suffix}` : `${name}${file.suffix}`;
+      try {
+        fs.writeFileSync(target, file.content);
+        traceOutput.push(`Klive BASIC: wrote ${target}`);
+      } catch (err) {
+        traceOutput.push(`Klive BASIC: could not write ${target}: ${(err as Error).message}`);
+      }
+    }
     return {
       errors,
-      traceOutput: [`Klive BASIC: code generated at optimisation level 0 (the only level so far)`],
+      traceOutput,
       segments: generated.output.segments.map((s) => ({
         startAddress: s.startAddress,
         emittedCode: s.emittedCode,

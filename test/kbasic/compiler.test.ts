@@ -227,6 +227,66 @@ describe("the zxbas compiler", () => {
     expect(output.entryAddress).toBeGreaterThan(0x8000);
   });
 
+  it("writes the files '@emit-asm, '@emit-ir and '@emit-map ask for, with the CODEBANK manifest", async () => {
+    const source = [
+      "'@emit-asm",
+      "'@emit-ir",
+      "'@emit-map",
+      "DIM r AS UInteger",
+      "CODEBANK 1",
+      "FUNCTION Twice(n AS UInteger) AS UInteger",
+      "  RETURN n * 2",
+      "END FUNCTION",
+      "END CODEBANK",
+      "CODEBANK 2",
+      "SUB Store(v AS UInteger)",
+      "  r = Twice(v)",
+      "END SUB",
+      "END CODEBANK",
+      "Store 21",
+      ""
+    ].join("\n");
+    fs.writeFileSync(path.join(folder, "banked.bas"), source);
+    const compiler = new KBasicCompiler();
+    compiler.setAppState(state({}, "zxnext"));
+    const output = (await compiler.compileFile(path.join(folder, "banked.bas"))) as DebuggableOutput;
+    expect(output.errors?.filter((e) => !e.isWarning)).toEqual([]);
+    const read = (name: string) => fs.readFileSync(path.join(folder, name), "utf8");
+    expect(read("banked.kbasic.asm")).toMatch(/^_Twice\.__far:/m);
+    expect(read("banked.kbasic.ir")).toMatch(/^function _Twice\.__far\(n: u16 @ix\+4\): u16 .*CODEBANK 1$/m);
+    const map = read("banked.kbasic.map");
+    expect(map).toMatch(/^\$6000 B1:_Twice\.__far$/m);
+    expect(map).toMatch(/^\$6000 B2:_Store\.__far$/m);
+    expect(map).toMatch(/^\$[0-9A-F]{4} core\.FarCall$/m);
+    const manifest = JSON.parse(read("banked.banks.json"));
+    expect(manifest).toMatchObject({ window: 0x6000, window_size: 0x2000 });
+    expect(manifest.banks.map((b: { bank: number; file: string; org: number; page: number; pages: number[] }) => [b.bank, b.file, b.org, b.page, b.pages])).toEqual([
+      [1, "banked.bank1.bin", 0x6000, 30, [30]],
+      [2, "banked.bank2.bin", 0x6000, 31, [31]]
+    ]);
+    // --- Each bank's file is the code the NEX loader puts in its page
+    for (const b of manifest.banks) {
+      const bin = fs.readFileSync(path.join(folder, b.file));
+      expect(bin.length).toBe(b.size);
+      const segment = output.segments.find((s) => s.bank === b.page >> 1 && (s.bankOffset ?? 0) === (b.page & 1) * 0x2000)!;
+      expect([...bin]).toEqual([...segment.emittedCode]);
+    }
+  });
+
+  it.each([
+    ["sp48", "sp48", 1],
+    ["sp128", "sp128", 2],
+    ["zxnext", "zxnext", 4]
+  ])("builds the %s ZX BASIC project template cleanly", async (templateMachine, machineId, modelType) => {
+    const compiler = new KBasicCompiler();
+    compiler.setAppState(state({}, machineId));
+    const template = path.join(__dirname, "../../src/public/project-templates", templateMachine, "zx-basic/code/program.zxbas");
+    const output = (await compiler.compileFile(template)) as DebuggableOutput & { modelType: number; nexConfig?: { filename?: string } };
+    expect(output.errors).toEqual([]);
+    expect(output.modelType).toBe(modelType);
+    if (modelType === 4) expect(output.nexConfig?.filename).toBe("program.nex");
+  });
+
   it("reports only the program's errors when it has some", async () => {
     const compiler = new KBasicCompiler();
     compiler.setAppState(state({}));

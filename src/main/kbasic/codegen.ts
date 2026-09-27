@@ -79,7 +79,7 @@ export async function generateProgram(
   const emitted = emitProgram({
     header: [
       `    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`,
-      ...nexHeader(options),
+      ...nexHeader(options, programName),
       "__kbasic_start:",
       ...prologueSource(runtimeInitialisers(modules)).split("\n")
     ],
@@ -210,10 +210,12 @@ const MODEL_NAMES: Record<string, string> = { zx48k: "Spectrum48", zx128k: "Spec
  * ends the program: NextZXOS's 48K ROM has no original main loop to go back to), then waits; `__kbasic_start`, after it, stays the
  * entry every other way of running the program uses.
  */
-function nexHeader(options: KBasicOptions): string[] {
+function nexHeader(options: KBasicOptions, programName: string): string[] {
   const org = `    .org ${options.origin}`;
   if (options.target !== "next") return [org];
   return [
+    // --- The NEX is named after the program (export and `debug` write it; its debug sidecar goes beside it)
+    `    .savenex file "${programName.replace(/"/g, "")}.nex"`,
     `    .savenex core "${options.nexCore}"`,
     ...(options.nexStack !== undefined ? [`    .savenex stackaddr ${options.nexStack}`] : []),
     org,

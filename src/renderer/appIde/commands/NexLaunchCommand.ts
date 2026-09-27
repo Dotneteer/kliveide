@@ -6,6 +6,7 @@ import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { NexHeader } from "../DocumentPanels/Next/nexFileLoader";
 
 import { MI_ZXNEXT } from "@common/machines/constants";
+import { readSourceDebugSidecar, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { isNexFilePath, nexSdCardTarget } from "@common/utils/nex-launch-paths";
 import { loadNexFileContents } from "../DocumentPanels/Next/nexFileLoader";
 import { getEntryPointBreakpointSite } from "../DocumentPanels/Next/nexEntryState";
@@ -154,11 +155,52 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
       options: {}
     };
 
+    // --- Source-level debug info from the NEX's sidecar (plan §8.5), before the run and again after
+    // --- it (the launch may replace the machine controller). Without a usable sidecar, the previous
+    // --- program's info is cleared: it would step this one by another's statements.
+    const sourceDebug = debug ? await this.readSourceDebug(context, hostPath) : undefined;
+    const sendSourceDebug = async () => {
+      try {
+        await context.emuApi.setSourceDebugInfo(sourceDebug);
+      } catch {
+        // --- An emulator without source stepping keeps instruction stepping
+      }
+    };
+    if (debug) await sendSourceDebug();
+
     await context.emuApi.runCodeCommand(codeToInject, sdPath, debug, false);
+    if (debug) await sendSourceDebug();
 
     return commandSuccessWith(
       debug ? `${sdPath} started in debug mode.` : `${sdPath} started.`
     );
+  }
+
+  /**
+   * The source-level debug info of the NEX's sidecar (`<name>.nex.kbasic-debug.json`), when there
+   * is one written for this very build; a sidecar that is there but unusable is reported.
+   */
+  private async readSourceDebug(context: IdeCommandContext, hostPath: string) {
+    const sidecarPath = sourceDebugSidecarPath(hostPath);
+    let text: string;
+    try {
+      text = await context.mainApi.readTextFile(sidecarPath);
+    } catch {
+      return undefined; // --- No sidecar: a NEX from another tool, debugged at Z80 level
+    }
+    try {
+      const nex = await context.mainApi.readBinaryFile(hostPath);
+      const read = readSourceDebugSidecar(text, nex);
+      if ("error" in read) {
+        writeMessage(context.output, `Source-level debug info in ${sidecarPath} is not used: ${read.error}.`, "yellow");
+        return undefined;
+      }
+      writeMessage(context.output, `Source-level debug info loaded from ${sidecarPath}.`, "green");
+      return read.info;
+    } catch (err) {
+      writeMessage(context.output, `Could not read ${hostPath}: ${err instanceof Error ? err.message : String(err)}`, "yellow");
+      return undefined;
+    }
   }
 
   /**

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { SourceDebugIndex } from "@emu/machines/SourceStepDecision";
@@ -86,5 +89,15 @@ describe("source stepping on the Next (§10.2)", () => {
     expect([out.stoppedAt, line(out)]).toEqual(["returnPoint", 9]);
     expect(out.returned.map((r) => r.registers.af >> 8)).toEqual([42]);
     expect(line(session.sourceStep(index, "over", { returnTo: done }))).toBe(10);
+  });
+});
+
+describe("the ZX Spectrum Next project template", () => {
+  it("runs, calling its CODEBANK routine", async () => {
+    const source = readFileSync(join(__dirname, "../../../src/public/project-templates/zxnext/zx-basic/code/program.zxbas"), "utf8");
+    const r = await runBasicNext(source);
+    expect(r.screen()[10]).toBe("     Welcome to Klive IDE");
+    expect(r.screen()[11]).toBe("        (Klive BASIC)");
+    expect(r.generated.debug.sourceLevel.extensions?.codebank?.banks).toEqual([{ bank: 1, pages: [30] }]);
   });
 });
