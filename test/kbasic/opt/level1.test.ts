@@ -89,3 +89,23 @@ describe("the tree selector", () => {
     expect(lines.slice(-4)).toEqual(["ld a,(_a)", "inc a", "ld (_a),a", "ld bc,0"]);
   });
 });
+
+describe("level 2: constant slots", () => {
+  it("compares a FOR loop with its constant limit, and drops the hidden limit variable", async () => {
+    const { generated } = await compileBasic("DIM i AS UByte\nFOR i = 0 TO 9\n POKE 16384 + i, i\nNEXT i\n", { optimize: 2 });
+    const text = generated.emitted.text;
+    expect(text).not.toMatch(/__forlim/);
+    expect(text).toMatch(/^\s+cp 10$/m);
+    const level1 = (await compileBasic("DIM i AS UByte\nFOR i = 0 TO 9\n POKE 16384 + i, i\nNEXT i\n", { optimize: 1 })).generated.emitted.text;
+    expect(level1).toMatch(/__forlim/);
+  });
+
+  it("keeps a user variable's store, and a load the store does not dominate", async () => {
+    const source = "SUB s()\n DIM k, n AS UByte\n WHILE n < 3\n  POKE 16384 + n, k\n  k = 5\n  n = n + 1\n WEND\nEND SUB\ns()\n";
+    const { generated } = await compileBasic(source, { optimize: 2 });
+    const text = generated.emitted.text;
+    // --- k's store stays, and the POKE before it still reads k's slot
+    expect(text).toMatch(/ld \(ix-1\),5/);
+    expect(text).toMatch(/ld a,\(ix-1\)/);
+  });
+});

@@ -1,4 +1,5 @@
 import { COMPARISONS, isSignedM, mtypeSize, type BinOp, type Instr, type MFunction, type MModule, type MType, type Value, type VReg } from "../ir/mir";
+import { propagateConstantSlots } from "./constant-slots";
 import { verifyFunction } from "./verify";
 
 /**
@@ -18,6 +19,14 @@ export type MirPass = { name: string; run: (fn: MFunction) => boolean };
 
 export function optimizeMir(mir: MModule, level: number, onPass?: (name: string) => void): void {
   if (level < 1) return;
+  // --- Level 2: constant slots across statements first, so the per-statement passes fold what they give
+  if (level >= 2 && propagateConstantSlots(mir)) {
+    onPass?.("constant-slots");
+    for (const fn of mir.functions) {
+      const problems = verifyFunction(fn, level);
+      if (problems.length) throw new Error(`The MIR pass 'constant-slots' broke ${fn.name}: ${problems.slice(0, 3).join("; ")}`);
+    }
+  }
   for (const fn of mir.functions) {
     for (let round = 0; round < 10; round++) {
       let changed = false;

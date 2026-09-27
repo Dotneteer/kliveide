@@ -309,3 +309,24 @@ Figures (151 48K programs): level 0 35,524 bytes / 41.55M T-states; level 1 31,2
 39.01M T-states (−6.1%); level 2 30,733 bytes / 38.99M T-states. Strings are the one value type still
 left to level 0 (their ownership rules live in the runtime calls). Next: step 2 of §12, 7c's MIR
 passes with write-back.
+
+## 14. 7c: constant slots (2026-09-27)
+
+Step 2 of §12 begins with SCCP's most valuable case, done in memory form (`opt/constant-slots.ts`,
+level 2, before the per-statement passes): a slot the routine stores exactly once, with a constant,
+holds that constant wherever the store dominates the load, and the load becomes the constant.
+Slots: frame slots of routines whose address is never taken (locals, parameters, hidden temporaries;
+one access type, no overlapping access), and the main program's hidden FOR slots (`__forlim<n>`,
+`__forstep<n>`); never the main program's variables (O9), never in a routine with inline asm.
+Dominance (an iterative analysis over the MIR's blocks; a GOSUB also reaches its return point) keeps
+it exact: a load that can run before the store — the first time round a loop, a GOTO into a FOR
+body — still reads memory. A user variable's store always stays (write-back); a hidden slot's store
+and data go once nothing reads them. Pinned by `control/level2-constant-slots.zxbas` and
+`level1.test.ts`.
+
+With it, a FOR loop with a constant limit tests `cp 10` at every NEXT: the tree selector now writes a
+branch on `a > k` as `a >= k + 1` (and `a <= k` as `a < k + 1`; unsigned `> 0` / `<= 0` as the zero
+tests), keeping the constant the immediate operand. Only for branches: as a value, the swapped form
+ends on carry, the cheapest flag to turn into 0/1.
+
+Figures (152 programs): level 1 31,787 bytes; level 2 30,554 bytes (−15.7% against level 0's 36,244).

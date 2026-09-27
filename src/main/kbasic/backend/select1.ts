@@ -265,7 +265,7 @@ class TreeGen {
     }
     const def = this.def(br.cond);
     if (def.instr.op === "bin" && COMPARISONS.has(def.instr.bop) && isSupportedType(def.instr.a.type)) {
-      const cc = this.compare(def.instr.bop, def.instr.a, def.instr.b);
+      const cc = this.compare(def.instr.bop, def.instr.a, def.instr.b, true);
       this.emit(`jp ${cc},${br.ifTrue}`, `jp ${br.ifFalse}`);
       return;
     }
@@ -909,7 +909,7 @@ class TreeGen {
    * Compares left with right and gives the condition code under which the comparison holds. gt and
    * le compare the other way round; signed operands are compared with their sign bits flipped.
    */
-  private compare(op: BinOp, a: Value, b: Value): string {
+  private compare(op: BinOp, a: Value, b: Value, forBranch = false): string {
     const cls = regClassOf(a.type);
     if (cls === "r32") return this.compare32(op, a, b);
     if (cls === "rflt") {
@@ -920,6 +920,26 @@ class TreeGen {
     let left = a;
     let right = b;
     let cmp = op;
+    // --- Against a constant, a > k is a >= k + 1 and a <= k is a < k + 1: the constant stays the
+    // --- immediate operand (unless k + 1 would not fit the type). For a branch only: as a value the
+    // --- swapped form ends on carry, which is the cheapest to turn into 0/1
+    const k = this.constant(b);
+    if (forBranch && (op === "gt" || op === "le") && k !== undefined) {
+      const bits = cls === "r8" ? 8 : 16;
+      const signed = isSignedM(a.type);
+      const max = signed ? 2 ** (bits - 1) - 1 : 2 ** bits - 1;
+      const value = signed ? ((k << (32 - bits)) >> (32 - bits)) : k & (2 ** bits - 1);
+      if (!signed && value === 0) {
+        // --- Unsigned: a > 0 is a <> 0, a <= 0 is a = 0 (the short zero tests)
+        right = { kind: "imm", type: b.type, value: 0 };
+        cmp = op === "gt" ? "ne" : "eq";
+        op = cmp;
+      } else if (value < max) {
+        right = { kind: "imm", type: b.type, value: value + 1 };
+        cmp = op === "gt" ? "ge" : "lt";
+        op = cmp;
+      }
+    }
     if (op === "gt" || op === "le") {
       cmp = op === "gt" ? "lt" : "ge";
       if (!this.mayReorder(a, b)) {

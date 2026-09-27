@@ -1,0 +1,41 @@
+' Level 2's constant slots (.docs/kbasic-optimiser.md §14): FOR limits and steps that are constants,
+' a local assigned once with a constant, a parameter assigned once, and a load that can run before
+' the only store (the first time round a loop), which must still read memory
+'@expect screen 0 "25 11"
+'@expect screen 1 "7 -1"
+'@expect screen 2 "055"
+'@expect screen 3 "707"
+'@expect screen 4 "5050 101"
+DIM i AS UByte
+DIM t AS UInteger
+DIM st AS Byte
+DIM k AS Byte
+FOR i = 1 TO 9 STEP 2 : t = t + i : NEXT i
+PRINT t; " "; i
+st = -3 : t = 0
+FOR k = 20 TO 1 STEP st : t = t + 1 : NEXT k
+PRINT t; " "; k
+SUB loopy()
+  DIM k AS UByte
+  DIM n AS UByte
+  WHILE n < 3
+    PRINT k;
+    k = 5
+    n = n + 1
+  WEND
+  PRINT
+END SUB
+FUNCTION scaled(x AS UInteger) AS UInteger
+  DIM f AS UInteger = 7
+  x = 100
+  RETURN x * f + f
+END FUNCTION
+SUB counts()
+  DIM j AS UInteger
+  DIM s AS UInteger
+  FOR j = 1 TO 100 : s = s + j : NEXT j
+  PRINT s; " "; j
+END SUB
+loopy()
+PRINT scaled(3)
+counts()
