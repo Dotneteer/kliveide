@@ -56,7 +56,7 @@ export class Z88CustomDisassembler implements ICustomDisassembler {
       this._api.fetch();
       let opByte = this._api.fetch().opcode;
       let opCodes = [peekResult.opcode, opByte];
-      if (opByte === 6 || opByte === 9 || opByte === 12) {
+      if (opByte === 3 || opByte === 6 || opByte === 9 || opByte === 12) {
         const opByte2 = this._api.fetch().opcode;
         opByte = (opByte2 << 8) + opByte;
         opCodes.push(opByte2);
@@ -198,7 +198,13 @@ export const z88FppApis: Record<number, string> = {
   0x96: "FP_FLT",
   0x9c: "FP_CMP",
   0x9f: "FP_NEG",
-  0xa2: "FP_BAS"
+  0xa2: "FP_BAS",
+  0xa5: "FP_SHL", /* OZ V5 */
+  0xa8: "FP_SHX", /* OZ V5 */
+  0xab: "FP_SAR", /* OZ V5 */
+  0xae: "FP_SHR", /* OZ V5 */
+  0xb1: "FP_ROL", /* OZ V5 */
+  0xb4: "FP_ROR", /* OZ V5 */
 };
 
 export const z88OzApis: Record<number, string> = {
@@ -248,15 +254,17 @@ export const z88OzApis: Record<number, string> = {
   0xa2: "OS_RBE",
   0xa5: "OS_WBE",
 
-  0xac03: "OS_PRN",
-  0xae03: "OS_BP",
-  0xb003: "OS_DIS",
-  0xb203: "OS_DBG",
-  0xb603: "OS_EP",
-  0xb606: "OS_FAT",
-  0xb806: "OS_ISO",
-  0xba06: "OS_FDP",
-  0xbc06: "OS_WTS",
+  0xae03: "OS_BP",  /* OZ v5 */
+  0xb003: "OS_DIS", /* OZ v5 */
+  0xb203: "OS_DBG", /* OZ v5 */
+  0xb403: "OS_EP",  /* OZ v5 */
+  
+  0xaa06: "OS_MTH", /* OZ v5 */
+  0xac06: "OS_PRN", /* OZ v5 */
+  0xb606: "OS_FAT", /* OZ v5 */
+  0xb806: "OS_ISO", /* OZ v5 */
+  0xba06: "OS_FDP", /* OZ v5 */
+  0xbc06: "OS_WTS", /* OZ v5 */
   0xc006: "OS_FXM",
   0xc206: "OS_AXM",
   0xc406: "OS_FMA",
@@ -351,18 +359,18 @@ export const z88OzApis: Record<number, string> = {
   0x7a09: "GN_WIN",
   0x7c09: "GN_CRC",
   0x7e09: "GN_GAB",
-  0x8009: "GN_LDM",
-  0x8209: "GN_ELF",
-  0x8409: "GN_GHN",
-  0x8609: "GN_PHN",
-  0x8809: "GN_DIR",
-  0x8a09: "GN_MOV",
-  0x8c09: "GN_CPY",
-  0x8e09: "GN_LUT",
-  0x9009: "GN_MDT",
-  0x9209: "GN_UPR",
-  0x9409: "GN_LWR",
-  0x9609: "GN_SWC",
+  0x8009: "GN_LDM", /* OZ v5 */
+  0x8209: "GN_ELF", /* OZ v5 */
+  0x8409: "GN_GHN", /* OZ v5 */
+  0x8609: "GN_PHN", /* OZ v5 */
+  0x8809: "GN_DIR", /* OZ v5 */
+  0x8a09: "GN_MOV", /* OZ v5 */
+  0x8c09: "GN_CPY", /* OZ v5 */
+  0x8e09: "GN_LUT", /* OZ v5 */
+  0x9009: "GN_MDT", /* OZ v5 */
+  0x9209: "GN_UPR", /* OZ v5 */
+  0x9409: "GN_LWR", /* OZ v5 */
+  0x9609: "GN_SWC", /* OZ v5 */
 
   0x060c: "DC_INI",
   0x080c: "DC_BYE",
@@ -379,9 +387,10 @@ export const z88OzApis: Record<number, string> = {
   0x1e0c: "DC_XIN",
   0x200c: "DC_GEN",
   0x220c: "DC_POL",
-  0x240c: "DC_RTE",
-  0x260c: "DC_ELF",
-  0x280c: "DC_LCK",
-  0x2a0c: "DC_ENV",
-  0x2c0c: "DC_TTY"
+  0x240c: "DC_SCN",
+  0x260c: "DC_ELF", /* OZ v5 */
+  0x280c: "DC_RTE", /* OZ v5 */
+  0x2a0c: "DC_ENV", /* OZ v5 */
+  0x2c0c: "DC_TTY", /* OZ v5 */
+  0x2e0c: "DC_LCK"  /* OZ v5 */
 };
