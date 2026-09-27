@@ -13,7 +13,9 @@
  * Then the source-level debugger (plan Phase 5): a second program stops in a SUB; the Call Stack
  * panel must show the SUB and the main program, the Variables panel the parameter and the global;
  * Step Over moves to the next statement, Step Out stops at the calling statement as a return point,
- * and continuing stops at the runtime error the program raises, before the ROM's report.
+ * and continuing stops at the runtime error the program raises, before the ROM's report. A value
+ * edited in the Variables panel is written to memory. With Just My Code off, Step Into enters a
+ * standard-library routine, shown in a read-only view of the library file.
  *
  * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop.
  */
@@ -27,6 +29,8 @@ const STOPS = [
   { line: 1, text: PROGRAM[0] },
   { line: 3, text: PROGRAM[2] }
 ];
+
+const JMC = ["#include <hex.bas>", "DIM s AS String", "s = hex8(255)", "PRINT s", ""];
 
 const DEBUGGER = [
   "DIM total AS UInteger = 5", // 1
@@ -111,6 +115,17 @@ const DEBUGGER = [
       await sleep(1200);
     };
     const shot = async (name) => shots && (await ide.screenshot({ path: path.join(shots, `kbasic-${name}.png`) }));
+    // --- The execution line once it satisfies `ok` (steps and editor refreshes take a moment)
+    const waitLine = async (ok) => {
+      let line;
+      const start = Date.now();
+      while (Date.now() - start < 10000) {
+        line = (await executionLine()) ?? "";
+        if (ok(line)) return line;
+        await sleep(300);
+      }
+      return line;
+    };
     const waitPaused = async () => {
       const start = Date.now();
       while (Date.now() - start < 20000) {
@@ -145,21 +160,51 @@ const DEBUGGER = [
     check(/total\s*5\s*UInteger/.test(panels), "the Variables panel shows the global total = 5");
     await shot("variables");
 
-    await cmd("em-sto", 2500);
-    check((await executionLine()) === DEBUGGER[6], `Step Over moves to ${JSON.stringify(DEBUGGER[6])}`);
+    await cmd("em-sto", 1000);
+    check((await waitLine((l) => l === DEBUGGER[6])) === DEBUGGER[6], `Step Over moves to ${JSON.stringify(DEBUGGER[6])}`);
     check(/total\s*13\s*UInteger/.test(await sideBarText()), "the Variables panel follows the step (total = 13)");
-    await cmd("em-out", 2500);
-    const returned = (await executionLine()) ?? "";
+    // --- Editing a value writes memory (§10.7)
+    await ide.locator('[class*="_variablesPanel_"]').getByText("13", { exact: true }).first().dblclick({ force: true });
+    await sleep(500);
+    await ide.locator('input[aria-label="New value of total"]').fill("100");
+    await ide.locator('input[aria-label="New value of total"]').press("Enter");
+    await sleep(1500);
+    check(/total\s*100\s*UInteger/.test(await sideBarText()), "editing total in the Variables panel writes 100 to memory");
+    await cmd("em-out", 1000);
+    const returned = await waitLine((l) => l.startsWith(DEBUGGER[8]));
     check(returned.startsWith(DEBUGGER[8]) && returned.includes("returned from Show"), `Step Out stops at the call as a return point (${JSON.stringify(returned)})`);
     await shot("return-point");
 
     await cmd("em-debug", 2500);
     check(await waitPaused(), "the machine paused at the runtime error");
-    await sleep(1500);
-    const errorLine = (await executionLine()) ?? "";
+    const errorLine = await waitLine((l) => l.startsWith(DEBUGGER[9]));
     check(errorLine.startsWith(DEBUGGER[9]) && errorLine.includes("3 Subscript wrong"), `the error stop marks ${JSON.stringify(DEBUGGER[9])} (${JSON.stringify(errorLine)})`);
     check(/runtime error: 3 Subscript wrong/.test(await sideBarText()), "the Call Stack names the error");
     await shot("error-stop");
+
+    // --- Just My Code off (§10.12): Step Into enters the standard library, shown read-only
+    await cmd("em-stop", 1500);
+    await cmd("bp-ea", 800);
+    await cmd(`newp sp48 kbjmc zx-basic -p "${projects}"`, 5000);
+    const jmcFolder = path.join(projects, "kbjmc");
+    fs.writeFileSync(path.join(jmcFolder, "code", "program.zxbas"), JMC.join("\n"));
+    await cmd(`open "${jmcFolder}"`, 8000);
+    await cmd("set -p zxbasic.compiler klive", 1500);
+    await cmd("nav code/program.zxbas", 3000);
+    await cmd("bp-set [code/program.zxbas]:3", 1200);
+    await cmd("em-jmc off", 800);
+    await cmd("debug", 5000);
+    check(await waitPaused(), "the library program paused at its breakpoint");
+    await sleep(1500);
+    await cmd("em-sti", 3000);
+    // --- The editor follows the execution point only with source sync on; select the frame instead
+    await ide.locator('[class*="_callStackPanel_"]').getByText("hex8", { exact: true }).first().click({ force: true });
+    const inLibrary = (await waitLine((l) => l.trim() === "RETURN __kbHexDigits(n, 2)")).trim();
+    const tabs = await ide.evaluate(() => document.body.innerText);
+    check(inLibrary === "RETURN __kbHexDigits(n, 2)" && tabs.includes("hex.bas (library)"), `Step Into enters hex8 in the library's read-only view (${JSON.stringify(inLibrary)})`);
+    check(/Top:\s*hex8\s*hex\.bas:\d+/.test(await sideBarText()), "the Call Stack shows hex8 in hex.bas");
+    await shot("library");
+    await cmd("em-jmc on", 800);
   } catch (e) {
     failures.push(e.message.split("\n")[0]);
   } finally {

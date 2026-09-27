@@ -142,9 +142,13 @@ integration changes.
   injection), routes Step Into/Over/Out to source steps while `sourceStepping` is on, and answers
   `getSourceStopInfo` / `getSourceCallStack`. EmuApi: `setSourceDebugInfo`, `setSourceStepping`,
   `sourceStep`, `getSourceStepping`, `getSourceStopInfo`, `getSourceCallStack`, `setSourceErrorStops`.
-  Commands: `em-stl` (Step Over Line), `em-sit`, `em-rtf`, `em-src`, `em-err`.
+  Commands: `em-stl` (Step Over Line), `em-sit`, `em-rtf`, `em-src`, `em-err`, `em-jmc`. Settings
+  (`emuOptions.sourceStepStopsInInterrupts`, `.stopOnRuntimeErrors`, `.justMyCode`) are read by the
+  controller at every run; Just My Code is a `SourceDebugIndex` flag that hides library statements.
+  Step Into Target: a drop-down on the toolbar's Step Into and editor context-menu items.
 - **Runtime-error stops** (§10.10): `IDebugSupport.errorStopAddress` (the program's `core.RaiseError`)
-  stops every debug run there, before the ROM's report; `statementTracker` follows the running
+  and `romErrorAddress` (RST 8, guarded by `romErrorGuard`: a program statement is on the stack)
+  stop every debug run there, before the ROM's report; `statementTracker` follows the running
   statement through the debug loop so the stop can name it even when the routine was reached by a `jp`.
 
 ## 6. Editor, highlighting, panels
@@ -167,7 +171,10 @@ integration changes.
 - Watch panel: `src/renderer/appIde/SideBarPanels/WatchPanel.tsx` — assembler symbols only, flat
   64K, no types. Call stack: `CallStackPanel.tsx` → `Z80MachineBase.getCallStack()` = 16 raw words
   from SP, or for a program with source-level info the symbolic frames
-  (`appIde/debugger/source/SourceCallStack.tsx`; selecting one sets `ideView.sourceFrame`).
+  (`appIde/debugger/source/SourceCallStack.tsx`; selecting one sets `ideView.sourceFrame`, and the
+  editor marks that frame's calling statement). `CpuState.pcPartition` gives PC's partition to
+  `locateSource`/`listItemsAtPc` for banked sources (§10.4). A `<kbasic-stdlib>/x.bas` path given to
+  `nav` opens the bundled library file as a read-only document.
 - **Variables panel** (Phase 5, §10.7–§10.8): `appIde/debugger/source/VariablesPanel.tsx` on a memory
   snapshot; the models beside it (`variables-model.ts`, `value-decoder.ts`, `watch-expression.ts`,
   `call-stack-model.ts`) are pure and tested on the 48K harness. BASIC watches are

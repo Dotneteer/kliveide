@@ -200,7 +200,10 @@ export const IdeEventsHandler = () => {
         stop = undefined;
       }
     }
-    const location = locateSource(compilation.result, cpuResponse.pc, stop);
+    const location = locateSource(compilation.result, cpuResponse.pc, stop, {
+      partition: (cpuResponse as { pcPartition?: number }).pcPartition,
+      machineId: store.getState().emulatorState?.machineId
+    });
     if (!location) return;
 
     await ideCommandsService.executeCommand(`nav "${location.filename}" ${location.line}`);

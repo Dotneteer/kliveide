@@ -38,11 +38,11 @@ now defaults to `klive`. **Phase 5 done** (2026-09-27): the source-level debug t
 statement stepping, Step Over Line and statement breakpoints (§10.3); step over, into and out across
 SUB, FUNCTION, GOSUB and recursion with return-point stops, Step Into Target, Run to Frame and
 returned values (§10.2); the interrupt-depth signal in every Z80 core (§10.2.7); the symbolic call
-stack (§10.6), the Variables panel (§10.7) and BASIC watch expressions (§10.8); runtime-error stops
-(§10.10). Every row of the §10.2/§10.3 scenario tables is an emulator test on the 48K; the call
+stack (§10.6), the Variables panel with value editing (§10.7) and BASIC watch expressions (§10.8);
+partition-aware source mapping (§10.4); runtime-error stops, the ROM's own errors included (§10.10);
+Just My Code with stepping into the standard library (§10.12); the three debugger settings. Every row of the §10.2/§10.3 scenario tables is an emulator test on the 48K; the call
 stack, the Variables panel and watches are checked against each other on all 159 corpus programs;
-the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). Just My Code
-(§10.12) is always on (see the Phase 5 facts). **Phase 6 (the Next and CODEBANK) is next.** Decisions D1–D12 settled
+the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). **Phase 6 (the Next and CODEBANK) is next.** Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -150,16 +150,33 @@ support). Three things are still open from Phase 4 and need the project author's
   stops at once on the following statement (`stopAtStart`).
 - Interrupts: every core's shadow step-out stack marks interrupt entries; a step ignores stops while
   the interrupt depth is above the one it started at, unless `em-src on -i`.
-- **Just My Code is always on.** Library statements are not in the tables (their files are virtual
-  and the editor cannot open them), so stepping runs through library code as through the runtime;
-  §10.12's "step into a stdlib routine" needs library files the editor can show first.
-- Runtime errors: `core.RaiseError` is the one error routine the program's own code reaches; errors
-  the ROM raises itself (inside the calculator) go through RST 8 and are not stopped at yet.
-- Not done in Phase 5, deliberately: editing a value in the Variables panel (§10.7's last bullet),
-  re-anchoring a statement breakpoint's column when its line is edited, bank-local reads by
-  partition (Phase 6, with CODEBANK), data breakpoints (§10.9, Phase 8).
-- Known IDE quirk met by the IDE check: a document open in the editor keeps its text when its file is
-  rewritten on disk and the same project folder is opened again; the check uses a second project.
+- **Just My Code** is a `SourceDebugIndex` constructor flag: the tables always hold the library's
+  statements (`libraryFiles` names their files), and with the flag on the index hides them — no
+  entries, no statement at their addresses, their call sites belong to no statement — so every rule
+  of the step decision is unchanged. The controller rebuilds the index when the setting changes. A
+  library file opens in the editor as a read-only virtual document whose id is its
+  `<kbasic-stdlib>/x.bas` path (`nav` handles such paths); anything that matches documents by
+  resource name must accept an id outside the project folder.
+- Settings (global, `emuOptions.*`): `sourceStepStopsInInterrupts` (off), `stopOnRuntimeErrors` (on),
+  `justMyCode` (on); `em-src on -i`, `em-err`, `em-jmc` write them. The controller reads them at every
+  run, so a change applies to the next step.
+- Runtime errors stop at `core.RaiseError` (A = ERR_NR) and at the ROM's RST 8 ($0008, the code byte
+  after the RST) while a statement of the program is on the stack — so errors in BASIC after the
+  program ended do not stop. The statement tracker names the statement even when the error routine
+  was reached by a `jp`.
+- §10.4: `CpuState.pcPartition` reports PC's partition; `locateSource` and the editor pick the list
+  item in that partition when banked sources share an address. The source-level tables are not
+  partitioned yet: CODEBANK (Phase 6) adds `partitionedAddressMap` and a partition-aware index.
+- Statement breakpoints re-anchor on edits inside their line by scanning the new text for statement
+  starts (`statementStartsOf`: after `:`, THEN and ELSE outside strings and comments), without a
+  compile; the column is dropped when only the line's first statement is left.
+- Left for later phases, as the plan places them: bank-local reads by partition (Phase 6, CODEBANK),
+  data breakpoints (§10.9) and conditional breakpoints (Phase 8), the "optimised: statements merged"
+  status (Phase 7). An array parameter's first dimension shows only when the program keeps the
+  upper-bound table.
+- IDE quirk met by the IDE check: `ProjectService` never clears its document cache
+  (`_projectItemCache`), so a document keeps its old text when its file is rewritten on disk and the
+  same folder is opened again; the check uses a new project per scenario (fix queued separately).
 - The 48K harness builds its WASM core once per test process (it used to run clang for every
   session, 2.3 s each).
 

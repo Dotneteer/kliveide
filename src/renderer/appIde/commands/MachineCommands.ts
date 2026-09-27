@@ -1,4 +1,8 @@
-import { SETTING_EMU_STEP_IN_INTERRUPTS, SETTING_EMU_STOP_ON_ERRORS } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_JUST_MY_CODE,
+  SETTING_EMU_STEP_IN_INTERRUPTS,
+  SETTING_EMU_STOP_ON_ERRORS
+} from "@common/settings/setting-const";
 import type { MachineCommand } from "@abstractions/MachineCommand";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -289,6 +293,26 @@ export class ErrorStopsMachineCommand extends IdeCommandBase<ErrorStopArgs> {
     if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
     await context.mainApi.setGlobalSettingsValue(SETTING_EMU_STOP_ON_ERRORS, mode === "on");
     writeSuccessMessage(context.output, mode === "on" ? "Debug runs stop at runtime errors" : "Runtime errors go to the ROM's report");
+    return commandSuccess;
+  }
+}
+
+export class JustMyCodeMachineCommand extends IdeCommandBase<ErrorStopArgs> {
+  readonly id = "em-jmc";
+  readonly description =
+    "Just My Code: on, source stepping runs through the Klive BASIC standard library; off, it stops in the library's statements too";
+  readonly usage = "em-jmc <on|off>";
+  readonly aliases = [];
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    mandatory: [{ name: "mode" }]
+  };
+
+  async execute(context: IdeCommandContext, args: ErrorStopArgs): Promise<IdeCommandResult> {
+    const mode = `${args.mode}`.toLowerCase();
+    if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
+    await context.mainApi.setGlobalSettingsValue(SETTING_EMU_JUST_MY_CODE, mode === "on");
+    writeSuccessMessage(context.output, mode === "on" ? "Stepping runs through the standard library" : "Stepping stops in the standard library too");
     return commandSuccess;
   }
 }

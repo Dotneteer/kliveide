@@ -93,14 +93,15 @@ The extensions (plan §8.4, type `KBasicDebugExtensions` in the new
 `codegen.ts` after `buildDebugInfo`) produces the whole table above except `codebank`, and
 `KBasicCompiler` ships it as `sourceLevelDebug`. Where it differs from the plan's letter:
 
-- `statements` holds the **user's** statements only. Library statements (`#include <...>`) and DATA
-  items are left out, so stepping runs through library code as through the runtime (plan §10.12's
-  Just My Code, always on: library files are virtual and the editor cannot show them).
-  `addressToStatement` maps library code to −1 accordingly.
+- `statements` holds the user's statements and the standard library's (`#include <...>`); DATA items
+  are left out (READ's calls into them are runtime). The library's files come after the user's and
+  `libraryFiles` lists them: the emulator's index hides their statements while Just My Code
+  (plan §10.12) is on. `labels` lists the program's labels by address (GOSUB rows of the call stack).
 - `callables` has one entry per generated function except the DATA reader; a routine's `exits` are
   its `ret` lines. `frames` carries `startAddress`/`endAddress` too, so the frame locator can find
   the innermost callable from PC.
-- `variables`: globals by address (a `CONST` by value), parameters and locals by IX offset from the
+- `variables`: the user's globals by address (a `CONST` by value), every routine's parameters and
+  locals — the library's included — by IX offset from the
   MIR function's `vars` (the frame layout lowering built); a BYREF parameter and an array parameter
   hold an address (`byRef`). A byte parameter's offset points at its value byte (slot + 1), a Float
   parameter's at its exponent. Declared bounds go with every array but an array parameter, whose

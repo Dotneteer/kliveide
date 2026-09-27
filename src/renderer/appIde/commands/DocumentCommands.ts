@@ -124,12 +124,12 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       );
     }
     if (args.lineNo !== undefined) {
-      const openDoc = await docService.waitOpen(args.filename, true);
-      if (openDoc) {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-        const api = docService.getDocumentApi(openDoc.id) as EditorApi | undefined;
-        if (typeof api?.setPosition === "function") api.setPosition(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
-      }
+      // --- `waitOpen` answers with the project's copy of a document, which a library file has not:
+      // --- the editor API is what matters here
+      await docService.waitOpen(args.filename, true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const api = docService.getDocumentApi(args.filename) as EditorApi | undefined;
+      if (typeof api?.setPosition === "function") api.setPosition(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
     }
     writeSuccessMessage(context.output, `Navigate to ${args.filename}`);
     return commandSuccess;

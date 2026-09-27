@@ -51,8 +51,8 @@ import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
-import { locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
-import { runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
+import { listItemsAtPc, locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
+import { reanchorColumn, runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
 import { stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
@@ -930,6 +930,27 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
               );
             }
 
+            // --- An edit inside one line re-anchors that line's statement breakpoints (§10.3)
+            if (deletedLines === 0 && insertedLines === 0 && change.range.startLineNumber === change.range.endLineNumber) {
+              const line = change.range.startLineNumber;
+              const onLine = breakpoints.filter((bp) => bp.resource === resourceName && bp.line === line && bp.column !== undefined);
+              if (onLine.length) {
+                const newText = editor.current.getModel().getLineContent(line);
+                const emu = createEmuApi(messenger);
+                for (const bp of onLine) {
+                  const column = reanchorColumn(
+                    bp.column,
+                    { startColumn: change.range.startColumn - 1, endColumn: change.range.endColumn - 1, text: change.text },
+                    newText
+                  );
+                  if (column === bp.column) continue;
+                  await emu.removeBreakpoint(bp);
+                  const { column: _old, ...lineBreakpoint } = bp;
+                  await emu.setBreakpoint(column === undefined ? lineBreakpoint : { ...lineBreakpoint, column });
+                }
+              }
+            }
+
             // --- If changed, normalize breakpoints
             await createEmuApi(messenger).normalizeBreakpoints(
               resourceName,
@@ -1063,7 +1084,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
               : createCodeBreakpointDecoration(bp.line, false);
           }
           decorations.push(decoration);
-        } else if (bp.resource && bp.resource === document.node.projectPath) {
+        } else if (bp.resource && bp.resource === document.node?.projectPath) {
           // --- Remove the source code breakpoint exceeding the source code range
           await removeBreakpoint(messenger, bp);
         }
@@ -1315,6 +1336,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Get the current PC value
     const cpuStateResponse = await emuApi.getCpuState();
     const pc = cpuStateResponse.pc;
+    // --- PC's partition: which of several banked sources sharing the address runs (plan §10.4)
+    const where = {
+      partition: (cpuStateResponse as { pcPartition?: number }).pcPartition,
+      machineId: store.getState().emulatorState?.machineId
+    };
 
     // --- Is the machine running?
     const machineState = store.getState().emulatorState?.machineState;
@@ -1328,7 +1354,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       } catch {
         stop = undefined;
       }
-      const location = locateSource(compilation.result, pc, stop);
+      const location = locateSource(compilation.result, pc, stop, where);
       if (location?.sourceLevel) {
         const sep = getIsWindows() ? "\\" : "/";
         if (location.filename.replaceAll(sep, "/").endsWith(getResourceName())) {
@@ -1371,10 +1397,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         // --- Get source map information
         const sourceMapInfo = compilation.result.sourceMap[pc];
 
-        // --- Check for the active breakpoint line
-        const lineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.address === pc && !li.isMacroInvocation
-        );
+        // --- Check for the active breakpoint line (in PC's partition, for banked sources)
+        const itemsAtPc = listItemsAtPc(compilation.result, pc, where, fileIndex);
+        const lineInfo = itemsAtPc.find((li) => !li.isMacroInvocation);
 
         if (lineInfo) {
           const resName = getResourceName()?.slice(1);
@@ -1394,9 +1419,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
 
         // --- Check for active macro invocation line
-        const macroInvocationlineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.address === pc && li.isMacroInvocation
-        );
+        const macroInvocationlineInfo = itemsAtPc.find((li) => li.isMacroInvocation);
 
         if (macroInvocationlineInfo) {
           const resName = getResourceName()?.slice(1);

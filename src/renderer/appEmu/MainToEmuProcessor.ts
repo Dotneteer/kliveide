@@ -274,7 +274,10 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
-    return controller.machine.getCpuState();
+    const machine = controller.machine;
+    const state = machine.getCpuState();
+    const pcPartition = machine.getPartition?.(state.pc);
+    return pcPartition === undefined ? state : { ...state, pcPartition };
   }
 
   /**

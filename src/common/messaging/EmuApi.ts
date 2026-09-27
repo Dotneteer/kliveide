@@ -528,6 +528,11 @@ export type Z80CpuState = {
   lastIoWritePort: number;
   lastIoWriteValue: number;
   /**
+   * The memory partition PC is in (a paged bank or ROM), or `undefined` on a machine without
+   * partitions: which of several sources sharing an address is executing (plan §10.4).
+   */
+  pcPartition?: number;
+  /**
    * The NextReg write the machine last stopped on. ZX Spectrum Next only, and absent until a
    * NextReg write breakpoint fires.
    *

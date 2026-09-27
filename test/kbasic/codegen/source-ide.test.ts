@@ -2,8 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import type { DebuggableOutput } from "@abstractions/CompilerInfo";
 import { getBreakpointStorageKey, statementAtColumn } from "@common/utils/breakpoints";
-import { locateSource } from "@renderer/appIde/utils/source-location";
-import { runToCursorAddress, sourceFileIndex, statementMarkers } from "@renderer/features/editor/monaco/statementBreakpoints";
+import { listItemsAtPc, locateSource } from "@renderer/appIde/utils/source-location";
+import {
+  reanchorColumn,
+  runToCursorAddress,
+  sourceFileIndex,
+  statementMarkers,
+  statementStartsOf
+} from "@renderer/features/editor/monaco/statementBreakpoints";
 
 import { compileBasic } from "./run-kit";
 
@@ -82,6 +88,27 @@ describe("statement breakpoints (§10.3)", () => {
   });
 });
 
+describe("re-anchoring statement breakpoints while editing (§10.3)", () => {
+  it("finds statement starts in a line's text where the compiler puts them", async () => {
+    const info = (await output()).sourceLevelDebug;
+    const lines = SOURCE.split("\n");
+    for (const line of [5, 6, 7]) {
+      const compiled = [...new Set(info.statements.filter((s) => s.startLine === line && s.fileIndex === 0).map((s) => s.startColumn))].sort((a, b) => a - b);
+      expect(statementStartsOf(lines[line - 1]), `line ${line}`).toEqual(compiled);
+    }
+    expect(statementStartsOf('PRINT "a:b" : c = 1 \' x : y')).toEqual([0, 14]);
+    expect(statementStartsOf("10 IF k THEN GOTO 20 ELSE PRINT 1 : REM : no")).toEqual([0, 13, 26]);
+  });
+
+  it("follows an edit before the statement, re-anchors over it, and drops the column when it is gone", () => {
+    expect(reanchorColumn(8, { startColumn: 5, endColumn: 5, text: "0" }, "a = 10 : b = 2")).toBe(9);
+    expect(reanchorColumn(8, { startColumn: 0, endColumn: 2, text: "" }, "= 1 : b = 2")).toBe(6);
+    expect(reanchorColumn(8, { startColumn: 6, endColumn: 9, text: ": c" }, "a = 1 : c = 2")).toBe(8);
+    expect(reanchorColumn(8, { startColumn: 13, endColumn: 13, text: "3" }, "a = 1 : b = 23")).toBe(8);
+    expect(reanchorColumn(8, { startColumn: 5, endColumn: 13, text: "" }, "a = 1")).toBeUndefined();
+  });
+});
+
 describe("the execution point's source location (§10.4, §10.5)", () => {
   it("names the statement the emulator stopped at, with its columns", async () => {
     const out = await output();
@@ -120,5 +147,34 @@ describe("the execution point's source location (§10.4, §10.5)", () => {
     const s = out.sourceLevelDebug.statements.find((x) => x.startLine === 7)!;
     expect(locateSource(out, s.startAddress)).toMatchObject({ line: 7, kind: "statement", sourceLevel: false });
     expect(locateSource(out, 0x0005)).toBeUndefined();
+  });
+});
+
+describe("partition-aware source mapping (§10.4)", () => {
+  // --- Two `.bank` sections assembled at the same address, as a 128K program has them
+  const banked = {
+    errors: [],
+    injectOptions: {},
+    segments: [
+      { bank: 3, bankOffset: 0, startAddress: 0xc000, emittedCode: [] },
+      { bank: 4, bankOffset: 0, startAddress: 0xc000, emittedCode: [] }
+    ],
+    sourceFileList: [{ filename: "/p/main.kz80.asm" }],
+    sourceMap: { [0xc000]: { fileIndex: 0, line: 3 } },
+    listFileItems: [
+      { fileIndex: 0, address: 0xc000, lineNumber: 3, segmentIndex: 0 },
+      { fileIndex: 0, address: 0xc000, lineNumber: 9, segmentIndex: 1 }
+    ]
+  } as unknown as DebuggableOutput;
+
+  it("shows the line of the bank PC is in, not the one sourceMap happens to hold", () => {
+    expect(locateSource(banked, 0xc000, undefined, { partition: 3, machineId: "sp128" })?.line).toBe(3);
+    expect(locateSource(banked, 0xc000, undefined, { partition: 4, machineId: "sp128" })?.line).toBe(9);
+    expect(listItemsAtPc(banked, 0xc000, { partition: 4, machineId: "sp128" }).map((li) => li.lineNumber)).toEqual([9]);
+  });
+
+  it("shows nothing when PC's bank holds none of the program, and sourceMap without a partition", () => {
+    expect(locateSource(banked, 0xc000, undefined, { partition: 7, machineId: "sp128" })).toBeUndefined();
+    expect(locateSource(banked, 0xc000)?.line).toBe(3);
   });
 });

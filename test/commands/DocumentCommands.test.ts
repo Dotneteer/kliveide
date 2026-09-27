@@ -126,7 +126,8 @@ describe("NavigateToDocumentCommand", () => {
       const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
       mockDocService.getDocument.mockReturnValue(undefined);
       const setPosition = vi.fn();
-      mockDocService.waitOpen.mockResolvedValue({ id: "<kbasic-stdlib>/hex.bas" });
+      // --- The project has no copy of a library document: waitOpen finds none
+      mockDocService.waitOpen.mockResolvedValue(undefined);
       mockDocService.getDocumentApi.mockReturnValue({ setPosition });
 
       const result = await command.execute(context, { filename: "<kbasic-stdlib>/hex.bas", lineNo: 9, columnNo: 5 });
