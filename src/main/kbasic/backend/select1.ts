@@ -26,10 +26,11 @@ import { RUNTIME_ARGS } from "./select0";
  * comparisons, conversions between 8 and 16 bits — ending in nothing, a jump, a branch, END, or the
  * main program's RETURN. Roots are stores, SUB calls and runtime calls, emitted in their MIR order;
  * each root's tree is emitted where the root stands, and a run whose tree reaches back over an
- * earlier root is declined, so no load moves across a store or a call. A call is only ever a root:
- * inside a tree its side effects could be reordered against the tree's other loads. Strings, Fixed,
- * Float and 32-bit values, FUNCTION calls, runtime calls with more than one computed argument,
- * inline asm and the other terminators go to level 0.
+ * earlier root is declined, so no load moves across a store or a call. A FUNCTION call is a node of
+ * its tree: wherever the selector would evaluate a tree's operands out of MIR order (to use a leaf in
+ * place), it keeps MIR order instead when one side calls a FUNCTION and the other reads memory
+ * (`mayReorder`). Strings, Fixed, Float and 32-bit values, runtime calls with more than one computed
+ * argument, inline asm and the other terminators go to level 0.
  *
  * Code: a value is computed into its accumulator (A, HL); a leaf operand — a constant, a global, a
  * frame slot — is used where it is (`add a,(ix-2)`, `cp 10`, `ld de,(_b)`), and only an operation
@@ -153,8 +154,8 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
         if (!isSupportedType(i.type)) return undefined;
         break;
       case "call":
-        // --- A SUB call (a root); a FUNCTION's result would put the call inside a tree
-        if (i.dst) return undefined;
+        // --- A SUB call is a root; a FUNCTION call is a node of its tree, of a type the selector knows
+        if (i.dst && !isSupportedType(i.dst.type)) return undefined;
         break;
       case "rtcall": {
         if (i.dst) return undefined;
@@ -189,7 +190,8 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
   let lastStore = -1;
   for (let n = 0; n < instrs.length; n++) {
     const i = instrs[n];
-    if (i.op !== "store" && i.op !== "call" && i.op !== "rtcall") continue;
+    // --- Roots only: a FUNCTION call is a node of the tree that uses its result
+    if (i.op !== "store" && !(i.op === "call" && !i.dst) && i.op !== "rtcall") continue;
     const tree = collect(i, defs, operandsOf);
     if (tree.some((id) => (position.get(id) ?? -1) < lastStore)) return undefined;
     lastStore = n;
@@ -341,9 +343,66 @@ class TreeGen {
         return this.unary(i.op, i.a);
       case "conv":
         return this.conv(i.dst, i.a);
+      case "call":
+        // --- A FUNCTION: its result comes back in its accumulator (G6)
+        return this.userCall(i);
       default:
         return decline();
     }
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // Evaluation order with calls in a tree
+
+  /** Whether a value's tree calls a FUNCTION (which may change any variable). */
+  private hasCall(v: Value): boolean {
+    if (v.kind !== "vreg") return false;
+    const i = this.def(v).instr;
+    if (i.op === "call") return true;
+    switch (i.op) {
+      case "load":
+      case "addr":
+        return i.slot.kind === "deref" && this.hasCall(i.slot.ptr);
+      case "bin":
+        return this.hasCall(i.a) || this.hasCall(i.b);
+      case "neg":
+      case "not":
+      case "lnot":
+      case "conv":
+        return this.hasCall(i.a);
+      default:
+        return false;
+    }
+  }
+
+  /** Whether a value reads memory (a load somewhere in its tree). */
+  private readsMemory(v: Value): boolean {
+    if (v.kind !== "vreg") return false;
+    const i = this.def(v).instr;
+    switch (i.op) {
+      case "load":
+      case "call":
+        return true;
+      case "addr":
+        return i.slot.kind === "deref" && this.readsMemory(i.slot.ptr);
+      case "bin":
+        return this.readsMemory(i.a) || this.readsMemory(i.b);
+      case "neg":
+      case "not":
+      case "lnot":
+      case "conv":
+        return this.readsMemory(i.a);
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Whether `later` (after `earlier` in MIR order) may be evaluated before it: not when one of them
+   * calls a FUNCTION and the other reads memory the call could change.
+   */
+  private mayReorder(earlier: Value, later: Value): boolean {
+    return !((this.hasCall(later) && this.readsMemory(earlier)) || (this.hasCall(earlier) && this.readsMemory(later)));
   }
 
   private loadImmediate(cls: string, text: string): void {
@@ -407,6 +466,15 @@ class TreeGen {
     if (i.slot.kind !== "deref") return decline();
     // --- Through a pointer: the pointer into HL, the value into A / DE
     const ptr = i.slot.ptr;
+    if (!this.mayReorder(ptr, i.src)) {
+      // --- In MIR order: the pointer first, saved while the value is computed
+      this.gen(ptr);
+      this.emit("push hl");
+      this.gen(i.src);
+      if (cls === "r8") this.emit("pop hl", "ld (hl),a");
+      else this.emit("ex de,hl", "pop hl", "ld (hl),e", "inc hl", "ld (hl),d");
+      return;
+    }
     if (cls === "r8") {
       const leaf = this.leaf8(i.src);
       if (leaf !== undefined && !leaf.startsWith("(")) {
@@ -438,8 +506,9 @@ class TreeGen {
   }
 
   /**
-   * A SUB call: the arguments evaluated last first (plan Q1) and pushed in ABI order; a FASTCALL
-   * routine's first argument stays in its accumulator.
+   * A SUB or FUNCTION call: the arguments evaluated last first (plan Q1) and pushed in ABI order; a
+   * FASTCALL routine's first argument stays in its accumulator. A FUNCTION's result is in its
+   * accumulator afterwards.
    */
   private userCall(i: Extract<Instr, { op: "call" }>): void {
     for (let k = i.args.length - 1; k >= 0; k--) {
@@ -597,7 +666,7 @@ class TreeGen {
     if (alu[op]) {
       // --- The right operand where it is; for a commutative operator either side may be the leaf
       let [left, right] = [a, b];
-      if (commutative && !this.isLeaf8(right) && this.isLeaf8(left)) [left, right] = [b, a];
+      if (commutative && !this.isLeaf8(right) && this.isLeaf8(left) && this.mayReorder(a, b)) [left, right] = [b, a];
       const k = this.constant(right);
       if (k !== undefined && op === "add" && (k & 0xff) === 1) {
         this.gen(left);
@@ -661,6 +730,14 @@ class TreeGen {
       this.emit(`ld hl,${global}`, "ld h,(hl)");
       return;
     }
+    if (!this.mayReorder(a, b)) {
+      // --- In MIR order: the left saved while the right is computed
+      this.gen(a);
+      this.emit("push af");
+      this.gen(b);
+      this.emit(`ld ${reg},a`, "pop af");
+      return;
+    }
     // --- The right first, then the left: the right waits in `reg` if the left is a leaf
     this.gen(b);
     if (this.isLeaf8(a) && !this.global8(a)) {
@@ -687,7 +764,7 @@ class TreeGen {
     }
     const commutative = op === "add" || op === "and" || op === "or" || op === "xor";
     let [left, right] = [a, b];
-    if (commutative && !this.isLeaf16(right) && this.isLeaf16(left)) [left, right] = [b, a];
+    if (commutative && !this.isLeaf16(right) && this.isLeaf16(left) && this.mayReorder(a, b)) [left, right] = [b, a];
     this.pair16(left, right);
     switch (op) {
       case "add":
@@ -714,6 +791,14 @@ class TreeGen {
     if (this.isLeaf16(right)) {
       this.gen(left);
       this.leafToDe(right);
+      return;
+    }
+    if (!this.mayReorder(left, right)) {
+      // --- In MIR order: the left saved while the right is computed
+      this.gen(left);
+      this.emit("push hl");
+      this.gen(right);
+      this.emit("ex de,hl", "pop hl");
       return;
     }
     this.gen(right);

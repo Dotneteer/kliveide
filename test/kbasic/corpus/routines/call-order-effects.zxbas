@@ -1,0 +1,28 @@
+' A FUNCTION that changes variables the same expression reads: operands are evaluated left to right
+' and the index of an array element before its value, at every optimisation level (the tree
+' selector keeps MIR order around calls, .docs/kbasic-optimiser.md §12)
+'@expect screen 0 "6 15"
+'@expect screen 1 "16 15"
+'@expect screen 2 "1 0 11"
+'@expect screen 3 "9"
+'@expect screen 4 "5 19 17"
+'@expect screen 5 "0 1"
+DIM g AS UInteger
+DIM b AS UByte
+DIM r AS UInteger
+DIM t(3) AS UInteger
+FUNCTION bump() AS UInteger
+  g = g + 10
+  b = b + 1
+  RETURN 1
+END FUNCTION
+FUNCTION bumpb() AS UByte
+  b = b + 7
+  RETURN 2
+END FUNCTION
+g = 5 : r = g + bump() : PRINT r; " "; g
+g = 5 : r = bump() + g : PRINT r; " "; g
+g = 1 : t(g) = bump() : PRINT t(1); " "; t(2); " "; g
+g = 5 : r = g * 2 - bump() : PRINT r
+b = 3 : PRINT b + bumpb(); " "; bumpb() + b; " "; b
+b = 3 : PRINT b < bumpb(); " "; bumpb() < b
