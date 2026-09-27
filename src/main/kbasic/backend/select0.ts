@@ -845,7 +845,7 @@ class Selector {
       case "div":
         return this.emit(`call ${this.rt(type === "fix" ? "core.FixDiv" : signed ? "core.DivI32" : "core.DivU32")}`);
       case "mod":
-        return this.emit(`call ${this.rt(signed ? "core.ModI32" : "core.ModU32")}`);
+        return this.emit(`call ${this.rt(type === "fix" ? "core.FixMod" : signed ? "core.ModI32" : "core.ModU32")}`);
       default:
         throw new CodegenError(`Level 0 cannot select ${op} on ${type} yet`);
     }

@@ -523,20 +523,20 @@
  },
  "classic/temperature.zxbas": {
   "0": {
-   "bytes": 173,
-   "tstates": 194886
+   "bytes": 135,
+   "tstates": 57411
   },
   "1": {
-   "bytes": 147,
-   "tstates": 194836
+   "bytes": 109,
+   "tstates": 57248
   },
   "2": {
-   "bytes": 136,
-   "tstates": 194586
+   "bytes": 98,
+   "tstates": 57095
   },
   "3": {
-   "bytes": 136,
-   "tstates": 194586
+   "bytes": 98,
+   "tstates": 57095
   }
  },
  "classic/times-table.zxbas": {
@@ -902,19 +902,19 @@
  "data/data-expressions.zxbas": {
   "0": {
    "bytes": 94,
-   "tstates": 83342
+   "tstates": 84462
   },
   "1": {
    "bytes": 94,
-   "tstates": 83342
+   "tstates": 84462
   },
   "2": {
    "bytes": 94,
-   "tstates": 83342
+   "tstates": 84462
   },
   "3": {
    "bytes": 94,
-   "tstates": 83342
+   "tstates": 84462
   }
  },
  "data/read-array.zxbas": {
@@ -938,19 +938,19 @@
  "data/read-numbers.zxbas": {
   "0": {
    "bytes": 95,
-   "tstates": 68850
+   "tstates": 69831
   },
   "1": {
    "bytes": 95,
-   "tstates": 68850
+   "tstates": 69831
   },
   "2": {
    "bytes": 95,
-   "tstates": 68850
+   "tstates": 69831
   },
   "3": {
    "bytes": 95,
-   "tstates": 68850
+   "tstates": 69831
   }
  },
  "data/read-strings.zxbas": {
@@ -1045,20 +1045,20 @@
  },
  "fixed/fixed-compare.zxbas": {
   "0": {
-   "bytes": 286,
-   "tstates": 35285
+   "bytes": 302,
+   "tstates": 15486
   },
   "1": {
-   "bytes": 274,
-   "tstates": 35189
+   "bytes": 269,
+   "tstates": 15178
   },
   "2": {
-   "bytes": 271,
-   "tstates": 35179
+   "bytes": 266,
+   "tstates": 15163
   },
   "3": {
-   "bytes": 271,
-   "tstates": 35179
+   "bytes": 266,
+   "tstates": 15163
   }
  },
  "fixed/fixed-conversions.zxbas": {
@@ -1081,20 +1081,20 @@
  },
  "fixed/fixed-loop.zxbas": {
   "0": {
-   "bytes": 155,
-   "tstates": 146479
+   "bytes": 144,
+   "tstates": 25493
   },
   "1": {
-   "bytes": 121,
-   "tstates": 145744
+   "bytes": 106,
+   "tstates": 24032
   },
   "2": {
-   "bytes": 102,
-   "tstates": 145480
+   "bytes": 87,
+   "tstates": 23673
   },
   "3": {
-   "bytes": 102,
-   "tstates": 145480
+   "bytes": 87,
+   "tstates": 23673
   }
  },
  "fixed/fixed-negative.zxbas": {
@@ -1297,20 +1297,20 @@
  },
  "float/mod.zxbas": {
   "0": {
-   "bytes": 124,
-   "tstates": 177176
+   "bytes": 48,
+   "tstates": 18382
   },
   "1": {
-   "bytes": 124,
-   "tstates": 177176
+   "bytes": 48,
+   "tstates": 18382
   },
   "2": {
-   "bytes": 124,
-   "tstates": 177176
+   "bytes": 48,
+   "tstates": 18382
   },
   "3": {
-   "bytes": 124,
-   "tstates": 177176
+   "bytes": 48,
+   "tstates": 18382
   }
  },
  "float/power-constant.zxbas": {
@@ -1640,19 +1640,19 @@
  "integers/byte-signed.zxbas": {
   "0": {
    "bytes": 96,
-   "tstates": 28845
+   "tstates": 27040
   },
   "1": {
    "bytes": 92,
-   "tstates": 28837
+   "tstates": 27032
   },
   "2": {
    "bytes": 83,
-   "tstates": 28769
+   "tstates": 26964
   },
   "3": {
    "bytes": 83,
-   "tstates": 28769
+   "tstates": 26964
   }
  },
  "integers/comparisons.zxbas": {
@@ -1693,38 +1693,38 @@
  },
  "integers/constant-typed.zxbas": {
   "0": {
-   "bytes": 31,
-   "tstates": 14334
+   "bytes": 32,
+   "tstates": 14267
   },
   "1": {
-   "bytes": 31,
-   "tstates": 14334
+   "bytes": 32,
+   "tstates": 14267
   },
   "2": {
-   "bytes": 31,
-   "tstates": 14334
+   "bytes": 32,
+   "tstates": 14267
   },
   "3": {
-   "bytes": 31,
-   "tstates": 14334
+   "bytes": 32,
+   "tstates": 14267
   }
  },
  "integers/divide-by-zero.zxbas": {
   "0": {
    "bytes": 124,
-   "tstates": 34586
+   "tstates": 34459
   },
   "1": {
    "bytes": 124,
-   "tstates": 34586
+   "tstates": 34459
   },
   "2": {
    "bytes": 124,
-   "tstates": 34586
+   "tstates": 34459
   },
   "3": {
    "bytes": 124,
-   "tstates": 34586
+   "tstates": 34459
   }
  },
  "integers/division-by-zero.zxbas": {
@@ -1748,19 +1748,19 @@
  "integers/integer-division.zxbas": {
   "0": {
    "bytes": 166,
-   "tstates": 44358
+   "tstates": 42299
   },
   "1": {
    "bytes": 166,
-   "tstates": 44358
+   "tstates": 42299
   },
   "2": {
    "bytes": 163,
-   "tstates": 44342
+   "tstates": 42283
   },
   "3": {
    "bytes": 163,
-   "tstates": 44342
+   "tstates": 42283
   }
  },
  "integers/level1-shapes.zxbas": {
@@ -1784,19 +1784,19 @@
  "integers/literal-typing.zxbas": {
   "0": {
    "bytes": 72,
-   "tstates": 113887
+   "tstates": 70357
   },
   "1": {
    "bytes": 72,
-   "tstates": 113887
+   "tstates": 70357
   },
   "2": {
    "bytes": 72,
-   "tstates": 113887
+   "tstates": 70357
   },
   "3": {
    "bytes": 72,
-   "tstates": 113887
+   "tstates": 70357
   }
  },
  "integers/logic.zxbas": {
@@ -1909,20 +1909,20 @@
  },
  "long/level1-long-shapes.zxbas": {
   "0": {
-   "bytes": 1423,
-   "tstates": 534286
+   "bytes": 1426,
+   "tstates": 491746
   },
   "1": {
-   "bytes": 1307,
-   "tstates": 533137
+   "bytes": 1310,
+   "tstates": 490620
   },
   "2": {
-   "bytes": 1294,
-   "tstates": 533113
+   "bytes": 1297,
+   "tstates": 490575
   },
   "3": {
-   "bytes": 1294,
-   "tstates": 533113
+   "bytes": 1297,
+   "tstates": 490575
   }
  },
  "long/long-arith.zxbas": {
@@ -2000,19 +2000,19 @@
  "long/long-divide.zxbas": {
   "0": {
    "bytes": 230,
-   "tstates": 162515
+   "tstates": 160523
   },
   "1": {
    "bytes": 230,
-   "tstates": 162515
+   "tstates": 160523
   },
   "2": {
    "bytes": 230,
-   "tstates": 162515
+   "tstates": 160523
   },
   "3": {
    "bytes": 230,
-   "tstates": 162515
+   "tstates": 160523
   }
  },
  "long/long-loop.zxbas": {
@@ -2036,19 +2036,19 @@
  "long/long-mul-div.zxbas": {
   "0": {
    "bytes": 146,
-   "tstates": 135086
+   "tstates": 133159
   },
   "1": {
    "bytes": 146,
-   "tstates": 135086
+   "tstates": 133159
   },
   "2": {
    "bytes": 146,
-   "tstates": 135086
+   "tstates": 133159
   },
   "3": {
    "bytes": 146,
-   "tstates": 135086
+   "tstates": 133159
   }
  },
  "long/ulong-wrap.zxbas": {

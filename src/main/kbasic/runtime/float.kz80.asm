@@ -27,9 +27,10 @@ FBinary:
     call FCalc
     jp FFetch
 
-; left MOD right: left - TRUNCATE(left / right) * right, so the result takes the dividend's sign
-; (the semantics annex's mod-sign; the ROM's n-mod-m rounds the quotient down instead). In: the left
-; operand on the stack, the right one in A-E-D-C-B. Out: A-E-D-C-B. Changes F, HL.
+; left MOD right, floored: left - INT(left / right) * right, so a non-zero result takes the divisor's
+; sign (-7.5 MOD 2 is 0.5), as the ROM's n-mod-m and ZX BASIC's constant folding give (compatibility
+; plan D-C6: zxbc's own run-time Float MOD is faulty). In: the left operand on the stack, the right
+; one in A-E-D-C-B. Out: A-E-D-C-B. Changes F, HL.
 FMod:
     call FTwoOperands
     call RomIn
@@ -39,10 +40,10 @@ FMod:
     .defb $01               ; exchange                 [b][a]
     .defb $c1               ; st-mem-1: a
     .defb $01               ; exchange                 [a][b]
-    .defb $c0               ; st-mem-0: b
+    .defb $c2               ; st-mem-2: b (INT uses mem-0 for a negative number)
     .defb $05               ; division                 [a/b]
-    .defb $3a               ; truncate
-    .defb $e0               ; get-mem-0                [t][b]
+    .defb $27               ; int: rounds down
+    .defb $e2               ; get-mem-2                [t][b]
     .defb $04               ; multiply                 [t*b]
     .defb $e1               ; get-mem-1                [t*b][a]
     .defb $01               ; exchange                 [a][t*b]

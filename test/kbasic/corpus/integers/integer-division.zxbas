@@ -1,6 +1,6 @@
-' Signed 16-bit division truncates towards zero; MOD takes the dividend's sign
-'@expect screen 0 "-33 -1 33 1 -33 1"
-'@expect oracle-differs mod-sign
+' Signed 16-bit division truncates towards zero; MOD is the remainder of the magnitudes (semantics
+' annex: mod-sign)
+'@expect screen 0 "-33 1 33 1 -33 1"
 DIM a, b AS Integer
 a = -100: b = 3
 PRINT a / b; " "; a MOD b; " ";

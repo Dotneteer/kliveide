@@ -51,7 +51,7 @@ describe("expression types (spec types and operators)", () => {
     ["ub + i", "(Integer(ub:UByte) + i:Integer):Integer"],
     ["ui + b", "(Integer(ui:UInteger) + Integer(b:Byte)):Integer"],
     ["-ub", "(-Byte(ub:UByte)):Byte"],
-    ["ub * 2.5", "(Float(ub:UByte) * float 130,32,0,0,0:Float):Float"],
+    ["ub * 2.5", "(Fixed(ub:UByte) * fixed 163840:Fixed):Fixed"],
     ["fx + 1", "(fx:Fixed + fixed 65536:Fixed):Fixed"],
     ["i SHL 2", "(i:Integer SHL 2:UByte):Integer"],
     ["fl bAND 3", "(Long(fl:Float) BAND 3:Long):Long"],
@@ -67,8 +67,8 @@ describe("constant folding", () => {
   it.each([
     ["200 + 100", "300:UInteger"],
     ["1 - 2", "-1:Byte"],
-    ["7 / 2", "3:UByte"],
-    ["-7 MOD 2", "-1:Byte"],
+    ["7 / 2", "fixed 229376:Fixed"],
+    ["-7 MOD 2", "1:UByte"],
     ["1 < 2", "1:Boolean"],
     ['"ab" + "cd"', '"abcd":String'],
     ['"hello"(1 TO 3)', '"ell":String'],
@@ -82,7 +82,7 @@ describe("constant folding", () => {
     ["CAST(UByte, 300)", "44:UByte"],
     ["SIZEOF(Float)", "5:UByte"],
     ["NOT 0", "1:Boolean"],
-    ["bNOT 0", "255:UByte"]
+    ["bNOT 0", "-1:Byte"]
   ])("%s", (expression, expected) => {
     expect(printed(`PRINT ${expression}\n`)).toBe(expected);
   });
@@ -107,7 +107,7 @@ describe("implicit variables (spec types.default_type)", () => {
     ["a = 1", "UByte"],
     ["a = -1", "Byte"],
     ["a = 1000", "UInteger"],
-    ["a = 1.5", "Float"],
+    ["a = 1.5", "Fixed"],
     ['a = "x"', "String"],
     ["a = 1 < 2", "UByte"]
   ])("%s makes a %s", (source, type) => {

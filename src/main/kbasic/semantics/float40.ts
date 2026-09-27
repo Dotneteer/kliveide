@@ -143,7 +143,7 @@ export function toNumber(a: Float40): number {
 }
 
 /** The Float of num / den (den > 0), rounded to 32 mantissa bits, half to even; normalised form. */
-function fromExact(num: bigint, den: bigint): Float40 {
+export function fromExact(num: bigint, den: bigint): Float40 {
   const negative = num < 0n;
   if (negative) num = -num;
   if (num === 0n) return [0, 0, 0, 0, 0];

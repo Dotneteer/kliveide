@@ -1,0 +1,111 @@
+{
+ "suite": "implicit",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "v = 1.5: v / 7",
+   "decl": [
+    "v2218 = 1.5"
+   ],
+   "expr": "v2218 / 7"
+  },
+  {
+   "id": "v = 7 / 2: v / 7",
+   "decl": [
+    "v2219 = 7 / 2"
+   ],
+   "expr": "v2219 / 7"
+  },
+  {
+   "id": "v = 0.001: v",
+   "decl": [
+    "v2220 = 0.001"
+   ],
+   "expr": "v2220"
+  },
+  {
+   "id": "v = 100000: v * 100000",
+   "decl": [
+    "v2221 = 100000"
+   ],
+   "expr": "v2221 * 100000"
+  },
+  {
+   "id": "v = -1: v",
+   "decl": [
+    "v2222 = -1"
+   ],
+   "expr": "v2222"
+  },
+  {
+   "id": "v = 2.5: v * v * v * v",
+   "decl": [
+    "v2223 = 2.5"
+   ],
+   "expr": "v2223 * v2223 * v2223 * v2223"
+  },
+  {
+   "id": "v = 1E10: v",
+   "decl": [
+    "v2224 = 1E10"
+   ],
+   "expr": "v2224"
+  },
+  {
+   "id": "v = 40000: v + v",
+   "decl": [
+    "v2225 = 40000"
+   ],
+   "expr": "v2225 + v2225"
+  },
+  {
+   "id": "v = -200: v",
+   "decl": [
+    "v2226 = -200"
+   ],
+   "expr": "v2226"
+  },
+  {
+   "id": "v = 0.5: v * 2",
+   "decl": [
+    "v2227 = 0.5"
+   ],
+   "expr": "v2227 * 2"
+  },
+  {
+   "id": "FOR v = 0 TO 1 STEP 0.25: v / 3 after",
+   "decl": [
+    "FOR v2228 = 0 TO 1 STEP 0.25: NEXT v2228"
+   ],
+   "expr": "v2228 / 3"
+  },
+  {
+   "id": "FOR v = 1 TO 0 STEP -0.5: v / 3 after",
+   "decl": [
+    "FOR v2229 = 1 TO 0 STEP -0.5: NEXT v2229"
+   ],
+   "expr": "v2229 / 3"
+  },
+  {
+   "id": "FOR v = 0 TO 2.5 STEP 1: v / 3 after",
+   "decl": [
+    "FOR v2230 = 0 TO 2.5 STEP 1: NEXT v2230"
+   ],
+   "expr": "v2230 / 3"
+  },
+  {
+   "id": "FOR v = 10 TO 1 STEP -3: v / 3 after",
+   "decl": [
+    "FOR v2231 = 10 TO 1 STEP -3: NEXT v2231"
+   ],
+   "expr": "v2231 / 3"
+  },
+  {
+   "id": "FOR v = 1 TO 300 STEP 100: v / 3 after",
+   "decl": [
+    "FOR v2232 = 1 TO 300 STEP 100: NEXT v2232"
+   ],
+   "expr": "v2232 / 3"
+  }
+ ]
+}

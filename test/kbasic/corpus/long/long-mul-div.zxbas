@@ -1,6 +1,6 @@
-' 32-bit multiply, divide and MOD, signed and unsigned
-'@expect screen 0 "-97406784 -156 -372 428571428"
-'@expect oracle-differs mod-sign
+' 32-bit multiply, divide and MOD, signed and unsigned; a signed MOD is the remainder of the
+' magnitudes (semantics annex: mod-sign)
+'@expect screen 0 "-97406784 -156 372 428571428"
 DIM a, b AS Long
 DIM u AS ULong = 3000000000
 a = -123456: b = 789

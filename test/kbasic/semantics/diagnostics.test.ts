@@ -109,7 +109,7 @@ const ERRORS: Record<keyof typeof SEMANTIC_ERRORS, Case[]> = {
   E424: [{ source: "DIM a(3) AS UByte\nDIM b(3) AS Integer\na = b\n", text: "a = b" }],
   E425: [
     { source: "DIM x AS UByte\nCONST k = x + 1\n", text: "x + 1" },
-    { source: "PRINT 1e38 * 1e38\n", text: "1e38 * 1e38" },
+    { source: "PRINT 1e38 * 1e38 + 0.5\n", text: "1e38 * 1e38 + 0.5" },
     { source: "PRINT 1.5 / 0\n", text: "1.5 / 0" }
   ],
   E426: [

@@ -26,6 +26,12 @@ export type Constant = {
    * that holds them instead of wrapping (`200 + 100` is 300, a UInteger).
    */
   literal?: boolean;
+  /**
+   * A literal constant's exact value (compatibility plan C2, R1). Literal-only expressions fold in
+   * exact arithmetic, as ZX BASIC does, and `type`/`value` are the natural type and value the exact
+   * one takes when it is used: see `naturalConstant`.
+   */
+  exact?: Rational;
 };
 
 /** A folding problem the caller reports: `overflow` is the ROM's "Number too big". */
@@ -52,16 +58,66 @@ export function booleanConstant(value: boolean): Constant {
   return intConstant(value ? 1n : 0n, "Boolean");
 }
 
-/** A number literal: integers take the smallest type that holds them; reals are Float. */
+/** A number literal: its exact value, in the natural type that value takes (`naturalConstant`). */
 export function numberLiteral(value: number, text: string, form: "integer" | "real" | "based"): Constant {
-  if (form !== "real" && Number.isSafeInteger(value)) {
-    const v = BigInt(value);
-    const type = literalIntegerType(v);
-    if (type !== "Float") return intConstant(v, type, true);
-    return { type: "Float", value: { kind: "float", value: f40.fromDecimal(v.toString()) }, literal: true };
+  if (form !== "real" && Number.isSafeInteger(value)) return naturalConstant({ num: BigInt(value), den: 1n });
+  return naturalConstant(decimalRational(form === "real" ? text : String(value)));
+}
+
+/** The exact value of a decimal number as written (`1.5E-5` is 15 / 1000000). */
+export function decimalRational(text: string): Rational {
+  const m = /^\s*([+-]?)(\d*)(?:\.(\d*))?(?:[eE]([+-]?\d+))?\s*$/.exec(text);
+  if (!m) throw new Error(`'${text}' is not a decimal number`);
+  const scale = BigInt(m[4] ?? 0) - BigInt((m[3] ?? "").length);
+  let num = BigInt((m[2] + (m[3] ?? "")) || "0");
+  let den = 1n;
+  if (scale >= 0n) num *= 10n ** scale;
+  else den = 10n ** -scale;
+  return reduce({ num: m[1] === "-" ? -num : num, den });
+}
+
+/**
+ * The type and value ZX BASIC gives an exact constant (observed through the oracle, compatibility
+ * plan C2): a whole number takes the smallest integer type that holds it, and beyond 32 bits wraps
+ * to them (ULong when positive, Long when negative: 1E10 is 1410065408); a fraction is a Fixed when
+ * it lies in Fixed's range (truncated towards zero to 65536ths: 0.001 is 65 / 65536), otherwise a
+ * Float. The exact value stays with the constant, so folding goes on exactly (1E10 MOD 3 is 1) and a
+ * conversion to Float starts from it.
+ */
+export function naturalConstant(exact: Rational): Constant {
+  const r = reduce(exact);
+  if (r.den === 1n) {
+    let v = r.num;
+    let type = literalIntegerType(v);
+    if (type === "Float") {
+      v = v >= 0n ? BigInt.asUintN(32, v) : BigInt.asIntN(32, v);
+      type = v >= 0n ? "ULong" : "Long";
+    }
+    return { type, value: { kind: "int", value: v }, literal: true, exact: r };
   }
-  const decimal = form === "real" ? text : String(value);
-  return { type: "Float", value: { kind: "float", value: f40.fromDecimal(decimal) }, literal: true };
+  if (r.num >= -32768n * r.den && r.num < 32768n * r.den) {
+    return { type: "Fixed", value: { kind: "fixed", raw: Number((r.num * 65536n) / r.den) }, literal: true, exact: r };
+  }
+  try {
+    return { type: "Float", value: { kind: "float", value: f40.fromExact(r.num, r.den) }, literal: true, exact: r };
+  } catch (e) {
+    if (e instanceof f40.Float40Overflow) throw new FoldError("overflow");
+    throw e;
+  }
+}
+
+function gcd(a: bigint, b: bigint): bigint {
+  a = a < 0n ? -a : a;
+  b = b < 0n ? -b : b;
+  while (b) [a, b] = [b, a % b];
+  return a;
+}
+
+function reduce(r: Rational): Rational {
+  if (r.num === 0n) return { num: 0n, den: 1n };
+  const sign = r.den < 0n ? -1n : 1n;
+  const g = gcd(r.num, r.den);
+  return { num: (sign * r.num) / g, den: (sign * r.den) / g };
 }
 
 // =================================================================================================
@@ -140,12 +196,17 @@ export function convertConstant(c: Constant, to: KType): { constant: Constant; l
     return { constant: intConstant(value, to), lossy };
   }
   if (to === "Fixed") {
+    // --- Towards zero, as ZX BASIC converts a constant (-0.1 is -6553 / 65536)
     const exact = exactRational(c);
-    const scaled = floorDiv(exact.num * 65536n, exact.den);
+    const scaled = (exact.num * 65536n) / exact.den;
     const lossy = scaled * exact.den !== exact.num * 65536n || scaled < -(2n ** 31n) || scaled >= 2n ** 31n;
     return { constant: { type: "Fixed", value: { kind: "fixed", raw: Number(BigInt.asIntN(32, scaled)) } }, lossy };
   }
-  // --- Float
+  // --- Float: from a literal's exact value
+  if (c.exact) {
+    const e = c.exact;
+    return { constant: { type: "Float", value: { kind: "float", value: e.den === 1n && e.num >= -0xffffn && e.num <= 0xffffn ? f40.fromInteger(Number(e.num)) : f40.fromExact(e.num, e.den) } }, lossy: false };
+  }
   switch (v.kind) {
     case "float":
       return { constant: { type: "Float", value: v }, lossy: false };
@@ -162,9 +223,10 @@ export function wrap(value: bigint, type: KType): bigint {
   return integralRange(type).min < 0n ? BigInt.asIntN(bits, value) : BigInt.asUintN(bits, value);
 }
 
-type Rational = { num: bigint; den: bigint };
+export type Rational = { num: bigint; den: bigint };
 
 function exactRational(c: Constant): Rational {
+  if (c.exact) return c.exact;
   const v = c.value;
   switch (v.kind) {
     case "int":
@@ -214,6 +276,10 @@ export function foldBinary(
 ): Constant | undefined {
   const literal = !!a.literal && !!b.literal;
   if (a.value.kind === "address" || b.value.kind === "address") return foldAddress(op, a, b, resultType);
+  if (a.exact && b.exact) {
+    const exact = foldExact(op, a.exact, b.exact);
+    if (exact) return exact;
+  }
 
   // --- Logical operators look at truth values only
   if (op === "AND" || op === "OR" || op === "XOR") {
@@ -315,10 +381,14 @@ export function foldBinary(
       // --- Truncates towards zero; a zero divisor gives every bit set, as the runtime does
       result = y === 0n ? -1n : x / y;
       break;
-    case "MOD":
-      // --- The remainder takes the dividend's sign; a zero divisor gives the dividend
-      result = y === 0n ? x : x % y;
+    case "MOD": {
+      // --- The remainder of the magnitudes, never negative, as ZX BASIC's run time gives (-100 MOD 3
+      // --- is 1); a zero divisor gives the dividend's magnitude
+      const ax = x < 0n ? -x : x;
+      const ay = y < 0n ? -y : y;
+      result = ay === 0n ? ax : ax % ay;
       break;
+    }
     case "BAND":
       result = x & y;
       break;
@@ -352,6 +422,8 @@ export function foldUnary(op: "-" | "+" | "NOT" | "BNOT", c: Constant, type: KTy
   if (op === "+") return c;
   if (op === "NOT") return booleanConstant(!isTrueConstant(c));
   if (v.kind === "address" || v.kind === "string") return undefined;
+  if (c.exact && op === "-") return naturalConstant({ num: -c.exact.num, den: c.exact.den });
+  if (c.exact && op === "BNOT" && c.exact.den === 1n) return naturalConstant({ num: -c.exact.num - 1n, den: 1n });
   if (op === "BNOT") {
     if (v.kind !== "int") return undefined;
     return intConstant(wrap(~v.value, type), type);
@@ -367,6 +439,51 @@ export function foldUnary(op: "-" | "+" | "NOT" | "BNOT", c: Constant, type: KTy
       return { type: "Fixed", value: { kind: "fixed", raw: Number(BigInt.asIntN(32, -BigInt(v.raw))) } };
     case "float":
       return { ...floatConstant(f40.negate(v.value)), ...(c.literal ? { literal: true } : {}) };
+  }
+}
+
+/**
+ * A binary operation on two literal constants, in exact arithmetic as ZX BASIC folds them (observed
+ * through the oracle, compatibility plan C2): `/` divides exactly (1 / 8 is 0.125), MOD is floored
+ * (-1 MOD 3 is 2), the bitwise operators and shifts work on whole numbers as unbounded two's
+ * complement, and the result takes its natural type. Undefined for what the exact rules do not cover
+ * (a zero divisor, a bitwise operator on a fraction, ^): the typed folding takes those.
+ */
+function foldExact(op: BinaryFoldOp, x: Rational, y: Rational): Constant | undefined {
+  const whole = x.den === 1n && y.den === 1n;
+  const order = x.num * y.den - y.num * x.den;
+  switch (op) {
+    case "+":
+      return naturalConstant({ num: x.num * y.den + y.num * x.den, den: x.den * y.den });
+    case "-":
+      return naturalConstant({ num: x.num * y.den - y.num * x.den, den: x.den * y.den });
+    case "*":
+      return naturalConstant({ num: x.num * y.num, den: x.den * y.den });
+    case "/":
+      return y.num === 0n ? undefined : naturalConstant({ num: x.num * y.den, den: x.den * y.num });
+    case "MOD": {
+      if (y.num === 0n) return undefined;
+      const q = floorDiv(x.num * y.den, x.den * y.num);
+      return naturalConstant({ num: x.num * y.den - q * y.num * x.den, den: x.den * y.den });
+    }
+    case "BAND":
+    case "BOR":
+    case "BXOR":
+      if (!whole) return undefined;
+      return naturalConstant({ num: op === "BAND" ? x.num & y.num : op === "BOR" ? x.num | y.num : x.num ^ y.num, den: 1n });
+    case "SHL":
+    case "SHR":
+      if (!whole || y.num < 0n || y.num > 64n) return undefined;
+      return naturalConstant({ num: op === "SHL" ? x.num << y.num : x.num >> y.num, den: 1n });
+    case "=":
+    case "<>":
+    case "<":
+    case ">":
+    case "<=":
+    case ">=":
+      return compareResult(op, order < 0n ? -1 : order > 0n ? 1 : 0);
+    default:
+      return undefined;
   }
 }
 

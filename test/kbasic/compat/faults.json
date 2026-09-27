@@ -1,0 +1,393 @@
+{
+ "binary": {
+  "Byte -7 / 2": {
+   "klive": "-3",
+   "zxbc": "3",
+   "fault": "byte-division"
+  },
+  "Fixed 3.5 MOD 1.25": {
+   "klive": "1",
+   "zxbc": "0.9999847412109375",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5 MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-1.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed 100.25 MOD -0.5": {
+   "klive": "-0.25",
+   "zxbc": "0.25",
+   "fault": "decimal-mod"
+  },
+  "Fixed 0.1 MOD 3": {
+   "klive": "0.0999908447265625",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5 MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-19.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "divlit": {
+  "Byte -7: a / 2": {
+   "klive": "-3",
+   "zxbc": "-4",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -7: a / 4": {
+   "klive": "-1",
+   "zxbc": "1",
+   "fault": "byte-division"
+  },
+  "Byte -7: a / 3": {
+   "klive": "-2",
+   "zxbc": "2",
+   "fault": "byte-division"
+  },
+  "Byte -7: a / 2.0": {
+   "klive": "-3",
+   "zxbc": "-4",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -7: a MOD 4": {
+   "klive": "3",
+   "zxbc": "1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a / 2": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a / 2.0": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a MOD 4": {
+   "klive": "1",
+   "zxbc": "3",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -100: a SHR 1": {
+   "klive": "-50",
+   "zxbc": "32718",
+   "fault": "shr-signed"
+  },
+  "Integer -1: a / 2": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a / 2.0": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a MOD 4": {
+   "klive": "1",
+   "zxbc": "3",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a SHR 1": {
+   "klive": "-1",
+   "zxbc": "32767",
+   "fault": "shr-signed"
+  }
+ },
+ "divzero": {
+  "Byte -7 / 0": {
+   "klive": "1",
+   "zxbc": "-1",
+   "fault": "byte-division"
+  },
+  "Fixed -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0.0000152587890625",
+   "fault": "fixed-division-by-zero"
+  },
+  "Fixed -7.5 MOD 0": {
+   "klive": "7.5",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Fixed 3.5 / 0": {
+   "klive": "",
+   "zxbc": "-0.0000152587890625",
+   "fault": "fixed-division-by-zero"
+  },
+  "Fixed 3.5 MOD 0": {
+   "klive": "3.5",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0",
+   "fault": "fixed-division-by-zero"
+  },
+  "Float 7.5 / 0": {
+   "klive": "",
+   "zxbc": "0",
+   "fault": "fixed-division-by-zero"
+  }
+ },
+ "literals": {
+  "BNOT 0.5": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  },
+  "BNOT 2.5": {
+   "klive": "-3",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  },
+  "BNOT 0.001": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  }
+ },
+ "meet": {
+  "UByte 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "UByte 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "UByte 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Byte 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Byte 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "Byte 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "UInteger 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "UInteger 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "UInteger 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Integer 100: 0.5 / a": {
+   "klive": "0.0049896240234375",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Integer 100: a / 0.001": {
+   "klive": "-30247.3846282958984375",
+   "zxbc": "-28672",
+   "fault": "fixed-division"
+  },
+  "Integer 100: a MOD 0.001": {
+   "klive": "0.0006103515625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "ULong 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "ULong 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "ULong 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Long 100000: 0.5 / a": {
+   "klive": "-0.0000152587890625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Long 100000: a / 0.001": {
+   "klive": "-2016.4922943115234375",
+   "zxbc": "-32768",
+   "fault": "fixed-division"
+  },
+  "Long 100000: a MOD 0.001": {
+   "klive": "0.0005035400390625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-1.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a / -1": {
+   "klive": "7.5",
+   "zxbc": "2175.003143310546875",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 256": {
+   "klive": "248.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: 0.5 / a": {
+   "klive": "-0.0666656494140625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 0.5": {
+   "klive": "0",
+   "zxbc": "-0.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a / 0.001": {
+   "klive": "-7561.8461456298828125",
+   "zxbc": "-7680",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 0.001": {
+   "klive": "0.000152587890625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 1E10": {
+   "klive": "-7.5",
+   "zxbc": "-7.4375",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 70000": {
+   "klive": "4456.5",
+   "zxbc": "-7.49267578125",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-19.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 256": {
+   "klive": "248.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 0.5": {
+   "klive": "0",
+   "zxbc": "-232.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 0.001": {
+   "klive": "1.8626451E-9",
+   "zxbc": "-56257508",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 1E10": {
+   "klive": "1E+10",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 70000": {
+   "klive": "69992.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "mixed": {
+  "UByte 200 / Byte 2": {
+   "klive": "-28",
+   "zxbc": "28",
+   "fault": "byte-division"
+  },
+  "Integer -100 MOD Fixed 1.25": {
+   "klive": "0",
+   "zxbc": "-1.25",
+   "fault": "decimal-mod"
+  },
+  "Integer 100 MOD Fixed 100.25": {
+   "klive": "100",
+   "zxbc": "99.9991302490234375",
+   "fault": "decimal-mod"
+  },
+  "Long -100000 / Fixed 1.25": {
+   "klive": "24857.5999908447265625",
+   "zxbc": "24857.5999755859375",
+   "fault": "fixed-division"
+  },
+  "Long -100000 MOD Fixed 1.25": {
+   "klive": "0.75",
+   "zxbc": "0.749969482421875",
+   "fault": "decimal-mod"
+  },
+  "Long 100000 MOD Fixed 100.25": {
+   "klive": "5.5",
+   "zxbc": "-94.7492218017578125",
+   "fault": "decimal-mod"
+  },
+  "Integer -100 MOD Float 2.5": {
+   "klive": "0",
+   "zxbc": "-1700",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5 MOD Float 10000000000": {
+   "klive": "1E+10",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "shifts": {
+  "Integer -100 SHR 1": {
+   "klive": "-50",
+   "zxbc": "32718",
+   "fault": "shr-signed"
+  }
+ },
+ "unary": {
+  "Fixed 3.5: BNOT a": {
+   "klive": "-4",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'",
+   "fault": "bnot-decimal"
+  },
+  "Fixed -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'",
+   "fault": "bnot-decimal"
+  },
+  "Float 7.5: BNOT a": {
+   "klive": "-8",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'",
+   "fault": "bnot-decimal"
+  },
+  "Float -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'",
+   "fault": "bnot-decimal"
+  }
+ }
+}

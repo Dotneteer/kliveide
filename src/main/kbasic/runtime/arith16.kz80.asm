@@ -5,9 +5,10 @@
 ;
 ; Operands follow runtime-abi.md §7: 8-bit in A and H, 16-bit in HL and DE. A product keeps its low
 ; 8 or 16 bits, the same for signed and unsigned operands. Signed division truncates towards zero
-; and the remainder takes the dividend's sign. Division by zero gives the dividend as the remainder
-; and a quotient of the magnitudes with every bit set, then given the quotient's sign: -7 / 0 is 1,
-; as upstream gives (the semantics annex's integer-division-by-zero and mod-sign).
+; and the remainder is the remainder of the magnitudes, never negative: -100 MOD 3 is 1, as ZX BASIC
+; gives (the semantics annex's mod-sign). Division by zero gives the dividend's magnitude as the
+; remainder and a quotient of the magnitudes with every bit set, then given the quotient's sign:
+; -7 / 0 is 1 (integer-division-by-zero).
 
 ; ------------------------------------------------------------------------------------------------
 ; A * H. Out: A. Changes F, B, H, L.
@@ -58,7 +59,7 @@ DivModU8Next:
     ret
 
 ; ------------------------------------------------------------------------------------------------
-; A / H, signed. Out: A = quotient, L = remainder. Changes F, B, C, H.
+; A / H, signed. Out: A = H = quotient, L = remainder (of the magnitudes). Changes F, B, C.
 DivModI8:
     ld b,a                  ; B = dividend
     xor h
@@ -71,25 +72,17 @@ DivModI8:
 DivModI8Pos:
     ld a,b
     or a
-    push af                 ; S: [dividend's sign]
     jp p,DivModI8Div
     neg                     ; A = |dividend|
 DivModI8Div:
-    push bc                 ; S: [C][sign]
+    push bc                 ; S: [C]
     call DivModU8
-    pop bc                  ; C = quotient sign                    S: [sign]
+    pop bc                  ; C = quotient sign                    S: []
     bit 7,c
-    jr z,DivModI8Rem
+    jr z,DivModI8Done
     neg
-DivModI8Rem:
-    ld h,a                  ; H = quotient
-    pop af                  ; S: []
-    ld a,l
-    jp p,DivModI8Done
-    neg
-    ld l,a
 DivModI8Done:
-    ld a,h
+    ld h,a                  ; H = quotient
     ret
 
 ; ------------------------------------------------------------------------------------------------
@@ -166,13 +159,12 @@ DivModU16Done:
     ret
 
 ; ------------------------------------------------------------------------------------------------
-; HL / DE, signed. Out: HL = quotient, DE = remainder. Changes AF, BC.
+; HL / DE, signed. Out: HL = quotient, DE = remainder (of the magnitudes). Changes AF, BC.
 DivModI16:
     ld a,h
     xor d
     push af                 ; S: [quotient sign]
     ld a,h
-    push af                 ; S: [dividend sign][quotient sign]
     or a
     call m,DivModNegHL
     ex de,hl
@@ -181,11 +173,6 @@ DivModI16:
     call m,DivModNegHL
     ex de,hl
     call DivModU16
-    pop af                  ; S: [quotient sign]
-    ex de,hl
-    or a
-    call m,DivModNegHL      ; the remainder takes the dividend's sign
-    ex de,hl
     pop af                  ; S: []
     or a
     ret p

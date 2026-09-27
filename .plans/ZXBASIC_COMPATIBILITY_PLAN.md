@@ -9,7 +9,8 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 
 **Status:** stage C0 done (2026-09-27): the DO…LOOP acceptance fixes. The §5 decisions are taken
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
-helper; findings in §4.1. Next: C2.
+helper; findings in §4.1. **C2 in progress** (§4.2): numbers done — 1,747 generated items agree with
+zxbc apart from 75 recorded upstream faults and crashes.
 
 ---
 
@@ -149,6 +150,30 @@ program that pins them. Target: every generated program agrees.
 - **substring-assign** writes outside its String under zxbc (the typed run prints garbage and never
   reports); which statement does it is a C3 question before D-C2 can decide it.
 
+### 4.2 C2 state (2026-09-27)
+
+- **The generated suites** (`scripts/kbasic-compat.cjs gen`, `test/kbasic/compat/suites/`): literals,
+  binary and mixed operators, shifts, CONST, conversions, unary operators, number printing, division
+  by zero, variables meeting literals, DIM initialisers, implicit variables and FOR, signed variables
+  divided by literals — 1,747 items. `oracle` records zxbc's result per item (a rejected program is
+  halved until each rejected item stands alone); `compat.test.ts` compares Klive at levels 0 and 3,
+  and requires the two levels to agree.
+- **Two files keep it honest:** `baseline.json`, the items still to fix (a ratchet; empty now), and
+  `faults.json`, the items Klive differs on purpose, each naming its annex entry (D-C1 crashes, D-C6
+  faults): 75 now — `decimal-mod`, `fixed-division`, `byte-division`, `power-of-two-literal-divisor`,
+  `shr-signed`, `fixed-division-by-zero`, `bnot-decimal`.
+- **Copied from zxbc:** literal-only expressions fold exactly (`/` divides exactly, MOD floored,
+  `BNOT n` = -(n+1), shifts unbounded) and the result takes its natural type — a whole number the
+  smallest integer type, wrapping to 32 bits beyond it (`1E10` is 1410065408); a fraction a Fixed in
+  Fixed range, else a Float (`0.001` is 65/65536; converted to Float, a literal keeps its exact value).
+  A typed CONST folds by its value. A constant converts to Fixed truncating towards zero. Signed MOD
+  at run time is the remainder of the magnitudes (`-100 MOD 3` = 1). Implicit variables and FOR take
+  these types (`a = 1.5` is a Fixed).
+- **Kept correct (D-C6):** Float and Fixed MOD at run time floor (`FixMod`, new; `FMod` uses the ROM's
+  INT, with the divisor moved to calculator memory 2, since INT uses memory 0 for negative numbers).
+- **Next in C2:** Strings (comparison, slices, concatenation, the String functions) and the numeric
+  built-ins, then close C2.
+
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with
 `node scripts/kbasic-opt-report.cjs`, the reason in the commit), the Next and CODEBANK corpus.
@@ -165,6 +190,14 @@ position, so Klive will (a C3 item). The table keeps the questions and the accep
 | D-C3 | Klive **extensions zxbc rejects**: `#elif`, `=` in `#if`, `x ^ -1`, READ without DATA. | Reject them, as K1 says (a program Klive accepts then also compiles with zxbc). |
 | D-C4 | **Inline asm default**: today Klive's own dialect. | zxbasm's by default (K3); Klive's with `'@asm-dialect klive`. The standard library and tests keep Klive's by declaring it. |
 | D-C5 | **Runtime errors**: zxbc returns to the caller with ERR_NR set. | Follow zxbc once C1 has shown what the user sees through BASIC; the debugger's error stop stays. |
+
+**D-C6 (project author, 2026-09-27, from C2's findings):** zxbc's *consistent* rules are copied,
+even where they surprise (constant folding in exact arithmetic, MOD taking the magnitudes at run time,
+named arguments by position). Where its **run-time arithmetic is simply wrong** — Byte division
+dropping the sign, `Integer -100 SHR 1` = 32718, Float MOD (-7.5 MOD 2 = -19.5), Fixed MOD losing
+precision, Float/Fixed division by zero giving 0 — Klive keeps the correct result, recorded in the
+annex as an upstream fault. For Float and Fixed MOD at run time, "correct" is zxbc's own constant
+rule: floored, as the ROM's n-mod-m.
 
 ## 6. References
 

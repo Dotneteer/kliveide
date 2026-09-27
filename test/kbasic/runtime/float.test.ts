@@ -119,14 +119,14 @@ describe("Klive BASIC runtime - float", () => {
     }
   });
 
-  it("takes MOD with the dividend's sign", () => {
+  it("takes MOD floored: a remainder takes the divisor's sign", () => {
     const mod = (a: string, b: string) => {
       put("Left", fromDecimal(a));
       put("Right", fromDecimal(b));
       rig.call("Mod");
       return toNumber(result());
     };
-    expect([mod("7", "3"), mod("-7", "3"), mod("7", "-3"), mod("5.5", "2")]).toEqual([1, -1, 1, 1.5]);
+    expect([mod("7", "3"), mod("-7", "3"), mod("7", "-3"), mod("5.5", "2"), mod("-7.5", "2"), mod("-6", "3")]).toEqual([1, 2, -2, 1.5, 0.5, 0]);
   });
 
   it("compares", () => {

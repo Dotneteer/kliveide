@@ -554,6 +554,11 @@ export class ExpressionBinder {
     if (op === "NOT") type = "Boolean";
     else if (op === "BNOT") {
       type = isDecimal(operand.type) ? "Long" : operand.type === "Boolean" ? "UByte" : operand.type;
+      // --- A whole literal folds exactly before any conversion: BNOT 256 is -257 (ZX BASIC)
+      if (operand.constant?.exact?.den === 1n) {
+        const folded = foldUnary("BNOT", operand.constant, type);
+        if (folded) return this.constantExpr(folded, span);
+      }
       input = this.convert(operand, type);
     } else type = signedOf(operand.type);
     if (input.constant) {
@@ -596,8 +601,11 @@ export class ExpressionBinder {
       case "SHL":
       case "SHR":
         operandType = resultType = isDecimal(left.type) ? "ULong" : left.type === "Boolean" ? "UByte" : left.type;
-        l = this.convert(left, operandType);
-        r = this.convert(right, "UByte");
+        // --- Two literals shift exactly (5 SHL 8 is 1280, ZX BASIC); otherwise in the left type
+        if (!(left.constant?.exact && right.constant?.exact)) {
+          l = this.convert(left, operandType);
+          r = this.convert(right, "UByte");
+        }
         break;
       case "BAND":
       case "BOR":

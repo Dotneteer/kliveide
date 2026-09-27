@@ -36,9 +36,9 @@ describe("integer arithmetic", () => {
   it.each([
     ["DIM a AS UByte = 200\nDIM b AS UByte = 100\nPRINT a + b", "44"],
     ["DIM a AS Integer = 200\nDIM b AS Integer = 100\nPRINT a + b; \" \"; a - b; \" \"; b - a", "300 100 -100"],
-    ["DIM a AS Integer = -7\nDIM b AS Integer = 2\nPRINT a / b; \" \"; a MOD b", "-3 -1"],
+    ["DIM a AS Integer = -7\nDIM b AS Integer = 2\nPRINT a / b; \" \"; a MOD b", "-3 1"],
     ["DIM a AS UInteger = 50000\nDIM b AS UInteger = 7\nPRINT a / b; \" \"; a MOD b", "7142 6"],
-    ["DIM a AS Byte = -100\nDIM b AS Byte = 3\nPRINT a / b; \" \"; a MOD b", "-33 -1"],
+    ["DIM a AS Byte = -100\nDIM b AS Byte = 3\nPRINT a / b; \" \"; a MOD b", "-33 1"],
     ["DIM a AS UInteger = 300\nDIM b AS UInteger = 200\nPRINT a * b", "60000"],
     ["DIM a AS UByte = 13\nPRINT a * 7", "91"],
     ["DIM a AS Integer = 1\nPRINT a SHL 10; \" \"; -1024 SHR 3", "1024 -128"],

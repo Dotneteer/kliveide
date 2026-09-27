@@ -5,9 +5,10 @@
 ; Every routine takes its left operand on the stack under the return address (pushed high word
 ; first, so the low word is on top) and its right operand in DE:HL (DE = the high word); it removes
 ; the left operand and gives the result in DE:HL. That is where the compiler's stack machine has
-; the operands of a binary operator. Division truncates towards zero; a remainder takes the
-; dividend's sign. Dividing by zero gives a quotient with every bit set and the dividend as the
-; remainder (the semantics annex's integer-division-by-zero).
+; the operands of a binary operator. Division truncates towards zero; a signed remainder is the
+; remainder of the magnitudes, never negative, as ZX BASIC gives (the semantics annex's mod-sign).
+; Dividing by zero gives a quotient with every bit set and the dividend's magnitude as the remainder
+; (integer-division-by-zero).
 ;
 ; The routines keep their operands in memory, so they are not re-entrant: an interrupt handler must
 ; not use 32-bit multiply or divide while the program it interrupted is in one.
@@ -76,11 +77,7 @@ DivI32:
 
 ModI32:
     call Arith32Operands
-    call DivModSigned32
-    ld a,(Arith32RSign)
-    or a
-    ld hl,Arith32R
-    call m,Neg32Mem
+    call DivModSigned32     ; the remainder of the magnitudes stays positive
     jr Arith32Remainder
 
 ; ------------------------------------------------------------------------------------------------

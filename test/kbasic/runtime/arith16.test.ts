@@ -41,12 +41,12 @@ describe("Klive BASIC runtime - arith16", () => {
     }
   });
 
-  it("DivModI8 truncates towards zero; the remainder takes the dividend's sign", () => {
+  it("DivModI8 truncates towards zero; the remainder is that of the magnitudes (ZX BASIC)", () => {
     for (let a = -128; a < 128; a += 3) {
       for (const h of [-128, -127, -10, -3, -2, -1, 1, 2, 3, 7, 10, 100, 127]) {
         const r = rig.call("core.DivModI8", { a: a & 0xff, hl: (h & 0xff) << 8 });
         const q = truncDiv(a, h);
-        expect([s8(r.a), s8(r.hl & 0xff)], `${a} / ${h}`).toEqual([s8(q & 0xff), a - q * h]);
+        expect([s8(r.a), s8(r.hl & 0xff)], `${a} / ${h}`).toEqual([s8(q & 0xff), Math.abs(a) % Math.abs(h)]);
       }
     }
   });
@@ -71,13 +71,13 @@ describe("Klive BASIC runtime - arith16", () => {
     }
   });
 
-  it("DivModI16 truncates towards zero; the remainder takes the dividend's sign", () => {
+  it("DivModI16 truncates towards zero; the remainder is that of the magnitudes (ZX BASIC)", () => {
     const values = [...EDGE16, ...lcg(3, 40)].map((v) => s16(v & 0xffff));
     for (const x of values) {
       for (const y of values.filter((v) => v !== 0).slice(0, 24)) {
         const r = rig.call("core.DivModI16", { hl: x & 0xffff, de: y & 0xffff });
         const q = truncDiv(x, y);
-        expect([s16(r.hl), s16(r.de)], `${x} / ${y}`).toEqual([s16(q & 0xffff), s16((x - q * y) & 0xffff)]);
+        expect([s16(r.hl), s16(r.de)], `${x} / ${y}`).toEqual([s16(q & 0xffff), Math.abs(x) % Math.abs(y)]);
       }
     }
   });

@@ -1,0 +1,846 @@
+{
+ "suite": "initial",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "DIM AS UByte = -2.5",
+   "decl": [
+    "DIM v2098 AS UByte = -2.5"
+   ],
+   "expr": "v2098"
+  },
+  {
+   "id": "DIM AS UByte = 2.5",
+   "decl": [
+    "DIM v2099 AS UByte = 2.5"
+   ],
+   "expr": "v2099"
+  },
+  {
+   "id": "DIM AS UByte = -0.1",
+   "decl": [
+    "DIM v2100 AS UByte = -0.1"
+   ],
+   "expr": "v2100"
+  },
+  {
+   "id": "DIM AS UByte = 0.001",
+   "decl": [
+    "DIM v2101 AS UByte = 0.001"
+   ],
+   "expr": "v2101"
+  },
+  {
+   "id": "DIM AS UByte = 1 / 3",
+   "decl": [
+    "DIM v2102 AS UByte = 1 / 3"
+   ],
+   "expr": "v2102"
+  },
+  {
+   "id": "DIM AS UByte = -1 / 3",
+   "decl": [
+    "DIM v2103 AS UByte = -1 / 3"
+   ],
+   "expr": "v2103"
+  },
+  {
+   "id": "DIM AS UByte = 7 / 2",
+   "decl": [
+    "DIM v2104 AS UByte = 7 / 2"
+   ],
+   "expr": "v2104"
+  },
+  {
+   "id": "DIM AS UByte = 1E10",
+   "decl": [
+    "DIM v2105 AS UByte = 1E10"
+   ],
+   "expr": "v2105"
+  },
+  {
+   "id": "DIM AS UByte = 70000",
+   "decl": [
+    "DIM v2106 AS UByte = 70000"
+   ],
+   "expr": "v2106"
+  },
+  {
+   "id": "DIM AS UByte = -1",
+   "decl": [
+    "DIM v2107 AS UByte = -1"
+   ],
+   "expr": "v2107"
+  },
+  {
+   "id": "DIM AS UByte = 300",
+   "decl": [
+    "DIM v2108 AS UByte = 300"
+   ],
+   "expr": "v2108"
+  },
+  {
+   "id": "DIM AS UByte = -129",
+   "decl": [
+    "DIM v2109 AS UByte = -129"
+   ],
+   "expr": "v2109"
+  },
+  {
+   "id": "DIM AS UByte = 65536",
+   "decl": [
+    "DIM v2110 AS UByte = 65536"
+   ],
+   "expr": "v2110"
+  },
+  {
+   "id": "DIM AS UByte = 3.99",
+   "decl": [
+    "DIM v2111 AS UByte = 3.99"
+   ],
+   "expr": "v2111"
+  },
+  {
+   "id": "DIM AS UByte = -3.99",
+   "decl": [
+    "DIM v2112 AS UByte = -3.99"
+   ],
+   "expr": "v2112"
+  },
+  {
+   "id": "DIM AS Byte = -2.5",
+   "decl": [
+    "DIM v2113 AS Byte = -2.5"
+   ],
+   "expr": "v2113"
+  },
+  {
+   "id": "DIM AS Byte = 2.5",
+   "decl": [
+    "DIM v2114 AS Byte = 2.5"
+   ],
+   "expr": "v2114"
+  },
+  {
+   "id": "DIM AS Byte = -0.1",
+   "decl": [
+    "DIM v2115 AS Byte = -0.1"
+   ],
+   "expr": "v2115"
+  },
+  {
+   "id": "DIM AS Byte = 0.001",
+   "decl": [
+    "DIM v2116 AS Byte = 0.001"
+   ],
+   "expr": "v2116"
+  },
+  {
+   "id": "DIM AS Byte = 1 / 3",
+   "decl": [
+    "DIM v2117 AS Byte = 1 / 3"
+   ],
+   "expr": "v2117"
+  },
+  {
+   "id": "DIM AS Byte = -1 / 3",
+   "decl": [
+    "DIM v2118 AS Byte = -1 / 3"
+   ],
+   "expr": "v2118"
+  },
+  {
+   "id": "DIM AS Byte = 7 / 2",
+   "decl": [
+    "DIM v2119 AS Byte = 7 / 2"
+   ],
+   "expr": "v2119"
+  },
+  {
+   "id": "DIM AS Byte = 1E10",
+   "decl": [
+    "DIM v2120 AS Byte = 1E10"
+   ],
+   "expr": "v2120"
+  },
+  {
+   "id": "DIM AS Byte = 70000",
+   "decl": [
+    "DIM v2121 AS Byte = 70000"
+   ],
+   "expr": "v2121"
+  },
+  {
+   "id": "DIM AS Byte = -1",
+   "decl": [
+    "DIM v2122 AS Byte = -1"
+   ],
+   "expr": "v2122"
+  },
+  {
+   "id": "DIM AS Byte = 300",
+   "decl": [
+    "DIM v2123 AS Byte = 300"
+   ],
+   "expr": "v2123"
+  },
+  {
+   "id": "DIM AS Byte = -129",
+   "decl": [
+    "DIM v2124 AS Byte = -129"
+   ],
+   "expr": "v2124"
+  },
+  {
+   "id": "DIM AS Byte = 65536",
+   "decl": [
+    "DIM v2125 AS Byte = 65536"
+   ],
+   "expr": "v2125"
+  },
+  {
+   "id": "DIM AS Byte = 3.99",
+   "decl": [
+    "DIM v2126 AS Byte = 3.99"
+   ],
+   "expr": "v2126"
+  },
+  {
+   "id": "DIM AS Byte = -3.99",
+   "decl": [
+    "DIM v2127 AS Byte = -3.99"
+   ],
+   "expr": "v2127"
+  },
+  {
+   "id": "DIM AS UInteger = -2.5",
+   "decl": [
+    "DIM v2128 AS UInteger = -2.5"
+   ],
+   "expr": "v2128"
+  },
+  {
+   "id": "DIM AS UInteger = 2.5",
+   "decl": [
+    "DIM v2129 AS UInteger = 2.5"
+   ],
+   "expr": "v2129"
+  },
+  {
+   "id": "DIM AS UInteger = -0.1",
+   "decl": [
+    "DIM v2130 AS UInteger = -0.1"
+   ],
+   "expr": "v2130"
+  },
+  {
+   "id": "DIM AS UInteger = 0.001",
+   "decl": [
+    "DIM v2131 AS UInteger = 0.001"
+   ],
+   "expr": "v2131"
+  },
+  {
+   "id": "DIM AS UInteger = 1 / 3",
+   "decl": [
+    "DIM v2132 AS UInteger = 1 / 3"
+   ],
+   "expr": "v2132"
+  },
+  {
+   "id": "DIM AS UInteger = -1 / 3",
+   "decl": [
+    "DIM v2133 AS UInteger = -1 / 3"
+   ],
+   "expr": "v2133"
+  },
+  {
+   "id": "DIM AS UInteger = 7 / 2",
+   "decl": [
+    "DIM v2134 AS UInteger = 7 / 2"
+   ],
+   "expr": "v2134"
+  },
+  {
+   "id": "DIM AS UInteger = 1E10",
+   "decl": [
+    "DIM v2135 AS UInteger = 1E10"
+   ],
+   "expr": "v2135"
+  },
+  {
+   "id": "DIM AS UInteger = 70000",
+   "decl": [
+    "DIM v2136 AS UInteger = 70000"
+   ],
+   "expr": "v2136"
+  },
+  {
+   "id": "DIM AS UInteger = -1",
+   "decl": [
+    "DIM v2137 AS UInteger = -1"
+   ],
+   "expr": "v2137"
+  },
+  {
+   "id": "DIM AS UInteger = 300",
+   "decl": [
+    "DIM v2138 AS UInteger = 300"
+   ],
+   "expr": "v2138"
+  },
+  {
+   "id": "DIM AS UInteger = -129",
+   "decl": [
+    "DIM v2139 AS UInteger = -129"
+   ],
+   "expr": "v2139"
+  },
+  {
+   "id": "DIM AS UInteger = 65536",
+   "decl": [
+    "DIM v2140 AS UInteger = 65536"
+   ],
+   "expr": "v2140"
+  },
+  {
+   "id": "DIM AS UInteger = 3.99",
+   "decl": [
+    "DIM v2141 AS UInteger = 3.99"
+   ],
+   "expr": "v2141"
+  },
+  {
+   "id": "DIM AS UInteger = -3.99",
+   "decl": [
+    "DIM v2142 AS UInteger = -3.99"
+   ],
+   "expr": "v2142"
+  },
+  {
+   "id": "DIM AS Integer = -2.5",
+   "decl": [
+    "DIM v2143 AS Integer = -2.5"
+   ],
+   "expr": "v2143"
+  },
+  {
+   "id": "DIM AS Integer = 2.5",
+   "decl": [
+    "DIM v2144 AS Integer = 2.5"
+   ],
+   "expr": "v2144"
+  },
+  {
+   "id": "DIM AS Integer = -0.1",
+   "decl": [
+    "DIM v2145 AS Integer = -0.1"
+   ],
+   "expr": "v2145"
+  },
+  {
+   "id": "DIM AS Integer = 0.001",
+   "decl": [
+    "DIM v2146 AS Integer = 0.001"
+   ],
+   "expr": "v2146"
+  },
+  {
+   "id": "DIM AS Integer = 1 / 3",
+   "decl": [
+    "DIM v2147 AS Integer = 1 / 3"
+   ],
+   "expr": "v2147"
+  },
+  {
+   "id": "DIM AS Integer = -1 / 3",
+   "decl": [
+    "DIM v2148 AS Integer = -1 / 3"
+   ],
+   "expr": "v2148"
+  },
+  {
+   "id": "DIM AS Integer = 7 / 2",
+   "decl": [
+    "DIM v2149 AS Integer = 7 / 2"
+   ],
+   "expr": "v2149"
+  },
+  {
+   "id": "DIM AS Integer = 1E10",
+   "decl": [
+    "DIM v2150 AS Integer = 1E10"
+   ],
+   "expr": "v2150"
+  },
+  {
+   "id": "DIM AS Integer = 70000",
+   "decl": [
+    "DIM v2151 AS Integer = 70000"
+   ],
+   "expr": "v2151"
+  },
+  {
+   "id": "DIM AS Integer = -1",
+   "decl": [
+    "DIM v2152 AS Integer = -1"
+   ],
+   "expr": "v2152"
+  },
+  {
+   "id": "DIM AS Integer = 300",
+   "decl": [
+    "DIM v2153 AS Integer = 300"
+   ],
+   "expr": "v2153"
+  },
+  {
+   "id": "DIM AS Integer = -129",
+   "decl": [
+    "DIM v2154 AS Integer = -129"
+   ],
+   "expr": "v2154"
+  },
+  {
+   "id": "DIM AS Integer = 65536",
+   "decl": [
+    "DIM v2155 AS Integer = 65536"
+   ],
+   "expr": "v2155"
+  },
+  {
+   "id": "DIM AS Integer = 3.99",
+   "decl": [
+    "DIM v2156 AS Integer = 3.99"
+   ],
+   "expr": "v2156"
+  },
+  {
+   "id": "DIM AS Integer = -3.99",
+   "decl": [
+    "DIM v2157 AS Integer = -3.99"
+   ],
+   "expr": "v2157"
+  },
+  {
+   "id": "DIM AS ULong = -2.5",
+   "decl": [
+    "DIM v2158 AS ULong = -2.5"
+   ],
+   "expr": "v2158"
+  },
+  {
+   "id": "DIM AS ULong = 2.5",
+   "decl": [
+    "DIM v2159 AS ULong = 2.5"
+   ],
+   "expr": "v2159"
+  },
+  {
+   "id": "DIM AS ULong = -0.1",
+   "decl": [
+    "DIM v2160 AS ULong = -0.1"
+   ],
+   "expr": "v2160"
+  },
+  {
+   "id": "DIM AS ULong = 0.001",
+   "decl": [
+    "DIM v2161 AS ULong = 0.001"
+   ],
+   "expr": "v2161"
+  },
+  {
+   "id": "DIM AS ULong = 1 / 3",
+   "decl": [
+    "DIM v2162 AS ULong = 1 / 3"
+   ],
+   "expr": "v2162"
+  },
+  {
+   "id": "DIM AS ULong = -1 / 3",
+   "decl": [
+    "DIM v2163 AS ULong = -1 / 3"
+   ],
+   "expr": "v2163"
+  },
+  {
+   "id": "DIM AS ULong = 7 / 2",
+   "decl": [
+    "DIM v2164 AS ULong = 7 / 2"
+   ],
+   "expr": "v2164"
+  },
+  {
+   "id": "DIM AS ULong = 1E10",
+   "decl": [
+    "DIM v2165 AS ULong = 1E10"
+   ],
+   "expr": "v2165"
+  },
+  {
+   "id": "DIM AS ULong = 70000",
+   "decl": [
+    "DIM v2166 AS ULong = 70000"
+   ],
+   "expr": "v2166"
+  },
+  {
+   "id": "DIM AS ULong = -1",
+   "decl": [
+    "DIM v2167 AS ULong = -1"
+   ],
+   "expr": "v2167"
+  },
+  {
+   "id": "DIM AS ULong = 300",
+   "decl": [
+    "DIM v2168 AS ULong = 300"
+   ],
+   "expr": "v2168"
+  },
+  {
+   "id": "DIM AS ULong = -129",
+   "decl": [
+    "DIM v2169 AS ULong = -129"
+   ],
+   "expr": "v2169"
+  },
+  {
+   "id": "DIM AS ULong = 65536",
+   "decl": [
+    "DIM v2170 AS ULong = 65536"
+   ],
+   "expr": "v2170"
+  },
+  {
+   "id": "DIM AS ULong = 3.99",
+   "decl": [
+    "DIM v2171 AS ULong = 3.99"
+   ],
+   "expr": "v2171"
+  },
+  {
+   "id": "DIM AS ULong = -3.99",
+   "decl": [
+    "DIM v2172 AS ULong = -3.99"
+   ],
+   "expr": "v2172"
+  },
+  {
+   "id": "DIM AS Long = -2.5",
+   "decl": [
+    "DIM v2173 AS Long = -2.5"
+   ],
+   "expr": "v2173"
+  },
+  {
+   "id": "DIM AS Long = 2.5",
+   "decl": [
+    "DIM v2174 AS Long = 2.5"
+   ],
+   "expr": "v2174"
+  },
+  {
+   "id": "DIM AS Long = -0.1",
+   "decl": [
+    "DIM v2175 AS Long = -0.1"
+   ],
+   "expr": "v2175"
+  },
+  {
+   "id": "DIM AS Long = 0.001",
+   "decl": [
+    "DIM v2176 AS Long = 0.001"
+   ],
+   "expr": "v2176"
+  },
+  {
+   "id": "DIM AS Long = 1 / 3",
+   "decl": [
+    "DIM v2177 AS Long = 1 / 3"
+   ],
+   "expr": "v2177"
+  },
+  {
+   "id": "DIM AS Long = -1 / 3",
+   "decl": [
+    "DIM v2178 AS Long = -1 / 3"
+   ],
+   "expr": "v2178"
+  },
+  {
+   "id": "DIM AS Long = 7 / 2",
+   "decl": [
+    "DIM v2179 AS Long = 7 / 2"
+   ],
+   "expr": "v2179"
+  },
+  {
+   "id": "DIM AS Long = 1E10",
+   "decl": [
+    "DIM v2180 AS Long = 1E10"
+   ],
+   "expr": "v2180"
+  },
+  {
+   "id": "DIM AS Long = 70000",
+   "decl": [
+    "DIM v2181 AS Long = 70000"
+   ],
+   "expr": "v2181"
+  },
+  {
+   "id": "DIM AS Long = -1",
+   "decl": [
+    "DIM v2182 AS Long = -1"
+   ],
+   "expr": "v2182"
+  },
+  {
+   "id": "DIM AS Long = 300",
+   "decl": [
+    "DIM v2183 AS Long = 300"
+   ],
+   "expr": "v2183"
+  },
+  {
+   "id": "DIM AS Long = -129",
+   "decl": [
+    "DIM v2184 AS Long = -129"
+   ],
+   "expr": "v2184"
+  },
+  {
+   "id": "DIM AS Long = 65536",
+   "decl": [
+    "DIM v2185 AS Long = 65536"
+   ],
+   "expr": "v2185"
+  },
+  {
+   "id": "DIM AS Long = 3.99",
+   "decl": [
+    "DIM v2186 AS Long = 3.99"
+   ],
+   "expr": "v2186"
+  },
+  {
+   "id": "DIM AS Long = -3.99",
+   "decl": [
+    "DIM v2187 AS Long = -3.99"
+   ],
+   "expr": "v2187"
+  },
+  {
+   "id": "DIM AS Fixed = -2.5",
+   "decl": [
+    "DIM v2188 AS Fixed = -2.5"
+   ],
+   "expr": "v2188"
+  },
+  {
+   "id": "DIM AS Fixed = 2.5",
+   "decl": [
+    "DIM v2189 AS Fixed = 2.5"
+   ],
+   "expr": "v2189"
+  },
+  {
+   "id": "DIM AS Fixed = -0.1",
+   "decl": [
+    "DIM v2190 AS Fixed = -0.1"
+   ],
+   "expr": "v2190"
+  },
+  {
+   "id": "DIM AS Fixed = 0.001",
+   "decl": [
+    "DIM v2191 AS Fixed = 0.001"
+   ],
+   "expr": "v2191"
+  },
+  {
+   "id": "DIM AS Fixed = 1 / 3",
+   "decl": [
+    "DIM v2192 AS Fixed = 1 / 3"
+   ],
+   "expr": "v2192"
+  },
+  {
+   "id": "DIM AS Fixed = -1 / 3",
+   "decl": [
+    "DIM v2193 AS Fixed = -1 / 3"
+   ],
+   "expr": "v2193"
+  },
+  {
+   "id": "DIM AS Fixed = 7 / 2",
+   "decl": [
+    "DIM v2194 AS Fixed = 7 / 2"
+   ],
+   "expr": "v2194"
+  },
+  {
+   "id": "DIM AS Fixed = 1E10",
+   "decl": [
+    "DIM v2195 AS Fixed = 1E10"
+   ],
+   "expr": "v2195"
+  },
+  {
+   "id": "DIM AS Fixed = 70000",
+   "decl": [
+    "DIM v2196 AS Fixed = 70000"
+   ],
+   "expr": "v2196"
+  },
+  {
+   "id": "DIM AS Fixed = -1",
+   "decl": [
+    "DIM v2197 AS Fixed = -1"
+   ],
+   "expr": "v2197"
+  },
+  {
+   "id": "DIM AS Fixed = 300",
+   "decl": [
+    "DIM v2198 AS Fixed = 300"
+   ],
+   "expr": "v2198"
+  },
+  {
+   "id": "DIM AS Fixed = -129",
+   "decl": [
+    "DIM v2199 AS Fixed = -129"
+   ],
+   "expr": "v2199"
+  },
+  {
+   "id": "DIM AS Fixed = 65536",
+   "decl": [
+    "DIM v2200 AS Fixed = 65536"
+   ],
+   "expr": "v2200"
+  },
+  {
+   "id": "DIM AS Fixed = 3.99",
+   "decl": [
+    "DIM v2201 AS Fixed = 3.99"
+   ],
+   "expr": "v2201"
+  },
+  {
+   "id": "DIM AS Fixed = -3.99",
+   "decl": [
+    "DIM v2202 AS Fixed = -3.99"
+   ],
+   "expr": "v2202"
+  },
+  {
+   "id": "DIM AS Float = -2.5",
+   "decl": [
+    "DIM v2203 AS Float = -2.5"
+   ],
+   "expr": "v2203"
+  },
+  {
+   "id": "DIM AS Float = 2.5",
+   "decl": [
+    "DIM v2204 AS Float = 2.5"
+   ],
+   "expr": "v2204"
+  },
+  {
+   "id": "DIM AS Float = -0.1",
+   "decl": [
+    "DIM v2205 AS Float = -0.1"
+   ],
+   "expr": "v2205"
+  },
+  {
+   "id": "DIM AS Float = 0.001",
+   "decl": [
+    "DIM v2206 AS Float = 0.001"
+   ],
+   "expr": "v2206"
+  },
+  {
+   "id": "DIM AS Float = 1 / 3",
+   "decl": [
+    "DIM v2207 AS Float = 1 / 3"
+   ],
+   "expr": "v2207"
+  },
+  {
+   "id": "DIM AS Float = -1 / 3",
+   "decl": [
+    "DIM v2208 AS Float = -1 / 3"
+   ],
+   "expr": "v2208"
+  },
+  {
+   "id": "DIM AS Float = 7 / 2",
+   "decl": [
+    "DIM v2209 AS Float = 7 / 2"
+   ],
+   "expr": "v2209"
+  },
+  {
+   "id": "DIM AS Float = 1E10",
+   "decl": [
+    "DIM v2210 AS Float = 1E10"
+   ],
+   "expr": "v2210"
+  },
+  {
+   "id": "DIM AS Float = 70000",
+   "decl": [
+    "DIM v2211 AS Float = 70000"
+   ],
+   "expr": "v2211"
+  },
+  {
+   "id": "DIM AS Float = -1",
+   "decl": [
+    "DIM v2212 AS Float = -1"
+   ],
+   "expr": "v2212"
+  },
+  {
+   "id": "DIM AS Float = 300",
+   "decl": [
+    "DIM v2213 AS Float = 300"
+   ],
+   "expr": "v2213"
+  },
+  {
+   "id": "DIM AS Float = -129",
+   "decl": [
+    "DIM v2214 AS Float = -129"
+   ],
+   "expr": "v2214"
+  },
+  {
+   "id": "DIM AS Float = 65536",
+   "decl": [
+    "DIM v2215 AS Float = 65536"
+   ],
+   "expr": "v2215"
+  },
+  {
+   "id": "DIM AS Float = 3.99",
+   "decl": [
+    "DIM v2216 AS Float = 3.99"
+   ],
+   "expr": "v2216"
+  },
+  {
+   "id": "DIM AS Float = -3.99",
+   "decl": [
+    "DIM v2217 AS Float = -3.99"
+   ],
+   "expr": "v2217"
+  }
+ ]
+}

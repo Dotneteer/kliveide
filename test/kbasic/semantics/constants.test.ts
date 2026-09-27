@@ -62,10 +62,18 @@ describe("literal types", () => {
     expect(literalIntegerType(BigInt(n))).toBe(t);
   });
 
-  it("makes a real literal a Float with the ROM's value", () => {
-    const c = numberLiteral(0.1, "0.1", "real");
-    expect(c.type).toBe("Float");
-    expect(c.value).toEqual({ kind: "float", value: f40.fromDecimal("0.1") });
+  it("gives a literal its natural type, keeping the exact value (ZX BASIC)", () => {
+    // --- A fraction within Fixed range is a Fixed, truncated towards zero to 65536ths
+    expect(numberLiteral(0.1, "0.1", "real")).toMatchObject({ type: "Fixed", value: { kind: "fixed", raw: 6553 }, exact: { num: 1n, den: 10n } });
+    expect(numberLiteral(-0.1, "-0.1", "real")).toMatchObject({ type: "Fixed", value: { raw: -6553 } });
+    // --- ... beyond it a Float, with the value of the exact number
+    expect(numberLiteral(70000.5, "70000.5", "real")).toMatchObject({ type: "Float", value: { kind: "float", value: f40.fromDecimal("70000.5") } });
+    // --- A whole number is an integer whatever it looks like; beyond 32 bits it wraps
+    expect(numberLiteral(3, "3.0", "real")).toMatchObject({ type: "UByte", value: { value: 3n } });
+    expect(numberLiteral(1e10, "1E10", "real")).toMatchObject({ type: "ULong", value: { value: 1410065408n }, exact: { num: 10000000000n } });
+    expect(numberLiteral(-1e10, "-1E10", "real")).toMatchObject({ type: "Long", value: { value: -1410065408n } });
+    // --- Converted to Float, a literal starts from its exact value, not from its Fixed one
+    expect(convertConstant(numberLiteral(0.001, "0.001", "real"), "Float")?.constant.value).toEqual({ kind: "float", value: f40.fromDecimal("0.001") });
   });
 
   it("makes a based literal an integer", () => {
@@ -120,10 +128,21 @@ describe("foldBinary", () => {
     });
   });
 
-  it("divides integers towards zero, the remainder taking the dividend's sign", () => {
-    expect(foldBinary("/", lit(7), lit(2), "UByte", "UByte")?.value).toMatchObject({ value: 3n });
+  it("folds literals exactly: / divides exactly, MOD is floored, BNOT and shifts are unbounded", () => {
+    expect(foldBinary("/", lit(7), lit(2), "UByte", "UByte")).toMatchObject({ type: "Fixed", value: { raw: 229376 } });
+    expect(foldBinary("/", lit(8), lit(2), "UByte", "UByte")).toMatchObject({ type: "UByte", value: { value: 4n } });
+    expect(foldBinary("MOD", lit(-7), lit(2), "Byte", "Byte")).toMatchObject({ value: { value: 1n } });
+    expect(foldBinary("SHL", lit(5), lit(8), "UByte", "UByte")).toMatchObject({ type: "UInteger", value: { value: 1280n } });
+    expect(foldUnary("BNOT", lit(256), "UInteger")).toMatchObject({ type: "Integer", value: { value: -257n } });
+    // --- The exact value goes on: 1E10 MOD 3 is 1, not 1410065408 MOD 3
+    const big = numberLiteral(1e10, "1E10", "real");
+    expect(foldBinary("MOD", big, lit(3), "ULong", "ULong")).toMatchObject({ value: { value: 1n } });
+  });
+
+  it("divides typed integers towards zero, MOD being the remainder of the magnitudes", () => {
     expect(foldBinary("/", typed(-7, "Byte"), typed(2, "Byte"), "Byte", "Byte")?.value).toMatchObject({ value: -3n });
-    expect(foldBinary("MOD", typed(-7, "Byte"), typed(2, "Byte"), "Byte", "Byte")?.value).toMatchObject({ value: -1n });
+    expect(foldBinary("MOD", typed(-7, "Byte"), typed(2, "Byte"), "Byte", "Byte")?.value).toMatchObject({ value: 1n });
+    expect(foldBinary("MOD", typed(7, "Byte"), typed(-2, "Byte"), "Byte", "Byte")?.value).toMatchObject({ value: 1n });
   });
 
   it("folds an integer division by zero as the runtime computes it", () => {
@@ -131,15 +150,21 @@ describe("foldBinary", () => {
     expect(foldBinary("MOD", typed(7, "UByte"), typed(0, "UByte"), "UByte", "UByte")?.value).toMatchObject({ value: 7n });
   });
 
+  const float = (x: number, text = String(x)) => convertConstant(lit(x, text), "Float")!.constant;
+
   it("computes Float operations bit for bit as the ROM does", () => {
-    const r = foldBinary("/", lit(1), lit(3, "3.0"), "Float", "Float")!;
+    const r = foldBinary("/", float(1), float(3), "Float", "Float")!;
     expect(r.value).toEqual({ kind: "float", value: f40.divide(f40.fromInteger(1), f40.fromInteger(3)) });
   });
 
   it("reports a Float division by zero and an overflow", () => {
-    expect(() => foldBinary("/", lit(1.5, "1.5"), lit(0, "0.0"), "Float", "Float")).toThrow(FoldError);
-    const big = numberLiteral(1e38, "1e38", "real");
+    expect(() => foldBinary("/", float(1.5, "1.5"), float(0), "Float", "Float")).toThrow(FoldError);
+    const big = float(1e38, "1e38");
     expect(() => foldBinary("*", big, big, "Float", "Float")).toThrowError(new FoldError("overflow"));
+    // --- Literals: a whole product wraps to 32 bits; a fraction too big for a Float overflows
+    const literal = numberLiteral(1e38, "1e38", "real");
+    expect(foldBinary("*", literal, literal, "ULong", "ULong")).toMatchObject({ type: "ULong", value: { value: BigInt.asUintN(32, 10n ** 76n) } });
+    expect(() => foldBinary("+", foldBinary("*", literal, literal, "ULong", "ULong")!, numberLiteral(0.5, "0.5", "real"), "Float", "Float")).toThrowError(new FoldError("overflow"));
   });
 
   it("folds Fixed arithmetic in 16.16", () => {

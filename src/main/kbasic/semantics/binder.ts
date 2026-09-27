@@ -668,7 +668,10 @@ class Binder extends ExpressionBinder {
     }
     let constant = value.constant;
     const type = declaredType ?? (ref.sigil ? typeOfSigil(ref.sigil) : constant.type === "Boolean" ? "UByte" : constant.type);
-    if (type !== constant.type) {
+    // --- ZX BASIC folds a numeric CONST by its value whatever type it declares (CONST k AS UByte =
+    // --- 200: k + k is 400; observed through the oracle, compatibility plan C2)
+    const keepsValue = !!constant.exact && type !== "String";
+    if (type !== constant.type && !keepsValue) {
       const converted = this.convert(value, type);
       if (!converted.constant) return;
       constant = converted.constant;
@@ -678,7 +681,9 @@ class Binder extends ExpressionBinder {
       this.error("E403", `'${ref.name}' is already declared as ${kindText(existing)}`, ref.span);
       return;
     }
-    const symbol: ConstSymbol = { kind: "const", name: ref.name, span: ref.span, uses: [], bank: this.settings.bank, type, value: { ...constant, type, literal: declaredType ? undefined : constant.literal } };
+    const symbol: ConstSymbol = keepsValue
+      ? { kind: "const", name: ref.name, span: ref.span, uses: [], bank: this.settings.bank, type: constant.type, value: constant }
+      : { kind: "const", name: ref.name, span: ref.span, uses: [], bank: this.settings.bank, type, value: { ...constant, type, literal: declaredType ? undefined : constant.literal } };
     if (!symbol.value.literal) delete symbol.value.literal;
     this.scope.add(symbol, this.settings.caseInsensitive);
   }

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import { runBasic } from "./run-kit";
 
-/** Fixed (16.16) on the 48K: DE:HL values, the fixed runtime module, conversions through Float. */
-const raw = (x: number) => Math.floor(x * 65536);
+/**
+ * Fixed (16.16) on the 48K: DE:HL values, the fixed runtime module, conversions through Float. A
+ * constant converts to Fixed truncating towards zero, as ZX BASIC does (-0.1 is -6553 / 65536).
+ */
+const raw = (x: number) => Math.trunc(x * 65536);
 
 describe("Fixed", () => {
   it("multiplies and divides as the compiler folds: the product rounded down, the quotient truncated", async () => {
@@ -33,9 +36,9 @@ describe("Fixed", () => {
     });
   });
 
-  it("adds, compares, takes MOD and prints as the Float of the same value", async () => {
+  it("adds, compares, takes MOD (floored) and prints exactly", async () => {
     const source = "DIM a, b AS Fixed\na = 2.5: b = -0.75\nPRINT a + b; \" \"; a - b; \" \"; a > b; a < b; a = 2.5; \" \"; a MOD 1; \" \"; -a MOD 1; \" \"; -a\n";
-    expect((await runBasic(source)).screen(1)[0]).toBe("1.75 3.25 101 0.5 -0.5 -2.5");
+    expect((await runBasic(source)).screen(1)[0]).toBe("1.75 3.25 101 0.5 0.5 -2.5");
   });
 
   it("converts: integers exactly, reals and back rounding towards minus infinity", async () => {

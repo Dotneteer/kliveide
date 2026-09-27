@@ -197,11 +197,68 @@ function generate() {
   suites.divzero = {
     perProgram: 1,
     items: TYPES.flatMap((t) =>
-      ["/", "MOD"].map((op) => {
+      [...new Set([PAIRS[t][1][0], PAIRS[t][0][0]])].flatMap((x) =>
+        ["/", "MOD"].map((op) => {
+          const a = name();
+          const z = name();
+          return { id: `${t} ${literal(x)} ${op} 0`, decl: [`DIM ${a} AS ${t} = ${literal(x)}`, `DIM ${z} AS ${t}`], expr: `${a} ${op} ${z}` };
+        })
+      )
+    )
+  };
+
+  // --- A variable meeting a literal, on either side: which type the literal takes there
+  const MEET = ["2", "-1", "256", "0.5", "0.001", "1E10", "70000"];
+  suites.meet = {
+    perProgram: ROWS,
+    items: TYPES.flatMap((t) =>
+      MEET.flatMap((l) =>
+        ["a + L", "L - a", "a * L", "a / L", "L / a", "a MOD L"].map((form) => {
+          const a = name();
+          return { id: `${t} ${literal(PAIRS[t][1][0])}: ${form.replace(/L/g, l)}`, decl: [`DIM ${a} AS ${t} = ${literal(PAIRS[t][1][0])}`], expr: form.replace(/a/g, a).replace(/L/g, l) };
+        })
+      )
+    )
+  };
+
+  // --- A constant expression converted to a declared type (DIM ... = constant)
+  const INITIAL = ["-2.5", "2.5", "-0.1", "0.001", "1 / 3", "-1 / 3", "7 / 2", "1E10", "70000", "-1", "300", "-129", "65536", "3.99", "-3.99"];
+  suites.initial = {
+    perProgram: ROWS,
+    items: TYPES.flatMap((t) =>
+      INITIAL.map((c) => {
         const a = name();
-        const z = name();
-        return { id: `${t} ${literal(PAIRS[t][1][0])} ${op} 0`, decl: [`DIM ${a} AS ${t} = ${literal(PAIRS[t][1][0])}`, `DIM ${z} AS ${t}`], expr: `${a} ${op} ${z}` };
+        return { id: `DIM AS ${t} = ${c}`, decl: [`DIM ${a} AS ${t} = ${c}`], expr: a };
       })
+    )
+  };
+
+  // --- Variables typed by their first assignment, and a FOR variable after the loop
+  const IMPLICIT = [["1.5", "v / 7"], ["7 / 2", "v / 7"], ["0.001", "v"], ["100000", "v * 100000"], ["-1", "v"], ["2.5", "v * v * v * v"], ["1E10", "v"], ["40000", "v + v"], ["-200", "v"], ["0.5", "v * 2"]];
+  suites.implicit = {
+    perProgram: ROWS,
+    items: [
+      ...IMPLICIT.map(([value, form]) => {
+        const v = name();
+        return { id: `${v.replace(/\d+/, "")} = ${value}: ${form}`, decl: [`${v} = ${value}`], expr: form.replace(/v/g, v) };
+      }),
+      ...[["0", "1", "0.25"], ["1", "0", "-0.5"], ["0", "2.5", "1"], ["10", "1", "-3"], ["1", "300", "100"]].map(([from, to, step]) => {
+        const v = name();
+        return { id: `FOR v = ${from} TO ${to} STEP ${step}: v / 3 after`, decl: [`FOR ${v} = ${from} TO ${to} STEP ${step}: NEXT ${v}`], expr: `${v} / 3` };
+      })
+    ]
+  };
+
+  // --- Signed variables divided by literals: whole, with a zero fraction, powers of two or not
+  suites.divlit = {
+    perProgram: ROWS,
+    items: ["Byte", "Integer", "Long"].flatMap((t) =>
+      [PAIRS[t][0][0], PAIRS[t][1][0], -1].flatMap((x) =>
+        ["a / 2", "a / 4", "a / 3", "a / 2.0", "a MOD 2", "a MOD 4", "a MOD 2.0", "a * 2.0", "a SHR 1"].map((form) => {
+          const a = name();
+          return { id: `${t} ${literal(x)}: ${form}`, decl: [`DIM ${a} AS ${t} = ${literal(x)}`], expr: form.replace(/a/g, a) };
+        })
+      )
     )
   };
 

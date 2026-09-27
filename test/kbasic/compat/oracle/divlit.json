@@ -1,0 +1,248 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "Byte -7: a / 2": {
+   "out": "-4"
+  },
+  "Byte -7: a / 4": {
+   "out": "1"
+  },
+  "Byte -7: a / 3": {
+   "out": "2"
+  },
+  "Byte -7: a / 2.0": {
+   "out": "-4"
+  },
+  "Byte -7: a MOD 2": {
+   "out": "1"
+  },
+  "Byte -7: a MOD 4": {
+   "out": "1"
+  },
+  "Byte -7: a MOD 2.0": {
+   "out": "1"
+  },
+  "Byte -7: a * 2.0": {
+   "out": "-14"
+  },
+  "Byte -7: a SHR 1": {
+   "out": "-4"
+  },
+  "Byte 7: a / 2": {
+   "out": "3"
+  },
+  "Byte 7: a / 4": {
+   "out": "1"
+  },
+  "Byte 7: a / 3": {
+   "out": "2"
+  },
+  "Byte 7: a / 2.0": {
+   "out": "3"
+  },
+  "Byte 7: a MOD 2": {
+   "out": "1"
+  },
+  "Byte 7: a MOD 4": {
+   "out": "3"
+  },
+  "Byte 7: a MOD 2.0": {
+   "out": "1"
+  },
+  "Byte 7: a * 2.0": {
+   "out": "14"
+  },
+  "Byte 7: a SHR 1": {
+   "out": "3"
+  },
+  "Byte -1: a / 2": {
+   "out": "-1"
+  },
+  "Byte -1: a / 4": {
+   "out": "0"
+  },
+  "Byte -1: a / 3": {
+   "out": "0"
+  },
+  "Byte -1: a / 2.0": {
+   "out": "-1"
+  },
+  "Byte -1: a MOD 2": {
+   "out": "1"
+  },
+  "Byte -1: a MOD 4": {
+   "out": "3"
+  },
+  "Byte -1: a MOD 2.0": {
+   "out": "1"
+  },
+  "Byte -1: a * 2.0": {
+   "out": "-2"
+  },
+  "Byte -1: a SHR 1": {
+   "out": "-1"
+  },
+  "Integer -100: a / 2": {
+   "out": "-50"
+  },
+  "Integer -100: a / 4": {
+   "out": "-25"
+  },
+  "Integer -100: a / 3": {
+   "out": "-33"
+  },
+  "Integer -100: a / 2.0": {
+   "out": "-50"
+  },
+  "Integer -100: a MOD 2": {
+   "out": "0"
+  },
+  "Integer -100: a MOD 4": {
+   "out": "0"
+  },
+  "Integer -100: a MOD 2.0": {
+   "out": "0"
+  },
+  "Integer -100: a * 2.0": {
+   "out": "-200"
+  },
+  "Integer -100: a SHR 1": {
+   "out": "32718"
+  },
+  "Integer 100: a / 2": {
+   "out": "50"
+  },
+  "Integer 100: a / 4": {
+   "out": "25"
+  },
+  "Integer 100: a / 3": {
+   "out": "33"
+  },
+  "Integer 100: a / 2.0": {
+   "out": "50"
+  },
+  "Integer 100: a MOD 2": {
+   "out": "0"
+  },
+  "Integer 100: a MOD 4": {
+   "out": "0"
+  },
+  "Integer 100: a MOD 2.0": {
+   "out": "0"
+  },
+  "Integer 100: a * 2.0": {
+   "out": "200"
+  },
+  "Integer 100: a SHR 1": {
+   "out": "50"
+  },
+  "Integer -1: a / 2": {
+   "out": "-1"
+  },
+  "Integer -1: a / 4": {
+   "out": "0"
+  },
+  "Integer -1: a / 3": {
+   "out": "0"
+  },
+  "Integer -1: a / 2.0": {
+   "out": "-1"
+  },
+  "Integer -1: a MOD 2": {
+   "out": "1"
+  },
+  "Integer -1: a MOD 4": {
+   "out": "3"
+  },
+  "Integer -1: a MOD 2.0": {
+   "out": "1"
+  },
+  "Integer -1: a * 2.0": {
+   "out": "-2"
+  },
+  "Integer -1: a SHR 1": {
+   "out": "32767"
+  },
+  "Long -100000: a / 2": {
+   "out": "-50000"
+  },
+  "Long -100000: a / 4": {
+   "out": "-25000"
+  },
+  "Long -100000: a / 3": {
+   "out": "-33333"
+  },
+  "Long -100000: a / 2.0": {
+   "out": "-50000"
+  },
+  "Long -100000: a MOD 2": {
+   "out": "0"
+  },
+  "Long -100000: a MOD 4": {
+   "out": "0"
+  },
+  "Long -100000: a MOD 2.0": {
+   "out": "0"
+  },
+  "Long -100000: a * 2.0": {
+   "out": "-200000"
+  },
+  "Long -100000: a SHR 1": {
+   "out": "-50000"
+  },
+  "Long 100000: a / 2": {
+   "out": "50000"
+  },
+  "Long 100000: a / 4": {
+   "out": "25000"
+  },
+  "Long 100000: a / 3": {
+   "out": "33333"
+  },
+  "Long 100000: a / 2.0": {
+   "out": "50000"
+  },
+  "Long 100000: a MOD 2": {
+   "out": "0"
+  },
+  "Long 100000: a MOD 4": {
+   "out": "0"
+  },
+  "Long 100000: a MOD 2.0": {
+   "out": "0"
+  },
+  "Long 100000: a * 2.0": {
+   "out": "200000"
+  },
+  "Long 100000: a SHR 1": {
+   "out": "50000"
+  },
+  "Long -1: a / 2": {
+   "out": "0"
+  },
+  "Long -1: a / 4": {
+   "out": "0"
+  },
+  "Long -1: a / 3": {
+   "out": "0"
+  },
+  "Long -1: a / 2.0": {
+   "out": "0"
+  },
+  "Long -1: a MOD 2": {
+   "out": "1"
+  },
+  "Long -1: a MOD 4": {
+   "out": "1"
+  },
+  "Long -1: a MOD 2.0": {
+   "out": "1"
+  },
+  "Long -1: a * 2.0": {
+   "out": "-2"
+  },
+  "Long -1: a SHR 1": {
+   "out": "-1"
+  }
+ }
+}

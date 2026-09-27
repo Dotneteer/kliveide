@@ -25,7 +25,7 @@ describe("Float", () => {
       "f = -2.5: i = f: PRINT i; \" \";",
       "f = 300.7: u = f: PRINT u; \" \";",
       "l = 100000: f = l * 3: PRINT f; \" \";",
-      "i = -7: f = i / 2.0: PRINT f",
+      "i = -7: f = i: f = f / 2: PRINT f",
       ""
     ].join("\n");
     expect((await lines(source))[0]).toBe("-3 44 300000 -3.5");
@@ -46,9 +46,9 @@ describe("Float", () => {
     expect((await lines(source))[0]).toBe("0.125|-12 5.125");
   });
 
-  it("takes MOD with the dividend's sign", async () => {
-    const source = "DIM a AS Float = -7\nPRINT a MOD 3; \" \"; 7.5 MOD 2\n";
-    expect((await lines(source))[0]).toBe("-1 1.5");
+  it("takes MOD floored: a remainder takes the divisor's sign", async () => {
+    const source = "DIM a AS Float = -7\nPRINT a MOD 3; \" \"; 7.5 MOD 2; \" \"; a MOD -3\n";
+    expect((await lines(source))[0]).toBe("2 1.5 -1");
   });
 
   it("passes, returns and keeps Floats: parameters, FASTCALL, locals, arrays", async () => {

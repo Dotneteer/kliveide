@@ -1,7 +1,7 @@
-' Long division truncates towards zero; ULong divides unsigned
-'@expect screen 0 "-14285 -5 14285 5"
+' Long division truncates towards zero; MOD is the remainder of the magnitudes (semantics annex:
+' mod-sign); ULong divides unsigned
+'@expect screen 0 "-14285 5 14285 5"
 '@expect screen 1 "429496729 5"
-'@expect oracle-differs mod-sign
 DIM a, b AS Long
 a = -100000: b = 7
 PRINT a / b; " "; a MOD b; " "; -a / b; " "; -a MOD b

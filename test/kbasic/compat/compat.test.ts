@@ -11,10 +11,12 @@ import type { CompatItemResult, CompatOracle } from "./compat-oracle-run.test";
  * (`test/kbasic/compat/oracle/<suite>.json`) is compiled and run by Klive BASIC and compared on its
  * own - what its row shows, or that both compilers reject it.
  *
- * `baseline.json` lists the items that still differ, with both results. It is a ratchet, like the
- * optimiser's size baseline: an item that differs and is not listed fails, and so does a listed item
- * that now agrees, until `KBASIC_COMPAT_UPDATE=1` rewrites the list. Level 3 must print what level 0
- * prints for every item, whatever zxbc does.
+ * `faults.json` lists the items where Klive differs on purpose: zxbc crashes on them (D-C1) or its
+ * arithmetic is faulty there (D-C6). Each names the semantics-annex entry that decides it and must
+ * keep differing exactly as recorded. `baseline.json` lists the items that still differ and are to be
+ * fixed. It is a ratchet, like the optimiser's size baseline: an item that differs and is in neither
+ * file fails, and so does a listed item that now agrees, until `KBASIC_COMPAT_UPDATE=1` rewrites the
+ * baseline. Level 3 must print what level 0 prints for every item, whatever zxbc does.
  */
 type Item = { id: string; decl: string[]; expr: string };
 type Suite = { suite: string; perProgram: number; items: Item[] };
@@ -28,6 +30,10 @@ const DIR = __dirname;
 const BASELINE_FILE = join(DIR, "baseline.json");
 const UPDATE = process.env.KBASIC_COMPAT_UPDATE === "1";
 const baseline: Baseline = existsSync(BASELINE_FILE) ? JSON.parse(readFileSync(BASELINE_FILE, "utf8")) : {};
+const faults: Record<string, Record<string, Diff & { fault: string }>> = JSON.parse(readFileSync(join(DIR, "faults.json"), "utf8"));
+const ANNEX = new Set<string>(
+  (JSON.parse(readFileSync(join(DIR, "..", "..", "..", ".ai", "zxbasic-syntax", "zxbasic-syntax.json"), "utf8")).semantics.entries as { name: string }[]).map((e) => e.name)
+);
 const next: Baseline = {};
 
 const suites: Suite[] = existsSync(join(DIR, "suites"))
@@ -84,10 +90,19 @@ describe("compatibility suites: Klive BASIC against zxbc", () => {
       const optimiser = items.filter((i) => show(level0[i.id]) !== show(level3[i.id])).map((i) => `${i.id}: level 0 "${show(level0[i.id])}", level 3 "${show(level3[i.id])}"`);
       expect(optimiser, "level 3 prints what level 0 prints").toEqual([]);
 
+      const kept = faults[suite.suite] ?? {};
+      for (const [id, f] of Object.entries(kept)) expect(ANNEX.has(f.fault), `${id}: the fault names the annex entry ${f.fault}`).toBe(true);
       const diffs: Record<string, Diff> = {};
+      const stale: string[] = [];
       for (const item of items) {
-        if (!agrees(level0[item.id], oracle.items[item.id])) diffs[item.id] = { klive: show(level0[item.id]), zxbc: show(oracle.items[item.id]) };
+        const differs = !agrees(level0[item.id], oracle.items[item.id]);
+        const d = { klive: show(level0[item.id]), zxbc: show(oracle.items[item.id]) };
+        const fault = kept[item.id];
+        if (fault) {
+          if (!differs || fault.klive !== d.klive || fault.zxbc !== d.zxbc) stale.push(`${item.id}: now Klive "${d.klive}", zxbc "${d.zxbc}"`);
+        } else if (differs) diffs[item.id] = d;
       }
+      expect(stale, "faults.json entries that no longer differ as recorded").toEqual([]);
       next[suite.suite] = diffs;
       if (UPDATE) return;
       const known = baseline[suite.suite] ?? {};

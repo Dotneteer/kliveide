@@ -1,0 +1,2358 @@
+{
+ "suite": "meet",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 7: a + 2",
+   "decl": [
+    "DIM v1762 AS UByte = 7"
+   ],
+   "expr": "v1762 + 2"
+  },
+  {
+   "id": "UByte 7: 2 - a",
+   "decl": [
+    "DIM v1763 AS UByte = 7"
+   ],
+   "expr": "2 - v1763"
+  },
+  {
+   "id": "UByte 7: a * 2",
+   "decl": [
+    "DIM v1764 AS UByte = 7"
+   ],
+   "expr": "v1764 * 2"
+  },
+  {
+   "id": "UByte 7: a / 2",
+   "decl": [
+    "DIM v1765 AS UByte = 7"
+   ],
+   "expr": "v1765 / 2"
+  },
+  {
+   "id": "UByte 7: 2 / a",
+   "decl": [
+    "DIM v1766 AS UByte = 7"
+   ],
+   "expr": "2 / v1766"
+  },
+  {
+   "id": "UByte 7: a MOD 2",
+   "decl": [
+    "DIM v1767 AS UByte = 7"
+   ],
+   "expr": "v1767 MOD 2"
+  },
+  {
+   "id": "UByte 7: a + -1",
+   "decl": [
+    "DIM v1768 AS UByte = 7"
+   ],
+   "expr": "v1768 + -1"
+  },
+  {
+   "id": "UByte 7: -1 - a",
+   "decl": [
+    "DIM v1769 AS UByte = 7"
+   ],
+   "expr": "-1 - v1769"
+  },
+  {
+   "id": "UByte 7: a * -1",
+   "decl": [
+    "DIM v1770 AS UByte = 7"
+   ],
+   "expr": "v1770 * -1"
+  },
+  {
+   "id": "UByte 7: a / -1",
+   "decl": [
+    "DIM v1771 AS UByte = 7"
+   ],
+   "expr": "v1771 / -1"
+  },
+  {
+   "id": "UByte 7: -1 / a",
+   "decl": [
+    "DIM v1772 AS UByte = 7"
+   ],
+   "expr": "-1 / v1772"
+  },
+  {
+   "id": "UByte 7: a MOD -1",
+   "decl": [
+    "DIM v1773 AS UByte = 7"
+   ],
+   "expr": "v1773 MOD -1"
+  },
+  {
+   "id": "UByte 7: a + 256",
+   "decl": [
+    "DIM v1774 AS UByte = 7"
+   ],
+   "expr": "v1774 + 256"
+  },
+  {
+   "id": "UByte 7: 256 - a",
+   "decl": [
+    "DIM v1775 AS UByte = 7"
+   ],
+   "expr": "256 - v1775"
+  },
+  {
+   "id": "UByte 7: a * 256",
+   "decl": [
+    "DIM v1776 AS UByte = 7"
+   ],
+   "expr": "v1776 * 256"
+  },
+  {
+   "id": "UByte 7: a / 256",
+   "decl": [
+    "DIM v1777 AS UByte = 7"
+   ],
+   "expr": "v1777 / 256"
+  },
+  {
+   "id": "UByte 7: 256 / a",
+   "decl": [
+    "DIM v1778 AS UByte = 7"
+   ],
+   "expr": "256 / v1778"
+  },
+  {
+   "id": "UByte 7: a MOD 256",
+   "decl": [
+    "DIM v1779 AS UByte = 7"
+   ],
+   "expr": "v1779 MOD 256"
+  },
+  {
+   "id": "UByte 7: a + 0.5",
+   "decl": [
+    "DIM v1780 AS UByte = 7"
+   ],
+   "expr": "v1780 + 0.5"
+  },
+  {
+   "id": "UByte 7: 0.5 - a",
+   "decl": [
+    "DIM v1781 AS UByte = 7"
+   ],
+   "expr": "0.5 - v1781"
+  },
+  {
+   "id": "UByte 7: a * 0.5",
+   "decl": [
+    "DIM v1782 AS UByte = 7"
+   ],
+   "expr": "v1782 * 0.5"
+  },
+  {
+   "id": "UByte 7: a / 0.5",
+   "decl": [
+    "DIM v1783 AS UByte = 7"
+   ],
+   "expr": "v1783 / 0.5"
+  },
+  {
+   "id": "UByte 7: 0.5 / a",
+   "decl": [
+    "DIM v1784 AS UByte = 7"
+   ],
+   "expr": "0.5 / v1784"
+  },
+  {
+   "id": "UByte 7: a MOD 0.5",
+   "decl": [
+    "DIM v1785 AS UByte = 7"
+   ],
+   "expr": "v1785 MOD 0.5"
+  },
+  {
+   "id": "UByte 7: a + 0.001",
+   "decl": [
+    "DIM v1786 AS UByte = 7"
+   ],
+   "expr": "v1786 + 0.001"
+  },
+  {
+   "id": "UByte 7: 0.001 - a",
+   "decl": [
+    "DIM v1787 AS UByte = 7"
+   ],
+   "expr": "0.001 - v1787"
+  },
+  {
+   "id": "UByte 7: a * 0.001",
+   "decl": [
+    "DIM v1788 AS UByte = 7"
+   ],
+   "expr": "v1788 * 0.001"
+  },
+  {
+   "id": "UByte 7: a / 0.001",
+   "decl": [
+    "DIM v1789 AS UByte = 7"
+   ],
+   "expr": "v1789 / 0.001"
+  },
+  {
+   "id": "UByte 7: 0.001 / a",
+   "decl": [
+    "DIM v1790 AS UByte = 7"
+   ],
+   "expr": "0.001 / v1790"
+  },
+  {
+   "id": "UByte 7: a MOD 0.001",
+   "decl": [
+    "DIM v1791 AS UByte = 7"
+   ],
+   "expr": "v1791 MOD 0.001"
+  },
+  {
+   "id": "UByte 7: a + 1E10",
+   "decl": [
+    "DIM v1792 AS UByte = 7"
+   ],
+   "expr": "v1792 + 1E10"
+  },
+  {
+   "id": "UByte 7: 1E10 - a",
+   "decl": [
+    "DIM v1793 AS UByte = 7"
+   ],
+   "expr": "1E10 - v1793"
+  },
+  {
+   "id": "UByte 7: a * 1E10",
+   "decl": [
+    "DIM v1794 AS UByte = 7"
+   ],
+   "expr": "v1794 * 1E10"
+  },
+  {
+   "id": "UByte 7: a / 1E10",
+   "decl": [
+    "DIM v1795 AS UByte = 7"
+   ],
+   "expr": "v1795 / 1E10"
+  },
+  {
+   "id": "UByte 7: 1E10 / a",
+   "decl": [
+    "DIM v1796 AS UByte = 7"
+   ],
+   "expr": "1E10 / v1796"
+  },
+  {
+   "id": "UByte 7: a MOD 1E10",
+   "decl": [
+    "DIM v1797 AS UByte = 7"
+   ],
+   "expr": "v1797 MOD 1E10"
+  },
+  {
+   "id": "UByte 7: a + 70000",
+   "decl": [
+    "DIM v1798 AS UByte = 7"
+   ],
+   "expr": "v1798 + 70000"
+  },
+  {
+   "id": "UByte 7: 70000 - a",
+   "decl": [
+    "DIM v1799 AS UByte = 7"
+   ],
+   "expr": "70000 - v1799"
+  },
+  {
+   "id": "UByte 7: a * 70000",
+   "decl": [
+    "DIM v1800 AS UByte = 7"
+   ],
+   "expr": "v1800 * 70000"
+  },
+  {
+   "id": "UByte 7: a / 70000",
+   "decl": [
+    "DIM v1801 AS UByte = 7"
+   ],
+   "expr": "v1801 / 70000"
+  },
+  {
+   "id": "UByte 7: 70000 / a",
+   "decl": [
+    "DIM v1802 AS UByte = 7"
+   ],
+   "expr": "70000 / v1802"
+  },
+  {
+   "id": "UByte 7: a MOD 70000",
+   "decl": [
+    "DIM v1803 AS UByte = 7"
+   ],
+   "expr": "v1803 MOD 70000"
+  },
+  {
+   "id": "Byte 7: a + 2",
+   "decl": [
+    "DIM v1804 AS Byte = 7"
+   ],
+   "expr": "v1804 + 2"
+  },
+  {
+   "id": "Byte 7: 2 - a",
+   "decl": [
+    "DIM v1805 AS Byte = 7"
+   ],
+   "expr": "2 - v1805"
+  },
+  {
+   "id": "Byte 7: a * 2",
+   "decl": [
+    "DIM v1806 AS Byte = 7"
+   ],
+   "expr": "v1806 * 2"
+  },
+  {
+   "id": "Byte 7: a / 2",
+   "decl": [
+    "DIM v1807 AS Byte = 7"
+   ],
+   "expr": "v1807 / 2"
+  },
+  {
+   "id": "Byte 7: 2 / a",
+   "decl": [
+    "DIM v1808 AS Byte = 7"
+   ],
+   "expr": "2 / v1808"
+  },
+  {
+   "id": "Byte 7: a MOD 2",
+   "decl": [
+    "DIM v1809 AS Byte = 7"
+   ],
+   "expr": "v1809 MOD 2"
+  },
+  {
+   "id": "Byte 7: a + -1",
+   "decl": [
+    "DIM v1810 AS Byte = 7"
+   ],
+   "expr": "v1810 + -1"
+  },
+  {
+   "id": "Byte 7: -1 - a",
+   "decl": [
+    "DIM v1811 AS Byte = 7"
+   ],
+   "expr": "-1 - v1811"
+  },
+  {
+   "id": "Byte 7: a * -1",
+   "decl": [
+    "DIM v1812 AS Byte = 7"
+   ],
+   "expr": "v1812 * -1"
+  },
+  {
+   "id": "Byte 7: a / -1",
+   "decl": [
+    "DIM v1813 AS Byte = 7"
+   ],
+   "expr": "v1813 / -1"
+  },
+  {
+   "id": "Byte 7: -1 / a",
+   "decl": [
+    "DIM v1814 AS Byte = 7"
+   ],
+   "expr": "-1 / v1814"
+  },
+  {
+   "id": "Byte 7: a MOD -1",
+   "decl": [
+    "DIM v1815 AS Byte = 7"
+   ],
+   "expr": "v1815 MOD -1"
+  },
+  {
+   "id": "Byte 7: a + 256",
+   "decl": [
+    "DIM v1816 AS Byte = 7"
+   ],
+   "expr": "v1816 + 256"
+  },
+  {
+   "id": "Byte 7: 256 - a",
+   "decl": [
+    "DIM v1817 AS Byte = 7"
+   ],
+   "expr": "256 - v1817"
+  },
+  {
+   "id": "Byte 7: a * 256",
+   "decl": [
+    "DIM v1818 AS Byte = 7"
+   ],
+   "expr": "v1818 * 256"
+  },
+  {
+   "id": "Byte 7: a / 256",
+   "decl": [
+    "DIM v1819 AS Byte = 7"
+   ],
+   "expr": "v1819 / 256"
+  },
+  {
+   "id": "Byte 7: 256 / a",
+   "decl": [
+    "DIM v1820 AS Byte = 7"
+   ],
+   "expr": "256 / v1820"
+  },
+  {
+   "id": "Byte 7: a MOD 256",
+   "decl": [
+    "DIM v1821 AS Byte = 7"
+   ],
+   "expr": "v1821 MOD 256"
+  },
+  {
+   "id": "Byte 7: a + 0.5",
+   "decl": [
+    "DIM v1822 AS Byte = 7"
+   ],
+   "expr": "v1822 + 0.5"
+  },
+  {
+   "id": "Byte 7: 0.5 - a",
+   "decl": [
+    "DIM v1823 AS Byte = 7"
+   ],
+   "expr": "0.5 - v1823"
+  },
+  {
+   "id": "Byte 7: a * 0.5",
+   "decl": [
+    "DIM v1824 AS Byte = 7"
+   ],
+   "expr": "v1824 * 0.5"
+  },
+  {
+   "id": "Byte 7: a / 0.5",
+   "decl": [
+    "DIM v1825 AS Byte = 7"
+   ],
+   "expr": "v1825 / 0.5"
+  },
+  {
+   "id": "Byte 7: 0.5 / a",
+   "decl": [
+    "DIM v1826 AS Byte = 7"
+   ],
+   "expr": "0.5 / v1826"
+  },
+  {
+   "id": "Byte 7: a MOD 0.5",
+   "decl": [
+    "DIM v1827 AS Byte = 7"
+   ],
+   "expr": "v1827 MOD 0.5"
+  },
+  {
+   "id": "Byte 7: a + 0.001",
+   "decl": [
+    "DIM v1828 AS Byte = 7"
+   ],
+   "expr": "v1828 + 0.001"
+  },
+  {
+   "id": "Byte 7: 0.001 - a",
+   "decl": [
+    "DIM v1829 AS Byte = 7"
+   ],
+   "expr": "0.001 - v1829"
+  },
+  {
+   "id": "Byte 7: a * 0.001",
+   "decl": [
+    "DIM v1830 AS Byte = 7"
+   ],
+   "expr": "v1830 * 0.001"
+  },
+  {
+   "id": "Byte 7: a / 0.001",
+   "decl": [
+    "DIM v1831 AS Byte = 7"
+   ],
+   "expr": "v1831 / 0.001"
+  },
+  {
+   "id": "Byte 7: 0.001 / a",
+   "decl": [
+    "DIM v1832 AS Byte = 7"
+   ],
+   "expr": "0.001 / v1832"
+  },
+  {
+   "id": "Byte 7: a MOD 0.001",
+   "decl": [
+    "DIM v1833 AS Byte = 7"
+   ],
+   "expr": "v1833 MOD 0.001"
+  },
+  {
+   "id": "Byte 7: a + 1E10",
+   "decl": [
+    "DIM v1834 AS Byte = 7"
+   ],
+   "expr": "v1834 + 1E10"
+  },
+  {
+   "id": "Byte 7: 1E10 - a",
+   "decl": [
+    "DIM v1835 AS Byte = 7"
+   ],
+   "expr": "1E10 - v1835"
+  },
+  {
+   "id": "Byte 7: a * 1E10",
+   "decl": [
+    "DIM v1836 AS Byte = 7"
+   ],
+   "expr": "v1836 * 1E10"
+  },
+  {
+   "id": "Byte 7: a / 1E10",
+   "decl": [
+    "DIM v1837 AS Byte = 7"
+   ],
+   "expr": "v1837 / 1E10"
+  },
+  {
+   "id": "Byte 7: 1E10 / a",
+   "decl": [
+    "DIM v1838 AS Byte = 7"
+   ],
+   "expr": "1E10 / v1838"
+  },
+  {
+   "id": "Byte 7: a MOD 1E10",
+   "decl": [
+    "DIM v1839 AS Byte = 7"
+   ],
+   "expr": "v1839 MOD 1E10"
+  },
+  {
+   "id": "Byte 7: a + 70000",
+   "decl": [
+    "DIM v1840 AS Byte = 7"
+   ],
+   "expr": "v1840 + 70000"
+  },
+  {
+   "id": "Byte 7: 70000 - a",
+   "decl": [
+    "DIM v1841 AS Byte = 7"
+   ],
+   "expr": "70000 - v1841"
+  },
+  {
+   "id": "Byte 7: a * 70000",
+   "decl": [
+    "DIM v1842 AS Byte = 7"
+   ],
+   "expr": "v1842 * 70000"
+  },
+  {
+   "id": "Byte 7: a / 70000",
+   "decl": [
+    "DIM v1843 AS Byte = 7"
+   ],
+   "expr": "v1843 / 70000"
+  },
+  {
+   "id": "Byte 7: 70000 / a",
+   "decl": [
+    "DIM v1844 AS Byte = 7"
+   ],
+   "expr": "70000 / v1844"
+  },
+  {
+   "id": "Byte 7: a MOD 70000",
+   "decl": [
+    "DIM v1845 AS Byte = 7"
+   ],
+   "expr": "v1845 MOD 70000"
+  },
+  {
+   "id": "UInteger 7: a + 2",
+   "decl": [
+    "DIM v1846 AS UInteger = 7"
+   ],
+   "expr": "v1846 + 2"
+  },
+  {
+   "id": "UInteger 7: 2 - a",
+   "decl": [
+    "DIM v1847 AS UInteger = 7"
+   ],
+   "expr": "2 - v1847"
+  },
+  {
+   "id": "UInteger 7: a * 2",
+   "decl": [
+    "DIM v1848 AS UInteger = 7"
+   ],
+   "expr": "v1848 * 2"
+  },
+  {
+   "id": "UInteger 7: a / 2",
+   "decl": [
+    "DIM v1849 AS UInteger = 7"
+   ],
+   "expr": "v1849 / 2"
+  },
+  {
+   "id": "UInteger 7: 2 / a",
+   "decl": [
+    "DIM v1850 AS UInteger = 7"
+   ],
+   "expr": "2 / v1850"
+  },
+  {
+   "id": "UInteger 7: a MOD 2",
+   "decl": [
+    "DIM v1851 AS UInteger = 7"
+   ],
+   "expr": "v1851 MOD 2"
+  },
+  {
+   "id": "UInteger 7: a + -1",
+   "decl": [
+    "DIM v1852 AS UInteger = 7"
+   ],
+   "expr": "v1852 + -1"
+  },
+  {
+   "id": "UInteger 7: -1 - a",
+   "decl": [
+    "DIM v1853 AS UInteger = 7"
+   ],
+   "expr": "-1 - v1853"
+  },
+  {
+   "id": "UInteger 7: a * -1",
+   "decl": [
+    "DIM v1854 AS UInteger = 7"
+   ],
+   "expr": "v1854 * -1"
+  },
+  {
+   "id": "UInteger 7: a / -1",
+   "decl": [
+    "DIM v1855 AS UInteger = 7"
+   ],
+   "expr": "v1855 / -1"
+  },
+  {
+   "id": "UInteger 7: -1 / a",
+   "decl": [
+    "DIM v1856 AS UInteger = 7"
+   ],
+   "expr": "-1 / v1856"
+  },
+  {
+   "id": "UInteger 7: a MOD -1",
+   "decl": [
+    "DIM v1857 AS UInteger = 7"
+   ],
+   "expr": "v1857 MOD -1"
+  },
+  {
+   "id": "UInteger 7: a + 256",
+   "decl": [
+    "DIM v1858 AS UInteger = 7"
+   ],
+   "expr": "v1858 + 256"
+  },
+  {
+   "id": "UInteger 7: 256 - a",
+   "decl": [
+    "DIM v1859 AS UInteger = 7"
+   ],
+   "expr": "256 - v1859"
+  },
+  {
+   "id": "UInteger 7: a * 256",
+   "decl": [
+    "DIM v1860 AS UInteger = 7"
+   ],
+   "expr": "v1860 * 256"
+  },
+  {
+   "id": "UInteger 7: a / 256",
+   "decl": [
+    "DIM v1861 AS UInteger = 7"
+   ],
+   "expr": "v1861 / 256"
+  },
+  {
+   "id": "UInteger 7: 256 / a",
+   "decl": [
+    "DIM v1862 AS UInteger = 7"
+   ],
+   "expr": "256 / v1862"
+  },
+  {
+   "id": "UInteger 7: a MOD 256",
+   "decl": [
+    "DIM v1863 AS UInteger = 7"
+   ],
+   "expr": "v1863 MOD 256"
+  },
+  {
+   "id": "UInteger 7: a + 0.5",
+   "decl": [
+    "DIM v1864 AS UInteger = 7"
+   ],
+   "expr": "v1864 + 0.5"
+  },
+  {
+   "id": "UInteger 7: 0.5 - a",
+   "decl": [
+    "DIM v1865 AS UInteger = 7"
+   ],
+   "expr": "0.5 - v1865"
+  },
+  {
+   "id": "UInteger 7: a * 0.5",
+   "decl": [
+    "DIM v1866 AS UInteger = 7"
+   ],
+   "expr": "v1866 * 0.5"
+  },
+  {
+   "id": "UInteger 7: a / 0.5",
+   "decl": [
+    "DIM v1867 AS UInteger = 7"
+   ],
+   "expr": "v1867 / 0.5"
+  },
+  {
+   "id": "UInteger 7: 0.5 / a",
+   "decl": [
+    "DIM v1868 AS UInteger = 7"
+   ],
+   "expr": "0.5 / v1868"
+  },
+  {
+   "id": "UInteger 7: a MOD 0.5",
+   "decl": [
+    "DIM v1869 AS UInteger = 7"
+   ],
+   "expr": "v1869 MOD 0.5"
+  },
+  {
+   "id": "UInteger 7: a + 0.001",
+   "decl": [
+    "DIM v1870 AS UInteger = 7"
+   ],
+   "expr": "v1870 + 0.001"
+  },
+  {
+   "id": "UInteger 7: 0.001 - a",
+   "decl": [
+    "DIM v1871 AS UInteger = 7"
+   ],
+   "expr": "0.001 - v1871"
+  },
+  {
+   "id": "UInteger 7: a * 0.001",
+   "decl": [
+    "DIM v1872 AS UInteger = 7"
+   ],
+   "expr": "v1872 * 0.001"
+  },
+  {
+   "id": "UInteger 7: a / 0.001",
+   "decl": [
+    "DIM v1873 AS UInteger = 7"
+   ],
+   "expr": "v1873 / 0.001"
+  },
+  {
+   "id": "UInteger 7: 0.001 / a",
+   "decl": [
+    "DIM v1874 AS UInteger = 7"
+   ],
+   "expr": "0.001 / v1874"
+  },
+  {
+   "id": "UInteger 7: a MOD 0.001",
+   "decl": [
+    "DIM v1875 AS UInteger = 7"
+   ],
+   "expr": "v1875 MOD 0.001"
+  },
+  {
+   "id": "UInteger 7: a + 1E10",
+   "decl": [
+    "DIM v1876 AS UInteger = 7"
+   ],
+   "expr": "v1876 + 1E10"
+  },
+  {
+   "id": "UInteger 7: 1E10 - a",
+   "decl": [
+    "DIM v1877 AS UInteger = 7"
+   ],
+   "expr": "1E10 - v1877"
+  },
+  {
+   "id": "UInteger 7: a * 1E10",
+   "decl": [
+    "DIM v1878 AS UInteger = 7"
+   ],
+   "expr": "v1878 * 1E10"
+  },
+  {
+   "id": "UInteger 7: a / 1E10",
+   "decl": [
+    "DIM v1879 AS UInteger = 7"
+   ],
+   "expr": "v1879 / 1E10"
+  },
+  {
+   "id": "UInteger 7: 1E10 / a",
+   "decl": [
+    "DIM v1880 AS UInteger = 7"
+   ],
+   "expr": "1E10 / v1880"
+  },
+  {
+   "id": "UInteger 7: a MOD 1E10",
+   "decl": [
+    "DIM v1881 AS UInteger = 7"
+   ],
+   "expr": "v1881 MOD 1E10"
+  },
+  {
+   "id": "UInteger 7: a + 70000",
+   "decl": [
+    "DIM v1882 AS UInteger = 7"
+   ],
+   "expr": "v1882 + 70000"
+  },
+  {
+   "id": "UInteger 7: 70000 - a",
+   "decl": [
+    "DIM v1883 AS UInteger = 7"
+   ],
+   "expr": "70000 - v1883"
+  },
+  {
+   "id": "UInteger 7: a * 70000",
+   "decl": [
+    "DIM v1884 AS UInteger = 7"
+   ],
+   "expr": "v1884 * 70000"
+  },
+  {
+   "id": "UInteger 7: a / 70000",
+   "decl": [
+    "DIM v1885 AS UInteger = 7"
+   ],
+   "expr": "v1885 / 70000"
+  },
+  {
+   "id": "UInteger 7: 70000 / a",
+   "decl": [
+    "DIM v1886 AS UInteger = 7"
+   ],
+   "expr": "70000 / v1886"
+  },
+  {
+   "id": "UInteger 7: a MOD 70000",
+   "decl": [
+    "DIM v1887 AS UInteger = 7"
+   ],
+   "expr": "v1887 MOD 70000"
+  },
+  {
+   "id": "Integer 100: a + 2",
+   "decl": [
+    "DIM v1888 AS Integer = 100"
+   ],
+   "expr": "v1888 + 2"
+  },
+  {
+   "id": "Integer 100: 2 - a",
+   "decl": [
+    "DIM v1889 AS Integer = 100"
+   ],
+   "expr": "2 - v1889"
+  },
+  {
+   "id": "Integer 100: a * 2",
+   "decl": [
+    "DIM v1890 AS Integer = 100"
+   ],
+   "expr": "v1890 * 2"
+  },
+  {
+   "id": "Integer 100: a / 2",
+   "decl": [
+    "DIM v1891 AS Integer = 100"
+   ],
+   "expr": "v1891 / 2"
+  },
+  {
+   "id": "Integer 100: 2 / a",
+   "decl": [
+    "DIM v1892 AS Integer = 100"
+   ],
+   "expr": "2 / v1892"
+  },
+  {
+   "id": "Integer 100: a MOD 2",
+   "decl": [
+    "DIM v1893 AS Integer = 100"
+   ],
+   "expr": "v1893 MOD 2"
+  },
+  {
+   "id": "Integer 100: a + -1",
+   "decl": [
+    "DIM v1894 AS Integer = 100"
+   ],
+   "expr": "v1894 + -1"
+  },
+  {
+   "id": "Integer 100: -1 - a",
+   "decl": [
+    "DIM v1895 AS Integer = 100"
+   ],
+   "expr": "-1 - v1895"
+  },
+  {
+   "id": "Integer 100: a * -1",
+   "decl": [
+    "DIM v1896 AS Integer = 100"
+   ],
+   "expr": "v1896 * -1"
+  },
+  {
+   "id": "Integer 100: a / -1",
+   "decl": [
+    "DIM v1897 AS Integer = 100"
+   ],
+   "expr": "v1897 / -1"
+  },
+  {
+   "id": "Integer 100: -1 / a",
+   "decl": [
+    "DIM v1898 AS Integer = 100"
+   ],
+   "expr": "-1 / v1898"
+  },
+  {
+   "id": "Integer 100: a MOD -1",
+   "decl": [
+    "DIM v1899 AS Integer = 100"
+   ],
+   "expr": "v1899 MOD -1"
+  },
+  {
+   "id": "Integer 100: a + 256",
+   "decl": [
+    "DIM v1900 AS Integer = 100"
+   ],
+   "expr": "v1900 + 256"
+  },
+  {
+   "id": "Integer 100: 256 - a",
+   "decl": [
+    "DIM v1901 AS Integer = 100"
+   ],
+   "expr": "256 - v1901"
+  },
+  {
+   "id": "Integer 100: a * 256",
+   "decl": [
+    "DIM v1902 AS Integer = 100"
+   ],
+   "expr": "v1902 * 256"
+  },
+  {
+   "id": "Integer 100: a / 256",
+   "decl": [
+    "DIM v1903 AS Integer = 100"
+   ],
+   "expr": "v1903 / 256"
+  },
+  {
+   "id": "Integer 100: 256 / a",
+   "decl": [
+    "DIM v1904 AS Integer = 100"
+   ],
+   "expr": "256 / v1904"
+  },
+  {
+   "id": "Integer 100: a MOD 256",
+   "decl": [
+    "DIM v1905 AS Integer = 100"
+   ],
+   "expr": "v1905 MOD 256"
+  },
+  {
+   "id": "Integer 100: a + 0.5",
+   "decl": [
+    "DIM v1906 AS Integer = 100"
+   ],
+   "expr": "v1906 + 0.5"
+  },
+  {
+   "id": "Integer 100: 0.5 - a",
+   "decl": [
+    "DIM v1907 AS Integer = 100"
+   ],
+   "expr": "0.5 - v1907"
+  },
+  {
+   "id": "Integer 100: a * 0.5",
+   "decl": [
+    "DIM v1908 AS Integer = 100"
+   ],
+   "expr": "v1908 * 0.5"
+  },
+  {
+   "id": "Integer 100: a / 0.5",
+   "decl": [
+    "DIM v1909 AS Integer = 100"
+   ],
+   "expr": "v1909 / 0.5"
+  },
+  {
+   "id": "Integer 100: 0.5 / a",
+   "decl": [
+    "DIM v1910 AS Integer = 100"
+   ],
+   "expr": "0.5 / v1910"
+  },
+  {
+   "id": "Integer 100: a MOD 0.5",
+   "decl": [
+    "DIM v1911 AS Integer = 100"
+   ],
+   "expr": "v1911 MOD 0.5"
+  },
+  {
+   "id": "Integer 100: a + 0.001",
+   "decl": [
+    "DIM v1912 AS Integer = 100"
+   ],
+   "expr": "v1912 + 0.001"
+  },
+  {
+   "id": "Integer 100: 0.001 - a",
+   "decl": [
+    "DIM v1913 AS Integer = 100"
+   ],
+   "expr": "0.001 - v1913"
+  },
+  {
+   "id": "Integer 100: a * 0.001",
+   "decl": [
+    "DIM v1914 AS Integer = 100"
+   ],
+   "expr": "v1914 * 0.001"
+  },
+  {
+   "id": "Integer 100: a / 0.001",
+   "decl": [
+    "DIM v1915 AS Integer = 100"
+   ],
+   "expr": "v1915 / 0.001"
+  },
+  {
+   "id": "Integer 100: 0.001 / a",
+   "decl": [
+    "DIM v1916 AS Integer = 100"
+   ],
+   "expr": "0.001 / v1916"
+  },
+  {
+   "id": "Integer 100: a MOD 0.001",
+   "decl": [
+    "DIM v1917 AS Integer = 100"
+   ],
+   "expr": "v1917 MOD 0.001"
+  },
+  {
+   "id": "Integer 100: a + 1E10",
+   "decl": [
+    "DIM v1918 AS Integer = 100"
+   ],
+   "expr": "v1918 + 1E10"
+  },
+  {
+   "id": "Integer 100: 1E10 - a",
+   "decl": [
+    "DIM v1919 AS Integer = 100"
+   ],
+   "expr": "1E10 - v1919"
+  },
+  {
+   "id": "Integer 100: a * 1E10",
+   "decl": [
+    "DIM v1920 AS Integer = 100"
+   ],
+   "expr": "v1920 * 1E10"
+  },
+  {
+   "id": "Integer 100: a / 1E10",
+   "decl": [
+    "DIM v1921 AS Integer = 100"
+   ],
+   "expr": "v1921 / 1E10"
+  },
+  {
+   "id": "Integer 100: 1E10 / a",
+   "decl": [
+    "DIM v1922 AS Integer = 100"
+   ],
+   "expr": "1E10 / v1922"
+  },
+  {
+   "id": "Integer 100: a MOD 1E10",
+   "decl": [
+    "DIM v1923 AS Integer = 100"
+   ],
+   "expr": "v1923 MOD 1E10"
+  },
+  {
+   "id": "Integer 100: a + 70000",
+   "decl": [
+    "DIM v1924 AS Integer = 100"
+   ],
+   "expr": "v1924 + 70000"
+  },
+  {
+   "id": "Integer 100: 70000 - a",
+   "decl": [
+    "DIM v1925 AS Integer = 100"
+   ],
+   "expr": "70000 - v1925"
+  },
+  {
+   "id": "Integer 100: a * 70000",
+   "decl": [
+    "DIM v1926 AS Integer = 100"
+   ],
+   "expr": "v1926 * 70000"
+  },
+  {
+   "id": "Integer 100: a / 70000",
+   "decl": [
+    "DIM v1927 AS Integer = 100"
+   ],
+   "expr": "v1927 / 70000"
+  },
+  {
+   "id": "Integer 100: 70000 / a",
+   "decl": [
+    "DIM v1928 AS Integer = 100"
+   ],
+   "expr": "70000 / v1928"
+  },
+  {
+   "id": "Integer 100: a MOD 70000",
+   "decl": [
+    "DIM v1929 AS Integer = 100"
+   ],
+   "expr": "v1929 MOD 70000"
+  },
+  {
+   "id": "ULong 7: a + 2",
+   "decl": [
+    "DIM v1930 AS ULong = 7"
+   ],
+   "expr": "v1930 + 2"
+  },
+  {
+   "id": "ULong 7: 2 - a",
+   "decl": [
+    "DIM v1931 AS ULong = 7"
+   ],
+   "expr": "2 - v1931"
+  },
+  {
+   "id": "ULong 7: a * 2",
+   "decl": [
+    "DIM v1932 AS ULong = 7"
+   ],
+   "expr": "v1932 * 2"
+  },
+  {
+   "id": "ULong 7: a / 2",
+   "decl": [
+    "DIM v1933 AS ULong = 7"
+   ],
+   "expr": "v1933 / 2"
+  },
+  {
+   "id": "ULong 7: 2 / a",
+   "decl": [
+    "DIM v1934 AS ULong = 7"
+   ],
+   "expr": "2 / v1934"
+  },
+  {
+   "id": "ULong 7: a MOD 2",
+   "decl": [
+    "DIM v1935 AS ULong = 7"
+   ],
+   "expr": "v1935 MOD 2"
+  },
+  {
+   "id": "ULong 7: a + -1",
+   "decl": [
+    "DIM v1936 AS ULong = 7"
+   ],
+   "expr": "v1936 + -1"
+  },
+  {
+   "id": "ULong 7: -1 - a",
+   "decl": [
+    "DIM v1937 AS ULong = 7"
+   ],
+   "expr": "-1 - v1937"
+  },
+  {
+   "id": "ULong 7: a * -1",
+   "decl": [
+    "DIM v1938 AS ULong = 7"
+   ],
+   "expr": "v1938 * -1"
+  },
+  {
+   "id": "ULong 7: a / -1",
+   "decl": [
+    "DIM v1939 AS ULong = 7"
+   ],
+   "expr": "v1939 / -1"
+  },
+  {
+   "id": "ULong 7: -1 / a",
+   "decl": [
+    "DIM v1940 AS ULong = 7"
+   ],
+   "expr": "-1 / v1940"
+  },
+  {
+   "id": "ULong 7: a MOD -1",
+   "decl": [
+    "DIM v1941 AS ULong = 7"
+   ],
+   "expr": "v1941 MOD -1"
+  },
+  {
+   "id": "ULong 7: a + 256",
+   "decl": [
+    "DIM v1942 AS ULong = 7"
+   ],
+   "expr": "v1942 + 256"
+  },
+  {
+   "id": "ULong 7: 256 - a",
+   "decl": [
+    "DIM v1943 AS ULong = 7"
+   ],
+   "expr": "256 - v1943"
+  },
+  {
+   "id": "ULong 7: a * 256",
+   "decl": [
+    "DIM v1944 AS ULong = 7"
+   ],
+   "expr": "v1944 * 256"
+  },
+  {
+   "id": "ULong 7: a / 256",
+   "decl": [
+    "DIM v1945 AS ULong = 7"
+   ],
+   "expr": "v1945 / 256"
+  },
+  {
+   "id": "ULong 7: 256 / a",
+   "decl": [
+    "DIM v1946 AS ULong = 7"
+   ],
+   "expr": "256 / v1946"
+  },
+  {
+   "id": "ULong 7: a MOD 256",
+   "decl": [
+    "DIM v1947 AS ULong = 7"
+   ],
+   "expr": "v1947 MOD 256"
+  },
+  {
+   "id": "ULong 7: a + 0.5",
+   "decl": [
+    "DIM v1948 AS ULong = 7"
+   ],
+   "expr": "v1948 + 0.5"
+  },
+  {
+   "id": "ULong 7: 0.5 - a",
+   "decl": [
+    "DIM v1949 AS ULong = 7"
+   ],
+   "expr": "0.5 - v1949"
+  },
+  {
+   "id": "ULong 7: a * 0.5",
+   "decl": [
+    "DIM v1950 AS ULong = 7"
+   ],
+   "expr": "v1950 * 0.5"
+  },
+  {
+   "id": "ULong 7: a / 0.5",
+   "decl": [
+    "DIM v1951 AS ULong = 7"
+   ],
+   "expr": "v1951 / 0.5"
+  },
+  {
+   "id": "ULong 7: 0.5 / a",
+   "decl": [
+    "DIM v1952 AS ULong = 7"
+   ],
+   "expr": "0.5 / v1952"
+  },
+  {
+   "id": "ULong 7: a MOD 0.5",
+   "decl": [
+    "DIM v1953 AS ULong = 7"
+   ],
+   "expr": "v1953 MOD 0.5"
+  },
+  {
+   "id": "ULong 7: a + 0.001",
+   "decl": [
+    "DIM v1954 AS ULong = 7"
+   ],
+   "expr": "v1954 + 0.001"
+  },
+  {
+   "id": "ULong 7: 0.001 - a",
+   "decl": [
+    "DIM v1955 AS ULong = 7"
+   ],
+   "expr": "0.001 - v1955"
+  },
+  {
+   "id": "ULong 7: a * 0.001",
+   "decl": [
+    "DIM v1956 AS ULong = 7"
+   ],
+   "expr": "v1956 * 0.001"
+  },
+  {
+   "id": "ULong 7: a / 0.001",
+   "decl": [
+    "DIM v1957 AS ULong = 7"
+   ],
+   "expr": "v1957 / 0.001"
+  },
+  {
+   "id": "ULong 7: 0.001 / a",
+   "decl": [
+    "DIM v1958 AS ULong = 7"
+   ],
+   "expr": "0.001 / v1958"
+  },
+  {
+   "id": "ULong 7: a MOD 0.001",
+   "decl": [
+    "DIM v1959 AS ULong = 7"
+   ],
+   "expr": "v1959 MOD 0.001"
+  },
+  {
+   "id": "ULong 7: a + 1E10",
+   "decl": [
+    "DIM v1960 AS ULong = 7"
+   ],
+   "expr": "v1960 + 1E10"
+  },
+  {
+   "id": "ULong 7: 1E10 - a",
+   "decl": [
+    "DIM v1961 AS ULong = 7"
+   ],
+   "expr": "1E10 - v1961"
+  },
+  {
+   "id": "ULong 7: a * 1E10",
+   "decl": [
+    "DIM v1962 AS ULong = 7"
+   ],
+   "expr": "v1962 * 1E10"
+  },
+  {
+   "id": "ULong 7: a / 1E10",
+   "decl": [
+    "DIM v1963 AS ULong = 7"
+   ],
+   "expr": "v1963 / 1E10"
+  },
+  {
+   "id": "ULong 7: 1E10 / a",
+   "decl": [
+    "DIM v1964 AS ULong = 7"
+   ],
+   "expr": "1E10 / v1964"
+  },
+  {
+   "id": "ULong 7: a MOD 1E10",
+   "decl": [
+    "DIM v1965 AS ULong = 7"
+   ],
+   "expr": "v1965 MOD 1E10"
+  },
+  {
+   "id": "ULong 7: a + 70000",
+   "decl": [
+    "DIM v1966 AS ULong = 7"
+   ],
+   "expr": "v1966 + 70000"
+  },
+  {
+   "id": "ULong 7: 70000 - a",
+   "decl": [
+    "DIM v1967 AS ULong = 7"
+   ],
+   "expr": "70000 - v1967"
+  },
+  {
+   "id": "ULong 7: a * 70000",
+   "decl": [
+    "DIM v1968 AS ULong = 7"
+   ],
+   "expr": "v1968 * 70000"
+  },
+  {
+   "id": "ULong 7: a / 70000",
+   "decl": [
+    "DIM v1969 AS ULong = 7"
+   ],
+   "expr": "v1969 / 70000"
+  },
+  {
+   "id": "ULong 7: 70000 / a",
+   "decl": [
+    "DIM v1970 AS ULong = 7"
+   ],
+   "expr": "70000 / v1970"
+  },
+  {
+   "id": "ULong 7: a MOD 70000",
+   "decl": [
+    "DIM v1971 AS ULong = 7"
+   ],
+   "expr": "v1971 MOD 70000"
+  },
+  {
+   "id": "Long 100000: a + 2",
+   "decl": [
+    "DIM v1972 AS Long = 100000"
+   ],
+   "expr": "v1972 + 2"
+  },
+  {
+   "id": "Long 100000: 2 - a",
+   "decl": [
+    "DIM v1973 AS Long = 100000"
+   ],
+   "expr": "2 - v1973"
+  },
+  {
+   "id": "Long 100000: a * 2",
+   "decl": [
+    "DIM v1974 AS Long = 100000"
+   ],
+   "expr": "v1974 * 2"
+  },
+  {
+   "id": "Long 100000: a / 2",
+   "decl": [
+    "DIM v1975 AS Long = 100000"
+   ],
+   "expr": "v1975 / 2"
+  },
+  {
+   "id": "Long 100000: 2 / a",
+   "decl": [
+    "DIM v1976 AS Long = 100000"
+   ],
+   "expr": "2 / v1976"
+  },
+  {
+   "id": "Long 100000: a MOD 2",
+   "decl": [
+    "DIM v1977 AS Long = 100000"
+   ],
+   "expr": "v1977 MOD 2"
+  },
+  {
+   "id": "Long 100000: a + -1",
+   "decl": [
+    "DIM v1978 AS Long = 100000"
+   ],
+   "expr": "v1978 + -1"
+  },
+  {
+   "id": "Long 100000: -1 - a",
+   "decl": [
+    "DIM v1979 AS Long = 100000"
+   ],
+   "expr": "-1 - v1979"
+  },
+  {
+   "id": "Long 100000: a * -1",
+   "decl": [
+    "DIM v1980 AS Long = 100000"
+   ],
+   "expr": "v1980 * -1"
+  },
+  {
+   "id": "Long 100000: a / -1",
+   "decl": [
+    "DIM v1981 AS Long = 100000"
+   ],
+   "expr": "v1981 / -1"
+  },
+  {
+   "id": "Long 100000: -1 / a",
+   "decl": [
+    "DIM v1982 AS Long = 100000"
+   ],
+   "expr": "-1 / v1982"
+  },
+  {
+   "id": "Long 100000: a MOD -1",
+   "decl": [
+    "DIM v1983 AS Long = 100000"
+   ],
+   "expr": "v1983 MOD -1"
+  },
+  {
+   "id": "Long 100000: a + 256",
+   "decl": [
+    "DIM v1984 AS Long = 100000"
+   ],
+   "expr": "v1984 + 256"
+  },
+  {
+   "id": "Long 100000: 256 - a",
+   "decl": [
+    "DIM v1985 AS Long = 100000"
+   ],
+   "expr": "256 - v1985"
+  },
+  {
+   "id": "Long 100000: a * 256",
+   "decl": [
+    "DIM v1986 AS Long = 100000"
+   ],
+   "expr": "v1986 * 256"
+  },
+  {
+   "id": "Long 100000: a / 256",
+   "decl": [
+    "DIM v1987 AS Long = 100000"
+   ],
+   "expr": "v1987 / 256"
+  },
+  {
+   "id": "Long 100000: 256 / a",
+   "decl": [
+    "DIM v1988 AS Long = 100000"
+   ],
+   "expr": "256 / v1988"
+  },
+  {
+   "id": "Long 100000: a MOD 256",
+   "decl": [
+    "DIM v1989 AS Long = 100000"
+   ],
+   "expr": "v1989 MOD 256"
+  },
+  {
+   "id": "Long 100000: a + 0.5",
+   "decl": [
+    "DIM v1990 AS Long = 100000"
+   ],
+   "expr": "v1990 + 0.5"
+  },
+  {
+   "id": "Long 100000: 0.5 - a",
+   "decl": [
+    "DIM v1991 AS Long = 100000"
+   ],
+   "expr": "0.5 - v1991"
+  },
+  {
+   "id": "Long 100000: a * 0.5",
+   "decl": [
+    "DIM v1992 AS Long = 100000"
+   ],
+   "expr": "v1992 * 0.5"
+  },
+  {
+   "id": "Long 100000: a / 0.5",
+   "decl": [
+    "DIM v1993 AS Long = 100000"
+   ],
+   "expr": "v1993 / 0.5"
+  },
+  {
+   "id": "Long 100000: 0.5 / a",
+   "decl": [
+    "DIM v1994 AS Long = 100000"
+   ],
+   "expr": "0.5 / v1994"
+  },
+  {
+   "id": "Long 100000: a MOD 0.5",
+   "decl": [
+    "DIM v1995 AS Long = 100000"
+   ],
+   "expr": "v1995 MOD 0.5"
+  },
+  {
+   "id": "Long 100000: a + 0.001",
+   "decl": [
+    "DIM v1996 AS Long = 100000"
+   ],
+   "expr": "v1996 + 0.001"
+  },
+  {
+   "id": "Long 100000: 0.001 - a",
+   "decl": [
+    "DIM v1997 AS Long = 100000"
+   ],
+   "expr": "0.001 - v1997"
+  },
+  {
+   "id": "Long 100000: a * 0.001",
+   "decl": [
+    "DIM v1998 AS Long = 100000"
+   ],
+   "expr": "v1998 * 0.001"
+  },
+  {
+   "id": "Long 100000: a / 0.001",
+   "decl": [
+    "DIM v1999 AS Long = 100000"
+   ],
+   "expr": "v1999 / 0.001"
+  },
+  {
+   "id": "Long 100000: 0.001 / a",
+   "decl": [
+    "DIM v2000 AS Long = 100000"
+   ],
+   "expr": "0.001 / v2000"
+  },
+  {
+   "id": "Long 100000: a MOD 0.001",
+   "decl": [
+    "DIM v2001 AS Long = 100000"
+   ],
+   "expr": "v2001 MOD 0.001"
+  },
+  {
+   "id": "Long 100000: a + 1E10",
+   "decl": [
+    "DIM v2002 AS Long = 100000"
+   ],
+   "expr": "v2002 + 1E10"
+  },
+  {
+   "id": "Long 100000: 1E10 - a",
+   "decl": [
+    "DIM v2003 AS Long = 100000"
+   ],
+   "expr": "1E10 - v2003"
+  },
+  {
+   "id": "Long 100000: a * 1E10",
+   "decl": [
+    "DIM v2004 AS Long = 100000"
+   ],
+   "expr": "v2004 * 1E10"
+  },
+  {
+   "id": "Long 100000: a / 1E10",
+   "decl": [
+    "DIM v2005 AS Long = 100000"
+   ],
+   "expr": "v2005 / 1E10"
+  },
+  {
+   "id": "Long 100000: 1E10 / a",
+   "decl": [
+    "DIM v2006 AS Long = 100000"
+   ],
+   "expr": "1E10 / v2006"
+  },
+  {
+   "id": "Long 100000: a MOD 1E10",
+   "decl": [
+    "DIM v2007 AS Long = 100000"
+   ],
+   "expr": "v2007 MOD 1E10"
+  },
+  {
+   "id": "Long 100000: a + 70000",
+   "decl": [
+    "DIM v2008 AS Long = 100000"
+   ],
+   "expr": "v2008 + 70000"
+  },
+  {
+   "id": "Long 100000: 70000 - a",
+   "decl": [
+    "DIM v2009 AS Long = 100000"
+   ],
+   "expr": "70000 - v2009"
+  },
+  {
+   "id": "Long 100000: a * 70000",
+   "decl": [
+    "DIM v2010 AS Long = 100000"
+   ],
+   "expr": "v2010 * 70000"
+  },
+  {
+   "id": "Long 100000: a / 70000",
+   "decl": [
+    "DIM v2011 AS Long = 100000"
+   ],
+   "expr": "v2011 / 70000"
+  },
+  {
+   "id": "Long 100000: 70000 / a",
+   "decl": [
+    "DIM v2012 AS Long = 100000"
+   ],
+   "expr": "70000 / v2012"
+  },
+  {
+   "id": "Long 100000: a MOD 70000",
+   "decl": [
+    "DIM v2013 AS Long = 100000"
+   ],
+   "expr": "v2013 MOD 70000"
+  },
+  {
+   "id": "Fixed -7.5: a + 2",
+   "decl": [
+    "DIM v2014 AS Fixed = -7.5"
+   ],
+   "expr": "v2014 + 2"
+  },
+  {
+   "id": "Fixed -7.5: 2 - a",
+   "decl": [
+    "DIM v2015 AS Fixed = -7.5"
+   ],
+   "expr": "2 - v2015"
+  },
+  {
+   "id": "Fixed -7.5: a * 2",
+   "decl": [
+    "DIM v2016 AS Fixed = -7.5"
+   ],
+   "expr": "v2016 * 2"
+  },
+  {
+   "id": "Fixed -7.5: a / 2",
+   "decl": [
+    "DIM v2017 AS Fixed = -7.5"
+   ],
+   "expr": "v2017 / 2"
+  },
+  {
+   "id": "Fixed -7.5: 2 / a",
+   "decl": [
+    "DIM v2018 AS Fixed = -7.5"
+   ],
+   "expr": "2 / v2018"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 2",
+   "decl": [
+    "DIM v2019 AS Fixed = -7.5"
+   ],
+   "expr": "v2019 MOD 2"
+  },
+  {
+   "id": "Fixed -7.5: a + -1",
+   "decl": [
+    "DIM v2020 AS Fixed = -7.5"
+   ],
+   "expr": "v2020 + -1"
+  },
+  {
+   "id": "Fixed -7.5: -1 - a",
+   "decl": [
+    "DIM v2021 AS Fixed = -7.5"
+   ],
+   "expr": "-1 - v2021"
+  },
+  {
+   "id": "Fixed -7.5: a * -1",
+   "decl": [
+    "DIM v2022 AS Fixed = -7.5"
+   ],
+   "expr": "v2022 * -1"
+  },
+  {
+   "id": "Fixed -7.5: a / -1",
+   "decl": [
+    "DIM v2023 AS Fixed = -7.5"
+   ],
+   "expr": "v2023 / -1"
+  },
+  {
+   "id": "Fixed -7.5: -1 / a",
+   "decl": [
+    "DIM v2024 AS Fixed = -7.5"
+   ],
+   "expr": "-1 / v2024"
+  },
+  {
+   "id": "Fixed -7.5: a MOD -1",
+   "decl": [
+    "DIM v2025 AS Fixed = -7.5"
+   ],
+   "expr": "v2025 MOD -1"
+  },
+  {
+   "id": "Fixed -7.5: a + 256",
+   "decl": [
+    "DIM v2026 AS Fixed = -7.5"
+   ],
+   "expr": "v2026 + 256"
+  },
+  {
+   "id": "Fixed -7.5: 256 - a",
+   "decl": [
+    "DIM v2027 AS Fixed = -7.5"
+   ],
+   "expr": "256 - v2027"
+  },
+  {
+   "id": "Fixed -7.5: a * 256",
+   "decl": [
+    "DIM v2028 AS Fixed = -7.5"
+   ],
+   "expr": "v2028 * 256"
+  },
+  {
+   "id": "Fixed -7.5: a / 256",
+   "decl": [
+    "DIM v2029 AS Fixed = -7.5"
+   ],
+   "expr": "v2029 / 256"
+  },
+  {
+   "id": "Fixed -7.5: 256 / a",
+   "decl": [
+    "DIM v2030 AS Fixed = -7.5"
+   ],
+   "expr": "256 / v2030"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 256",
+   "decl": [
+    "DIM v2031 AS Fixed = -7.5"
+   ],
+   "expr": "v2031 MOD 256"
+  },
+  {
+   "id": "Fixed -7.5: a + 0.5",
+   "decl": [
+    "DIM v2032 AS Fixed = -7.5"
+   ],
+   "expr": "v2032 + 0.5"
+  },
+  {
+   "id": "Fixed -7.5: 0.5 - a",
+   "decl": [
+    "DIM v2033 AS Fixed = -7.5"
+   ],
+   "expr": "0.5 - v2033"
+  },
+  {
+   "id": "Fixed -7.5: a * 0.5",
+   "decl": [
+    "DIM v2034 AS Fixed = -7.5"
+   ],
+   "expr": "v2034 * 0.5"
+  },
+  {
+   "id": "Fixed -7.5: a / 0.5",
+   "decl": [
+    "DIM v2035 AS Fixed = -7.5"
+   ],
+   "expr": "v2035 / 0.5"
+  },
+  {
+   "id": "Fixed -7.5: 0.5 / a",
+   "decl": [
+    "DIM v2036 AS Fixed = -7.5"
+   ],
+   "expr": "0.5 / v2036"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 0.5",
+   "decl": [
+    "DIM v2037 AS Fixed = -7.5"
+   ],
+   "expr": "v2037 MOD 0.5"
+  },
+  {
+   "id": "Fixed -7.5: a + 0.001",
+   "decl": [
+    "DIM v2038 AS Fixed = -7.5"
+   ],
+   "expr": "v2038 + 0.001"
+  },
+  {
+   "id": "Fixed -7.5: 0.001 - a",
+   "decl": [
+    "DIM v2039 AS Fixed = -7.5"
+   ],
+   "expr": "0.001 - v2039"
+  },
+  {
+   "id": "Fixed -7.5: a * 0.001",
+   "decl": [
+    "DIM v2040 AS Fixed = -7.5"
+   ],
+   "expr": "v2040 * 0.001"
+  },
+  {
+   "id": "Fixed -7.5: a / 0.001",
+   "decl": [
+    "DIM v2041 AS Fixed = -7.5"
+   ],
+   "expr": "v2041 / 0.001"
+  },
+  {
+   "id": "Fixed -7.5: 0.001 / a",
+   "decl": [
+    "DIM v2042 AS Fixed = -7.5"
+   ],
+   "expr": "0.001 / v2042"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 0.001",
+   "decl": [
+    "DIM v2043 AS Fixed = -7.5"
+   ],
+   "expr": "v2043 MOD 0.001"
+  },
+  {
+   "id": "Fixed -7.5: a + 1E10",
+   "decl": [
+    "DIM v2044 AS Fixed = -7.5"
+   ],
+   "expr": "v2044 + 1E10"
+  },
+  {
+   "id": "Fixed -7.5: 1E10 - a",
+   "decl": [
+    "DIM v2045 AS Fixed = -7.5"
+   ],
+   "expr": "1E10 - v2045"
+  },
+  {
+   "id": "Fixed -7.5: a * 1E10",
+   "decl": [
+    "DIM v2046 AS Fixed = -7.5"
+   ],
+   "expr": "v2046 * 1E10"
+  },
+  {
+   "id": "Fixed -7.5: a / 1E10",
+   "decl": [
+    "DIM v2047 AS Fixed = -7.5"
+   ],
+   "expr": "v2047 / 1E10"
+  },
+  {
+   "id": "Fixed -7.5: 1E10 / a",
+   "decl": [
+    "DIM v2048 AS Fixed = -7.5"
+   ],
+   "expr": "1E10 / v2048"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 1E10",
+   "decl": [
+    "DIM v2049 AS Fixed = -7.5"
+   ],
+   "expr": "v2049 MOD 1E10"
+  },
+  {
+   "id": "Fixed -7.5: a + 70000",
+   "decl": [
+    "DIM v2050 AS Fixed = -7.5"
+   ],
+   "expr": "v2050 + 70000"
+  },
+  {
+   "id": "Fixed -7.5: 70000 - a",
+   "decl": [
+    "DIM v2051 AS Fixed = -7.5"
+   ],
+   "expr": "70000 - v2051"
+  },
+  {
+   "id": "Fixed -7.5: a * 70000",
+   "decl": [
+    "DIM v2052 AS Fixed = -7.5"
+   ],
+   "expr": "v2052 * 70000"
+  },
+  {
+   "id": "Fixed -7.5: a / 70000",
+   "decl": [
+    "DIM v2053 AS Fixed = -7.5"
+   ],
+   "expr": "v2053 / 70000"
+  },
+  {
+   "id": "Fixed -7.5: 70000 / a",
+   "decl": [
+    "DIM v2054 AS Fixed = -7.5"
+   ],
+   "expr": "70000 / v2054"
+  },
+  {
+   "id": "Fixed -7.5: a MOD 70000",
+   "decl": [
+    "DIM v2055 AS Fixed = -7.5"
+   ],
+   "expr": "v2055 MOD 70000"
+  },
+  {
+   "id": "Float -7.5: a + 2",
+   "decl": [
+    "DIM v2056 AS Float = -7.5"
+   ],
+   "expr": "v2056 + 2"
+  },
+  {
+   "id": "Float -7.5: 2 - a",
+   "decl": [
+    "DIM v2057 AS Float = -7.5"
+   ],
+   "expr": "2 - v2057"
+  },
+  {
+   "id": "Float -7.5: a * 2",
+   "decl": [
+    "DIM v2058 AS Float = -7.5"
+   ],
+   "expr": "v2058 * 2"
+  },
+  {
+   "id": "Float -7.5: a / 2",
+   "decl": [
+    "DIM v2059 AS Float = -7.5"
+   ],
+   "expr": "v2059 / 2"
+  },
+  {
+   "id": "Float -7.5: 2 / a",
+   "decl": [
+    "DIM v2060 AS Float = -7.5"
+   ],
+   "expr": "2 / v2060"
+  },
+  {
+   "id": "Float -7.5: a MOD 2",
+   "decl": [
+    "DIM v2061 AS Float = -7.5"
+   ],
+   "expr": "v2061 MOD 2"
+  },
+  {
+   "id": "Float -7.5: a + -1",
+   "decl": [
+    "DIM v2062 AS Float = -7.5"
+   ],
+   "expr": "v2062 + -1"
+  },
+  {
+   "id": "Float -7.5: -1 - a",
+   "decl": [
+    "DIM v2063 AS Float = -7.5"
+   ],
+   "expr": "-1 - v2063"
+  },
+  {
+   "id": "Float -7.5: a * -1",
+   "decl": [
+    "DIM v2064 AS Float = -7.5"
+   ],
+   "expr": "v2064 * -1"
+  },
+  {
+   "id": "Float -7.5: a / -1",
+   "decl": [
+    "DIM v2065 AS Float = -7.5"
+   ],
+   "expr": "v2065 / -1"
+  },
+  {
+   "id": "Float -7.5: -1 / a",
+   "decl": [
+    "DIM v2066 AS Float = -7.5"
+   ],
+   "expr": "-1 / v2066"
+  },
+  {
+   "id": "Float -7.5: a MOD -1",
+   "decl": [
+    "DIM v2067 AS Float = -7.5"
+   ],
+   "expr": "v2067 MOD -1"
+  },
+  {
+   "id": "Float -7.5: a + 256",
+   "decl": [
+    "DIM v2068 AS Float = -7.5"
+   ],
+   "expr": "v2068 + 256"
+  },
+  {
+   "id": "Float -7.5: 256 - a",
+   "decl": [
+    "DIM v2069 AS Float = -7.5"
+   ],
+   "expr": "256 - v2069"
+  },
+  {
+   "id": "Float -7.5: a * 256",
+   "decl": [
+    "DIM v2070 AS Float = -7.5"
+   ],
+   "expr": "v2070 * 256"
+  },
+  {
+   "id": "Float -7.5: a / 256",
+   "decl": [
+    "DIM v2071 AS Float = -7.5"
+   ],
+   "expr": "v2071 / 256"
+  },
+  {
+   "id": "Float -7.5: 256 / a",
+   "decl": [
+    "DIM v2072 AS Float = -7.5"
+   ],
+   "expr": "256 / v2072"
+  },
+  {
+   "id": "Float -7.5: a MOD 256",
+   "decl": [
+    "DIM v2073 AS Float = -7.5"
+   ],
+   "expr": "v2073 MOD 256"
+  },
+  {
+   "id": "Float -7.5: a + 0.5",
+   "decl": [
+    "DIM v2074 AS Float = -7.5"
+   ],
+   "expr": "v2074 + 0.5"
+  },
+  {
+   "id": "Float -7.5: 0.5 - a",
+   "decl": [
+    "DIM v2075 AS Float = -7.5"
+   ],
+   "expr": "0.5 - v2075"
+  },
+  {
+   "id": "Float -7.5: a * 0.5",
+   "decl": [
+    "DIM v2076 AS Float = -7.5"
+   ],
+   "expr": "v2076 * 0.5"
+  },
+  {
+   "id": "Float -7.5: a / 0.5",
+   "decl": [
+    "DIM v2077 AS Float = -7.5"
+   ],
+   "expr": "v2077 / 0.5"
+  },
+  {
+   "id": "Float -7.5: 0.5 / a",
+   "decl": [
+    "DIM v2078 AS Float = -7.5"
+   ],
+   "expr": "0.5 / v2078"
+  },
+  {
+   "id": "Float -7.5: a MOD 0.5",
+   "decl": [
+    "DIM v2079 AS Float = -7.5"
+   ],
+   "expr": "v2079 MOD 0.5"
+  },
+  {
+   "id": "Float -7.5: a + 0.001",
+   "decl": [
+    "DIM v2080 AS Float = -7.5"
+   ],
+   "expr": "v2080 + 0.001"
+  },
+  {
+   "id": "Float -7.5: 0.001 - a",
+   "decl": [
+    "DIM v2081 AS Float = -7.5"
+   ],
+   "expr": "0.001 - v2081"
+  },
+  {
+   "id": "Float -7.5: a * 0.001",
+   "decl": [
+    "DIM v2082 AS Float = -7.5"
+   ],
+   "expr": "v2082 * 0.001"
+  },
+  {
+   "id": "Float -7.5: a / 0.001",
+   "decl": [
+    "DIM v2083 AS Float = -7.5"
+   ],
+   "expr": "v2083 / 0.001"
+  },
+  {
+   "id": "Float -7.5: 0.001 / a",
+   "decl": [
+    "DIM v2084 AS Float = -7.5"
+   ],
+   "expr": "0.001 / v2084"
+  },
+  {
+   "id": "Float -7.5: a MOD 0.001",
+   "decl": [
+    "DIM v2085 AS Float = -7.5"
+   ],
+   "expr": "v2085 MOD 0.001"
+  },
+  {
+   "id": "Float -7.5: a + 1E10",
+   "decl": [
+    "DIM v2086 AS Float = -7.5"
+   ],
+   "expr": "v2086 + 1E10"
+  },
+  {
+   "id": "Float -7.5: 1E10 - a",
+   "decl": [
+    "DIM v2087 AS Float = -7.5"
+   ],
+   "expr": "1E10 - v2087"
+  },
+  {
+   "id": "Float -7.5: a * 1E10",
+   "decl": [
+    "DIM v2088 AS Float = -7.5"
+   ],
+   "expr": "v2088 * 1E10"
+  },
+  {
+   "id": "Float -7.5: a / 1E10",
+   "decl": [
+    "DIM v2089 AS Float = -7.5"
+   ],
+   "expr": "v2089 / 1E10"
+  },
+  {
+   "id": "Float -7.5: 1E10 / a",
+   "decl": [
+    "DIM v2090 AS Float = -7.5"
+   ],
+   "expr": "1E10 / v2090"
+  },
+  {
+   "id": "Float -7.5: a MOD 1E10",
+   "decl": [
+    "DIM v2091 AS Float = -7.5"
+   ],
+   "expr": "v2091 MOD 1E10"
+  },
+  {
+   "id": "Float -7.5: a + 70000",
+   "decl": [
+    "DIM v2092 AS Float = -7.5"
+   ],
+   "expr": "v2092 + 70000"
+  },
+  {
+   "id": "Float -7.5: 70000 - a",
+   "decl": [
+    "DIM v2093 AS Float = -7.5"
+   ],
+   "expr": "70000 - v2093"
+  },
+  {
+   "id": "Float -7.5: a * 70000",
+   "decl": [
+    "DIM v2094 AS Float = -7.5"
+   ],
+   "expr": "v2094 * 70000"
+  },
+  {
+   "id": "Float -7.5: a / 70000",
+   "decl": [
+    "DIM v2095 AS Float = -7.5"
+   ],
+   "expr": "v2095 / 70000"
+  },
+  {
+   "id": "Float -7.5: 70000 / a",
+   "decl": [
+    "DIM v2096 AS Float = -7.5"
+   ],
+   "expr": "70000 / v2096"
+  },
+  {
+   "id": "Float -7.5: a MOD 70000",
+   "decl": [
+    "DIM v2097 AS Float = -7.5"
+   ],
+   "expr": "v2097 MOD 70000"
+  }
+ ]
+}

@@ -76,14 +76,15 @@ describe("Klive BASIC runtime - arith32", () => {
     }
   });
 
-  it("DivI32 and ModI32 truncate towards zero; the remainder takes the dividend's sign", () => {
+  it("DivI32 truncates towards zero; ModI32 is the remainder of the magnitudes (ZX BASIC)", () => {
     const signed = VALUES.map(i32);
     for (const a of signed) {
       for (const b of [...signed.slice(1, 12), -1n, -3n, -10n, -65536n]) {
         if (b === 0n) continue;
         // --- BigInt division truncates towards zero, as the routines do
         expect(i32(op("DivI32", a, b)), `${a} / ${b}`).toBe(i32(a / b));
-        expect(i32(op("ModI32", a, b)), `${a} MOD ${b}`).toBe(a % b);
+        const abs = (v: bigint) => (v < 0n ? -v : v);
+        expect(i32(op("ModI32", a, b)), `${a} MOD ${b}`).toBe(i32(abs(a) % abs(b)));
       }
     }
   });

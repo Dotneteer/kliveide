@@ -7,10 +7,22 @@
   "UByte 7 MOD 0": {
    "out": "7"
   },
+  "UByte 200 / 0": {
+   "out": "255"
+  },
+  "UByte 200 MOD 0": {
+   "out": "200"
+  },
   "Byte 7 / 0": {
    "out": "-1"
   },
   "Byte 7 MOD 0": {
+   "out": "7"
+  },
+  "Byte -7 / 0": {
+   "out": "-1"
+  },
+  "Byte -7 MOD 0": {
    "out": "7"
   },
   "UInteger 7 / 0": {
@@ -19,10 +31,22 @@
   "UInteger 7 MOD 0": {
    "out": "7"
   },
+  "UInteger 60000 / 0": {
+   "out": "65535"
+  },
+  "UInteger 60000 MOD 0": {
+   "out": "60000"
+  },
   "Integer 100 / 0": {
    "out": "-1"
   },
   "Integer 100 MOD 0": {
+   "out": "100"
+  },
+  "Integer -100 / 0": {
+   "out": "1"
+  },
+  "Integer -100 MOD 0": {
    "out": "100"
   },
   "ULong 7 / 0": {
@@ -31,10 +55,22 @@
   "ULong 7 MOD 0": {
    "out": "7"
   },
+  "ULong 4000000000 / 0": {
+   "out": "4294967295"
+  },
+  "ULong 4000000000 MOD 0": {
+   "out": "4000000000"
+  },
   "Long 100000 / 0": {
    "out": "-1"
   },
   "Long 100000 MOD 0": {
+   "out": "100000"
+  },
+  "Long -100000 / 0": {
+   "out": "1"
+  },
+  "Long -100000 MOD 0": {
    "out": "100000"
   },
   "Fixed -7.5 / 0": {
@@ -43,10 +79,22 @@
   "Fixed -7.5 MOD 0": {
    "out": "0"
   },
+  "Fixed 3.5 / 0": {
+   "out": "-0.0000152587890625"
+  },
+  "Fixed 3.5 MOD 0": {
+   "out": "0"
+  },
   "Float -7.5 / 0": {
    "out": "0"
   },
   "Float -7.5 MOD 0": {
+   "out": ""
+  },
+  "Float 7.5 / 0": {
+   "out": "0"
+  },
+  "Float 7.5 MOD 0": {
    "out": ""
   }
  }

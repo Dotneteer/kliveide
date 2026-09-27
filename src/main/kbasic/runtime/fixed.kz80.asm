@@ -1,11 +1,10 @@
 ; @module   fixed
 ; @summary  Fixed (16.16) multiply and divide.
-; @exports  FixMul, FixDiv
-; @requires errors
+; @exports  FixMul, FixDiv, FixMod
+; @requires errors, arith32
 ;
 ; A Fixed is a 32-bit two's complement number of 65536ths, in DE:HL (DE = the integer part, HL = the
-; fraction). Addition, subtraction, comparison and MOD are those of the 32-bit integers (MOD of the
-; raw values is the Fixed MOD, with the dividend's sign). Like the arith32 routines these take the
+; fraction). Addition, subtraction and comparison are those of the 32-bit integers; MOD is FixMod. Like the arith32 routines these take the
 ; left operand on the stack under the return address (high word pushed first) and the right one in
 ; DE:HL, remove the left one and give the result in DE:HL. They keep their work in memory, so they
 ; are not re-entrant.
@@ -188,3 +187,85 @@ FixN:
     .defs 6
 FixR:                       ; must follow FixN (FixDiv shifts them as one)
     .defs 4
+
+; ------------------------------------------------------------------------------------------------
+; left MOD right, floored: left - INT(left / right) * right, so a non-zero result takes the divisor's
+; sign (-7.5 MOD 2 is 0.5), as the ROM's n-mod-m and ZX BASIC's constant folding give (compatibility
+; plan D-C6: zxbc's own run-time Fixed MOD is faulty). A zero divisor gives the dividend's magnitude,
+; as ModI32 does. Changes AF, BC.
+FixMod:
+    ld (FixModRight),hl
+    ld (FixModRight+2),de
+    pop bc                  ; BC = the return address
+    pop hl                  ; HL = the left operand's low word
+    pop de                  ; DE = its high word
+    push bc
+    ld a,d
+    ld (FixModSign),a       ; bit 7: the dividend's sign
+    push de
+    push hl                 ; the left operand again, for ModI32
+    ld hl,(FixModRight)
+    ld de,(FixModRight+2)
+    call ModI32             ; DE:HL = |left| MOD |right|: both are 65536ths, so this is the Fixed one
+    ld a,d
+    or e
+    or h
+    or l
+    ret z                   ; no remainder
+    ld a,(FixModRight)
+    ld b,a
+    ld a,(FixModRight+1)
+    or b
+    ld b,a
+    ld a,(FixModRight+2)
+    or b
+    ld b,a
+    ld a,(FixModRight+3)
+    or b
+    ret z                   ; a zero divisor: DE:HL is the dividend's magnitude
+    ld a,(FixModRight+3)
+    ld b,a
+    ld a,(FixModSign)
+    xor b
+    jp p,FixModSign2        ; the same signs: the magnitude is the remainder's
+    ld (FixModRem),hl       ; different signs: the magnitude is |right| - the remainder
+    ld (FixModRem+2),de
+    ld hl,(FixModRight)
+    ld de,(FixModRight+2)
+    bit 7,d
+    call nz,FixNeg32        ; DE:HL = |right|
+    ld bc,(FixModRem)
+    and a
+    sbc hl,bc
+    ex de,hl
+    ld bc,(FixModRem+2)
+    sbc hl,bc
+    ex de,hl
+FixModSign2:
+    ld a,(FixModRight+3)
+    or a
+    ret p
+    ; fall through: the result takes the divisor's sign
+
+; DE:HL = -DE:HL. Changes AF.
+FixNeg32:
+    xor a
+    sub l
+    ld l,a
+    ld a,0
+    sbc a,h
+    ld h,a
+    ld a,0
+    sbc a,e
+    ld e,a
+    ld a,0
+    sbc a,d
+    ld d,a
+    ret
+
+FixModRight:
+    .defs 4
+FixModRem:
+    .defs 4
+FixModSign:
+    .defb 0

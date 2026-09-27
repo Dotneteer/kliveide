@@ -2524,6 +2524,16 @@
         "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "name": "bnot-decimal",
+        "question": "What does BNOT do with a Fixed, a Float or a literal with a fraction?",
+        "decision": "It converts the operand to Long (flooring) and complements it: BNOT 2.5 is -3.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 crashes compiling it: compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "status": "decided",
         "source": "klive-decision",
         "phase": 8,
@@ -2534,24 +2544,32 @@
         "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "name": "byte-division",
+        "question": "What sign does a signed Byte division take?",
+        "decision": "The quotient sign: -7 / 2 is -3 (truncated towards zero, as for the other integer types).",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "constant-arithmetic-literal",
         "question": "What type does arithmetic on number literals alone have?",
-        "decision": "Literal-only arithmetic stays exact and takes the smallest type that holds the result: 200 + 100 is 300, a UInteger; 1 - 2 is -1, a Byte.",
-        "status": "open",
-        "source": "klive-decision",
+        "decision": "Literal-only expressions fold in exact arithmetic: / divides exactly (1 / 8 is 0.125), MOD is floored, BNOT n is -(n + 1), shifts and bitwise operators act on whole numbers; the result takes its natural type as a literal does (literal-integer-type), and the exact value stays for further folding (1E10 MOD 3 is 1).",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream folds / of integer literals to a Float (1 / 8 = 0.125), against its documentation's integer division. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "constant-arithmetic-typed",
         "question": "Does constant arithmetic on typed values wrap to the type's width?",
-        "decision": "Yes: folding computes what the program would, so a typed operand (a DIMmed constant, a CAST) wraps in its type; 200 in a UByte plus 100 is 44.",
-        "status": "open",
-        "source": "klive-decision",
+        "decision": "A numeric CONST folds by its value whatever type it declares: CONST k AS UByte = 200 makes k + k 400 (it behaves as a literal). A value converted to Fixed truncates towards zero, to an integer type it floors.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/corpus/integers/constant-typed.zxbas",
-        "oracle": "Upstream folds a typed CONST without its type: CONST k AS UByte = 200, k + k is 400. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "constant-integer-division-by-zero",
@@ -2583,6 +2601,16 @@
         "oracle": "zxbc 1.19 crashes compiling it (AttributeError). Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "name": "decimal-mod",
+        "question": "What does MOD give for Float and Fixed operands at run time?",
+        "decision": "The floored remainder, left - INT(left / right) * right, as the ROM n-mod-m and zxbc own constant folding give (-7.5 MOD 2 is 0.5); a Fixed zero divisor gives the dividend magnitude.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc run-time Float and Fixed MOD are faulty (-7.5 MOD 2 is -19.5 for Float and -1.5 for Fixed; Fixed 0.1 MOD 3 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "do-loop-one-line",
         "question": "Where may LOOP stand after a DO without WHILE or UNTIL?",
         "decision": "Anywhere but after ':' on the line that holds all of the loop's body: `DO: i = i + 1: LOOP` and `DO` then `i = i + 1: LOOP` are rejected (E315), while an empty body (`DO: LOOP UNTIL k`, and `DO LOOP UNTIL k` without a separator) and any body with a line break in it, even a blank line, are accepted. A DO WHILE/UNTIL loop may end on its own line.",
@@ -2612,14 +2640,24 @@
         "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
-        "status": "open",
+        "phase": 8,
+        "status": "decided",
+        "name": "fixed-division",
+        "question": "How precise is a Fixed division at run time?",
+        "decision": "The quotient of the 65536ths, rounded towards minus infinity, as constant folding gives.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc run-time Fixed division loses precision or overflows (7 / 0.001 is 7168, 0.5 / 7 is 0, -7.5 / -1 is 2175.003): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
         "name": "fixed-division-by-zero",
-        "question": "What does a Fixed division by zero do?",
-        "decision": "It stops with 6 Number too big.",
-        "test": "test/kbasic/corpus/fixed/fixed-divide-zero.zxbas",
-        "oracle": "Upstream gives -0.0000152587890625 and goes on. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "question": "What does a Fixed or Float division by zero do?",
+        "decision": "It stops with 6 Number too big, as the ROM calculator does.",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc gives a value and goes on (Fixed -7.5 / 0 is 0.0000152587890625, Float 7.5 / 0 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
         "status": "decided",
@@ -2719,12 +2757,11 @@
       {
         "name": "literal-integer-type",
         "question": "What type does an integer literal have?",
-        "decision": "The smallest type that holds it, unsigned when it is not negative (0..255 UByte, 256..65535 UInteger, -128..-1 Byte, ...); Float beyond 32 bits. This gives the spec's FOR examples: FOR i = 1 TO 10 counts in UByte, FOR i = -1 TO 10 in Byte.",
-        "status": "open",
-        "source": "docs",
+        "decision": "A whole literal takes the smallest type that holds it, unsigned when not negative; beyond 32 bits it wraps to them (ULong when positive, Long when negative: 1E10 is 1410065408). A literal with a fraction is a Fixed within Fixed range (truncated towards zero: 0.001 is 65/65536), otherwise a Float; converted to Float it keeps its exact value.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream retypes literals in places: BNOT $100 = -257, 5 SHL 8 = 1280, 1 SHL 8 = 256, and PRINT 0.001 prints 0.0009918212890625 (a Fixed). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "logical-operators-short-circuit",
@@ -2738,12 +2775,11 @@
       {
         "name": "mod-sign",
         "question": "Which sign does the remainder of MOD take?",
-        "decision": "The dividend's (the quotient truncates towards zero), in folding and at run time.",
-        "status": "open",
-        "source": "klive-decision",
+        "decision": "At run time, for the integer types: the remainder of the magnitudes, never negative (-100 MOD 3 is 1, 100 MOD -3 is 1); a zero divisor gives the dividend magnitude. A literal-only expression folds floored (-1 MOD 3 is 2; see constant-arithmetic-literal). Float and Fixed: see decimal-mod.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream: integer MOD is never negative (-100 MOD 3 = 1), Float MOD floors (-7.5 MOD 2 = 0.5), and Byte division floors (-7 / 2 = -4) while Integer and Long division truncate. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "status": "open",
@@ -2792,6 +2828,16 @@
         "decision": "PLOT's: (0,0) at the bottom left and all 192 rows, so POINT(x, y) is 1 after PLOT x, y.",
         "test": "test/kbasic/corpus/stdlib/sinclair-functions.zxbas",
         "oracle": "Upstream's POINT (sinclair-compatible) gives 0 after PLOT 5, 5. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+      },
+      {
+        "name": "power-of-two-literal-divisor",
+        "question": "What does a signed variable divided by a literal power of two give (a / 2, a MOD 4)?",
+        "decision": "The same as for any divisor: the division truncates towards zero and MOD is the remainder of the magnitudes (-1 / 2 is 0, -1 MOD 4 is 1).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc turns them into a shift and a mask: a / 2 floors (-1 / 2 is -1, -7 / 2 is -4) and a MOD 4 masks (-1 MOD 4 is 3), while a / 4 and a MOD 3 follow its rules: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
         "name": "print-position",
@@ -2856,7 +2902,8 @@
         "status": "decided",
         "source": "oracle",
         "phase": 2,
-        "test": "test/kbasic/corpus/integers/shifts.zxbas"
+        "test": "test/kbasic/corpus/integers/shifts.zxbas",
+        "oracle": "zxbc agrees for SHR by more than 1; Integer -100 SHR 1 gives 32718 there (a logical shift): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
         "status": "decided",

@@ -1,6 +1,7 @@
-' Byte values keep their sign through arithmetic and division
-'@expect screen 0 "-128 127 -3 -1"
-'@expect oracle-differs mod-sign
+' Byte values keep their sign through arithmetic and division; MOD is the remainder of the
+' magnitudes (semantics annex: mod-sign, byte-division)
+'@expect screen 0 "-128 127 -3 1"
+'@expect oracle-differs byte-division
 DIM a, b AS Byte
 a = 127
 a = a + 1
