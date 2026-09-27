@@ -126,6 +126,28 @@ export function literalText(exact: Rational): string {
   return (negative ? "-" : "") + text;
 }
 
+/**
+ * A literal Float from a double, as ZX BASIC folds a built-in function of a literal (SQR(2), SIN(1);
+ * observed through the oracle, compatibility plan C4): a Float when used on its own, while further
+ * literal arithmetic goes on from the double's exact value (SQR(2) + 0 is a Fixed). Undefined for a
+ * value that is not finite.
+ */
+export function literalFloat(x: number): Constant | undefined {
+  if (!Number.isFinite(x)) return undefined;
+  let den = 1n;
+  let v = x;
+  while (!Number.isInteger(v)) {
+    v *= 2;
+    den *= 2n;
+  }
+  const exact = reduce({ num: BigInt(v), den });
+  try {
+    return { type: "Float", value: { kind: "float", value: f40.fromNumber(x) }, literal: true, exact };
+  } catch {
+    return undefined;
+  }
+}
+
 function gcd(a: bigint, b: bigint): bigint {
   a = a < 0n ? -a : a;
   b = b < 0n ? -b : b;

@@ -128,19 +128,19 @@
  "builtins/abs-sgn-int.zxbas": {
   "0": {
    "bytes": 110,
-   "tstates": 51971
+   "tstates": 51955
   },
   "1": {
    "bytes": 110,
-   "tstates": 51971
+   "tstates": 51955
   },
   "2": {
    "bytes": 110,
-   "tstates": 51971
+   "tstates": 51955
   },
   "3": {
    "bytes": 110,
-   "tstates": 51971
+   "tstates": 51955
   }
  },
  "builtins/bounds.zxbas": {
@@ -199,20 +199,20 @@
  },
  "builtins/len-str.zxbas": {
   "0": {
-   "bytes": 86,
-   "tstates": 81887
+   "bytes": 84,
+   "tstates": 81911
   },
   "1": {
-   "bytes": 86,
-   "tstates": 81887
+   "bytes": 84,
+   "tstates": 81911
   },
   "2": {
-   "bytes": 86,
-   "tstates": 81887
+   "bytes": 84,
+   "tstates": 81911
   },
   "3": {
-   "bytes": 86,
-   "tstates": 81887
+   "bytes": 84,
+   "tstates": 81911
   }
  },
  "builtins/peek-poke-typed.zxbas": {
@@ -505,20 +505,20 @@
  },
  "classic/sqr-newton.zxbas": {
   "0": {
-   "bytes": 305,
-   "tstates": 577226
+   "bytes": 300,
+   "tstates": 213907
   },
   "1": {
-   "bytes": 272,
-   "tstates": 577011
+   "bytes": 267,
+   "tstates": 213683
   },
   "2": {
-   "bytes": 272,
-   "tstates": 577011
+   "bytes": 267,
+   "tstates": 213683
   },
   "3": {
-   "bytes": 272,
-   "tstates": 577011
+   "bytes": 267,
+   "tstates": 213683
   }
  },
  "classic/temperature.zxbas": {
@@ -991,20 +991,20 @@
  },
  "data/read-no-data.zxbas": {
   "0": {
-   "bytes": 52,
-   "tstates": 20735
+   "bytes": 58,
+   "tstates": 20951
   },
   "1": {
-   "bytes": 52,
-   "tstates": 20735
+   "bytes": 58,
+   "tstates": 20951
   },
   "2": {
-   "bytes": 49,
-   "tstates": 20727
+   "bytes": 55,
+   "tstates": 20951
   },
   "3": {
-   "bytes": 49,
-   "tstates": 20727
+   "bytes": 55,
+   "tstates": 20951
   }
  },
  "data/read-numbers.zxbas": {
@@ -1297,38 +1297,38 @@
  },
  "float/int-abs-sgn.zxbas": {
   "0": {
-   "bytes": 171,
-   "tstates": 98567
+   "bytes": 163,
+   "tstates": 95643
   },
   "1": {
-   "bytes": 171,
-   "tstates": 98567
+   "bytes": 163,
+   "tstates": 95643
   },
   "2": {
-   "bytes": 171,
-   "tstates": 98567
+   "bytes": 163,
+   "tstates": 95643
   },
   "3": {
-   "bytes": 171,
-   "tstates": 98567
+   "bytes": 163,
+   "tstates": 95643
   }
  },
  "float/inverse-trig.zxbas": {
   "0": {
-   "bytes": 322,
-   "tstates": 1457651
+   "bytes": 75,
+   "tstates": 49455
   },
   "1": {
-   "bytes": 322,
-   "tstates": 1457651
+   "bytes": 75,
+   "tstates": 49455
   },
   "2": {
-   "bytes": 322,
-   "tstates": 1457651
+   "bytes": 75,
+   "tstates": 49455
   },
   "3": {
-   "bytes": 322,
-   "tstates": 1457651
+   "bytes": 75,
+   "tstates": 49455
   }
  },
  "float/level1-float-shapes.zxbas": {
@@ -1351,20 +1351,20 @@
  },
  "float/ln-exp.zxbas": {
   "0": {
-   "bytes": 235,
-   "tstates": 1297273
+   "bytes": 89,
+   "tstates": 72187
   },
   "1": {
-   "bytes": 235,
-   "tstates": 1297273
+   "bytes": 89,
+   "tstates": 72187
   },
   "2": {
-   "bytes": 235,
-   "tstates": 1297273
+   "bytes": 89,
+   "tstates": 72187
   },
   "3": {
-   "bytes": 235,
-   "tstates": 1297273
+   "bytes": 89,
+   "tstates": 72187
   }
  },
  "float/mod.zxbas": {
@@ -1405,20 +1405,20 @@
  },
  "float/power-roots.zxbas": {
   "0": {
-   "bytes": 260,
-   "tstates": 2113443
+   "bytes": 170,
+   "tstates": 963259
   },
   "1": {
-   "bytes": 260,
-   "tstates": 2113443
+   "bytes": 170,
+   "tstates": 963259
   },
   "2": {
-   "bytes": 260,
-   "tstates": 2113443
+   "bytes": 170,
+   "tstates": 963259
   },
   "3": {
-   "bytes": 260,
-   "tstates": 2113443
+   "bytes": 170,
+   "tstates": 963259
   }
  },
  "float/precedence.zxbas": {
@@ -1513,20 +1513,20 @@
  },
  "float/trig.zxbas": {
   "0": {
-   "bytes": 282,
-   "tstates": 1036775
+   "bytes": 272,
+   "tstates": 772579
   },
   "1": {
-   "bytes": 282,
-   "tstates": 1036775
+   "bytes": 272,
+   "tstates": 772579
   },
   "2": {
-   "bytes": 282,
-   "tstates": 1036775
+   "bytes": 272,
+   "tstates": 772579
   },
   "3": {
-   "bytes": 282,
-   "tstates": 1036775
+   "bytes": 272,
+   "tstates": 772579
   }
  },
  "graphics/border.zxbas": {
@@ -2917,20 +2917,20 @@
  },
  "strings/length-code.zxbas": {
   "0": {
-   "bytes": 119,
-   "tstates": 28556
+   "bytes": 118,
+   "tstates": 28580
   },
   "1": {
-   "bytes": 119,
-   "tstates": 28556
+   "bytes": 118,
+   "tstates": 28580
   },
   "2": {
-   "bytes": 119,
-   "tstates": 28556
+   "bytes": 118,
+   "tstates": 28580
   },
   "3": {
-   "bytes": 119,
-   "tstates": 28556
+   "bytes": 118,
+   "tstates": 28580
   }
  },
  "strings/loop-temporaries.zxbas": {

@@ -82,8 +82,8 @@ export const CASES: Record<string, { accept: string[]; reject: string[] }> = {
   },
   'params = param { "," param } ;': { accept: ["SUB s(a, b, c)\nEND SUB"], reject: ["SUB s(a,)\nEND SUB"] },
   'param = [ "BYVAL" | "BYREF" ] identifier [ "AS" type ] [ "=" const-expr ] | [ "BYREF" ] identifier "(" ")" "AS" type ;': {
-    accept: ["SUB s(BYVAL a AS UBYTE = 1, BYREF b() AS UBYTE, c() AS FLOAT, d)\nEND SUB"],
-    reject: ["SUB s(a() AS)\nEND SUB", "SUB s(BYVAL)\nEND SUB", "SUB s(a())\nEND SUB"]
+    accept: ["SUB s(BYVAL a AS UBYTE = 1, BYREF b() AS UBYTE, c() AS FLOAT, d)\nEND SUB", "SUB s(a())\nEND SUB"],
+    reject: ["SUB s(a() AS)\nEND SUB", "SUB s(BYVAL)\nEND SUB"]
   },
   'goto = "GO" "TO" target ;': { accept: ["GO TO 10"], reject: ["GO 10"] },
   'gosub = "GO" "SUB" target ;': { accept: ["GO SUB lbl"], reject: ["GO SUB"] },
@@ -95,8 +95,8 @@ export const CASES: Record<string, { accept: string[]; reject: string[] }> = {
     reject: ["IF THEN PRINT 1", "IF a THEN PRINT 1 ELSE ELSE PRINT 2"]
   },
   'if-block = "IF" expr [ "THEN" ] NL block { "ELSEIF" expr [ "THEN" ] [ NL ] block } [ "ELSE" [ NL ] block ] ( "END" "IF" | "ENDIF" ) ;': {
-    accept: ["IF a THEN\nELSEIF b THEN\nELSE\nEND IF", "IF a\n PRINT\nENDIF", "IF a THEN\nELSEIF b PRINT 1\nELSE PRINT 2\nEND IF"],
-    reject: ["IF a THEN\nPRINT 1", "IF a THEN\nELSE\nELSE\nEND IF"]
+    accept: ["IF a THEN\nELSEIF b THEN\nELSE\nEND IF", "IF a\n PRINT\nENDIF", "IF a THEN\nELSEIF b PRINT 1\nELSE\nPRINT 2\nEND IF", "IF a THEN\nPRINT 0\nELSE PRINT 2"],
+    reject: ["IF a THEN\nPRINT 1", "IF a THEN\nELSE\nELSE\nEND IF", "IF a THEN\nPRINT 0\nELSE PRINT 2\nEND IF"]
   },
   'ink = "INK" expr ;': { accept: ["INK 7"], reject: ["INK"] },
   'inverse = "INVERSE" expr ;': { accept: ["INVERSE 1"], reject: ["INVERSE"] },
@@ -171,39 +171,39 @@ export const CASES: Record<string, { accept: string[]; reject: string[] }> = {
     accept: ["WHILE a: WEND", "WHILE a\n a = a - 1\nEND WHILE"],
     reject: ["WHILE a\nPRINT", "WHILE: WEND"]
   },
-  '"ABS" "(" expr ")"': { accept: ["x = ABS(-1)"], reject: ["x = ABS 1", "x = ABS()"] },
-  '"ACS" "(" expr ")"': { accept: ["x = ACS(0.5)"], reject: ["x = ACS 1"] },
-  '"ASN" "(" expr ")"': { accept: ["x = ASN(0.5)"], reject: ["x = ASN 1"] },
-  '"ATN" "(" expr ")"': { accept: ["x = ATN(1)"], reject: ["x = ATN 1"] },
+  '"ABS" "(" expr ")"': { accept: ["x = ABS 1", "x = ABS(-1)"], reject: ["x = ABS -1", "x = ABS()"] },
+  '"ACS" "(" expr ")"': { accept: ["x = ACS 1", "x = ACS(0.5)"], reject: ["x = ACS -1"] },
+  '"ASN" "(" expr ")"': { accept: ["x = ASN 1", "x = ASN(0.5)"], reject: ["x = ASN -1"] },
+  '"ATN" "(" expr ")"': { accept: ["x = ATN 1", "x = ATN(1)"], reject: ["x = ATN -1"] },
   '"CAST" "(" type "," expr ")"': { accept: ["x = CAST(UBYTE, 300)"], reject: ["x = CAST(1, 2)", "x = CAST UBYTE, 1"] },
-  '( "CHR" | "CHR$" ) "(" expr { "," expr } ")"': { accept: ["x$ = CHR$(65, 66)", "x$ = CHR(1)"], reject: ["x$ = CHR 65", "x$ = CHR()"] },
-  '"CODE" "(" string-expr ")"': { accept: ['x = CODE("a")'], reject: ['x = CODE "a"'] },
-  '"COS" "(" expr ")"': { accept: ["x = COS(PI)"], reject: ["x = COS PI"] },
-  '"EXP" "(" expr ")"': { accept: ["x = EXP(1)"], reject: ["x = EXP 1"] },
+  '( "CHR" | "CHR$" ) "(" expr { "," expr } ")"': { accept: ["x$ = CHR 65", "x$ = CHR$(65, 66)", "x$ = CHR(1)"], reject: ["x$ = CHR -65", "x$ = CHR()"] },
+  '"CODE" "(" string-expr ")"': { accept: ['x = CODE "a"', 'x = CODE("a")'], reject: ['x = CODE -1'] },
+  '"COS" "(" expr ")"': { accept: ["x = COS PI", "x = COS(PI)"], reject: ["x = COS -PI"] },
+  '"EXP" "(" expr ")"': { accept: ["x = EXP 1", "x = EXP(1)"], reject: ["x = EXP -1"] },
   '"IN" expr': { accept: ["x = IN 254"], reject: ["x = IN"] },
   '"IN" "(" expr ")"': { accept: ["x = IN(254)"], reject: ["x = IN(254"] },
   '"INKEY"': { accept: ["x$ = INKEY"], reject: ["x$ = INKEY 1"] },
   '"INKEY$"': { accept: ['IF INKEY$ = "" THEN PRINT'], reject: ["x$ = INKEY$ 1"] },
-  '"INT" "(" expr ")"': { accept: ["x = INT(1.5)"], reject: ["x = INT 1.5"] },
+  '"INT" "(" expr ")"': { accept: ["x = INT 1.5", "x = INT(1.5)"], reject: ["x = INT -1.5"] },
   '"LBOUND" "(" array-identifier [ "," expr ] ")"': { accept: ["x = LBOUND(a, 1)", "x = LBOUND(a)"], reject: ["x = LBOUND(1)", "x = LBOUND()"] },
-  '"LEN" "(" string-expr ")"': { accept: ['x = LEN("abc")'], reject: ["x = LEN a$"] },
-  '"LN" "(" expr ")"': { accept: ["x = LN(2)"], reject: ["x = LN 2"] },
+  '"LEN" "(" string-expr ")"': { accept: ["x = LEN a$", 'x = LEN("abc")'], reject: ["x = LEN -1"] },
+  '"LN" "(" expr ")"': { accept: ["x = LN 2", "x = LN(2)"], reject: ["x = LN -2"] },
   '"PEEK" expr': { accept: ["x = PEEK 23672"], reject: ["x = PEEK"] },
   '"PEEK" "(" expr ")"': { accept: ["x = PEEK(23672)"], reject: ["x = PEEK(1"] },
   '"PEEK" "(" type "," expr ")"': { accept: ["x = PEEK(UINTEGER, 23672)"], reject: ["x = PEEK(UINTEGER 1)"] },
   '"PI"': { accept: ["x = PI"], reject: ["x = PI(1)"] },
   '"RND"': { accept: ["x = RND"], reject: ["x = RND 1"] },
   '"RND" "(" ")"': { accept: ["x = RND()"], reject: ["x = RND(1)"] },
-  '"SGN" "(" expr ")"': { accept: ["x = SGN(-3)"], reject: ["x = SGN 3"] },
-  '"SIN" "(" expr ")"': { accept: ["x = SIN(0)"], reject: ["x = SIN 0"] },
+  '"SGN" "(" expr ")"': { accept: ["x = SGN 3", "x = SGN(-3)"], reject: ["x = SGN -3"] },
+  '"SIN" "(" expr ")"': { accept: ["x = SIN 0", "x = SIN(0)"], reject: ["x = SIN -1"] },
   '"SIZEOF" "(" ( type | identifier ) ")"': { accept: ["x = SIZEOF(LONG)", "x = SIZEOF(v)"], reject: ["x = SIZEOF(1)", "x = SIZEOF LONG"] },
-  '"SQR" "(" expr ")"': { accept: ["x = SQR(4)"], reject: ["x = SQR 4"] },
-  '( "STR" | "STR$" ) "(" expr ")"': { accept: ["x$ = STR$(1)", "x$ = STR(2)"], reject: ["x$ = STR$ 1"] },
-  '"TAN" "(" expr ")"': { accept: ["x = TAN(1)"], reject: ["x = TAN 1"] },
+  '"SQR" "(" expr ")"': { accept: ["x = SQR 4", "x = SQR(4)"], reject: ["x = SQR -4"] },
+  '( "STR" | "STR$" ) "(" expr ")"': { accept: ["x$ = STR$ 1", "x$ = STR$(1)", "x$ = STR(2)"], reject: ["x$ = STR$ -1"] },
+  '"TAN" "(" expr ")"': { accept: ["x = TAN 1", "x = TAN(1)"], reject: ["x = TAN -1"] },
   '"UBOUND" "(" array-identifier [ "," expr ] ")"': { accept: ["x = UBOUND(a, 2)"], reject: ["x = UBOUND(a,)"] },
   '"USR" expr': { accept: ["x = USR 32768", "x = USR @routine"], reject: ["x = USR"] },
   '"USR" string-expr': { accept: ['x = USR "a"'], reject: ["x = USR ,"] },
-  '"VAL" "(" string-expr ")"': { accept: ['x = VAL("1.5")'], reject: ['x = VAL "1"'] },
+  '"VAL" "(" string-expr ")"': { accept: ['x = VAL "1"', 'x = VAL("1.5")'], reject: ['x = VAL -1'] },
   'codebank-block = "CODEBANK" const-expr NL { routine-def | dim-stmt | asm-block | label-decl } "END" "CODEBANK" ;   (* not allowed inside a SUB/FUNCTION *)': {
     accept: ["CODEBANK 1\nSUB s\nEND SUB\nDIM buf(10) AS UBYTE\nASM\n nop\nEND ASM\nhere:\nEND CODEBANK"],
     reject: ["CODEBANK 1\nPRINT 1\nEND CODEBANK", "SUB s\nCODEBANK 1\nEND CODEBANK\nEND SUB", "CODEBANK 1\nSUB s\nEND SUB"]
@@ -226,8 +226,8 @@ export const CASES: Record<string, { accept: string[]; reject: string[] }> = {
   },
   'slice = str-designator "(" expr ")" ;                       (* single character *)': { accept: ["x$ = a$(1)"], reject: ["x$ = a$(1"] },
   'str-designator = identifier | string-literal | "(" string-expr ")" | array-element | function-call ;': {
-    accept: ['x$ = "abc"(1)', "x$ = (a$)(1)", "x$ = f$(1)(0)", "x$ = s$(1, 2)(0 TO 1)"],
-    reject: ["x$ = (a$(1)"]
+    accept: ['x$ = "abc"(1)', "x$ = (a$)(0 TO 1)", "x$ = f$(1)(0)", "x$ = s$(1, 2)(0 TO 1)"],
+    reject: ["x$ = (a$(1)", "x$ = (a$)(1)"]
   },
   'call = identifier | identifier "(" [ args ] ")" | identifier args ;   (* statement: SUB or FUNCTION call; the parenthesis-less form allows e.g. test x := 1 *)': {
     accept: ["s", "s()", "s(1)", "s 1, 2", "test x := 1"],

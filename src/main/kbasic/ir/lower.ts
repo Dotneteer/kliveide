@@ -372,7 +372,9 @@ class Lowering {
         return;
       case "restore": {
         this.beginStatement(s.span, "other");
-        const first = s.label ? this.restoreTargets.get(s.label) : this.dataFirstItem.get(this.dataStatements[0]);
+        // --- A label with no DATA after it wraps to the first item, as READ past the end does (zxbc)
+        const programFirst = this.dataFirstItem.get(this.dataStatements[0]);
+        const first = s.label ? (this.restoreTargets.get(s.label) ?? programFirst) : programFirst;
         const target: SymRef = { kind: "sym", type: "ptr", name: first ?? this.rt("DataNone"), offset: 0 };
         this.emit({ op: "store", type: "ptr", slot: { kind: "global", name: "__data_next" }, src: target, sid: this.sid });
         return;

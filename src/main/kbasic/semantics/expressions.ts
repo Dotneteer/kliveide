@@ -12,7 +12,9 @@ import {
   isTrueConstant,
   numberLiteral,
   numericValue,
+  literalFloat,
   literalText,
+  naturalConstant,
   stringConstant,
   type BinaryFoldOp,
   type Constant
@@ -104,6 +106,9 @@ export class ExpressionBinder {
 
   // ===============================================================================================
   // Names
+
+  /** While binding a DIM ... AT address: @ may name a variable not declared yet. */
+  protected implicitAddress = false;
 
   protected lookup(name: string): Symbol | undefined {
     return this.scope.lookup(name, this.settings.caseInsensitive);
@@ -345,9 +350,21 @@ export class ExpressionBinder {
         }
       }
     }
+    // --- Chained parentheses need a declared array or String: zxbc refuses f$(1)(0) for an unknown f$
+    if (callee.kind === "call" && callee.callee.kind === "name" && !this.lookup(callee.callee.name)) {
+      this.error("E401", `'${callee.callee.name}' is not declared: an array must be DIMmed before use, and a FUNCTION defined`, callee.callee.span);
+      this.bindArgumentsLoosely(args);
+      return this.errorExpr(span);
+    }
     // --- A string slice
     const target = this.value(callee);
     if (target.kind === "error") {
+      this.bindArgumentsLoosely(args);
+      return this.errorExpr(span);
+    }
+    if (target.kind === "call") {
+      // --- ZX BASIC does not slice what a FUNCTION returns: f$(1)(0) is an error there (C4)
+      this.error("E435", `What ${target.routine.name} returns cannot be sliced here: assign it to a variable first`, callee.span);
       this.bindArgumentsLoosely(args);
       return this.errorExpr(span);
     }
@@ -742,6 +759,12 @@ export class ExpressionBinder {
       this.noteLabelReference(label, target.span);
       return make({ kind: "label", label }, address(`label:${label.name}`));
     }
+    // --- ZX BASIC does not declare a variable for @ - an unknown name is an error - except after
+    // --- DIM ... AT (compatibility plan C4)
+    if (!this.implicitAddress) {
+      this.error("E434", `@${target.name}: '${target.name}' is not declared`, target.span);
+      return this.errorExpr(span, "UInteger");
+    }
     const created = this.implicitVariable(target);
     created.assigned = true;
     return make({ kind: "variable", symbol: created }, created.storage === "global" ? address(created.name) : undefined);
@@ -811,8 +834,17 @@ export class ExpressionBinder {
       case "LN":
       case "SIN":
       case "SQR":
-      case "TAN":
+      case "TAN": {
+        // --- ZX BASIC folds a function of a literal in double arithmetic, and the result stays a
+        // --- literal (see literalFloat); a value outside the domain is left to the run time
+        const a = this.value(args[0]);
+        if (a.constant?.exact) {
+          const x = Number(a.constant.exact.num) / Number(a.constant.exact.den);
+          const folded = literalFloat(MATH[name](x));
+          if (folded) return this.constantExpr(folded, span);
+        }
         return floatFunction();
+      }
       case "STR": {
         // --- ZX BASIC writes a literal's STR$ at compile time: see literalText
         const a = this.value(args[0]);
@@ -825,6 +857,12 @@ export class ExpressionBinder {
         if (a.kind === "error") return this.errorExpr(span, name === "SGN" ? "Byte" : "Float");
         if (!isSigned(a.type)) this.warning("K403", `${name} of an unsigned ${a.type === "Boolean" ? "value" : a.type} is ${name === "ABS" ? "the value itself" : "never negative"}`, span);
         const type = name === "SGN" ? "Byte" : a.type === "Boolean" ? "UByte" : a.type;
+        if (a.constant?.exact) {
+          // --- Of a literal: a literal, whose type comes from its value (ZX BASIC; C4)
+          const e = a.constant.exact;
+          const sign = e.num > 0n ? 1n : e.num < 0n ? -1n : 0n;
+          return this.constantExpr(name === "SGN" ? naturalConstant({ num: sign, den: 1n }) : naturalConstant({ num: sign * e.num, den: e.den }), span);
+        }
         if (a.constant && a.constant.value.kind !== "address") {
           const x = numericValue(a.constant);
           if (name === "SGN") return this.constantExpr(intConstant(BigInt(Math.sign(x)), "Byte"), span);
@@ -836,6 +874,11 @@ export class ExpressionBinder {
       }
       case "INT": {
         const a = this.numeric(args[0]);
+        if (a.constant?.exact) {
+          const e = a.constant.exact;
+          const q = e.num / e.den;
+          return this.constantExpr(naturalConstant({ num: q * e.den > e.num ? q - 1n : q, den: 1n }), span);
+        }
         if (a.constant && a.constant.value.kind !== "address") {
           const converted = convertConstant(a.constant, "Long");
           if (converted) return this.constantExpr(converted.constant, span);
@@ -865,7 +908,7 @@ export class ExpressionBinder {
         const a = this.valueAs(args[0], "String");
         if (a.constant?.value.kind === "string") {
           const text = a.constant.value.value;
-          return this.constantExpr(intConstant(BigInt(text.length ? text.charCodeAt(0) : 0), "UByte"), span);
+          return this.constantExpr(naturalConstant({ num: BigInt(text.length ? text.charCodeAt(0) : 0), den: 1n }), span);
         }
         return make("UByte", [a]);
       }
@@ -875,7 +918,7 @@ export class ExpressionBinder {
           return this.constantExpr(intConstant(BigInt(a.symbol.bounds.length), "UInteger"), span);
         }
         const s = this.convert(a, "String");
-        if (s.constant?.value.kind === "string") return this.constantExpr(intConstant(BigInt(s.constant.value.value.length), "UInteger"), span);
+        if (s.constant?.value.kind === "string") return this.constantExpr(naturalConstant({ num: BigInt(s.constant.value.value.length), den: 1n }), span);
         return make("UInteger", [s]);
       }
       case "VAL": {
@@ -983,3 +1026,8 @@ export class ExpressionBinder {
     return e.constant && e.constant.value.kind !== "address" ? isTrueConstant(e.constant) : undefined;
   }
 }
+
+/** The math functions ZX BASIC folds for a literal argument, in double arithmetic. */
+const MATH: Record<string, (x: number) => number> = {
+  ACS: Math.acos, ASN: Math.asin, ATN: Math.atan, COS: Math.cos, EXP: Math.exp, LN: Math.log, SIN: Math.sin, SQR: Math.sqrt, TAN: Math.tan
+};

@@ -100,7 +100,6 @@ describe("Klive BASIC parser: expressions", () => {
     ["SIZEOF(FLOAT) + SIZEOF(v)", "(+ SIZEOF(FLOAT) SIZEOF(v))"],
     ["LBOUND(a, 1) + UBOUND(a)", "(+ LBOUND(a, 1) UBOUND(a))"],
     ["CHR$(65, 66)", "CHR(65, 66)"],
-    ["STR$(1)(0)", "STR(1)(0)"],
     ["INKEY$ + INKEY", "(+ INKEY~() INKEY~())"],
     ["RND + RND()", "(+ RND~() RND())"],
     ["PI * 2", "(* PI~() 2)"],
@@ -111,8 +110,18 @@ describe("Klive BASIC parser: expressions", () => {
     expect(expr(text)).toBe(expected);
   });
 
-  it("requires parentheses for most built-ins", () => {
-    expect(parseText("x = ABS 3").errors.map((e) => e.code)).toEqual(["E310"]);
+  it("takes a built-in's operand without parentheses, but not one starting with a sign (ZX BASIC)", () => {
+    expect(expr("SIN 0 + 1")).toBe("(+ SIN~(0) 1)");
+    expect(expr("SIN COS 0")).toBe("SIN~(COS~(0))");
+    expect(parseText("x = ABS -3").errors.map((e) => e.code)).toEqual(["E309"]);
+    expect(parseText("x = 2 ^ -1").errors.map((e) => e.code)).toEqual(["E309"]);
+    expect(parseText("x = 2 ^ (-1)").errors).toEqual([]);
+  });
+
+  it("slices a parenthesised expression only with a range, and nothing a built-in gives (ZX BASIC)", () => {
+    expect(parseText("x$ = (a$)(1)").errors.length).toBeGreaterThan(0);
+    expect(parseText("x$ = STR$(1)(0)").errors.length).toBeGreaterThan(0);
+    expect(parseText("x$ = (a$)(0 TO 1)").errors).toEqual([]);
   });
 });
 
@@ -183,7 +192,7 @@ describe("Klive BASIC parser: statements", () => {
   });
 
   it("parses block IF with ELSEIF, ELSE, END IF or ENDIF, and labels inside", () => {
-    const [s] = statements("IF a THEN\n  PRINT 1\nELSEIF b\n10 PRINT 2\nELSE PRINT 3\n  PRINT 4\nENDIF");
+    const [s] = statements("IF a THEN\n  PRINT 1\nELSEIF b\n10 PRINT 2\nELSE\n  PRINT 3\n  PRINT 4\nENDIF");
     if (s.kind !== "if") throw new Error();
     expect([s.singleLine, s.then.length, s.elseIfs.length, s.elseIfs[0].body.map((x) => x.kind), s.else?.length]).toEqual([
       false,
@@ -192,6 +201,14 @@ describe("Klive BASIC parser: statements", () => {
       ["label", "print"],
       2
     ]);
+  });
+
+  it("ends a block IF with an ELSE that has statements on its line (ZX BASIC)", () => {
+    const [s] = statements("IF a THEN\n  PRINT 1\nELSE PRINT 3: PRINT 4\nPRINT 5");
+    if (s.kind !== "if") throw new Error();
+    expect([s.singleLine, s.then.length, s.else?.length]).toEqual([false, 1, 2]);
+    expect(parseText("IF a THEN\nPRINT 1\nELSE PRINT 2: END IF").errors).toEqual([]);
+    expect(parseText("IF a THEN\nPRINT 1\nELSE PRINT 2\nEND IF").errors.length).toBeGreaterThan(0);
   });
 
   it("parses loops, on one line or several", () => {

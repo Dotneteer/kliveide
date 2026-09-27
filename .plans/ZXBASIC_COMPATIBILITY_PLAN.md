@@ -13,7 +13,8 @@ helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated item
 and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3 in
 done** (2026-09-27, §4.3): evaluation order, named arguments, FOR, the runtime error model, the print
 position on return, colours, POINT, USR of a String; PRINT's layout and the graphics agreed as they
-were. Next: C4.
+were. **C4 done** (2026-09-27, §4.4): acceptance agrees with zxbc on 506 programs apart from recorded
+faults. Next: C5.
 
 ---
 
@@ -122,7 +123,7 @@ program that pins them. Target: every generated program agrees.
 | **C1** | Oracle v2 (§3.1); the bisect helper; the three zxbc crashes and the error model observed through BASIC. | **Done 2026-09-27** (§4.1). |
 | **C2** (**done 2026-09-27**, §4.2) | Expressions and types (§3.3): literal typing, promotion, CONST folding, division and MOD for every type, shifts, bitwise, comparisons, conversions, number printing (Float, Fixed and integer literals). The binder, the constant folder, the runtime (arith16/arith32/float/fixed) and the tree selector follow; the optimiser's folding stays equal to the run time. | The generated suites and the corpus agree with zxbc for these areas. |
 | **C3** (**done 2026-09-27**, §4.3) | Statements: FOR (re-evaluation, unsigned with negative STEP, the value after the loop), evaluation order around calls, named arguments by position, the runtime error model (§4.1: which errors stop and which set ERR_NR and carry on; the debugger still stops at `errorEntry`), the print position written back for BASIC on return, PLOT/DRAW/POINT, Fixed division by zero, substring assignment, DATA/READ, PRINT's comma/TAB/AT edge cases, INPUT, sound and tape. | The statement corpus agrees; the debugger corpus and the step tests still pass at every level. |
-| **C4** | Acceptance (§3.2), both ways: reject what zxbc rejects (`#elif`, `=` in `#if`, `x ^ -1`, READ without DATA as a compile error, …), accept what it accepts. Klive's extensions are decided per D-C3. | The acceptance suite agrees. |
+| **C4** (**done 2026-09-27**, §4.4) | Acceptance (§3.2), both ways: reject what zxbc rejects (`#elif`, `=` in `#if`, `x ^ -1`, READ without DATA as a compile error, …), accept what it accepts. Klive's extensions are decided per D-C3. | The acceptance suite agrees. |
 | **C5** | Inline asm: zxbasm's dialect (main plan §6.5, D10) as the default, the runtime alias table for documented entry points, `'@asm-dialect klive` for Klive's own. nextlib compiles and its demo programs run under the oracle. | nextlib and the corpus's asm programs agree. |
 | **C6** | The standard library: every library `#include <…>` can name, with the APIs from upstream's documentation (the undocumented ones get their interface recorded from the docs first, main plan Handoff item 2). One oracle program per library. | Every documented library's programs agree. |
 | **C7** | Options and `#pragma`s: every zxbc CLI option the spec lists (`--array-base`, `--string-base`, `--sinclair`, `--heap-size`, `--explicit`, `--strict`, `--debug-memory`, `--debug-array`, `--enable-break`, `--org`, …) has a program run by both with the option set. | The option programs agree. |
@@ -222,6 +223,28 @@ program that pins them. Target: every generated program agrees.
   - Kept as a fault: a slice assignment past the String's end or open-ended (zxbc corrupts memory).
 - **C3 closed.** 2,321 generated items agree apart from 79 recorded faults; `baseline.json` holds one
   item for C4 (a constant BEEP out of range, which zxbc rejects at compile time).
+
+### 4.4 C4 state (2026-09-27)
+
+- **The acceptance suite** (`acceptance`, 506 programs: every spec case, accepting and rejecting, and
+  hand-written edges) records zxbc's verdict per program (the oracle only compiles them); Klive's
+  full compile must give the same verdict. The corpus runner now fails a program zxbc rejects other
+  than by crashing. The policy: follow zxbc's verdicts, except its crashes (D-C1: Klive compiles
+  them) and malformed code it silently repairs (`PRINT )`, `NEXT` alone, `CLS 1`, `SUB PASCAL s`:
+  kept rejected, annex `silent-syntax-repair`).
+- **Now rejected, as in zxbc:** a sign right after `^` or after a built-in without parentheses (E309);
+  `#elif` (E208) and `=` in `#if` (E213); READ in a program without DATA (E432); a constant BEEP
+  outside 0-10 / -60..127 (E433); `@` or SAVE/LOAD DATA of an undeclared name (E434; `@` after
+  `DIM ... AT` excepted); slicing what a FUNCTION returns (E435), a built-in's result, or a
+  parenthesised expression with a single index; an END IF after `ELSE statement` in a block IF.
+- **Now accepted, as in zxbc:** built-ins without parentheses (`SIN 0 + 1` is `SIN(0) + 1`); an
+  unused DECLARE; an array parameter without a type; `ELSE statement` closing a block IF.
+- **Found on the way:** zxbc folds a built-in of a literal (`SQR(2) + 0` is a Fixed, `LEN("abc") / 2`
+  is 1.5 - annex `builtin-literal-folding`), and RESTORE to a label with no DATA after it wraps to the
+  first item (C3b had it read 0).
+- **Left:** SAVE/LOAD DATA without a name (whole-memory tape blocks, E501) stays in `baseline.json`
+  for C8. Faults: 29 acceptance items (crashes, silent repairs, CODEBANK as NextBuild's, a degenerate
+  #ifdef program, a Float constant past the range).
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

@@ -1,0 +1,251 @@
+{
+ "suite": "noparen",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "SIN 0 + 1",
+   "decl": [],
+   "expr": "SIN 0 + 1"
+  },
+  {
+   "id": "SQR 4 * 4",
+   "decl": [],
+   "expr": "SQR 4 * 4"
+  },
+  {
+   "id": "SQR 4 ^ 2",
+   "decl": [],
+   "expr": "SQR 4 ^ 2"
+  },
+  {
+   "id": "ABS -5",
+   "decl": [],
+   "expr": "ABS -5"
+  },
+  {
+   "id": "ABS -5 + 1",
+   "decl": [],
+   "expr": "ABS -5 + 1"
+  },
+  {
+   "id": "-ABS -3",
+   "decl": [],
+   "expr": "-ABS -3"
+  },
+  {
+   "id": "INT -2.5",
+   "decl": [],
+   "expr": "INT -2.5"
+  },
+  {
+   "id": "INT 2.5 * 2",
+   "decl": [],
+   "expr": "INT 2.5 * 2"
+  },
+  {
+   "id": "SGN -3 * 2",
+   "decl": [],
+   "expr": "SGN -3 * 2"
+  },
+  {
+   "id": "SIN COS 0",
+   "decl": [],
+   "expr": "SIN COS 0"
+  },
+  {
+   "id": "LEN \"ab\" + 1",
+   "decl": [],
+   "expr": "LEN \"ab\" + 1"
+  },
+  {
+   "id": "CODE \"a\" + 1",
+   "decl": [],
+   "expr": "CODE \"a\" + 1"
+  },
+  {
+   "id": "VAL \"2\" * 3",
+   "decl": [],
+   "expr": "VAL \"2\" * 3"
+  },
+  {
+   "id": "VAL \"2\" + \"3\"",
+   "decl": [],
+   "expr": "VAL \"2\" + \"3\""
+  },
+  {
+   "id": "STR$ 12 + \"x\"",
+   "decl": [],
+   "expr": "STR$ 12 + \"x\""
+  },
+  {
+   "id": "LEN STR$ 123",
+   "decl": [],
+   "expr": "LEN STR$ 123"
+  },
+  {
+   "id": "EXP 0 + 1",
+   "decl": [],
+   "expr": "EXP 0 + 1"
+  },
+  {
+   "id": "LN 1 + 1",
+   "decl": [],
+   "expr": "LN 1 + 1"
+  },
+  {
+   "id": "ATN 0 + 1",
+   "decl": [],
+   "expr": "ATN 0 + 1"
+  },
+  {
+   "id": "TAN 0 + 1",
+   "decl": [],
+   "expr": "TAN 0 + 1"
+  },
+  {
+   "id": "PEEK 23610 + 1",
+   "decl": [],
+   "expr": "PEEK 23610 + 1"
+  },
+  {
+   "id": "ABS 2 - 3",
+   "decl": [],
+   "expr": "ABS 2 - 3"
+  },
+  {
+   "id": "SQR 16 / 4",
+   "decl": [],
+   "expr": "SQR 16 / 4"
+  },
+  {
+   "id": "INT 7 / 2",
+   "decl": [],
+   "expr": "INT 7 / 2"
+  },
+  {
+   "id": "NOT 0 + 1",
+   "decl": [],
+   "expr": "NOT 0 + 1"
+  },
+  {
+   "id": "SIN 0 = 0",
+   "decl": [],
+   "expr": "SIN 0 = 0"
+  },
+  {
+   "id": "ABS -2 < 1",
+   "decl": [],
+   "expr": "ABS -2 < 1"
+  },
+  {
+   "id": "LEN \"abc\" = 3",
+   "decl": [],
+   "expr": "LEN \"abc\" = 3"
+  },
+  {
+   "id": "CHR$ 65 + CHR$ 66",
+   "decl": [],
+   "expr": "CHR$ 65 + CHR$ 66"
+  },
+  {
+   "id": "ASN 1 + 0",
+   "decl": [],
+   "expr": "ASN 1 + 0"
+  },
+  {
+   "id": "ASN(1) + 0",
+   "decl": [],
+   "expr": "ASN(1) + 0"
+  },
+  {
+   "id": "INT(7) / 2",
+   "decl": [],
+   "expr": "INT(7) / 2"
+  },
+  {
+   "id": "SQR(2) + 0",
+   "decl": [],
+   "expr": "SQR(2) + 0"
+  },
+  {
+   "id": "SQR 2 + 0",
+   "decl": [],
+   "expr": "SQR 2 + 0"
+  },
+  {
+   "id": "SIN(1) + 0",
+   "decl": [],
+   "expr": "SIN(1) + 0"
+  },
+  {
+   "id": "SIN 1 + 0",
+   "decl": [],
+   "expr": "SIN 1 + 0"
+  },
+  {
+   "id": "ABS(3) / 2",
+   "decl": [],
+   "expr": "ABS(3) / 2"
+  },
+  {
+   "id": "ABS 3 / 2",
+   "decl": [],
+   "expr": "ABS 3 / 2"
+  },
+  {
+   "id": "LEN(\"abc\") / 2",
+   "decl": [],
+   "expr": "LEN(\"abc\") / 2"
+  },
+  {
+   "id": "LEN \"abc\" / 2",
+   "decl": [],
+   "expr": "LEN \"abc\" / 2"
+  },
+  {
+   "id": "CODE(\"a\") / 2",
+   "decl": [],
+   "expr": "CODE(\"a\") / 2"
+  },
+  {
+   "id": "INT(2.5) / 2",
+   "decl": [],
+   "expr": "INT(2.5) / 2"
+  },
+  {
+   "id": "SGN(3) / 2",
+   "decl": [],
+   "expr": "SGN(3) / 2"
+  },
+  {
+   "id": "PEEK(0) / 2",
+   "decl": [],
+   "expr": "PEEK(0) / 2"
+  },
+  {
+   "id": "PEEK 0 / 2",
+   "decl": [],
+   "expr": "PEEK 0 / 2"
+  },
+  {
+   "id": "VAL(\"7\") / 2",
+   "decl": [],
+   "expr": "VAL(\"7\") / 2"
+  },
+  {
+   "id": "EXP(1) + 0",
+   "decl": [],
+   "expr": "EXP(1) + 0"
+  },
+  {
+   "id": "INT(7.5)",
+   "decl": [],
+   "expr": "INT(7.5)"
+  },
+  {
+   "id": "INT 7.5",
+   "decl": [],
+   "expr": "INT 7.5"
+  }
+ ]
+}

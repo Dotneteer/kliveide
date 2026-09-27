@@ -178,15 +178,10 @@ class Preprocessor {
         this.conditions.push({ outer, active: outer && value, taken: value, elseSeen: false, span });
         return;
       }
-      case "elif": {
-        const c = this.top("#elif", span);
-        if (!c) return;
-        if (c.elseSeen) this.error("E202", "#elif after #else", span);
-        const value = c.outer && !c.taken && this.condition("if", rawArgs, args, span);
-        c.active = value;
-        c.taken ||= value;
+      case "elif":
+        // --- zxbc has no #elif: it is a syntax error there (observed through the oracle, C4)
+        this.error("E208", "Unknown directive #elif: ZX BASIC has none (use #else and a nested #if)", span);
         return;
-      }
       case "else": {
         const c = this.top("#else", span);
         if (!c) return;
@@ -631,10 +626,11 @@ class ConditionEvaluator {
     let v = this.unary();
     for (;;) {
       const op = this.tokens[this.i];
-      if (!["==", "=", "!=", "<>", "<", "<=", ">", ">="].includes(op)) return v;
+      if (op === "=") throw new Error("'=' does not compare here: use '==' (ZX BASIC)");
+      if (!["==", "!=", "<>", "<", "<=", ">", ">="].includes(op)) return v;
       this.i++;
       const r = this.unary();
-      if (op === "==" || op === "=") v = bool(v.text === r.text);
+      if (op === "==") v = bool(v.text === r.text);
       else if (op === "!=" || op === "<>") v = bool(v.text !== r.text);
       else {
         const a = toInt(v.text);

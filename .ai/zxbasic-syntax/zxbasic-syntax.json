@@ -2523,14 +2523,22 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "array-parameter-type",
+        "question": "May an array parameter omit its type (SUB s(a()))?",
+        "decision": "Yes: Float, or the type of the name sigil (W100), as zxbc accepts.",
+        "source": "oracle"
+      },
+      {
         "name": "beep-limits",
         "question": "Which BEEP durations and pitches are allowed?",
-        "decision": "The ROM limits, as ZX BASIC has them: a duration from 0 to 10 seconds (rounded down) and a pitch from -60 to 69 (rounded down); anything else stops with B Integer out of range. A duration too short for one cycle makes no sound.",
+        "decision": "The ROM limits, as ZX BASIC has them: a duration from 0 to 10 seconds (rounded down) and a pitch from -60 to 69 (rounded down); anything else stops with B Integer out of range. A duration too short for one cycle makes no sound. Constant arguments are checked when compiling, as zxbc does: a duration outside 0-10 or a pitch outside -60..127 is E433.",
         "status": "decided",
         "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/compat/compat.test.ts",
-        "oracle": "With constant arguments out of range zxbc 1.19 crashes compiling (BeepError): Klive is to reject them at compile time in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "phase": 8,
@@ -2541,6 +2549,15 @@
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
         "oracle": "zxbc 1.19 crashes compiling it: compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "builtin-literal-folding",
+        "question": "How does a built-in function of a literal fold (SQR(2) + 0, LEN(\"abc\") / 2)?",
+        "decision": "At compile time, as zxbc: ABS, SGN, INT, CODE, LEN give exact literals; the math functions give a literal Float computed in double arithmetic. Used alone it keeps its type; in further literal arithmetic the result takes its natural type (SQR(2) + 0 is a Fixed, LEN(\"abc\") / 2 is 1.5).",
+        "source": "oracle"
       },
       {
         "status": "decided",
@@ -2561,6 +2578,16 @@
         "source": "klive-decision",
         "test": "test/kbasic/compat/compat.test.ts",
         "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "codebank-extension",
+        "question": "How do #pragma codebank and CODEBANK inside ASM read?",
+        "decision": "As NextBuild CODEBANK extension, which Klive supports (plan section 9): the pragma takes a bank number and CODEBANK in ASM a bank.",
+        "source": "klive-decision",
+        "oracle": "zxbc has no CODEBANK: it takes the pragma as unknown (a warning) and CODEBANK in ASM as assembler text."
       },
       {
         "name": "colour-values",
@@ -2590,14 +2617,24 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "constant-float-overflow",
+        "question": "What does a Float constant beyond the Float range (DIM a AS Float = 1E40) do?",
+        "decision": "It is an error (E425, Number too big).",
+        "source": "klive-decision",
+        "oracle": "zxbc accepts it and stores a value that is not the number: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
         "name": "constant-integer-division-by-zero",
         "question": "What does a constant integer division or MOD by zero fold to?",
         "decision": "The runtime's result (every bit set; MOD gives the dividend), with warning K406. A Float or Fixed constant division by zero is error E425.",
-        "status": "open",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md: compiled as documented, since zxbc crashes (D-C1)."
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError): compiled as documented (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
       },
       {
         "name": "constant-power",
@@ -2629,6 +2666,25 @@
         "oracle": "zxbc run-time Float and Fixed MOD are faulty (-7.5 MOD 2 is -19.5 for Float and -1.5 for Fixed; Fixed 0.1 MOD 3 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "declare-unused",
+        "question": "Is a DECLARE without a definition an error?",
+        "decision": "Only when the routine is used (E416), as in zxbc.",
+        "source": "oracle"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "degenerate-preprocessor",
+        "question": "Is a program that is only a false #ifdef block, or an empty conditional block, valid?",
+        "decision": "Yes: it compiles to an empty program.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 rejects them (Unexpected end of file; an unexpected #endif): kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
         "name": "do-loop-one-line",
         "question": "Where may LOOP stand after a DO without WHILE or UNTIL?",
         "decision": "Anywhere but after ':' on the line that holds all of the loop's body: `DO: i = i + 1: LOOP` and `DO` then `i = i + 1: LOOP` are rejected (E315), while an empty body (`DO: LOOP UNTIL k`, and `DO LOOP UNTIL k` without a separator) and any body with a line break in it, even a blank line, are accepted. A DO WHILE/UNTIL loop may end on its own line.",
@@ -2639,13 +2695,12 @@
       },
       {
         "name": "elif-directive",
-        "question": "Is #elif accepted by the preprocessor?",
-        "decision": "Yes.",
-        "status": "open",
-        "source": "klive-decision",
+        "question": "Is #elif a directive?",
+        "decision": "No: #elif is an unknown directive (E208), as in zxbc 1.19. #if expressions compare with ==; a single = is an error (E213).",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/corpus/preprocessor/elif.zxbas",
-        "oracle": "zxbc 1.19 rejects #elif (a syntax error): Klive accepts it as an extension. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "status": "decided",
@@ -2744,6 +2799,15 @@
         "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "functions-without-parentheses",
+        "question": "May the built-in functions take their argument without parentheses (SIN 0, LEN a$, CODE \"a\")?",
+        "decision": "Yes, as zxbc accepts: the function takes the operand right after it (SIN 0 + 1 is SIN(0) + 1, INT 7 / 2 is INT(7) / 2), and that operand may not start with a sign (ABS -5 is a syntax error, as is 2 ^ -1).",
+        "source": "oracle"
+      },
+      {
         "name": "heap-exhaustion",
         "question": "What happens when the String heap is full?",
         "decision": "The String that does not fit is the empty String and the program goes on (with check-memory, it stops with 4 Out of memory).",
@@ -2752,6 +2816,15 @@
         "phase": 8,
         "test": "test/kbasic/compat/compat.test.ts",
         "oracle": "zxbc 1.19 without --debug-memory writes past the heap (the screen fills with garbage and the program stops): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "if-else-line",
+        "question": "What does ELSE followed by statements on its own line do in a block IF?",
+        "decision": "It ends the IF with that line: an END IF may follow on the same line only (IF a THEN / PRINT 0 / ELSE PRINT 2 is complete; a following END IF is an error).",
+        "source": "oracle"
       },
       {
         "name": "implicit-type-from-context",
@@ -2902,12 +2975,11 @@
       {
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
-        "decision": "It wraps to the first item. After RESTORE to a label with no DATA after it, READ reads 0 (or the empty String) with no error; so does a program with no DATA at all.",
-        "status": "open",
+        "decision": "It wraps to the first item, and so does READ after RESTORE to a label with no DATA after it. A program with no DATA at all cannot READ: E432 at compile time, as in zxbc.",
+        "status": "decided",
         "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/codegen/data.test.ts",
-        "oracle": "zxbc rejects a program with no DATA at all at compile time (\"No DATA defined\"): to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "read-type-mismatch",
@@ -2936,6 +3008,25 @@
         "phase": 2,
         "test": "test/kbasic/corpus/integers/shifts.zxbas",
         "oracle": "zxbc agrees for SHR by more than 1; Integer -100 SHR 1 gives 32718 there (a logical shift): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "silent-syntax-repair",
+        "question": "Does Klive accept the malformed statements zxbc compiles without a word (PRINT ), NEXT alone, CLS 1, DIM x y, SUB PASCAL s, 1.5 PRINT)?",
+        "decision": "No: they stay syntax errors.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 drops what it cannot parse there and compiles the rest silently: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "slice-of-expression",
+        "question": "May a parenthesised expression or a call result be sliced ((a$)(1), f$(1)(0))?",
+        "decision": "No: syntax errors, as in zxbc. A String literal and a String variable or element may be sliced; a String array element takes its character index in the same parentheses.",
+        "source": "oracle"
       },
       {
         "status": "decided",
@@ -2994,6 +3085,15 @@
         "test": "test/kbasic/semantics/diagnostics.test.ts"
       },
       {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "undeclared-name-references",
+        "question": "May @ or SAVE/LOAD/VERIFY DATA name something not declared?",
+        "decision": "No (E434), as in zxbc - except @ after DIM ... AT, which may name a variable declared by that reference.",
+        "source": "oracle"
+      },
+      {
         "name": "unused-warning-w150",
         "question": "When is a variable 'never used' (W150)?",
         "decision": "When it is never mentioned after its declaration: no read, no assignment, no address taken; mapped variables and BYREF parameters are exempt. Reported, like W170, only at optimisation levels above 0.",
@@ -3029,6 +3129,16 @@
         "phase": 4,
         "test": "test/kbasic/corpus/builtins/val-error.zxbas",
         "oracle": "zxbc agrees on the value and ERR_NR. After a failed VAL it leaves BASIC state broken (typed as a user does, the command ends with C Nonsense in BASIC, 3331:1); Klive restores CH_ADD and the workspace, an undefined result it keeps (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "zxbc-compile-crash",
+        "question": "What about programs zxbc crashes on while compiling (CHR$(65, 66), CHR 65, SIZEOF(LONG), POKE LONG, BNOT of a fraction)?",
+        "decision": "Klive compiles them as documented.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 stops with an internal exception (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
       }
     ]
   }

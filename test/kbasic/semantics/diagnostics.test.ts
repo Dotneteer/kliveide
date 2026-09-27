@@ -131,6 +131,16 @@ const ERRORS: Record<keyof typeof SEMANTIC_ERRORS, Case[]> = {
     { source: "SUB FASTCALL s(a AS UByte)\n DIM t AS UByte\nEND SUB\ns 1\n", text: "t" },
     { source: "SUB FASTCALL s(a AS UByte)\n x = a\nEND SUB\ns 1\n", text: "x" }
   ],
+  E432: [{ source: "DIM x AS UByte\nREAD x\n", text: "READ x" }],
+  E433: [
+    { source: "BEEP 100, 0\n", text: "100" },
+    { source: "BEEP 1, -61\n", text: "-61" }
+  ],
+  E434: [
+    { source: "PRINT @nothing\n", text: "nothing" },
+    { source: 'SAVE "v" DATA v\n', text: "v" }
+  ],
+  E435: [{ source: 'FUNCTION f$() AS String\n RETURN "ab"\nEND FUNCTION\nPRINT f$()(0)\n', text: "f$()" }],
   E450: [
     { source: "DIM b AS UByte = 1\nCODEBANK b\nSUB s()\nEND SUB\nEND CODEBANK\n", text: "b" },
     { source: "CODEBANK 300\nSUB s()\nEND SUB\nEND CODEBANK\n", text: "300" }

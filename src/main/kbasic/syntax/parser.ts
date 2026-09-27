@@ -666,7 +666,16 @@ class Parser {
       elseIfs.push(this.node(elseIfStart, { condition: c, body: this.block(branchEnd) }));
     }
     let otherwise: Statement[] | undefined;
-    if (this.eatKeyword("ELSE")) otherwise = this.block(() => this.isEndIf() || this.atKeyword("ELSEIF") || this.atKeyword("ELSE"));
+    if (this.eatKeyword("ELSE")) {
+      if (!this.at("newline") && !this.at("eof") && !this.atOp(":")) {
+        // --- ELSE with statements on its line ends the IF with that line, as in ZX BASIC (an END IF
+        // --- may follow on the same line only; observed through the oracle, compatibility plan C4)
+        otherwise = this.inlineStatements();
+        if (this.isEndIf() && this.next().keyword === "END") this.next();
+        return this.node(start, { kind: "if", condition, then, elseIfs, else: otherwise, singleLine: false });
+      }
+      otherwise = this.block(() => this.isEndIf() || this.atKeyword("ELSEIF") || this.atKeyword("ELSE"));
+    }
     if (this.atKeyword("ELSEIF") || this.atKeyword("ELSE")) this.fail("E306", "ELSE or ELSEIF after ELSE");
     this.closeBlock("IF", opener, "ENDIF");
     return this.node(start, { kind: "if", condition, then, elseIfs, ...(otherwise ? { else: otherwise } : {}), singleLine: false });
@@ -898,8 +907,9 @@ class Parser {
     const name = this.name();
     if (this.eatOp("(")) {
       this.expectOp(")");
-      const type = this.asType() ?? this.fail("E302", "Expected AS and a type for the array parameter");
-      return this.node(start, { kind: "param", name, ...(passing ? { passing } : {}), type, isArray: true });
+      // --- An array parameter may omit its type, as ZX BASIC allows: Float, or the name's sigil (C4)
+      const type = this.asType();
+      return this.node(start, { kind: "param", name, ...(passing ? { passing } : {}), ...(type ? { type } : {}), isArray: true });
     }
     const type = this.asType();
     const defaultValue = this.eatOp("=") ? this.expression() : undefined;
@@ -974,24 +984,30 @@ class Parser {
   // ==============================================================================================
   // Expressions
 
-  expression(minPower = 0): Expression {
+  /**
+   * An expression binding at least as tightly as `minPower`. `unsigned`: it may not start with a sign,
+   * as ZX BASIC's grammar has it after `^` and for a built-in's argument without parentheses (2 ^ -1
+   * and ABS -5 are syntax errors there; observed through the oracle, compatibility plan C4).
+   */
+  expression(minPower = 0, unsigned = false): Expression {
     const start = this.pos;
-    let left = this.prefix();
+    let left = this.prefix(unsigned);
     for (;;) {
       const t = this.peek();
       const key = t.kind === "keyword" ? t.keyword! : t.kind === "operator" ? t.text : "";
       const info = BINARY[key];
       if (!info || info.power < minPower) return left;
       this.next();
-      const right = this.expression(info.right ? info.power : info.power + 1);
+      const right = this.expression(info.right ? info.power : info.power + 1, info.op === "^");
       left = this.node(start, { kind: "binary", op: info.op, left, right });
     }
   }
 
-  private prefix(): Expression {
+  private prefix(unsigned = false): Expression {
     const start = this.pos;
     const t = this.peek();
     if (t.kind === "operator") {
+      if ((t.text === "-" || t.text === "+") && unsigned) this.fail("E309", `A sign cannot start this operand: put it in parentheses (ZX BASIC)`);
       if (t.text === "-" || t.text === "+") {
         this.next();
         return this.node(start, { kind: "unary", op: t.text as "-" | "+", operand: this.expression(NEGATION_OPERAND) });
@@ -1004,7 +1020,9 @@ class Parser {
         this.next();
         const expression = this.expression();
         this.expectOp(")");
-        return this.postfix(this.node(start, { kind: "paren", expression }));
+        // --- ZX BASIC slices a parenthesised expression only with a range: (a$)(0 TO 1), not (a$)(1)
+        const paren: Expression = this.node(start, { kind: "paren" as const, expression });
+        return this.nextGroupIsRange() ? this.postfix(paren) : paren;
       }
       if (t.text === "@") {
         this.next();
@@ -1042,11 +1060,28 @@ class Parser {
     return t.kind === "number" || t.kind === "string" || t.kind === "identifier" || (t.kind === "operator" && t.text === "@");
   }
 
+  /** Whether the parenthesised group here holds TO at its own level: a range, s(a TO b). */
+  private nextGroupIsRange(): boolean {
+    if (!this.atOp("(")) return false;
+    let depth = 0;
+    for (let k = 0; ; k++) {
+      const t = this.peek(k);
+      if (t.kind === "eof" || t.kind === "newline") return false;
+      if (t.kind === "operator" && t.text === "(") depth++;
+      else if (t.kind === "operator" && t.text === ")" && --depth === 0) return false;
+      else if (depth === 1 && t.kind === "keyword" && t.keyword === "TO") return true;
+    }
+  }
+
   private primaryName(): NameRef {
     return this.name();
   }
 
-  /** Parenthesised argument lists after a primary: calls, array elements, string slices. */
+  /**
+   * Parenthesised argument lists after a primary: calls, array elements, string slices
+   * (s$(1)(2 TO 3)). What a built-in function gives is not sliced (STR$(1)(0) is an error in ZX
+   * BASIC), and the binder refuses to slice what a FUNCTION gives (E435).
+   */
   private postfix(primary: Expression): Expression {
     let e = primary;
     while (this.atOp("(")) {
@@ -1101,7 +1136,7 @@ class Parser {
       case "PI":
         return builtin([], false);
       case "INKEY":
-        return this.postfix(builtin([], false));
+        return builtin([], false);
       case "RND":
         if (this.atOp("(") && this.atOp(")", 1)) {
           this.next();
@@ -1122,7 +1157,7 @@ class Parser {
         if (type) this.expectOp(",");
         const arg = this.expression();
         this.expectOp(")");
-        return this.postfix(builtin([arg], true, type));
+        return builtin([arg], true, type);
       }
       case "CAST": {
         this.expectOp("(");
@@ -1152,19 +1187,22 @@ class Parser {
         return builtin(args, true);
       }
       case "CHR": {
+        if (!this.atOp("(")) return builtin([this.expression(FUNCTION_OPERAND, true)], false);
         this.expectOp("(");
         const args = [this.expression()];
         while (this.eatOp(",")) args.push(this.expression());
         this.expectOp(")");
-        return this.postfix(builtin(args, true));
+        return builtin(args, true);
       }
     }
     if (PAREN_FUNCTIONS.has(kw)) {
-      if (!this.atOp("(")) this.fail("E310", `${t.text.toUpperCase()} needs its argument in parentheses`);
+      // --- Without parentheses the function takes the operand right after it (SIN 0 + 1 is SIN(0) + 1),
+      // --- which may not start with a sign, as ZX BASIC has it (observed through the oracle, C4)
+      if (!this.atOp("(")) return builtin([this.expression(FUNCTION_OPERAND, true)], false);
       this.next();
       const arg = this.expression();
       this.expectOp(")");
-      return this.postfix(builtin([arg], true));
+      return builtin([arg], true);
     }
     this.pos = start;
     return this.fail("E309", "Expected an expression");

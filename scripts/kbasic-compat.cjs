@@ -463,6 +463,59 @@ function generate() {
     })
   };
 
+  // --- Built-in functions without parentheses (C4): how far each one's argument reaches
+  const NOPAREN = ["SIN 0 + 1", "SQR 4 * 4", "SQR 4 ^ 2", "ABS -5", "ABS -5 + 1", "-ABS -3", "INT -2.5", "INT 2.5 * 2", "SGN -3 * 2", "SIN COS 0",
+    'LEN "ab" + 1', 'CODE "a" + 1', 'VAL "2" * 3', 'VAL "2" + "3"', "STR$ 12 + \"x\"", 'LEN STR$ 123', "EXP 0 + 1", "LN 1 + 1", "ATN 0 + 1", "TAN 0 + 1",
+    "PEEK 23610 + 1", "ABS 2 - 3", "SQR 16 / 4", "INT 7 / 2", "NOT 0 + 1", "SIN 0 = 0", "ABS -2 < 1", "LEN \"abc\" = 3", "CHR$ 65 + CHR$ 66", "ASN 1 + 0",
+    "ASN(1) + 0", "INT(7) / 2", "SQR(2) + 0", "SQR 2 + 0", "SIN(1) + 0", "SIN 1 + 0", "ABS(3) / 2", "ABS 3 / 2", "LEN(\"abc\") / 2", "LEN \"abc\" / 2",
+    "CODE(\"a\") / 2", "INT(2.5) / 2", "SGN(3) / 2", "PEEK(0) / 2", "PEEK 0 / 2", "VAL(\"7\") / 2", "EXP(1) + 0", "INT(7.5)", "INT 7.5"];
+  suites.noparen = {
+    perProgram: ROWS,
+    items: NOPAREN.map((expr) => ({ id: expr, decl: [], expr }))
+  };
+
+  // --- Acceptance (C4): whole programs that are only compiled - the spec's accepting and rejecting
+  // --- cases for every EBNF form (test/kbasic/syntax/spec-cases.ts), and known edges
+  const specCases = loadSpecCases();
+  const EDGES = [
+    "#if A = 1\nPRINT 1\n#endif", "#define A 1\n#if A == 1\nPRINT 1\n#endif", "#define A 2\n#if A == 1\nPRINT 1\n#elif A == 2\nPRINT 2\n#endif",
+    "#define A 2\n#if A == 1\nPRINT 1\n#else\nPRINT 2\n#endif", "#ifdef A\nPRINT 1\n#endif",
+    "DIM x AS Float = 2\nPRINT x ^ -1", "PRINT 2 ^ -1", "DIM x AS Float = 2\nPRINT x ^ (-1)", "DIM x AS Float = 2\nPRINT -x ^ 2", "PRINT 2 * -1", "PRINT 2 - -1",
+    "DIM x AS UByte\nREAD x", "DIM x AS UByte\nREAD x\nDATA 1", "RESTORE", "DATA 1\nRESTORE",
+    "BEEP 100, 0", "BEEP 1, 100", "BEEP -1, 0", "BEEP 10, 69", "BEEP 0, -60", "BEEP 1, -61", "DIM d AS Float = 100\nBEEP d, 0",
+    "PRINT 1 / 0", "PRINT 1 MOD 0", "PRINT 1.5 / 0", 'PRINT "a" = "a"', "DIM s AS UByte = 1\nFOR i = 1 TO 5 STEP s: NEXT i",
+    "FUNCTION f() AS UByte: RETURN 1: END FUNCTION\nPRINT f()", "SUB s: END SUB\ns()",
+    "GOTO 10", "10 PRINT 1\n10 PRINT 2", "GOSUB 20\nEND\n20 RETURN",
+    "PRINT AT 30, 0; 1", "PRINT AT 0, 40; 1", "PLOT 300, 0", "PLOT 0, 200", "INK 12", "PAPER 9", "BORDER 9", "FLASH 2", "OVER 3", "INVERSE 2",
+    "PAUSE -1", "POKE 70000, 1", "PRINT CHR$(300)", "DIM a(0)", "DIM a(-1)", "DIM a(3) AS UByte\nPRINT a(5)", "DIM a(3) AS UByte\na(4) = 1",
+    'x = 5: x$ = "a"', "DIM a AS UByte\nDIM a AS UByte", "DIM a AS UByte\nDIM a AS Integer",
+    'PRINT CODE ""', "PRINT LEN 5", "PRINT VAL 5", 'PRINT STR$ "a"', "PRINT 1,,2", "PRINT ;;", "PRINT 1'2",
+    "IF 1 THEN PRINT 1 ELSE PRINT 2", "IF 1 THEN\nEND IF", "ON 1 GOTO 10, 20\n10 PRINT\n20 PRINT", "RETURN",
+    "EXIT FOR", "NEXT", "NEXT i", "CONST c = 1\nc = 2", 'DIM s AS String = 5', 'PRINT "a" + 1', 'DIM s AS String\ns = 5',
+    "FUNCTION f(a)\n RETURN a\nEND FUNCTION\nPRINT f(1)", "PRINT SIN", "PRINT PEEK", "x = 1 +", "PRINT (1", "PRINT 1)",
+    "DIM a AS UByte = 256", "DIM a AS Byte = 200", "DIM a AS UInteger = -1", "DIM a AS Fixed = 40000", "DIM a AS Float = 1E40",
+    "PRINT 1E40", "PRINT 1E39 * 10", "DIM a(3) AS UByte => {1, 2, 3}", "DIM a(3) AS UByte => {1, 2, 3, 4, 5}",
+    "SUB s(a AS UByte = 1, b AS UByte)\nEND SUB", "FUNCTION f AS UByte\nEND FUNCTION\nPRINT f", "s()", "PRINT f(1)",
+    "DIM a AS UByte\na(1) = 2", "DIM a(3) AS UByte\na = 2", "LET a = 1: LET a = a + 1: PRINT a", "PRINT PI = 3",
+    "PRINT RND * 10", "RANDOMIZE", "RANDOMIZE 1", "PRINT INKEY$", "PRINT USR 0", "PRINT IN 254", "OUT 254, 1",
+    "DIM i AS UByte\nFOR i = 1 TO 10 STEP 0: NEXT i", "FOR i = 10 TO 1: NEXT i", "DO\nLOOP UNTIL 1: LOOP", "WHILE 1: WEND",
+    "ASM\n ld a,1\nEND ASM", "ASM\n ld a,(ix+1)\n call $0d6b\nEND ASM", "PRINT @x", "DIM x AS UByte\nPRINT @x",
+    "STOP 3", "END 5", "ERROR 30", "ERROR 256",
+    "IF a THEN\nELSEIF b THEN PRINT 1\nELSE PRINT 2\nEND IF", "IF a THEN\nELSEIF b THEN\nPRINT 1\nELSE\nPRINT 2\nEND IF",
+    "IF a THEN\nELSEIF b PRINT 1\nEND IF", "IF a THEN\nELSEIF b THEN\nPRINT 1\nEND IF", "IF a THEN\nELSE PRINT 2\nEND IF", "IF a THEN PRINT 1: ELSE PRINT 2",
+    "", "REM x", "' comment", "#ifdef A\nPRINT 1\n#endif\nPRINT 2", "#define A\n#ifdef A\nPRINT 1\n#endif",
+    "x = ABS -1", "x = SIN COS 0", "x = PEEK 23610 + 1", "x$ = CHR$ 65", "x = CODE a$", "x = USR 0 + 1", "x = LEN \"ab\" + 1", "x = INT (1.5) + 1"
+  ];
+  const acceptance = [
+    ...Object.values(specCases).flatMap((c) => [...c.accept, ...c.reject]),
+    ...EDGES
+  ];
+  suites.acceptance = {
+    kind: "accept",
+    perProgram: 1,
+    items: [...new Set(acceptance)].map((source) => ({ id: source, decl: [], expr: "", source }))
+  };
+
   for (const [suite, data] of Object.entries(suites)) {
     const ids = new Set();
     for (const item of data.items) {
@@ -479,6 +532,16 @@ function generate() {
 function fail(message) {
   console.error(`kbasic-compat: ${message}`);
   process.exit(1);
+}
+
+/** test/kbasic/syntax/spec-cases.ts's CASES, through the TypeScript compiler's transpiler. */
+function loadSpecCases() {
+  const ts = require("typescript");
+  const source = fs.readFileSync(path.join(ROOT, "test/kbasic/syntax/spec-cases.ts"), "utf8");
+  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const mod = { exports: {} };
+  new Function("module", "exports", "require", js)(mod, mod.exports, require);
+  return mod.exports.CASES;
 }
 
 function writeSuites() {
@@ -523,6 +586,19 @@ function runOracle(names) {
         compile(items.slice(0, half));
         compile(items.slice(half));
       };
+      if (data.kind === "accept") {
+        // --- Only compiled: accepted, or zxbc's message
+        for (const item of data.items) {
+          const base = path.join(work, `${suite}-${count++}`);
+          fs.writeFileSync(`${base}.bas`, item.source + "\n");
+          const r = compileWithZxbc(zxbc, work, base, ["--org", String(ORG)]);
+          if (r.error) entry.rejected[item.id] = failureKind(r.error);
+          else (entry.accepted ??= []).push(item.id);
+        }
+        manifest.suites[suite] = entry;
+        console.log(`${suite}: ${(entry.accepted ?? []).length} accepted, ${Object.keys(entry.rejected).length} rejected`);
+        continue;
+      }
       for (const group of chunk(data.items, data.perProgram)) compile(group);
       manifest.suites[suite] = entry;
       console.log(`${suite}: ${entry.programs.length} programs, ${Object.keys(entry.rejected).length} items rejected`);

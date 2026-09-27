@@ -114,6 +114,10 @@ describe("Klive BASIC corpus", () => {
         for (const entry of differs) expect(ANNEX.has(entry), `oracle-differs names the annex entry ${entry}`).toBe(true);
         if (existsSync(oracleFile)) {
           const oracle = JSON.parse(readFileSync(oracleFile, "utf8")) as OracleResult;
+          // --- A program zxbc rejects must be one Klive rejects too, unless zxbc crashed (C4, D-C1)
+          if (oracle.compileError && !oracle.compileError.startsWith("zxbc crashed")) {
+            expect.fail(`zxbc rejects this program (${oracle.compileError}), and Klive accepts it`);
+          }
           const found = oracleDifferences(expectations, oracle);
           if (!differs.length) expect(found, "the upstream oracle's result").toEqual([]);
           // --- A mark that no longer differs would hide the next real difference

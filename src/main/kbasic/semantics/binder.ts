@@ -15,7 +15,7 @@ import type {
   Vector
 } from "../syntax/ast";
 import type { BoundAttr, BoundExpr, BoundPrintItem, BoundProgram, BoundStatement } from "./bound";
-import { constantText, type Constant } from "./constants";
+import { constantText, numericValue, type Constant } from "./constants";
 import { ExpressionBinder, type BindSettings } from "./expressions";
 import { checkFlow } from "./flow";
 import {
@@ -63,6 +63,9 @@ class Binder extends ExpressionBinder {
   private readonly pragmaStacks = new Map<string, unknown[]>();
   /** The enclosing loops, innermost last (EXIT, CONTINUE). */
   private loops: LoopKind[] = [];
+  /** The first READ, and whether the program has DATA: zxbc rejects READ without DATA (E432). */
+  private firstRead?: Span;
+  private sawData = false;
   /** Routine headers by their syntax node, from pass 1. */
   private readonly headerSymbols = new Map<RoutineHeader, RoutineSymbol>();
 
@@ -235,8 +238,15 @@ class Binder extends ExpressionBinder {
         return { kind: "attribute", span, attr: s.attr, value: this.valueAs(s.value, "UByte") };
       case "border":
         return { kind: "border", span, value: this.valueAs(s.value, "UByte") };
-      case "beep":
-        return { kind: "beep", span, duration: this.valueAs(s.duration, "Float"), pitch: this.valueAs(s.pitch, "Float") };
+      case "beep": {
+        const duration = this.valueAs(s.duration, "Float");
+        const pitch = this.valueAs(s.pitch, "Float");
+        // --- zxbc checks constant arguments when it compiles (its run time has the ROM's limits)
+        const outside = (e: BoundExpr, low: number, high: number) => e.constant && e.constant.value.kind !== "address" && (numericValue(e.constant) < low || numericValue(e.constant) > high);
+        if (outside(duration, 0, 10)) this.error("E433", "The BEEP duration must be between 0 and 10 seconds", s.duration.span);
+        if (outside(pitch, -60, 127)) this.error("E433", "The BEEP pitch must be between -60 and 127", s.pitch.span);
+        return { kind: "beep", span, duration, pitch };
+      }
       case "cls":
         return { kind: "cls", span };
       case "plot":
@@ -324,8 +334,10 @@ class Binder extends ExpressionBinder {
       case "randomize":
         return { kind: "randomize", span, ...(s.seed ? { seed: this.valueAs(s.seed, "ULong") } : {}) };
       case "read":
+        this.firstRead ??= span;
         return { kind: "read", span, targets: s.targets.map((t) => this.readTarget(t)) };
       case "data":
+        this.sawData = true;
         if (this.routine) this.error("E413", "DATA is not allowed inside a SUB or FUNCTION", span);
         return { kind: "data", span, items: s.items.map((i) => this.value(i)) };
       case "restore": {
@@ -570,7 +582,10 @@ class Binder extends ExpressionBinder {
 
   /** An AT address (spec DIM): a constant number or a constant address. */
   private address(e: Expression): Constant | undefined {
+    // --- After DIM ... AT, zxbc takes @ of a name it has not seen (compatibility plan C4)
+    this.implicitAddress = true;
     const bound = this.valueAs(e, "UInteger");
+    this.implicitAddress = false;
     if (bound.kind === "error") return undefined;
     if (!bound.constant) {
       this.error("E406", "An AT address must be a constant (a number, @global, @label or @array(constant subscripts))", e.span);
@@ -863,6 +878,12 @@ class Binder extends ExpressionBinder {
       };
     } else if (t.kind === "screen") target = { kind: "screen" };
     else {
+      // --- zxbc does not declare a variable for SAVE/LOAD/VERIFY DATA (compatibility plan C4)
+      const named = t.variable;
+      if (named && !this.lookup(named.name)) {
+        this.error("E434", `${s.operation} DATA ${named.name}: '${named.name}' is not declared`, named.span);
+        return { kind: "tape", span: s.span, operation: s.operation, name, target: { kind: "data" } };
+      }
       const bound = t.variable ? this.expr(t.variable) : undefined;
       if (bound?.kind === "variable" && s.operation !== "SAVE") bound.symbol.assigned = true;
       target = { kind: "data", ...(bound && bound.kind !== "error" ? { target: bound } : {}) };
@@ -949,8 +970,10 @@ class Binder extends ExpressionBinder {
 
   private finish(): void {
     for (const r of this.routines) {
-      if (!r.definedAt) this.error("E416", `${r.kind === "sub" ? "SUB" : "FUNCTION"} ${r.name} is declared but never defined`, r.declaredAt ?? r.span);
+      // --- A DECLARE nothing uses is harmless, as in zxbc (compatibility plan C4)
+      if (!r.definedAt && r.uses.length) this.error("E416", `${r.kind === "sub" ? "SUB" : "FUNCTION"} ${r.name} is declared but never defined`, r.declaredAt ?? r.span);
     }
+    if (this.firstRead && !this.sawData) this.error("E432", "READ in a program that has no DATA", this.firstRead);
     this.checkBankReferences();
   }
 

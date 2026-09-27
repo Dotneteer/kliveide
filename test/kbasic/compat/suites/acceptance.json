@@ -1,0 +1,3043 @@
+{
+ "suite": "acceptance",
+ "kind": "accept",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "ASM\n nop\n ret\nEND ASM",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n nop\n ret\nEND ASM"
+  },
+  {
+   "id": "ASM\n nop\n",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n nop\n"
+  },
+  {
+   "id": "BEEP 0.5, 12",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 0.5, 12"
+  },
+  {
+   "id": "BEEP 1",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 1"
+  },
+  {
+   "id": "BOLD 1",
+   "decl": [],
+   "expr": "",
+   "source": "BOLD 1"
+  },
+  {
+   "id": "BOLD",
+   "decl": [],
+   "expr": "",
+   "source": "BOLD"
+  },
+  {
+   "id": "BORDER 2",
+   "decl": [],
+   "expr": "",
+   "source": "BORDER 2"
+  },
+  {
+   "id": "BORDER",
+   "decl": [],
+   "expr": "",
+   "source": "BORDER"
+  },
+  {
+   "id": "BRIGHT 1",
+   "decl": [],
+   "expr": "",
+   "source": "BRIGHT 1"
+  },
+  {
+   "id": "BRIGHT",
+   "decl": [],
+   "expr": "",
+   "source": "BRIGHT"
+  },
+  {
+   "id": "CIRCLE 128, 88, 40",
+   "decl": [],
+   "expr": "",
+   "source": "CIRCLE 128, 88, 40"
+  },
+  {
+   "id": "CIRCLE INK 2; 1, 2, 3",
+   "decl": [],
+   "expr": "",
+   "source": "CIRCLE INK 2; 1, 2, 3"
+  },
+  {
+   "id": "CIRCLE 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "CIRCLE 1, 2"
+  },
+  {
+   "id": "PLOT INK 1; PAPER 2; 3, 4",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT INK 1; PAPER 2; 3, 4"
+  },
+  {
+   "id": "PLOT INK 1 3, 4",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT INK 1 3, 4"
+  },
+  {
+   "id": "CLS",
+   "decl": [],
+   "expr": "",
+   "source": "CLS"
+  },
+  {
+   "id": "CLS 1",
+   "decl": [],
+   "expr": "",
+   "source": "CLS 1"
+  },
+  {
+   "id": "CONST a AS UBYTE = 5",
+   "decl": [],
+   "expr": "",
+   "source": "CONST a AS UBYTE = 5"
+  },
+  {
+   "id": "CONST b = 1",
+   "decl": [],
+   "expr": "",
+   "source": "CONST b = 1"
+  },
+  {
+   "id": "CONST s$ = \"text\"",
+   "decl": [],
+   "expr": "",
+   "source": "CONST s$ = \"text\""
+  },
+  {
+   "id": "CONST c",
+   "decl": [],
+   "expr": "",
+   "source": "CONST c"
+  },
+  {
+   "id": "CONST = 1",
+   "decl": [],
+   "expr": "",
+   "source": "CONST = 1"
+  },
+  {
+   "id": "CONTINUE FOR",
+   "decl": [],
+   "expr": "",
+   "source": "CONTINUE FOR"
+  },
+  {
+   "id": "CONTINUE",
+   "decl": [],
+   "expr": "",
+   "source": "CONTINUE"
+  },
+  {
+   "id": "CONTINUE LOOP",
+   "decl": [],
+   "expr": "",
+   "source": "CONTINUE LOOP"
+  },
+  {
+   "id": "DATA 1, \"a\", x + 1",
+   "decl": [],
+   "expr": "",
+   "source": "DATA 1, \"a\", x + 1"
+  },
+  {
+   "id": "DATA",
+   "decl": [],
+   "expr": "",
+   "source": "DATA"
+  },
+  {
+   "id": "DATA 1,",
+   "decl": [],
+   "expr": "",
+   "source": "DATA 1,"
+  },
+  {
+   "id": "DECLARE FUNCTION f(a AS INTEGER) AS LONG",
+   "decl": [],
+   "expr": "",
+   "source": "DECLARE FUNCTION f(a AS INTEGER) AS LONG"
+  },
+  {
+   "id": "DECLARE SUB s",
+   "decl": [],
+   "expr": "",
+   "source": "DECLARE SUB s"
+  },
+  {
+   "id": "DECLARE x",
+   "decl": [],
+   "expr": "",
+   "source": "DECLARE x"
+  },
+  {
+   "id": "DIM a, b AS INTEGER",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a, b AS INTEGER"
+  },
+  {
+   "id": "DIM c",
+   "decl": [],
+   "expr": "",
+   "source": "DIM c"
+  },
+  {
+   "id": "DIM a, AS INTEGER",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a, AS INTEGER"
+  },
+  {
+   "id": "DIM a AS UBYTE = 5",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UBYTE = 5"
+  },
+  {
+   "id": "DIM b = 1.5",
+   "decl": [],
+   "expr": "",
+   "source": "DIM b = 1.5"
+  },
+  {
+   "id": "DIM a, b = 5",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a, b = 5"
+  },
+  {
+   "id": "DIM a AS UBYTE AT 23672",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UBYTE AT 23672"
+  },
+  {
+   "id": "DIM a AT",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AT"
+  },
+  {
+   "id": "DIM a(10) AS BYTE",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(10) AS BYTE"
+  },
+  {
+   "id": "DIM s$(5)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s$(5)"
+  },
+  {
+   "id": "DIM a(10",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(10"
+  },
+  {
+   "id": "DIM a(1 TO 5) AS UBYTE AT 49152",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1 TO 5) AS UBYTE AT 49152"
+  },
+  {
+   "id": "DIM a(5) AT",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(5) AT"
+  },
+  {
+   "id": "DIM a(2) => {1, 2, 3}",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(2) => {1, 2, 3}"
+  },
+  {
+   "id": "DIM b(1) AS UBYTE => {1, _\n 2}",
+   "decl": [],
+   "expr": "",
+   "source": "DIM b(1) AS UBYTE => {1, _\n 2}"
+  },
+  {
+   "id": "DIM a(2) => 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(2) => 1, 2"
+  },
+  {
+   "id": "DIM x, y, z",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x, y, z"
+  },
+  {
+   "id": "DIM x y",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x y"
+  },
+  {
+   "id": "DIM a(1, 2, 3)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1, 2, 3)"
+  },
+  {
+   "id": "DIM a(1,)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1,)"
+  },
+  {
+   "id": "DIM a(4)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(4)"
+  },
+  {
+   "id": "DIM b(1 TO 4)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM b(1 TO 4)"
+  },
+  {
+   "id": "DIM a(1 TO)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1 TO)"
+  },
+  {
+   "id": "DIM a(1, 1) => {{1, 2}, {3, 4}}",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1, 1) => {{1, 2}, {3, 4}}"
+  },
+  {
+   "id": "DIM a(1) => {1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(1) => {1, 2"
+  },
+  {
+   "id": "DIM x AT @y",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT @y"
+  },
+  {
+   "id": "DIM x AT @arr(1, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT @arr(1, 2)"
+  },
+  {
+   "id": "DIM x AT 1000",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT 1000"
+  },
+  {
+   "id": "DIM x AT @lbl",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT @lbl"
+  },
+  {
+   "id": "DIM x AT @",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT @"
+  },
+  {
+   "id": "DIM x AT @(1)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AT @(1)"
+  },
+  {
+   "id": "DO: LOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO: LOOP"
+  },
+  {
+   "id": "DO\n x = 1\nLOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO\n x = 1\nLOOP"
+  },
+  {
+   "id": "DO\nx = 1",
+   "decl": [],
+   "expr": "",
+   "source": "DO\nx = 1"
+  },
+  {
+   "id": "DO: LOOP UNTIL a",
+   "decl": [],
+   "expr": "",
+   "source": "DO: LOOP UNTIL a"
+  },
+  {
+   "id": "DO\nLOOP WHILE b",
+   "decl": [],
+   "expr": "",
+   "source": "DO\nLOOP WHILE b"
+  },
+  {
+   "id": "DO: LOOP UNTIL",
+   "decl": [],
+   "expr": "",
+   "source": "DO: LOOP UNTIL"
+  },
+  {
+   "id": "DO UNTIL a: LOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO UNTIL a: LOOP"
+  },
+  {
+   "id": "DO WHILE b\nLOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO WHILE b\nLOOP"
+  },
+  {
+   "id": "DO UNTIL a: LOOP WHILE b",
+   "decl": [],
+   "expr": "",
+   "source": "DO UNTIL a: LOOP WHILE b"
+  },
+  {
+   "id": "DO WHILE: LOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO WHILE: LOOP"
+  },
+  {
+   "id": "DRAW 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "DRAW 1, 2"
+  },
+  {
+   "id": "DRAW 1, 2, PI",
+   "decl": [],
+   "expr": "",
+   "source": "DRAW 1, 2, PI"
+  },
+  {
+   "id": "DRAW OVER 1; 3, 4",
+   "decl": [],
+   "expr": "",
+   "source": "DRAW OVER 1; 3, 4"
+  },
+  {
+   "id": "DRAW 1",
+   "decl": [],
+   "expr": "",
+   "source": "DRAW 1"
+  },
+  {
+   "id": "END",
+   "decl": [],
+   "expr": "",
+   "source": "END"
+  },
+  {
+   "id": "END 3",
+   "decl": [],
+   "expr": "",
+   "source": "END 3"
+  },
+  {
+   "id": "END 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "END 1, 2"
+  },
+  {
+   "id": "ERROR 3",
+   "decl": [],
+   "expr": "",
+   "source": "ERROR 3"
+  },
+  {
+   "id": "ERROR",
+   "decl": [],
+   "expr": "",
+   "source": "ERROR"
+  },
+  {
+   "id": "EXIT DO",
+   "decl": [],
+   "expr": "",
+   "source": "EXIT DO"
+  },
+  {
+   "id": "EXIT WHILE",
+   "decl": [],
+   "expr": "",
+   "source": "EXIT WHILE"
+  },
+  {
+   "id": "EXIT SUB",
+   "decl": [],
+   "expr": "",
+   "source": "EXIT SUB"
+  },
+  {
+   "id": "FLASH 1",
+   "decl": [],
+   "expr": "",
+   "source": "FLASH 1"
+  },
+  {
+   "id": "FLASH",
+   "decl": [],
+   "expr": "",
+   "source": "FLASH"
+  },
+  {
+   "id": "FOR i = 1 TO 2 STEP 1: NEXT i",
+   "decl": [],
+   "expr": "",
+   "source": "FOR i = 1 TO 2 STEP 1: NEXT i"
+  },
+  {
+   "id": "FOR j = 1 TO 5\n PRINT j\nNEXT",
+   "decl": [],
+   "expr": "",
+   "source": "FOR j = 1 TO 5\n PRINT j\nNEXT"
+  },
+  {
+   "id": "FOR i = 1: NEXT",
+   "decl": [],
+   "expr": "",
+   "source": "FOR i = 1: NEXT"
+  },
+  {
+   "id": "FOR 1 = 1 TO 2: NEXT",
+   "decl": [],
+   "expr": "",
+   "source": "FOR 1 = 1 TO 2: NEXT"
+  },
+  {
+   "id": "FOR i = 1 TO 3\nPRINT i",
+   "decl": [],
+   "expr": "",
+   "source": "FOR i = 1 TO 3\nPRINT i"
+  },
+  {
+   "id": "FUNCTION f AS UBYTE\n RETURN 1\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f AS UBYTE\n RETURN 1\nEND FUNCTION"
+  },
+  {
+   "id": "FUNCTION STDCALL g(a, b) AS LONG\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION STDCALL g(a, b) AS LONG\nEND FUNCTION"
+  },
+  {
+   "id": "FUNCTION h()\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION h()\nEND FUNCTION"
+  },
+  {
+   "id": "FUNCTION f(\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f(\nEND FUNCTION"
+  },
+  {
+   "id": "FUNCTION\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION\nEND FUNCTION"
+  },
+  {
+   "id": "FUNCTION f\nPRINT",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f\nPRINT"
+  },
+  {
+   "id": "SUB FASTCALL s(a AS UBYTE)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB FASTCALL s(a AS UBYTE)\nEND SUB"
+  },
+  {
+   "id": "SUB STDCALL t\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB STDCALL t\nEND SUB"
+  },
+  {
+   "id": "SUB PASCAL s\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB PASCAL s\nEND SUB"
+  },
+  {
+   "id": "SUB s(a, b, c)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(a, b, c)\nEND SUB"
+  },
+  {
+   "id": "SUB s(a,)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(a,)\nEND SUB"
+  },
+  {
+   "id": "SUB s(BYVAL a AS UBYTE = 1, BYREF b() AS UBYTE, c() AS FLOAT, d)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(BYVAL a AS UBYTE = 1, BYREF b() AS UBYTE, c() AS FLOAT, d)\nEND SUB"
+  },
+  {
+   "id": "SUB s(a())\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(a())\nEND SUB"
+  },
+  {
+   "id": "SUB s(a() AS)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(a() AS)\nEND SUB"
+  },
+  {
+   "id": "SUB s(BYVAL)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(BYVAL)\nEND SUB"
+  },
+  {
+   "id": "GO TO 10",
+   "decl": [],
+   "expr": "",
+   "source": "GO TO 10"
+  },
+  {
+   "id": "GO 10",
+   "decl": [],
+   "expr": "",
+   "source": "GO 10"
+  },
+  {
+   "id": "GO SUB lbl",
+   "decl": [],
+   "expr": "",
+   "source": "GO SUB lbl"
+  },
+  {
+   "id": "GO SUB",
+   "decl": [],
+   "expr": "",
+   "source": "GO SUB"
+  },
+  {
+   "id": "GOSUB 100",
+   "decl": [],
+   "expr": "",
+   "source": "GOSUB 100"
+  },
+  {
+   "id": "GOSUB",
+   "decl": [],
+   "expr": "",
+   "source": "GOSUB"
+  },
+  {
+   "id": "GOTO lbl",
+   "decl": [],
+   "expr": "",
+   "source": "GOTO lbl"
+  },
+  {
+   "id": "GOTO 10",
+   "decl": [],
+   "expr": "",
+   "source": "GOTO 10"
+  },
+  {
+   "id": "GOTO 1.5",
+   "decl": [],
+   "expr": "",
+   "source": "GOTO 1.5"
+  },
+  {
+   "id": "GOTO a$",
+   "decl": [],
+   "expr": "",
+   "source": "GOTO a$"
+  },
+  {
+   "id": "GOTO",
+   "decl": [],
+   "expr": "",
+   "source": "GOTO"
+  },
+  {
+   "id": "IF a THEN PRINT 1 ELSE PRINT 2: END IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN PRINT 1 ELSE PRINT 2: END IF"
+  },
+  {
+   "id": "IF a PRINT 1: ENDIF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a PRINT 1: ENDIF"
+  },
+  {
+   "id": "IF a THEN x = 1: y = 2",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN x = 1: y = 2"
+  },
+  {
+   "id": "IF THEN PRINT 1",
+   "decl": [],
+   "expr": "",
+   "source": "IF THEN PRINT 1"
+  },
+  {
+   "id": "IF a THEN PRINT 1 ELSE ELSE PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN PRINT 1 ELSE ELSE PRINT 2"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b THEN\nELSE\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b THEN\nELSE\nEND IF"
+  },
+  {
+   "id": "IF a\n PRINT\nENDIF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a\n PRINT\nENDIF"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b PRINT 1\nELSE\nPRINT 2\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b PRINT 1\nELSE\nPRINT 2\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nPRINT 0\nELSE PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nPRINT 0\nELSE PRINT 2"
+  },
+  {
+   "id": "IF a THEN\nPRINT 1",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nPRINT 1"
+  },
+  {
+   "id": "IF a THEN\nELSE\nELSE\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSE\nELSE\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nPRINT 0\nELSE PRINT 2\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nPRINT 0\nELSE PRINT 2\nEND IF"
+  },
+  {
+   "id": "INK 7",
+   "decl": [],
+   "expr": "",
+   "source": "INK 7"
+  },
+  {
+   "id": "INK",
+   "decl": [],
+   "expr": "",
+   "source": "INK"
+  },
+  {
+   "id": "INVERSE 1",
+   "decl": [],
+   "expr": "",
+   "source": "INVERSE 1"
+  },
+  {
+   "id": "INVERSE",
+   "decl": [],
+   "expr": "",
+   "source": "INVERSE"
+  },
+  {
+   "id": "ITALIC 1",
+   "decl": [],
+   "expr": "",
+   "source": "ITALIC 1"
+  },
+  {
+   "id": "ITALIC",
+   "decl": [],
+   "expr": "",
+   "source": "ITALIC"
+  },
+  {
+   "id": "LET a = 1",
+   "decl": [],
+   "expr": "",
+   "source": "LET a = 1"
+  },
+  {
+   "id": "b = 2",
+   "decl": [],
+   "expr": "",
+   "source": "b = 2"
+  },
+  {
+   "id": "LET = 1",
+   "decl": [],
+   "expr": "",
+   "source": "LET = 1"
+  },
+  {
+   "id": "LET a 1",
+   "decl": [],
+   "expr": "",
+   "source": "LET a 1"
+  },
+  {
+   "id": "a(1, 2) = 3",
+   "decl": [],
+   "expr": "",
+   "source": "a(1, 2) = 3"
+  },
+  {
+   "id": "LET b(0) = 1",
+   "decl": [],
+   "expr": "",
+   "source": "LET b(0) = 1"
+  },
+  {
+   "id": "a(1, 2 = 3",
+   "decl": [],
+   "expr": "",
+   "source": "a(1, 2 = 3"
+  },
+  {
+   "id": "LET a = b",
+   "decl": [],
+   "expr": "",
+   "source": "LET a = b"
+  },
+  {
+   "id": "c = d",
+   "decl": [],
+   "expr": "",
+   "source": "c = d"
+  },
+  {
+   "id": "LET a =",
+   "decl": [],
+   "expr": "",
+   "source": "LET a ="
+  },
+  {
+   "id": "a$(1 TO 2) = \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(1 TO 2) = \"x\""
+  },
+  {
+   "id": "LET a$(TO) = \"\"",
+   "decl": [],
+   "expr": "",
+   "source": "LET a$(TO) = \"\""
+  },
+  {
+   "id": "a$(3 TO) = \"y\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(3 TO) = \"y\""
+  },
+  {
+   "id": "a$(1 TO 2 = \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(1 TO 2 = \"x\""
+  },
+  {
+   "id": "a$(1 TO 2 TO 3) = \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(1 TO 2 TO 3) = \"x\""
+  },
+  {
+   "id": "a$(3) = \"y\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(3) = \"y\""
+  },
+  {
+   "id": "a$(3 = \"y\"",
+   "decl": [],
+   "expr": "",
+   "source": "a$(3 = \"y\""
+  },
+  {
+   "id": "s$(1)(2 TO 3) = \"z\"",
+   "decl": [],
+   "expr": "",
+   "source": "s$(1)(2 TO 3) = \"z\""
+  },
+  {
+   "id": "s$(1)(2 TO 3 = \"z\"",
+   "decl": [],
+   "expr": "",
+   "source": "s$(1)(2 TO 3 = \"z\""
+  },
+  {
+   "id": "s$(1, 2) = \"w\"",
+   "decl": [],
+   "expr": "",
+   "source": "s$(1, 2) = \"w\""
+  },
+  {
+   "id": "s$(1, ) = \"w\"",
+   "decl": [],
+   "expr": "",
+   "source": "s$(1, ) = \"w\""
+  },
+  {
+   "id": "LOAD \"x\" CODE",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"x\" CODE"
+  },
+  {
+   "id": "LOAD \"x\" CODE 32768, 10",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"x\" CODE 32768, 10"
+  },
+  {
+   "id": "LOAD \"s\" SCREEN$",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"s\" SCREEN$"
+  },
+  {
+   "id": "LOAD \"s\" SCREEN",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"s\" SCREEN"
+  },
+  {
+   "id": "LOAD \"d\" DATA a()",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"d\" DATA a()"
+  },
+  {
+   "id": "LOAD \"\" DATA",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"\" DATA"
+  },
+  {
+   "id": "LOAD \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"x\""
+  },
+  {
+   "id": "LOAD \"x\" CODE 1,",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"x\" CODE 1,"
+  },
+  {
+   "id": "LOAD \"d\" DATA a(",
+   "decl": [],
+   "expr": "",
+   "source": "LOAD \"d\" DATA a("
+  },
+  {
+   "id": "ON x GOTO 10, 20",
+   "decl": [],
+   "expr": "",
+   "source": "ON x GOTO 10, 20"
+  },
+  {
+   "id": "ON x GO SUB a",
+   "decl": [],
+   "expr": "",
+   "source": "ON x GO SUB a"
+  },
+  {
+   "id": "ON x GOSUB a, b",
+   "decl": [],
+   "expr": "",
+   "source": "ON x GOSUB a, b"
+  },
+  {
+   "id": "ON x GO TO 1",
+   "decl": [],
+   "expr": "",
+   "source": "ON x GO TO 1"
+  },
+  {
+   "id": "ON x GOTO",
+   "decl": [],
+   "expr": "",
+   "source": "ON x GOTO"
+  },
+  {
+   "id": "ON x PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "ON x PRINT"
+  },
+  {
+   "id": "OUT 254, 1",
+   "decl": [],
+   "expr": "",
+   "source": "OUT 254, 1"
+  },
+  {
+   "id": "OUT 254",
+   "decl": [],
+   "expr": "",
+   "source": "OUT 254"
+  },
+  {
+   "id": "OVER 1",
+   "decl": [],
+   "expr": "",
+   "source": "OVER 1"
+  },
+  {
+   "id": "OVER",
+   "decl": [],
+   "expr": "",
+   "source": "OVER"
+  },
+  {
+   "id": "PAPER 6",
+   "decl": [],
+   "expr": "",
+   "source": "PAPER 6"
+  },
+  {
+   "id": "PAPER",
+   "decl": [],
+   "expr": "",
+   "source": "PAPER"
+  },
+  {
+   "id": "PAUSE 0",
+   "decl": [],
+   "expr": "",
+   "source": "PAUSE 0"
+  },
+  {
+   "id": "PAUSE",
+   "decl": [],
+   "expr": "",
+   "source": "PAUSE"
+  },
+  {
+   "id": "PLOT 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT 1, 2"
+  },
+  {
+   "id": "PLOT 1",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT 1"
+  },
+  {
+   "id": "POKE 23672, 0",
+   "decl": [],
+   "expr": "",
+   "source": "POKE 23672, 0"
+  },
+  {
+   "id": "POKE 1",
+   "decl": [],
+   "expr": "",
+   "source": "POKE 1"
+  },
+  {
+   "id": "POKE (1, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (1, 2)"
+  },
+  {
+   "id": "POKE (1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (1, 2"
+  },
+  {
+   "id": "POKE UINTEGER 23675, 60000",
+   "decl": [],
+   "expr": "",
+   "source": "POKE UINTEGER 23675, 60000"
+  },
+  {
+   "id": "POKE UINTEGER 1",
+   "decl": [],
+   "expr": "",
+   "source": "POKE UINTEGER 1"
+  },
+  {
+   "id": "POKE (FLOAT a, PI)",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (FLOAT a, PI)"
+  },
+  {
+   "id": "POKE (FLOAT 1)",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (FLOAT 1)"
+  },
+  {
+   "id": "POKE LONG, 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "POKE LONG, 1, 2"
+  },
+  {
+   "id": "POKE LONG, 1",
+   "decl": [],
+   "expr": "",
+   "source": "POKE LONG, 1"
+  },
+  {
+   "id": "POKE (LONG, 1, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (LONG, 1, 2)"
+  },
+  {
+   "id": "POKE (LONG, 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "POKE (LONG, 1, 2"
+  },
+  {
+   "id": "PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT"
+  },
+  {
+   "id": "PRINT a; b, c;",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT a; b, c;"
+  },
+  {
+   "id": "PRINT ,",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT ,"
+  },
+  {
+   "id": "PRINT )",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT )"
+  },
+  {
+   "id": "PRINT AT 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT AT 1"
+  },
+  {
+   "id": "PRINT 1, 2; 3",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1, 2; 3"
+  },
+  {
+   "id": "PRINT 1 : 2",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1 : 2"
+  },
+  {
+   "id": "PRINT AT 0, 0; TAB 4; INK 2; 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT AT 0, 0; TAB 4; INK 2; 1"
+  },
+  {
+   "id": "PRINT TAB",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT TAB"
+  },
+  {
+   "id": "PRINT AT 1; 2",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT AT 1; 2"
+  },
+  {
+   "id": "PRINT PAPER 1; BOLD 1; ITALIC 0; FLASH 0; BRIGHT 1; INVERSE 0; OVER 1; \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT PAPER 1; BOLD 1; ITALIC 0; FLASH 0; BRIGHT 1; INVERSE 0; OVER 1; \"x\""
+  },
+  {
+   "id": "PRINT INK; 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT INK; 1"
+  },
+  {
+   "id": "RANDOMIZE",
+   "decl": [],
+   "expr": "",
+   "source": "RANDOMIZE"
+  },
+  {
+   "id": "RANDOMIZE 42",
+   "decl": [],
+   "expr": "",
+   "source": "RANDOMIZE 42"
+  },
+  {
+   "id": "RANDOMIZE 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "RANDOMIZE 1, 2"
+  },
+  {
+   "id": "READ a, b(1), c$",
+   "decl": [],
+   "expr": "",
+   "source": "READ a, b(1), c$"
+  },
+  {
+   "id": "READ",
+   "decl": [],
+   "expr": "",
+   "source": "READ"
+  },
+  {
+   "id": "READ 1",
+   "decl": [],
+   "expr": "",
+   "source": "READ 1"
+  },
+  {
+   "id": "READ x(1, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "READ x(1, 2)"
+  },
+  {
+   "id": "READ x(",
+   "decl": [],
+   "expr": "",
+   "source": "READ x("
+  },
+  {
+   "id": "RESTORE",
+   "decl": [],
+   "expr": "",
+   "source": "RESTORE"
+  },
+  {
+   "id": "RESTORE lbl",
+   "decl": [],
+   "expr": "",
+   "source": "RESTORE lbl"
+  },
+  {
+   "id": "RESTORE 100",
+   "decl": [],
+   "expr": "",
+   "source": "RESTORE 100"
+  },
+  {
+   "id": "RESTORE 1 + 2",
+   "decl": [],
+   "expr": "",
+   "source": "RESTORE 1 + 2"
+  },
+  {
+   "id": "RETURN",
+   "decl": [],
+   "expr": "",
+   "source": "RETURN"
+  },
+  {
+   "id": "RETURN a + 1",
+   "decl": [],
+   "expr": "",
+   "source": "RETURN a + 1"
+  },
+  {
+   "id": "RETURN ,",
+   "decl": [],
+   "expr": "",
+   "source": "RETURN ,"
+  },
+  {
+   "id": "SAVE \"c\" CODE 16384, 6912",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"c\" CODE 16384, 6912"
+  },
+  {
+   "id": "SAVE \"s\" SCREEN$",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"s\" SCREEN$"
+  },
+  {
+   "id": "SAVE \"d\" DATA",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"d\" DATA"
+  },
+  {
+   "id": "SAVE \"v\" DATA v",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"v\" DATA v"
+  },
+  {
+   "id": "SAVE \"x\" CODE 1",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"x\" CODE 1"
+  },
+  {
+   "id": "SAVE \"x\"",
+   "decl": [],
+   "expr": "",
+   "source": "SAVE \"x\""
+  },
+  {
+   "id": "STOP",
+   "decl": [],
+   "expr": "",
+   "source": "STOP"
+  },
+  {
+   "id": "STOP 1",
+   "decl": [],
+   "expr": "",
+   "source": "STOP 1"
+  },
+  {
+   "id": "STOP ,",
+   "decl": [],
+   "expr": "",
+   "source": "STOP ,"
+  },
+  {
+   "id": "SUB s\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s\nEND SUB"
+  },
+  {
+   "id": "SUB FASTCALL t(a)\n PRINT a\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB FASTCALL t(a)\n PRINT a\nEND SUB"
+  },
+  {
+   "id": "SUB s AS INTEGER\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s AS INTEGER\nEND SUB"
+  },
+  {
+   "id": "SUB\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB\nEND SUB"
+  },
+  {
+   "id": "SUB s\nEND FUNCTION",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s\nEND FUNCTION"
+  },
+  {
+   "id": "VERIFY \"x\" CODE",
+   "decl": [],
+   "expr": "",
+   "source": "VERIFY \"x\" CODE"
+  },
+  {
+   "id": "VERIFY \"d\" DATA a()",
+   "decl": [],
+   "expr": "",
+   "source": "VERIFY \"d\" DATA a()"
+  },
+  {
+   "id": "VERIFY \"s\" SCREEN$",
+   "decl": [],
+   "expr": "",
+   "source": "VERIFY \"s\" SCREEN$"
+  },
+  {
+   "id": "VERIFY \"x\" CODE ,",
+   "decl": [],
+   "expr": "",
+   "source": "VERIFY \"x\" CODE ,"
+  },
+  {
+   "id": "VERIFY \"x\" PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "VERIFY \"x\" PRINT"
+  },
+  {
+   "id": "WHILE a: WEND",
+   "decl": [],
+   "expr": "",
+   "source": "WHILE a: WEND"
+  },
+  {
+   "id": "WHILE a\n a = a - 1\nEND WHILE",
+   "decl": [],
+   "expr": "",
+   "source": "WHILE a\n a = a - 1\nEND WHILE"
+  },
+  {
+   "id": "WHILE a\nPRINT",
+   "decl": [],
+   "expr": "",
+   "source": "WHILE a\nPRINT"
+  },
+  {
+   "id": "WHILE: WEND",
+   "decl": [],
+   "expr": "",
+   "source": "WHILE: WEND"
+  },
+  {
+   "id": "x = ABS 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ABS 1"
+  },
+  {
+   "id": "x = ABS(-1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = ABS(-1)"
+  },
+  {
+   "id": "x = ABS -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ABS -1"
+  },
+  {
+   "id": "x = ABS()",
+   "decl": [],
+   "expr": "",
+   "source": "x = ABS()"
+  },
+  {
+   "id": "x = ACS 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ACS 1"
+  },
+  {
+   "id": "x = ACS(0.5)",
+   "decl": [],
+   "expr": "",
+   "source": "x = ACS(0.5)"
+  },
+  {
+   "id": "x = ACS -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ACS -1"
+  },
+  {
+   "id": "x = ASN 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ASN 1"
+  },
+  {
+   "id": "x = ASN(0.5)",
+   "decl": [],
+   "expr": "",
+   "source": "x = ASN(0.5)"
+  },
+  {
+   "id": "x = ASN -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ASN -1"
+  },
+  {
+   "id": "x = ATN 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ATN 1"
+  },
+  {
+   "id": "x = ATN(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = ATN(1)"
+  },
+  {
+   "id": "x = ATN -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = ATN -1"
+  },
+  {
+   "id": "x = CAST(UBYTE, 300)",
+   "decl": [],
+   "expr": "",
+   "source": "x = CAST(UBYTE, 300)"
+  },
+  {
+   "id": "x = CAST(1, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "x = CAST(1, 2)"
+  },
+  {
+   "id": "x = CAST UBYTE, 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = CAST UBYTE, 1"
+  },
+  {
+   "id": "x$ = CHR 65",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR 65"
+  },
+  {
+   "id": "x$ = CHR$(65, 66)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR$(65, 66)"
+  },
+  {
+   "id": "x$ = CHR(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR(1)"
+  },
+  {
+   "id": "x$ = CHR -65",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR -65"
+  },
+  {
+   "id": "x$ = CHR()",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR()"
+  },
+  {
+   "id": "x = CODE \"a\"",
+   "decl": [],
+   "expr": "",
+   "source": "x = CODE \"a\""
+  },
+  {
+   "id": "x = CODE(\"a\")",
+   "decl": [],
+   "expr": "",
+   "source": "x = CODE(\"a\")"
+  },
+  {
+   "id": "x = CODE -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = CODE -1"
+  },
+  {
+   "id": "x = COS PI",
+   "decl": [],
+   "expr": "",
+   "source": "x = COS PI"
+  },
+  {
+   "id": "x = COS(PI)",
+   "decl": [],
+   "expr": "",
+   "source": "x = COS(PI)"
+  },
+  {
+   "id": "x = COS -PI",
+   "decl": [],
+   "expr": "",
+   "source": "x = COS -PI"
+  },
+  {
+   "id": "x = EXP 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = EXP 1"
+  },
+  {
+   "id": "x = EXP(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = EXP(1)"
+  },
+  {
+   "id": "x = EXP -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = EXP -1"
+  },
+  {
+   "id": "x = IN 254",
+   "decl": [],
+   "expr": "",
+   "source": "x = IN 254"
+  },
+  {
+   "id": "x = IN",
+   "decl": [],
+   "expr": "",
+   "source": "x = IN"
+  },
+  {
+   "id": "x = IN(254)",
+   "decl": [],
+   "expr": "",
+   "source": "x = IN(254)"
+  },
+  {
+   "id": "x = IN(254",
+   "decl": [],
+   "expr": "",
+   "source": "x = IN(254"
+  },
+  {
+   "id": "x$ = INKEY",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = INKEY"
+  },
+  {
+   "id": "x$ = INKEY 1",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = INKEY 1"
+  },
+  {
+   "id": "IF INKEY$ = \"\" THEN PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "IF INKEY$ = \"\" THEN PRINT"
+  },
+  {
+   "id": "x$ = INKEY$ 1",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = INKEY$ 1"
+  },
+  {
+   "id": "x = INT 1.5",
+   "decl": [],
+   "expr": "",
+   "source": "x = INT 1.5"
+  },
+  {
+   "id": "x = INT(1.5)",
+   "decl": [],
+   "expr": "",
+   "source": "x = INT(1.5)"
+  },
+  {
+   "id": "x = INT -1.5",
+   "decl": [],
+   "expr": "",
+   "source": "x = INT -1.5"
+  },
+  {
+   "id": "x = LBOUND(a, 1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = LBOUND(a, 1)"
+  },
+  {
+   "id": "x = LBOUND(a)",
+   "decl": [],
+   "expr": "",
+   "source": "x = LBOUND(a)"
+  },
+  {
+   "id": "x = LBOUND(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = LBOUND(1)"
+  },
+  {
+   "id": "x = LBOUND()",
+   "decl": [],
+   "expr": "",
+   "source": "x = LBOUND()"
+  },
+  {
+   "id": "x = LEN a$",
+   "decl": [],
+   "expr": "",
+   "source": "x = LEN a$"
+  },
+  {
+   "id": "x = LEN(\"abc\")",
+   "decl": [],
+   "expr": "",
+   "source": "x = LEN(\"abc\")"
+  },
+  {
+   "id": "x = LEN -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = LEN -1"
+  },
+  {
+   "id": "x = LN 2",
+   "decl": [],
+   "expr": "",
+   "source": "x = LN 2"
+  },
+  {
+   "id": "x = LN(2)",
+   "decl": [],
+   "expr": "",
+   "source": "x = LN(2)"
+  },
+  {
+   "id": "x = LN -2",
+   "decl": [],
+   "expr": "",
+   "source": "x = LN -2"
+  },
+  {
+   "id": "x = PEEK 23672",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK 23672"
+  },
+  {
+   "id": "x = PEEK",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK"
+  },
+  {
+   "id": "x = PEEK(23672)",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK(23672)"
+  },
+  {
+   "id": "x = PEEK(1",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK(1"
+  },
+  {
+   "id": "x = PEEK(UINTEGER, 23672)",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK(UINTEGER, 23672)"
+  },
+  {
+   "id": "x = PEEK(UINTEGER 1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK(UINTEGER 1)"
+  },
+  {
+   "id": "x = PI",
+   "decl": [],
+   "expr": "",
+   "source": "x = PI"
+  },
+  {
+   "id": "x = PI(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = PI(1)"
+  },
+  {
+   "id": "x = RND",
+   "decl": [],
+   "expr": "",
+   "source": "x = RND"
+  },
+  {
+   "id": "x = RND 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = RND 1"
+  },
+  {
+   "id": "x = RND()",
+   "decl": [],
+   "expr": "",
+   "source": "x = RND()"
+  },
+  {
+   "id": "x = RND(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = RND(1)"
+  },
+  {
+   "id": "x = SGN 3",
+   "decl": [],
+   "expr": "",
+   "source": "x = SGN 3"
+  },
+  {
+   "id": "x = SGN(-3)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SGN(-3)"
+  },
+  {
+   "id": "x = SGN -3",
+   "decl": [],
+   "expr": "",
+   "source": "x = SGN -3"
+  },
+  {
+   "id": "x = SIN 0",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIN 0"
+  },
+  {
+   "id": "x = SIN(0)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIN(0)"
+  },
+  {
+   "id": "x = SIN -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIN -1"
+  },
+  {
+   "id": "x = SIZEOF(LONG)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIZEOF(LONG)"
+  },
+  {
+   "id": "x = SIZEOF(v)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIZEOF(v)"
+  },
+  {
+   "id": "x = SIZEOF(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIZEOF(1)"
+  },
+  {
+   "id": "x = SIZEOF LONG",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIZEOF LONG"
+  },
+  {
+   "id": "x = SQR 4",
+   "decl": [],
+   "expr": "",
+   "source": "x = SQR 4"
+  },
+  {
+   "id": "x = SQR(4)",
+   "decl": [],
+   "expr": "",
+   "source": "x = SQR(4)"
+  },
+  {
+   "id": "x = SQR -4",
+   "decl": [],
+   "expr": "",
+   "source": "x = SQR -4"
+  },
+  {
+   "id": "x$ = STR$ 1",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = STR$ 1"
+  },
+  {
+   "id": "x$ = STR$(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = STR$(1)"
+  },
+  {
+   "id": "x$ = STR(2)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = STR(2)"
+  },
+  {
+   "id": "x$ = STR$ -1",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = STR$ -1"
+  },
+  {
+   "id": "x = TAN 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = TAN 1"
+  },
+  {
+   "id": "x = TAN(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = TAN(1)"
+  },
+  {
+   "id": "x = TAN -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = TAN -1"
+  },
+  {
+   "id": "x = UBOUND(a, 2)",
+   "decl": [],
+   "expr": "",
+   "source": "x = UBOUND(a, 2)"
+  },
+  {
+   "id": "x = UBOUND(a,)",
+   "decl": [],
+   "expr": "",
+   "source": "x = UBOUND(a,)"
+  },
+  {
+   "id": "x = USR 32768",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR 32768"
+  },
+  {
+   "id": "x = USR @routine",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR @routine"
+  },
+  {
+   "id": "x = USR",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR"
+  },
+  {
+   "id": "x = USR \"a\"",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR \"a\""
+  },
+  {
+   "id": "x = USR ,",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR ,"
+  },
+  {
+   "id": "x = VAL \"1\"",
+   "decl": [],
+   "expr": "",
+   "source": "x = VAL \"1\""
+  },
+  {
+   "id": "x = VAL(\"1.5\")",
+   "decl": [],
+   "expr": "",
+   "source": "x = VAL(\"1.5\")"
+  },
+  {
+   "id": "x = VAL -1",
+   "decl": [],
+   "expr": "",
+   "source": "x = VAL -1"
+  },
+  {
+   "id": "CODEBANK 1\nSUB s\nEND SUB\nDIM buf(10) AS UBYTE\nASM\n nop\nEND ASM\nhere:\nEND CODEBANK",
+   "decl": [],
+   "expr": "",
+   "source": "CODEBANK 1\nSUB s\nEND SUB\nDIM buf(10) AS UBYTE\nASM\n nop\nEND ASM\nhere:\nEND CODEBANK"
+  },
+  {
+   "id": "CODEBANK 1\nPRINT 1\nEND CODEBANK",
+   "decl": [],
+   "expr": "",
+   "source": "CODEBANK 1\nPRINT 1\nEND CODEBANK"
+  },
+  {
+   "id": "SUB s\nCODEBANK 1\nEND CODEBANK\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s\nCODEBANK 1\nEND CODEBANK\nEND SUB"
+  },
+  {
+   "id": "CODEBANK 1\nSUB s\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "CODEBANK 1\nSUB s\nEND SUB"
+  },
+  {
+   "id": "#pragma codebank = 2",
+   "decl": [],
+   "expr": "",
+   "source": "#pragma codebank = 2"
+  },
+  {
+   "id": "#pragma codebank = 0",
+   "decl": [],
+   "expr": "",
+   "source": "#pragma codebank = 0"
+  },
+  {
+   "id": "#pragma codebank =",
+   "decl": [],
+   "expr": "",
+   "source": "#pragma codebank ="
+  },
+  {
+   "id": "#pragma codebank = x",
+   "decl": [],
+   "expr": "",
+   "source": "#pragma codebank = x"
+  },
+  {
+   "id": "x = FARPTR buf",
+   "decl": [],
+   "expr": "",
+   "source": "x = FARPTR buf"
+  },
+  {
+   "id": "x = FARPTR 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = FARPTR 1"
+  },
+  {
+   "id": "ASM\n CODEBANK 2\n nop\nEND ASM",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n CODEBANK 2\n nop\nEND ASM"
+  },
+  {
+   "id": "ASM\n CODEBANK\nEND ASM",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n CODEBANK\nEND ASM"
+  },
+  {
+   "id": "x$ = a$(1 TO 2)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(1 TO 2)"
+  },
+  {
+   "id": "x$ = a$(TO 2)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(TO 2)"
+  },
+  {
+   "id": "x$ = a$(2 TO)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(2 TO)"
+  },
+  {
+   "id": "x$ = a$(1 TO 2",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(1 TO 2"
+  },
+  {
+   "id": "x$ = a$(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(1)"
+  },
+  {
+   "id": "x$ = a$(1",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = a$(1"
+  },
+  {
+   "id": "x$ = \"abc\"(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = \"abc\"(1)"
+  },
+  {
+   "id": "x$ = (a$)(0 TO 1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = (a$)(0 TO 1)"
+  },
+  {
+   "id": "x$ = f$(1)(0)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = f$(1)(0)"
+  },
+  {
+   "id": "x$ = s$(1, 2)(0 TO 1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = s$(1, 2)(0 TO 1)"
+  },
+  {
+   "id": "x$ = (a$(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = (a$(1)"
+  },
+  {
+   "id": "x$ = (a$)(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = (a$)(1)"
+  },
+  {
+   "id": "s",
+   "decl": [],
+   "expr": "",
+   "source": "s"
+  },
+  {
+   "id": "s()",
+   "decl": [],
+   "expr": "",
+   "source": "s()"
+  },
+  {
+   "id": "s(1)",
+   "decl": [],
+   "expr": "",
+   "source": "s(1)"
+  },
+  {
+   "id": "s 1, 2",
+   "decl": [],
+   "expr": "",
+   "source": "s 1, 2"
+  },
+  {
+   "id": "test x := 1",
+   "decl": [],
+   "expr": "",
+   "source": "test x := 1"
+  },
+  {
+   "id": "s(1",
+   "decl": [],
+   "expr": "",
+   "source": "s(1"
+  },
+  {
+   "id": "s 1,",
+   "decl": [],
+   "expr": "",
+   "source": "s 1,"
+  },
+  {
+   "id": "s 1, x := 2",
+   "decl": [],
+   "expr": "",
+   "source": "s 1, x := 2"
+  },
+  {
+   "id": "s 1, , 2",
+   "decl": [],
+   "expr": "",
+   "source": "s 1, , 2"
+  },
+  {
+   "id": "s a, x := 1, arr",
+   "decl": [],
+   "expr": "",
+   "source": "s a, x := 1, arr"
+  },
+  {
+   "id": "s x :=",
+   "decl": [],
+   "expr": "",
+   "source": "s x :="
+  },
+  {
+   "id": "x = 1 + \"a\" + PI + y + f(1) + g 2 + a$(1 TO 2) + (3) + @z + ABS(1)",
+   "decl": [],
+   "expr": "",
+   "source": "x = 1 + \"a\" + PI + y + f(1) + g 2 + a$(1 TO 2) + (3) + @z + ABS(1)"
+  },
+  {
+   "id": "x = )",
+   "decl": [],
+   "expr": "",
+   "source": "x = )"
+  },
+  {
+   "id": "x = @1",
+   "decl": [],
+   "expr": "",
+   "source": "x = @1"
+  },
+  {
+   "id": "",
+   "decl": [],
+   "expr": "",
+   "source": ""
+  },
+  {
+   "id": "10 PRINT\n20 PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "10 PRINT\n20 PRINT"
+  },
+  {
+   "id": "start: PRINT 1: PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "start: PRINT 1: PRINT 2"
+  },
+  {
+   "id": "10",
+   "decl": [],
+   "expr": "",
+   "source": "10"
+  },
+  {
+   "id": "here:",
+   "decl": [],
+   "expr": "",
+   "source": "here:"
+  },
+  {
+   "id": "PRINT 1 PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1 PRINT 2"
+  },
+  {
+   "id": "10 PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "10 PRINT"
+  },
+  {
+   "id": "here: PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "here: PRINT"
+  },
+  {
+   "id": "1.5 PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "1.5 PRINT"
+  },
+  {
+   "id": "#if A = 1\nPRINT 1\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#if A = 1\nPRINT 1\n#endif"
+  },
+  {
+   "id": "#define A 1\n#if A == 1\nPRINT 1\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#define A 1\n#if A == 1\nPRINT 1\n#endif"
+  },
+  {
+   "id": "#define A 2\n#if A == 1\nPRINT 1\n#elif A == 2\nPRINT 2\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#define A 2\n#if A == 1\nPRINT 1\n#elif A == 2\nPRINT 2\n#endif"
+  },
+  {
+   "id": "#define A 2\n#if A == 1\nPRINT 1\n#else\nPRINT 2\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#define A 2\n#if A == 1\nPRINT 1\n#else\nPRINT 2\n#endif"
+  },
+  {
+   "id": "#ifdef A\nPRINT 1\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#ifdef A\nPRINT 1\n#endif"
+  },
+  {
+   "id": "DIM x AS Float = 2\nPRINT x ^ -1",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS Float = 2\nPRINT x ^ -1"
+  },
+  {
+   "id": "PRINT 2 ^ -1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 2 ^ -1"
+  },
+  {
+   "id": "DIM x AS Float = 2\nPRINT x ^ (-1)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS Float = 2\nPRINT x ^ (-1)"
+  },
+  {
+   "id": "DIM x AS Float = 2\nPRINT -x ^ 2",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS Float = 2\nPRINT -x ^ 2"
+  },
+  {
+   "id": "PRINT 2 * -1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 2 * -1"
+  },
+  {
+   "id": "PRINT 2 - -1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 2 - -1"
+  },
+  {
+   "id": "DIM x AS UByte\nREAD x",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS UByte\nREAD x"
+  },
+  {
+   "id": "DIM x AS UByte\nREAD x\nDATA 1",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS UByte\nREAD x\nDATA 1"
+  },
+  {
+   "id": "DATA 1\nRESTORE",
+   "decl": [],
+   "expr": "",
+   "source": "DATA 1\nRESTORE"
+  },
+  {
+   "id": "BEEP 100, 0",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 100, 0"
+  },
+  {
+   "id": "BEEP 1, 100",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 1, 100"
+  },
+  {
+   "id": "BEEP -1, 0",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP -1, 0"
+  },
+  {
+   "id": "BEEP 10, 69",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 10, 69"
+  },
+  {
+   "id": "BEEP 0, -60",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 0, -60"
+  },
+  {
+   "id": "BEEP 1, -61",
+   "decl": [],
+   "expr": "",
+   "source": "BEEP 1, -61"
+  },
+  {
+   "id": "DIM d AS Float = 100\nBEEP d, 0",
+   "decl": [],
+   "expr": "",
+   "source": "DIM d AS Float = 100\nBEEP d, 0"
+  },
+  {
+   "id": "PRINT 1 / 0",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1 / 0"
+  },
+  {
+   "id": "PRINT 1 MOD 0",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1 MOD 0"
+  },
+  {
+   "id": "PRINT 1.5 / 0",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1.5 / 0"
+  },
+  {
+   "id": "PRINT \"a\" = \"a\"",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT \"a\" = \"a\""
+  },
+  {
+   "id": "DIM s AS UByte = 1\nFOR i = 1 TO 5 STEP s: NEXT i",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s AS UByte = 1\nFOR i = 1 TO 5 STEP s: NEXT i"
+  },
+  {
+   "id": "FUNCTION f() AS UByte: RETURN 1: END FUNCTION\nPRINT f()",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f() AS UByte: RETURN 1: END FUNCTION\nPRINT f()"
+  },
+  {
+   "id": "SUB s: END SUB\ns()",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s: END SUB\ns()"
+  },
+  {
+   "id": "10 PRINT 1\n10 PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "10 PRINT 1\n10 PRINT 2"
+  },
+  {
+   "id": "GOSUB 20\nEND\n20 RETURN",
+   "decl": [],
+   "expr": "",
+   "source": "GOSUB 20\nEND\n20 RETURN"
+  },
+  {
+   "id": "PRINT AT 30, 0; 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT AT 30, 0; 1"
+  },
+  {
+   "id": "PRINT AT 0, 40; 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT AT 0, 40; 1"
+  },
+  {
+   "id": "PLOT 300, 0",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT 300, 0"
+  },
+  {
+   "id": "PLOT 0, 200",
+   "decl": [],
+   "expr": "",
+   "source": "PLOT 0, 200"
+  },
+  {
+   "id": "INK 12",
+   "decl": [],
+   "expr": "",
+   "source": "INK 12"
+  },
+  {
+   "id": "PAPER 9",
+   "decl": [],
+   "expr": "",
+   "source": "PAPER 9"
+  },
+  {
+   "id": "BORDER 9",
+   "decl": [],
+   "expr": "",
+   "source": "BORDER 9"
+  },
+  {
+   "id": "FLASH 2",
+   "decl": [],
+   "expr": "",
+   "source": "FLASH 2"
+  },
+  {
+   "id": "OVER 3",
+   "decl": [],
+   "expr": "",
+   "source": "OVER 3"
+  },
+  {
+   "id": "INVERSE 2",
+   "decl": [],
+   "expr": "",
+   "source": "INVERSE 2"
+  },
+  {
+   "id": "PAUSE -1",
+   "decl": [],
+   "expr": "",
+   "source": "PAUSE -1"
+  },
+  {
+   "id": "POKE 70000, 1",
+   "decl": [],
+   "expr": "",
+   "source": "POKE 70000, 1"
+  },
+  {
+   "id": "PRINT CHR$(300)",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT CHR$(300)"
+  },
+  {
+   "id": "DIM a(0)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(0)"
+  },
+  {
+   "id": "DIM a(-1)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(-1)"
+  },
+  {
+   "id": "DIM a(3) AS UByte\nPRINT a(5)",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(3) AS UByte\nPRINT a(5)"
+  },
+  {
+   "id": "DIM a(3) AS UByte\na(4) = 1",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(3) AS UByte\na(4) = 1"
+  },
+  {
+   "id": "x = 5: x$ = \"a\"",
+   "decl": [],
+   "expr": "",
+   "source": "x = 5: x$ = \"a\""
+  },
+  {
+   "id": "DIM a AS UByte\nDIM a AS UByte",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UByte\nDIM a AS UByte"
+  },
+  {
+   "id": "DIM a AS UByte\nDIM a AS Integer",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UByte\nDIM a AS Integer"
+  },
+  {
+   "id": "PRINT CODE \"\"",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT CODE \"\""
+  },
+  {
+   "id": "PRINT LEN 5",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT LEN 5"
+  },
+  {
+   "id": "PRINT VAL 5",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT VAL 5"
+  },
+  {
+   "id": "PRINT STR$ \"a\"",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT STR$ \"a\""
+  },
+  {
+   "id": "PRINT 1,,2",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1,,2"
+  },
+  {
+   "id": "PRINT ;;",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT ;;"
+  },
+  {
+   "id": "PRINT 1'2",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1'2"
+  },
+  {
+   "id": "IF 1 THEN PRINT 1 ELSE PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "IF 1 THEN PRINT 1 ELSE PRINT 2"
+  },
+  {
+   "id": "IF 1 THEN\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF 1 THEN\nEND IF"
+  },
+  {
+   "id": "ON 1 GOTO 10, 20\n10 PRINT\n20 PRINT",
+   "decl": [],
+   "expr": "",
+   "source": "ON 1 GOTO 10, 20\n10 PRINT\n20 PRINT"
+  },
+  {
+   "id": "EXIT FOR",
+   "decl": [],
+   "expr": "",
+   "source": "EXIT FOR"
+  },
+  {
+   "id": "NEXT",
+   "decl": [],
+   "expr": "",
+   "source": "NEXT"
+  },
+  {
+   "id": "NEXT i",
+   "decl": [],
+   "expr": "",
+   "source": "NEXT i"
+  },
+  {
+   "id": "CONST c = 1\nc = 2",
+   "decl": [],
+   "expr": "",
+   "source": "CONST c = 1\nc = 2"
+  },
+  {
+   "id": "DIM s AS String = 5",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s AS String = 5"
+  },
+  {
+   "id": "PRINT \"a\" + 1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT \"a\" + 1"
+  },
+  {
+   "id": "DIM s AS String\ns = 5",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s AS String\ns = 5"
+  },
+  {
+   "id": "FUNCTION f(a)\n RETURN a\nEND FUNCTION\nPRINT f(1)",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f(a)\n RETURN a\nEND FUNCTION\nPRINT f(1)"
+  },
+  {
+   "id": "PRINT SIN",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT SIN"
+  },
+  {
+   "id": "PRINT PEEK",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT PEEK"
+  },
+  {
+   "id": "x = 1 +",
+   "decl": [],
+   "expr": "",
+   "source": "x = 1 +"
+  },
+  {
+   "id": "PRINT (1",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT (1"
+  },
+  {
+   "id": "PRINT 1)",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1)"
+  },
+  {
+   "id": "DIM a AS UByte = 256",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UByte = 256"
+  },
+  {
+   "id": "DIM a AS Byte = 200",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS Byte = 200"
+  },
+  {
+   "id": "DIM a AS UInteger = -1",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UInteger = -1"
+  },
+  {
+   "id": "DIM a AS Fixed = 40000",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS Fixed = 40000"
+  },
+  {
+   "id": "DIM a AS Float = 1E40",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS Float = 1E40"
+  },
+  {
+   "id": "PRINT 1E40",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1E40"
+  },
+  {
+   "id": "PRINT 1E39 * 10",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT 1E39 * 10"
+  },
+  {
+   "id": "DIM a(3) AS UByte => {1, 2, 3}",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(3) AS UByte => {1, 2, 3}"
+  },
+  {
+   "id": "DIM a(3) AS UByte => {1, 2, 3, 4, 5}",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(3) AS UByte => {1, 2, 3, 4, 5}"
+  },
+  {
+   "id": "SUB s(a AS UByte = 1, b AS UByte)\nEND SUB",
+   "decl": [],
+   "expr": "",
+   "source": "SUB s(a AS UByte = 1, b AS UByte)\nEND SUB"
+  },
+  {
+   "id": "FUNCTION f AS UByte\nEND FUNCTION\nPRINT f",
+   "decl": [],
+   "expr": "",
+   "source": "FUNCTION f AS UByte\nEND FUNCTION\nPRINT f"
+  },
+  {
+   "id": "PRINT f(1)",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT f(1)"
+  },
+  {
+   "id": "DIM a AS UByte\na(1) = 2",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a AS UByte\na(1) = 2"
+  },
+  {
+   "id": "DIM a(3) AS UByte\na = 2",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a(3) AS UByte\na = 2"
+  },
+  {
+   "id": "LET a = 1: LET a = a + 1: PRINT a",
+   "decl": [],
+   "expr": "",
+   "source": "LET a = 1: LET a = a + 1: PRINT a"
+  },
+  {
+   "id": "PRINT PI = 3",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT PI = 3"
+  },
+  {
+   "id": "PRINT RND * 10",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT RND * 10"
+  },
+  {
+   "id": "RANDOMIZE 1",
+   "decl": [],
+   "expr": "",
+   "source": "RANDOMIZE 1"
+  },
+  {
+   "id": "PRINT INKEY$",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT INKEY$"
+  },
+  {
+   "id": "PRINT USR 0",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT USR 0"
+  },
+  {
+   "id": "PRINT IN 254",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT IN 254"
+  },
+  {
+   "id": "DIM i AS UByte\nFOR i = 1 TO 10 STEP 0: NEXT i",
+   "decl": [],
+   "expr": "",
+   "source": "DIM i AS UByte\nFOR i = 1 TO 10 STEP 0: NEXT i"
+  },
+  {
+   "id": "FOR i = 10 TO 1: NEXT i",
+   "decl": [],
+   "expr": "",
+   "source": "FOR i = 10 TO 1: NEXT i"
+  },
+  {
+   "id": "DO\nLOOP UNTIL 1: LOOP",
+   "decl": [],
+   "expr": "",
+   "source": "DO\nLOOP UNTIL 1: LOOP"
+  },
+  {
+   "id": "WHILE 1: WEND",
+   "decl": [],
+   "expr": "",
+   "source": "WHILE 1: WEND"
+  },
+  {
+   "id": "ASM\n ld a,1\nEND ASM",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n ld a,1\nEND ASM"
+  },
+  {
+   "id": "ASM\n ld a,(ix+1)\n call $0d6b\nEND ASM",
+   "decl": [],
+   "expr": "",
+   "source": "ASM\n ld a,(ix+1)\n call $0d6b\nEND ASM"
+  },
+  {
+   "id": "PRINT @x",
+   "decl": [],
+   "expr": "",
+   "source": "PRINT @x"
+  },
+  {
+   "id": "DIM x AS UByte\nPRINT @x",
+   "decl": [],
+   "expr": "",
+   "source": "DIM x AS UByte\nPRINT @x"
+  },
+  {
+   "id": "STOP 3",
+   "decl": [],
+   "expr": "",
+   "source": "STOP 3"
+  },
+  {
+   "id": "END 5",
+   "decl": [],
+   "expr": "",
+   "source": "END 5"
+  },
+  {
+   "id": "ERROR 30",
+   "decl": [],
+   "expr": "",
+   "source": "ERROR 30"
+  },
+  {
+   "id": "ERROR 256",
+   "decl": [],
+   "expr": "",
+   "source": "ERROR 256"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b THEN PRINT 1\nELSE PRINT 2\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b THEN PRINT 1\nELSE PRINT 2\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b THEN\nPRINT 1\nELSE\nPRINT 2\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b THEN\nPRINT 1\nELSE\nPRINT 2\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b PRINT 1\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b PRINT 1\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nELSEIF b THEN\nPRINT 1\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSEIF b THEN\nPRINT 1\nEND IF"
+  },
+  {
+   "id": "IF a THEN\nELSE PRINT 2\nEND IF",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN\nELSE PRINT 2\nEND IF"
+  },
+  {
+   "id": "IF a THEN PRINT 1: ELSE PRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "IF a THEN PRINT 1: ELSE PRINT 2"
+  },
+  {
+   "id": "REM x",
+   "decl": [],
+   "expr": "",
+   "source": "REM x"
+  },
+  {
+   "id": "' comment",
+   "decl": [],
+   "expr": "",
+   "source": "' comment"
+  },
+  {
+   "id": "#ifdef A\nPRINT 1\n#endif\nPRINT 2",
+   "decl": [],
+   "expr": "",
+   "source": "#ifdef A\nPRINT 1\n#endif\nPRINT 2"
+  },
+  {
+   "id": "#define A\n#ifdef A\nPRINT 1\n#endif",
+   "decl": [],
+   "expr": "",
+   "source": "#define A\n#ifdef A\nPRINT 1\n#endif"
+  },
+  {
+   "id": "x = SIN COS 0",
+   "decl": [],
+   "expr": "",
+   "source": "x = SIN COS 0"
+  },
+  {
+   "id": "x = PEEK 23610 + 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = PEEK 23610 + 1"
+  },
+  {
+   "id": "x$ = CHR$ 65",
+   "decl": [],
+   "expr": "",
+   "source": "x$ = CHR$ 65"
+  },
+  {
+   "id": "x = CODE a$",
+   "decl": [],
+   "expr": "",
+   "source": "x = CODE a$"
+  },
+  {
+   "id": "x = USR 0 + 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = USR 0 + 1"
+  },
+  {
+   "id": "x = LEN \"ab\" + 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = LEN \"ab\" + 1"
+  },
+  {
+   "id": "x = INT (1.5) + 1",
+   "decl": [],
+   "expr": "",
+   "source": "x = INT (1.5) + 1"
+  }
+ ]
+}

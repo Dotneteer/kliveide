@@ -1,10 +1,13 @@
-' #elif chooses the first branch whose condition holds (semantics annex: elif-directive)
+' ZX BASIC has no #elif (semantics annex: elif-directive): a chain of choices nests #if in #else,
+' and #if compares with ==
 '@expect screen 0 "two"
 #define LEVEL 2
 #if LEVEL == 1
 PRINT "one"
-#elif LEVEL == 2
+#else
+#if LEVEL == 2
 PRINT "two"
 #else
 PRINT "other"
+#endif
 #endif

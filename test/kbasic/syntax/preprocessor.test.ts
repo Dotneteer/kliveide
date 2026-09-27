@@ -73,7 +73,6 @@ describe("Klive BASIC preprocessor", () => {
 
   it.each([
     ["LEVEL == 3", true],
-    ["LEVEL = 3", true],
     ["LEVEL != 3", false],
     ["LEVEL <> 2", true],
     ["LEVEL > 2 && LEVEL < 4", true],
@@ -90,9 +89,9 @@ describe("Klive BASIC preprocessor", () => {
     expect(r.out).toBe(expected ? "YES" : "NO");
   });
 
-  it("supports #elif", () => {
-    const text = (v: number) => `#define V ${v}\n#if V == 1\nONE\n#elif V == 2\nTWO\n#elif V == 3\nTHREE\n#else\nOTHER\n#endif`;
-    expect([1, 2, 3, 4].map((v) => run(text(v)).out)).toEqual(["ONE", "TWO", "THREE", "OTHER"]);
+  it("has no #elif, and compares with == only, as zxbc (compatibility plan C4)", () => {
+    expect(run("#define V 2\n#if V == 1\nONE\n#elif V == 2\nTWO\n#endif").codes).toContain("E208");
+    expect(run("#define V 2\n#if V = 2\nTWO\n#endif").codes).toEqual(["E213"]);
   });
 
   it("reports unbalanced conditionals and bad expressions", () => {

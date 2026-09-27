@@ -1,9 +1,12 @@
 {
- "errors": {
-  "BEEP too long": {
-   "klive": "",
-   "zxbc": "rejected: zxbc crashed: src.arch.z80.beep.BeepError: Invalid duration: must be between [0, 10]"
+ "acceptance": {
+  "LOAD \"\" DATA": {
+   "klive": "rejected: E501 LOAD DATA without a name is not supported by the Klive BASIC code generator yet",
+   "zxbc": "accepted"
+  },
+  "SAVE \"d\" DATA": {
+   "klive": "rejected: E501 SAVE DATA without a name is not supported by the Klive BASIC code generator yet",
+   "zxbc": "accepted"
   }
- },
- "screen": {}
+ }
 }
