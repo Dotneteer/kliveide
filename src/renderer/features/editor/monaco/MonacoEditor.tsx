@@ -9,6 +9,7 @@ import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
@@ -51,6 +52,9 @@ import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
 import { runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
+import { stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
+import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import { statementAtColumn } from "@common/utils/breakpoints";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
@@ -186,6 +190,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Use these state variables to manage breakpoints and their changes
   const breakpointsVersion = useSelector((s) => s.emulatorState.breakpointsVersion);
+  const sourceFrame = useSelector((s) => s.ideView?.sourceFrame ?? 0);
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
@@ -195,6 +200,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const bpDecorations = useRef<EditorDecorationsCollection>(null);
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
+  // --- Step Into Target's context-menu items (plan §10.2.4), one per routine the stopped statement calls
+  const stepTargetActions = useRef<monacoEditor.IDisposable[]>([]);
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
   const refreshEditorBreakpoints = useRef<() => Promise<void>>(async () => undefined);
 
@@ -355,7 +362,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     void refreshEditorBreakpoints.current();
-  }, [breakpointsVersion, compilation, execState, hubVersion]);
+  }, [breakpointsVersion, compilation, execState, hubVersion, sourceFrame]);
 
   useEffect(() => {
     // Clear previous decorations and model markers
@@ -1264,6 +1271,29 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    * Refreshes the current breakpoint
    * @returns
    */
+  /** The calling statement of the outer frame selected in the Call Stack panel, when it is in this document. */
+  async function selectedFrameDecoration(info: SourceLevelDebugInfo, stop: SourceStopInfo | undefined): Promise<Decoration | undefined> {
+    const frame = store.getState().ideView?.sourceFrame ?? 0;
+    if (frame <= 0) return undefined;
+    let chain: SourceActivationInfo[] | undefined;
+    try {
+      chain = await emuApi.getSourceCallStack();
+    } catch {
+      return undefined;
+    }
+    const row = chain ? buildSourceCallStack(info, chain, stop).find((r) => !("runtime" in r) && r.frame === frame) : undefined;
+    if (!row || "runtime" in row || !row.filename || row.line === undefined) return undefined;
+    const sep = getIsWindows() ? "\\" : "/";
+    if (!row.filename.replaceAll(sep, "/").endsWith(getResourceName())) return undefined;
+    return {
+      range: new monacoEditor.Range(row.line, (row.startColumn ?? 0) + 1, row.endLine ?? row.line, (row.endColumn ?? 0) + 1),
+      options: {
+        className: styles.selectedFrameStatement,
+        hoverMessage: { value: `Frame ${frame}: ${row.name} is running a call made here` }
+      }
+    };
+  }
+
   async function refreshCurrentBreakpoint(bps: BreakpointInfo[]): Promise<void> {
     // --- No editor, no decorations
     if (!editor.current) {
@@ -1277,6 +1307,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Store the decorations
     const decorations: Decoration[] = [];
+    stepTargetActions.current.forEach((d) => d.dispose());
+    stepTargetActions.current = [];
 
     // --- Get the current PC value
     const cpuStateResponse = await emuApi.getCpuState();
@@ -1301,7 +1333,21 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           const resName = getResourceName()?.slice(1);
           const activeBp = bps.find((bp) => (bp.line === location.line && bp.resource === resName) || bp.address === pc);
           decorations.push(createCurrentStatementDecoration(location, activeBp));
+          stepIntoTargets(compilation.result.sourceLevelDebug, stop).forEach((target, i) => {
+            stepTargetActions.current.push(
+              editor.current.addAction({
+                id: `klive.stepIntoTarget.${target.callableIndex}`,
+                label: `Step Into ${target.name}`,
+                contextMenuGroupId: "klive-debug",
+                contextMenuOrder: 3 + i,
+                run: () => void emuApi.sourceStep("intoTarget", { targetCallable: target.callableIndex })
+              })
+            );
+          });
         }
+        // --- An outer frame selected in the Call Stack panel (§10.6): its calling statement
+        const frameDecoration = await selectedFrameDecoration(compilation.result.sourceLevelDebug, stop);
+        if (frameDecoration) decorations.push(frameDecoration);
         execPointDecoration.current?.clear();
         execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
         return;

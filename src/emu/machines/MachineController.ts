@@ -43,7 +43,11 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
-import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_STEP_IN_INTERRUPTS,
+  SETTING_EMU_STOP_ON_ERRORS
+} from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
@@ -119,6 +123,9 @@ export function attachStoredMedia(machine: IAnyMachine, mediaIds?: string[]): vo
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
  */
+/** The ROM's error restart (RST 8): the code byte follows the RST instruction. */
+const ROM_ERROR_RESTART = 0x0008;
+
 export class MachineController implements IMachineController {
   private _cancelRequested: boolean;
   private _machineTask: Promise<void>;
@@ -345,11 +352,21 @@ export class MachineController implements IMachineController {
   /** Source stepping (true) or Z80 instruction stepping (false) when source-level info is loaded. */
   sourceStepping = true;
 
-  /** Statement entries inside interrupt handlers stop a source step (§10.2.7; off by default). */
-  stopInInterrupts = false;
+  /** A boolean global setting, or its default when the store does not have it. */
+  private flagSetting(key: string, fallback: boolean): boolean {
+    const value = this.store ? getGlobalSetting(this.store, key) : undefined;
+    return value === undefined || value === null ? fallback : !!value;
+  }
 
-  /** Debug runs stop at the program's runtime-error routine (§10.10; on by default). */
-  stopOnErrors = true;
+  /** Statement entries inside interrupt handlers stop a source step (§10.2.7; a setting, off by default). */
+  get stopInInterrupts(): boolean {
+    return this.flagSetting(SETTING_EMU_STEP_IN_INTERRUPTS, false);
+  }
+
+  /** Debug runs stop at the program's runtime-error routines (§10.10; a setting, on by default). */
+  get stopOnErrors(): boolean {
+    return this.flagSetting(SETTING_EMU_STOP_ON_ERRORS, true);
+  }
 
   /** The injected program's source-level debug info; undefined for a program without it. */
   setSourceDebugInfo(info?: SourceLevelDebugInfo): void {
@@ -359,14 +376,31 @@ export class MachineController implements IMachineController {
       this.debugSupport.sourceStep = undefined;
       this.debugSupport.statementTracker = index ? new CurrentStatementTracker(index) : undefined;
     }
-    this.setStopOnErrors(this.stopOnErrors);
+    this.applyErrorStops();
   }
 
-  /** Turns runtime-error stops on or off (§10.10). */
-  setStopOnErrors(on: boolean): void {
-    this.stopOnErrors = on;
-    const entry = this.sourceIndex?.info.extensions?.errorEntry;
-    if (this.debugSupport) this.debugSupport.errorStopAddress = on ? entry : undefined;
+  /** Arms or disarms the runtime-error stop from the setting; every run does this, so a change applies at once. */
+  private applyErrorStops(): void {
+    const index = this.sourceIndex;
+    const debugSupport = this.debugSupport;
+    if (!debugSupport) return;
+    const on = this.stopOnErrors && !!index;
+    debugSupport.errorStopAddress = on ? index!.info.extensions?.errorEntry : undefined;
+    // --- The ROM's own errors (RST 8), while a statement of the program is on the stack
+    debugSupport.romErrorAddress = on ? ROM_ERROR_RESTART : undefined;
+    debugSupport.romErrorGuard = on ? () => innermostUserStatement(index!, this.machineView()) >= 0 : undefined;
+  }
+
+  /** At an error stop: the ERR_NR code (A at the runtime's routine, the byte after the RST at the ROM's). */
+  private errorCodeAt(pc: number): number | undefined {
+    const debugSupport = this.debugSupport;
+    if (!debugSupport) return undefined;
+    if (pc === debugSupport.errorStopAddress) return ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+    if (pc === debugSupport.romErrorAddress && debugSupport.romErrorGuard?.()) {
+      const view = this.machineView();
+      return this.machine.doReadMemory(view.readWord(view.sp)) & 0xff;
+    }
+    return undefined;
   }
 
   /**
@@ -445,8 +479,8 @@ export class MachineController implements IMachineController {
         returned: step.returned
       };
     }
-    if (this.debugSupport?.errorStopAddress === pc) {
-      const code = ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+    const code = this.errorCodeAt(pc);
+    if (code !== undefined) {
       return {
         kind: "error",
         pc,
@@ -827,6 +861,7 @@ export class MachineController implements IMachineController {
     this.context.terminationPoint = terminationPoint;
     this.context.canceled = false;
     this.context.debugSupport = this.debugSupport;
+    this.applyErrorStops();
     // --- A run that is not a source step ends what the last one reported
     if (debugStepMode !== DebugStepMode.SourceStep && this.debugSupport) this.debugSupport.sourceStep = undefined;
 
@@ -1143,7 +1178,7 @@ export class MachineController implements IMachineController {
    * the Next Registers panel reads.
    */
   private describeDebugStop(): string {
-    if (this.sourceIndex && this.debugSupport?.errorStopAddress === this.machine.pc) {
+    if (this.sourceIndex && this.errorCodeAt(this.machine.pc) !== undefined) {
       const stop = this.getSourceStopInfo();
       const s = stop?.userStatementIndex !== undefined ? this.sourceIndex.statements[stop.userStatementIndex] : undefined;
       const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;

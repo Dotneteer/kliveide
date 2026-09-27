@@ -355,9 +355,9 @@ class EmuApiImpl {
 
   /**
    * Selects source stepping (true) or Z80 instruction stepping (false) for a program with
-   * source-level debug info, and whether source steps stop inside interrupt handlers.
+   * source-level debug info.
    */
-  async setSourceStepping(_source: boolean, _stopInInterrupts?: boolean): Promise<void> {
+  async setSourceStepping(_source: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -366,11 +366,6 @@ class EmuApiImpl {
    * into a chosen call of the statement (`targetCallable`). Returns once the step has started.
    */
   async sourceStep(_kind: SourceStepKind, _options?: { targetFrame?: number; targetCallable?: number }): Promise<void> {
-    return Promise.reject(new Error(NO_PROXY_ERROR));
-  }
-
-  /** Whether debug runs stop at a compiled program's runtime-error routine (plan §10.10). */
-  async setSourceErrorStops(_on: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

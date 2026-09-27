@@ -1,3 +1,4 @@
+import { SETTING_EMU_STEP_IN_INTERRUPTS, SETTING_EMU_STOP_ON_ERRORS } from "@common/settings/setting-const";
 import type { MachineCommand } from "@abstractions/MachineCommand";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
@@ -286,7 +287,7 @@ export class ErrorStopsMachineCommand extends IdeCommandBase<ErrorStopArgs> {
   async execute(context: IdeCommandContext, args: ErrorStopArgs): Promise<IdeCommandResult> {
     const mode = `${args.mode}`.toLowerCase();
     if (mode !== "on" && mode !== "off") return commandError("Use 'on' or 'off'");
-    await context.emuApi.setSourceErrorStops(mode === "on");
+    await context.mainApi.setGlobalSettingsValue(SETTING_EMU_STOP_ON_ERRORS, mode === "on");
     writeSuccessMessage(context.output, mode === "on" ? "Debug runs stop at runtime errors" : "Runtime errors go to the ROM's report");
     return commandSuccess;
   }
@@ -309,7 +310,8 @@ export class SourceSteppingMachineCommand extends IdeCommandBase<SourceSteppingA
   async execute(context: IdeCommandContext, args: SourceSteppingArgs): Promise<IdeCommandResult> {
     const mode = `${args.mode}`.toLowerCase();
     if (mode !== "on" && mode !== "off") return commandError("Use 'on' (source stepping) or 'off' (Z80 stepping)");
-    await context.emuApi.setSourceStepping(mode === "on", !!args["-i"]);
+    await context.emuApi.setSourceStepping(mode === "on");
+    if (mode === "on") await context.mainApi.setGlobalSettingsValue(SETTING_EMU_STEP_IN_INTERRUPTS, !!args["-i"]);
     writeSuccessMessage(
       context.output,
       mode === "on" ? `Source stepping${args["-i"] ? ", stopping in interrupt handlers" : ""}` : "Z80 instruction stepping"

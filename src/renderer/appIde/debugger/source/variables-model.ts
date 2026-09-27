@@ -31,6 +31,8 @@ export type VariableNode = {
   /** Where the value is (for the tooltip and a data breakpoint); absent for constants and results. */
   address?: number;
   decoded?: DecodedValue;
+  /** A scalar in memory: its type, so the panel can write a new value (§10.7). */
+  valueType?: SourceValueType;
   expand?: () => VariableNode[];
 };
 
@@ -110,7 +112,7 @@ export function elementAddress(layout: ArrayLayout, subscripts: number[]): numbe
 
 function scalarNode(id: string, name: string, type: SourceValueType, mem: MemoryView, address: number): VariableNode {
   const decoded = decodeValue(type, mem, address);
-  return { id, name, type: typeName(type), value: decoded.text, address, decoded };
+  return { id, name, type: typeName(type), value: decoded.text, address, decoded, valueType: type };
 }
 
 function boundsText(layout: ArrayLayout): string {

@@ -30,7 +30,9 @@ const emu = {
   getCpuState: vi.fn().mockResolvedValue({ pc: 0x8100, sp: 0xfefe }),
   getMemoryContents: vi.fn().mockResolvedValue({ memory }),
   getCpuStateChunk: vi.fn().mockResolvedValue({ state: {} }),
-  sourceStep: vi.fn().mockResolvedValue(undefined)
+  sourceStep: vi.fn().mockResolvedValue(undefined),
+  setMemoryContent: vi.fn().mockResolvedValue(undefined),
+  getCallStack: vi.fn().mockResolvedValue({ sp: 0xfefe, frames: [] })
 };
 const commands = { executeCommand: vi.fn().mockResolvedValue(undefined) };
 
@@ -115,6 +117,17 @@ describe("the symbolic Call Stack panel (§10.6)", () => {
     expect(commands.executeCommand).toHaveBeenCalledWith('nav "/p/code/main.bas" 9 1');
   });
 
+  it("offers Run to this frame in a frame's context menu", async () => {
+    await renderPaused(<CallStackPanel />);
+    await act(async () => {
+      fireEvent.contextMenu(screen.getByText("main"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getAllByText("Run to this frame").find((e) => e.closest('[role="menuitem"]'))!);
+    });
+    expect(emu.sourceStep).toHaveBeenCalledWith("runToFrame", { targetFrame: 1 });
+  });
+
   it("runs to an outer frame", async () => {
     await renderPaused(<CallStackPanel />);
     await act(async () => {
@@ -132,6 +145,34 @@ describe("the Variables panel (§10.7, §10.8)", () => {
     expect(screen.getByText("Locals — f")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("12345")).toBeInTheDocument();
+  });
+
+  it("writes an edited number to memory", async () => {
+    await renderPaused(<VariablesPanel />);
+    await act(async () => {
+      fireEvent.doubleClick(screen.getByText("12345"));
+    });
+    const input = screen.getByLabelText("New value of score");
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "258" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
+    expect(emu.setMemoryContent).toHaveBeenCalledWith(0x9000, 2, 8, false);
+    expect(emu.setMemoryContent).toHaveBeenCalledWith(0x9001, 1, 8, false);
+  });
+
+  it("keeps the editor open with the reason when the value does not fit", async () => {
+    await renderPaused(<VariablesPanel />);
+    await act(async () => {
+      fireEvent.doubleClick(screen.getByText("12345"));
+    });
+    const input = screen.getByLabelText("New value of score");
+    await act(async () => {
+      fireEvent.change(input, { target: { value: "70000" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+    });
+    expect(screen.getByText("UInteger holds 0 to 65535")).toBeInTheDocument();
+    expect(emu.setMemoryContent).not.toHaveBeenCalled();
   });
 
   it("evaluates BASIC watches the user adds, and removes them", async () => {

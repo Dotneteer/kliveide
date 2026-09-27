@@ -230,6 +230,14 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
 
   const variables = buildVariables(input, functions, at);
   const errorEntry = input.symbol("core.RaiseError");
+  // --- Labels, from their definitions in the generated text (`_label.<name>:`)
+  const labels = text
+    .flatMap((line) => {
+      const m = /^_label\.([^\s:]+):/.exec(line);
+      const address = m ? input.symbol(`_label.${m[1]}`) : undefined;
+      return m && address !== undefined ? [{ name: m[1], address }] : [];
+    })
+    .sort((a, b) => a.address - b.address);
   return {
     language: "basic",
     files: [...files.map((filename, index): SourceFileEntry => ({ index, filename }))],
@@ -241,6 +249,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       callSites,
       frames,
       mainBaselineSymbol: input.symbol("core.ProgramSP") ?? 0,
+      labels,
       runtimeSymbols: input.runtimeSymbols,
       ...(errorEntry !== undefined ? { errorEntry } : {}),
       optimizationLevel: input.optimizationLevel

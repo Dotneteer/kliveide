@@ -299,7 +299,11 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   choosing what the Variables panel shows — a selection, not a debug state; its per-row action
   (Run to this frame) appears only on hover or on the selected row, so the frame names stay what
   the eye lands on. Tree indentation is `calc(var(--space-3) * depth)`, and the expander column is
-  present on every row so names align whether or not a row expands.
+  present on every row so names align whether or not a row expands. The same "selection, not a
+  debug state" reading puts `--surface-selected` behind the selected outer frame's calling
+  statement in the editor (`.selectedFrameStatement`), never the execution point's highlight. An
+  in-place value editor borrows the data-panel filter input's tokens (`--bgcolor-input`,
+  `--accent-border`) and turns its border `--status-error` while its text does not fit the type.
 - **Certainty is carried by strength, not by hue.** The same branch gutter draws the same glyph in
   the same colour on every row, and dims it to 45% everywhere except the execution point. Away from
   PC the verdict was computed from *today's* flags rather than the ones that will hold when the CPU

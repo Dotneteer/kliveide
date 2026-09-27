@@ -14,7 +14,9 @@ const emu = {
   issueMachineCommand: vi.fn().mockResolvedValue(undefined),
   sourceStep: vi.fn().mockResolvedValue(undefined),
   setSourceStepping: vi.fn().mockResolvedValue(undefined),
-  getSourceStepping: vi.fn().mockResolvedValue(true)
+  getSourceStepping: vi.fn().mockResolvedValue(true),
+  getSourceStopInfo: vi.fn().mockResolvedValue(undefined),
+  getSourceCallStack: vi.fn().mockResolvedValue(undefined)
 };
 
 vi.mock("@renderer/core/EmuApi", () => ({ useEmuApi: () => emu }));
@@ -32,6 +34,18 @@ vi.mock("@appIde/services/AppServicesProvider", () => ({
     outputPaneService: { getOutputPaneBuffer: () => ({ clear: vi.fn() }) },
     ideCommandsService: { executeCommand: vi.fn().mockResolvedValue(undefined) }
   })
+}));
+
+vi.mock("@controls/ToolbarSplitButton", () => ({
+  ToolbarSplitButton: ({ options, onAction, enable }: any) => (
+    <div>
+      {options.map((o: any) => (
+        <button key={o.value} title={o.label} disabled={enable === false} onClick={() => onAction(o.value)}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
 }));
 
 vi.mock("@controls/IconButton", () => ({
@@ -87,5 +101,36 @@ describe("ExecutionControls source stepping", () => {
     expect(screen.getByTitle(/Stepping Z80 instructions/)).toBeInTheDocument();
     // --- Step Over Line is a source step: not offered while stepping instructions
     expect(screen.getByTitle("Step Over Line (Shift+F10)")).toBeDisabled();
+  });
+
+  it("lists the statement's call targets under Step Into, and steps into the chosen one", async () => {
+    const withCalls = {
+      ...withSourceLevel,
+      sourceLevelDebug: {
+        ...withSourceLevel.sourceLevelDebug,
+        callables: [{ name: "main" }, { name: "f" }, { name: "g" }],
+        extensions: {
+          callSites: [
+            { returnAddress: 0x8010, statementIndex: 4, callerIndex: 0, kind: "function", calleeIndex: 2, moreCallsFollow: true, order: 0 },
+            { returnAddress: 0x8014, statementIndex: 4, callerIndex: 0, kind: "function", calleeIndex: 1, moreCallsFollow: false, order: 1 }
+          ],
+          variables: [],
+          frames: [],
+          mainBaselineSymbol: 0,
+          runtimeSymbols: [],
+          optimizationLevel: 0
+        }
+      }
+    };
+    emu.getSourceStopInfo.mockResolvedValue({ kind: "statement", pc: 0x8000, statementIndex: 4, returned: [] });
+    emu.getSourceCallStack.mockResolvedValue([{ callableIndex: 0, kind: "main", baseline: 0xff00 }]);
+    await renderPaused(withCalls);
+    expect(screen.getByTitle("Step Into g")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(screen.getByTitle("Step Into f"));
+    });
+    expect(emu.sourceStep).toHaveBeenCalledWith("intoTarget", { targetCallable: 1 });
+    // --- In the main program Step Out has nowhere to go
+    expect(screen.getByTitle("Step Out: the main program has nothing to return to")).toBeDisabled();
   });
 });

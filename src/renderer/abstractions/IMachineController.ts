@@ -124,14 +124,11 @@ export interface IMachineController {
   /** Source stepping (true) or Z80 stepping (false) for a program with source-level debug info. */
   sourceStepping: boolean;
 
-  /** Source steps stop inside interrupt handlers too (plan §10.2.7). */
-  stopInInterrupts: boolean;
+  /** Source steps stop inside interrupt handlers too (plan §10.2.7): the global setting. */
+  readonly stopInInterrupts: boolean;
 
   /** The injected program's source-level debug info (plan §10.2); undefined for none. */
   setSourceDebugInfo(info?: SourceLevelDebugInfo): void;
-
-  /** Debug runs stop at the program's runtime-error routine (plan §10.10; on by default). */
-  setStopOnErrors(on: boolean): void;
 
   /** A source-level step (`SourceStepDecision.ts`). */
   sourceStep(kind: SourceStepKind, options?: { targetFrame?: number; targetCallable?: number }): Promise<void>;

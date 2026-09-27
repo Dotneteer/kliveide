@@ -9,6 +9,9 @@ import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
 import { EmptyState } from "@renderer/controls/data";
 import { IconButton } from "@renderer/controls/IconButton";
+import { Icon } from "@renderer/controls/Icon";
+import { ContextMenu, ContextMenuItem, useContextMenuState } from "@renderer/controls/ContextMenu";
+import { iconSizes } from "@renderer/theming/tokens/dimensions";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
 import { Value } from "@renderer/controls/layout/Value";
@@ -33,6 +36,11 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const selected = useSelector((s) => s.ideView?.sourceFrame ?? 0);
   const [rows, setRows] = useState<(SourceFrameRow | RuntimeRow)[]>();
+  // --- The runtime row expands to the raw return addresses between SP and the innermost user activation
+  const [runtimeWords, setRuntimeWords] = useState<{ slot: number; value: number }[]>([]);
+  const [runtimeOpen, setRuntimeOpen] = useState(false);
+  const [menuState, menuApi] = useContextMenuState();
+  const [menuRow, setMenuRow] = useState<SourceFrameRow>();
   const lastStop = useRef<string>();
 
   const refresh = useCallback(async () => {
@@ -47,6 +55,13 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
       emuApi.getCpuState()
     ]);
     setRows(chain ? buildSourceCallStack(info, chain, stop) : undefined);
+    if (chain?.length && stop && stop.statementIndex < 0) {
+      const raw = await emuApi.getCallStack();
+      const limit = chain[0].returnSlot ?? chain[0].baseline;
+      setRuntimeWords(
+        raw.frames.map((value, i) => ({ slot: (raw.sp + 2 * i) & 0xffff, value })).filter((w) => w.slot < limit)
+      );
+    } else setRuntimeWords([]);
     // --- A new stop selects the innermost frame again; a refresh at the same stop keeps the choice
     const key = `${cpu.pc}:${cpu.sp}`;
     if (key !== lastStop.current) {
@@ -67,20 +82,47 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
     }
   };
 
+  const runToFrame = (frame: number) => void emuApi.sourceStep("runToFrame", { targetFrame: frame });
+  const symbolOf = (address: number) => runtimeSymbolAt(info, address);
+
   if (!rows) return <EmptyState message="Pause the machine to see the call stack" />;
   return (
     <div className={styles.callStackPanel}>
       {rows.map((row) =>
         "runtime" in row ? (
-          <div key="runtime" className={styles.item}>
-            <Label text="" className={styles.csIndex} />
-            <Secondary text={row.error ? `runtime error: ${row.error}` : `runtime code at $${toHexa4(row.pc)}`} />
+          <div key="runtime">
+            <div className={classnames(styles.item, styles.sourceFrame)} onClick={() => setRuntimeOpen(!runtimeOpen)}>
+              <span className={styles.csIndex}>
+                <Icon
+                  iconName={runtimeOpen ? "chevron-down" : "chevron-right"}
+                  width={iconSizes.sm}
+                  height={iconSizes.sm}
+                  fill="--data-label"
+                />
+              </span>
+              <Secondary
+                text={row.error ? `runtime error: ${row.error}` : `runtime code at $${toHexa4(row.pc)}${symbolOf(row.pc)}`}
+              />
+            </div>
+            {runtimeOpen &&
+              runtimeWords.map((w) => (
+                <div key={w.slot} className={styles.item}>
+                  <Label text="" className={styles.csIndex} />
+                  <Value text={toHexa4(w.slot)} className={classnames(styles.csCell, regStyles.stateValueAlt)} />
+                  <Icon iconName="arrow-small-right" width={16} height={16} fill="--data-label" />
+                  <Value text={`${toHexa4(w.value)}${symbolOf(w.value)}`} className={classnames(styles.csCell, regStyles.stateValue)} />
+                </div>
+              ))}
           </div>
         ) : (
           <div
             key={row.frame}
             className={classnames(styles.item, styles.sourceFrame, { [styles.selectedFrame]: row.frame === selected })}
             onClick={() => void select(row)}
+            onContextMenu={(e) => {
+              setMenuRow(row);
+              menuApi.show(e);
+            }}
           >
             <Label text={row.frame ? `${row.frame}:` : "Top:"} className={styles.csIndex} />
             <Value text={row.name} className={classnames(styles.csCell, regStyles.stateValue)} />
@@ -96,7 +138,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
                   title="Run to this frame"
                   clicked={(e) => {
                     e.stopPropagation();
-                    void emuApi.sourceStep("runToFrame", { targetFrame: row.frame });
+                    runToFrame(row.frame);
                   }}
                 />
               </span>
@@ -104,6 +146,36 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
           </div>
         )
       )}
+      <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
+        <ContextMenuItem
+          text="Go to this frame"
+          clicked={() => {
+            menuApi.conceal();
+            if (menuRow) void select(menuRow);
+          }}
+        />
+        <ContextMenuItem
+          text="Run to this frame"
+          iconName="step-out"
+          disabled={!menuRow?.frame}
+          clicked={() => {
+            menuApi.conceal();
+            if (menuRow?.frame) runToFrame(menuRow.frame);
+          }}
+        />
+      </ContextMenu>
     </div>
   );
 };
+
+/** ` (core.Name+n)` for an address in the runtime, from its entry points; empty elsewhere. */
+function runtimeSymbolAt(info: SourceLevelDebugInfo, address: number): string {
+  let best: { name: string; address: number } | undefined;
+  for (const s of info.extensions?.runtimeSymbols ?? []) {
+    if (s.address > address) break;
+    best = s;
+  }
+  if (!best || address - best.address > 0x400) return "";
+  const offset = address - best.address;
+  return ` (${best.name}${offset ? `+${offset}` : ""})`;
+}

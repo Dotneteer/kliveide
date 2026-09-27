@@ -379,6 +379,8 @@ export class DebugSupport implements IDebugSupport {
   imminentBreakpoint?: number;
   sourceStep?: SourceStep;
   errorStopAddress?: number;
+  romErrorAddress?: number;
+  romErrorGuard?: () => boolean;
   statementTracker?: { observe(pc: number): void; current: number };
 
   /**

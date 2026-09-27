@@ -13,6 +13,7 @@ export type SourceFrameRow = {
   kind: "main" | "routine" | "gosub";
   filename?: string;
   line?: number;
+  endLine?: number;
   startColumn?: number;
   endColumn?: number;
   /** Library code (not the user's source). */
@@ -42,12 +43,13 @@ export function buildSourceCallStack(
     const callable = info.callables[activation.callableIndex];
     rows.push({
       frame,
-      name: activation.kind === "gosub" ? "GOSUB" : (callable?.name ?? "?"),
+      name: activation.kind === "gosub" ? gosubName(info, activation.callableIndex, s?.startAddress) : (callable?.name ?? "?"),
       kind: activation.kind,
       ...(s
         ? {
             filename: info.files[s.fileIndex]?.filename,
             line: s.startLine,
+            endLine: s.endLine,
             startColumn: s.startColumn,
             endColumn: s.endColumn
           }
@@ -56,4 +58,20 @@ export function buildSourceCallStack(
     });
   });
   return rows;
+}
+
+/**
+ * A GOSUB activation's name: `GOSUB` and the label its subroutine starts at — the nearest label at
+ * or before the statement it stands at, in the same callable. The subroutine's entry is not on the
+ * stack (ON ... GOSUB does not even call it directly), so this is the reading a user would make.
+ */
+export function gosubName(info: SourceLevelDebugInfo, callableIndex: number, address: number | undefined): string {
+  const frame = info.extensions?.frames[callableIndex];
+  if (address === undefined || !frame) return "GOSUB";
+  let best: string | undefined;
+  for (const label of info.extensions?.labels ?? []) {
+    if (label.address > address) break;
+    if (label.address >= frame.startAddress && label.address < frame.endAddress) best = label.name;
+  }
+  return best === undefined ? "GOSUB" : `GOSUB ${best}`;
 }

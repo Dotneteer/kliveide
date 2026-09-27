@@ -20,6 +20,9 @@ import {
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
+  SETTING_EMU_STEP_IN_INTERRUPTS,
+  SETTING_EMU_STOP_ON_ERRORS,
+  SETTING_EMU_JUST_MY_CODE,
   SETTING_EMU_SCANLINE_EFFECT,
   SETTING_EMU_ZOOM_STEP,
   SETTING_EMU_MOUSE_CAPTURE,
@@ -176,6 +179,40 @@ const settingDefinitions: Setting[] = [
     id: SETTING_EMU_FAST_LOAD,
     title: "Fast load",
     description: "Allows the emulator fast tape load mode.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  // --- Source-level debugging of a compiled program (Klive BASIC, plan §10.2.7, §10.10, §10.12)
+  {
+    id: SETTING_EMU_STEP_IN_INTERRUPTS,
+    title: "Stop in Interrupt Handlers While Stepping",
+    description:
+      "Source steps also stop at statements of interrupt handlers (a BASIC SUB installed as an IM2 " +
+      "handler). Off: a handler taken during a step runs outside it. Breakpoints always stop.",
+    type: "boolean",
+    defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_STOP_ON_ERRORS,
+    title: "Stop at Runtime Errors",
+    description:
+      "A debug run of a compiled program stops where it raises a BASIC error, before the ROM " +
+      "prints the report, and shows the statement that raised it.",
+    type: "boolean",
+    defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_JUST_MY_CODE,
+    title: "Just My Code",
+    description:
+      "Source stepping runs through the standard library as it runs through the runtime. Off: " +
+      "stepping also stops in the library's statements.",
     type: "boolean",
     defaultValue: true,
     saveWithIde: true,

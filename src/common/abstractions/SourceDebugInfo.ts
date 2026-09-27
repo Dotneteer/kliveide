@@ -101,6 +101,8 @@ export type SourceDebugExtensions = {
   frames: CallableFrameInfo[];
   /** The address of the word where the prologue stores the main program's baseline SP. */
   mainBaselineSymbol: number;
+  /** The program's labels (a line number's digits or a label's name), sorted by address: GOSUB rows name their subroutine by them. */
+  labels?: { name: string; address: number }[];
   /** Runtime entry points, for disassembly labels and the call stack's runtime rows. */
   runtimeSymbols: { name: string; address: number }[];
   /** The runtime's error routine (§10.10): a debug run can stop here with the BASIC error. */

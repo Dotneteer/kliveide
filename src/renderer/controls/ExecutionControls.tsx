@@ -12,6 +12,7 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import type { MachineCommand } from "@common/abstractions/MachineCommand";
 import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
+import { canSourceStepOut, STEP_OUT_IN_MAIN, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 
 type Props = {
   ide: boolean;
@@ -111,7 +112,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
    * (Klive BASIC): Step Over Line, and the Source / Z80 toggle that decides what Step Into, Over
    * and Out step. The emulator's controller owns the mode; this follows it.
    */
-  const hasSourceDebug = useSelector((s) => hasSourceLevelDebug(s.compilation?.result));
+  const compilationResult = useSelector((s) => s.compilation?.result);
+  const hasSourceDebug = hasSourceLevelDebug(compilationResult);
   const [sourceMode, setSourceMode] = useState(true);
   useEffect(() => {
     if (!ide || !hasSourceDebug) return;
@@ -120,6 +122,33 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       .then(setSourceMode)
       .catch(() => undefined);
   }, [ide, hasSourceDebug, state, emuApi]);
+
+  /*
+   * Where a paused source-level program stands decides two things: Step Into's drop-down lists the
+   * routines the statement calls (Step Into Target, §10.2.4), and Step Out is disabled in the main
+   * program, which has nothing to return to (§10.2.5).
+   */
+  const [stepTargets, setStepTargets] = useState<{ callableIndex: number; name: string }[]>([]);
+  const [stepOutPossible, setStepOutPossible] = useState(true);
+  useEffect(() => {
+    if (!ide || !hasSourceLevelDebug(compilationResult) || state !== MachineControllerState.Paused) {
+      setStepTargets([]);
+      setStepOutPossible(true);
+      return undefined;
+    }
+    let live = true;
+    Promise.all([emuApi.getSourceStopInfo(), emuApi.getSourceCallStack()])
+      .then(([stop, chain]) => {
+        if (!live) return;
+        setStepTargets(stepIntoTargets(compilationResult.sourceLevelDebug, stop));
+        setStepOutPossible(canSourceStepOut(chain));
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [ide, compilationResult, state, emuApi]);
+  const sourceStepping = ide && hasSourceDebug && sourceMode;
 
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);
   const [stepOverKey, setStepOverKey] = useState<string>(null);
@@ -180,6 +209,15 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     setResumeAction("debug");
     await emuApi.issueMachineCommand("stepOut");
   }, [emuApi]);
+
+  const handleStepIntoAction = useCallback(
+    async (value: string) => {
+      setResumeAction("debug");
+      if (value === "into") await emuApi.issueMachineCommand("stepInto");
+      else await emuApi.sourceStep("intoTarget", { targetCallable: Number(value) });
+    },
+    [emuApi]
+  );
 
   const handleStepOverLine = useCallback(async () => {
     setResumeAction("debug");
@@ -273,14 +311,32 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         clicked={handleRestart}
       />
       <ToolbarSeparator />
-      <IconButton
-        iconName="step-into"
-        iconSize={SECONDARY_ICON_SIZE}
-        fill="--color-toolbarbutton-blue"
-        title={`Step Into (${stepIntoKey})`}
-        enable={canStep}
-        clicked={handleStepInto}
-      />
+      {sourceStepping && stepTargets.length > 0 ? (
+        <ToolbarSplitButton
+          options={[
+            { value: "into", label: `Step Into (${stepIntoKey})`, iconName: "step-into", fill: "--color-toolbarbutton-blue" },
+            ...stepTargets.map((t) => ({
+              value: String(t.callableIndex),
+              label: `Step Into ${t.name}`,
+              iconName: "step-into",
+              fill: "--color-toolbarbutton-blue"
+            }))
+          ]}
+          selectedValue="into"
+          enable={canStep}
+          dropdownTitle="Step Into Target"
+          onAction={handleStepIntoAction}
+        />
+      ) : (
+        <IconButton
+          iconName="step-into"
+          iconSize={SECONDARY_ICON_SIZE}
+          fill="--color-toolbarbutton-blue"
+          title={`Step Into (${stepIntoKey})`}
+          enable={canStep}
+          clicked={handleStepInto}
+        />
+      )}
       <IconButton
         iconName="step-over"
         iconSize={SECONDARY_ICON_SIZE}
@@ -293,8 +349,8 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         iconName="step-out"
         iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title={`Step Out (${stepOutKey})`}
-        enable={canStep}
+        title={sourceStepping && !stepOutPossible ? STEP_OUT_IN_MAIN : `Step Out (${stepOutKey})`}
+        enable={canStep && (!sourceStepping || stepOutPossible)}
         clicked={handleStepOut}
       />
       {ide && hasSourceDebug && (

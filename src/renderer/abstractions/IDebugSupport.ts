@@ -118,6 +118,14 @@ export interface IDebugSupport {
    */
   errorStopAddress?: number;
 
+  /**
+   * The ROM's error restart (RST 8 at $0008), where errors the ROM raises itself end up (the
+   * calculator's "6 Number too big"). A debug run stops there only while `romErrorGuard` says a
+   * compiled program is running, so BASIC's own errors after the program has ended do not stop.
+   */
+  romErrorAddress?: number;
+  romErrorGuard?: () => boolean;
+
   /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
   statementTracker?: { observe(pc: number): void; current: number };
 

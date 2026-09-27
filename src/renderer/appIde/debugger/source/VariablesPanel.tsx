@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { buildSourceCallStack } from "./call-stack-model";
-import { memoryView, type MemoryView } from "./value-decoder";
+import { encodeValue, memoryView, type MemoryView } from "./value-decoder";
 import { buildVariableSections, type VariableNode } from "./variables-model";
 import { evaluateWatch } from "./watch-expression";
 import styles from "./VariablesPanel.module.scss";
@@ -46,6 +46,8 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const [snapshot, setSnapshot] = useState<Snapshot>();
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [draft, setDraft] = useState("");
+  // --- A value being edited (§10.7): the row, the text typed so far, and why the last try failed
+  const [editing, setEditing] = useState<{ id: string; text: string; error?: string }>();
 
   const refresh = useCallback(async () => {
     if (machineState !== MachineControllerState.Paused) {
@@ -89,12 +91,36 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
     setDraft("");
   };
 
+  const editable = (node: VariableNode) =>
+    machineState === MachineControllerState.Paused &&
+    node.address !== undefined &&
+    node.valueType !== undefined &&
+    node.valueType !== "string";
+
+  const commitEdit = async (node: VariableNode) => {
+    if (!editing) return;
+    const encoded = encodeValue(node.valueType!, editing.text);
+    if ("error" in encoded) {
+      setEditing({ ...editing, error: encoded.error });
+      return;
+    }
+    for (let i = 0; i < encoded.bytes.length; i++) {
+      await emuApi.setMemoryContent((node.address! + i) & 0xffff, encoded.bytes[i], 8, false);
+    }
+    setEditing(undefined);
+    await refresh();
+  };
+
   const renderNodes = (nodes: VariableNode[], depth: number) =>
     nodes.map((node) => {
       const open = expanded.has(node.id);
       return (
         <div key={node.id}>
-          <DataRow hoverable clicked={node.expand ? () => toggle(node.id) : undefined}>
+          <DataRow
+            hoverable
+            clicked={node.expand ? () => toggle(node.id) : undefined}
+            onDoubleClick={editable(node) ? () => setEditing({ id: node.id, text: node.value }) : undefined}
+          >
             <span className={styles.indent} style={{ inlineSize: `calc(var(--space-3) * ${depth})` }} />
             <span className={styles.expander}>
               {node.expand && (
@@ -107,11 +133,29 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
               )}
             </span>
             <DataLabel text={node.name} />
-            <DataValue
-              text={node.value}
-              xclass={styles.value}
-              {...(node.address !== undefined ? { title: `At $${toHexa4(node.address)} (${node.address})` } : {})}
-            />
+            {editing?.id === node.id ? (
+              <input
+                className={styles.valueEditor}
+                aria-label={`New value of ${node.name}`}
+                autoFocus
+                value={editing.text}
+                title={editing.error}
+                aria-invalid={!!editing.error}
+                onChange={(e) => setEditing({ id: node.id, text: e.target.value })}
+                onBlur={() => setEditing(undefined)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void commitEdit(node);
+                  else if (e.key === "Escape") setEditing(undefined);
+                }}
+              />
+            ) : (
+              <DataValue
+                text={node.value}
+                xclass={styles.value}
+                title={`${node.address !== undefined ? `At $${toHexa4(node.address)} (${node.address})` : ""}${editable(node) ? "\nDouble-click to change" : ""}`}
+              />
+            )}
+            {editing?.id === node.id && editing.error && <span className={styles.watchError}>{editing.error}</span>}
             {node.type && <DataSecondary text={node.type} />}
           </DataRow>
           {open && node.expand && renderNodes(node.expand(), depth + 1)}

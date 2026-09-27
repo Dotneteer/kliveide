@@ -768,21 +768,12 @@ class EmuMessageProcessor {
     controller.setSourceDebugInfo(info);
   }
 
-  setSourceStepping(source: boolean, stopInInterrupts?: boolean) {
+  setSourceStepping(source: boolean) {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
     controller.sourceStepping = source;
-    if (stopInInterrupts !== undefined) controller.stopInInterrupts = stopInInterrupts;
-  }
-
-  setSourceErrorStops(on: boolean) {
-    const controller = this.machineService.getMachineController();
-    if (!controller) {
-      noController();
-    }
-    controller.setStopOnErrors(on);
   }
 
   getSourceStepping() {

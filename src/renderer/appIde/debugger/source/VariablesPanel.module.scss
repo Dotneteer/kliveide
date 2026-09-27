@@ -30,3 +30,21 @@
 .rowAction {
   margin-inline-start: auto;
 }
+
+/* The in-place editor of a value (§10.7): styled as the data panel filter input, one row tall */
+.valueEditor {
+  flex: 0 1 12ch;
+  min-width: 0;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
+  color: var(--data-value);
+  background: var(--bgcolor-input);
+
+  &[aria-invalid="true"] {
+    border-color: var(--status-error);
+  }
+}

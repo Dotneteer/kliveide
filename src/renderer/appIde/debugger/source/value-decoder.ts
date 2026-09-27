@@ -1,5 +1,5 @@
 import type { SourceReturnRegisters, SourceValueType } from "@abstractions/SourceDebugInfo";
-import { toNumber, type Float40 } from "@main/kbasic/semantics/float40";
+import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
 
 /**
  * Decoding a Klive BASIC value from emulator memory or registers (plan §10.7), in the
@@ -150,5 +150,54 @@ export function decodeRegisters(type: SourceValueType, r: SourceReturnRegisters,
       return fromBytes(type, [a, lo(r.de), hi(r.de), lo(r.bc), hi(r.bc)], mem);
     default:
       return fromBytes(type, [lo(r.hl), hi(r.hl), lo(r.de), hi(r.de)], mem);
+  }
+}
+
+const RANGES: Partial<Record<SourceValueType, [number, number]>> = {
+  byte: [-128, 127],
+  ubyte: [0, 255],
+  integer: [-32768, 32767],
+  uinteger: [0, 65535],
+  long: [-2147483648, 2147483647],
+  ulong: [0, 4294967295]
+};
+
+/**
+ * The bytes a new value of `type` is stored as (plan §10.7: editing a value writes memory), or an
+ * error for text that is not a number of the type. Numbers only: a String is a heap pointer, and
+ * writing one would need the program's heap.
+ */
+export function encodeValue(type: SourceValueType, text: string): { bytes: number[] } | { error: string } {
+  const t = text.trim();
+  if (type === "string") return { error: "Strings cannot be edited" };
+  if (type === "boolean") {
+    const upper = t.toUpperCase();
+    if (upper === "TRUE" || upper === "FALSE") return { bytes: [upper === "TRUE" ? 1 : 0] };
+  }
+  const hex = /^\$([0-9a-f]+)$/i.exec(t);
+  const x = hex ? parseInt(hex[1], 16) : t === "" ? NaN : Number(t);
+  if (!Number.isFinite(x)) return { error: `'${text}' is not a number` };
+  const le = (value: number, size: number) => Array.from({ length: size }, (_, i) => Math.floor(value / 2 ** (8 * i)) & 0xff);
+  switch (type) {
+    case "boolean":
+      return { bytes: [x ? 1 : 0] };
+    case "fixed": {
+      const raw = Math.round(x * 0x10000);
+      if (raw < -0x80000000 || raw > 0x7fffffff) return { error: "Out of the Fixed range" };
+      return { bytes: le(raw >>> 0, 4) };
+    }
+    case "float":
+      try {
+        return { bytes: [...fromNumber(x)] };
+      } catch {
+        return { error: "Out of the Float range" };
+      }
+    default: {
+      const [lo, hi] = RANGES[type]!;
+      if (!Number.isInteger(x)) return { error: `${typeName(type)} takes whole numbers` };
+      if (x < lo || x > hi) return { error: `${typeName(type)} holds ${lo} to ${hi}` };
+      const size = valueSize(type);
+      return { bytes: le(x < 0 ? x + 2 ** (8 * size) : x, size) };
+    }
   }
 }

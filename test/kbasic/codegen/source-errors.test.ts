@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { basicErrorReport, CurrentStatementTracker, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
+import { basicErrorReport, CurrentStatementTracker, innermostUserStatement, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import { locateActivations } from "@emu/machines/SourceStepDecision";
 
@@ -17,6 +17,10 @@ async function runToError(source: string, options = {}) {
   const index = new SourceDebugIndex(info);
   const debugSupport = session.attachDebugSupport();
   debugSupport.errorStopAddress = info.extensions!.errorEntry;
+  // --- As MachineController arms it: the ROM's RST 8, while a statement of the program is on the stack
+  const machineView = () => ({ pc: session.machine.pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) });
+  debugSupport.romErrorAddress = 0x0008;
+  debugSupport.romErrorGuard = () => innermostUserStatement(index, machineView()) >= 0;
   const tracker = new CurrentStatementTracker(index);
   debugSupport.statementTracker = tracker;
   const pc = session.continueToBreakpoint({ returnTo: done, maxFrames: 400 });
@@ -24,7 +28,8 @@ async function runToError(source: string, options = {}) {
   const s = info.statements[tracker.current];
   const text = s ? lines[s.startLine - 1].slice(s.startColumn, s.endColumn) : undefined;
   const view = { pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
-  return { session, info, index, pc, tracker, text, code: session.machine.a, view };
+  const code = pc === 0x0008 ? session.peek(session.peekWord(session.machine.sp)) : session.machine.a;
+  return { session, info, index, pc, tracker, text, code, view };
 }
 
 describe("runtime-error stops (§10.10)", () => {
@@ -59,5 +64,21 @@ describe("runtime-error stops (§10.10)", () => {
     const r = await runToError(source, { heapSize: 200, checkMemory: true });
     expect(basicErrorReport(r.code)).toBe("4 Out of memory");
     expect(r.text).toBe('s$ = s$ + "0123456789"');
+  });
+
+  it("stops when the ROM raises an error itself (RST 8), naming the statement", async () => {
+    const source = ["DIM x AS Float = 1E30", 'PRINT "before"', "x = x * x * x * x * x", 'PRINT "not reached"', ""].join("\n");
+    const r = await runToError(source);
+    expect(r.pc).toBe(0x0008);
+    expect(basicErrorReport(r.code)).toBe("6 Number too big");
+    expect(r.text).toBe("x = x * x * x * x * x");
+  });
+
+  it("does not stop at the ROM's errors once the program has ended", async () => {
+    const { session, generated, done } = await startBasic('PRINT "done"\n');
+    const index = new SourceDebugIndex(generated.debug.sourceLevel);
+    session.runTo(done);
+    const view = { pc: session.machine.pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
+    expect(innermostUserStatement(index, view)).toBe(-1);
   });
 });

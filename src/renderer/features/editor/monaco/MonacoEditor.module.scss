@@ -242,3 +242,10 @@
 .warningIcon:has(+ .warningIcon) {
   padding-right: 0 !important;
 }
+
+.selectedFrameStatement {
+  /* The calling statement of an outer frame selected in the Call Stack panel (plan §10.6): where
+     that frame stands, not where execution is, so the selection surface rather than the
+     execution-point highlight */
+  background: var(--surface-selected);
+}

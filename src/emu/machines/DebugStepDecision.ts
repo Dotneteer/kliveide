@@ -141,7 +141,11 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
    * to leave for the ROM's report. Not on the instruction a run resumes from, so continuing from
    * the stop goes on to the report.
    */
-  if (debugSupport.errorStopAddress === pc && instructionsExecuted > 0) {
+  if (
+    instructionsExecuted > 0 &&
+    (debugSupport.errorStopAddress === pc ||
+      (debugSupport.romErrorAddress === pc && (debugSupport.romErrorGuard?.() ?? true)))
+  ) {
     debugSupport.imminentBreakpoint = undefined;
     return true;
   }

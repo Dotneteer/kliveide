@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { innermostUserStatement, locateActivations, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
-import { decodeRegisters, memoryView, spectrumText, type MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
+import { decodeRegisters, decodeValue, encodeValue, memoryView, spectrumText, type MemoryView } from "@renderer/appIde/debugger/source/value-decoder";
 import { buildVariableSections, type VariableNode } from "@renderer/appIde/debugger/source/variables-model";
 import { evaluateWatch, parseWatch } from "@renderer/appIde/debugger/source/watch-expression";
 
@@ -210,5 +210,60 @@ describe("the BASIC watch list (§10.8)", () => {
     expect(state).toEqual(["a + 1", "grid(1, 2)"]);
     expect(basicWatchReducer(state, removeBasicWatchAction(0))).toEqual(["grid(1, 2)"]);
     expect(basicWatchReducer(state, setBasicWatchesAction(undefined))).toEqual([]);
+  });
+});
+
+describe("editing a value (§10.7)", () => {
+  const roundTrip = (type: Parameters<typeof encodeValue>[0], text: string) => {
+    const encoded = encodeValue(type, text);
+    if ("error" in encoded) return `error: ${encoded.error}`;
+    const memory = new Uint8Array(0x10000);
+    memory.set(encoded.bytes, 0x8000);
+    return decodeValue(type, memoryView(memory), 0x8000).text;
+  };
+
+  it("stores numbers of every type as the program reads them", () => {
+    expect(roundTrip("byte", "-5")).toBe("-5");
+    expect(roundTrip("ubyte", "$FF")).toBe("255");
+    expect(roundTrip("integer", "-1234")).toBe("-1234");
+    expect(roundTrip("uinteger", "60000")).toBe("60000");
+    expect(roundTrip("long", "-100000")).toBe("-100000");
+    expect(roundTrip("ulong", "4000000000")).toBe("4000000000");
+    expect(roundTrip("fixed", "-1.25")).toBe("-1.25");
+    expect(roundTrip("float", "3.25")).toBe("3.25");
+    expect(roundTrip("float", "1e30")).toBe("1e+30");
+    expect(roundTrip("boolean", "true")).toBe("TRUE");
+  });
+
+  it("refuses what the type cannot hold, and Strings", () => {
+    expect(roundTrip("ubyte", "256")).toBe("error: UByte holds 0 to 255");
+    expect(roundTrip("integer", "1.5")).toBe("error: Integer takes whole numbers");
+    expect(roundTrip("uinteger", "abc")).toBe("error: 'abc' is not a number");
+    expect(roundTrip("string", "x")).toBe("error: Strings cannot be edited");
+  });
+
+  it("writes through the running machine and the program sees it", async () => {
+    const d = await stopAt(24);
+    const { globals } = buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem);
+    const u = row(globals, "u")!;
+    const encoded = encodeValue(u.valueType!, "1234");
+    if ("error" in encoded) throw new Error(encoded.error);
+    d.session.poke(u.address!, encoded.bytes);
+    expect(row(buildVariableSections(d.info, d.chain(), 0, d.stop(), d.mem).globals, "u")?.value).toBe("1234");
+  });
+});
+
+describe("GOSUB rows (§10.6)", () => {
+  it("name the subroutine by its label", async () => {
+    const source = ["GOSUB 100", "END", "100 PRINT 1", "  GOSUB inner", "  RETURN", "inner:", "  PRINT 2", "  RETURN", ""].join("\n");
+    const { session, generated, done } = await startBasic(source);
+    const info = generated.debug.sourceLevel;
+    const index = new SourceDebugIndex(info);
+    const debugSupport = session.attachDebugSupport();
+    debugSupport.addBreakpoint({ address: info.statements.find((s) => s.startLine === 7)!.startAddress, exec: true });
+    const pc = session.continueToBreakpoint({ returnTo: done });
+    const view = { pc, sp: session.machine.sp, ix: session.machine.ix, readWord: (a: number) => session.peekWord(a) };
+    const rows = buildSourceCallStack(info, locateActivations(index, view), { kind: "statement", pc, statementIndex: index.statementAt(pc), returned: [] });
+    expect(rows.map((r) => ("runtime" in r ? "runtime" : `${r.name}:${r.line}`))).toEqual(["GOSUB inner:7", "GOSUB 100:4", "main:1"]);
   });
 });
