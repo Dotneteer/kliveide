@@ -52,14 +52,6 @@ PrintInitInverse:
     jr z,PrintInitFlags
     set 1,c
 PrintInitFlags:
-    bit 5,a
-    jr z,PrintInitInk9
-    set 4,c
-PrintInitInk9:
-    bit 7,a
-    jr z,PrintInitPaper9
-    set 5,c
-PrintInitPaper9:
     ld a,c
     ld (PrintFlagsP),a
     xor a
@@ -89,7 +81,7 @@ PrintAttrP:
 PrintMaskP:
     .defb 0
 PrintFlags:
-    .defb 0                 ; bit 0 OVER, 1 INVERSE, 2 BOLD, 3 ITALIC, 4 INK 9, 5 PAPER 9
+    .defb 0                 ; bit 0 OVER (bit 0), 1 INVERSE, 2 BOLD, 3 ITALIC, 4 OVER (bit 1)
 PrintFlagsP:
     .defb 0
 PrintCtl:
@@ -227,10 +219,20 @@ PrintGlyphInverse:
     bit 1,c
     jr z,PrintGlyphOver
     cpl                     ; INVERSE
-PrintGlyphOver:
+PrintGlyphOver:              ; OVER 0 replaces, 1 XORs, 2 ANDs, 3 ORs (flag bits 4 and 0)
+    bit 4,c
+    jr nz,PrintGlyphOver23
     bit 0,c
     jr z,PrintGlyphPut
-    xor (hl)                ; OVER
+    xor (hl)                ; OVER 1
+    jr PrintGlyphPut
+PrintGlyphOver23:
+    bit 0,c
+    jr nz,PrintGlyphOr
+    and (hl)                ; OVER 2
+    jr PrintGlyphPut
+PrintGlyphOr:
+    or (hl)                 ; OVER 3
 PrintGlyphPut:
     ld (hl),a
     inc de
@@ -243,8 +245,8 @@ PrintGlyphPut:
     ret
 
 ; ------------------------------------------------------------------------------------------------
-; Gives the attribute at HL the current colours: the fields the mask keeps stay, INK 9 and PAPER 9
-; contrast. PRINT and the graphics statements share it. Changes AF, BC, DE.
+; Gives the attribute at HL the current colours: the fields the mask keeps stay. PRINT and the graphics
+; statements share it. Changes AF, BC, DE.
 PrintApplyAttr:
     ld a,(PrintFlags)
     ld c,a
@@ -256,20 +258,6 @@ PrintApplyAttr:
     cpl
     and e
     or b
-    bit 4,c
-    jr z,PrintApplyPaper9
-    and $f8                 ; INK 9: white on a dark paper, black on a light one
-    bit 5,a
-    jr nz,PrintApplyPaper9
-    or $07
-PrintApplyPaper9:
-    bit 5,c
-    jr z,PrintApplyDone
-    and $c7                 ; PAPER 9: white under a dark ink, black under a light one
-    bit 2,a
-    jr nz,PrintApplyDone
-    or $38
-PrintApplyDone:
     ld (hl),a
     ret
 
@@ -523,9 +511,11 @@ PrintSavePosn:
 
 ; ------------------------------------------------------------------------------------------------
 ; A colour code's argument: C = the code (16 INK, 17 PAPER, 18 FLASH, 19 BRIGHT, 20 INVERSE, 21 OVER,
-; and, as PRINT items only, 26 BOLD, 27 ITALIC), A = the value. INK and PAPER take 0-7, 8 (keep the
-; screen's) and 9 (contrast: white on a dark colour, black on a light one); FLASH and BRIGHT 0, 1
-; and 8; the others 0 and 1. Anything else stops with "K Invalid colour". Changes AF, BC, HL.
+; and, as PRINT items only, 26 BOLD, 27 ITALIC), A = the value, taken as ZX BASIC takes it (observed
+; through the oracle, compatibility plan C3): INK and PAPER 8 keep the screen's, any other value is
+; masked to 0-7 (9 is 1: there is no contrast); FLASH and BRIGHT 8 keep the screen's, any other
+; non-zero value sets them; OVER takes bits 0 and 1 (a glyph: 0 replaces, 1 XORs, 2 ANDs, 3 ORs; PLOT
+; reads bit 0 only); INVERSE, BOLD and ITALIC bit 0. No value stops the program. Changes AF, BC, HL.
 PrintColour:
     ld b,a                  ; B = the value
     ld a,c
@@ -556,9 +546,7 @@ PrintColour:
     ld c,$38                ; PAPER
     cp 8
     jr z,PrintColourKeep
-    cp 9
-    jr z,PrintColourContrast
-    jr nc,PrintColourBad
+    and 7                   ; 9 is 1, 10 is 2...: no contrast, no error (ZX BASIC)
     rlca
     rlca
     rlca
@@ -566,9 +554,7 @@ PrintColour:
 PrintColourField:           ; A = the value
     cp 8
     jr z,PrintColourKeep
-    cp 9
-    jr z,PrintColourContrast
-    jr nc,PrintColourBad
+    and 7
 PrintColourSet:             ; A = the value in the field's position, C = the field, HL = PrintAttr
     ld b,a
     ld a,c
@@ -581,63 +567,49 @@ PrintColourSet:             ; A = the value in the field's position, C = the fie
     cpl
     and (hl)
     ld (hl),a               ; the field is no longer kept from the screen
-PrintColourNoContrast:      ; C = the field: INK and PAPER stop contrasting
-    call PrintContrastBit
-    cpl
-    ld hl,PrintFlags
-    and (hl)
-    ld (hl),a
     ret
 PrintColourKeep:            ; 8: keep the field from the screen
     inc hl
     ld a,(hl)
     or c
     ld (hl),a
-    jr PrintColourNoContrast
-PrintColourContrast:        ; 9: INK or PAPER contrasts with the other one
-    call PrintContrastBit
-    ld hl,PrintFlags
-    or (hl)
-    ld (hl),a
     ret
-PrintColourBit:             ; FLASH, BRIGHT: B = 0, 1 or 8
+PrintColourBit:             ; FLASH, BRIGHT: 8 keeps, any other value but 0 sets
     ld a,b
     cp 8
     jr z,PrintColourKeep
-    cp 2
-    jr nc,PrintColourBad
-    neg                     ; 0 -> 0, 1 -> $FF
+    or a
+    jr z,PrintColourBitOff
+    ld a,$ff
+PrintColourBitOff:
     and c
     jr PrintColourSet
-PrintColourFlag:            ; B = 0 or 1, C = the flag, HL = PrintFlags
+PrintColourFlag:            ; B = the value, C = the flag, HL = PrintFlags
+    ld a,c
+    cp 1
+    jr nz,PrintColourFlagBit
+    ld a,b                  ; OVER: bit 0 in flag bit 0 (PLOT reads it), bit 1 in flag bit 4
+    and 3
+    bit 1,a
+    jr z,PrintColourOver
+    and 1
+    or $10
+PrintColourOver:
+    ld b,a
+    ld c,$11
+    jr PrintColourFlagSet
+PrintColourFlagBit:         ; INVERSE, BOLD, ITALIC: bit 0 of the value
     ld a,b
-    cp 2
-    jr nc,PrintColourBad
+    and 1
     neg
     and c
     ld b,a
+PrintColourFlagSet:         ; B = the new bits, C = the flag's bits
     ld a,c
     cpl
     and (hl)
     or b
     ld (hl),a
-    ret
-PrintColourBad:
-    ld a,19
-    jp RaiseError
-
-; A = the PrintFlags bit of field C's contrast: bit 4 for INK ($07), bit 5 for PAPER ($38), none for
-; the others. Changes F.
-PrintContrastBit:
-    ld a,c
-    cp $07
-    ld a,$10
-    ret z
-    ld a,c
-    cp $38
-    ld a,$20
-    ret z
-    xor a
     ret
 
 ; ------------------------------------------------------------------------------------------------

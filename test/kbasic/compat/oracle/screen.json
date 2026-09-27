@@ -1,0 +1,290 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "colour: INK 0": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: INK 7": {
+   "out": "63 63 0 0 56"
+  },
+  "colour: INK 8": {
+   "out": "56 56 7 0 56"
+  },
+  "colour: INK 9": {
+   "out": "57 57 0 0 56"
+  },
+  "colour: INK 10": {
+   "out": "58 58 0 0 56"
+  },
+  "colour: INK 15": {
+   "out": "63 63 0 0 56"
+  },
+  "colour: PAPER 0": {
+   "out": "0 0 0 0 56"
+  },
+  "colour: PAPER 8": {
+   "out": "56 56 56 0 56"
+  },
+  "colour: PAPER 9": {
+   "out": "8 8 0 0 56"
+  },
+  "colour: PAPER 10": {
+   "out": "16 16 0 0 56"
+  },
+  "colour: PAPER 12": {
+   "out": "32 32 0 0 56"
+  },
+  "colour: FLASH 1": {
+   "out": "184 184 0 0 56"
+  },
+  "colour: BRIGHT 1": {
+   "out": "120 120 0 0 56"
+  },
+  "colour: FLASH 2": {
+   "out": "184 184 0 0 56"
+  },
+  "colour: BRIGHT 2": {
+   "out": "120 120 0 0 56"
+  },
+  "colour: FLASH 8": {
+   "out": "56 56 128 0 56"
+  },
+  "colour: BRIGHT 8": {
+   "out": "56 56 64 0 56"
+  },
+  "colour: INVERSE 1": {
+   "out": "56 56 0 12 56"
+  },
+  "colour: OVER 1": {
+   "out": "56 56 0 3 56"
+  },
+  "colour: INVERSE 2": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: OVER 2": {
+   "out": ""
+  },
+  "colour: BORDER 0": {
+   "out": "56 56 0 0 7"
+  },
+  "colour: BORDER 7": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: BORDER 8": {
+   "out": "56 56 0 0 71"
+  },
+  "colour: BORDER 9": {
+   "out": "56 56 0 0 79"
+  },
+  "colour: BORDER 10": {
+   "out": "56 56 0 0 87"
+  },
+  "colour: PAPER 1: INK 9": {
+   "out": "9 9 0 0 56"
+  },
+  "colour: PAPER 6: INK 9": {
+   "out": "49 49 0 0 56"
+  },
+  "colour: INK 2: PAPER 9": {
+   "out": "10 10 0 0 56"
+  },
+  "colour: PRINT INK 9;": {
+   "out": "57 56 0 0 56"
+  },
+  "colour: PRINT PAPER 9;": {
+   "out": "8 56 0 0 56"
+  },
+  "colour: PRINT INK 8;": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: PRINT INK 10;": {
+   "out": "58 56 0 0 56"
+  },
+  "colour: PRINT FLASH 8;": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: PRINT BRIGHT 2;": {
+   "out": "120 56 0 0 56"
+  },
+  "colour: PRINT PAPER 1; INK 9;": {
+   "out": "9 56 0 0 56"
+  },
+  "colour: PRINT INVERSE 1;": {
+   "out": "56 56 0 0 56"
+  },
+  "colour: PRINT OVER 1;": {
+   "out": "56 56 0 0 56"
+  },
+  "layout: PRINT \"a\", \"b\", \"c\"": {
+   "out": "a               b / c"
+  },
+  "layout: PRINT \"abcdefghijklmnopqrst\", \"x\"": {
+   "out": "abcdefghijklmnopqrst / x"
+  },
+  "layout: PRINT TAB 10; \"x\"; TAB 5; \"y\"": {
+   "out": "          x /      y"
+  },
+  "layout: PRINT TAB 40; \"x\"": {
+   "out": "        x"
+  },
+  "layout: PRINT 1; 2; -3; 0.5": {
+   "out": "12-30.5"
+  },
+  "layout: PRINT \"a\"; 1; \"b\"": {
+   "out": "a1b"
+  },
+  "layout: PRINT AT 0, 30; \"abcd\"": {
+   "out": "                              ab / cd"
+  },
+  "layout: PRINT \"0123456789012345678901234567890123456789\"": {
+   "out": "01234567890123456789012345678901 / 23456789"
+  },
+  "layout: PRINT \"a\" + CHR$(8) + \"b\"": {
+   "out": "b"
+  },
+  "layout: PRINT \"a\" + CHR$(13) + \"b\"": {
+   "out": "a / b"
+  },
+  "layout: PRINT CHR$(22) + CHR$(1) + CHR$(3) + \"x\"": {
+   "out": " /    x"
+  },
+  "layout: PRINT CHR$(23) + CHR$(5) + CHR$(0) + \"x\"": {
+   "out": "     x"
+  },
+  "layout: PRINT \"x\"; CHR$(6); \"y\"": {
+   "out": "x               y"
+  },
+  "layout: PRINT , \"x\"": {
+   "out": "                x"
+  },
+  "layout: PRINT ; \"x\"": {
+   "out": "x"
+  },
+  "layout: PRINT: PRINT \"x\"": {
+   "out": " / x"
+  },
+  "layout: PRINT AT 0, 0; \"ab\"; AT 0, 1; \"c\"": {
+   "out": "ac"
+  },
+  "layout: PRINT 3 = 3; 3 < 2": {
+   "out": "10"
+  },
+  "layout: PRINT \"abc\": CLS: PRINT \"x\"": {
+   "out": "x"
+  },
+  "layout: PRINT \"a\";: PRINT \"b\"": {
+   "out": "ab"
+  },
+  "layout: PRINT \"a\", : PRINT \"b\"": {
+   "out": "a               b"
+  },
+  "layout: PRINT AT 1, 0; \"x\": PRINT \"y\"": {
+   "out": " / x / y"
+  },
+  "layout: PRINT \"x\"; TAB 3; \"y\"; TAB 3; \"z\"": {
+   "out": "x  y /    z"
+  },
+  "graphics: PLOT 0, 0: PLOT 255, 191: PLOT 128, 96": {
+   "out": "0                              ?"
+  },
+  "graphics: PLOT 10, 10: DRAW 100, 50: DRAW -30, 70: DRAW 0, -50": {
+   "out": "0"
+  },
+  "graphics: PLOT 0, 0: DRAW 255, 175": {
+   "out": "0"
+  },
+  "graphics: CIRCLE 128, 96, 50": {
+   "out": "0"
+  },
+  "graphics: CIRCLE 10, 10, 5": {
+   "out": "0"
+  },
+  "graphics: CIRCLE 128, 96, 1": {
+   "out": "0"
+  },
+  "graphics: CIRCLE 128, 96, 0": {
+   "out": "0"
+  },
+  "graphics: CIRCLE 200, 150, 30": {
+   "out": "0"
+  },
+  "graphics: PLOT 50, 50: DRAW 100, 0, PI": {
+   "out": "0"
+  },
+  "graphics: PLOT 50, 50: DRAW 50, 50, -PI / 2": {
+   "out": "0"
+  },
+  "graphics: PLOT 100, 100: DRAW 30, 0, 1": {
+   "out": "0"
+  },
+  "graphics: PLOT 5, 5: PLOT INVERSE 1; 5, 5: PLOT 6, 6: PLOT OVER 1; 6, 6: PLOT OVER 1; 7, 7": {
+   "out": "0"
+  },
+  "graphics: PLOT 20, 20: DRAW OVER 1; 50, 0: DRAW OVER 1; -50, 0": {
+   "out": "0"
+  },
+  "graphics: PLOT 5, 5: POINT": {
+   "out": "1-10"
+  },
+  "graphics: PLOT 5, 21: POINT": {
+   "out": "100"
+  },
+  "graphics: PLOT 5, 100: POINT": {
+   "out": "100"
+  },
+  "graphics: PLOT 5, 175: POINT": {
+   "out": "100"
+  },
+  "graphics: PLOT 5, 189: POINT": {
+   "out": "10-1"
+  },
+  "USR \"a\"": {
+   "out": "65368 0"
+  },
+  "USR \"A\"": {
+   "out": "65368 0"
+  },
+  "USR \"u\"": {
+   "out": "65528 0"
+  },
+  "USR \"v\"": {
+   "out": "0 0"
+  },
+  "USR \"zz\"": {
+   "out": "32 0"
+  },
+  "USR \"\"": {
+   "out": "0 9"
+  },
+  "slice: s(0 TO 4) = \"Howdy\"": {
+   "out": "Howdy World|11|0"
+  },
+  "slice: s(6 TO) = \"Earth\"": {
+   "out": "????!??p ???$??????!??p ???$????"
+  },
+  "slice: s(0) = \"J\"": {
+   "out": "Jello World|11|0"
+  },
+  "slice: s(2 TO 3) = \"XYZ\"": {
+   "out": "HeXYo World|11|0"
+  },
+  "slice: s(2 TO 6) = \"a\"": {
+   "out": "Hea    orld|11|0"
+  },
+  "slice: s(9 TO 20) = \"abc\"": {
+   "out": "?????"
+  },
+  "slice: s(20) = \"z\"": {
+   "out": "Hello World|11|0"
+  },
+  "slice: s(TO 2) = \"abc\"": {
+   "out": "abclo World|11|0"
+  },
+  "slice: s(5 TO 2) = \"q\"": {
+   "out": "Hello World|11|0"
+  },
+  "slice: s(10 TO 10) = \"!\"": {
+   "out": "Hello Worl!|11|0"
+  }
+ }
+}

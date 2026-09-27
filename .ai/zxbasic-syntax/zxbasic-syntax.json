@@ -2563,6 +2563,15 @@
         "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
+        "name": "colour-values",
+        "question": "What do INK, PAPER, FLASH, BRIGHT, INVERSE, OVER and BORDER do with values outside 0-1 / 0-7?",
+        "decision": "No value stops the program. INK and PAPER 8 keep the screen field, any other value is masked to 0-7 (9 is 1: there is no INK 9 / PAPER 9 contrast). FLASH and BRIGHT 8 keep, any other non-zero value sets. INVERSE takes bit 0. OVER takes bits 0-1: a printed glyph is replaced (0), XORed (1), ANDed (2) or ORed (3); PLOT reads bit 0 only. BORDER shows bits 0-2 and sets BORDCR to n * 8 with white ink on the four dark colours.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
         "name": "constant-arithmetic-literal",
         "question": "What type does arithmetic on number literals alone have?",
         "decision": "Literal-only expressions fold in exact arithmetic: / divides exactly (1 / 8 is 0.125), MOD is floored, BNOT n is -(n + 1), shifts and bitwise operators act on whole numbers; the result takes its natural type as a literal does (literal-integer-type), and the exact value stays for further folding (1E10 MOD 3 is 1).",
@@ -2845,14 +2854,13 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
-        "status": "open",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
         "name": "point-coordinates",
         "question": "Which coordinates does POINT use?",
-        "decision": "PLOT's: (0,0) at the bottom left and all 192 rows, so POINT(x, y) is 1 after PLOT x, y.",
-        "test": "test/kbasic/corpus/stdlib/sinclair-functions.zxbas",
-        "oracle": "Upstream's POINT (sinclair-compatible) gives 0 after PLOT 5, 5. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "decision": "POINT(x, y) is 1 when the pixel is set, else 0, and -1 for a y past the top. It counts as PLOT does - (0, 0) at the bottom left, all 192 rows - except under sinclair-compatible, where it takes the ROM coordinates: y counts the 176 rows above the ROM editor, so POINT(x, y) tests the pixel PLOT x, y + 16 sets.",
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "power-of-two-literal-divisor",
@@ -2970,11 +2978,11 @@
         "name": "substring-assignment",
         "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
         "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target. Awaits the oracle.",
-        "status": "open",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
-        "test": "test/kbasic/codegen/strings.test.ts",
-        "oracle": "zxbc 1.19 stops strings/substring-assign.zxbas with B Integer out of range. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc agrees while the range lies inside the String (padding and truncation included); a range past the end, or open-ended (s(6 TO) = ...), makes it write outside the String and corrupt memory: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
         "name": "truncation-warning-w200",
@@ -2993,6 +3001,15 @@
         "source": "klive-decision",
         "phase": 2,
         "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "name": "usr-string",
+        "question": "What does USR of a String give?",
+        "decision": "The UDG address of its first character as ZX BASIC computes it: the character lower-cased by setting bit 5, its place from a as a byte, UDG + 8 * place as a word (a-u give their graphic, v gives 0, 1 gives 1496); no String stops the program, and the empty one gives 0 with ERR_NR 9.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "val-constant-invalid",

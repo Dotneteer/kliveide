@@ -3,5 +3,6 @@
 ' Klive's own code (plan §6.4).
 #pragma once
 #include <attr.bas>
+#define __KBASIC_SINCLAIR_POINT
 #include <point.bas>
 #include <screen.bas>

@@ -30,9 +30,9 @@ describe("colours and BORDER", () => {
     expect(light.session.peek(0x5c48)).toBe(5 << 3);
   });
 
-  it("stops with K Invalid colour", async () => {
-    const r = await runBasic("DIM c AS UByte = 9\nBORDER c\n", { expectEnd: false, frames: 60 });
-    expect(r.session.screenLine(23)).toMatch(/^K Invalid colour/);
+  it("takes any BORDER value as ZX BASIC does: its bits 0-2, and BORDCR n * 8", async () => {
+    const r = await runBasic("DIM c AS UByte = 9\nBORDER c\n");
+    expect(r.session.peek(0x5c48), "BORDCR: 72, and white ink on blue").toBe(79);
   });
 });
 
@@ -87,9 +87,9 @@ describe("BOLD, ITALIC and contrast", () => {
     expect(italic).toEqual(plain.map((row, line) => (line < 3 ? row >> 1 : line > 4 ? (row << 1) & 0xff : row)));
   });
 
-  it("chooses a contrasting INK or PAPER with 9", async () => {
+  it("masks INK and PAPER 9 to 1: there is no contrast (ZX BASIC)", async () => {
     const r = await runBasic('PAPER 1: INK 9\nPRINT "a";\nPAPER 6\nPRINT "b";\nINK 2: PAPER 9\nPRINT "c"\n');
-    expect([attr(r, 0, 0), attr(r, 0, 1), attr(r, 0, 2)]).toEqual([(1 << 3) | 7, (6 << 3) | 0, (7 << 3) | 2]);
-    expect(r.session.peek(0x5c91) & 0xf0, "P_FLAG: PAPER 9 now, INK 9 no longer").toBe(0xc0);
+    expect([attr(r, 0, 0), attr(r, 0, 1), attr(r, 0, 2)]).toEqual([(1 << 3) | 1, (6 << 3) | 1, (1 << 3) | 2]);
+    expect(r.session.peek(0x5c91) & 0xf0, "P_FLAG: no INK 9 or PAPER 9 bits").toBe(0);
   });
 });

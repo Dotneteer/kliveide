@@ -216,15 +216,9 @@ describe("Klive BASIC runtime - print", () => {
     expect(rig.session.screenLine(23)).toMatch(/^5 Out of screen,/);
   });
 
-  it("stops with 'K Invalid colour' for a colour out of range", async () => {
-    const rig = await createRuntimeRig({
-      uses: USES,
-      init: false,
-      main: printLit("Bad"),
-      extra: literal("Bad", 16, 10, "x")
-    });
-    rig.startAsRunningLine();
-    expect(rig.session.peek(23610)).toBe(19);
-    expect(rig.session.screenLine(23)).toMatch(/^K Invalid colour,/);
+  it("masks a colour out of range to 0-7, with no error (ZX BASIC)", async () => {
+    const rig = await printRig(printLit("Bad"), literal("Bad", 16, 10, "x"));
+    expect(rig.session.screenLine(0)).toMatch(/^x/);
+    expect(attr(rig, 0, 0) & 7, "INK 10 is INK 2").toBe(2);
   });
 });

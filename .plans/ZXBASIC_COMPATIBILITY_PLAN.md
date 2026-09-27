@@ -11,8 +11,9 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
 helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated items over numbers, Strings
 and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3 in
-progress** (§4.3): C3a (evaluation order, named arguments, FOR) and C3b (the error model, the print
-position on return) done.
+done** (2026-09-27, §4.3): evaluation order, named arguments, FOR, the runtime error model, the print
+position on return, colours, POINT, USR of a String; PRINT's layout and the graphics agreed as they
+were. Next: C4.
 
 ---
 
@@ -120,7 +121,7 @@ program that pins them. Target: every generated program agrees.
 | **C0** | DO…LOOP: `DO LOOP UNTIL c` without a separator is accepted; a bare DO whose LOOP follows `:` on the line holding all of the body is rejected (E315), as zxbc does. `control/do-loops.zxbas` rewritten and confirmed by the oracle. | **Done 2026-09-27.** |
 | **C1** | Oracle v2 (§3.1); the bisect helper; the three zxbc crashes and the error model observed through BASIC. | **Done 2026-09-27** (§4.1). |
 | **C2** (**done 2026-09-27**, §4.2) | Expressions and types (§3.3): literal typing, promotion, CONST folding, division and MOD for every type, shifts, bitwise, comparisons, conversions, number printing (Float, Fixed and integer literals). The binder, the constant folder, the runtime (arith16/arith32/float/fixed) and the tree selector follow; the optimiser's folding stays equal to the run time. | The generated suites and the corpus agree with zxbc for these areas. |
-| **C3** | Statements: FOR (re-evaluation, unsigned with negative STEP, the value after the loop), evaluation order around calls, named arguments by position, the runtime error model (§4.1: which errors stop and which set ERR_NR and carry on; the debugger still stops at `errorEntry`), the print position written back for BASIC on return, PLOT/DRAW/POINT, Fixed division by zero, substring assignment, DATA/READ, PRINT's comma/TAB/AT edge cases, INPUT, sound and tape. | The statement corpus agrees; the debugger corpus and the step tests still pass at every level. |
+| **C3** (**done 2026-09-27**, §4.3) | Statements: FOR (re-evaluation, unsigned with negative STEP, the value after the loop), evaluation order around calls, named arguments by position, the runtime error model (§4.1: which errors stop and which set ERR_NR and carry on; the debugger still stops at `errorEntry`), the print position written back for BASIC on return, PLOT/DRAW/POINT, Fixed division by zero, substring assignment, DATA/READ, PRINT's comma/TAB/AT edge cases, INPUT, sound and tape. | The statement corpus agrees; the debugger corpus and the step tests still pass at every level. |
 | **C4** | Acceptance (§3.2), both ways: reject what zxbc rejects (`#elif`, `=` in `#if`, `x ^ -1`, READ without DATA as a compile error, …), accept what it accepts. Klive's extensions are decided per D-C3. | The acceptance suite agrees. |
 | **C5** | Inline asm: zxbasm's dialect (main plan §6.5, D10) as the default, the runtime alias table for documented entry points, `'@asm-dialect klive` for Klive's own. nextlib compiles and its demo programs run under the oracle. | nextlib and the corpus's asm programs agree. |
 | **C6** | The standard library: every library `#include <…>` can name, with the APIs from upstream's documentation (the undocumented ones get their interface recorded from the docs first, main plan Handoff item 2). One oracle program per library. | Every documented library's programs agree. |
@@ -207,7 +208,20 @@ program that pins them. Target: every generated program agrees.
   - Kept as faults: heap exhaustion (zxbc overwrites memory), Fixed division by zero. Left for C4:
     constant BEEP out of range and a program without DATA (compile-time rejections in zxbc). Left for
     C3c: invalid colours (zxbc masks them to 3 bits, INK 9 included), USR of a String.
-- **Next:** C3c (colours, graphics details, slice assignment, PRINT's edge cases, USR of a String).
+- **C3c done.** The suite `screen` (95 items, one program each; multi-row items compare the first
+  rows, graphics items a checksum of the bitmap computed in BASIC) agreed at once for PRINT's layout
+  (comma, TAB, wrapping, control codes) and for PLOT, DRAW, arcs and CIRCLE. Changed:
+  - **Colours** (annex `colour-values`): no value stops the program. INK/PAPER 8 keep, anything else
+    is masked to 0-7 (there is no INK 9 contrast); FLASH/BRIGHT 8 keep, non-zero sets; INVERSE takes
+    bit 0; OVER bits 0-1 - a glyph is replaced, XORed, ANDed or ORed (PrintFlags bit 4 holds OVER's
+    bit 1), PLOT reads bit 0 only; BORDER shows bits 0-2 and sets BORDCR to n * 8.
+  - **POINT** (annex `point-coordinates`): -1 past the top; under sinclair-compatible the ROM's
+    coordinates (POINT(x, y) tests PLOT x, y + 16), through `__KBASIC_SINCLAIR_POINT` in sinclair.bas.
+  - **USR of a String** (annex `usr-string`): zxbc's arithmetic on the first character, never an
+    error; the empty String gives 0 and ERR_NR 9.
+  - Kept as a fault: a slice assignment past the String's end or open-ended (zxbc corrupts memory).
+- **C3 closed.** 2,321 generated items agree apart from 79 recorded faults; `baseline.json` holds one
+  item for C4 (a constant BEEP out of range, which zxbc rejects at compile time).
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

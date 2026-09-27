@@ -5,6 +5,9 @@ import { describe, it } from "vitest";
 
 import { runBinary } from "../codegen/run-kit";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as { itemResult(item: { rows?: number }, row: number, line: (row: number) => string): string };
+
 /**
  * The compatibility suites' oracle runner (compatibility plan C2). `scripts/kbasic-compat.cjs oracle`
  * compiles the suites' programs with zxbc into a temporary folder and starts this file with
@@ -14,7 +17,7 @@ import { runBinary } from "../codegen/run-kit";
  */
 type Manifest = {
   zxbc: string;
-  suites: Record<string, { programs: { bin: string; org: number; ids: string[] }[]; rejected: Record<string, string> }>;
+  suites: Record<string, { programs: { bin: string; org: number; ids: string[]; rows: number[] }[]; rejected: Record<string, string> }>;
 };
 export type CompatItemResult = { out: string } | { error: string };
 export type CompatOracle = { zxbc: string; items: Record<string, CompatItemResult> };
@@ -29,7 +32,7 @@ describe.skipIf(!MANIFEST)("compatibility suites: the zxbc oracle", () => {
       for (const [id, error] of Object.entries(entry.rejected)) items[id] = { error };
       for (const program of entry.programs) {
         const { session } = await runBinary(new Uint8Array(readFileSync(program.bin)), program.org, { frames: 300 });
-        program.ids.forEach((id, row) => (items[id] = { out: session.screenLine(row).trimEnd() }));
+        program.ids.forEach((id, row) => (items[id] = { out: itemResult({ rows: program.rows[row] }, row, (r) => session.screenLine(r)) }));
       }
       const dir = join(__dirname, "oracle");
       mkdirSync(dir, { recursive: true });

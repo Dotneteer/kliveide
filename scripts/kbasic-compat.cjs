@@ -31,12 +31,23 @@ const ORG = 32768;
 /** The rows a program holds: one item a row, printed with AT so a long value cannot shift the rest. */
 const ROWS = 20;
 
-/** The source of a program printing `items`, one a row from row 0. */
+/**
+ * The source of a program printing `items`, one a row from row 0. An item with `rows` (alone in its
+ * program) prints nothing of its own: its result is the first `rows` rows its statements leave.
+ */
 function buildProgram(items) {
   const lines = ["' Klive BASIC compatibility suite (scripts/kbasic-compat.cjs)"];
   for (const item of items) lines.push(...item.decl);
-  items.forEach((item, row) => lines.push(`PRINT AT ${row}, 0; ${item.expr}`));
+  items.forEach((item, row) => {
+    if (!item.rows) lines.push(`PRINT AT ${row}, 0; ${item.expr}`);
+  });
   return lines.join("\n") + "\n";
+}
+
+/** What an item's program shows for it: its row, or its first `rows` rows joined with " / ". */
+function itemResult(item, row, screenLine) {
+  if (!item.rows) return screenLine(row).trimEnd();
+  return Array.from({ length: item.rows }, (_, r) => screenLine(r).trimEnd()).join(" / ");
 }
 
 /** Items in programs of `size` (at most ROWS), in order. */
@@ -409,6 +420,49 @@ function generate() {
     })
   };
 
+  // --- The screen (C3c): colours, PRINT's layout, graphics, USR of a String, slice assignment. One
+  // --- program each; `@` becomes the item's own suffix
+  const ATTRS = "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624";
+  const COLOURS = [
+    ...[0, 7, 8, 9, 10, 15].map((v) => `INK ${v}`), ...[0, 8, 9, 10, 12].map((v) => `PAPER ${v}`),
+    ...[1, 2, 8].flatMap((v) => [`FLASH ${v}`, `BRIGHT ${v}`]), ...[1, 2].flatMap((v) => [`INVERSE ${v}`, `OVER ${v}`]),
+    ...[0, 7, 8, 9, 10].map((v) => `BORDER ${v}`), "PAPER 1: INK 9", "PAPER 6: INK 9", "INK 2: PAPER 9"
+  ].map((stmt) => ({ id: `colour: ${stmt}`, decl: [stmt, 'PRINT AT 5, 0; "a";'], expr: ATTRS }));
+  const PRINTED_COLOURS = ["INK 9", "PAPER 9", "INK 8", "INK 10", "FLASH 8", "BRIGHT 2", "PAPER 1; INK 9", "INVERSE 1", "OVER 1"].map((attr) => ({
+    id: `colour: PRINT ${attr};`,
+    decl: [`PRINT AT 5, 0; ${attr}; "a";`],
+    expr: ATTRS
+  }));
+  const LAYOUT = [
+    ['PRINT "a", "b", "c"', 2], ['PRINT "abcdefghijklmnopqrst", "x"', 2], ['PRINT TAB 10; "x"; TAB 5; "y"', 2], ['PRINT TAB 40; "x"', 1],
+    ['PRINT 1; 2; -3; 0.5', 1], ['PRINT "a"; 1; "b"', 1], ['PRINT AT 0, 30; "abcd"', 2], ['PRINT "0123456789012345678901234567890123456789"', 2],
+    ['PRINT "a" + CHR$(8) + "b"', 1], ['PRINT "a" + CHR$(13) + "b"', 2], ['PRINT CHR$(22) + CHR$(1) + CHR$(3) + "x"', 2],
+    ['PRINT CHR$(23) + CHR$(5) + CHR$(0) + "x"', 1], ['PRINT "x"; CHR$(6); "y"', 1], ['PRINT , "x"', 1], ['PRINT ; "x"', 1],
+    ['PRINT: PRINT "x"', 2], ['PRINT AT 0, 0; "ab"; AT 0, 1; "c"', 1], ['PRINT 3 = 3; 3 < 2', 1], ['PRINT "abc": CLS: PRINT "x"', 1],
+    ['PRINT "a";: PRINT "b"', 1], ['PRINT "a", : PRINT "b"', 1], ['PRINT AT 1, 0; "x": PRINT "y"', 3], ['PRINT "x"; TAB 3; "y"; TAB 3; "z"', 2]
+  ].map(([stmt, rows]) => ({ id: `layout: ${stmt}`, decl: [stmt], expr: "", rows }));
+  const CHECKSUM = "FUNCTION ck@() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION";
+  const GRAPHICS = [
+    "PLOT 0, 0: PLOT 255, 191: PLOT 128, 96", "PLOT 10, 10: DRAW 100, 50: DRAW -30, 70: DRAW 0, -50", "PLOT 0, 0: DRAW 255, 175",
+    "CIRCLE 128, 96, 50", "CIRCLE 10, 10, 5", "CIRCLE 128, 96, 1", "CIRCLE 128, 96, 0", "CIRCLE 200, 150, 30",
+    "PLOT 50, 50: DRAW 100, 0, PI", "PLOT 50, 50: DRAW 50, 50, -PI / 2", "PLOT 100, 100: DRAW 30, 0, 1",
+    "PLOT 5, 5: PLOT INVERSE 1; 5, 5: PLOT 6, 6: PLOT OVER 1; 6, 6: PLOT OVER 1; 7, 7", "PLOT 20, 20: DRAW OVER 1; 50, 0: DRAW OVER 1; -50, 0"
+  ].map((stmt) => ({ id: `graphics: ${stmt}`, decl: [CHECKSUM, stmt], expr: "ck@()" }));
+  const POINTS = [5, 21, 100, 175, 189].map((y) => ({ id: `graphics: PLOT 5, ${y}: POINT`, decl: ["#include <point.bas>", `PLOT 5, ${y}`], expr: `POINT(5, ${y}); POINT(5, ${y} - 16); POINT(5, ${y} + 16)` }));
+  const USRS = ['"a"', '"A"', '"u"', '"v"', '"zz"', '""'].map((v) => ({ id: `USR ${v}`, decl: ["DIM u@ AS UInteger", `u@ = USR ${v}`], expr: 'u@; " "; PEEK 23610' }));
+  const SLICES_ASSIGNED = ['s(0 TO 4) = "Howdy"', 's(6 TO) = "Earth"', 's(0) = "J"', 's(2 TO 3) = "XYZ"', 's(2 TO 6) = "a"', 's(9 TO 20) = "abc"', 's(20) = "z"', 's(TO 2) = "abc"', 's(5 TO 2) = "q"', 's(10 TO 10) = "!"'].map((stmt) => ({
+    id: `slice: ${stmt}`,
+    decl: ['DIM s@ AS String = "Hello World"', stmt.replace(/\bs\(/, "s@(")],
+    expr: 's@; "|"; LEN(s@); "|"; PEEK 23610'
+  }));
+  suites.screen = {
+    perProgram: 1,
+    items: [...COLOURS, ...PRINTED_COLOURS, ...LAYOUT, ...GRAPHICS, ...POINTS, ...USRS, ...SLICES_ASSIGNED].map((item) => {
+      const suffix = name();
+      return { ...item, decl: item.decl.map((d) => d.replace(/@/g, suffix)), expr: item.expr.replace(/@/g, suffix) };
+    })
+  };
+
   for (const [suite, data] of Object.entries(suites)) {
     const ids = new Set();
     for (const item of data.items) {
@@ -463,7 +517,7 @@ function runOracle(names) {
         const base = path.join(work, `${suite}-${count++}`);
         fs.writeFileSync(`${base}.bas`, buildProgram(items));
         const r = compileWithZxbc(zxbc, work, base, ["--org", String(ORG)]);
-        if (!r.error) return entry.programs.push({ bin: `${base}.bin`, org: ORG, ids: items.map((i) => i.id) });
+        if (!r.error) return entry.programs.push({ bin: `${base}.bin`, org: ORG, ids: items.map((i) => i.id), rows: items.map((i) => i.rows ?? 0) });
         if (items.length === 1) return (entry.rejected[items[0].id] = failureKind(r.error));
         const half = Math.ceil(items.length / 2);
         compile(items.slice(0, half));
@@ -496,4 +550,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { buildProgram, chunk, generate, ROWS };
+module.exports = { buildProgram, chunk, generate, itemResult, ROWS };

@@ -64,10 +64,10 @@ describe("standard library", () => {
     expect((await runBasic(source)).screen(1)[0]).toBe(`42 ${0x38}`);
   });
 
-  it("point.bas tests a pixel, (0, 0) at the bottom left", async () => {
+  it("point.bas tests a pixel, (0, 0) at the bottom left, and gives -1 past the top (ZX BASIC)", async () => {
     // --- (255, 191) is the top right: the PRINT on row 0 does not reach it
     const source = "#include <point.bas>\nPLOT 10, 20\nPLOT 255, 191\nPRINT POINT(10, 20); POINT(11, 20); POINT(10, 21); POINT(255, 191); POINT(255, 192)\n";
-    expect((await runBasic(source)).screen(1)[0].slice(0, 5)).toBe("10010");
+    expect((await runBasic(source)).screen(1)[0].slice(0, 6)).toBe("1001-1");
   });
 
   it("screen.bas recognises the font's characters, normal and inverse", async () => {
@@ -261,8 +261,9 @@ describe("standard library", () => {
   });
 
   describe("the library as the compiler uses it", () => {
-    it("sinclair-compatible brings ATTR, POINT and SCREEN$ without an #include", async () => {
-      const r = await runBasic('PLOT 1, 1\nPRINT AT 0, 0; "Z"; ATTR(0, 0); POINT(1, 1); SCREEN$(0, 0)\n', { sinclairCompatible: true });
+    it("sinclair-compatible brings ATTR, POINT and SCREEN$ without an #include; POINT takes the ROM's rows", async () => {
+      // --- POINT(x, y) tests the pixel PLOT x, y + 16 sets, as zxbc --sinclair does
+      const r = await runBasic('PLOT 1, 17\nPRINT AT 0, 0; "Z"; ATTR(0, 0); POINT(1, 1); SCREEN$(0, 0)\n', { sinclairCompatible: true });
       expect(r.screen(1)[0]).toBe(`Z${0x38}1Z`);
     });
 

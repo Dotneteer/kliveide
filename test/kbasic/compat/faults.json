@@ -373,6 +373,18 @@
    "fault": "decimal-mod"
   }
  },
+ "screen": {
+  "slice: s(6 TO) = \"Earth\"": {
+   "klive": "Hello Earth|11|0",
+   "zxbc": "????!??p ???$??????!??p ???$????",
+   "fault": "substring-assignment"
+  },
+  "slice: s(9 TO 20) = \"abc\"": {
+   "klive": "Hello Worab|11|0",
+   "zxbc": "?????",
+   "fault": "substring-assignment"
+  }
+ },
  "shifts": {
   "Integer -100 SHR 1": {
    "klive": "-50",

@@ -18,13 +18,17 @@ import type { CompatItemResult, CompatOracle } from "./compat-oracle-run.test";
  * file fails, and so does a listed item that now agrees, until `KBASIC_COMPAT_UPDATE=1` rewrites the
  * baseline. Level 3 must print what level 0 prints for every item, whatever zxbc does.
  */
-type Item = { id: string; decl: string[]; expr: string };
+type Item = { id: string; decl: string[]; expr: string; rows?: number };
 type Suite = { suite: string; perProgram: number; items: Item[] };
 type Diff = { klive: string; zxbc: string };
 type Baseline = Record<string, Record<string, Diff>>;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const compat = require("../../../scripts/kbasic-compat.cjs") as { buildProgram(items: Item[]): string; chunk(items: Item[], size: number): Item[][] };
+const compat = require("../../../scripts/kbasic-compat.cjs") as {
+  buildProgram(items: Item[]): string;
+  chunk(items: Item[], size: number): Item[][];
+  itemResult(item: Item, row: number, line: (row: number) => string): string;
+};
 
 const DIR = __dirname;
 const BASELINE_FILE = join(DIR, "baseline.json");
@@ -69,7 +73,7 @@ async function kliveResults(items: Item[], perProgram: number, level: number): P
     } catch (e) {
       if (!/Timed out/.test((e as Error).message)) throw e;
     }
-    group.forEach((item, row) => (out[item.id] = { out: session.screenLine(row).trimEnd() }));
+    group.forEach((item, row) => (out[item.id] = { out: compat.itemResult(item, row, (r) => session.screenLine(r)) }));
   };
   for (const group of compat.chunk(items, perProgram)) await run(group);
   return out;
