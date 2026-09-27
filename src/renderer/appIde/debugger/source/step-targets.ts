@@ -3,12 +3,14 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 
 /**
  * Step Into Target (plan §10.2.4): the routines the statement at the execution point calls, in
- * evaluation order (the call-site table's `order`), each once. Empty when the program is not
+ * evaluation order (the call-site table's `order`), each once; library routines only when Just My
+ * Code is off. Empty when the program is not
  * stopped on a statement or the statement calls no SUB or FUNCTION.
  */
 export function stepIntoTargets(
   info: SourceLevelDebugInfo,
-  stop: SourceStopInfo | undefined
+  stop: SourceStopInfo | undefined,
+  justMyCode = true
 ): { callableIndex: number; name: string }[] {
   if (!stop || stop.statementIndex < 0 || stop.kind === "error") return [];
   const sites = (info.extensions?.callSites ?? [])
@@ -18,6 +20,8 @@ export function stepIntoTargets(
   const out: { callableIndex: number; name: string }[] = [];
   for (const site of sites) {
     if (seen.has(site.calleeIndex!)) continue;
+    // --- Just My Code steps through library routines, so they are not targets
+    if (justMyCode && info.extensions?.frames[site.calleeIndex!]?.library) continue;
     seen.add(site.calleeIndex!);
     out.push({ callableIndex: site.calleeIndex!, name: info.callables[site.calleeIndex!]?.name ?? "?" });
   }

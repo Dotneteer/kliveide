@@ -103,6 +103,8 @@ export type SourceDebugExtensions = {
   mainBaselineSymbol: number;
   /** The program's labels (a line number's digits or a label's name), sorted by address: GOSUB rows name their subroutine by them. */
   labels?: { name: string; address: number }[];
+  /** Files of the standard library (`<kbasic-stdlib>/...`): Just My Code steps through their statements (§10.12). */
+  libraryFiles?: number[];
   /** Runtime entry points, for disassembly labels and the call stack's runtime rows. */
   runtimeSymbols: { name: string; address: number }[];
   /** The runtime's error routine (§10.10): a debug run can stop here with the BASIC error. */

@@ -15,6 +15,8 @@ import {
   type NavigationReason
 } from "@renderer/abstractions/NavigationLocation";
 import type { ProjectNode } from "@abstractions/ProjectNode";
+import { CODE_EDITOR } from "@common/state/common-ids";
+import { isLibraryPath, LIBRARY_FOLDER, libraryFile } from "@main/kbasic/stdlib";
 import { getDocumentAreaCommandTarget } from "@renderer/features/documents/documentAreaCommandTarget";
 import { type DocumentAreaGridApi } from "@renderer/features/documents/DocumentAreaGrid";
 
@@ -63,6 +65,9 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
       return commandError("No project is open.");
     }
 
+    // --- A Klive BASIC library file (plan §10.12): no project node, a read-only view of its text
+    if (isLibraryPath(args.filename)) return this.openLibraryFile(context, args);
+
     // --- Get the project node
     const projNode = context.service.projectService.getNodeForFile(args.filename);
     if (!projNode) {
@@ -87,6 +92,46 @@ export class NavigateToDocumentCommand extends IdeCommandBase<NavigateToDocument
           : ""
       } `
     );
+    return commandSuccess;
+  }
+
+  /**
+   * Opens a standard-library file of Klive BASIC read-only — what source stepping shows when Just My
+   * Code is off — and moves its cursor. Its id is the library path the debug info names it by.
+   */
+  private async openLibraryFile(context: IdeCommandContext, args: NavigateToDocumentCommandArgs): Promise<IdeCommandResult> {
+    const name = args.filename.slice(LIBRARY_FOLDER.length + 1);
+    const file = libraryFile(name);
+    if (!file) return commandError(`No library file '${name}'.`);
+    const docService = context.service.projectService.getActiveDocumentHubService();
+    if (docService.getDocument(args.filename)) {
+      await docService.setActiveDocument(args.filename);
+    } else {
+      await docService.openDocument(
+        {
+          id: args.filename,
+          name: `${name} (library)`,
+          type: CODE_EDITOR,
+          language: "zxbas",
+          contents: file.text,
+          isReadOnly: true,
+          iconName: "file-zxbas",
+          editVersionCount: 1,
+          savedVersionCount: 1
+        },
+        undefined,
+        true
+      );
+    }
+    if (args.lineNo !== undefined) {
+      const openDoc = await docService.waitOpen(args.filename, true);
+      if (openDoc) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        const api = docService.getDocumentApi(openDoc.id) as EditorApi | undefined;
+        if (typeof api?.setPosition === "function") api.setPosition(args.lineNo, Math.max((args.columnNo ?? 0) - 1, 0));
+      }
+    }
+    writeSuccessMessage(context.output, `Navigate to ${args.filename}`);
     return commandSuccess;
   }
 

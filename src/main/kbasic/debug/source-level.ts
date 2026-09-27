@@ -22,14 +22,16 @@ import type { KType } from "../semantics/types";
 import type { Span } from "../diagnostics";
 import type { SourceSet } from "../syntax/source";
 import type { StatementAddresses } from "./builder";
+import { isLibraryPath } from "../stdlib";
 
 /**
  * The source-level tables (`.docs/kbasic-debug-builder.md` §4): `SourceLevelDebugInfo` and its
  * extensions (plan §8.4), which source stepping, the call stack and the Variables panel read.
  *
- * Only the user's statements are statements here: the DATA table's code (which READ calls) and the
- * standard library's code count as runtime, so stepping runs through them. Library routines stay
- * callables (flagged `library`), because their activations are on the stack like any other.
+ * The user's statements and the standard library's are statements here; the DATA table's code
+ * (which READ calls) counts as runtime. Library files come after the user's and are listed in
+ * `libraryFiles`: Just My Code (plan §10.12) runs through their statements unless it is turned off.
+ * Library routines are callables flagged `library`.
  */
 export type SourceLevelInput = {
   mir: MModule;
@@ -77,6 +79,10 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     const s = statementOf.get(sid);
     return !!s && mir.functions[s.functionIndex].kind !== "data" && !input.isLibraryFile(s.span.file);
   };
+  const debuggableStatement = (sid: number) => {
+    const s = statementOf.get(sid);
+    return !!s && mir.functions[s.functionIndex].kind !== "data";
+  };
   for (const a of input.addresses) {
     if (!a.elided && userStatement(a.sid)) fileIndex(locate(sources, statementOf.get(a.sid)!.span.start, statementOf.get(a.sid)!.span.file).fileName);
   }
@@ -99,7 +105,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
   // --- Statements, sorted by entry address
   const sidToIndex = new Map<number, number>();
   const rows = input.addresses
-    .filter((a) => !a.elided && userStatement(a.sid))
+    .filter((a) => !a.elided && debuggableStatement(a.sid))
     .sort((x, y) => x.start - y.start)
     .map((a, index) => {
       sidToIndex.set(a.sid, index);
@@ -250,6 +256,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       frames,
       mainBaselineSymbol: input.symbol("core.ProgramSP") ?? 0,
       labels,
+      libraryFiles: files.flatMap((name, index) => (isLibraryPath(name) ? [index] : [])),
       runtimeSymbols: input.runtimeSymbols,
       ...(errorEntry !== undefined ? { errorEntry } : {}),
       optimizationLevel: input.optimizationLevel
@@ -310,7 +317,6 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
   }
 
   functions.forEach(({ fn }, callableIndex) => {
-    if (fn.span && input.isLibraryFile(fn.span.file)) return;
     for (const v of fn.vars ?? []) {
       const { symbol } = v;
       const location: VariableDebugLocation = { at: "frame", ixOffset: v.offset };

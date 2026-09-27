@@ -1,5 +1,5 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
 import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { ToolbarSplitButton, type ToolbarSplitButtonOption } from "./ToolbarSplitButton";
@@ -13,6 +13,7 @@ import type { MachineCommand } from "@common/abstractions/MachineCommand";
 import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
 import { canSourceStepOut, STEP_OUT_IN_MAIN, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
+import { SETTING_EMU_JUST_MY_CODE } from "@common/settings/setting-const";
 
 type Props = {
   ide: boolean;
@@ -128,6 +129,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
    * routines the statement calls (Step Into Target, §10.2.4), and Step Out is disabled in the main
    * program, which has nothing to return to (§10.2.5).
    */
+  const justMyCode = useGlobalSetting(SETTING_EMU_JUST_MY_CODE);
   const [stepTargets, setStepTargets] = useState<{ callableIndex: number; name: string }[]>([]);
   const [stepOutPossible, setStepOutPossible] = useState(true);
   useEffect(() => {
@@ -140,14 +142,14 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     Promise.all([emuApi.getSourceStopInfo(), emuApi.getSourceCallStack()])
       .then(([stop, chain]) => {
         if (!live) return;
-        setStepTargets(stepIntoTargets(compilationResult.sourceLevelDebug, stop));
+        setStepTargets(stepIntoTargets(compilationResult.sourceLevelDebug, stop, justMyCode !== false));
         setStepOutPossible(canSourceStepOut(chain));
       })
       .catch(() => undefined);
     return () => {
       live = false;
     };
-  }, [ide, compilationResult, state, emuApi]);
+  }, [ide, compilationResult, state, emuApi, justMyCode]);
   const sourceStepping = ide && hasSourceDebug && sourceMode;
 
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);

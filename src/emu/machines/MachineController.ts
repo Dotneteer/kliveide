@@ -45,6 +45,7 @@ import { PANE_ID_EMU } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_JUST_MY_CODE,
   SETTING_EMU_STEP_IN_INTERRUPTS,
   SETTING_EMU_STOP_ON_ERRORS
 } from "@common/settings/setting-const";
@@ -368,19 +369,32 @@ export class MachineController implements IMachineController {
     return this.flagSetting(SETTING_EMU_STOP_ON_ERRORS, true);
   }
 
+  /** Stepping runs through the standard library's statements (§10.12; a setting, on by default). */
+  get justMyCode(): boolean {
+    return this.flagSetting(SETTING_EMU_JUST_MY_CODE, true);
+  }
+
   /** The injected program's source-level debug info; undefined for a program without it. */
   setSourceDebugInfo(info?: SourceLevelDebugInfo): void {
-    const index = info?.extensions ? new SourceDebugIndex(info) : undefined;
-    this.sourceIndex = index;
-    if (this.debugSupport) {
-      this.debugSupport.sourceStep = undefined;
-      this.debugSupport.statementTracker = index ? new CurrentStatementTracker(index) : undefined;
-    }
+    if (this.debugSupport) this.debugSupport.sourceStep = undefined;
+    this.buildSourceIndex(info);
     this.applyErrorStops();
+  }
+
+  private buildSourceIndex(info?: SourceLevelDebugInfo): void {
+    const index = info?.extensions ? new SourceDebugIndex(info, this.justMyCode) : undefined;
+    this.sourceIndex = index;
+    if (this.debugSupport) this.debugSupport.statementTracker = index ? new CurrentStatementTracker(index) : undefined;
+  }
+
+  /** Just My Code changed since the index was built: rebuild it (a step in progress keeps its own). */
+  private refreshSourceIndex(): void {
+    if (this.sourceIndex && this.sourceIndex.justMyCode !== this.justMyCode) this.buildSourceIndex(this.sourceIndex.info);
   }
 
   /** Arms or disarms the runtime-error stop from the setting; every run does this, so a change applies at once. */
   private applyErrorStops(): void {
+    this.refreshSourceIndex();
     const index = this.sourceIndex;
     const debugSupport = this.debugSupport;
     if (!debugSupport) return;
@@ -442,6 +456,7 @@ export class MachineController implements IMachineController {
     options: { targetFrame?: number; targetCallable?: number } = {},
     operationRevision?: number
   ): Promise<void> {
+    this.refreshSourceIndex();
     const index = this.sourceIndex;
     if (!index) return;
     const activeOperationRevision = this.prepareMachineOperation(operationRevision);

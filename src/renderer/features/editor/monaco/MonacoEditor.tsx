@@ -4,7 +4,7 @@ import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
-import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { getGlobalSetting, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
 import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
@@ -44,7 +44,8 @@ import {
   SETTING_EDITOR_TABSIZE,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
+  SETTING_EMU_JUST_MY_CODE
 } from "@common/settings/setting-const";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
@@ -1264,7 +1265,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    */
   function getResourceName(): string {
     const projPath = store.getState().project?.folderPath;
-    return document.id.substring(projPath?.length);
+    // --- A document outside the project (a Klive BASIC library file) is named by its whole id
+    return projPath && document.id.startsWith(projPath) ? document.id.substring(projPath.length) : document.id;
   }
 
   /**
@@ -1333,7 +1335,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           const resName = getResourceName()?.slice(1);
           const activeBp = bps.find((bp) => (bp.line === location.line && bp.resource === resName) || bp.address === pc);
           decorations.push(createCurrentStatementDecoration(location, activeBp));
-          stepIntoTargets(compilation.result.sourceLevelDebug, stop).forEach((target, i) => {
+          const justMyCode = getGlobalSetting(store, SETTING_EMU_JUST_MY_CODE) !== false;
+          stepIntoTargets(compilation.result.sourceLevelDebug, stop, justMyCode).forEach((target, i) => {
             stepTargetActions.current.push(
               editor.current.addAction({
                 id: `klive.stepIntoTarget.${target.callableIndex}`,

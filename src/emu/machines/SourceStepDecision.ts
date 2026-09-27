@@ -49,10 +49,21 @@ export class SourceDebugIndex {
   private readonly mapStatements: number[];
   private readonly callableRanges: { start: number; end: number; index: number }[];
 
-  constructor(readonly info: SourceLevelDebugInfo) {
+  /**
+   * `justMyCode` (plan §10.12, the default): the standard library's statements are not statements
+   * here — no entries, no statement at their addresses, their call sites belong to no statement — so
+   * stepping, the frame locator and the statement tracker run through library code as through the
+   * runtime. Off, library statements are stops like the user's.
+   */
+  constructor(
+    readonly info: SourceLevelDebugInfo,
+    readonly justMyCode = true
+  ) {
     this.statements = info.statements;
     this.callables = info.callables;
     const ext = info.extensions;
+    const libraryFiles = new Set(justMyCode ? (ext?.libraryFiles ?? []) : []);
+    const hidden = (statement: number) => statement >= 0 && libraryFiles.has(info.statements[statement]?.fileIndex);
     this.frames = ext?.frames ?? [];
     this.mainIndex = Math.max(
       0,
@@ -60,11 +71,13 @@ export class SourceDebugIndex {
     );
     this.mainBaselineSymbol = ext?.mainBaselineSymbol ?? 0;
     for (const s of info.statements) {
-      if (s.endAddress > s.startAddress) this.entries.set(s.startAddress, s.index);
+      if (s.endAddress > s.startAddress && !hidden(s.index)) this.entries.set(s.startAddress, s.index);
     }
-    for (const site of ext?.callSites ?? []) this.returnSites.set(site.returnAddress, site);
+    for (const site of ext?.callSites ?? []) {
+      this.returnSites.set(site.returnAddress, hidden(site.statementIndex) ? { ...site, statementIndex: -1 } : site);
+    }
     this.mapStarts = info.addressToStatement.map(([a]) => a);
-    this.mapStatements = info.addressToStatement.map(([, s]) => s);
+    this.mapStatements = info.addressToStatement.map(([, s]) => (hidden(s) ? -1 : s));
     this.callableRanges = this.frames
       .map((f) => ({ start: f.startAddress, end: f.endAddress, index: f.callableIndex }))
       .sort((a, b) => a.start - b.start);
@@ -415,6 +428,12 @@ export function shouldStopAtSourceStep(step: SourceStep, input: SourceStepInput)
       returned = true;
     }
     if (returned) {
+      // --- Back in code with no statement of its own (library code under Just My Code): not a
+      // --- place to stop; Step Out goes on to the activation that code returns to
+      if (site.statementIndex < 0 && index.statementAt(input.pc) < 0) {
+        if ((step.kind === "out" || step.kind === "runToFrame") && step.level >= step.targetLevel) step.targetLevel = step.level + 1;
+        return false;
+      }
       if ((step.kind === "out" || step.kind === "runToFrame") && step.level >= step.targetLevel) return returnPoint();
       // --- Stop where the caller's statement makes more calls, so the user can step into them
       if ((step.kind === "over" || step.kind === "into") && site.moreCallsFollow) return returnPoint();

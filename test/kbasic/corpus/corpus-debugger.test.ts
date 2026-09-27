@@ -16,7 +16,7 @@ import { programs, readExpectations } from "./expectations";
 /**
  * The source-level debugger on the whole corpus (plan Phase 5 exit: "call stack, Variables panel
  * and watches work on the corpus, 48K"). Each program runs in a debug run with a breakpoint on every
- * statement; at the first STOPS distinct statements it reaches, the panels' models are built from
+ * statement, the standard library's included (Just My Code off); at the first STOPS distinct statements it reaches, the panels' models are built from
  * the real machine and checked against each other:
  *
  * - the call stack ends in the main program, its innermost activation is the callable holding the
@@ -41,7 +41,8 @@ describe("the source-level debugger on the corpus", () => {
       const { session, generated, done } = await startBasic(source);
       if (keys) session.keyDown(...keys.keys);
       const info = generated.debug.sourceLevel;
-      const index = new SourceDebugIndex(info);
+      // --- Just My Code off: the library's statements are checked like the user's
+      const index = new SourceDebugIndex(info, false);
       const debugSupport = session.attachDebugSupport();
       debugSupport.statementTracker = new CurrentStatementTracker(index);
       // --- A program that raises an error ends at the error stop, not in the ROM's report loop

@@ -43,8 +43,9 @@ describe("the source-level tables", () => {
     const addresses = info.statements.map((s) => s.startAddress);
     expect(addresses).toEqual([...addresses].sort((a, b) => a - b));
     info.statements.forEach((s, i) => expect(s.index).toBe(i));
-    // --- Only the user's file: the library's statements are runtime to the debugger
-    expect(new Set(info.statements.map((s) => s.fileIndex))).toEqual(new Set([0]));
+    // --- The library's statements too, in a file listed as the library's (Just My Code, §10.12)
+    expect(new Set(info.statements.map((s) => s.fileIndex))).toEqual(new Set([0, 1]));
+    expect(info.extensions!.libraryFiles).toEqual([1]);
     // --- Two statements on line 7, each with its own columns
     const line7 = info.statements.filter((s) => s.startLine === 7);
     expect(line7.map((s) => [s.startColumn, s.endColumn])).toEqual([
@@ -97,7 +98,7 @@ describe("the source-level tables", () => {
     );
     // --- The library's own call (hex8 calls __kbHexDigits) is a call site of a library callable
     const inner = sites.find((c) => callee(c.calleeIndex) === "__kbHexDigits")!;
-    expect(inner.statementIndex).toBe(-1);
+    expect(info.files[info.statements[inner.statementIndex].fileIndex].filename).toBe("<kbasic-stdlib>/hex.bas");
     expect(info.callables[inner.callerIndex].name).toBe("hex8");
     expect(info.extensions!.frames[inner.callerIndex].library).toBe(true);
   });
@@ -106,17 +107,20 @@ describe("the source-level tables", () => {
     const { generated } = await compileBasic(PROGRAM);
     const info = generated.debug.sourceLevel;
     const vars = info.extensions!.variables;
-    const byName = (name: string) => vars.find((v) => v.name === name)!;
+    const add = info.callables.findIndex((c) => c.name === "add");
+    const byName = (name: string) => vars.find((v) => v.name === name && (v.scope === "global" || v.scope.callableIndex === add))!;
     expect(byName("total")).toMatchObject({ type: "uinteger", kind: "global", scope: "global", location: { at: "absolute" } });
     expect(byName("names")).toMatchObject({ type: "string", array: { elementType: "string", dimensions: [{ lower: 1, upper: 2 }] } });
     expect(byName("LIMIT")).toMatchObject({ kind: "constant", location: { at: "constant", value: 3 } });
-    const add = info.callables.findIndex((c) => c.name === "add");
     expect(byName("n")).toMatchObject({ kind: "parameter", type: "ubyte", scope: { callableIndex: add }, location: { at: "frame", ixOffset: 5 } });
     expect(byName("t")).toMatchObject({ kind: "parameter", byRef: true, location: { at: "frame", ixOffset: 6 } });
     expect(byName("twice")).toMatchObject({ kind: "local", location: { at: "frame", ixOffset: -2 } });
     expect(byName("twice").declaredAt).toEqual({ fileIndex: 0, line: 6, column: 6 });
-    // --- The library's own variables are not the user's
-    expect(vars.some((v) => v.name === "digits")).toBe(false);
+    // --- The library's routines have their parameters and locals (shown when Just My Code is off);
+    // --- its globals are not listed with the user's
+    const digitsOf = info.callables.findIndex((c) => c.name === "__kbHexDigits");
+    expect(vars.find((v) => v.name === "digits")).toMatchObject({ kind: "parameter", scope: { callableIndex: digitsOf } });
+    expect(vars.filter((v) => v.scope === "global").every((v) => v.declaredAt.fileIndex === 0)).toBe(true);
   });
 
   it("describes frames that match the real stack at every statement entry", async () => {
