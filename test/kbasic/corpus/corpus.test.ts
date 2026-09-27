@@ -74,8 +74,10 @@ function g4Problems(r: Run): string[] {
       problems.push(`statement ${v.sid}: SP ${v.sp} is not the main baseline ${baseline} at GOSUB depth ${[...depths].join("/")}`);
       if (problems.length > 5) break;
     }
+    // --- A statement inlined from a routine (level 3) is no GOSUB's RETURN, whatever its kind
+    const gosubReturn = st.kind === "return" && st.inlinedFrom === undefined;
     depths =
-      st.kind === "call" || st.kind === "switch" ? new Set([depth, depth + 1]) : st.kind === "return" ? new Set([depth - 1]) : new Set([depth]);
+      st.kind === "call" || st.kind === "switch" ? new Set([depth, depth + 1]) : gosubReturn ? new Set([depth - 1]) : new Set([depth]);
   }
   return problems;
 }

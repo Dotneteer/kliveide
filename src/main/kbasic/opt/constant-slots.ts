@@ -17,7 +17,7 @@ import type { Instr, MFunction, MModule, Slot, Terminator, Value } from "../ir/m
  * store always stays (write-back: memory and the Variables panel keep its value); a hidden slot's
  * store and data go once nothing reads them.
  */
-const HIDDEN_GLOBAL = /^__for(lim|step)\d+$/;
+const HIDDEN_GLOBAL = /^__(for(lim|step)|inl)\d+$/;
 
 type Access = { block: number; index: number; instr: Extract<Instr, { op: "load" | "store" | "addr" }> };
 

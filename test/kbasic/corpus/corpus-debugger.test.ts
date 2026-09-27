@@ -44,7 +44,7 @@ describe("the source-level debugger on the corpus", () => {
   // --- Next-only programs (CODEBANK): their debugging is checked on the Next harness (codebank-step.test.ts)
   for (const file of programs(ROOT).filter((f) => !isNextOnly(readFileSync(f, "utf8")))) {
     const name = relative(ROOT, file).replace(/\\/g, "/");
-    for (const level of [0, 1, 2])
+    for (const level of [0, 1, 2, 3])
       it(`${name} (optimize ${level})`, async () => {
         const source = readFileSync(file, "utf8");
         const expectations = readExpectations(source);

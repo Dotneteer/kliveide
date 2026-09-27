@@ -158,3 +158,30 @@ describe("level 2: unused routines", () => {
     expect(level1).toMatch(/^_unused:/m);
   });
 });
+
+describe("level 3: inlining", () => {
+  it("puts a small leaf routine with one call site into its caller, and keeps the rest", async () => {
+    const source = [
+      "FUNCTION once(n AS UByte) AS UByte",
+      " RETURN n + 1",
+      "END FUNCTION",
+      "FUNCTION twice(n AS UByte) AS UByte",
+      " RETURN n * 2",
+      "END FUNCTION",
+      "DIM a AS UByte",
+      "a = once(1) + twice(2) + twice(3)",
+      ""
+    ].join("\n");
+    const { generated } = await compileBasic(source, { optimize: 3 });
+    const text = generated.emitted.text;
+    expect(text).not.toMatch(/^_once:/m);
+    expect(text).toMatch(/^_twice:/m);
+    expect(generated.debug.problems).toEqual([]);
+    // --- The inlined statement belongs to the main program now, and says where it came from
+    const once = generated.mir.functions.findIndex((f) => f.name === "once");
+    const moved = generated.mir.statements.filter((s) => s.inlinedFrom === once);
+    expect(moved.length).toBeGreaterThan(0);
+    expect(moved.every((s) => generated.mir.functions[s.functionIndex].kind === "main")).toBe(true);
+    expect(generated.debug.sourceLevel.callables.map((c) => c.name)).not.toContain("once");
+  });
+});

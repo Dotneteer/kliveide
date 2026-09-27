@@ -1,5 +1,6 @@
 import { COMPARISONS, isSignedM, mtypeSize, type BinOp, type Instr, type MFunction, type MModule, type MType, type Value, type VReg } from "../ir/mir";
 import { propagateConstantSlots } from "./constant-slots";
+import { inlineCalls } from "./inline";
 import { removeUnusedRoutines } from "./unused-routines";
 import { verifyFunction } from "./verify";
 
@@ -23,6 +24,16 @@ export function optimizeMir(mir: MModule, level: number, onPass?: (name: string)
   // --- Level 2: routines nothing reaches get no code; constant slots across statements next, so the
   // --- per-statement passes fold what they give
   if (level >= 2 && removeUnusedRoutines(mir)) onPass?.("unused-routines");
+  // --- Level 3: small leaf routines with one call site go into their callers (then the constant
+  // --- slots can follow constant arguments into them)
+  if (level >= 3 && inlineCalls(mir)) {
+    onPass?.("inline");
+    for (const fn of mir.functions) {
+      if (fn.removed) continue;
+      const problems = verifyFunction(fn, level);
+      if (problems.length) throw new Error(`The MIR pass 'inline' broke ${fn.name}: ${problems.slice(0, 3).join("; ")}`);
+    }
+  }
   if (level >= 2 && propagateConstantSlots(mir)) {
     onPass?.("constant-slots");
     for (const fn of mir.functions) {

@@ -210,6 +210,8 @@ export type StatementEntry = {
   asmLines?: Span[];
   /** The statement's routine was removed as unused (level 2): it has no code and no entry. */
   removed?: boolean;
+  /** Level 3: the statement was inlined from this routine (its index in MModule.functions) into `functionIndex`. */
+  inlinedFrom?: number;
 };
 
 export type MModule = {

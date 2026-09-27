@@ -123,8 +123,11 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     const site = info.site;
     if (!site || site.kind === "read") return;
     const item = byLine.get(i + 1);
-    const caller = statementOf.get(info.sid);
-    if (!item || !caller) return;
+    // --- The calling routine: the statement's, or for shared code (-2: the rest of a statement an
+    // --- inlined call split, level 3) the routine whose lines hold the call
+    const functionIndex = statementOf.get(info.sid)?.functionIndex ?? emitted.functionLines.findIndex((r) => r && i + 1 >= r.start && i + 1 < r.end);
+    if (!item || functionIndex < 0) return;
+    const caller = { functionIndex };
     const calleeIndex = site.callee !== undefined && (site.kind === "sub" || site.kind === "function") ? calleeByName.get(site.callee) : undefined;
     const statementIndex = sidToIndex.get(info.sid) ?? -1;
     const partition = input.partitionOf?.(item);

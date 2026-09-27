@@ -329,9 +329,12 @@ debuggable at source level, in the emulator tests and in the running IDE.
    level 1 is 12.1% smaller and 6.1% faster than level 0). **Stage 7c is complete** (§14, §15):
    constant slots (SCCP's paying case) with dominance, branch folding, unused-routine removal; CSE,
    LICM and promote were measured on the corpus and not built (§15 has the census). Level 2 is 15.8%
-   smaller and 6.3% faster than level 0. Next: **stage 7d** — level 3 (inlining small leaf routines,
-   loop strength reduction, FASTCALL conversion, tail calls of runtime calls, cross-block rules, the
-   Z80N rule group), and Strings in the tree selector if the measurements say so.
+   smaller and 6.3% faster than level 0. **Stage 7d is done** (§16): level 3 is enabled, with
+   inlining of small single-call leaf routines (debuggable: the debugger corpus runs at levels 0–3)
+   and Z80N multiplies in the Next runtime. Tail calls, loop strength reduction and FASTCALL
+   conversion were measured and not built (§16 has the census). Level 3 is 17.3% smaller and 6.3%
+   faster than level 0 (154 programs). Not done, as no gain was shown: cross-block rules, further
+   Z80N rules, and Strings in the tree selector.
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

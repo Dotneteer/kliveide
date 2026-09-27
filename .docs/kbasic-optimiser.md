@@ -365,3 +365,54 @@ routine's) behave as lines without code already do. Debug builds use level 1 (th
 
 Stage 7c is complete. Figures (153 programs): level 0 36,412 bytes / 41.67M T-states; level 1 31,950
 bytes (−12.3%) / 39.12M (−6.1%); level 2 30,656 bytes (−15.8%) / 39.06M (−6.3%).
+
+## 16. Stage 7d: level 3 (2026-09-27)
+
+Done:
+
+- **Z80N multiplies** (Next target, all levels): `Mul8` and `Mul16` in `runtime/arith16.kz80.asm` have
+  `#ifmod Next` variants that use `mul d,e` (one for Mul8, three for Mul16). Pinned by
+  `next-target.test.ts`; the Next corpus runs them.
+- **Level 3 is enabled** (`codegen.ts` caps the requested level at 3). Debug builds still use level 1
+  (the debug profile).
+- **Inlining** (`opt/inline.ts`, level 3, before the constant slots). A SUB or FUNCTION is inlined when
+  it is a leaf with at most 4 statements and exactly one call site. It must also have no inline asm,
+  no bank, only numeric parameters and locals, and nothing may take its address (`@`, asm, data).
+  - **Homes.** The callee's frame slots move to frame slots of a calling routine, or to hidden
+    globals `__inl<n>` in the main program. The constant slots treat those globals like the FOR
+    slots. A byte or Float parameter is read at offset+1, so its home follows that access. The
+    callee's result slot becomes the result's home.
+  - **Zeroing.** A home is zeroed as a frame is, except where the first block stores it before
+    any load.
+  - **The block.** The caller's block is split at the call. Values live across the call are
+    stored and reloaded.
+  - **The debug info.** The continuation has no statement (sid -2) until the next statement
+    marker. Moved statements keep their lines, take the caller's `functionIndex` and record
+    `inlinedFrom`, and the callee is marked `removed` (as in §15).
+- **Call sites in shared code.** `debug/source-level.ts` now records a call site whose line has no
+  statement (sid -2) against the routine whose lines hold it. Before this, a call after an inlined
+  call in the same statement had no site, so the call stack could not walk out of it.
+- **The debugger at level 3.** The debugger corpus runs at levels 0–3. A breakpoint on an inlined
+  line stops there, and the call stack shows the caller: an inlined routine has no activation of
+  its own. The corpus's G4 model counts an inlined `END FUNCTION` as a statement, not a GOSUB
+  return.
+
+**Measured, and not built:**
+
+| Candidate | Finding | Why it stays out |
+| --- | --- | --- |
+| Tail calls of runtime calls | 116 T-states on the whole corpus | a `jp` in place of `call`/`ret` breaks the G4 model of GOSUB programs, for almost nothing |
+| Loop strength reduction | 4 of 75 loops access an induction variable's array element twice or more | too few loops to pay back a pointer slot and its write-back |
+| FASTCALL conversion | no gain by construction | Klive's FASTCALL routines still build an IX frame and push the register argument into it (the debugger needs the frame), so the push a conversion would save stays |
+
+Not done in 7d: cross-block rules, Z80N rules beyond the multiplies, and Strings in the tree
+selector. None has shown a gain in the census that would justify its risk.
+
+Figures (154 programs):
+
+| Level | Bytes | vs level 0 | T-states | vs level 0 |
+| --- | --- | --- | --- | --- |
+| 0 | 37,171 | — | 41.76M | — |
+| 1 | 32,635 | −12.2% | 39.22M | −6.1% |
+| 2 | 31,316 | −15.8% | 39.15M | −6.2% |
+| 3 | 30,753 | −17.3% | 39.14M | −6.3% |

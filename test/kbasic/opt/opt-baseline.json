@@ -733,8 +733,8 @@
    "tstates": 75956
   },
   "3": {
-   "bytes": 491,
-   "tstates": 75956
+   "bytes": 403,
+   "tstates": 64914
   }
  },
  "control/logic-evaluation.zxbas": {
@@ -1165,8 +1165,8 @@
    "tstates": 1024170
   },
   "3": {
-   "bytes": 436,
-   "tstates": 1024170
+   "bytes": 405,
+   "tstates": 1023986
   }
  },
  "float/for-step.zxbas": {
@@ -2119,8 +2119,8 @@
    "tstates": 14957
   },
   "3": {
-   "bytes": 135,
-   "tstates": 14957
+   "bytes": 114,
+   "tstates": 14782
   }
  },
  "routines/defaults-named.zxbas": {
@@ -2155,8 +2155,8 @@
    "tstates": 30437
   },
   "3": {
-   "bytes": 200,
-   "tstates": 30437
+   "bytes": 71,
+   "tstates": 29618
   }
  },
  "routines/function-result.zxbas": {
@@ -2191,8 +2191,26 @@
    "tstates": 26401
   },
   "3": {
-   "bytes": 102,
-   "tstates": 26401
+   "bytes": 50,
+   "tstates": 26029
+  }
+ },
+ "routines/level3-inline.zxbas": {
+  "0": {
+   "bytes": 759,
+   "tstates": 92229
+  },
+  "1": {
+   "bytes": 685,
+   "tstates": 91381
+  },
+  "2": {
+   "bytes": 660,
+   "tstates": 91134
+  },
+  "3": {
+   "bytes": 488,
+   "tstates": 89715
   }
  },
  "routines/locals-zeroed.zxbas": {
@@ -2353,8 +2371,8 @@
    "tstates": 74445
   },
   "3": {
-   "bytes": 495,
-   "tstates": 74445
+   "bytes": 461,
+   "tstates": 74221
   }
  },
  "stdlib/hex-lib.zxbas": {
@@ -2479,8 +2497,8 @@
    "tstates": 78214
   },
   "3": {
-   "bytes": 617,
-   "tstates": 78214
+   "bytes": 581,
+   "tstates": 77974
   }
  },
  "stdlib/string-lib.zxbas": {

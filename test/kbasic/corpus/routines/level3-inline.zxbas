@@ -1,0 +1,54 @@
+' Level 3 inlines small leaf routines with one call site (.docs/kbasic-optimiser.md §16): byte, Float
+' and FASTCALL parameters, nesting (a routine becomes a leaf once its callee is inlined), a value
+' computed before the call and used after it, several RETURN paths, a FUNCTION without RETURN,
+' locals zeroed on every pass round a loop, a routine as the caller; the same at every level
+'@expect screen 0 "42 2.5 2001"
+'@expect screen 1 "-101"
+'@expect screen 2 "3"
+'@expect screen 3 "k5 21"
+'@expect screen 4 "-7"
+DIM y AS UInteger
+DIM i AS UByte
+DIM t AS UInteger
+FUNCTION twice(n AS UByte) AS UByte
+  RETURN n * 2
+END FUNCTION
+FUNCTION half(x AS Float) AS Float
+  RETURN x / 2
+END FUNCTION
+FUNCTION FASTCALL inc(n AS UInteger) AS UInteger
+  RETURN n + 1
+END FUNCTION
+FUNCTION sign(n AS Integer) AS Byte
+  IF n < 0 THEN RETURN -1
+  IF n > 0 THEN RETURN 1
+END FUNCTION
+FUNCTION counter() AS UByte
+  DIM c AS UByte
+  c = c + 1
+  RETURN c
+END FUNCTION
+SUB inner(k AS UByte)
+  PRINT "k"; k; " ";
+END SUB
+SUB outer(k AS UByte)
+  inner(k + 1)
+END SUB
+FUNCTION inRoutine(v AS UInteger) AS UInteger
+  RETURN v + inc(v)
+END FUNCTION
+y = 1000
+PRINT twice(21); " "; half(5); " "; y + inc(y)
+PRINT sign(-5); sign(0); sign(7)
+FOR i = 1 TO 3 : t = t + counter() : NEXT i
+PRINT t
+outer(4)
+PRINT inRoutine(10)
+FUNCTION FASTCALL neg8(n AS Byte) AS Byte
+  RETURN -n
+END FUNCTION
+FUNCTION inRoutine2(v AS Byte) AS Byte
+  DIM w AS Byte = 3
+  RETURN neg8(v) + w
+END FUNCTION
+PRINT inRoutine2(10)
