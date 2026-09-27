@@ -310,6 +310,84 @@ function generate() {
     ]
   };
 
+  // --- Statements (C3): evaluation order around calls, named arguments, FOR. One program an item: each
+  // --- has routines with side effects of its own. `@` in a line is replaced by the item's own suffix.
+  const STATEMENTS = [
+    // --- Evaluation order: a FUNCTION that changes g and b, then an expression reading them too
+    ["order: g + f()", "g + f()"], ["order: f() + g", "f() + g"], ["order: g - f()", "g - f()"],
+    ["order: g * 2 - f()", "g * 2 - f()"], ["order: (g + 0) + f()", "(g + 0) + f()"], ["order: -g + f()", "-g + f()"],
+    ["order: g + f() * 1", "g + f() * 1"], ["order: t(1) + f()", "t(1) + f()"], ["order: u + f()", "u + f()"], ["order: fl + f()", "fl + f()"],
+    ["order: g + f() + g", "g + f() + g"], ["order: f() + g + f()", "f() + g + f()"], ["order: g + (f() + g)", "g + (f() + g)"],
+    ["order: g = f()", "g = f()"], ["order: g AND f()", "g AND f()"], ["order: s + h()", "s + h()"],
+    ["order: 100 + f() + g", "100 + f() + g"], ["order: g < f()", "g < f()"], ["order: f() - f()", "f() - f()"],
+    ["order: b + f()", "b + f()"], ["order: (g + b) + f()", "(g + b) + f()"], ["order: CAST(Integer, g) + f()", "CAST(Integer, g) + f()"],
+    ["order: g2(g, f())", "g2(g, f())"], ["order: g2(f(), g)", "g2(f(), g)"]
+  ].map(([id, expr]) => ({
+    id,
+    decl: [
+      "DIM g@, b@ AS Integer", "DIM t@(3) AS Integer", "DIM u@ AS UByte = 5", "DIM fl@ AS Float = 5", "DIM s@ AS String = \"a\"",
+      "FUNCTION f@() AS Integer: g@ = g@ + 10: b@ = b@ + 100: t@(1) = t@(1) + 1000: u@ = u@ + 10: fl@ = fl@ + 10: RETURN 1: END FUNCTION",
+      "FUNCTION h@() AS String: s@ = \"b\": RETURN \"c\": END FUNCTION",
+      "FUNCTION g2@(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+      "g@ = 5: b@ = 3: t@(1) = 7"
+    ],
+    expr: expr.replace(/\bg2\(/g, "g2@(").replace(/\bg\b/g, "g@").replace(/\bb\b/g, "b@").replace(/\bu\b/g, "u@").replace(/\bfl\b/g, "fl@").replace(/\bs\b/g, "s@").replace(/\bh\(\)/g, "h@()").replace(/\bt\(/g, "t@(").replace(/\bf\(\)/g, "f@()")
+  }));
+  const ASSIGN = [
+    ["assign: t(g) = f()", "t@(g@) = f@()", 'STR$(t@(0)) + " " + STR$(t@(1)) + " " + STR$(t@(2)) + " " + STR$(g@)'],
+    ["assign: t(g + 0) = f()", "t@(g@ + 0) = f@()", 'STR$(t@(0)) + " " + STR$(t@(1)) + " " + STR$(t@(2)) + " " + STR$(g@)'],
+    ["assign: t(h()) = f()", "t@(h@()) = f@()", 'STR$(t@(0)) + " " + STR$(t@(1)) + " " + STR$(t@(2)) + " " + STR$(g@)'],
+    ["assign: g = g + f()", "g@ = g@ + f@()", "g@"]
+  ].map(([id, stmt, expr]) => ({
+    id,
+    decl: [
+      "DIM g@ AS UByte", "DIM t@(20) AS Integer",
+      "FUNCTION f@() AS Integer: g@ = g@ + 1: RETURN 50: END FUNCTION",
+      "FUNCTION h@() AS UByte: g@ = g@ + 1: RETURN g@: END FUNCTION",
+      "g@ = 1", stmt
+    ],
+    expr
+  }));
+  const NAMED = [
+    ["named: s(c := 7, a := 5)", "s@(c := 7, a := 5)"], ["named: s(1, c := 9)", "s@(1, c := 9)"], ["named: s(b := 4)", "s@(b := 4)"],
+    ["named: s(a := 1, b := 2, c := 3)", "s@(a := 1, b := 2, c := 3)"], ["named: fn(y := 2, x := 1)", "PRINT AT 0, 0; fn@(y := 2, x := 1)"]
+  ].map(([id, stmt]) => ({
+    id,
+    decl: [
+      "SUB s@(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+      "FUNCTION fn@(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+      stmt
+    ],
+    expr: '""; : REM'
+  }));
+  const FORS = [
+    ["for: limit and step changed in the body", "DIM i@, l@, s@, n@ AS Integer", "l@ = 10: s@ = 2: FOR i@ = 1 TO l@ STEP s@: l@ = 0: s@ = 100: n@ = n@ + 1: NEXT i@"],
+    ["for: limit raised in the body", "DIM i@, l@, n@ AS Integer", "l@ = 3: FOR i@ = 1 TO l@: IF i@ = 2 THEN l@ = 5\nn@ = n@ + 1: NEXT i@"],
+    ["for: step changed in the body", "DIM i@, s@, n@ AS Integer", "s@ = 1: FOR i@ = 1 TO 10 STEP s@: s@ = 3: n@ = n@ + 1: NEXT i@"],
+    ["for: limit from a FUNCTION", "DIM i@, n@, c@ AS Integer\nFUNCTION lim@() AS Integer: c@ = c@ + 1: RETURN 4: END FUNCTION", "FOR i@ = 1 TO lim@(): n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + c@"],
+    ["for: step from a FUNCTION", "DIM i@, n@, c@ AS Integer\nFUNCTION st@() AS Integer: c@ = c@ + 1: RETURN 1: END FUNCTION", "FOR i@ = 1 TO 4 STEP st@(): n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + c@"],
+    ["for: start from a FUNCTION", "DIM i@, n@, c@ AS Integer\nFUNCTION st@() AS Integer: c@ = c@ + 1: RETURN 1: END FUNCTION", "FOR i@ = st@() TO 4: n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + c@"],
+    ["for: UInteger with a negative Integer STEP", "DIM u@ AS UInteger\nDIM s@ AS Integer = -300\nDIM n@ AS Integer", "FOR u@ = 1000 TO 150 STEP s@: n@ = n@ + 1: NEXT u@\nn@ = n@ * 10000 + u@"],
+    ["for: UByte with a negative Byte STEP", "DIM u@ AS UByte\nDIM s@ AS Byte = -2\nDIM n@ AS Integer", "FOR u@ = 9 TO 2 STEP s@: n@ = n@ + 1: NEXT u@\nn@ = n@ * 1000 + u@"],
+    ["for: UByte with a negative literal STEP", "DIM u@ AS UByte\nDIM n@ AS Integer", "FOR u@ = 9 TO 2 STEP -2: n@ = n@ + 1: NEXT u@\nn@ = n@ * 1000 + u@"],
+    ["for: Integer with a UByte STEP variable", "DIM i@ AS Integer\nDIM s@ AS UByte = 3\nDIM n@ AS Integer", "FOR i@ = 1 TO 10 STEP s@: n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + i@"],
+    ["for: no pass", "DIM i@, n@ AS Integer", "FOR i@ = 10 TO 1: n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + i@"],
+    ["for: the variable changed in the body", "DIM i@, n@ AS Integer", "FOR i@ = 1 TO 10: i@ = i@ + 2: n@ = n@ + 1: NEXT i@\nn@ = n@ * 100 + i@"],
+    ["for: Float variable, 0.1 steps", "DIM f@ AS Float\nDIM n@ AS Integer", "FOR f@ = 0 TO 1 STEP 0.1: n@ = n@ + 1: NEXT f@\nn@ = n@ * 100 + INT(f@ * 10)"],
+    ["for: Fixed variable, 0.25 steps", "DIM f@ AS Fixed\nDIM n@ AS Integer", "FOR f@ = 0 TO 1 STEP 0.25: n@ = n@ + 1: NEXT f@\nn@ = n@ * 100 + INT(f@ * 100)"],
+    ["for: UByte up to 255", "DIM u@ AS UByte\nDIM n@ AS Integer", "FOR u@ = 250 TO 255: n@ = n@ + 1: IF n@ > 20 THEN EXIT FOR\nNEXT u@\nn@ = n@ * 1000 + u@"],
+    ["for: Byte down to -128", "DIM u@ AS Byte\nDIM n@ AS Integer", "FOR u@ = -125 TO -128 STEP -1: n@ = n@ + 1: IF n@ > 20 THEN EXIT FOR\nNEXT u@\nn@ = n@ * 1000 + u@"],
+    ["for: an undeclared variable", "DIM n@ AS Integer", "FOR k@ = 1 TO 300 STEP 100: n@ = n@ + 1: NEXT k@\nn@ = n@ * 1000 + k@"]
+  ].map(([id, decl, body]) => ({ id, decl: [...decl.split("\n"), ...body.split("\n")], expr: "n@" }));
+  suites.statements = {
+    perProgram: 1,
+    items: [...STATEMENTS, ...ASSIGN, ...NAMED, ...FORS].map((item) => {
+      const suffix = name();
+      const sub = (text) => text.replace(/@/g, suffix);
+      return { id: item.id, decl: item.decl.map(sub), expr: sub(item.expr) };
+    })
+  };
+
   for (const [suite, data] of Object.entries(suites)) {
     const ids = new Set();
     for (const item of data.items) {

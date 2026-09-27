@@ -853,7 +853,8 @@ class Parser {
     const opener = this.peek();
     const header = this.routineHeader();
     const keyword = header.routine;
-    this.expectSeparator(true);
+    // --- ':' may follow the header: `FUNCTION f() AS UByte: RETURN 1: END FUNCTION` on one line (zxbc)
+    this.expectSeparator();
     this.routineDepth++;
     // --- A routine ends at its END; END of the other kind or a new routine header leaves it unclosed
     const body = this.block(

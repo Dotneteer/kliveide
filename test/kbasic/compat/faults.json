@@ -368,6 +368,13 @@
    "fault": "shr-signed"
   }
  },
+ "statements": {
+  "for: no pass": {
+   "klive": "10",
+   "zxbc": "0",
+   "fault": "for-never-runs"
+  }
+ },
  "unary": {
   "Fixed 3.5: BNOT a": {
    "klive": "-4",

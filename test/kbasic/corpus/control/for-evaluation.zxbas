@@ -1,8 +1,8 @@
-' FOR evaluates its limit and step once, before the first test; afterwards the variable holds the
-' first value past the limit (semantics annex: for-loop-evaluation)
-'@expect screen 0 "5 11"
+' FOR evaluates its limit and step again at every test, so a body that changes them changes the
+' loop; afterwards the variable holds the first value past the limit (semantics annex:
+' for-loop-evaluation)
+'@expect screen 0 "1 101"
 '@expect screen 1 "3 -2"
-'@expect oracle-differs for-loop-evaluation
 DIM i, lim, st, n AS Integer
 lim = 10: st = 2
 FOR i = 1 TO lim STEP st

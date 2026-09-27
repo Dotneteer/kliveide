@@ -752,9 +752,12 @@ class Binder extends ExpressionBinder {
     const type = variable?.type ?? "Float";
     const f = this.convert(from, type, true);
     const t = this.convert(to, type, true);
-    // --- A signed STEP of an unsigned variable stays signed (the same width), so that STEP -1
-    // --- counts a UByte down rather than up by 255
-    const st = step ? this.convert(step, UNSIGNED_TO_SIGNED[type] && SIGNED_STEP_TYPES.has(step.type) ? UNSIGNED_TO_SIGNED[type] : type, true) : undefined;
+    // --- A signed constant STEP of an unsigned variable stays signed (the same width), so that STEP -1
+    // --- counts a UByte down rather than up by 255. A STEP that is not constant takes the variable's
+    // --- type, as ZX BASIC converts it: with an unsigned variable it never counts down (observed
+    // --- through the oracle, compatibility plan C3)
+    const signedStep = !!step?.constant && !!UNSIGNED_TO_SIGNED[type] && SIGNED_STEP_TYPES.has(step.type);
+    const st = step ? this.convert(step, signedStep ? UNSIGNED_TO_SIGNED[type] : type, true) : undefined;
     this.checkForRange(f, t, st, s.span, type);
     const body = this.loopBody("FOR", s.body, s.span);
     if (!variable) return undefined;

@@ -1,7 +1,8 @@
-' An unsigned FOR variable counts down with a negative STEP, constant or computed (the STEP keeps
-' its sign; the variable adds its bits). Each limit is reached without wrapping below 0.
-'@expect screen 0 "5 3 |1|1000 700 400 |100|321|0"
-'@expect oracle-differs for-unsigned-negative-step
+' An unsigned FOR variable counts down with a negative constant STEP, reaching each limit without
+' wrapping below 0; a STEP held in a variable takes the variable's type, so with an unsigned one it
+' never counts down and FOR u = 1000 TO 150 STEP s runs no pass (semantics annex:
+' for-unsigned-negative-step)
+'@expect screen 0 "5 3 |1||1000|321|0"
 DIM b AS UByte
 DIM u AS UInteger
 DIM s AS Integer = -300

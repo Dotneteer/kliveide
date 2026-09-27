@@ -170,12 +170,12 @@ describe("routines", () => {
   const source =
     "FUNCTION add(a AS UByte, b AS UByte = 2) AS UInteger\n RETURN a + b\nEND FUNCTION\nSUB inc(BYREF v AS UInteger)\n v = v + 1\nEND SUB\nDIM r AS UInteger\nr = add(1)\ninc r\nPRINT add(b := 3, a := 4)\n";
 
-  it("fills defaults and matches named arguments", () => {
+  it("fills defaults, and places named arguments in the order written (ZX BASIC)", () => {
     const b = bindText(source);
     expect(b.semantic).toEqual([]);
     const all = statements(b);
     expect(show(valueOf(all.find((s) => s.kind === "assign")!))).toBe("add(1:UByte, default):UInteger");
-    expect(show(valueOf(all[all.length - 1]))).toBe("add(4:UByte, 3:UByte):UInteger");
+    expect(show(valueOf(all[all.length - 1]))).toBe("add(3:UByte, 4:UByte):UInteger");
   });
 
   it("passes a BYREF argument as the variable", () => {

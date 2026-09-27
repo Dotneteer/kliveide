@@ -2516,12 +2516,11 @@
       {
         "name": "argument-evaluation-order",
         "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
-        "decision": "A call's arguments last first, so the stack machine leaves them where STDCALL wants them; a binary operator's left operand before its right, and an assigned array element's index before the value.",
-        "status": "open",
-        "source": "klive-decision",
+        "decision": "A call arguments are evaluated last first. A binary operator evaluates its left operand first, except that a plain variable on the left - read in the operation own type, with no conversion - is read after the right operand (g + f() sees g as f() left it; u + f() with u a UByte and f() an Integer reads u first). An assigned array element subscripts are evaluated after the value (t(g) = f() stores where g points after f()).",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/corpus/routines/call-order.zxbas",
-        "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "phase": 8,
@@ -2671,22 +2670,30 @@
       {
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
-        "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. A signed STEP of an unsigned variable keeps its sign (it is held in the signed type of the variable's width), so FOR i = 5 TO 1 STEP -1 counts a UByte down. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
-        "status": "open",
-        "source": "klive-decision",
+        "decision": "The start is evaluated once. Every test - before the first pass and after each NEXT - evaluates the limit again, and a STEP that is not constant too when its sign decides the direction; NEXT adds the STEP, evaluated again. A body that changes the limit or the STEP changes the loop; after the loop the variable holds the first value past the limit.",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
-        "test": "test/kbasic/corpus/control/for-evaluation.zxbas",
-        "oracle": "Upstream re-evaluates the limit and STEP on every pass. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
-        "status": "open",
+        "name": "for-never-runs",
+        "question": "What does a FOR loop whose constant range never runs leave in its variable (FOR i = 10 TO 1)?",
+        "decision": "The start value, as for any loop that ends before its first pass: i is 10.",
+        "status": "decided",
         "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc drops the whole statement when its constant analysis sees no pass, the assignment of the start included, so i keeps its old value: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
         "name": "for-unsigned-negative-step",
         "question": "How does an unsigned FOR variable count with a negative STEP held in a signed variable?",
-        "decision": "Down: the STEP keeps its sign, and the loop stops at its limit without wrapping below 0.",
-        "test": "test/kbasic/corpus/control/for-unsigned-down.zxbas",
-        "oracle": "Upstream treats the STEP as unsigned and runs no iteration. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "decision": "A constant STEP keeps its sign (FOR u = 9 TO 2 STEP -2 counts a UByte down). A STEP that is not constant takes the loop variable type, so with an unsigned variable it never counts down: FOR u = 1000 TO 150 STEP s with s = -300 runs no pass.",
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "phase": 8,
@@ -2782,14 +2789,13 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
-        "status": "open",
-        "source": "klive-decision",
+        "status": "decided",
+        "source": "oracle",
         "phase": 8,
         "name": "named-arguments",
         "question": "How are named arguments (name := value) matched to parameters?",
-        "decision": "By name; parameters left out take their defaults.",
-        "test": "test/kbasic/corpus/routines/defaults-named.zxbas",
-        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md: copy zxbc and pass by position (D-C2)."
+        "decision": "Positionally: the values given, positional and named, in the order written, then the defaults of the parameters neither given by position nor named, in parameter order; parameter i takes the i-th. A name only says which default is left out: s(c := 7, a := 5) is s(7, 5, <b default>); s(b := 4) is s(4, <a default>, <c default>).",
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "on-goto-out-of-range",

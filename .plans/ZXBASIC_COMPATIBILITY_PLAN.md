@@ -10,7 +10,8 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 **Status:** stage C0 done (2026-09-27): the DO…LOOP acceptance fixes. The §5 decisions are taken
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
 helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated items over numbers, Strings
-and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. Next: C3.
+and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. **C3 in
+progress** (§4.3): evaluation order, named arguments and FOR done.
 
 ---
 
@@ -175,6 +176,25 @@ program that pins them. Target: every generated program agrees.
   a literal, which zxbc writes at compile time (annex `str-of-literal`; `literalText`).
 - **Closed** with every suite agreeing: `baseline.json` empty, 75 recorded faults. A new difference
   anywhere in the suites fails CI; a fault that stops differing fails too.
+
+### 4.3 C3 state (2026-09-27)
+
+- **C3a done.** The suite `statements` (50 items, one program each) pins evaluation order around
+  calls, named arguments and FOR; all agree but one recorded fault (`for-never-runs`).
+  - **Single-line routines** (`FUNCTION f() AS UByte: RETURN 1: END FUNCTION`) now parse, as zxbc
+    accepts them.
+  - **Evaluation order** (annex `argument-evaluation-order`): a plain variable on the left of a binary
+    operator, read in the operation's type, is read after a right operand that calls a FUNCTION; an
+    assigned element's subscripts are evaluated after the value. `lower.ts` swaps the operands of a
+    commutative or mirrored operator, and holds the right value in a hidden slot for the others (`-`,
+    `/`, MOD, shifts, concatenation) - the level-0 stack machine needs its operands in order.
+  - **Named arguments** (annex `named-arguments`): positional, in the order written, then the defaults
+    of the parameters neither given nor named (a parameter may take another's default).
+  - **FOR** (annex `for-loop-evaluation`, `for-unsigned-negative-step`): the limit, and a non-constant
+    STEP whose sign decides, are evaluated at every test; NEXT evaluates the STEP again; a
+    non-constant STEP takes the variable's type. Loops with an expression as the limit grew a little.
+- **Next:** C3b (the runtime error model, the print position on return), then C3c (graphics, slice
+  assignment, PRINT's edge cases).
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

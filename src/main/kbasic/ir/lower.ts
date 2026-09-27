@@ -551,6 +551,23 @@ class Lowering {
         this.unsupported(`${target.type} arrays`, span);
         return;
       }
+      if (callsRoutine(valueExpr)) {
+        // --- ZX BASIC evaluates the value before the element's subscripts (t(g) = f() stores where g
+        // --- points after f() ran; compatibility plan C3). The address must be computed right before
+        // --- the store, so a number waits in a hidden slot; a String goes to StrStore value first
+        if (type === "str") {
+          const value = this.ownedString(valueExpr);
+          const address = this.elementAddress(target.symbol, target.indices, span);
+          this.emit({ op: "rtcall", name: this.rt("StrStore"), args: [value, address], sid: this.sid });
+          this.owned.delete((value as VReg).id);
+          return;
+        }
+        const held = this.hiddenSlot(type, "asg");
+        this.emit({ op: "store", type, slot: held, src: this.value(valueExpr), sid: this.sid });
+        const ptr = this.elementAddress(target.symbol, target.indices, span);
+        this.emit({ op: "store", type, slot: { kind: "deref", ptr }, src: this.load(type, held), sid: this.sid });
+        return;
+      }
       // --- The element's address first, then the value (like a BYREF variable)
       const slot: Slot = { kind: "deref", ptr: this.elementAddress(target.symbol, target.indices, span) };
       if (type === "str") this.storeString(slot, valueExpr);
@@ -919,6 +936,13 @@ class Lowering {
     this.continueAt(after);
   }
 
+  /**
+   * FOR as ZX BASIC runs it (observed through the oracle, compatibility plan C3): the start is
+   * evaluated once; every test - before the first pass and after each NEXT - evaluates the limit
+   * again, and a STEP that is not constant too, when its sign decides the direction; NEXT adds the
+   * STEP, evaluated again. So a body that changes the limit or the STEP changes the loop. A STEP that is
+   * not constant has the variable's type (the binder converts it): with an unsigned variable it counts up.
+   */
   private forStatement(s: Extract<BoundStatement, { kind: "for" }>): void {
     if (s.variable.kind !== "variable") return;
     const type = mtypeOf(s.variable.type);
@@ -934,18 +958,8 @@ class Lowering {
 
     this.beginStatement(s.header, "loop");
     this.emit({ op: "store", type, slot, src: this.value(s.from), sid: this.sid });
-    const limit = this.hiddenSlot(type, "forlim");
-    this.emit({ op: "store", type, slot: limit, src: this.value(s.to), sid: this.sid });
     const constantStep = s.step ? stepConstant(s.step) : 1;
-    // --- The step may be the signed counterpart of an unsigned variable (same width): its sign
-    // --- decides the direction, and its bits are added as the variable's type
-    const stepType = s.step ? mtypeOf(s.step.type) : type;
-    let stepSlot: Slot | undefined;
-    if (s.step && constantStep === undefined) {
-      stepSlot = this.hiddenSlot(stepType, "forstep");
-      this.emit({ op: "store", type: stepType, slot: stepSlot, src: this.value(s.step), sid: this.sid });
-    }
-    const beyond = () => this.forBeyond(slot, limit, type, constantStep, stepSlot, stepType);
+    const beyond = () => this.forBeyond(slot, s.to, type, constantStep, s.step);
     this.terminate({ op: "br", cond: beyond(), ifTrue: exit, ifFalse: body, sid: this.sid });
 
     this.startBlock(body);
@@ -956,11 +970,8 @@ class Lowering {
     this.continueAt(next);
     this.beginStatement(s.next, "loop");
     const i = this.load(type, slot);
-    const step = stepSlot
-      ? this.load(type, stepSlot)
-      : s.step && stepType === type
-        ? this.value(s.step)
-        : this.numberValue(type, wrapTo(type, constantStep ?? 1));
+    // --- A constant STEP may be the signed counterpart of an unsigned variable: its bits are added
+    const step = s.step && constantStep === undefined ? this.value(s.step) : this.numberValue(type, wrapTo(type, constantStep ?? 1));
     const sum = this.vreg(type);
     this.emit({ op: "bin", bop: "add", dst: sum, a: i, b: step, sid: this.sid });
     this.emit({ op: "store", type, slot, src: sum, sid: this.sid });
@@ -968,24 +979,36 @@ class Lowering {
     this.startBlock(exit);
   }
 
-  /** `i > limit` for a positive step, `i < limit` for a negative one; tested at run time when unknown. */
-  private forBeyond(slot: Slot, limit: Slot, type: MType, step: number | undefined, stepSlot: Slot | undefined, stepType: MType): Value {
+  /**
+   * `i > limit` for a positive step, `i < limit` for a negative one, with the limit evaluated now;
+   * a signed STEP that is not constant is evaluated now too, and its sign decides at run time.
+   */
+  private forBeyond(slot: Slot, to: BoundExpr, type: MType, step: number | undefined, stepExpr: BoundExpr | undefined): Value {
+    const stepType = step === undefined ? mtypeOf(stepExpr!.type) : type;
+    if (step !== undefined || (!isSignedM(stepType) && stepType !== "flt" && stepType !== "fix")) {
+      const r = this.vreg("bool");
+      const i = this.load(type, slot);
+      this.emit({ op: "bin", bop: step !== undefined && step < 0 ? "lt" : "gt", dst: r, a: i, b: this.value(to), sid: this.sid });
+      return r;
+    }
+    // --- The sign decides at run time: the limit, then the STEP, each evaluated once and held
+    const limit = this.hiddenSlot(type, "forlim");
+    this.emit({ op: "store", type, slot: limit, src: this.value(to), sid: this.sid });
+    const stepHeld = this.hiddenSlot(stepType, "forstep");
+    this.emit({ op: "store", type: stepType, slot: stepHeld, src: this.value(stepExpr!), sid: this.sid });
     const compare = (op: BinOp) => {
       const r = this.vreg("bool");
       this.emit({ op: "bin", bop: op, dst: r, a: this.load(type, slot), b: this.load(type, limit), sid: this.sid });
       return r;
     };
-    if (step !== undefined) return compare(step >= 0 ? "gt" : "lt");
     // --- (step < 0 AND i < limit) OR (step >= 0 AND i > limit)
     const negative = this.vreg("bool");
-    const stepValue = this.load(stepType, stepSlot!);
-    this.emit({ op: "bin", bop: "lt", dst: negative, a: stepValue, b: this.numberValue(stepType, 0), sid: this.sid });
+    this.emit({ op: "bin", bop: "lt", dst: negative, a: this.load(stepType, stepHeld), b: this.numberValue(stepType, 0), sid: this.sid });
     const below = compare("lt");
     const down = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: down, a: negative, b: below, sid: this.sid });
     const positive = this.vreg("bool");
-    const stepAgain = this.load(stepType, stepSlot!);
-    this.emit({ op: "bin", bop: "ge", dst: positive, a: stepAgain, b: this.numberValue(stepType, 0), sid: this.sid });
+    this.emit({ op: "bin", bop: "ge", dst: positive, a: this.load(stepType, stepHeld), b: this.numberValue(stepType, 0), sid: this.sid });
     const above = compare("gt");
     const up = this.vreg("bool");
     this.emit({ op: "bin", bop: "land", dst: up, a: positive, b: above, sid: this.sid });
@@ -1568,19 +1591,57 @@ class Lowering {
 
   private binary(e: Extract<BoundExpr, { kind: "binary" }>): Value {
     const op = BINARY_OPS[e.op];
+    // --- ZX BASIC's order may read the left operand last (operands): a commutative or mirrored
+    // --- operator then simply swaps its operands, with no value held aside
+    const swapped = SWAPPED[op];
+    if (swapped && e.operandType !== "String" && this.readsLeftLast(e.left, e.right)) {
+      const then = op === "land" || op === "lor" || op === "lxor" ? (v: Value) => this.toBool(v) : (v: Value) => v;
+      const b = then(this.value(e.right));
+      const a = then(this.value(e.left));
+      const r = this.vreg(COMPARISONS.has(op) || op === "land" || op === "lor" || op === "lxor" ? "bool" : mtypeOf(e.type));
+      this.emit({ op: "bin", bop: swapped, dst: r, a: b, b: a, sid: this.sid });
+      return r;
+    }
     if (op === "land" || op === "lor" || op === "lxor") {
-      const a = this.toBool(this.value(e.left));
-      const b = this.toBool(this.value(e.right));
+      const [a, b] = this.operands(e.left, e.right, (v) => this.toBool(v));
       const r = this.vreg("bool");
       this.emit({ op: "bin", bop: op, dst: r, a, b, sid: this.sid });
       return r;
     }
     if (e.operandType === "String") return this.stringBinary(op, e);
-    const a = this.value(e.left);
-    const b = this.value(e.right);
+    const [a, b] = this.operands(e.left, e.right);
     const r = this.vreg(COMPARISONS.has(op) ? "bool" : mtypeOf(e.type));
     this.emit({ op: "bin", bop: op, dst: r, a, b, sid: this.sid });
     return r;
+  }
+
+  /**
+   * A binary operator's operands in ZX BASIC's order (observed through the oracle, compatibility plan
+   * C3): the left one first, except that a plain variable on the left - read in the operation's own
+   * type, with no conversion - is read after the right one. That is observable only when the right one
+   * calls a FUNCTION, which may change the variable (g + f() sees g as f() left it), and only then is
+   * the order changed.
+   */
+  /** Whether ZX BASIC reads this left operand after the right one (see operands). */
+  private readsLeftLast(left: BoundExpr, right: BoundExpr): boolean {
+    return left.kind === "variable" && callsRoutine(right);
+  }
+
+  private operands(left: BoundExpr, right: BoundExpr, then: (v: Value) => Value = (v) => v): [Value, Value] {
+    if (this.readsLeftLast(left, right)) {
+      // --- The right value waits in a hidden slot, so the code still meets its operands in order
+      const type = mtypeOf(right.type);
+      const held = this.hiddenSlot(type, "opd");
+      const b = this.value(right);
+      const owned = b.kind === "vreg" && this.owned.delete(b.id);
+      this.emit({ op: "store", type, slot: held, src: b, sid: this.sid });
+      const a = then(this.value(left));
+      const again = this.load(type, held);
+      if (owned) this.owned.add((again as VReg).id);
+      return [a, then(again)];
+    }
+    const a = then(this.value(left));
+    return [a, then(this.value(right))];
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -1621,8 +1682,7 @@ class Lowering {
   }
 
   private stringBinary(op: BinOp, e: Extract<BoundExpr, { kind: "binary" }>): Value {
-    const a = this.value(e.left);
-    const b = this.value(e.right);
+    const [a, b] = this.operands(e.left, e.right);
     const flags = imm("u8", this.consumeFlag(a) | (this.consumeFlag(b) << 1));
     if (op === "add") {
       const r = this.vreg("str");
@@ -1944,6 +2004,33 @@ function arrayBytes(symbol: ArraySymbol): number {
 function wrapTo(type: MType, n: number): number {
   const bits = type === "u8" || type === "i8" ? 8 : type === "u16" || type === "i16" ? 16 : type === "u32" || type === "i32" ? 32 : 0;
   return bits ? ((n % 2 ** bits) + 2 ** bits) % 2 ** bits : n;
+}
+
+/** Operators that give the same result with their operands swapped: the swapped operator. */
+const SWAPPED: Partial<Record<BinOp, BinOp>> = {
+  add: "add", mul: "mul", and: "and", or: "or", xor: "xor", land: "land", lor: "lor", lxor: "lxor",
+  eq: "eq", ne: "ne", lt: "gt", gt: "lt", le: "ge", ge: "le"
+};
+
+/** Whether evaluating an expression calls a SUB or FUNCTION, which may change variables. */
+function callsRoutine(e: BoundExpr): boolean {
+  switch (e.kind) {
+    case "call":
+      return true;
+    case "element":
+      return e.indices.some(callsRoutine);
+    case "slice":
+      return callsRoutine(e.target) || (!!e.from && callsRoutine(e.from)) || (!!e.to && callsRoutine(e.to));
+    case "builtin":
+      return e.args.some(callsRoutine);
+    case "unary":
+    case "convert":
+      return callsRoutine(e.operand);
+    case "binary":
+      return callsRoutine(e.left) || callsRoutine(e.right);
+    default:
+      return false;
+  }
 }
 
 function stepConstant(step: BoundExpr): number | undefined {

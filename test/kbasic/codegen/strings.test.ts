@@ -102,7 +102,24 @@ describe("String ownership", () => {
     expect((await runChecked(source, []))[0]).toBe("*****");
   });
 
-  it("copies a borrowed global a FUNCTION changes in the same statement (rule B1)", async () => {
+  it("copies a borrowed element a FUNCTION changes in the same statement (rule B1)", async () => {
+    // --- An element on the left is read first (ZX BASIC's order), so its String must survive the call
+    const source = [
+      "DIM t$(2) AS String",
+      't$(1) = "old"',
+      "FUNCTION change() AS String",
+      ' t$(1) = "NEW"',
+      ' RETURN "!"',
+      "END FUNCTION",
+      "b$ = t$(1) + change()",
+      "PRINT b$; \" \"; t$(1)",
+      't$(1) = ""',
+      ""
+    ].join("\n");
+    expect((await runChecked(source, ["b"]))[0]).toBe("old! NEW");
+  });
+
+  it("reads a plain String variable on the left after a FUNCTION on the right (ZX BASIC's order)", async () => {
     const source = [
       'a$ = "old"',
       "FUNCTION change() AS String",
@@ -113,7 +130,7 @@ describe("String ownership", () => {
       "PRINT b$; \" \"; a$",
       ""
     ].join("\n");
-    expect((await runChecked(source, ["a", "b"]))[0]).toBe("old! NEW");
+    expect((await runChecked(source, ["a", "b"]))[0]).toBe("NEW! NEW");
   });
 
   it("changes a caller's String through BYREF", async () => {

@@ -91,13 +91,13 @@ describe("the tree selector", () => {
 });
 
 describe("level 2: constant slots", () => {
-  it("compares a FOR loop with its constant limit, and drops the hidden limit variable", async () => {
-    const { generated } = await compileBasic("DIM i AS UByte\nFOR i = 0 TO 9\n POKE 16384 + i, i\nNEXT i\n", { optimize: 2 });
-    const text = generated.emitted.text;
-    expect(text).not.toMatch(/__forlim/);
-    expect(text).toMatch(/^\s+cp 10$/m);
-    const level1 = (await compileBasic("DIM i AS UByte\nFOR i = 0 TO 9\n POKE 16384 + i, i\nNEXT i\n", { optimize: 1 })).generated.emitted.text;
-    expect(level1).toMatch(/__forlim/);
+  it("compares a FOR loop with its constant limit: the limit is evaluated at each test (ZX BASIC)", async () => {
+    for (const level of [1, 2]) {
+      const { generated } = await compileBasic("DIM i AS UByte\nFOR i = 0 TO 9\n POKE 16384 + i, i\nNEXT i\n", { optimize: level });
+      const text = generated.emitted.text;
+      expect(text).not.toMatch(/__forlim/);
+      expect(text).toMatch(/^\s+cp 10$/m);
+    }
   });
 
   it("keeps a user variable's store, and a load the store does not dominate", async () => {

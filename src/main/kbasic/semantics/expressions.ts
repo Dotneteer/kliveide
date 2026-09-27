@@ -445,11 +445,19 @@ export class ExpressionBinder {
     return { kind: "call", span, type: routine.returnType ?? "Float", routine, args: bound };
   }
 
+  /**
+   * Arguments as ZX BASIC places them (observed through the oracle, compatibility plan C3): the values
+   * given, positional and named, in the order they are written, then the default values of the
+   * parameters neither given by position nor named, in parameter order - parameter i takes the i-th.
+   * A name therefore only says which default is left out: s(c := 7, a := 5) is s(7, 5, <b's default>),
+   * and s(b := 4) is s(4, <a's default>, <c's default>).
+   */
   protected matchArguments(routine: RoutineSymbol, args: Argument[], span: Span): BoundArgument[] {
     const params = routine.params;
-    const given = new Map<number, Argument>();
+    const values: Argument[] = [];
+    const namedIndices = new Set<number>();
     let named = false;
-    let position = 0;
+    let positional = 0;
     for (const a of args) {
       if (a.kind === "range") {
         this.error("E417", "A range is not an argument", a.span);
@@ -461,10 +469,13 @@ export class ExpressionBinder {
         if (index < 0) {
           this.error("E417", `${routine.name} has no parameter '${a.name.name}'`, a.name.span);
           this.expr(a.value);
-        } else if (given.has(index)) {
+        } else if (namedIndices.has(index)) {
           this.error("E417", `Parameter '${params[index].name}' is given twice`, a.name.span);
           this.expr(a.value);
-        } else given.set(index, a);
+        } else {
+          namedIndices.add(index);
+          values.push(a);
+        }
         continue;
       }
       if (named) {
@@ -472,24 +483,39 @@ export class ExpressionBinder {
         this.expr(a.value);
         continue;
       }
-      if (position >= params.length) {
-        this.error("E417", `${routine.name} takes ${params.length} argument(s); too many given`, a.span);
-        this.expr(a.value);
-        position++;
-        continue;
-      }
-      given.set(position++, a);
+      positional++;
+      values.push(a);
     }
+    if (values.length > params.length) {
+      for (const extra of values.slice(params.length)) {
+        this.error("E417", `${routine.name} takes ${params.length} argument(s); too many given`, extra.span);
+        this.expr((extra as { value: Expression }).value);
+      }
+      values.length = params.length;
+    }
+    // --- The defaults of the parameters neither given by position nor named, in parameter order
+    const defaults = params.map((_, i) => i).filter((i) => i >= positional && !namedIndices.has(i));
     const result: BoundArgument[] = [];
     params.forEach((param, i) => {
-      const a = given.get(i);
-      if (!a) {
-        if (!param.hasDefault) this.error("E417", `${routine.name} needs an argument for '${param.name}'`, span);
+      const a = values[i];
+      if (a) {
+        const value = (a as { value: Expression }).value;
+        result.push({ param, byref: param.byref || param.isArray, value: this.argument(param, value, routine) });
+        return;
+      }
+      const from = params[defaults[i - values.length]];
+      if (!from?.hasDefault) {
+        this.error("E417", `${routine.name} needs an argument for '${(from ?? param).name}'`, span);
         result.push({ param, byref: param.byref });
         return;
       }
-      const value = (a as { value: Expression }).value;
-      result.push({ param, byref: param.byref || param.isArray, value: this.argument(param, value, routine) });
+      if (from === param || !from.defaultValue) {
+        result.push({ param, byref: param.byref });
+        return;
+      }
+      // --- Another parameter's default, in this parameter's type
+      const converted = convertConstant(from.defaultValue, param.type);
+      result.push({ param, byref: param.byref, value: this.constantExpr(converted!.constant, span) });
     });
     return result;
   }
