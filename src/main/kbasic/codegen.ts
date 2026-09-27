@@ -69,7 +69,7 @@ export async function generateProgram(
   }
   let functions: LirLine[][] = [];
   try {
-    for (const fn of mir.functions) functions.push(selectFunction(fn, runtime, level));
+    for (const fn of mir.functions) functions.push(fn.removed ? [] : selectFunction(fn, runtime, level));
     functions = optimizeLir(mir, functions, { level, target: options.target === "next" ? "z80n" : "z80" });
   } catch (e) {
     if (!(e instanceof CodegenError)) throw e;

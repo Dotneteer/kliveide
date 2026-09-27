@@ -76,6 +76,8 @@ export function buildDebugInfo(input: DebugBuildInput): DebugBuild {
     return undefined;
   };
   for (const s of input.statements) {
+    // --- A statement of a routine removed as unused (level 2) has no code and no entry
+    if (s.removed) continue;
     const markerLine = markerLines.get(s.sid);
     if (markerLine === undefined) {
       problems.push(`G1: statement ${s.sid} has no entry marker`);
@@ -150,6 +152,7 @@ function validate(input: DebugBuildInput, byLine: Map<number, ListFileItem>, add
     sorted.find((a) => a.partition === partition && address >= a.start && address < a.end);
 
   // --- G2: a branch from outside a statement lands on its entry; G5: every user call is a call site
+  const asmSids = new Set(input.statements.filter((st) => st.asmLines?.length).map((st) => st.sid));
   const labels = new Map<string, { address: number; partition?: number }>();
   input.text.forEach((line, i) => {
     const m = LABEL_LINE.exec(line);
@@ -161,8 +164,9 @@ function validate(input: DebugBuildInput, byLine: Map<number, ListFileItem>, add
     if (!m) return;
     const [, op, target] = m;
     const info = input.lines[i];
-    // --- Glue (sid -1: the NEX start stub's call of the program) is not a user call
-    if (op === "call" && info.sid >= 0 && !target.startsWith("core.") && !info.site) {
+    // --- Glue (sid -1: the NEX start stub's call of the program) is not a user call, and neither
+    // --- is a call the user wrote in inline asm (G5 is about the calls the compiler makes)
+    if (op === "call" && info.sid >= 0 && !asmSids.has(info.sid) && !target.startsWith("core.") && !info.site) {
       problems.push(`G5: the call to ${target} at line ${i + 1} has no call-site record`);
     }
     const label = labels.get(target);

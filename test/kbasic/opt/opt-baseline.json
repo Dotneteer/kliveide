@@ -1693,6 +1693,20 @@
    "tstates": 17682
   }
  },
+ "routines/level2-unused.zxbas": {
+  "0": {
+   "bytes": 168,
+   "tstates": 26732
+  },
+  "1": {
+   "bytes": 163,
+   "tstates": 26401
+  },
+  "2": {
+   "bytes": 102,
+   "tstates": 26401
+  }
+ },
  "routines/locals-zeroed.zxbas": {
   "0": {
    "bytes": 81,

@@ -330,3 +330,38 @@ tests), keeping the constant the immediate operand. Only for branches: as a valu
 ends on carry, the cheapest flag to turn into 0/1.
 
 Figures (152 programs): level 1 31,787 bytes; level 2 30,554 bytes (−15.7% against level 0's 36,244).
+
+## 15. The rest of 7c, and what was not built (2026-09-27)
+
+Done:
+
+- **Branch folding** (`branch-fold` in `opt/mir-passes.ts`, level 1 and up): a branch on a constant
+  (`WHILE 1`, a comparison the folder or the constant slots decided) becomes a jump, an ON GOTO with a
+  constant selector a jump to its target. The code no longer reached stays: its statement entries
+  are kept.
+- **Unused routines** (`opt/unused-routines.ts`, level 2, plan §7.2 step 10): a SUB or FUNCTION the
+  main program cannot reach — through calls, address constants (`@routine`), inline asm or the
+  program's data — gets no code. It is *marked* (`MFunction.removed`, `StatementEntry.removed`), not
+  deleted, so function and statement indices stay as the debug info uses them; its statements have no
+  entry and no callable, and a breakpoint on one of its lines is unresolved like one on a line
+  without code. Banked routines always stay. Pinned by `routines/level2-unused.zxbas` and
+  `level1.test.ts`.
+- The validator's G5 now leaves out calls the user writes in inline asm (they are not the compiler's
+  calls; the check had never met one).
+
+**Measured, and not built** — a census of the 153-program corpus at level 2:
+
+| Pass | Opportunities found | Why it stays out |
+| --- | --- | --- |
+| CSE | 18 repeated expressions, none costly (no multiply, divide or Float), none across statements | with write-back a shared value is a hidden-slot store and reload, dearer than recomputing the cheap trees level 1 already writes |
+| LICM | 2 costly loop invariants in 106 loops | most loops call the runtime (PRINT, …), and a call ends every invariant |
+| promote / copy propagation | — | without register allocation, promoting a variable and writing it back is the memory form again; the constant slots (§14) are the part of SCCP that pays |
+
+They are worth revisiting only with a register allocator that keeps values across statements.
+
+**The debugger states** (merged, hoisted): with this design level 2 never merges statements or
+hoists code (no CSE, no LICM), so there is no state to show; statements without code (a removed
+routine's) behave as lines without code already do. Debug builds use level 1 (the debug profile).
+
+Stage 7c is complete. Figures (153 programs): level 0 36,412 bytes / 41.67M T-states; level 1 31,950
+bytes (−12.3%) / 39.12M (−6.1%); level 2 30,656 bytes (−15.8%) / 39.06M (−6.3%).

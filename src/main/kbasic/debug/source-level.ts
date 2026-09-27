@@ -100,7 +100,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
   const callableOf = new Map<number, number>();
   const functions: { fn: MFunction; index: number }[] = [];
   mir.functions.forEach((fn, index) => {
-    if (fn.kind === "data") return;
+    if (fn.kind === "data" || fn.removed) return;
     callableOf.set(index, functions.length);
     functions.push({ fn, index });
   });

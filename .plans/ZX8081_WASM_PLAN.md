@@ -1,6 +1,7 @@
 # Sinclair ZX80 / ZX81 on the WASM Core — Implementation Plan
 
-**Status:** not started. Written 2026-09-27. **Start at §13 Phase 0.**
+**Status:** not started. Written 2026-09-27. **Start at §13 Phase 0.** The ZX81 virtual keyboard
+design is approved and fully specified in §8.1; its mockup is `.plans/zx8081/zx81-keyboard-mockup.html`.
 **Input:** Clock Signal (CLK) by Thomas Harte, MIT. The ZX80/81 sources are extracted to
 `_input/clk-zx8081/` from commit `096de574…`, 2026-07-28; read its `README.md` first.
 **Shape of the result:** one new C translation unit that `#include`s the shared Z80 core
@@ -335,10 +336,238 @@ buffer with a width, a height and a start offset (`useEmulatorScreen.ts:362-388`
 - **TS.** `Zx8081KeyCode.ts`, the host mappings (port CLK's `KeyboardMapper`: Backspace → SHIFT+0,
   arrows → SHIFT+5..8, Escape → BREAK = SHIFT+SPACE), and the auto-typer tables from CLK's
   `CharacterMapper`.
-- **Virtual keyboard.** New `Zx81Keyboard.tsx` / `Zx80Keyboard.tsx` in
-  `src/renderer/appEmu/Keyboard/`, wired in `KeyboardPanel.tsx`. The ZX81 legends are keywords,
-  functions and graphics; the ZX80 has fewer. Theming rules apply: tokens only, `ch` widths, and an
-  update to `.ai/ui-theming-intent-and-lessons.md` (AGENTS.md).
+- **Virtual keyboard.** Fully specified in §8.1; the design was approved on 2026-09-27. The
+  ZX80 keyboard (§8.1.9) is not designed yet.
+
+### 8.1 The ZX81 virtual keyboard: approved design, not yet built
+
+**Status:** mockup approved by the project author on 2026-09-27. **The React component is
+deliberately not built yet.** Build it from this section and the mockup, and do not re-derive the
+design.
+
+- **Mockup (source of truth for geometry and legends):** `.plans/zx8081/zx81-keyboard-mockup.html`.
+  It is standalone, so open it in a browser. It is interactive: hover zones, press state, and a
+  readout of the keystrokes each click would send.
+- **Reference photo:** <https://dn710202.ca.archive.org/0/items/ZX81_Keyboard_Layout/ZX81_keyboard.jpg>
+  (629 × 228 px). Every measurement below comes from it. The mockup was checked side by side with
+  the photo in a browser over three rounds.
+- **Legend source:** the ZX81 ROM key tables `K-UNSHIFT` `$007E`, `K-SHIFT` `$00A5`, `K-FUNCT`
+  `$00CC` and `K-GRAPH` `$00F3`, in `_input/Assembly Listing of the Operating System of the Sinclair ZX81..html`.
+  `FETCH-1` (`$04F7`) indexes `K-GRAPH` from `$00C7`, so the graphics table starts at key **A**.
+  That is why Z, X, C, V, B, N, M, `.` and the other non-graphics keys carry none. The photo
+  confirms the ROM-derived glyph for every key.
+
+#### 8.1.1 How the existing 48K keyboard works (the pattern to follow)
+Files: `src/renderer/appEmu/Keyboard/Sp48Keyboard.tsx`, `Sp48Key.tsx`, `keyboard-common.tsx`,
+`useKeyboard.ts` and `KeyboardPanel.tsx`.
+- **One `<svg>` per key**, with `viewBox` in key units (a normal key is 100 wide).
+  - Rendered size = units × `zoom`, where `zoom = calculateKeyboardZoom(width, height,
+    DEFAULT_WIDTH, DEFAULT_HEIGHT)`.
+  - Rows are `Row`s inside a `Column` (`keyboardRootStyle` / `keyboardRowStyle`). A row's stagger is
+    a `marginLeft` of `units × zoom`. The key gap is the SVG's `marginRight`.
+- **Clickable zones.** Each key has independent zones with their own hover state and
+  `onMouseDown`/`onMouseUp`, raising `keyAction({ code, keyCategory, button, down })`. The categories
+  are `main`, `symbol`, `above`, `below`, `topNum` and `glyph`.
+  - A hovered zone's legend turns `--color-key48-highlight`, and a pressed key's background
+    becomes `--bgcolor-hilited48`.
+- **`handleClick`** does the following:
+  - `main` → `setKeyStatus(code)`, plus CAPS SHIFT on the right button.
+  - `symbol` → the key plus SYMBOL SHIFT.
+  - `above`, `below` and `glyph` → `machine.queueKeystroke(startFrame, frames, primary, secondary)`
+    sequences.
+  - It ignores clicks while `machine.getKeyQueueLength() > 0`.
+- **`useKeyboard(apiLoaded)`** supplies `isPressed(code)` for the physical-keyboard feedback.
+- Colours are read with `useTheme().getThemeProperty("--token")`, because the key SVGs are
+  imperative (M4). The legend colours are `--device-*` tokens and are theme-invariant (device
+  surfaces have no light mode).
+- **Trap:** `KeyboardPanel.tsx` renders `Sp128Keyboard` for **every unknown machine type**.
+  Until `zx81` (and `zx80`) are wired in explicitly, they silently get the Spectrum 128 keyboard.
+
+#### 8.1.2 Files to create or touch
+- `src/renderer/appEmu/Keyboard/Zx81Key.tsx`: one key. Its props follow `Sp48Key`'s idea, but the
+  zones are ZX81 ones (§8.1.5).
+- `src/renderer/appEmu/Keyboard/Zx81Keyboard.tsx`: the layout and `handleClick`, using the key
+  table in §8.1.4 (lift it verbatim from the mockup's `R` array).
+- `KeyboardPanel.tsx`: add `type === "zx81"` → `<Zx81Keyboard …/>`, and exclude it from the
+  Sp128 fallback.
+- **Tokens (no literal colours in the component — AGENTS.md):**
+  - Add to L1 `DEVICE` in `src/renderer/theming/tokens/palette.ts`: `keyZx81` (the key face,
+    mockup `#f4f4f4`), `legendZx81Ink` (the black main legend, `#111`), `legendZx81Red` (the red
+    shifted legend, `#d42020`), `zx81Body` (`#0a0a0a`), and `zx81GlyphFrame` (`#555`).
+  - Expose them at L2 as `--device-*` (`semantic.ts:187-195`) and at L4 in `componentAliases.ts`,
+    next to the keyboard block at l.253-269: for example `--bgcolor-keyzx81`, `--color-keyzx81-main`,
+    `--color-keyzx81-shift`, `--color-keyzx81-legend` (the white keyword/function print, which
+    can reuse `--device-legend-main`), `--color-keyzx81-highlight` → `var(--accent-solid)` and
+    `--bgcolor-hilitedzx81` → `var(--accent-subtle)`.
+  - The panel ground is `--bgcolor-keyboard`. Decide whether the ZX81's pure-black body is worth
+    its own token or whether the shared `#181818` body is close enough; the mockup used
+    `#0a0a0a`.
+- Update `.ai/ui-theming-intent-and-lessons.md` in the same change (standing rule). Record the
+  durable lesson: *device keyboards may use a light key face; hover on a white key must use the
+  accent's dark end, not the light highlight used on grey keys* (§8.1.6).
+- `emuOptions.keyboardPanelHeights` (see the theming notes, "each machine has its own keyboard
+  height"): give `zx81` a default that suits the 1382 × 501 aspect ratio.
+- A jsdom test in the style of the existing keyboard tests: it renders all 40 keys, each zone
+  raises the right `keyCategory`, and the right button on a main key adds SHIFT.
+
+#### 8.1.3 Geometry (units; a key is 100 wide)
+Measured from the photo: a key is 45.5 × 34 px, the horizontal pitch is 58.3 px, the vertical pitch
+is 56.7 px, and the row starts are x = 7, 38, 52 and 24 px (top row y = 7 px). The scale is
+`U = 100 / 45.5 = 2.1978`.
+
+| Quantity | Photo px | Units | Notes |
+|---|---|---|---|
+| Key face | 45.5 × 34 | **100 × 74.7** | Every key is the same size, **including SHIFT, NEW LINE and SPACE**. `rx = 8`. |
+| Horizontal pitch / gap | 58.3 / 12.8 | **128.1 / 28.1** | The gap becomes the SVG's `marginRight = 28.1 × zoom`. |
+| Vertical pitch | 56.7 | **124.6** | Keyword band + key + function band. The per-key SVG cell is 100 × 124.6, with the key face at y = 24. |
+| Row stagger vs. row 1 | 0 / 31 / 45 / 17 | **0 / 68.1 / 98.9 / 37.4** | Rows: digits, Q…P, A…NEW LINE, SHIFT…SPACE. |
+| Outer margin | 7 | 15.4 | |
+| Whole keyboard | 629 × 228 | **1382 × 501** | Suggested `DEFAULT_WIDTH = 1382` and `DEFAULT_HEIGHT = 501` for `calculateKeyboardZoom`. |
+
+**Positions inside a key**, with (0,0) at the top-left of the key face. In the per-key SVG, add 24
+to every y.
+
+| Element | Position / size | Font |
+|---|---|---|
+| Keyword above the key (PLOT, NEW…) | x 6, baseline −6; hit band y −24…−2 | 17, bold, white |
+| Function below the key (SIN, ARCSIN, π…) | x 6, baseline 93.7 (key + 19); hit band 76.7…98.7 | 17, bold, white |
+| Main character | x 10, baseline 64 | 46, bold, black |
+| Red word legend (EDIT, STOP, LPRINT…) | right-aligned at x 92, baseline 21 | regular. **18** for ≤ 4 letters, **16** for 5–6, **11.5** for GRAPHICS/FUNCTION |
+| Red two-character symbol (`<=`, `<>`, `>=`, `**`, `""`) | right-aligned at x 93, baseline 27 | 28. Regular with letter-spacing 1.5, except **`**` and `""` are bold, with no spacing** (bold `<=` renders cramped) |
+| Red one-character symbol (`$ ( ) " − + = : ; ? / * < > ,`) | right-aligned at x 88, baseline 33 | 31. Regular, except `"` is bold |
+| Cursor arrows (5–8) | a red **outlined** polygon, stroke 2.2, no fill, in a 36 × 20 box at (54, 4) | see the polygons below |
+| Graphic glyph | a 2 × 2 grid of 14.5-unit squares at (60, 32), i.e. 29 × 29, with a `#555` frame of stroke 1.4 | chequer = a 3.4-unit pattern of 1.7-unit black/white checks |
+| SHIFT key | "SHIFT" centred, baseline 47 | 23, regular, **red** |
+| NEW LINE key | "NEW" at baseline 48 and "LINE" at 64, centred, black; red "FUNCTION" centred at baseline 19 | 15 regular; FUNCTION 12 |
+| SPACE key | "SPACE" centred at baseline 64, black; red "£" centred at baseline 30; the keyword above is "BREAK" | 14 regular; £ 24 |
+| `0` key | main legend is **Ø** (slashed zero, as printed) | |
+
+Arrow polygons, in box coordinates:
+- left `0,9 11,0 11,5 36,5 36,13 11,13 11,18`
+- right `36,9 25,0 25,5 0,5 0,13 25,13 25,18`
+- down `18,20 4,8 12,8 12,0 24,0 24,8 32,8`
+- up `18,0 4,12 12,12 12,20 24,20 24,12 32,12`
+
+Font: `Helvetica, Arial, sans-serif`. The photo's face is a condensed, heavier Helvetica; Arial is
+slightly wider. That is the only known visual gap, and it was accepted.
+
+#### 8.1.4 Key table
+Codes are Klive's `line × 5 + bit`, the same numbering as `Sp48Keyboard.tsx`. The ZX81 matrix is
+identical, and `.` (36) is where the Spectrum has SYMBOL SHIFT. **Shifted** is the red legend,
+**Above** is the keyword, **Below** is the function, and **Glyph** is the ZX81 character code of the
+block graphic.
+
+| Row | Key (code) | Shifted | Above | Below | Glyph |
+|---|---|---|---|---|---|
+| 1 | 1 (15) | EDIT | – | – | $01 ▘ |
+| 1 | 2 (16) | AND | – | – | $02 ▝ |
+| 1 | 3 (17) | THEN | – | – | $87 ▗ |
+| 1 | 4 (18) | TO | – | – | $04 ▖ |
+| 1 | 5 (19) | ⇦ (outlined) | – | – | $05 ▌ |
+| 1 | 6 (24) | ⇩ (outlined) | – | – | $83 ▄ |
+| 1 | 7 (23) | ⇧ (outlined) | – | – | $03 ▀ |
+| 1 | 8 (22) | ⇨ (outlined) | – | – | $85 ▐ |
+| 1 | 9 (21) | GRAPHICS | – | – | – |
+| 1 | Ø (20) | RUBOUT | – | – | – |
+| 2 | Q (10) | `""` | PLOT | SIN | $81 ▟ |
+| 2 | W (11) | OR | UNPLOT | COS | $82 ▙ |
+| 2 | E (12) | STEP | REM | TAN | $07 ▛ |
+| 2 | R (13) | `<=` | RUN | INT | $84 ▜ |
+| 2 | T (14) | `<>` | RAND | RND | $06 ▞ |
+| 2 | Y (29) | `>=` | RETURN | STR$ | $86 ▚ |
+| 2 | U (28) | `$` | IF | CHR$ | – |
+| 2 | I (27) | `(` | INPUT | CODE | – |
+| 2 | O (26) | `)` | POKE | PEEK | – |
+| 2 | P (25) | `"` | PRINT | TAB | – |
+| 3 | A (5) | STOP | NEW | ARCSIN | $08 chequer |
+| 3 | S (6) | LPRINT | SAVE | ARCCOS | $0A chequer top |
+| 3 | D (7) | SLOW | DIM | ARCTAN | $09 chequer bottom |
+| 3 | F (8) | FAST | FOR | SGN | $8A inv. $0A |
+| 3 | G (9) | LLIST | GOTO | ABS | $89 inv. $09 |
+| 3 | H (34) | `**` | GOSUB | SQR | $88 inv. chequer |
+| 3 | J (33) | `−` | LOAD | VAL | – |
+| 3 | K (32) | `+` | LIST | LEN | – |
+| 3 | L (31) | `=` | LET | USR | – |
+| 3 | NEW LINE (30) | FUNCTION | – | – | – |
+| 4 | SHIFT (0) | – | – | – | – |
+| 4 | Z (1) | `:` | COPY | LN | – |
+| 4 | X (2) | `;` | CLEAR | EXP | – |
+| 4 | C (3) | `?` | CONT | AT | – |
+| 4 | V (4) | `/` | CLS | – | – |
+| 4 | B (39) | `*` | SCROLL | INKEY$ | – |
+| 4 | N (38) | `<` | NEXT | NOT | – |
+| 4 | M (37) | `>` | PAUSE | π | – |
+| 4 | . (36) | `,` | – | – | – |
+| 4 | SPACE (35) | £ | BREAK | – | – |
+
+**Glyph quadrants** (TL, TR, BL, BR; i = ink, p = paper, g = chequer):
+
+| Code | Quadrants | Code | Quadrants |
+|---|---|---|---|
+| $01 | i p p p | $06 | p i i p |
+| $02 | p i p p | $07 | i i i p |
+| $03 | i i p p | $08 | g g g g |
+| $04 | p p i p | $09 | p p g g |
+| $05 | i p i p | $0A | g g p p |
+
+Bit 7 set means inverse: ink and paper swap, and the chequer is drawn the same.
+
+Deliberate choices:
+- The photo prints "IN KEY$"; the component uses `INKEY$`.
+- The screen tokens are ASN, ACS and ATN, but the keyboard prints ARCSIN, ARCCOS and ARCTAN, and
+  the virtual keyboard follows the keyboard.
+
+#### 8.1.5 Zones and what a click sends
+| Zone | Hit area | Left button | Right button |
+|---|---|---|---|
+| `main` | the key face **and** the keyword above it | `setKeyStatus(code)` while held | the key + SHIFT (0) while held, as the 48K does with CAPS SHIFT |
+| `shift` | the red legend or arrow (top of the key; x 40…97, y 2…28; on NEW LINE and SPACE x 15…85) | the key + SHIFT (0) while held | same |
+| `below` (function) | the function text under the key | queue SHIFT + NEW LINE (FUNCTION mode), then the key | same |
+| `glyph` | the graphic box | queue SHIFT + 9 (GRAPHICS on), SHIFT + key, SHIFT + 9 (GRAPHICS off) | same |
+
+- The ZX81 has no separate symbol-shift or extended mode, so this is simpler than the 48K. There is
+  no `topNum` zone and there are no ink colours.
+- Clicking the keyword above a key is the same as the main key: the ROM shows the keyword whenever
+  it is in K mode. There is no separate "keyword" keystroke.
+- Keep the 48K's guard: ignore clicks while `getKeyQueueLength() > 0`. The 48K's glyph trick
+  (queued GRAPHICS toggles) has a documented race on fast repeat clicks (docs,
+  `getting-started/keyboard.mdx` "Known Issues"). The ZX81 version inherits it. A cursor-mode check
+  equivalent to `getCursorMode()` needs the ZX81 `MODE` system variable (`$4006`, see `K-DECODE`
+  `$04DF`); add it to the host once the machine exists.
+- Queue timing: reuse the 48K's frame offsets (0, 3, 10 frames with a 2-frame hold) as the
+  starting values. Verify them on the real ROM with the harness, because the ZX81 in SLOW mode
+  scans the keyboard once per frame.
+
+#### 8.1.6 Visual states
+- **Hover:** only the hovered zone's legend changes colour. On a **white** key the highlight must be
+  the accent's *dark* end: the mockup uses `#185FA5` for the main/red legends and draws the glyph
+  frame at stroke 3. The keyword and function text on the black body use the *light* end
+  (`#85B7EB`). The 48K's single `--color-key48-highlight` is not enough here, so the ZX81 needs
+  two highlight tokens, or `--accent-solid` plus a light accent step.
+- **Pressed** (mouse or physical key via `isPressed`): the key face becomes the light accent
+  (`#B5D4F4` in the mockup), and legends stay readable on it.
+
+#### 8.1.7 Verification when the component is built
+- Render it in the running app, not a replica (AGENTS.md; the CDP recipe is in
+  `.ai/ui-theming-intent-and-lessons.md`). Screenshot the keyboard panel, open the reference photo
+  scaled to the same width, and compare them side by side. Row stagger, key ratio and legend
+  positions must match the mockup.
+- Check the smallest keyboard panel height. At small zoom the 11.5-unit legends (GRAPHICS,
+  FUNCTION) are the first to become unreadable, the same trade-off the 48K accepts.
+- The style mandates apply to anything outside the SVG: M1 (no `em` fonts), M2 (`ch` widths) and
+  M3 (row-size tokens). The SVG internals use viewBox units, exactly like `Sp48Key`.
+
+#### 8.1.8 Where the keyboard lands in the phases
+The component itself is **Phase 4** (§13, "Keyboard + files"). It depends on the machine existing
+(the `zx81` ID in `KeyboardPanel`, `setKeyStatus` and `queueKeystroke` on the host). The tokens and
+the static component could land earlier behind the `zx81` type check, since nothing renders them
+until the machine is registered.
+
+#### 8.1.9 ZX80
+Not designed. The ZX80 uses the same matrix and the same component structure, but a different
+legend set: keywords printed on the keys, no function mode, and a different shifted-symbol layout.
+It needs its own reference photo and its own key table, built from the **ZX80** ROM key tables.
+Reuse `Zx81Key.tsx` if the legend positions allow it; otherwise add `Zx80Key.tsx`.
 
 ---
 
@@ -440,10 +669,24 @@ All tests run the real WASM machine.
 - **Screen goldens:** the boot screen; `PRINT` of the full character set (inverse included); `PLOT`
   graphics; FAST vs SLOW; a pseudo-hi-res program with I pointing into RAM (this settles the CLK
   RAM-address question in §6).
-  - Test programs are **written for Klive**, typed via the harness or assembled. No third-party
-    `.P` files go into the repo.
+  - Test programs are **written for Klive** (typed via the harness or assembled), **or** taken from
+    `_input/zx81-tapes/`: 26 files from their authors' own repositories, all under MIT or the
+    Unlicense, each pinned to a commit, with licence texts in `licenses/`. Read its README.
+    - Any other third-party `.P` file needs the same provenance before it enters the repo, which
+      rules out commercial or "abandonware" titles.
+    - A test fixture copied from there must bring its licence file along.
+  - Suggested first uses:
+    - `machine-code/dezog-sample.p`: known behaviour (press S, then the screen fills).
+    - `basic/Characters.P`: a character-set golden.
+    - `hi-res/*`: the §6 RAM-address question and WRX.
 - **Tape:** a fast load and a real-time load of the same `.P` both end in identical RAM; auto-RUN
   works; motor control stops the tape outside the ROM range.
+  - Loader robustness uses `_input/zx81-tapes/edge-cases/`: `zero.p` must be rejected cleanly and
+    `minimal.p` must load.
+  - Also: `basic/BASE.p` and `POKE1.p`, which have bytes after E_LINE; `1k/byteForever.p` and
+    `rcar.p`, which hold garbage in the system variables; `1k/chess.p`, which exceeds 1K.
+  - Once TZX block `$19` is supported (§14), `p-and-tzx/` gives the same program as `.P` and
+    `.TZX`, and both must end in identical RAM.
 - **Oracle runs, manual and never in CI:** run the same programs in CLK (build it from the scratch
   checkout) and in EightyOne, and compare screens. Record the observed results in Klive's words.
 - **Performance:** `benchmark:zx8081-wasm` must show more than 10× real time in SLOW mode, to catch
@@ -463,7 +706,7 @@ All tests run the real WASM machine.
 | **1. Core hooks** | C1-C4 (§5). | All five existing artifacts rebuilt; every suite green; goldens identical except reviewed R-values; size checks pass. |
 | **2. Skeleton** | `zx8081.c` TU; memory map (1K/16K/64K, mirrors); ROM upload; ports without ULA timing; frame loop; loader; host; registry entry for **ZX81 16K** only; build and contract scripts. | The ROM runs; `bootToBasic()` reaches the `K` cursor, observed through D_FILE memory, not pixels. |
 | **3. ULA + video** | §6 and §7: NMI/WAIT, INT-on-A6, M1 NOP forcing, refresh fetch, raster builder, sync-driven frames, FAST/SLOW. | The boot screen golden matches; ULA timing tests pass; typing `PRINT "HELLO"` renders; no jitter over 100 frames. |
-| **4. Keyboard + files** | §8 and §9: host mappings, virtual keyboard, `.P` open, fast load, real-time load, auto-type and auto-RUN, motor control. | Tape tests pass; a `.P` opened from the IDE runs by itself. |
+| **4. Keyboard + files** | §8 and §9: host mappings, the virtual keyboard (built to the approved design in §8.1), `.P` open, fast load, real-time load, auto-type and auto-RUN, motor control. | Tape tests pass; a `.P` opened from the IDE runs by itself; the virtual keyboard matches `.plans/zx8081/zx81-keyboard-mockup.html` in the running app (§8.1.7). |
 | **5. Models + ZX80** | 1K / 64K / NTSC models; the ZX80 (1K/16K, 4K ROM, no NMI, `.O` files); ZX80 with the 8K ROM. | A ZX80 boot golden; ZX80 `.O` fast load; NTSC `MARGIN` = 31. |
 | **6. Debugger + IDE polish** | ZX81 disassembler (`RST $08`/`$28`), character map, menus, register editor parity, breakpoint tests. | A debug-step test in the style of `wasm-z88-debug-step.test.ts`; manual IDE check with `scripts/`-driven screenshots. |
 | **7. Ship** | Packaging, docs page, CHANGELOG, `.ai/` notes (a ZX81 section in `wasm-migration-intent-and-lessons.md`: the ULA/hook mapping and the traps found). | A packaged build runs both machines; `npm run build:check`, `lint:renderer` and `doc:build`/`doc:check` are green. |

@@ -326,8 +326,12 @@ debuggable at source level, in the emulator tests and in the running IDE.
    across a statement's trees, type narrowing. **7c-1 is done** (§12: redundant loads across
    statements). **The order changed** (project author, 2026-09-27, §12 of the note): the tree
    selector is **widened** (§13: FUNCTION calls with order-safe evaluation, 32-bit/Fixed, Float;
-   level 1 is 12.1% smaller and 6.1% faster than level 0). Next: 7c's MIR passes (promote, SCCP,
-   CSE, branch folding) with write-back to memory homes instead of a linear-scan allocator.
+   level 1 is 12.1% smaller and 6.1% faster than level 0). **Stage 7c is complete** (§14, §15):
+   constant slots (SCCP's paying case) with dominance, branch folding, unused-routine removal; CSE,
+   LICM and promote were measured on the corpus and not built (§15 has the census). Level 2 is 15.8%
+   smaller and 6.3% faster than level 0. Next: **stage 7d** — level 3 (inlining small leaf routines,
+   loop strength reduction, FASTCALL conversion, tail calls of runtime calls, cross-block rules, the
+   Z80N rule group), and Strings in the tree selector if the measurements say so.
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

@@ -1,0 +1,20 @@
+' Level 2 removes routines nothing reaches (.docs/kbasic-optimiser.md §15); the program behaves the
+' same at every level: a used SUB, a FUNCTION reached only from another used routine, an unused SUB
+' that itself calls a used one, and an unused FUNCTION
+'@expect screen 0 "in used 42"
+'@expect screen 1 "done"
+FUNCTION inner(n AS UByte) AS UByte
+  RETURN n * 2
+END FUNCTION
+SUB used(n AS UByte)
+  PRINT "in used "; inner(n)
+END SUB
+SUB neverCalled()
+  used(1)
+  PRINT "never"
+END SUB
+FUNCTION alsoNever() AS UInteger
+  RETURN 12345
+END FUNCTION
+used(21)
+PRINT "done"

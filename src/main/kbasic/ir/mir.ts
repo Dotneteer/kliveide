@@ -177,6 +177,8 @@ export type MFunction = {
    * resident trampoline at `_name` enters it through the far-call runtime.
    */
   bank?: number;
+  /** Level 2: nothing reaches the routine (opt/unused-routines.ts): it gets no code. */
+  removed?: boolean;
 };
 
 /** A parameter or local of a routine as the debugger reads it: `offset` from IX (the value's first byte). */
@@ -206,6 +208,8 @@ export type StatementEntry = {
   functionIndex: number;
   /** An ASM block: the span of each of its lines, to report the assembler's errors against. */
   asmLines?: Span[];
+  /** The statement's routine was removed as unused (level 2): it has no code and no entry. */
+  removed?: boolean;
 };
 
 export type MModule = {

@@ -60,7 +60,7 @@ describe("MIR passes", () => {
     expect(applied).toEqual(expect.arrayContaining(["fold", "dead-code"]));
     expect(fn.blocks[0].instrs.map((i) => i.op)).toEqual(["stmt", "const", "store"]);
     expect(fn.blocks[0].instrs[1]).toMatchObject({ dst: { id: 3 }, value: { value: 44 } });
-    expect(MIR_PASSES.map((p) => p.name)).toEqual(["fold", "algebra", "dead-code"]);
+    expect(MIR_PASSES.map((p) => p.name)).toEqual(["fold", "algebra", "branch-fold", "dead-code"]);
   });
 });
 
@@ -107,5 +107,54 @@ describe("level 2: constant slots", () => {
     // --- k's store stays, and the POKE before it still reads k's slot
     expect(text).toMatch(/ld \(ix-1\),5/);
     expect(text).toMatch(/ld a,\(ix-1\)/);
+  });
+});
+
+describe("branch folding", () => {
+  it("turns a branch on a constant into a jump", async () => {
+    const source = "DIM a AS UByte\nWHILE 1\n a = a + 1\n IF a = 10 THEN EXIT WHILE\nWEND\nPRINT a\n";
+    const mir = (level: number) => compileBasic(source, { optimize: level }).then((c) => mirText(c.generated.mir));
+    expect((await mir(0)).match(/^\s+br /gm)?.length).toBe(2);
+    expect((await mir(1)).match(/^\s+br /gm)?.length).toBe(1);
+  });
+});
+
+describe("level 2: unused routines", () => {
+  const source = [
+    "SUB used()",
+    " POKE 16384, 1",
+    "END SUB",
+    "SUB unused()",
+    " PRINT \"never\"",
+    "END SUB",
+    "FUNCTION byAddress() AS UByte",
+    " RETURN 1",
+    "END FUNCTION",
+    "SUB byAsm()",
+    " POKE 16385, 2",
+    "END SUB",
+    "SUB onlyFromUnused()",
+    " POKE 16386, 3",
+    "END SUB",
+    "used()",
+    "DIM p AS UInteger",
+    "p = @byAddress",
+    "ASM",
+    " call _byAsm",
+    "END ASM",
+    ""
+  ].join("\n");
+
+  it("get no code, while routines reached by a call, an address or inline asm stay", async () => {
+    const { generated } = await compileBasic(source, { optimize: 2 });
+    const text = generated.emitted.text;
+    expect(text).toMatch(/^_used:/m);
+    expect(text).toMatch(/^_byAddress:/m);
+    expect(text).toMatch(/^_byAsm:/m);
+    expect(text).not.toMatch(/^_unused:/m);
+    expect(generated.debug.problems).toEqual([]);
+    expect(generated.debug.sourceLevel.callables.map((c) => c.name)).not.toContain("unused");
+    const level1 = (await compileBasic(source, { optimize: 1 })).generated.emitted.text;
+    expect(level1).toMatch(/^_unused:/m);
   });
 });

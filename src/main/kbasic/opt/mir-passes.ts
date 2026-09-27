@@ -1,5 +1,6 @@
 import { COMPARISONS, isSignedM, mtypeSize, type BinOp, type Instr, type MFunction, type MModule, type MType, type Value, type VReg } from "../ir/mir";
 import { propagateConstantSlots } from "./constant-slots";
+import { removeUnusedRoutines } from "./unused-routines";
 import { verifyFunction } from "./verify";
 
 /**
@@ -19,7 +20,9 @@ export type MirPass = { name: string; run: (fn: MFunction) => boolean };
 
 export function optimizeMir(mir: MModule, level: number, onPass?: (name: string) => void): void {
   if (level < 1) return;
-  // --- Level 2: constant slots across statements first, so the per-statement passes fold what they give
+  // --- Level 2: routines nothing reaches get no code; constant slots across statements next, so the
+  // --- per-statement passes fold what they give
+  if (level >= 2 && removeUnusedRoutines(mir)) onPass?.("unused-routines");
   if (level >= 2 && propagateConstantSlots(mir)) {
     onPass?.("constant-slots");
     for (const fn of mir.functions) {
@@ -261,4 +264,35 @@ const deadCode: MirPass = {
   }
 };
 
-export const MIR_PASSES: readonly MirPass[] = [fold, algebra, deadCode];
+// -------------------------------------------------------------------------------------------------
+// Branch folding
+
+/**
+ * A branch on a constant is a jump (`IF 1 THEN`, a comparison the folder decided, `WHILE 1`); an
+ * ON GOTO with a constant selector jumps to its target. The constant then has no use and goes with
+ * the dead code. The code the branch no longer reaches stays: its statement entries are kept.
+ */
+const branchFold: MirPass = {
+  name: "branch-fold",
+  run(fn) {
+    const defs = defsOf(fn);
+    let changed = false;
+    for (const b of fn.blocks) {
+      const t = b.term;
+      if (t?.op === "br") {
+        const k = constantOf(t.cond, defs);
+        if (k === undefined) continue;
+        b.term = { op: "jmp", target: k !== 0 ? t.ifTrue : t.ifFalse, sid: t.sid };
+        changed = true;
+      } else if (t?.op === "switch") {
+        const k = constantOf(t.sel, defs);
+        if (k === undefined) continue;
+        b.term = { op: "jmp", target: k >= 0 && k < t.targets.length ? t.targets[k] : t.otherwise, sid: t.sid };
+        changed = true;
+      }
+    }
+    return changed;
+  }
+};
+
+export const MIR_PASSES: readonly MirPass[] = [fold, algebra, branchFold, deadCode];
