@@ -1,5 +1,6 @@
 import type { Span } from "../diagnostics";
 import type { StatementKind } from "@abstractions/CompilerInfo";
+import type { ArraySymbol, VariableSymbol } from "../semantics/symbols";
 import type { KType } from "../semantics/types";
 
 /**
@@ -167,6 +168,19 @@ export type MFunction = {
   blocks: Block[];
   /** The shared epilogue's label (`_name.leave`). */
   epilogue?: string;
+  /** A SUB or FUNCTION: its definition, from the header to END SUB / END FUNCTION (the debugger). */
+  span?: Span;
+  /** A SUB or FUNCTION: its parameters and locals and where each lives in the frame (the debugger). */
+  vars?: FrameVariable[];
+};
+
+/** A parameter or local of a routine as the debugger reads it: `offset` from IX (the value's first byte). */
+export type FrameVariable = {
+  symbol: VariableSymbol | ArraySymbol;
+  offset: number;
+  /** The slot holds an address: a BYREF parameter's, or an array parameter's descriptor. */
+  byref: boolean;
+  param: boolean;
 };
 
 /** Data the program image holds: globals, string literals, the DATA table. */

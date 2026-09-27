@@ -1,3 +1,4 @@
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { AssemblerOptions as AssemblerOptionsType } from "@main/compiler-common/assembler-in-out";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { ExpressionValue } from "@main/compiler-common/expressions";
@@ -9,6 +10,7 @@ import { emitProgram, type EmittedProgram } from "./backend/emit";
 import { CodegenError, type LirLine } from "./backend/lir";
 import { selectFunction } from "./backend/select0";
 import { buildDebugInfo, type DebugBuild } from "./debug/builder";
+import { buildSourceLevel } from "./debug/source-level";
 import { lowerProgram } from "./ir/lower";
 import type { MModule } from "./ir/mir";
 import type { KBasicOptions } from "./options/options";
@@ -22,7 +24,7 @@ export type GeneratedProgram = {
   emitted: EmittedProgram;
   /** The assembler's output for the program and its runtime closure. */
   output: Awaited<ReturnType<Z80Assembler["compileProgram"]>>;
-  debug: DebugBuild;
+  debug: DebugBuild & { sourceLevel: SourceLevelDebugInfo };
   entryAddress: number;
 };
 
@@ -88,7 +90,33 @@ export async function generateProgram(
     programFileIndex: 0,
     sources
   });
-  return { mir, emitted, output, debug, entryAddress: options.origin };
+  // --- An assembler symbol's address: a dotted runtime name (`core.X`) is in the core module
+  const symbol = (name: string): number | undefined => {
+    const core = name.startsWith("core.") ? output.getNestedModule("core") : undefined;
+    const s = core ? core.getSymbol(name.slice(5)) : output.getSymbol(name);
+    return typeof s?.value?.value === "number" ? s.value.value : undefined;
+  };
+  const runtimeSymbols = modules
+    .flatMap((m) => m.exports)
+    .flatMap((name) => {
+      const address = symbol(`core.${name}`);
+      return address === undefined ? [] : [{ name: `core.${name}`, address }];
+    })
+    .sort((a, b) => a.address - b.address);
+  const sourceLevel = buildSourceLevel({
+    mir,
+    emitted,
+    listFileItems: output.listFileItems,
+    programFileIndex: 0,
+    sources,
+    addresses: debug.addresses,
+    symbol,
+    runtimeSymbols,
+    globals: bound.globals,
+    isLibraryFile: (file) => isLibraryPath(sources.get(file).name),
+    optimizationLevel: options.optimize
+  });
+  return { mir, emitted, output, debug: { ...debug, sourceLevel }, entryAddress: options.origin };
 }
 
 /** The BASIC span of an emitted line (1-based) that came from an ASM block, or undefined. */

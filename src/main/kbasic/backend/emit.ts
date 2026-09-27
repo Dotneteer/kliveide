@@ -13,6 +13,8 @@ export type EmittedProgram = {
   text: string;
   /** One entry per line of `text`: `lines[n - 1]` describes line n. */
   lines: LineInfo[];
+  /** Per function, in input order: its lines, 1-based, `end` exclusive (the debugger's callable ranges). */
+  functionLines: { start: number; end: number }[];
 };
 
 export type EmitInput = {
@@ -35,7 +37,9 @@ export function emitProgram(input: EmitInput): EmittedProgram {
     lines.push(info);
   };
   for (const h of input.header) add(h, { sid: -1 });
+  const functionLines: { start: number; end: number }[] = [];
   for (const fn of input.functions) {
+    const start = text.length + 1;
     const kept = dropJumpsToNext(fn);
     for (const l of kept) {
       switch (l.kind) {
@@ -53,9 +57,10 @@ export function emitProgram(input: EmitInput): EmittedProgram {
           break;
       }
     }
+    functionLines.push({ start, end: text.length + 1 });
   }
   for (const d of input.data) for (const line of dataLines(d)) add(line, { sid: -1 });
-  return { text: text.join("\n"), lines };
+  return { text: text.join("\n"), lines, functionLines };
 }
 
 function dropJumpsToNext(fn: LirLine[]): LirLine[] {

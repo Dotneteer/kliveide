@@ -35,7 +35,8 @@ export type Run = {
   entries: StatementVisit[];
 };
 
-export type StatementVisit = { sid: number; sp: number; ix: number };
+/** A statement entry the traced program passed: SP and IX there, and the 32 stack words from SP up. */
+export type StatementVisit = { sid: number; sp: number; ix: number; stack: number[] };
 
 /** Where the start-up stub goes: it calls the program as a running BASIC line would, then loops. */
 const STUB = 0xff00;
@@ -155,6 +156,6 @@ function traceEntries(
     }
     if (pc === done) return;
     const m = session.machine;
-    entries.push({ sid: sidAt.get(pc)!, sp: m.sp, ix: m.ix });
+    entries.push({ sid: sidAt.get(pc)!, sp: m.sp, ix: m.ix, stack: Array.from({ length: 32 }, (_, k) => session.peekWord((m.sp + 2 * k) & 0xffff)) });
   }
 }

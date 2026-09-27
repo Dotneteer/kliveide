@@ -1055,7 +1055,8 @@ class Lowering {
       argBytes: 0,
       ...(returnType ? { returnType } : {}),
       blocks: [],
-      epilogue: `${globalName(r.name)}.leave`
+      epilogue: `${globalName(r.name)}.leave`,
+      span: s.span
     };
     this.fnIndex = this.module.functions.length;
     this.module.functions.push(this.fn);
@@ -1114,6 +1115,11 @@ class Lowering {
     }
     this.resultSlot = returnType ? this.allocateLocal(returnType) : undefined;
     if (returnType && !this.supportedType(returnType)) this.unsupported(`${r.returnType} FUNCTION results`, r.span);
+    // --- For the debugger: where each parameter and local lives
+    const params = new Set(r.params.map((p) => p.symbol));
+    this.fn.vars = [...this.frameSlots].flatMap(([symbol, { slot, byref }]) =>
+      slot.kind === "frame" ? [{ symbol, offset: slot.offset, byref: byref || (symbol.kind === "array" && !!symbol.param), param: params.has(symbol) }] : []
+    );
 
     this.startBlock(this.fn.label);
     this.block.instrs.push({ op: "prologue.end", sid: -1 });

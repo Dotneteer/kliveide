@@ -1,5 +1,6 @@
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
+import type { SourceDebugExtensions } from "./SourceDebugInfo";
 
 /**
  * Represents the possible types of an expression value
@@ -802,6 +803,12 @@ export type SourceLevelDebugInfo = {
     readonly partition: number;
     readonly addressToStatement: ReadonlyArray<[number, number]>;
   }>;
+  /**
+   * Frames, call sites and variables (`SourceDebugInfo.ts`): what stepping over and out of calls,
+   * the symbolic call stack and the Variables panel need. Without it, source stepping works one
+   * statement at a time with no knowledge of activations.
+   */
+  readonly extensions?: SourceDebugExtensions;
 };
 
 /**
