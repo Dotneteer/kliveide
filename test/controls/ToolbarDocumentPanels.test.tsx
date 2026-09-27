@@ -94,6 +94,37 @@ describe("Toolbar document panels", () => {
   });
 });
 
+describe("Toolbar focus (issue #1383)", () => {
+  it("does not let a mouse press move focus onto a toolbar button", () => {
+    appServices.projectService.getActiveDocumentHubService.mockImplementation(() => createHub([]));
+    renderToolbar(createStore());
+    const button = screen.getByLabelText("Show Memory Panel");
+
+    // --- fireEvent returns false when a handler called preventDefault(); that is what stops the
+    // --- browser focusing the button, so a later Space/Enter meant for the emulator cannot click it.
+    expect(fireEvent.mouseDown(button)).toBe(false);
+  });
+
+  it("still runs the button's action on click", () => {
+    appServices.projectService.getActiveDocumentHubService.mockImplementation(() => createHub([]));
+    renderToolbar(createStore());
+    const button = screen.getByLabelText("Show Memory Panel");
+
+    fireEvent.mouseDown(button);
+    fireEvent.click(button);
+
+    expect(appServices.ideCommandsService.executeCommand).toHaveBeenCalledWith("show-memory");
+  });
+
+  it("leaves a mouse press outside the buttons alone", () => {
+    appServices.projectService.getActiveDocumentHubService.mockImplementation(() => createHub([]));
+    renderToolbar(createStore());
+    const strip = screen.getByLabelText("Show Memory Panel").parentElement!;
+
+    expect(fireEvent.mouseDown(strip)).toBe(true);
+  });
+});
+
 function createHub(openDocumentIds: string[]) {
   return {
     isOpen: (documentId: string) => openDocumentIds.includes(documentId)
