@@ -388,5 +388,7 @@ void z88SetCpuSnoozed(uint32_t v) {
   }
 }
 uint32_t z88GetStepOutAddress(void) { return z80GetStepOutAddress(); }
+/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
+uint32_t z88GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 /* The INT line the CPU saw at the start of the last instruction (`Z80Cpu.sigINT`) */
 uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }

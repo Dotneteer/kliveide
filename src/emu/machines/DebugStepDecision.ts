@@ -1,5 +1,6 @@
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { shouldStopAtSourceStep, type ReturnRegisters } from "./SourceStepDecision";
 
 /**
  * The single answer to "should the machine stop here?", shared by every WASM v2 machine.
@@ -77,6 +78,15 @@ export type DebugStopDecisionInput = {
    * machine whose core cannot track a shadow stack would need it again.
    */
   retExecuted: boolean;
+
+  /** SP now: read only by a source step, and only at statement entries and return points. */
+  getSp?: () => number;
+
+  /** How many interrupt handlers are running (the core's shadow stack): a source step runs them outside the step. */
+  getInterruptDepth?: () => number;
+
+  /** The registers a FUNCTION result is read from at a return point (a source step, §10.2.6). */
+  getRegisters?: () => ReturnRegisters;
 };
 
 /**
@@ -126,6 +136,19 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
 
   if (debugStepMode === DebugStepMode.StopAtBreakpoint) {
     return false;
+  }
+
+  if (debugStepMode === DebugStepMode.SourceStep) {
+    const step = debugSupport.sourceStep;
+    // --- No step description: behave as an instruction step rather than run away
+    if (!step) return instructionsExecuted > 0;
+    return shouldStopAtSourceStep(step, {
+      pc,
+      instructionsExecuted,
+      getSp: input.getSp ?? (() => 0),
+      ...(input.getInterruptDepth ? { getInterruptDepth: input.getInterruptDepth } : {}),
+      ...(input.getRegisters ? { getRegisters: input.getRegisters } : {})
+    });
   }
 
   if (debugStepMode === DebugStepMode.StepOver) {

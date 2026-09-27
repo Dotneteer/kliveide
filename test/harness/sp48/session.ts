@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
+import { beginSourceStep, type SourceDebugIndex, type SourceStep, type SourceStepKind } from "@emu/machines/SourceStepDecision";
 import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
@@ -226,6 +227,47 @@ export class Sp48TestSession {
     } finally {
       ctx.debugStepMode = DebugStepMode.NoDebug;
     }
+  }
+
+  /**
+   * A source-level step (`SourceStepDecision.ts`) of a compiled program, as the IDE's Step
+   * Into/Over/Out run it: starts the step at the current state and runs in debug mode until it
+   * stops (a statement entry, a return point, or a breakpoint, which always wins). Returns the
+   * step, with `stoppedAt` saying how it ended; `undefined` when the program returned to
+   * `returnTo` first.
+   */
+  sourceStep(
+    index: SourceDebugIndex,
+    kind: SourceStepKind,
+    options: { targetFrame?: number; targetCallable?: number; returnTo?: number; stopInInterrupts?: boolean } & RunLimit = {}
+  ): SourceStep | undefined {
+    const { maxFrames = 100, returnTo, ...stepOptions } = options;
+    const ctx = this.machine.executionContext;
+    const debugSupport = ctx.debugSupport;
+    if (!debugSupport) throw new Error("Call attachDebugSupport() first.");
+    const m = this.machine;
+    const view = { pc: m.pc, sp: m.sp, ix: m.ix, readWord: (a: number) => this.peekWord(a), interruptDepth: this.interruptDepth() };
+    const step = beginSourceStep(index, view, kind, {
+      ...stepOptions,
+      previous: debugSupport.sourceStep
+    });
+    debugSupport.sourceStep = step;
+    ctx.debugStepMode = DebugStepMode.SourceStep;
+    const limit = this.frames + maxFrames;
+    try {
+      while (true) {
+        if (this.frames >= limit) throw new Error(`The source step did not stop in ${maxFrames} frames (PC=${hex4(this.machine.pc)})`);
+        if (this.execute() === FrameTerminationMode.DebugEvent) return step;
+        if (returnTo !== undefined && this.machine.pc === returnTo) return undefined;
+      }
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /** How many interrupt handlers are running (the core's shadow stack, plan §10.2.7). */
+  interruptDepth(): number {
+    return this.machine.wasmV2Runtime?.exports.sp48GetInterruptDepth() ?? 0;
   }
 
   // ==========================================================================================

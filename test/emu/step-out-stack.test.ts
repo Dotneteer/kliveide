@@ -205,3 +205,31 @@ describe("step-out shadow stack, balanced against RET", () => {
     expect(cpu.stepOutAddress).toBe(0x1234);
   });
 });
+
+describe("interrupt depth (source stepping runs handlers outside the step, plan §10.2.7)", () => {
+  it("counts interrupt entries on the shadow stack until their RET", () => {
+    const cpu = cpuWith([0xc9]); // ret
+    cpu.pushToStepOutStack(0x1234);
+    cpu.pushToStepOutStack(0x8000, true);
+    expect(cpu.interruptDepth).toBe(1);
+    cpu.popFromStepOutStack();
+    expect(cpu.interruptDepth).toBe(0);
+    cpu.popFromStepOutStack();
+    expect(cpu.interruptDepth).toBe(0);
+  });
+
+  it("counts an interrupt taken through pushPC, and forgets it on reset", () => {
+    const cpu = cpuWith([0x00]);
+    cpu.pushPC();
+    expect(cpu.interruptDepth).toBe(1);
+    cpu.reset();
+    expect(cpu.interruptDepth).toBe(0);
+  });
+
+  it("drops an interrupt entry the full buffer overwrites", () => {
+    const cpu = cpuWith([0x00]);
+    cpu.pushToStepOutStack(0x8000, true);
+    for (let i = 0; i < 256; i++) cpu.pushToStepOutStack(0x9000 + i);
+    expect(cpu.interruptDepth).toBe(0);
+  });
+});

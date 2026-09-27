@@ -164,6 +164,7 @@ const productionExports = [
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
   "z88GetStepOutAddress",
+  "z88GetInterruptDepth",
   "z88GetCpuSigInt",
   // --- Test hooks (in the allow-list, not required by the loader)
   "z88TestResetRtc",

@@ -99,6 +99,7 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128SetCpuIy: Sp128WasmV2ExportFunction;
   sp128GetCpuPc: Sp128WasmV2ExportFunction;
   sp128GetStepOutAddress: Sp128WasmV2ExportFunction;
+  sp128GetInterruptDepth: Sp128WasmV2ExportFunction;
   sp128SetCpuPc: Sp128WasmV2ExportFunction;
   sp128GetCpuSp: Sp128WasmV2ExportFunction;
   sp128SetCpuSp: Sp128WasmV2ExportFunction;
@@ -286,6 +287,7 @@ const requiredV2Exports = [
   "sp128SetCpuIy",
   "sp128GetCpuPc",
   "sp128GetStepOutAddress",
+  "sp128GetInterruptDepth",
   "sp128SetCpuPc",
   "sp128GetCpuSp",
   "sp128SetCpuSp",

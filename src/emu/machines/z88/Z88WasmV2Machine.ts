@@ -573,6 +573,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
       instructionsExecuted,
       getPartition: (address) => this.getPartition(address),
       getCallInstructionLength: () => this.getCallInstructionLength(),
+      getSp: () => this.sp,
+      getInterruptDepth: () => this.requireWasmV2Runtime().exports.z88GetInterruptDepth(),
+      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
       stepOutAddress: this.stepOutAddress,
       // --- The core's shadow stack gives the exact step-out target; see ZxSpectrum48WasmV2Machine
       retExecuted: false

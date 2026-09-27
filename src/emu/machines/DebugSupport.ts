@@ -2,6 +2,7 @@ import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import type { SourceStep } from "./SourceStepDecision";
 
 import { incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointStorageKey } from "@common/utils/breakpoints";
@@ -376,6 +377,7 @@ export class DebugSupport implements IDebugSupport {
    * Breakpoint used for step-out debugging mode
    */
   imminentBreakpoint?: number;
+  sourceStep?: SourceStep;
 
   /**
    * Erases all breakpoints

@@ -197,6 +197,7 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eSetCpuWz: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPc: SpP3eWasmV2ExportFunction;
   spp3eGetStepOutAddress: SpP3eWasmV2ExportFunction;
+  spp3eGetInterruptDepth: SpP3eWasmV2ExportFunction;
   spp3eSetCpuPc: SpP3eWasmV2ExportFunction;
   spp3eGetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eSetCpuSp: SpP3eWasmV2ExportFunction;
@@ -455,6 +456,7 @@ const requiredV2Exports = [
   "spp3eSetCpuWz",
   "spp3eGetCpuPc",
   "spp3eGetStepOutAddress",
+  "spp3eGetInterruptDepth",
   "spp3eSetCpuPc",
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",

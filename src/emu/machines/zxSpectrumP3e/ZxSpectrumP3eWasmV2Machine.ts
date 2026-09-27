@@ -1235,6 +1235,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
       instructionsExecuted,
       getPartition: (address) => this.getPartition(address),
       getCallInstructionLength: () => this.getCallInstructionLength(),
+      getSp: () => this.sp,
+      getInterruptDepth: () => this.requireWasmV2Runtime().exports.spp3eGetInterruptDepth(),
+      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
       stepOutAddress: this.stepOutAddress,
       /*
        * `false` now that the core keeps a step-out stack: `stepOutAddress` above is the exact

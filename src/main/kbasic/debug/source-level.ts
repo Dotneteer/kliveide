@@ -206,6 +206,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       callableIndex: index,
       convention: fn.kind === "main" ? "entrypoint" : "frame",
       ...(fn.kind === "main" ? {} : { returnSlotOffset: 2 * Math.ceil(fn.frameSize / 2) + 2, argBytes: fn.argBytes }),
+      startAddress: first,
       bodyStart,
       epilogueStart,
       endAddress,

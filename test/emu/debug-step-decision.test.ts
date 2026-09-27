@@ -3,6 +3,8 @@ import { shouldStopAtDebugPoint } from "@emu/machines/DebugStepDecision";
 import type { DebugStopDecisionInput } from "@emu/machines/DebugStepDecision";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import { beginSourceStep, SourceDebugIndex } from "@emu/machines/SourceStepDecision";
 
 /**
  * A debug-support stub carrying only what the decision reads.
@@ -223,5 +225,58 @@ describe("shouldStopAtDebugPoint — other modes", () => {
     expect(
       decide({ debugSupport: support([0x8000]), debugStepMode: DebugStepMode.NoDebug }).stop
     ).toBe(true);
+  });
+});
+
+describe("shouldStopAtDebugPoint — source steps", () => {
+  // --- A two-statement main program: entries at $8000 and $8010, nothing else
+  const info = {
+    files: [{ index: 0, filename: "main.bas" }],
+    statements: [
+      { index: 0, fileIndex: 0, startLine: 1, startColumn: 0, endLine: 1, endColumn: 5, startAddress: 0x8000, endAddress: 0x8008, kind: "assignment", callableIndex: 0 },
+      { index: 1, fileIndex: 0, startLine: 2, startColumn: 0, endLine: 2, endColumn: 5, startAddress: 0x8010, endAddress: 0x8018, kind: "assignment", callableIndex: 0 }
+    ],
+    callables: [{ index: 0, name: "main", kind: "entrypoint", fileIndex: 0, startLine: 1, endLine: 2, entryAddress: 0x8000, exitAddresses: [], firstStatementIndex: 0, lastStatementIndex: 1 }],
+    addressToStatement: [[0, -1], [0x8000, 0], [0x8008, -1], [0x8010, 1], [0x8018, -1]],
+    extensions: {
+      variables: [],
+      callSites: [],
+      frames: [{ callableIndex: 0, convention: "entrypoint", startAddress: 0x8000, bodyStart: 0x8000, epilogueStart: 0x8018, endAddress: 0x8018 }],
+      mainBaselineSymbol: 0x9000,
+      runtimeSymbols: [],
+      optimizationLevel: 0
+    }
+  } as unknown as SourceLevelDebugInfo;
+  const index = new SourceDebugIndex(info);
+  const into = () =>
+    beginSourceStep(index, { pc: 0x8000, sp: 0xff00, ix: 0, readWord: (a) => (a === 0x9000 ? 0xff00 : 0) }, "into");
+
+  it("steps one instruction when no source step is described", () => {
+    expect(decide({ debugStepMode: DebugStepMode.SourceStep, instructionsExecuted: 0 }).stop).toBe(false);
+    expect(decide({ debugStepMode: DebugStepMode.SourceStep, instructionsExecuted: 1 }).stop).toBe(true);
+  });
+
+  it("stops at the next statement entry, never before the first instruction", () => {
+    const debugSupport = support([], { sourceStep: into() });
+    const getSp = () => 0xff00;
+    expect(decide({ debugSupport, debugStepMode: DebugStepMode.SourceStep, pc: 0x8000, instructionsExecuted: 0, getSp }).stop).toBe(false);
+    expect(decide({ debugSupport, debugStepMode: DebugStepMode.SourceStep, pc: 0x8004, instructionsExecuted: 1, getSp }).stop).toBe(false);
+    expect(decide({ debugSupport, debugStepMode: DebugStepMode.SourceStep, pc: 0x8010, instructionsExecuted: 3, getSp }).stop).toBe(true);
+    expect(debugSupport.sourceStep).toMatchObject({ stoppedAt: "statement", stopPc: 0x8010, stopStatement: 1 });
+  });
+
+  it("reads SP only at statement entries and return points", () => {
+    const getSp = vi.fn(() => 0xff00);
+    const debugSupport = support([], { sourceStep: into() });
+    for (const pc of [0x8001, 0x8002, 0x8009, 0x1234]) {
+      decide({ debugSupport, debugStepMode: DebugStepMode.SourceStep, pc, instructionsExecuted: 1, getSp });
+    }
+    expect(getSp).not.toHaveBeenCalled();
+  });
+
+  it("lets a real breakpoint win over the step", () => {
+    const debugSupport = support([0x8004], { sourceStep: into() });
+    expect(decide({ debugSupport, debugStepMode: DebugStepMode.SourceStep, pc: 0x8004, instructionsExecuted: 1 }).stop).toBe(true);
+    expect(debugSupport.sourceStep!.stoppedAt).toBeUndefined();
   });
 });

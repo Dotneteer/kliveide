@@ -80,6 +80,8 @@ export type CallableFrameInfo = {
   returnSlotOffset?: number;
   /** `frame`: bytes of stack arguments above the return address, which the routine removes. */
   argBytes?: number;
+  /** The callable's first code byte (its label: the prologue starts here). */
+  startAddress: number;
   /** The first address after the prologue: IX is valid from here. */
   bodyStart: number;
   /** The first address of the epilogue: IX is valid until here. */

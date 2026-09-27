@@ -210,6 +210,7 @@ const productionExports = [
   "spp3eSetCpuWz",
   "spp3eGetCpuPc",
   "spp3eGetStepOutAddress",
+  "spp3eGetInterruptDepth",
   "spp3eSetCpuPc",
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",

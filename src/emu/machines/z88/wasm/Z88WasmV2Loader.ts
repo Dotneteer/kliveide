@@ -206,6 +206,7 @@ export const z88WasmV2RequiredExports = [
   "z88GetCpuSnoozed",
   "z88SetCpuSnoozed",
   "z88GetStepOutAddress",
+  "z88GetInterruptDepth",
   "z88GetCpuSigInt"
 ] as const;
 

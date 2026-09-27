@@ -2396,6 +2396,8 @@ void spp3eSetCpuWz(uint32_t value) { z80SetWz(value); }
    --- in z80.c: without it this machine has no step-out target at all, because the
    --- TypeScript CPU's push never runs when execution happens inside the core. */
 uint32_t spp3eGetStepOutAddress(void) { return z80GetStepOutAddress(); }
+/* --- Running interrupt handlers (z80.c): source stepping runs them outside the step */
+uint32_t spp3eGetInterruptDepth(void) { return z80GetInterruptDepth(); }
 
 uint32_t spp3eGetCpuPc(void) { return z80GetPc(); }
 void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }

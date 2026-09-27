@@ -28,5 +28,11 @@ export enum DebugStepMode {
   /**
    * The execution loop stops after the first RET instruction (conditional or unconditional) when it returns to its caller.
    */
-  StepOut
+  StepOut,
+
+  /**
+   * A source-level step (`SourceStepDecision.ts`): into, over, out of statements and calls of a
+   * compiled program, as `IDebugSupport.sourceStep` describes. Needs source-level debug info.
+   */
+  SourceStep
 }

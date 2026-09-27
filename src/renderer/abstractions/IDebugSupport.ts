@@ -1,4 +1,5 @@
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type { SourceStep } from "@emu/machines/SourceStepDecision";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -105,6 +106,11 @@ export interface IDebugSupport {
    * Breakpoint used for step-out debugging mode
    */
   imminentBreakpoint?: number;
+
+  /**
+   * The source-level step in progress (`DebugStepMode.SourceStep`), and after it stopped, how.
+   */
+  sourceStep?: SourceStep;
 
   /**
    * Erases all breakpoints
