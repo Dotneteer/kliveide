@@ -28,5 +28,35 @@
     "",
     " 1982 Sinclair Research Ltd"
   ],
-  "errNr": 4
+  "errNr": 4,
+  "basic": {
+    "report": "5 Out of screen, 0:1",
+    "screen": [
+      "x",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "5 Out of screen, 0:1"
+    ],
+    "border": 7
+  }
 }

@@ -293,6 +293,19 @@ export class Sp48TestSession {
     return this;
   }
 
+  /**
+   * Types at the keyboard as a user does: each chord (keys pressed together, e.g. `["CShift", "SShift"]`
+   * for extended mode) is held for `hold` frames and released for `gap` frames, short of the ROM's
+   * auto-repeat delay. The ROM (or a program reading the keyboard) must be running.
+   */
+  typeKeys(chords: string[][], { hold = 3, gap = 3 }: { hold?: number; gap?: number } = {}): this {
+    for (const chord of chords) {
+      this.keyDown(...chord).runFrames(hold);
+      this.keyUp(...chord).runFrames(gap);
+    }
+    return this;
+  }
+
   // ==========================================================================================
   // Memory and screen
 

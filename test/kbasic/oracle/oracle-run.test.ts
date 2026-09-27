@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 
 import { describe, it } from "vitest";
 
-import { runBinary } from "../codegen/run-kit";
+import { runBinary, runBinaryThroughBasic } from "../codegen/run-kit";
 import { readExpectations, type OracleResult } from "../corpus/expectations";
 
 /**
@@ -45,10 +45,25 @@ describe.skipIf(!MANIFEST)("behavioural oracle (zxbc)", () => {
           if (e.kind === "peekw") peeks[`peekw ${e.address}`] = session.peekWord(e.address);
         }
         if (Object.keys(peeks).length) result.peeks = peeks;
+        // --- The same program as a user runs it: RANDOMIZE USR typed at the keyboard (plan C1). Not
+        // --- for a program that holds keys: once it returns, BASIC would type them too
+        if (keys) return writeResult(entry, result);
+        const typed = await runBinaryThroughBasic(new Uint8Array(readFileSync(entry.bin)), entry.org, {
+          frames: (frames?.count ?? 500) + 200
+        });
+        result.basic = {
+          report: typed.report ?? null,
+          screen: Array.from({ length: 24 }, (_, row) => typed.session.screenLine(row).trimEnd()),
+          border: (typed.session.peek(23624) >> 3) & 7
+        };
       }
-      const out = join(__dirname, entry.program.replace(/\.zxbas$/, ".json"));
-      mkdirSync(dirname(out), { recursive: true });
-      writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
+      writeResult(entry, result);
     });
   }
 });
+
+function writeResult(entry: ManifestEntry, result: OracleResult): void {
+  const out = join(__dirname, entry.program.replace(/\.zxbas$/, ".json"));
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, JSON.stringify(result, null, 2) + "\n");
+}

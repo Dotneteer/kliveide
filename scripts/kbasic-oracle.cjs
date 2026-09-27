@@ -5,6 +5,9 @@
  *
  *   node scripts/kbasic-oracle.cjs                      every corpus program
  *   node scripts/kbasic-oracle.cjs float/mod data/...   the named ones (relative to the corpus)
+ *   node scripts/kbasic-oracle.cjs --bisect strings/compare
+ *        prints the smallest program, made by dropping lines of the named one, that zxbc still
+ *        rejects or crashes on the same way (compatibility plan C1); writes nothing
  *
  * `KBASIC_ORACLE_ZXBC` names the zxbc executable (default `~/zxbasic/.venv/bin/zxbc`; see
  * `.ai/kbasic/README.md`). Guard rails, as the plan requires:
@@ -86,6 +89,62 @@ function zxbcArguments(options) {
   return { args: [...args, "--org", String(org)], org };
 }
 
+/**
+ * Compiles `<base>.bas` with zxbc into `<base>.bin`. Returns `{ error }` when zxbc rejects the program
+ * (its first message line) or crashes (only the exception's message, the last line - never the
+ * traceback's lines, which quote upstream's source), else `{}`.
+ */
+function compileWithZxbc(zxbc, work, base, args) {
+  fs.rmSync(`${base}.bin`, { force: true });
+  const run = spawnSync(zxbc, ["--output-format", "bin", "--output", `${base}.bin`, ...args, `${base}.bas`], {
+    encoding: "utf8",
+    cwd: work
+  });
+  if (run.status === 0 && fs.existsSync(`${base}.bin`)) return {};
+  const lines = `${run.stderr || run.stdout || run.error || ""}`.split(/\r?\n/).filter((l) => l.trim() && !/: warning: /.test(l));
+  const crashed = lines[0]?.startsWith("Traceback");
+  const message = crashed ? `zxbc crashed: ${lines[lines.length - 1]}` : lines[0] || `exit code ${run.status}`;
+  return { error: message.split(work).join("").replace(/^[\\/]+/, "") };
+}
+
+/** A failure without where it happened: the file and line prefix of a diagnostic removed. */
+function failureKind(error) {
+  return error.replace(/^[^:]*\.bas:\d+: /, "");
+}
+
+/**
+ * Delta debugging over lines: drops chunks of the program's lines, keeping every reduction zxbc
+ * still fails on with the same kind of failure, until no single line can go.
+ */
+function bisect(zxbc, work, file) {
+  const source = fs.readFileSync(file, "utf8");
+  const plan = zxbcArguments(headerOptions(source));
+  if (plan.skip) fail(plan.skip);
+  const base = path.join(work, "bisect");
+  const outcome = (lines) => {
+    fs.writeFileSync(`${base}.bas`, lines.join("\n") + "\n");
+    const r = compileWithZxbc(zxbc, work, base, plan.args);
+    return r.error ? failureKind(r.error) : undefined;
+  };
+  let lines = source.split(/\r?\n/).filter((l) => l.trim() !== "" && !/^\s*'\s*@expect/.test(l));
+  const target = outcome(lines);
+  if (!target) fail(`zxbc compiles ${path.relative(CORPUS, file)}: nothing to bisect`);
+  let chunk = Math.max(1, Math.floor(lines.length / 2));
+  while (chunk >= 1) {
+    let reduced = false;
+    for (let at = 0; at < lines.length; ) {
+      const candidate = [...lines.slice(0, at), ...lines.slice(at + chunk)];
+      if (candidate.length && outcome(candidate) === target) {
+        lines = candidate;
+        reduced = true;
+      } else at += chunk;
+    }
+    if (!reduced) chunk = Math.floor(chunk / 2);
+  }
+  console.log(`zxbc: ${target}`);
+  console.log(lines.join("\n"));
+}
+
 function corpusPrograms(dir) {
   return fs
     .readdirSync(dir, { withFileTypes: true })
@@ -100,6 +159,19 @@ function main() {
   const version = spawnSync(zxbc, ["--version"], { encoding: "utf8" });
   if (version.status !== 0) fail(`${zxbc} --version failed: ${version.stderr || version.error}`);
   const zxbcVersion = (version.stdout || version.stderr).trim();
+
+  if (process.argv[2] === "--bisect") {
+    const name = process.argv[3] || fail("--bisect needs a corpus program");
+    const file = path.join(CORPUS, name.endsWith(".zxbas") ? name : `${name}.zxbas`);
+    if (!fs.existsSync(file)) fail(`no corpus program ${name}`);
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "kbasic-bisect-"));
+    try {
+      bisect(zxbc, work, file);
+    } finally {
+      fs.rmSync(work, { recursive: true, force: true });
+    }
+    return;
+  }
 
   const named = process.argv.slice(2);
   const files = named.length
@@ -121,19 +193,10 @@ function main() {
       // --- zxbc reads a .bas file; the copy and its output stay in the temporary folder
       const base = path.join(work, program.replace(/[\\/]/g, "__").replace(/\.zxbas$/, ""));
       fs.writeFileSync(`${base}.bas`, source);
-      const run = spawnSync(zxbc, ["--output-format", "bin", "--output", `${base}.bin`, ...plan.args, `${base}.bas`], {
-        encoding: "utf8",
-        cwd: work
-      });
+      const outcome = compileWithZxbc(zxbc, work, base, plan.args);
       const entry = { program, source: file, org: plan.org };
-      if (run.status !== 0 || !fs.existsSync(`${base}.bin`)) {
-        // --- A diagnostic is zxbc's first line; a crash records only the exception's message (the
-        // --- last line), never the traceback's lines, which quote upstream's source
-        const lines = `${run.stderr || run.stdout || run.error || ""}`.split(/\r?\n/).filter((l) => l.trim());
-        const crashed = lines[0]?.startsWith("Traceback");
-        const message = crashed ? `zxbc crashed: ${lines[lines.length - 1]}` : lines[0] || `exit code ${run.status}`;
-        entry.compileError = message.split(work).join("").replace(/^[\\/]+/, "");
-      } else entry.bin = `${base}.bin`;
+      if (outcome.error) entry.compileError = outcome.error;
+      else entry.bin = `${base}.bin`;
       entries.push(entry);
       console.log(`${entry.bin ? "built" : "rejected"} ${program}`);
     }
@@ -154,4 +217,4 @@ function main() {
 
 if (require.main === module) main();
 
-module.exports = { headerOptions, zxbcArguments };
+module.exports = { headerOptions, zxbcArguments, failureKind };

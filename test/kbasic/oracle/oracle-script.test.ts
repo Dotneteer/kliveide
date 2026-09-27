@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { compileBasic, runBasic, runBinary } from "../codegen/run-kit";
+import { compileBasic, runBasic, runBinary, runBinaryThroughBasic } from "../codegen/run-kit";
 import { oracleDifferences, readExpectations } from "../corpus/expectations";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -51,6 +51,27 @@ describe("behavioural oracle", () => {
     expect(oracleDifferences(expectations, returned)).toEqual([]);
     expect(oracleDifferences(expectations, { ...returned, errNr: 9 })).toEqual(["error: Klive 6, zxbc ERR_NR 9 (A)"]);
     expect(oracleDifferences(expectations, { program: "p", zxbc: "z", compileError: "x.bas:1: error: nope" })).toEqual([]);
+  });
+
+  it("runs a binary as a user does, RANDOMIZE USR typed at the keyboard, and reads BASIC's report", async () => {
+    const run = async (source: string) => {
+      const { generated } = await compileBasic(source);
+      const segment = generated.output.segments[0];
+      return runBinaryThroughBasic(Uint8Array.from(segment.emittedCode), segment.startAddress, { then: [["SShift", "Z"], ["P"], ["N7"]] });
+    };
+    // --- The command is RANDOMIZE USR <org>: PRINT 7; BASIC runs its second statement after a return
+    const ok = await run('PRINT "hi";\n');
+    expect(ok.report).toBe("0 OK, 0:2");
+    expect(ok.session.screenLine(0)).toContain("7");
+    // --- A Klive runtime error stops at the USR statement
+    const stopped = await run('PRINT "x";\nPRINT AT 30, 0; "y"\n');
+    expect(stopped.report).toBe("5 Out of screen, 0:1");
+    expect(stopped.session.screenLine(0).trimEnd()).toBe("x");
+  });
+
+  it("names a zxbc failure without where it happened, so a bisect can keep it", () => {
+    expect(oracle.failureKind("strings__compare.bas:4: error: Syntax Error. Unexpected token 'LOOP' <LOOP>")).toBe("error: Syntax Error. Unexpected token 'LOOP' <LOOP>");
+    expect(oracle.failureKind("zxbc crashed: AttributeError: x")).toBe("zxbc crashed: AttributeError: x");
   });
 
   it("runs a binary as the corpus runs a program", async () => {

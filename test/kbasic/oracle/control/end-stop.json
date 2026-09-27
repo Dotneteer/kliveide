@@ -28,5 +28,35 @@
     "",
     " 1982 Sinclair Research Ltd"
   ],
-  "errNr": 8
+  "errNr": 8,
+  "basic": {
+    "report": "9 STOP statement, 0:1",
+    "screen": [
+      "before",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "9 STOP statement, 0:1"
+    ],
+    "border": 7
+  }
 }

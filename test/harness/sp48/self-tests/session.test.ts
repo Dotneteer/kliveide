@@ -37,6 +37,15 @@ describe("ZX Spectrum 48K harness", () => {
     expect(s.peekWord(s.program!.symbol("Result"))).toBe(0x1234);
   });
 
+  it("types at the keyboard as a user does", async () => {
+    const s = await createSp48Session();
+    s.bootToBasic();
+    s.runFrames(20);
+    // --- K mode: T is RANDOMIZE; extended mode (CAPS + SYMBOL SHIFT), then L is USR
+    s.typeKeys([["T"], ["CShift", "SShift"], ["L"], ["N1"]]);
+    expect(s.screenLine(23).trimEnd()).toBe("RANDOMIZE USR 1L"); // --- the trailing L is the cursor
+  });
+
   it("reads text printed through the ROM from the screen", async () => {
     const s = await createSp48Session();
     s.bootToBasic();

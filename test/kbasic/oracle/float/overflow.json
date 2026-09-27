@@ -28,5 +28,35 @@
     "",
     "6 Number too big, 0:0"
   ],
-  "errNr": 5
+  "errNr": 5,
+  "basic": {
+    "report": "6 Number too big, 0:1",
+    "screen": [
+      "before",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      "6 Number too big, 0:1"
+    ],
+    "border": 7
+  }
 }

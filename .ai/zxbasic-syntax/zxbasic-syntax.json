@@ -2524,14 +2524,14 @@
         "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "open",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
         "name": "byref-float-parameter",
         "question": "What does a BYREF Float parameter read and write?",
         "decision": "The caller's variable, through its address: reads see its value and writes change it.",
         "test": "test/kbasic/corpus/float/float-routines.zxbas",
-        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
         "name": "constant-arithmetic-literal",
@@ -2561,7 +2561,7 @@
         "source": "klive-decision",
         "phase": 8,
         "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md: compiled as documented, since zxbc crashes (D-C1)."
       },
       {
         "name": "constant-power",
@@ -2571,6 +2571,16 @@
         "source": "oracle",
         "phase": 2,
         "test": "test/kbasic/corpus/float/power-constant.zxbas"
+      },
+      {
+        "phase": 8,
+        "name": "constant-string-comparison",
+        "question": "What does a comparison of two String constants give (\"abc\" < \"abd\")?",
+        "decision": "Its value, folded at compile time (1 or 0), as a comparison with a variable gives at run time.",
+        "status": "decided",
+        "source": "klive-decision",
+        "test": "test/kbasic/corpus/strings/ordering.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError). Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
         "name": "do-loop-one-line",
@@ -2592,14 +2602,14 @@
         "oracle": "zxbc 1.19 rejects #elif (a syntax error): Klive accepts it as an extension. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "open",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
         "name": "fastcall-basic-body",
         "question": "Can a FASTCALL routine with a BASIC body use its first parameter?",
         "decision": "Yes: it arrives in registers and the prologue stores it in the frame, so the body reads it like any parameter.",
         "test": "test/kbasic/corpus/routines/fastcall.zxbas",
-        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
         "status": "open",
@@ -2641,6 +2651,16 @@
         "oracle": "Upstream treats the STEP as unsigned and runs no iteration. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
+        "phase": 8,
+        "name": "for-unsigned-variable-step",
+        "question": "Can a FOR loop take its STEP from a UByte or UInteger variable?",
+        "decision": "Yes: the loop counts by the variable value.",
+        "status": "decided",
+        "source": "klive-decision",
+        "test": "test/kbasic/corpus/classic/primes-sieve.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError); a signed or Float STEP variable compiles. Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "forward-function-call",
         "question": "What signature does a FUNCTION called before its definition have when there is no DECLARE?",
         "decision": "Its definition's signature: routine headers are collected before binding. Upstream assumes a Float return until the definition; Klive accepts every program upstream accepts here, and a few it rejects.",
@@ -2650,14 +2670,14 @@
         "test": "test/kbasic/semantics/binder.test.ts"
       },
       {
-        "status": "open",
+        "status": "decided",
         "source": "klive-decision",
         "phase": 8,
         "name": "function-without-return",
         "question": "What does a FUNCTION give when it ends without RETURN?",
         "decision": "0 (the empty String for a String FUNCTION): the result is zeroed on entry.",
         "test": "test/kbasic/corpus/routines/function-result.zxbas",
-        "oracle": "Upstream gives whatever its result register held. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
       },
       {
         "name": "implicit-type-from-context",
@@ -2733,7 +2753,7 @@
         "question": "How are named arguments (name := value) matched to parameters?",
         "decision": "By name; parameters left out take their defaults.",
         "test": "test/kbasic/corpus/routines/defaults-named.zxbas",
-        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md: copy zxbc and pass by position (D-C2)."
       },
       {
         "name": "on-goto-out-of-range",
@@ -2783,6 +2803,15 @@
         "test": "test/kbasic/corpus/print/scroll.zxbas"
       },
       {
+        "phase": 8,
+        "name": "print-position-on-return",
+        "question": "Where does BASIC print after the program returns?",
+        "decision": "Klive today: where BASIC last printed; Klive keeps its own cursor and does not write it back.",
+        "status": "open",
+        "source": "oracle",
+        "oracle": "zxbc leaves BASIC printing after the program output (STOP then PRINT 7 gives a7 on the program line). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+      },
+      {
         "name": "print-udg-codes",
         "question": "What do character codes 165-255 print?",
         "decision": "One glyph each from the UDG area (codes 165-255 read past its 21 characters), not the ROM's keyword text.",
@@ -2804,11 +2833,21 @@
       {
         "name": "read-type-mismatch",
         "question": "What does READ do when a String item meets a numeric target, or a number meets a String target?",
-        "decision": "It stops with A Invalid argument. Numeric items reach numeric targets through Float (exact for every integer type).",
-        "status": "decided",
+        "decision": "Klive today: it stops with A Invalid argument.",
+        "status": "open",
         "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/corpus/data/read-mismatch.zxbas"
+        "test": "test/kbasic/corpus/data/read-mismatch.zxbas",
+        "oracle": "zxbc sets ERR_NR to 9 (A Invalid argument) and carries on: the READ and the rest of the program run (see runtime-error-model). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
+      },
+      {
+        "phase": 8,
+        "name": "runtime-error-model",
+        "question": "What does a runtime error do to the program and to BASIC after it?",
+        "decision": "Klive today: every runtime error stops at once with the ROM report, at the RANDOMIZE USR statement.",
+        "status": "open",
+        "source": "oracle",
+        "oracle": "zxbc 1.19, run as a user runs it (RANDOMIZE USR <org>: PRINT 7 typed at the keyboard): ERROR n and the ROM calculator errors stop at once (report at statement 1, PRINT 7 not run). READ of the wrong kind and PRINT AT off the screen set ERR_NR and carry on; STOP ends the program by returning with ERR_NR 8. BASIC then runs PRINT 7 and its final report shows the leftover ERR_NR (e.g. 9 STOP statement, 0:2). To change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md (D-C5)."
       },
       {
         "name": "shr-signed",
@@ -2891,7 +2930,8 @@
         "status": "decided",
         "source": "oracle",
         "phase": 4,
-        "test": "test/kbasic/corpus/builtins/val-error.zxbas"
+        "test": "test/kbasic/corpus/builtins/val-error.zxbas",
+        "oracle": "zxbc agrees on the value and ERR_NR. After a failed VAL it leaves BASIC state broken (typed as a user does, the command ends with C Nonsense in BASIC, 3331:1); Klive restores CH_ADD and the workspace, an undefined result it keeps (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       }
     ]
   }

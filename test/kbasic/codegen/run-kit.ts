@@ -87,6 +87,44 @@ export async function runBinary(
   }
 }
 
+/** The keys that type `RANDOMIZE USR <address>` in the 48K's K mode, then ENTER. */
+function randomizeUsrKeys(address: number): string[][] {
+  const digits = String(address).split("").map((d) => [`N${d}`]);
+  return [["T"], ["CShift", "SShift"], ["L"], ...digits, ["Enter"]];
+}
+
+/** BASIC's report on the bottom row, as the ROM prints it after a command ("0 OK, 0:1"). */
+const BASIC_REPORT = /^[0-9A-R] .*, \d+:\d+$/;
+
+/**
+ * Runs a machine-code program the way a user does (compatibility plan C1): loaded at `org` on a
+ * freshly booted 48K, started by typing `RANDOMIZE USR <org>` at the keyboard, and run until BASIC
+ * prints its report on the bottom row (or `frames` pass). What the user sees after the program
+ * returns - the report BASIC prints, whatever ERR_NR the program left - is on the screen.
+ */
+export async function runBinaryThroughBasic(
+  bytes: Uint8Array,
+  org: number,
+  options: { frames?: number; before?: (session: Sp48TestSession) => void; then?: string[][] } = {}
+): Promise<{ session: Sp48TestSession; report?: string }> {
+  const session = await createSp48Session();
+  session.bootToBasic();
+  session.runFrames(20);
+  session.poke(org, [...bytes]);
+  // --- `then`: more of the command line after the USR, before ENTER (": PRINT 7")
+  const keys = randomizeUsrKeys(org);
+  session.typeKeys([...keys.slice(0, -1), ...(options.then ?? []), ...keys.slice(-1)]);
+  // --- Keys the program reads go down once the command is typed, so they cannot become part of it
+  options.before?.(session);
+  const limit = options.frames ?? 500;
+  for (let frame = 0; frame < limit; frame += 5) {
+    session.runFrames(5);
+    const bottom = session.screenLine(23).trimEnd();
+    if (BASIC_REPORT.test(bottom)) return { session, report: bottom };
+  }
+  return { session };
+}
+
 /**
  * Compiles, loads and runs a program on a freshly booted 48K until it ends (or `frames` pass, for
  * programs that stop with an error report). The program is called like `USR` from a running BASIC

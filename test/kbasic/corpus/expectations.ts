@@ -103,6 +103,12 @@ export type OracleResult = {
   /** ERR_NR (23610) when the run stopped: an error upstream's runtime raised, whether or not the ROM
    *  printed its report. */
   errNr?: number;
+  /**
+   * The same program started as a user starts it, `RANDOMIZE USR` typed at the keyboard
+   * (compatibility plan C1): BASIC's report on the bottom row (null when none came), the screen, and
+   * the border from BORDCR.
+   */
+  basic?: { report: string | null; screen: string[]; border: number };
   /** The bytes and words the program's `peek` / `peekw` expectations name. */
   peeks?: Record<string, number>;
 };
