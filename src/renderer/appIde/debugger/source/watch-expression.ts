@@ -61,7 +61,10 @@ export function evaluateWatch(text: string, ctx: WatchContext): WatchResult {
 export function formatWatchValue(v: WatchValue): string {
   if (v.kind === "string") return spectrumText([...v.value].map((c) => c.charCodeAt(0)));
   if (v.type === "boolean") return v.value ? "TRUE" : "FALSE";
-  return Number.isInteger(v.value) ? String(v.value) : formatFloat(v.value);
+  // --- Whole numbers print in full within the 32-bit range; Floats, Fixed and the rest as the
+  // --- Variables panel prints a Float
+  const whole = Number.isInteger(v.value) && Math.abs(v.value) < 2 ** 32 && v.type !== "float" && v.type !== "fixed";
+  return whole ? String(v.value) : formatFloat(v.value);
 }
 
 /** The variable a name means in the selected frame: its locals first, then the globals. */

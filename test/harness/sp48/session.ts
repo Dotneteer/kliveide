@@ -45,12 +45,18 @@ class HarnessSp48Machine extends ZxSpectrum48WasmV2Machine {
   }
 }
 
+let wasmBuilt = false;
+
 /**
- * Creates a ZX Spectrum 48K with the real ROM, ready to boot. Build the WASM core first if it is
- * missing or stale (the same build the 48K machine tests use).
+ * Creates a ZX Spectrum 48K with the real ROM, ready to boot. Builds the WASM core first, once per
+ * test process (the same build the 48K machine tests use).
  */
 export async function createSp48Session(): Promise<Sp48TestSession> {
-  buildSp48Wasm();
+  // --- Once per test process: the build runs clang, which is most of a session's start-up cost
+  if (!wasmBuilt) {
+    buildSp48Wasm();
+    wasmBuilt = true;
+  }
   const machine = new HarnessSp48Machine(new Uint8Array(readFileSync(ROM_PATH)));
   await machine.setup();
   return new Sp48TestSession(machine);
