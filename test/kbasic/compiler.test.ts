@@ -213,11 +213,18 @@ describe("the zxbas compiler", () => {
     expect(output.modelType).toBe(modelType);
   });
 
-  it("does not build for a target it has no code generator for yet", async () => {
+  it("builds a NEX for the ZX Spectrum Next (model type 4), with the program's entry after the NEX start stub", async () => {
     const compiler = new KBasicCompiler();
     compiler.setAppState(state({}, "zxnext"));
-    const output = await compiler.compileFile(path.join(folder, "good.bas"));
-    expect(output.errors?.map((e) => e.errorCode)).toContain("E502");
+    const output = (await compiler.compileFile(path.join(folder, "good.bas"))) as DebuggableOutput & {
+      modelType: number;
+      entryAddress: number;
+      nexConfig?: { entryAddr?: number };
+    };
+    expect(output.errors?.filter((e) => !e.isWarning)).toEqual([]);
+    expect(output.modelType).toBe(4);
+    expect(output.nexConfig).toBeDefined();
+    expect(output.entryAddress).toBeGreaterThan(0x8000);
   });
 
   it("reports only the program's errors when it has some", async () => {

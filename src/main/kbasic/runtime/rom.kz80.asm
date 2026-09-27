@@ -5,10 +5,12 @@
 ; The ROM is used only for the Float calculator, Float <-> text, tape and error reports (plan §6.3).
 ; On the 128K and the +3 the 48K BASIC ROM must be paged in for them: RomIn pages it in and RomOut
 ; puts back what the program had (the 128K: bit 4 of $7FFD, shadowed in BANKM; the +3: bit 2 of
-; $1FFD too, shadowed in BANK678). They nest (only the outermost pair pages), and on the 48K they
-; do nothing. The calculator (RST $28) reads its literals from the bytes after the restart, so it
-; cannot go through RomCall: a calculator sequence gets its own stub that calls RomIn and RomOut and
-; sets and restores IY around it.
+; $1FFD too, shadowed in BANK678; the Next: MMU slots 0 and 1 set to the ROM and ROM 3 selected
+; through NextReg $8E, which is readable, so the program's mapping is read rather than shadowed).
+; They nest (only the outermost pair pages), and on the 48K they do nothing. The calculator
+; (RST $28) reads its literals from the bytes after the restart, so it cannot go through RomCall: a
+; calculator sequence gets its own stub that calls RomIn and RomOut and sets and restores IY around
+; it.
 
 ; ------------------------------------------------------------------------------------------------
 ; Calls a ROM routine:
@@ -84,6 +86,41 @@ RomInDone:
 RomInDone:
     pop af
 #endif
+#ifmod Next
+    push af
+    ld a,(RomDepth)
+    inc a
+    ld (RomDepth),a
+    dec a
+    jr nz,RomInDone
+    push bc
+    ld bc,$243b
+    ld a,$50
+    out (c),a
+    inc b
+    in a,(c)                ; MMU0
+    ld (RomSavedBank),a
+    dec b
+    ld a,$51
+    out (c),a
+    inc b
+    in a,(c)                ; MMU1
+    ld (RomSavedBank678),a
+    dec b
+    ld a,$8e
+    out (c),a
+    inc b
+    in a,(c)                ; the 128K mapping: ROM select in bits 1 and 0
+    ld (RomSaved8E),a
+    and $f0                 ; bit 3 clear: the RAM banks stay; bit 2 clear: normal paging
+    or $03                  ; ROM 3: 48K BASIC
+    nextreg $8e,a
+    nextreg $50,$ff         ; slots 0 and 1: the ROM
+    nextreg $51,$ff
+    pop bc
+RomInDone:
+    pop af
+#endif
     ret
 
 RomOut:
@@ -121,6 +158,22 @@ RomOutDone:
 RomOutDone:
     pop af
 #endif
+#ifmod Next
+    push af
+    ld a,(RomDepth)
+    dec a
+    ld (RomDepth),a
+    jr nz,RomOutDone
+    ld a,(RomSaved8E)
+    and $f7                 ; bit 3 clear: only the ROM selection changes back
+    nextreg $8e,a
+    ld a,(RomSavedBank)
+    nextreg $50,a
+    ld a,(RomSavedBank678)
+    nextreg $51,a
+RomOutDone:
+    pop af
+#endif
     ret
 
 RomDepth:
@@ -128,4 +181,6 @@ RomDepth:
 RomSavedBank:
     .defb 0
 RomSavedBank678:
+    .defb 0
+RomSaved8E:
     .defb 0

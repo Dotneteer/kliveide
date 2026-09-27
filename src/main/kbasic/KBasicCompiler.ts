@@ -69,12 +69,12 @@ export class KBasicCompiler implements IKliveCompiler {
     }
   }
 
-  /** Code generation (the 48K, 128K and +3 targets, optimisation level 0). */
+  /** Code generation (the 48K, 128K, +3 and Next targets, optimisation level 0). */
   private async build(filename: string, front: KBasicFrontEndResult): Promise<SimpleAssemblerOutput | DebuggableOutput> {
     const diagnostics = front.diagnostics;
     const model = targetModel(front.options.target);
     if (model === undefined) {
-      diagnostics.error("E502", `Klive BASIC does not generate code for target '${front.options.target}' yet (the ZX Spectrum Next comes with Phase 6)`, { file: 0, start: 0, end: 0 });
+      diagnostics.error("E502", `Klive BASIC does not generate code for target '${front.options.target}'`, { file: 0, start: 0, end: 0 });
       return { errors: toErrorInfo(diagnostics.items, front.sources) };
     }
     const generated = await generateProgram(front.bound!, front.sources, front.options, programName(filename), diagnostics);
@@ -84,7 +84,20 @@ export class KBasicCompiler implements IKliveCompiler {
     return {
       errors,
       traceOutput: [`Klive BASIC: code generated at optimisation level 0 (the only level so far)`],
-      segments: generated.output.segments.map((s) => ({ startAddress: s.startAddress, emittedCode: s.emittedCode })),
+      segments: generated.output.segments.map((s) => ({
+        startAddress: s.startAddress,
+        emittedCode: s.emittedCode,
+        ...(s.bank !== undefined ? { bank: s.bank, bankOffset: s.bankOffset } : {})
+      })),
+      // --- The Next: the IDE exports a NEX (unbanked code goes into bank 2) and launches it with .nexload
+      ...(model === SpectrumModelType.Next
+        ? {
+            nexConfig: generated.output.nexConfig,
+            unbankedSegments: generated.output.segments
+              .filter((s) => s.bank === undefined)
+              .map((s) => ({ startAddress: s.startAddress, emittedCode: s.emittedCode }))
+          }
+        : {}),
       injectOptions: { subroutine: true },
       sourceFileList: classic.sourceFileList,
       sourceMap: classic.sourceMap,
@@ -218,5 +231,10 @@ function isAbsolutePath(path: string): boolean {
 
 /** The Spectrum model a target builds for; undefined for a target without code generation yet. */
 export function targetModel(target: string): SpectrumModelType | undefined {
-  return { zx48k: SpectrumModelType.Spectrum48, zx128k: SpectrumModelType.Spectrum128, zxplus3: SpectrumModelType.SpectrumP3 }[target as "zx48k"];
+  return {
+    zx48k: SpectrumModelType.Spectrum48,
+    zx128k: SpectrumModelType.Spectrum128,
+    zxplus3: SpectrumModelType.SpectrumP3,
+    next: SpectrumModelType.Next
+  }[target as "zx48k"];
 }

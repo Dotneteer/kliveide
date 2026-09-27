@@ -29,6 +29,10 @@ export type MachineView = {
   sp: number;
   ix: number;
   readWord: (address: number) => number;
+  /** Reads a byte (the far-call runtime's current bank, CODEBANK §9.4). */
+  readByte?: (address: number) => number;
+  /** The memory partition an address is in (an 8K page on the Next): which bank's code runs there. */
+  partitionOf?: (address: number) => number | undefined;
   /** Interrupt handlers running now (§10.2.7): a step begun inside one may stop in it. */
   interruptDepth?: number;
 };

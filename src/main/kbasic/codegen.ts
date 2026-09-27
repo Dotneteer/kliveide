@@ -54,9 +54,15 @@ export async function generateProgram(
     return undefined;
   }
 
-  const modules = resolveRuntimeModules(runtime, ["program"]);
+  // --- The Next's start stub reports errors through the errors module, which prints them
+  const modules = resolveRuntimeModules(runtime, options.target === "next" ? ["program", "errors", "print"] : ["program"]);
   const emitted = emitProgram({
-    header: [`    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`, `    .org ${options.origin}`, "__kbasic_start:", ...prologueSource(runtimeInitialisers(modules)).split("\n")],
+    header: [
+      `    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`,
+      ...nexHeader(options),
+      "__kbasic_start:",
+      ...prologueSource(runtimeInitialisers(modules)).split("\n")
+    ],
     functions,
     data: mir.data
   });
@@ -116,7 +122,7 @@ export async function generateProgram(
     isLibraryFile: (file) => isLibraryPath(sources.get(file).name),
     optimizationLevel: options.optimize
   });
-  return { mir, emitted, output, debug: { ...debug, sourceLevel }, entryAddress: options.origin };
+  return { mir, emitted, output, debug: { ...debug, sourceLevel }, entryAddress: symbol("__kbasic_start") ?? options.origin };
 }
 
 /** The BASIC span of an emitted line (1-based) that came from an ASM block, or undefined. */
@@ -130,11 +136,39 @@ function asmLineSpan(mir: MModule, emitted: EmittedProgram, line: number): Span 
 }
 
 /** The `.model` of each target (the runtime pages the 48K BASIC ROM with `#ifmod` on it). */
-const MODEL_NAMES: Record<string, string> = { zx48k: "Spectrum48", zx128k: "Spectrum128", zxplus3: "SpectrumP3" };
+const MODEL_NAMES: Record<string, string> = { zx48k: "Spectrum48", zx128k: "Spectrum128", zxplus3: "SpectrumP3", next: "Next" };
+
+/**
+ * The origin and, for the Next, what the NEX needs: its header (`.savenex`) and a start stub. A NEX
+ * is jumped to, not called, so the stub calls the program with interrupts on (PAUSE needs them) and
+ * ERR_SP at a slot holding the runtime's `ReportError` (a report, the ROM's own included, prints and
+ * ends the program: NextZXOS's 48K ROM has no original main loop to go back to), then waits; `__kbasic_start`, after it, stays the
+ * entry every other way of running the program uses.
+ */
+function nexHeader(options: KBasicOptions): string[] {
+  const org = `    .org ${options.origin}`;
+  if (options.target !== "next") return [org];
+  return [
+    `    .savenex core "${options.nexCore}"`,
+    ...(options.nexStack !== undefined ? [`    .savenex stackaddr ${options.nexStack}`] : []),
+    org,
+    "__kbNexStart:",
+    "    ei",
+    "    ld hl,core.ReportError",
+    "    push hl",
+    "    ld ($5c3d),sp",
+    "    call __kbasic_start",
+    "__kbNexEnd:",
+    "    jr __kbNexEnd",
+    `    .savenex entryaddr ${options.nexEntry ?? "__kbNexStart"}`
+  ];
+}
 
 function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {
   const a = new AssemblerOptions();
-  a.currentModel = { zx128k: SpectrumModelType.Spectrum128, zxplus3: SpectrumModelType.SpectrumP3 }[options.target as "zx128k"] ?? SpectrumModelType.Spectrum48;
+  a.currentModel =
+    { zx128k: SpectrumModelType.Spectrum128, zxplus3: SpectrumModelType.SpectrumP3, next: SpectrumModelType.Next }[options.target as "zx128k"] ??
+    SpectrumModelType.Spectrum48;
   // --- BASIC identifiers are case-sensitive, so their labels must be too
   a.useCaseSensitiveSymbols = true;
   if (options.checkMemory) a.predefinedSymbols["KB_CHECK_MEMORY"] = new ExpressionValue(true);
