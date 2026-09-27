@@ -11,7 +11,7 @@ import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression
 
 import { startBasic } from "../codegen/run-kit";
 
-import { programs, readExpectations } from "./expectations";
+import { isNextOnly, programs, readExpectations } from "./expectations";
 
 /**
  * The source-level debugger on the whole corpus (plan Phase 5 exit: "call stack, Variables panel
@@ -32,7 +32,8 @@ const scalarRows = (nodes: VariableNode[] | undefined) =>
   (nodes ?? []).filter((n) => !n.expand && n.address !== undefined && /^[A-Za-z_][A-Za-z0-9_]*\$?$/.test(n.name));
 
 describe("the source-level debugger on the corpus", () => {
-  for (const file of programs(ROOT)) {
+  // --- Next-only programs (CODEBANK): their debugging is checked on the Next harness (codebank-step.test.ts)
+  for (const file of programs(ROOT).filter((f) => !isNextOnly(readFileSync(f, "utf8")))) {
     const name = relative(ROOT, file).replace(/\\/g, "/");
     it(name, async () => {
       const source = readFileSync(file, "utf8");

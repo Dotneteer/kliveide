@@ -1,0 +1,18 @@
+' CODEBANK: a 16K window; the bank's second 8K page holds data a routine reads, so both are mapped
+'@target next
+'@codebank-window-size 16k
+'@codebank-window $A000
+'@expect screen 0 "77 8300"
+DIM r AS UByte
+CODEBANK 1
+DIM pad(8300) AS UByte
+DIM tail AS UByte = 77
+FUNCTION Tail() AS UByte
+  RETURN tail
+END FUNCTION
+FUNCTION Size() AS UInteger
+  RETURN UBOUND(pad, 1)
+END FUNCTION
+END CODEBANK
+r = Tail()
+PRINT r; " "; Size()

@@ -1,0 +1,42 @@
+' CODEBANK: bank-local data with constant initialisers, and run-time initialisers in source order
+' across banks; two banks keep private tables at the same window addresses
+'@target next
+'@expect screen 0 "bank2"
+'@expect screen 1 "1265 123"
+'@expect screen 2 "100 200"
+DIM order(4) AS UByte
+DIM n AS UByte
+DIM r AS UInteger
+FUNCTION Mark(v AS UByte) AS UByte
+  order(n) = v
+  n = n + 1
+  RETURN v
+END FUNCTION
+CODEBANK 1
+DIM k AS UInteger = 1234
+DIM t(3) AS UByte => {10, 20, 30, 40}
+DIM m AS UByte = Mark(1)
+DIM one AS UInteger = 100
+SUB Show()
+  r = k + t(2) + m
+END SUB
+FUNCTION First() AS UInteger
+  RETURN one
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+DIM two AS UInteger = 200
+DIM q AS UByte = Mark(2)
+DIM s$ = "bank"
+SUB Show2()
+  PRINT s$; q
+END SUB
+FUNCTION Second() AS UInteger
+  RETURN two
+END FUNCTION
+END CODEBANK
+DIM z AS UByte = Mark(3)
+Show2
+Show
+PRINT r; " "; order(0); order(1); order(2)
+PRINT First(); " "; Second()

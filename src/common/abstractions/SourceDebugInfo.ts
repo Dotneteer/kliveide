@@ -47,6 +47,12 @@ export type VariableDebugInfo = {
   /** A global, or a SUB/FUNCTION's parameter or local (visible while its activation is selected). */
   scope: "global" | { callableIndex: number };
   declaredAt: { fileIndex: number; line: number; column: number };
+  /**
+   * CODEBANK: the logical bank of bank-local data. Its descriptor (and an array's data and tables)
+   * lives in the bank's page(s) at the window's addresses, so it is read through the bank's pages
+   * (`codebank.banks`), not through whatever the window holds now.
+   */
+  bank?: number;
 };
 
 /** A call of a user routine, a GOSUB or an ON ... GOSUB dispatch: one Z80 `call` (guarantee G5). */
@@ -88,6 +94,8 @@ export type CallableFrameInfo = {
   epilogueStart: number;
   /** One past the callable's last code byte. */
   endAddress: number;
+  /** CODEBANK: the 8K page the callable's code lives in (its addresses are the window's); undefined for resident code. */
+  partition?: number;
   /** FUNCTIONs only: how the result is returned (A, HL, DE:HL, A-E-D-C-B, a String pointer in HL). */
   returnType?: SourceValueType;
   /** Library code (not the user's source): stepping runs through it, like the runtime. */
@@ -109,7 +117,32 @@ export type SourceDebugExtensions = {
   runtimeSymbols: { name: string; address: number }[];
   /** The runtime's error routine (§10.10): a debug run can stop here with the BASIC error. */
   errorEntry?: number;
+  /** CODEBANK (plan §9.4): where banked code runs and the far-call runtime's state, for the frame locator. */
+  codebank?: CodebankDebugInfo;
   optimizationLevel: number;
+};
+
+/**
+ * The far-call runtime as the debugger sees it (plan §9.2, §9.4). Banked code runs at the window's
+ * addresses, so an address there means nothing without its 8K page. On a cross-bank call the callee's
+ * return slot holds `farReturn`; the real return address and the caller's bank are in the shadow
+ * stack, one 3-byte record `{previous bank, return address}` per cross-bank call still running, the
+ * newest just below the word at `shadowStackPointer`.
+ */
+export type CodebankDebugInfo = {
+  /** The window's first address and its size in bytes (8K or 16K). */
+  window: number;
+  windowSize: number;
+  /** The far-call entry every trampoline calls, and the far return a cross-bank callee returns to. */
+  farCall: number;
+  farReturn: number;
+  /** The byte holding the current logical bank (0: resident, the window as the loader left it). */
+  currentBank: number;
+  /** The word holding the shadow stack's top, and the shadow stack's first byte. */
+  shadowStackPointer: number;
+  shadowStack: number;
+  /** Each logical bank's 8K pages, in window order (two for a 16K window). */
+  banks: { bank: number; pages: number[] }[];
 };
 
 /** The registers a FUNCTION result is decoded from at a return point (§10.2.6). */

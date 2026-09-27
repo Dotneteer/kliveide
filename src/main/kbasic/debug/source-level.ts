@@ -9,6 +9,7 @@ import type {
 import type {
   CallableFrameInfo,
   CallSiteDebugInfo,
+  CodebankDebugInfo,
   SourceValueType,
   VariableDebugInfo,
   VariableDebugLocation
@@ -47,6 +48,9 @@ export type SourceLevelInput = {
   globals: Scope;
   isLibraryFile: (fileIndex: number) => boolean;
   optimizationLevel: number;
+  /** CODEBANK: the 8K page a list item's code lives in (undefined: resident), and the far-call runtime. */
+  partitionOf?: (item: ListFileItem) => number | undefined;
+  codebank?: CodebankDebugInfo;
 };
 
 export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo {
@@ -106,7 +110,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
   const sidToIndex = new Map<number, number>();
   const rows = input.addresses
     .filter((a) => !a.elided && debuggableStatement(a.sid))
-    .sort((x, y) => x.start - y.start)
+    .sort((x, y) => x.start - y.start || (x.partition ?? -1) - (y.partition ?? -1))
     .map((a, index) => {
       sidToIndex.set(a.sid, index);
       return { a, index };
@@ -123,8 +127,10 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     if (!item || !caller) return;
     const calleeIndex = site.callee !== undefined && (site.kind === "sub" || site.kind === "function") ? calleeByName.get(site.callee) : undefined;
     const statementIndex = sidToIndex.get(info.sid) ?? -1;
+    const partition = input.partitionOf?.(item);
     callSites.push({
       returnAddress: item.address + (item.codeLength ?? 0),
+      ...(partition !== undefined ? { partition } : {}),
       statementIndex,
       callerIndex: callableOf.get(caller.functionIndex) ?? 0,
       kind: site.kind,
@@ -153,6 +159,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       endColumn: end.column,
       startAddress: a.start,
       endAddress: a.end,
+      ...(a.partition !== undefined ? { partition: a.partition } : {}),
       kind: s.kind,
       callableIndex: callableOf.get(s.functionIndex) ?? 0,
       ...(targets ? { callTargets: targets } : {})
@@ -196,10 +203,13 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       endLine = end.line;
     }
     const kind: CallableKind = fn.kind === "main" ? "entrypoint" : fn.kind === "function" ? "function" : "subroutine";
+    const partition = items[0] ? input.partitionOf?.(items[0]) : undefined;
+    const inPartition = partition !== undefined ? { partition } : {};
     callables.push({
       index,
       name: fn.name,
       kind,
+      ...inPartition,
       fileIndex: fileIdx,
       startLine,
       endLine,
@@ -216,23 +226,39 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       bodyStart,
       epilogueStart,
       endAddress,
+      ...inPartition,
       ...(fn.returnType ? { returnType: valueTypeOfMType(fn.returnType) } : {}),
       ...(library ? { library: true } : {})
     });
   });
 
-  // --- Every code byte: the statements' ranges, everything else runtime or glue (-1)
-  const addressToStatement: [number, number][] = [];
-  const push = (address: number, index: number) => {
-    const last = addressToStatement[addressToStatement.length - 1];
-    if (last && last[0] === address) last[1] = index;
-    else if (!last || last[1] !== index) addressToStatement.push([address, index]);
+  // --- Every code byte: the statements' ranges, everything else runtime or glue (-1). Resident code
+  // --- in addressToStatement, each CODEBANK page's in its own map (banks share the window's addresses)
+  const addressMap = (list: StatementDebugInfo[]) => {
+    const map: [number, number][] = [];
+    const push = (address: number, index: number) => {
+      const last = map[map.length - 1];
+      if (last && last[0] === address) last[1] = index;
+      else if (!last || last[1] !== index) map.push([address, index]);
+    };
+    push(0, -1);
+    for (const s of list) {
+      push(s.startAddress, s.index);
+      push(s.endAddress, -1);
+    }
+    return map;
   };
-  push(0, -1);
-  for (const s of statements) {
-    push(s.startAddress, s.index);
-    push(s.endAddress, -1);
-  }
+  const addressToStatement = addressMap(statements.filter((s) => s.partition === undefined));
+  const partitions = [...new Set(statements.flatMap((s) => (s.partition !== undefined ? [s.partition] : [])))].sort((a, b) => a - b);
+  const banking = partitions.length
+    ? {
+        usesBanking: true,
+        partitionedAddressMap: partitions.map((partition) => ({
+          partition,
+          addressToStatement: addressMap(statements.filter((s) => s.partition === partition))
+        }))
+      }
+    : {};
 
   const variables = buildVariables(input, functions, at);
   const errorEntry = input.symbol("core.RaiseError");
@@ -250,6 +276,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
     statements,
     callables,
     addressToStatement,
+    ...banking,
     extensions: {
       variables,
       callSites,
@@ -259,6 +286,7 @@ export function buildSourceLevel(input: SourceLevelInput): SourceLevelDebugInfo 
       libraryFiles: files.flatMap((name, index) => (isLibraryPath(name) ? [index] : [])),
       runtimeSymbols: input.runtimeSymbols,
       ...(errorEntry !== undefined ? { errorEntry } : {}),
+      ...(input.codebank ? { codebank: input.codebank } : {}),
       optimizationLevel: input.optimizationLevel
     }
   };
@@ -309,10 +337,11 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
       displayName: displayName(symbol),
       type: valueTypeOf(symbol.kind === "array" ? symbol.elementType : symbol.type),
       kind: "global",
-      location: { at: "absolute", address },
+      location: { at: "absolute", address, ...bankPartition(input.codebank, symbol.bank, address) },
       ...(symbol.kind === "array" ? { array: arrayInfo(symbol) } : {}),
       scope: "global",
-      declaredAt: declaredAt(symbol.span)
+      declaredAt: declaredAt(symbol.span),
+      ...(symbol.bank ? { bank: symbol.bank } : {})
     });
   }
 
@@ -334,6 +363,14 @@ function buildVariables(input: SourceLevelInput, functions: { fn: MFunction }[],
     }
   });
   return out;
+}
+
+/** CODEBANK: the 8K page holding a bank-local variable's first byte (`{}` for resident data). */
+function bankPartition(codebank: CodebankDebugInfo | undefined, bank: number | undefined, address: number): { partition?: number } {
+  const pages = bank ? codebank?.banks.find((b) => b.bank === bank)?.pages : undefined;
+  const offset = codebank ? address - codebank.window : -1;
+  if (!pages || !codebank || offset < 0 || offset >= codebank.windowSize) return {};
+  return { partition: pages[offset >> 13] };
 }
 
 function globalAddress(input: SourceLevelInput, symbol: VariableSymbol | ArraySymbol): number | undefined {

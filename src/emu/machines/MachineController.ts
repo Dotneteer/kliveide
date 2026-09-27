@@ -443,6 +443,8 @@ export class MachineController implements IMachineController {
       sp: m.sp,
       ix: cpu.ix,
       readWord: (a: number) => readByte(a) | (readByte(a + 1) << 8),
+      readByte,
+      partitionOf: (a: number) => m.getPartition?.(a & 0xffff),
       interruptDepth: cpu.getInterruptDepth?.() ?? 0
     };
   }
@@ -488,7 +490,7 @@ export class MachineController implements IMachineController {
       return {
         kind: step.stoppedAt,
         pc,
-        statementIndex: step.stopStatement ?? index.statementAt(pc),
+        statementIndex: step.stopStatement ?? index.statementAt(pc, index.partitionNow(this.machineView(), pc)),
         ...(from?.kind === "routine" ? { returnedFrom: from.callableIndex } : {}),
         ...(from?.kind === "gosub" ? { returnedFromGosub: true } : {}),
         returned: step.returned
@@ -505,7 +507,7 @@ export class MachineController implements IMachineController {
         returned: step?.returned ?? []
       };
     }
-    const statementIndex = index.statementAt(pc);
+    const statementIndex = index.statementAt(pc, index.partitionNow(this.machineView(), pc));
     return {
       kind: "other",
       pc,

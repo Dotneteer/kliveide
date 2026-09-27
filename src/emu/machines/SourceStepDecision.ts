@@ -1,5 +1,11 @@
 import type { CallableDebugInfo, SourceLevelDebugInfo, StatementDebugInfo } from "@abstractions/CompilerInfo";
-import type { CallableFrameInfo, CallSiteDebugInfo, SourceActivationInfo, SourceReturnRegisters } from "@abstractions/SourceDebugInfo";
+import type {
+  CallableFrameInfo,
+  CallSiteDebugInfo,
+  CodebankDebugInfo,
+  SourceActivationInfo,
+  SourceReturnRegisters
+} from "@abstractions/SourceDebugInfo";
 
 /**
  * Source-level stepping (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §10.2, §10.3): steps one statement
@@ -18,6 +24,13 @@ import type { CallableFrameInfo, CallSiteDebugInfo, SourceActivationInfo, Source
  *
  * **Cheap per instruction.** Most instructions are neither a statement entry nor a call's return
  * address, and for those the decision is two map lookups; SP is read only when one matches.
+ *
+ * **Banked code** (CODEBANK, plan §9.4, §10.4). Banks share the window's addresses, so there an
+ * address names code only together with its partition (the 8K page). The index keys everything in
+ * a banked 8K slot by `(partition, address)` and everything else by address, so a program without
+ * banked code pays nothing; PC's partition is read only when PC is in a banked slot. On the stack, a
+ * cross-bank callee's return slot holds the far-return entry; the frame locator takes the real
+ * return address and the caller's bank from the far-call runtime's shadow stack.
  */
 
 // =================================================================================================
@@ -47,11 +60,17 @@ export class SourceDebugIndex {
   readonly frames: CallableFrameInfo[];
   readonly mainIndex: number;
   readonly mainBaselineSymbol: number;
+  /** CODEBANK: the window and the far-call runtime (undefined without banked code). */
+  readonly codebank?: CodebankDebugInfo;
   private readonly entries = new Map<number, number>();
   private readonly returnSites = new Map<number, CallSiteDebugInfo>();
   private readonly mapStarts: number[];
   private readonly mapStatements: number[];
-  private readonly callableRanges: { start: number; end: number; index: number }[];
+  /** Per partition: the banked code's address map (starts and statements). */
+  private readonly bankedMaps = new Map<number, { starts: number[]; statements: number[] }>();
+  private readonly callableRanges: { start: number; end: number; index: number; partition?: number }[];
+  /** The 8K slots (address >> 13) that hold banked code: there an address needs its partition. */
+  private readonly bankedSlots = new Uint8Array(8);
 
   /**
    * `justMyCode` (plan §10.12, the default): the standard library's statements are not statements
@@ -74,50 +93,97 @@ export class SourceDebugIndex {
       info.callables.findIndex((c) => c.kind === "entrypoint")
     );
     this.mainBaselineSymbol = ext?.mainBaselineSymbol ?? 0;
+    // --- The banked slots: the CODEBANK window, and any 8K slot a partitioned statement starts in
+    this.codebank = ext?.codebank;
+    const cb = this.codebank;
+    if (cb) for (let a = cb.window; a < cb.window + cb.windowSize; a += 0x2000) this.bankedSlots[(a >> 13) & 7] = 1;
+    for (const s of info.statements) if (s.partition !== undefined) this.bankedSlots[(s.startAddress >> 13) & 7] = 1;
+
     for (const s of info.statements) {
-      if (s.endAddress > s.startAddress && !hidden(s.index)) this.entries.set(s.startAddress, s.index);
+      if (s.endAddress > s.startAddress && !hidden(s.index)) this.entries.set(this.key(s.startAddress, s.partition), s.index);
     }
     for (const site of ext?.callSites ?? []) {
-      this.returnSites.set(site.returnAddress, hidden(site.statementIndex) ? { ...site, statementIndex: -1 } : site);
+      this.returnSites.set(this.key(site.returnAddress, site.partition), hidden(site.statementIndex) ? { ...site, statementIndex: -1 } : site);
     }
     this.mapStarts = info.addressToStatement.map(([a]) => a);
     this.mapStatements = info.addressToStatement.map(([, s]) => (hidden(s) ? -1 : s));
+    for (const p of info.partitionedAddressMap ?? []) {
+      this.bankedMaps.set(p.partition, {
+        starts: p.addressToStatement.map(([a]) => a),
+        statements: p.addressToStatement.map(([, s]) => (hidden(s) ? -1 : s))
+      });
+    }
     this.callableRanges = this.frames
-      .map((f) => ({ start: f.startAddress, end: f.endAddress, index: f.callableIndex }))
+      .map((f) => ({ start: f.startAddress, end: f.endAddress, index: f.callableIndex, ...(f.partition !== undefined ? { partition: f.partition } : {}) }))
       .sort((a, b) => a.start - b.start);
   }
 
-  /** The statement whose entry is `address`, or -1. */
-  entryAt(address: number): number {
-    return this.entries.get(address) ?? -1;
+  /** Whether `address` is in an 8K slot that holds banked code: there it names code only with its partition. */
+  isBanked(address: number): boolean {
+    return this.bankedSlots[(address >> 13) & 7] === 1;
   }
 
-  /** The call site whose return address is `address`, if any. */
-  returnSiteAt(address: number): CallSiteDebugInfo | undefined {
-    return this.returnSites.get(address);
+  /**
+   * The map key of an address: the address itself outside the banked slots; inside them the address
+   * qualified by its partition (-1, which nothing has, when the partition is unknown).
+   */
+  private key(address: number, partition: number | undefined): number {
+    if (!this.isBanked(address)) return address;
+    return partition === undefined ? -1 : (partition + 1) * 0x10000 + address;
   }
 
-  /** The statement whose code holds `address`, or -1 (runtime, glue). */
-  statementAt(address: number): number {
+  /** The statement whose entry is `address` (in `partition`, for banked code), or -1. */
+  entryAt(address: number, partition?: number): number {
+    return this.entries.get(this.key(address, partition)) ?? -1;
+  }
+
+  /** The call site whose return address is `address` (in `partition`, for banked code), if any. */
+  returnSiteAt(address: number, partition?: number): CallSiteDebugInfo | undefined {
+    return this.returnSites.get(this.key(address, partition));
+  }
+
+  /** The statement whose code holds `address` (in `partition`, for banked code), or -1 (runtime, glue). */
+  statementAt(address: number, partition?: number): number {
+    let starts = this.mapStarts;
+    let statements = this.mapStatements;
+    if (this.isBanked(address)) {
+      const banked = partition === undefined ? undefined : this.bankedMaps.get(partition);
+      if (!banked) return -1;
+      starts = banked.starts;
+      statements = banked.statements;
+    }
     let lo = 0;
-    let hi = this.mapStarts.length - 1;
+    let hi = starts.length - 1;
     let found = -1;
     while (lo <= hi) {
       const mid = (lo + hi) >> 1;
-      if (this.mapStarts[mid] <= address) {
+      if (starts[mid] <= address) {
         found = mid;
         lo = mid + 1;
       } else hi = mid - 1;
     }
-    return found < 0 ? -1 : this.mapStatements[found];
+    return found < 0 ? -1 : statements[found];
   }
 
-  /** The callable whose code (prologue and epilogue included) holds `address`, if any. */
-  callableAt(address: number): number | undefined {
+  /** The callable whose code (prologue and epilogue included) holds `address` (in `partition`, for banked code), if any. */
+  callableAt(address: number, partition?: number): number | undefined {
+    const banked = this.isBanked(address);
     for (const r of this.callableRanges) {
-      if (address >= r.start && address < r.end) return r.index;
+      if (address >= r.start && address < r.end && (!banked || r.partition === partition)) return r.index;
     }
     return undefined;
+  }
+
+  /** The partition of `address` in a machine's current paging, read only for a banked slot. */
+  partitionNow(m: Pick<MachineView, "partitionOf">, address: number): number | undefined {
+    return this.isBanked(address) ? m.partitionOf?.(address) : undefined;
+  }
+
+  /** CODEBANK: the 8K page holding `address` while logical bank `bank` is in the window (undefined outside it, or for bank 0). */
+  bankPartition(bank: number, address: number): number | undefined {
+    const cb = this.codebank;
+    if (!cb || address < cb.window || address >= cb.window + cb.windowSize) return undefined;
+    return cb.banks.find((b) => b.bank === bank)?.pages[(address - cb.window) >> 13];
   }
 
   /** The main program's baseline SP, as the running program's prologue stored it. */
@@ -135,6 +201,44 @@ export class SourceDebugIndex {
  */
 export type Activation = SourceActivationInfo;
 
+/** A return address read from the stack, with the partition of the code it returns into. */
+export type StackReturn = { address: number; partition?: number };
+
+/**
+ * Reads return addresses from the stack as the code that pushed them meant them (plan §9.4). Below
+ * the first cross-bank return slot, a banked address is in the bank the window holds now; a slot
+ * holding the far-return entry stands for the real return address and the caller's bank, from the
+ * shadow stack (the k-th such slot above SP is the k-th record below its top); above that slot,
+ * banked addresses are in the caller's bank, until the next far-return slot.
+ *
+ * Built once per question: it scans the stack between SP and `limit` for far-return slots. A stray
+ * stack word that equals the far-return entry (a local holding that number) would shift the
+ * pairing; the runtime keeps nothing of its own on the Z80 stack, so only user data can.
+ */
+export function stackReader(index: SourceDebugIndex, m: MachineView, limit: number): (slot: number) => StackReturn {
+  const cb = index.codebank;
+  const far: { slot: number; ret: number; bank: number }[] = [];
+  if (cb && m.readByte) {
+    let record = m.readWord(cb.shadowStackPointer);
+    for (let p = m.sp; p < limit && record - 3 >= cb.shadowStack; p += 2) {
+      if (m.readWord(p) !== cb.farReturn) continue;
+      record -= 3;
+      far.push({ slot: p, bank: m.readByte(record), ret: m.readWord(record + 1) });
+    }
+  }
+  return (slot: number) => {
+    let bank: number | undefined;
+    for (const f of far) {
+      if (f.slot === slot) return { address: f.ret, partition: index.bankPartition(f.bank, f.ret) };
+      if (f.slot < slot) bank = f.bank;
+      else break;
+    }
+    const address = m.readWord(slot);
+    if (!index.isBanked(address)) return { address };
+    return { address, partition: bank === undefined ? m.partitionOf?.(address) : index.bankPartition(bank, address) };
+  };
+}
+
 /**
  * The activation chain, innermost first and the main program last. Works from anywhere: a statement
  * entry, the middle of a statement, a prologue, the runtime. Method (§10.2.2): the innermost
@@ -147,7 +251,11 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   const out: Activation[] = [];
   const main = index.mainIndex;
   const mainBaseline = index.mainBaseline(m);
-  const siteAt = (address: number) => index.returnSiteAt(m.readWord(address));
+  const read = stackReader(index, m, mainBaseline);
+  const siteAt = (slot: number) => {
+    const r = read(slot);
+    return index.returnSiteAt(r.address, r.partition);
+  };
   const isRoutineSite = (site: CallSiteDebugInfo | undefined, callee?: number) =>
     !!site &&
     (site.kind === "sub" || site.kind === "function") &&
@@ -156,7 +264,7 @@ export function locateActivations(index: SourceDebugIndex, m: MachineView): Acti
   const inStack = (address: number) => address >= m.sp && address < mainBaseline;
 
   // --- The innermost callable, and its frame pointer when its frame is certainly up
-  let callable = index.callableAt(m.pc);
+  let callable = index.callableAt(m.pc, index.partitionNow(m, m.pc));
   let ix: number | undefined;
   if (callable !== undefined && callable !== main) {
     const f = index.frames[callable];
@@ -221,13 +329,14 @@ export class CurrentStatementTracker {
 
   constructor(private readonly index: SourceDebugIndex) {}
 
-  observe(pc: number): void {
-    const entry = this.index.entryAt(pc);
+  observe(pc: number, getPartition?: (address: number) => number | undefined): void {
+    const partition = this.index.isBanked(pc) ? getPartition?.(pc) : undefined;
+    const entry = this.index.entryAt(pc, partition);
     if (entry >= 0) {
       this.current = entry;
       return;
     }
-    const site = this.index.returnSiteAt(pc);
+    const site = this.index.returnSiteAt(pc, partition);
     if (site && site.statementIndex >= 0) this.current = site.statementIndex;
   }
 }
@@ -275,13 +384,14 @@ export function basicErrorReport(code: number): string {
  * return address of the statement's call into the runtime. -1 when there is none.
  */
 export function innermostUserStatement(index: SourceDebugIndex, m: MachineView): number {
-  const here = index.statementAt(m.pc);
+  const here = index.statementAt(m.pc, index.partitionNow(m, m.pc));
   if (here >= 0) return here;
   const limit = index.mainBaseline(m);
+  const read = stackReader(index, m, limit);
   for (let p = m.sp, n = 0; p < limit && n < 256; p += 2, n++) {
-    const w = m.readWord(p);
-    const s = index.statementAt(w);
-    if (s >= 0 && w > index.statements[s].startAddress) return s;
+    const w = read(p);
+    const s = index.statementAt(w.address, w.partition);
+    if (s >= 0 && w.address > index.statements[s].startAddress) return s;
   }
   return -1;
 }
@@ -357,12 +467,13 @@ export function beginSourceStep(
 ): SourceStep {
   const chain = locateActivations(index, m);
   const { previous } = options;
+  const partition = index.partitionNow(m, m.pc);
   const stopAtStart =
     previous?.stoppedAt === "returnPoint" &&
     previous.stopPc === m.pc &&
-    index.entryAt(m.pc) >= 0 &&
+    index.entryAt(m.pc, partition) >= 0 &&
     (kind === "into" || kind === "over" || kind === "overLine");
-  const statement = index.statementAt(m.pc);
+  const statement = index.statementAt(m.pc, partition);
   const s = statement >= 0 ? index.statements[statement] : undefined;
   const lineFirstStatement = s
     ? (index.statements.find((x) => x.fileIndex === s.fileIndex && x.startLine === s.startLine && x.callableIndex === s.callableIndex)?.index ?? s.index)
@@ -397,6 +508,8 @@ export type SourceStepInput = {
   getRegisters?: () => ReturnRegisters;
   /** How many interrupt handlers are running (§10.2.7). */
   getInterruptDepth?: () => number;
+  /** The partition an address is in now: asked only for PC in a banked slot (CODEBANK). */
+  getPartition?: (address: number) => number | undefined;
 };
 
 /**
@@ -406,17 +519,19 @@ export type SourceStepInput = {
  */
 export function shouldStopAtSourceStep(step: SourceStep, input: SourceStepInput): boolean {
   const { index } = step;
-  const entry = index.entryAt(input.pc);
+  const partition = index.isBanked(input.pc) ? input.getPartition?.(input.pc) : undefined;
+  const entry = index.entryAt(input.pc, partition);
   if (input.instructionsExecuted === 0) {
     return step.stopAtStart === true && entry >= 0 ? stop(step, "statement", input.pc, entry) : false;
   }
-  const site = index.returnSiteAt(input.pc);
+  const site = index.returnSiteAt(input.pc, partition);
   if (entry < 0 && !site) return false;
   // --- An interrupt handler runs outside the step: its statements and returns are not the step's
   if (!step.stopInInterrupts && (input.getInterruptDepth?.() ?? 0) > step.baseInterruptDepth) return false;
   const sp = input.getSp();
   // --- A return point shows the calling statement (PC may already be the next one's entry)
-  const returnPoint = () => stop(step, "returnPoint", input.pc, site && site.statementIndex >= 0 ? site.statementIndex : index.statementAt(input.pc));
+  const returnPoint = () =>
+    stop(step, "returnPoint", input.pc, site && site.statementIndex >= 0 ? site.statementIndex : index.statementAt(input.pc, partition));
 
   // --- Activations that have returned: SP is above their return slot, and PC is back in user code
   // --- (the return address of the call that made them)
@@ -434,7 +549,7 @@ export function shouldStopAtSourceStep(step: SourceStep, input: SourceStepInput)
     if (returned) {
       // --- Back in code with no statement of its own (library code under Just My Code): not a
       // --- place to stop; Step Out goes on to the activation that code returns to
-      if (site.statementIndex < 0 && index.statementAt(input.pc) < 0) {
+      if (site.statementIndex < 0 && index.statementAt(input.pc, partition) < 0) {
         if ((step.kind === "out" || step.kind === "runToFrame") && step.level >= step.targetLevel) step.targetLevel = step.level + 1;
         return false;
       }

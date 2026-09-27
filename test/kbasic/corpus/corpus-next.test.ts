@@ -12,7 +12,8 @@ import { programs, readExpectations, reportChar } from "./expectations";
  * runs on the Next harness and meets the same screen, memory and error expectations as on the 48K.
  * The runtime is the same; what differs is the Next's own ROM paging, the NEX layout and the
  * machine. Programs that hold keys run only on the 48K (the Next's keyboard is scanned differently
- * from the harness's held keys).
+ * from the harness's held keys). Programs whose header says `'@target next` (CODEBANK, `codebank/`)
+ * run only here; after a CODEBANK program the far-call runtime must be back where it started.
  */
 const ROOT = __dirname;
 
@@ -29,6 +30,14 @@ describe("Klive BASIC corpus on the ZX Spectrum Next", () => {
         ...(error ? { expectEnd: false } : {}),
         ...(frames ? { frames: frames.count } : error ? { frames: 100 } : {})
       });
+      expect(r.generated.debug.problems, "the debug-info validator").toEqual([]);
+      // --- CODEBANK: control is back in resident code, so the far-call runtime is back where it started
+      const codebank = r.generated.debug.sourceLevel.extensions?.codebank;
+      if (codebank && !error) {
+        expect(r.session.peek(codebank.currentBank), "the current bank").toBe(0);
+        expect(r.session.peekWord(codebank.shadowStackPointer), "the shadow stack").toBe(codebank.shadowStack);
+        expect(r.session.mmuPage(codebank.window >> 13), "the window's page").toBe(r.session.peek(r.program.symbol("core.FarPages")));
+      }
       for (const e of expectations) {
         switch (e.kind) {
           case "screen":

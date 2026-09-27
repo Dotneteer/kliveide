@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { runBasic, type Run } from "../codegen/run-kit";
 
-import { oracleDifferences, programs, readExpectations, reportChar, type OracleResult } from "./expectations";
+import { isNextOnly, oracleDifferences, programs, readExpectations, reportChar, type OracleResult } from "./expectations";
 
 /**
  * The Klive BASIC test corpus (plan R10): every `<area>/<name>.zxbas` below this folder is compiled,
@@ -80,7 +80,8 @@ function g4Problems(r: Run): string[] {
   return problems;
 }
 
-const files = programs(ROOT);
+/** Programs for the 48K: those whose header asks for the Next run in `corpus-next.test.ts` only. */
+const files = programs(ROOT).filter((file) => !isNextOnly(readFileSync(file, "utf8")));
 
 describe("Klive BASIC corpus", () => {
   it("has the Phase 4 programs (60 from Phase 3, and 90 more)", () => {

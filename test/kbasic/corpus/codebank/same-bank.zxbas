@@ -1,0 +1,22 @@
+' CODEBANK: calls within one bank take the fast path; #pragma codebank places routines like a block
+'@target next
+'@expect screen 0 "7 42 8"
+DIM r AS UInteger
+CODEBANK 1
+FUNCTION Inc(n AS UInteger) AS UInteger
+  RETURN n + 1
+END FUNCTION
+SUB Twice()
+  r = Inc(Inc(5))
+END SUB
+END CODEBANK
+#pragma codebank = 2
+FUNCTION Double(n AS UInteger) AS UInteger
+  RETURN n * 2
+END FUNCTION
+FUNCTION Both(n AS UInteger) AS UInteger
+  RETURN Double(n) - Inc(n) + 1
+END FUNCTION
+#pragma codebank = 0
+Twice
+PRINT r; " "; Double(21); " "; Both(8)

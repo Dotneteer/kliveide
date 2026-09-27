@@ -1,4 +1,7 @@
-import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { ListFileItem, SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { CodebankDebugInfo } from "@abstractions/SourceDebugInfo";
+import { MI_ZXNEXT } from "@common/machines/constants";
+import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition";
 import type { AssemblerOptions as AssemblerOptionsType } from "@main/compiler-common/assembler-in-out";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { ExpressionValue } from "@main/compiler-common/expressions";
@@ -144,13 +147,18 @@ export async function generateProgram(
     }
   }
 
+  // --- CODEBANK: banked code shares the window's addresses, so its tables carry the 8K page
+  const partitionOf = banking
+    ? (item: ListFileItem) => resolvedPartitionFor(output.segments[item.segmentIndex ?? -1], item.address, MI_ZXNEXT)
+    : undefined;
   const debug = buildDebugInfo({
     statements: mir.statements,
     lines: emitted.lines,
     text: emitted.text.split("\n"),
     listFileItems: output.listFileItems,
     programFileIndex: 0,
-    sources
+    sources,
+    ...(partitionOf ? { partitionOf } : {})
   });
   // --- An assembler symbol's address: a dotted runtime name (`core.X`) is in the core module
   const symbol = (name: string): number | undefined => {
@@ -176,7 +184,8 @@ export async function generateProgram(
     runtimeSymbols,
     globals: bound.globals,
     isLibraryFile: (file) => isLibraryPath(sources.get(file).name),
-    optimizationLevel: options.optimize
+    optimizationLevel: options.optimize,
+    ...(partitionOf && banking ? { partitionOf, codebank: codebankDebugInfo(banking, options, symbol) } : {})
   });
   return { mir, emitted, output, debug: { ...debug, sourceLevel }, entryAddress: symbol("__kbasic_start") ?? options.origin };
 }
@@ -266,6 +275,24 @@ function planBanks(banks: number[], options: KBasicOptions): BankPlan | string {
   return {
     placement: new Map(banks.map((bank) => [bank, { page: pageOf(bank), address: window, pages: slots }])),
     layout: { slot: window >> 13, slots, depth: options.codebankDepth, pages }
+  };
+}
+
+/** The far-call runtime as the debugger needs it (plan §9.4): the window, the runtime's state, the pages. */
+function codebankDebugInfo(banking: BankPlan, options: KBasicOptions, symbol: (name: string) => number | undefined): CodebankDebugInfo {
+  const at = (name: string) => symbol(`core.${name}`) ?? 0;
+  return {
+    window: options.codebankWindow,
+    windowSize: banking.layout.slots * 0x2000,
+    farCall: at("FarCall"),
+    farReturn: at("FarReturn"),
+    currentBank: at("FarBank"),
+    shadowStackPointer: at("FarSP"),
+    shadowStack: at("FarStack"),
+    banks: [...banking.placement].map(([bank, place]) => ({
+      bank,
+      pages: Array.from({ length: place.pages }, (_, i) => place.page + i)
+    }))
   };
 }
 

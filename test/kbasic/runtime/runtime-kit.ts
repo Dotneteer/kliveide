@@ -25,6 +25,8 @@ export type RuntimeProgramOptions = {
   /** Compiler-defined symbols (`KB_CHECK_MEMORY`, ...). */
   defines?: string[];
   layout?: RuntimeLayout;
+  /** Assemble for the ZX Spectrum Next (Z80N instructions allowed) instead of the 48K. */
+  next?: boolean;
 };
 
 /** The registers a runtime call takes and gives back. */
@@ -50,12 +52,12 @@ const AS_RUNNING_LINE = ["AsRunningLine:", "    ld hl,$1303", "    push hl", "  
 
 export async function assembleRuntimeProgram(options: RuntimeProgramOptions) {
   const assemblerOptions = new AssemblerOptions();
-  assemblerOptions.currentModel = SpectrumModelType.Spectrum48;
+  assemblerOptions.currentModel = options.next ? SpectrumModelType.Next : SpectrumModelType.Spectrum48;
   for (const d of options.defines ?? []) assemblerOptions.predefinedSymbols[d] = new ExpressionValue(true);
 
   const modules = resolveRuntimeModules(options.uses, ["program"]);
   const source = [
-    "    .model Spectrum48",
+    `    .model ${options.next ? "Next" : "Spectrum48"}`,
     "    .org $8000",
     "Main:",
     prologueSource(runtimeInitialisers(modules)),

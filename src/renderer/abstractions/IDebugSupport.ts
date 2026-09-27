@@ -127,7 +127,7 @@ export interface IDebugSupport {
   romErrorGuard?: () => boolean;
 
   /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
-  statementTracker?: { observe(pc: number): void; current: number };
+  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
 
   /**
    * Erases all breakpoints

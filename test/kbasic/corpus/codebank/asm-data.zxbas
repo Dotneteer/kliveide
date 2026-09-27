@@ -1,0 +1,18 @@
+' CODEBANK: a module-level ASM block puts raw data in a bank under a label, and a banked routine
+' reads it (the label names the bank's copy, at the window)
+'@target next
+'@expect screen 0 "72 105 33"
+DIM a, b, c AS UByte
+CODEBANK 1
+greeting:
+ASM
+    .defb 72, 105, 33
+END ASM
+SUB ReadIt()
+  a = PEEK(@greeting)
+  b = PEEK(@greeting + 1)
+  c = PEEK(@greeting + 2)
+END SUB
+END CODEBANK
+ReadIt
+PRINT a; " "; b; " "; c

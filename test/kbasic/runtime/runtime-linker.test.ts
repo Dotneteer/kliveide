@@ -60,18 +60,31 @@ describe("Klive BASIC runtime - linker", () => {
     expect(await cache.unit(heap, options(["KB_CHECK_MEMORY"]))).not.toBe(a);
   });
 
+  // --- banking (CODEBANK) is Next-only: it uses Z80N instructions and needs the compiler's layout
+  const classic = runtimeBundle.modules.filter((m) => m.name !== "banking");
+  const codebank = { slot: 3, slots: 1, depth: 16, pages: [0, 30, 31] };
+
   it("assembles every module together without a clash", async () => {
-    const all = runtimeBundle.modules.flatMap((m) => m.exports);
+    const all = classic.flatMap((m) => m.exports);
     const { output, modules } = await assembleRuntimeProgram({ uses: all });
-    expect(modules.length).toBe(runtimeBundle.modules.length);
+    expect(modules.length).toBe(classic.length);
     expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
   });
 
   it("assembles every module with every option symbol defined", async () => {
     const symbols = [...new Set(runtimeBundle.modules.flatMap((m) => m.symbols))];
-    const all = runtimeBundle.modules.flatMap((m) => m.exports);
+    const all = classic.flatMap((m) => m.exports);
     const { output } = await assembleRuntimeProgram({ uses: all, defines: symbols });
     expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
+  });
+
+  it("assembles every module, banking included, for the Next with a CODEBANK layout", async () => {
+    const all = runtimeBundle.modules.flatMap((m) => m.exports);
+    for (const slots of [1, 2]) {
+      const { output, modules } = await assembleRuntimeProgram({ uses: all, next: true, layout: { codebank: { ...codebank, slots } } });
+      expect(modules.length).toBe(runtimeBundle.modules.length);
+      expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
+    }
   });
 
   it("puts the heap after the program, or at a fixed address", async () => {

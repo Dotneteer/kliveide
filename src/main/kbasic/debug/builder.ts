@@ -16,6 +16,10 @@ export type StatementAddresses = {
   /** One past the end of the first run of the statement's code; `start` for an elided statement. */
   end: number;
   elided: boolean;
+  /** The assembler segment of the entry (the classic list items carry it, so breakpoints get a partition). */
+  segmentIndex?: number;
+  /** CODEBANK: the 8K page the statement's code lives in; undefined for resident code. */
+  partition?: number;
 };
 
 export type ClassicTables = {
@@ -33,6 +37,11 @@ export type DebugBuildInput = {
   listFileItems: ListFileItem[];
   programFileIndex: number;
   sources: SourceSet;
+  /**
+   * CODEBANK: the 8K page a list item's code lives in, undefined for resident code. Banks share the
+   * window's addresses, so the validator compares addresses only within one partition.
+   */
+  partitionOf?: (item: ListFileItem) => number | undefined;
 };
 
 export type DebugBuild = {
@@ -87,7 +96,15 @@ export function buildDebugInfo(input: DebugBuildInput): DebugBuild {
         end = item.address + (item.codeLength ?? 0);
       }
     }
-    addresses.push({ sid: s.sid, start: first.address, end, elided });
+    const partition = input.partitionOf?.(first);
+    addresses.push({
+      sid: s.sid,
+      start: first.address,
+      end,
+      elided,
+      ...(first.segmentIndex !== undefined ? { segmentIndex: first.segmentIndex } : {}),
+      ...(partition !== undefined ? { partition } : {})
+    });
   }
 
   validate(input, byLine, addresses, problems);
@@ -121,29 +138,37 @@ function validate(input: DebugBuildInput, byLine: Map<number, ListFileItem>, add
     }
   });
 
-  // --- Statement ranges must not overlap: every code byte belongs to one statement at most
-  const sorted = [...ranges].sort((a, b) => a.start - b.start);
+  // --- Statement ranges must not overlap: every code byte belongs to one statement at most (within
+  // --- one partition: CODEBANK banks share the window's addresses)
+  const sorted = [...ranges].sort((a, b) => (a.partition ?? -1) - (b.partition ?? -1) || a.start - b.start);
   for (let k = 1; k < sorted.length; k++) {
-    if (sorted[k].start < sorted[k - 1].end) problems.push(`G1: statements ${sorted[k - 1].sid} and ${sorted[k].sid} overlap`);
+    if (sorted[k].partition === sorted[k - 1].partition && sorted[k].start < sorted[k - 1].end) {
+      problems.push(`G1: statements ${sorted[k - 1].sid} and ${sorted[k].sid} overlap`);
+    }
   }
-  const statementAt = (address: number) => sorted.find((a) => address >= a.start && address < a.end);
+  const statementAt = (address: number, partition: number | undefined) =>
+    sorted.find((a) => a.partition === partition && address >= a.start && address < a.end);
 
   // --- G2: a branch from outside a statement lands on its entry; G5: every user call is a call site
-  const labels = new Map<string, number>();
+  const labels = new Map<string, { address: number; partition?: number }>();
   input.text.forEach((line, i) => {
     const m = LABEL_LINE.exec(line);
     const item = m ? codeAt(i + 2) : undefined;
-    if (m && item) labels.set(m[1], item.address);
+    if (m && item) labels.set(m[1], { address: item.address, partition: input.partitionOf?.(item) });
   });
   input.text.forEach((line, i) => {
     const m = BRANCH.exec(line);
     if (!m) return;
     const [, op, target] = m;
     const info = input.lines[i];
-    if (op === "call" && !target.startsWith("core.") && !info.site) problems.push(`G5: the call to ${target} at line ${i + 1} has no call-site record`);
-    const address = labels.get(target);
-    if (address === undefined) return;
-    const into = statementAt(address);
+    // --- Glue (sid -1: the NEX start stub's call of the program) is not a user call
+    if (op === "call" && info.sid >= 0 && !target.startsWith("core.") && !info.site) {
+      problems.push(`G5: the call to ${target} at line ${i + 1} has no call-site record`);
+    }
+    const label = labels.get(target);
+    if (label === undefined) return;
+    const { address } = label;
+    const into = statementAt(address, label.partition);
     if (into && into.sid !== info.sid && address !== into.start) {
       problems.push(`G2: ${op} ${target} at line ${i + 1} branches into the middle of statement ${into.sid}`);
     }
@@ -203,7 +228,9 @@ function classicTables(input: DebugBuildInput, addresses: StatementAddresses[]):
     const end = file.location(Math.max(s.span.start, s.span.end));
     const index = fileIndex(start.fileName);
     const endColumn = end.line === start.line ? end.column : undefined;
-    listFileItems.push({ fileIndex: index, address: a.start, lineNumber: start.line, segmentIndex: 0, codeLength: a.end - a.start });
+    listFileItems.push({ fileIndex: index, address: a.start, lineNumber: start.line, segmentIndex: a.segmentIndex ?? 0, codeLength: a.end - a.start });
+    // --- By address alone: banks share the window's addresses, so the IDE lets the list items (with
+    // --- their segments, hence partitions) decide which bank's line a shared address shows (§10.4)
     if (sourceMap[a.start] === undefined) {
       sourceMap[a.start] = { fileIndex: index, line: start.line, startColumn: start.column, ...(endColumn !== undefined ? { endColumn } : {}) };
     }

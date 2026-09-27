@@ -22,6 +22,17 @@ export function programs(dir: string): string[] {
     .sort();
 }
 
+/** Whether a program's header asks for the ZX Spectrum Next (`'@target next`): it runs only on the Next harness. */
+export function isNextOnly(source: string): boolean {
+  for (const line of source.split("\n")) {
+    const trimmed = line.trim();
+    if (trimmed === "") continue;
+    if (!trimmed.startsWith("'")) return false;
+    if (/^'\s*@target\s+next\b/i.test(trimmed)) return true;
+  }
+  return false;
+}
+
 const num = (text: string) => (text.startsWith("$") ? parseInt(text.slice(1), 16) : Number(text));
 
 export function readExpectations(source: string): Expectation[] {

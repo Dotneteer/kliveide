@@ -853,9 +853,19 @@ export class ZxNextWasmV2Machine
       instructionsExecuted,
       getPartition: (address) => this.getPartition(address),
       getCallInstructionLength: () => this.getCallInstructionLength(),
-      getSp: () => this.sp,
+      /*
+       * From the core, not the mirrored fields: the debug loop keeps only PC in step per instruction
+       * (the rest is synced when it exits), so `this.sp` would be the SP the run started with and a
+       * source step over a call would stop inside the callee.
+       */
+      getSp: () => this.wasmV2Runtime?.exports.zxnextGetCpuSp() ?? this.sp,
       getInterruptDepth: () => this.getInterruptDepth(),
-      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
+      getRegisters: () => {
+        const w = this.wasmV2Runtime?.exports;
+        return w
+          ? { af: w.zxnextGetCpuAf(), bc: w.zxnextGetCpuBc(), de: w.zxnextGetCpuDe(), hl: w.zxnextGetCpuHl() }
+          : { af: this.af, bc: this.bc, de: this.de, hl: this.hl };
+      },
       stepOutAddress: this.stepOutAddress,
       /*
        * `false` now that the core keeps a step-out stack: `stepOutAddress` above is the exact

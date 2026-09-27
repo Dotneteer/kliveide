@@ -74,7 +74,7 @@ export function emitProgram(input: EmitInput): EmittedProgram {
   // --- resident part
   const banks = [...(input.bankPlacement?.keys() ?? [])].sort((a, b) => a - b);
   if (banks.length) {
-    add(`${RESIDENT_END}:`, { sid: -1 });
+    add(`${RESIDENT_END} .equ $`, { sid: -1 });
     for (const bank of banks) {
       const place = input.bankPlacement!.get(bank)!;
       add(`    .page ${place.page}, ${place.address}${place.pages > 1 ? `, ${place.pages}` : ""}`, { sid: -1 });

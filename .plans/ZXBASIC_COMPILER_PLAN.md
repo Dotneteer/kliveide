@@ -44,8 +44,9 @@ Just My Code with stepping into the standard library (§10.12); the three debugg
 stack, the Variables panel and watches are checked against each other on all 159 corpus programs;
 the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). **Phase 6 in progress**
 (2026-09-27): the Next target is done (commit "Phase 6: the ZX Spectrum Next target": the whole
-corpus passes on the Next harness, a built NEX loads and runs); CODEBANK code generation is written
-but **not yet run** — see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
+corpus passes on the Next harness, a built NEX loads and runs); CODEBANK runs (11 corpus programs,
+E455–E458) and is debuggable across banks at source level (stepping, breakpoints, call stack) —
+see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -163,7 +164,8 @@ Done and committed:
   `NexFileWriter` + the harness's NEX loader), `test/kbasic/corpus/corpus-next.test.ts` (all 155
   corpus programs without held keys pass on the Next).
 
-Written, type-checked (`build:check` clean), **committed as work in progress, never run**:
+Done and committed (second session, 2026-09-27) — the CODEBANK work below, first written unrun, now
+runs and is tested:
 
 - **Assembler:** `.page N, address, count` — a count of 2 (even page, 8K-aligned address ≤ `$C000`)
   lets a segment fill both pages of a bank (a 16K window); errors Z0336/Z0337; tests appended to
@@ -200,38 +202,70 @@ Written, type-checked (`build:check` clean), **committed as work in progress, ne
 - **First test, not yet run:** `test/kbasic/codegen/codebank.test.ts` (two banks calling across
   and back; placement of the two banks in pages 30/31 = bank 15).
 
+What the second session found and did:
+
+- The WIP ran almost as written. One emitter fix: `__kbResidentEnd` is `.equ $` (a lone label line
+  attaches to the next line, and `.page` refuses a label). The Next WASM artifact must be rebuilt
+  (`npm run build:zxnext-wasm`) when it lacks `zxnextGetInterruptDepth`.
+- **E455–E458** have cases in `diagnostics.test.ts` (`CODEGEN_ERRORS`: code-generation errors
+  compiled through `compileBasic`, since the binder cannot see sizes); `core.test.ts`'s E501 case is
+  now SAVE DATA of a String array, with a separate E458 case.
+- The runtime linker test assembles `banking` only for the Next (`assembleRuntimeProgram({ next })`
+  with a CODEBANK layout, 8K and 16K); the 48K "every module" tests leave it out.
+- **Corpus:** `test/kbasic/corpus/codebank/` — 11 programs with `'@target next` (two banks, same-bank
+  fast path and `#pragma codebank`, every return type, cross-bank mutual recursion with a six-argument
+  frame, bank-local data and initialiser order across banks, private data at shared window
+  addresses, Strings and a bank-local String array, FARPTR, a 16K window, a page list, six banks of
+  6K data, module-level ASM data). `isNextOnly` (expectations.ts) keeps them out of the 48K runner and
+  the 48K debugger runner; `corpus-next.test.ts` now also checks the debug-info validator and, for
+  CODEBANK programs, that the current bank is 0, the shadow stack empty and the window back on its
+  boot page.
+- **Debug info across banks (§8.4, §9.4):** the builder records each statement's segment and 8K page
+  (`partitionOf` from `resolvedPartitionFor`); the validator compares addresses within a partition;
+  G5 ignores glue calls (sid −1, the NEX stub's `call __kbasic_start`). The classic list items carry
+  their real `segmentIndex`, so IDE breakpoints in banks get partitions. Source-level: `partition` on
+  statements, callables, frames and call sites; resident statements in `addressToStatement`, banked
+  ones in `partitionedAddressMap` with `usesBanking`; bank-local globals have `bank` and
+  `location.partition`; new extension `codebank` (`CodebankDebugInfo` in `SourceDebugInfo.ts`:
+  window, size, `farCall`/`farReturn`, `currentBank`/`shadowStackPointer`/`shadowStack` addresses,
+  banks → pages).
+- **The emulator side:** `SourceDebugIndex` keys lookups in banked 8K slots by (partition, address)
+  (`isBanked`, `partitionNow`, `bankPartition`); PC's partition is read only in a banked slot.
+  `stackReader` resolves stack words: a `FarReturn` slot becomes the real return address and the
+  caller's bank from the shadow stack (the k-th slot above SP ↔ the k-th record below its top), and
+  banked addresses above it are in that bank. The locator, `innermostUserStatement`, the statement
+  tracker (`observe(pc, getPartition)`) and the step decision (`getPartition` in its input) use it;
+  the controller's `machineView` fills `partitionOf` and `readByte`.
+- **A Next bug fixed on the way:** `ZxNextWasmV2Machine`'s debug loop keeps only PC in step per
+  instruction, so `getSp`/`getRegisters` passed to the step decision were the run's starting values:
+  source Step Over/Out on the Next stopped inside callees. They now read the core.
+- **Tests:** `test/kbasic/codegen/codebank-step.test.ts` — the tables' partitions, Step Into across
+  banks and back, Step Over, Step Out of a cross-bank call to the return point (window paged back),
+  Step Over of cross-bank recursion, a partition-qualified breakpoint, and the call stack's real
+  callers through the shadow stack. `codebank.test.ts` passes.
+
 Next steps, in order:
 
-1. Run `test/z80-assembler/page-pragma.test.ts`, then `codebank.test.ts`; debug until the two-bank
-   program prints 41 and leaves MMU3 at page 11 and `core.FarBank` at 0. Then run all of
-   `test/kbasic` (1680 passed before the CODEBANK changes) to see nothing else moved.
-2. Add the E455–E458 cases to `diagnostics.test.ts`.
-3. The contract §6 scenarios (`.ai/kbasic/codebank-contract.md`) as Next-harness tests, and CODEBANK
-   corpus programs: same-bank fast path, nested/recursive cross-bank calls with every return type,
-   bank-local data and initialisers in source order, Strings across banks, FARPTR, a 16K window,
-   the window-overlap and too-large errors, `#pragma codebank` around a routine.
-4. `farmem.bas` (FarPeek/FarPeekW/FarPoke/FarPokeW/FarCopy/FarCopyTo/FarStr), written for Klive:
+1. Finish the debugger across banks: the **Variables panel and watches** read bank-local data from
+   the bank's pages, not the window (`VariableDebugInfo.bank`/`location.partition`): fetch those
+   pages with `emuApi.getMemoryContents(page)` in `VariablesPanel.tsx` and give `MemoryView` a bank
+   overlay for the window; editing a bank-local value must write to its page (or be refused). Check
+   runtime-error stops inside a banked routine, and `locateSource` / the editor's execution point in
+   the running IDE with a banked program (§10.4). Stepping inside `FarCall`/`FarReturn` at Z80 level
+   and then resuming source stepping is untested (the shadow record is written after the return
+   slot is replaced).
+2. `farmem.bas` (FarPeek/FarPeekW/FarPoke/FarPokeW/FarCopy/FarCopyTo/FarStr), written for Klive:
    map the bank's page(s) into the window temporarily (read the slot's current page back through
    the NextReg ports), access, restore — and it has to be in `stdlib-api.json` first, or recorded
    from upstream's documentation (never its source).
-5. Debugger across banks (§9.4, §10.4, task "P6: source-level debugging across banks"):
-   statements/callables/call sites with `partition` (the 8K page of their code; `listFileItems`
-   `segmentIndex` + `resolvedPartitionFor`), `usesBanking` + `partitionedAddressMap`, a
-   partition-aware `SourceDebugIndex` (`MachineView.partitionOf` already exists; the controller's
-   `machineView()` must fill it from `machine.getPartition`), the frame locator replacing a
-   `FarReturn` return slot with the real address from the shadow stack (the k-th `FarReturn` from
-   the top ↔ the k-th record below `FarSP`), the `codebank` extension (window, window size,
-   `FarCall`/`FarReturn`/`FarBank`/`FarSP`/`FarStack` addresses, banks → pages), Variables reading
-   bank-local data by partition (`getMemoryContents(partition)` / the harness's `peekPage`), and the
-   §10.2/§10.3 step scenarios across banks on the Next harness.
-6. §8.5 NEX sidecar `<name>.nex.kbasic-debug.json` beside NEX exports, loaded by `nex-run`
+3. §8.5 NEX sidecar `<name>.nex.kbasic-debug.json` beside NEX exports, loaded by `nex-run`
    (`NexLaunchCommand.execute`, before `runCodeCommand`) through `emuApi.setSourceDebugInfo`; the
    `'@emit-map` banks manifest (§9.3); the `zxnext/zx-basic` project template (R13); extend
    `scripts/kbasic-ide-check.cjs` to a Next project (NEX launch via `.nexload` needs NextZXOS on the
    SD image the IDE uses).
-7. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
+4. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
-Known limits so far: a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
+Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK
 block) stays resident — only CODEBANK blocks move ASM into banks; FARPTR with constant subscripts
 is not lowered (the bound node has no subscripts); interrupt handlers must not far-call (documented
 hazard, not checked).

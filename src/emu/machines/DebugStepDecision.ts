@@ -106,7 +106,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
     retExecuted
   } = input;
 
-  debugSupport.statementTracker?.observe(pc);
+  debugSupport.statementTracker?.observe(pc, getPartition);
 
   /*
    * A real breakpoint always wins.
@@ -162,6 +162,7 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
       pc,
       instructionsExecuted,
       getSp: input.getSp ?? (() => 0),
+      getPartition,
       ...(input.getInterruptDepth ? { getInterruptDepth: input.getInterruptDepth } : {}),
       ...(input.getRegisters ? { getRegisters: input.getRegisters } : {})
     });

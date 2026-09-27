@@ -1,0 +1,42 @@
+' CODEBANK: every return type comes back across banks in its registers (A, HL, DE:HL, A-E-D-C-B, a String)
+'@target next
+'@expect screen 0 "42 1234 -300000 0.75 1.75 hi!"
+'@expect heap s
+DIM b AS UByte
+DIM w AS UInteger
+DIM l AS Long
+DIM f AS Float
+DIM x AS Fixed
+DIM s AS String
+CODEBANK 1
+FUNCTION FB(a AS UByte) AS UByte
+  RETURN a + 1
+END FUNCTION
+FUNCTION FW(a AS UInteger) AS UInteger
+  RETURN a + 1000
+END FUNCTION
+FUNCTION FL(a AS Long) AS Long
+  RETURN a * 3
+END FUNCTION
+FUNCTION FF(a AS Float) AS Float
+  RETURN a / 4
+END FUNCTION
+FUNCTION FX(a AS Fixed) AS Fixed
+  RETURN a + 0.5
+END FUNCTION
+FUNCTION FS(a AS String) AS String
+  RETURN a + "!"
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+SUB All()
+  b = FB(41)
+  w = FW(234)
+  l = FL(-100000)
+  f = FF(3)
+  x = FX(1.25)
+  s = FS("hi")
+END SUB
+END CODEBANK
+All
+PRINT b; " "; w; " "; l; " "; f; " "; x; " "; s

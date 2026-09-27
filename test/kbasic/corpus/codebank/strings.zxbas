@@ -1,0 +1,36 @@
+' CODEBANK: Strings into and acc of banks, from one bank to another, and a bank-local String array
+'@target next
+'@expect screen 0 "[ABC] CBA 1"
+'@expect screen 1 "xyz-xyz"
+'@expect heap a b
+DIM a AS String
+DIM b AS String
+CODEBANK 1
+FUNCTION Wrap(s AS String) AS String
+  RETURN "[" + s + "]"
+END FUNCTION
+FUNCTION Rev(s AS String) AS String
+  DIM i AS UByte
+  DIM acc AS String
+  FOR i = LEN(s) TO 1 STEP -1
+    acc = acc + s(i - 1 TO i - 1)
+  NEXT i
+  RETURN acc
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+DIM names$(2)
+FUNCTION Both(s AS String) AS String
+  names$(0) = s
+  names$(1) = Rev(s)
+  RETURN Wrap(s) + " " + names$(1)
+END FUNCTION
+FUNCTION Twice(s AS String) AS String
+  names$(2) = s + "-" + s
+  RETURN names$(2)(0 TO 6)
+END FUNCTION
+END CODEBANK
+a = Both("ABC")
+b = Twice("xyz")
+PRINT a; " "; LEN(a) - 8
+PRINT b

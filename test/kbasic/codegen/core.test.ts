@@ -171,6 +171,10 @@ describe("code generation facts", () => {
   });
 
   it("reports what the code generator cannot do yet (E501) instead of generating wrong code", async () => {
-    await expect(compileBasic("CODEBANK 1\nSUB s()\nEND SUB\nEND CODEBANK\n")).rejects.toThrow(/E501/);
+    await expect(compileBasic("DIM a$(3)\nSAVE \"x\" DATA a$()\n")).rejects.toThrow(/E501/);
+  });
+
+  it("refuses CODEBANK off the Next (E458)", async () => {
+    await expect(compileBasic("CODEBANK 1\nSUB s()\nEND SUB\nEND CODEBANK\n")).rejects.toThrow(/E458/);
   });
 });

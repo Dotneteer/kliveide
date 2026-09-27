@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SEMANTIC_ERRORS, SEMANTIC_WARNINGS } from "@main/kbasic/semantics/codes";
 import type { KBasicOptions } from "@main/kbasic/options/options";
 import { bindText } from "./bind-kit";
+import { compileBasic } from "../codegen/run-kit";
 
 /**
  * Plan §14, Phase 2's exit criterion: every spec'd warning and error class has a test. Each case is
@@ -137,7 +138,28 @@ const ERRORS: Record<keyof typeof SEMANTIC_ERRORS, Case[]> = {
   E451: [{ source: "CODEBANK 1\nfar: \nSUB s()\nEND SUB\nEND CODEBANK\nGOTO far\n", text: "far" }],
   E452: [{ source: "CODEBANK 1\nDIM t(3) AS UByte\nSUB s()\nEND SUB\nEND CODEBANK\nPRINT t(0)\n", text: "t" }],
   E453: [], // needs the preprocessor's #init list: tested below
-  E454: [{ source: "CODEBANK 1\nSUB s()\n ASM\n  codebank 2\n  nop\n END ASM\nEND SUB\nEND CODEBANK\n" }]
+  E454: [{ source: "CODEBANK 1\nSUB s()\n ASM\n  codebank 2\n  nop\n END ASM\nEND SUB\nEND CODEBANK\n" }],
+  // --- Reported by code generation (they need sizes and addresses): CODEGEN_ERRORS below
+  E455: [],
+  E456: [],
+  E457: [],
+  E458: []
+};
+
+/** Errors the code generator reports once code sizes and placement are known (plan §9, Phase 6). */
+const BANKED_SUB = "CODEBANK 1\nSUB s()\n PRINT 1\nEND SUB\nEND CODEBANK\ns\n";
+const CODEGEN_ERRORS: Record<string, Case[]> = {
+  E455: [
+    { source: "CODEBANK 1\nDIM big(9000) AS UByte\nSUB s()\n big(1) = 1\nEND SUB\nEND CODEBANK\ns\n", options: { target: "next" } },
+    { source: "CODEBANK 1\nSUB s()\n ASM\n  .defs 8192\n END ASM\nEND SUB\nEND CODEBANK\ns\n", options: { target: "next" } }
+  ],
+  E456: [{ source: BANKED_SUB, options: { target: "next", codebankWindow: 0x8000 } }],
+  E457: [
+    { source: BANKED_SUB, options: { target: "next", codebankWindow: 0x6100 } },
+    { source: BANKED_SUB, options: { target: "next", codebankWindow: 0xe000, codebankWindowSize: "16k" } },
+    { source: BANKED_SUB, options: { target: "next", codebankWindowSize: "16k", codebankFirstPage: 31 } }
+  ],
+  E458: [{ source: BANKED_SUB }]
 };
 
 const WARNINGS: Record<keyof typeof SEMANTIC_WARNINGS, Case[]> = {
@@ -212,6 +234,16 @@ describe("semantic errors", () => {
   }
 });
 
+describe("code-generation errors", () => {
+  for (const [code, cases] of Object.entries(CODEGEN_ERRORS)) {
+    cases.forEach((c, i) => {
+      it(`${code} #${i + 1}: ${SEMANTIC_ERRORS[code as keyof typeof SEMANTIC_ERRORS]}`, async () => {
+        await expect(compileBasic(c.source, c.options)).rejects.toThrow(new RegExp(`\\b${code}\\b`));
+      });
+    });
+  }
+});
+
 describe("semantic warnings", () => {
   for (const [code, cases] of Object.entries(WARNINGS)) {
     cases.forEach((c, i) => {
@@ -233,7 +265,8 @@ describe("coverage", () => {
   it("has a case for every error and warning code", () => {
     for (const code of Object.keys(SEMANTIC_ERRORS)) {
       if (code === "E453") continue;
-      expect((ERRORS as Record<string, Case[]>)[code]?.length ?? 0, `no case for ${code}`).toBeGreaterThan(0);
+      const cases = [...((ERRORS as Record<string, Case[]>)[code] ?? []), ...(CODEGEN_ERRORS[code] ?? [])];
+      expect(cases.length, `no case for ${code}`).toBeGreaterThan(0);
     }
     for (const code of Object.keys(SEMANTIC_WARNINGS)) {
       expect((WARNINGS as Record<string, Case[]>)[code]?.length ?? 0, `no case for ${code}`).toBeGreaterThan(0);

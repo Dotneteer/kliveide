@@ -295,6 +295,6 @@ describe("shouldStopAtDebugPoint — runtime-error stops (plan §10.10)", () => 
     const observe = vi.fn();
     const debugSupport = support([], { statementTracker: { observe, current: -1 } });
     decide({ debugSupport, debugStepMode: DebugStepMode.StopAtBreakpoint, pc: 0x8123, instructionsExecuted: 1 });
-    expect(observe).toHaveBeenCalledWith(0x8123);
+    expect(observe).toHaveBeenCalledWith(0x8123, expect.any(Function));
   });
 });

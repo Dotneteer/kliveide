@@ -381,7 +381,7 @@ export class DebugSupport implements IDebugSupport {
   errorStopAddress?: number;
   romErrorAddress?: number;
   romErrorGuard?: () => boolean;
-  statementTracker?: { observe(pc: number): void; current: number };
+  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
 
   /**
    * Erases all breakpoints
