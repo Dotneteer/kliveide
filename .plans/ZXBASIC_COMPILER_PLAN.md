@@ -51,7 +51,9 @@ template, the docs section. **Phase 6 done** — see "Phase 6 state" in the Hand
 level 3 is 17.3% smaller and 6.3% faster than level 0 on the corpus, every level passes the corpus,
 the debugger corpus and the step tests. **Phase 8 in progress** (2026-09-27): the zxbc oracle has run
 over the whole corpus and the semantics annex is settled (38 entries decided, one open) — see "Phase 8
-state" in the Handoff. Decisions D1–D12 settled
+state" in the Handoff. **Compatibility (2026-09-27, project author):** Klive BASIC is to be 100%
+compatible with ZX BASIC; that work is `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`, which supersedes this
+plan where they disagree (stage C0, the DO…LOOP fixes, done). Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -354,7 +356,9 @@ debuggable at source level, in the emulator tests and in the running IDE.
   waits for the next character, so the last line printed stays on row 23; READ of the wrong kind stops
   with A Invalid argument; PRINT of a Fixed writes every decimal digit (`PrintFixed`). K407 is gone
   (VAL of a constant that is not a number now runs).
-- **Kept as Klive decisions** (project author): MOD and division of negatives (one rule for every
+- **Kept as Klive decisions** (project author) — **reversed later the same day**: Klive BASIC is to
+  be 100% compatible with ZX BASIC, `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`; those annex entries are
+  `open` again. Kept at the time: MOD and division of negatives (one rule for every
   type), the documented literal typing (`integers/literal-typing.zxbas`), FOR evaluating its limit
   once. The annex's new `oracle` field says what upstream does; each program that differs carries
   `'@expect oracle-differs <entry>` (several allowed), and a mark on a program upstream agrees with
@@ -367,8 +371,11 @@ debuggable at source level, in the emulator tests and in the running IDE.
   `preprocessor/{elif,keyword-macro}`, `strings/escape-unknown`, `routines/implicit-global`,
   `print/udg-codes`, `builtins/val-error` (166 programs). Signed division by zero was not pinned
   before: it gives the quotient's sign (-7 / 0 = 1), which is also upstream's.
-- Still open: `string-concatenation-overflow` (no practical test). Next in Phase 8: the rest of §14's
-  list — language intelligence (§11.2), data breakpoints (§10.9), mixed disassembly and the program
+- **Next: the compatibility plan** (`.plans/ZXBASIC_COMPATIBILITY_PLAN.md`), stage C1 onwards; its
+  stage C0 (DO…LOOP: `DO LOOP UNTIL c` accepted, a bare DO's LOOP on the body's only line rejected with
+  E315, as zxbc) is done. Its C5–C7 cover §6.5 (zxbasm dialect, nextlib), §6.4 (the library) and the
+  options. Still open besides: `string-concatenation-overflow` (no practical test). Then the rest of
+  §14's list — language intelligence (§11.2), data breakpoints (§10.9), mixed disassembly and the program
   map (§10.11), `asm-dialect zxbasm` with nextlib (§6.5), the rest of the standard library (§6.4,
   needs documented APIs), R18 docs.
 

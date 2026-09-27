@@ -296,6 +296,28 @@ describe("Klive BASIC parser: statements", () => {
     expect(parseText("IF a THEN\nPRINT").errors.map((e) => e.code)).toEqual(["E303"]);
   });
 
+  it("rejects what zxbc rejects: a bare DO whose LOOP shares the line holding all of its body", () => {
+    const code = (text: string) => parseText(`${text}\n`).errors.map((e) => e.code);
+    // --- zxbc 1.19 rejects these (observed through the oracle)
+    for (const bad of ["DO: i = i + 1: LOOP WHILE i < 3", "DO: i = 1: LOOP", "DO\ni = i + 1: LOOP UNTIL i = 3", "DO\nPRINT i;: LOOP UNTIL 1", "DO\na = 1: b = 2: LOOP", "DO\ni = 1:: LOOP"]) {
+      expect(code(bad), bad).toEqual(["E315"]);
+    }
+    // --- ... and accepts these: an empty body, a line break anywhere in the body, a condition on DO
+    for (const good of [
+      "DO: LOOP UNTIL k",
+      "DO LOOP UNTIL k",
+      "DO\n\ni = i + 1: LOOP UNTIL i = 3",
+      "DO: REM start\ni = i + 1: LOOP UNTIL i = 3",
+      "DO: i = i + 1\nLOOP UNTIL i = 3",
+      "DO\ni = i + 1\nPRINT i;: LOOP UNTIL i = 3",
+      "DO WHILE i < 3: i = i + 1: LOOP",
+      "DO UNTIL i = 3: i = i + 1: LOOP",
+      "DO WHILE i < 3\ni = i + 1: LOOP"
+    ]) {
+      expect(code(good), good).toEqual([]);
+    }
+  });
+
   it("points errors inside macros at the macro use", () => {
     const r = parseText("#define BAD )\nPRINT BAD");
     const text = r.sources.get(0).text;

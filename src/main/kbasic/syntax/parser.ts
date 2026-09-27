@@ -714,9 +714,12 @@ class Parser {
       test = "preWhile";
       condition = this.expression();
     }
-    this.expectSeparator();
+    // --- `DO LOOP UNTIL c`: an empty loop needs no separator (spec; zxbc accepts it)
+    if (test !== "none" || !this.atKeyword("LOOP")) this.expectSeparator();
+    const bodyStart = this.pos + 1; // --- past DO's own separator
     const body = this.block(() => this.atKeyword("LOOP"));
     const loopStart = this.pos;
+    if (test === "none" && this.atKeyword("LOOP")) this.checkBareDoLine(bodyStart, loopStart);
     if (!this.eatKeyword("LOOP")) {
       const loop = this.missingCloser("DO has no LOOP", opener);
       return this.node(start, { kind: "do", test, ...(condition ? { condition } : {}), body, loop });
@@ -730,6 +733,25 @@ class Parser {
     }
     const loop = this.node(loopStart, {});
     return this.node(start, { kind: "do", test, ...(condition ? { condition } : {}), body, loop });
+  }
+
+  /**
+   * zxbc's grammar (observed through the oracle, plan D12) rejects a DO without a condition whose
+   * LOOP follows ':' when all of the body is on that one line: `DO: i = i + 1: LOOP UNTIL i = 3`, or
+   * `DO` then `i = i + 1: LOOP`. An empty body (`DO: LOOP UNTIL k`) is accepted, and so is any body
+   * with a line break in it, even a blank line; a DO WHILE/UNTIL loop is never affected. Klive rejects
+   * the same programs, so a program it accepts also compiles with zxbc.
+   */
+  private checkBareDoLine(bodyStart: number, loopStart: number): void {
+    if (loopStart <= bodyStart) return;
+    const beforeLoop = this.tokens[loopStart - 1];
+    if (beforeLoop.kind !== "operator" || beforeLoop.text !== ":") return;
+    for (let i = bodyStart; i < loopStart; i++) if (this.tokens[i].kind === "newline") return;
+    this.diagnostics.error(
+      "E315",
+      "LOOP must start a new line here: after a DO without WHILE or UNTIL, ZX BASIC does not accept a LOOP on the line that holds the whole body",
+      siteSpan(this.tokens[loopStart])
+    );
   }
 
   private loopKind(): LoopKind {

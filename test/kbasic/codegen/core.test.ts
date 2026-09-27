@@ -84,10 +84,12 @@ describe("control flow", () => {
       'PRINT ";";',
       "DO WHILE n > 0: PRINT n;: n = n - 1: LOOP",
       'PRINT ";";',
-      "DO: n = n + 1: PRINT n;: LOOP UNTIL n = 2",
+      "DO: n = n + 1: PRINT n;",
+      "LOOP UNTIL n = 2",
       'PRINT ";";',
       "DO UNTIL n = 0: n = n - 1: LOOP",
-      "DO: PRINT n;: n = n + 1: LOOP WHILE n < 2",
+      "DO: PRINT n;: n = n + 1",
+      "LOOP WHILE n < 2",
       ""
     ].join("\n");
     expect((await screenOf(source, 1))[0]).toBe("012;321;12;01");

@@ -559,20 +559,20 @@
  },
  "control/do-loops.zxbas": {
   "0": {
-   "bytes": 238,
-   "tstates": 20749
+   "bytes": 274,
+   "tstates": 24854
   },
   "1": {
-   "bytes": 168,
-   "tstates": 20272
+   "bytes": 192,
+   "tstates": 24345
   },
   "2": {
-   "bytes": 162,
-   "tstates": 20188
+   "bytes": 186,
+   "tstates": 24261
   },
   "3": {
-   "bytes": 162,
-   "tstates": 20188
+   "bytes": 186,
+   "tstates": 24261
   }
  },
  "control/exit-continue.zxbas": {

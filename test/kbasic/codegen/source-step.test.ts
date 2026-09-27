@@ -348,9 +348,11 @@ function scenarios(level: number) {
       const d = await dbg("10 GOTO 10\n");
       expect(d.first).toBe("GOTO 10");
       expect(d.steps("into", 3)).toEqual(["GOTO 10", "GOTO 10", "GOTO 10"]);
-      // --- DO : ... : LOOP on one line: every pass stops at each statement again
-      const loop = await dbg("DIM n AS UByte\nDO : n = n + 1 : LOOP\n");
+      // --- DO WHILE ... : LOOP on one line (a DO without a condition cannot end on its body's line,
+      // --- as in zxbc): every pass stops at each statement again
+      const loop = await dbg("DIM n AS UByte\nDO WHILE n < 200 : n = n + 1 : LOOP\n");
       const pass = loop.steps("over", 2);
+      expect(pass).toEqual(["n = n + 1", "DO WHILE n < 200"]);
       expect(loop.steps("over", 6)).toEqual([...pass, ...pass, ...pass]);
       expect(loop.session.peek(loop.session.program.symbol("_n"))).toBe(4);
     });

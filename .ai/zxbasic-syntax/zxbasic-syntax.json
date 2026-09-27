@@ -2517,51 +2517,51 @@
         "name": "argument-evaluation-order",
         "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
         "decision": "A call's arguments last first, so the stack machine leaves them where STDCALL wants them; a binary operator's left operand before its right, and an assigned array element's index before the value.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 3,
+        "phase": 8,
         "test": "test/kbasic/corpus/routines/call-order.zxbas",
-        "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Klive keeps left to right (project author, 2026-09-27)."
+        "oracle": "Upstream agrees on arguments (routines/call-order.zxbas) but evaluates a FUNCTION call before the other operand, and an assigned element's index after the value (routines/call-order-effects.zxbas). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "byref-float-parameter",
         "question": "What does a BYREF Float parameter read and write?",
         "decision": "The caller's variable, through its address: reads see its value and writes change it.",
         "test": "test/kbasic/corpus/float/float-routines.zxbas",
-        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault)."
+        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "constant-arithmetic-literal",
         "question": "What type does arithmetic on number literals alone have?",
         "decision": "Literal-only arithmetic stays exact and takes the smallest type that holds the result: 200 + 100 is 300, a UInteger; 1 - 2 is -1, a Byte.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 2,
+        "phase": 8,
         "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream folds / of integer literals to a Float (1 / 8 = 0.125), against its documentation's integer division. Klive keeps the documented rule (project author, 2026-09-27; integers/literal-typing.zxbas)."
+        "oracle": "Upstream folds / of integer literals to a Float (1 / 8 = 0.125), against its documentation's integer division. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "constant-arithmetic-typed",
         "question": "Does constant arithmetic on typed values wrap to the type's width?",
         "decision": "Yes: folding computes what the program would, so a typed operand (a DIMmed constant, a CAST) wraps in its type; 200 in a UByte plus 100 is 44.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 2,
+        "phase": 8,
         "test": "test/kbasic/corpus/integers/constant-typed.zxbas",
-        "oracle": "Upstream folds a typed CONST without its type: CONST k AS UByte = 200, k + k is 400."
+        "oracle": "Upstream folds a typed CONST without its type: CONST k AS UByte = 200, k + k is 400. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "constant-integer-division-by-zero",
         "question": "What does a constant integer division or MOD by zero fold to?",
         "decision": "The runtime's result (every bit set; MOD gives the dividend), with warning K406. A Float or Fixed constant division by zero is error E425.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 2,
+        "phase": 8,
         "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
-        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError)."
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "constant-power",
@@ -2573,34 +2573,43 @@
         "test": "test/kbasic/corpus/float/power-constant.zxbas"
       },
       {
+        "name": "do-loop-one-line",
+        "question": "Where may LOOP stand after a DO without WHILE or UNTIL?",
+        "decision": "Anywhere but after ':' on the line that holds all of the loop's body: `DO: i = i + 1: LOOP` and `DO` then `i = i + 1: LOOP` are rejected (E315), while an empty body (`DO: LOOP UNTIL k`, and `DO LOOP UNTIL k` without a separator) and any body with a line break in it, even a blank line, are accepted. A DO WHILE/UNTIL loop may end on its own line.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/syntax/parser.test.ts"
+      },
+      {
         "name": "elif-directive",
         "question": "Is #elif accepted by the preprocessor?",
         "decision": "Yes.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 1,
+        "phase": 8,
         "test": "test/kbasic/corpus/preprocessor/elif.zxbas",
-        "oracle": "zxbc 1.19 rejects #elif (a syntax error): Klive accepts it as an extension."
+        "oracle": "zxbc 1.19 rejects #elif (a syntax error): Klive accepts it as an extension. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "fastcall-basic-body",
         "question": "Can a FASTCALL routine with a BASIC body use its first parameter?",
         "decision": "Yes: it arrives in registers and the prologue stores it in the frame, so the body reads it like any parameter.",
         "test": "test/kbasic/corpus/routines/fastcall.zxbas",
-        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814)."
+        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "fixed-division-by-zero",
         "question": "What does a Fixed division by zero do?",
         "decision": "It stops with 6 Number too big.",
         "test": "test/kbasic/corpus/fixed/fixed-divide-zero.zxbas",
-        "oracle": "Upstream gives -0.0000152587890625 and goes on."
+        "oracle": "Upstream gives -0.0000152587890625 and goes on. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "status": "decided",
@@ -2615,21 +2624,21 @@
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
         "decision": "Limit and step are evaluated once, before the first test; the loop runs while the variable is not past the limit (above it for a step of 0 or more, below it for a negative step), so STEP 0 loops for ever; afterwards the variable holds the first value past the limit. A signed STEP of an unsigned variable keeps its sign (it is held in the signed type of the variable's width), so FOR i = 5 TO 1 STEP -1 counts a UByte down. An integer variable wraps: a loop that must count past its type's range never ends (warning K408). Awaits the oracle.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 4,
+        "phase": 8,
         "test": "test/kbasic/corpus/control/for-evaluation.zxbas",
-        "oracle": "Upstream re-evaluates the limit and STEP on every pass. Klive keeps Sinclair BASIC's once (project author, 2026-09-27)."
+        "oracle": "Upstream re-evaluates the limit and STEP on every pass. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "for-unsigned-negative-step",
         "question": "How does an unsigned FOR variable count with a negative STEP held in a signed variable?",
         "decision": "Down: the STEP keeps its sign, and the loop stops at its limit without wrapping below 0.",
         "test": "test/kbasic/corpus/control/for-unsigned-down.zxbas",
-        "oracle": "Upstream treats the STEP as unsigned and runs no iteration."
+        "oracle": "Upstream treats the STEP as unsigned and runs no iteration. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "forward-function-call",
@@ -2641,14 +2650,14 @@
         "test": "test/kbasic/semantics/binder.test.ts"
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "function-without-return",
         "question": "What does a FUNCTION give when it ends without RETURN?",
         "decision": "0 (the empty String for a String FUNCTION): the result is zeroed on entry.",
         "test": "test/kbasic/corpus/routines/function-result.zxbas",
-        "oracle": "Upstream gives whatever its result register held."
+        "oracle": "Upstream gives whatever its result register held. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "implicit-type-from-context",
@@ -2691,11 +2700,11 @@
         "name": "literal-integer-type",
         "question": "What type does an integer literal have?",
         "decision": "The smallest type that holds it, unsigned when it is not negative (0..255 UByte, 256..65535 UInteger, -128..-1 Byte, ...); Float beyond 32 bits. This gives the spec's FOR examples: FOR i = 1 TO 10 counts in UByte, FOR i = -1 TO 10 in Byte.",
-        "status": "decided",
+        "status": "open",
         "source": "docs",
-        "phase": 2,
+        "phase": 8,
         "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream retypes literals in places: BNOT $100 = -257, 5 SHL 8 = 1280, 1 SHL 8 = 256, and PRINT 0.001 prints 0.0009918212890625 (a Fixed). Klive keeps the documented rules (project author, 2026-09-27; integers/literal-typing.zxbas)."
+        "oracle": "Upstream retypes literals in places: BNOT $100 = -257, 5 SHL 8 = 1280, 1 SHL 8 = 256, and PRINT 0.001 prints 0.0009918212890625 (a Fixed). Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "logical-operators-short-circuit",
@@ -2710,21 +2719,21 @@
         "name": "mod-sign",
         "question": "Which sign does the remainder of MOD take?",
         "decision": "The dividend's (the quotient truncates towards zero), in folding and at run time.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 2,
+        "phase": 8,
         "test": "test/kbasic/semantics/constants.test.ts",
-        "oracle": "Upstream: integer MOD is never negative (-100 MOD 3 = 1), Float MOD floors (-7.5 MOD 2 = 0.5), and Byte division floors (-7 / 2 = -4) while Integer and Long division truncate. Klive keeps one rule for every type (project author, 2026-09-27)."
+        "oracle": "Upstream: integer MOD is never negative (-100 MOD 3 = 1), Float MOD floors (-7.5 MOD 2 = 0.5), and Byte division floors (-7 / 2 = -4) while Integer and Long division truncate. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "named-arguments",
         "question": "How are named arguments (name := value) matched to parameters?",
         "decision": "By name; parameters left out take their defaults.",
         "test": "test/kbasic/corpus/routines/defaults-named.zxbas",
-        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position."
+        "oracle": "zxbc 1.19 accepts the syntax but passes the values by position. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "on-goto-out-of-range",
@@ -2745,24 +2754,24 @@
         "test": "test/kbasic/corpus/integers/precedence.zxbas"
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "plot-off-screen",
         "question": "What do PLOT and DRAW do with a point off the screen?",
         "decision": "They stop with B Integer out of range, as the ROM's PLOT and DRAW do.",
         "test": "test/kbasic/corpus/graphics/plot-range.zxbas",
-        "oracle": "Upstream stops with 5 Out of screen."
+        "oracle": "Upstream stops with 5 Out of screen. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
         "phase": 8,
         "name": "point-coordinates",
         "question": "Which coordinates does POINT use?",
         "decision": "PLOT's: (0,0) at the bottom left and all 192 rows, so POINT(x, y) is 1 after PLOT x, y.",
         "test": "test/kbasic/corpus/stdlib/sinclair-functions.zxbas",
-        "oracle": "Upstream's POINT (sinclair-compatible) gives 0 after PLOT 5, 5."
+        "oracle": "Upstream's POINT (sinclair-compatible) gives 0 after PLOT 5, 5. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "print-position",
@@ -2786,11 +2795,11 @@
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
         "decision": "It wraps to the first item. With no DATA at all, or after RESTORE to a label with no DATA after it, READ stops with E Out of DATA.",
-        "status": "decided",
+        "status": "open",
         "source": "oracle",
-        "phase": 4,
+        "phase": 8,
         "test": "test/kbasic/codegen/data.test.ts",
-        "oracle": "Upstream agrees on wrapping; a program with no DATA at all is a compile error there (\"No DATA defined\"), where Klive stops at run time."
+        "oracle": "Upstream agrees on wrapping; a program with no DATA at all is a compile error there (\"No DATA defined\"), where Klive stops at run time. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C4 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "read-type-mismatch",
@@ -2842,11 +2851,11 @@
         "name": "substring-assignment",
         "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
         "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target. Awaits the oracle.",
-        "status": "decided",
+        "status": "open",
         "source": "klive-decision",
-        "phase": 4,
+        "phase": 8,
         "test": "test/kbasic/codegen/strings.test.ts",
-        "oracle": "zxbc 1.19 stops strings/substring-assign.zxbas with B Integer out of range."
+        "oracle": "zxbc 1.19 stops strings/substring-assign.zxbas with B Integer out of range. Open again: Klive BASIC is to be 100% compatible with ZX BASIC (project author, 2026-09-27); the decision above is what Klive does today, to change in C3 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md."
       },
       {
         "name": "truncation-warning-w200",
