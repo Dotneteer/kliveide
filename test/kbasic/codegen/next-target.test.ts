@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { runBasicNext } from "./next-kit";
+import { SourceDebugIndex } from "@emu/machines/SourceStepDecision";
+
+import { runBasicNext, startBasicNext } from "./next-kit";
 
 /**
  * The ZX Spectrum Next target (plan Phase 6): programs built for `next` run on the Next harness —
@@ -63,5 +65,26 @@ describe("the NEX a Next build exports", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+describe("source stepping on the Next (§10.2)", () => {
+  // --- Regression: the Next's debug loop keeps only PC in step per instruction, so the step decision
+  // --- must read SP and the result registers from the core, or Step Over and Step Out stop in callees
+  const SOURCE = ["FUNCTION f(n AS UByte) AS UByte", "  RETURN n + 1", "END FUNCTION", "SUB s()", "  PRINT 1", "END SUB", "DIM x AS UByte", "s", "x = f(41)", "PRINT x", ""].join("\n");
+
+  it("steps over calls, and steps out to the return point with the returned value", async () => {
+    const { session, generated, done } = await startBasicNext(SOURCE);
+    const info = generated.debug.sourceLevel;
+    const index = new SourceDebugIndex(info);
+    session.attachDebugSupport();
+    const line = (st: ReturnType<typeof session.sourceStep>) => (st ? info.statements[st.stopStatement!].startLine : -1);
+    expect(line(session.sourceStep(index, "into", { returnTo: done }))).toBe(8);
+    expect(line(session.sourceStep(index, "over", { returnTo: done }))).toBe(9);
+    expect(line(session.sourceStep(index, "into", { returnTo: done }))).toBe(2);
+    const out = session.sourceStep(index, "out", { returnTo: done })!;
+    expect([out.stoppedAt, line(out)]).toEqual(["returnPoint", 9]);
+    expect(out.returned.map((r) => r.registers.af >> 8)).toEqual([42]);
+    expect(line(session.sourceStep(index, "over", { returnTo: done }))).toBe(10);
   });
 });
