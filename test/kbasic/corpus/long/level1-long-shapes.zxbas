@@ -1,0 +1,35 @@
+' Level-1 code shapes of 32-bit and Fixed values: signed and unsigned comparisons against constants,
+' variables and frame slots, add and subtract in place (carries across the word boundary), shifts,
+' masks, conversions and Fixed arithmetic; the corpus runs it at every level
+'@expect screen 0 "10111010"
+'@expect screen 1 "-69999 -1 65536 3999934465 0"
+'@expect screen 2 "250000000 3705032704 32767 -8750"
+'@expect screen 3 " -280000"
+'@expect screen 4 "250000000 10240 255 560000"
+'@expect screen 5 "65535 -4465 4464"
+'@expect screen 6 "3.75 5 -0.5 10"
+'@expect screen 7 "neg-1"
+'@expect screen 8 "le"
+'@expect screen 9 "pos99995"
+'@expect screen 10 "gt"
+DIM a AS Long
+DIM b AS Long
+DIM u AS ULong
+DIM v AS ULong
+DIM f AS Fixed
+DIM w AS UInteger
+a = -70000 : b = 70000 : u = 4000000000 : v = 65535
+PRINT a < b; a > b; a < -69999; b >= 70000; u > v; u < 100; a = -70000; u <> 4000000000
+PRINT a + 1; " "; b - 70001; " "; v + 1; " "; u - v; " "; a + b
+PRINT u >> 4; " "; u << 1; " "; v >> 1; " "; a >> 3; " "; a << 2
+PRINT u / 16; " "; u MOD 65536; " "; v MOD 256; " "; b * 8
+w = v : PRINT w; " "; CAST(Long, w) + a; " "; CAST(UInteger, b)
+f = 2.5 : PRINT f + 1.25; " "; f * 2; " "; f - 3; " "; f < 2.75; f > 3
+SUB s(x AS Long, y AS Long)
+  DIM z AS Long
+  z = x - y
+  IF z < 0 THEN PRINT "neg"; z ELSE PRINT "pos"; z
+  IF x > y THEN PRINT "gt" ELSE PRINT "le"
+END SUB
+s(100000, 100001)
+s(-5, -100000)

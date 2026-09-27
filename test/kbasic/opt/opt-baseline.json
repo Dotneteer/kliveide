@@ -271,12 +271,12 @@
    "tstates": 2487422
   },
   "1": {
-   "bytes": 262,
-   "tstates": 2476115
+   "bytes": 224,
+   "tstates": 337463
   },
   "2": {
-   "bytes": 258,
-   "tstates": 2476107
+   "bytes": 214,
+   "tstates": 335223
   }
  },
  "classic/factorial.zxbas": {
@@ -313,12 +313,12 @@
    "tstates": 32189
   },
   "1": {
-   "bytes": 198,
-   "tstates": 31533
+   "bytes": 195,
+   "tstates": 30486
   },
   "2": {
-   "bytes": 195,
-   "tstates": 31462
+   "bytes": 192,
+   "tstates": 30430
   }
  },
  "classic/hanoi.zxbas": {
@@ -1357,18 +1357,32 @@
    "tstates": 34638
   }
  },
+ "long/level1-long-shapes.zxbas": {
+  "0": {
+   "bytes": 1429,
+   "tstates": 613218
+  },
+  "1": {
+   "bytes": 1313,
+   "tstates": 612036
+  },
+  "2": {
+   "bytes": 1300,
+   "tstates": 611999
+  }
+ },
  "long/long-arith.zxbas": {
   "0": {
    "bytes": 202,
    "tstates": 154679
   },
   "1": {
-   "bytes": 202,
-   "tstates": 154679
+   "bytes": 192,
+   "tstates": 148871
   },
   "2": {
-   "bytes": 194,
-   "tstates": 154663
+   "bytes": 184,
+   "tstates": 148810
   }
  },
  "long/long-bitwise.zxbas": {
@@ -1391,12 +1405,12 @@
    "tstates": 28231
   },
   "1": {
-   "bytes": 445,
-   "tstates": 28231
+   "bytes": 431,
+   "tstates": 28093
   },
   "2": {
-   "bytes": 445,
-   "tstates": 28231
+   "bytes": 431,
+   "tstates": 28093
   }
  },
  "long/long-conversions.zxbas": {
@@ -1433,12 +1447,12 @@
    "tstates": 45539
   },
   "1": {
-   "bytes": 322,
-   "tstates": 45293
+   "bytes": 314,
+   "tstates": 45035
   },
   "2": {
-   "bytes": 314,
-   "tstates": 45170
+   "bytes": 303,
+   "tstates": 44875
   }
  },
  "long/long-mul-div.zxbas": {
@@ -1461,12 +1475,12 @@
    "tstates": 47242
   },
   "1": {
-   "bytes": 108,
-   "tstates": 47242
+   "bytes": 100,
+   "tstates": 47123
   },
   "2": {
-   "bytes": 108,
-   "tstates": 47242
+   "bytes": 100,
+   "tstates": 47123
   }
  },
  "print/at-tab.zxbas": {
@@ -1581,6 +1595,20 @@
    "tstates": 10685
   }
  },
+ "routines/call-order-effects.zxbas": {
+  "0": {
+   "bytes": 385,
+   "tstates": 56587
+  },
+  "1": {
+   "bytes": 367,
+   "tstates": 55435
+  },
+  "2": {
+   "bytes": 343,
+   "tstates": 55334
+  }
+ },
  "routines/call-order.zxbas": {
   "0": {
    "bytes": 140,
@@ -1615,12 +1643,12 @@
    "tstates": 32355
   },
   "1": {
-   "bytes": 204,
-   "tstates": 30479
+   "bytes": 200,
+   "tstates": 30437
   },
   "2": {
-   "bytes": 204,
-   "tstates": 30479
+   "bytes": 200,
+   "tstates": 30437
   }
  },
  "routines/function-result.zxbas": {
@@ -1671,12 +1699,12 @@
    "tstates": 164000
   },
   "1": {
-   "bytes": 281,
-   "tstates": 158259
+   "bytes": 262,
+   "tstates": 155987
   },
   "2": {
-   "bytes": 264,
-   "tstates": 155270
+   "bytes": 245,
+   "tstates": 152986
   }
  },
  "routines/string-locals.zxbas": {
@@ -1769,12 +1797,12 @@
    "tstates": 108773
   },
   "1": {
-   "bytes": 474,
-   "tstates": 106899
+   "bytes": 471,
+   "tstates": 106456
   },
   "2": {
-   "bytes": 466,
-   "tstates": 106473
+   "bytes": 463,
+   "tstates": 106044
   }
  },
  "stdlib/point-lib.zxbas": {
@@ -1811,12 +1839,12 @@
    "tstates": 90257
   },
   "1": {
-   "bytes": 855,
-   "tstates": 60982
+   "bytes": 851,
+   "tstates": 61035
   },
   "2": {
-   "bytes": 830,
-   "tstates": 59691
+   "bytes": 826,
+   "tstates": 59854
   }
  },
  "stdlib/print64-lib.zxbas": {

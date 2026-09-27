@@ -62,7 +62,7 @@ type Sink = {
 
 type Node = { instr: Instr; dst: VReg };
 
-const SUPPORTED_TYPES = new Set<MType>(["i8", "u8", "i16", "u16", "bool", "ptr"]);
+const SUPPORTED_TYPES = new Set<MType>(["i8", "u8", "i16", "u16", "bool", "ptr", "i32", "u32", "fix"]);
 const isSupportedType = (t: MType) => SUPPORTED_TYPES.has(t);
 
 /** Selects a run, or returns false (nothing emitted) when level 0 must. */
@@ -160,7 +160,7 @@ function planRun(instrs: Instr[], term: Terminator | undefined, plainReturn: boo
       case "rtcall": {
         if (i.dst) return undefined;
         const regs = RUNTIME_ARGS[i.name];
-        if (!regs || i.name.startsWith("inline.") || regs.length !== i.args.length || regs.some((r) => r === "stack" || r === "dehl" || r === "aedcb")) return undefined;
+        if (!regs || i.name.startsWith("inline.") || regs.length !== i.args.length || regs.some((r) => r === "stack" || r === "aedcb")) return undefined;
         break;
       }
       default:
@@ -408,12 +408,26 @@ class TreeGen {
   private loadImmediate(cls: string, text: string): void {
     if (cls === "r8") this.emit(text === "0" ? "xor a" : `ld a,${text}`);
     else if (cls === "r16") this.emit(`ld hl,${text}`);
-    else decline();
+    else if (cls === "r32") {
+      const [low, high] = words32(text);
+      this.emit(`ld hl,${low}`, `ld de,${high}`);
+    } else decline();
   }
 
   private load(dst: VReg, slot: Slot): void {
     const cls = regClassOf(dst.type);
     const fixed = fixedAddress(slot);
+    if (cls === "r32") {
+      if (fixed !== undefined) this.emit(`ld hl,(${fixed})`, `ld de,(${fixed}+2)`);
+      else if (slot.kind === "frame") {
+        const d = slot.offset;
+        this.emit(`ld l,${ixd(d)}`, `ld h,${ixd(d + 1)}`, `ld e,${ixd(d + 2)}`, `ld d,${ixd(d + 3)}`);
+      } else if (slot.kind === "deref") {
+        this.gen(slot.ptr);
+        this.emit("ld e,(hl)", "inc hl", "ld d,(hl)", "inc hl", "ld a,(hl)", "inc hl", "ld h,(hl)", "ld l,a", "ex de,hl");
+      } else decline();
+      return;
+    }
     if (fixed !== undefined) {
       this.emit(cls === "r8" ? `ld a,(${fixed})` : `ld hl,(${fixed})`);
       return;
@@ -445,6 +459,7 @@ class TreeGen {
     if (i.op !== "store") return decline();
     const cls = regClassOf(i.type);
     const fixed = fixedAddress(i.slot);
+    if (cls === "r32") return this.store32(i.slot, i.src);
     if (i.slot.kind === "frame") {
       const d = i.slot.offset;
       const imm = this.constant(i.src);
@@ -505,6 +520,33 @@ class TreeGen {
     this.emit("ld (hl),e", "inc hl", "ld (hl),d");
   }
 
+  /** A 32-bit (or Fixed) store: DE:HL to a global, a frame slot or through a pointer (MIR order). */
+  private store32(slot: Slot, src: Value): void {
+    const fixed = fixedAddress(slot);
+    if (fixed !== undefined) {
+      this.gen(src);
+      this.emit(`ld (${fixed}),hl`, `ld (${fixed}+2),de`);
+      return;
+    }
+    if (slot.kind === "frame") {
+      const d = slot.offset;
+      const k = this.constant(src);
+      if (k !== undefined) {
+        const [low, high] = words32(String(k));
+        this.emit(`ld ${ixd(d)},${low & 0xff}`, `ld ${ixd(d + 1)},${low >> 8}`, `ld ${ixd(d + 2)},${high & 0xff}`, `ld ${ixd(d + 3)},${high >> 8}`);
+        return;
+      }
+      this.gen(src);
+      this.emit(`ld ${ixd(d)},l`, `ld ${ixd(d + 1)},h`, `ld ${ixd(d + 2)},e`, `ld ${ixd(d + 3)},d`);
+      return;
+    }
+    if (slot.kind !== "deref") return decline();
+    this.gen(slot.ptr);
+    this.emit("push hl");
+    this.gen(src);
+    this.emit("ld b,h", "ld c,l", "pop hl", "ld (hl),c", "inc hl", "ld (hl),b", "inc hl", "ld (hl),e", "inc hl", "ld (hl),d");
+  }
+
   /**
    * A SUB or FUNCTION call: the arguments evaluated last first (plan Q1) and pushed in ABI order; a
    * FASTCALL routine's first argument stays in its accumulator. A FUNCTION's result is in its
@@ -513,7 +555,10 @@ class TreeGen {
   private userCall(i: Extract<Instr, { op: "call" }>): void {
     for (let k = i.args.length - 1; k >= 0; k--) {
       this.gen(i.args[k]);
-      if (k > 0 || i.convention === "stdcall") this.emit(regClassOf(i.args[k].type) === "r8" ? "push af" : "push hl");
+      if (k > 0 || i.convention === "stdcall") {
+        const cls = regClassOf(i.args[k].type);
+        this.emit(...(cls === "r8" ? ["push af"] : cls === "r32" ? ["push de", "push hl"] : ["push hl"]));
+      }
     }
     this.ctx.emitCall(`call ${i.target}`, i.site);
   }
@@ -538,12 +583,16 @@ class TreeGen {
         if (reg === "de") this.emit("ex de,hl");
         else if (reg === "bc") this.emit("ld b,h", "ld c,l");
         else return decline();
-      } else if ((cls === "r8" && reg !== "a") || (cls === "r16" && reg !== "hl") || (cls !== "r8" && cls !== "r16")) return decline();
+      } else if (cls === "r32" && reg !== "dehl") return decline();
+      else if (cls !== "r8" && cls !== "r16" && cls !== "r32") return decline();
     }
     i.args.forEach((a, k) => {
       if (computed.some((c) => c.k === k)) return;
       const value = this.constant(a) ?? (a.kind !== "vreg" ? immText(a) : decline());
-      this.emit(`ld ${regs[k]},${value}`);
+      if (regs[k] === "dehl") {
+        const [low, high] = words32(String(value));
+        this.emit(`ld hl,${low}`, `ld de,${high}`);
+      } else this.emit(`ld ${regs[k]},${value}`);
     });
     this.emit(`call ${this.ctx.rt(i.name)}`);
   }
@@ -571,7 +620,9 @@ class TreeGen {
 
   private binary(op: BinOp, dst: VReg, a: Value, b: Value): void {
     const cls = regClassOf(a.type);
-    if (!isSupportedType(a.type) || (cls !== "r8" && cls !== "r16")) return decline();
+    if (!isSupportedType(a.type)) return decline();
+    if (cls === "r32") return this.binary32(op, a, b);
+    if (cls !== "r8" && cls !== "r16") return decline();
     if (COMPARISONS.has(op)) {
       const cc = this.compare(op, a, b);
       this.materialize(cc);
@@ -654,10 +705,21 @@ class TreeGen {
       else this.emit("ld l,h", "ld h,0");
       n -= 8;
     }
-    for (let i = 0; i < n; i++) {
-      if (op === "shl") this.emit("add hl,hl");
-      else this.emit(signed ? "sra h" : "srl h", "rr l");
+    // --- A right shift costs 4 bytes a bit: past two bits a djnz loop is shorter
+    const step = op === "shl" ? ["add hl,hl"] : [signed ? "sra h" : "srl h", "rr l"];
+    this.repeat(step, n, op === "shl" ? 7 : 2);
+  }
+
+  /** `step` n times: straight-line up to `inline` times, otherwise a djnz loop on B. */
+  private repeat(step: string[], n: number, inline: number): void {
+    if (n <= inline) {
+      for (let i = 0; i < n; i++) this.emit(...step);
+      return;
     }
+    const loop = this.ctx.local();
+    this.emit(`ld b,${n}`);
+    this.ctx.label(loop);
+    this.emit(...step, `djnz ${loop}`);
   }
 
   private binary8(op: BinOp, a: Value, b: Value): void {
@@ -822,14 +884,31 @@ class TreeGen {
    * le compare the other way round; signed operands are compared with their sign bits flipped.
    */
   private compare(op: BinOp, a: Value, b: Value): string {
+    const cls = regClassOf(a.type);
+    if (cls === "r32") return this.compare32(op, a, b);
     let left = a;
     let right = b;
     let cmp = op;
     if (op === "gt" || op === "le") {
-      [left, right] = [b, a];
       cmp = op === "gt" ? "lt" : "ge";
+      if (!this.mayReorder(a, b)) {
+        // --- In MIR order, then the operands swapped in their registers: b - a
+        const signed = isSignedM(a.type);
+        if (cls === "r8") {
+          this.pairIn(a, b, "h");
+          this.emit("ld l,a", "ld a,h", "ld h,l");
+          if (signed) this.emit("xor $80", "ld l,a", "ld a,h", "xor $80", "ld h,a", "ld a,l");
+          this.emit("cp h");
+        } else {
+          this.pair16(a, b);
+          this.emit("ex de,hl");
+          if (signed) this.emit("ld a,h", "xor $80", "ld h,a", "ld a,d", "xor $80", "ld d,a");
+          this.emit("and a", "sbc hl,de");
+        }
+        return TRUE_WHEN[cmp]!;
+      }
+      [left, right] = [b, a];
     }
-    const cls = regClassOf(a.type);
     const ordered = cmp !== "eq" && cmp !== "ne";
     const signed = isSignedM(a.type) && ordered;
     if (cls === "r8") {
@@ -872,6 +951,8 @@ class TreeGen {
     const cls = regClassOf(a.type);
     this.gen(a);
     if (op === "lnot") this.emit("xor 1");
+    else if (cls === "r32" && op === "neg") this.emit("xor a", "sub l", "ld l,a", "ld a,0", "sbc a,h", "ld h,a", "ld a,0", "sbc a,e", "ld e,a", "ld a,0", "sbc a,d", "ld d,a");
+    else if (cls === "r32") this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a", "ld a,d", "cpl", "ld d,a", "ld a,e", "cpl", "ld e,a");
     else if (cls === "r8") this.emit(op === "neg" ? "neg" : "cpl");
     else if (op === "neg") this.emit("xor a", "sub l", "ld l,a", "sbc a,a", "sub h", "ld h,a");
     else this.emit("ld a,h", "cpl", "ld h,a", "ld a,l", "cpl", "ld l,a");
@@ -881,12 +962,202 @@ class TreeGen {
     const from = regClassOf(a.type);
     const to = regClassOf(dst.type);
     this.gen(a);
+    if ((a.type === "fix") !== (dst.type === "fix")) return this.convFixed(a.type, dst.type);
     if (from === to) return;
+    const signed = isSignedM(a.type);
     if (from === "r8" && to === "r16") {
-      if (isSignedM(a.type)) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a");
+      if (signed) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a");
       else this.emit("ld l,a", "ld h,0");
     } else if (from === "r16" && to === "r8") this.emit("ld a,l");
+    else if (from === "r8" && to === "r32") {
+      if (signed) this.emit("ld l,a", "add a,a", "sbc a,a", "ld h,a", "ld e,a", "ld d,a");
+      else this.emit("ld l,a", "ld h,0", "ld de,0");
+    } else if (from === "r16" && to === "r32") {
+      if (signed) this.emit("ld a,h", "add a,a", "sbc a,a", "ld e,a", "ld d,a");
+      else this.emit("ld de,0");
+    } else if (from === "r32" && to === "r16") {
+      // --- The low word is already in HL
+    } else if (from === "r32" && to === "r8") this.emit("ld a,l");
     else decline();
+  }
+
+  /** To or from Fixed (16.16 in DE:HL), as level 0 does it: an integer n is n * 65536; a Fixed as an integer is its integer part. */
+  private convFixed(from: MType, to: MType): void {
+    if (to === "fix") {
+      const cls = regClassOf(from);
+      if (from === "flt") return decline();
+      if (cls === "r8") this.emit(...(isSignedM(from) ? ["ld e,a", "add a,a", "sbc a,a", "ld d,a"] : ["ld e,a", "ld d,0"]));
+      else this.emit("ex de,hl");
+      this.emit("ld hl,0");
+      return;
+    }
+    if (to === "flt") return decline();
+    const cls = regClassOf(to);
+    if (cls === "r8") return this.emit("ld a,e");
+    this.emit("ex de,hl");
+    if (cls === "r32") this.emit("ld a,h", "add a,a", "sbc a,a", "ld e,a", "ld d,a");
+  }
+
+  // ----------------------------------------------------------------------------------------------
+  // 32-bit and Fixed values (DE:HL, the low word in HL)
+
+  /** A leaf 32-bit operand's two words as `ld bc,...` loads: [low, high], or undefined. */
+  private words32Of(v: Value): [string[], string[]] | undefined {
+    const k = this.constant(v);
+    if (k !== undefined) {
+      const [low, high] = words32(String(k));
+      return [[`ld bc,${low}`], [`ld bc,${high}`]];
+    }
+    if (v.kind !== "vreg") return undefined;
+    const d = this.def(v).instr;
+    if (d.op !== "load") return undefined;
+    const fixed = fixedAddress(d.slot);
+    if (fixed !== undefined) return [[`ld bc,(${fixed})`], [`ld bc,(${fixed}+2)`]];
+    if (d.slot.kind === "frame") {
+      const o = d.slot.offset;
+      return [
+        [`ld c,${ixd(o)}`, `ld b,${ixd(o + 1)}`],
+        [`ld c,${ixd(o + 2)}`, `ld b,${ixd(o + 3)}`]
+      ];
+    }
+    return undefined;
+  }
+
+  /** The left operand on the stack (low word on top) and the right in DE:HL, in MIR order. */
+  private stack32(a: Value, b: Value): void {
+    this.gen(a);
+    this.emit("push de", "push hl");
+    this.gen(b);
+  }
+
+  private binary32(op: BinOp, a: Value, b: Value): void {
+    const fix = a.type === "fix";
+    const signed = isSignedM(a.type);
+    if (COMPARISONS.has(op)) return this.materialize(this.compare32(op, a, b));
+    if (!fix && this.strength32(op, a, b)) return;
+    // --- Add and subtract with a leaf right operand: in place, word by word through BC
+    const words = op === "add" || op === "sub" ? this.words32Of(b) : undefined;
+    if (words) {
+      this.gen(a);
+      if (op === "add") this.emit(...words[0], "add hl,bc", "ex de,hl", ...words[1], "adc hl,bc", "ex de,hl");
+      else this.emit(...words[0], "and a", "sbc hl,bc", "ex de,hl", ...words[1], "sbc hl,bc", "ex de,hl");
+      return;
+    }
+    this.stack32(a, b);
+    const bytewise = (alu: string) =>
+      this.emit("pop bc", "ld a,l", `${alu} c`, "ld l,a", "ld a,h", `${alu} b`, "ld h,a", "pop bc", "ld a,e", `${alu} c`, "ld e,a", "ld a,d", `${alu} b`, "ld d,a");
+    switch (op) {
+      case "add":
+        return this.emit("pop bc", "add hl,bc", "ex de,hl", "pop bc", "adc hl,bc", "ex de,hl");
+      case "sub":
+        return this.emit("ld b,d", "ld c,e", "ex de,hl", "pop hl", "and a", "sbc hl,de", "ex (sp),hl", "sbc hl,bc", "ex de,hl", "pop hl");
+      case "and":
+      case "or":
+      case "xor":
+        return bytewise(op);
+      case "mul":
+        return this.emit(`call ${this.ctx.rt(fix ? "core.FixMul" : "core.Mul32")}`);
+      case "div":
+        return this.emit(`call ${this.ctx.rt(fix ? "core.FixDiv" : signed ? "core.DivI32" : "core.DivU32")}`);
+      case "mod":
+        if (fix) return decline();
+        return this.emit(`call ${this.ctx.rt(signed ? "core.ModI32" : "core.ModU32")}`);
+      default:
+        return decline();
+    }
+  }
+
+  /** 32-bit strength reduction: constant shifts, multiplication by a power of two, unsigned div/MOD by one. */
+  private strength32(op: BinOp, a: Value, b: Value): boolean {
+    const k = this.constant(b);
+    if (k === undefined) return false;
+    const n = k >>> 0;
+    const signed = isSignedM(a.type);
+    const log2 = n > 0 && (n & (n - 1)) === 0 ? Math.log2(n) : -1;
+    if (op === "shl" || op === "shr") {
+      this.gen(a);
+      this.shift32(op, n & 0xff, signed);
+      return true;
+    }
+    if (op === "mul" && log2 >= 0) {
+      this.gen(a);
+      this.shift32("shl", log2, false);
+      return true;
+    }
+    if ((op === "div" || op === "mod") && !signed && log2 >= 0) {
+      this.gen(a);
+      if (op === "div") {
+        this.shift32("shr", log2, false);
+        return true;
+      }
+      // --- The mask n - 1, byte by byte: 0xff bytes stay, 0 bytes clear
+      const mask = (n - 1) >>> 0;
+      const regs = ["l", "h", "e", "d"];
+      regs.forEach((r, i) => {
+        const m = (mask >>> (8 * i)) & 0xff;
+        if (m === 0xff) return;
+        if (m === 0) this.emit(`ld ${r},0`);
+        else this.emit(`ld a,${r}`, `and ${m}`, `ld ${r},a`);
+      });
+      return true;
+    }
+    return false;
+  }
+
+  private shift32(op: "shl" | "shr", count: number, signed: boolean): void {
+    let n = count;
+    if (n >= 32) {
+      if (op === "shl" || !signed) this.emit("ld hl,0", "ld de,0");
+      else this.emit("ld a,d", "add a,a", "sbc a,a", "ld h,a", "ld l,a", "ld d,a", "ld e,a");
+      return;
+    }
+    if (n >= 16) {
+      if (op === "shl") this.emit("ex de,hl", "ld hl,0");
+      else if (signed) this.emit("ex de,hl", "ld a,h", "add a,a", "sbc a,a", "ld d,a", "ld e,a");
+      else this.emit("ex de,hl", "ld de,0");
+      n -= 16;
+    }
+    // --- 5 (left) or 8 (right) bytes a bit: past two bits a djnz loop is shorter
+    const step = op === "shl" ? ["add hl,hl", "ex de,hl", "adc hl,hl", "ex de,hl"] : [signed ? "sra d" : "srl d", "rr e", "rr h", "rr l"];
+    this.repeat(step, n, 2);
+  }
+
+  /**
+   * Compares two 32-bit values and gives the condition code under which the comparison holds; signed
+   * ones (and Fixed) with their sign bits flipped. A leaf right operand is compared in place;
+   * otherwise the left goes on the stack (MIR order) and gt/le swap the two there.
+   */
+  private compare32(op: BinOp, a: Value, b: Value): string {
+    const ordered = op !== "eq" && op !== "ne";
+    const signed = isSignedM(a.type) && ordered;
+    const cmp: BinOp = op === "gt" ? "lt" : op === "le" ? "ge" : op;
+    const swap = op === "gt" || op === "le";
+    // --- In place: the left in DE:HL, the right a leaf (for gt/le the leaf is the left operand)
+    const [left, right] = swap ? [b, a] : [a, b];
+    const words = this.words32Of(right);
+    // --- Not for a signed variable on the right: flipping its sign bit between the two word
+    // --- subtractions would clear the low word's borrow; a constant is flipped when it is compiled
+    const flipsRight = signed && this.constant(right) === undefined;
+    if (words && !flipsRight && (!swap || this.mayReorder(a, b))) {
+      this.gen(left);
+      if (signed) this.emit("ld a,d", "xor $80", "ld d,a");
+      const k = this.constant(right);
+      const high = signed && k !== undefined ? [`ld bc,${(words32(String(k))[1] ^ 0x8000) & 0xffff}`] : words[1];
+      if (!ordered) {
+        this.emit(...words[0], "and a", "sbc hl,bc", "ld a,h", "or l", "ex de,hl", ...high, "sbc hl,bc", "or h", "or l");
+        return TRUE_WHEN[cmp]!;
+      }
+      this.emit(...words[0], "and a", "sbc hl,bc", "ex de,hl", ...high, "sbc hl,bc");
+      return TRUE_WHEN[cmp]!;
+    }
+    this.stack32(a, b);
+    if (swap) this.emit("ex (sp),hl", "pop bc", "ex de,hl", "ex (sp),hl", "push bc", "ex de,hl");
+    if (signed) this.emit("ld a,d", "xor $80", "ld d,a");
+    this.emit("ld b,d", "ld c,e", "ex de,hl", "pop hl");
+    if (signed) this.emit("ex (sp),hl", "ld a,h", "xor $80", "ld h,a", "ex (sp),hl");
+    this.emit("and a", "sbc hl,de", "ex (sp),hl", "sbc hl,bc", "pop de");
+    if (!ordered) this.emit("ld a,h", "or l", "or d", "or e");
+    return TRUE_WHEN[cmp]!;
   }
 }
 
@@ -894,6 +1165,13 @@ function fixedAddress(slot: Slot): string | undefined {
   if (slot.kind === "global") return slot.name;
   if (slot.kind === "deref" && slot.ptr.kind !== "vreg") return immText(slot.ptr);
   return undefined;
+}
+
+/** The low and high words of a 32-bit immediate's text. */
+function words32(text: string): [number, number] {
+  const v = Number(text);
+  if (!Number.isFinite(v)) return decline();
+  return [v & 0xffff, (v >>> 16) & 0xffff];
 }
 
 function ixd(d: number): string {
