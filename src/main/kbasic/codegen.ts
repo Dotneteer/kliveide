@@ -16,6 +16,7 @@ import { buildDebugInfo, type DebugBuild } from "./debug/builder";
 import { buildSourceLevel } from "./debug/source-level";
 import { lowerProgram } from "./ir/lower";
 import { optimizeLir, shapeBranches } from "./opt/pipeline";
+import { optimizeMir } from "./opt/mir-passes";
 import { verifyModule } from "./opt/verify";
 import type { MModule } from "./ir/mir";
 import type { KBasicOptions } from "./options/options";
@@ -59,10 +60,16 @@ export async function generateProgram(
       diagnostics.error("E599", `Internal code generator error: the MIR is invalid (${problems.slice(0, 3).join("; ")})`, { file: 0, start: 0, end: 0 });
       return undefined;
     }
+    try {
+      optimizeMir(mir, level);
+    } catch (e) {
+      diagnostics.error("E599", `Internal code generator error: ${(e as Error).message}`, { file: 0, start: 0, end: 0 });
+      return undefined;
+    }
   }
   let functions: LirLine[][] = [];
   try {
-    for (const fn of mir.functions) functions.push(selectFunction(fn, runtime));
+    for (const fn of mir.functions) functions.push(selectFunction(fn, runtime, level));
     functions = optimizeLir(mir, functions, { level, target: options.target === "next" ? "z80n" : "z80" });
   } catch (e) {
     if (!(e instanceof CodegenError)) throw e;

@@ -52,7 +52,7 @@ import { collectedBuildTasks } from "./build";
 import { Dispatch } from "react";
 import { Action } from "@common/state/Action";
 import type { MessageBoxType, ZxNextStorageCopyRequest } from "@common/messaging/MainApi";
-import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import { CompileProfile, CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import {
   DEFAULT_SD_CARD_FILE,
@@ -695,7 +695,7 @@ class MainMessageProcessor {
    * @param language The language to use.
    * @param options Optional compiler options.
    */
-  async compileFile(filename: string, language: string, options?: CompilerOptions) {
+  async compileFile(filename: string, language: string, options?: CompilerOptions, params?: { profile?: CompileProfile }) {
     const compiler = compilerRegistry.getCompiler(language);
     if (!compiler) {
       throw new Error(
@@ -705,7 +705,7 @@ class MainMessageProcessor {
     }
 
     compiler?.setAppState(mainStore.getState());
-    return (await compiler.compileFile(filename, options)) as KliveCompilerOutput;
+    return (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
   }
 
   /**

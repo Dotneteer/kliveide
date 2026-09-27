@@ -1,4 +1,4 @@
-import type { IKliveCompiler, KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import type { CompileProfile, IKliveCompiler, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 
 import { KBasicCompiler } from "@main/kbasic/KBasicCompiler";
@@ -24,8 +24,8 @@ export class ZxBasicDispatcher implements IKliveCompiler {
     this.zxbc.setAppState(state);
   }
 
-  compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput> {
-    return this.current().compileFile(filename, options);
+  compileFile(filename: string, options?: Record<string, any>, profile?: CompileProfile): Promise<KliveCompilerOutput> {
+    return this.current().compileFile(filename, options, profile);
   }
 
   checkFile(filename: string): Promise<KliveCompilerOutput> {

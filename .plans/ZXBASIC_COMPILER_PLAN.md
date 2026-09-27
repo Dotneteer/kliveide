@@ -319,9 +319,12 @@ debuggable at source level, in the emulator tests and in the running IDE.
    (O1–O9). **Stage 7a is done** (its §10 records the state): the rule engine, liveness, the load and
    branch rules, branch shaping, the MIR verifier, the measurement baseline; level 1 = level-0 code
    with the rules inside statements, verified at levels 0 and 1 by the corpus, the debugger corpus,
-   the step scenarios and the IDE check. Next: **stage 7b** — the per-statement MIR passes, the
-   level-1 selector with per-statement allocation (falling back to the stack machine per statement,
-   O8), comparisons that produce flags directly, and the debug profile (§6, O6).
+   the step scenarios and the IDE check. **Stage 7b is done** (its §11): the tree selector
+   (`backend/select1.ts`, falling back to the stack machine per run, O8) with strength reduction and
+   flag branches, the level-1 MIR passes, the debug profile (`compileFile`'s `profile`); level 1 is
+   11.9% smaller than level 0 on the corpus. Deferred to 7c with reasons: linear-scan allocation
+   across a statement's trees, type narrowing. Next: **stage 7c** — level 2 (promote, the SSA
+   passes, routine-wide allocation, cross-statement rules, `merged`/`elided`/`hoisted`).
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

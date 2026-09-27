@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import type { AssemblerErrorInfo, DebuggableOutput, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
+import type { AssemblerErrorInfo, CompileProfile, DebuggableOutput, IKliveCompiler, SimpleAssemblerOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 
 import { createSettingsReader } from "@common/utils/SettingsReader";
@@ -40,8 +40,8 @@ export class KBasicCompiler implements IKliveCompiler {
   }
 
   /** A build: until code generation exists, the front end's diagnostics and a note saying so. */
-  compileFile(filename: string): Promise<SimpleAssemblerOutput> {
-    return this.run(filename, false);
+  compileFile(filename: string, _options?: Record<string, unknown>, profile?: CompileProfile): Promise<SimpleAssemblerOutput> {
+    return this.run(filename, false, profile);
   }
 
   /** The editor's background diagnostics. */
@@ -49,7 +49,7 @@ export class KBasicCompiler implements IKliveCompiler {
     return this.run(filename, true);
   }
 
-  private async run(filename: string, background: boolean): Promise<SimpleAssemblerOutput> {
+  private async run(filename: string, background: boolean, profile?: CompileProfile): Promise<SimpleAssemblerOutput> {
     const settings = this.state ? createSettingsReader(this.state) : undefined;
     const base = optionsFromSettings((key) => settings?.readSetting(key), this.state?.emulatorState?.machineId);
     let text: string;
@@ -63,7 +63,10 @@ export class KBasicCompiler implements IKliveCompiler {
       if (background || result.diagnostics.hasErrors || !result.bound) {
         return { errors: toErrorInfo(result.diagnostics.items, result.sources) };
       }
-      return await this.build(filename, result);
+      // --- The debug profile (plan §8.6, D11): optimisation capped at 1 unless the header asks for a level
+      const capped = profile === "debug" && result.options.optimize > DEBUG_PROFILE_LEVEL && !headerSetsOptimize(filename, text);
+      if (capped) result.options = { ...result.options, optimize: DEBUG_PROFILE_LEVEL };
+      return await this.build(filename, result, capped);
     } catch (err) {
       // --- A worker that throws is reported as a success (plan §2.1), so a compiler bug is an error
       return { errors: [fileError(filename, "K000", `Internal compiler error: ${(err as Error).message}`)] };
@@ -71,7 +74,7 @@ export class KBasicCompiler implements IKliveCompiler {
   }
 
   /** Code generation (the 48K, 128K, +3 and Next targets, optimisation level 0). */
-  private async build(filename: string, front: KBasicFrontEndResult): Promise<SimpleAssemblerOutput | DebuggableOutput> {
+  private async build(filename: string, front: KBasicFrontEndResult, debugProfile = false): Promise<SimpleAssemblerOutput | DebuggableOutput> {
     const diagnostics = front.diagnostics;
     const model = targetModel(front.options.target);
     if (model === undefined) {
@@ -86,7 +89,13 @@ export class KBasicCompiler implements IKliveCompiler {
     const requested = front.options.optimize;
     const level = effectiveLevel(requested);
     const traceOutput = [
-      `Klive BASIC: code generated at optimisation level ${level}${level !== requested ? ` (level ${requested} was asked for; levels 2-3 generate level-1 code for now)` : ""}`
+      `Klive BASIC: code generated at optimisation level ${level}${
+        debugProfile
+          ? " (the debug profile: debug builds use at most level 1 unless the header sets '@optimize)"
+          : level !== requested
+            ? ` (level ${requested} was asked for; levels 2-3 generate level-1 code for now)`
+            : ""
+      }`
     ];
     const name = programName(filename);
     for (const file of emittedFiles(generated, front.options, name)) {
@@ -233,6 +242,14 @@ function fileError(filename: string, errorCode: string, message: string): Assemb
 }
 
 /** The build root's name without folder and extension: the generated program's file name. */
+/** The highest optimisation level a debug build uses when the header does not set one (plan §8.6). */
+export const DEBUG_PROFILE_LEVEL = 1;
+
+/** Whether the build root's header sets the optimisation level itself (`'@optimize`, NextBuild's `'!opt`). */
+export function headerSetsOptimize(filename: string, text: string): boolean {
+  return readHeader(new SourceFile(0, filename, text.replace(/\r\n?/g, "\n")), new DiagnosticBag()).some((h) => h.name === "optimize" || h.name === "opt");
+}
+
 function programName(path: string): string {
   const base = path.slice(Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\")) + 1);
   return base.replace(/\.[^.]*$/, "") || "program";

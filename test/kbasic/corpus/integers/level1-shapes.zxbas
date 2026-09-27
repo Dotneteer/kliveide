@@ -1,0 +1,40 @@
+' Level-1 code shapes (.docs/kbasic-optimiser.md §4.1): comparisons against constants, variables and
+' frame slots (signed and unsigned, as values and as branches), multiplication by constants,
+' division and MOD by powers of two, constant shifts, array stores; the corpus runs it at every level
+'@expect screen 0 "1111111111"
+'@expect screen 1 "88 208 3392 -900 -3000 41920"
+'@expect screen 2 "5000 0 39 64 50 8"
+'@expect screen 3 "57856 78 144 25 -75 -3"
+'@expect screen 4 "40 68 115"
+'@expect screen 5 "39"
+'@expect screen 6 "neg-19"
+'@expect screen 7 "neg-30"
+'@expect screen 8 "big"
+DIM b AS Byte
+DIM ub AS UByte
+DIM i AS Integer
+DIM u AS UInteger
+DIM r AS UInteger
+DIM t(4) AS UInteger
+DIM k AS UByte
+b = -5 : ub = 200 : i = -300 : u = 40000
+PRINT b < 3; b > -6; ub < 201; ub >= 200; i < -299; i > -301; u > 39999; u <= 40000; b = -5; u <> 1
+PRINT ub * 3; " "; ub * 10; " "; u * 5; " "; i * 3; " "; i * 10; " "; u * 255
+PRINT u / 8; " "; u MOD 8; " "; u / 1024; " "; u MOD 512; " "; ub / 4; " "; ub MOD 16
+PRINT u << 3; " "; u >> 9; " "; ub << 1; " "; ub >> 3; " "; i >> 2; " "; b >> 1
+FOR k = 0 TO 4 : t(k) = k * 7 + u / 1000 : NEXT k
+PRINT t(0); " "; t(4); " "; t(2) + t(3)
+r = 0
+FOR k = 1 TO 10
+  IF k * 3 > 20 THEN r = r + k
+  IF u < 50000 AND k MOD 2 = 0 THEN r = r + 1
+NEXT k
+PRINT r
+SUB s(x AS Integer, y AS UByte)
+  DIM z AS Integer
+  z = x * 4 - y
+  IF z < 0 THEN PRINT "neg"; z ELSE PRINT "pos"; z
+  IF y > 100 THEN PRINT "big"
+END SUB
+s(-3, 7)
+s(30, 150)

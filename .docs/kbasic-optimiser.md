@@ -220,3 +220,46 @@ Approved as proposed (O1–O9). Done:
 Learned: the level-0 selector's comparisons build a 0/1 in A through a stack round trip
 (`push af … pop af ; ld l,a ; ld a,h ; ld h,l ; cp h`); the rules cannot reach that shape well —
 the level-1 selector (7b) should produce the flags directly.
+
+## 11. State after stage 7b (2026-09-27)
+
+Done:
+
+- **The tree selector** (`backend/select1.ts`) — level 1's code generator. The level-0 selector
+  (`select0.ts`) splits every block into *runs* (the instructions between the block's start and the
+  statement markers, where no value is live — G4) and gives each run to the tree selector first; it
+  selects the run itself when the tree selector declines (O8). Accepted runs: values that form trees
+  (each defined once, used once) of 8/16-bit constants, loads, stores, address constants, arithmetic,
+  logic, comparisons and 8↔16-bit conversions; SUB calls and runtime calls with at most one computed
+  argument as roots; jump, branch, END and the main program's RETURN. A call is only ever a root:
+  inside a tree it could be reordered against the tree's loads. Leaves are used where they are
+  (`cp 10`, `add a,(ix-2)`, `ld de,(_b)`, `cp (hl)` for a global); only an operation whose operands
+  both need computing saves one on the stack. A branch on a comparison branches on the flags; a
+  comparison used as a value is materialised (`sbc a,a / neg` for carry).
+- **Strength reduction is in the tree selector**, not a MIR pass (a change to §3): the constant
+  operands are in view there — constant shifts straight-line (whole bytes at once for 16-bit),
+  multiplication by a constant as shift-and-add when that takes at most 8 steps, unsigned division
+  and MOD by a power of two as shifts and masks.
+- **MIR passes** (`opt/mir-passes.ts`): constant folding (into a `const` defining the same vreg),
+  algebraic identities (`x+0`, `x*1`, `x AND -1`, … rename the result to the operand; `x*0` and
+  `x AND 0` become 0 when x's tree is pure) and removal of unused pure integer instructions; the
+  verifier runs after every pass.
+- **The debug profile** (§6, O6): `IKliveCompiler.compileFile(filename, options?, profile?)`; the
+  IDE's debug runs pass `debug` (`compileCode(context, profile)`, the main process forwards it, the
+  ZX BASIC dispatcher too); Klive BASIC caps the level at 1 unless the header sets `'@optimize` (or
+  NextBuild's `'!opt`), and says so in the build output.
+- Tests: `test/kbasic/opt/level1.test.ts` (the passes, the selector's code shapes, the fall-back);
+  the corpus program `integers/level1-shapes.zxbas`; the rule-coverage test now runs on level-1
+  code (every rule still fires); the baseline is rewritten.
+- Figures (148 48K programs): level 0 32,475 bytes, level 1 28,608 bytes (−11.9%); T-states −0.9%.
+
+Not done in 7b, and why:
+
+- **Register allocation across a statement's trees** (linear scan per statement, §4.1): the tree
+  selector keeps one value in the accumulator and saves others on the stack; values do not stay in
+  registers from one root to the next. A statement rarely has more than one root at level 1, so the
+  gain is small until level 2 keeps values across statements — linear scan moves to 7c.
+- **Type narrowing** (§3): the corpus's hot 8-bit code (FOR over UByte, attributes) is already 8-bit
+  in the MIR; narrowing mixed 8/16-bit arithmetic needs the value ranges that SCCP (7c) provides.
+- The tree selector declines Float, 32-bit, Fixed and String values and FUNCTION calls: those still
+  get level-0 code (plus the 7a rules). They are most of what is left at level 1.

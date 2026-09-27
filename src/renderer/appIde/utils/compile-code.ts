@@ -1,5 +1,5 @@
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
-import { KliveCompilerOutput } from "@abstractions/CompilerInfo";
+import { CompileProfile, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import {
   endCompileAction,
@@ -56,7 +56,8 @@ export function modelTypeToMachineType(model: SpectrumModelType): string | null 
  * message when the build failed.
  */
 export async function compileCode(
-  context: IdeCommandContext
+  context: IdeCommandContext,
+  profile: CompileProfile = "build"
 ): Promise<{ result?: KliveCompilerOutput; message?: string }> {
   /*
    * Release the files the debugger locked.
@@ -95,7 +96,7 @@ export async function compileCode(
   let result: KliveCompilerOutput;
   let failedMessage = "";
   try {
-    result = await context.mainApi.compileFile(fullPath, language);
+    result = await context.mainApi.compileFile(fullPath, language, undefined, { profile });
   } catch (err) {
     failedMessage = err.message;
   } finally {

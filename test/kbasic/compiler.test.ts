@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DebuggableOutput } from "@abstractions/CompilerInfo";
 import type { AppState } from "@common/state/AppState";
 import { lineCanHaveBreakpoint } from "@main/kbasic/breakpoints";
-import { KBasicCompiler, runFrontEnd, toErrorInfo } from "@main/kbasic/KBasicCompiler";
+import { headerSetsOptimize, KBasicCompiler, runFrontEnd, toErrorInfo } from "@main/kbasic/KBasicCompiler";
 import { defaultOptions } from "@main/kbasic/options/options";
 import type { FileReader } from "@main/kbasic/syntax/preprocessor";
 import { ZxBasicDispatcher } from "@main/zxb-integration/ZxBasicDispatcher";
@@ -285,6 +285,20 @@ describe("the zxbas compiler", () => {
     expect(output.errors).toEqual([]);
     expect(output.modelType).toBe(modelType);
     if (modelType === 4) expect(output.nexConfig?.filename).toBe("program.nex");
+  });
+
+  it("builds a debug build with the debug profile unless the header sets '@optimize (plan §8.6)", async () => {
+    const compiler = new KBasicCompiler();
+    compiler.setAppState(state({}));
+    fs.writeFileSync(path.join(folder, "plain.bas"), "PRINT 1\n");
+    fs.writeFileSync(path.join(folder, "pinned.bas"), "'@optimize 3\nPRINT 1\n");
+    const trace = async (file: string, profile?: "debug" | "build") =>
+      ((await compiler.compileFile(path.join(folder, file), undefined, profile)) as { traceOutput: string[] }).traceOutput[0];
+    expect(await trace("plain.bas", "debug")).toMatch(/level 1 \(the debug profile/);
+    expect(await trace("plain.bas", "build")).toMatch(/level 1 \(level 2 was asked for/);
+    expect(await trace("pinned.bas", "debug")).toMatch(/level 1 \(level 3 was asked for/);
+    expect(headerSetsOptimize("x.bas", "' a comment\n'!opt=2\nPRINT 1\n")).toBe(true);
+    expect(headerSetsOptimize("x.bas", "PRINT 1\n'@optimize 2\n")).toBe(false);
   });
 
   it("reports only the program's errors when it has some", async () => {

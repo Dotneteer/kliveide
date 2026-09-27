@@ -868,6 +868,9 @@ export type KliveCompilerOutput =
 /**
  * Defines the responsibilities of a compiler that can vork directly with a build root
  */
+/** What a foreground build is for (`IKliveCompiler.compileFile`). */
+export type CompileProfile = "debug" | "build";
+
 export interface IKliveCompiler {
   /**
    * The unique ID of the compiler
@@ -889,9 +892,12 @@ export interface IKliveCompiler {
    * binary code.
    * @param filename Z80 assembly source file (absolute path)
    * @param options Compiler options. If not defined, the compiler uses the default options.
+   * @param profile What the build is for: `debug` when the IDE is about to debug it (a compiler may
+   *   then keep its code debug-friendly, as Klive BASIC's debug profile caps optimisation), `build`
+   *   otherwise. Never passed inside `options`, which some compilers take whole as their option set.
    * @returns Output of the compilation
    */
-  compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
+  compileFile(filename: string, options?: Record<string, any>, profile?: CompileProfile): Promise<KliveCompilerOutput>;
 
   /**
    * Optionally checks the file for the editor's background diagnostics without building it; the

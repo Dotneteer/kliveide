@@ -1092,7 +1092,8 @@ export async function injectCode(
     }
   }
 
-  const { message, result } = await compileCode(context);
+  // --- A debug run builds with the debug profile (plan §8.6): code the debugger can follow exactly
+  const { message, result } = await compileCode(context, operationType === "debug" ? "debug" : "build");
   const errorNo = result?.errors?.length ?? 0;
   if (message) {
     if (!result) {

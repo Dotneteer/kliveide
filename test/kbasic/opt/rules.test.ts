@@ -129,7 +129,7 @@ describe("the rules on the corpus", () => {
       const mir = lowerProgram(front.bound.program, front.bound.globals, diagnostics, (f) => isLibraryPath(front.sources.get(f).name));
       expect(verifyModule(mir, 1), file).toEqual([]);
       const runtime = new Set(mir.runtime);
-      const functions = mir.functions.map((fn) => selectFunction(fn, runtime));
+      const functions = mir.functions.map((fn) => selectFunction(fn, runtime, 1));
       optimizeLir(mir, functions, { level: 1, target: "z80", onFire: (r) => fired.set(r, (fired.get(r) ?? 0) + 1) });
     }
     expect(RULES.map((r) => r.name).filter((r) => !fired.has(r))).toEqual([]);

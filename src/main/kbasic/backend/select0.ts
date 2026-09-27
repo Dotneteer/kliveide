@@ -15,6 +15,7 @@ import {
   type VReg
 } from "../ir/mir";
 import { CodegenError, instr, label, type LirLine } from "./lir";
+import { selectRun } from "./select1";
 
 /**
  * Level-0 instruction selection (`.docs/kbasic-lir-regalloc.md` §4): a stack machine. Every value
@@ -25,12 +26,12 @@ import { CodegenError, instr, label, type LirLine } from "./lir";
  *
  * Nothing stays on the stack across a statement entry (G4); a `stmt` marker checks it.
  */
-export function selectFunction(fn: MFunction, runtime: Set<string>): LirLine[] {
-  return new Selector(fn, runtime).run();
+export function selectFunction(fn: MFunction, runtime: Set<string>, level = 0): LirLine[] {
+  return new Selector(fn, runtime, level).run();
 }
 
 /** Which register each runtime routine takes each argument in (the modules' header comments). */
-const RUNTIME_ARGS: Record<string, string[]> = {
+export const RUNTIME_ARGS: Record<string, string[]> = {
   "core.PrintU8": ["a"],
   "core.PrintI8": ["a"],
   "core.PrintU16": ["hl"],
@@ -118,7 +119,8 @@ class Selector {
 
   constructor(
     private readonly fn: MFunction,
-    private readonly runtime: Set<string>
+    private readonly runtime: Set<string>,
+    private readonly level = 0
   ) {}
 
   run(): LirLine[] {
@@ -131,15 +133,58 @@ class Selector {
     this.stack = [];
     this.out.push(label(b.label, b.instrs[0]?.sid ?? b.term?.sid ?? -1));
     if (b === this.fn.blocks[0] && (this.fn.kind === "sub" || this.fn.kind === "function")) this.prologue();
-    for (const i of b.instrs) {
-      this.sid = i.sid;
-      this.instruction(i);
+    // --- Runs between boundaries (the block's start, markers): no value is live at a run's start
+    // --- (G4). From level 1 each run goes to the tree selector first (select1.ts), and to the stack
+    // --- machine below when that declines (.docs/kbasic-optimiser.md O8).
+    const isMarker = (i: Instr) => i.op === "stmt" || i.op === "prologue.end" || i.op === "epilogue.begin";
+    const n = b.instrs.length;
+    const tree = this.level >= 1 && this.fn.kind !== "data";
+    let termDone = false;
+    let k = 0;
+    for (;;) {
+      if (k < n && isMarker(b.instrs[k])) {
+        this.sid = b.instrs[k].sid;
+        this.instruction(b.instrs[k]);
+        k++;
+        continue;
+      }
+      if (k >= n) {
+        // --- Only the terminator is left (the block is empty or ends with a marker)
+        if (b.term && tree && this.treeRun([], b.term)) termDone = true;
+        break;
+      }
+      let end = k;
+      while (end < n && !isMarker(b.instrs[end])) end++;
+      const term = end === n ? b.term : undefined;
+      if (tree && this.treeRun(b.instrs.slice(k, end), term)) {
+        if (term) termDone = true;
+      } else {
+        for (let m = k; m < end; m++) {
+          this.sid = b.instrs[m].sid;
+          this.instruction(b.instrs[m]);
+        }
+      }
+      if (end === n) break;
+      k = end;
     }
-    if (b.term) {
+    if (b.term && !termDone) {
       this.sid = b.term.sid;
       this.terminator(b.term);
     }
     if (this.acc || this.stack.length) throw new CodegenError(`Block ${b.label} ends with values left over`);
+  }
+
+  /** A run through the tree selector; false (nothing emitted) when it declines. */
+  private treeRun(instrs: Instr[], term: Terminator | undefined): boolean {
+    if (this.acc || this.stack.length) return false;
+    return selectRun(instrs, term, {
+      plainReturn: this.fn.kind === "main" || this.fn.kind === "data",
+      emit: (sid, ...lines) => lines.forEach((l) => this.out.push(instr(l, sid))),
+      emitCall: (sid, text, site) => this.out.push(instr(text, sid, site)),
+      label: (sid, name) => this.out.push(label(name, sid)),
+      local: () => this.local(),
+      rt: (name) => this.rt(name)
+    });
   }
 
   // ===============================================================================================
