@@ -12,6 +12,7 @@ import {
   isTrueConstant,
   numberLiteral,
   numericValue,
+  literalText,
   stringConstant,
   type BinaryFoldOp,
   type Constant
@@ -786,8 +787,12 @@ export class ExpressionBinder {
       case "SQR":
       case "TAN":
         return floatFunction();
-      case "STR":
+      case "STR": {
+        // --- ZX BASIC writes a literal's STR$ at compile time: see literalText
+        const a = this.value(args[0]);
+        if (a.constant?.exact) return this.constantExpr(stringConstant(literalText(a.constant.exact)), span);
         return make("String", [this.valueAs(args[0], "Float")]);
+      }
       case "ABS":
       case "SGN": {
         const a = this.numeric(args[0]);

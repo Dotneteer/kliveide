@@ -2916,6 +2916,15 @@
         "oracle": "Upstream's library has no such variables: zxbc takes the names as new variables (0)."
       },
       {
+        "name": "str-of-literal",
+        "question": "How does STR$ write a literal (STR$(1 / 3), STR$(1E10))?",
+        "decision": "At compile time: a whole number exactly (\"10000000000\"), anything else as the shortest decimal that reads back as the same double, with an exponent below 1E-4 and from 1E16 up (\"0.3333333333333333\", \"-0.001\", \"1e-07\"). STR$ of anything else is the ROM number format at run time.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
         "name": "string-concatenation-overflow",
         "question": "What does a concatenation longer than 65535 characters give?",
         "decision": "The empty String.",

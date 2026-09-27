@@ -262,6 +262,54 @@ function generate() {
     )
   };
 
+  // --- Strings: comparison, concatenation, slices and the String functions, on variables
+  const STRS = [["abc", "abd"], ["", "a"], ["ab", "abc"], ["B", "a"], ["Hello", "Hello"], ["x", ""]];
+  const SLICES = ["s(1 TO 3)", "s(2)", "s(TO 2)", "s(3 TO)", "s(0)", "s(4 TO 2)", "s(1 TO 99)", "s(0 TO 0)"];
+  const STRFNS = ["LEN(s)", "CODE(s)", "s + t", "t + s", "STR$(LEN(s)) + s", "CHR$(65) + s", "s = t", "s < t", "s > t", "s <> t", "s <= t", "s >= t"];
+  suites.strings = {
+    perProgram: ROWS,
+    items: [
+      ...STRS.flatMap(([x, y]) =>
+        STRFNS.map((form) => {
+          const a = name();
+          const b = name();
+          return { id: `"${x}", "${y}": ${form}`, decl: [`DIM ${a} AS String = "${x}"`, `DIM ${b} AS String = "${y}"`], expr: form.replace(/\bs\b/g, a).replace(/\bt\b/g, b) };
+        })
+      ),
+      ...["Hello World", "Hi", ""].flatMap((x) =>
+        SLICES.map((form) => {
+          const a = name();
+          return { id: `"${x}": ${form}`, decl: [`DIM ${a} AS String = "${x}"`], expr: form.replace(/\bs\b/g, a) };
+        })
+      ),
+      ...["1.5", "-0.001", "1E10", "65535", "-32768", "0.1", "1 / 3", "3.0"].map((v) => ({ id: `STR$(${v})`, decl: [], expr: `STR$(${v})` })),
+      ...["Float 0.1", "Float -2.5", "Fixed 0.1", "Fixed -2.5", "Long -100000", "UByte 200", "Integer -32768"].map((tv) => {
+        const [t, v] = tv.split(" ");
+        const a = name();
+        return { id: `STR$(${t} ${v})`, decl: [`DIM ${a} AS ${t} = ${v}`], expr: `STR$(${a})` };
+      })
+    ]
+  };
+
+  // --- The numeric built-ins on each type, inside each function's domain
+  const BUILTIN_VALUES = { UByte: [0, 200], Byte: [-100, 7], UInteger: [1, 60000], Integer: [-2, 30000], ULong: [1, 4000000000], Long: [-100000, 3], Fixed: [0.5, -2.5], Float: [0.5, -7.25] };
+  const FNS = ["ABS(a)", "SGN(a)", "INT(a)", "SQR(ABS(a))", "SIN(a)", "COS(a)", "TAN(a)", "ATN(a)", "EXP(a / 100000)", "LN(ABS(a) + 1)", "a * PI", "a ^ 2"];
+  suites.builtins = {
+    perProgram: ROWS,
+    items: [
+      ...TYPES.flatMap((t) =>
+        BUILTIN_VALUES[t].flatMap((x) =>
+          FNS.map((form) => {
+            const a = name();
+            return { id: `${t} ${literal(x)}: ${form}`, decl: [`DIM ${a} AS ${t} = ${literal(x)}`], expr: form.replace(/\ba\b/g, a) };
+          })
+        )
+      ),
+      ...["0.5", "-0.5", "1", "0"].flatMap((v) => ["ASN", "ACS"].map((f) => ({ id: `${f}(${v})`, decl: [], expr: `${f}(${v})` }))),
+      ...["2.5", "-2.5", "7", "0.001", "1E10", "256"].flatMap((v) => ["ABS", "SGN", "INT", "SQR"].map((f) => ({ id: `${f}(${v}) (literal)`, decl: [], expr: `${f}(${v === "-2.5" ? "ABS(-2.5)" : v})` })))
+    ]
+  };
+
   for (const [suite, data] of Object.entries(suites)) {
     const ids = new Set();
     for (const item of data.items) {

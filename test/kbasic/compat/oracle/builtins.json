@@ -1,0 +1,677 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "UByte 0: ABS(a)": {
+   "out": "0"
+  },
+  "UByte 0: SGN(a)": {
+   "out": "0"
+  },
+  "UByte 0: INT(a)": {
+   "out": "0"
+  },
+  "UByte 0: SQR(ABS(a))": {
+   "out": "0"
+  },
+  "UByte 0: SIN(a)": {
+   "out": "0"
+  },
+  "UByte 0: COS(a)": {
+   "out": "1"
+  },
+  "UByte 0: TAN(a)": {
+   "out": "0"
+  },
+  "UByte 0: ATN(a)": {
+   "out": "0"
+  },
+  "UByte 0: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "UByte 0: LN(ABS(a) + 1)": {
+   "out": "0"
+  },
+  "UByte 0: a * PI": {
+   "out": "0"
+  },
+  "UByte 0: a ^ 2": {
+   "out": "0"
+  },
+  "UByte 200: ABS(a)": {
+   "out": "200"
+  },
+  "UByte 200: SGN(a)": {
+   "out": "1"
+  },
+  "UByte 200: INT(a)": {
+   "out": "200"
+  },
+  "UByte 200: SQR(ABS(a))": {
+   "out": "14.142136"
+  },
+  "UByte 200: SIN(a)": {
+   "out": "-0.87329731"
+  },
+  "UByte 200: COS(a)": {
+   "out": "0.48718766"
+  },
+  "UByte 200: TAN(a)": {
+   "out": "-1.7925276"
+  },
+  "UByte 200: ATN(a)": {
+   "out": "1.5657964"
+  },
+  "UByte 200: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "UByte 200: LN(ABS(a) + 1)": {
+   "out": "5.3033049"
+  },
+  "UByte 200: a * PI": {
+   "out": "628.31853"
+  },
+  "UByte 200: a ^ 2": {
+   "out": "40000"
+  },
+  "Byte -100: ABS(a)": {
+   "out": "100"
+  },
+  "Byte -100: SGN(a)": {
+   "out": "-1"
+  },
+  "Byte -100: INT(a)": {
+   "out": "-100"
+  },
+  "Byte -100: SQR(ABS(a))": {
+   "out": "10"
+  },
+  "Byte -100: SIN(a)": {
+   "out": "0.50636565"
+  },
+  "Byte -100: COS(a)": {
+   "out": "0.86231887"
+  },
+  "Byte -100: TAN(a)": {
+   "out": "0.58721393"
+  },
+  "Byte -100: ATN(a)": {
+   "out": "-1.5607967"
+  },
+  "Byte -100: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "Byte -100: LN(ABS(a) + 1)": {
+   "out": "4.6151205"
+  },
+  "Byte -100: a * PI": {
+   "out": "-314.15927"
+  },
+  "Byte -100: a ^ 2": {
+   "out": ""
+  },
+  "Byte 7: ABS(a)": {
+   "out": ""
+  },
+  "Byte 7: SGN(a)": {
+   "out": ""
+  },
+  "Byte 7: INT(a)": {
+   "out": ""
+  },
+  "Byte 7: SQR(ABS(a))": {
+   "out": ""
+  },
+  "Byte 7: SIN(a)": {
+   "out": "0.6569866"
+  },
+  "Byte 7: COS(a)": {
+   "out": "0.75390226"
+  },
+  "Byte 7: TAN(a)": {
+   "out": "0.87144798"
+  },
+  "Byte 7: ATN(a)": {
+   "out": "1.4288993"
+  },
+  "Byte 7: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "Byte 7: LN(ABS(a) + 1)": {
+   "out": "2.0794415"
+  },
+  "Byte 7: a * PI": {
+   "out": "21.991149"
+  },
+  "Byte 7: a ^ 2": {
+   "out": "49"
+  },
+  "UInteger 1: ABS(a)": {
+   "out": "1"
+  },
+  "UInteger 1: SGN(a)": {
+   "out": "1"
+  },
+  "UInteger 1: INT(a)": {
+   "out": "1"
+  },
+  "UInteger 1: SQR(ABS(a))": {
+   "out": "1"
+  },
+  "UInteger 1: SIN(a)": {
+   "out": "0.84147098"
+  },
+  "UInteger 1: COS(a)": {
+   "out": "0.54030231"
+  },
+  "UInteger 1: TAN(a)": {
+   "out": "1.5574077"
+  },
+  "UInteger 1: ATN(a)": {
+   "out": "0.78539816"
+  },
+  "UInteger 1: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "UInteger 1: LN(ABS(a) + 1)": {
+   "out": "0.69314718"
+  },
+  "UInteger 1: a * PI": {
+   "out": "3.1415927"
+  },
+  "UInteger 1: a ^ 2": {
+   "out": "1"
+  },
+  "UInteger 60000: ABS(a)": {
+   "out": "60000"
+  },
+  "UInteger 60000: SGN(a)": {
+   "out": "1"
+  },
+  "UInteger 60000: INT(a)": {
+   "out": "60000"
+  },
+  "UInteger 60000: SQR(ABS(a))": {
+   "out": "244.94897"
+  },
+  "UInteger 60000: SIN(a)": {
+   "out": "0.95746753"
+  },
+  "UInteger 60000: COS(a)": {
+   "out": "-0.28854103"
+  },
+  "UInteger 60000: TAN(a)": {
+   "out": "-3.3183063"
+  },
+  "UInteger 60000: ATN(a)": {
+   "out": "1.5707797"
+  },
+  "UInteger 60000: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "UInteger 60000: LN(ABS(a) + 1)": {
+   "out": "11.002117"
+  },
+  "UInteger 60000: a * PI": {
+   "out": "188495.56"
+  },
+  "UInteger 60000: a ^ 2": {
+   "out": "3.6E+9"
+  },
+  "Integer -2: ABS(a)": {
+   "out": "2"
+  },
+  "Integer -2: SGN(a)": {
+   "out": "-1"
+  },
+  "Integer -2: INT(a)": {
+   "out": "-2"
+  },
+  "Integer -2: SQR(ABS(a))": {
+   "out": "1.4142136"
+  },
+  "Integer -2: SIN(a)": {
+   "out": "-0.90929743"
+  },
+  "Integer -2: COS(a)": {
+   "out": "-0.41614684"
+  },
+  "Integer -2: TAN(a)": {
+   "out": "2.1850399"
+  },
+  "Integer -2: ATN(a)": {
+   "out": "-1.1071487"
+  },
+  "Integer -2: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "Integer -2: LN(ABS(a) + 1)": {
+   "out": "1.0986123"
+  },
+  "Integer -2: a * PI": {
+   "out": "-6.2831853"
+  },
+  "Integer -2: a ^ 2": {
+   "out": ""
+  },
+  "Integer 30000: ABS(a)": {
+   "out": ""
+  },
+  "Integer 30000: SGN(a)": {
+   "out": ""
+  },
+  "Integer 30000: INT(a)": {
+   "out": ""
+  },
+  "Integer 30000: SQR(ABS(a))": {
+   "out": ""
+  },
+  "Integer 30000: SIN(a)": {
+   "out": ""
+  },
+  "Integer 30000: COS(a)": {
+   "out": ""
+  },
+  "Integer 30000: TAN(a)": {
+   "out": ""
+  },
+  "Integer 30000: ATN(a)": {
+   "out": ""
+  },
+  "Integer 30000: EXP(a / 100000)": {
+   "out": ""
+  },
+  "Integer 30000: LN(ABS(a) + 1)": {
+   "out": ""
+  },
+  "Integer 30000: a * PI": {
+   "out": ""
+  },
+  "Integer 30000: a ^ 2": {
+   "out": ""
+  },
+  "ULong 1: ABS(a)": {
+   "out": ""
+  },
+  "ULong 1: SGN(a)": {
+   "out": ""
+  },
+  "ULong 1: INT(a)": {
+   "out": ""
+  },
+  "ULong 1: SQR(ABS(a))": {
+   "out": ""
+  },
+  "ULong 1: SIN(a)": {
+   "out": "0.84147098"
+  },
+  "ULong 1: COS(a)": {
+   "out": "0.54030231"
+  },
+  "ULong 1: TAN(a)": {
+   "out": "1.5574077"
+  },
+  "ULong 1: ATN(a)": {
+   "out": "0.78539816"
+  },
+  "ULong 1: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "ULong 1: LN(ABS(a) + 1)": {
+   "out": "0.69314718"
+  },
+  "ULong 1: a * PI": {
+   "out": "3.1415927"
+  },
+  "ULong 1: a ^ 2": {
+   "out": "1"
+  },
+  "ULong 4000000000: ABS(a)": {
+   "out": "4000000000"
+  },
+  "ULong 4000000000: SGN(a)": {
+   "out": "1"
+  },
+  "ULong 4000000000: INT(a)": {
+   "out": "-294967296"
+  },
+  "ULong 4000000000: SQR(ABS(a))": {
+   "out": "63245.553"
+  },
+  "ULong 4000000000: SIN(a)": {
+   "out": "1"
+  },
+  "ULong 4000000000: COS(a)": {
+   "out": "0"
+  },
+  "ULong 4000000000: TAN(a)": {
+   "out": ""
+  },
+  "ULong 4000000000: ATN(a)": {
+   "out": ""
+  },
+  "ULong 4000000000: EXP(a / 100000)": {
+   "out": ""
+  },
+  "ULong 4000000000: LN(ABS(a) + 1)": {
+   "out": ""
+  },
+  "ULong 4000000000: a * PI": {
+   "out": ""
+  },
+  "ULong 4000000000: a ^ 2": {
+   "out": ""
+  },
+  "Long -100000: ABS(a)": {
+   "out": "100000"
+  },
+  "Long -100000: SGN(a)": {
+   "out": "-1"
+  },
+  "Long -100000: INT(a)": {
+   "out": "-100000"
+  },
+  "Long -100000: SQR(ABS(a))": {
+   "out": "316.22777"
+  },
+  "Long -100000: SIN(a)": {
+   "out": "-.035753305"
+  },
+  "Long -100000: COS(a)": {
+   "out": "-0.99936065"
+  },
+  "Long -100000: TAN(a)": {
+   "out": ".035776179"
+  },
+  "Long -100000: ATN(a)": {
+   "out": "-1.5707863"
+  },
+  "Long -100000: EXP(a / 100000)": {
+   "out": "0.36787944"
+  },
+  "Long -100000: LN(ABS(a) + 1)": {
+   "out": "11.512935"
+  },
+  "Long -100000: a * PI": {
+   "out": "-314159.27"
+  },
+  "Long -100000: a ^ 2": {
+   "out": ""
+  },
+  "Long 3: ABS(a)": {
+   "out": ""
+  },
+  "Long 3: SGN(a)": {
+   "out": ""
+  },
+  "Long 3: INT(a)": {
+   "out": ""
+  },
+  "Long 3: SQR(ABS(a))": {
+   "out": ""
+  },
+  "Long 3: SIN(a)": {
+   "out": ""
+  },
+  "Long 3: COS(a)": {
+   "out": ""
+  },
+  "Long 3: TAN(a)": {
+   "out": ""
+  },
+  "Long 3: ATN(a)": {
+   "out": ""
+  },
+  "Long 3: EXP(a / 100000)": {
+   "out": "1"
+  },
+  "Long 3: LN(ABS(a) + 1)": {
+   "out": "1.3862944"
+  },
+  "Long 3: a * PI": {
+   "out": "9.424778"
+  },
+  "Long 3: a ^ 2": {
+   "out": "9"
+  },
+  "Fixed 0.5: ABS(a)": {
+   "out": "0.5"
+  },
+  "Fixed 0.5: SGN(a)": {
+   "out": "1"
+  },
+  "Fixed 0.5: INT(a)": {
+   "out": "0"
+  },
+  "Fixed 0.5: SQR(ABS(a))": {
+   "out": "0.70710678"
+  },
+  "Fixed 0.5: SIN(a)": {
+   "out": "0.47942554"
+  },
+  "Fixed 0.5: COS(a)": {
+   "out": "0.87758256"
+  },
+  "Fixed 0.5: TAN(a)": {
+   "out": "0.54630249"
+  },
+  "Fixed 0.5: ATN(a)": {
+   "out": "0.46364761"
+  },
+  "Fixed 0.5: EXP(a / 100000)": {
+   "out": "0.99998474"
+  },
+  "Fixed 0.5: LN(ABS(a) + 1)": {
+   "out": "0.40546511"
+  },
+  "Fixed 0.5: a * PI": {
+   "out": "1.5707963"
+  },
+  "Fixed 0.5: a ^ 2": {
+   "out": "0.25"
+  },
+  "Fixed -2.5: ABS(a)": {
+   "out": "2.5"
+  },
+  "Fixed -2.5: SGN(a)": {
+   "out": "-1"
+  },
+  "Fixed -2.5: INT(a)": {
+   "out": "-3"
+  },
+  "Fixed -2.5: SQR(ABS(a))": {
+   "out": "1.5811388"
+  },
+  "Fixed -2.5: SIN(a)": {
+   "out": "-0.59847214"
+  },
+  "Fixed -2.5: COS(a)": {
+   "out": "-0.80114362"
+  },
+  "Fixed -2.5: TAN(a)": {
+   "out": "0.7470223"
+  },
+  "Fixed -2.5: ATN(a)": {
+   "out": "-1.1902899"
+  },
+  "Fixed -2.5: EXP(a / 100000)": {
+   "out": "1.0000763"
+  },
+  "Fixed -2.5: LN(ABS(a) + 1)": {
+   "out": "1.252763"
+  },
+  "Fixed -2.5: a * PI": {
+   "out": "-7.8539816"
+  },
+  "Fixed -2.5: a ^ 2": {
+   "out": ""
+  },
+  "Float 0.5: ABS(a)": {
+   "out": ""
+  },
+  "Float 0.5: SGN(a)": {
+   "out": ""
+  },
+  "Float 0.5: INT(a)": {
+   "out": ""
+  },
+  "Float 0.5: SQR(ABS(a))": {
+   "out": ""
+  },
+  "Float 0.5: SIN(a)": {
+   "out": ""
+  },
+  "Float 0.5: COS(a)": {
+   "out": ""
+  },
+  "Float 0.5: TAN(a)": {
+   "out": ""
+  },
+  "Float 0.5: ATN(a)": {
+   "out": ""
+  },
+  "Float 0.5: EXP(a / 100000)": {
+   "out": ""
+  },
+  "Float 0.5: LN(ABS(a) + 1)": {
+   "out": ""
+  },
+  "Float 0.5: a * PI": {
+   "out": ""
+  },
+  "Float 0.5: a ^ 2": {
+   "out": ""
+  },
+  "Float -7.25: ABS(a)": {
+   "out": "7.25"
+  },
+  "Float -7.25: SGN(a)": {
+   "out": "-1"
+  },
+  "Float -7.25: INT(a)": {
+   "out": "-8"
+  },
+  "Float -7.25: SQR(ABS(a))": {
+   "out": "2.6925824"
+  },
+  "Float -7.25: SIN(a)": {
+   "out": "-0.82308088"
+  },
+  "Float -7.25: COS(a)": {
+   "out": "0.56792417"
+  },
+  "Float -7.25: TAN(a)": {
+   "out": "-1.4492795"
+  },
+  "Float -7.25: ATN(a)": {
+   "out": "-1.4337302"
+  },
+  "Float -7.25: EXP(a / 100000)": {
+   "out": "0.9999275"
+  },
+  "Float -7.25: LN(ABS(a) + 1)": {
+   "out": "2.1102132"
+  },
+  "Float -7.25: a * PI": {
+   "out": "-22.776547"
+  },
+  "Float -7.25: a ^ 2": {
+   "out": ""
+  },
+  "ASN(0.5)": {
+   "out": ""
+  },
+  "ACS(0.5)": {
+   "out": ""
+  },
+  "ASN(-0.5)": {
+   "out": ""
+  },
+  "ACS(-0.5)": {
+   "out": ""
+  },
+  "ASN(1)": {
+   "out": ""
+  },
+  "ACS(1)": {
+   "out": ""
+  },
+  "ASN(0)": {
+   "out": ""
+  },
+  "ACS(0)": {
+   "out": ""
+  },
+  "ABS(2.5) (literal)": {
+   "out": "2.5"
+  },
+  "SGN(2.5) (literal)": {
+   "out": "1"
+  },
+  "INT(2.5) (literal)": {
+   "out": "2"
+  },
+  "SQR(2.5) (literal)": {
+   "out": "1.5811388"
+  },
+  "ABS(-2.5) (literal)": {
+   "out": "2.5"
+  },
+  "SGN(-2.5) (literal)": {
+   "out": "1"
+  },
+  "INT(-2.5) (literal)": {
+   "out": "2"
+  },
+  "SQR(-2.5) (literal)": {
+   "out": "1.5811388"
+  },
+  "ABS(7) (literal)": {
+   "out": "7"
+  },
+  "SGN(7) (literal)": {
+   "out": "1"
+  },
+  "INT(7) (literal)": {
+   "out": "7"
+  },
+  "SQR(7) (literal)": {
+   "out": "2.6457513"
+  },
+  "ABS(0.001) (literal)": {
+   "out": "0.0009918212890625"
+  },
+  "SGN(0.001) (literal)": {
+   "out": "1"
+  },
+  "INT(0.001) (literal)": {
+   "out": "0"
+  },
+  "SQR(0.001) (literal)": {
+   "out": ".031622777"
+  },
+  "ABS(1E10) (literal)": {
+   "out": "1410065408"
+  },
+  "SGN(1E10) (literal)": {
+   "out": "1"
+  },
+  "INT(1E10) (literal)": {
+   "out": "1410065408"
+  },
+  "SQR(1E10) (literal)": {
+   "out": "100000"
+  },
+  "ABS(256) (literal)": {
+   "out": "256"
+  },
+  "SGN(256) (literal)": {
+   "out": "1"
+  },
+  "INT(256) (literal)": {
+   "out": "256"
+  },
+  "SQR(256) (literal)": {
+   "out": "16"
+  }
+ }
+}

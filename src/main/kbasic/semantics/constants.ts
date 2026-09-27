@@ -106,6 +106,26 @@ export function naturalConstant(exact: Rational): Constant {
   }
 }
 
+/**
+ * How ZX BASIC writes a literal's STR$ at compile time (observed through the oracle, compatibility
+ * plan C2): a whole number exactly (STR$(1E10) is "10000000000"), anything else as the shortest
+ * decimal that reads back as the same double, with an exponent below 1E-4 and from 1E16 up
+ * (STR$(1 / 3) is "0.3333333333333333", STR$(1E-7) is "1e-07").
+ */
+export function literalText(exact: Rational): string {
+  const r = reduce(exact);
+  if (r.den === 1n) return r.num.toString();
+  const x = Number(r.num) / Number(r.den);
+  const [mantissa, exponentText] = x.toExponential().split("e");
+  const exponent = Number(exponentText);
+  if (exponent < -4 || exponent >= 16) return `${mantissa}e${exponent < 0 ? "-" : "+"}${String(Math.abs(exponent)).padStart(2, "0")}`;
+  const negative = mantissa.startsWith("-");
+  const digits = mantissa.replace(/^-/, "").replace(".", "");
+  const point = exponent + 1;
+  const text = point <= 0 ? `0.${"0".repeat(-point)}${digits}` : digits.length > point ? `${digits.slice(0, point)}.${digits.slice(point)}` : `${digits}${"0".repeat(point - digits.length)}`;
+  return (negative ? "-" : "") + text;
+}
+
 function gcd(a: bigint, b: bigint): bigint {
   a = a < 0n ? -a : a;
   b = b < 0n ? -b : b;

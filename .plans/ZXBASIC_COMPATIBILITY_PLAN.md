@@ -9,8 +9,8 @@ typing, FOR evaluating its limit once), are reversed by this decision.
 
 **Status:** stage C0 done (2026-09-27): the DO…LOOP acceptance fixes. The §5 decisions are taken
 (all proposals accepted; named arguments copied). **C1 done** (2026-09-27): oracle v2 and the bisect
-helper; findings in §4.1. **C2 in progress** (§4.2): numbers done — 1,747 generated items agree with
-zxbc apart from 75 recorded upstream faults and crashes.
+helper; findings in §4.1. **C2 done** (2026-09-27, §4.2): 2,082 generated items over numbers, Strings
+and the built-ins agree with zxbc apart from 75 recorded upstream faults and crashes. Next: C3.
 
 ---
 
@@ -117,7 +117,7 @@ program that pins them. Target: every generated program agrees.
 | --- | --- | --- |
 | **C0** | DO…LOOP: `DO LOOP UNTIL c` without a separator is accepted; a bare DO whose LOOP follows `:` on the line holding all of the body is rejected (E315), as zxbc does. `control/do-loops.zxbas` rewritten and confirmed by the oracle. | **Done 2026-09-27.** |
 | **C1** | Oracle v2 (§3.1); the bisect helper; the three zxbc crashes and the error model observed through BASIC. | **Done 2026-09-27** (§4.1). |
-| **C2** | Expressions and types (§3.3): literal typing, promotion, CONST folding, division and MOD for every type, shifts, bitwise, comparisons, conversions, number printing (Float, Fixed and integer literals). The binder, the constant folder, the runtime (arith16/arith32/float/fixed) and the tree selector follow; the optimiser's folding stays equal to the run time. | The generated suites and the corpus agree with zxbc for these areas. |
+| **C2** (**done 2026-09-27**, §4.2) | Expressions and types (§3.3): literal typing, promotion, CONST folding, division and MOD for every type, shifts, bitwise, comparisons, conversions, number printing (Float, Fixed and integer literals). The binder, the constant folder, the runtime (arith16/arith32/float/fixed) and the tree selector follow; the optimiser's folding stays equal to the run time. | The generated suites and the corpus agree with zxbc for these areas. |
 | **C3** | Statements: FOR (re-evaluation, unsigned with negative STEP, the value after the loop), evaluation order around calls, named arguments by position, the runtime error model (§4.1: which errors stop and which set ERR_NR and carry on; the debugger still stops at `errorEntry`), the print position written back for BASIC on return, PLOT/DRAW/POINT, Fixed division by zero, substring assignment, DATA/READ, PRINT's comma/TAB/AT edge cases, INPUT, sound and tape. | The statement corpus agrees; the debugger corpus and the step tests still pass at every level. |
 | **C4** | Acceptance (§3.2), both ways: reject what zxbc rejects (`#elif`, `=` in `#if`, `x ^ -1`, READ without DATA as a compile error, …), accept what it accepts. Klive's extensions are decided per D-C3. | The acceptance suite agrees. |
 | **C5** | Inline asm: zxbasm's dialect (main plan §6.5, D10) as the default, the runtime alias table for documented entry points, `'@asm-dialect klive` for Klive's own. nextlib compiles and its demo programs run under the oracle. | nextlib and the corpus's asm programs agree. |
@@ -171,8 +171,10 @@ program that pins them. Target: every generated program agrees.
   these types (`a = 1.5` is a Fixed).
 - **Kept correct (D-C6):** Float and Fixed MOD at run time floor (`FixMod`, new; `FMod` uses the ROM's
   INT, with the divisor moved to calculator memory 2, since INT uses memory 0 for negative numbers).
-- **Next in C2:** Strings (comparison, slices, concatenation, the String functions) and the numeric
-  built-ins, then close C2.
+- **Strings and built-ins** (suites `strings`, `builtins`, 335 items) agreed at once, apart from STR$ of
+  a literal, which zxbc writes at compile time (annex `str-of-literal`; `literalText`).
+- **Closed** with every suite agreeing: `baseline.json` empty, 75 recorded faults. A new difference
+  anywhere in the suites fails CI; a fault that stops differing fails too.
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with
