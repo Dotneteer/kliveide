@@ -8,6 +8,9 @@ import type { MessengerBase } from "@messaging/MessengerBase";
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
 import type { SavedFileInfo } from "@emu/abstractions/ITapeDevice";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
@@ -114,9 +117,27 @@ export interface IMachineController {
   restart(): Promise<void>;
 
   /**
-   * Starts the machine in step-into mode.
+   * Starts the machine in step-into mode (a statement step while source stepping is in use).
    */
   stepInto(): Promise<void>;
+
+  /** Source stepping (true) or Z80 stepping (false) for a program with source-level debug info. */
+  sourceStepping: boolean;
+
+  /** Source steps stop inside interrupt handlers too (plan §10.2.7). */
+  stopInInterrupts: boolean;
+
+  /** The injected program's source-level debug info (plan §10.2); undefined for none. */
+  setSourceDebugInfo(info?: SourceLevelDebugInfo): void;
+
+  /** A source-level step (`SourceStepDecision.ts`). */
+  sourceStep(kind: SourceStepKind, options?: { targetFrame?: number; targetCallable?: number }): Promise<void>;
+
+  /** Where the paused program stands at source level. */
+  getSourceStopInfo(): SourceStopInfo | undefined;
+
+  /** The symbolic call stack, innermost first. */
+  getSourceCallStack(): SourceActivationInfo[] | undefined;
 
   /**
    * Starts the machine in step-over mode.

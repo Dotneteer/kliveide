@@ -48,7 +48,10 @@ import {
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
-import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
+import { runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
+import { statementAtColumn } from "@common/utils/breakpoints";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
 import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
@@ -78,6 +81,7 @@ type MarkdownString = monacoEditor.IMarkdownString;
 // --- the renderer bundle entry at runtime.
 const MONACO_GUTTER_GLYPH_MARGIN = 2;
 const MONACO_GUTTER_LINE_NUMBERS = 3;
+const MONACO_CONTENT_TEXT = 6;
 
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
@@ -625,6 +629,40 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
+    // --- Source-level debugging actions (plan §10.3, §10.5): the statement under the cursor
+    if (languageInfo?.supportsBreakpoints) {
+      disposables.push(
+        ed.addAction({
+          id: "klive.toggleStatementBreakpoint",
+          label: "Toggle Breakpoint at Statement",
+          contextMenuGroupId: "klive-debug",
+          contextMenuOrder: 1,
+          run: (target) => {
+            const position = target.getPosition();
+            if (position) void toggleStatementBreakpoint(position.lineNumber, position.column - 1);
+          }
+        }),
+        ed.addAction({
+          id: "klive.runToCursor",
+          label: "Run to Cursor",
+          contextMenuGroupId: "klive-debug",
+          contextMenuOrder: 2,
+          run: (target) => {
+            const position = target.getPosition();
+            if (!position) return;
+            const address = runToCursorAddress(
+              store.getState().compilation?.result,
+              getResourceName(),
+              getIsWindows(),
+              position.lineNumber,
+              position.column - 1
+            );
+            if (address === undefined) return;
+            void ideCommandsService.executeCommand(`run-to $${address.toString(16).padStart(4, "0")}`);
+          }
+        })
+      );
+    }
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
       ed.onMouseUp(handleEditorMouseUp),
@@ -1000,8 +1038,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
       }
 
-      // --- Render the breakpoint according to its type and reachability
-      if (editorLines !== null && bp.resource === resourceName.slice(1)) {
+      // --- Render the breakpoint according to its type and reachability (a statement breakpoint is
+      // --- drawn at its statement below, not in the gutter)
+      if (editorLines !== null && bp.resource === resourceName.slice(1) && bp.column === undefined) {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
           if (bp.disabled) {
@@ -1023,11 +1062,53 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       }
     });
 
+    // --- Statement breakpoints (plan §10.3): a marker before each further statement of a line with
+    // --- several, while debugging; a statement breakpoint's marker always
+    if (hasSourceLevelDebug(compilationResult) && compilationResult.errors?.every((e) => e.isWarning)) {
+      const info = compilationResult.sourceLevelDebug;
+      const fileIndex = sourceFileIndex(info, resourceName, getIsWindows());
+      if (fileIndex >= 0) {
+        const debugging = !!state.emulatorState?.isDebugging;
+        const own = bps.filter((bp) => bp.resource === resourceName.slice(1) && bp.column !== undefined);
+        const shown = new Set<string>();
+        for (const s of statementMarkers(info, fileIndex)) {
+          const bp = own.find((b) => b.line === s.startLine && b.column === s.startColumn);
+          if (!bp && !debugging) continue;
+          decorations.push(createStatementMarkerDecoration(s.startLine, s.startColumn, bp));
+          shown.add(`${s.startLine}:${s.startColumn}`);
+        }
+        // --- A statement breakpoint whose statement has no marker (the line's first one)
+        for (const bp of own) {
+          if (!shown.has(`${bp.line}:${bp.column}`)) decorations.push(createStatementMarkerDecoration(bp.line!, bp.column!, bp));
+        }
+      }
+    }
+
     if (bpDecorations.current) {
       bpDecorations.current.clear();
     }
     bpDecorations.current = editor.current.createDecorationsCollection(decorations);
     return bps;
+  }
+
+  /**
+   * Adds or removes the statement breakpoint at a line and 0-based column (plan §10.3): the
+   * statement whose range holds the column.
+   */
+  async function toggleStatementBreakpoint(line: number, column: number): Promise<void> {
+    const result = store.getState().compilation?.result;
+    if (!hasSourceLevelDebug(result)) return;
+    const fileIndex = sourceFileIndex(result.sourceLevelDebug, getResourceName(), getIsWindows());
+    const statement = fileIndex >= 0 ? statementAtColumn(result.sourceLevelDebug, fileIndex, line, column) : undefined;
+    if (!statement || statement.startLine !== line) return;
+    const resource = document.node?.projectPath ?? getResourceName().slice(1);
+    const existing = breakpoints.current.find(
+      (bp) => bp.resource === resource && bp.line === line && bp.column === statement.startColumn
+    );
+    if (existing) await removeBreakpoint(messenger, existing);
+    else await addBreakpoint(messenger, { resource, line, column: statement.startColumn, exec: true });
+    await refreshSourceCodeBreakpoints(store, messenger);
+    store.dispatch(incBreakpointsVersionAction());
   }
 
   /**
@@ -1041,7 +1122,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // --- Check if there is an existing breakpoint at this line
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === resourceName && bp.line === lineNo
+        (bp) => bp.resource === resourceName && bp.line === lineNo && bp.column === undefined
       );
       if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
@@ -1098,6 +1179,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ? e.target.position.lineNumber
       : null;
 
+    // --- An inline statement marker (plan §10.3): toggles that statement's breakpoint
+    const markerClasses = [styles.statementBpMarker, styles.statementBpSet, styles.statementBpDisabled];
+    if (
+      e.event.leftButton &&
+      e.target?.type === MONACO_CONTENT_TEXT &&
+      e.target.position &&
+      markerClasses.some((c) => e.target.element?.classList.contains(c))
+    ) {
+      void toggleStatementBreakpoint(e.target.position.lineNumber, e.target.position.column - 1);
+      return;
+    }
+
     if (
       e.event.leftButton &&
       e.target?.type === MONACO_GUTTER_GLYPH_MARGIN
@@ -1105,7 +1198,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo
+        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo && bp.column === undefined
       );
       (async () => {
         if (existingBp) {
@@ -1191,6 +1284,30 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Is the machine running?
     const machineState = store.getState().emulatorState?.machineState;
+
+    // --- Source-level debug info (plan §10.5): the active statement's own range, and return
+    // --- points, which the emulator's report of the last stop knows about
+    if (machineState === MachineControllerState.Paused && hasSourceLevelDebug(compilation.result)) {
+      let stop;
+      try {
+        stop = await emuApi.getSourceStopInfo();
+      } catch {
+        stop = undefined;
+      }
+      const location = locateSource(compilation.result, pc, stop);
+      if (location?.sourceLevel) {
+        const sep = getIsWindows() ? "\\" : "/";
+        if (location.filename.replaceAll(sep, "/").endsWith(getResourceName())) {
+          const resName = getResourceName()?.slice(1);
+          const activeBp = bps.find((bp) => (bp.line === location.line && bp.resource === resName) || bp.address === pc);
+          decorations.push(createCurrentStatementDecoration(location, activeBp));
+        }
+        execPointDecoration.current?.clear();
+        execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
+        return;
+      }
+    }
+
     if (
       machineState === MachineControllerState.Running ||
       machineState == MachineControllerState.Paused
@@ -1358,6 +1475,49 @@ function createCurrentBreakpointDecoration(
           ? styles.activeBinBreakpointOnExistingMargin
           : styles.activeBreakpointOnExistingMargin
         : styles.activeBreakpointMargin
+    }
+  };
+}
+
+/**
+ * An inline statement marker (plan §10.3), before a statement that shares its line: faint where a
+ * breakpoint can go, in the breakpoint colour where one is set.
+ */
+function createStatementMarkerDecoration(line: number, column: number, bp?: BreakpointInfo): Decoration {
+  const className = bp ? (bp.disabled ? styles.statementBpDisabled : styles.statementBpSet) : styles.statementBpMarker;
+  return {
+    range: new monacoEditor.Range(line, column + 1, line, column + 1),
+    options: {
+      before: { content: "\u25cf", inlineClassName: className },
+      hoverMessage: { value: bp ? "Click to remove the breakpoint on this statement" : "Click to add a breakpoint on this statement" }
+    }
+  };
+}
+
+/**
+ * The execution point at source level (plan §10.3, §10.5): exactly the active statement, across
+ * its lines; at a return point the calling statement, with a note naming the routine that returned.
+ */
+function createCurrentStatementDecoration(location: SourceLocation, activeBp?: BreakpointInfo): Decoration {
+  const startColumn = (location.startColumn ?? 0) + 1;
+  const endColumn = location.endColumn !== undefined ? location.endColumn + 1 : startColumn;
+  const returnPoint = location.kind === "returnPoint";
+  const note = returnPoint ? `returned from ${location.returnedFrom ?? "a call"}` : undefined;
+  return {
+    range: new monacoEditor.Range(location.line, startColumn, location.endLine, endColumn),
+    options: {
+      className: styles.activeBreakpointLine,
+      glyphMarginClassName: activeBp
+        ? activeBp.address !== undefined
+          ? styles.activeBinBreakpointOnExistingMargin
+          : styles.activeBreakpointOnExistingMargin
+        : styles.activeBreakpointMargin,
+      ...(note
+        ? {
+            hoverMessage: { value: `Execution returned here: ${note}` },
+            after: { content: `  \u2190 ${note}`, inlineClassName: styles.returnPointNote }
+          }
+        : {})
     }
   };
 }

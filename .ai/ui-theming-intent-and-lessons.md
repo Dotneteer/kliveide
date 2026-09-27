@@ -282,6 +282,13 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   `--status-warning` are already spoken for *in the same row* by `--color-breakpoint-code`,
   `-binary` and `--color-breakpoint-current`. The general rule: before giving a new mark a status
   hue, check what else in that row already owns one.
+- **A note on an existing mark takes neutral text, not a hue of its own.** The source debugger's
+  return point (`MonacoEditor.module.scss` `.returnPointNote`, "← returned from f" after the
+  execution-point statement) is the execution point with an explanation, not a second state, so it
+  is `--text-secondary` italic beside the usual `--bgcolor-debug-active-bp` highlight. A "possible
+  here" mark reuses its family's tokens at reduced strength: the inline statement-breakpoint marker
+  is `--color-breakpoint-disabled` at 50% where a breakpoint can go and `--color-breakpoint-code`
+  where one is set — the same pair the gutter uses, so a statement breakpoint reads as a breakpoint.
 - **Certainty is carried by strength, not by hue.** The same branch gutter draws the same glyph in
   the same colour on every row, and dims it to 45% everywhere except the execution point. Away from
   PC the verdict was computed from *today's* flags rather than the ones that will hold when the CPU

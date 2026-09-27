@@ -71,6 +71,34 @@
   border: 1px solid var(--bgcolor-debug-active-bp);
 }
 
+/*
+ * Inline statement markers (plan §10.3): before each further statement of a line, clicked to set a
+ * breakpoint on that statement alone. The breakpoint tokens, as in the gutter; the empty marker is
+ * the disabled colour, faint, so it reads as "possible here" and never as a breakpoint.
+ */
+.statementBpMarker {
+  color: var(--color-breakpoint-disabled);
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.statementBpSet {
+  color: var(--color-breakpoint-code);
+  cursor: pointer;
+}
+
+.statementBpDisabled {
+  color: var(--color-breakpoint-disabled);
+  cursor: pointer;
+}
+
+.returnPointNote {
+  /* A return point's "← returned from f" (plan §10.2.6): a note on the execution point, not a
+     second state, so neutral text rather than another status hue */
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 .activeMacroInvocationLine {
   background: var(--bgcolor-debug-macro-bp);
   border: 1px solid var(--bgcolor-debug-macro-bp);

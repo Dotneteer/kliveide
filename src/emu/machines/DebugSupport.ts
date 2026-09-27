@@ -813,9 +813,10 @@ export class DebugSupport implements IDebugSupport {
     resource: string,
     line: number,
     address: number,
-    partition?: number
+    partition?: number,
+    column?: number
   ): void {
-    const bpKey = getBreakpointStorageKey({ resource, line });
+    const bpKey = getBreakpointStorageKey({ resource, line, ...(column !== undefined ? { column } : {}) });
     const bp = this.breakpointDefs.get(bpKey);
     if (!bp || !bp.exec) {
       return;

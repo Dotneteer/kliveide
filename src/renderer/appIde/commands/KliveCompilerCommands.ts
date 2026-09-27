@@ -30,7 +30,7 @@ import {
   setProjectDebuggingAction
 } from "@common/state/actions";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { hasSourceLevelDebug, isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
@@ -1179,6 +1179,14 @@ export async function injectCode(
       returnMessage = `Code injected and started in debug mode.`;
       break;
     }
+  }
+
+  // --- Source-level debug info (plan §10.2) goes to the emulator after the injection, which may
+  // --- have replaced the machine controller; a program without it clears the previous one's
+  try {
+    await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
+  } catch {
+    // --- An emulator without source stepping keeps instruction stepping
   }
 
   // --- Injection done

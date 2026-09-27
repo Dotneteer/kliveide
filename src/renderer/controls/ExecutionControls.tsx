@@ -11,6 +11,7 @@ import { useIdeApi } from "@renderer/core/IdeApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { MachineCommand } from "@common/abstractions/MachineCommand";
 import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
 
 type Props = {
   ide: boolean;
@@ -105,6 +106,21 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     setResumeAction(isDebugging ? "debug" : "continue");
   }, [isDebugging]);
 
+  /*
+   * Source-level stepping (plan §10.2.8), offered for a program built with source-level debug info
+   * (Klive BASIC): Step Over Line, and the Source / Z80 toggle that decides what Step Into, Over
+   * and Out step. The emulator's controller owns the mode; this follows it.
+   */
+  const hasSourceDebug = useSelector((s) => hasSourceLevelDebug(s.compilation?.result));
+  const [sourceMode, setSourceMode] = useState(true);
+  useEffect(() => {
+    if (!ide || !hasSourceDebug) return;
+    emuApi
+      .getSourceStepping()
+      .then(setSourceMode)
+      .catch(() => undefined);
+  }, [ide, hasSourceDebug, state, emuApi]);
+
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);
   const [stepOverKey, setStepOverKey] = useState<string>(null);
   const [stepOutKey, setStepOutKey] = useState<string>(null);
@@ -164,6 +180,17 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     setResumeAction("debug");
     await emuApi.issueMachineCommand("stepOut");
   }, [emuApi]);
+
+  const handleStepOverLine = useCallback(async () => {
+    setResumeAction("debug");
+    await emuApi.sourceStep("overLine");
+  }, [emuApi]);
+
+  const handleToggleStepMode = useCallback(async () => {
+    const next = !sourceMode;
+    await emuApi.setSourceStepping(next);
+    setSourceMode(next);
+  }, [emuApi, sourceMode]);
 
   useEffect(() => {
     if (!mainApi) return;
@@ -270,6 +297,29 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         enable={canStep}
         clicked={handleStepOut}
       />
+      {ide && hasSourceDebug && (
+        <>
+          <IconButton
+            iconName="step-over-line"
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton-blue"
+            title="Step Over Line (Shift+F10)"
+            enable={canStep && sourceMode}
+            clicked={handleStepOverLine}
+          />
+          <IconButton
+            iconName={sourceMode ? "step-mode-source" : "step-mode-z80"}
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton-blue"
+            title={
+              sourceMode
+                ? "Stepping source statements (click to step Z80 instructions)"
+                : "Stepping Z80 instructions (click to step source statements)"
+            }
+            clicked={handleToggleStepMode}
+          />
+        </>
+      )}
     </>
   );
 };

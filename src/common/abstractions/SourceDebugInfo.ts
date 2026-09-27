@@ -107,3 +107,37 @@ export type SourceDebugExtensions = {
   errorEntry?: number;
   optimizationLevel: number;
 };
+
+/** The registers a FUNCTION result is decoded from at a return point (§10.2.6). */
+export type SourceReturnRegisters = { af: number; bc: number; de: number; hl: number };
+
+/**
+ * Where a paused program stands at source level, as the emulator reports it after a stop: how it
+ * stopped, the statement to show (for a return point, the calling statement), and the FUNCTION
+ * results that returned during the last source step.
+ */
+export type SourceStopInfo = {
+  kind: "statement" | "returnPoint" | "other";
+  pc: number;
+  /** Index into `SourceLevelDebugInfo.statements`, or -1 (runtime code, the ROM). */
+  statementIndex: number;
+  /** A return point: the SUB or FUNCTION that just returned. */
+  returnedFrom?: number;
+  /** A return point: a GOSUB subroutine just returned. */
+  returnedFromGosub?: boolean;
+  returned: { callableIndex: number; registers: SourceReturnRegisters }[];
+};
+
+/** One activation of the symbolic call stack (§10.6), innermost first. */
+export type SourceActivationInfo = {
+  callableIndex: number;
+  kind: "main" | "routine" | "gosub";
+  /** SP at the activation's statement entries. */
+  baseline: number;
+  /** The word holding its return address (absent for the main program). */
+  returnSlot?: number;
+  /** The call that started it: its statement is where the caller stands. */
+  callSite?: CallSiteDebugInfo;
+  /** A routine's frame pointer, for its parameters and locals. */
+  ix?: number;
+};

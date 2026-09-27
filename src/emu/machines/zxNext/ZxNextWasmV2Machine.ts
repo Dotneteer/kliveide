@@ -831,6 +831,12 @@ export class ZxNextWasmV2Machine
    * `0xffffffff` is the core's "nothing has been called" sentinel, mapped back to the -1 the rest
    * of the debugger expects.
    */
+  /** Interrupt handlers running now, from the core's shadow stack (source stepping, plan §10.2.7). */
+  override getInterruptDepth(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.zxnextGetInterruptDepth() : super.getInterruptDepth();
+  }
+
   override markStepOutAddress(): void {
     const address = this.requireWasmV2Runtime().exports.zxnextGetStepOutAddress();
     this.stepOutAddress = address === 0xffffffff ? -1 : address;
@@ -848,7 +854,7 @@ export class ZxNextWasmV2Machine
       getPartition: (address) => this.getPartition(address),
       getCallInstructionLength: () => this.getCallInstructionLength(),
       getSp: () => this.sp,
-      getInterruptDepth: () => this.requireWasmV2Runtime().exports.zxnextGetInterruptDepth(),
+      getInterruptDepth: () => this.getInterruptDepth(),
       getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
       stepOutAddress: this.stepOutAddress,
       /*

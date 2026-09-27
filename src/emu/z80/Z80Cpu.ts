@@ -641,6 +641,11 @@ export class Z80Cpu implements IZ80Cpu {
    */
   interruptDepth = 0;
 
+  /** How many interrupt handlers are running; a WASM machine answers from its core. */
+  getInterruptDepth(): number {
+    return this.interruptDepth;
+  }
+
   /**
    * Circular buffer pointer for stepOutStack (points to next write position)
    */

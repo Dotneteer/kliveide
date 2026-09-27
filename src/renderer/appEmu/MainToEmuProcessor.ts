@@ -29,6 +29,8 @@ import { CodeToInject } from "@abstractions/CodeToInject";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { BreakpointInfo, type BreakpointScope } from "@abstractions/BreakpointInfo";
 import { MachineCommand } from "@abstractions/MachineCommand";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import {
   CpuState,
   CpuStateChunk,
@@ -756,6 +758,55 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.machine.getCallStack();
+  }
+
+  setSourceDebugInfo(info?: SourceLevelDebugInfo) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.setSourceDebugInfo(info);
+  }
+
+  setSourceStepping(source: boolean, stopInInterrupts?: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.sourceStepping = source;
+    if (stopInInterrupts !== undefined) controller.stopInInterrupts = stopInInterrupts;
+  }
+
+  getSourceStepping() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.sourceStepping;
+  }
+
+  sourceStep(kind: SourceStepKind, options?: { targetFrame?: number; targetCallable?: number }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.sourceStep(kind, options ?? {});
+  }
+
+  getSourceStopInfo() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.getSourceStopInfo();
+  }
+
+  getSourceCallStack() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.getSourceCallStack();
   }
 
   /**

@@ -1,5 +1,5 @@
 import type { CallableDebugInfo, SourceLevelDebugInfo, StatementDebugInfo } from "@abstractions/CompilerInfo";
-import type { CallableFrameInfo, CallSiteDebugInfo } from "@abstractions/SourceDebugInfo";
+import type { CallableFrameInfo, CallSiteDebugInfo, SourceActivationInfo, SourceReturnRegisters } from "@abstractions/SourceDebugInfo";
 
 /**
  * Source-level stepping (plan `.plans/ZXBASIC_COMPILER_PLAN.md` §10.2, §10.3): steps one statement
@@ -116,16 +116,7 @@ export class SourceDebugIndex {
  * One activation on the stack. `baseline` is SP at each of its statement entries; `returnSlot` the
  * address of the word holding its return address (absent for the main program).
  */
-export type Activation = {
-  callableIndex: number;
-  kind: "main" | "routine" | "gosub";
-  baseline: number;
-  returnSlot?: number;
-  /** The call that started it (absent for the main program). */
-  callSite?: CallSiteDebugInfo;
-  /** A routine's frame pointer: its parameters and locals are relative to it. */
-  ix?: number;
-};
+export type Activation = SourceActivationInfo;
 
 /**
  * The activation chain, innermost first and the main program last. Works from anywhere: a statement
@@ -220,7 +211,7 @@ export type SourceStepKind =
   | "intoTarget";
 
 /** The registers a returned value is decoded from (G6). */
-export type ReturnRegisters = { af: number; bc: number; de: number; hl: number };
+export type ReturnRegisters = SourceReturnRegisters;
 
 export type ReturnedValue = { callableIndex: number; registers: ReturnRegisters };
 

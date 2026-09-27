@@ -18,7 +18,8 @@ import {
 import { IProjectService } from "@renderer/abstractions/IProjectService";
 import { AppState } from "@common/state/AppState";
 import { Store } from "@common/state/redux-light";
-import { isDebuggableCompilerOutput } from "./utils/compiler-utils";
+import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "./utils/compiler-utils";
+import { locateSource } from "./utils/source-location";
 import { restoreLastOpenDocuments } from "./restoreLastOpenDocuments";
 import { revealNexBankAtPc } from "./DocumentPanels/Next/nexBankReveal";
 import { nexBankDumpId, nexBankDumpTitle } from "./DocumentPanels/Next/nexBankDocument";
@@ -189,14 +190,20 @@ export const IdeEventsHandler = () => {
 
     // --- Get the available breakpoints
     const cpuResponse = await emuApi.getCpuState();
-    // --- Check if there is a location for PC
-    const fileLine = compilation.result.sourceMap[cpuResponse.pc];
-    if (!fileLine) return;
+    // --- The source location of PC: with source-level info, where the last step stopped (a return
+    // --- point is not a statement entry, so it has no sourceMap entry)
+    let stop;
+    if (hasSourceLevelDebug(compilation.result)) {
+      try {
+        stop = await emuApi.getSourceStopInfo();
+      } catch {
+        stop = undefined;
+      }
+    }
+    const location = locateSource(compilation.result, cpuResponse.pc, stop);
+    if (!location) return;
 
-    const fullFile = compilation.result.sourceFileList[fileLine.fileIndex]?.filename;
-    if (!fullFile) return;
-
-    await ideCommandsService.executeCommand(`nav "${fullFile}" ${fileLine.line}`);
+    await ideCommandsService.executeCommand(`nav "${location.filename}" ${location.line}`);
   }
 };
 

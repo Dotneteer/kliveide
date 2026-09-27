@@ -168,7 +168,7 @@ export interface IDebugSupport {
    * @param partition The memory partition the line's code lives in, for a line inside a `.bank`
    * segment. Absent for unbanked code, which stays partitionless.
    */
-  resolveBreakpoint(resource: string, line: number, address: number, partition?: number): void;
+  resolveBreakpoint(resource: string, line: number, address: number, partition?: number, column?: number): void;
 
   /**
    * Renames breakpoints when the source file is renamed

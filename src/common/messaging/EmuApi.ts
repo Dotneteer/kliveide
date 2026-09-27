@@ -11,6 +11,9 @@ import { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { IMemorySection } from "@abstractions/MemorySection";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -339,6 +342,45 @@ class EmuApiImpl {
    * Gets the current call stack information.
    */
   async getCallStack(): Promise<CallStackInfo> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Hands the emulator the injected program's source-level debug info (plan §10.2): with it, Step
+   * Into/Over/Out step statements. Undefined for a program without it.
+   */
+  async setSourceDebugInfo(_info?: SourceLevelDebugInfo): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Selects source stepping (true) or Z80 instruction stepping (false) for a program with
+   * source-level debug info, and whether source steps stop inside interrupt handlers.
+   */
+  async setSourceStepping(_source: boolean, _stopInInterrupts?: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A source-level step: into, over, out, over the line, to a call-stack frame (`targetFrame`), or
+   * into a chosen call of the statement (`targetCallable`). Returns once the step has started.
+   */
+  async sourceStep(_kind: SourceStepKind, _options?: { targetFrame?: number; targetCallable?: number }): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Whether Step Into/Over/Out step source statements (true) or Z80 instructions (false). */
+  async getSourceStepping(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Where the paused program stands at source level (undefined without source-level info). */
+  async getSourceStopInfo(): Promise<SourceStopInfo | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The symbolic call stack, innermost first (undefined without source-level info). */
+  async getSourceCallStack(): Promise<SourceActivationInfo[] | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

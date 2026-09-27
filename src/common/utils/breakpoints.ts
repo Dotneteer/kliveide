@@ -8,7 +8,8 @@ import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
 import { isNextRegBreakpoint } from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
-import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import type { SourceLevelDebugInfo, StatementDebugInfo } from "@abstractions/CompilerInfo";
 
 /**
  * A breakpoint's key, in two forms.
@@ -135,7 +136,8 @@ function buildBreakpointKey(
     // --- Routing it through the labels is how the two index spaces got confused before.
     return `${labelBankText(bp.bank)}:+$${toHexa4(bp.bankOffset)}${suffix}`;
   } else if (bp.resource && bp.line !== undefined) {
-    return `[${bp.resource}]:${bp.line}`;
+    // --- A statement breakpoint adds its column; line breakpoints keep the key they always had
+    return `[${bp.resource}]:${bp.line}${bp.column !== undefined ? `:${bp.column}` : ""}`;
   }
   throw new Error("Breakpoint info does not have key information.");
 }
@@ -210,6 +212,25 @@ export {
   withScopeOwner
 } from "./breakpoint-scope";
 
+/**
+ * The statement a statement breakpoint at (`line`, `column`) stands for: the one on the line whose
+ * range holds the column, else the first one starting after it (plan §10.3).
+ */
+export function statementAtColumn(
+  info: SourceLevelDebugInfo,
+  fileIndex: number,
+  line: number,
+  column: number
+): StatementDebugInfo | undefined {
+  const onLine = info.statements
+    .filter((s) => s.fileIndex === fileIndex && s.startLine === line && s.endAddress > s.startAddress)
+    .sort((a, b) => a.startColumn - b.startColumn);
+  return (
+    onLine.find((s) => column >= s.startColumn && (s.endLine > line || column < s.endColumn)) ??
+    onLine.find((s) => s.startColumn >= column)
+  );
+}
+
 // --- Sends all resolved source code breakpoints to the emulator
 export async function refreshSourceCodeBreakpoints(
   store: Store<AppState>,
@@ -228,12 +249,21 @@ export async function refreshSourceCodeBreakpoints(
 
     // --- There can be source code breakpoints
     const bps = await getBreakpoints(messenger);
+    const sourceLevel = hasSourceLevelDebug(compilation.result) ? compilation.result.sourceLevelDebug : undefined;
     for (const bp of bps) {
       if (!bp.resource) continue;
       delete bp.resolvedAddress;
       const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
         fi.filename.endsWith(bp.resource!)
       );
+      // --- A statement breakpoint (plan §10.3): the statement whose range on its line holds the column
+      if (fileIndex >= 0 && bp.column !== undefined) {
+        const statement = sourceLevel ? statementAtColumn(sourceLevel, fileIndex, bp.line!, bp.column) : undefined;
+        if (statement) {
+          resolvedBp.push({ resource: bp.resource, line: bp.line!, column: bp.column, address: statement.startAddress });
+        }
+        continue;
+      }
       if (fileIndex >= 0) {
         const lineInfo = compilation.result.listFileItems.find(
           (li) => li.fileIndex === fileIndex && li.lineNumber === bp.line // && !li.isMacroInvocation

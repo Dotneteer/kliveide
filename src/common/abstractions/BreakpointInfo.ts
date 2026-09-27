@@ -110,6 +110,12 @@ export type BreakpointInfo = {
   line?: number;
 
   /**
+   * A statement breakpoint (plan §10.3): a 0-based column on `line`, resolved to the statement whose
+   * range holds it. Absent for a line breakpoint, which stops at the line's first statement.
+   */
+  column?: number;
+
+  /**
    * Indicates that a source-bound breakpoint has been resolved
    */
   resolvedAddress?: number;
