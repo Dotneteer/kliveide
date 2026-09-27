@@ -321,6 +321,19 @@ describe("suppressing user breakpoints during a launch flow", () => {
     expect(ds.shouldStopAt(0x9000, () => undefined)).toEqual(true);
   });
 
+  it("holds a user breakpoint back only while keystrokes are still queued", () => {
+    // --- The flag is lifted by a poll that can come late: once the last keystroke has landed, the
+    // --- loaded program's first breakpoint must fire even though the flag is still up
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8000, exec: true });
+    ds.suppressUserBreakpoints = true;
+    let queued = 2;
+    ds.keystrokesPending = () => queued > 0;
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(false);
+    queued = 0;
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(true);
+  });
+
   it("changes nothing while it is off", () => {
     const ds = new DebugSupport();
     ds.addBreakpoint({ address: 0x8000, exec: true });

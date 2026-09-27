@@ -43,10 +43,10 @@ partition-aware source mapping (§10.4); runtime-error stops, the ROM's own erro
 Just My Code with stepping into the standard library (§10.12); the three debugger settings. Every row of the §10.2/§10.3 scenario tables is an emulator test on the 48K; the call
 stack, the Variables panel and watches are checked against each other on all 159 corpus programs;
 the whole flow is verified in the running IDE (`scripts/kbasic-ide-check.cjs`). **Phase 6 in progress**
-(2026-09-27): the Next target is done (commit "Phase 6: the ZX Spectrum Next target": the whole
-corpus passes on the Next harness, a built NEX loads and runs); CODEBANK runs (11 corpus programs,
-E455–E458) and is debuggable across banks at source level (stepping, breakpoints, call stack) —
-see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
+(2026-09-27): the Next target; CODEBANK (12 corpus programs, E455–E458, `farmem.bas`) debuggable
+across banks at source level, checked in the running IDE through NextZXOS; the NEX debug sidecar,
+the `emit-*` files, the Next template, the docs section. The exit criterion is met; two small items
+remain — see "Phase 6 state" in the Handoff. Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -287,13 +287,26 @@ Done in the same session, after that:
   characters. Tests: corpus `codebank/farmem.zxbas` (all seven, from resident code and from another
   bank, zero counts, bank 0), `codebank.test.ts`, an E458 case.
 
+- **The IDE check on the Next (Phase 6 exit criterion):** `scripts/kbasic-ide-check.cjs` has a
+  Next part — a CODEBANK project debugged through NextZXOS `.nexload`: a breakpoint in the bank,
+  the execution point on the banked line, the Call Stack (banked routine, resident caller), the
+  parameter and a bank-local global in Variables, Step Out to the resident caller, Step Over. All 28
+  checks pass. Each part runs in a fresh Klive (a long session across a 48K and a Next project hits
+  the ProjectService cache quirk: the new project's files are missing from the service's tree).
+  The app runs with its own home (`launchKlive({ userHome })` sets Electron's `home` path in the app,
+  since on macOS it does not follow `HOME`) holding a **copy** of `~/Klive/ks2.cim`; without a card
+  the part is skipped. `KBASIC_IDE_ONLY=next|classic`.
+- **A NEX-launch race fixed on the way:** the launch flow lifts `suppressUserBreakpoints` by a 50 ms
+  poll; `DebugSupport.keystrokesPending` now decides at the moment of a hit, so a breakpoint early in
+  a loaded NEX is not lost to a late poll (test in `BankRelativeBreakpoints.test.ts`).
+
+Phase 6's exit criterion is met: the CODEBANK scenarios pass on the Next harness, and banked code is
+debuggable at source level, in the emulator tests and in the running IDE.
+
 Next steps, in order:
 
-1. Extend `scripts/kbasic-ide-check.cjs` to a Next project with CODEBANK (NEX launch via `.nexload`
-   needs NextZXOS on the SD image the IDE uses): breakpoints in a bank, the execution point in the
-   editor (§10.4), the Call Stack and Variables panels; and `nex-run -d` of the exported NEX with
-   its sidecar. Decide whether `nex-run` with a sidecar should also give the renderer the program's
-   tables (today they come only from a build).
+1. `nex-run -d` of an exported NEX with its sidecar in the running IDE, and whether `nex-run` with a
+   sidecar should also give the renderer the program's tables (today they come only from a build).
 2. Optional per §6.2: Z80N instructions in the Next runtime variants (`mul d,e`, `ldirx`, …).
 
 Known limits so far: the Next harness runner does not check `'@expect heap`; a module-level ASM block under `#pragma codebank = n` (without a CODEBANK

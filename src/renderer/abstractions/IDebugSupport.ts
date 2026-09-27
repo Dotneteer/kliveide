@@ -201,6 +201,9 @@ export interface IDebugSupport {
    */
   suppressUserBreakpoints: boolean;
 
+  /** While `suppressUserBreakpoints` is set: whether keystrokes are still queued (checked when a breakpoint is hit). */
+  keystrokesPending?: () => boolean;
+
   /**
    * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.
    *

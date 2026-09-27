@@ -17,7 +17,15 @@
  * edited in the Variables panel is written to memory. With Just My Code off, Step Into enters a
  * standard-library routine, shown in a read-only view of the library file.
  *
- * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop.
+ * Then CODEBANK on the ZX Spectrum Next (plan Phase 6): a Next project whose FUNCTION lives in a bank
+ * stops at a breakpoint inside it (NextZXOS boots and `.nexload`s the exported NEX); the execution
+ * point, the Call Stack (the banked routine and its caller), a bank-local global in the Variables
+ * panel, and Step Out to the resident caller are checked. It needs a NextZXOS SD card image: the
+ * real `~/Klive/ks2.cim` (or `KBASIC_IDE_CARD=<file>`) is **copied** into the run's own home (the app
+ * runs with `HOME` there), so the user's card is never written. Without one the scenario is skipped.
+ *
+ * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop;
+ * `KBASIC_IDE_ONLY=next` (or `classic`) runs only that part; each part runs in a fresh Klive.
  */
 const fs = require("fs");
 const os = require("os");
@@ -31,6 +39,19 @@ const STOPS = [
 ];
 
 const JMC = ["#include <hex.bas>", "DIM s AS String", "s = hex8(255)", "PRINT s", ""];
+
+const NEXT_PROGRAM = [
+  "DIM total AS UInteger = 5", // 1
+  "CODEBANK 1", // 2
+  "DIM factor AS UByte = 3", // 3
+  "FUNCTION Scale(n AS UByte) AS UInteger", // 4
+  "  RETURN n * factor", // 5
+  "END FUNCTION", // 6
+  "END CODEBANK", // 7
+  "total = total + Scale(4)", // 8
+  "PRINT total", // 9
+  ""
+];
 
 const DEBUGGER = [
   "DIM total AS UInteger = 5", // 1
@@ -49,9 +70,20 @@ const DEBUGGER = [
 (async () => {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "kbasic-ide-"));
   const shots = process.env.KBASIC_IDE_SHOTS;
-  const klive = await launchKlive({ home: path.join(work, "home"), height: 900 });
-  const { app, ide, cmd, sleep } = klive;
+  // --- The app's own home: Next launches write the SD card image under it (a copy of the user's card)
+  const userHome = path.join(work, "user");
+  const card = process.env.KBASIC_IDE_CARD ?? path.join(os.homedir(), "Klive", "ks2.cim");
+  const hasCard = fs.existsSync(card);
+  fs.mkdirSync(path.join(userHome, "Klive"), { recursive: true });
+  if (hasCard) fs.copyFileSync(card, path.join(userHome, "Klive", "ks2.cim"));
+  const only = process.env.KBASIC_IDE_ONLY;
   const failures = [];
+  // --- Each part in a fresh Klive: after a machine switch the IDE's project service can keep the
+  // --- previous project's tree (the document-cache quirk in the plan's handoff), which a long
+  // --- session across a 48K and a Next project runs into
+  const runPart = async (part) => {
+  const klive = await launchKlive({ home: path.join(work, "home"), height: 900, userHome });
+  const { app, ide, cmd, sleep } = klive;
   const emuText = async () => {
     const emu = app.windows().find((w) => w.url().includes("?emu"));
     return (await emu.evaluate(() => document.body.innerText)).replace(/\s+/g, " ");
@@ -86,6 +118,7 @@ const DEBUGGER = [
   try {
     const projects = path.join(work, "projects");
     fs.mkdirSync(projects, { recursive: true });
+    if (part === "classic") {
     await cmd(`newp sp48 kbcheck zx-basic -p "${projects}"`, 5000);
     const folder = path.join(projects, "kbcheck");
     fs.writeFileSync(path.join(folder, "code", "program.zxbas"), PROGRAM.join("\n"));
@@ -102,6 +135,7 @@ const DEBUGGER = [
     const after = await emuText();
     if (/Paused/i.test(after)) failures.push("the program did not run to its end after the last stop");
     else console.log("ok   the program ran to its end after the last stop");
+    }
 
     // --- The source-level debugger (Phase 5)
     const check = (ok, what) => {
@@ -135,6 +169,7 @@ const DEBUGGER = [
       return false;
     };
     // --- A project of its own: the IDE keeps an open document's text across a reopen of its folder
+    if (part === "classic") {
     await cmd("em-stop", 1500);
     await cmd("bp-ea", 800);
     await cmd(`newp sp48 kbdebug zx-basic -p "${projects}"`, 5000);
@@ -205,12 +240,89 @@ const DEBUGGER = [
     check(/Top:\s*hex8\s*hex\.bas:\d+/.test(await sideBarText()), "the Call Stack shows hex8 in hex.bas");
     await shot("library");
     await cmd("em-jmc on", 800);
+    }
+
+    // --- CODEBANK on the ZX Spectrum Next (Phase 6)
+    if (part === "next") {
+      await cmd("em-stop", 1500);
+      await cmd("bp-ea", 800);
+      await cmd(`newp zxnext kbnext zx-basic -p "${projects}"`, 5000);
+      const nextFolder = path.join(projects, "kbnext");
+      // --- A file name of its own: the IDE keeps an open document's text by its project path across
+      // --- projects (the ProjectService cache quirk), and every earlier scenario used program.zxbas
+      fs.writeFileSync(path.join(nextFolder, "code", "banked.zxbas"), NEXT_PROGRAM.join("\n"));
+      const projectFile = path.join(nextFolder, fs.readdirSync(nextFolder).find((f) => f.endsWith("klive.project")));
+      const project = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+      project.builder = { ...(project.builder ?? {}), roots: ["code/banked.zxbas"] };
+      fs.writeFileSync(projectFile, JSON.stringify(project, null, 2));
+      await cmd(`open "${nextFolder}"`, 8000);
+      if (process.env.KBASIC_IDE_TRACE) {
+        const out = await ide.evaluate(() => document.body.innerText);
+        console.log(`  (after open: ${out.slice(out.lastIndexOf("newp zxnext")).slice(0, 500).replace(/\s+/g, " ")})`);
+      }
+      await cmd("set -p zxbasic.compiler klive", 1500);
+      await cmd("nav code/banked.zxbas", 3000);
+      // --- Opening the project switches the machine and then restores the project's own (no)
+      // --- breakpoints; a breakpoint set before that finishes is wiped, so wait for the Next first
+      for (let t = Date.now(); !/ZX Spectrum Next/.test(await emuText()) && Date.now() - t < 30000; ) await sleep(500);
+      await sleep(3000);
+      await cmd("bp-set [code/banked.zxbas]:5", 1200);
+      const bpText = async (label) => {
+        await cmd("bp-list", 1200);
+        const out = await ide.evaluate(() => document.body.innerText);
+        console.log(`  (${label}: ${out.slice(out.lastIndexOf("bp-set [")).slice(0, 400).replace(/\s+/g, " ")})`);
+      };
+      if (process.env.KBASIC_IDE_TRACE) await bpText("after bp-set");
+      await cmd("debug", 5000);
+      if (process.env.KBASIC_IDE_TRACE) await bpText("after debug");
+      // --- NextZXOS boots and loads the NEX: this takes a while
+      let paused = false;
+      for (let t = Date.now(); !paused && Date.now() - t < 120000; ) paused = await waitPaused();
+      check(paused, "the Next program paused at the breakpoint in its bank");
+      if (!paused) {
+        await cmd("bp-list", 1500);
+        const out = await ide.evaluate(() => document.body.innerText);
+        console.log(`  (breakpoints: ${out.slice(out.lastIndexOf("bp-list")).slice(0, 400).replace(/\s+/g, " ")})`);
+        await ide.screenshot({ path: path.join(os.tmpdir(), "kbasic-next-nopause.png") });
+      }
+      await sleep(2000);
+      const banked = await waitLine((l) => l === NEXT_PROGRAM[4]);
+      if (banked !== NEXT_PROGRAM[4]) {
+        console.log(`  (emulator: ${(await emuText()).slice(0, 200)}; execution line ${JSON.stringify(banked)})`);
+        await ide.screenshot({ path: path.join(os.tmpdir(), "kbasic-next-fail.png") });
+      }
+      check(banked === NEXT_PROGRAM[4], `the execution point is on the banked line ${JSON.stringify(NEXT_PROGRAM[4])}`);
+      await ide.locator('button[aria-label="Debug"]').click({ force: true });
+      await sleep(1000);
+      await expandPanel("Call Stack", "Top:");
+      await expandPanel("Variables", "Globals");
+      await sleep(1500);
+      const nextPanels = await sideBarText();
+      check(/Top:\s*Scale\s*banked\.zxbas:5/.test(nextPanels), "the Call Stack shows the banked Scale at line 5");
+      check(/1:\s*main\s*banked\.zxbas:8/.test(nextPanels), "the Call Stack shows its resident caller at line 8");
+      check(/Locals — Scale\s*n\s*4/.test(nextPanels), "the Variables panel shows the parameter n = 4");
+      check(/factor\s*3\s*UByte/.test(nextPanels), "the Variables panel reads the bank-local factor = 3");
+      await shot("next-banked");
+      await cmd("em-out", 1000);
+      const back = await waitLine((l) => l.startsWith(NEXT_PROGRAM[7]));
+      check(back.startsWith(NEXT_PROGRAM[7]) && back.includes("returned from Scale"), `Step Out returns to the resident caller (${JSON.stringify(back)})`);
+      await cmd("em-sto", 1000);
+      check((await waitLine((l) => l === NEXT_PROGRAM[8])) === NEXT_PROGRAM[8], `Step Over moves to ${JSON.stringify(NEXT_PROGRAM[8])}`);
+      check(/total\s*17\s*UInteger/.test(await sideBarText()), "the Variables panel shows total = 17");
+      await shot("next-return");
+    }
   } catch (e) {
     failures.push(e.message.split("\n")[0]);
   } finally {
     await Promise.race([klive.close(), new Promise((r) => setTimeout(r, 10000))]);
-    fs.rmSync(work, { recursive: true, force: true });
   }
+  };
+  const parts = only === "next" ? ["next"] : only === "classic" ? ["classic"] : ["classic", "next"];
+  for (const part of parts) {
+    if (part === "next" && !hasCard) console.log(`skip the Next scenario: no NextZXOS SD card image at ${card}`);
+    else await runPart(part);
+  }
+  fs.rmSync(work, { recursive: true, force: true });
   if (failures.length) {
     console.log(`\n${failures.length} problem(s):\n  ${failures.join("\n  ")}`);
     process.exit(1);

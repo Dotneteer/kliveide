@@ -1095,6 +1095,8 @@ export class MachineController implements IMachineController {
     if (!debugSupport) return;
 
     debugSupport.suppressUserBreakpoints = true;
+    // --- Exact at the moment of a hit: the poll below may lift the flag only after the program ran
+    debugSupport.keystrokesPending = () => (this.machine?.getKeyQueueLength() ?? 0) > 0;
     const deadline = Date.now() + KEYSTROKE_SUPPRESSION_TIMEOUT_MS;
 
     const lift = async () => {
@@ -1111,6 +1113,7 @@ export class MachineController implements IMachineController {
       } finally {
         // --- Unconditional: every way out of that loop ends the window.
         debugSupport.suppressUserBreakpoints = false;
+        debugSupport.keystrokesPending = undefined;
       }
     };
     void lift();
