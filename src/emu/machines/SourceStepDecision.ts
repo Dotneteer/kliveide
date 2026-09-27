@@ -208,23 +208,29 @@ export type StackReturn = { address: number; partition?: number };
  * Reads return addresses from the stack as the code that pushed them meant them (plan §9.4). Below
  * the first cross-bank return slot, a banked address is in the bank the window holds now; a slot
  * holding the far-return entry stands for the real return address and the caller's bank, from the
- * shadow stack (the k-th such slot above SP is the k-th record below its top); above that slot,
- * banked addresses are in the caller's bank, until the next far-return slot.
+ * shadow stack; above that slot, banked addresses are in the caller's bank, until the next
+ * far-return slot.
  *
- * Built once per question: it scans the stack between SP and `limit` for far-return slots. A stray
- * stack word that equals the far-return entry (a local holding that number) would shift the
- * pairing; the runtime keeps nothing of its own on the Z80 stack, so only user data can.
+ * Slots pair with records from the oldest end: the outermost slot (highest address) with the first
+ * record. The far-call runtime writes a record before it replaces its slot and pops it after the
+ * slot has gone, so a record without a slot (paused inside `FarCall` or `FarReturn`) is always the
+ * newest and leaves the pairs below it right. Built once per question: it scans the stack between
+ * SP and `limit`. A stray stack word that equals the far-return entry (a local holding that
+ * number) would shift the pairing; the runtime keeps nothing of its own on the Z80 stack.
  */
 export function stackReader(index: SourceDebugIndex, m: MachineView, limit: number): (slot: number) => StackReturn {
   const cb = index.codebank;
   const far: { slot: number; ret: number; bank: number }[] = [];
   if (cb && m.readByte) {
-    let record = m.readWord(cb.shadowStackPointer);
-    for (let p = m.sp; p < limit && record - 3 >= cb.shadowStack; p += 2) {
-      if (m.readWord(p) !== cb.farReturn) continue;
-      record -= 3;
-      far.push({ slot: p, bank: m.readByte(record), ret: m.readWord(record + 1) });
+    const records = Math.max(0, Math.floor((m.readWord(cb.shadowStackPointer) - cb.shadowStack) / 3));
+    const slots: number[] = [];
+    for (let p = m.sp; p < limit; p += 2) if (m.readWord(p) === cb.farReturn) slots.push(p);
+    // --- The outermost slot is the oldest record; slots beyond the records (none, normally) stay unpaired
+    for (let k = 0; k < Math.min(records, slots.length); k++) {
+      const record = cb.shadowStack + 3 * k;
+      far.push({ slot: slots[slots.length - 1 - k], bank: m.readByte(record), ret: m.readWord(record + 1) });
     }
+    far.sort((a, b) => a.slot - b.slot);
   }
   return (slot: number) => {
     let bank: number | undefined;

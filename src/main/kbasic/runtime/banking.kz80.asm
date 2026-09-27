@@ -9,6 +9,10 @@
 ; FarSlots (1 for an 8K window, 2 for 16K), FarDepth, the page table FarPages (a row per logical
 ; bank, row 0 the window's pages at start-up) and the shadow stack FarStack in core-open/core-close.
 ;
+; The debugger pairs return slots holding FarReturn with shadow records from the oldest end, so
+; FarCall writes its record before it replaces the slot, and FarReturn pops its record only after
+; its slot has gone: between the two there is at most one record without a slot, always the newest.
+;
 ; While a banked routine runs, the Z80 stack is exactly as after a direct call - the arguments, then
 ; one return-address slot - so frame offsets, G4 and the debugger's frame locator hold across banks
 ; (plan §9.2). On a cross-bank call the slot holds FarReturn and the shadow stack keeps
@@ -37,17 +41,18 @@ FarCall:
     jr z,FarGo              ; the same bank: straight in, the stack as after a direct call
     ld b,(hl)               ; B = the current bank
     ld (hl),a               ; the wanted one is current now
-    pop de                  ; DE = the real return address
-    ld hl,FarReturn
-    push hl                 ; the return slot: the far return
+    pop de                  ; DE = the real return address (read, and put back unchanged)
+    push de
     ld hl,(FarSP)
-    ld (hl),b               ; the shadow record: previous bank, real return address
+    ld (hl),b               ; the shadow record first: previous bank, real return address
     inc hl
     ld (hl),e
     inc hl
     ld (hl),d
     inc hl
     ld (FarSP),hl
+    ld hl,FarReturn         ; then the return slot: the far return (one instruction, so at every
+    ex (sp),hl              ; instruction boundary the records are the slots plus at most one newer)
     call FarMap             ; A = the wanted bank
 FarGo:
     ld bc,(FarSaveAF)

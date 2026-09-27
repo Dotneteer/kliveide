@@ -12,6 +12,7 @@ import {
   typeName,
   valueSize,
   type DecodedValue,
+  memoryFor,
   type MemoryView
 } from "./value-decoder";
 
@@ -34,7 +35,15 @@ export type VariableNode = {
   /** A scalar in memory: its type, so the panel can write a new value (§10.7). */
   valueType?: SourceValueType;
   expand?: () => VariableNode[];
+  /** CODEBANK: the node is bank-local data of this logical bank (`address` is in the window, in the bank's pages). */
+  bank?: number;
 };
+
+/** Marks a node and everything it expands to as bank-local. */
+function inBankNode(node: VariableNode, bank: number): VariableNode {
+  const expand = node.expand;
+  return { ...node, bank, ...(expand ? { expand: () => expand().map((n) => inBankNode(n, bank)) } : {}) };
+}
 
 export type VariableSections = {
   /** FUNCTION results that returned during the last step (§10.2.6). */
@@ -181,6 +190,11 @@ export function variableNode(v: VariableDebugInfo, mem: MemoryView, ix: number |
       type: `CONST ${typeName(v.type)}`,
       value: typeof value === "string" ? `"${value}"` : String(value)
     };
+  }
+  // --- Bank-local data (CODEBANK) is read from its bank's pages; it is not editable through the 64K view
+  if (v.bank) {
+    const node = variableNode({ ...v, bank: undefined }, memoryFor(mem, v), ix);
+    return node && inBankNode(node, v.bank);
   }
   const address = variableAddress(v, mem, ix);
   if (address === undefined) return undefined;

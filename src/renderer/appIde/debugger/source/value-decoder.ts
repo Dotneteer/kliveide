@@ -1,4 +1,4 @@
-import type { SourceReturnRegisters, SourceValueType } from "@abstractions/SourceDebugInfo";
+import type { CodebankDebugInfo, SourceReturnRegisters, SourceValueType, VariableDebugInfo } from "@abstractions/SourceDebugInfo";
 import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float40";
 
 /**
@@ -11,11 +11,53 @@ import { fromNumber, toNumber, type Float40 } from "@main/kbasic/semantics/float
 export type MemoryView = {
   byte(address: number): number;
   word(address: number): number;
+  /**
+   * CODEBANK (plan §10.7): the memory as a logical bank sees it — the window's addresses read from
+   * the bank's own pages, whatever the window holds now. Absent without banked data.
+   */
+  inBank?(bank: number): MemoryView;
 };
 
 export function memoryView(memory: Uint8Array): MemoryView {
   const byte = (a: number) => memory[a & 0xffff] ?? 0;
   return { byte, word: (a) => byte(a) | (byte(a + 1) << 8) };
+}
+
+/**
+ * A memory view that can also read through a CODEBANK bank: `pages` holds the 8K pages fetched by
+ * partition (`getMemoryContents(page)`). Outside the window, and for a page not fetched, a bank's
+ * view reads what the CPU sees.
+ */
+export function bankedMemoryView(base: MemoryView, codebank: CodebankDebugInfo, pages: ReadonlyMap<number, Uint8Array>): MemoryView {
+  const views = new Map<number, MemoryView>();
+  const inBank = (bank: number): MemoryView => {
+    let view = views.get(bank);
+    if (view) return view;
+    const bankPages = codebank.banks.find((b) => b.bank === bank)?.pages ?? [];
+    const byte = (address: number) => {
+      const a = address & 0xffff;
+      const offset = a - codebank.window;
+      if (offset < 0 || offset >= codebank.windowSize) return base.byte(a);
+      const page = pages.get(bankPages[offset >> 13]);
+      return page ? (page[offset & 0x1fff] ?? 0) : base.byte(a);
+    };
+    view = { byte, word: (a) => byte(a) | (byte(a + 1) << 8), inBank };
+    views.set(bank, view);
+    return view;
+  };
+  return { ...base, inBank };
+}
+
+/** The memory a variable is read through: its bank's for bank-local data, what the CPU sees otherwise. */
+export function memoryFor(mem: MemoryView, v: Pick<VariableDebugInfo, "bank">): MemoryView {
+  return v.bank && mem.inBank ? mem.inBank(v.bank) : mem;
+}
+
+/** The 8K pages the bank-local variables live in: what a view needs fetched (`bankedMemoryView`). */
+export function bankPagesOf(variables: readonly VariableDebugInfo[], codebank: CodebankDebugInfo | undefined): number[] {
+  if (!codebank) return [];
+  const banks = new Set(variables.flatMap((v) => (v.bank ? [v.bank] : [])));
+  return [...new Set(codebank.banks.filter((b) => banks.has(b.bank)).flatMap((b) => b.pages))];
 }
 
 /** A decoded value: its text for display, and the number or string behind it. */

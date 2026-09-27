@@ -6,7 +6,7 @@ import { lex } from "@main/kbasic/syntax/lexer";
 import { parseExpression } from "@main/kbasic/syntax/parser";
 import { SourceFile } from "@main/kbasic/syntax/source";
 
-import { decodeValue, formatFloat, spectrumText, typeName, type MemoryView } from "./value-decoder";
+import { decodeValue, formatFloat, memoryFor, spectrumText, typeName, type MemoryView } from "./value-decoder";
 import { arrayLayout, elementAddress, frameIx, variableAddress } from "./variables-model";
 
 /**
@@ -78,17 +78,19 @@ export function resolveVariable(ctx: WatchContext, name: string): VariableDebugI
   return candidates.find((v) => v.name === name) ?? candidates.find((v) => v.name.toLowerCase() === name.toLowerCase());
 }
 
-function variableOf(ctx: WatchContext, name: string): { v: VariableDebugInfo; address?: number } {
+/** A variable, its address, and the memory it is read through (its bank's pages for bank-local data). */
+function variableOf(ctx: WatchContext, name: string): { v: VariableDebugInfo; address?: number; mem: MemoryView } {
   const v = resolveVariable(ctx, name) ?? fail(`Unknown variable '${name}'`);
-  if (v.location.at === "constant") return { v };
+  const mem = memoryFor(ctx.mem, v);
+  if (v.location.at === "constant") return { v, mem };
   const ix = v.scope === "global" ? undefined : frameIx(ctx.chain, ctx.frame);
-  const address = variableAddress(v, ctx.mem, ix);
+  const address = variableAddress(v, mem, ix);
   if (address === undefined) fail(`'${name}' cannot be read here: the routine's frame is not set up`);
-  return { v, address };
+  return { v, address, mem };
 }
 
-function valueAt(ctx: WatchContext, type: SourceValueType, address: number): WatchValue {
-  const decoded = decodeValue(type, ctx.mem, address);
+function valueAt(mem: MemoryView, type: SourceValueType, address: number): WatchValue {
+  const decoded = decodeValue(type, mem, address);
   return decoded.string !== undefined ? { kind: "string", value: decoded.string } : { kind: "number", value: decoded.number!, type };
 }
 
@@ -98,15 +100,15 @@ function num(ctx: WatchContext, e: Expression): number {
   return (v as { value: number }).value;
 }
 
-function elementOf(ctx: WatchContext, name: string, args: Expression[]): { address: number; type: SourceValueType } {
-  const { v, address } = variableOf(ctx, name);
+function elementOf(ctx: WatchContext, name: string, args: Expression[]): { address: number; type: SourceValueType; mem: MemoryView } {
+  const { v, address, mem } = variableOf(ctx, name);
   if (!v.array) fail(`'${name}' is not an array`);
-  const layout = arrayLayout(v, ctx.mem, address!);
+  const layout = arrayLayout(v, mem, address!);
   if (args.length !== layout.dimensions.length) fail(`'${name}' has ${layout.dimensions.length} dimension(s)`);
   if (!layout.data) fail(`'${name}' is not allocated`);
   const at = elementAddress(layout, args.map((a) => Math.trunc(num(ctx, a))));
   if (at === undefined) fail("Subscript out of range");
-  return { address: at!, type: layout.elementType };
+  return { address: at!, type: layout.elementType, mem };
 }
 
 function callArgs(e: Extract<Expression, { kind: "call" }>): Expression[] {
@@ -124,18 +126,18 @@ function evaluate(e: Expression, ctx: WatchContext): WatchValue {
     case "paren":
       return evaluate(e.expression, ctx);
     case "name": {
-      const { v, address } = variableOf(ctx, e.name);
+      const { v, address, mem } = variableOf(ctx, e.name);
       if (v.location.at === "constant") {
         const c = v.location.value;
         return typeof c === "string" ? { kind: "string", value: c } : { kind: "number", value: c, type: v.type };
       }
       if (v.array) fail(`'${e.name}' is an array: give its subscripts`);
-      return valueAt(ctx, v.type, address!);
+      return valueAt(mem, v.type, address!);
     }
     case "call": {
       if (e.callee.kind !== "name") return fail("Only array elements can be subscripted");
       const element = elementOf(ctx, e.callee.name, callArgs(e));
-      return valueAt(ctx, element.type, element.address);
+      return valueAt(element.mem, element.type, element.address);
     }
     case "addressOf": {
       const t = e.target;
@@ -253,7 +255,7 @@ function builtin(e: Extract<Expression, { kind: "builtin" }>, ctx: WatchContext)
   switch (e.name) {
     case "PEEK": {
       const type = e.type ? PEEK_TYPES[e.type.name] : "ubyte";
-      return valueAt(ctx, type, Math.trunc(num(ctx, arg())) & 0xffff);
+      return valueAt(ctx.mem, type, Math.trunc(num(ctx, arg())) & 0xffff);
     }
     case "LEN": {
       const v = evaluate(arg(), ctx);

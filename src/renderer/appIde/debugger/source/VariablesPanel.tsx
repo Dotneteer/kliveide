@@ -16,7 +16,7 @@ import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { iconSizes } from "@renderer/theming/tokens/dimensions";
 
 import { buildSourceCallStack } from "./call-stack-model";
-import { encodeValue, memoryView, type MemoryView } from "./value-decoder";
+import { bankedMemoryView, bankPagesOf, encodeValue, memoryView, type MemoryView } from "./value-decoder";
 import { buildVariableSections, type VariableNode } from "./variables-model";
 import { evaluateWatch } from "./watch-expression";
 import styles from "./VariablesPanel.module.scss";
@@ -54,13 +54,19 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
       setSnapshot(undefined);
       return;
     }
-    const [chain, stop, memory] = await Promise.all([
+    // --- CODEBANK: bank-local variables are read from their banks' pages, not from the window
+    const codebank = info.extensions?.codebank;
+    const pageNumbers = bankPagesOf(info.extensions?.variables ?? [], codebank);
+    const [chain, stop, memory, ...pages] = await Promise.all([
       emuApi.getSourceCallStack(),
       emuApi.getSourceStopInfo(),
-      emuApi.getMemoryContents()
+      emuApi.getMemoryContents(),
+      ...pageNumbers.map((page) => emuApi.getMemoryContents(page))
     ]);
-    setSnapshot(chain ? { chain, stop, mem: memoryView(memory.memory) } : undefined);
-  }, [emuApi, machineState]);
+    const flat = memoryView(memory.memory);
+    const mem = codebank ? bankedMemoryView(flat, codebank, new Map(pageNumbers.map((page, i) => [page, pages[i].memory]))) : flat;
+    setSnapshot(chain ? { chain, stop, mem } : undefined);
+  }, [emuApi, machineState, info]);
 
   useEffect(() => {
     void refresh();
@@ -94,6 +100,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
   const editable = (node: VariableNode) =>
     machineState === MachineControllerState.Paused &&
     node.address !== undefined &&
+    node.bank === undefined &&
     node.valueType !== undefined &&
     node.valueType !== "string";
 
@@ -152,7 +159,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
               <DataValue
                 text={node.value}
                 xclass={styles.value}
-                title={`${node.address !== undefined ? `At $${toHexa4(node.address)} (${node.address})` : ""}${editable(node) ? "\nDouble-click to change" : ""}`}
+                title={`${node.address !== undefined ? `At $${toHexa4(node.address)} (${node.address})` : ""}${node.bank !== undefined ? ` in CODEBANK ${node.bank}` : ""}${editable(node) ? "\nDouble-click to change" : ""}`}
               />
             )}
             {editing?.id === node.id && editing.error && <span className={styles.watchError}>{editing.error}</span>}

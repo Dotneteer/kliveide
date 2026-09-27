@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { locateActivations, SourceDebugIndex, type SourceStepKind } from "@emu/machines/SourceStepDecision";
+import {
+  CurrentStatementTracker,
+  innermostUserStatement,
+  locateActivations,
+  SourceDebugIndex,
+  type SourceStepKind
+} from "@emu/machines/SourceStepDecision";
+
+import { bankedMemoryView, bankPagesOf, memoryView } from "@renderer/appIde/debugger/source/value-decoder";
+import { buildVariableSections } from "@renderer/appIde/debugger/source/variables-model";
+import { evaluateWatch } from "@renderer/appIde/debugger/source/watch-expression";
 
 import { startBasicNext } from "./next-kit";
 
@@ -153,5 +163,121 @@ describe("Breakpoints and the call stack across banks (§10.4, §10.6)", () => {
     d.session.continueToBreakpoint(); // Even(3)
     d.session.continueToBreakpoint(); // Even(1), called from Odd(2) in bank 2
     expect(d.chain()).toEqual(["Even@RETURN Even(n - 1)", "Odd@RETURN Odd(n - 1)", "Even@r = Even(3)", "main"]);
+  });
+});
+
+describe("Variables and watches across banks (§10.7, §10.8)", () => {
+  const DATA = [
+    "CODEBANK 1", // 1
+    "DIM k AS UInteger = 1234", // 2
+    "DIM t(3) AS UByte => {10, 20, 30, 40}", // 3
+    'DIM s$ = "bank"', // 4
+    "SUB One()", // 5
+    "  k = k + 1", // 6
+    "END SUB", // 7
+    "END CODEBANK", // 8
+    "CODEBANK 2", // 9
+    "DIM two AS UInteger = 200", // 10
+    "SUB Two()", // 11
+    "  two = two * 2", // 12
+    "END SUB", // 13
+    "END CODEBANK", // 14
+    "One", // 15
+    "Two", // 16
+    "PRINT 1", // 17
+    ""
+  ].join("\n");
+
+  it("reads bank-local data from its bank's pages while resident code runs", async () => {
+    const d = await debug(DATA);
+    d.breakAt(17);
+    d.session.continueToBreakpoint();
+    const info = d.info;
+    const codebank = info.extensions!.codebank!;
+    // --- The window holds its boot page now: the 64K view does not show the banks' data
+    expect(d.session.mmuPage(codebank.window >> 13)).not.toBe(30);
+    const flat = memoryView(Uint8Array.from({ length: 0x10000 }, (_, a) => d.session.peek(a)));
+    const pages = bankPagesOf(info.extensions!.variables, codebank);
+    expect(pages).toEqual([30, 31]);
+    const mem = bankedMemoryView(flat, codebank, new Map(pages.map((p) => [p, d.session.machine.getMemoryPartition(p)])));
+
+    const chain = locateActivations(d.index, d.session.machineView());
+    const globals = buildVariableSections(info, chain, 0, undefined, mem).globals;
+    const row = (name: string) => globals.find((n) => n.name === name)!;
+    expect([row("k").value, row("s$").value, row("two").value]).toEqual(["1235", '"bank"', "400"]);
+    expect([row("k").bank, row("two").bank]).toEqual([1, 2]);
+    // --- Both live at window addresses, each read from its own page
+    expect([row("k").address! >> 13, row("two").address! >> 13]).toEqual([3, 3]);
+    expect(row("t").expand!().map((n) => [n.value, n.bank])).toEqual([["10", 1], ["20", 1], ["30", 1], ["40", 1]]);
+
+    const watch = (text: string) => {
+      const r = evaluateWatch(text, { info, chain, frame: 0, mem });
+      return "error" in r ? r.error : r.text;
+    };
+    expect([watch("t(2) + k"), watch("two / 4"), watch("s$ + \"!\"")]).toEqual(["1265", "100", '"bank!"']);
+  });
+});
+
+describe("Runtime-error stops in banked code (§10.10)", () => {
+  const FAILS = [
+    "DIM a(3) AS UByte", // 1
+    "CODEBANK 1", // 2
+    "SUB Outer(i AS UByte)", // 3
+    "  Inner i", // 4
+    "END SUB", // 5
+    "END CODEBANK", // 6
+    "CODEBANK 2", // 7
+    "SUB Inner(i AS UByte)", // 8
+    "  PRINT \"in\"", // 9
+    "  ERROR 2", // 10
+    "END SUB", // 11
+    "END CODEBANK", // 12
+    "Outer 9", // 13
+    ""
+  ].join("\n");
+
+  it("stops at the error routine and names the banked statement and its callers", async () => {
+    const d = await debug(FAILS);
+    const errorEntry = d.info.extensions!.errorEntry!;
+    d.debugSupport.errorStopAddress = errorEntry;
+    d.debugSupport.statementTracker = new CurrentStatementTracker(d.index);
+    expect(d.session.continueToBreakpoint()).toBe(errorEntry);
+    const tracked = d.debugSupport.statementTracker.current;
+    expect(d.info.statements[tracked].startLine).toBe(10);
+    const scanned = innermostUserStatement(d.index, d.session.machineView());
+    expect(scanned < 0 || d.info.statements[scanned].startLine === 10).toBe(true);
+    expect(d.chain()).toEqual(["Inner@Inner i", "Outer@Outer 9", "main"]);
+  });
+});
+
+describe("The call stack inside the far-call runtime (§9.4)", () => {
+  it("keeps the outer frames right at every instruction of a cross-bank call and return", async () => {
+    const d = await debug(BANKED);
+    d.breakAt(15); // --- Store (bank 2), about to call Twice (bank 1)
+    d.session.continueToBreakpoint();
+    d.debugSupport.eraseAllBreakpoints();
+    const twice = d.info.statements.find((s) => s.startLine === 6)!;
+    const back = d.info.statements.find((s) => s.startLine === 16)!;
+    const seen = new Set<string>();
+    // --- Into Twice through the trampoline and FarCall, then back through FarReturn to PRINT result
+    for (let n = 0; n < 2000; n++) {
+      d.session.step();
+      const pc = d.session.machine.pc;
+      const partition = d.session.machine.getPartition(pc);
+      // --- A routine's epilogue holds its return address in BC' while it drops the arguments: no
+      // --- frame locator can find it there (on any machine), so the check skips epilogues
+      const inEpilogue = d.info.extensions!.frames.some(
+        (f) => pc >= f.epilogueStart && pc < f.endAddress && (f.partition === undefined || f.partition === partition)
+      );
+      if (inEpilogue) continue;
+      const chain = d.chain();
+      // --- Whatever the innermost frame is mid-call, Store's activation and main are always below it
+      expect(chain.slice(-2), `at $${pc.toString(16)}`).toEqual(["Store@Store 20", "main"]);
+      seen.add(chain[0]);
+      if (pc === back.startAddress && partition === back.partition) break;
+    }
+    expect(seen).toContain("Twice@result = Twice(v) + 1");
+    expect(d.session.machine.pc).toBe(back.startAddress);
+    expect(twice.partition).toBe(30);
   });
 });
