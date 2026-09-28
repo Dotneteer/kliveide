@@ -2828,6 +2828,16 @@
         "source": "oracle"
       },
       {
+        "name": "headerless",
+        "question": "What does headerless (zxbc --headerless) leave out?",
+        "decision": "The program start-up and the END code: no registers are kept for END and no runtime module is initialised; END (and the end of the main program) returns BC to whoever called the program. What the runtime does without its start-up is not defined.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/codegen/core.test.ts",
+        "oracle": "zxbc 1.19 headerless code runs and returns BC (its variables come first, at the origin). Its PRINT shows nothing without the start-up; Klive's PRINT still works, a difference in undefined behaviour kept (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "heap-exhaustion",
         "question": "What happens when the String heap is full?",
         "decision": "The String that does not fit is the empty String and the program goes on (with check-memory, it stops with 4 Out of memory).",
@@ -3132,16 +3142,6 @@
         "source": "oracle"
       },
       {
-        "status": "decided",
-        "source": "klive-decision",
-        "phase": 8,
-        "name": "stdlib-internals",
-        "question": "Is the standard library's internal state part of its interface?",
-        "decision": "No: it is Klive's own (print42.bas and print64.bas keep their cursors in __kbP42Row/__kbP42Col and __kbP64Row/__kbP64Col, which the corpus reads to test them).",
-        "test": "test/kbasic/corpus/stdlib/print42-lib.zxbas",
-        "oracle": "Upstream's library has no such variables: zxbc takes the names as new variables (0)."
-      },
-      {
         "name": "str-of-literal",
         "question": "How does STR$ write a literal (STR$(1 / 3), STR$(1E10))?",
         "decision": "At compile time: a whole number exactly (\"10000000000\"), anything else as the shortest decimal that reads back as the same double, with an exponent below 1E-4 and from 1E16 up (\"0.3333333333333333\", \"-0.001\", \"1e-07\"). STR$ of anything else is the ROM number format at run time.",
@@ -3162,11 +3162,11 @@
       {
         "name": "string-concatenation-overflow",
         "question": "What does a concatenation longer than 65535 characters give?",
-        "decision": "The empty String.",
-        "status": "open",
+        "decision": "It cannot happen: every character of a String lives on the heap, which is well under 64K (4768 bytes by default), so a concatenation runs out of heap long before its length could pass 65535. Running out of heap is what heap-exhaustion decides (with check-memory, 4 Out of memory: the options suite).",
+        "status": "decided",
         "source": "klive-decision",
-        "phase": 4,
-        "test": null
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "string-escape-unknown",
@@ -3189,7 +3189,7 @@
       {
         "name": "substring-assignment",
         "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
-        "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target. Awaits the oracle.",
+        "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target.",
         "status": "decided",
         "source": "klive-decision",
         "phase": 8,

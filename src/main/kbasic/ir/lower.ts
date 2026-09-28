@@ -97,6 +97,8 @@ class Lowering {
   private localArrays = new Map<ArraySymbol, ArrayTables & { image?: string }>();
   private routine: RoutineSymbol | undefined;
   private resultSlot: Slot | undefined;
+  /** SAVE/LOAD "" DATA without a name: the user-data area's length symbol, once made. */
+  private userDataLength: string | undefined;
   /** A FASTCALL routine's first statement when it is zxbasm-dialect asm: it gets the parameter's registers. */
   private fastcallAsm: BoundStatement | undefined;
   /** The call sites of the current statement, to fill in `moreCallsFollow` when it ends. */
@@ -830,23 +832,33 @@ class Lowering {
     let block: { start: BoundExpr | Value; length: BoundExpr | Value } | undefined;
     if (s.target.kind === "data") {
       const v = s.target.target;
-      if (!v || (v.kind !== "variable" && v.kind !== "array") || v.type === "String") {
-        this.unsupported(`${s.operation} DATA ${v ? "of a String" : "without a name"}`, s.span);
-        return;
+      if (!v) {
+        // --- Without a name: the program's variables and its heap (compatibility plan C8), the block
+        // --- the emitter keeps together between __kbUserData and __kbUserDataEnd
+        if (!this.userDataLength) {
+          this.userDataLength = "__kbUserDataLength";
+          this.module.data.push({ kind: "equ", label: this.userDataLength, value: "__kbUserDataEnd - __kbUserData" });
+        }
+        block = { start: { kind: "sym", type: "ptr", name: "__kbUserData", offset: 0 }, length: { kind: "sym", type: "u16", name: this.userDataLength, offset: 0 } };
+      } else {
+        if ((v.kind !== "variable" && v.kind !== "array") || v.type === "String") {
+          this.unsupported(`${s.operation} DATA of a String`, s.span);
+          return;
+        }
+        if (v.kind === "array" && (v.symbol.param || v.symbol.storage !== "global")) {
+          this.unsupported(`${s.operation} DATA of a local array`, s.span);
+          return;
+        }
+        if (v.kind === "variable" && v.symbol.storage !== "global") {
+          this.unsupported(`${s.operation} DATA of a local variable`, s.span);
+          return;
+        }
+        const start: Value =
+          v.kind === "array"
+            ? { kind: "sym", type: "ptr", name: `${globalName(v.symbol.name)}.data`, offset: 0 }
+            : { kind: "sym", type: "ptr", name: (this.variableSlot(v.symbol, v.span) as { name: string }).name, offset: 0 };
+        block = { start, length: imm("u16", v.kind === "array" ? arrayBytes(v.symbol) : mtypeSize(mtypeOf(v.type))) };
       }
-      if (v.kind === "array" && (v.symbol.param || v.symbol.storage !== "global")) {
-        this.unsupported(`${s.operation} DATA of a local array`, s.span);
-        return;
-      }
-      if (v.kind === "variable" && v.symbol.storage !== "global") {
-        this.unsupported(`${s.operation} DATA of a local variable`, s.span);
-        return;
-      }
-      const start: Value =
-        v.kind === "array"
-          ? { kind: "sym", type: "ptr", name: `${globalName(v.symbol.name)}.data`, offset: 0 }
-          : { kind: "sym", type: "ptr", name: (this.variableSlot(v.symbol, v.span) as { name: string }).name, offset: 0 };
-      block = { start, length: imm("u16", v.kind === "array" ? arrayBytes(v.symbol) : mtypeSize(mtypeOf(v.type))) };
     } else if (s.target.kind === "screen") block = { start: imm("u16", 16384), length: imm("u16", 6912) };
     const name = this.value(s.name);
     const code = s.target.kind === "code" ? s.target : undefined;

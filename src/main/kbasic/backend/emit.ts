@@ -26,7 +26,18 @@ export type EmitInput = {
   functionBanks?: (number | undefined)[];
   /** CODEBANK: where each bank goes, by logical bank: its first 8K page, the window, the page count. */
   bankPlacement?: Map<number, { page: number; address: number; pages: number }>;
+  /** The heap's size when it follows the program's variables (no fixed heap address). */
+  heapSize?: number;
 };
+
+/**
+ * The user-data area (compatibility plan C8): the resident variables (with the arrays' descriptors and
+ * tables), then the heap unless it has a fixed address. SAVE/LOAD "" DATA without a name move this block, as zxbc's move its variables and
+ * heap; `HeapStart` (runtime) is `USER_HEAP` then.
+ */
+export const USER_DATA = "__kbUserData";
+export const USER_DATA_END = "__kbUserDataEnd";
+export const USER_HEAP = "__kbHeap";
 
 /** The label that ends the resident part of a banked program: the runtime continues there. */
 export const RESIDENT_END = "__kbResidentEnd";
@@ -69,7 +80,18 @@ export function emitProgram(input: EmitInput): EmittedProgram {
   };
   // --- The resident program: its code, then its data
   input.functions.forEach((_, i) => bankOf(i) === undefined && emitFunction(i));
-  for (const d of input.data) if (!d.bank) for (const line of dataLines(d)) add(line, { sid: -1 });
+  // --- String literals and symbols first; then the user-data area: the variables in their order, an
+  // --- array's descriptor and tables still next to its data (constants, which a LOAD writes back
+  // --- unchanged), then the heap
+  const inUserData = (d: DataItem) => d.kind === "var" || d.kind === "raw";
+  for (const d of input.data) if (!d.bank && !inUserData(d)) for (const line of dataLines(d)) add(line, { sid: -1 });
+  add(`${USER_DATA}:`, { sid: -1 });
+  for (const d of input.data) if (!d.bank && inUserData(d)) for (const line of dataLines(d)) add(line, { sid: -1 });
+  if (input.heapSize !== undefined) {
+    add(`${USER_HEAP}:`, { sid: -1 });
+    add(`    .defs ${input.heapSize}`, { sid: -1 });
+  }
+  add(`${USER_DATA_END}:`, { sid: -1 });
   // --- CODEBANK: each bank in its page(s), assembled for the window; the runtime goes on after the
   // --- resident part
   const banks = [...(input.bankPlacement?.keys() ?? [])].sort((a, b) => a - b);

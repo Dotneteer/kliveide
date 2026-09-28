@@ -180,3 +180,14 @@ describe("code generation facts", () => {
     await expect(compileBasic("CODEBANK 1\nSUB s()\nEND SUB\nEND CODEBANK\n")).rejects.toThrow(/E458/);
   });
 });
+
+describe("headerless (compatibility plan C8)", () => {
+  it("has no start-up and returns to its caller at the end, as zxbc's --headerless", async () => {
+    const source = "DIM a AS UByte = 7\nPOKE 50000, a + 1\nPOKE 50001, 9\n";
+    const { generated } = await compileBasic(source, { headerless: true });
+    // --- The program starts with its first statement's code: no register saves, no initialisers
+    expect(generated.emitted.text).not.toMatch(/ld \(core\.SavedIY\),iy/);
+    const r = await runBasic(source, { headerless: true });
+    expect([r.session.peek(50000), r.session.peek(50001)]).toEqual([8, 9]);
+  });
+});

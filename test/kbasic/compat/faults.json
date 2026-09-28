@@ -657,6 +657,11 @@
    "klive": "1",
    "zxbc": "rejected: error: Syntax error. Unexpected token '21' [INTEGER]",
    "fault": "zxnext-option"
+  },
+  "options: headerless": {
+   "klive": "9",
+   "zxbc": "",
+   "fault": "headerless"
   }
  }
 }

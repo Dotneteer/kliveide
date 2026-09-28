@@ -537,6 +537,16 @@
    "expr": "1"
   },
   {
+   "id": "options: headerless",
+   "header": [
+    "'@headerless"
+   ],
+   "decl": [
+    "DIM xv3097 AS UByte = 9"
+   ],
+   "expr": "xv3097"
+  },
+  {
    "id": "options: nextreg in asm",
    "header": [],
    "decl": [

@@ -2737,38 +2737,38 @@
  },
  "stdlib/print42-lib.zxbas": {
   "0": {
-   "bytes": 1452,
-   "tstates": 90911
+   "bytes": 1662,
+   "tstates": 122471
   },
   "1": {
-   "bytes": 1059,
-   "tstates": 61451
+   "bytes": 1210,
+   "tstates": 70063
   },
   "2": {
-   "bytes": 1027,
-   "tstates": 60399
+   "bytes": 1178,
+   "tstates": 69051
   },
   "3": {
-   "bytes": 1027,
-   "tstates": 60399
+   "bytes": 1178,
+   "tstates": 69051
   }
  },
  "stdlib/print64-lib.zxbas": {
   "0": {
-   "bytes": 1077,
-   "tstates": 43858
+   "bytes": 1286,
+   "tstates": 87203
   },
   "1": {
-   "bytes": 762,
-   "tstates": 32711
+   "bytes": 909,
+   "tstates": 48171
   },
   "2": {
-   "bytes": 737,
-   "tstates": 31957
+   "bytes": 884,
+   "tstates": 47059
   },
   "3": {
-   "bytes": 737,
-   "tstates": 31957
+   "bytes": 884,
+   "tstates": 47059
   }
  },
  "stdlib/putchars-lib.zxbas": {

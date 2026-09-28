@@ -53,7 +53,11 @@ the debugger corpus and the step tests. **Phase 8 in progress** (2026-09-27): th
 over the whole corpus and the semantics annex is settled (38 entries decided, one open) — see "Phase 8
 state" in the Handoff. **Compatibility (2026-09-27, project author):** Klive BASIC is to be 100%
 compatible with ZX BASIC; that work is `.plans/ZXBASIC_COMPATIBILITY_PLAN.md`, which supersedes this
-plan where they disagree (stage C0, the DO…LOOP fixes, done). Decisions D1–D12 settled
+plan where they disagree. **Compatibility done** (2026-09-28, stages C0–C8): the language, the
+options and pragmas, the documented standard library and zxbasm-dialect inline asm agree with zxbc
+1.19 across the compatibility suites and the corpus, apart from the recorded deliberate differences
+(the annex's `klive-decision` entries); the semantics annex has no open entry; R18 (the user docs,
+`docs/content/working-with-ide/zxb.mdx`) done. Decisions D1–D12 settled
 (§0.2–§0.3). See **Handoff**, immediately below, before doing
 anything else.
 
@@ -1865,7 +1869,7 @@ they are done.
 | R15 | Point `AGENTS.md` and `.ai/README.md` at this plan, `.ai/kbasic/` and the provenance rule (§0.1). | **Done** 2026-09-26. |
 | R16 | Schedule the upstream check (`node scripts/zxbasic-syntax-check.cjs`); on a new release, refresh the spec, then review `.ai/kbasic/runtime-abi.md` and `stdlib-api.json` for interface changes the runtime must follow. | Open; can be a scheduled task. |
 | R17 | First releasable milestone: Phases 0–5 on the 48K/128K targets (full language, source debugging, optimisation up to level 1); then Next and CODEBANK; then the optimiser. | Proposed. |
-| R18 | User documentation on the docs site: header options, differences from upstream (Klive-dialect inline asm, dropped options, behaviours decided in R8), debugging BASIC. | Open (Phase 8). |
+| R18 | User documentation on the docs site: header options, differences from upstream (Klive-dialect inline asm, dropped options, behaviours decided in R8), debugging BASIC. | **Done 2026-09-28** (compatibility plan C8): `docs/content/working-with-ide/zxb.mdx` states the compatibility, the options and pragmas, inline asm, the library and every deliberate difference. |
 
 ## 18. References
 

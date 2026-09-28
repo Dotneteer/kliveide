@@ -1,7 +1,15 @@
-' print64.bas: 64 columns, two characters to a byte
-'@expect screen 2 "1,0 1"
-'@expect oracle-differs stdlib-internals
+' print64.bas: 64 columns, two characters to a byte; past the last column the next row
+'@expect screen 2 "1 1 1"
 #include <print64.bas>
+' Any pixel of character cell (r, c) under a mask (the left or right half)
+FUNCTION lit(r AS UByte, c AS UByte, mask AS UByte) AS UByte
+    DIM l AS UByte
+    FOR l = 0 TO 7
+        IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) BAND mask THEN RETURN 1
+    NEXT l
+    RETURN 0
+END FUNCTION
 printat64(0, 62)
 print64("ab")
-PRINT AT 2, 0; __kbP64Row; ","; __kbP64Col; " "; PEEK(16384 + 256 + 31) BAND 15 <> 0
+print64("c")
+PRINT AT 2, 0; lit(0, 31, $F0); " "; lit(0, 31, $0F); " "; lit(1, 0, $F0)

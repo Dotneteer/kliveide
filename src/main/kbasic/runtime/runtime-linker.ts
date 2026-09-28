@@ -16,6 +16,8 @@ export const DEFAULT_HEAP_SIZE = 4768;
 export type RuntimeLayout = {
   heapSize?: number;
   heapAddress?: number;
+  /** The heap is the program's (after its variables, at this label), not the runtime's own block. */
+  heapLabel?: string;
   /**
    * CODEBANK (plan §9): the far-call runtime's parameters — the window's first MMU slot and its
    * size in 8K slots, the nesting depth, and each logical bank's first 8K page (index 0 is the
@@ -95,6 +97,7 @@ export function endSource(value = 0): string {
 function coreOpenSource(layout: RuntimeLayout): string {
   const lines = ["    .module core", `HeapSize .equ ${layout.heapSize ?? DEFAULT_HEAP_SIZE}`];
   if (layout.heapAddress !== undefined) lines.push(`HeapStart .equ ${layout.heapAddress}`);
+  else if (layout.heapLabel) lines.push(`HeapStart .equ ${layout.heapLabel}`);
   const cb = layout.codebank;
   if (cb) lines.push(`FarReg .equ ${0x50 + cb.slot}`, `FarSlots .equ ${cb.slots}`, `FarDepth .equ ${cb.depth}`);
   return lines.join("\n");
@@ -108,7 +111,7 @@ function coreCloseSource(layout: RuntimeLayout): string {
     const rows = cb.pages.flatMap((page) => (cb.slots === 2 ? [page, page + 1] : [page]));
     lines.push("FarPages:", `    .defb ${rows.join(",")}`, "FarStack:", `    .defs ${3 * cb.depth}`);
   }
-  if (layout.heapAddress === undefined) lines.push("HeapStart:", "    .defs HeapSize");
+  if (layout.heapAddress === undefined && !layout.heapLabel) lines.push("HeapStart:", "    .defs HeapSize");
   lines.push("    .moduleend");
   return lines.join("\n");
 }

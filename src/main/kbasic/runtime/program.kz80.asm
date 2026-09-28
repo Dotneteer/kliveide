@@ -1,6 +1,7 @@
 ; @module   program
 ; @summary  Program start-up state and END: what the prologue saves and END restores.
 ; @exports  End, EndHook, StopProgram, ProgramSP, SavedIY, SavedIX, SavedHL2
+; @symbols  KB_HEADERLESS
 ;
 ; The prologue the compiler emits (runtime-linker.ts, prologueSource) stores the caller's IY, IX,
 ; HL' and SP here, sets IY to $5C3A, calls the linked modules' initialisers and runs the main
@@ -11,6 +12,11 @@
 ; END n. In: BC = n. Returns to whoever started the program (BASIC's USR returns BC), with SP, IY,
 ; IX and HL' as they were at the start. Does not return to its caller.
 End:
+#ifdef KB_HEADERLESS
+    ; --- headerless (zxbc's --headerless; compatibility plan C8): there was no start-up to undo, and
+    ; --- the program returns BC to whoever called it
+    ret
+#endif
     push bc
     ld hl,(EndHook)
     call EndCall            ; what a linked module leaves for BASIC (the print position)

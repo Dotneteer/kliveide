@@ -82,4 +82,50 @@ describe("tape DATA", () => {
     });
     expect(r.screen(1)[0]).toBe("123 12345");
   });
+
+  it("SAVEs and LOADs every variable and the heap with DATA and no name (compatibility plan C8)", async () => {
+    // --- One program, run twice: the first run (flag set) saves, the second loads what it saved
+    const source = [
+      "DIM n AS UInteger",
+      "DIM s AS String",
+      "DIM a(2) AS UByte",
+      "IF PEEK 50000 = 1 THEN",
+      '  n = 1234: s = "hello": a(2) = 9',
+      '  SAVE "state" DATA',
+      "ELSE",
+      '  LOAD "state" DATA',
+      "END IF",
+      'PRINT n; " "; s; " "; a(2)',
+      ""
+    ].join("\n");
+    const first = await runBasic(source, {
+      before: (s) => {
+        s.poke(50000, 1);
+        s.machine.setMachineProperty(TAPE_MODE, TapeMode.Save);
+      },
+      frames: 6000
+    });
+    expect(first.screen(1)[0]).toBe("1234 hello 9");
+    const saved = first.session.machine.getMachineProperty(SAVED_TO_TAPE) as { contents: Uint8Array };
+    // --- The TZX's standard-speed blocks (ID $10: pause, length, then the bytes) become the tape
+    const tzx = [...saved.contents];
+    const blocks: TapeDataBlock[] = [];
+    for (let i = 10; i < tzx.length; ) {
+      if (tzx[i] !== 0x10) break;
+      const length = tzx[i + 3] | (tzx[i + 4] << 8);
+      const b = new TapeDataBlock();
+      b.data = new Uint8Array(tzx.slice(i + 5, i + 5 + length));
+      blocks.push(b);
+      i += 5 + length;
+    }
+    expect(blocks.length).toBe(2);
+    const second = await runBasic(source, {
+      before: (s) => {
+        s.machine.setMachineProperty(MEDIA_TAPE, blocks);
+        s.machine.setMachineProperty(FAST_LOAD, true);
+      },
+      frames: 3000
+    });
+    expect(second.screen(1)[0]).toBe("1234 hello 9");
+  });
 });

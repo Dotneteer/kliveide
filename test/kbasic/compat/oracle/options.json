@@ -139,6 +139,9 @@
   "options: check-bounds: an array parameter in range": {
    "out": "after1 | ERR 0"
   },
+  "options: headerless": {
+   "out": ""
+  },
   "options: #pragma zxnext with nextreg": {
    "out": "1"
   }

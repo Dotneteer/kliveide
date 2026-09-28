@@ -9,7 +9,7 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 import type { DiagnosticBag, Span } from "./diagnostics";
-import { emitProgram, type EmittedProgram } from "./backend/emit";
+import { emitProgram, USER_HEAP, type EmittedProgram } from "./backend/emit";
 import { CodegenError, type LirLine } from "./backend/lir";
 import { selectFunction } from "./backend/select0";
 import { buildDebugInfo, type DebugBuild } from "./debug/builder";
@@ -118,10 +118,12 @@ export async function generateProgram(
       `    .model ${MODEL_NAMES[options.target] ?? "Spectrum48"}`,
       ...nexHeader(options, programName),
       "__kbasic_start:",
-      ...prologueSource(runtimeInitialisers(modules)).split("\n")
+      // --- headerless: none of the start-up (the registers kept for END, the modules' initialisers)
+      ...(options.headerless ? [] : prologueSource(runtimeInitialisers(modules)).split("\n"))
     ],
     functions,
     data: mir.data,
+    ...(options.heapAddress === undefined ? { heapSize: options.heapSize } : {}),
     ...(banking ? { functionBanks: mir.functions.map((f) => f.bank), bankPlacement: banking.placement } : {})
   });
 
@@ -133,7 +135,7 @@ export async function generateProgram(
     programUnit,
     ...(await runtimeUnits(modules, assemblerOptions, {
       heapSize: options.heapSize,
-      ...(options.heapAddress !== undefined ? { heapAddress: options.heapAddress } : {}),
+      ...(options.heapAddress !== undefined ? { heapAddress: options.heapAddress } : { heapLabel: USER_HEAP }),
       ...(banking ? { codebank: banking.layout } : {})
     }))
   ];
@@ -295,6 +297,7 @@ function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {
   a.useCaseSensitiveSymbols = true;
   if (options.checkMemory) a.predefinedSymbols["KB_CHECK_MEMORY"] = new ExpressionValue(true);
   a.allowNextInstructions = options.zxnext;
+  if (options.headerless) a.predefinedSymbols["KB_HEADERLESS"] = new ExpressionValue(true);
   return a;
 }
 

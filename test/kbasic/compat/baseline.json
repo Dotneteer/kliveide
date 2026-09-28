@@ -1,12 +1,3 @@
 {
- "acceptance": {
-  "LOAD \"\" DATA": {
-   "klive": "rejected: E501 LOAD DATA without a name is not supported by the Klive BASIC code generator yet",
-   "zxbc": "accepted"
-  },
-  "SAVE \"d\" DATA": {
-   "klive": "rejected: E501 SAVE DATA without a name is not supported by the Klive BASIC code generator yet",
-   "zxbc": "accepted"
-  }
- }
+ "acceptance": {}
 }

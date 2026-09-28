@@ -17,7 +17,8 @@ were. **C4 done** (2026-09-27, §4.4): acceptance agrees with zxbc on 506 progra
 faults. **C5 done** (2026-09-27, §4.5): zxbasm is the default inline-asm dialect, zxbc's FASTCALL
 and register contracts hold, and NextLib compiles and runs as zxbc builds it. **C6 done** (2026-09-28, §4.6): every documented
 library zxbc ships, checked against zxbc routine by routine. **C7 done** (2026-09-28, §4.7): options and
-pragmas agree with zxbc (headerless open). Next: C8.
+pragmas agree with zxbc. **C8 done** (2026-09-28, §4.8): the plan is complete; the remaining differences
+are the recorded deliberate ones.
 
 ---
 
@@ -130,7 +131,7 @@ program that pins them. Target: every generated program agrees.
 | **C5** | Inline asm: zxbasm's dialect (main plan §6.5, D10) as the default, the runtime alias table for documented entry points, `'@asm-dialect klive` for Klive's own. nextlib compiles and its demo programs run under the oracle. | nextlib and the corpus's asm programs agree. |
 | **C6** | The standard library: every library `#include <…>` can name, with the APIs from upstream's documentation (the undocumented ones get their interface recorded from the docs first, main plan Handoff item 2). One oracle program per library. | Every documented library's programs agree. |
 | **C7** | Options and `#pragma`s: every zxbc CLI option the spec lists (`--array-base`, `--string-base`, `--sinclair`, `--heap-size`, `--explicit`, `--strict`, `--debug-memory`, `--debug-array`, `--enable-break`, `--org`, …) has a program run by both with the option set. | The option programs agree. |
-| **C8** | Close: the annex has no `open` entry left but string-concatenation-overflow (or it is observed too); `oracle-differs` marks only on the D-C2 list; the user documentation (main plan R18) states the compatibility and the remaining deviations; the main plan's status updated. | K1–K3 hold on every suite. |
+| **C8** (**done 2026-09-28**, §4.8) | Close: the annex has no `open` entry left but string-concatenation-overflow (or it is observed too); `oracle-differs` marks only on the D-C2 list; the user documentation (main plan R18) states the compatibility and the remaining deviations; the main plan's status updated. | K1–K3 hold on every suite. |
 
 ### 4.1 C1 findings (2026-09-27)
 
@@ -320,11 +321,27 @@ program that pins them. Target: every generated program agrees.
 - **Found and followed:** strict typing rejects an untyped DIM with an initial value (annex
   `strict-initialised-dim`); string.bas's mid counts from 0 whatever the string base, asc follows it
   (annex `string-library-base`); `#pragma sinclair` has no effect in zxbc.
-- **Open:** `headerless` is accepted but not implemented (Klive still emits its start-up and END
-  code). A headerless zxbc build run as a program prints nothing, so no program can compare the two;
-  it needs a decision on what Klive's start-up may leave out. Options with no effect on a program's
-  behaviour (warnings, output formats, include paths, the memory map) are covered by their own tests,
-  not by this suite.
+- **headerless** was left open here and is implemented in C8 (§4.8). Options with no effect on a
+  program's behaviour (warnings, output formats, include paths, the memory map) are covered by their
+  own tests, not by this suite.
+
+### 4.8 C8 state (2026-09-28)
+
+- **The annex** has no open entry: string-concatenation-overflow is unreachable (a String lives on a
+  heap far below 64K; running out of it is heap-exhaustion's). `stdlib-internals` is gone: the
+  print42/print64 corpus programs now test what the screen shows, and zxbc agrees with them.
+- **`oracle-differs` marks** remain only for D-C2 entries (fastcall-basic-body,
+  function-without-return, byref-float-parameter) and D-C6 upstream faults (byte-division,
+  fixed-division-by-zero, substring-assignment).
+- **SAVE/LOAD "" DATA without a name** save and load the user-data area: the emitter now puts the
+  resident variables and then the heap together between `__kbUserData` and `__kbUserDataEnd` (the
+  runtime's `HeapStart` points into it). The compatibility baseline is empty.
+- **headerless** is implemented: no start-up code, and END returns BC to the caller (annex
+  `headerless`; the one difference, Klive's PRINT working without the start-up, is a fault of the
+  options suite).
+- **The user documentation** (main plan R18): `docs/content/working-with-ide/zxb.mdx` states the
+  compatibility, the options with their zxbc counterparts, the pragmas, inline asm, the library and
+  every deliberate difference.
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

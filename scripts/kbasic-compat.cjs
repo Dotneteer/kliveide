@@ -723,6 +723,7 @@ function generate() {
     opt("check-bounds: through an array parameter", ["check-bounds"], ["SUB put~(a() AS UByte, i AS UByte)", "a(i) = 1", "END SUB", "DIM a~(3) AS UByte", "put~(a~, 7)"], '"after"; a~(0)', { err: true }),
     opt("check-bounds: an array parameter in range", ["check-bounds"], ["SUB put~(a() AS UByte, i AS UByte)", "a(i) = 1", "END SUB", "DIM a~(3) AS UByte", "put~(a~, 3)"], '"after"; a~(3)', { err: true }),
     opt("zxnext with nextreg", ["zxnext"], ["ASM", "nextreg $15, 1", "END ASM"], "1"),
+    opt("headerless", ["headerless"], ["DIM x~ AS UByte = 9"], "x~"),
     // --- ZX Next opcodes in inline asm (compile verdicts)
     opt("nextreg in asm", [], ["ASM", "nextreg $15, 1", "END ASM"], "1"),
     opt("#pragma zxnext with nextreg", [], ["#pragma zxnext = true", "ASM", "nextreg $15, 1", "END ASM"], "1")
