@@ -128,4 +128,52 @@ describe("tape DATA", () => {
     });
     expect(second.screen(1)[0]).toBe("1234 hello 9");
   });
+
+  /** The standard-speed blocks of a saved TZX (ID $10: pause, length, then the bytes). */
+  const tzxBlocks = (contents: Uint8Array): number[][] => {
+    const tzx = [...contents];
+    const out: number[][] = [];
+    for (let i = 10; i < tzx.length && tzx[i] === 0x10; ) {
+      const length = tzx[i + 3] | (tzx[i + 4] << 8);
+      out.push(tzx.slice(i + 5, i + 5 + length));
+      i += 5 + length;
+    }
+    return out;
+  };
+
+  it.each([
+    ["a local UByte", 'SUB f()\n DIM v AS UByte = 77\n SAVE "v" DATA v\nEND SUB\nf()\nPRINT "ok"\n', [77]],
+    ["a local UInteger", 'SUB f()\n DIM v AS UInteger = 4660\n SAVE "v" DATA v\nEND SUB\nf()\nPRINT "ok"\n', [0x34, 0x12]],
+    ["a UByte parameter", 'SUB f(v AS UByte)\n SAVE "v" DATA v\nEND SUB\nf(99)\nPRINT "ok"\n', [99]],
+    ["a BYREF parameter", 'DIM g AS UInteger = 513\nSUB f(BYREF v AS UInteger)\n SAVE "v" DATA v\nEND SUB\nf(g)\nPRINT "ok"\n', [1, 2]]
+  ])("SAVEs %s's own bytes with DATA, as zxbc (compatibility plan)", async (_, source, bytes) => {
+    const r = await runBasic(source as string, { before: (s) => s.machine.setMachineProperty(TAPE_MODE, TapeMode.Save), frames: 3000 });
+    expect(r.screen(1)[0]).toBe("ok");
+    const [head, data] = tzxBlocks((r.session.machine.getMachineProperty(SAVED_TO_TAPE) as { contents: Uint8Array }).contents);
+    expect(head[12] | (head[13] << 8), "the header's length").toBe((bytes as number[]).length);
+    expect(data.slice(1, -1)).toEqual(bytes);
+  });
+
+  it("SAVEs a String variable's pointer (two bytes) with DATA, as zxbc", async () => {
+    const r = await runBasic('DIM s AS String = "HELLO"\nSAVE "s" DATA s\nPRINT PEEK(UInteger, @s)\n', {
+      before: (s) => s.machine.setMachineProperty(TAPE_MODE, TapeMode.Save),
+      frames: 3000
+    });
+    const pointer = Number(r.screen(1)[0]);
+    const [head, data] = tzxBlocks((r.session.machine.getMachineProperty(SAVED_TO_TAPE) as { contents: Uint8Array }).contents);
+    expect(head[12] | (head[13] << 8)).toBe(2);
+    expect(data.slice(1, -1)).toEqual([pointer & 0xff, pointer >> 8]);
+  });
+
+  it("LOADs a local variable's bytes with DATA", async () => {
+    const tape = [header("v", 2, 0), block([0xff, 0x39, 0x30])];
+    const r = await runBasic('SUB f()\n DIM v AS UInteger\n LOAD "v" DATA v\n PRINT v\nEND SUB\nf()\n', {
+      before: (s) => {
+        s.machine.setMachineProperty(MEDIA_TAPE, tape);
+        s.machine.setMachineProperty(FAST_LOAD, true);
+      },
+      frames: 1500
+    });
+    expect(r.screen(1)[0]).toBe("12345");
+  });
 });

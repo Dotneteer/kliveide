@@ -733,6 +733,12 @@
   "x$ = CHR$ 65": {
    "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'"
   },
+  "DIM a$(3)\nSAVE \"x\" DATA a$()": {
+   "error": "error: Syntax Error. Unexpected token 'a$' <ARRAY_ID>"
+  },
+  "SUB f()\n DIM a(3) AS UByte\n SAVE \"x\" DATA a()\nEND SUB\nf()": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ARRAY_ID>"
+  },
   "ASM\n nop\n ret\nEND ASM": {
    "out": "accepted"
   },
@@ -1517,6 +1523,21 @@
    "out": "accepted"
   },
   "x = INT (1.5) + 1": {
+   "out": "accepted"
+  },
+  "DIM s AS String\nSAVE \"x\" DATA s": {
+   "out": "accepted"
+  },
+  "DIM s AS String\nLOAD \"x\" DATA s": {
+   "out": "accepted"
+  },
+  "SUB f()\n DIM v AS UByte\n SAVE \"x\" DATA v\nEND SUB\nf()": {
+   "out": "accepted"
+  },
+  "SUB f()\n DIM v AS UInteger\n LOAD \"x\" DATA v\nEND SUB\nf()": {
+   "out": "accepted"
+  },
+  "SUB f(v AS UByte)\n SAVE \"x\" DATA v\nEND SUB\nf(1)": {
    "out": "accepted"
   }
  }

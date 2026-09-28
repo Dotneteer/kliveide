@@ -3038,6 +3038,48 @@
    "decl": [],
    "expr": "",
    "source": "x = INT (1.5) + 1"
+  },
+  {
+   "id": "DIM s AS String\nSAVE \"x\" DATA s",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s AS String\nSAVE \"x\" DATA s"
+  },
+  {
+   "id": "DIM s AS String\nLOAD \"x\" DATA s",
+   "decl": [],
+   "expr": "",
+   "source": "DIM s AS String\nLOAD \"x\" DATA s"
+  },
+  {
+   "id": "SUB f()\n DIM v AS UByte\n SAVE \"x\" DATA v\nEND SUB\nf()",
+   "decl": [],
+   "expr": "",
+   "source": "SUB f()\n DIM v AS UByte\n SAVE \"x\" DATA v\nEND SUB\nf()"
+  },
+  {
+   "id": "SUB f()\n DIM v AS UInteger\n LOAD \"x\" DATA v\nEND SUB\nf()",
+   "decl": [],
+   "expr": "",
+   "source": "SUB f()\n DIM v AS UInteger\n LOAD \"x\" DATA v\nEND SUB\nf()"
+  },
+  {
+   "id": "SUB f(v AS UByte)\n SAVE \"x\" DATA v\nEND SUB\nf(1)",
+   "decl": [],
+   "expr": "",
+   "source": "SUB f(v AS UByte)\n SAVE \"x\" DATA v\nEND SUB\nf(1)"
+  },
+  {
+   "id": "DIM a$(3)\nSAVE \"x\" DATA a$()",
+   "decl": [],
+   "expr": "",
+   "source": "DIM a$(3)\nSAVE \"x\" DATA a$()"
+  },
+  {
+   "id": "SUB f()\n DIM a(3) AS UByte\n SAVE \"x\" DATA a()\nEND SUB\nf()",
+   "decl": [],
+   "expr": "",
+   "source": "SUB f()\n DIM a(3) AS UByte\n SAVE \"x\" DATA a()\nEND SUB\nf()"
   }
  ]
 }

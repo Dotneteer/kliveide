@@ -767,7 +767,11 @@ function generate() {
     "IF a THEN\nELSEIF b THEN PRINT 1\nELSE PRINT 2\nEND IF", "IF a THEN\nELSEIF b THEN\nPRINT 1\nELSE\nPRINT 2\nEND IF",
     "IF a THEN\nELSEIF b PRINT 1\nEND IF", "IF a THEN\nELSEIF b THEN\nPRINT 1\nEND IF", "IF a THEN\nELSE PRINT 2\nEND IF", "IF a THEN PRINT 1: ELSE PRINT 2",
     "", "REM x", "' comment", "#ifdef A\nPRINT 1\n#endif\nPRINT 2", "#define A\n#ifdef A\nPRINT 1\n#endif",
-    "x = ABS -1", "x = SIN COS 0", "x = PEEK 23610 + 1", "x$ = CHR$ 65", "x = CODE a$", "x = USR 0 + 1", "x = LEN \"ab\" + 1", "x = INT (1.5) + 1"
+    "x = ABS -1", "x = SIN COS 0", "x = PEEK 23610 + 1", "x$ = CHR$ 65", "x = CODE a$", "x = USR 0 + 1", "x = LEN \"ab\" + 1", "x = INT (1.5) + 1",
+    // --- SAVE/LOAD DATA of a String, a local and a parameter (accepted), of a String array and a local array (not)
+    'DIM s AS String\nSAVE "x" DATA s', 'DIM s AS String\nLOAD "x" DATA s', 'SUB f()\n DIM v AS UByte\n SAVE "x" DATA v\nEND SUB\nf()',
+    'SUB f()\n DIM v AS UInteger\n LOAD "x" DATA v\nEND SUB\nf()', 'SUB f(v AS UByte)\n SAVE "x" DATA v\nEND SUB\nf(1)',
+    'DIM a$(3)\nSAVE "x" DATA a$()', 'SUB f()\n DIM a(3) AS UByte\n SAVE "x" DATA a()\nEND SUB\nf()'
   ];
   const acceptance = [
     ...Object.values(specCases).flatMap((c) => [...c.accept, ...c.reject]),

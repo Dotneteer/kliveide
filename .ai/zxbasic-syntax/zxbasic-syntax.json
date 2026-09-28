@@ -3197,6 +3197,16 @@
         "oracle": "zxbc agrees while the range lies inside the String (padding and truncation included); a range past the end, or open-ended (s(6 TO) = ...), makes it write outside the String and corrupt memory: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
       },
       {
+        "name": "tape-data-variable",
+        "question": "What do SAVE and LOAD ... DATA move for a single variable?",
+        "decision": "The variable's own bytes wherever it lives: a global's, a local's or a parameter's in the routine's frame (a BYREF parameter's through its address), and for a String its two-byte pointer, not its characters. A String array and a local array are not accepted, as in zxbc.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/codegen/tape.test.ts",
+        "oracle": "zxbc 1.19 saves a String variable's 2-byte pointer and a local's or parameter's frame bytes (observed through the ROM save routine's arguments)."
+      },
+      {
         "name": "truncation-warning-w200",
         "question": "Which conversions raise W200 ('a value will be truncated')?",
         "decision": "A Fixed or Float value that is not a constant, converted to an integral type by an assignment, an argument, a RETURN or a POKE.",

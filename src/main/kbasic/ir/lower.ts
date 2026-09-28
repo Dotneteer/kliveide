@@ -829,7 +829,7 @@ class Lowering {
    * array (a CODE block of its bytes).
    */
   private tape(s: Extract<BoundStatement, { kind: "tape" }>): void {
-    let block: { start: BoundExpr | Value; length: BoundExpr | Value } | undefined;
+    let block: { start: BoundExpr | Value | (() => Value); length: BoundExpr | Value } | undefined;
     if (s.target.kind === "data") {
       const v = s.target.target;
       if (!v) {
@@ -841,28 +841,40 @@ class Lowering {
         }
         block = { start: { kind: "sym", type: "ptr", name: "__kbUserData", offset: 0 }, length: { kind: "sym", type: "u16", name: this.userDataLength, offset: 0 } };
       } else {
-        if ((v.kind !== "variable" && v.kind !== "array") || v.type === "String") {
-          this.unsupported(`${s.operation} DATA of a String`, s.span);
+        // --- zxbc rejects a String array and a local array here (syntax errors), so Klive does too
+        if ((v.kind !== "variable" && v.kind !== "array") || (v.kind === "array" && v.type === "String")) {
+          this.unsupported(`${s.operation} DATA of a String array`, s.span);
           return;
         }
         if (v.kind === "array" && (v.symbol.param || v.symbol.storage !== "global")) {
           this.unsupported(`${s.operation} DATA of a local array`, s.span);
           return;
         }
-        if (v.kind === "variable" && v.symbol.storage !== "global") {
-          this.unsupported(`${s.operation} DATA of a local variable`, s.span);
-          return;
+        if (v.kind === "array") {
+          block = { start: { kind: "sym", type: "ptr", name: `${globalName(v.symbol.name)}.data`, offset: 0 }, length: imm("u16", arrayBytes(v.symbol)) };
+        } else {
+          // --- A variable's own bytes wherever it lives, as zxbc's (compatibility plan): a String's
+          // --- are its pointer; a local's and a parameter's are in the routine's frame, so the address
+          // --- is worked out after the name (the level-0 selector takes operands in order)
+          const symbol = v.symbol;
+          block = {
+            start: () => {
+              const slot = this.variableSlot(symbol, v.span);
+              if (!slot) return imm("ptr", 0);
+              if (slot.kind === "global") return { kind: "sym", type: "ptr", name: slot.name, offset: 0 };
+              if (slot.kind === "deref") return slot.ptr;
+              const r = this.vreg("ptr");
+              this.emit({ op: "addr", dst: r, slot, sid: this.sid });
+              return r;
+            },
+            length: imm("u16", mtypeSize(mtypeOf(v.type)))
+          };
         }
-        const start: Value =
-          v.kind === "array"
-            ? { kind: "sym", type: "ptr", name: `${globalName(v.symbol.name)}.data`, offset: 0 }
-            : { kind: "sym", type: "ptr", name: (this.variableSlot(v.symbol, v.span) as { name: string }).name, offset: 0 };
-        block = { start, length: imm("u16", v.kind === "array" ? arrayBytes(v.symbol) : mtypeSize(mtypeOf(v.type))) };
       }
     } else if (s.target.kind === "screen") block = { start: imm("u16", 16384), length: imm("u16", 6912) };
     const name = this.value(s.name);
     const code = s.target.kind === "code" ? s.target : undefined;
-    const given = (x: BoundExpr | Value | undefined): Value => (!x ? imm("u16", 0) : "span" in x ? this.value(x) : x);
+    const given = (x: BoundExpr | Value | (() => Value) | undefined): Value => (!x ? imm("u16", 0) : typeof x === "function" ? x() : "span" in x ? this.value(x) : x);
     const start = given(block?.start ?? code?.start);
     const length = given(block?.length ?? code?.length);
     let flags = this.consumeFlag(name);
