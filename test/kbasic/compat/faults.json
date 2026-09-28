@@ -651,5 +651,12 @@
    "zxbc": "-0.574615478515625 4294929638",
    "fault": "fmath-angle-reduction"
   }
+ },
+ "options": {
+  "options: zxnext with nextreg": {
+   "klive": "1",
+   "zxbc": "rejected: error: Syntax error. Unexpected token '21' [INTEGER]",
+   "fault": "zxnext-option"
+  }
  }
 }

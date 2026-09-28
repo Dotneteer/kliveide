@@ -42,7 +42,9 @@ const FLAGS = {
   "check-bounds": () => ["--debug-array"],
   "break-key": () => ["--enable-break"],
   define: (v) => v.split(/\s*,\s*/).flatMap((d) => ["-D", d]),
-  optimize: (v) => ["--optimize", v]
+  optimize: (v) => ["--optimize", v],
+  zxnext: () => ["--zxnext"],
+  headerless: () => ["--headerless"]
 };
 /** Options that change nothing zxbc would do differently for a 48K run. */
 const IGNORED = new Set(["output", "emit-asm", "emit-ir", "emit-map", "debug-info", "disable-warning", "enable-warning", "expect-warnings"]);

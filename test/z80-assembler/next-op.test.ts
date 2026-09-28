@@ -1,5 +1,7 @@
 import { describe, it } from "vitest";
-import { codeRaisesError, testCodeEmit } from "./test-helpers";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+
+import { codeRaisesError, testCodeEmit, testCodeEmitWithOptions } from "./test-helpers";
 
 describe("Assembler - NEXT operations", async () => {
   it("mul d,e", async () => {
@@ -44,6 +46,13 @@ describe("Assembler - NEXT operations", async () => {
 
   it("jp (c)", async () => {
     await testNextCodeEmit("jp (c)", 0xed, 0x98);
+  });
+
+  it("next ops in non-next mode with allowNextInstructions (Klive BASIC's zxnext option)", async () => {
+    const options = new AssemblerOptions();
+    options.allowNextInstructions = true;
+    await testCodeEmitWithOptions("nextreg #12, #34", options, 0xed, 0x91, 0x12, 0x34);
+    await testCodeEmitWithOptions("swapnib", options, 0xed, 0x23);
   });
 
   it("next ops in non-next mode", async () => {

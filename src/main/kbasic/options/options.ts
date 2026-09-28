@@ -23,6 +23,8 @@ export type KBasicOptions = {
   checkBounds: boolean;
   breakKey: boolean;
   headerless: boolean;
+  /** Z80N instructions in inline asm on any target (zxbc's `--zxnext`). */
+  zxnext: boolean;
   defines: { name: string; value?: string }[];
   includePaths: string[];
   disabledWarnings: string[];
@@ -66,6 +68,7 @@ export function defaultOptions(target: Target = "zx48k"): KBasicOptions {
     checkBounds: false,
     breakKey: false,
     headerless: false,
+    zxnext: false,
     defines: [],
     includePaths: [],
     disabledWarnings: [],
@@ -145,6 +148,7 @@ export const OPTION_SPECS: readonly OptionSpec[] = [
   { name: "check-bounds", value: flag, describe: "check array subscripts", apply: set("checkBounds") },
   { name: "break-key", value: flag, describe: "BREAK stops the program", apply: set("breakKey") },
   { name: "headerless", value: flag, describe: "no program start-up and END code", apply: set("headerless") },
+  { name: "zxnext", value: flag, describe: "ZX Next instructions in inline asm, whatever the target", apply: set("zxnext") },
   {
     name: "define",
     value: { kind: "list" },

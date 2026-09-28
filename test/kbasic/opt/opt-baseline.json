@@ -2809,20 +2809,20 @@
  },
  "stdlib/string-lib.zxbas": {
   "0": {
-   "bytes": 773,
-   "tstates": 75731
+   "bytes": 777,
+   "tstates": 75739
   },
   "1": {
-   "bytes": 703,
-   "tstates": 75475
+   "bytes": 713,
+   "tstates": 75531
   },
   "2": {
-   "bytes": 688,
-   "tstates": 75367
+   "bytes": 700,
+   "tstates": 75431
   },
   "3": {
-   "bytes": 688,
-   "tstates": 75367
+   "bytes": 700,
+   "tstates": 75431
   }
  },
  "strings/byref-string.zxbas": {

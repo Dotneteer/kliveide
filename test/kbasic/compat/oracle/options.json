@@ -1,0 +1,146 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "options: #pragma sinclair: the libraries": {
+   "error": "error: 'ATTR' is neither an array nor a function."
+  },
+  "options: require-declarations: undeclared": {
+   "error": "error: Undeclared variable \"xv3068\""
+  },
+  "options: #pragma explicit: undeclared": {
+   "error": "error: Undeclared variable \"xv3070\""
+  },
+  "options: require-types: untyped DIM": {
+   "error": "error: strict mode: missing type declaration for 'yv3071'"
+  },
+  "options: #pragma strict: untyped DIM": {
+   "error": "error: strict mode: missing type declaration for 'yv3073'"
+  },
+  "options: zxnext with nextreg": {
+   "error": "error: Syntax error. Unexpected token '21' [INTEGER]"
+  },
+  "options: nextreg in asm": {
+   "error": "error: Syntax error. Unexpected token '21' [INTEGER]"
+  },
+  "options: array-base 1": {
+   "out": "1 3 40"
+  },
+  "options: #pragma array_base = 1": {
+   "out": "1 3 40"
+  },
+  "options: array-base 1, explicit bounds": {
+   "out": "0 4"
+  },
+  "options: #pragma array_base, then back": {
+   "out": "1 0"
+  },
+  "options: string-base 1": {
+   "out": "Hel/He/lo5"
+  },
+  "options: #pragma string_base = 1": {
+   "out": "Hel/He/lo5"
+  },
+  "options: string-base 1 and string.bas": {
+   "out": "llo/He/lo/72"
+  },
+  "options: case-insensitive": {
+   "out": "4"
+  },
+  "options: #pragma case_insensitive": {
+   "out": "4"
+  },
+  "options: case-insensitive routines": {
+   "out": "8"
+  },
+  "options: sinclair-compatible": {
+   "out": "17H56Q0"
+  },
+  "options: #pragma sinclair": {
+   "out": "07i"
+  },
+  "options: #pragma sinclair: case": {
+   "out": "0"
+  },
+  "options: check-bounds: a read out of range": {
+   "out": " | ERR 2"
+  },
+  "options: check-bounds: a String array": {
+   "out": " | ERR 2"
+  },
+  "options: require-declarations: declared": {
+   "out": "5"
+  },
+  "options: require-types: typed": {
+   "out": "3"
+  },
+  "options: #pragma default_byref": {
+   "out": "6"
+  },
+  "options: heap-size and check-memory: a String too long": {
+   "out": " | ERR 3"
+  },
+  "options: #pragma heap_size and memory_check": {
+   "out": " | ERR 3"
+  },
+  "options: heap-size fits": {
+   "out": "80 | ERR 0"
+  },
+  "options: heap-address 50000": {
+   "out": "1"
+  },
+  "options: #pragma heap_address": {
+   "out": "1"
+  },
+  "options: check-bounds: out of range": {
+   "out": " | ERR 2"
+  },
+  "options: #pragma array_check": {
+   "out": " | ERR 2"
+  },
+  "options: check-bounds: in range": {
+   "out": "after0 | ERR 0"
+  },
+  "options: check-bounds: a two-dimensional array": {
+   "out": " | ERR 2"
+  },
+  "options: break-key with BREAK held": {
+   "out": " | ERR 20"
+  },
+  "options: #pragma enable_break with BREAK held": {
+   "out": " | ERR 20"
+  },
+  "options: no break-key with BREAK held": {
+   "out": "after | ERR 0"
+  },
+  "options: define": {
+   "out": "fast3"
+  },
+  "options: optimize 0": {
+   "out": "1 -17.5 -1"
+  },
+  "options: optimize 1": {
+   "out": "1 -17.5 -1"
+  },
+  "options: optimize 2": {
+   "out": "1 -17.5 -1"
+  },
+  "options: optimize 3": {
+   "out": "1 -17.5 -1"
+  },
+  "options: #pragma optimization_level": {
+   "out": "1"
+  },
+  "options: origin 40000": {
+   "out": "9 1"
+  },
+  "options: check-bounds: through an array parameter": {
+   "out": " | ERR 2"
+  },
+  "options: check-bounds: an array parameter in range": {
+   "out": "after1 | ERR 0"
+  },
+  "options: #pragma zxnext with nextreg": {
+   "out": "1"
+  }
+ }
+}

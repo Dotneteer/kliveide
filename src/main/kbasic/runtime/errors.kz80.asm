@@ -1,6 +1,6 @@
 ; @module   errors
 ; @summary  Runtime error reports: the program stops with the ROM's familiar report.
-; @exports  RaiseError, ReportError
+; @exports  RaiseError, ReportError, CheckBreak
 ; @requires program, rom
 ;
 ; The report codes are the ROM's ERR_NR values, one less than the report's number or letter:
@@ -149,3 +149,18 @@ ReportMessages:
 #else
     ret
 #endif
+
+; ------------------------------------------------------------------------------------------------
+; The BREAK check of `break-key` (zxbc's --enable-break; compatibility plan C7): with CAPS SHIFT and
+; SPACE both held, the program stops with "L BREAK into program". Changes AF.
+CheckBreak:
+    ld a,$7f
+    in a,($fe)
+    rra                     ; SPACE: bit 0 of row $7F, 0 when held
+    ret c
+    ld a,$fe
+    in a,($fe)
+    rra                     ; CAPS SHIFT: bit 0 of row $FE
+    ret c
+    ld a,20
+    jp RaiseError

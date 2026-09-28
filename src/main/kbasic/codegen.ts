@@ -46,7 +46,10 @@ export async function generateProgram(
   programName: string,
   diagnostics: DiagnosticBag
 ): Promise<GeneratedProgram | undefined> {
-  const mir = lowerProgram(bound.program, bound.globals, diagnostics, (file) => isLibraryPath(sources.get(file).name));
+  const mir = lowerProgram(bound.program, bound.globals, diagnostics, (file) => isLibraryPath(sources.get(file).name), {
+    bounds: options.checkBounds,
+    breakKey: options.breakKey
+  });
   if (diagnostics.hasErrors) return undefined;
 
   // --- Instruction selection adds the runtime routines it calls (multiply, divide, ...)
@@ -291,6 +294,7 @@ function assemblerOptionsFor(options: KBasicOptions): AssemblerOptionsType {
   // --- BASIC identifiers are case-sensitive, so their labels must be too
   a.useCaseSensitiveSymbols = true;
   if (options.checkMemory) a.predefinedSymbols["KB_CHECK_MEMORY"] = new ExpressionValue(true);
+  a.allowNextInstructions = options.zxnext;
   return a;
 }
 

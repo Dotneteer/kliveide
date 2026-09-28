@@ -30,9 +30,9 @@ describe("standard library", () => {
       expect(r.screen(2)).toEqual(["Spec|rum|ect|um||Spectrum", "|m"]);
     });
 
-    it("counts positions from 1 under string-base 1", async () => {
+    it("counts mid's start from 0 even under string-base 1, as zxbc's (compatibility plan C7)", async () => {
       const r = await runBasic(source, { stringBase: 1 });
-      expect(r.screen(2)[0]).toBe("Spec|rum|pec|rum||Spectrum");
+      expect(r.screen(2)[0]).toBe("Spec|rum|ect|um||Spectrum");
     });
   });
 

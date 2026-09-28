@@ -3057,6 +3057,15 @@
         "test": "test/kbasic/corpus/print/udg-codes.zxbas"
       },
       {
+        "name": "program-pragmas",
+        "question": "Where do #pragma lines for whole-program options take effect?",
+        "decision": "heap_size, heap_address, memory_check, array_check, enable_break, optimization_level, opt_strategy, org, headerless, zxnext, autorun and expected_warnings set their option for the whole program wherever they stand, over the header's. array_base, string_base, case_insensitive, explicit, strict and default_byref change binding from their line onward (with push/pop). #pragma sinclair changes nothing: neither the bases, nor case, nor the Sinclair functions (only the sinclair-compatible option does).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
         "name": "read-past-end",
         "question": "What does READ do after the last DATA item?",
         "decision": "It wraps to the first item, and so does READ after RESTORE to a label with no DATA after it. A program with no DATA at all cannot READ: E432 at compile time, as in zxbc.",
@@ -3073,6 +3082,16 @@
         "source": "oracle",
         "phase": 4,
         "test": "test/kbasic/corpus/data/read-mismatch.zxbas"
+      },
+      {
+        "name": "runtime-checks",
+        "question": "What do check-bounds (--debug-array) and break-key (--enable-break) do?",
+        "decision": "check-bounds: an index outside its dimension's bounds, in any array (a parameter's too, and each dimension of several), stops the program with 3 Subscript wrong (ERR_NR 2). break-key: with CAPS SHIFT and SPACE held when one of the program's statements starts, the program stops with L BREAK into program (ERR_NR 20). Without them nothing is checked.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 at -O2 drops a store to an array that is never read, and its check with it; Klive keeps both."
       },
       {
         "phase": 8,
@@ -3132,6 +3151,15 @@
         "test": "test/kbasic/compat/compat.test.ts"
       },
       {
+        "name": "strict-initialised-dim",
+        "question": "Under strict typing, may a DIM leave out its type when it has an initial value?",
+        "decision": "No: DIM x = 3 is E426 under require-types or #pragma strict, as zxbc; the initial value gives the type only without strict typing.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
         "name": "string-concatenation-overflow",
         "question": "What does a concatenation longer than 65535 characters give?",
         "decision": "The empty String.",
@@ -3148,6 +3176,15 @@
         "source": "oracle",
         "phase": 1,
         "test": "test/kbasic/corpus/strings/escape-unknown.zxbas"
+      },
+      {
+        "name": "string-library-base",
+        "question": "Do string.bas and asc.bas follow the string base?",
+        "decision": "mid counts its start from 0 whatever the string base (as its documentation says); left and right take a count, so the base does not matter; asc counts from the string base.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "substring-assignment",
@@ -3223,6 +3260,16 @@
         "decision": "Klive compiles them as documented.",
         "source": "klive-decision",
         "oracle": "zxbc 1.19 stops with an internal exception (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "name": "zxnext-option",
+        "question": "Does the zxnext option allow the Next's instructions in inline asm?",
+        "decision": "Yes: '@zxnext and #pragma zxnext = true accept the ZX Spectrum Next's instructions in ASM blocks on any target.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19's --zxnext (-N) flag has no effect: nextreg is still a syntax error, while #pragma zxnext = true and --arch=zxnext accept it. Klive's option does what zxbc documents."
       }
     ]
   }

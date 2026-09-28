@@ -186,10 +186,56 @@ export function runFrontEnd(
   for (const file of result.sources.files.slice(1)) {
     if (!file.name.startsWith("<")) reportIgnoredHeader(file, diagnostics);
   }
+  applyProgramPragmas(result.program.statements, options);
   const bound = diagnostics.hasErrors ? undefined : bind(result.program, options, diagnostics, result.preprocessed.inits);
   dropDisabledWarnings(diagnostics, options);
   dropLibraryWarnings(diagnostics, result.sources);
   return { ...result, options, ...(bound ? { bound } : {}) };
+}
+
+/**
+ * The `#pragma` lines that set a whole-program option (compatibility plan C7): wherever they stand,
+ * they set it for the program, as zxbc's do (plan §5.2: a pragma outranks the header). The ones that
+ * change binding from their line onward (array_base, explicit, ...) are the binder's; `sinclair` has
+ * no effect in zxbc and none here.
+ */
+const PROGRAM_PRAGMAS: Record<string, (o: KBasicOptions, v: string) => void> = {
+  heap_size: (o, v) => (o.heapSize = pragmaInt(v)),
+  heap_address: (o, v) => (o.heapAddress = pragmaInt(v)),
+  memory_check: (o, v) => (o.checkMemory = pragmaBool(v)),
+  array_check: (o, v) => (o.checkBounds = pragmaBool(v)),
+  enable_break: (o, v) => (o.breakKey = pragmaBool(v)),
+  optimization_level: (o, v) => (o.optimize = pragmaInt(v)),
+  opt_strategy: (o, v) => (o.optimizeFor = v === "size" ? "size" : v === "speed" ? "speed" : "balanced"),
+  org: (o, v) => (o.origin = pragmaInt(v)),
+  headerless: (o, v) => (o.headerless = pragmaBool(v)),
+  zxnext: (o, v) => (o.zxnext = pragmaBool(v)),
+  autorun: (o, v) => (o.autorun = pragmaBool(v)),
+  expected_warnings: (o, v) => (o.expectWarnings = pragmaInt(v))
+};
+
+function pragmaInt(v: string): number {
+  const t = v.trim();
+  return (t.startsWith("$") ? parseInt(t.slice(1), 16) : /^0x/i.test(t) ? parseInt(t.slice(2), 16) : parseInt(t, 10)) || 0;
+}
+
+function pragmaBool(v: string): boolean {
+  return ["", "true", "on", "yes", "+", "1"].includes(v.trim().toLowerCase());
+}
+
+function applyProgramPragmas(statements: unknown, options: KBasicOptions): void {
+  const visit = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    if (Array.isArray(node)) return node.forEach(visit);
+    const o = node as { kind?: string; name?: string; action?: string; value?: string };
+    if (o.kind === "pragma") {
+      const set = o.name && o.action === "set" ? PROGRAM_PRAGMAS[o.name] : undefined;
+      if (set) set(options, o.value ?? "");
+      return;
+    }
+    for (const [key, value] of Object.entries(o)) if (key !== "span") visit(value);
+  };
+  visit(statements);
 }
 
 /** Warnings about Klive's own library code (an unused library FUNCTION, say) are not the user's. */

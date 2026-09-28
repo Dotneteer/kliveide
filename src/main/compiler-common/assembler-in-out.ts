@@ -333,6 +333,12 @@ export class AssemblerOptions {
   flexibleDefPragmas: boolean = false;
 
   /**
+   * Accepts the ZX Spectrum Next's extra instructions whatever the model (Klive BASIC's `zxnext`
+   * option, as zxbc's `--zxnext`)
+   */
+  allowNextInstructions: boolean = false;
+
+  /**
    * Provides the absolute file path of a source item
    * @param sourceItem Source item
    * @returns Absolute file path

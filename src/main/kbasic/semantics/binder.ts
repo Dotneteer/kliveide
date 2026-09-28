@@ -545,8 +545,11 @@ class Binder extends ExpressionBinder {
       let type: KType;
       if (declaredType) type = declaredType;
       else if (ref.sigil) type = typeOfSigil(ref.sigil);
-      else if (initial && initial.kind !== "error") type = initial.type === "Boolean" ? "UByte" : initial.type;
-      else type = this.defaultType(ref.name, ref.span);
+      else if (initial && initial.kind !== "error") {
+        // --- Strict typing wants the type named even when the initial value gives one (as zxbc)
+        if (this.settings.strict) this.error("E426", `Variable '${ref.name}' needs a type (AS ...): strict typing is on`, ref.span);
+        type = initial.type === "Boolean" ? "UByte" : initial.type;
+      } else type = this.defaultType(ref.name, ref.span);
       const symbol = this.declareVariable(ref, type);
       if (!symbol) continue;
       if (s.at) {

@@ -18,7 +18,7 @@ import type { CompatItemResult, CompatOracle } from "./compat-oracle-run.test";
  * file fails, and so does a listed item that now agrees, until `KBASIC_COMPAT_UPDATE=1` rewrites the
  * baseline. Level 3 must print what level 0 prints for every item, whatever zxbc does.
  */
-type Item = { id: string; decl: string[]; expr: string; rows?: number; source?: string };
+type Item = { id: string; decl: string[]; expr: string; rows?: number; source?: string; header?: string[]; err?: boolean; hold?: string[] };
 type Suite = { suite: string; kind?: "accept"; perProgram: number; frames?: number; items: Item[] };
 type Diff = { klive: string; zxbc: string };
 type Baseline = Record<string, Record<string, Diff>>;
@@ -27,7 +27,7 @@ type Baseline = Record<string, Record<string, Diff>>;
 const compat = require("../../../scripts/kbasic-compat.cjs") as {
   buildProgram(items: Item[]): string;
   chunk(items: Item[], size: number): Item[][];
-  itemResult(item: Item, row: number, line: (row: number) => string): string;
+  itemResult(item: Item, row: number, line: (row: number) => string, peek?: (address: number) => number): string;
 };
 
 const DIR = __dirname;
@@ -68,12 +68,14 @@ async function kliveResults(items: Item[], perProgram: number, level: number, fr
       return;
     }
     const { session, done } = await startBasic(source, { optimize: level });
+    const hold = group.flatMap((i) => i.hold ?? []);
+    if (hold.length) session.keyDown(...hold);
     try {
       session.runTo(done, { maxFrames: frames });
     } catch (e) {
       if (!/Timed out/.test((e as Error).message)) throw e;
     }
-    group.forEach((item, row) => (out[item.id] = { out: compat.itemResult(item, row, (r) => session.screenLine(r)) }));
+    group.forEach((item, row) => (out[item.id] = { out: compat.itemResult(item, row, (r) => session.screenLine(r), (a) => session.peek(a)) }));
   };
   for (const group of compat.chunk(items, perProgram)) await run(group);
   return out;

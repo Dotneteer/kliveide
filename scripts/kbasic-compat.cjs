@@ -37,6 +37,8 @@ const ROWS = 20;
  */
 function buildProgram(items) {
   const lines = ["' Klive BASIC compatibility suite (scripts/kbasic-compat.cjs)"];
+  // --- Header options (`'@name value`, C7): only for an item alone in its program
+  for (const item of items) lines.push(...(item.header ?? []));
   for (const item of items) lines.push(...item.decl);
   items.forEach((item, row) => {
     if (!item.rows) lines.push(`PRINT AT ${row}, 0; ${item.expr}`);
@@ -44,10 +46,13 @@ function buildProgram(items) {
   return lines.join("\n") + "\n";
 }
 
-/** What an item's program shows for it: its row, or its first `rows` rows joined with " / ". */
-function itemResult(item, row, screenLine) {
-  if (!item.rows) return screenLine(row).trimEnd();
-  return Array.from({ length: item.rows }, (_, r) => screenLine(r).trimEnd()).join(" / ");
+/**
+ * What an item's program shows for it: its row, or its first `rows` rows joined with " / "; an item
+ * with `err` adds ERR_NR as the run left it (255 is OK).
+ */
+function itemResult(item, row, screenLine, peek) {
+  const shown = !item.rows ? screenLine(row).trimEnd() : Array.from({ length: item.rows }, (_, r) => screenLine(r).trimEnd()).join(" / ");
+  return item.err && peek ? `${shown} | ERR ${peek(23610)}` : shown;
 }
 
 /** Items in programs of `size` (at most ROWS), in order. */
@@ -657,6 +662,80 @@ function generate() {
     })
   };
 
+  // --- Options and pragmas (C7): each item alone in its program, with header options (`'@name value`,
+  // --- zxbc flags through the corpus oracle's mapping) or `#pragma` lines. `err` items add ERR_NR,
+  // --- `hold` items run with those keys held down.
+  const opt = (id, header, decl, expr, extra = {}) => ({ id, header: header.map((h) => `'@${h}`), decl, expr, ...extra });
+  const ARRAY = ["DIM a~(3) AS UByte", "a~(1) = 10: a~(3) = 30"];
+  const ARRAY_EXPR = 'LBOUND(a~, 1); " "; UBOUND(a~, 1); " "; a~(1) + a~(3)';
+  const STR = ['DIM s~ AS String = "Hello"'];
+  const STR_EXPR = 's~(1); s~(2 TO 3); "/"; s~( TO 2); "/"; s~(4 TO); LEN(s~)';
+  const OPTIONS = [
+    // --- array base
+    opt("array-base 1", ["array-base 1"], ARRAY, ARRAY_EXPR),
+    opt("#pragma array_base = 1", [], ["#pragma array_base = 1", ...ARRAY], ARRAY_EXPR),
+    opt("array-base 1, explicit bounds", ["array-base 1"], ["DIM a~(0 TO 2) AS UByte => {4, 5, 6}"], 'LBOUND(a~, 1); " "; a~(0)'),
+    opt("#pragma array_base, then back", [], ["#pragma array_base = 1", "DIM a~(3) AS UByte", "#pragma array_base = 0", "DIM b~(3) AS UByte"], 'LBOUND(a~, 1); " "; LBOUND(b~, 1)'),
+    // --- string base
+    opt("string-base 1", ["string-base 1"], STR, STR_EXPR),
+    opt("#pragma string_base = 1", [], ["#pragma string_base = 1", ...STR], STR_EXPR),
+    opt("string-base 1 and string.bas", ["string-base 1"], ["#include <string.bas>", "#include <asc.bas>"], 'mid("Hello", 2, 3); "/"; left("Hello", 2); "/"; right("Hello", 2); "/"; asc("Hello", 1)'),
+    // --- case
+    opt("case-insensitive", ["case-insensitive"], ["DIM Foo~ AS UByte = 3", "foo~ = FOO~ + 1"], "fOO~"),
+    opt("#pragma case_insensitive", [], ["#pragma case_insensitive = true", "DIM Foo~ AS UByte = 3", "foo~ = FOO~ + 1"], "fOO~"),
+    opt("case-insensitive routines", ["case-insensitive"], ["FUNCTION Twice~(n AS UByte) AS UByte", "RETURN n * 2", "END FUNCTION"], "TWICE~(4)"),
+    // --- Sinclair compatibility
+    opt("sinclair-compatible", ["sinclair-compatible"], ["DIM a~(3) AS UByte", "a~(1) = 7", 'DIM s~ AS String = "Hi"', 'PRINT AT 5, 5; "Q"'], 'LBOUND(a~, 1); a~(1); s~(1); ATTR(5, 5); SCREEN$(5, 5); POINT(0, 0)'),
+    opt("#pragma sinclair", [], ["#pragma sinclair = true", "DIM a~(3) AS UByte", "a~(1) = 7", 'DIM s~ AS String = "Hi"'], "LBOUND(a~, 1); a~(1); s~(1)"),
+    opt("#pragma sinclair: the libraries", [], ["#pragma sinclair = true", 'PRINT AT 5, 5; "Q"'], "ATTR(5, 5); SCREEN$(5, 5); POINT(0, 0)"),
+    opt("#pragma sinclair: case", [], ["#pragma sinclair = true", "DIM Foo~ AS UByte = 3"], "FOO~"),
+    opt("check-bounds: a read out of range", ["check-bounds"], ["DIM a~(3) AS UByte", "DIM i~ AS UByte = 200", "DIM v~ AS UByte", "v~ = a~(i~)"], '"after"; v~', { err: true }),
+    opt("check-bounds: a String array", ["check-bounds"], ["DIM a~(3) AS String", "DIM i~ AS UByte = 4", 'a~(i~) = "x"'], '"after"; a~(0)', { err: true }),
+    // --- declarations and types (compile verdicts)
+    opt("require-declarations: undeclared", ["require-declarations"], ["x~ = 5"], "x~"),
+    opt("require-declarations: declared", ["require-declarations"], ["DIM x~ AS UByte = 5"], "x~"),
+    opt("#pragma explicit: undeclared", [], ["#pragma explicit = true", "x~ = 5"], "x~"),
+    opt("require-types: untyped DIM", ["require-types"], ["DIM y~ = 3"], "y~"),
+    opt("require-types: typed", ["require-types"], ["DIM y~ AS Integer = 3"], "y~"),
+    opt("#pragma strict: untyped DIM", [], ["#pragma strict = true", "DIM y~ = 3"], "y~"),
+    opt("#pragma default_byref", [], ["#pragma default_byref = true", "SUB inc~(a AS UByte)", "a = a + 1", "END SUB", "DIM v~ AS UByte = 5", "inc~(v~)"], "v~"),
+    // --- the heap
+    opt("heap-size and check-memory: a String too long", ["heap-size 200", "check-memory"], ['DIM s~ AS String = ""', "DIM i~ AS UByte", 'FOR i~ = 1 TO 60: s~ = s~ + "abcd": NEXT i~'], "LEN(s~)", { err: true }),
+    opt("#pragma heap_size and memory_check", [], ["#pragma heap_size = 200", "#pragma memory_check = true", 'DIM s~ AS String = ""', "DIM i~ AS UByte", 'FOR i~ = 1 TO 60: s~ = s~ + "abcd": NEXT i~'], "LEN(s~)", { err: true }),
+    opt("heap-size fits", ["heap-size 400", "check-memory"], ['DIM s~ AS String = ""', "DIM i~ AS UByte", 'FOR i~ = 1 TO 20: s~ = s~ + "abcd": NEXT i~'], "LEN(s~)", { err: true }),
+    ...[["heap-address 50000", ["heap-address 50000"], []], ["#pragma heap_address", [], ["#pragma heap_address = 50000"]]].map(([id, header, pragma]) =>
+      opt(id, header, [...pragma, 'DIM s~ AS String = "HELLO"', 's~ = s~ + "WORLD"', "DIM i~ AS UInteger", "DIM at~ AS UInteger = 0", "FOR i~ = 50000 TO 55000", "IF PEEK(i~) = 87 AND PEEK(i~ + 1) = 79 AND at~ = 0 THEN at~ = i~", "NEXT i~"], "at~ > 0")
+    ),
+    // --- array bounds checks
+    opt("check-bounds: out of range", ["check-bounds"], ["DIM a~(3) AS UByte", "DIM i~ AS UByte = 5", "a~(i~) = 1"], '"after"; a~(0)', { err: true }),
+    opt("#pragma array_check", [], ["#pragma array_check = true", "DIM a~(3) AS UByte", "DIM i~ AS UByte = 5", "a~(i~) = 1"], '"after"; a~(0)', { err: true }),
+    opt("check-bounds: in range", ["check-bounds"], ["DIM a~(3) AS UByte", "DIM i~ AS UByte = 3", "a~(i~) = 1"], '"after"; a~(0)', { err: true }),
+    opt("check-bounds: a two-dimensional array", ["check-bounds"], ["DIM a~(3, 2) AS UByte", "DIM i~ AS UByte = 1", "DIM j~ AS UByte = 3", "a~(i~, j~) = 1"], '"after"; a~(0, 0)', { err: true }),
+    // --- BREAK
+    opt("break-key with BREAK held", ["break-key"], ["DIM i~ AS UInteger", "FOR i~ = 1 TO 3000: NEXT i~"], '"after"', { err: true, hold: ["CShift", "Space"] }),
+    opt("#pragma enable_break with BREAK held", [], ["#pragma enable_break = true", "DIM i~ AS UInteger", "FOR i~ = 1 TO 3000: NEXT i~"], '"after"', { err: true, hold: ["CShift", "Space"] }),
+    opt("no break-key with BREAK held", [], ["DIM i~ AS UInteger", "FOR i~ = 1 TO 3000: NEXT i~"], '"after"', { err: true, hold: ["CShift", "Space"] }),
+    // --- defines, optimisation, origin
+    opt("define", ["define LEVEL=3, FAST"], ["#ifdef FAST", 'DIM t~ AS String = "fast"', "#else", 'DIM t~ AS String = "slow"', "#endif"], 't~; LEVEL'),
+    ...[0, 1, 2, 3].map((o) => opt(`optimize ${o}`, [`optimize ${o}`], ["DIM x~ AS Integer = -7", "DIM f~ AS Float = 2.5"], 'x~ * 3 MOD 5; " "; f~ * x~; " "; x~ SHR 3')),
+    opt("#pragma optimization_level", [], ["#pragma optimization_level = 0", "DIM x~ AS Integer = -7"], "x~ * 3 MOD 5"),
+    opt("origin 40000", ["origin 40000"], ["DIM x~ AS UByte = 9"], 'x~; " "; PEEK(40000) <> 0'),
+    opt("check-bounds: through an array parameter", ["check-bounds"], ["SUB put~(a() AS UByte, i AS UByte)", "a(i) = 1", "END SUB", "DIM a~(3) AS UByte", "put~(a~, 7)"], '"after"; a~(0)', { err: true }),
+    opt("check-bounds: an array parameter in range", ["check-bounds"], ["SUB put~(a() AS UByte, i AS UByte)", "a(i) = 1", "END SUB", "DIM a~(3) AS UByte", "put~(a~, 3)"], '"after"; a~(3)', { err: true }),
+    opt("zxnext with nextreg", ["zxnext"], ["ASM", "nextreg $15, 1", "END ASM"], "1"),
+    // --- ZX Next opcodes in inline asm (compile verdicts)
+    opt("nextreg in asm", [], ["ASM", "nextreg $15, 1", "END ASM"], "1"),
+    opt("#pragma zxnext with nextreg", [], ["#pragma zxnext = true", "ASM", "nextreg $15, 1", "END ASM"], "1")
+  ];
+  suites.options = {
+    perProgram: 1,
+    frames: 600,
+    items: OPTIONS.map((item) => {
+      const suffix = name();
+      return { ...item, id: `options: ${item.id}`, decl: item.decl.map((d) => d.replace(/~/g, suffix)), expr: item.expr.replace(/~/g, suffix) };
+    })
+  };
+
   // --- Acceptance (C4): whole programs that are only compiled - the spec's accepting and rejecting
   // --- cases for every EBNF form (test/kbasic/syntax/spec-cases.ts), and known edges
   const specCases = loadSpecCases();
@@ -744,7 +823,7 @@ function readSuite(suite) {
 
 function runOracle(names) {
   if (process.env.CI) fail("refusing to run with CI set: the oracle never runs in CI (plan D12)");
-  const { compileWithZxbc, failureKind } = require("./kbasic-oracle.cjs");
+  const { compileWithZxbc, failureKind, headerOptions, zxbcArguments } = require("./kbasic-oracle.cjs");
   const zxbc = process.env.KBASIC_ORACLE_ZXBC || path.join(os.homedir(), "zxbasic/.venv/bin/zxbc");
   if (!fs.existsSync(zxbc)) fail(`no zxbc at ${zxbc}`);
   const version = spawnSync(zxbc, ["--version"], { encoding: "utf8" });
@@ -761,9 +840,25 @@ function runOracle(names) {
       // --- Compile a group; a rejected group splits in halves until the rejected items stand alone
       const compile = (items) => {
         const base = path.join(work, `${suite}-${count++}`);
-        fs.writeFileSync(`${base}.bas`, buildProgram(items));
-        const r = compileWithZxbc(zxbc, work, base, ["--org", String(ORG)]);
-        if (!r.error) return entry.programs.push({ bin: `${base}.bin`, org: ORG, ids: items.map((i) => i.id), rows: items.map((i) => i.rows ?? 0), frames: data.frames ?? 300 });
+        const source = buildProgram(items);
+        fs.writeFileSync(`${base}.bas`, source);
+        // --- The header's options as zxbc flags (the corpus oracle's mapping)
+        const mapped = zxbcArguments(headerOptions(source));
+        if (mapped.skip) {
+          for (const i of items) entry.rejected[i.id] = `not run: ${mapped.skip}`;
+          return;
+        }
+        const r = compileWithZxbc(zxbc, work, base, mapped.args);
+        if (!r.error)
+          return entry.programs.push({
+            bin: `${base}.bin`,
+            org: mapped.org,
+            ids: items.map((i) => i.id),
+            rows: items.map((i) => i.rows ?? 0),
+            errs: items.map((i) => !!i.err),
+            hold: items.flatMap((i) => i.hold ?? []),
+            frames: data.frames ?? 300
+          });
         if (items.length === 1) return (entry.rejected[items[0].id] = failureKind(r.error));
         const half = Math.ceil(items.length / 2);
         compile(items.slice(0, half));

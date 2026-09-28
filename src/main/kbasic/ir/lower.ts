@@ -36,13 +36,17 @@ import {
  * What the code generator does not handle yet is reported as E501 and left out, so the rest of the
  * program still gets its diagnostics.
  */
+/** The run-time checks a program asks for (zxbc's --debug-array and --enable-break). */
+export type RuntimeChecks = { bounds?: boolean; breakKey?: boolean };
+
 export function lowerProgram(
   program: BoundProgram,
   globals: Scope,
   diagnostics: DiagnosticBag,
-  isLibraryFile: (fileIndex: number) => boolean = () => false
+  isLibraryFile: (fileIndex: number) => boolean = () => false,
+  checks: RuntimeChecks = {}
 ): MModule {
-  return new Lowering(diagnostics, isLibraryFile).run(program, globals);
+  return new Lowering(diagnostics, isLibraryFile, checks).run(program, globals);
 }
 
 /** The labels the runtime modules export (an asm block's `core.X` that is one links its module). */
@@ -116,11 +120,13 @@ class Lowering {
 
   constructor(
     private readonly diagnostics: DiagnosticBag,
-    private readonly isLibraryFile: (fileIndex: number) => boolean
+    private readonly isLibraryFile: (fileIndex: number) => boolean,
+    private readonly checks: RuntimeChecks = {}
   ) {}
 
   run(program: BoundProgram, globals: Scope): MModule {
-    this.upperTables = containsBuiltin(program.statements, "UBOUND");
+    // --- An array parameter's upper bounds come from its descriptor's table: UBOUND and check-bounds read it
+    this.upperTables = containsBuiltin(program.statements, "UBOUND") || !!this.checks.bounds;
     this.collectData(program.statements, []);
     this.dataRead = containsKind(program.statements, "read") || containsKind(program.statements, "restore");
     this.globalData(globals);
@@ -301,6 +307,9 @@ class Lowering {
     this.sid = this.module.statements.length;
     this.module.statements.push({ sid: this.sid, span, kind, functionIndex: this.fnIndex });
     this.emit({ op: "stmt", sid: this.sid });
+    // --- break-key (zxbc's --enable-break): BREAK is looked at as each of the user's statements starts;
+    // --- not in asm, whose registers the call would change, nor in the library's code
+    if (this.checks.breakKey && kind !== "asm" && !this.isLibraryFile(span.file)) this.emit({ op: "rtcall", name: this.rt("CheckBreak"), args: [], sid: this.sid });
   }
 
   /** Marks every user call of the statement but its last as followed by more calls (plan §10.2.3). */
@@ -1426,13 +1435,27 @@ class Lowering {
         this.unsupported(`The array parameter '${symbol.name}'`, span);
         return imm("ptr", 0);
       }
-      const values = indices.map((i) => this.inVReg(this.value(i)));
+      // --- check-bounds: each index against the bounds the descriptor gives, before any is pushed
+      const held = this.checks.bounds ? indices.map((i, d) => this.checkParamIndex(i, d + 1, local.slot)) : [];
+      const values = indices.map((i, d) => this.inVReg(this.checks.bounds ? this.load("u16", held[d]) : this.value(i)));
       const descriptor = this.load("ptr", local.slot);
       const r = this.vreg("ptr");
       this.emit({ op: "rtcall", name: this.rt("ArrayAddress"), dst: r, args: [...values, descriptor], sid: this.sid });
       return r;
     }
     const counts = symbol.bounds.map((b) => b.upper - b.lower + 1);
+    // --- check-bounds: every index is checked before the address is worked out (a check branches,
+    // --- and no value may be pending then); each is held in a slot, as a value is used once
+    const checked = new Map<number, Slot>();
+    if (this.checks.bounds) {
+      indices.forEach((index, d) => {
+        if (index.constant?.value.kind === "int") return;
+        const held = this.hiddenSlot("u16", "idx");
+        this.emit({ op: "store", type: "u16", slot: held, src: this.value(index), sid: this.sid });
+        this.checkIndex(this.load("u16", held), symbol.bounds[d].lower, symbol.bounds[d].upper);
+        checked.set(d, held);
+      });
+    }
     let offset = 0;
     let sum: Value | undefined;
     indices.forEach((index, d) => {
@@ -1443,7 +1466,7 @@ class Lowering {
         offset += Number(c.value) * scale;
         return;
       }
-      let term = this.value(index);
+      let term = checked.has(d) ? this.load("u16", checked.get(d)!) : this.value(index);
       if (scale !== 1) {
         const scaled = this.vreg("u16");
         const shift = Math.log2(scale);
@@ -1483,6 +1506,61 @@ class Lowering {
       address = r;
     }
     return address;
+  }
+
+  /**
+   * `check-bounds` (zxbc's --debug-array; compatibility plan C7): an index outside its dimension's
+   * bounds stops the program with "3 Subscript wrong". One unsigned compare: index - lower > upper -
+   * lower catches both sides.
+   */
+  private checkIndex(index: Value, lower: number, upper: number): void {
+    let offset: Value = index;
+    if (lower !== 0) {
+      const d = this.vreg("u16");
+      this.emit({ op: "bin", bop: "sub", dst: d, a: index, b: imm("u16", lower & 0xffff), sid: this.sid });
+      offset = d;
+    }
+    const beyond = this.vreg("bool");
+    this.emit({ op: "bin", bop: "gt", dst: beyond, a: offset, b: imm("u16", (upper - lower) & 0xffff), sid: this.sid });
+    const fail = this.newLabel();
+    const ok = this.newLabel();
+    this.terminate({ op: "br", cond: beyond, ifTrue: fail, ifFalse: ok, sid: this.sid });
+    this.startBlock(fail);
+    this.terminate({ op: "raise", code: imm("u8", 2), sid: this.sid });
+    this.startBlock(ok);
+  }
+
+  /** check-bounds for an array parameter: the index in a slot, checked against LBOUND and UBOUND. */
+  private checkParamIndex(index: BoundExpr, dimension: number, descriptorSlot: Slot): Slot {
+    const held = this.hiddenSlot("u16", "idx");
+    this.emit({ op: "store", type: "u16", slot: held, src: this.value(index), sid: this.sid });
+    const bound = (name: "ArrayLBound" | "ArrayUBound"): Slot => {
+      const r = this.vreg("u16");
+      this.emit({ op: "rtcall", name: this.rt(name), dst: r, args: [this.load("ptr", descriptorSlot), imm("u16", dimension)], sid: this.sid });
+      const slot = this.hiddenSlot("u16", name === "ArrayLBound" ? "lb" : "ub");
+      this.emit({ op: "store", type: "u16", slot, src: r, sid: this.sid });
+      return slot;
+    };
+    const lower = bound("ArrayLBound");
+    const upper = bound("ArrayUBound");
+    // --- index - lower > upper - lower (unsigned) catches both sides
+    const offset = this.vreg("u16");
+    this.emit({ op: "bin", bop: "sub", dst: offset, a: this.load("u16", held), b: this.load("u16", lower), sid: this.sid });
+    const offsetSlot = this.hiddenSlot("u16", "off");
+    this.emit({ op: "store", type: "u16", slot: offsetSlot, src: offset, sid: this.sid });
+    // --- Operands in the order they are used (the level-0 selector's stack)
+    const offsetAgain = this.load("u16", offsetSlot);
+    const span = this.vreg("u16");
+    this.emit({ op: "bin", bop: "sub", dst: span, a: this.load("u16", upper), b: this.load("u16", lower), sid: this.sid });
+    const beyond = this.vreg("bool");
+    this.emit({ op: "bin", bop: "gt", dst: beyond, a: offsetAgain, b: span, sid: this.sid });
+    const fail = this.newLabel();
+    const ok = this.newLabel();
+    this.terminate({ op: "br", cond: beyond, ifTrue: fail, ifFalse: ok, sid: this.sid });
+    this.startBlock(fail);
+    this.terminate({ op: "raise", code: imm("u8", 2), sid: this.sid });
+    this.startBlock(ok);
+    return held;
   }
 
   /** The address of an array's descriptor (what an array argument passes, and `@a`). */

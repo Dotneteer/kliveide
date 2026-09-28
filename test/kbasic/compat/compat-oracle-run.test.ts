@@ -6,7 +6,9 @@ import { describe, it } from "vitest";
 import { runBinary } from "../codegen/run-kit";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as { itemResult(item: { rows?: number }, row: number, line: (row: number) => string): string };
+const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as {
+  itemResult(item: { rows?: number; err?: boolean }, row: number, line: (row: number) => string, peek?: (address: number) => number): string;
+};
 
 /**
  * The compatibility suites' oracle runner (compatibility plan C2). `scripts/kbasic-compat.cjs oracle`
@@ -17,7 +19,7 @@ const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as { itemRe
  */
 type Manifest = {
   zxbc: string;
-  suites: Record<string, { programs: { bin: string; org: number; ids: string[]; rows: number[]; frames?: number }[]; rejected: Record<string, string>; accepted?: string[] }>;
+  suites: Record<string, { programs: { bin: string; org: number; ids: string[]; rows: number[]; errs?: boolean[]; hold?: string[]; frames?: number }[]; rejected: Record<string, string>; accepted?: string[] }>;
 };
 export type CompatItemResult = { out: string } | { error: string };
 export type CompatOracle = { zxbc: string; items: Record<string, CompatItemResult> };
@@ -32,8 +34,13 @@ describe.skipIf(!MANIFEST)("compatibility suites: the zxbc oracle", () => {
       for (const [id, error] of Object.entries(entry.rejected)) items[id] = { error };
       for (const id of entry.accepted ?? []) items[id] = { out: "accepted" };
       for (const program of entry.programs) {
-        const { session } = await runBinary(new Uint8Array(readFileSync(program.bin)), program.org, { frames: program.frames ?? 300 });
-        program.ids.forEach((id, row) => (items[id] = { out: itemResult({ rows: program.rows[row] }, row, (r) => session.screenLine(r)) }));
+        const { session } = await runBinary(new Uint8Array(readFileSync(program.bin)), program.org, {
+          frames: program.frames ?? 300,
+          before: (s) => void (program.hold?.length && s.keyDown(...program.hold))
+        });
+        program.ids.forEach(
+          (id, row) => (items[id] = { out: itemResult({ rows: program.rows[row], err: program.errs?.[row] }, row, (r) => session.screenLine(r), (a) => session.peek(a)) })
+        );
       }
       const dir = join(__dirname, "oracle");
       mkdirSync(dir, { recursive: true });

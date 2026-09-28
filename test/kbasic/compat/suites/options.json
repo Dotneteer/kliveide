@@ -1,0 +1,561 @@
+{
+ "suite": "options",
+ "perProgram": 1,
+ "frames": 600,
+ "items": [
+  {
+   "id": "options: array-base 1",
+   "header": [
+    "'@array-base 1"
+   ],
+   "decl": [
+    "DIM av3052(3) AS UByte",
+    "av3052(1) = 10: av3052(3) = 30"
+   ],
+   "expr": "LBOUND(av3052, 1); \" \"; UBOUND(av3052, 1); \" \"; av3052(1) + av3052(3)"
+  },
+  {
+   "id": "options: #pragma array_base = 1",
+   "header": [],
+   "decl": [
+    "#pragma array_base = 1",
+    "DIM av3053(3) AS UByte",
+    "av3053(1) = 10: av3053(3) = 30"
+   ],
+   "expr": "LBOUND(av3053, 1); \" \"; UBOUND(av3053, 1); \" \"; av3053(1) + av3053(3)"
+  },
+  {
+   "id": "options: array-base 1, explicit bounds",
+   "header": [
+    "'@array-base 1"
+   ],
+   "decl": [
+    "DIM av3054(0 TO 2) AS UByte => {4, 5, 6}"
+   ],
+   "expr": "LBOUND(av3054, 1); \" \"; av3054(0)"
+  },
+  {
+   "id": "options: #pragma array_base, then back",
+   "header": [],
+   "decl": [
+    "#pragma array_base = 1",
+    "DIM av3055(3) AS UByte",
+    "#pragma array_base = 0",
+    "DIM bv3055(3) AS UByte"
+   ],
+   "expr": "LBOUND(av3055, 1); \" \"; LBOUND(bv3055, 1)"
+  },
+  {
+   "id": "options: string-base 1",
+   "header": [
+    "'@string-base 1"
+   ],
+   "decl": [
+    "DIM sv3056 AS String = \"Hello\""
+   ],
+   "expr": "sv3056(1); sv3056(2 TO 3); \"/\"; sv3056( TO 2); \"/\"; sv3056(4 TO); LEN(sv3056)"
+  },
+  {
+   "id": "options: #pragma string_base = 1",
+   "header": [],
+   "decl": [
+    "#pragma string_base = 1",
+    "DIM sv3057 AS String = \"Hello\""
+   ],
+   "expr": "sv3057(1); sv3057(2 TO 3); \"/\"; sv3057( TO 2); \"/\"; sv3057(4 TO); LEN(sv3057)"
+  },
+  {
+   "id": "options: string-base 1 and string.bas",
+   "header": [
+    "'@string-base 1"
+   ],
+   "decl": [
+    "#include <string.bas>",
+    "#include <asc.bas>"
+   ],
+   "expr": "mid(\"Hello\", 2, 3); \"/\"; left(\"Hello\", 2); \"/\"; right(\"Hello\", 2); \"/\"; asc(\"Hello\", 1)"
+  },
+  {
+   "id": "options: case-insensitive",
+   "header": [
+    "'@case-insensitive"
+   ],
+   "decl": [
+    "DIM Foov3059 AS UByte = 3",
+    "foov3059 = FOOv3059 + 1"
+   ],
+   "expr": "fOOv3059"
+  },
+  {
+   "id": "options: #pragma case_insensitive",
+   "header": [],
+   "decl": [
+    "#pragma case_insensitive = true",
+    "DIM Foov3060 AS UByte = 3",
+    "foov3060 = FOOv3060 + 1"
+   ],
+   "expr": "fOOv3060"
+  },
+  {
+   "id": "options: case-insensitive routines",
+   "header": [
+    "'@case-insensitive"
+   ],
+   "decl": [
+    "FUNCTION Twicev3061(n AS UByte) AS UByte",
+    "RETURN n * 2",
+    "END FUNCTION"
+   ],
+   "expr": "TWICEv3061(4)"
+  },
+  {
+   "id": "options: sinclair-compatible",
+   "header": [
+    "'@sinclair-compatible"
+   ],
+   "decl": [
+    "DIM av3062(3) AS UByte",
+    "av3062(1) = 7",
+    "DIM sv3062 AS String = \"Hi\"",
+    "PRINT AT 5, 5; \"Q\""
+   ],
+   "expr": "LBOUND(av3062, 1); av3062(1); sv3062(1); ATTR(5, 5); SCREEN$(5, 5); POINT(0, 0)"
+  },
+  {
+   "id": "options: #pragma sinclair",
+   "header": [],
+   "decl": [
+    "#pragma sinclair = true",
+    "DIM av3063(3) AS UByte",
+    "av3063(1) = 7",
+    "DIM sv3063 AS String = \"Hi\""
+   ],
+   "expr": "LBOUND(av3063, 1); av3063(1); sv3063(1)"
+  },
+  {
+   "id": "options: #pragma sinclair: the libraries",
+   "header": [],
+   "decl": [
+    "#pragma sinclair = true",
+    "PRINT AT 5, 5; \"Q\""
+   ],
+   "expr": "ATTR(5, 5); SCREEN$(5, 5); POINT(0, 0)"
+  },
+  {
+   "id": "options: #pragma sinclair: case",
+   "header": [],
+   "decl": [
+    "#pragma sinclair = true",
+    "DIM Foov3065 AS UByte = 3"
+   ],
+   "expr": "FOOv3065"
+  },
+  {
+   "id": "options: check-bounds: a read out of range",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "DIM av3066(3) AS UByte",
+    "DIM iv3066 AS UByte = 200",
+    "DIM vv3066 AS UByte",
+    "vv3066 = av3066(iv3066)"
+   ],
+   "expr": "\"after\"; vv3066",
+   "err": true
+  },
+  {
+   "id": "options: check-bounds: a String array",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "DIM av3067(3) AS String",
+    "DIM iv3067 AS UByte = 4",
+    "av3067(iv3067) = \"x\""
+   ],
+   "expr": "\"after\"; av3067(0)",
+   "err": true
+  },
+  {
+   "id": "options: require-declarations: undeclared",
+   "header": [
+    "'@require-declarations"
+   ],
+   "decl": [
+    "xv3068 = 5"
+   ],
+   "expr": "xv3068"
+  },
+  {
+   "id": "options: require-declarations: declared",
+   "header": [
+    "'@require-declarations"
+   ],
+   "decl": [
+    "DIM xv3069 AS UByte = 5"
+   ],
+   "expr": "xv3069"
+  },
+  {
+   "id": "options: #pragma explicit: undeclared",
+   "header": [],
+   "decl": [
+    "#pragma explicit = true",
+    "xv3070 = 5"
+   ],
+   "expr": "xv3070"
+  },
+  {
+   "id": "options: require-types: untyped DIM",
+   "header": [
+    "'@require-types"
+   ],
+   "decl": [
+    "DIM yv3071 = 3"
+   ],
+   "expr": "yv3071"
+  },
+  {
+   "id": "options: require-types: typed",
+   "header": [
+    "'@require-types"
+   ],
+   "decl": [
+    "DIM yv3072 AS Integer = 3"
+   ],
+   "expr": "yv3072"
+  },
+  {
+   "id": "options: #pragma strict: untyped DIM",
+   "header": [],
+   "decl": [
+    "#pragma strict = true",
+    "DIM yv3073 = 3"
+   ],
+   "expr": "yv3073"
+  },
+  {
+   "id": "options: #pragma default_byref",
+   "header": [],
+   "decl": [
+    "#pragma default_byref = true",
+    "SUB incv3074(a AS UByte)",
+    "a = a + 1",
+    "END SUB",
+    "DIM vv3074 AS UByte = 5",
+    "incv3074(vv3074)"
+   ],
+   "expr": "vv3074"
+  },
+  {
+   "id": "options: heap-size and check-memory: a String too long",
+   "header": [
+    "'@heap-size 200",
+    "'@check-memory"
+   ],
+   "decl": [
+    "DIM sv3075 AS String = \"\"",
+    "DIM iv3075 AS UByte",
+    "FOR iv3075 = 1 TO 60: sv3075 = sv3075 + \"abcd\": NEXT iv3075"
+   ],
+   "expr": "LEN(sv3075)",
+   "err": true
+  },
+  {
+   "id": "options: #pragma heap_size and memory_check",
+   "header": [],
+   "decl": [
+    "#pragma heap_size = 200",
+    "#pragma memory_check = true",
+    "DIM sv3076 AS String = \"\"",
+    "DIM iv3076 AS UByte",
+    "FOR iv3076 = 1 TO 60: sv3076 = sv3076 + \"abcd\": NEXT iv3076"
+   ],
+   "expr": "LEN(sv3076)",
+   "err": true
+  },
+  {
+   "id": "options: heap-size fits",
+   "header": [
+    "'@heap-size 400",
+    "'@check-memory"
+   ],
+   "decl": [
+    "DIM sv3077 AS String = \"\"",
+    "DIM iv3077 AS UByte",
+    "FOR iv3077 = 1 TO 20: sv3077 = sv3077 + \"abcd\": NEXT iv3077"
+   ],
+   "expr": "LEN(sv3077)",
+   "err": true
+  },
+  {
+   "id": "options: heap-address 50000",
+   "header": [
+    "'@heap-address 50000"
+   ],
+   "decl": [
+    "DIM sv3078 AS String = \"HELLO\"",
+    "sv3078 = sv3078 + \"WORLD\"",
+    "DIM iv3078 AS UInteger",
+    "DIM atv3078 AS UInteger = 0",
+    "FOR iv3078 = 50000 TO 55000",
+    "IF PEEK(iv3078) = 87 AND PEEK(iv3078 + 1) = 79 AND atv3078 = 0 THEN atv3078 = iv3078",
+    "NEXT iv3078"
+   ],
+   "expr": "atv3078 > 0"
+  },
+  {
+   "id": "options: #pragma heap_address",
+   "header": [],
+   "decl": [
+    "#pragma heap_address = 50000",
+    "DIM sv3079 AS String = \"HELLO\"",
+    "sv3079 = sv3079 + \"WORLD\"",
+    "DIM iv3079 AS UInteger",
+    "DIM atv3079 AS UInteger = 0",
+    "FOR iv3079 = 50000 TO 55000",
+    "IF PEEK(iv3079) = 87 AND PEEK(iv3079 + 1) = 79 AND atv3079 = 0 THEN atv3079 = iv3079",
+    "NEXT iv3079"
+   ],
+   "expr": "atv3079 > 0"
+  },
+  {
+   "id": "options: check-bounds: out of range",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "DIM av3080(3) AS UByte",
+    "DIM iv3080 AS UByte = 5",
+    "av3080(iv3080) = 1"
+   ],
+   "expr": "\"after\"; av3080(0)",
+   "err": true
+  },
+  {
+   "id": "options: #pragma array_check",
+   "header": [],
+   "decl": [
+    "#pragma array_check = true",
+    "DIM av3081(3) AS UByte",
+    "DIM iv3081 AS UByte = 5",
+    "av3081(iv3081) = 1"
+   ],
+   "expr": "\"after\"; av3081(0)",
+   "err": true
+  },
+  {
+   "id": "options: check-bounds: in range",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "DIM av3082(3) AS UByte",
+    "DIM iv3082 AS UByte = 3",
+    "av3082(iv3082) = 1"
+   ],
+   "expr": "\"after\"; av3082(0)",
+   "err": true
+  },
+  {
+   "id": "options: check-bounds: a two-dimensional array",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "DIM av3083(3, 2) AS UByte",
+    "DIM iv3083 AS UByte = 1",
+    "DIM jv3083 AS UByte = 3",
+    "av3083(iv3083, jv3083) = 1"
+   ],
+   "expr": "\"after\"; av3083(0, 0)",
+   "err": true
+  },
+  {
+   "id": "options: break-key with BREAK held",
+   "header": [
+    "'@break-key"
+   ],
+   "decl": [
+    "DIM iv3084 AS UInteger",
+    "FOR iv3084 = 1 TO 3000: NEXT iv3084"
+   ],
+   "expr": "\"after\"",
+   "err": true,
+   "hold": [
+    "CShift",
+    "Space"
+   ]
+  },
+  {
+   "id": "options: #pragma enable_break with BREAK held",
+   "header": [],
+   "decl": [
+    "#pragma enable_break = true",
+    "DIM iv3085 AS UInteger",
+    "FOR iv3085 = 1 TO 3000: NEXT iv3085"
+   ],
+   "expr": "\"after\"",
+   "err": true,
+   "hold": [
+    "CShift",
+    "Space"
+   ]
+  },
+  {
+   "id": "options: no break-key with BREAK held",
+   "header": [],
+   "decl": [
+    "DIM iv3086 AS UInteger",
+    "FOR iv3086 = 1 TO 3000: NEXT iv3086"
+   ],
+   "expr": "\"after\"",
+   "err": true,
+   "hold": [
+    "CShift",
+    "Space"
+   ]
+  },
+  {
+   "id": "options: define",
+   "header": [
+    "'@define LEVEL=3, FAST"
+   ],
+   "decl": [
+    "#ifdef FAST",
+    "DIM tv3087 AS String = \"fast\"",
+    "#else",
+    "DIM tv3087 AS String = \"slow\"",
+    "#endif"
+   ],
+   "expr": "tv3087; LEVEL"
+  },
+  {
+   "id": "options: optimize 0",
+   "header": [
+    "'@optimize 0"
+   ],
+   "decl": [
+    "DIM xv3088 AS Integer = -7",
+    "DIM fv3088 AS Float = 2.5"
+   ],
+   "expr": "xv3088 * 3 MOD 5; \" \"; fv3088 * xv3088; \" \"; xv3088 SHR 3"
+  },
+  {
+   "id": "options: optimize 1",
+   "header": [
+    "'@optimize 1"
+   ],
+   "decl": [
+    "DIM xv3089 AS Integer = -7",
+    "DIM fv3089 AS Float = 2.5"
+   ],
+   "expr": "xv3089 * 3 MOD 5; \" \"; fv3089 * xv3089; \" \"; xv3089 SHR 3"
+  },
+  {
+   "id": "options: optimize 2",
+   "header": [
+    "'@optimize 2"
+   ],
+   "decl": [
+    "DIM xv3090 AS Integer = -7",
+    "DIM fv3090 AS Float = 2.5"
+   ],
+   "expr": "xv3090 * 3 MOD 5; \" \"; fv3090 * xv3090; \" \"; xv3090 SHR 3"
+  },
+  {
+   "id": "options: optimize 3",
+   "header": [
+    "'@optimize 3"
+   ],
+   "decl": [
+    "DIM xv3091 AS Integer = -7",
+    "DIM fv3091 AS Float = 2.5"
+   ],
+   "expr": "xv3091 * 3 MOD 5; \" \"; fv3091 * xv3091; \" \"; xv3091 SHR 3"
+  },
+  {
+   "id": "options: #pragma optimization_level",
+   "header": [],
+   "decl": [
+    "#pragma optimization_level = 0",
+    "DIM xv3092 AS Integer = -7"
+   ],
+   "expr": "xv3092 * 3 MOD 5"
+  },
+  {
+   "id": "options: origin 40000",
+   "header": [
+    "'@origin 40000"
+   ],
+   "decl": [
+    "DIM xv3093 AS UByte = 9"
+   ],
+   "expr": "xv3093; \" \"; PEEK(40000) <> 0"
+  },
+  {
+   "id": "options: check-bounds: through an array parameter",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "SUB putv3094(a() AS UByte, i AS UByte)",
+    "a(i) = 1",
+    "END SUB",
+    "DIM av3094(3) AS UByte",
+    "putv3094(av3094, 7)"
+   ],
+   "expr": "\"after\"; av3094(0)",
+   "err": true
+  },
+  {
+   "id": "options: check-bounds: an array parameter in range",
+   "header": [
+    "'@check-bounds"
+   ],
+   "decl": [
+    "SUB putv3095(a() AS UByte, i AS UByte)",
+    "a(i) = 1",
+    "END SUB",
+    "DIM av3095(3) AS UByte",
+    "putv3095(av3095, 3)"
+   ],
+   "expr": "\"after\"; av3095(3)",
+   "err": true
+  },
+  {
+   "id": "options: zxnext with nextreg",
+   "header": [
+    "'@zxnext"
+   ],
+   "decl": [
+    "ASM",
+    "nextreg $15, 1",
+    "END ASM"
+   ],
+   "expr": "1"
+  },
+  {
+   "id": "options: nextreg in asm",
+   "header": [],
+   "decl": [
+    "ASM",
+    "nextreg $15, 1",
+    "END ASM"
+   ],
+   "expr": "1"
+  },
+  {
+   "id": "options: #pragma zxnext with nextreg",
+   "header": [],
+   "decl": [
+    "#pragma zxnext = true",
+    "ASM",
+    "nextreg $15, 1",
+    "END ASM"
+   ],
+   "expr": "1"
+  }
+ ]
+}

@@ -16,7 +16,8 @@ position on return, colours, POINT, USR of a String; PRINT's layout and the grap
 were. **C4 done** (2026-09-27, §4.4): acceptance agrees with zxbc on 506 programs apart from recorded
 faults. **C5 done** (2026-09-27, §4.5): zxbasm is the default inline-asm dialect, zxbc's FASTCALL
 and register contracts hold, and NextLib compiles and runs as zxbc builds it. **C6 done** (2026-09-28, §4.6): every documented
-library zxbc ships, checked against zxbc routine by routine. Next: C7.
+library zxbc ships, checked against zxbc routine by routine. **C7 done** (2026-09-28, §4.7): options and
+pragmas agree with zxbc (headerless open). Next: C8.
 
 ---
 
@@ -303,6 +304,27 @@ program that pins them. Target: every generated program agrees.
   needs typed keys, tested with the harness's keyboard.
 - **Left for later:** zx0.bas has one decoder for all names, so the Turbo and Mega names are not
   faster than Standard (the results are the same).
+
+### 4.7 C7 state (2026-09-28)
+
+- **The `options` suite** (47 items, each alone in its program): header options (`'@name value`,
+  passed to zxbc as flags through the corpus oracle's mapping) and their `#pragma` forms. Items can
+  add ERR_NR to their result (`err`) and run with keys held (`hold`). Everything agrees but one fault:
+  zxbc's `--zxnext` flag has no effect (annex `zxnext-option`; the pragma works in both).
+- **Implemented:** `check-bounds` (every array, a parameter's through its descriptor's bounds; 3
+  Subscript wrong) and `break-key` (CAPS SHIFT + SPACE at each of the user's statements; L BREAK),
+  which were parsed and then ignored (annex `runtime-checks`); the whole-program pragmas (heap_size,
+  heap_address, memory_check, array_check, enable_break, optimization_level, opt_strategy, org,
+  headerless, zxnext, autorun, expected_warnings), also ignored before (annex `program-pragmas`); a
+  `zxnext` option (the assembler's new `allowNextInstructions`).
+- **Found and followed:** strict typing rejects an untyped DIM with an initial value (annex
+  `strict-initialised-dim`); string.bas's mid counts from 0 whatever the string base, asc follows it
+  (annex `string-library-base`); `#pragma sinclair` has no effect in zxbc.
+- **Open:** `headerless` is accepted but not implemented (Klive still emits its start-up and END
+  code). A headerless zxbc build run as a program prints nothing, so no program can compare the two;
+  it needs a decision on what Klive's start-up may leave out. Options with no effect on a program's
+  behaviour (warnings, output formats, include paths, the memory map) are covered by their own tests,
+  not by this suite.
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with
