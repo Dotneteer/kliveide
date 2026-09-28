@@ -61,7 +61,7 @@ export const SourceCallStack = ({ info }: { info: SourceLevelDebugInfo }) => {
       setRuntimeWords(
         raw.frames.map((value, i) => ({ slot: (raw.sp + 2 * i) & 0xffff, value })).filter((w) => w.slot < limit)
       );
-    } else setRuntimeWords([]);
+    } else setRuntimeWords((words) => (words.length ? [] : words));
     // --- A new stop selects the innermost frame again; a refresh at the same stop keeps the choice
     const key = `${cpu.pc}:${cpu.sp}`;
     if (key !== lastStop.current) {

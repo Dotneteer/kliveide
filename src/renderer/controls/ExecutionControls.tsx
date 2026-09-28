@@ -134,7 +134,9 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   const [stepOutPossible, setStepOutPossible] = useState(true);
   useEffect(() => {
     if (!ide || !hasSourceLevelDebug(compilationResult) || state !== MachineControllerState.Paused) {
-      setStepTargets([]);
+      // --- Keep the same (empty) array: a new one would render again, and an effect whose
+      // --- dependencies change on every render (a test's emuApi, say) would then never stop
+      setStepTargets((targets) => (targets.length ? [] : targets));
       setStepOutPossible(true);
       return undefined;
     }
