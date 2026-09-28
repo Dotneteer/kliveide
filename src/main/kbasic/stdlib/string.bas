@@ -13,10 +13,10 @@ FUNCTION left(BYVAL s AS String, BYVAL n AS UInteger) AS String
     RETURN s( TO __kbStringBase + n - 1)
 END FUNCTION
 
-' The last n characters of s (all of s when it is shorter).
+' The last n characters of s; empty when s is shorter (as zxbc's).
 FUNCTION right(BYVAL s AS String, BYVAL n AS UInteger) AS String
-    IF n >= LEN(s) THEN RETURN s
-    IF n = 0 THEN RETURN ""
+    IF n = LEN(s) THEN RETURN s
+    IF n = 0 OR n > LEN(s) THEN RETURN ""
     RETURN s(__kbStringBase + LEN(s) - n TO )
 END FUNCTION
 

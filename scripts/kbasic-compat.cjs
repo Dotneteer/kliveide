@@ -522,6 +522,141 @@ function generate() {
     })
   };
 
+  // --- The standard library (C6): each documented library a program an item. `ck~` checksums
+  // --- memory (24 bits), `occ~` shows which character cells of a row hold any pixel - the layout of
+  // --- print42/print64 text without depending on the font.
+  const LIB_CHECKSUM = [
+    "FUNCTION ck~(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION"
+  ];
+  const OCCUPANCY = [
+    "FUNCTION occ~(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION"
+  ];
+  const bytes = (arr) => arr.join(",");
+  const TEXT = [..."Klive BASIC packs: abcabcabcabc, the rain in Spain stays mainly in the plain; 0000000000 plain plain!"].map((c) => c.charCodeAt(0));
+  const packers = require("./kbasic-packers.cjs");
+  const packed = (label, data) => [`DIM ${label}(0 TO ${data.length - 1}) AS UByte => {${bytes(data)}}`];
+  const out = (n) => [`DIM o~(0 TO ${n - 1}) AS UByte`];
+  // --- 1500 bytes whose repeats lie 200-1100 bytes back: far offsets in both formats
+  const FAR = (() => {
+    let seed = 12345;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) >> 16;
+    const data = Array.from({ length: 300 }, () => rnd() & 255);
+    for (let k = 0; data.length < 1500; k++) {
+      data.push(rnd() & 255, rnd() & 255);
+      const from = data.length - Math.min(data.length, 200 + ((k * 137) % 900));
+      for (let n = 0; n < 5 + ((k * 7) % 30); n++) data.push(data[from + n]);
+    }
+    return data;
+  })();
+  const TILE = Array.from({ length: 36 }, (_, i) => (i < 32 ? (i * 37 + 11) & 255 : [0x47, 0x16, 0x39, 0x0a][i - 32]));
+  const CHARS = Array.from({ length: 32 }, (_, i) => (i * 29 + 5) & 255);
+  const LIBRARY = [
+    // --- asc.bas
+    ...[0, 1, 4, 5, 9].map((n) => [`asc("Hello", ${n})`, ["#include <asc.bas>"], `asc("Hello", ${n})`]),
+    // --- hex.bas
+    ...["hex(0)", "hex(305419896)", "hex(4294967295)", "hex16(4660)", "hex16(65535)", "hex8(171)", "hex8(0)"].map((e) => [e, ["#include <hex.bas>"], e]),
+    // --- string.bas
+    ...['left("Hello", 0)', 'left("Hello", 2)', 'left("Hello", 9)', 'right("Hello", 2)', 'right("Hello", 9)', 'right("Hello", 5)', 'right("Hello", 6)', 'mid("Hello", 1, 3)', 'mid("Hello", 4, 5)', 'mid("Hello", 9, 2)', 'mid("Hello", 0, 0)', 'left("", 3)'].map((e) => [e, ["#include <string.bas>"], `"[" + ${e} + "]"`]),
+    // --- csrlin.bas and pos.bas
+    ...[["5, 7", '"ab"'], ["23, 30", '"xy"'], ["10, 0", '"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"'], ["3, 3", '"a";TAB 20']].map(([at, what]) => [
+      `CSRLIN/POS after PRINT AT ${at}; ${what};`,
+      ["#include <csrlin.bas>", "#include <pos.bas>", "DIM r~ AS UByte", "DIM c~ AS UByte", `PRINT AT ${at}; ${what};`, "r~ = CSRLIN()", "c~ = POS()"],
+      'r~; " "; c~'
+    ]),
+    // --- attr.bas and screen.bas
+    ...["ATTR(3, 4)", "ATTR(0, 0)", "ATTR(22, 0)", "ATTR(23, 31)"].map((e) => [e, ["#include <attr.bas>", 'PRINT AT 3, 4; INK 2; PAPER 5; BRIGHT 1; "X"'], e]),
+    ...["SCREEN$(2, 3)", "SCREEN$(2, 4)", "SCREEN$(4, 4)", "SCREEN$(6, 6)", "SCREEN$(23, 0)"].map((e) => [e, ["#include <screen.bas>", 'PRINT AT 2, 3; "Q"; AT 4, 4; INVERSE 1; "Z"; AT 6, 6; CHR 144'], `"[" + ${e} + "]"`]),
+    // --- putchars.bas
+    ["putChars 2x2", ["#include <putchars.bas>", ...LIB_CHECKSUM, `DIM d~(0 TO 31) AS UByte => {${bytes(CHARS)}}`, "putChars(3, 4, 2, 2, @d~(0))"], "ck~(16384, 6144)"],
+    ["paint 3x2", ["#include <putchars.bas>", ...LIB_CHECKSUM, "paint(30, 22, 3, 2, 71)"], "ck~(22528, 768)"],
+    ["paintData 2x2", ["#include <putchars.bas>", ...LIB_CHECKSUM, "DIM d~(0 TO 3) AS UByte => {1, 2, 3, 4}", "paintData(0, 0, 2, 2, @d~(0))"], "ck~(22528, 768)"],
+    // --- print42.bas and print64.bas: the cells they touch, and the pixels
+    ...[["print42", "printat42", 41], ["print64", "printat64", 63]].flatMap(([p, at, last]) => [
+      [`${p} layout`, [`#include <${p}.bas>`, ...OCCUPANCY, `${at}(2, 3)`, `${p}("Hello, World")`, `${p}(" more")`], "occ~(2)"],
+      [`${p} pixels`, [`#include <${p}.bas>`, ...LIB_CHECKSUM, `${at}(0, 0)`, `${p}("AbC 09")`], "ck~(16384, 256 * 8)"],
+      ...[
+        ["past the last column", `${at}(9, ${last}): ${p}("ab")`, [9, 10]],
+        ["a column past the end", `${at}(9, 60 + ${last - 41}): ${p}("ab")`, [9, 10]],
+        ["a row past the end", `${at}(30, 0): ${p}("ab")`, [0, 23]],
+        ["the last place", `${at}(23, ${last}): ${p}("ab")`, [23, 0]],
+        ["CHR 13", `${at}(5, 0): ${p}("a" + CHR(13) + "b")`, [5, 6]],
+        ["CHR 8", `${at}(12, 0): ${p}(CHR(8) + "b")`, [11, 12]],
+        ["CHR 22", `${at}(12, 5): ${p}(CHR(22) + CHR(3) + CHR(7) + "b")`, [3, 12]],
+        ["CHR 23 and colour codes", `${at}(12, 5): ${p}(CHR(23) + CHR(16) + CHR(2) + "b")`, [12, 13]],
+        ["skipped codes", `${at}(12, 5): ${p}(CHR(1) + CHR(128) + CHR(170) + CHR(255) + "b")`, [12, 13]],
+        ["UDGs and CHR 127", `${at}(12, 5): ${p}(CHR(144) + CHR(160) + CHR(127) + "b")`, [12, 13]],
+        ["the cursor stays", `${at}(4, 4): ${p}("ab"): CLS: PRINT AT 20, 20; "";: ${p}("c")`, [4, 20]]
+      ].map(([what, code, rows]) => [`${p} ${what}`, [`#include <${p}.bas>`, ...OCCUPANCY, "DIM k~ AS String", code, `k~ = ${rows.map((r) => `occ~(${r})`).join(' + " " + ')}`, "CLS"], "k~"])
+    ]),
+    // --- clearbox.bas
+    ["clearBox", ["#include <clearbox.bas>", ...LIB_CHECKSUM, "DIM i~ AS UInteger", "FOR i~ = 16384 TO 22527: POKE i~, i~ BAND 255: NEXT i~", "clearBox(2, 3, 4, 5)"], "ck~(16384, 6912)"],
+    // --- hmirror.bas
+    ...[0, 1, 128, 3, 165, 240, 255].map((n) => [`hMirror(${n})`, ["#include <hmirror.bas>"], `hMirror(${n})`]),
+    // --- puttile.bas
+    ...[[0, 0], [10, 10], [30, 22]].map(([x, y]) => [`putTile(${x}, ${y})`, ["#include <puttile.bas>", ...LIB_CHECKSUM, `DIM d~(0 TO 35) AS UByte => {${bytes(TILE)}}`, `putTile(${x}, ${y}, @d~(0))`], "ck~(16384, 6912)"]),
+    // --- fmath.bas: the Fixed results' bits
+    ...[0, 1, 2, 3, 30, 45, 46, 89, 90, 91, 135, 180, 181, 270, 359, 360, 400, -30, 0.5, 44.75].flatMap((d) =>
+      ["fSin", "fCos", "fTan"].filter((f) => f !== "fTan" || ![90, 270].includes(d)).map((f) => [`${f}(${d})`, ["#include <fmath.bas>", "DIM x~ AS Fixed", `x~ = ${f}(${d})`], 'x~; " "; PEEK(ULong, @x~)'])
+    ),
+    // --- megalz.bas and zx0.bas: decompressed with the result's checksum
+    ["megaLZDepack far offsets", ["#include <megalz.bas>", ...LIB_CHECKSUM, ...packed("p~", packers.megaLzPack(FAR)), ...out(FAR.length), `megaLZDepack(@p~(0), @o~(0))`], `ck~(@o~(0), ${FAR.length})`],
+    ["dzx0Standard far offsets", ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", packers.zx0Pack(FAR)), ...out(FAR.length), `dzx0Standard(@p~(0), @o~(0))`], `ck~(@o~(0), ${FAR.length})`],
+    (() => {
+      const data = packers.zx0Pack(FAR, { backwards: true });
+      return ["dzx0StandardBack far offsets", ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", data), ...out(FAR.length), `dzx0StandardBack(@p~(${data.length - 1}), @o~(${FAR.length - 1}))`], `ck~(@o~(0), ${FAR.length})`];
+    })(),
+    ["megaLZDepack", ["#include <megalz.bas>", ...LIB_CHECKSUM, ...packed("p~", packers.megaLzPack(TEXT)), ...out(TEXT.length + 4), `megaLZDepack(@p~(0), @o~(0))`], `ck~(@o~(0), ${TEXT.length + 4})`],
+    ...["dzx0Standard", "dzx0Turbo", "dzx0Mega"].flatMap((f) => [
+      [`${f}`, ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", packers.zx0Pack(TEXT)), ...out(TEXT.length + 4), `${f}(@p~(0), @o~(0))`], `ck~(@o~(0), ${TEXT.length + 4})`],
+      (() => {
+        const data = packers.zx0Pack(TEXT, { backwards: true });
+        return [`${f}Back`, ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", data), ...out(TEXT.length + 4), `${f}Back(@p~(${data.length - 1}), @o~(${TEXT.length + 1}))`], `ck~(@o~(0), ${TEXT.length + 4})`];
+      })()
+    ]),
+    ...[["dzx0SmartRCS", false], ["dzx0AgileRCS", false], ["dzx0SmartRCSBack", true]].map(([f, back]) => {
+      const screen = Array.from({ length: 6912 }, (_, i) => (i < 6144 ? ((i >> 5) * 7 + (i & 31) * 3) & (i % 13 ? 255 : 0) : 56 + (i % 5)));
+      const data = packers.zx0Pack(packers.rcsEncode(screen), { backwards: back });
+      return [f, ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", data), back ? `${f}(@p~(${data.length - 1}), 23295)` : `${f}(@p~(0), 16384)`], "ck~(16384, 6912)"];
+    }),
+    ["zx0 to memory with RCS", ["#include <zx0.bas>", ...LIB_CHECKSUM, ...packed("p~", packers.zx0Pack(TEXT)), ...out(TEXT.length + 4), `dzx0SmartRCS(@p~(0), @o~(0))`], `ck~(@o~(0), ${TEXT.length + 4})`],
+    // --- memorybank.bas on the 48K machine: BANKM is ordinary RAM there
+    ...[0, 3, 7].map((b) => [`SetBank(${b}) GetBank()`, ["#include <memorybank.bas>", "POKE 23388, 16", `SetBank(${b})`], 'GetBank(); " "; PEEK(23388)'])
+  ];
+  // --- A screen checksum is taken, then the screen cleared, so the result prints on a blank one
+  const screenFirst = ([id, decl, expr]) =>
+    /ck~\(16384/.test(expr) ? [id, [...decl, "DIM k~ AS ULong", `k~ = ${expr}`, "CLS"], "k~"] : [id, decl, expr];
+  suites.library = {
+    perProgram: 1,
+    frames: 3000,
+    items: LIBRARY.map(screenFirst).map(([id, decl, expr]) => {
+      const suffix = name();
+      return { id: `library: ${id}`, decl: decl.map((d) => d.replace(/~/g, suffix)), expr: expr.replace(/~/g, suffix) };
+    })
+  };
+
   // --- Acceptance (C4): whole programs that are only compiled - the spec's accepting and rejecting
   // --- cases for every EBNF form (test/kbasic/syntax/spec-cases.ts), and known edges
   const specCases = loadSpecCases();
@@ -628,7 +763,7 @@ function runOracle(names) {
         const base = path.join(work, `${suite}-${count++}`);
         fs.writeFileSync(`${base}.bas`, buildProgram(items));
         const r = compileWithZxbc(zxbc, work, base, ["--org", String(ORG)]);
-        if (!r.error) return entry.programs.push({ bin: `${base}.bin`, org: ORG, ids: items.map((i) => i.id), rows: items.map((i) => i.rows ?? 0) });
+        if (!r.error) return entry.programs.push({ bin: `${base}.bin`, org: ORG, ids: items.map((i) => i.id), rows: items.map((i) => i.rows ?? 0), frames: data.frames ?? 300 });
         if (items.length === 1) return (entry.rejected[items[0].id] = failureKind(r.error));
         const half = Math.ceil(items.length / 2);
         compile(items.slice(0, half));

@@ -15,7 +15,8 @@ done** (2026-09-27, §4.3): evaluation order, named arguments, FOR, the runtime 
 position on return, colours, POINT, USR of a String; PRINT's layout and the graphics agreed as they
 were. **C4 done** (2026-09-27, §4.4): acceptance agrees with zxbc on 506 programs apart from recorded
 faults. **C5 done** (2026-09-27, §4.5): zxbasm is the default inline-asm dialect, zxbc's FASTCALL
-and register contracts hold, and NextLib compiles and runs as zxbc builds it. Next: C6.
+and register contracts hold, and NextLib compiles and runs as zxbc builds it. **C6 done** (2026-09-28, §4.6): every documented
+library zxbc ships, checked against zxbc routine by routine. Next: C7.
 
 ---
 
@@ -277,6 +278,31 @@ program that pins them. Target: every generated program agrees.
   removal hides). A demo using NextRegA, GetReg, ScrollLayer, ShowLayer2, GetMMU, checkints,
   ClipLayer2, PlotL2 and CLS256, built by both compilers and run on the Next harness, leaves the same
   NextRegs, memory and Layer 2 pages.
+
+### 4.6 C6 state (2026-09-28)
+
+- **The inventory.** zxbc 1.19 ships 41 library files; upstream documents 20 of them. Klive now has
+  all 20: new are `clearbox`, `fmath`, `hmirror`, `input42`, `megalz`, `memorybank`, `puttile` and
+  `zx0`. Left out (annex `library-coverage`): the undocumented files, whose interface only their
+  source could give (the provenance rule), and `fastplot.bas`, which ships without the documented
+  `fastPlot`. A name the documentation only shows as a listing (`distance.bas`, `iSqrt.bas`, ...)
+  gives E216 saying so.
+- **The `library` suite** (152 items, 3000 frames a program) runs every documented routine under
+  zxbc, including edges the documentation leaves open, and agrees apart from 11 faults: the print42 /
+  print64 glyphs (annex `library-font`: Klive's fonts are its own) and fmath outside 0-360, where
+  zxbc's inexact run-time Fixed MOD shows (annex `fmath-angle-reduction`, D-C6).
+- **Found and followed:** `right` longer than the String gives ""; print42/print64 wrap an
+  out-of-range cursor instead of stopping, handle CHR$ 13 / 22 (and print42's CHR$ 8 and UDGs) and
+  skip every other code (annex `library-print-cursor`); fmath is a 2-degree SIN * 255 table with
+  linear interpolation; zx0.bas reads ZX0 format 2, its Back names the compressor's backwards
+  format (flag bits flipped, the offset's low byte plain), its RCS names the RCS screen order (annex
+  `library-compressed-formats`). The test data comes from Klive's own packers
+  (`scripts/kbasic-packers.cjs`), written from the formats' published descriptions.
+- **Not observable under the 48K oracle:** memorybank's paging, tested on the Next harness instead
+  (SetCodeBank copies the bank at $C000 to $8000 and pages the previous bank back); INPUT42, which
+  needs typed keys, tested with the harness's keyboard.
+- **Left for later:** zx0.bas has one decoder for all names, so the Turbo and Mega names are not
+  faster than Standard (the results are the same).
 
 **What each stage must keep:** the debugger guarantees (G1–G6, the debugger corpus at levels 0–3),
 the optimiser baseline ratchet (a compatibility change that costs bytes is recorded with

@@ -594,5 +594,62 @@
    "zxbc": "15360",
    "fault": "asm-unused-variable"
   }
+ },
+ "library": {
+  "library: print42 layout": {
+   "klive": "3FEE0000",
+   "zxbc": "3FFE0000",
+   "fault": "library-font"
+  },
+  "library: print42 pixels": {
+   "klive": "12362367",
+   "zxbc": "7256190",
+   "fault": "library-font"
+  },
+  "library: print42 the cursor stays": {
+   "klive": "08000000 00000000",
+   "zxbc": "0C000000 00000000",
+   "fault": "library-font"
+  },
+  "library: print64 pixels": {
+   "klive": "11642722",
+   "zxbc": "15100540",
+   "fault": "library-font"
+  },
+  "library: fCos(91)": {
+   "klive": "-0.01763916015625 4294966140",
+   "zxbc": "0 0",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(91)": {
+   "klive": "-56.6920318603515625 4291251927",
+   "zxbc": "-0.0000152587890625 4294967295",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fSin(400)": {
+   "klive": "0.64312744140625 42148",
+   "zxbc": "0.64306640625 42144",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fCos(400)": {
+   "klive": "0.7646942138671875 50115",
+   "zxbc": "0.7647552490234375 50119",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(400)": {
+   "klive": "0.8410186767578125 55117",
+   "zxbc": "0.8408660888671875 55107",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fSin(-30)": {
+   "klive": "-0.4980316162109375 4294934657",
+   "zxbc": "-0.4980010986328125 4294934659",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(-30)": {
+   "klive": "-0.57464599609375 4294929636",
+   "zxbc": "-0.574615478515625 4294929638",
+   "fault": "fmath-angle-reduction"
+  }
  }
 }

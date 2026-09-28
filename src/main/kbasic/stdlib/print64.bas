@@ -41,22 +41,23 @@ DIM __kbP64Font(0 TO 383) AS UByte => { _
     0, 72, 68, 70, 68, 72, 0, 0, 0, 4, 202, 46, 10, 4, 0, 0 _
 }
 
-' Moves the print64 cursor to row y (0-23), column x (0-63); others stop the program with
-' "5 Out of screen".
+' Moves the print64 cursor to row y (0-23), column x (0-63). As zxbc's: a column past 63 is the start
+' of the next row, and a row past 23 is row 0.
 SUB printat64(BYVAL y AS UByte, BYVAL x AS UByte)
-    IF y > 23 OR x > 63 THEN
-        ASM
-            ld a,4
-            jp core.RaiseError
-        END ASM
+    IF x > 63 THEN
+        x = 0
+        y = y + 1
     END IF
+    IF y > 23 THEN y = 0
     __kbP64Row = y
     __kbP64Col = x
 END SUB
 
 ' Prints s at the print64 cursor, four pixels a character, in the permanent colours (ATTR_P), and
-' moves the cursor on. CHR$ 13 starts a new line; a character outside 32-127 prints as "?". Past
-' the last column the text goes on at the next row, and past the last row at the top.
+' moves the cursor on. Past the last column the text goes on at the next row, and past the last row
+' at the top. The characters, as zxbc's print64 treats them: 32-127 from the font (31 takes a place
+' and prints nothing); CHR$ 13 starts a new line, CHR$ 22 row, column moves the cursor as printat64;
+' every other code is skipped.
 SUB print64(BYVAL s AS String)
     DIM i AS UInteger
     DIM ch AS UByte
@@ -65,12 +66,17 @@ SUB print64(BYVAL s AS String)
     DIM r AS UByte
     DIM pattern AS UByte
     DIM keep AS UByte
-    FOR i = 1 TO LEN(s)
+    i = 1
+    WHILE i <= LEN(s)
         ch = CODE(s(i - 1 + __kbStringBase))
         IF ch = 13 THEN
             __kbP64Col = 64
-        ELSE
-            IF ch < 32 OR ch > 127 THEN ch = 63
+        ELSEIF ch = 22 THEN
+            IF i + 2 <= LEN(s) THEN printat64(CODE(s(i + __kbStringBase)), CODE(s(i + 1 + __kbStringBase)))
+            i = i + 2
+        ELSEIF ch = 31 THEN
+            __kbP64Col = __kbP64Col + 1
+        ELSEIF ch >= 32 AND ch <= 127 THEN
             glyph = CAST(UInteger, (ch - 32) SHR 1) * 8
             address = 16384 + (CAST(UInteger, __kbP64Row BAND 24) SHL 8) + (CAST(UInteger, __kbP64Row BAND 7) SHL 5) + (__kbP64Col SHR 1)
             keep = 0Fh
@@ -91,7 +97,8 @@ SUB print64(BYVAL s AS String)
             __kbP64Row = __kbP64Row + 1
             IF __kbP64Row > 23 THEN __kbP64Row = 0
         END IF
-    NEXT i
+        i = i + 1
+    WEND
 END SUB
 
 #pragma pop(asm_dialect)

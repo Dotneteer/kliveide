@@ -19,7 +19,7 @@ import type { CompatItemResult, CompatOracle } from "./compat-oracle-run.test";
  * baseline. Level 3 must print what level 0 prints for every item, whatever zxbc does.
  */
 type Item = { id: string; decl: string[]; expr: string; rows?: number; source?: string };
-type Suite = { suite: string; kind?: "accept"; perProgram: number; items: Item[] };
+type Suite = { suite: string; kind?: "accept"; perProgram: number; frames?: number; items: Item[] };
 type Diff = { klive: string; zxbc: string };
 type Baseline = Record<string, Record<string, Diff>>;
 
@@ -50,7 +50,7 @@ const suites: Suite[] = existsSync(join(DIR, "suites"))
 const show = (r: CompatItemResult | undefined): string => (!r ? "(nothing)" : "error" in r ? `rejected: ${r.error}` : r.out);
 
 /** Klive BASIC's result for every item: the row it printed, or its compile error. */
-async function kliveResults(items: Item[], perProgram: number, level: number): Promise<Record<string, CompatItemResult>> {
+async function kliveResults(items: Item[], perProgram: number, level: number, frames = 300): Promise<Record<string, CompatItemResult>> {
   const out: Record<string, CompatItemResult> = {};
   const run = async (group: Item[]): Promise<void> => {
     const source = compat.buildProgram(group);
@@ -69,7 +69,7 @@ async function kliveResults(items: Item[], perProgram: number, level: number): P
     }
     const { session, done } = await startBasic(source, { optimize: level });
     try {
-      session.runTo(done, { maxFrames: 300 });
+      session.runTo(done, { maxFrames: frames });
     } catch (e) {
       if (!/Timed out/.test((e as Error).message)) throw e;
     }
@@ -103,8 +103,8 @@ describe("compatibility suites: Klive BASIC against zxbc", () => {
     it(suite.suite, { timeout: 1_800_000 }, async () => {
       const oracle: CompatOracle = JSON.parse(readFileSync(oracleFile, "utf8"));
       const items = suite.items.filter((i) => oracle.items[i.id]);
-      const level0 = suite.kind === "accept" ? await kliveAccepts(items) : await kliveResults(items, suite.perProgram, 0);
-      const level3 = suite.kind === "accept" ? level0 : await kliveResults(items, suite.perProgram, 3);
+      const level0 = suite.kind === "accept" ? await kliveAccepts(items) : await kliveResults(items, suite.perProgram, 0, suite.frames);
+      const level3 = suite.kind === "accept" ? level0 : await kliveResults(items, suite.perProgram, 3, suite.frames);
       const optimiser = items.filter((i) => show(level0[i.id]) !== show(level3[i.id])).map((i) => `${i.id}: level 0 "${show(level0[i.id])}", level 3 "${show(level3[i.id])}"`);
       expect(optimiser, "level 3 prints what level 0 prints").toEqual([]);
 

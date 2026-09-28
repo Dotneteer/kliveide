@@ -2737,38 +2737,38 @@
  },
  "stdlib/print42-lib.zxbas": {
   "0": {
-   "bytes": 1081,
-   "tstates": 90591
+   "bytes": 1452,
+   "tstates": 90911
   },
   "1": {
-   "bytes": 822,
-   "tstates": 61123
+   "bytes": 1059,
+   "tstates": 61451
   },
   "2": {
-   "bytes": 794,
-   "tstates": 60003
+   "bytes": 1027,
+   "tstates": 60399
   },
   "3": {
-   "bytes": 794,
-   "tstates": 60003
+   "bytes": 1027,
+   "tstates": 60399
   }
  },
  "stdlib/print64-lib.zxbas": {
   "0": {
-   "bytes": 876,
-   "tstates": 43508
+   "bytes": 1077,
+   "tstates": 43858
   },
   "1": {
-   "bytes": 628,
-   "tstates": 32472
+   "bytes": 762,
+   "tstates": 32711
   },
   "2": {
-   "bytes": 609,
-   "tstates": 31716
+   "bytes": 737,
+   "tstates": 31957
   },
   "3": {
-   "bytes": 609,
-   "tstates": 31716
+   "bytes": 737,
+   "tstates": 31957
   }
  },
  "stdlib/putchars-lib.zxbas": {
@@ -2809,20 +2809,20 @@
  },
  "stdlib/string-lib.zxbas": {
   "0": {
-   "bytes": 740,
-   "tstates": 75375
+   "bytes": 773,
+   "tstates": 75731
   },
   "1": {
-   "bytes": 660,
-   "tstates": 75099
+   "bytes": 703,
+   "tstates": 75475
   },
   "2": {
-   "bytes": 645,
-   "tstates": 74983
+   "bytes": 688,
+   "tstates": 75367
   },
   "3": {
-   "bytes": 645,
-   "tstates": 74983
+   "bytes": 688,
+   "tstates": 75367
   }
  },
  "strings/byref-string.zxbas": {

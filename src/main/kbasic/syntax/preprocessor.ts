@@ -361,7 +361,7 @@ class Preprocessor {
       const message = !system
         ? `Cannot find the included file "${name}"`
         : isDocumentedLibrary(name)
-          ? `<${name}> is not available in Klive BASIC yet`
+          ? `<${name}> is a listing in the ZX BASIC documentation, not a library file: copy it into the program`
           : `<${name}> is not in Klive BASIC's library, nor in the include path`;
       this.error("E216", message, span);
       return;

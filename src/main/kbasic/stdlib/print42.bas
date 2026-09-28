@@ -13,22 +13,23 @@
 DIM __kbP42Row AS UByte
 DIM __kbP42Col AS UByte
 
-' Moves the print42 cursor to row y (0-23), column x (0-41); others stop the program with
-' "5 Out of screen".
+' Moves the print42 cursor to row y (0-23), column x (0-41). As zxbc's: a column past 41 is the start
+' of the next row, and a row past 23 is row 0.
 SUB printat42(BYVAL y AS UByte, BYVAL x AS UByte)
-    IF y > 23 OR x > 41 THEN
-        ASM
-            ld a,4
-            jp core.RaiseError
-        END ASM
+    IF x > 41 THEN
+        x = 0
+        y = y + 1
     END IF
+    IF y > 23 THEN y = 0
     __kbP42Row = y
     __kbP42Col = x
 END SUB
 
-' Prints s at the print42 cursor in the permanent colours (ATTR_P) and moves the cursor on. CHR$ 13
-' starts a new line; a character outside 32-127 prints as "?". Past the last column the text goes
-' on at the next row, and past the last row at the top.
+' Prints s at the print42 cursor in the permanent colours (ATTR_P) and moves the cursor on. Past the
+' last column the text goes on at the next row, and past the last row at the top. The characters, as
+' zxbc's print42 treats them: 31-127 from the font (CHARS), 144-164 from the UDGs; CHR$ 13 starts a
+' new line, CHR$ 8 steps back (to the end of the row above from column 0), CHR$ 22 row, column
+' moves the cursor as printat42; every other code is skipped.
 SUB print42(BYVAL s AS String)
     DIM i AS UInteger
     DIM ch AS UByte
@@ -42,13 +43,28 @@ SUB print42(BYVAL s AS String)
     DIM mask AS UInteger
     DIM g AS UByte
     DIM attribute AS UInteger
-    FOR i = 1 TO LEN(s)
+    i = 1
+    WHILE i <= LEN(s)
         ch = CODE(s(i - 1 + __kbStringBase))
-        IF ch = 13 THEN
-            __kbP42Col = 42
-        ELSE
-            IF ch < 32 OR ch > 127 THEN ch = 63
+        glyph = 0
+        IF ch >= 31 AND ch <= 127 THEN
             glyph = PEEK(UInteger, 23606) + CAST(UInteger, ch) * 8
+        ELSEIF ch >= 144 AND ch <= 164 THEN
+            glyph = PEEK(UInteger, 23675) + CAST(UInteger, ch - 144) * 8
+        ELSEIF ch = 13 THEN
+            __kbP42Col = 42
+        ELSEIF ch = 8 THEN
+            IF __kbP42Col > 0 THEN
+                __kbP42Col = __kbP42Col - 1
+            ELSE
+                __kbP42Col = 41
+                IF __kbP42Row > 0 THEN __kbP42Row = __kbP42Row - 1 ELSE __kbP42Row = 23
+            END IF
+        ELSEIF ch = 22 THEN
+            IF i + 2 <= LEN(s) THEN printat42(CODE(s(i + __kbStringBase)), CODE(s(i + 1 + __kbStringBase)))
+            i = i + 2
+        END IF
+        IF glyph <> 0 THEN
             x = CAST(UInteger, __kbP42Col) * 6
             b = x SHR 3
             shift = x BAND 7
@@ -71,7 +87,8 @@ SUB print42(BYVAL s AS String)
             __kbP42Row = __kbP42Row + 1
             IF __kbP42Row > 23 THEN __kbP42Row = 0
         END IF
-    NEXT i
+        i = i + 1
+    WEND
 END SUB
 
 #pragma pop(asm_dialect)

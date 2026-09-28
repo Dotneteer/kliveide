@@ -5,6 +5,7 @@ import { runFrontEnd } from "@main/kbasic/KBasicCompiler";
 import { defaultOptions, type KBasicOptions } from "@main/kbasic/options/options";
 import { runtimeBundle } from "@main/kbasic/runtime/generated/runtime-bundle";
 
+import { runBasicNext } from "./next-kit";
 import { compileBasic, runBasic } from "./run-kit";
 
 /** Klive BASIC's standard library (plan §6.4): `#include <name.bas>`, run on the 48K. */
@@ -127,6 +128,51 @@ describe("standard library", () => {
     expect(r.screen(3)).toEqual(["> abdef", "", "[abdef]"]);
   });
 
+  it("input42.bas reads a line through print42, with DELETE, until ENTER (compatibility plan C6)", async () => {
+    const source = '#include <input42.bas>\nDIM s AS String\nprintat42(4, 10)\ns = INPUT42(4)\nPRINT AT 2, 0; "["; s; "]"\n';
+    const r = await runBasic(source, { expectEnd: false, frames: 5 });
+    const type = (...keys: string[]) => {
+      for (const k of keys) r.session.keyDown(k).runFrames(1);
+      r.session.runFrames(2);
+      r.session.keyUp(...keys).runFrames(3);
+    };
+    for (const k of ["K", "L", "M"]) type(k);
+    type("CShift", "N0"); // DELETE
+    for (const k of ["X", "Y", "Z"]) type(k); // only four fit
+    type("Enter");
+    r.session.runFrames(5);
+    expect(r.screen(3)[2]).toBe("[klxy]");
+    // --- The echo is print42's: row 4 from column 10 (pixel 60) holds ink, the cursor is gone after it
+    const row4 = (col: number) => [0, 1, 2, 3, 4, 5, 6, 7].some((l) => r.session.peek(16384 + 4 * 32 + l * 256 + col) !== 0);
+    expect([7, 8, 9, 10, 11].map(row4)).toEqual([true, true, true, true, false]);
+  });
+
+  it("memorybank.bas pages banks at $C000 and copies one to $8000 (on the Next's 128K paging)", async () => {
+    // --- The stack moves below the program first: paging swaps the harness's stack at the top of memory
+    // --- out. The program runs from $6000, as SetCodeBank overwrites $8000-$BFFF. BANKM starts as a
+    // --- 128K in 48K BASIC has it (the 48K ROM selected, bit 4): SetBank keeps that bit.
+    const source = [
+      "#include <memorybank.bas>",
+      "DIM a AS UByte",
+      "DIM b AS UByte",
+      "ASM",
+      "    ld sp,$5FF0",
+      "END ASM",
+      "POKE 23388, 16",
+      "SetBank(1): POKE $C000, 11",
+      "SetBank(3): POKE $C000, 33",
+      "SetBank(1): a = PEEK($C000)",
+      "SetBank(3): b = PEEK($C000)",
+      "POKE $5B00, a: POKE $5B01, b: POKE $5B02, GetBank(): POKE $5B03, PEEK(23388)",
+      "SetCodeBank(1)",
+      "POKE $5B04, PEEK($8000): POKE $5B05, GetBank()",
+      "DO: LOOP",
+      ""
+    ].join("\n");
+    const r = await runBasicNext(source, { origin: 0x6000, expectEnd: false, frames: 20 });
+    expect([0, 1, 2, 3, 4, 5].map((i) => r.session.peek(0x5b00 + i))).toEqual([11, 33, 3, 0x13, 11, 3]);
+  });
+
   describe("putchars.bas", () => {
     it("putChars copies bitmaps column by column", async () => {
       const source = [
@@ -206,10 +252,13 @@ describe("standard library", () => {
       expect(text).toContain(font64.table(font64.pack()));
     });
 
-    it("printat42 and printat64 stop with 5 Out of screen past the edge", async () => {
-      for (const call of ["#include <print64.bas>\nprintat64(24, 0)\n", "#include <print42.bas>\nprintat42(0, 42)\n"]) {
-        const r = await runBasic(call, { expectEnd: false, frames: 60 });
-        expect(r.session.screenLine(23)).toMatch(/^5 Out of screen/);
+    it("printat42 and printat64 wrap past the edge, as zxbc's (compatibility plan C6)", async () => {
+      // --- A column past the last is the next row's start; a row past 23 is row 0
+      const ink = (r: Awaited<ReturnType<typeof runBasic>>, row: number) =>
+        Array.from({ length: 256 }, (_, i) => r.session.peek(16384 + (row >> 3) * 2048 + (row & 7) * 32 + (i >> 5) * 256 + (i & 31))).some((b) => b !== 0);
+      for (const [lib, call] of [["print64", "printat64(24, 0): print64(\"x\")"], ["print42", "printat42(22, 42): print42(\"x\")"]]) {
+        const r = await runBasic(`#include <${lib}.bas>\nCLS\n${call}\n`);
+        expect([0, 22, 23].map((row) => ink(r, row)), lib).toEqual(lib === "print64" ? [true, false, false] : [false, false, true]);
       }
     });
   });
@@ -267,10 +316,10 @@ describe("standard library", () => {
       expect(r.screen(1)[0]).toBe(`Z${0x38}1Z`);
     });
 
-    it("names a documented library that is not written yet (E216)", () => {
-      const { diagnostics } = front("#include <zx0.bas>\n");
+    it("names a library upstream's documentation only lists (E216)", () => {
+      const { diagnostics } = front("#include <distance.bas>\n");
       const e216 = diagnostics.items.filter((d) => d.code === "E216");
-      expect(e216.map((d) => d.message)).toEqual(["<zx0.bas> is not available in Klive BASIC yet"]);
+      expect(e216.map((d) => d.message)).toEqual(["<distance.bas> is a listing in the ZX BASIC documentation, not a library file: copy it into the program"]);
       const other = front("#include <nowhere.bas>\n").diagnostics.items.filter((d) => d.code === "E216");
       expect(other[0].message).toMatch(/not in Klive BASIC's library, nor in the include path/);
     });

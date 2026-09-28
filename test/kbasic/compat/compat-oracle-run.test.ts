@@ -17,7 +17,7 @@ const { itemResult } = require("../../../scripts/kbasic-compat.cjs") as { itemRe
  */
 type Manifest = {
   zxbc: string;
-  suites: Record<string, { programs: { bin: string; org: number; ids: string[]; rows: number[] }[]; rejected: Record<string, string>; accepted?: string[] }>;
+  suites: Record<string, { programs: { bin: string; org: number; ids: string[]; rows: number[]; frames?: number }[]; rejected: Record<string, string>; accepted?: string[] }>;
 };
 export type CompatItemResult = { out: string } | { error: string };
 export type CompatOracle = { zxbc: string; items: Record<string, CompatItemResult> };
@@ -32,7 +32,7 @@ describe.skipIf(!MANIFEST)("compatibility suites: the zxbc oracle", () => {
       for (const [id, error] of Object.entries(entry.rejected)) items[id] = { error };
       for (const id of entry.accepted ?? []) items[id] = { out: "accepted" };
       for (const program of entry.programs) {
-        const { session } = await runBinary(new Uint8Array(readFileSync(program.bin)), program.org, { frames: 300 });
+        const { session } = await runBinary(new Uint8Array(readFileSync(program.bin)), program.org, { frames: program.frames ?? 300 });
         program.ids.forEach((id, row) => (items[id] = { out: itemResult({ rows: program.rows[row] }, row, (r) => session.screenLine(r)) }));
       }
       const dir = join(__dirname, "oracle");

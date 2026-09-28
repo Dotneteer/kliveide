@@ -2752,6 +2752,16 @@
         "test": "test/kbasic/corpus/fixed/fixed-arith.zxbas"
       },
       {
+        "name": "fmath-angle-reduction",
+        "question": "What do fSin, fCos and fTan give for angles outside 0-360?",
+        "decision": "The angle is reduced with MOD 360 (Fixed MOD floors: -30 is 330), then read from a table of SIN at every 2 degrees times 255 (rounded), interpolated linearly; the result is the exact Fixed value of the interpolated entry / 255, rounded down. fCos(x) is fSin(90 - x) and fTan(x) is fSin(x) / fSin(90 - x).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 agrees inside 0-360. Its run-time Fixed MOD is inexact (400 MOD 360 is 39.9957, -30 MOD 360 is -29.998), so for angles outside that range its results are off by a few units in the last places, and fSin(-1) is 0; Klive keeps the exact reduction (D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
         "name": "for-loop-evaluation",
         "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
         "decision": "The start is evaluated once. Every test - before the first pass and after each NEXT - evaluates the limit again, and a STEP that is not constant too when its sign decides the direction; NEXT adds the STEP, evaluated again. A body that changes the limit or the STEP changes the loop; after the loop the variable holds the first value past the limit.",
@@ -2899,6 +2909,43 @@
         "source": "oracle",
         "phase": 1,
         "test": "test/kbasic/corpus/preprocessor/keyword-macro.zxbas"
+      },
+      {
+        "name": "library-compressed-formats",
+        "question": "Which data do zx0.bas and megalz.bas decompress?",
+        "decision": "zx0.bas: ZX0 format 2 (Einar Saukas' compressor without -c). Every name is one decoder: the speed variants give the same result. The Back names take the addresses of the last data byte and the last destination byte and read data made by the compressor's backwards mode. The RCS names write bytes that land in the screen bitmap (16384-22527) to their RCS places and every other byte as is. megalz.bas: MegaLZ (the 110-byte depacker's format).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "library-coverage",
+        "question": "Which #include <...> libraries does Klive BASIC provide?",
+        "decision": "Every library upstream documents that zxbc ships: asc, attr, clearbox, csrlin, fmath, hex, hmirror, input42, keys, megalz, memorybank, point, pos, print42, print64, putchars, puttile, screen, string and zx0, plus input and sinclair, and Klive's own farmem. Library files upstream ships without documentation (alloc, basic, esxdos, IM2, memcopy, play, printfzx, random, retrace, round, scrbuffer, scroll, spectranet, template, winscroll, SP/Fill, cb/maskedsprites, mj/fourspriter, the ZX-Uno and Next ones) are not provided: their interface could only come from their source, which the provenance rule forbids. fastplot.bas is not provided either: the file zxbc ships has no fastPlot, the documented routine.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "library-font",
+        "question": "Do print42 and print64 draw the same pixels as zxbc's?",
+        "decision": "No: Klive's glyphs are its own (print42 squeezes the machine's font, print64 has Klive's 3 x 7 font), because upstream's fonts are library code. Everything else follows zxbc: the cursor, wrapping and the control codes (library-print-cursor).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19's print42 and print64 glyphs differ in shape, so a pixel checksum differs and a glyph edge may reach a character cell Klive's leaves empty."
+      },
+      {
+        "name": "library-print-cursor",
+        "question": "How do print42 and print64 handle an out-of-range cursor and control codes?",
+        "decision": "printat42/printat64 with a column past the last is the start of the next row, and a row past 23 is row 0 (no error). Printing past the last column goes on at the next row, past the last row at the top (no scroll). CHR$ 13 starts a new line and CHR$ 22 row, column moves the cursor. print42 prints 31-127 from the font and 144-164 from the UDGs, and CHR$ 8 steps back (from column 0 to the end of the row above, from the top-left to the bottom-right); print64 prints 32-127 (31 takes a place). Every other code, colour codes included, is skipped without moving the cursor. Each library's cursor is its own: PRINT and CLS do not move it.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
       },
       {
         "name": "literal-integer-type",

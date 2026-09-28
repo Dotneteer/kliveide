@@ -1963,7 +1963,13 @@ function containsBuiltin(node: unknown, name: string): boolean {
  */
 function reachableRoutines(statements: BoundStatement[]): Set<RoutineSymbol> {
   const bodies = new Map(routinesOf(statements).map((r) => [r.routine, r.body]));
+  const byLabel = new Map(routinesOf(statements).map((r) => [globalName(r.routine.name), r.routine]));
   const reached = new Set<RoutineSymbol>();
+  const reach = (target: RoutineSymbol | undefined) => {
+    if (!target || reached.has(target)) return;
+    reached.add(target);
+    visit(bodies.get(target));
+  };
   const visit = (node: unknown): void => {
     if (!node || typeof node !== "object") return;
     if (Array.isArray(node)) {
@@ -1974,10 +1980,9 @@ function reachableRoutines(statements: BoundStatement[]): Set<RoutineSymbol> {
     if (o.kind === "routine" && o.body) return; // a definition: reached only through a call
     const target =
       o.kind === "call" ? o.routine : o.kind === "address" ? (o.target as { routine?: unknown }).routine : o.kind === "draw" ? o.arc : undefined;
-    if (target && !reached.has(target as RoutineSymbol)) {
-      reached.add(target as RoutineSymbol);
-      visit(bodies.get(target as RoutineSymbol));
-    }
+    reach(target as RoutineSymbol | undefined);
+    // --- A routine inline asm names (`call _name`, a library's shared asm routine)
+    if (o.kind === "asm") for (const line of o.lines as { text: string }[]) for (const m of line.text.matchAll(/[A-Za-z_][\w.]*/g)) reach(byLabel.get(m[0]));
     for (const [key, value] of Object.entries(o)) {
       if (key === "symbol" || key === "routine" || key === "arc" || key === "constant" || key === "span" || key === "label") continue;
       visit(value);
