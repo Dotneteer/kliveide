@@ -6,7 +6,10 @@ import { defaultOptions, type KBasicOptions } from "@main/kbasic/options/options
 import { runtimeBundle } from "@main/kbasic/runtime/generated/runtime-bundle";
 
 import { runBasicNext } from "./next-kit";
-import { compileBasic, runBasic } from "./run-kit";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const packers = require("../../../scripts/kbasic-packers.cjs") as { zx0Pack(data: number[], o?: { backwards?: boolean }): number[] };
+import { compileBasic, runBasic, startBasic } from "./run-kit";
 
 /** Klive BASIC's standard library (plan §6.4): `#include <name.bas>`, run on the 48K. */
 describe("standard library", () => {
@@ -171,6 +174,42 @@ describe("standard library", () => {
     ].join("\n");
     const r = await runBasicNext(source, { origin: 0x6000, expectEnd: false, frames: 20 });
     expect([0, 1, 2, 3, 4, 5].map((i) => r.session.peek(0x5b00 + i))).toEqual([11, 33, 3, 0x13, 11, 3]);
+  });
+
+  describe("zx0.bas speed", () => {
+    // --- 1500 bytes whose repeats lie 200-1100 bytes back; the time a call takes is the difference
+    // --- between the program with it and without it
+    let seed = 12345;
+    const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) >> 16;
+    const data = Array.from({ length: 300 }, () => rnd() & 255);
+    for (let k = 0; data.length < 1500; k++) {
+      data.push(rnd() & 255, rnd() & 255);
+      const from = data.length - Math.min(data.length, 200 + ((k * 137) % 900));
+      for (let n = 0; n < 5 + ((k * 7) % 30); n++) data.push(data[from + n]);
+    }
+    const run = async (packed: number[], call: string): Promise<{ tstates: number; out: number[] }> => {
+      const { session, done } = await startBasic(`#include <zx0.bas>\nDIM p(0 TO ${packed.length - 1}) AS UByte => {${packed.join(",")}}\n${call}\n`, { optimize: 2 });
+      const start = session.machine.getWasmV2Diagnostics().tacts;
+      session.runTo(done, { maxFrames: 3000 });
+      const tstates = session.machine.getWasmV2Diagnostics().tacts - start;
+      return { tstates, out: Array.from({ length: data.length }, (_, i) => session.peek(50000 + i)) };
+    };
+
+    it.each([false, true])("decodes with every name, Mega faster than Turbo faster than Standard (backwards: %s)", async (backwards) => {
+      const packed = packers.zx0Pack(data, { backwards });
+      const base = (await run(packed, "POKE 49999, 0")).tstates;
+      const times: number[] = [];
+      for (const name of ["dzx0Standard", "dzx0Turbo", "dzx0Mega"]) {
+        const call = backwards ? `${name}Back(@p(${packed.length - 1}), ${50000 + data.length - 1})` : `${name}(@p(0), 50000)`;
+        const r = await run(packed, `POKE 49999, 0\n${call}`);
+        expect(r.out, name).toEqual(data);
+        times.push(r.tstates - base);
+      }
+      // --- About 50-60 T-states a byte (the first, byte-at-a-time decoder took over 400)
+      expect(times[0] / data.length).toBeLessThan(65);
+      expect(times[1]).toBeLessThan(times[0]);
+      expect(times[2]).toBeLessThan(times[1]);
+    });
   });
 
   describe("putchars.bas", () => {

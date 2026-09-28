@@ -303,8 +303,11 @@ program that pins them. Target: every generated program agrees.
 - **Not observable under the 48K oracle:** memorybank's paging, tested on the Next harness instead
   (SetCodeBank copies the bank at $C000 to $8000 and pages the previous bank back); INPUT42, which
   needs typed keys, tested with the harness's keyboard.
-- **Left for later:** zx0.bas has one decoder for all names, so the Turbo and Mega names are not
-  faster than Standard (the results are the same).
+- **zx0.bas speed (2026-09-28):** each name has its own register decoder (A the bits, IX the offset,
+  LDIR/LDDR copies): on 1,500 bytes Standard takes about 55 T-states a byte, Turbo (inline gamma
+  codes and copies) and Mega (JP bit reads) less, 7-8.5 times faster than the first decoder;
+  `stdlib.test.ts` holds the order and a bound. The RCS names keep the byte-at-a-time decoder, which
+  maps each byte's address.
 
 ### 4.7 C7 state (2026-09-28)
 

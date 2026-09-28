@@ -3,9 +3,9 @@
 ' ZX0 and RCS formats by Einar Saukas (https://github.com/einar-saukas/ZX0), whose author asks that
 ' programs using ZX0 mention it in their documentation. Data in ZX0's current format (version 2).
 '
-' Every name decodes the same stream: the speed variants of the original decompressors are one
-' decoder here. "Back" names read the data from its last byte down (src and dst are the last
-' addresses); "RCS" names write bytes that land in the screen bitmap to their RCS places.
+' Every name decodes the same stream; Standard is the smallest decoder, Turbo and Mega faster ones.
+' "Back" names read the data from its last byte down (src and dst are the last addresses); "RCS"
+' names write bytes that land in the screen bitmap to their RCS places.
 #pragma once
 #pragma push(case_insensitive)
 #pragma case_insensitive = true
@@ -230,14 +230,845 @@ __kbz_off:  dw 0
     END ASM
 END SUB
 
+' The register decoders, one per name (the RCS names use the decoder above). In: HL the data (its
+' last byte backwards), DE the destination (its last byte backwards). A holds the bits (a marker bit
+' shows when a new byte is due), IX the last offset (negated forwards), BC the counts. Backwards data
+' is read downwards, with its flag bits flipped and the offset's parts as the compressor's backwards
+' mode writes them.
+
+' Forwards, compact: the gamma codes and the copies are subroutines.
+SUB FASTCALL __kbZx0Std()
+    ASM
+        push ix
+        ld ix,-1                  ; the first offset: 1
+        ld a,$80
+__kbzs_lits:
+        call __kbzs_gammaplain
+        ldir                        ; the literals
+        add a,a
+        jr nz,__kbzs_b1
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b1:
+        jr c,__kbzs_new
+        call __kbzs_gammaplain
+                                    ; a copy from the last offset
+        call __kbzs_copy
+        add a,a
+        jr nz,__kbzs_b2
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b2:
+        jr nc,__kbzs_lits
+__kbzs_new:
+        call __kbzs_gammainv
+        dec b                       ; a high part of 256 ends the data
+        jr z,__kbzs_done
+        push af
+        xor a
+        sub c
+        ld b,a                      ; B = -high
+        pop af
+        ld c,(hl)
+        inc hl
+        sra b
+        rr c                        ; BC = -(high * 128 - low / 2); carry: the length's first bit
+        push bc
+        pop ix
+        call __kbzs_gammacarry
+        inc bc
+        call __kbzs_copy
+        add a,a
+        jr nz,__kbzs_b3
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b3:
+        jr c,__kbzs_new
+        jr __kbzs_lits
+__kbzs_done:
+        pop ix
+        ret
+__kbzs_copy:
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        ldir
+        pop hl
+        ret
+__kbzs_gammaplain:
+        ld bc,1
+__kbzs_g4:
+        add a,a
+        jr nz,__kbzs_b7
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b7:
+        jr c,__kbzs_e6
+__kbzs_d5:
+        add a,a
+        jr nz,__kbzs_b8
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b8:
+        rl c
+        rl b
+        jr __kbzs_g4
+__kbzs_e6:
+        ret
+__kbzs_gammainv:
+        ld bc,1
+__kbzs_g9:
+        add a,a
+        jr nz,__kbzs_b12
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b12:
+        jr c,__kbzs_e11
+__kbzs_d10:
+        add a,a
+        jr nz,__kbzs_b13
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b13:
+        ccf
+        rl c
+        rl b
+        jr __kbzs_g9
+__kbzs_e11:
+        ret
+__kbzs_gammacarry:
+        ld bc,1
+        jr c,__kbzs_e16
+        jr __kbzs_d15
+__kbzs_g14:
+        add a,a
+        jr nz,__kbzs_b17
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b17:
+        jr c,__kbzs_e16
+__kbzs_d15:
+        add a,a
+        jr nz,__kbzs_b18
+        ld a,(hl)
+        inc hl
+        rla
+__kbzs_b18:
+        rl c
+        rl b
+        jr __kbzs_g14
+__kbzs_e16:
+        ret
+    END ASM
+END SUB
+
+' Backwards, compact.
+SUB FASTCALL __kbZx0StdBack()
+    ASM
+        push ix
+        ld ix,1                  ; the first offset: 1
+        ld a,$80
+__kbzsb_lits:
+        call __kbzsb_gammaplain
+        lddr                        ; the literals
+        add a,a
+        jr nz,__kbzsb_b1
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b1:
+        jr c,__kbzsb_new
+        call __kbzsb_gammaplain
+                                    ; a copy from the last offset
+        call __kbzsb_copy
+        add a,a
+        jr nz,__kbzsb_b2
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b2:
+        jr nc,__kbzsb_lits
+__kbzsb_new:
+        call __kbzsb_gammaplain
+        dec b                       ; a high part of 256 ends the data
+        jr z,__kbzsb_done
+        ld b,c
+        dec b                       ; B = high - 1
+        ld c,(hl)
+        dec hl
+        srl b
+        rr c
+        inc bc                      ; BC = (high - 1) * 128 + low / 2 + 1; carry: the length's first bit
+        push bc
+        pop ix
+        call __kbzsb_gammacarry
+        inc bc
+        call __kbzsb_copy
+        add a,a
+        jr nz,__kbzsb_b3
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b3:
+        jr c,__kbzsb_new
+        jr __kbzsb_lits
+__kbzsb_done:
+        pop ix
+        ret
+__kbzsb_copy:
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        lddr
+        pop hl
+        ret
+__kbzsb_gammaplain:
+        ld bc,1
+__kbzsb_g4:
+        add a,a
+        jr nz,__kbzsb_b7
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b7:
+        jr nc,__kbzsb_e6
+__kbzsb_d5:
+        add a,a
+        jr nz,__kbzsb_b8
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b8:
+        rl c
+        rl b
+        jr __kbzsb_g4
+__kbzsb_e6:
+        ret
+__kbzsb_gammacarry:
+        ld bc,1
+        jr nc,__kbzsb_e11
+        jr __kbzsb_d10
+__kbzsb_g9:
+        add a,a
+        jr nz,__kbzsb_b12
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b12:
+        jr nc,__kbzsb_e11
+__kbzsb_d10:
+        add a,a
+        jr nz,__kbzsb_b13
+        ld a,(hl)
+        dec hl
+        rla
+__kbzsb_b13:
+        rl c
+        rl b
+        jr __kbzsb_g9
+__kbzsb_e11:
+        ret
+    END ASM
+END SUB
+
+' Forwards, faster: the gamma codes and the copies inline.
+SUB FASTCALL __kbZx0Turbo()
+    ASM
+        push ix
+        ld ix,-1                  ; the first offset: 1
+        ld a,$80
+__kbzt_lits:
+        ld bc,1
+__kbzt_g1:
+        add a,a
+        jr nz,__kbzt_b4
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b4:
+        jr c,__kbzt_e3
+__kbzt_d2:
+        add a,a
+        jr nz,__kbzt_b5
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b5:
+        rl c
+        rl b
+        jr __kbzt_g1
+__kbzt_e3:
+        ldir                        ; the literals
+        add a,a
+        jr nz,__kbzt_b6
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b6:
+        jp c,__kbzt_new
+        ld bc,1
+__kbzt_g7:
+        add a,a
+        jr nz,__kbzt_b10
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b10:
+        jr c,__kbzt_e9
+__kbzt_d8:
+        add a,a
+        jr nz,__kbzt_b11
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b11:
+        rl c
+        rl b
+        jr __kbzt_g7
+__kbzt_e9:
+                                    ; a copy from the last offset
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        ldir
+        pop hl
+        add a,a
+        jr nz,__kbzt_b12
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b12:
+        jp nc,__kbzt_lits
+__kbzt_new:
+        ld bc,1
+__kbzt_g13:
+        add a,a
+        jr nz,__kbzt_b16
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b16:
+        jr c,__kbzt_e15
+__kbzt_d14:
+        add a,a
+        jr nz,__kbzt_b17
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b17:
+        ccf
+        rl c
+        rl b
+        jr __kbzt_g13
+__kbzt_e15:
+        dec b                       ; a high part of 256 ends the data
+        jp z,__kbzt_done
+        push af
+        xor a
+        sub c
+        ld b,a                      ; B = -high
+        pop af
+        ld c,(hl)
+        inc hl
+        sra b
+        rr c                        ; BC = -(high * 128 - low / 2); carry: the length's first bit
+        push bc
+        pop ix
+        ld bc,1
+        jr c,__kbzt_e20
+        jr __kbzt_d19
+__kbzt_g18:
+        add a,a
+        jr nz,__kbzt_b21
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b21:
+        jr c,__kbzt_e20
+__kbzt_d19:
+        add a,a
+        jr nz,__kbzt_b22
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b22:
+        rl c
+        rl b
+        jr __kbzt_g18
+__kbzt_e20:
+        inc bc
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        ldir
+        pop hl
+        add a,a
+        jr nz,__kbzt_b23
+        ld a,(hl)
+        inc hl
+        rla
+__kbzt_b23:
+        jp c,__kbzt_new
+        jp __kbzt_lits
+__kbzt_done:
+        pop ix
+        ret
+    END ASM
+END SUB
+
+' Backwards, faster.
+SUB FASTCALL __kbZx0TurboBack()
+    ASM
+        push ix
+        ld ix,1                  ; the first offset: 1
+        ld a,$80
+__kbztb_lits:
+        ld bc,1
+__kbztb_g1:
+        add a,a
+        jr nz,__kbztb_b4
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b4:
+        jr nc,__kbztb_e3
+__kbztb_d2:
+        add a,a
+        jr nz,__kbztb_b5
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b5:
+        rl c
+        rl b
+        jr __kbztb_g1
+__kbztb_e3:
+        lddr                        ; the literals
+        add a,a
+        jr nz,__kbztb_b6
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b6:
+        jp c,__kbztb_new
+        ld bc,1
+__kbztb_g7:
+        add a,a
+        jr nz,__kbztb_b10
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b10:
+        jr nc,__kbztb_e9
+__kbztb_d8:
+        add a,a
+        jr nz,__kbztb_b11
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b11:
+        rl c
+        rl b
+        jr __kbztb_g7
+__kbztb_e9:
+                                    ; a copy from the last offset
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        lddr
+        pop hl
+        add a,a
+        jr nz,__kbztb_b12
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b12:
+        jp nc,__kbztb_lits
+__kbztb_new:
+        ld bc,1
+__kbztb_g13:
+        add a,a
+        jr nz,__kbztb_b16
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b16:
+        jr nc,__kbztb_e15
+__kbztb_d14:
+        add a,a
+        jr nz,__kbztb_b17
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b17:
+        rl c
+        rl b
+        jr __kbztb_g13
+__kbztb_e15:
+        dec b                       ; a high part of 256 ends the data
+        jp z,__kbztb_done
+        ld b,c
+        dec b                       ; B = high - 1
+        ld c,(hl)
+        dec hl
+        srl b
+        rr c
+        inc bc                      ; BC = (high - 1) * 128 + low / 2 + 1; carry: the length's first bit
+        push bc
+        pop ix
+        ld bc,1
+        jr nc,__kbztb_e20
+        jr __kbztb_d19
+__kbztb_g18:
+        add a,a
+        jr nz,__kbztb_b21
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b21:
+        jr nc,__kbztb_e20
+__kbztb_d19:
+        add a,a
+        jr nz,__kbztb_b22
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b22:
+        rl c
+        rl b
+        jr __kbztb_g18
+__kbztb_e20:
+        inc bc
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        lddr
+        pop hl
+        add a,a
+        jr nz,__kbztb_b23
+        ld a,(hl)
+        dec hl
+        rla
+__kbztb_b23:
+        jp c,__kbztb_new
+        jp __kbztb_lits
+__kbztb_done:
+        pop ix
+        ret
+    END ASM
+END SUB
+
+' Forwards, fastest: as Turbo, with JP for the bit reads (a taken JP is 2 T-states cheaper than JR).
+SUB FASTCALL __kbZx0Mega()
+    ASM
+        push ix
+        ld ix,-1                  ; the first offset: 1
+        ld a,$80
+__kbzm_lits:
+        ld bc,1
+__kbzm_g1:
+        add a,a
+        jp nz,__kbzm_b4
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b4:
+        jp c,__kbzm_e3
+__kbzm_d2:
+        add a,a
+        jp nz,__kbzm_b5
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b5:
+        rl c
+        rl b
+        jp __kbzm_g1
+__kbzm_e3:
+        ldir                        ; the literals
+        add a,a
+        jp nz,__kbzm_b6
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b6:
+        jp c,__kbzm_new
+        ld bc,1
+__kbzm_g7:
+        add a,a
+        jp nz,__kbzm_b10
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b10:
+        jp c,__kbzm_e9
+__kbzm_d8:
+        add a,a
+        jp nz,__kbzm_b11
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b11:
+        rl c
+        rl b
+        jp __kbzm_g7
+__kbzm_e9:
+                                    ; a copy from the last offset
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        ldir
+        pop hl
+        add a,a
+        jp nz,__kbzm_b12
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b12:
+        jp nc,__kbzm_lits
+__kbzm_new:
+        ld bc,1
+__kbzm_g13:
+        add a,a
+        jp nz,__kbzm_b16
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b16:
+        jp c,__kbzm_e15
+__kbzm_d14:
+        add a,a
+        jp nz,__kbzm_b17
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b17:
+        ccf
+        rl c
+        rl b
+        jp __kbzm_g13
+__kbzm_e15:
+        dec b                       ; a high part of 256 ends the data
+        jp z,__kbzm_done
+        push af
+        xor a
+        sub c
+        ld b,a                      ; B = -high
+        pop af
+        ld c,(hl)
+        inc hl
+        sra b
+        rr c                        ; BC = -(high * 128 - low / 2); carry: the length's first bit
+        push bc
+        pop ix
+        ld bc,1
+        jp c,__kbzm_e20
+        jp __kbzm_d19
+__kbzm_g18:
+        add a,a
+        jp nz,__kbzm_b21
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b21:
+        jp c,__kbzm_e20
+__kbzm_d19:
+        add a,a
+        jp nz,__kbzm_b22
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b22:
+        rl c
+        rl b
+        jp __kbzm_g18
+__kbzm_e20:
+        inc bc
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        ldir
+        pop hl
+        add a,a
+        jp nz,__kbzm_b23
+        ld a,(hl)
+        inc hl
+        rla
+__kbzm_b23:
+        jp c,__kbzm_new
+        jp __kbzm_lits
+__kbzm_done:
+        pop ix
+        ret
+    END ASM
+END SUB
+
+' Backwards, fastest.
+SUB FASTCALL __kbZx0MegaBack()
+    ASM
+        push ix
+        ld ix,1                  ; the first offset: 1
+        ld a,$80
+__kbzmb_lits:
+        ld bc,1
+__kbzmb_g1:
+        add a,a
+        jp nz,__kbzmb_b4
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b4:
+        jp nc,__kbzmb_e3
+__kbzmb_d2:
+        add a,a
+        jp nz,__kbzmb_b5
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b5:
+        rl c
+        rl b
+        jp __kbzmb_g1
+__kbzmb_e3:
+        lddr                        ; the literals
+        add a,a
+        jp nz,__kbzmb_b6
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b6:
+        jp c,__kbzmb_new
+        ld bc,1
+__kbzmb_g7:
+        add a,a
+        jp nz,__kbzmb_b10
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b10:
+        jp nc,__kbzmb_e9
+__kbzmb_d8:
+        add a,a
+        jp nz,__kbzmb_b11
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b11:
+        rl c
+        rl b
+        jp __kbzmb_g7
+__kbzmb_e9:
+                                    ; a copy from the last offset
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        lddr
+        pop hl
+        add a,a
+        jp nz,__kbzmb_b12
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b12:
+        jp nc,__kbzmb_lits
+__kbzmb_new:
+        ld bc,1
+__kbzmb_g13:
+        add a,a
+        jp nz,__kbzmb_b16
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b16:
+        jp nc,__kbzmb_e15
+__kbzmb_d14:
+        add a,a
+        jp nz,__kbzmb_b17
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b17:
+        rl c
+        rl b
+        jp __kbzmb_g13
+__kbzmb_e15:
+        dec b                       ; a high part of 256 ends the data
+        jp z,__kbzmb_done
+        ld b,c
+        dec b                       ; B = high - 1
+        ld c,(hl)
+        dec hl
+        srl b
+        rr c
+        inc bc                      ; BC = (high - 1) * 128 + low / 2 + 1; carry: the length's first bit
+        push bc
+        pop ix
+        ld bc,1
+        jp nc,__kbzmb_e20
+        jp __kbzmb_d19
+__kbzmb_g18:
+        add a,a
+        jp nz,__kbzmb_b21
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b21:
+        jp nc,__kbzmb_e20
+__kbzmb_d19:
+        add a,a
+        jp nz,__kbzmb_b22
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b22:
+        rl c
+        rl b
+        jp __kbzmb_g18
+__kbzmb_e20:
+        inc bc
+        push hl
+        push ix
+        pop hl
+        add hl,de
+        lddr
+        pop hl
+        add a,a
+        jp nz,__kbzmb_b23
+        ld a,(hl)
+        dec hl
+        rla
+__kbzmb_b23:
+        jp c,__kbzmb_new
+        jp __kbzmb_lits
+__kbzmb_done:
+        pop ix
+        ret
+    END ASM
+END SUB
+
 SUB FASTCALL dzx0Standard(BYVAL src AS UInteger, BYVAL dst AS UInteger)
     ASM
         pop bc
         pop de
         push bc
-        xor a
-        ld c,a
-        jp ___kbZx0
+        jp ___kbZx0Std
     END ASM
 END SUB
 
@@ -246,9 +1077,7 @@ SUB FASTCALL dzx0StandardBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)
         pop bc
         pop de
         push bc
-        ld a,1
-        ld c,0
-        jp ___kbZx0
+        jp ___kbZx0StdBack
     END ASM
 END SUB
 
@@ -257,9 +1086,7 @@ SUB FASTCALL dzx0Turbo(BYVAL src AS UInteger, BYVAL dst AS UInteger)
         pop bc
         pop de
         push bc
-        xor a
-        ld c,a
-        jp ___kbZx0
+        jp ___kbZx0Turbo
     END ASM
 END SUB
 
@@ -268,9 +1095,7 @@ SUB FASTCALL dzx0TurboBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)
         pop bc
         pop de
         push bc
-        ld a,1
-        ld c,0
-        jp ___kbZx0
+        jp ___kbZx0TurboBack
     END ASM
 END SUB
 
@@ -279,9 +1104,7 @@ SUB FASTCALL dzx0Mega(BYVAL src AS UInteger, BYVAL dst AS UInteger)
         pop bc
         pop de
         push bc
-        xor a
-        ld c,a
-        jp ___kbZx0
+        jp ___kbZx0Mega
     END ASM
 END SUB
 
@@ -290,9 +1113,7 @@ SUB FASTCALL dzx0MegaBack(BYVAL src AS UInteger, BYVAL dst AS UInteger)
         pop bc
         pop de
         push bc
-        ld a,1
-        ld c,0
-        jp ___kbZx0
+        jp ___kbZx0MegaBack
     END ASM
 END SUB
 
