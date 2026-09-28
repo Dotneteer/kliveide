@@ -8,7 +8,10 @@ import { runtimeBundle } from "@main/kbasic/runtime/generated/runtime-bundle";
 import { runBasicNext } from "./next-kit";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const packers = require("../../../scripts/kbasic-packers.cjs") as { zx0Pack(data: number[], o?: { backwards?: boolean }): number[] };
+const packers = require("../../../scripts/kbasic-packers.cjs") as {
+  zx0Pack(data: number[], o?: { backwards?: boolean }): number[];
+  rcsAddress(i: number): number;
+};
 import { compileBasic, runBasic, startBasic } from "./run-kit";
 
 /** Klive BASIC's standard library (plan §6.4): `#include <name.bas>`, run on the 48K. */
@@ -209,6 +212,45 @@ describe("standard library", () => {
       expect(times[0] / data.length).toBeLessThan(65);
       expect(times[1]).toBeLessThan(times[0]);
       expect(times[2]).toBeLessThan(times[1]);
+    });
+  });
+
+  describe("zx0.bas RCS decoders", () => {
+    // --- The stream's bytes from the screen on through the attributes into the printer buffer ($5B00,
+    // --- free on a 48K; below $4000 is ROM): repeats 7, 100 and 900 back, so copies cross $5800 and
+    // --- some read from the other side of it
+    const first = 16384;
+    const stream = Array.from({ length: 23296 + 200 - first }, (_, i) => (i % 7 === 3 ? (i * 31) & 255 : i % 9 < 4 ? (i >> 2) & 255 : ((i % 100) * 3) & 255));
+    const place = (a: number) => (a >= 16384 && a < 22528 ? 16384 + packers.rcsAddress(a - 16384) : a);
+    const run = async (packed: number[], call: string) => {
+      const { session, done } = await startBasic(`#include <zx0.bas>\nDIM p(0 TO ${packed.length - 1}) AS UByte => {${packed.join(",")}}\n${call}\n`, { optimize: 2 });
+      const start = session.machine.getWasmV2Diagnostics().tacts;
+      session.runTo(done, { maxFrames: 5000 });
+      return { tstates: session.machine.getWasmV2Diagnostics().tacts - start, byteAt: (a: number) => session.peek(place(a)) };
+    };
+
+    it.each([
+      ["dzx0SmartRCS", false],
+      ["dzx0AgileRCS", false],
+      ["dzx0SmartRCSBack", true]
+    ])("%s puts every byte in its place, across the bitmap's edge", async (name, backwards) => {
+      const packed = packers.zx0Pack(stream, { backwards: backwards as boolean });
+      const call = backwards ? `${name}(@p(${packed.length - 1}), ${first + stream.length - 1})` : `${name}(@p(0), ${first})`;
+      const r = await run(packed, call);
+      const wrong = stream.findIndex((b, i) => r.byteAt(first + i) !== b);
+      expect(wrong, `the first wrong byte (stream position ${first + wrong})`).toBe(-1);
+    });
+
+    it("decodes a screen at speed, AgileRCS faster than SmartRCS", async () => {
+      // --- A blank screen: one long copy, the bitmap's own loops
+      const packed = packers.zx0Pack(new Array(6912).fill(0));
+      const base = (await run(packed, "POKE 49999, 0")).tstates;
+      const smart = (await run(packed, "POKE 49999, 0\ndzx0SmartRCS(@p(0), 16384)")).tstates - base;
+      const agile = (await run(packed, "POKE 49999, 0\ndzx0AgileRCS(@p(0), 16384)")).tstates - base;
+      // --- About 135 and 85 T-states a byte (the first, byte-at-a-time decoder took over 650)
+      expect(smart / 6912).toBeLessThan(160);
+      expect(agile / 6912).toBeLessThan(100);
+      expect(agile).toBeLessThan(smart);
     });
   });
 

@@ -306,8 +306,11 @@ program that pins them. Target: every generated program agrees.
 - **zx0.bas speed (2026-09-28):** each name has its own register decoder (A the bits, IX the offset,
   LDIR/LDDR copies): on 1,500 bytes Standard takes about 55 T-states a byte, Turbo (inline gamma
   codes and copies) and Mega (JP bit reads) less, 7-8.5 times faster than the first decoder;
-  `stdlib.test.ts` holds the order and a bound. The RCS names keep the byte-at-a-time decoder, which
-  maps each byte's address.
+  `stdlib.test.ts` holds the order and a bound. The RCS names have register decoders too: a literal
+  run or a copy goes in segments on one side of the bitmap's edges (LDIR outside it); inside it the
+  destination's (and a copy source's) place follows byte by byte, mostly one INC H. AgileRCS copies
+  in chunks that stay in one character cell of both. On a screen 4-8 times faster than before
+  (AgileRCS about 85-105 T-states a byte, SmartRCS 135-165); tested across the $5800 edge.
 
 ### 4.7 C7 state (2026-09-28)
 
