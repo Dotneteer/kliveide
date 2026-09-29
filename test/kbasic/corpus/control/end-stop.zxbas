@@ -1,0 +1,7 @@
+' STOP ends the program: it returns with ERR_NR 8, and BASIC shows "9 STOP statement" when its own
+' statement ends (semantics annex: runtime-error-model); the rest is not run
+'@expect peek 23610 8
+'@expect screen 0 "before"
+PRINT "before"
+STOP
+PRINT "after"

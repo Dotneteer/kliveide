@@ -1,0 +1,5 @@
+' Slices count from 0 (string_base 0); a bound past the end is clipped
+'@expect screen 0 "Hel|o|World|H|World|"
+'@expect heap s
+DIM s$ AS String = "Hello World"
+PRINT s$(0 TO 2); "|"; s$(4); "|"; s$(6 TO); "|"; s$( TO 0); "|"; s$(6 TO 99); "|"; s$(20 TO)

@@ -7,12 +7,16 @@ import {
   nexSdCardTarget
 } from "@common/utils/nex-launch-paths";
 import { LaunchNexCommand } from "@renderer/appIde/commands/NexLaunchCommand";
+import { createSourceDebugSidecar, readSourceDebugSidecar, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import {
   getNexLoad,
   recordNexLoad,
   resetNexLoadSessionForTests
 } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
 import { ValidationMessageType } from "@renderer/abstractions/ValidationMessageType";
+import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
+
+vi.mock("@common/utils/breakpoints", () => ({ refreshSourceCodeBreakpoints: vi.fn().mockResolvedValue(undefined) }));
 
 describe("nex launch paths", () => {
   it("recognises a NEX file regardless of case or padding", () => {
@@ -394,5 +398,84 @@ describe("LaunchNexCommand", () => {
       expect(result.finalMessage).toContain("permission denied");
       expect(runCodeCommand).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe("the source-level debug sidecar (plan §8.5)", () => {
+  const info = { files: [], statements: [], callables: [], addressToStatement: [[0, -1]] } as any;
+
+  it("belongs to one build of a NEX, and refuses another", () => {
+    const nex = nexBytes(0xc123, 20);
+    const text = createSourceDebugSidecar(nex, info);
+    expect(readSourceDebugSidecar(text, nex)).toEqual({ info });
+    const rebuilt = nex.slice();
+    rebuilt[14] ^= 1;
+    expect(readSourceDebugSidecar(text, rebuilt)).toEqual({ error: "it was written for another build of this NEX" });
+    expect("error" in readSourceDebugSidecar("{}", nex)).toBe(true);
+    expect("error" in readSourceDebugSidecar("not json", nex)).toBe(true);
+    expect(sourceDebugSidecarPath("/p/game.nex")).toBe("/p/game.nex.kbasic-debug.json");
+  });
+
+  it("is sent to the emulator by a debug launch, before and after the run", async () => {
+    const { context, runCodeCommand } = contextFor(MI_ZXNEXT);
+    const nex = nexBytes(0xc123, 20);
+    context.mainApi.readBinaryFile.mockResolvedValue(nex);
+    context.mainApi.readTextFile = vi.fn().mockResolvedValue(createSourceDebugSidecar(nex, info));
+    const setSourceDebugInfo = vi.fn().mockResolvedValue(undefined);
+    context.emuApi.setSourceDebugInfo = setSourceDebugInfo;
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex", "-d": true });
+    expect(context.mainApi.readTextFile).toHaveBeenCalledWith("/p/game.nex.kbasic-debug.json");
+    expect(setSourceDebugInfo.mock.calls).toEqual([[info], [info]]);
+    expect(runCodeCommand).toHaveBeenCalledTimes(1);
+  });
+
+  it("makes the sidecar's program the IDE's current build and resolves its breakpoints before the run", async () => {
+    const { context, runCodeCommand } = contextFor(MI_ZXNEXT);
+    const nex = nexBytes(0xc123, 20);
+    const program = {
+      sourceFileList: [{ filename: "/p/code/program.zxbas", includes: [] }],
+      listFileItems: [{ fileIndex: 0, lineNumber: 3, address: 0x6000, segmentIndex: 1 }],
+      sourceMap: {},
+      segments: [{ startAddress: 0x8000 }, { startAddress: 0x6000, bank: 15, bankOffset: 0 }]
+    };
+    context.mainApi.readBinaryFile.mockResolvedValue(nex);
+    context.mainApi.readTextFile = vi.fn().mockResolvedValue(createSourceDebugSidecar(nex, info, program));
+    context.emuApi.setSourceDebugInfo = vi.fn().mockResolvedValue(undefined);
+    const order: string[] = [];
+    context.store.dispatch = vi.fn((a: { type: string }) => order.push(a.type));
+    vi.mocked(refreshSourceCodeBreakpoints).mockImplementation(async () => {
+      order.push("refresh");
+    });
+    runCodeCommand.mockImplementation(async () => {
+      order.push("run");
+    });
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex", "-d": true });
+    const endCompile = context.store.dispatch.mock.calls.find(([a]: [{ type: string }]) => a.type === "END_COMPILE")[0];
+    expect(endCompile.payload.compileResult).toMatchObject({
+      sourceFileList: program.sourceFileList,
+      listFileItems: program.listFileItems,
+      sourceLevelDebug: info,
+      segments: [{ startAddress: 0x8000, emittedCode: [] }, { startAddress: 0x6000, bank: 15, bankOffset: 0, emittedCode: [] }]
+    });
+    expect(order.slice(0, 3)).toEqual(["END_COMPILE", "refresh", "INC_BPS_VERSION"]);
+    expect(order.indexOf("run")).toBeGreaterThan(order.indexOf("refresh"));
+  });
+
+  it("clears the previous program's info when the NEX has no usable sidecar", async () => {
+    const { context } = contextFor(MI_ZXNEXT);
+    context.mainApi.readTextFile = vi.fn().mockResolvedValue(createSourceDebugSidecar(nexBytes(0x8000, 5), info));
+    const setSourceDebugInfo = vi.fn().mockResolvedValue(undefined);
+    context.emuApi.setSourceDebugInfo = setSourceDebugInfo;
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex", "-d": true });
+    expect(setSourceDebugInfo.mock.calls).toEqual([[undefined], [undefined]]);
+  });
+
+  it("is not read for a run without debugging", async () => {
+    const { context } = contextFor(MI_ZXNEXT);
+    context.mainApi.readTextFile = vi.fn();
+    context.emuApi.setSourceDebugInfo = vi.fn();
+    await new LaunchNexCommand().execute(context, { file: "/p/game.nex" });
+    expect(context.mainApi.readTextFile).not.toHaveBeenCalled();
+    expect(context.emuApi.setSourceDebugInfo).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,13 @@
+' RANDOMIZE with a seed repeats RND's sequence; RND is in [0, 1)
+'@expect screen 0 "1 1"
+DIM a, b AS Float
+DIM i AS UByte
+DIM ok AS UByte = 1
+RANDOMIZE 42
+a = RND
+FOR i = 1 TO 50
+  b = RND
+  IF b < 0 OR b >= 1 THEN ok = 0
+NEXT i
+RANDOMIZE 42
+PRINT (RND = a); " "; ok

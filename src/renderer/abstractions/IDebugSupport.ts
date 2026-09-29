@@ -1,4 +1,5 @@
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type { SourceStep } from "@emu/machines/SourceStepDecision";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -107,6 +108,28 @@ export interface IDebugSupport {
   imminentBreakpoint?: number;
 
   /**
+   * The source-level step in progress (`DebugStepMode.SourceStep`), and after it stopped, how.
+   */
+  sourceStep?: SourceStep;
+
+  /**
+   * A runtime-error stop (plan §10.10): the address of a compiled program's error routine. Every
+   * debug run stops when execution reaches it, before the ROM prints the report.
+   */
+  errorStopAddress?: number;
+
+  /**
+   * The ROM's error restart (RST 8 at $0008), where errors the ROM raises itself end up (the
+   * calculator's "6 Number too big"). A debug run stops there only while `romErrorGuard` says a
+   * compiled program is running, so BASIC's own errors after the program has ended do not stop.
+   */
+  romErrorAddress?: number;
+  romErrorGuard?: () => boolean;
+
+  /** Follows the running source statement through a debug run (`CurrentStatementTracker`). */
+  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
+
+  /**
    * Erases all breakpoints
    */
   eraseAllBreakpoints(): void;
@@ -162,7 +185,7 @@ export interface IDebugSupport {
    * @param partition The memory partition the line's code lives in, for a line inside a `.bank`
    * segment. Absent for unbanked code, which stays partitionless.
    */
-  resolveBreakpoint(resource: string, line: number, address: number, partition?: number): void;
+  resolveBreakpoint(resource: string, line: number, address: number, partition?: number, column?: number): void;
 
   /**
    * Renames breakpoints when the source file is renamed
@@ -177,6 +200,9 @@ export interface IDebugSupport {
    * leave the OS command line half-typed. See `.plans/NEX_DEBUGGING_PLAN.md` §9.5.
    */
   suppressUserBreakpoints: boolean;
+
+  /** While `suppressUserBreakpoints` is set: whether keystrokes are still queued (checked when a breakpoint is hit). */
+  keystrokesPending?: () => boolean;
 
   /**
    * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.

@@ -1,0 +1,12 @@
+' FOR over a range that crosses zero (the value after the loop and a loop to the type's maximum
+' are the annex's open for-loop-evaluation question, so they are not pinned here)
+'@expect screen 0 "7 0 -3"
+DIM i, s, first AS Integer
+DIM n AS UByte
+first = 99
+FOR i = -3 TO 3
+ IF first = 99 THEN first = i
+ n = n + 1
+ s = s + i
+NEXT i
+PRINT n; " "; s; " "; first

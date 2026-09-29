@@ -1,0 +1,9 @@
+' Colour statements are permanent; BORDER sets BORDCR
+'@expect peek $5800 $62
+'@expect peek $5801 $0C
+'@expect peek 23624 $17
+INK 2: PAPER 4: BRIGHT 1
+PRINT "a";
+BRIGHT 0: INK 4: PAPER 1
+PRINT "b"
+BORDER 2

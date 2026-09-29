@@ -466,4 +466,48 @@ describe("NextTestSession: checkpoints", () => {
     expect({ regs: s.registers(), tacts: s.tacts, frames: s.frames, ram: Array.from(s.peekBytes(0xc000, 64)) }).toEqual(before);
     expect(() => s.restoreCheckpoint("other"), "an unknown key").toThrow(/No checkpoint "other"/);
   });
+
+  it("prepareBasic: the 48K ROM's calculator and PR-STRING work as on the 48K", async () => {
+    const s = await createSession();
+    await s.prepareBasic();
+    await s.loadCode(`
+      .org $8000
+    Park:
+      jr Park
+    Main:
+      ld hl,First
+      call $33b4          ; STACK-NUM
+      ld hl,Second
+      call $33b4
+      rst $28
+      .defb $0f           ; addition
+      .defb $38           ; end-calc
+      ld hl,($5c65)       ; STKEND
+      ld de,5
+      or a
+      sbc hl,de
+      ld de,Sum
+      ld bc,5
+      ldir
+      ld a,2
+      call $1601          ; CHAN-OPEN: the upper screen
+      ld de,Text
+      ld bc,5
+      call $203c          ; PR-STRING
+      ret
+    First:  .defb $81,$00,$00,$00,$00   ; 1.0
+    Second: .defb $80,$00,$00,$00,$00   ; 0.5
+    Sum:    .defs 5
+    Text:   .defm "Hello"
+    `);
+
+    s.call("Main", { returnTo: s.symbol("Park") });
+
+    expect(Array.from(s.peekBytes(s.symbol("Sum"), 5)), "1 + 0.5").toEqual([0x81, 0x40, 0, 0, 0]);
+    const glyph = Array.from({ length: 8 }, (_, line) => s.peek(0x3c00 + "H".charCodeAt(0) * 8 + line));
+    const cell = Array.from({ length: 8 }, (_, line) => s.peek(0x4000 + (line << 8)));
+    expect(cell, "'H' printed at the top left through the ROM").toEqual(glyph);
+    expect(glyph.some((b) => b !== 0), "ROM 3's font is paged in").toBe(true);
+  });
 });
+

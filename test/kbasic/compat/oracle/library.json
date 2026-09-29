@@ -1,0 +1,461 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "library: asc(\"Hello\", 0)": {
+   "out": "72"
+  },
+  "library: asc(\"Hello\", 1)": {
+   "out": "101"
+  },
+  "library: asc(\"Hello\", 4)": {
+   "out": "111"
+  },
+  "library: asc(\"Hello\", 5)": {
+   "out": "0"
+  },
+  "library: asc(\"Hello\", 9)": {
+   "out": "0"
+  },
+  "library: hex(0)": {
+   "out": "00000000"
+  },
+  "library: hex(305419896)": {
+   "out": "12345678"
+  },
+  "library: hex(4294967295)": {
+   "out": "FFFFFFFF"
+  },
+  "library: hex16(4660)": {
+   "out": "1234"
+  },
+  "library: hex16(65535)": {
+   "out": "FFFF"
+  },
+  "library: hex8(171)": {
+   "out": "AB"
+  },
+  "library: hex8(0)": {
+   "out": "00"
+  },
+  "library: left(\"Hello\", 0)": {
+   "out": "[]"
+  },
+  "library: left(\"Hello\", 2)": {
+   "out": "[He]"
+  },
+  "library: left(\"Hello\", 9)": {
+   "out": "[Hello]"
+  },
+  "library: right(\"Hello\", 2)": {
+   "out": "[lo]"
+  },
+  "library: right(\"Hello\", 9)": {
+   "out": "[]"
+  },
+  "library: right(\"Hello\", 5)": {
+   "out": "[Hello]"
+  },
+  "library: right(\"Hello\", 6)": {
+   "out": "[]"
+  },
+  "library: mid(\"Hello\", 1, 3)": {
+   "out": "[ell]"
+  },
+  "library: mid(\"Hello\", 4, 5)": {
+   "out": "[o]"
+  },
+  "library: mid(\"Hello\", 9, 2)": {
+   "out": "[]"
+  },
+  "library: mid(\"Hello\", 0, 0)": {
+   "out": "[]"
+  },
+  "library: left(\"\", 3)": {
+   "out": "[]"
+  },
+  "library: CSRLIN/POS after PRINT AT 5, 7; \"ab\";": {
+   "out": "5 9"
+  },
+  "library: CSRLIN/POS after PRINT AT 23, 30; \"xy\";": {
+   "out": "23 32"
+  },
+  "library: CSRLIN/POS after PRINT AT 10, 0; \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\";": {
+   "out": "11 4"
+  },
+  "library: CSRLIN/POS after PRINT AT 3, 3; \"a\";TAB 20;": {
+   "out": "3 20"
+  },
+  "library: ATTR(3, 4)": {
+   "out": "106"
+  },
+  "library: ATTR(0, 0)": {
+   "out": "56"
+  },
+  "library: ATTR(22, 0)": {
+   "out": "56"
+  },
+  "library: ATTR(23, 31)": {
+   "out": "56"
+  },
+  "library: SCREEN$(2, 3)": {
+   "out": "[Q]"
+  },
+  "library: SCREEN$(2, 4)": {
+   "out": "[ ]"
+  },
+  "library: SCREEN$(4, 4)": {
+   "out": "[Z]"
+  },
+  "library: SCREEN$(6, 6)": {
+   "out": "[A]"
+  },
+  "library: SCREEN$(23, 0)": {
+   "out": "[]"
+  },
+  "library: putChars 2x2": {
+   "out": "14387650"
+  },
+  "library: paint 3x2": {
+   "out": "16641789"
+  },
+  "library: paintData 2x2": {
+   "out": "1338306"
+  },
+  "library: print42 layout": {
+   "out": "3FFE0000"
+  },
+  "library: print42 pixels": {
+   "out": "7256190"
+  },
+  "library: print42 past the last column": {
+   "out": "00000003 80000000"
+  },
+  "library: print42 a column past the end": {
+   "out": "00000000 C0000000"
+  },
+  "library: print42 a row past the end": {
+   "out": "C0000000 BDFEFF70"
+  },
+  "library: print42 the last place": {
+   "out": "BDFEFF73 80000000"
+  },
+  "library: print42 CHR 13": {
+   "out": "80000000 80000000"
+  },
+  "library: print42 CHR 8": {
+   "out": "00000003 00000000"
+  },
+  "library: print42 CHR 22": {
+   "out": "04000000 00000000"
+  },
+  "library: print42 CHR 23 and colour codes": {
+   "out": "18000000 00000000"
+  },
+  "library: print42 skipped codes": {
+   "out": "18000000 00000000"
+  },
+  "library: print42 UDGs and CHR 127": {
+   "out": "1E000000 00000000"
+  },
+  "library: print42 the cursor stays": {
+   "out": "0C000000 00000000"
+  },
+  "library: print64 layout": {
+   "out": "7FC00000"
+  },
+  "library: print64 pixels": {
+   "out": "15100540"
+  },
+  "library: print64 past the last column": {
+   "out": "00000001 80000000"
+  },
+  "library: print64 a column past the end": {
+   "out": "00000000 80000000"
+  },
+  "library: print64 a row past the end": {
+   "out": "80000000 BDFEFF70"
+  },
+  "library: print64 the last place": {
+   "out": "BDFEFF71 80000000"
+  },
+  "library: print64 CHR 13": {
+   "out": "80000000 80000000"
+  },
+  "library: print64 CHR 8": {
+   "out": "00000000 80000000"
+  },
+  "library: print64 CHR 22": {
+   "out": "10000000 00000000"
+  },
+  "library: print64 CHR 23 and colour codes": {
+   "out": "20000000 00000000"
+  },
+  "library: print64 skipped codes": {
+   "out": "20000000 00000000"
+  },
+  "library: print64 UDGs and CHR 127": {
+   "out": "30000000 00000000"
+  },
+  "library: print64 the cursor stays": {
+   "out": "10000000 00000000"
+  },
+  "library: clearBox": {
+   "out": "15057968"
+  },
+  "library: hMirror(0)": {
+   "out": "0"
+  },
+  "library: hMirror(1)": {
+   "out": "128"
+  },
+  "library: hMirror(128)": {
+   "out": "1"
+  },
+  "library: hMirror(3)": {
+   "out": "192"
+  },
+  "library: hMirror(165)": {
+   "out": "165"
+  },
+  "library: hMirror(240)": {
+   "out": "15"
+  },
+  "library: hMirror(255)": {
+   "out": "255"
+  },
+  "library: putTile(0, 0)": {
+   "out": "5622930"
+  },
+  "library: putTile(10, 10)": {
+   "out": "5717266"
+  },
+  "library: putTile(30, 22)": {
+   "out": "6103570"
+  },
+  "library: fSin(0)": {
+   "out": "0 0"
+  },
+  "library: fCos(0)": {
+   "out": "1 65536"
+  },
+  "library: fTan(0)": {
+   "out": "0 0"
+  },
+  "library: fSin(1)": {
+   "out": "0.01763916015625 1156"
+  },
+  "library: fCos(1)": {
+   "out": "1 65536"
+  },
+  "library: fTan(1)": {
+   "out": "0.01763916015625 1156"
+  },
+  "library: fSin(2)": {
+   "out": "0.0352935791015625 2313"
+  },
+  "library: fCos(2)": {
+   "out": "1 65536"
+  },
+  "library: fTan(2)": {
+   "out": "0.0352935791015625 2313"
+  },
+  "library: fSin(3)": {
+   "out": "0.0529327392578125 3469"
+  },
+  "library: fCos(3)": {
+   "out": "0.9980316162109375 65407"
+  },
+  "library: fTan(3)": {
+   "out": "0.0530242919921875 3475"
+  },
+  "library: fSin(30)": {
+   "out": "0.4980316162109375 32639"
+  },
+  "library: fCos(30)": {
+   "out": "0.8666534423828125 56797"
+  },
+  "library: fTan(30)": {
+   "out": "0.57464599609375 37660"
+  },
+  "library: fSin(45)": {
+   "out": "0.70587158203125 46260"
+  },
+  "library: fCos(45)": {
+   "out": "0.70587158203125 46260"
+  },
+  "library: fTan(45)": {
+   "out": "1 65536"
+  },
+  "library: fSin(46)": {
+   "out": "0.7176361083984375 47031"
+  },
+  "library: fCos(46)": {
+   "out": "0.6941070556640625 45489"
+  },
+  "library: fTan(46)": {
+   "out": "1.0338897705078125 67757"
+  },
+  "library: fSin(89)": {
+   "out": "1 65536"
+  },
+  "library: fCos(89)": {
+   "out": "0.01763916015625 1156"
+  },
+  "library: fTan(89)": {
+   "out": "56.6920318603515625 3715369"
+  },
+  "library: fSin(90)": {
+   "out": "1 65536"
+  },
+  "library: fCos(90)": {
+   "out": "0 0"
+  },
+  "library: fSin(91)": {
+   "out": "1 65536"
+  },
+  "library: fCos(91)": {
+   "out": "0 0"
+  },
+  "library: fTan(91)": {
+   "out": "-0.0000152587890625 4294967295"
+  },
+  "library: fSin(135)": {
+   "out": "0.70587158203125 46260"
+  },
+  "library: fCos(135)": {
+   "out": "-0.70587158203125 4294921036"
+  },
+  "library: fTan(135)": {
+   "out": "-1 4294901760"
+  },
+  "library: fSin(180)": {
+   "out": "0 0"
+  },
+  "library: fCos(180)": {
+   "out": "-1 4294901760"
+  },
+  "library: fTan(180)": {
+   "out": "0 0"
+  },
+  "library: fSin(181)": {
+   "out": "-0.01763916015625 4294966140"
+  },
+  "library: fCos(181)": {
+   "out": "-1 4294901760"
+  },
+  "library: fTan(181)": {
+   "out": "0.01763916015625 1156"
+  },
+  "library: fSin(270)": {
+   "out": "-1 4294901760"
+  },
+  "library: fCos(270)": {
+   "out": "0 0"
+  },
+  "library: fSin(359)": {
+   "out": "-0.01763916015625 4294966140"
+  },
+  "library: fCos(359)": {
+   "out": "1 65536"
+  },
+  "library: fTan(359)": {
+   "out": "-0.01763916015625 4294966140"
+  },
+  "library: fSin(360)": {
+   "out": "0 0"
+  },
+  "library: fCos(360)": {
+   "out": "1 65536"
+  },
+  "library: fTan(360)": {
+   "out": "0 0"
+  },
+  "library: fSin(400)": {
+   "out": "0.64306640625 42144"
+  },
+  "library: fCos(400)": {
+   "out": "0.7647552490234375 50119"
+  },
+  "library: fTan(400)": {
+   "out": "0.8408660888671875 55107"
+  },
+  "library: fSin(-30)": {
+   "out": "-0.4980010986328125 4294934659"
+  },
+  "library: fCos(-30)": {
+   "out": "0.8666534423828125 56797"
+  },
+  "library: fTan(-30)": {
+   "out": "-0.574615478515625 4294929638"
+  },
+  "library: fSin(0.5)": {
+   "out": "0.008819580078125 578"
+  },
+  "library: fCos(0.5)": {
+   "out": "1 65536"
+  },
+  "library: fTan(0.5)": {
+   "out": "0.008819580078125 578"
+  },
+  "library: fSin(44.75)": {
+   "out": "0.7029266357421875 46067"
+  },
+  "library: fCos(44.75)": {
+   "out": "0.7088165283203125 46453"
+  },
+  "library: fTan(44.75)": {
+   "out": "0.9916839599609375 64991"
+  },
+  "library: megaLZDepack far offsets": {
+   "out": "11081643"
+  },
+  "library: dzx0Standard far offsets": {
+   "out": "11081643"
+  },
+  "library: dzx0StandardBack far offsets": {
+   "out": "11081643"
+  },
+  "library: megaLZDepack": {
+   "out": "11468686"
+  },
+  "library: dzx0Standard": {
+   "out": "11468686"
+  },
+  "library: dzx0StandardBack": {
+   "out": "10594974"
+  },
+  "library: dzx0Turbo": {
+   "out": "11468686"
+  },
+  "library: dzx0TurboBack": {
+   "out": "10594974"
+  },
+  "library: dzx0Mega": {
+   "out": "11468686"
+  },
+  "library: dzx0MegaBack": {
+   "out": "10594974"
+  },
+  "library: dzx0SmartRCS": {
+   "out": "8803001"
+  },
+  "library: dzx0AgileRCS": {
+   "out": "8803001"
+  },
+  "library: dzx0SmartRCSBack": {
+   "out": "8803001"
+  },
+  "library: zx0 to memory with RCS": {
+   "out": "11468686"
+  },
+  "library: SetBank(0) GetBank()": {
+   "out": "0 16"
+  },
+  "library: SetBank(3) GetBank()": {
+   "out": "3 19"
+  },
+  "library: SetBank(7) GetBank()": {
+   "out": "7 23"
+  }
+ }
+}

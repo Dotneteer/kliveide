@@ -1,2 +1,8 @@
+' Klive BASIC (compatible with Boriel ZX BASIC).
+'
+' Build options go in this header, one per line, as '@name value. For example:
+'@optimize 0
+'@heap-size 4768
+
 print at 10,5; paper 4; bright 0; "Welcome to Klive IDE"
 print at 11,5; paper 4; bright 1; "  (Boriel's Basic)  "

@@ -1,0 +1,5 @@
+' PRINT AT row, column and TAB
+'@expect screen 5 "          X"
+'@expect screen 6 "   Y      Z"
+PRINT AT 5, 10; "X"
+PRINT AT 6, 0; TAB 3; "Y"; TAB 10; "Z"

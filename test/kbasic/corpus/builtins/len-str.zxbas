@@ -1,0 +1,4 @@
+' LEN and STR$ of integers
+'@expect screen 0 "4 -305 0 5"
+DIM n AS Integer = -305
+PRINT LEN(STR$(n)); " "; STR$(n); " "; LEN(""); " "; LEN("abc" + "de")

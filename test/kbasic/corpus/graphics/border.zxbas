@@ -1,0 +1,4 @@
+' BORDER sets the border and BORDCR's border bits
+'@expect screen 0 "3"
+BORDER 3
+PRINT (PEEK 23624 SHR 3) BAND 7

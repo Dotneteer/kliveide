@@ -1,0 +1,12 @@
+' READ after RESTORE to a label with no DATA after it wraps to the first item (semantics annex:
+' read-past-end); a program with no DATA at all does not compile (E432)
+'@expect screen 0 "go"
+'@expect screen 1 "1 read"
+DIM x AS UByte
+x = 7
+DATA 1
+PRINT "go"
+RESTORE fin
+READ x
+PRINT x; " read"
+fin:

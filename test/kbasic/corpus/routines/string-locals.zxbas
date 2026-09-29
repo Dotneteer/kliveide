@@ -1,0 +1,10 @@
+' String locals are freed when the routine ends: the heap is empty again after many calls
+'@expect heap
+'@expect screen 0 "Hi20"
+SUB greet(n AS UByte)
+  DIM s AS String
+  s = "Hi" + STR$(n)
+  IF n = 20 THEN PRINT s
+END SUB
+DIM i AS UByte
+FOR i = 1 TO 20: greet(i): NEXT i

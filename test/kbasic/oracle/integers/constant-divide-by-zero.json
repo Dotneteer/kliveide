@@ -1,0 +1,5 @@
+{
+  "program": "integers/constant-divide-by-zero.zxbas",
+  "zxbc": "zxbc 1.19.0",
+  "compileError": "zxbc crashed: ZeroDivisionError: division by zero"
+}

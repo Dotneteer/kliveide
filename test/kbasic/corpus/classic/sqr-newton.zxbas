@@ -1,0 +1,9 @@
+' Newton's square root against SQR
+'@expect screen 0 "1 1414213"
+DIM x, g AS Float
+DIM i AS UByte
+x = 2: g = 1
+FOR i = 1 TO 6
+  g = (g + x / g) / 2
+NEXT i
+PRINT ABS(g - SQR(2)) < 1E-7; " "; INT(g * 1E6)

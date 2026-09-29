@@ -122,6 +122,7 @@ import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { NextRegPanel } from "./appIde/SideBarPanels/NextRegPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
+import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
 import { PalettePanel } from "./appIde/SideBarPanels/PalettePanel";
 import { sjasmZ80LanguageProvider } from "./appIde/project/sjasmZ80LanguageProvider";
@@ -248,6 +249,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     renderer: BlinkPanel,
     initialSize: 500,
     requireFeature: [MF_BLINK]
+  },
+  {
+    id: "variablesPanel",
+    title: "Variables",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    useScrollViewer: false,
+    renderer: VariablesPanel,
+    expandedOnInit: false
   },
   {
     id: "watchPanel",

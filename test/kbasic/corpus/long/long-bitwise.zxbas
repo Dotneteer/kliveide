@@ -1,0 +1,4 @@
+' Bitwise operators and shifts on 32-bit values (a literal's shift: integers/literal-typing.zxbas)
+'@expect screen 0 "22136 4660 127 1"
+DIM a AS ULong = 305419896
+PRINT (a BAND 65535); " "; (a SHR 16); " "; (a BOR 15) BAND 255; " "; (CAST(ULong, 1) SHL 31) = 2147483648

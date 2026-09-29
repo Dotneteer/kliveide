@@ -1,0 +1,365 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "DIM AS UByte = -2.5": {
+   "out": "253"
+  },
+  "DIM AS UByte = 2.5": {
+   "out": "2"
+  },
+  "DIM AS UByte = -0.1": {
+   "out": "255"
+  },
+  "DIM AS UByte = 0.001": {
+   "out": "0"
+  },
+  "DIM AS UByte = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS UByte = -1 / 3": {
+   "out": "255"
+  },
+  "DIM AS UByte = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS UByte = 1E10": {
+   "out": "0"
+  },
+  "DIM AS UByte = 70000": {
+   "out": "112"
+  },
+  "DIM AS UByte = -1": {
+   "out": "255"
+  },
+  "DIM AS UByte = 300": {
+   "out": "44"
+  },
+  "DIM AS UByte = -129": {
+   "out": "127"
+  },
+  "DIM AS UByte = 65536": {
+   "out": "0"
+  },
+  "DIM AS UByte = 3.99": {
+   "out": "3"
+  },
+  "DIM AS UByte = -3.99": {
+   "out": "252"
+  },
+  "DIM AS Byte = -2.5": {
+   "out": "-3"
+  },
+  "DIM AS Byte = 2.5": {
+   "out": "2"
+  },
+  "DIM AS Byte = -0.1": {
+   "out": "-1"
+  },
+  "DIM AS Byte = 0.001": {
+   "out": "0"
+  },
+  "DIM AS Byte = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS Byte = -1 / 3": {
+   "out": "-1"
+  },
+  "DIM AS Byte = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS Byte = 1E10": {
+   "out": "0"
+  },
+  "DIM AS Byte = 70000": {
+   "out": "112"
+  },
+  "DIM AS Byte = -1": {
+   "out": "-1"
+  },
+  "DIM AS Byte = 300": {
+   "out": "44"
+  },
+  "DIM AS Byte = -129": {
+   "out": "127"
+  },
+  "DIM AS Byte = 65536": {
+   "out": "0"
+  },
+  "DIM AS Byte = 3.99": {
+   "out": "3"
+  },
+  "DIM AS Byte = -3.99": {
+   "out": "-4"
+  },
+  "DIM AS UInteger = -2.5": {
+   "out": "65533"
+  },
+  "DIM AS UInteger = 2.5": {
+   "out": "2"
+  },
+  "DIM AS UInteger = -0.1": {
+   "out": "65535"
+  },
+  "DIM AS UInteger = 0.001": {
+   "out": "0"
+  },
+  "DIM AS UInteger = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS UInteger = -1 / 3": {
+   "out": "65535"
+  },
+  "DIM AS UInteger = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS UInteger = 1E10": {
+   "out": "58368"
+  },
+  "DIM AS UInteger = 70000": {
+   "out": "4464"
+  },
+  "DIM AS UInteger = -1": {
+   "out": "65535"
+  },
+  "DIM AS UInteger = 300": {
+   "out": "300"
+  },
+  "DIM AS UInteger = -129": {
+   "out": "65407"
+  },
+  "DIM AS UInteger = 65536": {
+   "out": "0"
+  },
+  "DIM AS UInteger = 3.99": {
+   "out": "3"
+  },
+  "DIM AS UInteger = -3.99": {
+   "out": "65532"
+  },
+  "DIM AS Integer = -2.5": {
+   "out": "-3"
+  },
+  "DIM AS Integer = 2.5": {
+   "out": "2"
+  },
+  "DIM AS Integer = -0.1": {
+   "out": "-1"
+  },
+  "DIM AS Integer = 0.001": {
+   "out": "0"
+  },
+  "DIM AS Integer = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS Integer = -1 / 3": {
+   "out": "-1"
+  },
+  "DIM AS Integer = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS Integer = 1E10": {
+   "out": "-7168"
+  },
+  "DIM AS Integer = 70000": {
+   "out": "4464"
+  },
+  "DIM AS Integer = -1": {
+   "out": "-1"
+  },
+  "DIM AS Integer = 300": {
+   "out": "300"
+  },
+  "DIM AS Integer = -129": {
+   "out": "-129"
+  },
+  "DIM AS Integer = 65536": {
+   "out": "0"
+  },
+  "DIM AS Integer = 3.99": {
+   "out": "3"
+  },
+  "DIM AS Integer = -3.99": {
+   "out": "-4"
+  },
+  "DIM AS ULong = -2.5": {
+   "out": "4294967293"
+  },
+  "DIM AS ULong = 2.5": {
+   "out": "2"
+  },
+  "DIM AS ULong = -0.1": {
+   "out": "4294967295"
+  },
+  "DIM AS ULong = 0.001": {
+   "out": "0"
+  },
+  "DIM AS ULong = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS ULong = -1 / 3": {
+   "out": "4294967295"
+  },
+  "DIM AS ULong = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS ULong = 1E10": {
+   "out": "1410065408"
+  },
+  "DIM AS ULong = 70000": {
+   "out": "70000"
+  },
+  "DIM AS ULong = -1": {
+   "out": "4294967295"
+  },
+  "DIM AS ULong = 300": {
+   "out": "300"
+  },
+  "DIM AS ULong = -129": {
+   "out": "4294967167"
+  },
+  "DIM AS ULong = 65536": {
+   "out": "65536"
+  },
+  "DIM AS ULong = 3.99": {
+   "out": "3"
+  },
+  "DIM AS ULong = -3.99": {
+   "out": "4294967292"
+  },
+  "DIM AS Long = -2.5": {
+   "out": "-3"
+  },
+  "DIM AS Long = 2.5": {
+   "out": "2"
+  },
+  "DIM AS Long = -0.1": {
+   "out": "-1"
+  },
+  "DIM AS Long = 0.001": {
+   "out": "0"
+  },
+  "DIM AS Long = 1 / 3": {
+   "out": "0"
+  },
+  "DIM AS Long = -1 / 3": {
+   "out": "-1"
+  },
+  "DIM AS Long = 7 / 2": {
+   "out": "3"
+  },
+  "DIM AS Long = 1E10": {
+   "out": "1410065408"
+  },
+  "DIM AS Long = 70000": {
+   "out": "70000"
+  },
+  "DIM AS Long = -1": {
+   "out": "-1"
+  },
+  "DIM AS Long = 300": {
+   "out": "300"
+  },
+  "DIM AS Long = -129": {
+   "out": "-129"
+  },
+  "DIM AS Long = 65536": {
+   "out": "65536"
+  },
+  "DIM AS Long = 3.99": {
+   "out": "3"
+  },
+  "DIM AS Long = -3.99": {
+   "out": "-4"
+  },
+  "DIM AS Fixed = -2.5": {
+   "out": "-2.5"
+  },
+  "DIM AS Fixed = 2.5": {
+   "out": "2.5"
+  },
+  "DIM AS Fixed = -0.1": {
+   "out": "-0.0999908447265625"
+  },
+  "DIM AS Fixed = 0.001": {
+   "out": "0.0009918212890625"
+  },
+  "DIM AS Fixed = 1 / 3": {
+   "out": "0.3333282470703125"
+  },
+  "DIM AS Fixed = -1 / 3": {
+   "out": "-0.3333282470703125"
+  },
+  "DIM AS Fixed = 7 / 2": {
+   "out": "3.5"
+  },
+  "DIM AS Fixed = 1E10": {
+   "out": "-7168"
+  },
+  "DIM AS Fixed = 70000": {
+   "out": "4464"
+  },
+  "DIM AS Fixed = -1": {
+   "out": "-1"
+  },
+  "DIM AS Fixed = 300": {
+   "out": "300"
+  },
+  "DIM AS Fixed = -129": {
+   "out": "-129"
+  },
+  "DIM AS Fixed = 65536": {
+   "out": "0"
+  },
+  "DIM AS Fixed = 3.99": {
+   "out": "3.989990234375"
+  },
+  "DIM AS Fixed = -3.99": {
+   "out": "-3.989990234375"
+  },
+  "DIM AS Float = -2.5": {
+   "out": "-2.5"
+  },
+  "DIM AS Float = 2.5": {
+   "out": "2.5"
+  },
+  "DIM AS Float = -0.1": {
+   "out": "-0.1"
+  },
+  "DIM AS Float = 0.001": {
+   "out": ".001"
+  },
+  "DIM AS Float = 1 / 3": {
+   "out": "0.33333333"
+  },
+  "DIM AS Float = -1 / 3": {
+   "out": "-0.33333333"
+  },
+  "DIM AS Float = 7 / 2": {
+   "out": "3.5"
+  },
+  "DIM AS Float = 1E10": {
+   "out": "1E+10"
+  },
+  "DIM AS Float = 70000": {
+   "out": "70000"
+  },
+  "DIM AS Float = -1": {
+   "out": "-1"
+  },
+  "DIM AS Float = 300": {
+   "out": "300"
+  },
+  "DIM AS Float = -129": {
+   "out": "-129"
+  },
+  "DIM AS Float = 65536": {
+   "out": "65536"
+  },
+  "DIM AS Float = 3.99": {
+   "out": "3.99"
+  },
+  "DIM AS Float = -3.99": {
+   "out": "-3.99"
+  }
+ }
+}

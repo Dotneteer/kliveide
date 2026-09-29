@@ -1,0 +1,5 @@
+' Colour items in a PRINT last to its end
+'@expect peek $5800 $11
+'@expect peek $5801 $38
+PRINT INK 1; PAPER 2; "a"
+PRINT AT 0, 1; "b"

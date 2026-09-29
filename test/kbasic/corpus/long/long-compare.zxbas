@@ -1,0 +1,9 @@
+' Long and ULong comparisons, in both directions
+'@expect screen 0 "1100 0011 10"
+DIM a AS Long = -70000
+DIM b AS Long = 70000
+DIM u AS ULong = 3000000000
+DIM v AS ULong = 70000
+PRINT a < b; a <= b; a > b; a >= b; " ";
+PRINT u < v; u <= v; u > v; u >= v; " ";
+PRINT a = -70000; b <> 70000

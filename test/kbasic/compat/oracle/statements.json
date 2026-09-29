@@ -1,0 +1,155 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "order: g + f()": {
+   "out": "16"
+  },
+  "order: f() + g": {
+   "out": "16"
+  },
+  "order: g - f()": {
+   "out": "14"
+  },
+  "order: g * 2 - f()": {
+   "out": "9"
+  },
+  "order: (g + 0) + f()": {
+   "out": "6"
+  },
+  "order: -g + f()": {
+   "out": "-4"
+  },
+  "order: g + f() * 1": {
+   "out": "16"
+  },
+  "order: t(1) + f()": {
+   "out": "8"
+  },
+  "order: u + f()": {
+   "out": "6"
+  },
+  "order: fl + f()": {
+   "out": "16"
+  },
+  "order: g + f() + g": {
+   "out": "31"
+  },
+  "order: f() + g + f()": {
+   "out": "17"
+  },
+  "order: g + (f() + g)": {
+   "out": "31"
+  },
+  "order: g = f()": {
+   "out": "0"
+  },
+  "order: g AND f()": {
+   "out": "1"
+  },
+  "order: s + h()": {
+   "out": "bc"
+  },
+  "order: 100 + f() + g": {
+   "out": "116"
+  },
+  "order: g < f()": {
+   "out": "0"
+  },
+  "order: f() - f()": {
+   "out": "0"
+  },
+  "order: b + f()": {
+   "out": "104"
+  },
+  "order: (g + b) + f()": {
+   "out": "9"
+  },
+  "order: CAST(Integer, g) + f()": {
+   "out": "16"
+  },
+  "order: g2(g, f())": {
+   "out": "1501"
+  },
+  "order: g2(f(), g)": {
+   "out": "105"
+  },
+  "assign: t(g) = f()": {
+   "out": "0 0 50 2"
+  },
+  "assign: t(g + 0) = f()": {
+   "out": "0 0 50 2"
+  },
+  "assign: t(h()) = f()": {
+   "out": "0 0 0 3"
+  },
+  "assign: g = g + f()": {
+   "out": "51"
+  },
+  "named: s(c := 7, a := 5)": {
+   "out": "7-5-2"
+  },
+  "named: s(1, c := 9)": {
+   "out": "1-9-2"
+  },
+  "named: s(b := 4)": {
+   "out": "4-1-3"
+  },
+  "named: s(a := 1, b := 2, c := 3)": {
+   "out": "1-2-3"
+  },
+  "named: fn(y := 2, x := 1)": {
+   "out": "201"
+  },
+  "for: limit and step changed in the body": {
+   "out": "1"
+  },
+  "for: limit raised in the body": {
+   "out": "5"
+  },
+  "for: step changed in the body": {
+   "out": "4"
+  },
+  "for: limit from a FUNCTION": {
+   "out": "405"
+  },
+  "for: step from a FUNCTION": {
+   "out": "409"
+  },
+  "for: start from a FUNCTION": {
+   "out": "401"
+  },
+  "for: UInteger with a negative Integer STEP": {
+   "out": "1000"
+  },
+  "for: UByte with a negative Byte STEP": {
+   "out": "9"
+  },
+  "for: UByte with a negative literal STEP": {
+   "out": "4001"
+  },
+  "for: Integer with a UByte STEP variable": {
+   "out": "413"
+  },
+  "for: no pass": {
+   "out": "0"
+  },
+  "for: the variable changed in the body": {
+   "out": "413"
+  },
+  "for: Float variable, 0.1 steps": {
+   "out": "1010"
+  },
+  "for: Fixed variable, 0.25 steps": {
+   "out": "625"
+  },
+  "for: UByte up to 255": {
+   "out": "21014"
+  },
+  "for: Byte down to -128": {
+   "out": "21111"
+  },
+  "for: an undeclared variable": {
+   "out": "3301"
+  }
+ }
+}

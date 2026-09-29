@@ -1,0 +1,4 @@
+' USR calls machine code and gives its BC
+'@expect screen 0 "12345"
+POKE 40000, 1: POKE 40001, 57: POKE 40002, 48: POKE 40003, 201
+PRINT USR 40000

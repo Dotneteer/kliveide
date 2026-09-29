@@ -1,0 +1,839 @@
+{
+ "suite": "strings",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "\"abc\", \"abd\": LEN(s)",
+   "decl": [
+    "DIM v2314 AS String = \"abc\"",
+    "DIM v2315 AS String = \"abd\""
+   ],
+   "expr": "LEN(v2314)"
+  },
+  {
+   "id": "\"abc\", \"abd\": CODE(s)",
+   "decl": [
+    "DIM v2316 AS String = \"abc\"",
+    "DIM v2317 AS String = \"abd\""
+   ],
+   "expr": "CODE(v2316)"
+  },
+  {
+   "id": "\"abc\", \"abd\": s + t",
+   "decl": [
+    "DIM v2318 AS String = \"abc\"",
+    "DIM v2319 AS String = \"abd\""
+   ],
+   "expr": "v2318 + v2319"
+  },
+  {
+   "id": "\"abc\", \"abd\": t + s",
+   "decl": [
+    "DIM v2320 AS String = \"abc\"",
+    "DIM v2321 AS String = \"abd\""
+   ],
+   "expr": "v2321 + v2320"
+  },
+  {
+   "id": "\"abc\", \"abd\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2322 AS String = \"abc\"",
+    "DIM v2323 AS String = \"abd\""
+   ],
+   "expr": "STR$(LEN(v2322)) + v2322"
+  },
+  {
+   "id": "\"abc\", \"abd\": CHR$(65) + s",
+   "decl": [
+    "DIM v2324 AS String = \"abc\"",
+    "DIM v2325 AS String = \"abd\""
+   ],
+   "expr": "CHR$(65) + v2324"
+  },
+  {
+   "id": "\"abc\", \"abd\": s = t",
+   "decl": [
+    "DIM v2326 AS String = \"abc\"",
+    "DIM v2327 AS String = \"abd\""
+   ],
+   "expr": "v2326 = v2327"
+  },
+  {
+   "id": "\"abc\", \"abd\": s < t",
+   "decl": [
+    "DIM v2328 AS String = \"abc\"",
+    "DIM v2329 AS String = \"abd\""
+   ],
+   "expr": "v2328 < v2329"
+  },
+  {
+   "id": "\"abc\", \"abd\": s > t",
+   "decl": [
+    "DIM v2330 AS String = \"abc\"",
+    "DIM v2331 AS String = \"abd\""
+   ],
+   "expr": "v2330 > v2331"
+  },
+  {
+   "id": "\"abc\", \"abd\": s <> t",
+   "decl": [
+    "DIM v2332 AS String = \"abc\"",
+    "DIM v2333 AS String = \"abd\""
+   ],
+   "expr": "v2332 <> v2333"
+  },
+  {
+   "id": "\"abc\", \"abd\": s <= t",
+   "decl": [
+    "DIM v2334 AS String = \"abc\"",
+    "DIM v2335 AS String = \"abd\""
+   ],
+   "expr": "v2334 <= v2335"
+  },
+  {
+   "id": "\"abc\", \"abd\": s >= t",
+   "decl": [
+    "DIM v2336 AS String = \"abc\"",
+    "DIM v2337 AS String = \"abd\""
+   ],
+   "expr": "v2336 >= v2337"
+  },
+  {
+   "id": "\"\", \"a\": LEN(s)",
+   "decl": [
+    "DIM v2338 AS String = \"\"",
+    "DIM v2339 AS String = \"a\""
+   ],
+   "expr": "LEN(v2338)"
+  },
+  {
+   "id": "\"\", \"a\": CODE(s)",
+   "decl": [
+    "DIM v2340 AS String = \"\"",
+    "DIM v2341 AS String = \"a\""
+   ],
+   "expr": "CODE(v2340)"
+  },
+  {
+   "id": "\"\", \"a\": s + t",
+   "decl": [
+    "DIM v2342 AS String = \"\"",
+    "DIM v2343 AS String = \"a\""
+   ],
+   "expr": "v2342 + v2343"
+  },
+  {
+   "id": "\"\", \"a\": t + s",
+   "decl": [
+    "DIM v2344 AS String = \"\"",
+    "DIM v2345 AS String = \"a\""
+   ],
+   "expr": "v2345 + v2344"
+  },
+  {
+   "id": "\"\", \"a\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2346 AS String = \"\"",
+    "DIM v2347 AS String = \"a\""
+   ],
+   "expr": "STR$(LEN(v2346)) + v2346"
+  },
+  {
+   "id": "\"\", \"a\": CHR$(65) + s",
+   "decl": [
+    "DIM v2348 AS String = \"\"",
+    "DIM v2349 AS String = \"a\""
+   ],
+   "expr": "CHR$(65) + v2348"
+  },
+  {
+   "id": "\"\", \"a\": s = t",
+   "decl": [
+    "DIM v2350 AS String = \"\"",
+    "DIM v2351 AS String = \"a\""
+   ],
+   "expr": "v2350 = v2351"
+  },
+  {
+   "id": "\"\", \"a\": s < t",
+   "decl": [
+    "DIM v2352 AS String = \"\"",
+    "DIM v2353 AS String = \"a\""
+   ],
+   "expr": "v2352 < v2353"
+  },
+  {
+   "id": "\"\", \"a\": s > t",
+   "decl": [
+    "DIM v2354 AS String = \"\"",
+    "DIM v2355 AS String = \"a\""
+   ],
+   "expr": "v2354 > v2355"
+  },
+  {
+   "id": "\"\", \"a\": s <> t",
+   "decl": [
+    "DIM v2356 AS String = \"\"",
+    "DIM v2357 AS String = \"a\""
+   ],
+   "expr": "v2356 <> v2357"
+  },
+  {
+   "id": "\"\", \"a\": s <= t",
+   "decl": [
+    "DIM v2358 AS String = \"\"",
+    "DIM v2359 AS String = \"a\""
+   ],
+   "expr": "v2358 <= v2359"
+  },
+  {
+   "id": "\"\", \"a\": s >= t",
+   "decl": [
+    "DIM v2360 AS String = \"\"",
+    "DIM v2361 AS String = \"a\""
+   ],
+   "expr": "v2360 >= v2361"
+  },
+  {
+   "id": "\"ab\", \"abc\": LEN(s)",
+   "decl": [
+    "DIM v2362 AS String = \"ab\"",
+    "DIM v2363 AS String = \"abc\""
+   ],
+   "expr": "LEN(v2362)"
+  },
+  {
+   "id": "\"ab\", \"abc\": CODE(s)",
+   "decl": [
+    "DIM v2364 AS String = \"ab\"",
+    "DIM v2365 AS String = \"abc\""
+   ],
+   "expr": "CODE(v2364)"
+  },
+  {
+   "id": "\"ab\", \"abc\": s + t",
+   "decl": [
+    "DIM v2366 AS String = \"ab\"",
+    "DIM v2367 AS String = \"abc\""
+   ],
+   "expr": "v2366 + v2367"
+  },
+  {
+   "id": "\"ab\", \"abc\": t + s",
+   "decl": [
+    "DIM v2368 AS String = \"ab\"",
+    "DIM v2369 AS String = \"abc\""
+   ],
+   "expr": "v2369 + v2368"
+  },
+  {
+   "id": "\"ab\", \"abc\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2370 AS String = \"ab\"",
+    "DIM v2371 AS String = \"abc\""
+   ],
+   "expr": "STR$(LEN(v2370)) + v2370"
+  },
+  {
+   "id": "\"ab\", \"abc\": CHR$(65) + s",
+   "decl": [
+    "DIM v2372 AS String = \"ab\"",
+    "DIM v2373 AS String = \"abc\""
+   ],
+   "expr": "CHR$(65) + v2372"
+  },
+  {
+   "id": "\"ab\", \"abc\": s = t",
+   "decl": [
+    "DIM v2374 AS String = \"ab\"",
+    "DIM v2375 AS String = \"abc\""
+   ],
+   "expr": "v2374 = v2375"
+  },
+  {
+   "id": "\"ab\", \"abc\": s < t",
+   "decl": [
+    "DIM v2376 AS String = \"ab\"",
+    "DIM v2377 AS String = \"abc\""
+   ],
+   "expr": "v2376 < v2377"
+  },
+  {
+   "id": "\"ab\", \"abc\": s > t",
+   "decl": [
+    "DIM v2378 AS String = \"ab\"",
+    "DIM v2379 AS String = \"abc\""
+   ],
+   "expr": "v2378 > v2379"
+  },
+  {
+   "id": "\"ab\", \"abc\": s <> t",
+   "decl": [
+    "DIM v2380 AS String = \"ab\"",
+    "DIM v2381 AS String = \"abc\""
+   ],
+   "expr": "v2380 <> v2381"
+  },
+  {
+   "id": "\"ab\", \"abc\": s <= t",
+   "decl": [
+    "DIM v2382 AS String = \"ab\"",
+    "DIM v2383 AS String = \"abc\""
+   ],
+   "expr": "v2382 <= v2383"
+  },
+  {
+   "id": "\"ab\", \"abc\": s >= t",
+   "decl": [
+    "DIM v2384 AS String = \"ab\"",
+    "DIM v2385 AS String = \"abc\""
+   ],
+   "expr": "v2384 >= v2385"
+  },
+  {
+   "id": "\"B\", \"a\": LEN(s)",
+   "decl": [
+    "DIM v2386 AS String = \"B\"",
+    "DIM v2387 AS String = \"a\""
+   ],
+   "expr": "LEN(v2386)"
+  },
+  {
+   "id": "\"B\", \"a\": CODE(s)",
+   "decl": [
+    "DIM v2388 AS String = \"B\"",
+    "DIM v2389 AS String = \"a\""
+   ],
+   "expr": "CODE(v2388)"
+  },
+  {
+   "id": "\"B\", \"a\": s + t",
+   "decl": [
+    "DIM v2390 AS String = \"B\"",
+    "DIM v2391 AS String = \"a\""
+   ],
+   "expr": "v2390 + v2391"
+  },
+  {
+   "id": "\"B\", \"a\": t + s",
+   "decl": [
+    "DIM v2392 AS String = \"B\"",
+    "DIM v2393 AS String = \"a\""
+   ],
+   "expr": "v2393 + v2392"
+  },
+  {
+   "id": "\"B\", \"a\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2394 AS String = \"B\"",
+    "DIM v2395 AS String = \"a\""
+   ],
+   "expr": "STR$(LEN(v2394)) + v2394"
+  },
+  {
+   "id": "\"B\", \"a\": CHR$(65) + s",
+   "decl": [
+    "DIM v2396 AS String = \"B\"",
+    "DIM v2397 AS String = \"a\""
+   ],
+   "expr": "CHR$(65) + v2396"
+  },
+  {
+   "id": "\"B\", \"a\": s = t",
+   "decl": [
+    "DIM v2398 AS String = \"B\"",
+    "DIM v2399 AS String = \"a\""
+   ],
+   "expr": "v2398 = v2399"
+  },
+  {
+   "id": "\"B\", \"a\": s < t",
+   "decl": [
+    "DIM v2400 AS String = \"B\"",
+    "DIM v2401 AS String = \"a\""
+   ],
+   "expr": "v2400 < v2401"
+  },
+  {
+   "id": "\"B\", \"a\": s > t",
+   "decl": [
+    "DIM v2402 AS String = \"B\"",
+    "DIM v2403 AS String = \"a\""
+   ],
+   "expr": "v2402 > v2403"
+  },
+  {
+   "id": "\"B\", \"a\": s <> t",
+   "decl": [
+    "DIM v2404 AS String = \"B\"",
+    "DIM v2405 AS String = \"a\""
+   ],
+   "expr": "v2404 <> v2405"
+  },
+  {
+   "id": "\"B\", \"a\": s <= t",
+   "decl": [
+    "DIM v2406 AS String = \"B\"",
+    "DIM v2407 AS String = \"a\""
+   ],
+   "expr": "v2406 <= v2407"
+  },
+  {
+   "id": "\"B\", \"a\": s >= t",
+   "decl": [
+    "DIM v2408 AS String = \"B\"",
+    "DIM v2409 AS String = \"a\""
+   ],
+   "expr": "v2408 >= v2409"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": LEN(s)",
+   "decl": [
+    "DIM v2410 AS String = \"Hello\"",
+    "DIM v2411 AS String = \"Hello\""
+   ],
+   "expr": "LEN(v2410)"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": CODE(s)",
+   "decl": [
+    "DIM v2412 AS String = \"Hello\"",
+    "DIM v2413 AS String = \"Hello\""
+   ],
+   "expr": "CODE(v2412)"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s + t",
+   "decl": [
+    "DIM v2414 AS String = \"Hello\"",
+    "DIM v2415 AS String = \"Hello\""
+   ],
+   "expr": "v2414 + v2415"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": t + s",
+   "decl": [
+    "DIM v2416 AS String = \"Hello\"",
+    "DIM v2417 AS String = \"Hello\""
+   ],
+   "expr": "v2417 + v2416"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2418 AS String = \"Hello\"",
+    "DIM v2419 AS String = \"Hello\""
+   ],
+   "expr": "STR$(LEN(v2418)) + v2418"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": CHR$(65) + s",
+   "decl": [
+    "DIM v2420 AS String = \"Hello\"",
+    "DIM v2421 AS String = \"Hello\""
+   ],
+   "expr": "CHR$(65) + v2420"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s = t",
+   "decl": [
+    "DIM v2422 AS String = \"Hello\"",
+    "DIM v2423 AS String = \"Hello\""
+   ],
+   "expr": "v2422 = v2423"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s < t",
+   "decl": [
+    "DIM v2424 AS String = \"Hello\"",
+    "DIM v2425 AS String = \"Hello\""
+   ],
+   "expr": "v2424 < v2425"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s > t",
+   "decl": [
+    "DIM v2426 AS String = \"Hello\"",
+    "DIM v2427 AS String = \"Hello\""
+   ],
+   "expr": "v2426 > v2427"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s <> t",
+   "decl": [
+    "DIM v2428 AS String = \"Hello\"",
+    "DIM v2429 AS String = \"Hello\""
+   ],
+   "expr": "v2428 <> v2429"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s <= t",
+   "decl": [
+    "DIM v2430 AS String = \"Hello\"",
+    "DIM v2431 AS String = \"Hello\""
+   ],
+   "expr": "v2430 <= v2431"
+  },
+  {
+   "id": "\"Hello\", \"Hello\": s >= t",
+   "decl": [
+    "DIM v2432 AS String = \"Hello\"",
+    "DIM v2433 AS String = \"Hello\""
+   ],
+   "expr": "v2432 >= v2433"
+  },
+  {
+   "id": "\"x\", \"\": LEN(s)",
+   "decl": [
+    "DIM v2434 AS String = \"x\"",
+    "DIM v2435 AS String = \"\""
+   ],
+   "expr": "LEN(v2434)"
+  },
+  {
+   "id": "\"x\", \"\": CODE(s)",
+   "decl": [
+    "DIM v2436 AS String = \"x\"",
+    "DIM v2437 AS String = \"\""
+   ],
+   "expr": "CODE(v2436)"
+  },
+  {
+   "id": "\"x\", \"\": s + t",
+   "decl": [
+    "DIM v2438 AS String = \"x\"",
+    "DIM v2439 AS String = \"\""
+   ],
+   "expr": "v2438 + v2439"
+  },
+  {
+   "id": "\"x\", \"\": t + s",
+   "decl": [
+    "DIM v2440 AS String = \"x\"",
+    "DIM v2441 AS String = \"\""
+   ],
+   "expr": "v2441 + v2440"
+  },
+  {
+   "id": "\"x\", \"\": STR$(LEN(s)) + s",
+   "decl": [
+    "DIM v2442 AS String = \"x\"",
+    "DIM v2443 AS String = \"\""
+   ],
+   "expr": "STR$(LEN(v2442)) + v2442"
+  },
+  {
+   "id": "\"x\", \"\": CHR$(65) + s",
+   "decl": [
+    "DIM v2444 AS String = \"x\"",
+    "DIM v2445 AS String = \"\""
+   ],
+   "expr": "CHR$(65) + v2444"
+  },
+  {
+   "id": "\"x\", \"\": s = t",
+   "decl": [
+    "DIM v2446 AS String = \"x\"",
+    "DIM v2447 AS String = \"\""
+   ],
+   "expr": "v2446 = v2447"
+  },
+  {
+   "id": "\"x\", \"\": s < t",
+   "decl": [
+    "DIM v2448 AS String = \"x\"",
+    "DIM v2449 AS String = \"\""
+   ],
+   "expr": "v2448 < v2449"
+  },
+  {
+   "id": "\"x\", \"\": s > t",
+   "decl": [
+    "DIM v2450 AS String = \"x\"",
+    "DIM v2451 AS String = \"\""
+   ],
+   "expr": "v2450 > v2451"
+  },
+  {
+   "id": "\"x\", \"\": s <> t",
+   "decl": [
+    "DIM v2452 AS String = \"x\"",
+    "DIM v2453 AS String = \"\""
+   ],
+   "expr": "v2452 <> v2453"
+  },
+  {
+   "id": "\"x\", \"\": s <= t",
+   "decl": [
+    "DIM v2454 AS String = \"x\"",
+    "DIM v2455 AS String = \"\""
+   ],
+   "expr": "v2454 <= v2455"
+  },
+  {
+   "id": "\"x\", \"\": s >= t",
+   "decl": [
+    "DIM v2456 AS String = \"x\"",
+    "DIM v2457 AS String = \"\""
+   ],
+   "expr": "v2456 >= v2457"
+  },
+  {
+   "id": "\"Hello World\": s(1 TO 3)",
+   "decl": [
+    "DIM v2458 AS String = \"Hello World\""
+   ],
+   "expr": "v2458(1 TO 3)"
+  },
+  {
+   "id": "\"Hello World\": s(2)",
+   "decl": [
+    "DIM v2459 AS String = \"Hello World\""
+   ],
+   "expr": "v2459(2)"
+  },
+  {
+   "id": "\"Hello World\": s(TO 2)",
+   "decl": [
+    "DIM v2460 AS String = \"Hello World\""
+   ],
+   "expr": "v2460(TO 2)"
+  },
+  {
+   "id": "\"Hello World\": s(3 TO)",
+   "decl": [
+    "DIM v2461 AS String = \"Hello World\""
+   ],
+   "expr": "v2461(3 TO)"
+  },
+  {
+   "id": "\"Hello World\": s(0)",
+   "decl": [
+    "DIM v2462 AS String = \"Hello World\""
+   ],
+   "expr": "v2462(0)"
+  },
+  {
+   "id": "\"Hello World\": s(4 TO 2)",
+   "decl": [
+    "DIM v2463 AS String = \"Hello World\""
+   ],
+   "expr": "v2463(4 TO 2)"
+  },
+  {
+   "id": "\"Hello World\": s(1 TO 99)",
+   "decl": [
+    "DIM v2464 AS String = \"Hello World\""
+   ],
+   "expr": "v2464(1 TO 99)"
+  },
+  {
+   "id": "\"Hello World\": s(0 TO 0)",
+   "decl": [
+    "DIM v2465 AS String = \"Hello World\""
+   ],
+   "expr": "v2465(0 TO 0)"
+  },
+  {
+   "id": "\"Hi\": s(1 TO 3)",
+   "decl": [
+    "DIM v2466 AS String = \"Hi\""
+   ],
+   "expr": "v2466(1 TO 3)"
+  },
+  {
+   "id": "\"Hi\": s(2)",
+   "decl": [
+    "DIM v2467 AS String = \"Hi\""
+   ],
+   "expr": "v2467(2)"
+  },
+  {
+   "id": "\"Hi\": s(TO 2)",
+   "decl": [
+    "DIM v2468 AS String = \"Hi\""
+   ],
+   "expr": "v2468(TO 2)"
+  },
+  {
+   "id": "\"Hi\": s(3 TO)",
+   "decl": [
+    "DIM v2469 AS String = \"Hi\""
+   ],
+   "expr": "v2469(3 TO)"
+  },
+  {
+   "id": "\"Hi\": s(0)",
+   "decl": [
+    "DIM v2470 AS String = \"Hi\""
+   ],
+   "expr": "v2470(0)"
+  },
+  {
+   "id": "\"Hi\": s(4 TO 2)",
+   "decl": [
+    "DIM v2471 AS String = \"Hi\""
+   ],
+   "expr": "v2471(4 TO 2)"
+  },
+  {
+   "id": "\"Hi\": s(1 TO 99)",
+   "decl": [
+    "DIM v2472 AS String = \"Hi\""
+   ],
+   "expr": "v2472(1 TO 99)"
+  },
+  {
+   "id": "\"Hi\": s(0 TO 0)",
+   "decl": [
+    "DIM v2473 AS String = \"Hi\""
+   ],
+   "expr": "v2473(0 TO 0)"
+  },
+  {
+   "id": "\"\": s(1 TO 3)",
+   "decl": [
+    "DIM v2474 AS String = \"\""
+   ],
+   "expr": "v2474(1 TO 3)"
+  },
+  {
+   "id": "\"\": s(2)",
+   "decl": [
+    "DIM v2475 AS String = \"\""
+   ],
+   "expr": "v2475(2)"
+  },
+  {
+   "id": "\"\": s(TO 2)",
+   "decl": [
+    "DIM v2476 AS String = \"\""
+   ],
+   "expr": "v2476(TO 2)"
+  },
+  {
+   "id": "\"\": s(3 TO)",
+   "decl": [
+    "DIM v2477 AS String = \"\""
+   ],
+   "expr": "v2477(3 TO)"
+  },
+  {
+   "id": "\"\": s(0)",
+   "decl": [
+    "DIM v2478 AS String = \"\""
+   ],
+   "expr": "v2478(0)"
+  },
+  {
+   "id": "\"\": s(4 TO 2)",
+   "decl": [
+    "DIM v2479 AS String = \"\""
+   ],
+   "expr": "v2479(4 TO 2)"
+  },
+  {
+   "id": "\"\": s(1 TO 99)",
+   "decl": [
+    "DIM v2480 AS String = \"\""
+   ],
+   "expr": "v2480(1 TO 99)"
+  },
+  {
+   "id": "\"\": s(0 TO 0)",
+   "decl": [
+    "DIM v2481 AS String = \"\""
+   ],
+   "expr": "v2481(0 TO 0)"
+  },
+  {
+   "id": "STR$(1.5)",
+   "decl": [],
+   "expr": "STR$(1.5)"
+  },
+  {
+   "id": "STR$(-0.001)",
+   "decl": [],
+   "expr": "STR$(-0.001)"
+  },
+  {
+   "id": "STR$(1E10)",
+   "decl": [],
+   "expr": "STR$(1E10)"
+  },
+  {
+   "id": "STR$(65535)",
+   "decl": [],
+   "expr": "STR$(65535)"
+  },
+  {
+   "id": "STR$(-32768)",
+   "decl": [],
+   "expr": "STR$(-32768)"
+  },
+  {
+   "id": "STR$(0.1)",
+   "decl": [],
+   "expr": "STR$(0.1)"
+  },
+  {
+   "id": "STR$(1 / 3)",
+   "decl": [],
+   "expr": "STR$(1 / 3)"
+  },
+  {
+   "id": "STR$(3.0)",
+   "decl": [],
+   "expr": "STR$(3.0)"
+  },
+  {
+   "id": "STR$(Float 0.1)",
+   "decl": [
+    "DIM v2482 AS Float = 0.1"
+   ],
+   "expr": "STR$(v2482)"
+  },
+  {
+   "id": "STR$(Float -2.5)",
+   "decl": [
+    "DIM v2483 AS Float = -2.5"
+   ],
+   "expr": "STR$(v2483)"
+  },
+  {
+   "id": "STR$(Fixed 0.1)",
+   "decl": [
+    "DIM v2484 AS Fixed = 0.1"
+   ],
+   "expr": "STR$(v2484)"
+  },
+  {
+   "id": "STR$(Fixed -2.5)",
+   "decl": [
+    "DIM v2485 AS Fixed = -2.5"
+   ],
+   "expr": "STR$(v2485)"
+  },
+  {
+   "id": "STR$(Long -100000)",
+   "decl": [
+    "DIM v2486 AS Long = -100000"
+   ],
+   "expr": "STR$(v2486)"
+  },
+  {
+   "id": "STR$(UByte 200)",
+   "decl": [
+    "DIM v2487 AS UByte = 200"
+   ],
+   "expr": "STR$(v2487)"
+  },
+  {
+   "id": "STR$(Integer -32768)",
+   "decl": [
+    "DIM v2488 AS Integer = -32768"
+   ],
+   "expr": "STR$(v2488)"
+  }
+ ]
+}

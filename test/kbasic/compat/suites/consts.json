@@ -1,0 +1,888 @@
+{
+ "suite": "consts",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "CONST AS UByte 200: k",
+   "decl": [
+    "CONST v1185 AS UByte = 200"
+   ],
+   "expr": "v1185"
+  },
+  {
+   "id": "CONST AS UByte 200: k + k",
+   "decl": [
+    "CONST v1186 AS UByte = 200"
+   ],
+   "expr": "v1186 + v1186"
+  },
+  {
+   "id": "CONST AS UByte 200: k * 3",
+   "decl": [
+    "CONST v1187 AS UByte = 200"
+   ],
+   "expr": "v1187 * 3"
+  },
+  {
+   "id": "CONST AS UByte 200: k - 300",
+   "decl": [
+    "CONST v1188 AS UByte = 200"
+   ],
+   "expr": "v1188 - 300"
+  },
+  {
+   "id": "CONST AS UByte 200: -k",
+   "decl": [
+    "CONST v1189 AS UByte = 200"
+   ],
+   "expr": "-v1189"
+  },
+  {
+   "id": "CONST AS UByte 200: k / 7",
+   "decl": [
+    "CONST v1190 AS UByte = 200"
+   ],
+   "expr": "v1190 / 7"
+  },
+  {
+   "id": "CONST AS UByte 200: k MOD 7",
+   "decl": [
+    "CONST v1191 AS UByte = 200"
+   ],
+   "expr": "v1191 MOD 7"
+  },
+  {
+   "id": "CONST AS UByte 7: k",
+   "decl": [
+    "CONST v1192 AS UByte = 7"
+   ],
+   "expr": "v1192"
+  },
+  {
+   "id": "CONST AS UByte 7: k + k",
+   "decl": [
+    "CONST v1193 AS UByte = 7"
+   ],
+   "expr": "v1193 + v1193"
+  },
+  {
+   "id": "CONST AS UByte 7: k * 3",
+   "decl": [
+    "CONST v1194 AS UByte = 7"
+   ],
+   "expr": "v1194 * 3"
+  },
+  {
+   "id": "CONST AS UByte 7: k - 300",
+   "decl": [
+    "CONST v1195 AS UByte = 7"
+   ],
+   "expr": "v1195 - 300"
+  },
+  {
+   "id": "CONST AS UByte 7: -k",
+   "decl": [
+    "CONST v1196 AS UByte = 7"
+   ],
+   "expr": "-v1196"
+  },
+  {
+   "id": "CONST AS UByte 7: k / 7",
+   "decl": [
+    "CONST v1197 AS UByte = 7"
+   ],
+   "expr": "v1197 / 7"
+  },
+  {
+   "id": "CONST AS UByte 7: k MOD 7",
+   "decl": [
+    "CONST v1198 AS UByte = 7"
+   ],
+   "expr": "v1198 MOD 7"
+  },
+  {
+   "id": "CONST AS Byte -7: k",
+   "decl": [
+    "CONST v1199 AS Byte = -7"
+   ],
+   "expr": "v1199"
+  },
+  {
+   "id": "CONST AS Byte -7: k + k",
+   "decl": [
+    "CONST v1200 AS Byte = -7"
+   ],
+   "expr": "v1200 + v1200"
+  },
+  {
+   "id": "CONST AS Byte -7: k * 3",
+   "decl": [
+    "CONST v1201 AS Byte = -7"
+   ],
+   "expr": "v1201 * 3"
+  },
+  {
+   "id": "CONST AS Byte -7: k - 300",
+   "decl": [
+    "CONST v1202 AS Byte = -7"
+   ],
+   "expr": "v1202 - 300"
+  },
+  {
+   "id": "CONST AS Byte -7: -k",
+   "decl": [
+    "CONST v1203 AS Byte = -7"
+   ],
+   "expr": "-v1203"
+  },
+  {
+   "id": "CONST AS Byte -7: k / 7",
+   "decl": [
+    "CONST v1204 AS Byte = -7"
+   ],
+   "expr": "v1204 / 7"
+  },
+  {
+   "id": "CONST AS Byte -7: k MOD 7",
+   "decl": [
+    "CONST v1205 AS Byte = -7"
+   ],
+   "expr": "v1205 MOD 7"
+  },
+  {
+   "id": "CONST AS Byte 7: k",
+   "decl": [
+    "CONST v1206 AS Byte = 7"
+   ],
+   "expr": "v1206"
+  },
+  {
+   "id": "CONST AS Byte 7: k + k",
+   "decl": [
+    "CONST v1207 AS Byte = 7"
+   ],
+   "expr": "v1207 + v1207"
+  },
+  {
+   "id": "CONST AS Byte 7: k * 3",
+   "decl": [
+    "CONST v1208 AS Byte = 7"
+   ],
+   "expr": "v1208 * 3"
+  },
+  {
+   "id": "CONST AS Byte 7: k - 300",
+   "decl": [
+    "CONST v1209 AS Byte = 7"
+   ],
+   "expr": "v1209 - 300"
+  },
+  {
+   "id": "CONST AS Byte 7: -k",
+   "decl": [
+    "CONST v1210 AS Byte = 7"
+   ],
+   "expr": "-v1210"
+  },
+  {
+   "id": "CONST AS Byte 7: k / 7",
+   "decl": [
+    "CONST v1211 AS Byte = 7"
+   ],
+   "expr": "v1211 / 7"
+  },
+  {
+   "id": "CONST AS Byte 7: k MOD 7",
+   "decl": [
+    "CONST v1212 AS Byte = 7"
+   ],
+   "expr": "v1212 MOD 7"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k",
+   "decl": [
+    "CONST v1213 AS UInteger = 60000"
+   ],
+   "expr": "v1213"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k + k",
+   "decl": [
+    "CONST v1214 AS UInteger = 60000"
+   ],
+   "expr": "v1214 + v1214"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k * 3",
+   "decl": [
+    "CONST v1215 AS UInteger = 60000"
+   ],
+   "expr": "v1215 * 3"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k - 300",
+   "decl": [
+    "CONST v1216 AS UInteger = 60000"
+   ],
+   "expr": "v1216 - 300"
+  },
+  {
+   "id": "CONST AS UInteger 60000: -k",
+   "decl": [
+    "CONST v1217 AS UInteger = 60000"
+   ],
+   "expr": "-v1217"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k / 7",
+   "decl": [
+    "CONST v1218 AS UInteger = 60000"
+   ],
+   "expr": "v1218 / 7"
+  },
+  {
+   "id": "CONST AS UInteger 60000: k MOD 7",
+   "decl": [
+    "CONST v1219 AS UInteger = 60000"
+   ],
+   "expr": "v1219 MOD 7"
+  },
+  {
+   "id": "CONST AS UInteger 7: k",
+   "decl": [
+    "CONST v1220 AS UInteger = 7"
+   ],
+   "expr": "v1220"
+  },
+  {
+   "id": "CONST AS UInteger 7: k + k",
+   "decl": [
+    "CONST v1221 AS UInteger = 7"
+   ],
+   "expr": "v1221 + v1221"
+  },
+  {
+   "id": "CONST AS UInteger 7: k * 3",
+   "decl": [
+    "CONST v1222 AS UInteger = 7"
+   ],
+   "expr": "v1222 * 3"
+  },
+  {
+   "id": "CONST AS UInteger 7: k - 300",
+   "decl": [
+    "CONST v1223 AS UInteger = 7"
+   ],
+   "expr": "v1223 - 300"
+  },
+  {
+   "id": "CONST AS UInteger 7: -k",
+   "decl": [
+    "CONST v1224 AS UInteger = 7"
+   ],
+   "expr": "-v1224"
+  },
+  {
+   "id": "CONST AS UInteger 7: k / 7",
+   "decl": [
+    "CONST v1225 AS UInteger = 7"
+   ],
+   "expr": "v1225 / 7"
+  },
+  {
+   "id": "CONST AS UInteger 7: k MOD 7",
+   "decl": [
+    "CONST v1226 AS UInteger = 7"
+   ],
+   "expr": "v1226 MOD 7"
+  },
+  {
+   "id": "CONST AS Integer -100: k",
+   "decl": [
+    "CONST v1227 AS Integer = -100"
+   ],
+   "expr": "v1227"
+  },
+  {
+   "id": "CONST AS Integer -100: k + k",
+   "decl": [
+    "CONST v1228 AS Integer = -100"
+   ],
+   "expr": "v1228 + v1228"
+  },
+  {
+   "id": "CONST AS Integer -100: k * 3",
+   "decl": [
+    "CONST v1229 AS Integer = -100"
+   ],
+   "expr": "v1229 * 3"
+  },
+  {
+   "id": "CONST AS Integer -100: k - 300",
+   "decl": [
+    "CONST v1230 AS Integer = -100"
+   ],
+   "expr": "v1230 - 300"
+  },
+  {
+   "id": "CONST AS Integer -100: -k",
+   "decl": [
+    "CONST v1231 AS Integer = -100"
+   ],
+   "expr": "-v1231"
+  },
+  {
+   "id": "CONST AS Integer -100: k / 7",
+   "decl": [
+    "CONST v1232 AS Integer = -100"
+   ],
+   "expr": "v1232 / 7"
+  },
+  {
+   "id": "CONST AS Integer -100: k MOD 7",
+   "decl": [
+    "CONST v1233 AS Integer = -100"
+   ],
+   "expr": "v1233 MOD 7"
+  },
+  {
+   "id": "CONST AS Integer 100: k",
+   "decl": [
+    "CONST v1234 AS Integer = 100"
+   ],
+   "expr": "v1234"
+  },
+  {
+   "id": "CONST AS Integer 100: k + k",
+   "decl": [
+    "CONST v1235 AS Integer = 100"
+   ],
+   "expr": "v1235 + v1235"
+  },
+  {
+   "id": "CONST AS Integer 100: k * 3",
+   "decl": [
+    "CONST v1236 AS Integer = 100"
+   ],
+   "expr": "v1236 * 3"
+  },
+  {
+   "id": "CONST AS Integer 100: k - 300",
+   "decl": [
+    "CONST v1237 AS Integer = 100"
+   ],
+   "expr": "v1237 - 300"
+  },
+  {
+   "id": "CONST AS Integer 100: -k",
+   "decl": [
+    "CONST v1238 AS Integer = 100"
+   ],
+   "expr": "-v1238"
+  },
+  {
+   "id": "CONST AS Integer 100: k / 7",
+   "decl": [
+    "CONST v1239 AS Integer = 100"
+   ],
+   "expr": "v1239 / 7"
+  },
+  {
+   "id": "CONST AS Integer 100: k MOD 7",
+   "decl": [
+    "CONST v1240 AS Integer = 100"
+   ],
+   "expr": "v1240 MOD 7"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k",
+   "decl": [
+    "CONST v1241 AS ULong = 4000000000"
+   ],
+   "expr": "v1241"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k + k",
+   "decl": [
+    "CONST v1242 AS ULong = 4000000000"
+   ],
+   "expr": "v1242 + v1242"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k * 3",
+   "decl": [
+    "CONST v1243 AS ULong = 4000000000"
+   ],
+   "expr": "v1243 * 3"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k - 300",
+   "decl": [
+    "CONST v1244 AS ULong = 4000000000"
+   ],
+   "expr": "v1244 - 300"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: -k",
+   "decl": [
+    "CONST v1245 AS ULong = 4000000000"
+   ],
+   "expr": "-v1245"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k / 7",
+   "decl": [
+    "CONST v1246 AS ULong = 4000000000"
+   ],
+   "expr": "v1246 / 7"
+  },
+  {
+   "id": "CONST AS ULong 4000000000: k MOD 7",
+   "decl": [
+    "CONST v1247 AS ULong = 4000000000"
+   ],
+   "expr": "v1247 MOD 7"
+  },
+  {
+   "id": "CONST AS ULong 7: k",
+   "decl": [
+    "CONST v1248 AS ULong = 7"
+   ],
+   "expr": "v1248"
+  },
+  {
+   "id": "CONST AS ULong 7: k + k",
+   "decl": [
+    "CONST v1249 AS ULong = 7"
+   ],
+   "expr": "v1249 + v1249"
+  },
+  {
+   "id": "CONST AS ULong 7: k * 3",
+   "decl": [
+    "CONST v1250 AS ULong = 7"
+   ],
+   "expr": "v1250 * 3"
+  },
+  {
+   "id": "CONST AS ULong 7: k - 300",
+   "decl": [
+    "CONST v1251 AS ULong = 7"
+   ],
+   "expr": "v1251 - 300"
+  },
+  {
+   "id": "CONST AS ULong 7: -k",
+   "decl": [
+    "CONST v1252 AS ULong = 7"
+   ],
+   "expr": "-v1252"
+  },
+  {
+   "id": "CONST AS ULong 7: k / 7",
+   "decl": [
+    "CONST v1253 AS ULong = 7"
+   ],
+   "expr": "v1253 / 7"
+  },
+  {
+   "id": "CONST AS ULong 7: k MOD 7",
+   "decl": [
+    "CONST v1254 AS ULong = 7"
+   ],
+   "expr": "v1254 MOD 7"
+  },
+  {
+   "id": "CONST AS Long -100000: k",
+   "decl": [
+    "CONST v1255 AS Long = -100000"
+   ],
+   "expr": "v1255"
+  },
+  {
+   "id": "CONST AS Long -100000: k + k",
+   "decl": [
+    "CONST v1256 AS Long = -100000"
+   ],
+   "expr": "v1256 + v1256"
+  },
+  {
+   "id": "CONST AS Long -100000: k * 3",
+   "decl": [
+    "CONST v1257 AS Long = -100000"
+   ],
+   "expr": "v1257 * 3"
+  },
+  {
+   "id": "CONST AS Long -100000: k - 300",
+   "decl": [
+    "CONST v1258 AS Long = -100000"
+   ],
+   "expr": "v1258 - 300"
+  },
+  {
+   "id": "CONST AS Long -100000: -k",
+   "decl": [
+    "CONST v1259 AS Long = -100000"
+   ],
+   "expr": "-v1259"
+  },
+  {
+   "id": "CONST AS Long -100000: k / 7",
+   "decl": [
+    "CONST v1260 AS Long = -100000"
+   ],
+   "expr": "v1260 / 7"
+  },
+  {
+   "id": "CONST AS Long -100000: k MOD 7",
+   "decl": [
+    "CONST v1261 AS Long = -100000"
+   ],
+   "expr": "v1261 MOD 7"
+  },
+  {
+   "id": "CONST AS Long 100000: k",
+   "decl": [
+    "CONST v1262 AS Long = 100000"
+   ],
+   "expr": "v1262"
+  },
+  {
+   "id": "CONST AS Long 100000: k + k",
+   "decl": [
+    "CONST v1263 AS Long = 100000"
+   ],
+   "expr": "v1263 + v1263"
+  },
+  {
+   "id": "CONST AS Long 100000: k * 3",
+   "decl": [
+    "CONST v1264 AS Long = 100000"
+   ],
+   "expr": "v1264 * 3"
+  },
+  {
+   "id": "CONST AS Long 100000: k - 300",
+   "decl": [
+    "CONST v1265 AS Long = 100000"
+   ],
+   "expr": "v1265 - 300"
+  },
+  {
+   "id": "CONST AS Long 100000: -k",
+   "decl": [
+    "CONST v1266 AS Long = 100000"
+   ],
+   "expr": "-v1266"
+  },
+  {
+   "id": "CONST AS Long 100000: k / 7",
+   "decl": [
+    "CONST v1267 AS Long = 100000"
+   ],
+   "expr": "v1267 / 7"
+  },
+  {
+   "id": "CONST AS Long 100000: k MOD 7",
+   "decl": [
+    "CONST v1268 AS Long = 100000"
+   ],
+   "expr": "v1268 MOD 7"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k",
+   "decl": [
+    "CONST v1269 AS Fixed = 3.5"
+   ],
+   "expr": "v1269"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k + k",
+   "decl": [
+    "CONST v1270 AS Fixed = 3.5"
+   ],
+   "expr": "v1270 + v1270"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k * 3",
+   "decl": [
+    "CONST v1271 AS Fixed = 3.5"
+   ],
+   "expr": "v1271 * 3"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k - 300",
+   "decl": [
+    "CONST v1272 AS Fixed = 3.5"
+   ],
+   "expr": "v1272 - 300"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: -k",
+   "decl": [
+    "CONST v1273 AS Fixed = 3.5"
+   ],
+   "expr": "-v1273"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k / 7",
+   "decl": [
+    "CONST v1274 AS Fixed = 3.5"
+   ],
+   "expr": "v1274 / 7"
+  },
+  {
+   "id": "CONST AS Fixed 3.5: k MOD 7",
+   "decl": [
+    "CONST v1275 AS Fixed = 3.5"
+   ],
+   "expr": "v1275 MOD 7"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k",
+   "decl": [
+    "CONST v1276 AS Fixed = -7.5"
+   ],
+   "expr": "v1276"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k + k",
+   "decl": [
+    "CONST v1277 AS Fixed = -7.5"
+   ],
+   "expr": "v1277 + v1277"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k * 3",
+   "decl": [
+    "CONST v1278 AS Fixed = -7.5"
+   ],
+   "expr": "v1278 * 3"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k - 300",
+   "decl": [
+    "CONST v1279 AS Fixed = -7.5"
+   ],
+   "expr": "v1279 - 300"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: -k",
+   "decl": [
+    "CONST v1280 AS Fixed = -7.5"
+   ],
+   "expr": "-v1280"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k / 7",
+   "decl": [
+    "CONST v1281 AS Fixed = -7.5"
+   ],
+   "expr": "v1281 / 7"
+  },
+  {
+   "id": "CONST AS Fixed -7.5: k MOD 7",
+   "decl": [
+    "CONST v1282 AS Fixed = -7.5"
+   ],
+   "expr": "v1282 MOD 7"
+  },
+  {
+   "id": "CONST AS Float 7.5: k",
+   "decl": [
+    "CONST v1283 AS Float = 7.5"
+   ],
+   "expr": "v1283"
+  },
+  {
+   "id": "CONST AS Float 7.5: k + k",
+   "decl": [
+    "CONST v1284 AS Float = 7.5"
+   ],
+   "expr": "v1284 + v1284"
+  },
+  {
+   "id": "CONST AS Float 7.5: k * 3",
+   "decl": [
+    "CONST v1285 AS Float = 7.5"
+   ],
+   "expr": "v1285 * 3"
+  },
+  {
+   "id": "CONST AS Float 7.5: k - 300",
+   "decl": [
+    "CONST v1286 AS Float = 7.5"
+   ],
+   "expr": "v1286 - 300"
+  },
+  {
+   "id": "CONST AS Float 7.5: -k",
+   "decl": [
+    "CONST v1287 AS Float = 7.5"
+   ],
+   "expr": "-v1287"
+  },
+  {
+   "id": "CONST AS Float 7.5: k / 7",
+   "decl": [
+    "CONST v1288 AS Float = 7.5"
+   ],
+   "expr": "v1288 / 7"
+  },
+  {
+   "id": "CONST AS Float 7.5: k MOD 7",
+   "decl": [
+    "CONST v1289 AS Float = 7.5"
+   ],
+   "expr": "v1289 MOD 7"
+  },
+  {
+   "id": "CONST AS Float -7.5: k",
+   "decl": [
+    "CONST v1290 AS Float = -7.5"
+   ],
+   "expr": "v1290"
+  },
+  {
+   "id": "CONST AS Float -7.5: k + k",
+   "decl": [
+    "CONST v1291 AS Float = -7.5"
+   ],
+   "expr": "v1291 + v1291"
+  },
+  {
+   "id": "CONST AS Float -7.5: k * 3",
+   "decl": [
+    "CONST v1292 AS Float = -7.5"
+   ],
+   "expr": "v1292 * 3"
+  },
+  {
+   "id": "CONST AS Float -7.5: k - 300",
+   "decl": [
+    "CONST v1293 AS Float = -7.5"
+   ],
+   "expr": "v1293 - 300"
+  },
+  {
+   "id": "CONST AS Float -7.5: -k",
+   "decl": [
+    "CONST v1294 AS Float = -7.5"
+   ],
+   "expr": "-v1294"
+  },
+  {
+   "id": "CONST AS Float -7.5: k / 7",
+   "decl": [
+    "CONST v1295 AS Float = -7.5"
+   ],
+   "expr": "v1295 / 7"
+  },
+  {
+   "id": "CONST AS Float -7.5: k MOD 7",
+   "decl": [
+    "CONST v1296 AS Float = -7.5"
+   ],
+   "expr": "v1296 MOD 7"
+  },
+  {
+   "id": "CONST (untyped) -100: k",
+   "decl": [
+    "CONST v1297 = -100"
+   ],
+   "expr": "v1297"
+  },
+  {
+   "id": "CONST (untyped) -100: k + k",
+   "decl": [
+    "CONST v1298 = -100"
+   ],
+   "expr": "v1298 + v1298"
+  },
+  {
+   "id": "CONST (untyped) -100: k * 3",
+   "decl": [
+    "CONST v1299 = -100"
+   ],
+   "expr": "v1299 * 3"
+  },
+  {
+   "id": "CONST (untyped) -100: k - 300",
+   "decl": [
+    "CONST v1300 = -100"
+   ],
+   "expr": "v1300 - 300"
+  },
+  {
+   "id": "CONST (untyped) -100: -k",
+   "decl": [
+    "CONST v1301 = -100"
+   ],
+   "expr": "-v1301"
+  },
+  {
+   "id": "CONST (untyped) -100: k / 7",
+   "decl": [
+    "CONST v1302 = -100"
+   ],
+   "expr": "v1302 / 7"
+  },
+  {
+   "id": "CONST (untyped) -100: k MOD 7",
+   "decl": [
+    "CONST v1303 = -100"
+   ],
+   "expr": "v1303 MOD 7"
+  },
+  {
+   "id": "CONST (untyped) 100: k",
+   "decl": [
+    "CONST v1304 = 100"
+   ],
+   "expr": "v1304"
+  },
+  {
+   "id": "CONST (untyped) 100: k + k",
+   "decl": [
+    "CONST v1305 = 100"
+   ],
+   "expr": "v1305 + v1305"
+  },
+  {
+   "id": "CONST (untyped) 100: k * 3",
+   "decl": [
+    "CONST v1306 = 100"
+   ],
+   "expr": "v1306 * 3"
+  },
+  {
+   "id": "CONST (untyped) 100: k - 300",
+   "decl": [
+    "CONST v1307 = 100"
+   ],
+   "expr": "v1307 - 300"
+  },
+  {
+   "id": "CONST (untyped) 100: -k",
+   "decl": [
+    "CONST v1308 = 100"
+   ],
+   "expr": "-v1308"
+  },
+  {
+   "id": "CONST (untyped) 100: k / 7",
+   "decl": [
+    "CONST v1309 = 100"
+   ],
+   "expr": "v1309 / 7"
+  },
+  {
+   "id": "CONST (untyped) 100: k MOD 7",
+   "decl": [
+    "CONST v1310 = 100"
+   ],
+   "expr": "v1310 MOD 7"
+  }
+ ]
+}

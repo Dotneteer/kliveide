@@ -192,6 +192,7 @@ const registers: StaticCompletionItem[] = [
 const pragmas: StaticCompletionItem[] = [
   { label: ".org",        kind: "pragma", detail: "Set origin address",              insertText: ".org ${1:address}" },
   { label: ".bank",       kind: "pragma", detail: "Set bank",                        insertText: ".bank ${1:n}" },
+  { label: ".page",       kind: "pragma", detail: "Set 8K page (Next)",              insertText: ".page ${1:n}" },
   { label: ".xorg",       kind: "pragma", detail: "Set extra origin",                insertText: ".xorg ${1:address}" },
   { label: ".ent",        kind: "pragma", detail: "Set entry point",                 insertText: ".ent ${1:address}" },
   { label: ".xent",       kind: "pragma", detail: "Set extra entry point",           insertText: ".xent ${1:address}" },

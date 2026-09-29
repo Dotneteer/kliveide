@@ -1,0 +1,12 @@
+' A two-dimensional array is row-major: the last subscript varies fastest
+'@expect screen 0 "12 23 34"
+'@expect peek 40000 23
+DIM m(2, 3) AS UByte
+DIM i, j AS UByte
+FOR i = 0 TO 2
+ FOR j = 0 TO 3
+  m(i, j) = (i + 1) * 10 + j + 1
+ NEXT j
+NEXT i
+PRINT m(0, 1); " "; m(1, 2); " "; m(2, 3)
+POKE 40000, PEEK(@m(0, 0) + 6)

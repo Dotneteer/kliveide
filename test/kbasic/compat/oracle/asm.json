@@ -1,0 +1,158 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "asm: number b suffix": {
+   "error": "error: Undefined temporary label '1010'"
+  },
+  "asm: EQU with colon": {
+   "error": "error: Syntax error. Unexpected token 'EQU' [EQU]"
+  },
+  "asm: a global by _name": {
+   "error": "error: Undefined GLOBAL label '._gv2879'"
+  },
+  "asm: number $hex": {
+   "out": "4660"
+  },
+  "asm: number h suffix": {
+   "out": "4660"
+  },
+  "asm: number 0x": {
+   "out": "4660"
+  },
+  "asm: number %bin": {
+   "out": "10"
+  },
+  "asm: char literal": {
+   "out": "65"
+  },
+  "asm: expression precedence": {
+   "out": "14"
+  },
+  "asm: expression parens": {
+   "out": "20"
+  },
+  "asm: division": {
+   "out": "14"
+  },
+  "asm: shift": {
+   "out": "16"
+  },
+  "asm: and or": {
+   "out": "49"
+  },
+  "asm: negative": {
+   "out": "65531"
+  },
+  "asm: DEFW and a label": {
+   "out": "1234"
+  },
+  "asm: DW": {
+   "out": "4321"
+  },
+  "asm: DEFB doubled quote": {
+   "out": "34"
+  },
+  "asm: DB string and number": {
+   "out": "7"
+  },
+  "asm: DEFS size": {
+   "out": "5"
+  },
+  "asm: DS with fill": {
+   "out": "9"
+  },
+  "asm: several instructions on a line": {
+   "out": "3"
+  },
+  "asm: label then instructions": {
+   "out": "6"
+  },
+  "asm: EQU": {
+   "out": "42"
+  },
+  "asm: mixed case": {
+   "out": "8"
+  },
+  "asm: PROC LOCAL": {
+   "out": "3"
+  },
+  "asm: two PROCs with one LOCAL name": {
+   "out": "5"
+  },
+  "asm: a label in a PROC not LOCAL": {
+   "out": "11"
+  },
+  "asm: temporary labels": {
+   "out": "3"
+  },
+  "asm: dotted label": {
+   "out": "2"
+  },
+  "asm: current address": {
+   "out": "0"
+  },
+  "asm: jr $+3": {
+   "out": "6"
+  },
+  "asm: comment after code": {
+   "out": "8"
+  },
+  "asm: ALIGN": {
+   "out": "0"
+  },
+  "asm frame: STDCALL byte and word parameters": {
+   "out": "1003"
+  },
+  "asm frame: STDCALL three parameters": {
+   "out": "974"
+  },
+  "asm frame: FASTCALL byte": {
+   "out": "42"
+  },
+  "asm frame: FASTCALL word": {
+   "out": "2468"
+  },
+  "asm frame: FASTCALL Long": {
+   "out": "70001"
+  },
+  "asm frame: a local through IX": {
+   "out": "28"
+  },
+  "asm frame: a byte local at IX-2": {
+   "out": "6"
+  },
+  "asm frame: a byte local at IX-3": {
+   "out": "80"
+  },
+  "asm frame: a word local at IX-2": {
+   "out": "60"
+  },
+  "asm frame: a word local at IX-4": {
+   "out": "16962"
+  },
+  "asm frame: two byte locals": {
+   "out": "15360"
+  },
+  "asm frame: FUNCTION Float result": {
+   "out": "2.5"
+  },
+  "asm frame: FASTCALL byte in A, two statements": {
+   "out": "9"
+  },
+  "asm frame: FASTCALL popping a byte parameter": {
+   "out": "42"
+  },
+  "asm frame: FASTCALL popping a word parameter": {
+   "out": "1234"
+  },
+  "asm frame: FASTCALL ret inside the asm": {
+   "out": "75"
+  },
+  "asm frame: FASTCALL SUB with a parameter popped": {
+   "out": "4321"
+  },
+  "asm frame: a result by RETURN after asm": {
+   "out": "5"
+  }
+ }
+}

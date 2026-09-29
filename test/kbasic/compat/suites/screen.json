@@ -1,0 +1,757 @@
+{
+ "suite": "screen",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "colour: INK 0",
+   "decl": [
+    "INK 0",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 7",
+   "decl": [
+    "INK 7",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 8",
+   "decl": [
+    "INK 8",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 9",
+   "decl": [
+    "INK 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 10",
+   "decl": [
+    "INK 10",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 15",
+   "decl": [
+    "INK 15",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 0",
+   "decl": [
+    "PAPER 0",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 8",
+   "decl": [
+    "PAPER 8",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 9",
+   "decl": [
+    "PAPER 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 10",
+   "decl": [
+    "PAPER 10",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 12",
+   "decl": [
+    "PAPER 12",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: FLASH 1",
+   "decl": [
+    "FLASH 1",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BRIGHT 1",
+   "decl": [
+    "BRIGHT 1",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: FLASH 2",
+   "decl": [
+    "FLASH 2",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BRIGHT 2",
+   "decl": [
+    "BRIGHT 2",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: FLASH 8",
+   "decl": [
+    "FLASH 8",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BRIGHT 8",
+   "decl": [
+    "BRIGHT 8",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INVERSE 1",
+   "decl": [
+    "INVERSE 1",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: OVER 1",
+   "decl": [
+    "OVER 1",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INVERSE 2",
+   "decl": [
+    "INVERSE 2",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: OVER 2",
+   "decl": [
+    "OVER 2",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BORDER 0",
+   "decl": [
+    "BORDER 0",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BORDER 7",
+   "decl": [
+    "BORDER 7",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BORDER 8",
+   "decl": [
+    "BORDER 8",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BORDER 9",
+   "decl": [
+    "BORDER 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: BORDER 10",
+   "decl": [
+    "BORDER 10",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 1: INK 9",
+   "decl": [
+    "PAPER 1: INK 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PAPER 6: INK 9",
+   "decl": [
+    "PAPER 6: INK 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: INK 2: PAPER 9",
+   "decl": [
+    "INK 2: PAPER 9",
+    "PRINT AT 5, 0; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT INK 9;",
+   "decl": [
+    "PRINT AT 5, 0; INK 9; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT PAPER 9;",
+   "decl": [
+    "PRINT AT 5, 0; PAPER 9; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT INK 8;",
+   "decl": [
+    "PRINT AT 5, 0; INK 8; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT INK 10;",
+   "decl": [
+    "PRINT AT 5, 0; INK 10; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT FLASH 8;",
+   "decl": [
+    "PRINT AT 5, 0; FLASH 8; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT BRIGHT 2;",
+   "decl": [
+    "PRINT AT 5, 0; BRIGHT 2; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT PAPER 1; INK 9;",
+   "decl": [
+    "PRINT AT 5, 0; PAPER 1; INK 9; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT INVERSE 1;",
+   "decl": [
+    "PRINT AT 5, 0; INVERSE 1; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "colour: PRINT OVER 1;",
+   "decl": [
+    "PRINT AT 5, 0; OVER 1; \"a\";"
+   ],
+   "expr": "PEEK 22688; \" \"; PEEK 23693; \" \"; PEEK 23694; \" \"; PEEK 23697; \" \"; PEEK 23624"
+  },
+  {
+   "id": "layout: PRINT \"a\", \"b\", \"c\"",
+   "decl": [
+    "PRINT \"a\", \"b\", \"c\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT \"abcdefghijklmnopqrst\", \"x\"",
+   "decl": [
+    "PRINT \"abcdefghijklmnopqrst\", \"x\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT TAB 10; \"x\"; TAB 5; \"y\"",
+   "decl": [
+    "PRINT TAB 10; \"x\"; TAB 5; \"y\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT TAB 40; \"x\"",
+   "decl": [
+    "PRINT TAB 40; \"x\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT 1; 2; -3; 0.5",
+   "decl": [
+    "PRINT 1; 2; -3; 0.5"
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"a\"; 1; \"b\"",
+   "decl": [
+    "PRINT \"a\"; 1; \"b\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT AT 0, 30; \"abcd\"",
+   "decl": [
+    "PRINT AT 0, 30; \"abcd\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT \"0123456789012345678901234567890123456789\"",
+   "decl": [
+    "PRINT \"0123456789012345678901234567890123456789\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT \"a\" + CHR$(8) + \"b\"",
+   "decl": [
+    "PRINT \"a\" + CHR$(8) + \"b\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"a\" + CHR$(13) + \"b\"",
+   "decl": [
+    "PRINT \"a\" + CHR$(13) + \"b\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT CHR$(22) + CHR$(1) + CHR$(3) + \"x\"",
+   "decl": [
+    "PRINT CHR$(22) + CHR$(1) + CHR$(3) + \"x\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT CHR$(23) + CHR$(5) + CHR$(0) + \"x\"",
+   "decl": [
+    "PRINT CHR$(23) + CHR$(5) + CHR$(0) + \"x\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"x\"; CHR$(6); \"y\"",
+   "decl": [
+    "PRINT \"x\"; CHR$(6); \"y\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT , \"x\"",
+   "decl": [
+    "PRINT , \"x\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT ; \"x\"",
+   "decl": [
+    "PRINT ; \"x\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT: PRINT \"x\"",
+   "decl": [
+    "PRINT: PRINT \"x\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "layout: PRINT AT 0, 0; \"ab\"; AT 0, 1; \"c\"",
+   "decl": [
+    "PRINT AT 0, 0; \"ab\"; AT 0, 1; \"c\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT 3 = 3; 3 < 2",
+   "decl": [
+    "PRINT 3 = 3; 3 < 2"
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"abc\": CLS: PRINT \"x\"",
+   "decl": [
+    "PRINT \"abc\": CLS: PRINT \"x\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"a\";: PRINT \"b\"",
+   "decl": [
+    "PRINT \"a\";: PRINT \"b\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT \"a\", : PRINT \"b\"",
+   "decl": [
+    "PRINT \"a\", : PRINT \"b\""
+   ],
+   "expr": "",
+   "rows": 1
+  },
+  {
+   "id": "layout: PRINT AT 1, 0; \"x\": PRINT \"y\"",
+   "decl": [
+    "PRINT AT 1, 0; \"x\": PRINT \"y\""
+   ],
+   "expr": "",
+   "rows": 3
+  },
+  {
+   "id": "layout: PRINT \"x\"; TAB 3; \"y\"; TAB 3; \"z\"",
+   "decl": [
+    "PRINT \"x\"; TAB 3; \"y\"; TAB 3; \"z\""
+   ],
+   "expr": "",
+   "rows": 2
+  },
+  {
+   "id": "graphics: PLOT 0, 0: PLOT 255, 191: PLOT 128, 96",
+   "decl": [
+    "FUNCTION ckv2815() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 0, 0: PLOT 255, 191: PLOT 128, 96"
+   ],
+   "expr": "ckv2815()"
+  },
+  {
+   "id": "graphics: PLOT 10, 10: DRAW 100, 50: DRAW -30, 70: DRAW 0, -50",
+   "decl": [
+    "FUNCTION ckv2816() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 10, 10: DRAW 100, 50: DRAW -30, 70: DRAW 0, -50"
+   ],
+   "expr": "ckv2816()"
+  },
+  {
+   "id": "graphics: PLOT 0, 0: DRAW 255, 175",
+   "decl": [
+    "FUNCTION ckv2817() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 0, 0: DRAW 255, 175"
+   ],
+   "expr": "ckv2817()"
+  },
+  {
+   "id": "graphics: CIRCLE 128, 96, 50",
+   "decl": [
+    "FUNCTION ckv2818() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "CIRCLE 128, 96, 50"
+   ],
+   "expr": "ckv2818()"
+  },
+  {
+   "id": "graphics: CIRCLE 10, 10, 5",
+   "decl": [
+    "FUNCTION ckv2819() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "CIRCLE 10, 10, 5"
+   ],
+   "expr": "ckv2819()"
+  },
+  {
+   "id": "graphics: CIRCLE 128, 96, 1",
+   "decl": [
+    "FUNCTION ckv2820() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "CIRCLE 128, 96, 1"
+   ],
+   "expr": "ckv2820()"
+  },
+  {
+   "id": "graphics: CIRCLE 128, 96, 0",
+   "decl": [
+    "FUNCTION ckv2821() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "CIRCLE 128, 96, 0"
+   ],
+   "expr": "ckv2821()"
+  },
+  {
+   "id": "graphics: CIRCLE 200, 150, 30",
+   "decl": [
+    "FUNCTION ckv2822() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "CIRCLE 200, 150, 30"
+   ],
+   "expr": "ckv2822()"
+  },
+  {
+   "id": "graphics: PLOT 50, 50: DRAW 100, 0, PI",
+   "decl": [
+    "FUNCTION ckv2823() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 50, 50: DRAW 100, 0, PI"
+   ],
+   "expr": "ckv2823()"
+  },
+  {
+   "id": "graphics: PLOT 50, 50: DRAW 50, 50, -PI / 2",
+   "decl": [
+    "FUNCTION ckv2824() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 50, 50: DRAW 50, 50, -PI / 2"
+   ],
+   "expr": "ckv2824()"
+  },
+  {
+   "id": "graphics: PLOT 100, 100: DRAW 30, 0, 1",
+   "decl": [
+    "FUNCTION ckv2825() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 100, 100: DRAW 30, 0, 1"
+   ],
+   "expr": "ckv2825()"
+  },
+  {
+   "id": "graphics: PLOT 5, 5: PLOT INVERSE 1; 5, 5: PLOT 6, 6: PLOT OVER 1; 6, 6: PLOT OVER 1; 7, 7",
+   "decl": [
+    "FUNCTION ckv2826() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 5, 5: PLOT INVERSE 1; 5, 5: PLOT 6, 6: PLOT OVER 1; 6, 6: PLOT OVER 1; 7, 7"
+   ],
+   "expr": "ckv2826()"
+  },
+  {
+   "id": "graphics: PLOT 20, 20: DRAW OVER 1; 50, 0: DRAW OVER 1; -50, 0",
+   "decl": [
+    "FUNCTION ckv2827() AS UInteger: DIM a AS UInteger: DIM s AS UInteger: FOR a = 16384 TO 22527: s = (s SHL 1) BXOR PEEK a: NEXT a: RETURN s: END FUNCTION",
+    "PLOT 20, 20: DRAW OVER 1; 50, 0: DRAW OVER 1; -50, 0"
+   ],
+   "expr": "ckv2827()"
+  },
+  {
+   "id": "graphics: PLOT 5, 5: POINT",
+   "decl": [
+    "#include <point.bas>",
+    "PLOT 5, 5"
+   ],
+   "expr": "POINT(5, 5); POINT(5, 5 - 16); POINT(5, 5 + 16)"
+  },
+  {
+   "id": "graphics: PLOT 5, 21: POINT",
+   "decl": [
+    "#include <point.bas>",
+    "PLOT 5, 21"
+   ],
+   "expr": "POINT(5, 21); POINT(5, 21 - 16); POINT(5, 21 + 16)"
+  },
+  {
+   "id": "graphics: PLOT 5, 100: POINT",
+   "decl": [
+    "#include <point.bas>",
+    "PLOT 5, 100"
+   ],
+   "expr": "POINT(5, 100); POINT(5, 100 - 16); POINT(5, 100 + 16)"
+  },
+  {
+   "id": "graphics: PLOT 5, 175: POINT",
+   "decl": [
+    "#include <point.bas>",
+    "PLOT 5, 175"
+   ],
+   "expr": "POINT(5, 175); POINT(5, 175 - 16); POINT(5, 175 + 16)"
+  },
+  {
+   "id": "graphics: PLOT 5, 189: POINT",
+   "decl": [
+    "#include <point.bas>",
+    "PLOT 5, 189"
+   ],
+   "expr": "POINT(5, 189); POINT(5, 189 - 16); POINT(5, 189 + 16)"
+  },
+  {
+   "id": "USR \"a\"",
+   "decl": [
+    "DIM uv2833 AS UInteger",
+    "uv2833 = USR \"a\""
+   ],
+   "expr": "uv2833; \" \"; PEEK 23610"
+  },
+  {
+   "id": "USR \"A\"",
+   "decl": [
+    "DIM uv2834 AS UInteger",
+    "uv2834 = USR \"A\""
+   ],
+   "expr": "uv2834; \" \"; PEEK 23610"
+  },
+  {
+   "id": "USR \"u\"",
+   "decl": [
+    "DIM uv2835 AS UInteger",
+    "uv2835 = USR \"u\""
+   ],
+   "expr": "uv2835; \" \"; PEEK 23610"
+  },
+  {
+   "id": "USR \"v\"",
+   "decl": [
+    "DIM uv2836 AS UInteger",
+    "uv2836 = USR \"v\""
+   ],
+   "expr": "uv2836; \" \"; PEEK 23610"
+  },
+  {
+   "id": "USR \"zz\"",
+   "decl": [
+    "DIM uv2837 AS UInteger",
+    "uv2837 = USR \"zz\""
+   ],
+   "expr": "uv2837; \" \"; PEEK 23610"
+  },
+  {
+   "id": "USR \"\"",
+   "decl": [
+    "DIM uv2838 AS UInteger",
+    "uv2838 = USR \"\""
+   ],
+   "expr": "uv2838; \" \"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(0 TO 4) = \"Howdy\"",
+   "decl": [
+    "DIM sv2839 AS String = \"Hello World\"",
+    "sv2839(0 TO 4) = \"Howdy\""
+   ],
+   "expr": "sv2839; \"|\"; LEN(sv2839); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(6 TO) = \"Earth\"",
+   "decl": [
+    "DIM sv2840 AS String = \"Hello World\"",
+    "sv2840(6 TO) = \"Earth\""
+   ],
+   "expr": "sv2840; \"|\"; LEN(sv2840); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(0) = \"J\"",
+   "decl": [
+    "DIM sv2841 AS String = \"Hello World\"",
+    "sv2841(0) = \"J\""
+   ],
+   "expr": "sv2841; \"|\"; LEN(sv2841); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(2 TO 3) = \"XYZ\"",
+   "decl": [
+    "DIM sv2842 AS String = \"Hello World\"",
+    "sv2842(2 TO 3) = \"XYZ\""
+   ],
+   "expr": "sv2842; \"|\"; LEN(sv2842); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(2 TO 6) = \"a\"",
+   "decl": [
+    "DIM sv2843 AS String = \"Hello World\"",
+    "sv2843(2 TO 6) = \"a\""
+   ],
+   "expr": "sv2843; \"|\"; LEN(sv2843); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(9 TO 20) = \"abc\"",
+   "decl": [
+    "DIM sv2844 AS String = \"Hello World\"",
+    "sv2844(9 TO 20) = \"abc\""
+   ],
+   "expr": "sv2844; \"|\"; LEN(sv2844); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(20) = \"z\"",
+   "decl": [
+    "DIM sv2845 AS String = \"Hello World\"",
+    "sv2845(20) = \"z\""
+   ],
+   "expr": "sv2845; \"|\"; LEN(sv2845); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(TO 2) = \"abc\"",
+   "decl": [
+    "DIM sv2846 AS String = \"Hello World\"",
+    "sv2846(TO 2) = \"abc\""
+   ],
+   "expr": "sv2846; \"|\"; LEN(sv2846); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(5 TO 2) = \"q\"",
+   "decl": [
+    "DIM sv2847 AS String = \"Hello World\"",
+    "sv2847(5 TO 2) = \"q\""
+   ],
+   "expr": "sv2847; \"|\"; LEN(sv2847); \"|\"; PEEK 23610"
+  },
+  {
+   "id": "slice: s(10 TO 10) = \"!\"",
+   "decl": [
+    "DIM sv2848 AS String = \"Hello World\"",
+    "sv2848(10 TO 10) = \"!\""
+   ],
+   "expr": "sv2848; \"|\"; LEN(sv2848); \"|\"; PEEK 23610"
+  }
+ ]
+}

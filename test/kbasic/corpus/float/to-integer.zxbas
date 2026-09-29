@@ -1,0 +1,12 @@
+' Float to integer types: rounded towards minus infinity, then wrapped
+'@expect screen 0 "44 300 -4 4464"
+DIM f AS Float
+DIM b AS UByte
+DIM i AS Integer
+DIM u AS UInteger
+f = 300.7: b = f: u = f
+PRINT b; " "; u;
+f = -3.5: i = f
+PRINT " "; i;
+f = 70000: u = f
+PRINT " "; u

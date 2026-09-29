@@ -1,0 +1,11 @@
+' WHILE tests first: a false condition skips the body
+'@expect screen 0 "64 0"
+DIM p AS UInteger = 1
+DIM n AS UByte
+WHILE p < 50
+ p = p * 2
+END WHILE
+WHILE n > 0
+ n = 99
+END WHILE
+PRINT p; " "; n

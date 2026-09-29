@@ -1,0 +1,18 @@
+' print42.bas: its cursor moves 42 columns to a row and wraps, apart from PRINT's
+'@expect screen 0 "xy   2 1 1 1"
+#include <print42.bas>
+#include <pos.bas>
+' Any pixel of character cell (r, c)
+FUNCTION lit(r AS UByte, c AS UByte) AS UByte
+    DIM l AS UByte
+    FOR l = 0 TO 7
+        IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) THEN RETURN 1
+    NEXT l
+    RETURN 0
+END FUNCTION
+DIM c AS UByte
+PRINT "xy";
+printat42(3, 40)
+print42("abc")
+c = POS()
+PRINT AT 0, 5; c; " "; lit(3, 30); " "; lit(3, 31); " "; lit(4, 0)

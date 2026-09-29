@@ -1,0 +1,183 @@
+{
+ "suite": "errors",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "PRINT AT row 30",
+   "decl": [
+    "PRINT AT 30, 0; \"y\";"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "PRINT AT column 40",
+   "decl": [
+    "PRINT AT 0, 40; \"y\";"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "INK 10",
+   "decl": [
+    "INK 10"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "PAPER 12",
+   "decl": [
+    "PAPER 12"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "PRINT INK 10",
+   "decl": [
+    "PRINT INK 10; \"y\";"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "BORDER 9",
+   "decl": [
+    "BORDER 9"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "PLOT off the screen",
+   "decl": [
+    "PLOT 10, 200"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "DRAW off the screen",
+   "decl": [
+    "PLOT 10, 10: DRAW 250, 0"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "CIRCLE off the screen",
+   "decl": [
+    "CIRCLE 250, 100, 20"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "READ of the wrong kind",
+   "decl": [
+    "DIM xv2740 AS UByte",
+    "READ xv2740",
+    "DATA \"t\""
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "READ after RESTORE to no DATA",
+   "decl": [
+    "DIM xv2741 AS UByte",
+    "DATA 1",
+    "RESTORE finv2741",
+    "READ xv2741",
+    "finv2741:"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "STOP",
+   "decl": [
+    "STOP"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "ERROR 3",
+   "decl": [
+    "ERROR 3"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "SQR(-1)",
+   "decl": [
+    "DIM fv2744 AS Float = -1",
+    "fv2744 = SQR(fv2744)"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "Float overflow",
+   "decl": [
+    "DIM fv2745 AS Float = 1E38",
+    "fv2745 = fv2745 * fv2745"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "LN(0)",
+   "decl": [
+    "DIM fv2746 AS Float",
+    "fv2746 = LN(fv2746)"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "BEEP too long",
+   "decl": [
+    "BEEP 100, 0"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "BEEP too high",
+   "decl": [
+    "BEEP 0.01, 100"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "String heap full",
+   "decl": [
+    "DIM sv2749 AS String",
+    "DIM iv2749 AS UInteger",
+    "FOR iv2749 = 1 TO 300: sv2749 = sv2749 + \"0123456789012345678901234567890123456789\": NEXT iv2749"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "CHR$ of 300",
+   "decl": [
+    "DIM cv2750 AS UInteger = 300",
+    "DIM sv2750 AS String",
+    "sv2750 = CHR$(cv2750)"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "USR of a String",
+   "decl": [
+    "DIM uv2751 AS UInteger",
+    "uv2751 = USR \"zz\""
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "END",
+   "decl": [
+    "END"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  },
+  {
+   "id": "Fixed division by zero",
+   "decl": [
+    "DIM av2753, zv2753 AS Fixed",
+    "av2753 = 1",
+    "av2753 = av2753 / zv2753"
+   ],
+   "expr": "\"after \"; PEEK 23610"
+  }
+ ]
+}

@@ -66,7 +66,13 @@ async function launchKlive({
    * width and size together decide which layout the screenshot shows.
    */
   panelFontFamily = "jetbrains-mono",
-  panelFontSize = 14
+  panelFontSize = 14,
+  /*
+   * The user home the app sees (`HOME`), for a run that must not touch the real one: Klive keeps
+   * its SD card image (`~/Klive/ks2.cim`, written by every ZX Spectrum Next launch) and its exports
+   * under it. Unset, the app uses the real home, as every recipe did before this option existed.
+   */
+  userHome
 }) {
   if (!fs.existsSync(MAIN)) {
     throw new Error(`No build at ${MAIN} — run \`npx electron-vite build --config build/electron.vite.config.ts\` first.`);
@@ -108,9 +114,13 @@ async function launchKlive({
     executablePath: require(path.join(REPO, "node_modules", "electron")),
     args: [MAIN, "--showide"],
     cwd: REPO,
-    env: { ...process.env, KLIVE_SETTINGS_FILE: settings },
+    env: { ...process.env, KLIVE_SETTINGS_FILE: settings, ...(userHome ? { HOME: userHome } : {}) },
     timeout: 60_000
   });
+
+  // --- On macOS Electron's home path does not follow HOME: set it in the app itself, before any
+  // --- command can reach the SD card image or the exports folder under it
+  if (userHome) await app.evaluate(({ app: electronApp }, home) => electronApp.setPath("home", home), userHome);
 
   const deadline = Date.now() + 30_000;
   while (app.windows().length < 2 && Date.now() < deadline) await sleep(250);

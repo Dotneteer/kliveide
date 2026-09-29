@@ -1,0 +1,14 @@
+' How PRINT writes Floats: the ROM's number format, eight significant digits (a literal printed
+' directly: integers/literal-typing.zxbas)
+'@expect screen 0 "0.5 -0.25 1000000 .001"
+'@expect screen 1 "1E+10 .000015 0.33333333"
+'@expect screen 2 "1.2345679E+8"
+DIM f AS Float
+f = 0.5: PRINT f; " ";
+f = -0.25: PRINT f; " ";
+f = 1E6: PRINT f; " ";
+f = 0.001: PRINT f
+f = 1E10: PRINT f; " ";
+f = 1.5E-5: PRINT f; " ";
+f = 1: PRINT f / 3
+f = 123456789: PRINT f

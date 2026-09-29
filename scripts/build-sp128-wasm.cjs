@@ -122,6 +122,7 @@ const productionExports = [
   "sp128SetCpuWz",
   "sp128GetCpuPc",
   "sp128GetStepOutAddress",
+  "sp128GetInterruptDepth",
   "sp128SetCpuPc",
   "sp128GetCpuSp",
   "sp128SetCpuSp",

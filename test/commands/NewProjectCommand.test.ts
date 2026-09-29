@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NewProjectCommand } from "@renderer/appIde/commands/NewProjectCommand";
+import { parseCommand } from "@renderer/appIde/services/command-parser";
+import { extractArguments } from "@renderer/appIde/services/ide-commands";
 import { createMockContext } from "./test-helpers/mock-context";
 import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext";
 
@@ -27,8 +29,7 @@ type MockIdeCommandContext = IdeCommandContext & {
 type NewProjectCommandArgs = {
   machineId: string;
   projectName: string;
-  templateId?: string;
-  projectFolder?: string;
+  template?: string;
   "-o"?: boolean;
   "-p"?: string;
 };
@@ -77,6 +78,56 @@ describe("NewProjectCommand", () => {
     it("should have commandOptions including -o", () => {
       expect(command.argumentInfo.commandOptions).toContain("-o");
     });
+
+    it("should show the project folder as the -p option in its usage", () => {
+      expect(command.usage).toBe("newp <machine ID> <project name> [<template>] [-p <project folder>] [-o]");
+    });
+  });
+
+  // --- Through the same path as the IDE prompt: the command line is tokenised and its arguments
+  // --- extracted by name from `argumentInfo`, so a field the command reads under another name is
+  // --- caught here, where calling `execute` with a hand-built args object would hide it.
+  describe("command line", () => {
+    const run = async (line: string) => {
+      const args = extractArguments(parseCommand(line).slice(1), command.argumentInfo);
+      expect(Array.isArray(args), `argument errors: ${JSON.stringify(args)}`).toBe(false);
+      (context.mainApi as any).createKliveProject.mockResolvedValue("/new/project");
+      return command.execute(context, args as NewProjectCommandArgs);
+    };
+
+    it("passes the template to createKliveProject", async () => {
+      const result = await run("newp sp48 demo zx-basic -p /tmp/x");
+      expect(result.success).toBe(true);
+      expect(context.mainApi.createKliveProject).toHaveBeenCalledWith(
+        "sp48",
+        "demo",
+        "/tmp/x",
+        undefined,
+        "zx-basic"
+      );
+    });
+
+    it("uses the default template when none is given", async () => {
+      await run("newp sp48 demo -p /tmp/x");
+      expect(context.mainApi.createKliveProject).toHaveBeenCalledWith(
+        "sp48",
+        "demo",
+        "/tmp/x",
+        undefined,
+        "default"
+      );
+    });
+
+    it("takes the template before or after the options", async () => {
+      await run("newp sp48:pal demo -p /tmp/x -o zx-basic");
+      expect(context.mainApi.createKliveProject).toHaveBeenCalledWith(
+        "sp48",
+        "demo",
+        "/tmp/x",
+        "pal",
+        "zx-basic"
+      );
+    });
   });
 
   describe("execute", () => {
@@ -107,7 +158,7 @@ describe("NewProjectCommand", () => {
       const args: NewProjectCommandArgs = { 
         machineId: "spectrum", 
         projectName: "MyProject",
-        templateId: "custom"
+        template: "custom"
       };
 
       // Act

@@ -1,0 +1,11 @@
+' Rows of Pascal's triangle in an array
+'@expect screen 0 "1 8 28 56 70 56 28 8 1"
+DIM row(8) AS UInteger
+DIM i, j AS UByte
+row(0) = 1
+FOR i = 1 TO 8
+  FOR j = i TO 1 STEP -1
+    row(j) = row(j) + row(j - 1)
+  NEXT j
+NEXT i
+FOR j = 0 TO 8: PRINT row(j); " ";: NEXT j

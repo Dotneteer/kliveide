@@ -11,6 +11,9 @@ import { MemoryPageInfo } from "@emu/machines/zxNext/nextMemoryLayout";
 import { CallStackInfo } from "@emu/abstractions/CallStack";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { IMemorySection } from "@abstractions/MemorySection";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -343,6 +346,45 @@ class EmuApiImpl {
   }
 
   /**
+   * Hands the emulator the injected program's source-level debug info (plan §10.2): with it, Step
+   * Into/Over/Out step statements. Undefined for a program without it.
+   */
+  async setSourceDebugInfo(_info?: SourceLevelDebugInfo): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Selects source stepping (true) or Z80 instruction stepping (false) for a program with
+   * source-level debug info.
+   */
+  async setSourceStepping(_source: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * A source-level step: into, over, out, over the line, to a call-stack frame (`targetFrame`), or
+   * into a chosen call of the statement (`targetCallable`). Returns once the step has started.
+   */
+  async sourceStep(_kind: SourceStepKind, _options?: { targetFrame?: number; targetCallable?: number }): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Whether Step Into/Over/Out step source statements (true) or Z80 instructions (false). */
+  async getSourceStepping(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Where the paused program stands at source level (undefined without source-level info). */
+  async getSourceStopInfo(): Promise<SourceStopInfo | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** The symbolic call stack, innermost first (undefined without source-level info). */
+  async getSourceCallStack(): Promise<SourceActivationInfo[] | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets the key status (pressed/released) for a key.
    * @param _key The key code.
    * @param _isDown True if the key is pressed.
@@ -485,6 +527,11 @@ export type Z80CpuState = {
   lastIoReadValue: number;
   lastIoWritePort: number;
   lastIoWriteValue: number;
+  /**
+   * The memory partition PC is in (a paged bank or ROM), or `undefined` on a machine without
+   * partitions: which of several sources sharing an address is executing (plan §10.4).
+   */
+  pcPartition?: number;
   /**
    * The NextReg write the machine last stopped on. ZX Spectrum Next only, and absent until a
    * NextReg write breakpoint fires.

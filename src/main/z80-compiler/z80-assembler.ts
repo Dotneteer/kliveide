@@ -120,7 +120,8 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
       // --- Get the op codes for the instruction
       if (
         nextInstructionCodes[mnemonic] !== undefined &&
-        this._output.modelType !== SpectrumModelType.Next
+        this._output.modelType !== SpectrumModelType.Next &&
+        !this._options.allowNextInstructions
       ) {
         this.reportAssemblyError("Z0414", opLine);
         return;
@@ -1213,7 +1214,7 @@ export class Z80Assembler extends CommonAssembler<Z80Node, Z80TokenType> {
    * @param op Instruction to test
    */
   private invalidNextInst(op: Z80Node): boolean {
-    if (this._output.modelType !== SpectrumModelType.Next) {
+    if (this._output.modelType !== SpectrumModelType.Next && !this._options.allowNextInstructions) {
       this.reportAssemblyError("Z0414", op);
       return true;
     }

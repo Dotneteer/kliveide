@@ -1,0 +1,209 @@
+# Where Klive BASIC plugs into Klive
+
+A map of the existing code Klive BASIC builds on, surveyed 2026-09-26 at HEAD `1c1365677`. Line
+numbers drift; search for the names if a reference no longer matches. Update this file when the
+integration changes.
+
+## 1. Compiler plug-in contract
+
+- `IKliveCompiler` — `src/common/abstractions/CompilerInfo.ts` (~864): `id`, `language`,
+  `providesKliveOutput`, `compileFile(filename, options?)`, `lineCanHaveBreakpoint(line)`,
+  optional `setAppState(state)` (the only way settings reach a compiler, also in the worker),
+  optional `checkFile(filename, options?)` — the background worker calls it instead of
+  `compileFile` when a compiler has it (Klive BASIC's diagnostics-only check). Do not signal a
+  background compile through `options`: the Z80 assembler takes a non-empty options object as its
+  complete `AssemblerOptions`.
+- Registry — `src/main/compiler-integration/compiler-registry.ts`: keyed by **language id**;
+  `createCompilerRegistry()` hard-codes Z80Compiler (`kz80-asm`), `ZxBasicDispatcher` (`zxbas`),
+  SjasmPCompiler (`sjasmp`), Pasta80Compiler (`pasta80`). The dispatcher
+  (`src/main/zxb-integration/ZxBasicDispatcher.ts`, plan D9) hands each request to
+  `KBasicCompiler` (`src/main/kbasic/KBasicCompiler.ts`) unless `zxbasic.compiler` is `zxbc`, which
+  selects the external `ZxBasicCompiler`. Klive BASIC is the default since Phase 4;
+  `selectedZxBasicCompiler` in `zxb-config.ts` decides, for the main process and the renderer alike.
+- Output types (same file): `SimpleAssemblerOutput` → `InjectableOutput` (segments,
+  `injectOptions`) → `DebuggableOutput` (`sourceFileList`, `sourceMap: Record<address, FileLine>`,
+  `listFileItems`, optional `sourceLevelDebug`) and the full `CompilerOutput` (adds `symbols`,
+  `modelType` 1=48 2=128 3=+3 4=Next, `entryAddress`, `nexConfig`, …). `FileLine` has optional
+  `startColumn`/`endColumn`.
+- **Existing, unused source-level debug model** (same file, ~620–805): `SourceLevelDebugInfo`
+  (`files`, `statements` ascending by address, `callables`, `usesBanking`, `addressToStatement`
+  pairs with −1 for glue, `partitionedAddressMap`), `StatementDebugInfo` (file, 1-based lines,
+  0-based columns end-exclusive, start/end address, `partition`, `callTargets`, `kind`,
+  `callableIndex`), `CallableDebugInfo` (name, kind, lines, entry, `exitAddresses`, partition,
+  statement range, parent). Must stay JSON-serialisable. Type guard `hasSourceLevelDebug()` in
+  `src/renderer/appIde/utils/compiler-utils.ts` — never called. The design that came with it:
+  `git show 1d9f2856d:plan.md`.
+- Where compiles run: **foreground** (build/inject/run/debug/export) in the Electron **main
+  process** via `RendererToMainProcessor.compileFile`; **background** (as-you-type) in a
+  `worker_threads` worker (`src/main/compiler-integration/compilerWorker.ts`, `runWorker.ts`) that
+  builds its own registry and receives an `AppState` snapshot. Results cross IPC / MessagePort:
+  structured-clone-safe only. A compiler that **throws** in the worker is reported as success —
+  return errors instead.
+- Background builds of external compilers only run when the editor setting
+  `allowBackgroundCompile` is on (`startBackgroundCompile` in `MonacoEditor.tsx`); the Klive
+  assembler, and `zxbas` unless `zxbasic.compiler` is `zxbc`, always run (the assembler's result
+  feeds language intelligence). Markers, however, are drawn **only** with that setting on, for
+  every language (it defaults to off).
+- One background compile runs at a time. `BackgroundCompileScheduler`
+  (`src/renderer/features/editor/monaco/monacoBackgroundCompile.ts`) debounces edits (1200 ms, after
+  the 1 s as-you-type save), reads the in-progress flag when a request fires, and keeps a request
+  made while a compile runs, or one main refused, until that compile ends (with any result). The
+  main process sets `backgroundInProgress` itself when it accepts a compile
+  (`RendererToMainProcessor.startBackgroundCompile`); the renderer's own START action is local and
+  is never forwarded, since the renderer forwards only actions dispatched with the `ide` source.
+
+## 2. Klive's assembler
+
+- `src/main/compiler-common/common-assembler.ts` (`CommonAssembler`): entry points
+  `compile(sourceText, options)` and `compileFile(filename, options)`. Internally `doCompile`
+  parses into `preprocessedLines` (`executeParse`) and then calls `emitCode(lines)`, then fixups —
+  so a programmatic entry that supplies parsed lines is a small change (plan §4.1).
+- Yields to the event loop every 1000 lines (`ASSEMBLY_BATCH_SIZE`) because it can run on the main
+  process.
+- Features: full Z80 + Z80N (Z80N only under `.model Next`, else `Z0414`), `.module`/`.moduleend`
+  with dotted resolution and `::` for root-qualified names, `.proc`, macros, structs, `#if`
+  family, `.bank N[,offset]` (16K bank assembled at `$C000+offset`), `.savenex …`, NEX V1.2 writer
+  (`src/main/z80-compiler/nex-file-writer.ts`; unbanked code must be ≥ `$8000`, goes to bank 2;
+  banked segments placed at `bankOffset`, falling back to `startAddress % 16384`).
+- Programmatic entry (plan §4.1): `parseSourceUnit` parses one unit, `compileProgram` assembles
+  several parsed units as one program. `.page N` places code in an 8K Next page (§4.2); `#line`
+  remaps reported lines (§4.4). The NEX writer places a banked segment by its `bankOffset`.
+- Missing: numeric temporary labels.
+- Source map: every code-emitting line sets `sourceMap[addr]` and pushes a `listFileItems` entry
+  (`fileIndex`, `lineNumber`, `address`, `segmentIndex`, `codeLength`, `sourceText`). Pragma,
+  label-only and comment lines get none.
+- Tests: `test/z80-assembler/` (79 files); helpers in `test-helpers.ts` compile in memory with
+  `new Z80Assembler().compile(source, options)`.
+
+## 3. Build, inject, run, debug
+
+- `src/renderer/appIde/commands/KliveCompilerCommands.ts`: `klive.compile`, `klive.inject`,
+  `klive.run`, `klive.debug`, export (tap/tzx/hex/nex). `injectCode()` builds a `CodeToInject`
+  (`src/common/abstractions/CodeToInject.ts`) and calls `emuApi.runCodeCommand(code, info,
+  debug, …)`. For the Next it exports a NEX to the SD card (`_klive/<name>`) and the machine types
+  `.nexload`.
+- `MachineController.runCode` (`src/emu/machines/MachineController.ts`) executes the machine's
+  `CodeInjectionFlow` (keep PC, reach an execution point, inject, set return, start).
+- 48K: the injection flow reaches `SP48_MAIN_ENTRY = $12AC` (`src/emu/machines/ZxSpectrumBase.ts`).
+- **Klive BASIC builds** (Phase 3): `KBasicCompiler.compileFile` returns the segments of the program
+  and its runtime closure, `injectOptions: { subroutine: true }` (the program returns to BASIC, like
+  `USR`), `modelType` 1 (48K; any other target is E502), `entryAddress` = the origin, and the
+  classic tables below. From the IDE's command prompt use `debug` / `run` (what the menu calls);
+  `klive.debug` and `klive.run` refuse interactive use.
+
+## 4. Breakpoints
+
+- Model: `BreakpointInfo` (`src/common/abstractions/BreakpointInfo.ts`): address (+ partition),
+  bank-relative (`bank`+`bankOffset`), source (`resource`+`line` → `resolvedAddress`,
+  `resolvedPartition`), label-anchored, NextReg write, memory read/write, I/O read/write, one-shot,
+  owner/scope. Keys: `src/common/utils/breakpoints.ts` `buildBreakpointKey` (source key
+  `[resource]:line`).
+- Resolution after each compile: `refreshSourceCodeBreakpoints` (`breakpoints.ts` ~214) finds the
+  file index by `filename.endsWith(resource)`, then the **first** `listFileItems` entry for the
+  line, its segment, and the partition (`src/common/utils/source-breakpoint-partition.ts`; on the
+  Next an 8K page), then `emuApi.resolveBreakpoints`.
+- Emulator side: `DebugSupport` (`src/emu/machines/DebugSupport.ts`): `addBreakpoint`,
+  `resolveBreakpoint(resource, line, address, partition?)`, `shouldStopAt(address,
+  partitionResolver)` over a 64K flag array plus per-address partition lists. Tests construct it
+  as `new DebugSupport(undefined, [])`.
+- Persistence: `.kliveproject` `debugger.breakpoints`; NEX-owned ones in `.nex.dis` sidecars.
+- **Klive BASIC's classic tables** (`src/main/kbasic/debug/builder.ts`, `.docs/kbasic-debug-builder.md`
+  §5): `sourceFileList` holds the BASIC files only; `listFileItems` has one item per statement (so a
+  line breakpoint resolves to the line's first statement); `sourceMap` maps each statement entry to
+  its line and columns (0-based start, exclusive end, the assembler's convention). The `zxbas`
+  provider has `fullLineBreakpoints: true`, so the execution point is drawn on the whole line.
+  Verified in the running app by `scripts/kbasic-ide-check.cjs`.
+- **Statement breakpoints** (Phase 5, plan §10.3): `BreakpointInfo.column` (0-based) makes a
+  source breakpoint a statement's; its key is `[resource]:line:column`. `refreshSourceCodeBreakpoints`
+  resolves it with `statementAtColumn` (the statement holding the column, else the next one on the
+  line) against `sourceLevelDebug`. The editor draws an inline marker before each further statement
+  of a line (`features/editor/monaco/statementBreakpoints.ts`); the gutter still sets line breakpoints.
+
+## 5. Stepping
+
+- `DebugStepMode` (`src/emu/abstractions/DebugStepMode.ts`): NoDebug, StopAtBreakpoint, StepInto,
+  StepOver, StepOut — instruction level.
+- Shared decision `shouldStopAtDebugPoint` (`src/emu/machines/DebugStepDecision.ts`), called
+  **after every instruction from TypeScript** by every Z80 machine's debug loop:
+  `ZxSpectrum48WasmV2Machine` (~864), `ZxSpectrum128WasmV2Machine` (~918),
+  `ZxSpectrumP3eWasmV2Machine` (~1231), `ZxNextWasmV2Machine` (~843), `Z88WasmV2Machine`,
+  `MachineFrameRunner`. Any `debugStepMode` other than NoDebug, or a `frameTerminationMode` other
+  than Normal, selects the per-instruction loop.
+- Step out uses a shadow return stack kept by each WASM core (`z80.c`; pushed on CALL, RST and
+  interrupt entry, popped on taken RET), exposed as e.g. `zxnextGetStepOutAddress`.
+- `FrameTerminationMode.UntilExecutionPoint` + `executionContext.terminationPoint` runs until PC
+  reaches an address — what test harnesses use to run a routine to its return.
+- **Source stepping** (Phase 5): `DebugStepMode.SourceStep` hands the decision to
+  `shouldStopAtSourceStep` (`src/emu/machines/SourceStepDecision.ts`), which reads SP, the registers
+  and the core's interrupt depth (`<m>GetInterruptDepth`) through callbacks, only at statement entries
+  and call-site return addresses. The same file has the frame locator (`locateActivations`), the
+  statement index, the `CurrentStatementTracker` and the ROM report names. `MachineController`
+  holds the index (`setSourceDebugInfo`, sent by `injectCode` before a debug run and after the
+  injection), routes Step Into/Over/Out to source steps while `sourceStepping` is on, and answers
+  `getSourceStopInfo` / `getSourceCallStack`. EmuApi: `setSourceDebugInfo`, `setSourceStepping`,
+  `sourceStep`, `getSourceStepping`, `getSourceStopInfo`, `getSourceCallStack`, `setSourceErrorStops`.
+  Commands: `em-stl` (Step Over Line), `em-sit`, `em-rtf`, `em-src`, `em-err`, `em-jmc`. Settings
+  (`emuOptions.sourceStepStopsInInterrupts`, `.stopOnRuntimeErrors`, `.justMyCode`) are read by the
+  controller at every run; Just My Code is a `SourceDebugIndex` flag that hides library statements.
+  Step Into Target: a drop-down on the toolbar's Step Into and editor context-menu items.
+- **Runtime-error stops** (§10.10): `IDebugSupport.errorStopAddress` (the program's `core.RaiseError`)
+  and `romErrorAddress` (RST 8, guarded by `romErrorGuard`: a program statement is on the stack)
+  stop every debug run there, before the ROM's report; `statementTracker` follows the running
+  statement through the debug loop so the stop can name it even when the routine was reached by a `jp`.
+
+## 6. Editor, highlighting, panels
+
+- `src/renderer/features/editor/monaco/MonacoEditor.tsx`: execution point
+  (`refreshCurrentBreakpoint` ~1150; matches `address === pc` only — **not partition-aware**;
+  column range from `sourceMap[pc]` via `createCurrentBreakpointDecoration`), breakpoint glyphs
+  (~932), gutter clicks (~1060, need `supportsBreakpoints`; with `instantSyntaxCheck` they ask the
+  compiler's `lineCanHaveBreakpoint` over IPC), markers from background compiles only (~337). Error
+  columns mark the error's range only for a language with `exactErrorColumns` (`zxbas`), and only
+  when the error has `endColumn > startColumn`; other languages still mark from the first
+  non-blank character to the end of the line. The inline message badge stays at the line's end;
+  a line gets one badge per severity, its messages joined with " • " (see the badge note in
+  `.ai/ui-theming-intent-and-lessons.md`).
+- Auto-navigation to the PC: `src/renderer/appIde/IdeEventsHandler.tsx` `refreshCodeLocation`,
+  through `locateSource` (`appIde/utils/source-location.ts`): with source-level info the emulator's
+  stop report decides (a return point shows the calling statement, an error stop the statement that
+  raised it), otherwise `sourceMap[pc]`. `MonacoEditor` draws the statement's range and a return
+  point's or error's note (`createCurrentStatementDecoration`).
+- Watch panel: `src/renderer/appIde/SideBarPanels/WatchPanel.tsx` — assembler symbols only, flat
+  64K, no types. Call stack: `CallStackPanel.tsx` → `Z80MachineBase.getCallStack()` = 16 raw words
+  from SP, or for a program with source-level info the symbolic frames
+  (`appIde/debugger/source/SourceCallStack.tsx`; selecting one sets `ideView.sourceFrame`, and the
+  editor marks that frame's calling statement). `CpuState.pcPartition` gives PC's partition to
+  `locateSource`/`listItemsAtPc` for banked sources (§10.4). A `<kbasic-stdlib>/x.bas` path given to
+  `nav` opens the bundled library file as a read-only document.
+- **Variables panel** (Phase 5, §10.7–§10.8): `appIde/debugger/source/VariablesPanel.tsx` on a memory
+  snapshot; the models beside it (`variables-model.ts`, `value-decoder.ts`, `watch-expression.ts`,
+  `call-stack-model.ts`) are pure and tested on the 48K harness. BASIC watches are
+  `AppState.basicWatches`, saved with the project (`debugger.basicWatches`); they parse with the
+  compiler's `parseExpression` (`src/main/kbasic/syntax/parser.ts`).
+- Execution controls: `ExecutionControls.tsx`; debug shortcuts: `monacoDebugShortcuts.ts`.
+
+## 7. Languages, templates, harnesses
+
+- Language providers: `src/renderer/appIde/project/*LanguageProvider.ts`, registered in
+  `src/renderer/registry.ts` (`customLanguagesRegistry`, `fileTypeRegistry`). `zxbas`:
+  `.zxbas`/`.bas`, `supportsBreakpoints: true`, `instantSyntaxCheck: true` (gutter clicks ask the
+  dispatcher: Klive BASIC answers from its lexer, zxbc always refuses), `exactErrorColumns: true`;
+  `ASM` blocks still embed `zxbasm`, which becomes `kz80-asm` when the default flips to Klive
+  BASIC (Phase 4).
+- Templates: `src/public/project-templates/<machine>/<template>/` with `build.ksx`
+  (`buildCode` → `klive.compile`, …) and `__$klive.project` (build roots). ZX BASIC templates
+  exist for sp48 and sp128; `zxnext` has only `default`.
+- Settings keys of the external compiler: `src/main/zxb-integration/zxb-config.ts` (`zxbasic.*`).
+- Test projects (`build/vitest.config.ts`): `node` (`test/**/*.test.ts`), `jsdom`
+  (`*.test.tsx`), `perf`.
+- **ZX Spectrum Next harness** (`test/harness/zxnext/`): `createSession()`, `loadCode(source)`
+  assembles Klive Z80N source and maps pages `[$FF,$FF,10,11,4,5,0,1]`. **ROM in slots 0–1 is
+  whatever hard reset selected, not the 48K BASIC ROM; no system variables; interrupts off**
+  (`core/load-nex-direct.ts`). A real `.nexload` hands over with NextZXOS's 48K BASIC ROM paged
+  in. Code that needs the ROM cannot run under `loadCode` as it is.
+- **ZX Spectrum 48K harness** (`test/harness/sp48/`, added for Klive BASIC): real 48K ROM
+  (`src/public/roms/sp48.rom`), boot to `$12AC`, assemble and load Klive source, call a routine
+  and run it to its return, peek/poke, symbols, screen-text reading, breakpoint runs. See its
+  README.
+- 48K machine in tests: `test/wasm/zxSpectrum/wasm-test-helpers.ts` (`TestSp48WasmMachine`,
+  `buildSp48WasmArtifact`); the WASM build uses clang 17 + wasm-ld (`scripts/build-sp48-wasm.cjs`).

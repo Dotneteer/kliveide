@@ -1,0 +1,383 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "CONST AS UByte 200: k": {
+   "out": "200"
+  },
+  "CONST AS UByte 200: k + k": {
+   "out": "400"
+  },
+  "CONST AS UByte 200: k * 3": {
+   "out": "600"
+  },
+  "CONST AS UByte 200: k - 300": {
+   "out": "-100"
+  },
+  "CONST AS UByte 200: -k": {
+   "out": "-200"
+  },
+  "CONST AS UByte 200: k / 7": {
+   "out": "28.5714263916015625"
+  },
+  "CONST AS UByte 200: k MOD 7": {
+   "out": "4"
+  },
+  "CONST AS UByte 7: k": {
+   "out": "7"
+  },
+  "CONST AS UByte 7: k + k": {
+   "out": "14"
+  },
+  "CONST AS UByte 7: k * 3": {
+   "out": "21"
+  },
+  "CONST AS UByte 7: k - 300": {
+   "out": "-293"
+  },
+  "CONST AS UByte 7: -k": {
+   "out": "-7"
+  },
+  "CONST AS UByte 7: k / 7": {
+   "out": "1"
+  },
+  "CONST AS UByte 7: k MOD 7": {
+   "out": "0"
+  },
+  "CONST AS Byte -7: k": {
+   "out": "-7"
+  },
+  "CONST AS Byte -7: k + k": {
+   "out": "-14"
+  },
+  "CONST AS Byte -7: k * 3": {
+   "out": "-21"
+  },
+  "CONST AS Byte -7: k - 300": {
+   "out": "-307"
+  },
+  "CONST AS Byte -7: -k": {
+   "out": "7"
+  },
+  "CONST AS Byte -7: k / 7": {
+   "out": "-1"
+  },
+  "CONST AS Byte -7: k MOD 7": {
+   "out": "0"
+  },
+  "CONST AS Byte 7: k": {
+   "out": "7"
+  },
+  "CONST AS Byte 7: k + k": {
+   "out": "14"
+  },
+  "CONST AS Byte 7: k * 3": {
+   "out": "21"
+  },
+  "CONST AS Byte 7: k - 300": {
+   "out": "-293"
+  },
+  "CONST AS Byte 7: -k": {
+   "out": "-7"
+  },
+  "CONST AS Byte 7: k / 7": {
+   "out": "1"
+  },
+  "CONST AS Byte 7: k MOD 7": {
+   "out": "0"
+  },
+  "CONST AS UInteger 60000: k": {
+   "out": "60000"
+  },
+  "CONST AS UInteger 60000: k + k": {
+   "out": "120000"
+  },
+  "CONST AS UInteger 60000: k * 3": {
+   "out": "180000"
+  },
+  "CONST AS UInteger 60000: k - 300": {
+   "out": "59700"
+  },
+  "CONST AS UInteger 60000: -k": {
+   "out": "-60000"
+  },
+  "CONST AS UInteger 60000: k / 7": {
+   "out": "8571.428558349609375"
+  },
+  "CONST AS UInteger 60000: k MOD 7": {
+   "out": "3"
+  },
+  "CONST AS UInteger 7: k": {
+   "out": "7"
+  },
+  "CONST AS UInteger 7: k + k": {
+   "out": "14"
+  },
+  "CONST AS UInteger 7: k * 3": {
+   "out": "21"
+  },
+  "CONST AS UInteger 7: k - 300": {
+   "out": "-293"
+  },
+  "CONST AS UInteger 7: -k": {
+   "out": "-7"
+  },
+  "CONST AS UInteger 7: k / 7": {
+   "out": "1"
+  },
+  "CONST AS UInteger 7: k MOD 7": {
+   "out": "0"
+  },
+  "CONST AS Integer -100: k": {
+   "out": "-100"
+  },
+  "CONST AS Integer -100: k + k": {
+   "out": "-200"
+  },
+  "CONST AS Integer -100: k * 3": {
+   "out": "-300"
+  },
+  "CONST AS Integer -100: k - 300": {
+   "out": "-400"
+  },
+  "CONST AS Integer -100: -k": {
+   "out": "100"
+  },
+  "CONST AS Integer -100: k / 7": {
+   "out": "-14.28570556640625"
+  },
+  "CONST AS Integer -100: k MOD 7": {
+   "out": "5"
+  },
+  "CONST AS Integer 100: k": {
+   "out": "100"
+  },
+  "CONST AS Integer 100: k + k": {
+   "out": "200"
+  },
+  "CONST AS Integer 100: k * 3": {
+   "out": "300"
+  },
+  "CONST AS Integer 100: k - 300": {
+   "out": "-200"
+  },
+  "CONST AS Integer 100: -k": {
+   "out": "-100"
+  },
+  "CONST AS Integer 100: k / 7": {
+   "out": "14.28570556640625"
+  },
+  "CONST AS Integer 100: k MOD 7": {
+   "out": "2"
+  },
+  "CONST AS ULong 4000000000: k": {
+   "out": "4000000000"
+  },
+  "CONST AS ULong 4000000000: k + k": {
+   "out": "3705032704"
+  },
+  "CONST AS ULong 4000000000: k * 3": {
+   "out": "3410065408"
+  },
+  "CONST AS ULong 4000000000: k - 300": {
+   "out": "3999999700"
+  },
+  "CONST AS ULong 4000000000: -k": {
+   "out": "294967296"
+  },
+  "CONST AS ULong 4000000000: k / 7": {
+   "out": "5.7142857E+8"
+  },
+  "CONST AS ULong 4000000000: k MOD 7": {
+   "out": "3"
+  },
+  "CONST AS ULong 7: k": {
+   "out": "7"
+  },
+  "CONST AS ULong 7: k + k": {
+   "out": "14"
+  },
+  "CONST AS ULong 7: k * 3": {
+   "out": "21"
+  },
+  "CONST AS ULong 7: k - 300": {
+   "out": "-293"
+  },
+  "CONST AS ULong 7: -k": {
+   "out": "-7"
+  },
+  "CONST AS ULong 7: k / 7": {
+   "out": "1"
+  },
+  "CONST AS ULong 7: k MOD 7": {
+   "out": "0"
+  },
+  "CONST AS Long -100000: k": {
+   "out": "-100000"
+  },
+  "CONST AS Long -100000: k + k": {
+   "out": "-200000"
+  },
+  "CONST AS Long -100000: k * 3": {
+   "out": "-300000"
+  },
+  "CONST AS Long -100000: k - 300": {
+   "out": "-100300"
+  },
+  "CONST AS Long -100000: -k": {
+   "out": "100000"
+  },
+  "CONST AS Long -100000: k / 7": {
+   "out": "-14285.7142791748046875"
+  },
+  "CONST AS Long -100000: k MOD 7": {
+   "out": "2"
+  },
+  "CONST AS Long 100000: k": {
+   "out": "100000"
+  },
+  "CONST AS Long 100000: k + k": {
+   "out": "200000"
+  },
+  "CONST AS Long 100000: k * 3": {
+   "out": "300000"
+  },
+  "CONST AS Long 100000: k - 300": {
+   "out": "99700"
+  },
+  "CONST AS Long 100000: -k": {
+   "out": "-100000"
+  },
+  "CONST AS Long 100000: k / 7": {
+   "out": "14285.7142791748046875"
+  },
+  "CONST AS Long 100000: k MOD 7": {
+   "out": "5"
+  },
+  "CONST AS Fixed 3.5: k": {
+   "out": "3.5"
+  },
+  "CONST AS Fixed 3.5: k + k": {
+   "out": "7"
+  },
+  "CONST AS Fixed 3.5: k * 3": {
+   "out": "10.5"
+  },
+  "CONST AS Fixed 3.5: k - 300": {
+   "out": "-296.5"
+  },
+  "CONST AS Fixed 3.5: -k": {
+   "out": "-3.5"
+  },
+  "CONST AS Fixed 3.5: k / 7": {
+   "out": "0.5"
+  },
+  "CONST AS Fixed 3.5: k MOD 7": {
+   "out": "3.5"
+  },
+  "CONST AS Fixed -7.5: k": {
+   "out": "-7.5"
+  },
+  "CONST AS Fixed -7.5: k + k": {
+   "out": "-15"
+  },
+  "CONST AS Fixed -7.5: k * 3": {
+   "out": "-22.5"
+  },
+  "CONST AS Fixed -7.5: k - 300": {
+   "out": "-307.5"
+  },
+  "CONST AS Fixed -7.5: -k": {
+   "out": "7.5"
+  },
+  "CONST AS Fixed -7.5: k / 7": {
+   "out": "-1.0714263916015625"
+  },
+  "CONST AS Fixed -7.5: k MOD 7": {
+   "out": "6.5"
+  },
+  "CONST AS Float 7.5: k": {
+   "out": "7.5"
+  },
+  "CONST AS Float 7.5: k + k": {
+   "out": "15"
+  },
+  "CONST AS Float 7.5: k * 3": {
+   "out": "22.5"
+  },
+  "CONST AS Float 7.5: k - 300": {
+   "out": "-292.5"
+  },
+  "CONST AS Float 7.5: -k": {
+   "out": "-7.5"
+  },
+  "CONST AS Float 7.5: k / 7": {
+   "out": "1.0714263916015625"
+  },
+  "CONST AS Float 7.5: k MOD 7": {
+   "out": "0.5"
+  },
+  "CONST AS Float -7.5: k": {
+   "out": "-7.5"
+  },
+  "CONST AS Float -7.5: k + k": {
+   "out": "-15"
+  },
+  "CONST AS Float -7.5: k * 3": {
+   "out": "-22.5"
+  },
+  "CONST AS Float -7.5: k - 300": {
+   "out": "-307.5"
+  },
+  "CONST AS Float -7.5: -k": {
+   "out": "7.5"
+  },
+  "CONST AS Float -7.5: k / 7": {
+   "out": "-1.0714263916015625"
+  },
+  "CONST AS Float -7.5: k MOD 7": {
+   "out": "6.5"
+  },
+  "CONST (untyped) -100: k": {
+   "out": "-100"
+  },
+  "CONST (untyped) -100: k + k": {
+   "out": "-200"
+  },
+  "CONST (untyped) -100: k * 3": {
+   "out": "-300"
+  },
+  "CONST (untyped) -100: k - 300": {
+   "out": "-400"
+  },
+  "CONST (untyped) -100: -k": {
+   "out": "100"
+  },
+  "CONST (untyped) -100: k / 7": {
+   "out": "-14.28570556640625"
+  },
+  "CONST (untyped) -100: k MOD 7": {
+   "out": "5"
+  },
+  "CONST (untyped) 100: k": {
+   "out": "100"
+  },
+  "CONST (untyped) 100: k + k": {
+   "out": "200"
+  },
+  "CONST (untyped) 100: k * 3": {
+   "out": "300"
+  },
+  "CONST (untyped) 100: k - 300": {
+   "out": "-200"
+  },
+  "CONST (untyped) 100: -k": {
+   "out": "-100"
+  },
+  "CONST (untyped) 100: k / 7": {
+   "out": "14.28570556640625"
+  },
+  "CONST (untyped) 100: k MOD 7": {
+   "out": "2"
+  }
+ }
+}

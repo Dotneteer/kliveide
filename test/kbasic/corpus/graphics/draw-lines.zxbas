@@ -1,0 +1,8 @@
+' DRAW in the four directions ends where it says
+'@expect screen 0 "100,100"
+'@expect screen 1 "150,130"
+PLOT 100, 100
+DRAW 20, 0: DRAW 0, 20: DRAW -20, 0: DRAW 0, -20
+PRINT PEEK 23677; ","; PEEK 23678
+DRAW 50, 30
+PRINT PEEK 23677; ","; PEEK 23678

@@ -34,6 +34,15 @@ This folder stores durable notes for future AI-assisted work in this repository.
   author's standing instruction. Write the durable rule, fold it into the
   existing sections, replace what it supersedes, and keep no history: that file
   is a standing brief, not a log.
+- **Before any work on ZX BASIC (Boriel BASIC) language support — Klive BASIC (the Klive-native
+  compiler, `.plans/ZXBASIC_COMPILER_PLAN.md`), the Monaco language provider, or checking a new
+  upstream release — read `zxbasic-syntax/README.md` and `kbasic/README.md`.**
+  `zxbasic-syntax/zxbasic-syntax.json` is Klive's own description of the language and the only
+  language reference to use. `kbasic/` holds the runtime ABI, the CODEBANK contract, the
+  integration map and the documented library API. **No upstream code is copied, converted or
+  translated — compiler or runtime**; upstream is read only to discover language and interface
+  facts. `node scripts/zxbasic-syntax-check.cjs` says whether a new upstream release changed
+  anything the spec describes.
 - **Before writing any test of ZX Spectrum Next hardware behaviour, read
   `../test/harness/zxnext/README.md`.** The harness runs the real machine (the WASM core) and scripts it
   through ports, NextRegs, memory, registers, picture and audio; it replaces mock-based device tests,

@@ -60,6 +60,30 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
+## Klive BASIC (the ZX BASIC compiler)
+
+- The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
+  (readiness) before any work on it.
+- **Provenance rule — a hard requirement of the project author:** no code from upstream
+  `boriel-basic/zxbasic` (AGPL compiler, runtime, libraries) or from NextBuild's compiler fork is
+  copied, converted or translated into Klive, and the upstream compiler is never read for design.
+  Upstream may be read only to discover language and interface facts, recorded in Klive's own words.
+  **Running** an installed upstream `zxbc` as a behavioural oracle is allowed (plan D12): only the
+  observed results of Klive's own test programs are recorded, never generated code, and never in CI.
+- References: `.ai/zxbasic-syntax/` (the language spec, the only language reference; refresh with
+  `node scripts/zxbasic-syntax-check.cjs`) and `.ai/kbasic/` (runtime ABI, CODEBANK contract,
+  integration map, documented library API).
+- The standard library is Klive BASIC source in `src/main/kbasic/stdlib/` (read its `README.md`),
+  written only from the documented API in `.ai/kbasic/stdlib-api.json`. Regenerate the bundle with
+  `npm run kbasic:runtime` after changing it.
+- Execution tests run on the real WASM cores: `test/harness/sp48/` (48K with the real ROM, booted
+  to BASIC; read its README) and `test/harness/zxnext/`.
+- New language behaviour gets a program in the test corpus, `test/kbasic/corpus/<area>/<name>.zxbas`,
+  with `'@expect` header lines (the runner's header comment lists them); the runner also fails on
+  the debug-info validator's problems and checks SP at every statement entry (G4).
+  `scripts/kbasic-ide-check.cjs` checks breakpoints, the execution point and the source-level debugger
+  (stepping, return points, the Call Stack and Variables panels, error stops) in the running IDE.
+
 ## ZX Spectrum Next Test Harness
 
 - **Test ZX Spectrum Next hardware behaviour with the harness in `test/harness/zxnext/`; read its

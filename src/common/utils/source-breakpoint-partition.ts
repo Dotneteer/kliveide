@@ -19,7 +19,7 @@ export type BankedSegmentInfo = {
   bank?: number;
   /** The offset within that bank the segment starts at. */
   bankOffset?: number;
-  /** The Z80 address the segment starts at — `$C000 + bankOffset` for a banked one. */
+  /** The Z80 address the segment starts at — `$C000 + bankOffset` for `.bank`, any address for `.page`. */
   startAddress: number;
 };
 

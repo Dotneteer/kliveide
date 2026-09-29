@@ -1,0 +1,7 @@
+' A Float result too big stops the program with "6 Number too big"
+'@expect screen 0 "before"
+'@expect error 5
+DIM x AS Float = 1E30
+PRINT "before"
+x = x * x * x * x * x
+PRINT "not reached"

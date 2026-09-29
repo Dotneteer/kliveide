@@ -104,3 +104,16 @@ Assume that this code is in the `C:\Work` folder:
 ```
 
 The compiler will check the `C:\Work` folder for the first two include files and `C:\Work\Commmon` for the third one.
+## The #LINE Directive
+
+`#LINE` changes the source location that the compiler reports for the lines that follow it: in error messages, in the source map, and in the list file. The IDE uses these locations to set breakpoints and to highlight the current execution point, so a tool that generates assembly code can make the debugger point to its own source file instead of the generated code.
+
+`#LINE` accepts a line number, which may be an expression, and an optional file name as a string. The line after the directive is reported as that line of that file; the subsequent lines are numbered from there. Without a file name, the current file is kept. A relative file name is resolved the same way as in `#INCLUDE`, but the file is not read.
+
+```z80klive
+#line 10 "game.zxbas"
+  ld a,2          ; reported as line 10 of game.zxbas
+  call $1601      ; reported as line 11 of game.zxbas
+```
+
+`#LINE` affects only the file in which it is used; the lines of an included file keep their own locations.

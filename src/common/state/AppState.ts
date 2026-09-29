@@ -53,6 +53,8 @@ export type AppState = {
   scripts?: ScriptRunInfo[];
   workspaceSettings?: Record<string, any>;
   watchExpressions?: WatchInfo[];
+  /** BASIC watch expressions of the Variables panel (plan §10.8), as the user typed them. */
+  basicWatches?: string[];
 };
 
 export type IdeView = {
@@ -69,6 +71,8 @@ export type IdeView = {
   cursorLine?: number;
   cursorColumn?: number;
   navHistory?: NavigationHistoryState;
+  /** The source-level call-stack frame selected in the Call Stack panel (0: innermost); the Variables panel shows its locals. */
+  sourceFrame?: number;
 };
 
 /**
@@ -235,5 +239,6 @@ export const initialAppState: AppState = {
   },
   scripts: [],
   workspaceSettings: {},
-  watchExpressions: []
+  watchExpressions: [],
+  basicWatches: []
 };

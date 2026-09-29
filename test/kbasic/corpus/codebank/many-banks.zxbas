@@ -1,0 +1,72 @@
+' CODEBANK: six banks of 6K data each, every one filled and summed by its own routine
+'@target next
+'@expect screen 0 "1 2 3 4 5 6"
+'@expect screen 1 "6144 12288 18432 24576"
+'@expect screen 2 "30720 36864"
+DIM i AS UByte
+CODEBANK 1
+DIM d1(6143) AS UByte
+FUNCTION S1() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d1(k) = 1: NEXT k
+  FOR k = 0 TO 6143: t = t + d1(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+DIM d2(6143) AS UByte
+FUNCTION S2() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d2(k) = 2: NEXT k
+  FOR k = 0 TO 6143: t = t + d2(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 3
+DIM d3(6143) AS UByte
+FUNCTION S3() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d3(k) = 3: NEXT k
+  FOR k = 0 TO 6143: t = t + d3(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 4
+DIM d4(6143) AS UByte
+FUNCTION S4() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d4(k) = 4: NEXT k
+  FOR k = 0 TO 6143: t = t + d4(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 5
+DIM d5(6143) AS UByte
+FUNCTION S5() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d5(k) = 5: NEXT k
+  FOR k = 0 TO 6143: t = t + d5(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 6
+DIM d6(6143) AS UByte
+FUNCTION S6() AS ULong
+  DIM k AS UInteger
+  DIM t AS ULong
+  FOR k = 0 TO 6143: d6(k) = 6: NEXT k
+  FOR k = 0 TO 6143: t = t + d6(k): NEXT k
+  RETURN t
+END FUNCTION
+END CODEBANK
+' fill every bank first, then sum again without refilling: each bank kept its own data
+DIM a1, a2, a3, a4, a5, a6 AS ULong
+a1 = S1(): a2 = S2(): a3 = S3(): a4 = S4(): a5 = S5(): a6 = S6()
+PRINT a1 / 6144; " "; a2 / 6144; " "; a3 / 6144; " "; a4 / 6144; " "; a5 / 6144; " "; a6 / 6144
+PRINT a1; " "; a2; " "; a3; " "; a4
+PRINT a5; " "; a6

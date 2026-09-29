@@ -1,0 +1,7 @@
+' A recursive FUNCTION with Float parameters: the power series of e
+'@expect screen 0 "271828"
+FUNCTION term(n AS UByte, t AS Float) AS Float
+  IF n > 12 THEN RETURN 0
+  RETURN t + term(n + 1, t / (n + 1))
+END FUNCTION
+PRINT INT(term(0, 1) * 100000)

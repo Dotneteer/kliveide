@@ -1,0 +1,8 @@
+' Integer division by zero at run time: the quotient of the magnitudes has every bit set and takes
+' the quotient's sign (-7 / 0 is 1), and MOD gives the dividend (semantics annex:
+' integer-division-by-zero)
+'@expect screen 0 "65535 100 1 -1"
+DIM a, b AS UInteger
+DIM i, j AS Integer
+a = 100: b = 0: i = -7: j = 0
+PRINT a / b; " "; a MOD b; " "; i / j; " "; -i / j

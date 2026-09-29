@@ -1,0 +1,3286 @@
+{
+  "meta": {
+    "$comment": "Klive's own description of the Boriel ZX BASIC language. Read .ai/zxbasic-syntax/README.md before editing. Arrays keyed by 'name' are kept sorted; run `node scripts/zxbasic-syntax-check.cjs` to see whether upstream changed since this was written.",
+    "format": 1,
+    "language": "Boriel ZX BASIC",
+    "upstream": {
+      "repo": "boriel-basic/zxbasic",
+      "version": "1.19.0",
+      "tag": "v1.19.0",
+      "commit": "b8d3cd706b07620f4366418fb78f1ac43076da92",
+      "release_date": "2026-08-03"
+    },
+    "last_full_review": "2026-09-26",
+    "reading_rule": "Upstream (AGPL) was read only to discover facts about the language; everything here is written independently, in Klive's own words and own EBNF. Documentation pages (CC BY 4.0, (c) Jose Rodriguez-Rosa 'Boriel' and contributors) were paraphrased with attribution.",
+    "ebnf_conventions": "'=' defines; '|' alternatives; '[ ]' optional; '{ }' zero or more; '( )' grouping; \"x\" literal token; keywords are case-insensitive; NL = end of line; SEP = end of line or ':'; block = { line }.",
+    "confidence_markers": "'unverified' in a notes field means the fact was inferred from documentation or behaviour, not confirmed against the implementation."
+  },
+  "lexical": {
+    "case_sensitivity": {
+      "keywords": "always case-insensitive (PRINT, print, PrInT are the same token)",
+      "identifiers": "case-sensitive by default; case-insensitive with --ignore-case, #pragma case_insensitive = true, or --sinclair",
+      "notes": "Standard-library files switch case_insensitive on for their own scope with #pragma push(case_insensitive) ... #pragma pop(case_insensitive)."
+    },
+    "comments": [
+      {
+        "form": "REM ...",
+        "kind": "line",
+        "notes": "REM must be followed by a blank, tab or end of line. As a statement it needs a preceding ':' when it follows another statement on the line."
+      },
+      {
+        "form": "' ...",
+        "kind": "line",
+        "notes": "Needs no ':' before it. The apostrophe is never a PRINT separator in ZX BASIC."
+      },
+      {
+        "form": "/' ... '/",
+        "kind": "block",
+        "notes": "May span lines, may sit in the middle of a statement (the statement continues after it), and nests: each /' raises a depth counter, each '/ lowers it."
+      }
+    ],
+    "line_structure": {
+      "ebnf": [
+        "program = { line } ;",
+        "line = [ label-decl ] [ statement { \":\" statement } ] NL ;",
+        "label-decl = line-number | identifier \":\" ;"
+      ],
+      "statement_separator": "':' ; empty statements ('::') are allowed",
+      "continuation": "A '_' or '\\' as the last token of a line (a trailing ' or REM comment may follow it) joins the next physical line. No label is recognised at the start of a continued line.",
+      "line_numbers": "Optional. A decimal integer at the start of a line (only blanks before it) is a label. A non-integer number there is an error. Line order is irrelevant; duplicate line numbers are errors.",
+      "labels": "An identifier at the start of a line (only blanks before it) followed by optional blanks and ':' declares a label. Since 1.18.0 labels are recognised only at the beginning of a line. Labels are global even when declared inside SUB/FUNCTION.",
+      "directives": "A '#' as the first non-blank character starts a preprocessor directive line. A '#' anywhere else is an illegal character."
+    },
+    "identifiers": {
+      "ebnf": "identifier = ( letter | \"_\" ) { letter | digit | \"_\" } [ \"$\" | \"%\" ] ;",
+      "letters": "ASCII A-Z a-z. The lexer accepts a leading underscore (documentation says names start with a letter).",
+      "sigils": {
+        "$": "String",
+        "%": "Integer (16-bit signed)",
+        "notes": "The sigil is stripped from the stored name, so a$ and a name the same variable. A sigil that contradicts the variable's declared or inferred type is an error (tightened in 1.19.0). '&' for Long exists in the internal table but lexes as the bAND operator, so it cannot be used (unverified)."
+      },
+      "spelling_aliases": "CHR$, STR$, INKEY$ are accepted spellings of CHR, STR, INKEY. SCREEN$ and SCREEN are accepted after SAVE/LOAD/VERIFY. A SUB/FUNCTION name may carry '$'; a $-suffixed FUNCTION must return String.",
+      "reserved": "Reserved words (see keywords) cannot be identifiers."
+    },
+    "numeric_literals": [
+      {
+        "form": "decimal integer",
+        "example": "123"
+      },
+      {
+        "form": "decimal real",
+        "example": "1.5, .5, 1e3, 2.5E-3",
+        "notes": "optional fraction, optional exponent e|E [+|-] digits"
+      },
+      {
+        "form": "hexadecimal",
+        "example": "$9C, 0x9C, 9Ch, 0C9h",
+        "notes": "The h-suffix form must start with a digit (C9h is an identifier)."
+      },
+      {
+        "form": "octal",
+        "example": "17o",
+        "notes": "digits 0-7 with an o/O suffix"
+      },
+      {
+        "form": "binary",
+        "example": "%101, 101b, BIN 101",
+        "notes": "BIN is a keyword: the token after it is read as binary digits; BIN followed by a non-binary token yields 0. 00B is binary, 00Bh is hex."
+      }
+    ],
+    "literal_typing": {
+      "integer": "smallest type that holds the value: 0..255 UByte; -128..127 Byte; 0..65535 UInteger; -32768..32767 Integer; other negative Long; other positive ULong. A negative literal is unary minus on a positive literal, folded at compile time.",
+      "real": "a non-integer literal in the open range (-32768, 32767) is Fixed; otherwise Float",
+      "based": "binary, hex and octal literals are unsigned, sized by value"
+    },
+    "string_literals": {
+      "ebnf": "string = '\"' { character | '\"\"' | escape } '\"' ;",
+      "doubled_quote": "\"\" inside a literal is one double quote",
+      "escapes": [
+        {
+          "escape": "\\\\",
+          "meaning": "backslash"
+        },
+        {
+          "escape": "\\*",
+          "meaning": "character 127 (copyright sign)"
+        },
+        {
+          "escape": "\\A .. \\U",
+          "meaning": "UDG characters 144..164 (letter case-insensitive)"
+        },
+        {
+          "escape": "\\xy with x,y in {space ' . :}",
+          "meaning": "block-graphics characters 128..143: 128 + P(x) + N(y), P: space=0 '=2 .=8 :=10, N: space=0 '=1 .=4 :=5"
+        },
+        {
+          "escape": "\\#nnn",
+          "meaning": "character with decimal code nnn (exactly three digits)"
+        },
+        {
+          "escape": "\\{iN} \\{pN} \\{fN} \\{bN}",
+          "meaning": "embedded INK/PAPER/FLASH/BRIGHT control code (chr 16..19, N)"
+        },
+        {
+          "escape": "\\{vN}",
+          "meaning": "embedded INVERSE control code (chr 20, N); N in {0,1,n,i}"
+        },
+        {
+          "escape": "\\{IN} \\{BN}",
+          "meaning": "embedded ITALIC (chr 15) / BOLD (chr 14) control code"
+        }
+      ],
+      "notes": "Any other character is taken literally. Documentation mentions \\` for the pound sign; no such lexer rule was found (a plain backtick already is the pound sign in the Spectrum character set) - unverified. Multi-line literals: unverified, not recommended."
+    },
+    "punctuation": {
+      "tokens": "+ - * / ^ ( ) = < > <= >= <> << >> ~ & | ! @ { } , ; : := =>",
+      "aliases": {
+        "&": "bAND",
+        "|": "bOR",
+        "~": "bXOR",
+        "!": "bNOT",
+        "<<": "SHL",
+        ">>": "SHR"
+      },
+      "special": {
+        "=>": "introduces an array initialiser",
+        ":=": "marks a named argument",
+        "@": "address-of"
+      }
+    }
+  },
+  "keywords": [
+    {
+      "name": "ABS",
+      "kind": "function",
+      "docs": "docs/abs.md"
+    },
+    {
+      "name": "ACS",
+      "kind": "function",
+      "docs": "docs/acs.md"
+    },
+    {
+      "name": "AND",
+      "kind": "operator",
+      "docs": "docs/operators.md"
+    },
+    {
+      "name": "AS",
+      "kind": "modifier",
+      "docs": "docs/dim.md"
+    },
+    {
+      "name": "ASM",
+      "kind": "statement",
+      "docs": "docs/asm.md"
+    },
+    {
+      "name": "ASN",
+      "kind": "function",
+      "docs": "docs/asn.md"
+    },
+    {
+      "name": "AT",
+      "kind": "modifier",
+      "docs": "docs/at.md"
+    },
+    {
+      "name": "ATN",
+      "kind": "function",
+      "docs": "docs/atn.md"
+    },
+    {
+      "name": "BAND",
+      "kind": "operator",
+      "docs": "docs/bitwiselogic.md"
+    },
+    {
+      "name": "BEEP",
+      "kind": "statement",
+      "docs": "docs/beep.md"
+    },
+    {
+      "name": "BIN",
+      "kind": "misc",
+      "docs": "docs/bin.md",
+      "notes": "binary literal prefix"
+    },
+    {
+      "name": "BNOT",
+      "kind": "operator",
+      "docs": "docs/bitwiselogic.md"
+    },
+    {
+      "name": "BOLD",
+      "kind": "statement",
+      "docs": "docs/bold.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "BOR",
+      "kind": "operator",
+      "docs": "docs/bitwiselogic.md"
+    },
+    {
+      "name": "BORDER",
+      "kind": "statement",
+      "docs": "docs/border.md"
+    },
+    {
+      "name": "BRIGHT",
+      "kind": "statement",
+      "docs": "docs/bright.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "BXOR",
+      "kind": "operator",
+      "docs": "docs/bitwiselogic.md"
+    },
+    {
+      "name": "BYREF",
+      "kind": "modifier",
+      "docs": "docs/byref.md"
+    },
+    {
+      "name": "BYTE",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "BYVAL",
+      "kind": "modifier",
+      "docs": "docs/byval.md"
+    },
+    {
+      "name": "CAST",
+      "kind": "function",
+      "docs": "docs/cast.md"
+    },
+    {
+      "name": "CHR",
+      "kind": "function",
+      "docs": "docs/chr.md"
+    },
+    {
+      "name": "CHR$",
+      "kind": "function",
+      "docs": "docs/chr.md",
+      "notes": "spelling alias of CHR"
+    },
+    {
+      "name": "CIRCLE",
+      "kind": "statement",
+      "docs": "docs/circle.md"
+    },
+    {
+      "name": "CLS",
+      "kind": "statement",
+      "docs": "docs/cls.md"
+    },
+    {
+      "name": "CODE",
+      "kind": "function",
+      "docs": "docs/code.md",
+      "notes": "also a SAVE/LOAD/VERIFY modifier"
+    },
+    {
+      "name": "CONST",
+      "kind": "declaration",
+      "docs": "docs/const.md"
+    },
+    {
+      "name": "CONTINUE",
+      "kind": "statement",
+      "docs": "docs/continue.md"
+    },
+    {
+      "name": "COS",
+      "kind": "function",
+      "docs": "docs/cos.md"
+    },
+    {
+      "name": "DATA",
+      "kind": "statement",
+      "docs": "docs/data.md",
+      "notes": "also a SAVE/LOAD/VERIFY modifier"
+    },
+    {
+      "name": "DECLARE",
+      "kind": "declaration",
+      "docs": "docs/declare.md"
+    },
+    {
+      "name": "DIM",
+      "kind": "declaration",
+      "docs": "docs/dim.md"
+    },
+    {
+      "name": "DO",
+      "kind": "statement",
+      "docs": "docs/do.md"
+    },
+    {
+      "name": "DRAW",
+      "kind": "statement",
+      "docs": "docs/draw.md"
+    },
+    {
+      "name": "ELSE",
+      "kind": "misc",
+      "docs": "docs/if.md"
+    },
+    {
+      "name": "ELSEIF",
+      "kind": "misc",
+      "docs": "docs/if.md"
+    },
+    {
+      "name": "END",
+      "kind": "statement",
+      "docs": "docs/end.md",
+      "notes": "also closes SUB, FUNCTION, IF, WHILE and ASM blocks"
+    },
+    {
+      "name": "ENDIF",
+      "kind": "misc",
+      "docs": "docs/if.md",
+      "notes": "one-word alternative to END IF"
+    },
+    {
+      "name": "ERROR",
+      "kind": "statement",
+      "docs": null
+    },
+    {
+      "name": "EXIT",
+      "kind": "statement",
+      "docs": "docs/exit.md"
+    },
+    {
+      "name": "EXP",
+      "kind": "function",
+      "docs": "docs/exp.md"
+    },
+    {
+      "name": "FASTCALL",
+      "kind": "modifier",
+      "docs": "docs/fastcall.md"
+    },
+    {
+      "name": "FIXED",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "FLASH",
+      "kind": "statement",
+      "docs": "docs/flash.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "FLOAT",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "FOR",
+      "kind": "statement",
+      "docs": "docs/for.md"
+    },
+    {
+      "name": "FUNCTION",
+      "kind": "declaration",
+      "docs": "docs/function.md"
+    },
+    {
+      "name": "GO",
+      "kind": "statement",
+      "docs": "docs/goto.md",
+      "notes": "GO TO / GO SUB two-word forms"
+    },
+    {
+      "name": "GOSUB",
+      "kind": "statement",
+      "docs": "docs/gosub.md"
+    },
+    {
+      "name": "GOTO",
+      "kind": "statement",
+      "docs": "docs/goto.md"
+    },
+    {
+      "name": "IF",
+      "kind": "statement",
+      "docs": "docs/if.md"
+    },
+    {
+      "name": "IN",
+      "kind": "function",
+      "docs": "docs/in.md"
+    },
+    {
+      "name": "INK",
+      "kind": "statement",
+      "docs": "docs/ink.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "INKEY",
+      "kind": "function",
+      "docs": "docs/inkey.md"
+    },
+    {
+      "name": "INKEY$",
+      "kind": "function",
+      "docs": "docs/inkey.md",
+      "notes": "spelling alias of INKEY"
+    },
+    {
+      "name": "INT",
+      "kind": "function",
+      "docs": "docs/int.md"
+    },
+    {
+      "name": "INTEGER",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "INVERSE",
+      "kind": "statement",
+      "docs": "docs/inverse.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "ITALIC",
+      "kind": "statement",
+      "docs": "docs/italic.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "LBOUND",
+      "kind": "function",
+      "docs": "docs/lbound.md"
+    },
+    {
+      "name": "LEN",
+      "kind": "function",
+      "docs": null
+    },
+    {
+      "name": "LET",
+      "kind": "statement",
+      "docs": "docs/let.md"
+    },
+    {
+      "name": "LN",
+      "kind": "function",
+      "docs": "docs/ln.md"
+    },
+    {
+      "name": "LOAD",
+      "kind": "statement",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "LONG",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "LOOP",
+      "kind": "misc",
+      "docs": "docs/do.md"
+    },
+    {
+      "name": "MOD",
+      "kind": "operator",
+      "docs": "docs/operators.md"
+    },
+    {
+      "name": "NEXT",
+      "kind": "misc",
+      "docs": "docs/for.md"
+    },
+    {
+      "name": "NOT",
+      "kind": "operator",
+      "docs": "docs/operators.md"
+    },
+    {
+      "name": "ON",
+      "kind": "statement",
+      "docs": "docs/on_goto.md"
+    },
+    {
+      "name": "OR",
+      "kind": "operator",
+      "docs": "docs/operators.md"
+    },
+    {
+      "name": "OUT",
+      "kind": "statement",
+      "docs": "docs/out.md"
+    },
+    {
+      "name": "OVER",
+      "kind": "statement",
+      "docs": "docs/over.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "PAPER",
+      "kind": "statement",
+      "docs": "docs/paper.md",
+      "notes": "also a PRINT modifier"
+    },
+    {
+      "name": "PAUSE",
+      "kind": "statement",
+      "docs": "docs/pause.md"
+    },
+    {
+      "name": "PEEK",
+      "kind": "function",
+      "docs": "docs/peek.md"
+    },
+    {
+      "name": "PI",
+      "kind": "function",
+      "docs": "docs/pi.md",
+      "notes": "constant"
+    },
+    {
+      "name": "PLOT",
+      "kind": "statement",
+      "docs": "docs/plot.md"
+    },
+    {
+      "name": "POKE",
+      "kind": "statement",
+      "docs": "docs/poke.md"
+    },
+    {
+      "name": "PRINT",
+      "kind": "statement",
+      "docs": "docs/print.md"
+    },
+    {
+      "name": "RANDOMIZE",
+      "kind": "statement",
+      "docs": "docs/randomize.md"
+    },
+    {
+      "name": "READ",
+      "kind": "statement",
+      "docs": "docs/read.md"
+    },
+    {
+      "name": "REM",
+      "kind": "misc",
+      "docs": "docs/comments.md"
+    },
+    {
+      "name": "RESTORE",
+      "kind": "statement",
+      "docs": "docs/restore.md"
+    },
+    {
+      "name": "RETURN",
+      "kind": "statement",
+      "docs": "docs/return.md"
+    },
+    {
+      "name": "RND",
+      "kind": "function",
+      "docs": "docs/rnd.md"
+    },
+    {
+      "name": "SAVE",
+      "kind": "statement",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "SGN",
+      "kind": "function",
+      "docs": "docs/sgn.md"
+    },
+    {
+      "name": "SHL",
+      "kind": "operator",
+      "docs": "docs/shl.md"
+    },
+    {
+      "name": "SHR",
+      "kind": "operator",
+      "docs": "docs/shl.md"
+    },
+    {
+      "name": "SIN",
+      "kind": "function",
+      "docs": "docs/sin.md"
+    },
+    {
+      "name": "SIZEOF",
+      "kind": "function",
+      "docs": null
+    },
+    {
+      "name": "SQR",
+      "kind": "function",
+      "docs": "docs/sqr.md"
+    },
+    {
+      "name": "STDCALL",
+      "kind": "modifier",
+      "docs": "docs/stdcall.md"
+    },
+    {
+      "name": "STEP",
+      "kind": "modifier",
+      "docs": "docs/for.md"
+    },
+    {
+      "name": "STOP",
+      "kind": "statement",
+      "docs": "docs/stop.md"
+    },
+    {
+      "name": "STR",
+      "kind": "function",
+      "docs": "docs/str.md"
+    },
+    {
+      "name": "STR$",
+      "kind": "function",
+      "docs": "docs/str.md",
+      "notes": "spelling alias of STR"
+    },
+    {
+      "name": "STRING",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "SUB",
+      "kind": "declaration",
+      "docs": "docs/sub.md"
+    },
+    {
+      "name": "TAB",
+      "kind": "modifier",
+      "docs": "docs/tab.md"
+    },
+    {
+      "name": "TAN",
+      "kind": "function",
+      "docs": "docs/tan.md"
+    },
+    {
+      "name": "THEN",
+      "kind": "modifier",
+      "docs": "docs/if.md"
+    },
+    {
+      "name": "TO",
+      "kind": "modifier",
+      "docs": "docs/to.md"
+    },
+    {
+      "name": "UBOUND",
+      "kind": "function",
+      "docs": "docs/ubound.md"
+    },
+    {
+      "name": "UBYTE",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "UINTEGER",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "ULONG",
+      "kind": "type",
+      "docs": "docs/types.md"
+    },
+    {
+      "name": "UNTIL",
+      "kind": "misc",
+      "docs": "docs/do.md"
+    },
+    {
+      "name": "USR",
+      "kind": "function",
+      "docs": "docs/usr.md"
+    },
+    {
+      "name": "VAL",
+      "kind": "function",
+      "docs": "docs/val.md"
+    },
+    {
+      "name": "VERIFY",
+      "kind": "statement",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "WEND",
+      "kind": "misc",
+      "docs": "docs/while.md",
+      "notes": "one-word alternative to END WHILE"
+    },
+    {
+      "name": "WHILE",
+      "kind": "statement",
+      "docs": "docs/while.md"
+    },
+    {
+      "name": "XOR",
+      "kind": "operator",
+      "docs": "docs/operators.md"
+    }
+  ],
+  "keywords_notes": {
+    "directive_names": "After '#': define undef include ifdef ifndef if else endif error warning line init require pragma push pop once (case-insensitive).",
+    "library_names_to_avoid": "Not reserved but provided by the standard library: ASC ATTR CSRLIN HEX HEX16 INPUT INPUT42 GETKEY MULTIKEYS GETKEYSCANCODE LCASE UCASE POINT POS PRINT42 PRINTAT42 PRINT64 PRINTAT64 SCREEN$ MID$ LEFT$ RIGHT$ STRPOS STRPOS2 INSTR LTRIM RTRIM TRIM ISDIGIT ISLETTER ROUND ALLOCATE."
+  },
+  "types": {
+    "primitives": [
+      {
+        "name": "Byte",
+        "bytes": 1,
+        "signed": true,
+        "range": "-128..127"
+      },
+      {
+        "name": "UByte",
+        "bytes": 1,
+        "signed": false,
+        "range": "0..255"
+      },
+      {
+        "name": "Integer",
+        "bytes": 2,
+        "signed": true,
+        "range": "-32768..32767",
+        "sigil": "%"
+      },
+      {
+        "name": "UInteger",
+        "bytes": 2,
+        "signed": false,
+        "range": "0..65535"
+      },
+      {
+        "name": "Long",
+        "bytes": 4,
+        "signed": true,
+        "range": "-2^31..2^31-1"
+      },
+      {
+        "name": "ULong",
+        "bytes": 4,
+        "signed": false,
+        "range": "0..2^32-1"
+      },
+      {
+        "name": "Fixed",
+        "bytes": 4,
+        "signed": true,
+        "range": "16.16 fixed point, about -32767.99998..32767.99998, resolution 1/65536"
+      },
+      {
+        "name": "Float",
+        "bytes": 5,
+        "signed": true,
+        "range": "Sinclair ROM 40-bit float: 1 exponent byte (excess 128) + 4 mantissa bytes"
+      },
+      {
+        "name": "String",
+        "bytes": 2,
+        "signed": false,
+        "range": "pointer to a heap block: 2-byte length followed by the characters; max 65535 characters; null pointer means the empty string",
+        "sigil": "$"
+      }
+    ],
+    "boolean": "Internal only (result of comparisons and logical operators): 1 byte, 0 or 1; cannot be named; converts to UByte in arithmetic.",
+    "categories": {
+      "integral": "Byte UByte Integer UInteger Long ULong (+boolean)",
+      "decimal": "Fixed Float",
+      "numeric": "integral or decimal"
+    },
+    "default_type": "An untyped identifier takes its type from context (assigned expression, common type of FOR bounds, sigil, READ target, parameter or return position). If nothing determines it, the type is Float with warning W100. Under --strict an implicit type is an error; under --explicit every variable and function must be declared before use.",
+    "initial_values": "Numeric variables start at zero, strings at the empty string.",
+    "common_type_rule": "For two operands: same type -> that type; either Float -> Float; else either Fixed -> Fixed; else String with non-String -> error; else the larger size, made signed if either operand is signed (UByte+Byte -> Byte, UInteger+Byte -> Integer). An operand of unknown type takes the other's type.",
+    "conversions": {
+      "numeric": "implicit between numeric types (assignment, parameters, arguments, built-ins)",
+      "string": "never implicit; use VAL() and STR()",
+      "constants": "constant conversion to an integral type truncates toward minus infinity and masks to the target width; a value that does not fit raises W120",
+      "bitwise_on_decimals": "bitwise operators on Fixed/Float operands compute in Long",
+      "whole_array_assignment": "requires identical element type and identical total byte size; differing dimension shapes only warn"
+    },
+    "sizeof": "SIZEOF(type) and SIZEOF(variable) are compile-time constants in bytes.",
+    "strings": {
+      "representation": "length-prefixed heap strings; assignment copies; '+' concatenates; comparisons are lexicographic",
+      "slicing": [
+        "slice = str-designator \"(\" [ expr ] \"TO\" [ expr ] \")\" ;   (* substring, inclusive bounds *)",
+        "slice = str-designator \"(\" expr \")\" ;                       (* single character *)",
+        "str-designator = identifier | string-literal | \"(\" string-expr \")\" | array-element | function-call ;"
+      ],
+      "slice_rules": "Indices are relative to string_base (default 0; --string-base 1 or --sinclair make them 1-based). A missing lower bound is the first character, a missing upper bound the last. Bounds clip to 0..65534; lower > upper yields the empty string. Constant slices of constant strings fold at compile time.",
+      "heap": "Heap size defaults to 4768 bytes (--heap-size). A string that does not fit becomes empty unless --debug-memory, which raises the ROM 'Out of memory' report."
+    }
+  },
+  "operators": {
+    "precedence": [
+      {
+        "level": 1,
+        "operators": [
+          "( )",
+          "function call",
+          "slice",
+          "@"
+        ],
+        "associativity": "n/a"
+      },
+      {
+        "level": 2,
+        "operators": [
+          "^"
+        ],
+        "associativity": "right"
+      },
+      {
+        "level": 3,
+        "operators": [
+          "unary -"
+        ],
+        "associativity": "right"
+      },
+      {
+        "level": 4,
+        "operators": [
+          "*",
+          "/"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 5,
+        "operators": [
+          "MOD"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 6,
+        "operators": [
+          "+",
+          "- (binary)",
+          "bNOT / ! (unary)"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 7,
+        "operators": [
+          "bAND / &",
+          "bXOR / ~",
+          "SHL / <<",
+          "SHR / >>"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 8,
+        "operators": [
+          "bOR / |"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 9,
+        "operators": [
+          "=",
+          "<>",
+          "<",
+          ">",
+          "<=",
+          ">="
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 10,
+        "operators": [
+          "NOT"
+        ],
+        "associativity": "right"
+      },
+      {
+        "level": 11,
+        "operators": [
+          "XOR"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 12,
+        "operators": [
+          "AND"
+        ],
+        "associativity": "left"
+      },
+      {
+        "level": 13,
+        "operators": [
+          "OR"
+        ],
+        "associativity": "left"
+      }
+    ],
+    "precedence_notes": "NOT a = b parses as NOT (a = b); a bAND 3 = 1 as (a bAND 3) = 1; a bAND b + 1 as a bAND (b + 1); 2^3^2 = 512; -2^2 = -(2^2). The table was carried over from the pre-1.19 LALR grammar; that the Lark grammar reproduces it exactly is unverified.",
+    "list": [
+      {
+        "name": "+",
+        "operands": "numeric/numeric or string/string",
+        "result": "common type; String concatenation"
+      },
+      {
+        "name": "-",
+        "operands": "numeric",
+        "result": "common type; unary minus converts an unsigned operand to its signed counterpart"
+      },
+      {
+        "name": "*",
+        "operands": "numeric",
+        "result": "common type"
+      },
+      {
+        "name": "/",
+        "operands": "numeric",
+        "result": "common type; integer division when both operands are integral"
+      },
+      {
+        "name": "MOD",
+        "operands": "numeric",
+        "result": "common type; remainder"
+      },
+      {
+        "name": "^",
+        "operands": "numeric",
+        "result": "Float (both operands converted to Float)"
+      },
+      {
+        "name": "SHL / <<",
+        "operands": "integral left (Fixed/Float left converts to ULong); right converted to UByte",
+        "result": "type of the left operand"
+      },
+      {
+        "name": "SHR / >>",
+        "operands": "as SHL",
+        "result": "type of the left operand"
+      },
+      {
+        "name": "bAND / &",
+        "operands": "integral (decimals convert to Long)",
+        "result": "common type"
+      },
+      {
+        "name": "bOR / |",
+        "operands": "integral",
+        "result": "common type"
+      },
+      {
+        "name": "bXOR / ~",
+        "operands": "integral",
+        "result": "common type"
+      },
+      {
+        "name": "bNOT / !",
+        "operands": "integral (unary)",
+        "result": "same type, all bits inverted"
+      },
+      {
+        "name": "= <> < > <= >=",
+        "operands": "numeric/numeric or string/string",
+        "result": "boolean 0/1"
+      },
+      {
+        "name": "AND / OR / XOR",
+        "operands": "numeric (0 is false, non-zero true)",
+        "result": "boolean 0/1"
+      },
+      {
+        "name": "NOT",
+        "operands": "numeric (unary)",
+        "result": "boolean 0/1"
+      },
+      {
+        "name": "@",
+        "operands": "variable, array element with constant subscripts, or label",
+        "result": "UInteger address; a compile-time constant for globals and labels, a run-time value for locals"
+      },
+      {
+        "name": "CAST(type, expr)",
+        "operands": "numeric",
+        "result": "the named type"
+      }
+    ],
+    "restrictions": "Strings cannot be operands of - * / MOD AND OR XOR bAND bOR bXOR SHL SHR. Constant sub-expressions fold at compile time, including literal string concatenation and comparison. A condition that is a numeric constant raises W110.",
+    "primary_expressions": [
+      "primary = number | string-literal | \"PI\" | identifier | identifier \"(\" [ args ] \")\" | identifier expr | slice | \"(\" expr \")\" | \"@\" address-designator | builtin-call ;",
+      "args = arg { \",\" arg } ;",
+      "arg = expr | identifier \":=\" expr | array-identifier ;"
+    ],
+    "primary_notes": "identifier(args) is a function call, an array element or a string slice depending on what the identifier names. identifier expr is a single-argument call without parentheses. A bare identifier is a variable or a call to a parameterless FUNCTION. A SUB cannot appear in an expression. A bare array name is allowed only as a whole-array argument or in whole-array assignment."
+  },
+  "statements": [
+    {
+      "name": "ASM",
+      "syntax": [
+        "asm-block = \"ASM\" NL { asm-line } \"END\" \"ASM\" ;"
+      ],
+      "semantics": "Passes the enclosed lines verbatim to the built-in Z80 assembler. Preprocessor macros expand inside the block; #line, #init and #require may appear inside it.",
+      "constraints": "Global variables and routines are visible to the assembler as _name (BASIC name with the sigil stripped); user labels and line numbers as .LABEL._name; locals and parameters live on the stack and have no name; runtime symbols are in the .core namespace. Inline asm in a FASTCALL routine needs no ret. See inline_asm.",
+      "docs": "docs/asm.md"
+    },
+    {
+      "name": "BEEP",
+      "syntax": [
+        "beep = \"BEEP\" expr \",\" expr ;"
+      ],
+      "semantics": "Sounds the beeper: duration in seconds, then pitch in semitones relative to middle C. Both operands convert to Float.",
+      "docs": "docs/beep.md"
+    },
+    {
+      "name": "BOLD",
+      "syntax": [
+        "bold = \"BOLD\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement (ZX BASIC extension): emphasised glyphs when the operand (converted to UByte) is non-zero. Also usable as a PRINT modifier.",
+      "docs": "docs/bold.md"
+    },
+    {
+      "name": "BORDER",
+      "syntax": [
+        "border = \"BORDER\" expr ;"
+      ],
+      "semantics": "Sets the border colour; the operand converts to UByte.",
+      "docs": "docs/border.md"
+    },
+    {
+      "name": "BRIGHT",
+      "syntax": [
+        "bright = \"BRIGHT\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/bright.md"
+    },
+    {
+      "name": "CIRCLE",
+      "syntax": [
+        "circle = \"CIRCLE\" [ attr-list ] expr \",\" expr \",\" expr ;",
+        "attr-list = attr-modifier \";\" { attr-modifier \";\" } ;"
+      ],
+      "semantics": "Draws a circle at x, y with radius r. Each of the three operands converts to Byte (signed 8-bit). Optional attribute modifiers apply to this statement only.",
+      "docs": "docs/circle.md"
+    },
+    {
+      "name": "CLS",
+      "syntax": [
+        "cls = \"CLS\" ;"
+      ],
+      "semantics": "Clears the screen with the current permanent attributes.",
+      "docs": "docs/cls.md"
+    },
+    {
+      "name": "CONST",
+      "syntax": [
+        "const-stmt = \"CONST\" identifier [ \"AS\" type ] \"=\" const-expr ;"
+      ],
+      "semantics": "Declares a compile-time constant. The value must be a constant expression (numbers, operators, @ of globals or labels) or a string literal (string constants since 1.17.1). A constant is not a variable; a string constant can be sliced.",
+      "docs": "docs/const.md"
+    },
+    {
+      "name": "CONTINUE",
+      "syntax": [
+        "continue = \"CONTINUE\" ( \"DO\" | \"FOR\" | \"WHILE\" ) ;"
+      ],
+      "semantics": "Restarts the innermost enclosing loop of the named kind (goes to its next iteration). An error when no enclosing loop of that kind exists.",
+      "docs": "docs/continue.md"
+    },
+    {
+      "name": "DATA",
+      "syntax": [
+        "data = \"DATA\" expr { \",\" expr } ;"
+      ],
+      "semantics": "Provides items for READ. Items may be numeric or string expressions, including non-constant ones, which are evaluated when READ executes. Global scope only: DATA inside a SUB/FUNCTION is an error.",
+      "docs": "docs/data.md"
+    },
+    {
+      "name": "DECLARE",
+      "syntax": [
+        "declare = \"DECLARE\" ( sub-header | function-header ) ;"
+      ],
+      "semantics": "Forward-declares a SUB or FUNCTION header without a body, so it can be called before its definition with a known signature. The later definition must match name, parameter count, types and BYREF-ness (renamed parameters warn). A DECLARE after the definition, or a second definition, is an error.",
+      "docs": "docs/declare.md"
+    },
+    {
+      "name": "DIM",
+      "syntax": [
+        "dim-stmt = \"DIM\" idlist [ \"AS\" type ] ;",
+        "dim-stmt = \"DIM\" identifier [ \"AS\" type ] \"=\" expr ;",
+        "dim-stmt = \"DIM\" identifier [ \"AS\" type ] \"AT\" const-address ;",
+        "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] ;",
+        "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] \"AT\" const-address ;",
+        "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] \"=>\" vector ;",
+        "idlist = identifier { \",\" identifier } ;",
+        "bounds = bound { \",\" bound } ;",
+        "bound = const-expr | const-expr \"TO\" const-expr ;",
+        "vector = \"{\" ( const-expr { \",\" const-expr } | vector { \",\" vector } ) \"}\" ;",
+        "const-address = const-expr | \"@\" identifier | \"@\" identifier \"(\" const-expr { \",\" const-expr } \")\" | \"@\" label ;"
+      ],
+      "semantics": "Declares scalars or arrays. Several scalars may share one DIM; the initialised (= expr) and mapped (AT) forms take one name. '= expr': a compile-time constant (not a string) becomes the static initial value, otherwise an assignment is emitted at that point; the type is inferred when AS is omitted. 'AT addr' aliases the variable to a constant address (number, @global, @label or @array(const subscripts)); inside a routine a mapped variable is static. Arrays: bounds are non-negative constants with lower <= upper; a single bound n means array_base TO n; any number of dimensions; string elements allowed; elements are contiguous row-major; @a(0) is the first element's address. '=> {...}' initialises numeric arrays; nesting depth and counts must match the bounds; string arrays cannot be initialised; => and AT cannot be combined. Inside SUB/FUNCTION, DIM allocates stack locals released on return; parameters cannot be re-DIMmed.",
+      "constraints": "Arrays must be declared before use. Declaring a variable that was already referenced is an error. A non-constant AT address or initialiser is an error. Array subscripts convert to UInteger.",
+      "docs": "docs/dim.md"
+    },
+    {
+      "name": "DO",
+      "syntax": [
+        "do = \"DO\" SEP block \"LOOP\" ;",
+        "do = \"DO\" SEP block \"LOOP\" ( \"UNTIL\" | \"WHILE\" ) expr ;",
+        "do = \"DO\" ( \"UNTIL\" | \"WHILE\" ) expr SEP block \"LOOP\" ;"
+      ],
+      "semantics": "DO ... LOOP alone loops forever (the recommended infinite loop). Bottom-tested forms run the body at least once; top-tested forms test first. DO LOOP UNTIL c on one line is allowed. An empty body raises W130.",
+      "docs": "docs/do.md"
+    },
+    {
+      "name": "DRAW",
+      "syntax": [
+        "draw = \"DRAW\" [ attr-list ] expr \",\" expr [ \",\" expr ] ;"
+      ],
+      "semantics": "Draws a line relative to the last plotted point: dx, dy convert to Integer; the optional third operand is an arc angle in radians (Float).",
+      "docs": "docs/draw.md"
+    },
+    {
+      "name": "END",
+      "syntax": [
+        "end = \"END\" [ expr ] ;"
+      ],
+      "semantics": "Ends the program and returns to the caller (BASIC or the OS) with the optional value (default 0). END also pairs with SUB, FUNCTION, IF, WHILE and ASM to close blocks.",
+      "docs": "docs/end.md"
+    },
+    {
+      "name": "ERROR",
+      "syntax": [
+        "error = \"ERROR\" expr ;"
+      ],
+      "semantics": "Raises the ROM error report with the given number (operand converts to UByte).",
+      "docs": null
+    },
+    {
+      "name": "EXIT",
+      "syntax": [
+        "exit = \"EXIT\" ( \"DO\" | \"FOR\" | \"WHILE\" ) ;"
+      ],
+      "semantics": "Leaves the innermost enclosing loop of the named kind. An error when no enclosing loop of that kind exists.",
+      "docs": "docs/exit.md"
+    },
+    {
+      "name": "FLASH",
+      "syntax": [
+        "flash = \"FLASH\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/flash.md"
+    },
+    {
+      "name": "FOR",
+      "syntax": [
+        "for = \"FOR\" identifier \"=\" expr \"TO\" expr [ \"STEP\" expr ] SEP block \"NEXT\" [ identifier ] ;"
+      ],
+      "semantics": "Counted loop; STEP defaults to 1. NEXT may name the loop variable, and if it does it must match. An undeclared loop variable takes the common type of the three expressions (FOR i = 1 TO 10 gives UByte; FOR i = -1 TO 10 gives Byte), so wrap-around of that type can make a loop endless. Constant analysis warns for STEP 0 and for ranges that never iterate.",
+      "docs": "docs/for.md"
+    },
+    {
+      "name": "FUNCTION",
+      "syntax": [
+        "function-def = \"FUNCTION\" [ convention ] identifier [ \"(\" [ params ] \")\" ] [ \"AS\" type ] NL body \"END\" \"FUNCTION\" ;",
+        "convention = \"FASTCALL\" | \"STDCALL\" ;",
+        "params = param { \",\" param } ;",
+        "param = [ \"BYVAL\" | \"BYREF\" ] identifier [ \"AS\" type ] [ \"=\" const-expr ] | [ \"BYREF\" ] identifier \"(\" \")\" \"AS\" type ;"
+      ],
+      "semantics": "Defines a value-returning routine; RETURN expr returns the value (converted to the return type). An untyped return defaults to Float (W100; error under --strict). Falling off the end raises W190. See subprograms for parameter passing, calling conventions and calls.",
+      "docs": "docs/function.md"
+    },
+    {
+      "name": "GO",
+      "syntax": [
+        "goto = \"GO\" \"TO\" target ;",
+        "gosub = \"GO\" \"SUB\" target ;"
+      ],
+      "semantics": "Two-word spellings of GOTO and GOSUB.",
+      "docs": "docs/goto.md"
+    },
+    {
+      "name": "GOSUB",
+      "syntax": [
+        "gosub = \"GOSUB\" target ;",
+        "target = line-number | identifier ;"
+      ],
+      "semantics": "Calls the code at a label or line number; RETURN at global scope comes back. Not allowed inside SUB/FUNCTION. Targets may be used before they are declared; an undeclared target is an error at the end of parsing.",
+      "docs": "docs/gosub.md"
+    },
+    {
+      "name": "GOTO",
+      "syntax": [
+        "goto = \"GOTO\" target ;",
+        "target = line-number | identifier ;"
+      ],
+      "semantics": "Jumps to a label or line number. Labels are global; jumping into a SUB/FUNCTION is not possible.",
+      "docs": "docs/goto.md"
+    },
+    {
+      "name": "IF",
+      "syntax": [
+        "if-single = \"IF\" expr [ \"THEN\" ] statements [ \"ELSE\" statements ] [ \":\" ( \"END\" \"IF\" | \"ENDIF\" ) ] ;",
+        "if-block = \"IF\" expr [ \"THEN\" ] NL block { \"ELSEIF\" expr [ \"THEN\" ] [ NL ] block } [ \"ELSE\" [ NL ] block ] ( \"END\" \"IF\" | \"ENDIF\" ) ;"
+      ],
+      "semantics": "THEN is optional. The single-line form keeps everything on one line. ELSE IF written as two words is a nested IF that needs its own END IF. Labels may precede body lines. An empty IF is dropped with W140.",
+      "docs": "docs/if.md"
+    },
+    {
+      "name": "INK",
+      "syntax": [
+        "ink = \"INK\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/ink.md"
+    },
+    {
+      "name": "INVERSE",
+      "syntax": [
+        "inverse = \"INVERSE\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/inverse.md"
+    },
+    {
+      "name": "ITALIC",
+      "syntax": [
+        "italic = \"ITALIC\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement (ZX BASIC extension): slanted glyphs when non-zero. Also a PRINT modifier.",
+      "docs": "docs/italic.md"
+    },
+    {
+      "name": "LET",
+      "syntax": [
+        "assignment = [ \"LET\" ] identifier \"=\" expr ;",
+        "array-assignment = [ \"LET\" ] identifier \"(\" args \")\" \"=\" expr ;",
+        "array-copy = [ \"LET\" ] array-identifier \"=\" array-identifier ;",
+        "substr-assignment = [ \"LET\" ] str-designator \"(\" [ expr ] \"TO\" [ expr ] \")\" \"=\" string-expr ;",
+        "substr-assignment = [ \"LET\" ] str-designator \"(\" expr \")\" \"=\" string-expr ;",
+        "substr-assignment = [ \"LET\" ] string-array \"(\" args \")\" \"(\" [ expr ] \"TO\" [ expr ] \")\" \"=\" string-expr ;",
+        "substr-assignment = [ \"LET\" ] string-array \"(\" args \",\" expr \")\" \"=\" string-expr ;"
+      ],
+      "semantics": "LET is optional everywhere. The right side converts to the variable's type. Substring assignment overwrites characters in place; for a string array element one extra subscript is the character index. There are no compound assignment operators.",
+      "constraints": "Assigning to a constant, function or label is an error; assigning an array to a scalar is an error; whole-array copy needs identical element type and total size.",
+      "docs": "docs/let.md"
+    },
+    {
+      "name": "LOAD",
+      "syntax": [
+        "load = \"LOAD\" string-expr ( \"CODE\" [ expr [ \",\" expr ] ] | \"SCREEN$\" | \"SCREEN\" | \"DATA\" [ identifier [ \"(\" \")\" ] ] ) ;"
+      ],
+      "semantics": "Loads from tape: CODE with optional address and length; SCREEN$ is CODE 16384, 6912; DATA loads the bytes of one scalar or whole array, or without a name the whole user-variable area plus heap. Load errors do not stop the program (check PEEK 23610); BREAK cancels.",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "ON",
+      "syntax": [
+        "on-jump = \"ON\" expr ( \"GOTO\" | \"GO\" \"TO\" | \"GOSUB\" | \"GO\" \"SUB\" ) target { \",\" target } ;"
+      ],
+      "semantics": "Computed jump through a jump table: the expression converts to UByte; value 0 selects the first target; out-of-range values do nothing.",
+      "docs": "docs/on_goto.md"
+    },
+    {
+      "name": "OUT",
+      "syntax": [
+        "out = \"OUT\" expr \",\" expr ;"
+      ],
+      "semantics": "Writes a byte to an I/O port: port converts to UInteger, value to UByte.",
+      "docs": "docs/out.md"
+    },
+    {
+      "name": "OVER",
+      "syntax": [
+        "over = \"OVER\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/over.md"
+    },
+    {
+      "name": "PAPER",
+      "syntax": [
+        "paper = \"PAPER\" expr ;"
+      ],
+      "semantics": "Permanent attribute statement; operand converts to UByte. Also a PRINT modifier.",
+      "docs": "docs/paper.md"
+    },
+    {
+      "name": "PAUSE",
+      "syntax": [
+        "pause = \"PAUSE\" expr ;"
+      ],
+      "semantics": "Waits the given number of frames (operand converts to UInteger); 0 waits for a key press (or 65536 frames).",
+      "docs": "docs/pause.md"
+    },
+    {
+      "name": "PLOT",
+      "syntax": [
+        "plot = \"PLOT\" [ attr-list ] expr \",\" expr ;"
+      ],
+      "semantics": "Plots a pixel at x, y (both convert to UByte); (0,0) is bottom-left and all 192 rows are usable. Optional attribute modifiers apply to this statement only.",
+      "docs": "docs/plot.md"
+    },
+    {
+      "name": "POKE",
+      "syntax": [
+        "poke = \"POKE\" expr \",\" expr ;",
+        "poke = \"POKE\" \"(\" expr \",\" expr \")\" ;",
+        "poke = \"POKE\" type expr \",\" expr ;",
+        "poke = \"POKE\" \"(\" type expr \",\" expr \")\" ;",
+        "poke = \"POKE\" type \",\" expr \",\" expr ;",
+        "poke = \"POKE\" \"(\" type \",\" expr \",\" expr \")\" ;"
+      ],
+      "semantics": "Writes to memory. Without a type: address converts to UInteger, value to UByte. With a type the value is converted to and stored as that type (POKE UINTEGER 23675, v; POKE FLOAT a, PI). The comma-after-type form is accepted for FreeBASIC compatibility.",
+      "docs": "docs/poke.md"
+    },
+    {
+      "name": "PRINT",
+      "syntax": [
+        "print = \"PRINT\" [ print-item { print-sep print-item } ] [ print-sep ] ;",
+        "print-sep = \";\" | \",\" ;",
+        "print-item = expr | \"AT\" expr \",\" expr | \"TAB\" expr | attr-modifier ;",
+        "attr-modifier = ( \"INK\" | \"PAPER\" | \"FLASH\" | \"BRIGHT\" | \"INVERSE\" | \"OVER\" | \"BOLD\" | \"ITALIC\" ) expr ;"
+      ],
+      "semantics": "';' juxtaposes, ',' advances to the next 16-column field, a trailing separator suppresses the newline, a bare PRINT outputs a newline. AT row, col (both UByte; all 24 rows usable); TAB col (UByte, taken modulo 32, moves to the next line when already past the column). Attribute modifiers inside PRINT are temporary for that statement. Boolean expressions print as 0 or 1. The apostrophe is not a separator.",
+      "docs": "docs/print.md"
+    },
+    {
+      "name": "RANDOMIZE",
+      "syntax": [
+        "randomize = \"RANDOMIZE\" [ expr ] ;"
+      ],
+      "semantics": "Seeds the random generator with the operand (converted to ULong); without an operand it seeds from the FRAMES counter.",
+      "docs": "docs/randomize.md"
+    },
+    {
+      "name": "READ",
+      "syntax": [
+        "read = \"READ\" designator { \",\" designator } ;",
+        "designator = identifier | identifier \"(\" args \")\" ;"
+      ],
+      "semantics": "Reads the next DATA items into scalars or array elements (a whole array is an error). An undeclared target becomes Float. Reading past the last item wraps to the first.",
+      "docs": "docs/read.md"
+    },
+    {
+      "name": "RESTORE",
+      "syntax": [
+        "restore = \"RESTORE\" [ target ] ;"
+      ],
+      "semantics": "Makes the next READ start at the first DATA item, or at the DATA line following the given label or line number.",
+      "docs": "docs/restore.md"
+    },
+    {
+      "name": "RETURN",
+      "syntax": [
+        "return = \"RETURN\" [ expr ] ;"
+      ],
+      "semantics": "At global scope returns from GOSUB. Inside a SUB returns. Inside a FUNCTION it must carry a value of the function's category (numeric vs string), which converts to the return type. RETURN expr outside a FUNCTION is an error.",
+      "docs": "docs/return.md"
+    },
+    {
+      "name": "SAVE",
+      "syntax": [
+        "save = \"SAVE\" string-expr ( \"CODE\" expr \",\" expr | \"SCREEN$\" | \"SCREEN\" | \"DATA\" [ identifier [ \"(\" \")\" ] ] ) ;"
+      ],
+      "semantics": "Saves to tape: CODE address, length; SCREEN$ is CODE 16384, 6912; DATA saves one scalar or whole array, or without a name the whole user-variable area plus heap.",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "STOP",
+      "syntax": [
+        "stop = \"STOP\" [ expr ] ;"
+      ],
+      "semantics": "Raises a ROM report; without an operand the 'STOP statement' report.",
+      "docs": "docs/stop.md"
+    },
+    {
+      "name": "SUB",
+      "syntax": [
+        "sub-def = \"SUB\" [ convention ] identifier [ \"(\" [ params ] \")\" ] NL body \"END\" \"SUB\" ;"
+      ],
+      "semantics": "Defines a routine without a return value; a SUB cannot declare a return type and cannot be used in an expression. See subprograms for parameters, conventions and calls.",
+      "docs": "docs/sub.md"
+    },
+    {
+      "name": "VERIFY",
+      "syntax": [
+        "verify = \"VERIFY\" string-expr ( \"CODE\" [ expr [ \",\" expr ] ] | \"SCREEN$\" | \"SCREEN\" | \"DATA\" [ identifier [ \"(\" \")\" ] ] ) ;"
+      ],
+      "semantics": "Same forms as LOAD; compares the tape block with memory instead of loading it.",
+      "docs": "docs/load.md"
+    },
+    {
+      "name": "WHILE",
+      "syntax": [
+        "while = \"WHILE\" expr SEP block ( \"END\" \"WHILE\" | \"WEND\" ) ;"
+      ],
+      "semantics": "Top-tested loop. An empty body raises W130.",
+      "docs": "docs/while.md"
+    }
+  ],
+  "statements_notes": {
+    "labels_and_addresses": "label: and line numbers declare global labels of pointer type; @label is a compile-time constant address, used with USR @label, DIM x AT @label, POKE, RESTORE label and array initialisers. @global is constant; @local is a run-time value; a bare @array yields the array's data label (1.18.3).",
+    "prologue": "Unless --headerless: the program prologue disables interrupts, saves IX, IY and HL', stores SP, re-enables interrupts, calls every #init routine and jumps to the main code; the epilogue restores them and returns to BASIC. END and STOP return a code. --enable-break inserts a BREAK check per line."
+  },
+  "functions": [
+    {
+      "name": "ABS",
+      "syntax": [
+        "\"ABS\" \"(\" expr \")\""
+      ],
+      "argument": "numeric",
+      "result": "same type as the argument",
+      "notes": "warns as redundant on an unsigned argument",
+      "docs": "docs/abs.md"
+    },
+    {
+      "name": "ACS",
+      "syntax": [
+        "\"ACS\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/acs.md"
+    },
+    {
+      "name": "ASN",
+      "syntax": [
+        "\"ASN\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/asn.md"
+    },
+    {
+      "name": "ATN",
+      "syntax": [
+        "\"ATN\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/atn.md"
+    },
+    {
+      "name": "CAST",
+      "syntax": [
+        "\"CAST\" \"(\" type \",\" expr \")\""
+      ],
+      "argument": "numeric",
+      "result": "the named type",
+      "docs": "docs/cast.md"
+    },
+    {
+      "name": "CHR",
+      "syntax": [
+        "( \"CHR\" | \"CHR$\" ) \"(\" expr { \",\" expr } \")\""
+      ],
+      "argument": "each converted to UByte",
+      "result": "String with one character per argument; parentheses mandatory",
+      "docs": "docs/chr.md"
+    },
+    {
+      "name": "CODE",
+      "syntax": [
+        "\"CODE\" \"(\" string-expr \")\""
+      ],
+      "argument": "String",
+      "result": "UByte code of the first character; 0 for the empty string",
+      "docs": "docs/code.md"
+    },
+    {
+      "name": "COS",
+      "syntax": [
+        "\"COS\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/cos.md"
+    },
+    {
+      "name": "EXP",
+      "syntax": [
+        "\"EXP\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/exp.md"
+    },
+    {
+      "name": "IN",
+      "syntax": [
+        "\"IN\" expr",
+        "\"IN\" \"(\" expr \")\""
+      ],
+      "argument": "port converted to UInteger",
+      "result": "UByte read from the port",
+      "docs": "docs/in.md"
+    },
+    {
+      "name": "INKEY",
+      "syntax": [
+        "\"INKEY\"",
+        "\"INKEY$\""
+      ],
+      "argument": "none",
+      "result": "String: the key currently pressed, or the empty string",
+      "docs": "docs/inkey.md"
+    },
+    {
+      "name": "INT",
+      "syntax": [
+        "\"INT\" \"(\" expr \")\""
+      ],
+      "argument": "numeric",
+      "result": "Long, truncated toward minus infinity",
+      "docs": "docs/int.md"
+    },
+    {
+      "name": "LBOUND",
+      "syntax": [
+        "\"LBOUND\" \"(\" array-identifier [ \",\" expr ] \")\""
+      ],
+      "argument": "array and a 1-based dimension number",
+      "result": "UInteger lower bound; dimension omitted or 0 gives the number of dimensions; constant-folded for declared arrays",
+      "docs": "docs/lbound.md"
+    },
+    {
+      "name": "LEN",
+      "syntax": [
+        "\"LEN\" \"(\" string-expr \")\""
+      ],
+      "argument": "String",
+      "result": "UInteger length; constant-folded for literals. LEN of an array gives its number of dimensions (edge case).",
+      "docs": null
+    },
+    {
+      "name": "LN",
+      "syntax": [
+        "\"LN\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/ln.md"
+    },
+    {
+      "name": "PEEK",
+      "syntax": [
+        "\"PEEK\" expr",
+        "\"PEEK\" \"(\" expr \")\"",
+        "\"PEEK\" \"(\" type \",\" expr \")\""
+      ],
+      "argument": "address converted to UInteger",
+      "result": "UByte, or the named type when one is given",
+      "docs": "docs/peek.md"
+    },
+    {
+      "name": "PI",
+      "syntax": [
+        "\"PI\""
+      ],
+      "argument": "none",
+      "result": "Float constant",
+      "docs": "docs/pi.md"
+    },
+    {
+      "name": "RND",
+      "syntax": [
+        "\"RND\"",
+        "\"RND\" \"(\" \")\""
+      ],
+      "argument": "none",
+      "result": "Float in [0, 1); 2^32 period",
+      "docs": "docs/rnd.md"
+    },
+    {
+      "name": "SGN",
+      "syntax": [
+        "\"SGN\" \"(\" expr \")\""
+      ],
+      "argument": "numeric",
+      "result": "Byte: -1, 0 or 1; warns on an unsigned argument",
+      "docs": "docs/sgn.md"
+    },
+    {
+      "name": "SIN",
+      "syntax": [
+        "\"SIN\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/sin.md"
+    },
+    {
+      "name": "SIZEOF",
+      "syntax": [
+        "\"SIZEOF\" \"(\" ( type | identifier ) \")\""
+      ],
+      "argument": "type name or variable",
+      "result": "compile-time constant size in bytes",
+      "docs": null
+    },
+    {
+      "name": "SQR",
+      "syntax": [
+        "\"SQR\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/sqr.md"
+    },
+    {
+      "name": "STR",
+      "syntax": [
+        "( \"STR\" | \"STR$\" ) \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "String",
+      "docs": "docs/str.md"
+    },
+    {
+      "name": "TAN",
+      "syntax": [
+        "\"TAN\" \"(\" expr \")\""
+      ],
+      "argument": "converted to Float",
+      "result": "Float",
+      "docs": "docs/tan.md"
+    },
+    {
+      "name": "UBOUND",
+      "syntax": [
+        "\"UBOUND\" \"(\" array-identifier [ \",\" expr ] \")\""
+      ],
+      "argument": "array and a 1-based dimension number",
+      "result": "UInteger upper bound; dimension omitted or 0 gives the number of dimensions; constant-folded for declared arrays",
+      "docs": "docs/ubound.md"
+    },
+    {
+      "name": "USR",
+      "syntax": [
+        "\"USR\" expr",
+        "\"USR\" string-expr"
+      ],
+      "argument": "address converted to UInteger, or a string",
+      "result": "UInteger: calls machine code at the address and returns BC; for a string, the UDG address of its first character (case-insensitive)",
+      "docs": "docs/usr.md"
+    },
+    {
+      "name": "VAL",
+      "syntax": [
+        "\"VAL\" \"(\" string-expr \")\""
+      ],
+      "argument": "String",
+      "result": "Float; constant strings fold at compile time (invalid gives 0 with a warning); at run time an invalid string sets the ROM error variable",
+      "docs": "docs/val.md"
+    }
+  ],
+  "functions_notes": {
+    "library": "Provided by #include, not built in: ATTR (attr.bas), SCREEN$ (screen.bas), POINT (point.bas), INPUT and INPUT42 (String; input.bas), POS, CSRLIN, ASC, HEX, HEX16, ROUND, and from string.bas MID$, LEFT$, RIGHT$, STRPOS, STRPOS2, INSTR, UCASE/UCASE2, LCASE/LCASE2, LTRIM/RTRIM/TRIM, ISDIGIT, ISLETTER. With --sinclair the file sinclair.bas is included automatically (attr, point, screen, input, alloc; it also relocates the UDG system variable to allocated heap)."
+  },
+  "subprograms": {
+    "call": [
+      "call = identifier | identifier \"(\" [ args ] \")\" | identifier args ;   (* statement: SUB or FUNCTION call; the parenthesis-less form allows e.g. test x := 1 *)",
+      "args = arg { \",\" arg } ;",
+      "arg = expr | identifier \":=\" expr | array-identifier ;"
+    ],
+    "parameters": {
+      "default_passing": "scalars BYVAL unless #pragma default_byref = true; arrays always BYREF (BYVAL on an array is an error)",
+      "byref_arguments": "a BYREF argument must be a variable, an array or an array element, not an expression",
+      "optional": "a parameter with '= const' is optional; a mandatory parameter after an optional one is an error; array parameters cannot have defaults",
+      "named_arguments": "name := expr; positional arguments may not follow a named one; unknown names, too many or too few arguments are errors",
+      "whole_arrays": "passed by name: f(myArray)",
+      "typing": "untyped parameters and returns default to Float (W100; error under --strict)"
+    },
+    "conventions": {
+      "STDCALL": "Default. Parameters are pushed on the stack in reverse order (last argument first); an 8-bit value occupies a word with the value in the high byte; 32-bit values are pushed high word then low word; a Float takes 6 bytes (a padding byte, then exponent, then the 4 mantissa bytes). The callee removes them. Results: A for 8-bit, HL for 16-bit and String pointers, DE:HL for 32-bit and Fixed, and for Float the register image A (exponent), E, D, C, B (mantissa, sign in bit 7 of E). The docs pages fastcall.md/stdcall.md describe the Float result as C/DE/HL; the implementation and runtime use A/E/D/C/B (verified against the backend and runtime headers).",
+      "FASTCALL": "The first parameter arrives in registers according to its size: A (8-bit), HL (16-bit or String pointer), DE:HL (32-bit or Fixed), A/E/D/C/B (Float). No stack frame is set up and locals are not allowed. Results as for STDCALL. More than one parameter raises W160; the remaining ones are pushed STDCALL-style ([SP+0] return address, [SP+2] second parameter, ...) and the routine must remove them itself."
+    },
+    "rules": "Recursion is allowed. Locals are DIMmed inside the body. DATA and GOSUB are not allowed inside routines. A FUNCTION called before its definition is checked at the end of parsing; without DECLARE its return type is assumed Float. Unused routines are removed at -O1 and above (W170)."
+  },
+  "preprocessor": {
+    "overview": "Runs before parsing (and again over the generated assembly in asm output mode). A directive line starts with '#' as its first non-blank character; blanks may follow '#'; names are case-insensitive.",
+    "directives": [
+      {
+        "name": "#define",
+        "syntax": [
+          "\"#define\" NAME",
+          "\"#define\" NAME body",
+          "\"#define\" NAME \"(\" param { \",\" param } \")\" body"
+        ],
+        "semantics": "Object-like or function-like macro. The parameter list must follow the name without a space. The body may continue over lines ending in '\\' or '_'. Duplicate parameter names are errors; redefinition raises W510 (W500 for a built-in); no whitespace after the name raises W520. Expansion is lazy and recursive; arguments may contain nested parentheses and commas inside them; the argument count must match. '##' pastes tokens, '#' stringizes (the result is a BASIC string with doubled quotes)."
+      },
+      {
+        "name": "#else",
+        "syntax": [
+          "\"#else\""
+        ],
+        "semantics": "Alternative branch of #if, #ifdef or #ifndef."
+      },
+      {
+        "name": "#endif",
+        "syntax": [
+          "\"#endif\""
+        ],
+        "semantics": "Closes a conditional block."
+      },
+      {
+        "name": "#error",
+        "syntax": [
+          "\"#error\" text"
+        ],
+        "semantics": "Emits a compile error with the text."
+      },
+      {
+        "name": "#if",
+        "syntax": [
+          "\"#if\" pp-expr"
+        ],
+        "semantics": "Conditional compilation. pp-expr uses macro names, integers, strings, parentheses, ==, != or <>, <, <=, >, >=, && and ||. Equality compares expanded text; ordering compares integer values (non-numeric counts as 0); a bare name is true when it expands to a non-zero integer or, failing that, when it is defined. zxbc 1.19 does not implement #elif: it is a syntax error there (observed through the oracle; Klive accepts it, semantics annex elif-directive)."
+      },
+      {
+        "name": "#ifdef",
+        "syntax": [
+          "\"#ifdef\" NAME"
+        ],
+        "semantics": "True when NAME is defined."
+      },
+      {
+        "name": "#ifndef",
+        "syntax": [
+          "\"#ifndef\" NAME"
+        ],
+        "semantics": "True when NAME is not defined."
+      },
+      {
+        "name": "#include",
+        "syntax": [
+          "\"#include\" \"<\" file \">\"",
+          "\"#include\" '\"' file '\"'",
+          "\"#include\" MACRO",
+          "\"#include\" \"once\" [ \"[\" \"arch\" \":\" arch \"]\" ] ( \"<\" file \">\" | '\"' file '\"' )"
+        ],
+        "semantics": "<file> searches the include path: the architecture's stdlib/, runtime/, then -I directories (zx81sd falls back to zx48k). \"file\" tries the current file's directory first. Absolute paths are allowed. A MACRO must expand to one of the two forms (1.15.1). Recursive inclusion warns. 'once' includes only if not already included (a later inclusion is silently empty; a warning when included from several places). The [arch:zx48k] modifier looks the file up in another architecture's library; any modifier name other than arch is an error."
+      },
+      {
+        "name": "#init",
+        "syntax": [
+          "\"#init\" name",
+          "\"#init\" '\"' name '\"'"
+        ],
+        "semantics": "Registers an assembler routine (dotted names allowed) to be called in the program prologue. Used inside ASM blocks of libraries."
+      },
+      {
+        "name": "#line",
+        "syntax": [
+          "\"#line\" N [ '\"' file '\"' ]"
+        ],
+        "semantics": "Resets line and file bookkeeping for diagnostics."
+      },
+      {
+        "name": "#pragma",
+        "syntax": [
+          "\"#pragma\" option \"=\" value",
+          "\"#pragma\" option value",
+          "\"#pragma\" \"push\" \"(\" option \")\"",
+          "\"#pragma\" \"pop\" \"(\" option \")\"",
+          "\"#pragma\" \"once\""
+        ],
+        "semantics": "Sets, saves or restores a compiler option (see pragmas). Values are integers, identifiers or strings; booleans accept true/false, on/off, yes/no, +/-. An unknown option raises W300. 'once' marks the current file as include-once."
+      },
+      {
+        "name": "#require",
+        "syntax": [
+          "\"#require\" '\"' file.asm '\"'"
+        ],
+        "semantics": "Requests a runtime assembler module to be appended to the output (an include-once of that file)."
+      },
+      {
+        "name": "#undef",
+        "syntax": [
+          "\"#undef\" NAME"
+        ],
+        "semantics": "Removes a macro definition."
+      },
+      {
+        "name": "#warning",
+        "syntax": [
+          "\"#warning\" text"
+        ],
+        "semantics": "Emits a compile warning with the text."
+      }
+    ],
+    "builtin_macros": {
+      "always": [
+        "__FILE__",
+        "__LINE__",
+        "__BASE_FILE__",
+        "__ABS_FILE__"
+      ],
+      "by_option": {
+        "__MEMORY_CHECK__": "--debug-memory",
+        "__CHECK_ARRAY_BOUNDARY__": "--debug-array",
+        "__ENABLE_BREAK__": "--enable-break",
+        "__OPT_STRATEGY__": "size, speed or auto",
+        "___PRINT_IS_USED___": "asm stage only"
+      },
+      "notes": "-D NAME[=VALUE] defines further macros. The runtime honours -D HIDE_LOAD_MSG to hide LOAD messages."
+    },
+    "pragmas": [
+      {
+        "name": "array_base",
+        "type": "int",
+        "default": 0,
+        "effect": "default lower array bound"
+      },
+      {
+        "name": "array_check",
+        "type": "bool",
+        "default": false,
+        "effect": "subscript range checks (same as --debug-array)"
+      },
+      {
+        "name": "autorun",
+        "type": "bool",
+        "default": false,
+        "effect": "auto-start entry in the output"
+      },
+      {
+        "name": "case_insensitive",
+        "type": "bool",
+        "default": false,
+        "effect": "identifiers become case-insensitive"
+      },
+      {
+        "name": "default_byref",
+        "type": "bool",
+        "default": false,
+        "effect": "scalar parameters default to BYREF"
+      },
+      {
+        "name": "enable_break",
+        "type": "bool",
+        "default": false,
+        "effect": "BREAK key checks per line"
+      },
+      {
+        "name": "expected_warnings",
+        "type": "int",
+        "default": 0,
+        "effect": "as --expect-warnings"
+      },
+      {
+        "name": "explicit",
+        "type": "bool",
+        "default": false,
+        "effect": "variables must be declared before use"
+      },
+      {
+        "name": "force_asm_brackets",
+        "type": "bool",
+        "default": false,
+        "effect": "as the CLI flag of the same name (assembler bracket style)"
+      },
+      {
+        "name": "headerless",
+        "type": "bool",
+        "default": false,
+        "effect": "omit prologue and epilogue"
+      },
+      {
+        "name": "heap_address",
+        "type": "int",
+        "default": null,
+        "effect": "fixed heap address instead of after the program"
+      },
+      {
+        "name": "heap_size",
+        "type": "int",
+        "default": 4768,
+        "effect": "heap size in bytes"
+      },
+      {
+        "name": "hide_warning_codes",
+        "type": "bool",
+        "default": false,
+        "effect": "omit [Wnnn] prefixes"
+      },
+      {
+        "name": "include_path",
+        "type": "string",
+        "default": "",
+        "effect": "extra include directories"
+      },
+      {
+        "name": "memory_check",
+        "type": "bool",
+        "default": false,
+        "effect": "out-of-memory detection (same as --debug-memory)"
+      },
+      {
+        "name": "memory_map",
+        "type": "string",
+        "default": null,
+        "effect": "label map output file (as --mmap)"
+      },
+      {
+        "name": "once",
+        "type": "flag",
+        "default": null,
+        "effect": "marks the current file as include-once"
+      },
+      {
+        "name": "opt_strategy",
+        "type": "size | speed | auto",
+        "default": "auto",
+        "effect": "optimiser strategy"
+      },
+      {
+        "name": "optimization_level",
+        "type": "int",
+        "default": 2,
+        "effect": "optimisation level"
+      },
+      {
+        "name": "org",
+        "type": "int",
+        "default": 32768,
+        "effect": "code origin"
+      },
+      {
+        "name": "sinclair",
+        "type": "bool",
+        "default": false,
+        "effect": "Sinclair compatibility mode (as --sinclair)"
+      },
+      {
+        "name": "strict",
+        "type": "bool",
+        "default": false,
+        "effect": "explicit types required"
+      },
+      {
+        "name": "strict_bool",
+        "type": "bool",
+        "default": false,
+        "effect": "deprecated and ignored since 1.18.0"
+      },
+      {
+        "name": "string_base",
+        "type": "int",
+        "default": 0,
+        "effect": "index of the first character of a string"
+      },
+      {
+        "name": "zxnext",
+        "type": "bool",
+        "default": false,
+        "effect": "ZX Next opcodes allowed in ASM blocks"
+      }
+    ],
+    "pragmas_notes": "Any compiler option can be set through #pragma; the ones above are the meaningful ones. push/pop save and restore a single option, which the standard library uses around its own case_insensitive setting."
+  },
+  "inline_asm": {
+    "delimiters": "ASM on a line of its own ... END ASM on a line of its own; ';' starts an assembler comment",
+    "upstream_dialect": "The built-in assembler (zxbasm) accepts DEFB/DEFW/DEFS, ALIGN n, PROC/LOCAL/ENDP local label scopes, #incbin, temporary labels 1b/1f, and namespaces (the compiler uses .core, .LABEL and .DATA). Curly braces are tolerated for third-party assembler compatibility. Z80N opcodes need --zxnext or --arch zxnext. Preprocessor macros expand inside the block.",
+    "symbol_visibility": "Global variables and routines: _name (sigil stripped). Labels and line numbers: .LABEL._name (for example .LABEL._10). Locals and parameters: stack (IX-relative), no name. Runtime: .core namespace. The usual BASIC-side idiom is @label / @var for addresses and USR @label to call code; a label line immediately before an ASM block is the documented way to address data inside it. That _name is exactly what the assembler sees for every global is unverified.",
+    "klive_rule": "Klive's compiler accepts inline asm in Klive's native assembler dialect (decision recorded 2026-09-26). How BASIC symbols are exposed to it is defined by the compiler plan, not by upstream."
+  },
+  "cli": {
+    "command": "zxbc [options] PROGRAM.bas   (zxb is the historical name); option prefix characters are '-' and '+'",
+    "archs": [
+      "zx48k",
+      "zxnext",
+      "zx81sd"
+    ],
+    "output_formats": [
+      "asm",
+      "bin",
+      "ir",
+      "sna",
+      "tap",
+      "tzx",
+      "z80"
+    ],
+    "exit_codes": {
+      "0": "ok",
+      "1": "preprocessor, parse or semantic errors",
+      "5": "assembler errors"
+    },
+    "message_format": {
+      "error": "file:line: error: text",
+      "warning": "file:line: warning: [Wnnn] text",
+      "notes": "identical messages print once; more than 20 errors aborts"
+    },
+    "options": [
+      {
+        "name": "--append-binary",
+        "short": null,
+        "argument": "FILE",
+        "default": null,
+        "meaning": "append an extra block to tap/tzx output (repeatable)"
+      },
+      {
+        "name": "--append-headless-binary",
+        "short": null,
+        "argument": "FILE",
+        "default": null,
+        "meaning": "append a headerless block to tap/tzx output (repeatable)"
+      },
+      {
+        "name": "--arch",
+        "short": null,
+        "argument": "zx48k | zxnext | zx81sd",
+        "default": "zx48k",
+        "meaning": "target architecture"
+      },
+      {
+        "name": "--array-base",
+        "short": null,
+        "argument": "N",
+        "default": 0,
+        "meaning": "default lower array bound"
+      },
+      {
+        "name": "--asm",
+        "short": "-A",
+        "argument": null,
+        "default": false,
+        "meaning": "deprecated alias of --output-format asm"
+      },
+      {
+        "name": "--autorun",
+        "short": "-a",
+        "argument": null,
+        "default": false,
+        "meaning": "auto-run after load (tap, tzx, sna, z80); sna and z80 need both -B and -a"
+      },
+      {
+        "name": "--BASIC",
+        "short": "-B",
+        "argument": null,
+        "default": false,
+        "meaning": "prepend a BASIC loader (tap, tzx, sna or z80 output)"
+      },
+      {
+        "name": "--config-file",
+        "short": "-F",
+        "argument": "FILE",
+        "default": "./project.ini when present",
+        "meaning": "load options from an INI file, section [zxbc]"
+      },
+      {
+        "name": "--debug",
+        "short": "-d",
+        "argument": null,
+        "default": 0,
+        "meaning": "verbosity; repeatable"
+      },
+      {
+        "name": "--debug-array",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "array subscript checks"
+      },
+      {
+        "name": "--debug-memory",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "out-of-memory checks"
+      },
+      {
+        "name": "--define",
+        "short": "-D",
+        "argument": "NAME[=VALUE]",
+        "default": null,
+        "meaning": "define a preprocessor macro (repeatable)"
+      },
+      {
+        "name": "--disable-warning",
+        "short": "-W",
+        "argument": "NNN",
+        "default": null,
+        "meaning": "disable warning code NNN (repeatable; -WNNN form)"
+      },
+      {
+        "name": "--emit-backend",
+        "short": "-E",
+        "argument": null,
+        "default": false,
+        "meaning": "deprecated alias of --output-format ir"
+      },
+      {
+        "name": "--enable-break",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "BREAK key detection"
+      },
+      {
+        "name": "--enable-warning",
+        "short": "+W",
+        "argument": "NNN",
+        "default": null,
+        "meaning": "enable warning code NNN (repeatable; +WNNN form); a code cannot be both enabled and disabled"
+      },
+      {
+        "name": "--errmsg",
+        "short": "-e",
+        "argument": "FILE",
+        "default": null,
+        "meaning": "write error messages to a file"
+      },
+      {
+        "name": "--expect-warnings",
+        "short": null,
+        "argument": "N",
+        "default": 0,
+        "meaning": "silence the first N warnings"
+      },
+      {
+        "name": "--explicit",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "require declarations"
+      },
+      {
+        "name": "--headerless",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "no prologue or epilogue"
+      },
+      {
+        "name": "--heap-address",
+        "short": null,
+        "argument": "ADDR",
+        "default": null,
+        "meaning": "place the heap at a fixed address"
+      },
+      {
+        "name": "--heap-size",
+        "short": "-H",
+        "argument": "N",
+        "default": 4768,
+        "meaning": "heap size in bytes"
+      },
+      {
+        "name": "--help",
+        "short": "-h",
+        "argument": null,
+        "default": null,
+        "meaning": "print the option summary and exit"
+      },
+      {
+        "name": "--hide-warning-codes",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "omit [Wnnn] prefixes"
+      },
+      {
+        "name": "--ignore-case",
+        "short": "-i",
+        "argument": null,
+        "default": false,
+        "meaning": "identifiers case-insensitive"
+      },
+      {
+        "name": "--include-path",
+        "short": "-I",
+        "argument": "dir1:dir2",
+        "default": null,
+        "meaning": "extra include directories, colon-separated"
+      },
+      {
+        "name": "--mmap",
+        "short": "-M",
+        "argument": "FILE",
+        "default": null,
+        "meaning": "write the label memory map (not with asm output)"
+      },
+      {
+        "name": "--opt-strategy",
+        "short": null,
+        "argument": "size | speed | auto",
+        "default": "auto",
+        "meaning": "optimiser strategy"
+      },
+      {
+        "name": "--optimize",
+        "short": "-O",
+        "argument": "N",
+        "default": 2,
+        "meaning": "optimisation level; 0 none; 3 and above aggressive peephole"
+      },
+      {
+        "name": "--org",
+        "short": "-S",
+        "argument": "ORG",
+        "default": 32768,
+        "meaning": "code origin; decimal or hex"
+      },
+      {
+        "name": "--output",
+        "short": "-o",
+        "argument": "FILE",
+        "default": "input name with the output format's extension",
+        "meaning": "output file"
+      },
+      {
+        "name": "--output-format",
+        "short": "-f",
+        "argument": "asm | bin | ir | sna | tap | tzx | z80",
+        "default": "bin",
+        "meaning": "output format"
+      },
+      {
+        "name": "--parse-only",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "syntax and semantic check only"
+      },
+      {
+        "name": "--save-config",
+        "short": null,
+        "argument": "FILE",
+        "default": null,
+        "meaning": "write the current options to an INI file"
+      },
+      {
+        "name": "--sinclair",
+        "short": "-Z",
+        "argument": null,
+        "default": false,
+        "meaning": "Sinclair compatibility: array and string base 1, case-insensitive identifiers, auto-include sinclair.bas"
+      },
+      {
+        "name": "--strict",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "require explicit types"
+      },
+      {
+        "name": "--strict-bool",
+        "short": null,
+        "argument": null,
+        "default": false,
+        "meaning": "deprecated; ignored with a notice"
+      },
+      {
+        "name": "--string-base",
+        "short": null,
+        "argument": "N",
+        "default": 0,
+        "meaning": "index of the first character of a string"
+      },
+      {
+        "name": "--tap",
+        "short": "-t",
+        "argument": null,
+        "default": false,
+        "meaning": "deprecated alias of --output-format tap"
+      },
+      {
+        "name": "--tzx",
+        "short": "-T",
+        "argument": null,
+        "default": false,
+        "meaning": "deprecated alias of --output-format tzx"
+      },
+      {
+        "name": "--version",
+        "short": null,
+        "argument": null,
+        "default": null,
+        "meaning": "print the version"
+      },
+      {
+        "name": "--zxnext",
+        "short": "-N",
+        "argument": null,
+        "default": false,
+        "meaning": "ZX Next extended opcodes in ASM blocks"
+      }
+    ],
+    "zxbpp": "zxbpp [-o OUTPUT] [-d] [-e ERRFILE] [--arch A] [--expect-warnings N] [input_file]; reads stdin when no file is given; a .asm input switches to asm mode."
+  },
+  "diagnostics": {
+    "warnings": [
+      {
+        "name": "W100",
+        "meaning": "an identifier received the default (implicit) type; an error under --strict"
+      },
+      {
+        "name": "W101",
+        "meaning": "a string variable is read before it was ever assigned"
+      },
+      {
+        "name": "W110",
+        "meaning": "a condition is constant (always true or always false)"
+      },
+      {
+        "name": "W120",
+        "meaning": "a constant conversion loses significant digits or does not fit the target type"
+      },
+      {
+        "name": "W130",
+        "meaning": "a loop body is empty"
+      },
+      {
+        "name": "W140",
+        "meaning": "an empty IF was discarded"
+      },
+      {
+        "name": "W150",
+        "meaning": "a variable or parameter is never used (reported only with -O above 0)"
+      },
+      {
+        "name": "W160",
+        "meaning": "a FASTCALL routine declares more than one parameter"
+      },
+      {
+        "name": "W170",
+        "meaning": "a routine is never called and was removed"
+      },
+      {
+        "name": "W180",
+        "meaning": "unreachable code"
+      },
+      {
+        "name": "W190",
+        "meaning": "a FUNCTION may finish without returning a value"
+      },
+      {
+        "name": "W200",
+        "meaning": "a value will be truncated"
+      },
+      {
+        "name": "W300",
+        "meaning": "an unknown #pragma option was ignored"
+      },
+      {
+        "name": "W500",
+        "meaning": "a built-in preprocessor macro was redefined"
+      },
+      {
+        "name": "W510",
+        "meaning": "a macro was redefined"
+      },
+      {
+        "name": "W520",
+        "meaning": "no whitespace after the macro name in #define"
+      }
+    ],
+    "uncoded_warnings": "useless FOR ranges, STEP 0, arrays with different dimension shapes in a copy, SGN or ABS of an unsigned value, parameters renamed relative to a DECLARE, deprecated CLI flags",
+    "errors": "Errors carry no numeric codes. Main classes: undeclared identifier, array or label; identifier used with the wrong class (variable, array, function, sub, label); duplicate declaration (variable, constant, label, line number, function, parameter); array used before declaration; array bounds not constant, negative or reversed; AT address or initialiser not constant; initialiser shape mismatch; string array initialiser; string/number conversion required (use VAL or STR); operator applied to strings; wrong expression type; FOR/NEXT variable mismatch; unclosed loop or block; EXIT/CONTINUE outside such a loop; GOSUB inside a routine; RETURN with a value outside FUNCTION, SUB returning a value, FUNCTION returning nothing, wrong return category; DECLARE/definition mismatch; declared but never implemented; wrong argument count, unknown or misordered named argument; BYREF needs a variable; array passed by value; mandatory parameter after an optional one; DATA inside a routine; READ of a whole array; non-integer line number; sigil contradicting the variable type; unexpected token, end of line or end of file; preprocessor: file not found, invalid directive or filename, macro argument count mismatch, duplicated macro parameter."
+  },
+  "extensions": {
+    "codebank": {
+      "origin": "NextBuild Studio's fork zxbasic 1.18.7-nb10 (em00k/NextBuildStudio, bare-bones-files/NextBuildv10/zxbasic1.18.7-nb10), AGPL-derived. Only the syntax and the observable contract are recorded here; Klive implements it independently.",
+      "status": "not upstream; upstream 1.19.0 has no banked-code syntax",
+      "syntax": [
+        "codebank-block = \"CODEBANK\" const-expr NL { routine-def | dim-stmt | asm-block | label-decl } \"END\" \"CODEBANK\" ;   (* not allowed inside a SUB/FUNCTION *)",
+        "codebank-pragma = \"#pragma\" \"codebank\" \"=\" const-expr ;   (* bank 0 = resident; reset with #pragma codebank = 0 after an #include *)",
+        "farptr = \"FARPTR\" identifier ;   (* ULong: bank in bits 16..23, address in bits 0..15; for an array, the data address *)",
+        "asm-pseudo-op = \"CODEBANK\" const-expr ;   (* inside ASM: switch the bank of following asm lines *)"
+      ],
+      "farmem_api": "#include <farmem.bas>: FarPeek(p), FarPeekW(p), FarPoke(p, v), FarPokeW(p, v), FarCopy(fp, dest, count) (bank to resident), FarCopyTo(fp, src, count) (resident to bank), FarStr(p) - p and fp are FARPTR values (ULong); dest, src and count UInteger (see .ai/kbasic/codebank-contract.md §1)",
+      "semantics": "SUB and FUNCTION bodies inside a bank are compiled into an 8K page that is paged into a code window (default $6000-$7FFF, MMU slot 3 via NextReg $53; a 16K window is optional). Call sites are unchanged: each banked routine keeps a 6-byte resident trampoline (call far-call helper, bank byte, body address) that pages the bank in, keeps a 3-byte-per-level shadow stack and redirects the return through a far-return helper, so stack frames and argument offsets are unchanged. Same-bank calls take a fast path. Bank-local data: DIMs inside the block, module-level asm and labels, INCBIN; reachable from outside only through FARPTR and the farmem API. Resident: ordinary statements, the runtime, string literals, DATA, the heap, non-bank globals.",
+      "rules": {
+        "errors": [
+          "a bank larger than the window",
+          "direct GOTO, jp or call between different banks",
+          "references into a bank from outside it",
+          "a banked #init routine",
+          "ORG inside a bank",
+          "the window overlapping the program",
+          "an asm block that does not return to its starting segment"
+        ],
+        "warnings": {
+          "W900": "ByRef argument crosses banks",
+          "W910": "a bank holds data but no routine",
+          "W920": "bare @array used in a bank context"
+        },
+        "unchecked": [
+          "interrupt routines must not make far calls or remap the window",
+          "SP must never point into the window"
+        ]
+      },
+      "cli": [
+        {
+          "name": "--code-bank-base",
+          "default": 30,
+          "meaning": "8K page used for CODEBANK 1"
+        },
+        {
+          "name": "--code-bank-depth",
+          "default": 16,
+          "meaning": "far-call nesting depth (3 bytes per level)"
+        },
+        {
+          "name": "--code-bank-pages",
+          "default": null,
+          "meaning": "explicit comma-separated page list"
+        },
+        {
+          "name": "--code-window",
+          "default": "$6000",
+          "meaning": "code window address"
+        },
+        {
+          "name": "--code-window-size",
+          "default": 8192,
+          "meaning": "8192 or 16384"
+        }
+      ],
+      "outputs": "<name>.bank<N>.bin per non-empty bank; <name>.banks.json manifest {window, window_size, banks: [{bank, file, org, size, page, pages}]}; banked labels carry a B<n>: prefix in the .map file. The NextBuild build turns the manifest into NEX page loads and checks page overlaps with packed data."
+    }
+  },
+  "changes": [
+    {
+      "release": "v1.19.0",
+      "date": "2026-08-03",
+      "reviewed": "2026-09-26",
+      "syntax_relevant": [
+        "parser ported to Lark (no intended syntax change; the grammar is now embedded in generated form)",
+        "new architecture zx81sd (--arch zx81sd)",
+        "a sigil that contradicts the variable's type is now an error (previously accepted)",
+        "new docs pages bin.md (BIN literal prefix) and tab.md (PRINT TAB)",
+        "new Play library (AY/Next sound) and maskedsprites library merged (library, not language)",
+        "requires Python 3.14+"
+      ]
+    },
+    {
+      "release": "v1.18.0",
+      "date": "2025-01-01",
+      "reviewed": "2026-09-26",
+      "syntax_relevant": [
+        "labels are recognised only at the beginning of a line",
+        "boolean values normalised: comparisons and logical operators always yield 0 or 1; --strict-bool deprecated"
+      ],
+      "notes": "1.18.1-1.18.7 were bug-fix releases with no syntax change (i32/u32 casts, ByRef with array elements, @array label emission, Fixed to Long conversion, decimal casts truncating toward minus infinity, zxnext backend fixes). Library additions: hmirror.bas (1.18.2), getPaintData/getChars in putchars.bas (1.18.3), scroll-aligned functions (1.18.4). The date is approximate (unverified)."
+    }
+  ],
+  "docs_errata": {
+    "$comment": "Places where upstream docs pages disagree with each other or with the implementation. The spec follows the implementation; these notes stop a future session from 'correcting' the spec back to the docs.",
+    "items": [
+      "fastcall.md and stdcall.md give the Float result registers as C/DE/HL; the backend and runtime use A (exponent) plus E/D/C/B (mantissa). The spec follows the implementation.",
+      "zxb.md: the option help says the default optimisation level is 2, the prose says 1. The implementation default is 2.",
+      "zxb.md: the prose calls -e \"--stderr\"; the option is --errmsg. The prose uses zxb.py, the help uses zxbc.py (zxb is the historical name).",
+      "operators.md documents precedence only for ^, * / MOD and + -. The full table in operators.precedence comes from the implementation.",
+      "types.md marks ULong as signed (typo) and does not state the width of the % sigil (16-bit Integer).",
+      "print.md never documents ',' as a PRINT separator although examples use it; ',' advances to the next 16-column field.",
+      "paper.md says the value range is 1-8 but lists 0-8; ink.md says INK 9 is not supported.",
+      "return.md mentions a --stack-check option that is not in the option list and not implemented in 1.19.0.",
+      "rnd.md's example uses FreeBASIC-style 'As Double' and 'Function = ...', neither of which is ZX BASIC syntax.",
+      "Pages linked but missing from the docs set: memory_heap.md, zxbasm.md, pragma.md, zxbpp.md, addroperator.md, scope.md, len.md."
+    ]
+  },
+  "semantics": {
+    "$comment": "The semantics annex (plan R8): one entry per behaviour question the syntax does not answer. status: 'decided' (settled), 'provisional' (implemented and tested, to be confirmed against the zxbc oracle, D12), or 'open' (to settle by the given phase). source: 'docs' (upstream documentation), 'oracle' (observed zxbc behaviour) or 'klive-decision'. Every decided or provisional entry names the test that pins it. 'oracle' records what zxbc 1.19 did where it differs from the decision (scripts/kbasic-oracle.cjs, test/kbasic/oracle/).",
+    "entries": [
+      {
+        "name": "argument-evaluation-order",
+        "question": "In which order are a call's arguments evaluated, and a binary operator's operands? (Observable when they call FUNCTIONs with side effects.)",
+        "decision": "A call arguments are evaluated last first. A binary operator evaluates its left operand first, except that a plain variable on the left - read in the operation own type, with no conversion - is read after the right operand (g + f() sees g as f() left it; u + f() with u a UByte and f() an Integer reads u first). An assigned array element subscripts are evaluated after the value (t(g) = f() stores where g points after f()).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "array-parameter-type",
+        "question": "May an array parameter omit its type (SUB s(a()))?",
+        "decision": "Yes: Float, or the type of the name sigil (W100), as zxbc accepts.",
+        "source": "oracle"
+      },
+      {
+        "name": "asm-unused-variable",
+        "question": "Does a variable that only inline asm names exist?",
+        "decision": "Yes. Klive keeps it: a global is reachable as _name and a local at its frame offset (the first byte local at IX-1).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 removes a variable that no BASIC code uses even when inline asm names it: '_name' of such a global is an undefined label, and a local's frame bytes hold leftover values. Klive keeps the variable (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "beep-limits",
+        "question": "Which BEEP durations and pitches are allowed?",
+        "decision": "The ROM limits, as ZX BASIC has them: a duration from 0 to 10 seconds (rounded down) and a pitch from -60 to 69 (rounded down); anything else stops with B Integer out of range. A duration too short for one cycle makes no sound. Constant arguments are checked when compiling, as zxbc does: a duration outside 0-10 or a pitch outside -60..127 is E433.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "name": "bnot-decimal",
+        "question": "What does BNOT do with a Fixed, a Float or a literal with a fraction?",
+        "decision": "It converts the operand to Long (flooring) and complements it: BNOT 2.5 is -3.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 crashes compiling it: compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "builtin-literal-folding",
+        "question": "How does a built-in function of a literal fold (SQR(2) + 0, LEN(\"abc\") / 2)?",
+        "decision": "At compile time, as zxbc: ABS, SGN, INT, CODE, LEN give exact literals; the math functions give a literal Float computed in double arithmetic. Used alone it keeps its type; in further literal arithmetic the result takes its natural type (SQR(2) + 0 is a Fixed, LEN(\"abc\") / 2 is 1.5).",
+        "source": "oracle"
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "byref-float-parameter",
+        "question": "What does a BYREF Float parameter read and write?",
+        "decision": "The caller's variable, through its address: reads see its value and writes change it.",
+        "test": "test/kbasic/corpus/float/float-routines.zxbas",
+        "oracle": "zxbc 1.19 prints 0 inside the routine and leaves 0.5 in the variable (an upstream fault). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "name": "byte-division",
+        "question": "What sign does a signed Byte division take?",
+        "decision": "The quotient sign: -7 / 2 is -3 (truncated towards zero, as for the other integer types).",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc drops the sign when both operands are Byte variables (-7 / 2 is 3; 200 / 2 as Bytes is 28): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "codebank-extension",
+        "question": "How do #pragma codebank and CODEBANK inside ASM read?",
+        "decision": "As NextBuild CODEBANK extension, which Klive supports (plan section 9): the pragma takes a bank number and CODEBANK in ASM a bank.",
+        "source": "klive-decision",
+        "oracle": "zxbc has no CODEBANK: it takes the pragma as unknown (a warning) and CODEBANK in ASM as assembler text."
+      },
+      {
+        "name": "colour-values",
+        "question": "What do INK, PAPER, FLASH, BRIGHT, INVERSE, OVER and BORDER do with values outside 0-1 / 0-7?",
+        "decision": "No value stops the program. INK and PAPER 8 keep the screen field, any other value is masked to 0-7 (9 is 1: there is no INK 9 / PAPER 9 contrast). FLASH and BRIGHT 8 keep, any other non-zero value sets. INVERSE takes bit 0. OVER takes bits 0-1: a printed glyph is replaced (0), XORed (1), ANDed (2) or ORed (3); PLOT reads bit 0 only. BORDER shows bits 0-2 and sets BORDCR to n * 8 with white ink on the four dark colours.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "constant-arithmetic-literal",
+        "question": "What type does arithmetic on number literals alone have?",
+        "decision": "Literal-only expressions fold in exact arithmetic: / divides exactly (1 / 8 is 0.125), MOD is floored, BNOT n is -(n + 1), shifts and bitwise operators act on whole numbers; the result takes its natural type as a literal does (literal-integer-type), and the exact value stays for further folding (1E10 MOD 3 is 1).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "constant-arithmetic-typed",
+        "question": "Does constant arithmetic on typed values wrap to the type's width?",
+        "decision": "A numeric CONST folds by its value whatever type it declares: CONST k AS UByte = 200 makes k + k 400 (it behaves as a literal). A value converted to Fixed truncates towards zero, to an integer type it floors.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "constant-float-overflow",
+        "question": "What does a Float constant beyond the Float range (DIM a AS Float = 1E40) do?",
+        "decision": "It is an error (E425, Number too big).",
+        "source": "klive-decision",
+        "oracle": "zxbc accepts it and stores a value that is not the number: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "name": "constant-integer-division-by-zero",
+        "question": "What does a constant integer division or MOD by zero fold to?",
+        "decision": "The runtime's result (every bit set; MOD gives the dividend), with warning K406. A Float or Fixed constant division by zero is error E425.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/corpus/integers/constant-divide-by-zero.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling 100 / 0 (ZeroDivisionError): compiled as documented (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "name": "constant-power",
+        "question": "How is a constant x ^ y folded?",
+        "decision": "As the exact power rounded to the nearest Float. The ROM computes EXP(y * LN x), which can differ in the last bit.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 2,
+        "test": "test/kbasic/corpus/float/power-constant.zxbas"
+      },
+      {
+        "phase": 8,
+        "name": "constant-string-comparison",
+        "question": "What does a comparison of two String constants give (\"abc\" < \"abd\")?",
+        "decision": "Its value, folded at compile time (1 or 0), as a comparison with a variable gives at run time.",
+        "status": "decided",
+        "source": "klive-decision",
+        "test": "test/kbasic/corpus/strings/ordering.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError). Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "name": "decimal-mod",
+        "question": "What does MOD give for Float and Fixed operands at run time?",
+        "decision": "The floored remainder, left - INT(left / right) * right, as the ROM n-mod-m and zxbc own constant folding give (-7.5 MOD 2 is 0.5); a Fixed zero divisor gives the dividend magnitude.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc run-time Float and Fixed MOD are faulty (-7.5 MOD 2 is -19.5 for Float and -1.5 for Fixed; Fixed 0.1 MOD 3 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "declare-unused",
+        "question": "Is a DECLARE without a definition an error?",
+        "decision": "Only when the routine is used (E416), as in zxbc.",
+        "source": "oracle"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "degenerate-preprocessor",
+        "question": "Is a program that is only a false #ifdef block, or an empty conditional block, valid?",
+        "decision": "Yes: it compiles to an empty program.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 rejects them (Unexpected end of file; an unexpected #endif): kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "name": "do-loop-one-line",
+        "question": "Where may LOOP stand after a DO without WHILE or UNTIL?",
+        "decision": "Anywhere but after ':' on the line that holds all of the loop's body: `DO: i = i + 1: LOOP` and `DO` then `i = i + 1: LOOP` are rejected (E315), while an empty body (`DO: LOOP UNTIL k`, and `DO LOOP UNTIL k` without a separator) and any body with a line break in it, even a blank line, are accepted. A DO WHILE/UNTIL loop may end on its own line.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/syntax/parser.test.ts"
+      },
+      {
+        "name": "elif-directive",
+        "question": "Is #elif a directive?",
+        "decision": "No: #elif is an unknown directive (E208), as in zxbc 1.19. #if expressions compare with ==; a single = is an error (E213).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "fastcall-basic-body",
+        "question": "Can a FASTCALL routine with a BASIC body use its first parameter?",
+        "decision": "Yes: it arrives in registers and the prologue stores it in the frame, so the body reads it like any parameter.",
+        "test": "test/kbasic/corpus/routines/fastcall.zxbas",
+        "oracle": "zxbc 1.19 leaves register parameters to inline asm: a BASIC body reads something else (dbl(42) gives 34814). Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "name": "fixed-division",
+        "question": "How precise is a Fixed division at run time?",
+        "decision": "The quotient of the 65536ths, rounded towards minus infinity, as constant folding gives.",
+        "source": "klive-decision",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc run-time Fixed division loses precision or overflows (7 / 0.001 is 7168, 0.5 / 7 is 0, -7.5 / -1 is 2175.003): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "fixed-division-by-zero",
+        "question": "What does a Fixed or Float division by zero do?",
+        "decision": "It stops with 6 Number too big, as the ROM calculator does.",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc gives a value and goes on (Fixed -7.5 / 0 is 0.0000152587890625, Float 7.5 / 0 is 0): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "fixed-print",
+        "question": "How does PRINT write a Fixed?",
+        "decision": "Exactly: the sign, the integer part, and when there is a fraction a point and every decimal digit of it (3.5 / 1.25 prints 2.79998779296875). STR$ writes the ROM's Float format.",
+        "test": "test/kbasic/corpus/fixed/fixed-arith.zxbas"
+      },
+      {
+        "name": "fmath-angle-reduction",
+        "question": "What do fSin, fCos and fTan give for angles outside 0-360?",
+        "decision": "The angle is reduced with MOD 360 (Fixed MOD floors: -30 is 330), then read from a table of SIN at every 2 degrees times 255 (rounded), interpolated linearly; the result is the exact Fixed value of the interpolated entry / 255, rounded down. fCos(x) is fSin(90 - x) and fTan(x) is fSin(x) / fSin(90 - x).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 agrees inside 0-360. Its run-time Fixed MOD is inexact (400 MOD 360 is 39.9957, -30 MOD 360 is -29.998), so for angles outside that range its results are off by a few units in the last places, and fSin(-1) is 0; Klive keeps the exact reduction (D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "for-loop-evaluation",
+        "question": "Are FOR's limit and step evaluated once or on every iteration, what is the variable after the loop, and how do negative and zero STEP behave?",
+        "decision": "The start is evaluated once. Every test - before the first pass and after each NEXT - evaluates the limit again, and a STEP that is not constant too when its sign decides the direction; NEXT adds the STEP, evaluated again. A body that changes the limit or the STEP changes the loop; after the loop the variable holds the first value past the limit.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "for-never-runs",
+        "question": "What does a FOR loop whose constant range never runs leave in its variable (FOR i = 10 TO 1)?",
+        "decision": "The start value, as for any loop that ends before its first pass: i is 10.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc drops the whole statement when its constant analysis sees no pass, the assignment of the start included, so i keeps its old value: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "for-unsigned-negative-step",
+        "question": "How does an unsigned FOR variable count with a negative STEP held in a signed variable?",
+        "decision": "A constant STEP keeps its sign (FOR u = 9 TO 2 STEP -2 counts a UByte down). A STEP that is not constant takes the loop variable type, so with an unsigned variable it never counts down: FOR u = 1000 TO 150 STEP s with s = -300 runs no pass.",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "phase": 8,
+        "name": "for-unsigned-variable-step",
+        "question": "Can a FOR loop take its STEP from a UByte or UInteger variable?",
+        "decision": "Yes: the loop counts by the variable value.",
+        "status": "decided",
+        "source": "klive-decision",
+        "test": "test/kbasic/corpus/classic/primes-sieve.zxbas",
+        "oracle": "zxbc 1.19 crashes compiling it (AttributeError); a signed or Float STEP variable compiles. Compiled as documented (D-C1 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "forward-function-call",
+        "question": "What signature does a FUNCTION called before its definition have when there is no DECLARE?",
+        "decision": "Its definition's signature: routine headers are collected before binding. Upstream assumes a Float return until the definition; Klive accepts every program upstream accepts here, and a few it rejects.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/binder.test.ts"
+      },
+      {
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "name": "function-without-return",
+        "question": "What does a FUNCTION give when it ends without RETURN?",
+        "decision": "0 (the empty String for a String FUNCTION): the result is zeroed on entry.",
+        "test": "test/kbasic/corpus/routines/function-result.zxbas",
+        "oracle": "Upstream gives whatever its result register held. Undefined in ZX BASIC: Klive keeps this defined result (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md, project author 2026-09-27)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "functions-without-parentheses",
+        "question": "May the built-in functions take their argument without parentheses (SIN 0, LEN a$, CODE \"a\")?",
+        "decision": "Yes, as zxbc accepts: the function takes the operand right after it (SIN 0 + 1 is SIN(0) + 1, INT 7 / 2 is INT(7) / 2), and that operand may not start with a sign (ABS -5 is a syntax error, as is 2 ^ -1).",
+        "source": "oracle"
+      },
+      {
+        "name": "headerless",
+        "question": "What does headerless (zxbc --headerless) leave out?",
+        "decision": "The program start-up and the END code: no registers are kept for END and no runtime module is initialised; END (and the end of the main program) returns BC to whoever called the program. What the runtime does without its start-up is not defined.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/codegen/core.test.ts",
+        "oracle": "zxbc 1.19 headerless code runs and returns BC (its variables come first, at the origin). Its PRINT shows nothing without the start-up; Klive's PRINT still works, a difference in undefined behaviour kept (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "heap-exhaustion",
+        "question": "What happens when the String heap is full?",
+        "decision": "The String that does not fit is the empty String and the program goes on (with check-memory, it stops with 4 Out of memory).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 without --debug-memory writes past the heap (the screen fills with garbage and the program stops): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "if-else-line",
+        "question": "What does ELSE followed by statements on its own line do in a block IF?",
+        "decision": "It ends the IF with that line: an END IF may follow on the same line only (IF a THEN / PRINT 0 / ELSE PRINT 2 is complete; a following END IF is an error).",
+        "source": "oracle"
+      },
+      {
+        "name": "implicit-type-from-context",
+        "question": "Does a variable typed by its first assignment, FOR values or READ raise W100?",
+        "decision": "No: W100 is raised only when nothing determines the type and it becomes Float. Under strict typing any undeclared variable is error E426.",
+        "status": "decided",
+        "source": "docs",
+        "phase": 2,
+        "test": "test/kbasic/semantics/binder.test.ts"
+      },
+      {
+        "name": "implicit-variable-in-routine",
+        "question": "Is an undeclared variable used inside a SUB or FUNCTION local or global?",
+        "decision": "Global when a global of that name exists at that point; otherwise local to the routine.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 2,
+        "test": "test/kbasic/corpus/routines/implicit-global.zxbas"
+      },
+      {
+        "name": "inline-asm-dialect",
+        "question": "Which assembler dialect do ASM blocks use?",
+        "decision": "zxbasm's, by default: ':' separates instructions, ';' starts a comment, mnemonics, registers and directives ignore case while labels do not, $1F / 0x1F / 1Fh / %101 / 'A' are numbers, a number ending in b or f names a temporary label (1: ... 1b / 1f), parentheses around a whole operand are a memory reference and elsewhere group, 'name EQU value' (a colon before EQU is an error), DEFB/DB, DEFW/DW, DEFS/DS with a fill, DEFM/DM and ALIGN. PROC ... ENDP makes only the names its LOCAL lines list local, over the whole PROC even when it spans ASM blocks; every other label stays global. '.LABEL._name' is a BASIC label and '._name' a global. '@asm-dialect klive or '#pragma asm_dialect = klive' (push/pop) selects Klive's own assembler dialect; the standard library declares it.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "inline-asm-macros",
+        "question": "Are #define macros expanded inside ASM blocks?",
+        "decision": "Yes, as text: a macro name (exact case) outside strings and the ';' comment is replaced by its body, with a function-like macro's arguments substituted. Libraries name instruction sequences this way (#define ESXDOS rst 8).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/syntax/preprocessor.test.ts"
+      },
+      {
+        "name": "inline-asm-registers",
+        "question": "How does asm in a FUNCTION see a FASTCALL parameter and give the result?",
+        "decision": "A FASTCALL routine whose body starts with an ASM block finds its parameter in A (8 bits), HL (16) or DE:HL (32 bits and Fixed). A FUNCTION whose body ends with an ASM block and falls off its end returns what the registers hold: A, HL, DE:HL, or A,E,D,C,B for a Float. Registers carry from one ASM block to the next. STDCALL parameters are on the frame: the first at IX+4 (a byte in IX+5), each taking whole words.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "integer-division-by-zero",
+        "question": "What does integer division or MOD by zero give at run time?",
+        "decision": "The quotient of the magnitudes has every bit set and takes the quotient's sign (100 / 0 = 65535, -7 / 0 = 1, 7 / 0 = -1); MOD gives the dividend.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 4,
+        "test": "test/kbasic/corpus/integers/divide-by-zero.zxbas",
+        "oracle": "Upstream's quotients agree; its MOD by zero follows its own MOD sign rule (see mod-sign)."
+      },
+      {
+        "name": "keyword-macro-names",
+        "question": "May a #define use a keyword as its name?",
+        "decision": "Yes.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 1,
+        "test": "test/kbasic/corpus/preprocessor/keyword-macro.zxbas"
+      },
+      {
+        "name": "library-compressed-formats",
+        "question": "Which data do zx0.bas and megalz.bas decompress?",
+        "decision": "zx0.bas: ZX0 format 2 (Einar Saukas' compressor without -c). Every name is one decoder: the speed variants give the same result. The Back names take the addresses of the last data byte and the last destination byte and read data made by the compressor's backwards mode. The RCS names write bytes that land in the screen bitmap (16384-22527) to their RCS places and every other byte as is. megalz.bas: MegaLZ (the 110-byte depacker's format).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "library-coverage",
+        "question": "Which #include <...> libraries does Klive BASIC provide?",
+        "decision": "Every library upstream documents that zxbc ships: asc, attr, clearbox, csrlin, fmath, hex, hmirror, input42, keys, megalz, memorybank, point, pos, print42, print64, putchars, puttile, screen, string and zx0, plus input and sinclair, and Klive's own farmem. Library files upstream ships without documentation (alloc, basic, esxdos, IM2, memcopy, play, printfzx, random, retrace, round, scrbuffer, scroll, spectranet, template, winscroll, SP/Fill, cb/maskedsprites, mj/fourspriter, the ZX-Uno and Next ones) are not provided: their interface could only come from their source, which the provenance rule forbids. fastplot.bas is not provided either: the file zxbc ships has no fastPlot, the documented routine.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "library-font",
+        "question": "Do print42 and print64 draw the same pixels as zxbc's?",
+        "decision": "No: Klive's glyphs are its own (print42 squeezes the machine's font, print64 has Klive's 3 x 7 font), because upstream's fonts are library code. Everything else follows zxbc: the cursor, wrapping and the control codes (library-print-cursor).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19's print42 and print64 glyphs differ in shape, so a pixel checksum differs and a glyph edge may reach a character cell Klive's leaves empty."
+      },
+      {
+        "name": "library-print-cursor",
+        "question": "How do print42 and print64 handle an out-of-range cursor and control codes?",
+        "decision": "printat42/printat64 with a column past the last is the start of the next row, and a row past 23 is row 0 (no error). Printing past the last column goes on at the next row, past the last row at the top (no scroll). CHR$ 13 starts a new line and CHR$ 22 row, column moves the cursor. print42 prints 31-127 from the font and 144-164 from the UDGs, and CHR$ 8 steps back (from column 0 to the end of the row above, from the top-left to the bottom-right); print64 prints 32-127 (31 takes a place). Every other code, colour codes included, is skipped without moving the cursor. Each library's cursor is its own: PRINT and CLS do not move it.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "literal-integer-type",
+        "question": "What type does an integer literal have?",
+        "decision": "A whole literal takes the smallest type that holds it, unsigned when not negative; beyond 32 bits it wraps to them (ULong when positive, Long when negative: 1E10 is 1410065408). A literal with a fraction is a Fixed within Fixed range (truncated towards zero: 0.001 is 65/65536), otherwise a Float; converted to Float it keeps its exact value.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "logical-operators-short-circuit",
+        "question": "Do AND and OR skip their right operand when the left one decides the result?",
+        "decision": "No: both operands are always evaluated, the left first.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 3,
+        "test": "test/kbasic/corpus/control/logic-evaluation.zxbas"
+      },
+      {
+        "name": "mod-sign",
+        "question": "Which sign does the remainder of MOD take?",
+        "decision": "At run time, for the integer types: the remainder of the magnitudes, never negative (-100 MOD 3 is 1, 100 MOD -3 is 1); a zero divisor gives the dividend magnitude. A literal-only expression folds floored (-1 MOD 3 is 2; see constant-arithmetic-literal). Float and Fixed: see decimal-mod.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "named-arguments",
+        "question": "How are named arguments (name := value) matched to parameters?",
+        "decision": "Positionally: the values given, positional and named, in the order written, then the defaults of the parameters neither given by position nor named, in parameter order; parameter i takes the i-th. A name only says which default is left out: s(c := 7, a := 5) is s(7, 5, <b default>); s(b := 4) is s(4, <a default>, <c default>).",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "on-goto-out-of-range",
+        "question": "What does ON ... GOTO/GOSUB do with a value outside its target list?",
+        "decision": "Nothing: execution continues after the statement.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 3,
+        "test": "test/kbasic/corpus/control/on-goto.zxbas"
+      },
+      {
+        "name": "operator-precedence",
+        "question": "Does the 1.19 parser keep the precedence table recorded in operators.precedence?",
+        "decision": "Klive implements the recorded table.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 1,
+        "test": "test/kbasic/corpus/integers/precedence.zxbas"
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "plot-off-screen",
+        "question": "What do PLOT, DRAW and CIRCLE do with a point off the screen?",
+        "decision": "The point is not drawn - PLOT plots nothing, DRAW draws nothing at all when its end is off the screen, CIRCLE skips the points off it - the last point plotted stays, and ERR_NR becomes 4 (5 Out of screen) while the program carries on.",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "name": "point-coordinates",
+        "question": "Which coordinates does POINT use?",
+        "decision": "POINT(x, y) is 1 when the pixel is set, else 0, and -1 for a y past the top. It counts as PLOT does - (0, 0) at the bottom left, all 192 rows - except under sinclair-compatible, where it takes the ROM coordinates: y counts the 176 rows above the ROM editor, so POINT(x, y) tests the pixel PLOT x, y + 16 sets.",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "power-of-two-literal-divisor",
+        "question": "What does a signed variable divided by a literal power of two give (a / 2, a MOD 4)?",
+        "decision": "The same as for any divisor: the division truncates towards zero and MOD is the remainder of the magnitudes (-1 / 2 is 0, -1 MOD 4 is 1).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc turns them into a shift and a mask: a / 2 floors (-1 / 2 is -1, -7 / 2 is -4) and a MOD 4 masks (-1 MOD 4 is 3), while a / 4 and a MOD 3 follow its rules: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "print-position",
+        "question": "Where does PRINT start, and does it prompt 'scroll?'?",
+        "decision": "It starts at BASIC's print position (S_POSN) and uses all 24 rows without a scroll prompt. Scrolling waits: a line feed on row 23 leaves the cursor below the screen, and the screen scrolls when something is printed there, so the last line printed stays on row 23.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 4,
+        "test": "test/kbasic/corpus/print/scroll.zxbas"
+      },
+      {
+        "phase": 8,
+        "name": "print-position-on-return",
+        "question": "Where does BASIC print after the program returns?",
+        "decision": "Where the program stopped: the program end leaves S_POSN and DF_CC at its cursor (PrintSave), so BASIC goes on printing after the program output (STOP then PRINT 7 gives a7).",
+        "status": "decided",
+        "source": "oracle",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "print-udg-codes",
+        "question": "What do character codes 165-255 print?",
+        "decision": "One glyph each from the UDG area (codes 165-255 read past its 21 characters), not the ROM's keyword text.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 4,
+        "test": "test/kbasic/corpus/print/udg-codes.zxbas"
+      },
+      {
+        "name": "program-pragmas",
+        "question": "Where do #pragma lines for whole-program options take effect?",
+        "decision": "heap_size, heap_address, memory_check, array_check, enable_break, optimization_level, opt_strategy, org, headerless, zxnext, autorun and expected_warnings set their option for the whole program wherever they stand, over the header's. array_base, string_base, case_insensitive, explicit, strict and default_byref change binding from their line onward (with push/pop). #pragma sinclair changes nothing: neither the bases, nor case, nor the Sinclair functions (only the sinclair-compatible option does).",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "read-past-end",
+        "question": "What does READ do after the last DATA item?",
+        "decision": "It wraps to the first item, and so does READ after RESTORE to a label with no DATA after it. A program with no DATA at all cannot READ: E432 at compile time, as in zxbc.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "read-type-mismatch",
+        "question": "What does READ do when a String item meets a numeric target, or a number meets a String target?",
+        "decision": "READ of a String item into a number reads 0 (of a number into a String, the empty String), sets ERR_NR to 9 (A Invalid argument) and the program carries on; the next READ reads the next item.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 4,
+        "test": "test/kbasic/corpus/data/read-mismatch.zxbas"
+      },
+      {
+        "name": "runtime-checks",
+        "question": "What do check-bounds (--debug-array) and break-key (--enable-break) do?",
+        "decision": "check-bounds: an index outside its dimension's bounds, in any array (a parameter's too, and each dimension of several), stops the program with 3 Subscript wrong (ERR_NR 2). break-key: with CAPS SHIFT and SPACE held when one of the program's statements starts, the program stops with L BREAK into program (ERR_NR 20). Without them nothing is checked.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19 at -O2 drops a store to an array that is never read, and its check with it; Klive keeps both."
+      },
+      {
+        "phase": 8,
+        "name": "runtime-error-model",
+        "question": "What does a runtime error do to the program and to BASIC after it?",
+        "decision": "As ZX BASIC does: ERROR n, the ROM calculator errors (SQR(-1), LN(0), overflow) and BEEP out of range stop at once with the ROM report. PRINT AT off the screen, PLOT/DRAW/CIRCLE off the screen and READ of the wrong kind set ERR_NR and carry on. STOP ends the program by returning with ERR_NR 8; BASIC runs the rest of its line and its report shows the leftover ERR_NR. Invalid colours and USR of a String raise no error (C3c). The debugger stops on the errors that stop.",
+        "status": "decided",
+        "source": "oracle",
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "shr-signed",
+        "question": "Is SHR on a signed type arithmetic or logical?",
+        "decision": "Arithmetic (the sign is kept) for signed types, logical for unsigned ones.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 2,
+        "test": "test/kbasic/corpus/integers/shifts.zxbas",
+        "oracle": "zxbc agrees for SHR by more than 1; Integer -100 SHR 1 gives 32718 there (a logical shift): kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "silent-syntax-repair",
+        "question": "Does Klive accept the malformed statements zxbc compiles without a word (PRINT ), NEXT alone, CLS 1, DIM x y, SUB PASCAL s, 1.5 PRINT)?",
+        "decision": "No: they stay syntax errors.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 drops what it cannot parse there and compiles the rest silently: kept as an upstream fault (D-C6 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "slice-of-expression",
+        "question": "May a parenthesised expression or a call result be sliced ((a$)(1), f$(1)(0))?",
+        "decision": "No: syntax errors, as in zxbc. A String literal and a String variable or element may be sliced; a String array element takes its character index in the same parentheses.",
+        "source": "oracle"
+      },
+      {
+        "name": "str-of-literal",
+        "question": "How does STR$ write a literal (STR$(1 / 3), STR$(1E10))?",
+        "decision": "At compile time: a whole number exactly (\"10000000000\"), anything else as the shortest decimal that reads back as the same double, with an exponent below 1E-4 and from 1E16 up (\"0.3333333333333333\", \"-0.001\", \"1e-07\"). STR$ of anything else is the ROM number format at run time.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "strict-initialised-dim",
+        "question": "Under strict typing, may a DIM leave out its type when it has an initial value?",
+        "decision": "No: DIM x = 3 is E426 under require-types or #pragma strict, as zxbc; the initial value gives the type only without strict typing.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "string-concatenation-overflow",
+        "question": "What does a concatenation longer than 65535 characters give?",
+        "decision": "It cannot happen: every character of a String lives on the heap, which is well under 64K (4768 bytes by default), so a concatenation runs out of heap long before its length could pass 65535. Running out of heap is what heap-exhaustion decides (with check-memory, 4 Out of memory: the options suite).",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "string-escape-unknown",
+        "question": "What does an unknown backslash escape in a string literal give?",
+        "decision": "The backslash and the character, as written.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 1,
+        "test": "test/kbasic/corpus/strings/escape-unknown.zxbas"
+      },
+      {
+        "name": "string-library-base",
+        "question": "Do string.bas and asc.bas follow the string base?",
+        "decision": "mid counts its start from 0 whatever the string base (as its documentation says); left and right take a count, so the base does not matter; asc counts from the string base.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "substring-assignment",
+        "question": "What does a substring assignment do when the value's length differs from the range's, or the range runs past the String?",
+        "decision": "The range is clipped to the String's current length; a shorter value is padded with spaces, a longer one cut; the String's length never changes, and a range entirely outside it writes nothing. The value is evaluated before the target.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc agrees while the range lies inside the String (padding and truncation included); a range past the end, or open-ended (s(6 TO) = ...), makes it write outside the String and corrupt memory: kept as an upstream fault (project author, 2026-09-27; D-C6 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "name": "tape-data-variable",
+        "question": "What do SAVE and LOAD ... DATA move for a single variable?",
+        "decision": "The variable's own bytes wherever it lives: a global's, a local's or a parameter's in the routine's frame (a BYREF parameter's through its address), and for a String its two-byte pointer, not its characters. A String array and a local array are not accepted, as in zxbc.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/codegen/tape.test.ts",
+        "oracle": "zxbc 1.19 saves a String variable's 2-byte pointer and a local's or parameter's frame bytes (observed through the ROM save routine's arguments)."
+      },
+      {
+        "name": "truncation-warning-w200",
+        "question": "Which conversions raise W200 ('a value will be truncated')?",
+        "decision": "A Fixed or Float value that is not a constant, converted to an integral type by an assignment, an argument, a RETURN or a POKE.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "undeclared-name-references",
+        "question": "May @ or SAVE/LOAD/VERIFY DATA name something not declared?",
+        "decision": "No (E434), as in zxbc - except @ after DIM ... AT, which may name a variable declared by that reference.",
+        "source": "oracle"
+      },
+      {
+        "name": "unused-warning-w150",
+        "question": "When is a variable 'never used' (W150)?",
+        "decision": "When it is never mentioned after its declaration: no read, no assignment, no address taken; mapped variables and BYREF parameters are exempt. Reported, like W170, only at optimisation levels above 0.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 2,
+        "test": "test/kbasic/semantics/diagnostics.test.ts"
+      },
+      {
+        "name": "usr-string",
+        "question": "What does USR of a String give?",
+        "decision": "The UDG address of its first character as ZX BASIC computes it: the character lower-cased by setting bit 5, its place from a as a byte, UDG + 8 * place as a word (a-u give their graphic, v gives 0, 1 gives 1496); no String stops the program, and the empty one gives 0 with ERR_NR 9.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts"
+      },
+      {
+        "name": "val-constant-invalid",
+        "question": "What does VAL of a constant string that is not a number give?",
+        "decision": "A constant String that is a plain number folds; any other constant is evaluated at run time like every VAL (0 and ERR_NR 9 when BASIC rejects it). No warning.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 2,
+        "test": "test/kbasic/corpus/builtins/val.zxbas"
+      },
+      {
+        "name": "val-runtime",
+        "question": "What does VAL accept at run time, and how does it round?",
+        "decision": "BASIC's own VAL, through the ROM calculator: the String is evaluated as a numeric expression (VAL(\"2*3\") = 6; names are BASIC's variables). A String BASIC rejects gives 0 and sets ERR_NR to 9 (A Invalid argument) without stopping the program.",
+        "status": "decided",
+        "source": "oracle",
+        "phase": 4,
+        "test": "test/kbasic/corpus/builtins/val-error.zxbas",
+        "oracle": "zxbc agrees on the value and ERR_NR. After a failed VAL it leaves BASIC state broken (typed as a user does, the command ends with C Nonsense in BASIC, 3331:1); Klive restores CH_ADD and the workspace, an undefined result it keeps (D-C2 of .plans/ZXBASIC_COMPATIBILITY_PLAN.md)."
+      },
+      {
+        "phase": 8,
+        "status": "decided",
+        "test": "test/kbasic/compat/compat.test.ts",
+        "name": "zxbc-compile-crash",
+        "question": "What about programs zxbc crashes on while compiling (CHR$(65, 66), CHR 65, SIZEOF(LONG), POKE LONG, BNOT of a fraction)?",
+        "decision": "Klive compiles them as documented.",
+        "source": "klive-decision",
+        "oracle": "zxbc 1.19 stops with an internal exception (D-C1 of (project author, 2026-09-27; .plans/ZXBASIC_COMPATIBILITY_PLAN.md))."
+      },
+      {
+        "name": "zxnext-option",
+        "question": "Does the zxnext option allow the Next's instructions in inline asm?",
+        "decision": "Yes: '@zxnext and #pragma zxnext = true accept the ZX Spectrum Next's instructions in ASM blocks on any target.",
+        "status": "decided",
+        "source": "klive-decision",
+        "phase": 8,
+        "test": "test/kbasic/compat/compat.test.ts",
+        "oracle": "zxbc 1.19's --zxnext (-N) flag has no effect: nextreg is still a syntax error, while #pragma zxnext = true and --arch=zxnext accept it. Klive's option does what zxbc documents."
+      }
+    ]
+  }
+}

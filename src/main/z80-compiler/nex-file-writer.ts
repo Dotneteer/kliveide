@@ -463,8 +463,8 @@ export class NexFileWriter {
         
         const bank = bankData.get(segment.bank)!;
         
-        // Calculate offset within bank
-        const bankOffset = segment.startAddress % 16384;
+        // --- Where the segment starts within its bank: `.page` code runs at an address unrelated to it
+        const bankOffset = segment.bankOffset ?? segment.startAddress % 16384;
         
         // Copy segment data to bank
         const segmentData = new Uint8Array(segment.emittedCode);

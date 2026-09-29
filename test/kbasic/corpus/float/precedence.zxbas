@@ -1,0 +1,7 @@
+' Float operator precedence: power, unary minus, * and /, + and -; ^ is right-associative, so
+' 2 ^ 3 ^ 2 is 2 ^ 9
+'@expect screen 0 "14 20 18 -9"
+'@expect screen 1 "5 6 512"
+DIM x AS Float = 3
+PRINT 2 + x * 4; " "; (2 + x) * 4; " "; x ^ 2 * 2; " "; -x ^ 2
+PRINT 10 - x - 2; " "; 36 / x / 2; " "; 2 ^ 3 ^ 2

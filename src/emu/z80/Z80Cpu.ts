@@ -66,6 +66,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.stepOutStack = new Array(MAX_STEP_OUT_STACK_SIZE);
     this.stepOutStackPointer = 0;
     this.stepOutStackCount = 0;
+    this.interruptDepth = 0;
   }
 
   // ----------------------------------------------------------------------------------------------------------------
@@ -629,6 +630,23 @@ export class Z80Cpu implements IZ80Cpu {
   stepOutStack: number[];
 
   /**
+   * Which `stepOutStack` entries an interrupt pushed (parallel to it).
+   */
+  private stepOutIsInterrupt: boolean[] = new Array(MAX_STEP_OUT_STACK_SIZE).fill(false);
+
+  /**
+   * How many interrupt handlers are running: interrupt entries on the shadow stack whose RET has
+   * not executed yet. Source stepping runs handlers outside the step (plan §10.2.7). Mirrored in
+   * `z80GetInterruptDepth` in z80.c.
+   */
+  interruptDepth = 0;
+
+  /** How many interrupt handlers are running; a WASM machine answers from its core. */
+  getInterruptDepth(): number {
+    return this.interruptDepth;
+  }
+
+  /**
    * Circular buffer pointer for stepOutStack (points to next write position)
    */
   private stepOutStackPointer: number;
@@ -782,6 +800,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.stepOutStack = [];
     this.stepOutStackPointer = 0;
     this.stepOutStackCount = 0;
+    this.interruptDepth = 0;
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
@@ -836,6 +855,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.stepOutStack = [];
     this.stepOutStackPointer = 0;
     this.stepOutStackCount = 0;
+    this.interruptDepth = 0;
     this.stepOutAddress = -1;
     this.totalContentionDelaySinceStart = 0;
     this.contentionDelaySincePause = 0;
@@ -1282,7 +1302,7 @@ export class Z80Cpu implements IZ80Cpu {
     // --- handler ends with a RET/RETI/RETN. Recording it keeps the step-out shadow stack aligned
     // --- with the real one, so stepping out of a handler targets the interrupted instruction.
     // --- Mirrored in `pushPcForInterrupt` in z80.c; the two implementations must agree.
-    this.pushToStepOutStack(this.pc);
+    this.pushToStepOutStack(this.pc, true);
     this.sp--;
     this.tactPlusN(1);
     this.writeMemory(this.sp, this.pc >>> 8);
@@ -1326,9 +1346,19 @@ export class Z80Cpu implements IZ80Cpu {
     this.pc = this.wz = addr;
   }
 
-  pushToStepOutStack(returnAddress: number): void {
+  pushToStepOutStack(returnAddress: number, isInterrupt = false): void {
+    // --- A full buffer overwrites its oldest entry: an interrupt's entry lost that way no longer counts
+    if (
+      this.stepOutStackCount === MAX_STEP_OUT_STACK_SIZE &&
+      this.stepOutIsInterrupt[this.stepOutStackPointer] &&
+      this.interruptDepth > 0
+    ) {
+      this.interruptDepth--;
+    }
     // Write to current position in circular buffer
     this.stepOutStack[this.stepOutStackPointer] = returnAddress;
+    this.stepOutIsInterrupt[this.stepOutStackPointer] = isInterrupt;
+    if (isInterrupt) this.interruptDepth++;
 
     // Advance pointer (wrap around at buffer size)
     this.stepOutStackPointer = (this.stepOutStackPointer + 1) % MAX_STEP_OUT_STACK_SIZE;
@@ -1369,6 +1399,7 @@ export class Z80Cpu implements IZ80Cpu {
     this.stepOutStackPointer =
       (this.stepOutStackPointer - 1 + MAX_STEP_OUT_STACK_SIZE) % MAX_STEP_OUT_STACK_SIZE;
     this.stepOutStackCount--;
+    if (this.stepOutIsInterrupt[this.stepOutStackPointer] && this.interruptDepth > 0) this.interruptDepth--;
   }
 
   /**

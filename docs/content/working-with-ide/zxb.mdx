@@ -16,11 +16,132 @@ However, BASIC still ran as an interpreted language, which means the computer ha
 
 Boriel's ZX BASIC (you can find it [here](https://zxbasic.readthedocs.io/en/docs/)) is a BASIC dialect similar to the original Sinclair BASIC. It fixes many issues found in the original language, such as proper subroutine handling and local variables. It compiles BASIC source code to Z80 binary code, which runs much faster than interpreted BASIC.
 
-Klive supports Boriel's ZX BASIC with an extension that allows you to write BASIC source code and create ZX Spectrum executables.
+Klive compiles ZX BASIC with its own compiler, **Klive BASIC**, which is built into the IDE and compatible with Boriel ZX BASIC. It needs no installation, and it produces the debug information that lets you step through your BASIC program statement by statement. If you prefer, Klive can still run Boriel's own compiler, `zxbc`, instead (see [Using the external zxbc compiler](#using-the-external-zxbc-compiler)).
 
 ## ZX BASIC Files
 
-Files with the `.bas` extension are automatically recognized as ZX BASIC files. You can open a Klive project and create a new ZX BASIC source file:
+Files with the `.zxbas` or `.bas` extension are recognized as ZX BASIC files. A new project created with the **zx-basic** template (ZX Spectrum 48, 128 and Next) starts with a `code/program.zxbas` file that is ready to build.
+
+## Klive BASIC
+
+Klive BASIC is compatible with Boriel ZX BASIC 1.19: the same language, the same options and `#pragma`s, the same standard libraries and the same inline assembly dialect. It also supports NextBuild's `CODEBANK` extension for the ZX Spectrum Next. It generates code for the ZX Spectrum 48K, 128K and +3 and the ZX Spectrum Next; the target follows the machine you have selected in the emulator.
+
+Compatibility is checked, not assumed: several thousand test cases are compiled by both Klive BASIC and `zxbc`, run on the same emulated machine, and must show the same results. The few places where Klive BASIC gives a different result on purpose are listed in [Where Klive BASIC differs from zxbc](#where-klive-basic-differs-from-zxbc). The machine code itself is Klive's own, so addresses and sizes differ from `zxbc`'s.
+
+### Build options in the source
+
+Options go in the comment lines at the top of the build root file, before the first line of code, one per line as `'@name value`:
+
+```
+'@optimize 0
+'@heap-size 4768
+'@array-base 1
+
+PRINT "Hello"
+```
+
+These options correspond to `zxbc`'s command-line options:
+
+| Option | What it sets | `zxbc` option |
+| --- | --- | --- |
+| `origin` | The address the program starts at (`$8000`) | `--org` |
+| `optimize` | The optimisation level, 0-3 (2) | `-O` |
+| `heap-size`, `heap-address` | The size (4768 bytes) and, optionally, the fixed address of the heap that holds strings and dynamic arrays | `--heap-size`, `--heap-address` |
+| `array-base`, `string-base` | Whether arrays and strings count from 0 (the default) or 1 | `--array-base`, `--string-base` |
+| `case-insensitive` | Names match in any case | `--ignore-case` |
+| `sinclair-compatible` | Sinclair BASIC's conventions: both bases 1, names in any case, `ATTR`, `POINT` and `SCREEN$` without an `#include` | `--sinclair` |
+| `require-declarations`, `require-types` | Every variable declared, every declaration typed | `--explicit`, `--strict` |
+| `check-memory` | Report `4 Out of memory` when the heap is full | `--debug-memory` |
+| `check-bounds` | Report `3 Subscript wrong` for an array index outside its bounds | `--debug-array` |
+| `break-key` | Stop with `L BREAK into program` when BREAK (CAPS SHIFT + SPACE) is pressed | `--enable-break` |
+| `define` | Preprocessor symbols, as `NAME` or `NAME=value` | `-D` |
+| `zxnext` | Accept the ZX Spectrum Next's instructions in inline assembly on any target | `--zxnext` |
+| `headerless` | No start-up and no end code: the program returns to its caller | `--headerless` |
+| `asm-dialect` | The dialect of `ASM` blocks: `zxbasm` (the default) or `klive` | |
+| `emit-asm`, `emit-ir`, `emit-map` | Write the generated assembly, the intermediate code and a label map beside the source | `-f asm`, `-M` |
+| `codebank-window`, `codebank-window-size`, `codebank-first-page`, `codebank-pages` | Where `CODEBANK` code runs and which 8K pages hold it (ZX Spectrum Next) | |
+
+`#pragma` lines work as in Boriel ZX BASIC. `array_base`, `string_base`, `case_insensitive`, `explicit`, `strict` and `default_byref` change what follows them (with `push` and `pop`); the others (`heap_size`, `array_check`, `enable_break`, `org`, ...) set the option for the whole program, wherever they stand, and override the header.
+
+### Inline assembly
+
+`ASM` … `END ASM` blocks use the dialect of Boriel's assembler, `zxbasm`, so existing libraries (NextBuild's NextLib, for example) compile unchanged: `;` comments, several instructions on a line separated by `:`, `PROC` … `ENDP` with `LOCAL` labels, temporary labels (`1:` referenced as `1b` and `1f`), `$1F`, `1Fh` and `%101` numbers, `DB`, `DW`, `DS` and `EQU`. `#define` macros are expanded inside the block. A program's variables are `_name`, its labels `.LABEL._name`.
+
+A routine written in assembly follows `zxbc`'s conventions: a `FASTCALL` routine gets its first argument in A, HL or DE:HL and the return address on top of the stack (the others below it), and a FUNCTION returns its result in A, HL, DE:HL or, for a Float, A, E, D, C, B.
+
+To use Klive's own assembler syntax instead (the one of Klive's `.kz80.asm` files), add `'@asm-dialect klive` to the header, or put the blocks between `#pragma push(asm_dialect)`, `#pragma asm_dialect = klive` and `#pragma pop(asm_dialect)`.
+
+### The standard library
+
+These libraries are included with `#include <name.bas>`, as in Boriel ZX BASIC: `asc`, `attr`, `clearbox`, `csrlin`, `fmath`, `hex`, `hmirror`, `input`, `input42`, `keys`, `megalz`, `memorybank`, `point`, `pos`, `print42`, `print64`, `putchars`, `puttile`, `screen`, `sinclair`, `string` and `zx0`, and Klive's own `farmem` (far memory for `CODEBANK` programs). They are Klive's own code, written to behave as the libraries documented for Boriel ZX BASIC. Library files that Boriel ZX BASIC ships without documentation are not available.
+
+`zx0.bas` decompresses data packed with [ZX0](https://github.com/einar-saukas/ZX0) by Einar Saukas (its current format; the `Back` routines take data packed backwards), `megalz.bas` data packed with MegaLZ.
+
+### Where Klive BASIC differs from zxbc
+
+Klive BASIC gives a different result from `zxbc` 1.19 only in these cases:
+
+- **Where `zxbc`'s result is wrong.** Klive BASIC keeps the correct result for: `MOD` of Float and Fixed values (the floored remainder, `-7.5 MOD 2` is `0.5`); Fixed division (exact to 1/65536); Fixed and Float division by zero (`6 Number too big`); a signed Byte division, and a signed division or `MOD` by a power-of-two literal (`-7 / 2` is `-3`, `-1 MOD 4` is `1`); a `FOR` loop that never runs (its variable still takes the start value); a substring assignment that reaches past the end of the string (clipped, instead of writing past it); and a full heap without `check-memory` (the string that does not fit is empty, instead of writing past the heap).
+- **Where `zxbc`'s result depends on leftovers.** A FUNCTION that ends without `RETURN` gives 0 (or the empty string); a `FASTCALL` routine with a BASIC body can read its first parameter; a `BYREF` Float parameter reads and writes the caller's variable; a variable used only by inline assembly is kept; code built `headerless` still prints.
+- **Where `zxbc` stops with an internal error.** Programs such as `CHR$(65, 66)`, `SIZEOF(LONG)`, `BNOT 2.5`, a constant division by zero or a comparison of two string constants compile as the documentation describes.
+- **Where `zxbc` repairs a malformed statement without a word** (`PRINT )`, `CLS 1`, `DIM x y`, ...): Klive BASIC reports a syntax error.
+- **Library details:** the glyphs of `print42` and `print64` are Klive's own (the cursor and the control codes work as in Boriel's), and `fSin`, `fCos` and `fTan` reduce angles outside 0-360 exactly.
+- **`zxnext`:** the option works (`zxbc`'s `--zxnext` flag has no effect in 1.19; its `#pragma zxnext` works in both).
+
+### Banked code on the ZX Spectrum Next (CODEBANK)
+
+On the ZX Spectrum Next, routines and data inside a `CODEBANK` block live in their own 8K memory pages instead of the program's main memory:
+
+```
+CODEBANK 1
+DIM table(1000) AS UByte
+FUNCTION Lookup(i AS UInteger) AS UByte
+  RETURN table(i)
+END FUNCTION
+END CODEBANK
+
+PRINT Lookup(10)
+```
+
+A call is written as any other call. The program pages the routine's bank into a window (`$6000`–`$7FFF` by default, or 16K with `'@codebank-window-size 16k`) and pages the caller's memory back when it returns. Bank-local data is reachable from outside its bank through `FARPTR` and the `#include <farmem.bas>` routines (`FarPeek`, `FarPeekW`, `FarPoke`, `FarPokeW`, `FarCopy`, `FarCopyTo`, `FarStr`). The compiler reports a bank that does not fit its window, and a window that overlaps the program. With `'@emit-map`, a build also writes `<name>.banks.json` and one `<name>.bank<n>.bin` per bank, in the format NextBuild's tools read.
+
+<Callout type="warning">
+An interrupt handler must not call a banked routine or read bank-local data: the window may hold another bank when the interrupt arrives.
+</Callout>
+
+### Debugging BASIC at source level
+
+A debug run of a Klive BASIC program steps **statements**, not Z80 instructions. On a line such as `a = 1 : b = 2 : PRINT a + b`, each statement is a step and the editor highlights only the statement about to run.
+
+- **Step Into** stops at the next statement, inside a called SUB, FUNCTION or GOSUB subroutine if there is one. Its drop-down (**Step Into Target**) lists the routines the current statement calls, so you can step into the second of two calls directly.
+- **Step Over** runs calls completely and stops at the next statement of the current routine.
+- **Step Out** runs until the current routine returns, and stops in the calling statement; the Variables panel then shows the value a FUNCTION returned.
+- **Step Over Line** runs the rest of the current line.
+- The toolbar's **Source / Z80** button switches to stepping Z80 instructions and back.
+
+Breakpoints set in the gutter stop at the line's first statement; the small markers in front of further statements on a line set a breakpoint on that statement only. The **Call Stack** panel shows the chain of routines and GOSUB subroutines (recursive calls once per level), and **Run to this frame** on a row runs until control is back there. The **Variables** panel shows the selected routine's parameters and locals, the globals and your watch expressions, which can be any BASIC expression over variables and array elements. When the program raises a BASIC error, the debug run stops at the statement that raised it, before the error report.
+
+All of this works across `CODEBANK` banks too: breakpoints fire only in their own bank, the call stack shows the real callers of banked routines, and bank-local variables are read from their bank even when another bank is paged in.
+
+These commands change how source stepping behaves (they are saved as settings):
+
+| Command | Effect |
+| --- | --- |
+| `em-src <on\|off> [-i]` | Step source statements (on) or Z80 instructions (off); `-i` also stops inside interrupt handlers |
+| `em-err <on\|off>` | Stop where the program raises a BASIC error (on by default) |
+| `em-jmc <on\|off>` | Just My Code: step over the standard library's code (on by default) |
+
+Exporting a ZX Spectrum Next program as a NEX file also writes `<name>.nex.kbasic-debug.json` beside it. When you run that NEX with `nex-run <file> -d`, Klive loads the file's source-level debug information, so the program steps at source level without rebuilding it. A NEX rebuilt later by another tool does not match its old debug file, which is then ignored.
+
+## Using the external zxbc compiler
+
+To build with Boriel's own `zxbc` instead of Klive BASIC, set:
+
+```
+set zxbasic.compiler zxbc
+```
+
+(`set zxbasic.compiler klive` switches back.) Then configure the integration:
 
 <ClickableImage src="/images/working-with-ide/zxb-reset.png" width={770} />
 
@@ -60,4 +181,4 @@ When you run the code, the compiler checks the syntax. If there are any errors, 
 
 ## Debugging
 
-You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. In debug mode, the IDE will stop at any breakpoints you set in your code.
+You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. With Klive BASIC, debugging works at source level as described in [Debugging BASIC at source level](#debugging-basic-at-source-level); with the external `zxbc`, the IDE steps Z80 instructions.

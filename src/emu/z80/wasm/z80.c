@@ -123,6 +123,10 @@ typedef struct Z80State {
   uint16_t stepOutStack[Z80_STEP_OUT_STACK_SIZE];
   uint16_t stepOutStackPointer;
   uint16_t stepOutStackCount;
+  /* Which shadow-stack entries an interrupt pushed, and how many of those are live: while it is
+     non-zero an interrupt handler is running (source stepping runs handlers outside the step). */
+  uint8_t stepOutIsInterrupt[Z80_STEP_OUT_STACK_SIZE];
+  uint16_t interruptDepth;
   uint8_t afterLdAIR;
   uint8_t interruptVector;
   uint16_t lastPortAddress;
@@ -663,14 +667,23 @@ static inline void pushPair(RegisterPair pairValue) {
   writeMemory(cpu.sp, pairValue.bytes.low);
 }
 
-static inline void pushToStepOutStack(uint16_t returnAddress) {
+static inline void pushStepOutEntry(uint16_t returnAddress, uint8_t isInterrupt) {
+  /* A full buffer overwrites its oldest entry: an interrupt's entry lost that way no longer counts */
+  if (cpu.stepOutStackCount == Z80_STEP_OUT_STACK_SIZE && cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] &&
+      cpu.interruptDepth > 0u) {
+    cpu.interruptDepth--;
+  }
   cpu.stepOutStack[cpu.stepOutStackPointer] = returnAddress;
+  cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] = isInterrupt;
+  if (isInterrupt) cpu.interruptDepth++;
   cpu.stepOutStackPointer =
     (uint16_t)((cpu.stepOutStackPointer + 1u) % Z80_STEP_OUT_STACK_SIZE);
   if (cpu.stepOutStackCount < Z80_STEP_OUT_STACK_SIZE) {
     cpu.stepOutStackCount++;
   }
 }
+
+static inline void pushToStepOutStack(uint16_t returnAddress) { pushStepOutEntry(returnAddress, 0); }
 
 /*
  * Drop the newest return address, because a RET has just consumed it.
@@ -688,6 +701,7 @@ static inline void popFromStepOutStack(void) {
   cpu.stepOutStackPointer = (uint16_t)((cpu.stepOutStackPointer + Z80_STEP_OUT_STACK_SIZE - 1u) %
                                        Z80_STEP_OUT_STACK_SIZE);
   cpu.stepOutStackCount--;
+  if (cpu.stepOutIsInterrupt[cpu.stepOutStackPointer] && cpu.interruptDepth > 0u) cpu.interruptDepth--;
 }
 
 static inline void retCore(void) {
@@ -741,7 +755,7 @@ static inline void pushPcForInterrupt(void) {
    * Observed before this: an interrupt landing mid-step made step-out overshoot both the handler
    * and the routine beneath it. Mirrored in `Z80Cpu.pushPC`.
    */
-  pushToStepOutStack(cpu.pc);
+  pushStepOutEntry(cpu.pc, 1);
   cpu.sp = (uint16_t)(cpu.sp - 1);
   tactPlusN(1);
   writeMemory(cpu.sp, hi(cpu.pc));
@@ -824,6 +838,7 @@ void z80Reset(void) {
   cpu.retnExecuted = 0;
   cpu.stepOutStackPointer = 0;
   cpu.stepOutStackCount = 0;
+  cpu.interruptDepth = 0;
   cpu.afterLdAIR = 0;
   cpu.interruptVector = 0xff;
   cpu.lastPortAddress = 0;
@@ -3294,6 +3309,13 @@ uint32_t z80GetStepOutAddress(void) {
   return cpu.stepOutStack[lastIndex];
 }
 void z80SetRetnExecuted(uint32_t value) { cpu.retnExecuted = value != 0; }
+
+/*
+ * How many interrupt handlers are running: interrupt entries on the shadow stack whose RET has not
+ * executed yet. Source stepping (`SourceStepDecision.ts`, plan §10.2.7) runs a handler outside the
+ * step: a statement entry reached while this is non-zero is not a stop.
+ */
+uint32_t z80GetInterruptDepth(void) { return cpu.interruptDepth; }
 void z80TactPlusN(uint32_t value) { tactPlusN(value); }
 
 /* Snooze (see `Z80State.snoozed`): `Z80Cpu.snoozeCpu`, `awakeCpu`, `isCpuSnoozed` */

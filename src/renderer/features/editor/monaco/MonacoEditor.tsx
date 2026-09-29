@@ -4,16 +4,19 @@ import * as monacoEditor from "monaco-editor";
 import AutoSizer from "../../../../lib/react-virtualized-auto-sizer";
 import { useTheme } from "@renderer/theming/ThemeProvider";
 import { useEffect, useRef, useState } from "react";
-import { useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { getGlobalSetting, useGlobalSetting, useRendererContext, useSelector } from "@renderer/core/RendererProvider";
+import { selectedZxBasicCompiler } from "@main/zxb-integration/zxb-config";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { customLanguagesRegistry } from "@renderer/registry";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
+  resetBackgroundCompileAction,
   startBackgroundCompileAction,
   setCursorPositionAction
 } from "@common/state/actions";
@@ -41,12 +44,19 @@ import {
   SETTING_EDITOR_TABSIZE,
   SETTING_EDITOR_OCCURRENCES_HIGHLIGHT,
   SETTING_EDITOR_QUICK_SUGGESTION_DELAY,
-  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE
+  SETTING_EDITOR_ALLOW_BACKGROUND_COMPILE,
+  SETTING_EMU_JUST_MY_CODE
 } from "@common/settings/setting-const";
 import { Store } from "@common/state/redux-light";
 import { AppState } from "@common/state/AppState";
 import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
-import { isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { listItemsAtPc, locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
+import { reanchorColumn, runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
+import { stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
+import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import { statementAtColumn } from "@common/utils/breakpoints";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
 import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
@@ -61,6 +71,7 @@ import { registerMonacoDebugShortcuts } from "./monacoDebugShortcuts";
 import { publishEditorCursorPosition } from "./monacoCursorPosition";
 import { getNormalizedLineNumberSelection } from "./monacoLineNumberSelection";
 import { pasteTextIntoEditor } from "./monacoClipboard";
+import { BackgroundCompileScheduler } from "./monacoBackgroundCompile";
 
 export { initializeMonaco } from "./monacoBootstrap";
 
@@ -75,6 +86,7 @@ type MarkdownString = monacoEditor.IMarkdownString;
 // --- the renderer bundle entry at runtime.
 const MONACO_GUTTER_GLYPH_MARGIN = 2;
 const MONACO_GUTTER_LINE_NUMBERS = 3;
+const MONACO_CONTENT_TEXT = 6;
 
 // --- This type represents the API that we can access from outside
 export type EditorApi = DocumentApi & {
@@ -179,6 +191,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
   // --- Use these state variables to manage breakpoints and their changes
   const breakpointsVersion = useSelector((s) => s.emulatorState.breakpointsVersion);
+  const sourceFrame = useSelector((s) => s.ideView?.sourceFrame ?? 0);
   const breakpoints = useRef<BreakpointInfo[]>([]);
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
@@ -188,14 +201,13 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const bpDecorations = useRef<EditorDecorationsCollection>(null);
   const hoverDecorations = useRef<EditorDecorationsCollection>(null);
   const execPointDecoration = useRef<EditorDecorationsCollection>(null);
+  // --- Step Into Target's context-menu items (plan §10.2.4), one per routine the stopped statement calls
+  const stepTargetActions = useRef<monacoEditor.IDisposable[]>([]);
   const errorWarningDecorations = useRef<EditorDecorationsCollection>(null);
   const refreshEditorBreakpoints = useRef<() => Promise<void>>(async () => undefined);
 
-  // --- Debounce timer for background compilation (1200ms)
-  const compileDebounce = useRef<ReturnType<typeof setTimeout>>(null);
-
-  // --- True when a compile was requested while one was already in progress
-  const pendingCompile = useRef(false);
+  // --- Background compiles: debounced after edits, one at a time, none lost (see the helper)
+  const compileScheduler = useRef<BackgroundCompileScheduler>(null);
 
   // --- Line-number clicks select the right text, but Monaco leaves the active
   // --- cursor on the next line. Keep the clicked line until mouse-up, then
@@ -224,6 +236,25 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Background compilation
   const backgroundResult = useSelector((s) => s.compilation.backgroundResult);
   const backgroundInProgress = useSelector((s) => s.compilation.backgroundInProgress ?? false);
+
+  // --- The scheduler reads these when a request fires, so it always sees the current values
+  const compileContext = useRef({ store, mainApi, allowBackgroundCompile });
+  compileContext.current = { store, mainApi, allowBackgroundCompile };
+  if (!compileScheduler.current) {
+    compileScheduler.current = new BackgroundCompileScheduler({
+      isRunning: () => compileContext.current.store.getState().compilation?.backgroundInProgress ?? false,
+      start: () => {
+        const { store, mainApi, allowBackgroundCompile } = compileContext.current;
+        return startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+      }
+    });
+  }
+  useEffect(() => () => compileScheduler.current?.dispose(), []);
+
+  // --- A compile finished, with any result: run the one requested while it ran
+  useEffect(() => {
+    if (!backgroundInProgress) compileScheduler.current?.compileFinished();
+  }, [backgroundInProgress]);
 
   // --- Language intelligence data (updated after each background compile)
   const languageIntel = useSelector((s) => s.compilation.languageIntel);
@@ -332,7 +363,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- Refresh breakpoints when they may change
   useEffect(() => {
     void refreshEditorBreakpoints.current();
-  }, [breakpointsVersion, compilation, execState, hubVersion]);
+  }, [breakpointsVersion, compilation, execState, hubVersion, sourceFrame]);
 
   useEffect(() => {
     // Clear previous decorations and model markers
@@ -409,10 +440,36 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       return { startCol, endCol };
     };
 
+    // --- A compiler whose language says its columns are exact marks just the offending text
+    const exactColumns = !!customLanguagesRegistry.find((l) => l.id === document.language)
+      ?.exactErrorColumns;
+    const getErrorCols = (err: (typeof fileErrors)[number]): { startCol: number; endCol: number } => {
+      const hasRange =
+        exactColumns &&
+        typeof err.startColumn === "number" &&
+        typeof err.endColumn === "number" &&
+        err.endColumn > err.startColumn;
+      // --- 0-based in the error, 1-based in Monaco
+      return hasRange
+        ? { startCol: err.startColumn + 1, endCol: err.endColumn + 1 }
+        : getLineCols(err.line || 1);
+    };
+
+    // --- Monaco renders a long text run as several spans, each with the decoration's class, and the
+    // --- stylesheet joins adjacent same-class spans into one pill. So a line gets one badge per
+    // --- severity, its messages joined, or two messages would fuse into one pill with no separator.
+    const badges = new Map<string, { lineNo: number; messages: string[]; isWarning: boolean }>();
+    const addBadge = (lineNo: number, message: string, isWarning: boolean | undefined) => {
+      const key = `${lineNo}:${!!isWarning}`;
+      const badge = badges.get(key) ?? { lineNo, messages: [], isWarning: !!isWarning };
+      if (!badge.messages.includes(message)) badge.messages.push(message);
+      badges.set(key, badge);
+    };
+
     fileErrors.forEach((err) => {
       const lineNo = err.line || 1;
       const isWarning = err.isWarning;
-      const { startCol, endCol } = getLineCols(lineNo);
+      const { startCol, endCol } = getErrorCols(err);
 
       // Standard Monaco marker: squiggles + scrollbar overview ruler + minimap + hover tooltip
       markers.push({
@@ -426,17 +483,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         endColumn: endCol
       });
 
-      // Custom inline pill/badge displayed after the line content
-      afterDecorations.push({
-        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
-        options: {
-          after: {
-            content: err.message || "Issue detected",
-            inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
-          },
-          isWholeLine: false
-        }
-      });
+      addBadge(lineNo, err.message || "Issue detected", isWarning);
     });
 
     // Add markers for invocation sites found in macro error message prefixes
@@ -454,11 +501,17 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         endLineNumber: lineNo,
         endColumn: endCol
       });
+      addBadge(lineNo, message, isWarning);
+    });
+
+    // Custom inline pill/badge displayed after the line content: one per line and severity
+    badges.forEach(({ lineNo, messages, isWarning }) => {
+      const { startCol, endCol } = getLineCols(lineNo);
       afterDecorations.push({
-        range: new monacoEditor.Range(lineNo, col, lineNo, endCol),
+        range: new monacoEditor.Range(lineNo, startCol, lineNo, endCol),
         options: {
           after: {
-            content: message,
+            content: messages.join("  \u2022  "),
             inlineClassName: isWarning ? styles.warningIcon : styles.errorIcon
           },
           isWholeLine: false
@@ -470,18 +523,10 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (afterDecorations.length > 0) {
       errorWarningDecorations.current = editor.current.createDecorationsCollection(afterDecorations);
     }
-
-    // --- If a compile was requested while this one was in progress, start it now
-    if (pendingCompile.current) {
-      pendingCompile.current = false;
-      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-    }
-  }, [backgroundResult, document.node?.projectPath, allowBackgroundCompile, mainApi, store]);
+  }, [backgroundResult, document.node?.projectPath, document.language, allowBackgroundCompile]);
 
   useEffect(() => {
-    if (store && mainApi) {
-      startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-    }
+    if (store && mainApi) void compileScheduler.current?.requestNow();
   }, [store, mainApi, allowBackgroundCompile]);
 
   // --- Initializes the editor when mounted
@@ -592,6 +637,40 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Mount events to save the view state
     const disposables: monacoEditor.IDisposable[] = [];
+    // --- Source-level debugging actions (plan §10.3, §10.5): the statement under the cursor
+    if (languageInfo?.supportsBreakpoints) {
+      disposables.push(
+        ed.addAction({
+          id: "klive.toggleStatementBreakpoint",
+          label: "Toggle Breakpoint at Statement",
+          contextMenuGroupId: "klive-debug",
+          contextMenuOrder: 1,
+          run: (target) => {
+            const position = target.getPosition();
+            if (position) void toggleStatementBreakpoint(position.lineNumber, position.column - 1);
+          }
+        }),
+        ed.addAction({
+          id: "klive.runToCursor",
+          label: "Run to Cursor",
+          contextMenuGroupId: "klive-debug",
+          contextMenuOrder: 2,
+          run: (target) => {
+            const position = target.getPosition();
+            if (!position) return;
+            const address = runToCursorAddress(
+              store.getState().compilation?.result,
+              getResourceName(),
+              getIsWindows(),
+              position.lineNumber,
+              position.column - 1
+            );
+            if (address === undefined) return;
+            void ideCommandsService.executeCommand(`run-to $${address.toString(16).padStart(4, "0")}`);
+          }
+        })
+      );
+    }
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
       ed.onMouseUp(handleEditorMouseUp),
@@ -712,7 +791,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     setTimeout(() => notifySemanticTokensChanged(), 0);
 
     // --- Start background compilation
-    startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+    void compileScheduler.current?.requestNow();
 
     // --- Show breakpoints and other decorations when initially displaying the editor
     (async () => {
@@ -851,6 +930,27 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
               );
             }
 
+            // --- An edit inside one line re-anchors that line's statement breakpoints (§10.3)
+            if (deletedLines === 0 && insertedLines === 0 && change.range.startLineNumber === change.range.endLineNumber) {
+              const line = change.range.startLineNumber;
+              const onLine = breakpoints.filter((bp) => bp.resource === resourceName && bp.line === line && bp.column !== undefined);
+              if (onLine.length) {
+                const newText = editor.current.getModel().getLineContent(line);
+                const emu = createEmuApi(messenger);
+                for (const bp of onLine) {
+                  const column = reanchorColumn(
+                    bp.column,
+                    { startColumn: change.range.startColumn - 1, endColumn: change.range.endColumn - 1, text: change.text },
+                    newText
+                  );
+                  if (column === bp.column) continue;
+                  await emu.removeBreakpoint(bp);
+                  const { column: _old, ...lineBreakpoint } = bp;
+                  await emu.setBreakpoint(column === undefined ? lineBreakpoint : { ...lineBreakpoint, column });
+                }
+              }
+            }
+
             // --- If changed, normalize breakpoints
             await createEmuApi(messenger).normalizeBreakpoints(
               resourceName,
@@ -877,17 +977,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       }
     );
 
-    // --- Start background compilation (debounced to prevent multiple rapid compilations)
-    clearTimeout(compileDebounce.current);
-    compileDebounce.current = setTimeout(() => {
-      if (backgroundInProgress) {
-        // A compile is already running — mark that we need another one when it finishes
-        pendingCompile.current = true;
-      } else {
-        pendingCompile.current = false;
-        startBackgroundCompile(store, mainApi, allowBackgroundCompile);
-      }
-    }, 1200);
+    // --- Compile once the typing pauses (after any compile that is running now)
+    compileScheduler.current?.requestAfterEdit();
   };
 
   // --- render the editor when monaco has been initialized
@@ -976,8 +1067,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
       }
 
-      // --- Render the breakpoint according to its type and reachability
-      if (editorLines !== null && bp.resource === resourceName.slice(1)) {
+      // --- Render the breakpoint according to its type and reachability (a statement breakpoint is
+      // --- drawn at its statement below, not in the gutter)
+      if (editorLines !== null && bp.resource === resourceName.slice(1) && bp.column === undefined) {
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
           if (bp.disabled) {
@@ -992,18 +1084,60 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
               : createCodeBreakpointDecoration(bp.line, false);
           }
           decorations.push(decoration);
-        } else if (bp.resource && bp.resource === document.node.projectPath) {
+        } else if (bp.resource && bp.resource === document.node?.projectPath) {
           // --- Remove the source code breakpoint exceeding the source code range
           await removeBreakpoint(messenger, bp);
         }
       }
     });
 
+    // --- Statement breakpoints (plan §10.3): a marker before each further statement of a line with
+    // --- several, while debugging; a statement breakpoint's marker always
+    if (hasSourceLevelDebug(compilationResult) && compilationResult.errors?.every((e) => e.isWarning)) {
+      const info = compilationResult.sourceLevelDebug;
+      const fileIndex = sourceFileIndex(info, resourceName, getIsWindows());
+      if (fileIndex >= 0) {
+        const debugging = !!state.emulatorState?.isDebugging;
+        const own = bps.filter((bp) => bp.resource === resourceName.slice(1) && bp.column !== undefined);
+        const shown = new Set<string>();
+        for (const s of statementMarkers(info, fileIndex)) {
+          const bp = own.find((b) => b.line === s.startLine && b.column === s.startColumn);
+          if (!bp && !debugging) continue;
+          decorations.push(createStatementMarkerDecoration(s.startLine, s.startColumn, bp));
+          shown.add(`${s.startLine}:${s.startColumn}`);
+        }
+        // --- A statement breakpoint whose statement has no marker (the line's first one)
+        for (const bp of own) {
+          if (!shown.has(`${bp.line}:${bp.column}`)) decorations.push(createStatementMarkerDecoration(bp.line!, bp.column!, bp));
+        }
+      }
+    }
+
     if (bpDecorations.current) {
       bpDecorations.current.clear();
     }
     bpDecorations.current = editor.current.createDecorationsCollection(decorations);
     return bps;
+  }
+
+  /**
+   * Adds or removes the statement breakpoint at a line and 0-based column (plan §10.3): the
+   * statement whose range holds the column.
+   */
+  async function toggleStatementBreakpoint(line: number, column: number): Promise<void> {
+    const result = store.getState().compilation?.result;
+    if (!hasSourceLevelDebug(result)) return;
+    const fileIndex = sourceFileIndex(result.sourceLevelDebug, getResourceName(), getIsWindows());
+    const statement = fileIndex >= 0 ? statementAtColumn(result.sourceLevelDebug, fileIndex, line, column) : undefined;
+    if (!statement || statement.startLine !== line) return;
+    const resource = document.node?.projectPath ?? getResourceName().slice(1);
+    const existing = breakpoints.current.find(
+      (bp) => bp.resource === resource && bp.line === line && bp.column === statement.startColumn
+    );
+    if (existing) await removeBreakpoint(messenger, existing);
+    else await addBreakpoint(messenger, { resource, line, column: statement.startColumn, exec: true });
+    await refreshSourceCodeBreakpoints(store, messenger);
+    store.dispatch(incBreakpointsVersionAction());
   }
 
   /**
@@ -1017,7 +1151,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // --- Check if there is an existing breakpoint at this line
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === resourceName && bp.line === lineNo
+        (bp) => bp.resource === resourceName && bp.line === lineNo && bp.column === undefined
       );
       if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
@@ -1074,6 +1208,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ? e.target.position.lineNumber
       : null;
 
+    // --- An inline statement marker (plan §10.3): toggles that statement's breakpoint
+    const markerClasses = [styles.statementBpMarker, styles.statementBpSet, styles.statementBpDisabled];
+    if (
+      e.event.leftButton &&
+      e.target?.type === MONACO_CONTENT_TEXT &&
+      e.target.position &&
+      markerClasses.some((c) => e.target.element?.classList.contains(c))
+    ) {
+      void toggleStatementBreakpoint(e.target.position.lineNumber, e.target.position.column - 1);
+      return;
+    }
+
     if (
       e.event.leftButton &&
       e.target?.type === MONACO_GUTTER_GLYPH_MARGIN
@@ -1081,7 +1227,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo
+        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo && bp.column === undefined
       );
       (async () => {
         if (existingBp) {
@@ -1140,13 +1286,37 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    */
   function getResourceName(): string {
     const projPath = store.getState().project?.folderPath;
-    return document.id.substring(projPath?.length);
+    // --- A document outside the project (a Klive BASIC library file) is named by its whole id
+    return projPath && document.id.startsWith(projPath) ? document.id.substring(projPath.length) : document.id;
   }
 
   /**
    * Refreshes the current breakpoint
    * @returns
    */
+  /** The calling statement of the outer frame selected in the Call Stack panel, when it is in this document. */
+  async function selectedFrameDecoration(info: SourceLevelDebugInfo, stop: SourceStopInfo | undefined): Promise<Decoration | undefined> {
+    const frame = store.getState().ideView?.sourceFrame ?? 0;
+    if (frame <= 0) return undefined;
+    let chain: SourceActivationInfo[] | undefined;
+    try {
+      chain = await emuApi.getSourceCallStack();
+    } catch {
+      return undefined;
+    }
+    const row = chain ? buildSourceCallStack(info, chain, stop).find((r) => !("runtime" in r) && r.frame === frame) : undefined;
+    if (!row || "runtime" in row || !row.filename || row.line === undefined) return undefined;
+    const sep = getIsWindows() ? "\\" : "/";
+    if (!row.filename.replaceAll(sep, "/").endsWith(getResourceName())) return undefined;
+    return {
+      range: new monacoEditor.Range(row.line, (row.startColumn ?? 0) + 1, row.endLine ?? row.line, (row.endColumn ?? 0) + 1),
+      options: {
+        className: styles.selectedFrameStatement,
+        hoverMessage: { value: `Frame ${frame}: ${row.name} is running a call made here` }
+      }
+    };
+  }
+
   async function refreshCurrentBreakpoint(bps: BreakpointInfo[]): Promise<void> {
     // --- No editor, no decorations
     if (!editor.current) {
@@ -1160,13 +1330,59 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
     // --- Store the decorations
     const decorations: Decoration[] = [];
+    stepTargetActions.current.forEach((d) => d.dispose());
+    stepTargetActions.current = [];
 
     // --- Get the current PC value
     const cpuStateResponse = await emuApi.getCpuState();
     const pc = cpuStateResponse.pc;
+    // --- PC's partition: which of several banked sources sharing the address runs (plan §10.4)
+    const where = {
+      partition: (cpuStateResponse as { pcPartition?: number }).pcPartition,
+      machineId: store.getState().emulatorState?.machineId
+    };
 
     // --- Is the machine running?
     const machineState = store.getState().emulatorState?.machineState;
+
+    // --- Source-level debug info (plan §10.5): the active statement's own range, and return
+    // --- points, which the emulator's report of the last stop knows about
+    if (machineState === MachineControllerState.Paused && hasSourceLevelDebug(compilation.result)) {
+      let stop;
+      try {
+        stop = await emuApi.getSourceStopInfo();
+      } catch {
+        stop = undefined;
+      }
+      const location = locateSource(compilation.result, pc, stop, where);
+      if (location?.sourceLevel) {
+        const sep = getIsWindows() ? "\\" : "/";
+        if (location.filename.replaceAll(sep, "/").endsWith(getResourceName())) {
+          const resName = getResourceName()?.slice(1);
+          const activeBp = bps.find((bp) => (bp.line === location.line && bp.resource === resName) || bp.address === pc);
+          decorations.push(createCurrentStatementDecoration(location, activeBp));
+          const justMyCode = getGlobalSetting(store, SETTING_EMU_JUST_MY_CODE) !== false;
+          stepIntoTargets(compilation.result.sourceLevelDebug, stop, justMyCode).forEach((target, i) => {
+            stepTargetActions.current.push(
+              editor.current.addAction({
+                id: `klive.stepIntoTarget.${target.callableIndex}`,
+                label: `Step Into ${target.name}`,
+                contextMenuGroupId: "klive-debug",
+                contextMenuOrder: 3 + i,
+                run: () => void emuApi.sourceStep("intoTarget", { targetCallable: target.callableIndex })
+              })
+            );
+          });
+        }
+        // --- An outer frame selected in the Call Stack panel (§10.6): its calling statement
+        const frameDecoration = await selectedFrameDecoration(compilation.result.sourceLevelDebug, stop);
+        if (frameDecoration) decorations.push(frameDecoration);
+        execPointDecoration.current?.clear();
+        execPointDecoration.current = editor.current.createDecorationsCollection(decorations);
+        return;
+      }
+    }
+
     if (
       machineState === MachineControllerState.Running ||
       machineState == MachineControllerState.Paused
@@ -1181,10 +1397,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         // --- Get source map information
         const sourceMapInfo = compilation.result.sourceMap[pc];
 
-        // --- Check for the active breakpoint line
-        const lineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.address === pc && !li.isMacroInvocation
-        );
+        // --- Check for the active breakpoint line (in PC's partition, for banked sources)
+        const itemsAtPc = listItemsAtPc(compilation.result, pc, where, fileIndex);
+        const lineInfo = itemsAtPc.find((li) => !li.isMacroInvocation);
 
         if (lineInfo) {
           const resName = getResourceName()?.slice(1);
@@ -1204,9 +1419,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
 
         // --- Check for active macro invocation line
-        const macroInvocationlineInfo = compilation.result.listFileItems.find(
-          (li) => li.fileIndex === fileIndex && li.address === pc && li.isMacroInvocation
-        );
+        const macroInvocationlineInfo = itemsAtPc.find((li) => li.isMacroInvocation);
 
         if (macroInvocationlineInfo) {
           const resName = getResourceName()?.slice(1);
@@ -1339,6 +1552,56 @@ function createCurrentBreakpointDecoration(
 }
 
 /**
+ * An inline statement marker (plan §10.3), before a statement that shares its line: faint where a
+ * breakpoint can go, in the breakpoint colour where one is set.
+ */
+function createStatementMarkerDecoration(line: number, column: number, bp?: BreakpointInfo): Decoration {
+  const className = bp ? (bp.disabled ? styles.statementBpDisabled : styles.statementBpSet) : styles.statementBpMarker;
+  return {
+    range: new monacoEditor.Range(line, column + 1, line, column + 1),
+    options: {
+      before: { content: "\u25cf", inlineClassName: className },
+      hoverMessage: { value: bp ? "Click to remove the breakpoint on this statement" : "Click to add a breakpoint on this statement" }
+    }
+  };
+}
+
+/**
+ * The execution point at source level (plan §10.3, §10.5): exactly the active statement, across
+ * its lines; at a return point the calling statement, with a note naming the routine that returned.
+ */
+function createCurrentStatementDecoration(location: SourceLocation, activeBp?: BreakpointInfo): Decoration {
+  const startColumn = (location.startColumn ?? 0) + 1;
+  const endColumn = location.endColumn !== undefined ? location.endColumn + 1 : startColumn;
+  const returnPoint = location.kind === "returnPoint";
+  const note = returnPoint ? `returned from ${location.returnedFrom ?? "a call"}` : undefined;
+  const error = location.kind === "error" ? (location.error ?? "runtime error") : undefined;
+  return {
+    range: new monacoEditor.Range(location.line, startColumn, location.endLine, endColumn),
+    options: {
+      className: styles.activeBreakpointLine,
+      glyphMarginClassName: activeBp
+        ? activeBp.address !== undefined
+          ? styles.activeBinBreakpointOnExistingMargin
+          : styles.activeBreakpointOnExistingMargin
+        : styles.activeBreakpointMargin,
+      ...(note
+        ? {
+            hoverMessage: { value: `Execution returned here: ${note}` },
+            after: { content: `  \u2190 ${note}`, inlineClassName: styles.returnPointNote }
+          }
+        : {}),
+      ...(error
+        ? {
+            hoverMessage: { value: `The program stopped on a runtime error: ${error}. Continue to let the ROM report it.` },
+            after: { content: `  \u2716 ${error}`, inlineClassName: styles.errorStopNote }
+          }
+        : {})
+    }
+  };
+}
+
+/**
  * Creates a current breakpoint decoration
  * @param lineNo Line to apply the decoration to
  * @returns
@@ -1364,7 +1627,11 @@ function createCurrentMacroInvocationBreakpointDecoration(
   };
 }
 
-// --- Compile the current project's code
+/**
+ * Starts a background compile of the current project's build root. Resolves to false only when the
+ * main process refuses because a compile is already running (the scheduler then retries after it);
+ * true otherwise, including when there is nothing to compile.
+ */
 async function startBackgroundCompile(
   store: Store<AppState>,
   mainApi: ReturnType<typeof createMainApi>,
@@ -1373,25 +1640,34 @@ async function startBackgroundCompile(
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
-    return false;
+    return true;
   }
   const buildRoot = state.project.buildRoots?.[0];
   if (!buildRoot) {
-    return false;
+    return true;
   }
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, store)?.subType;
 
-  // --- The built-in Klive Z80 assembler always runs background compilation;
-  // --- the flag only gates external compilers (ZxBasic, SjasmPlus, etc.)
+  // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC unless `zxbasic.compiler`
+  // --- selects zxbc) always run background compilation; the flag only gates external compilers
+  // --- (zxbc, SjasmPlus, etc.)
   const langInfo = customLanguagesRegistry.find((l) => l.id === language);
-  const isBuiltInCompiler = langInfo?.compiler === "Z80Compiler";
+  const isBuiltInCompiler =
+    langInfo?.compiler === "Z80Compiler" ||
+    (language === "zxbas" && selectedZxBasicCompiler(state) === "klive");
   if (!allowCompile && !isBuiltInCompiler) {
-    return false;
+    return true;
   }
 
-  // --- Compile the build root
+  // --- Compile the build root. A refusal leaves the flag to the compile that is running, whose
+  // --- end clears it; a failed request clears it here, or no later request would ever start.
   store.dispatch(startBackgroundCompileAction());
-  mainApi.startBackgroundCompile(fullPath, language);
-  return true;
+  try {
+    return await mainApi.startBackgroundCompile(fullPath, language);
+  } catch (err) {
+    store.dispatch(resetBackgroundCompileAction());
+    reportError(err);
+    return true;
+  }
 }

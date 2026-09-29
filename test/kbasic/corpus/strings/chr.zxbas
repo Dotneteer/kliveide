@@ -1,0 +1,4 @@
+' CHR$ with one and several codes
+'@expect screen 0 "ABC Hi!"
+'@expect heap
+PRINT CHR$(65); CHR$(66, 67); " "; CHR$(72) + CHR$(105, 33)

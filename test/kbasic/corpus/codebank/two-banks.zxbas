@@ -1,0 +1,17 @@
+' CODEBANK: a SUB in bank 2 calls a FUNCTION in bank 1, and control comes back to resident code
+'@target next
+'@expect screen 0 "41"
+'@expect word result 41
+DIM result AS UInteger
+CODEBANK 1
+FUNCTION Twice(n AS UInteger) AS UInteger
+  RETURN n * 2
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+SUB Store(v AS UInteger)
+  result = Twice(v) + 1
+END SUB
+END CODEBANK
+Store 20
+PRINT result

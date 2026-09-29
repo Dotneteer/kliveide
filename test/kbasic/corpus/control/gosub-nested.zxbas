@@ -1,0 +1,14 @@
+' Nested GOSUBs return in order
+'@expect screen 0 "12345"
+PRINT "1";
+GOSUB outer
+PRINT "5"
+END
+outer:
+  PRINT "2";
+  GOSUB inner
+  PRINT "4";
+  RETURN
+inner:
+  PRINT "3";
+  RETURN

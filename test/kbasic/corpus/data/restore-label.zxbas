@@ -1,0 +1,13 @@
+' RESTORE to a label starts READ again there
+'@expect screen 0 "1 2 3 1"
+DIM x AS UByte
+READ x: PRINT x; " ";
+READ x: PRINT x; " ";
+RESTORE second
+READ x: PRINT x; " ";
+RESTORE
+READ x: PRINT x
+first:
+DATA 1, 2
+second:
+DATA 3, 4

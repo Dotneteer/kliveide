@@ -1,0 +1,13 @@
+' Widening keeps the sign of signed values; narrowing keeps the low bits
+'@expect screen 0 "-200 65336 200 34464"
+DIM i AS Integer = -200
+DIM a AS Long
+DIM u AS ULong
+DIM w AS UInteger
+a = i
+u = CAST(UInteger, i)
+PRINT a; " "; u; " ";
+a = 200: w = a
+PRINT w; " ";
+a = 100000: w = a
+PRINT w

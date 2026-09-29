@@ -1,0 +1,1544 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "10": {
+   "out": "accepted"
+  },
+  "ASM\n nop\n": {
+   "error": "error: Unexpected end of file"
+  },
+  "BEEP 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "BOLD": {
+   "error": "error: Unexpected end of file"
+  },
+  "BORDER": {
+   "error": "error: Unexpected end of file"
+  },
+  "BRIGHT": {
+   "error": "error: Unexpected end of file"
+  },
+  "CIRCLE 1, 2": {
+   "error": "error: Unexpected end of line"
+  },
+  "PLOT INK 1 3, 4": {
+   "error": "error: Syntax Error. Unexpected token '3' <NUMBER>"
+  },
+  "CONST c": {
+   "error": "error: Unexpected end of file"
+  },
+  "CONST = 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "CONTINUE FOR": {
+   "error": "error: Syntax Error: CONTINUE FOR out of loop"
+  },
+  "CONTINUE": {
+   "error": "error: Unexpected end of file"
+  },
+  "CONTINUE LOOP": {
+   "error": "error: Unexpected end of file"
+  },
+  "DATA": {
+   "error": "error: Unexpected end of file"
+  },
+  "DATA 1,": {
+   "error": "error: Unexpected end of line"
+  },
+  "DECLARE x": {
+   "error": "error: Unexpected end of file"
+  },
+  "DIM a, AS INTEGER": {
+   "error": "error: Syntax Error. Unexpected token 'AS' <AS>"
+  },
+  "DIM a, b = 5": {
+   "error": "error: Initialized variables must be declared one by one."
+  },
+  "DIM a AT": {
+   "error": "error: Unexpected end of line"
+  },
+  "DIM a(10": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "DIM a(5) AT": {
+   "error": "error: Unexpected end of line"
+  },
+  "DIM a(2) => 1, 2": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "DIM a(1,)": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "DIM a(1 TO)": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "DIM a(1) => {1, 2": {
+   "error": "error: Unexpected end of line"
+  },
+  "DIM x AT @arr(1, 2)": {
+   "error": "error: Undeclared array \"arr\""
+  },
+  "DIM x AT @": {
+   "error": "error: Unexpected end of line"
+  },
+  "DIM x AT @(1)": {
+   "error": "error: Syntax Error. Unexpected token '(' <LP>"
+  },
+  "DO\nx = 1": {
+   "error": "error: DO loop not closed"
+  },
+  "DO: LOOP UNTIL": {
+   "error": "error: Unexpected end of line"
+  },
+  "DO UNTIL a: LOOP WHILE b": {
+   "error": "error: Syntax Error. Unexpected token 'WHILE' <WHILE>"
+  },
+  "DO WHILE: LOOP": {
+   "error": "error: Unexpected end of file"
+  },
+  "DRAW 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "ERROR": {
+   "error": "error: Unexpected end of file"
+  },
+  "EXIT DO": {
+   "error": "error: Syntax Error: EXIT DO out of loop"
+  },
+  "EXIT WHILE": {
+   "error": "error: Syntax Error: EXIT WHILE out of loop"
+  },
+  "EXIT SUB": {
+   "error": "error: Unexpected end of file"
+  },
+  "FLASH": {
+   "error": "error: Unexpected end of file"
+  },
+  "FOR i = 1: NEXT": {
+   "error": "error: Syntax Error. Unexpected token ':' <CO>"
+  },
+  "FOR 1 = 1 TO 2: NEXT": {
+   "error": "error: Unexpected end of file"
+  },
+  "FOR i = 1 TO 3\nPRINT i": {
+   "error": "error: FOR without NEXT"
+  },
+  "FUNCTION f(\nEND FUNCTION": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "FUNCTION\nEND FUNCTION": {
+   "error": "error: Unexpected end of file"
+  },
+  "FUNCTION f\nPRINT": {
+   "error": "error: Unexpected end of file"
+  },
+  "SUB s(a,)\nEND SUB": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "SUB s(BYVAL a AS UBYTE = 1, BYREF b() AS UBYTE, c() AS FLOAT, d)\nEND SUB": {
+   "error": "error: Can't declare mandatory param 'b' after optional param 'a'"
+  },
+  "SUB s(a() AS)\nEND SUB": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "SUB s(BYVAL)\nEND SUB": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "GO TO 10": {
+   "error": "error: Undeclared label \"10\""
+  },
+  "GO 10": {
+   "error": "error: Unexpected end of file"
+  },
+  "GO SUB lbl": {
+   "error": "error: Undeclared label \"lbl\""
+  },
+  "GO SUB": {
+   "error": "error: Unexpected end of file"
+  },
+  "GOSUB 100": {
+   "error": "error: Undeclared label \"100\""
+  },
+  "GOSUB": {
+   "error": "error: Unexpected end of file"
+  },
+  "GOTO lbl": {
+   "error": "error: Undeclared label \"lbl\""
+  },
+  "GOTO 10": {
+   "error": "error: Undeclared label \"10\""
+  },
+  "GOTO 1.5": {
+   "error": "error: Undeclared label \"1.5\""
+  },
+  "GOTO a$": {
+   "error": "error: Undeclared label \"a\""
+  },
+  "GOTO": {
+   "error": "error: Unexpected end of file"
+  },
+  "IF THEN PRINT 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "IF a THEN PRINT 1 ELSE ELSE PRINT 2": {
+   "error": "error: Syntax Error. Unexpected token 'ELSE' <ELSE>"
+  },
+  "IF a THEN\nPRINT 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "IF a THEN\nELSE\nELSE\nEND IF": {
+   "error": "error: Syntax Error. Unexpected token 'ELSE' <ELSE>"
+  },
+  "IF a THEN\nPRINT 0\nELSE PRINT 2\nEND IF": {
+   "error": "error: Syntax Error. Unexpected token 'END' <END>"
+  },
+  "INK": {
+   "error": "error: Unexpected end of file"
+  },
+  "INVERSE": {
+   "error": "error: Unexpected end of file"
+  },
+  "ITALIC": {
+   "error": "error: Unexpected end of file"
+  },
+  "LET = 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "LET a 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "a(1, 2) = 3": {
+   "error": "error: Syntax Error. Unexpected token '=' <EQ>"
+  },
+  "LET b(0) = 1": {
+   "error": "error: 'b' is neither an array nor a function."
+  },
+  "a(1, 2 = 3": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "LET a =": {
+   "error": "error: Unexpected end of line"
+  },
+  "a$(1 TO 2 = \"x\"": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "a$(1 TO 2 TO 3) = \"x\"": {
+   "error": "error: Syntax Error. Unexpected token 'TO' <TO>"
+  },
+  "a$(3 = \"y\"": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "s$(1)(2 TO 3) = \"z\"": {
+   "error": "error: Expected a string type expression. Got ubyte type instead"
+  },
+  "s$(1)(2 TO 3 = \"z\"": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "s$(1, 2) = \"w\"": {
+   "error": "error: Syntax Error. Unexpected token '=' <EQ>"
+  },
+  "s$(1, ) = \"w\"": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "LOAD \"d\" DATA a()": {
+   "error": "error: Undeclared identifier \"a\""
+  },
+  "LOAD \"x\"": {
+   "error": "error: Unexpected end of file"
+  },
+  "LOAD \"x\" CODE 1,": {
+   "error": "error: Unexpected end of line"
+  },
+  "LOAD \"d\" DATA a(": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "ON x GOTO 10, 20": {
+   "error": "error: Undeclared label \"10\""
+  },
+  "ON x GO SUB a": {
+   "error": "error: Undeclared label \"a\""
+  },
+  "ON x GOSUB a, b": {
+   "error": "error: Undeclared label \"a\""
+  },
+  "ON x GO TO 1": {
+   "error": "error: Undeclared label \"1\""
+  },
+  "ON x GOTO": {
+   "error": "error: Unexpected end of line"
+  },
+  "ON x PRINT": {
+   "error": "error: Unexpected end of file"
+  },
+  "OUT 254": {
+   "error": "error: Unexpected end of file"
+  },
+  "OVER": {
+   "error": "error: Unexpected end of file"
+  },
+  "PAPER": {
+   "error": "error: Unexpected end of file"
+  },
+  "PAUSE": {
+   "error": "error: Unexpected end of file"
+  },
+  "PLOT 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "POKE 1": {
+   "error": "error: Unexpected end of file"
+  },
+  "POKE (1, 2": {
+   "error": "error: Unexpected end of line"
+  },
+  "POKE UINTEGER 1": {
+   "error": "error: Unexpected end of line"
+  },
+  "POKE (FLOAT 1)": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "POKE LONG, 1, 2": {
+   "error": "zxbc crashed: IndexError: list index out of range"
+  },
+  "POKE LONG, 1": {
+   "error": "error: Unexpected end of line"
+  },
+  "POKE (LONG, 1, 2": {
+   "error": "error: Unexpected end of line"
+  },
+  "PRINT AT 1": {
+   "error": "error: Unexpected end of line"
+  },
+  "PRINT 1 : 2": {
+   "error": "error: Syntax Error. Unexpected token '2' <NUMBER>"
+  },
+  "PRINT TAB": {
+   "error": "error: Unexpected end of file"
+  },
+  "PRINT AT 1; 2": {
+   "error": "error: Syntax Error. Unexpected token ';' <SC>"
+  },
+  "READ a, b(1), c$": {
+   "error": "error: 'b' is neither an array nor a function."
+  },
+  "READ": {
+   "error": "error: Unexpected end of file"
+  },
+  "READ 1": {
+   "error": "error: Syntax error. Can only read a variable or an array element"
+  },
+  "READ x(1, 2)": {
+   "error": "error: 'x' is neither an array nor a function."
+  },
+  "READ x(": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "RESTORE lbl": {
+   "error": "error: Undeclared label \"lbl\""
+  },
+  "RESTORE 100": {
+   "error": "error: Undeclared label \"100\""
+  },
+  "RESTORE 1 + 2": {
+   "error": "error: Undeclared label \"1\""
+  },
+  "RETURN a + 1": {
+   "error": "error: Syntax Error: Returning value out of FUNCTION"
+  },
+  "SAVE \"v\" DATA v": {
+   "error": "error: Undeclared identifier \"v\""
+  },
+  "SAVE \"x\" CODE 1": {
+   "error": "error: Unexpected end of line"
+  },
+  "SAVE \"x\"": {
+   "error": "error: Unexpected end of file"
+  },
+  "SUB s AS INTEGER\nEND SUB": {
+   "error": "error: SUBs cannot have a return type definition"
+  },
+  "SUB\nEND SUB": {
+   "error": "error: Unexpected end of file"
+  },
+  "SUB s\nEND FUNCTION": {
+   "error": "error: Unexpected token 'END FUNCTION'. Should be 'END SUB'"
+  },
+  "VERIFY \"d\" DATA a()": {
+   "error": "error: Undeclared identifier \"a\""
+  },
+  "VERIFY \"x\" CODE ,": {
+   "error": "error: Syntax Error. Unexpected token ',' <COMMA>"
+  },
+  "VERIFY \"x\" PRINT": {
+   "error": "error: Unexpected end of file"
+  },
+  "WHILE a\nPRINT": {
+   "error": "error: WHILE loop not closed"
+  },
+  "WHILE: WEND": {
+   "error": "error: Unexpected end of file"
+  },
+  "x = ABS -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = ABS()": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "x = ACS -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = ASN -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = ATN -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = CAST(1, 2)": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = CAST UBYTE, 1": {
+   "error": "error: Syntax Error. Unexpected token 'UBYTE' <UBYTE>"
+  },
+  "x$ = CHR 65": {
+   "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'"
+  },
+  "x$ = CHR$(65, 66)": {
+   "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'"
+  },
+  "x$ = CHR(1)": {
+   "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'"
+  },
+  "x$ = CHR -65": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x$ = CHR()": {
+   "error": "error: CHR$ function need at less 1 parameter"
+  },
+  "x = CODE -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = COS -PI": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = EXP -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = IN": {
+   "error": "error: Unexpected end of line"
+  },
+  "x = IN(254": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "x$ = INKEY 1": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x$ = INKEY$ 1": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = INT -1.5": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = LBOUND(a, 1)": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ID>"
+  },
+  "x = LBOUND(a)": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ID>"
+  },
+  "x = LBOUND(1)": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = LBOUND()": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "x = LEN -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = LN -2": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = PEEK": {
+   "error": "error: Unexpected end of line"
+  },
+  "x = PEEK(1": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "x = PEEK(UINTEGER 1)": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = PI(1)": {
+   "error": "error: Syntax Error. Unexpected token '(' <LP>"
+  },
+  "x = RND 1": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = RND(1)": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = SGN -3": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = SIN -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = SIZEOF(LONG)": {
+   "error": "zxbc crashed: AttributeError: type object 'Type' has no attribute 'to_type'"
+  },
+  "x = SIZEOF(v)": {
+   "error": "zxbc crashed: AttributeError: type object 'Type' has no attribute 'to_type'"
+  },
+  "x = SIZEOF(1)": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "x = SIZEOF LONG": {
+   "error": "error: Syntax Error. Unexpected token 'LONG' <LONG>"
+  },
+  "x = SQR -4": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x$ = STR$ -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = TAN -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "x = UBOUND(a, 2)": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ID>"
+  },
+  "x = UBOUND(a,)": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ID>"
+  },
+  "x = USR @routine": {
+   "error": "error: Undeclared identifier \"routine\""
+  },
+  "x = USR": {
+   "error": "error: Unexpected end of line"
+  },
+  "x = USR ,": {
+   "error": "error: Syntax Error. Unexpected token ',' <COMMA>"
+  },
+  "x = VAL -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "CODEBANK 1\nSUB s\nEND SUB\nDIM buf(10) AS UBYTE\nASM\n nop\nEND ASM\nhere:\nEND CODEBANK": {
+   "error": "error: Undeclared function \"CODEBANK\""
+  },
+  "CODEBANK 1\nPRINT 1\nEND CODEBANK": {
+   "error": "error: Undeclared function \"CODEBANK\""
+  },
+  "SUB s\nCODEBANK 1\nEND CODEBANK\nEND SUB": {
+   "error": "error: Undeclared function \"CODEBANK\""
+  },
+  "CODEBANK 1\nSUB s\nEND SUB": {
+   "error": "error: Undeclared function \"CODEBANK\""
+  },
+  "#pragma codebank =": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "x = FARPTR buf": {
+   "error": "error: 'FARPTR' is neither an array nor a function."
+  },
+  "x = FARPTR 1": {
+   "error": "error: 'FARPTR' is neither an array nor a function."
+  },
+  "ASM\n CODEBANK 2\n nop\nEND ASM": {
+   "error": "error: Syntax error. Unexpected token '2' [INTEGER]"
+  },
+  "x$ = a$(1 TO 2": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "x$ = a$(1": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "x$ = f$(1)(0)": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "x$ = s$(1, 2)(0 TO 1)": {
+   "error": "error: Undeclared function \"s$\""
+  },
+  "x$ = (a$(1)": {
+   "error": "error: Unexpected end of line"
+  },
+  "x$ = (a$)(1)": {
+   "error": "error: Syntax Error. Unexpected token ')' <RP>"
+  },
+  "s": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "s()": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "s(1)": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "s 1, 2": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "test x := 1": {
+   "error": "error: Undeclared function \"test\""
+  },
+  "s(1": {
+   "error": "error: Syntax error. Unexpected end of line"
+  },
+  "s 1,": {
+   "error": "error: Unexpected end of line"
+  },
+  "s 1, x := 2": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "s 1, , 2": {
+   "error": "error: Syntax Error. Unexpected token ',' <COMMA>"
+  },
+  "s a, x := 1, arr": {
+   "error": "error: Undeclared function \"s\""
+  },
+  "s x :=": {
+   "error": "error: Unexpected end of line"
+  },
+  "x = 1 + \"a\" + PI + y + f(1) + g 2 + a$(1 TO 2) + (3) + @z + ABS(1)": {
+   "error": "error: Cannot convert string to a value. Use VAL() function"
+  },
+  "x = )": {
+   "error": "error: Unexpected end of file"
+  },
+  "x = @1": {
+   "error": "error: Syntax Error. Unexpected token '1' <NUMBER>"
+  },
+  "#if A = 1\nPRINT 1\n#endif": {
+   "error": "error: illegal preprocessor character '='"
+  },
+  "#define A 2\n#if A == 1\nPRINT 1\n#elif A == 2\nPRINT 2\n#endif": {
+   "error": "error: Syntax error. Unexpected token 'elif' [ELIF]"
+  },
+  "#ifdef A\nPRINT 1\n#endif": {
+   "error": "error: Unexpected end of file"
+  },
+  "DIM x AS Float = 2\nPRINT x ^ -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "PRINT 2 ^ -1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "DIM x AS UByte\nREAD x": {
+   "error": "error: No DATA defined"
+  },
+  "BEEP 100, 0": {
+   "error": "zxbc crashed: src.arch.z80.beep.BeepError: Invalid duration: must be between [0, 10]"
+  },
+  "BEEP -1, 0": {
+   "error": "zxbc crashed: src.arch.z80.beep.BeepError: Invalid duration: must be between [0, 10]"
+  },
+  "BEEP 1, -61": {
+   "error": "zxbc crashed: src.arch.z80.beep.BeepError: Pitch out of range: must be between [-60, 127]"
+  },
+  "PRINT 1 / 0": {
+   "error": "zxbc crashed: ZeroDivisionError: division by zero"
+  },
+  "PRINT 1 MOD 0": {
+   "error": "zxbc crashed: ZeroDivisionError: division by zero"
+  },
+  "PRINT 1.5 / 0": {
+   "error": "zxbc crashed: ZeroDivisionError: division by zero"
+  },
+  "PRINT \"a\" = \"a\"": {
+   "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'text'"
+  },
+  "DIM s AS UByte = 1\nFOR i = 1 TO 5 STEP s: NEXT i": {
+   "error": "zxbc crashed: AttributeError: 'VarRef' object has no attribute 'value'"
+  },
+  "10 PRINT 1\n10 PRINT 2": {
+   "error": "error: Label '10' already used at /acceptance-411.bas:1"
+  },
+  "DIM a(-1)": {
+   "error": "error: Lower array bound must be less or equal to upper one"
+  },
+  "x = 5: x$ = \"a\"": {
+   "error": "error: Invalid $ suffix (or sigil) for numeric variable"
+  },
+  "DIM a AS UByte\nDIM a AS UByte": {
+   "error": "error: Variable 'a' already declared at /acceptance-431.bas:1"
+  },
+  "DIM a AS UByte\nDIM a AS Integer": {
+   "error": "error: Variable 'a' already declared at /acceptance-432.bas:1"
+  },
+  "PRINT LEN 5": {
+   "error": "error: Expected a 'string' type expression, got 'ubyte' instead"
+  },
+  "PRINT VAL 5": {
+   "error": "error: Expected a 'string' type expression, got 'ubyte' instead"
+  },
+  "PRINT STR$ \"a\"": {
+   "error": "error: Cannot convert string to a value. Use VAL() function"
+  },
+  "EXIT FOR": {
+   "error": "error: Syntax Error: EXIT FOR out of loop"
+  },
+  "NEXT i": {
+   "error": "error: Undeclared function \"i\""
+  },
+  "CONST c = 1\nc = 2": {
+   "error": "error: Cannot assign a value to 'c'. It's not a variable"
+  },
+  "DIM s AS String = 5": {
+   "error": "error: Cannot convert value to string. Use STR() function"
+  },
+  "PRINT \"a\" + 1": {
+   "error": "error: Cannot convert value to string. Use STR() function"
+  },
+  "DIM s AS String\ns = 5": {
+   "error": "error: Cannot convert value to string. Use STR() function"
+  },
+  "PRINT SIN": {
+   "error": "error: Unexpected end of file"
+  },
+  "PRINT PEEK": {
+   "error": "error: Unexpected end of file"
+  },
+  "x = 1 +": {
+   "error": "error: Unexpected end of line"
+  },
+  "PRINT (1": {
+   "error": "error: Unexpected end of line"
+  },
+  "DIM a(3) AS UByte => {1, 2, 3}": {
+   "error": "error: Mismatched vector size. Expected 4 elements, got 3."
+  },
+  "DIM a(3) AS UByte => {1, 2, 3, 4, 5}": {
+   "error": "error: Mismatched vector size. Expected 4 elements, got 5."
+  },
+  "SUB s(a AS UByte = 1, b AS UByte)\nEND SUB": {
+   "error": "error: Can't declare mandatory param 'b' after optional param 'a'"
+  },
+  "PRINT f(1)": {
+   "error": "error: 'f' is neither an array nor a function."
+  },
+  "DIM a AS UByte\na(1) = 2": {
+   "error": "error: 'a' is neither an array nor a function."
+  },
+  "DIM a(3) AS UByte\na = 2": {
+   "error": "error: Syntax Error. Unexpected token '2' <NUMBER>"
+  },
+  "DO\nLOOP UNTIL 1: LOOP": {
+   "error": "error: Syntax Error. Unexpected token 'LOOP' <LOOP>"
+  },
+  "PRINT @x": {
+   "error": "error: Undeclared identifier \"x\""
+  },
+  "IF a THEN\nELSEIF b THEN PRINT 1\nELSE PRINT 2\nEND IF": {
+   "error": "error: Syntax Error. Unexpected token 'END' <END>"
+  },
+  "IF a THEN\nELSE PRINT 2\nEND IF": {
+   "error": "error: Syntax Error. Unexpected token 'ELSE' <ELSE>"
+  },
+  "x$ = CHR$ 65": {
+   "error": "zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'"
+  },
+  "DIM a$(3)\nSAVE \"x\" DATA a$()": {
+   "error": "error: Syntax Error. Unexpected token 'a$' <ARRAY_ID>"
+  },
+  "SUB f()\n DIM a(3) AS UByte\n SAVE \"x\" DATA a()\nEND SUB\nf()": {
+   "error": "error: Syntax Error. Unexpected token 'a' <ARRAY_ID>"
+  },
+  "ASM\n nop\n ret\nEND ASM": {
+   "out": "accepted"
+  },
+  "BEEP 0.5, 12": {
+   "out": "accepted"
+  },
+  "BOLD 1": {
+   "out": "accepted"
+  },
+  "BORDER 2": {
+   "out": "accepted"
+  },
+  "BRIGHT 1": {
+   "out": "accepted"
+  },
+  "CIRCLE 128, 88, 40": {
+   "out": "accepted"
+  },
+  "CIRCLE INK 2; 1, 2, 3": {
+   "out": "accepted"
+  },
+  "PLOT INK 1; PAPER 2; 3, 4": {
+   "out": "accepted"
+  },
+  "CLS": {
+   "out": "accepted"
+  },
+  "CLS 1": {
+   "out": "accepted"
+  },
+  "CONST a AS UBYTE = 5": {
+   "out": "accepted"
+  },
+  "CONST b = 1": {
+   "out": "accepted"
+  },
+  "CONST s$ = \"text\"": {
+   "out": "accepted"
+  },
+  "DATA 1, \"a\", x + 1": {
+   "out": "accepted"
+  },
+  "DECLARE FUNCTION f(a AS INTEGER) AS LONG": {
+   "out": "accepted"
+  },
+  "DECLARE SUB s": {
+   "out": "accepted"
+  },
+  "DIM a, b AS INTEGER": {
+   "out": "accepted"
+  },
+  "DIM c": {
+   "out": "accepted"
+  },
+  "DIM a AS UBYTE = 5": {
+   "out": "accepted"
+  },
+  "DIM b = 1.5": {
+   "out": "accepted"
+  },
+  "DIM a AS UBYTE AT 23672": {
+   "out": "accepted"
+  },
+  "DIM a(10) AS BYTE": {
+   "out": "accepted"
+  },
+  "DIM s$(5)": {
+   "out": "accepted"
+  },
+  "DIM a(1 TO 5) AS UBYTE AT 49152": {
+   "out": "accepted"
+  },
+  "DIM a(2) => {1, 2, 3}": {
+   "out": "accepted"
+  },
+  "DIM b(1) AS UBYTE => {1, _\n 2}": {
+   "out": "accepted"
+  },
+  "DIM x, y, z": {
+   "out": "accepted"
+  },
+  "DIM x y": {
+   "out": "accepted"
+  },
+  "DIM a(1, 2, 3)": {
+   "out": "accepted"
+  },
+  "DIM a(4)": {
+   "out": "accepted"
+  },
+  "DIM b(1 TO 4)": {
+   "out": "accepted"
+  },
+  "DIM a(1, 1) => {{1, 2}, {3, 4}}": {
+   "out": "accepted"
+  },
+  "DIM x AT @y": {
+   "out": "accepted"
+  },
+  "DIM x AT 1000": {
+   "out": "accepted"
+  },
+  "DIM x AT @lbl": {
+   "out": "accepted"
+  },
+  "DO: LOOP": {
+   "out": "accepted"
+  },
+  "DO\n x = 1\nLOOP": {
+   "out": "accepted"
+  },
+  "DO: LOOP UNTIL a": {
+   "out": "accepted"
+  },
+  "DO\nLOOP WHILE b": {
+   "out": "accepted"
+  },
+  "DO UNTIL a: LOOP": {
+   "out": "accepted"
+  },
+  "DO WHILE b\nLOOP": {
+   "out": "accepted"
+  },
+  "DRAW 1, 2": {
+   "out": "accepted"
+  },
+  "DRAW 1, 2, PI": {
+   "out": "accepted"
+  },
+  "DRAW OVER 1; 3, 4": {
+   "out": "accepted"
+  },
+  "END": {
+   "out": "accepted"
+  },
+  "END 3": {
+   "out": "accepted"
+  },
+  "END 1, 2": {
+   "out": "accepted"
+  },
+  "ERROR 3": {
+   "out": "accepted"
+  },
+  "FLASH 1": {
+   "out": "accepted"
+  },
+  "FOR i = 1 TO 2 STEP 1: NEXT i": {
+   "out": "accepted"
+  },
+  "FOR j = 1 TO 5\n PRINT j\nNEXT": {
+   "out": "accepted"
+  },
+  "FUNCTION f AS UBYTE\n RETURN 1\nEND FUNCTION": {
+   "out": "accepted"
+  },
+  "FUNCTION STDCALL g(a, b) AS LONG\nEND FUNCTION": {
+   "out": "accepted"
+  },
+  "FUNCTION h()\nEND FUNCTION": {
+   "out": "accepted"
+  },
+  "SUB FASTCALL s(a AS UBYTE)\nEND SUB": {
+   "out": "accepted"
+  },
+  "SUB STDCALL t\nEND SUB": {
+   "out": "accepted"
+  },
+  "SUB PASCAL s\nEND SUB": {
+   "out": "accepted"
+  },
+  "SUB s(a, b, c)\nEND SUB": {
+   "out": "accepted"
+  },
+  "SUB s(a())\nEND SUB": {
+   "out": "accepted"
+  },
+  "IF a THEN PRINT 1 ELSE PRINT 2: END IF": {
+   "out": "accepted"
+  },
+  "IF a PRINT 1: ENDIF": {
+   "out": "accepted"
+  },
+  "IF a THEN x = 1: y = 2": {
+   "out": "accepted"
+  },
+  "IF a THEN\nELSEIF b THEN\nELSE\nEND IF": {
+   "out": "accepted"
+  },
+  "IF a\n PRINT\nENDIF": {
+   "out": "accepted"
+  },
+  "IF a THEN\nELSEIF b PRINT 1\nELSE\nPRINT 2\nEND IF": {
+   "out": "accepted"
+  },
+  "IF a THEN\nPRINT 0\nELSE PRINT 2": {
+   "out": "accepted"
+  },
+  "INK 7": {
+   "out": "accepted"
+  },
+  "INVERSE 1": {
+   "out": "accepted"
+  },
+  "ITALIC 1": {
+   "out": "accepted"
+  },
+  "LET a = 1": {
+   "out": "accepted"
+  },
+  "b = 2": {
+   "out": "accepted"
+  },
+  "LET a = b": {
+   "out": "accepted"
+  },
+  "c = d": {
+   "out": "accepted"
+  },
+  "a$(1 TO 2) = \"x\"": {
+   "out": "accepted"
+  },
+  "LET a$(TO) = \"\"": {
+   "out": "accepted"
+  },
+  "a$(3 TO) = \"y\"": {
+   "out": "accepted"
+  },
+  "a$(3) = \"y\"": {
+   "out": "accepted"
+  },
+  "LOAD \"x\" CODE": {
+   "out": "accepted"
+  },
+  "LOAD \"x\" CODE 32768, 10": {
+   "out": "accepted"
+  },
+  "LOAD \"s\" SCREEN$": {
+   "out": "accepted"
+  },
+  "LOAD \"s\" SCREEN": {
+   "out": "accepted"
+  },
+  "LOAD \"\" DATA": {
+   "out": "accepted"
+  },
+  "OUT 254, 1": {
+   "out": "accepted"
+  },
+  "OVER 1": {
+   "out": "accepted"
+  },
+  "PAPER 6": {
+   "out": "accepted"
+  },
+  "PAUSE 0": {
+   "out": "accepted"
+  },
+  "PLOT 1, 2": {
+   "out": "accepted"
+  },
+  "POKE 23672, 0": {
+   "out": "accepted"
+  },
+  "POKE (1, 2)": {
+   "out": "accepted"
+  },
+  "POKE UINTEGER 23675, 60000": {
+   "out": "accepted"
+  },
+  "POKE (FLOAT a, PI)": {
+   "out": "accepted"
+  },
+  "POKE (LONG, 1, 2)": {
+   "out": "accepted"
+  },
+  "PRINT": {
+   "out": "accepted"
+  },
+  "PRINT a; b, c;": {
+   "out": "accepted"
+  },
+  "PRINT ,": {
+   "out": "accepted"
+  },
+  "PRINT )": {
+   "out": "accepted"
+  },
+  "PRINT 1, 2; 3": {
+   "out": "accepted"
+  },
+  "PRINT AT 0, 0; TAB 4; INK 2; 1": {
+   "out": "accepted"
+  },
+  "PRINT PAPER 1; BOLD 1; ITALIC 0; FLASH 0; BRIGHT 1; INVERSE 0; OVER 1; \"x\"": {
+   "out": "accepted"
+  },
+  "PRINT INK; 1": {
+   "out": "accepted"
+  },
+  "RANDOMIZE": {
+   "out": "accepted"
+  },
+  "RANDOMIZE 42": {
+   "out": "accepted"
+  },
+  "RANDOMIZE 1, 2": {
+   "out": "accepted"
+  },
+  "RESTORE": {
+   "out": "accepted"
+  },
+  "RETURN": {
+   "out": "accepted"
+  },
+  "RETURN ,": {
+   "out": "accepted"
+  },
+  "SAVE \"c\" CODE 16384, 6912": {
+   "out": "accepted"
+  },
+  "SAVE \"s\" SCREEN$": {
+   "out": "accepted"
+  },
+  "SAVE \"d\" DATA": {
+   "out": "accepted"
+  },
+  "STOP": {
+   "out": "accepted"
+  },
+  "STOP 1": {
+   "out": "accepted"
+  },
+  "STOP ,": {
+   "out": "accepted"
+  },
+  "SUB s\nEND SUB": {
+   "out": "accepted"
+  },
+  "SUB FASTCALL t(a)\n PRINT a\nEND SUB": {
+   "out": "accepted"
+  },
+  "VERIFY \"x\" CODE": {
+   "out": "accepted"
+  },
+  "VERIFY \"s\" SCREEN$": {
+   "out": "accepted"
+  },
+  "WHILE a: WEND": {
+   "out": "accepted"
+  },
+  "WHILE a\n a = a - 1\nEND WHILE": {
+   "out": "accepted"
+  },
+  "x = ABS 1": {
+   "out": "accepted"
+  },
+  "x = ABS(-1)": {
+   "out": "accepted"
+  },
+  "x = ACS 1": {
+   "out": "accepted"
+  },
+  "x = ACS(0.5)": {
+   "out": "accepted"
+  },
+  "x = ASN 1": {
+   "out": "accepted"
+  },
+  "x = ASN(0.5)": {
+   "out": "accepted"
+  },
+  "x = ATN 1": {
+   "out": "accepted"
+  },
+  "x = ATN(1)": {
+   "out": "accepted"
+  },
+  "x = CAST(UBYTE, 300)": {
+   "out": "accepted"
+  },
+  "x = CODE \"a\"": {
+   "out": "accepted"
+  },
+  "x = CODE(\"a\")": {
+   "out": "accepted"
+  },
+  "x = COS PI": {
+   "out": "accepted"
+  },
+  "x = COS(PI)": {
+   "out": "accepted"
+  },
+  "x = EXP 1": {
+   "out": "accepted"
+  },
+  "x = EXP(1)": {
+   "out": "accepted"
+  },
+  "x = IN 254": {
+   "out": "accepted"
+  },
+  "x = IN(254)": {
+   "out": "accepted"
+  },
+  "x$ = INKEY": {
+   "out": "accepted"
+  },
+  "IF INKEY$ = \"\" THEN PRINT": {
+   "out": "accepted"
+  },
+  "x = INT 1.5": {
+   "out": "accepted"
+  },
+  "x = INT(1.5)": {
+   "out": "accepted"
+  },
+  "x = LEN a$": {
+   "out": "accepted"
+  },
+  "x = LEN(\"abc\")": {
+   "out": "accepted"
+  },
+  "x = LN 2": {
+   "out": "accepted"
+  },
+  "x = LN(2)": {
+   "out": "accepted"
+  },
+  "x = PEEK 23672": {
+   "out": "accepted"
+  },
+  "x = PEEK(23672)": {
+   "out": "accepted"
+  },
+  "x = PEEK(UINTEGER, 23672)": {
+   "out": "accepted"
+  },
+  "x = PI": {
+   "out": "accepted"
+  },
+  "x = RND": {
+   "out": "accepted"
+  },
+  "x = RND()": {
+   "out": "accepted"
+  },
+  "x = SGN 3": {
+   "out": "accepted"
+  },
+  "x = SGN(-3)": {
+   "out": "accepted"
+  },
+  "x = SIN 0": {
+   "out": "accepted"
+  },
+  "x = SIN(0)": {
+   "out": "accepted"
+  },
+  "x = SQR 4": {
+   "out": "accepted"
+  },
+  "x = SQR(4)": {
+   "out": "accepted"
+  },
+  "x$ = STR$ 1": {
+   "out": "accepted"
+  },
+  "x$ = STR$(1)": {
+   "out": "accepted"
+  },
+  "x$ = STR(2)": {
+   "out": "accepted"
+  },
+  "x = TAN 1": {
+   "out": "accepted"
+  },
+  "x = TAN(1)": {
+   "out": "accepted"
+  },
+  "x = USR 32768": {
+   "out": "accepted"
+  },
+  "x = USR \"a\"": {
+   "out": "accepted"
+  },
+  "x = VAL \"1\"": {
+   "out": "accepted"
+  },
+  "x = VAL(\"1.5\")": {
+   "out": "accepted"
+  },
+  "#pragma codebank = 2": {
+   "out": "accepted"
+  },
+  "#pragma codebank = 0": {
+   "out": "accepted"
+  },
+  "#pragma codebank = x": {
+   "out": "accepted"
+  },
+  "ASM\n CODEBANK\nEND ASM": {
+   "out": "accepted"
+  },
+  "x$ = a$(1 TO 2)": {
+   "out": "accepted"
+  },
+  "x$ = a$(TO 2)": {
+   "out": "accepted"
+  },
+  "x$ = a$(2 TO)": {
+   "out": "accepted"
+  },
+  "x$ = a$(1)": {
+   "out": "accepted"
+  },
+  "x$ = \"abc\"(1)": {
+   "out": "accepted"
+  },
+  "x$ = (a$)(0 TO 1)": {
+   "out": "accepted"
+  },
+  "": {
+   "out": "accepted"
+  },
+  "10 PRINT\n20 PRINT": {
+   "out": "accepted"
+  },
+  "start: PRINT 1: PRINT 2": {
+   "out": "accepted"
+  },
+  "here:": {
+   "out": "accepted"
+  },
+  "PRINT 1 PRINT 2": {
+   "out": "accepted"
+  },
+  "10 PRINT": {
+   "out": "accepted"
+  },
+  "here: PRINT": {
+   "out": "accepted"
+  },
+  "1.5 PRINT": {
+   "out": "accepted"
+  },
+  "#define A 1\n#if A == 1\nPRINT 1\n#endif": {
+   "out": "accepted"
+  },
+  "#define A 2\n#if A == 1\nPRINT 1\n#else\nPRINT 2\n#endif": {
+   "out": "accepted"
+  },
+  "DIM x AS Float = 2\nPRINT x ^ (-1)": {
+   "out": "accepted"
+  },
+  "DIM x AS Float = 2\nPRINT -x ^ 2": {
+   "out": "accepted"
+  },
+  "PRINT 2 * -1": {
+   "out": "accepted"
+  },
+  "PRINT 2 - -1": {
+   "out": "accepted"
+  },
+  "DIM x AS UByte\nREAD x\nDATA 1": {
+   "out": "accepted"
+  },
+  "DATA 1\nRESTORE": {
+   "out": "accepted"
+  },
+  "BEEP 1, 100": {
+   "out": "accepted"
+  },
+  "BEEP 10, 69": {
+   "out": "accepted"
+  },
+  "BEEP 0, -60": {
+   "out": "accepted"
+  },
+  "DIM d AS Float = 100\nBEEP d, 0": {
+   "out": "accepted"
+  },
+  "FUNCTION f() AS UByte: RETURN 1: END FUNCTION\nPRINT f()": {
+   "out": "accepted"
+  },
+  "SUB s: END SUB\ns()": {
+   "out": "accepted"
+  },
+  "GOSUB 20\nEND\n20 RETURN": {
+   "out": "accepted"
+  },
+  "PRINT AT 30, 0; 1": {
+   "out": "accepted"
+  },
+  "PRINT AT 0, 40; 1": {
+   "out": "accepted"
+  },
+  "PLOT 300, 0": {
+   "out": "accepted"
+  },
+  "PLOT 0, 200": {
+   "out": "accepted"
+  },
+  "INK 12": {
+   "out": "accepted"
+  },
+  "PAPER 9": {
+   "out": "accepted"
+  },
+  "BORDER 9": {
+   "out": "accepted"
+  },
+  "FLASH 2": {
+   "out": "accepted"
+  },
+  "OVER 3": {
+   "out": "accepted"
+  },
+  "INVERSE 2": {
+   "out": "accepted"
+  },
+  "PAUSE -1": {
+   "out": "accepted"
+  },
+  "POKE 70000, 1": {
+   "out": "accepted"
+  },
+  "PRINT CHR$(300)": {
+   "out": "accepted"
+  },
+  "DIM a(0)": {
+   "out": "accepted"
+  },
+  "DIM a(3) AS UByte\nPRINT a(5)": {
+   "out": "accepted"
+  },
+  "DIM a(3) AS UByte\na(4) = 1": {
+   "out": "accepted"
+  },
+  "PRINT CODE \"\"": {
+   "out": "accepted"
+  },
+  "PRINT 1,,2": {
+   "out": "accepted"
+  },
+  "PRINT ;;": {
+   "out": "accepted"
+  },
+  "PRINT 1'2": {
+   "out": "accepted"
+  },
+  "IF 1 THEN PRINT 1 ELSE PRINT 2": {
+   "out": "accepted"
+  },
+  "IF 1 THEN\nEND IF": {
+   "out": "accepted"
+  },
+  "ON 1 GOTO 10, 20\n10 PRINT\n20 PRINT": {
+   "out": "accepted"
+  },
+  "NEXT": {
+   "out": "accepted"
+  },
+  "FUNCTION f(a)\n RETURN a\nEND FUNCTION\nPRINT f(1)": {
+   "out": "accepted"
+  },
+  "PRINT 1)": {
+   "out": "accepted"
+  },
+  "DIM a AS UByte = 256": {
+   "out": "accepted"
+  },
+  "DIM a AS Byte = 200": {
+   "out": "accepted"
+  },
+  "DIM a AS UInteger = -1": {
+   "out": "accepted"
+  },
+  "DIM a AS Fixed = 40000": {
+   "out": "accepted"
+  },
+  "DIM a AS Float = 1E40": {
+   "out": "accepted"
+  },
+  "PRINT 1E40": {
+   "out": "accepted"
+  },
+  "PRINT 1E39 * 10": {
+   "out": "accepted"
+  },
+  "FUNCTION f AS UByte\nEND FUNCTION\nPRINT f": {
+   "out": "accepted"
+  },
+  "LET a = 1: LET a = a + 1: PRINT a": {
+   "out": "accepted"
+  },
+  "PRINT PI = 3": {
+   "out": "accepted"
+  },
+  "PRINT RND * 10": {
+   "out": "accepted"
+  },
+  "RANDOMIZE 1": {
+   "out": "accepted"
+  },
+  "PRINT INKEY$": {
+   "out": "accepted"
+  },
+  "PRINT USR 0": {
+   "out": "accepted"
+  },
+  "PRINT IN 254": {
+   "out": "accepted"
+  },
+  "DIM i AS UByte\nFOR i = 1 TO 10 STEP 0: NEXT i": {
+   "out": "accepted"
+  },
+  "FOR i = 10 TO 1: NEXT i": {
+   "out": "accepted"
+  },
+  "WHILE 1: WEND": {
+   "out": "accepted"
+  },
+  "ASM\n ld a,1\nEND ASM": {
+   "out": "accepted"
+  },
+  "ASM\n ld a,(ix+1)\n call $0d6b\nEND ASM": {
+   "out": "accepted"
+  },
+  "DIM x AS UByte\nPRINT @x": {
+   "out": "accepted"
+  },
+  "STOP 3": {
+   "out": "accepted"
+  },
+  "END 5": {
+   "out": "accepted"
+  },
+  "ERROR 30": {
+   "out": "accepted"
+  },
+  "ERROR 256": {
+   "out": "accepted"
+  },
+  "IF a THEN\nELSEIF b THEN\nPRINT 1\nELSE\nPRINT 2\nEND IF": {
+   "out": "accepted"
+  },
+  "IF a THEN\nELSEIF b PRINT 1\nEND IF": {
+   "out": "accepted"
+  },
+  "IF a THEN\nELSEIF b THEN\nPRINT 1\nEND IF": {
+   "out": "accepted"
+  },
+  "IF a THEN PRINT 1: ELSE PRINT 2": {
+   "out": "accepted"
+  },
+  "REM x": {
+   "out": "accepted"
+  },
+  "' comment": {
+   "out": "accepted"
+  },
+  "#ifdef A\nPRINT 1\n#endif\nPRINT 2": {
+   "out": "accepted"
+  },
+  "#define A\n#ifdef A\nPRINT 1\n#endif": {
+   "out": "accepted"
+  },
+  "x = SIN COS 0": {
+   "out": "accepted"
+  },
+  "x = PEEK 23610 + 1": {
+   "out": "accepted"
+  },
+  "x = CODE a$": {
+   "out": "accepted"
+  },
+  "x = USR 0 + 1": {
+   "out": "accepted"
+  },
+  "x = LEN \"ab\" + 1": {
+   "out": "accepted"
+  },
+  "x = INT (1.5) + 1": {
+   "out": "accepted"
+  },
+  "DIM s AS String\nSAVE \"x\" DATA s": {
+   "out": "accepted"
+  },
+  "DIM s AS String\nLOAD \"x\" DATA s": {
+   "out": "accepted"
+  },
+  "SUB f()\n DIM v AS UByte\n SAVE \"x\" DATA v\nEND SUB\nf()": {
+   "out": "accepted"
+  },
+  "SUB f()\n DIM v AS UInteger\n LOAD \"x\" DATA v\nEND SUB\nf()": {
+   "out": "accepted"
+  },
+  "SUB f(v AS UByte)\n SAVE \"x\" DATA v\nEND SUB\nf(1)": {
+   "out": "accepted"
+  }
+ }
+}

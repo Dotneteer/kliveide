@@ -1,0 +1,8 @@
+' sinclair-compatible brings ATTR, POINT and SCREEN$ without an #include; POINT takes the ROM's
+' coordinates there, so after PLOT 5, 5 it finds the pixel at POINT(5, -11), not at (5, 5)
+' (semantics annex: point-coordinates)
+'@sinclair-compatible
+'@expect screen 0 "S056"
+PLOT 5, 5
+PRINT AT 1, 1; "S"
+PRINT AT 0, 0; SCREEN$(1, 1); POINT(5, 5); ATTR(1, 1)

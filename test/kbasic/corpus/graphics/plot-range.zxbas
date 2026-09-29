@@ -1,0 +1,9 @@
+' A DRAW whose end is off the screen draws nothing, sets ERR_NR to 4 ("5 Out of screen") and the
+' program carries on; the last point plotted stays (semantics annex: plot-off-screen)
+'@expect screen 0 "go"
+'@expect screen 1 "after 10 10"
+'@expect peek 23610 4
+PLOT 10, 10
+PRINT "go"
+DRAW 250, 0
+PRINT "after "; PEEK 23677; " "; PEEK 23678

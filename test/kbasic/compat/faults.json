@@ -1,0 +1,667 @@
+{
+ "acceptance": {
+  "CLS 1": {
+   "klive": "rejected: E301 Expected the end of the statement, found '1'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "DIM x y": {
+   "klive": "rejected: E301 Expected the end of the statement, found 'y'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "END 1, 2": {
+   "klive": "rejected: E301 Expected the end of the statement, found ','",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "SUB PASCAL s\nEND SUB": {
+   "klive": "rejected: E302 Expected ':' or the end of the line, found 's'; E305 END SUB without its opening statement, found 'END'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "POKE LONG, 1, 2": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: IndexError: list index out of range",
+   "fault": "zxbc-compile-crash"
+  },
+  "PRINT )": {
+   "klive": "rejected: E309 Expected an expression, found ')'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "PRINT INK; 1": {
+   "klive": "rejected: E309 Expected an expression, found ';'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "RANDOMIZE 1, 2": {
+   "klive": "rejected: E301 Expected the end of the statement, found ','",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "RETURN ,": {
+   "klive": "rejected: E309 Expected an expression, found ','",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "STOP ,": {
+   "klive": "rejected: E309 Expected an expression, found ','",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "x$ = CHR$(65, 66)": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'",
+   "fault": "zxbc-compile-crash"
+  },
+  "x$ = CHR(1)": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'",
+   "fault": "zxbc-compile-crash"
+  },
+  "x$ = CHR 65": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'",
+   "fault": "zxbc-compile-crash"
+  },
+  "x = SIZEOF(LONG)": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: type object 'Type' has no attribute 'to_type'",
+   "fault": "zxbc-compile-crash"
+  },
+  "#pragma codebank = x": {
+   "klive": "rejected: E314 Invalid value 'x' for #pragma codebank",
+   "zxbc": "accepted",
+   "fault": "codebank-extension"
+  },
+  "ASM\n CODEBANK\nEND ASM": {
+   "klive": "rejected: E313 CODEBANK in an ASM block needs a bank number",
+   "zxbc": "accepted",
+   "fault": "codebank-extension"
+  },
+  "PRINT 1 PRINT 2": {
+   "klive": "rejected: E302 Expected ';' or ',', found 'PRINT'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "1.5 PRINT": {
+   "klive": "rejected: E304 A line number must be a whole number",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "#ifdef A\nPRINT 1\n#endif": {
+   "klive": "accepted",
+   "zxbc": "rejected: error: Unexpected end of file",
+   "fault": "degenerate-preprocessor"
+  },
+  "PRINT 1 / 0": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: ZeroDivisionError: division by zero",
+   "fault": "constant-integer-division-by-zero"
+  },
+  "PRINT 1 MOD 0": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: ZeroDivisionError: division by zero",
+   "fault": "constant-integer-division-by-zero"
+  },
+  "PRINT \"a\" = \"a\"": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'text'",
+   "fault": "constant-string-comparison"
+  },
+  "DIM s AS UByte = 1\nFOR i = 1 TO 5 STEP s: NEXT i": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'VarRef' object has no attribute 'value'",
+   "fault": "for-unsigned-variable-step"
+  },
+  "NEXT": {
+   "klive": "rejected: E306 NEXT without FOR, found 'NEXT'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "PRINT 1)": {
+   "klive": "rejected: E302 Expected ';' or ',', found ')'",
+   "zxbc": "accepted",
+   "fault": "silent-syntax-repair"
+  },
+  "DIM a AS Float = 1E40": {
+   "klive": "rejected: Number too big",
+   "zxbc": "accepted",
+   "fault": "constant-float-overflow"
+  },
+  "x$ = CHR$ 65": {
+   "klive": "accepted",
+   "zxbc": "rejected: zxbc crashed: AttributeError: 'SymbolSTRING' object has no attribute 'fname'",
+   "fault": "zxbc-compile-crash"
+  }
+ },
+ "binary": {
+  "Byte -7 / 2": {
+   "klive": "-3",
+   "zxbc": "3",
+   "fault": "byte-division"
+  },
+  "Fixed 3.5 MOD 1.25": {
+   "klive": "1",
+   "zxbc": "0.9999847412109375",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5 MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-1.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed 100.25 MOD -0.5": {
+   "klive": "-0.25",
+   "zxbc": "0.25",
+   "fault": "decimal-mod"
+  },
+  "Fixed 0.1 MOD 3": {
+   "klive": "0.0999908447265625",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5 MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-19.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "divlit": {
+  "Byte -7: a / 2": {
+   "klive": "-3",
+   "zxbc": "-4",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -7: a / 4": {
+   "klive": "-1",
+   "zxbc": "1",
+   "fault": "byte-division"
+  },
+  "Byte -7: a / 3": {
+   "klive": "-2",
+   "zxbc": "2",
+   "fault": "byte-division"
+  },
+  "Byte -7: a / 2.0": {
+   "klive": "-3",
+   "zxbc": "-4",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -7: a MOD 4": {
+   "klive": "3",
+   "zxbc": "1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a / 2": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a / 2.0": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Byte -1: a MOD 4": {
+   "klive": "1",
+   "zxbc": "3",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -100: a SHR 1": {
+   "klive": "-50",
+   "zxbc": "32718",
+   "fault": "shr-signed"
+  },
+  "Integer -1: a / 2": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a / 2.0": {
+   "klive": "0",
+   "zxbc": "-1",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a MOD 4": {
+   "klive": "1",
+   "zxbc": "3",
+   "fault": "power-of-two-literal-divisor"
+  },
+  "Integer -1: a SHR 1": {
+   "klive": "-1",
+   "zxbc": "32767",
+   "fault": "shr-signed"
+  }
+ },
+ "divzero": {
+  "Byte -7 / 0": {
+   "klive": "1",
+   "zxbc": "-1",
+   "fault": "byte-division"
+  },
+  "Fixed -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0.0000152587890625",
+   "fault": "fixed-division-by-zero"
+  },
+  "Fixed -7.5 MOD 0": {
+   "klive": "7.5",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Fixed 3.5 / 0": {
+   "klive": "",
+   "zxbc": "-0.0000152587890625",
+   "fault": "fixed-division-by-zero"
+  },
+  "Fixed 3.5 MOD 0": {
+   "klive": "3.5",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5 / 0": {
+   "klive": "",
+   "zxbc": "0",
+   "fault": "fixed-division-by-zero"
+  },
+  "Float 7.5 / 0": {
+   "klive": "",
+   "zxbc": "0",
+   "fault": "fixed-division-by-zero"
+  }
+ },
+ "errors": {
+  "String heap full": {
+   "klive": "after 0",
+   "zxbc": "",
+   "fault": "heap-exhaustion"
+  },
+  "Fixed division by zero": {
+   "klive": "",
+   "zxbc": "after 0",
+   "fault": "fixed-division-by-zero"
+  }
+ },
+ "literals": {
+  "BNOT 0.5": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  },
+  "BNOT 2.5": {
+   "klive": "-3",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  },
+  "BNOT 0.001": {
+   "klive": "-1",
+   "zxbc": "rejected: zxbc crashed: TypeError: bad operand type for unary ~: 'float'",
+   "fault": "bnot-decimal"
+  }
+ },
+ "meet": {
+  "UByte 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "UByte 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "UByte 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Byte 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Byte 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "Byte 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "UInteger 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "UInteger 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "UInteger 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Integer 100: 0.5 / a": {
+   "klive": "0.0049896240234375",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Integer 100: a / 0.001": {
+   "klive": "-30247.3846282958984375",
+   "zxbc": "-28672",
+   "fault": "fixed-division"
+  },
+  "Integer 100: a MOD 0.001": {
+   "klive": "0.0006103515625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "ULong 7: 0.5 / a": {
+   "klive": "0.0714263916015625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "ULong 7: a / 0.001": {
+   "klive": "7057.7230682373046875",
+   "zxbc": "7168",
+   "fault": "fixed-division"
+  },
+  "ULong 7: a MOD 0.001": {
+   "klive": "0.0007171630859375",
+   "zxbc": "0",
+   "fault": "decimal-mod"
+  },
+  "Long 100000: 0.5 / a": {
+   "klive": "-0.0000152587890625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Long 100000: a / 0.001": {
+   "klive": "-2016.4922943115234375",
+   "zxbc": "-32768",
+   "fault": "fixed-division"
+  },
+  "Long 100000: a MOD 0.001": {
+   "klive": "0.0005035400390625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-1.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a / -1": {
+   "klive": "7.5",
+   "zxbc": "2175.003143310546875",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 256": {
+   "klive": "248.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: 0.5 / a": {
+   "klive": "-0.0666656494140625",
+   "zxbc": "0",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 0.5": {
+   "klive": "0",
+   "zxbc": "-0.5",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a / 0.001": {
+   "klive": "-7561.8461456298828125",
+   "zxbc": "-7680",
+   "fault": "fixed-division"
+  },
+  "Fixed -7.5: a MOD 0.001": {
+   "klive": "0.000152587890625",
+   "zxbc": "-0.0009918212890625",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 1E10": {
+   "klive": "-7.5",
+   "zxbc": "-7.4375",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5: a MOD 70000": {
+   "klive": "4456.5",
+   "zxbc": "-7.49267578125",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 2": {
+   "klive": "0.5",
+   "zxbc": "-19.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 256": {
+   "klive": "248.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 0.5": {
+   "klive": "0",
+   "zxbc": "-232.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 0.001": {
+   "klive": "1.8626451E-9",
+   "zxbc": "-56257508",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 1E10": {
+   "klive": "1E+10",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  },
+  "Float -7.5: a MOD 70000": {
+   "klive": "69992.5",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "mixed": {
+  "UByte 200 / Byte 2": {
+   "klive": "-28",
+   "zxbc": "28",
+   "fault": "byte-division"
+  },
+  "Integer -100 MOD Fixed 1.25": {
+   "klive": "0",
+   "zxbc": "-1.25",
+   "fault": "decimal-mod"
+  },
+  "Integer 100 MOD Fixed 100.25": {
+   "klive": "100",
+   "zxbc": "99.9991302490234375",
+   "fault": "decimal-mod"
+  },
+  "Long -100000 / Fixed 1.25": {
+   "klive": "24857.5999908447265625",
+   "zxbc": "24857.5999755859375",
+   "fault": "fixed-division"
+  },
+  "Long -100000 MOD Fixed 1.25": {
+   "klive": "0.75",
+   "zxbc": "0.749969482421875",
+   "fault": "decimal-mod"
+  },
+  "Long 100000 MOD Fixed 100.25": {
+   "klive": "5.5",
+   "zxbc": "-94.7492218017578125",
+   "fault": "decimal-mod"
+  },
+  "Integer -100 MOD Float 2.5": {
+   "klive": "0",
+   "zxbc": "-1700",
+   "fault": "decimal-mod"
+  },
+  "Fixed -7.5 MOD Float 10000000000": {
+   "klive": "1E+10",
+   "zxbc": "-7.5",
+   "fault": "decimal-mod"
+  }
+ },
+ "screen": {
+  "slice: s(6 TO) = \"Earth\"": {
+   "klive": "Hello Earth|11|0",
+   "zxbc": "????!??p ???$??????!??p ???$????",
+   "fault": "substring-assignment"
+  },
+  "slice: s(9 TO 20) = \"abc\"": {
+   "klive": "Hello Worab|11|0",
+   "zxbc": "?????",
+   "fault": "substring-assignment"
+  }
+ },
+ "shifts": {
+  "Integer -100 SHR 1": {
+   "klive": "-50",
+   "zxbc": "32718",
+   "fault": "shr-signed"
+  }
+ },
+ "statements": {
+  "for: no pass": {
+   "klive": "10",
+   "zxbc": "0",
+   "fault": "for-never-runs"
+  }
+ },
+ "unary": {
+  "Fixed 3.5: BNOT a": {
+   "klive": "-4",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'",
+   "fault": "bnot-decimal"
+  },
+  "Fixed -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf16'",
+   "fault": "bnot-decimal"
+  },
+  "Float 7.5: BNOT a": {
+   "klive": "-8",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'",
+   "fault": "bnot-decimal"
+  },
+  "Float -7.5: BNOT a": {
+   "klive": "7",
+   "zxbc": "rejected: zxbc crashed: KeyError: 'bnotf'",
+   "fault": "bnot-decimal"
+  }
+ },
+ "asm": {
+  "asm: a global by _name": {
+   "klive": "501",
+   "zxbc": "rejected: error: Undefined GLOBAL label '._gv2879'",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a local through IX": {
+   "klive": "14",
+   "zxbc": "28",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a byte local at IX-2": {
+   "klive": "0",
+   "zxbc": "6",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a byte local at IX-3": {
+   "klive": "21",
+   "zxbc": "80",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a word local at IX-2": {
+   "klive": "1234",
+   "zxbc": "60",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: a word local at IX-4": {
+   "klive": "0",
+   "zxbc": "16962",
+   "fault": "asm-unused-variable"
+  },
+  "asm frame: two byte locals": {
+   "klive": "775",
+   "zxbc": "15360",
+   "fault": "asm-unused-variable"
+  }
+ },
+ "library": {
+  "library: print42 layout": {
+   "klive": "3FEE0000",
+   "zxbc": "3FFE0000",
+   "fault": "library-font"
+  },
+  "library: print42 pixels": {
+   "klive": "12362367",
+   "zxbc": "7256190",
+   "fault": "library-font"
+  },
+  "library: print42 the cursor stays": {
+   "klive": "08000000 00000000",
+   "zxbc": "0C000000 00000000",
+   "fault": "library-font"
+  },
+  "library: print64 pixels": {
+   "klive": "11642722",
+   "zxbc": "15100540",
+   "fault": "library-font"
+  },
+  "library: fCos(91)": {
+   "klive": "-0.01763916015625 4294966140",
+   "zxbc": "0 0",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(91)": {
+   "klive": "-56.6920318603515625 4291251927",
+   "zxbc": "-0.0000152587890625 4294967295",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fSin(400)": {
+   "klive": "0.64312744140625 42148",
+   "zxbc": "0.64306640625 42144",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fCos(400)": {
+   "klive": "0.7646942138671875 50115",
+   "zxbc": "0.7647552490234375 50119",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(400)": {
+   "klive": "0.8410186767578125 55117",
+   "zxbc": "0.8408660888671875 55107",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fSin(-30)": {
+   "klive": "-0.4980316162109375 4294934657",
+   "zxbc": "-0.4980010986328125 4294934659",
+   "fault": "fmath-angle-reduction"
+  },
+  "library: fTan(-30)": {
+   "klive": "-0.57464599609375 4294929636",
+   "zxbc": "-0.574615478515625 4294929638",
+   "fault": "fmath-angle-reduction"
+  }
+ },
+ "options": {
+  "options: zxnext with nextreg": {
+   "klive": "1",
+   "zxbc": "rejected: error: Syntax error. Unexpected token '21' [INTEGER]",
+   "fault": "zxnext-option"
+  },
+  "options: headerless": {
+   "klive": "9",
+   "zxbc": "",
+   "fault": "headerless"
+  }
+ }
+}

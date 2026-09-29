@@ -13,6 +13,8 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { EmptyState } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { hasSourceLevelDebug } from "../utils/compiler-utils";
+import { SourceCallStack } from "../debugger/source/SourceCallStack";
 
 /**
  * A stack address, in hex and decimal.
@@ -59,7 +61,17 @@ const CallStackRow = ({ index, slot, frame }: { index: number; slot: number; fra
   );
 };
 
+/**
+ * The call stack: symbolic frames for a program compiled with source-level debug info (a Klive
+ * BASIC program, plan §10.6), otherwise the raw return addresses.
+ */
 export const CallStackPanel = () => {
+  const result = useSelector((s) => s.compilation?.result);
+  if (hasSourceLevelDebug(result)) return <SourceCallStack info={result.sourceLevelDebug} />;
+  return <RawCallStack />;
+};
+
+const RawCallStack = () => {
   const emuApi = useEmuApi();
   const [refreshed, setRefreshed] = useState(false);
   const [spValue, setSpValue] = useState<number>();

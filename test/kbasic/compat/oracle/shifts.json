@@ -1,0 +1,581 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "UByte 200 SHL 1": {
+   "out": "144"
+  },
+  "UByte 200 SHL UByte 1": {
+   "out": "144"
+  },
+  "UByte 200 SHR 1": {
+   "out": "100"
+  },
+  "UByte 200 SHR UByte 1": {
+   "out": "100"
+  },
+  "UByte 200 SHL 3": {
+   "out": "64"
+  },
+  "UByte 200 SHL UByte 3": {
+   "out": "64"
+  },
+  "UByte 200 SHR 3": {
+   "out": "25"
+  },
+  "UByte 200 SHR UByte 3": {
+   "out": "25"
+  },
+  "UByte 200 SHL 8": {
+   "out": "0"
+  },
+  "UByte 200 SHL UByte 8": {
+   "out": "0"
+  },
+  "UByte 200 SHR 8": {
+   "out": "0"
+  },
+  "UByte 200 SHR UByte 8": {
+   "out": "0"
+  },
+  "UByte 200 SHL 17": {
+   "out": "0"
+  },
+  "UByte 200 SHL UByte 17": {
+   "out": "0"
+  },
+  "UByte 200 SHR 17": {
+   "out": "0"
+  },
+  "UByte 200 SHR UByte 17": {
+   "out": "0"
+  },
+  "UByte 7 SHL 1": {
+   "out": "14"
+  },
+  "UByte 7 SHL UByte 1": {
+   "out": "14"
+  },
+  "UByte 7 SHR 1": {
+   "out": "3"
+  },
+  "UByte 7 SHR UByte 1": {
+   "out": "3"
+  },
+  "UByte 7 SHL 3": {
+   "out": "56"
+  },
+  "UByte 7 SHL UByte 3": {
+   "out": "56"
+  },
+  "UByte 7 SHR 3": {
+   "out": "0"
+  },
+  "UByte 7 SHR UByte 3": {
+   "out": "0"
+  },
+  "UByte 7 SHL 8": {
+   "out": "0"
+  },
+  "UByte 7 SHL UByte 8": {
+   "out": "0"
+  },
+  "UByte 7 SHR 8": {
+   "out": "0"
+  },
+  "UByte 7 SHR UByte 8": {
+   "out": "0"
+  },
+  "UByte 7 SHL 17": {
+   "out": "0"
+  },
+  "UByte 7 SHL UByte 17": {
+   "out": "0"
+  },
+  "UByte 7 SHR 17": {
+   "out": "0"
+  },
+  "UByte 7 SHR UByte 17": {
+   "out": "0"
+  },
+  "Byte -7 SHL 1": {
+   "out": "-14"
+  },
+  "Byte -7 SHL UByte 1": {
+   "out": "-14"
+  },
+  "Byte -7 SHR 1": {
+   "out": "-4"
+  },
+  "Byte -7 SHR UByte 1": {
+   "out": "-4"
+  },
+  "Byte -7 SHL 3": {
+   "out": "-56"
+  },
+  "Byte -7 SHL UByte 3": {
+   "out": "-56"
+  },
+  "Byte -7 SHR 3": {
+   "out": "-1"
+  },
+  "Byte -7 SHR UByte 3": {
+   "out": "-1"
+  },
+  "Byte -7 SHL 8": {
+   "out": "0"
+  },
+  "Byte -7 SHL UByte 8": {
+   "out": "0"
+  },
+  "Byte -7 SHR 8": {
+   "out": "-1"
+  },
+  "Byte -7 SHR UByte 8": {
+   "out": "-1"
+  },
+  "Byte -7 SHL 17": {
+   "out": "0"
+  },
+  "Byte -7 SHL UByte 17": {
+   "out": "0"
+  },
+  "Byte -7 SHR 17": {
+   "out": "-1"
+  },
+  "Byte -7 SHR UByte 17": {
+   "out": "-1"
+  },
+  "Byte 7 SHL 1": {
+   "out": "14"
+  },
+  "Byte 7 SHL UByte 1": {
+   "out": "14"
+  },
+  "Byte 7 SHR 1": {
+   "out": "3"
+  },
+  "Byte 7 SHR UByte 1": {
+   "out": "3"
+  },
+  "Byte 7 SHL 3": {
+   "out": "56"
+  },
+  "Byte 7 SHL UByte 3": {
+   "out": "56"
+  },
+  "Byte 7 SHR 3": {
+   "out": "0"
+  },
+  "Byte 7 SHR UByte 3": {
+   "out": "0"
+  },
+  "Byte 7 SHL 8": {
+   "out": "0"
+  },
+  "Byte 7 SHL UByte 8": {
+   "out": "0"
+  },
+  "Byte 7 SHR 8": {
+   "out": "0"
+  },
+  "Byte 7 SHR UByte 8": {
+   "out": "0"
+  },
+  "Byte 7 SHL 17": {
+   "out": "0"
+  },
+  "Byte 7 SHL UByte 17": {
+   "out": "0"
+  },
+  "Byte 7 SHR 17": {
+   "out": "0"
+  },
+  "Byte 7 SHR UByte 17": {
+   "out": "0"
+  },
+  "UInteger 60000 SHL 1": {
+   "out": "54464"
+  },
+  "UInteger 60000 SHL UByte 1": {
+   "out": "54464"
+  },
+  "UInteger 60000 SHR 1": {
+   "out": "30000"
+  },
+  "UInteger 60000 SHR UByte 1": {
+   "out": "30000"
+  },
+  "UInteger 60000 SHL 3": {
+   "out": "21248"
+  },
+  "UInteger 60000 SHL UByte 3": {
+   "out": "21248"
+  },
+  "UInteger 60000 SHR 3": {
+   "out": "7500"
+  },
+  "UInteger 60000 SHR UByte 3": {
+   "out": "7500"
+  },
+  "UInteger 60000 SHL 8": {
+   "out": "24576"
+  },
+  "UInteger 60000 SHL UByte 8": {
+   "out": "24576"
+  },
+  "UInteger 60000 SHR 8": {
+   "out": "234"
+  },
+  "UInteger 60000 SHR UByte 8": {
+   "out": "234"
+  },
+  "UInteger 60000 SHL 17": {
+   "out": "0"
+  },
+  "UInteger 60000 SHL UByte 17": {
+   "out": "0"
+  },
+  "UInteger 60000 SHR 17": {
+   "out": "0"
+  },
+  "UInteger 60000 SHR UByte 17": {
+   "out": "0"
+  },
+  "UInteger 7 SHL 1": {
+   "out": "14"
+  },
+  "UInteger 7 SHL UByte 1": {
+   "out": "14"
+  },
+  "UInteger 7 SHR 1": {
+   "out": "3"
+  },
+  "UInteger 7 SHR UByte 1": {
+   "out": "3"
+  },
+  "UInteger 7 SHL 3": {
+   "out": "56"
+  },
+  "UInteger 7 SHL UByte 3": {
+   "out": "56"
+  },
+  "UInteger 7 SHR 3": {
+   "out": "0"
+  },
+  "UInteger 7 SHR UByte 3": {
+   "out": "0"
+  },
+  "UInteger 7 SHL 8": {
+   "out": "1792"
+  },
+  "UInteger 7 SHL UByte 8": {
+   "out": "1792"
+  },
+  "UInteger 7 SHR 8": {
+   "out": "0"
+  },
+  "UInteger 7 SHR UByte 8": {
+   "out": "0"
+  },
+  "UInteger 7 SHL 17": {
+   "out": "0"
+  },
+  "UInteger 7 SHL UByte 17": {
+   "out": "0"
+  },
+  "UInteger 7 SHR 17": {
+   "out": "0"
+  },
+  "UInteger 7 SHR UByte 17": {
+   "out": "0"
+  },
+  "Integer -100 SHL 1": {
+   "out": "-200"
+  },
+  "Integer -100 SHL UByte 1": {
+   "out": "-200"
+  },
+  "Integer -100 SHR 1": {
+   "out": "32718"
+  },
+  "Integer -100 SHR UByte 1": {
+   "out": "-50"
+  },
+  "Integer -100 SHL 3": {
+   "out": "-800"
+  },
+  "Integer -100 SHL UByte 3": {
+   "out": "-800"
+  },
+  "Integer -100 SHR 3": {
+   "out": "-13"
+  },
+  "Integer -100 SHR UByte 3": {
+   "out": "-13"
+  },
+  "Integer -100 SHL 8": {
+   "out": "-25600"
+  },
+  "Integer -100 SHL UByte 8": {
+   "out": "-25600"
+  },
+  "Integer -100 SHR 8": {
+   "out": "-1"
+  },
+  "Integer -100 SHR UByte 8": {
+   "out": "-1"
+  },
+  "Integer -100 SHL 17": {
+   "out": "0"
+  },
+  "Integer -100 SHL UByte 17": {
+   "out": "0"
+  },
+  "Integer -100 SHR 17": {
+   "out": "-1"
+  },
+  "Integer -100 SHR UByte 17": {
+   "out": "-1"
+  },
+  "Integer 100 SHL 1": {
+   "out": "200"
+  },
+  "Integer 100 SHL UByte 1": {
+   "out": "200"
+  },
+  "Integer 100 SHR 1": {
+   "out": "50"
+  },
+  "Integer 100 SHR UByte 1": {
+   "out": "50"
+  },
+  "Integer 100 SHL 3": {
+   "out": "800"
+  },
+  "Integer 100 SHL UByte 3": {
+   "out": "800"
+  },
+  "Integer 100 SHR 3": {
+   "out": "12"
+  },
+  "Integer 100 SHR UByte 3": {
+   "out": "12"
+  },
+  "Integer 100 SHL 8": {
+   "out": "25600"
+  },
+  "Integer 100 SHL UByte 8": {
+   "out": "25600"
+  },
+  "Integer 100 SHR 8": {
+   "out": "0"
+  },
+  "Integer 100 SHR UByte 8": {
+   "out": "0"
+  },
+  "Integer 100 SHL 17": {
+   "out": "0"
+  },
+  "Integer 100 SHL UByte 17": {
+   "out": "0"
+  },
+  "Integer 100 SHR 17": {
+   "out": "0"
+  },
+  "Integer 100 SHR UByte 17": {
+   "out": "0"
+  },
+  "ULong 4000000000 SHL 1": {
+   "out": "3705032704"
+  },
+  "ULong 4000000000 SHL UByte 1": {
+   "out": "3705032704"
+  },
+  "ULong 4000000000 SHR 1": {
+   "out": "2000000000"
+  },
+  "ULong 4000000000 SHR UByte 1": {
+   "out": "2000000000"
+  },
+  "ULong 4000000000 SHL 3": {
+   "out": "1935228928"
+  },
+  "ULong 4000000000 SHL UByte 3": {
+   "out": "1935228928"
+  },
+  "ULong 4000000000 SHR 3": {
+   "out": "500000000"
+  },
+  "ULong 4000000000 SHR UByte 3": {
+   "out": "500000000"
+  },
+  "ULong 4000000000 SHL 8": {
+   "out": "1797783552"
+  },
+  "ULong 4000000000 SHL UByte 8": {
+   "out": "1797783552"
+  },
+  "ULong 4000000000 SHR 8": {
+   "out": "15625000"
+  },
+  "ULong 4000000000 SHR UByte 8": {
+   "out": "15625000"
+  },
+  "ULong 4000000000 SHL 17": {
+   "out": "1342177280"
+  },
+  "ULong 4000000000 SHL UByte 17": {
+   "out": "1342177280"
+  },
+  "ULong 4000000000 SHR 17": {
+   "out": "30517"
+  },
+  "ULong 4000000000 SHR UByte 17": {
+   "out": "30517"
+  },
+  "ULong 7 SHL 1": {
+   "out": "14"
+  },
+  "ULong 7 SHL UByte 1": {
+   "out": "14"
+  },
+  "ULong 7 SHR 1": {
+   "out": "3"
+  },
+  "ULong 7 SHR UByte 1": {
+   "out": "3"
+  },
+  "ULong 7 SHL 3": {
+   "out": "56"
+  },
+  "ULong 7 SHL UByte 3": {
+   "out": "56"
+  },
+  "ULong 7 SHR 3": {
+   "out": "0"
+  },
+  "ULong 7 SHR UByte 3": {
+   "out": "0"
+  },
+  "ULong 7 SHL 8": {
+   "out": "1792"
+  },
+  "ULong 7 SHL UByte 8": {
+   "out": "1792"
+  },
+  "ULong 7 SHR 8": {
+   "out": "0"
+  },
+  "ULong 7 SHR UByte 8": {
+   "out": "0"
+  },
+  "ULong 7 SHL 17": {
+   "out": "917504"
+  },
+  "ULong 7 SHL UByte 17": {
+   "out": "917504"
+  },
+  "ULong 7 SHR 17": {
+   "out": "0"
+  },
+  "ULong 7 SHR UByte 17": {
+   "out": "0"
+  },
+  "Long -100000 SHL 1": {
+   "out": "-200000"
+  },
+  "Long -100000 SHL UByte 1": {
+   "out": "-200000"
+  },
+  "Long -100000 SHR 1": {
+   "out": "-50000"
+  },
+  "Long -100000 SHR UByte 1": {
+   "out": "-50000"
+  },
+  "Long -100000 SHL 3": {
+   "out": "-800000"
+  },
+  "Long -100000 SHL UByte 3": {
+   "out": "-800000"
+  },
+  "Long -100000 SHR 3": {
+   "out": "-12500"
+  },
+  "Long -100000 SHR UByte 3": {
+   "out": "-12500"
+  },
+  "Long -100000 SHL 8": {
+   "out": "-25600000"
+  },
+  "Long -100000 SHL UByte 8": {
+   "out": "-25600000"
+  },
+  "Long -100000 SHR 8": {
+   "out": "-391"
+  },
+  "Long -100000 SHR UByte 8": {
+   "out": "-391"
+  },
+  "Long -100000 SHL 17": {
+   "out": "-222298112"
+  },
+  "Long -100000 SHL UByte 17": {
+   "out": "-222298112"
+  },
+  "Long -100000 SHR 17": {
+   "out": "-1"
+  },
+  "Long -100000 SHR UByte 17": {
+   "out": "-1"
+  },
+  "Long 100000 SHL 1": {
+   "out": "200000"
+  },
+  "Long 100000 SHL UByte 1": {
+   "out": "200000"
+  },
+  "Long 100000 SHR 1": {
+   "out": "50000"
+  },
+  "Long 100000 SHR UByte 1": {
+   "out": "50000"
+  },
+  "Long 100000 SHL 3": {
+   "out": "800000"
+  },
+  "Long 100000 SHL UByte 3": {
+   "out": "800000"
+  },
+  "Long 100000 SHR 3": {
+   "out": "12500"
+  },
+  "Long 100000 SHR UByte 3": {
+   "out": "12500"
+  },
+  "Long 100000 SHL 8": {
+   "out": "25600000"
+  },
+  "Long 100000 SHL UByte 8": {
+   "out": "25600000"
+  },
+  "Long 100000 SHR 8": {
+   "out": "390"
+  },
+  "Long 100000 SHR UByte 8": {
+   "out": "390"
+  },
+  "Long 100000 SHL 17": {
+   "out": "222298112"
+  },
+  "Long 100000 SHL UByte 17": {
+   "out": "222298112"
+  },
+  "Long 100000 SHR 17": {
+   "out": "0"
+  },
+  "Long 100000 SHR UByte 17": {
+   "out": "0"
+  }
+ }
+}

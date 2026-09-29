@@ -1,0 +1,437 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "UByte 200 + Byte 2": {
+   "out": "-54"
+  },
+  "UByte 200 - Byte 2": {
+   "out": "-58"
+  },
+  "UByte 200 * Byte 2": {
+   "out": "-112"
+  },
+  "UByte 200 / Byte 2": {
+   "out": "28"
+  },
+  "UByte 200 MOD Byte 2": {
+   "out": "0"
+  },
+  "UByte 200 < Byte 2": {
+   "out": "1"
+  },
+  "UByte 7 + Byte -128": {
+   "out": "-121"
+  },
+  "UByte 7 - Byte -128": {
+   "out": "-121"
+  },
+  "UByte 7 * Byte -128": {
+   "out": "-128"
+  },
+  "UByte 7 / Byte -128": {
+   "out": "0"
+  },
+  "UByte 7 MOD Byte -128": {
+   "out": "7"
+  },
+  "UByte 7 < Byte -128": {
+   "out": "0"
+  },
+  "UByte 200 + Integer 3": {
+   "out": "203"
+  },
+  "UByte 200 - Integer 3": {
+   "out": "197"
+  },
+  "UByte 200 * Integer 3": {
+   "out": "600"
+  },
+  "UByte 200 / Integer 3": {
+   "out": "66"
+  },
+  "UByte 200 MOD Integer 3": {
+   "out": "2"
+  },
+  "UByte 200 < Integer 3": {
+   "out": "0"
+  },
+  "UByte 7 + Integer -32768": {
+   "out": "-32761"
+  },
+  "UByte 7 - Integer -32768": {
+   "out": "-32761"
+  },
+  "UByte 7 * Integer -32768": {
+   "out": "-32768"
+  },
+  "UByte 7 / Integer -32768": {
+   "out": "0"
+  },
+  "UByte 7 MOD Integer -32768": {
+   "out": "7"
+  },
+  "UByte 7 < Integer -32768": {
+   "out": "0"
+  },
+  "Byte -7 + UInteger 1000": {
+   "out": "993"
+  },
+  "Byte -7 - UInteger 1000": {
+   "out": "-1007"
+  },
+  "Byte -7 * UInteger 1000": {
+   "out": "-7000"
+  },
+  "Byte -7 / UInteger 1000": {
+   "out": "0"
+  },
+  "Byte -7 MOD UInteger 1000": {
+   "out": "7"
+  },
+  "Byte -7 < UInteger 1000": {
+   "out": "1"
+  },
+  "Byte 7 + UInteger 65535": {
+   "out": "6"
+  },
+  "Byte 7 - UInteger 65535": {
+   "out": "8"
+  },
+  "Byte 7 * UInteger 65535": {
+   "out": "-7"
+  },
+  "Byte 7 / UInteger 65535": {
+   "out": "-7"
+  },
+  "Byte 7 MOD UInteger 65535": {
+   "out": "0"
+  },
+  "Byte 7 < UInteger 65535": {
+   "out": "0"
+  },
+  "Integer -100 + UInteger 1000": {
+   "out": "900"
+  },
+  "Integer -100 - UInteger 1000": {
+   "out": "-1100"
+  },
+  "Integer -100 * UInteger 1000": {
+   "out": "31072"
+  },
+  "Integer -100 / UInteger 1000": {
+   "out": "0"
+  },
+  "Integer -100 MOD UInteger 1000": {
+   "out": "100"
+  },
+  "Integer -100 < UInteger 1000": {
+   "out": "1"
+  },
+  "Integer 100 + UInteger 65535": {
+   "out": "99"
+  },
+  "Integer 100 - UInteger 65535": {
+   "out": "101"
+  },
+  "Integer 100 * UInteger 65535": {
+   "out": "-100"
+  },
+  "Integer 100 / UInteger 65535": {
+   "out": "-100"
+  },
+  "Integer 100 MOD UInteger 65535": {
+   "out": "0"
+  },
+  "Integer 100 < UInteger 65535": {
+   "out": "0"
+  },
+  "Integer -100 + Long 7": {
+   "out": "-93"
+  },
+  "Integer -100 - Long 7": {
+   "out": "-107"
+  },
+  "Integer -100 * Long 7": {
+   "out": "-700"
+  },
+  "Integer -100 / Long 7": {
+   "out": "-14"
+  },
+  "Integer -100 MOD Long 7": {
+   "out": "2"
+  },
+  "Integer -100 < Long 7": {
+   "out": "1"
+  },
+  "Integer 100 + Long -2147483648": {
+   "out": "-2147483548"
+  },
+  "Integer 100 - Long -2147483648": {
+   "out": "-2147483548"
+  },
+  "Integer 100 * Long -2147483648": {
+   "out": "0"
+  },
+  "Integer 100 / Long -2147483648": {
+   "out": "0"
+  },
+  "Integer 100 MOD Long -2147483648": {
+   "out": "100"
+  },
+  "Integer 100 < Long -2147483648": {
+   "out": "0"
+  },
+  "UInteger 60000 + Long 7": {
+   "out": "60007"
+  },
+  "UInteger 60000 - Long 7": {
+   "out": "59993"
+  },
+  "UInteger 60000 * Long 7": {
+   "out": "420000"
+  },
+  "UInteger 60000 / Long 7": {
+   "out": "8571"
+  },
+  "UInteger 60000 MOD Long 7": {
+   "out": "3"
+  },
+  "UInteger 60000 < Long 7": {
+   "out": "0"
+  },
+  "UInteger 7 + Long -2147483648": {
+   "out": "-2147483641"
+  },
+  "UInteger 7 - Long -2147483648": {
+   "out": "-2147483641"
+  },
+  "UInteger 7 * Long -2147483648": {
+   "out": "-2147483648"
+  },
+  "UInteger 7 / Long -2147483648": {
+   "out": "0"
+  },
+  "UInteger 7 MOD Long -2147483648": {
+   "out": "7"
+  },
+  "UInteger 7 < Long -2147483648": {
+   "out": "0"
+  },
+  "Long -100000 + ULong 7": {
+   "out": "-99993"
+  },
+  "Long -100000 - ULong 7": {
+   "out": "-100007"
+  },
+  "Long -100000 * ULong 7": {
+   "out": "-700000"
+  },
+  "Long -100000 / ULong 7": {
+   "out": "-14285"
+  },
+  "Long -100000 MOD ULong 7": {
+   "out": "5"
+  },
+  "Long -100000 < ULong 7": {
+   "out": "1"
+  },
+  "Long 100000 + ULong 4294967295": {
+   "out": "99999"
+  },
+  "Long 100000 - ULong 4294967295": {
+   "out": "100001"
+  },
+  "Long 100000 * ULong 4294967295": {
+   "out": "-100000"
+  },
+  "Long 100000 / ULong 4294967295": {
+   "out": "-100000"
+  },
+  "Long 100000 MOD ULong 4294967295": {
+   "out": "0"
+  },
+  "Long 100000 < ULong 4294967295": {
+   "out": "0"
+  },
+  "Byte -7 + ULong 7": {
+   "out": "0"
+  },
+  "Byte -7 - ULong 7": {
+   "out": "-14"
+  },
+  "Byte -7 * ULong 7": {
+   "out": "-49"
+  },
+  "Byte -7 / ULong 7": {
+   "out": "-1"
+  },
+  "Byte -7 MOD ULong 7": {
+   "out": "0"
+  },
+  "Byte -7 < ULong 7": {
+   "out": "1"
+  },
+  "Byte 7 + ULong 4294967295": {
+   "out": "6"
+  },
+  "Byte 7 - ULong 4294967295": {
+   "out": "8"
+  },
+  "Byte 7 * ULong 4294967295": {
+   "out": "-7"
+  },
+  "Byte 7 / ULong 4294967295": {
+   "out": "-7"
+  },
+  "Byte 7 MOD ULong 4294967295": {
+   "out": "0"
+  },
+  "Byte 7 < ULong 4294967295": {
+   "out": "0"
+  },
+  "Integer -100 + Fixed 1.25": {
+   "out": "-98.75"
+  },
+  "Integer -100 - Fixed 1.25": {
+   "out": "-101.25"
+  },
+  "Integer -100 * Fixed 1.25": {
+   "out": "-125"
+  },
+  "Integer -100 / Fixed 1.25": {
+   "out": "-80"
+  },
+  "Integer -100 MOD Fixed 1.25": {
+   "out": "-1.25"
+  },
+  "Integer -100 < Fixed 1.25": {
+   "out": "1"
+  },
+  "Integer 100 + Fixed 100.25": {
+   "out": "200.25"
+  },
+  "Integer 100 - Fixed 100.25": {
+   "out": "-0.25"
+  },
+  "Integer 100 * Fixed 100.25": {
+   "out": "10025"
+  },
+  "Integer 100 / Fixed 100.25": {
+   "out": "0.99749755859375"
+  },
+  "Integer 100 MOD Fixed 100.25": {
+   "out": "99.9991302490234375"
+  },
+  "Integer 100 < Fixed 100.25": {
+   "out": "1"
+  },
+  "Long -100000 + Fixed 1.25": {
+   "out": "31073.25"
+  },
+  "Long -100000 - Fixed 1.25": {
+   "out": "31070.75"
+  },
+  "Long -100000 * Fixed 1.25": {
+   "out": "-26696"
+  },
+  "Long -100000 / Fixed 1.25": {
+   "out": "24857.5999755859375"
+  },
+  "Long -100000 MOD Fixed 1.25": {
+   "out": "0.749969482421875"
+  },
+  "Long -100000 < Fixed 1.25": {
+   "out": "0"
+  },
+  "Long 100000 + Fixed 100.25": {
+   "out": "-30971.75"
+  },
+  "Long 100000 - Fixed 100.25": {
+   "out": "-31172.25"
+  },
+  "Long 100000 * Fixed 100.25": {
+   "out": "30760"
+  },
+  "Long 100000 / Fixed 100.25": {
+   "out": "-309.94512939453125"
+  },
+  "Long 100000 MOD Fixed 100.25": {
+   "out": "-94.7492218017578125"
+  },
+  "Long 100000 < Fixed 100.25": {
+   "out": "1"
+  },
+  "Integer -100 + Float 2.5": {
+   "out": "-97.5"
+  },
+  "Integer -100 - Float 2.5": {
+   "out": "-102.5"
+  },
+  "Integer -100 * Float 2.5": {
+   "out": "-250"
+  },
+  "Integer -100 / Float 2.5": {
+   "out": "-40"
+  },
+  "Integer -100 MOD Float 2.5": {
+   "out": "-1700"
+  },
+  "Integer -100 < Float 2.5": {
+   "out": "1"
+  },
+  "Integer 100 + Float 10000000000": {
+   "out": "1E+10"
+  },
+  "Integer 100 - Float 10000000000": {
+   "out": "-9.9999999E+9"
+  },
+  "Integer 100 * Float 10000000000": {
+   "out": "1E+12"
+  },
+  "Integer 100 / Float 10000000000": {
+   "out": "1E-8"
+  },
+  "Integer 100 MOD Float 10000000000": {
+   "out": "100"
+  },
+  "Integer 100 < Float 10000000000": {
+   "out": "1"
+  },
+  "Fixed 3.5 + Float 2.5": {
+   "out": "6"
+  },
+  "Fixed 3.5 - Float 2.5": {
+   "out": "1"
+  },
+  "Fixed 3.5 * Float 2.5": {
+   "out": "8.75"
+  },
+  "Fixed 3.5 / Float 2.5": {
+   "out": "1.4"
+  },
+  "Fixed 3.5 MOD Float 2.5": {
+   "out": "1"
+  },
+  "Fixed 3.5 < Float 2.5": {
+   "out": "0"
+  },
+  "Fixed -7.5 + Float 10000000000": {
+   "out": "1E+10"
+  },
+  "Fixed -7.5 - Float 10000000000": {
+   "out": "-1E+10"
+  },
+  "Fixed -7.5 * Float 10000000000": {
+   "out": "-7.5E+10"
+  },
+  "Fixed -7.5 / Float 10000000000": {
+   "out": "-7.5E-10"
+  },
+  "Fixed -7.5 MOD Float 10000000000": {
+   "out": "-7.5"
+  },
+  "Fixed -7.5 < Float 10000000000": {
+   "out": "1"
+  }
+ }
+}

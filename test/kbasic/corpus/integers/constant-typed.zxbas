@@ -1,0 +1,6 @@
+' A CONST folds by its value whatever type it declares (k + k is 400), while a UByte variable's
+' sum wraps (semantics annex: constant-arithmetic-typed)
+'@expect screen 0 "400 144"
+CONST k AS UByte = 200
+DIM a AS UByte = 200
+PRINT k + k; " "; a + 200

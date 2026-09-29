@@ -1,0 +1,626 @@
+{
+ "suite": "statements",
+ "perProgram": 1,
+ "items": [
+  {
+   "id": "order: g + f()",
+   "decl": [
+    "DIM gv2681, bv2681 AS Integer",
+    "DIM tv2681(3) AS Integer",
+    "DIM uv2681 AS UByte = 5",
+    "DIM flv2681 AS Float = 5",
+    "DIM sv2681 AS String = \"a\"",
+    "FUNCTION fv2681() AS Integer: gv2681 = gv2681 + 10: bv2681 = bv2681 + 100: tv2681(1) = tv2681(1) + 1000: uv2681 = uv2681 + 10: flv2681 = flv2681 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2681() AS String: sv2681 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2681(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2681 = 5: bv2681 = 3: tv2681(1) = 7"
+   ],
+   "expr": "gv2681 + fv2681()"
+  },
+  {
+   "id": "order: f() + g",
+   "decl": [
+    "DIM gv2682, bv2682 AS Integer",
+    "DIM tv2682(3) AS Integer",
+    "DIM uv2682 AS UByte = 5",
+    "DIM flv2682 AS Float = 5",
+    "DIM sv2682 AS String = \"a\"",
+    "FUNCTION fv2682() AS Integer: gv2682 = gv2682 + 10: bv2682 = bv2682 + 100: tv2682(1) = tv2682(1) + 1000: uv2682 = uv2682 + 10: flv2682 = flv2682 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2682() AS String: sv2682 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2682(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2682 = 5: bv2682 = 3: tv2682(1) = 7"
+   ],
+   "expr": "fv2682() + gv2682"
+  },
+  {
+   "id": "order: g - f()",
+   "decl": [
+    "DIM gv2683, bv2683 AS Integer",
+    "DIM tv2683(3) AS Integer",
+    "DIM uv2683 AS UByte = 5",
+    "DIM flv2683 AS Float = 5",
+    "DIM sv2683 AS String = \"a\"",
+    "FUNCTION fv2683() AS Integer: gv2683 = gv2683 + 10: bv2683 = bv2683 + 100: tv2683(1) = tv2683(1) + 1000: uv2683 = uv2683 + 10: flv2683 = flv2683 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2683() AS String: sv2683 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2683(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2683 = 5: bv2683 = 3: tv2683(1) = 7"
+   ],
+   "expr": "gv2683 - fv2683()"
+  },
+  {
+   "id": "order: g * 2 - f()",
+   "decl": [
+    "DIM gv2684, bv2684 AS Integer",
+    "DIM tv2684(3) AS Integer",
+    "DIM uv2684 AS UByte = 5",
+    "DIM flv2684 AS Float = 5",
+    "DIM sv2684 AS String = \"a\"",
+    "FUNCTION fv2684() AS Integer: gv2684 = gv2684 + 10: bv2684 = bv2684 + 100: tv2684(1) = tv2684(1) + 1000: uv2684 = uv2684 + 10: flv2684 = flv2684 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2684() AS String: sv2684 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2684(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2684 = 5: bv2684 = 3: tv2684(1) = 7"
+   ],
+   "expr": "gv2684 * 2 - fv2684()"
+  },
+  {
+   "id": "order: (g + 0) + f()",
+   "decl": [
+    "DIM gv2685, bv2685 AS Integer",
+    "DIM tv2685(3) AS Integer",
+    "DIM uv2685 AS UByte = 5",
+    "DIM flv2685 AS Float = 5",
+    "DIM sv2685 AS String = \"a\"",
+    "FUNCTION fv2685() AS Integer: gv2685 = gv2685 + 10: bv2685 = bv2685 + 100: tv2685(1) = tv2685(1) + 1000: uv2685 = uv2685 + 10: flv2685 = flv2685 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2685() AS String: sv2685 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2685(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2685 = 5: bv2685 = 3: tv2685(1) = 7"
+   ],
+   "expr": "(gv2685 + 0) + fv2685()"
+  },
+  {
+   "id": "order: -g + f()",
+   "decl": [
+    "DIM gv2686, bv2686 AS Integer",
+    "DIM tv2686(3) AS Integer",
+    "DIM uv2686 AS UByte = 5",
+    "DIM flv2686 AS Float = 5",
+    "DIM sv2686 AS String = \"a\"",
+    "FUNCTION fv2686() AS Integer: gv2686 = gv2686 + 10: bv2686 = bv2686 + 100: tv2686(1) = tv2686(1) + 1000: uv2686 = uv2686 + 10: flv2686 = flv2686 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2686() AS String: sv2686 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2686(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2686 = 5: bv2686 = 3: tv2686(1) = 7"
+   ],
+   "expr": "-gv2686 + fv2686()"
+  },
+  {
+   "id": "order: g + f() * 1",
+   "decl": [
+    "DIM gv2687, bv2687 AS Integer",
+    "DIM tv2687(3) AS Integer",
+    "DIM uv2687 AS UByte = 5",
+    "DIM flv2687 AS Float = 5",
+    "DIM sv2687 AS String = \"a\"",
+    "FUNCTION fv2687() AS Integer: gv2687 = gv2687 + 10: bv2687 = bv2687 + 100: tv2687(1) = tv2687(1) + 1000: uv2687 = uv2687 + 10: flv2687 = flv2687 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2687() AS String: sv2687 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2687(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2687 = 5: bv2687 = 3: tv2687(1) = 7"
+   ],
+   "expr": "gv2687 + fv2687() * 1"
+  },
+  {
+   "id": "order: t(1) + f()",
+   "decl": [
+    "DIM gv2688, bv2688 AS Integer",
+    "DIM tv2688(3) AS Integer",
+    "DIM uv2688 AS UByte = 5",
+    "DIM flv2688 AS Float = 5",
+    "DIM sv2688 AS String = \"a\"",
+    "FUNCTION fv2688() AS Integer: gv2688 = gv2688 + 10: bv2688 = bv2688 + 100: tv2688(1) = tv2688(1) + 1000: uv2688 = uv2688 + 10: flv2688 = flv2688 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2688() AS String: sv2688 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2688(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2688 = 5: bv2688 = 3: tv2688(1) = 7"
+   ],
+   "expr": "tv2688(1) + fv2688()"
+  },
+  {
+   "id": "order: u + f()",
+   "decl": [
+    "DIM gv2689, bv2689 AS Integer",
+    "DIM tv2689(3) AS Integer",
+    "DIM uv2689 AS UByte = 5",
+    "DIM flv2689 AS Float = 5",
+    "DIM sv2689 AS String = \"a\"",
+    "FUNCTION fv2689() AS Integer: gv2689 = gv2689 + 10: bv2689 = bv2689 + 100: tv2689(1) = tv2689(1) + 1000: uv2689 = uv2689 + 10: flv2689 = flv2689 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2689() AS String: sv2689 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2689(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2689 = 5: bv2689 = 3: tv2689(1) = 7"
+   ],
+   "expr": "uv2689 + fv2689()"
+  },
+  {
+   "id": "order: fl + f()",
+   "decl": [
+    "DIM gv2690, bv2690 AS Integer",
+    "DIM tv2690(3) AS Integer",
+    "DIM uv2690 AS UByte = 5",
+    "DIM flv2690 AS Float = 5",
+    "DIM sv2690 AS String = \"a\"",
+    "FUNCTION fv2690() AS Integer: gv2690 = gv2690 + 10: bv2690 = bv2690 + 100: tv2690(1) = tv2690(1) + 1000: uv2690 = uv2690 + 10: flv2690 = flv2690 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2690() AS String: sv2690 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2690(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2690 = 5: bv2690 = 3: tv2690(1) = 7"
+   ],
+   "expr": "flv2690 + fv2690()"
+  },
+  {
+   "id": "order: g + f() + g",
+   "decl": [
+    "DIM gv2691, bv2691 AS Integer",
+    "DIM tv2691(3) AS Integer",
+    "DIM uv2691 AS UByte = 5",
+    "DIM flv2691 AS Float = 5",
+    "DIM sv2691 AS String = \"a\"",
+    "FUNCTION fv2691() AS Integer: gv2691 = gv2691 + 10: bv2691 = bv2691 + 100: tv2691(1) = tv2691(1) + 1000: uv2691 = uv2691 + 10: flv2691 = flv2691 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2691() AS String: sv2691 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2691(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2691 = 5: bv2691 = 3: tv2691(1) = 7"
+   ],
+   "expr": "gv2691 + fv2691() + gv2691"
+  },
+  {
+   "id": "order: f() + g + f()",
+   "decl": [
+    "DIM gv2692, bv2692 AS Integer",
+    "DIM tv2692(3) AS Integer",
+    "DIM uv2692 AS UByte = 5",
+    "DIM flv2692 AS Float = 5",
+    "DIM sv2692 AS String = \"a\"",
+    "FUNCTION fv2692() AS Integer: gv2692 = gv2692 + 10: bv2692 = bv2692 + 100: tv2692(1) = tv2692(1) + 1000: uv2692 = uv2692 + 10: flv2692 = flv2692 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2692() AS String: sv2692 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2692(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2692 = 5: bv2692 = 3: tv2692(1) = 7"
+   ],
+   "expr": "fv2692() + gv2692 + fv2692()"
+  },
+  {
+   "id": "order: g + (f() + g)",
+   "decl": [
+    "DIM gv2693, bv2693 AS Integer",
+    "DIM tv2693(3) AS Integer",
+    "DIM uv2693 AS UByte = 5",
+    "DIM flv2693 AS Float = 5",
+    "DIM sv2693 AS String = \"a\"",
+    "FUNCTION fv2693() AS Integer: gv2693 = gv2693 + 10: bv2693 = bv2693 + 100: tv2693(1) = tv2693(1) + 1000: uv2693 = uv2693 + 10: flv2693 = flv2693 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2693() AS String: sv2693 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2693(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2693 = 5: bv2693 = 3: tv2693(1) = 7"
+   ],
+   "expr": "gv2693 + (fv2693() + gv2693)"
+  },
+  {
+   "id": "order: g = f()",
+   "decl": [
+    "DIM gv2694, bv2694 AS Integer",
+    "DIM tv2694(3) AS Integer",
+    "DIM uv2694 AS UByte = 5",
+    "DIM flv2694 AS Float = 5",
+    "DIM sv2694 AS String = \"a\"",
+    "FUNCTION fv2694() AS Integer: gv2694 = gv2694 + 10: bv2694 = bv2694 + 100: tv2694(1) = tv2694(1) + 1000: uv2694 = uv2694 + 10: flv2694 = flv2694 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2694() AS String: sv2694 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2694(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2694 = 5: bv2694 = 3: tv2694(1) = 7"
+   ],
+   "expr": "gv2694 = fv2694()"
+  },
+  {
+   "id": "order: g AND f()",
+   "decl": [
+    "DIM gv2695, bv2695 AS Integer",
+    "DIM tv2695(3) AS Integer",
+    "DIM uv2695 AS UByte = 5",
+    "DIM flv2695 AS Float = 5",
+    "DIM sv2695 AS String = \"a\"",
+    "FUNCTION fv2695() AS Integer: gv2695 = gv2695 + 10: bv2695 = bv2695 + 100: tv2695(1) = tv2695(1) + 1000: uv2695 = uv2695 + 10: flv2695 = flv2695 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2695() AS String: sv2695 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2695(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2695 = 5: bv2695 = 3: tv2695(1) = 7"
+   ],
+   "expr": "gv2695 AND fv2695()"
+  },
+  {
+   "id": "order: s + h()",
+   "decl": [
+    "DIM gv2696, bv2696 AS Integer",
+    "DIM tv2696(3) AS Integer",
+    "DIM uv2696 AS UByte = 5",
+    "DIM flv2696 AS Float = 5",
+    "DIM sv2696 AS String = \"a\"",
+    "FUNCTION fv2696() AS Integer: gv2696 = gv2696 + 10: bv2696 = bv2696 + 100: tv2696(1) = tv2696(1) + 1000: uv2696 = uv2696 + 10: flv2696 = flv2696 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2696() AS String: sv2696 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2696(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2696 = 5: bv2696 = 3: tv2696(1) = 7"
+   ],
+   "expr": "sv2696 + hv2696()"
+  },
+  {
+   "id": "order: 100 + f() + g",
+   "decl": [
+    "DIM gv2697, bv2697 AS Integer",
+    "DIM tv2697(3) AS Integer",
+    "DIM uv2697 AS UByte = 5",
+    "DIM flv2697 AS Float = 5",
+    "DIM sv2697 AS String = \"a\"",
+    "FUNCTION fv2697() AS Integer: gv2697 = gv2697 + 10: bv2697 = bv2697 + 100: tv2697(1) = tv2697(1) + 1000: uv2697 = uv2697 + 10: flv2697 = flv2697 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2697() AS String: sv2697 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2697(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2697 = 5: bv2697 = 3: tv2697(1) = 7"
+   ],
+   "expr": "100 + fv2697() + gv2697"
+  },
+  {
+   "id": "order: g < f()",
+   "decl": [
+    "DIM gv2698, bv2698 AS Integer",
+    "DIM tv2698(3) AS Integer",
+    "DIM uv2698 AS UByte = 5",
+    "DIM flv2698 AS Float = 5",
+    "DIM sv2698 AS String = \"a\"",
+    "FUNCTION fv2698() AS Integer: gv2698 = gv2698 + 10: bv2698 = bv2698 + 100: tv2698(1) = tv2698(1) + 1000: uv2698 = uv2698 + 10: flv2698 = flv2698 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2698() AS String: sv2698 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2698(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2698 = 5: bv2698 = 3: tv2698(1) = 7"
+   ],
+   "expr": "gv2698 < fv2698()"
+  },
+  {
+   "id": "order: f() - f()",
+   "decl": [
+    "DIM gv2699, bv2699 AS Integer",
+    "DIM tv2699(3) AS Integer",
+    "DIM uv2699 AS UByte = 5",
+    "DIM flv2699 AS Float = 5",
+    "DIM sv2699 AS String = \"a\"",
+    "FUNCTION fv2699() AS Integer: gv2699 = gv2699 + 10: bv2699 = bv2699 + 100: tv2699(1) = tv2699(1) + 1000: uv2699 = uv2699 + 10: flv2699 = flv2699 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2699() AS String: sv2699 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2699(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2699 = 5: bv2699 = 3: tv2699(1) = 7"
+   ],
+   "expr": "fv2699() - fv2699()"
+  },
+  {
+   "id": "order: b + f()",
+   "decl": [
+    "DIM gv2700, bv2700 AS Integer",
+    "DIM tv2700(3) AS Integer",
+    "DIM uv2700 AS UByte = 5",
+    "DIM flv2700 AS Float = 5",
+    "DIM sv2700 AS String = \"a\"",
+    "FUNCTION fv2700() AS Integer: gv2700 = gv2700 + 10: bv2700 = bv2700 + 100: tv2700(1) = tv2700(1) + 1000: uv2700 = uv2700 + 10: flv2700 = flv2700 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2700() AS String: sv2700 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2700(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2700 = 5: bv2700 = 3: tv2700(1) = 7"
+   ],
+   "expr": "bv2700 + fv2700()"
+  },
+  {
+   "id": "order: (g + b) + f()",
+   "decl": [
+    "DIM gv2701, bv2701 AS Integer",
+    "DIM tv2701(3) AS Integer",
+    "DIM uv2701 AS UByte = 5",
+    "DIM flv2701 AS Float = 5",
+    "DIM sv2701 AS String = \"a\"",
+    "FUNCTION fv2701() AS Integer: gv2701 = gv2701 + 10: bv2701 = bv2701 + 100: tv2701(1) = tv2701(1) + 1000: uv2701 = uv2701 + 10: flv2701 = flv2701 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2701() AS String: sv2701 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2701(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2701 = 5: bv2701 = 3: tv2701(1) = 7"
+   ],
+   "expr": "(gv2701 + bv2701) + fv2701()"
+  },
+  {
+   "id": "order: CAST(Integer, g) + f()",
+   "decl": [
+    "DIM gv2702, bv2702 AS Integer",
+    "DIM tv2702(3) AS Integer",
+    "DIM uv2702 AS UByte = 5",
+    "DIM flv2702 AS Float = 5",
+    "DIM sv2702 AS String = \"a\"",
+    "FUNCTION fv2702() AS Integer: gv2702 = gv2702 + 10: bv2702 = bv2702 + 100: tv2702(1) = tv2702(1) + 1000: uv2702 = uv2702 + 10: flv2702 = flv2702 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2702() AS String: sv2702 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2702(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2702 = 5: bv2702 = 3: tv2702(1) = 7"
+   ],
+   "expr": "CAST(Integer, gv2702) + fv2702()"
+  },
+  {
+   "id": "order: g2(g, f())",
+   "decl": [
+    "DIM gv2703, bv2703 AS Integer",
+    "DIM tv2703(3) AS Integer",
+    "DIM uv2703 AS UByte = 5",
+    "DIM flv2703 AS Float = 5",
+    "DIM sv2703 AS String = \"a\"",
+    "FUNCTION fv2703() AS Integer: gv2703 = gv2703 + 10: bv2703 = bv2703 + 100: tv2703(1) = tv2703(1) + 1000: uv2703 = uv2703 + 10: flv2703 = flv2703 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2703() AS String: sv2703 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2703(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2703 = 5: bv2703 = 3: tv2703(1) = 7"
+   ],
+   "expr": "g2v2703(gv2703, fv2703())"
+  },
+  {
+   "id": "order: g2(f(), g)",
+   "decl": [
+    "DIM gv2704, bv2704 AS Integer",
+    "DIM tv2704(3) AS Integer",
+    "DIM uv2704 AS UByte = 5",
+    "DIM flv2704 AS Float = 5",
+    "DIM sv2704 AS String = \"a\"",
+    "FUNCTION fv2704() AS Integer: gv2704 = gv2704 + 10: bv2704 = bv2704 + 100: tv2704(1) = tv2704(1) + 1000: uv2704 = uv2704 + 10: flv2704 = flv2704 + 10: RETURN 1: END FUNCTION",
+    "FUNCTION hv2704() AS String: sv2704 = \"b\": RETURN \"c\": END FUNCTION",
+    "FUNCTION g2v2704(x AS Integer, y AS Integer) AS Integer: RETURN x * 100 + y: END FUNCTION",
+    "gv2704 = 5: bv2704 = 3: tv2704(1) = 7"
+   ],
+   "expr": "g2v2704(fv2704(), gv2704)"
+  },
+  {
+   "id": "assign: t(g) = f()",
+   "decl": [
+    "DIM gv2705 AS UByte",
+    "DIM tv2705(20) AS Integer",
+    "FUNCTION fv2705() AS Integer: gv2705 = gv2705 + 1: RETURN 50: END FUNCTION",
+    "FUNCTION hv2705() AS UByte: gv2705 = gv2705 + 1: RETURN gv2705: END FUNCTION",
+    "gv2705 = 1",
+    "tv2705(gv2705) = fv2705()"
+   ],
+   "expr": "STR$(tv2705(0)) + \" \" + STR$(tv2705(1)) + \" \" + STR$(tv2705(2)) + \" \" + STR$(gv2705)"
+  },
+  {
+   "id": "assign: t(g + 0) = f()",
+   "decl": [
+    "DIM gv2706 AS UByte",
+    "DIM tv2706(20) AS Integer",
+    "FUNCTION fv2706() AS Integer: gv2706 = gv2706 + 1: RETURN 50: END FUNCTION",
+    "FUNCTION hv2706() AS UByte: gv2706 = gv2706 + 1: RETURN gv2706: END FUNCTION",
+    "gv2706 = 1",
+    "tv2706(gv2706 + 0) = fv2706()"
+   ],
+   "expr": "STR$(tv2706(0)) + \" \" + STR$(tv2706(1)) + \" \" + STR$(tv2706(2)) + \" \" + STR$(gv2706)"
+  },
+  {
+   "id": "assign: t(h()) = f()",
+   "decl": [
+    "DIM gv2707 AS UByte",
+    "DIM tv2707(20) AS Integer",
+    "FUNCTION fv2707() AS Integer: gv2707 = gv2707 + 1: RETURN 50: END FUNCTION",
+    "FUNCTION hv2707() AS UByte: gv2707 = gv2707 + 1: RETURN gv2707: END FUNCTION",
+    "gv2707 = 1",
+    "tv2707(hv2707()) = fv2707()"
+   ],
+   "expr": "STR$(tv2707(0)) + \" \" + STR$(tv2707(1)) + \" \" + STR$(tv2707(2)) + \" \" + STR$(gv2707)"
+  },
+  {
+   "id": "assign: g = g + f()",
+   "decl": [
+    "DIM gv2708 AS UByte",
+    "DIM tv2708(20) AS Integer",
+    "FUNCTION fv2708() AS Integer: gv2708 = gv2708 + 1: RETURN 50: END FUNCTION",
+    "FUNCTION hv2708() AS UByte: gv2708 = gv2708 + 1: RETURN gv2708: END FUNCTION",
+    "gv2708 = 1",
+    "gv2708 = gv2708 + fv2708()"
+   ],
+   "expr": "gv2708"
+  },
+  {
+   "id": "named: s(c := 7, a := 5)",
+   "decl": [
+    "SUB sv2709(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+    "FUNCTION fnv2709(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+    "sv2709(c := 7, a := 5)"
+   ],
+   "expr": "\"\"; : REM"
+  },
+  {
+   "id": "named: s(1, c := 9)",
+   "decl": [
+    "SUB sv2710(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+    "FUNCTION fnv2710(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+    "sv2710(1, c := 9)"
+   ],
+   "expr": "\"\"; : REM"
+  },
+  {
+   "id": "named: s(b := 4)",
+   "decl": [
+    "SUB sv2711(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+    "FUNCTION fnv2711(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+    "sv2711(b := 4)"
+   ],
+   "expr": "\"\"; : REM"
+  },
+  {
+   "id": "named: s(a := 1, b := 2, c := 3)",
+   "decl": [
+    "SUB sv2712(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+    "FUNCTION fnv2712(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+    "sv2712(a := 1, b := 2, c := 3)"
+   ],
+   "expr": "\"\"; : REM"
+  },
+  {
+   "id": "named: fn(y := 2, x := 1)",
+   "decl": [
+    "SUB sv2713(a AS UByte = 1, b AS UByte = 2, c AS UByte = 3): PRINT AT 0, 0; a; \"-\"; b; \"-\"; c: END SUB",
+    "FUNCTION fnv2713(x AS UByte, y AS UByte = 50) AS UInteger: RETURN x * 100 + y: END FUNCTION",
+    "PRINT AT 0, 0; fnv2713(y := 2, x := 1)"
+   ],
+   "expr": "\"\"; : REM"
+  },
+  {
+   "id": "for: limit and step changed in the body",
+   "decl": [
+    "DIM iv2714, lv2714, sv2714, nv2714 AS Integer",
+    "lv2714 = 10: sv2714 = 2: FOR iv2714 = 1 TO lv2714 STEP sv2714: lv2714 = 0: sv2714 = 100: nv2714 = nv2714 + 1: NEXT iv2714"
+   ],
+   "expr": "nv2714"
+  },
+  {
+   "id": "for: limit raised in the body",
+   "decl": [
+    "DIM iv2715, lv2715, nv2715 AS Integer",
+    "lv2715 = 3: FOR iv2715 = 1 TO lv2715: IF iv2715 = 2 THEN lv2715 = 5",
+    "nv2715 = nv2715 + 1: NEXT iv2715"
+   ],
+   "expr": "nv2715"
+  },
+  {
+   "id": "for: step changed in the body",
+   "decl": [
+    "DIM iv2716, sv2716, nv2716 AS Integer",
+    "sv2716 = 1: FOR iv2716 = 1 TO 10 STEP sv2716: sv2716 = 3: nv2716 = nv2716 + 1: NEXT iv2716"
+   ],
+   "expr": "nv2716"
+  },
+  {
+   "id": "for: limit from a FUNCTION",
+   "decl": [
+    "DIM iv2717, nv2717, cv2717 AS Integer",
+    "FUNCTION limv2717() AS Integer: cv2717 = cv2717 + 1: RETURN 4: END FUNCTION",
+    "FOR iv2717 = 1 TO limv2717(): nv2717 = nv2717 + 1: NEXT iv2717",
+    "nv2717 = nv2717 * 100 + cv2717"
+   ],
+   "expr": "nv2717"
+  },
+  {
+   "id": "for: step from a FUNCTION",
+   "decl": [
+    "DIM iv2718, nv2718, cv2718 AS Integer",
+    "FUNCTION stv2718() AS Integer: cv2718 = cv2718 + 1: RETURN 1: END FUNCTION",
+    "FOR iv2718 = 1 TO 4 STEP stv2718(): nv2718 = nv2718 + 1: NEXT iv2718",
+    "nv2718 = nv2718 * 100 + cv2718"
+   ],
+   "expr": "nv2718"
+  },
+  {
+   "id": "for: start from a FUNCTION",
+   "decl": [
+    "DIM iv2719, nv2719, cv2719 AS Integer",
+    "FUNCTION stv2719() AS Integer: cv2719 = cv2719 + 1: RETURN 1: END FUNCTION",
+    "FOR iv2719 = stv2719() TO 4: nv2719 = nv2719 + 1: NEXT iv2719",
+    "nv2719 = nv2719 * 100 + cv2719"
+   ],
+   "expr": "nv2719"
+  },
+  {
+   "id": "for: UInteger with a negative Integer STEP",
+   "decl": [
+    "DIM uv2720 AS UInteger",
+    "DIM sv2720 AS Integer = -300",
+    "DIM nv2720 AS Integer",
+    "FOR uv2720 = 1000 TO 150 STEP sv2720: nv2720 = nv2720 + 1: NEXT uv2720",
+    "nv2720 = nv2720 * 10000 + uv2720"
+   ],
+   "expr": "nv2720"
+  },
+  {
+   "id": "for: UByte with a negative Byte STEP",
+   "decl": [
+    "DIM uv2721 AS UByte",
+    "DIM sv2721 AS Byte = -2",
+    "DIM nv2721 AS Integer",
+    "FOR uv2721 = 9 TO 2 STEP sv2721: nv2721 = nv2721 + 1: NEXT uv2721",
+    "nv2721 = nv2721 * 1000 + uv2721"
+   ],
+   "expr": "nv2721"
+  },
+  {
+   "id": "for: UByte with a negative literal STEP",
+   "decl": [
+    "DIM uv2722 AS UByte",
+    "DIM nv2722 AS Integer",
+    "FOR uv2722 = 9 TO 2 STEP -2: nv2722 = nv2722 + 1: NEXT uv2722",
+    "nv2722 = nv2722 * 1000 + uv2722"
+   ],
+   "expr": "nv2722"
+  },
+  {
+   "id": "for: Integer with a UByte STEP variable",
+   "decl": [
+    "DIM iv2723 AS Integer",
+    "DIM sv2723 AS UByte = 3",
+    "DIM nv2723 AS Integer",
+    "FOR iv2723 = 1 TO 10 STEP sv2723: nv2723 = nv2723 + 1: NEXT iv2723",
+    "nv2723 = nv2723 * 100 + iv2723"
+   ],
+   "expr": "nv2723"
+  },
+  {
+   "id": "for: no pass",
+   "decl": [
+    "DIM iv2724, nv2724 AS Integer",
+    "FOR iv2724 = 10 TO 1: nv2724 = nv2724 + 1: NEXT iv2724",
+    "nv2724 = nv2724 * 100 + iv2724"
+   ],
+   "expr": "nv2724"
+  },
+  {
+   "id": "for: the variable changed in the body",
+   "decl": [
+    "DIM iv2725, nv2725 AS Integer",
+    "FOR iv2725 = 1 TO 10: iv2725 = iv2725 + 2: nv2725 = nv2725 + 1: NEXT iv2725",
+    "nv2725 = nv2725 * 100 + iv2725"
+   ],
+   "expr": "nv2725"
+  },
+  {
+   "id": "for: Float variable, 0.1 steps",
+   "decl": [
+    "DIM fv2726 AS Float",
+    "DIM nv2726 AS Integer",
+    "FOR fv2726 = 0 TO 1 STEP 0.1: nv2726 = nv2726 + 1: NEXT fv2726",
+    "nv2726 = nv2726 * 100 + INT(fv2726 * 10)"
+   ],
+   "expr": "nv2726"
+  },
+  {
+   "id": "for: Fixed variable, 0.25 steps",
+   "decl": [
+    "DIM fv2727 AS Fixed",
+    "DIM nv2727 AS Integer",
+    "FOR fv2727 = 0 TO 1 STEP 0.25: nv2727 = nv2727 + 1: NEXT fv2727",
+    "nv2727 = nv2727 * 100 + INT(fv2727 * 100)"
+   ],
+   "expr": "nv2727"
+  },
+  {
+   "id": "for: UByte up to 255",
+   "decl": [
+    "DIM uv2728 AS UByte",
+    "DIM nv2728 AS Integer",
+    "FOR uv2728 = 250 TO 255: nv2728 = nv2728 + 1: IF nv2728 > 20 THEN EXIT FOR",
+    "NEXT uv2728",
+    "nv2728 = nv2728 * 1000 + uv2728"
+   ],
+   "expr": "nv2728"
+  },
+  {
+   "id": "for: Byte down to -128",
+   "decl": [
+    "DIM uv2729 AS Byte",
+    "DIM nv2729 AS Integer",
+    "FOR uv2729 = -125 TO -128 STEP -1: nv2729 = nv2729 + 1: IF nv2729 > 20 THEN EXIT FOR",
+    "NEXT uv2729",
+    "nv2729 = nv2729 * 1000 + uv2729"
+   ],
+   "expr": "nv2729"
+  },
+  {
+   "id": "for: an undeclared variable",
+   "decl": [
+    "DIM nv2730 AS Integer",
+    "FOR kv2730 = 1 TO 300 STEP 100: nv2730 = nv2730 + 1: NEXT kv2730",
+    "nv2730 = nv2730 * 1000 + kv2730"
+   ],
+   "expr": "nv2730"
+  }
+ ]
+}

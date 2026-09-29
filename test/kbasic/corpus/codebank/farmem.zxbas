@@ -1,0 +1,37 @@
+' CODEBANK: farmem.bas reads and writes bank-local data from resident code and from another bank,
+' without changing the current bank; bank 0 is resident memory
+'@target next
+'@expect screen 0 "42 1234 hello, bank 5"
+'@expect screen 1 "7 4660 ABC 99 0"
+'@expect screen 2 "ABClo"
+#include <farmem.bas>
+DIM buf(9) AS UByte
+DIM g AS UByte = 99
+DIM s AS String
+DIM t AS String
+CODEBANK 1
+DIM b AS UByte = 42
+DIM w AS UInteger = 1234
+DIM text(13) AS UByte => {11, 0, 104, 101, 108, 108, 111, 44, 32, 98, 97, 110, 107, 0}
+END CODEBANK
+CODEBANK 2
+DIM mine AS UByte = 5
+FUNCTION FromBank2() AS String
+  ' --- Called in bank 2, reads bank 1: the window goes back to bank 2 before this returns
+  RETURN FarStr(FARPTR text) + " " + STR(mine)
+END FUNCTION
+END CODEBANK
+s = FromBank2()
+PRINT FarPeek(FARPTR b); " "; FarPeekW(FARPTR w); " "; s
+FarPoke(FARPTR b, 7)
+FarPokeW(FARPTR w, $1234)
+buf(0) = 65: buf(1) = 66: buf(2) = 67
+FarCopyTo(FARPTR text + 2, @buf(0), 3)
+FarCopy(FARPTR text + 2, @buf(5), 3)
+FarCopy(FARPTR text, @buf(0), 0)
+PRINT FarPeek(FARPTR b); " "; FarPeekW(FARPTR w); " "; CHR(buf(5)); CHR(buf(6)); CHR(buf(7)); " "; FarPeek(FARPTR g); " "; buf(8)
+' --- A shorter image: the first five characters (the first three now ABC)
+FarPokeW(FARPTR text, 5)
+t = FarStr(FARPTR text)
+FarCopyTo(FARPTR text + 2, @buf(8), 0)
+PRINT t

@@ -1,5 +1,6 @@
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { shouldStopAtDebugPoint } from "./DebugStepDecision";
+import type { ReturnRegisters } from "./SourceStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 
@@ -282,6 +283,13 @@ export class MachineFrameRunner implements IMachineFrameRunner {
         instructionsExecuted,
         getPartition: (address) => machine.getPartition(address),
         getCallInstructionLength: () => machine.getCallInstructionLength(),
+        getSp: () => machine.sp,
+        getInterruptDepth: () => (machine as unknown as { interruptDepth?: number }).interruptDepth ?? 0,
+        getRegisters: () => {
+          // --- Every machine that runs source-level debug info is a Z80 one, with these registers
+          const z80 = machine as unknown as ReturnRegisters;
+          return { af: z80.af, bc: z80.bc, de: z80.de, hl: z80.hl };
+        },
         stepOutAddress: machine.stepOutAddress,
         /*
          * `false` on purpose, and it is the *stronger* behaviour rather than the weaker one.

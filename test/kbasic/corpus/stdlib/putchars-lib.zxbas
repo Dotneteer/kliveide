@@ -1,0 +1,5 @@
+' putchars.bas: paint colours a block of cells
+'@expect screen 0 "17 17 56"
+#include <putchars.bas>
+paint(2, 3, 4, 2, 17)
+PRINT PEEK(22528 + 3 * 32 + 2); " "; PEEK(22528 + 4 * 32 + 5); " "; PEEK(22528 + 5 * 32 + 2)

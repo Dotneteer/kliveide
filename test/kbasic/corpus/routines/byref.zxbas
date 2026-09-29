@@ -1,0 +1,18 @@
+' BYREF parameters: a global, a local, and a BYREF parameter passed on
+'@expect screen 0 "3 12"
+SUB bump(BYREF v AS UInteger)
+ v = v + 1
+END SUB
+SUB bumpTwice(BYREF w AS UInteger)
+ bump w
+ bump w
+END SUB
+SUB withLocal()
+ DIM k AS UInteger = 10
+ bumpTwice k
+ PRINT " "; k
+END SUB
+DIM g AS UInteger = 1
+bumpTwice g
+PRINT g;
+withLocal

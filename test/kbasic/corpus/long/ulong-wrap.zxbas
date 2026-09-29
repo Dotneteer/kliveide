@@ -1,0 +1,8 @@
+' ULong and Long arithmetic wraps modulo 2^32; arithmetic on literals alone stays exact, so
+' 65536 * 65536 is not 0 (semantics annex: constant-arithmetic-literal)
+'@expect screen 0 "1 -2147483648 0"
+DIM u AS ULong = 4294967295
+DIM l AS Long = 2147483647
+u = u + 2
+l = l + 1
+PRINT u; " "; l; " "; 65536 * 65536 = 0

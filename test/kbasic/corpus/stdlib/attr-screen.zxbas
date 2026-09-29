@@ -1,0 +1,6 @@
+' attr.bas and screen.bas read the screen back
+'@expect screen 0 "35 K[ ]"
+#include <attr.bas>
+#include <screen.bas>
+PRINT AT 4, 4; INK 3; PAPER 4; "K";
+PRINT AT 0, 0; ATTR(4, 4); " "; SCREEN$(4, 4); "["; SCREEN$(4, 5); "]"

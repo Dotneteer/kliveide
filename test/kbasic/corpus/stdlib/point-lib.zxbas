@@ -1,0 +1,5 @@
+' point.bas: POINT reads what PLOT and DRAW set
+'@expect screen 0 "1110"
+#include <point.bas>
+PLOT 30, 30: DRAW 10, 10
+PRINT POINT(30, 30); POINT(35, 35); POINT(40, 40); POINT(40, 30)

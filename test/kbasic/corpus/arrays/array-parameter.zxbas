@@ -1,0 +1,13 @@
+' An array parameter: its bounds come with it
+'@expect screen 0 "6 150 2"
+FUNCTION sum(a() AS UInteger) AS UInteger
+ DIM i AS UByte
+ DIM s AS UInteger
+ FOR i = LBOUND(a, 1) TO UBOUND(a, 1)
+  s = s + a(i)
+ NEXT i
+ RETURN s
+END FUNCTION
+DIM x(2) AS UInteger => {1, 2, 3}
+DIM y(4 TO 6) AS UInteger => {40, 50, 60}
+PRINT sum(x); " "; sum(y); " "; LBOUND(x, 0) + 1

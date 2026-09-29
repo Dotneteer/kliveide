@@ -1,0 +1,20 @@
+' CODEBANK: banks placed in an explicit page list (and after its end, the next pages)
+'@target next
+'@codebank-pages 40, 50
+'@expect screen 0 "1 2 3"
+CODEBANK 1
+FUNCTION One() AS UByte
+  RETURN 1
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+FUNCTION Two() AS UByte
+  RETURN One() + 1
+END FUNCTION
+END CODEBANK
+CODEBANK 3
+FUNCTION Three() AS UByte
+  RETURN Two() + 1
+END FUNCTION
+END CODEBANK
+PRINT One(); " "; Two(); " "; Three()

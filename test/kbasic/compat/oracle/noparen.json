@@ -1,0 +1,152 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "ABS -5": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "ABS -5 + 1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "-ABS -3": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "INT -2.5": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "SGN -3 * 2": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "VAL \"2\" + \"3\"": {
+   "error": "error: Cannot convert string to a value. Use VAL() function"
+  },
+  "ABS -2 < 1": {
+   "error": "error: Syntax Error. Unexpected token '-' <MINUS>"
+  },
+  "SIN 0 + 1": {
+   "out": "1"
+  },
+  "SQR 4 * 4": {
+   "out": "8"
+  },
+  "SQR 4 ^ 2": {
+   "out": "4"
+  },
+  "INT 2.5 * 2": {
+   "out": "4"
+  },
+  "SIN COS 0": {
+   "out": "0.84147098"
+  },
+  "LEN \"ab\" + 1": {
+   "out": "3"
+  },
+  "CODE \"a\" + 1": {
+   "out": "98"
+  },
+  "VAL \"2\" * 3": {
+   "out": "6"
+  },
+  "STR$ 12 + \"x\"": {
+   "out": "12x"
+  },
+  "LEN STR$ 123": {
+   "out": "3"
+  },
+  "EXP 0 + 1": {
+   "out": "2"
+  },
+  "LN 1 + 1": {
+   "out": "1"
+  },
+  "ATN 0 + 1": {
+   "out": "1"
+  },
+  "TAN 0 + 1": {
+   "out": "1"
+  },
+  "PEEK 23610 + 1": {
+   "out": "1"
+  },
+  "ABS 2 - 3": {
+   "out": "-1"
+  },
+  "SQR 16 / 4": {
+   "out": "1"
+  },
+  "INT 7 / 2": {
+   "out": "3.5"
+  },
+  "NOT 0 + 1": {
+   "out": "0"
+  },
+  "SIN 0 = 0": {
+   "out": "1"
+  },
+  "LEN \"abc\" = 3": {
+   "out": "1"
+  },
+  "CHR$ 65 + CHR$ 66": {
+   "out": "AB"
+  },
+  "ASN 1 + 0": {
+   "out": "1.5707855224609375"
+  },
+  "ASN(1) + 0": {
+   "out": "1.5707855224609375"
+  },
+  "INT(7) / 2": {
+   "out": "3.5"
+  },
+  "SQR(2) + 0": {
+   "out": "1.4141998291015625"
+  },
+  "SQR 2 + 0": {
+   "out": "1.4141998291015625"
+  },
+  "SIN(1) + 0": {
+   "out": "0.841461181640625"
+  },
+  "SIN 1 + 0": {
+   "out": "0.841461181640625"
+  },
+  "ABS(3) / 2": {
+   "out": "1.5"
+  },
+  "ABS 3 / 2": {
+   "out": "1.5"
+  },
+  "LEN(\"abc\") / 2": {
+   "out": "1.5"
+  },
+  "LEN \"abc\" / 2": {
+   "out": "1.5"
+  },
+  "CODE(\"a\") / 2": {
+   "out": "48.5"
+  },
+  "INT(2.5) / 2": {
+   "out": "1"
+  },
+  "SGN(3) / 2": {
+   "out": "0.5"
+  },
+  "PEEK(0) / 2": {
+   "out": "121"
+  },
+  "PEEK 0 / 2": {
+   "out": "121"
+  },
+  "VAL(\"7\") / 2": {
+   "out": "3.5"
+  },
+  "EXP(1) + 0": {
+   "out": "2.7182769775390625"
+  },
+  "INT(7.5)": {
+   "out": "7"
+  },
+  "INT 7.5": {
+   "out": "7"
+  }
+ }
+}

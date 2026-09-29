@@ -14,6 +14,14 @@ import type {
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { DebugSupport } from "@emu/machines/DebugSupport";
+import {
+  beginSourceStep,
+  type MachineView,
+  type SourceDebugIndex,
+  type SourceStep,
+  type SourceStepKind
+} from "@emu/machines/SourceStepDecision";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { loadNexFileContents, type NexFileContents } from "@renderer/appIde/DocumentPanels/Next/nexFileLoader";
 
@@ -28,6 +36,7 @@ import { uartPeerOf, type UartFrame, type UartIndex } from "./uart-peer";
 import { keyCode, type NextKey } from "./keys";
 import { joyBits, setJoystickState, type JoyButton, type JoySide } from "./joystick";
 import { mouseButtonBits, sendMousePacket, type MouseEvent } from "./mouse";
+import { createSp48Session } from "../../sp48";
 
 /*
  * The scripting layer of the ZX Spectrum Next test harness: one real machine (the WASM core), driven
@@ -86,6 +95,9 @@ export type Program = {
 };
 
 type RunLimit = { maxFrames?: number };
+
+/** An assembler output `loadOutput` takes (`Z80Assembler.compileProgram`'s). */
+type CompiledOutput = Awaited<ReturnType<Z80Assembler["compileProgram"]>>;
 
 /** What the IDE's Next panels would show; see `ideState`. */
 export type IdeState = {
@@ -400,6 +412,28 @@ export class NextTestSession {
   }
 
   /**
+   * Makes the machine ready for code that calls the 48K BASIC ROM, as a program started by
+   * `.nexload` finds it: ROM 3 (48K BASIC) in slots 0-1, selected through `$1FFD` bit 2 and `$7FFD`
+   * bit 4 as the ROM paging does, and the screen, a 48K BASIC system-variable area, calculator
+   * workspace and machine stack, copied from the 48K harness after `bootToBasic()` (`$4000-$5AFF`,
+   * `$5C00-$5FFF`, `$FF00-$FFFF`): the cleared screen and its attributes are what BASIC leaves.
+   * IY is `$5C3A` and the interrupt mode is 1; interrupts stay disabled. Sets the NEX MMU layout, so
+   * call it before or after `loadCode`. An approximation of what NextZXOS leaves: see README.md
+   * "Direct load".
+   */
+  async prepareBasic(): Promise<this> {
+    const snapshot = await basicSnapshot();
+    DEFAULT_MMU.forEach((page, slot) => writeNextReg(this.machine, 0x50 + slot, page));
+    this.out(0x1ffd, 0x04); // ROM select high bit, no special paging
+    this.out(0x7ffd, 0x10); // ROM select low bit, bank 0 at $C000
+    DEFAULT_MMU.forEach((page, slot) => writeNextReg(this.machine, 0x50 + slot, page)); // $7FFD set MMU 6-7
+    for (const [start, bytes] of snapshot) this.poke(start, bytes);
+    this.machine.iy = 0x5c3a;
+    this.machine.interruptMode = 1;
+    return this;
+  }
+
+  /**
    * Loads a `.nex` file, or compiles an `.asm` file with `.savenex` pragmas first, with the harness's
    * direct NEX loader (banks, MMU, border, SP, PC). No NextZXOS: see README.md "Direct load".
    */
@@ -415,6 +449,177 @@ export class NextTestSession {
     loadNexDirect(this.machine, contents);
     this.program = undefined;
     return contents;
+  }
+
+  /**
+   * Writes an assembler output built for the Next (`compileProgram`, a Klive BASIC build) into
+   * memory with the NEX MMU layout (ROM, bank 5, bank 2, bank 0): unbanked code at its address,
+   * each `.bank`/`.page` segment into its 8K page, through MMU slot 7 (restored afterwards), as the
+   * NEX loader places pages. Throws on assembly errors. Does not change PC or SP.
+   */
+  loadOutput(output: CompiledOutput, options: { entry?: number | string } = {}): Program {
+    const errors = output.errors.filter((e) => !e.isWarning);
+    if (errors.length) {
+      throw new Error(
+        "Assembly failed:\n" +
+          errors.map((e) => `  ${e.filename} line ${e.line}:${e.startColumn} ${e.errorCode}: ${e.message}`).join("\n")
+      );
+    }
+    const used = output.segments.filter((s) => s.emittedCode.length);
+    if (!used.length) throw new Error("The output emits no code.");
+    DEFAULT_MMU.forEach((page, slot) => writeNextReg(this.machine, 0x50 + slot, page));
+    for (const s of used) {
+      if (s.bank === undefined) {
+        this.poke(s.startAddress, s.emittedCode);
+        continue;
+      }
+      // --- A banked segment: its 16K bank and offset name the 8K page(s) it lands in
+      const offset = s.bankOffset ?? s.startAddress % 0x4000;
+      for (let i = 0; i < s.emittedCode.length; i++) this.pokePage(s.bank * 2 + ((offset + i) >> 13), (offset + i) & 0x1fff, s.emittedCode[i]);
+    }
+    const symbol = (name: string): number => {
+      // --- "core.X": the runtime's module; a dotted name of the program's own is a symbol as it is
+      const parts = name.split(".");
+      let module: Pick<CompiledOutput, "getSymbol" | "getNestedModule"> | undefined = output;
+      for (const part of parts.slice(0, -1)) module = module?.getNestedModule(part);
+      const s = module?.getSymbol(parts[parts.length - 1]) ?? output.getSymbol(name);
+      if (!s?.value) throw new Error(`Unknown symbol '${name}'`);
+      return s.value.value as number;
+    };
+    const entry =
+      typeof options.entry === "string" ? symbol(options.entry) : (options.entry ?? output.entryAddress ?? used[0].startAddress);
+    this.program = { symbol, entry, segments: used.map((s) => [s.startAddress, Uint8Array.from(s.emittedCode)]) };
+    return this.program;
+  }
+
+  /** Reads a byte of an 8K RAM page whatever is mapped, through MMU slot 7 (restored afterwards). */
+  peekPage(page: number, offset: number): number {
+    const saved = readNextRegDirect(this.machine, 0x57);
+    writeNextReg(this.machine, 0x57, page);
+    const value = this.peek(0xe000 + (offset & 0x1fff));
+    writeNextReg(this.machine, 0x57, saved);
+    return value;
+  }
+
+  /** Writes a byte of an 8K RAM page whatever is mapped, through MMU slot 7 (restored afterwards). */
+  pokePage(page: number, offset: number, value: number): this {
+    const saved = readNextRegDirect(this.machine, 0x57);
+    writeNextReg(this.machine, 0x57, page);
+    this.poke(0xe000 + (offset & 0x1fff), value);
+    writeNextReg(this.machine, 0x57, saved);
+    return this;
+  }
+
+  /**
+   * The character at a ULA text cell (row 0-23, column 0-31), matched against the 48K ROM's font at
+   * $3D00 (plain or inverse): needs the ROM in slot 0, as `prepareBasic` leaves it. Undefined for a
+   * cell that is no ROM character.
+   */
+  screenChar(row: number, col: number): string | undefined {
+    const cell: number[] = [];
+    for (let line = 0; line < 8; line++) cell.push(this.peek(0x4000 | ((row & 0x18) << 8) | (line << 8) | ((row & 0x07) << 5) | col));
+    for (let code = 32; code < 128; code++) {
+      const base = 0x3d00 + (code - 32) * 8;
+      let same = true;
+      let inverse = true;
+      for (let line = 0; line < 8; line++) {
+        const glyph = this.peek(base + line);
+        if (cell[line] !== glyph) same = false;
+        if (cell[line] !== (~glyph & 0xff)) inverse = false;
+      }
+      if (same || inverse) return String.fromCharCode(code);
+    }
+    return undefined;
+  }
+
+  /** A ULA text row as text (`?` for a cell that is no ROM character), trailing blanks removed. */
+  screenLine(row: number): string {
+    let text = "";
+    for (let col = 0; col < 32; col++) text += this.screenChar(row, col) ?? "?";
+    return text.replace(/\s+$/, "");
+  }
+
+  /** The 8K page mapped into an MMU slot (0-7), from its NextReg. */
+  mmuPage(slot: number): number {
+    return readNextRegDirect(this.machine, 0x50 + (slot & 7));
+  }
+
+  // ==========================================================================================
+  // Breakpoints and source-level steps (the same API as the 48K harness)
+
+  /** Attaches a fresh `DebugSupport` (the emulator's breakpoint store) and returns it. */
+  attachDebugSupport(): DebugSupport {
+    const debugSupport = new DebugSupport(undefined, []);
+    this.machine.executionContext.debugSupport = debugSupport;
+    return debugSupport;
+  }
+
+  /** Continues in debug mode until a breakpoint stops the machine; returns the PC. */
+  continueToBreakpoint(options: { returnTo?: number } & RunLimit = {}): number {
+    const { maxFrames = 100, returnTo } = options;
+    const ctx = this.machine.executionContext;
+    if (!ctx.debugSupport) throw new Error("Call attachDebugSupport() first.");
+    ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    const limit = this.frames + maxFrames;
+    try {
+      while (true) {
+        if (this.frames >= limit) throw new Error(`No breakpoint hit in ${maxFrames} frames (PC=${hex(this.machine.pc, 4)})`);
+        if (this.execute(true) === FrameTerminationMode.DebugEvent) return this.machine.pc;
+        if (returnTo !== undefined && this.machine.pc === returnTo) {
+          throw new Error(`The program returned to ${hex(returnTo, 4)} without hitting a breakpoint.`);
+        }
+      }
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /**
+   * A source-level step of a compiled program, as the IDE runs it: starts the step at the current
+   * state and runs in debug mode until it stops. Returns the step; undefined when the program
+   * returned to `returnTo` first.
+   */
+  sourceStep(
+    index: SourceDebugIndex,
+    kind: SourceStepKind,
+    options: { targetFrame?: number; targetCallable?: number; returnTo?: number; stopInInterrupts?: boolean } & RunLimit = {}
+  ): SourceStep | undefined {
+    const { maxFrames = 100, returnTo, ...stepOptions } = options;
+    const ctx = this.machine.executionContext;
+    const debugSupport = ctx.debugSupport;
+    if (!debugSupport) throw new Error("Call attachDebugSupport() first.");
+    const step = beginSourceStep(index, this.machineView(), kind, { ...stepOptions, previous: debugSupport.sourceStep });
+    debugSupport.sourceStep = step;
+    ctx.debugStepMode = DebugStepMode.SourceStep;
+    const limit = this.frames + maxFrames;
+    try {
+      while (true) {
+        if (this.frames >= limit) throw new Error(`The source step did not stop in ${maxFrames} frames (PC=${hex(this.machine.pc, 4)})`);
+        if (this.execute(true) === FrameTerminationMode.DebugEvent) return step;
+        if (returnTo !== undefined && this.machine.pc === returnTo) return undefined;
+      }
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
+    }
+  }
+
+  /** The machine as the source-level debugger reads it: registers, memory and PC's partition. */
+  machineView(): MachineView {
+    const m = this.machine;
+    return {
+      pc: m.pc,
+      sp: m.sp,
+      ix: m.ix,
+      readWord: (a: number) => this.peekWord(a),
+      readByte: (a: number) => this.peek(a),
+      partitionOf: (a: number) => m.getPartition(a & 0xffff),
+      interruptDepth: this.interruptDepth()
+    };
+  }
+
+  /** How many interrupt handlers are running (the core's shadow stack, plan §10.2.7). */
+  interruptDepth(): number {
+    return this.machine.getInterruptDepth?.() ?? 0;
   }
 
   /** A label of the last `loadCode` program. */
@@ -716,4 +921,20 @@ export function createSession(options?: SessionOptions): Promise<NextTestSession
 
 export function hex(value: number, digits = 2): string {
   return "$" + value.toString(16).toUpperCase().padStart(digits, "0");
+}
+
+/** The 48K BASIC state `prepareBasic` installs, read once from a booted 48K harness. */
+let basicSnapshotPromise: Promise<Array<[number, Uint8Array]>> | undefined;
+
+function basicSnapshot(): Promise<Array<[number, Uint8Array]>> {
+  basicSnapshotPromise ??= (async () => {
+    const sp48 = await createSp48Session();
+    sp48.bootToBasic();
+    const region = (start: number, end: number): [number, Uint8Array] => [
+      start,
+      Uint8Array.from({ length: end - start + 1 }, (_, i) => sp48.peek(start + i))
+    ];
+    return [region(0x4000, 0x5aff), region(0x5c00, 0x5fff), region(0xff00, 0xffff)];
+  })();
+  return basicSnapshotPromise;
 }

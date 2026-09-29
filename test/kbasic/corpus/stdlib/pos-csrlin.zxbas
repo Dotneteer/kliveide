@@ -1,0 +1,8 @@
+' pos.bas and csrlin.bas follow PRINT's cursor
+'@expect screen 0 "7,13"
+#include <pos.bas>
+#include <csrlin.bas>
+DIM c, r AS UByte
+PRINT AT 7, 10; "abc";
+c = POS(): r = CSRLIN()
+PRINT AT 0, 0; r; ","; c

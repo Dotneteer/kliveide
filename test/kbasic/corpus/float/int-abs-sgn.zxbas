@@ -1,0 +1,5 @@
+' INT rounds towards minus infinity; ABS and SGN of Floats
+'@expect screen 0 "2 -3 -1 2.5 -1 0 1"
+DIM x AS Float
+x = -2.5
+PRINT INT(2.7); " "; INT(x); " "; INT(-0.1); " "; ABS(x); " "; SGN(x); " "; SGN(0.0); " "; SGN(0.25)

@@ -1,0 +1,17 @@
+' CODEBANK: FARPTR of bank-local data holds the bank in bits 16-23 and the window address below;
+' of resident data, bank 0
+'@target next
+'@codebank-window $6000
+'@expect screen 0 "3 1 0 1"
+DIM p AS ULong
+DIM q AS ULong
+DIM g AS UInteger
+CODEBANK 3
+DIM v AS UInteger
+SUB Touch()
+  v = 1
+END SUB
+END CODEBANK
+p = FARPTR v
+q = FARPTR g
+PRINT p >> 16; " "; (p BAND 65535) >= $6000; " "; q >> 16; " "; (q BAND 65535) = @g

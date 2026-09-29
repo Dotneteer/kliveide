@@ -558,6 +558,12 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   }
 
   /** Where a step-out lands: the top of the core's shadow stack of return addresses */
+  /** Interrupt handlers running now, from the core's shadow stack (source stepping, plan §10.2.7). */
+  override getInterruptDepth(): number {
+    const w = this.wasmV2Runtime?.exports;
+    return w ? w.z88GetInterruptDepth() : super.getInterruptDepth();
+  }
+
   override markStepOutAddress(): void {
     const address = this.requireWasmV2Runtime().exports.z88GetStepOutAddress();
     this.stepOutAddress = address === 0xffffffff ? -1 : address;
@@ -573,6 +579,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
       instructionsExecuted,
       getPartition: (address) => this.getPartition(address),
       getCallInstructionLength: () => this.getCallInstructionLength(),
+      getSp: () => this.sp,
+      getInterruptDepth: () => this.getInterruptDepth(),
+      getRegisters: () => ({ af: this.af, bc: this.bc, de: this.de, hl: this.hl }),
       stepOutAddress: this.stepOutAddress,
       // --- The core's shadow stack gives the exact step-out target; see ZxSpectrum48WasmV2Machine
       retExecuted: false

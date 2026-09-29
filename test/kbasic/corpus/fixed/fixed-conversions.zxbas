@@ -1,0 +1,9 @@
+' Fixed to and from integers (towards minus infinity) and Float
+'@expect screen 0 "7 -8 -7.25 12.5"
+DIM x AS Fixed
+DIM i AS Integer
+DIM f AS Float
+x = 7.75: i = x: PRINT i; " ";
+x = -7.25: i = x: PRINT i; " ";
+f = x: PRINT f; " ";
+i = 100: x = i: PRINT x / 8

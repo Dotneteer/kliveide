@@ -13,6 +13,11 @@ export type ResolvedBreakpoint = {
   line: number;
 
   /**
+   * A statement breakpoint's column (part of its identity, as in `BreakpointInfo.column`).
+   */
+  column?: number;
+
+  /**
    * Breakpoint address
    */
   address: number;

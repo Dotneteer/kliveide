@@ -1,5 +1,6 @@
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
+import { shouldStopAtSourceStep, type ReturnRegisters } from "./SourceStepDecision";
 
 /**
  * The single answer to "should the machine stop here?", shared by every WASM v2 machine.
@@ -77,6 +78,15 @@ export type DebugStopDecisionInput = {
    * machine whose core cannot track a shadow stack would need it again.
    */
   retExecuted: boolean;
+
+  /** SP now: read only by a source step, and only at statement entries and return points. */
+  getSp?: () => number;
+
+  /** How many interrupt handlers are running (the core's shadow stack): a source step runs them outside the step. */
+  getInterruptDepth?: () => number;
+
+  /** The registers a FUNCTION result is read from at a return point (a source step, §10.2.6). */
+  getRegisters?: () => ReturnRegisters;
 };
 
 /**
@@ -95,6 +105,8 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
     stepOutAddress,
     retExecuted
   } = input;
+
+  debugSupport.statementTracker?.observe(pc, getPartition);
 
   /*
    * A real breakpoint always wins.
@@ -124,8 +136,36 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
     return true;
   }
 
+  /*
+   * A runtime-error stop (plan §10.10) wins over every step, like a breakpoint: the program is about
+   * to leave for the ROM's report. Not on the instruction a run resumes from, so continuing from
+   * the stop goes on to the report.
+   */
+  if (
+    instructionsExecuted > 0 &&
+    (debugSupport.errorStopAddress === pc ||
+      (debugSupport.romErrorAddress === pc && (debugSupport.romErrorGuard?.() ?? true)))
+  ) {
+    debugSupport.imminentBreakpoint = undefined;
+    return true;
+  }
+
   if (debugStepMode === DebugStepMode.StopAtBreakpoint) {
     return false;
+  }
+
+  if (debugStepMode === DebugStepMode.SourceStep) {
+    const step = debugSupport.sourceStep;
+    // --- No step description: behave as an instruction step rather than run away
+    if (!step) return instructionsExecuted > 0;
+    return shouldStopAtSourceStep(step, {
+      pc,
+      instructionsExecuted,
+      getSp: input.getSp ?? (() => 0),
+      getPartition,
+      ...(input.getInterruptDepth ? { getInterruptDepth: input.getInterruptDepth } : {}),
+      ...(input.getRegisters ? { getRegisters: input.getRegisters } : {})
+    });
   }
 
   if (debugStepMode === DebugStepMode.StepOver) {

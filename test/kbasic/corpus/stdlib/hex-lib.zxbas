@@ -1,0 +1,4 @@
+' hex.bas: hexadecimal Strings of 32, 16 and 8 bits
+'@expect screen 0 "0000FFFF 3C00 FF"
+#include <hex.bas>
+PRINT hex(65535); " "; hex16(PEEK(UInteger, 23606)); " "; hex8(255)

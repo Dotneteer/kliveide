@@ -1,0 +1,7 @@
+' The first Fibonacci numbers, as a Sinclair BASIC listing would print them
+'@expect screen 0 "0 1 1 2 3 5 8 13 21 34 55 89"
+10 LET a = 0: LET b = 1
+20 FOR i = 1 TO 12
+30 PRINT a; " ";
+40 LET c = a + b: LET a = b: LET b = c
+50 NEXT i

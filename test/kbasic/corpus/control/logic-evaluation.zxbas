@@ -1,0 +1,11 @@
+' AND and OR evaluate both operands, the left first (semantics annex: logical-operators-short-circuit)
+'@expect screen 0 "FT0 TF1"
+FUNCTION t(s AS String, v AS UByte) AS UByte
+ PRINT s;
+ RETURN v
+END FUNCTION
+DIM r AS UByte
+r = t("F", 0) AND t("T", 1)
+PRINT r; " ";
+r = t("T", 1) OR t("F", 0)
+PRINT r

@@ -123,6 +123,7 @@ const DEBUG_MACHINE = "debug";
 const STEP_INTO = "step_into";
 const STEP_OVER = "step_over";
 const STEP_OUT = "step_out";
+const STEP_OVER_LINE = "step_over_line";
 const CLOCK_MULT = "clock_mult";
 const SOUND_LEVEL = "sound_level";
 const SCANLINE_EFFECT = "scanline_effect";
@@ -273,6 +274,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const stepOverShortcut = settingsReader.readSetting("shortcuts.stepOver") ?? "F10";
   const stepOutShortcut =
     settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
+  const stepOverLineShortcut = settingsReader.readSetting("shortcuts.stepOverLine") ?? "Shift+F10";
   const navigationShortcuts = readNavigationShortcuts(mainStore.getState(), __DARWIN__);
   const navHistory = appState?.ideView?.navHistory;
 
@@ -907,6 +909,16 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       accelerator: stepOutShortcut,
       click: async () => {
         await getEmuApi().issueMachineCommand("stepOut");
+      }
+    },
+    {
+      id: STEP_OVER_LINE,
+      label: "Step Over Line",
+      enabled: machinePaused,
+      accelerator: stepOverLineShortcut,
+      click: async () => {
+        // --- A source-level step: the emulator ignores it for a program without source-level info
+        await getEmuApi().sourceStep("overLine");
       }
     }
   ];

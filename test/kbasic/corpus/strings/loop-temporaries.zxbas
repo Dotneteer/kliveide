@@ -1,0 +1,11 @@
+' Temporaries in a loop are freed: the heap ends with only the variables' values
+'@expect screen 0 "1275"
+'@expect heap t
+DIM t$ AS String
+DIM n AS UInteger
+DIM i AS UByte
+FOR i = 1 TO 50
+ t$ = CHR$(48 + i MOD 10) + t$(0 TO 3)
+ n = n + LEN(t$ + "x") + i - LEN(t$) - 1
+NEXT i
+PRINT n

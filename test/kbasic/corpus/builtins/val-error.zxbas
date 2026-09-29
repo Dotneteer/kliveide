@@ -1,0 +1,13 @@
+' VAL of a String BASIC cannot evaluate gives 0 and sets ERR_NR to 9 ("A Invalid argument") without
+' stopping the program, as upstream does (semantics annex: val-runtime); a hundred of them leave
+' BASIC's workspace (STKBOT) where it was
+'@expect screen 0 "0 9 6 0"
+DIM s AS String = "abc"
+DIM w AS UInteger
+DIM i AS UByte
+DIM f AS Float
+w = PEEK(UInteger, 23651)
+FOR i = 1 TO 100
+ f = VAL("1+")
+NEXT i
+PRINT VAL(s); " "; PEEK 23610; " "; VAL("2*3"); " "; PEEK(UInteger, 23651) - w

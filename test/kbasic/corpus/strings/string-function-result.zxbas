@@ -1,0 +1,11 @@
+' A FUNCTION returning a String built from its parameters
+'@expect screen 0 "ababab-- 30"
+FUNCTION repeat(s AS String, n AS UByte) AS String
+  DIM r AS String
+  DIM i AS UByte
+  FOR i = 1 TO n: r = r + s: NEXT i
+  RETURN r
+END FUNCTION
+DIM a AS String
+a = repeat("ab", 3) + repeat("-", 2)
+PRINT a; " "; LEN(repeat("xyz", 10))

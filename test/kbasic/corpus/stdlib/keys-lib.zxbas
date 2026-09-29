@@ -1,0 +1,5 @@
+' keys.bas: MultiKeys tests several keys of one half-row at once
+'@expect keys P I
+'@expect screen 0 "5 0 1"
+#include <keys.bas>
+PRINT MultiKeys(KEYP BOR KEYO BOR KEYI); " "; MultiKeys(KEYO); " "; GetKeyScanCode() = (KEYP BOR KEYI)

@@ -1,0 +1,4 @@
+' An unknown backslash escape in a String literal stays as written (semantics annex:
+' string-escape-unknown); \A to \U are the user-defined graphics
+'@expect screen 0 "a\zb Q"
+PRINT "a\zb \q"

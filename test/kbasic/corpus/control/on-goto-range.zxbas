@@ -1,0 +1,10 @@
+' ON ... GOTO with an index out of range goes on with the next statement (indices count from 0)
+'@expect screen 0 "5 b"
+DIM i AS UByte
+i = 5
+ON i GOTO a, b
+PRINT "5 ";
+i = 1
+ON i GOTO a, b
+a: PRINT "a"
+b: PRINT "b"

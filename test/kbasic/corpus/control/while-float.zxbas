@@ -1,0 +1,9 @@
+' WHILE with a Float condition
+'@expect screen 0 "18 1477"
+DIM x AS Float = 1
+DIM n AS UByte
+WHILE x < 1000
+  x = x * 1.5
+  n = n + 1
+WEND
+PRINT n; " "; INT(x)

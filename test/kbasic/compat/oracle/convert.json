@@ -1,0 +1,773 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "UByte 200 -> UByte (assignment)": {
+   "out": "200"
+  },
+  "CAST(UByte, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> Byte (assignment)": {
+   "out": "-56"
+  },
+  "CAST(Byte, UByte 200)": {
+   "out": "-56"
+  },
+  "UByte 200 -> UInteger (assignment)": {
+   "out": "200"
+  },
+  "CAST(UInteger, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> Integer (assignment)": {
+   "out": "200"
+  },
+  "CAST(Integer, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> ULong (assignment)": {
+   "out": "200"
+  },
+  "CAST(ULong, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> Long (assignment)": {
+   "out": "200"
+  },
+  "CAST(Long, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> Fixed (assignment)": {
+   "out": "200"
+  },
+  "CAST(Fixed, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 200 -> Float (assignment)": {
+   "out": "200"
+  },
+  "CAST(Float, UByte 200)": {
+   "out": "200"
+  },
+  "UByte 7 -> UByte (assignment)": {
+   "out": "7"
+  },
+  "CAST(UByte, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> Byte (assignment)": {
+   "out": "7"
+  },
+  "CAST(Byte, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> UInteger (assignment)": {
+   "out": "7"
+  },
+  "CAST(UInteger, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> Integer (assignment)": {
+   "out": "7"
+  },
+  "CAST(Integer, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> ULong (assignment)": {
+   "out": "7"
+  },
+  "CAST(ULong, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> Long (assignment)": {
+   "out": "7"
+  },
+  "CAST(Long, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> Fixed (assignment)": {
+   "out": "7"
+  },
+  "CAST(Fixed, UByte 7)": {
+   "out": "7"
+  },
+  "UByte 7 -> Float (assignment)": {
+   "out": "7"
+  },
+  "CAST(Float, UByte 7)": {
+   "out": "7"
+  },
+  "Byte -7 -> UByte (assignment)": {
+   "out": "249"
+  },
+  "CAST(UByte, Byte -7)": {
+   "out": "249"
+  },
+  "Byte -7 -> Byte (assignment)": {
+   "out": "-7"
+  },
+  "CAST(Byte, Byte -7)": {
+   "out": "-7"
+  },
+  "Byte -7 -> UInteger (assignment)": {
+   "out": "65529"
+  },
+  "CAST(UInteger, Byte -7)": {
+   "out": "65529"
+  },
+  "Byte -7 -> Integer (assignment)": {
+   "out": "-7"
+  },
+  "CAST(Integer, Byte -7)": {
+   "out": "-7"
+  },
+  "Byte -7 -> ULong (assignment)": {
+   "out": "4294967289"
+  },
+  "CAST(ULong, Byte -7)": {
+   "out": "4294967289"
+  },
+  "Byte -7 -> Long (assignment)": {
+   "out": "-7"
+  },
+  "CAST(Long, Byte -7)": {
+   "out": "-7"
+  },
+  "Byte -7 -> Fixed (assignment)": {
+   "out": "-7"
+  },
+  "CAST(Fixed, Byte -7)": {
+   "out": "-7"
+  },
+  "Byte -7 -> Float (assignment)": {
+   "out": "-7"
+  },
+  "CAST(Float, Byte -7)": {
+   "out": "-7"
+  },
+  "Byte 7 -> UByte (assignment)": {
+   "out": "7"
+  },
+  "CAST(UByte, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> Byte (assignment)": {
+   "out": "7"
+  },
+  "CAST(Byte, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> UInteger (assignment)": {
+   "out": "7"
+  },
+  "CAST(UInteger, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> Integer (assignment)": {
+   "out": "7"
+  },
+  "CAST(Integer, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> ULong (assignment)": {
+   "out": "7"
+  },
+  "CAST(ULong, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> Long (assignment)": {
+   "out": "7"
+  },
+  "CAST(Long, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> Fixed (assignment)": {
+   "out": "7"
+  },
+  "CAST(Fixed, Byte 7)": {
+   "out": "7"
+  },
+  "Byte 7 -> Float (assignment)": {
+   "out": "7"
+  },
+  "CAST(Float, Byte 7)": {
+   "out": "7"
+  },
+  "UInteger 60000 -> UByte (assignment)": {
+   "out": "96"
+  },
+  "CAST(UByte, UInteger 60000)": {
+   "out": "96"
+  },
+  "UInteger 60000 -> Byte (assignment)": {
+   "out": "96"
+  },
+  "CAST(Byte, UInteger 60000)": {
+   "out": "96"
+  },
+  "UInteger 60000 -> UInteger (assignment)": {
+   "out": "60000"
+  },
+  "CAST(UInteger, UInteger 60000)": {
+   "out": "60000"
+  },
+  "UInteger 60000 -> Integer (assignment)": {
+   "out": "-5536"
+  },
+  "CAST(Integer, UInteger 60000)": {
+   "out": "-5536"
+  },
+  "UInteger 60000 -> ULong (assignment)": {
+   "out": "60000"
+  },
+  "CAST(ULong, UInteger 60000)": {
+   "out": "60000"
+  },
+  "UInteger 60000 -> Long (assignment)": {
+   "out": "60000"
+  },
+  "CAST(Long, UInteger 60000)": {
+   "out": "60000"
+  },
+  "UInteger 60000 -> Fixed (assignment)": {
+   "out": "-5536"
+  },
+  "CAST(Fixed, UInteger 60000)": {
+   "out": "-5536"
+  },
+  "UInteger 60000 -> Float (assignment)": {
+   "out": "60000"
+  },
+  "CAST(Float, UInteger 60000)": {
+   "out": "60000"
+  },
+  "UInteger 7 -> UByte (assignment)": {
+   "out": "7"
+  },
+  "CAST(UByte, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> Byte (assignment)": {
+   "out": "7"
+  },
+  "CAST(Byte, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> UInteger (assignment)": {
+   "out": "7"
+  },
+  "CAST(UInteger, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> Integer (assignment)": {
+   "out": "7"
+  },
+  "CAST(Integer, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> ULong (assignment)": {
+   "out": "7"
+  },
+  "CAST(ULong, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> Long (assignment)": {
+   "out": "7"
+  },
+  "CAST(Long, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> Fixed (assignment)": {
+   "out": "7"
+  },
+  "CAST(Fixed, UInteger 7)": {
+   "out": "7"
+  },
+  "UInteger 7 -> Float (assignment)": {
+   "out": "7"
+  },
+  "CAST(Float, UInteger 7)": {
+   "out": "7"
+  },
+  "Integer -100 -> UByte (assignment)": {
+   "out": "156"
+  },
+  "CAST(UByte, Integer -100)": {
+   "out": "156"
+  },
+  "Integer -100 -> Byte (assignment)": {
+   "out": "-100"
+  },
+  "CAST(Byte, Integer -100)": {
+   "out": "-100"
+  },
+  "Integer -100 -> UInteger (assignment)": {
+   "out": "65436"
+  },
+  "CAST(UInteger, Integer -100)": {
+   "out": "65436"
+  },
+  "Integer -100 -> Integer (assignment)": {
+   "out": "-100"
+  },
+  "CAST(Integer, Integer -100)": {
+   "out": "-100"
+  },
+  "Integer -100 -> ULong (assignment)": {
+   "out": "4294967196"
+  },
+  "CAST(ULong, Integer -100)": {
+   "out": "4294967196"
+  },
+  "Integer -100 -> Long (assignment)": {
+   "out": "-100"
+  },
+  "CAST(Long, Integer -100)": {
+   "out": "-100"
+  },
+  "Integer -100 -> Fixed (assignment)": {
+   "out": "-100"
+  },
+  "CAST(Fixed, Integer -100)": {
+   "out": "-100"
+  },
+  "Integer -100 -> Float (assignment)": {
+   "out": "-100"
+  },
+  "CAST(Float, Integer -100)": {
+   "out": "-100"
+  },
+  "Integer 100 -> UByte (assignment)": {
+   "out": "100"
+  },
+  "CAST(UByte, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> Byte (assignment)": {
+   "out": "100"
+  },
+  "CAST(Byte, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> UInteger (assignment)": {
+   "out": "100"
+  },
+  "CAST(UInteger, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> Integer (assignment)": {
+   "out": "100"
+  },
+  "CAST(Integer, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> ULong (assignment)": {
+   "out": "100"
+  },
+  "CAST(ULong, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> Long (assignment)": {
+   "out": "100"
+  },
+  "CAST(Long, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> Fixed (assignment)": {
+   "out": "100"
+  },
+  "CAST(Fixed, Integer 100)": {
+   "out": "100"
+  },
+  "Integer 100 -> Float (assignment)": {
+   "out": "100"
+  },
+  "CAST(Float, Integer 100)": {
+   "out": "100"
+  },
+  "ULong 4000000000 -> UByte (assignment)": {
+   "out": "0"
+  },
+  "CAST(UByte, ULong 4000000000)": {
+   "out": "0"
+  },
+  "ULong 4000000000 -> Byte (assignment)": {
+   "out": "0"
+  },
+  "CAST(Byte, ULong 4000000000)": {
+   "out": "0"
+  },
+  "ULong 4000000000 -> UInteger (assignment)": {
+   "out": "10240"
+  },
+  "CAST(UInteger, ULong 4000000000)": {
+   "out": "10240"
+  },
+  "ULong 4000000000 -> Integer (assignment)": {
+   "out": "10240"
+  },
+  "CAST(Integer, ULong 4000000000)": {
+   "out": "10240"
+  },
+  "ULong 4000000000 -> ULong (assignment)": {
+   "out": "4000000000"
+  },
+  "CAST(ULong, ULong 4000000000)": {
+   "out": "4000000000"
+  },
+  "ULong 4000000000 -> Long (assignment)": {
+   "out": "-294967296"
+  },
+  "CAST(Long, ULong 4000000000)": {
+   "out": "-294967296"
+  },
+  "ULong 4000000000 -> Fixed (assignment)": {
+   "out": "10240"
+  },
+  "CAST(Fixed, ULong 4000000000)": {
+   "out": "10240"
+  },
+  "ULong 4000000000 -> Float (assignment)": {
+   "out": "4E+9"
+  },
+  "CAST(Float, ULong 4000000000)": {
+   "out": "4E+9"
+  },
+  "ULong 7 -> UByte (assignment)": {
+   "out": "7"
+  },
+  "CAST(UByte, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> Byte (assignment)": {
+   "out": "7"
+  },
+  "CAST(Byte, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> UInteger (assignment)": {
+   "out": "7"
+  },
+  "CAST(UInteger, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> Integer (assignment)": {
+   "out": "7"
+  },
+  "CAST(Integer, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> ULong (assignment)": {
+   "out": "7"
+  },
+  "CAST(ULong, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> Long (assignment)": {
+   "out": "7"
+  },
+  "CAST(Long, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> Fixed (assignment)": {
+   "out": "7"
+  },
+  "CAST(Fixed, ULong 7)": {
+   "out": "7"
+  },
+  "ULong 7 -> Float (assignment)": {
+   "out": "7"
+  },
+  "CAST(Float, ULong 7)": {
+   "out": "7"
+  },
+  "Long -100000 -> UByte (assignment)": {
+   "out": "96"
+  },
+  "CAST(UByte, Long -100000)": {
+   "out": "96"
+  },
+  "Long -100000 -> Byte (assignment)": {
+   "out": "96"
+  },
+  "CAST(Byte, Long -100000)": {
+   "out": "96"
+  },
+  "Long -100000 -> UInteger (assignment)": {
+   "out": "31072"
+  },
+  "CAST(UInteger, Long -100000)": {
+   "out": "31072"
+  },
+  "Long -100000 -> Integer (assignment)": {
+   "out": "31072"
+  },
+  "CAST(Integer, Long -100000)": {
+   "out": "31072"
+  },
+  "Long -100000 -> ULong (assignment)": {
+   "out": "4294867296"
+  },
+  "CAST(ULong, Long -100000)": {
+   "out": "4294867296"
+  },
+  "Long -100000 -> Long (assignment)": {
+   "out": "-100000"
+  },
+  "CAST(Long, Long -100000)": {
+   "out": "-100000"
+  },
+  "Long -100000 -> Fixed (assignment)": {
+   "out": "31072"
+  },
+  "CAST(Fixed, Long -100000)": {
+   "out": "31072"
+  },
+  "Long -100000 -> Float (assignment)": {
+   "out": "-100000"
+  },
+  "CAST(Float, Long -100000)": {
+   "out": "-100000"
+  },
+  "Long 100000 -> UByte (assignment)": {
+   "out": "160"
+  },
+  "CAST(UByte, Long 100000)": {
+   "out": "160"
+  },
+  "Long 100000 -> Byte (assignment)": {
+   "out": "-96"
+  },
+  "CAST(Byte, Long 100000)": {
+   "out": "-96"
+  },
+  "Long 100000 -> UInteger (assignment)": {
+   "out": "34464"
+  },
+  "CAST(UInteger, Long 100000)": {
+   "out": "34464"
+  },
+  "Long 100000 -> Integer (assignment)": {
+   "out": "-31072"
+  },
+  "CAST(Integer, Long 100000)": {
+   "out": "-31072"
+  },
+  "Long 100000 -> ULong (assignment)": {
+   "out": "100000"
+  },
+  "CAST(ULong, Long 100000)": {
+   "out": "100000"
+  },
+  "Long 100000 -> Long (assignment)": {
+   "out": "100000"
+  },
+  "CAST(Long, Long 100000)": {
+   "out": "100000"
+  },
+  "Long 100000 -> Fixed (assignment)": {
+   "out": "-31072"
+  },
+  "CAST(Fixed, Long 100000)": {
+   "out": "-31072"
+  },
+  "Long 100000 -> Float (assignment)": {
+   "out": "100000"
+  },
+  "CAST(Float, Long 100000)": {
+   "out": "100000"
+  },
+  "Fixed 3.5 -> UByte (assignment)": {
+   "out": "3"
+  },
+  "CAST(UByte, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> Byte (assignment)": {
+   "out": "3"
+  },
+  "CAST(Byte, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> UInteger (assignment)": {
+   "out": "3"
+  },
+  "CAST(UInteger, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> Integer (assignment)": {
+   "out": "3"
+  },
+  "CAST(Integer, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> ULong (assignment)": {
+   "out": "3"
+  },
+  "CAST(ULong, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> Long (assignment)": {
+   "out": "3"
+  },
+  "CAST(Long, Fixed 3.5)": {
+   "out": "3"
+  },
+  "Fixed 3.5 -> Fixed (assignment)": {
+   "out": "3.5"
+  },
+  "CAST(Fixed, Fixed 3.5)": {
+   "out": "3.5"
+  },
+  "Fixed 3.5 -> Float (assignment)": {
+   "out": "3.5"
+  },
+  "CAST(Float, Fixed 3.5)": {
+   "out": "3.5"
+  },
+  "Fixed -7.5 -> UByte (assignment)": {
+   "out": "248"
+  },
+  "CAST(UByte, Fixed -7.5)": {
+   "out": "248"
+  },
+  "Fixed -7.5 -> Byte (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Byte, Fixed -7.5)": {
+   "out": "-8"
+  },
+  "Fixed -7.5 -> UInteger (assignment)": {
+   "out": "65528"
+  },
+  "CAST(UInteger, Fixed -7.5)": {
+   "out": "65528"
+  },
+  "Fixed -7.5 -> Integer (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Integer, Fixed -7.5)": {
+   "out": "-8"
+  },
+  "Fixed -7.5 -> ULong (assignment)": {
+   "out": "4294967288"
+  },
+  "CAST(ULong, Fixed -7.5)": {
+   "out": "4294967288"
+  },
+  "Fixed -7.5 -> Long (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Long, Fixed -7.5)": {
+   "out": "-8"
+  },
+  "Fixed -7.5 -> Fixed (assignment)": {
+   "out": "-7.5"
+  },
+  "CAST(Fixed, Fixed -7.5)": {
+   "out": "-7.5"
+  },
+  "Fixed -7.5 -> Float (assignment)": {
+   "out": "-7.5"
+  },
+  "CAST(Float, Fixed -7.5)": {
+   "out": "-7.5"
+  },
+  "Float 7.5 -> UByte (assignment)": {
+   "out": "7"
+  },
+  "CAST(UByte, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> Byte (assignment)": {
+   "out": "7"
+  },
+  "CAST(Byte, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> UInteger (assignment)": {
+   "out": "7"
+  },
+  "CAST(UInteger, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> Integer (assignment)": {
+   "out": "7"
+  },
+  "CAST(Integer, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> ULong (assignment)": {
+   "out": "7"
+  },
+  "CAST(ULong, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> Long (assignment)": {
+   "out": "7"
+  },
+  "CAST(Long, Float 7.5)": {
+   "out": "7"
+  },
+  "Float 7.5 -> Fixed (assignment)": {
+   "out": "7.5"
+  },
+  "CAST(Fixed, Float 7.5)": {
+   "out": "7.5"
+  },
+  "Float 7.5 -> Float (assignment)": {
+   "out": "7.5"
+  },
+  "CAST(Float, Float 7.5)": {
+   "out": "7.5"
+  },
+  "Float -7.5 -> UByte (assignment)": {
+   "out": "248"
+  },
+  "CAST(UByte, Float -7.5)": {
+   "out": "248"
+  },
+  "Float -7.5 -> Byte (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Byte, Float -7.5)": {
+   "out": "-8"
+  },
+  "Float -7.5 -> UInteger (assignment)": {
+   "out": "65528"
+  },
+  "CAST(UInteger, Float -7.5)": {
+   "out": "65528"
+  },
+  "Float -7.5 -> Integer (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Integer, Float -7.5)": {
+   "out": "-8"
+  },
+  "Float -7.5 -> ULong (assignment)": {
+   "out": "4294967288"
+  },
+  "CAST(ULong, Float -7.5)": {
+   "out": "4294967288"
+  },
+  "Float -7.5 -> Long (assignment)": {
+   "out": "-8"
+  },
+  "CAST(Long, Float -7.5)": {
+   "out": "-8"
+  },
+  "Float -7.5 -> Fixed (assignment)": {
+   "out": "-7.5"
+  },
+  "CAST(Fixed, Float -7.5)": {
+   "out": "-7.5"
+  },
+  "Float -7.5 -> Float (assignment)": {
+   "out": "-7.5"
+  },
+  "CAST(Float, Float -7.5)": {
+   "out": "-7.5"
+  }
+ }
+}

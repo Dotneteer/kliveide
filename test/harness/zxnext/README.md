@@ -80,6 +80,8 @@ Methods returning `this` chain.
 | Load | `loadCode(source, { entry?, sp? })` → `Program` | Assembles Klive Z80N source in memory. NEX MMU layout (ROM, bank 5, bank 2, bank 0), DI, SP `$BFF0`, PC = `.ent` / `entry` / first segment. `.model Next` added if missing. No `#include`, no `.bank`. |
 | | `loadProgramFile(path)` | `.asm` with `.savenex` pragmas (includes work) or a `.nex`; direct NEX loader, no NextZXOS. |
 | | `symbol(name)` | A label or `.equ` of the last `loadCode` program. |
+| | `await prepareBasic()` | BASIC-ready mode: ROM 3 (48K BASIC) in slots 0-1 through `$1FFD`/`$7FFD`, and the 48K harness's screen, system variables, calculator workspace and machine stack after `bootToBasic()` copied in (`$4000-$5AFF`, `$5C00-$5FFF`, `$FF00-$FFFF`); IY `$5C3A`, IM 1, interrupts still off. For code that calls the ROM (Klive BASIC's Float runtime). Before or after `loadCode`. See "Direct load". |
+| | `loadOutput(output, { entry })` | Writes an assembler output built for the Next (`compileProgram`, a Klive BASIC build) with the NEX MMU layout: unbanked code at its address, each `.bank`/`.page` segment into its 8K page through MMU slot 7 (restored). Does not set PC or SP. |
 | Run | `runFrames(n = 1)` | Whole frames exactly as the emulator panel runs them. Finishes a frame stopped midway first. |
 | | `runUntil(pred, what, { maxFrames })` | Frame granularity; fails with PC and `what` on timeout. |
 | | `runUntilReady({ maxFrames = 50 })` | Until the program writes `$A5` to NextReg `$7F`. |
@@ -88,6 +90,9 @@ Methods returning `this` chain.
 | | `call(addrOrLabel, { returnTo?, maxFrames })` | Pushes a return address, jumps, runs until it returns. |
 | | `hardReset()` `reset()` | Power-on reset / soft reset (memory kept). |
 | Memory | `peek` `peekWord` `peekBytes` `poke(addr, byte \| bytes)` `pokeWord` | Through the current MMU paging, like the CPU. |
+| | `peekPage(page, offset)` `pokePage(page, offset, v)` `mmuPage(slot)` | An 8K page's byte whatever is mapped (through MMU slot 7, restored), and the page an MMU slot maps. For banked code and bank-local data. |
+| Text | `screenLine(row)` `screenChar(row, col)` | A ULA text row, matched against the 48K ROM font at `$3D00` (needs the ROM, as `prepareBasic` leaves it). |
+| Debug | `attachDebugSupport()` `continueToBreakpoint({ returnTo?, maxFrames })` `sourceStep(index, kind, opts)` `machineView()` `interruptDepth()` | The 48K harness's breakpoint and source-step API, for Klive BASIC's source-level debugger; `machineView()` adds PC's partition (8K page) for banked code. |
 | I/O | `out(port, v)` `in(port)` | With every hardware side effect (reads that clear status bits clear them). |
 | NextReg | `setNextReg(r, v)` `readNextReg(r)` | Through `$243B`/`$253B`, as Z80 code would. |
 | | `nextRegValue(r)` | Stored value without port side effects - for assertions and wait conditions. |
@@ -207,3 +212,11 @@ subtract the CPU's own timing out. `test/zxnext-hw/_timing-helpers.ts` has the e
 entry state, but without NextZXOS: ROM selection, the NextRegs the OS changes, the interrupt mode and
 system variables stay at hard-reset values. A test that depends on any of that belongs in a screen
 case with `"tiers": ["headless", "browser"]`.
+
+`prepareBasic()` narrows the gap for code that calls the 48K BASIC ROM: it pages ROM 3 in and
+installs a 48K BASIC system-variable area, as `.nexload` hands over. It is an approximation, not
+NextZXOS: the system variables are the 48K ROM's after boot (not NextZXOS's, which sets more of
+them, the Next's channels and its own RAMTOP among them), the NextRegs stay at reset values, and
+interrupts stay off. ROM 3 matches the 48K ROM at the entry points Klive BASIC uses (the calculator,
+CHAN-OPEN, PR-STRING, the error restart, the font), but not everywhere. A test that needs the real
+thing boots NextZXOS from a cloned CIM (see "Adding a method", Candidates).

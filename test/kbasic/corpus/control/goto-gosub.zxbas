@@ -1,0 +1,15 @@
+' GOTO and GOSUB with RETURN, to labels and line numbers
+'@expect screen 0 "a b c d"
+GOSUB sub1
+GOTO 100
+PRINT "never"
+sub1:
+PRINT "a ";
+GOSUB 200
+RETURN
+100 PRINT "c ";
+GOTO finish
+200 PRINT "b ";
+RETURN
+finish:
+PRINT "d"

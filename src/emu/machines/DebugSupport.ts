@@ -2,6 +2,7 @@ import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
+import type { SourceStep } from "./SourceStepDecision";
 
 import { incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointStorageKey } from "@common/utils/breakpoints";
@@ -92,6 +93,14 @@ export class DebugSupport implements IDebugSupport {
   suppressUserBreakpoints = false;
 
   /**
+   * While `suppressUserBreakpoints` is set: whether the flow's keystrokes are still queued, asked at
+   * the moment a breakpoint is hit. The flag itself is lifted by a poll, which can come late — by
+   * then NextZXOS may have loaded the program and run it past its first breakpoint — so the
+   * suppression holds only while there is really something left to type. Unset: the flag alone.
+   */
+  keystrokesPending?: () => boolean;
+
+  /**
    * Initializes the service using the specified store
    * @param store Application state store
    */
@@ -141,7 +150,7 @@ export class DebugSupport implements IDebugSupport {
     }
 
     // --- During a launch flow only the flow's own stop may fire; see `suppressUserBreakpoints`.
-    if (this.suppressUserBreakpoints && !this.hasSessionStopAt(address)) {
+    if (this.suppressUserBreakpoints && (this.keystrokesPending?.() ?? true) && !this.hasSessionStopAt(address)) {
       return false;
     }
 
@@ -376,6 +385,11 @@ export class DebugSupport implements IDebugSupport {
    * Breakpoint used for step-out debugging mode
    */
   imminentBreakpoint?: number;
+  sourceStep?: SourceStep;
+  errorStopAddress?: number;
+  romErrorAddress?: number;
+  romErrorGuard?: () => boolean;
+  statementTracker?: { observe(pc: number, getPartition?: (address: number) => number | undefined): void; current: number };
 
   /**
    * Erases all breakpoints
@@ -811,9 +825,10 @@ export class DebugSupport implements IDebugSupport {
     resource: string,
     line: number,
     address: number,
-    partition?: number
+    partition?: number,
+    column?: number
   ): void {
-    const bpKey = getBreakpointStorageKey({ resource, line });
+    const bpKey = getBreakpointStorageKey({ resource, line, ...(column !== undefined ? { column } : {}) });
     const bp = this.breakpointDefs.get(bpKey);
     if (!bp || !bp.exec) {
       return;

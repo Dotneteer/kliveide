@@ -1,0 +1,15 @@
+' EXIT and CONTINUE, for FOR, WHILE and DO
+'@expect screen 0 "13579 5 4"
+DIM i AS UByte
+FOR i = 1 TO 20
+ IF i MOD 2 = 0 THEN CONTINUE FOR
+ IF i > 9 THEN EXIT FOR
+ PRINT i;
+NEXT i
+PRINT " "; 5;
+i = 0
+WHILE 1
+ i = i + 1
+ IF i = 4 THEN EXIT WHILE
+END WHILE
+PRINT " "; i

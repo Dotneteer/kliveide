@@ -1,0 +1,5 @@
+' STR$ and VAL of Floats
+'@expect screen 0 "2.5|3|6.5|1001|-7"
+DIM s AS String
+s = STR$(2.5)
+PRINT s; "|"; LEN(s); "|"; VAL("3.25") * 2; "|"; VAL("1E3") + 1; "|"; STR$(-7)

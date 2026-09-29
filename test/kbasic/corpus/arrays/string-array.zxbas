@@ -1,0 +1,7 @@
+' A String array's elements follow the ownership rules
+'@expect screen 0 "one|two!|"
+DIM w$(2)
+w$(0) = "one"
+w$(1) = "two"
+w$(1) = w$(1) + "!"
+PRINT w$(0); "|"; w$(1); "|"; w$(2)

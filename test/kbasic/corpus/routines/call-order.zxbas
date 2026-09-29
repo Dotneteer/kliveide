@@ -1,0 +1,12 @@
+' Arguments are evaluated last first (semantics annex: argument-evaluation-order)
+'@expect screen 0 "BA 21"
+DIM n AS UByte
+FUNCTION tag(s AS String) AS UByte
+ PRINT s;
+ n = n + 1
+ RETURN n
+END FUNCTION
+SUB two(a AS UByte, b AS UByte)
+ PRINT " "; a; b
+END SUB
+two tag("A"), tag("B")

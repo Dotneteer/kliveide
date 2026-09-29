@@ -1,0 +1,8 @@
+' Concatenation and assignment
+'@expect screen 0 "Hello, World!"
+'@expect heap a b
+DIM a$, b$ AS String
+a$ = "Hello"
+b$ = a$ + ", " + "World"
+b$ = b$ + "!"
+PRINT b$

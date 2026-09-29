@@ -315,7 +315,7 @@ describe("NEX File Writer", () => {
     
     const segment2 = new BinarySegment();
     segment2.bank = 5;
-    segment2.bankOffset = 0;
+    segment2.bankOffset = 0x1000; // The writer places a banked segment by its bank offset
     segment2.startAddress = 0xd000; // Different address in same bank
     segment2.emittedCode = [0x04, 0x05, 0x06];
     output.segments.push(segment2);

@@ -1,0 +1,10 @@
+' Default parameter values and named arguments, placed as ZX BASIC places them: the values in the
+' order written, then the defaults of the parameters neither given nor named (semantics annex:
+' named-arguments)
+'@expect screen 0 "1-2-3 1-9-3 7-5-2"
+SUB show(a AS UByte, b AS UByte = 2, c AS UByte = 3)
+ PRINT a; "-"; b; "-"; c; " ";
+END SUB
+show 1
+show 1, 9
+show(c := 7, a := 5)

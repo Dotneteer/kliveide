@@ -1,0 +1,6 @@
+' A Celsius to Fahrenheit table with Float arithmetic
+'@expect screen 0 "-10C=14F 10C=50F 30C=86F"
+DIM c AS Integer
+FOR c = -10 TO 30 STEP 20
+  PRINT c; "C="; c * 9 / 5.0 + 32; "F ";
+NEXT c

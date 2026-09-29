@@ -1,0 +1,6 @@
+' PLOT sets one pixel, (0, 0) at the bottom left; COORDS keeps the point
+'@expect screen 0 "255,175 1 1"
+PLOT 0, 0
+PLOT 255, 175
+' --- (0, 0) is bit 7 of the bottom row's first byte (22496); (255, 175) bit 0 of 16479
+PRINT PEEK 23677; ","; PEEK 23678; " "; PEEK 22496 BAND 128 <> 0; " "; PEEK 16479 BAND 1

@@ -1,0 +1,10 @@
+' Factorials: UInteger wraps at 9!, Float keeps growing
+'@expect screen 0 "35200 362880 4.790016E+8"
+FUNCTION factorial(n AS UByte) AS Float
+  IF n < 2 THEN RETURN 1
+  RETURN n * factorial(n - 1)
+END FUNCTION
+DIM u AS UInteger = 1
+DIM i AS UByte
+FOR i = 1 TO 9: u = u * i: NEXT i
+PRINT u; " "; factorial(9); " "; factorial(12)

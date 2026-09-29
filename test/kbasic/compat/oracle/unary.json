@@ -1,0 +1,293 @@
+{
+ "zxbc": "zxbc 1.19.0",
+ "items": {
+  "Fixed 3.5: BNOT a": {
+   "error": "zxbc crashed: KeyError: 'bnotf16'"
+  },
+  "Fixed -7.5: BNOT a": {
+   "error": "zxbc crashed: KeyError: 'bnotf16'"
+  },
+  "Float 7.5: BNOT a": {
+   "error": "zxbc crashed: KeyError: 'bnotf'"
+  },
+  "Float -7.5: BNOT a": {
+   "error": "zxbc crashed: KeyError: 'bnotf'"
+  },
+  "UByte 200: -a": {
+   "out": "56"
+  },
+  "UByte 200: BNOT a": {
+   "out": "55"
+  },
+  "UByte 200: NOT a": {
+   "out": "0"
+  },
+  "UByte 200: ABS(a)": {
+   "out": "200"
+  },
+  "UByte 200: SGN(a)": {
+   "out": "1"
+  },
+  "UByte 200: INT(a)": {
+   "out": "200"
+  },
+  "UByte 7: -a": {
+   "out": "-7"
+  },
+  "UByte 7: BNOT a": {
+   "out": "248"
+  },
+  "UByte 7: NOT a": {
+   "out": "0"
+  },
+  "UByte 7: ABS(a)": {
+   "out": "7"
+  },
+  "UByte 7: SGN(a)": {
+   "out": "1"
+  },
+  "UByte 7: INT(a)": {
+   "out": "7"
+  },
+  "Byte -7: -a": {
+   "out": "7"
+  },
+  "Byte -7: BNOT a": {
+   "out": "6"
+  },
+  "Byte -7: NOT a": {
+   "out": "0"
+  },
+  "Byte -7: ABS(a)": {
+   "out": "7"
+  },
+  "Byte -7: SGN(a)": {
+   "out": "-1"
+  },
+  "Byte -7: INT(a)": {
+   "out": "-7"
+  },
+  "Byte 7: -a": {
+   "out": "-7"
+  },
+  "Byte 7: BNOT a": {
+   "out": "-8"
+  },
+  "Byte 7: NOT a": {
+   "out": "0"
+  },
+  "Byte 7: ABS(a)": {
+   "out": "7"
+  },
+  "Byte 7: SGN(a)": {
+   "out": "1"
+  },
+  "Byte 7: INT(a)": {
+   "out": "7"
+  },
+  "UInteger 60000: -a": {
+   "out": "5536"
+  },
+  "UInteger 60000: BNOT a": {
+   "out": "5535"
+  },
+  "UInteger 60000: NOT a": {
+   "out": "0"
+  },
+  "UInteger 60000: ABS(a)": {
+   "out": "60000"
+  },
+  "UInteger 60000: SGN(a)": {
+   "out": "1"
+  },
+  "UInteger 60000: INT(a)": {
+   "out": "60000"
+  },
+  "UInteger 7: -a": {
+   "out": "-7"
+  },
+  "UInteger 7: BNOT a": {
+   "out": "65528"
+  },
+  "UInteger 7: NOT a": {
+   "out": "0"
+  },
+  "UInteger 7: ABS(a)": {
+   "out": "7"
+  },
+  "UInteger 7: SGN(a)": {
+   "out": "1"
+  },
+  "UInteger 7: INT(a)": {
+   "out": "7"
+  },
+  "Integer -100: -a": {
+   "out": "100"
+  },
+  "Integer -100: BNOT a": {
+   "out": "99"
+  },
+  "Integer -100: NOT a": {
+   "out": "0"
+  },
+  "Integer -100: ABS(a)": {
+   "out": "100"
+  },
+  "Integer -100: SGN(a)": {
+   "out": "-1"
+  },
+  "Integer -100: INT(a)": {
+   "out": "-100"
+  },
+  "Integer 100: -a": {
+   "out": "-100"
+  },
+  "Integer 100: BNOT a": {
+   "out": "-101"
+  },
+  "Integer 100: NOT a": {
+   "out": "0"
+  },
+  "Integer 100: ABS(a)": {
+   "out": "100"
+  },
+  "Integer 100: SGN(a)": {
+   "out": "1"
+  },
+  "Integer 100: INT(a)": {
+   "out": "100"
+  },
+  "ULong 4000000000: -a": {
+   "out": "294967296"
+  },
+  "ULong 4000000000: BNOT a": {
+   "out": "294967295"
+  },
+  "ULong 4000000000: NOT a": {
+   "out": "0"
+  },
+  "ULong 4000000000: ABS(a)": {
+   "out": "4000000000"
+  },
+  "ULong 4000000000: SGN(a)": {
+   "out": "1"
+  },
+  "ULong 4000000000: INT(a)": {
+   "out": "-294967296"
+  },
+  "ULong 7: -a": {
+   "out": "-7"
+  },
+  "ULong 7: BNOT a": {
+   "out": "4294967288"
+  },
+  "ULong 7: NOT a": {
+   "out": "0"
+  },
+  "ULong 7: ABS(a)": {
+   "out": "7"
+  },
+  "ULong 7: SGN(a)": {
+   "out": "1"
+  },
+  "ULong 7: INT(a)": {
+   "out": "7"
+  },
+  "Long -100000: -a": {
+   "out": "100000"
+  },
+  "Long -100000: BNOT a": {
+   "out": "99999"
+  },
+  "Long -100000: NOT a": {
+   "out": "0"
+  },
+  "Long -100000: ABS(a)": {
+   "out": "100000"
+  },
+  "Long -100000: SGN(a)": {
+   "out": "-1"
+  },
+  "Long -100000: INT(a)": {
+   "out": "-100000"
+  },
+  "Long 100000: -a": {
+   "out": "-100000"
+  },
+  "Long 100000: BNOT a": {
+   "out": "-100001"
+  },
+  "Long 100000: NOT a": {
+   "out": "0"
+  },
+  "Long 100000: ABS(a)": {
+   "out": "100000"
+  },
+  "Long 100000: SGN(a)": {
+   "out": "1"
+  },
+  "Long 100000: INT(a)": {
+   "out": "100000"
+  },
+  "Fixed 3.5: -a": {
+   "out": "-3.5"
+  },
+  "Fixed 3.5: NOT a": {
+   "out": "0"
+  },
+  "Fixed 3.5: ABS(a)": {
+   "out": "3.5"
+  },
+  "Fixed 3.5: SGN(a)": {
+   "out": "1"
+  },
+  "Fixed 3.5: INT(a)": {
+   "out": "3"
+  },
+  "Fixed -7.5: -a": {
+   "out": "7.5"
+  },
+  "Fixed -7.5: NOT a": {
+   "out": "0"
+  },
+  "Fixed -7.5: ABS(a)": {
+   "out": "7.5"
+  },
+  "Fixed -7.5: SGN(a)": {
+   "out": "-1"
+  },
+  "Fixed -7.5: INT(a)": {
+   "out": "-8"
+  },
+  "Float 7.5: -a": {
+   "out": "-7.5"
+  },
+  "Float 7.5: NOT a": {
+   "out": "0"
+  },
+  "Float 7.5: ABS(a)": {
+   "out": "7.5"
+  },
+  "Float 7.5: SGN(a)": {
+   "out": "1"
+  },
+  "Float 7.5: INT(a)": {
+   "out": "7"
+  },
+  "Float -7.5: -a": {
+   "out": "7.5"
+  },
+  "Float -7.5: NOT a": {
+   "out": "0"
+  },
+  "Float -7.5: ABS(a)": {
+   "out": "7.5"
+  },
+  "Float -7.5: SGN(a)": {
+   "out": "-1"
+  },
+  "Float -7.5: INT(a)": {
+   "out": "-8"
+  }
+ }
+}

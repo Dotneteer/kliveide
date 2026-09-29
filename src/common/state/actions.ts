@@ -185,6 +185,11 @@ export const setCursorPositionAction: ActionCreator = (line: number, column: num
   payload: { line, column }
 });
 
+export const setSourceFrameAction: ActionCreator = (frame: number) => ({
+  type: "SET_SOURCE_FRAME",
+  payload: { index: frame }
+});
+
 export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });
@@ -403,4 +408,21 @@ export const clearWatchAction: ActionCreator = () => ({
 export const setWatchesAction: ActionCreator = (watches: any[]) => ({
   type: "SET_WATCHES",
   payload: { watches }
+});
+
+// --- BASIC watch expressions (the Variables panel, plan §10.8)
+export const addBasicWatchAction: ActionCreator = (expression: string) => ({
+  type: "ADD_BASIC_WATCH",
+  payload: { text: expression }
+});
+
+export const removeBasicWatchAction: ActionCreator = (index: number) => ({
+  type: "REMOVE_BASIC_WATCH",
+  payload: { index }
+});
+
+/** Replaces the list in one action, as `setWatchesAction` does, when a project is opened. */
+export const setBasicWatchesAction: ActionCreator = (watches: string[]) => ({
+  type: "SET_BASIC_WATCHES",
+  payload: { value: watches }
 });

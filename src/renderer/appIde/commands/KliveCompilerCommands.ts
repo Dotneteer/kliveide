@@ -30,7 +30,8 @@ import {
   setProjectDebuggingAction
 } from "@common/state/actions";
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
-import { isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { hasSourceLevelDebug, isInjectableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
+import { createSourceDebugSidecar, sidecarProgramOf, sourceDebugSidecarPath } from "@common/utils/source-debug-sidecar";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
@@ -987,6 +988,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
 
       await context.mainApi.copyToSdCard(filePath, "_klive/" + compiledOutput.nexConfig.filename);
 
+      // --- Source-level debug info (Klive BASIC, plan §8.5) goes beside the NEX, so `nex-run` can
+      // --- debug the file at source level without a rebuild
+      let sidecarPath: string | undefined;
+      if (hasSourceLevelDebug(output)) {
+        sidecarPath = await context.mainApi.saveTextFile(
+          sourceDebugSidecarPath(filePath),
+          createSourceDebugSidecar(nexData, output.sourceLevelDebug, sidecarProgramOf(output))
+        );
+      }
+
       // --- Build summary message
       const bankCount = compiledOutput.segments.filter(
         (s) => s.bank !== undefined && s.bank !== null
@@ -1013,6 +1024,9 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       }
       if (compiledOutput.nexConfig.loadingBar.enabled) {
         summary += `\n  Loading bar: Yes`;
+      }
+      if (sidecarPath) {
+        summary += `\n  Source-level debug info: ${sidecarPath}`;
       }
 
       return commandSuccessWith(summary);
@@ -1078,7 +1092,8 @@ export async function injectCode(
     }
   }
 
-  const { message, result } = await compileCode(context);
+  // --- A debug run builds with the debug profile (plan §8.6): code the debugger can follow exactly
+  const { message, result } = await compileCode(context, operationType === "debug" ? "debug" : "build");
   const errorNo = result?.errors?.length ?? 0;
   if (message) {
     if (!result) {
@@ -1145,6 +1160,19 @@ export async function injectCode(
   const dispatch = context.store.dispatch;
   let returnMessage = "";
 
+  // --- Source-level debug info (plan §10.2) goes to the emulator before a debug run starts, so its
+  // --- error stop and statement tracking (§10.10) are armed from the first instruction, and again
+  // --- after the injection, which may have replaced the machine controller; a program without it
+  // --- clears the previous one's
+  const sendSourceDebugInfo = async () => {
+    try {
+      await context.emuApi.setSourceDebugInfo(hasSourceLevelDebug(result) ? result.sourceLevelDebug : undefined);
+    } catch {
+      // --- An emulator without source stepping keeps instruction stepping
+    }
+  };
+  if (operationType === "debug") await sendSourceDebugInfo();
+
   switch (operationType) {
     case "inject":
       await context.emuApi.injectCodeCommand(codeToInject);
@@ -1180,6 +1208,8 @@ export async function injectCode(
       break;
     }
   }
+
+  await sendSourceDebugInfo();
 
   // --- Injection done
   dispatch(incInjectionVersionAction());

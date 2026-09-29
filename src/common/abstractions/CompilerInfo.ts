@@ -1,5 +1,6 @@
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
+import type { SourceDebugExtensions } from "./SourceDebugInfo";
 
 /**
  * Represents the possible types of an expression value
@@ -802,6 +803,12 @@ export type SourceLevelDebugInfo = {
     readonly partition: number;
     readonly addressToStatement: ReadonlyArray<[number, number]>;
   }>;
+  /**
+   * Frames, call sites and variables (`SourceDebugInfo.ts`): what stepping over and out of calls,
+   * the symbolic call stack and the Variables panel need. Without it, source stepping works one
+   * statement at a time with no knowledge of activations.
+   */
+  readonly extensions?: SourceDebugExtensions;
 };
 
 /**
@@ -861,6 +868,9 @@ export type KliveCompilerOutput =
 /**
  * Defines the responsibilities of a compiler that can vork directly with a build root
  */
+/** What a foreground build is for (`IKliveCompiler.compileFile`). */
+export type CompileProfile = "debug" | "build";
+
 export interface IKliveCompiler {
   /**
    * The unique ID of the compiler
@@ -882,9 +892,20 @@ export interface IKliveCompiler {
    * binary code.
    * @param filename Z80 assembly source file (absolute path)
    * @param options Compiler options. If not defined, the compiler uses the default options.
+   * @param profile What the build is for: `debug` when the IDE is about to debug it (a compiler may
+   *   then keep its code debug-friendly, as Klive BASIC's debug profile caps optimisation), `build`
+   *   otherwise. Never passed inside `options`, which some compilers take whole as their option set.
    * @returns Output of the compilation
    */
-  compileFile(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
+  compileFile(filename: string, options?: Record<string, any>, profile?: CompileProfile): Promise<KliveCompilerOutput>;
+
+  /**
+   * Optionally checks the file for the editor's background diagnostics without building it; the
+   * background compile uses `compileFile` when a compiler does not have this.
+   * @param filename Build root file (absolute path)
+   * @param options Compiler options. If not defined, the compiler uses the default options.
+   */
+  checkFile?(filename: string, options?: Record<string, any>): Promise<KliveCompilerOutput>;
 
   /**
    * Checks if the specified file can have a breakpoint

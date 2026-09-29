@@ -297,6 +297,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48SetCpuWz: () => 0,
       sp48GetCpuPc: () => 0,
       sp48GetStepOutAddress: () => 0xffffffff,
+      sp48GetInterruptDepth: () => 0,
       sp48SetCpuPc: () => 0,
       sp48GetCpuSp: () => 0,
       sp48SetCpuSp: () => 0,

@@ -1,0 +1,29 @@
+' A FUNCTION that changes variables the same expression reads, in ZX BASIC's order: the left operand
+' first, except that a plain variable on the left is read after the right operand; an assigned
+' element's subscripts after the value; the same at every optimisation level (semantics annex:
+' argument-evaluation-order)
+'@expect screen 0 "16 15"
+'@expect screen 1 "16 15"
+'@expect screen 2 "0 1 11"
+'@expect screen 3 "9"
+'@expect screen 4 "12 19 17"
+'@expect screen 5 "0 1"
+DIM g AS UInteger
+DIM b AS UByte
+DIM r AS UInteger
+DIM t(20) AS UInteger
+FUNCTION bump() AS UInteger
+  g = g + 10
+  b = b + 1
+  RETURN 1
+END FUNCTION
+FUNCTION bumpb() AS UByte
+  b = b + 7
+  RETURN 2
+END FUNCTION
+g = 5 : r = g + bump() : PRINT r; " "; g
+g = 5 : r = bump() + g : PRINT r; " "; g
+g = 1 : t(g) = bump() : PRINT t(1); " "; t(11); " "; g
+g = 5 : r = g * 2 - bump() : PRINT r
+b = 3 : PRINT b + bumpb(); " "; bumpb() + b; " "; b
+b = 3 : PRINT b < bumpb(); " "; bumpb() < b

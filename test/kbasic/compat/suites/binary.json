@@ -1,0 +1,2822 @@
+{
+ "suite": "binary",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 200 + 100",
+   "decl": [
+    "DIM v1 AS UByte = 200",
+    "DIM v2 AS UByte = 100"
+   ],
+   "expr": "v1 + v2"
+  },
+  {
+   "id": "UByte 200 - 100",
+   "decl": [
+    "DIM v3 AS UByte = 200",
+    "DIM v4 AS UByte = 100"
+   ],
+   "expr": "v3 - v4"
+  },
+  {
+   "id": "UByte 200 * 100",
+   "decl": [
+    "DIM v5 AS UByte = 200",
+    "DIM v6 AS UByte = 100"
+   ],
+   "expr": "v5 * v6"
+  },
+  {
+   "id": "UByte 200 / 100",
+   "decl": [
+    "DIM v7 AS UByte = 200",
+    "DIM v8 AS UByte = 100"
+   ],
+   "expr": "v7 / v8"
+  },
+  {
+   "id": "UByte 200 MOD 100",
+   "decl": [
+    "DIM v9 AS UByte = 200",
+    "DIM v10 AS UByte = 100"
+   ],
+   "expr": "v9 MOD v10"
+  },
+  {
+   "id": "UByte 200 = 100",
+   "decl": [
+    "DIM v11 AS UByte = 200",
+    "DIM v12 AS UByte = 100"
+   ],
+   "expr": "v11 = v12"
+  },
+  {
+   "id": "UByte 200 < 100",
+   "decl": [
+    "DIM v13 AS UByte = 200",
+    "DIM v14 AS UByte = 100"
+   ],
+   "expr": "v13 < v14"
+  },
+  {
+   "id": "UByte 200 > 100",
+   "decl": [
+    "DIM v15 AS UByte = 200",
+    "DIM v16 AS UByte = 100"
+   ],
+   "expr": "v15 > v16"
+  },
+  {
+   "id": "UByte 200 BAND 100",
+   "decl": [
+    "DIM v17 AS UByte = 200",
+    "DIM v18 AS UByte = 100"
+   ],
+   "expr": "v17 BAND v18"
+  },
+  {
+   "id": "UByte 200 BOR 100",
+   "decl": [
+    "DIM v19 AS UByte = 200",
+    "DIM v20 AS UByte = 100"
+   ],
+   "expr": "v19 BOR v20"
+  },
+  {
+   "id": "UByte 200 BXOR 100",
+   "decl": [
+    "DIM v21 AS UByte = 200",
+    "DIM v22 AS UByte = 100"
+   ],
+   "expr": "v21 BXOR v22"
+  },
+  {
+   "id": "UByte 7 + 2",
+   "decl": [
+    "DIM v23 AS UByte = 7",
+    "DIM v24 AS UByte = 2"
+   ],
+   "expr": "v23 + v24"
+  },
+  {
+   "id": "UByte 7 - 2",
+   "decl": [
+    "DIM v25 AS UByte = 7",
+    "DIM v26 AS UByte = 2"
+   ],
+   "expr": "v25 - v26"
+  },
+  {
+   "id": "UByte 7 * 2",
+   "decl": [
+    "DIM v27 AS UByte = 7",
+    "DIM v28 AS UByte = 2"
+   ],
+   "expr": "v27 * v28"
+  },
+  {
+   "id": "UByte 7 / 2",
+   "decl": [
+    "DIM v29 AS UByte = 7",
+    "DIM v30 AS UByte = 2"
+   ],
+   "expr": "v29 / v30"
+  },
+  {
+   "id": "UByte 7 MOD 2",
+   "decl": [
+    "DIM v31 AS UByte = 7",
+    "DIM v32 AS UByte = 2"
+   ],
+   "expr": "v31 MOD v32"
+  },
+  {
+   "id": "UByte 7 = 2",
+   "decl": [
+    "DIM v33 AS UByte = 7",
+    "DIM v34 AS UByte = 2"
+   ],
+   "expr": "v33 = v34"
+  },
+  {
+   "id": "UByte 7 < 2",
+   "decl": [
+    "DIM v35 AS UByte = 7",
+    "DIM v36 AS UByte = 2"
+   ],
+   "expr": "v35 < v36"
+  },
+  {
+   "id": "UByte 7 > 2",
+   "decl": [
+    "DIM v37 AS UByte = 7",
+    "DIM v38 AS UByte = 2"
+   ],
+   "expr": "v37 > v38"
+  },
+  {
+   "id": "UByte 7 BAND 2",
+   "decl": [
+    "DIM v39 AS UByte = 7",
+    "DIM v40 AS UByte = 2"
+   ],
+   "expr": "v39 BAND v40"
+  },
+  {
+   "id": "UByte 7 BOR 2",
+   "decl": [
+    "DIM v41 AS UByte = 7",
+    "DIM v42 AS UByte = 2"
+   ],
+   "expr": "v41 BOR v42"
+  },
+  {
+   "id": "UByte 7 BXOR 2",
+   "decl": [
+    "DIM v43 AS UByte = 7",
+    "DIM v44 AS UByte = 2"
+   ],
+   "expr": "v43 BXOR v44"
+  },
+  {
+   "id": "UByte 255 + 1",
+   "decl": [
+    "DIM v45 AS UByte = 255",
+    "DIM v46 AS UByte = 1"
+   ],
+   "expr": "v45 + v46"
+  },
+  {
+   "id": "UByte 255 - 1",
+   "decl": [
+    "DIM v47 AS UByte = 255",
+    "DIM v48 AS UByte = 1"
+   ],
+   "expr": "v47 - v48"
+  },
+  {
+   "id": "UByte 255 * 1",
+   "decl": [
+    "DIM v49 AS UByte = 255",
+    "DIM v50 AS UByte = 1"
+   ],
+   "expr": "v49 * v50"
+  },
+  {
+   "id": "UByte 255 / 1",
+   "decl": [
+    "DIM v51 AS UByte = 255",
+    "DIM v52 AS UByte = 1"
+   ],
+   "expr": "v51 / v52"
+  },
+  {
+   "id": "UByte 255 MOD 1",
+   "decl": [
+    "DIM v53 AS UByte = 255",
+    "DIM v54 AS UByte = 1"
+   ],
+   "expr": "v53 MOD v54"
+  },
+  {
+   "id": "UByte 255 = 1",
+   "decl": [
+    "DIM v55 AS UByte = 255",
+    "DIM v56 AS UByte = 1"
+   ],
+   "expr": "v55 = v56"
+  },
+  {
+   "id": "UByte 255 < 1",
+   "decl": [
+    "DIM v57 AS UByte = 255",
+    "DIM v58 AS UByte = 1"
+   ],
+   "expr": "v57 < v58"
+  },
+  {
+   "id": "UByte 255 > 1",
+   "decl": [
+    "DIM v59 AS UByte = 255",
+    "DIM v60 AS UByte = 1"
+   ],
+   "expr": "v59 > v60"
+  },
+  {
+   "id": "UByte 255 BAND 1",
+   "decl": [
+    "DIM v61 AS UByte = 255",
+    "DIM v62 AS UByte = 1"
+   ],
+   "expr": "v61 BAND v62"
+  },
+  {
+   "id": "UByte 255 BOR 1",
+   "decl": [
+    "DIM v63 AS UByte = 255",
+    "DIM v64 AS UByte = 1"
+   ],
+   "expr": "v63 BOR v64"
+  },
+  {
+   "id": "UByte 255 BXOR 1",
+   "decl": [
+    "DIM v65 AS UByte = 255",
+    "DIM v66 AS UByte = 1"
+   ],
+   "expr": "v65 BXOR v66"
+  },
+  {
+   "id": "UByte 3 + 200",
+   "decl": [
+    "DIM v67 AS UByte = 3",
+    "DIM v68 AS UByte = 200"
+   ],
+   "expr": "v67 + v68"
+  },
+  {
+   "id": "UByte 3 - 200",
+   "decl": [
+    "DIM v69 AS UByte = 3",
+    "DIM v70 AS UByte = 200"
+   ],
+   "expr": "v69 - v70"
+  },
+  {
+   "id": "UByte 3 * 200",
+   "decl": [
+    "DIM v71 AS UByte = 3",
+    "DIM v72 AS UByte = 200"
+   ],
+   "expr": "v71 * v72"
+  },
+  {
+   "id": "UByte 3 / 200",
+   "decl": [
+    "DIM v73 AS UByte = 3",
+    "DIM v74 AS UByte = 200"
+   ],
+   "expr": "v73 / v74"
+  },
+  {
+   "id": "UByte 3 MOD 200",
+   "decl": [
+    "DIM v75 AS UByte = 3",
+    "DIM v76 AS UByte = 200"
+   ],
+   "expr": "v75 MOD v76"
+  },
+  {
+   "id": "UByte 3 = 200",
+   "decl": [
+    "DIM v77 AS UByte = 3",
+    "DIM v78 AS UByte = 200"
+   ],
+   "expr": "v77 = v78"
+  },
+  {
+   "id": "UByte 3 < 200",
+   "decl": [
+    "DIM v79 AS UByte = 3",
+    "DIM v80 AS UByte = 200"
+   ],
+   "expr": "v79 < v80"
+  },
+  {
+   "id": "UByte 3 > 200",
+   "decl": [
+    "DIM v81 AS UByte = 3",
+    "DIM v82 AS UByte = 200"
+   ],
+   "expr": "v81 > v82"
+  },
+  {
+   "id": "UByte 3 BAND 200",
+   "decl": [
+    "DIM v83 AS UByte = 3",
+    "DIM v84 AS UByte = 200"
+   ],
+   "expr": "v83 BAND v84"
+  },
+  {
+   "id": "UByte 3 BOR 200",
+   "decl": [
+    "DIM v85 AS UByte = 3",
+    "DIM v86 AS UByte = 200"
+   ],
+   "expr": "v85 BOR v86"
+  },
+  {
+   "id": "UByte 3 BXOR 200",
+   "decl": [
+    "DIM v87 AS UByte = 3",
+    "DIM v88 AS UByte = 200"
+   ],
+   "expr": "v87 BXOR v88"
+  },
+  {
+   "id": "Byte -7 + 2",
+   "decl": [
+    "DIM v89 AS Byte = -7",
+    "DIM v90 AS Byte = 2"
+   ],
+   "expr": "v89 + v90"
+  },
+  {
+   "id": "Byte -7 - 2",
+   "decl": [
+    "DIM v91 AS Byte = -7",
+    "DIM v92 AS Byte = 2"
+   ],
+   "expr": "v91 - v92"
+  },
+  {
+   "id": "Byte -7 * 2",
+   "decl": [
+    "DIM v93 AS Byte = -7",
+    "DIM v94 AS Byte = 2"
+   ],
+   "expr": "v93 * v94"
+  },
+  {
+   "id": "Byte -7 / 2",
+   "decl": [
+    "DIM v95 AS Byte = -7",
+    "DIM v96 AS Byte = 2"
+   ],
+   "expr": "v95 / v96"
+  },
+  {
+   "id": "Byte -7 MOD 2",
+   "decl": [
+    "DIM v97 AS Byte = -7",
+    "DIM v98 AS Byte = 2"
+   ],
+   "expr": "v97 MOD v98"
+  },
+  {
+   "id": "Byte -7 = 2",
+   "decl": [
+    "DIM v99 AS Byte = -7",
+    "DIM v100 AS Byte = 2"
+   ],
+   "expr": "v99 = v100"
+  },
+  {
+   "id": "Byte -7 < 2",
+   "decl": [
+    "DIM v101 AS Byte = -7",
+    "DIM v102 AS Byte = 2"
+   ],
+   "expr": "v101 < v102"
+  },
+  {
+   "id": "Byte -7 > 2",
+   "decl": [
+    "DIM v103 AS Byte = -7",
+    "DIM v104 AS Byte = 2"
+   ],
+   "expr": "v103 > v104"
+  },
+  {
+   "id": "Byte -7 BAND 2",
+   "decl": [
+    "DIM v105 AS Byte = -7",
+    "DIM v106 AS Byte = 2"
+   ],
+   "expr": "v105 BAND v106"
+  },
+  {
+   "id": "Byte -7 BOR 2",
+   "decl": [
+    "DIM v107 AS Byte = -7",
+    "DIM v108 AS Byte = 2"
+   ],
+   "expr": "v107 BOR v108"
+  },
+  {
+   "id": "Byte -7 BXOR 2",
+   "decl": [
+    "DIM v109 AS Byte = -7",
+    "DIM v110 AS Byte = 2"
+   ],
+   "expr": "v109 BXOR v110"
+  },
+  {
+   "id": "Byte 7 + -2",
+   "decl": [
+    "DIM v111 AS Byte = 7",
+    "DIM v112 AS Byte = -2"
+   ],
+   "expr": "v111 + v112"
+  },
+  {
+   "id": "Byte 7 - -2",
+   "decl": [
+    "DIM v113 AS Byte = 7",
+    "DIM v114 AS Byte = -2"
+   ],
+   "expr": "v113 - v114"
+  },
+  {
+   "id": "Byte 7 * -2",
+   "decl": [
+    "DIM v115 AS Byte = 7",
+    "DIM v116 AS Byte = -2"
+   ],
+   "expr": "v115 * v116"
+  },
+  {
+   "id": "Byte 7 / -2",
+   "decl": [
+    "DIM v117 AS Byte = 7",
+    "DIM v118 AS Byte = -2"
+   ],
+   "expr": "v117 / v118"
+  },
+  {
+   "id": "Byte 7 MOD -2",
+   "decl": [
+    "DIM v119 AS Byte = 7",
+    "DIM v120 AS Byte = -2"
+   ],
+   "expr": "v119 MOD v120"
+  },
+  {
+   "id": "Byte 7 = -2",
+   "decl": [
+    "DIM v121 AS Byte = 7",
+    "DIM v122 AS Byte = -2"
+   ],
+   "expr": "v121 = v122"
+  },
+  {
+   "id": "Byte 7 < -2",
+   "decl": [
+    "DIM v123 AS Byte = 7",
+    "DIM v124 AS Byte = -2"
+   ],
+   "expr": "v123 < v124"
+  },
+  {
+   "id": "Byte 7 > -2",
+   "decl": [
+    "DIM v125 AS Byte = 7",
+    "DIM v126 AS Byte = -2"
+   ],
+   "expr": "v125 > v126"
+  },
+  {
+   "id": "Byte 7 BAND -2",
+   "decl": [
+    "DIM v127 AS Byte = 7",
+    "DIM v128 AS Byte = -2"
+   ],
+   "expr": "v127 BAND v128"
+  },
+  {
+   "id": "Byte 7 BOR -2",
+   "decl": [
+    "DIM v129 AS Byte = 7",
+    "DIM v130 AS Byte = -2"
+   ],
+   "expr": "v129 BOR v130"
+  },
+  {
+   "id": "Byte 7 BXOR -2",
+   "decl": [
+    "DIM v131 AS Byte = 7",
+    "DIM v132 AS Byte = -2"
+   ],
+   "expr": "v131 BXOR v132"
+  },
+  {
+   "id": "Byte -128 + -1",
+   "decl": [
+    "DIM v133 AS Byte = -128",
+    "DIM v134 AS Byte = -1"
+   ],
+   "expr": "v133 + v134"
+  },
+  {
+   "id": "Byte -128 - -1",
+   "decl": [
+    "DIM v135 AS Byte = -128",
+    "DIM v136 AS Byte = -1"
+   ],
+   "expr": "v135 - v136"
+  },
+  {
+   "id": "Byte -128 * -1",
+   "decl": [
+    "DIM v137 AS Byte = -128",
+    "DIM v138 AS Byte = -1"
+   ],
+   "expr": "v137 * v138"
+  },
+  {
+   "id": "Byte -128 / -1",
+   "decl": [
+    "DIM v139 AS Byte = -128",
+    "DIM v140 AS Byte = -1"
+   ],
+   "expr": "v139 / v140"
+  },
+  {
+   "id": "Byte -128 MOD -1",
+   "decl": [
+    "DIM v141 AS Byte = -128",
+    "DIM v142 AS Byte = -1"
+   ],
+   "expr": "v141 MOD v142"
+  },
+  {
+   "id": "Byte -128 = -1",
+   "decl": [
+    "DIM v143 AS Byte = -128",
+    "DIM v144 AS Byte = -1"
+   ],
+   "expr": "v143 = v144"
+  },
+  {
+   "id": "Byte -128 < -1",
+   "decl": [
+    "DIM v145 AS Byte = -128",
+    "DIM v146 AS Byte = -1"
+   ],
+   "expr": "v145 < v146"
+  },
+  {
+   "id": "Byte -128 > -1",
+   "decl": [
+    "DIM v147 AS Byte = -128",
+    "DIM v148 AS Byte = -1"
+   ],
+   "expr": "v147 > v148"
+  },
+  {
+   "id": "Byte -128 BAND -1",
+   "decl": [
+    "DIM v149 AS Byte = -128",
+    "DIM v150 AS Byte = -1"
+   ],
+   "expr": "v149 BAND v150"
+  },
+  {
+   "id": "Byte -128 BOR -1",
+   "decl": [
+    "DIM v151 AS Byte = -128",
+    "DIM v152 AS Byte = -1"
+   ],
+   "expr": "v151 BOR v152"
+  },
+  {
+   "id": "Byte -128 BXOR -1",
+   "decl": [
+    "DIM v153 AS Byte = -128",
+    "DIM v154 AS Byte = -1"
+   ],
+   "expr": "v153 BXOR v154"
+  },
+  {
+   "id": "Byte 100 + 27",
+   "decl": [
+    "DIM v155 AS Byte = 100",
+    "DIM v156 AS Byte = 27"
+   ],
+   "expr": "v155 + v156"
+  },
+  {
+   "id": "Byte 100 - 27",
+   "decl": [
+    "DIM v157 AS Byte = 100",
+    "DIM v158 AS Byte = 27"
+   ],
+   "expr": "v157 - v158"
+  },
+  {
+   "id": "Byte 100 * 27",
+   "decl": [
+    "DIM v159 AS Byte = 100",
+    "DIM v160 AS Byte = 27"
+   ],
+   "expr": "v159 * v160"
+  },
+  {
+   "id": "Byte 100 / 27",
+   "decl": [
+    "DIM v161 AS Byte = 100",
+    "DIM v162 AS Byte = 27"
+   ],
+   "expr": "v161 / v162"
+  },
+  {
+   "id": "Byte 100 MOD 27",
+   "decl": [
+    "DIM v163 AS Byte = 100",
+    "DIM v164 AS Byte = 27"
+   ],
+   "expr": "v163 MOD v164"
+  },
+  {
+   "id": "Byte 100 = 27",
+   "decl": [
+    "DIM v165 AS Byte = 100",
+    "DIM v166 AS Byte = 27"
+   ],
+   "expr": "v165 = v166"
+  },
+  {
+   "id": "Byte 100 < 27",
+   "decl": [
+    "DIM v167 AS Byte = 100",
+    "DIM v168 AS Byte = 27"
+   ],
+   "expr": "v167 < v168"
+  },
+  {
+   "id": "Byte 100 > 27",
+   "decl": [
+    "DIM v169 AS Byte = 100",
+    "DIM v170 AS Byte = 27"
+   ],
+   "expr": "v169 > v170"
+  },
+  {
+   "id": "Byte 100 BAND 27",
+   "decl": [
+    "DIM v171 AS Byte = 100",
+    "DIM v172 AS Byte = 27"
+   ],
+   "expr": "v171 BAND v172"
+  },
+  {
+   "id": "Byte 100 BOR 27",
+   "decl": [
+    "DIM v173 AS Byte = 100",
+    "DIM v174 AS Byte = 27"
+   ],
+   "expr": "v173 BOR v174"
+  },
+  {
+   "id": "Byte 100 BXOR 27",
+   "decl": [
+    "DIM v175 AS Byte = 100",
+    "DIM v176 AS Byte = 27"
+   ],
+   "expr": "v175 BXOR v176"
+  },
+  {
+   "id": "UInteger 60000 + 1000",
+   "decl": [
+    "DIM v177 AS UInteger = 60000",
+    "DIM v178 AS UInteger = 1000"
+   ],
+   "expr": "v177 + v178"
+  },
+  {
+   "id": "UInteger 60000 - 1000",
+   "decl": [
+    "DIM v179 AS UInteger = 60000",
+    "DIM v180 AS UInteger = 1000"
+   ],
+   "expr": "v179 - v180"
+  },
+  {
+   "id": "UInteger 60000 * 1000",
+   "decl": [
+    "DIM v181 AS UInteger = 60000",
+    "DIM v182 AS UInteger = 1000"
+   ],
+   "expr": "v181 * v182"
+  },
+  {
+   "id": "UInteger 60000 / 1000",
+   "decl": [
+    "DIM v183 AS UInteger = 60000",
+    "DIM v184 AS UInteger = 1000"
+   ],
+   "expr": "v183 / v184"
+  },
+  {
+   "id": "UInteger 60000 MOD 1000",
+   "decl": [
+    "DIM v185 AS UInteger = 60000",
+    "DIM v186 AS UInteger = 1000"
+   ],
+   "expr": "v185 MOD v186"
+  },
+  {
+   "id": "UInteger 60000 = 1000",
+   "decl": [
+    "DIM v187 AS UInteger = 60000",
+    "DIM v188 AS UInteger = 1000"
+   ],
+   "expr": "v187 = v188"
+  },
+  {
+   "id": "UInteger 60000 < 1000",
+   "decl": [
+    "DIM v189 AS UInteger = 60000",
+    "DIM v190 AS UInteger = 1000"
+   ],
+   "expr": "v189 < v190"
+  },
+  {
+   "id": "UInteger 60000 > 1000",
+   "decl": [
+    "DIM v191 AS UInteger = 60000",
+    "DIM v192 AS UInteger = 1000"
+   ],
+   "expr": "v191 > v192"
+  },
+  {
+   "id": "UInteger 60000 BAND 1000",
+   "decl": [
+    "DIM v193 AS UInteger = 60000",
+    "DIM v194 AS UInteger = 1000"
+   ],
+   "expr": "v193 BAND v194"
+  },
+  {
+   "id": "UInteger 60000 BOR 1000",
+   "decl": [
+    "DIM v195 AS UInteger = 60000",
+    "DIM v196 AS UInteger = 1000"
+   ],
+   "expr": "v195 BOR v196"
+  },
+  {
+   "id": "UInteger 60000 BXOR 1000",
+   "decl": [
+    "DIM v197 AS UInteger = 60000",
+    "DIM v198 AS UInteger = 1000"
+   ],
+   "expr": "v197 BXOR v198"
+  },
+  {
+   "id": "UInteger 7 + 2",
+   "decl": [
+    "DIM v199 AS UInteger = 7",
+    "DIM v200 AS UInteger = 2"
+   ],
+   "expr": "v199 + v200"
+  },
+  {
+   "id": "UInteger 7 - 2",
+   "decl": [
+    "DIM v201 AS UInteger = 7",
+    "DIM v202 AS UInteger = 2"
+   ],
+   "expr": "v201 - v202"
+  },
+  {
+   "id": "UInteger 7 * 2",
+   "decl": [
+    "DIM v203 AS UInteger = 7",
+    "DIM v204 AS UInteger = 2"
+   ],
+   "expr": "v203 * v204"
+  },
+  {
+   "id": "UInteger 7 / 2",
+   "decl": [
+    "DIM v205 AS UInteger = 7",
+    "DIM v206 AS UInteger = 2"
+   ],
+   "expr": "v205 / v206"
+  },
+  {
+   "id": "UInteger 7 MOD 2",
+   "decl": [
+    "DIM v207 AS UInteger = 7",
+    "DIM v208 AS UInteger = 2"
+   ],
+   "expr": "v207 MOD v208"
+  },
+  {
+   "id": "UInteger 7 = 2",
+   "decl": [
+    "DIM v209 AS UInteger = 7",
+    "DIM v210 AS UInteger = 2"
+   ],
+   "expr": "v209 = v210"
+  },
+  {
+   "id": "UInteger 7 < 2",
+   "decl": [
+    "DIM v211 AS UInteger = 7",
+    "DIM v212 AS UInteger = 2"
+   ],
+   "expr": "v211 < v212"
+  },
+  {
+   "id": "UInteger 7 > 2",
+   "decl": [
+    "DIM v213 AS UInteger = 7",
+    "DIM v214 AS UInteger = 2"
+   ],
+   "expr": "v213 > v214"
+  },
+  {
+   "id": "UInteger 7 BAND 2",
+   "decl": [
+    "DIM v215 AS UInteger = 7",
+    "DIM v216 AS UInteger = 2"
+   ],
+   "expr": "v215 BAND v216"
+  },
+  {
+   "id": "UInteger 7 BOR 2",
+   "decl": [
+    "DIM v217 AS UInteger = 7",
+    "DIM v218 AS UInteger = 2"
+   ],
+   "expr": "v217 BOR v218"
+  },
+  {
+   "id": "UInteger 7 BXOR 2",
+   "decl": [
+    "DIM v219 AS UInteger = 7",
+    "DIM v220 AS UInteger = 2"
+   ],
+   "expr": "v219 BXOR v220"
+  },
+  {
+   "id": "UInteger 65535 + 1",
+   "decl": [
+    "DIM v221 AS UInteger = 65535",
+    "DIM v222 AS UInteger = 1"
+   ],
+   "expr": "v221 + v222"
+  },
+  {
+   "id": "UInteger 65535 - 1",
+   "decl": [
+    "DIM v223 AS UInteger = 65535",
+    "DIM v224 AS UInteger = 1"
+   ],
+   "expr": "v223 - v224"
+  },
+  {
+   "id": "UInteger 65535 * 1",
+   "decl": [
+    "DIM v225 AS UInteger = 65535",
+    "DIM v226 AS UInteger = 1"
+   ],
+   "expr": "v225 * v226"
+  },
+  {
+   "id": "UInteger 65535 / 1",
+   "decl": [
+    "DIM v227 AS UInteger = 65535",
+    "DIM v228 AS UInteger = 1"
+   ],
+   "expr": "v227 / v228"
+  },
+  {
+   "id": "UInteger 65535 MOD 1",
+   "decl": [
+    "DIM v229 AS UInteger = 65535",
+    "DIM v230 AS UInteger = 1"
+   ],
+   "expr": "v229 MOD v230"
+  },
+  {
+   "id": "UInteger 65535 = 1",
+   "decl": [
+    "DIM v231 AS UInteger = 65535",
+    "DIM v232 AS UInteger = 1"
+   ],
+   "expr": "v231 = v232"
+  },
+  {
+   "id": "UInteger 65535 < 1",
+   "decl": [
+    "DIM v233 AS UInteger = 65535",
+    "DIM v234 AS UInteger = 1"
+   ],
+   "expr": "v233 < v234"
+  },
+  {
+   "id": "UInteger 65535 > 1",
+   "decl": [
+    "DIM v235 AS UInteger = 65535",
+    "DIM v236 AS UInteger = 1"
+   ],
+   "expr": "v235 > v236"
+  },
+  {
+   "id": "UInteger 65535 BAND 1",
+   "decl": [
+    "DIM v237 AS UInteger = 65535",
+    "DIM v238 AS UInteger = 1"
+   ],
+   "expr": "v237 BAND v238"
+  },
+  {
+   "id": "UInteger 65535 BOR 1",
+   "decl": [
+    "DIM v239 AS UInteger = 65535",
+    "DIM v240 AS UInteger = 1"
+   ],
+   "expr": "v239 BOR v240"
+  },
+  {
+   "id": "UInteger 65535 BXOR 1",
+   "decl": [
+    "DIM v241 AS UInteger = 65535",
+    "DIM v242 AS UInteger = 1"
+   ],
+   "expr": "v241 BXOR v242"
+  },
+  {
+   "id": "UInteger 3 + 60000",
+   "decl": [
+    "DIM v243 AS UInteger = 3",
+    "DIM v244 AS UInteger = 60000"
+   ],
+   "expr": "v243 + v244"
+  },
+  {
+   "id": "UInteger 3 - 60000",
+   "decl": [
+    "DIM v245 AS UInteger = 3",
+    "DIM v246 AS UInteger = 60000"
+   ],
+   "expr": "v245 - v246"
+  },
+  {
+   "id": "UInteger 3 * 60000",
+   "decl": [
+    "DIM v247 AS UInteger = 3",
+    "DIM v248 AS UInteger = 60000"
+   ],
+   "expr": "v247 * v248"
+  },
+  {
+   "id": "UInteger 3 / 60000",
+   "decl": [
+    "DIM v249 AS UInteger = 3",
+    "DIM v250 AS UInteger = 60000"
+   ],
+   "expr": "v249 / v250"
+  },
+  {
+   "id": "UInteger 3 MOD 60000",
+   "decl": [
+    "DIM v251 AS UInteger = 3",
+    "DIM v252 AS UInteger = 60000"
+   ],
+   "expr": "v251 MOD v252"
+  },
+  {
+   "id": "UInteger 3 = 60000",
+   "decl": [
+    "DIM v253 AS UInteger = 3",
+    "DIM v254 AS UInteger = 60000"
+   ],
+   "expr": "v253 = v254"
+  },
+  {
+   "id": "UInteger 3 < 60000",
+   "decl": [
+    "DIM v255 AS UInteger = 3",
+    "DIM v256 AS UInteger = 60000"
+   ],
+   "expr": "v255 < v256"
+  },
+  {
+   "id": "UInteger 3 > 60000",
+   "decl": [
+    "DIM v257 AS UInteger = 3",
+    "DIM v258 AS UInteger = 60000"
+   ],
+   "expr": "v257 > v258"
+  },
+  {
+   "id": "UInteger 3 BAND 60000",
+   "decl": [
+    "DIM v259 AS UInteger = 3",
+    "DIM v260 AS UInteger = 60000"
+   ],
+   "expr": "v259 BAND v260"
+  },
+  {
+   "id": "UInteger 3 BOR 60000",
+   "decl": [
+    "DIM v261 AS UInteger = 3",
+    "DIM v262 AS UInteger = 60000"
+   ],
+   "expr": "v261 BOR v262"
+  },
+  {
+   "id": "UInteger 3 BXOR 60000",
+   "decl": [
+    "DIM v263 AS UInteger = 3",
+    "DIM v264 AS UInteger = 60000"
+   ],
+   "expr": "v263 BXOR v264"
+  },
+  {
+   "id": "Integer -100 + 3",
+   "decl": [
+    "DIM v265 AS Integer = -100",
+    "DIM v266 AS Integer = 3"
+   ],
+   "expr": "v265 + v266"
+  },
+  {
+   "id": "Integer -100 - 3",
+   "decl": [
+    "DIM v267 AS Integer = -100",
+    "DIM v268 AS Integer = 3"
+   ],
+   "expr": "v267 - v268"
+  },
+  {
+   "id": "Integer -100 * 3",
+   "decl": [
+    "DIM v269 AS Integer = -100",
+    "DIM v270 AS Integer = 3"
+   ],
+   "expr": "v269 * v270"
+  },
+  {
+   "id": "Integer -100 / 3",
+   "decl": [
+    "DIM v271 AS Integer = -100",
+    "DIM v272 AS Integer = 3"
+   ],
+   "expr": "v271 / v272"
+  },
+  {
+   "id": "Integer -100 MOD 3",
+   "decl": [
+    "DIM v273 AS Integer = -100",
+    "DIM v274 AS Integer = 3"
+   ],
+   "expr": "v273 MOD v274"
+  },
+  {
+   "id": "Integer -100 = 3",
+   "decl": [
+    "DIM v275 AS Integer = -100",
+    "DIM v276 AS Integer = 3"
+   ],
+   "expr": "v275 = v276"
+  },
+  {
+   "id": "Integer -100 < 3",
+   "decl": [
+    "DIM v277 AS Integer = -100",
+    "DIM v278 AS Integer = 3"
+   ],
+   "expr": "v277 < v278"
+  },
+  {
+   "id": "Integer -100 > 3",
+   "decl": [
+    "DIM v279 AS Integer = -100",
+    "DIM v280 AS Integer = 3"
+   ],
+   "expr": "v279 > v280"
+  },
+  {
+   "id": "Integer -100 BAND 3",
+   "decl": [
+    "DIM v281 AS Integer = -100",
+    "DIM v282 AS Integer = 3"
+   ],
+   "expr": "v281 BAND v282"
+  },
+  {
+   "id": "Integer -100 BOR 3",
+   "decl": [
+    "DIM v283 AS Integer = -100",
+    "DIM v284 AS Integer = 3"
+   ],
+   "expr": "v283 BOR v284"
+  },
+  {
+   "id": "Integer -100 BXOR 3",
+   "decl": [
+    "DIM v285 AS Integer = -100",
+    "DIM v286 AS Integer = 3"
+   ],
+   "expr": "v285 BXOR v286"
+  },
+  {
+   "id": "Integer 100 + -3",
+   "decl": [
+    "DIM v287 AS Integer = 100",
+    "DIM v288 AS Integer = -3"
+   ],
+   "expr": "v287 + v288"
+  },
+  {
+   "id": "Integer 100 - -3",
+   "decl": [
+    "DIM v289 AS Integer = 100",
+    "DIM v290 AS Integer = -3"
+   ],
+   "expr": "v289 - v290"
+  },
+  {
+   "id": "Integer 100 * -3",
+   "decl": [
+    "DIM v291 AS Integer = 100",
+    "DIM v292 AS Integer = -3"
+   ],
+   "expr": "v291 * v292"
+  },
+  {
+   "id": "Integer 100 / -3",
+   "decl": [
+    "DIM v293 AS Integer = 100",
+    "DIM v294 AS Integer = -3"
+   ],
+   "expr": "v293 / v294"
+  },
+  {
+   "id": "Integer 100 MOD -3",
+   "decl": [
+    "DIM v295 AS Integer = 100",
+    "DIM v296 AS Integer = -3"
+   ],
+   "expr": "v295 MOD v296"
+  },
+  {
+   "id": "Integer 100 = -3",
+   "decl": [
+    "DIM v297 AS Integer = 100",
+    "DIM v298 AS Integer = -3"
+   ],
+   "expr": "v297 = v298"
+  },
+  {
+   "id": "Integer 100 < -3",
+   "decl": [
+    "DIM v299 AS Integer = 100",
+    "DIM v300 AS Integer = -3"
+   ],
+   "expr": "v299 < v300"
+  },
+  {
+   "id": "Integer 100 > -3",
+   "decl": [
+    "DIM v301 AS Integer = 100",
+    "DIM v302 AS Integer = -3"
+   ],
+   "expr": "v301 > v302"
+  },
+  {
+   "id": "Integer 100 BAND -3",
+   "decl": [
+    "DIM v303 AS Integer = 100",
+    "DIM v304 AS Integer = -3"
+   ],
+   "expr": "v303 BAND v304"
+  },
+  {
+   "id": "Integer 100 BOR -3",
+   "decl": [
+    "DIM v305 AS Integer = 100",
+    "DIM v306 AS Integer = -3"
+   ],
+   "expr": "v305 BOR v306"
+  },
+  {
+   "id": "Integer 100 BXOR -3",
+   "decl": [
+    "DIM v307 AS Integer = 100",
+    "DIM v308 AS Integer = -3"
+   ],
+   "expr": "v307 BXOR v308"
+  },
+  {
+   "id": "Integer -32768 + -1",
+   "decl": [
+    "DIM v309 AS Integer = -32768",
+    "DIM v310 AS Integer = -1"
+   ],
+   "expr": "v309 + v310"
+  },
+  {
+   "id": "Integer -32768 - -1",
+   "decl": [
+    "DIM v311 AS Integer = -32768",
+    "DIM v312 AS Integer = -1"
+   ],
+   "expr": "v311 - v312"
+  },
+  {
+   "id": "Integer -32768 * -1",
+   "decl": [
+    "DIM v313 AS Integer = -32768",
+    "DIM v314 AS Integer = -1"
+   ],
+   "expr": "v313 * v314"
+  },
+  {
+   "id": "Integer -32768 / -1",
+   "decl": [
+    "DIM v315 AS Integer = -32768",
+    "DIM v316 AS Integer = -1"
+   ],
+   "expr": "v315 / v316"
+  },
+  {
+   "id": "Integer -32768 MOD -1",
+   "decl": [
+    "DIM v317 AS Integer = -32768",
+    "DIM v318 AS Integer = -1"
+   ],
+   "expr": "v317 MOD v318"
+  },
+  {
+   "id": "Integer -32768 = -1",
+   "decl": [
+    "DIM v319 AS Integer = -32768",
+    "DIM v320 AS Integer = -1"
+   ],
+   "expr": "v319 = v320"
+  },
+  {
+   "id": "Integer -32768 < -1",
+   "decl": [
+    "DIM v321 AS Integer = -32768",
+    "DIM v322 AS Integer = -1"
+   ],
+   "expr": "v321 < v322"
+  },
+  {
+   "id": "Integer -32768 > -1",
+   "decl": [
+    "DIM v323 AS Integer = -32768",
+    "DIM v324 AS Integer = -1"
+   ],
+   "expr": "v323 > v324"
+  },
+  {
+   "id": "Integer -32768 BAND -1",
+   "decl": [
+    "DIM v325 AS Integer = -32768",
+    "DIM v326 AS Integer = -1"
+   ],
+   "expr": "v325 BAND v326"
+  },
+  {
+   "id": "Integer -32768 BOR -1",
+   "decl": [
+    "DIM v327 AS Integer = -32768",
+    "DIM v328 AS Integer = -1"
+   ],
+   "expr": "v327 BOR v328"
+  },
+  {
+   "id": "Integer -32768 BXOR -1",
+   "decl": [
+    "DIM v329 AS Integer = -32768",
+    "DIM v330 AS Integer = -1"
+   ],
+   "expr": "v329 BXOR v330"
+  },
+  {
+   "id": "Integer 30000 + 3000",
+   "decl": [
+    "DIM v331 AS Integer = 30000",
+    "DIM v332 AS Integer = 3000"
+   ],
+   "expr": "v331 + v332"
+  },
+  {
+   "id": "Integer 30000 - 3000",
+   "decl": [
+    "DIM v333 AS Integer = 30000",
+    "DIM v334 AS Integer = 3000"
+   ],
+   "expr": "v333 - v334"
+  },
+  {
+   "id": "Integer 30000 * 3000",
+   "decl": [
+    "DIM v335 AS Integer = 30000",
+    "DIM v336 AS Integer = 3000"
+   ],
+   "expr": "v335 * v336"
+  },
+  {
+   "id": "Integer 30000 / 3000",
+   "decl": [
+    "DIM v337 AS Integer = 30000",
+    "DIM v338 AS Integer = 3000"
+   ],
+   "expr": "v337 / v338"
+  },
+  {
+   "id": "Integer 30000 MOD 3000",
+   "decl": [
+    "DIM v339 AS Integer = 30000",
+    "DIM v340 AS Integer = 3000"
+   ],
+   "expr": "v339 MOD v340"
+  },
+  {
+   "id": "Integer 30000 = 3000",
+   "decl": [
+    "DIM v341 AS Integer = 30000",
+    "DIM v342 AS Integer = 3000"
+   ],
+   "expr": "v341 = v342"
+  },
+  {
+   "id": "Integer 30000 < 3000",
+   "decl": [
+    "DIM v343 AS Integer = 30000",
+    "DIM v344 AS Integer = 3000"
+   ],
+   "expr": "v343 < v344"
+  },
+  {
+   "id": "Integer 30000 > 3000",
+   "decl": [
+    "DIM v345 AS Integer = 30000",
+    "DIM v346 AS Integer = 3000"
+   ],
+   "expr": "v345 > v346"
+  },
+  {
+   "id": "Integer 30000 BAND 3000",
+   "decl": [
+    "DIM v347 AS Integer = 30000",
+    "DIM v348 AS Integer = 3000"
+   ],
+   "expr": "v347 BAND v348"
+  },
+  {
+   "id": "Integer 30000 BOR 3000",
+   "decl": [
+    "DIM v349 AS Integer = 30000",
+    "DIM v350 AS Integer = 3000"
+   ],
+   "expr": "v349 BOR v350"
+  },
+  {
+   "id": "Integer 30000 BXOR 3000",
+   "decl": [
+    "DIM v351 AS Integer = 30000",
+    "DIM v352 AS Integer = 3000"
+   ],
+   "expr": "v351 BXOR v352"
+  },
+  {
+   "id": "ULong 4000000000 + 7",
+   "decl": [
+    "DIM v353 AS ULong = 4000000000",
+    "DIM v354 AS ULong = 7"
+   ],
+   "expr": "v353 + v354"
+  },
+  {
+   "id": "ULong 4000000000 - 7",
+   "decl": [
+    "DIM v355 AS ULong = 4000000000",
+    "DIM v356 AS ULong = 7"
+   ],
+   "expr": "v355 - v356"
+  },
+  {
+   "id": "ULong 4000000000 * 7",
+   "decl": [
+    "DIM v357 AS ULong = 4000000000",
+    "DIM v358 AS ULong = 7"
+   ],
+   "expr": "v357 * v358"
+  },
+  {
+   "id": "ULong 4000000000 / 7",
+   "decl": [
+    "DIM v359 AS ULong = 4000000000",
+    "DIM v360 AS ULong = 7"
+   ],
+   "expr": "v359 / v360"
+  },
+  {
+   "id": "ULong 4000000000 MOD 7",
+   "decl": [
+    "DIM v361 AS ULong = 4000000000",
+    "DIM v362 AS ULong = 7"
+   ],
+   "expr": "v361 MOD v362"
+  },
+  {
+   "id": "ULong 4000000000 = 7",
+   "decl": [
+    "DIM v363 AS ULong = 4000000000",
+    "DIM v364 AS ULong = 7"
+   ],
+   "expr": "v363 = v364"
+  },
+  {
+   "id": "ULong 4000000000 < 7",
+   "decl": [
+    "DIM v365 AS ULong = 4000000000",
+    "DIM v366 AS ULong = 7"
+   ],
+   "expr": "v365 < v366"
+  },
+  {
+   "id": "ULong 4000000000 > 7",
+   "decl": [
+    "DIM v367 AS ULong = 4000000000",
+    "DIM v368 AS ULong = 7"
+   ],
+   "expr": "v367 > v368"
+  },
+  {
+   "id": "ULong 4000000000 BAND 7",
+   "decl": [
+    "DIM v369 AS ULong = 4000000000",
+    "DIM v370 AS ULong = 7"
+   ],
+   "expr": "v369 BAND v370"
+  },
+  {
+   "id": "ULong 4000000000 BOR 7",
+   "decl": [
+    "DIM v371 AS ULong = 4000000000",
+    "DIM v372 AS ULong = 7"
+   ],
+   "expr": "v371 BOR v372"
+  },
+  {
+   "id": "ULong 4000000000 BXOR 7",
+   "decl": [
+    "DIM v373 AS ULong = 4000000000",
+    "DIM v374 AS ULong = 7"
+   ],
+   "expr": "v373 BXOR v374"
+  },
+  {
+   "id": "ULong 7 + 2",
+   "decl": [
+    "DIM v375 AS ULong = 7",
+    "DIM v376 AS ULong = 2"
+   ],
+   "expr": "v375 + v376"
+  },
+  {
+   "id": "ULong 7 - 2",
+   "decl": [
+    "DIM v377 AS ULong = 7",
+    "DIM v378 AS ULong = 2"
+   ],
+   "expr": "v377 - v378"
+  },
+  {
+   "id": "ULong 7 * 2",
+   "decl": [
+    "DIM v379 AS ULong = 7",
+    "DIM v380 AS ULong = 2"
+   ],
+   "expr": "v379 * v380"
+  },
+  {
+   "id": "ULong 7 / 2",
+   "decl": [
+    "DIM v381 AS ULong = 7",
+    "DIM v382 AS ULong = 2"
+   ],
+   "expr": "v381 / v382"
+  },
+  {
+   "id": "ULong 7 MOD 2",
+   "decl": [
+    "DIM v383 AS ULong = 7",
+    "DIM v384 AS ULong = 2"
+   ],
+   "expr": "v383 MOD v384"
+  },
+  {
+   "id": "ULong 7 = 2",
+   "decl": [
+    "DIM v385 AS ULong = 7",
+    "DIM v386 AS ULong = 2"
+   ],
+   "expr": "v385 = v386"
+  },
+  {
+   "id": "ULong 7 < 2",
+   "decl": [
+    "DIM v387 AS ULong = 7",
+    "DIM v388 AS ULong = 2"
+   ],
+   "expr": "v387 < v388"
+  },
+  {
+   "id": "ULong 7 > 2",
+   "decl": [
+    "DIM v389 AS ULong = 7",
+    "DIM v390 AS ULong = 2"
+   ],
+   "expr": "v389 > v390"
+  },
+  {
+   "id": "ULong 7 BAND 2",
+   "decl": [
+    "DIM v391 AS ULong = 7",
+    "DIM v392 AS ULong = 2"
+   ],
+   "expr": "v391 BAND v392"
+  },
+  {
+   "id": "ULong 7 BOR 2",
+   "decl": [
+    "DIM v393 AS ULong = 7",
+    "DIM v394 AS ULong = 2"
+   ],
+   "expr": "v393 BOR v394"
+  },
+  {
+   "id": "ULong 7 BXOR 2",
+   "decl": [
+    "DIM v395 AS ULong = 7",
+    "DIM v396 AS ULong = 2"
+   ],
+   "expr": "v395 BXOR v396"
+  },
+  {
+   "id": "ULong 4294967295 + 1",
+   "decl": [
+    "DIM v397 AS ULong = 4294967295",
+    "DIM v398 AS ULong = 1"
+   ],
+   "expr": "v397 + v398"
+  },
+  {
+   "id": "ULong 4294967295 - 1",
+   "decl": [
+    "DIM v399 AS ULong = 4294967295",
+    "DIM v400 AS ULong = 1"
+   ],
+   "expr": "v399 - v400"
+  },
+  {
+   "id": "ULong 4294967295 * 1",
+   "decl": [
+    "DIM v401 AS ULong = 4294967295",
+    "DIM v402 AS ULong = 1"
+   ],
+   "expr": "v401 * v402"
+  },
+  {
+   "id": "ULong 4294967295 / 1",
+   "decl": [
+    "DIM v403 AS ULong = 4294967295",
+    "DIM v404 AS ULong = 1"
+   ],
+   "expr": "v403 / v404"
+  },
+  {
+   "id": "ULong 4294967295 MOD 1",
+   "decl": [
+    "DIM v405 AS ULong = 4294967295",
+    "DIM v406 AS ULong = 1"
+   ],
+   "expr": "v405 MOD v406"
+  },
+  {
+   "id": "ULong 4294967295 = 1",
+   "decl": [
+    "DIM v407 AS ULong = 4294967295",
+    "DIM v408 AS ULong = 1"
+   ],
+   "expr": "v407 = v408"
+  },
+  {
+   "id": "ULong 4294967295 < 1",
+   "decl": [
+    "DIM v409 AS ULong = 4294967295",
+    "DIM v410 AS ULong = 1"
+   ],
+   "expr": "v409 < v410"
+  },
+  {
+   "id": "ULong 4294967295 > 1",
+   "decl": [
+    "DIM v411 AS ULong = 4294967295",
+    "DIM v412 AS ULong = 1"
+   ],
+   "expr": "v411 > v412"
+  },
+  {
+   "id": "ULong 4294967295 BAND 1",
+   "decl": [
+    "DIM v413 AS ULong = 4294967295",
+    "DIM v414 AS ULong = 1"
+   ],
+   "expr": "v413 BAND v414"
+  },
+  {
+   "id": "ULong 4294967295 BOR 1",
+   "decl": [
+    "DIM v415 AS ULong = 4294967295",
+    "DIM v416 AS ULong = 1"
+   ],
+   "expr": "v415 BOR v416"
+  },
+  {
+   "id": "ULong 4294967295 BXOR 1",
+   "decl": [
+    "DIM v417 AS ULong = 4294967295",
+    "DIM v418 AS ULong = 1"
+   ],
+   "expr": "v417 BXOR v418"
+  },
+  {
+   "id": "ULong 3 + 70000",
+   "decl": [
+    "DIM v419 AS ULong = 3",
+    "DIM v420 AS ULong = 70000"
+   ],
+   "expr": "v419 + v420"
+  },
+  {
+   "id": "ULong 3 - 70000",
+   "decl": [
+    "DIM v421 AS ULong = 3",
+    "DIM v422 AS ULong = 70000"
+   ],
+   "expr": "v421 - v422"
+  },
+  {
+   "id": "ULong 3 * 70000",
+   "decl": [
+    "DIM v423 AS ULong = 3",
+    "DIM v424 AS ULong = 70000"
+   ],
+   "expr": "v423 * v424"
+  },
+  {
+   "id": "ULong 3 / 70000",
+   "decl": [
+    "DIM v425 AS ULong = 3",
+    "DIM v426 AS ULong = 70000"
+   ],
+   "expr": "v425 / v426"
+  },
+  {
+   "id": "ULong 3 MOD 70000",
+   "decl": [
+    "DIM v427 AS ULong = 3",
+    "DIM v428 AS ULong = 70000"
+   ],
+   "expr": "v427 MOD v428"
+  },
+  {
+   "id": "ULong 3 = 70000",
+   "decl": [
+    "DIM v429 AS ULong = 3",
+    "DIM v430 AS ULong = 70000"
+   ],
+   "expr": "v429 = v430"
+  },
+  {
+   "id": "ULong 3 < 70000",
+   "decl": [
+    "DIM v431 AS ULong = 3",
+    "DIM v432 AS ULong = 70000"
+   ],
+   "expr": "v431 < v432"
+  },
+  {
+   "id": "ULong 3 > 70000",
+   "decl": [
+    "DIM v433 AS ULong = 3",
+    "DIM v434 AS ULong = 70000"
+   ],
+   "expr": "v433 > v434"
+  },
+  {
+   "id": "ULong 3 BAND 70000",
+   "decl": [
+    "DIM v435 AS ULong = 3",
+    "DIM v436 AS ULong = 70000"
+   ],
+   "expr": "v435 BAND v436"
+  },
+  {
+   "id": "ULong 3 BOR 70000",
+   "decl": [
+    "DIM v437 AS ULong = 3",
+    "DIM v438 AS ULong = 70000"
+   ],
+   "expr": "v437 BOR v438"
+  },
+  {
+   "id": "ULong 3 BXOR 70000",
+   "decl": [
+    "DIM v439 AS ULong = 3",
+    "DIM v440 AS ULong = 70000"
+   ],
+   "expr": "v439 BXOR v440"
+  },
+  {
+   "id": "Long -100000 + 7",
+   "decl": [
+    "DIM v441 AS Long = -100000",
+    "DIM v442 AS Long = 7"
+   ],
+   "expr": "v441 + v442"
+  },
+  {
+   "id": "Long -100000 - 7",
+   "decl": [
+    "DIM v443 AS Long = -100000",
+    "DIM v444 AS Long = 7"
+   ],
+   "expr": "v443 - v444"
+  },
+  {
+   "id": "Long -100000 * 7",
+   "decl": [
+    "DIM v445 AS Long = -100000",
+    "DIM v446 AS Long = 7"
+   ],
+   "expr": "v445 * v446"
+  },
+  {
+   "id": "Long -100000 / 7",
+   "decl": [
+    "DIM v447 AS Long = -100000",
+    "DIM v448 AS Long = 7"
+   ],
+   "expr": "v447 / v448"
+  },
+  {
+   "id": "Long -100000 MOD 7",
+   "decl": [
+    "DIM v449 AS Long = -100000",
+    "DIM v450 AS Long = 7"
+   ],
+   "expr": "v449 MOD v450"
+  },
+  {
+   "id": "Long -100000 = 7",
+   "decl": [
+    "DIM v451 AS Long = -100000",
+    "DIM v452 AS Long = 7"
+   ],
+   "expr": "v451 = v452"
+  },
+  {
+   "id": "Long -100000 < 7",
+   "decl": [
+    "DIM v453 AS Long = -100000",
+    "DIM v454 AS Long = 7"
+   ],
+   "expr": "v453 < v454"
+  },
+  {
+   "id": "Long -100000 > 7",
+   "decl": [
+    "DIM v455 AS Long = -100000",
+    "DIM v456 AS Long = 7"
+   ],
+   "expr": "v455 > v456"
+  },
+  {
+   "id": "Long -100000 BAND 7",
+   "decl": [
+    "DIM v457 AS Long = -100000",
+    "DIM v458 AS Long = 7"
+   ],
+   "expr": "v457 BAND v458"
+  },
+  {
+   "id": "Long -100000 BOR 7",
+   "decl": [
+    "DIM v459 AS Long = -100000",
+    "DIM v460 AS Long = 7"
+   ],
+   "expr": "v459 BOR v460"
+  },
+  {
+   "id": "Long -100000 BXOR 7",
+   "decl": [
+    "DIM v461 AS Long = -100000",
+    "DIM v462 AS Long = 7"
+   ],
+   "expr": "v461 BXOR v462"
+  },
+  {
+   "id": "Long 100000 + -7",
+   "decl": [
+    "DIM v463 AS Long = 100000",
+    "DIM v464 AS Long = -7"
+   ],
+   "expr": "v463 + v464"
+  },
+  {
+   "id": "Long 100000 - -7",
+   "decl": [
+    "DIM v465 AS Long = 100000",
+    "DIM v466 AS Long = -7"
+   ],
+   "expr": "v465 - v466"
+  },
+  {
+   "id": "Long 100000 * -7",
+   "decl": [
+    "DIM v467 AS Long = 100000",
+    "DIM v468 AS Long = -7"
+   ],
+   "expr": "v467 * v468"
+  },
+  {
+   "id": "Long 100000 / -7",
+   "decl": [
+    "DIM v469 AS Long = 100000",
+    "DIM v470 AS Long = -7"
+   ],
+   "expr": "v469 / v470"
+  },
+  {
+   "id": "Long 100000 MOD -7",
+   "decl": [
+    "DIM v471 AS Long = 100000",
+    "DIM v472 AS Long = -7"
+   ],
+   "expr": "v471 MOD v472"
+  },
+  {
+   "id": "Long 100000 = -7",
+   "decl": [
+    "DIM v473 AS Long = 100000",
+    "DIM v474 AS Long = -7"
+   ],
+   "expr": "v473 = v474"
+  },
+  {
+   "id": "Long 100000 < -7",
+   "decl": [
+    "DIM v475 AS Long = 100000",
+    "DIM v476 AS Long = -7"
+   ],
+   "expr": "v475 < v476"
+  },
+  {
+   "id": "Long 100000 > -7",
+   "decl": [
+    "DIM v477 AS Long = 100000",
+    "DIM v478 AS Long = -7"
+   ],
+   "expr": "v477 > v478"
+  },
+  {
+   "id": "Long 100000 BAND -7",
+   "decl": [
+    "DIM v479 AS Long = 100000",
+    "DIM v480 AS Long = -7"
+   ],
+   "expr": "v479 BAND v480"
+  },
+  {
+   "id": "Long 100000 BOR -7",
+   "decl": [
+    "DIM v481 AS Long = 100000",
+    "DIM v482 AS Long = -7"
+   ],
+   "expr": "v481 BOR v482"
+  },
+  {
+   "id": "Long 100000 BXOR -7",
+   "decl": [
+    "DIM v483 AS Long = 100000",
+    "DIM v484 AS Long = -7"
+   ],
+   "expr": "v483 BXOR v484"
+  },
+  {
+   "id": "Long -2147483648 + -1",
+   "decl": [
+    "DIM v485 AS Long = -2147483648",
+    "DIM v486 AS Long = -1"
+   ],
+   "expr": "v485 + v486"
+  },
+  {
+   "id": "Long -2147483648 - -1",
+   "decl": [
+    "DIM v487 AS Long = -2147483648",
+    "DIM v488 AS Long = -1"
+   ],
+   "expr": "v487 - v488"
+  },
+  {
+   "id": "Long -2147483648 * -1",
+   "decl": [
+    "DIM v489 AS Long = -2147483648",
+    "DIM v490 AS Long = -1"
+   ],
+   "expr": "v489 * v490"
+  },
+  {
+   "id": "Long -2147483648 / -1",
+   "decl": [
+    "DIM v491 AS Long = -2147483648",
+    "DIM v492 AS Long = -1"
+   ],
+   "expr": "v491 / v492"
+  },
+  {
+   "id": "Long -2147483648 MOD -1",
+   "decl": [
+    "DIM v493 AS Long = -2147483648",
+    "DIM v494 AS Long = -1"
+   ],
+   "expr": "v493 MOD v494"
+  },
+  {
+   "id": "Long -2147483648 = -1",
+   "decl": [
+    "DIM v495 AS Long = -2147483648",
+    "DIM v496 AS Long = -1"
+   ],
+   "expr": "v495 = v496"
+  },
+  {
+   "id": "Long -2147483648 < -1",
+   "decl": [
+    "DIM v497 AS Long = -2147483648",
+    "DIM v498 AS Long = -1"
+   ],
+   "expr": "v497 < v498"
+  },
+  {
+   "id": "Long -2147483648 > -1",
+   "decl": [
+    "DIM v499 AS Long = -2147483648",
+    "DIM v500 AS Long = -1"
+   ],
+   "expr": "v499 > v500"
+  },
+  {
+   "id": "Long -2147483648 BAND -1",
+   "decl": [
+    "DIM v501 AS Long = -2147483648",
+    "DIM v502 AS Long = -1"
+   ],
+   "expr": "v501 BAND v502"
+  },
+  {
+   "id": "Long -2147483648 BOR -1",
+   "decl": [
+    "DIM v503 AS Long = -2147483648",
+    "DIM v504 AS Long = -1"
+   ],
+   "expr": "v503 BOR v504"
+  },
+  {
+   "id": "Long -2147483648 BXOR -1",
+   "decl": [
+    "DIM v505 AS Long = -2147483648",
+    "DIM v506 AS Long = -1"
+   ],
+   "expr": "v505 BXOR v506"
+  },
+  {
+   "id": "Long 2000000000 + 2000000000",
+   "decl": [
+    "DIM v507 AS Long = 2000000000",
+    "DIM v508 AS Long = 2000000000"
+   ],
+   "expr": "v507 + v508"
+  },
+  {
+   "id": "Long 2000000000 - 2000000000",
+   "decl": [
+    "DIM v509 AS Long = 2000000000",
+    "DIM v510 AS Long = 2000000000"
+   ],
+   "expr": "v509 - v510"
+  },
+  {
+   "id": "Long 2000000000 * 2000000000",
+   "decl": [
+    "DIM v511 AS Long = 2000000000",
+    "DIM v512 AS Long = 2000000000"
+   ],
+   "expr": "v511 * v512"
+  },
+  {
+   "id": "Long 2000000000 / 2000000000",
+   "decl": [
+    "DIM v513 AS Long = 2000000000",
+    "DIM v514 AS Long = 2000000000"
+   ],
+   "expr": "v513 / v514"
+  },
+  {
+   "id": "Long 2000000000 MOD 2000000000",
+   "decl": [
+    "DIM v515 AS Long = 2000000000",
+    "DIM v516 AS Long = 2000000000"
+   ],
+   "expr": "v515 MOD v516"
+  },
+  {
+   "id": "Long 2000000000 = 2000000000",
+   "decl": [
+    "DIM v517 AS Long = 2000000000",
+    "DIM v518 AS Long = 2000000000"
+   ],
+   "expr": "v517 = v518"
+  },
+  {
+   "id": "Long 2000000000 < 2000000000",
+   "decl": [
+    "DIM v519 AS Long = 2000000000",
+    "DIM v520 AS Long = 2000000000"
+   ],
+   "expr": "v519 < v520"
+  },
+  {
+   "id": "Long 2000000000 > 2000000000",
+   "decl": [
+    "DIM v521 AS Long = 2000000000",
+    "DIM v522 AS Long = 2000000000"
+   ],
+   "expr": "v521 > v522"
+  },
+  {
+   "id": "Long 2000000000 BAND 2000000000",
+   "decl": [
+    "DIM v523 AS Long = 2000000000",
+    "DIM v524 AS Long = 2000000000"
+   ],
+   "expr": "v523 BAND v524"
+  },
+  {
+   "id": "Long 2000000000 BOR 2000000000",
+   "decl": [
+    "DIM v525 AS Long = 2000000000",
+    "DIM v526 AS Long = 2000000000"
+   ],
+   "expr": "v525 BOR v526"
+  },
+  {
+   "id": "Long 2000000000 BXOR 2000000000",
+   "decl": [
+    "DIM v527 AS Long = 2000000000",
+    "DIM v528 AS Long = 2000000000"
+   ],
+   "expr": "v527 BXOR v528"
+  },
+  {
+   "id": "Fixed 3.5 + 1.25",
+   "decl": [
+    "DIM v529 AS Fixed = 3.5",
+    "DIM v530 AS Fixed = 1.25"
+   ],
+   "expr": "v529 + v530"
+  },
+  {
+   "id": "Fixed 3.5 - 1.25",
+   "decl": [
+    "DIM v531 AS Fixed = 3.5",
+    "DIM v532 AS Fixed = 1.25"
+   ],
+   "expr": "v531 - v532"
+  },
+  {
+   "id": "Fixed 3.5 * 1.25",
+   "decl": [
+    "DIM v533 AS Fixed = 3.5",
+    "DIM v534 AS Fixed = 1.25"
+   ],
+   "expr": "v533 * v534"
+  },
+  {
+   "id": "Fixed 3.5 / 1.25",
+   "decl": [
+    "DIM v535 AS Fixed = 3.5",
+    "DIM v536 AS Fixed = 1.25"
+   ],
+   "expr": "v535 / v536"
+  },
+  {
+   "id": "Fixed 3.5 MOD 1.25",
+   "decl": [
+    "DIM v537 AS Fixed = 3.5",
+    "DIM v538 AS Fixed = 1.25"
+   ],
+   "expr": "v537 MOD v538"
+  },
+  {
+   "id": "Fixed 3.5 = 1.25",
+   "decl": [
+    "DIM v539 AS Fixed = 3.5",
+    "DIM v540 AS Fixed = 1.25"
+   ],
+   "expr": "v539 = v540"
+  },
+  {
+   "id": "Fixed 3.5 < 1.25",
+   "decl": [
+    "DIM v541 AS Fixed = 3.5",
+    "DIM v542 AS Fixed = 1.25"
+   ],
+   "expr": "v541 < v542"
+  },
+  {
+   "id": "Fixed 3.5 > 1.25",
+   "decl": [
+    "DIM v543 AS Fixed = 3.5",
+    "DIM v544 AS Fixed = 1.25"
+   ],
+   "expr": "v543 > v544"
+  },
+  {
+   "id": "Fixed 3.5 BAND 1.25",
+   "decl": [
+    "DIM v545 AS Fixed = 3.5",
+    "DIM v546 AS Fixed = 1.25"
+   ],
+   "expr": "v545 BAND v546"
+  },
+  {
+   "id": "Fixed 3.5 BOR 1.25",
+   "decl": [
+    "DIM v547 AS Fixed = 3.5",
+    "DIM v548 AS Fixed = 1.25"
+   ],
+   "expr": "v547 BOR v548"
+  },
+  {
+   "id": "Fixed 3.5 BXOR 1.25",
+   "decl": [
+    "DIM v549 AS Fixed = 3.5",
+    "DIM v550 AS Fixed = 1.25"
+   ],
+   "expr": "v549 BXOR v550"
+  },
+  {
+   "id": "Fixed -7.5 + 2",
+   "decl": [
+    "DIM v551 AS Fixed = -7.5",
+    "DIM v552 AS Fixed = 2"
+   ],
+   "expr": "v551 + v552"
+  },
+  {
+   "id": "Fixed -7.5 - 2",
+   "decl": [
+    "DIM v553 AS Fixed = -7.5",
+    "DIM v554 AS Fixed = 2"
+   ],
+   "expr": "v553 - v554"
+  },
+  {
+   "id": "Fixed -7.5 * 2",
+   "decl": [
+    "DIM v555 AS Fixed = -7.5",
+    "DIM v556 AS Fixed = 2"
+   ],
+   "expr": "v555 * v556"
+  },
+  {
+   "id": "Fixed -7.5 / 2",
+   "decl": [
+    "DIM v557 AS Fixed = -7.5",
+    "DIM v558 AS Fixed = 2"
+   ],
+   "expr": "v557 / v558"
+  },
+  {
+   "id": "Fixed -7.5 MOD 2",
+   "decl": [
+    "DIM v559 AS Fixed = -7.5",
+    "DIM v560 AS Fixed = 2"
+   ],
+   "expr": "v559 MOD v560"
+  },
+  {
+   "id": "Fixed -7.5 = 2",
+   "decl": [
+    "DIM v561 AS Fixed = -7.5",
+    "DIM v562 AS Fixed = 2"
+   ],
+   "expr": "v561 = v562"
+  },
+  {
+   "id": "Fixed -7.5 < 2",
+   "decl": [
+    "DIM v563 AS Fixed = -7.5",
+    "DIM v564 AS Fixed = 2"
+   ],
+   "expr": "v563 < v564"
+  },
+  {
+   "id": "Fixed -7.5 > 2",
+   "decl": [
+    "DIM v565 AS Fixed = -7.5",
+    "DIM v566 AS Fixed = 2"
+   ],
+   "expr": "v565 > v566"
+  },
+  {
+   "id": "Fixed -7.5 BAND 2",
+   "decl": [
+    "DIM v567 AS Fixed = -7.5",
+    "DIM v568 AS Fixed = 2"
+   ],
+   "expr": "v567 BAND v568"
+  },
+  {
+   "id": "Fixed -7.5 BOR 2",
+   "decl": [
+    "DIM v569 AS Fixed = -7.5",
+    "DIM v570 AS Fixed = 2"
+   ],
+   "expr": "v569 BOR v570"
+  },
+  {
+   "id": "Fixed -7.5 BXOR 2",
+   "decl": [
+    "DIM v571 AS Fixed = -7.5",
+    "DIM v572 AS Fixed = 2"
+   ],
+   "expr": "v571 BXOR v572"
+  },
+  {
+   "id": "Fixed 100.25 + -0.5",
+   "decl": [
+    "DIM v573 AS Fixed = 100.25",
+    "DIM v574 AS Fixed = -0.5"
+   ],
+   "expr": "v573 + v574"
+  },
+  {
+   "id": "Fixed 100.25 - -0.5",
+   "decl": [
+    "DIM v575 AS Fixed = 100.25",
+    "DIM v576 AS Fixed = -0.5"
+   ],
+   "expr": "v575 - v576"
+  },
+  {
+   "id": "Fixed 100.25 * -0.5",
+   "decl": [
+    "DIM v577 AS Fixed = 100.25",
+    "DIM v578 AS Fixed = -0.5"
+   ],
+   "expr": "v577 * v578"
+  },
+  {
+   "id": "Fixed 100.25 / -0.5",
+   "decl": [
+    "DIM v579 AS Fixed = 100.25",
+    "DIM v580 AS Fixed = -0.5"
+   ],
+   "expr": "v579 / v580"
+  },
+  {
+   "id": "Fixed 100.25 MOD -0.5",
+   "decl": [
+    "DIM v581 AS Fixed = 100.25",
+    "DIM v582 AS Fixed = -0.5"
+   ],
+   "expr": "v581 MOD v582"
+  },
+  {
+   "id": "Fixed 100.25 = -0.5",
+   "decl": [
+    "DIM v583 AS Fixed = 100.25",
+    "DIM v584 AS Fixed = -0.5"
+   ],
+   "expr": "v583 = v584"
+  },
+  {
+   "id": "Fixed 100.25 < -0.5",
+   "decl": [
+    "DIM v585 AS Fixed = 100.25",
+    "DIM v586 AS Fixed = -0.5"
+   ],
+   "expr": "v585 < v586"
+  },
+  {
+   "id": "Fixed 100.25 > -0.5",
+   "decl": [
+    "DIM v587 AS Fixed = 100.25",
+    "DIM v588 AS Fixed = -0.5"
+   ],
+   "expr": "v587 > v588"
+  },
+  {
+   "id": "Fixed 100.25 BAND -0.5",
+   "decl": [
+    "DIM v589 AS Fixed = 100.25",
+    "DIM v590 AS Fixed = -0.5"
+   ],
+   "expr": "v589 BAND v590"
+  },
+  {
+   "id": "Fixed 100.25 BOR -0.5",
+   "decl": [
+    "DIM v591 AS Fixed = 100.25",
+    "DIM v592 AS Fixed = -0.5"
+   ],
+   "expr": "v591 BOR v592"
+  },
+  {
+   "id": "Fixed 100.25 BXOR -0.5",
+   "decl": [
+    "DIM v593 AS Fixed = 100.25",
+    "DIM v594 AS Fixed = -0.5"
+   ],
+   "expr": "v593 BXOR v594"
+  },
+  {
+   "id": "Fixed 0.1 + 3",
+   "decl": [
+    "DIM v595 AS Fixed = 0.1",
+    "DIM v596 AS Fixed = 3"
+   ],
+   "expr": "v595 + v596"
+  },
+  {
+   "id": "Fixed 0.1 - 3",
+   "decl": [
+    "DIM v597 AS Fixed = 0.1",
+    "DIM v598 AS Fixed = 3"
+   ],
+   "expr": "v597 - v598"
+  },
+  {
+   "id": "Fixed 0.1 * 3",
+   "decl": [
+    "DIM v599 AS Fixed = 0.1",
+    "DIM v600 AS Fixed = 3"
+   ],
+   "expr": "v599 * v600"
+  },
+  {
+   "id": "Fixed 0.1 / 3",
+   "decl": [
+    "DIM v601 AS Fixed = 0.1",
+    "DIM v602 AS Fixed = 3"
+   ],
+   "expr": "v601 / v602"
+  },
+  {
+   "id": "Fixed 0.1 MOD 3",
+   "decl": [
+    "DIM v603 AS Fixed = 0.1",
+    "DIM v604 AS Fixed = 3"
+   ],
+   "expr": "v603 MOD v604"
+  },
+  {
+   "id": "Fixed 0.1 = 3",
+   "decl": [
+    "DIM v605 AS Fixed = 0.1",
+    "DIM v606 AS Fixed = 3"
+   ],
+   "expr": "v605 = v606"
+  },
+  {
+   "id": "Fixed 0.1 < 3",
+   "decl": [
+    "DIM v607 AS Fixed = 0.1",
+    "DIM v608 AS Fixed = 3"
+   ],
+   "expr": "v607 < v608"
+  },
+  {
+   "id": "Fixed 0.1 > 3",
+   "decl": [
+    "DIM v609 AS Fixed = 0.1",
+    "DIM v610 AS Fixed = 3"
+   ],
+   "expr": "v609 > v610"
+  },
+  {
+   "id": "Fixed 0.1 BAND 3",
+   "decl": [
+    "DIM v611 AS Fixed = 0.1",
+    "DIM v612 AS Fixed = 3"
+   ],
+   "expr": "v611 BAND v612"
+  },
+  {
+   "id": "Fixed 0.1 BOR 3",
+   "decl": [
+    "DIM v613 AS Fixed = 0.1",
+    "DIM v614 AS Fixed = 3"
+   ],
+   "expr": "v613 BOR v614"
+  },
+  {
+   "id": "Fixed 0.1 BXOR 3",
+   "decl": [
+    "DIM v615 AS Fixed = 0.1",
+    "DIM v616 AS Fixed = 3"
+   ],
+   "expr": "v615 BXOR v616"
+  },
+  {
+   "id": "Float 7.5 + 2.5",
+   "decl": [
+    "DIM v617 AS Float = 7.5",
+    "DIM v618 AS Float = 2.5"
+   ],
+   "expr": "v617 + v618"
+  },
+  {
+   "id": "Float 7.5 - 2.5",
+   "decl": [
+    "DIM v619 AS Float = 7.5",
+    "DIM v620 AS Float = 2.5"
+   ],
+   "expr": "v619 - v620"
+  },
+  {
+   "id": "Float 7.5 * 2.5",
+   "decl": [
+    "DIM v621 AS Float = 7.5",
+    "DIM v622 AS Float = 2.5"
+   ],
+   "expr": "v621 * v622"
+  },
+  {
+   "id": "Float 7.5 / 2.5",
+   "decl": [
+    "DIM v623 AS Float = 7.5",
+    "DIM v624 AS Float = 2.5"
+   ],
+   "expr": "v623 / v624"
+  },
+  {
+   "id": "Float 7.5 MOD 2.5",
+   "decl": [
+    "DIM v625 AS Float = 7.5",
+    "DIM v626 AS Float = 2.5"
+   ],
+   "expr": "v625 MOD v626"
+  },
+  {
+   "id": "Float 7.5 = 2.5",
+   "decl": [
+    "DIM v627 AS Float = 7.5",
+    "DIM v628 AS Float = 2.5"
+   ],
+   "expr": "v627 = v628"
+  },
+  {
+   "id": "Float 7.5 < 2.5",
+   "decl": [
+    "DIM v629 AS Float = 7.5",
+    "DIM v630 AS Float = 2.5"
+   ],
+   "expr": "v629 < v630"
+  },
+  {
+   "id": "Float 7.5 > 2.5",
+   "decl": [
+    "DIM v631 AS Float = 7.5",
+    "DIM v632 AS Float = 2.5"
+   ],
+   "expr": "v631 > v632"
+  },
+  {
+   "id": "Float 7.5 BAND 2.5",
+   "decl": [
+    "DIM v633 AS Float = 7.5",
+    "DIM v634 AS Float = 2.5"
+   ],
+   "expr": "v633 BAND v634"
+  },
+  {
+   "id": "Float 7.5 BOR 2.5",
+   "decl": [
+    "DIM v635 AS Float = 7.5",
+    "DIM v636 AS Float = 2.5"
+   ],
+   "expr": "v635 BOR v636"
+  },
+  {
+   "id": "Float 7.5 BXOR 2.5",
+   "decl": [
+    "DIM v637 AS Float = 7.5",
+    "DIM v638 AS Float = 2.5"
+   ],
+   "expr": "v637 BXOR v638"
+  },
+  {
+   "id": "Float -7.5 + 2",
+   "decl": [
+    "DIM v639 AS Float = -7.5",
+    "DIM v640 AS Float = 2"
+   ],
+   "expr": "v639 + v640"
+  },
+  {
+   "id": "Float -7.5 - 2",
+   "decl": [
+    "DIM v641 AS Float = -7.5",
+    "DIM v642 AS Float = 2"
+   ],
+   "expr": "v641 - v642"
+  },
+  {
+   "id": "Float -7.5 * 2",
+   "decl": [
+    "DIM v643 AS Float = -7.5",
+    "DIM v644 AS Float = 2"
+   ],
+   "expr": "v643 * v644"
+  },
+  {
+   "id": "Float -7.5 / 2",
+   "decl": [
+    "DIM v645 AS Float = -7.5",
+    "DIM v646 AS Float = 2"
+   ],
+   "expr": "v645 / v646"
+  },
+  {
+   "id": "Float -7.5 MOD 2",
+   "decl": [
+    "DIM v647 AS Float = -7.5",
+    "DIM v648 AS Float = 2"
+   ],
+   "expr": "v647 MOD v648"
+  },
+  {
+   "id": "Float -7.5 = 2",
+   "decl": [
+    "DIM v649 AS Float = -7.5",
+    "DIM v650 AS Float = 2"
+   ],
+   "expr": "v649 = v650"
+  },
+  {
+   "id": "Float -7.5 < 2",
+   "decl": [
+    "DIM v651 AS Float = -7.5",
+    "DIM v652 AS Float = 2"
+   ],
+   "expr": "v651 < v652"
+  },
+  {
+   "id": "Float -7.5 > 2",
+   "decl": [
+    "DIM v653 AS Float = -7.5",
+    "DIM v654 AS Float = 2"
+   ],
+   "expr": "v653 > v654"
+  },
+  {
+   "id": "Float -7.5 BAND 2",
+   "decl": [
+    "DIM v655 AS Float = -7.5",
+    "DIM v656 AS Float = 2"
+   ],
+   "expr": "v655 BAND v656"
+  },
+  {
+   "id": "Float -7.5 BOR 2",
+   "decl": [
+    "DIM v657 AS Float = -7.5",
+    "DIM v658 AS Float = 2"
+   ],
+   "expr": "v657 BOR v658"
+  },
+  {
+   "id": "Float -7.5 BXOR 2",
+   "decl": [
+    "DIM v659 AS Float = -7.5",
+    "DIM v660 AS Float = 2"
+   ],
+   "expr": "v659 BXOR v660"
+  },
+  {
+   "id": "Float 10000000000 + 3",
+   "decl": [
+    "DIM v661 AS Float = 10000000000",
+    "DIM v662 AS Float = 3"
+   ],
+   "expr": "v661 + v662"
+  },
+  {
+   "id": "Float 10000000000 - 3",
+   "decl": [
+    "DIM v663 AS Float = 10000000000",
+    "DIM v664 AS Float = 3"
+   ],
+   "expr": "v663 - v664"
+  },
+  {
+   "id": "Float 10000000000 * 3",
+   "decl": [
+    "DIM v665 AS Float = 10000000000",
+    "DIM v666 AS Float = 3"
+   ],
+   "expr": "v665 * v666"
+  },
+  {
+   "id": "Float 10000000000 / 3",
+   "decl": [
+    "DIM v667 AS Float = 10000000000",
+    "DIM v668 AS Float = 3"
+   ],
+   "expr": "v667 / v668"
+  },
+  {
+   "id": "Float 10000000000 MOD 3",
+   "decl": [
+    "DIM v669 AS Float = 10000000000",
+    "DIM v670 AS Float = 3"
+   ],
+   "expr": "v669 MOD v670"
+  },
+  {
+   "id": "Float 10000000000 = 3",
+   "decl": [
+    "DIM v671 AS Float = 10000000000",
+    "DIM v672 AS Float = 3"
+   ],
+   "expr": "v671 = v672"
+  },
+  {
+   "id": "Float 10000000000 < 3",
+   "decl": [
+    "DIM v673 AS Float = 10000000000",
+    "DIM v674 AS Float = 3"
+   ],
+   "expr": "v673 < v674"
+  },
+  {
+   "id": "Float 10000000000 > 3",
+   "decl": [
+    "DIM v675 AS Float = 10000000000",
+    "DIM v676 AS Float = 3"
+   ],
+   "expr": "v675 > v676"
+  },
+  {
+   "id": "Float 10000000000 BAND 3",
+   "decl": [
+    "DIM v677 AS Float = 10000000000",
+    "DIM v678 AS Float = 3"
+   ],
+   "expr": "v677 BAND v678"
+  },
+  {
+   "id": "Float 10000000000 BOR 3",
+   "decl": [
+    "DIM v679 AS Float = 10000000000",
+    "DIM v680 AS Float = 3"
+   ],
+   "expr": "v679 BOR v680"
+  },
+  {
+   "id": "Float 10000000000 BXOR 3",
+   "decl": [
+    "DIM v681 AS Float = 10000000000",
+    "DIM v682 AS Float = 3"
+   ],
+   "expr": "v681 BXOR v682"
+  },
+  {
+   "id": "Float 0.1 + 3",
+   "decl": [
+    "DIM v683 AS Float = 0.1",
+    "DIM v684 AS Float = 3"
+   ],
+   "expr": "v683 + v684"
+  },
+  {
+   "id": "Float 0.1 - 3",
+   "decl": [
+    "DIM v685 AS Float = 0.1",
+    "DIM v686 AS Float = 3"
+   ],
+   "expr": "v685 - v686"
+  },
+  {
+   "id": "Float 0.1 * 3",
+   "decl": [
+    "DIM v687 AS Float = 0.1",
+    "DIM v688 AS Float = 3"
+   ],
+   "expr": "v687 * v688"
+  },
+  {
+   "id": "Float 0.1 / 3",
+   "decl": [
+    "DIM v689 AS Float = 0.1",
+    "DIM v690 AS Float = 3"
+   ],
+   "expr": "v689 / v690"
+  },
+  {
+   "id": "Float 0.1 MOD 3",
+   "decl": [
+    "DIM v691 AS Float = 0.1",
+    "DIM v692 AS Float = 3"
+   ],
+   "expr": "v691 MOD v692"
+  },
+  {
+   "id": "Float 0.1 = 3",
+   "decl": [
+    "DIM v693 AS Float = 0.1",
+    "DIM v694 AS Float = 3"
+   ],
+   "expr": "v693 = v694"
+  },
+  {
+   "id": "Float 0.1 < 3",
+   "decl": [
+    "DIM v695 AS Float = 0.1",
+    "DIM v696 AS Float = 3"
+   ],
+   "expr": "v695 < v696"
+  },
+  {
+   "id": "Float 0.1 > 3",
+   "decl": [
+    "DIM v697 AS Float = 0.1",
+    "DIM v698 AS Float = 3"
+   ],
+   "expr": "v697 > v698"
+  },
+  {
+   "id": "Float 0.1 BAND 3",
+   "decl": [
+    "DIM v699 AS Float = 0.1",
+    "DIM v700 AS Float = 3"
+   ],
+   "expr": "v699 BAND v700"
+  },
+  {
+   "id": "Float 0.1 BOR 3",
+   "decl": [
+    "DIM v701 AS Float = 0.1",
+    "DIM v702 AS Float = 3"
+   ],
+   "expr": "v701 BOR v702"
+  },
+  {
+   "id": "Float 0.1 BXOR 3",
+   "decl": [
+    "DIM v703 AS Float = 0.1",
+    "DIM v704 AS Float = 3"
+   ],
+   "expr": "v703 BXOR v704"
+  }
+ ]
+}

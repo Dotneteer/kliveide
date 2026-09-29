@@ -1,0 +1,27 @@
+' CODEBANK: mutual recursion across two banks (a DECLARE for the later one), and a six-argument frame
+'@target next
+'@expect screen 0 "1 0 105009"
+DECLARE FUNCTION IsOdd(n AS UInteger) AS UByte
+DIM total AS Long
+CODEBANK 1
+FUNCTION IsEven(n AS UInteger) AS UByte
+  IF n = 0 THEN RETURN 1
+  RETURN IsOdd(n - 1)
+END FUNCTION
+FUNCTION Sum6(a AS UByte, b AS Integer, c AS Long, d AS UByte, e AS UInteger, f AS Long) AS Long
+  DIM t AS Long
+  t = a + b + c + d + e + f
+  RETURN t
+END FUNCTION
+END CODEBANK
+CODEBANK 2
+FUNCTION IsOdd(n AS UInteger) AS UByte
+  IF n = 0 THEN RETURN 0
+  RETURN IsEven(n - 1)
+END FUNCTION
+FUNCTION Call6() AS Long
+  RETURN Sum6(1, -2, 100000, 4, 5000, 6)
+END FUNCTION
+END CODEBANK
+total = Call6()
+PRINT IsEven(20); " "; IsOdd(12); " "; total

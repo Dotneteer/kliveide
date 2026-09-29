@@ -1,0 +1,8 @@
+' INKEY$ reads the key being held
+'@expect keys CShift K
+'@expect screen 0 "K"
+DIM k$ AS String
+DO
+ k$ = INKEY$
+LOOP WHILE k$ = ""
+PRINT k$

@@ -1,0 +1,4 @@
+' MOD of Floats is floored: a remainder takes the divisor's sign (semantics annex: decimal-mod,
+' constant-arithmetic-literal)
+'@expect screen 0 "1.5 0.5 3"
+PRINT 7.5 MOD 2; " "; -7.5 MOD 2; " "; 10 MOD 3.5

@@ -95,6 +95,7 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48SetCpuWz: Sp48WasmV2ExportFunction;
   sp48GetCpuPc: Sp48WasmV2ExportFunction;
   sp48GetStepOutAddress: Sp48WasmV2ExportFunction;
+  sp48GetInterruptDepth: Sp48WasmV2ExportFunction;
   sp48SetCpuPc: Sp48WasmV2ExportFunction;
   sp48GetCpuSp: Sp48WasmV2ExportFunction;
   sp48SetCpuSp: Sp48WasmV2ExportFunction;
@@ -278,6 +279,7 @@ const requiredV2Exports = [
   "sp48SetCpuWz",
   "sp48GetCpuPc",
   "sp48GetStepOutAddress",
+  "sp48GetInterruptDepth",
   "sp48SetCpuPc",
   "sp48GetCpuSp",
   "sp48SetCpuSp",

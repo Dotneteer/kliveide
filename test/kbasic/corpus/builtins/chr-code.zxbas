@@ -1,0 +1,3 @@
+' CHR$ and CODE, and CHR$ with several codes
+'@expect screen 0 "65 B 0 Hi 200"
+PRINT CODE("A"); " "; CHR$(66); " "; CODE(""); " "; CHR$(72, 105); " "; CODE(CHR$(200))

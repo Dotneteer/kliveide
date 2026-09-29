@@ -1,0 +1,151 @@
+<!doctype html>
+<!--
+  ZX81 virtual keyboard mockup - approved by the project author on 2026-09-27.
+  Geometry measured from https://dn710202.ca.archive.org/0/items/ZX81_Keyboard_Layout/ZX81_keyboard.jpg
+  (629 x 228 px) and compared side by side with it. The spec is §8.1 of ../ZX8081_WASM_PLAN.md.
+  This page is a design reference only: literal colours are fine here, but the React component
+  must take every colour from theme tokens (see the plan).
+  Open it directly in a browser; it has no dependencies.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ZX81 keyboard mockup</title>
+<style>
+  body { margin: 0; padding: 24px; background: #202020; font-family: system-ui, sans-serif; color: #ddd; }
+  #kb svg { display: block; width: 100%; max-width: 1400px; height: auto; user-select: none; }
+  .key.down .kb { fill: #B5D4F4; }
+  .key[data-hz=main] .mz { fill: #185FA5; }
+  .key[data-hz=main] .kw { fill: #85B7EB; }
+  .key[data-hz=shift] text.sz { fill: #185FA5; }
+  .key[data-hz=shift] polygon.sz { stroke: #185FA5; }
+  .key[data-hz=func] .fz { fill: #85B7EB; }
+  .key[data-hz=glyph] .gz { stroke: #185FA5; stroke-width: 3; }
+  .key [data-z] { cursor: pointer; }
+  .ro { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14px; margin-top: 12px; max-width: 1400px; }
+  .ro span:nth-child(odd) { color: #999; }
+  .ro code { font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div id="kb"></div>
+<div class="ro">
+  <span>Zone</span><span id="r-zone">Hover a key or a legend</span>
+  <span>Sends</span><span><code id="r-send">-</code></span>
+  <span>Types</span><span id="r-res">-</span>
+</div>
+<script>
+// Quadrants TL,TR,BL,BR for ZX81 graphic codes $00-$0A: i = ink, p = paper, g = chequer.
+// Bit 7 set = inverse (ink and paper swapped).
+const G = { 1: "ippp", 2: "pipp", 3: "iipp", 4: "ppip", 5: "ipip", 6: "piip", 7: "iiip", 8: "gggg", 9: "ppgg", 10: "ggpp" };
+function cells(c) {
+  const inv = c & 0x80;
+  return G[c & 0x7f].split("").map(v => (inv ? (v === "i" ? "p" : v === "p" ? "i" : "G") : v));
+}
+
+// Klive key codes = line * 5 + bit (the same numbering as Sp48Keyboard.tsx).
+const N = { 0: "SHIFT", 1: "Z", 2: "X", 3: "C", 4: "V", 5: "A", 6: "S", 7: "D", 8: "F", 9: "G", 10: "Q", 11: "W", 12: "E", 13: "R", 14: "T", 15: "1", 16: "2", 17: "3", 18: "4", 19: "5", 20: "0", 21: "9", 22: "8", 23: "7", 24: "6", 25: "P", 26: "O", 27: "I", 28: "U", 29: "Y", 30: "NEWLINE", 31: "L", 32: "K", 33: "J", 34: "H", 35: "SPACE", 36: ".", 37: "M", 38: "N", 39: "B" };
+
+// c = key code, m = main legend, s = red shifted legend, sym = s is a symbol (not a word),
+// k = keyword (printed above the key), f = function (printed below the key), g = graphic code,
+// arrow = outlined cursor arrow instead of a text legend.
+const R = [
+  [{ c: 15, m: "1", s: "EDIT", g: 0x01 }, { c: 16, m: "2", s: "AND", g: 0x02 }, { c: 17, m: "3", s: "THEN", g: 0x87 }, { c: 18, m: "4", s: "TO", g: 0x04 },
+   { c: 19, m: "5", arrow: "l", s: "cursor left", g: 0x05 }, { c: 24, m: "6", arrow: "d", s: "cursor down", g: 0x83 }, { c: 23, m: "7", arrow: "u", s: "cursor up", g: 0x03 },
+   { c: 22, m: "8", arrow: "r", s: "cursor right", g: 0x85 }, { c: 21, m: "9", s: "GRAPHICS" }, { c: 20, m: "Ø", s: "RUBOUT" }],
+  [{ c: 10, m: "Q", s: "\"\"", sym: 1, k: "PLOT", f: "SIN", g: 0x81 }, { c: 11, m: "W", s: "OR", k: "UNPLOT", f: "COS", g: 0x82 }, { c: 12, m: "E", s: "STEP", k: "REM", f: "TAN", g: 0x07 },
+   { c: 13, m: "R", s: "<=", sym: 1, k: "RUN", f: "INT", g: 0x84 }, { c: 14, m: "T", s: "<>", sym: 1, k: "RAND", f: "RND", g: 0x06 }, { c: 29, m: "Y", s: ">=", sym: 1, k: "RETURN", f: "STR$", g: 0x86 },
+   { c: 28, m: "U", s: "$", sym: 1, k: "IF", f: "CHR$" }, { c: 27, m: "I", s: "(", sym: 1, k: "INPUT", f: "CODE" }, { c: 26, m: "O", s: ")", sym: 1, k: "POKE", f: "PEEK" },
+   { c: 25, m: "P", s: "\"", sym: 1, k: "PRINT", f: "TAB" }],
+  [{ c: 5, m: "A", s: "STOP", k: "NEW", f: "ARCSIN", g: 0x08 }, { c: 6, m: "S", s: "LPRINT", k: "SAVE", f: "ARCCOS", g: 0x0a }, { c: 7, m: "D", s: "SLOW", k: "DIM", f: "ARCTAN", g: 0x09 },
+   { c: 8, m: "F", s: "FAST", k: "FOR", f: "SGN", g: 0x8a }, { c: 9, m: "G", s: "LLIST", k: "GOTO", f: "ABS", g: 0x89 }, { c: 34, m: "H", s: "**", sym: 1, k: "GOSUB", f: "SQR", g: 0x88 },
+   { c: 33, m: "J", s: "−", sym: 1, k: "LOAD", f: "VAL" }, { c: 32, m: "K", s: "+", sym: 1, k: "LIST", f: "LEN" }, { c: 31, m: "L", s: "=", sym: 1, k: "LET", f: "USR" },
+   { c: 30, nl: 1, s: "FUNCTION" }],
+  [{ c: 0, shift: 1 }, { c: 1, m: "Z", s: ":", sym: 1, k: "COPY", f: "LN" }, { c: 2, m: "X", s: ";", sym: 1, k: "CLEAR", f: "EXP" }, { c: 3, m: "C", s: "?", sym: 1, k: "CONT", f: "AT" },
+   { c: 4, m: "V", s: "/", sym: 1, k: "CLS" }, { c: 39, m: "B", s: "*", sym: 1, k: "SCROLL", f: "INKEY$" }, { c: 38, m: "N", s: "<", sym: 1, k: "NEXT", f: "NOT" },
+   { c: 37, m: "M", s: ">", sym: 1, k: "PAUSE", f: "π" }, { c: 36, m: ".", s: ",", sym: 1 }, { c: 35, space: 1, s: "£", sym: 1, k: "BREAK" }]
+];
+
+// Geometry: photo pixels scaled so that a key is 100 units wide.
+const U = 100 / 45.5, KW = 100, KH = 34 * U, PX = 58.3 * U, PY = 56.7 * U;
+const OFF = [7, 38, 52, 24].map(v => v * U), TOP = 7 * U, VW = 629 * U, VH = 228 * U;
+const RED = "#d42020", INK = "#111", LEG = "#f4f4f4", KEY = "#f4f4f4", FONT = "Helvetica, Arial, sans-serif";
+
+const esc = t => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const T = (x, y, sz, cls, fill, txt, anchor, z, w, ls) =>
+  `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" font-size="${sz}" class="${cls}" fill="${fill}" text-anchor="${anchor || "start"}" font-weight="${w || 700}" ${ls ? `letter-spacing="${ls}"` : ""} ${z ? `data-z="${z}"` : ""}>${esc(txt)}</text>`;
+// Outlined arrows, drawn in a 36 x 20 box placed at (54, 4) of the key.
+const ARROWS = {
+  l: "0,9 11,0 11,5 36,5 36,13 11,13 11,18",
+  r: "36,9 25,0 25,5 0,5 0,13 25,13 25,18",
+  d: "18,20 4,8 12,8 12,0 24,0 24,8 32,8",
+  u: "18,0 4,12 12,12 12,20 24,20 24,12 32,12"
+};
+const wordSize = s => (s.length <= 4 ? 18 : s.length <= 6 ? 16 : 11.5);
+
+let svg = `<svg viewBox="0 0 ${VW.toFixed(0)} ${VH.toFixed(0)}" xmlns="http://www.w3.org/2000/svg" font-family="${FONT}">` +
+  `<defs><pattern id="chk" width="3.4" height="3.4" patternUnits="userSpaceOnUse"><rect width="3.4" height="3.4" fill="${KEY}"/>` +
+  `<rect width="1.7" height="1.7" fill="${INK}"/><rect x="1.7" y="1.7" width="1.7" height="1.7" fill="${INK}"/></pattern></defs>` +
+  `<rect width="100%" height="100%" rx="6" fill="#0a0a0a"/>`;
+
+R.forEach((row, ri) => row.forEach((d, ci) => {
+  const x = OFF[ri] + ci * PX, y = TOP + ri * PY;
+  let s = `<g class="key" data-i="${ri}-${ci}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">`;
+  if (d.k) s += `<rect data-z="main" x="0" y="-24" width="${KW}" height="22" fill="transparent"/>` + T(6, -6, 17, "kw", LEG, d.k, "start", "main");
+  s += `<rect class="kb" data-z="main" rx="8" width="${KW}" height="${KH.toFixed(1)}" fill="${KEY}"/>`;
+  if (d.shift) s += T(KW / 2, 47, 23, "mz", RED, "SHIFT", "middle", "main", 400);
+  else if (d.nl) s += T(KW / 2, 48, 15, "mz", INK, "NEW", "middle", "main", 400) + T(KW / 2, 64, 15, "mz", INK, "LINE", "middle", "main", 400);
+  else if (d.space) s += T(KW / 2, 64, 14, "mz", INK, "SPACE", "middle", "main", 400);
+  else s += T(10, 64, 46, "mz", INK, d.m, "start", "main");
+  if (d.arrow) {
+    s += `<rect data-z="shift" x="48" y="2" width="46" height="26" fill="transparent"/>` +
+      `<polygon class="sz" data-z="shift" transform="translate(54 4)" points="${ARROWS[d.arrow]}" fill="none" stroke="${RED}" stroke-width="2.2"/>`;
+  } else if (d.s) {
+    let ax, an, by, sz, w, ls;
+    if (d.nl) { ax = KW / 2; an = "middle"; by = 19; sz = 12; w = 400; }
+    else if (d.space) { ax = KW / 2; an = "middle"; by = 30; sz = 24; w = 400; }
+    else if (d.sym) {
+      const two = d.s.length > 1;
+      ax = two ? 93 : 88; an = "end"; by = two ? 27 : 33; sz = two ? 28 : 31;
+      w = d.s === "**" || d.s === "\"\"" || d.s === "\"" ? 700 : 400;
+      ls = two && w === 400 ? 1.5 : 0;
+    } else { ax = 92; an = "end"; by = 21; sz = wordSize(d.s); w = 400; }
+    s += `<rect data-z="shift" x="${d.nl || d.space ? 15 : 40}" y="2" width="${d.nl || d.space ? 70 : 57}" height="26" fill="transparent"/>` +
+      T(ax, by, sz, "sz", RED, d.s, an, "shift", w, ls);
+  }
+  if (d.g !== undefined) {
+    const q = 14.5, gx = 60, gy = 32;
+    s += cells(d.g).map((v, i) =>
+      `<rect data-z="glyph" x="${gx + (i % 2) * q}" y="${gy + Math.floor(i / 2) * q}" width="${q}" height="${q}" fill="${v === "i" ? INK : v === "p" ? KEY : "url(#chk)"}"/>`).join("") +
+      `<rect class="gz" data-z="glyph" x="${gx}" y="${gy}" width="${2 * q}" height="${2 * q}" fill="none" stroke="#555" stroke-width="1.4"/>`;
+  }
+  if (d.f) s += `<rect data-z="func" x="0" y="${(KH + 2).toFixed(1)}" width="${KW}" height="22" fill="transparent"/>` + T(6, KH + 19, 17, "fz", LEG, d.f, "start", "func");
+  svg += s + "</g>";
+}));
+document.getElementById("kb").innerHTML = svg + "</svg>";
+
+const rz = document.getElementById("r-zone"), rs = document.getElementById("r-send"), rr = document.getElementById("r-res");
+const label = d => (d.shift ? "SHIFT" : d.nl ? "NEWLINE" : d.space ? "SPACE" : d.m);
+function describe(d, z, btn) {
+  const code = `${N[d.c]} (${d.c})`;
+  if (z === "main" && d.shift) return ["SHIFT key", "SHIFT (0)", "hold with another key"];
+  if (z === "main" && btn === 2 && d.s) return ["Main key, right button", `SHIFT (0) + ${code}`, d.s];
+  if (z === "main") return ["Main key or keyword, left button", code, d.k ? `${d.k} in K mode, ${label(d)} in L mode` : label(d)];
+  if (z === "shift") return ["Shifted legend", `SHIFT (0) + ${code}`, d.s];
+  if (z === "func") return ["Function legend", `SHIFT (0) + NEWLINE (30), then ${code}`, d.f];
+  if (z === "glyph") return ["Graphic", `SHIFT + 9 (21), then SHIFT + ${code}, then SHIFT + 9`, `block graphic $${d.g.toString(16).toUpperCase().padStart(2, "0")}`];
+  return ["", "", ""];
+}
+document.querySelectorAll(".key").forEach(g => {
+  const [ri, ci] = g.dataset.i.split("-").map(Number), d = R[ri][ci];
+  g.querySelectorAll("[data-z]").forEach(el => {
+    el.addEventListener("mouseenter", () => { g.dataset.hz = el.dataset.z; const [a, b, c] = describe(d, el.dataset.z, 0); rz.textContent = a; rs.textContent = b; rr.textContent = c; });
+    el.addEventListener("mousedown", e => { g.classList.add("down"); const [a, b, c] = describe(d, el.dataset.z, e.button); rz.textContent = a; rs.textContent = b; rr.textContent = c; });
+  });
+  g.addEventListener("mouseleave", () => { delete g.dataset.hz; g.classList.remove("down"); });
+  g.addEventListener("mouseup", () => g.classList.remove("down"));
+  g.addEventListener("contextmenu", e => e.preventDefault());
+});
+</script>
+</body>
+</html>

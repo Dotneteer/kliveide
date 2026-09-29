@@ -43,9 +43,27 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
 import { createIdeApi } from "@common/messaging/IdeApi";
-import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_JUST_MY_CODE,
+  SETTING_EMU_STEP_IN_INTERRUPTS,
+  SETTING_EMU_STOP_ON_ERRORS
+} from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
+import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
+import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
+import {
+  basicErrorReport,
+  beginSourceStep,
+  canStepOut,
+  CurrentStatementTracker,
+  innermostUserStatement,
+  locateActivations,
+  SourceDebugIndex,
+  type MachineView,
+  type SourceStepKind
+} from "./SourceStepDecision";
 
 /** How often to check whether an injection flow's keystrokes have landed. */
 const KEYSTROKE_SUPPRESSION_POLL_MS = 50;
@@ -106,6 +124,9 @@ export function attachStoredMedia(machine: IAnyMachine, mediaIds?: string[]): vo
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
  */
+/** The ROM's error restart (RST 8): the code byte follows the RST instruction. */
+const ROM_ERROR_RESTART = 0x0008;
+
 export class MachineController implements IMachineController {
   private _cancelRequested: boolean;
   private _machineTask: Promise<void>;
@@ -323,10 +344,189 @@ export class MachineController implements IMachineController {
     await this.start(activeOperationRevision);
   }
 
+  // ==============================================================================================
+  // Source-level stepping (plan §10.2): active while the injected program has source-level debug
+  // info and Source stepping is selected; Step Into/Over/Out then step statements, not instructions.
+
+  private sourceIndex?: SourceDebugIndex;
+
+  /** Source stepping (true) or Z80 instruction stepping (false) when source-level info is loaded. */
+  sourceStepping = true;
+
+  /** A boolean global setting, or its default when the store does not have it. */
+  private flagSetting(key: string, fallback: boolean): boolean {
+    const value = this.store ? getGlobalSetting(this.store, key) : undefined;
+    return value === undefined || value === null ? fallback : !!value;
+  }
+
+  /** Statement entries inside interrupt handlers stop a source step (§10.2.7; a setting, off by default). */
+  get stopInInterrupts(): boolean {
+    return this.flagSetting(SETTING_EMU_STEP_IN_INTERRUPTS, false);
+  }
+
+  /** Debug runs stop at the program's runtime-error routines (§10.10; a setting, on by default). */
+  get stopOnErrors(): boolean {
+    return this.flagSetting(SETTING_EMU_STOP_ON_ERRORS, true);
+  }
+
+  /** Stepping runs through the standard library's statements (§10.12; a setting, on by default). */
+  get justMyCode(): boolean {
+    return this.flagSetting(SETTING_EMU_JUST_MY_CODE, true);
+  }
+
+  /** The injected program's source-level debug info; undefined for a program without it. */
+  setSourceDebugInfo(info?: SourceLevelDebugInfo): void {
+    if (this.debugSupport) this.debugSupport.sourceStep = undefined;
+    this.buildSourceIndex(info);
+    this.applyErrorStops();
+  }
+
+  private buildSourceIndex(info?: SourceLevelDebugInfo): void {
+    const index = info?.extensions ? new SourceDebugIndex(info, this.justMyCode) : undefined;
+    this.sourceIndex = index;
+    if (this.debugSupport) this.debugSupport.statementTracker = index ? new CurrentStatementTracker(index) : undefined;
+  }
+
+  /** Just My Code changed since the index was built: rebuild it (a step in progress keeps its own). */
+  private refreshSourceIndex(): void {
+    if (this.sourceIndex && this.sourceIndex.justMyCode !== this.justMyCode) this.buildSourceIndex(this.sourceIndex.info);
+  }
+
+  /** Arms or disarms the runtime-error stop from the setting; every run does this, so a change applies at once. */
+  private applyErrorStops(): void {
+    this.refreshSourceIndex();
+    const index = this.sourceIndex;
+    const debugSupport = this.debugSupport;
+    if (!debugSupport) return;
+    const on = this.stopOnErrors && !!index;
+    debugSupport.errorStopAddress = on ? index!.info.extensions?.errorEntry : undefined;
+    // --- The ROM's own errors (RST 8), while a statement of the program is on the stack
+    debugSupport.romErrorAddress = on ? ROM_ERROR_RESTART : undefined;
+    debugSupport.romErrorGuard = on ? () => innermostUserStatement(index!, this.machineView()) >= 0 : undefined;
+  }
+
+  /** At an error stop: the ERR_NR code (A at the runtime's routine, the byte after the RST at the ROM's). */
+  private errorCodeAt(pc: number): number | undefined {
+    const debugSupport = this.debugSupport;
+    if (!debugSupport) return undefined;
+    if (pc === debugSupport.errorStopAddress) return ((this.machine as unknown as { af: number }).af >> 8) & 0xff;
+    if (pc === debugSupport.romErrorAddress && debugSupport.romErrorGuard?.()) {
+      const view = this.machineView();
+      return this.machine.doReadMemory(view.readWord(view.sp)) & 0xff;
+    }
+    return undefined;
+  }
+
+  /**
+   * The user statement running when PC is outside the user's statements: at an error stop the
+   * statement tracker knows it best (the error routine is often reached by a `jp`); otherwise the
+   * stack's innermost return address into a statement, then the tracker.
+   */
+  private userStatement(index: SourceDebugIndex, preferTracker: boolean): number {
+    const tracked = this.debugSupport?.statementTracker?.current ?? -1;
+    if (preferTracker && tracked >= 0) return tracked;
+    const scanned = innermostUserStatement(index, this.machineView());
+    return scanned >= 0 ? scanned : tracked;
+  }
+
+  /** Whether Step Into/Over/Out step statements now. */
+  get usesSourceStepping(): boolean {
+    return !!this.sourceIndex && this.sourceStepping;
+  }
+
+  private machineView(): MachineView {
+    const m = this.machine;
+    const cpu = m as unknown as { ix: number; getInterruptDepth?: () => number };
+    const readByte = (a: number) => m.doReadMemory(a & 0xffff);
+    return {
+      pc: m.pc,
+      sp: m.sp,
+      ix: cpu.ix,
+      readWord: (a: number) => readByte(a) | (readByte(a + 1) << 8),
+      readByte,
+      partitionOf: (a: number) => m.getPartition?.(a & 0xffff),
+      interruptDepth: cpu.getInterruptDepth?.() ?? 0
+    };
+  }
+
+  /**
+   * A source-level step (`SourceStepDecision.ts`): into, over, out of statements and calls, over a
+   * whole line, to a frame of the call stack, or into a chosen call of the statement.
+   */
+  async sourceStep(
+    kind: SourceStepKind,
+    options: { targetFrame?: number; targetCallable?: number } = {},
+    operationRevision?: number
+  ): Promise<void> {
+    this.refreshSourceIndex();
+    const index = this.sourceIndex;
+    if (!index) return;
+    const activeOperationRevision = this.prepareMachineOperation(operationRevision);
+    this.isDebugging = true;
+    this.machine?.awakeCpu();
+    const step = beginSourceStep(index, this.machineView(), kind, {
+      ...options,
+      previous: this.debugSupport?.sourceStep,
+      stopInInterrupts: this.stopInInterrupts
+    });
+    if ((kind === "out" || kind === "runToFrame") && !canStepOut(step.chain)) {
+      await this.sendOutput("Step out: the main program has nothing to return to", "yellow");
+      return;
+    }
+    if (this.debugSupport) this.debugSupport.sourceStep = step;
+    await this.sendOutput(`Source step (${kind}) at PC $${this.machine.pc.toString(16).padStart(4, "0")}`, "cyan");
+    this.assertMachineOperationIsCurrent(activeOperationRevision);
+    await this.run(FrameTerminationMode.DebugEvent, DebugStepMode.SourceStep, undefined, undefined, activeOperationRevision);
+  }
+
+  /** Where the paused program stands at source level; undefined without source-level info. */
+  getSourceStopInfo(): SourceStopInfo | undefined {
+    const index = this.sourceIndex;
+    if (!index) return undefined;
+    const step = this.debugSupport?.sourceStep;
+    const pc = this.machine.pc;
+    if (step?.stoppedAt && step.stopPc === pc) {
+      const from = step.stoppedAt === "returnPoint" ? step.chain[step.level - 1] : undefined;
+      return {
+        kind: step.stoppedAt,
+        pc,
+        statementIndex: step.stopStatement ?? index.statementAt(pc, index.partitionNow(this.machineView(), pc)),
+        ...(from?.kind === "routine" ? { returnedFrom: from.callableIndex } : {}),
+        ...(from?.kind === "gosub" ? { returnedFromGosub: true } : {}),
+        returned: step.returned
+      };
+    }
+    const code = this.errorCodeAt(pc);
+    if (code !== undefined) {
+      return {
+        kind: "error",
+        pc,
+        statementIndex: -1,
+        userStatementIndex: this.userStatement(index, true),
+        error: { code, report: basicErrorReport(code) },
+        returned: step?.returned ?? []
+      };
+    }
+    const statementIndex = index.statementAt(pc, index.partitionNow(this.machineView(), pc));
+    return {
+      kind: "other",
+      pc,
+      statementIndex,
+      ...(statementIndex < 0 ? { userStatementIndex: this.userStatement(index, false) } : {}),
+      returned: step?.returned ?? []
+    };
+  }
+
+  /** The symbolic call stack (§10.6), innermost first; undefined without source-level info. */
+  getSourceCallStack(): SourceActivationInfo[] | undefined {
+    return this.sourceIndex ? locateActivations(this.sourceIndex, this.machineView()) : undefined;
+  }
+
   /**
    * Starts the machine in step-into mode.
    */
   async stepInto(operationRevision?: number): Promise<void> {
+    if (this.usesSourceStepping) return this.sourceStep("into", {}, operationRevision);
     const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
@@ -348,6 +548,7 @@ export class MachineController implements IMachineController {
    * Starts the machine in step-over mode.
    */
   async stepOver(operationRevision?: number): Promise<void> {
+    if (this.usesSourceStepping) return this.sourceStep("over", {}, operationRevision);
     const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
@@ -369,6 +570,7 @@ export class MachineController implements IMachineController {
    * Starts the machine in step-out mode.
    */
   async stepOut(operationRevision?: number): Promise<void> {
+    if (this.usesSourceStepping) return this.sourceStep("out", {}, operationRevision);
     const activeOperationRevision = this.prepareMachineOperation(operationRevision);
     this.isDebugging = true;
     this.machine?.awakeCpu();
@@ -614,7 +816,7 @@ export class MachineController implements IMachineController {
     if (!this.debugSupport) return;
     this.debugSupport.resetBreakpointResolution();
     for (const bp of bps) {
-      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address, bp.partition);
+      this.debugSupport.resolveBreakpoint(bp.resource, bp.line, bp.address, bp.partition, bp.column);
     }
   }
 
@@ -676,6 +878,9 @@ export class MachineController implements IMachineController {
     this.context.terminationPoint = terminationPoint;
     this.context.canceled = false;
     this.context.debugSupport = this.debugSupport;
+    this.applyErrorStops();
+    // --- A run that is not a source step ends what the last one reported
+    if (debugStepMode !== DebugStepMode.SourceStep && this.debugSupport) this.debugSupport.sourceStep = undefined;
 
     // --- Set up the state
     this.machine.resetContentionDelaySincePause();
@@ -890,6 +1095,8 @@ export class MachineController implements IMachineController {
     if (!debugSupport) return;
 
     debugSupport.suppressUserBreakpoints = true;
+    // --- Exact at the moment of a hit: the poll below may lift the flag only after the program ran
+    debugSupport.keystrokesPending = () => (this.machine?.getKeyQueueLength() ?? 0) > 0;
     const deadline = Date.now() + KEYSTROKE_SUPPRESSION_TIMEOUT_MS;
 
     const lift = async () => {
@@ -906,6 +1113,7 @@ export class MachineController implements IMachineController {
       } finally {
         // --- Unconditional: every way out of that loop ends the window.
         debugSupport.suppressUserBreakpoints = false;
+        debugSupport.keystrokesPending = undefined;
       }
     };
     void lift();
@@ -990,6 +1198,12 @@ export class MachineController implements IMachineController {
    * the Next Registers panel reads.
    */
   private describeDebugStop(): string {
+    if (this.sourceIndex && this.errorCodeAt(this.machine.pc) !== undefined) {
+      const stop = this.getSourceStopInfo();
+      const s = stop?.userStatementIndex !== undefined ? this.sourceIndex.statements[stop.userStatementIndex] : undefined;
+      const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;
+      return `Runtime error ${stop?.error?.report ?? ""}${s ? ` at ${file}:${s.startLine}` : ""} (continue to let the ROM report it)`;
+    }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {
       return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;

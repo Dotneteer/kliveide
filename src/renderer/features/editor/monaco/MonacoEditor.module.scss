@@ -71,6 +71,41 @@
   border: 1px solid var(--bgcolor-debug-active-bp);
 }
 
+/*
+ * Inline statement markers (plan §10.3): before each further statement of a line, clicked to set a
+ * breakpoint on that statement alone. The breakpoint tokens, as in the gutter; the empty marker is
+ * the disabled colour, faint, so it reads as "possible here" and never as a breakpoint.
+ */
+.statementBpMarker {
+  color: var(--color-breakpoint-disabled);
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.statementBpSet {
+  color: var(--color-breakpoint-code);
+  cursor: pointer;
+}
+
+.statementBpDisabled {
+  color: var(--color-breakpoint-disabled);
+  cursor: pointer;
+}
+
+.returnPointNote {
+  /* A return point's "← returned from f" (plan §10.2.6): a note on the execution point, not a
+     second state, so neutral text rather than another status hue */
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.errorStopNote {
+  /* A runtime-error stop's "✖ 3 Subscript wrong" (plan §10.10): unlike a return point this *is* a
+     state — the program failed here — so it takes the status error ink */
+  color: var(--status-error);
+  font-style: italic;
+}
+
 .activeMacroInvocationLine {
   background: var(--bgcolor-debug-macro-bp);
   border: 1px solid var(--bgcolor-debug-macro-bp);
@@ -188,4 +223,29 @@
 
 .warningIcon {
   background-color: var(--status-warning);
+}
+
+/*
+ * Monaco renders a long text run as pieces of at most 50 characters, each its own span carrying
+ * the decoration's class — so a long message would show as several pills, split mid-word. A piece
+ * that follows another of the same pill joins it seamlessly: no gap, no padding, no rounding at the
+ * joint.
+ */
+.errorIcon + .errorIcon,
+.warningIcon + .warningIcon {
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  border-radius: 0;
+}
+
+.errorIcon:has(+ .errorIcon),
+.warningIcon:has(+ .warningIcon) {
+  padding-right: 0 !important;
+}
+
+.selectedFrameStatement {
+  /* The calling statement of an outer frame selected in the Call Stack panel (plan §10.6): where
+     that frame stands, not where execution is, so the selection surface rather than the
+     execution-point highlight */
+  background: var(--surface-selected);
 }

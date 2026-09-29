@@ -119,6 +119,34 @@ describe("NavigateToDocumentCommand", () => {
       expect(result.success).toBe(true);
     });
 
+    it("opens a Klive BASIC library file read-only, without a project node (Just My Code off)", async () => {
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({ project: { folderPath: "/test/project" } });
+      const mockService = context.service as any;
+      const mockDocService = mockService.projectService.getActiveDocumentHubService() as any;
+      mockDocService.getDocument.mockReturnValue(undefined);
+      const setPosition = vi.fn();
+      // --- The project has no copy of a library document: waitOpen finds none
+      mockDocService.waitOpen.mockResolvedValue(undefined);
+      mockDocService.getDocumentApi.mockReturnValue({ setPosition });
+
+      const result = await command.execute(context, { filename: "<kbasic-stdlib>/hex.bas", lineNo: 9, columnNo: 5 });
+
+      expect(result.success).toBe(true);
+      expect(mockService.projectService.getNodeForFile).not.toHaveBeenCalled();
+      const doc = mockDocService.openDocument.mock.calls[0][0];
+      expect(doc).toMatchObject({ id: "<kbasic-stdlib>/hex.bas", isReadOnly: true, language: "zxbas" });
+      expect(doc.contents).toContain("FUNCTION hex8");
+      expect(setPosition).toHaveBeenCalledWith(9, 4);
+    });
+
+    it("refuses a library file that does not exist", async () => {
+      const mockStore = context.store as any;
+      mockStore.getState.mockReturnValue({ project: { folderPath: "/test/project" } });
+      const result = await command.execute(context, { filename: "<kbasic-stdlib>/nope.bas" });
+      expect(result.success).toBe(false);
+    });
+
     it("should open document when not already open", async () => {
       // Arrange
       const mockStore = context.store as any;

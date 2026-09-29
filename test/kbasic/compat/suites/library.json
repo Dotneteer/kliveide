@@ -1,0 +1,1999 @@
+{
+ "suite": "library",
+ "perProgram": 1,
+ "frames": 3000,
+ "items": [
+  {
+   "id": "library: asc(\"Hello\", 0)",
+   "decl": [
+    "#include <asc.bas>"
+   ],
+   "expr": "asc(\"Hello\", 0)"
+  },
+  {
+   "id": "library: asc(\"Hello\", 1)",
+   "decl": [
+    "#include <asc.bas>"
+   ],
+   "expr": "asc(\"Hello\", 1)"
+  },
+  {
+   "id": "library: asc(\"Hello\", 4)",
+   "decl": [
+    "#include <asc.bas>"
+   ],
+   "expr": "asc(\"Hello\", 4)"
+  },
+  {
+   "id": "library: asc(\"Hello\", 5)",
+   "decl": [
+    "#include <asc.bas>"
+   ],
+   "expr": "asc(\"Hello\", 5)"
+  },
+  {
+   "id": "library: asc(\"Hello\", 9)",
+   "decl": [
+    "#include <asc.bas>"
+   ],
+   "expr": "asc(\"Hello\", 9)"
+  },
+  {
+   "id": "library: hex(0)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex(0)"
+  },
+  {
+   "id": "library: hex(305419896)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex(305419896)"
+  },
+  {
+   "id": "library: hex(4294967295)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex(4294967295)"
+  },
+  {
+   "id": "library: hex16(4660)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex16(4660)"
+  },
+  {
+   "id": "library: hex16(65535)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex16(65535)"
+  },
+  {
+   "id": "library: hex8(171)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex8(171)"
+  },
+  {
+   "id": "library: hex8(0)",
+   "decl": [
+    "#include <hex.bas>"
+   ],
+   "expr": "hex8(0)"
+  },
+  {
+   "id": "library: left(\"Hello\", 0)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + left(\"Hello\", 0) + \"]\""
+  },
+  {
+   "id": "library: left(\"Hello\", 2)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + left(\"Hello\", 2) + \"]\""
+  },
+  {
+   "id": "library: left(\"Hello\", 9)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + left(\"Hello\", 9) + \"]\""
+  },
+  {
+   "id": "library: right(\"Hello\", 2)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + right(\"Hello\", 2) + \"]\""
+  },
+  {
+   "id": "library: right(\"Hello\", 9)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + right(\"Hello\", 9) + \"]\""
+  },
+  {
+   "id": "library: right(\"Hello\", 5)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + right(\"Hello\", 5) + \"]\""
+  },
+  {
+   "id": "library: right(\"Hello\", 6)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + right(\"Hello\", 6) + \"]\""
+  },
+  {
+   "id": "library: mid(\"Hello\", 1, 3)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + mid(\"Hello\", 1, 3) + \"]\""
+  },
+  {
+   "id": "library: mid(\"Hello\", 4, 5)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + mid(\"Hello\", 4, 5) + \"]\""
+  },
+  {
+   "id": "library: mid(\"Hello\", 9, 2)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + mid(\"Hello\", 9, 2) + \"]\""
+  },
+  {
+   "id": "library: mid(\"Hello\", 0, 0)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + mid(\"Hello\", 0, 0) + \"]\""
+  },
+  {
+   "id": "library: left(\"\", 3)",
+   "decl": [
+    "#include <string.bas>"
+   ],
+   "expr": "\"[\" + left(\"\", 3) + \"]\""
+  },
+  {
+   "id": "library: CSRLIN/POS after PRINT AT 5, 7; \"ab\";",
+   "decl": [
+    "#include <csrlin.bas>",
+    "#include <pos.bas>",
+    "DIM rv2924 AS UByte",
+    "DIM cv2924 AS UByte",
+    "PRINT AT 5, 7; \"ab\";",
+    "rv2924 = CSRLIN()",
+    "cv2924 = POS()"
+   ],
+   "expr": "rv2924; \" \"; cv2924"
+  },
+  {
+   "id": "library: CSRLIN/POS after PRINT AT 23, 30; \"xy\";",
+   "decl": [
+    "#include <csrlin.bas>",
+    "#include <pos.bas>",
+    "DIM rv2925 AS UByte",
+    "DIM cv2925 AS UByte",
+    "PRINT AT 23, 30; \"xy\";",
+    "rv2925 = CSRLIN()",
+    "cv2925 = POS()"
+   ],
+   "expr": "rv2925; \" \"; cv2925"
+  },
+  {
+   "id": "library: CSRLIN/POS after PRINT AT 10, 0; \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\";",
+   "decl": [
+    "#include <csrlin.bas>",
+    "#include <pos.bas>",
+    "DIM rv2926 AS UByte",
+    "DIM cv2926 AS UByte",
+    "PRINT AT 10, 0; \"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\";",
+    "rv2926 = CSRLIN()",
+    "cv2926 = POS()"
+   ],
+   "expr": "rv2926; \" \"; cv2926"
+  },
+  {
+   "id": "library: CSRLIN/POS after PRINT AT 3, 3; \"a\";TAB 20;",
+   "decl": [
+    "#include <csrlin.bas>",
+    "#include <pos.bas>",
+    "DIM rv2927 AS UByte",
+    "DIM cv2927 AS UByte",
+    "PRINT AT 3, 3; \"a\";TAB 20;",
+    "rv2927 = CSRLIN()",
+    "cv2927 = POS()"
+   ],
+   "expr": "rv2927; \" \"; cv2927"
+  },
+  {
+   "id": "library: ATTR(3, 4)",
+   "decl": [
+    "#include <attr.bas>",
+    "PRINT AT 3, 4; INK 2; PAPER 5; BRIGHT 1; \"X\""
+   ],
+   "expr": "ATTR(3, 4)"
+  },
+  {
+   "id": "library: ATTR(0, 0)",
+   "decl": [
+    "#include <attr.bas>",
+    "PRINT AT 3, 4; INK 2; PAPER 5; BRIGHT 1; \"X\""
+   ],
+   "expr": "ATTR(0, 0)"
+  },
+  {
+   "id": "library: ATTR(22, 0)",
+   "decl": [
+    "#include <attr.bas>",
+    "PRINT AT 3, 4; INK 2; PAPER 5; BRIGHT 1; \"X\""
+   ],
+   "expr": "ATTR(22, 0)"
+  },
+  {
+   "id": "library: ATTR(23, 31)",
+   "decl": [
+    "#include <attr.bas>",
+    "PRINT AT 3, 4; INK 2; PAPER 5; BRIGHT 1; \"X\""
+   ],
+   "expr": "ATTR(23, 31)"
+  },
+  {
+   "id": "library: SCREEN$(2, 3)",
+   "decl": [
+    "#include <screen.bas>",
+    "PRINT AT 2, 3; \"Q\"; AT 4, 4; INVERSE 1; \"Z\"; AT 6, 6; CHR 144"
+   ],
+   "expr": "\"[\" + SCREEN$(2, 3) + \"]\""
+  },
+  {
+   "id": "library: SCREEN$(2, 4)",
+   "decl": [
+    "#include <screen.bas>",
+    "PRINT AT 2, 3; \"Q\"; AT 4, 4; INVERSE 1; \"Z\"; AT 6, 6; CHR 144"
+   ],
+   "expr": "\"[\" + SCREEN$(2, 4) + \"]\""
+  },
+  {
+   "id": "library: SCREEN$(4, 4)",
+   "decl": [
+    "#include <screen.bas>",
+    "PRINT AT 2, 3; \"Q\"; AT 4, 4; INVERSE 1; \"Z\"; AT 6, 6; CHR 144"
+   ],
+   "expr": "\"[\" + SCREEN$(4, 4) + \"]\""
+  },
+  {
+   "id": "library: SCREEN$(6, 6)",
+   "decl": [
+    "#include <screen.bas>",
+    "PRINT AT 2, 3; \"Q\"; AT 4, 4; INVERSE 1; \"Z\"; AT 6, 6; CHR 144"
+   ],
+   "expr": "\"[\" + SCREEN$(6, 6) + \"]\""
+  },
+  {
+   "id": "library: SCREEN$(23, 0)",
+   "decl": [
+    "#include <screen.bas>",
+    "PRINT AT 2, 3; \"Q\"; AT 4, 4; INVERSE 1; \"Z\"; AT 6, 6; CHR 144"
+   ],
+   "expr": "\"[\" + SCREEN$(23, 0) + \"]\""
+  },
+  {
+   "id": "library: putChars 2x2",
+   "decl": [
+    "#include <putchars.bas>",
+    "FUNCTION ckv2937(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM dv2937(0 TO 31) AS UByte => {5,34,63,92,121,150,179,208,237,10,39,68,97,126,155,184,213,242,15,44,73,102,131,160,189,218,247,20,49,78,107,136}",
+    "putChars(3, 4, 2, 2, @dv2937(0))",
+    "DIM kv2937 AS ULong",
+    "kv2937 = ckv2937(16384, 6144)",
+    "CLS"
+   ],
+   "expr": "kv2937"
+  },
+  {
+   "id": "library: paint 3x2",
+   "decl": [
+    "#include <putchars.bas>",
+    "FUNCTION ckv2938(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "paint(30, 22, 3, 2, 71)"
+   ],
+   "expr": "ckv2938(22528, 768)"
+  },
+  {
+   "id": "library: paintData 2x2",
+   "decl": [
+    "#include <putchars.bas>",
+    "FUNCTION ckv2939(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM dv2939(0 TO 3) AS UByte => {1, 2, 3, 4}",
+    "paintData(0, 0, 2, 2, @dv2939(0))"
+   ],
+   "expr": "ckv2939(22528, 768)"
+  },
+  {
+   "id": "library: print42 layout",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2940(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "printat42(2, 3)",
+    "print42(\"Hello, World\")",
+    "print42(\" more\")"
+   ],
+   "expr": "occv2940(2)"
+  },
+  {
+   "id": "library: print42 pixels",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION ckv2941(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "printat42(0, 0)",
+    "print42(\"AbC 09\")",
+    "DIM kv2941 AS ULong",
+    "kv2941 = ckv2941(16384, 256 * 8)",
+    "CLS"
+   ],
+   "expr": "kv2941"
+  },
+  {
+   "id": "library: print42 past the last column",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2942(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2942 AS String",
+    "printat42(9, 41): print42(\"ab\")",
+    "kv2942 = occv2942(9) + \" \" + occv2942(10)",
+    "CLS"
+   ],
+   "expr": "kv2942"
+  },
+  {
+   "id": "library: print42 a column past the end",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2943(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2943 AS String",
+    "printat42(9, 60 + 0): print42(\"ab\")",
+    "kv2943 = occv2943(9) + \" \" + occv2943(10)",
+    "CLS"
+   ],
+   "expr": "kv2943"
+  },
+  {
+   "id": "library: print42 a row past the end",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2944(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2944 AS String",
+    "printat42(30, 0): print42(\"ab\")",
+    "kv2944 = occv2944(0) + \" \" + occv2944(23)",
+    "CLS"
+   ],
+   "expr": "kv2944"
+  },
+  {
+   "id": "library: print42 the last place",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2945(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2945 AS String",
+    "printat42(23, 41): print42(\"ab\")",
+    "kv2945 = occv2945(23) + \" \" + occv2945(0)",
+    "CLS"
+   ],
+   "expr": "kv2945"
+  },
+  {
+   "id": "library: print42 CHR 13",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2946(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2946 AS String",
+    "printat42(5, 0): print42(\"a\" + CHR(13) + \"b\")",
+    "kv2946 = occv2946(5) + \" \" + occv2946(6)",
+    "CLS"
+   ],
+   "expr": "kv2946"
+  },
+  {
+   "id": "library: print42 CHR 8",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2947(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2947 AS String",
+    "printat42(12, 0): print42(CHR(8) + \"b\")",
+    "kv2947 = occv2947(11) + \" \" + occv2947(12)",
+    "CLS"
+   ],
+   "expr": "kv2947"
+  },
+  {
+   "id": "library: print42 CHR 22",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2948(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2948 AS String",
+    "printat42(12, 5): print42(CHR(22) + CHR(3) + CHR(7) + \"b\")",
+    "kv2948 = occv2948(3) + \" \" + occv2948(12)",
+    "CLS"
+   ],
+   "expr": "kv2948"
+  },
+  {
+   "id": "library: print42 CHR 23 and colour codes",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2949(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2949 AS String",
+    "printat42(12, 5): print42(CHR(23) + CHR(16) + CHR(2) + \"b\")",
+    "kv2949 = occv2949(12) + \" \" + occv2949(13)",
+    "CLS"
+   ],
+   "expr": "kv2949"
+  },
+  {
+   "id": "library: print42 skipped codes",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2950(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2950 AS String",
+    "printat42(12, 5): print42(CHR(1) + CHR(128) + CHR(170) + CHR(255) + \"b\")",
+    "kv2950 = occv2950(12) + \" \" + occv2950(13)",
+    "CLS"
+   ],
+   "expr": "kv2950"
+  },
+  {
+   "id": "library: print42 UDGs and CHR 127",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2951(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2951 AS String",
+    "printat42(12, 5): print42(CHR(144) + CHR(160) + CHR(127) + \"b\")",
+    "kv2951 = occv2951(12) + \" \" + occv2951(13)",
+    "CLS"
+   ],
+   "expr": "kv2951"
+  },
+  {
+   "id": "library: print42 the cursor stays",
+   "decl": [
+    "#include <print42.bas>",
+    "FUNCTION occv2952(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2952 AS String",
+    "printat42(4, 4): print42(\"ab\"): CLS: PRINT AT 20, 20; \"\";: print42(\"c\")",
+    "kv2952 = occv2952(4) + \" \" + occv2952(20)",
+    "CLS"
+   ],
+   "expr": "kv2952"
+  },
+  {
+   "id": "library: print64 layout",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2953(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "printat64(2, 3)",
+    "print64(\"Hello, World\")",
+    "print64(\" more\")"
+   ],
+   "expr": "occv2953(2)"
+  },
+  {
+   "id": "library: print64 pixels",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION ckv2954(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "printat64(0, 0)",
+    "print64(\"AbC 09\")",
+    "DIM kv2954 AS ULong",
+    "kv2954 = ckv2954(16384, 256 * 8)",
+    "CLS"
+   ],
+   "expr": "kv2954"
+  },
+  {
+   "id": "library: print64 past the last column",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2955(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2955 AS String",
+    "printat64(9, 63): print64(\"ab\")",
+    "kv2955 = occv2955(9) + \" \" + occv2955(10)",
+    "CLS"
+   ],
+   "expr": "kv2955"
+  },
+  {
+   "id": "library: print64 a column past the end",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2956(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2956 AS String",
+    "printat64(9, 60 + 22): print64(\"ab\")",
+    "kv2956 = occv2956(9) + \" \" + occv2956(10)",
+    "CLS"
+   ],
+   "expr": "kv2956"
+  },
+  {
+   "id": "library: print64 a row past the end",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2957(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2957 AS String",
+    "printat64(30, 0): print64(\"ab\")",
+    "kv2957 = occv2957(0) + \" \" + occv2957(23)",
+    "CLS"
+   ],
+   "expr": "kv2957"
+  },
+  {
+   "id": "library: print64 the last place",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2958(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2958 AS String",
+    "printat64(23, 63): print64(\"ab\")",
+    "kv2958 = occv2958(23) + \" \" + occv2958(0)",
+    "CLS"
+   ],
+   "expr": "kv2958"
+  },
+  {
+   "id": "library: print64 CHR 13",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2959(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2959 AS String",
+    "printat64(5, 0): print64(\"a\" + CHR(13) + \"b\")",
+    "kv2959 = occv2959(5) + \" \" + occv2959(6)",
+    "CLS"
+   ],
+   "expr": "kv2959"
+  },
+  {
+   "id": "library: print64 CHR 8",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2960(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2960 AS String",
+    "printat64(12, 0): print64(CHR(8) + \"b\")",
+    "kv2960 = occv2960(11) + \" \" + occv2960(12)",
+    "CLS"
+   ],
+   "expr": "kv2960"
+  },
+  {
+   "id": "library: print64 CHR 22",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2961(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2961 AS String",
+    "printat64(12, 5): print64(CHR(22) + CHR(3) + CHR(7) + \"b\")",
+    "kv2961 = occv2961(3) + \" \" + occv2961(12)",
+    "CLS"
+   ],
+   "expr": "kv2961"
+  },
+  {
+   "id": "library: print64 CHR 23 and colour codes",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2962(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2962 AS String",
+    "printat64(12, 5): print64(CHR(23) + CHR(16) + CHR(2) + \"b\")",
+    "kv2962 = occv2962(12) + \" \" + occv2962(13)",
+    "CLS"
+   ],
+   "expr": "kv2962"
+  },
+  {
+   "id": "library: print64 skipped codes",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2963(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2963 AS String",
+    "printat64(12, 5): print64(CHR(1) + CHR(128) + CHR(170) + CHR(255) + \"b\")",
+    "kv2963 = occv2963(12) + \" \" + occv2963(13)",
+    "CLS"
+   ],
+   "expr": "kv2963"
+  },
+  {
+   "id": "library: print64 UDGs and CHR 127",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2964(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2964 AS String",
+    "printat64(12, 5): print64(CHR(144) + CHR(160) + CHR(127) + \"b\")",
+    "kv2964 = occv2964(12) + \" \" + occv2964(13)",
+    "CLS"
+   ],
+   "expr": "kv2964"
+  },
+  {
+   "id": "library: print64 the cursor stays",
+   "decl": [
+    "#include <print64.bas>",
+    "FUNCTION occv2965(r AS UByte) AS String",
+    "DIM t AS String = \"\"",
+    "DIM c AS UByte",
+    "DIM l AS UByte",
+    "DIM nib AS UByte = 0",
+    "FOR c = 0 TO 31",
+    "nib = nib SHL 1",
+    "FOR l = 0 TO 7",
+    "IF PEEK(16384 + (r >> 3) * 2048 + (r BAND 7) * 32 + l * 256 + c) <> 0 THEN nib = nib BOR 1: l = 7",
+    "NEXT l",
+    "IF (c BAND 3) = 3 THEN",
+    "IF nib < 10 THEN t = t + CHR(48 + nib) ELSE t = t + CHR(55 + nib)",
+    "nib = 0",
+    "END IF",
+    "NEXT c",
+    "RETURN t",
+    "END FUNCTION",
+    "DIM kv2965 AS String",
+    "printat64(4, 4): print64(\"ab\"): CLS: PRINT AT 20, 20; \"\";: print64(\"c\")",
+    "kv2965 = occv2965(4) + \" \" + occv2965(20)",
+    "CLS"
+   ],
+   "expr": "kv2965"
+  },
+  {
+   "id": "library: clearBox",
+   "decl": [
+    "#include <clearbox.bas>",
+    "FUNCTION ckv2966(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM iv2966 AS UInteger",
+    "FOR iv2966 = 16384 TO 22527: POKE iv2966, iv2966 BAND 255: NEXT iv2966",
+    "clearBox(2, 3, 4, 5)",
+    "DIM kv2966 AS ULong",
+    "kv2966 = ckv2966(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv2966"
+  },
+  {
+   "id": "library: hMirror(0)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(0)"
+  },
+  {
+   "id": "library: hMirror(1)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(1)"
+  },
+  {
+   "id": "library: hMirror(128)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(128)"
+  },
+  {
+   "id": "library: hMirror(3)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(3)"
+  },
+  {
+   "id": "library: hMirror(165)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(165)"
+  },
+  {
+   "id": "library: hMirror(240)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(240)"
+  },
+  {
+   "id": "library: hMirror(255)",
+   "decl": [
+    "#include <hmirror.bas>"
+   ],
+   "expr": "hMirror(255)"
+  },
+  {
+   "id": "library: putTile(0, 0)",
+   "decl": [
+    "#include <puttile.bas>",
+    "FUNCTION ckv2974(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM dv2974(0 TO 35) AS UByte => {11,48,85,122,159,196,233,14,51,88,125,162,199,236,17,54,91,128,165,202,239,20,57,94,131,168,205,242,23,60,97,134,71,22,57,10}",
+    "putTile(0, 0, @dv2974(0))",
+    "DIM kv2974 AS ULong",
+    "kv2974 = ckv2974(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv2974"
+  },
+  {
+   "id": "library: putTile(10, 10)",
+   "decl": [
+    "#include <puttile.bas>",
+    "FUNCTION ckv2975(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM dv2975(0 TO 35) AS UByte => {11,48,85,122,159,196,233,14,51,88,125,162,199,236,17,54,91,128,165,202,239,20,57,94,131,168,205,242,23,60,97,134,71,22,57,10}",
+    "putTile(10, 10, @dv2975(0))",
+    "DIM kv2975 AS ULong",
+    "kv2975 = ckv2975(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv2975"
+  },
+  {
+   "id": "library: putTile(30, 22)",
+   "decl": [
+    "#include <puttile.bas>",
+    "FUNCTION ckv2976(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM dv2976(0 TO 35) AS UByte => {11,48,85,122,159,196,233,14,51,88,125,162,199,236,17,54,91,128,165,202,239,20,57,94,131,168,205,242,23,60,97,134,71,22,57,10}",
+    "putTile(30, 22, @dv2976(0))",
+    "DIM kv2976 AS ULong",
+    "kv2976 = ckv2976(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv2976"
+  },
+  {
+   "id": "library: fSin(0)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2977 AS Fixed",
+    "xv2977 = fSin(0)"
+   ],
+   "expr": "xv2977; \" \"; PEEK(ULong, @xv2977)"
+  },
+  {
+   "id": "library: fCos(0)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2978 AS Fixed",
+    "xv2978 = fCos(0)"
+   ],
+   "expr": "xv2978; \" \"; PEEK(ULong, @xv2978)"
+  },
+  {
+   "id": "library: fTan(0)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2979 AS Fixed",
+    "xv2979 = fTan(0)"
+   ],
+   "expr": "xv2979; \" \"; PEEK(ULong, @xv2979)"
+  },
+  {
+   "id": "library: fSin(1)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2980 AS Fixed",
+    "xv2980 = fSin(1)"
+   ],
+   "expr": "xv2980; \" \"; PEEK(ULong, @xv2980)"
+  },
+  {
+   "id": "library: fCos(1)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2981 AS Fixed",
+    "xv2981 = fCos(1)"
+   ],
+   "expr": "xv2981; \" \"; PEEK(ULong, @xv2981)"
+  },
+  {
+   "id": "library: fTan(1)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2982 AS Fixed",
+    "xv2982 = fTan(1)"
+   ],
+   "expr": "xv2982; \" \"; PEEK(ULong, @xv2982)"
+  },
+  {
+   "id": "library: fSin(2)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2983 AS Fixed",
+    "xv2983 = fSin(2)"
+   ],
+   "expr": "xv2983; \" \"; PEEK(ULong, @xv2983)"
+  },
+  {
+   "id": "library: fCos(2)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2984 AS Fixed",
+    "xv2984 = fCos(2)"
+   ],
+   "expr": "xv2984; \" \"; PEEK(ULong, @xv2984)"
+  },
+  {
+   "id": "library: fTan(2)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2985 AS Fixed",
+    "xv2985 = fTan(2)"
+   ],
+   "expr": "xv2985; \" \"; PEEK(ULong, @xv2985)"
+  },
+  {
+   "id": "library: fSin(3)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2986 AS Fixed",
+    "xv2986 = fSin(3)"
+   ],
+   "expr": "xv2986; \" \"; PEEK(ULong, @xv2986)"
+  },
+  {
+   "id": "library: fCos(3)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2987 AS Fixed",
+    "xv2987 = fCos(3)"
+   ],
+   "expr": "xv2987; \" \"; PEEK(ULong, @xv2987)"
+  },
+  {
+   "id": "library: fTan(3)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2988 AS Fixed",
+    "xv2988 = fTan(3)"
+   ],
+   "expr": "xv2988; \" \"; PEEK(ULong, @xv2988)"
+  },
+  {
+   "id": "library: fSin(30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2989 AS Fixed",
+    "xv2989 = fSin(30)"
+   ],
+   "expr": "xv2989; \" \"; PEEK(ULong, @xv2989)"
+  },
+  {
+   "id": "library: fCos(30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2990 AS Fixed",
+    "xv2990 = fCos(30)"
+   ],
+   "expr": "xv2990; \" \"; PEEK(ULong, @xv2990)"
+  },
+  {
+   "id": "library: fTan(30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2991 AS Fixed",
+    "xv2991 = fTan(30)"
+   ],
+   "expr": "xv2991; \" \"; PEEK(ULong, @xv2991)"
+  },
+  {
+   "id": "library: fSin(45)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2992 AS Fixed",
+    "xv2992 = fSin(45)"
+   ],
+   "expr": "xv2992; \" \"; PEEK(ULong, @xv2992)"
+  },
+  {
+   "id": "library: fCos(45)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2993 AS Fixed",
+    "xv2993 = fCos(45)"
+   ],
+   "expr": "xv2993; \" \"; PEEK(ULong, @xv2993)"
+  },
+  {
+   "id": "library: fTan(45)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2994 AS Fixed",
+    "xv2994 = fTan(45)"
+   ],
+   "expr": "xv2994; \" \"; PEEK(ULong, @xv2994)"
+  },
+  {
+   "id": "library: fSin(46)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2995 AS Fixed",
+    "xv2995 = fSin(46)"
+   ],
+   "expr": "xv2995; \" \"; PEEK(ULong, @xv2995)"
+  },
+  {
+   "id": "library: fCos(46)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2996 AS Fixed",
+    "xv2996 = fCos(46)"
+   ],
+   "expr": "xv2996; \" \"; PEEK(ULong, @xv2996)"
+  },
+  {
+   "id": "library: fTan(46)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2997 AS Fixed",
+    "xv2997 = fTan(46)"
+   ],
+   "expr": "xv2997; \" \"; PEEK(ULong, @xv2997)"
+  },
+  {
+   "id": "library: fSin(89)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2998 AS Fixed",
+    "xv2998 = fSin(89)"
+   ],
+   "expr": "xv2998; \" \"; PEEK(ULong, @xv2998)"
+  },
+  {
+   "id": "library: fCos(89)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv2999 AS Fixed",
+    "xv2999 = fCos(89)"
+   ],
+   "expr": "xv2999; \" \"; PEEK(ULong, @xv2999)"
+  },
+  {
+   "id": "library: fTan(89)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3000 AS Fixed",
+    "xv3000 = fTan(89)"
+   ],
+   "expr": "xv3000; \" \"; PEEK(ULong, @xv3000)"
+  },
+  {
+   "id": "library: fSin(90)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3001 AS Fixed",
+    "xv3001 = fSin(90)"
+   ],
+   "expr": "xv3001; \" \"; PEEK(ULong, @xv3001)"
+  },
+  {
+   "id": "library: fCos(90)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3002 AS Fixed",
+    "xv3002 = fCos(90)"
+   ],
+   "expr": "xv3002; \" \"; PEEK(ULong, @xv3002)"
+  },
+  {
+   "id": "library: fSin(91)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3003 AS Fixed",
+    "xv3003 = fSin(91)"
+   ],
+   "expr": "xv3003; \" \"; PEEK(ULong, @xv3003)"
+  },
+  {
+   "id": "library: fCos(91)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3004 AS Fixed",
+    "xv3004 = fCos(91)"
+   ],
+   "expr": "xv3004; \" \"; PEEK(ULong, @xv3004)"
+  },
+  {
+   "id": "library: fTan(91)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3005 AS Fixed",
+    "xv3005 = fTan(91)"
+   ],
+   "expr": "xv3005; \" \"; PEEK(ULong, @xv3005)"
+  },
+  {
+   "id": "library: fSin(135)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3006 AS Fixed",
+    "xv3006 = fSin(135)"
+   ],
+   "expr": "xv3006; \" \"; PEEK(ULong, @xv3006)"
+  },
+  {
+   "id": "library: fCos(135)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3007 AS Fixed",
+    "xv3007 = fCos(135)"
+   ],
+   "expr": "xv3007; \" \"; PEEK(ULong, @xv3007)"
+  },
+  {
+   "id": "library: fTan(135)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3008 AS Fixed",
+    "xv3008 = fTan(135)"
+   ],
+   "expr": "xv3008; \" \"; PEEK(ULong, @xv3008)"
+  },
+  {
+   "id": "library: fSin(180)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3009 AS Fixed",
+    "xv3009 = fSin(180)"
+   ],
+   "expr": "xv3009; \" \"; PEEK(ULong, @xv3009)"
+  },
+  {
+   "id": "library: fCos(180)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3010 AS Fixed",
+    "xv3010 = fCos(180)"
+   ],
+   "expr": "xv3010; \" \"; PEEK(ULong, @xv3010)"
+  },
+  {
+   "id": "library: fTan(180)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3011 AS Fixed",
+    "xv3011 = fTan(180)"
+   ],
+   "expr": "xv3011; \" \"; PEEK(ULong, @xv3011)"
+  },
+  {
+   "id": "library: fSin(181)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3012 AS Fixed",
+    "xv3012 = fSin(181)"
+   ],
+   "expr": "xv3012; \" \"; PEEK(ULong, @xv3012)"
+  },
+  {
+   "id": "library: fCos(181)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3013 AS Fixed",
+    "xv3013 = fCos(181)"
+   ],
+   "expr": "xv3013; \" \"; PEEK(ULong, @xv3013)"
+  },
+  {
+   "id": "library: fTan(181)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3014 AS Fixed",
+    "xv3014 = fTan(181)"
+   ],
+   "expr": "xv3014; \" \"; PEEK(ULong, @xv3014)"
+  },
+  {
+   "id": "library: fSin(270)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3015 AS Fixed",
+    "xv3015 = fSin(270)"
+   ],
+   "expr": "xv3015; \" \"; PEEK(ULong, @xv3015)"
+  },
+  {
+   "id": "library: fCos(270)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3016 AS Fixed",
+    "xv3016 = fCos(270)"
+   ],
+   "expr": "xv3016; \" \"; PEEK(ULong, @xv3016)"
+  },
+  {
+   "id": "library: fSin(359)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3017 AS Fixed",
+    "xv3017 = fSin(359)"
+   ],
+   "expr": "xv3017; \" \"; PEEK(ULong, @xv3017)"
+  },
+  {
+   "id": "library: fCos(359)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3018 AS Fixed",
+    "xv3018 = fCos(359)"
+   ],
+   "expr": "xv3018; \" \"; PEEK(ULong, @xv3018)"
+  },
+  {
+   "id": "library: fTan(359)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3019 AS Fixed",
+    "xv3019 = fTan(359)"
+   ],
+   "expr": "xv3019; \" \"; PEEK(ULong, @xv3019)"
+  },
+  {
+   "id": "library: fSin(360)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3020 AS Fixed",
+    "xv3020 = fSin(360)"
+   ],
+   "expr": "xv3020; \" \"; PEEK(ULong, @xv3020)"
+  },
+  {
+   "id": "library: fCos(360)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3021 AS Fixed",
+    "xv3021 = fCos(360)"
+   ],
+   "expr": "xv3021; \" \"; PEEK(ULong, @xv3021)"
+  },
+  {
+   "id": "library: fTan(360)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3022 AS Fixed",
+    "xv3022 = fTan(360)"
+   ],
+   "expr": "xv3022; \" \"; PEEK(ULong, @xv3022)"
+  },
+  {
+   "id": "library: fSin(400)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3023 AS Fixed",
+    "xv3023 = fSin(400)"
+   ],
+   "expr": "xv3023; \" \"; PEEK(ULong, @xv3023)"
+  },
+  {
+   "id": "library: fCos(400)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3024 AS Fixed",
+    "xv3024 = fCos(400)"
+   ],
+   "expr": "xv3024; \" \"; PEEK(ULong, @xv3024)"
+  },
+  {
+   "id": "library: fTan(400)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3025 AS Fixed",
+    "xv3025 = fTan(400)"
+   ],
+   "expr": "xv3025; \" \"; PEEK(ULong, @xv3025)"
+  },
+  {
+   "id": "library: fSin(-30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3026 AS Fixed",
+    "xv3026 = fSin(-30)"
+   ],
+   "expr": "xv3026; \" \"; PEEK(ULong, @xv3026)"
+  },
+  {
+   "id": "library: fCos(-30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3027 AS Fixed",
+    "xv3027 = fCos(-30)"
+   ],
+   "expr": "xv3027; \" \"; PEEK(ULong, @xv3027)"
+  },
+  {
+   "id": "library: fTan(-30)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3028 AS Fixed",
+    "xv3028 = fTan(-30)"
+   ],
+   "expr": "xv3028; \" \"; PEEK(ULong, @xv3028)"
+  },
+  {
+   "id": "library: fSin(0.5)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3029 AS Fixed",
+    "xv3029 = fSin(0.5)"
+   ],
+   "expr": "xv3029; \" \"; PEEK(ULong, @xv3029)"
+  },
+  {
+   "id": "library: fCos(0.5)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3030 AS Fixed",
+    "xv3030 = fCos(0.5)"
+   ],
+   "expr": "xv3030; \" \"; PEEK(ULong, @xv3030)"
+  },
+  {
+   "id": "library: fTan(0.5)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3031 AS Fixed",
+    "xv3031 = fTan(0.5)"
+   ],
+   "expr": "xv3031; \" \"; PEEK(ULong, @xv3031)"
+  },
+  {
+   "id": "library: fSin(44.75)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3032 AS Fixed",
+    "xv3032 = fSin(44.75)"
+   ],
+   "expr": "xv3032; \" \"; PEEK(ULong, @xv3032)"
+  },
+  {
+   "id": "library: fCos(44.75)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3033 AS Fixed",
+    "xv3033 = fCos(44.75)"
+   ],
+   "expr": "xv3033; \" \"; PEEK(ULong, @xv3033)"
+  },
+  {
+   "id": "library: fTan(44.75)",
+   "decl": [
+    "#include <fmath.bas>",
+    "DIM xv3034 AS Fixed",
+    "xv3034 = fTan(44.75)"
+   ],
+   "expr": "xv3034; \" \"; PEEK(ULong, @xv3034)"
+  },
+  {
+   "id": "library: megaLZDepack far offsets",
+   "decl": [
+    "#include <megalz.bas>",
+    "FUNCTION ckv3035(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3035(0 TO 604) AS UByte => {220,255,4,245,121,248,40,26,11,135,255,236,165,59,158,154,57,235,190,255,207,134,7,64,53,156,217,192,255,34,152,117,170,222,236,27,67,255,175,64,147,138,216,114,214,207,255,204,210,104,149,92,160,55,108,254,202,112,37,142,135,238,63,47,216,27,234,255,61,2,91,180,164,233,122,231,255,210,92,229,140,129,133,169,235,255,110,100,242,91,120,35,204,116,255,0,5,208,229,15,18,255,192,255,46,120,105,21,91,211,36,98,255,63,181,9,147,49,34,3,244,255,166,48,11,254,89,17,37,71,255,172,194,170,167,183,15,85,186,254,137,164,208,195,3,122,238,15,81,176,236,240,67,146,162,14,191,130,45,111,102,50,134,240,26,173,81,189,127,239,36,69,100,143,35,225,4,234,238,120,192,148,207,141,67,255,94,252,74,98,33,51,106,255,140,224,207,240,124,172,115,183,255,11,211,201,30,29,71,246,126,255,198,114,124,233,155,50,68,197,139,103,219,63,110,127,149,12,107,46,255,179,109,84,145,117,162,19,252,248,228,28,49,102,244,255,189,36,219,213,82,255,200,171,152,85,65,153,32,165,255,240,133,98,55,254,225,67,95,255,193,70,144,216,200,187,79,64,255,121,94,219,70,62,8,115,53,7,238,220,255,188,229,83,36,54,79,3,177,255,5,234,230,93,72,251,210,128,255,250,190,151,244,218,208,221,4,255,40,179,71,39,150,227,234,85,225,7,48,193,123,12,129,82,79,219,56,8,205,43,251,203,174,123,17,254,189,196,217,198,63,168,202,177,103,255,236,140,64,165,134,221,58,78,207,108,209,185,142,91,251,253,19,136,29,254,116,223,16,217,178,6,9,154,168,216,82,162,163,104,203,245,99,109,80,186,25,163,225,165,137,101,255,194,104,123,98,95,57,216,3,108,207,182,176,40,240,16,123,115,74,161,100,182,220,23,166,32,207,216,228,255,187,16,96,44,99,205,160,156,163,186,60,216,207,246,117,161,55,197,123,236,197,177,81,198,168,79,247,213,224,246,179,67,63,213,105,177,173,63,236,76,103,226,107,219,195,150,197,253,58,140,178,35,187,177,125,177,109,22,205,195,60,198,27,35,132,73,31,254,154,22,105,200,108,224,243,68,255,108,136,220,50,91,187,255,237,170,29,238,118,176,97,219,144,237,126,25,191,232,6,178,197,27,7,187,162,27,246,214,137,16,209,248,35,178,131,251,196,254,177,245,46,236,59,35,167,101,54,226,176,189,131,251,173,46,119,39,251,36,200,242,16,240,155,214,51,47,237,18,11,233,143,246,137,58,221,60,61,179,16,191,251,120,177,177,95,236,114,236,245,115,204,233,2}",
+    "DIM ov3035(0 TO 1511) AS UByte",
+    "megaLZDepack(@pv3035(0), @ov3035(0))"
+   ],
+   "expr": "ckv3035(@ov3035(0), 1512)"
+  },
+  {
+   "id": "library: dzx0Standard far offsets",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3036(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3036(0 TO 579) AS UByte => {65,7,220,4,245,121,248,40,26,11,135,236,165,59,158,154,57,235,190,207,134,7,64,53,156,217,192,34,152,117,170,222,236,27,67,175,64,147,138,216,114,214,207,204,210,104,149,92,160,55,108,202,112,37,142,135,238,63,135,216,27,234,61,2,91,180,164,233,122,231,210,92,229,140,129,133,169,235,110,100,242,91,120,35,204,116,0,5,208,229,15,18,255,192,46,120,105,21,91,211,36,98,63,181,9,147,49,34,3,244,166,48,11,254,89,17,37,71,172,194,170,167,183,15,85,186,137,164,208,195,3,122,238,137,81,176,236,67,146,162,14,176,130,45,111,102,50,134,26,173,81,189,102,239,36,69,100,143,35,4,234,238,100,192,148,207,141,238,238,94,252,74,98,33,51,106,140,224,207,240,124,172,115,183,11,211,201,30,29,71,246,126,198,114,124,233,155,50,68,197,103,68,219,100,221,5,216,127,149,12,107,46,179,109,84,145,117,162,19,252,228,28,49,102,244,244,189,36,219,213,82,200,171,152,85,65,153,32,165,240,133,98,55,254,225,67,95,193,70,144,216,200,187,79,64,121,94,219,70,62,8,115,53,94,238,220,188,229,83,36,54,79,3,177,5,234,230,93,72,251,210,128,250,190,151,244,218,208,221,4,40,179,71,39,150,227,234,85,7,48,193,227,12,129,82,79,112,140,8,205,150,150,50,174,123,122,18,51,196,217,80,6,50,202,103,24,0,142,64,165,186,24,224,58,78,162,35,185,142,37,250,99,19,136,93,232,72,246,223,16,100,61,6,121,80,35,82,162,100,208,99,203,245,116,160,35,186,25,152,194,204,165,137,132,35,104,123,88,114,88,211,3,108,96,18,49,40,240,128,230,99,74,161,146,184,56,23,166,158,24,220,228,255,32,8,245,96,44,64,99,156,163,96,120,177,216,128,234,140,161,55,37,216,35,197,81,209,80,143,79,247,192,35,246,67,49,170,141,105,173,100,152,35,103,226,76,134,88,198,150,197,116,35,140,35,9,98,99,125,109,132,154,141,195,60,193,70,140,132,73,128,52,35,22,105,134,192,52,243,68,128,16,140,220,50,37,254,99,237,170,87,236,82,53,176,97,54,218,51,126,63,208,72,217,245,178,14,24,211,187,162,172,66,57,137,16,240,140,35,131,48,136,141,254,245,88,118,88,220,35,167,108,72,200,226,189,90,6,53,46,119,146,72,52,200,242,129,54,140,4,51,112,36,35,11,233,8,18,2,216,58,120,35,61,16,53,246,141,120,177,101,228,35,236,245,77,210,29,85,86}",
+    "DIM ov3036(0 TO 1511) AS UByte",
+    "dzx0Standard(@pv3036(0), @ov3036(0))"
+   ],
+   "expr": "ckv3036(@ov3036(0), 1512)"
+  },
+  {
+   "id": "library: dzx0StandardBack far offsets",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3037(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3037(0 TO 626) AS UByte => {160,170,218,231,223,185,159,234,61,2,91,180,164,233,122,231,109,43,23,126,218,37,173,157,61,167,183,15,85,186,137,164,208,195,3,122,238,137,81,176,236,67,146,162,14,176,130,45,223,47,21,226,189,141,94,252,74,98,33,51,106,140,224,207,240,124,104,58,5,63,231,19,167,165,240,133,54,139,226,95,193,70,144,216,200,187,79,64,121,94,219,70,62,8,115,53,94,238,220,188,229,83,36,54,79,3,189,163,123,221,137,139,154,149,8,205,124,27,34,1,41,159,41,196,217,75,242,121,182,253,49,157,119,246,58,78,137,175,150,239,202,198,114,124,233,155,50,68,197,103,182,162,103,163,116,0,5,141,223,154,169,237,124,47,59,203,245,137,209,186,25,94,85,114,167,135,250,190,151,244,104,123,152,243,135,238,100,192,216,236,219,120,83,47,219,203,222,25,57,23,166,201,93,228,255,208,229,15,18,255,192,46,120,105,21,91,211,74,62,201,222,230,175,210,185,154,102,50,134,26,173,81,189,102,239,36,69,100,143,35,4,234,161,55,185,107,114,230,83,197,81,109,162,159,147,183,163,17,209,47,118,235,105,173,68,219,147,96,19,136,210,92,229,140,129,133,169,235,110,100,242,91,120,35,204,103,226,114,175,101,76,187,47,202,103,150,197,41,45,207,182,165,119,81,156,163,177,5,234,230,93,72,251,210,128,216,111,132,73,90,63,53,158,91,41,236,27,148,39,74,161,39,89,22,105,36,245,214,27,105,147,106,230,229,237,170,127,149,12,107,46,179,109,84,145,117,162,19,252,228,28,49,102,244,244,189,36,219,213,82,200,171,152,85,65,153,32,176,97,98,63,181,9,147,49,34,3,126,63,181,47,33,246,67,37,97,165,137,177,245,178,211,162,81,228,9,135,29,112,37,142,135,238,63,135,216,27,40,240,246,226,199,137,16,37,183,35,131,147,135,96,143,254,245,218,208,221,4,40,179,71,39,150,227,234,85,7,48,193,227,12,129,82,79,35,167,75,234,135,120,50,134,53,174,123,24,37,226,189,137,135,98,173,79,239,195,60,150,235,46,119,148,227,34,152,117,170,222,79,247,200,242,36,223,16,148,206,87,6,121,96,44,165,63,4,51,148,207,141,238,238,3,108,67,175,64,147,138,216,114,214,207,204,210,104,149,92,160,55,108,202,11,233,208,62,33,82,162,94,162,183,236,165,59,52,31,58,67,64,165,165,143,61,16,158,76,43,67,27,7,64,53,156,217,192,187,162,55,120,177,190,207,134,243,68,154,57,235,190,185,142,172,115,183,11,211,201,30,29,71,246,126,220,236,245,98,55,254,225,67,140,35,244,166,48,11,254,89,17,37,71,172,194,170,125,109,220,4,245,121,248,40,26,11,135,228,170}",
+    "DIM ov3037(0 TO 1511) AS UByte",
+    "dzx0StandardBack(@pv3037(626), @ov3037(1511))"
+   ],
+   "expr": "ckv3037(@ov3037(0), 1512)"
+  },
+  {
+   "id": "library: megaLZDepack",
+   "decl": [
+    "#include <megalz.bas>",
+    "FUNCTION ckv3038(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3038(0 TO 70) AS UByte => {75,255,108,105,118,101,32,66,65,83,194,73,67,252,112,97,99,107,115,58,16,160,98,183,121,253,44,32,116,104,225,240,114,97,105,110,210,253,83,83,222,250,115,116,10,121,32,84,109,245,128,108,227,234,154,222,112,108,65,241,59,183,48,52,255,52,238,88,250,33,4}",
+    "DIM ov3038(0 TO 104) AS UByte",
+    "megaLZDepack(@pv3038(0), @ov3038(0))"
+   ],
+   "expr": "ckv3038(@ov3038(0), 105)"
+  },
+  {
+   "id": "library: dzx0Standard",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3039(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3039(0 TO 73) AS UByte => {20,224,75,108,105,118,101,32,66,65,83,73,67,32,112,97,99,107,115,58,32,97,98,99,250,131,44,32,116,104,135,195,114,97,105,110,32,175,250,83,189,165,244,232,115,116,97,121,115,32,109,234,255,108,121,212,188,142,112,108,226,158,59,32,48,254,14,220,121,244,181,33,85,88}",
+    "DIM ov3039(0 TO 104) AS UByte",
+    "dzx0Standard(@pv3039(0), @ov3039(0))"
+   ],
+   "expr": "ckv3039(@ov3039(0), 105)"
+  },
+  {
+   "id": "library: dzx0StandardBack",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3040(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3040(0 TO 73) AS UByte => {128,170,75,108,105,118,106,60,66,65,83,73,67,32,74,66,99,107,115,58,32,78,139,5,97,98,99,44,146,67,34,114,17,65,43,83,112,37,87,115,116,97,121,115,32,109,245,29,108,121,32,208,55,116,104,101,208,35,59,32,76,162,1,48,196,11,32,112,108,97,105,110,33,244}",
+    "DIM ov3040(0 TO 104) AS UByte",
+    "dzx0StandardBack(@pv3040(73), @ov3040(102))"
+   ],
+   "expr": "ckv3040(@ov3040(0), 105)"
+  },
+  {
+   "id": "library: dzx0Turbo",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3041(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3041(0 TO 73) AS UByte => {20,224,75,108,105,118,101,32,66,65,83,73,67,32,112,97,99,107,115,58,32,97,98,99,250,131,44,32,116,104,135,195,114,97,105,110,32,175,250,83,189,165,244,232,115,116,97,121,115,32,109,234,255,108,121,212,188,142,112,108,226,158,59,32,48,254,14,220,121,244,181,33,85,88}",
+    "DIM ov3041(0 TO 104) AS UByte",
+    "dzx0Turbo(@pv3041(0), @ov3041(0))"
+   ],
+   "expr": "ckv3041(@ov3041(0), 105)"
+  },
+  {
+   "id": "library: dzx0TurboBack",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3042(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3042(0 TO 73) AS UByte => {128,170,75,108,105,118,106,60,66,65,83,73,67,32,74,66,99,107,115,58,32,78,139,5,97,98,99,44,146,67,34,114,17,65,43,83,112,37,87,115,116,97,121,115,32,109,245,29,108,121,32,208,55,116,104,101,208,35,59,32,76,162,1,48,196,11,32,112,108,97,105,110,33,244}",
+    "DIM ov3042(0 TO 104) AS UByte",
+    "dzx0TurboBack(@pv3042(73), @ov3042(102))"
+   ],
+   "expr": "ckv3042(@ov3042(0), 105)"
+  },
+  {
+   "id": "library: dzx0Mega",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3043(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3043(0 TO 73) AS UByte => {20,224,75,108,105,118,101,32,66,65,83,73,67,32,112,97,99,107,115,58,32,97,98,99,250,131,44,32,116,104,135,195,114,97,105,110,32,175,250,83,189,165,244,232,115,116,97,121,115,32,109,234,255,108,121,212,188,142,112,108,226,158,59,32,48,254,14,220,121,244,181,33,85,88}",
+    "DIM ov3043(0 TO 104) AS UByte",
+    "dzx0Mega(@pv3043(0), @ov3043(0))"
+   ],
+   "expr": "ckv3043(@ov3043(0), 105)"
+  },
+  {
+   "id": "library: dzx0MegaBack",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3044(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3044(0 TO 73) AS UByte => {128,170,75,108,105,118,106,60,66,65,83,73,67,32,74,66,99,107,115,58,32,78,139,5,97,98,99,44,146,67,34,114,17,65,43,83,112,37,87,115,116,97,121,115,32,109,245,29,108,121,32,208,55,116,104,101,208,35,59,32,76,162,1,48,196,11,32,112,108,97,105,110,33,244}",
+    "DIM ov3044(0 TO 104) AS UByte",
+    "dzx0MegaBack(@pv3044(73), @ov3044(102))"
+   ],
+   "expr": "ckv3044(@ov3044(0), 105)"
+  },
+  {
+   "id": "library: dzx0SmartRCS",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3045(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3045(0 TO 3030) AS UByte => {0,15,0,56,112,168,224,24,80,136,7,63,119,175,231,31,87,143,14,70,126,0,238,38,94,150,21,77,133,189,245,45,101,157,28,84,140,196,252,52,0,164,35,0,147,203,3,59,115,171,42,98,154,210,10,66,122,178,49,105,161,217,0,73,129,185,216,131,227,27,83,139,224,216,248,234,0,90,146,216,58,241,41,97,153,90,30,192,248,48,104,160,90,135,0,255,55,111,167,161,90,232,206,6,62,118,174,90,122,213,13,69,0,181,90,31,220,20,76,132,188,216,131,230,30,86,0,224,216,248,237,37,93,149,216,58,244,44,100,156,90,30,195,251,0,107,163,90,135,202,2,58,114,170,161,90,232,209,9,65,121,177,90,122,0,16,72,128,184,90,31,223,23,79,135,191,216,131,0,33,89,145,224,216,248,240,40,96,152,216,58,247,47,103,0,90,30,198,254,54,110,166,90,135,205,5,61,117,173,161,90,232,212,12,0,124,180,90,122,219,19,75,131,187,90,31,226,26,82,138,194,216,131,236,36,92,148,224,216,248,243,43,99,155,216,58,0,50,106,162,90,30,201,1,57,113,169,90,135,208,8,64,120,0,161,90,232,215,15,71,127,183,90,122,222,22,78,134,190,90,31,229,29,0,141,197,216,131,239,39,95,151,224,216,248,246,46,0,158,216,58,253,53,109,165,90,30,204,4,60,116,172,90,135,211,0,67,123,179,161,90,232,218,18,74,130,186,90,122,225,25,81,137,0,90,31,232,32,88,144,200,216,178,242,86,251,216,249,47,86,216,215,216,235,90,207,88,217,235,0,175,90,214,90,216,235,182,90,221,95,216,163,90,228,0,91,216,167,90,235,35,91,93,217,98,176,207,0,87,216,214,177,215,108,177,181,216,203,176,0,93,176,181,17,181,216,152,50,237,0,192,90,123,50,199,181,90,239,50,206,216,215,176,45,199,96,176,181,0,237,217,90,107,176,125,95,177,91,88,176,235,90,0,95,216,94,50,214,34,216,214,50,99,0,209,88,176,179,51,87,245,216,175,176,0,216,215,176,45,216,96,176,181,0,237,217,90,104,50,237,142,198,90,123,50,205,173,90,0,127,216,216,215,176,109,0,118,176,215,68,217,181,90,238,176,0,90,214,176,58,90,215,233,216,214,50,45,0,123,217,90,90,50,53,159,215,155,176,0,94,177,216,214,176,191,176,216,93,176,181,0,219,176,85,94,217,90,215,50,187,0,90,94,50,235,211,90,250,95,216,245,216,219,176,11,88,176,45,0,125,177,91,123,176,193,181,90,141,176,123,50,0,91,216,88,50,181,102,237,217,90,123,50,0,240,216,255,136,216,92,176,181,0,220,176,61,136,102,176,59,0,203,90,94,50,237,210,90,123,50,217,94,50,214,0,216,194,96,88,207,17,0,87,216,195,136,213,205,226,123,176,0,95,216,87,226,45,213,102,50,59,0,220,90,8,10,194,96,99,125,0,245,216,205,176,95,226,89,176,181,0,237,217,90,94,226,213,209,203,226,216,173,90,0,125,216,92,226,190,230,216,194,0,96,77,89,226,142,142,0,90,215,176,117,123,226,212,88,50,181,0,237,217,90,94,226,213,226,203,226,233,240,216,151,96,237,216,0,119,176,11,136,86,226,99,159,0,181,90,237,50,222,92,226,181,229,139,50,0,92,217,48,96,141,85,0,123,177,216,15,136,87,226,53,139,176,0,91,216,87,226,45,225,89,226,142,176,0,90,194,10,48,205,96,123,176,0,93,176,195,136,214,176,109,0,125,177,91,123,176,221,87,226,45,228,123,50,0,91,216,87,226,45,242,98,176,207,0,87,216,195,136,213,205,226,123,176,0,93,176,195,136,214,50,99,0,231,181,90,237,50,238,92,226,191,245,216,9,96,117,139,176,0,94,217,90,213,245,226,213,177,155,226,227,173,90,0,125,216,92,226,181,241,152,50,195,0,248,96,24,253,153,0,216,115,176,87,226,214,176,109,0,123,217,90,87,226,181,237,114,226,235,244,90,0,95,216,9,96,35,244,0,93,176,194,136,208,203,146,0,181,90,141,176,92,226,181,240,139,50,0,94,217,90,194,10,53,155,176,0,94,177,216,195,136,213,205,226,98,176,215,0,176,112,180,136,50,146,237,0,90,123,50,250,87,226,47,1,216,194,96,93,102,176,215,0,177,215,91,176,181,232,114,226,215,239,50,181,0,181,216,114,226,213,253,155,226,204,12,249,49,96,215,176,181,0,220,176,61,136,102,176,59,0,242,90,94,50,213,249,203,226,0,94,50,214,0,216,194,96,88,207,56,0,87,216,195,136,213,205,226,123,176,0,95,216,87,226,45,252,102,50,59,0,3,90,8,10,208,203,146,0,245,216,204,176,24,106,214,176,45,0,123,217,90,6,106,53,114,226,235,255,90,0,95,216,87,226,47,13,216,176,0,147,96,67,146,46,0,90,215,176,116,35,186,88,50,181,0,236,217,90,24,106,213,203,226,16,240,216,151,96,237,216,0,119,176,11,136,67,146,46,0,90,193,141,106,92,226,181,12,139,50,0,92,217,48,96,141,124,0,123,177,216,15,136,87,226,53,139,176,0,91,216,87,226,45,8,12,146,187,0,90,8,10,216,242,192,181,92,88,182,237,26,159,116,27,85,141,182,45,76,39,36,217,27,116,192,213,133,125,56,246,156,116,119,157,85,142,182,26,217,116,246,27,116,53,91,222,85,142,182,26,217,116,245,27,95,56,79,76,24,166,219,156,103,116,3,7,73,36,212,217,253,116,192,213,133,99,182,75,202,103,116,77,77,141,116,86,222,213,125,56,61,76,157,116,53,77,95,56,79,76,82,212,116,213,203,99,182,75,202,73,36,212,212,253,141,86,86,222,213,99,182,75,76,72,36,212,181,252,35,86,85,181,222,95,56,79,76,82,212,112,53,133,88,182,210,202,212,157,212,53,203,88,182,210,76,210,36,117,53,253,35,86,85,181,222,95,56,79,76,24,166,212,181,252,88,182,210,202,210,36,117,53,253,39,212,3,133,85,141,182,45,76,72,86,210,76,211,36,213,124,222,99,166,82,252,212,51,16,29,1,35,36,77,203,73,212,205,87,86,182,53,180,216,157,36,117,217,35,86,85,181,222,95,56,79,76,82,86,53,177,216,245,166,95,222,82,212,117,204,176,11,92,85,141,182,45,202,72,86,214,176,117,88,222,210,36,117,214,217,50,112,53,133,95,56,79,76,82,212,112,53,133,88,182,214,176,117,35,252,88,176,213,109,222,86,182,52,181,76,35,86,91,216,85,245,56,241,216,141,166,109,216,86,182,53,221,176,75,252,82,212,112,53,133,88,182,214,176,117,35,252,88,50,213,109,222,87,56,212,245,252,35,86,91,216,85,141,182,75,252,82,212,117,157,176,87,222,214,176,53,45,252,72,86,213,109,222,87,56,215,216,212,141,86,109,216,99,50,2,6,212,157,212,119,176,3,133,85,141,182,75,252,82,86,53,205,176,87,222,214,50,53,45,252,72,86,213,109,222,87,56,215,216,212,157,212,99,176,2,92,53,39,212,93,176,192,213,133,99,182,64,199,192,85,141,222,3,192,117,140,176,11,92,85,140,182,45,136,73,212,214,176,53,88,222,208,48,192,213,109,222,87,56,208,37,192,213,99,182,9,96,53,141,176,86,222,213,99,182,11,136,87,226,45,142,87,56,208,32,192,48,44,6,49,96,192,213,133,99,182,89,176,212,141,252,99,176,85,181,222,95,56,64,146,192,213,159,125,56,124,216,36,96,192,141,92,92,226,181,134,103,226,3,133,85,141,182,3,192,77,87,222,213,124,56,61,10,103,176,3,133,85,140,182,45,136,92,226,214,176,53,95,222,64,199,192,3,133,85,244,56,9,192,117,88,182,194,96,77,103,176,3,133,85,140,182,45,136,2,192,77,86,222,52,12,192,112,53,7,88,182,194,96,29,125,176,86,222,53,115,226,92,176,192,213,133,125,56,3,192,77,86,222,48,151,96,3,92,213,99,182,11,136,87,226,53,245,176,88,222,208,48,192,213,109,222,87,56,195,10,208,203,146,0,85,141,182,103,176,17,135,112,85,181,222,88,182,208,33,192,196,125,112,86,222,52,13,192,213,99,182,9,96,52,50,146,213,0,99,182,89,176,196,97,112,213,109,222,87,56,208,36,192,181,187,88,182,194,96,77,86,182,53,220,176,70,112,27,0,85,244,56,13,192,117,95,222,12,96,48,45,92,86,182,48,181,136,115,226,88,176,213,125,222,3,192,28,13,133,87,56,215,216,195,96,53,240,176,35,92,87,226,53,204,176,13,133,86,182,52,12,192,117,88,222,208,55,192,88,176,192,181,92,88,182,193,32,32,214,176,53,88,222,208,48,192,213,109,222,87,56,208,37,192,213,99,182,4,199,32,85,141,222,86,182,48,72,32,49,24,112,213,99,222,64,195,192,2,6,195,96,28,13,133,86,182,48,76,32,117,88,222,213,125,56,2,192,76,71,112,213,99,222,9,96,48,35,92,4,195,32,85,181,222,88,182,208,52,192,213,125,222,87,56,195,10,214,176,109,0,117,177,95,182,4,135,32,88,176,176,0,77,32,117,181,217,0,95,56,64,151,192,240,216,77,32,117,181,217,0,240,177,91,73,32,113,24,112,180,0,8,192,11,158,119,242,84,156,208,11,92,0,159,148,27,84,203,82,29,0,159,148,27,73,36,246,27,116,112,48,133,8,22,219,156,114,242,192,0,39,148,197,27,114,178,192,25,39,148,76,77,2,148,125,27,159,116,27,0,157,148,209,157,103,2,112,157,9,148,211,203,69,203,2,21,21,203,178,0,0,157,148,49,77,92,178,176,42,9,148,211,77,0,157,148,54,77,116,116,192,77,39,148,76,203,87,178,44,24,2,148,116,209,203,114,2,197,38,114,178,192,0,39,148,76,77,86,52,116,212,77,140,86,11,6,21,203,178,20,82,212,112,48,133,9,148,211,203,21,203,178,41,0,157,148,52,77,92,2,177,55,89,52,192,192,133,35,22,75,76,21,203,178,23,0,157,148,49,203,92,178,177,37,89,178,192,192,133,39,148,76,77,86,52,116,192,77,39,148,77,77,23,2,44,72,2,148,115,87,0,157,148,49,203,92,178,176,40,9,148,215,217,21,203,178,54,21,156,52,12,133,2,148,116,197,77,103,52,92,217,2,148,117,141,176,72,252,192,39,148,92,217,2,148,116,197,77,114,178,192,57,39,148,93,217,22,2,117,214,217,50,112,52,7,156,36,197,87,114,178,192,0,39,148,88,176,212,140,252,2,148,117,192,217,39,148,76,77,86,52,117,192,217,35,22,91,216,21,205,178,99,176,3,92,210,36,117,197,217,114,178,192,0,39,148,92,217,86,52,117,192,217,39,148,92,217,2,22,53,45,252,103,176,3,133,0,157,148,76,253,87,178,53,141,176,87,222,193,103,228,92,217,86,52,112,48,133,9,148,215,217,21,157,52,112,217,9,148,214,176,117,61,252,103,176,3,133,0,157,148,76,253,87,178,44,69,2,148,117,193,217,103,228,92,217,86,52,112,48,7,9,148,212,197,253,115,178,95,176,85,140,222,87,178,53,204,176,12,133,2,148,116,12,192,53,88,222,197,115,178,89,176,192,176,92,9,148,195,137,21,205,178,125,176,86,222,52,12,192,53,91,222,0,140,22,44,10,87,178,44,0,2,148,117,141,176,72,252,192,39,148,92,217,2,148,116,8,192,44,85,2,148,116,8,192,112,9,148,194,96,29,89,226,192,192,133,39,148,88,176,208,32,192,213,124,222,2,148,116,8,192,44,102,2,148,112,135,96,0,157,148,115,176,11,136,86,226,112,48,133,9,148,208,49,192,213,124,222,48,96,192,176,92,9,148,195,137,87,226,53,141,176,87,222,208,49,192,192,192,133,35,22,91,216,12,96,215,176,192,141,92,92,226,215,176,48,48,133,9,148,208,48,192,213,99,222,64,220,192,2,148,115,87,0,156,148,53,137,115,226,95,176,85,141,222,3,192,13,86,222,192,39,148,64,135,192,0,156,148,33,96,192,39,148,92,217,2,148,112,213,137,204,226,71,112,213,99,222,64,195,192,2,6,195,96,28,12,133,2,148,117,140,176,70,112,29,86,222,192,39,148,64,131,192,17,245,112,88,222,194,96,76,8,92,213,204,226,71,112,108,0,2,148,116,12,192,117,95,222,0,140,22,45,10,103,176,3,133,0,156,148,53,137,115,226,88,176,213,125,222,3,192,28,12,133,2,148,116,8,192,112,9,148,194,96,29,103,176,3,133,0,156,148,52,137,9,192,53,88,222,208,49,192,192,192,7,39,148,8,96,53,245,176,88,222,213,205,226,115,176,3,133,0,157,148,3,192,13,86,222,48,151,96,3,92,192,39,148,4,221,32,99,176,85,141,222,3,192,13,86,222,192,35,22,11,10,67,146,44,0,2,148,112,76,32,53,88,222,192,39,148,64,131,192,17,245,112,88,222,208,55,192,0,156,148,19,32,77,86,222,192,39,148,4,195,32,85,140,222,2,148,116,8,192,45,141,86,182,48,147,96,85,140,182,19,32,93,86,222,213,125,56,3,192,93,87,222,195,96,8,215,249,0,177,85,240,182,72,32,117,139,176,0,64,128,192,141,84,0,87,56,215,216,195,96,53,236,176,0,19,32,93,109,217,0,125,177,91,3,192,88,208,175,0,36,192,135,60,56,57,58,59,149,246,81,53,85,88}",
+    "dzx0SmartRCS(@pv3045(0), 16384)",
+    "DIM kv3045 AS ULong",
+    "kv3045 = ckv3045(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv3045"
+  },
+  {
+   "id": "library: dzx0AgileRCS",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3046(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3046(0 TO 3030) AS UByte => {0,15,0,56,112,168,224,24,80,136,7,63,119,175,231,31,87,143,14,70,126,0,238,38,94,150,21,77,133,189,245,45,101,157,28,84,140,196,252,52,0,164,35,0,147,203,3,59,115,171,42,98,154,210,10,66,122,178,49,105,161,217,0,73,129,185,216,131,227,27,83,139,224,216,248,234,0,90,146,216,58,241,41,97,153,90,30,192,248,48,104,160,90,135,0,255,55,111,167,161,90,232,206,6,62,118,174,90,122,213,13,69,0,181,90,31,220,20,76,132,188,216,131,230,30,86,0,224,216,248,237,37,93,149,216,58,244,44,100,156,90,30,195,251,0,107,163,90,135,202,2,58,114,170,161,90,232,209,9,65,121,177,90,122,0,16,72,128,184,90,31,223,23,79,135,191,216,131,0,33,89,145,224,216,248,240,40,96,152,216,58,247,47,103,0,90,30,198,254,54,110,166,90,135,205,5,61,117,173,161,90,232,212,12,0,124,180,90,122,219,19,75,131,187,90,31,226,26,82,138,194,216,131,236,36,92,148,224,216,248,243,43,99,155,216,58,0,50,106,162,90,30,201,1,57,113,169,90,135,208,8,64,120,0,161,90,232,215,15,71,127,183,90,122,222,22,78,134,190,90,31,229,29,0,141,197,216,131,239,39,95,151,224,216,248,246,46,0,158,216,58,253,53,109,165,90,30,204,4,60,116,172,90,135,211,0,67,123,179,161,90,232,218,18,74,130,186,90,122,225,25,81,137,0,90,31,232,32,88,144,200,216,178,242,86,251,216,249,47,86,216,215,216,235,90,207,88,217,235,0,175,90,214,90,216,235,182,90,221,95,216,163,90,228,0,91,216,167,90,235,35,91,93,217,98,176,207,0,87,216,214,177,215,108,177,181,216,203,176,0,93,176,181,17,181,216,152,50,237,0,192,90,123,50,199,181,90,239,50,206,216,215,176,45,199,96,176,181,0,237,217,90,107,176,125,95,177,91,88,176,235,90,0,95,216,94,50,214,34,216,214,50,99,0,209,88,176,179,51,87,245,216,175,176,0,216,215,176,45,216,96,176,181,0,237,217,90,104,50,237,142,198,90,123,50,205,173,90,0,127,216,216,215,176,109,0,118,176,215,68,217,181,90,238,176,0,90,214,176,58,90,215,233,216,214,50,45,0,123,217,90,90,50,53,159,215,155,176,0,94,177,216,214,176,191,176,216,93,176,181,0,219,176,85,94,217,90,215,50,187,0,90,94,50,235,211,90,250,95,216,245,216,219,176,11,88,176,45,0,125,177,91,123,176,193,181,90,141,176,123,50,0,91,216,88,50,181,102,237,217,90,123,50,0,240,216,255,136,216,92,176,181,0,220,176,61,136,102,176,59,0,203,90,94,50,237,210,90,123,50,217,94,50,214,0,216,194,96,88,207,17,0,87,216,195,136,213,205,226,123,176,0,95,216,87,226,45,213,102,50,59,0,220,90,8,10,194,96,99,125,0,245,216,205,176,95,226,89,176,181,0,237,217,90,94,226,213,209,203,226,216,173,90,0,125,216,92,226,190,230,216,194,0,96,77,89,226,142,142,0,90,215,176,117,123,226,212,88,50,181,0,237,217,90,94,226,213,226,203,226,233,240,216,151,96,237,216,0,119,176,11,136,86,226,99,159,0,181,90,237,50,222,92,226,181,229,139,50,0,92,217,48,96,141,85,0,123,177,216,15,136,87,226,53,139,176,0,91,216,87,226,45,225,89,226,142,176,0,90,194,10,48,205,96,123,176,0,93,176,195,136,214,176,109,0,125,177,91,123,176,221,87,226,45,228,123,50,0,91,216,87,226,45,242,98,176,207,0,87,216,195,136,213,205,226,123,176,0,93,176,195,136,214,50,99,0,231,181,90,237,50,238,92,226,191,245,216,9,96,117,139,176,0,94,217,90,213,245,226,213,177,155,226,227,173,90,0,125,216,92,226,181,241,152,50,195,0,248,96,24,253,153,0,216,115,176,87,226,214,176,109,0,123,217,90,87,226,181,237,114,226,235,244,90,0,95,216,9,96,35,244,0,93,176,194,136,208,203,146,0,181,90,141,176,92,226,181,240,139,50,0,94,217,90,194,10,53,155,176,0,94,177,216,195,136,213,205,226,98,176,215,0,176,112,180,136,50,146,237,0,90,123,50,250,87,226,47,1,216,194,96,93,102,176,215,0,177,215,91,176,181,232,114,226,215,239,50,181,0,181,216,114,226,213,253,155,226,204,12,249,49,96,215,176,181,0,220,176,61,136,102,176,59,0,242,90,94,50,213,249,203,226,0,94,50,214,0,216,194,96,88,207,56,0,87,216,195,136,213,205,226,123,176,0,95,216,87,226,45,252,102,50,59,0,3,90,8,10,208,203,146,0,245,216,204,176,24,106,214,176,45,0,123,217,90,6,106,53,114,226,235,255,90,0,95,216,87,226,47,13,216,176,0,147,96,67,146,46,0,90,215,176,116,35,186,88,50,181,0,236,217,90,24,106,213,203,226,16,240,216,151,96,237,216,0,119,176,11,136,67,146,46,0,90,193,141,106,92,226,181,12,139,50,0,92,217,48,96,141,124,0,123,177,216,15,136,87,226,53,139,176,0,91,216,87,226,45,8,12,146,187,0,90,8,10,216,242,192,181,92,88,182,237,26,159,116,27,85,141,182,45,76,39,36,217,27,116,192,213,133,125,56,246,156,116,119,157,85,142,182,26,217,116,246,27,116,53,91,222,85,142,182,26,217,116,245,27,95,56,79,76,24,166,219,156,103,116,3,7,73,36,212,217,253,116,192,213,133,99,182,75,202,103,116,77,77,141,116,86,222,213,125,56,61,76,157,116,53,77,95,56,79,76,82,212,116,213,203,99,182,75,202,73,36,212,212,253,141,86,86,222,213,99,182,75,76,72,36,212,181,252,35,86,85,181,222,95,56,79,76,82,212,112,53,133,88,182,210,202,212,157,212,53,203,88,182,210,76,210,36,117,53,253,35,86,85,181,222,95,56,79,76,24,166,212,181,252,88,182,210,202,210,36,117,53,253,39,212,3,133,85,141,182,45,76,72,86,210,76,211,36,213,124,222,99,166,82,252,212,51,16,29,1,35,36,77,203,73,212,205,87,86,182,53,180,216,157,36,117,217,35,86,85,181,222,95,56,79,76,82,86,53,177,216,245,166,95,222,82,212,117,204,176,11,92,85,141,182,45,202,72,86,214,176,117,88,222,210,36,117,214,217,50,112,53,133,95,56,79,76,82,212,112,53,133,88,182,214,176,117,35,252,88,176,213,109,222,86,182,52,181,76,35,86,91,216,85,245,56,241,216,141,166,109,216,86,182,53,221,176,75,252,82,212,112,53,133,88,182,214,176,117,35,252,88,50,213,109,222,87,56,212,245,252,35,86,91,216,85,141,182,75,252,82,212,117,157,176,87,222,214,176,53,45,252,72,86,213,109,222,87,56,215,216,212,141,86,109,216,99,50,2,6,212,157,212,119,176,3,133,85,141,182,75,252,82,86,53,205,176,87,222,214,50,53,45,252,72,86,213,109,222,87,56,215,216,212,157,212,99,176,2,92,53,39,212,93,176,192,213,133,99,182,64,199,192,85,141,222,3,192,117,140,176,11,92,85,140,182,45,136,73,212,214,176,53,88,222,208,48,192,213,109,222,87,56,208,37,192,213,99,182,9,96,53,141,176,86,222,213,99,182,11,136,87,226,45,142,87,56,208,32,192,48,44,6,49,96,192,213,133,99,182,89,176,212,141,252,99,176,85,181,222,95,56,64,146,192,213,159,125,56,124,216,36,96,192,141,92,92,226,181,134,103,226,3,133,85,141,182,3,192,77,87,222,213,124,56,61,10,103,176,3,133,85,140,182,45,136,92,226,214,176,53,95,222,64,199,192,3,133,85,244,56,9,192,117,88,182,194,96,77,103,176,3,133,85,140,182,45,136,2,192,77,86,222,52,12,192,112,53,7,88,182,194,96,29,125,176,86,222,53,115,226,92,176,192,213,133,125,56,3,192,77,86,222,48,151,96,3,92,213,99,182,11,136,87,226,53,245,176,88,222,208,48,192,213,109,222,87,56,195,10,208,203,146,0,85,141,182,103,176,17,135,112,85,181,222,88,182,208,33,192,196,125,112,86,222,52,13,192,213,99,182,9,96,52,50,146,213,0,99,182,89,176,196,97,112,213,109,222,87,56,208,36,192,181,187,88,182,194,96,77,86,182,53,220,176,70,112,27,0,85,244,56,13,192,117,95,222,12,96,48,45,92,86,182,48,181,136,115,226,88,176,213,125,222,3,192,28,13,133,87,56,215,216,195,96,53,240,176,35,92,87,226,53,204,176,13,133,86,182,52,12,192,117,88,222,208,55,192,88,176,192,181,92,88,182,193,32,32,214,176,53,88,222,208,48,192,213,109,222,87,56,208,37,192,213,99,182,4,199,32,85,141,222,86,182,48,72,32,49,24,112,213,99,222,64,195,192,2,6,195,96,28,13,133,86,182,48,76,32,117,88,222,213,125,56,2,192,76,71,112,213,99,222,9,96,48,35,92,4,195,32,85,181,222,88,182,208,52,192,213,125,222,87,56,195,10,214,176,109,0,117,177,95,182,4,135,32,88,176,176,0,77,32,117,181,217,0,95,56,64,151,192,240,216,77,32,117,181,217,0,240,177,91,73,32,113,24,112,180,0,8,192,11,158,119,242,84,156,208,11,92,0,159,148,27,84,203,82,29,0,159,148,27,73,36,246,27,116,112,48,133,8,22,219,156,114,242,192,0,39,148,197,27,114,178,192,25,39,148,76,77,2,148,125,27,159,116,27,0,157,148,209,157,103,2,112,157,9,148,211,203,69,203,2,21,21,203,178,0,0,157,148,49,77,92,178,176,42,9,148,211,77,0,157,148,54,77,116,116,192,77,39,148,76,203,87,178,44,24,2,148,116,209,203,114,2,197,38,114,178,192,0,39,148,76,77,86,52,116,212,77,140,86,11,6,21,203,178,20,82,212,112,48,133,9,148,211,203,21,203,178,41,0,157,148,52,77,92,2,177,55,89,52,192,192,133,35,22,75,76,21,203,178,23,0,157,148,49,203,92,178,177,37,89,178,192,192,133,39,148,76,77,86,52,116,192,77,39,148,77,77,23,2,44,72,2,148,115,87,0,157,148,49,203,92,178,176,40,9,148,215,217,21,203,178,54,21,156,52,12,133,2,148,116,197,77,103,52,92,217,2,148,117,141,176,72,252,192,39,148,92,217,2,148,116,197,77,114,178,192,57,39,148,93,217,22,2,117,214,217,50,112,52,7,156,36,197,87,114,178,192,0,39,148,88,176,212,140,252,2,148,117,192,217,39,148,76,77,86,52,117,192,217,35,22,91,216,21,205,178,99,176,3,92,210,36,117,197,217,114,178,192,0,39,148,92,217,86,52,117,192,217,39,148,92,217,2,22,53,45,252,103,176,3,133,0,157,148,76,253,87,178,53,141,176,87,222,193,103,228,92,217,86,52,112,48,133,9,148,215,217,21,157,52,112,217,9,148,214,176,117,61,252,103,176,3,133,0,157,148,76,253,87,178,44,69,2,148,117,193,217,103,228,92,217,86,52,112,48,7,9,148,212,197,253,115,178,95,176,85,140,222,87,178,53,204,176,12,133,2,148,116,12,192,53,88,222,197,115,178,89,176,192,176,92,9,148,195,137,21,205,178,125,176,86,222,52,12,192,53,91,222,0,140,22,44,10,87,178,44,0,2,148,117,141,176,72,252,192,39,148,92,217,2,148,116,8,192,44,85,2,148,116,8,192,112,9,148,194,96,29,89,226,192,192,133,39,148,88,176,208,32,192,213,124,222,2,148,116,8,192,44,102,2,148,112,135,96,0,157,148,115,176,11,136,86,226,112,48,133,9,148,208,49,192,213,124,222,48,96,192,176,92,9,148,195,137,87,226,53,141,176,87,222,208,49,192,192,192,133,35,22,91,216,12,96,215,176,192,141,92,92,226,215,176,48,48,133,9,148,208,48,192,213,99,222,64,220,192,2,148,115,87,0,156,148,53,137,115,226,95,176,85,141,222,3,192,13,86,222,192,39,148,64,135,192,0,156,148,33,96,192,39,148,92,217,2,148,112,213,137,204,226,71,112,213,99,222,64,195,192,2,6,195,96,28,12,133,2,148,117,140,176,70,112,29,86,222,192,39,148,64,131,192,17,245,112,88,222,194,96,76,8,92,213,204,226,71,112,108,0,2,148,116,12,192,117,95,222,0,140,22,45,10,103,176,3,133,0,156,148,53,137,115,226,88,176,213,125,222,3,192,28,12,133,2,148,116,8,192,112,9,148,194,96,29,103,176,3,133,0,156,148,52,137,9,192,53,88,222,208,49,192,192,192,7,39,148,8,96,53,245,176,88,222,213,205,226,115,176,3,133,0,157,148,3,192,13,86,222,48,151,96,3,92,192,39,148,4,221,32,99,176,85,141,222,3,192,13,86,222,192,35,22,11,10,67,146,44,0,2,148,112,76,32,53,88,222,192,39,148,64,131,192,17,245,112,88,222,208,55,192,0,156,148,19,32,77,86,222,192,39,148,4,195,32,85,140,222,2,148,116,8,192,45,141,86,182,48,147,96,85,140,182,19,32,93,86,222,213,125,56,3,192,93,87,222,195,96,8,215,249,0,177,85,240,182,72,32,117,139,176,0,64,128,192,141,84,0,87,56,215,216,195,96,53,236,176,0,19,32,93,109,217,0,125,177,91,3,192,88,208,175,0,36,192,135,60,56,57,58,59,149,246,81,53,85,88}",
+    "dzx0AgileRCS(@pv3046(0), 16384)",
+    "DIM kv3046 AS ULong",
+    "kv3046 = ckv3046(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv3046"
+  },
+  {
+   "id": "library: dzx0SmartRCSBack",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3047(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3047(0 TO 3034) AS UByte => {160,170,38,154,166,63,242,0,27,143,226,222,223,179,164,78,95,0,38,26,218,223,183,39,95,63,61,191,199,165,0,38,26,218,223,183,0,31,79,162,223,45,251,73,165,78,154,0,198,79,104,245,125,199,169,33,150,106,63,222,111,73,162,33,26,170,223,105,251,163,201,159,159,243,33,137,106,143,185,167,63,252,107,54,255,33,137,106,223,218,126,107,243,122,223,223,159,246,249,241,167,63,253,33,38,170,143,137,123,223,183,223,107,252,33,39,170,223,105,251,107,205,127,63,203,111,107,243,33,31,170,63,105,191,33,137,106,79,162,223,221,126,107,243,168,223,107,205,127,63,247,155,33,168,166,63,253,107,54,255,122,253,79,153,29,102,106,163,242,79,151,159,102,39,31,154,233,252,122,247,183,63,253,33,150,106,79,162,29,153,118,218,107,55,255,163,241,167,159,125,33,169,182,63,253,107,54,255,0,177,143,184,79,103,218,107,252,183,159,124,107,243,27,31,63,202,111,107,243,33,31,170,143,45,238,79,137,107,54,255,0,109,97,111,159,203,107,55,255,63,221,111,33,162,143,90,238,63,41,191,107,205,127,33,168,182,143,184,79,39,218,107,252,0,135,109,189,245,241,233,201,127,33,168,166,63,253,33,38,170,79,165,29,153,118,218,107,55,255,163,245,247,159,124,33,162,154,63,246,219,107,252,122,247,79,103,154,29,169,33,137,106,79,105,159,202,107,55,255,248,253,63,109,191,33,137,106,63,206,118,111,223,107,252,122,247,79,55,218,159,242,107,205,127,63,203,111,107,243,122,223,223,63,246,33,91,170,79,137,29,102,118,106,223,107,252,122,247,79,55,245,26,159,233,252,33,151,106,63,219,111,107,243,122,223,223,29,168,80,29,97,106,163,242,231,159,124,39,104,233,242,55,31,63,202,111,107,243,38,159,107,54,255,3,201,154,79,104,107,243,122,223,223,159,246,249,241,231,63,253,107,54,255,72,29,97,118,106,223,107,252,38,167,107,205,127,159,203,107,55,255,63,45,191,107,205,127,33,168,166,63,253,33,38,170,79,165,77,153,118,122,223,107,252,168,119,107,243,223,63,253,33,38,170,63,105,191,107,205,122,127,127,79,166,77,153,122,163,242,79,151,77,102,234,39,161,233,201,122,127,127,203,163,38,158,27,54,250,33,165,154,79,104,77,166,2,222,218,107,252,122,247,79,103,154,77,169,249,199,159,205,38,104,218,203,168,38,167,107,205,0,127,77,152,38,122,218,27,232,33,151,106,79,162,77,153,2,122,107,107,243,38,159,203,54,234,218,169,107,205,38,127,218,107,252,3,39,107,79,162,107,205,0,127,77,152,122,3,172,79,153,107,54,255,38,105,203,163,38,158,107,54,255,38,105,203,163,178,222,107,54,255,38,105,107,243,159,3,172,79,137,107,54,255,0,77,97,234,179,177,233,201,122,127,127,205,163,38,105,219,179,33,137,106,79,105,77,166,52,222,107,54,255,163,241,79,55,154,77,169,39,135,233,38,255,38,105,203,163,178,222,107,54,255,122,253,77,141,103,122,77,152,38,122,218,107,252,117,135,77,169,52,183,107,205,248,127,127,203,163,85,30,253,166,178,219,107,54,255,99,77,97,234,178,109,107,243,122,223,223,43,172,120,77,97,234,52,109,107,243,178,223,203,54,234,178,109,107,243,122,223,223,203,168,102,135,253,233,178,182,107,205,116,127,77,152,52,122,219,107,252,122,247,43,55,107,179,108,233,242,178,223,107,54,255,178,109,203,163,178,222,107,54,255,0,77,97,234,119,253,97,186,52,109,107,243,133,31,77,166,179,30,155,233,252,178,183,139,141,178,109,107,243,178,223,107,54,255,115,77,97,234,52,109,107,243,0,31,77,166,136,30,253,166,248,219,223,139,98,152,253,141,228,110,107,205,111,127,77,152,228,122,107,205,52,127,219,107,252,132,135,77,169,228,215,107,252,93,135,173,173,98,102,107,243,122,223,223,139,114,24,77,166,228,94,107,243,223,47,178,218,107,252,52,183,107,205,127,245,242,165,0,255,145,168,63,252,0,134,79,104,223,206,126,39,78,164,0,90,137,159,246,38,0,107,105,242,63,253,199,150,0,106,38,104,223,223,126,73,162,154,159,243,73,137,198,106,63,56,191,199,165,154,33,168,182,223,237,73,39,170,33,161,218,223,183,159,73,168,63,118,191,33,137,106,143,185,183,63,252,73,38,170,33,137,106,223,219,126,73,162,0,26,109,246,245,214,199,151,106,33,168,166,63,253,33,38,170,79,137,166,223,236,73,39,170,163,245,247,159,124,33,162,154,63,247,199,91,170,33,165,218,223,179,159,33,168,79,150,182,159,124,73,162,248,218,223,63,246,155,33,168,230,63,252,119,198,73,39,170,122,253,79,141,230,159,124,73,162,218,63,243,199,91,170,122,253,63,109,191,33,165,154,79,104,29,166,119,198,73,39,170,122,253,79,141,245,214,199,151,106,33,169,230,63,253,73,38,170,0,143,113,238,29,153,154,163,252,159,57,159,33,168,143,150,123,63,206,111,199,169,33,134,106,143,139,123,79,163,73,137,122,106,127,159,219,249,199,159,63,246,155,33,168,143,150,123,29,166,119,198,73,39,170,33,161,154,79,104,159,206,73,39,170,63,61,191,199,165,33,26,170,63,105,191,33,137,106,79,105,29,166,119,198,73,39,170,163,241,79,39,218,63,253,33,38,170,63,109,191,73,137,60,106,154,79,105,29,166,163,38,127,79,105,159,246,39,165,199,165,122,218,223,63,246,33,91,170,79,137,29,102,106,119,124,73,162,163,26,127,159,218,33,151,106,63,223,111,199,169,122,246,29,55,106,119,124,79,167,73,137,106,159,206,73,39,170,237,225,63,252,199,150,106,33,169,166,63,252,79,54,154,73,168,122,246,29,55,106,159,206,73,39,170,63,61,191,199,165,254,26,63,203,111,73,162,33,26,170,79,137,3,38,107,79,163,73,137,122,106,127,159,243,245,245,199,165,33,26,170,63,105,191,33,137,106,79,105,29,166,119,198,73,39,170,163,245,247,159,124,33,162,154,63,247,199,91,170,122,253,79,41,154,169,172,33,137,106,79,162,43,205,119,26,159,73,168,248,246,183,63,253,33,38,170,63,57,191,3,177,73,38,170,122,253,79,141,3,214,154,79,105,73,162,39,26,154,169,172,39,165,199,165,33,26,170,169,201,3,26,107,79,162,33,165,218,79,104,43,179,3,198,154,73,168,122,246,79,55,3,90,107,199,169,33,134,106,205,162,39,161,169,201,39,26,154,73,168,33,134,106,169,178,3,198,154,79,104,163,253,79,141,43,54,107,39,105,199,169,39,134,169,38,107,3,173,199,165,33,26,170,79,137,3,38,107,79,163,73,137,122,106,127,43,179,168,118,219,179,248,253,205,141,39,134,89,38,39,94,199,90,170,39,161,169,201,179,26,155,73,168,33,134,106,79,162,3,201,218,79,104,73,162,39,26,154,169,172,179,181,199,165,122,218,223,205,38,104,218,219,108,33,162,154,79,104,43,179,53,198,73,38,170,163,241,79,39,3,26,107,89,226,33,165,89,90,39,30,154,169,172,179,177,73,137,106,33,168,169,38,38,107,218,219,108,169,156,73,168,168,118,43,179,179,214,199,150,106,33,168,169,38,218,107,106,219,179,179,177,73,137,106,179,108,169,178,53,198,73,38,170,122,253,43,205,2,218,218,219,108,249,252,169,201,3,26,107,89,226,179,181,199,165,33,26,170,169,201,2,218,218,219,108,53,108,73,162,52,218,43,54,107,53,108,73,162,179,26,155,169,172,179,181,199,165,33,26,170,169,201,3,26,107,219,178,179,177,73,137,122,106,127,43,179,2,182,219,54,53,27,155,73,168,3,198,154,89,120,179,109,199,169,178,182,139,141,179,177,73,137,106,33,168,139,38,52,182,139,141,53,177,73,137,106,13,103,99,199,89,170,122,253,139,141,228,219,53,179,27,155,73,168,228,214,139,229,24,73,137,106,163,252,139,137,75,13,97,33,150,106,139,98,153,139,141,229,199,85,170,122,253,139,141,228,219,53,53,27,155,73,168,228,214,139,228,88,219,178,108,249,29,153,154,149,248,165,0,17,109,246,119,198,79,119,0,26,79,162,29,153,119,90,39,31,78,0,105,79,140,245,38,165,31,38,0,105,205,136,145,134,29,169,79,137,165,0,70,109,216,119,27,223,79,0,141,105,226,159,124,39,0,105,165,141,16,29,166,149,38,126,165,38,164,0,79,33,154,149,248,79,153,39,0,232,86,178,159,137,0,125,205,50,144,26,29,166,39,150,0,165,6,158,29,97,106,149,226,165,38,71,0,26,79,162,159,61,39,95,140,29,97,106,149,226,165,154,0,71,205,50,119,90,223,79,0,105,79,164,29,153,119,90,39,95,168,0,29,79,162,143,29,97,106,39,0,104,205,164,157,29,97,164,106,79,164,164,78,165,0,79,49,119,90,223,79,0,105,79,164,159,217,245,39,165,31,0,109,97,160,111,29,152,39,26,0,26,79,162,29,153,119,90,39,31,78,0,44,105,162,159,38,125,0,26,205,162,156,29,97,163,106,205,164,165,0,17,109,246,119,198,79,119,0,26,39,245,159,124,39,152,133,29,169,159,29,145,165,26,38,0,105,205,136,69,38,111,79,167,165,0,17,109,246,230,159,0,124,39,155,20,29,166,39,150,0,165,6,169,29,97,176,106,29,164,165,38,70,0,26,79,163,29,165,79,102,39,90,0,109,97,111,245,242,165,165,0,145,205,140,172,134,29,169,39,165,0,79,145,29,102,106,119,125,39,200,154,112,69,159,60,39,31,0,26,205,168,105,29,152,175,26,205,105,165,182,0,36,79,163,119,245,79,157,0,79,70,218,159,246,126,220,125,29,140,171,26,29,166,39,134,0,205,70,185,26,29,166,192,79,70,164,78,90,0,26,79,163,159,61,39,95,167,29,97,174,106,205,164,165,0,237,145,29,140,119,26,223,79,0,105,79,136,29,102,106,119,125,39,78,164,0,79,49,154,245,124,165,38,164,0,205,33,184,26,29,166,79,38,165,26,0,254,201,29,168,119,241,79,157,0,180,38,159,206,39,151,0,165,6,180,29,97,187,106,29,164,165,38,70,0,26,79,163,29,165,79,102,39,90,0,15,201,159,246,176,0,201,205,183,104,29,152,39,90,0,26,165,197,196,29,168,78,105,29,169,165,38,145,0,134,79,104,159,207,39,179,87,29,152,186,26,205,105,165,193,0,36,205,163,119,245,79,157,0,79,70,154,29,169,119,245,39,168,213,0,79,33,245,26,159,205,104,39,0,104,205,164,196,205,145,165,203,70,79,164,164,78,165,0,79,49,119,90,223,79,0,105,79,152,39,185,86,205,164,165,0,17,205,105,165,38,164,55,205,33,39,26,0,26,79,138,165,220,70,39,160,39,78,145,0,134,79,162,146,39,38,81,0,26,205,162,39,165,163,165,202,65,205,164,165,0,17,79,105,165,38,164,72,79,113,0,26,79,167,39,237,21,79,104,39,191,205,69,165,26,198,254,205,9,165,26,38,0,105,205,136,39,150,180,198,79,105,165,0,39,4,39,90,168,89,29,79,167,0,39,81,39,106,104,205,164,39,165,0,165,208,65,205,164,165,215,15,145,79,160,165,38,145,0,134,79,162,197,79,97,39,90,0,79,129,39,197,86,205,164,165,204,0,145,205,140,39,134,123,205,70,39,90,0,26,79,167,164,78,165,32,38,161,39,168,213,0,161,79,104,39,39,133,0,205,70,207,26,205,105,165,214,205,68,165,26,221,0,137,79,162,140,79,113,0,26,79,166,39,78,145,49,78,134,39,0,86,39,160,171,165,38,65,66,122,178,218,165,39,16,0,185,154,165,39,80,192,26,165,231,39,4,199,26,165,238,0,38,36,39,90,169,157,113,39,169,20,164,39,71,206,6,62,118,174,45,165,213,13,69,125,181,180,165,0,20,76,132,188,208,165,227,27,83,139,195,66,165,11,234,34,90,0,202,45,165,241,41,97,153,164,39,248,48,104,160,148,39,255,0,111,167,82,39,74,209,9,65,121,177,45,165,216,16,0,128,184,180,165,223,23,79,135,191,208,165,230,30,86,142,198,66,165,11,0,37,93,149,205,45,165,244,44,100,156,164,39,251,51,107,0,148,39,2,58,114,170,82,39,74,212,12,68,124,0,45,165,219,19,75,131,187,180,165,226,26,82,138,194,208,165,233,33,0,145,201,66,165,11,240,40,96,152,208,45,165,247,47,103,159,164,39,0,54,110,166,148,39,5,61,117,173,82,39,74,215,0,71,127,183,45,165,222,22,78,134,190,180,165,229,29,85,141,0,208,165,236,36,92,148,204,66,165,11,243,43,99,155,211,45,165,250,50,0,162,164,39,1,57,113,169,148,39,8,64,120,176,82,39,74,218,18,74,130,186,45,165,225,25,81,137,193,180,165,232,0,88,144,200,208,165,239,39,95,151,207,66,165,11,246,46,102,158,0,45,165,253,53,109,165,164,39,4,60,116,172,148,39,11,67,0,179,82,39,74,221,21,77,133,189,245,45,101,228,28,84,0,196,252,52,108,235,35,91,147,203,3,59,115,242,42,98,154,210,10,0,122,249,0,105,161,217,17,73,129,0,56,112,168,224,24,80,136,7,63,119,175,0,31,87,143,14,70,126,182,238,38,94,150,169,42,238,255,9,58,59,60,56,57,180}",
+    "dzx0SmartRCSBack(@pv3047(3034), 23295)",
+    "DIM kv3047 AS ULong",
+    "kv3047 = ckv3047(16384, 6912)",
+    "CLS"
+   ],
+   "expr": "kv3047"
+  },
+  {
+   "id": "library: zx0 to memory with RCS",
+   "decl": [
+    "#include <zx0.bas>",
+    "FUNCTION ckv3048(a AS UInteger, n AS UInteger) AS ULong",
+    "DIM s AS ULong = 0",
+    "DIM i AS UInteger",
+    "FOR i = 0 TO n - 1",
+    "s = (s * 3 + PEEK(a + i)) BAND 16777215",
+    "NEXT i",
+    "RETURN s",
+    "END FUNCTION",
+    "DIM pv3048(0 TO 73) AS UByte => {20,224,75,108,105,118,101,32,66,65,83,73,67,32,112,97,99,107,115,58,32,97,98,99,250,131,44,32,116,104,135,195,114,97,105,110,32,175,250,83,189,165,244,232,115,116,97,121,115,32,109,234,255,108,121,212,188,142,112,108,226,158,59,32,48,254,14,220,121,244,181,33,85,88}",
+    "DIM ov3048(0 TO 104) AS UByte",
+    "dzx0SmartRCS(@pv3048(0), @ov3048(0))"
+   ],
+   "expr": "ckv3048(@ov3048(0), 105)"
+  },
+  {
+   "id": "library: SetBank(0) GetBank()",
+   "decl": [
+    "#include <memorybank.bas>",
+    "POKE 23388, 16",
+    "SetBank(0)"
+   ],
+   "expr": "GetBank(); \" \"; PEEK(23388)"
+  },
+  {
+   "id": "library: SetBank(3) GetBank()",
+   "decl": [
+    "#include <memorybank.bas>",
+    "POKE 23388, 16",
+    "SetBank(3)"
+   ],
+   "expr": "GetBank(); \" \"; PEEK(23388)"
+  },
+  {
+   "id": "library: SetBank(7) GetBank()",
+   "decl": [
+    "#include <memorybank.bas>",
+    "POKE 23388, 16",
+    "SetBank(7)"
+   ],
+   "expr": "GetBank(); \" \"; PEEK(23388)"
+  }
+ ]
+}

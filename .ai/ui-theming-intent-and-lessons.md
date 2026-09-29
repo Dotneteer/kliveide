@@ -282,6 +282,28 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   `--status-warning` are already spoken for *in the same row* by `--color-breakpoint-code`,
   `-binary` and `--color-breakpoint-current`. The general rule: before giving a new mark a status
   hue, check what else in that row already owns one.
+- **A note on an existing mark takes neutral text, not a hue of its own.** The source debugger's
+  return point (`MonacoEditor.module.scss` `.returnPointNote`, "← returned from f" after the
+  execution-point statement) is the execution point with an explanation, not a second state, so it
+  is `--text-secondary` italic beside the usual `--bgcolor-debug-active-bp` highlight. A "possible
+  here" mark reuses its family's tokens at reduced strength: the inline statement-breakpoint marker
+  is `--color-breakpoint-disabled` at 50% where a breakpoint can go and `--color-breakpoint-code`
+  where one is set — the same pair the gutter uses, so a statement breakpoint reads as a breakpoint.
+  The test is "is this a second state?": a runtime-error stop *is* one — the program failed on that
+  statement — so its note (`.errorStopNote`, "✖ 3 Subscript wrong") takes `--status-error`, while a
+  return point's does not.
+- **Source-level debug panels follow the converted state panels.** The Variables panel's values use
+  `--color-state-value`, like a register, and a watch that fails to evaluate shows its message in
+  `--status-error` in the value column rather than a hue on the row. The symbolic Call Stack's
+  selected frame is `--surface-selected`, the explorer's selection, because selecting a frame is
+  choosing what the Variables panel shows — a selection, not a debug state; its per-row action
+  (Run to this frame) appears only on hover or on the selected row, so the frame names stay what
+  the eye lands on. Tree indentation is `calc(var(--space-3) * depth)`, and the expander column is
+  present on every row so names align whether or not a row expands. The same "selection, not a
+  debug state" reading puts `--surface-selected` behind the selected outer frame's calling
+  statement in the editor (`.selectedFrameStatement`), never the execution point's highlight. An
+  in-place value editor borrows the data-panel filter input's tokens (`--bgcolor-input`,
+  `--accent-border`) and turns its border `--status-error` while its text does not fit the type.
 - **Certainty is carried by strength, not by hue.** The same branch gutter draws the same glyph in
   the same colour on every row, and dims it to 45% everywhere except the execution point. Away from
   PC the verdict was computed from *today's* flags rather than the ones that will hold when the CPU
@@ -1732,6 +1754,26 @@ extra files.
 `MF_MOUSE_SUPPORT` in the machine registry, beside `MF_TAPE_SUPPORT`, rather than on a machine id.
 A ZX Spectrum 48 has no pointing device, and a toolbar button offering to capture a mouse for it is
 a promise the machine cannot keep.
+
+## An Editor Diagnostic Marks The Text Its Compiler Can Vouch For
+
+A compile error's squiggle covers the exact range only when the language says its compiler's
+columns are exact (`exactErrorColumns` on the language provider, today `zxbas` for Klive BASIC) and
+the error carries a real range (`endColumn > startColumn`). Every other error keeps the whole-line
+mark, from the first non-blank character to the line's end: the Z80 assembler and the external
+tools fill the column fields with values of mixed meaning (zero, end-inclusive, end-exclusive), and
+a squiggle under the wrong token misleads more than one under the whole line. The inline message
+badge is an `after` decoration and always sits at the line's end, whatever the squiggle covers — a
+badge anchored to a narrowed range lands in the middle of the code.
+
+**Monaco cuts any text run longer than 50 characters into separate spans**
+(`splitLargeTokens` in `viewLineRenderer.js`, unconditional for left-to-right text), and every
+piece carries the decoration's class. Styled as a pill, a long message therefore renders as several
+pills, split mid-word. The stylesheet joins a piece to the same-class piece before it (no gap,
+padding or rounding at the joint, via `+` and `:has(+ …)`), which is only safe because a line gets
+**one badge per severity**, its messages joined with " • ": two separate badges of the same
+severity side by side would fuse into one pill with no separator. Any inline decoration that styles
+its text as a shape has the same problem.
 
 ## Recommended First Reading For UI Work
 

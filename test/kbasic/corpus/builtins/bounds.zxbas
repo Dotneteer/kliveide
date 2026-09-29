@@ -1,0 +1,4 @@
+' LBOUND and UBOUND of each dimension
+'@expect screen 0 "2 5 0 3"
+DIM a(2 TO 5, 3) AS UByte
+PRINT LBOUND(a, 1); " "; UBOUND(a, 1); " "; LBOUND(a, 2); " "; UBOUND(a, 2)

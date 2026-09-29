@@ -1,0 +1,1510 @@
+{
+ "suite": "builtins",
+ "perProgram": 20,
+ "items": [
+  {
+   "id": "UByte 0: ABS(a)",
+   "decl": [
+    "DIM v2489 AS UByte = 0"
+   ],
+   "expr": "ABS(v2489)"
+  },
+  {
+   "id": "UByte 0: SGN(a)",
+   "decl": [
+    "DIM v2490 AS UByte = 0"
+   ],
+   "expr": "SGN(v2490)"
+  },
+  {
+   "id": "UByte 0: INT(a)",
+   "decl": [
+    "DIM v2491 AS UByte = 0"
+   ],
+   "expr": "INT(v2491)"
+  },
+  {
+   "id": "UByte 0: SQR(ABS(a))",
+   "decl": [
+    "DIM v2492 AS UByte = 0"
+   ],
+   "expr": "SQR(ABS(v2492))"
+  },
+  {
+   "id": "UByte 0: SIN(a)",
+   "decl": [
+    "DIM v2493 AS UByte = 0"
+   ],
+   "expr": "SIN(v2493)"
+  },
+  {
+   "id": "UByte 0: COS(a)",
+   "decl": [
+    "DIM v2494 AS UByte = 0"
+   ],
+   "expr": "COS(v2494)"
+  },
+  {
+   "id": "UByte 0: TAN(a)",
+   "decl": [
+    "DIM v2495 AS UByte = 0"
+   ],
+   "expr": "TAN(v2495)"
+  },
+  {
+   "id": "UByte 0: ATN(a)",
+   "decl": [
+    "DIM v2496 AS UByte = 0"
+   ],
+   "expr": "ATN(v2496)"
+  },
+  {
+   "id": "UByte 0: EXP(a / 100000)",
+   "decl": [
+    "DIM v2497 AS UByte = 0"
+   ],
+   "expr": "EXP(v2497 / 100000)"
+  },
+  {
+   "id": "UByte 0: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2498 AS UByte = 0"
+   ],
+   "expr": "LN(ABS(v2498) + 1)"
+  },
+  {
+   "id": "UByte 0: a * PI",
+   "decl": [
+    "DIM v2499 AS UByte = 0"
+   ],
+   "expr": "v2499 * PI"
+  },
+  {
+   "id": "UByte 0: a ^ 2",
+   "decl": [
+    "DIM v2500 AS UByte = 0"
+   ],
+   "expr": "v2500 ^ 2"
+  },
+  {
+   "id": "UByte 200: ABS(a)",
+   "decl": [
+    "DIM v2501 AS UByte = 200"
+   ],
+   "expr": "ABS(v2501)"
+  },
+  {
+   "id": "UByte 200: SGN(a)",
+   "decl": [
+    "DIM v2502 AS UByte = 200"
+   ],
+   "expr": "SGN(v2502)"
+  },
+  {
+   "id": "UByte 200: INT(a)",
+   "decl": [
+    "DIM v2503 AS UByte = 200"
+   ],
+   "expr": "INT(v2503)"
+  },
+  {
+   "id": "UByte 200: SQR(ABS(a))",
+   "decl": [
+    "DIM v2504 AS UByte = 200"
+   ],
+   "expr": "SQR(ABS(v2504))"
+  },
+  {
+   "id": "UByte 200: SIN(a)",
+   "decl": [
+    "DIM v2505 AS UByte = 200"
+   ],
+   "expr": "SIN(v2505)"
+  },
+  {
+   "id": "UByte 200: COS(a)",
+   "decl": [
+    "DIM v2506 AS UByte = 200"
+   ],
+   "expr": "COS(v2506)"
+  },
+  {
+   "id": "UByte 200: TAN(a)",
+   "decl": [
+    "DIM v2507 AS UByte = 200"
+   ],
+   "expr": "TAN(v2507)"
+  },
+  {
+   "id": "UByte 200: ATN(a)",
+   "decl": [
+    "DIM v2508 AS UByte = 200"
+   ],
+   "expr": "ATN(v2508)"
+  },
+  {
+   "id": "UByte 200: EXP(a / 100000)",
+   "decl": [
+    "DIM v2509 AS UByte = 200"
+   ],
+   "expr": "EXP(v2509 / 100000)"
+  },
+  {
+   "id": "UByte 200: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2510 AS UByte = 200"
+   ],
+   "expr": "LN(ABS(v2510) + 1)"
+  },
+  {
+   "id": "UByte 200: a * PI",
+   "decl": [
+    "DIM v2511 AS UByte = 200"
+   ],
+   "expr": "v2511 * PI"
+  },
+  {
+   "id": "UByte 200: a ^ 2",
+   "decl": [
+    "DIM v2512 AS UByte = 200"
+   ],
+   "expr": "v2512 ^ 2"
+  },
+  {
+   "id": "Byte -100: ABS(a)",
+   "decl": [
+    "DIM v2513 AS Byte = -100"
+   ],
+   "expr": "ABS(v2513)"
+  },
+  {
+   "id": "Byte -100: SGN(a)",
+   "decl": [
+    "DIM v2514 AS Byte = -100"
+   ],
+   "expr": "SGN(v2514)"
+  },
+  {
+   "id": "Byte -100: INT(a)",
+   "decl": [
+    "DIM v2515 AS Byte = -100"
+   ],
+   "expr": "INT(v2515)"
+  },
+  {
+   "id": "Byte -100: SQR(ABS(a))",
+   "decl": [
+    "DIM v2516 AS Byte = -100"
+   ],
+   "expr": "SQR(ABS(v2516))"
+  },
+  {
+   "id": "Byte -100: SIN(a)",
+   "decl": [
+    "DIM v2517 AS Byte = -100"
+   ],
+   "expr": "SIN(v2517)"
+  },
+  {
+   "id": "Byte -100: COS(a)",
+   "decl": [
+    "DIM v2518 AS Byte = -100"
+   ],
+   "expr": "COS(v2518)"
+  },
+  {
+   "id": "Byte -100: TAN(a)",
+   "decl": [
+    "DIM v2519 AS Byte = -100"
+   ],
+   "expr": "TAN(v2519)"
+  },
+  {
+   "id": "Byte -100: ATN(a)",
+   "decl": [
+    "DIM v2520 AS Byte = -100"
+   ],
+   "expr": "ATN(v2520)"
+  },
+  {
+   "id": "Byte -100: EXP(a / 100000)",
+   "decl": [
+    "DIM v2521 AS Byte = -100"
+   ],
+   "expr": "EXP(v2521 / 100000)"
+  },
+  {
+   "id": "Byte -100: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2522 AS Byte = -100"
+   ],
+   "expr": "LN(ABS(v2522) + 1)"
+  },
+  {
+   "id": "Byte -100: a * PI",
+   "decl": [
+    "DIM v2523 AS Byte = -100"
+   ],
+   "expr": "v2523 * PI"
+  },
+  {
+   "id": "Byte -100: a ^ 2",
+   "decl": [
+    "DIM v2524 AS Byte = -100"
+   ],
+   "expr": "v2524 ^ 2"
+  },
+  {
+   "id": "Byte 7: ABS(a)",
+   "decl": [
+    "DIM v2525 AS Byte = 7"
+   ],
+   "expr": "ABS(v2525)"
+  },
+  {
+   "id": "Byte 7: SGN(a)",
+   "decl": [
+    "DIM v2526 AS Byte = 7"
+   ],
+   "expr": "SGN(v2526)"
+  },
+  {
+   "id": "Byte 7: INT(a)",
+   "decl": [
+    "DIM v2527 AS Byte = 7"
+   ],
+   "expr": "INT(v2527)"
+  },
+  {
+   "id": "Byte 7: SQR(ABS(a))",
+   "decl": [
+    "DIM v2528 AS Byte = 7"
+   ],
+   "expr": "SQR(ABS(v2528))"
+  },
+  {
+   "id": "Byte 7: SIN(a)",
+   "decl": [
+    "DIM v2529 AS Byte = 7"
+   ],
+   "expr": "SIN(v2529)"
+  },
+  {
+   "id": "Byte 7: COS(a)",
+   "decl": [
+    "DIM v2530 AS Byte = 7"
+   ],
+   "expr": "COS(v2530)"
+  },
+  {
+   "id": "Byte 7: TAN(a)",
+   "decl": [
+    "DIM v2531 AS Byte = 7"
+   ],
+   "expr": "TAN(v2531)"
+  },
+  {
+   "id": "Byte 7: ATN(a)",
+   "decl": [
+    "DIM v2532 AS Byte = 7"
+   ],
+   "expr": "ATN(v2532)"
+  },
+  {
+   "id": "Byte 7: EXP(a / 100000)",
+   "decl": [
+    "DIM v2533 AS Byte = 7"
+   ],
+   "expr": "EXP(v2533 / 100000)"
+  },
+  {
+   "id": "Byte 7: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2534 AS Byte = 7"
+   ],
+   "expr": "LN(ABS(v2534) + 1)"
+  },
+  {
+   "id": "Byte 7: a * PI",
+   "decl": [
+    "DIM v2535 AS Byte = 7"
+   ],
+   "expr": "v2535 * PI"
+  },
+  {
+   "id": "Byte 7: a ^ 2",
+   "decl": [
+    "DIM v2536 AS Byte = 7"
+   ],
+   "expr": "v2536 ^ 2"
+  },
+  {
+   "id": "UInteger 1: ABS(a)",
+   "decl": [
+    "DIM v2537 AS UInteger = 1"
+   ],
+   "expr": "ABS(v2537)"
+  },
+  {
+   "id": "UInteger 1: SGN(a)",
+   "decl": [
+    "DIM v2538 AS UInteger = 1"
+   ],
+   "expr": "SGN(v2538)"
+  },
+  {
+   "id": "UInteger 1: INT(a)",
+   "decl": [
+    "DIM v2539 AS UInteger = 1"
+   ],
+   "expr": "INT(v2539)"
+  },
+  {
+   "id": "UInteger 1: SQR(ABS(a))",
+   "decl": [
+    "DIM v2540 AS UInteger = 1"
+   ],
+   "expr": "SQR(ABS(v2540))"
+  },
+  {
+   "id": "UInteger 1: SIN(a)",
+   "decl": [
+    "DIM v2541 AS UInteger = 1"
+   ],
+   "expr": "SIN(v2541)"
+  },
+  {
+   "id": "UInteger 1: COS(a)",
+   "decl": [
+    "DIM v2542 AS UInteger = 1"
+   ],
+   "expr": "COS(v2542)"
+  },
+  {
+   "id": "UInteger 1: TAN(a)",
+   "decl": [
+    "DIM v2543 AS UInteger = 1"
+   ],
+   "expr": "TAN(v2543)"
+  },
+  {
+   "id": "UInteger 1: ATN(a)",
+   "decl": [
+    "DIM v2544 AS UInteger = 1"
+   ],
+   "expr": "ATN(v2544)"
+  },
+  {
+   "id": "UInteger 1: EXP(a / 100000)",
+   "decl": [
+    "DIM v2545 AS UInteger = 1"
+   ],
+   "expr": "EXP(v2545 / 100000)"
+  },
+  {
+   "id": "UInteger 1: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2546 AS UInteger = 1"
+   ],
+   "expr": "LN(ABS(v2546) + 1)"
+  },
+  {
+   "id": "UInteger 1: a * PI",
+   "decl": [
+    "DIM v2547 AS UInteger = 1"
+   ],
+   "expr": "v2547 * PI"
+  },
+  {
+   "id": "UInteger 1: a ^ 2",
+   "decl": [
+    "DIM v2548 AS UInteger = 1"
+   ],
+   "expr": "v2548 ^ 2"
+  },
+  {
+   "id": "UInteger 60000: ABS(a)",
+   "decl": [
+    "DIM v2549 AS UInteger = 60000"
+   ],
+   "expr": "ABS(v2549)"
+  },
+  {
+   "id": "UInteger 60000: SGN(a)",
+   "decl": [
+    "DIM v2550 AS UInteger = 60000"
+   ],
+   "expr": "SGN(v2550)"
+  },
+  {
+   "id": "UInteger 60000: INT(a)",
+   "decl": [
+    "DIM v2551 AS UInteger = 60000"
+   ],
+   "expr": "INT(v2551)"
+  },
+  {
+   "id": "UInteger 60000: SQR(ABS(a))",
+   "decl": [
+    "DIM v2552 AS UInteger = 60000"
+   ],
+   "expr": "SQR(ABS(v2552))"
+  },
+  {
+   "id": "UInteger 60000: SIN(a)",
+   "decl": [
+    "DIM v2553 AS UInteger = 60000"
+   ],
+   "expr": "SIN(v2553)"
+  },
+  {
+   "id": "UInteger 60000: COS(a)",
+   "decl": [
+    "DIM v2554 AS UInteger = 60000"
+   ],
+   "expr": "COS(v2554)"
+  },
+  {
+   "id": "UInteger 60000: TAN(a)",
+   "decl": [
+    "DIM v2555 AS UInteger = 60000"
+   ],
+   "expr": "TAN(v2555)"
+  },
+  {
+   "id": "UInteger 60000: ATN(a)",
+   "decl": [
+    "DIM v2556 AS UInteger = 60000"
+   ],
+   "expr": "ATN(v2556)"
+  },
+  {
+   "id": "UInteger 60000: EXP(a / 100000)",
+   "decl": [
+    "DIM v2557 AS UInteger = 60000"
+   ],
+   "expr": "EXP(v2557 / 100000)"
+  },
+  {
+   "id": "UInteger 60000: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2558 AS UInteger = 60000"
+   ],
+   "expr": "LN(ABS(v2558) + 1)"
+  },
+  {
+   "id": "UInteger 60000: a * PI",
+   "decl": [
+    "DIM v2559 AS UInteger = 60000"
+   ],
+   "expr": "v2559 * PI"
+  },
+  {
+   "id": "UInteger 60000: a ^ 2",
+   "decl": [
+    "DIM v2560 AS UInteger = 60000"
+   ],
+   "expr": "v2560 ^ 2"
+  },
+  {
+   "id": "Integer -2: ABS(a)",
+   "decl": [
+    "DIM v2561 AS Integer = -2"
+   ],
+   "expr": "ABS(v2561)"
+  },
+  {
+   "id": "Integer -2: SGN(a)",
+   "decl": [
+    "DIM v2562 AS Integer = -2"
+   ],
+   "expr": "SGN(v2562)"
+  },
+  {
+   "id": "Integer -2: INT(a)",
+   "decl": [
+    "DIM v2563 AS Integer = -2"
+   ],
+   "expr": "INT(v2563)"
+  },
+  {
+   "id": "Integer -2: SQR(ABS(a))",
+   "decl": [
+    "DIM v2564 AS Integer = -2"
+   ],
+   "expr": "SQR(ABS(v2564))"
+  },
+  {
+   "id": "Integer -2: SIN(a)",
+   "decl": [
+    "DIM v2565 AS Integer = -2"
+   ],
+   "expr": "SIN(v2565)"
+  },
+  {
+   "id": "Integer -2: COS(a)",
+   "decl": [
+    "DIM v2566 AS Integer = -2"
+   ],
+   "expr": "COS(v2566)"
+  },
+  {
+   "id": "Integer -2: TAN(a)",
+   "decl": [
+    "DIM v2567 AS Integer = -2"
+   ],
+   "expr": "TAN(v2567)"
+  },
+  {
+   "id": "Integer -2: ATN(a)",
+   "decl": [
+    "DIM v2568 AS Integer = -2"
+   ],
+   "expr": "ATN(v2568)"
+  },
+  {
+   "id": "Integer -2: EXP(a / 100000)",
+   "decl": [
+    "DIM v2569 AS Integer = -2"
+   ],
+   "expr": "EXP(v2569 / 100000)"
+  },
+  {
+   "id": "Integer -2: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2570 AS Integer = -2"
+   ],
+   "expr": "LN(ABS(v2570) + 1)"
+  },
+  {
+   "id": "Integer -2: a * PI",
+   "decl": [
+    "DIM v2571 AS Integer = -2"
+   ],
+   "expr": "v2571 * PI"
+  },
+  {
+   "id": "Integer -2: a ^ 2",
+   "decl": [
+    "DIM v2572 AS Integer = -2"
+   ],
+   "expr": "v2572 ^ 2"
+  },
+  {
+   "id": "Integer 30000: ABS(a)",
+   "decl": [
+    "DIM v2573 AS Integer = 30000"
+   ],
+   "expr": "ABS(v2573)"
+  },
+  {
+   "id": "Integer 30000: SGN(a)",
+   "decl": [
+    "DIM v2574 AS Integer = 30000"
+   ],
+   "expr": "SGN(v2574)"
+  },
+  {
+   "id": "Integer 30000: INT(a)",
+   "decl": [
+    "DIM v2575 AS Integer = 30000"
+   ],
+   "expr": "INT(v2575)"
+  },
+  {
+   "id": "Integer 30000: SQR(ABS(a))",
+   "decl": [
+    "DIM v2576 AS Integer = 30000"
+   ],
+   "expr": "SQR(ABS(v2576))"
+  },
+  {
+   "id": "Integer 30000: SIN(a)",
+   "decl": [
+    "DIM v2577 AS Integer = 30000"
+   ],
+   "expr": "SIN(v2577)"
+  },
+  {
+   "id": "Integer 30000: COS(a)",
+   "decl": [
+    "DIM v2578 AS Integer = 30000"
+   ],
+   "expr": "COS(v2578)"
+  },
+  {
+   "id": "Integer 30000: TAN(a)",
+   "decl": [
+    "DIM v2579 AS Integer = 30000"
+   ],
+   "expr": "TAN(v2579)"
+  },
+  {
+   "id": "Integer 30000: ATN(a)",
+   "decl": [
+    "DIM v2580 AS Integer = 30000"
+   ],
+   "expr": "ATN(v2580)"
+  },
+  {
+   "id": "Integer 30000: EXP(a / 100000)",
+   "decl": [
+    "DIM v2581 AS Integer = 30000"
+   ],
+   "expr": "EXP(v2581 / 100000)"
+  },
+  {
+   "id": "Integer 30000: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2582 AS Integer = 30000"
+   ],
+   "expr": "LN(ABS(v2582) + 1)"
+  },
+  {
+   "id": "Integer 30000: a * PI",
+   "decl": [
+    "DIM v2583 AS Integer = 30000"
+   ],
+   "expr": "v2583 * PI"
+  },
+  {
+   "id": "Integer 30000: a ^ 2",
+   "decl": [
+    "DIM v2584 AS Integer = 30000"
+   ],
+   "expr": "v2584 ^ 2"
+  },
+  {
+   "id": "ULong 1: ABS(a)",
+   "decl": [
+    "DIM v2585 AS ULong = 1"
+   ],
+   "expr": "ABS(v2585)"
+  },
+  {
+   "id": "ULong 1: SGN(a)",
+   "decl": [
+    "DIM v2586 AS ULong = 1"
+   ],
+   "expr": "SGN(v2586)"
+  },
+  {
+   "id": "ULong 1: INT(a)",
+   "decl": [
+    "DIM v2587 AS ULong = 1"
+   ],
+   "expr": "INT(v2587)"
+  },
+  {
+   "id": "ULong 1: SQR(ABS(a))",
+   "decl": [
+    "DIM v2588 AS ULong = 1"
+   ],
+   "expr": "SQR(ABS(v2588))"
+  },
+  {
+   "id": "ULong 1: SIN(a)",
+   "decl": [
+    "DIM v2589 AS ULong = 1"
+   ],
+   "expr": "SIN(v2589)"
+  },
+  {
+   "id": "ULong 1: COS(a)",
+   "decl": [
+    "DIM v2590 AS ULong = 1"
+   ],
+   "expr": "COS(v2590)"
+  },
+  {
+   "id": "ULong 1: TAN(a)",
+   "decl": [
+    "DIM v2591 AS ULong = 1"
+   ],
+   "expr": "TAN(v2591)"
+  },
+  {
+   "id": "ULong 1: ATN(a)",
+   "decl": [
+    "DIM v2592 AS ULong = 1"
+   ],
+   "expr": "ATN(v2592)"
+  },
+  {
+   "id": "ULong 1: EXP(a / 100000)",
+   "decl": [
+    "DIM v2593 AS ULong = 1"
+   ],
+   "expr": "EXP(v2593 / 100000)"
+  },
+  {
+   "id": "ULong 1: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2594 AS ULong = 1"
+   ],
+   "expr": "LN(ABS(v2594) + 1)"
+  },
+  {
+   "id": "ULong 1: a * PI",
+   "decl": [
+    "DIM v2595 AS ULong = 1"
+   ],
+   "expr": "v2595 * PI"
+  },
+  {
+   "id": "ULong 1: a ^ 2",
+   "decl": [
+    "DIM v2596 AS ULong = 1"
+   ],
+   "expr": "v2596 ^ 2"
+  },
+  {
+   "id": "ULong 4000000000: ABS(a)",
+   "decl": [
+    "DIM v2597 AS ULong = 4000000000"
+   ],
+   "expr": "ABS(v2597)"
+  },
+  {
+   "id": "ULong 4000000000: SGN(a)",
+   "decl": [
+    "DIM v2598 AS ULong = 4000000000"
+   ],
+   "expr": "SGN(v2598)"
+  },
+  {
+   "id": "ULong 4000000000: INT(a)",
+   "decl": [
+    "DIM v2599 AS ULong = 4000000000"
+   ],
+   "expr": "INT(v2599)"
+  },
+  {
+   "id": "ULong 4000000000: SQR(ABS(a))",
+   "decl": [
+    "DIM v2600 AS ULong = 4000000000"
+   ],
+   "expr": "SQR(ABS(v2600))"
+  },
+  {
+   "id": "ULong 4000000000: SIN(a)",
+   "decl": [
+    "DIM v2601 AS ULong = 4000000000"
+   ],
+   "expr": "SIN(v2601)"
+  },
+  {
+   "id": "ULong 4000000000: COS(a)",
+   "decl": [
+    "DIM v2602 AS ULong = 4000000000"
+   ],
+   "expr": "COS(v2602)"
+  },
+  {
+   "id": "ULong 4000000000: TAN(a)",
+   "decl": [
+    "DIM v2603 AS ULong = 4000000000"
+   ],
+   "expr": "TAN(v2603)"
+  },
+  {
+   "id": "ULong 4000000000: ATN(a)",
+   "decl": [
+    "DIM v2604 AS ULong = 4000000000"
+   ],
+   "expr": "ATN(v2604)"
+  },
+  {
+   "id": "ULong 4000000000: EXP(a / 100000)",
+   "decl": [
+    "DIM v2605 AS ULong = 4000000000"
+   ],
+   "expr": "EXP(v2605 / 100000)"
+  },
+  {
+   "id": "ULong 4000000000: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2606 AS ULong = 4000000000"
+   ],
+   "expr": "LN(ABS(v2606) + 1)"
+  },
+  {
+   "id": "ULong 4000000000: a * PI",
+   "decl": [
+    "DIM v2607 AS ULong = 4000000000"
+   ],
+   "expr": "v2607 * PI"
+  },
+  {
+   "id": "ULong 4000000000: a ^ 2",
+   "decl": [
+    "DIM v2608 AS ULong = 4000000000"
+   ],
+   "expr": "v2608 ^ 2"
+  },
+  {
+   "id": "Long -100000: ABS(a)",
+   "decl": [
+    "DIM v2609 AS Long = -100000"
+   ],
+   "expr": "ABS(v2609)"
+  },
+  {
+   "id": "Long -100000: SGN(a)",
+   "decl": [
+    "DIM v2610 AS Long = -100000"
+   ],
+   "expr": "SGN(v2610)"
+  },
+  {
+   "id": "Long -100000: INT(a)",
+   "decl": [
+    "DIM v2611 AS Long = -100000"
+   ],
+   "expr": "INT(v2611)"
+  },
+  {
+   "id": "Long -100000: SQR(ABS(a))",
+   "decl": [
+    "DIM v2612 AS Long = -100000"
+   ],
+   "expr": "SQR(ABS(v2612))"
+  },
+  {
+   "id": "Long -100000: SIN(a)",
+   "decl": [
+    "DIM v2613 AS Long = -100000"
+   ],
+   "expr": "SIN(v2613)"
+  },
+  {
+   "id": "Long -100000: COS(a)",
+   "decl": [
+    "DIM v2614 AS Long = -100000"
+   ],
+   "expr": "COS(v2614)"
+  },
+  {
+   "id": "Long -100000: TAN(a)",
+   "decl": [
+    "DIM v2615 AS Long = -100000"
+   ],
+   "expr": "TAN(v2615)"
+  },
+  {
+   "id": "Long -100000: ATN(a)",
+   "decl": [
+    "DIM v2616 AS Long = -100000"
+   ],
+   "expr": "ATN(v2616)"
+  },
+  {
+   "id": "Long -100000: EXP(a / 100000)",
+   "decl": [
+    "DIM v2617 AS Long = -100000"
+   ],
+   "expr": "EXP(v2617 / 100000)"
+  },
+  {
+   "id": "Long -100000: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2618 AS Long = -100000"
+   ],
+   "expr": "LN(ABS(v2618) + 1)"
+  },
+  {
+   "id": "Long -100000: a * PI",
+   "decl": [
+    "DIM v2619 AS Long = -100000"
+   ],
+   "expr": "v2619 * PI"
+  },
+  {
+   "id": "Long -100000: a ^ 2",
+   "decl": [
+    "DIM v2620 AS Long = -100000"
+   ],
+   "expr": "v2620 ^ 2"
+  },
+  {
+   "id": "Long 3: ABS(a)",
+   "decl": [
+    "DIM v2621 AS Long = 3"
+   ],
+   "expr": "ABS(v2621)"
+  },
+  {
+   "id": "Long 3: SGN(a)",
+   "decl": [
+    "DIM v2622 AS Long = 3"
+   ],
+   "expr": "SGN(v2622)"
+  },
+  {
+   "id": "Long 3: INT(a)",
+   "decl": [
+    "DIM v2623 AS Long = 3"
+   ],
+   "expr": "INT(v2623)"
+  },
+  {
+   "id": "Long 3: SQR(ABS(a))",
+   "decl": [
+    "DIM v2624 AS Long = 3"
+   ],
+   "expr": "SQR(ABS(v2624))"
+  },
+  {
+   "id": "Long 3: SIN(a)",
+   "decl": [
+    "DIM v2625 AS Long = 3"
+   ],
+   "expr": "SIN(v2625)"
+  },
+  {
+   "id": "Long 3: COS(a)",
+   "decl": [
+    "DIM v2626 AS Long = 3"
+   ],
+   "expr": "COS(v2626)"
+  },
+  {
+   "id": "Long 3: TAN(a)",
+   "decl": [
+    "DIM v2627 AS Long = 3"
+   ],
+   "expr": "TAN(v2627)"
+  },
+  {
+   "id": "Long 3: ATN(a)",
+   "decl": [
+    "DIM v2628 AS Long = 3"
+   ],
+   "expr": "ATN(v2628)"
+  },
+  {
+   "id": "Long 3: EXP(a / 100000)",
+   "decl": [
+    "DIM v2629 AS Long = 3"
+   ],
+   "expr": "EXP(v2629 / 100000)"
+  },
+  {
+   "id": "Long 3: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2630 AS Long = 3"
+   ],
+   "expr": "LN(ABS(v2630) + 1)"
+  },
+  {
+   "id": "Long 3: a * PI",
+   "decl": [
+    "DIM v2631 AS Long = 3"
+   ],
+   "expr": "v2631 * PI"
+  },
+  {
+   "id": "Long 3: a ^ 2",
+   "decl": [
+    "DIM v2632 AS Long = 3"
+   ],
+   "expr": "v2632 ^ 2"
+  },
+  {
+   "id": "Fixed 0.5: ABS(a)",
+   "decl": [
+    "DIM v2633 AS Fixed = 0.5"
+   ],
+   "expr": "ABS(v2633)"
+  },
+  {
+   "id": "Fixed 0.5: SGN(a)",
+   "decl": [
+    "DIM v2634 AS Fixed = 0.5"
+   ],
+   "expr": "SGN(v2634)"
+  },
+  {
+   "id": "Fixed 0.5: INT(a)",
+   "decl": [
+    "DIM v2635 AS Fixed = 0.5"
+   ],
+   "expr": "INT(v2635)"
+  },
+  {
+   "id": "Fixed 0.5: SQR(ABS(a))",
+   "decl": [
+    "DIM v2636 AS Fixed = 0.5"
+   ],
+   "expr": "SQR(ABS(v2636))"
+  },
+  {
+   "id": "Fixed 0.5: SIN(a)",
+   "decl": [
+    "DIM v2637 AS Fixed = 0.5"
+   ],
+   "expr": "SIN(v2637)"
+  },
+  {
+   "id": "Fixed 0.5: COS(a)",
+   "decl": [
+    "DIM v2638 AS Fixed = 0.5"
+   ],
+   "expr": "COS(v2638)"
+  },
+  {
+   "id": "Fixed 0.5: TAN(a)",
+   "decl": [
+    "DIM v2639 AS Fixed = 0.5"
+   ],
+   "expr": "TAN(v2639)"
+  },
+  {
+   "id": "Fixed 0.5: ATN(a)",
+   "decl": [
+    "DIM v2640 AS Fixed = 0.5"
+   ],
+   "expr": "ATN(v2640)"
+  },
+  {
+   "id": "Fixed 0.5: EXP(a / 100000)",
+   "decl": [
+    "DIM v2641 AS Fixed = 0.5"
+   ],
+   "expr": "EXP(v2641 / 100000)"
+  },
+  {
+   "id": "Fixed 0.5: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2642 AS Fixed = 0.5"
+   ],
+   "expr": "LN(ABS(v2642) + 1)"
+  },
+  {
+   "id": "Fixed 0.5: a * PI",
+   "decl": [
+    "DIM v2643 AS Fixed = 0.5"
+   ],
+   "expr": "v2643 * PI"
+  },
+  {
+   "id": "Fixed 0.5: a ^ 2",
+   "decl": [
+    "DIM v2644 AS Fixed = 0.5"
+   ],
+   "expr": "v2644 ^ 2"
+  },
+  {
+   "id": "Fixed -2.5: ABS(a)",
+   "decl": [
+    "DIM v2645 AS Fixed = -2.5"
+   ],
+   "expr": "ABS(v2645)"
+  },
+  {
+   "id": "Fixed -2.5: SGN(a)",
+   "decl": [
+    "DIM v2646 AS Fixed = -2.5"
+   ],
+   "expr": "SGN(v2646)"
+  },
+  {
+   "id": "Fixed -2.5: INT(a)",
+   "decl": [
+    "DIM v2647 AS Fixed = -2.5"
+   ],
+   "expr": "INT(v2647)"
+  },
+  {
+   "id": "Fixed -2.5: SQR(ABS(a))",
+   "decl": [
+    "DIM v2648 AS Fixed = -2.5"
+   ],
+   "expr": "SQR(ABS(v2648))"
+  },
+  {
+   "id": "Fixed -2.5: SIN(a)",
+   "decl": [
+    "DIM v2649 AS Fixed = -2.5"
+   ],
+   "expr": "SIN(v2649)"
+  },
+  {
+   "id": "Fixed -2.5: COS(a)",
+   "decl": [
+    "DIM v2650 AS Fixed = -2.5"
+   ],
+   "expr": "COS(v2650)"
+  },
+  {
+   "id": "Fixed -2.5: TAN(a)",
+   "decl": [
+    "DIM v2651 AS Fixed = -2.5"
+   ],
+   "expr": "TAN(v2651)"
+  },
+  {
+   "id": "Fixed -2.5: ATN(a)",
+   "decl": [
+    "DIM v2652 AS Fixed = -2.5"
+   ],
+   "expr": "ATN(v2652)"
+  },
+  {
+   "id": "Fixed -2.5: EXP(a / 100000)",
+   "decl": [
+    "DIM v2653 AS Fixed = -2.5"
+   ],
+   "expr": "EXP(v2653 / 100000)"
+  },
+  {
+   "id": "Fixed -2.5: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2654 AS Fixed = -2.5"
+   ],
+   "expr": "LN(ABS(v2654) + 1)"
+  },
+  {
+   "id": "Fixed -2.5: a * PI",
+   "decl": [
+    "DIM v2655 AS Fixed = -2.5"
+   ],
+   "expr": "v2655 * PI"
+  },
+  {
+   "id": "Fixed -2.5: a ^ 2",
+   "decl": [
+    "DIM v2656 AS Fixed = -2.5"
+   ],
+   "expr": "v2656 ^ 2"
+  },
+  {
+   "id": "Float 0.5: ABS(a)",
+   "decl": [
+    "DIM v2657 AS Float = 0.5"
+   ],
+   "expr": "ABS(v2657)"
+  },
+  {
+   "id": "Float 0.5: SGN(a)",
+   "decl": [
+    "DIM v2658 AS Float = 0.5"
+   ],
+   "expr": "SGN(v2658)"
+  },
+  {
+   "id": "Float 0.5: INT(a)",
+   "decl": [
+    "DIM v2659 AS Float = 0.5"
+   ],
+   "expr": "INT(v2659)"
+  },
+  {
+   "id": "Float 0.5: SQR(ABS(a))",
+   "decl": [
+    "DIM v2660 AS Float = 0.5"
+   ],
+   "expr": "SQR(ABS(v2660))"
+  },
+  {
+   "id": "Float 0.5: SIN(a)",
+   "decl": [
+    "DIM v2661 AS Float = 0.5"
+   ],
+   "expr": "SIN(v2661)"
+  },
+  {
+   "id": "Float 0.5: COS(a)",
+   "decl": [
+    "DIM v2662 AS Float = 0.5"
+   ],
+   "expr": "COS(v2662)"
+  },
+  {
+   "id": "Float 0.5: TAN(a)",
+   "decl": [
+    "DIM v2663 AS Float = 0.5"
+   ],
+   "expr": "TAN(v2663)"
+  },
+  {
+   "id": "Float 0.5: ATN(a)",
+   "decl": [
+    "DIM v2664 AS Float = 0.5"
+   ],
+   "expr": "ATN(v2664)"
+  },
+  {
+   "id": "Float 0.5: EXP(a / 100000)",
+   "decl": [
+    "DIM v2665 AS Float = 0.5"
+   ],
+   "expr": "EXP(v2665 / 100000)"
+  },
+  {
+   "id": "Float 0.5: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2666 AS Float = 0.5"
+   ],
+   "expr": "LN(ABS(v2666) + 1)"
+  },
+  {
+   "id": "Float 0.5: a * PI",
+   "decl": [
+    "DIM v2667 AS Float = 0.5"
+   ],
+   "expr": "v2667 * PI"
+  },
+  {
+   "id": "Float 0.5: a ^ 2",
+   "decl": [
+    "DIM v2668 AS Float = 0.5"
+   ],
+   "expr": "v2668 ^ 2"
+  },
+  {
+   "id": "Float -7.25: ABS(a)",
+   "decl": [
+    "DIM v2669 AS Float = -7.25"
+   ],
+   "expr": "ABS(v2669)"
+  },
+  {
+   "id": "Float -7.25: SGN(a)",
+   "decl": [
+    "DIM v2670 AS Float = -7.25"
+   ],
+   "expr": "SGN(v2670)"
+  },
+  {
+   "id": "Float -7.25: INT(a)",
+   "decl": [
+    "DIM v2671 AS Float = -7.25"
+   ],
+   "expr": "INT(v2671)"
+  },
+  {
+   "id": "Float -7.25: SQR(ABS(a))",
+   "decl": [
+    "DIM v2672 AS Float = -7.25"
+   ],
+   "expr": "SQR(ABS(v2672))"
+  },
+  {
+   "id": "Float -7.25: SIN(a)",
+   "decl": [
+    "DIM v2673 AS Float = -7.25"
+   ],
+   "expr": "SIN(v2673)"
+  },
+  {
+   "id": "Float -7.25: COS(a)",
+   "decl": [
+    "DIM v2674 AS Float = -7.25"
+   ],
+   "expr": "COS(v2674)"
+  },
+  {
+   "id": "Float -7.25: TAN(a)",
+   "decl": [
+    "DIM v2675 AS Float = -7.25"
+   ],
+   "expr": "TAN(v2675)"
+  },
+  {
+   "id": "Float -7.25: ATN(a)",
+   "decl": [
+    "DIM v2676 AS Float = -7.25"
+   ],
+   "expr": "ATN(v2676)"
+  },
+  {
+   "id": "Float -7.25: EXP(a / 100000)",
+   "decl": [
+    "DIM v2677 AS Float = -7.25"
+   ],
+   "expr": "EXP(v2677 / 100000)"
+  },
+  {
+   "id": "Float -7.25: LN(ABS(a) + 1)",
+   "decl": [
+    "DIM v2678 AS Float = -7.25"
+   ],
+   "expr": "LN(ABS(v2678) + 1)"
+  },
+  {
+   "id": "Float -7.25: a * PI",
+   "decl": [
+    "DIM v2679 AS Float = -7.25"
+   ],
+   "expr": "v2679 * PI"
+  },
+  {
+   "id": "Float -7.25: a ^ 2",
+   "decl": [
+    "DIM v2680 AS Float = -7.25"
+   ],
+   "expr": "v2680 ^ 2"
+  },
+  {
+   "id": "ASN(0.5)",
+   "decl": [],
+   "expr": "ASN(0.5)"
+  },
+  {
+   "id": "ACS(0.5)",
+   "decl": [],
+   "expr": "ACS(0.5)"
+  },
+  {
+   "id": "ASN(-0.5)",
+   "decl": [],
+   "expr": "ASN(-0.5)"
+  },
+  {
+   "id": "ACS(-0.5)",
+   "decl": [],
+   "expr": "ACS(-0.5)"
+  },
+  {
+   "id": "ASN(1)",
+   "decl": [],
+   "expr": "ASN(1)"
+  },
+  {
+   "id": "ACS(1)",
+   "decl": [],
+   "expr": "ACS(1)"
+  },
+  {
+   "id": "ASN(0)",
+   "decl": [],
+   "expr": "ASN(0)"
+  },
+  {
+   "id": "ACS(0)",
+   "decl": [],
+   "expr": "ACS(0)"
+  },
+  {
+   "id": "ABS(2.5) (literal)",
+   "decl": [],
+   "expr": "ABS(2.5)"
+  },
+  {
+   "id": "SGN(2.5) (literal)",
+   "decl": [],
+   "expr": "SGN(2.5)"
+  },
+  {
+   "id": "INT(2.5) (literal)",
+   "decl": [],
+   "expr": "INT(2.5)"
+  },
+  {
+   "id": "SQR(2.5) (literal)",
+   "decl": [],
+   "expr": "SQR(2.5)"
+  },
+  {
+   "id": "ABS(-2.5) (literal)",
+   "decl": [],
+   "expr": "ABS(ABS(-2.5))"
+  },
+  {
+   "id": "SGN(-2.5) (literal)",
+   "decl": [],
+   "expr": "SGN(ABS(-2.5))"
+  },
+  {
+   "id": "INT(-2.5) (literal)",
+   "decl": [],
+   "expr": "INT(ABS(-2.5))"
+  },
+  {
+   "id": "SQR(-2.5) (literal)",
+   "decl": [],
+   "expr": "SQR(ABS(-2.5))"
+  },
+  {
+   "id": "ABS(7) (literal)",
+   "decl": [],
+   "expr": "ABS(7)"
+  },
+  {
+   "id": "SGN(7) (literal)",
+   "decl": [],
+   "expr": "SGN(7)"
+  },
+  {
+   "id": "INT(7) (literal)",
+   "decl": [],
+   "expr": "INT(7)"
+  },
+  {
+   "id": "SQR(7) (literal)",
+   "decl": [],
+   "expr": "SQR(7)"
+  },
+  {
+   "id": "ABS(0.001) (literal)",
+   "decl": [],
+   "expr": "ABS(0.001)"
+  },
+  {
+   "id": "SGN(0.001) (literal)",
+   "decl": [],
+   "expr": "SGN(0.001)"
+  },
+  {
+   "id": "INT(0.001) (literal)",
+   "decl": [],
+   "expr": "INT(0.001)"
+  },
+  {
+   "id": "SQR(0.001) (literal)",
+   "decl": [],
+   "expr": "SQR(0.001)"
+  },
+  {
+   "id": "ABS(1E10) (literal)",
+   "decl": [],
+   "expr": "ABS(1E10)"
+  },
+  {
+   "id": "SGN(1E10) (literal)",
+   "decl": [],
+   "expr": "SGN(1E10)"
+  },
+  {
+   "id": "INT(1E10) (literal)",
+   "decl": [],
+   "expr": "INT(1E10)"
+  },
+  {
+   "id": "SQR(1E10) (literal)",
+   "decl": [],
+   "expr": "SQR(1E10)"
+  },
+  {
+   "id": "ABS(256) (literal)",
+   "decl": [],
+   "expr": "ABS(256)"
+  },
+  {
+   "id": "SGN(256) (literal)",
+   "decl": [],
+   "expr": "SGN(256)"
+  },
+  {
+   "id": "INT(256) (literal)",
+   "decl": [],
+   "expr": "INT(256)"
+  },
+  {
+   "id": "SQR(256) (literal)",
+   "decl": [],
+   "expr": "SQR(256)"
+  }
+ ]
+}

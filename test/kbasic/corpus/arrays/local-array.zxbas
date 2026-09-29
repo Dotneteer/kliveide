@@ -1,0 +1,14 @@
+' Local arrays: zeroed data on the heap for each call, freed on return
+'@expect screen 0 "10 10 10"
+'@expect heap
+FUNCTION f() AS UInteger
+ DIM v(3) AS UInteger
+ DIM t$(1)
+ DIM i AS UByte
+ t$(1) = "temp"
+ FOR i = 0 TO 3
+  v(i) = v(i) + i
+ NEXT i
+ RETURN v(0) + v(1) + v(2) + v(3) + LEN(t$(1)) - 4 + 4
+END FUNCTION
+PRINT f(); " "; f(); " "; f()
