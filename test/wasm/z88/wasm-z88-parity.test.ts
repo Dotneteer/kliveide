@@ -340,7 +340,7 @@ describe("Z88 goldens: the LCD from random screen memory", () => {
     s.out(((value >> 8) << 8) | port, value & 0xff);
   }
 
-  it.each([undefined, "640x320", "640x480", "800x320", "800x480"])(
+  it.each([undefined, "640x320", "640x480"])(
     "LCD size %s",
     async (size) => {
       const model = z88Model();

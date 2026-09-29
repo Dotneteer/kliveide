@@ -45,6 +45,26 @@ describe("Z88 LCD resolution menu", () => {
     getState.mockReturnValue({ emulatorState: { machineId: "z88", modelId: "OZ40", config: {} } });
   });
 
+  it("offers the four 640-pixel-wide LCDs", () => {
+    const [lcdMenu] = z88LcdRenderer({} as any, undefined, undefined);
+    const labels = (lcdMenu.submenu as MenuItemConstructorOptions[]).map((i) => i.label);
+    expect(labels).toEqual(["640 x 64", "640 x 256", "640 x 320", "640 x 480"]);
+  });
+
+  it("checks the item of the configured LCD size", () => {
+    getState.mockReturnValue({
+      emulatorState: { machineId: "z88", modelId: "OZ40", config: { [MC_SCREEN_SIZE]: "640x256" } }
+    });
+    expect(lcdItem("640 x 256").checked).toBe(true);
+    expect(lcdItem("640 x 64").checked).toBe(false);
+  });
+
+  it("rebuilds the machine with 640x256", async () => {
+    await lcdItem("640 x 256").click!({} as any, undefined, {} as any);
+    const [, , config] = setMachineType.mock.calls[0] as unknown as [string, string, any];
+    expect(config[MC_SCREEN_SIZE]).toBe("640x256");
+  });
+
   it("rebuilds the machine with the chosen LCD size and the rest of the model's configuration", async () => {
     await lcdItem("640 x 480").click!({} as any, undefined, {} as any);
 
@@ -87,7 +107,7 @@ describe("getModelConfig", () => {
     const config = getModelConfig("z88", "OZ40");
     expect(config).toEqual(oz40().config);
     expect(config).not.toBe(oz40().config);
-    config[MC_SCREEN_SIZE] = "800x480";
+    config[MC_SCREEN_SIZE] = "640x480";
     expect(oz40().config[MC_SCREEN_SIZE]).toBeUndefined();
   });
 

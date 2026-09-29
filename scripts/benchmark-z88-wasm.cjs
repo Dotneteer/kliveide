@@ -134,11 +134,11 @@ const SCENARIOS = [
     frame: (s) => s.runFrames(1)
   },
   {
-    id: "lcd-800x480",
-    label: "800x480 LCD drawing changing screen memory",
+    id: "lcd-640x480",
+    label: "640x480 LCD drawing changing screen memory",
     async setup(h) {
       const model = h.z88Model();
-      const config = { ...model.config, screenSize: "800x480" };
+      const config = { ...model.config, screenSize: "640x480" };
       const s = await h.createZ88Session({ config, audioSampleRate: 44100 });
       await s.loadCode(LCD, { entry: "start" });
       outWord(s, 0x70, (0x21 << 5) | (0x1200 >> 9));

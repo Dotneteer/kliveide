@@ -178,10 +178,9 @@ describe("Cambridge Z88 WASM machine - setup", () => {
 
   it.each([
     [undefined, 640, 64],
+    ["640x256", 640, 256],
     ["640x320", 640, 320],
-    ["640x480", 640, 480],
-    ["800x320", 800, 320],
-    ["800x480", 800, 480]
+    ["640x480", 640, 480]
   ])("LCD size %s: %i x %i, and the pixel buffer is exactly the LCD", async (size, width, height) => {
     const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
     const config = { ...model.config, [MC_SCREEN_SIZE]: size };

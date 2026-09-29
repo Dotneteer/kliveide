@@ -193,10 +193,12 @@ describe("z88LcdSizeRegisters (the LCD size rule)", () => {
   it.each([
     [undefined, 0xff, 8],
     ["640x64", 0xff, 8],
+    ["640x256", 0xff, 32],
     ["640x320", 0xff, 40],
     ["640x480", 0xff, 60],
-    ["800x320", 100, 40],
-    ["800x480", 100, 60],
+    // --- The 800-pixel sizes were removed (issue #1385): a project that still names one gets 640x64
+    ["800x320", 0xff, 8],
+    ["800x480", 0xff, 8],
     ["1024x768", 0xff, 8]
   ])("%s: SCW %i, SCH %i", (size, scw, sch) => {
     expect(z88LcdSizeRegisters(size)).toEqual({ scw, sch });

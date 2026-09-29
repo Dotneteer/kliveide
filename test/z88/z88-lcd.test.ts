@@ -231,10 +231,9 @@ describe("Z88 LCD", () => {
 
   it.each([
     [undefined, 640, 64, 0xff, 8],
+    ["640x256", 640, 256, 0xff, 32],
     ["640x320", 640, 320, 0xff, 40],
-    ["640x480", 640, 480, 0xff, 60],
-    ["800x320", 800, 320, 100, 40],
-    ["800x480", 800, 480, 100, 60]
+    ["640x480", 640, 480, 0xff, 60]
   ] as const)("LCD size %s is %ix%i (SCW %i, SCH %i), every text row rendered", async (size, w, h, scw, sch) => {
     const s = await lcdSession({ size });
     expect(s.lcdWidth).toBe(w);

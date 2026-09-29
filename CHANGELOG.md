@@ -1,5 +1,19 @@
 # Klive IDE Changelog
 
+## Unreleased
+
+### Features
+
+- **New Cambridge Z88 LCD resolution: 640x256** (#1385), as in OZvm (Blink SCW=$FF, SCH=32). It
+  matches the ZX Spectrum Next in tile mode. The Z88 now offers 640x64 (the default), 640x256,
+  640x320 and 640x480.
+
+### Breaking changes
+
+- **The 800x320 and 800x480 Cambridge Z88 LCD sizes are gone** (#1385). The OZ screen driver is
+  designed for 640-pixel-wide screens, so an LCD driver for them is not practical. A project that
+  still names one of them opens with the default 640x64 LCD.
+
 ## 0.61.0
 
 ### Highlights
