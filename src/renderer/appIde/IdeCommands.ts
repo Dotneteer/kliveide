@@ -97,6 +97,7 @@ import { ResetSjasmPlusCommand } from "./commands/SjasmPlusCommands";
 import { ResetPasta80Command } from "./commands/Pasta80Commands";
 import { ZxNextStorageCopyCommand } from "./commands/ZxNextStorageCopyCommand";
 import { LaunchNexCommand } from "./commands/NexLaunchCommand";
+import { Z88SnapshotCommand } from "./commands/Z88SnapshotCommand";
 import { RunToCursorCommand } from "./commands/RunToCursorCommand";
 import { NexLabelCommand } from "./commands/NexLabelCommand";
 
@@ -195,6 +196,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ResetPasta80Command());
   cmdSrv.registerCommand(new ZxNextStorageCopyCommand());
   cmdSrv.registerCommand(new LaunchNexCommand());
+  cmdSrv.registerCommand(new Z88SnapshotCommand());
   cmdSrv.registerCommand(new RunToCursorCommand());
   cmdSrv.registerCommand(new NexLabelCommand());
 }

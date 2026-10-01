@@ -170,6 +170,15 @@ export interface IMachineController {
   ): Promise<void>;
 
   /**
+   * Replaces the machine's state and leaves it Paused, so the next Start, Debug or step continues
+   * from that state instead of resetting the machine (a start from Stopped resets it). The machine
+   * is stopped first; `applyState` runs on the stopped machine.
+   * @param applyState Writes the new state into the machine
+   * @param description What was restored, for the emulator output
+   */
+  restoreState(applyState: () => void, description: string): Promise<void>;
+
+  /**
    * Resolves the source code breakpoints used when running the machine
    * @param bps
    */

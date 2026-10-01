@@ -68,6 +68,8 @@ export class AudioRenderer {
   }
 
   async play(): Promise<void> {
+    // --- A closed context belongs to a machine that has been replaced; its successor plays instead
+    if (this.context.state === "closed") return;
     if (this.suspended || this.context.state !== "running") {
       await this.context.resume();
       this.suspended = this.context.state !== "running";
@@ -75,7 +77,7 @@ export class AudioRenderer {
   }
 
   async suspend(): Promise<void> {
-    if (this.suspended) return;
+    if (this.suspended || this.context.state === "closed") return;
     this.suspended = true;
     await this.context.suspend();
     this.worklet.port.postMessage({ initialize: this.samplesPerFrame });

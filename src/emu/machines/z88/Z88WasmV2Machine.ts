@@ -4,6 +4,9 @@ import type { BlinkState, CpuState } from "@common/messaging/EmuApi";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { Z88CardKind, Z88CardSpec } from "./z88CardCatalog";
 import type { Z88WasmV2LoaderOptions, Z88WasmV2Runtime } from "./wasm/Z88WasmV2Loader";
+import type { Z88Snapshot } from "@common/z88/z88Snapshot";
+import type { Z88SnapshotMapping } from "@common/z88/z88SnapshotMapping";
+import type { Z88Tim } from "@common/z88/z88Rtc";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
@@ -15,6 +18,8 @@ import { loadZ88WasmV2 } from "./wasm/Z88WasmV2Loader";
 import { z88LcdSizeRegisters } from "./z88MachineInfo";
 import { z88InternalRamSizeInBytes } from "./z88CardCatalog";
 import { Z88WasmHost } from "./Z88WasmHost";
+import { Z88_INTERNAL_RAM_BANK } from "@common/z88/z88Snapshot";
+import { adjustZ88LostTime } from "@common/z88/z88Rtc";
 
 /** The size of a slot's region in the 4 MB physical memory */
 const Z88_SLOT_SIZE = 0x10_0000;
@@ -646,6 +651,92 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   /** The card the backend holds in a slot (undefined when empty) */
   getInsertedCard(slot: number): Z88CardSpec | undefined {
     return this.cards[slot];
+  }
+
+  // ==========================================================================================
+  // Snapshots
+
+  /**
+   * Replaces the whole machine state with a `.z88` snapshot's (`.plans/Z88_SNAPSHOT_PLAN.md` §4.4).
+   *
+   * The machine is reset first, as OZvm resets the Blink and wipes memory before a load: that clears
+   * what the snapshot does not store (HALT, the keyboard matrix, EPR, a snooze, sleep, queued keys).
+   * Then the cards go in - slot 0 included, replacing the configured ROM in the core only - and the
+   * Blink and the CPU are restored, with the RTC advanced by the time the file spent on disk.
+   *
+   * The machine's configuration is not touched: the caller rebuilds the machine first when the
+   * internal RAM size differs, and records the cards (§4.5).
+   * @param snapshot The parsed snapshot
+   * @param mapping Its mapping to Klive cards; it must have no errors
+   * @param nowMs The host time, for the RTC catch-up
+   * @returns TIM0..TIM4 as restored, after the catch-up
+   * @throws When the mapping has errors, or the internal RAM differs from this machine's
+   */
+  loadSnapshotState(snapshot: Z88Snapshot, mapping: Z88SnapshotMapping, nowMs: number): Z88Tim {
+    if (mapping.errors.length > 0) {
+      throw new Error(`The snapshot cannot be loaded: ${mapping.errors.join("; ")}`);
+    }
+    if (snapshot.ram.length !== this.internalRam.sizeInBytes) {
+      throw new Error(
+        `The snapshot has ${snapshot.ram.length / 1024}K internal RAM, the machine ` +
+          `${this.internalRam.sizeInBytes / 1024}K`
+      );
+    }
+    const runtime = this.requireWasmV2Runtime();
+    const w = runtime.exports;
+
+    // --- A clean machine, with no stale bytes of a card the snapshot does not have
+    this.reset();
+    runtime.memory.fill(0);
+
+    // --- Cards, then the internal RAM (banks $20-$3F, at $080000)
+    for (let slot = 0; slot < 4; slot++) {
+      const card = mapping.slots[slot];
+      if (card) {
+        this.insertCardIntoBackend(slot, card.spec, card.bytes);
+      } else {
+        this.removeCardFromBackend(slot);
+      }
+    }
+    runtime.memory.set(snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
+
+    // --- The Blink. COM first: SR0's paging depends on COM.RAMS, and COM.RESTIM clears TIM.
+    const blink = snapshot.blink;
+    w.z88SetCom(blink.com);
+    blink.sr.forEach((bank, index) => w.z88SetSr(index, bank));
+    w.z88SetInt(blink.int);
+    w.z88SetSta(blink.sta);
+    w.z88SetTmk(blink.tmk);
+    w.z88SetTsta(blink.tsta);
+    blink.pb.forEach((value, index) => w.z88SetPb(index, value));
+    w.z88SetSbr(blink.sbr);
+    const tim = adjustZ88LostTime(blink.tim, snapshot.stoppedAt, nowMs);
+    tim.forEach((value, index) => w.z88SetTim(index, value));
+
+    // --- The CPU
+    const cpu = snapshot.cpu;
+    w.z88SetCpuAf(cpu.af);
+    w.z88SetCpuBc(cpu.bc);
+    w.z88SetCpuDe(cpu.de);
+    w.z88SetCpuHl(cpu.hl);
+    w.z88SetCpuAfAlt(cpu.af_);
+    w.z88SetCpuBcAlt(cpu.bc_);
+    w.z88SetCpuDeAlt(cpu.de_);
+    w.z88SetCpuHlAlt(cpu.hl_);
+    w.z88SetCpuIx(cpu.ix);
+    w.z88SetCpuIy(cpu.iy);
+    w.z88SetCpuIr((cpu.i << 8) | cpu.r);
+    w.z88SetCpuIff1(cpu.iff1 ? 1 : 0);
+    w.z88SetCpuIff2(cpu.iff2 ? 1 : 0);
+    w.z88SetCpuInterruptMode(cpu.im);
+    w.z88SetCpuSp(cpu.sp);
+    w.z88SetCpuPc(cpu.pc);
+
+    // --- The picture the snapshot holds, before the first frame (a debug stop is seen at once)
+    w.z88DrawLcd();
+
+    this.syncCpuFromWasmV2(runtime);
+    return tim;
   }
 
   // ==========================================================================================

@@ -386,6 +386,20 @@ uint32_t z88GetPb(uint32_t index) { return z88Pb[index & 3u]; }
 uint32_t z88GetSbr(void) { return z88Sbr; }
 uint32_t z88GetEarBit(void) { return z88EarBit; }
 
+/*
+ * Restoring a saved state (`.z88` snapshots, `.plans/Z88_SNAPSHOT_PLAN.md` §4.4). These set the
+ * registers as they were saved: no RTC event, no interrupt re-evaluation (TSTA is a latch; STA and
+ * INT, which drive the interrupt line, are restored through their own setters), and the LCD
+ * pointers without the port's B-register split. The screen derives its font and map addresses from
+ * PB0-PB3 and SBR at every draw, so there is nothing else to update.
+ */
+void z88SetTim(uint32_t index, uint32_t value) {
+  if (index < 5u) z88Tim[index] = (uint8_t)value;
+}
+void z88SetTsta(uint32_t value) { z88Tsta = (uint8_t)value; }
+void z88SetPb(uint32_t index, uint32_t value) { z88Pb[index & 3u] = (uint16_t)value; }
+void z88SetSbr(uint32_t value) { z88Sbr = (uint16_t)value; }
+
 /* The RTC's test hooks (`IZ88BlinkTestDevice`) */
 void z88TestResetRtc(void) { z88BlinkResetRtc(); }
 void z88TestIncrementRtc(void) { z88BlinkIncrementRtc(); }

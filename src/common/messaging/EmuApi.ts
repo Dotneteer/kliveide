@@ -14,6 +14,7 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
+import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -71,6 +72,21 @@ class EmuApiImpl {
     _confirm?: boolean,
     _suppressError?: boolean
   ): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Loads a `.z88` (OZvm) snapshot into the emulator, rebuilding the machine as a Z88 that fits it
+   * when needed (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5).
+   * @param _contents The `.z88` file
+   * @param _mode "load": stay paused at the snapshot's PC; "run": start; "debug": start debugging,
+   * stopping at the snapshot's PC before that instruction runs
+   * @returns What was loaded; rejects with the reason when the snapshot cannot be loaded
+   */
+  async loadZ88Snapshot(
+    _contents: Uint8Array,
+    _mode: Z88SnapshotLoadMode
+  ): Promise<Z88SnapshotLoadResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

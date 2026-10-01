@@ -124,6 +124,12 @@ const productionExports = [
   "z88GetPb",
   "z88GetSbr",
   "z88GetEarBit",
+  // --- Restoring a saved state (.z88 snapshots)
+  "z88SetTim",
+  "z88SetTsta",
+  "z88SetPb",
+  "z88SetSbr",
+  "z88DrawLcd",
   // --- CPU and bus events
   "z88GetCpuAf",
   "z88SetCpuAf",

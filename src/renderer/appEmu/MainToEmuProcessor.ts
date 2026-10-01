@@ -41,6 +41,9 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
+import { setMachineConfigAction } from "@state/actions";
+import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
+import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
 
@@ -185,6 +188,27 @@ class EmuMessageProcessor {
         `Tape file ${file} successfully set.`
       );
     }
+  }
+
+  /**
+   * Loads a `.z88` snapshot (see `EmuApi.loadZ88Snapshot`).
+   * @param contents The `.z88` file
+   * @param mode What to do once the state is restored
+   */
+  loadZ88Snapshot(contents: Uint8Array, mode: Z88SnapshotLoadMode): Promise<Z88SnapshotLoadResult> {
+    const store = getCachedStore();
+    return loadZ88Snapshot(
+      {
+        getMachineController: () => this.machineService.getMachineController(),
+        getEmulatorState: () => store.getState()?.emulatorState ?? {},
+        setMachineType: (machineId, modelId, config) =>
+          this.machineService.setMachineType(machineId, modelId, config),
+        setMachineConfig: (config) => store.dispatch(setMachineConfigAction(config), "emu")
+      },
+      contents,
+      mode,
+      Date.now()
+    );
   }
 
   /**

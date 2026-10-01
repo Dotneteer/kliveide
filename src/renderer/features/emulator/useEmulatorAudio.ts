@@ -24,6 +24,11 @@ export function useEmulatorAudio() {
       if (!audioSampleRate) return;
       const samplesPerBurst =
         ((tactsInFrame * audioSampleRate) / baseClockFrequency) * Math.max(1, framesPerBurst);
+      // --- Drop the renderer before its context closes: a machine started while the new context is
+      // --- still being built (a `.z88` snapshot runs straight after the machine it needed is set up)
+      // --- must find no renderer, not one whose context is closed ("Cannot resume a closed
+      // --- AudioContext"). Every full frame calls `play()`, so the new renderer starts by itself.
+      beeperRenderer.current = undefined;
       await releaseBeeperContext();
       beeperRenderer.current = new AudioRenderer(await getBeeperContext(samplesPerBurst));
     },

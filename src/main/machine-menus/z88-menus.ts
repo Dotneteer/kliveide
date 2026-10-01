@@ -1,4 +1,6 @@
 import fs from "fs";
+import path from "path";
+import { app, dialog, type BrowserWindow } from "electron";
 
 import { MachineControllerState } from "@common/abstractions/MachineControllerState";
 import { MachineMenuRenderer } from "@common/machines/info-types";
@@ -9,8 +11,13 @@ import { saveKliveProject } from "@main/projects";
 import { getModelConfig } from "@common/machines/machine-registry";
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
 import { setMachineType } from "@main/registeredMachines";
-import { getSettingValue, setSettingValue } from "@main/settings-utils";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
+import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
+import {
+  z88SnapshotCommandText,
+  type Z88SnapshotCommandOption
+} from "@common/z88/z88SnapshotLoadTypes";
 
 const Z88_KEYBOARDS = "z88_keyboards";
 const Z88_DE_KEYBOARD = "z88_de_layout";
@@ -97,6 +104,70 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
     mainStore.dispatch(incMenuVersionAction());
   }
 };
+
+/** The settings key of the folder the last snapshot was opened from */
+const Z88_SNAPSHOT_FOLDER = "z88SnapshotFolder";
+
+/**
+ * Renders the `.z88` snapshot commands (`.plans/Z88_SNAPSHOT_PLAN.md` §4.7). Both hand the file to
+ * the IDE's `z88-snapshot` command, which makes the machine fit the snapshot and reports problems.
+ */
+export const z88SnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
+  const emuWindow = windowInfo.emuWindow;
+  return [
+    { type: "separator" },
+    {
+      id: "z88_open_snapshot",
+      label: "Open Z88 Snapshot...",
+      click: async () => {
+        // --- As OZvm does: run when the file says Autorun, otherwise stop in the debugger at PC
+        await openZ88Snapshot(emuWindow, "autorun");
+      }
+    },
+    {
+      id: "z88_load_snapshot",
+      label: "Load Z88 Snapshot (Paused)...",
+      click: async () => {
+        await openZ88Snapshot(emuWindow, "load");
+      }
+    }
+  ];
+};
+
+/**
+ * Asks for a `.z88` file and loads it through the IDE's `z88-snapshot` command.
+ * @param browserWindow The window that owns the dialog
+ * @param option What to do after loading
+ */
+async function openZ88Snapshot(
+  browserWindow: BrowserWindow,
+  option: Z88SnapshotCommandOption
+): Promise<void> {
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select Z88 Snapshot File",
+    defaultPath: appSettings?.folders?.[Z88_SNAPSHOT_FOLDER] || app.getPath("home"),
+    filters: [
+      { name: "Z88 Snapshot Files", extensions: ["z88"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  const filename = dialogResult.filePaths[0];
+  appSettings.folders ??= {};
+  appSettings.folders[Z88_SNAPSHOT_FOLDER] = path.dirname(filename);
+  saveAppSettings();
+
+  const result = await getIdeApi().executeCommand(z88SnapshotCommandText(filename, option));
+  if (!result?.success) {
+    await dialog.showMessageBox(browserWindow, {
+      type: "error",
+      title: "Z88 Snapshot",
+      message: result?.finalMessage ?? `Could not load ${filename}`
+    });
+  }
+}
 
 /**
  * Renders reset-related menus

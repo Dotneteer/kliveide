@@ -398,6 +398,12 @@ perfectly editable with the emulator stopped — fall back, but **say so where t
 `--status-warning`: a silently-wrong palette still looks like a palette, which is exactly how the
 rotation bug above survived.
 
+**A picture of the machine that a file carries is shown as stored.** The `.z88` viewer's LCD capture
+(`snapshot.png`) is a device surface frozen in a file: its pixels are the machine's, so it gets no
+theme treatment, no tint and no smoothing — `image-rendering: pixelated`, `max-width: 100%` and
+nothing else, so it shrinks to its pane but never blurs. The same holds for any thumbnail a snapshot
+format embeds.
+
 **The same holds for the frame around a machine's picture.** The Z88's LCD surround is unlit
 green, and grey while the LCD is off. The core reports it (`z88GetLcdSurroundColor`, following
 what it last painted rather than COM.LCDON, so frame and picture never disagree) through

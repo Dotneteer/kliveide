@@ -60,6 +60,7 @@ Methods returning `this` chain.
 | | `physPeek(abs)` | The 4 MB physical memory; slot N starts at N * $100000, internal RAM at $080000 |
 | I/O | `in(port)` `out(port, v)` | Full 16-bit port address: the KBD row select and the LCD registers' high byte come from B |
 | CPU | `registers()` `setRegisters({...})` `tacts` `frames` | `registers()` reads `getCpuState()`, the IDE's path (the machine syncs its lazily mirrored CPU first) |
+| | `cpuState()` | The whole `Z80CpuState`, alternate registers included |
 | Debugger | `breakpoint(addrOrLabel)` `watch(addrOrLabel \| port, "memoryRead" \| "memoryWrite" \| "ioRead" \| "ioWrite")` `debug("continue" \| "stepInto" \| "stepOver" \| "stepOut")` | As the IDE runs it (`MachineController.run`): a step wakes a snoozing CPU first, a step-out marks its target first. Returns the PC it stopped at. |
 | State | `snoozed` `sleeping` `blinkState()` | `blinkState()` is what the Blink panel shows |
 | Keys | `keyDown(...keys)` `keyUp(...keys)` | `Z88KeyCode` names: `"A"`, `"N1"`, `"Enter"`, `"ShiftL"`, `"Menu"`, ... |
@@ -67,6 +68,7 @@ Methods returning `this` chain.
 | Cards | `await plugCard(slot, { cardType, size, file? } \| undefined)` | Hot-plugs slot 1-3 as the card dialogs do (`CardIds` types, size in KB); a re-configured flash card comes back erased |
 | LCD | `lcdWidth` `lcdHeight` `pixel(x, y)` `screen()` | ABGR words; compare with `Z88_LCD.ON/OFF/GREY/SCREEN_OFF`. The LCD renders every 8th frame. |
 | Audio | `startAudio()` `audio()` | Samples of every completed frame (DC-filtered: level changes show as jumps) |
+| Snapshots | `loadSnapshot(bytes, nowMs?)` `insertedCards()` | Parses and maps a `.z88` file, then `loadSnapshotState`; `nowMs` defaults to the file's stop time (no RTC catch-up). Returns the snapshot, its mapping and the restored TIM0-4. |
 | Escape hatch | `s.machine` | Avoid in tests; add a method instead |
 
 ## Rules

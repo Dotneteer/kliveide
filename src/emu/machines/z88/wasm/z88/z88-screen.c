@@ -237,3 +237,20 @@ static void z88RenderScreen(void) {
   z88LcdWentOff = 0u;
   z88DrawScreen();
 }
+
+/*
+ * Draws the LCD now, from the current Blink state and memory. A restored `.z88` snapshot is looked at
+ * before its first frame - a debug session stops on its PC before any instruction runs - and the
+ * frame-start work above would leave the reset's blank picture until the 8th frame
+ * (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 7).
+ */
+void z88DrawLcd(void) {
+  z88FlashFlag = z88Tim[0] <= 120u ? 1u : 0u;
+  if (!(z88Com & Z88_COM_LCDON)) {
+    z88RenderScreenOff();
+    z88LcdWentOff = 1u;
+    return;
+  }
+  z88LcdWentOff = 0u;
+  z88DrawScreen();
+}
