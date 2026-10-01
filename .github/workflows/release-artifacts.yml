@@ -68,7 +68,7 @@ jobs:
           name: install-kit-winx86
           path: |
             artifacts/*.exe
-            artifacts/*.msi
+            artifacts/*.zip
 
   build-on-linux:
     runs-on: ubuntu-latest
