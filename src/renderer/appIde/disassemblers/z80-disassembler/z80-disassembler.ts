@@ -69,7 +69,12 @@ export class Z80Disassembler {
       getOffset: () => this._offset,
       fetch: () => this.apiFetch(),
       peek: (ahead?: number) => this.peek(ahead),
-      addDisassemblyItem: (item: DisassemblyItem) => this._output.addItem(item),
+      // --- A custom disassembler addresses its items by offset into the memory it reads, as
+      // --- `peek` reports it; the listing's numbering adds the address offset, exactly as
+      // --- `decodeInstruction` does for every built-in item. Without it a bank listed at $C000
+      // --- showed its OZ calls at $0029.
+      addDisassemblyItem: (item: DisassemblyItem) =>
+        this._output.addItem({ ...item, address: (item.address + this._addressOffset) & 0xffff }),
       createLabel: (address: number) => this._output.createLabel(address),
       getRomPage: () => {
         if (this.options && this.options.getRomPage) {
@@ -132,7 +137,10 @@ export class Z80Disassembler {
     this._overflow = false;
     const endOffset = section.endAddress;
     while (this._offset <= endOffset && !this._overflow) {
-      // --- Disassemble the current item
+      // --- Disassemble the current item. A fresh opcode array first: the previous item holds the
+      // --- last one by reference, and a custom disassembler's `fetch` pushes onto it - so the
+      // --- instruction before every OZ call or RST 28 showed the custom item's bytes as its own.
+      this._currentOpCodes = [];
       const customTakes = this._customDisassembler?.beforeInstruction(this.peek()) ?? false;
       if (!customTakes) {
         const item = this.disassembleOperation();
