@@ -34,10 +34,13 @@ export function isZ88SnapshotPath(path: string | undefined): boolean {
 /**
  * Loads a `.z88` (OZvm) snapshot into the Cambridge Z88 (`.plans/Z88_SNAPSHOT_PLAN.md` §4.6).
  *
- * With no option the machine stands paused at the snapshot's PC. `-r` runs it. `-d` debugs it,
- * stopping at the snapshot's PC before that instruction runs. `-a` does what the file's `Autorun`
- * flag says, as OZvm does: run when it is set, debug-stop at PC when it is not. The emulator's
- * "Open Z88 snapshot" menu uses `-a`.
+ * With no option (or `-d`) it debugs the snapshot, stopping at its PC before that instruction runs.
+ * `-r` runs it. `-a` does what the file's `Autorun` flag says, as OZvm does: run when it is set,
+ * debug-stop at PC when it is not. The emulator's "Open Z88 snapshot" menu uses `-a`.
+ *
+ * There was a third mode, "load and stay paused at PC". It ended where debugging does and differed
+ * only in that Continue then ran without breakpoints - nothing on screen told the two apart - so the
+ * plain command now debugs. `-d` stays accepted, for the scripts and menus that pass it.
  *
  * The emulator makes the machine fit the snapshot, so loading may turn the current machine into a
  * Z88 or rebuild it with another internal RAM or LCD size. That is fine with no project open. A
@@ -46,7 +49,8 @@ export function isZ88SnapshotPath(path: string | undefined): boolean {
  */
 export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
   readonly id = "z88-snapshot";
-  readonly description = "Loads a .z88 snapshot into the Cambridge Z88, optionally running or debugging it";
+  readonly description =
+    "Loads a .z88 snapshot into the Cambridge Z88 and debugs it, stopping at its PC (-r runs it, -a follows its Autorun flag)";
   readonly aliases = ["z88snap"];
   readonly usage = "z88-snapshot <z88-file> [-r | -d | -a]";
 
@@ -93,7 +97,7 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
     }
 
     // --- -a needs the file's Autorun flag before the load decides what to do
-    let mode: Z88SnapshotLoadMode = args["-r"] ? "run" : args["-d"] ? "debug" : "load";
+    let mode: Z88SnapshotLoadMode = args["-r"] ? "run" : "debug";
     if (args["-a"]) {
       try {
         mode = parseZ88Snapshot(bytes).autorun ? "run" : "debug";
@@ -115,8 +119,7 @@ export class Z88SnapshotCommand extends IdeCommandBase<Z88SnapshotCommandArgs> {
     for (const warning of result.warnings) {
       writeMessage(context.output, `Warning: ${warning}`, "yellow");
     }
-    const done =
-      mode === "run" ? "running" : mode === "debug" ? "stopped at" : "paused at";
+    const done = mode === "run" ? "running" : "stopped at";
     return commandSuccessWith(`Z88 snapshot ${file} loaded, ${done} PC $${toHexa4(result.pc)}.`);
   }
 }

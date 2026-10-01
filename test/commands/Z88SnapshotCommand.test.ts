@@ -146,7 +146,8 @@ describe("z88-snapshot command", () => {
 
   describe("execute", () => {
     it.each([
-      [{}, "load", "paused at"],
+      // --- No option debugs: "load and stay paused" stopped at PC exactly as debugging does
+      [{}, "debug", "stopped at"],
       [{ "-r": true }, "run", "running"],
       [{ "-d": true }, "debug", "stopped at"]
     ])("with %o loads the file in %s mode", async (options, mode, done) => {
@@ -219,8 +220,7 @@ describe("z88-snapshot command", () => {
 
   describe("command text (the emulator menu and the viewer)", () => {
     it("quotes the path and adds the option's flag", () => {
-      expect(z88SnapshotCommandText("/p/my game.z88", "load")).toBe('z88-snapshot "/p/my game.z88"');
-      expect(z88SnapshotCommandText("/p/a.z88", "run")).toBe('z88-snapshot "/p/a.z88" -r');
+      expect(z88SnapshotCommandText("/p/my game.z88", "run")).toBe('z88-snapshot "/p/my game.z88" -r');
       expect(z88SnapshotCommandText("/p/a.z88", "debug")).toBe('z88-snapshot "/p/a.z88" -d');
       expect(z88SnapshotCommandText("/p/a.z88", "autorun")).toBe('z88-snapshot "/p/a.z88" -a');
     });

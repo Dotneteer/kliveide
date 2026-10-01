@@ -10,8 +10,10 @@ import { z88SnapshotCommandText } from "@common/z88/z88SnapshotLoadTypes";
 import { z88SnapshotProjectGuard } from "@renderer/appIde/commands/Z88SnapshotCommand";
 
 /*
- * **Load** / **Run** / **Debug** for a `.z88` snapshot: the Explorer's context menu entries and the
- * buttons in the `.z88` viewer's tab bar (`.plans/Z88_SNAPSHOT_PLAN.md` §4.9). All of them run the
+ * **Run** / **Debug** for a `.z88` snapshot: the Explorer's context menu entries and the buttons in
+ * the `.z88` viewer's tab bar (`.plans/Z88_SNAPSHOT_PLAN.md` §4.9). There is no "Load (paused)": it
+ * stopped at the snapshot's PC exactly as Debug does, and differed only in Continue then ignoring
+ * breakpoints, which nothing on screen told apart. All of them run the
  * `z88-snapshot` command, as the `.nex` launch entries run `nex-run`, so the Explorer, the viewer,
  * the emulator menu and a script do the same thing.
  *
@@ -36,11 +38,6 @@ export function getZ88SnapshotContextMenuInfo(services: AppServices): ContextMen
 
   return [
     {
-      text: "Load Z88 snapshot (paused)",
-      disabled: refused,
-      clicked: async (item: string) => await launch(item, "load")
-    },
-    {
       text: "Run Z88 snapshot",
       disabled: refused,
       clicked: async (item: string) => await launch(item, "run")
@@ -57,7 +54,7 @@ type Props = {
   path: string;
 };
 
-/** The three actions in a `.z88` document's tab bar */
+/** The two actions in a `.z88` document's tab bar */
 const Z88SnapshotLaunchCommandBar = ({ path }: Props) => {
   const { ideCommandsService } = useAppServices();
   const isKliveProject = useSelector((s) => s.project?.isKliveProject);
@@ -72,13 +69,6 @@ const Z88SnapshotLaunchCommandBar = ({ path }: Props) => {
   return (
     <>
       <TabButtonSeparator />
-      <TabButton
-        iconName="pause"
-        title={`Load this snapshot and stay paused at its PC${hint}`}
-        disabled={!!refusal}
-        clicked={async () => await launch("load")}
-      />
-      <TabButtonSpace />
       <TabButton
         iconName="play"
         title={`Load and run this snapshot${hint}`}

@@ -7,8 +7,8 @@
  *     shows the snapshot's cards. Slot 0's configuration is never changed: it names a ROM file,
  *     which a snapshot does not have. The snapshot's slot 0 lives in the core only.
  *  3. Restore the state through `IMachineController.restoreState`, which leaves the machine Paused.
- *  4. Then, by mode: stay paused ("load"), run ("run"), or debug, stopping at the snapshot's PC
- *     before that instruction runs ("debug" - a one-shot breakpoint, as `nex-run -e` stops at entry).
+ *  4. Then, by mode: run ("run"), or debug, stopping at the snapshot's PC before that instruction
+ *     runs ("debug" - a one-shot breakpoint, as `nex-run -e` stops at entry).
  *
  * The services it needs come in as ports, so the flow is testable without the emulator window.
  */
@@ -111,7 +111,7 @@ export async function loadZ88Snapshot(
   const pc = snapshot.cpu.pc;
   if (mode === "run") {
     await controller.start();
-  } else if (mode === "debug") {
+  } else {
     controller.debugSupport?.addBreakpoint({
       address: pc,
       exec: true,

@@ -4,10 +4,13 @@
  */
 
 /**
- * What happens after the snapshot's state is restored: stay paused at its PC ("load"), run
- * ("run"), or debug, stopping at its PC before that instruction runs ("debug").
+ * What happens after the snapshot's state is restored: run ("run"), or debug, stopping at its PC
+ * before that instruction runs ("debug").
+ *
+ * There is no "load and stay paused": it ended in the same place as "debug" - paused at PC - and
+ * differed only in that Continue then ran without breakpoints, which nothing on screen told apart.
  */
-export type Z88SnapshotLoadMode = "load" | "run" | "debug";
+export type Z88SnapshotLoadMode = "run" | "debug";
 
 /** The result of a load; it crosses the process boundary, so it is plain data */
 export type Z88SnapshotLoadResult = {
@@ -24,10 +27,9 @@ export type Z88SnapshotLoadResult = {
 };
 
 /** How the `z88-snapshot` IDE command continues after the load */
-export type Z88SnapshotCommandOption = "load" | "run" | "debug" | "autorun";
+export type Z88SnapshotCommandOption = "run" | "debug" | "autorun";
 
 const COMMAND_FLAGS: Record<Z88SnapshotCommandOption, string> = {
-  load: "",
   run: " -r",
   debug: " -d",
   autorun: " -a"

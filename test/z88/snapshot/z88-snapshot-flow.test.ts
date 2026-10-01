@@ -35,7 +35,7 @@ import { createHarnessZ88Machine, ResolvingMessenger, z88Model } from "../../har
 
 /*
  * The emulator-side snapshot load (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5, Phase 3): fitting the machine
- * to the snapshot, restoring the state Paused, and the load / run / debug modes - on a real
+ * to the snapshot, restoring the state Paused, and the run / debug modes - on a real
  * `MachineController` driving the real Z88 core.
  */
 
@@ -168,9 +168,10 @@ describe("Z88 snapshot - fitting the machine", () => {
 });
 
 describe("Z88 snapshot - loading through the controller", () => {
-  it("load: stands Paused at the snapshot's PC, and the store says so", async () => {
+  it("stands Paused at the snapshot's PC, and the store says so", async () => {
     const emu = await track(fittingEmulator());
-    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "load", parseZ88Snapshot(SAMPLE).stoppedAt!);
+    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "debug", parseZ88Snapshot(SAMPLE).stoppedAt!);
+    await emu.until(MachineControllerState.Paused);
     expect(result).toEqual({
       pc: SAMPLE_PC,
       tim: [0x51, 0x29, 0x0c, 0x00, 0x00],
@@ -185,9 +186,10 @@ describe("Z88 snapshot - loading through the controller", () => {
     expect(emuState.pcValue).toBe(SAMPLE_PC);
   });
 
-  it("load: the card UI's configuration shows the snapshot's cards, without a rebuild", async () => {
+  it("the card UI's configuration shows the snapshot's cards, without a rebuild", async () => {
     const emu = await track(fittingEmulator());
-    await loadZ88Snapshot(emu.ports, SAMPLE, "load", Date.now());
+    await loadZ88Snapshot(emu.ports, SAMPLE, "debug", Date.now());
+    await emu.until(MachineControllerState.Paused);
     expect(emu.rebuilds).toEqual([]);
     const config = emu.store.getState().emulatorState.config;
     expect(config[MC_Z88_SLOT2]).toEqual({ cardType: CardIds.EPROMUV32, size: 32 });
@@ -196,7 +198,7 @@ describe("Z88 snapshot - loading through the controller", () => {
     expect(emu.machine.getInsertedCard(0)).toEqual({ kind: "AMD_FLASH_29F040B", sizeInBytes: 0x08_0000 });
   });
 
-  it("load: rebuilds a Z88 whose internal RAM does not fit, then loads into the new machine", async () => {
+  it("rebuilds a Z88 whose internal RAM does not fit, then loads into the new machine", async () => {
     const emu = await track(
       (async () => {
         const e = new FakeEmulator();
@@ -204,7 +206,8 @@ describe("Z88 snapshot - loading through the controller", () => {
         return e;
       })()
     );
-    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "load", Date.now());
+    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "debug", Date.now());
+    await emu.until(MachineControllerState.Paused);
     expect(result.rebuilt).toBe(true);
     expect(emu.rebuilds).toHaveLength(1);
     expect(emu.machine.internalRam.sizeInBytes).toBe(128 * 1024);
@@ -212,11 +215,12 @@ describe("Z88 snapshot - loading through the controller", () => {
     expect(emu.machine.pc).toBe(SAMPLE_PC);
   });
 
-  it("load: turns another machine type into a Z88", async () => {
+  it("turns another machine type into a Z88", async () => {
     const emu = new FakeEmulator();
     await emu.build(MI_SPECTRUM_48, "pal", {});
     emulators.push(emu);
-    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "load", Date.now());
+    const result = await loadZ88Snapshot(emu.ports, SAMPLE, "debug", Date.now());
+    await emu.until(MachineControllerState.Paused);
     expect(result.rebuilt).toBe(true);
     expect(emu.store.getState().emulatorState.machineId).toBe(MI_Z88);
     expect(emu.machine.pc).toBe(SAMPLE_PC);
@@ -265,7 +269,8 @@ describe("Z88 snapshot - loading through the controller", () => {
     const emu = await track(fittingEmulator());
     await loadZ88Snapshot(emu.ports, SAMPLE, "run", Date.now());
     await new Promise((resolve) => setTimeout(resolve, 50));
-    await loadZ88Snapshot(emu.ports, SAMPLE, "load", Date.now());
+    await loadZ88Snapshot(emu.ports, SAMPLE, "debug", Date.now());
+    await emu.until(MachineControllerState.Paused);
     expect(emu.controller!.state).toBe(MachineControllerState.Paused);
     expect(emu.machine.pc).toBe(SAMPLE_PC);
     // --- Really paused: the running loop was stopped, not just relabelled
@@ -289,7 +294,7 @@ describe("Z88 snapshot - loading through the controller", () => {
 
   it("reports the snapshot's Autorun flag", async () => {
     const emu = await track(fittingEmulator());
-    const result = await loadZ88Snapshot(emu.ports, sampleWith("Autorun", "false"), "load", Date.now());
+    const result = await loadZ88Snapshot(emu.ports, sampleWith("Autorun", "false"), "debug", Date.now());
     expect(result.autorun).toBe(false);
   });
 
@@ -297,7 +302,7 @@ describe("Z88 snapshot - loading through the controller", () => {
     const emu = await track(fittingEmulator());
     const before = emu.controller;
     await expect(
-      loadZ88Snapshot(emu.ports, sampleWith("SLOT0TYPE", "2"), "load", Date.now())
+      loadZ88Snapshot(emu.ports, sampleWith("SLOT0TYPE", "2"), "debug", Date.now())
     ).rejects.toThrow(/cannot be loaded/);
     expect(emu.controller).toBe(before);
     expect(emu.controller!.state).toBe(MachineControllerState.None);
@@ -309,6 +314,6 @@ describe("Z88 snapshot - loading through the controller", () => {
     await emu.build(MI_Z88, MODEL.modelId, MODEL.config);
     emulators.push(emu);
     emu.supersede = true;
-    await expect(loadZ88Snapshot(emu.ports, SAMPLE, "load", Date.now())).rejects.toThrow(/superseded/);
+    await expect(loadZ88Snapshot(emu.ports, SAMPLE, "debug", Date.now())).rejects.toThrow(/superseded/);
   });
 });

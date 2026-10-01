@@ -109,8 +109,9 @@ export const z88LcdRenderer: MachineMenuRenderer = () => {
 const Z88_SNAPSHOT_FOLDER = "z88SnapshotFolder";
 
 /**
- * Renders the `.z88` snapshot commands (`.plans/Z88_SNAPSHOT_PLAN.md` §4.7). Both hand the file to
- * the IDE's `z88-snapshot` command, which makes the machine fit the snapshot and reports problems.
+ * Renders the `.z88` snapshot command (`.plans/Z88_SNAPSHOT_PLAN.md` §4.7). It hands the file to the
+ * IDE's `z88-snapshot` command, which makes the machine fit the snapshot and reports problems. There
+ * is no "Load (paused)" item: it stopped at PC exactly as the debug-stop does.
  */
 export const z88SnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
   const emuWindow = windowInfo.emuWindow;
@@ -122,13 +123,6 @@ export const z88SnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
       click: async () => {
         // --- As OZvm does: run when the file says Autorun, otherwise stop in the debugger at PC
         await openZ88Snapshot(emuWindow, "autorun");
-      }
-    },
-    {
-      id: "z88_load_snapshot",
-      label: "Load Z88 Snapshot (Paused)...",
-      click: async () => {
-        await openZ88Snapshot(emuWindow, "load");
       }
     }
   ];

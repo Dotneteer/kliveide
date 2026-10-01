@@ -60,13 +60,13 @@ async function loadModule(state: State) {
 
 describe("Z88 snapshot launch - Explorer context menu", () => {
   it.each([
-    [0, "Load Z88 snapshot (paused)", `z88-snapshot "${PATH}"`],
-    [1, "Run Z88 snapshot", `z88-snapshot "${PATH}" -r`],
-    [2, "Debug Z88 snapshot (stop at PC)", `z88-snapshot "${PATH}" -d`]
+    [0, "Run Z88 snapshot", `z88-snapshot "${PATH}" -r`],
+    [1, "Debug Z88 snapshot (stop at PC)", `z88-snapshot "${PATH}" -d`]
   ])("entry %i, %s, runs %s", async (index, text, command) => {
     const { getZ88SnapshotContextMenuInfo, executeCommand } = await loadModule({ machineId: MI_Z88 });
     const entries = getZ88SnapshotContextMenuInfo({ ideCommandsService: { executeCommand } } as any);
-    expect(entries).toHaveLength(3);
+    // --- No "Load (paused)": it stopped at PC exactly as Debug does
+    expect(entries).toHaveLength(2);
     expect(entries[index].text).toBe(text);
     await entries[index].clicked!(PATH);
     expect(executeCommand).toHaveBeenCalledWith(command);
@@ -81,13 +81,12 @@ describe("Z88 snapshot launch - Explorer context menu", () => {
     const { getZ88SnapshotContextMenuInfo, executeCommand } = await loadModule(state);
     const entries = getZ88SnapshotContextMenuInfo({ ideCommandsService: { executeCommand } } as any);
     const store = { getState: () => appState(state) } as any;
-    expect(entries.map((entry) => entry.disabled!(store, PATH))).toEqual([disabled, disabled, disabled]);
+    expect(entries.map((entry) => entry.disabled!(store, PATH))).toEqual([disabled, disabled]);
   });
 });
 
 describe("Z88 snapshot launch - tab bar", () => {
   it.each([
-    ["Load this snapshot and stay paused at its PC", `z88-snapshot "${PATH}"`],
     ["Load and run this snapshot", `z88-snapshot "${PATH}" -r`],
     ["Load this snapshot and debug it, stopping at its PC", `z88-snapshot "${PATH}" -d`]
   ])("%s runs %s", async (title, command) => {
@@ -97,12 +96,13 @@ describe("Z88 snapshot launch - tab bar", () => {
     expect(executeCommand).toHaveBeenCalledWith(command);
   });
 
-  it("shows the play, pause and debug icons", async () => {
+  it("shows the play and debug icons, and no pause (Load) button", async () => {
     const { z88SnapshotLaunchCommandBarRenderer } = await loadModule({ machineId: MI_Z88 });
     render(<>{z88SnapshotLaunchCommandBarRenderer(PATH)}</>);
-    for (const icon of ["pause", "play", "debug"]) {
+    for (const icon of ["play", "debug"]) {
       expect(screen.getByTestId(`icon-${icon}`)).toBeInTheDocument();
     }
+    expect(screen.queryByTestId("icon-pause")).not.toBeInTheDocument();
   });
 
   it("disables the buttons for another machine's project, and says why", async () => {
@@ -112,7 +112,7 @@ describe("Z88 snapshot launch - tab bar", () => {
     });
     render(<>{z88SnapshotLaunchCommandBarRenderer(PATH)}</>);
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(2);
     for (const button of buttons) {
       expect(button).toBeDisabled();
       expect(button.getAttribute("aria-label")).toMatch(/\(The open project targets ZX Spectrum 48K;/);

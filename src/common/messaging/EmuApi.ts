@@ -79,8 +79,8 @@ class EmuApiImpl {
    * Loads a `.z88` (OZvm) snapshot into the emulator, rebuilding the machine as a Z88 that fits it
    * when needed (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5).
    * @param _contents The `.z88` file
-   * @param _mode "load": stay paused at the snapshot's PC; "run": start; "debug": start debugging,
-   * stopping at the snapshot's PC before that instruction runs
+   * @param _mode "run": start; "debug": start debugging, stopping at the snapshot's PC before that
+   * instruction runs
    * @returns What was loaded; rejects with the reason when the snapshot cannot be loaded
    */
   async loadZ88Snapshot(
