@@ -4,6 +4,11 @@ import type { NavigationEntry, NavigationLocator } from "@renderer/abstractions/
 import { getBytesPerRow, resolveViewMode } from "@renderer/features/memory/memoryViewModel";
 import { DISASSEMBLY_PANEL_ID, MEMORY_PANEL_ID } from "@common/state/common-ids";
 import { nexBankDumpId, nexBankDumpTitle } from "../DocumentPanels/Next/nexBankDocument";
+import {
+  parseZ88BankDocumentId,
+  z88BankDumpId,
+  z88BankDumpTitle
+} from "../DocumentPanels/Z88/z88BankDocument";
 import { getNexAnnotationPath } from "../DocumentPanels/Next/nexAnnotations";
 
 /*
@@ -151,10 +156,17 @@ export type StaticDumpNavigationDeps = {
       viewMode?: "memory" | "disassembly" | "sprites";
       nexAnnotationPath?: string;
       nexAnnotationBank?: number;
+      disassemblyFlavor?: "z88";
       topAddress?: number;
     }
   ) => Promise<void>;
   readNexBankBytes: (
+    path: string,
+    bank: number,
+    readFile: (path: string) => Promise<Uint8Array>
+  ) => Promise<Uint8Array | undefined>;
+  /** A `.z88` snapshot bank's bytes; absent, a closed snapshot bank is not reopened. */
+  readZ88BankBytes?: (
     path: string,
     bank: number,
     readFile: (path: string) => Promise<Uint8Array>
@@ -170,8 +182,9 @@ export function parseNexBankDocumentId(
 }
 
 /**
- * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank,
- * because that is the one kind whose bytes can be read back — from the `.nex` file its id names.
+ * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank
+ * or a `.z88` snapshot bank, because those are the kinds whose bytes can be read back — from the
+ * file its id names.
  */
 export function createStaticDumpNavigationAdapter(
   deps: StaticDumpNavigationDeps
@@ -217,6 +230,33 @@ export function createStaticDumpNavigationAdapter(
         });
         await target.setActiveDocument(entry.documentId);
         return await revealWhenMounted(target, entry.documentId, locator);
+      }
+
+      const z88Bank = parseZ88BankDocumentId(entry.documentId);
+      if (z88Bank) {
+        if (!deps.readZ88BankBytes) return false;
+        let bytes: Uint8Array | undefined;
+        try {
+          bytes = await deps.readZ88BankBytes(z88Bank.path, z88Bank.bank, env.readBinaryFile);
+        } catch {
+          return false;
+        }
+        if (!bytes) return false;
+        await deps.openStaticMemoryDump(
+          target,
+          z88BankDumpId(z88Bank.path, z88Bank.bank),
+          z88BankDumpTitle(z88Bank.path, z88Bank.bank, env.store.getState()?.project?.folderPath),
+          bytes,
+          {
+            disassemblyEnabled: true,
+            disassOffset: locator.base ?? 0,
+            // --- Reopened as it was opened: Z88 code, whatever machine is running
+            disassemblyFlavor: "z88",
+            topAddress: locator.address,
+            viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
+          }
+        );
+        return true;
       }
 
       const nexBank = parseNexBankDocumentId(entry.documentId);

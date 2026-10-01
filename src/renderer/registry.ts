@@ -104,6 +104,7 @@ import {
   memoryNavigationAdapter
 } from "./appIde/navigation/addressNavigationAdapters";
 import { readNexBankBytes } from "./appIde/DocumentPanels/Next/nexBankReveal";
+import { readZ88BankBytes } from "./appIde/DocumentPanels/Z88/z88BankDocument";
 import { fileDocumentNavigationAdapter } from "./appIde/navigation/fileDocumentNavigationAdapter";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
@@ -401,7 +402,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: STATIC_MEMORY_DUMP_VIEWER,
     renderer: createStaticMemoryDump,
     icon: "memory-icon",
-    navigation: createStaticDumpNavigationAdapter({ openStaticMemoryDump, readNexBankBytes })
+    navigation: createStaticDumpNavigationAdapter({
+      openStaticMemoryDump,
+      readNexBankBytes,
+      readZ88BankBytes
+    })
   },
   {
     id: TAP_VIEWER,
@@ -427,7 +432,10 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   {
     id: Z88_SNAPSHOT_VIEWER,
     renderer: createZ88SnapshotViewerPanel,
-    icon: "chip"
+    icon: "chip",
+    // --- Its banks pop out into documents, and Go Back must return here
+    // --- (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4)
+    navigation: fileDocumentNavigationAdapter
   },
   {
     id: SNA_VIEWER,

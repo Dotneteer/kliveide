@@ -9,12 +9,11 @@ import { LabeledText } from "@renderer/controls/layout/LabeledText";
 import { LabeledFlag } from "@renderer/controls/layout/LabeledFlag";
 import { Row } from "@renderer/controls/layout/Row";
 import { Text } from "@renderer/controls/layout/Text";
-import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { SmallIconButton } from "@renderer/controls/IconButton";
-import Dropdown from "@renderer/controls/Dropdown";
-import { MemoryDumpViewer } from "@renderer/controls/memory/MemoryDumpViewer";
 import { openStaticMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
+import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
+import { useSelector } from "@renderer/core/RendererProvider";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { parseZ88Snapshot } from "@common/z88/z88Snapshot";
 import { mapZ88SnapshotToKlive } from "@common/z88/z88SnapshotMapping";
@@ -23,19 +22,22 @@ import { buildZ88AddressSpace, z88SnapshotBankReader } from "@common/z88/z88Addr
 import {
   formatZ88Rtc,
   z88AddressLocation,
-  z88BankDisassemblyBase,
   z88BlinkBitNames,
   z88PagedRanges,
+  z88SlotBrowserItems,
   z88ViewedCards,
+  type Z88BankView,
   type Z88BlinkBitRegister,
-  type Z88SnapshotFileInfo,
-  type Z88ViewedCard
+  type Z88SnapshotFileInfo
 } from "./z88SnapshotView";
+import { Z88SlotBrowser } from "./Z88SlotBrowser";
+import { z88BankDumpId, z88BankDumpTitle } from "./z88BankDocument";
 
 /*
  * The `.z88` (OZvm snapshot) viewer (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8): what the file holds and
  * whether Klive can load it, the Z80 and Blink state, the 64K as the snapshot pages it (with a
- * memory dump and disassembly at PC), and every card bank by bank.
+ * memory dump and disassembly at PC), and every card bank by bank in the Slots browser
+ * (`.plans/Z88_SLOT_BROWSER_PLAN.md`), which pops a bank out as its own document.
  *
  * Built only from the shared viewer primitives - no stylesheet of its own, no colour.
  */
@@ -53,8 +55,10 @@ type Z88SnapshotViewState = {
   blinkExpanded?: boolean;
   pagingExpanded?: boolean;
   breakpointsExpanded?: boolean;
-  cardExpanded?: Record<string, boolean>;
-  cardBank?: Record<string, number>;
+  /** The Slots browser: the selected bank, the filter, and the view each bank last popped out in */
+  selectedBank?: number;
+  slotFilter?: string;
+  bankView?: Record<number, Z88BankView>;
 };
 
 type ViewContext = GenericFileContext<Z88SnapshotFileInfo, Z88SnapshotViewState>;
@@ -82,7 +86,13 @@ const Z88SnapshotViewerPanel = ({ document, contents, viewState }: DocumentProps
     viewState={viewState}
     apiLoaded={() => {}}
     fileLoader={loadZ88SnapshotFileContents}
-    validRenderer={(ctx) => <SnapshotView ctx={ctx} documentSource={document.node?.projectPath ?? document.id} />}
+    validRenderer={(ctx) => (
+      <SnapshotView
+        ctx={ctx}
+        documentSource={document.node?.projectPath ?? document.id}
+        fullPath={document.node?.fullPath ?? document.path ?? document.id}
+      />
+    )}
   />
 );
 
@@ -95,10 +105,10 @@ export const createZ88SnapshotViewerPanel = ({ document, contents, viewState }: 
   />
 );
 
-type ViewProps = { ctx: ViewContext; documentSource: string };
+type ViewProps = { ctx: ViewContext; documentSource: string; fullPath: string };
 
 /** A module-level component, so it may hold state (see `GenericFilePanel`'s renderer note) */
-const SnapshotView = ({ ctx, documentSource }: ViewProps) => {
+const SnapshotView = ({ ctx, documentSource, fullPath }: ViewProps) => {
   const info = ctx.fileInfo;
   if (!info) return null;
   return (
@@ -107,9 +117,7 @@ const SnapshotView = ({ ctx, documentSource }: ViewProps) => {
       <CpuSection ctx={ctx} info={info} />
       <BlinkSection ctx={ctx} info={info} />
       <PagingSection ctx={ctx} info={info} documentSource={documentSource} />
-      {z88ViewedCards(info).map((card) => (
-        <CardSection key={card.key} ctx={ctx} info={info} card={card} documentSource={documentSource} />
-      ))}
+      <SlotsSection ctx={ctx} info={info} fullPath={fullPath} />
       <BreakpointsSection ctx={ctx} info={info} />
     </>
   );
@@ -159,13 +167,17 @@ const SummarySection = ({ ctx, info }: SectionProps) => {
           valueTooltip="The saved RTC advanced by the time the file has spent on disk"
         />
       </Row>
-      <Row>
-        <LabeledText
-          label="Contents:"
-          labelWidth={LABEL_WIDTH}
-          value={snapshot.entries.map((entry) => `${entry.name} (${entry.size} bytes)`).join(", ")}
-        />
-      </Row>
+      {/* --- One entry per row: a data value never wraps, and the archive's members on one line
+          --- pushed the whole viewer into horizontal scrolling */}
+      {snapshot.entries.map((entry, index) => (
+        <Row key={entry.name}>
+          <LabeledText
+            label={index === 0 ? "Contents:" : ""}
+            labelWidth={LABEL_WIDTH}
+            value={`${entry.name} (${entry.size} bytes)`}
+          />
+        </Row>
+      ))}
       {snapshot.png && <LcdPicture png={snapshot.png} />}
     </ExpandableRow>
   );
@@ -321,7 +333,7 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
       `z88Snapshot${documentSource}`,
       `${documentSource} - 64K at PC`,
       space,
-      { disassemblyEnabled: true, disassOffset: 0, viewMode, topAddress: pc }
+      { disassemblyEnabled: true, disassOffset: 0, viewMode, topAddress: pc, disassemblyFlavor: "z88" }
     );
 
   return (
@@ -368,55 +380,52 @@ const PagingSection = ({ ctx, info, documentSource }: SectionProps & { documentS
   );
 };
 
-type CardProps = SectionProps & { card: Z88ViewedCard; documentSource: string };
+/**
+ * Every card's banks in one browser. A bank pops out as its own document, keyed by the file's full
+ * path (`z88BankDocument.ts`), disassembled as Z88 code where the snapshot pages it.
+ */
+const SlotsSection = ({ ctx, info, fullPath }: SectionProps & { fullPath: string }) => {
+  const documentHubService = useDocumentHubService();
+  const { navigationHistoryService } = useAppServices();
+  const projectFolder = useSelector((s) => s.project?.folderPath);
+  const bankView = ctx.viewState?.bankView;
+  const cards = useMemo(() => z88ViewedCards(info), [info]);
+  const items = useMemo(() => z88SlotBrowserItems(info, bankView), [info, bankView]);
 
-const CardSection = ({ ctx, info, card, documentSource }: CardProps) => {
-  const selected = ctx.viewState?.cardBank?.[card.key] ?? card.banks[0]?.bank;
-  const current = card.banks.find((b) => b.bank === selected) ?? card.banks[0];
-  const options = useMemo(
-    () => card.banks.map((b) => ({ value: `${b.bank}`, label: `Bank $${toHexa2(b.bank)}` })),
-    [card.banks]
-  );
+  /** Pop a bank out in the view asked for. Recorded, so Go Back returns here. */
+  const openBankDump = async (bank: number, view: Z88BankView) => {
+    const item = items.find((i) => i.bank === bank);
+    const bytes = cards.flatMap((card) => card.banks).find((b) => b.bank === bank)?.bytes;
+    if (!item || !bytes) return;
+    ctx.changeViewState((vs) => {
+      vs.bankView = { ...vs.bankView, [bank]: view };
+    });
+    await navigationHistoryService.recordJump("z88Bank", () =>
+      openStaticMemoryDump(
+        documentHubService,
+        z88BankDumpId(fullPath, bank),
+        z88BankDumpTitle(fullPath, bank, projectFolder),
+        bytes,
+        {
+          disassemblyEnabled: true,
+          disassOffset: item.listedAt,
+          viewMode: view,
+          disassemblyFlavor: "z88"
+        }
+      )
+    );
+  };
+
   return (
-    <ExpandableRow
-      heading={`${card.title}: ${card.typeName}, ${card.sizeK}K`}
-      meta={card.loadable ? `loads as ${card.klive}` : card.klive}
-      initialExpanded={ctx.viewState?.cardExpanded?.[card.key] ?? false}
-      onExpanded={(exp) =>
-        ctx.changeViewState((vs) => {
-          vs.cardExpanded = { ...vs.cardExpanded, [card.key]: exp };
-        })
-      }
-    >
-      {current && (
-        <>
-          <Row>
-            <Text text="Bank" />
-            <LabelSeparator width={8} />
-            <Dropdown
-              options={options}
-              initialValue={`${current.bank}`}
-              width={96}
-              onChanged={(value) =>
-                ctx.changeViewState((vs) => {
-                  vs.cardBank = { ...vs.cardBank, [card.key]: Number(value) };
-                })
-              }
-            />
-          </Row>
-          <MemoryDumpViewer
-            documentSource={documentSource}
-            contents={current.bytes}
-            bank={current.bank}
-            allowDisassembly={true}
-            disassOffset={z88BankDisassemblyBase(info.snapshot, current.bank, card.banks.length)}
-            iconTitle="Display the bank's memory dump and disassembly"
-            idFactory={(source, bank) => `z88SnapshotBank${source}-${bank}`}
-            titleFactory={(source, bank) => `${source} - Bank $${toHexa2(bank)}`}
-          />
-        </>
-      )}
-    </ExpandableRow>
+    <Z88SlotBrowser
+      items={items}
+      cards={cards}
+      selectedBank={ctx.viewState?.selectedBank}
+      filter={ctx.viewState?.slotFilter ?? "all"}
+      onSelect={(bank) => ctx.changeViewState((vs) => (vs.selectedBank = bank))}
+      onFilterChange={(filter) => ctx.changeViewState((vs) => (vs.slotFilter = filter))}
+      onPopOut={(bank, view) => void openBankDump(bank, view)}
+    />
   );
 };
 

@@ -114,9 +114,14 @@ export type Z88ViewedCard = {
   /** The Klive card it loads as, or why it cannot be loaded */
   klive: string;
   loadable: boolean;
-  /** Every bank of the card, with its contents */
-  banks: { bank: number; bytes: Uint8Array }[];
+  /** OZvm's type code: the internal RAM is 2 */
+  ozvmType: number;
+  /** Every bank of the card, with its contents; a hybrid card's banks say which half they are in */
+  banks: { bank: number; bytes: Uint8Array; half?: Z88HybridHalf }[];
 };
+
+/** Which half of a hybrid (RAM + Flash) card a bank is in */
+export type Z88HybridHalf = "RAM" | "flash";
 
 /**
  * Every card of the snapshot, slot 0's ROM and RAM first, with its banks.
@@ -135,6 +140,7 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
     sizeK: snapshot.rom.bytes.length / 1024,
     klive: rom ? rom.cardType : "not supported in slot 0",
     loadable: !!rom,
+    ozvmType: romType,
     banks: banksOf(snapshot.rom.bytes, 0x00)
   });
   cards.push({
@@ -144,6 +150,7 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
     sizeK: snapshot.ram.length / 1024,
     klive: mapping.intRamMask !== undefined ? `internal RAM` : "size not supported",
     loadable: mapping.intRamMask !== undefined,
+    ozvmType: 2,
     banks: banksOf(snapshot.ram, Z88_INTERNAL_RAM_BANK)
   });
 
@@ -153,7 +160,10 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
     const base = slot << 6;
     const hybrid = Z88_OZVM_HYBRID_TYPES.includes(card.ozvmType);
     const banks = hybrid
-      ? [...banksOf(card.ram, base), ...banksOf(card.flash, base + 0x20)]
+      ? [
+          ...banksOf(card.ram, base).map((b) => ({ ...b, half: "RAM" as const })),
+          ...banksOf(card.flash, base + 0x20).map((b) => ({ ...b, half: "flash" as const }))
+        ]
       : banksOf(card.bytes, base);
     const mapped = mapping.slots[slot];
     cards.push({
@@ -163,6 +173,7 @@ export function z88ViewedCards(info: Z88SnapshotFileInfo): Z88ViewedCard[] {
       sizeK: banks.length * (Z88_BANK_SIZE / 1024),
       klive: mapped ? mapped.cardType : hybrid ? "hybrid cards are not supported" : "not supported",
       loadable: !!mapped,
+      ozvmType: card.ozvmType,
       banks
     });
   }
@@ -182,22 +193,59 @@ function banksOf(image: Uint8Array | undefined, firstBank: number): { bank: numb
 }
 
 /**
+ * Whether the bank a segment register (or the fixed lower 8K) names is `bank`, through the card's
+ * mirrors: a card smaller than its slot answers across the whole slot, so a 32K card in slot 2 has
+ * banks $80 and $81, and SR3 = $BF pages $81.
+ */
+function sameBankThroughMirrors(named: number, bank: number, cardBanks: number): boolean {
+  const base = areaBase(bank);
+  return areaBase(named) === base && (named - base) % cardBanks === (bank - base) % cardBanks;
+}
+
+/** Where the snapshot pages a bank in: one of the five ranges of `z88PagedRanges` */
+export type Z88BankPlacement = {
+  /** "SR0"-"SR3", or "$0000" for the fixed lower 8K (bank $00, or $20 with COM.RAMS) */
+  name: string;
+  /** The address range the bank's bytes appear at */
+  start: number;
+  end: number;
+  /** The offset within the bank where the range starts (an odd SR0 shows the upper 8K) */
+  offset: number;
+};
+
+/**
+ * Every range the snapshot pages a bank into, through the card's mirrors.
+ * @param snapshot The parsed snapshot
+ * @param bank The bank number
+ * @param cardBanks The number of banks of the card (or slot-0 area) holding it
+ */
+export function z88BankPlacements(
+  snapshot: Z88Snapshot,
+  bank: number,
+  cardBanks: number
+): Z88BankPlacement[] {
+  return z88PagedRanges(snapshot)
+    .map((range, index) => ({
+      range,
+      // --- SR0's bank shows an 8K half in $2000-$3FFF; it is the bank with bit 0 cleared
+      named: range.start === 0x2000 ? range.bank & 0xfe : range.bank,
+      name: index === 0 ? "$0000" : `SR${index - 1}`
+    }))
+    .filter(({ named }) => sameBankThroughMirrors(named, bank, cardBanks))
+    .map(({ range, name }) => ({ name, start: range.start, end: range.end, offset: range.offset }));
+}
+
+/**
  * The address a bank's disassembly starts at: where the snapshot has it paged in (SR3 first, as the
  * segment most code runs in), else $C000 - the segment an application bank usually runs in.
- *
- * A card smaller than its slot is mirrored across it, so a segment register can name the bank
- * through any of its mirrors: a 32K card in slot 2 has banks $80 and $81, and SR3 = $BF pages $81.
  * @param snapshot The parsed snapshot
  * @param bank The bank number
  * @param cardBanks The number of banks of the card (or slot-0 area) holding it
  */
 export function z88BankDisassemblyBase(snapshot: Z88Snapshot, bank: number, cardBanks: number): number {
-  const base = areaBase(bank);
-  const index = (bank - base) % cardBanks;
   const { sr } = snapshot.blink;
   for (const segment of [3, 2, 1]) {
-    const paged = sr[segment];
-    if (areaBase(paged) === base && (paged - base) % cardBanks === index) {
+    if (sameBankThroughMirrors(sr[segment], bank, cardBanks)) {
       return segment * 0x4000;
     }
   }
@@ -207,6 +255,156 @@ export function z88BankDisassemblyBase(snapshot: Z88Snapshot, bank: number, card
 /** The first bank of the area a bank belongs to: slot 0's ROM ($00) or RAM ($20), or a slot */
 function areaBase(bank: number): number {
   return bank < 0x40 ? bank & 0x20 : bank & 0xc0;
+}
+
+/** The number of bank numbers an area answers to: 32 for slot 0's halves, 64 for a slot */
+function areaSize(bank: number): number {
+  return bank < 0x40 ? 0x20 : 0x40;
+}
+
+/**
+ * The other bank numbers a bank answers to in its area, when its card is smaller than the area.
+ * @param bank The bank number
+ * @param cardBanks The number of banks of the card (or slot-0 area) holding it
+ */
+export function z88BankMirrors(bank: number, cardBanks: number): number[] {
+  const base = areaBase(bank);
+  const mirrors: number[] = [];
+  for (let other = bank + cardBanks; other < base + areaSize(bank); other += cardBanks) {
+    mirrors.push(other);
+  }
+  return mirrors;
+}
+
+/** The mirrors as a short phrase: "none", "$81, $83" or "$83, $85, ... $BF (31 banks)" */
+export function formatZ88Mirrors(mirrors: number[]): string {
+  const hex = (bank: number) => `$${bank.toString(16).toUpperCase().padStart(2, "0")}`;
+  if (mirrors.length === 0) return "none";
+  if (mirrors.length <= 3) return mirrors.map(hex).join(", ");
+  return `${hex(mirrors[0])}, ${hex(mirrors[1])}, ... ${hex(mirrors[mirrors.length - 1])} (${mirrors.length} banks)`;
+}
+
+/**
+ * The value an erased (never written) byte of a card reads: `$00` for RAM, `$FF` for ROM, EPROM and
+ * Flash. A bank holding only that value is shown as empty.
+ * @param card The card
+ * @param half The hybrid half the bank is in, if any
+ */
+export function z88ErasedValue(card: Z88ViewedCard, half?: Z88HybridHalf): number {
+  if (half) return half === "RAM" ? 0x00 : 0xff;
+  return card.ozvmType === 2 ? 0x00 : 0xff;
+}
+
+/** The views a Z88 bank pops out in */
+export type Z88BankView = "memory" | "disassembly";
+
+/** One row of the Slots browser */
+export type Z88BankItem = {
+  key: string;
+  bank: number;
+  /** The card the bank belongs to: its `Z88ViewedCard.key` */
+  cardKey: string;
+  half?: Z88HybridHalf;
+  size: number;
+  /** Every byte is the card's erased value */
+  empty: boolean;
+  erasedValue: number;
+  placements: Z88BankPlacement[];
+  /** The program counter, when a range this bank is paged into holds it */
+  pc?: number;
+  sp?: number;
+  /** The snapshot's own (OZvm) breakpoints in this bank, as offsets within it */
+  breakpoints: Z88SnapshotBreakpointView[];
+  mirrors: number[];
+  /** The address byte 0 is disassembled at */
+  listedAt: number;
+  lastView: Z88BankView;
+};
+
+/** An OZvm breakpoint as the browser lists it */
+export type Z88SnapshotBreakpointView = { offset: number; display: boolean };
+
+/**
+ * One item per bank of every card, in the viewer's card order.
+ * @param info The parsed snapshot and its mapping
+ * @param lastViews The view each bank last popped out in (the viewer's view state)
+ */
+export function z88SlotBrowserItems(
+  info: Z88SnapshotFileInfo,
+  lastViews: Record<number, Z88BankView> = {}
+): Z88BankItem[] {
+  const { snapshot } = info;
+  const { pc, sp } = snapshot.cpu;
+  const items: Z88BankItem[] = [];
+  for (const card of z88ViewedCards(info)) {
+    const hybrid = card.banks.some((b) => b.half);
+    // --- A hybrid's halves are separate chips at fixed places, so neither mirrors the other.
+    const cardBanks = hybrid ? areaSize(card.banks[0].bank) : card.banks.length;
+    for (const { bank, bytes, half } of card.banks) {
+      const erasedValue = z88ErasedValue(card, half);
+      const placements = z88BankPlacements(snapshot, bank, cardBanks);
+      const holds = (address: number) =>
+        placements.some((p) => address >= p.start && address <= p.end);
+      const isRam = erasedValue === 0x00;
+      items.push({
+        key: `${bank}`,
+        bank,
+        cardKey: card.key,
+        half,
+        size: bytes.length,
+        empty: bytes.every((value) => value === erasedValue),
+        erasedValue,
+        placements,
+        pc: holds(pc) ? pc : undefined,
+        sp: holds(sp) ? sp : undefined,
+        breakpoints: snapshot.breakpoints
+          .filter((bp) => sameBankThroughMirrors(bp.bank, bank, cardBanks))
+          .map((bp) => ({ offset: bp.offset, display: bp.display })),
+        mirrors: hybrid ? [] : z88BankMirrors(bank, cardBanks),
+        listedAt: z88BankDisassemblyBase(snapshot, bank, cardBanks),
+        lastView: lastViews[bank] ?? (isRam ? "memory" : "disassembly")
+      });
+    }
+  }
+  return items;
+}
+
+/** The Slots browser's filters: everything, non-empty or paged-in banks, or one card */
+export type Z88SlotFilter = "all" | "nonEmpty" | "pagedIn" | string;
+
+/**
+ * The filter buttons: the three general ones, then one per card present.
+ * @param cards The snapshot's cards
+ */
+export function z88SlotFilters(cards: Z88ViewedCard[]): { value: string; text: string }[] {
+  const names: Record<string, string> = { rom: "ROM", ram: "RAM" };
+  return [
+    { value: "all", text: "All" },
+    { value: "nonEmpty", text: "Non-empty" },
+    { value: "pagedIn", text: "Paged in" },
+    ...cards.map((card) => ({
+      value: card.key,
+      text: names[card.key] ?? card.title
+    }))
+  ];
+}
+
+/**
+ * The items a filter leaves.
+ * @param items Every bank
+ * @param filter The filter: general, or a card's key
+ */
+export function filterZ88Banks(items: Z88BankItem[], filter: Z88SlotFilter): Z88BankItem[] {
+  switch (filter) {
+    case "all":
+      return items;
+    case "nonEmpty":
+      return items.filter((item) => !item.empty);
+    case "pagedIn":
+      return items.filter((item) => item.placements.length > 0);
+    default:
+      return items.filter((item) => item.cardKey === filter);
+  }
 }
 
 /**

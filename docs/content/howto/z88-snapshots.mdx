@@ -28,31 +28,39 @@ Open a `.z88` file from the Explorer to see its contents:
 - **Address Space at PC**: which bank and offset the program counter is in, and which bank is paged
   into each address range. The two buttons in the heading open the 64K the CPU sees as a **memory
   dump** or a **disassembly**, positioned at the program counter.
-- One section per card (the slot-0 ROM, the internal RAM, and every card in slots 1&ndash;3): its type,
-  size, and what it loads as in Klive. Pick a bank to see its memory dump; the pop-out button opens
-  the bank with disassembly, at the address the snapshot pages it in.
+- **Slots**: every bank of every card in one list, grouped by card (the slot-0 ROM, the internal
+  RAM, and every card in slots 1&ndash;3). Each card's heading shows its type, its size, and what it
+  loads as in Klive. A bank's row is marked with the segment registers that page it in (`SR0`&ndash;`SR3`,
+  or `$0000` for the fixed lower 8K), with **PC** or **SP** when the program counter or stack pointer
+  points into it, and with **empty** when it holds only erased bytes (`$FF` on ROM, EPROM and Flash,
+  `$00` on RAM). The buttons above the list show all banks, only non-empty ones, only paged-in ones,
+  or one card's. Select a bank to see its details: where it is paged in, the other bank numbers that
+  reach it (a card smaller than its slot repeats across the slot), and any breakpoints OZvm saved in
+  it.
+- **Pop out** a bank &mdash; with its row's icon, by double-clicking the row, or with Enter &mdash;
+  to open it as its own document, as a **memory dump** or a **disassembly** (the arrow beside
+  **Pop out** chooses). The disassembly starts at the address the snapshot pages the bank in, or
+  `$C000` when it is not paged in, and reads the bytes as Z88 code: OZ system calls after `RST 20h`
+  are decoded, whatever machine the emulator is running. **Go Back** returns to the viewer.
 - **Breakpoints**: the breakpoints OZvm saved with the snapshot, for reference.
 
 ## Loading, running and debugging
 
-There are three ways to load a snapshot:
+There are two ways to load a snapshot:
 
-- **Load** (pause icon): the machine stands paused at the snapshot's program counter. Press
-  *Start* or *Start with Debugging*, or step, to continue from there.
 - **Run** (play icon): the machine runs from the snapshot's state.
 - **Debug** (debug icon): the machine starts in debug mode and stops at the snapshot's program
   counter **before** executing that instruction, so the CPU, Memory and Disassembly panels show
-  the saved state. Step or continue from there.
+  the saved state. Step from there, or continue with your breakpoints active.
 
 You can reach them from:
 
 - the buttons in a `.z88` document's tab;
 - the Explorer's context menu on a `.z88` file;
 - the [`z88-snapshot`](../commands-reference#z88-snapshot) command;
-- the Emulator's **Machine** menu, while the machine is a Cambridge Z88:
-  - **Open Z88 Snapshot...** does what the file's *Autorun* flag says, as OZvm does: it runs the
-    snapshot if the flag is set, and stops in the debugger at the program counter if it is not.
-  - **Load Z88 Snapshot (Paused)...** always loads the snapshot paused.
+- the Emulator's **Machine** menu, while the machine is a Cambridge Z88: **Open Z88 Snapshot...**
+  does what the file's *Autorun* flag says, as OZvm does &mdash; it runs the snapshot if the flag is
+  set, and stops in the debugger at the program counter if it is not.
 
 Klive makes the machine fit the snapshot. If the current machine is not a Cambridge Z88, or its
 internal RAM or LCD size differs from the snapshot's, the machine is set up again first. The cards

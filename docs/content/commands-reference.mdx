@@ -407,7 +407,7 @@ The `projectFile` argument is a project file name. When you specify the name, us
 
 You can specify an optional `line` and `column` argument to jump to the specified location within the file.
 
-With the `-r` option, the jump is remembered in the [navigation history](/working-with-ide/navigation), so `nav-back` can return to where you were. `reason` is what the history list shows as the cause of the jump: `definition`, `outputLink`, `breakpoint`, `memoryGoTo`, `disassemblyGoTo`, `nexLabel`, `nexBank`, `tabSwitch`, `explorer` or `command`. Without `-r`, the jump is not remembered.
+With the `-r` option, the jump is remembered in the [navigation history](/working-with-ide/navigation), so `nav-back` can return to where you were. `reason` is what the history list shows as the cause of the jump: `definition`, `outputLink`, `breakpoint`, `memoryGoTo`, `disassemblyGoTo`, `nexLabel`, `nexBank`, `z88Bank`, `tabSwitch`, `explorer` or `command`. Without `-r`, the jump is not remembered.
 
 ## `nav-back`
 
@@ -529,10 +529,16 @@ NextZXOS reports a successful load in all of those cases and the program runs in
 loaded.
 </Callout>
 
+<Callout type="info">
+Loading goes through NextZXOS, so the program starts the way it would from the Next's own command
+line &mdash; with the OS initialised behind it. The first launch in a session pays for a full
+NextZXOS boot; later ones reuse a cached machine state and start much faster.
+</Callout>
+
 ## `z88-snapshot`
 
-This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine,
-optionally running or debugging it.
+This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine and
+debugs or runs it.
 
 ```
 z88-snapshot <z88-file> [-r | -d | -a]
@@ -540,9 +546,9 @@ z88-snapshot <z88-file> [-r | -d | -a]
 
 Available aliases: `z88snap`
 
-With no option, the machine stands paused at the snapshot's program counter. Use `-r` to run the
-snapshot, and `-d` to debug it: the machine starts in debug mode and stops at the snapshot's program
-counter before executing that instruction. `-a` does what the file's *Autorun* flag says &mdash; run
+With no option (or with `-d`), the snapshot is debugged: the machine starts in debug mode and stops
+at the snapshot's program counter before executing that instruction. Use `-r` to run the snapshot.
+`-a` does what the file's *Autorun* flag says &mdash; run
 when it is set, debug and stop at the program counter when it is not &mdash; as the Emulator's
 **Open Z88 Snapshot...** menu does. Use only one option at a time.
 
@@ -558,14 +564,8 @@ Klive can load.
 ```text
 z88-snapshot "snapshots/game.z88"
 z88-snapshot "snapshots/game.z88" -r
-z88-snapshot "snapshots/game.z88" -d
+z88-snapshot "snapshots/game.z88" -a
 ```
-
-<Callout type="info">
-Loading goes through NextZXOS, so the program starts the way it would from the Next's own command
-line &mdash; with the OS initialised behind it. The first launch in a session pays for a full
-NextZXOS boot; later ones reuse a cached machine state and start much faster.
-</Callout>
 
 ## `nex-label`
 

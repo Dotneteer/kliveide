@@ -39,7 +39,7 @@ The nearest models in the codebase are:
 | D6 | Unzipping uses the **`fflate`** dependency. |
 | D7 | The issue's sample `mm+jsw-oz5.z88` is **committed as a test fixture** (Gunther agreed). |
 | D8 | Card-type numbering follows the **spec**: 9 = AMIC hybrid (rejected), 10 = STM (→ AMD). Type 14 (Intel SA) maps to the Klive Intel card. Gunther agreed to both. |
-| D9 | The emulator menu offers **Load** (paused at PC, ignoring `Autorun`) next to the `Autorun`-driven open. |
+| D9 | ~~The emulator menu offers **Load** (paused at PC, ignoring `Autorun`) next to the `Autorun`-driven open.~~ **Reversed (2026-10):** Load was removed everywhere (Explorer menu, viewer tab bar, emulator menu). It ended paused at PC exactly as Debug does, and differed only in Continue then ignoring breakpoints, which nothing on screen told apart. `z88-snapshot` with no option now debugs; `-d` stays accepted. |
 
 ### 1.2 Out of scope (later work)
 
@@ -499,7 +499,8 @@ The menu itself is checked in the running app (Phase 7).
   stored").
 
 **What differed from the plan**
-- **Bank picking**: the bank browser is a dropdown, not a `NexBankBrowser` clone. A Z88 card has
+- **Bank picking** (*superseded by `.plans/Z88_SLOT_BROWSER_PLAN.md`*, which replaced the per-card
+  sections with one Slots browser on the shared `BankBrowser` shell): the bank browser is a dropdown, not a `NexBankBrowser` clone. A Z88 card has
   no per-bank annotations to list, so the NEX browser's list-and-details layout would carry nothing
   extra.
 - **Disassembly base**: a bank disassembles at the address the snapshot pages it **through the card's

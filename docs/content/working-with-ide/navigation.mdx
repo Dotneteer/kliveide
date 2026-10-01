@@ -1,5 +1,5 @@
 ---
-description: "Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX banks."
+description: "Klive remembers the places you jump to, so Go Back and Go Forward can take you through them again, across source files, the Memory and Disassembly views and popped-out NEX and Z88 snapshot banks."
 ---
 
 import { Callout } from 'nextra/components'
@@ -9,8 +9,8 @@ import { Callout } from 'nextra/components'
 Klive remembers the places you jump to. **Go Back** returns to where you were before a jump, and
 **Go Forward** undoes a Go Back, in the same way as a browser or Visual Studio Code. The history
 spans the whole IDE: one list covers every source file, the [Memory View](./memory), the
-[Disassembly View](./disassembly) and the banks you pop out of a NEX file, whichever editor area
-they are in.
+[Disassembly View](./disassembly) and the banks you pop out of a NEX file or a
+[Z88 snapshot](../howto/z88-snapshots), whichever editor area they are in.
 
 ## Going Back and Forward
 
@@ -57,6 +57,7 @@ A place is remembered when you **go** somewhere, not when you merely look around
 - **With NEX files:** popping a bank (or the Layer 2 loading screen) out of the NEX viewer, the
   *Go To* and *Go to PC* actions of a popped-out bank, and following a label — *Go to Definition*
   on a labelled operand, even into another bank, or *Go To* in the **Labels** and **Regions** lists.
+- **With Z88 snapshots:** popping a bank out of the `.z88` viewer's **Slots** list.
 
 Moving the cursor, scrolling and typing do not add places. Neither does **debugging**: when the
 machine pauses at a breakpoint or after a step, the IDE shows you the code it stopped at, but that is
@@ -78,8 +79,8 @@ were reading.
   again. For the Memory and Disassembly views, this also restores the address, the bank and the
   64K view setting. When you go back to a place in the Disassembly view, Klive turns **Follow PC**
   off, so that the next step of the machine does not scroll the view away from it.
-- **Popped-out NEX banks.** A closed bank is reopened from its NEX file, at the same address and in
-  the same memory or disassembly listing.
+- **Popped-out NEX and Z88 snapshot banks.** A closed bank is reopened from its NEX or `.z88` file,
+  at the same address and in the same memory or disassembly listing.
 - **Places that no longer exist.** A place in a file you have deleted, or in a memory dump that cannot
   be reopened, is dropped from the history when you reach it, and Klive carries on to the next place
   in the same direction.

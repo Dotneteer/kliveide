@@ -2,8 +2,9 @@ import type { DocumentNavigationAdapter } from "@renderer/abstractions/DocumentN
 
 /*
  * Navigation for a project file shown by a viewer with no finer position than "this file" — the NEX
- * file viewer, which the bank documents are popped out of. Being an entry is what lets Go Back
- * return to the viewer after opening a bank from it.
+ * file viewer and the `.z88` snapshot viewer, which bank documents are popped out of. Being an entry
+ * is what lets Go Back return to the viewer after opening a bank from it. A viewer with pop-outs and
+ * no adapter records only the destination, so Go Back has nowhere to go.
  *
  * Restore goes through `nav`, like the text editors, so a file that is no longer in the project
  * fails the restore and the history drops the entry.
