@@ -261,6 +261,31 @@ describe("Cambridge Z88 WASM machine - cards", () => {
     expect(wasm.directReadMemory(SLOT)).toBe(0x5a);
   });
 
+  /*
+   * A card smaller than its slot is mirrored across it: with a 32K card in slot 2, bank $BF is the
+   * card's second bank ($81). The memory and disassembly views read through `get64KFlatMemory` and
+   * `getMemoryPartition`, which once read `bank * 16K` and so showed the mirror's empty storage - all
+   * NOPs - while the CPU ran the card's code there.
+   */
+  it("the memory views read a mirrored bank as the CPU does", async () => {
+    const ram = new Uint8Array(0x8000).map((_, i) => (i * 7 + 3) & 0xff);
+    const wasm = await machineWith(
+      { [MC_Z88_SLOT2]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" } },
+      { "ram.bin": ram }
+    );
+    await wasm.configure();
+    wasm.doWritePort(0xd3, 0xbf); // SR3 <- bank $BF, paged in at $C000
+
+    const secondBank = ram.subarray(0x4000, 0x8000);
+    expect(wasm.getMemoryPartition(0xbf)).toEqual(secondBank);
+    expect(wasm.getMemoryPartition(0x81)).toEqual(secondBank);
+    const flat = wasm.get64KFlatMemory();
+    expect(flat.subarray(0xc000)).toEqual(secondBank);
+    for (const address of [0xc000, 0xd523, 0xf523, 0xffff]) {
+      expect(flat[address]).toBe(wasm.doReadMemory(address));
+    }
+  });
+
   it.each([
     [
       "an image of the wrong size",

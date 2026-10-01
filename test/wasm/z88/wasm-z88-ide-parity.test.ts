@@ -18,6 +18,11 @@ import { Digest, goldens } from "./z88-goldens";
  * The answers are checked against `goldens/wasm-z88-ide-parity.json`: what the TypeScript machine
  * answered in the same state, recorded before it was removed
  * (`.plans/CAMBRIDGE_Z88_TYPESCRIPT_REMOVAL_PLAN.md`, `z88-goldens.ts`).
+ *
+ * One deliberate departure: the memory answers were re-recorded once the memory views began reading
+ * what the CPU reads - a card smaller than its slot mirrored across it, and the upper half of an odd
+ * SR0's bank at $2000. The TypeScript machine read `bank * 16K`, which showed empty storage (NOPs)
+ * wherever the CPU ran code from a mirrored bank.
  */
 
 const golden = goldens("wasm-z88-ide-parity");

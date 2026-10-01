@@ -48,7 +48,7 @@ export function audioDigest(samples: AudioSample[]): { count: number; sha256: st
 /** The hash of all 4 MB of physical memory, bank by bank */
 export function memoryDigest(s: Z88TestSession): string {
   const hash = createHash("sha256");
-  for (let bank = 0; bank < 256; bank++) hash.update(s.machine.getMemoryPartition(bank));
+  for (let bank = 0; bank < 256; bank++) hash.update(s.machine.getPhysicalBank(bank));
   return hash.digest("hex");
 }
 

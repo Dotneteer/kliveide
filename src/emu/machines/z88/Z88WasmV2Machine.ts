@@ -51,6 +51,25 @@ const BUS_IO_WRITE_VALUE = 0x20;
 /** The beeper's DC filter cut-off (`AudioDeviceBase.DC_FILTER_CUTOFF_HZ`); the core has no `exp` */
 const DC_FILTER_CUTOFF_HZ = 1.4;
 
+/** The core's slot index of the internal RAM card (`Z88_INTERNAL_RAM_CARD`, z88-memory.c) */
+const INTERNAL_RAM_CARD = 4;
+
+/**
+ * Where a bank's bytes live in the 4 MB physical memory: the core's `z88BankOffset` (z88-memory.c).
+ *
+ * A card smaller than its slot is mirrored across it, so the bank number is masked by the card's chip
+ * mask within its slot. Banks $00-$1F are slot 0 and $20-$3F the internal RAM, both 32-bank halves;
+ * slots 1-3 are 64 banks each. An empty slot has mask 0, mirroring onto its first bank like the core.
+ * @param bank The bank number, $00-$FF
+ * @param chipMaskOf The chip mask of a slot (0-3) or of the internal RAM card (4)
+ */
+export function z88BankStorageOffset(bank: number, chipMaskOf: (slot: number) => number): number {
+  const b = bank & 0xff;
+  const mask = b >= 0x20 && b <= 0x3f ? chipMaskOf(INTERNAL_RAM_CARD) : chipMaskOf(b >> 6);
+  const base = b < 0x40 ? b & 0xe0 : b & 0xc0;
+  return (base | (b & mask & 0x3f)) * Z88_BANK_SIZE;
+}
+
 /* Local, so the machine does not depend on the renderer's command services */
 const toHexa2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
 
@@ -747,8 +766,24 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     return this.requireWasmV2Runtime().memory[absAddress];
   }
 
-  /** A 16K bank of the physical memory (bank $00-$FF) */
+  /**
+   * A 16K bank (bank $00-$FF) as the CPU sees it when the bank is paged in.
+   *
+   * A card smaller than its slot is mirrored across the slot, so a bank number does not name its own
+   * storage: with a 32K card in slot 2, bank $BF is bank $81's storage. Reading `bank * 16K` showed the
+   * never-used (all-zero) storage of the mirror instead of the code the CPU runs.
+   */
   getMemoryPartition(index: number): Uint8Array {
+    const exports = this.requireWasmV2Runtime().exports;
+    const offset = z88BankStorageOffset(index, (slot) => exports.z88GetSlotChipMask(slot));
+    return this.requireWasmV2Runtime().memory.subarray(offset, offset + Z88_BANK_SIZE);
+  }
+
+  /**
+   * The raw storage at bank index `index` of the 4 MB physical memory, with no card mirroring:
+   * what a whole-memory digest hashes. The IDE wants `getMemoryPartition`.
+   */
+  getPhysicalBank(index: number): Uint8Array {
     const offset = (index & 0xff) * Z88_BANK_SIZE;
     return this.requireWasmV2Runtime().memory.subarray(offset, offset + Z88_BANK_SIZE);
   }
@@ -764,21 +799,18 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   }
 
   /**
-   * The 64K the CPU sees, for the memory view. Like `Z88BankedMemory.get64KFlatMemory`, each part is
-   * read from the start of its page's bank (for an odd SR0 the $2000-$3FFF part shows the bank's
-   * lower half - kept for parity).
+   * The 64K the CPU sees, for the memory and disassembly views: each 8K page is copied from the
+   * physical offset the core itself reads it from (`z88GetPageOffset`). That offset already carries
+   * card mirroring and the half of SR0's bank that an odd SR0 selects; recomputing it from the bank
+   * numbers showed zeros for any bank of a card smaller than its slot.
    */
   get64KFlatMemory(): Uint8Array {
-    const memory = this.requireWasmV2Runtime().memory;
-    const banks = this.getCurrentPartitions();
+    const runtime = this.requireWasmV2Runtime();
     const flat = new Uint8Array(0x1_0000);
-    const copy = (target: number, bank: number, length: number) =>
-      flat.set(memory.subarray(bank * Z88_BANK_SIZE, bank * Z88_BANK_SIZE + length), target);
-    copy(0x0000, banks[0], 0x2000);
-    copy(0x2000, banks[1], 0x2000);
-    copy(0x4000, banks[2], 0x4000);
-    copy(0x8000, banks[4], 0x4000);
-    copy(0xc000, banks[6], 0x4000);
+    for (let page = 0; page < 8; page++) {
+      const offset = runtime.exports.z88GetPageOffset(page);
+      flat.set(runtime.memory.subarray(offset, offset + 0x2000), page * 0x2000);
+    }
     return flat;
   }
 
