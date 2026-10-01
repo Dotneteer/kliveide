@@ -587,6 +587,11 @@ The assembler will generate warnings if:
 
 - **Z0370**: Unbanked code address exceeds $bfff (typical bank 2 range)
 
+When you export the NEX file (with the export command, or by running or debugging the program), the export writes its own warnings to the build output, prefixed with `NEX export:`. They name unbanked code that does not fit into bank 2, and the file is still written:
+
+- Code above $bfff "may be truncated": only the part that falls within bank 2 is exported.
+- Code below $8000 "will be ignored": it is left out of the NEX file entirely.
+
 ## Notes
 
 - The `.savenex` pragma only configures the NEX file parameters; it doesn't generate the actual NEX file. The file generation happens during the export process.

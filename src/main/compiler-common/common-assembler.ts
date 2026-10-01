@@ -2105,6 +2105,12 @@ export abstract class CommonAssembler<
     this._currentSegment.bankOffset = offset;
     this._currentSegment.nexExport = !pragma.noexport; // Default true, set to false if noexport flag present
     this._currentSegment.maxCodeLength = 0x4000 - offset;
+    // --- A reused empty segment may be the one Next auto mode tracked as unbanked; once it has a
+    // --- bank, the NEX writer must not also treat it as bank 2 code (as `.page` already ensures)
+    if (this._output.unbankedSegments) {
+      const index = this._output.unbankedSegments.indexOf(this._currentSegment);
+      if (index >= 0) this._output.unbankedSegments.splice(index, 1);
+    }
   }
 
   /**

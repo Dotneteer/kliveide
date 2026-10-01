@@ -36,6 +36,7 @@ import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { MF_INJECT_SUPPORT, MI_ZXNEXT } from "@common/machines/constants";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
+import type { IOutputBuffer } from "@renderer/appIde/ToolArea/abstractions";
 import {
   compileCode,
   modelTypeToMachineType
@@ -972,12 +973,16 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         return commandError("No active project found.");
       }
 
-      // --- Generate NEX file data
+      // --- Generate NEX file data. Problems the writer works around (code it drops or may
+      // --- truncate) still produce a file, so they are shown as warnings rather than failing.
+      const nexWarnings: string[] = [];
       const nexData = await NexFileWriter.fromAssemblerOutput(
         compiledOutput as any,
         projectRoot,
-        async (filename) => await context.mainApi.readBinaryFile(filename)
+        async (filename) => await context.mainApi.readBinaryFile(filename),
+        (message) => nexWarnings.push(message)
       );
+      writeNexWarnings(context.output, nexWarnings);
 
       // --- Save the NEX file
       const filePath = await context.mainApi.saveBinaryFile(
@@ -1028,11 +1033,34 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       if (sidecarPath) {
         summary += `\n  Source-level debug info: ${sidecarPath}`;
       }
+      if (nexWarnings.length > 0) {
+        summary += `\n  Warnings: ${nexWarnings.length}`;
+      }
 
       return commandSuccessWith(summary);
     } catch (err) {
       return commandError(`NEX export failed: ${err.toString()}`);
     }
+  }
+}
+
+/**
+ * Writes the NEX writer's warnings to the build output, styled and marked like the assembler's
+ * own warnings.
+ *
+ * They go to the output rather than into the command's result text because `run` and `debug`
+ * export the NEX too and discard that result: written here, the user sees them on every path.
+ */
+export function writeNexWarnings(out: IOutputBuffer, warnings: readonly string[]): void {
+  for (const warning of warnings) {
+    out.severity("warning");
+    out.color("yellow");
+    out.bold(true);
+    out.write("NEX export: ");
+    out.bold(false);
+    out.write(warning);
+    out.writeLine();
+    out.resetStyle();
   }
 }
 

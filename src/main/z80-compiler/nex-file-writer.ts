@@ -3,6 +3,13 @@ import type { AssemblerOutput } from "@main/compiler-common/assembler-in-out";
 export type NexFileReader = (filename: string) => Promise<Uint8Array>;
 
 /**
+ * Receives a problem the writer worked around while building the file - code it had to drop or
+ * may have truncated. The NEX is still written, so these are warnings, not errors; the caller
+ * decides where the user sees them (the IDE writes them to the build output).
+ */
+export type NexWarningSink = (message: string) => void;
+
+/**
  * NEX file format writer for ZX Spectrum Next.
  * Implements NEX V1.2 specification.
  * 
@@ -333,12 +340,15 @@ export class NexFileWriter {
    * Create NEX file from assembler output.
    * @param output - Assembler output with nexConfig
    * @param baseDir - Base directory for resolving relative paths
+   * @param readFile - Reads the screen, palette and copper files the configuration names
+   * @param onWarning - Receives each problem worked around; without one they go to the console
    * @returns NEX file as byte array
    */
   static async fromAssemblerOutput(
     output: AssemblerOutput<any, any>,
     baseDir: string,
-    readFile: NexFileReader = missingNexFileReader
+    readFile: NexFileReader = missingNexFileReader,
+    onWarning: NexWarningSink = consoleNexWarning
   ): Promise<Uint8Array> {
     if (!output.nexConfig) {
       throw new Error("No NEX configuration in assembler output");
@@ -428,8 +438,8 @@ export class NexFileWriter {
         
         if (bank2Offset < 0) {
           // Address below bank 2 range
-          console.warn(
-            `Warning: Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
+          onWarning(
+            `Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
             `is below bank 2 range ($8000). Code will be ignored.`
           );
           continue;
@@ -437,8 +447,8 @@ export class NexFileWriter {
         
         if (bank2Offset >= 16384) {
           // Address above bank 2 range
-          console.warn(
-            `Warning: Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
+          onWarning(
+            `Unbanked code at $${segment.startAddress.toString(16).toUpperCase()} ` +
             `is above bank 2 range ($bfff). Code may be truncated.`
           );
         }
@@ -504,6 +514,10 @@ function normalizeSeparators(filename: string): string {
     normalizedSegments.push(segment);
   }
   return [prefix, ...normalizedSegments].join("/");
+}
+
+function consoleNexWarning(message: string): void {
+  console.warn(`Warning: ${message}`);
 }
 
 async function missingNexFileReader(filename: string): Promise<Uint8Array> {
