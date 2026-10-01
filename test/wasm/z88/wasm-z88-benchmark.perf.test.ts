@@ -30,7 +30,7 @@ describe("Cambridge Z88: the WASM machine stays within its time budget", () => {
       "oz-idle",
       "oz-typing",
       "cpu-loop",
-      "lcd-800x480",
+      "lcd-640x480",
       "beeper",
       "flash-program",
       "debug-run",

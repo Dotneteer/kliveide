@@ -59,6 +59,7 @@ export const z88KeyboardLayoutRenderer: MachineMenuRenderer = () => {
 export const z88LcdRenderer: MachineMenuRenderer = () => {
   const lcds = [
     { id: "z88_640_64", label: "640 x 64" },
+    { id: "z88_640_256", label: "640 x 256" },
     { id: "z88_640_320", label: "640 x 320" },
     { id: "z88_640_480", label: "640 x 480" },
   ];

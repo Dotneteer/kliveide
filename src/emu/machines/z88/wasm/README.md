@@ -75,7 +75,7 @@ machine's figures from 2026-09-19, before it was removed:
 | OZ 5.0 idle (snoozing) | 0.008 | 0.069 |
 | OZ 5.0 at the keyboard | 0.038 | 0.327 |
 | CPU-heavy loop | 0.045 | 0.958 |
-| 800x480 LCD, changing screen | 0.053 | 0.918 |
+| 640x480 LCD, changing screen | 0.054 (2026-09-29) | 0.918 (at 800x480) |
 | Beeper toggling, 44.1 kHz | 0.037 | 0.606 |
 | AMD flash programming | 0.041 | 0.906 |
 | Running under the debugger | 0.053 | 0.184-0.835 |
