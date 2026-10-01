@@ -19,11 +19,13 @@ import {
   openFolder,
   openFolderByPath,
   resolveHomeFilePath,
+  resolveKliveHomeFilePath,
   resolvePublicFilePath,
   resolveSavedFilePath,
   saveKliveProject
 } from "./projects";
 import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
+import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
 import {
   applyProjectSettingAction,
@@ -479,7 +481,7 @@ class MainMessageProcessor {
    * @param destFile The destination file path on the SD card image.
    */
   async copyToSdCard(srcFile: string, destFile: string) {
-    const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
     if (!fs.existsSync(sdCardPath)) {
       // --- The folder does not exist, we cannot proceed
       console.error("SD card path does not exist:", sdCardPath);
@@ -517,7 +519,7 @@ class MainMessageProcessor {
     const appState = mainStore.getState();
     const currentStoragePath =
       appState.media?.[MEDIA_SD_CARD] ??
-      path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+      path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
 
     return await copyZxNextStorageFileOnHost(request, {
       projectFolder: appState.project?.folderPath,
@@ -969,7 +971,7 @@ class MainMessageProcessor {
    * @returns True if the "autoexec.1st" file exists, false otherwise.
    */
   async hasNextAutoExec(): Promise<boolean> {
-    const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+    const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
     if (!fs.existsSync(sdCardPath)) {
       return false;
     }
@@ -998,7 +1000,7 @@ class MainMessageProcessor {
    * Returns the absolute path of the output file.
    */
   async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): Promise<string> {
-    const homeDir = app.getPath("home");
+    const homeDir = getKliveHomeBase();
     const ext = format === "webm" ? "webm" : format === "mkv" ? "mkv" : "mp4";
     const outputPath = resolveRecordingPath(homeDir, ext);
     _recordingBackend = isFFmpegAvailable()
@@ -1160,6 +1162,9 @@ function resolveMessagePath(inputPath: string, resolveIn?: string): string {
     switch (segments[0]) {
       case "home":
         inputPath = resolveHomeFilePath(inputPath);
+        break;
+      case "kliveHome":
+        inputPath = resolveKliveHomeFilePath(inputPath);
         break;
       case "project":
         inputPath = getKliveProjectFolder(inputPath);

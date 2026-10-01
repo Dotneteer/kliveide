@@ -10,8 +10,10 @@
 
 - **No-installer Windows build** (#1382). Each release now also ships
   `KliveIde-Portable-{version}-x64.zip`, which you unpack and run without setup or admin rights.
-  Settings still live in `%USERPROFILE%\Klive`, shared with an installed Klive. Unblock the zip
-  (*Properties → Unblock*) before extracting it.
+  It is fully portable: settings, the SD card image, default project and export folders and the
+  browser cache all live in a `KliveData` folder beside `Klive IDE.exe`, never in
+  `%USERPROFILE%\Klive` or `%APPDATA%\Klive IDE`. Unblock the zip (*Properties → Unblock*) before
+  extracting it.
 
 ### Breaking changes
 

@@ -24,6 +24,7 @@ import {
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
 import { ExportDialogSettings, KLIVE_HOME_FOLDER } from "./settings";
+import { getKliveHomeBase } from "./portable";
 import {
   PROJECT_TEMPLATES,
   PROJECT_FILE,
@@ -315,6 +316,16 @@ export function resolveHomeFilePath(toResolve: string): string {
 }
 
 /**
+ * Resolves the specified path using the base of Klive's own folders as relative root. It is the user's home folder,
+ * except in portable mode, where it is the portable data folder.
+ * @param toResolve Path to resolve
+ * @returns Resolved path
+ */
+export function resolveKliveHomeFilePath(toResolve: string): string {
+  return path.isAbsolute(toResolve) ? toResolve : path.join(getKliveHomeBase(), toResolve);
+}
+
+/**
  * Resolves the specified path using the save folder as relative root
  * @param toResolve Path to resolve
  * @returns Resolved path
@@ -327,7 +338,7 @@ export function resolveSavedFilePath(toResolve: string): string {
     ? toResolve
     : isKliveProject
       ? path.join(projectFolder, "SavedFiles", toResolve)
-      : path.join(path.join(app.getPath("home"), KLIVE_HOME_FOLDER, "SavedFiles"), toResolve);
+      : path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, "SavedFiles", toResolve);
   return finalPath;
 }
 
@@ -345,8 +356,8 @@ export function getKliveProjectFolder(projectFolder: string): string {
   return projectFolder
     ? path.isAbsolute(projectFolder)
       ? projectFolder
-      : path.join(app.getPath("home"), KLIVE_PROJECT_ROOT, projectFolder)
-    : path.join(app.getPath("home"), KLIVE_PROJECT_ROOT);
+      : path.join(getKliveHomeBase(), KLIVE_PROJECT_ROOT, projectFolder)
+    : path.join(getKliveHomeBase(), KLIVE_PROJECT_ROOT);
 }
 
 // --- Get the current klive project structure to save
