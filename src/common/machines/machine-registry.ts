@@ -366,6 +366,14 @@ export const machineRegistry: MachineInfo[] = [
     },
     models: [...Z88_MODELS],
     toolInfo: {
+      // --- Without a factory the disassembly view renders nothing: the panel takes its
+      // --- disassembler from here and has no Z80 fallback of its own.
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_CUSTOM_DISASSEMBLER]: () => new Z88CustomDisassembler(),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
