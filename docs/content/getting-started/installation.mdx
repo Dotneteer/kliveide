@@ -86,14 +86,23 @@ If you cannot or prefer not to run an installer (a locked-down machine, no admin
 2. Extract the archive into a **new, empty folder** — the files sit at the root of the archive, not inside a folder of their own.
 3. Run `Klive IDE.exe` from that folder.
 
-To upgrade, extract the newer archive into a fresh folder; to remove Klive, delete the folder.
+This copy is fully portable: it keeps everything it writes in a `KliveData` folder next to `Klive IDE.exe`, and nothing in your user profile.
+
+| Folder | Contents | Installed Klive uses |
+| --- | --- | --- |
+| `KliveData\Klive` | Settings, the ZX Spectrum Next SD card image, saved files | `%USERPROFILE%\Klive` |
+| `KliveData\KliveProjects` | Default location of new projects | `%USERPROFILE%\KliveProjects` |
+| `KliveData\KliveExports` | Exported code and screen recordings | `%USERPROFILE%\KliveExports` |
+| `KliveData\AppData` | Browser cache and window data | `%APPDATA%\Klive IDE` |
+
+To remove Klive, delete the folder. To upgrade, extract the newer archive into a fresh folder and copy the `KliveData` folder over from the old one to keep your settings.
 
 <Callout type="info" emoji="💡">
-This build has no installer, but it is not fully self-contained: like the installed version, it keeps its settings in `%USERPROFILE%\Klive`, creates new projects in `%USERPROFILE%\KliveProjects` by default, and stores its browser cache in `%APPDATA%\Klive IDE`. An installed Klive and a zip copy therefore share their settings.
+The zip copy and an installed Klive do not share settings. To start the zip copy with your existing settings, copy `%USERPROFILE%\Klive` to `KliveData\Klive` before the first run.
 </Callout>
 
 <Callout type="warning" emoji="⚠️">
-Only one Klive IDE can run at a time. While an installed Klive (or another zip copy) is running, starting a second one exits silently.
+Extract the archive into a folder you can write to. In a read-only location (for example, under `C:\Program Files`), Klive cannot create `KliveData` and falls back to the user-profile folders of an installed Klive.
 </Callout>
 
 ## Linux Installation

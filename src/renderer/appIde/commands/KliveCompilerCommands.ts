@@ -487,7 +487,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
         const path = await context.mainApi.saveTextFile(
           filename,
           hexOut,
-          `home:${EXPORT_FILE_FOLDER}`
+          `kliveHome:${EXPORT_FILE_FOLDER}`
         );
         return commandSuccessWith(`Code successfully exported to '${path}'`);
       } catch (err) {
@@ -920,7 +920,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
             const filePath = await context.mainApi.saveBinaryFile(
               args.filename,
               writer.buffer,
-              `home:${EXPORT_FILE_FOLDER}`
+              `kliveHome:${EXPORT_FILE_FOLDER}`
             );
             return commandSuccessWith(`Code successfully exported to '${filePath}'`);
           } catch (err) {
@@ -988,7 +988,7 @@ export class ExportCodeCommand extends IdeCommandBase<ExportCommandArgs> {
       const filePath = await context.mainApi.saveBinaryFile(
         filename,
         nexData,
-        `home:${EXPORT_FILE_FOLDER}`
+        `kliveHome:${EXPORT_FILE_FOLDER}`
       );
 
       await context.mainApi.copyToSdCard(filePath, "_klive/" + compiledOutput.nexConfig.filename);
