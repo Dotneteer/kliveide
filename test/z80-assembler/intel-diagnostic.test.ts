@@ -21,21 +21,12 @@ DelayLoop:
 `);
     expect(output.errorCount).toBe(0);
 
-    // Dump raw data for diagnostic
-    const syms = Object.keys(output.symbols);
-    const macros = Object.keys(output.macros);
-    console.log("output.symbols keys:", syms);
-    console.log("output.macros keys:", macros);
-    console.log("output.symbols['delay']:", JSON.stringify(output.symbols["delay"], null, 2));
-    console.log("output.macros['delay']:", JSON.stringify(output.macros["delay"], null, 2));
-
     const intel = extractLanguageIntelData(output as unknown as KliveCompilerOutput);
     
     // Check there's exactly ONE entry for "delay"
     const delayEntries = intel.symbolDefinitions.filter(
       (s) => s.name.toLowerCase() === "delay"
     );
-    console.log("delay entries in symbolDefinitions:", JSON.stringify(delayEntries, null, 2));
     
     expect(delayEntries.length).toBe(1);
     expect(delayEntries[0].kind).toBe("macro");
@@ -58,7 +49,6 @@ RepeatLight: .macro(count, body)
       (s) => s.name.toLowerCase() === "repeatlight"
     );
     
-    console.log("RepeatLight entry:", JSON.stringify(macro, null, 2));
     
     expect(macro).toBeDefined();
     expect(macro!.kind).toBe("macro");
@@ -81,7 +71,6 @@ DoNothing: .macro()
       (s) => s.name.toLowerCase() === "donothing"
     );
     
-    console.log("DoNothing entry:", JSON.stringify(macro, null, 2));
     
     expect(macro).toBeDefined();
     expect(macro!.kind).toBe("macro");
@@ -104,7 +93,6 @@ Delay: .macro(wait)
       (s) => s.name.toLowerCase() === "delay"
     );
     
-    console.log("Delay entry with location:", JSON.stringify(macro, null, 2));
     
     expect(macro).toBeDefined();
     expect(macro!.kind).toBe("macro");
@@ -135,7 +123,6 @@ DelayLoop:
     const delayRefs = intel.symbolReferences.filter(
       (r) => r.symbolName === "delay"
     );
-    console.log("delay symbolReferences:", JSON.stringify(delayRefs, null, 2));
 
     // Two invocations should produce two references
     expect(delayRefs.length).toBe(2);

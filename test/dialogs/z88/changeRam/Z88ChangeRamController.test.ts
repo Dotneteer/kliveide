@@ -5,6 +5,7 @@ import { RAM_CHANGE_WARNING } from "@renderer/appEmu/dialogs/z88/changeRam/Z88Ch
 
 import { deferred } from "../../../mvc/deferred";
 import { MC_Z88_INTRAM, openChangeRamDialog } from "./fakes";
+import { expectConsole } from "../../../expectedConsole";
 
 describe("Z88ChangeRamController — applying", () => {
   it("rebuilds the machine, reports it, and settles as changed", async () => {
@@ -147,6 +148,7 @@ describe("Z88ChangeRamController — work in flight", () => {
   });
 
   it("clears the busy flag when the rebuild fails", async () => {
+    const consoleError = expectConsole("error");
     const h = openChangeRamDialog({
       ports: {
         machine: {
@@ -166,6 +168,12 @@ describe("Z88ChangeRamController — work in flight", () => {
     // --- busy flag would leave every control dead.
     expect(h.vm.applyEnabled).toBe(true);
     expect(h.ports.close.settled).not.toHaveBeenCalled();
+    // --- The failure is not swallowed silently: the controller reports it.
+    expect(consoleError).toHaveBeenCalledWith(
+      "Unhandled error while handling intent",
+      { type: "applyRequested" },
+      expect.objectContaining({ message: "machine is wedged" })
+    );
   });
 
   it("survives a dispose/activate cycle and still applies", async () => {

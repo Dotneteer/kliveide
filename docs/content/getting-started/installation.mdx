@@ -6,10 +6,11 @@ import { Callout } from 'nextra/components'
 
 # Installing Klive
 
-Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it will list five files, including the three installation kits:
+Visit the project [release page](https://github.com/Dotneteer/kliveide/releases) to get the install kits for Klive. You find the latest release at the top of the page. When you expand the Assets tab, it lists the installation kits:
 
 - `KliveIdeSetup-{version}-{arch}.AppImage`: The Linux AppImage format to install Klive IDE on Linux without requiring an admin privilege to run
 - `KliveIdeSetup-{version}-{arch}.exe`: Self-extracting executable to install Klive IDE on Windows x64 (NSIS installer)
+- `KliveIde-Portable-{version}-{arch}.zip`: A Windows x64 archive you unpack and run without an installer (see [Windows without an installer](#windows-without-an-installer))
 - `KliveIdeSetup-{version}-{arch}.pkg`: The standard PKG format to install Klive IDE on MacOS
 
 `{version}` is a placeholder for the version number of a particular release in the filename.
@@ -75,6 +76,24 @@ Click on Klive IDE to start it.
 
 <Callout type="info" emoji="💡">
 When Klive IDE is selected in the search result list, the right pane shows the Pin to taskbar command. Use this to add the IDE to the taskbar; later, you can run it with a single click on the Klive IDE icon.
+</Callout>
+
+### Windows without an installer
+
+If you cannot or prefer not to run an installer (a locked-down machine, no admin rights, or a USB stick), download `KliveIde-Portable-{version}-x64.zip` instead. It needs no setup and writes nothing to the registry.
+
+1. Before extracting, right-click the downloaded `.zip` file, select **Properties**, check **Unblock**, and click **OK**. Without this step, Windows marks every extracted file as downloaded from the internet and may warn you separately for each executable. (In PowerShell: `Unblock-File .\KliveIde-Portable-{version}-x64.zip`.)
+2. Extract the archive into a **new, empty folder** — the files sit at the root of the archive, not inside a folder of their own.
+3. Run `Klive IDE.exe` from that folder.
+
+To upgrade, extract the newer archive into a fresh folder; to remove Klive, delete the folder.
+
+<Callout type="info" emoji="💡">
+This build has no installer, but it is not fully self-contained: like the installed version, it keeps its settings in `%USERPROFILE%\Klive`, creates new projects in `%USERPROFILE%\KliveProjects` by default, and stores its browser cache in `%APPDATA%\Klive IDE`. An installed Klive and a zip copy therefore share their settings.
+</Callout>
+
+<Callout type="warning" emoji="⚠️">
+Only one Klive IDE can run at a time. While an installed Klive (or another zip copy) is running, starting a second one exits silently.
 </Callout>
 
 ## Linux Installation

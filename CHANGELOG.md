@@ -8,6 +8,11 @@
   matches the ZX Spectrum Next in tile mode. The Z88 now offers 640x64 (the default), 640x256,
   640x320 and 640x480.
 
+- **No-installer Windows build** (#1382). Each release now also ships
+  `KliveIde-Portable-{version}-x64.zip`, which you unpack and run without setup or admin rights.
+  Settings still live in `%USERPROFILE%\Klive`, shared with an installed Klive. Unblock the zip
+  (*Properties → Unblock*) before extracting it.
+
 ### Breaking changes
 
 - **The 800x320 and 800x480 Cambridge Z88 LCD sizes are gone** (#1385). The OZ screen driver is

@@ -13,6 +13,7 @@ import {
   openNewProjectDialog,
   rejectingValidation
 } from "./fakes";
+import { expectConsole } from "../../expectedConsole";
 
 describe("NewProjectController — opening", () => {
   it("loads the templates of the machine it opened on", async () => {
@@ -203,6 +204,7 @@ describe("NewProjectController — creating a project", () => {
 
 describe("NewProjectController — when a step fails", () => {
   it("stops after a failed creation and reports it", async () => {
+    const consoleError = expectConsole("error");
     const h = await openNewProjectDialog({
       service: {
         createProject: async () => {
@@ -220,9 +222,14 @@ describe("NewProjectController — when a step fails", () => {
     // --- The dialog stays open with what the user typed still in it.
     expect(h.vm.projectName.value).toBe("MyProject");
     expect(h.vm.submitEnabled).toBe(true);
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "disk full" })
+    );
   });
 
   it("treats a folder that reports a problem as a failure", async () => {
+    const consoleError = expectConsole("error");
     // --- The main process reports this one as a value, not a rejection, so it
     // --- would otherwise sail straight past.
     const h = await openNewProjectDialog({
@@ -239,9 +246,14 @@ describe("NewProjectController — when a step fails", () => {
       "Error opening folder: no such directory"
     );
     expect(h.ports.close.created).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "Error opening folder: no such directory" })
+    );
   });
 
   it("stops after the project fails to load", async () => {
+    const consoleError = expectConsole("error");
     const h = await openNewProjectDialog({
       service: {
         ensureProjectLoaded: async () => {
@@ -259,9 +271,14 @@ describe("NewProjectController — when a step fails", () => {
       CREATE_ERROR_TITLE,
       "project is corrupt"
     );
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "project is corrupt" })
+    );
   });
 
   it("reports a step that overran its budget", async () => {
+    const consoleError = expectConsole("error");
     const h = await openNewProjectDialog({
       timeoutMs: 10,
       service: { createProject: () => new Promise<string>(() => undefined) }
@@ -277,9 +294,14 @@ describe("NewProjectController — when a step fails", () => {
     );
     // --- And the dialog comes back to life rather than staying stuck busy.
     expect(h.vm.submitting).toBe(false);
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "Creating the Klive project timed out after 0.01 seconds." })
+    );
   });
 
   it("does not let a failing message box replace the failure it reports", async () => {
+    const consoleError = expectConsole("error");
     const h = await openNewProjectDialog({
       service: {
         createProject: async () => {
@@ -298,6 +320,15 @@ describe("NewProjectController — when a step fails", () => {
     // --- must not take the first one's place or wedge the form.
     expect(h.vm.submitting).toBe(false);
     expect(h.vm.submitEnabled).toBe(true);
+    // --- Both failures are logged, the original one first.
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "disk full" })
+    );
+    expect(consoleError).toHaveBeenCalledWith(
+      "Displaying the new project error failed",
+      expect.objectContaining({ message: "no window to show it in" })
+    );
   });
 });
 

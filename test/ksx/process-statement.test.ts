@@ -5,6 +5,7 @@ import {
   createEvalContext
 } from "@common/ksx/EvaluationContext";
 import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
+import { expectConsole } from "../expectedConsole";
 
 const ROOT_MODULE = "test";
 
@@ -85,6 +86,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("Const write #1", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "const y = 3; y++";
     const localContext = { x: 0 };
@@ -99,6 +102,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("Const write #2", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "const y = 3; y = 12";
     const localContext = { x: 0 };
@@ -977,6 +982,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("for..in loop with 'const' disallows write binding ", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
       let res ='';
@@ -1000,6 +1007,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("for..of loop with not iterable #1", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "for (y of obj) res += obj[y]; return res";
     const localContext = {
@@ -1017,6 +1026,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("for..of loop with not iterable #2", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "for (y of obj) res += obj[y]; return res";
     const localContext = {
@@ -1238,6 +1249,8 @@ describe("KSX Execution - statements", () => {
   });
 
   it("for..of loop with 'const' disallows write binding ", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
       let res ='';

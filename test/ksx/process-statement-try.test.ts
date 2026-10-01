@@ -5,11 +5,14 @@ import {
   createEvalContext
 } from "@common/ksx/EvaluationContext";
 import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
+import { expectConsole } from "../expectedConsole";
 
 const ROOT_MODULE = "test";
 
 describe("KSX Execution - try", () => {
   it("throw", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
           throw { type: 'Error' }
@@ -29,6 +32,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("throw a given Error object", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             throw errObj
@@ -297,6 +302,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - finally, error", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -326,6 +333,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - finally nested, error", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -406,6 +415,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - catch, error rethrown", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -436,6 +447,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - catch, error rethrown, finally", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -468,6 +481,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - catch, error rethrown other", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -498,6 +513,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - catch, error rethrown other, finally", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -530,6 +547,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - catch - finally, error in finally", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {
@@ -585,6 +604,8 @@ describe("KSX Execution - try", () => {
   });
 
   it("try - finally with return #2", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
             try {

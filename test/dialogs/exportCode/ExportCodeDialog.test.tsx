@@ -36,16 +36,20 @@ const servicesMock = vi.hoisted(() => ({
   getOutputPaneBuffer: vi.fn()
 }));
 
-vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
-  useAppServices: () => ({
+vi.mock("@renderer/appIde/services/AppServicesProvider", () => {
+  // --- One object for the whole file, like the real provider's ref-held services:
+  // --- a fresh object per call changes the dialog's `env` on every render, and the
+  // --- effect that dispatches it then loops until React gives up.
+  const services = {
     validationService: {
       isValidPath: validationMock.isValidPath,
       isValidFilename: validationMock.isValidFilename
     },
     outputPaneService: { getOutputPaneBuffer: servicesMock.getOutputPaneBuffer },
     ideCommandsService: { executeCommand: servicesMock.executeCommand }
-  })
-}));
+  };
+  return { useAppServices: () => services };
+});
 
 vi.mock("@renderer/core/MainApi", () => ({
   useMainApi: () => mainApiMock

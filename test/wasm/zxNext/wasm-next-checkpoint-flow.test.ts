@@ -190,7 +190,7 @@ class ResolvingMessenger extends MessengerBase {
       this.processResponse({
         type: "ApiMethodResponse",
         correlationId: message.correlationId,
-        result: undefined
+        result: resultOf(message)
       });
     }
   }
@@ -200,4 +200,16 @@ class ResolvingMessenger extends MessengerBase {
   get responseChannel(): Channel {
     return "EmuToMainResponse";
   }
+}
+
+/**
+ * The SD card size is the one answer the machine reads a field of: without it, the first SD
+ * command logs "SD card info fetch failed" and falls back to a default CSD. 128 MB is the
+ * size of a typical NextZXOS image; these tests only need the request to succeed.
+ */
+function resultOf(message: RequestMessage): unknown {
+  if (message.type === "ApiMethodRequest" && message.method === "getSdCardInfo") {
+    return { totalSectors: (128 * 1024 * 1024) / 512 };
+  }
+  return undefined;
 }

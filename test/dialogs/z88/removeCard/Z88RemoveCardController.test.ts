@@ -4,6 +4,7 @@ import { EMPTY_CARD_STATE } from "@renderer/appEmu/dialogs/z88/removeCard/Z88Rem
 
 import { deferred } from "../../../mvc/deferred";
 import { MC_Z88_SLOT0, fakeZ88MachinePort, openRemoveCardDialog } from "./fakes";
+import { expectConsole } from "../../../expectedConsole";
 
 describe("Z88RemoveCardController — card slots", () => {
   it("unplugs the card without rebuilding the machine", async () => {
@@ -58,6 +59,7 @@ describe("Z88RemoveCardController — slot 0", () => {
   });
 
   it("does not settle when the rebuild fails", async () => {
+    const consoleError = expectConsole("error");
     const machine = fakeZ88MachinePort({
       setMachineConfig: vi.fn(async () => {
         throw new Error("machine is wedged");
@@ -73,6 +75,12 @@ describe("Z88RemoveCardController — slot 0", () => {
     expect(h.ports.close.removed).not.toHaveBeenCalled();
     // --- The dialog stays usable so the user can try again.
     expect(h.vm.removeEnabled).toBe(true);
+    // --- The failure is not swallowed silently: the controller reports it.
+    expect(consoleError).toHaveBeenCalledWith(
+      "Unhandled error while handling intent",
+      { type: "removeRequested" },
+      expect.objectContaining({ message: "machine is wedged" })
+    );
   });
 });
 

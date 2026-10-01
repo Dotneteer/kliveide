@@ -68,6 +68,7 @@ vi.mock("child_process", () => {
 // ---------------------------------------------------------------------------
 import { spawn } from "child_process";
 import { FfmpegRecordingBackend } from "@main/recording/FfmpegRecordingBackend";
+import { expectConsole } from "../expectedConsole";
 
 // --- The backend rebuilds the path with path.join, so the expectation must use the
 // --- native separator too (backslashes on Windows).
@@ -275,32 +276,48 @@ describe("FfmpegRecordingBackend", () => {
   // ---- B6: a recording that wrote nothing says so (issue #1374) -----------
 
   it("finish() rejects with the reason when FFmpeg could not be started", async () => {
+    const consoleError = expectConsole("error");
     // --- A packaged build spawning the binary's path inside app.asar: the folder was created and
     // --- nothing else, and finish() used to report success
     backend.start(OUTPUT, W, H, FPS);
     failures.error!(Object.assign(new Error("spawn ENOTDIR"), { code: "ENOTDIR" }));
     backend.appendFrame(RGBA); // --- ignored once FFmpeg is gone
     await expect(backend.finish()).rejects.toThrow(/could not be started \(\/fake\/ffmpeg\): spawn ENOTDIR/);
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("[FFmpegBackend] FFmpeg could not be started")
+    );
   });
 
   it("finish() rejects with FFmpeg's last words when it exits early", async () => {
+    const consoleError = expectConsole("error");
     backend.start(OUTPUT, W, H, FPS);
     failures.stderr!("Input #0, rawvideo\nSomething odd\n[aac] Too many bits\n");
     failures.exit!(1);
     await expect(backend.finish()).rejects.toThrow(/exited with code 1:[\s\S]*Too many bits/);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[FFmpegBackend] FFmpeg exited with code 1"
+    );
   });
 
   it("finish() rejects when FFmpeg fails while finishing the file", async () => {
+    const consoleError = expectConsole("error");
     backend.start(OUTPUT, W, H, FPS);
     failures.exitCodeOnEnd = 1;
     await expect(backend.finish()).rejects.toThrow(/exited with code 1/);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[FFmpegBackend] FFmpeg exited with code 1"
+    );
   });
 
   it("a failure does not leak into the next recording", async () => {
+    const consoleError = expectConsole("error");
     backend.start(OUTPUT, W, H, FPS);
     failures.exit!(1);
     await expect(backend.finish()).rejects.toThrow();
     backend.start(OUTPUT, W, H, FPS);
     await expect(backend.finish()).resolves.toBe(OUTPUT);
+    expect(consoleError).toHaveBeenCalledWith(
+      "[FFmpegBackend] FFmpeg exited with code 1"
+    );
   });
 });

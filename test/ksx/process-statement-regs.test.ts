@@ -7,6 +7,7 @@ import {
 import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
 import { Expression } from "@common/ksx/source-tree";
 import { Parser } from "@common/ksx/Parser";
+import { expectConsole } from "../expectedConsole";
 
 const ROOT_MODULE = "test";
 
@@ -62,6 +63,7 @@ describe("KSX Execution - regression", () => {
   });
 
   it("mapped arrow regression #1", async () => {
+    const consoleLog = expectConsole("log");
     // --- Arrange
     const source = "const mapped = [1,2,3].map(id => {return {id: id} }); console.log(mapped)";
     const localContext = {};
@@ -73,6 +75,8 @@ describe("KSX Execution - regression", () => {
     const thread = evalContext.mainThread;
     expect(thread!.blocks!.length).toBe(1);
     expect(thread!.blocks![0].vars.mapped.length).toBe(3);
+    // --- The script's own console.log reaches the host console.
+    expect(consoleLog).toHaveBeenCalledWith([{ id: 1 }, { id: 2 }, { id: 3 }]);
   });
 
   it("arrow with vars sub-property regression #1", async () => {
@@ -206,6 +210,8 @@ describe("KSX Execution - regression", () => {
   });
 
   it("delete #4", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "x = delete Math.PI";
     const localContext = {
@@ -223,6 +229,8 @@ describe("KSX Execution - regression", () => {
   });
 
   it("disallow running banned function #1", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = "const x = setTimeout(() => {}, 300)";
     const localContext = {};

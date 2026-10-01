@@ -53,6 +53,7 @@ import {
 import { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { incDocHubServiceVersionAction } from "@common/state/actions";
 import { createMockStore, MockMessenger } from "../react-test-utils";
+import { suppressUncaughtErrors } from "../expectedConsole";
 
 function renderWithRendererProvider(ui: ReactElement) {
   const store = createMockStore();
@@ -74,6 +75,7 @@ function createDocumentHub(hubId: number): IDocumentHubService {
 describe("AppServicesProvider — Step 2: service context", () => {
   it("throws a clear error when useAppServices is used without its provider", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    suppressUncaughtErrors();
 
     function Subject() {
       useAppServices();
@@ -140,6 +142,7 @@ describe("AppServicesProvider — Step 2: service context", () => {
 describe("DocumentServiceProvider — Step 2: document hub context", () => {
   it("throws a clear error when useDocumentHubService is used without its provider", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    suppressUncaughtErrors();
 
     function Subject() {
       useDocumentHubService();
@@ -152,6 +155,7 @@ describe("DocumentServiceProvider — Step 2: document hub context", () => {
 
   it("throws a clear error when useDocumentHubServiceVersion has no hub", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    suppressUncaughtErrors();
 
     function Subject() {
       useDocumentHubServiceVersion();

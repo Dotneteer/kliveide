@@ -484,7 +484,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
       ) {
         // --- Raster interrupt is enabled and the current raster line matches the interrupt line
         this.machine.setIrqSignal(true);
-        console.log("IRQ");
       }
 
       // --- #2: Check if the current raster line can have be a bad line
@@ -748,9 +747,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
    * @param value The value to write
    */
   writeRegister(regIndex: number, value: number): void {
-    console.log(
-      `VIC write register $${(0xd000 + regIndex).toString(16)} <= $${value.toString(16)}`
-    );
     regIndex &= 0x3f; // Limit to 64 registers (0-63), with mirroring
     value &= 0xff; // Ensure it's a byte value
 
@@ -2337,7 +2333,6 @@ export class C64VicDevice implements IGenericDevice<IC64Machine> {
 
     const newBorderColor = value & 0x0f; // Mask to 4 bits (0-15)
     this.borderColor = newBorderColor;
-    console.log(`Border color set to ${this.borderColor}`);
     this.registers[0x20] = newBorderColor; // Store only the valid 4-bit value
   }
 

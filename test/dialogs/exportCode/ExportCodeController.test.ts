@@ -17,6 +17,7 @@ import {
   openExportCodeDialog,
   rejectingValidation
 } from "./fakes";
+import { expectConsole } from "../../expectedConsole";
 
 describe("ExportCodeController — opening", () => {
   it("seeds the form from what the project had saved", async () => {
@@ -75,6 +76,7 @@ describe("ExportCodeController — editing", () => {
   });
 
   it("keeps the dialog usable when saving the settings fails", async () => {
+    const consoleError = expectConsole("error");
     const h = await openExportCodeDialog({
       service: {
         persistSettings: async () => {
@@ -88,6 +90,10 @@ describe("ExportCodeController — editing", () => {
     // --- The user's real business here is the export, not the settings.
     expect(h.vm.exportName.value).toBe("game");
     expect(h.vm.submitEnabled).toBe(true);
+    expect(consoleError).toHaveBeenCalledWith(
+      "Saving the export settings failed",
+      expect.objectContaining({ message: "project file is read-only" })
+    );
   });
 });
 

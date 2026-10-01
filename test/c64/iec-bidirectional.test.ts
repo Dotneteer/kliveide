@@ -28,26 +28,18 @@ describe("C64 - IEC Bus Bidirectional Communication", () => {
     cpuPort.writeData(0xC0);
     
     // Let's see the state of the CIA2 internal properties
-    console.log("CIA2 _cpuPortDrivingDataLow:", (cia2 as any)._cpuPortDrivingDataLow);
-    console.log("CIA2 _cpuPortDrivingClockLow:", (cia2 as any)._cpuPortDrivingClockLow);
     
     // CIA2 should read the lines as high (no device pulling them low)
     const initialRead = cia2.readRegister(0x00);
-    console.log("CIA2 initial read:", initialRead.toString(16), "bits 6-7:", (initialRead & 0xC0).toString(16));
     expect((initialRead & 0xC0)).toBe(0xC0);
     
     // Now pull the DATA line low from the CPU port (writing 0 means pull low)
     cpuPort.writeData(0x80); // Bit 6 low, bit 7 high
     
     // Let's check the CIA2 internal properties again
-    console.log("After setting bit 6 low:");
-    console.log("CPU port data:", cpuPort.readData().toString(16));
-    console.log("CIA2 _cpuPortDrivingDataLow:", (cia2 as any)._cpuPortDrivingDataLow);
-    console.log("CIA2 _cpuPortDrivingClockLow:", (cia2 as any)._cpuPortDrivingClockLow);
     
     // CIA2 should read the DATA line as low
     const dataLowRead = cia2.readRegister(0x00);
-    console.log("CIA2 data low read:", dataLowRead.toString(16), "bits 6-7:", (dataLowRead & 0xC0).toString(16));
     expect((dataLowRead & 0x40)).toBe(0x00);
     expect((dataLowRead & 0x80)).toBe(0x80);
     
@@ -55,13 +47,9 @@ describe("C64 - IEC Bus Bidirectional Communication", () => {
     cpuPort.writeData(0x00);
     
     // Check CIA2 internal properties again
-    console.log("After setting both bits low:");
-    console.log("CIA2 _cpuPortDrivingDataLow:", (cia2 as any)._cpuPortDrivingDataLow);
-    console.log("CIA2 _cpuPortDrivingClockLow:", (cia2 as any)._cpuPortDrivingClockLow);
     
     // CIA2 should read both lines as low
     const bothLowRead = cia2.readRegister(0x00);
-    console.log("CIA2 both low read:", bothLowRead.toString(16), "bits 6-7:", (bothLowRead & 0xC0).toString(16));
     expect((bothLowRead & 0xC0)).toBe(0x00);
   });
   
@@ -91,13 +79,9 @@ describe("C64 - IEC Bus Bidirectional Communication", () => {
     cpuPort.writeData(0x80); // Bit 6 low, bit 7 high
     
     // Let's check the state
-    console.log("In wired-AND test:");
-    console.log("CIA2 _cpuPortDrivingDataLow:", (cia2 as any)._cpuPortDrivingDataLow);
-    console.log("CIA2 _cpuPortDrivingClockLow:", (cia2 as any)._cpuPortDrivingClockLow);
     
     // CIA2 reads DATA IN as low because CPU port is driving it low
     const cia2Read = cia2.readRegister(0x00);
-    console.log("CIA2 read:", cia2Read.toString(16), "bits 6-7:", (cia2Read & 0xC0).toString(16));
     expect((cia2Read & 0x40)).toBe(0x00);
     
     // CPU port should still read DATA IN as low (its own output)
@@ -141,15 +125,11 @@ describe("C64 - IEC Bus Bidirectional Communication", () => {
     cia2.writeRegister(0x00, 0xFF);
     
     // Let's check the state
-    console.log("In both devices test:");
-    console.log("CIA2 _cpuPortDrivingDataLow:", (cia2 as any)._cpuPortDrivingDataLow);
-    console.log("CIA2 _cpuPortDrivingClockLow:", (cia2 as any)._cpuPortDrivingClockLow);
     
     // 6. DATA line should still be low because CPU port is still driving it low
     expect(cia2.iecDataLine).toBe(true); // CIA2's output line is high
     
     const cia2Read = cia2.readRegister(0x00);
-    console.log("CIA2 read:", cia2Read.toString(16), "bits 6-7:", (cia2Read & 0xC0).toString(16));
     expect((cia2Read & 0x40)).toBe(0x00); // But it reads DATA IN as low
     expect((cpuPort.readData() & 0x40)).toBe(0x00);
     

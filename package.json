@@ -1,7 +1,7 @@
 {
   "name": "klive-ide",
   "productName": "Klive IDE",
-  "version": "0.61.0",
+  "version": "0.62.0",
   "description": "Sinclair Retro computer emulator and IDE for Mac, Windows and Linux",
   "author": {
     "name": "Istvan Novak",
@@ -170,10 +170,20 @@
           "arch": [
             "x64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
         }
       ],
+      "artifactName": "KliveIde-Portable-${version}-${arch}.${ext}",
       "asar": false,
       "icon": "public/images/512x512.png"
+    },
+    "nsis": {
+      "artifactName": "KliveIdeSetup-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": "AppImage",

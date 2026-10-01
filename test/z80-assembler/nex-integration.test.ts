@@ -41,7 +41,13 @@ describe("NEX Integration Tests", () => {
     expect(output.modelType).toBe(4); // SpectrumModelType.Next
     
     // Generate NEX file
-    const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
     
     expect(nexData).toBeDefined();
     expect(nexData.length).toBeGreaterThan(512); // At least header + 1 bank
@@ -62,6 +68,8 @@ describe("NEX Integration Tests", () => {
     
     // Verify at least one bank is present
     expect(nexData[18 + 5]).toBe(1); // Bank 5 present
+    // --- Code under .bank is banked: nothing may be treated as unbanked bank 2 code
+    expect(warnings).toEqual([]);
   });
 
   it("handles multi-bank programs correctly", async () => {
@@ -104,7 +112,13 @@ describe("NEX Integration Tests", () => {
     expect(output.segments.filter(s => s.bank === 2).length).toBeGreaterThan(0);
     expect(output.segments.filter(s => s.bank === 10).length).toBeGreaterThan(0);
     
-    const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
     
     // Verify banks are present in header
     expect(nexData[18 + 5]).toBe(1); // Bank 5
@@ -113,6 +127,8 @@ describe("NEX Integration Tests", () => {
     
     // Verify bank count
     expect(nexData[9]).toBe(3); // 3 banks total
+    // --- Code under .bank is banked: nothing may be treated as unbanked bank 2 code
+    expect(warnings).toEqual([]);
   });
 
   it("handles configuration defaults correctly", async () => {
@@ -138,9 +154,17 @@ describe("NEX Integration Tests", () => {
     expect(output.nexConfig.borderColor).toBe(7); // Auto-default for Next model
     expect(output.nexConfig.entryBank).toBe(0); // Default
     
-    const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
     expect(nexData[8]).toBe(0); // 768K RAM
     expect(nexData[11]).toBe(7); // White border (auto-default for Next)
+    // --- Unbanked code at $8000 sits inside bank 2's range
+    expect(warnings).toEqual([]);
   });
 
   it("validates model type requirement", async () => {
@@ -203,7 +227,13 @@ describe("NEX Integration Tests", () => {
     expect(output.nexConfig.loadingBar.enabled).toBe(true);
     expect(output.nexConfig.loadingBar.color).toBe(128);
     
-    const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
     
     expect(nexData[8]).toBe(1); // 1792K RAM
     expect(nexData[11]).toBe(7); // White border
@@ -214,6 +244,8 @@ describe("NEX Integration Tests", () => {
     expect(nexData[130]).toBe(1); // Loading bar enabled
     expect(nexData[131]).toBe(128); // Loading bar color
     expect(nexData[134]).toBe(1); // Preserve regs
+    // --- Code under .bank is banked: nothing may be treated as unbanked bank 2 code
+    expect(warnings).toEqual([]);
   });
 
   it("handles expression evaluation in savenex pragmas", async () => {
@@ -244,10 +276,53 @@ describe("NEX Integration Tests", () => {
     expect(output.nexConfig.stackAddr).toBe(0xFF00);
     expect(output.nexConfig.entryAddr).toBe(0xC000);
     
-    const nexData = await NexFileWriter.fromAssemblerOutput(output, process.cwd());
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
     expect(nexData[12]).toBe(0x00); // Stack LSB
     expect(nexData[13]).toBe(0xFF); // Stack MSB
     expect(nexData[14]).toBe(0x00); // PC LSB
     expect(nexData[15]).toBe(0xC0); // PC MSB
+    // --- Code under .bank is banked: nothing may be treated as unbanked bank 2 code
+    expect(warnings).toEqual([]);
+  });
+});
+
+describe("NEX export warnings", () => {
+  async function exportUnbanked(org: string) {
+    const options = new AssemblerOptions();
+    options.currentModel = 4;
+    const output = await new Z80Assembler().compile(
+      `.model Next\n.savenex file "w.nex"\n.org ${org}\n  nop\n`,
+      options
+    );
+    expect(output.errors.filter((e) => !e.isWarning)).toEqual([]);
+    const warnings: string[] = [];
+    const nexData = await NexFileWriter.fromAssemblerOutput(
+      output,
+      process.cwd(),
+      undefined,
+      (message) => warnings.push(message)
+    );
+    return { nexData, warnings };
+  }
+
+  it("reports unbanked code above bank 2 through the warning sink, and still writes the file", async () => {
+    const { nexData, warnings } = await exportUnbanked("$C000");
+    expect(warnings).toEqual([
+      "Unbanked code at $C000 is above bank 2 range ($bfff). Code may be truncated."
+    ]);
+    expect(nexData.length).toBeGreaterThan(512);
+  });
+
+  it("reports unbanked code below bank 2 through the warning sink", async () => {
+    const { warnings } = await exportUnbanked("$6000");
+    expect(warnings).toEqual([
+      "Unbanked code at $6000 is below bank 2 range ($8000). Code will be ignored."
+    ]);
   });
 });

@@ -277,15 +277,11 @@ describe("Fat32Volume - Bug #5: Race condition in cluster allocation", () => {
     volume.format();
     volume.init();
 
-    // Debug: Check volume stats
-    console.log(`Volume stats: lastCluster=${(volume as any)._lastCluster}, allocSearchStart=${(volume as any)._allocSearchStart}`);
-
     // Allocate multiple clusters sequentially (not chained)
     const clusters: number[] = [];
     for (let i = 0; i < 3; i++) {
       // Each allocation starts fresh (not chained to previous)
       const cluster = volume.allocateCluster(0);
-      console.log(`Allocation ${i}: cluster=${cluster}, allocSearchStart=${(volume as any)._allocSearchStart}`);
       expect(cluster).not.toBeNull();
       expect(typeof cluster).toBe("number");
       expect(cluster! > 0).toBe(true);

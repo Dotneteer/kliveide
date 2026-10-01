@@ -111,10 +111,14 @@ describe("Assembler - .page pragma", () => {
 });
 
 describe("NEX export - placement by bank offset", () => {
-  async function nexOf(source: string) {
+  async function nexOf(source: string, warnings: string[] = []) {
     const output = await compile(`.model next\n.savenex file "t.nex"\n${source}`);
     expect(output.errorCount).toBe(0);
-    return nexBanks(await NexFileWriter.fromAssemblerOutput(output, "/tmp"));
+    return nexBanks(
+      await NexFileWriter.fromAssemblerOutput(output, "/tmp", undefined, (message) =>
+        warnings.push(message)
+      )
+    );
   }
 
   it("places .page code by its page, not its address", async () => {
@@ -130,8 +134,12 @@ describe("NEX export - placement by bank offset", () => {
   });
 
   it("still places .bank code at its offset", async () => {
-    const banks = await nexOf(".bank 20, $0100\n  .defb 9\n");
+    const warnings: string[] = [];
+    const banks = await nexOf(".bank 20, $0100\n  .defb 9\n", warnings);
     expect(banks.get(20)![0x100]).toBe(9);
+    // --- `.bank` reuses Next auto mode's empty first segment; once banked it must leave the
+    // --- unbanked list, or the writer also treats it as bank 2 code at $C100 and warns
+    expect(warnings).toEqual([]);
   });
 
   it("keeps a .bank offset when .org changes the assembly address", async () => {

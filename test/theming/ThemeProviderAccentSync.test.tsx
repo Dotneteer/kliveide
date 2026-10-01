@@ -24,8 +24,8 @@
  * bug without depending on `var()` resolution.
  */
 import { describe, expect, it } from "vitest";
-import React, { act } from "react";
-import { render } from "@testing-library/react";
+import React from "react";
+import { act, render } from "@testing-library/react";
 import RendererProvider from "@renderer/core/RendererProvider";
 import ThemeProvider, { useTheme } from "@renderer/theming/ThemeProvider";
 import { MockMessenger, createMockStore } from "../react-test-utils";

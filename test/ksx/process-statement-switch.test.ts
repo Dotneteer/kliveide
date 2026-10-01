@@ -5,6 +5,7 @@ import {
   createEvalContext
 } from "@common/ksx/EvaluationContext";
 import { KsxModule, parseKsxModule, isModuleErrors, executeModule } from "@common/ksx/ksx-module";
+import { expectConsole } from "../expectedConsole";
 
 const ROOT_MODULE = "test";
 
@@ -591,6 +592,8 @@ describe("KSX Execution - switch", () => {
   });
 
   it("switch fails with multiple let", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
           let x = 0;
@@ -617,6 +620,8 @@ describe("KSX Execution - switch", () => {
   });
 
   it("switch fails with multiple const/let", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
           let x = 0;
@@ -643,6 +648,8 @@ describe("KSX Execution - switch", () => {
   });
 
   it("switch fails with multiple const", async () => {
+    // --- The engine reports the script error on the console; keep it out of the run.
+    expectConsole("log");
     // --- Arrange
     const source = `
           let x = 0;
