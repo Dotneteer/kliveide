@@ -4,6 +4,7 @@ import type { ExcludedItemInfo } from "@renderer/appIde/dialogs/excludedItems/Ex
 
 import { deferred } from "../../mvc/deferred";
 import { anItem, createExcludedItemsDialog, openExcludedItemsDialog } from "./fakes";
+import { expectConsole } from "../../expectedConsole";
 
 describe("ExcludedItemsController — opening", () => {
   it("loads the application-wide exclusions", async () => {
@@ -104,6 +105,7 @@ describe("ExcludedItemsController — applying", () => {
   });
 
   it("does not close when the save fails", async () => {
+    const consoleError = expectConsole("error");
     const h = await openExcludedItemsDialog({
       service: {
         saveExcludedItems: async () => {
@@ -117,6 +119,12 @@ describe("ExcludedItemsController — applying", () => {
     expect(h.ports.close.applied).not.toHaveBeenCalled();
     // --- And the dialog comes back to life so the user can try again.
     expect(h.vm.applyEnabled).toBe(true);
+    // --- The failure is not swallowed silently: the controller reports it.
+    expect(consoleError).toHaveBeenCalledWith(
+      "Unhandled error while handling intent",
+      { type: "applyRequested" },
+      expect.objectContaining({ message: "project file is read-only" })
+    );
   });
 });
 

@@ -10,6 +10,7 @@ import {
   fakeZ88MachinePort,
   openInsertCardDialog
 } from "./fakes";
+import { expectConsole } from "../../../expectedConsole";
 
 describe("Z88InsertCardController — choosing a card file", () => {
   it("accepts an image whose size the slot allows", async () => {
@@ -294,6 +295,7 @@ describe("Z88InsertCardController — work in flight", () => {
   });
 
   it("keeps the dialog usable when the insertion fails", async () => {
+    const consoleError = expectConsole("error");
     const machine = fakeZ88MachinePort({
       applyCardState: vi.fn(async () => {
         throw new Error("slot is jammed");
@@ -308,6 +310,12 @@ describe("Z88InsertCardController — work in flight", () => {
 
     expect(h.vm.insertEnabled).toBe(true);
     expect(h.ports.close.inserted).not.toHaveBeenCalled();
+    // --- The failure is not swallowed silently: the controller reports it.
+    expect(consoleError).toHaveBeenCalledWith(
+      "Unhandled error while handling intent",
+      { type: "insertRequested" },
+      expect.objectContaining({ message: "slot is jammed" })
+    );
   });
 
   it("survives a dispose/activate cycle and still inserts", async () => {

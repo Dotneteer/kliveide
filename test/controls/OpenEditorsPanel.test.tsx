@@ -134,8 +134,10 @@ describe("OpenEditorsPanel", () => {
     const hub = createHub(
       1,
       [
-        document("code.asm", "/proj/first/code.asm"),
-        document("code.asm", "/proj/second/code.asm"),
+        // --- Same name, different files: a real hub keys documents by path, so
+        // --- the ids must differ here too, or the rows collide on their React key.
+        { ...document("code.asm", "/proj/first/code.asm"), id: "/proj/first/code.asm" },
+        { ...document("code.asm", "/proj/second/code.asm"), id: "/proj/second/code.asm" },
         document("main.asm", "/proj/third/main.asm")
       ],
       0,

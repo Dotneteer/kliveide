@@ -150,3 +150,14 @@ if (typeof globalThis.ResizeObserver === "undefined") {
   }
   (globalThis as any).ResizeObserver = ResizeObserverStub;
 }
+
+/**
+ * jsdom has no 2D/WebGL canvas without the native `canvas` package, and says so on stderr
+ * every time a component asks for a context. Returning `null` is what that call returns
+ * anyway - and what a browser returns for an unsupported context - so components already
+ * handle it; this stub only drops the "Not implemented" line. A test that needs a context
+ * still installs its own with `vi.spyOn(HTMLCanvasElement.prototype, "getContext")`.
+ */
+if (typeof HTMLCanvasElement !== "undefined") {
+  HTMLCanvasElement.prototype.getContext = (() => null) as HTMLCanvasElement["getContext"];
+}

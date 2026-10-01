@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
-import React, { useRef, act } from "react";
-import { render } from "@testing-library/react";
+import React, { useRef } from "react";
+import { act, render } from "@testing-library/react";
 import { renderWithProviders, createMockStore } from "../react-test-utils";
 import {
   useGlobalSetting,
@@ -21,6 +21,7 @@ import {
   setGlobalSettingAction
 } from "@state/actions";
 import { SETTING_IDE_SHOW_TOOLBAR } from "@common/settings/setting-const";
+import { suppressUncaughtErrors } from "../expectedConsole";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -188,6 +189,7 @@ describe("useSelector — Step 2.1: shallowEqual gating", () => {
 
   it("throws a clear error when used outside RendererProvider", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    suppressUncaughtErrors();
 
     function Subject() {
       useSelector(s => s.emuLoaded);

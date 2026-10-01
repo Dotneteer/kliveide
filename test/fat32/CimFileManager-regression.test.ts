@@ -3,6 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { CimFileManager, CimFile, MAX_CLUSTERS, CIM_HEADER, CIM_VERSION_MAJOR, CIM_VERSION_MINOR, CLUSTER_BASE_SIZE } from "@main/fat32/CimFileManager";
+import { expectConsole } from "../expectedConsole";
 
 const TEST_DIR = "testFat32Regression";
 
@@ -228,6 +229,7 @@ describe("CimFileManager - Regression Tests", () => {
     });
 
     it("REGRESSION-006: File properties should be loaded from header, not constructor params", () => {
+      const consoleWarn = expectConsole("warn");
       // --- Arrange
       const cfm = new CimFileManager();
       const filePath = createTestFile("regression-006.cim");
@@ -256,6 +258,10 @@ describe("CimFileManager - Regression Tests", () => {
       
       // --- Clean up
       fs.unlinkSync(filePath);
+      // --- The mismatch is reported, not silently resolved.
+      expect(consoleWarn).toHaveBeenCalledWith(
+        expect.stringContaining("maxSize (64) differs from file header (128)")
+      );
     });
   });
 
@@ -645,6 +651,7 @@ describe("CimFileManager - Regression Tests", () => {
     });
 
     it("REGRESSION-016: Should detect maxClusters mismatch with actual allocated clusters", () => {
+      const consoleWarn = expectConsole("warn");
       // --- Test maxClusters consistency validation
       
       // --- Arrange
@@ -686,6 +693,9 @@ describe("CimFileManager - Regression Tests", () => {
       }
       
       fs.unlinkSync(filePath);
+      expect(consoleWarn).toHaveBeenCalledWith(
+        expect.stringContaining("Cluster map inconsistency detected")
+      );
     });
 
     it("REGRESSION-017: Should prevent data corruption from duplicate cluster assignment", () => {
@@ -744,6 +754,7 @@ describe("CimFileManager - Regression Tests", () => {
     });
 
     it("REGRESSION-018: Should validate cluster map on every file open", () => {
+      const consoleWarn = expectConsole("warn");
       // --- Test that validation happens consistently
       
       // --- Arrange
@@ -824,6 +835,9 @@ describe("CimFileManager - Regression Tests", () => {
       }
       
       fs.unlinkSync(filePath);
+      expect(consoleWarn).toHaveBeenCalledWith(
+        expect.stringContaining("Cluster map inconsistency detected")
+      );
     });
   });
 
@@ -865,7 +879,6 @@ describe("CimFileManager - Regression Tests", () => {
       // With file handle leak (open/close each time), this is slow
       // With persistent handle, this should be fast
       // Note: This is more of a performance test than correctness
-      console.log(`[REGRESSION-019] ${iterations} reads completed in ${elapsedMs}ms`);
       
       // Verify data integrity
       for (let i = 0; i < 10; i++) {
@@ -899,7 +912,6 @@ describe("CimFileManager - Regression Tests", () => {
       const elapsedMs = Date.now() - startTime;
       
       // --- Assert
-      console.log(`[REGRESSION-020] ${iterations} writes completed in ${elapsedMs}ms`);
       
       // Verify last written data
       for (let i = 0; i < 10; i++) {
@@ -1031,10 +1043,7 @@ describe("CimFileManager - Regression Tests", () => {
       
       const writeElapsed = Date.now() - writeStart;
       
-      // --- Assert: Log performance metrics
-      console.log(`[REGRESSION-023] Performance metrics:`);
-      console.log(`  ${readIterations} reads: ${readElapsed}ms (${(readElapsed/readIterations).toFixed(2)}ms avg)`);
-      console.log(`  ${writeIterations} writes: ${writeElapsed}ms (${(writeElapsed/writeIterations).toFixed(2)}ms avg)`);
+      // --- Assert
       
       // With persistent handles, expect < 1ms average per operation
       // With open/close pattern, expect > 2ms average per operation

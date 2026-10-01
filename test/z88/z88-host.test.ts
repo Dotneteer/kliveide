@@ -10,6 +10,7 @@ import { CardIds } from "@emu/machines/z88/CardIds";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { processMainToEmuMessages } from "@renderer/appEmu/MainToEmuProcessor";
 import { createHarnessZ88Machine } from "../harness/z88";
+import { expectConsole } from "../expectedConsole";
 
 /*
  * Host-level behaviour of the Cambridge Z88 machine: what the IDE and the card dialogs rely on,
@@ -159,8 +160,13 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
   });
 
   it("answers with an error for a machine that is not a Z88", async () => {
+    const consoleError = expectConsole("error");
     const response = await requestBlinkState({ machineId: "sp48" });
     expect(response.type).toBe("ErrorResponse");
     expect(response.message).toContain("BLINK device is not available");
+    expect(consoleError).toHaveBeenCalledWith(
+      expect.stringContaining("BLINK device is not available"),
+      expect.anything()
+    );
   });
 });

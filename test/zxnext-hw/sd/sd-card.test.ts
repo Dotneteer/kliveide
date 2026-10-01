@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createSession, MemorySdCard, type NextTestSession, type SdCardBacking } from "../../harness/zxnext";
+import { expectConsole } from "../../expectedConsole";
 
 /*
  * SPI master and SD card (catalogue SPI-001 - SPI-008; SPI-001's register-level half, the WASM `$E7`
@@ -404,6 +405,8 @@ ${readMore(6)}`,
   });
 
   it("SPI-011: a write the medium refuses answers the data response 'write error' and leaves the sector as it was", async () => {
+    // --- The machine logs the refused write; the response is what this test checks.
+    const consoleLog = expectConsole("log");
     // --- SD spec 7.3.3.1: data response token xxx0 sss1, sss = 010 accepted, 110 write error (& $1F = $0D).
     // --- The host storage throws on sector 9, as a failed or unconfirmed write of the image file does.
     const img = image();
@@ -463,6 +466,10 @@ ${send("Cmd17")}
     expect([r1Read, token], "the card still answers CMD17").toEqual([0x00, 0xfe]);
     expect(Array.from(s.peekBytes(0xb000, 512)), "sector 9 unchanged").toEqual(sectorOf(image(), 9));
     expect(sectorOf(img, 9), "the image too").toEqual(sectorOf(image(), 9));
+    expect(consoleLog).toHaveBeenCalledWith(
+      "SD card sector write error",
+      expect.objectContaining({ message: "medium error" })
+    );
   });
 
   it("SPI-012: NextReg $0A bit 5 does not swap the SD cards: $E7 = $FE still reaches card 0", async () => {

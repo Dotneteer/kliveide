@@ -4,6 +4,7 @@ import { resolvedPartitionFor } from "@common/utils/source-breakpoint-partition"
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
+import { expectConsole } from "../expectedConsole";
 
 async function compile(source: string, model?: number) {
   const options = new AssemblerOptions();
@@ -130,8 +131,12 @@ describe("NEX export - placement by bank offset", () => {
   });
 
   it("still places .bank code at its offset", async () => {
+    const consoleWarn = expectConsole("warn");
     const banks = await nexOf(".bank 20, $0100\n  .defb 9\n");
     expect(banks.get(20)![0x100]).toBe(9);
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("Unbanked code at $C100 is above bank 2 range")
+    );
   });
 
   it("keeps a .bank offset when .org changes the assembly address", async () => {

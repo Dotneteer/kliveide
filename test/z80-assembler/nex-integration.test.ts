@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { NexFileWriter } from "@main/z80-compiler/nex-file-writer";
+import { expectConsole } from "../expectedConsole";
 
 describe("NEX Integration Tests", () => {
   it("compiles and generates NEX file from source", async () => {
+    const consoleWarn = expectConsole("warn");
     const source = `
       ; NEX integration test
       .model Next
@@ -62,9 +64,13 @@ describe("NEX Integration Tests", () => {
     
     // Verify at least one bank is present
     expect(nexData[18 + 5]).toBe(1); // Bank 5 present
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("Unbanked code at $C000 is above bank 2 range")
+    );
   });
 
   it("handles multi-bank programs correctly", async () => {
+    const consoleWarn = expectConsole("warn");
     const source = `
       .model Next
       
@@ -113,6 +119,9 @@ describe("NEX Integration Tests", () => {
     
     // Verify bank count
     expect(nexData[9]).toBe(3); // 3 banks total
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("Unbanked code at $C000 is above bank 2 range")
+    );
   });
 
   it("handles configuration defaults correctly", async () => {
@@ -166,6 +175,7 @@ describe("NEX Integration Tests", () => {
   });
 
   it("supports all savenex configuration options", async () => {
+    const consoleWarn = expectConsole("warn");
     const source = `
       .model Next
       
@@ -214,9 +224,13 @@ describe("NEX Integration Tests", () => {
     expect(nexData[130]).toBe(1); // Loading bar enabled
     expect(nexData[131]).toBe(128); // Loading bar color
     expect(nexData[134]).toBe(1); // Preserve regs
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("Unbanked code at $C000 is above bank 2 range")
+    );
   });
 
   it("handles expression evaluation in savenex pragmas", async () => {
+    const consoleWarn = expectConsole("warn");
     const source = `
       .model Next
       
@@ -249,5 +263,8 @@ describe("NEX Integration Tests", () => {
     expect(nexData[13]).toBe(0xFF); // Stack MSB
     expect(nexData[14]).toBe(0x00); // PC LSB
     expect(nexData[15]).toBe(0xC0); // PC MSB
+    expect(consoleWarn).toHaveBeenCalledWith(
+      expect.stringContaining("Unbanked code at $C000 is above bank 2 range")
+    );
   });
 });

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NewProjectDialog } from "@renderer/appIde/dialogs/newProject/NewProjectDialog";
 
 import { fireEvent, renderWithProviders, screen, waitFor } from "../../react-test-utils";
+import { expectConsole } from "../../expectedConsole";
 
 /**
  * Container-level tests assert wiring and nothing else: that the renderer
@@ -34,16 +35,20 @@ const eventsMock = vi.hoisted(() => ({
   ensureBuildRootsLoaded: vi.fn()
 }));
 
-vi.mock("@renderer/appIde/services/AppServicesProvider", () => ({
-  useAppServices: () => ({
+vi.mock("@renderer/appIde/services/AppServicesProvider", () => {
+  // --- One object for the whole file, like the real provider's ref-held services:
+  // --- a fresh object per call changes the dialog's `env` on every render, and the
+  // --- effect that dispatches it then loops until React gives up.
+  const services = {
     validationService: {
       isValidPath: validationMock.isValidPath,
       isValidFilename: validationMock.isValidFilename
     },
     projectService: {},
     ideCommandsService: { executeCommand: ideCommandsMock.executeCommand }
-  })
-}));
+  };
+  return { useAppServices: () => services };
+});
 
 vi.mock("@renderer/core/MainApi", () => ({
   useMainApi: () => mainApiMock
@@ -146,6 +151,7 @@ describe("NewProjectDialog — wiring", () => {
   });
 
   it("reports a failed creation through the message box and stays open", async () => {
+    const consoleError = expectConsole("error");
     mainApiMock.createKliveProject.mockRejectedValue(new Error("disk full"));
     const onClose = vi.fn();
     renderWithProviders(<NewProjectDialog onClose={onClose} />);
@@ -160,6 +166,10 @@ describe("NewProjectDialog — wiring", () => {
       )
     );
     expect(onClose).not.toHaveBeenCalled();
+    expect(consoleError).toHaveBeenCalledWith(
+      "New Klive project creation failed",
+      expect.objectContaining({ message: "disk full" })
+    );
   });
 
   it("cancels through the caller's onClose", () => {
