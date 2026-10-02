@@ -60,6 +60,15 @@ internal link, and asserts the Z80 syntax highlighting actually rendered. The
 last of those exists because a lost grammar leaves every page present and
 merely uncoloured, which no route diff can see.
 
+## Feature Roadmap And Competitive Analysis
+
+- `.plans/CLOSING_THE_GAPS_PLAN.md` is the roadmap for features where Klive is weaker than other
+  Spectrum/Next tools; its Decisions section (standalone IDE, DeZog-compatible conventions, ROM
+  annotations written from scratch) is binding.
+- **Whenever a feature from that plan is implemented, update the comparison table (§2) and the
+  gap table (§4) in `.plans/LANDING_PAGE_COMPETITIVE_ANALYSIS.md` in the same change**, and mark
+  the feature as done in the roadmap. This is a standing instruction from the project author.
+
 ## Klive BASIC (the ZX BASIC compiler)
 
 - The plan is `.plans/ZXBASIC_COMPILER_PLAN.md`; read its §0 (ground rules and decisions) and §17
