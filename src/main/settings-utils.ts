@@ -4,7 +4,7 @@ import { mainStore } from "@main/main-store";
 import { get } from "lodash";
 import { KliveGlobalSettings } from "../common/settings/setting-definitions";
 import { getRecentProjects, saveKliveProject, setRecentProjects } from "./projects";
-import { app } from "electron";
+import { getKliveHomeBase } from "./portable";
 import { AppSettings } from "./settings";
 import { ensureSettingsFileDirectory, resolveSettingsFilePath } from "./settings-path";
 
@@ -154,5 +154,5 @@ export function loadAppSettings(): void {
 }
 
 export function getSettingsFilePath(): string {
-  return resolveSettingsFilePath(app.getPath("home"));
+  return resolveSettingsFilePath(getKliveHomeBase());
 }

@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog, screen } from "electron";
+import { BrowserWindow, dialog, screen } from "electron";
 import { mainStore } from "@main/main-store";
+import { getKliveHomeBase } from "@main/portable";
 import { setWindowRecordingStateAction } from "@state/actions";
 import { recordingQualityToCrf } from "@common/utils/recordingCrf";
 import type { IRecordingBackend } from "../IRecordingBackend";
@@ -72,7 +73,7 @@ export async function startWindowRecording(
   try {
     const colors = toComposerColors(await readThemeColors(ideWindow));
     const format = emulatorState?.screenRecordingFormat ?? "mp4";
-    const outputPath = resolveRecordingPath(app.getPath("home"), format);
+    const outputPath = resolveRecordingPath(getKliveHomeBase(), format);
     const backend: IRecordingBackend = isFFmpegAvailable()
       ? new FfmpegRecordingBackend()
       : new StubRecordingBackend();

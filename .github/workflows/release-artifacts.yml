@@ -65,10 +65,18 @@ jobs:
       - name: Add install Emulator install kit to artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: install-kit-winx86
-          path: |
-            artifacts/*.exe
-            artifacts/*.zip
+          name: install-kit-winx64
+          path: artifacts/*.exe
+          if-no-files-found: error
+
+      # --- The no-installer build (#1382) is its own artifact, so it is never mistaken for the
+      # --- setup kit or downloaded with it.
+      - name: Add portable Emulator kit to artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: portable-kit-winx64
+          path: artifacts/KliveIde-Portable-*.zip
+          if-no-files-found: error
 
   build-on-linux:
     runs-on: ubuntu-latest

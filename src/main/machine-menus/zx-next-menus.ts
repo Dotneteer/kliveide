@@ -9,6 +9,7 @@ import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
 import { KLIVE_HOME_FOLDER } from "@main/settings";
+import { getKliveHomeBase } from "@main/portable";
 import { setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
@@ -183,7 +184,7 @@ export const hotkeyMenuRenderer: MachineMenuRenderer = () => {
 
 export async function initializeZxSpectrumNext(): Promise<void> {
   // --- This is where the SD Card file is stored
-  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
   if (!fs.existsSync(sdCardPath)) {
     // --- Create the folder if it does not exist
     fs.mkdirSync(path.dirname(sdCardPath), { recursive: true });
@@ -223,7 +224,7 @@ export async function setupZxSpectrumNext(): Promise<void> {
 }
 
 function getDefaultSdCardFile(): string {
-  return path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  return path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
 }
 
 async function logSdCardEvent(filename: string): Promise<void> {
@@ -231,7 +232,7 @@ async function logSdCardEvent(filename: string): Promise<void> {
 }
 
 async function resetToDefaultSdCardFile(): Promise<void> {
-  const sdCardPath = path.join(app.getPath("home"), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
+  const sdCardPath = path.join(getKliveHomeBase(), KLIVE_HOME_FOLDER, DEFAULT_SD_CARD_FILE);
 
   // --- Rewriting the image must not overlap with emulated sector I/O or a file copy, all of
   // --- which work on the very same file.

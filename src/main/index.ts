@@ -83,6 +83,11 @@ import { KLIVE_HOME_FOLDER } from "./settings";
 import { KLIVE_APP_VERSION } from "./app-version";
 import { EMU_INITIAL_MIN_HEIGHT, EMU_MIN_CONTENT_WIDTH } from "@common/utils/emu-window-size";
 import { emuMachineSizeStore } from "./emu-machine-sizes";
+import { getKliveHomeBase, initPortableMode } from "./portable";
+
+// --- The Windows zip build keeps its data beside the executable (#1382). This must run before anything reads a Klive
+// --- folder, and before the single-instance lock, which lives in Electron's userData folder.
+initPortableMode();
 
 // --- We use the same index.html file for the EMU and IDE renderers. The UI receives a parameter to
 // --- determine which UI to display
@@ -687,7 +692,7 @@ ipcMain.on("IdeToMain", async (_ev, msg: RequestMessage) => {
 // --- Handle custom token loading requests from renderer
 ipcMain.handle("load-custom-tokens", async (_event, languageId: string) => {
   try {
-    const settingsFolderPath = join(app.getPath("home"), KLIVE_HOME_FOLDER);
+    const settingsFolderPath = join(getKliveHomeBase(), KLIVE_HOME_FOLDER);
     const tokenFilePath = join(settingsFolderPath, `${languageId}.tokens.json`);
     
     // Check if the file exists
