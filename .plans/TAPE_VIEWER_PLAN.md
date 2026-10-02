@@ -497,3 +497,21 @@ on the real 48K core with fast load off and checks the load time tracks the bloc
 **Still not played.** A pure tone ($12) has no data, and the WASM player treats a block with no data
 as a pause, so it is skipped; the viewer marks it "not played" with $13, $14, $15, $18 and $19. All of
 them belong to custom loaders, which need the player to learn those blocks (§1.3).
+
+**After the first release.**
+
+- **A header's 19 bytes are explained** (`Tape/TapeHeaderBytes.tsx`, model in
+  `tapeHeaderFields.ts`), chosen from three mockups (a labelled strip, a field table, a linked strip
+  and field list; the author chose the last). It replaced the header's fact list; a header shows no
+  byte preview or "List at" box, and the details' pop-out hint shows only where something can pop
+  out.
+- **Code pops out in the memory view by default.** The dump keeps the load address for Disassembly.
+  The memory view still numbers rows from `$0000`, as every static dump does (NEX and Z88 banks too).
+- **The list and the details always stay side by side** in the tape viewer (`BankBrowser`
+  `layout="sideBySide"`); NEX and Z88 keep their stacking below 96ch, at the author's choice.
+- **The details no longer show the BASIC listing or the code bytes**; both are in the pop-outs only.
+  A program shows its line count and a "Pop out the listing" link; a block no header places keeps
+  its "List at" box, which the Disassembly pop-out reads.
+- **`.tap` and `.tzx` match regardless of case** (`ignoreCase` on a `FileTypePattern`, opt-in per
+  entry, so other file types keep the case-sensitive match).
+

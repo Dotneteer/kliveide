@@ -648,6 +648,8 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".tzx",
+    // --- Tapes come from old media and other systems, where GAME.TAP is as common as game.tap
+    ignoreCase: true,
     editor: TAP_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,
@@ -659,6 +661,8 @@ export const fileTypeRegistry: FileTypeEditor[] = [
   {
     matchType: "ends",
     pattern: ".tap",
+    // --- Tapes come from old media and other systems, where GAME.TAP is as common as game.tap
+    ignoreCase: true,
     editor: TAP_VIEWER,
     icon: "@file-tap-tzx",
     isBinary: true,

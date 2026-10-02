@@ -10,15 +10,14 @@ import {
 } from "@renderer/controls/bankBrowser/BankBrowser";
 import { ContextMenuItem } from "@renderer/controls/ContextMenu";
 import { AddressInput } from "@renderer/controls/AddressInput";
-import { MiniMemoryDump } from "@renderer/features/memory/StaticMemoryDump";
 import { ScreenCanvas } from "@renderer/controls/Next/ScreenCanvas";
 import { SPECTRUM_48_COLORS } from "@emu/machines/spectrum-colors";
 import { ZxSpectrumChars } from "@common/machines/char-codes";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
-import { BasicLineDisplay } from "../BasicPanel";
 import { decodeBasicProgram } from "../basicListing";
 import { createScrPixelData } from "../Next/ScrFileViewerPanel";
 import { TapeTimeline } from "./TapeTimeline";
+import { TapeHeaderBytes } from "./TapeHeaderBytes";
 import {
   TAPE_BLOCK_FILTERS,
   TAPE_ROLE_NAMES,
@@ -43,12 +42,6 @@ import styles from "./TapeViewerPanel.module.scss";
  *
  * Like the NEX and Z88 browsers, it decides nothing about documents: the viewer hands it callbacks.
  */
-
-/** How many BASIC lines the details list before pointing at the pop-out */
-export const INLINE_BASIC_LINES = 40;
-
-/** How many bytes of a block the details preview */
-const PREVIEW_BYTES = 64;
 
 export type TapeBlockItem = BankBrowserItem<TapeBlockView> & { block: TapeBlockInfo };
 
@@ -136,6 +129,7 @@ export const TapeBlockBrowser = ({
       views={["memory", "disassembly", "basic", "screen"]}
       viewNames={TAPE_VIEW_NAMES}
       itemNoun="Block"
+      layout="sideBySide"
       formatNumber={(item) => `#${item.bank}`}
       viewsFor={(item) => viewsOf(item.block, !!basicOverride?.[item.block.index])}
       onSelect={(item) => onSelect(item.block.index)}
@@ -300,7 +294,9 @@ const Details = ({
             <dt>Length</dt>
             <dd>
               {`${fmt(block.bytes.length)} bytes`}
-              {payload && payload !== block.bytes ? ` (${fmt(payload.length)} of data)` : ""}
+              {payload && payload !== block.bytes && !block.header
+                ? ` (${fmt(payload.length)} of data)`
+                : ""}
             </dd>
           </>
         )}
@@ -345,7 +341,13 @@ const Details = ({
         )}
       </BankFacts>
 
-      {block.header && <HeaderFacts header={block.header} />}
+      {block.header && block.bytes && (
+        <TapeHeaderBytes
+          key={block.index}
+          bytes={block.bytes}
+          dataIndex={analysis.files.find((f) => f.headerIndex === block.index)?.dataIndex}
+        />
+      )}
 
       {fileHeader && (
         <BankDetailsSection
@@ -389,7 +391,8 @@ const Details = ({
         </BankDetailsSection>
       )}
 
-      {basic && <BasicPreview source={basic} onShowAll={onShowAll} />}
+      {/* --- The listing itself is only in the pop-out: the details stay a summary */}
+      {basic && <BasicSummary source={basic} onShowAll={onShowAll} />}
 
       {block.role === "screen" && payload && payload.length >= 6912 && (
         <BankDetailsSection title="Screen">
@@ -406,21 +409,20 @@ const Details = ({
         </BankDetailsSection>
       )}
 
-      {payload && !basic && block.role !== "screen" && (
-        <BankDetailsSection title={`First ${Math.min(PREVIEW_BYTES, payload.length)} bytes`}>
-          {!placedByHeader && (
-            <div className={styles.listAt}>
-              <AddressInput
-                label="List at:"
-                tooltip="The address to list this block at in Disassembly (hex). Enter to apply."
-                decimalView={false}
-                clearOnEnter={false}
-                onAddressSent={async (address) => onListAt(address & 0xffff)}
-              />
-              <span className={styles.listAtValue}>{`$${toHexa4(loadAt)}`}</span>
-            </div>
-          )}
-          <MiniMemoryDump contents={payload} length={PREVIEW_BYTES} />
+      {/* --- No byte preview: the bytes are in the memory pop-out. A block no header places still
+          --- needs an address for its disassembly. */}
+      {payload && !placedByHeader && !block.header && (
+        <BankDetailsSection title="Disassembly">
+          <div className={styles.listAt}>
+            <AddressInput
+              label="List at:"
+              tooltip="The address to list this block at in Disassembly (hex). Enter to apply."
+              decimalView={false}
+              clearOnEnter={false}
+              onAddressSent={async (address) => onListAt(address & 0xffff)}
+            />
+            <span className={styles.listAtValue}>{`$${toHexa4(loadAt)}`}</span>
+          </div>
         </BankDetailsSection>
       )}
     </>
@@ -434,42 +436,8 @@ const ArchiveField = ({ label, value }: { label: string; value: string }) => (
   </>
 );
 
-const HeaderFacts = ({ header }: { header: NonNullable<TapeBlockInfo["header"]> }) => (
-  <BankDetailsSection title="Header">
-    <BankFacts>
-      <dt>Name</dt>
-      <dd className={styles.wrap}>{`"${header.name}"`}</dd>
-      <dt>Type</dt>
-      <dd>{`${header.typeName} (${header.type})`}</dd>
-      <dt>Data length</dt>
-      <dd>{`${fmt(header.dataLength)} bytes`}</dd>
-      {header.type === 0 && (
-        <>
-          <dt>Autostart</dt>
-          <dd>{header.autostart !== undefined ? `LINE ${header.autostart}` : "None"}</dd>
-          <dt>Program</dt>
-          <dd>{`${fmt(header.variablesOffset ?? 0)} bytes`}</dd>
-          <dt>Variables</dt>
-          <dd>{`${fmt(Math.max(0, header.dataLength - (header.variablesOffset ?? 0)))} bytes`}</dd>
-        </>
-      )}
-      {header.startAddress !== undefined && (
-        <>
-          <dt>Start</dt>
-          <dd>{`$${toHexa4(header.startAddress)} (${header.startAddress})`}</dd>
-        </>
-      )}
-      {header.arrayName && (
-        <>
-          <dt>Array</dt>
-          <dd>{header.arrayName}</dd>
-        </>
-      )}
-    </BankFacts>
-  </BankDetailsSection>
-);
-
-const BasicPreview = ({
+/** A program's size in lines, and the way to its listing */
+const BasicSummary = ({
   source,
   onShowAll
 }: {
@@ -481,23 +449,18 @@ const BasicPreview = ({
     // --- `source` is rebuilt on every render; what it holds is what matters
     [source.bytes, source.end]
   );
-  const lines = listing.lines.filter((line) => line.spans.length > 0);
-  const shown = lines.slice(0, INLINE_BASIC_LINES);
-  const more = lines.length - shown.length;
   return (
-    <BankDetailsSection
-      title={`BASIC (${listing.lineCount} line${listing.lineCount === 1 ? "" : "s"})`}
-    >
-      <div className={styles.basic} data-testid="tape-basic-preview">
-        {shown.map((line, i) => (
-          <BasicLineDisplay key={i} spans={line.spans} />
-        ))}
-      </div>
-      {more > 0 && (
-        <button type="button" className={styles.more} onClick={onShowAll}>
-          {`… ${more} more line${more === 1 ? "" : "s"} · pop out the listing`}
-        </button>
-      )}
+    <BankDetailsSection title="BASIC">
+      <BankFacts>
+        <dt>Listing</dt>
+        <dd data-testid="tape-basic-summary">
+          {`${fmt(listing.lineCount)} line${listing.lineCount === 1 ? "" : "s"}`}
+          {listing.corrupted ? " (stops early: the program is damaged)" : ""}
+        </dd>
+      </BankFacts>
+      <button type="button" className={styles.more} onClick={onShowAll}>
+        Pop out the listing
+      </button>
     </BankDetailsSection>
   );
 };

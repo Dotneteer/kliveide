@@ -102,6 +102,25 @@
   }
 }
 
+/*
+ * `layout="sideBySide"` (the tape viewer): never stacked, however narrow the pane. The list keeps a
+ * readable minimum and the details scroll sideways (`.details`' minimum below) rather than squeeze.
+ * Declared after the container query, with one more class, so it wins inside it too.
+ */
+.browser.sideBySide .body {
+  grid-template-columns: minmax(30ch, 40ch) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.browser.sideBySide .listPane {
+  border-right: 1px solid var(--border-default);
+  border-bottom: 0;
+}
+
+.browser.sideBySide .details {
+  min-width: 44ch;
+}
+
 // ─── List ────────────────────────────────────────────────────────────────────
 
 /*

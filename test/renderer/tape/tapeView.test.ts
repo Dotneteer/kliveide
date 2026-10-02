@@ -278,6 +278,10 @@ describe("analyzeTape on a TZX file", () => {
     const basic = analysis!.blocks[2];
     expect(tapeBlockViews(basic)).toEqual(["memory", "disassembly", "basic"]);
     expect(defaultTapeBlockView(basic)).toBe("basic");
+    // --- Code pops out as memory
+    const code = analysis!.blocks[10];
+    expect(code.role).toBe("code");
+    expect(defaultTapeBlockView(code)).toBe("memory");
     expect(tapeBlockViews(analysis!.blocks[0])).toEqual([]);
     // --- A header: its details already show every byte
     expect(tapeBlockViews(analysis!.blocks[1])).toEqual([]);

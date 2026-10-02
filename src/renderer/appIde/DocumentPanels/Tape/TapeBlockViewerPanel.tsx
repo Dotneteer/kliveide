@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import classnames from "classnames";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import type { IDocumentHubService } from "@renderer/abstractions/IDocumentHubService";
 import { TAPE_BLOCK_VIEWER } from "@common/state/common-ids";
@@ -157,7 +158,13 @@ const TapeBasicListing = ({
         <VirtualizedList
           items={lines}
           renderItem={(idx) => (
-            <div key={idx} className={basicStyles.item}>
+            <div
+              key={idx}
+              className={classnames(basicStyles.item, {
+                [basicStyles.first]: idx === 0,
+                [basicStyles.last]: idx === lines.length - 1
+              })}
+            >
               <BasicLineDisplay spans={lines[idx]?.spans} showSpectrumFont={showSpectrumFont} />
             </div>
           )}

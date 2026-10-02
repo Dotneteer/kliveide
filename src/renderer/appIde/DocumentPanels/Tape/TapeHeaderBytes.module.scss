@@ -1,0 +1,91 @@
+/*
+ * The header byte explainer (`TapeHeaderBytes.tsx`). One highlight colour for "the field you are
+ * looking at", in the strip and the list alike, so the eye links the two; the fields otherwise
+ * alternate between two neutral surfaces, which is all a reader needs to see where one ends.
+ */
+
+/* --- Wraps between fields, never inside one, so a narrow details pane keeps each field whole */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.group {
+  display: inline-flex;
+  gap: 1px;
+  padding: 1px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  cursor: default;
+}
+
+.alt {
+  background: var(--surface-panel);
+}
+
+.cell {
+  min-width: 2.5ch;
+  padding: 0 var(--space-0_5);
+  color: var(--data-value);
+  font-family: var(--monospace-font);
+  text-align: center;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 6ch 10ch minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-0_5) var(--space-1);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--data-label);
+  font: inherit;
+  text-align: left;
+  cursor: default;
+
+  &:focus-visible {
+    outline: 1px solid var(--focus-ring);
+    outline-offset: -1px;
+  }
+}
+
+.offset {
+  color: var(--data-secondary);
+}
+
+.name {
+  color: var(--data-label);
+}
+
+.value {
+  overflow-wrap: anywhere;
+  color: var(--data-value);
+}
+
+/* --- The field being explained: the same accent wash on its bytes and its row */
+.group.active,
+.field.active {
+  border-color: var(--accent-border);
+  background: var(--accent-subtle);
+}
+
+.group.active .cell,
+.field.active .value {
+  color: var(--accent-text);
+}
+
+.meaning {
+  min-height: calc(var(--panel-line-height) * 2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+}

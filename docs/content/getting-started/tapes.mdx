@@ -34,17 +34,21 @@ You can rewind the tape to its beginning just as you can do it with a physical t
 
 ## Viewing a Tape File
 
-Open a `.tap` or `.tzx` file from the Explorer to see what is on it. The viewer shows:
+Open a `.tap` or `.tzx` file from the Explorer to see what is on it (the extension's case does not matter: `GAME.TAP` opens too). The viewer shows:
 
 - **A summary**: the format (and the TZX version), the file's size, how many blocks and files it holds, how long it plays, and the title, publisher and year of a TZX file that records them.
 - **A timeline strip**: the whole tape in play order, each block as wide as the time it takes to play. The selected block is outlined; click a segment to select its block. A BASIC program is drawn in the accent colour, and a block Klive cannot play in red.
 - **The blocks**: every block in a list, grouped by file. A standard header and the data block after it form one file, such as `Program "Float Spy"` or `Bytes "float.cde"`. Each row shows what the block holds: `LINE 9996` for a program that starts itself, the load address of code. Use the **All**, **Data**, **BASIC**, **Code** and **Not played** buttons to filter the list, and the arrow keys to move through it.
 
-The details beside the list describe the selected block: its length and checksum, when it plays, its header's fields, and the timing of a turbo block. A **BASIC program** is listed right there, decoded from its tokens; a **screen** (`SCREEN$`) is drawn; other data shows its first bytes.
+The details beside the list describe the selected block: its length and checksum, when it plays, its header's fields, and the timing of a turbo block. The list and the details always stay side by side. A **BASIC program** shows how many lines it has, and a **screen** (`SCREEN$`) is drawn; to read a program's listing or a block's bytes, pop the block out.
 
 <ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
 
-**Pop out** a block to see all of it in its own document: as a memory dump, as a disassembly at the address the block loads to, as a full BASIC listing, or as a screen. Use the button beside the block's details (its arrow chooses the view), the icon on its row, a double-click, or <kbd>Enter</kbd>. **Go Back** returns to the tape. A block with no header has no load address of its own: type one in the **List at** box to disassemble it there, and right-click it to **Read as BASIC** when you know it is a program.
+Select a **header** to see its 19 bytes explained. The bytes are grouped by field — flag, type, the ten-character name, three two-byte values and the checksum — above a list of the fields with their decoded values. Point at a byte or a field (or tab through the list) to highlight both and read what the field means; the autostart line of a program, or the load address of code, is explained from the start. The three two-byte values mean different things for each type of file, and the explanation says which.
+
+<ClickableImage src="/images/getting-started/tape-header-bytes.png" width={560} />
+
+**Pop out** a block to see all of it in its own document: as a memory dump (the default for code), as a disassembly at the address the block loads to, as a full BASIC listing, or as a screen. Use the button beside the block's details (its arrow chooses the view), the icon on its row, a double-click, or <kbd>Enter</kbd>. **Go Back** returns to the tape. A block with no header has no load address of its own: type one in the **List at** box to disassemble it there, and right-click it to **Read as BASIC** when you know it is a program.
 
 <Callout type="warning" emoji="⚠️">
 Some TZX blocks — pure tones, pulse sequences, pure data, direct and CSW recordings, generalized data — are shown but **not played** by Klive. A tape that needs them is marked with a banner, and its loading may fail.

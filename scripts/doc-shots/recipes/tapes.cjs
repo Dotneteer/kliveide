@@ -3,7 +3,9 @@
  * (`.plans/TAPE_VIEWER_PLAN.md`).
  *
  * - `getting-started/tape-viewer.png` — the viewer with its summary, timeline strip and block
- *   browser, a BASIC program block selected so its listing shows.
+ *   browser, a BASIC program block selected.
+ * - `getting-started/tape-header-bytes.png` — a header's 19 bytes explained, the autostart field
+ *   highlighted.
  * - `getting-started/tape-viewer-commands.png` — the tape's tab with its three load buttons.
  * - `getting-started/tape-viewer-loaded.png` — the emulator after "Load and run" on that tape: the
  *   48K typed `LOAD ""`, loaded the program, and the program loaded and ran its code block.
@@ -35,17 +37,32 @@ module.exports = {
       await klive.sleep(800);
 
       // --- Verify before photographing: the browser lists the four blocks, and the BASIC
-      // --- preview decoded the program
+      // --- summary counted the program's lines
       const state = await klive.ide.evaluate(() => ({
         rows: document.querySelectorAll('[aria-label="Block list"] [role="option"]').length,
-        basic: document.querySelector('[data-testid="tape-basic-preview"]')?.textContent ?? "",
+        basic: document.querySelector('[data-testid="tape-basic-summary"]')?.textContent ?? "",
         segments: document.querySelectorAll('[data-testid="tape-timeline"] [data-first]').length
       }));
       console.log(`  rows ${state.rows}, timeline segments ${state.segments}`);
-      if (state.rows !== 4 || !state.basic.includes("BORDER") || state.segments !== 4) {
+      if (state.rows !== 4 || state.basic !== "95 lines" || state.segments !== 4) {
         throw new Error(`The tape viewer did not render as expected: ${JSON.stringify(state)}`);
       }
       await klive.shot(VIEWER, "getting-started/tape-viewer.png", { displayWidth: 900 });
+      // --- The header explainer: select the Program header, check it explains the autostart
+      await klive.ide.locator('[role="option"][data-key="0"]').first().click();
+      await klive.sleep(600);
+      const meaning = await klive.ide.evaluate(
+        () => document.querySelector('[data-testid="tape-header-meaning"]')?.textContent ?? ""
+      );
+      if (!/runs from line 9996/.test(meaning)) {
+        throw new Error(`The header explainer did not render as expected: ${meaning}`);
+      }
+      await klive.shot('[aria-label="#0 details"]', "getting-started/tape-header-bytes.png", {
+        displayWidth: 560
+      });
+      await klive.ide.locator('[role="option"][data-key="1"]').first().click();
+      await klive.sleep(400);
+
       await klive.shot('[class*="_documentsHeader_"]', "getting-started/tape-viewer-commands.png", {
         displayWidth: 900
       });

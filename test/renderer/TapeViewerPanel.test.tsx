@@ -127,11 +127,22 @@ describe("TapeViewerPanel", () => {
     expect(within(list).getByText("$7FFC")).toBeInTheDocument();
   });
 
-  it("previews a BASIC block's listing", async () => {
-    await renderViewer(FLOAT_SPY, { selectedBlock: 1 });
-    const preview = await screen.findByTestId("tape-basic-preview");
-    expect(preview.textContent).toContain("BORDER");
-    expect(screen.getByText(/more lines · pop out the listing/)).toBeInTheDocument();
+  it("summarises a BASIC block, leaving the listing to the pop-out", async () => {
+    const { openDocument } = await renderViewer(FLOAT_SPY, { selectedBlock: 1 });
+    expect((await screen.findByTestId("tape-basic-summary")).textContent).toBe("95 lines");
+    expect(screen.queryByText(/BORDER/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Pop out the listing" }));
+    await waitFor(() => expect(openDocument).toHaveBeenCalled());
+    expect((openDocument.mock.calls[0] as unknown as [any])[0].type).toBe("TapeBlockViewer");
+  });
+
+  it("shows no bytes of a code block in the details", async () => {
+    await renderViewer(FLOAT_SPY, { selectedBlock: 3 });
+    await screen.findByRole("complementary", { name: "#3 details" });
+    // --- The first bytes of float.cde: none of them may be on screen
+    expect(screen.queryByText(/^0000/)).toBeNull();
+    // --- Its header places it, so it needs no "List at" box either
+    expect(screen.queryByText("List at:")).toBeNull();
   });
 
   it("shows a header's facts and offers no pop-out for it", async () => {
@@ -142,7 +153,30 @@ describe("TapeViewerPanel", () => {
     expect(within(details).queryByRole("button", { name: /^Pop out in/ })).toBeNull();
   });
 
-  it("pops a code block out as a disassembly at its load address", async () => {
+  it("explains the header's bytes, linking each byte to its field", async () => {
+    await renderViewer(FLOAT_SPY, { selectedBlock: 0 });
+    const meaning = await screen.findByTestId("tape-header-meaning");
+    // --- The autostart is explained before anything is pointed at
+    expect(meaning.textContent).toMatch(/runs from line 9996/);
+    const strip = screen.getByTestId("tape-header-strip");
+    expect(strip.getAttribute("aria-hidden")).toBe("true");
+    expect(strip.textContent).toBe("0000466C6F617420537079206415 0C27 6415 21".replace(/ /g, ""));
+
+    // --- Pointing at the name's bytes explains the name, and marks its row
+    fireEvent.mouseEnter(strip.querySelector('[data-field="name"]')!);
+    expect(meaning.textContent).toMatch(/^Ten characters padded with spaces/);
+    expect(screen.getByRole("button", { name: /Name/ }).getAttribute("aria-pressed")).toBe("true");
+
+    // --- The keyboard reaches every field through the list
+    fireEvent.focus(screen.getByRole("button", { name: /Checksum/ }));
+    expect(meaning.textContent).toMatch(/XOR of bytes 0–17/);
+
+    // --- No byte preview or "List at" box: the explainer already shows every byte
+    expect(screen.queryByText(/^First \d+ bytes$/)).toBeNull();
+    expect(screen.getByText("19 bytes")).toBeInTheDocument();
+  });
+
+  it("pops a code block out in the memory view, with its load address kept for Disassembly", async () => {
     const { openDocument, recordJump } = await renderViewer(FLOAT_SPY, { selectedBlock: 3 });
     fireEvent.click(await screen.findByRole("button", { name: "Pop out Block #3" }));
     await waitFor(() => expect(openDocument).toHaveBeenCalled());
@@ -152,7 +186,7 @@ describe("TapeViewerPanel", () => {
     expect(doc.name).toBe("floatspy.tap - Block #3");
     expect(doc.contents).toHaveLength(256);
     expect(state.disassOffset).toBe(32764);
-    expect(state.viewMode).toBe("disassembly");
+    expect(state.viewMode).toBe("memory");
   });
 
   it("pops a BASIC block out as a listing", async () => {

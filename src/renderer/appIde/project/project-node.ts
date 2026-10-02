@@ -174,20 +174,23 @@ export function getFileTypeEntry(filename: string, store: Store<AppState>): File
     }
   }
 
+  const lowerName = filename.toLowerCase();
   for (const typeEntry of fileTypeRegistry) {
     let match = false;
+    const name = typeEntry.ignoreCase ? lowerName : filename;
+    const pattern = typeEntry.ignoreCase ? typeEntry.pattern.toLowerCase() : typeEntry.pattern;
     switch (typeEntry.matchType) {
       case "full":
-        match = filename === typeEntry.pattern;
+        match = name === pattern;
         break;
       case "starts":
-        match = filename.startsWith(typeEntry.pattern);
+        match = name.startsWith(pattern);
         break;
       case "ends":
-        match = languageFound === typeEntry.subType || filename.endsWith(typeEntry.pattern);
+        match = languageFound === typeEntry.subType || name.endsWith(pattern);
         break;
       case "contains":
-        match = filename.indexOf(typeEntry.pattern) >= 0;
+        match = name.indexOf(pattern) >= 0;
         break;
     }
     if (match) {

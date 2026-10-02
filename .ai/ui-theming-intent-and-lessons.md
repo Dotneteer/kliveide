@@ -1595,6 +1595,15 @@ cartridge) wraps it rather than copying `NexBankBrowser`.
   read as a third kind of place.
 - **Content that belongs between the heading and the list goes in `beforeBody`** (the tape
   timeline), so it stays inside the browser's bounded height instead of pushing it.
+- **Stacking is the default, side by side is a per-viewer choice** (`layout="sideBySide"`). The
+  author wants the tape viewer's list and details side by side at any width; NEX and Z88 keep
+  stacking below 96ch. Side by side keeps the list at a 30ch minimum and gives the details a 44ch
+  minimum with horizontal scroll, so a narrow pane scrolls rather than squeezing either column.
+  The override lives *after* the container query with one more class, so it wins inside it.
+- **The details are a summary, the pop-out is the content.** The tape viewer's details show no
+  BASIC listing and no byte preview (the author's call): a program shows its line count and a
+  "Pop out the listing" link, code shows nothing of its bytes. A long listing in a side pane is
+  neither readable nor scannable; the pop-out has the room and the tools.
 
 - **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
   pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
@@ -1643,6 +1652,37 @@ bar whose segments are as wide as their share of a whole. What carries over to a
   segment that is already accent.
 - **It is not a second control.** No tab stop and `aria-hidden`: the list's keyboard moves the
   selection and the strip follows, so a screen reader is not told the list twice.
+
+## An Explainer Links Bytes To Meanings With One Highlight
+
+The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`) shows raw bytes above the fields
+they form. What carries over to any "these bytes mean this" view:
+
+- **One highlight, used in both places**: the field being explained takes `--accent-subtle` with an
+  `--accent-border` edge and `--accent-text` for its bytes and its value — in the byte strip and in
+  the field list alike, so the eye links them. Fields are otherwise told apart only by alternating two
+  neutral surfaces (`--surface-raised`/`--surface-panel`); a colour per field would be a legend to
+  learn for nineteen bytes.
+- **Something is explained before anyone points**: start on the field the structure is mostly *for*
+  (a program's autostart, code's load address). An empty explanation box teaches nothing and reads as
+  broken.
+- **The list is the accessible control, the strip is decoration**: field rows are buttons (focus and
+  hover both select), the strip is `aria-hidden`, and the explanation is `aria-live="polite"`.
+- **Wrap between groups, never inside one**: the strip is a flex-wrap of per-field groups, so a narrow
+  pane keeps a ten-byte name or a two-byte word whole.
+- **Do not show the same bytes twice**: a view that explains every byte drops the generic hex preview
+  and anything that only applies to a payload ("List at", "n of data").
+
+## A Listing Pane Pads Its Rows, Not Its Scroller
+
+The BASIC listings (the live BASIC panel and the tape viewer's BASIC pop-out share
+`BasicPanel.module.scss` `.item`) take `--space-4` inline and `--space-0_5` block padding **on each
+row**, so every line, including a long line's wrapped continuation, stays clear of the pane's edge.
+The virtualized list (`virtua`) measures each row, so the padding is part of the row's height and
+needs no row-height constant (M3). **The distance from the pane's top and bottom edges is on the
+first and last row** (`.first`/`.last`, `--space-3`), not on the scroller: the shared
+`VirtualizedList` has no content padding, and adding one would change every list that uses it. That
+way it scrolls with the content, and the gap between lines stays the rows' own.
 
 ## The Spectrum's BRIGHT Lifts Ink And Paper Alike
 

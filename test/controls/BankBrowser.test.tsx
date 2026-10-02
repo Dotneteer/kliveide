@@ -234,9 +234,33 @@ describe("BankBrowser", () => {
         renderDetails={() => null}
         itemNoun="Block"
         viewsFor={() => []}
+        hint="Pop out a block from its row's icon."
       />
     );
     expect(screen.queryByRole("button", { name: /^Pop out in/ })).toBeNull();
+    expect(screen.queryByText("Pop out a block from its row's icon.")).toBeNull();
     expect(screen.getByText("Block $00")).toBeInTheDocument();
+  });
+
+  it("stacks by default, and never with layout sideBySide", () => {
+    const props = {
+      visibleItems: [item(0, "a")],
+      heading: "Blocks",
+      summary: "",
+      filters: [],
+      filter: "all",
+      views: ["memory"] as View[],
+      viewNames: VIEW_NAMES,
+      onSelect: vi.fn(),
+      onFilterChange: vi.fn(),
+      onPopOut: vi.fn(),
+      renderRow: () => null,
+      renderDetails: () => null
+    };
+    const { unmount } = render(<BankBrowser<Item, View> {...props} />);
+    expect(screen.getByRole("region", { name: "Blocks" }).className).not.toMatch(/sideBySide/);
+    unmount();
+    render(<BankBrowser<Item, View> {...props} layout="sideBySide" />);
+    expect(screen.getByRole("region", { name: "Blocks" }).className).toMatch(/sideBySide/);
   });
 });

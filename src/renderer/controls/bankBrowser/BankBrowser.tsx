@@ -131,6 +131,11 @@ type Props<T extends BankBrowserItem<V>, V extends string> = {
   viewsFor?: (item: T) => V[];
   /** Content between the heading and the list - the tape viewer's timeline strip. */
   beforeBody?: ReactNode;
+  /**
+   * `auto` (the default) stacks the details under the list when the browser is narrower than 96ch;
+   * `sideBySide` never stacks - the list keeps ~30ch and the details scroll sideways instead.
+   */
+  layout?: "auto" | "sideBySide";
 };
 
 const defaultNumber = (item: BankBrowserItem) => `$${toHexa2(item.bank)}`;
@@ -156,8 +161,10 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   itemNoun = "Bank",
   formatNumber,
   viewsFor,
-  beforeBody
+  beforeBody,
+  layout = "auto"
 }: Props<T, V>) {
+  const sideBySide = layout === "sideBySide";
   const numberOf = formatNumber ?? defaultNumber;
   const viewsOf = viewsFor ?? (() => views);
   const canPopOut = (item: T) => viewsOf(item).length > 0;
@@ -241,7 +248,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   return (
     <section
       ref={browserRef}
-      className={styles.browser}
+      className={classnames(styles.browser, { [styles.sideBySide]: sideBySide })}
       aria-label={heading}
       style={
         viewportHeight === undefined
@@ -315,7 +322,11 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
               })}
             </div>
           </ScrollViewer>
-          <ScrollViewer className={styles.detailsPane} allowHorizontal={false} thinScrollBar={true}>
+          <ScrollViewer
+            className={styles.detailsPane}
+            allowHorizontal={sideBySide}
+            thinScrollBar={true}
+          >
             {selected && (
               <BankDetails
                 item={selected}
@@ -512,7 +523,8 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
 
       {children}
 
-      {hint && <div className={styles.hint}>{hint}</div>}
+      {/* --- How to pop out, said only where something can be popped out */}
+      {hint && views.length > 0 && <div className={styles.hint}>{hint}</div>}
     </aside>
   );
 }

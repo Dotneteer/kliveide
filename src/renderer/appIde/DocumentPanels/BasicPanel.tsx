@@ -223,7 +223,13 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
           apiLoaded={(api) => (vlApi.current = api)}
           renderItem={(idx) => {
             return (
-              <div key={idx} className={styles.item}>
+              <div
+                key={idx}
+                className={classnames(styles.item, {
+                  [styles.first]: idx === 0,
+                  [styles.last]: idx === basicLines.length - 1
+                })}
+              >
                 <BasicLineDisplay
                   spans={basicLines[idx]?.spans}
                   showSpectrumFont={showSpectrumFont}

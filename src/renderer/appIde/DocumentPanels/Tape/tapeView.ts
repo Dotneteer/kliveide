@@ -810,15 +810,17 @@ export function tapeBlockViews(block: TapeBlockInfo): TapeBlockView[] {
   return views;
 }
 
-/** The view a block pops out in before the user picks one */
+/**
+ * The view a block pops out in before the user picks one. Code opens as memory, like any other
+ * data; the dump keeps its load address, so switching it to Disassembly (or picking that in the
+ * pop-out menu, which then remembers it for the block) lists it where it loads.
+ */
 export function defaultTapeBlockView(block: TapeBlockInfo): TapeBlockView {
   switch (block.role) {
     case "basic":
       return "basic";
     case "screen":
       return "screen";
-    case "code":
-      return "disassembly";
     default:
       return "memory";
   }
