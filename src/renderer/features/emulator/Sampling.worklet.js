@@ -6,14 +6,27 @@
  * over half of every Z88 burst and the rest played as short blips between silences (issue #1374).
  */
 // Total ring buffer capacity in bursts. Small enough to bound maximum latency.
-const FRAMES_BUFFERED = 6;
-// Bursts to hold back before playing (at start and after running dry) to absorb scheduling jitter.
-const FRAMES_DELAYED = 1;
-// If the buffer fills beyond this many bursts, skip ahead to stay in sync.
-const MAX_LAG_FRAMES = 3;
+const FRAMES_BUFFERED = 8;
+/*
+ * Bursts to hold back before playing (at start and after running dry) to absorb scheduling jitter.
+ *
+ * Three, not one. Frames arrive every 20 ms, but the output pulls audio in ~10.7 ms callbacks
+ * (512 samples, measured over CDP on macOS), so a frame's samples can be consumed up to ~32 ms after
+ * the previous frame's. With one frame held back, the queue fell to 4-6 ms just before each frame
+ * arrived, and it still ran dry with two: every dry spell faded out and restarted, a click every
+ * few seconds. Three keep ~25 ms in hand at the low point - no dry spell in a minute's measurement -
+ * for ~60 ms of latency. A one-off shift of the output's callback phase (seen ~30 s into every run)
+ * costs a chunk of that margin without running dry.
+ */
+const FRAMES_DELAYED = 3;
+// If the buffer fills beyond this many bursts, skip ahead to stay in sync. Above the hold-back
+// plus a burst and a callback, so a steady queue is never trimmed (measured peak: ~3.4 bursts).
+const MAX_LAG_FRAMES = 5;
 // Per-sample decay of the held value while dry: fades any DC level out over a few milliseconds
 // instead of cutting it to zero, which would click.
 const DRY_DECAY = 0.995;
+// Samples over which playback fades back in after priming, so a restart never steps (~2 ms)
+const FADE_IN_SAMPLES = 96;
 
 let waveBuffer;
 let samplesPerFrameStereo = 0; // interleaved values (L, R) per frame, rounded up by one sample
@@ -30,6 +43,10 @@ let priming = true;
 // The last value played on each channel, faded out while there is nothing to play
 let lastLeft = 0;
 let lastRight = 0;
+// Sample pairs played (or held) since the last delivery: priming ends early on a lone frame
+let pairsSinceStore = 0;
+// Position in the fade-in that follows priming; FADE_IN_SAMPLES and above means full level
+let fadeIn = FADE_IN_SAMPLES;
 
 /*
  * The reader must never overtake the writer. The machine delivers a frame of samples only when it
@@ -66,11 +83,14 @@ class SamplingGenerator extends AudioWorkletProcessor {
     priming = true;
     lastLeft = 0;
     lastRight = 0;
+    pairsSinceStore = 0;
+    fadeIn = 0;
   }
 
   /**
    * Stores the samples to render, discarding the oldest data if the buffer has grown too large.
-   * @param samples Interleaved stereo samples [L, R, L, R, ...]
+   * @param samples Interleaved stereo samples [L, R, L, R, ...]: a `Float32Array` the renderer
+   * transferred, or a plain array
    */
   storeSamples (samples) {
     if (!waveBuffer) return;
@@ -94,15 +114,31 @@ class SamplingGenerator extends AudioWorkletProcessor {
       available = maxValues;
     }
 
+    pairsSinceStore = 0;
     if (priming && available >= primeValues) {
-      priming = false;
+      this.startPlaying();
     }
+  }
+
+  /** Ends priming; the output fades in from silence rather than stepping to the first sample */
+  startPlaying () {
+    priming = false;
+    fadeIn = 0;
   }
 
   /**
    * Takes the next stereo pair into `lastLeft`/`lastRight`, or fades them out when dry.
    */
   nextPair () {
+    pairsSinceStore++;
+    /*
+     * A lone burst - one frame and then nothing, as when the debugger steps the machine - would
+     * wait forever for a second one. Once a burst's worth of time has passed with nothing new,
+     * play what is queued.
+     */
+    if (priming && available >= 2 && pairsSinceStore * 2 >= samplesPerFrameStereo) {
+      this.startPlaying();
+    }
     if (priming || available < 2) {
       // --- Ran dry: wait for a frame's worth before playing again, so a machine delivering
       // --- slightly slower than real time is heard with gaps rather than as a stutter
@@ -111,8 +147,9 @@ class SamplingGenerator extends AudioWorkletProcessor {
       lastRight *= DRY_DECAY;
       return;
     }
-    lastLeft = waveBuffer[readIndex++];
-    lastRight = waveBuffer[readIndex++];
+    const gain = fadeIn < FADE_IN_SAMPLES ? ++fadeIn / FADE_IN_SAMPLES : 1;
+    lastLeft = waveBuffer[readIndex++] * gain;
+    lastRight = waveBuffer[readIndex++] * gain;
     if (readIndex >= waveBuffer.length) readIndex = 0;
     available -= 2;
   }

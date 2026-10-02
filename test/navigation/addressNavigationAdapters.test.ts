@@ -291,6 +291,69 @@ describe("static dump navigation adapter", () => {
     });
   });
 
+  /*
+   * A popped-out tape block (`.plans/TAPE_VIEWER_PLAN.md` §4.5): reopened from the tape file, at
+   * the address it was listed at.
+   */
+  describe("a closed tape block", () => {
+    const tapeId = "memoryDump-tapeBlockDump/project/game.tap:3";
+
+    function tapeAdapter(readTapeBlockBytes = vi.fn(async () => new Uint8Array([0xc9]))) {
+      const openStaticMemoryDump = vi.fn(async () => {});
+      return {
+        openStaticMemoryDump,
+        readTapeBlockBytes,
+        adapter: createStaticDumpNavigationAdapter({
+          openStaticMemoryDump,
+          readNexBankBytes: vi.fn(),
+          readTapeBlockBytes
+        })
+      };
+    }
+
+    it("is reopened from the file, where and how it was left", async () => {
+      const { adapter: a, openStaticMemoryDump, readTapeBlockBytes } = tapeAdapter();
+      const hub = fakeHub(0);
+      const readBinaryFile = vi.fn(async () => new Uint8Array(0));
+
+      const ok = await a.restore(
+        entry(tapeId, at(0x8004, { viewMode: "disassembly", base: 0x8000 }), "StaticMemoryDumpViewer"),
+        hub,
+        services(hub),
+        env(readBinaryFile)
+      );
+
+      expect(ok).toBe(true);
+      expect(readTapeBlockBytes).toHaveBeenCalledWith("/project/game.tap", 3, readBinaryFile);
+      expect(openStaticMemoryDump).toHaveBeenCalledWith(
+        hub,
+        "tapeBlockDump/project/game.tap:3",
+        "game.tap - Block #3",
+        new Uint8Array([0xc9]),
+        {
+          disassemblyEnabled: true,
+          disassOffset: 0x8000,
+          topAddress: 0x8004,
+          viewMode: "disassembly"
+        }
+      );
+    });
+
+    it("is dropped when the tape no longer has the block, or cannot be read", async () => {
+      const readTapeBlockBytes = vi.fn();
+      const { adapter: a } = tapeAdapter(readTapeBlockBytes);
+      const hub = fakeHub(0);
+      readTapeBlockBytes.mockResolvedValueOnce(undefined);
+      expect(await a.restore(entry(tapeId, at(0)), hub, services(hub), env())).toBe(false);
+      readTapeBlockBytes.mockRejectedValueOnce(new Error("gone"));
+      expect(await a.restore(entry(tapeId, at(0)), hub, services(hub), env())).toBe(false);
+    });
+
+    it("is not mistaken for a NEX bank", () => {
+      expect(parseNexBankDocumentId(tapeId)).toBeUndefined();
+    });
+  });
+
   it("treats addresses within $40 as one place, whatever the listing", () => {
     const { adapter: a } = adapter();
     expect(a.isNear(at(0xc000, { viewMode: "memory" }), at(0xc03f, { viewMode: "disassembly" }))).toBe(true);

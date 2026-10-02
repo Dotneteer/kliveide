@@ -82,6 +82,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   const controllerRef = useRef<IMachineController>(null);
   const [machineTools, setMachineTools] = useState<ReactNode>();
+  // --- The setting that switches the strip on and off; none means always shown (the Z88 slots)
+  const [machineToolsSetting, setMachineToolsSetting] = useState<string | undefined>();
+  const machineToolsSettingValue = useGlobalSetting(machineToolsSetting ?? "");
+  const showMachineTools = !!machineTools && (!machineToolsSetting || !!machineToolsSettingValue);
   const recordingManagerRef = useRecordingManager();
 
   // --- The window's minimum size, Fit Window to Screen and per-machine sizes (issue #1377)
@@ -183,6 +187,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       (machine) => machine.machineId === ctrl.machine.machineId
     );
     setMachineTools(toolInfo ? toolInfo.toolFactory(ctrl.machine) : null);
+    setMachineToolsSetting(toolInfo?.visibilitySetting);
   }, [audioSampleRate, initAudio, setKeyData, updateScreenDimensions]);
 
   // --- Handles machine state changes
@@ -363,7 +368,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   ]);
 
   /*
-   * Refit once the machine's tool strip (the Z88 slot cards) is in the DOM.
+   * Refit once the machine's tool strip (the Z88 slot cards, the Spectrum media strip) is in the
+   * DOM, and again whenever a switchable strip is shown or hidden.
    *
    * The strip mounts after the fit that `machineControllerChanged` runs, and the hook's resize
    * observer on it cannot attach in that same render (the ref is still empty when its dependency is
@@ -373,7 +379,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
   useEffect(() => {
     calculateDimensions();
     displayScreenData();
-  }, [machineTools, calculateDimensions, displayScreenData]);
+  }, [showMachineTools, machineTools, calculateDimensions, displayScreenData]);
 
   // --- Respond to the FAST LOAD flag changes
   useEffect(() => {
@@ -456,7 +462,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
             <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
           </div>
-          {machineTools && (
+          {showMachineTools && (
             <div className={styles.toolArea} ref={toolArea}>
               {machineTools}
             </div>

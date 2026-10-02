@@ -3,6 +3,7 @@ import type {
   IMachineController
 } from "@renderer/abstractions/IMachineController";
 import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
@@ -647,12 +648,42 @@ export class MachineController implements IMachineController {
     }
 
     // --- Execute the code injection flow
-    const m = this.machine;
     const injectionFlow = await this.machine.getCodeInjectionFlow(
-      codeToInject.model ?? m.machineId,
+      codeToInject.model ?? this.machine.machineId,
       additionalInfo
     );
     this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(injectionFlow, codeToInject, debug, operationRevision);
+  }
+
+  /**
+   * Resets the machine and starts the tape in its deck loading: `LOAD ""` on a 48K, the Tape Loader
+   * on a 128K or +2/+3 (`tapeLoadFlows.ts`, `.plans/TAPE_VIEWER_PLAN.md` §4.6). Nothing is
+   * injected - the ROM loads whatever the tape holds.
+   * @param debug Arm the breakpoints once the keystrokes are typed
+   */
+  async runTapeLoad(debug: boolean): Promise<void> {
+    const flow = this.machine.getTapeLoadFlow?.();
+    if (!flow) {
+      throw new Error("This machine cannot start loading a tape automatically.");
+    }
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
+  }
+
+  /**
+   * Runs a code-injection flow's steps, then starts the machine - in debug mode if asked. Shared by
+   * `runCode` and `runTapeLoad`; a flow with no `Inject` step needs no code.
+   */
+  private async executeInjectionFlow(
+    injectionFlow: CodeInjectionFlow,
+    codeToInject: CodeToInject | undefined,
+    debug: boolean,
+    operationRevision: number
+  ): Promise<void> {
+    const m = this.machine;
     await this.sendOutput("Initialize the machine", "blue");
     this.assertMachineOperationIsCurrent(operationRevision);
     this.isDebugging = debug;
@@ -771,6 +802,7 @@ export class MachineController implements IMachineController {
 
         case "Inject":
           // --- Inject the code and set up the machine to run the code
+          if (!codeToInject) break;
           entryPoint = this.machine.injectCodeToRun(codeToInject);
           await this.sendOutput(
             `Code injected and ready to start at $${toHexa4(entryPoint)}})`,
@@ -780,7 +812,7 @@ export class MachineController implements IMachineController {
           break;
 
         case "SetReturn":
-          if (codeToInject.subroutine) {
+          if (codeToInject?.subroutine) {
             const spValue = m.sp;
             m.doWriteMemory(spValue - 1, step.returnPoint >> 8);
             m.doWriteMemory(spValue - 2, step.returnPoint & 0xff);

@@ -10,15 +10,9 @@ import {
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
-import { toHexa2 } from "../services/ide-commands";
 import { useEmuStateListener } from "../useStateRefresh";
-import {
-  BasicLine,
-  BasicLineSpan,
-  BasicProgramBuffer,
-  getMemoryWord,
-  SpectrumColor
-} from "./BasicLine";
+import { BasicLine, BasicLineSpan, BasicProgramBuffer, getMemoryWord } from "./BasicLine";
+import { decodeBasicProgram } from "./basicListing";
 import styles from "./BasicPanel.module.scss";
 import { useDocumentHubService } from "@renderer/appIde/services/DocumentServiceProvider";
 import classnames from "classnames";
@@ -68,210 +62,14 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
   const useCodes = useRef(false);
   const useAutoRefresh = useRef(autoRefresh);
 
-  // --- Creates the addresses to represent dump sections
+  // --- Lists the program between PROG and VARS (`basicListing.ts`, shared with the tape viewer)
   const createListing = () => {
-    const buffer = programBuffer.current;
-    buffer.clear();
     const getWord = (address: number) => getMemoryWord(memory.current, address);
-
-    // --- Read PROG and VARS to get the program boundaries
-    const progStart = getWord(0x5c53);
-    const progEnd = getWord(0x5c4b);
-    let corrupted = progStart > progEnd;
-    let currentPos = progStart;
-    let lastLineNo = -1;
-
-    while (!corrupted && currentPos < progEnd) {
-      const lineNo = (memory.current[currentPos] << 8) + memory.current[currentPos + 1];
-      currentPos += 2;
-      const lineLength = getWord(currentPos);
-      currentPos += 2;
-      const nextLine = currentPos + lineLength;
-
-      // --- Check for line number/length corruption
-      if (lineNo > 9999 || lineNo < lastLineNo) {
-        corrupted = true;
-        break;
-      }
-
-      if (nextLine > progEnd + 1) {
-        corrupted = true;
-        break;
-      }
-
-      // --- Start displaying the line
-      lastLineNo = lineNo;
-      let lastCode = 0;
-      buffer.resetColor();
-      let segment = "";
-      let withinQuotes = false;
-
-      // --- Line number
-      buffer.ink("cyan");
-      buffer.write(lineNo.toString().padStart(4, "\xa0") + "\xa0");
-      buffer.resetColor();
-
-      // --- Iterate through the line
-      while (currentPos < nextLine) {
-        if (showCodes) {
-          buffer.resetColor();
-        }
-
-        const code = memory.current[currentPos++];
-
-        if (code === 0x0e) {
-          currentPos += 5;
-          continue;
-        }
-
-        if (code === 0x0d) {
-          continue;
-        }
-
-        if (code === 0x22) {
-          withinQuotes = !withinQuotes;
-        }
-
-        const nextSymbol = machineCharSet[code];
-        switch (nextSymbol.c) {
-          case "ctrl":
-            if (useCodes.current) {
-              buffer.paper("blue");
-              buffer.ink("white");
-              segment += `$${toHexa2(code)}`;
-            }
-            break;
-          case "graph":
-            if (useCodes.current) {
-              buffer.paper("magenta");
-              buffer.ink("white");
-              segment += `$${toHexa2(code)}`;
-            }
-            break;
-          case "pr":
-            if (useCodes.current) {
-              buffer.paper("magenta");
-              buffer.ink("white");
-              segment += `$${toHexa2(code)}`;
-            }
-            switch (code) {
-              case 0x10:
-                if (!useCodes.current) {
-                  buffer.ink(getColorCode(memory.current[currentPos++]));
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x11:
-                if (!useCodes.current) {
-                  buffer.paper(getColorCode(memory.current[currentPos++]));
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x12:
-                if (!useCodes.current) {
-                  buffer.flash(memory.current[currentPos++] !== 0);
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x13:
-                if (!useCodes.current) {
-                  buffer.bright(memory.current[currentPos++] !== 0);
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x14:
-                if (!useCodes.current) {
-                  buffer.inverse(memory.current[currentPos++] !== 0);
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x15:
-                if (useCodes.current) {
-                  const over = memory.current[currentPos++];
-                  buffer.paper("magenta");
-                  buffer.ink("white");
-                  segment += `$${toHexa2(over)}`;
-                } else {
-                  currentPos++;
-                }
-                break;
-              case 0x16:
-                if (useCodes.current) {
-                  const row = memory.current[currentPos++];
-                  buffer.paper("magenta");
-                  buffer.ink("white");
-                  segment += `$${toHexa2(row)}`;
-                  const col = memory.current[currentPos++];
-                  segment += `$${toHexa2(col)}`;
-                } else {
-                  currentPos += 2;
-                }
-                break;
-              case 0x17:
-                if (useCodes.current) {
-                  buffer.paper("magenta");
-                  buffer.ink("white");
-                  segment += "$17";
-                }
-            }
-            break;
-          case "udg":
-            if (useCodes.current) {
-              buffer.paper("green");
-              buffer.ink("white");
-              segment += `$${toHexa2(code)}`;
-            }
-            break;
-          case "token":
-            if (
-              (lastCode >= "a".charCodeAt(0) && lastCode <= "z".charCodeAt(0)) ||
-              (lastCode >= "A".charCodeAt(0) && lastCode <= "Z".charCodeAt(0)) ||
-              (lastCode >= "0".charCodeAt(0) && lastCode <= "9".charCodeAt(0))
-            ) {
-              segment += "\xa0";
-            }
-            segment += nextSymbol.t.toUpperCase();
-            segment += " ";
-            break;
-          default:
-            segment = nextSymbol.v;
-            if ((nextSymbol.v === ":" || nextSymbol.v === ";") && !withinQuotes) {
-              segment += "\xa0";
-            }
-            break;
-        }
-
-        if (segment) {
-          buffer.write(segment);
-          segment = "";
-        }
-
-        lastCode = code;
-      }
-
-      // --- Next line
-      currentPos = nextLine;
-      buffer.writeLine();
-    }
-
-    // --- Mark corrupted code
-    if (corrupted) {
-      buffer.resetColor();
-      buffer.writeLine();
-      buffer.bright(true);
-      buffer.paper("white");
-      buffer.ink("red");
-      buffer.inverse(true);
-      buffer.writeLine("*** BASIC code corrupted or partially loaded ***");
-    }
-
-    // --- Done.
-    const lines = buffer.getContents();
+    const { lines } = decodeBasicProgram(memory.current, getWord(0x5c53), getWord(0x5c4b), {
+      charSet: machineCharSet,
+      showCodes: useCodes.current,
+      buffer: programBuffer.current
+    });
     cachedLines.current = lines;
     (async () => {
       await new Promise((r) => setTimeout(r, 500));
@@ -425,7 +223,13 @@ const BasicPanel = ({ document, viewState }: DocumentProps<BasicViewState>) => {
           apiLoaded={(api) => (vlApi.current = api)}
           renderItem={(idx) => {
             return (
-              <div key={idx} className={styles.item}>
+              <div
+                key={idx}
+                className={classnames(styles.item, {
+                  [styles.first]: idx === 0,
+                  [styles.last]: idx === basicLines.length - 1
+                })}
+              >
                 <BasicLineDisplay
                   spans={basicLines[idx]?.spans}
                   showSpectrumFont={showSpectrumFont}
@@ -490,21 +294,6 @@ export const BasicLineDisplay = ({ spans, showSpectrumFont }: LineProps) => {
     </div>
   );
 };
-
-const colorCodes: SpectrumColor[] = [
-  "black",
-  "blue",
-  "red",
-  "magenta",
-  "green",
-  "cyan",
-  "yellow",
-  "white"
-];
-
-function getColorCode(code: number): SpectrumColor {
-  return colorCodes[code & 0x07];
-}
 
 export const createBasicPanel = ({ document, viewState }: DocumentProps) => (
   <BasicPanel document={document} viewState={viewState} apiLoaded={() => {}} />

@@ -40,6 +40,7 @@ export type NavigationReason =
   | "nexLabel"
   | "nexBank"
   | "z88Bank"
+  | "tapeBlock"
   | "tabSwitch"
   | "explorer"
   | "command";
@@ -54,6 +55,7 @@ export const NAVIGATION_REASONS: readonly NavigationReason[] = [
   "nexLabel",
   "nexBank",
   "z88Bank",
+  "tapeBlock",
   "tabSwitch",
   "explorer",
   "command"

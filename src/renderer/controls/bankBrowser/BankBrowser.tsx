@@ -113,7 +113,32 @@ type Props<T extends BankBrowserItem<V>, V extends string> = {
   /** Items after "Pop Out" in a row's context menu; `close` conceals the menu. */
   renderRowMenuItems?: (item: T, close: () => void) => ReactNode;
   hint?: ReactNode;
+  /**
+   * What one item is called, in the details title, the pop-out tooltips, the list's aria label and
+   * the empty-filter text. "Bank" by default; the tape viewer's items are "Block"s.
+   */
+  itemNoun?: string;
+  /**
+   * An item's number as the row and the details title show it. `$NN` by default, with the decimal
+   * beside it in the details; a caller that supplies this gets no decimal, since its own form is
+   * presumably already the one meant to be read.
+   */
+  formatNumber?: (item: T) => string;
+  /**
+   * The views this item can pop out in, when not every item can use every view (a tape's header has
+   * no BASIC listing). Defaults to `views`. An item with none has no pop-out controls at all.
+   */
+  viewsFor?: (item: T) => V[];
+  /** Content between the heading and the list - the tape viewer's timeline strip. */
+  beforeBody?: ReactNode;
+  /**
+   * `auto` (the default) stacks the details under the list when the browser is narrower than 96ch;
+   * `sideBySide` never stacks - the list keeps ~30ch and the details scroll sideways instead.
+   */
+  layout?: "auto" | "sideBySide";
 };
+
+const defaultNumber = (item: BankBrowserItem) => `$${toHexa2(item.bank)}`;
 
 export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   visibleItems: visible,
@@ -132,8 +157,17 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   renderDetailsMarks,
   renderDetails,
   renderRowMenuItems,
-  hint
+  hint,
+  itemNoun = "Bank",
+  formatNumber,
+  viewsFor,
+  beforeBody,
+  layout = "auto"
 }: Props<T, V>) {
+  const sideBySide = layout === "sideBySide";
+  const numberOf = formatNumber ?? defaultNumber;
+  const viewsOf = viewsFor ?? (() => views);
+  const canPopOut = (item: T) => viewsOf(item).length > 0;
   const selected = visible.find((item) => item.key === selectedKey) ?? visible[0] ?? undefined;
   const listRef = useRef<HTMLDivElement | null>(null);
   const browserRef = useRef<HTMLElement>(null);
@@ -195,7 +229,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
     if (event.key === "Enter") {
       event.preventDefault();
       event.stopPropagation();
-      onPopOut(selected, selected.lastView);
+      if (canPopOut(selected)) onPopOut(selected, selected.lastView);
     }
   };
 
@@ -214,7 +248,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
   return (
     <section
       ref={browserRef}
-      className={styles.browser}
+      className={classnames(styles.browser, { [styles.sideBySide]: sideBySide })}
       aria-label={heading}
       style={
         viewportHeight === undefined
@@ -240,8 +274,10 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
         </span>
       </div>
 
+      {beforeBody}
+
       {visible.length === 0 ? (
-        <div className={styles.none}>No bank matches this filter.</div>
+        <div className={styles.none}>{`No ${itemNoun.toLowerCase()} matches this filter.`}</div>
       ) : (
         <div className={styles.body}>
           <ScrollViewer
@@ -254,7 +290,7 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
               ref={listRef}
               className={styles.list}
               role="listbox"
-              aria-label="Bank list"
+              aria-label={`${itemNoun} list`}
               onKeyDown={listKeyDown}
             >
               {visible.map((item) => {
@@ -271,6 +307,9 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
                     <BankRow
                       item={item}
                       selected={item === selected}
+                      number={numberOf(item)}
+                      itemNoun={itemNoun}
+                      canPopOut={canPopOut(item)}
                       viewNames={viewNames}
                       onSelect={onSelect}
                       onPopOut={onPopOut}
@@ -283,11 +322,18 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
               })}
             </div>
           </ScrollViewer>
-          <ScrollViewer className={styles.detailsPane} allowHorizontal={false} thinScrollBar={true}>
+          <ScrollViewer
+            className={styles.detailsPane}
+            allowHorizontal={sideBySide}
+            thinScrollBar={true}
+          >
             {selected && (
               <BankDetails
                 item={selected}
-                views={views}
+                views={viewsOf(selected)}
+                title={formatNumber ? numberOf(selected) : `${itemNoun} ${numberOf(selected)}`}
+                decimal={formatNumber ? undefined : `(${selected.bank})`}
+                itemNoun={itemNoun}
                 viewNames={viewNames}
                 marks={renderDetailsMarks?.(selected)}
                 hint={hint}
@@ -301,16 +347,18 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
       )}
 
       <ContextMenu state={rowMenuState} onClickOutside={rowMenuApi.conceal}>
-        <ContextMenuItem
-          text={`Pop Out in ${
-            rowMenuItem.current ? viewNames[rowMenuItem.current.lastView] : viewNames[views[0]]
-          }`}
-          clicked={() => {
-            rowMenuApi.conceal();
-            const item = rowMenuItem.current;
-            if (item) onPopOut(item, item.lastView);
-          }}
-        />
+        {(!rowMenuItem.current || canPopOut(rowMenuItem.current)) && (
+          <ContextMenuItem
+            text={`Pop Out in ${
+              rowMenuItem.current ? viewNames[rowMenuItem.current.lastView] : viewNames[views[0]]
+            }`}
+            clicked={() => {
+              rowMenuApi.conceal();
+              const item = rowMenuItem.current;
+              if (item) onPopOut(item, item.lastView);
+            }}
+          />
+        )}
         {rowMenuExtra && (
           <>
             <ContextMenuSeparator />
@@ -327,6 +375,9 @@ export function BankBrowser<T extends BankBrowserItem<V>, V extends string>({
 function BankRow<T extends BankBrowserItem<V>, V extends string>({
   item,
   selected,
+  number,
+  itemNoun,
+  canPopOut,
   viewNames,
   onSelect,
   onPopOut,
@@ -335,6 +386,9 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
 }: {
   item: T;
   selected: boolean;
+  number: string;
+  itemNoun: string;
+  canPopOut: boolean;
   viewNames: Record<V, string>;
   onSelect: (item: T) => void;
   onPopOut: (item: T, view: V) => void;
@@ -349,31 +403,37 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
       data-key={item.key}
       data-bank={item.bank}
       className={classnames(styles.row, { [styles.rowSelected]: selected })}
-      title={`Double-click or Enter to pop out in ${viewNames[item.lastView]}`}
+      title={
+        canPopOut ? `Double-click or Enter to pop out in ${viewNames[item.lastView]}` : undefined
+      }
       onClick={() => onSelect(item)}
-      onDoubleClick={() => onPopOut(item, item.lastView)}
+      onDoubleClick={() => canPopOut && onPopOut(item, item.lastView)}
       onContextMenu={(event) => onContextMenu(item, event)}
     >
-      <span className={styles.bankNumber}>{`$${toHexa2(item.bank)}`}</span>
+      <span className={styles.bankNumber}>{number}</span>
       {children}
-      <button
-        type="button"
-        className={styles.rowPopOut}
-        title={`Pop out Bank $${toHexa2(item.bank)} (${viewNames[item.lastView]})`}
-        aria-label={`Pop out Bank $${toHexa2(item.bank)}`}
-        onClick={(event) => {
-          event.stopPropagation();
-          onPopOut(item, item.lastView);
-        }}
-        onDoubleClick={(event) => event.stopPropagation()}
-      >
-        <Icon
-          iconName="square-arrow-out-up-right"
-          width={14}
-          height={14}
-          fill="--color-command-icon"
-        />
-      </button>
+      {canPopOut ? (
+        <button
+          type="button"
+          className={styles.rowPopOut}
+          title={`Pop out ${itemNoun} ${number} (${viewNames[item.lastView]})`}
+          aria-label={`Pop out ${itemNoun} ${number}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onPopOut(item, item.lastView);
+          }}
+          onDoubleClick={(event) => event.stopPropagation()}
+        >
+          <Icon
+            iconName="square-arrow-out-up-right"
+            width={14}
+            height={14}
+            fill="--color-command-icon"
+          />
+        </button>
+      ) : (
+        <span className={styles.rowPopOutPlaceholder} aria-hidden="true" />
+      )}
     </div>
   );
 }
@@ -383,6 +443,9 @@ function BankRow<T extends BankBrowserItem<V>, V extends string>({
 function BankDetails<T extends BankBrowserItem<V>, V extends string>({
   item,
   views,
+  title,
+  decimal,
+  itemNoun,
   viewNames,
   marks,
   hint,
@@ -391,6 +454,9 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
 }: {
   item: T;
   views: V[];
+  title: string;
+  decimal?: string;
+  itemNoun: string;
   viewNames: Record<V, string>;
   marks?: ReactNode;
   hint?: ReactNode;
@@ -401,42 +467,44 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
   const moreRef = useRef<HTMLButtonElement | null>(null);
 
   return (
-    <aside className={styles.details} aria-label={`Bank $${toHexa2(item.bank)} details`}>
+    <aside className={styles.details} aria-label={`${title} details`}>
       <div className={styles.detailsHead}>
         <span className={styles.detailsTitle}>
-          <span className={styles.bankNumber}>{`Bank $${toHexa2(item.bank)}`}</span>
-          <span className={styles.decimal}>{`(${item.bank})`}</span>
+          <span className={styles.bankNumber}>{title}</span>
+          {decimal && <span className={styles.decimal}>{decimal}</span>}
           {marks}
         </span>
-        <span className={styles.split}>
-          <button
-            type="button"
-            className={styles.splitMain}
-            title="Open this bank as its own document"
-            aria-label={`Pop out in ${viewNames[item.lastView]}`}
-            onClick={() => onPopOut(item, item.lastView)}
-          >
-            <Icon
-              iconName="square-arrow-out-up-right"
-              width={14}
-              height={14}
-              fill="--text-on-accent"
-            />
-            Pop out
-            <span className={styles.splitView}>{`· ${viewNames[item.lastView]}`}</span>
-          </button>
-          <button
-            ref={moreRef}
-            type="button"
-            className={styles.splitMore}
-            aria-haspopup="menu"
-            aria-label="Pop out in another view"
-            title="Pop out in another view"
-            onClick={() => menuApi.showAt(moreRef.current)}
-          >
-            <Icon iconName="chevron-down" width={14} height={14} fill="--text-on-accent" />
-          </button>
-        </span>
+        {views.length > 0 && (
+          <span className={styles.split}>
+            <button
+              type="button"
+              className={styles.splitMain}
+              title={`Open this ${itemNoun.toLowerCase()} as its own document`}
+              aria-label={`Pop out in ${viewNames[item.lastView]}`}
+              onClick={() => onPopOut(item, item.lastView)}
+            >
+              <Icon
+                iconName="square-arrow-out-up-right"
+                width={14}
+                height={14}
+                fill="--text-on-accent"
+              />
+              Pop out
+              <span className={styles.splitView}>{`· ${viewNames[item.lastView]}`}</span>
+            </button>
+            <button
+              ref={moreRef}
+              type="button"
+              className={styles.splitMore}
+              aria-haspopup="menu"
+              aria-label="Pop out in another view"
+              title="Pop out in another view"
+              onClick={() => menuApi.showAt(moreRef.current)}
+            >
+              <Icon iconName="chevron-down" width={14} height={14} fill="--text-on-accent" />
+            </button>
+          </span>
+        )}
         <ContextMenu state={menuState} onClickOutside={menuApi.conceal} placement="bottom-end">
           {views.map((view) => (
             <ContextMenuItem
@@ -455,7 +523,8 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
 
       {children}
 
-      {hint && <div className={styles.hint}>{hint}</div>}
+      {/* --- How to pop out, said only where something can be popped out */}
+      {hint && views.length > 0 && <div className={styles.hint}>{hint}</div>}
     </aside>
   );
 }
@@ -465,15 +534,28 @@ function BankDetails<T extends BankBrowserItem<V>, V extends string>({
 /** A pill on a row or beside the details title: PC, SP, a segment. */
 export const BankChip = ({
   alt,
+  tone,
   title,
   children
 }: {
   /** The secondary accent, for a second kind of mark beside the first. */
   alt?: boolean;
+  /**
+   * A status, not a kind: a problem with the item (a tape block's bad checksum, a block Klive does
+   * not play). Takes the app's status colour, never an accent.
+   */
+  tone?: "warning" | "error";
   title?: string;
   children: ReactNode;
 }) => (
-  <span className={classnames(styles.chip, { [styles.chipAlt]: alt })} title={title}>
+  <span
+    className={classnames(styles.chip, {
+      [styles.chipAlt]: alt,
+      [styles.chipWarning]: tone === "warning",
+      [styles.chipError]: tone === "error"
+    })}
+    title={title}
+  >
     {children}
   </span>
 );

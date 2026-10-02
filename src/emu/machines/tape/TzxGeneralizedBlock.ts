@@ -80,8 +80,23 @@ export class TzxGeneralizedBlock extends TzxBlockBase {
     return 0x19;
   }
 
+  /**
+   * The packed data stream: `totd` symbols of `ceil(log2(asd))` bits each, most significant bit
+   * first. Kept raw - it is a bit stream, not the PRLE pairs `dataStream` once assumed.
+   */
+  dataBytes: Uint8Array = new Uint8Array(0);
+
+  /**
+   * Reads the block as TZX 1.20 describes it.
+   *
+   * The earlier reader assigned to `pilotStream[i].symbol` on an empty array, read no pulse lengths
+   * for a symbol definition, and took the data stream for PRLE pairs, so any file holding a `$19`
+   * block failed to open at all. Whatever this reads, the reader always ends at the block's declared
+   * end, which keeps the blocks after it readable even if a definition is malformed.
+   */
   readFrom (reader: BinaryReader): void {
     this.blockLength = reader.readUint32();
+    const end = reader.position + this.blockLength;
     this.pauseAfter = reader.readUint16();
     this.totp = reader.readUint32();
     this.npp = reader.readByte();
@@ -91,30 +106,40 @@ export class TzxGeneralizedBlock extends TzxBlockBase {
     this.asd = reader.readByte();
 
     this.pilotSymDef = [];
-    for (let i = 0; i < this.asp; i++) {
-      const symDef = new TzxSymDef();
-      symDef.readFrom(reader);
-      this.pilotSymDef[i] = symDef;
-    }
-
     this.pilotStream = [];
-    for (let i = 0; i < this.totp; i++) {
-      this.pilotStream[i].symbol = reader.readByte();
-      this.pilotStream[i].repetitions = reader.readUint16();
+    if (this.totp > 0) {
+      const asp = this.asp || 256;
+      for (let i = 0; i < asp; i++) {
+        const symDef = new TzxSymDef();
+        symDef.readFrom(reader, this.npp);
+        this.pilotSymDef[i] = symDef;
+      }
+      for (let i = 0; i < this.totp; i++) {
+        const prle = new TzxPrle();
+        prle.symbol = reader.readByte();
+        prle.repetitions = reader.readUint16();
+        this.pilotStream[i] = prle;
+      }
     }
 
     this.dataSymDef = [];
-    for (let i = 0; i < this.asd; i++) {
-      const symDef = new TzxSymDef();
-      symDef.readFrom(reader);
-      this.dataSymDef[i] = symDef;
-    }
-
     this.dataStream = [];
-    for (let i = 0; i < this.totd; i++) {
-      this.dataStream[i].symbol = reader.readByte();
-      this.dataStream[i].repetitions = reader.readUint16();
+    this.dataBytes = new Uint8Array(0);
+    if (this.totd > 0) {
+      const asd = this.asd || 256;
+      for (let i = 0; i < asd; i++) {
+        const symDef = new TzxSymDef();
+        symDef.readFrom(reader, this.npd);
+        this.dataSymDef[i] = symDef;
+      }
+      const bitsPerSymbol = Math.max(1, Math.ceil(Math.log2(asd)));
+      const byteCount = Math.min(
+        Math.ceil((bitsPerSymbol * this.totd) / 8),
+        Math.max(0, end - reader.position)
+      );
+      this.dataBytes = new Uint8Array(reader.readBytes(byteCount));
     }
+    reader.seek(end);
   }
 
   writeTo (writer: BinaryWriter): void {
@@ -126,22 +151,18 @@ export class TzxGeneralizedBlock extends TzxBlockBase {
     writer.writeUint32(this.totd);
     writer.writeByte(this.npd);
     writer.writeByte(this.asd);
-    for (let i = 0; i < this.asp; i++) {
+    for (let i = 0; i < this.pilotSymDef.length; i++) {
       this.pilotSymDef[i].writeTo(writer);
     }
 
-    for (let i = 0; i < this.totp; i++) {
+    for (let i = 0; i < this.pilotStream.length; i++) {
       writer.writeByte(this.pilotStream[i].symbol);
       writer.writeUint16(this.pilotStream[i].repetitions);
     }
 
-    for (let i = 0; i < this.asd; i++) {
+    for (let i = 0; i < this.dataSymDef.length; i++) {
       this.dataSymDef[i].writeTo(writer);
     }
-
-    for (let i = 0; i < this.totd; i++) {
-      writer.writeByte(this.dataStream[i].symbol);
-      writer.writeUint16(this.dataStream[i].repetitions);
-    }
+    writer.writeBytes(this.dataBytes);
   }
 }

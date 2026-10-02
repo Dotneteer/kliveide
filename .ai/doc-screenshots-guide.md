@@ -177,7 +177,14 @@ it.
 
 ## Coverage so far
 
-Two recipes; the rest of the pages were deliberately left ungenerated.
+Three recipes; the rest of the pages were deliberately left ungenerated.
+
+- `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
+  photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
+  if they are wrong, so a broken viewer fails the run instead of publishing a picture of itself. It
+  also photographs the **EMU window** — show it through `app.evaluate` on its `BrowserWindow`, then
+  `page.screenshot()` on that window's `Page` — after `tape-load -r`, which proves the load path end
+  to end.
 
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three

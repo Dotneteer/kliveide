@@ -102,6 +102,25 @@
   }
 }
 
+/*
+ * `layout="sideBySide"` (the tape viewer): never stacked, however narrow the pane. The list keeps a
+ * readable minimum and the details scroll sideways (`.details`' minimum below) rather than squeeze.
+ * Declared after the container query, with one more class, so it wins inside it too.
+ */
+.browser.sideBySide .body {
+  grid-template-columns: minmax(30ch, 40ch) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.browser.sideBySide .listPane {
+  border-right: 1px solid var(--border-default);
+  border-bottom: 0;
+}
+
+.browser.sideBySide .details {
+  min-width: 44ch;
+}
+
 // ─── List ────────────────────────────────────────────────────────────────────
 
 /*
@@ -225,6 +244,13 @@
 }
 
 /* --- Dim until the row is pointed at or selected: every row has one, and they should not shout. */
+/* --- Holds the pop-out button's place on a row that cannot pop out (a tape's header), so the rows'
+   --- lengths and chips stay aligned whichever rows can. Icon plus the button's padding. */
+.rowPopOutPlaceholder {
+  flex: 0 0 auto;
+  width: calc(14px + 2 * var(--space-0_5));
+}
+
 .rowPopOut {
   display: inline-grid;
   flex: 0 0 auto;
@@ -266,6 +292,15 @@
 
 .chipAlt {
   color: var(--accent-secondary-text);
+}
+
+/* --- Status chips: a problem with the item, in the app's status colours */
+.chipWarning {
+  color: var(--status-warning);
+}
+
+.chipError {
+  color: var(--status-error);
 }
 
 // ─── Details ─────────────────────────────────────────────────────────────────

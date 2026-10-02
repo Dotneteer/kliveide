@@ -145,9 +145,13 @@ wait:  djnz wait
       0.5
     );
 
-    expect(postedMessages).toEqual([{ samples: [0, 0, 0.125, -0.25] }]);
-    const samples = (postedMessages[0] as { samples: number[] }).samples;
+    expect(postedMessages).toEqual([{ samples: new Float32Array([0, 0, 0.125, -0.25]) }]);
+    const samples = (postedMessages[0] as { samples: Float32Array }).samples;
+    expect(samples).toBeInstanceOf(Float32Array);
     expect(samples.some((sample) => sample !== 0)).toBe(true);
+    // --- The buffer is transferred to the audio thread, not copied
+    const transfer = (worklet.port.postMessage as ReturnType<typeof vi.fn>).mock.calls[0][1];
+    expect(transfer).toEqual([samples.buffer]);
   });
 
   it("resumes a freshly constructed suspended audio context on first play", async () => {

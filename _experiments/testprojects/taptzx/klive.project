@@ -1,0 +1,139 @@
+{
+  "kliveVersion": "0.62.1",
+  "machineType": "sp128",
+  "clockMultiplier": 1,
+  "soundLevel": 0.8,
+  "soundMuted": false,
+  "savedSoundLevel": 0.8,
+  "media": {
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP"
+  },
+  "machineSpecific": {},
+  "ide": {
+    "excludedProjectItems": []
+  },
+  "viewOptions": {
+    "theme": "dark"
+  },
+  "debugger": {
+    "schemaVersion": 1,
+    "breakpoints": [],
+    "watchExpressions": [],
+    "basicWatches": []
+  },
+  "builder": {
+    "roots": [
+      "code/code.kz80.asm"
+    ]
+  },
+  "settings": {
+    "languages": {
+      "sjasmp": ".asm|.sjasm"
+    }
+  },
+  "workspaceSettings": {
+    "docsWorkspace": {
+      "version": 2,
+      "layout": {
+        "type": "leaf",
+        "areaId": "document-area-1"
+      },
+      "activeAreaId": "document-area-1",
+      "areas": [
+        {
+          "areaId": "document-area-1",
+          "documents": [
+            {
+              "type": "TapViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/floatspy.tap",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "selectedBlock": 1,
+                "blockView": {
+                  "1": "basic",
+                  "3": "disassembly"
+                },
+                "blockFilter": "all",
+                "scrollPosition": 0
+              }
+            },
+            {
+              "type": "TapViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/test.tzx",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "selectedBlock": 0,
+                "blockView": {
+                  "1": "basic",
+                  "3": "memory"
+                },
+                "scrollPosition": 75.7682876586914
+              }
+            },
+            {
+              "type": "TapViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "selectedBlock": 1,
+                "blockView": {
+                  "1": "basic"
+                }
+              }
+            },
+            {
+              "type": "CodeEditor",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/code/code.kz80.asm",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "cursorState": [
+                  {
+                    "inSelectionMode": false,
+                    "selectionStart": {
+                      "lineNumber": 1,
+                      "column": 1
+                    },
+                    "position": {
+                      "lineNumber": 1,
+                      "column": 1
+                    }
+                  }
+                ],
+                "viewState": {
+                  "scrollLeft": 0,
+                  "firstPosition": {
+                    "lineNumber": 1,
+                    "column": 1
+                  },
+                  "firstPositionDeltaTop": 0
+                },
+                "contributionsState": {
+                  "editor.contrib.folding": {
+                    "lineCount": 23,
+                    "provider": "syntax",
+                    "foldedImports": false
+                  },
+                  "editor.contrib.wordHighlighter": false
+                }
+              }
+            }
+          ],
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP"
+        }
+      ]
+    }
+  }
+}

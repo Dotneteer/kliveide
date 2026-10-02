@@ -15,10 +15,33 @@ export class SpectrumTapeHeader {
     return this._headerBytes;
   }
 
+  /**
+   * @param header The 19 bytes of an existing header block (flag, type, name, length, parameters,
+   * checksum) to read. Omitted, the header starts zero-filled for a writer to set up.
+   *
+   * The argument used to be ignored: every header came out zero-filled, so the class could build a
+   * header but never read one. Every writer calls it without an argument, so copying changes nothing
+   * for them. The checksum is copied as read, not recalculated, so a reader can tell a bad one.
+   */
   constructor (public readonly header?: Uint8Array) {
     this._headerBytes = new Uint8Array(HEADER_LEN);
-    for (let i = 0; i < HEADER_LEN; i++) this._headerBytes[i] = 0x00;
-    this.calcChecksum();
+    if (header) {
+      this._headerBytes.set(header.subarray(0, HEADER_LEN));
+    } else {
+      this.calcChecksum();
+    }
+  }
+
+  /** The raw bytes of the name, control codes and all (a name can hold `AT` and colour codes) */
+  get nameBytes (): Uint8Array {
+    return this._headerBytes.slice(NAME_OFFS, NAME_OFFS + NAME_LEN);
+  }
+
+  /** Whether the stored checksum matches the header's bytes */
+  get checksumValid (): boolean {
+    let chk = 0x00;
+    for (let i = 0; i < HEADER_LEN - 1; i++) chk ^= this._headerBytes[i];
+    return chk === this._headerBytes[CHK_OFFS];
   }
 
   // Gets or sets the type of the header

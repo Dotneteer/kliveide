@@ -943,7 +943,7 @@ before trusting any assertion about it.
   dialog field, with 8px block margins, a 32px button and a `font-size: 0.9em` M1 forbids.
 - **`controls/bankBrowser/`** — `BankBrowser`, the bounded list-and-details browser of a file's banks
   with per-bank pop-out, shared by the NEX viewer (`NexBankBrowser`) and the `.z88` viewer
-  (`Z88SlotBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
+  (`Z88SlotBrowser`), and by the tape viewer (`Tape/TapeBlockBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
   (`BankFacts`), sections and group headers; a viewer's own stylesheet holds only what that viewer
   alone shows (the NEX breakpoint chip, content mix, comment, labels). See "A Bank Browser Has One
   Shell".
@@ -1580,8 +1580,30 @@ of it. Open is shown by the popover itself.
 
 ## A Bank Browser Has One Shell
 
-`controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks; a new one (a
-`.sna`, a cartridge) wraps it rather than copying `NexBankBrowser`.
+`controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks — or anything
+listed and popped out the same way: the tape viewer's blocks use it too. A new one (a `.sna`, a
+cartridge) wraps it rather than copying `NexBankBrowser`.
+
+- **An item that is not a bank says so through props, never a fork**: `itemNoun` ("Block") reaches
+  the details title, aria labels, tooltips and the empty-filter text; `formatNumber` replaces the
+  `$NN` (a caller's own form gets no decimal beside it); `viewsFor` narrows the pop-out views per
+  item. **An item with no views has no pop-out controls at all** — not a disabled button — and its
+  row keeps a placeholder the icon's width, so the rows' lengths still line up.
+- **A problem with an item is a status chip, not an accent one** (`BankChip tone="warning" |
+  "error"`: `--status-warning` / `--status-error`). The accent pair marks *kinds* of thing; a bad
+  checksum or a block Klive does not play is a *state*, and painting it in the secondary accent would
+  read as a third kind of place.
+- **Content that belongs between the heading and the list goes in `beforeBody`** (the tape
+  timeline), so it stays inside the browser's bounded height instead of pushing it.
+- **Stacking is the default, side by side is a per-viewer choice** (`layout="sideBySide"`). The
+  author wants the tape viewer's list and details side by side at any width; NEX and Z88 keep
+  stacking below 96ch. Side by side keeps the list at a 30ch minimum and gives the details a 44ch
+  minimum with horizontal scroll, so a narrow pane scrolls rather than squeezing either column.
+  The override lives *after* the container query with one more class, so it wins inside it.
+- **The details are a summary, the pop-out is the content.** The tape viewer's details show no
+  BASIC listing and no byte preview (the author's call): a program shows its line count and a
+  "Pop out the listing" link, code shows nothing of its bytes. A long listing in a side pane is
+  neither readable nor scannable; the pop-out has the room and the tools.
 
 - **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
   pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
@@ -1611,6 +1633,63 @@ of it. Open is shown by the popover itself.
 - **When probing a bounded list over CDP, aim the wheel at the pane, not the list.** Inside a
   scroller the listbox is the full-height *content*; its centre can be off screen, and the wheel then
   lands on whatever is there — which read as "the viewer scrolls" when the list was never touched.
+
+## A Proportional Strip Colours By Importance, And Rings The Selection Outside
+
+The tape viewer's timeline (`Tape/TapeTimeline.tsx`, tokens `--color-tape-segment-*` at L4) is a
+bar whose segments are as wide as their share of a whole. What carries over to any strip like it:
+
+- **Neutral by default, ordered by how much a segment matters to the reader**: the data a reader came
+  for stands out of the track most (`--text-secondary`/`--text-tertiary`), the scaffolding around it
+  least (headers `--border-strong`, tones `--border-default`, pauses `--surface-active`). **At most
+  two hues**: the accent for the one kind the view decodes (BASIC), and the status error for the one
+  kind that is a problem (a block Klive does not play — the same fact as the row's "not played"
+  chip, so it takes the chip's colour).
+- **A minimum width, paid for by the widest segments**: a 19-byte header next to a 40 KB block is a
+  sub-pixel sliver otherwise. Keep the total exact, or the strip stops meaning "the whole".
+- **The selection ring is drawn outside the bar and in `--text-primary`, never the accent**: inside
+  a 2px segment it would cover the colour it is marking, and an accent ring vanishes on the one
+  segment that is already accent.
+- **It is not a second control.** No tab stop and `aria-hidden`: the list's keyboard moves the
+  selection and the strip follows, so a screen reader is not told the list twice.
+
+## An Explainer Links Bytes To Meanings With One Highlight
+
+The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`) shows raw bytes above the fields
+they form. What carries over to any "these bytes mean this" view:
+
+- **One highlight, used in both places**: the field being explained takes `--accent-subtle` with an
+  `--accent-border` edge and `--accent-text` for its bytes and its value — in the byte strip and in
+  the field list alike, so the eye links them. Fields are otherwise told apart only by alternating two
+  neutral surfaces (`--surface-raised`/`--surface-panel`); a colour per field would be a legend to
+  learn for nineteen bytes.
+- **Something is explained before anyone points**: start on the field the structure is mostly *for*
+  (a program's autostart, code's load address). An empty explanation box teaches nothing and reads as
+  broken.
+- **The list is the accessible control, the strip is decoration**: field rows are buttons (focus and
+  hover both select), the strip is `aria-hidden`, and the explanation is `aria-live="polite"`.
+- **Wrap between groups, never inside one**: the strip is a flex-wrap of per-field groups, so a narrow
+  pane keeps a ten-byte name or a two-byte word whole.
+- **Do not show the same bytes twice**: a view that explains every byte drops the generic hex preview
+  and anything that only applies to a payload ("List at", "n of data").
+
+## A Listing Pane Pads Its Rows, Not Its Scroller
+
+The BASIC listings (the live BASIC panel and the tape viewer's BASIC pop-out share
+`BasicPanel.module.scss` `.item`) take `--space-4` inline and `--space-0_5` block padding **on each
+row**, so every line, including a long line's wrapped continuation, stays clear of the pane's edge.
+The virtualized list (`virtua`) measures each row, so the padding is part of the row's height and
+needs no row-height constant (M3). **The distance from the pane's top and bottom edges is on the
+first and last row** (`.first`/`.last`, `--space-3`), not on the scroller: the shared
+`VirtualizedList` has no content padding, and adding one would change every list that uses it. That
+way it scrolls with the content, and the gap between lines stays the rows' own.
+
+## The Spectrum's BRIGHT Lifts Ink And Paper Alike
+
+Any renderer of a Spectrum attribute byte takes bit 6 into **both** colours: ink is
+`(attr & 7) | ((attr & 0x40) >> 3)`, paper `(attr & 0x78) >> 3`, indexing a 16-entry palette. The
+SCR viewer's `createScrPixelData` (now shared with the tape viewer's screen preview) gave it to
+paper only, so bright text drew in the normal shade — wrong in a way that looks plausible.
 
 ## A Shared Control Can Be Invisible In One Of Its Two Homes
 
@@ -1733,8 +1812,21 @@ Two things follow for any later change here:
   `[ref.current]`, read *during* render, so an element that first mounts in that same commit (the
   Z88 slot strip, set after the machine initializes) is not observed until some later re-render.
   The fit and the minimum ignored the strip until the user resized. `EmulatorPanel` refits in an
-  effect keyed on the strip's content. Do the same for anything else conditionally rendered into
-  the measured area.
+  effect keyed on the strip's content *and* on whether it is shown. Do the same for anything else
+  conditionally rendered into the measured area.
+- **Machine tool strips live in `appEmu/tool-registry.tsx` and share one card surface.** The Z88
+  slot cards and the Spectrum media strip (`SpectrumMediaToolArea`) are the same device-surface card:
+  `--bgcolor-display`, `--font-size-50`, the file or size in `--color-display-hilite`, an empty slot
+  in dimmed `--color-display`, and insert/eject/replace as the 14px `@upload` / `@eject` / `@replace`
+  images at the right (eject left of insert). A media card is a single line: the medium is named by
+  its icon (`cassette-tape`; `floppy` plus the drive letter), not a caption.
+- **A file name truncates at its start, not its end** — the end and the extension are what tell
+  files apart. `direction: rtl` + `text-overflow: ellipsis` on the box puts the ellipsis on the left;
+  the name goes inside a `<bdi>` so its own text stays left to right (without it, trailing brackets
+  and dots get reordered by the bidi algorithm).
+- **A strip the user can switch off names its setting in the registry entry** (`visibilitySetting`);
+  `EmulatorPanel` then leaves the `.toolArea` wrapper out entirely rather than rendering it empty,
+  because the wrapper's top margin is part of the height the screen fit reserves.
 
 ## Capturing The Mouse Over The Emulator Screen
 

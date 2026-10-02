@@ -181,17 +181,26 @@ static void setNextAudioSample(void) {
   SP48_AUDIO_BEFORE_SAMPLE(sp48AudioNextSampleTact);
   getExactWindowAudioSample(sp48AudioNextSampleTact, &rawLeft, &rawRight);
 
+  /*
+   * The beeper and the AY are mixed *before* the DC-blocking filter, as the real machines couple
+   * their sound through a capacitor. The AY used to be added after it, and its silent level is not
+   * zero (volume 0 maps to -0.125 per channel through the resistor table), so a silent 128K, +2 or +3
+   * produced a constant offset. Any gap in playback - the audio worklet fades to zero when the
+   * machine falls a few samples behind real time, then resumes - stepped from zero back to that
+   * offset, an audible thump every few seconds. The 48K, beeper only, was already filtered and silent.
+   */
   const double alpha = audioDcFilterAlpha();
-  const double outMono = rawLeft - sp48DcFilterPrevInputLeft + alpha * sp48DcFilterPrevOutputLeft;
+  const double inLeft = rawLeft + SP48_AUDIO_EXTRA_LEFT();
+  const double inRight = rawLeft + SP48_AUDIO_EXTRA_RIGHT();
+  const double outLeft = inLeft - sp48DcFilterPrevInputLeft + alpha * sp48DcFilterPrevOutputLeft;
+  const double outRight = inRight - sp48DcFilterPrevInputRight + alpha * sp48DcFilterPrevOutputRight;
 
-  sp48DcFilterPrevInputLeft = rawLeft;
-  sp48DcFilterPrevInputRight = rawLeft;
-  sp48DcFilterPrevOutputLeft = outMono;
-  sp48DcFilterPrevOutputRight = outMono;
-  sp48AudioSamples[sp48AudioSampleCount].left =
-    clampAudioWord((outMono + SP48_AUDIO_EXTRA_LEFT()) * SP48_AUDIO_SAMPLE_SCALE);
-  sp48AudioSamples[sp48AudioSampleCount].right =
-    clampAudioWord((outMono + SP48_AUDIO_EXTRA_RIGHT()) * SP48_AUDIO_SAMPLE_SCALE);
+  sp48DcFilterPrevInputLeft = inLeft;
+  sp48DcFilterPrevInputRight = inRight;
+  sp48DcFilterPrevOutputLeft = outLeft;
+  sp48DcFilterPrevOutputRight = outRight;
+  sp48AudioSamples[sp48AudioSampleCount].left = clampAudioWord(outLeft * SP48_AUDIO_SAMPLE_SCALE);
+  sp48AudioSamples[sp48AudioSampleCount].right = clampAudioWord(outRight * SP48_AUDIO_SAMPLE_SCALE);
   sp48AudioSampleCount++;
   sp48AudioNextSampleTact += sp48AudioSampleLength * (double)sp48ClockMultiplier;
   updateNextAudioSampleTactFloor();

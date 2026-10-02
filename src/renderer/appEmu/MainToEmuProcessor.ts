@@ -584,6 +584,18 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Resets the machine and starts the inserted tape loading (`MachineController.runTapeLoad`).
+   * @param debug True to arm the breakpoints once the keystrokes are typed.
+   */
+  startTapeLoad(debug: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.runTapeLoad(debug);
+  }
+
+  /**
    * Resolves breakpoints in the emulator.
    * @param breakpoints The breakpoints to resolve.
    */

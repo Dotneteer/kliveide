@@ -170,6 +170,12 @@ export interface IMachineController {
   ): Promise<void>;
 
   /**
+   * Resets the machine and starts the tape in its deck loading (`LOAD ""`, or the Tape Loader)
+   * @param debug Arm the breakpoints once the keystrokes are typed
+   */
+  runTapeLoad(debug: boolean): Promise<void>;
+
+  /**
    * Replaces the machine's state and leaves it Paused, so the next Start, Debug or step continues
    * from that state instead of resetting the machine (a start from Stopped resets it). The machine
    * is stopped first; `applyState` runs on the stopped machine.

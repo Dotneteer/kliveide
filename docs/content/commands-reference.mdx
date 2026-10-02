@@ -567,6 +567,25 @@ z88-snapshot "snapshots/game.z88" -r
 z88-snapshot "snapshots/game.z88" -a
 ```
 
+## `tape-load`
+
+This command puts a `.tap` or `.tzx` file into the ZX Spectrum's tape deck and, optionally, starts it loading.
+
+```
+tape-load <tape-file> [-r | -d]
+```
+
+Available aliases: `tapeload`
+
+With no option, the tape is only inserted, as **Machine | Select Tape File** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. A relative path is taken from the project folder.
+
+The command works on the ZX Spectrum 48K, 128K and +2/+3 only. It is what the tape viewer's buttons and the Explorer's context menu on a tape file run; see [Loading from Tape](./getting-started/tapes).
+
+```text
+tape-load "tapes/game.tzx"
+tape-load "tapes/game.tzx" -r
+```
+
 ## `nex-label`
 
 This command adds a label to the launched NEX file's annotations, at the address the machine is

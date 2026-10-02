@@ -16,6 +16,8 @@ import { BinaryReader } from "@common/utils/BinaryReader";
 export function readTapeFile (contents: Uint8Array): {
   data?: (TapeDataBlock | TzxBlockBase)[];
   type?: string;
+  /** The TZX format version, `major.minor`; undefined for a TAP file */
+  version?: string;
   error?: string;
 } {
   try {
@@ -32,7 +34,11 @@ export function readTapeFile (contents: Uint8Array): {
       }
       return { data: tapReader.dataBlocks, type: "tap" };
     }
-    return { data: tzxReader.dataBlocks, type: "tzx" };
+    return {
+      data: tzxReader.dataBlocks,
+      type: "tzx",
+      version: `${tzxReader.majorVersion}.${String(tzxReader.minorVersion).padStart(2, "0")}`
+    };
   } catch (err) {
     return { error: (err as Error)?.message };
   }

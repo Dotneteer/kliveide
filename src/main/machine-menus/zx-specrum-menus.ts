@@ -168,7 +168,17 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
   ];
 };
 
-export async function setSelectedTapeFile(filename: string): Promise<void> {
+/**
+ * Inserts a tape file into the machine, remembering it as the selected medium.
+ * @param filename The tape's full path
+ * @param showErrors Report a failure in a message box (the menu); the IDE's `tape-load` command
+ * passes false and reports the returned message itself
+ * @returns The failure's message, or undefined when the tape was inserted
+ */
+export async function setSelectedTapeFile(
+  filename: string,
+  showErrors = true
+): Promise<string | undefined> {
   // --- Read the file
   const tapeFileFolder = path.dirname(filename);
 
@@ -183,14 +193,53 @@ export async function setSelectedTapeFile(filename: string): Promise<void> {
     const contents = fs.readFileSync(filename);
     await getEmuApi().setTapeFile(filename, new Uint8Array(contents));
     await logEmuEvent(`Tape file set to ${filename}`);
+    return undefined;
   } catch (err) {
-    dialog.showErrorBox(
-      "Error while reading tape file",
-      `Reading file ${filename} resulted in error: ${err.message}\n\n` +
-        "The faulty tape file will be ejected after closing this dialog."
-    );
+    if (showErrors) {
+      dialog.showErrorBox(
+        "Error while reading tape file",
+        `Reading file ${filename} resulted in error: ${err.message}\n\n` +
+          "The faulty tape file will be ejected after closing this dialog."
+      );
+    }
     await ejectTape();
+    return `Reading file ${filename} resulted in error: ${err.message}`;
   }
+}
+
+/**
+ * Inserts a tape or disk through the open-file dialog, exactly as the Machine menu's
+ * "Select Tape File..." / "Insert Disk into Drive X..." items do. The emulator's media strip uses it.
+ * @param browserWindow The window that owns the dialog
+ * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+ */
+export async function selectMediaFile(browserWindow: BrowserWindow, mediaId: string): Promise<void> {
+  if (mediaId === MEDIA_TAPE) {
+    await setTapeFile(browserWindow, mainStore.getState());
+  } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
+    const index = mediaId === MEDIA_DISK_B ? 1 : 0;
+    await setDiskFile(browserWindow, index, index ? "b" : "a");
+  } else {
+    return;
+  }
+  await saveKliveProject();
+}
+
+/**
+ * Ejects a tape (after the same confirmation the menu asks for) or a disk, exactly as the Machine
+ * menu does. The emulator's media strip uses it.
+ * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+ */
+export async function ejectMediaFile(mediaId: string): Promise<void> {
+  if (mediaId === MEDIA_TAPE) {
+    await ejectTape(true);
+  } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
+    const index = mediaId === MEDIA_DISK_B ? 1 : 0;
+    await ejectDiskFile(index, index ? "b" : "a");
+  } else {
+    return;
+  }
+  await saveKliveProject();
 }
 
 // ============================================================================

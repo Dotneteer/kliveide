@@ -98,7 +98,10 @@ function loadScrFileContents (contents: Uint8Array): { fileInfo?: true; error?: 
   return { fileInfo: true };
 }
 
-function createScrPixelData (
+/**
+ * Draws a 6912-byte screen dump into `target`. Exported for the tape viewer's screen preview.
+ */
+export function createScrPixelData (
   data: Uint8Array,
   palette: number[],
   target: Uint32Array
@@ -113,7 +116,9 @@ function createScrPixelData (
       const pixelMask = 0x80 >> (x & 0x07);
       const pixelOn = (pixels[addr] & pixelMask) !== 0;
       const attr = attrs[attrAddress(x, y)];
-      const ink = attr & 0x07;
+      // --- BRIGHT (bit 6) lifts ink and paper alike. Paper took it as its bit 3; ink dropped it,
+      // --- so bright text drew in the normal shade.
+      const ink = (attr & 0x07) | ((attr & 0x40) >> 3);
       const paper = (attr & 0x78) >> 3;
       target[j++] = pixelOn ? palette[ink] : palette[paper];
     }

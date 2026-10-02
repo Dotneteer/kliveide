@@ -54,6 +54,7 @@ class WasmP3eFloppyLogFacade implements IFloppyControllerDevice {
   getLogEntries(): string[] { return []; }
 }
 
+import { menuTapeLoadFlow } from "../tapeLoadFlows";
 export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
   readonly machineId = "spp3e";
   selectedRom = 0;
@@ -194,6 +195,14 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
       ];
     }
     throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+  }
+
+  /**
+   * Resets to the start-up menu and chooses Loader (`tapeLoadFlows.ts`). On a model with a drive,
+   * Loader boots a disk in drive A instead of the tape.
+   */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    return menuTapeLoadFlow(SPP3_MAIN_WAITING_LOOP, "Loader");
   }
 
   injectCodeToRun(codeToInject: CodeToInject): number {

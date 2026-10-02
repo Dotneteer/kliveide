@@ -185,4 +185,82 @@ describe("BankBrowser", () => {
     fireEvent.click(screen.getByRole("button", { name: "ROM" }));
     expect(onFilterChange).toHaveBeenCalledWith("rom");
   });
+
+  it("names its items and numbers them as the caller asks", () => {
+    const items = [item(0, "a"), item(1, "a", { lastView: "memory" })];
+    render(
+      <BankBrowser<Item, View>
+        visibleItems={items}
+        selectedKey="1"
+        heading="Blocks"
+        summary=""
+        filters={[]}
+        filter="all"
+        views={["memory", "disassembly"]}
+        viewNames={VIEW_NAMES}
+        onSelect={vi.fn()}
+        onFilterChange={vi.fn()}
+        onPopOut={vi.fn()}
+        renderRow={() => null}
+        renderDetails={() => null}
+        itemNoun="Block"
+        formatNumber={(i) => `#${i.bank}`}
+        viewsFor={(i) => (i.bank === 0 ? [] : ["memory"])}
+      />
+    );
+    expect(screen.getByRole("listbox", { name: "Block list" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "#1 details" })).toBeInTheDocument();
+    // --- A caller's own number has no decimal beside it
+    expect(screen.queryByText("(1)")).toBeNull();
+    // --- Block 0 has no views: no pop-out button on its row
+    expect(screen.queryByRole("button", { name: "Pop out Block #0" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Pop out Block #1" })).toBeInTheDocument();
+  });
+
+  it("hides the details pop-out for an item with no views", () => {
+    render(
+      <BankBrowser<Item, View>
+        visibleItems={[item(0, "a")]}
+        heading="Blocks"
+        summary=""
+        filters={[]}
+        filter="all"
+        views={["memory"]}
+        viewNames={VIEW_NAMES}
+        onSelect={vi.fn()}
+        onFilterChange={vi.fn()}
+        onPopOut={vi.fn()}
+        renderRow={() => null}
+        renderDetails={() => null}
+        itemNoun="Block"
+        viewsFor={() => []}
+        hint="Pop out a block from its row's icon."
+      />
+    );
+    expect(screen.queryByRole("button", { name: /^Pop out in/ })).toBeNull();
+    expect(screen.queryByText("Pop out a block from its row's icon.")).toBeNull();
+    expect(screen.getByText("Block $00")).toBeInTheDocument();
+  });
+
+  it("stacks by default, and never with layout sideBySide", () => {
+    const props = {
+      visibleItems: [item(0, "a")],
+      heading: "Blocks",
+      summary: "",
+      filters: [],
+      filter: "all",
+      views: ["memory"] as View[],
+      viewNames: VIEW_NAMES,
+      onSelect: vi.fn(),
+      onFilterChange: vi.fn(),
+      onPopOut: vi.fn(),
+      renderRow: () => null,
+      renderDetails: () => null
+    };
+    const { unmount } = render(<BankBrowser<Item, View> {...props} />);
+    expect(screen.getByRole("region", { name: "Blocks" }).className).not.toMatch(/sideBySide/);
+    unmount();
+    render(<BankBrowser<Item, View> {...props} layout="sideBySide" />);
+    expect(screen.getByRole("region", { name: "Blocks" }).className).toMatch(/sideBySide/);
+  });
 });

@@ -17,6 +17,7 @@ import {
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_SHOW_MEDIA_INFO,
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
@@ -108,6 +109,17 @@ const settingDefinitions: Setting[] = [
     description: "Show or hide the instant screen in the Emulator view.",
     type: "boolean",
     defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SHOW_MEDIA_INFO,
+    title: "Show Media Information",
+    description:
+      "Show or hide the strip under the ZX Spectrum 48K/128K/+2E/+3E screen that names the " +
+      "inserted tape file and, on models with floppy drives, the disk file in each drive.",
+    type: "boolean",
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "emu"
   },

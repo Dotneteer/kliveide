@@ -16,6 +16,8 @@ const WORKLET_SOURCE = readFileSync(
 const SAMPLES_PER_FRAME = 882;
 /** The Web Audio render quantum */
 const QUANTUM = 128;
+/** The worklet's fade-in after priming: all but its first FADE_IN - 1 samples are at full level */
+const FADE_IN = 96;
 
 type Worklet = {
   post: (data: unknown) => void;
@@ -62,23 +64,56 @@ function renderQuanta(worklet: Worklet, quanta: number): number[] {
 const framesToQuanta = (frames: number) => Math.ceil((frames * SAMPLES_PER_FRAME) / QUANTUM);
 
 describe("Sampling.worklet", () => {
-  it("starts playing once a frame is queued", () => {
+  it("starts playing as soon as three frames are queued", () => {
+    const worklet = loadWorklet();
+    worklet.post({ initialize: SAMPLES_PER_FRAME });
+    worklet.post({ samples: frame(0.5) });
+    worklet.post({ samples: frame(0.5) });
+    expect(worklet.render().every((v) => v === 0)).toBe(true);
+    worklet.post({ samples: frame(0.5) });
+
+    // --- From the first quantum, fading in rather than stepping to full level
+    const out = worklet.render();
+    expect(out[0]).toBeGreaterThan(0);
+    expect(out[0]).toBeLessThan(0.05);
+    expect(out[QUANTUM - 1]).toBe(0.5);
+  });
+
+  it("holds a single frame back while more may be on the way, then plays it", () => {
+    // --- One frame and then nothing, as when the debugger steps the machine: wait a frame's time
+    // --- for a second one, then play what there is
     const worklet = loadWorklet();
     worklet.post({ initialize: SAMPLES_PER_FRAME });
     worklet.post({ samples: frame(0.5) });
 
+    const firstFrameTime = renderQuanta(worklet, Math.floor(SAMPLES_PER_FRAME / QUANTUM));
+    expect(firstFrameTime.every((v) => v === 0)).toBe(true);
     const out = renderQuanta(worklet, framesToQuanta(2));
-    expect(out.some((v) => v === 0.5)).toBe(true);
+    expect(out.filter((v) => v === 0.5).length).toBe(SAMPLES_PER_FRAME - (FADE_IN - 1));
+  });
+
+  it("fades back in after running dry, instead of stepping to the next sample", () => {
+    const worklet = loadWorklet();
+    worklet.post({ initialize: SAMPLES_PER_FRAME });
+    for (let i = 0; i < 3; i++) worklet.post({ samples: frame(0.5) });
+    renderQuanta(worklet, framesToQuanta(5)); // --- play them all, then run dry
+
+    for (let i = 0; i < 3; i++) worklet.post({ samples: frame(0.5) });
+    const out = renderQuanta(worklet, 2);
+    // --- No jump bigger than a fade step anywhere in the restart
+    for (let i = 1; i < out.length; i++) {
+      expect(Math.abs(out[i] - out[i - 1])).toBeLessThan(0.01);
+    }
   });
 
   it("starts playing on a frame a sample short of the rounded-up frame size", () => {
     // --- 44.1 kHz does not divide evenly into frames: a delivered frame can be 881 samples
     const worklet = loadWorklet();
     worklet.post({ initialize: SAMPLES_PER_FRAME + 0.5 });
-    worklet.post({ samples: frame(0.5).slice(2) });
+    for (let i = 0; i < 3; i++) worklet.post({ samples: frame(0.5).slice(2) });
 
-    const out = renderQuanta(worklet, framesToQuanta(2));
-    expect(out.filter((v) => v === 0.5).length).toBe(SAMPLES_PER_FRAME - 1);
+    const out = renderQuanta(worklet, framesToQuanta(4));
+    expect(out.filter((v) => v === 0.5).length).toBe(3 * (SAMPLES_PER_FRAME - 1) - (FADE_IN - 1));
   });
 
   it("never replays samples it has already played when the machine delivers late", () => {
@@ -91,7 +126,7 @@ describe("Sampling.worklet", () => {
     // --- Play the click out, then keep the output running for ten frames with nothing new
     const played = renderQuanta(worklet, framesToQuanta(2));
     const clickValues = played.filter((v) => v === 0.5).length;
-    expect(clickValues).toBe(SAMPLES_PER_FRAME);
+    expect(clickValues).toBe(SAMPLES_PER_FRAME - (FADE_IN - 1));
 
     const starved = renderQuanta(worklet, framesToQuanta(10));
     expect(starved.filter((v) => v === 0.5).length).toBe(0);
@@ -115,8 +150,8 @@ describe("Sampling.worklet", () => {
     worklet.post({ initialize: SAMPLES_PER_FRAME });
     for (let i = 0; i < 10; i++) worklet.post({ samples: frame(i === 9 ? 0.25 : 0.5) });
 
-    // --- The newest frame must be audible within the lag bound (3 frames plus a quantum)
-    const out = renderQuanta(worklet, framesToQuanta(4));
+    // --- The newest frame must be audible within the lag bound (5 frames plus a quantum)
+    const out = renderQuanta(worklet, framesToQuanta(6));
     expect(out.some((v) => v === 0.25)).toBe(true);
   });
 });
@@ -172,7 +207,8 @@ describe("Sampling.worklet - a machine that delivers in bursts (Cambridge Z88)",
     const out = playBursts(Z88_FRAME, 25);
     const firstSound = out.indexOf(0.5);
     const silent = out.slice(firstSound).filter((v) => v !== 0.5).length;
-    // --- Over half of the second after the first sound was silence
-    expect(silent).toBeGreaterThan(out.length / 2);
+    // --- A large share of the second after the first sound is silence: over half when the lag
+    // --- bound was three frames, ~42% with the five a three-frame hold-back needs - still choppy
+    expect(silent).toBeGreaterThan(out.length / 3);
   });
 });

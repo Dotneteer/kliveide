@@ -211,6 +211,12 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getCodeInjectionFlow(model: string, additionalInfo?: any): Promise<CodeInjectionFlow>;
 
   /**
+   * The flow that starts the tape in the deck loading after a reset: `LOAD ""` on a 48K, the Tape
+   * Loader on a 128K or +2/+3. Absent on a machine that cannot load a tape this way.
+   */
+  getTapeLoadFlow?(): CodeInjectionFlow;
+
+  /**
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */

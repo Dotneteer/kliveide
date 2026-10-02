@@ -6,6 +6,12 @@ export const MI_Z88 = "z88";
 export const MI_ZXNEXT = "zxnext";
 export const MI_C64 = "c64";
 
+/**
+ * The machines whose emulator screen can show the media strip (the tape and disk files in use),
+ * switched by the `emuViewOptions.showMediaInfo` setting.
+ */
+export const MEDIA_INFO_MACHINE_IDS: string[] = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E];
+
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";

@@ -65,7 +65,14 @@ export class TzxTurboSpeedBlock extends Tzx3ByteBlockBase {
     block.sync2PulseLength = this.sync2PulseLength;
     block.zeroBitPulseLength = this.zeroBitPulseLength;
     block.oneBitPulseLength = this.oneBitPulseLength;
-    block.endSyncPulseLength = this.pilotToneLength;
+    /*
+     * `pilotToneLength` is the TZX "length of PILOT tone (number of pulses)" - a count. It was put in
+     * `endSyncPulseLength`, so a turbo block played the ROM's default pilot (the players fall back to
+     * it when `pilotPulseCount` is unset) and then a terminating pulse thousands of T-states long.
+     * The block defines no terminating pulse, so that keeps the standard one.
+     */
+    block.pilotPulseCount = this.pilotToneLength;
+    block.lastByteUsedBits = this.lastByteUsedBits;
     block.pauseAfter = this.pauseAfter;
     return block;
   }

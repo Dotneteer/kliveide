@@ -62,7 +62,12 @@ import {
   invalidateSdCardHandler
 } from "./machine-menus/zx-next-menus";
 import { withSdCardAccess } from "./sd-card-access";
-import { setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { focusEmuWindow as bringEmuWindowToFront } from ".";
+import {
+  ejectMediaFile as ejectMachineMedia,
+  selectMediaFile as selectMachineMedia,
+  setSelectedTapeFile
+} from "./machine-menus/zx-specrum-menus";
 import { appSettings, saveAppSettings, setSettingValue } from "./settings-utils";
 import { runBackgroundCompileWorker } from "./compiler-integration/runWorker";
 import { CimFile } from "./fat32/CimFileManager";
@@ -950,6 +955,40 @@ class MainMessageProcessor {
     if (tapeFile) {
       await setSelectedTapeFile(tapeFile);
     }
+  }
+
+  /**
+   * Inserts a tape file, as the "Select Tape File..." menu does (`.plans/TAPE_VIEWER_PLAN.md` D6).
+   * @returns The failure's message, or undefined when the tape was inserted
+   */
+  async setTapeFile(filename: string): Promise<string | undefined> {
+    const error = await setSelectedTapeFile(filename, false);
+    // --- As the menu does: the project remembers its tape
+    if (!error) await saveKliveProject();
+    return error;
+  }
+
+  /**
+   * Brings the emulator window to the front and gives it the keyboard focus.
+   */
+  async focusEmuWindow(): Promise<void> {
+    bringEmuWindowToFront();
+  }
+
+  /**
+   * Inserts a tape or disk through the open-file dialog, as the Machine menu does.
+   * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+   */
+  async selectMediaFile(mediaId: string): Promise<void> {
+    await selectMachineMedia(this.window, mediaId);
+  }
+
+  /**
+   * Ejects a tape (after confirmation) or a disk, as the Machine menu does.
+   * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+   */
+  async ejectMediaFile(mediaId: string): Promise<void> {
+    await ejectMachineMedia(mediaId);
   }
 
   /**

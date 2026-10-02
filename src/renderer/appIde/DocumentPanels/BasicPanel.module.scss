@@ -1,8 +1,28 @@
+/*
+ * One listing line, in the live BASIC panel and the tape viewer's BASIC pop-out alike. The padding
+ * keeps the line number clear of the pane's edge and gives the lines a little air; the rows are
+ * measured by the virtualized list, so it needs no row-height constant.
+ */
 .item {
   display: block;
+  box-sizing: border-box;
   width: fit-content;
+  padding: var(--space-0_5) var(--space-4);
   overflow-x: hidden;
   word-break: break-all;
+}
+
+/*
+ * The listing's distance from the pane's top and bottom edges, on its first and last line: the
+ * virtualized list measures its rows, so this scrolls with the content like a padding would, and
+ * the gap between lines stays the rows' own.
+ */
+.first {
+  padding-top: var(--space-3);
+}
+
+.last {
+  padding-bottom: var(--space-3);
 }
 
 .spectrum {
