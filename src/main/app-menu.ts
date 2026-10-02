@@ -58,7 +58,11 @@ import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
-import { MF_ALLOW_CLOCK_MULTIPLIER, MF_ALLOW_SCAN_LINES } from "@common/machines/constants";
+import {
+  MEDIA_INFO_MACHINE_IDS,
+  MF_ALLOW_CLOCK_MULTIPLIER,
+  MF_ALLOW_SCAN_LINES
+} from "@common/machines/constants";
 import { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import {
   appSettings,
@@ -71,6 +75,7 @@ import { createIdeIntegrationsMenu } from "./ide-integrations-menu";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
+  SETTING_EMU_SHOW_MEDIA_INFO,
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_PERFORMANCE_INFO,
   SETTING_EMU_SHOW_TOOLBAR,
@@ -616,6 +621,11 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN),
+      // --- Only the Spectrum models have a media strip under the screen
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_MEDIA_INFO, {
+        visibleFn: () =>
+          isEmuWindowFocused() && MEDIA_INFO_MACHINE_IDS.includes(machineId)
+      }),
       {
         id: EMU_ZOOM_STEP,
         label: "Screen Zoom Steps",

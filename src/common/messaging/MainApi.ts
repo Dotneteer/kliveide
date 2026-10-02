@@ -557,6 +557,33 @@ class MainApiImpl {
   }
 
   /**
+   * Brings the emulator window to the front and gives it the keyboard focus (restoring it if it is
+   * minimized). Used after an IDE action starts the machine on something the user then types into,
+   * such as loading a tape, so the keys reach the machine and not the IDE.
+   */
+  async focusEmuWindow(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Inserts a tape or disk through the open-file dialog: the same path as the Machine menu's
+   * "Select Tape File..." / "Insert Disk into Drive X..." items, so the media state, the menus and
+   * the project all follow. Does nothing when the dialog is cancelled.
+   * @param _mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+   */
+  async selectMediaFile(_mediaId: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Ejects a tape (after the menu's confirmation) or a disk, as the Machine menu does.
+   * @param _mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+   */
+  async ejectMediaFile(_mediaId: string): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a global application setting value.
    * @param _settingId The setting key to set.
    * @param _value The value to set.
@@ -640,6 +667,8 @@ const UNBOUNDED_MAIN_METHODS = [
   "displayMessageBox",
   "showOpenFolderDialog",
   "showOpenFileDialog",
+  "selectMediaFile",
+  "ejectMediaFile",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",
   // --- Compilation time scales with the project and the external toolchain

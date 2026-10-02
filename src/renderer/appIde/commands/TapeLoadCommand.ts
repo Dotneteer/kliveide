@@ -78,6 +78,7 @@ export function tapeLoadGuard(state: {
  *
  * `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and picks
  * the Tape Loader (Loader on a +2A/+3) on a 128K. `-d` does the same with the breakpoints armed.
+ * Both then move the keyboard focus to the emulator window, where the loaded program expects it.
  */
 export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
   readonly id = "tape-load";
@@ -158,6 +159,15 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
       await context.emuApi.startTapeLoad(!!args["-d"]);
     } catch (err) {
       return commandError(`Could not start loading ${file}: ${messageOf(err)}`);
+    }
+
+    // --- The machine now waits for keys (a game's "press any key", a 128K menu): hand the keyboard
+    // --- to the emulator, or Space and Enter go to the IDE that launched the load. Best effort - a
+    // --- window that cannot be focused does not make the load fail.
+    try {
+      await context.mainApi.focusEmuWindow();
+    } catch {
+      // --- Intentionally ignored
     }
     return commandSuccessWith(
       `Tape ${file} inserted and loading${args["-d"] ? " (debugging)" : ""}.`

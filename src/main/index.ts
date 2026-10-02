@@ -726,6 +726,19 @@ export function isEmuWindowFocused() {
   return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isFocused?.();
 }
 
+/**
+ * Brings the emulator window to the front and gives it the keyboard focus (restoring it if it is
+ * minimized), so the keys the user presses next reach the machine rather than the IDE.
+ */
+export function focusEmuWindow(): void {
+  if (!emuWindow || emuWindow.isDestroyed()) return;
+  if (emuWindow.isMinimized()) emuWindow.restore();
+  emuWindow.show();
+  emuWindow.focus();
+  // --- The page inside must have focus too, or the machine's keyboard handlers stay silent
+  emuWindow.webContents.focus();
+}
+
 export function isEmuWindowVisible() {
   return (emuWindow?.isDestroyed() ?? false) === false && emuWindow.isVisible?.();
 }

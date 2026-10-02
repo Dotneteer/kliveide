@@ -33,6 +33,7 @@ function contextFor(machineId: string = MI_SPECTRUM_48, bytes: Uint8Array = FLOA
   const setTapeFile = vi.fn().mockResolvedValue(undefined);
   const startTapeLoad = vi.fn().mockResolvedValue(undefined);
   const setTapeFileOnEmu = vi.fn();
+  const focusEmuWindow = vi.fn().mockResolvedValue(undefined);
   const context: any = {
     store: { getState: () => ({ emulatorState: { machineId } }) },
     output: {
@@ -45,9 +46,17 @@ function contextFor(machineId: string = MI_SPECTRUM_48, bytes: Uint8Array = FLOA
       underline: vi.fn()
     },
     emuApi: { startTapeLoad, setTapeFile: setTapeFileOnEmu },
-    mainApi: { readBinaryFile, setTapeFile }
+    mainApi: { readBinaryFile, setTapeFile, focusEmuWindow }
   };
-  return { context, lines, readBinaryFile, setTapeFile, startTapeLoad, setTapeFileOnEmu };
+  return {
+    context,
+    lines,
+    readBinaryFile,
+    setTapeFile,
+    startTapeLoad,
+    setTapeFileOnEmu,
+    focusEmuWindow
+  };
 }
 
 async function validate(args: Record<string, unknown>, machineId?: string) {
@@ -99,19 +108,21 @@ describe("tape-load command", () => {
   });
 
   it("inserts the tape through the main process, never the emulator directly", async () => {
-    const { context, setTapeFile, startTapeLoad, setTapeFileOnEmu } = contextFor();
+    const { context, setTapeFile, startTapeLoad, setTapeFileOnEmu, focusEmuWindow } = contextFor();
     const result = await new TapeLoadCommand().execute(context, { file: " /p/a.tap " } as any);
     expect(result.success).toBe(true);
     expect(setTapeFile).toHaveBeenCalledWith("/p/a.tap");
     expect(setTapeFileOnEmu).not.toHaveBeenCalled();
     expect(startTapeLoad).not.toHaveBeenCalled();
+    // --- Inserting alone starts nothing, so the IDE keeps the keyboard
+    expect(focusEmuWindow).not.toHaveBeenCalled();
   });
 
   it.each([
     [{ "-r": true }, false],
     [{ "-d": true }, true]
   ])("with %o resets and starts the load (debug: %s)", async (options, debug) => {
-    const { context, setTapeFile, startTapeLoad } = contextFor(MI_SPECTRUM_128);
+    const { context, setTapeFile, startTapeLoad, focusEmuWindow } = contextFor(MI_SPECTRUM_128);
     const result = await new TapeLoadCommand().execute(context, {
       file: "/p/a.tap",
       ...options
@@ -119,6 +130,21 @@ describe("tape-load command", () => {
     expect(result.success).toBe(true);
     expect(setTapeFile).toHaveBeenCalled();
     expect(startTapeLoad).toHaveBeenCalledWith(debug);
+    // --- The loaded program waits for keys, so the emulator gets the keyboard
+    expect(focusEmuWindow).toHaveBeenCalledTimes(1);
+    expect(focusEmuWindow.mock.invocationCallOrder[0]).toBeGreaterThan(
+      startTapeLoad.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("still succeeds when the emulator window cannot take the focus", async () => {
+    const { context, focusEmuWindow } = contextFor();
+    focusEmuWindow.mockRejectedValue(new Error("no window"));
+    const result = await new TapeLoadCommand().execute(context, {
+      file: "/p/a.tap",
+      "-r": true
+    } as any);
+    expect(result.success).toBe(true);
   });
 
   it("refuses a file that is not a tape, without inserting it", async () => {

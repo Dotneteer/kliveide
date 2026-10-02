@@ -1812,8 +1812,21 @@ Two things follow for any later change here:
   `[ref.current]`, read *during* render, so an element that first mounts in that same commit (the
   Z88 slot strip, set after the machine initializes) is not observed until some later re-render.
   The fit and the minimum ignored the strip until the user resized. `EmulatorPanel` refits in an
-  effect keyed on the strip's content. Do the same for anything else conditionally rendered into
-  the measured area.
+  effect keyed on the strip's content *and* on whether it is shown. Do the same for anything else
+  conditionally rendered into the measured area.
+- **Machine tool strips live in `appEmu/tool-registry.tsx` and share one card surface.** The Z88
+  slot cards and the Spectrum media strip (`SpectrumMediaToolArea`) are the same device-surface card:
+  `--bgcolor-display`, `--font-size-50`, the file or size in `--color-display-hilite`, an empty slot
+  in dimmed `--color-display`, and insert/eject/replace as the 14px `@upload` / `@eject` / `@replace`
+  images at the right (eject left of insert). A media card is a single line: the medium is named by
+  its icon (`cassette-tape`; `floppy` plus the drive letter), not a caption.
+- **A file name truncates at its start, not its end** — the end and the extension are what tell
+  files apart. `direction: rtl` + `text-overflow: ellipsis` on the box puts the ellipsis on the left;
+  the name goes inside a `<bdi>` so its own text stays left to right (without it, trailing brackets
+  and dots get reordered by the bidi algorithm).
+- **A strip the user can switch off names its setting in the registry entry** (`visibilitySetting`);
+  `EmulatorPanel` then leaves the `.toolArea` wrapper out entirely rather than rendering it empty,
+  because the wrapper's top margin is part of the height the screen fit reserves.
 
 ## Capturing The Mouse Over The Emulator Screen
 

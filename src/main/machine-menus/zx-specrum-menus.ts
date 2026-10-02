@@ -207,6 +207,41 @@ export async function setSelectedTapeFile(
   }
 }
 
+/**
+ * Inserts a tape or disk through the open-file dialog, exactly as the Machine menu's
+ * "Select Tape File..." / "Insert Disk into Drive X..." items do. The emulator's media strip uses it.
+ * @param browserWindow The window that owns the dialog
+ * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+ */
+export async function selectMediaFile(browserWindow: BrowserWindow, mediaId: string): Promise<void> {
+  if (mediaId === MEDIA_TAPE) {
+    await setTapeFile(browserWindow, mainStore.getState());
+  } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
+    const index = mediaId === MEDIA_DISK_B ? 1 : 0;
+    await setDiskFile(browserWindow, index, index ? "b" : "a");
+  } else {
+    return;
+  }
+  await saveKliveProject();
+}
+
+/**
+ * Ejects a tape (after the same confirmation the menu asks for) or a disk, exactly as the Machine
+ * menu does. The emulator's media strip uses it.
+ * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
+ */
+export async function ejectMediaFile(mediaId: string): Promise<void> {
+  if (mediaId === MEDIA_TAPE) {
+    await ejectTape(true);
+  } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
+    const index = mediaId === MEDIA_DISK_B ? 1 : 0;
+    await ejectDiskFile(index, index ? "b" : "a");
+  } else {
+    return;
+  }
+  await saveKliveProject();
+}
+
 // ============================================================================
 // Helper functions
 
