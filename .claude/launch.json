@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "doc:dev"],
+      "port": 3000
+    }
+  ]
+}

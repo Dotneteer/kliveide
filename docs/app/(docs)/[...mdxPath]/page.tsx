@@ -9,7 +9,7 @@
  * https://github.com/shuding/nextra/blob/main/examples/docs/src/app/docs/%5B%5B...mdxPath%5D%5D/page.jsx
  */
 import { generateStaticParamsFor, importPage } from "nextra/pages";
-import { useMDXComponents as getMDXComponents } from "../../mdx-components";
+import { useMDXComponents as getMDXComponents } from "../../../mdx-components";
 
 export const generateStaticParams = generateStaticParamsFor("mdxPath");
 

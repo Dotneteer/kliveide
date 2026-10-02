@@ -1,0 +1,175 @@
+/* Landing page styles (prototype). Docs styling lives in app/(docs)/custom.css. */
+
+:root {
+  --landing-bg: #ffffff;
+  --landing-surface: #f4f5f7;
+  --landing-text: #1b1d22;
+  --landing-muted: #5b606b;
+  --landing-border: #dde0e5;
+  --landing-accent: #2563eb;
+  --landing-accent-text: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --landing-bg: #111317;
+    --landing-surface: #1a1d23;
+    --landing-text: #e8eaee;
+    --landing-muted: #9aa1ad;
+    --landing-border: #2b2f37;
+    --landing-accent: #3b82f6;
+    --landing-accent-text: #ffffff;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body.landing {
+  margin: 0;
+  background: var(--landing-bg);
+  color: var(--landing-text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+.landing a {
+  color: inherit;
+}
+
+.landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px max(16px, calc((100vw - 1120px) / 2));
+  background: color-mix(in srgb, var(--landing-bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--landing-border);
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.25rem;
+  text-decoration: none;
+}
+
+.landing-nav {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.landing-link {
+  color: var(--landing-muted) !important;
+  text-decoration: none;
+}
+
+.landing-link:hover {
+  color: var(--landing-text) !important;
+}
+
+.landing-button {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid var(--landing-border);
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.landing-button:hover {
+  background: var(--landing-surface);
+}
+
+.landing-button-primary {
+  background: var(--landing-accent);
+  border-color: var(--landing-accent);
+  color: var(--landing-accent-text) !important;
+}
+
+.landing-button-primary:hover {
+  background: var(--landing-accent);
+  filter: brightness(1.1);
+}
+
+.landing-hero {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 64px 16px 32px;
+  text-align: center;
+}
+
+.landing-hero h1 {
+  margin: 0 0 16px;
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  line-height: 1.15;
+}
+
+.landing-lead {
+  max-width: 640px;
+  margin: 0 auto 28px;
+  color: var(--landing-muted);
+  font-size: 1.15rem;
+}
+
+.landing-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 48px;
+}
+
+.landing-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--landing-border);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 0.25);
+}
+
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 32px 16px 64px;
+}
+
+.landing-card {
+  padding: 20px;
+  background: var(--landing-surface);
+  border: 1px solid var(--landing-border);
+  border-radius: 12px;
+}
+
+.landing-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.landing-card p {
+  margin: 0;
+  color: var(--landing-muted);
+}
+
+.landing-footer {
+  padding: 24px 16px;
+  border-top: 1px solid var(--landing-border);
+  color: var(--landing-muted);
+  text-align: center;
+  font-size: 0.9rem;
+}

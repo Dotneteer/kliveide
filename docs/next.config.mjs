@@ -305,7 +305,7 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
 const withNextra = nextra({
   // `theme` / `themeConfig` are gone in Nextra 4 - the theme is now applied by
-  // <Layout> in app/layout.tsx, and NextraConfigSchema rejects unknown keys.
+  // <Layout> in app/(docs)/layout.tsx, and NextraConfigSchema rejects unknown keys.
   mdxOptions: {
     remarkPlugins: [],
     rehypePlugins: [],
