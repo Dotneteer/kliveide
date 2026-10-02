@@ -5,6 +5,7 @@ import {
   TEXT_EDITOR,
   BIN_VIEWER,
   TAP_VIEWER,
+  TAPE_BLOCK_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
   Z80_VIEWER,
@@ -64,7 +65,9 @@ import {
   OutputPanel,
   OutputPanelHeader
 } from "./appIde/ToolArea/OutputPanel";
-import { createTapViewerPanel } from "./appIde/DocumentPanels/TapViewerPanel";
+import { createTapeViewerPanel } from "./appIde/DocumentPanels/Tape/TapeViewerPanel";
+import { createTapeBlockViewerPanel } from "./appIde/DocumentPanels/Tape/TapeBlockViewerPanel";
+import { readTapeBlockBytes } from "./appIde/DocumentPanels/Tape/tapeBlockDocument";
 import { PsgPanel } from "./appIde/SideBarPanels/PsgPanel";
 import { NecUpd765Panel } from "./appIde/SideBarPanels/NecUpd765Panel";
 import { createDskViewerPanel } from "./appIde/DocumentPanels/DskViewerPanel";
@@ -123,6 +126,10 @@ import {
   getZ88SnapshotContextMenuInfo,
   z88SnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/Z88SnapshotLaunchMenu";
+import {
+  getTapeLaunchContextMenuInfo,
+  tapeLaunchCommandBarRenderer
+} from "@renderer/features/documents/TapeLaunchMenu";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
@@ -405,13 +412,22 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: createStaticDumpNavigationAdapter({
       openStaticMemoryDump,
       readNexBankBytes,
-      readZ88BankBytes
+      readZ88BankBytes,
+      readTapeBlockBytes
     })
   },
   {
     id: TAP_VIEWER,
-    renderer: createTapViewerPanel,
-    icon: "@file-tap-tzx"
+    renderer: createTapeViewerPanel,
+    icon: "@file-tap-tzx",
+    // --- Its blocks pop out into documents, and Go Back must return here
+    // --- (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
+    navigation: fileDocumentNavigationAdapter
+  },
+  {
+    id: TAPE_BLOCK_VIEWER,
+    renderer: createTapeBlockViewerPanel,
+    icon: "code"
   },
   {
     id: DSK_VIEWER,
@@ -636,7 +652,9 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
-    openPermanent: true
+    openPermanent: true,
+    documentTabRenderer: tapeLaunchCommandBarRenderer,
+    contextMenuInfo: getTapeLaunchContextMenuInfo
   },
   {
     matchType: "ends",
@@ -645,7 +663,9 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     icon: "@file-tap-tzx",
     isBinary: true,
     isReadOnly: true,
-    openPermanent: true
+    openPermanent: true,
+    documentTabRenderer: tapeLaunchCommandBarRenderer,
+    contextMenuInfo: getTapeLaunchContextMenuInfo
   },
   {
     matchType: "ends",

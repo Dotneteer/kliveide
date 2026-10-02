@@ -121,6 +121,14 @@ export class TapeDevice implements ITapeDevice {
   // --- Pilot pulse counter used during a SAVE operation
   private _pilotPulseCount: number;
 
+  /*
+   * XORed into every level after the pilot: true when the pilot has an even number of pulses. A
+   * tape is a train of edges, but the levels below are absolute (SYNC1 low, SYNC2 high, each bit low
+   * then high), which is right only after an odd pilot. The ROM's pilots are odd; a TZX turbo
+   * block's need not be. The WASM player (`zx-spectrum-tape.c`) carries the same rule.
+   */
+  private _pulsePolarity = false;
+
   // --- Value of the last data pulse detected
   private _prevDataPulse: MicPulseType;
 
@@ -258,13 +266,13 @@ export class TapeDevice implements ITapeDevice {
       if (pos <= this._tapeSync1EndPos) {
         // --- Turn to SYNC phase
         this._playPhase = PlayPhase.Sync;
-        return false; // => Low EAR bit
+        return this._pulsePolarity; // => Low EAR bit
       }
 
       // --- Test SYNC_2 position
       if (pos <= this._tapeSync2EndPos) {
         this._playPhase = PlayPhase.Sync;
-        return true; // => High EAR bit
+        return !this._pulsePolarity; // => High EAR bit
       }
 
       // --- Now, we're ready to change to Data phase
@@ -286,10 +294,10 @@ export class TapeDevice implements ITapeDevice {
 
         // --- First pulse?
         if (bitPos < this._tapeBitPulseLen) {
-          return false; // => Low EAR bit
+          return this._pulsePolarity; // => Low EAR bit
         }
         if (bitPos < this._tapeBitPulseLen * 2) {
-          return true; // => High EAR bit
+          return !this._pulsePolarity; // => High EAR bit
         }
 
         // --- Move to the next bit
@@ -324,7 +332,7 @@ export class TapeDevice implements ITapeDevice {
               : block.zeroBitPulseLength;
 
           // --- We're in the first pulse of the next bit
-          return false; // => Low EAR bit
+          return this._pulsePolarity; // => Low EAR bit
         }
 
         // --- We've played all data bytes, let's send the terminating pulse
@@ -333,7 +341,7 @@ export class TapeDevice implements ITapeDevice {
         // --- Prepare to the terminating sync
         this._tapeTermEndPos =
           this._tapeBitStartPos + 2 * this._tapeBitPulseLen + block.endSyncPulseLength;
-        return false;
+        return this._pulsePolarity;
       } else {
         this._playPhase = PlayPhase.Pause;
         this._tapePauseEndPos =
@@ -346,7 +354,7 @@ export class TapeDevice implements ITapeDevice {
     // --- Termination sync?
     if (this._playPhase == PlayPhase.TermSync) {
       if (pos < this._tapeTermEndPos) {
-        return false; // => Low EAR bit
+        return this._pulsePolarity; // => Low EAR bit
       }
 
       // --- We terminated the data, it's pause time (1 second)
@@ -527,9 +535,10 @@ export class TapeDevice implements ITapeDevice {
     const block = this._blocks[++this._currentBlockIndex];
     this._playPhase = PlayPhase.Pilot;
     this._tapeStartTact = this.machine.tacts;
-    this._tapePilotEndPos =
-      block.pilotPulseLength *
-      (block.pilotPulseCount ?? (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT));
+    const pilotPulses =
+      block.pilotPulseCount || (block.data[0] & 0x80 ? DATA_PILOT_COUNT : HEADER_PILOT_COUNT);
+    this._tapePilotEndPos = block.pilotPulseLength * pilotPulses;
+    this._pulsePolarity = block.pilotPulseLength !== 0 && pilotPulses % 2 === 0;
     this._tapeSync1EndPos = this._tapePilotEndPos + block.sync1PulseLength;
     this._tapeSync2EndPos = this._tapeSync1EndPos + block.sync2PulseLength;
     this._dataIndex = 0;

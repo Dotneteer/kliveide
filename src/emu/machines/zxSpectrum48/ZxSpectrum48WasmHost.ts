@@ -9,6 +9,7 @@ import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
 import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SP48_MAIN_ENTRY, ZxSpectrumBase } from "../ZxSpectrumBase";
+import { sp48TapeLoadFlow } from "../tapeLoadFlows";
 import { toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { MC_MEM_SIZE, MC_SCREEN_FREQ } from "@common/machines/constants";
 import { zxSpectrum48SysVars } from "./ZxSpectrum48SysVars";
@@ -120,6 +121,11 @@ export abstract class ZxSpectrum48WasmHost extends ZxSpectrumBase {
       ];
     }
     throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+  }
+
+  /** Resets to the editor and types `LOAD ""` (`tapeLoadFlows.ts`) */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    return sp48TapeLoadFlow();
   }
 
   get sysVars(): SysVar[] {

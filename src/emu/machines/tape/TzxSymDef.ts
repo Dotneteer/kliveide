@@ -30,12 +30,14 @@ export class TzxSymDef {
     this.pulseLengths = [];
   }
 
-  readFrom (reader: BinaryReader): void {
+  /**
+   * @param maxPulses The block's maximum pulses per symbol (NPP or NPD). Every definition stores
+   * that many words, zero-padded. It used to read `pulseLengths.length` words - zero, from a fresh
+   * definition - so a block with symbol definitions could never be read.
+   */
+  readFrom (reader: BinaryReader, maxPulses = this.pulseLengths.length): void {
     this.symbolFlags = reader.readByte();
-    this.pulseLengths = TzxBlockBase.readWords(
-      reader,
-      this.pulseLengths.length
-    );
+    this.pulseLengths = TzxBlockBase.readWords(reader, maxPulses);
   }
 
   writeTo (writer: BinaryWriter): void {

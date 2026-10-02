@@ -546,6 +546,17 @@ class MainApiImpl {
   }
 
   /**
+   * Inserts a tape file: the same path as the emulator's "Select Tape File..." menu, so the media
+   * state, the Eject menu and the remembered folder all follow. Inserting the tape already in the
+   * deck reloads it from block 0.
+   * @param _filename The tape's full path
+   * @returns An error message, or undefined when the tape was inserted
+   */
+  async setTapeFile(_filename: string): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a global application setting value.
    * @param _settingId The setting key to set.
    * @param _value The value to set.

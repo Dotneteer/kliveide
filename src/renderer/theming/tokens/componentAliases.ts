@@ -641,5 +641,25 @@ export const componentAliases: Record<string, string> = {
   "--color-switch-on": "var(--accent-solid)",
   "--bgcolor-switch-on": "var(--surface-active)",
   "--color-switch-off": "var(--text-tertiary)",
-  "--bgcolor-switch-off": "var(--surface-active)"
+  "--bgcolor-switch-off": "var(--surface-active)",
+
+  // --- Tape viewer timeline strip ----------------------------------------------------------------
+  /*
+   * One segment per block, coloured by what the block is (`.plans/TAPE_VIEWER_PLAN.md` §4.4.1).
+   * Neutral by default, ordered by how much the block matters to a reader: data and code stand out
+   * of the track more than headers, tones and pauses do. Only two hues: BASIC takes the accent (it
+   * is the one block the viewer decodes), and a block Klive does not play takes the error colour -
+   * the same fact the row's "not played" chip states. The selection ring is text-primary, not the
+   * accent, so it stays visible on a BASIC segment.
+   */
+  "--bgcolor-tape-track": "var(--surface-canvas)",
+  "--color-tape-segment-header": "var(--border-strong)",
+  "--color-tape-segment-data": "var(--text-tertiary)",
+  "--color-tape-segment-code": "var(--text-secondary)",
+  "--color-tape-segment-basic": "var(--accent-solid)",
+  "--color-tape-segment-tone": "var(--border-default)",
+  "--color-tape-segment-pause": "var(--surface-active)",
+  "--color-tape-segment-merged": "var(--text-disabled)",
+  "--color-tape-segment-unplayable": "var(--status-error)",
+  "--color-tape-segment-selected": "var(--text-primary)"
 };

@@ -48,7 +48,8 @@ export abstract class TzxBlockBase {
     const result: number[] = [];
     const bytes = reader.readBytes(2 * count);
     for (let i = 0; i < count; i++) {
-      result[i] = (bytes[i * 2] + bytes[i * 2 + 1]) << 8;
+      // --- Little-endian. This read `(lo + hi) << 8`, garbling every $13 pulse length.
+      result[i] = bytes[i * 2] + (bytes[i * 2 + 1] << 8);
     }
     return result;
   }

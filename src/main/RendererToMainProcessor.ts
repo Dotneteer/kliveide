@@ -953,6 +953,17 @@ class MainMessageProcessor {
   }
 
   /**
+   * Inserts a tape file, as the "Select Tape File..." menu does (`.plans/TAPE_VIEWER_PLAN.md` D6).
+   * @returns The failure's message, or undefined when the tape was inserted
+   */
+  async setTapeFile(filename: string): Promise<string | undefined> {
+    const error = await setSelectedTapeFile(filename, false);
+    // --- As the menu does: the project remembers its tape
+    if (!error) await saveKliveProject();
+    return error;
+  }
+
+  /**
    * Sets a global application setting value.
    * @param settingId The setting key to set.
    * @param value The value to set.

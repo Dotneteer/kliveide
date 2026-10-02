@@ -943,7 +943,7 @@ before trusting any assertion about it.
   dialog field, with 8px block margins, a 32px button and a `font-size: 0.9em` M1 forbids.
 - **`controls/bankBrowser/`** — `BankBrowser`, the bounded list-and-details browser of a file's banks
   with per-bank pop-out, shared by the NEX viewer (`NexBankBrowser`) and the `.z88` viewer
-  (`Z88SlotBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
+  (`Z88SlotBrowser`), and by the tape viewer (`Tape/TapeBlockBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
   (`BankFacts`), sections and group headers; a viewer's own stylesheet holds only what that viewer
   alone shows (the NEX breakpoint chip, content mix, comment, labels). See "A Bank Browser Has One
   Shell".
@@ -1580,8 +1580,21 @@ of it. Open is shown by the popover itself.
 
 ## A Bank Browser Has One Shell
 
-`controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks; a new one (a
-`.sna`, a cartridge) wraps it rather than copying `NexBankBrowser`.
+`controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks — or anything
+listed and popped out the same way: the tape viewer's blocks use it too. A new one (a `.sna`, a
+cartridge) wraps it rather than copying `NexBankBrowser`.
+
+- **An item that is not a bank says so through props, never a fork**: `itemNoun` ("Block") reaches
+  the details title, aria labels, tooltips and the empty-filter text; `formatNumber` replaces the
+  `$NN` (a caller's own form gets no decimal beside it); `viewsFor` narrows the pop-out views per
+  item. **An item with no views has no pop-out controls at all** — not a disabled button — and its
+  row keeps a placeholder the icon's width, so the rows' lengths still line up.
+- **A problem with an item is a status chip, not an accent one** (`BankChip tone="warning" |
+  "error"`: `--status-warning` / `--status-error`). The accent pair marks *kinds* of thing; a bad
+  checksum or a block Klive does not play is a *state*, and painting it in the secondary accent would
+  read as a third kind of place.
+- **Content that belongs between the heading and the list goes in `beforeBody`** (the tape
+  timeline), so it stays inside the browser's bounded height instead of pushing it.
 
 - **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
   pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
@@ -1611,6 +1624,32 @@ of it. Open is shown by the popover itself.
 - **When probing a bounded list over CDP, aim the wheel at the pane, not the list.** Inside a
   scroller the listbox is the full-height *content*; its centre can be off screen, and the wheel then
   lands on whatever is there — which read as "the viewer scrolls" when the list was never touched.
+
+## A Proportional Strip Colours By Importance, And Rings The Selection Outside
+
+The tape viewer's timeline (`Tape/TapeTimeline.tsx`, tokens `--color-tape-segment-*` at L4) is a
+bar whose segments are as wide as their share of a whole. What carries over to any strip like it:
+
+- **Neutral by default, ordered by how much a segment matters to the reader**: the data a reader came
+  for stands out of the track most (`--text-secondary`/`--text-tertiary`), the scaffolding around it
+  least (headers `--border-strong`, tones `--border-default`, pauses `--surface-active`). **At most
+  two hues**: the accent for the one kind the view decodes (BASIC), and the status error for the one
+  kind that is a problem (a block Klive does not play — the same fact as the row's "not played"
+  chip, so it takes the chip's colour).
+- **A minimum width, paid for by the widest segments**: a 19-byte header next to a 40 KB block is a
+  sub-pixel sliver otherwise. Keep the total exact, or the strip stops meaning "the whole".
+- **The selection ring is drawn outside the bar and in `--text-primary`, never the accent**: inside
+  a 2px segment it would cover the colour it is marking, and an accent ring vanishes on the one
+  segment that is already accent.
+- **It is not a second control.** No tab stop and `aria-hidden`: the list's keyboard moves the
+  selection and the strip follows, so a screen reader is not told the list twice.
+
+## The Spectrum's BRIGHT Lifts Ink And Paper Alike
+
+Any renderer of a Spectrum attribute byte takes bit 6 into **both** colours: ink is
+`(attr & 7) | ((attr & 0x40) >> 3)`, paper `(attr & 0x78) >> 3`, indexing a 16-entry palette. The
+SCR viewer's `createScrPixelData` (now shared with the tape viewer's screen preview) gave it to
+paper only, so bright text drew in the normal shade — wrong in a way that looks plausible.
 
 ## A Shared Control Can Be Invisible In One Of Its Two Homes
 

@@ -225,6 +225,13 @@
 }
 
 /* --- Dim until the row is pointed at or selected: every row has one, and they should not shout. */
+/* --- Holds the pop-out button's place on a row that cannot pop out (a tape's header), so the rows'
+   --- lengths and chips stay aligned whichever rows can. Icon plus the button's padding. */
+.rowPopOutPlaceholder {
+  flex: 0 0 auto;
+  width: calc(14px + 2 * var(--space-0_5));
+}
+
 .rowPopOut {
   display: inline-grid;
   flex: 0 0 auto;
@@ -266,6 +273,15 @@
 
 .chipAlt {
   color: var(--accent-secondary-text);
+}
+
+/* --- Status chips: a problem with the item, in the app's status colours */
+.chipWarning {
+  color: var(--status-warning);
+}
+
+.chipError {
+  color: var(--status-error);
 }
 
 // ─── Details ─────────────────────────────────────────────────────────────────

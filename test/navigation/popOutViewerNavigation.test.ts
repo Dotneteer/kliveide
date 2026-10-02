@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { documentPanelRegistry } from "@renderer/registry";
-import { NEX_VIEWER, Z88_SNAPSHOT_VIEWER } from "@state/common-ids";
+import { NEX_VIEWER, TAP_VIEWER, Z88_SNAPSHOT_VIEWER } from "@state/common-ids";
 import { fileDocumentNavigationAdapter } from "@renderer/appIde/navigation/fileDocumentNavigationAdapter";
 
 /*
@@ -11,7 +11,8 @@ import { fileDocumentNavigationAdapter } from "@renderer/appIde/navigation/fileD
 describe("Viewers with bank pop-outs are navigation entries", () => {
   it.each([
     ["the NEX viewer", NEX_VIEWER],
-    ["the .z88 snapshot viewer", Z88_SNAPSHOT_VIEWER]
+    ["the .z88 snapshot viewer", Z88_SNAPSHOT_VIEWER],
+    ["the .tap/.tzx viewer", TAP_VIEWER]
   ])("%s", (_name, id) => {
     const panel = documentPanelRegistry.find((p) => p.id === id);
     expect(panel?.navigation).toBe(fileDocumentNavigationAdapter);

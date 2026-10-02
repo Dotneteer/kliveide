@@ -9,6 +9,17 @@
 #define SP48_EXTERNAL_TACT(tact) (tact)
 #endif
 
+/*
+ * The level every pulse after the pilot is XORed with: 1 when the pilot has an even number of
+ * pulses. A tape is a train of *edges*: each pulse flips the level. The player below sets absolute
+ * levels instead - pilot pulse k high when k is even, then SYNC1 low, SYNC2 high, each bit low then
+ * high - which is only right after an odd pilot, where the last pilot pulse is high. After an even
+ * one the last pilot pulse is already low, SYNC1 makes no edge, and the ROM reports a loading error.
+ * The ROM's own pilots (8063 and 3223 pulses) are odd, which hid this until TZX turbo blocks started
+ * playing their own pilot lengths.
+ */
+static uint8_t sp48TapePulsePolarity;
+
 static void clearTapeFileName(void) {
   for (uint32_t i = 0u; i < SP48_TAPE_FILENAME_CAPACITY; i++) {
     sp48TapeFileName[i] = 0u;
@@ -79,6 +90,7 @@ static void resetTapePlayback(void) {
   sp48TapeBitMask = 0x80u;
   sp48TapeTermEndPos = 0u;
   sp48TapePauseEndPos = 0u;
+  sp48TapePulsePolarity = 0u;
   sp48TapeEarBit = 1u;
   sp48TapeSavePhase = SP48_TAPE_SAVE_PHASE_NONE;
   sp48TapeSaveLastPulse = SP48_TAPE_MIC_PULSE_NONE;
@@ -403,6 +415,7 @@ static void nextTapeBlock(void) {
 
   const uint32_t pilotPulses = tapeBlockPilotPulseCount(block);
   sp48TapePilotEndPos = block->pilotPulseLength * pilotPulses;
+  sp48TapePulsePolarity = block->pilotPulseLength != 0u && (pilotPulses & 1u) == 0u ? 1u : 0u;
   sp48TapeSync1EndPos = sp48TapePilotEndPos + block->sync1PulseLength;
   sp48TapeSync2EndPos = sp48TapeSync1EndPos + block->sync2PulseLength;
 
@@ -575,14 +588,14 @@ static uint8_t sp48TapeGetEarBitInternal(void) {
 
     if (pos <= sp48TapeSync1EndPos) {
       sp48TapePlayPhase = SP48_TAPE_PHASE_SYNC;
-      setTapeEarBit(0u);
-      return 0u;
+      setTapeEarBit(0u ^ sp48TapePulsePolarity);
+      return 0u ^ sp48TapePulsePolarity;
     }
 
     if (pos <= sp48TapeSync2EndPos) {
       sp48TapePlayPhase = SP48_TAPE_PHASE_SYNC;
-      setTapeEarBit(1u);
-      return 1u;
+      setTapeEarBit(1u ^ sp48TapePulsePolarity);
+      return 1u ^ sp48TapePulsePolarity;
     }
 
     sp48TapePlayPhase = SP48_TAPE_PHASE_DATA;
@@ -598,12 +611,12 @@ static uint8_t sp48TapeGetEarBitInternal(void) {
       const uint32_t bitPos = pos - sp48TapeBitStartPos;
 
       if (bitPos < sp48TapeBitPulseLength) {
-        setTapeEarBit(0u);
-        return 0u;
+        setTapeEarBit(0u ^ sp48TapePulsePolarity);
+        return 0u ^ sp48TapePulsePolarity;
       }
       if (bitPos < sp48TapeBitPulseLength * 2u) {
-        setTapeEarBit(1u);
-        return 1u;
+        setTapeEarBit(1u ^ sp48TapePulsePolarity);
+        return 1u ^ sp48TapePulsePolarity;
       }
 
       sp48TapeBitMask = (uint8_t)(sp48TapeBitMask >> 1u);
@@ -623,15 +636,15 @@ static uint8_t sp48TapeGetEarBitInternal(void) {
           (sp48TapeData[block->offset + sp48TapeDataIndex] & sp48TapeBitMask) != 0u
             ? block->oneBitPulseLength
             : block->zeroBitPulseLength;
-        setTapeEarBit(0u);
-        return 0u;
+        setTapeEarBit(0u ^ sp48TapePulsePolarity);
+        return 0u ^ sp48TapePulsePolarity;
       }
 
       sp48TapePlayPhase = SP48_TAPE_PHASE_TERM_SYNC;
       sp48TapeTermEndPos =
         sp48TapeBitStartPos + 2u * sp48TapeBitPulseLength + block->endSyncPulseLength;
-      setTapeEarBit(0u);
-      return 0u;
+      setTapeEarBit(0u ^ sp48TapePulsePolarity);
+      return 0u ^ sp48TapePulsePolarity;
     }
 
     sp48TapePlayPhase = SP48_TAPE_PHASE_PAUSE;
@@ -642,8 +655,8 @@ static uint8_t sp48TapeGetEarBitInternal(void) {
 
   if (sp48TapePlayPhase == SP48_TAPE_PHASE_TERM_SYNC) {
     if (pos < sp48TapeTermEndPos) {
-      setTapeEarBit(0u);
-      return 0u;
+      setTapeEarBit(0u ^ sp48TapePulsePolarity);
+      return 0u ^ sp48TapePulsePolarity;
     }
 
     sp48TapePlayPhase = SP48_TAPE_PHASE_PAUSE;

@@ -45,6 +45,9 @@
 /images/getting-started/sp48-keyboard.png
 /images/getting-started/start.png
 /images/getting-started/symbol-key.png
+/images/getting-started/tape-viewer-commands.png
+/images/getting-started/tape-viewer-loaded.png
+/images/getting-started/tape-viewer.png
 /images/getting-started/ubuntu-permission.png
 /images/getting-started/warning1.png
 /images/getting-started/warning2.png

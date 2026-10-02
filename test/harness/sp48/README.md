@@ -42,6 +42,8 @@ it("prints through the ROM", async () => {
 | | `sourceStep(index, kind)` → `SourceStep` | A source-level step (`into`, `over`, `out`, `overLine`, `runToFrame`, `intoTarget`) of a compiled program with source-level debug info, exactly as the IDE runs it; `undefined` if the program returns to `returnTo` first. |
 | Keys | `keyDown(...keys)`, `keyUp(...keys)` | Hold / release keys by `SpectrumKeyCode` name (`"A"`, `"N1"`, `"Enter"`, `"Space"`, `"CShift"`, `"SShift"`); the matrix is read from the next frame. |
 | | `typeKeys(chords, { hold, gap })` | Types as a user does: each chord (keys pressed together) held `hold` frames (3), then released `gap` frames (3), short of the ROM's auto-repeat. The ROM or a program must be reading the keyboard. |
+| | `typeFlowKeys(flow, { hold, gap })` | Types a code-injection flow's `QueueKey` steps (for example `sp48TapeLoadFlow()`), so a test checks the keys the IDE queues. |
+| Tape | `insertTape(blocks, { fastLoad })` | Puts `TapeDataBlock`s in the deck (`MEDIA_TAPE`), fast load on by default; the ROM's LOAD reads them. |
 | Memory | `peek`, `peekWord`, `poke`, `pokeWord` | Through the machine's memory API. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
 

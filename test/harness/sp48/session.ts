@@ -8,6 +8,10 @@ import { beginSourceStep, type SourceDebugIndex, type SourceStep, type SourceSte
 import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
+import { FAST_LOAD } from "@emu/machines/machine-props";
+import { MEDIA_TAPE } from "@common/structs/project-const";
+import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
@@ -303,6 +307,36 @@ export class Sp48TestSession {
       this.keyDown(...chord).runFrames(hold);
       this.keyUp(...chord).runFrames(gap);
     }
+    return this;
+  }
+
+  /**
+   * Types a code-injection flow's `QueueKey` steps - the keystrokes the IDE queues for a flow such
+   * as `sp48TapeLoadFlow` - so a test checks the very keys the IDE sends. Other steps are skipped:
+   * the session is already where the flow's `ReachExecPoint` would take it.
+   */
+  typeFlowKeys(flow: CodeInjectionFlow, options?: { hold?: number; gap?: number }): this {
+    const names = Object.entries(SpectrumKeyCode);
+    const nameOf = (code: number) => names.find(([, value]) => value === code)![0];
+    const chords = flow.flatMap((step) =>
+      step.type === "QueueKey"
+        ? [[step.secondary, step.ternary, step.primary].filter((k) => k !== undefined).map((k) => nameOf(k!))]
+        : []
+    );
+    return this.typeKeys(chords, options);
+  }
+
+  // ==========================================================================================
+  // Tape
+
+  /**
+   * Puts a tape in the deck, as the IDE does when it inserts one: the blocks the emulator plays
+   * (`MainToEmuProcessor.setTapeFile` makes them from a `.tap` or `.tzx`), with fast load on unless
+   * asked otherwise. The ROM's LOAD then reads them.
+   */
+  insertTape(blocks: TapeDataBlock[], { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    this.machine.setMachineProperty(MEDIA_TAPE, blocks);
     return this;
   }
 

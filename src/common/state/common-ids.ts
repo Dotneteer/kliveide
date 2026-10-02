@@ -11,6 +11,8 @@ export const UNKNOWN_EDITOR = "Unknown";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
 export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";
 export const TAP_VIEWER = "TapViewer";
+// --- A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
+export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";
 export const DSK_VIEWER = "DskViewer";
 export const NEX_VIEWER = "NexViewer";
 export const Z80_VIEWER = "Z80Viewer";

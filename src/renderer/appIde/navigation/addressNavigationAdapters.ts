@@ -10,6 +10,11 @@ import {
   z88BankDumpTitle
 } from "../DocumentPanels/Z88/z88BankDocument";
 import { getNexAnnotationPath } from "../DocumentPanels/Next/nexAnnotations";
+import {
+  parseTapeBlockDocumentId,
+  tapeBlockDumpId,
+  tapeBlockTitle
+} from "../DocumentPanels/Tape/tapeBlockDocument";
 
 /*
  * Navigation for the address-based views: the live Memory and Disassembly panels, and static memory
@@ -171,6 +176,12 @@ export type StaticDumpNavigationDeps = {
     bank: number,
     readFile: (path: string) => Promise<Uint8Array>
   ) => Promise<Uint8Array | undefined>;
+  /** A tape block's payload; absent, a closed tape block dump is not reopened. */
+  readTapeBlockBytes?: (
+    path: string,
+    index: number,
+    readFile: (path: string) => Promise<Uint8Array>
+  ) => Promise<Uint8Array | undefined>;
 };
 
 /** The NEX file and bank a bank document was opened for, from its id. */
@@ -182,9 +193,9 @@ export function parseNexBankDocumentId(
 }
 
 /**
- * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank
- * or a `.z88` snapshot bank, because those are the kinds whose bytes can be read back — from the
- * file its id names.
+ * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank,
+ * a `.z88` snapshot bank or a tape block, because those are the kinds whose bytes can be read back —
+ * from the file its id names.
  */
 export function createStaticDumpNavigationAdapter(
   deps: StaticDumpNavigationDeps
@@ -252,6 +263,31 @@ export function createStaticDumpNavigationAdapter(
             disassOffset: locator.base ?? 0,
             // --- Reopened as it was opened: Z88 code, whatever machine is running
             disassemblyFlavor: "z88",
+            topAddress: locator.address,
+            viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
+          }
+        );
+        return true;
+      }
+
+      const tapeBlock = parseTapeBlockDocumentId(entry.documentId);
+      if (tapeBlock) {
+        if (!deps.readTapeBlockBytes) return false;
+        let bytes: Uint8Array | undefined;
+        try {
+          bytes = await deps.readTapeBlockBytes(tapeBlock.path, tapeBlock.index, env.readBinaryFile);
+        } catch {
+          return false;
+        }
+        if (!bytes) return false;
+        await deps.openStaticMemoryDump(
+          target,
+          tapeBlockDumpId(tapeBlock.path, tapeBlock.index),
+          tapeBlockTitle(tapeBlock.path, tapeBlock.index, env.store.getState()?.project?.folderPath),
+          bytes,
+          {
+            disassemblyEnabled: true,
+            disassOffset: locator.base ?? 0,
             topAddress: locator.address,
             viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
           }

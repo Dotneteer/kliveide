@@ -49,7 +49,8 @@ export class TzxCswRecordingBlock extends TzxBlockBase {
     this.pulseCount = reader.readUint32();
     const length =
       this.blockLength -
-      4 /* PauseAfter*/ -
+      2 /* PauseAfter (a word: this subtracted 4, under-reading the data by two bytes and
+           misaligning every block after it) */ -
       3 /* SamplingRate */ -
       1 /* CompressionType */ -
       4; /* PulseCount */
@@ -66,6 +67,6 @@ export class TzxCswRecordingBlock extends TzxBlockBase {
   }
 
   get isValid (): boolean {
-    return this.blockLength == 4 + 3 + 1 + 4 + this.data.length;
+    return this.blockLength == 2 + 3 + 1 + 4 + this.data.length;
   }
 }

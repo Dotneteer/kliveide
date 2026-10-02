@@ -23,6 +23,7 @@ import { zxSpectrum48SysVars } from "../zxSpectrum48/ZxSpectrum48SysVars";
 import { zxSpectrum128SysVars } from "./ZxSpectrum128SysVars";
 import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
 
+import { menuTapeLoadFlow } from "../tapeLoadFlows";
 export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   readonly machineId = "sp128";
   selectedRom = 0;
@@ -172,6 +173,11 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
       ];
     }
     throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
+  }
+
+  /** Resets to the start-up menu and chooses Tape Loader (`tapeLoadFlows.ts`) */
+  getTapeLoadFlow(): CodeInjectionFlow {
+    return menuTapeLoadFlow(SP128_MAIN_WAITING_LOOP, "Tape Loader");
   }
 
   injectCodeToRun(codeToInject: CodeToInject): number {

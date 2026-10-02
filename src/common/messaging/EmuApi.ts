@@ -224,6 +224,15 @@ class EmuApiImpl {
   }
 
   /**
+   * Resets the machine and starts the tape in its deck loading: types `LOAD ""` on a 48K, chooses
+   * the Tape Loader on a 128K or +2/+3. The tape must already be inserted (`MainApi.setTapeFile`).
+   * @param _debug Arm the breakpoints once the keystrokes are typed
+   */
+  async startTapeLoad(_debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Resolves breakpoints in the emulator.
    * @param _breakpoints The breakpoints to resolve.
    */
@@ -846,6 +855,8 @@ const UNBOUNDED_EMU_METHODS = [
   "displayDialog",
   // --- Project startup can wait on emulated ROM/OS execution; a later stop command cancels it
   "runCodeCommand",
+  // --- Reaches the editor or the start-up menu by running the ROM, like `runCodeCommand`
+  "startTapeLoad",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
   "stopScript"

@@ -185,4 +185,58 @@ describe("BankBrowser", () => {
     fireEvent.click(screen.getByRole("button", { name: "ROM" }));
     expect(onFilterChange).toHaveBeenCalledWith("rom");
   });
+
+  it("names its items and numbers them as the caller asks", () => {
+    const items = [item(0, "a"), item(1, "a", { lastView: "memory" })];
+    render(
+      <BankBrowser<Item, View>
+        visibleItems={items}
+        selectedKey="1"
+        heading="Blocks"
+        summary=""
+        filters={[]}
+        filter="all"
+        views={["memory", "disassembly"]}
+        viewNames={VIEW_NAMES}
+        onSelect={vi.fn()}
+        onFilterChange={vi.fn()}
+        onPopOut={vi.fn()}
+        renderRow={() => null}
+        renderDetails={() => null}
+        itemNoun="Block"
+        formatNumber={(i) => `#${i.bank}`}
+        viewsFor={(i) => (i.bank === 0 ? [] : ["memory"])}
+      />
+    );
+    expect(screen.getByRole("listbox", { name: "Block list" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "#1 details" })).toBeInTheDocument();
+    // --- A caller's own number has no decimal beside it
+    expect(screen.queryByText("(1)")).toBeNull();
+    // --- Block 0 has no views: no pop-out button on its row
+    expect(screen.queryByRole("button", { name: "Pop out Block #0" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Pop out Block #1" })).toBeInTheDocument();
+  });
+
+  it("hides the details pop-out for an item with no views", () => {
+    render(
+      <BankBrowser<Item, View>
+        visibleItems={[item(0, "a")]}
+        heading="Blocks"
+        summary=""
+        filters={[]}
+        filter="all"
+        views={["memory"]}
+        viewNames={VIEW_NAMES}
+        onSelect={vi.fn()}
+        onFilterChange={vi.fn()}
+        onPopOut={vi.fn()}
+        renderRow={() => null}
+        renderDetails={() => null}
+        itemNoun="Block"
+        viewsFor={() => []}
+      />
+    );
+    expect(screen.queryByRole("button", { name: /^Pop out in/ })).toBeNull();
+    expect(screen.getByText("Block $00")).toBeInTheDocument();
+  });
 });

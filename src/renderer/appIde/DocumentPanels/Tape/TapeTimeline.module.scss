@@ -1,0 +1,69 @@
+/*
+ * The tape viewer's timeline strip (`.plans/TAPE_VIEWER_PLAN.md` §4.4.1). Every colour is an L4
+ * alias (`--color-tape-segment-*` in `componentAliases.ts`); see there for why the hues are where
+ * they are.
+ */
+
+.timeline {
+  position: relative;
+  flex: 0 0 auto;
+  height: 6px;
+  /* --- Room for the selection ring, which is drawn outside the bar */
+  margin: var(--space-1) 0;
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-tape-track);
+}
+
+.segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  cursor: pointer;
+  /* --- A hairline gap between segments, so two blocks of one tone read as two */
+  box-shadow: inset -1px 0 0 var(--bgcolor-tape-track);
+}
+
+.header {
+  background: var(--color-tape-segment-header);
+}
+
+.data {
+  background: var(--color-tape-segment-data);
+}
+
+.code {
+  background: var(--color-tape-segment-code);
+}
+
+.basic {
+  background: var(--color-tape-segment-basic);
+}
+
+.tone {
+  background: var(--color-tape-segment-tone);
+}
+
+.pause {
+  background: var(--color-tape-segment-pause);
+}
+
+.merged {
+  background: var(--color-tape-segment-merged);
+}
+
+.unplayable {
+  background: var(--color-tape-segment-unplayable);
+}
+
+/* --- Outside the bar, so it stays visible on a 2px segment */
+.selection {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  box-sizing: content-box;
+  margin-left: -2px;
+  padding: 0 1px;
+  border: 1px solid var(--color-tape-segment-selected);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}

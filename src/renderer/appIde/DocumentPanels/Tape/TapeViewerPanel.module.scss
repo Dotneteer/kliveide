@@ -1,0 +1,88 @@
+/*
+ * The `.tap`/`.tzx` viewer (`.plans/TAPE_VIEWER_PLAN.md` §4.4): the summary strip and the parts of
+ * the block details the shared bank browser does not draw. Neutral data colours only - the browser
+ * owns the accent marks, and the timeline its own aliases.
+ */
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  min-width: 0;
+}
+
+/* --- One wrapping line of facts: label, value, label, value */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-4);
+}
+
+.fact {
+  display: inline-flex;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.factLabel {
+  color: var(--data-label);
+}
+
+.factValue {
+  color: var(--data-value);
+  overflow-wrap: anywhere;
+}
+
+.banner {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--status-warning-subtle);
+  color: var(--text-primary);
+}
+
+/* --- Inside the details */
+.rowLength {
+  flex: 0 0 auto;
+  color: var(--data-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.basic {
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.more {
+  align-self: flex-start;
+  padding: var(--space-0_5) 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  cursor: pointer;
+  font: inherit;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.screen {
+  display: flex;
+}
+
+.listAt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.listAtValue {
+  color: var(--data-secondary);
+}

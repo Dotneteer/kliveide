@@ -32,9 +32,37 @@ When the loading completes or gets interrupted, the tape position stays as if yo
 
 You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Rewind Tape** command.
 
-<Callout type="info" emoji="💡">
-Klive allows you to examine the contents of a particular tape file. You can learn about it in the IDE documentation.
+## Viewing a Tape File
+
+Open a `.tap` or `.tzx` file from the Explorer to see what is on it. The viewer shows:
+
+- **A summary**: the format (and the TZX version), the file's size, how many blocks and files it holds, how long it plays, and the title, publisher and year of a TZX file that records them.
+- **A timeline strip**: the whole tape in play order, each block as wide as the time it takes to play. The selected block is outlined; click a segment to select its block. A BASIC program is drawn in the accent colour, and a block Klive cannot play in red.
+- **The blocks**: every block in a list, grouped by file. A standard header and the data block after it form one file, such as `Program "Float Spy"` or `Bytes "float.cde"`. Each row shows what the block holds: `LINE 9996` for a program that starts itself, the load address of code. Use the **All**, **Data**, **BASIC**, **Code** and **Not played** buttons to filter the list, and the arrow keys to move through it.
+
+The details beside the list describe the selected block: its length and checksum, when it plays, its header's fields, and the timing of a turbo block. A **BASIC program** is listed right there, decoded from its tokens; a **screen** (`SCREEN$`) is drawn; other data shows its first bytes.
+
+<ClickableImage src="/images/getting-started/tape-viewer.png" width={900} />
+
+**Pop out** a block to see all of it in its own document: as a memory dump, as a disassembly at the address the block loads to, as a full BASIC listing, or as a screen. Use the button beside the block's details (its arrow chooses the view), the icon on its row, a double-click, or <kbd>Enter</kbd>. **Go Back** returns to the tape. A block with no header has no load address of its own: type one in the **List at** box to disassemble it there, and right-click it to **Read as BASIC** when you know it is a program.
+
+<Callout type="warning" emoji="⚠️">
+Some TZX blocks — pure tones, pulse sequences, pure data, direct and CSW recordings, generalized data — are shown but **not played** by Klive. A tape that needs them is marked with a banner, and its loading may fail.
 </Callout>
+
+## Loading a Tape From the IDE
+
+On a ZX Spectrum 48K, 128K or +2/+3, the tape viewer's tab has three buttons, and the Explorer's context menu on a `.tap` or `.tzx` file has the same three entries:
+
+<ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
+
+- **Load and run tape** (play icon) resets the machine and starts the tape loading: it types `LOAD ""` on a 48K, and chooses **Tape Loader** from the start-up menu of a 128K or +2 (**Loader** on a +2A/+3, which boots a disk instead if one is in drive A). Whatever loader the tape carries then runs as it would on the real machine.
+- **Insert tape** (cassette icon) puts the tape in the deck without a reset, as **Machine | Select Tape File** does. Inserting the tape that is already in the deck rewinds it.
+- **Load and debug tape** (debug icon) is **Load and run** with your breakpoints armed.
+
+<ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />
+
+On any other machine, such as the ZX Spectrum Next, the buttons and the menu entries are disabled; a button's tooltip says why. The same actions are available as the [`tape-load`](../commands-reference#tape-load) command.
 
 ## How Fast Load Works
 
