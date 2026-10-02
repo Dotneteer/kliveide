@@ -8,6 +8,7 @@ const makeMainApi = () => ({
   startScreenRecording: vi.fn().mockResolvedValue("/tmp/recording_test.txt"),
   appendRecordingFrame: vi.fn().mockResolvedValue(undefined),
   appendRecordingAudio: vi.fn().mockResolvedValue(undefined),
+  appendWindowRecordingAudio: vi.fn().mockResolvedValue(undefined),
   stopScreenRecording: vi.fn().mockResolvedValue("/tmp/recording_test.txt")
 });
 
@@ -371,5 +372,35 @@ describe("RecordingManager — submitAudioSamples", () => {
       await manager.submitFrame(RGBA);
       expect(mainApi.appendRecordingFrame).toHaveBeenCalledWith(RGBA);
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IDE + Emulator recording: the emulator's sound goes to the main process too
+// ---------------------------------------------------------------------------
+describe("RecordingManager — window recording audio", () => {
+  const SAMPLES = [{ left: 0.1, right: 0.2 }];
+
+  it("forwards sound while a window recording runs, even when its own recording is idle", async () => {
+    const mainApi = makeMainApi();
+    const manager = new RecordingManager(mainApi as any, makeDispatch(), () => true);
+    await manager.submitAudioSamples(SAMPLES);
+    expect(mainApi.appendWindowRecordingAudio).toHaveBeenCalledOnce();
+    expect(mainApi.appendRecordingAudio).not.toHaveBeenCalled();
+    const sent: Float32Array = mainApi.appendWindowRecordingAudio.mock.calls[0][0];
+    expect(Array.from(sent)).toEqual([Math.fround(0.1), Math.fround(0.2)]);
+  });
+
+  it("does not forward when no window recording runs", async () => {
+    const mainApi = makeMainApi();
+    const manager = new RecordingManager(mainApi as any, makeDispatch(), () => false);
+    await manager.submitAudioSamples(SAMPLES);
+    expect(mainApi.appendWindowRecordingAudio).not.toHaveBeenCalled();
+  });
+
+  it("defaults to no window recording", async () => {
+    const { manager, mainApi } = makeManager();
+    await manager.submitAudioSamples(SAMPLES);
+    expect(mainApi.appendWindowRecordingAudio).not.toHaveBeenCalled();
   });
 });

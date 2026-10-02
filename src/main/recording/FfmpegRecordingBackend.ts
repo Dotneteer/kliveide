@@ -1,7 +1,7 @@
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import { getFFmpegPath } from "./ffmpegAvailable";
-import type { IRecordingBackend } from "./IRecordingBackend";
+import type { IRecordingBackend, RecordingStartOptions } from "./IRecordingBackend";
 import type { RecordingFormat } from "@common/state/AppState";
 
 /**
@@ -37,15 +37,21 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
    * packaged build that could not start FFmpeg at all only ever left an empty folder (issue #1374).
    */
   private _failure: string | null = null;
+  // Byte order of the incoming frames
+  private _pixelFormat: "rgba" | "bgra" = "rgba";
+  // Favour encoding speed (large wall-clock frames)
+  private _realtime = false;
 
   /**
    * Compute integer scale factors so that the smaller ratio becomes 1.
    * e.g. xRatio=0.5, yRatio=1  →  scaleX=1, scaleY=2  (double vertical)
    *      xRatio=1,   yRatio=1  →  scaleX=1, scaleY=1  (unchanged)
    */
-  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): void {
+  start(outputPath: string, width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4", options: RecordingStartOptions = {}): void {
     this._dead = false;
     this._failure = null;
+    this._pixelFormat = options.pixelFormat ?? "rgba";
+    this._realtime = options.realtime ?? false;
     // Replace file extension based on format
     const dirName = path.dirname(outputPath);
     const baseName = path.basename(outputPath, path.extname(outputPath));
@@ -124,11 +130,15 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
       "-y",
       // Video input: raw RGBA frames from stdin (pipe:0)
       "-f", "rawvideo",
-      "-pix_fmt", "rgba",
+      "-pix_fmt", this._pixelFormat,
       "-s", `${this._outWidth}x${this._outHeight}`,
       "-r", String(fps),
       "-i", "pipe:0",
-      // Audio input: raw f32le stereo from fd 3 (pipe:3)
+      // Audio input: raw f32le stereo from fd 3 (pipe:3). Its format is given in full, so it is
+      // not probed: FFmpeg 4.4 would otherwise read 1-3 s of sound before taking a second video
+      // frame, and the IDE + Emulator recording, which waits for the encoder to start, would stall.
+      "-probesize", "32",
+      "-analyzeduration", "0",
       "-f", "f32le",
       "-ar", String(sampleRate),
       "-ac", "2",
@@ -143,8 +153,8 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
         // VP9 uses -deadline (realtime=fast, good=balanced, best=slow) and -cpu-used (0–5)
         codecArgs = [
           "-c:v", "libvpx-vp9",
-          "-deadline", crf === 0 ? "good" : "realtime",
-          "-cpu-used", crf === 0 ? "2" : "5",
+          "-deadline", crf === 0 && !this._realtime ? "good" : "realtime",
+          "-cpu-used", crf === 0 && !this._realtime ? "2" : "5",
           "-crf", String(crf),
           "-b:v", "0", // VBR mode for VP9
           "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
@@ -158,7 +168,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
         // H.265/HEVC + AAC (better compression than H.264)
         codecArgs = [
           "-c:v", "libx265",
-          "-preset", crf === 0 ? "ultrafast" : "fast",
+          "-preset", crf === 0 ? "ultrafast" : this._realtime ? "veryfast" : "fast",
           "-crf", String(crf),
           "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
           "-c:a", "aac",
@@ -172,7 +182,7 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
         // H.264 + AAC (universal, fast)
         codecArgs = [
           "-c:v", "libx264",
-          "-preset", crf === 0 ? "ultrafast" : "fast",
+          "-preset", crf === 0 ? "ultrafast" : this._realtime ? "veryfast" : "fast",
           "-crf", String(crf),
           "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2,format=yuv420p",
           "-c:a", "aac",
@@ -186,13 +196,42 @@ export class FfmpegRecordingBackend implements IRecordingBackend {
   }
 
   /**
-   * Write one raw RGBA frame to FFmpeg's stdin, scaling as needed.
+   * Write one raw frame to FFmpeg's stdin, scaling as needed.
+   * @param onWritten Called when the frame has been flushed to FFmpeg (the buffer may be reused).
+   * @returns false when FFmpeg's input is backed up (see `onceDrained`).
    */
-  appendFrame(rgba: Uint8Array): void {
-    if (this._dead || !this._process?.stdin) return;
+  appendFrame(rgba: Uint8Array, onWritten?: () => void): boolean {
+    if (this._dead || !this._process?.stdin) {
+      onWritten?.();
+      return true;
+    }
     const buf = this._stretchFrame(rgba);
     this._lastFrame = buf;
-    this._process.stdin.write(buf);
+    return onWritten
+      ? this._process.stdin.write(buf, () => onWritten())
+      : this._process.stdin.write(buf);
+  }
+
+  /**
+   * Calls `callback` once FFmpeg's input has drained, or at once when it is not backed up (or the
+   * process is gone, so nobody waits forever).
+   */
+  onceDrained(callback: () => void): void {
+    const stdin = this._process?.stdin;
+    if (this._dead || !stdin || !stdin.writableNeedDrain) {
+      callback();
+      return;
+    }
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      stdin.off("drain", finish);
+      stdin.off("close", finish);
+      callback();
+    };
+    stdin.once("drain", finish);
+    stdin.once("close", finish);
   }
 
   /**

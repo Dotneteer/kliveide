@@ -920,6 +920,12 @@ before trusting any assertion about it.
 - **M4 — shrink imperative theme reads.** Key SVGs still resolve colours through
   `themeService.getThemeProperty("--token")`. That is allowed; passing a raw hex is not. Pass **token
   names** and resolve them, as `Sp48Key` does.
+  The same holds **outside the renderer**: pixels the main process draws (the IDE + Emulator
+  recording's fill and click rings) take token names - `--surface-canvas`, `--accent-solid`,
+  `--accent-secondary-solid` - and read their computed values from the IDE page's theme root
+  (the element whose inline style carries the tokens) when the work starts
+  (`recording/window-recording/themeColors.ts`). The only literals allowed there are a fallback for
+  an unreadable page and the drawn picture of a mouse pointer, which is an image, not UI chrome.
 - **M5 — the Monaco syntax palette is generated in one place** (`theming/tokens/syntax.ts`),
   never as colour literals in the seven language providers. *What* it generates is being
   revised (see the note above); *where* it comes from is not.

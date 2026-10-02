@@ -24,11 +24,16 @@ type EmuStartupArgs = {
 
 export function useEmuRecordingManager(
   mainApi: MainApi,
-  dispatch: Dispatch
+  dispatch: Dispatch,
+  store?: Store<AppState>
 ): MutableRefObject<RecordingManager | null> {
   const recordingManagerRef = useRef<RecordingManager | null>(null);
   if (!recordingManagerRef.current) {
-    recordingManagerRef.current = new RecordingManager(mainApi, dispatch);
+    recordingManagerRef.current = new RecordingManager(
+      mainApi,
+      dispatch,
+      () => store?.getState()?.emulatorState?.windowRecordingState === "recording"
+    );
     setEmuRecordingManager(recordingManagerRef.current);
   }
   return recordingManagerRef;

@@ -120,6 +120,12 @@ export function saveAppSettings(): void {
   appSettings.machineSpecific = state.emulatorState?.machineSpecific;
   appSettings.clockMultiplier = state.emulatorState?.clockMultiplier ?? 1;
   appSettings.soundLevel = state.emulatorState?.soundLevel ?? 0.5;
+  appSettings.windowRecording = {
+    idePosition: state.emulatorState?.windowRecordingIdePosition ?? "left",
+    pointer: state.emulatorState?.windowRecordingPointer ?? true,
+    clicks: state.emulatorState?.windowRecordingClicks ?? true,
+    hiDpi: state.emulatorState?.windowRecordingHiDpi ?? false
+  };
   appSettings.media = state.media ?? {};
   appSettings.keyMappingFile = state.keyMappingFile;
   appSettings.project = { folderPath: state.project?.folderPath };

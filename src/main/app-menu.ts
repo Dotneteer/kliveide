@@ -38,6 +38,9 @@ import type { AppState } from "@state/AppState";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { readNavigationShortcuts } from "@common/utils/navigationShortcuts";
+import { readRecordIdeEmuShortcut } from "@common/utils/recordingShortcuts";
+import { toggleWindowRecording } from "./recording/window-recording/windowRecordingController";
+import { createWindowRecordingMenuItems } from "./recording/window-recording/windowRecordingMenu";
 import { openFolder, openFolderByPath, saveKliveProject } from "./projects";
 import {
   ABOUT_DIALOG,
@@ -253,7 +256,10 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
   const machinePaused = execState === MachineControllerState.Paused;
   const machineRestartable = machineRuns || machinePaused;
   const recState = appState?.emulatorState?.screenRecordingState;
-  const isRecordingIdle = !recState || recState === "idle";
+  const isScreenRecordingIdle = !recState || recState === "idle";
+  // --- IDE + Emulator recording; one recording runs at a time
+  const windowRecording = appState?.emulatorState?.windowRecordingState === "recording";
+  const isRecordingIdle = isScreenRecordingIdle && !windowRecording;
   const folderOpen = appState?.project?.folderPath;
   const kliveProject = appState?.project?.isKliveProject;
   const hasBuildFile = !!appState?.project?.hasBuildFile;
@@ -276,6 +282,7 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11");
   const stepOverLineShortcut = settingsReader.readSetting("shortcuts.stepOverLine") ?? "Shift+F10";
   const navigationShortcuts = readNavigationShortcuts(mainStore.getState(), __DARWIN__);
+  const recordIdeEmuShortcut = readRecordIdeEmuShortcut(mainStore.getState());
   const navHistory = appState?.ideView?.navHistory;
 
   // ==========================================================================
@@ -1044,9 +1051,12 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         { type: "separator" },
         {
           id: "recording_start_stop",
-          label: isRecordingIdle ? "Start recording" : "Stop recording",
+          label: isScreenRecordingIdle ? "Start recording" : "Stop recording",
+          enabled: !windowRecording,
           click: async () =>
-            await getEmuApi().issueRecordingCommand(isRecordingIdle ? "start-recording" : "disarm")
+            await getEmuApi().issueRecordingCommand(
+              isScreenRecordingIdle ? "start-recording" : "disarm"
+            )
         },
         { type: "separator" },
         {
@@ -1057,7 +1067,18 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
             await getEmuApi().issueRecordingCommand(
               recState === "paused" ? "resume-recording" : "pause-recording"
             )
-        }
+        },
+        // --- IDE + Emulator recording (.plans/IDE_EMU_RECORDING_PLAN.md §5.2)
+        { type: "separator" },
+        ...createWindowRecordingMenuItems({
+          state: appState,
+          getState: () => mainStore.getState(),
+          dispatch: (action) => mainStore.dispatch(action),
+          saveSettings: saveAppSettings,
+          ideWindowVisible: isIdeWindowVisible(),
+          shortcut: recordIdeEmuShortcut,
+          toggleRecording: () => toggleWindowRecording(emuWindow, ideWindow)
+        })
       ]
     }
   );

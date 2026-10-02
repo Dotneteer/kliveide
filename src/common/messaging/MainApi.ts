@@ -607,6 +607,14 @@ class MainApiImpl {
   async stopScreenRecording(): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
+
+  /**
+   * Appends emulator sound to the running IDE + Emulator recording.
+   * @param _samples Interleaved stereo f32le samples [L, R, L, R, …].
+   */
+  async appendWindowRecordingAudio(_samples: Float32Array): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
 }
 
 export type MainApi = MainApiImpl;

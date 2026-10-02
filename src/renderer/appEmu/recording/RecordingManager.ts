@@ -10,6 +10,7 @@ import {
   setScreenRecordingFormatAction,
   setScreenRecordingStateAction
 } from "@common/state/actions";
+import { recordingQualityToCrf } from "@common/utils/recordingCrf";
 
 type Dispatch = (action: any) => void;
 
@@ -54,7 +55,12 @@ export class RecordingManager {
 
   constructor(
     private readonly mainApi: MainApi,
-    private readonly dispatch: Dispatch
+    private readonly dispatch: Dispatch,
+    /**
+     * True while an IDE + Emulator recording runs in the main process. Its video comes from the
+     * windows, but its sound is the emulator's, so `submitAudioSamples` forwards it there too.
+     */
+    private readonly isWindowRecording: () => boolean = () => false
   ) {}
 
   get state(): ScreenRecordingState {
@@ -260,7 +266,9 @@ export class RecordingManager {
    * per eight of them, it dropped whole 40 ms stretches.
    */
   async submitAudioSamples(samples: { left: number; right: number }[]): Promise<void> {
-    if (this._state !== "recording") return;
+    const toScreenRecording = this._state === "recording";
+    const toWindowRecording = this.isWindowRecording();
+    if (!toScreenRecording && !toWindowRecording) return;
     if (!samples || samples.length === 0) {
       return;
     }
@@ -270,7 +278,8 @@ export class RecordingManager {
       interleaved[i * 2] = samples[i].left;
       interleaved[i * 2 + 1] = samples[i].right;
     }
-    await this.mainApi.appendRecordingAudio(interleaved);
+    if (toScreenRecording) await this.mainApi.appendRecordingAudio(interleaved);
+    if (toWindowRecording) await this.mainApi.appendWindowRecordingAudio(interleaved);
   }
 
   // ---------------------------------------------------------------------------
@@ -306,15 +315,7 @@ export class RecordingManager {
 
   /** Maps the quality preference to a CRF value for FFmpeg. */
   private _getCrf(): number {
-    switch (this._quality) {
-      case "lossless":
-        return 0;
-      case "high":
-        return 10;
-      case "good":
-      default:
-        return 18;
-    }
+    return recordingQualityToCrf(this._quality);
   }
 
   private async _stopRecording(): Promise<void> {

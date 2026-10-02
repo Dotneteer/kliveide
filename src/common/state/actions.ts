@@ -170,6 +170,36 @@ export const setScreenRecordingFormatAction: ActionCreator = (
   payload: { id: format }
 });
 
+export const setWindowRecordingStateAction: ActionCreator = (
+  recordingState: import("./AppState").WindowRecordingState,
+  file?: string
+) => ({
+  type: "SET_WINDOW_RECORDING_STATE",
+  payload: { id: recordingState, file }
+});
+
+export const setWindowRecordingIdePositionAction: ActionCreator = (
+  position: import("./AppState").RecordingIdePosition
+) => ({
+  type: "SET_WINDOW_RECORDING_IDE_POSITION",
+  payload: { id: position }
+});
+
+export const setWindowRecordingPointerAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_WINDOW_RECORDING_POINTER",
+  payload: { flag }
+});
+
+export const setWindowRecordingClicksAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_WINDOW_RECORDING_CLICKS",
+  payload: { flag }
+});
+
+export const setWindowRecordingHiDpiAction: ActionCreator = (flag: boolean) => ({
+  type: "SET_WINDOW_RECORDING_HIDPI",
+  payload: { flag }
+});
+
 export const setMediaAction: ActionCreator = (id: string, value: any) => ({
   type: "SET_MEDIA",
   payload: { id, value }

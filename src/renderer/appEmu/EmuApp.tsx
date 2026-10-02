@@ -27,7 +27,7 @@ const EmuApp = () => {
   const { store, messenger } = useRendererContext();
   const mainApi = useMainApi();
 
-  const recordingManagerRef = useEmuRecordingManager(mainApi, dispatch);
+  const recordingManagerRef = useEmuRecordingManager(mainApi, dispatch, store);
 
   // --- Visual state
   const showToolbar = useGlobalSetting(SETTING_EMU_SHOW_TOOLBAR);

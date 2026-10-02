@@ -1,0 +1,77 @@
+{
+  "kliveVersion": "0.62.0",
+  "machineType": "z88",
+  "modelId": "OZ50",
+  "config": {
+    "intRAM": 7,
+    "intROM": "z88v50b",
+    "slot0": {
+      "size": 512,
+      "cardType": "AMDF29F040B",
+      "file": "z88v50b"
+    },
+    "screenSize": "640x64",
+    "slot2": {
+      "cardType": "EPROMUV32",
+      "size": 32
+    },
+    "slot3": {
+      "cardType": "EPROMUV32",
+      "size": 32
+    }
+  },
+  "clockMultiplier": 1,
+  "soundLevel": 0.8,
+  "soundMuted": false,
+  "savedSoundLevel": 0.8,
+  "media": {
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+  },
+  "machineSpecific": {},
+  "ide": {
+    "excludedProjectItems": []
+  },
+  "viewOptions": {
+    "theme": "dark"
+  },
+  "debugger": {
+    "schemaVersion": 1,
+    "breakpoints": [],
+    "watchExpressions": [],
+    "basicWatches": []
+  },
+  "builder": {
+    "roots": []
+  },
+  "settings": {
+    "languages": {
+      "sjasmp": ".asm|.sjasm"
+    }
+  },
+  "workspaceSettings": {
+    "docsWorkspace": {
+      "version": 2,
+      "layout": {
+        "type": "leaf",
+        "areaId": "document-area-1"
+      },
+      "activeAreaId": "document-area-1",
+      "areas": [
+        {
+          "areaId": "document-area-1",
+          "documents": [
+            {
+              "type": "Z88SnapshotViewer",
+              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/oz5-08/mm+jsw-oz5.z88",
+              "position": {
+                "line": 0,
+                "column": 0
+              }
+            }
+          ],
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/oz5-08/mm+jsw-oz5.z88"
+        }
+      ]
+    }
+  }
+}
