@@ -170,10 +170,22 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
     uint16_t attributeAddress = 0u;
     uint8_t contention = 0u;
 
+    /*
+     * A visible row's left border is drawn at the *end* of the raster line before it
+     * (`calculateTimingBufferIndex` maps a line's tail to the next row). So row 0's left border is
+     * the tail of the line before the first visible one. It was left out, and those pixels were
+     * never redrawn: they kept whatever the boot drew there - on every Spectrum core, a grey
+     * (non-bright white) segment at the top left once a program changed the border.
+     */
+    const uint8_t firstRowLeftBorder =
+      sp48FirstVisibleLine > 0u &&
+      line == sp48FirstVisibleLine - 1u &&
+      tactInLine >= sp48FirstVisibleBorderTact;
     if (
-      line >= sp48FirstVisibleLine &&
-      line <= lastVisibleLine &&
-      (tactInLine < lastVisibleLineTact || tactInLine >= sp48FirstVisibleBorderTact)
+      firstRowLeftBorder ||
+      (line >= sp48FirstVisibleLine &&
+       line <= lastVisibleLine &&
+       (tactInLine < lastVisibleLineTact || tactInLine >= sp48FirstVisibleBorderTact))
     ) {
       uint8_t calculated = 0u;
       if (line == sp48FirstDisplayLine - 1u) {
