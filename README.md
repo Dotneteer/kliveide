@@ -51,7 +51,7 @@ Klive targets retro computers built around the Z80 CPU family. Each machine is e
 | **ZX Spectrum 128K**      | ✅ Active       | Full 128K memory paging                              |
 | **ZX Spectrum +2E / +3E** | ✅ Active       | Single and dual floppy drive models                  |
 | **Cambridge Z88**         | ✅ Active       | Multiple OZ OS versions (3.x – 5.0), various locales |
-| **ZX Spectrum Next**      | 🔄 In progress  | KS2 model; extended Z80 instruction set              |
+| **ZX Spectrum Next**      | ✅ Active       | KS2 model; extended Z80 instruction set              |
 | **Commodore 64**          | 🧪 Experimental | Early stage; 6510 CPU                                |
 | **ZX 80 / ZX 81**         | 🗓️ Planned      | —                                                    |
 
@@ -453,7 +453,7 @@ A heartfelt thank-you to these amazing people:
 ## 📋 Roadmap Highlights
 
 - [ ] ZX 80 / ZX 81 emulation
-- [ ] ZX Spectrum Next (KS2) — complete emulation
+- [x] ZX Spectrum Next (KS2) — complete emulation
 - [ ] Custom machine ROMs
 - [ ] Memory read/write breakpoints with hit-count conditions
 - [ ] I/O read/write breakpoints
