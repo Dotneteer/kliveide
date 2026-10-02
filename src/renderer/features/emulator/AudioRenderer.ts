@@ -90,13 +90,16 @@ export class AudioRenderer {
    */
   storeSamples(samples: AudioSample[], soundLevel: number = 1.0): void {
     if (this.worklet) {
-      // Send interleaved stereo samples: [L, R, L, R, ...]
-      const stereoSamples: number[] = [];
-      for (const sample of samples) {
-        stereoSamples.push(sample.left * soundLevel);
-        stereoSamples.push(sample.right * soundLevel);
+      // --- Interleaved stereo samples [L, R, L, R, ...], in a typed array whose buffer is
+      // --- *transferred* to the audio thread: no copy, and none of the ~1,900 boxed numbers a plain
+      // --- array cost every frame, whose garbage collection could stall the frame loop long enough
+      // --- to run the worklet dry
+      const stereoSamples = new Float32Array(samples.length * 2);
+      for (let i = 0; i < samples.length; i++) {
+        stereoSamples[2 * i] = samples[i].left * soundLevel;
+        stereoSamples[2 * i + 1] = samples[i].right * soundLevel;
       }
-      this.worklet.port.postMessage({ samples: stereoSamples });
+      this.worklet.port.postMessage({ samples: stereoSamples }, [stereoSamples.buffer]);
     }
   }
 }

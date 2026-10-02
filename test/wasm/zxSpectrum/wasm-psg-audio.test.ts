@@ -196,6 +196,30 @@ describe("ZX Spectrum WASM PSG register and audio", () => {
   });
 });
 
+/*
+ * A silent AY is not at zero: volume 0 maps through the resistor table to -0.125 per channel. It is
+ * mixed in front of the DC-blocking filter, as the real machines couple their sound through a
+ * capacitor, so silence settles at zero. Added after the filter, it left a constant offset, and every
+ * gap in playback (the audio worklet fades to zero when it runs dry, then resumes) stepped back up
+ * to it: a thump every few seconds on the 128K and +2/+3 only.
+ */
+describe("ZX Spectrum WASM PSG output level", () => {
+  for (const testCase of psgCases()) {
+    it(`${testCase.name} settles to zero when silent`, async () => {
+      const machine = await testCase.createWasmMachine();
+      machine.setMachineProperty(AUDIO_SAMPLE_RATE, 48000);
+      // --- About 1.2 s: the 1.4 Hz filter's time constant is ~0.11 s
+      for (let frame = 0; frame < 60; frame++) machine.executeMachineFrame();
+      const samples = machine.getAudioSamples();
+      expect(samples.length).toBeGreaterThan(0);
+      for (const sample of samples) {
+        expect(Math.abs(sample.left)).toBeLessThan(0.001);
+        expect(Math.abs(sample.right)).toBeLessThan(0.001);
+      }
+    });
+  }
+});
+
 function psgCases(): PsgCase[] {
   return [
     {
