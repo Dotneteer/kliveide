@@ -1,0 +1,370 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * A file's bank browser: a list and the selected bank's details. Shared by the NEX viewer's banks and
+ * the `.z88` viewer's slots; what only one of them shows lives in that viewer's own stylesheet.
+ *
+ * A container, so the two panes stack by the *panel's* width — a viewer docked in a narrow split
+ * should become one column, whatever the window is doing.
+ *
+ * Bounded: as tall as the viewer's visible area (`--bank-browser-height`, measured by the component),
+ * so the heading, the filters and the selected bank's details stay on screen while only the list
+ * scrolls. Never shorter than a dozen rows, so a small panel still shows a usable list; before the
+ * measurement lands, a share of the window.
+ */
+.browser {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  height: var(--bank-browser-height, 70vh);
+  min-height: calc(var(--panel-line-height) * 14);
+  margin: var(--space-2) 0;
+}
+
+.heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-1);
+}
+
+.title {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.summary {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.filters {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
+.filter {
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    border-color: var(--accent-text);
+    color: var(--accent-text);
+  }
+}
+
+.none {
+  padding: var(--space-3);
+  color: var(--data-secondary);
+}
+
+/*
+ * Fills the browser below its heading. The panes stretch to its height and scroll on their own.
+ * `overflow: clip` (not `hidden`) for the rounded corners: it makes no scroll container, so nothing
+ * inside is caught by it.
+ */
+.body {
+  display: grid;
+  flex: 1 1 0;
+  grid-template-columns: minmax(36ch, 46ch) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: clip;
+}
+
+/* --- Stacked: the list takes the larger share, the details the rest; both still scroll. */
+@container (max-width: 96ch) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  .listPane {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-default);
+  }
+}
+
+// ─── List ────────────────────────────────────────────────────────────────────
+
+/*
+ * The two panes are `ScrollViewer`s, so they scroll with the app's overlay scrollbars rather than the
+ * platform's (a native bar is an unthemed white strip in the dark tone). `min-height: 0` lets a grid
+ * item be shorter than its content, which is what makes it scroll instead of growing.
+ */
+.listPane {
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-panel);
+}
+
+.detailsPane {
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-chrome);
+}
+
+/*
+ * A pane scrolled to its end must not hand the wheel on to the viewer: that scrolled the browser's
+ * own heading and the details off the top - the very thing bounding it is for. The overlay viewport
+ * is the element that scrolls, so the rule goes on it.
+ */
+.listPane,
+.detailsPane {
+  :global([data-overlayscrollbars-viewport]) {
+    overscroll-behavior: contain;
+  }
+}
+
+.list {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  outline: none;
+}
+
+/*
+ * A group's heading in the list (a `.z88` file's card). Chrome rather than a row: it is not
+ * selectable, so it must not look like one.
+ */
+.groupHeader {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface-chrome);
+  color: var(--text-primary);
+  font-weight: 600;
+  user-select: none;
+}
+
+.groupMeta {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  font-weight: 400;
+}
+
+/* --- Natural height in the bounded list: they overflow into its scroll rather than shrink. */
+.row {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-0_5) var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  outline: none;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--accent-text);
+  }
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.rowSelected {
+  background: var(--surface-active);
+  box-shadow: inset 2px 0 0 var(--accent-text);
+
+  &:hover {
+    background: var(--surface-active);
+  }
+}
+
+.bankNumber {
+  flex: 0 0 auto;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-weight: 600;
+}
+
+.decimal {
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 400;
+}
+
+.rowText {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--data-secondary);
+  text-overflow: ellipsis;
+}
+
+/* --- Dim until the row is pointed at or selected: every row has one, and they should not shout. */
+.rowPopOut {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: var(--space-0_5);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.45;
+  @include focus-ring;
+
+  .row:hover &,
+  .rowSelected &,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+// ─── Marks ───────────────────────────────────────────────────────────────────
+
+.chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.chipAlt {
+  color: var(--accent-secondary-text);
+}
+
+// ─── Details ─────────────────────────────────────────────────────────────────
+
+/* --- Beside the list, never scrolled away by it; its pane scrolls when a bank has more to say. */
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.detailsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.detailsTitle {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  font-size: var(--font-size-300);
+}
+
+.split {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.splitMain,
+.splitMore {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid var(--accent-solid);
+  background: var(--accent-solid);
+  color: var(--text-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  @include focus-ring(1px);
+
+  &:hover {
+    background: var(--accent-solid-hover);
+  }
+}
+
+.splitMain {
+  padding: var(--space-0_5) var(--space-3);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.splitMore {
+  padding: var(--space-0_5) var(--space-1);
+  border-left-color: var(--text-on-accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.splitView {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-0_5) var(--space-4);
+  margin: 0;
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    font-family: var(--monospace-font);
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.sectionTitle {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hint {
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}

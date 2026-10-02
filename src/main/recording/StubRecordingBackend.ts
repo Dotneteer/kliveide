@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import type { IRecordingBackend } from "./IRecordingBackend";
+import type { IRecordingBackend, RecordingStartOptions } from "./IRecordingBackend";
 
 /**
  * Phase-A stub backend.
@@ -25,7 +25,7 @@ export class StubRecordingBackend implements IRecordingBackend {
   private frameCount = 0;
   private startedAt: Date | null = null;
 
-  start(outputPath: string, width: number, height: number, fps: number, _xRatio = 1, _yRatio = 1, sampleRate = 44100, _crf = 18, _format = "mp4"): void {
+  start(outputPath: string, width: number, height: number, fps: number, _xRatio = 1, _yRatio = 1, sampleRate = 44100, _crf = 18, _format = "mp4", _options?: RecordingStartOptions): void {
     this.outputPath = outputPath;
     this.width = width;
     this.height = height;
@@ -35,8 +35,14 @@ export class StubRecordingBackend implements IRecordingBackend {
     this.startedAt = new Date();
   }
 
-  appendFrame(_rgba: Uint8Array): void {
+  appendFrame(_rgba: Uint8Array, onWritten?: () => void): boolean {
     this.frameCount++;
+    onWritten?.();
+    return true;
+  }
+
+  onceDrained(callback: () => void): void {
+    callback();
   }
 
   holdFrame(): void {

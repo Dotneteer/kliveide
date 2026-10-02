@@ -115,6 +115,16 @@ export type RecordingFormat = "mp4" | "webm" | "mkv";
  */
 export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
 
+/**
+ * Where the IDE window goes relative to the emulator window in an IDE + Emulator recording
+ */
+export type RecordingIdePosition = "left" | "right" | "top" | "bottom";
+
+/**
+ * The lifecycle state of an IDE + Emulator recording
+ */
+export type WindowRecordingState = "idle" | "recording";
+
 export type EmulatorState = {
   machineId?: string;
   modelId?: string;
@@ -146,6 +156,13 @@ export type EmulatorState = {
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;
   screenRecordingFormat?: RecordingFormat;
+  /** IDE + Emulator recording (see .plans/IDE_EMU_RECORDING_PLAN.md) */
+  windowRecordingState?: WindowRecordingState;
+  windowRecordingFile?: string;
+  windowRecordingIdePosition?: RecordingIdePosition;
+  windowRecordingPointer?: boolean;
+  windowRecordingClicks?: boolean;
+  windowRecordingHiDpi?: boolean;
 };
 
 export type FloppyDiskState = {

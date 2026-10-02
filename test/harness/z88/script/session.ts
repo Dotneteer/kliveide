@@ -6,6 +6,10 @@ import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { Z88KeyCode } from "@emu/machines/z88/Z88KeyCode";
 import type { CardSlotState } from "@emu/machines/z88/CardSlotState";
 import { MC_Z88_SLOT1, MC_Z88_SLOT2, MC_Z88_SLOT3 } from "@common/machines/constants";
+import type { Z88CardSpec } from "@emu/machines/z88/z88CardCatalog";
+import { parseZ88Snapshot, type Z88Snapshot } from "@common/z88/z88Snapshot";
+import { mapZ88SnapshotToKlive, type Z88SnapshotMapping } from "@common/z88/z88SnapshotMapping";
+import type { Z88Tim } from "@common/z88/z88Rtc";
 
 import {
   createHarnessZ88Machine,
@@ -350,6 +354,11 @@ export class Z88TestSession {
     };
   }
 
+  /** The full CPU state the IDE's CPU panel shows, alternate registers included */
+  cpuState(): Z80CpuState {
+    return this.machine.getCpuState() as Z80CpuState;
+  }
+
   setRegisters(regs: Partial<Omit<Z88Registers, "halted">>): this {
     const m = this.machine;
     for (const [name, value] of Object.entries(regs)) {
@@ -423,6 +432,33 @@ export class Z88TestSession {
     this.machine.dynamicConfig = config;
     await this.machine.configure();
     return this;
+  }
+
+  /**
+   * Loads a `.z88` snapshot into the machine, as the app does once the machine fits it
+   * (`.plans/Z88_SNAPSHOT_PLAN.md` §4.4): parse, map to Klive cards, restore the state.
+   * @param bytes The `.z88` file
+   * @param nowMs The host time for the RTC catch-up; the snapshot's own stop time by default, so
+   * the RTC is restored unchanged
+   * @returns The parsed snapshot, its mapping, and TIM0..TIM4 as restored
+   */
+  loadSnapshot(
+    bytes: Uint8Array,
+    nowMs?: number
+  ): { snapshot: Z88Snapshot; mapping: Z88SnapshotMapping; tim: Z88Tim } {
+    const snapshot = parseZ88Snapshot(bytes);
+    const mapping = mapZ88SnapshotToKlive(snapshot);
+    const tim = this.machine.loadSnapshotState(
+      snapshot,
+      mapping,
+      nowMs ?? snapshot.stoppedAt ?? Date.now()
+    );
+    return { snapshot, mapping, tim };
+  }
+
+  /** The cards the machine holds (slot 0-3), as the core was told to insert them */
+  insertedCards(): (Z88CardSpec | undefined)[] {
+    return [0, 1, 2, 3].map((slot) => this.machine.getInsertedCard(slot));
   }
 
   /** Runs a machine custom command (`battery_low`, `press_shifts`, `flap_open`, `flap_close`) */

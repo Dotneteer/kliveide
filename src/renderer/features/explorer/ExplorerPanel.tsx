@@ -51,6 +51,29 @@ export const ExplorerPanel = () => {
   const { projectService, ideCommandsService, navigationHistoryService } = appServices;
   const documentHubService = projectService.getActiveDocumentHubService();
 
+  /*
+   * Opens still in flight, by file path.
+   *
+   * A double-click is click, click, dblclick. Each click activates the item, and opening a document
+   * reads the file before the document exists, so all three saw "not open" and each opened its own
+   * document object - the later ones throwing "Duplicated document with ID ...". A binary file is
+   * read slowly enough to hit it every time (a `.nex` or `.z88` viewer); a small text file usually
+   * finished first. Anything that opens or focuses a file waits for an open of the same file
+   * already under way, then finds the document open.
+   */
+  const pendingOpens = useRef(new Map<string, Promise<void>>());
+  const trackOpen = (path: string, open: () => Promise<void>): Promise<void> => {
+    const pending = open().finally(() => {
+      if (pendingOpens.current.get(path) === pending) pendingOpens.current.delete(path);
+    });
+    pendingOpens.current.set(path, pending);
+    return pending;
+  };
+  const openSettled = async (path: string): Promise<void> => {
+    // --- Its failure is reported by whoever started it
+    await pendingOpens.current.get(path)?.catch(() => {});
+  };
+
   const [isFocused, setIsFocused] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
@@ -199,13 +222,25 @@ export const ExplorerPanel = () => {
       return;
     }
 
+    // --- Decided before the first await, so the next click of a double-click sees this open
+    const path = node.data.fullPath;
+    const pending = pendingOpens.current.get(path);
+    if (pending) {
+      await openSettled(path);
+    } else if (!documentHubService.getDocument(path)) {
+      await trackOpen(path, () =>
+        navigationHistoryService.recordJump("explorer", async () => {
+          const newDocument = await projectService.getDocumentForProjectNode(node.data);
+          await documentHubService.openDocument(newDocument, undefined, true);
+        })
+      );
+      focusExplorerItem(restoreFocusIndex);
+      return;
+    }
     await navigationHistoryService.recordJump("explorer", async () => {
-      const openDocument = documentHubService.getDocument(node.data.fullPath);
+      const openDocument = documentHubService.getDocument(path);
       if (openDocument) {
         await documentHubService.setActiveDocument(openDocument.id);
-      } else {
-        const newDocument = await projectService.getDocumentForProjectNode(node.data);
-        await documentHubService.openDocument(newDocument, undefined, true);
       }
     });
     focusExplorerItem(restoreFocusIndex);
@@ -356,13 +391,19 @@ export const ExplorerPanel = () => {
         onActivate={() => activateExplorerNode(node, idx)}
         onDoubleClick={async () => {
           if (node.data.isFolder) return;
+          // --- The double-click's own clicks may have started opening this file
+          if (pendingOpens.current.has(node.data.fullPath)) {
+            await openSettled(node.data.fullPath);
+          }
           if (documentHubService.isOpen(node.data.fullPath)) {
             await navigationHistoryService.recordJump("explorer", () =>
               documentHubService.setActiveDocument(node.data.fullPath)
             );
             projectService.setPermanent(node.data.fullPath);
           } else {
-            await ideCommandsService.executeCommand(`nav "${node.data.fullPath}" -r explorer`);
+            await trackOpen(node.data.fullPath, async () => {
+              await ideCommandsService.executeCommand(`nav "${node.data.fullPath}" -r explorer`);
+            });
           }
           focusExplorerItem(idx);
         }}

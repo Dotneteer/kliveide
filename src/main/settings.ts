@@ -44,6 +44,13 @@ export type AppSettings = {
   machineSpecific?: Record<string, any>;
   clockMultiplier?: number;
   soundLevel?: number;
+  /** IDE + Emulator recording preferences */
+  windowRecording?: {
+    idePosition?: import("@common/state/AppState").RecordingIdePosition;
+    pointer?: boolean;
+    clicks?: boolean;
+    hiDpi?: boolean;
+  };
   media?: Record<string, any>;
   folders?: Record<string, string>;
   excludedProjectItems?: string[];

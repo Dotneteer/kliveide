@@ -36,6 +36,7 @@ import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
 import { SmallIconButton } from "@renderer/controls/IconButton";
 import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
+import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
 import { deriveLabelWidthCh, DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import {
@@ -157,7 +158,21 @@ type MemoryDumpViewState = {
    */
   spriteFormat?: NexSpriteFormat;
   spriteOffset?: number;
+  /**
+   * Whose code the bytes are, when that is not the running machine's. Absent: the ZX Spectrum (Next)
+   * listing this document always produced. Set by the opener and kept with the document.
+   */
+  disassemblyFlavor?: StaticDisassemblyFlavor;
 };
+
+/**
+ * `"z88"`: Cambridge Z88 code, from a `.z88` snapshot (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.5) - OZ
+ * calls decoded after `RST 20h`, no ZX Next opcodes, and no system-variable names.
+ *
+ * Never inferred from the current machine: the bytes came from a file and stay Z88 code whichever
+ * machine is running. Inferring it would show a Z88 bank as Next code whenever a Next was selected.
+ */
+export type StaticDisassemblyFlavor = "z88";
 
 type StaticDumpViewMode = "memory" | "disassembly" | "sprites";
 
@@ -168,6 +183,7 @@ type StaticMemoryDumpOptions = {
   viewMode?: StaticDumpViewMode;
   nexAnnotationPath?: string;
   nexAnnotationBank?: number;
+  disassemblyFlavor?: StaticDisassemblyFlavor;
 
   /**
    * Address to bring into view when the document opens, in the listing's own numbering — that is,
@@ -421,7 +437,11 @@ const StaticMemoryDump = ({
   const machineSysVarLabelResolver = useSysVarOperandLabelResolver();
   // --- Withheld rather than filtered when the switch is off: an absent resolver is exactly the
   // --- listing as it was before the feature, with no naming path to go wrong.
-  const sysVarLabelResolver = sysVarNames ? machineSysVarLabelResolver : undefined;
+  // --- A Z88 listing has no system-variable table to name from: the machine's would be the
+  // --- Spectrum's (or whatever is running), which names nothing in OZ code.
+  const isZ88Listing = currentViewState.disassemblyFlavor === "z88";
+  const sysVarLabelResolver =
+    sysVarNames && !isZ88Listing ? machineSysVarLabelResolver : undefined;
 
   /*
    * The branch gutter, for a popped-out NEX bank.
@@ -1184,7 +1204,8 @@ const StaticMemoryDump = ({
             bankBytes,
             undefined,
             {
-              allowExtendedSet: true,
+              // --- The Next's extra opcodes are not instructions on a Z88.
+              allowExtendedSet: !isZ88Listing,
               decimalMode: decimalView,
               // --- An un-annotated bank has no labels of its own, so the machine's system variables
               // --- are the only names available here — and the only ones this path ever needs.
@@ -1192,6 +1213,11 @@ const StaticMemoryDump = ({
             }
           );
           disassembler.setAddressOffset(disassOffset);
+          if (isZ88Listing) {
+            // --- `RST 20h` + its operand is an OZ call: without this, the operand bytes are
+            // --- decoded as instructions and every following line is off.
+            disassembler.setCustomDisassembler(new Z88CustomDisassembler());
+          }
           const output = await disassembler.disassemble(runStart, runEnd);
           collected.push(...(output?.outputItems ?? []));
         }
@@ -1224,6 +1250,7 @@ const StaticMemoryDump = ({
     disassemblyEnabled,
     annotationVm.annotations,
     hideScreenArea,
+    isZ88Listing,
     sysVarLabelResolver,
     viewMode
   ]);
@@ -1269,14 +1296,16 @@ const StaticMemoryDump = ({
                 clicked={changeDecimalView}
               />
             </PanelHeaderGroup>
-            <PanelHeaderGroup>
-              <LabeledSwitch
-                value={sysVarNames}
-                label="Sys vars"
-                title={SYS_VAR_NAMES_TITLE}
-                clicked={changeSysVarNames}
-              />
-            </PanelHeaderGroup>
+            {!isZ88Listing && (
+              <PanelHeaderGroup>
+                <LabeledSwitch
+                  value={sysVarNames}
+                  label="Sys vars"
+                  title={SYS_VAR_NAMES_TITLE}
+                  clicked={changeSysVarNames}
+                />
+              </PanelHeaderGroup>
+            )}
             {screenSwitchOffered && (
               <PanelHeaderGroup>
                 <LabeledSwitch
@@ -1729,6 +1758,7 @@ export async function openStaticMemoryDump(
         viewMode: options.viewMode,
         nexAnnotationPath: options.nexAnnotationPath,
         nexAnnotationBank: options.nexAnnotationBank,
+        disassemblyFlavor: options.disassemblyFlavor,
         topAddress: options.topAddress
       } satisfies MemoryDumpViewState,
       false

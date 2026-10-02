@@ -398,6 +398,12 @@ perfectly editable with the emulator stopped — fall back, but **say so where t
 `--status-warning`: a silently-wrong palette still looks like a palette, which is exactly how the
 rotation bug above survived.
 
+**A picture of the machine that a file carries is shown as stored.** The `.z88` viewer's LCD capture
+(`snapshot.png`) is a device surface frozen in a file: its pixels are the machine's, so it gets no
+theme treatment, no tint and no smoothing — `image-rendering: pixelated`, `max-width: 100%` and
+nothing else, so it shrinks to its pane but never blurs. The same holds for any thumbnail a snapshot
+format embeds.
+
 **The same holds for the frame around a machine's picture.** The Z88's LCD surround is unlit
 green, and grey while the LCD is off. The core reports it (`z88GetLcdSurroundColor`, following
 what it last painted rather than COM.LCDON, so frame and picture never disagree) through
@@ -914,6 +920,12 @@ before trusting any assertion about it.
 - **M4 — shrink imperative theme reads.** Key SVGs still resolve colours through
   `themeService.getThemeProperty("--token")`. That is allowed; passing a raw hex is not. Pass **token
   names** and resolve them, as `Sp48Key` does.
+  The same holds **outside the renderer**: pixels the main process draws (the IDE + Emulator
+  recording's fill and click rings) take token names - `--surface-canvas`, `--accent-solid`,
+  `--accent-secondary-solid` - and read their computed values from the IDE page's theme root
+  (the element whose inline style carries the tokens) when the work starts
+  (`recording/window-recording/themeColors.ts`). The only literals allowed there are a fallback for
+  an unreadable page and the drawn picture of a mouse pointer, which is an image, not UI chrome.
 - **M5 — the Monaco syntax palette is generated in one place** (`theming/tokens/syntax.ts`),
   never as colour literals in the seven language providers. *What* it generates is being
   revised (see the note above); *where* it comes from is not.
@@ -929,6 +941,12 @@ before trusting any assertion about it.
   chrome — no `--surface-chrome`, no bottom border — because a sidebar panel already has a header
   band and a second strip under it reads as a second title. `TextInput` is not a substitute: it is a
   dialog field, with 8px block margins, a 32px button and a `font-size: 0.9em` M1 forbids.
+- **`controls/bankBrowser/`** — `BankBrowser`, the bounded list-and-details browser of a file's banks
+  with per-bank pop-out, shared by the NEX viewer (`NexBankBrowser`) and the `.z88` viewer
+  (`Z88SlotBrowser`). The shell's stylesheet holds the frame, rows, chips (`BankChip`), facts
+  (`BankFacts`), sections and group headers; a viewer's own stylesheet holds only what that viewer
+  alone shows (the NEX breakpoint chip, content mix, comment, labels). See "A Bank Browser Has One
+  Shell".
 - **`controls/layout/`** — the wrappers with 21+ importers. They now *delegate* their cell to
   `controls/data` and add only `TooltipFactory` behaviour.
 - **`theming/tokens/syntax.ts`** — `syntaxPalette(tone, accent)`, `syntaxRules`, `editorColors`,
@@ -1559,6 +1577,40 @@ command, and two-line rows.
 **Do not give a narrow toolbar toggle `IconButton`'s `selected` state.** On a 12px-wide chevron the
 selected ring comes out as a tall, thin outlined box that reads heavier than the arrows either side
 of it. Open is shown by the popover itself.
+
+## A Bank Browser Has One Shell
+
+`controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks; a new one (a
+`.sna`, a cartridge) wraps it rather than copying `NexBankBrowser`.
+
+- **The shell owns everything a user learns once**: the list's keyboard, double-click and the row's
+  pop-out icon, the details' split "Pop out · *last view*" button, the chips, the fact list and the
+  hint. Two viewers that differ there teach two habits for one action.
+- **A group heading in the list is chrome, not a row** (`.groupHeader`: `--surface-chrome`,
+  `--border-default` seam, 600 weight, a quieter `--font-size-100` meta line). It has no
+  `role="option"`, takes no hover and is skipped by the keyboard, because it cannot be selected and
+  must not look as if it could.
+- **A chip names a place, not a state, so the secondary accent marks the second kind**: PC takes
+  `--accent-text`; SP and the `.z88` viewer's segment chips (`SR0`–`SR3`, `$0000`) take
+  `.chipAlt`. A breakpoint count that is not Klive's own (OZvm's, saved in the snapshot) is a plain
+  chip — the `--color-breakpoint-binary` chip means a Klive breakpoint you can act on.
+- **The shell imports nothing from a viewer.** If a render prop starts to need NEX or Z88 knowledge,
+  the knowledge belongs in that viewer's wrapper.
+- **Bounded, with its own scroll — not a sticky pane in a long page.** The browser is as tall as the
+  viewer's visible area (`--bank-browser-height`, measured from the scroll viewport), and only the
+  list and the details pane scroll, each in a thin-bar `ScrollViewer`. The first version let the list
+  grow inside the viewer's scroll with the details `position: sticky`; it never stuck, because the
+  body's `overflow: hidden` (for its rounded corners) was the box it stuck to, and scrolling to the
+  last of 44 banks carried the selected bank off the top. **`overflow: hidden` on an ancestor kills
+  `sticky`; round corners with `overflow: clip`**, which makes no scroll container.
+- **A scroll area is a `ScrollViewer`, never bare `overflow: auto`.** The platform's scrollbar is an
+  unthemed white strip in the dark tone; nothing in the app styles `::-webkit-scrollbar`.
+- **A nested scroller must not hand the wheel on**: `overscroll-behavior: contain` on its overlay
+  viewport (`[data-overlayscrollbars-viewport]`, the element that actually scrolls), or reaching the
+  end of the list scrolls the viewer and the heading goes with it.
+- **When probing a bounded list over CDP, aim the wheel at the pane, not the list.** Inside a
+  scroller the listbox is the full-height *content*; its centre can be off screen, and the wheel then
+  lands on whatever is there — which read as "the viewer scrolls" when the list was never touched.
 
 ## A Shared Control Can Be Invisible In One Of Its Two Homes
 

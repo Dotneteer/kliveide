@@ -39,6 +39,7 @@ export type NavigationReason =
   | "disassemblyGoTo"
   | "nexLabel"
   | "nexBank"
+  | "z88Bank"
   | "tabSwitch"
   | "explorer"
   | "command";
@@ -52,6 +53,7 @@ export const NAVIGATION_REASONS: readonly NavigationReason[] = [
   "disassemblyGoTo",
   "nexLabel",
   "nexBank",
+  "z88Bank",
   "tabSwitch",
   "explorer",
   "command"

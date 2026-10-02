@@ -124,6 +124,28 @@ export function emulatorStateReducer(
         screenRecordingFormat: payload?.id as import("./AppState").RecordingFormat
       };
 
+    case "SET_WINDOW_RECORDING_STATE":
+      return {
+        ...state,
+        windowRecordingState: payload?.id as import("./AppState").WindowRecordingState,
+        windowRecordingFile: payload?.file ?? state.windowRecordingFile
+      };
+
+    case "SET_WINDOW_RECORDING_IDE_POSITION":
+      return {
+        ...state,
+        windowRecordingIdePosition: payload?.id as import("./AppState").RecordingIdePosition
+      };
+
+    case "SET_WINDOW_RECORDING_POINTER":
+      return { ...state, windowRecordingPointer: !!payload?.flag };
+
+    case "SET_WINDOW_RECORDING_CLICKS":
+      return { ...state, windowRecordingClicks: !!payload?.flag };
+
+    case "SET_WINDOW_RECORDING_HIDPI":
+      return { ...state, windowRecordingHiDpi: !!payload?.flag };
+
     default:
       return state;
   }

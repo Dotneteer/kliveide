@@ -4,6 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@renderer/controls/Icon", () => ({
   Icon: ({ iconName }: { iconName: string }) => <span data-testid={`icon-${iconName}`} />
 }));
+// --- The list and details scroll in `ScrollViewer`s, which pick their scrollbar theme by tone
+vi.mock("@renderer/theming/ThemeProvider", () => ({
+  useTheme: () => ({ theme: { tone: "dark" } })
+}));
 
 import {
   NexBankBrowser,

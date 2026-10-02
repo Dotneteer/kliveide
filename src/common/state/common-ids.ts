@@ -14,6 +14,7 @@ export const TAP_VIEWER = "TapViewer";
 export const DSK_VIEWER = "DskViewer";
 export const NEX_VIEWER = "NexViewer";
 export const Z80_VIEWER = "Z80Viewer";
+export const Z88_SNAPSHOT_VIEWER = "Z88SnapshotViewer";
 export const SNA_VIEWER = "SnaViewer";
 export const SCR_VIEWER = "ScsViewer";
 export const SHC_VIEWER = "ShcViewer";

@@ -61,6 +61,12 @@ const RUNTIME_PROVIDED = new Set([
   // Supplied by Radix on the select trigger element itself.
   "--radix-select-trigger-width",
   /*
+   * Set on a bank browser (`controls/bankBrowser/BankBrowser.tsx`) from the measured height of the
+   * viewer's scroll viewport, so the browser fits the visible area and only its list scrolls. A
+   * measurement, not a theme value; the stylesheet falls back to a share of the window without it.
+   */
+  "--bank-browser-height",
+  /*
    * Set per element by `NextPaletteViewer`'s swatch, from that swatch's own luminance.
    *
    * This one cannot come from the token layer even in principle: the quadrant rule it colours is

@@ -123,7 +123,13 @@ export function ExplorerContextMenu({
                 dangerous={item.dangerous}
                 text={item.text}
                 disabled={item.disabled?.(store, selectedContextNode?.data?.fullPath)}
-                clicked={() => item?.clicked?.(selectedContextNode?.data?.fullPath)}
+                // --- Through `runAsync` like the built-in entries: `ContextMenuItem` does not close
+                // --- the menu itself, so a file type's entry (`.z88`, `.nex`, `.ksx`) left it open.
+                clicked={async () =>
+                  runAsync(async () => {
+                    await item?.clicked?.(selectedContextNode?.data?.fullPath);
+                  })
+                }
               />
             );
           })}

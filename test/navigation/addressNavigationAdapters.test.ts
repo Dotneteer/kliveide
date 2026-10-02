@@ -227,6 +227,70 @@ describe("static dump navigation adapter", () => {
     expect(await a.restore(entry(bankId, at(0)), hub, services(hub), env())).toBe(false);
   });
 
+  /*
+   * A popped-out `.z88` snapshot bank (`.plans/Z88_SLOT_BROWSER_PLAN.md`): reopened from the file,
+   * as Z88 code, where it was left.
+   */
+  describe("a closed .z88 snapshot bank", () => {
+    const z88Id = "memoryDump-z88BankDump/project/mm.z88:129";
+
+    function z88Adapter(readZ88BankBytes = vi.fn(async () => new Uint8Array([4, 5]))) {
+      const openStaticMemoryDump = vi.fn(async () => {});
+      return {
+        openStaticMemoryDump,
+        readZ88BankBytes,
+        adapter: createStaticDumpNavigationAdapter({
+          openStaticMemoryDump,
+          readNexBankBytes: vi.fn(),
+          readZ88BankBytes
+        })
+      };
+    }
+
+    it("is reopened from the file, as Z88 code, where and how it was left", async () => {
+      const { adapter: a, openStaticMemoryDump, readZ88BankBytes } = z88Adapter();
+      const hub = fakeHub(0);
+      const readBinaryFile = vi.fn(async () => new Uint8Array(0));
+
+      const ok = await a.restore(
+        entry(z88Id, at(0xf523, { viewMode: "disassembly", base: 0xc000 }), "StaticMemoryDumpViewer"),
+        hub,
+        services(hub),
+        env(readBinaryFile)
+      );
+
+      expect(ok).toBe(true);
+      expect(readZ88BankBytes).toHaveBeenCalledWith("/project/mm.z88", 129, readBinaryFile);
+      expect(openStaticMemoryDump).toHaveBeenCalledWith(
+        hub,
+        "z88BankDump/project/mm.z88:129",
+        "mm.z88 - Bank $81",
+        new Uint8Array([4, 5]),
+        {
+          disassemblyEnabled: true,
+          disassOffset: 0xc000,
+          disassemblyFlavor: "z88",
+          topAddress: 0xf523,
+          viewMode: "disassembly"
+        }
+      );
+    });
+
+    it("is dropped when the file no longer has the bank, or cannot be read", async () => {
+      const readZ88BankBytes = vi.fn();
+      const { adapter: a } = z88Adapter(readZ88BankBytes);
+      const hub = fakeHub(0);
+      readZ88BankBytes.mockResolvedValueOnce(undefined);
+      expect(await a.restore(entry(z88Id, at(0)), hub, services(hub), env())).toBe(false);
+      readZ88BankBytes.mockRejectedValueOnce(new Error("gone"));
+      expect(await a.restore(entry(z88Id, at(0)), hub, services(hub), env())).toBe(false);
+    });
+
+    it("is not mistaken for a NEX bank", () => {
+      expect(parseNexBankDocumentId(z88Id)).toBeUndefined();
+    });
+  });
+
   it("treats addresses within $40 as one place, whatever the listing", () => {
     const { adapter: a } = adapter();
     expect(a.isNear(at(0xc000, { viewMode: "memory" }), at(0xc03f, { viewMode: "disassembly" }))).toBe(true);

@@ -112,6 +112,50 @@ If the machine produces no sound, the video will contain silence — that is nor
 
 ---
 
+## Recording the IDE and the Emulator Together
+
+To show your code and the running machine in one video — a tutorial, a bug report, a debugging session — record both windows side by side.
+
+Choose **Machine › Recording › Start IDE + Emulator recording**, or press **Ctrl+Shift+F7**. Both window titles show **● REC** while the recording runs. Use the same command (or shortcut) again to stop; the file is saved to the same folder as any other recording.
+
+This recording runs on the clock, not on the machine: it starts at once and keeps recording while the machine is stopped or paused, so you can show the IDE before you run anything. The IDE window must be visible to start it.
+
+### Arranging the windows
+
+The two windows are placed next to each other in the video, wherever they are on your screen. **Machine › Recording › IDE position** sets where the IDE goes relative to the emulator: **Left** (default), **Right**, **Top**, or **Bottom**. The video is just large enough to hold both; the smaller window is centred along the shared side, and the space around it is filled with your theme's background colour.
+
+If you resize a window while recording, its picture is scaled to fit the space it had when the recording started.
+
+### Options
+
+| Option | Default | What it does |
+|---|---|---|
+| **Include pointer** | On | Draws the mouse pointer when it is over either window. |
+| **Show mouse clicks** | On | Draws a ring around the pointer while a button is held, and a short fading ring when it is released — in your accent colour for the left button and the secondary accent colour for the right. Available when **Include pointer** is on. |
+| **Full resolution (HiDPI)** | Off | Records at your display's full pixel density (twice the size on a Retina display) instead of normal size. Much larger files and more work for the encoder. |
+
+The **format** and **quality** settings above apply to this recording too. The frame rate is **30 fps** (**15 fps** with **Half fps**), since the IDE has no machine frame rate of its own.
+
+### Sound
+
+The machine's sound is recorded while it runs. While the machine is paused or stopped, the recording carries silence, so the sound always stays in step with the picture.
+
+<Callout type="info" emoji="💡">
+Only one recording runs at a time: while the IDE + Emulator recording runs, the emulator's own **Start Recording** is unavailable, and the other way round. The recording options are locked while either recording runs.
+</Callout>
+
+To use another shortcut, set the `shortcuts.recordIdeEmu` user setting with the
+[`set`](/commands-reference#set) command, for example:
+
+```
+set -u shortcuts.recordIdeEmu "CmdOrCtrl+Shift+R"
+```
+
+`CmdOrCtrl` means <kbd>Cmd</kbd> on macOS and <kbd>Ctrl</kbd> elsewhere; the default's **Ctrl** is
+the Control key on macOS too. The menu shows the shortcut in effect.
+
+---
+
 ## Where Files Are Saved
 
 Klive writes each recording to:

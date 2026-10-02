@@ -901,7 +901,7 @@
  "OZ50 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "2c9cab61f8c2d5ed04a70beb28f26adf39ddedbd80c31815eb34f02650430f11"
+   "sha256": "096ef5fb2b399ef8f47b031387aa849ef650dd2be5b6a154c6313ea2c8c44b3f"
   },
   "pc": 62043,
   "af": 19068,
@@ -1871,7 +1871,7 @@
  },
  "OZ40 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "c8b1bbdc3dc9c42846c29dd16c7b4fb054c220902f8307a94c452d89423c1b7a"
+  "sha256": "486ad98ebb23bb7cdbdd07855fced1a5120897e55fcbada5f58acd193eb2dc1b"
  },
  "OZ30 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -2808,7 +2808,7 @@
  },
  "OZ30 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "592ea35cc0b31be13d4a294c770192dd88201aec44494fc16c5d4a17d0f1b2dc"
+  "sha256": "7709070fd37db70ec458029825fd6921e55dace51b1097b63f45c3dd0116a78b"
  },
  "stopped mid-frame, a card in command mode: getCpuState()": {
   "af": 65535,
@@ -3744,7 +3744,7 @@
  },
  "stopped mid-frame, a card in command mode: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "e3b0fa3605d112fed7553694e9b83a32879d6a68ec4b4b2994025343cccda713"
+  "sha256": "18872fa860ade18b960ca7871bb84cef0406d026a48c5c716613808f1804c835"
  },
  "register edits: getCpuState()": {
   "af": 23205,
@@ -5647,6 +5647,6 @@
  },
  "memory edits: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "71d204f32eb0339dc3a673d21013e940e4323285569c59b5723b657a1c63329c"
+  "sha256": "512a7c300f0145e01390622bfee5398a902b892c25b9e917d31aa280f79c2474"
  }
 }

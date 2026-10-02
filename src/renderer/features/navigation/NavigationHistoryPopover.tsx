@@ -19,6 +19,7 @@ export const REASON_LABELS: Record<NavigationReason, string> = {
   disassemblyGoTo: "go to",
   nexLabel: "label",
   nexBank: "bank",
+  z88Bank: "bank",
   tabSwitch: "tab",
   explorer: "explorer",
   command: "command"

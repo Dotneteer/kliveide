@@ -26,6 +26,12 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
   const [machineName, setMachineName] = useState("");
   const [freq, setFreq] = useState(0);
   const clockMultiplier = useSelector(s => s.emulatorState.clockMultiplier);
+  /*
+   * Selected only to re-render on a machine state change. PC is read from the machine at render time,
+   * and frames re-render only some of the time (`onFrameCompleted`), so a pause - or a `.z88` snapshot
+   * restored with no frame run at all - would otherwise leave the PC of an earlier frame on show.
+   */
+  useSelector(s => s.emulatorState?.machineState);
   const counter = useRef(0);
 
   // --- Read by the frame handler, which is subscribed once per controller: a ref keeps it current

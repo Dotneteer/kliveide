@@ -8,6 +8,7 @@ import {
   DSK_VIEWER,
   NEX_VIEWER,
   Z80_VIEWER,
+  Z88_SNAPSHOT_VIEWER,
   SNA_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
@@ -80,6 +81,7 @@ import {
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
+import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/Next/SnaFileViewerPanel";
 import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileViewerPanel";
 import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
@@ -102,6 +104,7 @@ import {
   memoryNavigationAdapter
 } from "./appIde/navigation/addressNavigationAdapters";
 import { readNexBankBytes } from "./appIde/DocumentPanels/Next/nexBankReveal";
+import { readZ88BankBytes } from "./appIde/DocumentPanels/Z88/z88BankDocument";
 import { fileDocumentNavigationAdapter } from "./appIde/navigation/fileDocumentNavigationAdapter";
 import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
@@ -116,6 +119,10 @@ import {
   getNexLaunchContextMenuInfo,
   nexLaunchCommandBarRenderer
 } from "@renderer/features/documents/NexLaunchContextMenu";
+import {
+  getZ88SnapshotContextMenuInfo,
+  z88SnapshotLaunchCommandBarRenderer
+} from "@renderer/features/documents/Z88SnapshotLaunchMenu";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
 import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/DisassemblyPanel";
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
@@ -395,7 +402,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: STATIC_MEMORY_DUMP_VIEWER,
     renderer: createStaticMemoryDump,
     icon: "memory-icon",
-    navigation: createStaticDumpNavigationAdapter({ openStaticMemoryDump, readNexBankBytes })
+    navigation: createStaticDumpNavigationAdapter({
+      openStaticMemoryDump,
+      readNexBankBytes,
+      readZ88BankBytes
+    })
   },
   {
     id: TAP_VIEWER,
@@ -417,6 +428,14 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: Z80_VIEWER,
     renderer: createZ80FileViewerPanel,
     icon: "chip"
+  },
+  {
+    id: Z88_SNAPSHOT_VIEWER,
+    renderer: createZ88SnapshotViewerPanel,
+    icon: "chip",
+    // --- Its banks pop out into documents, and Go Back must return here
+    // --- (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4)
+    navigation: fileDocumentNavigationAdapter
   },
   {
     id: SNA_VIEWER,
@@ -677,6 +696,18 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     isBinary: true,
     isReadOnly: true,
     openPermanent: true
+  },
+  {
+    // --- An OZvm Cambridge Z88 snapshot (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8)
+    matchType: "ends",
+    pattern: ".z88",
+    editor: Z88_SNAPSHOT_VIEWER,
+    icon: "chip",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: z88SnapshotLaunchCommandBarRenderer,
+    contextMenuInfo: getZ88SnapshotContextMenuInfo
   },
   {
     matchType: "ends",

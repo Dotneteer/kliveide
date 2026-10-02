@@ -1,0 +1,106 @@
+---
+description: "Klive opens, runs and debugs Cambridge Z88 snapshots (.z88 files) saved by the OZvm emulator."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using Z88 Snapshots
+
+A Z88 snapshot (a `.z88` file) is a complete freeze of a Cambridge Z88: the Z80 registers, the
+Blink chip's registers, the internal ROM and RAM, and the cards in the three slots. The format comes
+from the [OZvm](https://gitlab.com/b4works/ozvm) emulator and is documented in its
+[wiki](https://gitlab.com/b4works/ozvm/-/wikis/Z88-Snapshot-Format).
+
+Klive can show you what a snapshot contains, and load it into the Cambridge Z88 machine to run it
+or debug it from the exact instruction where it was saved. That makes a snapshot a ready-made debug
+setup: save the machine in OZvm just before the code you are interested in, then continue from
+there in Klive.
+
+## Viewing a snapshot
+
+Open a `.z88` file from the Explorer to see its contents:
+
+- **Snapshot**: whether Klive can load it (and if not, why), its *Autorun* flag, when it was
+  saved, the real-time clock as saved and as it will be after loading, the files inside the
+  snapshot, and the picture of the LCD that OZvm saved with it.
+- **Z80 Registers** and **Blink**: the saved state, with the set bits of `COM`, `INT`, `STA`, `TMK`
+  and `TSTA` named.
+- **Address Space at PC**: which bank and offset the program counter is in, and which bank is paged
+  into each address range. The two buttons in the heading open the 64K the CPU sees as a **memory
+  dump** or a **disassembly**, positioned at the program counter.
+- **Slots**: every bank of every card in one list, grouped by card (the slot-0 ROM, the internal
+  RAM, and every card in slots 1&ndash;3). Each card's heading shows its type, its size, and what it
+  loads as in Klive. A bank's row is marked with the segment registers that page it in (`SR0`&ndash;`SR3`,
+  or `$0000` for the fixed lower 8K), with **PC** or **SP** when the program counter or stack pointer
+  points into it, and with **empty** when it holds only erased bytes (`$FF` on ROM, EPROM and Flash,
+  `$00` on RAM). The buttons above the list show all banks, only non-empty ones, only paged-in ones,
+  or one card's. Select a bank to see its details: where it is paged in, the other bank numbers that
+  reach it (a card smaller than its slot repeats across the slot), and any breakpoints OZvm saved in
+  it.
+- **Pop out** a bank &mdash; with its row's icon, by double-clicking the row, or with Enter &mdash;
+  to open it as its own document, as a **memory dump** or a **disassembly** (the arrow beside
+  **Pop out** chooses). The disassembly starts at the address the snapshot pages the bank in, or
+  `$C000` when it is not paged in, and reads the bytes as Z88 code: OZ system calls after `RST 20h`
+  are decoded, whatever machine the emulator is running. **Go Back** returns to the viewer.
+- **Breakpoints**: the breakpoints OZvm saved with the snapshot, for reference.
+
+## Loading, running and debugging
+
+There are two ways to load a snapshot:
+
+- **Run** (play icon): the machine runs from the snapshot's state.
+- **Debug** (debug icon): the machine starts in debug mode and stops at the snapshot's program
+  counter **before** executing that instruction, so the CPU, Memory and Disassembly panels show
+  the saved state. Step from there, or continue with your breakpoints active.
+
+You can reach them from:
+
+- the buttons in a `.z88` document's tab;
+- the Explorer's context menu on a `.z88` file;
+- the [`z88-snapshot`](../commands-reference#z88-snapshot) command;
+- the Emulator's **Machine** menu, while the machine is a Cambridge Z88: **Open Z88 Snapshot...**
+  does what the file's *Autorun* flag says, as OZvm does &mdash; it runs the snapshot if the flag is
+  set, and stops in the debugger at the program counter if it is not.
+
+Klive makes the machine fit the snapshot. If the current machine is not a Cambridge Z88, or its
+internal RAM or LCD size differs from the snapshot's, the machine is set up again first. The cards
+of slots 1&ndash;3 are recorded in the machine configuration, so the card dialogs show them.
+
+<Callout type="warning" emoji="⚠️">
+When a project for another machine is open, Klive refuses to load a snapshot instead of switching
+the project to the Z88. Close the project, or open a Z88 project, first.
+</Callout>
+
+## The real-time clock
+
+The Z88's real-time clock kept running in the real world while the snapshot sat on disk. When Klive
+loads a snapshot, it advances the clock by the time that passed since the snapshot was saved, as
+OZvm does, so the Z88's time and alarms stay in step with your computer's clock.
+
+## What Klive can load
+
+| OZvm card | Loads in Klive as |
+|---|---|
+| ROM (slot 0) | ROM of the same size (128K, 256K or 512K) |
+| ROM (slots 1&ndash;3) | UV EPROM of the same size (32K, 128K or 256K) |
+| RAM | RAM card (32K, 128K, 256K, 512K or 1M) |
+| UV EPROM | UV EPROM (32K, 128K or 256K) |
+| Intel Flash (S5 and SA) | Intel Flash 28F004S5 (512K) or 28F008S5 (1M) |
+| AMD, AMIC, STM, SST and Macronix Flash | AMD Flash 29F040B (512K) or 29F080B (1M) |
+| Hybrid RAM + Flash cards | not supported |
+
+The internal RAM can be 32K, 64K, 128K, 256K or 512K. Slot 0 accepts a ROM, a UV EPROM, or a 512K
+Flash chip. If a snapshot contains anything else, the viewer lists every reason, and loading
+reports them instead of loading part of the machine.
+
+An LCD size Klive does not offer (it offers 640 &times; 64, 256, 320 and 480 pixels) does not stop
+the load: the machine keeps its current LCD size, with a warning.
+
+## Things to know
+
+- The snapshot's cards come from the file, not from card images on disk. **Hard reset** (and
+  anything else that sets the machine up again) re-inserts the configured slot-0 ROM and blank cards
+  in slots 1&ndash;3, so the snapshot is gone. **Soft reset** keeps the memory, as the reset button of
+  a real Z88 does.
+- OZvm's saved breakpoints are shown in the viewer but not added to Klive's breakpoints.
+- Klive loads snapshots; it does not save them.

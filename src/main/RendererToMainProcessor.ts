@@ -74,6 +74,10 @@ import { FfmpegRecordingBackend } from "./recording/FfmpegRecordingBackend";
 import { StubRecordingBackend } from "./recording/StubRecordingBackend";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { resolveRecordingPath } from "./recording/outputPath";
+import {
+  appendWindowRecordingAudio,
+  isWindowRecordingActive
+} from "./recording/window-recording/windowRecordingController";
 import type { RecordingFormat } from "@common/state/AppState";
 import { copyZxNextStorageFile as copyZxNextStorageFileOnHost } from "./zx-next-storage-copy";
 import { applyEmuContentSizeHints } from "./emu-window-sizing";
@@ -1000,6 +1004,10 @@ class MainMessageProcessor {
    * Returns the absolute path of the output file.
    */
   async startScreenRecording(width: number, height: number, fps: number, xRatio = 1, yRatio = 1, sampleRate = 44100, crf = 18, format: RecordingFormat = "mp4"): Promise<string> {
+    // --- One recording at a time: the IDE + Emulator recording is running
+    if (isWindowRecordingActive()) {
+      throw new Error("An IDE + Emulator recording is in progress.");
+    }
     const homeDir = getKliveHomeBase();
     const ext = format === "webm" ? "webm" : format === "mkv" ? "mkv" : "mp4";
     const outputPath = resolveRecordingPath(homeDir, ext);
@@ -1022,6 +1030,13 @@ class MainMessageProcessor {
    */
   async appendRecordingAudio(samples: Float32Array): Promise<void> {
     _recordingBackend?.appendAudioSamples(samples);
+  }
+
+  /**
+   * Appends emulator sound to the running IDE + Emulator recording.
+   */
+  async appendWindowRecordingAudio(samples: Float32Array): Promise<void> {
+    appendWindowRecordingAudio(samples);
   }
 
   /**

@@ -52,6 +52,7 @@
 /howto/screen-recording/index.html
 /howto/shortcuts/index.html
 /howto/sp48-custom-rom/index.html
+/howto/z88-snapshots/index.html
 /index.html
 /machine-types/index.html
 /project-templates/index.html

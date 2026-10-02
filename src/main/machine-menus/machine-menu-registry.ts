@@ -8,7 +8,12 @@ import {
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, sp48RomMenuRenderer } from "./zx-specrum-menus";
-import { z88KeyboardLayoutRenderer, z88LcdRenderer, z88ResetRenderer } from "./z88-menus";
+import {
+  z88KeyboardLayoutRenderer,
+  z88LcdRenderer,
+  z88ResetRenderer,
+  z88SnapshotRenderer
+} from "./z88-menus";
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
@@ -43,6 +48,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     machineItems: (windowInfo, machine, model) => [
       ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
       ...z88LcdRenderer(windowInfo, machine, model),
+      ...z88SnapshotRenderer(windowInfo, machine, model),
       ...z88ResetRenderer(windowInfo, machine, model)
     ],
     helpLinks: [

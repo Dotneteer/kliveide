@@ -38,6 +38,10 @@ import {
   unloadWindowsAction,
   setClockMultiplierAction,
   setSoundLevelAction,
+  setWindowRecordingClicksAction,
+  setWindowRecordingHiDpiAction,
+  setWindowRecordingIdePositionAction,
+  setWindowRecordingPointerAction,
   setThemeAction,
   setAccentAction,
   startScreenDisplayedAction,
@@ -346,6 +350,11 @@ async function createAppWindows() {
       mainStore.dispatch(setMachineSpecificAction(appSettings.machineSpecific ?? {}));
       mainStore.dispatch(setClockMultiplierAction(appSettings.clockMultiplier ?? 1));
       mainStore.dispatch(setSoundLevelAction(appSettings.soundLevel ?? 0.5));
+      const windowRecording = appSettings.windowRecording ?? {};
+      mainStore.dispatch(setWindowRecordingIdePositionAction(windowRecording.idePosition ?? "left"));
+      mainStore.dispatch(setWindowRecordingPointerAction(windowRecording.pointer ?? true));
+      mainStore.dispatch(setWindowRecordingClicksAction(windowRecording.clicks ?? true));
+      mainStore.dispatch(setWindowRecordingHiDpiAction(windowRecording.hiDpi ?? false));
       if (appSettings.media) {
         Object.entries(appSettings.media).forEach(([key, value]) => {
           mainStore.dispatch(setMediaAction(key, value));

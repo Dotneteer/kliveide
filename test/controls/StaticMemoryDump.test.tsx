@@ -805,6 +805,45 @@ describe("StaticMemoryDump", () => {
     });
   });
 
+  /*
+   * A bank from a `.z88` snapshot (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.5). The bytes are Z88 code
+   * whichever machine runs, so the listing must not read them as ZX Next code.
+   */
+  describe("a Z88 listing", () => {
+    /** `oz OS_BOUT`, the Next-only `test $05`, then `ld hl,$5C08` (LAST_K on a Spectrum). */
+    const Z88_CODE = () => {
+      const contents = new Uint8Array(0x4000);
+      contents.set([0xe7, 0x90, 0xed, 0x27, 0x05, 0x21, 0x08, 0x5c]);
+      return contents;
+    };
+
+    const renderDump = (viewState: Record<string, unknown>) =>
+      renderStaticMemoryDump(
+        { disassemblyEnabled: true, viewMode: "disassembly", disassOffset: 0xc000, ...viewState },
+        undefined,
+        undefined,
+        Z88_CODE()
+      );
+
+    it("decodes OZ calls, not the Next's opcodes, and names no system variables", async () => {
+      await renderDump({ disassemblyFlavor: "z88" });
+
+      expect(await screen.findByText("oz OS_BOUT")).toBeInTheDocument();
+      expect(screen.getByText("ld hl,$5C08")).toBeInTheDocument();
+      expect(screen.queryByText("ld hl,LAST_K")).not.toBeInTheDocument();
+      expect(screen.queryByText(/^test /)).not.toBeInTheDocument();
+      expect(screen.queryByTestId("switch-Sys vars")).not.toBeInTheDocument();
+    });
+
+    it("is not what a dump without the flavor shows", async () => {
+      await renderDump({});
+
+      expect(await screen.findByText("test $05")).toBeInTheDocument();
+      expect(screen.queryByText("oz OS_BOUT")).not.toBeInTheDocument();
+      expect(screen.getByTestId("switch-Sys vars")).toBeInTheDocument();
+    });
+  });
+
   /**
    * The label column is sized to the listing, not to `L1234:`.
    *

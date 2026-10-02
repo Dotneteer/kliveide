@@ -145,6 +145,7 @@
     "@radix-ui/react-select": "^2.3.7",
     "classnames": "^2.5.1",
     "electron-updater": "^6.8.9",
+    "fflate": "^0.8.3",
     "overlayscrollbars-react": "^0.5.6",
     "react-popper": "^2.3.0",
     "react-switch": "^7.1.0",

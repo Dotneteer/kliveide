@@ -117,6 +117,17 @@ describe("FfmpegRecordingBackend", () => {
     expect(args).toContain("192k");
   });
 
+  it("start() does not probe the raw audio input (its format is given in full)", () => {
+    backend.start(OUTPUT, W, H, FPS);
+    const args = vi.mocked(spawn).mock.calls[0][1] as string[];
+    const audioInput = args.indexOf("pipe:3");
+    const probe = args.indexOf("-analyzeduration");
+    expect(probe).toBeGreaterThan(args.indexOf("pipe:0"));
+    expect(probe).toBeLessThan(audioInput);
+    expect(args[probe + 1]).toBe("0");
+    expect(args[args.indexOf("-probesize") + 1]).toBe("32");
+  });
+
   it("start() passes stdio: ['pipe','ignore','pipe','pipe'] for video+audio", () => {
     backend.start(OUTPUT, W, H, FPS);
     const opts = vi.mocked(spawn).mock.calls[0][2];
@@ -319,5 +330,80 @@ describe("FfmpegRecordingBackend", () => {
     expect(consoleError).toHaveBeenCalledWith(
       "[FFmpegBackend] FFmpeg exited with code 1"
     );
+  });
+
+  // ---- IDE + Emulator recording options ----------------------------------
+
+  describe("window recording options", () => {
+    const stdinOf = () => (spawn as ReturnType<typeof vi.fn>).mock.results[0].value.stdin;
+
+    it("start() with pixelFormat bgra tells FFmpeg the frames are BGRA", () => {
+      backend.start(OUTPUT, W, H, 30, 1, 1, 44100, 18, "mp4", { pixelFormat: "bgra" });
+      const args = vi.mocked(spawn).mock.calls[0][1] as string[];
+      expect(args[args.indexOf("-pix_fmt") + 1]).toBe("bgra");
+    });
+
+    it("realtime selects the veryfast preset for H.264 and H.265", () => {
+      backend.start(OUTPUT, W, H, 30, 1, 1, 44100, 18, "mp4", { realtime: true });
+      let args = vi.mocked(spawn).mock.calls[0][1] as string[];
+      expect(args[args.indexOf("-preset") + 1]).toBe("veryfast");
+      backend.start(OUTPUT, W, H, 30, 1, 1, 44100, 18, "mkv", { realtime: true });
+      args = vi.mocked(spawn).mock.calls[1][1] as string[];
+      expect(args[args.indexOf("-preset") + 1]).toBe("veryfast");
+    });
+
+    it("realtime keeps VP9 in realtime mode even when lossless", () => {
+      backend.start(OUTPUT, W, H, 30, 1, 1, 44100, 0, "webm", { realtime: true });
+      const args = vi.mocked(spawn).mock.calls[0][1] as string[];
+      expect(args[args.indexOf("-deadline") + 1]).toBe("realtime");
+    });
+
+    it("without options the presets are unchanged", () => {
+      backend.start(OUTPUT, W, H, 30, 1, 1, 44100, 18, "mp4");
+      const args = vi.mocked(spawn).mock.calls[0][1] as string[];
+      expect(args[args.indexOf("-preset") + 1]).toBe("fast");
+    });
+
+    it("appendFrame() returns write()'s backpressure flag and passes the callback", () => {
+      backend.start(OUTPUT, W, H, FPS);
+      const stdin = stdinOf();
+      stdin.write.mockImplementationOnce((_buf: Buffer, cb?: () => void) => {
+        cb?.();
+        return false;
+      });
+      const written = vi.fn();
+      expect(backend.appendFrame(RGBA, written)).toBe(false);
+      expect(written).toHaveBeenCalledOnce();
+      expect(backend.appendFrame(RGBA)).toBe(true);
+    });
+
+    it("onceDrained() calls back at once when FFmpeg is not backed up", () => {
+      backend.start(OUTPUT, W, H, FPS);
+      const cb = vi.fn();
+      backend.onceDrained(cb);
+      expect(cb).toHaveBeenCalledOnce();
+    });
+
+    it("onceDrained() waits for 'drain' when FFmpeg is backed up", () => {
+      backend.start(OUTPUT, W, H, FPS);
+      const stdin = stdinOf();
+      const handlers: Record<string, () => void> = {};
+      stdin.writableNeedDrain = true;
+      stdin.once = vi.fn((event: string, fn: () => void) => (handlers[event] = fn));
+      stdin.off = vi.fn();
+      const cb = vi.fn();
+      backend.onceDrained(cb);
+      expect(cb).not.toHaveBeenCalled();
+      handlers.drain();
+      handlers.close();
+      expect(cb).toHaveBeenCalledOnce();
+      stdin.writableNeedDrain = false;
+    });
+
+    it("appendFrame() before start() still releases the buffer", () => {
+      const cb = vi.fn();
+      expect(backend.appendFrame(RGBA, cb)).toBe(true);
+      expect(cb).toHaveBeenCalledOnce();
+    });
   });
 });

@@ -9,6 +9,8 @@ import { describe, it, expect, vi } from "vitest";
 import React from "react";
 import { renderWithProviders, act } from "../react-test-utils";
 import { EmuStatusBar } from "@renderer/appEmu/StatusBar/EmuStatusBar";
+import { setMachineStateAction } from "@state/actions";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 
 // ---------------------------------------------------------------------------
 // Stubs for Electron-dependent hooks
@@ -136,5 +138,28 @@ describe("EmuStatusBar — performance info", () => {
     }
     expect(reads).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain("PC:");
+  });
+});
+
+/*
+ * A state change shows the machine's PC at once, with no frame in between: a pause, and a `.z88`
+ * snapshot restored paused (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 7), which runs no frame at all.
+ */
+describe("EmuStatusBar — PC after a state change", () => {
+  it("shows the new PC when the machine pauses, without a frame", async () => {
+    let container: HTMLElement;
+    let store: ReturnType<typeof renderWithProviders>["store"];
+    mockController.machine.pc = 0x8000;
+    await act(async () => {
+      ({ container, store } = renderWithProviders(<EmuStatusBar show={true} />));
+    });
+    expect(container.textContent).toContain("8000");
+
+    mockController.machine.pc = 0xf523;
+    await act(async () => {
+      store.dispatch(setMachineStateAction(MachineControllerState.Paused, 0xf523), "emu");
+    });
+    expect(container.textContent).toContain("F523");
+    mockController.machine.pc = 0x8000;
   });
 });

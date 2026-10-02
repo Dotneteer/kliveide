@@ -598,6 +598,31 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * Replaces the machine's state and leaves it Paused (see `IMachineController.restoreState`).
+   *
+   * The same seam as the checkpoint restore in `runCode`: stopping makes the next state change a
+   * real one (Stopped -> Paused), so the IDE refreshes its panels and shows the execution point,
+   * and it forgets the last breakpoint, so a breakpoint at the restored PC fires before that
+   * instruction runs. Paused, not Stopped: `run()` resets a machine it starts from Stopped.
+   */
+  async restoreState(applyState: () => void, description: string): Promise<void> {
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+
+    applyState();
+
+    // --- `run()` attaches the stored media when it starts from a stop; this restore takes the
+    // --- place of that start
+    attachStoredMedia(this.machine, this._machineInfo.mediaIds);
+    this.state = MachineControllerState.Paused;
+    await this.sendOutput(
+      `${description} (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,
+      "cyan"
+    );
+  }
+
+  /**
    * Runs the specified code in the virtual machine
    * @param codeToInject Code to inject into the amchine
    * @param additionalInfo Additional information for code execution
