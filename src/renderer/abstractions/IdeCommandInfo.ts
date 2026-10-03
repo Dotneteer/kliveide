@@ -76,6 +76,13 @@ export type CommandArgumentInfo = {
   commandOptions?: string[];
   namedOptions?: CommandArg[];
   allowRest?: boolean;
+  /**
+   * An option that takes **the rest of the line, verbatim**, as its value (`bp-set ... -if A == 1`).
+   * The command service cuts the text at this option before tokenizing - the tokenizer would drop
+   * `==`/`&&` and split `[...]` - so it must be the last option. The value lands in the arguments
+   * under the option's name; a tail that is one double-quoted string is unquoted.
+   */
+  rawTailOption?: string;
 };
 
 export type CommandArgumentValue = Record<string, string | number | boolean | any[]>;

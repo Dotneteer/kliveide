@@ -693,3 +693,61 @@ void zxnextSetNextAudioMixerSample(uint32_t frameTacts28) { zxnextAudioMixerSetN
 uint32_t zxnextGetAudioMixerSampleCount(void) { return zxnextAudioMixerGetSampleCount(); }
 int32_t zxnextGetAudioMixerSampleLeft(uint32_t index) { return zxnextAudioMixerGetSampleLeft(index); }
 int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixerGetSampleRight(index); }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// this machine's side-effect-free reads. `zxnextMemoryPeekMapped` is the CPU view with no contention
+// or bus-mirror update. The partition layout mirrors `getMemoryPartition` and the paging
+// `getWasmV2PartitionForPage` in `ZxNextWasmV2Machine.ts` exactly (a test compares them); the
+// offsets are `nextMemoryLayout.ts`'s.
+// -----------------------------------------------------------------------------
+
+#define COND_NEXT_OFFS_NEXT_ROM 0x000000u
+#define COND_NEXT_OFFS_DIVMMC_ROM 0x010000u
+#define COND_NEXT_OFFS_ALT_ROM_0 0x018000u
+#define COND_NEXT_OFFS_ALT_ROM_1 0x01c000u
+#define COND_NEXT_OFFS_DIVMMC_RAM 0x020000u
+#define COND_NEXT_OFFS_NEXT_RAM 0x040000u
+
+static uint32_t condNextPeekPartition(int32_t partition, uint32_t address) {
+  uint32_t length = 0x2000u;
+  uint32_t offset = 0u;
+  if (partition >= -4 && partition <= -1) {
+    length = 0x4000u;
+    offset = COND_NEXT_OFFS_NEXT_ROM + 0x4000u * (uint32_t)(-partition - 1);
+  } else if (partition == -5) {
+    length = 0x4000u;
+    offset = COND_NEXT_OFFS_ALT_ROM_0;
+  } else if (partition == -6) {
+    length = 0x4000u;
+    offset = COND_NEXT_OFFS_ALT_ROM_1;
+  } else if (partition == -7) {
+    offset = COND_NEXT_OFFS_DIVMMC_ROM;
+  } else if (partition >= -23 && partition <= -8) {
+    offset = COND_NEXT_OFFS_DIVMMC_RAM + 0x2000u * (uint32_t)(-partition - 8);
+  } else if (partition >= 0 && partition < 224) {
+    offset = COND_NEXT_OFFS_NEXT_RAM + 0x2000u * (uint32_t)partition;
+  }
+  return zxnextMemory[(offset + address % length) % ZXNEXT_MEMORY_SIZE];
+}
+
+static int64_t condNextPartitionOf(uint32_t address) {
+  const uint32_t page = (address >> 13) & 0x07u;
+  const uint32_t bank8 = zxnextMemoryGetPageBank8(page);
+  if (bank8 < 224u) return bank8;
+  const uint32_t readOffset = zxnextMemoryGetPageReadOffset(page);
+  if (readOffset >= COND_NEXT_OFFS_NEXT_RAM) return INT64_MIN /* COND_NO_VALUE */;
+  if (readOffset >= COND_NEXT_OFFS_DIVMMC_RAM) return -8 - (int64_t)((readOffset - COND_NEXT_OFFS_DIVMMC_RAM) >> 13);
+  if (readOffset >= COND_NEXT_OFFS_ALT_ROM_1 && readOffset < COND_NEXT_OFFS_ALT_ROM_1 + 0x4000u) return -6;
+  if (readOffset >= COND_NEXT_OFFS_ALT_ROM_0 && readOffset < COND_NEXT_OFFS_ALT_ROM_0 + 0x4000u) return -5;
+  if (readOffset >= COND_NEXT_OFFS_DIVMMC_ROM && readOffset < COND_NEXT_OFFS_DIVMMC_ROM + 0x2000u) return -7;
+  if (readOffset < COND_NEXT_OFFS_NEXT_ROM + 0x10000u) return -1 - (int64_t)(readOffset >> 14);
+  return INT64_MIN /* COND_NO_VALUE */;
+}
+
+#define COND_PEEK(address) ((uint32_t)zxnextMemoryPeekMapped(address))
+#define COND_PEEK_PARTITION(partition, address) condNextPeekPartition(partition, address)
+#define COND_PEEK_BANK(bank, offset) condNextPeekPartition((int32_t)((bank) * 2u + (((offset) >> 13) & 1u)), (offset) & 0x1fffu)
+#define COND_PARTITION_OF(address) condNextPartitionOf(address)
+#define COND_NEXTREG(reg) zxnextNextRegPeek(reg)
+#include "../../../../z80/wasm/z80-condition.c"

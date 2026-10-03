@@ -2,7 +2,8 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { BreakpointEnvironment } from "@renderer/appIde/utils/breakpoint-form";
 
 import { useCallback } from "react";
-import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { getBreakpointDisplayKey, getBreakpointStorageKey } from "@common/utils/breakpoints";
+import { mergedConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
 import { useDialogs } from "@renderer/controls/overlay/DialogProvider";
@@ -36,12 +37,15 @@ export function useBreakpointDialog() {
 
   return useCallback(
     /**
-     * @param initial The breakpoint to edit. Omit to add a new one. Must be address-bound —
-     *   `isAuthorableBreakpoint` is the caller's gate, because a source-bound breakpoint belongs to the
-     *   editor's glyph margin.
+     * @param initial The breakpoint to edit. Omit to add a new one. A source-bound breakpoint opens
+     *   the dialog in source mode: its condition, hit rule and enabled state only (§4.4.2).
+     * @param options `focus` picks the first field (the editor margin's "Edit Hit Count…")
      * @returns Whether anything was installed; false when the dialog was cancelled.
      */
-    async (initial?: BreakpointInfo): Promise<boolean> => {
+    async (
+      initial?: BreakpointInfo,
+      options: { focus?: "condition" | "hitCount" } = {}
+    ): Promise<boolean> => {
       /*
        * Four IPC calls with a failure path.
        *
@@ -84,6 +88,16 @@ export function useBreakpointDialog() {
         partitionGroups
       );
 
+      /*
+       * The breakpoint as the emulator has it *now*: the caller's copy may be a render old, and
+       * the live hit count, a condition's state and a source breakpoint's resolution are only
+       * current in a fresh listing.
+       */
+      if (initial) {
+        const key = getBreakpointStorageKey(initial);
+        initial = (bpState?.breakpoints ?? []).find((bp) => getBreakpointStorageKey(bp) === key) ?? initial;
+      }
+
       const env: BreakpointEnvironment = {
         partitionLabels,
         // --- `banksView` is exactly "this machine declares MF_ROM or MF_BANK".
@@ -97,15 +111,29 @@ export function useBreakpointDialog() {
           getBreakpointDisplayKey(bp, partitionLabels)
         ),
         // --- A breakpoint must be allowed to keep its own key while being edited.
-        editingKey: initial ? getBreakpointDisplayKey(initial, partitionLabels) : undefined
+        editingKey: initial ? getBreakpointDisplayKey(initial, partitionLabels) : undefined,
+        // --- Conditions are checked against this machine and the current symbols (§3.7)
+        machineId,
+        conditionSymbols: mergedConditionSymbols()
       };
+      const edited = initial;
 
       const result = await dialogs.open(
         BreakpointDialog,
         // --- No `machineId`: `BreakpointDialog` declares no such prop, so it was reaching the
         // --- component and being dropped. It survived only because `dialogs.open`'s generics
         // --- infer the props from the object rather than checking it against the component.
-        { initial, env, machineSetup },
+        {
+          initial,
+          env,
+          machineSetup,
+          focus: options.focus,
+          onResetHits: edited
+            ? async () => {
+                await emuApi.resetBreakpointHits(edited);
+              }
+            : undefined
+        },
         { title: initial ? "Edit breakpoint" : "Add breakpoint", width: 420, iconName: "debug-with-bp" }
       );
       // --- A dismissed dialog resolves undefined, which is a cancellation, not an empty edit.

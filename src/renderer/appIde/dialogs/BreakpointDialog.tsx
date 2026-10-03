@@ -13,10 +13,14 @@ import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
 import { DialogRow } from "@renderer/controls/DialogRow";
 import { RadioGroup, type RadioGroupOption } from "@renderer/controls/RadioGroup";
+import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
+import { Button } from "@renderer/controls/Button";
+import { useMainApi } from "@renderer/core/MainApi";
 import { PartitionPicker } from "@renderer/controls/PartitionPicker";
 import type { MemoryMachineSetupState } from "@renderer/features/memory/useMemoryMachineSetup";
 import {
   applyKindChange,
+  breakpointFormWarnings,
   breakpointToForm,
   createEmptyForm,
   formToBreakpointInfo,
@@ -30,11 +34,13 @@ import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import styles from "./BreakpointDialog.module.scss";
 
 /**
- * Authors a binary (address-bound) breakpoint.
+ * Authors a binary (address-bound) breakpoint, and edits the condition and hit rule of any
+ * breakpoint.
  *
- * Source-code breakpoints are not editable here — they belong to the editor's glyph margin, which
- * places them by clicking a line and tracks them as lines move. Callers must gate on
- * `isAuthorableBreakpoint` before opening this on an existing breakpoint.
+ * Source-code breakpoints are *placed* by the editor's glyph margin, which tracks them as lines
+ * move; opened on one, the dialog is in **source mode** - the location is shown, and only the
+ * condition, the hit rule and the enabled state are editable
+ * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
  *
  * Every rule lives in `breakpoint-form.ts`, which has no React in it and is tested without mounting
  * anything. This component decides only what to *show*.
@@ -82,6 +88,20 @@ const isIoKind = (kind: BreakpointKind) => kind === "ioRead" || kind === "ioWrit
 const WORD_FIELD = "20ch";
 const BYTE_FIELD = "12ch";
 
+/** The hit-count rules, in the order §4.4.1 lists them. */
+const HIT_MODE_OPTIONS: DropdownOption[] = [
+  { value: "always", label: "Always" },
+  { value: "eq", label: "Equal to" },
+  { value: "gt", label: "Greater than" },
+  { value: "ge", label: "At least" },
+  { value: "lt", label: "Less than" },
+  { value: "le", label: "At most" },
+  { value: "every", label: "Every" }
+];
+
+/** The docs section the condition field's "Syntax" link opens. */
+const CONDITION_SYNTAX_PAGE = "/working-with-ide/breakpoints#conditions-and-hit-counts";
+
 type Props = DialogComponentProps<BreakpointDialogResult> & {
   /** The breakpoint being edited. Absent when adding. */
   initial?: BreakpointInfo;
@@ -94,14 +114,23 @@ type Props = DialogComponentProps<BreakpointDialogResult> & {
     MemoryMachineSetupState,
     "displayBankMatrix" | "segmentOptions" | "partitionOptions"
   >;
+  /** Which field to focus first: the margin's "Edit Hit Count…" opens on the hit count. */
+  focus?: "condition" | "hitCount";
+  /** Zero the edited breakpoint's hit counter. Absent when adding (there is no counter yet). */
+  onResetHits?: () => Promise<void>;
 };
 
 export const BreakpointDialog = ({
   initial,
   env,
   machineSetup,
+  focus,
+  onResetHits,
   controls
 }: Props) => {
+  const mainApi = useMainApi();
+  // --- The live count as it was when the dialog opened; Reset shows the zero it set
+  const [hits, setHits] = useState<number | undefined>(initial?.currentHits);
   const [form, setForm] = useState<BreakpointFormState>(() =>
     initial ? breakpointToForm(initial) : createEmptyForm()
   );
@@ -114,6 +143,8 @@ export const BreakpointDialog = ({
   const [submitted, setSubmitted] = useState(false);
 
   const errors = useMemo(() => validateBreakpointForm(form, env), [form, env]);
+  const warnings = useMemo(() => breakpointFormWarnings(form, env), [form, env]);
+  const sourceMode = form.source !== undefined;
   const valid = isFormValid(errors);
   const editing = initial !== undefined;
 
@@ -150,6 +181,9 @@ export const BreakpointDialog = ({
     return indices.length ? Math.min(...indices) : 0;
   }, [env.partitionLabels]);
   const addressLabel = ioKind ? "Port" : "Address";
+  // --- The place rows (type, partition, register, address, port mask) are the editor's in source
+  // --- mode; the first editable field takes the focus instead.
+  const focusCondition = focus === "condition" || (sourceMode && focus !== "hitCount");
 
   const submit = () => {
     setSubmitted(true);
@@ -167,6 +201,13 @@ export const BreakpointDialog = ({
       onSubmit={submit}
       onCancel={controls.cancel}
     >
+      {sourceMode && (
+        <DialogRow rows={true} label="Location">
+          <div className={styles.location}>{sourceLocationText(form.source!)}</div>
+        </DialogRow>
+      )}
+
+      {!sourceMode && (
       <DialogRow rows={true} label="Type">
         <RadioGroup
           ariaLabel="Breakpoint type"
@@ -176,8 +217,9 @@ export const BreakpointDialog = ({
           onChange={(kind) => setForm((prev) => applyKindChange(prev, kind as BreakpointKind))}
         />
       </DialogRow>
+      )}
 
-      {env.supportsPartitions && !nextRegKind && (
+      {!sourceMode && env.supportsPartitions && !nextRegKind && (
         <DialogRow rows={true} label="Partition">
           {/*
             * Opt in, rather than a "(none)" entry in the picker.
@@ -224,14 +266,14 @@ export const BreakpointDialog = ({
         </DialogRow>
       )}
 
-      {nextRegKind && (
+      {!sourceMode && nextRegKind && (
         <>
           <DialogRow rows={true} label="Register *">
             <TextInput
               value={form.nextReg}
               width={BYTE_FIELD}
               error={errorFor("nextReg")}
-              autoFocus={true}
+              autoFocus={!focus}
               onChange={(nextReg) => {
                 setTouched((t) => ({ ...t, nextReg: true }));
                 update({ nextReg });
@@ -309,13 +351,13 @@ export const BreakpointDialog = ({
         </>
       )}
 
-      {!nextRegKind && (
+      {!sourceMode && !nextRegKind && (
       <DialogRow rows={true} label={`${addressLabel} *`}>
         <TextInput
           value={form.address}
           width={WORD_FIELD}
           error={errorFor("address")}
-          autoFocus={true}
+          autoFocus={!focus}
           onChange={(address) => {
             setTouched((t) => ({ ...t, address: true }));
             update({ address });
@@ -336,7 +378,7 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
-      {ioKind && (
+      {!sourceMode && ioKind && (
         <DialogRow rows={true} label="Port mask">
           <TextInput
             value={form.ioMask}
@@ -353,6 +395,91 @@ export const BreakpointDialog = ({
         </DialogRow>
       )}
 
+      <DialogRow rows={true} label="Condition">
+        {/*
+          * Validated on every keystroke, by the same checker the emulator arms with. Errors show
+          * once the field has been touched; warnings (an unknown label) show at once, because the
+          * breakpoint is accepted and they explain why it may not stop yet.
+          */}
+        <TextInput
+          value={form.condition}
+          error={errorFor("condition")}
+          autoFocus={focusCondition}
+          ariaLabel="Condition"
+          placeholder="e.g. A == $FF && !ZF   or   w[score] >= 100"
+          onChange={(condition) => {
+            setTouched((t) => ({ ...t, condition: true }));
+            update({ condition });
+          }}
+        />
+        {warnings.condition && !errorFor("condition") && (
+          <div className={styles.warning} role="status">
+            {warnings.condition}
+          </div>
+        )}
+        <div className={styles.hint}>
+          Stops only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
+          {nextRegKind || !(form.kind === "exec" || sourceMode) ? "VAL and ADDR, " : ""}labels.{" "}
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => void mainApi.showWebsite(CONDITION_SYNTAX_PAGE)}
+          >
+            Syntax
+          </button>
+        </div>
+      </DialogRow>
+
+      <DialogRow rows={true} label="Hit count">
+        <div className={styles.hitFields}>
+          <Dropdown
+            options={HIT_MODE_OPTIONS}
+            initialValue={form.hitMode}
+            ariaLabel="Hit count rule"
+            width="14ch"
+            onChanged={(hitMode) => {
+              setTouched((t) => ({ ...t, hitCount: true }));
+              update({ hitMode: hitMode as BreakpointFormState["hitMode"] });
+            }}
+          />
+          {form.hitMode !== "always" && (
+            <TextInput
+              value={form.hitCount}
+              width={BYTE_FIELD}
+              ariaLabel="Hit count"
+              autoFocus={focus === "hitCount"}
+              error={errorFor("hitCount")}
+              onChange={(hitCount) => {
+                setTouched((t) => ({ ...t, hitCount: true }));
+                update({ hitCount });
+              }}
+            />
+          )}
+        </div>
+        <div className={styles.hint}>
+          Counts the hits where the condition is true.
+        </div>
+      </DialogRow>
+
+      {editing && hits !== undefined && (
+        <DialogRow rows={true} label="Hits so far">
+          <div className={styles.hitsRow}>
+            <span className={styles.hits} data-testid="breakpoint-hits">
+              {hits}
+            </span>
+            {onResetHits && (
+              <Button
+                text="Reset"
+                variant="secondary"
+                clicked={() => {
+                  void onResetHits().then(() => setHits(0));
+                }}
+              />
+            )}
+          </div>
+        </DialogRow>
+      )}
+
       <DialogRow>
         <Checkbox
           initialValue={!form.disabled}
@@ -362,7 +489,7 @@ export const BreakpointDialog = ({
         />
       </DialogRow>
 
-      {nextRegKind && (
+      {!sourceMode && nextRegKind && (
         <DialogRow rows={true}>
           {/*
             * The one place a user meets this contract. The machine cannot stop mid-instruction, so
@@ -373,12 +500,6 @@ export const BreakpointDialog = ({
             Stops after the instruction that wrote the register, reporting its previous and new
             values.
           </div>
-        </DialogRow>
-      )}
-
-      {initial?.hitCount !== undefined && (
-        <DialogRow rows={true}>
-          <div className={styles.hint}>Hit count: {initial.hitCount}</div>
         </DialogRow>
       )}
 
@@ -396,3 +517,12 @@ export const BreakpointDialog = ({
     </DialogForm>
   );
 };
+
+/** `main.asm:42` (with the column of a statement breakpoint) and where it resolved to. */
+export function sourceLocationText(bp: BreakpointInfo): string {
+  const column = bp.column !== undefined ? `:${bp.column + 1}` : "";
+  const place = `${bp.resource}:${bp.line}${column}`;
+  return bp.resolvedAddress === undefined
+    ? `${place} (not resolved - build the project)`
+    : `${place} ($${bp.resolvedAddress.toString(16).toUpperCase().padStart(4, "0")})`;
+}

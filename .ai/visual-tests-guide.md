@@ -17,7 +17,7 @@ npm run test:visual -- --tier browser       # Tier 2: cases tagged "browser", in
 npm run test:visual -- --tier browser --headed
 npm run visual:serve                        # interactive: open http://127.0.0.1:5177/ in Chrome
 npm run test:visual -- --approve C02        # lock in hashes after a pass verdict (add --tier browser)
-npm test -- --project node test/harness/zxnext  # the harness's own tests (mutation tests of every oracle,
+npm test -- test/harness/zxnext  # the harness's own tests (mutation tests of every oracle,
                                             # and raster/$1F/WAIT-H/border/$68/$14/line-interrupt/Layer 2/compositing regressions)
 ```
 

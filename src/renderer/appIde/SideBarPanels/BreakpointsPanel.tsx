@@ -44,6 +44,12 @@ import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
 import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+import { formatHitSpec } from "@common/utils/breakpoint-filters";
+import {
+  breakpointFilterLines,
+  isConditionalBreakpoint,
+  isInactiveBreakpoint
+} from "../utils/breakpoint-filter-text";
 
 /*
  * M2: `ch`, not px. Capacity preserved from the px widths at the panel's old 12.8px size (px / 6.4),
@@ -120,6 +126,8 @@ const breakpointTooltip = (
     }
   }
   if (bp.disabled) lines.push("Disabled");
+  // --- The condition, the hit rule, the live count and why a condition may not be stopping
+  lines.push(...breakpointFilterLines(bp));
   if (bp.resolvedAddress !== undefined) {
     lines.push(`Resolves to $${toHexa4(bp.resolvedAddress)} (${bp.resolvedAddress})`);
   }
@@ -131,13 +139,14 @@ const breakpointTooltip = (
   // --- two tooltips do not fire on top of this one.
   lines.push(bp.disabled ? "Check the box to enable" : "Uncheck the box to disable");
   lines.push("Right-click the indicator to remove");
-  // --- The row's own gestures. Only a binary breakpoint is editable here; a source-bound one is
-  // --- placed and moved from the editor's glyph margin.
+  // --- The row's own gestures. Every row is editable: a source-bound one opens in source mode,
+  // --- where its condition and hit rule are editable and its place stays the editor's.
   lines.push("Right-click the row for more actions");
-  // --- `isAuthorableBreakpoint`, not `bp.address !== undefined`: the same predicate the row's own
-  // --- double-click and the context menu use. A bank-relative breakpoint has no address and is
-  // --- editable, so the raw test promised no edit on a row that offers one.
-  if (isAuthorableBreakpoint(bp)) lines.push("Double-click the row to edit");
+  lines.push(
+    isAuthorableBreakpoint(bp)
+      ? "Double-click the row to edit"
+      : "Double-click the row to edit its condition and hit count"
+  );
   return lines.join("\n");
 };
 
@@ -204,6 +213,8 @@ export const BreakpointsPanel = () => {
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
+  // --- Live hit counts: dispatched by the emulator at most every 10 frames while running (§4.5)
+  const hitsVersion = useSelector((s) => s.emulatorState?.breakpointHitsVersion);
   const pcValue = useRef(-1);
 
   // --- Gets the address to display in the context of the breakpoint
@@ -266,7 +277,7 @@ export const BreakpointsPanel = () => {
     (async function () {
       await refreshBreakpoints();
     })();
-  }, [machineState, bpsVersion]);
+  }, [machineState, bpsVersion, hitsVersion]);
 
   // --- Obtain available partition labels for the current machine type
   useEffect(() => {
@@ -292,6 +303,11 @@ export const BreakpointsPanel = () => {
 
   const toggleBreakpoint = async (bp: BreakpointInfo) => {
     await emuApi.enableBreakpoint(bp, !!bp.disabled);
+    await refreshBreakpoints();
+  };
+
+  const resetHits = async (bp?: BreakpointInfo) => {
+    await emuApi.resetBreakpointHits(bp);
     await refreshBreakpoints();
   };
 
@@ -333,9 +349,6 @@ export const BreakpointsPanel = () => {
     void action();
   };
 
-  // --- Source-bound breakpoints appear in this list but cannot be authored here; the editor's
-  // --- glyph margin owns them. Everything that is a *set* operation still applies to them.
-  const menuTargetIsEditable = isAuthorableBreakpoint(menuTarget);
 
   /*
    * The rows the list actually renders: always sorted, with headers when grouping is on.
@@ -384,19 +397,15 @@ export const BreakpointsPanel = () => {
         />
       </div>
       <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
-        {menuTargetIsEditable ? (
-          <ContextMenuItem
-            text="Edit breakpoint..."
-            iconName="pencil"
-            clicked={runFromMenu(() => editBreakpoint(menuTarget))}
-          />
-        ) : (
-          /*
-           * A source-bound row gets a disabled hint rather than a silently shorter menu: an item
-           * that is simply missing invites a hunt for the state that brings it back.
-           */
-          <ContextMenuItem text="Edit from the editor's left margin" disabled />
-        )}
+        {/*
+          * Every row: a source-bound breakpoint opens the dialog in source mode, which edits its
+          * condition and hit rule while the editor keeps owning where it is (§4.4.2).
+          */}
+        <ContextMenuItem
+          text="Edit breakpoint..."
+          iconName="pencil"
+          clicked={runFromMenu(() => editBreakpoint(menuTarget))}
+        />
         <ContextMenuItem
           text={menuTarget?.disabled ? "Enable breakpoint" : "Disable breakpoint"}
           clicked={runFromMenu(() => toggleBreakpoint(menuTarget))}
@@ -405,6 +414,15 @@ export const BreakpointsPanel = () => {
           text="Remove breakpoint"
           dangerous
           clicked={runFromMenu(() => removeBreakpoint(menuTarget))}
+        />
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          text="Reset hit count"
+          clicked={runFromMenu(() => resetHits(menuTarget))}
+        />
+        <ContextMenuItem
+          text="Reset all hit counts"
+          clicked={runFromMenu(() => resetHits())}
         />
         <ContextMenuSeparator />
         <ContextMenuItem
@@ -488,11 +506,7 @@ export const BreakpointsPanel = () => {
                     partitionLabels
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
-                  onDoubleClick={
-                    // --- Only a binary breakpoint has anything to open; a source-bound one is the
-                    // --- editor's to edit.
-                    isAuthorableBreakpoint(bp) ? () => void editBreakpoint(bp) : undefined
-                  }
+                  onDoubleClick={() => void editBreakpoint(bp)}
                 >
                   <BreakpointIndicator
                     partition={
@@ -518,6 +532,8 @@ export const BreakpointsPanel = () => {
                     ioMask={bp.ioMask}
                     showType
                     noTooltip
+                    conditional={isConditionalBreakpoint(bp)}
+                    inactive={isInactiveBreakpoint(bp)}
                   />
                   {/*
                     * The breakpoint's own address is the headline and takes the primary accent (see
@@ -603,6 +619,7 @@ export const BreakpointsPanel = () => {
                       />
                     </>
                   )}
+                  <BreakpointFilterCells bp={bp} />
                 </BreakpointRow>
               );
             } catch (e) {
@@ -612,6 +629,39 @@ export const BreakpointsPanel = () => {
         />
       )}
     </div>
+  );
+};
+
+/**
+ * A row's filters (§4.9): the live count, the hit rule, and the condition - last, so it is the cell
+ * that truncates in a narrow sidebar; the tooltip has it in full. An inactive condition is muted, a
+ * condition the emulator could not arm takes the error colour.
+ */
+const BreakpointFilterCells = ({ bp }: { bp: BreakpointInfo }) => {
+  const hitSpec = formatHitSpec(bp);
+  const condition = bp.condition?.trim();
+  if (!hitSpec && !condition) return null;
+  return (
+    <>
+      {bp.currentHits !== undefined && (
+        <Value
+          text={`${bp.currentHits}\u00d7`}
+          width="auto"
+          className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+        />
+      )}
+      {hitSpec && <Secondary text={`hit ${hitSpec}`} width="auto" />}
+      {condition && (
+        <Secondary
+          text={`if ${condition}`}
+          width="auto"
+          className={classnames(styles.conditionCell, {
+            [styles.conditionInactive]: !!bp.conditionInactive,
+            [styles.conditionError]: !!bp.conditionError
+          })}
+        />
+      )}
+    </>
   );
 };
 

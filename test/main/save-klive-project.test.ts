@@ -184,6 +184,57 @@ describe("saveKliveProject", () => {
     ]);
   });
 
+  it("saves a breakpoint's condition and hit rule, but not its runtime state", async () => {
+    // --- `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1: the live counter restarts with the machine,
+    // --- and storing it would also make every save after a run rewrite the file for nothing.
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [
+        {
+          resource: "main.asm",
+          line: 42,
+          exec: true,
+          condition: "A == $FF && !ZF",
+          hitMode: "every",
+          hitCount: 4,
+          currentHits: 9,
+          conditionError: "stale",
+          conditionInactive: "unknown label score"
+        }
+      ]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([
+      {
+        resource: "main.asm",
+        line: 42,
+        exec: true,
+        condition: "A == $FF && !ZF",
+        hitMode: "every",
+        hitCount: 4
+      }
+    ]);
+  });
+
+  it("does not rewrite the file when only a hit counter moved", async () => {
+    const bp = { address: 0x8000, exec: true, hitCount: 3 };
+    listBreakpoints.mockResolvedValue({ breakpoints: [{ ...bp, currentHits: 1 }] });
+    const { saveKliveProject } = await import("@main/projects");
+    await saveKliveProject();
+    dispatch.mockClear();
+
+    listBreakpoints.mockResolvedValue({ breakpoints: [{ ...bp, currentHits: 2 }] });
+    const writeSpy = vi.spyOn(fs, "writeFileSync");
+    await saveKliveProject();
+    writeSpy.mockRestore();
+
+    expect(writeSpy).not.toHaveBeenCalled();
+    expect(projectFileVersionDispatches()).toBe(0);
+  });
+
   it("stamps the breakpoint schema it wrote", async () => {
     /*
      * A forward-looking marker. The one semantic change so far — a positive ZX Next partition being

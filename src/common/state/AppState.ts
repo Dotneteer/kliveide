@@ -140,6 +140,8 @@ export type EmulatorState = {
   clockMultiplier?: number;
   audioSampleRate?: number;
   breakpointsVersion: number;
+  /** Bumped when breakpoint hit counters moved; see `incBreakpointHitsVersionAction`. */
+  breakpointHitsVersion?: number;
   emuViewVersion: number;
   /**
    * True while the host mouse is captured by the emulator screen (Pointer Lock).

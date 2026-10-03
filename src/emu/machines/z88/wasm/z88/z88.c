@@ -392,3 +392,23 @@ uint32_t z88GetStepOutAddress(void) { return z80GetStepOutAddress(); }
 uint32_t z88GetInterruptDepth(void) { return z80GetInterruptDepth(); }
 /* The INT line the CPU saw at the start of the last instruction (`Z80Cpu.sigINT`) */
 uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// this machine's side-effect-free reads. `z88MemoryRead` reads through the paging with no timing and
+// no bus event. A partition is a 16K bank as `getMemoryPartition` in `Z88WasmV2Machine.ts` reads it
+// (`z88BankStorageOffset`: a small card is mirrored across its slot). `page()` stays "no value", as
+// the machine's `getPartition` does not report the Z88's paging yet.
+// -----------------------------------------------------------------------------
+
+static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
+  const uint32_t b = (uint32_t)partition & 0xffu;
+  const uint32_t mask = b >= 0x20u && b <= 0x3fu ? z88GetSlotChipMask(4u) : z88GetSlotChipMask(b >> 6);
+  const uint32_t base = b < 0x40u ? (b & 0xe0u) : (b & 0xc0u);
+  const uint32_t offset = (base | (b & mask & 0x3fu)) * 0x4000u;
+  return z88Memory[(offset + address % 0x4000u) % Z88_MEMORY_SIZE];
+}
+
+#define COND_PEEK(address) ((uint32_t)z88MemoryRead((uint16_t)((address) & 0xffffu)))
+#define COND_PEEK_PARTITION(partition, address) condZ88PeekPartition(partition, address)
+#include "../../../../z80/wasm/z80-condition.c"

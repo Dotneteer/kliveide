@@ -64,6 +64,18 @@ type Props = {
    * leaves it unset because its own row already handles the same gesture.
    */
   onEdit?: () => void;
+  /**
+   * The breakpoint has a condition or a hit-count rule: the dot carries an "=" mark
+   * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
+   */
+  conditional?: boolean;
+  /**
+   * The breakpoint is set but cannot stop the machine now: its condition names a label the last
+   * build did not define, or the emulator could not arm it. The dot is drawn hollow.
+   */
+  inactive?: boolean;
+  /** Tooltip lines describing the condition, hit rule, hit count and inactive reason. */
+  filterLines?: string[];
 };
 
 export const BreakpointIndicator = ({
@@ -82,7 +94,10 @@ export const BreakpointIndicator = ({
   armed,
   resolvedAddress,
   noTooltip,
-  onEdit
+  onEdit,
+  conditional,
+  inactive,
+  filterLines
 }: Props) => {
   const { ideCommandsService } = useAppServices();
   const cbkRef = useTooltipRef();
@@ -132,15 +147,17 @@ export const BreakpointIndicator = ({
    * and the tooltip stops advertising it.
    */
   const canRunTo = nextReg === undefined;
+  const filterText = filterLines?.length ? `${filterLines.join("\n")}\n` : "";
   const tooltip =
-    `${tooltipCommon})\n` +
+    `${tooltipCommon}\n` +
+    filterText +
     (hasBreakpoint ? `Right-click to remove this breakpoint` : "Right-click to set a breakpoint") +
     (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "") +
     // --- The gesture is only discoverable from here, which is why it is listed rather than left to
     // --- be found. See `runToHere`.
     (canRunTo ? `\n${runToModifierLabel}-click to run here` : "");
   const tooltipCheckbox =
-    `${tooltipCommon})\n` +
+    `${tooltipCommon}\n` +
     (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
 
   // --- Select the icon to show
@@ -150,7 +167,8 @@ export const BreakpointIndicator = ({
     iconName = hasBreakpoint ? "debug-with-bp" : "debug-current";
     fill = "--color-breakpoint-current";
   } else if (hasBreakpoint) {
-    iconName = "circle-filled";
+    // --- Same colours as any breakpoint; the shape says conditional or inactive
+    iconName = inactive ? "bp-inactive" : conditional ? "bp-conditional" : "circle-filled";
     // --- `armed` first, then the old inference for callers that do not pass it. A breakpoint that
     // --- can fire is never painted the colour that means "this cannot fire yet".
     fill = disabled

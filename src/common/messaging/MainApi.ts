@@ -412,8 +412,9 @@ class MainApiImpl {
 
   /**
    * Opens the Klive website in the default browser.
+   * @param _docsPath Optional page of the site to open, e.g. `/working-with-ide/breakpoints#…`
    */
-  async showWebsite(): Promise<void> {
+  async showWebsite(_docsPath?: string): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

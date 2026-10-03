@@ -53,6 +53,23 @@ import { getFileTypeEntry } from "@renderer/appIde/project/project-node";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import { listItemsAtPc, locateSource, type SourceLocation } from "@renderer/appIde/utils/source-location";
 import { reanchorColumn, runToCursorAddress, sourceFileIndex, statementMarkers } from "./statementBreakpoints";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@controls/ContextMenu";
+import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
+import {
+  breakpointFilterLines,
+  isConditionalBreakpoint,
+  isInactiveBreakpoint
+} from "@renderer/appIde/utils/breakpoint-filter-text";
+import {
+  marginMenuItems,
+  runMarginAction,
+  type MarginTarget
+} from "./marginBreakpointMenu";
 import { stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
@@ -213,6 +230,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   // --- cursor on the next line. Keep the clicked line until mouse-up, then
   // --- normalize only simple single-line gutter selections.
   const lineNumberSelectionClick = useRef<number | null>(null);
+
+  // --- The breakpoint margin's right-click menu (conditional breakpoints plan §4.4.2)
+  const [marginMenuState, marginMenuApi] = useContextMenuState();
+  const [marginTarget, setMarginTarget] = useState<MarginTarget>();
+  const openBreakpointDialog = useBreakpointDialog();
 
   // --- The name of the resource this editor displays
   const resourceName = document.node?.projectPath;
@@ -673,6 +695,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     }
     disposables.push(
       ed.onMouseDown(handleEditorMouseDown),
+      ed.onContextMenu(handleEditorContextMenu),
       ed.onMouseUp(handleEditorMouseUp),
       ed.onMouseLeave(handleEditorMouseLeave),
       ed.onMouseMove(handleEditorMouseMove),
@@ -981,8 +1004,30 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     compileScheduler.current?.requestAfterEdit();
   };
 
+  /** What the margin menu's actions do, over the same calls the gutter's own gestures make. */
+  const marginActionPorts = {
+    add: async (bp: BreakpointInfo) => {
+      await addBreakpoint(messenger, bp);
+    },
+    remove: async (bp: BreakpointInfo) => {
+      await removeBreakpoint(messenger, bp);
+    },
+    enable: async (bp: BreakpointInfo, enabled: boolean) => {
+      await emuApi.enableBreakpoint(bp, enabled);
+    },
+    resetHits: async (bp: BreakpointInfo) => {
+      await emuApi.resetBreakpointHits(bp);
+    },
+    resolve: async () => {
+      await refreshSourceCodeBreakpoints(store, messenger);
+      store.dispatch(incBreakpointsVersionAction());
+    },
+    edit: (bp: BreakpointInfo, focus: "condition" | "hitCount") => openBreakpointDialog(bp, { focus })
+  };
+
   // --- render the editor when monaco has been initialized
   return isMonacoInitialized() ? (
+    <>
     <AutoSizer>
       {({ width, height }) => (
         <Editor
@@ -1013,6 +1058,24 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         />
       )}
     </AutoSizer>
+    <ContextMenu state={marginMenuState} onClickOutside={() => marginMenuApi.conceal()}>
+      {marginTarget &&
+        marginMenuItems(marginTarget).map((item) => (
+          <span key={item.id} style={{ display: "contents" }}>
+            {item.separatorBefore && <ContextMenuSeparator />}
+            <ContextMenuItem
+              text={item.text}
+              dangerous={item.dangerous}
+              disabled={item.disabled}
+              clicked={() => {
+                marginMenuApi.conceal();
+                void runMarginAction(item.id, marginTarget, resourceName, marginActionPorts);
+              }}
+            />
+          </span>
+        ))}
+    </ContextMenu>
+    </>
   ) : null;
 
   /**
@@ -1073,15 +1136,15 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         if (bp.line <= editorLines) {
           let decoration: monacoEditor.editor.IModelDeltaDecoration;
           if (bp.disabled) {
-            decoration = createCodeBreakpointDecoration(bp.line, true);
+            decoration = createCodeBreakpointDecoration(bp.line, true, bp);
           } else if (unreachable) {
-            decoration = createUnreachableBreakpointDecoration(bp.line);
+            decoration = createUnreachableBreakpointDecoration(bp.line, bp);
           } else {
             // --- Check if there is a binary breakpoint
             const binBp = bps.find((b) => b.address === bp.resolvedAddress);
             decoration = binBp
-              ? createBinaryBreakpointDecoration(bp.line, false)
-              : createCodeBreakpointDecoration(bp.line, false);
+              ? createBinaryBreakpointDecoration(bp.line, false, bp)
+              : createCodeBreakpointDecoration(bp.line, false, bp);
           }
           decorations.push(decoration);
         } else if (bp.resource && bp.resource === document.node?.projectPath) {
@@ -1170,9 +1233,13 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
       }
 
-      // --- Display the message
+      // --- Display the message: the gesture, the breakpoint's filters, the menu
       hoverDecorations.current?.clear();
-      const message = `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`;
+      const message = [
+        `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`,
+        ...(existingBp ? breakpointFilterLines(existingBp) : []),
+        "Right-click for more actions"
+      ].join("\n\n");
       hoverDecorations.current = editor.current.createDecorationsCollection([
         createHoverBreakpointDecoration(lineNo, message)
       ]);
@@ -1255,6 +1322,66 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
       })();
     }
+  }
+
+  /**
+   * Can this line hold a breakpoint? Asked before offering to add one, as a click in the gutter does.
+   */
+  async function canAddBreakpointAt(lineNo: number): Promise<boolean> {
+    if (!languageInfo?.instantSyntaxCheck) return true;
+    const lineContent = editor.current.getModel().getLineContent(lineNo);
+    return createMainApi(messenger).canLineHaveBreakpoint(lineContent, languageInfo.id);
+  }
+
+  /**
+   * Right-click in the breakpoint margin or on an inline statement marker: the breakpoint menu
+   * (Edit Condition..., Edit Hit Count..., Disable, Reset Hit Count, Remove; or Add, Add
+   * Conditional...). Elsewhere Monaco's own context menu is left alone.
+   */
+  function handleEditorContextMenu(e: monacoEditor.editor.IEditorMouseEvent): void {
+    if (!languageInfo?.supportsBreakpoints || !e.target?.position) return;
+    const line = e.target.position.lineNumber;
+    const projectPath = document.node?.projectPath;
+    let column: number | undefined;
+
+    if (e.target.type === MONACO_GUTTER_GLYPH_MARGIN) {
+      column = undefined;
+    } else {
+      const markerClasses = [
+        styles.statementBpMarker,
+        styles.statementBpSet,
+        styles.statementBpDisabled,
+        styles.statementBpConditional,
+        styles.statementBpInactive
+      ];
+      if (
+        e.target.type !== MONACO_CONTENT_TEXT ||
+        !markerClasses.some((c) => e.target.element?.classList.contains(c))
+      ) {
+        return;
+      }
+      const result = store.getState().compilation?.result;
+      if (!hasSourceLevelDebug(result)) return;
+      const fileIndex = sourceFileIndex(result.sourceLevelDebug, getResourceName(), getIsWindows());
+      const statement =
+        fileIndex >= 0
+          ? statementAtColumn(result.sourceLevelDebug, fileIndex, line, e.target.position.column - 1)
+          : undefined;
+      if (!statement || statement.startLine !== line) return;
+      column = statement.startColumn;
+    }
+
+    e.event.preventDefault();
+    e.event.stopPropagation();
+    const breakpoint = breakpoints.current.find(
+      (bp) => bp.resource === projectPath && bp.line === line && bp.column === column
+    );
+    const browserEvent = e.event.browserEvent;
+    void (async () => {
+      const canAdd = breakpoint ? true : await canAddBreakpointAt(line);
+      setMarginTarget({ line, column, breakpoint, canAdd });
+      marginMenuApi.show(browserEvent as unknown as Parameters<typeof marginMenuApi.show>[0]);
+    })();
   }
 
   /**
@@ -1452,28 +1579,42 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
  * Creates a code breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createCodeBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
+function createCodeBreakpointDecoration(lineNo: number, disabled: boolean, bp?: BreakpointInfo): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: disabled ? styles.disabledBreakpointMargin : styles.codeBreakpointMargin
+      glyphMarginClassName: withFilterGlyph(
+        disabled ? styles.disabledBreakpointMargin : styles.codeBreakpointMargin,
+        bp
+      )
     }
   };
+}
+
+/**
+ * A margin glyph's class with the conditional ("=" mark) or inactive (hollow) variant added, the
+ * same shapes the disassembly gutter and the Breakpoints panel draw (plan §4.4.2).
+ */
+function withFilterGlyph(className: string, bp?: BreakpointInfo): string {
+  if (isInactiveBreakpoint(bp)) return `${className} ${styles.inactiveBreakpointMargin}`;
+  if (isConditionalBreakpoint(bp)) return `${className} ${styles.conditionalBreakpointMargin}`;
+  return className;
 }
 
 /**
  * Creates a binary breakpoint decoration
  * @param lineNo Line to apply the decoration to
  */
-function createBinaryBreakpointDecoration(lineNo: number, disabled: boolean): Decoration {
+function createBinaryBreakpointDecoration(lineNo: number, disabled: boolean, bp?: BreakpointInfo): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: disabled
-        ? styles.disabledBreakpointMargin
-        : styles.binaryBreakpointMargin
+      glyphMarginClassName: withFilterGlyph(
+        disabled ? styles.disabledBreakpointMargin : styles.binaryBreakpointMargin,
+        bp
+      )
     }
   };
 }
@@ -1515,12 +1656,12 @@ function createHoverDisabledBreakpointDecoration(lineNo: number, message?: strin
  * @param lineNo Line to apply the decoration to
  * @returns
  */
-function createUnreachableBreakpointDecoration(lineNo: number): Decoration {
+function createUnreachableBreakpointDecoration(lineNo: number, bp?: BreakpointInfo): Decoration {
   return {
     range: new monacoEditor.Range(lineNo, 1, lineNo, 1),
     options: {
       isWholeLine: false,
-      glyphMarginClassName: styles.unreachableBreakpointMargin
+      glyphMarginClassName: withFilterGlyph(styles.unreachableBreakpointMargin, bp)
     }
   };
 }
@@ -1556,12 +1697,26 @@ function createCurrentBreakpointDecoration(
  * breakpoint can go, in the breakpoint colour where one is set.
  */
 function createStatementMarkerDecoration(line: number, column: number, bp?: BreakpointInfo): Decoration {
-  const className = bp ? (bp.disabled ? styles.statementBpDisabled : styles.statementBpSet) : styles.statementBpMarker;
+  const className = bp
+    ? bp.disabled
+      ? styles.statementBpDisabled
+      : isInactiveBreakpoint(bp)
+        ? styles.statementBpInactive
+        : isConditionalBreakpoint(bp)
+          ? styles.statementBpConditional
+          : styles.statementBpSet
+    : styles.statementBpMarker;
+  // --- The glyph carries the variant, as in the margin: a hollow dot for an inactive breakpoint, a
+  // --- circled "=" for a conditional one
+  const content = bp && isInactiveBreakpoint(bp) ? "\u25cb" : bp && isConditionalBreakpoint(bp) ? "\u229c" : "\u25cf";
+  const hover = bp
+    ? ["Click to remove the breakpoint on this statement", ...breakpointFilterLines(bp), "Right-click for more actions"]
+    : ["Click to add a breakpoint on this statement", "Right-click for more actions"];
   return {
     range: new monacoEditor.Range(line, column + 1, line, column + 1),
     options: {
-      before: { content: "\u25cf", inlineClassName: className },
-      hoverMessage: { value: bp ? "Click to remove the breakpoint on this statement" : "Click to add a breakpoint on this statement" }
+      before: { content, inlineClassName: className },
+      hoverMessage: { value: hover.join("\n\n") }
     }
   };
 }

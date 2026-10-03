@@ -11,7 +11,7 @@ import { ValidationMessageType } from "../../abstractions/ValidationMessageType"
 import { IOutputBuffer } from "../ToolArea/abstractions";
 import { OutputPaneBuffer } from "../ToolArea/OutputPaneBuffer";
 import { parseCommand } from "./command-parser";
-import { extractArguments, IdeCommandBase, NoCommandArgs } from "./ide-commands";
+import { extractArguments, IdeCommandBase, NoCommandArgs, splitRawTail } from "./ide-commands";
 import { MessageSource } from "@common/messaging/messages-core";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { createMainApi } from "@common/messaging/MainApi";
@@ -129,8 +129,14 @@ class IdeCommandService implements IIdeCommandService {
       }
     }
 
+    // --- A command with a raw-tail option (`bp-set ... -if <condition>`) is cut there first: the
+    // --- tokenizer would mangle the tail, so it never sees it.
+    const rawTailOption = this.getCommandByIdOrAlias(command.trim().split(/\s+/)[0] ?? "")
+      ?.argumentInfo?.rawTailOption;
+    const rawSplit = rawTailOption ? splitRawTail(command, rawTailOption) : undefined;
+
     // --- Command must be syntactically valid
-    const tokens = parseCommand(command);
+    const tokens = parseCommand(rawSplit ? rawSplit.head : command);
     if (tokens.length === 0) {
       // --- No token, no command to execute
       return {
@@ -188,6 +194,9 @@ class IdeCommandService implements IIdeCommandService {
       let validationMessages: ValidationMessage[];
 
       const args = extractArguments(context.argTokens, commandInfo.argumentInfo);
+      if (rawSplit && !Array.isArray(args)) {
+        args[rawTailOption!] = rawSplit.tail;
+      }
       if (Array.isArray(args)) {
         validationMessages = args.map((a) => ({
           type: ValidationMessageType.Error,

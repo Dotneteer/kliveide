@@ -28,6 +28,17 @@ const optimizationProfiles = {
 };
 
 const productionExports = [
+  // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
+  "condArenaPtr",
+  "condArenaCapacity",
+  "condSlotTablePtr",
+  "condSlotCapacity",
+  "condMaxProgramWords",
+  "condGetToken",
+  "condSetToken",
+  "condGetLastStatus",
+  "condEvaluate",
+  "condEvaluateValue",
   "memory",
   // --- Buffers
   "z88BreakpointFlagsPtr",

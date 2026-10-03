@@ -14,6 +14,8 @@ import {
   MachineInstanceEventHandler
 } from "../abstractions/IMachineService";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";
@@ -75,7 +77,11 @@ class MachineService implements IMachineService {
 
     // --- Ok, dismount the old machine type
     let oldBps: BreakpointInfo[] | undefined;
+    // --- The program's symbols outlive the machine, like its breakpoints: they come from the last
+    // --- build, which a machine switch does not undo.
+    let oldSymbols: ConditionSymbols | undefined;
     if (this._controller) {
+      oldSymbols = this._controller.debugSupport?.conditionSymbolTable;
       if (this._controller.debugSupport) {
         // --- We keep the old source code breakpoints, as we want to use them in the new machine.
         // --- Session-owned ones are dropped: they belong to a debug session on the machine being
@@ -101,6 +107,11 @@ class MachineService implements IMachineService {
 
     // --- Restore the breakpoints from the old machine
     newController.debugSupport = new DebugSupport(this.store, oldBps);
+    // --- Conditional breakpoints (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6): what a condition
+    // --- reads, and the machine facts it compiles against - built with the same helper the IDE
+    // --- validates with, so both sides agree on what a condition means.
+    connectConditionSupport(newController.debugSupport, machine);
+    if (oldSymbols) newController.debugSupport.setConditionSymbols(oldSymbols);
     this._newInitializing.fire(machine);
 
     // --- Seup the machine

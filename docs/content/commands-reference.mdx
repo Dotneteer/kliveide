@@ -8,10 +8,10 @@ import { Callout } from 'nextra/components'
 
 <Callout type="info">
 Every breakpoint command below has an equivalent in the **Breakpoints** view: a toolbar for adding
-and clearing, and a row menu for editing, enabling, disabling and removing. The dialog it opens
-handles binary (address-bound) breakpoints; source-code breakpoints are placed in the editor's left
-margin, or scripted with `bp-set [myfile.asm]:12`. See
-[The Breakpoints View](/working-with-ide/breakpoints).
+and clearing, and a row menu for editing, enabling, disabling, removing and resetting hit counts.
+The dialog it opens authors binary (address-bound) breakpoints and edits the condition and hit
+count of any breakpoint; source-code breakpoints are placed in the editor's left margin, or
+scripted with `bp-set [myfile.asm]:12`. See [The Breakpoints View](/working-with-ide/breakpoints).
 </Callout>
 
 ## `bp-ea`
@@ -34,6 +34,19 @@ bp-list
 
 Available aliases: `bpl`
 
+Each breakpoint is listed in `bp-set` syntax &mdash; its address specification, its type options,
+its hit count rule and its condition &mdash; so a line pasted after `bp-set` recreates the
+breakpoint. What `bp-set` cannot say goes on an indented second line: `<disabled>`, the live hit
+count `(hits: 3)` of a breakpoint with a condition or a hit rule, and, when relevant,
+`<inactive: unknown label score>` or `<condition error: …>`:
+
+```
+[1]: $8010 -hit *4 -if A == $FF && !ZF
+     (hits: 2)
+[2]: [code/code.kz80.asm]:12 -if w[score] > 100
+     (hits: 0) <inactive: unknown label score>
+```
+
 ## `bp-del`
 
 This command removes a breakpoint.
@@ -52,7 +65,7 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
-- or a source code line specification, for example, `[code/code.kz80.asm]`
+- or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 ## `w-add`
 
@@ -138,16 +151,19 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
-- or a source code line specification, for example, `[code/code.kz80.asm]`
+- or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 The `-d` option disables the breakpoint.
+
+`bp-en` and `bp-del` accept `-hit` and `-if` and ignore them, so you can turn a `bp-list` line into
+either command by changing only its first word.
 
 ## `bp-set`
 
 This command sets a breakpoint.
 
 ```
-bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>]
+bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-hit <spec>] [-if <condition>]
 ```
 
 Available aliases: `bp`
@@ -159,6 +175,35 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
 - `-v <value>` breaks only when that value is written; `nr:` breakpoints only.
 - `-c` also breaks when the **copper** writes the register, not only when the CPU does; `nr:`
   breakpoints only, and off by default.
+- `-hit <spec>` sets a **hit count** rule: `10` (or `=10`) stops on the 10th hit only, `>10` after
+  it, `>=10` from it on, `<10` before it, `<=10` up to it, and `*10` on every 10th hit. The number
+  runs from 1 to 65535. A hit is counted only when the condition, if any, is true.
+- `-if <condition>` sets a **condition**: the machine stops only when it is true. `-if` must be the
+  **last** option, because everything after it to the end of the line is the condition, taken
+  verbatim &mdash; no quoting needed. A condition that is one double-quoted string is unquoted, so
+  `-if "A == 1"` works too. See
+  [Conditions and Hit Counts](/working-with-ide/breakpoints#conditions-and-hit-counts) for the
+  language.
+
+`bp-set` states the whole breakpoint: setting one that already exists replaces its condition and hit
+rule, and leaving out `-if` or `-hit` removes them. The hit counter is kept.
+
+```
+bp-set $8000 -if A == $FF && !ZF
+bp-set $9000 -w -hit *4 -if VAL == $AA
+bp-set [code/code.kz80.asm]:12 -hit >=10
+```
+
+A condition that does not parse is refused with its column and a caret under the mistake:
+
+```
+Condition error at column 6: Unexpected '=='; expected a value
+  A == == 1
+       ^^
+```
+
+A label the last build did not define is a warning, not an error: the breakpoint is set, but it does
+not stop &mdash; and does not count &mdash; until a build defines the label.
 
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
@@ -175,7 +220,22 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
-- or a source code line specification, for example, `[code/code.kz80.asm]`
+- or a source code line specification, for example, `[code/code.kz80.asm]:12`
+
+## `bp-reset-hits`
+
+This command resets the hit counter of one breakpoint, or of every breakpoint when you give no
+address specification.
+
+```
+bp-reset-hits [<address-spec>] [-r] [-w] [-i] [-o] [-m <mask>] [-v <value>]
+```
+
+Available aliases: `bprh`
+
+Hit counters also start again from zero whenever the machine restarts &mdash; *Start* after *Stop*,
+*Restart*, or a reset. Pausing and resuming keeps them, and so does editing a breakpoint's
+condition or hit rule.
 
 ## `close`
 

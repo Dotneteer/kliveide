@@ -3,6 +3,7 @@ import fs from "fs";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { breakpointMatchesScope } from "@common/utils/breakpoint-scope";
+import { withoutBreakpointRuntimeState } from "@common/utils/breakpoint-filters";
 import type { WatchInfo } from "@common/state/AppState";
 
 import {
@@ -214,9 +215,11 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       }
 
       if (machineApplied) {
-        const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? []).filter(
-          (bp) => !(bp.line && bp.line <= 0)
-        );
+        // --- Runtime state is stripped on the way in too: a hand-edited file (or one written by a
+        // --- build with a bug) must not seed a hit counter or a condition error.
+        const restoredBreakpoints = (projectStruct.debugger?.breakpoints ?? [])
+          .filter((bp) => !(bp.line && bp.line <= 0))
+          .map(withoutBreakpointRuntimeState);
         restoredBreakpoints.forEach((bp) => delete bp.resolvedAddress);
 
         // --- Install the whole set in one atomic call. The previous erase-then-add-each-one
@@ -372,9 +375,12 @@ export async function getKliveProjectStructure(options: {
   // --- which is a union of sets owned by different persisters: a `.nex` sidecar's bank breakpoints
   // --- and a session's one-shots live in there too, and writing them here would store them twice
   // --- and then restore them from two diverging places.
-  const projectBreakpoints = (bpResponse.breakpoints ?? []).filter((bp) =>
-    breakpointMatchesScope(bp.owner, { kind: "project" })
-  );
+  // --- The runtime-only fields `listBreakpoints` reports (live hit count, condition state) are
+  // --- stripped: a counter restarts with the machine, and a stored one would also make every
+  // --- save after a run differ from the last, rewriting the file for nothing.
+  const projectBreakpoints = (bpResponse.breakpoints ?? [])
+    .filter((bp) => breakpointMatchesScope(bp.owner, { kind: "project" }))
+    .map(withoutBreakpointRuntimeState);
   return getKliveProjectStructureFromState(projectBreakpoints);
 }
 

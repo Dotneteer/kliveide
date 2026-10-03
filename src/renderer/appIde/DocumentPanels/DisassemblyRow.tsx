@@ -12,7 +12,11 @@ import { Value } from "@renderer/controls/layout/Value";
 import { Icon } from "@controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
-import { isAuthorableBreakpoint } from "@renderer/appIde/utils/breakpoint-form";
+import {
+  breakpointFilterLines,
+  isConditionalBreakpoint,
+  isInactiveBreakpoint
+} from "@renderer/appIde/utils/breakpoint-filter-text";
 import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict";
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
@@ -404,7 +408,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   // --- shape. A source-bound one is not — it belongs to the editor's glyph margin, which places
   // --- and moves it by line. `isAuthorableBreakpoint` is the same gate the dialog's opener uses, so
   // --- the row cannot offer an edit the dialog would refuse.
-  const editable = onEditBreakpoint && breakpoint && isAuthorableBreakpoint(breakpoint);
+  // --- Every breakpoint: a source-bound one opens the dialog in source mode (its condition and hit
+  // --- rule; the editor keeps owning where it is)
+  const editable = !!(onEditBreakpoint && breakpoint);
   // --- A synopsis row stands in for a comment above the code, not for an instruction: it has no
   // --- address, so there is no view model to derive and no instruction columns to render.
   const isPrefixComment = item.prefixComment !== undefined;
@@ -519,6 +525,9 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             ioWrite={breakpoint?.ioWrite}
             ioMask={breakpoint?.ioMask}
             onEdit={editable ? () => onEditBreakpoint(breakpoint) : undefined}
+            conditional={isConditionalBreakpoint(breakpoint)}
+            inactive={isInactiveBreakpoint(breakpoint)}
+            filterLines={breakpoint ? breakpointFilterLines(breakpoint) : undefined}
           />
           {/*
             * Rendered whenever the listing has a bank column at all, not merely when *this* row has

@@ -26,8 +26,8 @@ describe("keyboard", () => {
 ## Commands
 
 ```bash
-npm test -- --project node test/harness/z88    # the harness's own tests
-npm test -- --project node test/z88            # the Z88 tests (core suites and session tests)
+npm test -- test/harness/z88    # the harness's own tests
+npm test -- test/z88            # the Z88 tests (core suites and session tests)
 ```
 
 ## Creating a session

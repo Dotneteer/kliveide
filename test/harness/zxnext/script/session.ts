@@ -14,6 +14,7 @@ import type {
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,
@@ -550,6 +551,8 @@ export class NextTestSession {
   /** Attaches a fresh `DebugSupport` (the emulator's breakpoint store) and returns it. */
   attachDebugSupport(): DebugSupport {
     const debugSupport = new DebugSupport(undefined, []);
+    // --- Conditions read this machine and compile against its facts, as in the IDE's emulator
+    connectConditionSupport(debugSupport, this.machine);
     this.machine.executionContext.debugSupport = debugSupport;
     return debugSupport;
   }

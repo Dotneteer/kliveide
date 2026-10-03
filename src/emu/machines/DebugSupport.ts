@@ -4,8 +4,20 @@ import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointIn
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { SourceStep } from "./SourceStepDecision";
 
-import { incBreakpointsVersionAction } from "@state/actions";
+import type { CompiledCondition, ConditionAccessKind, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionStore } from "./conditionStore";
+import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
+
+import { incBreakpointHitsVersionAction, incBreakpointsVersionAction } from "@state/actions";
 import { getBreakpointStorageKey } from "@common/utils/breakpoints";
+import {
+  breakpointFiltersOf,
+  effectiveHitMode,
+  hasBreakpointFilters
+} from "@common/utils/breakpoint-filters";
+import { bindCondition, compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
+import { emitCondition } from "@common/utils/breakpoint-condition/condition-bytecode";
+import { ConditionResult } from "./conditionStore";
 import {
   bankRelativeAddresses,
   bankRelativePartition,
@@ -41,6 +53,41 @@ export const DIS_MW_BP = 0x200;
 export const DIS_IOR_BP = 0x400;
 // --- I/O write breakpoint disabled?
 export const DIS_IOW_BP = 0x800;
+/*
+ * At least one breakpoint here has a condition or a hit-count rule
+ * (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5). The stop decision for such an address takes the
+ * slow path - every claiming definition is evaluated and counted - while every other address keeps
+ * the flag-only fast path, with no context, no register sync and no allocation.
+ *
+ * May be left stale on a port address after an I/O breakpoint is removed (the bulk I/O paths do
+ * not re-derive). That only costs speed: the slow path decides from the definitions.
+ */
+export const COND_BP = 0x1000;
+
+/** Which access a stop decision is about; selects the definitions that can match. */
+type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
+
+/** Per-definition runtime state, keyed by storage key; never persisted (plan §4.5, C12). */
+type BreakpointRuntimeState = {
+  /** Condition-true hits since the last restart or reset. */
+  hits: number;
+  /** The condition text `compiled`/`error` were built from. */
+  compiledFor?: string;
+  /** The access kind they were built for (decides `VAL`/`ADDR`). */
+  compiledKind?: ConditionAccessKind;
+  /** The machine-facts generation they were built against. */
+  compiledStamp?: number;
+  compiled?: CompiledCondition;
+  /** Set when the condition does not compile (C15): the breakpoint then stops every time. */
+  error?: string;
+  /** Where its program is in the core's store; unset until the store is (re)built. */
+  slot?: number;
+  /** The store had no room for its program: it then stops every time, and says why. */
+  overflow?: boolean;
+};
+
+/** The access an access breakpoint saw: `VAL` and `ADDR`. */
+type AccessFacts = { value?: number; address?: number };
 
 /*
  * The NextReg write watch table, a second registry beside `breakpointFlags`.
@@ -73,6 +120,32 @@ export class DebugSupport implements IDebugSupport {
   private readonly nextRegWatchMask = this.nextRegWatch.subarray(NEXTREG_WATCH_ROW * 2, NEXTREG_WATCH_SIZE);
 
   private suspendVersionIncrement = false;
+
+  /** Per-definition hit counters and compiled conditions; see `BreakpointRuntimeState`. */
+  private readonly runtime = new Map<string, BreakpointRuntimeState>();
+
+  /** A counter moved since `takeHitsChanged` last asked. */
+  private hitsChanged = false;
+
+  /** The machine facts conditions are compiled against; `setConditionEnvironment` sets them. */
+  private conditionFacts: ConditionMachineFacts = { isZ80: true };
+  /** Bumped by `setConditionEnvironment`, so compiled conditions are rebuilt for the new facts. */
+  private conditionStamp = 0;
+  /** The program symbols labels bind to; `setConditionSymbols` replaces them (§3.6). */
+  private conditionSymbols: ConditionSymbols = {};
+
+  /**
+   * The machine's condition evaluator: the program store of its core, where the shared C evaluator
+   * (`src/emu/z80/wasm/z80-condition.c`) runs a condition next to the registers - no copy crosses
+   * the WASM boundary (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine
+   * (`connectConditionSupport`); absent on a machine without one, where a condition fails safe.
+   */
+  conditionStoreProvider?: () => ConditionStore | undefined;
+
+  /** The store needs rebuilding: a program was compiled, re-bound or dropped since the last build. */
+  private storeDirty = true;
+  /** The token the last rebuild wrote into the store; a store not carrying it is rebuilt. */
+  private storeToken = 0;
 
   /**
    * While set, only session-owned breakpoints can stop the machine.
@@ -154,6 +227,11 @@ export class DebugSupport implements IDebugSupport {
       return false;
     }
 
+    // --- A condition or a hit rule here: decide from the definitions (§4.5)
+    if (flags & COND_BP) {
+      return this.decideFiltered("exec", address, partitionResolver);
+    }
+
     // --- Is there a partitionless breakpoint for this address?
     if (flags & EXEC_BP) {
       // --- Yes, though it may be disabled
@@ -186,26 +264,10 @@ export class DebugSupport implements IDebugSupport {
   hasMemoryRead(
     reads: ArrayLike<number>,
     length: number,
-    partitionResolver: (address: number) => number | undefined
+    partitionResolver: (address: number) => number | undefined,
+    values?: ArrayLike<number>
   ): boolean {
-    for (let i = 0; i < length; i++) {
-      const read = reads[i];
-      const flags = this.breakpointFlags[read];
-      if (flags & MEM_READ_BP) {
-        if (flags & DIS_MR_BP) {
-          return false;
-        }
-        const bpData = this.breakpointData.get(read);
-        if (!bpData?.partitions || bpData.partitions.length === 0) {
-          return true;
-        }
-        const partition = partitionResolver(read);
-        if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return this.hasMemoryAccess("memRead", reads, length, partitionResolver, values);
   }
 
   /**
@@ -213,30 +275,60 @@ export class DebugSupport implements IDebugSupport {
    * @param writes Addresses written during the current instruction
    * @param length Number of bytes written
    * @param partitionResolver A function to resolve the current partition
+   * @param values The byte written to each address, for a condition's `VAL`
    */
   hasMemoryWrite(
     writes: ArrayLike<number>,
     length: number,
-    partitionResolver: (address: number) => number | undefined
+    partitionResolver: (address: number) => number | undefined,
+    values?: ArrayLike<number>
   ): boolean {
+    return this.hasMemoryAccess("memWrite", writes, length, partitionResolver, values);
+  }
+
+  /**
+   * The memory read/write decision. **Every** access is examined, not just up to the first stop:
+   * a conditional breakpoint counts its hits (C11), so an earlier match must not hide a later one,
+   * and a disabled breakpoint at one address must not end the search at the next one (it used to
+   * return false there).
+   */
+  private hasMemoryAccess(
+    kind: "memRead" | "memWrite",
+    addresses: ArrayLike<number>,
+    length: number,
+    partitionResolver: (address: number) => number | undefined,
+    values?: ArrayLike<number>
+  ): boolean {
+    const kindBit = kind === "memRead" ? MEM_READ_BP : MEM_WRITE_BP;
+    const disabledBit = kind === "memRead" ? DIS_MR_BP : DIS_MW_BP;
+    let stop = false;
     for (let i = 0; i < length; i++) {
-      const write = writes[i];
-      const flags = this.breakpointFlags[write];
-      if (flags & MEM_WRITE_BP) {
-        if (flags & DIS_MW_BP) {
-          return false;
+      const address = addresses[i];
+      const flags = this.breakpointFlags[address];
+      if (!(flags & kindBit)) continue;
+      if (flags & COND_BP) {
+        if (
+          this.decideFiltered(kind, address, partitionResolver, {
+            value: values?.[i],
+            address
+          })
+        ) {
+          stop = true;
         }
-        const bpData = this.breakpointData.get(write);
-        if (!bpData?.partitions || bpData.partitions.length === 0) {
-          return true;
-        }
-        const partition = partitionResolver(write);
-        if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
-          return true;
-        }
+        continue;
+      }
+      if (stop || flags & disabledBit) continue;
+      const bpData = this.breakpointData.get(address);
+      if (!bpData?.partitions || bpData.partitions.length === 0) {
+        stop = true;
+        continue;
+      }
+      const partition = partitionResolver(address);
+      if (bpData.partitions.some((p) => p[0] === partition && !p[1])) {
+        stop = true;
       }
     }
-    return false;
+    return stop;
   }
 
   /**
@@ -338,7 +430,8 @@ export class DebugSupport implements IDebugSupport {
    * @param origin Which writer performed it
    */
   hasNextRegWrite(reg: number, value: number, origin: "cpu" | "copper"): boolean {
-    for (const bp of this.breakpointDefs.values()) {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
       if (!isNextRegBreakpoint(bp) || bp.disabled) continue;
       if ((bp.nextReg! & 0xff) !== (reg & 0xff)) continue;
       // --- Copper writes are opt-in per breakpoint; a CPU write satisfies every one of them.
@@ -347,20 +440,29 @@ export class DebugSupport implements IDebugSupport {
         const mask = (bp.nextRegMask ?? 0xff) & 0xff;
         if (mask !== 0 && (((value ^ bp.nextRegValue) & mask) & 0xff) !== 0) continue;
       }
-      return true;
+      // --- No early return: every matching definition counts its hit (C11)
+      if (this.passesFilters(key, bp, "nextReg", { value: value & 0xff, address: reg & 0xff })) {
+        stop = true;
+      }
     }
-    return false;
+    return stop;
   }
 
   /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
-  hasIoRead(address: number): boolean {
+  hasIoRead(address: number, value?: number): boolean {
     if (address === undefined) {
       return false;
     }
     const flags = this.breakpointFlags[address];
+    if (flags & IO_READ_BP && flags & COND_BP) {
+      return this.decideFiltered("ioRead", address, () => undefined, {
+        value,
+        address
+      });
+    }
     return (flags & IO_READ_BP) !== 0 && (flags & DIS_IOR_BP) === 0;
   }
 
@@ -368,11 +470,17 @@ export class DebugSupport implements IDebugSupport {
    * Gets I/O write breakpoint information for the specified address
    * @param address I/O address written during the current instruction
    */
-  hasIoWrite(address: number): boolean {
+  hasIoWrite(address: number, value?: number): boolean {
     if (address === undefined) {
       return false;
     }
     const flags = this.breakpointFlags[address];
+    if (flags & IO_WRITE_BP && flags & COND_BP) {
+      return this.decideFiltered("ioWrite", address, () => undefined, {
+        value,
+        address
+      });
+    }
     return (flags & IO_WRITE_BP) !== 0 && (flags & DIS_IOW_BP) === 0;
   }
 
@@ -396,6 +504,8 @@ export class DebugSupport implements IDebugSupport {
    */
   eraseAllBreakpoints(): void {
     this.breakpointDefs.clear();
+    this.runtime.clear();
+    this.storeDirty = true;
     this.breakpointFlags = new Uint16Array(0x1_0000);
     this.breakpointData.clear();
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
@@ -425,6 +535,10 @@ export class DebugSupport implements IDebugSupport {
         oneShot: bp.oneShot,
         resource: bp.resource,
         line: bp.line,
+        // --- Part of a statement breakpoint's identity (its storage key carries it). Omitted, the
+        // --- definition was stored under a key with the column while reporting none, so
+        // --- `listBreakpoints` — and therefore a project save — turned it into a line breakpoint.
+        column: bp.column,
         /*
          * `isNextRegBreakpoint` sits among four kind flags because a NextReg breakpoint has no kind
          * flag of its own - the register is its binding (see `BreakpointInfo.nextReg`). Without it
@@ -474,11 +588,19 @@ export class DebugSupport implements IDebugSupport {
          * would arm a breakpoint that was added disabled. The definition has to be complete.
          */
         disabled: bp.disabled,
-        hitCount: bp.hitCount
+        // --- The breakpoint's filters (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1), normalised
+        // --- so a blank condition or a mode without a count is not stored. The runtime-only fields
+        // --- (`currentHits`, `conditionError`, `conditionInactive`) are deliberately absent: they
+        // --- are computed when listed, never accepted from a caller.
+        ...breakpointFiltersOf(bp)
       });
     } catch (err) {
       console.log("err in addBreakpoint", err.toString());
     }
+    // --- Arm the condition now (C1), so a parse error is known before the first hit. The runtime
+    // --- state is keyed like the definition and survives this replacement: editing a condition or
+    // --- a hit rule keeps the counter (C12).
+    this.runtimeFor(bpKey, this.breakpointDefs.get(bpKey)!);
 
     // --- A bank-relative breakpoint has no single address: it is armed at every address its bank
     // --- could be paged to, and the partition test at fire time picks the real one.
@@ -508,13 +630,7 @@ export class DebugSupport implements IDebugSupport {
       } else {
         // --- Derived, not assigned: the flags word belongs to every breakpoint at this address.
         this.refreshFlagsAt(address);
-        if (partition !== undefined || bp.hitCount !== undefined) {
-          // --- We have extra breakpoint data
-          let bpData = this.breakpointData.get(address);
-          if (!bpData) {
-            bpData = {};
-            this.breakpointData.set(address, bpData);
-          }
+        if (partition !== undefined) {
           // --- `!== undefined`, not truthiness: partition 0 is a real partition on every banked
           // --- machine (bank `B0` on the 128K, bank `00` on the ZX Next), and a truthiness test
           // --- skipped it. `collectBpFlags` has already withheld `EXEC_BP` and set `PART_BP` for
@@ -522,15 +638,9 @@ export class DebugSupport implements IDebugSupport {
           // --- `shouldStopAt` fall through to `false` — the breakpoint could never fire. Removal
           // --- (`removeBreakpoint`) and enabling (`enableBreakpoint`) both test `!== undefined`,
           // --- so this was also an add/remove asymmetry.
-          if (partition !== undefined) {
-            // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
-            // --- one. Dedupe is on partition *and* tag, so the two can share an address.
-            this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
-          }
-          if (bp.hitCount !== undefined) {
-            bpData.currentHitCount = 0;
-            bpData.targetHitCount = bp.hitCount;
-          }
+          // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
+          // --- one. Dedupe is on partition *and* tag, so the two can share an address.
+          this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
         }
       }
     }
@@ -555,6 +665,9 @@ export class DebugSupport implements IDebugSupport {
       return false;
     }
     this.breakpointDefs.delete(bpKey);
+    // --- A breakpoint removed and added again is a new one, and starts counting from zero
+    this.runtime.delete(bpKey);
+    this.storeDirty = true;
 
     // --- A bank-relative breakpoint owns entries at eight addresses, tagged with its key, so it
     // --- takes only its own away.
@@ -601,10 +714,7 @@ export class DebugSupport implements IDebugSupport {
         if (!prevData.partitions || prevData.partitions.length === 0) {
           // --- No more partition breakpoint for the address
           this.breakpointFlags[address] &= ~PART_BP;
-          if (!(this.breakpointFlags[address] & HIT_BP)) {
-            // --- No partition, no hit count
-            this.breakpointData.delete(address);
-          }
+          this.breakpointData.delete(address);
         }
       }
     }
@@ -734,16 +844,20 @@ export class DebugSupport implements IDebugSupport {
         if (bp.resource === def.resource && bp.line >= lowerBound && bp.line < upperBound) {
           const oldKey = getBreakpointStorageKey(bp);
           this.breakpointDefs.delete(oldKey);
+          this.runtime.delete(oldKey);
+          this.storeDirty = true;
           return;
         }
       }
 
       if (bp.resource === def.resource && bp.line >= def.line) {
-        // --- Shift the breakpoint
+        // --- Shift the breakpoint, its counter with it
         const oldKey = getBreakpointStorageKey(bp);
         this.breakpointDefs.delete(oldKey);
         bp.line += shift;
-        this.breakpointDefs.set(getBreakpointStorageKey(bp), bp);
+        const newKey = getBreakpointStorageKey(bp);
+        this.breakpointDefs.set(newKey, bp);
+        this.moveRuntime(oldKey, newKey);
         changed = true;
       }
     });
@@ -781,6 +895,8 @@ export class DebugSupport implements IDebugSupport {
       if (toDelete.size > 0) {
         for (const item of toDelete.values()) {
           this.breakpointDefs.delete(item);
+          this.runtime.delete(item);
+          this.storeDirty = true;
         }
         this.store?.dispatch(incBreakpointsVersionAction(), "emu");
       }
@@ -868,7 +984,9 @@ export class DebugSupport implements IDebugSupport {
         const oldKey = getBreakpointStorageKey(bp);
         this.breakpointDefs.delete(oldKey);
         bp.resource = newResource;
-        this.breakpointDefs.set(getBreakpointStorageKey(bp), bp);
+        const newKey = getBreakpointStorageKey(bp);
+        this.breakpointDefs.set(newKey, bp);
+        this.moveRuntime(oldKey, newKey);
       }
     });
   }
@@ -910,6 +1028,14 @@ export class DebugSupport implements IDebugSupport {
     } finally {
       this.suspendVersionIncrement = false;
     }
+    // --- Counters survive the rebuild for every breakpoint still present (an edit keeps its count,
+    // --- C12); the ones that are gone take theirs with them.
+    for (const key of [...this.runtime.keys()]) {
+      if (!this.breakpointDefs.has(key)) {
+        this.runtime.delete(key);
+        this.storeDirty = true;
+      }
+    }
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
   }
 
@@ -949,6 +1075,270 @@ export class DebugSupport implements IDebugSupport {
       this.removeBreakpoint(bp);
     }
     return spent.length;
+  }
+
+  // ==============================================================================================
+  // Conditions and hit counts (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
+
+  /**
+   * The slow-path decision at an address carrying `COND_BP`: every enabled definition of `kind`
+   * that claims the address, in the paged-in partition, is evaluated and counted, and the machine
+   * stops if any of them says so. Evaluating all of them keeps each counter right (C11).
+   */
+  private decideFiltered(
+    kind: DecisionKind,
+    address: number,
+    partitionResolver: (address: number) => number | undefined,
+    access?: AccessFacts
+  ): boolean {
+    let stop = false;
+    let resolved = false;
+    let paged: number | undefined;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (bp.disabled || !kindMatches(bp, kind) || !this.claimsAddress(bp, address)) continue;
+      const site = effectiveBankSite(bp);
+      const partition = site
+        ? bankRelativePartition(site.bank, site.bankOffset)
+        : (bp.partition ?? bp.resolvedPartition);
+      if (partition !== undefined) {
+        if (!resolved) {
+          paged = partitionResolver(address);
+          resolved = true;
+        }
+        if (paged !== partition) continue;
+      }
+      if (this.passesFilters(key, bp, accessKindOf(kind), access)) stop = true;
+    }
+    return stop;
+  }
+
+  /**
+   * One definition's hit: evaluate its condition, count the hit if true, apply the hit rule.
+   *
+   * - A condition that did not compile counts as true (C15, fail-safe).
+   * - An inactive condition (a missing label, C14) neither stops nor counts.
+   * - A condition the core cannot run - no evaluator, no room in its store, an error from the
+   *   evaluator - counts as true, for the same reason as C15.
+   *
+   * The evaluation itself is one call into the core (`condEvaluate`), which reads the registers and
+   * memory where they live.
+   */
+  private passesFilters(
+    key: string,
+    bp: BreakpointInfo,
+    accessKind: ConditionAccessKind,
+    access?: AccessFacts
+  ): boolean {
+    const state = this.runtimeFor(key, bp, accessKind);
+    if (state.compiled) {
+      if (state.compiled.inactiveReason) return false;
+      const store = this.syncConditionStore();
+      if (store && state.slot !== undefined) {
+        const result = store.evaluate(state.slot, access?.value ?? 0, access?.address ?? 0);
+        if (result === ConditionResult.FALSE) return false;
+      }
+    }
+
+    state.hits++;
+    this.hitsChanged = true;
+    const mode = effectiveHitMode(bp);
+    if (!mode) return true;
+    const target = bp.hitCount!;
+    switch (mode) {
+      case "eq":
+        return state.hits === target;
+      case "gt":
+        return state.hits > target;
+      case "ge":
+        return state.hits >= target;
+      case "lt":
+        return state.hits < target;
+      case "le":
+        return state.hits <= target;
+      case "every":
+        return state.hits % target === 0;
+    }
+  }
+
+  /**
+   * The runtime state of one definition, with its condition compiled for the current machine facts
+   * and bound to the current symbols. Recompiles only when the text, the kind or the facts changed.
+   */
+  private runtimeFor(
+    key: string,
+    bp: BreakpointInfo,
+    accessKind: ConditionAccessKind = accessKindOfBreakpoint(bp)
+  ): BreakpointRuntimeState {
+    let state = this.runtime.get(key);
+    if (!state) {
+      state = { hits: 0 };
+      this.runtime.set(key, state);
+    }
+    const text = bp.condition?.trim() ? bp.condition : undefined;
+    if (
+      state.compiledFor !== text ||
+      state.compiledKind !== accessKind ||
+      state.compiledStamp !== this.conditionStamp
+    ) {
+      state.compiledFor = text;
+      state.compiledKind = accessKind;
+      state.compiledStamp = this.conditionStamp;
+      state.compiled = undefined;
+      state.error = undefined;
+      this.storeDirty = true;
+      if (text !== undefined) {
+        const result = compileCondition(text, {
+          ...this.conditionFacts,
+          accessKind,
+          symbols: this.conditionSymbols
+        });
+        if (result.compiled) {
+          state.compiled = result.compiled;
+        } else {
+          const first = result.errors[0];
+          state.error = `column ${first.start + 1}: ${first.message}`;
+        }
+      }
+    }
+    return state;
+  }
+
+  /**
+   * The core's program store, rebuilt when it is stale: every active condition's program written
+   * into its own slot (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4). Rebuilt whole rather than
+   * patched - the store is a cache of the definitions, and a cache patched in place is the kind of
+   * thing this file has learned not to trust (R5). Stale means a program changed since the last
+   * build, or the store does not carry the last build's token: a core instantiated since then has
+   * an empty store.
+   */
+  private syncConditionStore(): ConditionStore | undefined {
+    const store = this.conditionStoreProvider?.();
+    if (!store) return undefined;
+    if (!this.storeDirty && this.storeToken !== 0 && store.token === this.storeToken) return store;
+
+    store.slots.fill(0);
+    let slot = 0;
+    let offset = 0;
+    for (const state of this.runtime.values()) {
+      state.slot = undefined;
+      state.overflow = false;
+      if (!state.compiled || state.compiled.inactiveReason) continue;
+      const code = emitCondition(state.compiled);
+      if (
+        slot >= store.slotCount ||
+        code.length > store.maxProgramWords ||
+        offset + code.length > store.arena.length
+      ) {
+        state.overflow = true;
+        continue;
+      }
+      store.arena.set(code, offset);
+      store.slots[slot * 2] = offset;
+      store.slots[slot * 2 + 1] = code.length;
+      state.slot = slot++;
+      offset += code.length;
+    }
+    this.storeToken = (this.storeToken % 0xfffffffe) + 1;
+    store.token = this.storeToken;
+    this.storeDirty = false;
+    return store;
+  }
+
+  /**
+   * The machine facts conditions compile against (§3.7 rules 3-5). Every compiled condition is
+   * rebuilt on its next use, so a condition that failed against the wrong facts gets another go.
+   */
+  setConditionEnvironment(facts: ConditionMachineFacts): void {
+    this.conditionFacts = facts;
+    this.conditionStamp++;
+  }
+
+  /**
+   * Replace the program symbols conditions bind their labels to (§3.6). Called after every build
+   * and when a project opens; every compiled condition is re-bound, so a label a build just defined
+   * brings its breakpoint back to life (C14).
+   */
+  /** The symbols conditions are bound to now. */
+  get conditionSymbolTable(): ConditionSymbols {
+    return this.conditionSymbols;
+  }
+
+  setConditionSymbols(symbols: ConditionSymbols): void {
+    this.conditionSymbols = symbols ?? {};
+    let changed = false;
+    for (const state of this.runtime.values()) {
+      if (!state.compiled) continue;
+      const before = state.compiled.inactiveReason;
+      bindCondition(state.compiled, this.conditionSymbols);
+      // --- A label's value is a constant in the program, so every program is re-emitted
+      this.storeDirty = true;
+      changed ||= before !== state.compiled.inactiveReason;
+    }
+    // --- Only when a breakpoint went inactive or came back: the editors and the panel show that,
+    // --- while a rebuild that moved nothing should not ripple through every breakpoint listener.
+    if (changed) this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+  }
+
+  /**
+   * Zero one breakpoint's hit counter, or every counter (C12). Called on a machine restart and by
+   * the explicit reset commands.
+   * @param bp The breakpoint whose counter to reset; all of them when absent
+   * @returns False when `bp` names no breakpoint
+   */
+  resetHitCounts(bp?: BreakpointInfo): boolean {
+    if (bp) {
+      const key = getBreakpointStorageKey(bp);
+      if (!this.breakpointDefs.has(key)) return false;
+      const state = this.runtime.get(key);
+      if (state) state.hits = 0;
+    } else {
+      for (const state of this.runtime.values()) state.hits = 0;
+    }
+    this.store?.dispatch(incBreakpointHitsVersionAction(), "emu");
+    return true;
+  }
+
+  /**
+   * Did a hit counter move since the last call? Consumed by the machine controller, which turns it
+   * into a throttled `incBreakpointHitsVersionAction` - counting itself never dispatches, or a hot
+   * loop would flood the store.
+   */
+  takeHitsChanged(): boolean {
+    const changed = this.hitsChanged;
+    this.hitsChanged = false;
+    return changed;
+  }
+
+  /**
+   * The breakpoints with their runtime state: the live hit count, a condition error, the reason a
+   * condition is inactive. What `listBreakpoints` reports; every persister strips these fields.
+   */
+  listBreakpointsWithState(): BreakpointInfo[] {
+    const result: BreakpointInfo[] = [];
+    for (const [key, bp] of this.breakpointDefs) {
+      const listed: BreakpointInfo = { ...bp };
+      const state = this.runtimeFor(key, bp);
+      // --- Built now, so a condition the store has no room for reports it before its first hit
+      if (state.compiled && !state.compiled.inactiveReason) this.syncConditionStore();
+      if (state.overflow) {
+        listed.conditionError =
+          "the machine's condition store is full - it stops every time; remove some conditions";
+      }
+      if (hasBreakpointFilters(bp) || state.hits > 0) listed.currentHits = state.hits;
+      if (state.error) listed.conditionError ??= state.error;
+      if (state.compiled?.inactiveReason) listed.conditionInactive = state.compiled.inactiveReason;
+      result.push(listed);
+    }
+    return result;
+  }
+
+  /** Keep a definition's counter when its key changes under it (a line moved, a file renamed). */
+  private moveRuntime(oldKey: string, newKey: string): void {
+    if (oldKey === newKey) return;
+    const state = this.runtime.get(oldKey);
+    this.runtime.delete(oldKey);
+    this.storeDirty = true;
+    if (state) this.runtime.set(newKey, state);
   }
 
   /**
@@ -994,7 +1384,7 @@ export class DebugSupport implements IDebugSupport {
    * one masked port breakpoint into a quadratic scan.
    */
   private refreshFlagsAt(address: number): void {
-    let extra = 0; // --- PART_BP / HIT_BP: not kinds, and not separately disable-able
+    let extra = 0; // --- PART_BP / HIT_BP / COND_BP: not kinds, and not separately disable-able
     let present = 0; // --- kinds any breakpoint here provides
     let armed = 0; // --- kinds at least one *enabled* breakpoint here provides
 
@@ -1002,7 +1392,7 @@ export class DebugSupport implements IDebugSupport {
       if (!this.claimsAddress(bp, address)) continue;
 
       const bpFlags = this.collectBpFlags(bp);
-      extra |= bpFlags & (PART_BP | HIT_BP);
+      extra |= bpFlags & (PART_BP | HIT_BP | COND_BP);
       for (const [kind] of DebugSupport.FLAG_KINDS) {
         if (!(bpFlags & kind)) continue;
         present |= kind;
@@ -1102,7 +1492,7 @@ export class DebugSupport implements IDebugSupport {
     bpData.partitions = bpData.partitions.filter(
       (p) => !(p[0] === partition && p[2] === undefined)
     );
-    if (bpData.partitions.length === 0 && !(this.breakpointFlags[address] & HIT_BP)) {
+    if (bpData.partitions.length === 0) {
       this.breakpointData.delete(address);
     }
   }
@@ -1135,9 +1525,7 @@ export class DebugSupport implements IDebugSupport {
         bpData.partitions = bpData.partitions.filter((p) => p[2] !== owningKey);
         if (bpData.partitions.length === 0) {
           this.breakpointFlags[address] &= ~(bpFlags | PART_BP);
-          if (!(this.breakpointFlags[address] & HIT_BP)) {
-            this.breakpointData.delete(address);
-          }
+          this.breakpointData.delete(address);
         }
       }
     }
@@ -1202,6 +1590,9 @@ export class DebugSupport implements IDebugSupport {
     if (bp.hitCount !== undefined) {
       bpFlags |= HIT_BP;
     }
+    if (hasBreakpointFilters(bp)) {
+      bpFlags |= COND_BP;
+    }
 
     return bpFlags;
   }
@@ -1209,8 +1600,6 @@ export class DebugSupport implements IDebugSupport {
 
 // --- Extra data assigned to a particular breakpoint
 type BreakpointData = {
-  targetHitCount?: number;
-  currentHitCount?: number;
   /**
    * The partitions with a breakpoint at this address: `[partition, disabled, owningKey?]`.
    *
@@ -1224,3 +1613,32 @@ type BreakpointData = {
    */
   partitions?: [number, boolean, string?][];
 };
+
+/** Does a definition watch this kind of access? */
+function kindMatches(bp: BreakpointInfo, kind: DecisionKind): boolean {
+  switch (kind) {
+    case "exec":
+      return !!bp.exec;
+    case "memRead":
+      return !!bp.memoryRead;
+    case "memWrite":
+      return !!bp.memoryWrite;
+    case "ioRead":
+      return !!bp.ioRead;
+    case "ioWrite":
+      return !!bp.ioWrite;
+  }
+}
+
+/** The condition-language kind of a decision. */
+function accessKindOf(kind: DecisionKind): ConditionAccessKind {
+  return kind === "exec" ? "exec" : kind === "memRead" || kind === "memWrite" ? "memory" : "io";
+}
+
+/** The condition-language kind of a breakpoint definition. */
+function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
+  if (isNextRegBreakpoint(bp)) return "nextReg";
+  if (bp.memoryRead || bp.memoryWrite) return "memory";
+  if (bp.ioRead || bp.ioWrite) return "io";
+  return "exec";
+}

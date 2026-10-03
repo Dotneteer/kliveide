@@ -1,3 +1,7 @@
+import type { BreakpointHitMode } from "@abstractions/BreakpointInfo";
+
+import { readStoredBreakpointFilters } from "@common/utils/breakpoint-filters";
+
 /**
  * The schema a newly written sidecar declares.
  *
@@ -127,11 +131,22 @@ export type NexBankAnnotation = {
 /** A breakpoint as the sidecar stores it: an offset in a bank, and what kind it is. */
 export type NexSidecarBreakpointKind = "exec" | "memRead" | "memWrite";
 
-export type NexSidecarBreakpoint = {
+export type NexSidecarBreakpoint = NexSidecarBreakpointFilters & {
   bank: number;
   offset: number;
   kind: NexSidecarBreakpointKind;
   disabled?: boolean;
+};
+
+/**
+ * A breakpoint's condition and hit-count rule, stored under the names `BreakpointInfo` uses. Shared
+ * by both stored shapes; absent fields mean "always stop". Additive fields, like
+ * `labelBreakpoints` — not a schema bump. See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7.
+ */
+export type NexSidecarBreakpointFilters = {
+  condition?: string;
+  hitMode?: BreakpointHitMode;
+  hitCount?: number;
 };
 
 /**
@@ -144,7 +159,7 @@ export type NexSidecarBreakpoint = {
  *
  * `bank` absent means a **global** label. See `.plans/NEX_DEBUGGING_PLAN.md` §13.2.
  */
-export type NexSidecarLabelBreakpoint = {
+export type NexSidecarLabelBreakpoint = NexSidecarBreakpointFilters & {
   label: string;
   bank?: number;
   kind: NexSidecarBreakpointKind;
@@ -394,7 +409,7 @@ function readDebug(
     if (disabled === true) {
       breakpoint.disabled = true;
     }
-    breakpoints.push(breakpoint);
+    breakpoints.push(withStoredFilters(breakpoint, entry, entryPath, diagnostics));
   });
 
   return withLabels(breakpoints.length > 0 ? { breakpoints } : {});
@@ -445,9 +460,26 @@ function readLabelBreakpoints(
     // --- type as `unknown` here rather than `number`.
     if (isBankNumber(bank)) breakpoint.bank = bank;
     if (disabled === true) breakpoint.disabled = true;
-    entries.push(breakpoint);
+    entries.push(withStoredFilters(breakpoint, entry, entryPath, diagnostics));
   });
   return entries;
+}
+
+/**
+ * Add a stored entry's condition and hit-count rule to the breakpoint read from it.
+ *
+ * A malformed filter field is dropped with a warning and the breakpoint kept — it then stops on
+ * every hit, the safe direction (`readStoredBreakpointFilters`).
+ */
+function withStoredFilters<T extends NexSidecarBreakpointFilters>(
+  breakpoint: T,
+  entry: Record<string, unknown>,
+  entryPath: string,
+  diagnostics: NexAnnotationDiagnostic[]
+): T {
+  const { filters, problems } = readStoredBreakpointFilters(entry);
+  problems.forEach((problem) => diagnostics.push(warning(entryPath, problem)));
+  return { ...breakpoint, ...filters };
 }
 
 function isBankNumber(value: unknown): value is number {

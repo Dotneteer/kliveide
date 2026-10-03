@@ -257,6 +257,24 @@ class EmuApiImpl {
   }
 
   /**
+   * Zeroes one breakpoint's hit counter, or every counter when no breakpoint is given.
+   * @param _breakpoint The breakpoint whose counter to reset
+   * @returns False when the breakpoint does not exist
+   */
+  async resetBreakpointHits(_breakpoint?: BreakpointInfo): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Replaces the program symbols breakpoint conditions bind their labels to (integer symbols of the
+   * last successful build, keyed lower-case; NEX bank-local labels keyed `<bank>:<name>`).
+   * @param _symbols The symbol table
+   */
+  async setConditionSymbols(_symbols: Record<string, number>): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Replaces the breakpoints owned by `_scope`, leaving every other owner's alone.
    * @param _bps The breakpoints to install for this scope.
    * @param _scope Which existing breakpoints this call may remove.

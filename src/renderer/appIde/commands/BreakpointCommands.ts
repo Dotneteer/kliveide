@@ -15,7 +15,15 @@ import {
   getNumericTokenValue,
   toHexa2
 } from "@renderer/appIde/services/ide-commands";
-import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { getBreakpointAddressSpec, getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import { formatHitSpec, parseHitSpec } from "@common/utils/breakpoint-filters";
+import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
+import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
+import type {
+  ConditionAccessKind,
+  ConditionDiagnostic
+} from "@common/utils/breakpoint-condition/condition-types";
+import { mergedConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
 import {
   NEX_BANK_LAST_OFFSET,
   NEX_MAX_BANK
@@ -59,12 +67,16 @@ export class ListBreakpointsCommand extends IdeCommandBase {
     if (bps.breakpoints.length) {
       let ordered = bps.breakpoints;
       ordered.forEach((bp, idx) => {
-        // --- Two template literals were evaluated and discarded here, doing nothing. They are
-        // --- gone; the key below is the whole address column.
-        const addrKey = getBreakpointDisplayKey(bp, partitionLabels);
+        /*
+         * The first line is `bp-set` syntax: everything after `[n]: ` pasted back into `bp-set`
+         * recreates the breakpoint (plan §4.3) - the address spec, its kind options, the hit rule
+         * and the condition, which is last because `-if` takes the rest of the line. What `bp-set`
+         * cannot say (disabled, the live count, a condition's state) goes on a second line.
+         */
         writeMessage(context.output, `[${idx + 1}]: `, "bright-blue", false);
-        writeMessage(context.output, addrKey, "bright-magenta", false);
-        writeMessage(context.output, bp.disabled ? " <disabled>" : "", "cyan");
+        writeMessage(context.output, breakpointCommandSpec(bp, partitionLabels), "bright-magenta");
+        const status = breakpointStatusText(bp);
+        if (status) writeMessage(context.output, `     ${status}`, bp.conditionError ? "bright-red" : "cyan");
       });
       writeMessage(
         context.output,
@@ -103,6 +115,10 @@ export type BreakpointWithAddressArgs = {
   "-c"?: boolean;
   /** Break only on this written value (NextReg breakpoints only); `-m` masks the comparison. */
   "-v"?: number;
+  /** The hit-count rule as typed (`10`, `>=10`, `*10`, ...). */
+  "-hit"?: string;
+  /** The condition: the raw rest of the line after `-if`. */
+  "-if"?: string;
 };
 
 /**
@@ -171,8 +187,13 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
       {
         name: "-v",
         type: "number"
+      },
+      {
+        name: "-hit"
       }
-    ]
+    ],
+    // --- `bp-del` and `bp-en` accept and ignore `-if`/`-hit`, so a `bp-list` line edits into any
+    rawTailOption: "-if"
   };
 
   partitionLabels: Record<number, string> = {};
@@ -467,24 +488,186 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
 export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
-  readonly usage = "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>]";
+  readonly usage = [
+    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-hit <spec>] [-if <condition>]",
+    "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
+    "-if: must be last; the rest of the line is the condition, e.g. -if A == $FF && !ZF"
+  ];
   readonly aliases = ["bp"];
+
+  /** Warnings of the condition validated last (unknown labels), printed when the breakpoint is set. */
+  private conditionWarnings: ConditionDiagnostic[] = [];
+
+  async validateCommandArgs(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<ValidationMessage[]> {
+    const messages = await super.validateCommandArgs(context, args);
+    this.conditionWarnings = [];
+    if (messages.some((m) => m.type === ValidationMessageType.Error)) return messages;
+
+    if (args["-hit"] !== undefined) {
+      const hit = parseHitSpec(String(args["-hit"]));
+      if ("error" in hit) return [validationError(hit.error)];
+    }
+
+    if (args["-if"] !== undefined) {
+      const condition = args["-if"];
+      if (!condition.trim()) {
+        return [validationError("The -if option needs a condition after it")];
+      }
+      const result = compileCondition(condition, {
+        // --- The same machine the address spec was validated against
+        ...conditionMachineFacts(
+          context.service.machineService.getMachineInfo()?.machine?.machineId,
+          this.partitionLabels
+        ),
+        accessKind: accessKindOfArgs(args),
+        symbols: mergedConditionSymbols()
+      });
+      if (result.errors.length) {
+        return conditionErrorMessages(condition, result.errors[0]);
+      }
+      this.conditionWarnings = result.warnings;
+    }
+    return messages;
+  }
 
   async execute(
     context: IdeCommandContext,
     args: BreakpointWithAddressArgs
   ): Promise<IdeCommandResult> {
     const bpDef = breakpointFromArgs(args);
+    // --- `bp-set` states the whole breakpoint (C13): without `-if`/`-hit` it clears them
+    if (args["-if"] !== undefined) bpDef.condition = args["-if"];
+    if (args["-hit"] !== undefined) {
+      const hit = parseHitSpec(String(args["-hit"]));
+      if (!("error" in hit)) Object.assign(bpDef, hit);
+    }
     const flag = await context.emuApi.setBreakpoint(bpDef);
     let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
+    const hitSpec = formatHitSpec(bpDef);
     writeSuccessMessage(
       context.output,
       `Breakpoint at address ${addrKey}` +
         `${(args["-i"] || args["-o"]) && args["-m"] ? " /$" + toHexa4(args["-m"]) : ""}` +
-        `${flag ? " set" : " updated"}`
+        `${flag ? " set" : " updated"}` +
+        `${hitSpec ? ` -hit ${hitSpec}` : ""}` +
+        `${bpDef.condition ? ` -if ${bpDef.condition}` : ""}`
     );
+    for (const warning of this.conditionWarnings) {
+      writeMessage(context.output, `Warning (column ${warning.start + 1}): ${warning.message}`, "yellow");
+    }
     return commandSuccess;
   }
+}
+
+/**
+ * `bp-reset-hits [<address-spec>]`: zero one breakpoint's hit counter, or every counter (C12).
+ */
+export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
+  readonly id = "bp-reset-hits";
+  readonly description = "Resets the hit counter of a breakpoint, or of all breakpoints";
+  readonly usage = "bp-reset-hits [<address-spec>] [-r] [-w] [-i] [-o] [-m <mask>] [-v <value>]";
+  readonly aliases = ["bprh"];
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    optional: [
+      {
+        name: "addrSpec"
+      }
+    ],
+    commandOptions: ["-r", "-w", "-i", "-o", "-c"],
+    namedOptions: [
+      { name: "-m", type: "number" },
+      { name: "-v", type: "number" },
+      { name: "-hit" }
+    ],
+    rawTailOption: "-if"
+  };
+
+  async validateCommandArgs(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<ValidationMessage[]> {
+    if (args.addrSpec === undefined) return [];
+    return super.validateCommandArgs(context, args);
+  }
+
+  async execute(
+    context: IdeCommandContext,
+    args: BreakpointWithAddressArgs
+  ): Promise<IdeCommandResult> {
+    if (args.addrSpec === undefined) {
+      await context.emuApi.resetBreakpointHits();
+      writeSuccessMessage(context.output, "All breakpoint hit counters reset");
+      return commandSuccess;
+    }
+    const bpDef = breakpointFromArgs(args);
+    const addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
+    if (!(await context.emuApi.resetBreakpointHits(bpDef))) {
+      return commandError(`Breakpoint ${addrKey} does not exist`);
+    }
+    writeSuccessMessage(context.output, `Hit counter of breakpoint ${addrKey} reset`);
+    return commandSuccess;
+  }
+}
+
+/** The condition-language kind of the breakpoint a set of `bp-*` arguments describes. */
+function accessKindOfArgs(args: BreakpointWithAddressArgs): ConditionAccessKind {
+  if (args.nextReg !== undefined) return "nextReg";
+  if (args["-r"] || args["-w"]) return "memory";
+  if (args["-i"] || args["-o"]) return "io";
+  return "exec";
+}
+
+/**
+ * A condition error as the command line shows it: the message with its column, then the condition
+ * with a caret line under the offending range (§4.3).
+ */
+export function conditionErrorMessages(
+  condition: string,
+  error: ConditionDiagnostic
+): ValidationMessage[] {
+  const width = Math.max(1, error.end - error.start);
+  return [
+    validationError(`Condition error at column ${error.start + 1}: ${error.message}`),
+    { type: ValidationMessageType.Info, message: `  ${condition}` },
+    { type: ValidationMessageType.Info, message: `  ${" ".repeat(error.start)}${"^".repeat(width)}` }
+  ];
+}
+
+/**
+ * A breakpoint as `bp-set` arguments: the address spec, its kind options, the hit rule and the
+ * condition. Pasted back into `bp-set` it recreates the breakpoint.
+ */
+export function breakpointCommandSpec(
+  bp: BreakpointInfo,
+  partitionLabels: Record<number, string>
+): string {
+  const parts = [getBreakpointAddressSpec(bp, partitionLabels)];
+  if (bp.memoryRead) parts.push("-r");
+  if (bp.memoryWrite) parts.push("-w");
+  if (bp.ioRead) parts.push("-i");
+  if (bp.ioWrite) parts.push("-o");
+  if ((bp.ioRead || bp.ioWrite) && bp.ioMask !== undefined && bp.ioMask !== 0xffff) {
+    parts.push(`-m $${toHexa4(bp.ioMask)}`);
+  }
+  if (bp.nextRegCopper) parts.push("-c");
+  const hitSpec = formatHitSpec(bp);
+  if (hitSpec) parts.push(`-hit ${hitSpec}`);
+  if (bp.condition?.trim()) parts.push(`-if ${bp.condition}`);
+  return parts.join(" ");
+}
+
+/** What `bp-set` cannot say about a breakpoint: disabled, the live count, a condition's state. */
+export function breakpointStatusText(bp: BreakpointInfo): string {
+  const parts: string[] = [];
+  if (bp.disabled) parts.push("<disabled>");
+  if (bp.currentHits !== undefined) parts.push(`(hits: ${bp.currentHits})`);
+  if (bp.conditionInactive) parts.push(`<inactive: ${bp.conditionInactive}>`);
+  if (bp.conditionError) parts.push(`<condition error: ${bp.conditionError}>`);
+  return parts.join(" ");
 }
 
 export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
@@ -530,8 +713,12 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       {
         name: "-v",
         type: "number"
+      },
+      {
+        name: "-hit"
       }
-    ]
+    ],
+    rawTailOption: "-if"
   };
 
   async execute(

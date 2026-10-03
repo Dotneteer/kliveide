@@ -45,7 +45,8 @@ const emuApi = vi.hoisted(() => ({
   enableBreakpoint: vi.fn(),
   eraseAllBreakpoints: vi.fn(),
   restoreBreakpoints: vi.fn(),
-  getRomFlags: vi.fn()
+  getRomFlags: vi.fn(),
+  resetBreakpointHits: vi.fn()
 }));
 
 const dialogs = vi.hoisted(() => ({ open: vi.fn() }));
@@ -319,16 +320,18 @@ describe("BreakpointsPanel - row context menu", () => {
 describe("BreakpointsPanel - source-code breakpoints", () => {
   const sourceLabel = "[code/code.kz80.asm]:12";
 
-  it("does not offer to edit one, and says where to", async () => {
-    // --- The editor's glyph margin owns these: it places them by clicking a line and tracks them
-    // --- as lines move. A dialog asking for a filename and a line number would be worse.
+  it("offers Edit, which opens the dialog in source mode", async () => {
+    // --- The editor's glyph margin still *places* these; the dialog edits only their condition and
+    // --- hit rule (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2), so the old disabled "Edit
+    // --- from the editor's left margin" hint is gone.
     await renderPanel([SOURCE_BP]);
 
     await openRowMenu(sourceLabel);
+    expect(menuItem("Edit from the editor's left margin")).toBeUndefined();
+    fireEvent.click(menuItem("Edit breakpoint...")!);
 
-    expect(menuItem("Edit breakpoint...")).toBeUndefined();
-    expect(menuItem("Edit from the editor's left margin")).toBeTruthy();
-    expect(menuItem("Edit from the editor's left margin")).toBeDisabled();
+    await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
+    expect(dialogs.open.mock.calls[0][1].initial).toMatchObject(SOURCE_BP);
   });
 
   it("still offers the set operations, which are not authoring", async () => {
@@ -351,13 +354,13 @@ describe("BreakpointsPanel - source-code breakpoints", () => {
     );
   });
 
-  it("ignores a double-click rather than opening a dialog it cannot fill", async () => {
+  it("opens the dialog in source mode on a double-click", async () => {
     await renderPanel([SOURCE_BP]);
 
     fireEvent.doubleClick(screen.getByText(sourceLabel));
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(dialogs.open).not.toHaveBeenCalled();
+    await waitFor(() => expect(dialogs.open).toHaveBeenCalled());
+    expect(dialogs.open.mock.calls[0][1].initial).toMatchObject(SOURCE_BP);
   });
 });
 
@@ -552,5 +555,73 @@ describe("BreakpointsPanel - grouping", () => {
     expect(screen.queryByText("$9000")).not.toBeNull();
     expect(screen.queryByText("Execution")).toBeNull();
     expect(screen.getByRole("button", { name: "Group breakpoints by kind" })).toBeDefined();
+  });
+});
+
+
+/*
+ * Conditions and hit counts in the panel (Phase 6 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
+ * §4.9): the row shows the condition, the rule and the live count, and offers to reset counts.
+ */
+describe("BreakpointsPanel - conditions and hit counts", () => {
+  const conditional = execAt(0x8000, {
+    condition: "A == $FF && !ZF",
+    hitMode: "every",
+    hitCount: 4,
+    currentHits: 9
+  });
+
+  it("shows the live count, the hit rule and the condition", async () => {
+    await renderPanel([conditional]);
+
+    expect(screen.getByText("9\u00d7")).toBeTruthy();
+    expect(screen.getByText("hit *4")).toBeTruthy();
+    expect(screen.getByText("if A == $FF && !ZF")).toBeTruthy();
+  });
+
+  it("shows nothing extra for a plain breakpoint", async () => {
+    await renderPanel([execAt(0x8000)]);
+    expect(screen.queryByText(/^hit /)).toBeNull();
+    expect(screen.queryByText(/^if /)).toBeNull();
+  });
+
+  it("marks an inactive condition and a condition error", async () => {
+    await renderPanel([
+      execAt(0x8000, { condition: "w[score] > 1", conditionInactive: "unknown label score", currentHits: 0 }),
+      execAt(0x9000, { condition: "A ==", conditionError: "column 5: oops", currentHits: 2 })
+    ]);
+    expect(screen.getByText("if w[score] > 1").className).toMatch(/conditionInactive/);
+    expect(screen.getByText("if A ==").className).toMatch(/conditionError/);
+  });
+
+  it("resets one row's hit count", async () => {
+    emuApi.resetBreakpointHits.mockResolvedValue(true);
+    await renderPanel([conditional]);
+
+    await openRowMenu("$8000");
+    fireEvent.click(menuItem("Reset hit count")!);
+
+    await waitFor(() =>
+      expect(emuApi.resetBreakpointHits).toHaveBeenCalledWith(expect.objectContaining({ address: 0x8000 }))
+    );
+  });
+
+  it("resets every hit count", async () => {
+    emuApi.resetBreakpointHits.mockResolvedValue(true);
+    await renderPanel([conditional]);
+
+    await openRowMenu("$8000");
+    fireEvent.click(menuItem("Reset all hit counts")!);
+
+    await waitFor(() => expect(emuApi.resetBreakpointHits).toHaveBeenCalledWith(undefined));
+  });
+
+  it("refreshes when the emulator reports that hit counts moved", async () => {
+    const { store } = await renderPanel([conditional]);
+    const before = emuApi.listBreakpoints.mock.calls.length;
+
+    store.dispatch({ type: "INC_BP_HITS_VERSION" } as any);
+
+    await waitFor(() => expect(emuApi.listBreakpoints.mock.calls.length).toBeGreaterThan(before));
   });
 });

@@ -224,6 +224,16 @@ export const incBreakpointsVersionAction: ActionCreator = () => ({
   type: "INC_BPS_VERSION"
 });
 
+/**
+ * Breakpoint hit counters moved (conditional breakpoints, plan §4.5). Separate from
+ * `incBreakpointsVersionAction` so a live count refreshes the Breakpoints panel without telling
+ * every editor and the NEX sidecar sync that the breakpoint set itself changed. Throttled by the
+ * machine controller: at most every 10 frames while running, and once on pause.
+ */
+export const incBreakpointHitsVersionAction: ActionCreator = () => ({
+  type: "INC_BP_HITS_VERSION"
+});
+
 export const incToolCommandSeqNoAction: ActionCreator = () => ({
   type: "INC_TOOL_CMD_SEQ"
 });

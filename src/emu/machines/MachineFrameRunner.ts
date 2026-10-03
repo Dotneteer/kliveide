@@ -194,31 +194,25 @@ export class MachineFrameRunner implements IMachineFrameRunner {
       machine.traceInstructionExecuted?.(tracePcBefore);
 
       if (machine.executionContext.debugSupport) {
-        // --- Check for memory read/write breakpoints
-        if (
-          machine.executionContext.debugSupport.hasMemoryRead(
-            machine.lastMemoryReads,
-            machine.lastMemoryReadsCount,
-            (addr) => machine.getPartition(addr)
-          )
-        ) {
-          return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-        if (
-          machine.executionContext.debugSupport.hasMemoryWrite(
-            machine.lastMemoryWrites,
-            machine.lastMemoryWritesCount,
-            (addr) => machine.getPartition(addr)
-          )
-        ) {
-          return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-
-        // --- Check for port read/write breakpoints
-        if (machine.executionContext.debugSupport.hasIoRead(machine.lastIoReadPort)) {
-          return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
-        }
-        if (machine.executionContext.debugSupport.hasIoWrite(machine.lastIoWritePort)) {
+        // --- Check for memory and port breakpoints. All four are asked, not the first that stops:
+        // --- a conditional breakpoint counts its hits (C11), and each check may count one.
+        const debugSupport = machine.executionContext.debugSupport;
+        const partitionOf = (addr: number) => machine.getPartition(addr);
+        const read = debugSupport.hasMemoryRead(
+          machine.lastMemoryReads,
+          machine.lastMemoryReadsCount,
+          partitionOf,
+          machine.lastMemoryReadValues
+        );
+        const written = debugSupport.hasMemoryWrite(
+          machine.lastMemoryWrites,
+          machine.lastMemoryWritesCount,
+          partitionOf,
+          machine.lastMemoryWriteValues
+        );
+        const portRead = debugSupport.hasIoRead(machine.lastIoReadPort, machine.lastIoReadValue);
+        const portWritten = debugSupport.hasIoWrite(machine.lastIoWritePort, machine.lastIoWriteValue);
+        if (read || written || portRead || portWritten) {
           return (machine.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent);
         }
       }

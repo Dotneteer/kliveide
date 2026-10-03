@@ -64,9 +64,10 @@ describe("ZX Spectrum Next WASM rollout", () => {
   });
 
   it("declares the ZX Next WASM acceptance suite", () => {
-    // --- The node project, not jsdom: these are `.test.ts` files, which the jsdom project does
-    // --- not include - under `--project jsdom` the suite silently ran nothing.
-    expect(packageJson.scripts["test:zxnext-wasm-acceptance"]).toContain("--project node");
+    // --- The e2e-cores project, which runs the WASM core tests (`build/e2e-tests.ts`). Neither
+    // --- unit project includes them: under `--project jsdom` (or `node`) the suite silently ran
+    // --- nothing.
+    expect(packageJson.scripts["test:zxnext-wasm-acceptance"]).toContain("--project e2e-cores");
     expect(packageJson.scripts["test:zxnext-wasm-acceptance"]).toContain("test/wasm/zxNext/wasm-next-factory-setup.test.ts");
     expect(packageJson.scripts["test:zxnext-wasm-acceptance"]).toContain("test/wasm/zxNext/wasm-next-rollout.test.ts");
     expect(packageJson.scripts["test:zxnext-wasm-acceptance"]).toContain("test/wasm/zxNext/wasm-next-public-adapter.test.ts");

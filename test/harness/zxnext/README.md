@@ -33,8 +33,8 @@ test/harness/zxnext/
 ## Commands
 
 ```bash
-npm test -- --project node test/zxnext-hw               # scripted hardware tests
-npm test -- --project node test/harness/zxnext          # the harness's own tests
+npm test -- test/zxnext-hw               # scripted hardware tests
+npm test -- test/harness/zxnext          # the harness's own tests
 npm run test:visual                                     # screen cases, headless
 npm run test:visual -- C02 --verbose                    # one case / prefix
 npm run test:visual -- --long                           # adds each case's longCapture frames (D05)

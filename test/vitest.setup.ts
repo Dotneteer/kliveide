@@ -161,3 +161,47 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 if (typeof HTMLCanvasElement !== "undefined") {
   HTMLCanvasElement.prototype.getContext = (() => null) as HTMLCanvasElement["getContext"];
 }
+
+
+/*
+ * The unit tier must not run a WASM machine core.
+ *
+ * Tests that do are the end-to-end tiers (`build/e2e-tests.ts`), which `npm test` runs only when
+ * their inputs changed. A core test left in the unit tier would slow every run down and, worse,
+ * escape that bookkeeping - so it fails here, naming the fix. A core is recognised by its exports
+ * (`sp48*`, `sp128*`, `spp3e*`, `zxnext*`, `z88*`, `z80*`, and `cond*` for the condition evaluator
+ * built alone); other WebAssembly (Node's own HTTP parser, for one) is left alone.
+ */
+if (process.env.KLIVE_TEST_TIER === "unit") {
+  // --- `cond*`: the breakpoint condition evaluator's test build, which runs the cores' C code
+  const CORE_EXPORT = /^(sp48|sp128|spp3e|zxnext|z88|z80|cond)[A-Z]/;
+  const refuseCore = (instance: WebAssembly.Instance | undefined): void => {
+    const core = Object.keys(instance?.exports ?? {}).find((name) => CORE_EXPORT.test(name));
+    if (core) {
+      throw new Error(
+        `This test runs a WASM machine core (it instantiated a module exporting '${core}'). ` +
+          "Add it to an end-to-end tier in build/e2e-tests.ts; the unit tier runs without the cores."
+      );
+    }
+  };
+  const wasm = WebAssembly as unknown as {
+    instantiate: (...args: unknown[]) => Promise<unknown>;
+    Instance: unknown;
+  };
+  const instantiate = wasm.instantiate.bind(WebAssembly);
+  wasm.instantiate = async (...args: unknown[]) => {
+    const result = (await instantiate(...args)) as
+      | WebAssembly.Instance
+      | WebAssembly.WebAssemblyInstantiatedSource;
+    refuseCore("instance" in result ? result.instance : result);
+    return result;
+  };
+  const Instance = WebAssembly.Instance;
+  const GuardedInstance = function (module: WebAssembly.Module, imports?: WebAssembly.Imports) {
+    const instance = new Instance(module, imports);
+    refuseCore(instance);
+    return instance;
+  } as unknown as typeof WebAssembly.Instance;
+  GuardedInstance.prototype = Instance.prototype;
+  wasm.Instance = GuardedInstance;
+}

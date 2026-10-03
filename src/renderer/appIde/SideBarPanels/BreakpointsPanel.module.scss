@@ -100,3 +100,26 @@ span.bpCell {
   flex-shrink: 0;
 }
 
+
+/*
+ * A breakpoint's condition (`if A == $FF`): the row's last cell, so it is the one that truncates in a
+ * narrow sidebar - the row tooltip carries it in full. Its state is told by strength and hue: muted
+ * italic while a label it names is missing (it is set but cannot stop yet), the error hue when the
+ * emulator could not arm it (it then stops every time).
+ */
+.conditionCell {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conditionInactive {
+  font-style: italic;
+  opacity: 0.6;
+}
+
+.conditionError {
+  color: var(--status-error);
+}

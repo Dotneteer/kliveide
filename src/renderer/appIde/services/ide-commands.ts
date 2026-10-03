@@ -274,6 +274,49 @@ export function getAddressValue(
   return { value };
 }
 
+/**
+ * Split a command line at a raw-tail option (`CommandArgumentInfo.rawTailOption`).
+ *
+ * Text-level, so the tokenizer never sees the tail: the option counts only as a whole word outside
+ * double quotes and outside `[...]` (a `[file:line]` source spec cannot be cut). The tail is
+ * trimmed, and unquoted when it is exactly one double-quoted string (`-if "A == 1"`).
+ *
+ * @returns The line before the option and the tail after it; `undefined` when the option is absent
+ */
+export function splitRawTail(
+  command: string,
+  option: string
+): { head: string; tail: string } | undefined {
+  let inQuote = false;
+  let depth = 0;
+  for (let i = 0; i < command.length; i++) {
+    const ch = command[i];
+    if (inQuote) {
+      if (ch === "\\") i++;
+      else if (ch === '"') inQuote = false;
+      continue;
+    }
+    if (ch === '"') {
+      inQuote = true;
+      continue;
+    }
+    if (ch === "[") depth++;
+    else if (ch === "]") depth = Math.max(0, depth - 1);
+    if (
+      depth === 0 &&
+      (i === 0 || /\s/.test(command[i - 1])) &&
+      command.startsWith(option, i) &&
+      (i + option.length === command.length || /\s/.test(command[i + option.length]))
+    ) {
+      let tail = command.substring(i + option.length).trim();
+      const quoted = /^"((?:[^"\\]|\\.)*)"$/.exec(tail);
+      if (quoted) tail = quoted[1].replace(/\\(["\\])/g, "$1");
+      return { head: command.substring(0, i), tail };
+    }
+  }
+  return undefined;
+}
+
 export function extractArguments(
   tokens: Token[],
   argInfo: CommandArgumentInfo

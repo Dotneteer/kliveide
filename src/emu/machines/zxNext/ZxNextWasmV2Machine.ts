@@ -1,3 +1,4 @@
+import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   ULA_BORDER_COLOR_NAMES,
@@ -921,12 +922,24 @@ export class ZxNextWasmV2Machine
   private hasWasmV2AccessBreakpoint(): boolean {
     const debugSupport = this.executionContext.debugSupport;
     if (!debugSupport) return false;
-    return (
-      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasIoRead(this.lastIoReadPort) ||
-      debugSupport.hasIoWrite(this.lastIoWritePort)
+    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
+    // --- a read that stops must not hide a write in the same instruction from its counter.
+    const partitionOf = (addr: number) => this.getPartition(addr);
+    const read = debugSupport.hasMemoryRead(
+      this.lastMemoryReads,
+      this.lastMemoryReadsCount,
+      partitionOf,
+      this.lastMemoryReadValues
     );
+    const written = debugSupport.hasMemoryWrite(
+      this.lastMemoryWrites,
+      this.lastMemoryWritesCount,
+      partitionOf,
+      this.lastMemoryWriteValues
+    );
+    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
+    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
+    return read || written || portRead || portWritten;
   }
 
   readScreenMemory(offset: number): number {
@@ -1601,6 +1614,15 @@ export class ZxNextWasmV2Machine
       regs
     };
   }
+
+  /**
+   * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
+   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   */
+  getConditionStore(): ConditionStore | undefined {
+    return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
+  }
+
 
   private syncCpuFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;

@@ -2418,3 +2418,26 @@ uint32_t spp3eGetLastContendedValue(void) { return spp3eLastContendedValue; }
 uint32_t spp3eGetLastUlaReadValue(void) { return spp3eLastUlaReadValue; }
 void spp3eSetLastContendedValue(uint32_t value) { spp3eLastContendedValue = (uint8_t)value; }
 void spp3eSetLastUlaReadValue(uint32_t value) { spp3eLastUlaReadValue = (uint8_t)value; }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// this machine's side-effect-free reads. The CPU view reads the slot bases directly:
+// `spp3eReadMemory` latches the floating-bus value on a contended address, which a condition must
+// never do. The partition reads mirror `getMemoryPartition` in `ZxSpectrumP3eWasmV2Machine.ts`.
+// -----------------------------------------------------------------------------
+
+static uint32_t condSpp3ePeekPartition(int32_t partition, uint32_t address) {
+  const uint32_t offset = address % 0x4000u;
+  if (partition < 0) {
+    int32_t rom = -partition - 1;
+    if (rom < 0) rom = 0;
+    if (rom > 3) rom = 3;
+    return spp3eRom[(uint32_t)rom * 0x4000u + offset];
+  }
+  return spp3eRam[((uint32_t)partition & 0x07u) * 0x4000u + offset];
+}
+
+#define COND_PEEK(address) ((uint32_t)spp3eMemorySlotBase[((address) & 0xffffu) >> 14][(address) & 0x3fffu])
+#define COND_PEEK_PARTITION(partition, address) condSpp3ePeekPartition(partition, address)
+#define COND_PARTITION_OF(address) ((int64_t)spp3eGetCurrentPartition((address) >> 14))
+#include "../../../../z80/wasm/z80-condition.c"

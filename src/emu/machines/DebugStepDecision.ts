@@ -113,14 +113,18 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
    *
    * The `lastBreakpoint` dance stops a breakpoint from re-triggering on the instruction it already
    * stopped at: resuming from a breakpoint must move, not stop again on the spot.
+   *
+   * **The guard is tested first, and the decision is not even asked on the resumed-from
+   * instruction.** That ordering did not matter while `shouldStopAt` was a pure question; with hit
+   * counts it has a side effect, and asking it here would count the instruction a run resumes from
+   * a second time (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6) - the same reasoning as consuming
+   * one-shots only inside the guard, below.
    */
-  const stopAt = debugSupport.shouldStopAt(pc, getPartition);
-  if (
-    stopAt &&
-    (instructionsExecuted > 0 ||
-      debugSupport.lastBreakpoint === undefined ||
-      debugSupport.lastBreakpoint !== pc)
-  ) {
+  const resuming =
+    instructionsExecuted === 0 &&
+    debugSupport.lastBreakpoint !== undefined &&
+    debugSupport.lastBreakpoint === pc;
+  if (!resuming && debugSupport.shouldStopAt(pc, getPartition)) {
     debugSupport.lastBreakpoint = pc;
     debugSupport.imminentBreakpoint = undefined;
 

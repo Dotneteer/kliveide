@@ -17,9 +17,17 @@ This view displays every breakpoint, whether you created it here, with an intera
   - red: This breakpoint has been created in the source code.
   - orange: This color indicates that a breakpoint has been created in the source code but not resolved to an actual address as the code has not been compiled (after opening the project or editing the code).
   - gray: This breakpoint has been disabled.
+
+  The circle has an **=** mark in it when the breakpoint has a condition or a hit count rule, and
+  is **hollow** when its condition cannot stop the machine right now &mdash; see
+  [Conditions and Hit Counts](#conditions-and-hit-counts). The same shapes appear in the editor's
+  margin and in the Disassembly View.
 - An icon representing the breakpoint type
 - The breakpoint's address or source code location
 - Other information (such as the disassembly at the location)
+- For a breakpoint with a condition or a hit rule: the live hit count (`9×`), the rule (`hit *4`)
+  and the condition (`if A == $FF`). The condition is shortened in a narrow sidebar; hover the row
+  to read it in full.
 
 ## Manipulating Breakpoints
 
@@ -37,8 +45,8 @@ The toolbar at the top of the view adds two more actions:
   those are about to go.
 
 Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Enable**/**Disable**,
-**Remove breakpoint**, and **Remove all breakpoints**. Double-clicking a row opens the editor
-directly. You can also double-click a breakpoint's indicator in the
+**Remove breakpoint**, **Reset hit count**, **Reset all hit counts** and **Remove all breakpoints**.
+Double-clicking a row opens the editor directly. You can also double-click a breakpoint's indicator in the
 [Disassembly View](./disassembly) to edit it there.
 
 The view is **grouped by kind**, under a header carrying that kind's icon and a count; a kind with
@@ -81,18 +89,161 @@ every option the `bp-set` command accepts, without the flag syntax:
   **bank-relative** form, `05:+$0100`, described below. Typing one disables the partition row: a
   bank-relative breakpoint already names its bank, so there is nothing left to choose.
 - **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.
+- **Condition** &mdash; an expression; the breakpoint stops only when it is true. It is checked as
+  you type, against the machine and the last build: a mistake is shown under the field with its
+  column, and a label the last build did not define is a warning (the breakpoint is saved, but does
+  not stop until a build defines the label). The **Syntax** link opens
+  [the reference below](#conditions-and-hit-counts).
+- **Hit count** &mdash; *Always*, or stop when the number of hits is *Equal to*, *Greater than*,
+  *At least*, *Less than* or *At most* a number, or on *Every* Nth hit.
+- **Hits so far** &mdash; when editing, the live count, with a **Reset** button.
 - **Enabled** &mdash; clear this to create a breakpoint that is set but not armed.
 
 The dialog refuses an address that already has a breakpoint of the same type rather than silently
 merging the two, which is what `bp-set` does on the command line.
 
 <Callout type="info">
-The dialog edits **binary** breakpoints &mdash; those bound to an address. Source-code breakpoints
-belong to the editor, which places them when you click in the left margin beside a line and moves
-them with the line as you edit. That is why the row menu offers no **Edit** command for them; you
-can still enable, disable, and remove them from this view. To script one, use
-`bp-set [myfile.asm]:12`.
+Source-code breakpoints belong to the editor, which places them when you click in the left margin
+beside a line and moves them with the line as you edit. Opened on one, the dialog shows its
+**Location** (and the address it resolved to) instead of the type, address and partition rows, and
+edits only its condition, hit count and enabled state. To script one, use `bp-set [myfile.asm]:12`.
 </Callout>
+
+## The Editor's Breakpoint Margin
+
+Clicking the margin beside a line adds or removes a breakpoint. **Right-clicking** it opens a menu:
+
+- on a line with a breakpoint: **Edit Condition…** and **Edit Hit Count…** (both open the dialog,
+  on that field), **Disable**/**Enable Breakpoint**, **Reset Hit Count** and **Remove Breakpoint**;
+- on a line without one: **Add Breakpoint** and **Add Conditional Breakpoint…**, which adds the
+  breakpoint and opens the dialog on its condition &mdash; **Cancel** removes it again.
+
+The same menu works on the inline statement markers of languages with several statements on a line.
+Hovering a breakpoint in the margin shows its condition, hit rule, hit count and, when it cannot
+stop, why.
+
+## Conditions And Hit Counts
+
+Every breakpoint &mdash; execution, memory, I/O, NextReg, bank-relative, label-anchored and
+source-code &mdash; can carry a **condition** and a **hit count rule**. The machine stops only if
+the condition is true; a hit is counted only when it is, and the rule then decides whether this hit
+stops. Set them with `-if` and `-hit` on [`bp-set`](/commands-reference#bp-set), in the breakpoint
+dialog, or from the editor's margin menu. Conditions work on the Z80 machines.
+
+```
+A == $FF && !ZF
+HL > $C000
+(B & %0000_0111) == 3 || CF
+[IX+3] == 0
+w[$5C3A] > 100
+wbe[$8000] == $1234
+l[HL] == "KLIV"
+sb[IX+2] < -1
+s16(HL) < 0
+b[05:$C010] == $FF
+w[0A:+$0100] == score
+VAL == $C9
+ADDR >= $5800 && ADDR < $5B00
+page($C000) == @B5
+nr($56) == $0A
+w[score] >= 1000
+AF' == $0044
+```
+
+### Values
+
+| Form | Example | Notes |
+|---|---|---|
+| Decimal, hexadecimal, binary | `100`, `$FF`, `0xFF`, `%1010`, `0b1010` | `_` separates digits: `%0000_0111` |
+| Character | `'A'`, `'\x7F'`, `'£'` | One character, as its ZX Spectrum code (`£` is `$60`, `©` is `$7F`, `↑` is `$5E`); escapes `\\` `\'` `\"` `\n` `\r` `\t` `\0` `\xHH` |
+| String | `"KLIV"` | Only compared (`==`, `!=`) with an unsigned memory read of the same length: 1, 2 or 4 characters, in memory order |
+| Partition | `@B5`, `@R0`, `@0A` | A partition name, to compare with `page(…)` |
+
+### Registers, flags and specials
+
+Names are case-insensitive.
+
+- 8-bit registers: `A F B C D E H L I R IXH IXL IYH IYL` (also `XH XL YH YL`).
+- 16-bit registers: `AF BC DE HL IX IY SP PC WZ` and the shadow set `AF' BC' DE' HL'`.
+- Flags, each 0 or 1: `SF` (sign), `ZF` (zero), `F5F` or `YF` (bit 5), `HF` (half carry), `F3F` or
+  `XF` (bit 3), `PVF`, `PF` or `VF` (parity/overflow), `NF` (subtract), `CF` (carry). `C` and `H`
+  are registers, which is why the flags have their own names.
+- `VAL` &mdash; the byte read or written (memory), the port value (I/O), the new register value
+  (NextReg). `ADDR` &mdash; the address or the 16-bit port accessed. Not on execution breakpoints.
+
+### Memory
+
+| Read | Bytes | Range |
+|---|---|---|
+| `[a]`, `b[a]` | 1 | 0 … 255 |
+| `w[a]` / `wbe[a]` | 2, little- / big-endian | 0 … 65535 |
+| `l[a]` / `lbe[a]` | 4, little- / big-endian | 0 … $FFFFFFFF |
+| `sb[a]`, `sw[a]`, `swbe[a]`, `sl[a]`, `slbe[a]` | signed versions | two's complement |
+
+The address is any expression: `w[HL]`, `[IX+3]`, `w[score]`.
+
+- `w[HL]` reads memory as the CPU sees it now; the address wraps at `$FFFF`.
+- `b[05:$C010]` reads partition `05` at the offset of `$C010`, whatever is paged in &mdash; the same
+  spelling as `bp-set 05:$C010`.
+- `b[0A:+$0100]` (ZX Spectrum Next) reads 16K bank `0A` at offset `$0100`.
+- `b[05:Flags]` (ZX Spectrum Next) reads the bank-local label `Flags` of a `.nex.dis` sidecar in
+  bank `05`. Write `b[05:(score)]` to use a global label as a partition offset instead.
+- On a machine without banks, the part before the colon is ignored.
+
+Reading memory in a condition has no side effects on the machine.
+
+### Functions
+
+`page(addr)` is the partition paged in at `addr`; `nr(reg)` is a Next register's value (ZX Spectrum
+Next); `s8(x)`, `s16(x)` and `s32(x)` read the low 8, 16 or 32 bits of `x` as a signed number.
+
+### Operators
+
+From the lowest precedence to the highest: `||`; `&&`; the comparisons `== != < <= > >=`; `|`; `^`;
+`&`; the shifts `<< >> >>>`; `+ -`; and the unary `! ~ -`. **Bitwise operators bind tighter than
+comparisons**, so `A & $80 == 0` means `(A & $80) == 0`. Comparisons cannot be chained.
+
+Arithmetic and comparison work on exact numbers, so signed and unsigned values compare correctly.
+`& | ^ ~` give an unsigned 32-bit result (`~0 == $FFFFFFFF`); the shifts work exactly as in
+JavaScript (`1 << 31` is negative; write `(x << n) >>> 0` for an unsigned result).
+
+### Labels
+
+Any other name is a label of the **last successful build** (and, for a `.nex` file, its `.nex.dis`
+sidecar), resolved again after every build. Register and flag names win; write a label that
+collides with one in backticks: `` w[`ZF`] ``.
+
+A condition that names a label the last build did not define is **inactive**: the breakpoint does
+not stop and does not count, and the view shows it hollow and muted, with the reason in its tooltip.
+It comes back by itself once a build defines the label.
+
+### Checks
+
+A condition is checked when you set it: a syntax error, a string of the wrong length, `VAL` on an
+execution breakpoint, a partition the machine does not have, or a constant that the value it is
+compared with can never hold (`b[HL] == $1234`, `A > 300`, `A > -1`, `ZF == 2`) is refused with its
+column. The range check applies to constants written as literals - numbers, negative numbers,
+characters and partition names; a constant written as an expression (`A == 255 + 1`) is not checked,
+and simply never matches.
+
+Conditions are evaluated inside the emulated machine's core, next to its registers and memory, so a
+condition costs little even on an address the program passes thousands of times a second.
+
+### Hit counts
+
+| Rule | Stops on hit… |
+|---|---|
+| `10` or `=10` | 10 only |
+| `>10` | 11, 12, … |
+| `>=10` | 10, 11, … |
+| `<10` | 1 … 9 |
+| `<=10` | 1 … 10 |
+| `*10` | 10, 20, 30, … |
+
+Each breakpoint counts its own hits. The counters start from zero when the machine restarts
+(*Start* after *Stop*, *Restart*, a reset) and when you reset them &mdash; from the view, the dialog,
+the editor's margin or [`bp-reset-hits`](/commands-reference#bp-reset-hits). Pausing, stepping and
+editing the breakpoint keep them.
 
 ## Bank-Relative Breakpoints (ZX Spectrum Next)
 
@@ -319,7 +470,7 @@ These are the available breakpoint types (from top to bottom in the figure):
 - **I/O read**. This breakpoint is triggered when a particular I/O port has been read. The displayed address is the 16-bit I/O port address.
 - **I/O write**. This breakpoint is triggered when a particular I/O port has been written. The displayed address is the 16-bit I/O port address.
 - **Execution**. This breakpoint is triggered when the PC register reaches the specified address.
-- **Memory read**. This breakpoint is triggered when a particular 16-bit memory address (including instruction fetches) has been read. 
+- **Memory read**. This breakpoint is triggered when an instruction reads a particular 16-bit memory address as data. Fetching the instruction's own opcode and operand bytes does not count. Every data access of an instruction is examined, so `LD HL,($8000)` triggers a read breakpoint on `$8000` as well as on `$8001`. 
 - **Memory write**. This breakpoint is triggered when a particular 16-bit memory address has been written.
 
 The sixth is the ZX Spectrum Next's **NextReg write**, which is triggered when a Next Register is

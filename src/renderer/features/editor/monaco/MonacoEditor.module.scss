@@ -92,6 +92,58 @@
   cursor: pointer;
 }
 
+/* A statement breakpoint with a condition or hit rule (drawn as a circled "="), and one whose
+   condition cannot stop it now (drawn hollow): the margin's variants, inline */
+.statementBpConditional {
+  color: var(--color-breakpoint-code);
+  cursor: pointer;
+}
+
+.statementBpInactive {
+  color: var(--color-breakpoint-code);
+  cursor: pointer;
+}
+
+/*
+ * The margin glyph's conditional and inactive variants (conditional breakpoints plan §4.4.2): the
+ * same dot colours, reshaped by a mask instead of the circular clip - an "=" knocked out of the dot,
+ * or a ring. The masks are the shapes of `bp-conditional.svg` and `bp-inactive.svg`, so the margin,
+ * the disassembly gutter and the Breakpoints panel draw one vocabulary. A mask only reads alpha,
+ * so the colour stays a token.
+ */
+.conditionalBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM5.4 6.1h5.2v1.3H5.4zM5.4 8.6h5.2v1.3H5.4z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.inactiveBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='3.6' fill='none' stroke='black' stroke-width='1.6'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+/*
+ * The execution point wins over the variant's mask.
+ *
+ * Monaco merges every glyph-margin decoration of a line into one element, so the conditional or
+ * inactive breakpoint's class and the execution point's class land on the same box. The mask would
+ * then cut the execution point's arrow (a background image) to the shape of the "=" dot or the
+ * ring, and the arrow vanished at a conditional breakpoint while the line was still highlighted.
+ * Two classes outrank the one-class mask rules wherever they sit in this file.
+ */
+.conditionalBreakpointMargin,
+.inactiveBreakpointMargin {
+  &.activeBreakpointMargin,
+  &.activeBreakpointOnExistingMargin,
+  &.activeBinBreakpointOnExistingMargin,
+  &.activeMacroBreakpointMargin,
+  &.activeMacroBreakpointOnExistingMargin,
+  &.activeMacroBinBreakpointOnExistingMargin {
+    mask: none;
+  }
+}
+
 .returnPointNote {
   /* A return point's "← returned from f" (plan §10.2.6): a note on the execution point, not a
      second state, so neutral text rather than another status hue */

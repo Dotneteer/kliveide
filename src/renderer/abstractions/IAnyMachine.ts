@@ -14,6 +14,7 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
 import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 import { IMemorySection } from "@abstractions/MemorySection";
+import type { ConditionStore } from "@emu/machines/conditionStore";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -253,6 +254,12 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * @param label Label to parse
    */
   parsePartitionLabel(label: string): number | undefined;
+
+  /**
+   * The core's breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`): its program
+   * store. Z80 WASM machines only; absent elsewhere, where conditions are not offered (C18).
+   */
+  getConditionStore?(): ConditionStore | undefined;
 
   /**
    * Gets the label of the specified partition

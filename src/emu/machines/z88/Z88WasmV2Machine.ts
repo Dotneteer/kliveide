@@ -1,3 +1,4 @@
+import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { BlinkState, CpuState } from "@common/messaging/EmuApi";
@@ -615,12 +616,24 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   private hasWasmV2AccessBreakpoint(): boolean {
     const debugSupport = this.executionContext.debugSupport;
     if (!debugSupport) return false;
-    return (
-      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasIoRead(this.lastIoReadPort) ||
-      debugSupport.hasIoWrite(this.lastIoWritePort)
+    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
+    // --- a read that stops must not hide a write in the same instruction from its counter.
+    const partitionOf = (addr: number) => this.getPartition(addr);
+    const read = debugSupport.hasMemoryRead(
+      this.lastMemoryReads,
+      this.lastMemoryReadsCount,
+      partitionOf,
+      this.conditionAccessValues(this.lastMemoryReads, this.lastMemoryReadsCount)
     );
+    const written = debugSupport.hasMemoryWrite(
+      this.lastMemoryWrites,
+      this.lastMemoryWritesCount,
+      partitionOf,
+      this.conditionAccessValues(this.lastMemoryWrites, this.lastMemoryWritesCount)
+    );
+    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
+    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
+    return read || written || portRead || portWritten;
   }
 
   /**
@@ -628,6 +641,19 @@ export class Z88WasmV2Machine extends Z88WasmHost {
    * their counts, the last values, and the last ports - undefined where the TypeScript CPU has not
    * set one (see z88-memory.c for the rules).
    */
+  /**
+   * The byte at each accessed address, for a condition's `VAL`. The Z88 core records addresses and
+   * only the *last* value, so this reads memory now: exact for a write (memory holds what was
+   * written), and for a read unless the same instruction wrote the address afterwards
+   * (`INC (HL)`). Asked only while an access breakpoint is set.
+   */
+  private conditionAccessValues(addresses: ArrayLike<number>, count: number): number[] {
+    const w = this.requireWasmV2Runtime().exports;
+    const values: number[] = [];
+    for (let i = 0; i < count; i++) values.push(w.z88ReadMemory(addresses[i] & 0xffff));
+    return values;
+  }
+
   private importWasmV2BusAccess(runtime: Z88WasmV2Runtime): void {
     const w = runtime.exports;
     for (let i = 0; i < 8; i++) {
@@ -978,6 +1004,15 @@ export class Z88WasmV2Machine extends Z88WasmHost {
    * Mirrors the core's CPU and frame state into the TypeScript-visible fields. Assignments go
    * through `super`, so the values just read from the core are not pushed back into it.
    */
+  /**
+   * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
+   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
+   */
+  getConditionStore(): ConditionStore | undefined {
+    return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
+  }
+
+
   private syncCpuFromWasmV2(runtime: Z88WasmV2Runtime): void {
     const w = runtime.exports;
     super.af = w.z88GetCpuAf();
