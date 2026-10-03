@@ -123,6 +123,27 @@
     center / 14px 14px no-repeat;
 }
 
+/*
+ * The execution point wins over the variant's mask.
+ *
+ * Monaco merges every glyph-margin decoration of a line into one element, so the conditional or
+ * inactive breakpoint's class and the execution point's class land on the same box. The mask would
+ * then cut the execution point's arrow (a background image) to the shape of the "=" dot or the
+ * ring, and the arrow vanished at a conditional breakpoint while the line was still highlighted.
+ * Two classes outrank the one-class mask rules wherever they sit in this file.
+ */
+.conditionalBreakpointMargin,
+.inactiveBreakpointMargin {
+  &.activeBreakpointMargin,
+  &.activeBreakpointOnExistingMargin,
+  &.activeBinBreakpointOnExistingMargin,
+  &.activeMacroBreakpointMargin,
+  &.activeMacroBreakpointOnExistingMargin,
+  &.activeMacroBinBreakpointOnExistingMargin {
+    mask: none;
+  }
+}
+
 .returnPointNote {
   /* A return point's "← returned from f" (plan §10.2.6): a note on the execution point, not a
      second state, so neutral text rather than another status hue */

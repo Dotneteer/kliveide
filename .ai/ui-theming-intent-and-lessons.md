@@ -304,6 +304,13 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   (`.conditionalBreakpointMargin` / `.inactiveBreakpointMargin`) — a mask reads only alpha, so the
   colour stays a token; inline statement markers use the character equivalents `⊜` and `○`. Every
   state is read through `breakpoint-filter-text.ts`, never re-derived at a call site.
+- **Monaco merges every glyph-margin decoration of a line into one element**, so a shape class and
+  the execution point's class (`.active*Margin`, a background-image arrow) land on the same box. A
+  `mask` or `clip-path` written for the dot therefore cuts the arrow too: the "=" mask once made the
+  execution point vanish at a conditional breakpoint while the line stayed highlighted. **Any
+  shaping property on a margin glyph class must be cancelled by a two-class rule for every
+  execution-point class** (`.conditionalBreakpointMargin.activeBreakpointMargin { mask: none }`, ...).
+  Specificity decides it; never rely on source order, because Monaco's class order is not yours.
 - **A row's condition is its last cell, and its state is told by strength, then by hue.** In the
   Breakpoints panel the filters follow everything else on the row — the live count `9×` (secondary
   state accent, it is a supporting value), the rule `hit *4` and the condition `if A == $FF`

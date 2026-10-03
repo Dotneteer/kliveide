@@ -50,7 +50,7 @@ absence is the first thing an experienced developer notices.
 (`src/common/utils/breakpoint-condition/`) is the one G1.4 and G1.5 build on.
 
 **Plan:** G1.1–G1.3 are planned in [CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md).
-G1.5 and G1.6 are planned (draft) in
+G1.5 and G1.6 are planned in
 [ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md](ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md).
 That plan found one exception to the "no C core changes" note below: the WASM cores record only the
 last memory access of an instruction, so its Phase 0 makes them record every one (which also fixes

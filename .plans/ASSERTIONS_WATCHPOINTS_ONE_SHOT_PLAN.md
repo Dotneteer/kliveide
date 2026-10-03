@@ -1,6 +1,6 @@
 # Source Assertions, Watchpoints And One-Shot Breakpoints Plan (G1.5, G1.6)
 
-Status: **draft** (2026-10-03). Nothing is implemented.
+Status: **ready** (2026-10-03): every design question is answered. Nothing is implemented.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G1, decision D3. This plan covers
 **G1.6** (temporary / one-shot breakpoints) and **G1.5** (DeZog-compatible `ASSERTION` and `WPMEM`
 source comments), plus a link between WPMEM watchpoints and Klive's Watch panel.
@@ -169,7 +169,7 @@ with a real sjasmplus.
 | O3 | **"First hit" means the first time it stops the machine.** A one-shot with a condition or a hit rule is consumed only when its own filters pass. `-once -hit 10` stops on the tenth hit and is then gone. | The only reading under which a filter combined with `-once` makes sense. Fixes B1. |
 | O4 | **Run-to targets get their own key namespace** and never replace a user breakpoint. A user one-shot shares the location key with a regular breakpoint, because it is the same breakpoint with a flag. | Fixes B2. Run-to is the IDE's transient stop, not the user's breakpoint. |
 | O5 | A one-shot can be any kind: execution, memory, I/O or NextReg. Consumption covers all of them. | Uniform model. A "break on the next write to `score`" is a natural one-shot. |
-| O6 | **Glyph:** the breakpoint dot with a "1" knocked out (`bp-once.svg`), the same technique as the "=" mark. **Precedence when shapes compete:** inactive (hollow) > conditional (=) > one-shot (1). The Breakpoints panel always shows a `once` tag, whatever the glyph. | The gutter has room for one shape. Whether a breakpoint can fire matters more than whether it will last. Open question Q1. |
+| O6 | **Glyphs:** the breakpoint dot with a "1" knocked out (`bp-once.svg`), the same technique as the "=" mark. A breakpoint that is both conditional and one-shot gets a **combined glyph** (`bp-once-conditional.svg`), decided by the author (Q1). It is the one-shot "1" over a single bar (a shortened "="), candidate A of the 2026-10-03 sketch (Q5). The rejected candidate B put a "1" stem beside the "="; at 14px its three thin bars merged. **Inactive (hollow) still wins over all of them.** The Breakpoints panel always shows a `once` tag. | Both facts matter at a glance: that it will stop only under a condition, and that it will then be gone. Whether a breakpoint can fire at all matters most. |
 
 ### 3.2 Source comments (G1.5)
 
@@ -177,7 +177,8 @@ with a real sjasmplus.
 |---|---|---|
 | S1 | ASSERTION and WPMEM breakpoints are **owned by the build** (`owner: {kind:"build"}`). They are never saved, and the whole set is replaced after every successful build. They are re-applied from the last build when the machine changes. | They are a projection of the source, as the build's symbols are. |
 | S2 | **Their own key namespace** (`directive:<resource>:<line>:<n>`), so they sit alongside a user breakpoint at the same address. The machine stops if any of them stops it. | A user breakpoint on the instruction an assertion guards must not replace the assertion, or the reverse. |
-| S3 | They **cannot be deleted** from the IDE, only disabled. `bp-del` on one says which comment created it. A disabled state survives rebuilds while the comment stays on the same line. | Deleting something the next build recreates would be a lie. Remove the comment to remove it. |
+| S3 | They **cannot be deleted** from the IDE, only disabled. `bp-del` on one says which comment created it. A disabled state survives rebuilds while the comment stays on the same line, but **lasts for the session only**: it is not saved, and a restart of Klive enables them all again (Q2, decided by the author). | Deleting something the next build recreates would be a lie. Remove the comment to remove it, or switch the whole group off with its toggle. |
+| S12 | **A directive's margin mark:** a plain click toggles its disabled state. The hover names the guarded instruction ("checked before `ld (ix+3),a`, line 43, `$800D`"). Right-click opens a small menu: Disable/Enable and **Show in Disassembly**, which lists each address when a macro expanded the comment more than once (Q3). | Click keeps one meaning. The hover answers "which instruction?" without a jump, because the guarded instruction is usually the next source line. The jump matters where the source does not show the code: macros and banked code. |
 | S4 | **DeZog expressions go through a DeZog front end that builds Klive's condition tree.** The existing checker binds and compiles that tree as usual. The panel shows the original DeZog text, with the Klive form in the tooltip. | CONDITIONAL_BREAKPOINTS_PLAN §4.8. It also contains the precedence difference (§2.5) in one place. |
 | S5 | An expression that does not translate becomes a **build warning on the comment's line**: shown in the Problems list and as a Monaco marker. That comment creates no breakpoint. An unknown label makes the breakpoint *inactive* (hollow), exactly as for a hand-written condition (C14). | The comment is source code, so its errors belong with build diagnostics. |
 | S6 | **Per-project toggles, on by default:** `debugger.sourceComments.assertion` and `.wpmem` in the project file, where absent means on. They are switched from two toolbar buttons in the Breakpoints panel and with the `bp-comments` command. | Decided by the author. Someone who wrote assertions wants them, which is why Klive starts with them on where DeZog starts with them off. |
@@ -277,7 +278,7 @@ so the glyph-margin handler must `preventDefault` before Monaco sees it (R6).
   - One memory definition per access kind, with `length` (S10).
   - The `partition` comes from the directive when `addr` was omitted, and is absent otherwise.
 - **Disabled state.** It is held by the IDE in a session map keyed `resource:line:directive` and
-  re-applied after each rebuild (S3).
+  re-applied after each rebuild. It is never written to disk (S3).
 - **Machine change.** The new machine inherits the symbol table and receives the build-owned set
   again from the last compilation.
 
@@ -336,9 +337,12 @@ so the glyph-margin handler must `preventDefault` before Monaco sees it (R6).
   current:
   - an assertion mark;
   - the memory-write glyph for WPMEM.
-  - Clicking it toggles that generated breakpoint's disabled state.
   - It shows on the *comment's* line, even when the breakpoint's address belongs to the next
-    instruction. The hover says which address it guards.
+    instruction.
+  - Click, hover and right-click behave as S12 says.
+- **Show in Disassembly** needs a "reveal address" entry point on the live disassembly view. Today
+  only the NEX bank views have a "Show in Disassembly", and it targets a bank dump. The entry point
+  is built so other views can reuse it.
 
 ---
 
@@ -367,7 +371,8 @@ when it touches renderer React code.
 
 ### Phase 2 — one-shot UI
 
-- `bp-once.svg` and its Monaco mask class, with the glyph precedence of O6.
+- `bp-once.svg`, `bp-once-conditional.svg` (Q5: the "1" over a single bar) and their Monaco mask
+  classes, with inactive winning as in O6.
 - Shift+click in the editor glyph margin, the statement markers and the disassembly indicator.
 - The margin-menu items (unit-tested in `marginBreakpointMenu.ts`'s style), the "Stop Here Once"
   action, the disassembly row menu, and the panel `once` tag.
@@ -396,7 +401,8 @@ when it touches renderer React code.
 - Negated ASSERTION conditions; the disabled-state map; re-applying after a machine change.
 - Memory ranges (§4.6) with `-len` and the dialog's Length field.
 - Stop reports (S11), toggles (§4.8) and the command.
-- Panel groups and menus, and editor decorations.
+- Panel groups and menus, editor decorations (S12), and the live disassembly view's "reveal
+  address" entry point.
 - Tests:
   - unit tests for each;
   - Klive BASIC is untouched;
@@ -462,13 +468,22 @@ when it touches renderer React code.
 
 ---
 
-## 9. Open questions
+## 9. Questions and answers
 
-- **Q1 (O6):** when a breakpoint is both conditional and one-shot, should the gutter show the
-  "=" (proposed) or the "1"? Or a combined glyph, such as a dot with a "1" and an underline?
-- **Q2 (S3):** should a disabled generated breakpoint stay disabled across a restart of Klive?
-  Proposed: no, session only.
-- **Q3 (§4.8):** should the editor decoration on a directive line also let users jump to the guarded
-  instruction in the disassembly view?
-- **Q4 (W5):** should a WPMEM comment's breakpoint row offer Add to Watch even when the symbol has no
-  build label, by address only? Proposed: no; a watch needs a symbol.
+### 9.1 Answered by the project author (2026-10-03)
+
+- **Gesture:** Shift+click (O1).
+- **One-shot persistence:** session only (O2).
+- **Watch and WPMEM:** a two-way link (W2–W5).
+- **Toggles:** per project, on by default (S6).
+- **Q1:** a conditional one-shot gets a **combined glyph** (O6).
+- **Q2:** a disabled generated breakpoint stays disabled for the **session only** (S3).
+- **Q3:** the margin mark's hover names the guarded instruction, and its right-click menu offers
+  **Show in Disassembly** (S12). Confirmed by the author.
+- **Q4:** **no** Add to Watch by address only; a watch needs a build symbol (W5).
+
+- **Q5:** the combined glyph is **candidate A**, the "1" over a single bar (O6).
+
+### 9.2 Still open
+
+None.
