@@ -85,6 +85,10 @@ export async function compileCode(
   const fullPath = `${state.project.folderPath}/${buildRoot}`;
   const language = getFileTypeEntry(fullPath, context.store)?.subType;
 
+  // --- The compiler reads the files from disk: write what the editors have not saved yet (saving
+  // --- as you type is debounced), or a build started right after an edit compiles the old text
+  await context.service.projectService.performAllDelayedSavesNow?.();
+
   // --- Compile the build root
   out.color("bright-blue");
   out.write("Start compiling ");

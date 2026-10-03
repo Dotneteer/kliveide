@@ -72,6 +72,8 @@ export class ExpressionBinder {
   protected readonly labels = new Map<string, LabelSymbol>();
   protected readonly routines: RoutineSymbol[] = [];
   protected readonly bankReferences: BankReference[] = [];
+  /** Named-argument names, each a use of its parameter (for the editor; see `BindResult`). */
+  protected readonly paramUses: { param: ParamSymbol; span: Span }[] = [];
 
   constructor(
     protected readonly options: KBasicOptions,
@@ -494,6 +496,7 @@ export class ExpressionBinder {
           this.expr(a.value);
         } else {
           namedIndices.add(index);
+          this.paramUses.push({ param: params[index], span: a.name.span });
           values.push(a);
         }
         continue;

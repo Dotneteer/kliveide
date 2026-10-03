@@ -34,7 +34,7 @@ are estimates for prioritising, not commitments.
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
-| G8 | BASIC editor intelligence | **M** | Hover and go to definition |
+| G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
 | G9 | Machine breadth (ZX80/81, clones) | **M → XL** | Pentagon on top of the 128K core |
 | G10 | Proof points (accuracy evidence) | **S–M** | Publishing results of known test suites |
 
@@ -206,13 +206,15 @@ follow.
 
 | Feature | What it does | Size |
 |---|---|---|
-| G8.1 Hover | Types of variables and functions, `SUB`/`FUNCTION` signatures, keyword help. | S–M |
-| G8.2 Go to definition / find references | For SUBs, FUNCTIONs, labels, variables, constants, across `#include`d files. | M |
-| G8.3 Completion | Keywords, in-scope identifiers, library functions from the stdlib API. | M |
-| G8.4 Rename | Cross-file rename of user symbols. | M, after G8.2 |
-| G8.5 Signature help, outline, folding | Parameter hints while typing calls; document symbols; folding for `SUB`/`IF`/`FOR` blocks. | S–M |
+| G8.1 Hover ✅ | Types of variables and functions, `SUB`/`FUNCTION` signatures, keyword help. | S–M |
+| G8.2 Go to definition / find references ✅ | For SUBs, FUNCTIONs, labels, variables, constants, across `#include`d files. | M |
+| G8.3 Completion ✅ | Keywords, in-scope identifiers, library functions from the stdlib API. | M |
+| G8.4 Rename ✅ | Cross-file rename of user symbols. | M, after G8.2 |
+| G8.5 Signature help, outline, folding ✅ | Parameter hints while typing calls; document symbols; folding for `SUB`/`IF`/`FOR` blocks. | S–M |
 
-**Plan:** [BASIC_EDITOR_INTELLIGENCE_PLAN.md](BASIC_EDITOR_INTELLIGENCE_PLAN.md) (decisions recorded 2026-10-03).
+**Plan:** [BASIC_EDITOR_INTELLIGENCE_PLAN.md](BASIC_EDITOR_INTELLIGENCE_PLAN.md). **Done (2026-10-03):**
+G8.1–G8.5 on Klive BASIC snapshots from the background check, with keyword, directive and library
+help generated from Klive's spec; checked in the running IDE by `scripts/kbasic-ide-check.cjs`.
 
 ---
 
@@ -275,7 +277,7 @@ and WPMEM comments.
 **Wave 3 — depth:**
 - G5.5 DeZog-compatible unit tests and G6.1 CLI, which together enable G5.6 (CI).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
-- G8.x BASIC intelligence, G2.4 snapshot saving, G5.2–G5.3 heat map and profiler.
+- ~~G8.x BASIC intelligence~~ (done), G2.4 snapshot saving, G5.2–G5.3 heat map and profiler.
 - **G4.2 history in every core**, which is the groundwork for G4.4.
 
 **Wave 4 — the big bets:**

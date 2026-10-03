@@ -9,6 +9,7 @@ import {
   KliveCompilerOutput,
   LanguageIntelData
 } from "@abstractions/CompilerInfo";
+import type { BasicIntelData } from "@abstractions/BasicIntel";
 import { CompilationCompleted } from "@main/compiler-integration/runWorker";
 
 /**
@@ -219,6 +220,12 @@ export type CompilationState = {
   backgroundResult?: CompilationCompleted;
   /** Language intelligence data populated after each successful background compile. */
   languageIntel?: LanguageIntelData;
+  /**
+   * Klive BASIC intel, by the root file each snapshot was checked from: the build root's, and the
+   * open file's when the build root does not include it (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+   * E3, E14). Each entry is the last good snapshot of its root.
+   */
+  basicIntel?: Record<string, BasicIntelData>;
 };
 
 /**

@@ -220,7 +220,7 @@ describe("Klive BASIC parser: statements", () => {
 
   it("parses DIM in all its forms", () => {
     const s = statements(
-      "DIM a, b, c AS INTEGER\nDIM d = 5\nDIM e AS UBYTE AT 23672\nDIM f(10)\nDIM g(1 TO 3, 5) AS FLOAT AT @buffer\nDIM h(2, 1) AS UBYTE => {{1, 2}, {3, 4}, {5, 6}}\nDIM s$(10)"
+      "DIM a, b, c AS INTEGER\nDIM d = 5\nDIM e AS UBYTE AT 23672\nDIM f(10)\nDIM g(1 TO 3, 5) AS FLOAT AT @buffer\nDIM h(2, 1) AS UBYTE => {{1, 2}, {3, 4}, {5, 6}}\nDIM s$(10)\nDIM v(2) AS UBYTE = {1, 2, 3}"
     );
     expect(s.map((x) => (x.kind === "dim" ? `${x.names.length}:${x.bounds?.length ?? 0}:${!!x.initialValue}:${!!x.at}:${!!x.vector}` : x.kind))).toEqual([
       "3:0:false:false:false",
@@ -229,7 +229,9 @@ describe("Klive BASIC parser: statements", () => {
       "1:1:false:false:false",
       "1:2:false:true:false",
       "1:2:false:false:true",
-      "1:1:false:false:false"
+      "1:1:false:false:false",
+      // --- `= {...}` is the same as `=> {...}` (zxbc accepts it)
+      "1:1:false:false:true"
     ]);
   });
 

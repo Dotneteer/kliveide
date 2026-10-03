@@ -49,7 +49,7 @@ What the field looks like:
 | 48K / 128K / +2E / +3E | ✅ | ✅ | ✗ | ✅ (reference accuracy) | ◐ (48/128) | ◐ |
 | ZX Spectrum Next | ✅ C/WASM core that cites the FPGA VHDL; about 30-area hardware test suite | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
 | Other machines | Z88, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
-| Editor with language intelligence | ✅ Monaco with compiler-driven completion, hover (incl. macro expansion), rename, references, inlay hints, colour pickers | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
+| Editor with language intelligence | ✅ Monaco with compiler-driven completion, hover (incl. macro expansion), rename, references, inlay hints, colour pickers — for asm **and Klive BASIC** (scope-correct hover, definition, references, rename, completion with auto-`#include`, signature help, outline, folding; unreleased) | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
 | Built-in assembler | ✅ Klive Z80/Z80N: macros, structs, modules, `.savenex`, `.dma` DSL | ✗ (external) | ✗ | ✗ | ✗ | ✗ |
 | External toolchains | ✅ sjasmplus (with SLD), zxbc, z88dk, PASTA/80 | ✅ sjasmplus, z80asm, z88dk | map files | ✗ | SkoolKit | Boriel |
 | Built-in BASIC compiler | ✅ **(main)** Klive BASIC, Boriel 1.19 + CODEBANK compatible | ✗ | ✗ | ✗ | ✗ | Boriel (external) |
@@ -117,7 +117,7 @@ tools:
 | W5 | **Snapshot loading (.sna / .z80 / .szx) and RZX** | Fuse, ZEsarUX, Spectrum Analyser | Basic table stakes for 48K/128K users; Klive only *views* them. |
 | W6 | **No remote or real-hardware debugging**, no external API | DeZog (serial), ZEsarUX ZRCP, CSpect plugins, MAME gdbstub | Shuts Klive out of the VS Code/DeZog ecosystem. |
 | W7 | **48K/128K reverse-engineering depth** (automatic code/data detection, annotated ROMs, SkoolKit, graphics finders) | Spectrum Analyser | Klive's annotation model exists for NEX only. |
-| W8 | **BASIC editor intelligence** (completion, hover, rename for `.zxbas`) | — (also weak elsewhere) | Diagnostics only; compare with the rich asm experience. |
+| W8 | ~~**BASIC editor intelligence**~~ — closed on main (G8.1–G8.5; unreleased) | — (also weak elsewhere) | Hover, definition, scope-correct references and rename, completion (library routines add their `#include`), signature help, outline and folding for `.zxbas`, from the compiler's own binder. With zxbc selected, keyword help, completion and folding remain. |
 | W9 | **Machine breadth**: ZX80/ZX81, Pentagon/Scorpion/Timex | ZEsarUX, Fuse | ZX80/81 is planned (.plans/ZX8081_WASM_PLAN.md). |
 | W10 | **Proof points**: Next accuracy is unbenchmarked against CSpect/ZEsarUX publicly; sjasmplus debugging tested on 48K only | — | A credibility gap more than a feature gap. |
 

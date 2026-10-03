@@ -27,8 +27,15 @@
  * Then the NEX debug sidecar (plan §8.5): a fresh Klive opens that project without building it and
  * runs the exported NEX with `nex-run -d`; its breakpoint and the panels come from the sidecar.
  *
+ * Then editor intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §7): hover on a local, a
+ * global, a FUNCTION with a doc comment, PRINT and a header option; Go to Definition into a library
+ * file; the references of a shadowed name; completion after AS, after GOTO, of a library routine
+ * that adds its #include and of a header option's value; signature help in a nested call; a rename
+ * across two files (and back); folding a FUNCTION; the outline of an included file; hover surviving a
+ * syntax error; and keyword help with zxbc selected.
+ *
  * `KBASIC_IDE_SHOTS=<folder>` also saves a screenshot of the IDE at each stop;
- * `KBASIC_IDE_ONLY=next` (or `classic`) runs only that part; each part runs in a fresh Klive.
+ * `KBASIC_IDE_ONLY=next` (or `classic`, `intel`) runs only that part; each part runs in a fresh Klive.
  */
 const fs = require("fs");
 const os = require("os");
@@ -42,6 +49,26 @@ const STOPS = [
 ];
 
 const JMC = ["#include <hex.bas>", "DIM s AS String", "s = hex8(255)", "PRINT s", ""];
+
+const INTEL = [
+  "'@heap-size 2048", // 1
+  "#include <attr.bas>", // 2
+  '#include "helpers.zxbas"', // 3
+  "DIM total AS UInteger", // 4
+  "' Doubles a value.", // 5
+  "FUNCTION Twice(n AS UByte) AS UInteger", // 6
+  "  DIM total AS UInteger", // 7
+  "  total = n * 2", // 8
+  "  RETURN total", // 9
+  "END FUNCTION", // 10
+  "total = Twice(4)", // 11
+  "PRINT total; ATTR(0, 0)", // 12
+  "Greet", // 13
+  "done:", // 14
+  "CLS: BORDER 1", // 15
+  ""
+];
+const HELPERS = ["SUB Greet()", '  PRINT "hi"', "END SUB", ""];
 
 /** The first file named `name` below `dir`, or undefined. */
 function findFile(dir, name) {
@@ -111,7 +138,11 @@ const DEBUGGER = [
       if (!deco) return undefined;
       const top = deco.getBoundingClientRect().top;
       const line = [...document.querySelectorAll(".monaco-editor .view-line")].find((l) => Math.abs(l.getBoundingClientRect().top - top) < 2);
-      return line?.textContent.replace(/ /g, " ");
+      if (!line) return undefined;
+      // --- The statement markers are injected text, not part of the source line
+      const copy = line.cloneNode(true);
+      copy.querySelectorAll('[class*="statementBp"]').forEach((m) => m.remove());
+      return copy.textContent.replace(/ /g, " ");
     });
   const waitForStop = async (stop, index) => {
     const start = Date.now();
@@ -258,6 +289,238 @@ const DEBUGGER = [
     await cmd("em-jmc on", 800);
     }
 
+    // --- Editor intelligence (BASIC_EDITOR_INTELLIGENCE_PLAN §7)
+    if (part === "intel") {
+      const MOD = process.platform === "darwin" ? "Meta" : "Control";
+      await cmd(`newp sp48 kbintel zx-basic -p "${projects}"`, 5000);
+      const folder = path.join(projects, "kbintel");
+      fs.writeFileSync(path.join(folder, "code", "program.zxbas"), INTEL.join("\n"));
+      fs.writeFileSync(path.join(folder, "code", "helpers.zxbas"), HELPERS.join("\n"));
+      await cmd(`open "${folder}"`, 8000);
+      await cmd("set -p zxbasic.compiler klive", 1500);
+      await cmd("nav code/program.zxbas", 3000);
+
+      // --- The screen position of a 1-based (line, column) in the visible editor
+      const point = (line, column) =>
+        ide.evaluate(
+          ([line, column]) => {
+            const visible = (e) => e.getBoundingClientRect().width > 0;
+            const num = [...document.querySelectorAll(".monaco-editor .line-numbers")].filter(visible).find((n) => n.textContent.trim() === String(line));
+            if (!num) return undefined;
+            const top = num.getBoundingClientRect().top;
+            const row = [...document.querySelectorAll(".monaco-editor .view-line")].filter(visible).find((l) => Math.abs(l.getBoundingClientRect().top - top) < 3);
+            if (!row) return undefined;
+            const walker = document.createTreeWalker(row, NodeFilter.SHOW_TEXT);
+            let remaining = column - 1;
+            let node;
+            while ((node = walker.nextNode())) {
+              if (remaining < node.textContent.length) {
+                const r = document.createRange();
+                r.setStart(node, remaining);
+                r.setEnd(node, remaining + 1);
+                const rect = r.getBoundingClientRect();
+                return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+              }
+              remaining -= node.textContent.length;
+            }
+            return undefined;
+          },
+          [line, column]
+        );
+      const visibleText = (selector) =>
+        ide.evaluate((selector) => [...document.querySelectorAll(selector)].filter((e) => e.getBoundingClientRect().height > 0).map((e) => e.textContent).join("\n"), selector);
+      const editorLines = () =>
+        ide.evaluate(() =>
+          [...document.querySelectorAll(".monaco-editor .view-line")]
+            .filter((e) => e.getBoundingClientRect().width > 0)
+            .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)
+            .map((l) => l.textContent.replace(/ /g, " "))
+        );
+      const hover = async (line, column) => {
+        await ide.mouse.move(5, 5);
+        await sleep(300);
+        const p = await point(line, column);
+        if (!p) return "";
+        await ide.mouse.move(p.x, p.y);
+        for (let t = Date.now(); Date.now() - t < 4000; ) {
+          const text = await visibleText(".monaco-hover-content");
+          if (text.trim()) return text;
+          await sleep(200);
+        }
+        return "";
+      };
+      const clickAt = async (line, column) => {
+        const p = await point(line, column);
+        if (!p) throw new Error(`no editor position ${line}:${column}`);
+        await ide.mouse.click(p.x, p.y);
+        await sleep(300);
+      };
+      const key = (k) => ide.keyboard.press(k.replace("Mod", MOD));
+      const waitFor = async (probe, ms = 6000) => {
+        for (let t = Date.now(); Date.now() - t < ms; ) {
+          const value = await probe();
+          if (value) return value;
+          await sleep(250);
+        }
+        return undefined;
+      };
+      // --- Type on a fresh line at the end of the program; Escape and undo take it back out
+      const typeAtEnd = async (text) => {
+        await clickAt(INTEL.length - 1, 1);
+        await key("End");
+        await key("Enter");
+        await ide.keyboard.type(text, { delay: 30 });
+        await sleep(400);
+      };
+      const suggestions = async () => {
+        await key("Control+Space");
+        return (await waitFor(async () => (await visibleText(".suggest-widget .monaco-list-row")) || undefined)) ?? "";
+      };
+      // --- Undo until the editor shows the program as written (a typed line takes several steps)
+      const original = await editorLines();
+      const undoAll = async () => {
+        await key("Escape");
+        await key("Escape");
+        for (let i = 0; i < 30; i++) {
+          if (JSON.stringify(await editorLines()) === JSON.stringify(original)) return;
+          await key("Mod+z");
+          await sleep(120);
+        }
+      };
+
+      // --- The first background check publishes the snapshot
+      const first = await waitFor(async () => ((await hover(11, 10)).includes("FUNCTION Twice") ? "ok" : undefined), 20000);
+      check(!!first, "hover on a FUNCTION shows its signature (the snapshot arrived)");
+      const twice = await hover(11, 10);
+      check(twice.includes("Doubles a value."), `the FUNCTION's hover shows its doc comment (${JSON.stringify(twice.slice(0, 120))})`);
+      check((await hover(8, 4)).includes("local variable"), "hover on a local shows 'local variable'");
+      check((await hover(11, 2)).includes("global variable"), "hover on the shadowed global shows 'global variable'");
+      check((await hover(12, 2)).includes("CC BY 4.0"), "hover on PRINT shows keyword help with the attribution");
+      check((await hover(1, 5)).includes("heap size in bytes"), "hover on '@heap-size shows the option's help");
+      await shot("intel-hover");
+
+      // --- References of the shadowed name: the local's three, not the global's
+      await clickAt(8, 4);
+      await key("Shift+F12");
+      const refs = (await waitFor(async () => (await visibleText(".peekview-title")) || undefined)) ?? "";
+      check(/3 references|References \(3\)/.test(refs), `the references of the local total are its own three (${JSON.stringify(refs)})`);
+      await key("Escape");
+
+      // --- Folding the FUNCTION hides its body
+      await clickAt(6, 2);
+      await key("Mod+Alt+BracketLeft");
+      await sleep(600);
+      check(!(await editorLines()).includes("  total = n * 2"), "folding the FUNCTION hides its body");
+      await key("Mod+Alt+BracketRight");
+      await sleep(400);
+
+      // --- Completion
+      await typeAtEnd("DIM z AS U");
+      const types = await suggestions();
+      check(/UBYTE/.test(types), "completion after AS offers the types");
+      await undoAll();
+      await typeAtEnd("GOTO d");
+      check(/done/.test(await suggestions()), "completion after GOTO offers the labels");
+      await undoAll();
+      await typeAtEnd("PRINT hex1");
+      const lib = await suggestions();
+      check(/HEX16/i.test(lib), "completion offers a library routine the program does not include");
+      await key("Enter");
+      await sleep(600);
+      check((await editorLines()).some((l) => l.trim() === "#include <hex.bas>"), "accepting it adds #include <hex.bas>");
+      await undoAll();
+      check(!(await editorLines()).some((l) => l.trim() === "#include <hex.bas>"), "undo takes the #include back out");
+      await clickAt(1, 1);
+      await key("End");
+      await key("Enter");
+      await ide.keyboard.type("'@optimize-for ", { delay: 30 });
+      const optionValues = await suggestions();
+      await shot("intel-header-values");
+      check(/balanced/.test(optionValues), `completion offers a header option's values (${JSON.stringify(optionValues.slice(0, 80))})`);
+      await undoAll();
+
+      // --- Signature help in a nested call
+      await typeAtEnd("PRINT ATTR(1, ABS(");
+      const inner = (await waitFor(async () => (await visibleText(".parameter-hints-widget")) || undefined)) ?? "";
+      check(/ABS\(expr\)/.test(inner), `signature help shows the inner call (${JSON.stringify(inner.slice(0, 60))})`);
+      await ide.keyboard.type("2), ", { delay: 30 });
+      await sleep(600);
+      const outer = (await visibleText(".parameter-hints-widget")) ?? "";
+      check(/ATTR\(BYVAL row AS UByte, BYVAL col AS UByte\)/.test(outer), `then the outer one (${JSON.stringify(outer.slice(0, 80))})`);
+      await undoAll();
+
+      // --- Go to Definition into the standard library
+      await clickAt(12, 15);
+      await key("F12");
+      const opened = await waitFor(async () => ((await ide.evaluate(() => document.body.innerText)).includes("attr.bas (library)") ? "ok" : undefined));
+      check(!!opened, "Go to Definition on ATTR opens attr.bas read-only");
+      await shot("intel-library");
+
+      // --- The outline of an included file
+      await cmd("nav code/helpers.zxbas", 2500);
+      await clickAt(1, 1);
+      await key("Mod+Shift+o");
+      const outline = (await waitFor(async () => (await visibleText(".quick-input-list")) || undefined)) ?? "";
+      check(/Greet/.test(outline) && !/Twice/.test(outline), `the outline of helpers.zxbas is its own (${JSON.stringify(outline.slice(0, 60))})`);
+      await key("Escape");
+
+      // --- Rename across the two files, and back
+      await cmd("nav code/program.zxbas", 2500);
+      await clickAt(13, 2);
+      await key("F2");
+      await sleep(600);
+      await ide.keyboard.press(`${MOD}+a`);
+      await ide.keyboard.type("SayHello", { delay: 20 });
+      await key("Enter");
+      await sleep(1500);
+      await shot("intel-rename-done");
+      const renamed = await waitFor(() => fs.readFileSync(path.join(folder, "code", "helpers.zxbas"), "utf8").includes("SUB SayHello()"));
+      check(!!renamed && (await editorLines()).includes("SayHello"), "renaming Greet edits program.zxbas and helpers.zxbas");
+      // --- The next snapshot knows the new name; rename it back
+      const fresh = await waitFor(async () => ((await hover(13, 2)).includes("SUB SayHello") ? "ok" : undefined), 20000);
+      await clickAt(13, 2);
+      await key("F2");
+      await sleep(600);
+      await ide.keyboard.press(`${MOD}+a`);
+      await ide.keyboard.type("Greet", { delay: 20 });
+      await key("Enter");
+      const back = await waitFor(() => fs.readFileSync(path.join(folder, "code", "helpers.zxbas"), "utf8").includes("SUB Greet()"));
+      check(!!fresh && !!back, "renaming it back restores both files");
+
+      // --- A syntax error keeps the last good snapshot
+      await typeAtEnd("PRINT (");
+      await sleep(4000);
+      check((await hover(11, 10)).includes("FUNCTION Twice"), "hover still works on unchanged symbols while the file has an error");
+      await undoAll();
+
+      // --- A statement breakpoint is drawn at its statement, in the breakpoint colour (plan §10.3)
+      await cmd("compile", 6000);
+      await cmd("nav code/program.zxbas 15 1", 1500);
+      const border = await point(15, INTEL[14].indexOf("BORDER") + 2);
+      await ide.mouse.click(border.x, border.y, { button: "right" });
+      await sleep(800);
+      await ide.getByText("Toggle Breakpoint at Statement", { exact: true }).first().click();
+      const marker = await waitFor(() =>
+        ide.evaluate(() => {
+          const m = [...document.querySelectorAll(".monaco-editor [class*=statementBpSet]")].find((e) => e.getBoundingClientRect().width > 0);
+          if (!m) return undefined;
+          const next = m.nextElementSibling?.textContent ?? "";
+          return { color: getComputedStyle(m).color, text: m.textContent, next };
+        })
+      );
+      await shot("intel-statement-bp");
+      const foreground = await ide.evaluate(() => getComputedStyle(document.querySelector(".monaco-editor .mtk1")).color);
+      check(!!marker && marker.text === "\u25cf" && marker.next.startsWith("BORDER"), `a statement breakpoint shows its marker before BORDER (${JSON.stringify(marker)})`);
+      check(!!marker && marker.color !== foreground, "the marker is drawn in the breakpoint colour, not the text colour");
+      await cmd("bp-ea", 800);
+
+      // --- zxbc: the static help remains (E13)
+      await cmd("set -p zxbasic.compiler zxbc", 1500);
+      await cmd("nav code/program.zxbas", 1500);
+      check((await hover(12, 2)).includes("PRINT"), "with zxbc selected, keyword help remains");
+      await cmd("set -p zxbasic.compiler klive", 1000);
+    }
+
     // --- CODEBANK on the ZX Spectrum Next (Phase 6)
     if (part === "next") {
       await cmd("em-stop", 1500);
@@ -368,9 +631,9 @@ const DEBUGGER = [
     await Promise.race([klive.close(), new Promise((r) => setTimeout(r, 10000))]);
   }
   };
-  const parts = only === "next" ? ["next", "nex"] : only === "classic" ? ["classic"] : ["classic", "next", "nex"];
+  const parts = only === "next" ? ["next", "nex"] : only === "classic" ? ["classic"] : only === "intel" ? ["intel"] : ["classic", "intel", "next", "nex"];
   for (const part of parts) {
-    if (part !== "classic" && !hasCard) console.log(`skip the ${part} scenario: no NextZXOS SD card image at ${card}`);
+    if ((part === "next" || part === "nex") && !hasCard) console.log(`skip the ${part} scenario: no NextZXOS SD card image at ${card}`);
     else await runPart(part);
   }
   fs.rmSync(work, { recursive: true, force: true });
@@ -378,6 +641,6 @@ const DEBUGGER = [
     console.log(`\n${failures.length} problem(s):\n  ${failures.join("\n  ")}`);
     process.exit(1);
   }
-  console.log("\nKlive BASIC breakpoints, the execution point and the source-level debugger work in the IDE.");
+  console.log("\nKlive BASIC breakpoints, the execution point, the source-level debugger and editor intelligence work in the IDE.");
   process.exit(0);
 })();

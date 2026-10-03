@@ -1,0 +1,197 @@
+{
+  "$comment": "Hand-written help for what scripts/kbasic-help-data.cjs cannot derive from the spec: block statements' syntax (the spec's EBNF spans lines) and the keywords that are only parts of other statements. Keep it small; the generator reports what needs an entry.",
+  "keywords": {
+    "AS": {
+      "summary": "Gives the type of a variable, array, constant, parameter or FUNCTION result.",
+      "display": [
+        "DIM name AS type",
+        "FUNCTION name(...) AS type"
+      ]
+    },
+    "ASM": {
+      "display": [
+        "ASM … END ASM"
+      ]
+    },
+    "AT": {
+      "summary": "PRINT AT row, column positions the cursor; DIM ... AT address maps a variable to memory.",
+      "display": [
+        "PRINT AT row, column; …",
+        "DIM name AS type AT address"
+      ]
+    },
+    "BIN": {
+      "summary": "Reads the token after it as binary digits: BIN 101 is 5.",
+      "display": [
+        "BIN digits"
+      ]
+    },
+    "BYREF": {
+      "summary": "The parameter receives the caller's variable, not a copy of its value.",
+      "display": [
+        "BYREF name AS type"
+      ]
+    },
+    "BYVAL": {
+      "summary": "The parameter receives a copy of the value (the default unless default_byref is on).",
+      "display": [
+        "BYVAL name AS type"
+      ]
+    },
+    "CODEBANK": {
+      "summary": "Places the routines and data in the block in a memory bank (a Klive BASIC extension); bank 0 is resident.",
+      "display": [
+        "CODEBANK bank … END CODEBANK"
+      ]
+    },
+    "DO": {
+      "display": [
+        "DO … LOOP",
+        "DO … LOOP UNTIL expr",
+        "DO … LOOP WHILE expr",
+        "DO UNTIL expr … LOOP",
+        "DO WHILE expr … LOOP"
+      ]
+    },
+    "ELSE": {
+      "summary": "Starts the branch an IF runs when no condition holds.",
+      "display": [
+        "IF expr THEN … ELSE … END IF"
+      ]
+    },
+    "ELSEIF": {
+      "summary": "Starts another tested branch of a block IF.",
+      "display": [
+        "ELSEIF expr [THEN]"
+      ]
+    },
+    "ENDIF": {
+      "summary": "Closes an IF block; the same as END IF.",
+      "display": [
+        "ENDIF"
+      ]
+    },
+    "FARPTR": {
+      "summary": "A banked address as a ULong: the bank in bits 16-23, the address in bits 0-15.",
+      "display": [
+        "FARPTR name"
+      ]
+    },
+    "FASTCALL": {
+      "summary": "Calling convention: the first argument comes in registers (A, HL or DE:HL) and the routine has no stack frame.",
+      "display": [
+        "SUB FASTCALL name(...)",
+        "FUNCTION FASTCALL name(...) AS type"
+      ]
+    },
+    "FOR": {
+      "display": [
+        "FOR name = expr TO expr [STEP expr] … NEXT [name]"
+      ]
+    },
+    "FUNCTION": {
+      "display": [
+        "FUNCTION [FASTCALL | STDCALL] name[(params)] [AS type] … END FUNCTION"
+      ]
+    },
+    "IF": {
+      "display": [
+        "IF expr [THEN] statements [ELSE statements]",
+        "IF expr [THEN] … [ELSEIF expr [THEN] …] [ELSE …] END IF"
+      ]
+    },
+    "LOOP": {
+      "summary": "Closes a DO loop, optionally testing a condition at the bottom.",
+      "display": [
+        "LOOP [UNTIL expr | WHILE expr]"
+      ]
+    },
+    "NEXT": {
+      "summary": "Closes a FOR loop; it may name the loop variable, which must then match.",
+      "display": [
+        "NEXT [name]"
+      ]
+    },
+    "REM": {
+      "summary": "A comment to the end of the line; ' is the short form.",
+      "display": [
+        "REM text"
+      ]
+    },
+    "SIZEOF": {
+      "display": [
+        "SIZEOF(type)",
+        "SIZEOF(name)"
+      ],
+      "params": [
+        "type or name"
+      ]
+    },
+    "STDCALL": {
+      "summary": "Calling convention (the default): arguments on the stack and a stack frame for locals.",
+      "display": [
+        "SUB STDCALL name(...)",
+        "FUNCTION STDCALL name(...) AS type"
+      ]
+    },
+    "STEP": {
+      "summary": "The amount a FOR loop's variable changes by on each NEXT (1 when omitted).",
+      "display": [
+        "FOR name = expr TO expr STEP expr"
+      ]
+    },
+    "SUB": {
+      "display": [
+        "SUB [FASTCALL | STDCALL] name[(params)] … END SUB"
+      ]
+    },
+    "TAB": {
+      "summary": "In PRINT, moves to a column (taken modulo 32).",
+      "display": [
+        "PRINT TAB column; …"
+      ]
+    },
+    "THEN": {
+      "summary": "Ends an IF or ELSEIF condition; it is optional.",
+      "display": [
+        "IF expr THEN"
+      ]
+    },
+    "TO": {
+      "summary": "Separates the limits of a FOR loop, an array bound or a string slice.",
+      "display": [
+        "FOR name = expr TO expr",
+        "DIM a(lower TO upper)",
+        "s$(from TO to)"
+      ]
+    },
+    "UNTIL": {
+      "summary": "A DO loop's exit test: the loop ends when the condition holds.",
+      "display": [
+        "DO UNTIL expr",
+        "LOOP UNTIL expr"
+      ]
+    },
+    "WEND": {
+      "summary": "Closes a WHILE loop; the same as END WHILE.",
+      "display": [
+        "WEND"
+      ]
+    },
+    "WHILE": {
+      "display": [
+        "WHILE expr … WEND",
+        "WHILE expr … END WHILE"
+      ]
+    }
+  },
+  "directives": {
+    "#define": {
+      "display": [
+        "#define NAME",
+        "#define NAME body",
+        "#define NAME(param, …) body"
+      ]
+    }
+  }
+}

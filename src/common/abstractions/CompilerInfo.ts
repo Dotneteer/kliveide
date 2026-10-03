@@ -1,3 +1,4 @@
+import type { BasicIntelData } from "./BasicIntel";
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
 import type { SourceDebugExtensions } from "./SourceDebugInfo";
@@ -819,6 +820,8 @@ export type SimpleAssemblerOutput = {
   errors?: AssemblerErrorInfo[];
   debugMessages?: string[];
   traceOutput?: string[];
+  /** A Klive BASIC background check's language intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` §4.2). */
+  basicIntel?: BasicIntelData[];
 };
 
 /**

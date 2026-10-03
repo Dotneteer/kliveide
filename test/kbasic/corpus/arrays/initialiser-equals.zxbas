@@ -1,0 +1,8 @@
+' An array initialiser written with = instead of =>, as zxbc accepts it (pong.bas in its examples)
+'@expect screen 0 "10 30 4 3"
+DIM p(1 TO 3) AS UInteger = {10, 20, 30}
+DIM q(1, 1) AS UByte = { _
+    {1, 2}, _
+    {3, 4} _
+}
+PRINT p(1); " "; p(3); " "; q(1, 1); " "; q(1, 0)

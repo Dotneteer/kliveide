@@ -1,0 +1,5 @@
+' #include "file" finds a library file when the program's folder has none (zxbc's memory_banking.bas)
+'@expect screen 0 "35"
+#include "attr.bas"
+PRINT AT 4, 4; INK 3; PAPER 4; "K";
+PRINT AT 0, 0; ATTR(4, 4)

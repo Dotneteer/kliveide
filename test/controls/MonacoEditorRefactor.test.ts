@@ -287,6 +287,7 @@ describe("Monaco bootstrap", () => {
     const defineTheme = vi.fn();
     const registerEditorOpener = vi.fn();
     const registerZ80Providers = vi.fn();
+    const registerBasicProviders = vi.fn();
     const loadCustomTokenColors = vi.fn(() => Promise.resolve());
     const monaco = {
       languages: {
@@ -343,6 +344,12 @@ describe("Monaco bootstrap", () => {
     vi.doMock("@renderer/appIde/services/z80-providers", () => ({
       registerZ80Providers
     }));
+    vi.doMock("@renderer/appIde/services/BasicIntelService", () => ({
+      basicIntelSingleton: {}
+    }));
+    vi.doMock("@renderer/appIde/services/basic-providers", () => ({
+      registerBasicProviders
+    }));
 
     const { initializeMonaco, isMonacoInitialized, resetMonacoBootstrapForTests } = await import(
       "@renderer/features/editor/monaco/monacoBootstrap"
@@ -367,6 +374,7 @@ describe("Monaco bootstrap", () => {
      */
     expect(defineTheme).not.toHaveBeenCalled();
     expect(registerZ80Providers).toHaveBeenCalledTimes(1);
+    expect(registerBasicProviders).toHaveBeenCalledTimes(1);
     expect(registerEditorOpener).toHaveBeenCalledTimes(1);
 
     // --- The opener passes the definition's column on, not just its line.
@@ -383,6 +391,9 @@ describe("Monaco bootstrap", () => {
       })
     ).toBe(true);
     expect(navigate).toHaveBeenCalledWith("/p/lib.asm", 30, 5);
+    // --- A Klive BASIC library file's URI path loses the slash `Uri.file` put in front of it
+    opener.openCodeEditor(null, { fsPath: "/<kbasic-stdlib>/attr.bas", toString: () => "" }, { lineNumber: 9, column: 10 });
+    expect(navigate).toHaveBeenCalledWith("<kbasic-stdlib>/attr.bas", 9, 10);
     cleanup();
   });
 });

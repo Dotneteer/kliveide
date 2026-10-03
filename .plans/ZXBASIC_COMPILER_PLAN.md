@@ -379,7 +379,7 @@ debuggable at source level, in the emulator tests and in the running IDE.
   stage C0 (DO…LOOP: `DO LOOP UNTIL c` accepted, a bare DO's LOOP on the body's only line rejected with
   E315, as zxbc) is done. Its C5–C7 cover §6.5 (zxbasm dialect, nextlib), §6.4 (the library) and the
   options. Still open besides: `string-concatenation-overflow` (no practical test). Then the rest of
-  §14's list — language intelligence (§11.2), data breakpoints (§10.9), mixed disassembly and the program
+  §14's list — ~~language intelligence (§11.2)~~ (done), data breakpoints (§10.9), mixed disassembly and the program
   map (§10.11), `asm-dialect zxbasm` with nextlib (§6.5), the rest of the standard library (§6.4,
   needs documented APIs), R18 docs.
 
@@ -1652,11 +1652,12 @@ have statements.
 
 ## 11. Editor and language intelligence
 
-1. **Background diagnostics** through the worker: lexer, parser and binder errors and warnings with
+1. **Background diagnostics** (done) through the worker: lexer, parser and binder errors and warnings with
    exact column ranges. Klive's marker code currently ignores error columns
    (`MonacoEditor.tsx:337-470`); this plan changes it to use them when present.
-2. **Language intelligence** for `zxbas`, reusing the `LanguageIntelData` payload that `kz80-asm`
-   uses: hover (type, declaration, value of constants, doc summary for built-ins from the spec),
+2. **Language intelligence** for `zxbas` — **done (2026-10-03)** by
+   [BASIC_EDITOR_INTELLIGENCE_PLAN.md](BASIC_EDITOR_INTELLIGENCE_PLAN.md), which uses a BASIC payload
+   of its own (`BasicIntelData`, symbol ids and resolved occurrences) instead of `LanguageIntelData`: hover (type, declaration, value of constants, doc summary for built-ins from the spec),
    go to definition and references (variables, routines, labels, `#define`s, across includes),
    document outline (routines, labels, CODEBANK blocks), completion (keywords, declared symbols in
    scope, stdlib routines of included files, header option names and values).

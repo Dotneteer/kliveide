@@ -133,6 +133,25 @@ These commands change how source stepping behaves (they are saved as settings):
 
 Exporting a ZX Spectrum Next program as a NEX file also writes `<name>.nex.kbasic-debug.json` beside it. When you run that NEX with `nex-run <file> -d`, Klive loads the file's source-level debug information, so the program steps at source level without rebuilding it. A NEX rebuilt later by another tool does not match its old debug file, which is then ignored.
 
+### Editing ZX BASIC
+
+While you type, Klive BASIC checks the program in the background (about a second after you stop typing) and the editor uses what it learns about your symbols. Everything below works across `#include`d files, including the standard library's.
+
+- **Hover** a name to see its declaration: a variable's type and whether it is global, local or a parameter (and `BYREF`), a constant's value, an array's bounds, a SUB's or FUNCTION's signature with the comment lines written directly above it. Keywords, built-in functions, directives, `#pragma` options and `'@` header options show their syntax and a short description, and numbers show their value in the other bases.
+- **Go to Definition** (F12) jumps to where a name is declared. On an `#include` line it opens the file; a standard library file opens read-only.
+- **Find All References** (Shift+F12) lists the uses of the symbol under the cursor. It knows scopes: a local `total` inside a FUNCTION is not the global `total`.
+- **Completion** offers what fits where you type: statements and snippets at the start of a statement, values and functions in an expression, types after `AS`, labels after `GOTO` and `GOSUB`, directives after `#`, `#pragma` options, library files in `#include <…>`, and header option names and values in `'@` lines. A library routine that the program does not include yet is offered too; choosing it adds the `#include` line.
+- **Signature help** shows the parameters of the SUB, FUNCTION, built-in or library routine you are calling, also for a SUB called without parentheses.
+- **Rename** (F2) renames a variable, array, constant, SUB, FUNCTION, parameter or label in every file, keeping any `$` sigil. It refuses a name that a visible symbol or a library routine already uses, and a symbol that a macro uses.
+- **Outline** (the editor's symbol list, Cmd/Ctrl+Shift+O) lists the file's SUBs and FUNCTIONs with their parameters and locals, constants, global arrays and variables (also those created by their first use, without `DIM`), labels and `CODEBANK` blocks.
+- **Folding** and block highlights cover `SUB`, `FUNCTION`, multi-line `IF`, `FOR`, `WHILE`, `DO`, `ASM`, `CODEBANK`, `#if` regions and runs of comment lines.
+
+While a line is half-typed and the program has errors, the editor keeps using the last check that succeeded. A name declared since then becomes known when the program compiles again. A file that the build root does not include is checked on its own while it is open.
+
+<Callout type="info">
+With `zxbasic.compiler` set to `zxbc`, the editor knows no symbols: keyword help, keyword and library completion, signature help for built-ins, folding and block highlights still work.
+</Callout>
+
 ## Using the external zxbc compiler
 
 To build with Boriel's own `zxbc` instead of Klive BASIC, set:

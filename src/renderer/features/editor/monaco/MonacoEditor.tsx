@@ -81,11 +81,13 @@ import { statementAtColumn } from "@common/utils/breakpoints";
 import { setCommentBreakpointsEnabled } from "@renderer/appIde/utils/annotation-state";
 import { commentKindOf } from "@common/utils/source-annotations";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
+import { basicIntelSingleton } from "@renderer/appIde/services/BasicIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
 import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
 import {
   setMonacoExternalEditHandler,
   setMonacoNavigationHandler,
+  setMonacoProjectFilesHandler,
   setMonacoProviderStore
 } from "./monacoGlobals";
 import { applyExternalRenameEdits } from "./monacoExternalEdits";
@@ -266,14 +268,14 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
   const backgroundInProgress = useSelector((s) => s.compilation.backgroundInProgress ?? false);
 
   // --- The scheduler reads these when a request fires, so it always sees the current values
-  const compileContext = useRef({ store, mainApi, allowBackgroundCompile });
-  compileContext.current = { store, mainApi, allowBackgroundCompile };
+  const compileContext = useRef({ store, mainApi, allowBackgroundCompile, documentId: document.id, documentLanguage: document.language });
+  compileContext.current = { store, mainApi, allowBackgroundCompile, documentId: document.id, documentLanguage: document.language };
   if (!compileScheduler.current) {
     compileScheduler.current = new BackgroundCompileScheduler({
       isRunning: () => compileContext.current.store.getState().compilation?.backgroundInProgress ?? false,
       start: () => {
-        const { store, mainApi, allowBackgroundCompile } = compileContext.current;
-        return startBackgroundCompile(store, mainApi, allowBackgroundCompile);
+        const { store, mainApi, allowBackgroundCompile, documentId, documentLanguage } = compileContext.current;
+        return startBackgroundCompile(store, mainApi, allowBackgroundCompile, { id: documentId, language: documentLanguage });
       }
     });
   }
@@ -295,6 +297,25 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       notifySemanticTokensChanged();
     }
   }, [languageIntel]);
+
+  // --- Klive BASIC intel: every snapshot, with the build root's preferred (plan §4.3)
+  const basicIntel = useSelector((s) => s.compilation.basicIntel);
+  const projectFolder = useSelector((s) => s.project?.folderPath);
+  const buildRootFile = useSelector((s) => s.project?.buildRoots?.[0]);
+  useEffect(() => {
+    basicIntelSingleton.update(basicIntel, projectFolder && buildRootFile ? `${projectFolder}/${buildRootFile}` : undefined);
+  }, [basicIntel, projectFolder, buildRootFile]);
+
+  // --- The project's files, for `#include "..."` completion in `.zxbas` files
+  useEffect(() => {
+    return setMonacoProjectFilesHandler(() => {
+      const files: string[] = [];
+      projectService.getProjectTree()?.rootNode.forEachDescendant((n) => {
+        if (!n.data.isFolder && n.data.fullPath) files.push(n.data.fullPath);
+      });
+      return files;
+    });
+  }, [projectService]);
 
   // --- Wire the module-level cross-file navigation callback to this component's
   // --- ideCommandsService so that registerEditorOpener can open files in Klive.
@@ -1066,7 +1087,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints,
             "semanticHighlighting.enabled": true,
-            overviewRulerBorder: true
+            overviewRulerBorder: true,
+            // --- Hovers, suggestions and parameter hints may extend past the editor (a wide hover
+            // --- near the left edge is shifted left of it); in the editor's own DOM the document
+            // --- panel clips that part, so they are drawn in Monaco's fixed overflow layer instead
+            fixedOverflowWidgets: true
           }}
           loading=""
           width={width}
@@ -1574,7 +1599,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         styles.statementBpSet,
         styles.statementBpDisabled,
         styles.statementBpConditional,
-        styles.statementBpInactive
+        styles.statementBpInactive,
+        styles.statementBpOnce
       ];
       if (
         e.target.type !== MONACO_CONTENT_TEXT ||
@@ -1980,8 +2006,10 @@ function createStatementMarkerDecoration(line: number, column: number, bp?: Brea
         "Shift-click to stop here once",
         "Right-click for more actions"
       ];
+  // --- The range covers the statement's first character: Monaco (0.55) draws no `before` text for
+  // --- a decoration with an empty range, so an empty one left every marker invisible
   return {
-    range: new monacoEditor.Range(line, column + 1, line, column + 1),
+    range: new monacoEditor.Range(line, column + 1, line, column + 2),
     options: {
       before: { content, inlineClassName: className },
       hoverMessage: { value: hover.join("\n\n") }
@@ -2058,19 +2086,28 @@ function createCurrentMacroInvocationBreakpointDecoration(
 async function startBackgroundCompile(
   store: Store<AppState>,
   mainApi: ReturnType<typeof createMainApi>,
-  allowCompile: boolean = true
+  allowCompile: boolean = true,
+  activeDocument?: { id: string; language: string }
 ): Promise<boolean> {
   // --- Check if we have a build root to compile
   const state = store.getState();
   if (!state.project?.isKliveProject) {
     return true;
   }
+  // --- The open `.zxbas` file gets Klive BASIC intel even when the build root does not include it
+  // --- (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14); without a build root it is checked itself
+  const basicActiveFile =
+    activeDocument?.language === "zxbas" &&
+    !activeDocument.id.startsWith("<") &&
+    selectedZxBasicCompiler(state) === "klive"
+      ? activeDocument.id
+      : undefined;
   const buildRoot = state.project.buildRoots?.[0];
-  if (!buildRoot) {
+  if (!buildRoot && !basicActiveFile) {
     return true;
   }
-  const fullPath = `${state.project.folderPath}/${buildRoot}`;
-  const language = getFileTypeEntry(fullPath, store)?.subType;
+  const fullPath = buildRoot ? `${state.project.folderPath}/${buildRoot}` : basicActiveFile!;
+  const language = buildRoot ? getFileTypeEntry(fullPath, store)?.subType : "zxbas";
 
   // --- The built-in compilers (the Klive Z80 assembler, and Klive BASIC unless `zxbasic.compiler`
   // --- selects zxbc) always run background compilation; the flag only gates external compilers
@@ -2087,7 +2124,7 @@ async function startBackgroundCompile(
   // --- end clears it; a failed request clears it here, or no later request would ever start.
   store.dispatch(startBackgroundCompileAction());
   try {
-    return await mainApi.startBackgroundCompile(fullPath, language);
+    return await mainApi.startBackgroundCompile(fullPath, language, undefined, basicActiveFile ? { basicActiveFile } : undefined);
   } catch (err) {
     store.dispatch(resetBackgroundCompileAction());
     reportError(err);

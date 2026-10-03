@@ -422,6 +422,12 @@ export const setLanguageIntelAction: ActionCreator = (value: any) => ({
   payload: { value }
 });
 
+/** A Klive BASIC intel snapshot (`BasicIntelData`), stored under its root file. */
+export const setBasicIntelAction: ActionCreator = (value: any) => ({
+  type: "SET_BASIC_INTEL",
+  payload: { value }
+});
+
 // --- Watch expression actions
 export const addWatchAction: ActionCreator = (watch: any) => ({
   type: "ADD_WATCH",
