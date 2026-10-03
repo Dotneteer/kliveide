@@ -5,6 +5,8 @@ export const MI_SPECTRUM_3E = "spp3e";
 export const MI_Z88 = "z88";
 export const MI_ZXNEXT = "zxnext";
 export const MI_C64 = "c64";
+export const MI_ZX80 = "zx80";
+export const MI_ZX81 = "zx81";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
@@ -27,6 +29,8 @@ export const MC_Z88_SLOT2 = "slot2";
 export const MC_Z88_SLOT3 = "slot3";
 export const MC_Z88_KEYBOARD = "keyboard";
 export const MC_SP48_ROM_FILE = "sp48RomFile";
+/** ZX80 only: the 8K ZX81 ROM upgrade instead of the 4K ZX80 ROM */
+export const MC_ZX80_ROM8K = "zx80Rom8K";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

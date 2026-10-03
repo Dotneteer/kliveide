@@ -30,15 +30,19 @@ import {
   MF_M6510,
   CT_DISASSEMBLER,
   MF_VIC,
-  MF_ALLOW_SCAN_LINES
+  MF_ALLOW_SCAN_LINES,
+  MI_ZX80,
+  MI_ZX81
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
-import { ZxNextChars, ZxSpectrumChars } from "./char-codes";
+import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { ZxSpectrum48CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-48-disassembler";
 import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx-spectrum-next-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
+import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
+import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
@@ -375,6 +379,58 @@ export const machineRegistry: MachineInfo[] = [
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_CUSTOM_DISASSEMBLER]: () => new Z88CustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    machineId: MI_ZX81,
+    displayName: "Sinclair ZX81",
+    charSet: Zx81Chars,
+    features: {
+      [MF_Z80]: true,
+      [MF_TAPE_SUPPORT]: true,
+      // --- Programs arrive as .P files the ROM loads; code injection is a follow-up (plan §14)
+      [MF_INJECT_SUPPORT]: false,
+      [MF_ALLOW_SCAN_LINES]: false
+    },
+    models: [...ZX81_MODELS],
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: () => new Zx81CustomDisassembler(),
+      [CT_DISASSEMBLER_VIEW]: {
+        showRamOption: false,
+        showScreenOption: false
+      }
+    }
+  },
+  {
+    machineId: MI_ZX80,
+    displayName: "Sinclair ZX80",
+    charSet: Zx80Chars,
+    features: {
+      [MF_Z80]: true,
+      [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: false,
+      [MF_ALLOW_SCAN_LINES]: false
+    },
+    models: [...ZX80_MODELS],
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_DISASSEMBLER_VIEW]: {
         showRamOption: false,
         showScreenOption: false

@@ -4,6 +4,16 @@
 
 ### Features
 
+- **New machines: the Sinclair ZX81 and ZX80.** One WebAssembly core runs both: the ZX81 with 1K, 16K
+  or 64K, in PAL or NTSC (Timex Sinclair 1000), and the ZX80 with 1K or 16K, or with the 8K ROM
+  upgrade. The ULA is emulated cycle by cycle: SLOW and FAST modes, a jitter-free picture, and the
+  hi-res (WRX) graphics programs build on it. Open a `.p`/`.81` (ZX81) or `.o`/`.80` (ZX80) program
+  from *Machine → Select Program File...* or the Explorer, and *Load and Run* types `LOAD ""`, loads
+  it (instantly with fast load, or in real time from its tape signal) and types `RUN`. The ZX81 has a
+  virtual keyboard that follows the original's layout. The debugger works as on the other machines,
+  and the disassembler decodes the ZX81 ROM's error codes and calculator literals. The ZX80 and ZX81
+  ROMs ship with Klive; they are free for non-commercial use (see `zx8081-roms-readme.txt`).
+
 - **New Cambridge Z88 LCD resolution: 640x256** (#1385), as in OZvm (Blink SCW=$FF, SCH=32). It
   matches the ZX Spectrum Next in tile mode. The Z88 now offers 640x64 (the default), 640x256,
   640x320 and 640x480.
@@ -14,6 +24,12 @@
   browser cache all live in a `KliveData` folder beside `Klive IDE.exe`, never in
   `%USERPROFILE%\Klive` or `%APPDATA%\Klive IDE`. Unblock the zip (*Properties → Unblock*) before
   extracting it.
+
+### Fixes
+
+- **The Z80's R register counts both opcode fetches of a prefixed instruction** (`CB`, `ED`, `DD`,
+  `FD`), as the real CPU does: `LD A,R` after such an instruction reads one more than before. This
+  affects every machine. Timing is unchanged.
 
 ### Breaking changes
 

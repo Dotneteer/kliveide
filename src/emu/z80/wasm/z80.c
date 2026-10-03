@@ -42,8 +42,38 @@
 #define Z80_BEFORE_OPCODE_FETCH() ((void)0)
 #endif
 
+/*
+ * Runs after the M1 read and refresh of an unprefixed opcode fetch, before the opcode is dispatched.
+ * `cpu.opCode` holds the byte read and `cpu.pc` is still the fetch address.
+ *
+ * Contract: the hook MAY overwrite `cpu.opCode`, and the dispatch uses the new value. The Sinclair
+ * ZX80/ZX81 ULA relies on it - it forces a NOP onto the data bus for display-file bytes fetched
+ * above 32K (`test/wasm/z80/hooks/`, case C2, pins this).
+ */
 #ifndef Z80_AFTER_OPCODE_FETCH
 #define Z80_AFTER_OPCODE_FETCH() ((void)0)
+#endif
+
+/*
+ * Runs at every refresh cycle with the I:R value the Z80 drives onto the address bus - R *before*
+ * the refresh increments it. Every M1 has one: unprefixed opcode fetches, the second opcode byte of
+ * a CB/ED/DD/FD instruction, the HALTed cycle, and the NMI and INT acknowledges.
+ *
+ * On the fetch paths it runs immediately before the refresh tact, so at the call `cpu.tacts + 1` is
+ * the end of the refresh (on the second M1 of a prefixed instruction, the operation and its trailing
+ * tact follow the hook). The ZX81 ULA reads A6 here (its INT line) and the character-row address
+ * (A9-A15). No machine but the ZX80/ZX81 defines it.
+ */
+#ifndef Z80_REFRESH
+#define Z80_REFRESH(address) ((void)(address))
+#endif
+
+/*
+ * Runs after the INT acknowledge's first six tacts, before the return address is pushed. The ZX80
+ * and ZX81 ULA resets its line timer here.
+ */
+#ifndef Z80_INT_ACK
+#define Z80_INT_ACK() ((void)0)
 #endif
 
 #ifndef Z80_ALWAYS_INLINE
@@ -818,12 +848,24 @@ static inline void applyAfterLdAIRInterruptQuirk(void) {
 }
 
 static inline void processNmi(void) {
+#ifdef Z80_NMI_ACK_WAIT
+  /*
+   * The machine may hold WAIT in the middle of the NMI acknowledge M1 (the ZX81 ULA holds it until
+   * the end of HSYNC). Only a machine that defines the hook splits the four tacts, so no other core
+   * changes, not even in how its tact hook is called.
+   */
+  tactPlusN(2);
+  Z80_NMI_ACK_WAIT();
+  tactPlusN(2);
+#else
   tactPlusN(4);
+#endif
   removeFromHaltedState();
   cpu.iff2 = cpu.iff1;
   cpu.iff1 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_REFRESH(IR);
   refreshMemory();
   cpu.pc = 0x0066;
   WZ = 0x0066;
@@ -831,12 +873,14 @@ static inline void processNmi(void) {
 
 static inline void processInt(void) {
   tactPlusN(6);
+  Z80_INT_ACK();
   removeFromHaltedState();
   uint8_t intVector = cpu.interruptVector;
   cpu.iff1 = 0;
   cpu.iff2 = 0;
   applyAfterLdAIRInterruptQuirk();
   pushPcForInterrupt();
+  Z80_REFRESH(IR);
   refreshMemory();
 
   if (cpu.interruptMode == 2) {
@@ -3203,6 +3247,7 @@ void z80ExecuteCpuCycle(void) {
 
   if (cpu.halted) {
     delayMemoryRead(cpu.pc);
+    Z80_REFRESH(IR);
     refreshMemory();
     tactPlus1WithAddress(IR);
     return;
@@ -3214,9 +3259,21 @@ void z80ExecuteCpuCycle(void) {
   }
   cpu.opCode = readCodeMemory(cpu.pc);
   if (m1Active) {
+    Z80_REFRESH(IR);
     refreshMemory();
     tactPlus1WithAddress(IR);
     Z80_AFTER_OPCODE_FETCH();
+  } else if (cpu.prefix != PREFIX_DDCB && cpu.prefix != PREFIX_FDCB) {
+    /*
+     * The byte after a CB/ED/DD/FD prefix is fetched by a second M1, which refreshes too: R counts
+     * every M1, so a prefixed instruction adds 2 to R (the ZX81 ROM and its hi-res drivers count on
+     * it). The displacement and opcode of DDCB/FDCB are plain reads and do not count.
+     *
+     * Only R and the hook change here; the tacts stay where they were (the 3-T read above and the
+     * trailing tact after the operation), so contention and every timing golden are unaffected.
+     */
+    Z80_REFRESH(IR);
+    refreshMemory();
   }
   cpu.pc = (uint16_t)(cpu.pc + 1);
 

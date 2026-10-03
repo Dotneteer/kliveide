@@ -1,0 +1,255 @@
+const { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } = require("node:fs");
+const { dirname, relative, resolve, sep } = require("node:path");
+const { spawnSync } = require("node:child_process");
+
+const { acquireWasmBuildLock, waitForWasmBuildLock } = require("./wasm-build-lock.cjs");
+
+/*
+ * Builds the Sinclair ZX80/ZX81 full-machine WASM core (`.plans/ZX8081_WASM_PLAN.md`).
+ *
+ * The same shape as the Z88 build: plain clang for wasm32 (no Emscripten), one translation unit, a
+ * fixed linear memory, and an explicit export allow-list. Builds of the production artifact are
+ * serialized with a lock file, because vitest workers build it in parallel.
+ */
+
+const root = resolve(__dirname, "..");
+const source = resolve(root, "src/emu/machines/zx8081/wasm/zx8081/zx8081.c");
+const wasmDistDirectory = resolve(root, "src/emu/machines/zx8081/wasm/dist");
+const productionOutput = resolve(wasmDistDirectory, "zx8081.wasm");
+const output = productionOutput;
+const buildLockPath = resolve(wasmDistDirectory, ".zx8081.wasm.lock");
+const packagedResourceDirectory = "wasm/zx8081";
+const packagedArtifactRelative = `${packagedResourceDirectory}/zx8081.wasm`;
+
+const optimizationProfiles = {
+  speed: ["-O3", "-Wl,--strip-all"],
+  size: ["-Oz", "-Wl,--strip-all"],
+  lto: ["-O3", "-flto"]
+};
+
+const productionExports = [
+  // --- Breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`)
+  "condArenaPtr",
+  "condArenaCapacity",
+  "condSlotTablePtr",
+  "condSlotCapacity",
+  "condMaxProgramWords",
+  "condGetToken",
+  "condSetToken",
+  "condGetLastStatus",
+  "condEvaluate",
+  "condEvaluateValue",
+  "condSetEnv",
+  "condPeek",
+  "memory",
+  "zx8081ArmAutoRun",
+  "zx8081BreakpointFlagsPtr",
+  "zx8081Configure",
+  "zx8081ExecuteFrame",
+  "zx8081ExecuteInstruction",
+  "zx8081ExecuteUntilStop",
+  "zx8081GetAccessLogCount",
+  "zx8081GetAccessLogPtr",
+  "zx8081GetBaseClockFrequency",
+  "zx8081GetBeamY",
+  "zx8081GetClockMultiplier",
+  "zx8081GetCpuAf",
+  "zx8081GetCpuAfAlt",
+  "zx8081GetCpuBc",
+  "zx8081GetCpuBcAlt",
+  "zx8081GetCpuDe",
+  "zx8081GetCpuDeAlt",
+  "zx8081GetCpuHalted",
+  "zx8081GetCpuHl",
+  "zx8081GetCpuHlAlt",
+  "zx8081GetCpuIff1",
+  "zx8081GetCpuIff2",
+  "zx8081GetCpuInterruptMode",
+  "zx8081GetCpuIr",
+  "zx8081GetCpuIx",
+  "zx8081GetCpuIy",
+  "zx8081GetCpuOpCode",
+  "zx8081GetCpuPc",
+  "zx8081GetCpuPrefix",
+  "zx8081GetCpuSigInt",
+  "zx8081GetCpuSp",
+  "zx8081GetCpuWz",
+  "zx8081GetFirstInkLine",
+  "zx8081GetFirstInkX",
+  "zx8081GetFrameCompleted",
+  "zx8081GetFrameTacts",
+  "zx8081GetFrames",
+  "zx8081GetHcounter",
+  "zx8081GetHsync",
+  "zx8081GetInterruptDepth",
+  "zx8081GetKeyboardLine",
+  "zx8081GetLastFrameLines",
+  "zx8081GetLastPortAddress",
+  "zx8081GetLastPortIsWrite",
+  "zx8081GetLastPortValue",
+  "zx8081GetLineCounter",
+  "zx8081GetNmiEnabled",
+  "zx8081GetOpStartAddress",
+  "zx8081GetPixelBufferCapacity",
+  "zx8081GetRamBase",
+  "zx8081GetRamCapacity",
+  "zx8081GetRamSizeKb",
+  "zx8081GetRomCapacity",
+  "zx8081GetScreenHeight",
+  "zx8081GetScreenWidth",
+  "zx8081GetStepOutAddress",
+  "zx8081GetTacts",
+  "zx8081GetTactsInCurrentFrame",
+  "zx8081GetTactsInFrame",
+  "zx8081GetTapeCapacity",
+  "zx8081GetTvFrames",
+  "zx8081GetVsync",
+  "zx8081HardReset",
+  "zx8081KeyboardLinesPtr",
+  "zx8081PixelBufferPtr",
+  "zx8081RamPtr",
+  "zx8081ReadMemory",
+  "zx8081ReadPort",
+  "zx8081Reset",
+  "zx8081RomPtr",
+  "zx8081SetCpuAf",
+  "zx8081SetCpuAfAlt",
+  "zx8081SetCpuBc",
+  "zx8081SetCpuBcAlt",
+  "zx8081SetCpuDe",
+  "zx8081SetCpuDeAlt",
+  "zx8081SetCpuHl",
+  "zx8081SetCpuHlAlt",
+  "zx8081SetCpuIff1",
+  "zx8081SetCpuIff2",
+  "zx8081SetCpuInterruptMode",
+  "zx8081SetCpuIr",
+  "zx8081SetCpuIx",
+  "zx8081SetCpuIy",
+  "zx8081SetCpuPc",
+  "zx8081SetCpuSp",
+  "zx8081SetCpuWz",
+  "zx8081SetKeyStatus",
+  "zx8081SetTacts",
+  "zx8081SetTargetClockMultiplier",
+  "zx8081TakeAutoRunHit",
+  "zx8081TapeDataPtr",
+  "zx8081TapeGetEar",
+  "zx8081TapeGetFastPosition",
+  "zx8081TapeGetLength",
+  "zx8081TapeGetMotor",
+  "zx8081TapeGetPlaying",
+  "zx8081TapeGetPulsePosition",
+  "zx8081TapeGetTraps",
+  "zx8081TapeRewind",
+  "zx8081TapeSetAutoMotor",
+  "zx8081TapeSetFastLoad",
+  "zx8081TapeSetLength",
+  "zx8081TapeSetPlaying",
+  "zx8081WriteMemory",
+  "zx8081WritePort",
+];
+
+/*
+ * 64K RAM, the 416 x 400 raw raster (650 KB), the 352 x 288 picture (400 KB) and the tape buffer fit
+ * in 2 MiB with room for the stack. Raise this only with a recorded reason.
+ */
+const ZX8081_WASM_MEMORY_BYTES = 2 * 1024 * 1024;
+
+function normalizeOptimization(optimization = process.env.ZX8081_WASM_OPTIMIZATION || "speed") {
+  if (optimizationProfiles[optimization] == null) {
+    throw new Error(
+      `Unknown ZX80/ZX81 WASM optimization profile '${optimization}'. Expected one of: ${Object.keys(optimizationProfiles).join(", ")}.`
+    );
+  }
+  return optimization;
+}
+
+function buildZx8081Wasm({
+  compiler = process.env.ZX8081_WASM_CC || "clang",
+  optimization = process.env.ZX8081_WASM_OPTIMIZATION || "speed",
+  outputPath,
+  run = spawnSync
+} = {}) {
+  const optimizationProfile = normalizeOptimization(optimization);
+  const selectedOutput = outputPath ?? productionOutput;
+  const releaseBuildLock =
+    selectedOutput === productionOutput && run === spawnSync
+      ? acquireWasmBuildLock(buildLockPath, "ZX80/ZX81")
+      : () => {};
+  try {
+    if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
+      for (const entry of readdirSync(wasmDistDirectory)) {
+        const candidate = resolve(wasmDistDirectory, entry);
+        if (entry.endsWith(".wasm") && candidate !== selectedOutput) {
+          unlinkSync(candidate);
+        }
+      }
+    }
+    mkdirSync(dirname(selectedOutput), { recursive: true });
+    const args = [
+      "--target=wasm32",
+      "-std=c11",
+      ...optimizationProfiles[optimizationProfile],
+      "-ffreestanding",
+      "-fno-builtin",
+      "-nostdlib",
+      "-Wl,--no-entry",
+      "-Wl,--export-memory",
+      `-Wl,--initial-memory=${ZX8081_WASM_MEMORY_BYTES}`,
+      `-Wl,--max-memory=${ZX8081_WASM_MEMORY_BYTES}`,
+      ...productionExports.filter((name) => name !== "memory").map((name) => `-Wl,--export=${name}`),
+      source,
+      "-o",
+      selectedOutput
+    ];
+    const result = run(compiler, args, { cwd: root, stdio: "inherit" });
+    if (result.error) throw result.error;
+    if (result.status !== 0) throw new Error(`ZX80/ZX81 WASM compilation failed (${result.status}).`);
+    if (!existsSync(selectedOutput) || statSync(selectedOutput).size === 0) {
+      throw new Error(
+        `ZX80/ZX81 WASM compilation reported success (compiler: '${compiler}'), but '${selectedOutput}' is missing or empty. ` +
+          `The build must not continue - packaging this app would ship a broken emulator.`
+      );
+    }
+    return {
+      compiler,
+      args,
+      optimization: optimizationProfile,
+      exports: productionExports,
+      source,
+      sources: [source],
+      output: selectedOutput
+    };
+  } finally {
+    releaseBuildLock();
+  }
+}
+
+/** Waits until no build of the production artifact is in progress (for readers of the artifact). */
+function waitForZx8081WasmBuildLock(timeoutMs) {
+  waitForWasmBuildLock(buildLockPath, "ZX80/ZX81", timeoutMs);
+}
+
+if (require.main === module) buildZx8081Wasm();
+
+function toPosixRelative(from, to) {
+  return relative(from, to).split(sep).join("/");
+}
+
+module.exports = {
+  buildZx8081Wasm,
+  buildLockPath,
+  output,
+  productionOutput,
+  packagedArtifactRelative,
+  packagedResourceDirectory,
+  productionExports,
+  source,
+  waitForZx8081WasmBuildLock,
+  wasmDistDirectory,
+  ZX8081_WASM_MEMORY_BYTES,
+  outputRelative: toPosixRelative(root, output),
+  productionOutputRelative: toPosixRelative(root, productionOutput),
+  wasmDistDirectoryRelative: toPosixRelative(root, wasmDistDirectory)
+};

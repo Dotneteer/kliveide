@@ -155,5 +155,12 @@ from 0. Any other code that compares absolute tacts has the same trap.
 **The tact hook is `noinline`** (`Z88_CPU_NOINLINE`), as `sp48CpuTactPlusN` is: it runs the sampler,
 and inlined into every opcode it would more than triple the code (710 KB against 198 KB).
 
+**R counts both M1 cycles of a prefixed instruction** (2026-10-03, `.plans/ZX8081_WASM_PLAN.md` C4,
+the shared core's fix for the Sinclair ZX81). The IDE goldens' `ir` values and the typing sessions'
+memory digests were re-recorded for it: OZ stores R-derived bytes (its interrupt-state save reads
+`LD A,R`). Before re-recording, the typing sessions were recorded with every R-free field - PC, tacts,
+frames, the LCD, the Blink and the audio after every frame - under the old and the new core, and the
+two recordings were identical.
+
 The reset button uses the shared core's `z80SoftReset` (BC, DE, HL, their alternates, IX and IY keep
 their values, as on a real Z80 and on `Z80Cpu.reset`); power-on uses `z80Reset`.

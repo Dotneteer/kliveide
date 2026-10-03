@@ -259,7 +259,18 @@ export const DEVICE = {
   legendMain: "#e0e0e0",
   legendSymbol: "#c00000",
   legendAbove: "#00a000",
-  legendBelow: "#d02000"
+  legendBelow: "#d02000",
+  /*
+   * The Sinclair ZX81's keyboard: a pure black body and light-grey keys with black legends, red
+   * shifted legends and white keyword/function print (`.plans/ZX8081_WASM_PLAN.md` §8.1, the approved
+   * mockup `.plans/zx8081/zx81-keyboard-mockup.html`). A light key face is new among Klive's device
+   * keyboards; its highlight comes from the accent's dark end (`--accent-on-device-light`).
+   */
+  keyZx81: "#f4f4f4",
+  legendZx81Ink: "#111111",
+  legendZx81Red: "#d42020",
+  zx81Body: "#0a0a0a",
+  zx81GlyphFrame: "#555555"
 } as const;
 
 /**

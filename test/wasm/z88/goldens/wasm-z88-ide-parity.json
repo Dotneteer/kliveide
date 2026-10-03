@@ -12,7 +12,7 @@
   "sp": 6806,
   "ix": 30950,
   "iy": 9370,
-  "ir": 40,
+  "ir": 36,
   "wz": 62042,
   "tacts": 30212100,
   "tactsAtLastStart": 0,
@@ -915,7 +915,7 @@
   "sp": 6806,
   "ix": 30950,
   "iy": 9370,
-  "ir": 40,
+  "ir": 36,
   "wz": 62042,
   "partitionLabels": [
    "20",
@@ -934,7 +934,7 @@
  },
  "OZ50 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "4bb3427655aaaa5a34983a160ca0e23e1766f7785c6341e6e27c608ae82b6263"
+  "sha256": "be2515b2a71e21278557fd6093bca1d396b428a4c384a664370ea209b651010a"
  },
  "OZ40 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -949,7 +949,7 @@
   "sp": 7420,
   "ix": 31206,
   "iy": 7424,
-  "ir": 86,
+  "ir": 48,
   "wz": 64246,
   "tacts": 30212103,
   "tactsAtLastStart": 0,
@@ -1838,7 +1838,7 @@
  "OZ40 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "3e7468d48bb1e0b1e817cceab86e1e99a1fbd6813bfa0674b11f0802673fec0d"
+   "sha256": "837c0eaaa00f0ec608e24b57ea437494b4866fcd28a74ff1580227a2b5105c5b"
   },
   "pc": 64248,
   "af": 1860,
@@ -1852,7 +1852,7 @@
   "sp": 7420,
   "ix": 31206,
   "iy": 7424,
-  "ir": 86,
+  "ir": 48,
   "wz": 64246,
   "partitionLabels": [
    "20",
@@ -1871,7 +1871,7 @@
  },
  "OZ40 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "486ad98ebb23bb7cdbdd07855fced1a5120897e55fcbada5f58acd193eb2dc1b"
+  "sha256": "6981e96d9c2c684ac5485c4efcb613184af2750b78b5a23e9a4efb829e70ce4c"
  },
  "OZ30 after booting and a few keys: getCpuState()": {
   "af": 1860,
@@ -1886,7 +1886,7 @@
   "sp": 7420,
   "ix": 32486,
   "iy": 7424,
-  "ir": 90,
+  "ir": 98,
   "wz": 64206,
   "tacts": 30212106,
   "tactsAtLastStart": 0,
@@ -2775,7 +2775,7 @@
  "OZ30 after booting and a few keys: getMemoryContents()": {
   "memory": {
    "byteLength": 65536,
-   "sha256": "c8e9b85c8671d7cda6e5f2a6f25744ff6fa767892b78fd00722c19f33a7b11f1"
+   "sha256": "816858c2b3bac72c16dc95fe322863a01c88fb6b34708cefe292ffc8ae9b8277"
   },
   "pc": 64206,
   "af": 1860,
@@ -2789,7 +2789,7 @@
   "sp": 7420,
   "ix": 32486,
   "iy": 7424,
-  "ir": 90,
+  "ir": 98,
   "wz": 64206,
   "partitionLabels": [
    "20",
@@ -2808,7 +2808,7 @@
  },
  "OZ30 after booting and a few keys: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "7709070fd37db70ec458029825fd6921e55dace51b1097b63f45c3dd0116a78b"
+  "sha256": "1b38b317c6f40275ec9311e6655351bf040b64ed5b5fa9db652af6452f7ef390"
  },
  "stopped mid-frame, a card in command mode: getCpuState()": {
   "af": 65535,
@@ -2823,7 +2823,7 @@
   "sp": 49136,
   "ix": 4660,
   "iy": 22136,
-  "ir": 12,
+  "ir": 14,
   "wz": 36950,
   "tacts": 114,
   "tactsAtLastStart": 0,
@@ -3725,7 +3725,7 @@
   "sp": 49136,
   "ix": 4660,
   "iy": 22136,
-  "ir": 12,
+  "ir": 14,
   "wz": 36950,
   "partitionLabels": [
    "20",
@@ -3744,7 +3744,7 @@
  },
  "stopped mid-frame, a card in command mode: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "18872fa860ade18b960ca7871bb84cef0406d026a48c5c716613808f1804c835"
+  "sha256": "1e98e27e1ae8ecd652d1c9bd66daabc04005a3ef3870a361be43b7f2838dccc2"
  },
  "register edits: getCpuState()": {
   "af": 23205,
@@ -3794,7 +3794,7 @@
   "sp": 41196,
   "ix": 30600,
   "iy": 39338,
-  "ir": 15893,
+  "ir": 15897,
   "wz": 15875,
   "tacts": 32948,
   "tactsAtLastStart": 0,
@@ -4695,7 +4695,7 @@
   "sp": 41196,
   "ix": 30600,
   "iy": 39338,
-  "ir": 15893,
+  "ir": 15897,
   "wz": 15875,
   "partitionLabels": [
    "20",
@@ -4714,7 +4714,7 @@
  },
  "register edits, after the dump: getMemoryContents(<every bank>)": {
   "steps": 256,
-  "sha256": "5256281aad40315d48f31bf5a3e8767e3ca5ee05cf87ff31e3da0d1be74f7408"
+  "sha256": "f41962426897041b3eec026ee105c782c3cd42434df279c8be56947ba86df49d"
  },
  "memory edits: getCpuState()": {
   "af": 65535,

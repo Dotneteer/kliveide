@@ -104,4 +104,7 @@
 /images/working-with-ide/zxb-actions.png
 /images/working-with-ide/zxb-reset.png
 /images/working-with-ide/zxb-running.png
+/images/zx81/zx81-keyboard.png
+/images/zx81/zx81-loaded.png
+/images/zx81/zx81-print.png
 /next-examples.zip

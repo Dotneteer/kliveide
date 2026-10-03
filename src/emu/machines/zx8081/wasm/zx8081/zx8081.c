@@ -1,0 +1,426 @@
+/*
+ * Sinclair ZX80 / ZX81 - the full-machine WASM core.
+ *
+ * One translation unit: the machine state below, the ZX80/ZX81 parts it includes, and the shared Z80
+ * core (`src/emu/z80/wasm/z80.c`) wired to them through the `Z80_*` hook macros. No heap; every buffer
+ * is a static array exposed through a pointer export. The plan is `.plans/ZX8081_WASM_PLAN.md`.
+ *
+ * The ULA logic and its constants are ported from Clock Signal (CLK) by Thomas Harte,
+ * `Machines/Sinclair/ZX8081/ZX8081.cpp`; the video raster builder replaces CLK's `Video.cpp` and the
+ * tape pulse synthesizer ports `Storage/Tape/Formats/ZX80O81P.cpp`. CLK's licence:
+ *
+ *   Copyright (c) 2015 Thomas Harte
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+ *   associated documentation files (the "Software"), to deal in the Software without restriction,
+ *   including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ *   sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+ *
+ *   The above copyright notice and this permission notice shall be included in all copies or
+ *   substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ *   BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ *   DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * One artifact runs both machines (decision D6): `zx8081Configure` picks the ZX80 or ZX81 ULA, the
+ * ROM, the RAM size and the TV standard at run time.
+ *
+ * Every name is prefixed `zx8081`: `z80.c` defines register macros (`A`, `F`, `HL`, ...).
+ */
+#include <stdint.h>
+
+// -----------------------------------------------------------------------------
+// Machine constants
+// -----------------------------------------------------------------------------
+
+#define ZX8081_CLOCK_FREQUENCY 3250000u
+/* An emulation frame: 1/50 s (PAL) or 1/60 s (NTSC) of CPU time. The TV frame is independent. */
+#define ZX8081_TACTS_IN_FRAME_PAL 65000u
+#define ZX8081_TACTS_IN_FRAME_NTSC 54167u
+
+#define ZX8081_ROM_CAPACITY 0x2000u
+#define ZX8081_RAM_CAPACITY 0x10000u
+
+/* The ULA's line timing, in T-states (CLK counts half-cycles: ZX81 32-64, ZX80 26-66) */
+#define ZX81_LINE_TACTS 207u
+#define ZX81_HSYNC_START 16u
+#define ZX81_HSYNC_END 32u
+#define ZX80_HSYNC_START 13u
+#define ZX80_HSYNC_END 33u
+
+/* The raw raster: one pixel per half T-state, 207 T a line; enough lines for the TV flywheel */
+#define ZX8081_RAW_WIDTH 416u
+#define ZX8081_RAW_LINES 400u
+
+/* The visible window cut from the raw raster (decision D4) */
+#define ZX8081_SCREEN_WIDTH 352u
+#define ZX8081_SCREEN_HEIGHT_PAL 288u
+#define ZX8081_SCREEN_HEIGHT_NTSC 240u
+
+#define ZX8081_KEYBOARD_LINES 8u
+
+/* The tape: the file bytes the pulse synthesizer and the fast-load traps read */
+#define ZX8081_TAPE_CAPACITY 0x10001u
+
+/* Colours (0xAABBGGRR): sync and ink are black, idle and paper are white */
+#define ZX8081_BLACK 0xff000000u
+#define ZX8081_WHITE 0xffffffffu
+
+// -----------------------------------------------------------------------------
+// Machine state
+// -----------------------------------------------------------------------------
+
+static uint8_t zx8081Rom[ZX8081_ROM_CAPACITY];
+static uint8_t zx8081Ram[ZX8081_RAM_CAPACITY];
+static uint32_t zx8081RawRaster[ZX8081_RAW_LINES * ZX8081_RAW_WIDTH];
+static uint32_t zx8081PixelBuffer[ZX8081_SCREEN_WIDTH * ZX8081_SCREEN_HEIGHT_PAL];
+static uint8_t zx8081TapeData[ZX8081_TAPE_CAPACITY];
+
+/* The keyboard matrix (the shared Sinclair keyboard source, through aliases - decision D3) */
+static uint8_t zx8081KeyboardLines[ZX8081_KEYBOARD_LINES];
+static uint8_t zx8081KeyboardSelectedLineValue[256];
+
+/* The model */
+static uint8_t zx8081IsZx81 = 1u;     /* the ULA: ZX81 (NMI generator, 207-T lines) or ZX80 */
+static uint8_t zx8081RomIsZx81 = 1u;  /* the ROM: the 8K ZX81 ROM (also the ZX80's upgrade) or 4K */
+static uint8_t zx8081Ntsc = 0u;
+static uint32_t zx8081RamSizeKb = 16u;
+static uint16_t zx8081RomMask = 0x1fffu;
+static uint16_t zx8081RamBase = 0x4000u;
+static uint16_t zx8081RamMask = 0x3fffu;
+
+/* Frame accounting */
+static uint32_t zx8081Frames;
+static uint32_t zx8081FrameTacts;
+static uint32_t zx8081TactsInFrame = ZX8081_TACTS_IN_FRAME_PAL;
+static uint32_t zx8081TactsInCurrentFrame = ZX8081_TACTS_IN_FRAME_PAL;
+static uint32_t zx8081ClockMultiplier = 1u;
+static uint32_t zx8081TargetClockMultiplier = 1u;
+static uint8_t zx8081FrameCompleted = 1u;
+
+/* The instruction the debugger shows (`Z80Cpu.opStartAddress`) and the INT line it saw */
+static uint16_t zx8081OpStartAddress;
+static uint8_t zx8081LastSigInt;
+
+#if defined(__clang__) || defined(__GNUC__)
+#define ZX8081_NOINLINE __attribute__((noinline))
+#else
+#define ZX8081_NOINLINE
+#endif
+
+// -----------------------------------------------------------------------------
+// The shared Z80 core, wired to the ZX80/ZX81
+// -----------------------------------------------------------------------------
+
+static uint8_t zx8081CpuReadMemory(uint16_t address);
+static void zx8081CpuWriteMemory(uint16_t address, uint8_t value);
+static void zx8081PokeMemory(uint16_t address, uint8_t value);
+static uint8_t *zx8081CpuMemoryPtr(void);
+static uint8_t zx8081CpuReadPort(uint16_t address);
+static void zx8081CpuWritePort(uint16_t address, uint8_t value);
+/* Not inlined: the hooks run the ULA timer, and inlined into every opcode they would bloat it */
+static void ZX8081_NOINLINE zx8081AdvanceTacts(uint32_t value);
+static void ZX8081_NOINLINE zx8081DelayMemory(void);
+static void ZX8081_NOINLINE zx8081DelayPort(void);
+static void zx8081BeforeM1(void);
+static void ZX8081_NOINLINE zx8081Refresh(uint16_t address);
+static void ZX8081_NOINLINE zx8081NmiAckWait(void);
+static void zx8081IntAck(void);
+
+#define Z80_EXTERNAL_BUS 1
+#define Z80_MEMORY_PTR() zx8081CpuMemoryPtr()
+#define Z80_READ_MEMORY(address) zx8081CpuReadMemory((uint16_t)(address))
+#define Z80_WRITE_MEMORY(address, value) zx8081CpuWriteMemory((uint16_t)(address), (uint8_t)(value))
+#define Z80_POKE_MEMORY(address, value) zx8081PokeMemory((uint16_t)(address), (uint8_t)(value))
+#define Z80_READ_PORT(address) zx8081CpuReadPort((uint16_t)(address))
+#define Z80_WRITE_PORT(address, value) zx8081CpuWritePort((uint16_t)(address), (uint8_t)(value))
+/* The base 3 T / 4 T, then the ULA's WAIT - the way Spectrum contention is added */
+#define Z80_DELAY_MEMORY_READ(address) zx8081DelayMemory()
+#define Z80_DELAY_MEMORY_WRITE(address) zx8081DelayMemory()
+#define Z80_DELAY_PORT_READ(address) zx8081DelayPort()
+#define Z80_DELAY_PORT_WRITE(address) zx8081DelayPort()
+#define Z80_TACT_PLUS_N(value) zx8081AdvanceTacts((uint32_t)(value))
+/* Marks the opcode read of an unprefixed M1: the ULA forces NOP on it (see zx8081-memory.c) */
+#define Z80_BEFORE_OPCODE_FETCH() zx8081BeforeM1()
+#define Z80_REFRESH(address) zx8081Refresh((uint16_t)(address))
+#define Z80_NMI_ACK_WAIT() zx8081NmiAckWait()
+#define Z80_INT_ACK() zx8081IntAck()
+#include "../../../../z80/wasm/z80.c"
+
+// -----------------------------------------------------------------------------
+// The keyboard: the Sinclair 8x5 matrix, shared with the Spectrum cores (decision D3)
+// -----------------------------------------------------------------------------
+
+#define sp48KeyboardLines zx8081KeyboardLines
+#define sp48KeyboardSelectedLineValue zx8081KeyboardSelectedLineValue
+#define sp48SetKeyStatus zx8081SetKeyStatus
+#define sp48GetKeyboardLine zx8081GetKeyboardLine
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
+#undef sp48KeyboardLines
+#undef sp48KeyboardSelectedLineValue
+#undef sp48SetKeyStatus
+#undef sp48GetKeyboardLine
+
+// -----------------------------------------------------------------------------
+// ZX80/ZX81 parts
+// -----------------------------------------------------------------------------
+
+#include "zx8081-memory.c"
+#include "zx8081-video.c"
+#include "zx8081-tape.c"
+#include "zx8081-ula.c"
+
+static uint8_t *zx8081CpuMemoryPtr(void) { return zx8081Ram; }
+
+/*
+ * Every CPU clock step: the tact counter, the frame accounting (a frame completes the moment its
+ * last tact passes), the ULA's line timer and the tape.
+ */
+static void ZX8081_NOINLINE zx8081AdvanceTacts(uint32_t value) {
+  cpu.tacts += value;
+  zx8081FrameTacts += value;
+  if (zx8081FrameTacts >= zx8081TactsInCurrentFrame) {
+    zx8081Frames++;
+    zx8081FrameTacts -= zx8081TactsInCurrentFrame;
+    zx8081FrameCompleted = 1u;
+  }
+  const uint32_t hcounter = zx8081Hcounter + value;
+  if (hcounter < zx8081NextUlaEvent) {
+    zx8081Hcounter = hcounter;
+  } else {
+    zx8081UlaStep(value);
+  }
+  if (zx8081TapeMotor) {
+    zx8081TapeAdvance(value);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// The frame loop
+// -----------------------------------------------------------------------------
+
+static void zx8081BeginFrame(void) {
+  if (zx8081ClockMultiplier != zx8081TargetClockMultiplier) {
+    zx8081ClockMultiplier = zx8081TargetClockMultiplier;
+  }
+  zx8081TactsInCurrentFrame = zx8081TactsInFrame * zx8081ClockMultiplier;
+  zx8081FrameCompleted = 0u;
+}
+
+/*
+ * One instruction: a new frame first if the last one completed; the fast-load traps; the INT the
+ * ULA raised at the end of the previous instruction and the latched NMI edge; the CPU cycles until
+ * the instruction is complete; then whether this instruction's last T-state was a refresh with A6
+ * low (the ULA's INT, see zx8081-ula.c); the TV's horizontal flywheel and the tape motor.
+ * Returns whether the frame completed.
+ */
+uint32_t zx8081ExecuteInstruction(void) {
+  if (zx8081FrameCompleted) {
+    zx8081BeginFrame();
+  }
+  z80ClearBusEvents();
+  zx8081OpStartAddress = cpu.pc;
+  if (zx8081TapeTryTrap()) {
+    zx8081AfterInstruction();
+    return zx8081FrameCompleted;
+  }
+  zx8081LastSigInt = zx8081IntPending;
+  z80SetSigInt(zx8081IntPending);
+  zx8081IntPending = 0u;
+  zx8081IntCandidateValid = 0u;
+  do {
+    z80SetSigNmi(zx8081NmiLatched);
+    z80ExecuteCpuCycle();
+    z80SetSigInt(0u);
+  } while (cpu.prefix != PREFIX_NONE);
+  z80SetSigNmi(0u);
+  if (zx8081IntCandidateValid && zx8081IntCandidateEndTact == cpu.tacts) {
+    zx8081IntPending = 1u;
+  }
+  zx8081AfterInstruction();
+  return zx8081FrameCompleted;
+}
+
+/*
+ * The debugger's per-address breakpoint flags (`DebugSupport.breakpointFlags`), copied in by the host
+ * when a debug run starts.
+ */
+static uint16_t zx8081BreakpointFlags[0x10000];
+
+uint32_t zx8081BreakpointFlagsPtr(void) { return (uint32_t)(uintptr_t)zx8081BreakpointFlags; }
+
+/*
+ * The debugger's fast path (as `z88ExecuteUntilStop`): runs instructions until the frame completes or
+ * the PC reaches an address whose flags meet `mask`, or `extraStop` (above $FFFF: none). Returns how
+ * many instructions ran.
+ */
+uint32_t zx8081ExecuteUntilStop(uint32_t extraStop, uint32_t mask) {
+  uint32_t executed = 0u;
+  do {
+    zx8081ExecuteInstruction();
+    executed++;
+    const uint16_t pc = cpu.pc;
+    if ((zx8081BreakpointFlags[pc] & mask) || pc == extraStop) break;
+  } while (!zx8081FrameCompleted);
+  return executed;
+}
+
+/* Runs until the current frame completes (a frame stopped midway is finished) */
+uint32_t zx8081ExecuteFrame(void) {
+  do {
+    zx8081ExecuteInstruction();
+  } while (!zx8081FrameCompleted);
+  return 0u;
+}
+
+// -----------------------------------------------------------------------------
+// Buffers
+// -----------------------------------------------------------------------------
+
+uint32_t zx8081RomPtr(void) { return (uint32_t)(uintptr_t)zx8081Rom; }
+uint32_t zx8081GetRomCapacity(void) { return ZX8081_ROM_CAPACITY; }
+uint32_t zx8081RamPtr(void) { return (uint32_t)(uintptr_t)zx8081Ram; }
+uint32_t zx8081GetRamCapacity(void) { return ZX8081_RAM_CAPACITY; }
+uint32_t zx8081PixelBufferPtr(void) { return (uint32_t)(uintptr_t)zx8081PixelBuffer; }
+uint32_t zx8081GetPixelBufferCapacity(void) { return ZX8081_SCREEN_WIDTH * ZX8081_SCREEN_HEIGHT_PAL; }
+uint32_t zx8081KeyboardLinesPtr(void) { return (uint32_t)(uintptr_t)zx8081KeyboardLines; }
+uint32_t zx8081TapeDataPtr(void) { return (uint32_t)(uintptr_t)zx8081TapeData; }
+uint32_t zx8081GetTapeCapacity(void) { return ZX8081_TAPE_CAPACITY; }
+
+// -----------------------------------------------------------------------------
+// Lifecycle
+// -----------------------------------------------------------------------------
+
+/*
+ * Selects the model. `hardwareZx81`: the ZX81 ULA (else the ZX80's); `romZx81`: the 8K ZX81 ROM
+ * (else the 4K ZX80 ROM) - a ZX80 with the 8K ROM upgrade has 0 and 1; `ramKb`: 1, 16 or 64;
+ * `ntsc`: the US machine (60 Hz, bit 6 of port $FE reads 0). Takes effect now; the host uploads the
+ * ROM and hard-resets afterwards. The memory map follows CLK: RAM from $4000 masked to its size
+ * (mirrored up to $FFFF), except the 64K model, whose RAM starts at $2000.
+ */
+void zx8081Configure(uint32_t hardwareZx81, uint32_t romZx81, uint32_t ramKb, uint32_t ntsc) {
+  zx8081IsZx81 = hardwareZx81 != 0u;
+  zx8081RomIsZx81 = romZx81 != 0u;
+  zx8081Ntsc = ntsc != 0u;
+  zx8081RomMask = zx8081RomIsZx81 ? 0x1fffu : 0x0fffu;
+  if (ramKb >= 64u) {
+    zx8081RamSizeKb = 64u;
+    zx8081RamBase = 0x2000u;
+    zx8081RamMask = 0xffffu;
+  } else if (ramKb >= 16u) {
+    zx8081RamSizeKb = 16u;
+    zx8081RamBase = 0x4000u;
+    zx8081RamMask = 0x3fffu;
+  } else {
+    zx8081RamSizeKb = 1u;
+    zx8081RamBase = 0x4000u;
+    zx8081RamMask = 0x03ffu;
+  }
+  zx8081TactsInFrame = zx8081Ntsc ? ZX8081_TACTS_IN_FRAME_NTSC : ZX8081_TACTS_IN_FRAME_PAL;
+  zx8081VideoConfigure();
+}
+
+static void zx8081ResetMachine(void) {
+  zx8081Frames = 0u;
+  zx8081FrameTacts = 0u;
+  zx8081FrameCompleted = 1u;
+  zx8081ClockMultiplier = zx8081TargetClockMultiplier;
+  zx8081TactsInCurrentFrame = zx8081TactsInFrame * zx8081ClockMultiplier;
+  resetKeyboard();
+  zx8081UlaReset();
+  zx8081VideoReset();
+  zx8081TapeResetPlayback();
+}
+
+/* The reset button (the ZX80/81 has none; the IDE's soft reset): CPU registers kept as on a Z80 */
+void zx8081Reset(void) {
+  z80SoftReset();
+  zx8081ResetMachine();
+}
+
+/* Power on: every CPU register and the RAM (cleared) */
+void zx8081HardReset(void) {
+  for (uint32_t i = 0u; i < ZX8081_RAM_CAPACITY; i++) zx8081Ram[i] = 0u;
+  z80Reset();
+  zx8081ResetMachine();
+}
+
+// -----------------------------------------------------------------------------
+// Timing
+// -----------------------------------------------------------------------------
+
+uint32_t zx8081GetBaseClockFrequency(void) { return ZX8081_CLOCK_FREQUENCY; }
+uint32_t zx8081GetTactsInFrame(void) { return zx8081TactsInFrame; }
+uint32_t zx8081GetTactsInCurrentFrame(void) { return zx8081TactsInCurrentFrame; }
+uint32_t zx8081GetFrames(void) { return zx8081Frames; }
+uint32_t zx8081GetFrameTacts(void) { return zx8081FrameTacts; }
+uint32_t zx8081GetFrameCompleted(void) { return zx8081FrameCompleted; }
+uint32_t zx8081GetTacts(void) { return cpu.tacts; }
+void zx8081SetTacts(uint32_t value) { cpu.tacts = value; }
+uint32_t zx8081GetClockMultiplier(void) { return zx8081ClockMultiplier; }
+void zx8081SetTargetClockMultiplier(uint32_t value) { zx8081TargetClockMultiplier = value > 0u ? value : 1u; }
+
+// -----------------------------------------------------------------------------
+// CPU
+// -----------------------------------------------------------------------------
+
+uint32_t zx8081GetCpuAf(void) { return z80GetAf(); }
+void zx8081SetCpuAf(uint32_t v) { z80SetAf(v); }
+uint32_t zx8081GetCpuBc(void) { return z80GetBc(); }
+void zx8081SetCpuBc(uint32_t v) { z80SetBc(v); }
+uint32_t zx8081GetCpuDe(void) { return z80GetDe(); }
+void zx8081SetCpuDe(uint32_t v) { z80SetDe(v); }
+uint32_t zx8081GetCpuHl(void) { return z80GetHl(); }
+void zx8081SetCpuHl(uint32_t v) { z80SetHl(v); }
+uint32_t zx8081GetCpuAfAlt(void) { return z80GetAfAlt(); }
+void zx8081SetCpuAfAlt(uint32_t v) { z80SetAfAlt(v); }
+uint32_t zx8081GetCpuBcAlt(void) { return z80GetBcAlt(); }
+void zx8081SetCpuBcAlt(uint32_t v) { z80SetBcAlt(v); }
+uint32_t zx8081GetCpuDeAlt(void) { return z80GetDeAlt(); }
+void zx8081SetCpuDeAlt(uint32_t v) { z80SetDeAlt(v); }
+uint32_t zx8081GetCpuHlAlt(void) { return z80GetHlAlt(); }
+void zx8081SetCpuHlAlt(uint32_t v) { z80SetHlAlt(v); }
+uint32_t zx8081GetCpuIx(void) { return z80GetIx(); }
+void zx8081SetCpuIx(uint32_t v) { z80SetIx(v); }
+uint32_t zx8081GetCpuIy(void) { return z80GetIy(); }
+void zx8081SetCpuIy(uint32_t v) { z80SetIy(v); }
+uint32_t zx8081GetCpuIr(void) { return z80GetIr(); }
+void zx8081SetCpuIr(uint32_t v) { z80SetIr(v); }
+uint32_t zx8081GetCpuWz(void) { return z80GetWz(); }
+void zx8081SetCpuWz(uint32_t v) { z80SetWz(v); }
+uint32_t zx8081GetCpuPc(void) { return z80GetPc(); }
+void zx8081SetCpuPc(uint32_t v) { z80SetPc(v); }
+uint32_t zx8081GetCpuSp(void) { return z80GetSp(); }
+void zx8081SetCpuSp(uint32_t v) { z80SetSp(v); }
+uint32_t zx8081GetCpuIff1(void) { return z80GetIff1(); }
+void zx8081SetCpuIff1(uint32_t v) { z80SetIff1(v); }
+uint32_t zx8081GetCpuIff2(void) { return z80GetIff2(); }
+void zx8081SetCpuIff2(uint32_t v) { z80SetIff2(v); }
+uint32_t zx8081GetCpuInterruptMode(void) { return z80GetInterruptMode(); }
+void zx8081SetCpuInterruptMode(uint32_t v) { z80SetInterruptMode(v); }
+uint32_t zx8081GetCpuHalted(void) { return z80GetHalted(); }
+uint32_t zx8081GetCpuPrefix(void) { return z80GetPrefix(); }
+/* The opcode the CPU executed last: $00 for a display-file byte the ULA forced to NOP */
+uint32_t zx8081GetCpuOpCode(void) { return cpu.opCode; }
+uint32_t zx8081GetStepOutAddress(void) { return z80GetStepOutAddress(); }
+uint32_t zx8081GetInterruptDepth(void) { return z80GetInterruptDepth(); }
+uint32_t zx8081GetCpuSigInt(void) { return zx8081LastSigInt; }
+uint32_t zx8081GetOpStartAddress(void) { return zx8081OpStartAddress; }
+
+/* The bus record: the shared core's data-access log and last port event */
+uint32_t zx8081GetAccessLogPtr(void) { return z80AccessLogPtr(); }
+uint32_t zx8081GetAccessLogCount(void) { return z80GetAccessLogCount(); }
+uint32_t zx8081GetLastPortAddress(void) { return z80GetLastPortAddress(); }
+uint32_t zx8081GetLastPortValue(void) { return z80GetLastPortValue(); }
+uint32_t zx8081GetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions: the shared evaluator, reading memory through the map without side effects
+// -----------------------------------------------------------------------------
+
+#define COND_PEEK(address) ((uint32_t)zx8081PeekMemory((uint16_t)((address) & 0xffffu)))
+#include "../../../../z80/wasm/z80-condition.c"

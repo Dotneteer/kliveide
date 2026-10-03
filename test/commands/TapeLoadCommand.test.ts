@@ -91,11 +91,22 @@ describe("tape-load command", () => {
     expect(!tapeLoadGuard({ emulatorState: { machineId } })).toBe(allowed);
   });
 
+  it("takes a ZX80/ZX81 program on a ZX80 or ZX81, and only there", async () => {
+    expect(await validate({ file: "/p/game.P" }, "zx81")).toEqual([]);
+    expect(await validate({ file: "/p/game.o" }, "zx80")).toEqual([]);
+    expect(await validate({ file: "/p/game.tap" }, "zx81")).toEqual([
+      expect.stringMatching(/^Loading a tape requires a ZX Spectrum 48K, 128K or \+2\/\+3 machine/)
+    ]);
+    expect(await validate({ file: "/p/game.p" })).toEqual([
+      expect.stringMatching(/^Loading a tape requires a ZX80 or ZX81 machine/)
+    ]);
+  });
+
   it("validates its arguments", async () => {
     expect(await validate({ file: "/p/a.tap" })).toEqual([]);
     expect(await validate({ file: "" })).toEqual(["The tape file path cannot be empty."]);
     expect(await validate({ file: "/p/a.nex" })).toEqual([
-      "The file to load must be a .tap or .tzx tape."
+      "The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program."
     ]);
     expect(await validate({ file: "/p/a.tap", "-r": true, "-d": true })).toEqual([
       "Use only one of -r and -d."

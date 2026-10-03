@@ -48,7 +48,7 @@ What the field looks like:
 | Win / Mac / Linux | ✅ | ✅ | ◐ (Mono) | ✅ | ✅ | ✅ |
 | 48K / 128K / +2E / +3E | ✅ | ✅ | ✗ | ✅ (reference accuracy) | ◐ (48/128) | ◐ |
 | ZX Spectrum Next | ✅ C/WASM core that cites the FPGA VHDL; about 30-area hardware test suite | ✅ | ✅ (reference dev kit) | ✗ | ✗ | via CSpect / MAME |
-| Other machines | Z88, C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
+| Other machines | Z88, **ZX80 / ZX81 (main)** (C/WASM core: SLOW and FAST modes, WRX hi-res, `.P`/`.O` fast and real-time load, debugger), C64 (experimental) | Very wide | ✗ | Many clones | CPC, C64 | ✗ |
 | Editor with language intelligence | ✅ Monaco with compiler-driven completion, hover (incl. macro expansion), rename, references, inlay hints, colour pickers — for asm **and Klive BASIC** (scope-correct hover, definition, references, rename, completion with auto-`#include`, signature help, outline, folding; unreleased) | ✅ (VS Code extensions) | ✗ | ✗ | ✗ | ◐ |
 | Built-in assembler | ✅ Klive Z80/Z80N: macros, structs, modules, `.savenex`, `.dma` DSL | ✗ (external) | ✗ | ✗ | ✗ | ✗ |
 | External toolchains | ✅ sjasmplus (with SLD), zxbc, z88dk, PASTA/80 | ✅ sjasmplus, z80asm, z88dk | map files | ✗ | SkoolKit | Boriel |
@@ -118,7 +118,7 @@ tools:
 | W6 | **No remote or real-hardware debugging**, no external API | DeZog (serial), ZEsarUX ZRCP, CSpect plugins, MAME gdbstub | Shuts Klive out of the VS Code/DeZog ecosystem. |
 | W7 | **48K/128K reverse-engineering depth** (automatic code/data detection, annotated ROMs, SkoolKit, graphics finders) | Spectrum Analyser | Klive's annotation model exists for NEX only. |
 | W8 | ~~**BASIC editor intelligence**~~ — closed on main (G8.1–G8.5; unreleased) | — (also weak elsewhere) | Hover, definition, scope-correct references and rename, completion (library routines add their `#include`), signature help, outline and folding for `.zxbas`, from the compiler's own binder. With zxbc selected, keyword help, completion and folding remain. |
-| W9 | **Machine breadth**: ZX80/ZX81, Pentagon/Scorpion/Timex | ZEsarUX, Fuse | ZX80/81 is planned (.plans/ZX8081_WASM_PLAN.md). |
+| W9 | **Machine breadth**: ~~ZX80/ZX81~~ (closed on main, G9.3; unreleased), Pentagon/Scorpion/Timex | ZEsarUX, Fuse | The ZX80 and ZX81 (1K/16K/64K, PAL and NTSC, the ZX80 with the 8K ROM) run on one C/WASM core built on the shared Z80 (.plans/ZX8081_WASM_PLAN.md). Pentagon/Scorpion/Timex remain. |
 | W10 | **Proof points**: Next accuracy is unbenchmarked against CSpect/ZEsarUX publicly; sjasmplus debugging tested on 48K only | — | A credibility gap more than a feature gap. |
 
 ### Housekeeping found during the sweep (fix before marketing anything)

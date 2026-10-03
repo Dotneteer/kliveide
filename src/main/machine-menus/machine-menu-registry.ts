@@ -5,8 +5,11 @@ import {
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
   MI_Z88,
+  MI_ZX80,
+  MI_ZX81,
   MI_ZXNEXT
 } from "@common/machines/constants";
+import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, sp48RomMenuRenderer } from "./zx-specrum-menus";
 import {
   z88KeyboardLayoutRenderer,
@@ -26,6 +29,12 @@ import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
  * Machine-specific menu information
  */
 export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
+  [MI_ZX81]: {
+    machineItems: zx8081TapeMenuRenderer
+  },
+  [MI_ZX80]: {
+    machineItems: zx8081TapeMenuRenderer
+  },
   [MI_SPECTRUM_48]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
