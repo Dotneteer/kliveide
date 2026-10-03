@@ -4,4 +4,4 @@
 :HL["/kliveide/images/book/06-zxndma/ldir-dma.png","image"]
 :HL["/kliveide/images/book/06-zxndma/interrupt-break-into.png","image"]
 :HL["/kliveide/images/book/06-zxndma/heartbeat.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"book/06-zxndma","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"NFpkKv0Tx695KmBmgHrC8"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"book/06-zxndma","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"Tl3mW6ajl8pysVt1lOT4C"}
