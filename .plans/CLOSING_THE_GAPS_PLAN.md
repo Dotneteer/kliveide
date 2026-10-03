@@ -212,6 +212,8 @@ follow.
 | G8.4 Rename | Cross-file rename of user symbols. | M, after G8.2 |
 | G8.5 Signature help, outline, folding | Parameter hints while typing calls; document symbols; folding for `SUB`/`IF`/`FOR` blocks. | S–M |
 
+**Plan:** [BASIC_EDITOR_INTELLIGENCE_PLAN.md](BASIC_EDITOR_INTELLIGENCE_PLAN.md) (decisions recorded 2026-10-03).
+
 ---
 
 ## G9. Machine breadth — **M → XL**
