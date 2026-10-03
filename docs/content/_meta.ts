@@ -1,5 +1,7 @@
 export default {
-  index: "Introduction",
+  // "/" is the landing page (app/(landing)/page.tsx); Nextra's page map picks it up from app/.
+  index: { display: "hidden" },
+  introduction: "Introduction",
   "getting-started": "Getting Started",
   "working-with-ide": "Working with the IDE",
   howto: "How To",
