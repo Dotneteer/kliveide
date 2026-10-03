@@ -45,6 +45,11 @@ are estimates for prioritising, not commitments.
 **Why it matters:** every serious competitor has it, the README roadmap still lists it, and its
 absence is the first thing an experienced developer notices.
 
+**Plan:** G1.1–G1.3 are planned in [CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md).
+That plan found one exception to the "no C core changes" note below: the WASM cores record only the
+last memory access of an instruction, so its Phase 0 makes them record every one (which also fixes
+memory breakpoints that miss multi-byte accesses today).
+
 **Foundation:** breakpoints are a 64K flag table plus per-address data in `DebugSupport`
 (`src/emu/machines/DebugSupport.ts`), pushed to the WASM cores, which stop the frame on a hit.
 A `hitCount` field already exists for memory breakpoints and is shown in `BreakpointDialog`.
