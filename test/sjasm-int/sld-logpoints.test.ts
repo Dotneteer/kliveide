@@ -5,7 +5,8 @@ import {
   sldAnnotations,
   sldSymbols,
   sldoptWarning,
-  sourceHasLogpointComment
+  sourceHasLogpointComment,
+  annotationKindsInSource
 } from "@main/sjasmp-integration/SjasmPCompiler";
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 
@@ -30,6 +31,7 @@ const SLD = [
   "main.asm|9||0|-1|254|L|,PORT,,+equ",
   "main.asm|10||0|-1|0|L|,MyMacro,,+macro",
   "main.asm|11||0|2|32772|K|; WPMEM",
+  "main.asm|12||0|2|32772|K|; ASSERTION a < 5 ; why",
   "inc.asm|3:5:9||0|2|32773|K|; LOGPOINT from include"
 ].join("\n");
 
@@ -41,7 +43,7 @@ describe("SLD logpoints", () => {
     expect(or.data).toBe("; LOGPOINT or=${A | B}");
   });
 
-  it("turns K lines with LOGPOINT into annotations at the T lines' addresses", () => {
+  it("turns K lines with LOGPOINT, WPMEM and ASSERTION into annotations at the T lines' addresses", () => {
     const files: string[] = [];
     const annotations = sldAnnotations(lines, (f) => {
       if (!files.includes(f)) files.push(f);
@@ -56,6 +58,8 @@ describe("SLD logpoints", () => {
         text: "[SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}"
       },
       { kind: "LOGPOINT", fileIndex: 0, line: 6, address: 0x8001, text: "or=${A | B}" },
+      { kind: "WPMEM", fileIndex: 0, line: 11, address: 0x8004, text: "" },
+      { kind: "ASSERTION", fileIndex: 0, line: 12, address: 0x8004, text: "a < 5" },
       { kind: "LOGPOINT", fileIndex: 1, line: 3, address: 0x8005, text: "from include" }
     ]);
   });
@@ -77,6 +81,14 @@ describe("SLD logpoints", () => {
     expect(sourceHasLogpointComment("  ld a,1 ; logpoint x")).toBe(false);
     const warning = sldoptWarning("main.asm");
     expect(warning.isWarning).toBe(true);
-    expect(warning.message).toMatch(/SLDOPT COMMENT LOGPOINT/);
+    expect(warning.message).toMatch(/SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION/);
+  });
+
+  it("finds every keyword kind for the SLDOPT warning, and names the missing kinds (S9)", () => {
+    const kinds = annotationKindsInSource("  nop ; ASSERTION a < 5\n  defb 0 ; WPMEM\n");
+    expect([...kinds].sort()).toEqual(["ASSERTION", "WPMEM"]);
+    const warning = sldoptWarning("main.asm", ["ASSERTION", "WPMEM"]);
+    expect(warning.message).toMatch(/^WPMEM, ASSERTION comments are ignored/);
+    expect(warning.message).toMatch(/SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION/);
   });
 });

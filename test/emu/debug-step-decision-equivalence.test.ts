@@ -16,7 +16,7 @@ import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
  * different points relative to the breakpoint check. See `DebugStepDecision.ts`.
  *
  * One-shot consumption is likewise excluded: the fold predates it, and the matrix arms no one-shot,
- * so the added `consumeOneShotsAt` call cannot make the two paths differ here. It is a deliberate
+ * so the added `consumeFiredOneShots` call cannot make the two paths differ here. It is a deliberate
  * behaviour change of its own, covered by `debug-step-decision.test.ts`.
  *
  * `retExecuted` is pinned to `false` throughout, which is what the interpreted path passed at the
@@ -90,7 +90,7 @@ function makeSupport(breakAt: number[], lastBreakpoint?: number, imminentBreakpo
     shouldStopAt: (address: number) => breakAt.includes(address),
     // --- No one-shots in this matrix, so the call is a no-op and the two paths still leave the
     // --- same state behind. `debug-step-decision.test.ts` covers what it does when there are some.
-    consumeOneShotsAt: () => 0,
+    consumeFiredOneShots: () => 0,
     lastBreakpoint,
     imminentBreakpoint
   } as unknown as IDebugSupport;

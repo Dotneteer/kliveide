@@ -1,7 +1,8 @@
 # Source Assertions, Watchpoints And One-Shot Breakpoints Plan (G1.5, G1.6)
 
-Status: **ready** (2026-10-03), reconciled with LOGPOINTS_PLAN.md the same day; one open question
-(Q6). Nothing is implemented.
+Status: **done — Phases 0–6 implemented and verified** (2026-10-03). G1.5 and G1.6 are marked done
+in the base plan. §10 records what was built and where it departs from the design. Q6 was answered
+by the author afterwards (yes) and is implemented too.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G1, decision D3. This plan covers
 **G1.6** (temporary / one-shot breakpoints) and **G1.5** (DeZog-compatible `ASSERTION` and `WPMEM`
 source comments), plus a link between WPMEM watchpoints and Klive's Watch panel.
@@ -473,9 +474,82 @@ Starts after LOGPOINTS_PLAN Phases 1, 2 and 4 (owner, dialect, build integration
 - **Q4:** **no** Add to Watch by address only; a watch needs a build symbol (W5).
 - **Q5:** the combined glyph is **candidate A**, the "1" over a single bar (O6).
 
-### 9.2 Still open
+### 9.2 Answered after implementation
 
-- **Q6 (S12):** LOGPOINTS_PLAN §4.5 draws a LOGPOINT comment line as a **hollow, read-only
-  diamond**. Here an ASSERTION or WPMEM comment mark toggles on click and has a Show in Disassembly
-  menu. Should a LOGPOINT comment mark get the same click and menu, so the three comment kinds
-  behave alike? Proposed: yes; that is a change to LOGPOINTS_PLAN.
+- **Q6 (S12): yes** (the author, 2026-10-03). A LOGPOINT comment's mark behaves like an ASSERTION or
+  WPMEM mark: a click disables the comment's logpoint for the session (the same `resource:line:kind`
+  map, kind `LOGPOINT`), right-click offers Disable/Enable and Show in Disassembly, and the
+  Breakpoints panel's LOGPOINT comment rows get the same row menu. Still no Remove. LOGPOINTS_PLAN
+  §4.5 is amended to match. `commentKindOf` (`source-annotations.ts`) names the kind of every
+  comment-made breakpoint, LOGPOINT included, so no call site special-cases it.
+
+---
+
+## 10. Implementation notes (2026-10-03)
+
+**Verification.** `npm run test:all` (unit and both e2e tiers; the five failures it surfaced were
+tests asserting the old menus, dialog and usage text, all updated), `npm run build:check` (no new
+type errors), `npm run lint:renderer` (0 errors), the Vite build, `npm run doc:build && npm run
+doc:check`. Checked in the running app with the Playwright harness against a throwaway sp48 project:
+`compile` lists the ASSERTION and WPMEM comments; `bp-set $8003 -once` stopped once and was gone;
+the assertion stopped with `ASSERTION failed at code.kz80.asm:8: a < 4  (a=$04)` and the switch-off
+hint; after `as-en -d` the WPMEM watchpoint stopped with `WPMEM write at $800E (buf) by PC $8009`;
+the Breakpoints panel showed the `once` tags, the "ASSERTION comments - off" header and the WPMEM
+section; the Watch row menu's **Break on write** created `WS:buf -w -len 2` and the row's mark; the
+disassembly row menu listed its four items; Shift+click in the disassembly gutter and in the editor
+margin each made a one-shot, drawn with the "1" glyph. Hover tooltips and the click-to-toggle on a
+comment mark were not driven in the app (both are unit-tested through `marginBreakpointMenu.ts`).
+
+**Departures from the design.**
+- **Consumption.** Every one-shot (and every annotation breakpoint) sets `COND_BP`, so its address
+  takes the slow path, where `handleHit` records each definition whose filters passed. The decision
+  consumes them (`consumeFiredOneShots`) inside the re-trigger guard; the machine controller calls
+  it again on every debug stop, which is how memory, I/O and NextReg one-shots are spent (a no-op
+  after an execution stop). `lastStopBreakpoints` / `lastStopAccesses` are the stop information.
+- **Run-to key.** `RT:` + the ordinary key; `resolveBreakpoint` resolves both keys of a source line,
+  and `getBreakpointAddressSpec` drops the prefix, so commands still name the place.
+- **Ranges** are re-derived per address from the definitions (`claimedAddressesOf` +
+  `refreshFlagsAt`) instead of a reference count per address and kind - the same "derive, never
+  patch" rule the flag word already follows. A 16K range costs one walk of the definitions per byte
+  at install time only.
+- **The ASSERTION condition is evaluated in the DeZog dialect** (`conditionDialect: "dezog"`,
+  `condition = !(<expr>)`), compiled by `DebugSupport` with `compileConditionWith(...,
+  parseDezogExpression)`. The §4.5 printer (`dezog/dezog-printer.ts`) is display-only: the tooltip
+  and `bp-list`'s `read as:`. R3 holds: backticks take dots, tested.
+- **Watch-anchored watchpoints** are keyed `WS:<symbol>` and resolved by `DebugSupport` itself from
+  the symbol table it already receives after every build (`setConditionSymbols`), not by
+  `refreshSourceCodeBreakpoints`. `WS:<symbol>` is also a `bp-*` address spec, so `bp-list` lines
+  paste back and the gutter indicator can remove one; `-len` joined the indicator's commands for
+  every range.
+- **Stop reports.** The values come from `describeDezogValues`, which renders a transient DeZog
+  template (`A=${A}`, ...) through the core's condition store. The WPMEM PC is
+  `DebugSupport.lastDecisionPc` (the decision runs before every instruction), because the 48K, 128K
+  and +3E cores do not maintain `opStartAddress`; the report names the comment's line, not the
+  writing instruction's (it has no source map in the emulator).
+- **Reveal in the Breakpoints panel (W4)** is a small listener channel (`breakpoint-reveal.ts`): the
+  Watch mark expands the panel and asks; the panel scrolls to the row and tints it for two seconds.
+- **"Show in Disassembly"** is `show-disass [<address>]`, reusing the live view's `revealLocator`.
+- **The switches** live in the shared store (`AppState.sourceComments`, `SET_SOURCE_COMMENTS`),
+  persisted as `debugger.sourceComments`; a switch change reinstalls the build's comment
+  breakpoints at once (`reinstallAnnotationBreakpoints`), no rebuild. A switched-off kind's section
+  header stays in the panel as the way back on.
+- **Warning codes:** `AS001` (ASSERTION), `WP001` (WPMEM); `LP002` (the `SLDOPT` warning) now names
+  the missing kinds and the full line.
+
+**Where things are.** Model: `BreakpointInfo.runTo/length/annotationKind/annotationText/
+conditionDialect/watchSymbol`, `SourceCommentSwitches`; keys in `breakpoints.ts`. Emulator:
+`DebugSupport` (`consumeFiredOneShots`, ranges, `resolveWatchSymbols`, `describeDezogValues`),
+`DebugStepDecision.ts`, `MachineController.describeCommentStop`. Build: `source-annotations.ts`
+(`annotationsInComment`, `annotationBreakpoints`), `dezog/wpmem-args.ts`, `dezog/dezog-printer.ts`,
+the Klive assembler's `emitSingleLine`, `SjasmPCompiler` (`sldAnnotations`,
+`annotationKindsInSource`, `sldoptWarning`). IDE: `BreakpointCommands.ts` (`-once`, `-len`, `WS:`,
+`as-en`, `wp-en`), `breakpoint-form.ts` + `BreakpointDialog.tsx`, `marginBreakpointMenu.ts`,
+`MonacoEditor.tsx`, `BreakpointIndicator.tsx`, `disassemblyRowMenu.ts` + `DisassemblyPanel.tsx`,
+`BreakpointsPanel.tsx` + `breakpoint-grouping.ts`, `annotation-state.ts`, `watch-watchpoints.ts`,
+`WatchPanel.tsx`, `breakpoint-reveal.ts`, `ToolCommands.ts` (`show-disass`). Glyphs: `bp-once.svg`,
+`bp-once-conditional.svg`, `bp-assertion.svg`. Tests: `test/debug/one-shot-breakpoints.test.ts`,
+`test/commands/one-shot-commands.test.ts`, `test/z80-assembler/assertion-wpmem-annotations.test.ts`,
+`test/renderer/assertion-watch-ui.test.ts`, `test/emu/one-shot-real-machine.test.ts`,
+`test/emu/assertion-wpmem-real-machine.test.ts`, and additions to the margin-menu, dialog, form,
+SLD, project-save and step-decision tests.
+

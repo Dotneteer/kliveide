@@ -342,7 +342,7 @@ describe("ShowDisassemblyCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toBe("show-disass");
+      expect(command.usage).toBe("show-disass [<address>]");
     });
 
     it("should have alias 'shdis'", () => {

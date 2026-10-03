@@ -1,5 +1,5 @@
 import fs from "fs";
-import { logpointTextOf } from "@common/utils/source-annotations";
+import { annotationsInComment } from "@common/utils/source-annotations";
 import path from "path";
 
 import type { ErrorCodes } from "../compiler-common/assembler-errors";
@@ -1337,14 +1337,15 @@ export abstract class CommonAssembler<
     fromMacroEmit: boolean = false
   ): Promise<void> {
     /*
-     * A DeZog `LOGPOINT` comment (`.plans/LOGPOINTS_PLAN.md` §4.7) on any line that is assembled -
+     * A DeZog `LOGPOINT`, `ASSERTION` or `WPMEM` comment (`.plans/LOGPOINTS_PLAN.md` §4.7,
+     * `.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3) on any line that is assembled -
      * comment-only and label-only lines included; lines of a false IF branch never get here. It
      * fires at the line's own address when the line emits code, and otherwise at the location
      * counter after it: the next instruction emitted in the same segment. Each macro expansion
      * passes through here with its own address, so it yields its own annotation.
      */
-    const logpointText = logpointTextOf(asmLine.comment);
-    if (logpointText === undefined) {
+    const found = annotationsInComment(asmLine.comment);
+    if (found.length === 0) {
       await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
       return;
     }
@@ -1355,14 +1356,19 @@ export abstract class CommonAssembler<
     const emitted =
       this._currentSegment === segmentBefore &&
       (this._currentSegment?.emittedCode.length ?? 0) > lengthBefore;
-    this._output.debugAnnotations.push({
-      kind: "LOGPOINT",
-      fileIndex: asmLine.fileIndex,
-      line: asmLine.line,
-      address: (emitted ? addressBefore : this.locationCounter()) & 0xffff,
-      segmentIndex: this._output.segments.length - 1,
-      text: logpointText
-    });
+    // --- `ASSERTION` and `WPMEM` (G1.5) follow the same address rule: an assertion on an
+    // --- instruction's line is checked before that instruction runs; on its own line, before the
+    // --- next one. A WPMEM without an address watches the line's own address.
+    for (const { kind, text } of found) {
+      this._output.debugAnnotations.push({
+        kind,
+        fileIndex: asmLine.fileIndex,
+        line: asmLine.line,
+        address: (emitted ? addressBefore : this.locationCounter()) & 0xffff,
+        segmentIndex: this._output.segments.length - 1,
+        text
+      });
+    }
   }
 
   /**

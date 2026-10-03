@@ -309,8 +309,12 @@ Each line is `[GROUP] message`, in a distinct colour (a token, not a literal), w
   without a breakpoint, *Convert to Logpoint…* / *Convert to Breakpoint* on one with a breakpoint.
 - **Glyphs:** the logpoint glyph is a **diamond** (the VS Code convention), in the same colour
   family as breakpoints, with the conditional and inactive variants of the conditional plan.
-  A LOGPOINT comment line shows a **hollow** diamond: read-only and owned by the build. Hovering it
-  shows the template, its group, the address or addresses, and any compile warning.
+  A LOGPOINT comment line shows a **hollow** diamond, owned by the build. Hovering it
+  shows the template, its group, the address or addresses, and any compile warning. *Amended
+  2026-10-03 by [ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md](ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md)
+  Q6:* the mark is no longer read-only - like an ASSERTION or WPMEM mark, a click disables the
+  comment's logpoint for the session, and right-click (and the panel row's menu) offers
+  Disable/Enable and Show in Disassembly. It still cannot be deleted from the IDE.
 - **Breakpoints panel:** user logpoints are ordinary rows showing their template. Annotation
   logpoints appear in a **"LOGPOINT comments"** group with one checkbox row per log group (wired to
   `setLogGroups`) and the comment logpoints under it; clicking one opens the source line.

@@ -85,7 +85,22 @@ type Props = {
    * over `conditional` / `inactive`, which callers that do not know logpoints still pass.
    */
   glyph?: BreakpointGlyph;
+  /** A memory range's byte count (S10): part of the identity, so every command names it. */
+  length?: number;
+  /** The breakpoint here is a one-shot: Shift+click removes it (O1). */
+  oneShot?: boolean;
+  /**
+   * The command that turns the regular breakpoint here into a one-shot with its filters kept
+   * (`bp-set <spec> -once ...`). Supplied by a caller that knows the whole breakpoint; without it,
+   * Shift+click on a regular breakpoint does nothing.
+   */
+  oneShotCommand?: string;
 };
+
+/** A logpoint's glyph: never a one-shot. */
+function isLogpointGlyph(glyph: BreakpointGlyph | undefined): boolean {
+  return !!glyph && glyph.startsWith("logpoint");
+}
 
 export const BreakpointIndicator = ({
   address,
@@ -107,10 +122,15 @@ export const BreakpointIndicator = ({
   conditional,
   inactive,
   filterLines,
-  glyph
+  glyph,
+  oneShot,
+  oneShotCommand,
+  length
 }: Props) => {
+  const lengthOption = (memoryRead || memoryWrite) && length && length > 1 ? ` -len ${length}` : "";
   // --- A `LOGPOINT` comment belongs to the build: no gesture here may remove or toggle it
-  const readOnly = glyph === "logpointComment";
+  // --- (and an `ASSERTION`/`WPMEM` comment's: the comment owns it, S3)
+  const readOnly = glyph === "logpointComment" || glyph === "assertion" || glyph === "watchpoint";
   const { ideCommandsService } = useAppServices();
   const cbkRef = useTooltipRef();
   const ref = useTooltipRef();
@@ -164,14 +184,24 @@ export const BreakpointIndicator = ({
     `${tooltipCommon}\n` +
     filterText +
     (readOnly
-      ? "Edit the LOGPOINT comment and rebuild to change it"
+      ? "Edit the comment and rebuild to change it"
       : hasBreakpoint
         ? `Right-click to remove this breakpoint`
         : "Right-click to set a breakpoint") +
     (hasBreakpoint && onEdit ? "\nDouble-click to edit this breakpoint" : "") +
     // --- The gesture is only discoverable from here, which is why it is listed rather than left to
     // --- be found. See `runToHere`.
-    (canRunTo ? `\n${runToModifierLabel}-click to run here` : "");
+    (canRunTo ? `\n${runToModifierLabel}-click to run here` : "") +
+    // --- One-shots (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
+    (readOnly || isLogpointGlyph(glyph)
+      ? ""
+      : oneShot
+        ? "\nShift-click to remove the one-shot"
+        : hasBreakpoint
+          ? oneShotCommand
+            ? "\nShift-click to make it stop here once"
+            : ""
+          : "\nShift-click to stop here once");
   const tooltipCheckbox =
     `${tooltipCommon}\n` +
     (disabled ? `Check to enable this breakpoint` : "Uncheck to disable this breakpoint");
@@ -215,11 +245,29 @@ export const BreakpointIndicator = ({
     let command =
       `${hasBreakpoint ? "bp-del" : "bp-set"} ${addrLabel} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}`;
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}${lengthOption}`;
     if (ioRead || ioWrite) {
       command += ` -m $${toHexa4(ioMask)}`;
     }
     await ideCommandsService.executeCommand(command);
+  };
+
+  /**
+   * Shift+click (O1): a one-shot where there is none, a regular breakpoint made one, a one-shot
+   * removed. A logpoint never stops, so it is never made a one-shot.
+   */
+  const toggleOneShot = async () => {
+    if (readOnly || isLogpointGlyph(glyph)) return;
+    if (!hasBreakpoint) {
+      await ideCommandsService.executeCommand(
+        `bp-set ${addrLabel} ${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
+          `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""} -once`
+      );
+    } else if (oneShot) {
+      await handleRemove();
+    } else if (oneShotCommand) {
+      await ideCommandsService.executeCommand(oneShotCommand);
+    }
   };
 
   /**
@@ -246,7 +294,7 @@ export const BreakpointIndicator = ({
     let command =
       `bp-en ${addrLabel} ${disabled ? "" : "-d"} ` +
       `${memoryRead ? "-r" : ""} ${memoryWrite ? "-w" : ""}` +
-      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}`;
+      `${ioRead ? "-i" : ""} ${ioWrite ? "-o" : ""}${lengthOption}`;
     if (ioRead || ioWrite) {
       command += ` -m $${toHexa4(ioMask)}`;
     }
@@ -298,7 +346,13 @@ export const BreakpointIndicator = ({
         }}
         onClick={(e) => {
           // --- Plain click on the gutter has never done anything, so this adds a gesture rather
-          // --- than overloading one. Without the modifier it still does nothing.
+          // --- than overloading one. Without a modifier it still does nothing.
+          if (e.shiftKey) {
+            e.stopPropagation();
+            e.preventDefault();
+            void toggleOneShot();
+            return;
+          }
           if (!e.metaKey && !e.ctrlKey) return;
           e.stopPropagation();
           e.preventDefault();

@@ -26,7 +26,13 @@ import {
   hasBreakpointFilters,
   isLogpoint
 } from "@common/utils/breakpoint-filters";
-import { bindCondition, compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
+import {
+  bindCondition,
+  compileCondition,
+  compileConditionWith
+} from "@common/utils/breakpoint-condition/condition-checker";
+import { parseDezogExpression } from "@common/utils/breakpoint-condition/dezog/dezog-parser";
+import type { SyntaxNode } from "@common/utils/breakpoint-condition/condition-parser";
 import {
   CondEnv,
   NO_VALUE,
@@ -113,6 +119,8 @@ type BreakpointRuntimeState = {
   hits: number;
   /** The condition text `compiled`/`error` were built from. */
   compiledFor?: string;
+  /** ...and its dialect (an `ASSERTION` comment's is DeZog's). */
+  compiledDialect?: LogDialect;
   /** The access kind they were built for (decides `VAL`/`ADDR`). */
   compiledKind?: ConditionAccessKind;
   /** The machine-facts generation they were built against. */
@@ -614,6 +622,14 @@ export class DebugSupport implements IDebugSupport {
         bank: bp.bank,
         bankOffset: bp.bankOffset,
         oneShot: bp.oneShot,
+        runTo: bp.runTo,
+        // --- A memory range (S10) and the annotation/watch provenance (G1.5, W3): identity and
+        // --- display fields, carried for the same reason as `owner` above.
+        length: bp.length !== undefined && bp.length > 1 ? bp.length : undefined,
+        annotationKind: bp.annotationKind,
+        annotationText: bp.annotationText,
+        conditionDialect: bp.conditionDialect,
+        watchSymbol: bp.watchSymbol,
         resource: bp.resource,
         line: bp.line,
         // --- Part of a statement breakpoint's identity (its storage key carries it). Omitted, the
@@ -633,7 +649,9 @@ export class DebugSupport implements IDebugSupport {
           bp.ioWrite ||
           isNextRegBreakpoint(bp)
         ),
-        resolvedAddress: bp.resolvedAddress,
+        resolvedAddress: bp.watchSymbol
+          ? (bp.resolvedAddress ?? this.watchSymbolAddress(bp.watchSymbol))
+          : bp.resolvedAddress,
         resolvedPartition: bp.resolvedPartition,
         // --- Same reason as `owner` and `bank` above: this literal rebuilds the definition field
         // --- by field, so a label-anchored breakpoint would lose the label that identifies it and
@@ -693,8 +711,9 @@ export class DebugSupport implements IDebugSupport {
       return !oldBp;
     }
 
-    // --- Extract used address and partition
-    const address = bp.address ?? bp.resolvedAddress;
+    // --- Extract used address and partition (the stored definition: a watch symbol resolved there)
+    const stored = this.breakpointDefs.get(bpKey)!;
+    const address = stored.address ?? stored.resolvedAddress;
 
     // --- Do we have a breakpoint address at all?
     if (address !== undefined) {
@@ -710,7 +729,11 @@ export class DebugSupport implements IDebugSupport {
         }
       } else {
         // --- Derived, not assigned: the flags word belongs to every breakpoint at this address.
-        this.refreshFlagsAt(address);
+        // --- A memory range claims every address it covers (S10).
+        if (oldBp && oldBp !== stored) {
+          for (const old of this.claimedAddressesOf(oldBp)) this.refreshFlagsAt(old);
+        }
+        for (const claimed of this.claimedAddressesOf(stored)) this.refreshFlagsAt(claimed);
         if (partition !== undefined) {
           // --- `!== undefined`, not truthiness: partition 0 is a real partition on every banked
           // --- machine (bank `B0` on the 128K, bank `00` on the ZX Next), and a truthiness test
@@ -721,7 +744,9 @@ export class DebugSupport implements IDebugSupport {
           // --- so this was also an add/remove asymmetry.
           // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
           // --- one. Dedupe is on partition *and* tag, so the two can share an address.
-          this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
+          for (const claimed of this.claimedAddressesOf(stored)) {
+            this.addPartitionEntry(claimed, partition, undefined, !!bp.disabled);
+          }
         }
       }
     }
@@ -767,8 +792,14 @@ export class DebugSupport implements IDebugSupport {
       const partition = bp.partition ?? bp.resolvedPartition;
       // --- Derived from what is left, rather than by clearing this breakpoint's own bits: another
       // --- breakpoint at the same address may still want them. The definition has already been
-      // --- deleted above, so it contributes nothing here.
-      this.refreshFlagsAt(address);
+      // --- deleted above, so it contributes nothing here. A range refreshes every byte it covered.
+      const claimed = this.claimedAddressesOf(oldBp);
+      for (const each of claimed) this.refreshFlagsAt(each);
+      if (claimed.length > 1 && partition !== undefined) {
+        for (const each of claimed) {
+          if (each !== address) this.removeUntaggedPartitionEntryIfUnused(each, partition);
+        }
+      }
 
       if (bp.ioRead || bp.ioWrite) {
         for (let i = 0; i < 0x1_0000; i++) {
@@ -857,8 +888,15 @@ export class DebugSupport implements IDebugSupport {
           return false;
         }
 
-        // --- Partition breakpoint found, enable or disable it
+        // --- Partition breakpoint found, enable or disable it (every byte of a range, S10)
         partInfo[1] = !enabled;
+        for (const claimed of this.claimedAddressesOf(oldBp)) {
+          if (claimed === address) continue;
+          const entry = this.breakpointData
+            .get(claimed)
+            ?.partitions?.find((p) => p[0] === partition && p[2] === undefined);
+          if (entry) entry[1] = !enabled;
+        }
       } else {
         // --- Non-partition breakpoint
         let flag = 0x00;
@@ -886,12 +924,9 @@ export class DebugSupport implements IDebugSupport {
             }
           }
         } else {
-          // --- Set (disabled) or reset the flag
-          if (enabled) {
-            this.breakpointFlags[address] &= ~flag;
-          } else {
-            this.breakpointFlags[address] |= flag;
-          }
+          // --- Derived from the definitions (the one just changed included): a disabled flag is
+          // --- set only where *every* breakpoint of the kind is disabled, over a whole range (S10).
+          for (const claimed of this.claimedAddressesOf(oldBp)) this.refreshFlagsAt(claimed);
         }
       }
     }
@@ -998,6 +1033,9 @@ export class DebugSupport implements IDebugSupport {
      */
     const wasResolved = new Set<number>();
     for (const bp of this.breakpointDefs.values()) {
+      // --- A watch-made watchpoint is resolved from the symbol table (`setConditionSymbols`), not
+      // --- from the list file this reset prepares for (W3)
+      if (bp.watchSymbol) continue;
       if (bp.resolvedAddress !== undefined) {
         wasResolved.add(bp.resolvedAddress);
         // --- The partition entry goes with the resolution that created it. An untagged entry at
@@ -1025,11 +1063,17 @@ export class DebugSupport implements IDebugSupport {
     partition?: number,
     column?: number
   ): void {
-    const bpKey = getBreakpointStorageKey({ resource, line, ...(column !== undefined ? { column } : {}) });
-    const bp = this.breakpointDefs.get(bpKey);
-    if (!bp || !bp.exec) {
-      return;
+    const spec = { resource, line, ...(column !== undefined ? { column } : {}) };
+    const bpKey = getBreakpointStorageKey(spec);
+    const runToKey = getBreakpointStorageKey({ ...spec, runTo: true });
+    for (const key of [bpKey, runToKey]) {
+      const bp = this.breakpointDefs.get(key);
+      if (bp?.exec) this.resolveOne(bp, address, partition);
     }
+  }
+
+  /** Resolve one source-bound definition to `address` (see `resolveBreakpoint`). */
+  private resolveOne(bp: BreakpointInfo, address: number, partition?: number): void {
     bp.resolvedAddress = address;
     bp.resolvedPartition = partition;
 
@@ -1121,41 +1165,61 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
-   * Remove every one-shot breakpoint that has just fired at `address`.
+   * The storage keys of the definitions whose filters passed - and so voted "stop" - since the last
+   * stop was taken (`consumeFiredOneShots`). Recorded on the slow path (`handleHit`), which every
+   * one-shot takes because it sets `COND_BP` (`collectBpFlags`).
+   */
+  private fired: { key: string; address: number; value?: number }[] = [];
+
+  /**
+   * The definitions that stopped the machine at the last stop, as they were then (a consumed
+   * one-shot included): what the stop report names (S11). Empty when a fast-path breakpoint (no
+   * filters, not a one-shot, not an annotation) stopped it, or nothing did.
+   */
+  lastStopBreakpoints: BreakpointInfo[] = [];
+
+  /** For each of `lastStopBreakpoints`: the address it fired at (PC, or the accessed byte/port). */
+  lastStopAccesses: { address: number; value?: number }[] = [];
+
+  /**
+   * The stop has been taken: remove exactly the one-shots among the definitions that fired for it
+   * (O3, O5), and remember them all as `lastStopBreakpoints`.
    *
-   * A one-shot exists to stop the machine once — a run-to-cursor target, or the NEX entry-point
-   * stop — and must not survive its own hit. Removal goes through `removeBreakpoint`, so it also
-   * bumps `breakpointsVersion`: without that the panel and the disassembly gutter would keep
-   * showing a breakpoint that no longer exists.
+   * "Fired" is per definition, so a one-shot whose own condition or hit rule did not pass is not
+   * spent when a *different* breakpoint stops the machine at the same address (B1, the bug of the
+   * address-based `consumeOneShotsAt` this replaces). Execution, memory, I/O and NextReg stops all
+   * record here, so every kind of one-shot is consumed.
    *
-   * `partition` is the partition currently paged in at `address`, so a one-shot scoped to a bank
-   * that is *not* paged there is left alone — it did not fire.
-   *
-   * **Not yet called from the execution loop.** The hit is recorded in `DebugStepDecision.ts`,
-   * which is being rewritten concurrently; the call lands with the features that need it (the entry
-   * stop and run-to-cursor). See `.plans/NEX_DEBUGGING_PLAN.md` §7.3 and §19.
+   * Removal goes through `removeBreakpoint`, which bumps `breakpointsVersion`: without that the
+   * panel and the gutters would keep showing a breakpoint that no longer exists. A no-op (and
+   * `lastStopBreakpoints` is left alone) when nothing fired, so the machine controller may call it
+   * after the decision already did.
    *
    * @returns The number of one-shots removed.
    */
-  consumeOneShotsAt(address: number, partition: number | undefined): number {
-    const spent = this.breakpoints.filter((bp) => {
-      if (!bp.oneShot || bp.disabled) return false;
-      const site = effectiveBankSite(bp);
-      if (site) {
-        return (
-          bankRelativePartition(site.bank, site.bankOffset) === partition &&
-          bankRelativeAddresses(site.bankOffset).includes(address)
-        );
-      }
-      const bpAddress = bp.address ?? bp.resolvedAddress;
-      if (bpAddress !== address) return false;
-      const bpPartition = bp.partition ?? bp.resolvedPartition;
-      return bpPartition === undefined || bpPartition === partition;
-    });
-    for (const bp of spent) {
-      this.removeBreakpoint(bp);
+  consumeFiredOneShots(): number {
+    if (this.fired.length === 0) return 0;
+    const seen = new Set<string>();
+    const hits = this.fired.filter((hit) => !seen.has(hit.key) && !!seen.add(hit.key));
+    this.fired = [];
+    const found = hits
+      .map((hit) => ({ hit, bp: this.breakpointDefs.get(hit.key) }))
+      .filter((entry): entry is { hit: (typeof hits)[number]; bp: BreakpointInfo } => !!entry.bp);
+    const fired = found.map((entry) => entry.bp);
+    this.lastStopBreakpoints = fired.map((bp) => ({ ...bp }));
+    this.lastStopAccesses = found.map(({ hit }) => ({ address: hit.address, value: hit.value }));
+    let removed = 0;
+    for (const bp of fired) {
+      if (bp.oneShot && this.removeBreakpoint(bp)) removed++;
     }
-    return spent.length;
+    return removed;
+  }
+
+  /** A run starts: nothing has fired yet, and the previous stop's report no longer applies. */
+  clearFiredBreakpoints(): void {
+    this.fired = [];
+    this.lastStopBreakpoints = [];
+    this.lastStopAccesses = [];
   }
 
   // ==============================================================================================
@@ -1211,7 +1275,12 @@ export class DebugSupport implements IDebugSupport {
     access: AccessFacts | undefined,
     isExec: boolean
   ): boolean {
-    if (!isLogpoint(bp)) return this.passesFilters(key, bp, accessKind, access);
+    if (!isLogpoint(bp)) {
+      if (!this.passesFilters(key, bp, accessKind, access)) return false;
+      // --- This definition votes "stop": the one-shot consumption and the stop report read it
+      this.fired.push({ key, address: address & 0xffff, value: access?.value });
+      return true;
+    }
 
     if (isExec && !this.logArrival) return false;
     const state = this.runtimeFor(key, bp, accessKind);
@@ -1235,37 +1304,97 @@ export class DebugSupport implements IDebugSupport {
       return;
     }
     const template = state.template;
-    let text: string;
-    if (!template) {
-      text = `<logpoint error: ${state.logError ?? "the template did not compile"}>`;
-    } else {
-      const store = this.syncConditionStore();
-      if (store && template.segments.some((s) => s.k === "value" && s.usesEnv)) {
-        this.writeConditionEnv(store);
-      }
-      text = renderLogTemplate(
-        template,
-        (index): LogValue => {
-          const slot = state.templateSlots?.[index];
-          if (!store || slot === undefined) return { status: "error" };
-          const { status, value } = store.evaluateValue(slot, access?.value ?? 0, access?.address ?? 0);
-          if (status === ConditionResult.DIVZERO) return { status: "divZero" };
-          if (status === ConditionResult.ERROR) return { status: "error" };
-          if (value === NO_VALUE) return { status: "noValue" };
-          return { status: "ok", value };
-        },
-        {
-          peek: (a) => store?.peek(a) ?? 0,
-          slots: () => this.machineInfo?.slots() ?? ""
-        }
-      );
-    }
+    const text = template
+      ? this.renderTemplateNow(state, access)
+      : `<logpoint error: ${state.logError ?? "the template did not compile"}>`;
     this.pendingLog.push({
       group: template?.group ?? DEFAULT_GROUP,
       text,
       address: address & 0xffff,
       key
     });
+  }
+
+  /** A compiled template's text, its values read from the machine now. */
+  private renderTemplateNow(state: BreakpointRuntimeState, access: AccessFacts | undefined): string {
+    const template = state.template!;
+    const store = this.syncConditionStore();
+    if (store && template.segments.some((s) => s.k === "value" && s.usesEnv)) {
+      this.writeConditionEnv(store);
+    }
+    return renderLogTemplate(
+      template,
+      (index): LogValue => {
+        const slot = state.templateSlots?.[index];
+        if (!store || slot === undefined) return { status: "error" };
+        const { status, value } = store.evaluateValue(slot, access?.value ?? 0, access?.address ?? 0);
+        if (status === ConditionResult.DIVZERO) return { status: "divZero" };
+        if (status === ConditionResult.ERROR) return { status: "error" };
+        if (value === NO_VALUE) return { status: "noValue" };
+        return { status: "ok", value };
+      },
+      {
+        peek: (a) => store?.peek(a) ?? 0,
+        slots: () => this.machineInfo?.slots() ?? ""
+      }
+    );
+  }
+
+  /**
+   * The values a DeZog expression reads, as the machine holds them now - `A=$07, b@(HL)=$12` - for
+   * an `ASSERTION`'s failure report (S11, DeZog's "ASSERTIONs show the failure values"). Every
+   * register and memory read the expression names, each once, in the order written; labels are
+   * constants and are left out. Empty when there is nothing to show or the machine cannot say.
+   */
+  describeDezogValues(text: string): string {
+    let tree: SyntaxNode;
+    try {
+      tree = parseDezogExpression(text);
+    } catch {
+      return "";
+    }
+    const terms: string[] = [];
+    const visit = (node: SyntaxNode) => {
+      switch (node.k) {
+        case "name":
+          if (!node.quoted) terms.push(text.substring(node.start, node.end));
+          return;
+        case "mem":
+          terms.push(text.substring(node.start, node.end));
+          return;
+        case "un":
+          visit(node.e);
+          return;
+        case "bin":
+          visit(node.l);
+          visit(node.r);
+          return;
+        case "call":
+          visit(node.arg);
+          return;
+      }
+    };
+    visit(tree);
+    const unique = [...new Set(terms.map((t) => t.replace(/\s+/g, "")))];
+    if (!unique.length) return "";
+    const template = unique.map((t) => `${t}=\${${t}}`).join(", ");
+    const compiled = compileLogTemplate(template, "dezog", {
+      ...this.conditionFacts,
+      accessKind: "exec",
+      symbols: this.conditionSymbols
+    });
+    if (!compiled.template || !this.conditionStoreProvider?.()) return "";
+    // --- A transient runtime entry, so the store places its programs; gone again afterwards
+    const key = "\u0000report";
+    const state: BreakpointRuntimeState = { hits: 0, template: compiled.template };
+    this.runtime.set(key, state);
+    this.storeDirty = true;
+    try {
+      return this.renderTemplateNow(state, undefined);
+    } finally {
+      this.runtime.delete(key);
+      this.storeDirty = true;
+    }
   }
 
   /** Write the facts `cpufreq()` and `frame()` read into the core before a program reads them. */
@@ -1383,23 +1512,27 @@ export class DebugSupport implements IDebugSupport {
       this.runtime.set(key, state);
     }
     const text = bp.condition?.trim() ? bp.condition : undefined;
+    const conditionDialect = bp.conditionDialect ?? "klive";
     if (
       state.compiledFor !== text ||
+      state.compiledDialect !== conditionDialect ||
       state.compiledKind !== accessKind ||
       state.compiledStamp !== this.conditionStamp
     ) {
       state.compiledFor = text;
+      state.compiledDialect = conditionDialect;
       state.compiledKind = accessKind;
       state.compiledStamp = this.conditionStamp;
       state.compiled = undefined;
       state.error = undefined;
       this.storeDirty = true;
       if (text !== undefined) {
-        const result = compileCondition(text, {
-          ...this.conditionFacts,
-          accessKind,
-          symbols: this.conditionSymbols
-        });
+        const env = { ...this.conditionFacts, accessKind, symbols: this.conditionSymbols };
+        // --- An `ASSERTION` comment's expression is DeZog's (S4): its own parser, the one checker
+        const result =
+          conditionDialect === "dezog"
+            ? compileConditionWith(text, env, parseDezogExpression)
+            : compileCondition(text, env);
         if (result.compiled) {
           state.compiled = result.compiled;
           state.conditionUsesEnv = usesConditionEnv(result.compiled.tree);
@@ -1538,6 +1671,7 @@ export class DebugSupport implements IDebugSupport {
       this.storeDirty = true;
       changed ||= before !== state.template.inactiveReason;
     }
+    if (this.resolveWatchSymbols()) changed = true;
     // --- Only when a breakpoint went inactive or came back: the editors and the panel show that,
     // --- while a rebuild that moved nothing should not ripple through every breakpoint listener.
     if (changed) this.store?.dispatch(incBreakpointsVersionAction(), "emu");
@@ -1600,6 +1734,9 @@ export class DebugSupport implements IDebugSupport {
       if (state.compiled?.inactiveReason) listed.conditionInactive = state.compiled.inactiveReason;
       else if (state.template?.inactiveReason) {
         listed.conditionInactive = state.template.inactiveReason;
+      }
+      if (bp.watchSymbol && bp.resolvedAddress === undefined) {
+        listed.conditionInactive ??= `unknown symbol ${bp.watchSymbol}`;
       }
       if (state.logError) listed.logError = state.logError;
       else if (state.logOverflow) {
@@ -1697,7 +1834,65 @@ export class DebugSupport implements IDebugSupport {
       // --- All eight addresses its bank could be paged to, the same ones `armBankRelative` set.
       return bankRelativeAddresses(site.bankOffset).includes(address);
     }
-    return (bp.address ?? bp.resolvedAddress) === address;
+    const start = bp.address ?? bp.resolvedAddress;
+    if (start === undefined) return false;
+    if ((bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1) {
+      return address >= start && address < start + bp.length;
+    }
+    return start === address;
+  }
+
+  /**
+   * The addresses a plain (not bank-relative, not I/O) definition puts flags on: its address, or
+   * every byte of a memory range (S10). A range never wraps past `$FFFF`.
+   */
+  private claimedAddressesOf(bp: BreakpointInfo): number[] {
+    const start = bp.address ?? bp.resolvedAddress;
+    if (start === undefined) return [];
+    if (!(bp.memoryRead || bp.memoryWrite) || bp.length === undefined || bp.length <= 1) {
+      return [start];
+    }
+    const end = Math.min(0x1_0000, start + bp.length);
+    const result: number[] = [];
+    for (let a = start; a < end; a++) result.push(a);
+    return result;
+  }
+
+  /** Drop the untagged partition entry at `address` unless a remaining definition still claims it. */
+  private removeUntaggedPartitionEntryIfUnused(address: number, partition: number): void {
+    for (const bp of this.breakpointDefs.values()) {
+      if ((bp.partition ?? bp.resolvedPartition) === partition && this.claimsAddress(bp, address)) {
+        return;
+      }
+    }
+    this.removeUntaggedPartitionEntry(address, partition);
+  }
+
+  /** The address a watch symbol resolves to now (W3), `undefined` while the build lacks it. */
+  private watchSymbolAddress(symbol: string): number | undefined {
+    const value = this.conditionSymbols[symbol.toLowerCase()];
+    return value === undefined ? undefined : value & 0xffff;
+  }
+
+  /**
+   * Re-resolve every watch-made watchpoint against the current symbol table (W3): a rebuild that
+   * moved its label moves the watched bytes, and a symbol the build no longer has leaves it
+   * inactive (no address, so no flags).
+   * @returns Whether any watchpoint moved
+   */
+  private resolveWatchSymbols(): boolean {
+    let changed = false;
+    for (const bp of [...this.breakpointDefs.values()]) {
+      if (!bp.watchSymbol) continue;
+      const next = this.watchSymbolAddress(bp.watchSymbol);
+      if (next === bp.resolvedAddress) continue;
+      const before = this.claimedAddressesOf(bp);
+      bp.resolvedAddress = next;
+      for (const address of before) this.refreshFlagsAt(address);
+      for (const address of this.claimedAddressesOf(bp)) this.refreshFlagsAt(address);
+      changed = true;
+    }
+    return changed;
   }
 
   /**
@@ -1869,7 +2064,10 @@ export class DebugSupport implements IDebugSupport {
     if (bp.hitCount !== undefined) {
       bpFlags |= HIT_BP;
     }
-    if (hasBreakpointFilters(bp) || isLogpoint(bp)) {
+    // --- A one-shot takes the slow path too: only there is the definition that fired known, and
+    // --- only that definition may be consumed (O3). Annotation breakpoints are named in the stop
+    // --- report (S11), which needs the same knowledge.
+    if (hasBreakpointFilters(bp) || isLogpoint(bp) || bp.oneShot || bp.owner?.kind === "annotation") {
       bpFlags |= COND_BP;
     }
 

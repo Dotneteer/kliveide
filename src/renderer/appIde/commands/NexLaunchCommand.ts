@@ -143,6 +143,7 @@ export class LaunchNexCommand extends IdeCommandBase<LaunchNexCommandArgs> {
           bankOffset: armed.site.bankOffset,
           exec: true,
           oneShot: true,
+          runTo: true,
           owner: { kind: "session" }
         });
       }

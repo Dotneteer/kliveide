@@ -3,6 +3,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { effectiveHitMode, hasBreakpointFilters, isLogpoint } from "@common/utils/breakpoint-filters";
 import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
+import { kliveConditionText } from "@common/utils/breakpoint-condition/dezog/dezog-printer";
 
 /*
  * How a breakpoint's condition, hit rule and their runtime state read to a person - one wording for
@@ -37,16 +38,32 @@ export type BreakpointGlyph =
   | "logpoint"
   | "logpointConditional"
   | "logpointInactive"
-  | "logpointComment";
+  | "logpointComment"
+  | "once"
+  | "onceConditional"
+  | "assertion"
+  | "watchpoint";
 
+/**
+ * A one-shot (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6) draws the dot with a "1" knocked
+ * out, or - with a condition or hit rule - the "1" over a single bar. **Inactive (hollow) still
+ * wins**: whether a breakpoint can fire at all matters most. An `ASSERTION` or `WPMEM` comment
+ * draws its own mark (S12).
+ */
 export function breakpointGlyphOf(bp: BreakpointInfo | undefined): BreakpointGlyph {
   if (!bp) return "dot";
-  if (isAnnotationBreakpoint(bp)) return "logpointComment";
+  if (isAnnotationBreakpoint(bp)) {
+    if (bp.annotationKind === "ASSERTION") return "assertion";
+    if (bp.annotationKind === "WPMEM") return "watchpoint";
+    return "logpointComment";
+  }
   const inactive = isInactiveBreakpoint(bp) || !!bp.logError;
   if (isLogpoint(bp)) {
     return inactive ? "logpointInactive" : isConditionalBreakpoint(bp) ? "logpointConditional" : "logpoint";
   }
-  return inactive ? "inactive" : isConditionalBreakpoint(bp) ? "conditional" : "dot";
+  if (inactive) return "inactive";
+  if (bp.oneShot) return isConditionalBreakpoint(bp) ? "onceConditional" : "once";
+  return isConditionalBreakpoint(bp) ? "conditional" : "dot";
 }
 
 /** The icon (`src/renderer/assets/icons`) of a glyph. */
@@ -64,6 +81,14 @@ export function breakpointGlyphIcon(glyph: BreakpointGlyph): string {
       return "bp-logpoint-inactive";
     case "logpointComment":
       return "bp-logpoint-comment";
+    case "once":
+      return "bp-once";
+    case "onceConditional":
+      return "bp-once-conditional";
+    case "assertion":
+      return "bp-assertion";
+    case "watchpoint":
+      return "bp-mem-write";
     default:
       return "circle-filled";
   }
@@ -95,7 +120,7 @@ export function breakpointFilterLines(bp: BreakpointInfo): string[] {
   const lines: string[] = [];
   if (isLogpoint(bp)) {
     if (isAnnotationBreakpoint(bp)) {
-      lines.push("From a LOGPOINT comment - edit the comment and rebuild to change it");
+      lines.push("From a LOGPOINT comment - edit the comment and rebuild to change it, or disable it");
     }
     lines.push(`Logs: ${bp.logMessage}`);
     lines.push(`Group: ${logGroupOf(bp.logMessage)}`);
@@ -103,7 +128,16 @@ export function breakpointFilterLines(bp: BreakpointInfo): string[] {
       lines.push(`At: $${bp.address.toString(16).toUpperCase().padStart(4, "0")}`);
     }
   }
-  if (bp.condition?.trim()) lines.push(`Condition: ${bp.condition.trim()}`);
+  if (bp.oneShot && !bp.runTo) lines.push("One-shot: removed after it stops");
+  if (bp.runTo) lines.push("Run-to target: removed when the machine gets there");
+  if (bp.annotationKind === "ASSERTION") {
+    lines.push("From an ASSERTION comment - stops when the expression is false");
+    lines.push(`Asserts: ${bp.annotationText || "false (always stops)"}`);
+    if (bp.annotationText) lines.push(`Read as: ${kliveConditionText(bp.annotationText)}`);
+  } else if (bp.annotationKind === "WPMEM") {
+    lines.push(`From a WPMEM comment: ${bp.annotationText ? `WPMEM ${bp.annotationText}` : "WPMEM"}`);
+  }
+  if (bp.condition?.trim() && !bp.annotationKind) lines.push(`Condition: ${bp.condition.trim()}`);
   const rule = describeHitRule(bp);
   if (rule) lines.push(rule);
   if (bp.currentHits !== undefined && (bp.condition?.trim() || rule || isLogpoint(bp))) {

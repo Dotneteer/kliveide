@@ -27,7 +27,7 @@ are estimates for prioritising, not commitments.
 
 | # | Gap | Overall | Low-hanging pieces |
 |---|---|---|---|
-| G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ G1.1–G1.4 done (2026-10-03); DeZog ASSERTION/WPMEM comments and one-shot breakpoints remain |
+| G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | .sna and .z80 loading |
 | G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
@@ -71,8 +71,8 @@ evaluates, and it either stays stopped or resumes silently.
 | G1.2 Register / flag conditions ✅ **done** | Stop only when an expression is true, e.g. `A == $FF && !Z` or `HL > $C000`. | S–M (needs an expression evaluator over registers; check whether the watch or command expression code can be reused) |
 | G1.3 Memory and value conditions ✅ **done** | Conditions on memory contents (`[IX+3] == 0`, `w[$5C3A] > 100`), on the value being written (memory or I/O value breakpoints, like SpecEmu's MWV/PWV), and on the current paging or bank. | M |
 | G1.4 Logpoints ✅ **done** | A breakpoint that does not stop: it writes a formatted message (`"x={A} at {PC}"`) to the output pane and resumes. Also recognised from source comments using DeZog's LOGPOINT convention (decision D3). | S, once G1.2 exists |
-| G1.5 Assertions and watchpoints in source | DeZog-compatible ASSERTION and WPMEM source comments (decision D3) become conditional breakpoints and memory watchpoints when the program is debugged, so annotated DeZog projects work unchanged. | M |
-| G1.6 Temporary / one-shot breakpoints | Remove themselves after the first hit. | S |
+| G1.5 Assertions and watchpoints in source ✅ **done** | DeZog-compatible ASSERTION and WPMEM source comments (decision D3) become conditional breakpoints and memory watchpoints when the program is debugged, so annotated DeZog projects work unchanged. | M |
+| G1.6 Temporary / one-shot breakpoints ✅ **done** | Remove themselves after the first hit. | S |
 
 **Risk:** a conditional breakpoint inside a hot loop stops and resumes the frame on every pass,
 which is slow. That is acceptable at first; the fix, if needed, is evaluating simple register

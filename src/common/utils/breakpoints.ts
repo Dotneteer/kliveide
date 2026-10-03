@@ -20,7 +20,8 @@ import type {
   SourceLevelDebugInfo,
   StatementDebugInfo
 } from "@abstractions/CompilerInfo";
-import { annotationLogpoints } from "./source-annotations";
+import { annotationBreakpoints, type AnnotationBreakpointOptions } from "./source-annotations";
+import { isCommentDisabled } from "@renderer/appIde/utils/annotation-state";
 
 /**
  * A breakpoint's key, in two forms.
@@ -89,7 +90,22 @@ function buildBreakpointKey(
   bp: BreakpointInfo,
   partitionText: (partition: number) => string
 ): string {
+  /*
+   * A run-to target (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O4) lives in its own key
+   * namespace. Under the plain key, `run-to $8000` replaced the user's breakpoint at `$8000` with a
+   * session one-shot that was then consumed - the user's breakpoint was silently lost (B2).
+   */
+  if (bp.runTo) {
+    return `RT:${buildBreakpointKey({ ...bp, runTo: undefined }, partitionText)}`;
+  }
+
   const suffix = breakpointKindSuffix(bp);
+  // --- A memory range (S10) is part of the identity: `$8000+5:W`. Only on a memory kind, so the
+  // --- address spec (built with the kind flags cleared) stays what `bp-*` parses; `-len` says it.
+  const range =
+    (bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1
+      ? `+${bp.length}`
+      : "";
 
   /*
    * A label-anchored breakpoint is named by its label, and named **first**.
@@ -109,14 +125,33 @@ function buildBreakpointKey(
    * macro yields one logpoint per expansion. The `LP:` prefix keeps it clear of a user breakpoint on
    * the same line, so the user can still stop where a comment logs.
    */
+  /*
+   * `ASSERTION` and `WPMEM` comments follow the same pattern under their own prefixes (S2): `AS:`
+   * for an assertion, `WP:` with the watched range and the access kind for a watchpoint. They never
+   * collide with a user breakpoint at the same place, or with each other.
+   */
   if (bp.owner?.kind === "annotation" && bp.resource && bp.line !== undefined) {
     const site = bp.address ?? bp.resolvedAddress;
     const at =
       site === undefined
         ? ""
         : `@${bp.partition === undefined ? "" : `${partitionText(bp.partition)}:`}$${toHexa4(site)}`;
+    if (bp.annotationKind === "ASSERTION") return `AS:[${bp.resource}]:${bp.line}${at}`;
+    if (bp.annotationKind === "WPMEM") {
+      return `WP:[${bp.resource}]:${bp.line}${at}+${bp.length ?? 1}${suffix}`;
+    }
     return `LP:[${bp.resource}]:${bp.line}${at}`;
   }
+
+  /*
+   * A watchpoint made from a Watch row (W3) is named by its build symbol, not by the address the
+   * symbol resolves to: a rebuild that moves the label re-resolves it under the same key.
+   */
+  if (bp.watchSymbol) {
+    return `WS:${bp.watchSymbol}${range}${suffix}`;
+  }
+  // --- (The address spec, built with the kind flags cleared, is the bare `WS:<symbol>` the
+  // --- `bp-*` commands parse.)
 
   if (bp.label && bp.labelFile) {
     const bankPart = bp.bank === undefined ? "" : `${labelBankText(bp.bank)}:`;
@@ -146,9 +181,9 @@ function buildBreakpointKey(
   if (bp.address !== undefined) {
     // --- Breakpoint defined with address
     if (bp.partition === undefined) {
-      return `$${toHexa4(bp.address)}${suffix}`;
+      return `$${toHexa4(bp.address)}${range}${suffix}`;
     }
-    return `${partitionText(bp.partition)}:$${toHexa4(bp.address)}${suffix}`;
+    return `${partitionText(bp.partition)}:$${toHexa4(bp.address)}${range}${suffix}`;
   } else if (bp.bank !== undefined && bp.bankOffset !== undefined) {
     // --- Stated fields only, for the same reason the label branch above uses them: a resolved site
     // --- must not become part of the key.
@@ -160,7 +195,7 @@ function buildBreakpointKey(
     // --- The bank is rendered as a plain 2-digit hex number rather than through the partition label
     // --- map, because it is a **16K bank**, not a partition index — the map describes 8K pages.
     // --- Routing it through the labels is how the two index spaces got confused before.
-    return `${labelBankText(bp.bank)}:+$${toHexa4(bp.bankOffset)}${suffix}`;
+    return `${labelBankText(bp.bank)}:+$${toHexa4(bp.bankOffset)}${range}${suffix}`;
   } else if (bp.resource && bp.line !== undefined) {
     // --- A statement breakpoint adds its column; line breakpoints keep the key they always had
     return `[${bp.resource}]:${bp.line}${bp.column !== undefined ? `:${bp.column}` : ""}`;
@@ -220,7 +255,9 @@ export function getBreakpointAddressSpec(
       memoryRead: undefined,
       memoryWrite: undefined,
       ioRead: undefined,
-      ioWrite: undefined
+      ioWrite: undefined,
+      // --- A command names the place; the `RT:` namespace is storage-only (O4)
+      runTo: undefined
     },
     (partition) => partitionLabels?.[partition] ?? "?"
   );
@@ -277,10 +314,15 @@ export async function refreshSourceCodeBreakpoints(
     );
     await pushConditionSymbols(emuApi);
 
-    // --- The build's `LOGPOINT` comments replace the previous build's (`.plans/LOGPOINTS_PLAN.md`
-    // --- L10); a build without any clears them. A failed build never gets here, so it keeps them.
+    // --- The build's `LOGPOINT`, `ASSERTION` and `WPMEM` comments replace the previous build's
+    // --- (`.plans/LOGPOINTS_PLAN.md` L10) in **one** install - two would each delete the other's
+    // --- (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.4). A build without any clears them; a
+    // --- failed build never gets here, so it keeps them.
     await emuApi.resetBreakpointsTo(
-      buildLogpoints(compilation.result, store.getState().project?.folderPath, machineId),
+      buildLogpoints(compilation.result, store.getState().project?.folderPath, machineId, {
+        switches: store.getState().sourceComments,
+        isDisabled: isCommentDisabled
+      }),
       { kind: "annotation" }
     );
 
@@ -291,11 +333,16 @@ export async function refreshSourceCodeBreakpoints(
     // --- There can be source code breakpoints. Only the project's own: this call replaces the
     // --- project scope, so a sidecar's breakpoints or the build's `LOGPOINT` logpoints handed in
     // --- here would be restamped as project-owned (`.plans/LOGPOINTS_PLAN.md` L10).
-    const bps = (await getBreakpoints(messenger)).filter((bp) =>
-      breakpointMatchesScope(bp.owner, { kind: "project" })
-    );
+    const all = await getBreakpoints(messenger);
+    const bps = all.filter((bp) => breakpointMatchesScope(bp.owner, { kind: "project" }));
+    // --- Session-owned source breakpoints (a user's one-shot, a run-to target) are resolved too,
+    // --- but never reinstalled under the project scope (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O2)
+    const toResolve = [
+      ...bps,
+      ...all.filter((bp) => bp.owner?.kind === "session" && bp.resource && bp.exec)
+    ];
     const sourceLevel = hasSourceLevelDebug(compilation.result) ? compilation.result.sourceLevelDebug : undefined;
-    for (const bp of bps) {
+    for (const bp of toResolve) {
       if (!bp.resource) continue;
       delete bp.resolvedAddress;
       const fileIndex = compilation.result.sourceFileList.findIndex((fi) =>
@@ -350,16 +397,41 @@ export async function refreshSourceCodeBreakpoints(
 }
 
 /**
- * The logpoints of a build's `LOGPOINT` comments, keyed to project-relative resources like source
- * breakpoints, each in the partition its segment's bank implies.
+ * Install the last successful build's comment breakpoints again - after a switch changed (S6) - with
+ * no rebuild. A failed or missing build installs nothing new.
+ */
+export async function reinstallAnnotationBreakpoints(
+  store: Store<AppState>,
+  messenger: MessengerBase
+): Promise<void> {
+  const compilation = store.getState().compilation;
+  if (!compilation?.result || compilation.failed || compilation.result.errors?.some((e) => !e.isWarning)) {
+    return;
+  }
+  await createEmuApi(messenger).resetBreakpointsTo(
+    buildLogpoints(
+      compilation.result,
+      store.getState().project?.folderPath,
+      store.getState().emulatorState?.machineId,
+      { switches: store.getState().sourceComments, isDisabled: isCommentDisabled }
+    ),
+    { kind: "annotation" }
+  );
+}
+
+/**
+ * The breakpoints of a build's DeZog comments - `LOGPOINT`, `ASSERTION` and `WPMEM` - keyed to
+ * project-relative resources like source breakpoints, each in the partition its segment's bank
+ * implies. `options` carries the per-project switches and the session's disabled comments.
  */
 export function buildLogpoints(
   output: KliveCompilerOutput | undefined,
   projectFolder: string | undefined,
-  machineId: string | undefined
+  machineId: string | undefined,
+  options: AnnotationBreakpointOptions = {}
 ): BreakpointInfo[] {
   const folder = projectFolder?.replace(/\\/g, "/").replace(/\/$/, "");
-  return annotationLogpoints(
+  return annotationBreakpoints(
     output,
     (filename) => {
       const normalised = filename.replace(/\\/g, "/");
@@ -373,6 +445,7 @@ export function buildLogpoints(
           ? undefined
           : (output as { segments?: BinarySegment[] })?.segments?.[annotation.segmentIndex];
       return segment ? resolvedPartitionFor(segment, annotation.address, machineId) : undefined;
-    }
+    },
+    options
   );
 }

@@ -75,11 +75,12 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
       line: args.line,
       exec: true,
       oneShot: true,
+      runTo: true,
       owner: { kind: "session" }
     };
 
     await context.emuApi.setBreakpoint(target);
-    const addrKey = getBreakpointDisplayKey(target, this.partitionLabels);
+    const addrKey = getBreakpointDisplayKey({ ...target, runTo: undefined }, this.partitionLabels);
 
     if (isRunning) {
       // --- Already executing in debug mode: the one-shot is live from the next instruction, and

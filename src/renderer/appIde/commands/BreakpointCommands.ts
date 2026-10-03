@@ -15,14 +15,19 @@ import {
   getNumericTokenValue,
   toHexa2
 } from "@renderer/appIde/services/ide-commands";
-import { getBreakpointAddressSpec, getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import {
+  getBreakpointAddressSpec,
+  getBreakpointDisplayKey,
+  reinstallAnnotationBreakpoints
+} from "@common/utils/breakpoints";
 import { formatHitSpec, isLogpoint, parseHitSpec } from "@common/utils/breakpoint-filters";
 import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import {
   compileLogTemplate,
   logGroupOf
 } from "@common/utils/breakpoint-condition/logpoint-template";
-import { setLogpointGroupsAction } from "@common/state/actions";
+import { setLogpointGroupsAction, setSourceCommentsAction } from "@common/state/actions";
+import { kliveConditionText } from "@common/utils/breakpoint-condition/dezog/dezog-printer";
 import { saveProject } from "@renderer/appIde/utils/save-project";
 import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
@@ -71,9 +76,13 @@ export class ListBreakpointsCommand extends IdeCommandBase {
     // --- Listing a breakpoint in a notation `bp-set` would not accept back is what the storage /
     // --- display key split exists to prevent; this command is the one that used to do it.
     const partitionLabels = await context.emuApi.getPartitionLabels();
-    // --- Logpoints read from `LOGPOINT` comments belong to the build: listed apart, read-only
+    // --- Breakpoints read from DeZog comments belong to the build: listed apart, read-only
     const ordered = bps.breakpoints.filter((bp) => !isAnnotationBreakpoint(bp));
-    const comments = bps.breakpoints.filter((bp) => isAnnotationBreakpoint(bp));
+    const comments = bps.breakpoints.filter(
+      (bp) => isAnnotationBreakpoint(bp) && !bp.annotationKind
+    );
+    const assertions = bps.breakpoints.filter((bp) => bp.annotationKind === "ASSERTION");
+    const watchpoints = bps.breakpoints.filter((bp) => bp.annotationKind === "WPMEM");
     if (ordered.length) {
       ordered.forEach((bp, idx) => {
         /*
@@ -107,6 +116,39 @@ export class ListBreakpointsCommand extends IdeCommandBase {
         writeMessage(context.output, bp.logMessage ?? "", "bright-magenta");
         const status = breakpointStatusText(bp);
         if (status) writeMessage(context.output, `     ${status}`, bp.logError ? "bright-red" : "cyan");
+      });
+    }
+    if (assertions.length) {
+      writeMessage(
+        context.output,
+        "ASSERTION comments (stop when false; edit the comment and rebuild to change one):",
+        "bright-blue"
+      );
+      assertions.forEach((bp) => {
+        const at = getBreakpointAddressSpec({ address: bp.address, partition: bp.partition }, partitionLabels);
+        writeMessage(context.output, `  [${bp.resource}]:${bp.line} @ ${at}: `, "bright-blue", false);
+        writeMessage(context.output, `ASSERTION ${bp.annotationText ?? ""}`, "bright-magenta");
+        // --- The Klive reading, so C precedence is visible (R2)
+        if (bp.annotationText) {
+          writeMessage(context.output, `     read as: ${kliveConditionText(bp.annotationText)}`, "cyan");
+        }
+        const status = breakpointStatusText(bp);
+        if (status) writeMessage(context.output, `     ${status}`, bp.conditionError ? "bright-red" : "cyan");
+      });
+    }
+    if (watchpoints.length) {
+      writeMessage(
+        context.output,
+        "WPMEM comments (edit the comment and rebuild to change one):",
+        "bright-blue"
+      );
+      watchpoints.forEach((bp) => {
+        const at = getBreakpointAddressSpec({ address: bp.address, partition: bp.partition }, partitionLabels);
+        const range = bp.length && bp.length > 1 ? ` -len ${bp.length}` : "";
+        writeMessage(context.output, `  [${bp.resource}]:${bp.line} @ ${at}${range} ${bp.memoryRead ? "-r" : "-w"}: `, "bright-blue", false);
+        writeMessage(context.output, `WPMEM ${bp.annotationText ?? ""}`, "bright-magenta");
+        const status = breakpointStatusText(bp);
+        if (status) writeMessage(context.output, `     ${status}`, "cyan");
       });
     }
     return commandSuccess;
@@ -144,6 +186,12 @@ export type BreakpointWithAddressArgs = {
   "-if"?: string;
   /** A logpoint's message template (`.plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
   "-log"?: string;
+  /** A one-shot: removed the first time it stops the machine (G1.6, O1). `bp-set` only. */
+  "-once"?: boolean;
+  /** The bytes a memory breakpoint watches from its address (S10). Part of the identity. */
+  "-len"?: number;
+  /** The build symbol a `WS:<symbol>` spec anchors a watchpoint to (W3). */
+  watchSymbol?: string;
 };
 
 /**
@@ -181,6 +229,7 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     bankOffset: args.bankOffset,
     resource: args.resource,
     line: args.line,
+    watchSymbol: args.watchSymbol,
     nextReg: args.nextReg,
     nextRegValue: args["-v"],
     // --- `-m` is the port mask for an I/O breakpoint and the value mask for a NextReg one, so each
@@ -192,7 +241,11 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     memoryWrite: args["-w"],
     ioRead: args["-i"],
     ioWrite: args["-o"],
-    ioMask: isNextReg ? undefined : args["-m"]
+    ioMask: isNextReg ? undefined : args["-m"],
+    // --- Part of a memory range's identity, so `bp-del`/`bp-en` need it as much as `bp-set` does
+    ...((args["-r"] || args["-w"]) && args["-len"] !== undefined && args["-len"] > 1
+      ? { length: args["-len"] }
+      : {})
   };
 }
 
@@ -203,7 +256,7 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-c"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-once"],
     namedOptions: [
       {
         name: "-m",
@@ -211,6 +264,10 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
       },
       {
         name: "-v",
+        type: "number"
+      },
+      {
+        name: "-len",
         type: "number"
       },
       {
@@ -236,7 +293,18 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
     let messages: ValidationMessage[] = [];
 
     // --- Validate address and partition
-    if (addrArg.startsWith("[")) {
+    if (/^ws:/i.test(addrArg)) {
+      // --- `WS:<symbol>`: a watchpoint anchored to a build symbol (W3), the form `bp-list` prints
+      // --- for one made from a Watch row, so the line pastes back
+      const symbol = addrArg.substring(3).trim();
+      if (!/^[A-Za-z_][A-Za-z0-9_.]*$/.test(symbol)) {
+        return [validationError(`Invalid symbol in ${addrArg}`)];
+      }
+      if (!args["-r"] && !args["-w"]) {
+        return [validationError("A WS:<symbol> breakpoint watches memory: use -r or -w")];
+      }
+      args.watchSymbol = symbol;
+    } else if (addrArg.startsWith("[")) {
       const addrInfo = context.service.projectService.getBreakpointAddressInfo(addrArg);
       if (!addrInfo) {
         return [validationError(`Invalid breakpoint address ${addrArg}`)];
@@ -508,6 +576,18 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
       // --- An I/O breakpoint watches a port, which has no bank.
       return [validationError("You cannot use a bank offset with I/O breakpoints")];
     }
+    if (args["-len"] !== undefined) {
+      if (!args["-r"] && !args["-w"]) {
+        return [validationError("You can use the -len option only with -r or -w")];
+      }
+      const length = args["-len"];
+      if (!Number.isInteger(length) || length < 1 || length > 0x1_0000) {
+        return [validationError("The -len option takes a length between 1 and 65536")];
+      }
+      if (args.address !== undefined && args.address + length > 0x1_0000) {
+        return [validationError("A memory range cannot wrap past $FFFF")];
+      }
+    }
 
     // --- Done.
     return messages;
@@ -518,7 +598,9 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
   readonly usage = [
-    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
+    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
+    "-len: a memory breakpoint (-r/-w) over this many bytes, e.g. bp-set $8000 -w -len 5",
+    "-once: a one-shot breakpoint, removed the first time it stops the machine; never saved",
     "-log: log the message and continue instead of stopping (a logpoint), e.g. -log \"[LOOP] B={B} HL={HL:hex16}\"",
     "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
     "-if: must be last; the rest of the line is the condition, e.g. -if A == $FF && !ZF"
@@ -542,6 +624,11 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       context.service.machineService.getMachineInfo()?.machine?.machineId,
       this.partitionLabels
     );
+
+    if (args["-once"] && args["-log"] !== undefined) {
+      // --- A logpoint never stops the machine, so a one-shot one would never be spent
+      return [validationError("A logpoint cannot be a one-shot (-once with -log)")];
+    }
 
     if (args["-log"] !== undefined) {
       const template = (args["-log"] = unescapeLogOption(String(args["-log"])));
@@ -596,12 +683,18 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       const hit = parseHitSpec(String(args["-hit"]));
       if (!("error" in hit)) Object.assign(bpDef, hit);
     }
+    // --- A one-shot is the same breakpoint with a flag, owned by the session so no save keeps it
+    // --- (O2); without `-once`, `bp-set` makes it a regular, project-owned breakpoint again
+    if (args["-once"]) {
+      bpDef.oneShot = true;
+      bpDef.owner = { kind: "session" };
+    }
     const flag = await context.emuApi.setBreakpoint(bpDef);
     let addrKey = getBreakpointDisplayKey(bpDef, this.partitionLabels);
     const hitSpec = formatHitSpec(bpDef);
     writeSuccessMessage(
       context.output,
-      `${bpDef.logMessage ? "Logpoint" : "Breakpoint"} at address ${addrKey}` +
+      `${bpDef.logMessage ? "Logpoint" : bpDef.oneShot ? "One-shot breakpoint" : "Breakpoint"} at address ${addrKey}` +
         `${(args["-i"] || args["-o"]) && args["-m"] ? " /$" + toHexa4(args["-m"]) : ""}` +
         `${flag ? " set" : " updated"}` +
         `${bpDef.logMessage ? ` -log ${quoteLogTemplate(bpDef.logMessage)}` : ""}` +
@@ -637,10 +730,11 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-c"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-c", "-once"],
     namedOptions: [
       { name: "-m", type: "number" },
       { name: "-v", type: "number" },
+      { name: "-len", type: "number" },
       { name: "-hit" },
       { name: "-log" }
     ],
@@ -715,7 +809,12 @@ export function breakpointCommandSpec(
   if ((bp.ioRead || bp.ioWrite) && bp.ioMask !== undefined && bp.ioMask !== 0xffff) {
     parts.push(`-m $${toHexa4(bp.ioMask)}`);
   }
+  if ((bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1) {
+    parts.push(`-len ${bp.length}`);
+  }
   if (bp.nextRegCopper) parts.push("-c");
+  // --- Before `-hit`/`-if`, so a listed line pastes back (§4.2)
+  if (bp.oneShot && !bp.runTo) parts.push("-once");
   if (bp.logMessage) parts.push(`-log ${quoteLogTemplate(bp.logMessage)}`);
   const hitSpec = formatHitSpec(bp);
   if (hitSpec) parts.push(`-hit ${hitSpec}`);
@@ -727,6 +826,7 @@ export function breakpointCommandSpec(
 export function breakpointStatusText(bp: BreakpointInfo): string {
   const parts: string[] = [];
   if (bp.disabled) parts.push("<disabled>");
+  if (bp.runTo) parts.push("<run-to target>");
   if (bp.currentHits !== undefined) parts.push(`(hits: ${bp.currentHits})`);
   if (bp.conditionInactive) parts.push(`<inactive: ${bp.conditionInactive}>`);
   if (bp.conditionError) parts.push(`<condition error: ${bp.conditionError}>`);
@@ -810,6 +910,14 @@ export class ListLogpointGroupsCommand extends IdeCommandBase {
     const known = knownLogGroups((await context.emuApi.listBreakpoints()).breakpoints);
     for (const group of state.groups ?? []) if (!known.has(group)) known.set(group, 0);
     writeMessage(context.output, `Logging: ${describeLogGroups(state)}`, "bright-blue");
+    // --- The two other DeZog comment kinds' switches (S6)
+    const switches = context.store.getState().sourceComments ?? {};
+    writeMessage(
+      context.output,
+      `ASSERTION comments: ${switches.assertion === false ? "off" : "on"}; ` +
+        `WPMEM comments: ${switches.wpmem === false ? "off" : "on"}`,
+      "bright-blue"
+    );
     if (known.size === 0) {
       writeMessage(context.output, "No logpoints set", "bright-blue");
       return commandSuccess;
@@ -822,6 +930,46 @@ export class ListLogpointGroupsCommand extends IdeCommandBase {
     }
     return commandSuccess;
   }
+}
+
+type CommentSwitchArgs = { "-d"?: boolean };
+
+/**
+ * `as-en [-d]` / `wp-en [-d]` (S6): switch the breakpoints of `ASSERTION` / `WPMEM` comments on or
+ * off for this project, mirroring `lp-en`. Saved with the project; the build's comment breakpoints
+ * are installed again at once.
+ */
+abstract class SourceCommentSwitchCommand extends IdeCommandBase<CommentSwitchArgs> {
+  protected abstract readonly kind: "assertion" | "wpmem";
+  readonly argumentInfo: CommandArgumentInfo = { commandOptions: ["-d"] };
+
+  async execute(context: IdeCommandContext, args: CommentSwitchArgs): Promise<IdeCommandResult> {
+    const current = context.store.getState().sourceComments ?? {};
+    context.store.dispatch(setSourceCommentsAction({ ...current, [this.kind]: !args["-d"] }));
+    await reinstallAnnotationBreakpoints(context.store, context.messenger);
+    void saveProject(context.messenger);
+    writeSuccessMessage(
+      context.output,
+      `${this.kind === "assertion" ? "ASSERTION" : "WPMEM"} comments ${args["-d"] ? "off" : "on"}`
+    );
+    return commandSuccess;
+  }
+}
+
+export class EnableAssertionCommentsCommand extends SourceCommentSwitchCommand {
+  protected readonly kind = "assertion" as const;
+  readonly id = "as-en";
+  readonly description = "Switches the breakpoints of ASSERTION comments on or off";
+  readonly usage = ["as-en [-d]", "-d: switch them off; saved with the project"];
+  readonly aliases = ["ase"];
+}
+
+export class EnableWpmemCommentsCommand extends SourceCommentSwitchCommand {
+  protected readonly kind = "wpmem" as const;
+  readonly id = "wp-en";
+  readonly description = "Switches the watchpoints of WPMEM comments on or off";
+  readonly usage = ["wp-en [-d]", "-d: switch them off; saved with the project"];
+  readonly aliases = ["wpe"];
 }
 
 /** Does the group switch let this group log? */
@@ -851,6 +999,21 @@ export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
     if (flag) {
       writeSuccessMessage(context.output, `Breakpoint at address ${addrKey} removed`);
     } else {
+      // --- A comment's breakpoint cannot be deleted, only disabled (S3): say which comment it is
+      const comment = (await context.emuApi.listBreakpoints()).breakpoints.find(
+        (bp) =>
+          bp.annotationKind &&
+          bp.address === bpDef.address &&
+          !!bp.memoryRead === !!bpDef.memoryRead &&
+          !!bp.memoryWrite === !!bpDef.memoryWrite
+      );
+      if (comment) {
+        return commandError(
+          `The breakpoint at ${addrKey} comes from the ${comment.annotationKind} comment at ` +
+            `${comment.resource}:${comment.line}. Remove the comment and rebuild, or switch ` +
+            `${comment.annotationKind} comments off with ${comment.annotationKind === "ASSERTION" ? "as-en -d" : "wp-en -d"}.`
+        );
+      }
       writeSuccessMessage(context.output, `No breakpoint has been set at address ${addrKey}`);
     }
     return commandSuccess;
@@ -869,7 +1032,7 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
         name: "addrSpec"
       }
     ],
-    commandOptions: ["-r", "-w", "-i", "-o", "-d", "-c"],
+    commandOptions: ["-r", "-w", "-i", "-o", "-d", "-c", "-once"],
     namedOptions: [
       {
         name: "-m",
@@ -877,6 +1040,10 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       },
       {
         name: "-v",
+        type: "number"
+      },
+      {
+        name: "-len",
         type: "number"
       },
       {

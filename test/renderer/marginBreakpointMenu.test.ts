@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import {
   marginMenuItems,
+  oneShotToggle,
   runMarginAction,
   type MarginActionPorts,
   type MarginTarget
@@ -38,6 +39,7 @@ describe("marginMenuItems", () => {
       "Edit Condition...",
       "Edit Hit Count...",
       "Convert to Logpoint...",
+      "Remove After It Stops",
       "Disable Breakpoint",
       "Reset Hit Count",
       "Remove Breakpoint"
@@ -45,7 +47,7 @@ describe("marginMenuItems", () => {
   });
 
   it("labels the toggle by what it will do", () => {
-    expect(marginMenuItems({ ...onBp, breakpoint: { ...BP, disabled: true } })[3].text).toBe(
+    expect(marginMenuItems({ ...onBp, breakpoint: { ...BP, disabled: true } })[4].text).toBe(
       "Enable Breakpoint"
     );
   });
@@ -53,6 +55,7 @@ describe("marginMenuItems", () => {
   it("offers to add one on a line without, disabled where the line cannot hold one", () => {
     expect(marginMenuItems(empty).map((i) => [i.text, !!i.disabled])).toEqual([
       ["Add Breakpoint", false],
+      ["Add One-Shot Breakpoint", false],
       ["Add Conditional Breakpoint...", false],
       ["Add Logpoint...", false]
     ]);
@@ -205,5 +208,104 @@ describe("logpoint items", () => {
     await runMarginAction("addLogpoint", empty, "main.asm", p);
     expect(p.edit.mock.calls[0][1]).toBe("logMessage");
     expect(p.remove).toHaveBeenCalled();
+  });
+});
+
+describe("one-shots in the margin (G1.6)", () => {
+  it("offers Add One-Shot with its gesture, and Remove/Keep After It Stops on a breakpoint", () => {
+    expect(marginMenuItems(empty).find((i) => i.id === "addOnce")?.hint).toBe("Shift+Click");
+    expect(marginMenuItems(onBp).find((i) => i.id === "makeOnce")).toBeDefined();
+    const once = { ...onBp, breakpoint: { ...BP, oneShot: true, owner: { kind: "session" as const } } };
+    expect(marginMenuItems(once).find((i) => i.id === "keepAfterStop")?.text).toBe("Keep After It Stops");
+    // --- A logpoint never stops, so it is never a one-shot
+    const lp = { ...onBp, breakpoint: { ...BP, logMessage: "x" } };
+    expect(marginMenuItems(lp).some((i) => i.id === "makeOnce")).toBe(false);
+  });
+
+  it("adds a session-owned one-shot, converts and converts back", async () => {
+    const p = ports();
+    await runMarginAction("addOnce", empty, "main.asm", p);
+    expect(p.add).toHaveBeenCalledWith({
+      resource: "main.asm",
+      line: 42,
+      exec: true,
+      oneShot: true,
+      owner: { kind: "session" }
+    });
+    expect(p.edit).not.toHaveBeenCalled();
+
+    const q = ports();
+    await runMarginAction("makeOnce", onBp, "main.asm", q);
+    expect(q.add).toHaveBeenCalledWith({ ...BP, oneShot: true, owner: { kind: "session" } });
+    await runMarginAction(
+      "keepAfterStop",
+      { ...onBp, breakpoint: { ...BP, oneShot: true, owner: { kind: "session" } } },
+      "main.asm",
+      q
+    );
+    expect(q.add).toHaveBeenLastCalledWith(BP);
+  });
+
+  it("Shift+click adds, converts, then removes (O1)", () => {
+    const place = { resource: "main.asm", line: 1, exec: true };
+    const added = oneShotToggle(undefined, place);
+    expect(added).toEqual({ set: { ...place, oneShot: true, owner: { kind: "session" } } });
+    expect(oneShotToggle(place, place)).toEqual(added);
+    const once = (added as { set: BreakpointInfo }).set;
+    expect(oneShotToggle(once, place)).toEqual({ remove: once });
+  });
+});
+
+describe("ASSERTION / WPMEM comment marks (S12)", () => {
+  const assertion: BreakpointInfo = {
+    owner: { kind: "annotation" },
+    annotationKind: "ASSERTION",
+    resource: "main.asm",
+    line: 42,
+    address: 0x800d,
+    exec: true
+  };
+  const commentTarget: MarginTarget = {
+    line: 42,
+    canAdd: false,
+    comments: [assertion, { ...assertion, address: 0x9000 }]
+  };
+
+  it("offers Disable and Show in Disassembly per expansion, and no Remove", () => {
+    expect(marginMenuItems(commentTarget).map((i) => i.text)).toEqual([
+      "Disable ASSERTION",
+      "Show in Disassembly ($800D)",
+      "Show in Disassembly ($9000)"
+    ]);
+    const disabled = { ...commentTarget, comments: commentTarget.comments!.map((c) => ({ ...c, disabled: true })) };
+    expect(marginMenuItems(disabled)[0].text).toBe("Enable ASSERTION");
+  });
+
+  it("toggles every definition of the comment and reveals an address", async () => {
+    const p = { ...ports(), setCommentsEnabled: vi.fn().mockResolvedValue(undefined), showInDisassembly: vi.fn().mockResolvedValue(undefined) };
+    await runMarginAction("toggleComment", commentTarget, "main.asm", p);
+    expect(p.setCommentsEnabled).toHaveBeenCalledWith(commentTarget.comments, false);
+    await runMarginAction("showInDisassembly", commentTarget, "main.asm", p, 0x9000);
+    expect(p.showInDisassembly).toHaveBeenCalledWith(0x9000);
+  });
+});
+
+describe("LOGPOINT comment marks behave like the others (Q6)", () => {
+  const logpoint: BreakpointInfo = {
+    owner: { kind: "annotation" },
+    resource: "main.asm",
+    line: 7,
+    address: 0x8010,
+    exec: true,
+    logMessage: "[L] A=${A}",
+    logDialect: "dezog"
+  };
+
+  it("offers Disable and Show in Disassembly", () => {
+    const target: MarginTarget = { line: 7, canAdd: false, comments: [logpoint] };
+    expect(marginMenuItems(target).map((i) => i.text)).toEqual([
+      "Disable LOGPOINT",
+      "Show in Disassembly"
+    ]);
   });
 });

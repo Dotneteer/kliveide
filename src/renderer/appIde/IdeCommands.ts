@@ -7,6 +7,8 @@ import {
   EnableBreakpointCommand,
   ResetBreakpointHitsCommand,
   EnableLogpointGroupsCommand,
+  EnableAssertionCommentsCommand,
+  EnableWpmemCommentsCommand,
   ListLogpointGroupsCommand
 } from "./commands/BreakpointCommands";
 import {
@@ -153,6 +155,8 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new EnableBreakpointCommand());
   cmdSrv.registerCommand(new ResetBreakpointHitsCommand());
   cmdSrv.registerCommand(new EnableLogpointGroupsCommand());
+  cmdSrv.registerCommand(new EnableAssertionCommentsCommand());
+  cmdSrv.registerCommand(new EnableWpmemCommentsCommand());
   cmdSrv.registerCommand(new ListLogpointGroupsCommand());
 
   cmdSrv.registerCommand(new AddWatchCommand());

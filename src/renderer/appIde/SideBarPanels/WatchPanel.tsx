@@ -2,8 +2,29 @@ import type { WatchInfo } from "@common/state/AppState";
 
 import { Label } from "@renderer/controls/layout/Label";
 import { Value } from "@renderer/controls/layout/Value";
-import { useSelector } from "@renderer/core/RendererProvider";
-import { useState, useEffect, useCallback, memo } from "react";
+import { useDispatch, useSelector } from "@renderer/core/RendererProvider";
+import { removeWatchAction, setSideBarPanelExpandedAction } from "@common/state/actions";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@controls/ContextMenu";
+import { useMainApi } from "@renderer/core/MainApi";
+import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
+import { getBreakpointStorageKey } from "@common/utils/breakpoints";
+import {
+  describeWatchpoints,
+  overlappingWatchpoints,
+  watchByteCount,
+  watchpointsForWatch,
+  watchpointsOfWatch,
+  type WatchAccess
+} from "../utils/watch-watchpoints";
+import { requestBreakpointReveal } from "../utils/breakpoint-reveal";
 import { EMPTY_ARRAY } from "@renderer/utils/stablerefs";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { Icon } from "@renderer/controls/Icon";
@@ -31,6 +52,8 @@ const TYPE_ICON_FILL = "--data-label";
 const UNRESOLVED_ICON_FILL = "--status-warning";
 
 type WatchEntry = {
+  /** The watch definition the row shows. */
+  info: WatchInfo;
   symbol: string;
   value: string;
   icon: string;
@@ -65,6 +88,7 @@ export const WatchPanel = () => {
       for (const watch of watches) {
         const briefType = getBriefTypeName(watch.type);
         const watchEntry: WatchEntry = {
+          info: watch,
           symbol: watch.symbol.toUpperCase(),
           value: "<unknown>",
           icon: "warning",
@@ -145,8 +169,91 @@ export const WatchPanel = () => {
 
   useEmuStateListener(emuApi, refreshMemory);
 
+  /*
+   * The breakpoints, for the watchpoint indicator (W4): refreshed when the set changes, the panel's
+   * one extra read. Only while there are watches to mark.
+   */
+  const bpsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
+  const [breakpoints, setBreakpoints] = useState<BreakpointInfo[]>(EMPTY_ARRAY);
+  useEffect(() => {
+    if (!watchExpressions.length) return undefined;
+    let live = true;
+    void Promise.resolve()
+      .then(() => emuApi.listBreakpoints())
+      .then((r) => live && setBreakpoints(r?.breakpoints ?? []))
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [emuApi, bpsVersion, watchExpressions.length]);
+  const symbols = useMemo(
+    () => integerSymbolsOf((compilationResult as { symbols?: Record<string, unknown> })?.symbols),
+    [compilationResult]
+  );
+
+  // --- The row menu (W2): the watchpoint items, then the watch's own delete
+  const dispatch = useDispatch();
+  const mainApi = useMainApi();
+  const [menuState, menuApi] = useContextMenuState();
+  const [menuTarget, setMenuTarget] = useState<WatchEntry>();
+  const openMenu = useCallback(
+    (entry: WatchEntry, e: ReactMouseEvent) => {
+      e.preventDefault();
+      setMenuTarget(entry);
+      menuApi.show(e);
+    },
+    [menuApi]
+  );
+  const breakOn = async (entry: WatchEntry, access: WatchAccess) => {
+    for (const bp of watchpointsForWatch(entry.info, access)) await emuApi.setBreakpoint(bp);
+    void mainApi.saveProject();
+  };
+  const removeWatchpoints = async (entry: WatchEntry) => {
+    for (const bp of watchpointsOfWatch(entry.info, breakpoints)) await emuApi.removeBreakpoint(bp);
+    void mainApi.saveProject();
+  };
+  const runFromMenu = (action: () => Promise<void> | void) => () => {
+    menuApi.conceal();
+    void action();
+  };
+  const menuNoMemory = !menuTarget || watchByteCount(menuTarget.info) === undefined;
+
   return (
     <div className={styles.watchPanel}>
+      <ContextMenu state={menuState} onClickOutside={() => menuApi.conceal()}>
+        <ContextMenuItem
+          text="Break on write"
+          iconName="bp-mem-write"
+          disabled={menuNoMemory}
+          clicked={runFromMenu(() => breakOn(menuTarget!, "w"))}
+        />
+        <ContextMenuItem
+          text="Break on read"
+          iconName="bp-mem-read"
+          disabled={menuNoMemory}
+          clicked={runFromMenu(() => breakOn(menuTarget!, "r"))}
+        />
+        <ContextMenuItem
+          text="Break on access"
+          disabled={menuNoMemory}
+          clicked={runFromMenu(() => breakOn(menuTarget!, "rw"))}
+        />
+        <ContextMenuItem
+          text="Remove watchpoint"
+          disabled={!menuTarget || watchpointsOfWatch(menuTarget.info, breakpoints).length === 0}
+          clicked={runFromMenu(() => removeWatchpoints(menuTarget!))}
+        />
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          text="Delete watch"
+          dangerous
+          clicked={runFromMenu(async () => {
+            // --- What `w-del` does: drop it from the store, save the project
+            dispatch(removeWatchAction(menuTarget!.info.symbol), "ide");
+            await mainApi.saveProject();
+          })}
+        />
+      </ContextMenu>
       {displayedWatches.length === 0 && (
         <EmptyState message="No watch expressions defined" />
       )}
@@ -159,7 +266,16 @@ export const WatchPanel = () => {
            * unreachable — and had it ever caught anything it would have swallowed a real render
            * error from `WatchItem` and drawn an empty div in its place.
            */
-          renderItem={(idx) => <WatchItem watch={displayedWatches[idx]} />}
+          renderItem={(idx) => {
+            const entry = displayedWatches[idx];
+            const start = symbols[entry.info.symbol.toLowerCase()];
+            const length = watchByteCount(entry.info);
+            const watched =
+              start === undefined || length === undefined
+                ? EMPTY_ARRAY
+                : overlappingWatchpoints(start & 0xffff, length, breakpoints);
+            return <WatchItem watch={entry} watchpoints={watched} onMenu={openMenu} />;
+          }}
         />
       )}
     </div>
@@ -168,8 +284,14 @@ export const WatchPanel = () => {
 
 
 // --- Helpers
-type WatchItemProps = { watch: WatchEntry };
-const WatchItem = memo(({ watch }: WatchItemProps) => {
+type WatchItemProps = {
+  watch: WatchEntry;
+  /** The enabled memory breakpoints over the watch's bytes (W4). */
+  watchpoints: readonly BreakpointInfo[];
+  onMenu: (entry: WatchEntry, e: ReactMouseEvent) => void;
+};
+const WatchItem = memo(({ watch, watchpoints, onMenu }: WatchItemProps) => {
+  const dispatch = useDispatch();
   const { ideCommandsService } = useAppServices();
   const rowRef = useTooltipRef<HTMLDivElement>();
 
@@ -185,13 +307,55 @@ const WatchItem = memo(({ watch }: WatchItemProps) => {
    * destructive action to the whole row is a behaviour change, not a restyle.
    */
   const tip = watch
-    ? `${watch.symbol}\n(${watch.typeName})\nRight-click the icon to delete`
+    ? [
+        watch.symbol,
+        `(${watch.typeName})`,
+        ...describeWatchpoints(watchpoints),
+        watchpoints.length ? "Click the watchpoint mark to show it in the Breakpoints panel" : "",
+        "Right-click the row for watchpoints; right-click the icon to delete"
+      ]
+        .filter((line) => line)
+        .join("\n")
     : "";
+  const reads = watchpoints.some((bp) => bp.memoryRead);
+  const writes = watchpoints.some((bp) => bp.memoryWrite);
 
   return watch ? (
-    <DataRow hoverable ref={rowRef} xclass={styles.watchRow}>
-      <div className={styles.watchIcon} onContextMenu={handleRemove}>
+    <DataRow
+      hoverable
+      ref={rowRef}
+      xclass={styles.watchRow}
+      onContextMenu={(e) => onMenu(watch, e)}
+    >
+      <div
+        className={styles.watchIcon}
+        onContextMenu={(e) => {
+          // --- The icon keeps its delete (W2), and the row menu does not open on top of it
+          e.preventDefault();
+          e.stopPropagation();
+          void handleRemove();
+        }}
+      >
         <Icon iconName={watch.icon} width={16} height={16} fill={watch.fill} />
+      </div>
+      {/* The watchpoint mark (W4): the memory-write glyph wins when both kinds watch the bytes */}
+      <div
+        className={styles.watchpointMark}
+        onClick={() => {
+          if (!watchpoints[0]) return;
+          dispatch(setSideBarPanelExpandedAction("breakpointsPanel", true));
+          // --- After the panel has had a chance to mount
+          setTimeout(() => requestBreakpointReveal(getBreakpointStorageKey(watchpoints[0])), 50);
+        }}
+      >
+        {(reads || writes) && (
+          <Icon
+            iconName={writes ? "bp-mem-write" : "bp-mem-read"}
+            width={14}
+            height={14}
+            fill="--color-breakpoint-binary"
+          />
+        )}
       </div>
       <Label text={watch.symbol} className={styles.watchLabel} />
       <Value

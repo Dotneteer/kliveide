@@ -326,6 +326,26 @@ describe("saveKliveProject", () => {
     });
   });
 
+  it("stores the ASSERTION / WPMEM switches only when one is off (S6)", async () => {
+    const { saveKliveProject, readSourceComments } = await import("@main/projects");
+    const state = (sourceComments: unknown) => ({
+      emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
+      globalSettings: {},
+      project: { folderPath, buildRoots: [] },
+      projectSettings: {},
+      workspaceSettings: {},
+      sourceComments
+    });
+    getState.mockReturnValue(state({}));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.sourceComments).toBeUndefined();
+    getState.mockReturnValue(state({ wpmem: false }));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.sourceComments).toEqual({ wpmem: false });
+    expect(readSourceComments({ assertion: false, wpmem: "no" })).toEqual({ assertion: false });
+    expect(readSourceComments(undefined)).toBeUndefined();
+  });
+
   it("reads a stored group switch, treating a malformed one as 'everything on'", async () => {
     const { readLogpointGroups } = await import("@main/projects");
     expect(readLogpointGroups(undefined)).toBeUndefined();

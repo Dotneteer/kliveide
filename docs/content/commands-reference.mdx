@@ -35,8 +35,10 @@ bp-list
 Available aliases: `bpl`
 
 Each breakpoint is listed in `bp-set` syntax &mdash; its address specification, its type options,
-its message, its hit count rule and its condition &mdash; so a line pasted after `bp-set` recreates the
-breakpoint. What `bp-set` cannot say goes on an indented second line: `<disabled>`, the live hit
+its length, `-once`, its message, its hit count rule and its condition &mdash; so a line pasted after
+`bp-set` recreates the breakpoint. A run-to target is marked `<run-to target>`. Breakpoints made by
+`LOGPOINT`, `ASSERTION` and `WPMEM` comments are listed after the others, by kind; an assertion also
+shows how Klive reads its expression (`read as:`), with every operation in parentheses. What `bp-set` cannot say goes on an indented second line: `<disabled>`, the live hit
 count `(hits: 3)` of a breakpoint with a condition or a hit rule, and, when relevant,
 `<inactive: unknown label score>` or `<condition error: …>`:
 
@@ -56,10 +58,14 @@ edit the comment and build again.
 This command removes a breakpoint.
 
 ```
-bp-del <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>]
+bp-del <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>]
 ```
 
 Available aliases: `bd`
+
+A breakpoint an `ASSERTION` or `WPMEM` comment created cannot be removed: `bp-del` says which comment
+made it. Remove the comment and rebuild, or switch the kind off with [`as-en -d`](#as-en) or
+[`wp-en -d`](#wp-en).
 
 The `address-spec` parameter can be 
 - a 16-bit address (using the number for the address), for example, `$120a` or `32768`;
@@ -69,6 +75,11 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
+- a **watch symbol** (`WS:` then a build symbol), for example, `WS:score -w -len 2` &mdash; a memory
+  breakpoint anchored to the symbol rather than to an address, so a rebuild that moves the symbol
+  moves the watched bytes, and it does not stop while the build has no such symbol. This is what
+  the [Watch view](/working-with-ide/watch#watchpoints)'s **Break on write** creates, and how
+  `bp-list` prints it;
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 ## `w-add`
@@ -167,7 +178,7 @@ either command by changing only its first word.
 This command sets a breakpoint.
 
 ```
-bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-log "<message>"] [-hit <spec>] [-if <condition>]
+bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-once] [-log "<message>"] [-hit <spec>] [-if <condition>]
 ```
 
 Available aliases: `bp`
@@ -179,6 +190,14 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
 - `-v <value>` breaks only when that value is written; `nr:` breakpoints only.
 - `-c` also breaks when the **copper** writes the register, not only when the CPU does; `nr:`
   breakpoints only, and off by default.
+- `-len <bytes>` makes a memory breakpoint (`-r` or `-w`) watch a **range** of that many bytes from
+  its address, 1 to 65536; the range may not run past `$FFFF`. The length is part of the
+  breakpoint's identity, so `bp-del` and `bp-en` need it too.
+- `-once` makes a **one-shot** breakpoint: it is removed the first time it stops the machine, and it
+  is never saved with the project. With `-hit` or `-if`, "the first time" means the first time its
+  own rule and condition let it stop, so `-once -hit 10` stops on the 10th hit and is then gone. A
+  logpoint never stops, so it cannot be a one-shot. `bp-set` without `-once` makes it a regular
+  breakpoint again. See [One-Shot Breakpoints](/working-with-ide/breakpoints#one-shot-breakpoints).
 - `-log "<message>"` makes the breakpoint a **logpoint**: instead of stopping, it writes the
   message to the Log pane and continues. Write the message in double quotes (`\"` and `\\` inside
   it), before `-if`. See [Logpoints](/working-with-ide/breakpoints#logpoints) for the message
@@ -203,6 +222,8 @@ bp-set $9000 -w -hit *4 -if VAL == $AA
 bp-set [code/code.kz80.asm]:12 -hit >=10
 bp-set $8000 -log "x={A} at {PC:hex16}"
 bp-set [code/code.kz80.asm]:42 -log "[LOOP] B={B}" -hit *100
+bp-set $8000 -once -hit 3
+bp-set $5B00 -w -len 32
 ```
 
 A condition that does not parse is refused with its column and a caret under the mistake:
@@ -231,6 +252,8 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
+- a **watch symbol** (`WS:` then a build symbol, with `-r` or `-w`), for example, `WS:score -w -len 2`,
+  as described under [`bp-del`](#bp-del);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 ## `bp-reset-hits`
@@ -269,10 +292,37 @@ lp-en SPRITES LOOP
 lp-en LOOP -d
 ```
 
+## `as-en`
+
+This command switches the breakpoints of DeZog `ASSERTION` source comments on or off for the
+project.
+
+```
+as-en [-d]
+```
+
+Available aliases: `ase`
+
+Without `-d` it switches them on, with `-d` off. They are on by default; the setting is saved with
+the project and takes effect at once, without a rebuild. See
+[ASSERTION and WPMEM comments](/working-with-ide/breakpoints#dezog-assertion-and-wpmem-comments).
+
+## `wp-en`
+
+This command switches the watchpoints of DeZog `WPMEM` source comments on or off for the project.
+
+```
+wp-en [-d]
+```
+
+Available aliases: `wpe`
+
+It works like [`as-en`](#as-en).
+
 ## `lp-groups`
 
 This command lists every group the current logpoints name, whether it logs, and how many logpoints
-it holds.
+it holds. It also says whether `ASSERTION` and `WPMEM` comments are switched on.
 
 ```
 lp-groups
@@ -996,13 +1046,17 @@ When the value is outside the register's valid range, the command will give you 
 
 ## `show-disassembly`
 
-Use this command to display the machine code disassembly view.
+Use this command to display the machine code disassembly view, and optionally to show an address in
+it.
 
 ```
-show-disassembly
+show-disass [<address>]
 ```
 
 Available aliases: `shdis`
+
+With an address, the view switches to the full 64K listing, turns **Follow PC** off and scrolls to
+that address. The **Show in Disassembly** menu items of the editor and the Breakpoints view use it.
 
 ## `show-memory`
 

@@ -104,6 +104,12 @@
   cursor: pointer;
 }
 
+/* A one-shot statement breakpoint (G1.6, O6): drawn as a circled "1" */
+.statementBpOnce {
+  color: var(--color-breakpoint-code);
+  cursor: pointer;
+}
+
 /*
  * The margin glyph's conditional and inactive variants (conditional breakpoints plan §4.4.2): the
  * same dot colours, reshaped by a mask instead of the circular clip - an "=" knocked out of the dot,
@@ -149,7 +155,45 @@
 
 .logpointCommentBreakpointMargin {
   clip-path: none;
+  /* Clickable like the ASSERTION and WPMEM marks: it toggles the comment's logpoint (Q6) */
+  cursor: pointer;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round' d='M8 3.4L12.6 8L8 12.6L3.4 8z'/%3E%3Ccircle cx='8' cy='8' r='1.4'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+/*
+ * The one-shot variants (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6): a "1" knocked out of
+ * the dot, and the "1" over a single bar for a conditional one-shot. The shapes of `bp-once.svg`
+ * and `bp-once-conditional.svg`; the inactive (hollow) mask wins over both (the glyph chooser).
+ */
+.onceBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM7.35 5.3h1.3v5.4h-1.3v-3.75l-1.2 0.8v-1.4z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.onceConditionalBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM7.35 4.7h1.3v3.8h-1.3v-2.35l-1.1 0.7v-1.3zM5.5 9.35h5v1.3h-5z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+/*
+ * The margin marks of `ASSERTION` and `WPMEM` comments (S12): a shield with a "!" knocked out and the
+ * memory-write glyph, drawn on the comment's own line. The shapes of `bp-assertion.svg` and
+ * `bp-mem-write.svg`. A disabled comment takes the disabled colour from its base class.
+ */
+.assertionCommentMargin {
+  clip-path: none;
+  cursor: pointer;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 2.5l4.75 1.9v3.4c0 2.9-2 4.9-4.75 5.7c-2.75-0.8-4.75-2.8-4.75-5.7v-3.4zM7.35 5h1.3v4h-1.3zM7.35 9.8h1.3v1.3h-1.3z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.wpmemCommentMargin {
+  clip-path: none;
+  cursor: pointer;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='14' width='18' height='6' rx='1.5'/%3E%3Cpath d='M7 17h.01M12 17h.01M17 17h.01'/%3E%3Cpath d='M12 4v11'/%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E")
     center / 14px 14px no-repeat;
 }
 
@@ -167,7 +211,11 @@
 .logpointBreakpointMargin,
 .logpointConditionalBreakpointMargin,
 .logpointInactiveBreakpointMargin,
-.logpointCommentBreakpointMargin {
+.logpointCommentBreakpointMargin,
+.onceBreakpointMargin,
+.onceConditionalBreakpointMargin,
+.assertionCommentMargin,
+.wpmemCommentMargin {
   &.activeBreakpointMargin,
   &.activeBreakpointOnExistingMargin,
   &.activeBinBreakpointOnExistingMargin,

@@ -471,6 +471,18 @@ export const setBasicWatchesAction: ActionCreator = (watches: string[]) => ({
  * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2): all, none, or only the listed ones.
  * An absent value means everything on, which is what a project without the setting restores.
  */
+/**
+ * Which DeZog comment kinds a build turns into breakpoints
+ * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6). Absent means both on.
+ */
+export const setSourceCommentsAction: ActionCreator = (switches?: {
+  assertion?: boolean;
+  wpmem?: boolean;
+}) => ({
+  type: "SET_SOURCE_COMMENTS",
+  payload: { value: switches }
+});
+
 export const setLogpointGroupsAction: ActionCreator = (groups?: {
   enabled: boolean;
   groups?: string[];

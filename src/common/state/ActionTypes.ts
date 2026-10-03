@@ -103,6 +103,8 @@ export interface ActionTypes {
 
   // --- Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.2)
   SET_LOGPOINT_GROUPS: null;
+  // --- ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6)
+  SET_SOURCE_COMMENTS: null;
 
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;

@@ -864,7 +864,8 @@ export type DebuggableOutput = InjectableOutput & {
 
 /** A source-comment annotation the build found (`.plans/LOGPOINTS_PLAN.md` §4.7). */
 export type SourceAnnotation = {
-  kind: "LOGPOINT";
+  /** The DeZog keyword (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3 adds the last two). */
+  kind: "LOGPOINT" | "ASSERTION" | "WPMEM";
   /** Index into `sourceFileList`. */
   fileIndex: number;
   /** 1-based source line of the comment. */
@@ -878,7 +879,10 @@ export type SourceAnnotation = {
   partition?: number;
   /** The output segment it belongs to (the Klive assembler), so the IDE can derive the partition. */
   segmentIndex?: number;
-  /** Everything after the keyword, trimmed. */
+  /**
+   * Everything after the keyword, trimmed - for `ASSERTION` and `WPMEM` only up to the next `;`,
+   * which ends the expression (DeZog's convention).
+   */
   text: string;
 };
 

@@ -400,6 +400,8 @@ describe("helpers", () => {
       nextRegMask: "",
       nextRegCopper: false,
       disabled: false,
+      oneShot: false,
+      length: "",
       condition: "",
       hitMode: "always",
       hitCount: "",
@@ -1131,5 +1133,44 @@ describe("source mode (§4.4.2)", () => {
   it("clears a condition the user emptied", () => {
     const bp = formToBreakpointInfo({ ...breakpointToForm(source), condition: "" });
     expect(bp).not.toHaveProperty("condition");
+  });
+});
+
+describe("one-shots and memory ranges (G1.6, S10)", () => {
+  it("'Remove after it stops' makes a session-owned one-shot, and unticking it a project one", () => {
+    const bp = formToBreakpointInfo(aForm({ address: "$8000", oneShot: true }));
+    expect(bp).toMatchObject({ address: 0x8000, oneShot: true, owner: { kind: "session" } });
+    const back = breakpointToForm(bp);
+    expect(back.oneShot).toBe(true);
+    const kept = formToBreakpointInfo({ ...back, oneShot: false });
+    expect(kept.oneShot).toBeUndefined();
+    expect(kept.owner).toBeUndefined();
+  });
+
+  it("a logpoint is never a one-shot", () => {
+    const bp = formToBreakpointInfo(
+      aForm({ address: "$8000", oneShot: true, action: "log", logMessage: "x" })
+    );
+    expect(bp.oneShot).toBeUndefined();
+  });
+
+  it("a memory breakpoint carries its length, and the key says so", () => {
+    const form = aForm({ kind: "memWrite", address: "$8000", length: "5" });
+    expect(formToBreakpointInfo(form)).toMatchObject({ address: 0x8000, memoryWrite: true, length: 5 });
+    expect(breakpointKeyOf(form, anEnv())).toBe("$8000+5:W");
+    expect(breakpointToForm(formToBreakpointInfo(form)).length).toBe("5");
+  });
+
+  it("refuses a length on a non-memory kind, out of range, or wrapping past $FFFF", () => {
+    expect(validateBreakpointForm(aForm({ address: "$8000", length: "5" }), anEnv()).length).toBeDefined();
+    expect(
+      validateBreakpointForm(aForm({ kind: "memRead", address: "$8000", length: "0" }), anEnv()).length
+    ).toBeDefined();
+    expect(
+      validateBreakpointForm(aForm({ kind: "memRead", address: "$FFFE", length: "4" }), anEnv()).length
+    ).toMatch(/wrap/);
+    expect(
+      validateBreakpointForm(aForm({ kind: "memRead", address: "$8000", length: "5" }), anEnv()).length
+    ).toBeUndefined();
   });
 });

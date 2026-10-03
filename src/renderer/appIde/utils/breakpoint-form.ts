@@ -106,6 +106,13 @@ export type BreakpointFormState = {
   nextRegCopper: boolean;
   disabled: boolean;
   /**
+   * "Remove after it stops" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
+   * session-owned and never saved (O2). Unticking it makes the breakpoint project-owned again.
+   */
+  oneShot: boolean;
+  /** Raw input, memory kinds only: how many bytes the watchpoint covers (S10). Empty means one. */
+  length: string;
+  /**
    * The condition as typed (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.1). Empty means none.
    * Every kind carries one, source breakpoints included.
    */
@@ -286,12 +293,18 @@ export function createEmptyForm(): BreakpointFormState {
     nextRegMask: "",
     nextRegCopper: false,
     disabled: false,
+    oneShot: false,
+    length: "",
     condition: "",
     hitMode: "always",
     hitCount: "",
     action: "stop",
     logMessage: ""
   };
+}
+
+function isMemoryKind(kind: BreakpointKind): boolean {
+  return kind === "memRead" || kind === "memWrite";
 }
 
 function isIoKind(kind: BreakpointKind): boolean {
@@ -330,7 +343,8 @@ export function applyKindChange(
     filterValue: nextReg ? form.filterValue : false,
     nextRegValue: nextReg ? form.nextRegValue : "",
     nextRegMask: nextReg ? form.nextRegMask : "",
-    nextRegCopper: nextReg ? form.nextRegCopper : false
+    nextRegCopper: nextReg ? form.nextRegCopper : false,
+    length: isMemoryKind(kind) ? form.length : ""
   };
 }
 
@@ -370,7 +384,24 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
-  return { ...formPlaceToBreakpointInfo(form), ...formFilters(form) };
+  const bp: BreakpointInfo = { ...formPlaceToBreakpointInfo(form), ...formFilters(form) };
+  if (form.oneShot && form.action !== "log") {
+    // --- A one-shot is session-owned and never saved (O2)
+    bp.oneShot = true;
+    bp.owner = { kind: "session" };
+  } else if (bp.oneShot) {
+    // --- "Keep after it stops": a regular, project-owned breakpoint again
+    delete bp.oneShot;
+    if (bp.owner?.kind === "session") delete bp.owner;
+  }
+  return bp;
+}
+
+/** The form's Length field as a byte count over 1, or `undefined` (one byte, or not a memory kind). */
+function formLength(form: BreakpointFormState): number | undefined {
+  if (!isMemoryKind(form.kind)) return undefined;
+  const parsed = parseNumericInput(form.length);
+  return parsed.ok && parsed.value > 1 ? parsed.value : undefined;
 }
 
 /**
@@ -442,6 +473,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
   // --- bank anyway would build a breakpoint the emulator's own guard rejects.
   const bankSite = isIoKind(form.kind) ? undefined : parseBankRelativeInput(form.address);
   if (bankSite?.ok) {
+    const bankLength = formLength(form);
     return {
       bank: bankSite.bank,
       bankOffset: bankSite.bankOffset,
@@ -450,6 +482,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
       memoryWrite: form.kind === "memWrite",
       ioRead: false,
       ioWrite: false,
+      ...(bankLength !== undefined ? { length: bankLength } : {}),
       // --- No partition: a bank-relative breakpoint derives its own from the bank and offset, and
       // --- carrying a second, independent one would arm it somewhere the bank is not.
       disabled: form.disabled
@@ -469,6 +502,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     ioRead: form.kind === "ioRead",
     ioWrite: form.kind === "ioWrite",
     ioMask: mask?.ok ? mask.value & ADDRESS_MAX : undefined,
+    ...(formLength(form) !== undefined ? { length: formLength(form) } : {}),
     disabled: form.disabled
   };
 }
@@ -511,6 +545,8 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     partition: bp.partition,
     ioMask: bp.ioMask === undefined ? "" : `$${toHexa4(bp.ioMask)}`,
     disabled: bp.disabled ?? false,
+    oneShot: !!bp.oneShot,
+    length: bp.length !== undefined && bp.length > 1 ? `${bp.length}` : "",
     condition: bp.condition ?? "",
     hitMode: effectiveHitMode(bp) ?? "always",
     hitCount: bp.hitCount === undefined ? "" : `${bp.hitCount}`,
@@ -638,6 +674,24 @@ export function validateBreakpointForm(
         errors.ioMask = `Enter a valid port mask, ${NUMBER_HINT}.`;
       } else if (parsed.value < 0 || parsed.value > ADDRESS_MAX) {
         errors.ioMask = "The port mask must be between $0000 and $FFFF.";
+      }
+    }
+  }
+
+  // --- Length: optional, memory kinds only (S10)
+  const lengthText = (form.length ?? "").trim();
+  if (lengthText) {
+    if (!isMemoryKind(form.kind)) {
+      errors.length = "A length applies only to memory breakpoints.";
+    } else {
+      const parsed = parseNumericInput(lengthText);
+      const start = parseNumericInput(addressText);
+      if (!parsed.ok) {
+        errors.length = "Enter a valid length, for example 5 or $10.";
+      } else if (parsed.value < 1 || parsed.value > 0x1_0000) {
+        errors.length = "The length must be between 1 and 65536.";
+      } else if (start.ok && start.value + parsed.value > 0x1_0000) {
+        errors.length = "A memory range cannot wrap past $FFFF.";
       }
     }
   }

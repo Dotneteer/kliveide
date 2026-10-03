@@ -1,6 +1,6 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
-import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
+import type { LogpointGroupState, SourceCommentSwitches } from "@abstractions/BreakpointInfo";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
@@ -62,6 +62,12 @@ export type AppState = {
    * one value; persisted with the project when it is not "everything on" (§4.6).
    */
   logpointGroups?: LogpointGroupState;
+  /**
+   * Which DeZog comment kinds a build turns into breakpoints
+   * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): only a switch that is off is present.
+   * Persisted with the project next to `logpointGroups`.
+   */
+  sourceComments?: SourceCommentSwitches;
 };
 
 export type IdeView = {
@@ -267,5 +273,6 @@ export const initialAppState: AppState = {
   workspaceSettings: {},
   watchExpressions: [],
   basicWatches: [],
-  logpointGroups: { enabled: true }
+  logpointGroups: { enabled: true },
+  sourceComments: {}
 };

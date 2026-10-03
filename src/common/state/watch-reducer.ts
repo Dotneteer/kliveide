@@ -1,6 +1,6 @@
 import { Action } from "./Action";
 import { WatchInfo } from "./AppState";
-import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
+import type { LogpointGroupState, SourceCommentSwitches } from "@abstractions/BreakpointInfo";
 
 /**
  * This reducer is used to manage watch expressions
@@ -62,6 +62,27 @@ export function basicWatchReducer(state: string[] = [], { type, payload }: Actio
  * The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.2). Normalised so two states that behave
  * alike are equal: group names upper-case, sorted, without duplicates; "on, no list" is the default.
  */
+/**
+ * The ASSERTION / WPMEM comment switches (S6), normalised: only a switch that is off is stored, so
+ * "both on" is always `{}`.
+ */
+export function sourceCommentsReducer(
+  state: SourceCommentSwitches = {},
+  { type, payload }: Action
+): SourceCommentSwitches {
+  switch (type) {
+    case "SET_SOURCE_COMMENTS": {
+      const value = (payload?.value ?? {}) as SourceCommentSwitches;
+      return {
+        ...(value.assertion === false ? { assertion: false } : {}),
+        ...(value.wpmem === false ? { wpmem: false } : {})
+      };
+    }
+    default:
+      return state;
+  }
+}
+
 export function logpointGroupsReducer(
   state: LogpointGroupState = { enabled: true },
   { type, payload }: Action

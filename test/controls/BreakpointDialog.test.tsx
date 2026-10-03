@@ -105,12 +105,29 @@ describe("BreakpointDialog - adding", () => {
     renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
 
     typeAddress("$8000");
-    fireEvent.click(screen.getByRole("checkbox"));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Enabled" }));
     submit();
 
     await waitFor(() =>
       expect(controls.close).toHaveBeenCalledWith(
         expect.objectContaining({ breakpoint: expect.objectContaining({ disabled: true }) })
+      )
+    );
+  });
+
+  it("maps 'Remove after it stops' onto a session-owned one-shot (G1.6)", async () => {
+    const controls = someControls();
+    renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
+
+    typeAddress("$8000");
+    fireEvent.click(screen.getByRole("checkbox", { name: "Remove after it stops" }));
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith(
+        expect.objectContaining({
+          breakpoint: expect.objectContaining({ oneShot: true, owner: { kind: "session" } })
+        })
       )
     );
   });
@@ -376,7 +393,7 @@ describe("BreakpointDialog - editing", () => {
 
     expect((addressBox() as HTMLInputElement).value).toBe("$9000");
     expect((screen.getByLabelText("Memory read") as HTMLInputElement).checked).toBe(true);
-    expect((screen.getByRole("checkbox") as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByRole("checkbox", { name: "Enabled" }) as HTMLInputElement).checked).toBe(false);
     expect(screen.getByText("Save")).toBeTruthy();
   });
 

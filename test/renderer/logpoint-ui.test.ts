@@ -51,7 +51,7 @@ describe("glyphs", () => {
 
   it("describes a comment's logpoint as read-only, with its group and address", () => {
     expect(breakpointFilterLines(COMMENT)).toEqual([
-      "From a LOGPOINT comment - edit the comment and rebuild to change it",
+      "From a LOGPOINT comment - edit the comment and rebuild to change it, or disable it",
       "Logs: [SPRITES] ${A}",
       "Group: SPRITES",
       "At: $8000"

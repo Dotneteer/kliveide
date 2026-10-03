@@ -393,6 +393,24 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
+      {!sourceMode && (form.kind === "memRead" || form.kind === "memWrite") && (
+        <DialogRow rows={true} label="Length">
+          <TextInput
+            value={form.length}
+            width={BYTE_FIELD}
+            ariaLabel="Length"
+            error={errorFor("length")}
+            onChange={(length) => {
+              setTouched((t) => ({ ...t, length: true }));
+              update({ length });
+            }}
+          />
+          <div className={styles.hint}>
+            How many bytes to watch from the address. Leave empty for one.
+          </div>
+        </DialogRow>
+      )}
+
       {!sourceMode && ioKind && (
         <DialogRow rows={true} label="Port mask">
           <TextInput
@@ -548,6 +566,15 @@ export const BreakpointDialog = ({
           right={true}
           onChange={(enabled) => update({ disabled: !enabled })}
         />
+        {/* A one-shot (G1.6): session-owned and never saved; a logpoint never stops, so never */}
+        {!logging && (
+          <Checkbox
+            initialValue={form.oneShot}
+            label="Remove after it stops"
+            right={true}
+            onChange={(oneShot) => update({ oneShot })}
+          />
+        )}
       </DialogRow>
 
       {!sourceMode && nextRegKind && (

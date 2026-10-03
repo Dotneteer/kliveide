@@ -1,7 +1,7 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
-import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
+import type { LogpointGroupState, SourceCommentSwitches } from "@abstractions/BreakpointInfo";
 import {
   isAnnotationBreakpoint,
   isBankRelative,
@@ -73,7 +73,16 @@ export type BreakpointListItem<T extends BreakpointInfo = BreakpointInfo> =
   | { kind: "header"; group: BreakpointGroup; count: number }
   | { kind: "row"; bp: T }
   // --- The logpoint sections (`.plans/LOGPOINTS_PLAN.md` §4.5)
-  | { kind: "sectionHeader"; section: "logGroups" | "comments"; count: number }
+  | {
+      kind: "sectionHeader";
+      section: "logGroups" | "comments" | "assertions" | "wpmem";
+      count: number;
+      /**
+       * The section's switch (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): present on the
+       * ASSERTION and WPMEM comment sections, whose header row carries the checkbox.
+       */
+      on?: boolean;
+    }
   | { kind: "logGroup"; group: string; on: boolean; count: number };
 
 /**
@@ -205,7 +214,8 @@ export function isLogGroupOn(state: LogpointGroupState | undefined, group: strin
  */
 export function logpointSections<T extends BreakpointInfo>(
   bps: readonly T[],
-  state: LogpointGroupState | undefined
+  state: LogpointGroupState | undefined,
+  switches: SourceCommentSwitches = {}
 ): BreakpointListItem<T>[] {
   const items: BreakpointListItem<T>[] = [];
   const groups = new Map<string, number>();
@@ -220,17 +230,34 @@ export function logpointSections<T extends BreakpointInfo>(
       items.push({ kind: "logGroup", group, on: isLogGroupOn(state, group), count });
     }
   }
+  const bySource = (a: T, b: T) =>
+    (a.resource ?? "").localeCompare(b.resource ?? "") ||
+    (a.line ?? 0) - (b.line ?? 0) ||
+    (a.address ?? 0) - (b.address ?? 0) ||
+    Number(!!a.memoryWrite) - Number(!!b.memoryWrite);
   const comments = bps
-    .filter((bp) => isAnnotationBreakpoint(bp))
-    .sort(
-      (a, b) =>
-        (a.resource ?? "").localeCompare(b.resource ?? "") ||
-        (a.line ?? 0) - (b.line ?? 0) ||
-        (a.address ?? 0) - (b.address ?? 0)
-    );
+    .filter((bp) => isAnnotationBreakpoint(bp) && !bp.annotationKind)
+    .sort(bySource);
   if (comments.length) {
     items.push({ kind: "sectionHeader", section: "comments", count: comments.length });
     for (const bp of comments) items.push({ kind: "row", bp });
   }
+  /*
+   * The ASSERTION and WPMEM comment sections (S6, §4.8): a header with the project's switch, shown
+   * while the build has such comments *or* the switch is off - a switched-off kind installs
+   * nothing, and its header is the way back on.
+   */
+  const commentSection = (
+    section: "assertions" | "wpmem",
+    kind: "ASSERTION" | "WPMEM",
+    on: boolean
+  ) => {
+    const rows = bps.filter((bp) => bp.annotationKind === kind).sort(bySource);
+    if (!rows.length && on) return;
+    items.push({ kind: "sectionHeader", section, count: rows.length, on });
+    for (const bp of rows) items.push({ kind: "row", bp });
+  };
+  commentSection("assertions", "ASSERTION", switches.assertion !== false);
+  commentSection("wpmem", "WPMEM", switches.wpmem !== false);
   return items;
 }

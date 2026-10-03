@@ -268,7 +268,7 @@ describe("DebugSupport one-shot breakpoints", () => {
     });
 
     expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_LOW }))).toEqual(true);
-    expect(ds.consumeOneShotsAt(0x8100, BANK5_LOW)).toEqual(1);
+    expect(ds.consumeFiredOneShots()).toEqual(1);
 
     expect(ds.breakpoints).toEqual([]);
     expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_LOW }))).toEqual(false);
@@ -279,7 +279,8 @@ describe("DebugSupport one-shot breakpoints", () => {
     ds.addBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true, oneShot: true });
 
     // --- It did not fire, so it is not spent.
-    expect(ds.consumeOneShotsAt(0x8100, BANK5_HIGH)).toEqual(0);
+    expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_HIGH }))).toEqual(false);
+    expect(ds.consumeFiredOneShots()).toEqual(0);
     expect(ds.breakpoints.length).toEqual(1);
   });
 
@@ -287,7 +288,8 @@ describe("DebugSupport one-shot breakpoints", () => {
     const ds = new DebugSupport();
     ds.addBreakpoint({ address: 0x8000, exec: true, oneShot: true });
 
-    expect(ds.consumeOneShotsAt(0x8000, undefined)).toEqual(1);
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(true);
+    expect(ds.consumeFiredOneShots()).toEqual(1);
     expect(ds.breakpoints).toEqual([]);
   });
 
@@ -296,8 +298,10 @@ describe("DebugSupport one-shot breakpoints", () => {
     ds.addBreakpoint({ address: 0x8000, exec: true });
     ds.addBreakpoint({ bank: 5, bankOffset: 0x0100, exec: true });
 
-    expect(ds.consumeOneShotsAt(0x8000, undefined)).toEqual(0);
-    expect(ds.consumeOneShotsAt(0x8100, BANK5_LOW)).toEqual(0);
+    expect(ds.shouldStopAt(0x8000, () => undefined)).toEqual(true);
+    expect(ds.consumeFiredOneShots()).toEqual(0);
+    expect(ds.shouldStopAt(0x8100, paged({ 4: BANK5_LOW }))).toEqual(true);
+    expect(ds.consumeFiredOneShots()).toEqual(0);
     expect(ds.breakpoints.length).toEqual(2);
   });
 });

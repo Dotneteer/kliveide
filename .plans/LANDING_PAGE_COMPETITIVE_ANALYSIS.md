@@ -57,7 +57,7 @@ What the field looks like:
 | Asm source-level debugging | ✅ (Klive asm; sjasmplus only tested on 48K) | ✅ | labels only | ✗ | ✗ | ✗ |
 | Exec / memory / I/O breakpoints | ✅ incl. bank-relative and partition-scoped; **(main)** every data access of an instruction is watched | ✅ | ◐ | ✅ | ✅ | via CSpect |
 | NextReg write breakpoints (value/mask, copper, old→new) | ✅ **(apparently unique)** | ? | ? | ✗ | ✗ | ✗ |
-| **Conditional / hit-count breakpoints, logpoints** | ✅ **(main)** conditions (registers, flags, memory in any bank, accessed value/address, paging, NextRegs, program and NEX labels) and hit counts on every breakpoint type, with a live count; logpoints with formatted messages, groups and DeZog `LOGPOINT` source comments (Klive assembler and sjasmplus) | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
+| **Conditional / hit-count breakpoints, logpoints** | ✅ **(main)** conditions (registers, flags, memory in any bank, accessed value/address, paging, NextRegs, program and NEX labels) and hit counts on every breakpoint type, with a live count; logpoints with formatted messages, groups and DeZog `LOGPOINT` source comments (Klive assembler and sjasmplus); DeZog `ASSERTION` and `WPMEM` comments with value-reporting stop messages and per-project switches; one-shot breakpoints of every kind (Shift+click); memory watchpoints over ranges, also made from a Watch row | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
 | **Reverse debugging / execution history** | ✗ | ✅ | ? | ✗ | frame trace | ✗ |
 | **Unit tests / code coverage / profiler** | ✗ | ✅ (DeZog only) | ✗ | profiler | memory diff | ✗ |
 | Call stack, watches | ✅ (+ BASIC call stack) | ✅ | ? | ✗ | ✅ | ◐ |
@@ -110,7 +110,7 @@ tools:
 
 | # | Gap | Who has it | Notes |
 |---|---|---|---|
-| W1 | ~~**Logpoints**~~ — closed on main (G1.4, with conditional breakpoints and hit counts; unreleased). DeZog's ASSERTION/WPMEM comments (G1.5) remain | ZEsarUX, DeZog, Fuse, SpecEmu, MAME | G1.5 reuses the annotation pipeline and DeZog expression dialect G1.4 built. Remove the README roadmap entry for conditions and logpoints once released. |
+| W1 | ~~**Logpoints**~~ — closed on main (G1.4, with conditional breakpoints and hit counts; G1.5 DeZog ASSERTION/WPMEM comments and G1.6 one-shot breakpoints done too; unreleased) | ZEsarUX, DeZog, Fuse, SpecEmu, MAME | An annotated DeZog project's LOGPOINT, ASSERTION and WPMEM comments all work unchanged. Remove the README roadmap entry for conditions and logpoints once released. |
 | W2 | **Reverse debugging / execution history** | DeZog (zsim, ZEsarUX), ZEsarUX, Zeus | DeZog's most-praised feature. |
 | W3 | **Unit tests and code coverage, profiler** | DeZog; Fuse and Zeus profilers | Klive has a strong internal test harness, but nothing user-facing. |
 | W4 | **Live Next hardware inspectors** (sprites, Copper list, Layer 2 / tilemap / layer composition) | ZEsarUX; DeZog sprites | Large impact for a "Next IDE"; Klive has only NEX-file sprite and image views. |
@@ -227,8 +227,8 @@ source*.
    (clips). This needs a fixture project per feature, which is a separate plan.
 4. **Implement the content** on the landing page prototype: hero video, five feature sections,
    supporting strip, and OS-detected download links.
-5. **Separately, consider the roadmap**: W1 (conditional breakpoints and logpoints — now done on
-   main, with DeZog's ASSERTION/WPMEM comments left) and W5 (snapshot loading) look like the cheapest gaps to close with the biggest
+5. **Separately, consider the roadmap**: W1 (conditional breakpoints, logpoints, DeZog's ASSERTION/WPMEM
+   comments and one-shot breakpoints — all done on main) and W5 (snapshot loading) look like the cheapest gaps to close with the biggest
    perception payoff. W4 (live Next
    inspectors) and W2 (history) are the ones that would make Klive the clear Next leader.
 

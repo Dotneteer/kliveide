@@ -15,7 +15,7 @@ import { beginSourceStep, SourceDebugIndex } from "@emu/machines/SourceStepDecis
 function support(breakAt: number[] = [], overrides: Partial<IDebugSupport> = {}) {
   return {
     shouldStopAt: (address: number) => breakAt.includes(address),
-    consumeOneShotsAt: vi.fn(() => 0),
+    consumeFiredOneShots: vi.fn(() => 0),
     lastBreakpoint: undefined,
     imminentBreakpoint: undefined,
     ...overrides
@@ -83,7 +83,7 @@ describe("shouldStopAtDebugPoint — real breakpoints", () => {
     // --- not be left behind for the user to clear by hand.
     const debugSupport = support([0x8000]);
     decide({ debugSupport, pc: 0x8000, getPartition: () => 5 });
-    expect(debugSupport.consumeOneShotsAt).toHaveBeenCalledWith(0x8000, 5);
+    expect(debugSupport.consumeFiredOneShots).toHaveBeenCalledTimes(1);
   });
 
   it("does not spend one on the re-trigger it refuses", () => {
@@ -91,19 +91,13 @@ describe("shouldStopAtDebugPoint — real breakpoints", () => {
     // --- delete a one-shot that never fired, and the stop the user asked for would never come.
     const debugSupport = support([0x8000], { lastBreakpoint: 0x8000 });
     expect(decide({ debugSupport, instructionsExecuted: 0 }).stop).toBe(false);
-    expect(debugSupport.consumeOneShotsAt).not.toHaveBeenCalled();
+    expect(debugSupport.consumeFiredOneShots).not.toHaveBeenCalled();
   });
 
   it("does not spend one when nothing stopped the machine", () => {
     const debugSupport = support([]);
     decide({ debugSupport, debugStepMode: DebugStepMode.StopAtBreakpoint });
-    expect(debugSupport.consumeOneShotsAt).not.toHaveBeenCalled();
-  });
-
-  it("passes the partition of the address, so a bank that is not paged in keeps its one-shot", () => {
-    const debugSupport = support([0xc000]);
-    decide({ debugSupport, pc: 0xc000, getPartition: (address) => (address === 0xc000 ? 11 : 3) });
-    expect(debugSupport.consumeOneShotsAt).toHaveBeenCalledWith(0xc000, 11);
+    expect(debugSupport.consumeFiredOneShots).not.toHaveBeenCalled();
   });
 
   it("ignores everything else in StopAtBreakpoint mode", () => {

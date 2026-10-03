@@ -34,7 +34,12 @@ import {
 } from "../../script-packages/sjasm/sjasm";
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
-import { logpointTextOf } from "@common/utils/source-annotations";
+import {
+  ANNOTATION_KEYWORDS,
+  SLDOPT_ALL_KEYWORDS,
+  annotationsInComment,
+  type AnnotationKeyword
+} from "@common/utils/source-annotations";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -175,18 +180,25 @@ export class SjasmPCompiler implements IKliveCompiler {
       // --- Remove the output files
       removeTempFiles();
 
-      // --- No `K` lines but `LOGPOINT` in the sources: sjasmplus dropped them for want of SLDOPT
+      // --- A keyword in the sources with no `K` line of its kind: sjasmplus dropped it for want of
+      // --- SLDOPT (LOGPOINTS_PLAN Q6; extended to ASSERTION and WPMEM, S9)
       const warnings: AssemblerErrorInfo[] = [];
-      if (debugAnnotations.length === 0) {
-        const files = new Set([filename, ...sourceFileList.map((f) => f.filename)]);
-        const withLogpoint = [...files].find((f) => {
-          try {
-            return sourceHasLogpointComment(fs.readFileSync(f, "utf-8"));
-          } catch {
-            return false;
-          }
-        });
-        if (withLogpoint) warnings.push(sldoptWarning(withLogpoint));
+      const exported = new Set(debugAnnotations.map((a) => a.kind));
+      const files = new Set([filename, ...sourceFileList.map((f) => f.filename)]);
+      const missing = new Map<string, string>();
+      for (const f of files) {
+        let content: string;
+        try {
+          content = fs.readFileSync(f, "utf-8");
+        } catch {
+          continue;
+        }
+        for (const kind of annotationKindsInSource(content)) {
+          if (!exported.has(kind) && !missing.has(kind)) missing.set(kind, f);
+        }
+      }
+      if (missing.size) {
+        warnings.push(sldoptWarning([...missing.values()][0], [...missing.keys()]));
       }
 
       const sourceContent = fs.readFileSync(filename, "utf-8");
@@ -428,8 +440,8 @@ export function sldSymbols(lines: SldLine[]): Record<string, unknown> {
 }
 
 /**
- * The `LOGPOINT` annotations of an SLD file's `K` lines: the comment, with the address decoded
- * exactly as the `T` lines' is.
+ * The DeZog annotations of an SLD file's `K` lines - `LOGPOINT`, `ASSERTION` and `WPMEM` - the
+ * comment, with the address decoded exactly as the `T` lines' is.
  */
 export function sldAnnotations(
   lines: SldLine[],
@@ -437,32 +449,47 @@ export function sldAnnotations(
 ): SourceAnnotation[] {
   const result: SourceAnnotation[] = [];
   for (const line of lines) {
-    if (line.type !== "K") continue;
-    const text = logpointTextOf(line.data);
-    if (text === undefined || !Number.isFinite(line.value)) continue;
-    result.push({
-      kind: "LOGPOINT",
-      fileIndex: fileIndexOf(line.filename),
-      line: line.line,
-      address: line.value & 0xffff,
-      text
-    });
+    if (line.type !== "K" || !Number.isFinite(line.value)) continue;
+    for (const { kind, text } of annotationsInComment(line.data)) {
+      result.push({
+        kind,
+        fileIndex: fileIndexOf(line.filename),
+        line: line.line,
+        address: line.value & 0xffff,
+        text
+      });
+    }
   }
   return result;
 }
 
-/** Does a source hold `LOGPOINT` in a comment? A cheap line test, for the `SLDOPT` warning. */
-export function sourceHasLogpointComment(source: string): boolean {
-  return source.split(/\r?\n/).some((line) => {
+/** The DeZog keywords a source's comments hold. A cheap line test, for the `SLDOPT` warning. */
+export function annotationKindsInSource(source: string): Set<AnnotationKeyword> {
+  const kinds = new Set<AnnotationKeyword>();
+  for (const line of source.split(/\r?\n/)) {
     const comment = line.indexOf(";");
     const slashes = line.indexOf("//");
     const start = comment < 0 ? slashes : slashes < 0 ? comment : Math.min(comment, slashes);
-    return start >= 0 && logpointTextOf(line.substring(start)) !== undefined;
-  });
+    if (start < 0) continue;
+    for (const { kind } of annotationsInComment(line.substring(start))) kinds.add(kind);
+  }
+  return kinds;
 }
 
-/** The warning when sjasmplus exported no `LOGPOINT` comments the sources have (Q6). */
-export function sldoptWarning(filename: string): AssemblerErrorInfo {
+/** Does a source hold `LOGPOINT` in a comment? */
+export function sourceHasLogpointComment(source: string): boolean {
+  return annotationKindsInSource(source).has("LOGPOINT");
+}
+
+/**
+ * The warning when sjasmplus exported none of the comments of some kinds the sources have (Q6, S9).
+ * It names the full `SLDOPT` line; the IDE never adds it itself.
+ */
+export function sldoptWarning(
+  filename: string,
+  kinds: string[] = ["LOGPOINT"]
+): AssemblerErrorInfo {
+  const ordered = ANNOTATION_KEYWORDS.filter((k) => kinds.includes(k));
   return {
     errorCode: "LP002",
     filename,
@@ -472,8 +499,8 @@ export function sldoptWarning(filename: string): AssemblerErrorInfo {
     startColumn: 0,
     endColumn: null,
     message:
-      "LOGPOINT comments are ignored: add SLDOPT COMMENT LOGPOINT (or WPMEM, LOGPOINT, ASSERTION) " +
-      "to the source to use DeZog logpoints",
+      `${ordered.join(", ")} comments are ignored: add ${SLDOPT_ALL_KEYWORDS} ` +
+      "to the source to use DeZog's source comments",
     isWarning: true
   };
 }

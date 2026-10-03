@@ -213,13 +213,22 @@ export interface IDebugSupport {
   keystrokesPending?: () => boolean;
 
   /**
-   * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.
-   *
-   * @param address The address the machine stopped at
-   * @param partition The partition paged in at that address, so a one-shot bound to a bank that is
-   * not currently paged there is left armed
+   * The stop has been taken: removes exactly the one-shots among the definitions whose filters
+   * passed for it (any kind), and returns how many. A no-op when nothing fired.
    */
-  consumeOneShotsAt(address: number, partition: number | undefined): number;
+  consumeFiredOneShots(): number;
+
+  /** The definitions that stopped the machine at the last stop (the stop report, S11). */
+  lastStopBreakpoints: BreakpointInfo[];
+
+  /** For each of `lastStopBreakpoints`: the address it fired at and the accessed value. */
+  lastStopAccesses: { address: number; value?: number }[];
+
+  /** The registers and memory reads of a DeZog expression, as the machine holds them now. */
+  describeDezogValues(text: string): string;
+
+  /** A run starts: forget what fired and the previous stop's definitions. */
+  clearFiredBreakpoints(): void;
 
   /**
    * Replaces the breakpoints owned by `scope`, leaving every other owner's alone.
