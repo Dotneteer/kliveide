@@ -131,7 +131,8 @@ bitOr       = bitXor { "|" bitXor } ;
 bitXor      = bitAnd { "^" bitAnd } ;
 bitAnd      = shift { "&" shift } ;
 shift       = additive { ( "<<" | ">>" | ">>>" ) additive } ;
-additive    = unary { ( "+" | "-" ) unary } ;
+additive    = multiplicative { ( "+" | "-" ) multiplicative } ;
+multiplicative = unary { ( "*" | "/" ) unary } ;
 unary       = { "!" | "~" | "-" } primary ;
 primary     = number | charLit | stringLit | partitionLit
             | register | flag | special | label | bankLabel
@@ -148,8 +149,12 @@ label       = identifier | "`" identifier "`" ;
 
 The author's operator list (`== != < <= > >=`, `& | ^`, `! && ||`, parentheses, `<< >> >>>`) is
 complete above. `+`, binary and unary `-`, and `~` are additions: `[IX+3]` needs `+`/`-`, signed
-literals need unary `-`, and `~` is the bitwise partner of `!`. There is no `*`, `/` or `%`
-operator; `%` is the binary-literal prefix.
+literals need unary `-`, and `~` is the bitwise partner of `!`. `*` and `/` were added for the
+logpoints plan (its Q4): they are **integer** operations, `/` truncating toward zero like C, and they
+are mathematical like `+`/`-` (C4). A divisor that folds to the constant 0 is a parse error; a
+division by zero at run time makes the condition true, so the machine stops (C15's fail-safe), and
+the panel shows the error. There is no `%` operator, because `%` is the binary-literal prefix. The
+DeZog dialect of the logpoints plan produces a `%` node of its own.
 
 ### 3.3 Literals
 
@@ -496,8 +501,11 @@ its line must keep its condition.
 
 ### 4.8 Reuse by the rest of G1
 
-- **G1.4 logpoints** — `"x={A} at {PC}"`: each `{…}` is parsed with this grammar's `bitOr` entry
-  point and evaluated with the same context.
+- **G1.4 logpoints** — `"x={A} at {PC}"`: each `{…}` is parsed with this grammar's full `condition`
+  entry point and evaluated with the same context. Planned in
+  [LOGPOINTS_PLAN.md](LOGPOINTS_PLAN.md), which also adds `*`/`/` here (§3.2), the zero-argument
+  specials `tstates()`, `cpufreq()`, `frame()` and `slots()`, and a DeZog-dialect parser that builds
+  this same tree.
 - **G1.5 DeZog ASSERTION / WPMEM** — DeZog's expression syntax differs; when G1.5 is planned its
   comments are translated into this tree, not parsed by a second engine.
 
@@ -605,7 +613,8 @@ and hit rule are not in it); persister audit and round-trip tests (§4.7).
 ### Phase 2 — the condition engine — done
 `src/common/utils/breakpoint-condition/`: lexer, parser, checker, constant folder, binder, evaluator,
 `ConditionContext`. Exhaustive node-project tests: every operator and precedence level, JS shift
-semantics (`1 << 31`, `-8 >> 1`, `-8 >>> 28`, count masking), signed accesses and `s8/s16/s32`,
+semantics (`1 << 31`, `-8 >> 1`, `-8 >>> 28`, count masking), `*` and truncating `/` (`-7 / 2 == -3`,
+a constant zero divisor rejected, a run-time zero divisor reported), signed accesses and `s8/s16/s32`,
 every literal and escape, the ZX character mapping, `AF'` lexing, partition-spec lexing, backtick
 labels, bank-local labels (inside and outside brackets, and the `05:(score)` disambiguation),
 every §3.7 error with its range, string folding for all four width/endianness combinations,
@@ -891,6 +900,7 @@ place a logpoint would format and resume instead of stopping.
 | F1 bitwise results | Unsigned 32-bit results for `& \| ^ ~`, as proposed. | C6 |
 | F2 restart | *Start* after *Stop* is a restart. | C12, §4.5 |
 | F3 NEX labels | Yes to sidecar global labels and to bank-local `05:Label`. | §3.4, §3.6 |
+| LP-Q4 (from [LOGPOINTS_PLAN.md](LOGPOINTS_PLAN.md)) | Add `*` and integer `/` to this grammar; no `%`. | §3.2 |
 
 ### 10.2 Still open
 
