@@ -31,7 +31,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Light theme | **Derived by construction** from the same ramps as dark, with four hand-tuned exceptions. |
 | Device surfaces | **Theme-invariant.** The emulated machine is hardware; hardware has no light mode. |
 | Rainbow motif | Confined to empty states and the About panel. Order (red, yellow, green, cyan) confirmed correct by the author. |
-| Monaco | The syntax palette is a **fixed multi-hue table**; only the *keyword* colour follows the accent. Comments are green and italic, never grey. |
+| Monaco | The syntax palette is a **fixed multi-hue table**; only the *keyword* colour follows the accent. Comments are green and italic, never grey. Which `.zxbas` words get which class is not hand-kept: the Monarch lists come from the generated BASIC help data (`monarchWordLists()` in `src/common/kbasic/help.ts`), so a word is coloured as a keyword exactly when Klive BASIC knows it — change the spec or the overrides and run `npm run kbasic:help`, never edit the lists. BASIC hovers use Monaco's own markdown (a `zxbas` code fence, plain lines, an italic attribution footer) and add no styling. |
 | Window chrome | Frameless/title-bar toolbar: **explicitly deferred.** |
 | Secondary accent | **Yes, added in Phase 10.** Every accent has a second hue (`--accent-secondary-*`), for the specific case one hue can't cover — two things in the same view that must both read as accent-tied and clearly apart. Not a general "add more colour" licence; see below. |
 | Memory dump / disassembly colour | **These two views are exceptions to §5.2's neutral data-panel hierarchy**, added in Phase 10 — hex-editor-style views read better for real colour. |

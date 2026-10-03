@@ -17,9 +17,12 @@ import { customLanguagesRegistry } from "@renderer/registry";
 import { loadCustomTokenColors } from "@renderer/appIde/project/customTokenLoader";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { registerZ80Providers } from "@renderer/appIde/services/z80-providers";
+import { basicIntelSingleton } from "@renderer/appIde/services/BasicIntelService";
+import { registerBasicProviders } from "@renderer/appIde/services/basic-providers";
 import {
   applyMonacoExternalEdits,
   getMonacoNavigationPosition,
+  getMonacoProjectFiles,
   getMonacoProjectFolder,
   navigateMonacoToFile,
   type MonacoSelectionOrPosition
@@ -65,13 +68,23 @@ export async function initializeMonaco(): Promise<void> {
     navigateMonacoToFile
   );
 
+  // --- Klive BASIC (`.zxbas`): `.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md`
+  registerBasicProviders(monaco, {
+    getService: () => basicIntelSingleton,
+    getProjectFolder: getMonacoProjectFolder,
+    getProjectFiles: getMonacoProjectFiles,
+    navigateToFile: navigateMonacoToFile,
+    applyExternalEdits: applyMonacoExternalEdits
+  });
+
   monacoEditor.editor.registerEditorOpener({
     openCodeEditor(
       _source: unknown,
       resource: MonacoResource,
       selectionOrPosition: MonacoSelectionOrPosition
     ): boolean {
-      const filePath: string = resource.fsPath ?? resource.path ?? resource.toString();
+      // --- A Klive BASIC library file's URI path gets a leading slash: `nav` wants `<kbasic-stdlib>/x.bas`
+      const filePath: string = (resource.fsPath ?? resource.path ?? resource.toString()).replace(/^[\\/](<kbasic-stdlib>[\\/])/, "$1");
       const { line, column } = getMonacoNavigationPosition(selectionOrPosition);
       return navigateMonacoToFile(filePath, line, column);
     }

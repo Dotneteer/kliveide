@@ -734,7 +734,8 @@ class MainMessageProcessor {
   async startBackgroundCompile(
     filename: string,
     language: string,
-    options?: CompilerOptions
+    options?: CompilerOptions,
+    params?: { basicActiveFile?: string }
   ): Promise<boolean> {
     // --- One background compile at a time: the caller retries when the running one ends
     if (mainStore.getState().compilation?.backgroundInProgress) {
@@ -752,7 +753,8 @@ class MainMessageProcessor {
       state: mainStore.getState(),
       filePath: filename,
       language,
-      options
+      options,
+      ...(params?.basicActiveFile ? { basicActiveFile: params.basicActiveFile } : {})
     }).catch(() => {
       // --- A failed worker has already ended the compile in the store
     });

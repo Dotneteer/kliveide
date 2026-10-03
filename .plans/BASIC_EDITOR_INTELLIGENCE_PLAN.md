@@ -1,6 +1,7 @@
 # BASIC Editor Intelligence Plan: Hover, Definition, Completion, Rename and Outline for `.zxbas`
 
-Status: **all decisions recorded** (2026-10-03, §10). No code yet.
+Status: **implemented** (2026-10-03): Phases 0–6 done; see §9 for measurements and what changed
+from the design.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G8 (features **G8.1–G8.5**).
 Also delivers §11.1–§11.2 of [ZXBASIC_COMPILER_PLAN.md](ZXBASIC_COMPILER_PLAN.md) (its Phase 8,
 "Language intelligence"); that plan's §0 ground rules apply here.
@@ -542,8 +543,68 @@ cover:
 
 ## 9. Implementation notes
 
-(Filled in during implementation: measured payload sizes and check times, override entries, and
-front-end gaps found.)
+**Where the code is.**
+
+| Part | Files |
+|---|---|
+| Payload | `src/common/abstractions/BasicIntel.ts` |
+| Producer | `src/main/kbasic/intel/extract.ts`; `KBasicCompiler.checkFile` and `analyseFile`; `runFrontEnd(..., { collectDefines })` |
+| Transport | `src/main/compiler-integration/backgroundIntel.ts` (E3/E4 rule), `compilerWorker.ts` (E14), `compilation.basicIntel` + `SET_BASIC_INTEL` |
+| Service | `src/renderer/appIde/services/BasicIntelService.ts` (`basicIntelSingleton`) |
+| Text structure | `basic-structure.ts` (folding, block match, indentation), `basic-context.ts` (scanner) |
+| Providers | `basic-providers.ts`, registered in `monacoBootstrap.ts` |
+| Help data | `scripts/kbasic-help-data.cjs`, `scripts/kbasic-help-overrides.json`, `src/common/kbasic/help*.ts` |
+| Tests | `test/kbasic/intel/` (74 node tests); `scripts/kbasic-ide-check.cjs` part `intel` (22 probes in the running IDE) |
+
+**Measurements (Phase 1).** Over the 190 corpus programs, the largest snapshot is 25 KB serialised
+(`codebank/many-banks.zxbas`, 31 symbols), well under the 200 KB budget. The slowest front end plus
+extraction is 22.5 ms, for a program including seven libraries (zx0, string, print64, print42,
+input, megalz, fmath); corpus programs take 0.4–5 ms. R1's 300 ms threshold is far away, so the
+follow-ups (persistent worker, renderer-side front end) are not needed.
+
+**Front-end gaps found and closed.**
+- The suspicion held: named-argument names and the `NEXT` variable were not uses. `NEXT i` is now
+  pushed to the loop variable's `uses` (not through `noteUse`, so it adds no bank reference).
+  Named-argument names go to a separate `BindResult.paramUses`, because adding them to the
+  parameter variable's `uses` would silence its unused-variable warning.
+- `#define`s: `PreprocessResult.defines` behind `collectDefines`, with uses from expansions,
+  `#ifdef`, `#ifndef` and `#undef` (deduplicated: a macro body's uses repeat with each expansion).
+- Header options: `KBasicFrontEndResult.header`; the effective value is found by applying the
+  option's spec to a copy of the defaults and seeing which field changes.
+
+**Design changes made while building.**
+- **E11 is stricter than written.** A use counts as editable only when its text is the name under
+  the program's case rule (exact in a case-sensitive program), *and* it is not a recorded macro-use
+  site. Case-folding alone would have let `#define X x` rename the macro's use of `X`.
+- **Uses wider than the name** (`@x`, an array element's span) are narrowed to the name, so they
+  stay editable.
+- **Rename refuses on a stale snapshot.** Found in the running IDE: after edits shift lines, the
+  E5 fallback finds the right symbol but the snapshot's positions are old, so edits would land in
+  the wrong place. The rename now checks that every occurrence in the current file still reads as
+  the name, and asks to try again otherwise.
+- **E14 runs in the same worker**, not as a second scheduled check: the renderer passes the open
+  `.zxbas` file, and the worker analyses it only when the build root's snapshot does not contain it.
+  With no build root at all, the open file is checked as the root (so it also gets diagnostics).
+- **E4 for BASIC lives in the compiler:** `checkFile` omits the snapshot of a root with errors, so
+  `runWorker` publishes whatever snapshots arrive; for the assembler the rule is
+  `hasErrorSeverity()`. `SET_LANGUAGE_INTEL` was missing from `ActionTypes` (a baseline type error);
+  it is added.
+- **Library tabs:** the existing `nav <kbasic-stdlib>/x.bas` read-only tab (from the debugger work)
+  serves Q4. Monaco's `Uri.file` puts a slash before `<kbasic-stdlib>`; the editor opener strips it.
+- **Outline of a library file** lists all its routines (not only the used ones), since the outline
+  entries cost little and the tab is for reading.
+- **The Monarch word lists dropped words Klive BASIC does not know** (Sinclair-only `CAT`, `CLEAR`,
+  `LIST`…, and NextBuild statements such as `LAYER`, `SPRITE`). They are no longer coloured as
+  keywords; library routines Klive has (`ATTR`, `HEX16`, `print64`…) now are, as functions.
+
+**Overrides.** `scripts/kbasic-help-overrides.json` holds 28 keyword entries and one directive:
+the block statements (whose EBNF spans lines: `ASM`, `DO`, `FOR`, `FUNCTION`, `IF`, `SUB`, `WHILE`),
+the keywords that are only parts of other statements (`AS`, `AT`, `BYREF`, `THEN`, `TO`…), the
+CODEBANK extension, `SIZEOF` and `#define`. The generator reports any new keyword without a summary.
+
+**Error-tolerant binding (Q7): what users run into.** While a file does not parse, symbols declared
+since the last good check are unknown to completion and hover; the IDE check confirms hover on
+unchanged symbols keeps working. Nothing else surfaced during this work.
 
 ---
 

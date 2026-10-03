@@ -7,9 +7,9 @@ import {
   KliveCompilerOutput
 } from "@abstractions/CompilerInfo";
 import { mainStore } from "@main/main-store";
-import { endBackgroundCompileAction, setLanguageIntelAction } from "@common/state/actions";
+import { endBackgroundCompileAction } from "@common/state/actions";
 import { AppState } from "@common/state/AppState";
-import { extractLanguageIntelData } from "./extractIntelData";
+import { backgroundIntelActions } from "./backgroundIntel";
 import { __DARWIN__ } from "@main/electron-utils";
 
 export const COMPILER_WORKER_FILE = "compilerWorker";
@@ -19,6 +19,11 @@ export type CompilerWorkerData = {
   language: string;
   options?: CompilerOptions;
   state: AppState;
+  /**
+   * The open `.zxbas` file: when the build root does not include it, the worker checks it as a root
+   * of its own for language intelligence (`.plans/BASIC_EDITOR_INTELLIGENCE_PLAN.md` E14).
+   */
+  basicActiveFile?: string;
 };
 
 export type CompilationCompleted = {
@@ -46,13 +51,10 @@ export function runBackgroundCompileWorker(
               success: true,
               errors: []
             };
+      // --- Intel first, so the editor sees the new snapshot when the compile is reported finished.
+      // --- A result with errors keeps the last good snapshot; warnings do not count (plan E4).
+      for (const action of backgroundIntelActions(input.language, result)) mainStore.dispatch(action);
       mainStore.dispatch(endBackgroundCompileAction(backgroundResult));
-      // Only update intel data on success — preserve the last good
-      // semantic state so that tokens survive compilation errors.
-      if (backgroundResult.success) {
-        const intelData = extractLanguageIntelData(result);
-        mainStore.dispatch(setLanguageIntelAction(intelData));
-      }
       resolve(backgroundResult);
     });
 

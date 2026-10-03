@@ -19,6 +19,19 @@ export type PreprocessorOptions = {
   autoIncludes?: string[];
   /** Library files included after the build root when the program uses a keyword (DRAW's arc routine). */
   onDemandIncludes?: { keyword: string; file: string }[];
+  /** Record every `#define` and its uses in `PreprocessResult.defines` (the editor's intel; builds skip it). */
+  collectDefines?: boolean;
+};
+
+/** A `#define` and where its name is used (macro expansions, `#ifdef`, `#ifndef`, `#undef`). */
+export type PreprocessDefine = {
+  name: string;
+  /** The macro name in the `#define` line. */
+  span: Span;
+  uses: Span[];
+  /** The body as written (continuations joined, trailing comment dropped). */
+  body: string;
+  params?: string[];
 };
 
 export type PreprocessResult = {
@@ -29,6 +42,8 @@ export type PreprocessResult = {
   requires: { name: string; span: Span }[];
   /** `#init name` registrations, in order. */
   inits: { name: string; span: Span }[];
+  /** With `collectDefines`: every `#define` of the source files, in order. */
+  defines?: PreprocessDefine[];
 };
 
 type Macro = {
@@ -41,6 +56,8 @@ type Macro = {
   bodyProblems?: DiagnosticBag;
   span: Span;
   builtin?: boolean;
+  /** With `collectDefines`: its record. */
+  info?: PreprocessDefine;
 };
 
 type Condition = {
@@ -81,6 +98,8 @@ class Preprocessor {
   private readonly includedOnce = new Set<string>();
   private readonly includedAlready = new Set<string>();
   private conditions: Condition[] = [];
+  private readonly defines: PreprocessDefine[] = [];
+  private readonly defineUseKeys = new Set<string>();
 
   constructor(
     private readonly sources: SourceSet,
@@ -120,7 +139,13 @@ class Preprocessor {
       this.processFile(this.sources.add(library.path, library.text));
     }
     this.out.push({ kind: "eof", text: "", span: { file: this.root.index, start: this.root.text.length, end: this.root.text.length } });
-    return { tokens: this.out, comments: this.comments, requires: this.requires, inits: this.inits };
+    return {
+      tokens: this.out,
+      comments: this.comments,
+      requires: this.requires,
+      inits: this.inits,
+      ...(this.options.collectDefines ? { defines: this.defines } : {})
+    };
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -206,7 +231,10 @@ class Preprocessor {
       case "undef": {
         const t = args()[0];
         if (!t || t.kind !== "identifier") this.error("E203", "#undef needs a macro name", span);
-        else this.macros.delete(t.text);
+        else {
+          this.noteMacroUse(this.macros.get(t.text), t.span);
+          this.macros.delete(t.text);
+        }
         return;
       }
       case "include":
@@ -302,7 +330,21 @@ class Preprocessor {
       this.diagnostics.warning("W510", `The macro ${name} is redefined`, nameToken.span);
     }
     const bodyProblems = problems.items.length ? problems : undefined;
-    this.macros.set(name, { name, params, body, text, bodyProblems, span: nameToken.span });
+    let info: PreprocessDefine | undefined;
+    if (this.options.collectDefines) {
+      info = { name, span: nameToken.span, uses: [], body: text, ...(params ? { params } : {}) };
+      this.defines.push(info);
+    }
+    this.macros.set(name, { name, params, body, text, bodyProblems, span: nameToken.span, ...(info ? { info } : {}) });
+  }
+
+  /** A use of a macro's name, once per place (a macro body's uses repeat with each expansion). */
+  private noteMacroUse(macro: Macro | undefined, span: Span): void {
+    if (!macro?.info) return;
+    const key = `${span.file}:${span.start}`;
+    if (this.defineUseKeys.has(key)) return;
+    this.defineUseKeys.add(key);
+    macro.info.uses.push(span);
   }
 
   // ----------------------------------------------------------------------------------------------
@@ -315,6 +357,7 @@ class Preprocessor {
         this.error("E212", `#${kind} needs a macro name`, span);
         return false;
       }
+      this.noteMacroUse(this.macros.get(t.text), t.span);
       return this.macros.has(t.text) === (kind === "ifdef");
     }
     try {
@@ -424,6 +467,7 @@ class Preprocessor {
         i++;
         continue;
       }
+      if (!macro.params || tokens[i + 1]?.text === "(") this.noteMacroUse(macro, t.span);
       if (macro.bodyProblems) {
         for (const d of macro.bodyProblems.items) this.diagnostics.items.push({ ...d, message: `${d.message} (in macro ${macro.name})` });
         macro.bodyProblems = undefined;

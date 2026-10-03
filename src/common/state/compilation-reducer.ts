@@ -1,4 +1,5 @@
 import { Action } from "./Action";
+import type { BasicIntelData } from "@abstractions/BasicIntel";
 import { CompilationState } from "./AppState";
 
 /**
@@ -64,6 +65,21 @@ export function compilationReducer(
         ...state,
         languageIntel: payload?.value
       };
+
+    case "SET_BASIC_INTEL": {
+      const intel = payload?.value as BasicIntelData | undefined;
+      if (!intel?.rootFile) return state;
+      return {
+        ...state,
+        basicIntel: { ...(state.basicIntel ?? {}), [intel.rootFile]: intel }
+      };
+    }
+
+    // --- Snapshots belong to a project and its build root
+    case "OPEN_FOLDER":
+    case "CLOSE_FOLDER":
+    case "SET_BUILD_ROOT":
+      return state.basicIntel ? { ...state, basicIntel: undefined } : state;
 
     default:
       return state;

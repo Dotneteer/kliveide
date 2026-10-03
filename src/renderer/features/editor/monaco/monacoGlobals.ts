@@ -55,6 +55,7 @@ type ApplyExternalEdits = (edits: RenameEdit[]) => void;
 let navigateToFile: NavigateToFile | null = null;
 let applyExternalEdits: ApplyExternalEdits | null = null;
 let providerStore: Store<AppState> | null = null;
+let projectFiles: (() => string[]) | null = null;
 
 /**
  * Sets the active Monaco cross-file navigation target and returns a cleanup
@@ -93,6 +94,23 @@ export function setMonacoProviderStore(store: Store<AppState>): () => void {
   };
 }
 
+/**
+ * Sets the provider of the project's file paths (for `#include "..."` completion) and returns scoped
+ * cleanup.
+ */
+export function setMonacoProjectFilesHandler(handler: () => string[]): () => void {
+  projectFiles = handler;
+  return () => {
+    if (projectFiles === handler) {
+      projectFiles = null;
+    }
+  };
+}
+
+export function getMonacoProjectFiles(): string[] {
+  return projectFiles?.() ?? [];
+}
+
 export function applyMonacoExternalEdits(edits: RenameEdit[]): void {
   applyExternalEdits?.(edits);
 }
@@ -115,4 +133,5 @@ export function resetMonacoGlobalsForTests(): void {
   navigateToFile = null;
   applyExternalEdits = null;
   providerStore = null;
+  projectFiles = null;
 }

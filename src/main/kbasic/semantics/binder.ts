@@ -35,6 +35,11 @@ import { commonType, integralRange, isIntegral, isNumeric, typeOfName, typeOfSig
 export type BindResult = {
   program: BoundProgram;
   globals: Scope;
+  /**
+   * The names of named arguments (`s(c := 7)`), each a use of a parameter. They are kept apart from
+   * the parameter variable's `uses`, which drive the unused-variable warnings (editor intelligence).
+   */
+  paramUses: { param: ParamSymbol; span: Span }[];
 };
 
 /**
@@ -90,7 +95,11 @@ class Binder extends ExpressionBinder {
       (span, message) => this.error("E503", `Inline assembly: ${message}`, span as Span)
     );
     this.zxbasmBlocks.forEach((b, k) => (b.lines = converted[k] as { text: string; span: Span }[]));
-    return { program: { statements, routines: this.routines, labels: [...this.labels.values()] }, globals: this.globals };
+    return {
+      program: { statements, routines: this.routines, labels: [...this.labels.values()] },
+      globals: this.globals,
+      paramUses: this.paramUses
+    };
   }
 
   // ===============================================================================================
@@ -783,6 +792,9 @@ class Binder extends ExpressionBinder {
     if (s.next.variable && !this.sameVariable(s.next.variable, s.variable)) {
       this.error("E411", `NEXT ${s.next.variable.name} does not close FOR ${s.variable.name}`, s.next.variable.span);
     }
+    const loopVariable = variable?.kind === "variable" ? variable.symbol : undefined;
+    // --- `NEXT i` names the loop variable: a use for the editor (not a bank reference, not a read)
+    if (s.next.variable && loopVariable && this.sameVariable(s.next.variable, s.variable)) loopVariable.uses.push(s.next.variable.span);
     const type = variable?.type ?? "Float";
     const f = this.convert(from, type, true);
     const t = this.convert(to, type, true);

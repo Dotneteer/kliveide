@@ -10,15 +10,19 @@ import { emittedFiles } from "./emit-files";
 import { lineCanHaveBreakpoint } from "./breakpoints";
 import { DiagnosticBag, type Diagnostic } from "./diagnostics";
 import { parseProgram, type FrontEndResult } from "./front-end";
-import { applyHeader, optionsFromSettings, readHeader, reportIgnoredHeader } from "./options/header";
+import { applyHeader, optionsFromSettings, readHeader, reportIgnoredHeader, type HeaderOption } from "./options/header";
 import type { KBasicOptions } from "./options/options";
 import { bind, type BindResult } from "./semantics/binder";
 import type { FileReader } from "./syntax/preprocessor";
 import { SourceFile, type SourceSet } from "./syntax/source";
 import { isLibraryPath } from "./stdlib";
+import { extractBasicIntel } from "./intel/extract";
+import type { BasicIntelData } from "@abstractions/BasicIntel";
 
 export type KBasicFrontEndResult = FrontEndResult & {
   options: KBasicOptions;
+  /** The build root's header option lines. */
+  header: HeaderOption[];
   /** The typed program; undefined when the source has syntax errors, which would only cascade. */
   bound?: BindResult;
 };
@@ -59,8 +63,13 @@ export class KBasicCompiler implements IKliveCompiler {
       return { errors: [fileError(filename, "K002", `Cannot read the file: ${(err as Error).message}`)] };
     }
     try {
-      const result = runFrontEnd(filename, text, fileSystemReader, base);
-      if (background || result.diagnostics.hasErrors || !result.bound) {
+      const result = runFrontEnd(filename, text, fileSystemReader, base, undefined, { collectDefines: background });
+      if (background) {
+        // --- The editor's intel (plan E4): a root with an error keeps its last good snapshot
+        const basicIntel = result.diagnostics.hasErrors ? undefined : extractBasicIntel(result);
+        return { errors: toErrorInfo(result.diagnostics.items, result.sources), basicIntel: basicIntel ? [basicIntel] : [] } as SimpleAssemblerOutput;
+      }
+      if (result.diagnostics.hasErrors || !result.bound) {
         return { errors: toErrorInfo(result.diagnostics.items, result.sources) };
       }
       // --- The debug profile (plan §8.6, D11): optimisation capped at 1 unless the header asks for a level
@@ -70,6 +79,22 @@ export class KBasicCompiler implements IKliveCompiler {
     } catch (err) {
       // --- A worker that throws is reported as a success (plan §2.1), so a compiler bug is an error
       return { errors: [fileError(filename, "K000", `Internal compiler error: ${(err as Error).message}`)] };
+    }
+  }
+
+  /**
+   * The editor's intel for a file checked as a root of its own: the open `.zxbas` file the build
+   * root does not include (plan E14). Undefined when it cannot be read or has errors.
+   */
+  analyseFile(filename: string): BasicIntelData | undefined {
+    const settings = this.state ? createSettingsReader(this.state) : undefined;
+    const base = optionsFromSettings((key) => settings?.readSetting(key), this.state?.emulatorState?.machineId);
+    try {
+      const text = fs.readFileSync(filename, "utf8");
+      const result = runFrontEnd(filename, text, fileSystemReader, base, undefined, { collectDefines: true });
+      return result.diagnostics.hasErrors ? undefined : extractBasicIntel(result);
+    } catch {
+      return undefined;
     }
   }
 
@@ -161,7 +186,8 @@ export function runFrontEnd(
   rootText: string,
   reader: FileReader,
   base: KBasicOptions,
-  diagnostics = new DiagnosticBag()
+  diagnostics = new DiagnosticBag(),
+  extra: { collectDefines?: boolean } = {}
 ): KBasicFrontEndResult {
   const normalised = rootText.replace(/\r\n?/g, "\n");
   const header = readHeader(new SourceFile(0, rootPath, normalised), diagnostics);
@@ -179,7 +205,8 @@ export function runFrontEnd(
       // --- sinclair-compatible brings the Sinclair functions in (the spec's --sinclair)
       ...(options.sinclairCompatible ? { autoIncludes: ["sinclair.bas"] } : {}),
       // --- DRAW x, y, angle draws its arc through a library routine
-      onDemandIncludes: [{ keyword: "DRAW", file: "__drawarc.bas" }]
+      onDemandIncludes: [{ keyword: "DRAW", file: "__drawarc.bas" }],
+      ...(extra.collectDefines ? { collectDefines: true } : {})
     },
     diagnostics
   );
@@ -190,7 +217,7 @@ export function runFrontEnd(
   const bound = diagnostics.hasErrors ? undefined : bind(result.program, options, diagnostics, result.preprocessed.inits);
   dropDisabledWarnings(diagnostics, options);
   dropLibraryWarnings(diagnostics, result.sources);
-  return { ...result, options, ...(bound ? { bound } : {}) };
+  return { ...result, options, header, ...(bound ? { bound } : {}) };
 }
 
 /**
