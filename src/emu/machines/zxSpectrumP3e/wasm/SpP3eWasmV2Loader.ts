@@ -1,3 +1,5 @@
+import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
+
 export const SPP3E_WASM_V2_ARTIFACT_NAME = "zx-spectrum-p3e.wasm";
 export const SPP3E_WASM_V2_MEMORY_SIZE = 0x10000;
 export const SPP3E_WASM_V2_RAM_SIZE = 0x20000;
@@ -211,9 +213,9 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & {
   spp3eSetCpuInterruptMode: SpP3eWasmV2ExportFunction;
   spp3eGetCpuRetExecuted: SpP3eWasmV2ExportFunction;
   spp3eGetCpuRetnExecuted: SpP3eWasmV2ExportFunction;
-  spp3eGetLastMemoryAddress: SpP3eWasmV2ExportFunction;
-  spp3eGetLastMemoryValue: SpP3eWasmV2ExportFunction;
-  spp3eGetLastMemoryIsWrite: SpP3eWasmV2ExportFunction;
+  spp3eGetAccessLogPtr: SpP3eWasmV2ExportFunction;
+  spp3eGetAccessLogCount: SpP3eWasmV2ExportFunction;
+  spp3eGetAccessLogOverflows: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortAddress: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortValue: SpP3eWasmV2ExportFunction;
   spp3eGetLastPortIsWrite: SpP3eWasmV2ExportFunction;
@@ -251,6 +253,8 @@ export type SpP3eWasmV2Runtime = {
   readonly exports: SpP3eWasmV2Exports;
   readonly memoryBuffer: ArrayBuffer;
   readonly memory: Uint8Array;
+  /** The CPU's per-instruction data-access log (`wasmAccessLog.ts`) */
+  readonly accessLog: Uint32Array;
   readonly ram: Uint8Array;
   readonly rom: Uint8Array;
   readonly pixelBuffer: Uint32Array;
@@ -470,9 +474,9 @@ const requiredV2Exports = [
   "spp3eSetCpuInterruptMode",
   "spp3eGetCpuRetExecuted",
   "spp3eGetCpuRetnExecuted",
-  "spp3eGetLastMemoryAddress",
-  "spp3eGetLastMemoryValue",
-  "spp3eGetLastMemoryIsWrite",
+  "spp3eGetAccessLogPtr",
+  "spp3eGetAccessLogCount",
+  "spp3eGetAccessLogOverflows",
   "spp3eGetLastPortAddress",
   "spp3eGetLastPortValue",
   "spp3eGetLastPortIsWrite",
@@ -547,6 +551,7 @@ export function createSpP3eWasmV2Views(
   const audioWords = audioSampleCapacity * 2;
 
   assertViewRange(artifactName, "memory", exports.spp3eMemoryPtr(), memorySize, memoryBuffer);
+  assertViewRange(artifactName, "accessLog", exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
   assertViewRange(artifactName, "ram", exports.spp3eRamPtr(), ramSize, memoryBuffer);
   assertViewRange(artifactName, "rom", exports.spp3eRomPtr(), romSize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.spp3ePixelBufferPtr(), pixelBytes, memoryBuffer);
@@ -562,6 +567,7 @@ export function createSpP3eWasmV2Views(
   return {
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.spp3eMemoryPtr(), memorySize),
+    accessLog: new Uint32Array(memoryBuffer, exports.spp3eGetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     ram: new Uint8Array(memoryBuffer, exports.spp3eRamPtr(), ramSize),
     rom: new Uint8Array(memoryBuffer, exports.spp3eRomPtr(), romSize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.spp3ePixelBufferPtr(), pixelWords),

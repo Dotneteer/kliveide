@@ -204,10 +204,6 @@ static uint32_t spp3eCpuFrameSliceInstructions;
 static uint8_t spp3eFrameCompleted;
 static uint32_t spp3eInterruptsRaised;
 static uint8_t spp3eInterruptLineActive;
-static uint16_t spp3eLastMemoryAddress;
-static uint8_t spp3eLastMemoryValue;
-static uint8_t spp3eLastMemoryIsWrite;
-static uint8_t spp3eHasMemoryEvent;
 static uint8_t spp3eCaptureBusEvents = 1u;
 static uint32_t spp3eTactsInFrame = SPP3E_TACTS_PER_FRAME;
 static uint32_t spp3eClockMultiplier = 1u;
@@ -1085,23 +1081,10 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #undef SP48_TAPE_MAX_BLOCKS
 
 static uint8_t spp3eCpuReadMemory(uint32_t address) {
-  const uint8_t value = (uint8_t)spp3eReadMemory(address);
-  if (spp3eCaptureBusEvents != 0u) {
-    spp3eLastMemoryAddress = (uint16_t)(address & 0xffffu);
-    spp3eLastMemoryValue = value;
-    spp3eLastMemoryIsWrite = 0u;
-    spp3eHasMemoryEvent = 1u;
-  }
-  return value;
+  return (uint8_t)spp3eReadMemory(address);
 }
 
 static void spp3eCpuWriteMemory(uint32_t address, uint32_t value) {
-  if (spp3eCaptureBusEvents != 0u) {
-    spp3eLastMemoryAddress = (uint16_t)(address & 0xffffu);
-    spp3eLastMemoryValue = (uint8_t)value;
-    spp3eLastMemoryIsWrite = 1u;
-    spp3eHasMemoryEvent = 1u;
-  }
   spp3eWriteMemory(address, value);
 }
 
@@ -1779,7 +1762,6 @@ void spp3eReset(void) {
   spp3eFrameCompleted = 0u;
   spp3eInterruptsRaised = 0u;
   spp3eInterruptLineActive = 0u;
-  spp3eHasMemoryEvent = 0u;
   z80ClearBusEvents();
   spp3eSelectedRom = 0u;
   spp3eSelectedBank = 0u;
@@ -1818,7 +1800,6 @@ void spp3eHardReset(void) {
 uint32_t spp3eExecuteFrame(void) {
   spp3eBeginMachineFrame();
   spp3eCaptureBusEvents = 0u;
-  spp3eHasMemoryEvent = 0u;
   z80ClearBusEvents();
 
   /*
@@ -1840,7 +1821,6 @@ uint32_t spp3eExecuteInstruction(void) {
   }
 
   if (spp3eCaptureBusEvents != 0u) {
-    spp3eHasMemoryEvent = 0u;
     z80ClearBusEvents();
   }
   spp3eUpdateTapeMode();
@@ -2422,9 +2402,10 @@ uint32_t spp3eGetCpuRetExecuted(void) {
 uint32_t spp3eGetCpuRetnExecuted(void) {
   return z80GetRetnExecuted();
 }
-uint32_t spp3eGetLastMemoryAddress(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryAddress : 0u; }
-uint32_t spp3eGetLastMemoryValue(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryValue : 0u; }
-uint32_t spp3eGetLastMemoryIsWrite(void) { return spp3eHasMemoryEvent != 0u ? spp3eLastMemoryIsWrite : 0u; }
+/* The per-instruction data-access log (z80.c) */
+uint32_t spp3eGetAccessLogPtr(void) { return z80AccessLogPtr(); }
+uint32_t spp3eGetAccessLogCount(void) { return z80GetAccessLogCount(); }
+uint32_t spp3eGetAccessLogOverflows(void) { return z80GetAccessLogOverflows(); }
 uint32_t spp3eGetLastPortAddress(void) { return z80GetLastPortAddress(); }
 uint32_t spp3eGetLastPortValue(void) { return z80GetLastPortValue(); }
 uint32_t spp3eGetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }

@@ -1,3 +1,5 @@
+import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
+
 export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
 export const SP48_WASM_V2_MEMORY_SIZE = 0x10000;
 export const SP48_WASM_V2_KEYBOARD_LINE_COUNT = 8;
@@ -107,9 +109,9 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & {
   sp48SetCpuInterruptMode: Sp48WasmV2ExportFunction;
   sp48GetCpuRetExecuted: Sp48WasmV2ExportFunction;
   sp48GetCpuRetnExecuted: Sp48WasmV2ExportFunction;
-  sp48GetLastMemoryAddress: Sp48WasmV2ExportFunction;
-  sp48GetLastMemoryValue: Sp48WasmV2ExportFunction;
-  sp48GetLastMemoryIsWrite: Sp48WasmV2ExportFunction;
+  sp48GetAccessLogPtr: Sp48WasmV2ExportFunction;
+  sp48GetAccessLogCount: Sp48WasmV2ExportFunction;
+  sp48GetAccessLogOverflows: Sp48WasmV2ExportFunction;
   sp48GetLastPortAddress: Sp48WasmV2ExportFunction;
   sp48GetLastPortValue: Sp48WasmV2ExportFunction;
   sp48GetLastPortIsWrite: Sp48WasmV2ExportFunction;
@@ -180,6 +182,8 @@ export type Sp48WasmV2Runtime = {
   readonly exports: Sp48WasmV2Exports;
   readonly memoryBuffer: ArrayBuffer;
   readonly memory: Uint8Array;
+  /** The CPU's per-instruction data-access log (`wasmAccessLog.ts`) */
+  readonly accessLog: Uint32Array;
   readonly pixelBuffer: Uint32Array;
   readonly pixelBufferBytes: Uint8ClampedArray;
   readonly keyboardLines: Uint8Array;
@@ -291,9 +295,9 @@ const requiredV2Exports = [
   "sp48SetCpuInterruptMode",
   "sp48GetCpuRetExecuted",
   "sp48GetCpuRetnExecuted",
-  "sp48GetLastMemoryAddress",
-  "sp48GetLastMemoryValue",
-  "sp48GetLastMemoryIsWrite",
+  "sp48GetAccessLogPtr",
+  "sp48GetAccessLogCount",
+  "sp48GetAccessLogOverflows",
   "sp48GetLastPortAddress",
   "sp48GetLastPortValue",
   "sp48GetLastPortIsWrite",
@@ -401,6 +405,7 @@ export function createSp48WasmV2Views(
   const audioWords = audioSampleCapacity * 2;
 
   assertViewRange(artifactName, "memory", exports.sp48MemoryPtr(), SP48_WASM_V2_MEMORY_SIZE, memoryBuffer);
+  assertViewRange(artifactName, "accessLog", exports.sp48GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.sp48PixelBufferPtr(), pixelBytes, memoryBuffer);
   assertViewRange(artifactName, "keyboardLines", exports.sp48KeyboardLinesPtr(), SP48_WASM_V2_KEYBOARD_LINE_COUNT, memoryBuffer);
   assertViewRange(artifactName, "audioSamples", exports.sp48AudioSamplesPtr(), audioWords * 2, memoryBuffer);
@@ -411,6 +416,7 @@ export function createSp48WasmV2Views(
   return {
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.sp48MemoryPtr(), SP48_WASM_V2_MEMORY_SIZE),
+    accessLog: new Uint32Array(memoryBuffer, exports.sp48GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.sp48PixelBufferPtr(), pixelWords),
     pixelBufferBytes: new Uint8ClampedArray(memoryBuffer, exports.sp48PixelBufferPtr(), pixelBytes),
     keyboardLines: new Uint8Array(memoryBuffer, exports.sp48KeyboardLinesPtr(), SP48_WASM_V2_KEYBOARD_LINE_COUNT),

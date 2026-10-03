@@ -211,10 +211,6 @@ static uint8_t sp48MicBit;
 static uint8_t sp48BeeperLevel;
 static uint32_t sp48EarBitChangedFrom0Tacts;
 static uint32_t sp48EarBitChangedFrom1Tacts;
-static uint16_t sp48LastMemoryAddress;
-static uint8_t sp48LastMemoryValue;
-static uint8_t sp48LastMemoryIsWrite;
-static uint8_t sp48HasMemoryEvent;
 static uint8_t sp48CaptureBusEvents = 1u;
 static uint32_t sp48TapeBlockCount;
 static uint32_t sp48TapeDataLength;
@@ -546,7 +542,6 @@ void sp48HardReset(uint32_t is16k, uint32_t isNtsc) {
 uint32_t sp48ExecuteFrame(void) {
   beginMachineFrame();
   sp48CaptureBusEvents = 0u;
-  sp48HasMemoryEvent = 0u;
   z80ClearBusEvents();
 
   /*
@@ -573,7 +568,6 @@ uint32_t sp48ExecuteInstruction(void) {
   }
 
   if (sp48CaptureBusEvents != 0u) {
-    sp48HasMemoryEvent = 0u;
     z80ClearBusEvents();
   }
   updateTapeMode();
@@ -983,16 +977,17 @@ uint32_t sp48GetCpuRetnExecuted(void) {
   return z80GetRetnExecuted();
 }
 
-uint32_t sp48GetLastMemoryAddress(void) {
-  return sp48HasMemoryEvent != 0u ? sp48LastMemoryAddress : 0u;
+/* The per-instruction data-access log (z80.c) */
+uint32_t sp48GetAccessLogPtr(void) {
+  return z80AccessLogPtr();
 }
 
-uint32_t sp48GetLastMemoryValue(void) {
-  return sp48HasMemoryEvent != 0u ? sp48LastMemoryValue : 0u;
+uint32_t sp48GetAccessLogCount(void) {
+  return z80GetAccessLogCount();
 }
 
-uint32_t sp48GetLastMemoryIsWrite(void) {
-  return sp48HasMemoryEvent != 0u ? sp48LastMemoryIsWrite : 0u;
+uint32_t sp48GetAccessLogOverflows(void) {
+  return z80GetAccessLogOverflows();
 }
 
 uint32_t sp48GetLastPortAddress(void) {

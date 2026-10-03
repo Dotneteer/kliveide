@@ -718,6 +718,11 @@ export class Z80Cpu implements IZ80Cpu {
   lastMemoryReadsCount = 0;
 
   /**
+   * The byte each of `lastMemoryReads` read, at the same index
+   */
+  lastMemoryReadValues: Uint8Array = new Uint8Array(8);
+
+  /**
    * The last value read from memory
    */
   lastMemoryReadValue: number;
@@ -727,6 +732,11 @@ export class Z80Cpu implements IZ80Cpu {
    */
   lastMemoryWrites: Uint16Array = new Uint16Array(8);
   lastMemoryWritesCount = 0;
+
+  /**
+   * The byte each of `lastMemoryWrites` wrote, at the same index
+   */
+  lastMemoryWriteValues: Uint8Array = new Uint8Array(8);
 
   /**
    * The last value written to memory
@@ -1755,8 +1765,10 @@ export class Z80Cpu implements IZ80Cpu {
    */
   readMemory(address: number): number {
     this.delayMemoryRead(address);
+    const value = this.doReadMemory(address);
+    this.lastMemoryReadValues[this.lastMemoryReadsCount] = value;
     this.lastMemoryReads[this.lastMemoryReadsCount++] = address;
-    return (this.lastMemoryReadValue = this.doReadMemory(address));
+    return (this.lastMemoryReadValue = value);
   }
 
   /**
@@ -1767,6 +1779,7 @@ export class Z80Cpu implements IZ80Cpu {
    */
   writeMemory(address: number, data: number): void {
     this.delayMemoryWrite(address);
+    this.lastMemoryWriteValues[this.lastMemoryWritesCount] = data;
     this.lastMemoryWrites[this.lastMemoryWritesCount++] = address;
     this.lastMemoryWriteValue = data;
     this.doWriteMemory(address, data);

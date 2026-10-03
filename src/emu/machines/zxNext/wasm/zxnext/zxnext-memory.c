@@ -279,22 +279,6 @@ static inline uint32_t zxnextMemoryResolveLayer2Offset(uint32_t address, uint32_
   return ZXNEXT_OFFS_NEXT_RAM + (layer2Page << 13u) + (normalized & 0x1fffu);
 }
 
-static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
-  uint32_t normalized = address & 0xffffu;
-  uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
-  if (!((normalized >> 13u) < 2u && zxnextMemoryLowOverlayActive())) {
-    physical = zxnextMemoryResolveLayer2Offset(normalized, 0u);
-  }
-  if (physical == ZXNEXT_NO_WRITE_OFFSET) {
-    physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
-  }
-  lastMemoryAddress = (uint16_t)normalized;
-  lastMemoryValue = zxnextMemoryReadPhysical(physical);
-  lastMemoryAccessed = 1;
-  lastMemoryIsWrite = 0;
-  return lastMemoryValue;
-}
-
 static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
   uint32_t normalized = address & 0xffffu;
   uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
@@ -305,6 +289,14 @@ static inline uint32_t zxnextMemoryPeekMapped(uint32_t address) {
     physical = zxnextMemoryResolveReadOffset(normalized >> 13) + (normalized & 0x1fffu);
   }
   return zxnextMemoryReadPhysical(physical);
+}
+
+/*
+ * A read through the current mapping. It has no side effects: the CPU's access log is written by the
+ * CPU's bus functions (z80.c), so a DMA transfer or an IDE read never shows up as a CPU access.
+ */
+static inline uint32_t zxnextMemoryReadMapped(uint32_t address) {
+  return zxnextMemoryPeekMapped(address);
 }
 
 static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
@@ -322,10 +314,6 @@ static inline void zxnextMemoryWriteMapped(uint32_t address, uint32_t value) {
     zxnextRasterMemoryWrite(physical % ZXNEXT_MEMORY_SIZE, value);
     zxnextMemoryWritePhysical(physical, value);
   }
-  lastMemoryAddress = (uint16_t)normalized;
-  lastMemoryValue = (uint8_t)value;
-  lastMemoryAccessed = 1;
-  lastMemoryIsWrite = 1;
 }
 
 static uint32_t zxnextMemoryReadScreenOffset(uint32_t offset) {

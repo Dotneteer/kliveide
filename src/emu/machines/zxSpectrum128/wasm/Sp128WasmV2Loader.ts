@@ -1,3 +1,5 @@
+import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
+
 export const SP128_WASM_V2_ARTIFACT_NAME = "zx-spectrum128.wasm";
 export const SP128_WASM_V2_MEMORY_SIZE = 0x10000;
 export const SP128_WASM_V2_RAM_SIZE = 0x20000;
@@ -105,9 +107,9 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & {
   sp128SetCpuSp: Sp128WasmV2ExportFunction;
   sp128GetCpuHalted: Sp128WasmV2ExportFunction;
   sp128GetCpuPrefix: Sp128WasmV2ExportFunction;
-  sp128GetLastMemoryAddress: Sp128WasmV2ExportFunction;
-  sp128GetLastMemoryValue: Sp128WasmV2ExportFunction;
-  sp128GetLastMemoryIsWrite: Sp128WasmV2ExportFunction;
+  sp128GetAccessLogPtr: Sp128WasmV2ExportFunction;
+  sp128GetAccessLogCount: Sp128WasmV2ExportFunction;
+  sp128GetAccessLogOverflows: Sp128WasmV2ExportFunction;
   sp128GetLastPortAddress: Sp128WasmV2ExportFunction;
   sp128GetLastPortValue: Sp128WasmV2ExportFunction;
   sp128GetLastPortIsWrite: Sp128WasmV2ExportFunction;
@@ -184,6 +186,8 @@ export type Sp128WasmV2Runtime = {
   readonly exports: Sp128WasmV2Exports;
   readonly memoryBuffer: ArrayBuffer;
   readonly memory: Uint8Array;
+  /** The CPU's per-instruction data-access log (`wasmAccessLog.ts`) */
+  readonly accessLog: Uint32Array;
   readonly ram: Uint8Array;
   readonly rom: Uint8Array;
   readonly pixelBuffer: Uint32Array;
@@ -293,9 +297,9 @@ const requiredV2Exports = [
   "sp128SetCpuSp",
   "sp128GetCpuHalted",
   "sp128GetCpuPrefix",
-  "sp128GetLastMemoryAddress",
-  "sp128GetLastMemoryValue",
-  "sp128GetLastMemoryIsWrite",
+  "sp128GetAccessLogPtr",
+  "sp128GetAccessLogCount",
+  "sp128GetAccessLogOverflows",
   "sp128GetLastPortAddress",
   "sp128GetLastPortValue",
   "sp128GetLastPortIsWrite",
@@ -407,6 +411,7 @@ export function createSp128WasmV2Views(
   const audioWords = audioSampleCapacity * 2;
 
   assertViewRange(artifactName, "memory", exports.sp128MemoryPtr(), memorySize, memoryBuffer);
+  assertViewRange(artifactName, "accessLog", exports.sp128GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY * 4, memoryBuffer);
   assertViewRange(artifactName, "ram", exports.sp128RamPtr(), ramSize, memoryBuffer);
   assertViewRange(artifactName, "rom", exports.sp128RomPtr(), romSize, memoryBuffer);
   assertViewRange(artifactName, "pixelBuffer", exports.sp128PixelBufferPtr(), pixelBytes, memoryBuffer);
@@ -418,6 +423,7 @@ export function createSp128WasmV2Views(
   return {
     memoryBuffer,
     memory: new Uint8Array(memoryBuffer, exports.sp128MemoryPtr(), memorySize),
+    accessLog: new Uint32Array(memoryBuffer, exports.sp128GetAccessLogPtr(), WASM_ACCESS_LOG_CAPACITY),
     ram: new Uint8Array(memoryBuffer, exports.sp128RamPtr(), ramSize),
     rom: new Uint8Array(memoryBuffer, exports.sp128RomPtr(), romSize),
     pixelBuffer: new Uint32Array(memoryBuffer, exports.sp128PixelBufferPtr(), pixelWords),

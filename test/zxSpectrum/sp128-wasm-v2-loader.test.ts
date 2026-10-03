@@ -156,9 +156,8 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128GetCpuFrameSliceInstructions()).toBe(1);
     expect(runtime.exports.sp128GetTacts()).toBe(7);
     expect(runtime.exports.sp128GetCpuTacts()).toBe(7);
-    expect(runtime.exports.sp128GetLastMemoryAddress()).toBe(1);
-    expect(runtime.exports.sp128GetLastMemoryValue()).toBe(0x42);
-    expect(runtime.exports.sp128GetLastMemoryIsWrite()).toBe(0);
+    // --- The operand fetch is code, not a data access
+    expect(runtime.exports.sp128GetAccessLogCount()).toBe(0);
   });
 
   it("records CPU memory writes through the current page map", async () => {
@@ -181,9 +180,9 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
     expect(runtime.exports.sp128ReadRamBank(0, 0x0000)).toBe(0xaa);
     expect(runtime.exports.sp128ReadMemory(0xc000)).toBe(0xaa);
     expect(runtime.exports.sp128GetCpuPc()).toBe(5);
-    expect(runtime.exports.sp128GetLastMemoryAddress()).toBe(0xc000);
-    expect(runtime.exports.sp128GetLastMemoryValue()).toBe(0xaa);
-    expect(runtime.exports.sp128GetLastMemoryIsWrite()).toBe(1);
+    // --- One data access: the write of $AA to $C000 (bits 0-15 address, 16-23 value, 24 write)
+    expect(runtime.exports.sp128GetAccessLogCount()).toBe(1);
+    expect(runtime.accessLog[0]).toBe(0x01aac000);
   });
 
   it("records CPU port writes through the 128K port handler", async () => {
@@ -223,9 +222,7 @@ describe("ZX Spectrum 128K WASM v2 loader", () => {
 
     expect(runtime.exports.sp128ExecuteFrame()).toBe(0);
 
-    expect(runtime.exports.sp128GetLastMemoryAddress()).toBe(0);
-    expect(runtime.exports.sp128GetLastMemoryValue()).toBe(0);
-    expect(runtime.exports.sp128GetLastMemoryIsWrite()).toBe(0);
+    expect(runtime.exports.sp128GetAccessLogCount()).toBe(0);
     expect(runtime.exports.sp128GetLastPortAddress()).toBe(0);
     expect(runtime.exports.sp128GetLastPortValue()).toBe(0);
     expect(runtime.exports.sp128GetLastPortIsWrite()).toBe(0);
@@ -978,9 +975,9 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128SetCpuSp: () => 0,
       sp128GetCpuHalted: () => 0,
       sp128GetCpuPrefix: () => 0,
-      sp128GetLastMemoryAddress: () => 0,
-      sp128GetLastMemoryValue: () => 0,
-      sp128GetLastMemoryIsWrite: () => 0,
+      sp128GetAccessLogPtr: () => 0xb6000,
+      sp128GetAccessLogCount: () => 0,
+      sp128GetAccessLogOverflows: () => 0,
       sp128GetLastPortAddress: () => 0,
       sp128GetLastPortValue: () => 0,
       sp128GetLastPortIsWrite: () => 0,

@@ -5,4 +5,4 @@ They are excluded only by `test/wasm/vitest.z80.config.ts`.
 
 | File | Reason |
 | --- | --- |
-| `memoryOp.test.ts` | Requires full per-instruction memory read/write history. The current standalone WASM Z80 test exports expose only the final memory bus event for an instruction. |
+| `memoryOp.test.ts` | Counts opcode fetches as memory reads, as the TypeScript `Z80Cpu` does. The WASM core's per-instruction access log (`z80AccessLogPtr`) records data accesses only - opcode, displacement and operand fetches are code, not data - so the counts differ by design. |

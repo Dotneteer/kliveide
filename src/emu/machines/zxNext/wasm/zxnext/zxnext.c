@@ -125,10 +125,9 @@ static uint32_t cpuTactScale;
 static inline uint32_t zxnextTimingIntPulseLength(void) {
   return (zxnextTimingIntPulseCycles * 2u) >> (cpuEffectiveSpeed & 0x03u);
 }
-static uint16_t lastMemoryAddress;
-static uint8_t lastMemoryValue;
-static uint8_t lastMemoryAccessed;
-static uint8_t lastMemoryIsWrite;
+/* 1 while the CPU's data accesses go to the access log (z80.c): off in a fast frame unless tracing */
+static uint8_t zxnextCaptureBusEvents = 1u;
+static uint32_t zxnextTraceEnabled; /* defined in zxnext-trace.c */
 static uint16_t lastPortAddress;
 static uint8_t lastPortValue;
 static uint8_t lastPortAccessed;
@@ -261,10 +260,6 @@ void zxnextReset(void) {
   zxnextDmaReset();
   zxnextNextRegSoftReset(keptNr06);
   zxnextPsgMode = (uint8_t)(keptNr06 & 0x03u); /* $06 is not in the reset branch */
-  lastMemoryAddress = 0;
-  lastMemoryValue = 0;
-  lastMemoryAccessed = 0;
-  lastMemoryIsWrite = 0;
   lastPortAddress = 0;
   lastPortValue = 0;
   lastPortAccessed = 0;
@@ -441,10 +436,10 @@ uint32_t zxnextGetCpuInterruptMode(void) { return z80GetInterruptMode(); }
 void zxnextSetCpuInterruptMode(uint32_t value) { z80SetInterruptMode(value); }
 uint32_t zxnextGetSharedZ80NMode(void) { return z80GetZ80NMode(); }
 
-uint32_t zxnextGetLastMemoryAddress(void) { return lastMemoryAddress; }
-uint32_t zxnextGetLastMemoryValue(void) { return lastMemoryValue; }
-uint32_t zxnextGetLastMemoryAccessed(void) { return lastMemoryAccessed; }
-uint32_t zxnextGetLastMemoryIsWrite(void) { return lastMemoryIsWrite; }
+/* The CPU's per-instruction data-access log (z80.c) */
+uint32_t zxnextGetAccessLogPtr(void) { return z80AccessLogPtr(); }
+uint32_t zxnextGetAccessLogCount(void) { return z80GetAccessLogCount(); }
+uint32_t zxnextGetAccessLogOverflows(void) { return z80GetAccessLogOverflows(); }
 uint32_t zxnextGetLastPortAddress(void) { return lastPortAddress; }
 uint32_t zxnextGetLastPortValue(void) { return lastPortValue; }
 uint32_t zxnextGetLastPortAccessed(void) { return lastPortAccessed; }

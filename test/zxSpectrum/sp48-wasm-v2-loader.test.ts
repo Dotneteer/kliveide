@@ -126,9 +126,7 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
 
     expect(runtime.exports.sp48ExecuteFrame()).toBe(0);
 
-    expect(runtime.exports.sp48GetLastMemoryAddress()).toBe(0);
-    expect(runtime.exports.sp48GetLastMemoryValue()).toBe(0);
-    expect(runtime.exports.sp48GetLastMemoryIsWrite()).toBe(0);
+    expect(runtime.exports.sp48GetAccessLogCount()).toBe(0);
     expect(runtime.exports.sp48GetLastPortAddress()).toBe(0);
     expect(runtime.exports.sp48GetLastPortValue()).toBe(0);
     expect(runtime.exports.sp48GetLastPortIsWrite()).toBe(0);
@@ -139,10 +137,9 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
     runtime.exports.sp48UploadRomByte(0x0002, 0xd3);
     runtime.exports.sp48UploadRomByte(0x0003, 0xfe);
 
+    // --- LD A,$47 fetches an operand, which is code, not a data access
     expect(runtime.exports.sp48ExecuteInstruction()).toBe(0);
-    expect(runtime.exports.sp48GetLastMemoryAddress()).toBe(1);
-    expect(runtime.exports.sp48GetLastMemoryValue()).toBe(0x47);
-    expect(runtime.exports.sp48GetLastMemoryIsWrite()).toBe(0);
+    expect(runtime.exports.sp48GetAccessLogCount()).toBe(0);
 
     expect(runtime.exports.sp48ExecuteInstruction()).toBe(0);
     expect(runtime.exports.sp48GetLastPortAddress()).toBe(0x47fe);
@@ -309,9 +306,9 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       sp48SetCpuInterruptMode: () => 0,
       sp48GetCpuRetExecuted: () => 0,
       sp48GetCpuRetnExecuted: () => 0,
-      sp48GetLastMemoryAddress: () => 0,
-      sp48GetLastMemoryValue: () => 0,
-      sp48GetLastMemoryIsWrite: () => 0,
+      sp48GetAccessLogPtr: () => 0x46300,
+      sp48GetAccessLogCount: () => 0,
+      sp48GetAccessLogOverflows: () => 0,
       sp48GetLastPortAddress: () => 0,
       sp48GetLastPortValue: () => 0,
       sp48GetLastPortIsWrite: () => 0,

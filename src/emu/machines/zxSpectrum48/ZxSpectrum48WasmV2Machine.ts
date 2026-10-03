@@ -16,6 +16,7 @@ import { loadSp48WasmV2 } from "./wasm/Sp48WasmV2Loader";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48WasmHost } from "./ZxSpectrum48WasmHost";
+import { importAccessLog } from "../wasmAccessLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -901,20 +902,9 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
 
   private importWasmV2BusAccess(runtime: Sp48WasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.lastMemoryReadsCount = 0;
-    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
-
-    const memoryAddress = wasm.sp48GetLastMemoryAddress();
-    const memoryValue = wasm.sp48GetLastMemoryValue();
-    if (wasm.sp48GetLastMemoryIsWrite() !== 0) {
-      this.lastMemoryWrites[this.lastMemoryWritesCount++] = memoryAddress;
-      this.lastMemoryWriteValue = memoryValue;
-    } else if (memoryAddress !== 0 || memoryValue !== 0) {
-      this.lastMemoryReads[this.lastMemoryReadsCount++] = memoryAddress;
-      this.lastMemoryReadValue = memoryValue;
-    }
+    importAccessLog(this, runtime.accessLog, wasm.sp48GetAccessLogCount());
 
     const portAddress = wasm.sp48GetLastPortAddress();
     const portValue = wasm.sp48GetLastPortValue();

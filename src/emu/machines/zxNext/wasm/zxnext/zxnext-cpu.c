@@ -37,6 +37,10 @@ static uint8_t zxnextCpuHeldAtFrameEnd;
 #define Z80_WRITE_PORT(address, value) zxnextCpuSharedWritePort(address, value)
 #define Z80_WRITE_TBBLUE(address, value) zxnextCpuSharedWriteTbBlue(address, value)
 #define Z80_TACT_PLUS_N(value) zxnextCpuTactPlusN(value)
+/* The access log (z80.c) records in debug steps and traced frames only; the stackless NMI's pushes
+   never reach memory, so they are not logged either */
+#define Z80_CAPTURE_BUS_EVENTS() zxnextCaptureBusEvents
+#define Z80_MEMORY_WRITE_SUPPRESSED() zxnextCpuMreqSuppressed
 /* DivMMC: a delayed automap takes effect after the opcode's M1 cycle (ZxNextMachine afterOpcodeFetch) */
 #define Z80_AFTER_OPCODE_FETCH() zxnextDivMmcAfterM1()
 #define Z80_DELAY_MEMORY_READ(address) zxnextCpuDelayMemoryRead(address)
@@ -282,10 +286,6 @@ static inline void zxnextCpuLatchP3FloatingBus(uint32_t address, uint32_t value)
 static uint32_t zxnextCpuSharedReadMemory(uint32_t address) {
   uint32_t value = zxnextMemoryReadMapped(address & 0xffffu);
   zxnextCpuLatchP3FloatingBus(address, value);
-  lastMemoryAddress = (uint16_t)address;
-  lastMemoryValue = (uint8_t)value;
-  lastMemoryAccessed = 1;
-  lastMemoryIsWrite = 0;
   return value;
 }
 
@@ -301,10 +301,6 @@ static void zxnextCpuSharedWriteMemory(uint32_t address, uint32_t value) {
   if (zxnextCpuMreqSuppressed) return;
   zxnextMemoryWriteMapped(address & 0xffffu, value & 0xffu);
   zxnextCpuLatchP3FloatingBus(address, value);
-  lastMemoryAddress = (uint16_t)address;
-  lastMemoryValue = (uint8_t)value;
-  lastMemoryAccessed = 1;
-  lastMemoryIsWrite = 1;
 }
 
 static uint32_t zxnextCpuSharedReadPort(uint32_t address) {
@@ -327,10 +323,7 @@ static void zxnextCpuSyncFrameState(uint32_t previousTacts, uint32_t currentTact
 }
 
 static void zxnextCpuClearInstructionAccesses(void) {
-  lastMemoryAddress = 0;
-  lastMemoryValue = 0;
-  lastMemoryAccessed = 0;
-  lastMemoryIsWrite = 0;
+  z80ClearBusEvents();
   lastPortAddress = 0;
   lastPortValue = 0;
   lastPortAccessed = 0;

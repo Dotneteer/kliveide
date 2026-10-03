@@ -267,9 +267,8 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eGetCpuFrameSliceInstructions()).toBe(1);
     expect(runtime.exports.spp3eGetTacts()).toBe(7);
     expect(runtime.exports.spp3eGetCpuTacts()).toBe(7);
-    expect(runtime.exports.spp3eGetLastMemoryAddress()).toBe(1);
-    expect(runtime.exports.spp3eGetLastMemoryValue()).toBe(0x42);
-    expect(runtime.exports.spp3eGetLastMemoryIsWrite()).toBe(0);
+    // --- The operand fetch is code, not a data access
+    expect(runtime.exports.spp3eGetAccessLogCount()).toBe(0);
   });
 
   it("records CPU memory writes through the current page map", async () => {
@@ -292,9 +291,9 @@ describe("ZX Spectrum +3E WASM v2 loader", () => {
     expect(runtime.exports.spp3eReadRamBank(0, 0x0000)).toBe(0xaa);
     expect(runtime.exports.spp3eReadMemory(0xc000)).toBe(0xaa);
     expect(runtime.exports.spp3eGetCpuPc()).toBe(5);
-    expect(runtime.exports.spp3eGetLastMemoryAddress()).toBe(0xc000);
-    expect(runtime.exports.spp3eGetLastMemoryValue()).toBe(0xaa);
-    expect(runtime.exports.spp3eGetLastMemoryIsWrite()).toBe(1);
+    // --- One data access: the write of $AA to $C000 (bits 0-15 address, 16-23 value, 24 write)
+    expect(runtime.exports.spp3eGetAccessLogCount()).toBe(1);
+    expect(runtime.accessLog[0]).toBe(0x01aac000);
   });
 
   it("records CPU port writes through the +3E port handler", async () => {

@@ -1,8 +1,8 @@
 # Conditional Breakpoints Plan: Hit Counts, Register/Flag Conditions, Memory/Value Conditions
 
-Status: **all decisions recorded** (2026-10-03, §10). No code yet. Work starts with **Phase 0**
-(exact per-instruction memory accesses in the cores, §5), which stands on its own: it is verified
-with the memory breakpoints that exist today, and fixes misses they already have.
+Status: **Phase 0 implemented, its full test run still pending** (2026-10-03). All decisions are
+recorded (§10). **Next session: start with "Handoff" in §9** - run the Phase 0 test checklist there,
+then start Phase 1.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G1. This plan covers
 **G1.1** (hit-count breakpoints), **G1.2** (register/flag conditions) and **G1.3** (memory and
 value conditions). G1.4 logpoints, G1.5 DeZog source comments and G1.6 one-shot breakpoints are not
@@ -515,7 +515,7 @@ same change (standing rule).
 Each phase ends green on its focused tests, `npm run build:check`, and — when renderer React code is
 touched — `npm run lint:renderer`.
 
-### Phase 0 — exact per-instruction memory accesses in the cores (Q12)
+### Phase 0 — exact per-instruction memory accesses in the cores (Q12) — implemented, full test run pending (§9)
 
 Done first because it needs nothing else from this plan: today's `bp-set <addr> -r` / `-w`
 breakpoints are enough to test it, and it fixes misses they already have.
@@ -688,7 +688,81 @@ machines.
 
 ## 9. Implementation notes
 
-(Filled in during implementation.)
+### Handoff (2026-10-03)
+
+**Phase 0 is implemented but not fully verified.** The focused tests listed below passed in the
+worktree; the **full unit suite was not run** (it was interrupted). Before starting Phase 1, run:
+
+```bash
+npm run build:all-wasm
+npx vitest run --config build/vitest.config.ts --project='!perf'
+npx vitest run --config test/wasm/vitest.z80.config.ts
+npm run build:check
+npm run check:wasm-cpu-contract
+```
+
+The `dist/*.wasm` artifacts are not checked in, so the cores must be rebuilt first. Fix any failure
+before Phase 1 - the likeliest are tests that pinned the old single-record behaviour (a read
+breakpoint firing on an opcode/operand fetch, or the Next's frame trace memory fields).
+
+Passed in the worktree: `test/wasm/wasm-access-log.test.ts` (68), `test/emu/access-breakpoints-real-machine.test.ts`
+(9), `test/zxSpectrum`, `test/wasm/zxSpectrum`, `test/wasm/zxNext`, `test/wasm/z88`,
+`test/wasm/wasm-shared-z80-cpu-contract.test.ts` (659 together), the Z80 WASM corpus (1473),
+`npm run build:check`, `npm run check:wasm-cpu-contract`, the `perf` project.
+
+**Phase 1 was surveyed, nothing written.** Findings so far:
+- `src/main/projects.ts` `getKliveProjectStructureFromState` saves `listBreakpoints()` output as is,
+  so the runtime-only fields (`currentHits`, `conditionError`, `conditionInactive`) must be stripped
+  there.
+- The `.nex.dis` sidecar stores breakpoints in its own shapes (`NexSidecarBreakpoint`,
+  `NexSidecarLabelBreakpoint` in `nexAnnotations.ts`): `condition`/`hitMode`/`hitCount` need new
+  fields there, in the reader (`readLabelBreakpoints` and the bank-breakpoint reader), in
+  `to/fromSidecar*Breakpoints` and in `sameSidecar*Breakpoints` (`nexBreakpointSync.ts`).
+- The editor (`MonacoEditor.tsx`): undo/redo snapshots go through `resetBreakpointsTo` (keeps all
+  fields); statement re-anchoring spreads `...bp` (keeps them); `scrollBreakpoints` and
+  `normalizeBreakpoints` in `DebugSupport.ts` still need checking.
+- `src/main/kbasic/breakpoints.ts` does not persist breakpoints; it only decides which lines can hold
+  one - nothing to change there.
+
+### Phase 0 — what was built
+
+- **One log, in the shared core.** The log lives in `src/emu/z80/wasm/z80.c` (`z80AccessLog`,
+  `z80AccessLogCount`, `z80AccessLogOverflows`), not in each machine: only the shared core knows
+  whether a read is data or a code fetch. `readMemory` / `writeMemory` record when
+  `Z80_CAPTURE_BUS_EVENTS()` is on; opcode, displacement and operand fetches go through a new
+  `readCodeMemory` that never records. `z80ClearBusEvents` and `z80Reset` clear the log. A new hook,
+  `Z80_MEMORY_WRITE_SUPPRESSED()`, keeps the Next's stackless-NMI pushes (which never reach memory)
+  out of the log.
+- **Correction to §1.1 ("Opcode fetches are not recorded").** That was wrong: the 48K, 128K and +3E
+  recorded opcode *and* operand fetches, and the Next opcode fetches - only hidden because each later
+  access overwrote them. The log now records **data accesses only**, which is what a memory
+  breakpoint means. The interpreted TypeScript `Z80Cpu` and the Z88 core (which has its own lists)
+  still count opcode fetches as reads; they were left unchanged. The copied `memoryOp.test.ts` stays
+  excluded from the WASM Z80 corpus for that reason (`test/wasm/z80/unsupported-tests.md`).
+- **Exports.** Each core exports `…GetAccessLogPtr`, `…GetAccessLogCount`, `…GetAccessLogOverflows`
+  (`sp48`, `sp128`, `spp3e`, `zxnext`); the `…GetLastMemory*` exports are removed. The standalone Z80
+  test build exports `z80AccessLogPtr` / `z80GetAccessLogCount` / `z80GetAccessLogOverflows`.
+- **Gating.** The Spectrum cores already turned capture off in `…ExecuteFrame`. The Next gained
+  `zxnextCaptureBusEvents`, off in `zxnextFrameExecute` **unless the frame trace is on** (the trace
+  records the instruction's last data access, so it needs the log in fast frames too).
+- **Next: CPU accesses only.** `zxnextMemoryReadMapped` / `WriteMapped` no longer record anything,
+  so DMA transfers and the IDE's `zxnextReadMemory` export cannot touch the CPU log;
+  `zxnextMemoryReadMapped` is now `zxnextMemoryPeekMapped`.
+- **TypeScript.** `src/emu/machines/wasmAccessLog.ts` (`importAccessLog`) fills `lastMemoryReads` /
+  `lastMemoryWrites` and the new parallel `lastMemoryReadValues` / `lastMemoryWriteValues` (added to
+  `Z80Cpu`, which fills them too) from a `Uint32Array` view the loaders create (`runtime.accessLog`).
+  This also fixed the old 48K/128K/+3E filter that dropped a read of `$00` from address `$0000`.
+- **Prefixes.** The Spectrum cores' `…ExecuteInstruction` runs one `z80ExecuteCpuCycle`, so a prefix
+  byte is a step of its own there; the Next runs the whole instruction. Either way the step that
+  completes the instruction holds its accesses.
+- **Performance.** `benchmark:spectrum-wasm` and `benchmark:zxnext-wasm` against a build of the
+  previous commit: within noise on the Spectrum cores, marginally faster on the Next (it no longer
+  stores four scalars on every access). The `perf` vitest project covers neither core.
+- **Tests added:** `test/wasm/wasm-access-log.test.ts` (every row of the Phase 0 table and the other
+  read-modify-write shapes, on all four cores, raw log order and the machine lists; no logging in a
+  fast frame; an IDE read leaves the log alone) and `test/emu/access-breakpoints-real-machine.test.ts`
+  (the four plan scenarios through the sp48 and zxnext harnesses, plus a burst DMA transfer whose
+  source/destination breakpoints must never fire).
 
 ---
 

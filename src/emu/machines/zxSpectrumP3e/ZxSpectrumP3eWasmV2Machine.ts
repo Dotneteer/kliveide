@@ -28,6 +28,7 @@ import { readDiskData } from "../disk/disk-readers";
 import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrumP3eWasmHost, mergeZxSpectrumP3eConfig } from "./ZxSpectrumP3eWasmHost";
+import { importAccessLog } from "../wasmAccessLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -1270,20 +1271,9 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
     const wasm = runtime.exports;
     this.lastContendedValue = wasm.spp3eGetLastContendedValue();
     this.lastUlaReadValue = wasm.spp3eGetLastUlaReadValue();
-    this.lastMemoryReadsCount = 0;
-    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
-
-    const memoryAddress = wasm.spp3eGetLastMemoryAddress();
-    const memoryValue = wasm.spp3eGetLastMemoryValue();
-    if (wasm.spp3eGetLastMemoryIsWrite() !== 0) {
-      this.lastMemoryWrites[this.lastMemoryWritesCount++] = memoryAddress;
-      this.lastMemoryWriteValue = memoryValue;
-    } else if (memoryAddress !== 0 || memoryValue !== 0) {
-      this.lastMemoryReads[this.lastMemoryReadsCount++] = memoryAddress;
-      this.lastMemoryReadValue = memoryValue;
-    }
+    importAccessLog(this, runtime.accessLog, wasm.spp3eGetAccessLogCount());
 
     const portAddress = wasm.spp3eGetLastPortAddress();
     const portValue = wasm.spp3eGetLastPortValue();

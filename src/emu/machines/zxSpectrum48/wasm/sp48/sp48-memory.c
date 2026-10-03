@@ -7,24 +7,11 @@ static inline uint8_t readScreenMemoryOffset(uint32_t offset) {
 
 static uint8_t sp48CpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
-  const uint8_t value = sp48Memory[maskedAddress];
-  if (sp48CaptureBusEvents != 0u) {
-    sp48LastMemoryAddress = maskedAddress;
-    sp48LastMemoryValue = value;
-    sp48LastMemoryIsWrite = 0u;
-    sp48HasMemoryEvent = 1u;
-  }
-  return value;
+  return sp48Memory[maskedAddress];
 }
 
 static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
-  if (sp48CaptureBusEvents != 0u) {
-    sp48LastMemoryAddress = maskedAddress;
-    sp48LastMemoryValue = (uint8_t)value;
-    sp48LastMemoryIsWrite = 1u;
-    sp48HasMemoryEvent = 1u;
-  }
   if (maskedAddress >= 0x4000u) {
     if (maskedAddress < 0x5b00u) {
       renderUlaUntilCurrentTact();

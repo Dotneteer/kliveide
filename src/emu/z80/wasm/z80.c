@@ -25,6 +25,11 @@
 #define Z80_CAPTURE_BUS_EVENTS() 1
 #endif
 
+/* 1 while a write cycle does not reach memory (the Next's stackless NMI acknowledge): not logged */
+#ifndef Z80_MEMORY_WRITE_SUPPRESSED
+#define Z80_MEMORY_WRITE_SUPPRESSED() 0
+#endif
+
 #ifndef Z80_DELAY_ADDRESS_BUS_ACCESS
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) ((void)(address))
 #endif
@@ -155,6 +160,31 @@ typedef struct Z80State {
 // -----------------------------------------------------------------------------
 
 static Z80State cpu;
+
+/*
+ * The per-instruction data-access log: every memory read and write the CPU makes as data (not
+ * opcode, displacement or operand fetches), in access order. One entry per byte, packed as
+ * bits 0-15 address, 16-23 value, bit 24 set for a write. The machine clears it at the start of an
+ * instruction (`z80ClearBusEvents`), and records into it only while it captures bus events, so a
+ * fast frame pays nothing. No Z80/Z80N instruction makes more than four data accesses
+ * (`EX (SP),IX`); eight also leaves room for an interrupt acknowledge in the same step. An access
+ * beyond the capacity is dropped and counted in `z80AccessLogOverflows`, which the tests assert
+ * stays zero. The log lives in WASM memory; TypeScript reads it through a view
+ * (`z80AccessLogPtr`) after reading the count.
+ */
+#define Z80_ACCESS_LOG_CAPACITY 8u
+#define Z80_ACCESS_LOG_WRITE 0x01000000u
+static uint32_t z80AccessLog[Z80_ACCESS_LOG_CAPACITY];
+static uint32_t z80AccessLogCount;
+static uint32_t z80AccessLogOverflows;
+
+Z80_ALWAYS_INLINE void z80LogAccess(uint16_t address, uint8_t value, uint32_t writeBit) {
+  if (z80AccessLogCount < Z80_ACCESS_LOG_CAPACITY) {
+    z80AccessLog[z80AccessLogCount++] = (uint32_t)address | ((uint32_t)value << 16) | writeBit;
+  } else {
+    z80AccessLogOverflows++;
+  }
+}
 static uint8_t z80Sz53Flags[256];
 static uint8_t z80Sz53PvFlags[256];
 static uint8_t z80FlagTablesInitialized;
@@ -304,13 +334,26 @@ Z80_ALWAYS_INLINE void removeFromHaltedState(void) {
   }
 }
 
-Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
+/*
+ * A code byte - an opcode, a displacement or an operand. It has a memory read's timing and side
+ * effects, but it is not a data access, so it is never logged.
+ */
+Z80_ALWAYS_INLINE uint8_t readCodeMemory(uint16_t address) {
   delayMemoryRead(address);
 #ifdef Z80_READ_MEMORY
   return Z80_READ_MEMORY(address);
 #else
   return memory[address];
 #endif
+}
+
+/* A data read: logged while the machine captures bus events */
+Z80_ALWAYS_INLINE uint8_t readMemory(uint16_t address) {
+  uint8_t value = readCodeMemory(address);
+  if (Z80_CAPTURE_BUS_EVENTS()) {
+    z80LogAccess(address, value, 0u);
+  }
+  return value;
 }
 
 Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
@@ -320,6 +363,9 @@ Z80_ALWAYS_INLINE void writeMemory(uint16_t address, uint8_t value) {
 #else
   memory[address] = value;
 #endif
+  if (Z80_CAPTURE_BUS_EVENTS() && !Z80_MEMORY_WRITE_SUPPRESSED()) {
+    z80LogAccess(address, value, Z80_ACCESS_LOG_WRITE);
+  }
 }
 
 Z80_ALWAYS_INLINE uint8_t readPort(uint16_t address) {
@@ -370,7 +416,7 @@ Z80_ALWAYS_INLINE uint8_t fetchCodeByte(void) {
 #ifdef Z80_FETCH_CODE_BYTE
   uint8_t value = Z80_FETCH_CODE_BYTE(cpu.pc);
 #else
-  uint8_t value = readMemory(cpu.pc);
+  uint8_t value = readCodeMemory(cpu.pc);
 #endif
   cpu.pc = (uint16_t)(cpu.pc + 1);
   return value;
@@ -738,7 +784,7 @@ static inline void rstCore(uint16_t address) {
 }
 
 static inline uint16_t readIndexedAddress(void) {
-  uint8_t displacement = readMemory(cpu.pc);
+  uint8_t displacement = readCodeMemory(cpu.pc);
   tactPlus5WithAddress(cpu.pc);
   cpu.pc = (uint16_t)(cpu.pc + 1);
   WZ = (uint16_t)(activeIndexPair()->word + sbyte(displacement));
@@ -838,6 +884,7 @@ void z80Reset(void) {
   cpu.retnExecuted = 0;
   cpu.stepOutStackPointer = 0;
   cpu.stepOutStackCount = 0;
+  z80AccessLogCount = 0;
   cpu.interruptDepth = 0;
   cpu.afterLdAIR = 0;
   cpu.interruptVector = 0xff;
@@ -3165,7 +3212,7 @@ void z80ExecuteCpuCycle(void) {
   if (m1Active) {
     Z80_BEFORE_OPCODE_FETCH();
   }
-  cpu.opCode = readMemory(cpu.pc);
+  cpu.opCode = readCodeMemory(cpu.pc);
   if (m1Active) {
     refreshMemory();
     tactPlus1WithAddress(IR);
@@ -3225,7 +3272,7 @@ void z80ExecuteCpuCycle(void) {
     case PREFIX_DDCB:
     case PREFIX_FDCB:
       WZ = (uint16_t)(activeIndexPair()->word + sbyte(cpu.opCode));
-      cpu.opCode = readMemory(cpu.pc);
+      cpu.opCode = readCodeMemory(cpu.pc);
       tactPlus2WithAddress(cpu.pc);
       cpu.pc = (uint16_t)(cpu.pc + 1);
       indexedBitOps[cpu.opCode]();
@@ -3345,9 +3392,9 @@ void z80PokeMemory(uint32_t address, uint32_t value) {
   memory[address & 0xffff] = (uint8_t)value;
 #endif
 }
-uint32_t z80GetLastMemAddress(void) { return 0; }
-uint32_t z80GetLastMemValue(void) { return 0; }
-uint32_t z80GetLastMemIsWrite(void) { return 0; }
+uint32_t z80AccessLogPtr(void) { return (uint32_t)(uintptr_t)z80AccessLog; }
+uint32_t z80GetAccessLogCount(void) { return z80AccessLogCount; }
+uint32_t z80GetAccessLogOverflows(void) { return z80AccessLogOverflows; }
 uint32_t z80GetLastPortAddress(void) { return cpu.hasPortEvent ? cpu.lastPortAddress : 0; }
 uint32_t z80GetLastPortValue(void) { return cpu.hasPortEvent ? cpu.lastPortValue : 0; }
 uint32_t z80GetLastPortIsWrite(void) { return cpu.hasPortEvent ? cpu.lastPortIsWrite : 0; }
@@ -3356,6 +3403,7 @@ uint32_t z80GetLastTbBlueAddress(void) { return cpu.hasTbBlueEvent ? cpu.lastTbB
 uint32_t z80GetLastTbBlueValue(void) { return cpu.hasTbBlueEvent ? cpu.lastTbBlueValue : 0; }
 uint32_t z80GetLastTbBlueIsWrite(void) { return cpu.hasTbBlueEvent; }
 void z80ClearBusEvents(void) {
+  z80AccessLogCount = 0;
   cpu.hasPortEvent = 0;
   cpu.hasTbBlueEvent = 0;
 }

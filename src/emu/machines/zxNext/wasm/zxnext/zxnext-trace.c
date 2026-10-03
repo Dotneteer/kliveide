@@ -143,6 +143,8 @@ static void zxnextTraceRecordInstruction(uint32_t pcBefore) {
   }
 
   uint32_t offset = ZXNEXT_TRACE_HEADER_SIZE + zxnextTraceCount * ZXNEXT_TRACE_RECORD_SIZE;
+  /* The record keeps one memory access: the instruction's last data access */
+  const uint32_t lastAccess = z80AccessLogCount != 0u ? z80AccessLog[z80AccessLogCount - 1u] : 0u;
   zxnextTraceWrite32(offset + 0u, zxnextTraceCount);
   zxnextTraceWrite32(offset + 4u, frameTacts28);
   zxnextTraceWrite64From32(offset + 8u, tacts);
@@ -165,11 +167,11 @@ static void zxnextTraceRecordInstruction(uint32_t pcBefore) {
   zxnextTraceWrite32(offset + 48u, zxnextTraceCount + 1u);
   zxnextTraceWrite32(offset + 52u, totalContentionDelaySinceStart);
   zxnextTraceWrite32(offset + 56u, contentionDelaySincePause);
-  zxnextTraceWrite16(offset + 60u, lastMemoryAddress);
+  zxnextTraceWrite16(offset + 60u, lastAccess & 0xffffu);
   zxnextTraceWrite16(offset + 62u, lastPortAddress);
-  zxnextTraceWrite8(offset + 64u, lastMemoryValue);
+  zxnextTraceWrite8(offset + 64u, (lastAccess >> 16) & 0xffu);
   zxnextTraceWrite8(offset + 65u, lastPortValue);
-  zxnextTraceWrite8(offset + 66u, (lastMemoryAccessed ? 0x01u : 0u) | (lastMemoryIsWrite ? 0x02u : 0u));
+  zxnextTraceWrite8(offset + 66u, (z80AccessLogCount != 0u ? 0x01u : 0u) | ((lastAccess & Z80_ACCESS_LOG_WRITE) ? 0x02u : 0u));
   zxnextTraceWrite8(offset + 67u, (lastPortAccessed ? 0x01u : 0u) | (lastPortIsWrite ? 0x02u : 0u));
   zxnextTraceWrite8(offset + 68u, cpuEffectiveSpeed);
   zxnextTraceWrite8(offset + 69u, cpuTactScale);

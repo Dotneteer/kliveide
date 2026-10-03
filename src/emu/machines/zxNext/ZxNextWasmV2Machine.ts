@@ -42,6 +42,7 @@ import { ZxNextWasmHost } from "./ZxNextWasmHost";
 import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
 import { rtcRegistersFromDate } from "./nextRtc";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
+import { importAccessLog } from "../wasmAccessLog";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -1648,20 +1649,9 @@ export class ZxNextWasmV2Machine
 
   private importWasmV2BusAccess(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;
-    this.lastMemoryReadsCount = 0;
-    this.lastMemoryWritesCount = 0;
     this.lastIoReadPort = undefined;
     this.lastIoWritePort = undefined;
-
-    const memoryAddress = wasm.zxnextGetLastMemoryAddress();
-    const memoryValue = wasm.zxnextGetLastMemoryValue();
-    if (wasm.zxnextGetLastMemoryIsWrite() !== 0) {
-      this.lastMemoryWrites[this.lastMemoryWritesCount++] = memoryAddress;
-      this.lastMemoryWriteValue = memoryValue;
-    } else if (wasm.zxnextGetLastMemoryAccessed() !== 0) {
-      this.lastMemoryReads[this.lastMemoryReadsCount++] = memoryAddress;
-      this.lastMemoryReadValue = memoryValue;
-    }
+    importAccessLog(this, runtime.accessLog, wasm.zxnextGetAccessLogCount());
 
     const portAddress = wasm.zxnextGetLastPortAddress();
     const portValue = wasm.zxnextGetLastPortValue();

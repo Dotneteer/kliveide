@@ -100,9 +100,9 @@ type Z80WasmExports = WebAssembly.Exports & {
   z80TactPlusN: WasmFn;
   z80PeekMemory: WasmFn;
   z80PokeMemory: WasmFn;
-  z80GetLastMemAddress: WasmFn;
-  z80GetLastMemValue: WasmFn;
-  z80GetLastMemIsWrite: WasmFn;
+  z80AccessLogPtr: WasmFn;
+  z80GetAccessLogCount: WasmFn;
+  z80GetAccessLogOverflows: WasmFn;
   z80GetLastPortAddress: WasmFn;
   z80GetLastPortValue: WasmFn;
   z80GetLastPortIsWrite: WasmFn;
@@ -629,17 +629,22 @@ class Z80WasmTestCpu {
     this.exports.z80SetRetnExecuted(value ? 1 : 0);
   }
 
+  /** The core's per-instruction data-access log (bits 0-15 address, 16-23 value, bit 24 write) */
   private captureMemoryEvent (): void {
-    const address = this.exports.z80GetLastMemAddress() & 0xffff;
-    const value = this.exports.z80GetLastMemValue() & 0xff;
-    const isWrite = this.exports.z80GetLastMemIsWrite() !== 0;
-    if (address === 0 && value === 0 && !isWrite) return;
-    if (isWrite) {
-      this.lastMemoryWrites.push(address, value);
-      this.lastMemoryWritesCount++;
-    } else {
-      this.lastMemoryReads.push(address, value);
-      this.lastMemoryReadsCount++;
+    const count = this.exports.z80GetAccessLogCount();
+    const memory = this.exports.memory;
+    const log = new Uint32Array(memory.buffer, this.exports.z80AccessLogPtr(), 8);
+    for (let i = 0; i < count; i++) {
+      const entry = log[i];
+      const address = entry & 0xffff;
+      const value = (entry >>> 16) & 0xff;
+      if (entry & 0x01000000) {
+        this.lastMemoryWrites.push(address, value);
+        this.lastMemoryWritesCount++;
+      } else {
+        this.lastMemoryReads.push(address, value);
+        this.lastMemoryReadsCount++;
+      }
     }
   }
 

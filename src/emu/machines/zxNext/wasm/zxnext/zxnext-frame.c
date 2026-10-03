@@ -19,8 +19,11 @@ static uint32_t zxnextFrameExecute(void) {
   zxnextBeeperBeginFrame();
   zxnextPsgBeginFrame();
   zxnextAudioMixerBeginFrame();
+  /* A fast frame logs no CPU accesses - unless the frame is traced, whose records carry one */
+  zxnextCaptureBusEvents = zxnextTraceEnabled != 0u;
   while (frameCompleted == 0u && zxnextSdGetHostCommand() == ZXNEXT_SD_HOST_COMMAND_NONE && zxnextResetRequest == 0u) {
     zxnextCpuExecuteInstruction();
   }
+  zxnextCaptureBusEvents = 1u;
   return 0;
 }

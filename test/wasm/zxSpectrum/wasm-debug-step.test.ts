@@ -161,9 +161,9 @@ describe("ZX Spectrum WASM debug step parity", () => {
 
     machine.executeOne();
     expect(machine.readTestMemory(0x4000)).toBe(0x44);
-    expect(callWasmExport(machine, "spp3eGetLastMemoryAddress")()).toBe(0x4000);
-    expect(callWasmExport(machine, "spp3eGetLastMemoryValue")()).toBe(0x44);
-    expect(callWasmExport(machine, "spp3eGetLastMemoryIsWrite")()).toBe(1);
+    // --- One data access: the write of A to $4000 (bits 0-15 address, 16-23 value, 24 write)
+    expect(callWasmExport(machine, "spp3eGetAccessLogCount")()).toBe(1);
+    expect(machine.wasmV2Runtime!.accessLog[0]).toBe(0x01444000);
 
     machine.executeOne();
     expect(callWasmExport(machine, "spp3eGetLastPortAddress")()).toBe(0x44fe);

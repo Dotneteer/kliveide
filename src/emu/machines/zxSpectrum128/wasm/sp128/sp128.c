@@ -253,10 +253,6 @@ static uint32_t sp128CpuFrameSliceInstructions;
 static uint32_t sp128FrameCompleted;
 static uint32_t sp128InterruptsRaised;
 static uint8_t sp128InterruptLineActive;
-static uint16_t sp128LastMemoryAddress;
-static uint8_t sp128LastMemoryValue;
-static uint8_t sp128LastMemoryIsWrite;
-static uint8_t sp128HasMemoryEvent;
 static uint8_t sp128CaptureBusEvents = 1u;
 
 uint32_t sp128ReadPort(uint32_t address);
@@ -718,18 +714,12 @@ SP128_ALWAYS_INLINE uint8_t readMappedMemory(uint32_t address) {
   return sp128MemorySlotBase[maskedAddress >> 14u][maskedAddress & 0x3fffu];
 }
 
-SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value, uint32_t recordEvent) {
+SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value) {
   if (sp128MemorySlotMapInitialized == 0u) {
     rebuildMemorySlotMap();
   }
   const uint32_t maskedAddress = address & 0xffffu;
   const uint8_t byteValue = (uint8_t)value;
-  if (recordEvent != 0u && sp128CaptureBusEvents != 0u) {
-    sp128LastMemoryAddress = (uint16_t)maskedAddress;
-    sp128LastMemoryValue = byteValue;
-    sp128LastMemoryIsWrite = 1u;
-    sp128HasMemoryEvent = 1u;
-  }
   const uint32_t slot = maskedAddress >> 14u;
   if (sp128MemorySlotWritable[slot] == 0u) {
     return;
@@ -784,22 +774,15 @@ SP128_ALWAYS_INLINE uint8_t shouldRaiseInterrupt(void) {
 
 SP128_ALWAYS_INLINE uint8_t sp128CpuReadMemory(uint32_t address) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
-  const uint8_t value = readMappedMemory(maskedAddress);
-  if (sp128CaptureBusEvents != 0u) {
-    sp128LastMemoryAddress = maskedAddress;
-    sp128LastMemoryValue = value;
-    sp128LastMemoryIsWrite = 0u;
-    sp128HasMemoryEvent = 1u;
-  }
-  return value;
+  return readMappedMemory(maskedAddress);
 }
 
 SP128_ALWAYS_INLINE void sp128CpuWriteMemory(uint32_t address, uint32_t value) {
-  writeMappedMemory(address, value, 1u);
+  writeMappedMemory(address, value);
 }
 
 SP128_ALWAYS_INLINE void sp128CpuPokeMemory(uint32_t address, uint32_t value) {
-  writeMappedMemory(address, value, 0u);
+  writeMappedMemory(address, value);
 }
 
 #define Z80_EXTERNAL_BUS 1
@@ -1197,7 +1180,6 @@ void sp128Reset(void) {
   sp128CpuFrameSliceInstructions = 0u;
   sp128InterruptsRaised = 0u;
   sp128InterruptLineActive = 0u;
-  sp128HasMemoryEvent = 0u;
   sp128CommonResetKeyboard();
   sp128CommonResetAudio();
   rebuildFlatMemory();
@@ -1214,7 +1196,6 @@ void sp128HardReset(void) {
 uint32_t sp128ExecuteFrame(void) {
   beginMachineFrame();
   sp128CaptureBusEvents = 0u;
-  sp128HasMemoryEvent = 0u;
   z80ClearBusEvents();
 
   /*
@@ -1236,7 +1217,6 @@ uint32_t sp128ExecuteInstruction(void) {
   }
 
   if (sp128CaptureBusEvents != 0u) {
-    sp128HasMemoryEvent = 0u;
     z80ClearBusEvents();
   }
   updateTapeMode();
@@ -1283,7 +1263,7 @@ uint32_t sp128ReadMemory(uint32_t address) {
 }
 
 void sp128WriteMemory(uint32_t address, uint32_t value) {
-  writeMappedMemory(address, value, 1u);
+  writeMappedMemory(address, value);
 }
 
 uint32_t sp128ReadRamBank(uint32_t bank, uint32_t offset) {
@@ -2111,16 +2091,17 @@ uint32_t sp128GetCpuRetnExecuted(void) {
   return z80GetRetnExecuted();
 }
 
-uint32_t sp128GetLastMemoryAddress(void) {
-  return sp128HasMemoryEvent != 0u ? sp128LastMemoryAddress : 0u;
+/* The per-instruction data-access log (z80.c) */
+uint32_t sp128GetAccessLogPtr(void) {
+  return z80AccessLogPtr();
 }
 
-uint32_t sp128GetLastMemoryValue(void) {
-  return sp128HasMemoryEvent != 0u ? sp128LastMemoryValue : 0u;
+uint32_t sp128GetAccessLogCount(void) {
+  return z80GetAccessLogCount();
 }
 
-uint32_t sp128GetLastMemoryIsWrite(void) {
-  return sp128HasMemoryEvent != 0u ? sp128LastMemoryIsWrite : 0u;
+uint32_t sp128GetAccessLogOverflows(void) {
+  return z80GetAccessLogOverflows();
 }
 
 uint32_t sp128GetLastPortAddress(void) {
