@@ -1,0 +1,154 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-06f4aa62023434cc.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-06f4aa62023434cc.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-06f4aa62023434cc.js"],"ClientWrapper"]
+5:T1777,---
+description: "Klive opens, runs and debugs Cambridge Z88 snapshots (.z88 files) saved by the OZvm emulator."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using Z88 Snapshots
+
+A Z88 snapshot (a `.z88` file) is a complete freeze of a Cambridge Z88: the Z80 registers, the
+Blink chip's registers, the internal ROM and RAM, and the cards in the three slots. The format comes
+from the [OZvm](https://gitlab.com/b4works/ozvm) emulator and is documented in its
+[wiki](https://gitlab.com/b4works/ozvm/-/wikis/Z88-Snapshot-Format).
+
+Klive can show you what a snapshot contains, and load it into the Cambridge Z88 machine to run it
+or debug it from the exact instruction where it was saved. That makes a snapshot a ready-made debug
+setup: save the machine in OZvm just before the code you are interested in, then continue from
+there in Klive.
+
+## Viewing a snapshot
+
+Open a `.z88` file from the Explorer to see its contents:
+
+- **Snapshot**: whether Klive can load it (and if not, why), its *Autorun* flag, when it was
+  saved, the real-time clock as saved and as it will be after loading, the files inside the
+  snapshot, and the picture of the LCD that OZvm saved with it.
+- **Z80 Registers** and **Blink**: the saved state, with the set bits of `COM`, `INT`, `STA`, `TMK`
+  and `TSTA` named.
+- **Address Space at PC**: which bank and offset the program counter is in, and which bank is paged
+  into each address range. The two buttons in the heading open the 64K the CPU sees as a **memory
+  dump** or a **disassembly**, positioned at the program counter.
+- **Slots**: every bank of every card in one list, grouped by card (the slot-0 ROM, the internal
+  RAM, and every card in slots 1&ndash;3). Each card's heading shows its type, its size, and what it
+  loads as in Klive. A bank's row is marked with the segment registers that page it in (`SR0`&ndash;`SR3`,
+  or `$0000` for the fixed lower 8K), with **PC** or **SP** when the program counter or stack pointer
+  points into it, and with **empty** when it holds only erased bytes (`$FF` on ROM, EPROM and Flash,
+  `$00` on RAM). The buttons above the list show all banks, only non-empty ones, only paged-in ones,
+  or one card's. Select a bank to see its details: where it is paged in, the other bank numbers that
+  reach it (a card smaller than its slot repeats across the slot), and any breakpoints OZvm saved in
+  it.
+- **Pop out** a bank &mdash; with its row's icon, by double-clicking the row, or with Enter &mdash;
+  to open it as its own document, as a **memory dump** or a **disassembly** (the arrow beside
+  **Pop out** chooses). The disassembly starts at the address the snapshot pages the bank in, or
+  `$C000` when it is not paged in, and reads the bytes as Z88 code: OZ system calls after `RST 20h`
+  are decoded, whatever machine the emulator is running. **Go Back** returns to the viewer.
+- **Breakpoints**: the breakpoints OZvm saved with the snapshot, for reference.
+
+## Loading, running and debugging
+
+There are two ways to load a snapshot:
+
+- **Run** (play icon): the machine runs from the snapshot's state.
+- **Debug** (debug icon): the machine starts in debug mode and stops at the snapshot's program
+  counter **before** executing that instruction, so the CPU, Memory and Disassembly panels show
+  the saved state. Step from there, or continue with your breakpoints active.
+
+You can reach them from:
+
+- the buttons in a `.z88` document's tab;
+- the Explorer's context menu on a `.z88` file;
+- the [`z88-snapshot`](../commands-reference#z88-snapshot) command;
+- the Emulator's **Machine** menu, while the machine is a Cambridge Z88: **Open Z88 Snapshot...**
+  does what the file's *Autorun* flag says, as OZvm does &mdash; it runs the snapshot if the flag is
+  set, and stops in the debugger at the program counter if it is not.
+
+Klive makes the machine fit the snapshot. If the current machine is not a Cambridge Z88, or its
+internal RAM or LCD size differs from the snapshot's, the machine is set up again first. The cards
+of slots 1&ndash;3 are recorded in the machine configuration, so the card dialogs show them.
+
+<Callout type="warning" emoji="⚠️">
+When a project for another machine is open, Klive refuses to load a snapshot instead of switching
+the project to the Z88. Close the project, or open a Z88 project, first.
+</Callout>
+
+## The real-time clock
+
+The Z88's real-time clock kept running in the real world while the snapshot sat on disk. When Klive
+loads a snapshot, it advances the clock by the time that passed since the snapshot was saved, as
+OZvm does, so the Z88's time and alarms stay in step with your computer's clock.
+
+## What Klive can load
+
+| OZvm card | Loads in Klive as |
+|---|---|
+| ROM (slot 0) | ROM of the same size (128K, 256K or 512K) |
+| ROM (slots 1&ndash;3) | UV EPROM of the same size (32K, 128K or 256K) |
+| RAM | RAM card (32K, 128K, 256K, 512K or 1M) |
+| UV EPROM | UV EPROM (32K, 128K or 256K) |
+| Intel Flash (S5 and SA) | Intel Flash 28F004S5 (512K) or 28F008S5 (1M) |
+| AMD, AMIC, STM, SST and Macronix Flash | AMD Flash 29F040B (512K) or 29F080B (1M) |
+| Hybrid RAM + Flash cards | not supported |
+
+The internal RAM can be 32K, 64K, 128K, 256K or 512K. Slot 0 accepts a ROM, a UV EPROM, or a 512K
+Flash chip. If a snapshot contains anything else, the viewer lists every reason, and loading
+reports them instead of loading part of the machine.
+
+An LCD size Klive does not offer (it offers 640 &times; 64, 256, 320 and 480 pixels) does not stop
+the load: the machine keeps its current LCD size, with a warning.
+
+## Things to know
+
+- The snapshot's cards come from the file, not from card images on disk. **Hard reset** (and
+  anything else that sets the machine up again) re-inserts the configured slot-0 ROM and blank cards
+  in slots 1&ndash;3, so the snapshot is gone. **Soft reset** keeps the memory, as the reset button of
+  a real Z88 does.
+- OZvm's saved breakpoints are shown in the viewer but not added to Klive's breakpoints.
+- Klive loads snapshots; it does not save them.a:X
+f:X
+f:C
+0:{"buildId":"yz_mh8rYx9TdHBr2ew4P-","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Viewing a snapshot","id":"viewing-a-snapshot","depth":2},{"value":"Loading, running and debugging","id":"loading-running-and-debugging","depth":2},{"value":"The real-time clock","id":"the-real-time-clock","depth":2},{"value":"What Klive can load","id":"what-klive-can-load","depth":2},{"value":"Things to know","id":"things-to-know","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive opens, runs and debugs Cambridge Z88 snapshots (.z88 files) saved by the OZvm emulator.","title":"Using Z88 Snapshots","filePath":"content/howto/z88-snapshots.mdx","timestamp":1791006842000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-06f4aa62023434cc.js"],"HeadingAnchor"]
+27:I[484,[],"OutletBoundary"]
+28:"$Sreact.suspense"
+2a:I[484,[],"ViewportBoundary"]
+2b:I[484,[],"MetadataBoundary"]
+2c:I[7121,[],""]
+2d:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using Z88 Snapshots","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A Z88 snapshot (a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".z88"}]," file) is a complete freeze of a Cambridge Z88: the Z80 registers, the\nBlink chip’s registers, the internal ROM and RAM, and the cards in the three slots. The format comes\nfrom the ",["$","a",null,{"href":"https://gitlab.com/b4works/ozvm","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["OZvm",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}]," emulator and is documented in its\n",["$","a",null,{"href":"https://gitlab.com/b4works/ozvm/-/wikis/Z88-Snapshot-Format","target":"_blank","rel":"noreferrer","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["wiki",[" ",["$","svg",null,{"fill":"none","stroke":"currentColor","strokeLinecap":"round","strokeLinejoin":"round","strokeWidth":1.7,"viewBox":"0 0 24 24","height":"1em","className":"x:inline x:align-baseline x:shrink-0","children":[["$","path",null,{"d":"M7 17L17 7"}],["$","path",null,{"d":"M7 7h10v10"}]]}]]]}],"."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive can show you what a snapshot contains, and load it into the Cambridge Z88 machine to run it\nor debug it from the exact instruction where it was saved. That makes a snapshot a ready-made debug\nsetup: save the machine in OZvm just before the code you are interested in, then continue from\nthere in Klive."}],"\n",["$","h2",null,{"id":"viewing-a-snapshot","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Viewing a snapshot",["$","$L12",null,{"id":"viewing-a-snapshot"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".z88"}]," file from the Explorer to see its contents:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Snapshot"}],": whether Klive can load it (and if not, why), its ",["$","em",null,{"children":"Autorun"}]," flag, when it was\nsaved, the real-time clock as saved and as it will be after loading, the files inside the\nsnapshot, and the picture of the LCD that OZvm saved with it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Z80 Registers"}]," and ",["$","strong",null,{"children":"Blink"}],": the saved state, with the set bits of ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"COM"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"INT"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"STA"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TMK"}],"\nand ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"TSTA"}]," named."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Address Space at PC"}],": which bank and offset the program counter is in, and which bank is paged\ninto each address range. The two buttons in the heading open the 64K the CPU sees as a ","$L13"," or a ","$L14",", positioned at the program counter."]}],"\n","$L15","\n","$L16","\n","$L17","\n"]}],"\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26"]}]
+8:["$","$L27",null,{"children":["$","$28",null,{"name":"Next.MetadataOutlet","children":"$@29"}]}]
+b:["$","$1","h",{"children":[null,["$","$L2a",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2b",null,{"children":["$","$28",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using Z88 Snapshots - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive opens, runs and debugs Cambridge Z88 snapshots (.z88 files) saved by the OZvm emulator."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2c",null,{"parallelRouterKey":"children","template":["$","$L2d",null,{}]}]]}]
+11:true
+2e:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-06f4aa62023434cc.js"],""]
+13:["$","strong",null,{"children":"memory\ndump"}]
+14:["$","strong",null,{"children":"disassembly"}]
+15:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Slots"}],": every bank of every card in one list, grouped by card (the slot-0 ROM, the internal\nRAM, and every card in slots 1–3). Each card’s heading shows its type, its size, and what it\nloads as in Klive. A bank’s row is marked with the segment registers that page it in (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SR0"}],"–",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SR3"}],",\nor ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000"}]," for the fixed lower 8K), with ",["$","strong",null,{"children":"PC"}]," or ",["$","strong",null,{"children":"SP"}]," when the program counter or stack pointer\npoints into it, and with ",["$","strong",null,{"children":"empty"}]," when it holds only erased bytes (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$FF"}]," on ROM, EPROM and Flash,\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$00"}]," on RAM). The buttons above the list show all banks, only non-empty ones, only paged-in ones,\nor one card’s. Select a bank to see its details: where it is paged in, the other bank numbers that\nreach it (a card smaller than its slot repeats across the slot), and any breakpoints OZvm saved in\nit."]}]
+16:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Pop out"}]," a bank — with its row’s icon, by double-clicking the row, or with Enter —\nto open it as its own document, as a ",["$","strong",null,{"children":"memory dump"}]," or a ",["$","strong",null,{"children":"disassembly"}]," (the arrow beside\n",["$","strong",null,{"children":"Pop out"}]," chooses). The disassembly starts at the address the snapshot pages the bank in, or\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}]," when it is not paged in, and reads the bytes as Z88 code: OZ system calls after ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST 20h"}],"\nare decoded, whatever machine the emulator is running. ",["$","strong",null,{"children":"Go Back"}]," returns to the viewer."]}]
+17:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Breakpoints"}],": the breakpoints OZvm saved with the snapshot, for reference."]}]
+18:["$","h2",null,{"id":"loading-running-and-debugging","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Loading, running and debugging",["$","$L12",null,{"id":"loading-running-and-debugging"}]]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"There are two ways to load a snapshot:"}]
+1a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Run"}]," (play icon): the machine runs from the snapshot’s state."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Debug"}]," (debug icon): the machine starts in debug mode and stops at the snapshot’s program\ncounter ",["$","strong",null,{"children":"before"}]," executing that instruction, so the CPU, Memory and Disassembly panels show\nthe saved state. Step from there, or continue with your breakpoints active."]}],"\n"]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can reach them from:"}]
+1c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["the buttons in a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".z88"}]," document’s tab;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the Explorer’s context menu on a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".z88"}]," file;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","$L2e",null,{"href":"../commands-reference#z88-snapshot","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"z88-snapshot"}]}]," command;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the Emulator’s ",["$","strong",null,{"children":"Machine"}]," menu, while the machine is a Cambridge Z88: ",["$","strong",null,{"children":"Open Z88 Snapshot…"}],"\ndoes what the file’s ",["$","em",null,{"children":"Autorun"}]," flag says, as OZvm does — it runs the snapshot if the flag is\nset, and stops in the debugger at the program counter if it is not."]}],"\n"]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive makes the machine fit the snapshot. If the current machine is not a Cambridge Z88, or its\ninternal RAM or LCD size differs from the snapshot’s, the machine is set up again first. The cards\nof slots 1–3 are recorded in the machine configuration, so the card dialogs show them."}]
+1e:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When a project for another machine is open, Klive refuses to load a snapshot instead of switching\nthe project to the Z88. Close the project, or open a Z88 project, first."}]}]]}]
+1f:["$","h2",null,{"id":"the-real-time-clock","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The real-time clock",["$","$L12",null,{"id":"the-real-time-clock"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The Z88’s real-time clock kept running in the real world while the snapshot sat on disk. When Klive\nloads a snapshot, it advances the clock by the time that passed since the snapshot was saved, as\nOZvm does, so the Z88’s time and alarms stay in step with your computer’s clock."}]
+21:["$","h2",null,{"id":"what-klive-can-load","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What Klive can load",["$","$L12",null,{"id":"what-klive-can-load"}]]}]
+22:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"OZvm card","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Loads in Klive as","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"ROM (slot 0)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"ROM of the same size (128K, 256K or 512K)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"ROM (slots 1–3)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UV EPROM of the same size (32K, 128K or 256K)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"RAM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RAM card (32K, 128K, 256K, 512K or 1M)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"UV EPROM","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"UV EPROM (32K, 128K or 256K)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Intel Flash (S5 and SA)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"Intel Flash 28F004S5 (512K) or 28F008S5 (1M)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"AMD, AMIC, STM, SST and Macronix Flash","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"AMD Flash 29F040B (512K) or 29F080B (1M)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Hybrid RAM + Flash cards","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"not supported","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The internal RAM can be 32K, 64K, 128K, 256K or 512K. Slot 0 accepts a ROM, a UV EPROM, or a 512K\nFlash chip. If a snapshot contains anything else, the viewer lists every reason, and loading\nreports them instead of loading part of the machine."}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An LCD size Klive does not offer (it offers 640 × 64, 256, 320 and 480 pixels) does not stop\nthe load: the machine keeps its current LCD size, with a warning."}]
+25:["$","h2",null,{"id":"things-to-know","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Things to know",["$","$L12",null,{"id":"things-to-know"}]]}]
+26:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["The snapshot’s cards come from the file, not from card images on disk. ",["$","strong",null,{"children":"Hard reset"}]," (and\nanything else that sets the machine up again) re-inserts the configured slot-0 ROM and blank cards\nin slots 1–3, so the snapshot is gone. ",["$","strong",null,{"children":"Soft reset"}]," keeps the memory, as the reset button of\na real Z88 does."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"OZvm’s saved breakpoints are shown in the viewer but not added to Klive’s breakpoints."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Klive loads snapshots; it does not save them."}],"\n"]}]
+29:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
