@@ -48,7 +48,7 @@ absence is the first thing an experienced developer notices.
 **Plan:** G1.1–G1.3 are planned in [CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md);
 G1.4 in [LOGPOINTS_PLAN.md](LOGPOINTS_PLAN.md) (decisions recorded), which also builds the
 source-annotation pipeline and DeZog expression dialect that G1.5 reuses.
-That plan found one exception to the "no C core changes" note below: the WASM cores record only the
+The conditional-breakpoints plan found one exception to the "no C core changes" note below: the WASM cores record only the
 last memory access of an instruction, so its Phase 0 makes them record every one (which also fixes
 memory breakpoints that miss multi-byte accesses today).
 
