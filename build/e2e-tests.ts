@@ -27,6 +27,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/access-breakpoints-real-machine.test.ts",
   "test/emu/conditional-breakpoints-injection-flow.test.ts",
   "test/emu/conditional-breakpoints-real-machine.test.ts",
+  "test/emu/logpoints-real-machine.test.ts",
   "test/tape/tape-load-flow.test.ts",
   "test/tape/turbo-block-playback.test.ts",
   "test/z88/memory-*.test.ts",

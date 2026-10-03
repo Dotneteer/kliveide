@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A logpoint with a condition or a hit rule: the diamond with an "=" knocked out (even-odd),
+       as the conditional breakpoint dot has. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M8 2.75L13.25 8L8 13.25L2.75 8zM5.6 6.1h4.8v1.3H5.6zM5.6 8.6h4.8v1.3H5.6z"/>
+</svg>

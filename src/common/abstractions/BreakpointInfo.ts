@@ -25,6 +25,14 @@ export type BreakpointOwner =
        * run-to-cursor and the NEX entry-point stop.
        */
       kind: "session";
+    }
+  | {
+      /**
+       * Owned by the last successful build: a logpoint read from a DeZog `LOGPOINT` source comment.
+       * Never persisted, replaced as a set after every successful build, dropped when the machine
+       * changes. See `.plans/LOGPOINTS_PLAN.md` L10.
+       */
+      kind: "annotation";
     };
 
 /**
@@ -45,6 +53,10 @@ export type BreakpointScope =
       /** Breakpoints owned by one `.nex.dis` sidecar. */
       kind: "nex";
       sidecar: string;
+    }
+  | {
+      /** The logpoints the last build read from source comments (`LOGPOINT`). */
+      kind: "annotation";
     };
 
 /**
@@ -286,6 +298,42 @@ export type BreakpointInfo = {
    * label.
    */
   conditionInactive?: string;
+
+  /**
+   * The message template of a **logpoint**: a breakpoint whose action is "log this message and
+   * continue" instead of "stop" (`.plans/LOGPOINTS_PLAN.md` L1). Its presence is what makes the
+   * breakpoint a logpoint; it binds, filters (condition, hit rule) and persists like any other.
+   *
+   * Stored as typed, in the dialect `logDialect` names. Like `condition`, **not part of the
+   * identity**: `bp-set` on an existing breakpoint turns it into a logpoint or back (L2).
+   */
+  logMessage?: string;
+
+  /**
+   * Which template language `logMessage` is written in: `"klive"` (`{expr[:fmt]}`, the condition
+   * language; what the user types) or `"dezog"` (`${expr[:fmt]}`, DeZog's expressions; what a
+   * `LOGPOINT` source comment holds). Absent means `"klive"`.
+   */
+  logDialect?: LogDialect;
+
+  /**
+   * **Runtime only.** The emulator could not compile `logMessage`. Such a logpoint logs this text on
+   * every hit instead of its message (the logging analogue of `conditionError`).
+   */
+  logError?: string;
+};
+
+/** The two logpoint template languages (`.plans/LOGPOINTS_PLAN.md` L6). */
+export type LogDialect = "klive" | "dezog";
+
+/**
+ * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2, the DeZog model): everything, nothing,
+ * or - with `groups` - only the listed ones. Persisted in the project file when not "all on".
+ */
+export type LogpointGroupState = {
+  enabled: boolean;
+  /** With `enabled`, only these groups log; absent means every group. Upper-case names. */
+  groups?: string[];
 };
 
 /**

@@ -1,7 +1,12 @@
-import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type {
+  BreakpointInfo,
+  BreakpointScope,
+  LogpointGroupState
+} from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import type { ConditionStore } from "@emu/machines/conditionStore";
+import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditionStore";
+import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 /**
@@ -246,4 +251,27 @@ export interface IDebugSupport {
 
   /** The breakpoints with their runtime state (hit count, condition error/inactive). */
   listBreakpointsWithState(): BreakpointInfo[];
+
+  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
+
+  /** The clock, frame counter and slot map logpoints and conditions read. */
+  machineInfo?: ConditionMachineInfo;
+
+  /** Set by `shouldStopAtDebugPoint`: is the execution address being arrived at (L5)? */
+  logArrival?: boolean;
+
+  /** The PC of the last stop decision; cleared on a machine start. */
+  lastDecisionPc?: number;
+
+  /** The log lines queued since the last call, and how many the per-frame cap dropped. */
+  takeLogLines(): { lines: LogLine[]; dropped: number };
+
+  /** Are log lines waiting? */
+  readonly hasPendingLog: boolean;
+
+  /** Switch logpoint groups: all on, all off, or only the listed ones. */
+  setLogGroups(state: LogpointGroupState | undefined): void;
+
+  /** Does this group log now? */
+  isLogGroupEnabled(group: string): boolean;
 }

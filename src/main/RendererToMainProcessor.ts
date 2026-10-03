@@ -1,4 +1,5 @@
 import path from "path";
+import { checkSourceAnnotations } from "@common/utils/source-annotations";
 import fs from "fs";
 import _ from "lodash";
 import type { ScriptStartInfo } from "@abstractions/ScriptStartInfo";
@@ -716,7 +717,9 @@ class MainMessageProcessor {
     }
 
     compiler?.setAppState(mainStore.getState());
-    return (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
+    const output = (await compiler.compileFile(filename, options, params?.profile)) as KliveCompilerOutput;
+    // --- `LOGPOINT` comments that cannot be used become build warnings (`.plans/LOGPOINTS_PLAN.md` L13)
+    return checkSourceAnnotations(output);
   }
 
   /**

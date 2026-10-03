@@ -28,8 +28,15 @@ import { SETTING_IDE_BP_GROUP_BY_KIND } from "@common/settings/setting-const";
 import {
   BREAKPOINT_GROUP_ICONS,
   BREAKPOINT_GROUP_TITLES,
-  groupBreakpoints
+  groupBreakpoints,
+  logpointSections
 } from "../utils/breakpoint-grouping";
+import { Checkbox } from "@renderer/controls/Checkbox";
+import { setLogpointGroupsAction } from "@common/state/actions";
+import { useDispatch } from "@renderer/core/RendererProvider";
+import { isLogpoint } from "@common/utils/breakpoint-filters";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
+import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import {
@@ -45,8 +52,10 @@ import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
 import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
+import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "../utils/breakpoint-filter-text";
@@ -104,7 +113,11 @@ const breakpointTooltip = (
             ? "I/O write"
             : "Execution";
   // --- "at" reads wrong for a shape that is not at anywhere.
-  const lines = [`${kind} breakpoint ${nextRegKind ? "on" : "at"} ${addrKey}`];
+  const comment = isAnnotationBreakpoint(bp);
+  const noun = isLogpoint(bp) ? "logpoint" : "breakpoint";
+  const lines = comment
+    ? [`LOGPOINT comment at ${bp.resource}:${bp.line}`]
+    : [`${kind} ${noun} ${nextRegKind ? "on" : "at"} ${addrKey}`];
   if (nextRegKind) {
     lines.push(nextRegName(bp.nextReg));
     lines.push(bp.nextRegCopper ? "Breaks on CPU and copper writes" : "Breaks on CPU writes");
@@ -134,6 +147,11 @@ const breakpointTooltip = (
   if ((bp.exec || isWatchpoint) && instruction) lines.push(instruction);
   if (bp.resource !== undefined && bp.line !== undefined) {
     lines.push(`Click the address to go to ${bp.resource.split("/").pop()}:${bp.line}`);
+  }
+  // --- A comment's logpoint is the build's: read-only here
+  if (comment) {
+    lines.push("Double-click the row to go to the comment");
+    return lines.join("\n");
   }
   // --- The indicator's own action hints, folded in: it renders with `noTooltip` here so that its
   // --- two tooltips do not fire on top of this one.
@@ -216,6 +234,9 @@ export const BreakpointsPanel = () => {
   // --- Live hit counts: dispatched by the emulator at most every 10 frames while running (§4.5)
   const hitsVersion = useSelector((s) => s.emulatorState?.breakpointHitsVersion);
   const pcValue = useRef(-1);
+  const logGroupState = useSelector((s) => s.logpointGroups);
+  const dispatch = useDispatch();
+  const { ideCommandsService } = useAppServices();
 
   // --- Gets the address to display in the context of the breakpoint
   const getBpAddress = (bp: BreakpointInfo): number => {
@@ -338,8 +359,30 @@ export const BreakpointsPanel = () => {
     await refreshBreakpoints();
   };
 
+  /**
+   * Switch one log group (`.plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
+   * groups that log, so switching one off lists the rest, and switching the last one on drops the
+   * list again. Persisted with the project; the emulator reads it from the shared store.
+   */
+  const toggleLogGroup = (group: string, on: boolean) => {
+    const known = [
+      ...new Set(bps.filter((bp) => isLogpoint(bp)).map((bp) => logGroupOfRow(bp)))
+    ];
+    const state: LogpointGroupState = logGroupState ?? { enabled: true };
+    const current = !state.enabled ? [] : (state.groups ?? known);
+    const next = on ? [...new Set([...current, group])] : current.filter((g) => g !== group);
+    dispatch(
+      setLogpointGroupsAction(
+        known.every((g) => next.includes(g)) ? { enabled: true } : { enabled: true, groups: next }
+      )
+    );
+    void mainApi.saveProject();
+  };
+
   const showRowMenu = (bp: BreakpointInfo, e: ReactMouseEvent) => {
     e.preventDefault();
+    // --- A comment's logpoint is the build's: nothing to edit, toggle or remove here
+    if (isAnnotationBreakpoint(bp)) return;
     setMenuTarget(bp);
     menuApi.show(e);
   };
@@ -357,8 +400,11 @@ export const BreakpointsPanel = () => {
    * order, so the list reshuffled every time a breakpoint was added or removed.
    */
   const listItems = useMemo(
-    () => groupBreakpoints(bps, partitionLabels, grouped !== false),
-    [bps, partitionLabels, grouped]
+    () => [
+      ...groupBreakpoints(bps, partitionLabels, grouped !== false),
+      ...logpointSections(bps, logGroupState)
+    ],
+    [bps, partitionLabels, grouped, logGroupState]
   );
 
   return (
@@ -442,6 +488,39 @@ export const BreakpointsPanel = () => {
           renderItem={(idx) => {
             try {
               const item = listItems[idx];
+              if (item.kind === "sectionHeader") {
+                return (
+                  <SectionHeader>
+                    <Icon
+                      iconName={item.section === "comments" ? "bp-logpoint-comment" : "bp-logpoint"}
+                      fill="--color-breakpoint-type"
+                      width={16}
+                      height={16}
+                    />
+                    <span>{item.section === "comments" ? "LOGPOINT comments" : "Log groups"}</span>
+                    <span>{item.count}</span>
+                  </SectionHeader>
+                );
+              }
+              if (item.kind === "logGroup") {
+                return (
+                  <DataRow hoverable>
+                    <div style={{ zoom: 0.8 }}>
+                      <Checkbox
+                        key={`${item.group}-${item.on}`}
+                        initialValue={item.on}
+                        right={true}
+                        onChange={(on) => toggleLogGroup(item.group, on)}
+                      />
+                    </div>
+                    <Label text={`[${item.group}]`} className={styles.logGroupLabel} />
+                    <Secondary
+                      text={`${item.count} logpoint${item.count === 1 ? "" : "s"}${item.on ? "" : " - off"}`}
+                      width="auto"
+                    />
+                  </DataRow>
+                );
+              }
               if (item.kind === "header") {
                 /*
                  * A heading *within* panel content, so `SectionHeader` - `PanelHeader` is a panel's
@@ -467,7 +546,10 @@ export const BreakpointsPanel = () => {
               // --- which take the kind as an option instead. This panel cleared the kind flags
               // --- inline to get the same result; `getBreakpointAddressSpec` is that, named, so
               // --- the disassembly gutter could stop getting it wrong.
-              const addrKey = getBreakpointAddressSpec(bp, partitionLabels);
+              const comment = isAnnotationBreakpoint(bp);
+              const addrKey = comment
+                ? `${(bp.resource ?? "").split("/").pop()}:${bp.line}`
+                : getBreakpointAddressSpec(bp, partitionLabels);
               const addr = bp.address;
               const disabled = bp.disabled ?? false;
               let isCurrent = false;
@@ -506,7 +588,13 @@ export const BreakpointsPanel = () => {
                     partitionLabels
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
-                  onDoubleClick={() => void editBreakpoint(bp)}
+                  onDoubleClick={() =>
+                    comment
+                      ? void ideCommandsService.executeCommand(
+                          `nav "${bp.resource}" ${bp.line} -r breakpoint`
+                        )
+                      : void editBreakpoint(bp)
+                  }
                 >
                   <BreakpointIndicator
                     partition={
@@ -524,7 +612,7 @@ export const BreakpointsPanel = () => {
                      * amber colour is for - and before this, a bank-relative or NextReg row wore
                      * that colour while being perfectly able to fire.
                      */
-                    armed={bp.resource === undefined}
+                    armed={bp.resource === undefined || comment}
                     memoryRead={bp.memoryRead}
                     memoryWrite={bp.memoryWrite}
                     ioRead={bp.ioRead}
@@ -534,6 +622,7 @@ export const BreakpointsPanel = () => {
                     noTooltip
                     conditional={isConditionalBreakpoint(bp)}
                     inactive={isInactiveBreakpoint(bp)}
+                    glyph={breakpointGlyphOf(bp)}
                   />
                   {/*
                     * The breakpoint's own address is the headline and takes the primary accent (see
@@ -549,7 +638,14 @@ export const BreakpointsPanel = () => {
                     />
                   )}
                   <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
-                  {bp.exec && (
+                  {comment && bp.address !== undefined && (
+                    <Value
+                      text={`$${toHexa4(bp.address)}`}
+                      width="auto"
+                      className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                    />
+                  )}
+                  {bp.exec && !comment && (
                     <Value
                       text={instruction}
                       width="auto"
@@ -640,7 +736,8 @@ export const BreakpointsPanel = () => {
 const BreakpointFilterCells = ({ bp }: { bp: BreakpointInfo }) => {
   const hitSpec = formatHitSpec(bp);
   const condition = bp.condition?.trim();
-  if (!hitSpec && !condition) return null;
+  const logMessage = isLogpoint(bp) ? bp.logMessage : undefined;
+  if (!hitSpec && !condition && !logMessage) return null;
   return (
     <>
       {bp.currentHits !== undefined && (
@@ -651,6 +748,20 @@ const BreakpointFilterCells = ({ bp }: { bp: BreakpointInfo }) => {
         />
       )}
       {hitSpec && <Secondary text={`hit ${hitSpec}`} width="auto" />}
+      {/*
+        * A logpoint's template, before the condition and like it the cell that truncates; a
+        * template that did not compile takes the error colour, an inactive one is muted.
+        */}
+      {logMessage && (
+        <Secondary
+          text={`log ${logMessage}`}
+          width="auto"
+          className={classnames(styles.conditionCell, styles.logMessageCell, {
+            [styles.conditionInactive]: !!bp.conditionInactive,
+            [styles.conditionError]: !!bp.logError
+          })}
+        />
+      )}
       {condition && (
         <Secondary
           text={`if ${condition}`}
@@ -694,3 +805,8 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
     </span>
   );
 };
+
+/** A logpoint row's group, as the switch rows name it. */
+function logGroupOfRow(bp: BreakpointInfo): string {
+  return logGroupOf(bp.logMessage);
+}

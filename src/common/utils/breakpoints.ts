@@ -1,5 +1,5 @@
+import { integerSymbolsOf } from "./breakpoint-condition/integer-symbols";
 import {
-  integerSymbolsOf,
   pushConditionSymbols,
   setBuildConditionSymbols
 } from "@renderer/appIde/utils/condition-symbols";
@@ -11,10 +11,16 @@ import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
-import { isNextRegBreakpoint } from "./breakpoint-scope";
+import { breakpointMatchesScope, isNextRegBreakpoint } from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
-import type { SourceLevelDebugInfo, StatementDebugInfo } from "@abstractions/CompilerInfo";
+import type {
+  BinarySegment,
+  KliveCompilerOutput,
+  SourceLevelDebugInfo,
+  StatementDebugInfo
+} from "@abstractions/CompilerInfo";
+import { annotationLogpoints } from "./source-annotations";
 
 /**
  * A breakpoint's key, in two forms.
@@ -97,6 +103,21 @@ function buildBreakpointKey(
    * different sidecars (§4.4). The bank is present for a bank's **local** label and absent for a
    * **global** one, whose value is a 16-bit address.
    */
+  /*
+   * A logpoint read from a `LOGPOINT` source comment (`.plans/LOGPOINTS_PLAN.md` §4.1): its
+   * resource and line for display and click-to-source, and its address because one comment inside a
+   * macro yields one logpoint per expansion. The `LP:` prefix keeps it clear of a user breakpoint on
+   * the same line, so the user can still stop where a comment logs.
+   */
+  if (bp.owner?.kind === "annotation" && bp.resource && bp.line !== undefined) {
+    const site = bp.address ?? bp.resolvedAddress;
+    const at =
+      site === undefined
+        ? ""
+        : `@${bp.partition === undefined ? "" : `${partitionText(bp.partition)}:`}$${toHexa4(site)}`;
+    return `LP:[${bp.resource}]:${bp.line}${at}`;
+  }
+
   if (bp.label && bp.labelFile) {
     const bankPart = bp.bank === undefined ? "" : `${labelBankText(bp.bank)}:`;
     return `[${bp.labelFile}]:${bankPart}${bp.label}${suffix}`;
@@ -256,12 +277,23 @@ export async function refreshSourceCodeBreakpoints(
     );
     await pushConditionSymbols(emuApi);
 
+    // --- The build's `LOGPOINT` comments replace the previous build's (`.plans/LOGPOINTS_PLAN.md`
+    // --- L10); a build without any clears them. A failed build never gets here, so it keeps them.
+    await emuApi.resetBreakpointsTo(
+      buildLogpoints(compilation.result, store.getState().project?.folderPath, machineId),
+      { kind: "annotation" }
+    );
+
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }
 
-    // --- There can be source code breakpoints
-    const bps = await getBreakpoints(messenger);
+    // --- There can be source code breakpoints. Only the project's own: this call replaces the
+    // --- project scope, so a sidecar's breakpoints or the build's `LOGPOINT` logpoints handed in
+    // --- here would be restamped as project-owned (`.plans/LOGPOINTS_PLAN.md` L10).
+    const bps = (await getBreakpoints(messenger)).filter((bp) =>
+      breakpointMatchesScope(bp.owner, { kind: "project" })
+    );
     const sourceLevel = hasSourceLevelDebug(compilation.result) ? compilation.result.sourceLevelDebug : undefined;
     for (const bp of bps) {
       if (!bp.resource) continue;
@@ -315,4 +347,32 @@ export async function refreshSourceCodeBreakpoints(
   }
 
   await emuApi.resolveBreakpoints(resolvedBp);
+}
+
+/**
+ * The logpoints of a build's `LOGPOINT` comments, keyed to project-relative resources like source
+ * breakpoints, each in the partition its segment's bank implies.
+ */
+export function buildLogpoints(
+  output: KliveCompilerOutput | undefined,
+  projectFolder: string | undefined,
+  machineId: string | undefined
+): BreakpointInfo[] {
+  const folder = projectFolder?.replace(/\\/g, "/").replace(/\/$/, "");
+  return annotationLogpoints(
+    output,
+    (filename) => {
+      const normalised = filename.replace(/\\/g, "/");
+      return folder && normalised.startsWith(`${folder}/`)
+        ? normalised.substring(folder.length + 1)
+        : normalised;
+    },
+    (annotation) => {
+      const segment =
+        annotation.segmentIndex === undefined
+          ? undefined
+          : (output as { segments?: BinarySegment[] })?.segments?.[annotation.segmentIndex];
+      return segment ? resolvedPartitionFor(segment, annotation.address, machineId) : undefined;
+    }
+  );
 }

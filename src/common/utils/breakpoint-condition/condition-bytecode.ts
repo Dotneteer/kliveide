@@ -44,8 +44,16 @@ export const CondOp = {
   GE: 28,
   ANDJ: 29,
   ORJ: 30,
-  BOOL: 31
+  BOOL: 31,
+  MUL: 32,
+  DIV: 33,
+  MOD: 34,
+  TSTATES: 35,
+  ENV: 36
 } as const;
+
+/** `ENV` indexes: the facts TypeScript writes with `condSetEnv` (`COND_ENV_*`). */
+export const CondEnv = { CPUFREQ: 0, FRAME: 1 } as const;
 
 /** `MEM` info word: width in bits 0-3, then these flags; the part kind in bits 8-9. */
 export const MEM_BE = 0x10;
@@ -71,6 +79,9 @@ export const MAX_STACK_DEPTH = 64;
 export const NO_VALUE = -(2n ** 63n);
 
 const BINARY_OPS: Record<Exclude<ConditionBinaryOp, "&&" | "||">, number> = {
+  "*": CondOp.MUL,
+  "/": CondOp.DIV,
+  "%": CondOp.MOD,
   "+": CondOp.ADD,
   "-": CondOp.SUB,
   "&": CondOp.AND,
@@ -139,6 +150,10 @@ function emitNode(node: CondNode, values: number[], words: number[]): void {
     case "special":
       words.push(node.s === "val" ? CondOp.VAL : CondOp.ADDR);
       return;
+    case "machine":
+      if (node.fn === "tstates") words.push(CondOp.TSTATES);
+      else words.push(CondOp.ENV, node.fn === "cpufreq" ? CondEnv.CPUFREQ : CondEnv.FRAME);
+      return;
     case "mem": {
       emitNode(node.addr, values, words);
       const kind = node.part?.kind === "bank" ? PART_BANK : node.part ? PART_PARTITION : 0;
@@ -182,5 +197,23 @@ function emitNode(node: CondNode, values: number[], words: number[]): void {
       words.push(BINARY_OPS[node.op]);
       return;
     }
+  }
+}
+
+/** Does the tree read a fact TypeScript must write first (`ENV`: the clock, the frame counter)? */
+export function usesConditionEnv(node: CondNode): boolean {
+  switch (node.k) {
+    case "machine":
+      return node.fn !== "tstates";
+    case "mem":
+      return usesConditionEnv(node.addr);
+    case "call":
+      return usesConditionEnv(node.arg);
+    case "un":
+      return usesConditionEnv(node.e);
+    case "bin":
+      return usesConditionEnv(node.l) || usesConditionEnv(node.r);
+    default:
+      return false;
   }
 }

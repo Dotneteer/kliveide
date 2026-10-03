@@ -28,6 +28,8 @@ const productionExports = [
   "condGetLastStatus",
   "condEvaluate",
   "condEvaluateValue",
+  "condSetEnv",
+  "condPeek",
   "memory",
   "sp128MemoryPtr",
   "sp128RamPtr",

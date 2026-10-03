@@ -304,6 +304,22 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   (`.conditionalBreakpointMargin` / `.inactiveBreakpointMargin`) — a mask reads only alpha, so the
   colour stays a token; inline statement markers use the character equivalents `⊜` and `○`. Every
   state is read through `breakpoint-filter-text.ts`, never re-derived at a call site.
+- **The breakpoint's *action* is a second shape axis: a dot stops, a diamond logs.** A logpoint
+  (`bp-logpoint.svg`, VS Code's convention) takes the same "=" and hollow variants as the dot
+  (`bp-logpoint-conditional.svg`, `bp-logpoint-inactive.svg`), and a logpoint the *build* owns - a
+  DeZog `LOGPOINT` source comment, read-only - is a hollow diamond with a centre dot
+  (`bp-logpoint-comment.svg`). Still shape only, never hue. `breakpointGlyphOf` is the one reader;
+  `BreakpointIndicator` takes its result as `glyph` and the Monaco margin maps it to a mask class
+  (`.logpoint*BreakpointMargin`, in the execution-point cancel rule like the others). **Pass the
+  breakpoint to every margin decoration builder** - the binary-address path once dropped it and drew
+  a logpoint as a plain dot. **Where a user breakpoint and a comment's logpoint share a line, the
+  user's glyph owns the margin** (Monaco would merge the comment's mask onto the user's dot); the
+  comment then lives in the hover.
+- **One group, one ink, in both places it appears.** A logpoint's `[GROUP]` is painted with the
+  output pane's `bright-magenta` in the Log pane, and the Breakpoints panel's log-group switch rows
+  take the same ink through `--color-logpoint` (an L4 alias of `--console-ansi-bright-magenta`), so a
+  group reads as one thing. The line's trailing `@ $8012` is `bright-black`: where it fired is
+  supporting context, not the message.
 - **Monaco merges every glyph-margin decoration of a line into one element**, so a shape class and
   the execution point's class (`.active*Margin`, a background-image arrow) land on the same box. A
   `mask` or `clip-path` written for the dot therefore cuts the arrow too: the "=" mask once made the

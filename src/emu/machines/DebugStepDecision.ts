@@ -109,6 +109,15 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
   debugSupport.statementTracker?.observe(pc, getPartition);
 
   /*
+   * Logpoints log once per arrival (`.plans/LOGPOINTS_PLAN.md` L5). The decision is asked again, at
+   * the same PC, on the instruction a run or step resumes from - after a pause, a step, or simply a
+   * frame boundary - and a logpoint there has already logged. Any executed instruction is an
+   * arrival; so is the first decision after a machine start, which clears `lastDecisionPc`.
+   */
+  debugSupport.logArrival = instructionsExecuted > 0 || debugSupport.lastDecisionPc !== pc;
+  debugSupport.lastDecisionPc = pc;
+
+  /*
    * A real breakpoint always wins.
    *
    * The `lastBreakpoint` dance stops a breakpoint from re-triggering on the instruction it already

@@ -1,4 +1,4 @@
-import type { BreakpointHitMode, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointHitMode, BreakpointInfo, LogDialect } from "@abstractions/BreakpointInfo";
 
 /*
  * A breakpoint's two filters — the condition and the hit-count rule — and the runtime state that
@@ -22,8 +22,25 @@ export const BREAKPOINT_HIT_MODES: readonly BreakpointHitMode[] = [
 /** The largest N a hit-count rule accepts. The smallest is 1: `< 1` could never be true. */
 export const MAX_BREAKPOINT_HIT_COUNT = 65535;
 
-/** The persisted filter fields of a breakpoint. */
-export type BreakpointFilters = Pick<BreakpointInfo, "condition" | "hitMode" | "hitCount">;
+/**
+ * The persisted filter fields of a breakpoint - and its action: a logpoint's template
+ * (`.plans/LOGPOINTS_PLAN.md` §4.1) travels with the condition and the hit rule, because every
+ * persister that must keep one must keep the other, and none of them is part of the identity.
+ */
+export type BreakpointFilters = Pick<
+  BreakpointInfo,
+  "condition" | "hitMode" | "hitCount" | "logMessage" | "logDialect"
+>;
+
+/** Is this breakpoint a logpoint - does it log instead of stopping (L1)? */
+export function isLogpoint(bp: BreakpointInfo | undefined): boolean {
+  return !!bp?.logMessage;
+}
+
+/** The dialect a logpoint's template is written in; absent means Klive's own. */
+export function effectiveLogDialect(bp: BreakpointInfo): LogDialect {
+  return bp.logDialect ?? "klive";
+}
 
 /** Is this one of the hit-count rules? */
 export function isBreakpointHitMode(value: unknown): value is BreakpointHitMode {
@@ -70,6 +87,11 @@ export function breakpointFiltersOf(bp: BreakpointInfo): BreakpointFilters {
     filters.hitCount = bp.hitCount;
     if (bp.hitMode !== undefined) filters.hitMode = bp.hitMode;
   }
+  // --- An empty template is "not a logpoint"; the Klive dialect is the default and not stored
+  if (bp.logMessage) {
+    filters.logMessage = bp.logMessage;
+    if (bp.logDialect && bp.logDialect !== "klive") filters.logDialect = bp.logDialect;
+  }
   return filters;
 }
 
@@ -80,13 +102,15 @@ export function sameBreakpointFilters(left: BreakpointInfo, right: BreakpointInf
   return (
     a.condition === b.condition &&
     a.hitCount === b.hitCount &&
-    effectiveHitMode(a) === effectiveHitMode(b)
+    effectiveHitMode(a) === effectiveHitMode(b) &&
+    a.logMessage === b.logMessage &&
+    a.logDialect === b.logDialect
   );
 }
 
 /**
  * The breakpoint without its runtime-only fields (`currentHits`, `conditionError`,
- * `conditionInactive`). `listBreakpoints` reports them; nothing may store them.
+ * `conditionInactive`, `logError`). `listBreakpoints` reports them; nothing may store them.
  *
  * A copy, never a mutation: callers hand in what `listBreakpoints` returned, which may be shared.
  */
@@ -94,11 +118,18 @@ export function withoutBreakpointRuntimeState(bp: BreakpointInfo): BreakpointInf
   if (
     bp.currentHits === undefined &&
     bp.conditionError === undefined &&
-    bp.conditionInactive === undefined
+    bp.conditionInactive === undefined &&
+    bp.logError === undefined
   ) {
     return bp;
   }
-  const { currentHits: _hits, conditionError: _error, conditionInactive: _inactive, ...stored } = bp;
+  const {
+    currentHits: _hits,
+    conditionError: _error,
+    conditionInactive: _inactive,
+    logError: _logError,
+    ...stored
+  } = bp;
   return stored;
 }
 
@@ -117,7 +148,7 @@ export function readStoredBreakpointFilters(entry: Record<string, unknown>): {
 } {
   const filters: BreakpointFilters = {};
   const problems: string[] = [];
-  const { condition, hitMode, hitCount } = entry;
+  const { condition, hitMode, hitCount, logMessage, logDialect } = entry;
 
   if (condition !== undefined) {
     if (typeof condition !== "string") {
@@ -143,6 +174,22 @@ export function readStoredBreakpointFilters(entry: Record<string, unknown>): {
       if (hitCount === undefined) problems.push("hitMode without hitCount; ignored.");
     } else {
       filters.hitMode = hitMode;
+    }
+  }
+
+  if (logMessage !== undefined) {
+    if (typeof logMessage !== "string") {
+      problems.push("logMessage must be a string; ignored.");
+    } else if (logMessage) {
+      filters.logMessage = logMessage;
+    }
+  }
+
+  if (logDialect !== undefined) {
+    if (logDialect !== "klive" && logDialect !== "dezog") {
+      problems.push('logDialect must be "klive" or "dezog"; ignored.');
+    } else if (filters.logMessage !== undefined && logDialect === "dezog") {
+      filters.logDialect = logDialect;
     }
   }
 

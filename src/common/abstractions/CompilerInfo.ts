@@ -854,6 +854,32 @@ export type DebuggableOutput = InjectableOutput & {
    * to Z80-instruction-level stepping.
    */
   readonly sourceLevelDebug?: SourceLevelDebugInfo;
+
+  /**
+   * Annotations read from source comments: DeZog's `LOGPOINT` today, `ASSERTION` and `WPMEM` with
+   * G1.5 (`.plans/LOGPOINTS_PLAN.md` §4.7). Kind-tagged so a new kind adds nothing else.
+   */
+  readonly debugAnnotations?: SourceAnnotation[];
+};
+
+/** A source-comment annotation the build found (`.plans/LOGPOINTS_PLAN.md` §4.7). */
+export type SourceAnnotation = {
+  kind: "LOGPOINT";
+  /** Index into `sourceFileList`. */
+  fileIndex: number;
+  /** 1-based source line of the comment. */
+  line: number;
+  /**
+   * Where it fires: the line's own address when it emits code; otherwise the location counter
+   * after it - the next instruction emitted in the same segment.
+   */
+  address: number;
+  /** The memory partition, when the build knows the bank. */
+  partition?: number;
+  /** The output segment it belongs to (the Klive assembler), so the IDE can derive the partition. */
+  segmentIndex?: number;
+  /** Everything after the keyword, trimmed. */
+  text: string;
 };
 
 /**

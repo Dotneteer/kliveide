@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
+import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 import {
-  integerSymbolsOf,
   mergedConditionSymbols,
   pushConditionSymbols,
   resetConditionSymbolsForTests,

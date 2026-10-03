@@ -37,6 +37,7 @@ describe("marginMenuItems", () => {
     expect(marginMenuItems(onBp).map((i) => i.text)).toEqual([
       "Edit Condition...",
       "Edit Hit Count...",
+      "Convert to Logpoint...",
       "Disable Breakpoint",
       "Reset Hit Count",
       "Remove Breakpoint"
@@ -44,7 +45,7 @@ describe("marginMenuItems", () => {
   });
 
   it("labels the toggle by what it will do", () => {
-    expect(marginMenuItems({ ...onBp, breakpoint: { ...BP, disabled: true } })[2].text).toBe(
+    expect(marginMenuItems({ ...onBp, breakpoint: { ...BP, disabled: true } })[3].text).toBe(
       "Enable Breakpoint"
     );
   });
@@ -52,7 +53,8 @@ describe("marginMenuItems", () => {
   it("offers to add one on a line without, disabled where the line cannot hold one", () => {
     expect(marginMenuItems(empty).map((i) => [i.text, !!i.disabled])).toEqual([
       ["Add Breakpoint", false],
-      ["Add Conditional Breakpoint...", false]
+      ["Add Conditional Breakpoint...", false],
+      ["Add Logpoint...", false]
     ]);
     expect(marginMenuItems({ ...empty, canAdd: false }).every((i) => i.disabled)).toBe(true);
   });
@@ -166,5 +168,42 @@ describe("breakpoint filter wording", () => {
     expect(isInactiveBreakpoint({ conditionInactive: "x" })).toBe(true);
     expect(isInactiveBreakpoint({ conditionError: "x" })).toBe(true);
     expect(isInactiveBreakpoint({ condition: "A" })).toBe(false);
+  });
+});
+
+// --- `.plans/LOGPOINTS_PLAN.md` §4.5
+describe("logpoint items", () => {
+  const LP = { ...BP, logMessage: "[G] A={A}" };
+  const onLp = { ...onBp, breakpoint: LP };
+
+  it("offers to edit the message and to convert back on a logpoint", () => {
+    expect(marginMenuItems(onLp).map((i) => i.text)).toEqual([
+      "Edit Log Message...",
+      "Edit Condition...",
+      "Edit Hit Count...",
+      "Convert to Breakpoint",
+      "Disable Logpoint",
+      "Reset Hit Count",
+      "Remove Logpoint"
+    ]);
+  });
+
+  it("converts a breakpoint through the dialog, and a logpoint back directly", async () => {
+    const p = ports();
+    await runMarginAction("toLogpoint", onBp, "main.asm", p);
+    expect(p.edit).toHaveBeenCalledWith(BP, "logMessage");
+    await runMarginAction("toBreakpoint", { ...onLp, breakpoint: { ...LP, currentHits: 3 } }, "main.asm", p);
+    const converted = p.add.mock.calls.at(-1)![0];
+    expect(converted.logMessage).toBeUndefined();
+    expect(converted.currentHits).toBeUndefined();
+    expect(converted.line).toBe(BP.line);
+  });
+
+  it("adds a logpoint and takes it away again on Cancel", async () => {
+    const p = ports();
+    p.edit.mockResolvedValue(false);
+    await runMarginAction("addLogpoint", empty, "main.asm", p);
+    expect(p.edit.mock.calls[0][1]).toBe("logMessage");
+    expect(p.remove).toHaveBeenCalled();
   });
 });

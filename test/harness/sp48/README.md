@@ -38,7 +38,7 @@ it("prints through the ROM", async () => {
 | Run | `runFrames(n)`, `runTo(addressOrLabel)`, `step(n)` | Whole frames; run until PC reaches an address (stops before executing it); single instructions. |
 | Call | `call(addressOrLabel, { returnTo? })` | Pushes a return address (default: the current PC, `$12AC` after boot), jumps, runs until the routine returns there — the way `USR` calls machine code. |
 | Debug | `attachDebugSupport()` → `DebugSupport` | Attaches the emulator's own breakpoint store, so tests add address breakpoints or resolve source breakpoints as the IDE does. |
-| | `callToBreakpoint(where)`, `continueToBreakpoint()` | Run in debug mode (`StopAtBreakpoint`) until a breakpoint stops the machine; return the PC. Throw if the routine returns first. |
+| | `callToBreakpoint(where)`, `continueToBreakpoint()` | Run in debug mode (`StopAtBreakpoint`) until a breakpoint stops the machine; return the PC. Throw if the routine returns first. `onFrame` runs after every frame (where the controller drains the logpoint queue). |
 | | `sourceStep(index, kind)` → `SourceStep` | A source-level step (`into`, `over`, `out`, `overLine`, `runToFrame`, `intoTarget`) of a compiled program with source-level debug info, exactly as the IDE runs it; `undefined` if the program returns to `returnTo` first. |
 | Keys | `keyDown(...keys)`, `keyUp(...keys)` | Hold / release keys by `SpectrumKeyCode` name (`"A"`, `"N1"`, `"Enter"`, `"Space"`, `"CShift"`, `"SShift"`); the matrix is read from the next frame. |
 | | `typeKeys(chords, { hold, gap })` | Types as a user does: each chord (keys pressed together) held `hold` frames (3), then released `gap` frames (3), short of the ROM's auto-repeat. The ROM or a program must be reading the keyboard. |

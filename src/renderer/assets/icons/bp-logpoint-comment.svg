@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A LOGPOINT source comment: a hollow diamond with a centre dot - a logpoint the build owns,
+       read-only (edit the comment and rebuild). -->
+  <path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M8 3.4L12.6 8L8 12.6L3.4 8z"/>
+  <circle cx="8" cy="8" r="1.4" fill="currentColor"/>
+</svg>

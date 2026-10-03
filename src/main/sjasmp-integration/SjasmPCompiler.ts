@@ -2,8 +2,11 @@ import fs from "fs";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import {
+  AssemblerErrorInfo,
   BinarySegment,
   DebuggableOutput,
+  ExpressionValueType,
+  SourceAnnotation,
   FileLine,
   IKliveCompiler,
   KliveCompilerOutput,
@@ -31,6 +34,7 @@ import {
 } from "../../script-packages/sjasm/sjasm";
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
+import { logpointTextOf } from "@common/utils/source-annotations";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -136,25 +140,24 @@ export class SjasmPCompiler implements IKliveCompiler {
       const listFileItems: ListFileItem[] = [];
 
       // --- Iterate through lines
+      const fileIndexOf = (filename: string) => {
+        let fileIndex = sourceFileHash[filename];
+        if (fileIndex === undefined) {
+          // --- Yes, a new file
+          fileIndex = sourceFileList.length;
+          sourceFileList[fileIndex] = { filename, includes: [] };
+          sourceFileHash[filename] = fileIndex;
+        }
+        return fileIndex;
+      };
       for (let i = 0; i < sldLines.length; i++) {
         const line = sldLines[i];
 
         if (line.type !== "T") {
-          // --- Process only trace lines
+          // --- Process only trace lines here; labels and keyword comments below
           continue;
         }
-
-        // --- A new file?
-        let fileIndex = sourceFileHash[line.filename];
-        if (fileIndex === undefined) {
-          fileIndex = sourceFileList.length;
-          // --- Yes, a new file
-          sourceFileList[fileIndex] = {
-            filename: line.filename,
-            includes: []
-          };
-          sourceFileHash[line.filename] = fileIndex;
-        }
+        const fileIndex = fileIndexOf(line.filename);
 
         // --- Map the address
         sourceMap[line.value] = { fileIndex, line: line.line };
@@ -165,8 +168,26 @@ export class SjasmPCompiler implements IKliveCompiler {
         });
       }
 
+      // --- Labels (`L` lines) and DeZog keyword comments (`K` lines), `.plans/LOGPOINTS_PLAN.md` §4.7
+      const symbols = sldSymbols(sldLines);
+      const debugAnnotations = sldAnnotations(sldLines, fileIndexOf);
+
       // --- Remove the output files
       removeTempFiles();
+
+      // --- No `K` lines but `LOGPOINT` in the sources: sjasmplus dropped them for want of SLDOPT
+      const warnings: AssemblerErrorInfo[] = [];
+      if (debugAnnotations.length === 0) {
+        const files = new Set([filename, ...sourceFileList.map((f) => f.filename)]);
+        const withLogpoint = [...files].find((f) => {
+          try {
+            return sourceHasLogpointComment(fs.readFileSync(f, "utf-8"));
+          } catch {
+            return false;
+          }
+        });
+        if (withLogpoint) warnings.push(sldoptWarning(withLogpoint));
+      }
 
       const sourceContent = fs.readFileSync(filename, "utf-8");
       const modelType = getSjasmModelType(sourceContent, this.state?.emulatorState?.machineId);
@@ -175,13 +196,15 @@ export class SjasmPCompiler implements IKliveCompiler {
       return {
         traceOutput: result.traceOutput,
         debugMessages: result.debugMessages,
-        errors: [],
+        errors: warnings,
         injectOptions: { subroutine: true },
         segments,
         modelType,
         sourceFileList,
         sourceMap,
-        listFileItems
+        listFileItems,
+        symbols,
+        debugAnnotations
       } as DebuggableOutput;
 
       function removeTempFiles() {
@@ -365,7 +388,9 @@ export function extractSldInfo(content: string): SldLine[] {
       page: parseInt(parts[4].trim(), 10),
       value: parseInt(parts[5].trim(), 10),
       type: parts[6].trim(),
-      data: parts[7].trim()
+      // --- The data field is the last one and may itself hold `|`: a `K` line's comment can be a
+      // --- logpoint like `${A | B}`
+      data: parts.slice(7).join("|").trim()
     });
   }
 
@@ -373,12 +398,92 @@ export function extractSldInfo(content: string): SldLine[] {
   return result;
 }
 
+/** sjasmplus `L`-line traits of names that are not values a program reads. */
+const NON_VALUE_TRAITS = new Set(["+macro", "+module", "+endmod", "+struct_def", "+sizeof"]);
+
+/**
+ * The integer symbols of an SLD file's `L` lines (`.plans/LOGPOINTS_PLAN.md` Q7), keyed lower-case
+ * by module, main and local name joined with dots - the full global name DeZog expects labels to be
+ * written with. Shaped like the Klive assembler's symbol table, so conditions, logpoints and the
+ * Watch panel read it the same way. The deprecated `F` and `D` lines are read as `L` ones.
+ */
+export function sldSymbols(lines: SldLine[]): Record<string, unknown> {
+  const symbols: Record<string, unknown> = {};
+  for (const line of lines) {
+    if (line.type !== "L" && line.type !== "F" && line.type !== "D") continue;
+    if (!Number.isFinite(line.value)) continue;
+    const [module = "", main = "", local = "", ...traits] = line.data.split(",");
+    if (traits.some((t) => NON_VALUE_TRAITS.has(t.trim()))) continue;
+    const name = [module, main, local]
+      .map((part) => part.trim())
+      .filter((part) => part)
+      .join(".");
+    if (!name) continue;
+    symbols[name.toLowerCase()] = {
+      name,
+      value: { _type: ExpressionValueType.Integer, _value: line.value }
+    };
+  }
+  return symbols;
+}
+
+/**
+ * The `LOGPOINT` annotations of an SLD file's `K` lines: the comment, with the address decoded
+ * exactly as the `T` lines' is.
+ */
+export function sldAnnotations(
+  lines: SldLine[],
+  fileIndexOf: (filename: string) => number
+): SourceAnnotation[] {
+  const result: SourceAnnotation[] = [];
+  for (const line of lines) {
+    if (line.type !== "K") continue;
+    const text = logpointTextOf(line.data);
+    if (text === undefined || !Number.isFinite(line.value)) continue;
+    result.push({
+      kind: "LOGPOINT",
+      fileIndex: fileIndexOf(line.filename),
+      line: line.line,
+      address: line.value & 0xffff,
+      text
+    });
+  }
+  return result;
+}
+
+/** Does a source hold `LOGPOINT` in a comment? A cheap line test, for the `SLDOPT` warning. */
+export function sourceHasLogpointComment(source: string): boolean {
+  return source.split(/\r?\n/).some((line) => {
+    const comment = line.indexOf(";");
+    const slashes = line.indexOf("//");
+    const start = comment < 0 ? slashes : slashes < 0 ? comment : Math.min(comment, slashes);
+    return start >= 0 && logpointTextOf(line.substring(start)) !== undefined;
+  });
+}
+
+/** The warning when sjasmplus exported no `LOGPOINT` comments the sources have (Q6). */
+export function sldoptWarning(filename: string): AssemblerErrorInfo {
+  return {
+    errorCode: "LP002",
+    filename,
+    line: 1,
+    startPosition: 0,
+    endPosition: null,
+    startColumn: 0,
+    endColumn: null,
+    message:
+      "LOGPOINT comments are ignored: add SLDOPT COMMENT LOGPOINT (or WPMEM, LOGPOINT, ASSERTION) " +
+      "to the source to use DeZog logpoints",
+    isWarning: true
+  };
+}
+
 type SegmentInfo = {
   origin: number;
   size: number;
 };
 
-type SldLine = {
+export type SldLine = {
   filename: string;
   line: number;
   defFile: string;

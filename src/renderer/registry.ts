@@ -113,6 +113,7 @@ import { ksxLanguageProvider } from "./appIde/project/ksxLanguageProvider";
 import {
   PANE_ID_BUILD,
   PANE_ID_EMU,
+  PANE_ID_LOG,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 import { ScriptingHistoryPanel } from "./appIde/SideBarPanels/ScriptingHistoryPanel";
@@ -363,6 +364,12 @@ export const outputPaneRegistry: OutputPaneInfo[] = [
   {
     id: PANE_ID_SCRIPTIMG,
     displayName: "Script Output"
+  },
+  {
+    // --- Logpoint output (`.plans/LOGPOINTS_PLAN.md` §4.3): its own pane, so a busy logpoint can
+    // --- be cleared without losing build or machine messages
+    id: PANE_ID_LOG,
+    displayName: "Log"
   }
 ];
 

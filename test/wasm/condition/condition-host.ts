@@ -31,6 +31,8 @@ type Exports = {
   condEvaluate(slot: number, value: number, address: number): number;
   condEvaluateValue(slot: number, value: number, address: number): bigint;
   condGetLastStatus(): number;
+  condSetEnv(index: number, value: number): void;
+  condPeek(address: number): number;
 };
 
 let instance: Exports | undefined;
@@ -52,7 +54,8 @@ function host(): Exports {
         ctx().readPartition(partition, address >>> 0) >>> 0,
       peekBank: (bank: number, offset: number) => ctx().readBank(bank, offset) >>> 0,
       partitionOf: (address: number) => ctx().partitionOf(address) ?? Number.NaN,
-      nextReg: (reg: number) => (ctx().nextReg ? ctx().nextReg!(reg) >>> 0 : 0)
+      nextReg: (reg: number) => (ctx().nextReg ? ctx().nextReg!(reg) >>> 0 : 0),
+      tstates: () => (ctx().tstates ? ctx().tstates!() >>> 0 : 0)
     }
   });
   instance = created.exports as unknown as Exports;
@@ -60,7 +63,12 @@ function host(): Exports {
 }
 
 /** Status codes of `condEvaluate`. */
-export const RESULT = { FALSE: 0, TRUE: 1, ERROR: 2 } as const;
+export const RESULT = { FALSE: 0, TRUE: 1, ERROR: 2, DIVZERO: 3 } as const;
+
+/** Write one `ENV` fact (`CondEnv`) of the standalone evaluator. */
+export function setConditionEnv(index: number, value: number): void {
+  host().condSetEnv(index, value >>> 0);
+}
 
 /** Run a raw program in slot 0. */
 export function runProgram(

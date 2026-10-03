@@ -29,6 +29,8 @@ const productionExports = [
   "condGetLastStatus",
   "condEvaluate",
   "condEvaluateValue",
+  "condSetEnv",
+  "condPeek",
   "memory",
   "zxnextMemoryPtr",
   "zxnextPixelBufferPtr",

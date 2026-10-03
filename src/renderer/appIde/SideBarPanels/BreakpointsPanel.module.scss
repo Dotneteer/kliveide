@@ -123,3 +123,17 @@ span.bpCell {
 .conditionError {
   color: var(--status-error);
 }
+
+/*
+ * A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.5): neutral secondary text like the
+ * condition, monospace because it is code the user typed.
+ */
+.logMessageCell {
+  font-family: var(--monospace-font);
+}
+
+/* A log group's name on its switch row: the logpoint ink, the one hue the Log pane's group takes */
+.logGroupLabel {
+  color: var(--color-logpoint);
+  margin-right: 1ch;
+}

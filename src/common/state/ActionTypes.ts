@@ -101,6 +101,9 @@ export interface ActionTypes {
   REMOVE_BASIC_WATCH: null;
   SET_BASIC_WATCHES: null;
 
+  // --- Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.2)
+  SET_LOGPOINT_GROUPS: null;
+
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;

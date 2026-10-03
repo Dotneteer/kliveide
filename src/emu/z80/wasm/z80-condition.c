@@ -59,6 +59,12 @@
 #define COND_OP_ANDJ 29u /* target: if the top is 0, keep it and jump; else drop it */
 #define COND_OP_ORJ 30u /* target: if the top is not 0, make it 1 and jump; else drop it */
 #define COND_OP_BOOL 31u
+/* `.plans/LOGPOINTS_PLAN.md` §3.4-§3.5: multiplicative operators and the machine specials */
+#define COND_OP_MUL 32u
+#define COND_OP_DIV 33u /* integer, truncating toward zero; a zero divisor is COND_RESULT_DIVZERO */
+#define COND_OP_MOD 34u /* C's remainder; a zero divisor is COND_RESULT_DIVZERO */
+#define COND_OP_TSTATES 35u /* the CPU's T-state counter */
+#define COND_OP_ENV 36u /* index: a machine fact TypeScript wrote with `condSetEnv` */
 
 /* `MEM` info word: bits 0-3 width (1, 2, 4), bit 4 big-endian, bit 5 signed, bits 8-9 part kind */
 #define COND_MEM_BE 0x10u
@@ -101,6 +107,14 @@
 #define COND_RESULT_FALSE 0u
 #define COND_RESULT_TRUE 1u
 #define COND_RESULT_ERROR 2u
+/* A division or remainder by zero: an error for a condition (it then fails safe, as any error), a
+ * `<division by zero>` placeholder for a logpoint. */
+#define COND_RESULT_DIVZERO 3u
+
+/* `COND_OP_ENV` indexes */
+#define COND_ENV_CPUFREQ 0u
+#define COND_ENV_FRAME 1u
+#define COND_ENV_COUNT 4u
 
 #define COND_STACK_DEPTH 64u
 #define COND_SLOT_COUNT 256u
@@ -120,12 +134,14 @@ COND_IMPORT("peekPartition") uint32_t condHostPeekPartition(int32_t partition, u
 COND_IMPORT("peekBank") uint32_t condHostPeekBank(uint32_t bank, uint32_t offset);
 COND_IMPORT("partitionOf") double condHostPartitionOf(uint32_t address);
 COND_IMPORT("nextReg") uint32_t condHostNextReg(uint32_t reg);
+COND_IMPORT("tstates") uint32_t condHostTstates(void);
 #define COND_REGISTER(id) condHostReg(id)
 #define COND_PEEK(address) condHostPeek(address)
 #define COND_PEEK_PARTITION(partition, address) condHostPeekPartition(partition, address)
 #define COND_PEEK_BANK(bank, offset) condHostPeekBank(bank, offset)
 #define COND_PARTITION_OF(address) condFromDouble(condHostPartitionOf(address))
 #define COND_NEXTREG(reg) condHostNextReg(reg)
+#define COND_TSTATES() condHostTstates()
 
 /* NaN - JavaScript's "undefined" partition - is "no value" */
 static inline int64_t condFromDouble(double value) {
@@ -195,6 +211,11 @@ static uint32_t condCpuRegister(uint32_t id) {
 #define COND_NEXTREG(reg) 0u
 #endif
 
+/* T-states since the machine started: the shared Z80's counter. */
+#ifndef COND_TSTATES
+#define COND_TSTATES() cpu.tacts
+#endif
+
 // -----------------------------------------------------------------------------
 // The program store
 // -----------------------------------------------------------------------------
@@ -209,6 +230,9 @@ static uint32_t condArena[COND_ARENA_WORDS];
 static uint32_t condSlots[COND_SLOT_COUNT][2];
 static uint32_t condToken;
 static uint32_t condLastStatus;
+/* Machine facts the core does not keep itself (the clock, the frame counter), written by TypeScript
+ * before a program that reads them runs (`COND_OP_ENV`). */
+static uint32_t condEnv[COND_ENV_COUNT];
 
 uint32_t condArenaPtr(void) { return (uint32_t)(uintptr_t)condArena; }
 uint32_t condArenaCapacity(void) { return COND_ARENA_WORDS; }
@@ -219,6 +243,12 @@ uint32_t condGetToken(void) { return condToken; }
 void condSetToken(uint32_t token) { condToken = token; }
 /* The status of the last evaluation: `COND_RESULT_*` (for `condEvaluateValue`). */
 uint32_t condGetLastStatus(void) { return condLastStatus; }
+/* Write one `COND_OP_ENV` fact. */
+void condSetEnv(uint32_t index, uint32_t value) {
+  if (index < COND_ENV_COUNT) condEnv[index] = value;
+}
+/* A byte as the CPU sees it now, without side effects - a logpoint's `string` format reads with it. */
+uint32_t condPeek(uint32_t address) { return COND_PEEK(address & 0xffffu) & 0xffu; }
 
 // -----------------------------------------------------------------------------
 // Evaluation
@@ -360,6 +390,41 @@ static uint32_t condRun(
         COND_NEED(1u);
         stack[depth - 1u] = stack[depth - 1u] != 0 ? 1 : 0;
         break;
+      case COND_OP_TSTATES:
+        COND_PUSH((int64_t)(uint32_t)COND_TSTATES());
+        break;
+      case COND_OP_ENV:
+        COND_OPERAND(pc);
+        if (code[pc] >= COND_ENV_COUNT) return COND_RESULT_ERROR;
+        COND_PUSH((int64_t)condEnv[code[pc]]);
+        pc++;
+        break;
+
+      case COND_OP_MUL:
+      case COND_OP_DIV:
+      case COND_OP_MOD: {
+        COND_NEED(2u);
+        const int64_t r = stack[--depth];
+        const int64_t l = stack[depth - 1u];
+        if (l == COND_NO_VALUE || r == COND_NO_VALUE) {
+          stack[depth - 1u] = COND_NO_VALUE;
+          break;
+        }
+        if (op == COND_OP_MUL) {
+          /* Wrapping, not undefined, on the (unrealistic) 64-bit overflow */
+          stack[depth - 1u] = (int64_t)((uint64_t)l * (uint64_t)r);
+          break;
+        }
+        if (r == 0) return COND_RESULT_DIVZERO;
+        if (r == -1) {
+          /* `INT64_MIN / -1` overflows; `l` is never INT64_MIN here (that is "no value") */
+          stack[depth - 1u] = op == COND_OP_DIV ? -l : 0;
+          break;
+        }
+        /* C99 division truncates toward zero, and `%` takes the sign of the dividend */
+        stack[depth - 1u] = op == COND_OP_DIV ? l / r : l % r;
+        break;
+      }
 
       case COND_OP_ANDJ:
       case COND_OP_ORJ: {
@@ -425,8 +490,8 @@ static uint32_t condRunSlot(uint32_t slot, int64_t accessValue, int64_t accessAd
 }
 
 /*
- * Is the condition in `slot` true? `COND_RESULT_TRUE`, `_FALSE`, or `_ERROR` for a malformed or
- * missing program. `accessValue` / `accessAddress` are `VAL` / `ADDR` (0 where there is no access).
+ * Is the condition in `slot` true? `COND_RESULT_TRUE`, `_FALSE`, `_ERROR` for a malformed or
+ * missing program, or `_DIVZERO` when it divided by zero (an error, for the caller). `accessValue` / `accessAddress` are `VAL` / `ADDR` (0 where there is no access).
  */
 uint32_t condEvaluate(uint32_t slot, uint32_t accessValue, uint32_t accessAddress) {
   int64_t result = 0;

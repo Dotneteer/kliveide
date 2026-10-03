@@ -411,6 +411,12 @@ export const componentAliases: Record<string, string> = {
    * secondary split this panel already uses for its instruction and its addresses.
    */
   "--color-breakpoint-type": "var(--accent-secondary-text)",
+  /*
+   * A logpoint's group (`.plans/LOGPOINTS_PLAN.md` §4.3, §4.5): the `[GROUP]` of each Log pane line
+   * is painted with the output pane's `bright-magenta`, and the Breakpoints panel's group switch rows
+   * take the same ink through this alias, so a group reads as one thing in both places.
+   */
+  "--color-logpoint": "var(--console-ansi-bright-magenta)",
 
   // --- Disassembly / memory ---------------------------------------------------------------------
   "--bgcolor-disass-even-row": "var(--surface-panel)",

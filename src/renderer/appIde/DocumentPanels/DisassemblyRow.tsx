@@ -14,6 +14,7 @@ import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "@renderer/appIde/utils/breakpoint-filter-text";
@@ -528,6 +529,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             conditional={isConditionalBreakpoint(breakpoint)}
             inactive={isInactiveBreakpoint(breakpoint)}
             filterLines={breakpoint ? breakpointFilterLines(breakpoint) : undefined}
+            glyph={breakpoint ? breakpointGlyphOf(breakpoint) : undefined}
           />
           {/*
             * Rendered whenever the listing has a bank column at all, not merely when *this* row has

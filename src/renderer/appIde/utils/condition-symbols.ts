@@ -2,7 +2,6 @@ import type { EmuApi } from "@common/messaging/EmuApi";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
 import type { NexFileAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
-import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 
 /*
@@ -16,19 +15,6 @@ import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition
 
 let buildSymbols: ConditionSymbols = {};
 const sidecarSymbols = new Map<string, ConditionSymbols>();
-
-/** The integer symbols of a compiler result (`compRes.symbols`, keyed lower-case). */
-export function integerSymbolsOf(symbols: Record<string, unknown> | undefined): ConditionSymbols {
-  const result: ConditionSymbols = {};
-  for (const [name, info] of Object.entries(symbols ?? {})) {
-    const value = (info as { value?: { _type?: number; _value?: unknown } })?.value;
-    // --- Only integer symbols qualify; a string or boolean label leaves the condition inactive
-    if (value?._type === ExpressionValueType.Integer && typeof value._value === "number") {
-      result[name.toLowerCase()] = value._value;
-    }
-  }
-  return result;
-}
 
 /** The labels of a NEX sidecar: globals by name, bank-locals as `<bank>:<name>` (bank offsets). */
 export function sidecarSymbolsOf(annotations: NexFileAnnotations | undefined): ConditionSymbols {

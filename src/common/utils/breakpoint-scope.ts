@@ -34,6 +34,8 @@ export function breakpointMatchesScope(
       return owner === undefined;
     case "nex":
       return owner?.kind === "nex" && owner.sidecar === scope.sidecar;
+    case "annotation":
+      return owner?.kind === "annotation";
     default:
       /*
        * Loud, because the silent version cost real time.
@@ -75,7 +77,17 @@ export function ownerForScope(
       return undefined;
     case "nex":
       return { kind: "nex", sidecar: scope.sidecar };
+    case "annotation":
+      return { kind: "annotation" };
   }
+}
+
+/**
+ * Is this a logpoint read from a `LOGPOINT` source comment - owned by the build, read-only to the
+ * user (`.plans/LOGPOINTS_PLAN.md` L10)?
+ */
+export function isAnnotationBreakpoint(bp: BreakpointInfo): boolean {
+  return bp?.owner?.kind === "annotation";
 }
 
 /**

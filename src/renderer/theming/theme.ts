@@ -227,6 +227,7 @@ export type ThemeProperties = {
   "--color-breakpoint-mixed"?: string;
   "--color-breakpoint-disabled"?: string;
   "--color-breakpoint-current"?: string;
+  "--color-logpoint"?: string;
   "--image-breakpoint-current"?: string;
   "--image-breakpoint-current-existing"?: string;
   "--image-breakpoint-current-existing-bin"?: string;

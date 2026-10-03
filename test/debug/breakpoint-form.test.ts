@@ -402,7 +402,9 @@ describe("helpers", () => {
       disabled: false,
       condition: "",
       hitMode: "always",
-      hitCount: ""
+      hitCount: "",
+      action: "stop",
+      logMessage: ""
     });
   });
 

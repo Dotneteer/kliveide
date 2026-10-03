@@ -886,6 +886,8 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       condGetLastStatus: () => 0,
       condEvaluate: () => 0,
       condEvaluateValue: () => 0n,
+      condSetEnv: () => undefined,
+      condPeek: () => 0,
       memory: new WebAssembly.Memory({ initial: 16 }),
       sp128MemoryPtr: () => 0x00000,
       sp128RamPtr: () => 0x10000,

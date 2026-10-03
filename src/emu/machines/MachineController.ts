@@ -4,7 +4,11 @@ import type {
 } from "@renderer/abstractions/IMachineController";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
+import type {
+  IOutputBuffer,
+  OutputColor,
+  OutputSpecification
+} from "@renderer/appIde/ToolArea/abstractions";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
@@ -44,6 +48,7 @@ import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { logLineOutput } from "./logOutput";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
   SETTING_EMU_FAST_LOAD,
@@ -692,6 +697,7 @@ export class MachineController implements IMachineController {
     // --- Starting a program is a restart (C12), also when the boot is restored from a checkpoint
     // --- rather than run from Stopped, which is where `run` resets them
     this.debugSupport?.resetHitCounts();
+    this.startLogSession();
 
     let entryPoint = 0;
     let keepPc = false;
@@ -934,6 +940,7 @@ export class MachineController implements IMachineController {
         // --- A restart: breakpoint hit counters start over (C12). Resuming from a pause does not
         // --- come here, so it keeps them.
         this.debugSupport?.resetHitCounts();
+        this.startLogSession();
         break;
     }
 
@@ -989,6 +996,10 @@ export class MachineController implements IMachineController {
         const frameStartTime = performance.now();
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
+        // --- Logpoint lines of this frame: one IPC call, sent before anything else this frame
+        // --- reports (`.plans/LOGPOINTS_PLAN.md` L4, L8). Not awaited, to keep the frame rate;
+        // --- awaited below before a stop message, so the lines come first.
+        const logFlush = this.flushLogLines();
         const frameCompleted =
           termination === FrameTerminationMode.Normal && this.machine.frameJustCompleted;
         let savedFileInfo: SavedFileInfo;
@@ -1061,6 +1072,7 @@ export class MachineController implements IMachineController {
           this.context.canceled = true;
 
           if (termination === FrameTerminationMode.DebugEvent) {
+            await logFlush;
             await this.sendOutput(this.describeDebugStop(), "cyan");
           }
           return;
@@ -1255,6 +1267,42 @@ export class MachineController implements IMachineController {
     }
 
     return { diskAChanges, diskBChanges };
+  }
+
+  /** Set when the Emulator pane has said where logpoint output goes, once per debug session. */
+  private _logHintShown = false;
+
+  /**
+   * A machine start: logpoints log on the very first instruction again (L5), and the Emulator pane
+   * gets its hint again with the first line.
+   */
+  private startLogSession(): void {
+    if (this.debugSupport) this.debugSupport.lastDecisionPc = undefined;
+    this._logHintShown = false;
+  }
+
+  /**
+   * Send the queued logpoint lines to the Log pane in one `displayOutputBatch` call (L8): each line
+   * as `[GROUP] message @ $8012`, then one line counting what the per-frame cap dropped (L9).
+   */
+  private flushLogLines(): Promise<void> {
+    const debugSupport = this.debugSupport;
+    if (!debugSupport?.hasPendingLog) return Promise.resolve();
+    const { lines, dropped } = debugSupport.takeLogLines();
+    const batch: OutputSpecification[] = [];
+    if (!this._logHintShown) {
+      this._logHintShown = true;
+      batch.push({
+        pane: PANE_ID_EMU,
+        text: "Logpoint output is in the Log pane",
+        foreground: "cyan",
+        writeLine: true
+      });
+    }
+    batch.push(...logLineOutput(lines, dropped));
+    return createIdeApi(this.messenger)
+      .displayOutputBatch(batch)
+      .catch((err) => console.error("Sending logpoint output failed.", err));
   }
 
   /**

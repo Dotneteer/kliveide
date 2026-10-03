@@ -55,6 +55,20 @@ export type CompileConditionResult = {
  * Parse and check a condition. When `env.symbols` is given the result is also bound against it.
  */
 export function compileCondition(text: string, env: ConditionEnvironment): CompileConditionResult {
+  return compileConditionWith(text, env, parseCondition);
+}
+
+/**
+ * Check and compile an expression with the given parser. The DeZog dialect of a logpoint template
+ * (`.plans/LOGPOINTS_PLAN.md` §3.4) is a second *front end* over this one checker: its parser
+ * builds the same syntax tree, and from there the expression is checked, emitted and evaluated as
+ * any condition is.
+ */
+export function compileConditionWith(
+  text: string,
+  env: ConditionEnvironment,
+  parse: (text: string) => SyntaxNode
+): CompileConditionResult {
   const warnings: ConditionDiagnostic[] = [];
   try {
     if (env.isZ80 === false) {
@@ -64,7 +78,7 @@ export function compileCondition(text: string, env: ConditionEnvironment): Compi
         text.length
       );
     }
-    const syntax = parseCondition(text);
+    const syntax = parse(text);
     const checker = new Checker(text, env, warnings);
     const tree = checker.convert(syntax, false);
     // --- The evaluator's limits (`z80-condition.c`): checked here, so a condition the cores could
@@ -212,6 +226,15 @@ class Checker {
         }
         return { k: "call", fn: node.fn, arg: this.convert(node.arg, ignoredBankPrefix) };
       }
+
+      case "machine":
+        if (node.fn === "slots") {
+          this.fail(
+            "slots() is text; it can only be a whole logpoint placeholder ({slots()})",
+            node
+          );
+        }
+        return { k: "machine", fn: node.fn };
 
       case "un": {
         const e = this.convert(node.e, ignoredBankPrefix);

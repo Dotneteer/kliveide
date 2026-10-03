@@ -802,3 +802,57 @@ describe("BreakpointDialog - source mode", () => {
     );
   });
 });
+
+// --- `.plans/LOGPOINTS_PLAN.md` §4.5: the Action row and the log message field
+describe("BreakpointDialog - logpoints", () => {
+  it("shows the message field only for the Log message action, and emits the template", async () => {
+    const controls = someControls();
+    renderWithProviders(<BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={controls} />);
+
+    expect((screen.getByLabelText("Stop") as HTMLInputElement).checked).toBe(true);
+    expect(screen.queryByLabelText("Log message", { selector: "input[type=text], input:not([type])" })).toBeNull();
+    typeAddress("$8000");
+    fireEvent.click(screen.getByLabelText("Log message", { selector: "input[type=radio]" }));
+    const message = screen.getByLabelText("Log message", { selector: "input:not([type=radio])" });
+    fireEvent.change(message, { target: { value: "[LOOP] B={B}" } });
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith(
+        expect.objectContaining({
+          breakpoint: expect.objectContaining({ address: 0x8000, logMessage: "[LOOP] B={B}" })
+        })
+      )
+    );
+  });
+
+  it("opens on the message with the action set to log when asked to", () => {
+    renderWithProviders(
+      <BreakpointDialog
+        env={anEnv()}
+        machineSetup={aListMachine}
+        controls={someControls()}
+        initial={{ address: 0x8000, exec: true }}
+        focus="logMessage"
+      />
+    );
+    expect((screen.getByLabelText("Log message", { selector: "input[type=radio]" }) as HTMLInputElement).checked).toBe(
+      true
+    );
+  });
+
+  it("refuses a template that does not compile, with its column", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog
+        env={anEnv()}
+        machineSetup={aListMachine}
+        controls={controls}
+        initial={{ address: 0x8000, exec: true, logMessage: "x={A +}" }}
+      />
+    );
+    submit("Save");
+    await waitFor(() => expect(screen.getByText(/^Column \d+:/)).toBeTruthy());
+    expect(controls.close).not.toHaveBeenCalled();
+  });
+});

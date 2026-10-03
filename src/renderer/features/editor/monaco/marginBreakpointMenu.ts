@@ -1,5 +1,7 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
+import { isLogpoint, withoutBreakpointRuntimeState } from "@common/utils/breakpoint-filters";
+
 /*
  * The editor's breakpoint-margin context menu (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2):
  * which items a right-click offers, and what each does. No React and no Monaco, so the decisions -
@@ -25,7 +27,12 @@ export type MarginActionId =
   | "resetHits"
   | "remove"
   | "add"
-  | "addConditional";
+  | "addConditional"
+  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.5)
+  | "addLogpoint"
+  | "toLogpoint"
+  | "editLogMessage"
+  | "toBreakpoint";
 
 export type MarginMenuItem = {
   id: MarginActionId;
@@ -40,17 +47,24 @@ export type MarginMenuItem = {
 export function marginMenuItems(target: MarginTarget): MarginMenuItem[] {
   const bp = target.breakpoint;
   if (bp) {
+    const logpoint = isLogpoint(bp);
+    const noun = logpoint ? "Logpoint" : "Breakpoint";
     return [
+      ...(logpoint ? [{ id: "editLogMessage" as const, text: "Edit Log Message..." }] : []),
       { id: "editCondition", text: "Edit Condition..." },
       { id: "editHitCount", text: "Edit Hit Count..." },
-      { id: "toggle", text: bp.disabled ? "Enable Breakpoint" : "Disable Breakpoint", separatorBefore: true },
+      logpoint
+        ? { id: "toBreakpoint", text: "Convert to Breakpoint" }
+        : { id: "toLogpoint", text: "Convert to Logpoint..." },
+      { id: "toggle", text: bp.disabled ? `Enable ${noun}` : `Disable ${noun}`, separatorBefore: true },
       { id: "resetHits", text: "Reset Hit Count" },
-      { id: "remove", text: "Remove Breakpoint", dangerous: true, separatorBefore: true }
+      { id: "remove", text: `Remove ${noun}`, dangerous: true, separatorBefore: true }
     ];
   }
   return [
     { id: "add", text: "Add Breakpoint", disabled: !target.canAdd },
-    { id: "addConditional", text: "Add Conditional Breakpoint...", disabled: !target.canAdd }
+    { id: "addConditional", text: "Add Conditional Breakpoint...", disabled: !target.canAdd },
+    { id: "addLogpoint", text: "Add Logpoint...", disabled: !target.canAdd }
   ];
 }
 
@@ -62,8 +76,11 @@ export type MarginActionPorts = {
   resetHits(bp: BreakpointInfo): Promise<void>;
   /** Re-resolve source breakpoints against the last build, so a new one is armed (and listed). */
   resolve(): Promise<void>;
-  /** Open the breakpoint dialog on a breakpoint; true when the user saved. */
-  edit(bp: BreakpointInfo, focus: "condition" | "hitCount"): Promise<boolean>;
+  /**
+   * Open the breakpoint dialog on a breakpoint; true when the user saved. `"logMessage"` opens it
+   * with the action set to log.
+   */
+  edit(bp: BreakpointInfo, focus: "condition" | "hitCount" | "logMessage"): Promise<boolean>;
 };
 
 /**
@@ -91,8 +108,21 @@ export async function runMarginAction(
     case "remove":
       if (existing) await ports.remove(existing);
       return;
+    case "editLogMessage":
+    case "toLogpoint":
+      // --- Cancel leaves it as it was: converting happens only on Save
+      if (existing) await ports.edit(existing, "logMessage");
+      return;
+    case "toBreakpoint":
+      // --- `setBreakpoint` replaces the definition under its key; without a template it stops (L2)
+      if (existing) {
+        const { logMessage: _m, logDialect: _d, ...stopping } = withoutBreakpointRuntimeState(existing);
+        await ports.add(stopping);
+      }
+      return;
     case "add":
-    case "addConditional": {
+    case "addConditional":
+    case "addLogpoint": {
       if (existing || !target.canAdd) return;
       const bp: BreakpointInfo = {
         resource,
@@ -106,7 +136,7 @@ export async function runMarginAction(
       // --- The breakpoint exists while its condition is being written, so the dialog edits it in
       // --- source mode like any other; Cancel means "I did not want this breakpoint" and takes it
       // --- away again.
-      if (!(await ports.edit(bp, "condition"))) {
+      if (!(await ports.edit(bp, id === "addLogpoint" ? "logMessage" : "condition"))) {
         await ports.remove(bp);
       }
       return;

@@ -1,11 +1,15 @@
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
+import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
 import {
+  isAnnotationBreakpoint,
   isBankRelative,
   isLabelAnchored,
   isNextRegBreakpoint
 } from "@common/utils/breakpoint-scope";
+import { isLogpoint } from "@common/utils/breakpoint-filters";
+import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
 
 /**
  * How the Breakpoints panel orders and groups its rows, with no React in it.
@@ -67,7 +71,10 @@ export const BREAKPOINT_GROUP_ICONS: Record<BreakpointGroup, string> = {
 /** A header, or a breakpoint. One flat array, because `VirtualizedList` takes one. */
 export type BreakpointListItem<T extends BreakpointInfo = BreakpointInfo> =
   | { kind: "header"; group: BreakpointGroup; count: number }
-  | { kind: "row"; bp: T };
+  | { kind: "row"; bp: T }
+  // --- The logpoint sections (`.plans/LOGPOINTS_PLAN.md` §4.5)
+  | { kind: "sectionHeader"; section: "logGroups" | "comments"; count: number }
+  | { kind: "logGroup"; group: string; on: boolean; count: number };
 
 /**
  * Which group a breakpoint belongs to.
@@ -160,7 +167,8 @@ export function groupBreakpoints<T extends BreakpointInfo>(
    * modes would make the toggle move every row as well as remove six of them, which is a lot of
    * motion for a control whose whole purpose is to reclaim those six rows.
    */
-  const sorted = [...bps].sort((a, b) => {
+  // --- `LOGPOINT` comments are the build's and have a section of their own (`logpointSections`)
+  const sorted = bps.filter((bp) => !isAnnotationBreakpoint(bp)).sort((a, b) => {
     const groupDelta =
       BREAKPOINT_GROUP_ORDER.indexOf(groupOf(a)) - BREAKPOINT_GROUP_ORDER.indexOf(groupOf(b));
     if (groupDelta !== 0) return groupDelta;
@@ -179,6 +187,50 @@ export function groupBreakpoints<T extends BreakpointInfo>(
     if (!rows.length) continue;
     items.push({ kind: "header", group, count: rows.length });
     for (const bp of rows) items.push({ kind: "row", bp });
+  }
+  return items;
+}
+
+/** Does the group switch let this group log? */
+export function isLogGroupOn(state: LogpointGroupState | undefined, group: string): boolean {
+  if (!state) return true;
+  return state.enabled && (!state.groups || state.groups.includes(group.toUpperCase()));
+}
+
+/**
+ * The panel's logpoint sections, after the breakpoints (`.plans/LOGPOINTS_PLAN.md` §4.5): one switch
+ * row per log group any logpoint names, then the logpoints read from `LOGPOINT` comments, ordered
+ * by source location. Shown whether or not the kind headers are, because the comment rows are
+ * read-only and must not mix with the user's own.
+ */
+export function logpointSections<T extends BreakpointInfo>(
+  bps: readonly T[],
+  state: LogpointGroupState | undefined
+): BreakpointListItem<T>[] {
+  const items: BreakpointListItem<T>[] = [];
+  const groups = new Map<string, number>();
+  for (const bp of bps) {
+    if (!isLogpoint(bp)) continue;
+    const group = logGroupOf(bp.logMessage);
+    groups.set(group, (groups.get(group) ?? 0) + 1);
+  }
+  if (groups.size) {
+    items.push({ kind: "sectionHeader", section: "logGroups", count: groups.size });
+    for (const [group, count] of [...groups.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      items.push({ kind: "logGroup", group, on: isLogGroupOn(state, group), count });
+    }
+  }
+  const comments = bps
+    .filter((bp) => isAnnotationBreakpoint(bp))
+    .sort(
+      (a, b) =>
+        (a.resource ?? "").localeCompare(b.resource ?? "") ||
+        (a.line ?? 0) - (b.line ?? 0) ||
+        (a.address ?? 0) - (b.address ?? 0)
+    );
+  if (comments.length) {
+    items.push({ kind: "sectionHeader", section: "comments", count: comments.length });
+    for (const bp of comments) items.push({ kind: "row", bp });
   }
   return items;
 }

@@ -35,7 +35,7 @@ bp-list
 Available aliases: `bpl`
 
 Each breakpoint is listed in `bp-set` syntax &mdash; its address specification, its type options,
-its hit count rule and its condition &mdash; so a line pasted after `bp-set` recreates the
+its message, its hit count rule and its condition &mdash; so a line pasted after `bp-set` recreates the
 breakpoint. What `bp-set` cannot say goes on an indented second line: `<disabled>`, the live hit
 count `(hits: 3)` of a breakpoint with a condition or a hit rule, and, when relevant,
 `<inactive: unknown label score>` or `<condition error: …>`:
@@ -46,6 +46,10 @@ count `(hits: 3)` of a breakpoint with a condition or a hit rule, and, when rele
 [2]: [code/code.kz80.asm]:12 -if w[score] > 100
      (hits: 0) <inactive: unknown label score>
 ```
+
+Logpoints read from `LOGPOINT` source comments are listed after them, under their own heading,
+with their source line and address. They are read-only: `bp-del` and `bp-en` do not touch them;
+edit the comment and build again.
 
 ## `bp-del`
 
@@ -155,7 +159,7 @@ The `address-spec` parameter can be
 
 The `-d` option disables the breakpoint.
 
-`bp-en` and `bp-del` accept `-hit` and `-if` and ignore them, so you can turn a `bp-list` line into
+`bp-en` and `bp-del` accept `-hit`, `-log` and `-if` and ignore them, so you can turn a `bp-list` line into
 either command by changing only its first word.
 
 ## `bp-set`
@@ -163,7 +167,7 @@ either command by changing only its first word.
 This command sets a breakpoint.
 
 ```
-bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-hit <spec>] [-if <condition>]
+bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-log "<message>"] [-hit <spec>] [-if <condition>]
 ```
 
 Available aliases: `bp`
@@ -175,6 +179,10 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
 - `-v <value>` breaks only when that value is written; `nr:` breakpoints only.
 - `-c` also breaks when the **copper** writes the register, not only when the CPU does; `nr:`
   breakpoints only, and off by default.
+- `-log "<message>"` makes the breakpoint a **logpoint**: instead of stopping, it writes the
+  message to the Log pane and continues. Write the message in double quotes (`\"` and `\\` inside
+  it), before `-if`. See [Logpoints](/working-with-ide/breakpoints#logpoints) for the message
+  syntax. Errors are reported with a caret, as for a condition.
 - `-hit <spec>` sets a **hit count** rule: `10` (or `=10`) stops on the 10th hit only, `>10` after
   it, `>=10` from it on, `<10` before it, `<=10` up to it, and `*10` on every 10th hit. The number
   runs from 1 to 65535. A hit is counted only when the condition, if any, is true.
@@ -185,13 +193,16 @@ reads and `-o` I/O writes. With none of them, the breakpoint is an execution bre
   [Conditions and Hit Counts](/working-with-ide/breakpoints#conditions-and-hit-counts) for the
   language.
 
-`bp-set` states the whole breakpoint: setting one that already exists replaces its condition and hit
-rule, and leaving out `-if` or `-hit` removes them. The hit counter is kept.
+`bp-set` states the whole breakpoint: setting one that already exists replaces its condition, hit
+rule and message, and leaving out `-if`, `-hit` or `-log` removes them &mdash; so `bp-set` without
+`-log` turns a logpoint back into a breakpoint. The hit counter is kept.
 
 ```
 bp-set $8000 -if A == $FF && !ZF
 bp-set $9000 -w -hit *4 -if VAL == $AA
 bp-set [code/code.kz80.asm]:12 -hit >=10
+bp-set $8000 -log "x={A} at {PC:hex16}"
+bp-set [code/code.kz80.asm]:42 -log "[LOOP] B={B}" -hit *100
 ```
 
 A condition that does not parse is refused with its column and a caret under the mistake:
@@ -236,6 +247,38 @@ Available aliases: `bprh`
 Hit counters also start again from zero whenever the machine restarts &mdash; *Start* after *Stop*,
 *Restart*, or a reset. Pausing and resuming keeps them, and so does editing a breakpoint's
 condition or hit rule.
+
+## `lp-en`
+
+This command switches logpoint groups on and off.
+
+```
+lp-en [<group> ...] [-d]
+```
+
+Available aliases: `lpe`
+
+Without groups, it switches every logpoint on (or, with `-d`, off). With groups, only the named
+groups log (or, with `-d`, the named groups stop logging and the rest keep logging). Group names are
+not case-sensitive; a logpoint without a `[GROUP]` is in `DEFAULT`. The setting is saved with the
+project, and a logpoint logs only when both it and its group are enabled.
+
+```
+lp-en -d
+lp-en SPRITES LOOP
+lp-en LOOP -d
+```
+
+## `lp-groups`
+
+This command lists every group the current logpoints name, whether it logs, and how many logpoints
+it holds.
+
+```
+lp-groups
+```
+
+Available aliases: `lpg`
 
 ## `close`
 

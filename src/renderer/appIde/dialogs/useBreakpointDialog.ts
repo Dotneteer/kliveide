@@ -44,7 +44,7 @@ export function useBreakpointDialog() {
      */
     async (
       initial?: BreakpointInfo,
-      options: { focus?: "condition" | "hitCount" } = {}
+      options: { focus?: "condition" | "hitCount" | "logMessage" } = {}
     ): Promise<boolean> => {
       /*
        * Four IPC calls with a failure path.

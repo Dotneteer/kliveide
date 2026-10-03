@@ -1,11 +1,20 @@
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
-import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type {
+  BreakpointInfo,
+  BreakpointScope,
+  LogDialect,
+  LogpointGroupState
+} from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { SourceStep } from "./SourceStepDecision";
 
 import type { CompiledCondition, ConditionAccessKind, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import type { ConditionStore } from "./conditionStore";
+import type { ConditionMachineInfo, ConditionStore } from "./conditionStore";
+import type {
+  CompiledLogTemplate,
+  LogValue
+} from "@common/utils/breakpoint-condition/logpoint-template";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 import { incBreakpointHitsVersionAction, incBreakpointsVersionAction } from "@state/actions";
@@ -13,10 +22,23 @@ import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 import {
   breakpointFiltersOf,
   effectiveHitMode,
-  hasBreakpointFilters
+  effectiveLogDialect,
+  hasBreakpointFilters,
+  isLogpoint
 } from "@common/utils/breakpoint-filters";
 import { bindCondition, compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
-import { emitCondition } from "@common/utils/breakpoint-condition/condition-bytecode";
+import {
+  CondEnv,
+  NO_VALUE,
+  emitCondition,
+  usesConditionEnv
+} from "@common/utils/breakpoint-condition/condition-bytecode";
+import {
+  bindLogTemplate,
+  compileLogTemplate,
+  logGroupOf,
+  renderLogTemplate
+} from "@common/utils/breakpoint-condition/logpoint-template";
 import { ConditionResult } from "./conditionStore";
 import {
   bankRelativeAddresses,
@@ -61,8 +83,26 @@ export const DIS_IOW_BP = 0x800;
  *
  * May be left stale on a port address after an I/O breakpoint is removed (the bulk I/O paths do
  * not re-derive). That only costs speed: the slow path decides from the definitions.
+ *
+ * A logpoint (`.plans/LOGPOINTS_PLAN.md` §4.2) sets it too: "log and continue" is one more outcome
+ * of the same per-definition walk.
  */
 export const COND_BP = 0x1000;
+
+/** At most this many log lines are queued between two drains - one frame (L9, Q10). */
+export const LOG_LINES_PER_FRAME = 256;
+
+/** One line a logpoint produced, waiting to be sent to the IDE's Log pane (L8). */
+export type LogLine = {
+  /** The logpoint's group, upper-case. */
+  group: string;
+  /** The filled-in message. */
+  text: string;
+  /** Where it fired: the PC for an execution logpoint, the accessed address or port otherwise. */
+  address: number;
+  /** The logpoint's storage key. */
+  key: string;
+};
 
 /** Which access a stop decision is about; selects the definitions that can match. */
 type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
@@ -84,6 +124,21 @@ type BreakpointRuntimeState = {
   slot?: number;
   /** The store had no room for its program: it then stops every time, and says why. */
   overflow?: boolean;
+  /** The condition reads a fact written before evaluation (`cpufreq()`, `frame()`). */
+  conditionUsesEnv?: boolean;
+
+  // --- A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.2), built like the condition
+  templateFor?: string;
+  templateDialect?: LogDialect;
+  templateKind?: ConditionAccessKind;
+  templateStamp?: number;
+  template?: CompiledLogTemplate;
+  /** The template did not compile: the logpoint logs this text instead of its message. */
+  logError?: string;
+  /** Each value placeholder's store slot, by segment index. */
+  templateSlots?: (number | undefined)[];
+  /** The store had no room for a placeholder's program. */
+  logOverflow?: boolean;
 };
 
 /** The access an access breakpoint saw: `VAL` and `ADDR`. */
@@ -146,6 +201,31 @@ export class DebugSupport implements IDebugSupport {
   private storeDirty = true;
   /** The token the last rebuild wrote into the store; a store not carrying it is rebuilt. */
   private storeToken = 0;
+
+  /**
+   * The machine facts the core does not keep itself - the clock, the frame counter, the slot map
+   * (`.plans/LOGPOINTS_PLAN.md` §3.5). Set with the condition store (`connectConditionSupport`).
+   */
+  machineInfo?: ConditionMachineInfo;
+
+  /**
+   * Logpoints log once per **arrival** (L5): `shouldStopAtDebugPoint` sets this before asking about
+   * an execution address. False on the instruction a run or step resumes from when the previous
+   * decision was made at that same address (a pause, a step, a frame boundary landed there).
+   */
+  logArrival = true;
+
+  /** The PC of the last stop decision; `undefined` after a machine start, so the first one logs. */
+  lastDecisionPc?: number;
+
+  /** Log lines waiting for the next drain (L8), and how many the cap dropped (L9). */
+  private pendingLog: LogLine[] = [];
+  private droppedLogLines = 0;
+
+  /** Which logpoint groups log; see `setLogGroups`. */
+  private logGroups: LogpointGroupState = { enabled: true };
+  /** The store value `logGroups` was last taken from. */
+  private logGroupsFromStore?: LogpointGroupState;
 
   /**
    * While set, only session-owned breakpoints can stop the machine.
@@ -441,7 +521,8 @@ export class DebugSupport implements IDebugSupport {
         if (mask !== 0 && (((value ^ bp.nextRegValue) & mask) & 0xff) !== 0) continue;
       }
       // --- No early return: every matching definition counts its hit (C11)
-      if (this.passesFilters(key, bp, "nextReg", { value: value & 0xff, address: reg & 0xff })) {
+      const access = { value: value & 0xff, address: reg & 0xff };
+      if (this.handleHit(key, bp, "nextReg", reg & 0xff, access, false)) {
         stop = true;
       }
     }
@@ -1107,9 +1188,135 @@ export class DebugSupport implements IDebugSupport {
         }
         if (paged !== partition) continue;
       }
-      if (this.passesFilters(key, bp, accessKindOf(kind), access)) stop = true;
+      if (this.handleHit(key, bp, accessKindOf(kind), address, access, kind === "exec")) {
+        stop = true;
+      }
     }
     return stop;
+  }
+
+  /**
+   * One definition reached: a breakpoint votes "stop" if its filters pass; a logpoint
+   * (`.plans/LOGPOINTS_PLAN.md` §4.2) logs if they pass and never stops (L3).
+   *
+   * A logpoint whose group is switched off, that is inactive (a missing label, C14), or - at an
+   * execution address - that is not being *arrived at* (L5), is skipped before its filters run, so
+   * it neither logs nor counts.
+   */
+  private handleHit(
+    key: string,
+    bp: BreakpointInfo,
+    accessKind: ConditionAccessKind,
+    address: number,
+    access: AccessFacts | undefined,
+    isExec: boolean
+  ): boolean {
+    if (!isLogpoint(bp)) return this.passesFilters(key, bp, accessKind, access);
+
+    if (isExec && !this.logArrival) return false;
+    const state = this.runtimeFor(key, bp, accessKind);
+    if (!this.isLogGroupEnabled(state.template?.group ?? logGroupOf(bp.logMessage))) return false;
+    if (state.template?.inactiveReason) return false;
+    if (this.passesFilters(key, bp, accessKind, access)) {
+      this.queueLog(key, state, address, access);
+    }
+    return false;
+  }
+
+  /** Fill in a logpoint's template now - the values must be the ones at the hit (L8) - and queue it. */
+  private queueLog(
+    key: string,
+    state: BreakpointRuntimeState,
+    address: number,
+    access: AccessFacts | undefined
+  ): void {
+    if (this.pendingLog.length >= LOG_LINES_PER_FRAME) {
+      this.droppedLogLines++;
+      return;
+    }
+    const template = state.template;
+    let text: string;
+    if (!template) {
+      text = `<logpoint error: ${state.logError ?? "the template did not compile"}>`;
+    } else {
+      const store = this.syncConditionStore();
+      if (store && template.segments.some((s) => s.k === "value" && s.usesEnv)) {
+        this.writeConditionEnv(store);
+      }
+      text = renderLogTemplate(
+        template,
+        (index): LogValue => {
+          const slot = state.templateSlots?.[index];
+          if (!store || slot === undefined) return { status: "error" };
+          const { status, value } = store.evaluateValue(slot, access?.value ?? 0, access?.address ?? 0);
+          if (status === ConditionResult.DIVZERO) return { status: "divZero" };
+          if (status === ConditionResult.ERROR) return { status: "error" };
+          if (value === NO_VALUE) return { status: "noValue" };
+          return { status: "ok", value };
+        },
+        {
+          peek: (a) => store?.peek(a) ?? 0,
+          slots: () => this.machineInfo?.slots() ?? ""
+        }
+      );
+    }
+    this.pendingLog.push({
+      group: template?.group ?? DEFAULT_GROUP,
+      text,
+      address: address & 0xffff,
+      key
+    });
+  }
+
+  /** Write the facts `cpufreq()` and `frame()` read into the core before a program reads them. */
+  private writeConditionEnv(store: ConditionStore): void {
+    const info = this.machineInfo;
+    store.setEnv(CondEnv.CPUFREQ, info?.cpuFrequency() ?? 0);
+    store.setEnv(CondEnv.FRAME, info?.frame() ?? 0);
+  }
+
+  /**
+   * The log lines queued since the last call, and how many were dropped for the cap (L9). The
+   * machine controller drains this once per frame and before it reports a stop (L4, L8).
+   */
+  takeLogLines(): { lines: LogLine[]; dropped: number } {
+    const lines = this.pendingLog;
+    const dropped = this.droppedLogLines;
+    this.pendingLog = [];
+    this.droppedLogLines = 0;
+    return { lines, dropped };
+  }
+
+  /** Are log lines waiting? Cheap: the controller asks after every frame. */
+  get hasPendingLog(): boolean {
+    return this.pendingLog.length > 0 || this.droppedLogLines > 0;
+  }
+
+  /**
+   * Switch logpoint groups (the DeZog model, §4.2): all on, all off, or only the listed groups on.
+   * Group state is separate from each logpoint's own `disabled` flag; a logpoint logs only if both
+   * allow it (L11).
+   */
+  setLogGroups(state: LogpointGroupState | undefined): void {
+    this.logGroups = normaliseLogGroups(state);
+    this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+  }
+
+  /** The group switch now: what `setLogGroups` set, or the shared store's when it changed since. */
+  get logGroupState(): LogpointGroupState {
+    const fromStore = this.store?.getState()?.logpointGroups;
+    if (fromStore && fromStore !== this.logGroupsFromStore) {
+      this.logGroupsFromStore = fromStore;
+      this.logGroups = normaliseLogGroups(fromStore);
+    }
+    return this.logGroups;
+  }
+
+  /** Does this group log? */
+  isLogGroupEnabled(group: string): boolean {
+    const state = this.logGroupState;
+    if (!state.enabled) return false;
+    return !state.groups || state.groups.includes(group.toUpperCase());
   }
 
   /**
@@ -1134,6 +1341,7 @@ export class DebugSupport implements IDebugSupport {
       if (state.compiled.inactiveReason) return false;
       const store = this.syncConditionStore();
       if (store && state.slot !== undefined) {
+        if (state.conditionUsesEnv) this.writeConditionEnv(store);
         const result = store.evaluate(state.slot, access?.value ?? 0, access?.address ?? 0);
         if (result === ConditionResult.FALSE) return false;
       }
@@ -1194,9 +1402,42 @@ export class DebugSupport implements IDebugSupport {
         });
         if (result.compiled) {
           state.compiled = result.compiled;
+          state.conditionUsesEnv = usesConditionEnv(result.compiled.tree);
         } else {
           const first = result.errors[0];
           state.error = `column ${first.start + 1}: ${first.message}`;
+        }
+      }
+    }
+
+    // --- A logpoint's template, compiled the same way (`.plans/LOGPOINTS_PLAN.md` §4.2)
+    const template = bp.logMessage || undefined;
+    const dialect = effectiveLogDialect(bp);
+    if (
+      state.templateFor !== template ||
+      state.templateDialect !== dialect ||
+      state.templateKind !== accessKind ||
+      state.templateStamp !== this.conditionStamp
+    ) {
+      state.templateFor = template;
+      state.templateDialect = dialect;
+      state.templateKind = accessKind;
+      state.templateStamp = this.conditionStamp;
+      state.template = undefined;
+      state.logError = undefined;
+      state.templateSlots = undefined;
+      this.storeDirty = true;
+      if (template !== undefined) {
+        const result = compileLogTemplate(template, dialect, {
+          ...this.conditionFacts,
+          accessKind,
+          symbols: this.conditionSymbols
+        });
+        if (result.template) {
+          state.template = result.template;
+        } else {
+          const first = result.errors[0];
+          state.logError = `column ${first.start + 1}: ${first.message}`;
         }
       }
     }
@@ -1219,24 +1460,40 @@ export class DebugSupport implements IDebugSupport {
     store.slots.fill(0);
     let slot = 0;
     let offset = 0;
-    for (const state of this.runtime.values()) {
-      state.slot = undefined;
-      state.overflow = false;
-      if (!state.compiled || state.compiled.inactiveReason) continue;
-      const code = emitCondition(state.compiled);
+    // --- One program into the next free slot; `undefined` when the store has no room
+    const place = (code: Uint32Array): number | undefined => {
       if (
         slot >= store.slotCount ||
         code.length > store.maxProgramWords ||
         offset + code.length > store.arena.length
       ) {
-        state.overflow = true;
-        continue;
+        return undefined;
       }
       store.arena.set(code, offset);
       store.slots[slot * 2] = offset;
       store.slots[slot * 2 + 1] = code.length;
-      state.slot = slot++;
       offset += code.length;
+      return slot++;
+    };
+    for (const state of this.runtime.values()) {
+      state.slot = undefined;
+      state.overflow = false;
+      if (state.compiled && !state.compiled.inactiveReason) {
+        state.slot = place(emitCondition(state.compiled));
+        state.overflow = state.slot === undefined;
+      }
+
+      // --- Every value placeholder of a logpoint is a program of its own
+      state.templateSlots = undefined;
+      state.logOverflow = false;
+      if (state.template && !state.template.inactiveReason) {
+        state.templateSlots = state.template.segments.map((segment) => {
+          if (segment.k !== "value") return undefined;
+          const placed = place(emitCondition(segment.compiled));
+          if (placed === undefined) state.logOverflow = true;
+          return placed;
+        });
+      }
     }
     this.storeToken = (this.storeToken % 0xfffffffe) + 1;
     store.token = this.storeToken;
@@ -1273,6 +1530,13 @@ export class DebugSupport implements IDebugSupport {
       // --- A label's value is a constant in the program, so every program is re-emitted
       this.storeDirty = true;
       changed ||= before !== state.compiled.inactiveReason;
+    }
+    for (const state of this.runtime.values()) {
+      if (!state.template) continue;
+      const before = state.template.inactiveReason;
+      bindLogTemplate(state.template, this.conditionSymbols);
+      this.storeDirty = true;
+      changed ||= before !== state.template.inactiveReason;
     }
     // --- Only when a breakpoint went inactive or came back: the editors and the panel show that,
     // --- while a rebuild that moved nothing should not ripple through every breakpoint listener.
@@ -1319,14 +1583,29 @@ export class DebugSupport implements IDebugSupport {
       const listed: BreakpointInfo = { ...bp };
       const state = this.runtimeFor(key, bp);
       // --- Built now, so a condition the store has no room for reports it before its first hit
-      if (state.compiled && !state.compiled.inactiveReason) this.syncConditionStore();
+      if (
+        (state.compiled && !state.compiled.inactiveReason) ||
+        (state.template && !state.template.inactiveReason)
+      ) {
+        this.syncConditionStore();
+      }
       if (state.overflow) {
         listed.conditionError =
           "the machine's condition store is full - it stops every time; remove some conditions";
       }
-      if (hasBreakpointFilters(bp) || state.hits > 0) listed.currentHits = state.hits;
+      if (hasBreakpointFilters(bp) || isLogpoint(bp) || state.hits > 0) {
+        listed.currentHits = state.hits;
+      }
       if (state.error) listed.conditionError ??= state.error;
       if (state.compiled?.inactiveReason) listed.conditionInactive = state.compiled.inactiveReason;
+      else if (state.template?.inactiveReason) {
+        listed.conditionInactive = state.template.inactiveReason;
+      }
+      if (state.logError) listed.logError = state.logError;
+      else if (state.logOverflow) {
+        listed.logError =
+          "the machine's condition store is full - placeholders print <error>; remove some conditions";
+      }
       result.push(listed);
     }
     return result;
@@ -1590,7 +1869,7 @@ export class DebugSupport implements IDebugSupport {
     if (bp.hitCount !== undefined) {
       bpFlags |= HIT_BP;
     }
-    if (hasBreakpointFilters(bp)) {
+    if (hasBreakpointFilters(bp) || isLogpoint(bp)) {
       bpFlags |= COND_BP;
     }
 
@@ -1641,4 +1920,15 @@ function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";
+}
+
+/** The group of a logpoint whose template could not be read. */
+const DEFAULT_GROUP = "DEFAULT";
+
+/** Group names upper-case and de-duplicated; a missing state is "everything on". */
+function normaliseLogGroups(state: LogpointGroupState | undefined): LogpointGroupState {
+  if (!state) return { enabled: true };
+  return state.enabled && state.groups
+    ? { enabled: true, groups: [...new Set(state.groups.map((g) => g.toUpperCase()))] }
+    : { enabled: !!state.enabled };
 }

@@ -1,5 +1,6 @@
 import { Action } from "./Action";
 import { WatchInfo } from "./AppState";
+import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
 
 /**
  * This reducer is used to manage watch expressions
@@ -53,6 +54,27 @@ export function basicWatchReducer(state: string[] = [], { type, payload }: Actio
       return payload?.index === undefined ? state : state.filter((_, i) => i !== payload.index);
     case "SET_BASIC_WATCHES":
       return payload?.value ?? [];
+    default:
+      return state;
+  }
+}
+/**
+ * The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.2). Normalised so two states that behave
+ * alike are equal: group names upper-case, sorted, without duplicates; "on, no list" is the default.
+ */
+export function logpointGroupsReducer(
+  state: LogpointGroupState = { enabled: true },
+  { type, payload }: Action
+): LogpointGroupState {
+  switch (type) {
+    case "SET_LOGPOINT_GROUPS": {
+      const value = payload?.value as LogpointGroupState | undefined;
+      if (!value) return { enabled: true };
+      const groups = value.groups
+        ? [...new Set(value.groups.map((g) => g.toUpperCase()))].sort()
+        : undefined;
+      return value.enabled && groups ? { enabled: true, groups } : { enabled: !!value.enabled };
+    }
     default:
       return state;
   }

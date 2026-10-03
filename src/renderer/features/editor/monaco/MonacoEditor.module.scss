@@ -124,6 +124,36 @@
 }
 
 /*
+ * The logpoint variants (`.plans/LOGPOINTS_PLAN.md` §4.5): a diamond instead of the dot, with the
+ * same "=" and hollow variants, and a hollow diamond with a centre dot for a `LOGPOINT` comment
+ * (owned by the build). The masks are the shapes of the `bp-logpoint*.svg` icons, so the margin,
+ * the disassembly gutter and the Breakpoints panel draw one vocabulary; the colour stays a token.
+ */
+.logpointBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.75L13.25 8L8 13.25L2.75 8z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.logpointConditionalBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M8 2.75L13.25 8L8 13.25L2.75 8zM5.6 6.1h4.8v1.3H5.6zM5.6 8.6h4.8v1.3H5.6z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.logpointInactiveBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.6' stroke-linejoin='round' d='M8 3.6L12.4 8L8 12.4L3.6 8z'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+.logpointCommentBreakpointMargin {
+  clip-path: none;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round' d='M8 3.4L12.6 8L8 12.6L3.4 8z'/%3E%3Ccircle cx='8' cy='8' r='1.4'/%3E%3C/svg%3E")
+    center / 14px 14px no-repeat;
+}
+
+/*
  * The execution point wins over the variant's mask.
  *
  * Monaco merges every glyph-margin decoration of a line into one element, so the conditional or
@@ -133,7 +163,11 @@
  * Two classes outrank the one-class mask rules wherever they sit in this file.
  */
 .conditionalBreakpointMargin,
-.inactiveBreakpointMargin {
+.inactiveBreakpointMargin,
+.logpointBreakpointMargin,
+.logpointConditionalBreakpointMargin,
+.logpointInactiveBreakpointMargin,
+.logpointCommentBreakpointMargin {
   &.activeBreakpointMargin,
   &.activeBreakpointOnExistingMargin,
   &.activeBinBreakpointOnExistingMargin,

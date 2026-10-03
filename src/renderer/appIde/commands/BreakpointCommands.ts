@@ -16,7 +16,14 @@ import {
   toHexa2
 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpointAddressSpec, getBreakpointDisplayKey } from "@common/utils/breakpoints";
-import { formatHitSpec, parseHitSpec } from "@common/utils/breakpoint-filters";
+import { formatHitSpec, isLogpoint, parseHitSpec } from "@common/utils/breakpoint-filters";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
+import {
+  compileLogTemplate,
+  logGroupOf
+} from "@common/utils/breakpoint-condition/logpoint-template";
+import { setLogpointGroupsAction } from "@common/state/actions";
+import { saveProject } from "@renderer/appIde/utils/save-project";
 import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import type {
@@ -64,8 +71,10 @@ export class ListBreakpointsCommand extends IdeCommandBase {
     // --- Listing a breakpoint in a notation `bp-set` would not accept back is what the storage /
     // --- display key split exists to prevent; this command is the one that used to do it.
     const partitionLabels = await context.emuApi.getPartitionLabels();
-    if (bps.breakpoints.length) {
-      let ordered = bps.breakpoints;
+    // --- Logpoints read from `LOGPOINT` comments belong to the build: listed apart, read-only
+    const ordered = bps.breakpoints.filter((bp) => !isAnnotationBreakpoint(bp));
+    const comments = bps.breakpoints.filter((bp) => isAnnotationBreakpoint(bp));
+    if (ordered.length) {
       ordered.forEach((bp, idx) => {
         /*
          * The first line is `bp-set` syntax: everything after `[n]: ` pasted back into `bp-set`
@@ -85,6 +94,20 @@ export class ListBreakpointsCommand extends IdeCommandBase {
       );
     } else {
       writeMessage(context.output, "No breakpoints set", "bright-blue");
+    }
+    if (comments.length) {
+      writeMessage(
+        context.output,
+        "LOGPOINT comments (from the last build; edit the comment and rebuild to change one):",
+        "bright-blue"
+      );
+      comments.forEach((bp) => {
+        const at = getBreakpointAddressSpec({ address: bp.address, partition: bp.partition }, partitionLabels);
+        writeMessage(context.output, `  [${bp.resource}]:${bp.line} @ ${at}: `, "bright-blue", false);
+        writeMessage(context.output, bp.logMessage ?? "", "bright-magenta");
+        const status = breakpointStatusText(bp);
+        if (status) writeMessage(context.output, `     ${status}`, bp.logError ? "bright-red" : "cyan");
+      });
     }
     return commandSuccess;
   }
@@ -119,6 +142,8 @@ export type BreakpointWithAddressArgs = {
   "-hit"?: string;
   /** The condition: the raw rest of the line after `-if`. */
   "-if"?: string;
+  /** A logpoint's message template (`.plans/LOGPOINTS_PLAN.md` §4.4), quotes removed. */
+  "-log"?: string;
 };
 
 /**
@@ -190,9 +215,13 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
       },
       {
         name: "-hit"
+      },
+      {
+        name: "-log"
       }
     ],
-    // --- `bp-del` and `bp-en` accept and ignore `-if`/`-hit`, so a `bp-list` line edits into any
+    // --- `bp-del` and `bp-en` accept and ignore `-if`/`-hit`/`-log`, so a `bp-list` line edits
+    // --- into any
     rawTailOption: "-if"
   };
 
@@ -489,7 +518,8 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly id = "bp-set";
   readonly description = "Sets a breakpoint at the specified address";
   readonly usage = [
-    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-hit <spec>] [-if <condition>]",
+    "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
+    "-log: log the message and continue instead of stopping (a logpoint), e.g. -log \"[LOOP] B={B} HL={HL:hex16}\"",
     "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
     "-if: must be last; the rest of the line is the condition, e.g. -if A == $FF && !ZF"
   ];
@@ -497,6 +527,8 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
 
   /** Warnings of the condition validated last (unknown labels), printed when the breakpoint is set. */
   private conditionWarnings: ConditionDiagnostic[] = [];
+  /** Warnings of the log template validated last. */
+  private logWarnings: ConditionDiagnostic[] = [];
 
   async validateCommandArgs(
     context: IdeCommandContext,
@@ -504,7 +536,28 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   ): Promise<ValidationMessage[]> {
     const messages = await super.validateCommandArgs(context, args);
     this.conditionWarnings = [];
+    this.logWarnings = [];
     if (messages.some((m) => m.type === ValidationMessageType.Error)) return messages;
+    const facts = conditionMachineFacts(
+      context.service.machineService.getMachineInfo()?.machine?.machineId,
+      this.partitionLabels
+    );
+
+    if (args["-log"] !== undefined) {
+      const template = (args["-log"] = unescapeLogOption(String(args["-log"])));
+      if (!template.trim()) {
+        return [validationError("The -log option needs a message template")];
+      }
+      const result = compileLogTemplate(template, "klive", {
+        ...facts,
+        accessKind: accessKindOfArgs(args),
+        symbols: mergedConditionSymbols()
+      });
+      if (result.errors.length) {
+        return conditionErrorMessages(template, result.errors[0], "Log template error");
+      }
+      this.logWarnings = result.warnings;
+    }
 
     if (args["-hit"] !== undefined) {
       const hit = parseHitSpec(String(args["-hit"]));
@@ -518,10 +571,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
       }
       const result = compileCondition(condition, {
         // --- The same machine the address spec was validated against
-        ...conditionMachineFacts(
-          context.service.machineService.getMachineInfo()?.machine?.machineId,
-          this.partitionLabels
-        ),
+        ...facts,
         accessKind: accessKindOfArgs(args),
         symbols: mergedConditionSymbols()
       });
@@ -540,6 +590,8 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     const bpDef = breakpointFromArgs(args);
     // --- `bp-set` states the whole breakpoint (C13): without `-if`/`-hit` it clears them
     if (args["-if"] !== undefined) bpDef.condition = args["-if"];
+    // --- And without `-log` it is a stopping breakpoint again (L2)
+    if (args["-log"] !== undefined) bpDef.logMessage = args["-log"];
     if (args["-hit"] !== undefined) {
       const hit = parseHitSpec(String(args["-hit"]));
       if (!("error" in hit)) Object.assign(bpDef, hit);
@@ -549,14 +601,22 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
     const hitSpec = formatHitSpec(bpDef);
     writeSuccessMessage(
       context.output,
-      `Breakpoint at address ${addrKey}` +
+      `${bpDef.logMessage ? "Logpoint" : "Breakpoint"} at address ${addrKey}` +
         `${(args["-i"] || args["-o"]) && args["-m"] ? " /$" + toHexa4(args["-m"]) : ""}` +
         `${flag ? " set" : " updated"}` +
+        `${bpDef.logMessage ? ` -log ${quoteLogTemplate(bpDef.logMessage)}` : ""}` +
         `${hitSpec ? ` -hit ${hitSpec}` : ""}` +
         `${bpDef.condition ? ` -if ${bpDef.condition}` : ""}`
     );
     for (const warning of this.conditionWarnings) {
       writeMessage(context.output, `Warning (column ${warning.start + 1}): ${warning.message}`, "yellow");
+    }
+    for (const warning of this.logWarnings) {
+      writeMessage(
+        context.output,
+        `Warning (log template column ${warning.start + 1}): ${warning.message}`,
+        "yellow"
+      );
     }
     return commandSuccess;
   }
@@ -581,7 +641,8 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
     namedOptions: [
       { name: "-m", type: "number" },
       { name: "-v", type: "number" },
-      { name: "-hit" }
+      { name: "-hit" },
+      { name: "-log" }
     ],
     rawTailOption: "-if"
   };
@@ -627,11 +688,12 @@ function accessKindOfArgs(args: BreakpointWithAddressArgs): ConditionAccessKind 
  */
 export function conditionErrorMessages(
   condition: string,
-  error: ConditionDiagnostic
+  error: ConditionDiagnostic,
+  what = "Condition error"
 ): ValidationMessage[] {
   const width = Math.max(1, error.end - error.start);
   return [
-    validationError(`Condition error at column ${error.start + 1}: ${error.message}`),
+    validationError(`${what} at column ${error.start + 1}: ${error.message}`),
     { type: ValidationMessageType.Info, message: `  ${condition}` },
     { type: ValidationMessageType.Info, message: `  ${" ".repeat(error.start)}${"^".repeat(width)}` }
   ];
@@ -654,6 +716,7 @@ export function breakpointCommandSpec(
     parts.push(`-m $${toHexa4(bp.ioMask)}`);
   }
   if (bp.nextRegCopper) parts.push("-c");
+  if (bp.logMessage) parts.push(`-log ${quoteLogTemplate(bp.logMessage)}`);
   const hitSpec = formatHitSpec(bp);
   if (hitSpec) parts.push(`-hit ${hitSpec}`);
   if (bp.condition?.trim()) parts.push(`-if ${bp.condition}`);
@@ -667,7 +730,109 @@ export function breakpointStatusText(bp: BreakpointInfo): string {
   if (bp.currentHits !== undefined) parts.push(`(hits: ${bp.currentHits})`);
   if (bp.conditionInactive) parts.push(`<inactive: ${bp.conditionInactive}>`);
   if (bp.conditionError) parts.push(`<condition error: ${bp.conditionError}>`);
+  if (bp.logError) parts.push(`<log template error: ${bp.logError}>`);
   return parts.join(" ");
+}
+
+/** A template as a `-log` value: double-quoted, `"` and `\` escaped (the tokenizer's escapes). */
+export function quoteLogTemplate(template: string): string {
+  return `"${template.replace(/[\\"]/g, (c) => `\\${c}`)}"`;
+}
+
+/** A `-log` value as typed: the tokenizer strips the quotes but leaves `\"` and `\\` escaped. */
+export function unescapeLogOption(value: string): string {
+  return value.replace(/\\(["\\])/g, "$1");
+}
+
+// ================================================================================================
+// Logpoint groups (`.plans/LOGPOINTS_PLAN.md` §4.4)
+
+/** Every group the current logpoints name, with how many each holds. */
+function knownLogGroups(bps: BreakpointInfo[]): Map<string, number> {
+  const groups = new Map<string, number>();
+  for (const bp of bps) {
+    if (!isLogpoint(bp)) continue;
+    const group = logGroupOf(bp.logMessage);
+    groups.set(group, (groups.get(group) ?? 0) + 1);
+  }
+  return groups;
+}
+
+type LogGroupsArgs = { rest?: string[]; "-d"?: boolean };
+
+/**
+ * `lp-en [<group> ...] [-d]`: with no groups, switch all logging on (or off with `-d`); with groups,
+ * log only those (or, with `-d`, stop logging those and keep the rest).
+ */
+export class EnableLogpointGroupsCommand extends IdeCommandBase<LogGroupsArgs> {
+  readonly id = "lp-en";
+  readonly description = "Enables or disables logpoint groups";
+  readonly usage = [
+    "lp-en [<group> ...] [-d]",
+    "no groups: all logpoints log (-d: none does); groups: only those log (-d: those stop logging)"
+  ];
+  readonly aliases = ["lpe"];
+
+  readonly argumentInfo: CommandArgumentInfo = {
+    allowRest: true,
+    commandOptions: ["-d"]
+  };
+
+  async execute(context: IdeCommandContext, args: LogGroupsArgs): Promise<IdeCommandResult> {
+    const named = (args.rest ?? []).map((g) => String(g).replace(/^\[|\]$/g, "").toUpperCase());
+    const current = context.store.getState().logpointGroups ?? { enabled: true };
+    let next: { enabled: boolean; groups?: string[] };
+    if (named.length === 0) {
+      next = { enabled: !args["-d"] };
+    } else if (!args["-d"]) {
+      next = { enabled: true, groups: named };
+    } else {
+      const known = knownLogGroups((await context.emuApi.listBreakpoints()).breakpoints);
+      const on = !current.enabled ? [] : (current.groups ?? [...known.keys()]);
+      next = { enabled: true, groups: on.filter((g) => !named.includes(g)) };
+    }
+    context.store.dispatch(setLogpointGroupsAction(next));
+    void saveProject(context.messenger);
+    writeSuccessMessage(context.output, `Logging: ${describeLogGroups(next)}`);
+    return commandSuccess;
+  }
+}
+
+/** `lp-groups`: every group the logpoints name, whether it logs, and how many logpoints it holds. */
+export class ListLogpointGroupsCommand extends IdeCommandBase {
+  readonly id = "lp-groups";
+  readonly description = "Lists the logpoint groups";
+  readonly usage = "lp-groups";
+  readonly aliases = ["lpg"];
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const state = context.store.getState().logpointGroups ?? { enabled: true };
+    const known = knownLogGroups((await context.emuApi.listBreakpoints()).breakpoints);
+    for (const group of state.groups ?? []) if (!known.has(group)) known.set(group, 0);
+    writeMessage(context.output, `Logging: ${describeLogGroups(state)}`, "bright-blue");
+    if (known.size === 0) {
+      writeMessage(context.output, "No logpoints set", "bright-blue");
+      return commandSuccess;
+    }
+    for (const [group, count] of [...known.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      const on = logGroupOn(state, group);
+      writeMessage(context.output, `  [${group}] `, "bright-magenta", false);
+      writeMessage(context.output, on ? "on " : "off", on ? "green" : "bright-black", false);
+      writeMessage(context.output, `  ${count} logpoint${count === 1 ? "" : "s"}`, "cyan");
+    }
+    return commandSuccess;
+  }
+}
+
+/** Does the group switch let this group log? */
+export function logGroupOn(state: { enabled: boolean; groups?: string[] }, group: string): boolean {
+  return state.enabled && (!state.groups || state.groups.includes(group.toUpperCase()));
+}
+
+function describeLogGroups(state: { enabled: boolean; groups?: string[] }): string {
+  if (!state.enabled) return "off";
+  if (!state.groups) return "all groups";
+  return state.groups.length ? `only ${state.groups.join(", ")}` : "no group";
 }
 
 export class RemoveBreakpointCommand extends BreakpointWithAddressCommand {
@@ -716,6 +881,9 @@ export class EnableBreakpointCommand extends BreakpointWithAddressCommand {
       },
       {
         name: "-hit"
+      },
+      {
+        name: "-log"
       }
     ],
     rawTailOption: "-if"

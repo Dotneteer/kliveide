@@ -466,3 +466,15 @@ export const setBasicWatchesAction: ActionCreator = (watches: string[]) => ({
   type: "SET_BASIC_WATCHES",
   payload: { value: watches }
 });
+
+/**
+ * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2): all, none, or only the listed ones.
+ * An absent value means everything on, which is what a project without the setting restores.
+ */
+export const setLogpointGroupsAction: ActionCreator = (groups?: {
+  enabled: boolean;
+  groups?: string[];
+}) => ({
+  type: "SET_LOGPOINT_GROUPS",
+  payload: { value: groups }
+});

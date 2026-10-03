@@ -13,6 +13,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
@@ -62,6 +63,7 @@ import {
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "@renderer/appIde/utils/breakpoint-filter-text";
@@ -1022,7 +1024,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       await refreshSourceCodeBreakpoints(store, messenger);
       store.dispatch(incBreakpointsVersionAction());
     },
-    edit: (bp: BreakpointInfo, focus: "condition" | "hitCount") => openBreakpointDialog(bp, { focus })
+    edit: (bp: BreakpointInfo, focus: "condition" | "hitCount" | "logMessage") =>
+      openBreakpointDialog(bp, { focus })
   };
 
   // --- render the editor when monaco has been initialized
@@ -1098,6 +1101,34 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Iterate through all breakpoins using this file's resource name as a filter
     const resourceName = getResourceName();
     bps.forEach(async (bp) => {
+      /*
+       * A `LOGPOINT` comment's logpoint (`.plans/LOGPOINTS_PLAN.md` §4.5): the hollow diamond on
+       * its line, read-only. A user breakpoint on the same line owns the margin - Monaco merges a
+       * line's glyph classes into one box, and the comment's mask would reshape the user's dot - so
+       * the comment then shows only in the hover.
+       */
+      if (isAnnotationBreakpoint(bp)) {
+        const userBpHere = bps.some(
+          (b) =>
+            !isAnnotationBreakpoint(b) &&
+            b.resource === bp.resource &&
+            b.line === bp.line &&
+            b.column === undefined
+        );
+        const drawnAlready = bps.find(
+          (b) => isAnnotationBreakpoint(b) && b.resource === bp.resource && b.line === bp.line
+        );
+        if (
+          editorLines !== null &&
+          bp.resource === resourceName.slice(1) &&
+          bp.line <= editorLines &&
+          !userBpHere &&
+          drawnAlready === bp
+        ) {
+          decorations.push(createBinaryBreakpointDecoration(bp.line, !!bp.disabled, bp));
+        }
+        return;
+      }
       let unreachable = true;
       if (
         compilationResult?.errors?.every((e) => e.isWarning) &&
@@ -1123,7 +1154,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             const bpInfo = compilationResult.sourceMap[bp.address];
             if (bpInfo) {
               if (bpInfo.fileIndex === fileIndex) {
-                decorations.push(createBinaryBreakpointDecoration(bpInfo.line, bp.disabled));
+                decorations.push(createBinaryBreakpointDecoration(bpInfo.line, bp.disabled, bp));
               }
             }
           }
@@ -1214,7 +1245,15 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // --- Check if there is an existing breakpoint at this line
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === resourceName && bp.line === lineNo && bp.column === undefined
+        (bp) =>
+          bp.resource === resourceName &&
+          bp.line === lineNo &&
+          bp.column === undefined &&
+          !isAnnotationBreakpoint(bp)
+      );
+      // --- A `LOGPOINT` comment on the line is described, never offered for removal
+      const commentBp = breakpoints.current.find(
+        (bp) => bp.resource === resourceName && bp.line === lineNo && isAnnotationBreakpoint(bp)
       );
       if (!existingBp && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
@@ -1238,6 +1277,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       const message = [
         `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`,
         ...(existingBp ? breakpointFilterLines(existingBp) : []),
+        ...(commentBp ? breakpointFilterLines(commentBp) : []),
         "Right-click for more actions"
       ].join("\n\n");
       hoverDecorations.current = editor.current.createDecorationsCollection([
@@ -1294,7 +1334,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo && bp.column === undefined
+        (bp) =>
+          bp.resource === document.node?.projectPath &&
+          bp.line === lineNo &&
+          bp.column === undefined &&
+          !isAnnotationBreakpoint(bp)
       );
       (async () => {
         if (existingBp) {
@@ -1374,7 +1418,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     e.event.preventDefault();
     e.event.stopPropagation();
     const breakpoint = breakpoints.current.find(
-      (bp) => bp.resource === projectPath && bp.line === line && bp.column === column
+      (bp) =>
+        bp.resource === projectPath &&
+        bp.line === line &&
+        bp.column === column &&
+        !isAnnotationBreakpoint(bp)
     );
     const browserEvent = e.event.browserEvent;
     void (async () => {
@@ -1597,9 +1645,23 @@ function createCodeBreakpointDecoration(lineNo: number, disabled: boolean, bp?: 
  * same shapes the disassembly gutter and the Breakpoints panel draw (plan §4.4.2).
  */
 function withFilterGlyph(className: string, bp?: BreakpointInfo): string {
-  if (isInactiveBreakpoint(bp)) return `${className} ${styles.inactiveBreakpointMargin}`;
-  if (isConditionalBreakpoint(bp)) return `${className} ${styles.conditionalBreakpointMargin}`;
-  return className;
+  // --- One reading of the glyph for every surface (`breakpoint-filter-text.ts`)
+  switch (breakpointGlyphOf(bp)) {
+    case "inactive":
+      return `${className} ${styles.inactiveBreakpointMargin}`;
+    case "conditional":
+      return `${className} ${styles.conditionalBreakpointMargin}`;
+    case "logpoint":
+      return `${className} ${styles.logpointBreakpointMargin}`;
+    case "logpointConditional":
+      return `${className} ${styles.logpointConditionalBreakpointMargin}`;
+    case "logpointInactive":
+      return `${className} ${styles.logpointInactiveBreakpointMargin}`;
+    case "logpointComment":
+      return `${className} ${styles.logpointCommentBreakpointMargin}`;
+    default:
+      return className;
+  }
 }
 
 /**

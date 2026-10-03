@@ -289,7 +289,8 @@ describe("syntax errors (§3.7 rule 1)", () => {
     ["A == == 1", "Unexpected '=='", 5, 7],
     ["A 1", "Unexpected '1'", 2, 3],
     ["A = 1", "Unexpected character '='", 2, 3],
-    ["A * 2", "Unexpected character '*'", 2, 3],
+    // --- `*` and `/` are operators since `.plans/LOGPOINTS_PLAN.md` Q4; `%` still starts a binary literal
+    ["A ? 2", "Unexpected character '?'", 2, 3],
     ["page(1", "Missing ')'", 6, 6],
     ["A == #1", "Unexpected character '#'", 5, 6]
   ])("rejects %j", (text, message, start, end) => {

@@ -114,9 +114,13 @@ edits only its condition, hit count and enabled state. To script one, use `bp-se
 Clicking the margin beside a line adds or removes a breakpoint. **Right-clicking** it opens a menu:
 
 - on a line with a breakpoint: **Edit Condition…** and **Edit Hit Count…** (both open the dialog,
-  on that field), **Disable**/**Enable Breakpoint**, **Reset Hit Count** and **Remove Breakpoint**;
-- on a line without one: **Add Breakpoint** and **Add Conditional Breakpoint…**, which adds the
-  breakpoint and opens the dialog on its condition &mdash; **Cancel** removes it again.
+  on that field), **Convert to Logpoint…**, **Disable**/**Enable Breakpoint**, **Reset Hit Count**
+  and **Remove Breakpoint**;
+- on a line with a [logpoint](#logpoints): **Edit Log Message…**, the same condition and hit count
+  items, **Convert to Breakpoint**, and the rest as above;
+- on a line without one: **Add Breakpoint**, **Add Conditional Breakpoint…** and **Add Logpoint…**;
+  the last two add the breakpoint and open the dialog on its condition or message &mdash;
+  **Cancel** removes it again.
 
 The same menu works on the inline statement markers of languages with several statements on a line.
 Hovering a breakpoint in the margin shows its condition, hit rule, hit count and, when it cannot
@@ -197,10 +201,17 @@ Reading memory in a condition has no side effects on the machine.
 `page(addr)` is the partition paged in at `addr`; `nr(reg)` is a Next register's value (ZX Spectrum
 Next); `s8(x)`, `s16(x)` and `s32(x)` read the low 8, 16 or 32 bits of `x` as a signed number.
 
+Four functions take no argument and read the machine: `tstates()` is the number of T-states since
+the machine started, `cpufreq()` the current CPU clock in Hz (turbo included), `frame()` the number
+of frames since the machine started, and `slots()` the partition paged into each slot, as text
+(`R0 B5 B2 B0`) &mdash; so `slots()` can only be a whole [logpoint](#logpoints) placeholder.
+
 ### Operators
 
 From the lowest precedence to the highest: `||`; `&&`; the comparisons `== != < <= > >=`; `|`; `^`;
-`&`; the shifts `<< >> >>>`; `+ -`; and the unary `! ~ -`. **Bitwise operators bind tighter than
+`&`; the shifts `<< >> >>>`; `+ -`; `* /`; and the unary `! ~ -`. `/` divides whole numbers,
+dropping the fraction (`7 / 2` is 3, `-7 / 2` is -3); dividing by zero makes the condition fail
+safe, so the breakpoint stops. There is no `%` operator: `%` starts a binary number. **Bitwise operators bind tighter than
 comparisons**, so `A & $80 == 0` means `(A & $80) == 0`. Comparisons cannot be chained.
 
 Arithmetic and comparison work on exact numbers, so signed and unsigned values compare correctly.
@@ -244,6 +255,123 @@ Each breakpoint counts its own hits. The counters start from zero when the machi
 (*Start* after *Stop*, *Restart*, a reset) and when you reset them &mdash; from the view, the dialog,
 the editor's margin or [`bp-reset-hits`](/commands-reference#bp-reset-hits). Pausing, stepping and
 editing the breakpoint keep them.
+
+## Logpoints
+
+A **logpoint** is a breakpoint that logs a message instead of stopping. When a debug run reaches
+it, its message is filled in from the machine's state and written to the **Log** output pane, and
+the program goes on as if nothing had happened.
+
+A logpoint is set like any breakpoint &mdash; at an address, a partition address, a bank-relative
+address, a source line, or on memory, I/O and NextReg access &mdash; and can carry a condition and a
+hit rule: then it logs only when the condition is true and the rule says so, and its hit counter
+counts the lines it logged. Set one with `-log` on [`bp-set`](/commands-reference#bp-set), with the
+**Action** row (*Log message*) of the breakpoint dialog, or with **Add Logpoint…** in the editor's
+margin menu:
+
+```
+bp-set $8000 -log "x={A} at {PC:hex16}"
+bp-set [code/code.kz80.asm]:42 -log "[LOOP] B={B}" -hit *100
+bp-set $5800 -w -log "attribute {ADDR} = {VAL:bits}"
+```
+
+In the margin, the Breakpoints view and the disassembly, a logpoint is drawn as a **diamond**
+rather than a dot, with the same "=" and hollow variants. When a logpoint and a breakpoint that
+stops share an address, the logpoint logs and then the machine stops.
+
+A logpoint logs **once each time execution arrives** at it: continuing or stepping from a
+logpoint the machine is sitting on does not log it a second time.
+
+### The message
+
+```
+x={A} at {PC:hex16}
+[SPRITES] sprite {B} at {w[IX+2]:hex16}, visible={b[IX+4] & $80 != 0}
+{{literal braces}} and a dollar $ sign
+```
+
+- `{` opens a placeholder and `}` closes it; write `{{` and `}}` for literal braces.
+- A placeholder holds a full [condition](#conditions-and-hit-counts) expression, so `{A == 3}`
+  prints 0 or 1.
+- An optional `:format` ends a placeholder. Only a `:` outside brackets and parentheses followed by
+  a format name counts, so `{b[05:$C010]}` and `{05:Flags}` keep their meaning; a bank-local label
+  whose name is a format name is written in parentheses: `{(05:hex8)}`.
+- A leading `[NAME]` (letters, digits, `_` and `.`) is the logpoint's **group** and is not printed.
+  Without one, the group is `DEFAULT`.
+
+| Format | Prints | Value $F3 |
+|---|---|---|
+| `hex8` / `hex16` | 2 / 4 hexadecimal digits, no `$` | `F3` / `00F3` |
+| `uint8` / `uint16` | the low 8 / 16 bits, unsigned | `243` |
+| `int8` / `int16` | the low 8 / 16 bits, signed | `-13` |
+| `bits` | binary: 8 digits below 256, otherwise 16 | `11110011` |
+| `string` | the value is an address: the bytes there up to a 0 (at most 64), with `£`, `©`, `↑` mapped back | `HELLO` |
+| *(none)* | a bare register, flag, `VAL`, `ADDR` or unsigned memory read: `$` and as many digits as it reads (`$3F`, `$C000`; a flag prints `0`/`1`); anything else in decimal | `$F3` |
+
+A message is checked as you type it, with the same column-accurate errors as a condition. A
+division by zero prints `<division by zero>` in place of the value, and the line is still logged.
+
+### The Log pane
+
+Each line reads `[GROUP] message @ $8012` &mdash; the group, the message, and where it fired. The
+first line of a debug session also leaves a note in the Emulator pane. At most 256 lines are kept
+per frame; a logpoint in a tight loop that produces more reports the rest as one line
+(`… 1 234 log lines dropped in this frame`), so the IDE stays responsive. Logpoints work in debug
+runs only, on the Z80 machines.
+
+### Groups
+
+Groups can be switched on and off without touching the logpoints themselves:
+[`lp-en`](/commands-reference#lp-en) switches all of them, or logs only the groups you name, and
+[`lp-groups`](/commands-reference#lp-groups) lists them. In the Breakpoints view, the **Log groups**
+section has a checkbox for each group. The switch is saved with the project. A logpoint logs only
+when both it and its group are enabled.
+
+### DeZog LOGPOINT comments
+
+Klive reads [DeZog](https://github.com/maziac/DeZog)'s logpoint comments, so a DeZog-annotated
+project logs unchanged:
+
+```z80klive
+DrawSprite:
+    ld a,(hl)        ; LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}
+```
+
+Every build turns each `LOGPOINT` comment into a logpoint at the address of its line. It fires
+**before** that instruction runs; a comment on a line of its own, or after a label alone, fires at
+the next instruction. The keyword is case-sensitive. Each expansion of a macro holding one gets its
+own logpoint, and comments in an `IF` branch that is not assembled are ignored.
+
+These comments use DeZog's own notation:
+
+- `${expression}` or `${expression:format}`; every other character, a lone `$` or `{` included,
+  is literal text. The formats are the ones above.
+- Registers (`A`, `HL`, `IXL`, `AF'` …), labels with their full dotted name (`sprite.counter`), and
+  memory reads `b@(address)` (a byte) and `w@(address)` (a word). Parentheses alone only group:
+  `(HL)` is HL, not memory.
+- Numbers as `31`, `0x1F` or `1Fh`.
+- C's operators and precedence &mdash; unlike Klive's own conditions, comparisons bind tighter
+  than `&`, so `A & 0x0F == 3` means `A & (0x0F == 3)` &mdash; plus `*`, `/` and `%` on whole
+  numbers.
+- `${Remote.tStates}`, `${Remote.cpuFrequency}` and `${Remote.slots}`. Division drops the
+  fraction, so DeZog's `${Remote.cpuFrequency/1000000}MHz` prints `3MHz` for a 3.5 MHz machine.
+
+The logpoints belong to the build: they are not saved with the project, they are replaced by the
+next successful build (a failed build keeps the previous ones), and you change one by editing the
+comment and building again. In the editor's margin they are drawn as a **hollow diamond with a dot**,
+and the Breakpoints view lists them, read-only, in a **LOGPOINT comments** section. A comment that
+cannot be read is a build **warning** with its file and line, never an error.
+
+When you build with **sjasmplus**, add this line to your source, or sjasmplus leaves the comments
+out of its debug data:
+
+```z80klive
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+```
+
+Klive warns when a source has `LOGPOINT` comments but the build delivered none. sjasmplus exports
+**end-of-line** comments only. Its builds also give conditions and logpoints their labels, written
+with their full dotted name (`module.main.local`).
 
 ## Bank-Relative Breakpoints (ZX Spectrum Next)
 

@@ -221,9 +221,14 @@ export class Sp48TestSession {
     return this.continueToBreakpoint({ ...options, returnTo: ret });
   }
 
-  /** Continues in debug mode until a breakpoint stops the machine; returns the PC. */
-  continueToBreakpoint(options: { returnTo?: number } & RunLimit = {}): number {
-    const { maxFrames = 100, returnTo } = options;
+  /**
+   * Continues in debug mode until a breakpoint stops the machine; returns the PC. `onFrame` runs
+   * after every executed frame - where the emulator's controller drains the logpoint queue.
+   */
+  continueToBreakpoint(
+    options: { returnTo?: number; onFrame?: () => void } & RunLimit = {}
+  ): number {
+    const { maxFrames = 100, returnTo, onFrame } = options;
     const ctx = this.machine.executionContext;
     if (!ctx.debugSupport) throw new Error("Call attachDebugSupport() first.");
     ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
@@ -232,6 +237,7 @@ export class Sp48TestSession {
       while (true) {
         if (this.frames >= limit) throw new Error(`No breakpoint hit in ${maxFrames} frames (PC=${hex4(this.machine.pc)})`);
         const termination = this.execute();
+        onFrame?.();
         if (termination === FrameTerminationMode.DebugEvent) return this.machine.pc;
         if (returnTo !== undefined && this.machine.pc === returnTo) {
           throw new Error(`The routine returned to ${hex4(returnTo)} without hitting a breakpoint.`);

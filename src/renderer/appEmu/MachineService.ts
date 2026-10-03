@@ -86,9 +86,11 @@ class MachineService implements IMachineService {
         // --- We keep the old source code breakpoints, as we want to use them in the new machine.
         // --- Session-owned ones are dropped: they belong to a debug session on the machine being
         // --- torn down (a run-to-cursor target, a NEX entry-point stop) and mean nothing on the
-        // --- next one.
+        // --- next one. Annotation-owned logpoints (DeZog `LOGPOINT` comments) go too: they belong
+        // --- to a build for the machine being torn down, and the next build installs its own
+        // --- (`.plans/LOGPOINTS_PLAN.md` L10).
         oldBps = this._controller.debugSupport.breakpoints.filter(
-          (bp) => bp.owner?.kind !== "session"
+          (bp) => bp.owner?.kind !== "session" && bp.owner?.kind !== "annotation"
         );
       }
       this._oldDisposing.fire(this._controller.machine.machineId);
