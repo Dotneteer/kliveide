@@ -1033,3 +1033,11 @@ uint32_t sp48GetEarBitChangedFrom1Tacts(void) {
 uint32_t sp48GetDiagnosticFlags(void) {
   return sp48DiagnosticFlags;
 }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// this machine's side-effect-free reads. The 48K has no partitions, so the defaults stand for them.
+// -----------------------------------------------------------------------------
+
+#define COND_PEEK(address) ((uint32_t)sp48Memory[(address) & 0xffffu])
+#include "../../../../z80/wasm/z80-condition.c"

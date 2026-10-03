@@ -2199,3 +2199,23 @@ uint32_t sp128GetPsgCurrentOutput(void) {
 uint32_t sp128GetDiagnosticFlags(void) {
   return sp128DiagnosticFlags;
 }
+
+// -----------------------------------------------------------------------------
+// Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
+// this machine's side-effect-free reads. The partition reads mirror `getMemoryPartition` in
+// `ZxSpectrum128WasmV2Machine.ts` exactly (a test compares them), and the paging `getPartition`.
+// -----------------------------------------------------------------------------
+
+static uint32_t condSp128PeekPartition(int32_t partition, uint32_t address) {
+  const uint32_t offset = address % 0x4000u;
+  if (partition < 0) {
+    const uint32_t rom = partition == -2 ? 1u : 0u;
+    return sp128Rom[rom * 0x4000u + offset];
+  }
+  return sp128Ram[((uint32_t)partition & 0x07u) * 0x4000u + offset];
+}
+
+#define COND_PEEK(address) ((uint32_t)readMappedMemory(address))
+#define COND_PEEK_PARTITION(partition, address) condSp128PeekPartition(partition, address)
+#define COND_PARTITION_OF(address) ((int64_t)(int32_t)sp128GetCurrentPartition((address) >> 14))
+#include "../../../../z80/wasm/z80-condition.c"

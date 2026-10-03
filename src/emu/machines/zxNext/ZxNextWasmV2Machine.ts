@@ -1,5 +1,4 @@
-import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
-import { createConditionContext, partitionViewMemory } from "../conditionContext";
+import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   ULA_BORDER_COLOR_NAMES,
@@ -1617,18 +1616,13 @@ export class ZxNextWasmV2Machine
   }
 
   /**
-   * What a breakpoint condition reads: the registers after one sync from the core (the debug loop
-   * mirrors only PC per instruction) and memory through the core's peek (`zxnextMemoryPeekMapped`: the CPU view, Layer 2 mapping included, with no contention or bus-mirror update) and the side-effect-free NextReg peek.
+   * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
+   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
-  override getConditionContext(): ConditionContext {
-    const runtime = this.requireWasmV2Runtime();
-    this.syncCpuFromWasmV2(runtime);
-    return createConditionContext(this, {
-      ...partitionViewMemory(this),
-      readMemory: (address) => runtime.exports.zxnextReadMemory(address & 0xffff),
-      nextReg: (reg) => runtime.exports.zxnextPeekNextRegister(reg & 0xff)
-    });
+  getConditionStore(): ConditionStore | undefined {
+    return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
+
 
   private syncCpuFromWasmV2(runtime: ZxNextWasmV2Runtime): void {
     const wasm = runtime.exports;

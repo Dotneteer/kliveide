@@ -14,7 +14,7 @@ import { CpuState } from "@common/messaging/EmuApi";
 import { SysVar } from "@abstractions/SysVar";
 import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 import { IMemorySection } from "@abstractions/MemorySection";
-import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionStore } from "@emu/machines/conditionStore";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -256,10 +256,10 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   parsePartitionLabel(label: string): number | undefined;
 
   /**
-   * What a breakpoint condition reads: registers and side-effect-free memory. Z80 machines only;
-   * absent elsewhere (conditions are a Z80 profile, `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` C18).
+   * The core's breakpoint condition evaluator (`src/emu/z80/wasm/z80-condition.c`): its program
+   * store. Z80 WASM machines only; absent elsewhere, where conditions are not offered (C18).
    */
-  getConditionContext?(): ConditionContext;
+  getConditionStore?(): ConditionStore | undefined;
 
   /**
    * Gets the label of the specified partition

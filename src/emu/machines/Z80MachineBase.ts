@@ -19,8 +19,7 @@ import { SysVar } from "@abstractions/SysVar";
 import { QueuedEvent } from "@emu/abstractions/QueuedEvent";
 import { IMachineFrameRunner, MachineFrameRunner } from "./MachineFrameRunner";
 import { IMemorySection } from "@abstractions/MemorySection";
-import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
-import { createConditionContext, partitionViewMemory } from "./conditionContext";
+
 
 /**
  * This class is intended to be a reusable base class for emulators using the Z80 CPU.
@@ -503,17 +502,6 @@ export abstract class Z80MachineBase extends Z80Cpu implements IZ80Machine {
    * @param _label Label to parse
    */
   abstract parsePartitionLabel(_label: string): number | undefined;
-
-  /**
-   * What a breakpoint condition reads (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6): the CPU's
-   * registers and side-effect-free memory reads. This default reads the TypeScript register fields
-   * and the partition views, which is right for a machine whose CPU runs in TypeScript. A WASM
-   * machine overrides it to sync its registers from the core first, and to use the core's own
-   * side-effect-free read.
-   */
-  getConditionContext(): ConditionContext {
-    return createConditionContext(this, partitionViewMemory(this));
-  }
 
   /**
    * Gets the label of the specified partition

@@ -221,7 +221,13 @@ It comes back by itself once a build defines the label.
 
 A condition is checked when you set it: a syntax error, a string of the wrong length, `VAL` on an
 execution breakpoint, a partition the machine does not have, or a constant that the value it is
-compared with can never hold (`b[HL] == $1234`, `A > 300`, `ZF == 2`) is refused with its column.
+compared with can never hold (`b[HL] == $1234`, `A > 300`, `A > -1`, `ZF == 2`) is refused with its
+column. The range check applies to constants written as literals - numbers, negative numbers,
+characters and partition names; a constant written as an expression (`A == 255 + 1`) is not checked,
+and simply never matches.
+
+Conditions are evaluated inside the emulated machine's core, next to its registers and memory, so a
+condition costs little even on an address the program passes thousands of times a second.
 
 ### Hit counts
 

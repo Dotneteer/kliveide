@@ -1,5 +1,4 @@
-import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
-import { createConditionContext, partitionViewMemory } from "../conditionContext";
+import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { BlinkState, CpuState } from "@common/messaging/EmuApi";
@@ -1006,17 +1005,13 @@ export class Z88WasmV2Machine extends Z88WasmHost {
    * through `super`, so the values just read from the core are not pushed back into it.
    */
   /**
-   * What a breakpoint condition reads: the registers after one sync from the core (the debug loop
-   * mirrors only PC per instruction) and memory through the core's paged read (no timing, no bus event).
+   * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
+   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
-  override getConditionContext(): ConditionContext {
-    const runtime = this.requireWasmV2Runtime();
-    this.syncCpuFromWasmV2(runtime);
-    return createConditionContext(this, {
-      ...partitionViewMemory(this),
-      readMemory: (address) => runtime.exports.z88ReadMemory(address & 0xffff)
-    });
+  getConditionStore(): ConditionStore | undefined {
+    return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
+
 
   private syncCpuFromWasmV2(runtime: Z88WasmV2Runtime): void {
     const w = runtime.exports;

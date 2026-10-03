@@ -4,7 +4,8 @@ import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointIn
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { SourceStep } from "./SourceStepDecision";
 
-import type { CompiledCondition, ConditionAccessKind, ConditionContext, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { CompiledCondition, ConditionAccessKind, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionStore } from "./conditionStore";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 import { incBreakpointHitsVersionAction, incBreakpointsVersionAction } from "@state/actions";
@@ -15,7 +16,8 @@ import {
   hasBreakpointFilters
 } from "@common/utils/breakpoint-filters";
 import { bindCondition, compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
-import { evaluateCondition } from "@common/utils/breakpoint-condition/condition-evaluator";
+import { emitCondition } from "@common/utils/breakpoint-condition/condition-bytecode";
+import { ConditionResult } from "./conditionStore";
 import {
   bankRelativeAddresses,
   bankRelativePartition,
@@ -78,6 +80,10 @@ type BreakpointRuntimeState = {
   compiled?: CompiledCondition;
   /** Set when the condition does not compile (C15): the breakpoint then stops every time. */
   error?: string;
+  /** Where its program is in the core's store; unset until the store is (re)built. */
+  slot?: number;
+  /** The store had no room for its program: it then stops every time, and says why. */
+  overflow?: boolean;
 };
 
 /** The access an access breakpoint saw: `VAL` and `ADDR`. */
@@ -129,11 +135,17 @@ export class DebugSupport implements IDebugSupport {
   private conditionSymbols: ConditionSymbols = {};
 
   /**
-   * Builds the context a condition reads: registers, memory, paging. Set once per machine; called
-   * at most once per stop decision, and only when a condition is actually evaluated - the one
-   * register sync a WASM machine needs happens there and never on the fast path (§4.6).
+   * The machine's condition evaluator: the program store of its core, where the shared C evaluator
+   * (`src/emu/z80/wasm/z80-condition.c`) runs a condition next to the registers - no copy crosses
+   * the WASM boundary (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine
+   * (`connectConditionSupport`); absent on a machine without one, where a condition fails safe.
    */
-  conditionContextProvider?: () => ConditionContext;
+  conditionStoreProvider?: () => ConditionStore | undefined;
+
+  /** The store needs rebuilding: a program was compiled, re-bound or dropped since the last build. */
+  private storeDirty = true;
+  /** The token the last rebuild wrote into the store; a store not carrying it is rebuilt. */
+  private storeToken = 0;
 
   /**
    * While set, only session-owned breakpoints can stop the machine.
@@ -217,7 +229,7 @@ export class DebugSupport implements IDebugSupport {
 
     // --- A condition or a hit rule here: decide from the definitions (§4.5)
     if (flags & COND_BP) {
-      return this.decideFiltered("exec", address, partitionResolver, this.lazyContext());
+      return this.decideFiltered("exec", address, partitionResolver);
     }
 
     // --- Is there a partitionless breakpoint for this address?
@@ -289,16 +301,14 @@ export class DebugSupport implements IDebugSupport {
   ): boolean {
     const kindBit = kind === "memRead" ? MEM_READ_BP : MEM_WRITE_BP;
     const disabledBit = kind === "memRead" ? DIS_MR_BP : DIS_MW_BP;
-    let context: (() => ConditionContext) | undefined;
     let stop = false;
     for (let i = 0; i < length; i++) {
       const address = addresses[i];
       const flags = this.breakpointFlags[address];
       if (!(flags & kindBit)) continue;
       if (flags & COND_BP) {
-        context ??= this.lazyContext();
         if (
-          this.decideFiltered(kind, address, partitionResolver, context, {
+          this.decideFiltered(kind, address, partitionResolver, {
             value: values?.[i],
             address
           })
@@ -420,7 +430,6 @@ export class DebugSupport implements IDebugSupport {
    * @param origin Which writer performed it
    */
   hasNextRegWrite(reg: number, value: number, origin: "cpu" | "copper"): boolean {
-    let context: (() => ConditionContext) | undefined;
     let stop = false;
     for (const [key, bp] of this.breakpointDefs) {
       if (!isNextRegBreakpoint(bp) || bp.disabled) continue;
@@ -432,8 +441,7 @@ export class DebugSupport implements IDebugSupport {
         if (mask !== 0 && (((value ^ bp.nextRegValue) & mask) & 0xff) !== 0) continue;
       }
       // --- No early return: every matching definition counts its hit (C11)
-      context ??= this.lazyContext();
-      if (this.passesFilters(key, bp, "nextReg", context, { value: value & 0xff, address: reg & 0xff })) {
+      if (this.passesFilters(key, bp, "nextReg", { value: value & 0xff, address: reg & 0xff })) {
         stop = true;
       }
     }
@@ -450,7 +458,7 @@ export class DebugSupport implements IDebugSupport {
     }
     const flags = this.breakpointFlags[address];
     if (flags & IO_READ_BP && flags & COND_BP) {
-      return this.decideFiltered("ioRead", address, () => undefined, this.lazyContext(), {
+      return this.decideFiltered("ioRead", address, () => undefined, {
         value,
         address
       });
@@ -468,7 +476,7 @@ export class DebugSupport implements IDebugSupport {
     }
     const flags = this.breakpointFlags[address];
     if (flags & IO_WRITE_BP && flags & COND_BP) {
-      return this.decideFiltered("ioWrite", address, () => undefined, this.lazyContext(), {
+      return this.decideFiltered("ioWrite", address, () => undefined, {
         value,
         address
       });
@@ -497,6 +505,7 @@ export class DebugSupport implements IDebugSupport {
   eraseAllBreakpoints(): void {
     this.breakpointDefs.clear();
     this.runtime.clear();
+    this.storeDirty = true;
     this.breakpointFlags = new Uint16Array(0x1_0000);
     this.breakpointData.clear();
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
@@ -658,6 +667,7 @@ export class DebugSupport implements IDebugSupport {
     this.breakpointDefs.delete(bpKey);
     // --- A breakpoint removed and added again is a new one, and starts counting from zero
     this.runtime.delete(bpKey);
+    this.storeDirty = true;
 
     // --- A bank-relative breakpoint owns entries at eight addresses, tagged with its key, so it
     // --- takes only its own away.
@@ -835,6 +845,7 @@ export class DebugSupport implements IDebugSupport {
           const oldKey = getBreakpointStorageKey(bp);
           this.breakpointDefs.delete(oldKey);
           this.runtime.delete(oldKey);
+          this.storeDirty = true;
           return;
         }
       }
@@ -885,6 +896,7 @@ export class DebugSupport implements IDebugSupport {
         for (const item of toDelete.values()) {
           this.breakpointDefs.delete(item);
           this.runtime.delete(item);
+          this.storeDirty = true;
         }
         this.store?.dispatch(incBreakpointsVersionAction(), "emu");
       }
@@ -1019,7 +1031,10 @@ export class DebugSupport implements IDebugSupport {
     // --- Counters survive the rebuild for every breakpoint still present (an edit keeps its count,
     // --- C12); the ones that are gone take theirs with them.
     for (const key of [...this.runtime.keys()]) {
-      if (!this.breakpointDefs.has(key)) this.runtime.delete(key);
+      if (!this.breakpointDefs.has(key)) {
+        this.runtime.delete(key);
+        this.storeDirty = true;
+      }
     }
     this.store?.dispatch(incBreakpointsVersionAction(), "emu");
   }
@@ -1074,7 +1089,6 @@ export class DebugSupport implements IDebugSupport {
     kind: DecisionKind,
     address: number,
     partitionResolver: (address: number) => number | undefined,
-    context: () => ConditionContext,
     access?: AccessFacts
   ): boolean {
     let stop = false;
@@ -1093,7 +1107,7 @@ export class DebugSupport implements IDebugSupport {
         }
         if (paged !== partition) continue;
       }
-      if (this.passesFilters(key, bp, accessKindOf(kind), context, access)) stop = true;
+      if (this.passesFilters(key, bp, accessKindOf(kind), access)) stop = true;
     }
     return stop;
   }
@@ -1103,28 +1117,26 @@ export class DebugSupport implements IDebugSupport {
    *
    * - A condition that did not compile counts as true (C15, fail-safe).
    * - An inactive condition (a missing label, C14) neither stops nor counts.
-   * - An evaluation that throws counts as true, for the same reason as C15.
+   * - A condition the core cannot run - no evaluator, no room in its store, an error from the
+   *   evaluator - counts as true, for the same reason as C15.
+   *
+   * The evaluation itself is one call into the core (`condEvaluate`), which reads the registers and
+   * memory where they live.
    */
   private passesFilters(
     key: string,
     bp: BreakpointInfo,
     accessKind: ConditionAccessKind,
-    context: () => ConditionContext,
     access?: AccessFacts
   ): boolean {
     const state = this.runtimeFor(key, bp, accessKind);
     if (state.compiled) {
       if (state.compiled.inactiveReason) return false;
-      let holds: boolean;
-      try {
-        const ctx = context();
-        ctx.accessValue = access?.value;
-        ctx.accessAddress = access?.address;
-        holds = evaluateCondition(state.compiled, ctx);
-      } catch {
-        holds = true;
+      const store = this.syncConditionStore();
+      if (store && state.slot !== undefined) {
+        const result = store.evaluate(state.slot, access?.value ?? 0, access?.address ?? 0);
+        if (result === ConditionResult.FALSE) return false;
       }
-      if (!holds) return false;
     }
 
     state.hits++;
@@ -1173,6 +1185,7 @@ export class DebugSupport implements IDebugSupport {
       state.compiledStamp = this.conditionStamp;
       state.compiled = undefined;
       state.error = undefined;
+      this.storeDirty = true;
       if (text !== undefined) {
         const result = compileCondition(text, {
           ...this.conditionFacts,
@@ -1190,16 +1203,45 @@ export class DebugSupport implements IDebugSupport {
     return state;
   }
 
-  /** A context getter that asks the provider at most once, on first use. */
-  private lazyContext(): () => ConditionContext {
-    let context: ConditionContext | undefined;
-    return () => {
-      if (context) return context;
-      if (!this.conditionContextProvider) {
-        throw new Error("This machine provides no condition context");
+  /**
+   * The core's program store, rebuilt when it is stale: every active condition's program written
+   * into its own slot (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4). Rebuilt whole rather than
+   * patched - the store is a cache of the definitions, and a cache patched in place is the kind of
+   * thing this file has learned not to trust (R5). Stale means a program changed since the last
+   * build, or the store does not carry the last build's token: a core instantiated since then has
+   * an empty store.
+   */
+  private syncConditionStore(): ConditionStore | undefined {
+    const store = this.conditionStoreProvider?.();
+    if (!store) return undefined;
+    if (!this.storeDirty && this.storeToken !== 0 && store.token === this.storeToken) return store;
+
+    store.slots.fill(0);
+    let slot = 0;
+    let offset = 0;
+    for (const state of this.runtime.values()) {
+      state.slot = undefined;
+      state.overflow = false;
+      if (!state.compiled || state.compiled.inactiveReason) continue;
+      const code = emitCondition(state.compiled);
+      if (
+        slot >= store.slotCount ||
+        code.length > store.maxProgramWords ||
+        offset + code.length > store.arena.length
+      ) {
+        state.overflow = true;
+        continue;
       }
-      return (context = this.conditionContextProvider());
-    };
+      store.arena.set(code, offset);
+      store.slots[slot * 2] = offset;
+      store.slots[slot * 2 + 1] = code.length;
+      state.slot = slot++;
+      offset += code.length;
+    }
+    this.storeToken = (this.storeToken % 0xfffffffe) + 1;
+    store.token = this.storeToken;
+    this.storeDirty = false;
+    return store;
   }
 
   /**
@@ -1228,6 +1270,8 @@ export class DebugSupport implements IDebugSupport {
       if (!state.compiled) continue;
       const before = state.compiled.inactiveReason;
       bindCondition(state.compiled, this.conditionSymbols);
+      // --- A label's value is a constant in the program, so every program is re-emitted
+      this.storeDirty = true;
       changed ||= before !== state.compiled.inactiveReason;
     }
     // --- Only when a breakpoint went inactive or came back: the editors and the panel show that,
@@ -1274,8 +1318,14 @@ export class DebugSupport implements IDebugSupport {
     for (const [key, bp] of this.breakpointDefs) {
       const listed: BreakpointInfo = { ...bp };
       const state = this.runtimeFor(key, bp);
+      // --- Built now, so a condition the store has no room for reports it before its first hit
+      if (state.compiled && !state.compiled.inactiveReason) this.syncConditionStore();
+      if (state.overflow) {
+        listed.conditionError =
+          "the machine's condition store is full - it stops every time; remove some conditions";
+      }
       if (hasBreakpointFilters(bp) || state.hits > 0) listed.currentHits = state.hits;
-      if (state.error) listed.conditionError = state.error;
+      if (state.error) listed.conditionError ??= state.error;
       if (state.compiled?.inactiveReason) listed.conditionInactive = state.compiled.inactiveReason;
       result.push(listed);
     }
@@ -1287,6 +1337,7 @@ export class DebugSupport implements IDebugSupport {
     if (oldKey === newKey) return;
     const state = this.runtime.get(oldKey);
     this.runtime.delete(oldKey);
+    this.storeDirty = true;
     if (state) this.runtime.set(newKey, state);
   }
 

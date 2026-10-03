@@ -4,8 +4,18 @@ import {
   bindCondition,
   compileCondition
 } from "@common/utils/breakpoint-condition/condition-checker";
-import { evaluateCondition, evaluateNode } from "@common/utils/breakpoint-condition/condition-evaluator";
 import { tokenizeCondition } from "@common/utils/breakpoint-condition/condition-lexer";
+import {
+  CONDITION_FORMAT,
+  CONDITION_REGISTER_IDS,
+  CondOp,
+  MEM_BE,
+  MEM_SIGNED,
+  PART_BANK,
+  PART_PARTITION,
+  emitCondition,
+  stackDepthOf
+} from "@common/utils/breakpoint-condition/condition-bytecode";
 import {
   bankLocalSymbolKey,
   type ConditionContext,
@@ -14,9 +24,11 @@ import {
 } from "@common/utils/breakpoint-condition/condition-types";
 
 /*
- * The condition engine, Phase 2 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: every operator and
- * precedence level, the literal forms, names, accesses, the §3.7 checks with their ranges, string
- * folding, wrap-around, and label binding.
+ * The condition language's **front end** - lexer, parser, checker, label binding - which needs no
+ * evaluator: the §3.7 errors with their ranges, warnings, tokens, the emitted tree and the bound
+ * labels (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3). What expressions *evaluate to* is tested
+ * against the C evaluator in `test/wasm/condition/condition-evaluation.test.ts`
+ * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
  */
 
 const EXEC: ConditionEnvironment = { accessKind: "exec" };
@@ -41,32 +53,7 @@ const NEXT: ConditionEnvironment = {
   partitionRange: { min: -23, max: 223 }
 };
 
-type FakeMachine = Partial<Record<ConditionRegister, number>> & {
-  memory?: Uint8Array;
-  partitions?: Record<number, Uint8Array>;
-  banks?: Record<number, Uint8Array>;
-  paging?: (address: number) => number | undefined;
-  nextRegs?: Record<number, number>;
-  val?: number;
-  addr?: number;
-};
 
-function context(m: FakeMachine = {}): ConditionContext {
-  const memory = m.memory ?? new Uint8Array(0x10000);
-  return {
-    reg: (id) => m[id] ?? 0,
-    readMemory: (address) => memory[address],
-    readPartition: (p, address) => {
-      const view = m.partitions?.[p];
-      return view ? view[address % view.length] : 0;
-    },
-    readBank: (bank, offset) => m.banks?.[bank]?.[offset] ?? 0,
-    partitionOf: (address) => m.paging?.(address),
-    nextReg: (reg) => m.nextRegs?.[reg] ?? 0,
-    accessValue: m.val,
-    accessAddress: m.addr
-  };
-}
 
 function compile(text: string, env: ConditionEnvironment = EXEC) {
   const result = compileCondition(text, env);
@@ -76,15 +63,7 @@ function compile(text: string, env: ConditionEnvironment = EXEC) {
   return result.compiled;
 }
 
-/** The numeric value of an expression (not just its truth). */
-function value(text: string, m: FakeMachine = {}, env: ConditionEnvironment = EXEC): number {
-  const compiled = compile(text, env);
-  return evaluateNode(compiled.tree, context(m), compiled.values);
-}
 
-function holds(text: string, m: FakeMachine = {}, env: ConditionEnvironment = EXEC): boolean {
-  return evaluateCondition(compile(text, env), context(m));
-}
 
 function error(text: string, env: ConditionEnvironment = EXEC) {
   const result = compileCondition(text, env);
@@ -101,43 +80,6 @@ function memoryWith(bytes: Record<number, number[]>): Uint8Array {
 }
 
 describe("literals", () => {
-  it.each([
-    ["100", 100],
-    ["65_535", 65535],
-    ["$FF", 255],
-    ["$ff", 255],
-    ["0xFF", 255],
-    ["0XfF", 255],
-    ["%1010", 10],
-    ["0b1010", 10],
-    ["%0000_0111", 7],
-    ["$FFFF_FFFF", 0xffffffff],
-    ["-1", -1],
-    ["--1", 1],
-    ["'A'", 0x41],
-    ["'\\''", 0x27],
-    ["'\\\\'", 0x5c],
-    ["'\\\"'", 0x22],
-    ["'\\n'", 0x0a],
-    ["'\\r'", 0x0d],
-    ["'\\t'", 0x09],
-    ["'\\0'", 0x00],
-    ["'\\x7F'", 0x7f],
-    ["'\"'", 0x22]
-  ])("%s is %d", (text, expected) => {
-    expect(value(text)).toBe(expected);
-  });
-
-  it("maps the three characters where the ZX Spectrum set differs from ASCII", () => {
-    expect(value("'£'")).toBe(0x60);
-    expect(value("'©'")).toBe(0x7f);
-    expect(value("'↑'")).toBe(0x5e);
-  });
-
-  it("accepts any other character up to $FF", () => {
-    expect(value("'é'")).toBe(0xe9);
-  });
-
   it.each([
     ["''", "Empty character literal", 0, 2],
     ["'AB'", 'use "AB" for a string', 0, 4],
@@ -159,92 +101,7 @@ describe("literals", () => {
   });
 });
 
-describe("operators", () => {
-  it("adds and subtracts mathematically", () => {
-    expect(value("3 + 4 - 10")).toBe(-3);
-    expect(value("$FFFFFFFF + 1")).toBe(0x1_0000_0000);
-  });
-
-  it("compares mathematically, so signed and unsigned mix", () => {
-    expect(value("-1 < 0")).toBe(1);
-    expect(value("$FFFFFFFF > -1")).toBe(1);
-    expect(value("3 <= 3")).toBe(1);
-    expect(value("3 >= 4")).toBe(0);
-    expect(value("3 == 3")).toBe(1);
-    expect(value("3 != 3")).toBe(0);
-  });
-
-  it("gives & | ^ ~ an unsigned 32-bit result (C6)", () => {
-    expect(value("~0")).toBe(0xffffffff);
-    expect(value("~0 == $FFFFFFFF")).toBe(1);
-    expect(value("$F0F0 | $0F0F")).toBe(0xffff);
-    expect(value("$FF ^ $0F")).toBe(0xf0);
-    expect(value("$80000000 & $80000000")).toBe(0x80000000);
-    expect(value("-1 & $FF")).toBe(0xff);
-  });
-
-  it("shifts exactly as JavaScript does (C5)", () => {
-    expect(value("1 << 31")).toBe(-2147483648);
-    expect(value("(1 << 31) >>> 0")).toBe(2147483648);
-    expect(value("-8 >> 1")).toBe(-4);
-    expect(value("-8 >>> 28")).toBe(15);
-    expect(value("1 << 32")).toBe(1);
-    expect(value("1 << 33")).toBe(2);
-    expect(value("$100 >> 36")).toBe(0x10);
-  });
-
-  it("yields 0 or 1 from the logical operators", () => {
-    expect(value("!0")).toBe(1);
-    expect(value("!5")).toBe(0);
-    expect(value("5 && 7")).toBe(1);
-    expect(value("5 && 0")).toBe(0);
-    expect(value("0 || 9")).toBe(1);
-    expect(value("0 || 0")).toBe(0);
-  });
-
-  it("short-circuits && and ||", () => {
-    let reads = 0;
-    const ctx = context();
-    ctx.readMemory = () => {
-      reads++;
-      return 0;
-    };
-    evaluateCondition(compile("A == 1 && [HL] == 0"), ctx);
-    evaluateCondition(compile("A == 0 || [HL] == 0"), ctx);
-    expect(reads).toBe(0);
-  });
-});
-
 describe("precedence", () => {
-  it("binds bitwise operators tighter than comparisons (C3)", () => {
-    expect(holds("A & $80 == 0", { A: 0x7f })).toBe(true);
-    expect(holds("A & $80 == 0", { A: 0x80 })).toBe(false);
-    expect(holds("A | 1 == 1", { A: 0 })).toBe(true);
-    expect(holds("A ^ 1 == 0", { A: 1 })).toBe(true);
-  });
-
-  it("orders the levels || < && < comparison < | < ^ < & < shift < additive < unary", () => {
-    expect(value("1 || 0 && 0")).toBe(1); // && first
-    expect(value("0 && 1 == 1")).toBe(0);
-    expect(value("6 | 3 ^ 3")).toBe(6); // ^ first
-    expect(value("6 ^ 3 & 1")).toBe(7); // & first
-    expect(value("3 & 1 << 1")).toBe(2); // shift first
-    expect(value("1 << 1 + 1")).toBe(4); // additive first
-    expect(value("-1 + 2")).toBe(1); // unary first
-    expect(value("!0 + 1")).toBe(2);
-    expect(value("~0 + 1")).toBe(0x1_0000_0000);
-  });
-
-  it("is left-associative within a level", () => {
-    expect(value("10 - 3 - 2")).toBe(5);
-    expect(value("256 >> 2 >> 1")).toBe(32);
-  });
-
-  it("honours parentheses", () => {
-    expect(value("(1 + 2) << 1")).toBe(6);
-    expect(value("(B & %0000_0111) == 3 || CF", { B: 0x0b, F: 0 })).toBe(1);
-  });
-
   it("rejects a chained comparison, pointing at the second operator", () => {
     const diagnostic = error("1 < A < 3");
     expect(diagnostic.message).toContain("cannot be chained");
@@ -252,148 +109,15 @@ describe("precedence", () => {
   });
 });
 
-describe("registers and flags", () => {
-  const cpu: FakeMachine = {
-    A: 0xff, F: 0b1101_0101, B: 1, C: 2, D: 3, E: 4, H: 5, L: 6, I: 7, R: 8,
-    XH: 9, XL: 10, YH: 11, YL: 12,
-    AF: 0xff55, BC: 0x0102, DE: 0x0304, HL: 0x0506, IX: 0x090a, IY: 0x0b0c,
-    SP: 0xfffe, PC: 0x8000, WZ: 0x1234,
-    "AF'": 0x0044, "BC'": 0x1111, "DE'": 0x2222, "HL'": 0x3333
-  };
-
-  it.each([
-    ["A", 0xff], ["a", 0xff], ["F", 0b1101_0101], ["B", 1], ["C", 2], ["D", 3], ["E", 4],
-    ["H", 5], ["L", 6], ["I", 7], ["R", 8],
-    ["IXH", 9], ["XH", 9], ["IXL", 10], ["XL", 10], ["IYH", 11], ["YH", 11], ["IYL", 12], ["YL", 12],
-    ["AF", 0xff55], ["BC", 0x0102], ["DE", 0x0304], ["HL", 0x0506], ["hl", 0x0506],
-    ["IX", 0x090a], ["IY", 0x0b0c], ["SP", 0xfffe], ["PC", 0x8000], ["WZ", 0x1234],
-    ["AF'", 0x0044], ["af'", 0x0044], ["BC'", 0x1111], ["DE'", 0x2222], ["HL'", 0x3333]
-  ])("%s reads its register", (name, expected) => {
-    expect(value(name, cpu)).toBe(expected);
-  });
-
-  it.each([
-    ["SF", 1], ["ZF", 1], ["F5F", 0], ["YF", 0], ["HF", 1], ["F3F", 0], ["XF", 0],
-    ["PVF", 1], ["PF", 1], ["VF", 1], ["NF", 0], ["CF", 1], ["zf", 1]
-  ])("%s reads its bit of F", (name, expected) => {
-    expect(value(name, cpu)).toBe(expected);
-  });
-
-  it("reads the base plan's example with named flags (C16)", () => {
-    expect(holds("A == $FF && !ZF", { A: 0xff, F: 0 })).toBe(true);
-    expect(holds("A == $FF && !ZF", { A: 0xff, F: 0x40 })).toBe(false);
-  });
-
-  it("lexes a prime only directly after AF, BC, DE or HL", () => {
-    expect(tokenizeCondition("AF'").map((t) => t.text)).toEqual(["AF'", ""]);
-    // --- After any other name it starts a character literal
-    expect(tokenizeCondition("A=='x'").map((t) => t.kind)).toEqual(["ident", "op", "num", "eof"]);
-    expect(holds("AF' == $0044", cpu)).toBe(true);
-  });
-
-  it("reads the undocumented flags two ways", () => {
-    expect(holds("(F & $28) != 0 || F3F || F5F", { F: 0x08 })).toBe(true);
-    expect(holds("(F & $28) != 0 || F3F || F5F", { F: 0 })).toBe(false);
-  });
-});
-
 describe("memory accesses", () => {
-  const memory = memoryWith({
-    0x8000: [0x34, 0x12, 0x78, 0x56],
-    0x9000: [0x80, 0xff, 0xff, 0xff],
-    0xffff: [0xaa],
-    0x0000: [0xbb, 0xcc, 0xdd],
-    0x5c3a: [0x65, 0x00]
-  });
-
-  it.each([
-    ["[$8000]", 0x34],
-    ["b[$8000]", 0x34],
-    ["w[$8000]", 0x1234],
-    ["wle[$8000]", 0x1234],
-    ["wbe[$8000]", 0x3412],
-    ["l[$8000]", 0x56781234],
-    ["lle[$8000]", 0x56781234],
-    ["lbe[$8000]", 0x34127856],
-    ["sb[$9000]", -128],
-    ["sw[$9000]", -128],
-    ["swle[$9000]", -128],
-    ["swbe[$9000]", -32513],
-    ["sl[$9000]", -128],
-    ["slle[$9000]", -128],
-    ["slbe[$9000]", -2130706433],
-    ["l[$9000]", 0xffffff80],
-    ["W[$8000]", 0x1234]
-  ])("%s reads %d", (text, expected) => {
-    expect(value(text, { memory })).toBe(expected);
-  });
-
-  it("evaluates the address expression", () => {
-    expect(value("[IX+3]", { memory, IX: 0x7ffd })).toBe(0x34);
-    expect(value("[HL-1]", { memory, HL: 0x8001 })).toBe(0x34);
-    expect(value("w[$5C3A] > 100", { memory })).toBe(1);
-  });
-
-  it("wraps the address and consecutive bytes at $FFFF", () => {
-    expect(value("w[$FFFF]", { memory })).toBe(0xbbaa);
-    expect(value("l[$FFFF]", { memory })).toBe(0xddccbbaa);
-    expect(value("[$10000]", { memory })).toBe(0xbb);
-    expect(value("[-1]", { memory })).toBe(0xaa);
-  });
-
-  it("treats access prefixes as labels when no bracket follows", () => {
-    const compiled = compile("w + b", { ...EXEC, symbols: { w: 2, b: 3 } });
-    expect(evaluateCondition(compiled, context())).toBe(true);
-  });
-
   it("rejects an unbalanced bracket with the opening column", () => {
     const diagnostic = error("w[HL == 1");
     expect(diagnostic.message).toContain("Missing ']' to close the '[' at column 2");
   });
 });
 
-describe("signed conversions", () => {
-  it.each([
-    ["s8($FF)", -1],
-    ["s8($7F)", 127],
-    ["s8($180)", -128],
-    ["s16($8000)", -32768],
-    ["s16($17FFF)", 32767],
-    ["s32($FFFFFFFF)", -1],
-    ["s32($80000000)", -2147483648]
-  ])("%s folds to %d", (text, expected) => {
-    expect(value(text)).toBe(expected);
-  });
-
-  it("converts at run time", () => {
-    expect(holds("s16(HL) < 0", { HL: 0x8000 })).toBe(true);
-    expect(holds("s16(HL) < 0", { HL: 0x7fff })).toBe(false);
-    expect(holds("s8(A) == -1", { A: 0xff })).toBe(true);
-  });
-
-  it("compares a signed access with a negative literal", () => {
-    expect(holds("sb[IX+2] < -1", { memory: memoryWith({ 0x8002: [0xfe] }), IX: 0x8000 })).toBe(true);
-  });
-});
-
 describe("strings (C8, C9)", () => {
   const memory = memoryWith({ 0x8000: [0x4b, 0x4c, 0x49, 0x56] }); // "KLIV"
-
-  it.each([
-    ['l[HL] == "KLIV"', true],
-    ['lbe[HL] == "KLIV"', true],
-    ['w[HL] == "KL"', true],
-    ['wbe[HL] == "KL"', true],
-    ['b[HL] == "K"', true],
-    ['[HL] == "K"', true],
-    ['"KLIV" == l[HL]', true],
-    ['l[HL] != "KLIX"', true],
-    ['(l[HL]) == "KLIV"', true],
-    ['w[HL] == "LK"', false],
-    ['wbe[HL] == "LK"', false]
-  ])("%s is %s", (text, expected) => {
-    expect(holds(text, { memory, HL: 0x8000 })).toBe(expected);
-  });
 
   it("folds the string into the number the access would read", () => {
     expect(compile('w[HL] == "AB"').tree).toMatchObject({ r: { k: "num", v: 0x4241 } });
@@ -405,10 +129,6 @@ describe("strings (C8, C9)", () => {
   it("maps string characters to ZX codes and decodes escapes", () => {
     expect(compile('w[HL] == "£\\x7F"').tree).toMatchObject({ r: { k: "num", v: 0x7f60 } });
     expect(compile('l[HL] == "a\\"bc"').tree).toMatchObject({ r: { k: "num", v: 0x63622261 } });
-  });
-
-  it("is a numeric test when written as a character literal", () => {
-    expect(holds("w[HL] == 'A'", { memory: memoryWith({ 0x8000: [0x41, 0] }), HL: 0x8000 })).toBe(true);
   });
 
   it.each([
@@ -444,8 +164,7 @@ describe("out-of-range constants (C10)", () => {
     ["ZF == 2", "2 is out of range for ZF (0…1)", 6, 7],
     ["s8(A) == 128", "out of range for s8(…) (-128…127)", 9, 12],
     ["s16(HL) == -32769", "out of range for s16(…)", 11, 17],
-    ["s32(HL) == $80000000", "out of range for s32(…)", 11, 20],
-    ["A == (1 << 8)", "(1 << 8) is out of range for A", 5, 13]
+    ["s32(HL) == $80000000", "out of range for s32(…)", 11, 20]
   ])("rejects %s", (text, message, start, end) => {
     const diagnostic = error(text);
     expect(diagnostic.message).toContain(message);
@@ -476,10 +195,6 @@ describe("out-of-range constants (C10)", () => {
 });
 
 describe("access specials (VAL, ADDR)", () => {
-  it.each<ConditionEnvironment["accessKind"]>(["memory", "io", "nextReg"])("are available on %s breakpoints", (accessKind) => {
-    expect(holds("VAL == $C9 && ADDR >= $5800", { val: 0xc9, addr: 0x5900 }, { accessKind })).toBe(true);
-  });
-
   it("are an error on an execution breakpoint", () => {
     const diagnostic = error("VAL == 1");
     expect(diagnostic.message).toContain("an execution breakpoint has none");
@@ -489,85 +204,11 @@ describe("access specials (VAL, ADDR)", () => {
 });
 
 describe("partitions and banks", () => {
-  it("reads a partition-qualified byte at the address's offset, whatever is paged in", () => {
-    const partitions = { 5: new Uint8Array(0x4000) };
-    partitions[5][0x0010] = 0xff;
-    expect(holds("b[B5:$C010] == $FF", { partitions }, SP128)).toBe(true);
-  });
-
-  it("wraps consecutive bytes inside the partition", () => {
-    const partitions = { 5: new Uint8Array(0x4000) };
-    partitions[5][0x3fff] = 0x34;
-    partitions[5][0x0000] = 0x12;
-    expect(value("w[B5:$FFFF]", { partitions }, SP128)).toBe(0x1234);
-  });
-
-  it("wraps by the partition's own size (8K on the Next)", () => {
-    const partitions = { 5: new Uint8Array(0x2000) };
-    partitions[5][0x0010] = 0x99;
-    expect(value("b[05:$C010]", { partitions }, NEXT)).toBe(0x99);
-  });
-
-  it("reads a Next 16K bank at an offset, wrapping inside the bank", () => {
-    const banks = { 0x0a: new Uint8Array(0x4000) };
-    banks[0x0a][0x0100] = 0x34;
-    banks[0x0a][0x0101] = 0x12;
-    banks[0x0a][0x3fff] = 0x78;
-    banks[0x0a][0x0000] = 0x56;
-    expect(value("w[0A:+$0100]", { banks }, NEXT)).toBe(0x1234);
-    expect(value("w[0a:+$3FFF]", { banks }, NEXT)).toBe(0x5678);
-  });
-
-  it("reads a bank-local label inside the bank, and its offset outside brackets", () => {
-    const banks = { 5: new Uint8Array(0x4000) };
-    banks[5][0x0123] = 1;
-    banks[5][0x0125] = 7;
-    const symbols = { [bankLocalSymbolKey(5, "Flags")]: 0x0123 };
-    const env = { ...NEXT, symbols };
-    expect(holds("b[05:Flags] == 1", { banks }, env)).toBe(true);
-    expect(holds("b[05:Flags+2] == 7", { banks }, env)).toBe(true);
-    expect(value("05:Flags", {}, env)).toBe(0x0123);
-  });
-
-  it("reads a global label as a partition-qualified address when parenthesised", () => {
-    const partitions = { 5: new Uint8Array(0x2000) };
-    partitions[5][0x0010] = 0x42;
-    const env = { ...NEXT, symbols: { score: 0xc010 } };
-    expect(value("b[05:(score)]", { partitions }, env)).toBe(0x42);
-  });
-
-  it("treats a reserved name after a spec as a partition-qualified address", () => {
-    const partitions = { 5: new Uint8Array(0x4000) };
-    partitions[5][0x0010] = 0x42;
-    expect(value("b[B5:HL]", { partitions, HL: 0xc010 }, SP128)).toBe(0x42);
-  });
-
   it("lexes a spec before ':' and a number otherwise", () => {
     expect(tokenizeCondition("b[05:$C010]").map((t) => t.kind)).toEqual([
       "ident", "op", "spec", "op", "num", "op", "eof"
     ]);
     expect(tokenizeCondition("b[$05]").map((t) => t.kind)).toEqual(["ident", "op", "num", "op", "eof"]);
-  });
-
-  it("compares page() with a partition literal", () => {
-    const paging = (address: number) => (address >= 0xc000 ? 5 : 0);
-    expect(holds("page($C000) == @B5", { paging }, SP128)).toBe(true);
-    expect(holds("page($C000) == @b5", { paging }, SP128)).toBe(true);
-    expect(holds("page($8000) == @B5", { paging }, SP128)).toBe(false);
-    expect(holds("page($C000) == @R0", { paging: () => undefined }, SP128)).toBe(false);
-  });
-
-  it("reads a Next register", () => {
-    expect(holds("nr($56) == $0A", { nextRegs: { 0x56: 0x0a } }, NEXT)).toBe(true);
-  });
-
-  it("ignores partition and bank prefixes on a machine without partitions (C17)", () => {
-    const memory = memoryWith({ 0xc010: [0xff], 0x0100: [0x11], 0x0123: [0x22] });
-    expect(holds("b[05:$C010] == $FF", { memory })).toBe(true);
-    expect(holds("b[B5:$C010] == $FF", { memory })).toBe(true);
-    expect(holds("b[0A:+$0100] == $11", { memory })).toBe(true);
-    // --- The bank-local label reads as the global label of that name
-    expect(holds("b[05:Flags] == $22", { memory }, { ...EXEC, symbols: { flags: 0x0123 } })).toBe(true);
   });
 
   it.each([
@@ -591,18 +232,6 @@ describe("partitions and banks", () => {
 });
 
 describe("labels (§3.6)", () => {
-  it("binds labels case-insensitively and re-binds after a build", () => {
-    const compiled = compile("w[score] >= 1000 && Lives == 3");
-    expect(compiled.labels).toEqual(["score", "lives"]);
-    bindCondition(compiled, { score: 0x8000, lives: 3 });
-    expect(compiled.inactiveReason).toBeUndefined();
-    const memory = memoryWith({ 0x8000: [0xe8, 0x03] });
-    expect(evaluateCondition(compiled, context({ memory }))).toBe(true);
-
-    bindCondition(compiled, { score: 0x8000, lives: 2 });
-    expect(evaluateCondition(compiled, context({ memory }))).toBe(false);
-  });
-
   it("is inactive while a label is missing, and active again once defined (C14)", () => {
     const compiled = compile("w[score] > 0 && level == 1 && w[score] < 9");
     bindCondition(compiled, { level: 1 });
@@ -629,14 +258,6 @@ describe("labels (§3.6)", () => {
 
   it("gives no warning without a symbol table", () => {
     expect(compileCondition("w[score] > 1", EXEC).warnings).toEqual([]);
-  });
-
-  it("lets reserved names win, and reaches the label through backticks", () => {
-    const symbols = { zf: 0x9000, c: 0x9100 };
-    const memory = memoryWith({ 0x9000: [0x55] });
-    const compiled = compile("w[`ZF`] == $55", { ...EXEC, symbols });
-    expect(evaluateCondition(compiled, context({ memory }))).toBe(true);
-    expect(compile("ZF", EXEC).tree).toEqual({ k: "flag", bit: 6 });
   });
 
   it("warns when a reserved name shadows a symbol (R5)", () => {
@@ -684,15 +305,22 @@ describe("profile (C18)", () => {
   });
 });
 
-describe("constant folding", () => {
-  it("folds constant sub-trees", () => {
-    expect(compile("(1 + 2) << 3").tree).toEqual({ k: "num", v: 24 });
+describe("no constant folding (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4)", () => {
+  it("leaves constant sub-trees to the C evaluator", () => {
     expect(compile("A == 1 + 2").tree).toEqual({
       k: "bin",
       op: "==",
       l: { k: "reg", r: "A" },
-      r: { k: "num", v: 3 }
+      r: { k: "bin", op: "+", l: { k: "num", v: 1 }, r: { k: "num", v: 2 } }
     });
+    expect(compile("s8($FF)").tree).toEqual({ k: "call", fn: "s8", arg: { k: "num", v: 255 } });
+  });
+
+  it("range-checks literals - negated ones included - but not computed constants", () => {
+    expect(error("A > -1").message).toContain("-1 is out of range for A");
+    expect(error("A == --300").message).toContain("--300 is out of range for A");
+    expect(compileCondition("A == (1 << 8)", EXEC).errors).toEqual([]);
+    expect(compileCondition("A == 255 + 1", EXEC).errors).toEqual([]);
   });
 
   it("keeps the source text", () => {
@@ -724,5 +352,70 @@ describe("the plan's §3.1 examples", () => {
     ["AF' == $0044", EXEC]
   ])("%s compiles", (text, env) => {
     expect(compileCondition(text, env).errors).toEqual([]);
+  });
+});
+
+describe("the bytecode (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.1)", () => {
+  const code = (text: string, env: ConditionEnvironment = EXEC) => Array.from(emitCondition(compile(text, env)));
+
+  it("starts with the format word and ends with END", () => {
+    const words = code("A");
+    expect(words[0]).toBe(CONDITION_FORMAT);
+    expect(words[words.length - 1]).toBe(CondOp.END);
+  });
+
+  it("emits operands in postfix order", () => {
+    expect(code("A == 1")).toEqual([
+      CONDITION_FORMAT,
+      CondOp.REG, CONDITION_REGISTER_IDS.indexOf("A"),
+      CondOp.CONST, 1, 0,
+      CondOp.EQ,
+      CondOp.END
+    ]);
+  });
+
+  it("encodes a negative constant as 64-bit two's complement", () => {
+    // --- A ROM partition literal is -1
+    expect(code("page($0000) == @R0", SP128).slice(-5, -2)).toEqual([CondOp.CONST, 0xffffffff, 0xffffffff]);
+    // --- `-1` is a literal negated by the evaluator, not folded
+    expect(code("-1")).toEqual([CONDITION_FORMAT, CondOp.CONST, 1, 0, CondOp.NEG, CondOp.END]);
+  });
+
+  it("encodes a memory access's width, byte order, sign and part", () => {
+    const [, , , , mem, info, part] = code("slbe[0A:+$0100]", NEXT);
+    expect(mem).toBe(CondOp.MEM);
+    expect(info).toBe(4 | MEM_BE | MEM_SIGNED | (PART_BANK << 8));
+    expect(part).toBe(0x0a);
+    const [, , , , , partInfo, partition] = code("w[B5:$C010]", SP128);
+    expect(partInfo).toBe(2 | (PART_PARTITION << 8));
+    expect(partition).toBe(5);
+    // --- A negative partition (a ROM) as its 32-bit pattern
+    expect(code("b[R0:$0010]", SP128)[6]).toBe(0xffffffff);
+  });
+
+  it("jumps over the right side of && and || to the end of the operator", () => {
+    const words = code("A && B");
+    const jump = words.indexOf(CondOp.ANDJ);
+    expect(words[jump + 1]).toBe(words.indexOf(CondOp.BOOL) + 1);
+    expect(code("A || B")).toContain(CondOp.ORJ);
+  });
+
+  it("puts a bound label's value in the program, and re-emits on re-binding (E10)", () => {
+    const compiled = compile("w[score] == 1");
+    bindCondition(compiled, { score: 0x9000 });
+    expect(Array.from(emitCondition(compiled)).slice(1, 4)).toEqual([CondOp.CONST, 0x9000, 0]);
+    bindCondition(compiled, { score: 0x9100 });
+    expect(Array.from(emitCondition(compiled)).slice(1, 4)).toEqual([CondOp.CONST, 0x9100, 0]);
+  });
+
+  it("refuses a condition nested deeper than the evaluator's stack", () => {
+    const deep = `${"(1 + ".repeat(70)}1${")".repeat(70)}`;
+    expect(stackDepthOf(compile("1 + (1 + 1)").tree)).toBe(3);
+    expect(compileCondition(deep, EXEC).errors[0].message).toBe("The condition is nested too deeply");
+  });
+
+  it("refuses a condition longer than a core stores", () => {
+    const long = Array.from({ length: 400 }, () => "A").join(" + ") + " == 1";
+    expect(compileCondition(long, EXEC).errors[0].message).toBe("The condition is too long");
   });
 });

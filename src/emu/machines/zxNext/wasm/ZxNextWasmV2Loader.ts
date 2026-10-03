@@ -1,3 +1,4 @@
+import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { OFFS_ERR_PAGE } from "../nextMemoryLayout";
 import { ZXNEXT_FRAME_TRACE_CAPACITY, ZXNEXT_FRAME_TRACE_HEADER_SIZE, ZXNEXT_FRAME_TRACE_RECORD_SIZE } from "./frameTraceLayout";
@@ -12,7 +13,7 @@ export const ZXNEXT_WASM_V2_SCREEN_HEIGHT = 288;
 
 export type ZxNextWasmV2ExportFunction = (...args: number[]) => number;
 
-export type ZxNextWasmV2Exports = WebAssembly.Exports & {
+export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   memory: WebAssembly.Memory;
   zxnextMemoryPtr: ZxNextWasmV2ExportFunction;
   zxnextPixelBufferPtr: ZxNextWasmV2ExportFunction;
@@ -704,6 +705,9 @@ const requiredV2Exports = [
   "zxnextGetDmaAddressA",
   "zxnextGetDmaAddressB",
   "zxnextGetDmaSeq",
+  // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
+  // --- evaluator, identical in every Z80 core
+  ...CONDITION_CORE_EXPORTS
 ] as const;
 
 export function resetZxNextWasmV2ModuleCache(): void {

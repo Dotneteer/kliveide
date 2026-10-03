@@ -1,5 +1,4 @@
-import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
-import { createConditionContext, partitionViewMemory } from "../conditionContext";
+import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { Sp128WasmV2LoaderOptions, Sp128WasmV2Runtime } from "./wasm/Sp128WasmV2Loader";
@@ -987,17 +986,13 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
   }
 
   /**
-   * What a breakpoint condition reads: the registers after one sync from the core (the debug loop
-   * mirrors only PC per instruction) and memory through the core's slot-map read (no contention, no floating bus).
+   * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
+   * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
-  override getConditionContext(): ConditionContext {
-    const runtime = this.requireWasmV2Runtime();
-    this.syncCpuFromWasmV2(runtime);
-    return createConditionContext(this, {
-      ...partitionViewMemory(this),
-      readMemory: (address) => runtime.exports.sp128ReadMemory(address & 0xffff)
-    });
+  getConditionStore(): ConditionStore | undefined {
+    return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
+
 
   private syncCpuFromWasmV2(runtime: Sp128WasmV2Runtime): void {
     const wasm = runtime.exports;

@@ -1,9 +1,7 @@
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
-import type {
-  ConditionContext,
-  ConditionSymbols
-} from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionStore } from "@emu/machines/conditionStore";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 /**
@@ -226,10 +224,10 @@ export interface IDebugSupport {
   resetBreakpointsTo(breakpoints: BreakpointInfo[], scope: BreakpointScope): void;
 
   /**
-   * Builds what a breakpoint condition reads. Set once per machine; asked only when a condition is
-   * evaluated (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6).
+   * The machine's condition evaluator: its core's program store
+   * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`). Set once per machine.
    */
-  conditionContextProvider?: () => ConditionContext;
+  conditionStoreProvider?: () => ConditionStore | undefined;
 
   /** The machine facts conditions compile against. */
   setConditionEnvironment(facts: ConditionMachineFacts): void;

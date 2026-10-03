@@ -6,6 +6,8 @@
  * The shape follows `Sp48WasmV2Loader.ts`. See `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`.
  */
 
+import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+
 export const Z88_WASM_V2_ARTIFACT_NAME = "cambridge-z88.wasm";
 
 /** The 4 MB physical memory: slot N (0-3) at N * $100000, internal RAM at $080000 */
@@ -18,10 +20,10 @@ export const Z88_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Z88WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Z88WasmV2Exports = WebAssembly.Exports & {
+export type Z88WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   memory: WebAssembly.Memory;
 } & {
-  [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory">]: Z88WasmV2ExportFunction;
+  [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory" | (typeof CONDITION_CORE_EXPORTS)[number]>]: Z88WasmV2ExportFunction;
 } & {
   /** The RTC test hooks; in the build's allow-list, not required by the loader */
   z88TestResetRtc?: Z88WasmV2ExportFunction;
@@ -213,7 +215,10 @@ export const z88WasmV2RequiredExports = [
   "z88SetCpuSnoozed",
   "z88GetStepOutAddress",
   "z88GetInterruptDepth",
-  "z88GetCpuSigInt"
+  "z88GetCpuSigInt",
+  // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
+  // --- evaluator, identical in every Z80 core
+  ...CONDITION_CORE_EXPORTS
 ] as const;
 
 let cachedModule: WebAssembly.Module | undefined;

@@ -649,7 +649,7 @@ lessons file for Phase 6's visuals.
 
 ## 6. Risks
 
-- **R1 — hot loops.** A conditional breakpoint inside a tight loop costs one register sync, a tree
+- **R1 — hot loops.** *(Follow-up: [BREAKPOINT_CONDITIONS_IN_C_PLAN.md](BREAKPOINT_CONDITIONS_IN_C_PLAN.md) moves evaluation into the C cores.)* A conditional breakpoint inside a tight loop costs one register sync, a tree
   walk and a few memory reads per pass. Acceptable at first; the measured cost goes into §9 after
   Phase 3. A later step could evaluate simple register-only trees in C.
 - **R2 — the core change touches four cores.** Phase 0 edits the bus functions of the 48K, 128K,
@@ -738,6 +738,10 @@ The handoff checklist ran green on a fresh `npm run build:all-wasm`: the full un
 `~/KliveProjects/sp48-1` (its `klive.project` restored afterwards): the margin menu, the "=" and
 hollow glyphs, the dialog in source mode, the panel's filter cells, and a `-hit *3` source
 breakpoint stopping on the third pass with the live count reading 3.
+
+**Superseded in part (2026-10-03):** conditions are now evaluated in C inside every Z80 core -
+`condition-evaluator.ts`, constant folding and `conditionContext.ts` below are gone. See
+[BREAKPOINT_CONDITIONS_IN_C_PLAN.md](BREAKPOINT_CONDITIONS_IN_C_PLAN.md) §8.
 
 **Engine (Phase 2)** — `src/common/utils/breakpoint-condition/`: `condition-types.ts`,
 `condition-lexer.ts`, `condition-parser.ts` (syntax tree with spans), `condition-checker.ts`

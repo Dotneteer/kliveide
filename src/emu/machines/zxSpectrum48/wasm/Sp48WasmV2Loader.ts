@@ -1,3 +1,4 @@
+import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 
 export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
@@ -7,7 +8,7 @@ export const SP48_WASM_V2_PIXEL_GUARD_LINES = 4;
 
 export type Sp48WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp48WasmV2Exports = WebAssembly.Exports & {
+export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   memory: WebAssembly.Memory;
   sp48MemoryPtr: Sp48WasmV2ExportFunction;
   sp48PixelBufferPtr: Sp48WasmV2ExportFunction;
@@ -343,7 +344,10 @@ const requiredV2Exports = [
   "sp48TapeGetBlockPilotPulseCount",
   "sp48TapeGetDataCapacity",
   "sp48TapeGetFileNameCapacity",
-  "sp48TapeGetSaveDataCapacity"
+  "sp48TapeGetSaveDataCapacity",
+  // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
+  // --- evaluator, identical in every Z80 core
+  ...CONDITION_CORE_EXPORTS
 ] as const;
 
 let cachedV2Module: WebAssembly.Module | undefined;

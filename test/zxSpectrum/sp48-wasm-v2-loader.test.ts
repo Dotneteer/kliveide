@@ -205,6 +205,17 @@ describe("ZX Spectrum 48K WASM v2 loader", () => {
 function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp48WasmV2Instance> {
   return Promise.resolve({
     exports: {
+      // --- The breakpoint condition evaluator (every Z80 core exports it)
+      condArenaPtr: () => 0,
+      condArenaCapacity: () => 0,
+      condSlotTablePtr: () => 0,
+      condSlotCapacity: () => 0,
+      condMaxProgramWords: () => 0,
+      condGetToken: () => 0,
+      condSetToken: () => undefined,
+      condGetLastStatus: () => 0,
+      condEvaluate: () => 0,
+      condEvaluateValue: () => 0n,
       memory: new WebAssembly.Memory({ initial: 8 }),
       sp48MemoryPtr: () => 0x00000,
       sp48PixelBufferPtr: () => 0x10000,

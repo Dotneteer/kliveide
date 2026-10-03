@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { connectConditionSupport } from "@emu/machines/conditionContext";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 
 import { createSp48Session } from "../harness/sp48";

@@ -1,40 +1,50 @@
 import { describe, expect, it } from "vitest";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
-import type { ConditionContext, ConditionRegister } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionRegister } from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionStore } from "@emu/machines/conditionStore";
 
 import { COND_BP, DebugSupport, EXEC_BP } from "@emu/machines/DebugSupport";
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import { bankLocalSymbolKey } from "@common/utils/breakpoint-condition/condition-types";
 import { bankRelativePartition } from "@common/utils/breakpoint-scope";
+import { conditionTestStore } from "./condition-host";
 
 /*
  * Conditional breakpoints in the emulator's breakpoint store, Phase 3 of
  * `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`: the slow path, per-definition counters, the hit rules,
- * resets, symbol binding, and the fail-safe and inactive states.
+ * resets, symbol binding, and the fail-safe and inactive states. Conditions run on the C evaluator
+ * every Z80 core includes (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`), here built standalone over
+ * a fake machine; `DebugSupport` sees the same program store a core gives it.
  */
 
 type Fake = {
   regs: Partial<Record<ConditionRegister, number>>;
   memory: Uint8Array;
-  /** How many times the provider built a context. */
-  contexts: number;
+  /** How many conditions the core was asked to evaluate. */
+  evaluations: number;
+  store: ConditionStore;
 };
 
 function setup(over: { machineId?: string; labels?: Record<number, string> } = {}) {
-  const fake: Fake = { regs: {}, memory: new Uint8Array(0x10000), contexts: 0 };
+  const regs: Partial<Record<ConditionRegister, number>> = {};
+  const memory = new Uint8Array(0x10000);
+  const store = conditionTestStore({
+    reg: (id) => regs[id] ?? 0,
+    readMemory: (address) => memory[address],
+    readPartition: () => 0,
+    readBank: () => 0,
+    partitionOf: () => undefined
+  });
+  const fake: Fake = { regs, memory, evaluations: 0, store };
+  const evaluate = store.evaluate.bind(store);
+  store.evaluate = (...args: Parameters<ConditionStore["evaluate"]>) => {
+    fake.evaluations++;
+    return evaluate(...args);
+  };
   const ds = new DebugSupport();
   ds.setConditionEnvironment(conditionMachineFacts(over.machineId ?? "sp48", over.labels ?? {}));
-  ds.conditionContextProvider = (): ConditionContext => {
-    fake.contexts++;
-    return {
-      reg: (id) => fake.regs[id] ?? 0,
-      readMemory: (address) => fake.memory[address],
-      readPartition: () => 0,
-      readBank: () => 0,
-      partitionOf: () => undefined
-    };
-  };
+  ds.conditionStoreProvider = () => store;
   return { ds, fake };
 }
 
@@ -44,28 +54,28 @@ const at = (ds: DebugSupport, address: number, resolver: (a: number) => number |
 const hitsOf = (ds: DebugSupport, index = 0) => ds.listBreakpointsWithState()[index].currentHits;
 
 describe("the fast path", () => {
-  it("is untouched for a breakpoint without filters: no flag, no context", () => {
+  it("is untouched for a breakpoint without filters: no flag, no evaluation", () => {
     const { ds, fake } = setup();
     ds.addBreakpoint({ address: 0x8000, exec: true });
     expect(ds.breakpointFlags[0x8000] & COND_BP).toBe(0);
     expect(at(ds, 0x8000)).toBe(true);
-    expect(fake.contexts).toBe(0);
+    expect(fake.evaluations).toBe(0);
   });
 
-  it("builds no context for a hit rule alone", () => {
+  it("never asks the core about a hit rule alone", () => {
     const { ds, fake } = setup();
     ds.addBreakpoint({ address: 0x8000, exec: true, hitCount: 2 });
     expect(ds.breakpointFlags[0x8000] & COND_BP).toBeTruthy();
     at(ds, 0x8000);
-    expect(fake.contexts).toBe(0);
+    expect(fake.evaluations).toBe(0);
   });
 
-  it("builds the context once per decision, however many conditions read it", () => {
+  it("asks the core once per condition at the address", () => {
     const { ds, fake } = setup();
     ds.addBreakpoint({ address: 0x8000, exec: true, condition: "A == 1" });
     ds.addBreakpoint({ address: 0x8000, partition: 3, exec: true, condition: "B == 1" });
     at(ds, 0x8000, () => 3);
-    expect(fake.contexts).toBe(1);
+    expect(fake.evaluations).toBe(2);
   });
 });
 
@@ -99,9 +109,9 @@ describe("conditions", () => {
     expect(listed.currentHits).toBe(2);
   });
 
-  it("stops when evaluation throws, e.g. a machine without a context", () => {
+  it("stops every time on a machine without an evaluator (fail-safe)", () => {
     const { ds } = setup();
-    ds.conditionContextProvider = undefined;
+    ds.conditionStoreProvider = undefined;
     ds.addBreakpoint({ address: 0x8000, exec: true, condition: "A == 1" });
     expect(at(ds, 0x8000)).toBe(true);
   });
@@ -369,5 +379,57 @@ describe("machine facts", () => {
     expect(ds.listBreakpointsWithState()[0].conditionError).toBeDefined();
     ds.setConditionEnvironment(conditionMachineFacts("sp128", { 5: "B5", 0: "B0" }));
     expect(ds.listBreakpointsWithState()[0].conditionError).toBeUndefined();
+  });
+});
+
+describe("the core's program store (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` §4.4)", () => {
+  it("rebuilds when the core's store was replaced (a freshly instantiated core)", () => {
+    const { ds, fake } = setup();
+    ds.addBreakpoint({ address: 0x8000, exec: true, condition: "B == 3" });
+    fake.regs.B = 3;
+    expect(at(ds, 0x8000)).toBe(true);
+    // --- What a new core looks like: an empty store without this side's token
+    fake.store.slots.fill(0);
+    fake.store.token = 0;
+    expect(at(ds, 0x8000)).toBe(true);
+    fake.regs.B = 4;
+    expect(at(ds, 0x8000)).toBe(false);
+  });
+
+  it("re-emits the programs when labels are re-bound", () => {
+    const { ds, fake } = setup();
+    fake.memory[0x9000] = 7;
+    fake.memory[0x9100] = 9;
+    ds.setConditionSymbols({ score: 0x9000 });
+    ds.addBreakpoint({ address: 0x8000, exec: true, condition: "[score] == 9" });
+    expect(at(ds, 0x8000)).toBe(false);
+    ds.setConditionSymbols({ score: 0x9100 });
+    expect(at(ds, 0x8000)).toBe(true);
+  });
+
+  it("holds 256 conditions; the next one fails safe and says why", () => {
+    const { ds, fake } = setup();
+    for (let i = 0; i < 257; i++) {
+      ds.addBreakpoint({ address: 0x8000 + i, exec: true, condition: "A == 1" });
+    }
+    fake.regs.A = 0;
+    const listed = ds.listBreakpointsWithState();
+    const full = listed.filter((bp) => bp.conditionError);
+    expect(full).toHaveLength(1);
+    expect(full[0].conditionError).toContain("condition store is full");
+    // --- The 256 that fit evaluate; the one that does not stops every time
+    expect(listed.filter((bp) => !bp.conditionError).every((bp) => !at(ds, bp.address!))).toBe(true);
+    expect(at(ds, full[0].address!)).toBe(true);
+  });
+
+  it("frees a slot when a condition goes away", () => {
+    const { ds, fake } = setup();
+    for (let i = 0; i < 257; i++) {
+      ds.addBreakpoint({ address: 0x8000 + i, exec: true, condition: "A == 1" });
+    }
+    ds.listBreakpointsWithState();
+    ds.removeBreakpoint({ address: 0x8000, exec: true });
+    fake.regs.A = 0;
+    expect(ds.listBreakpointsWithState().filter((bp) => bp.conditionError)).toHaveLength(0);
   });
 });

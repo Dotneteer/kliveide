@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
-import { evaluateCondition, evaluateNode } from "@common/utils/breakpoint-condition/condition-evaluator";
+import { evaluateCondition, evaluateValue } from "./condition-host";
 import {
   bankLocalSymbolKey,
   type ConditionContext,
@@ -15,8 +15,8 @@ import {
  * at an ordinary address and across each wrap boundary; string comparison for every unsigned width
  * and byte order; and the out-of-range check at each type's exact boundaries.
  *
- * Pure unit tests: a fake context, no machine. Expected values come from `DataView`, an oracle
- * independent of the evaluator under test.
+ * Run against the C evaluator every Z80 core includes (`condition-host.ts`), with a fake context
+ * and no machine. Expected values come from `DataView`, an oracle independent of the evaluator.
  */
 
 type Access = { name: string; width: 1 | 2 | 4; be: boolean; signed: boolean };
@@ -129,7 +129,7 @@ const SP128: ConditionEnvironment = {
 function valueOf(text: string, world: World, env: ConditionEnvironment = EXEC): number {
   const result = compileCondition(text, env);
   if (!result.compiled) throw new Error(`'${text}' did not compile: ${result.errors[0]?.message}`);
-  return evaluateNode(result.compiled.tree, contextOf(world), result.compiled.values);
+  return evaluateValue(result.compiled, contextOf(world));
 }
 
 describe("every access type reads what its width, byte order and signedness say", () => {

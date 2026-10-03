@@ -7,7 +7,7 @@ import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { connectConditionSupport } from "@emu/machines/conditionContext";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 
 import { createSp48Session } from "../harness/sp48";
 

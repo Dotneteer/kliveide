@@ -97,8 +97,11 @@ export function bankLocalSymbolKey(bank: number, name: string): string {
 }
 
 /**
- * What evaluation reads (plan §3.8). Every read must be free of side effects: no contention, no
- * floating-bus latch, no access-breakpoint trigger (R3).
+ * The machine facts a condition reads - the contract of the C evaluator's `COND_*` hooks
+ * (`src/emu/z80/wasm/z80-condition.c`), which each core implements in C. In TypeScript this shape
+ * only describes a fake machine for the evaluator's standalone test build
+ * (`test/wasm/condition/condition-host.ts`). Every read must be free of side effects: no
+ * contention, no floating-bus latch, no access-breakpoint trigger (R3).
  */
 export interface ConditionContext {
   reg(id: ConditionRegister): number;

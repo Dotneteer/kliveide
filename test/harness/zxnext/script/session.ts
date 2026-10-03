@@ -14,7 +14,7 @@ import type {
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
-import { connectConditionSupport } from "@emu/machines/conditionContext";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,

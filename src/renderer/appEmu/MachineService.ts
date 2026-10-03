@@ -15,7 +15,7 @@ import {
 } from "../abstractions/IMachineService";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import { connectConditionSupport } from "@emu/machines/conditionContext";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { machineRendererRegistry } from "@common/machines/machine-renderer-registry";
 import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { MachineConfigSet, MachineInfo, MachineModel } from "@common/machines/info-types";

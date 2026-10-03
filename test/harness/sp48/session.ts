@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
-import { connectConditionSupport } from "@emu/machines/conditionContext";
+import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { beginSourceStep, type SourceDebugIndex, type SourceStep, type SourceStepKind } from "@emu/machines/SourceStepDecision";
 import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";

@@ -9,14 +9,16 @@ import type {
 import { bankLocalSymbolKey } from "./condition-types";
 import { ConditionSyntaxError } from "./condition-lexer";
 import { parseCondition, type SyntaxNode } from "./condition-parser";
-import { applyBinary, applyUnary, toSigned } from "./condition-evaluator";
+import { MAX_PROGRAM_WORDS, MAX_STACK_DEPTH, emitCondition, stackDepthOf } from "./condition-bytecode";
 
 /*
  * The checker and the compile/bind entry points (plan §3.6-§3.8).
  *
  * The checker turns the syntax tree into the evaluation tree: names become registers, flags,
- * specials or label slots; strings fold into the number their access would read (C9); constants
- * fold; and the static checks of §3.7 run, the first error stopping compilation. Warnings (unknown
+ * specials or label slots; strings fold into the number their access would read (C9) - byte
+ * packing, not evaluation; and the static checks of §3.7 run, the first error stopping compilation.
+ * Nothing here evaluates: constants are emitted as bytecode and the C evaluator computes them
+ * (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4). Warnings (unknown
  * labels, reserved names shadowing a symbol) are collected and do not reject the condition.
  */
 
@@ -65,6 +67,14 @@ export function compileCondition(text: string, env: ConditionEnvironment): Compi
     const syntax = parseCondition(text);
     const checker = new Checker(text, env, warnings);
     const tree = checker.convert(syntax, false);
+    // --- The evaluator's limits (`z80-condition.c`): checked here, so a condition the cores could
+    // --- not run is refused with a message rather than failing safe at every hit
+    if (stackDepthOf(tree) > MAX_STACK_DEPTH) {
+      throw new ConditionSyntaxError("The condition is nested too deeply", 0, text.length);
+    }
+    if (emitCondition({ tree, values: checker.labels.map(() => 0) }).length > MAX_PROGRAM_WORDS) {
+      throw new ConditionSyntaxError("The condition is too long", 0, text.length);
+    }
     const compiled: CompiledCondition = {
       source: text,
       tree,
@@ -200,16 +210,12 @@ class Checker {
         if (node.fn === "nr" && !this.env.isNext) {
           this.fail("nr() reads a Next register; it exists only on the ZX Spectrum Next", node);
         }
-        const arg = this.convert(node.arg, ignoredBankPrefix);
-        if (arg.k === "num" && (node.fn === "s8" || node.fn === "s16" || node.fn === "s32")) {
-          return { k: "num", v: toSigned(arg.v, node.fn === "s8" ? 8 : node.fn === "s16" ? 16 : 32) };
-        }
-        return { k: "call", fn: node.fn, arg };
+        return { k: "call", fn: node.fn, arg: this.convert(node.arg, ignoredBankPrefix) };
       }
 
       case "un": {
         const e = this.convert(node.e, ignoredBankPrefix);
-        return e.k === "num" ? { k: "num", v: applyUnary(node.op, e.v) } : { k: "un", op: node.op, e };
+        return { k: "un", op: node.op, e };
       }
 
       case "bin": {
@@ -229,7 +235,6 @@ class Checker {
           this.checkRange(l, node.l, r, node.r);
           this.checkRange(r, node.r, l, node.l);
         }
-        if (l.k === "num" && r.k === "num") return { k: "num", v: applyBinary(node.op, l.v, r.v) };
         return { k: "bin", op: node.op, l, r };
       }
     }
@@ -326,9 +331,10 @@ class Checker {
 
   /** §3.7 rule 3: a constant compared with an operand that can never hold it. */
   private checkRange(operand: CondNode, operandSyntax: SyntaxNode, other: CondNode, otherSyntax: SyntaxNode) {
-    if (other.k !== "num") return;
+    const constant = literalValue(other);
+    if (constant === undefined) return;
     const range = this.rangeOf(operand, operandSyntax);
-    if (!range || (other.v >= range.min && other.v <= range.max)) return;
+    if (!range || (constant >= range.min && constant <= range.max)) return;
     this.fail(
       `${this.source(otherSyntax)} is out of range for ${range.name} (${formatRange(range.min, range.max)})`,
       otherSyntax
@@ -384,4 +390,21 @@ function isRelational(op: string): boolean {
 function formatRange(min: number, max: number): string {
   if (min < 0 || max <= 0xff) return `${min}…${max}`;
   return `${min}…$${max.toString(16).toUpperCase()}`;
+}
+
+/**
+ * The value of a **literal** operand - a number, a character, a partition or a folded string, or one
+ * of those negated - or `undefined` for anything computed.
+ *
+ * The front end does not evaluate (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md` E4): computed
+ * constants like `255 + 1` are left to the C evaluator, so only literals are range-checked.
+ * Negation is a sign, not evaluation.
+ */
+function literalValue(node: CondNode): number | undefined {
+  if (node.k === "num") return node.v;
+  if (node.k === "un" && node.op === "-") {
+    const inner = literalValue(node.e);
+    return inner === undefined ? undefined : -inner;
+  }
+  return undefined;
 }

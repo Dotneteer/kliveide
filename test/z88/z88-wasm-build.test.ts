@@ -103,9 +103,15 @@ describe("Cambridge Z88 WASM build", () => {
     const cFunctions = readdirSync(folder)
       .filter((f) => f.endsWith(".c"))
       .flatMap((f) => [...readFileSync(join(folder, f), "utf8").matchAll(/^(?:uint32_t|void) (z88[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)])
-      .map((m) => m[1])
-      .sort();
-    expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(cFunctions);
+      .map((m) => m[1]);
+    // --- The core also includes the shared breakpoint condition evaluator, and exports it
+    const evaluator = readFileSync(join(folder, "../../../../z80/wasm/z80-condition.c"), "utf8");
+    const condFunctions = [
+      ...evaluator.matchAll(/^(?:uint32_t|int64_t|void) (cond[A-Za-z0-9]+)\([^)]*\)\s*\{/gm)
+    ].map((m) => m[1]);
+    expect(productionExports.filter((name) => name !== "memory").sort()).toEqual(
+      [...cFunctions, ...condFunctions].sort()
+    );
   });
 
   it("exports everything the loader requires", () => {
