@@ -92,6 +92,12 @@ export function emulatorStateReducer(
         breakpointsVersion: (state.breakpointsVersion ?? 0) + 1
       };
 
+    case "INC_BP_HITS_VERSION":
+      return {
+        ...state,
+        breakpointHitsVersion: (state.breakpointHitsVersion ?? 0) + 1
+      };
+
     case "INC_EMU_VIEW_VERSION":
       return {
         ...state,

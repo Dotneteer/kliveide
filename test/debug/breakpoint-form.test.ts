@@ -3,6 +3,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import {
   SOURCE_SPEC_MESSAGE,
+  breakpointFormWarnings,
   breakpointKeyOf,
   breakpointToForm,
   applyKindChange,
@@ -398,7 +399,10 @@ describe("helpers", () => {
       nextRegValue: "",
       nextRegMask: "",
       nextRegCopper: false,
-      disabled: false
+      disabled: false,
+      condition: "",
+      hitMode: "always",
+      hitCount: ""
     });
   });
 
@@ -959,5 +963,171 @@ describe("NextReg breakpoints - switching type", () => {
       expect(back.nextReg, kind).toBe("");
       expect(back.ioMask, kind).toBe("");
     }
+  });
+});
+
+/*
+ * Conditions and hit counts in the form (Phase 5 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`,
+ * §4.4): validated by the same checker the emulator arms with, against the machine and symbols in
+ * the environment; and the source mode that edits only those on a source breakpoint.
+ */
+describe("conditions and hit counts", () => {
+  const form = (over: Partial<BreakpointFormState> = {}): BreakpointFormState => ({
+    ...createEmptyForm(),
+    address: "$8000",
+    ...over
+  });
+  const env128 = (over: Partial<BreakpointEnvironment> = {}) =>
+    anEnv({
+      machineId: "sp128",
+      supportsPartitions: true,
+      partitionLabels: { [-1]: "R0", 0: "B0", 5: "B5" },
+      ...over
+    });
+
+  it("accepts an empty condition and no hit rule", () => {
+    expect(validateBreakpointForm(form(), env128())).toEqual({});
+  });
+
+  it("reports a condition error with its column", () => {
+    expect(validateBreakpointForm(form({ condition: "A == == 1" }), env128()).condition).toBe(
+      "Column 6: Unexpected '=='; expected a value"
+    );
+  });
+
+  it("checks against the machine: partitions here, nr() not", () => {
+    expect(validateBreakpointForm(form({ condition: "page($C000) == @B5" }), env128())).toEqual({});
+    expect(validateBreakpointForm(form({ condition: "nr($56) == 1" }), env128()).condition).toContain(
+      "ZX Spectrum Next"
+    );
+    expect(
+      validateBreakpointForm(form({ condition: "page($C000) == 1" }), anEnv({ machineId: "sp48" })).condition
+    ).toContain("partitions");
+  });
+
+  it("re-judges VAL and ADDR when the kind changes", () => {
+    const exec = form({ condition: "VAL == $C9" });
+    expect(validateBreakpointForm(exec, env128()).condition).toContain("execution breakpoint");
+    const write = applyKindChange(exec, "memWrite");
+    expect(write.condition).toBe("VAL == $C9");
+    expect(validateBreakpointForm(write, env128())).toEqual({});
+  });
+
+  it("rejects any condition on a non-Z80 machine", () => {
+    expect(
+      validateBreakpointForm(form({ condition: "A == 1" }), anEnv({ machineId: "c64" })).condition
+    ).toContain("Z80 machines only");
+  });
+
+  it("warns about an unknown label without rejecting the form", () => {
+    const f = form({ condition: "w[score] > lives" });
+    const env = env128({ conditionSymbols: { lives: 3 } });
+    expect(validateBreakpointForm(f, env)).toEqual({});
+    expect(breakpointFormWarnings(f, env)).toEqual({
+      condition: "Column 3: Unknown label score: the breakpoint is inactive until a build defines it"
+    });
+    expect(breakpointFormWarnings(f, env128())).toEqual({});
+  });
+
+  it("gives no warnings for a condition that has an error", () => {
+    expect(breakpointFormWarnings(form({ condition: "score ==" }), env128({ conditionSymbols: {} }))).toEqual({});
+  });
+
+  it.each([
+    ["", "Enter the hit count."],
+    ["often", "Enter a valid hit count"],
+    ["0", "between 1 and 65535"],
+    ["65536", "between 1 and 65535"]
+  ])("rejects hit count %j", (hitCount, message) => {
+    expect(validateBreakpointForm(form({ hitMode: "ge", hitCount }), env128()).hitCount).toContain(message);
+  });
+
+  it("ignores the count while the rule is 'always'", () => {
+    expect(validateBreakpointForm(form({ hitMode: "always", hitCount: "junk" }), env128())).toEqual({});
+  });
+
+  it("emits the filters, and nothing for 'always' or a blank condition", () => {
+    expect(formToBreakpointInfo(form({ condition: "B == 0", hitMode: "every", hitCount: "$10" }))).toMatchObject({
+      address: 0x8000,
+      condition: "B == 0",
+      hitMode: "every",
+      hitCount: 16
+    });
+    const plain = formToBreakpointInfo(form({ condition: "  ", hitMode: "always", hitCount: "5" }));
+    expect(plain).not.toHaveProperty("condition");
+    expect(plain).not.toHaveProperty("hitCount");
+  });
+
+  it("reads the filters back for the Edit flow", () => {
+    expect(breakpointToForm({ address: 0x8000, exec: true, condition: "A == 1", hitCount: 7 })).toMatchObject({
+      condition: "A == 1",
+      hitMode: "eq",
+      hitCount: "7"
+    });
+    expect(breakpointToForm({ address: 0x8000, exec: true })).toMatchObject({
+      condition: "",
+      hitMode: "always",
+      hitCount: ""
+    });
+  });
+
+  it("keeps the filters out of the duplicate check's key", () => {
+    const env = env128({ existingKeys: ["$8000"] });
+    expect(validateBreakpointForm(form({ condition: "A == 1" }), env).form).toContain("already exists");
+  });
+
+  it("round-trips every filter through the form", () => {
+    const bp: BreakpointInfo = { address: 0x9000, memoryWrite: true, condition: "VAL == $AA", hitMode: "lt", hitCount: 3 };
+    expect(formToBreakpointInfo(breakpointToForm(bp))).toMatchObject(bp);
+  });
+});
+
+describe("source mode (§4.4.2)", () => {
+  const source: BreakpointInfo = {
+    resource: "main.asm",
+    line: 42,
+    exec: true,
+    resolvedAddress: 0x8012,
+    resolvedPartition: 2,
+    condition: "B == 0",
+    currentHits: 4,
+    conditionInactive: "stale"
+  };
+
+  it("opens a source breakpoint in source mode", () => {
+    const f = breakpointToForm(source);
+    expect(f.source).toBe(source);
+    expect(f.condition).toBe("B == 0");
+  });
+
+  it("judges only the filters: no address, no duplicate check", () => {
+    const f = breakpointToForm(source);
+    const env = anEnv({ existingKeys: ["[main.asm]:42"], machineId: "sp48" });
+    expect(validateBreakpointForm(f, env)).toEqual({});
+    expect(validateBreakpointForm({ ...f, condition: "VAL == 1" }, env).condition).toContain(
+      "execution breakpoint"
+    );
+  });
+
+  it("keeps the place, the resolution and the column, and drops runtime state", () => {
+    const f = breakpointToForm({ ...source, column: 5 });
+    const bp = formToBreakpointInfo({ ...f, condition: "B == 1", hitMode: "ge", hitCount: "2", disabled: true });
+    expect(bp).toEqual({
+      resource: "main.asm",
+      line: 42,
+      column: 5,
+      exec: true,
+      resolvedAddress: 0x8012,
+      resolvedPartition: 2,
+      disabled: true,
+      condition: "B == 1",
+      hitMode: "ge",
+      hitCount: 2
+    });
+  });
+
+  it("clears a condition the user emptied", () => {
+    const bp = formToBreakpointInfo({ ...breakpointToForm(source), condition: "" });
+    expect(bp).not.toHaveProperty("condition");
   });
 });

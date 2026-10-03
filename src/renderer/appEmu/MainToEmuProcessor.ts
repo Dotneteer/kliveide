@@ -443,10 +443,9 @@ class EmuMessageProcessor {
     }
 
     const lastOpStart = controller.machine.opStartAddress;
-    const execBreakpoints = controller.debugSupport.breakpoints
-      .map((bp) => ({
-        ...bp
-      }))
+    // --- With the runtime state (live hit count, condition error/inactive); copies already
+    const execBreakpoints = controller.debugSupport
+      .listBreakpointsWithState()
       .sort((a, b) => {
         if (a.address !== undefined) {
           if (b.address != undefined) {
@@ -620,6 +619,30 @@ class EmuMessageProcessor {
       noController();
     }
     controller.debugSupport.scrollBreakpoints(addr, shift, lowerBound, upperBound);
+  }
+
+  /**
+   * Zeroes one breakpoint's hit counter, or all of them.
+   * @param breakpoint The breakpoint; all counters when absent
+   */
+  resetBreakpointHits(breakpoint?: BreakpointInfo) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.debugSupport.resetHitCounts(breakpoint);
+  }
+
+  /**
+   * Replaces the symbols breakpoint conditions bind to.
+   * @param symbols Integer symbols, keyed lower-case
+   */
+  setConditionSymbols(symbols: Record<string, number>) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    controller.debugSupport.setConditionSymbols(symbols ?? {});
   }
 
   /**

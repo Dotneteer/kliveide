@@ -43,13 +43,17 @@ describe("SetBreakpointCommand", () => {
     });
 
     it("should have correct usage string", () => {
-      expect(command.usage).toContain("bp-set");
-      expect(command.usage).toContain("<address-spec>");
-      expect(command.usage).toContain("[-r]");
-      expect(command.usage).toContain("[-w]");
-      expect(command.usage).toContain("[-i]");
-      expect(command.usage).toContain("[-o]");
-      expect(command.usage).toContain("[-m");
+      // --- The first line is the syntax; the next ones explain -hit and -if
+      const usage = [command.usage].flat()[0];
+      expect(usage).toContain("bp-set");
+      expect(usage).toContain("<address-spec>");
+      expect(usage).toContain("[-r]");
+      expect(usage).toContain("[-w]");
+      expect(usage).toContain("[-i]");
+      expect(usage).toContain("[-o]");
+      expect(usage).toContain("[-m");
+      expect(usage).toContain("[-hit <spec>]");
+      expect(usage).toContain("[-if <condition>]");
     });
 
     it("should have alias 'bp'", () => {

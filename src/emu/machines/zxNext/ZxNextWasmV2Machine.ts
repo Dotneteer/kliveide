@@ -1,3 +1,5 @@
+import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
+import { createConditionContext, partitionViewMemory } from "../conditionContext";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   ULA_BORDER_COLOR_NAMES,
@@ -921,12 +923,24 @@ export class ZxNextWasmV2Machine
   private hasWasmV2AccessBreakpoint(): boolean {
     const debugSupport = this.executionContext.debugSupport;
     if (!debugSupport) return false;
-    return (
-      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasIoRead(this.lastIoReadPort) ||
-      debugSupport.hasIoWrite(this.lastIoWritePort)
+    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
+    // --- a read that stops must not hide a write in the same instruction from its counter.
+    const partitionOf = (addr: number) => this.getPartition(addr);
+    const read = debugSupport.hasMemoryRead(
+      this.lastMemoryReads,
+      this.lastMemoryReadsCount,
+      partitionOf,
+      this.lastMemoryReadValues
     );
+    const written = debugSupport.hasMemoryWrite(
+      this.lastMemoryWrites,
+      this.lastMemoryWritesCount,
+      partitionOf,
+      this.lastMemoryWriteValues
+    );
+    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
+    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
+    return read || written || portRead || portWritten;
   }
 
   readScreenMemory(offset: number): number {
@@ -1600,6 +1614,20 @@ export class ZxNextWasmV2Machine
       lastRegisterIndex: ex.zxnextGetNextRegisterIndex(),
       regs
     };
+  }
+
+  /**
+   * What a breakpoint condition reads: the registers after one sync from the core (the debug loop
+   * mirrors only PC per instruction) and memory through the core's peek (`zxnextMemoryPeekMapped`: the CPU view, Layer 2 mapping included, with no contention or bus-mirror update) and the side-effect-free NextReg peek.
+   */
+  override getConditionContext(): ConditionContext {
+    const runtime = this.requireWasmV2Runtime();
+    this.syncCpuFromWasmV2(runtime);
+    return createConditionContext(this, {
+      ...partitionViewMemory(this),
+      readMemory: (address) => runtime.exports.zxnextReadMemory(address & 0xffff),
+      nextReg: (reg) => runtime.exports.zxnextPeekNextRegister(reg & 0xff)
+    });
   }
 
   private syncCpuFromWasmV2(runtime: ZxNextWasmV2Runtime): void {

@@ -787,8 +787,13 @@ class MainMessageProcessor {
   /**
    * Opens the Klive website in the default browser.
    */
-  async showWebsite() {
-    shell.openExternal(KLIVE_GITHUB_PAGES);
+  async showWebsite(docsPath?: string) {
+    // --- Only a path inside the site: the renderer names a page, it never supplies a URL
+    const page =
+      typeof docsPath === "string" && /^\/[A-Za-z0-9\-/#_.]*$/.test(docsPath) && !docsPath.includes("..")
+        ? docsPath
+        : "";
+    shell.openExternal(`${KLIVE_GITHUB_PAGES}${page}`);
   }
 
   /**

@@ -292,6 +292,30 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   The test is "is this a second state?": a runtime-error stop *is* one — the program failed on that
   statement — so its note (`.errorStopNote`, "✖ 3 Subscript wrong") takes `--status-error`, while a
   return point's does not.
+- **A breakpoint's filter state changes the glyph's *shape*, never its colour.** A conditional
+  breakpoint (a condition or a hit rule) draws the dot with an "=" knocked out (`bp-conditional.svg`,
+  the VS Code convention); one whose condition cannot stop it now — a label the last build did not
+  define, or a condition the emulator could not arm — draws a hollow ring (`bp-inactive.svg`). Both
+  keep the colour the plain dot would have had (binary / code / unreachable / disabled), because hue
+  in that column already says *which kind* of breakpoint and whether it can resolve; a fourth hue
+  for "conditional" would have collided with the amber unresolved one. **One vocabulary in three
+  places:** `BreakpointIndicator` (panel, disassembly gutter) uses the SVGs; the Monaco margin, which
+  draws `clip-path` dots, uses the same two shapes as CSS `mask`s over the same background token
+  (`.conditionalBreakpointMargin` / `.inactiveBreakpointMargin`) — a mask reads only alpha, so the
+  colour stays a token; inline statement markers use the character equivalents `⊜` and `○`. Every
+  state is read through `breakpoint-filter-text.ts`, never re-derived at a call site.
+- **A row's condition is its last cell, and its state is told by strength, then by hue.** In the
+  Breakpoints panel the filters follow everything else on the row — the live count `9×` (secondary
+  state accent, it is a supporting value), the rule `hit *4` and the condition `if A == $FF`
+  (neutral secondary text) — so the condition is the cell that truncates in a narrow sidebar; the
+  row tooltip carries it whole. An inactive condition is italic at 60% (it is a *pending* state, not
+  a fault); a condition that failed to arm takes `--status-error`, because it really is wrong — it
+  stops every time.
+- **A dialog warning is `--status-warning` under the field, an error is the field's own error.** The
+  breakpoint dialog's condition field shows a parse error through `TextInput`'s `error` (accessible
+  description included) and an *accepted-with-a-note* message — an unknown label — as a
+  `role="status"` line in `--status-warning` below it. Warnings show at once (they explain why a
+  saved breakpoint may not stop); errors wait for the field to be touched, like every other field.
 - **Source-level debug panels follow the converted state panels.** The Variables panel's values use
   `--color-state-value`, like a register, and a watch that fails to evaluate shows its message in
   `--status-error` in the value column rather than a hue on the row. The symbolic Call Stack's

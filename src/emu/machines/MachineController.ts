@@ -27,6 +27,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   setDebuggingAction,
+  incBreakpointHitsVersionAction,
   setMachineStateAction,
   setProjectDebuggingAction
 } from "@state/actions";
@@ -310,9 +311,10 @@ export class MachineController implements IMachineController {
     this.frameStats.lastFrameTimeInMs = 0.0;
     this.frameStats.avgFrameTimeInMs = 0.0;
 
-    // --- Reset the imminent breakpoint
-    if (this.context.debugSupport) {
-      delete this.context.debugSupport.imminentBreakpoint;
+    // --- Reset the imminent breakpoint. The controller's own store, not the context's: a run that
+    // --- was not a debug run leaves the context without one (see `run`).
+    if (this.debugSupport) {
+      delete this.debugSupport.imminentBreakpoint;
       delete this.debugSupport.lastBreakpoint;
       delete this.debugSupport.lastStartupBreakpoint;
     }
@@ -687,6 +689,9 @@ export class MachineController implements IMachineController {
     await this.sendOutput("Initialize the machine", "blue");
     this.assertMachineOperationIsCurrent(operationRevision);
     this.isDebugging = debug;
+    // --- Starting a program is a restart (C12), also when the boot is restored from a checkpoint
+    // --- rather than run from Stopped, which is where `run` resets them
+    this.debugSupport?.resetHitCounts();
 
     let entryPoint = 0;
     let keepPc = false;
@@ -925,6 +930,10 @@ export class MachineController implements IMachineController {
 
         // --- Check for supported media, attach media contents to the machine
         attachStoredMedia(this.machine, this._machineInfo.mediaIds);
+
+        // --- A restart: breakpoint hit counters start over (C12). Resuming from a pause does not
+        // --- come here, so it keeps them.
+        this.debugSupport?.resetHitCounts();
         break;
     }
 
@@ -934,7 +943,17 @@ export class MachineController implements IMachineController {
     this.context.terminationPartition = terminationPartition;
     this.context.terminationPoint = terminationPoint;
     this.context.canceled = false;
-    this.context.debugSupport = this.debugSupport;
+    /*
+     * Breakpoints only in a debug run (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` C19).
+     *
+     * A `NoDebug` run reaches the per-instruction loops too - a code-injection flow's
+     * `ReachExecPoint` boots the ROM through them - and those loops ask the breakpoint store at every
+     * instruction whenever the context has one. A user breakpoint the boot passed (the IM 1 handler
+     * at $38 runs every frame) then silently cut the boot short, and with hit counts it was worse:
+     * the boot counted the hits, so `-hit 4` was spent before the program ever ran and never fired.
+     */
+    this.context.debugSupport =
+      debugStepMode === DebugStepMode.NoDebug ? undefined : this.debugSupport;
     this.applyErrorStops();
     // --- A run that is not a source step ends what the last one reported
     if (debugStepMode !== DebugStepMode.SourceStep && this.debugSupport) this.debugSupport.sourceStep = undefined;
@@ -1022,14 +1041,21 @@ export class MachineController implements IMachineController {
                 this.frameStats.lastFrameTimeInMs) /
               this.frameStats.frameCount;
 
+        // --- Live hit counts: at most every 10 frames while running (§4.5)
+        if (frameCompleted && this.frameStats.frameCount % 10 === 0) {
+          this.publishBreakpointHits();
+        }
+
         // --- Handle termination
         if (this._cancelRequested) {
           // --- The machine is paused or stopped
           this.context.canceled = true;
+          this.publishBreakpointHits();
           return;
         }
 
         if (termination !== FrameTerminationMode.Normal) {
+          this.publishBreakpointHits();
           this.state = MachineControllerState.Paused;
           this._machineTask = undefined;
           this.context.canceled = true;
@@ -1076,6 +1102,17 @@ export class MachineController implements IMachineController {
           resolve();
         }, milliseconds);
       });
+    }
+  }
+
+  /**
+   * Tell the IDE that breakpoint hit counters moved, if they did. Counting never dispatches by
+   * itself - a hot loop would flood the store - so this is the throttle: called every 10 frames
+   * while running and once when the run ends.
+   */
+  private publishBreakpointHits(): void {
+    if (this.debugSupport?.takeHitsChanged()) {
+      this.store.dispatch(incBreakpointHitsVersionAction(), "emu");
     }
   }
 

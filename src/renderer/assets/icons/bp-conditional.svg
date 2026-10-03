@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- The breakpoint dot with an "=" knocked out (even-odd), the VS Code convention for a
+       conditional breakpoint. Knocked out rather than painted, so it reads on any background. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM5.4 6.1h5.2v1.3H5.4zM5.4 8.6h5.2v1.3H5.4z"/>
+</svg>

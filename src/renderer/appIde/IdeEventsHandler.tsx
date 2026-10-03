@@ -6,6 +6,7 @@ import { saveProject } from "./utils/save-project";
 import { BUILD_FILE } from "@common/structs/project-const";
 import { incBuildFileVersionAction, workspaceLoadedAction } from "@common/state/actions";
 import { useEmuApi } from "@renderer/core/EmuApi";
+import { clearConditionSymbols, pushConditionSymbols } from "./utils/condition-symbols";
 import { delay } from "@renderer/utils/timing";
 import { useMainApi } from "@renderer/core/MainApi";
 import {
@@ -79,6 +80,11 @@ export const IdeEventsHandler = () => {
 
     const onProjectLoaded = async () => {
       const state = store.getState();
+
+      // --- Breakpoint conditions bind to the last build's symbols; that build was another
+      // --- project's, so the table starts empty until this one builds (C14)
+      clearConditionSymbols();
+      await pushConditionSymbols(emuApi);
 
       // --- Store current view options to set them later
       const maximizeToolPanels = getGlobalSetting(store, SETTING_IDE_MAXIMIZE_TOOLS);

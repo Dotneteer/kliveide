@@ -419,17 +419,29 @@ describe("BreakpointDialog - editing", () => {
     await waitFor(() => expect(controls.close).toHaveBeenCalled());
   });
 
-  it("shows the hit count the emulator reports, without offering to edit it", () => {
+  it("shows the live hit count and resets it", async () => {
+    const onResetHits = vi.fn().mockResolvedValue(undefined);
     renderWithProviders(
       <BreakpointDialog
-        initial={{ address: 0x9000, exec: true, hitCount: 42 }}
+        initial={{ address: 0x9000, exec: true, hitCount: 42, currentHits: 7 }}
         env={anEnv()}
         machineSetup={aListMachine}
+        onResetHits={onResetHits}
         controls={someControls()}
       />
     );
 
-    expect(screen.getByText("Hit count: 42")).toBeTruthy();
+    expect(screen.getByTestId("breakpoint-hits").textContent).toBe("7");
+    fireEvent.click(screen.getByText("Reset"));
+    await waitFor(() => expect(screen.getByTestId("breakpoint-hits").textContent).toBe("0"));
+    expect(onResetHits).toHaveBeenCalled();
+  });
+
+  it("shows no live count when adding", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />
+    );
+    expect(screen.queryByTestId("breakpoint-hits")).toBeNull();
   });
 });
 
@@ -511,12 +523,13 @@ describe("BreakpointDialog - NextReg write breakpoints", () => {
     );
     chooseNextReg();
 
-    // --- Register only.
-    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    // --- Register only - and the Condition field every kind has.
+    expect(screen.getAllByRole("textbox")).toHaveLength(2);
+    expect(screen.queryByLabelText("Value")).toBeNull();
 
     fireEvent.click(screen.getByLabelText("Break only on a specific value"));
 
-    expect(screen.getAllByRole("textbox")).toHaveLength(3);
+    expect(screen.getAllByRole("textbox")).toHaveLength(4);
     // --- Side by side, in the notation the key and the command both use: `=$03/$0F`.
     expect(screen.getByLabelText("Value")).toBeDefined();
     expect(screen.getByLabelText("Mask")).toBeDefined();
@@ -630,5 +643,162 @@ describe("BreakpointDialog - NextReg write breakpoints", () => {
     expect(breakpoint).toMatchObject({ nextReg: 0x07 });
     expect(breakpoint.address).toBeUndefined();
     expect(breakpoint.partition).toBeUndefined();
+  });
+});
+
+/*
+ * Conditions and hit counts (Phase 5 of `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md`, §4.4). The rules
+ * are `breakpoint-form.ts`'s and tested there; these check what the view shows and emits.
+ */
+describe("BreakpointDialog - conditions and hit counts", () => {
+  const conditionBox = () => screen.getByLabelText("Condition");
+
+  it("emits the condition typed", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
+    );
+    typeAddress("$8000");
+    fireEvent.change(conditionBox(), { target: { value: "A == $FF && !ZF" } });
+    submit();
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: expect.objectContaining({ address: 0x8000, condition: "A == $FF && !ZF" }),
+        replaces: undefined
+      })
+    );
+  });
+
+  it("shows a condition error with its column once the field is touched, and refuses to save", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
+    );
+    typeAddress("$8000");
+    fireEvent.change(conditionBox(), { target: { value: "A == == 1" } });
+
+    expect(await screen.findByText("Column 6: Unexpected '=='; expected a value")).toBeTruthy();
+    submit();
+    expect(controls.close).not.toHaveBeenCalled();
+  });
+
+  it("shows an unknown-label warning but still saves", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog
+        env={anEnv({ machineId: "sp48", conditionSymbols: {} })}
+        machineSetup={aListMachine}
+        controls={controls}
+      />
+    );
+    typeAddress("$8000");
+    fireEvent.change(conditionBox(), { target: { value: "w[score] > 3" } });
+
+    expect(screen.getByRole("status").textContent).toContain("Unknown label score");
+    submit();
+    await waitFor(() => expect(controls.close).toHaveBeenCalled());
+  });
+
+  it("edits an existing hit rule's count", async () => {
+    const controls = someControls();
+    const initial = { address: 0x9000, exec: true, hitMode: "every" as const, hitCount: 4 };
+    renderWithProviders(
+      <BreakpointDialog initial={initial} env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
+    );
+    expect(screen.getByRole("combobox", { name: "Hit count rule" }).textContent).toContain("Every");
+    fireEvent.change(screen.getByLabelText("Hit count"), { target: { value: "10" } });
+    submit("Save");
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: expect.objectContaining({ hitMode: "every", hitCount: 10 }),
+        replaces: initial
+      })
+    );
+  });
+
+  it("hides the count field while the rule is 'Always'", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("Hit count")).toBeNull();
+  });
+
+  it("focuses the hit count when asked to", () => {
+    renderWithProviders(
+      <BreakpointDialog
+        initial={{ address: 0x9000, exec: true, hitCount: 4 }}
+        focus="hitCount"
+        env={anEnv()}
+        machineSetup={aListMachine}
+        controls={someControls()}
+      />
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText("Hit count"));
+  });
+});
+
+describe("BreakpointDialog - source mode", () => {
+  const source = {
+    resource: "main.asm",
+    line: 42,
+    exec: true,
+    resolvedAddress: 0x8012,
+    condition: "B == 0",
+    currentHits: 3
+  };
+
+  it("shows the location instead of the type, address and partition", () => {
+    renderWithProviders(
+      <BreakpointDialog
+        initial={source}
+        env={anEnv({ supportsPartitions: true, partitionLabels: { 0: "B0" } })}
+        machineSetup={aListMachine}
+        controls={someControls()}
+      />
+    );
+    expect(screen.getByText("main.asm:42 ($8012)")).toBeTruthy();
+    expect(screen.queryByLabelText("Execution")).toBeNull();
+    expect(screen.queryByText("Break only in a specific partition")).toBeNull();
+    // --- The condition is the only text field, and it has the focus
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    expect(document.activeElement).toBe(screen.getByLabelText("Condition"));
+    expect(screen.getByTestId("breakpoint-hits").textContent).toBe("3");
+  });
+
+  it("says when the breakpoint is not resolved yet", () => {
+    renderWithProviders(
+      <BreakpointDialog
+        initial={{ resource: "main.asm", line: 7, column: 2, exec: true }}
+        env={anEnv()}
+        machineSetup={aListMachine}
+        controls={someControls()}
+      />
+    );
+    expect(screen.getByText("main.asm:7:3 (not resolved - build the project)")).toBeTruthy();
+  });
+
+  it("saves the same source breakpoint with the edited condition", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog initial={source} env={anEnv({ machineId: "sp48" })} machineSetup={aListMachine} controls={controls} />
+    );
+    fireEvent.change(screen.getByLabelText("Condition"), { target: { value: "B == 1" } });
+    submit("Save");
+
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: {
+          resource: "main.asm",
+          line: 42,
+          exec: true,
+          resolvedAddress: 0x8012,
+          disabled: false,
+          condition: "B == 1"
+        },
+        replaces: source
+      })
+    );
   });
 });

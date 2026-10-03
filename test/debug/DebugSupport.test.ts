@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DIS_EXEC_BP, DebugSupport, EXEC_BP, PART_BP } from "@emu/machines/DebugSupport";
+import { COND_BP, DIS_EXEC_BP, DebugSupport, EXEC_BP, PART_BP } from "@emu/machines/DebugSupport";
 import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
@@ -207,12 +207,11 @@ describe("DebugSupport", () => {
     // --- Act
     ds.addBreakpoint(bp);
 
-    // --- Assert
-    expect(ds.breakpointData.size).toEqual(1);
-    let data = ds.breakpointData.get(1234);
-    expect(data.partitions).toEqual(undefined);
-    expect(data.targetHitCount).toEqual(12);
-    expect(data.currentHitCount).toEqual(0);
+    // --- Assert: the hit rule lives on the definition and its counter per definition, not in
+    // --- per-address data (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.5)
+    expect(ds.breakpointData.size).toEqual(0);
+    expect(ds.breakpointFlags[1234] & COND_BP).toBeTruthy();
+    expect(ds.listBreakpointsWithState()[0]).toMatchObject({ hitCount: 12, currentHits: 0 });
   });
 
   it("removeBreakpoint exec #1", () => {
@@ -431,7 +430,7 @@ describe("DebugSupport", () => {
 
     // --- Assert
     expect(status).toEqual(false);
-    expect(ds.breakpointData.size).toEqual(1);
+    expect(ds.breakpoints.length).toEqual(1);
   });
 
   it("enableBreakpoint exec #1", () => {

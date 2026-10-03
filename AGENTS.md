@@ -120,7 +120,15 @@ merely uncoloured, which no route diff can see.
   from the baseline is a normal part of touching a file; run `npm run build:check -- --update` to
   record it. Raising a count needs a reason in the PR.
 - Renderer hook lint baseline: `npm run lint:renderer`
-- Focused jsdom tests: `npm test -- --project jsdom <test files>`
+- Tests: `npm test` runs the **unit tier** (projects `node` and `jsdom`, ~40 s) always, and each
+  **end-to-end tier** - `e2e-cores` (tests that run the WASM machine cores) and `e2e-kbasic`
+  (Klive BASIC programs compiled and run on them) - only when its inputs changed since it last
+  passed on this machine (`scripts/run-tests.cjs`; `npm test -- --dry-run` says which and why).
+  `npm run test:e2e` forces the e2e tiers, `npm run test:all` runs everything (CI does).
+  - The tiers are listed in `build/e2e-tests.ts`. **A new test that runs a core goes there**: in the
+    unit tier, instantiating a core fails with a message saying so (`test/vitest.setup.ts`).
+  - Focused runs: `npm test -- <paths>` runs those files whatever their tier;
+    `npm test -- --project jsdom <test files>` still selects one project.
 - Docs build: `npm run doc:build`
 - Docs verification: `npm run doc:check`
 - Docs preview at the production path: `npm run doc:serve`

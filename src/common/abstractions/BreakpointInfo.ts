@@ -240,7 +240,58 @@ export type BreakpointInfo = {
   ioMask?: number;
 
   /**
-   * Memory breakpoint target hit counter
+   * The breakpoint's condition, **as typed** — an expression over registers, flags, memory, the
+   * accessed value and program labels. The machine stops only when it is true.
+   *
+   * Stored as text, never as a parsed tree: the text is the stable persisted form, and each side
+   * (the IDE to validate, the emulator to arm) parses it when the breakpoint is created or modified.
+   * Like `disabled`, **not part of the breakpoint's identity**. Absent or empty means "always".
+   *
+   * See `.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3 for the language, C1 and C13 for the rules.
+   */
+  condition?: string;
+
+  /**
+   * How `hitCount` is compared with the number of (condition-true) hits. Absent with a `hitCount`
+   * reads as `"eq"` — the only meaning a hand-written file from before this field could have had.
+   * Not part of the identity. See `BreakpointHitMode` and the plan's §4.2.
+   */
+  hitMode?: BreakpointHitMode;
+
+  /**
+   * The N of the hit-count rule (`hitMode`), `1..65535`. Absent means every hit stops.
+   *
+   * The field predates the rule — it was an unread stub — and keeps its name so persisted
+   * breakpoints do not churn. Not part of the identity.
    */
   hitCount?: number;
+
+  /**
+   * **Runtime only** — never persisted: every persister removes it through
+   * `withoutBreakpointRuntimeState`. Times this breakpoint was hit with its condition true since the
+   * machine last restarted or its counter was reset. Reported by `listBreakpoints`.
+   */
+  currentHits?: number;
+
+  /**
+   * **Runtime only.** The emulator could not parse `condition` when it armed the breakpoint (a
+   * hand-edited file, or a grammar change). Such a breakpoint stops every time — the fail-safe —
+   * and this carries the message the Breakpoints panel shows.
+   */
+  conditionError?: string;
+
+  /**
+   * **Runtime only.** Why the condition is inactive — a label it names is missing from the current
+   * symbol table. An inactive breakpoint never stops and never counts until a build defines the
+   * label.
+   */
+  conditionInactive?: string;
 };
+
+/**
+ * The hit-count rules, each comparing the hit number with `hitCount` (N):
+ * - `eq`: the Nth hit only; `gt`: after it; `ge`: from it on
+ * - `lt`: before it; `le`: up to and including it
+ * - `every`: every Nth hit (N, 2N, 3N, ...)
+ */
+export type BreakpointHitMode = "eq" | "gt" | "ge" | "lt" | "le" | "every";

@@ -37,7 +37,9 @@ jobs:
         run: npm run build:check
 
       # Headroom for the test workers' heap: the Klive BASIC suites compile and run many programs.
-      - name: Run unit and component tests
-        run: npm run test:unit
+      # Every tier, the end-to-end ones included: `npm test` skips an e2e tier whose inputs are
+      # unchanged since it last passed *on that machine*, and CI has no such record to trust.
+      - name: Run unit, component and end-to-end tests
+        run: npm run test:all
         env:
           NODE_OPTIONS: --max-old-space-size=4096

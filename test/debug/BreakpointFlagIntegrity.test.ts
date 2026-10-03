@@ -232,6 +232,108 @@ describe("the stored definition must be complete", () => {
     ds.addBreakpoint({ address: 0x8000, exec: true, hitCount: 7 });
     expect(ds.breakpoints[0].hitCount).toEqual(7);
   });
+
+  it("keeps a statement breakpoint's column", () => {
+    // --- The column is in the storage key but was missing from the literal, so the definition was
+    // --- listed - and saved - as a line breakpoint on the same line.
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ resource: "main.kbas", line: 7, column: 12, exec: true });
+    expect(ds.breakpoints[0].column).toEqual(12);
+  });
+
+  /*
+   * Conditional breakpoints, Phase 1 (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.1): the condition
+   * and the hit rule are stored on every binding shape, and the runtime-only fields never are.
+   */
+  const FILTERS = { condition: "A == $FF && !ZF", hitMode: "every" as const, hitCount: 4 };
+  const SHAPES = [
+    { address: 0x8000, exec: true },
+    { address: 0x8000, partition: 3, exec: true },
+    { address: 0x8000, memoryRead: true },
+    { address: 0x00fe, ioWrite: true, ioMask: 0x00ff },
+    { bank: 5, bankOffset: 0x0100, memoryWrite: true },
+    { label: "DrawSprite", labelFile: "/p/Game.nex.dis", bank: 5, exec: true },
+    { resource: "main.asm", line: 42, exec: true },
+    { resource: "main.kbas", line: 7, column: 12, exec: true },
+    { nextReg: 0x07, nextRegCopper: true }
+  ];
+
+  it.each(SHAPES.map((bp) => [JSON.stringify(bp), bp] as const))(
+    "stores the condition and the hit rule of %s",
+    (_name, bp) => {
+      const ds = new DebugSupport();
+      ds.addBreakpoint({ ...bp, ...FILTERS });
+      expect(ds.breakpoints[0]).toMatchObject({ ...bp, ...FILTERS });
+    }
+  );
+
+  it("never stores runtime state handed in by a caller", () => {
+    // --- A caller round-tripping `listBreakpoints` output hands these back; a counter must not be
+    // --- seeded, and a stale error must not stick, from what a listing once said.
+    const ds = new DebugSupport();
+    ds.addBreakpoint({
+      address: 0x8000,
+      exec: true,
+      condition: "B == 0",
+      currentHits: 17,
+      conditionError: "stale",
+      conditionInactive: "stale"
+    });
+    const [stored] = ds.breakpoints;
+    expect(stored.condition).toEqual("B == 0");
+    expect(stored).not.toHaveProperty("currentHits");
+    expect(stored).not.toHaveProperty("conditionError");
+    expect(stored).not.toHaveProperty("conditionInactive");
+  });
+
+  it("does not store a blank condition or a mode without a count", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8000, exec: true, condition: "  ", hitMode: "gt" });
+    const [stored] = ds.breakpoints;
+    expect(stored).not.toHaveProperty("condition");
+    expect(stored).not.toHaveProperty("hitMode");
+  });
+
+  it("replaces the filters when the same breakpoint is set again (C13)", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ address: 0x8000, exec: true, ...FILTERS });
+    ds.addBreakpoint({ address: 0x8000, exec: true, condition: "HL > $C000" });
+
+    expect(ds.breakpoints).toHaveLength(1);
+    expect(ds.breakpoints[0].condition).toEqual("HL > $C000");
+    expect(ds.breakpoints[0]).not.toHaveProperty("hitCount");
+  });
+
+  it("keeps the filters through resetBreakpointsTo, the path undo, redo and restores take", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ resource: "main.asm", line: 42, exec: true, ...FILTERS });
+    ds.resetBreakpointsTo(ds.breakpoints, { kind: "project" });
+    expect(ds.breakpoints[0]).toMatchObject(FILTERS);
+  });
+
+  it("keeps a source breakpoint's filters when its line moves", () => {
+    // --- `scrollBreakpoints` is how the editor tracks a breakpoint through inserted lines.
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ resource: "main.asm", line: 42, exec: true, ...FILTERS });
+    ds.scrollBreakpoints({ resource: "main.asm", line: 10 }, 3);
+    expect(ds.breakpoints[0]).toMatchObject({ line: 45, ...FILTERS });
+  });
+
+  it("keeps the filters through a rename of the source file", () => {
+    const ds = new DebugSupport();
+    ds.addBreakpoint({ resource: "main.asm", line: 42, exec: true, ...FILTERS });
+    ds.renameBreakpoints("main.asm", "game.asm");
+    expect(ds.breakpoints[0]).toMatchObject({ resource: "game.asm", ...FILTERS });
+  });
+
+  it("keeps the filters through disabling and enabling", () => {
+    const ds = new DebugSupport();
+    const bp = { address: 0x8000, exec: true, ...FILTERS };
+    ds.addBreakpoint(bp);
+    ds.enableBreakpoint(bp, false);
+    ds.enableBreakpoint(bp, true);
+    expect(ds.breakpoints[0]).toMatchObject(FILTERS);
+  });
 });
 
 describe("a partition-scoped breakpoint added disabled", () => {

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A hollow breakpoint dot: set, but it cannot stop the machine now - its condition names a
+       label the last build did not define, or the emulator could not arm it. -->
+  <circle cx="8" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+</svg>

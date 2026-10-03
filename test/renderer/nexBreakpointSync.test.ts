@@ -10,6 +10,7 @@ import {
   toSidecarBreakpoints,
   toSidecarLabelBreakpoints
 } from "@renderer/appIde/DocumentPanels/Next/nexBreakpointSync";
+import { validateNexAnnotations } from "@renderer/appIde/DocumentPanels/Next/nexAnnotations";
 
 const SIDECAR = "/p/Game.nex.dis";
 const OTHER = "/p/Other.nex.dis";
@@ -378,5 +379,108 @@ describe("sameSidecarLabelBreakpoints", () => {
     expect(
       sameSidecarLabelBreakpoints(set, [{ label: "A", bank: 5, kind: "exec", disabled: true }])
     ).toEqual(false);
+  });
+});
+
+/*
+ * Conditional breakpoints, Phase 1 (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.7): a sidecar
+ * stores a breakpoint's condition and hit rule beside its place, for both stored shapes, and never
+ * the runtime state `listBreakpoints` reports.
+ */
+describe("conditions and hit rules in the sidecar", () => {
+  const FILTERS = { condition: "VAL == $AA", hitMode: "ge" as const, hitCount: 3 };
+  const RUNTIME = { currentHits: 5, conditionError: "stale", conditionInactive: "stale" };
+
+  it("stores a bank breakpoint's filters, and not its runtime state", () => {
+    expect(toSidecarBreakpoints([owned({ ...FILTERS, ...RUNTIME })], SIDECAR)).toEqual([
+      { bank: 5, offset: 0x100, kind: "exec", ...FILTERS }
+    ]);
+  });
+
+  it("stores a label breakpoint's filters, and not its runtime state", () => {
+    const bp: BreakpointInfo = {
+      label: "Flags",
+      labelFile: SIDECAR,
+      bank: 5,
+      memoryWrite: true,
+      owner: { kind: "nex", sidecar: SIDECAR },
+      ...FILTERS,
+      ...RUNTIME
+    };
+    expect(toSidecarLabelBreakpoints([bp], SIDECAR)).toEqual([
+      { label: "Flags", bank: 5, kind: "memWrite", ...FILTERS }
+    ]);
+  });
+
+  it("stores nothing extra for an unfiltered breakpoint", () => {
+    expect(toSidecarBreakpoints([owned({ condition: " ", hitMode: "gt" })], SIDECAR)).toEqual([
+      { bank: 5, offset: 0x100, kind: "exec" }
+    ]);
+  });
+
+  it("restores the filters of both shapes", () => {
+    expect(
+      fromSidecarBreakpoints([{ bank: 5, offset: 0x100, kind: "exec", ...FILTERS }], SIDECAR)[0]
+    ).toMatchObject(FILTERS);
+    expect(
+      fromSidecarLabelBreakpoints([{ label: "Flags", kind: "exec", ...FILTERS }], SIDECAR)[0]
+    ).toMatchObject(FILTERS);
+  });
+
+  it("survives a round trip through both shapes", () => {
+    const bank = owned({ ...FILTERS });
+    const label: BreakpointInfo = {
+      label: "Main",
+      labelFile: SIDECAR,
+      exec: true,
+      owner: { kind: "nex", sidecar: SIDECAR },
+      condition: "B == 0",
+      hitCount: 8
+    };
+    expect(fromSidecarBreakpoints(toSidecarBreakpoints([bank], SIDECAR), SIDECAR)).toEqual([bank]);
+    expect(
+      fromSidecarLabelBreakpoints(toSidecarLabelBreakpoints([label], SIDECAR), SIDECAR)
+    ).toEqual([label]);
+  });
+
+  it("notices a filter change that would need writing", () => {
+    // --- Otherwise editing a condition would never reach the file: the write-back compares first.
+    const base = { bank: 5, offset: 0x100, kind: "exec" as const, ...FILTERS };
+    expect(sameSidecarBreakpoints([base], [{ ...base }])).toBe(true);
+    expect(sameSidecarBreakpoints([base], [{ ...base, condition: "VAL == 0" }])).toBe(false);
+    expect(sameSidecarBreakpoints([base], [{ ...base, hitCount: 4 }])).toBe(false);
+    expect(sameSidecarBreakpoints([base], [{ ...base, hitMode: "gt" }])).toBe(false);
+
+    const labelBase = { label: "Main", kind: "exec" as const, ...FILTERS };
+    expect(sameSidecarLabelBreakpoints([labelBase], [{ ...labelBase }])).toBe(true);
+    expect(
+      sameSidecarLabelBreakpoints([labelBase], [{ ...labelBase, condition: undefined }])
+    ).toBe(false);
+  });
+
+  it("is read back from the file, with a warning for a malformed field", () => {
+    const { annotations, diagnostics } = validateNexAnnotations({
+      schemaVersion: 2,
+      banks: {},
+      debug: {
+        breakpoints: [
+          { bank: 5, offset: 0x100, kind: "exec", ...FILTERS },
+          { bank: 5, offset: 0x200, kind: "exec", condition: 7, hitCount: 0 }
+        ],
+        labelBreakpoints: [{ label: "Main", kind: "exec", hitMode: "every", hitCount: 2 }]
+      }
+    });
+    expect(annotations?.debug?.breakpoints).toEqual([
+      { bank: 5, offset: 0x100, kind: "exec", ...FILTERS },
+      // --- Kept, without the bad fields: it then stops on every hit, the safe direction
+      { bank: 5, offset: 0x200, kind: "exec" }
+    ]);
+    expect(annotations?.debug?.labelBreakpoints).toEqual([
+      { label: "Main", kind: "exec", hitMode: "every", hitCount: 2 }
+    ]);
+    expect(diagnostics.map((d) => [d.severity, d.path])).toEqual([
+      ["warning", "$.debug.breakpoints[1]"],
+      ["warning", "$.debug.breakpoints[1]"]
+    ]);
   });
 });

@@ -1,8 +1,8 @@
 # Conditional Breakpoints Plan: Hit Counts, Register/Flag Conditions, Memory/Value Conditions
 
-Status: **Phase 0 implemented, its full test run still pending** (2026-10-03). All decisions are
-recorded (§10). **Next session: start with "Handoff" in §9** - run the Phase 0 test checklist there,
-then start Phase 1.
+Status: **done — all phases (0–7) implemented and verified** (2026-10-03). G1.1–G1.3 are marked done
+in the base plan. §9 records what was built, where it departs from the design above, and what is
+left for G1.4/G1.5.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G1. This plan covers
 **G1.1** (hit-count breakpoints), **G1.2** (register/flag conditions) and **G1.3** (memory and
 value conditions). G1.4 logpoints, G1.5 DeZog source comments and G1.6 one-shot breakpoints are not
@@ -515,7 +515,7 @@ same change (standing rule).
 Each phase ends green on its focused tests, `npm run build:check`, and — when renderer React code is
 touched — `npm run lint:renderer`.
 
-### Phase 0 — exact per-instruction memory accesses in the cores (Q12) — implemented, full test run pending (§9)
+### Phase 0 — exact per-instruction memory accesses in the cores (Q12) — done
 
 Done first because it needs nothing else from this plan: today's `bp-set <addr> -r` / `-w`
 breakpoints are enough to test it, and it fixes misses they already have.
@@ -598,11 +598,11 @@ CPU-only path:
   on a `PUSH`'s first stack byte stops. Missing harness capabilities are added as session methods.
 - Performance: the `perf` project shows no regression in normal (non-debug) frames.
 
-### Phase 1 — model, keys and persistence (nothing user-visible)
+### Phase 1 — model, keys and persistence (nothing user-visible) — done
 `BreakpointInfo` fields (§4.1); `addBreakpoint` literal; storage key unchanged (test that condition
 and hit rule are not in it); persister audit and round-trip tests (§4.7).
 
-### Phase 2 — the condition engine
+### Phase 2 — the condition engine — done
 `src/common/utils/breakpoint-condition/`: lexer, parser, checker, constant folder, binder, evaluator,
 `ConditionContext`. Exhaustive node-project tests: every operator and precedence level, JS shift
 semantics (`1 << 31`, `-8 >> 1`, `-8 >>> 28`, count masking), signed accesses and `s8/s16/s32`,
@@ -612,7 +612,7 @@ every §3.7 error with its range, string folding for all four width/endianness c
 out-of-range constants on every operand kind, wrap-around at `$FFFF` and at a partition's end,
 label binding and the inactive state.
 
-### Phase 3 — `DebugSupport` and the debug loops
+### Phase 3 — `DebugSupport` and the debug loops — done
 `COND_BP`, the slow path, per-definition state, counters and resets, symbol binding, the guard
 reordering, `getConditionContext` in every machine that calls `shouldStopAtDebugPoint` (survey
 first), side-effect-free memory/partition/bank reads per core, the throttled hits-version dispatch,
@@ -625,21 +625,21 @@ memory-write breakpoint with `VAL == $AA`, a partition-qualified read with a dif
 (128K and Next), `page($C000) == @…`, `nr($56)` on the Next, a 48K run of a bank-qualified
 condition (prefix ignored), and a NEX with a sidecar using a global and a bank-local label. Missing harness capabilities are added as session methods.
 
-### Phase 4 — commands
+### Phase 4 — commands — done
 `rawTailOption`; `-if` and `-hit` on `bp-set` (accepted on `bp-del`/`bp-en`); `bp-list` output;
 `bp-reset-hits`. Tests for every validation message, the caret output, warnings, and that every
 `bp-list` line pasted back into `bp-set` recreates the same breakpoint.
 
-### Phase 5 — the dialog
+### Phase 5 — the dialog — done
 Form state, validation, warnings and the source mode in `breakpoint-form.ts` (node tests); the
 controls in `BreakpointDialog.tsx` (jsdom, extending `test/controls/BreakpointDialog.test.tsx`).
 
-### Phase 6 — editor margin, panel and glyphs
+### Phase 6 — editor margin, panel and glyphs — done
 The margin context menu (§4.4.2), the panel's new items and columns, the conditional and inactive
 glyph variants and their tooltips, live count refresh. Verified in the running app (CDP recipe in
 `.ai/ui-theming-intent-and-lessons.md`), not in a replica.
 
-### Phase 7 — docs, roadmap, lessons
+### Phase 7 — docs, roadmap, lessons — done
 `docs/content/working-with-ide/breakpoints.mdx` (a "Conditions and hit counts" section with the §3
 reference) and `docs/content/commands-reference.mdx`; `npm run doc:build && npm run doc:check`. Mark
 G1.1–G1.3 done in the base plan; update §2/§4 of `LANDING_PAGE_COMPETITIVE_ANALYSIS.md`; theming
@@ -688,41 +688,140 @@ machines.
 
 ## 9. Implementation notes
 
-### Handoff (2026-10-03)
+### Phase 0 — verification (2026-10-03)
 
-**Phase 0 is implemented but not fully verified.** The focused tests listed below passed in the
-worktree; the **full unit suite was not run** (it was interrupted). Before starting Phase 1, run:
+The handoff checklist ran green on a fresh `npm run build:all-wasm`: the full unit suite (901 files,
+22 448 tests), the Z80 WASM corpus (1 473), `npm run build:check` and
+`npm run check:wasm-cpu-contract`. No test had pinned the old single-record behaviour.
 
-```bash
-npm run build:all-wasm
-npx vitest run --config build/vitest.config.ts --project='!perf'
-npx vitest run --config test/wasm/vitest.z80.config.ts
-npm run build:check
-npm run check:wasm-cpu-contract
-```
+### Phase 1 — what was built
 
-The `dist/*.wasm` artifacts are not checked in, so the cores must be rebuilt first. Fix any failure
-before Phase 1 - the likeliest are tests that pinned the old single-record behaviour (a read
-breakpoint firing on an opcode/operand fetch, or the Next's frame trace memory fields).
+- **Model** (`BreakpointInfo`): `condition`, `hitMode` (type `BreakpointHitMode`), `hitCount` (the old
+  stub, now the rule's N), and the runtime-only `currentHits`, `conditionError`, `conditionInactive`.
+- **`src/common/utils/breakpoint-filters.ts`** — type-only imports, so the main process can use it:
+  `breakpointFiltersOf` (the normalised persisted subset: a blank condition and a mode without a
+  count are dropped), `effectiveHitMode` (a bare count is `eq`), `sameBreakpointFilters`,
+  `withoutBreakpointRuntimeState`, and `readStoredBreakpointFilters` (validates a stored entry; a bad
+  field is dropped with a message and the breakpoint kept — it then stops every time, the safe way).
+  Phase 4's `-hit` parser and Phase 5's form should use `BREAKPOINT_HIT_MODES`,
+  `MAX_BREAKPOINT_HIT_COUNT` and `isValidBreakpointHitCount` from here.
+- **`DebugSupport.addBreakpoint`** spreads `breakpointFiltersOf(bp)` into its literal, so runtime
+  fields handed back from a `listBreakpoints` round trip are never stored. **Phase 3 must keep the
+  per-definition hit state outside `breakpointDefs`**: `resetBreakpointsTo` (undo/redo, dialog
+  edits that move a key, NEX label resolution) rebuilds every definition, and C12 says counters
+  survive edits. The `HIT_BP` / `BreakpointData.targetHitCount` stub is untouched until Phase 3.
+- **Existing bug fixed:** the literal also dropped `column`, so a statement breakpoint was listed —
+  and saved — as a line breakpoint on the same line (its storage key still had the column).
+- **Persisters.** The project save strips runtime state (so a moving counter never rewrites the
+  file) and so does the project load. The `.nex.dis` sidecar stores the three fields on both
+  shapes (`NexSidecarBreakpointFilters`), its reader validates them with warnings, and
+  `to/from/sameSidecar*Breakpoints` carry and compare them. Additive fields, no schema bump (as
+  `labelBreakpoints` was); the project's breakpoint schema stays 1 for the same reason.
+- **Audited, nothing to change:** the editor's undo/redo (`resetBreakpointsTo` with listed
+  snapshots), statement re-anchoring (spreads `...bp`), `scrollBreakpoints` / `renameBreakpoints`
+  (mutate the stored definition), `normalizeBreakpoints` (only deletes), `refreshSourceCodeBreakpoints`
+  and `resolveBreakpoint` (resolve by key), `applyBreakpointEdit` (whole-set round trip), the NEX
+  label resolution, and `src/main/kbasic/breakpoints.ts` (persists nothing).
+- **Tests:** `test/debug/breakpoint-filters.test.ts` (filters out of the key for all nine binding
+  shapes, normalisation, stored-entry validation), `BreakpointFlagIntegrity.test.ts` (filters stored
+  on every shape; runtime state never stored; C13 replacement; survival through
+  `resetBreakpointsTo`, line scrolling, rename, disable/enable; the `column` fix),
+  `test/renderer/nexBreakpointSync.test.ts` (both sidecar shapes, round trips, change detection,
+  reading with warnings), `test/main/save-klive-project.test.ts` (filters saved, runtime state not,
+  no rewrite when only a counter moved).
 
-Passed in the worktree: `test/wasm/wasm-access-log.test.ts` (68), `test/emu/access-breakpoints-real-machine.test.ts`
-(9), `test/zxSpectrum`, `test/wasm/zxSpectrum`, `test/wasm/zxNext`, `test/wasm/z88`,
-`test/wasm/wasm-shared-z80-cpu-contract.test.ts` (659 together), the Z80 WASM corpus (1473),
-`npm run build:check`, `npm run check:wasm-cpu-contract`, the `perf` project.
+### Phases 2–7 — what was built (2026-10-03)
 
-**Phase 1 was surveyed, nothing written.** Findings so far:
-- `src/main/projects.ts` `getKliveProjectStructureFromState` saves `listBreakpoints()` output as is,
-  so the runtime-only fields (`currentHits`, `conditionError`, `conditionInactive`) must be stripped
-  there.
-- The `.nex.dis` sidecar stores breakpoints in its own shapes (`NexSidecarBreakpoint`,
-  `NexSidecarLabelBreakpoint` in `nexAnnotations.ts`): `condition`/`hitMode`/`hitCount` need new
-  fields there, in the reader (`readLabelBreakpoints` and the bank-breakpoint reader), in
-  `to/fromSidecar*Breakpoints` and in `sameSidecar*Breakpoints` (`nexBreakpointSync.ts`).
-- The editor (`MonacoEditor.tsx`): undo/redo snapshots go through `resetBreakpointsTo` (keeps all
-  fields); statement re-anchoring spreads `...bp` (keeps them); `scrollBreakpoints` and
-  `normalizeBreakpoints` in `DebugSupport.ts` still need checking.
-- `src/main/kbasic/breakpoints.ts` does not persist breakpoints; it only decides which lines can hold
-  one - nothing to change there.
+**Verification.** Full unit suite green (909 files, 22 947 tests at the last full run, after Phase 6),
+`npm run build:check` (no new type errors), `npm run lint:renderer` (0 errors), the Vite build,
+`npm run doc:build && npm run doc:check`. Phase 6 was checked in the running app over CDP against
+`~/KliveProjects/sp48-1` (its `klive.project` restored afterwards): the margin menu, the "=" and
+hollow glyphs, the dialog in source mode, the panel's filter cells, and a `-hit *3` source
+breakpoint stopping on the third pass with the live count reading 3.
+
+**Engine (Phase 2)** — `src/common/utils/breakpoint-condition/`: `condition-types.ts`,
+`condition-lexer.ts`, `condition-parser.ts` (syntax tree with spans), `condition-checker.ts`
+(`compileCondition`, `bindCondition`, §3.7 checks, string and constant folding),
+`condition-evaluator.ts`, `condition-machine.ts` (`conditionMachineFacts`, the one builder of
+machine facts used by the IDE *and* the emulator). Tests: `test/debug/breakpoint-condition.test.ts`.
+Departures from §3.8: flags are their own node (`{k:"flag", bit}`) rather than register reads;
+`ConditionContext.readPartition(partition, address)` takes the *address* and the context wraps it by
+the partition's real size (a Next ROM partition is 16K, a RAM page 8K, so no single
+`partitionSize` is right); a bank-local label is a symbol keyed `bankLocalSymbolKey(bank, name)`;
+the first error stops compilation (one diagnostic, with its range).
+
+**Emulator (Phase 3).**
+- `DebugSupport`: `COND_BP`, the slow path `decideFiltered` / `passesFilters`, a per-definition
+  runtime map (counter + compiled condition) kept **outside** `breakpointDefs` so
+  `resetBreakpointsTo` keeps counters (pruned for removed keys; moved with `scrollBreakpoints` /
+  `renameBreakpoints`), `setConditionEnvironment`, `setConditionSymbols` (dispatches
+  `breakpointsVersion` only when an inactive state changed), `resetHitCounts`, `takeHitsChanged`,
+  `listBreakpointsWithState`. The `BreakpointData.targetHitCount/currentHitCount` stub is gone.
+- **Departure from §4.6:** the context arrives through `debugSupport.conditionContextProvider`
+  (set once per machine by `connectConditionSupport` in `src/emu/machines/conditionContext.ts`),
+  not a new `DebugStopDecisionInput` field, so the six stop-decision call sites and the access
+  checks needed no new parameter. `Z80MachineBase.getConditionContext` reads the partition views;
+  each WASM machine syncs its registers first and uses its own side-effect-free read (`sp48ReadMemory`,
+  `sp128ReadMemory`, `zxnextReadMemory` (= peek) and `zxnextPeekNextRegister`, `z88ReadMemory`); the
+  **+3E uses the partition views** because `spp3eReadMemory` latches the floating-bus value (R3).
+- Access checks pass the per-access values (`lastMemoryReadValues`/`WriteValues`, the port value)
+  and are all evaluated, not short-circuited. The **Z88** core keeps no per-access values, so its
+  `VAL` is read back from memory: exact for writes, for reads unless the same instruction wrote the
+  byte afterwards.
+- The re-trigger guard runs before `shouldStopAt` (§4.6). Counters reset in `MachineController.run`
+  on a start from Stopped/None; `incBreakpointHitsVersionAction` is published every 10 frames and
+  on every run end.
+- Symbols: `src/renderer/appIde/utils/condition-symbols.ts` merges the build's integer symbols (set
+  in `refreshSourceCodeBreakpoints`, which every build path calls) with each NEX sidecar's labels
+  (set in `useNexSidecarBreakpointSync`); the build wins; cleared on project load; a new machine
+  inherits the table.
+- Tests: `test/debug/DebugSupport-conditions.test.ts`, `test/emu/conditional-breakpoints-real-machine.test.ts`
+  (sp48 and zxnext harnesses, plus the 128K and +3E through `test/wasm/zxSpectrum/wasm-test-helpers.ts`
+  — there is no 128K harness), the guard test in `test/emu/debug-step-decision.test.ts`.
+- **R1, measured** (sp48, 65 536 passes of a `NOP; DJNZ` loop, breakpoint on the `NOP`): no
+  breakpoint 389 ns/pass; a hit rule alone 498 ns; a register or memory condition ≈2.5 µs — almost
+  all of it the WASM register sync and context build. Addresses without filters pay nothing.
+
+**Commands (Phase 4).** `CommandArgumentInfo.rawTailOption` + `splitRawTail` in `ide-commands.ts`
+(text-level, respects quotes and `[...]`); `IdeCommandService` cuts the line before tokenizing
+(the tokenizer silently drops `==` and `&&`). `-hit` is a plain string option (its specs tokenize
+whole). `parseHitSpec` / `formatHitSpec` live in `breakpoint-filters.ts`. **`bp-list` departs
+from §4.3's single line:** the first line is pure `bp-set` syntax (spec, kind options, `-hit`,
+`-if` last) and the state (`<disabled>`, `(hits: N)`, `<inactive: …>`, `<condition error: …>`)
+goes on an indented second line, because anything after `-if` would become part of the
+condition. Tests: `test/commands/breakpoint-condition-commands.test.ts`.
+
+**Dialog (Phase 5).** Form fields `condition`, `hitMode`, `hitCount`, `source` (source mode keeps
+the editor's breakpoint, its resolution and column, and drops runtime state); `FieldWarnings` via
+`breakpointFormWarnings`; `BreakpointEnvironment` gained `machineId` and `conditionSymbols` (the
+plan's `hasPartitions`/`isNext`/`cpu` are derived by `conditionMachineFacts`). The dialog takes
+`focus` and `onResetHits`; `useBreakpointDialog` re-reads the breakpoint from a fresh listing. The
+"Syntax" link uses `MainApi.showWebsite(docsPath)`, which now accepts a site-relative path.
+
+**Margin, panel, glyphs (Phase 6).** `marginBreakpointMenu.ts` (items and actions, including
+"Add Conditional Breakpoint… → Cancel removes it"), `breakpoint-filter-text.ts` (one wording and
+the glyph predicates), `bp-conditional.svg` / `bp-inactive.svg`, the Monaco mask classes (also on
+the *unreachable* glyph, so a condition shows before the first build), `⊜`/`○` statement markers.
+Source rows are editable from the panel and the disassembly gutter. Also fixed: the indicator's
+tooltip printed a stray `)`.
+
+**Docs (Phase 7).** `breakpoints.mdx` ("The Editor's Breakpoint Margin", "Conditions And Hit
+Counts"; the memory-read type no longer claims opcode fetches count), `commands-reference.mdx`
+(`-hit`, `-if`, `bp-list` format, `bp-reset-hits`, and the source spec example now has its line).
+
+**Fix after review (2026-10-03): breakpoints only in debug runs.** A `-hit 4` breakpoint on $38
+never fired when a compiled program was started in debug mode. The code-injection flow boots the
+ROM with `ReachExecPoint`, a `NoDebug` run that still goes through the per-instruction loops, and
+`MachineController.run` handed those loops the breakpoint store, so the boot's IM 1 interrupts were
+counted: the 4th hit silently ended the boot step and the program's own hits started at 5. (A plain
+$38 breakpoint had the same latent defect, invisible because it stops every time.) `run` now
+attaches the store only when `debugStepMode !== NoDebug` (C19), and `executeInjectionFlow` resets
+the counters, since a restored boot checkpoint skips the reset in `run`. Test:
+`test/emu/conditional-breakpoints-injection-flow.test.ts` (real 48K under a real `MachineController`).
+
+**For G1.4/G1.5:** a logpoint's `{…}` fields can use `parseCondition` → the checker; the parser's
+`bitOr()` entry is not exported yet (export it, or wrap a field as `(…)`). `passesFilters` is the
+place a logpoint would format and resume instead of stopping.
 
 ### Phase 0 — what was built
 

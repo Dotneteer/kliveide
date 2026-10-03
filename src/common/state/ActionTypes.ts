@@ -47,6 +47,7 @@ export interface ActionTypes {
   SET_CURSOR_POSITION: null;
   SET_SOURCE_FRAME: null;
   INC_BPS_VERSION: null;
+  INC_BP_HITS_VERSION: null;
   INC_TOOL_CMD_SEQ: null;
 
   OPEN_FOLDER: null;

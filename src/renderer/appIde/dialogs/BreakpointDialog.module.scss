@@ -54,3 +54,51 @@
   color: var(--color-secondary-label);
   font-family: var(--monospace-font);
 }
+
+/* A note that accepts the form anyway: a condition label not in the symbol table yet. */
+.warning {
+  margin-top: var(--space-1_5);
+  color: var(--status-warning);
+  font-size: var(--font-size-100);
+  white-space: pre-line;
+}
+
+/* A source breakpoint's place, shown rather than edited (source mode). */
+.location {
+  font-family: var(--monospace-font);
+  color: var(--color-secondary-label);
+}
+
+/* The hit rule beside its N, and the live count beside its Reset. */
+.hitFields {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-1_5);
+}
+
+.hitFields > div {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* The live count beside its Reset: centred against the button, which is taller than a field. */
+.hitsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hits {
+  font-family: var(--monospace-font);
+}
+
+/* The "Syntax" link in the condition hint: a button, styled as the text link it acts as. */
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+}

@@ -1,7 +1,21 @@
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type { BreakpointHitMode, BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type {
+  ConditionAccessKind,
+  ConditionDiagnostic,
+  ConditionSymbols
+} from "@common/utils/breakpoint-condition/condition-types";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { isBankRelative, isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import {
+  MAX_BREAKPOINT_HIT_COUNT,
+  breakpointFiltersOf,
+  effectiveHitMode,
+  isValidBreakpointHitCount,
+  withoutBreakpointRuntimeState
+} from "@common/utils/breakpoint-filters";
+import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
+import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 // --- The Next's bank limits, from the module that owns the NEX bank facts. `BreakpointCommands`
@@ -18,12 +32,13 @@ import {
  * This module owns every rule the dialog enforces, so the rules can be tested in the fast `node`
  * project instead of through a mounted form. See `.plans/BREAKPOINT_MANAGEMENT_UI_PLAN.md` §5.1.
  *
- * **Binary breakpoints only.** A `BreakpointInfo` is address-bound (`address`, optionally
- * `partition`), **bank-relative** (`bank` + `bankOffset`), or source-bound (`resource` + `line`) —
- * `getBreakpointDisplayKey` branches on exactly that. The dialog authors the first two;
- * source-code breakpoints stay owned by the editor's glyph margin, which places them by clicking a
- * line, tracks them as lines move, and has its own undo/redo. Nothing here ever reads or writes
- * `resource`/`line`.
+ * **Binary breakpoints are authored; source breakpoints are only edited.** A `BreakpointInfo` is
+ * address-bound (`address`, optionally `partition`), **bank-relative** (`bank` + `bankOffset`), or
+ * source-bound (`resource` + `line`) — `getBreakpointDisplayKey` branches on exactly that. The
+ * dialog authors the first two. Source-code breakpoints stay *placed* by the editor's glyph margin,
+ * which tracks them as lines move and has its own undo/redo; the dialog's **source mode**
+ * (`BreakpointFormState.source`) edits only their condition, hit rule and enabled state, and never
+ * writes `resource`/`line` (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.2).
  *
  * The bank-relative kind is spelled into the **address field** — `05:+$0100` — rather than given
  * controls of its own. That is what `bp-set` accepts, so there is one spelling to learn and one
@@ -89,7 +104,25 @@ export type BreakpointFormState = {
   /** Also break when the copper writes the register, not only when the CPU does. */
   nextRegCopper: boolean;
   disabled: boolean;
+  /**
+   * The condition as typed (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.1). Empty means none.
+   * Every kind carries one, source breakpoints included.
+   */
+  condition: string;
+  /** The hit-count rule, or `"always"` for none. */
+  hitMode: "always" | BreakpointHitMode;
+  /** Raw input: the rule's N. Meaningful unless `hitMode` is `"always"`. */
+  hitCount: string;
+  /**
+   * **Source mode** (§4.4.2): the source breakpoint being edited. The editor places and tracks a
+   * source breakpoint, so only its condition, hit rule and enabled state are editable here; its
+   * location is shown, not authored. Absent for every other breakpoint.
+   */
+  source?: BreakpointInfo;
 };
+
+/** Messages that accept the form but deserve a note (unknown labels, shadowed names). */
+export type FieldWarnings = Partial<Record<"condition", string>>;
 
 /**
  * Everything the rules need to know about the world, resolved by the caller before the dialog opens.
@@ -126,6 +159,16 @@ export type BreakpointEnvironment = {
   existingKeys: string[];
   /** The key being edited, exempt from the duplicate check. Absent when adding. */
   editingKey?: string;
+  /**
+   * The machine's id, for the condition checker's machine facts (§3.7 rules 3-5). Built with the
+   * same helper the emulator arms with, from this id and `partitionLabels`.
+   */
+  machineId?: string;
+  /**
+   * The symbols condition labels resolve to - the last build's and the NEX sidecars'. A label
+   * missing from it is a warning, not an error (§3.6). Absent: no label warnings.
+   */
+  conditionSymbols?: ConditionSymbols;
 };
 
 /** Per-field messages, plus `form` for a rule that belongs to no single field. */
@@ -234,7 +277,10 @@ export function createEmptyForm(): BreakpointFormState {
     nextRegValue: "",
     nextRegMask: "",
     nextRegCopper: false,
-    disabled: false
+    disabled: false,
+    condition: "",
+    hitMode: "always",
+    hitCount: ""
   };
 }
 
@@ -314,6 +360,38 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
+  return { ...formPlaceToBreakpointInfo(form), ...formFilters(form) };
+}
+
+/**
+ * The condition and hit rule the form describes, normalised like a stored breakpoint (a blank
+ * condition or `"always"` says nothing). An unparseable count is dropped; validation refuses it.
+ */
+function formFilters(form: BreakpointFormState): Pick<BreakpointInfo, "condition" | "hitMode" | "hitCount"> {
+  const count = form.hitMode === "always" ? undefined : parseNumericInput(form.hitCount);
+  return breakpointFiltersOf({
+    condition: form.condition,
+    ...(count?.ok ? { hitMode: form.hitMode as BreakpointHitMode, hitCount: count.value } : {})
+  });
+}
+
+/** Where the breakpoint is and what it watches: everything but its filters. */
+function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
+  /*
+   * Source mode: the editor's breakpoint, unchanged but for what the dialog edits. Its resolution
+   * and owner come along, so saving does not disarm it until the next build. Its own filters and
+   * any runtime state are dropped; `formFilters` supplies the edited ones.
+   */
+  if (form.source) {
+    const {
+      condition: _condition,
+      hitMode: _hitMode,
+      hitCount: _hitCount,
+      ...place
+    } = withoutBreakpointRuntimeState(form.source);
+    return { ...place, disabled: form.disabled };
+  }
+
   /*
    * A NextReg breakpoint, first and on its own branch.
    *
@@ -416,7 +494,11 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
         : `$${toHexa4(bp.address)}`,
     partition: bp.partition,
     ioMask: bp.ioMask === undefined ? "" : `$${toHexa4(bp.ioMask)}`,
-    disabled: bp.disabled ?? false
+    disabled: bp.disabled ?? false,
+    condition: bp.condition ?? "",
+    hitMode: effectiveHitMode(bp) ?? "always",
+    hitCount: bp.hitCount === undefined ? "" : `${bp.hitCount}`,
+    ...(bp.resource !== undefined ? { source: bp } : {})
   };
 }
 
@@ -434,6 +516,11 @@ export function validateBreakpointForm(
   env: BreakpointEnvironment
 ): FieldErrors {
   const errors: FieldErrors = {};
+  addFilterErrors(errors, form, env);
+
+  // --- Source mode: the editor owns the place, so only the filters are judged (and there is no
+  // --- key to collide - the breakpoint keeps its own)
+  if (form.source) return errors;
 
   /*
    * The NextReg rules, on their own path.
@@ -556,6 +643,74 @@ export function validateBreakpointForm(
   addDuplicateKeyError(errors, form, env);
 
   return errors;
+}
+
+/** The condition and hit-count rules, the same for every kind and for source mode. */
+function addFilterErrors(
+  errors: FieldErrors,
+  form: BreakpointFormState,
+  env: BreakpointEnvironment
+): void {
+  const error = checkCondition(form, env).errors[0];
+  if (error) errors.condition = formatConditionDiagnostic(error);
+
+  if (form.hitMode !== "always") {
+    const count = parseNumericInput(form.hitCount);
+    if (!count.ok) {
+      errors.hitCount =
+        count.reason === "empty" ? "Enter the hit count." : "Enter a valid hit count, for example 10 or $0A.";
+    } else if (!isValidBreakpointHitCount(count.value)) {
+      errors.hitCount = `The hit count must be between 1 and ${MAX_BREAKPOINT_HIT_COUNT}.`;
+    }
+  }
+}
+
+/** The condition's diagnostics against this machine and these symbols; empty for no condition. */
+function checkCondition(
+  form: BreakpointFormState,
+  env: BreakpointEnvironment
+): { errors: ConditionDiagnostic[]; warnings: ConditionDiagnostic[] } {
+  if (!(form.condition ?? "").trim()) return { errors: [], warnings: [] };
+  const result = compileCondition(form.condition, {
+    ...conditionMachineFacts(env.machineId, env.partitionLabels),
+    accessKind: form.source ? "exec" : conditionAccessKindOf(form.kind),
+    symbols: env.conditionSymbols
+  });
+  return { errors: result.errors, warnings: result.warnings };
+}
+
+/** The condition-language kind of a form's breakpoint type (`VAL`/`ADDR` depend on it). */
+export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind {
+  switch (kind) {
+    case "memRead":
+    case "memWrite":
+      return "memory";
+    case "ioRead":
+    case "ioWrite":
+      return "io";
+    case "nextRegWrite":
+      return "nextReg";
+    default:
+      return "exec";
+  }
+}
+
+/** A condition message with its column, as the dialog shows it under the field. */
+export function formatConditionDiagnostic(diagnostic: ConditionDiagnostic): string {
+  return `Column ${diagnostic.start + 1}: ${diagnostic.message}`;
+}
+
+/**
+ * The notes that accept the form anyway: labels missing from the symbol table (the breakpoint is
+ * inactive until a build defines them, C14) and reserved names shadowing a label (R5).
+ */
+export function breakpointFormWarnings(
+  form: BreakpointFormState,
+  env: BreakpointEnvironment
+): FieldWarnings {
+  const { errors, warnings } = checkCondition(form, env);
+  if (errors.length || !warnings.length) return {};
+  return { condition: warnings.map(formatConditionDiagnostic).join("\n") };
 }
 
 /**

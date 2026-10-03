@@ -534,10 +534,10 @@ git diff --check
 For ZX Spectrum 48K specifically, the current commands are:
 
 ```sh
-npm test -- --project jsdom test/zxSpectrum/ZxSpectrum48MachineFactory.test.ts
-npm test -- --project jsdom test/zxSpectrum/ZxSpectrum48WasmV2Machine.test.ts
-npm test -- --project jsdom test/zxSpectrum/sp48-wasm-v2-loader.test.ts
-npm test -- --project jsdom test/zxSpectrum/sp48-wasm-build.test.ts
+npm test -- test/zxSpectrum/ZxSpectrum48MachineFactory.test.ts
+npm test -- test/zxSpectrum/ZxSpectrum48WasmV2Machine.test.ts
+npm test -- test/zxSpectrum/sp48-wasm-v2-loader.test.ts
+npm test -- test/zxSpectrum/sp48-wasm-build.test.ts
 npm run build:check
 npm run build:sp48-wasm
 npm run check:sp48-wasm-size

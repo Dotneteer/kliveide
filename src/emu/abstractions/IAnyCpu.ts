@@ -145,6 +145,12 @@ export interface IAnyCpu {
   lastMemoryReadValue: number;
 
   /**
+   * The value of each read in `lastMemoryReads`, in the same order: a breakpoint condition's `VAL`
+   * for the address it matched. Optional: a CPU that does not track per-access values leaves it out.
+   */
+  lastMemoryReadValues?: ArrayLike<number>;
+
+  /**
    * The memory addresses of the last memory write operations
    */
   lastMemoryWrites: ArrayLike<number>;
@@ -158,6 +164,9 @@ export interface IAnyCpu {
    * The last value written to memory
    */
   lastMemoryWriteValue: number;
+
+  /** The value of each write in `lastMemoryWrites`, in the same order (see `lastMemoryReadValues`). */
+  lastMemoryWriteValues?: ArrayLike<number>;
 
   /**
    * The port address of the last I/O read operation

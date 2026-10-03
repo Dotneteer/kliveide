@@ -55,9 +55,9 @@ What the field looks like:
 | Built-in BASIC compiler | ✅ **(main)** Klive BASIC, Boriel 1.19 + CODEBANK compatible | ✗ | ✗ | ✗ | ✗ | Boriel (external) |
 | **BASIC source-level debugging** | ✅ **(main)** statement stepping, symbolic call stack, editable variables, Just My Code, error stops | ◐ (BASIC/vars viewers only) | ✗ | ✗ | ✗ | ◐ (ZXBS, reported buggy) |
 | Asm source-level debugging | ✅ (Klive asm; sjasmplus only tested on 48K) | ✅ | labels only | ✗ | ✗ | ✗ |
-| Exec / memory / I/O breakpoints | ✅ incl. bank-relative and partition-scoped | ✅ | ◐ | ✅ | ✅ | via CSpect |
+| Exec / memory / I/O breakpoints | ✅ incl. bank-relative and partition-scoped; **(main)** every data access of an instruction is watched | ✅ | ◐ | ✅ | ✅ | via CSpect |
 | NextReg write breakpoints (value/mask, copper, old→new) | ✅ **(apparently unique)** | ? | ? | ✗ | ✗ | ✗ |
-| **Conditional / hit-count breakpoints, logpoints** | ✗ | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
+| **Conditional / hit-count breakpoints, logpoints** | ◐ **(main)** conditions (registers, flags, memory in any bank, accessed value/address, paging, NextRegs, program and NEX labels) and hit counts on every breakpoint type, with a live count; no logpoints yet | ✅ | ? | ✅ | ✅ (SpecEmu too) | ✗ |
 | **Reverse debugging / execution history** | ✗ | ✅ | ? | ✗ | frame trace | ✗ |
 | **Unit tests / code coverage / profiler** | ✗ | ✅ (DeZog only) | ✗ | profiler | memory diff | ✗ |
 | Call stack, watches | ✅ (+ BASIC call stack) | ✅ | ? | ✗ | ✅ | ◐ |
@@ -110,7 +110,7 @@ tools:
 
 | # | Gap | Who has it | Notes |
 |---|---|---|---|
-| W1 | **Conditional breakpoints, hit counts, logpoints** | ZEsarUX, DeZog, Fuse, SpecEmu, MAME | Expected as standard. Also still on the README roadmap. |
+| W1 | **Logpoints** (conditional breakpoints and hit counts are now on main, unreleased) | ZEsarUX, DeZog, Fuse, SpecEmu, MAME | Logpoints and DeZog's ASSERTION/WPMEM comments (G1.4, G1.5) reuse the condition engine that shipped. Remove the README roadmap entry for conditions once released. |
 | W2 | **Reverse debugging / execution history** | DeZog (zsim, ZEsarUX), ZEsarUX, Zeus | DeZog's most-praised feature. |
 | W3 | **Unit tests and code coverage, profiler** | DeZog; Fuse and Zeus profilers | Klive has a strong internal test harness, but nothing user-facing. |
 | W4 | **Live Next hardware inspectors** (sprites, Copper list, Layer 2 / tilemap / layer composition) | ZEsarUX; DeZog sprites | Large impact for a "Next IDE"; Klive has only NEX-file sprite and image views. |
@@ -211,8 +211,9 @@ experimental C64* · *Record your session as video* · *Klive Script automation*
 source*.
 
 ### Deliberately **not** claimed
-- Conditional breakpoints, reverse debugging, unit tests and coverage, live Copper/sprite
-  inspectors, snapshot/RZX loading, real-hardware debugging (see §4).
+- Conditional breakpoints until a release ships them (they are on main), reverse debugging, unit
+  tests and coverage, live Copper/sprite inspectors, snapshot/RZX loading, real-hardware debugging
+  (see §4).
 - "Most accurate" anything. There is no public benchmark against CSpect, ZEsarUX or Fuse.
 - No named competitor on the page. Comparisons stay implicit ("no toolchain to wire up").
 
@@ -226,8 +227,9 @@ source*.
    (clips). This needs a fixture project per feature, which is a separate plan.
 4. **Implement the content** on the landing page prototype: hero video, five feature sections,
    supporting strip, and OS-detected download links.
-5. **Separately, consider the roadmap**: W1 (conditional breakpoints) and W5 (snapshot loading)
-   look like the cheapest gaps to close with the biggest perception payoff. W4 (live Next
+5. **Separately, consider the roadmap**: W1 (conditional breakpoints — now done on main, with
+   logpoints left) and W5 (snapshot loading) look like the cheapest gaps to close with the biggest
+   perception payoff. W4 (live Next
    inspectors) and W2 (history) are the ones that would make Klive the clear Next leader.
 
 ## Sources (competitors)

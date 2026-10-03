@@ -1,3 +1,5 @@
+import type { ConditionContext } from "@common/utils/breakpoint-condition/condition-types";
+import { createConditionContext, partitionViewMemory } from "../conditionContext";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { CpuState } from "@common/messaging/EmuApi";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
@@ -892,12 +894,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
   private hasWasmV2AccessBreakpoint(): boolean {
     const debugSupport = this.executionContext.debugSupport;
     if (!debugSupport) return false;
-    return (
-      debugSupport.hasMemoryRead(this.lastMemoryReads, this.lastMemoryReadsCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasMemoryWrite(this.lastMemoryWrites, this.lastMemoryWritesCount, (addr) => this.getPartition(addr)) ||
-      debugSupport.hasIoRead(this.lastIoReadPort) ||
-      debugSupport.hasIoWrite(this.lastIoWritePort)
+    // --- All four asked, not short-circuited: a conditional breakpoint counts its hits (C11), so
+    // --- a read that stops must not hide a write in the same instruction from its counter.
+    const partitionOf = (addr: number) => this.getPartition(addr);
+    const read = debugSupport.hasMemoryRead(
+      this.lastMemoryReads,
+      this.lastMemoryReadsCount,
+      partitionOf,
+      this.lastMemoryReadValues
     );
+    const written = debugSupport.hasMemoryWrite(
+      this.lastMemoryWrites,
+      this.lastMemoryWritesCount,
+      partitionOf,
+      this.lastMemoryWriteValues
+    );
+    const portRead = debugSupport.hasIoRead(this.lastIoReadPort, this.lastIoReadValue);
+    const portWritten = debugSupport.hasIoWrite(this.lastIoWritePort, this.lastIoWriteValue);
+    return read || written || portRead || portWritten;
   }
 
   private importWasmV2BusAccess(runtime: Sp48WasmV2Runtime): void {
@@ -933,6 +947,19 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.totalContentionDelaySinceStart = wasm.sp48GetTotalContentionDelaySinceStart();
     this.contentionDelaySincePause =
       wasm.sp48GetContentionDelaySincePause() - this.wasmV2ContentionPauseBase;
+  }
+
+  /**
+   * What a breakpoint condition reads: the registers after one sync from the core (the debug loop
+   * mirrors only PC per instruction) and memory through the core's plain array read (no contention, no floating bus).
+   */
+  override getConditionContext(): ConditionContext {
+    const runtime = this.requireWasmV2Runtime();
+    this.syncCpuFromWasmV2(runtime);
+    return createConditionContext(this, {
+      ...partitionViewMemory(this),
+      readMemory: (address) => runtime.exports.sp48ReadMemory(address & 0xffff)
+    });
   }
 
   private syncCpuFromWasmV2(runtime: Sp48WasmV2Runtime): void {

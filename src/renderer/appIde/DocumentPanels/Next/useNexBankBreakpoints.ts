@@ -1,3 +1,4 @@
+import { pushConditionSymbols, setSidecarConditionSymbols } from "@renderer/appIde/utils/condition-symbols";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
@@ -187,6 +188,13 @@ export function useNexSidecarBreakpointSync(
    * through `listBreakpoints` — and that scope keeps each breakpoint's own owner rather than
    * stamping one.
    */
+  // --- The sidecar's labels join the symbols breakpoint conditions bind to (plan F3)
+  useEffect(() => {
+    if (!sidecar || !annotations) return;
+    setSidecarConditionSymbols(sidecar, annotations);
+    void pushConditionSymbols(emuApiRef.current);
+  }, [annotations, sidecar]);
+
   useEffect(() => {
     if (!sidecar || !annotations) return undefined;
     let cancelled = false;

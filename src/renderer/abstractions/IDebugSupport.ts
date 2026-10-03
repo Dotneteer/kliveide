@@ -1,5 +1,10 @@
 import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
+import type {
+  ConditionContext,
+  ConditionSymbols
+} from "@common/utils/breakpoint-condition/condition-types";
+import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 /**
  * This interface represents the properties and methods that support debugging an emulated machine.
@@ -31,7 +36,7 @@ export interface IDebugSupport {
    * @param length Number of bytes read
    * @param partitionResolver A function to resolve the current partition
    */
-  hasMemoryRead(reads: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined): boolean;
+  hasMemoryRead(reads: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined, values?: ArrayLike<number>): boolean;
 
   /**
    * Gets memory write breakpoint information for the specified address/partition
@@ -39,7 +44,7 @@ export interface IDebugSupport {
    * @param length Number of bytes written
    * @param partitionResolver A function to resolve the current partition
    */
-  hasMemoryWrite(writes: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined): boolean;
+  hasMemoryWrite(writes: ArrayLike<number>, length: number, partitionResolver: (address: number) => number | undefined, values?: ArrayLike<number>): boolean;
 
   /**
    * Does any breakpoint in this set watch memory or I/O access?
@@ -82,13 +87,13 @@ export interface IDebugSupport {
    * Gets IO read breakpoint information for the specified port
    * @param port Port read during the current instruction
    */
-  hasIoRead(port: number): boolean;
+  hasIoRead(port: number, value?: number): boolean;
 
   /**
    * Gets IO write breakpoint information for the specified port
    * @param port Port written during the current instruction
    */
-  hasIoWrite(port: number): boolean;
+  hasIoWrite(port: number, value?: number): boolean;
 
   /**
    * The breakpoint flags of every address (`EXEC_BP`, `PART_BP`, ... in `DebugSupport`). Optional: a
@@ -219,4 +224,28 @@ export interface IDebugSupport {
    * @param scope Which existing breakpoints this call may remove
    */
   resetBreakpointsTo(breakpoints: BreakpointInfo[], scope: BreakpointScope): void;
+
+  /**
+   * Builds what a breakpoint condition reads. Set once per machine; asked only when a condition is
+   * evaluated (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6).
+   */
+  conditionContextProvider?: () => ConditionContext;
+
+  /** The machine facts conditions compile against. */
+  setConditionEnvironment(facts: ConditionMachineFacts): void;
+
+  /** The symbols conditions are bound to now. */
+  readonly conditionSymbolTable: ConditionSymbols;
+
+  /** The program symbols condition labels bind to; re-binds every condition (§3.6). */
+  setConditionSymbols(symbols: ConditionSymbols): void;
+
+  /** Zero one breakpoint's hit counter, or all of them (C12). */
+  resetHitCounts(breakpoint?: BreakpointInfo): boolean;
+
+  /** Did a hit counter move since the last call? (throttled panel refresh, §4.5) */
+  takeHitsChanged(): boolean;
+
+  /** The breakpoints with their runtime state (hit count, condition error/inactive). */
+  listBreakpointsWithState(): BreakpointInfo[];
 }

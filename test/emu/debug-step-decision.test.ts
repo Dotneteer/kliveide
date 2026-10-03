@@ -51,6 +51,22 @@ describe("shouldStopAtDebugPoint — real breakpoints", () => {
     expect(decide({ debugSupport, instructionsExecuted: 0 }).stop).toBe(false);
   });
 
+  it("does not even ask about the breakpoint a run resumes from", () => {
+    // --- `shouldStopAt` counts hits now (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.6), so asking
+    // --- it here would count the resumed-from instruction twice. The guard comes first.
+    const shouldStopAt = vi.fn(() => true);
+    const debugSupport = support([], { lastBreakpoint: 0x8000, shouldStopAt });
+    expect(decide({ debugSupport, instructionsExecuted: 0 }).stop).toBe(false);
+    expect(shouldStopAt).not.toHaveBeenCalled();
+  });
+
+  it("still asks at the same address once the run has moved, and at another address at once", () => {
+    const shouldStopAt = vi.fn(() => false);
+    decide({ debugSupport: support([], { lastBreakpoint: 0x8000, shouldStopAt }), instructionsExecuted: 1 });
+    decide({ debugSupport: support([], { lastBreakpoint: 0x9000, shouldStopAt }), instructionsExecuted: 0 });
+    expect(shouldStopAt).toHaveBeenCalledTimes(2);
+  });
+
   it("does trigger again once execution has moved", () => {
     const debugSupport = support([0x8000], { lastBreakpoint: 0x8000 });
     expect(decide({ debugSupport, instructionsExecuted: 1 }).stop).toBe(true);

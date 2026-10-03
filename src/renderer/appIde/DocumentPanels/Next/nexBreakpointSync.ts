@@ -1,4 +1,5 @@
 import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import { breakpointFiltersOf, sameBreakpointFilters } from "@common/utils/breakpoint-filters";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
 import type {
@@ -67,7 +68,7 @@ export function toSidecarBreakpoints(
     if (!kind) continue;
     const entry: NexSidecarBreakpoint = { bank: bp.bank, offset: bp.bankOffset, kind };
     if (bp.disabled) entry.disabled = true;
-    stored.push(entry);
+    stored.push({ ...entry, ...breakpointFiltersOf(bp) });
   }
   return stored.sort((left, right) => left.bank - right.bank || left.offset - right.offset);
 }
@@ -91,7 +92,7 @@ export function fromSidecarBreakpoints(
       bp.exec = true;
     }
     if (entry.disabled) bp.disabled = true;
-    return bp;
+    return { ...bp, ...breakpointFiltersOf(entry) };
   });
 }
 
@@ -114,7 +115,8 @@ export function sameSidecarBreakpoints(
       entry.bank === other.bank &&
       entry.offset === other.offset &&
       entry.kind === other.kind &&
-      !!entry.disabled === !!other.disabled
+      !!entry.disabled === !!other.disabled &&
+      sameBreakpointFilters(entry, other)
     );
   });
 }
@@ -146,7 +148,7 @@ export function toSidecarLabelBreakpoints(
     // --- Absent bank is a global label, which is a state rather than a missing field.
     if (bp.bank !== undefined) entry.bank = bp.bank;
     if (bp.disabled) entry.disabled = true;
-    stored.push(entry);
+    stored.push({ ...entry, ...breakpointFiltersOf(bp) });
   }
   return stored.sort(
     (left, right) =>
@@ -181,7 +183,7 @@ export function fromSidecarLabelBreakpoints(
       bp.exec = true;
     }
     if (entry.disabled) bp.disabled = true;
-    return bp;
+    return { ...bp, ...breakpointFiltersOf(entry) };
   });
 }
 
@@ -199,7 +201,8 @@ export function sameSidecarLabelBreakpoints(
       entry.label === other.label &&
       entry.bank === other.bank &&
       entry.kind === other.kind &&
-      !!entry.disabled === !!other.disabled
+      !!entry.disabled === !!other.disabled &&
+      sameBreakpointFilters(entry, other)
     );
   });
 }

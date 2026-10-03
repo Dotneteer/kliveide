@@ -1,3 +1,8 @@
+import {
+  integerSymbolsOf,
+  pushConditionSymbols,
+  setBuildConditionSymbols
+} from "@renderer/appIde/utils/condition-symbols";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { createEmuApi } from "@common/messaging/EmuApi";
 import { MessengerBase } from "@common/messaging/MessengerBase";
@@ -243,6 +248,14 @@ export async function refreshSourceCodeBreakpoints(
   const resolvedBp: ResolvedBreakpoint[] = [];
   // --- Warnings are listed with the errors but do not fail the compilation
   if (compilation.result && !compilation.failed && !compilation.result.errors?.some((e) => !e.isWarning)) {
+    // --- Breakpoint conditions bind to the last *successful* build's integer symbols
+    // --- (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §3.6). This runs after every build path, so it
+    // --- is the one place that keeps the emulator's table current.
+    setBuildConditionSymbols(
+      integerSymbolsOf((compilation.result as { symbols?: Record<string, unknown> }).symbols)
+    );
+    await pushConditionSymbols(emuApi);
+
     if (!isDebuggableCompilerOutput(compilation.result)) {
       return;
     }

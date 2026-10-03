@@ -27,7 +27,7 @@ are estimates for prioritising, not commitments.
 
 | # | Gap | Overall | Low-hanging pieces |
 |---|---|---|---|
-| G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | Hit counts, logpoints, register conditions |
+| G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ G1.1–G1.3 done (2026-10-03); logpoints and one-shot breakpoints remain |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | .sna and .z80 loading |
 | G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
@@ -45,6 +45,10 @@ are estimates for prioritising, not commitments.
 **Why it matters:** every serious competitor has it, the README roadmap still lists it, and its
 absence is the first thing an experienced developer notices.
 
+**Status:** G1.1–G1.3 are **done** (2026-10-03), implemented by
+[CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md). Its condition engine
+(`src/common/utils/breakpoint-condition/`) is the one G1.4 and G1.5 build on.
+
 **Plan:** G1.1–G1.3 are planned in [CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md).
 That plan found one exception to the "no C core changes" note below: the WASM cores record only the
 last memory access of an instruction, so its Phase 0 makes them record every one (which also fixes
@@ -58,9 +62,9 @@ evaluates, and it either stays stopped or resumes silently.
 
 | Feature | What it does | Size |
 |---|---|---|
-| G1.1 Hit-count breakpoints | Stop only on the Nth hit, every Nth hit, or after N hits (`bp-set $8000 -hit >=10`). Shows the live count in the Breakpoints panel. | S |
-| G1.2 Register / flag conditions | Stop only when an expression is true, e.g. `A == $FF && !Z` or `HL > $C000`. | S–M (needs an expression evaluator over registers; check whether the watch or command expression code can be reused) |
-| G1.3 Memory and value conditions | Conditions on memory contents (`[IX+3] == 0`, `w[$5C3A] > 100`), on the value being written (memory or I/O value breakpoints, like SpecEmu's MWV/PWV), and on the current paging or bank. | M |
+| G1.1 Hit-count breakpoints ✅ **done** | Stop only on the Nth hit, every Nth hit, or after N hits (`bp-set $8000 -hit >=10`). Shows the live count in the Breakpoints panel. | S |
+| G1.2 Register / flag conditions ✅ **done** | Stop only when an expression is true, e.g. `A == $FF && !Z` or `HL > $C000`. | S–M (needs an expression evaluator over registers; check whether the watch or command expression code can be reused) |
+| G1.3 Memory and value conditions ✅ **done** | Conditions on memory contents (`[IX+3] == 0`, `w[$5C3A] > 100`), on the value being written (memory or I/O value breakpoints, like SpecEmu's MWV/PWV), and on the current paging or bank. | M |
 | G1.4 Logpoints | A breakpoint that does not stop: it writes a formatted message (`"x={A} at {PC}"`) to the output pane and resumes. Also recognised from source comments using DeZog's LOGPOINT convention (decision D3). | S, once G1.2 exists |
 | G1.5 Assertions and watchpoints in source | DeZog-compatible ASSERTION and WPMEM source comments (decision D3) become conditional breakpoints and memory watchpoints when the program is debugged, so annotated DeZog projects work unchanged. | M |
 | G1.6 Temporary / one-shot breakpoints | Remove themselves after the first hit. | S |

@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
+import { connectConditionSupport } from "@emu/machines/conditionContext";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { beginSourceStep, type SourceDebugIndex, type SourceStep, type SourceStepKind } from "@emu/machines/SourceStepDecision";
 import { SP48_MAIN_ENTRY } from "@emu/machines/ZxSpectrumBase";
@@ -201,6 +202,8 @@ export class Sp48TestSession {
    */
   attachDebugSupport(): DebugSupport {
     const debugSupport = new DebugSupport(undefined, []);
+    // --- Conditions read this machine and compile against its facts, as in the IDE's emulator
+    connectConditionSupport(debugSupport, this.machine);
     this.machine.executionContext.debugSupport = debugSupport;
     return debugSupport;
   }
