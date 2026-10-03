@@ -591,6 +591,9 @@ follow-ups (persistent worker, renderer-side front end) are not needed.
   it is added.
 - **Library tabs:** the existing `nav <kbasic-stdlib>/x.bas` read-only tab (from the debugger work)
   serves Q4. Monaco's `Uri.file` puts a slash before `<kbasic-stdlib>`; the editor opener strips it.
+- **The outline includes implicit variables** (created by a use, W100), at their first use; §4.1
+  said "global `DIM`s". In a classic-style program most variables are implicit, and Go to Symbol
+  listing none of them was the first thing a user reported.
 - **Outline of a library file** lists all its routines (not only the used ones), since the outline
   entries cost little and the tab is for reading.
 - **The Monarch word lists dropped words Klive BASIC does not know** (Sinclair-only `CAT`, `CLEAR`,

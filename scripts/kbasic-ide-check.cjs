@@ -65,6 +65,7 @@ const INTEL = [
   "PRINT total; ATTR(0, 0)", // 12
   "Greet", // 13
   "done:", // 14
+  "CLS: BORDER 1", // 15
   ""
 ];
 const HELPERS = ["SUB Greet()", '  PRINT "hi"', "END SUB", ""];
@@ -137,7 +138,11 @@ const DEBUGGER = [
       if (!deco) return undefined;
       const top = deco.getBoundingClientRect().top;
       const line = [...document.querySelectorAll(".monaco-editor .view-line")].find((l) => Math.abs(l.getBoundingClientRect().top - top) < 2);
-      return line?.textContent.replace(/ /g, " ");
+      if (!line) return undefined;
+      // --- The statement markers are injected text, not part of the source line
+      const copy = line.cloneNode(true);
+      copy.querySelectorAll('[class*="statementBp"]').forEach((m) => m.remove());
+      return copy.textContent.replace(/ /g, " ");
     });
   const waitForStop = async (stop, index) => {
     const start = Date.now();
@@ -487,6 +492,27 @@ const DEBUGGER = [
       await sleep(4000);
       check((await hover(11, 10)).includes("FUNCTION Twice"), "hover still works on unchanged symbols while the file has an error");
       await undoAll();
+
+      // --- A statement breakpoint is drawn at its statement, in the breakpoint colour (plan §10.3)
+      await cmd("compile", 6000);
+      await cmd("nav code/program.zxbas 15 1", 1500);
+      const border = await point(15, INTEL[14].indexOf("BORDER") + 2);
+      await ide.mouse.click(border.x, border.y, { button: "right" });
+      await sleep(800);
+      await ide.getByText("Toggle Breakpoint at Statement", { exact: true }).first().click();
+      const marker = await waitFor(() =>
+        ide.evaluate(() => {
+          const m = [...document.querySelectorAll(".monaco-editor [class*=statementBpSet]")].find((e) => e.getBoundingClientRect().width > 0);
+          if (!m) return undefined;
+          const next = m.nextElementSibling?.textContent ?? "";
+          return { color: getComputedStyle(m).color, text: m.textContent, next };
+        })
+      );
+      await shot("intel-statement-bp");
+      const foreground = await ide.evaluate(() => getComputedStyle(document.querySelector(".monaco-editor .mtk1")).color);
+      check(!!marker && marker.text === "\u25cf" && marker.next.startsWith("BORDER"), `a statement breakpoint shows its marker before BORDER (${JSON.stringify(marker)})`);
+      check(!!marker && marker.color !== foreground, "the marker is drawn in the breakpoint colour, not the text colour");
+      await cmd("bp-ea", 800);
 
       // --- zxbc: the static help remains (E13)
       await cmd("set -p zxbasic.compiler zxbc", 1500);

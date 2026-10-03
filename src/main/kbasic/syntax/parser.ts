@@ -603,7 +603,8 @@ class Parser {
       let at: Expression | undefined;
       let vector: Vector | undefined;
       if (this.eatKeyword("AT")) at = this.expression();
-      else if (this.eatOp("=>")) vector = this.vector();
+      // --- `= {...}` is accepted as `=> {...}`, as zxbc does (observed through the oracle)
+      else if (this.eatOp("=>") || (this.atOp("=") && this.atOp("{", 1) && this.eatOp("="))) vector = this.vector();
       return this.node(start, { kind: "dim", names, bounds, ...(type ? { type } : {}), ...(at ? { at } : {}), ...(vector ? { vector } : {}) });
     }
     while (this.eatOp(",")) names.push(this.name());

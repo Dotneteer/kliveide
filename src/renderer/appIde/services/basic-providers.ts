@@ -287,19 +287,18 @@ export function computeBasicIncludeTarget(req: BasicRequest, line: number, colum
   return resolveInclude(req, name, m[2] !== undefined);
 }
 
+/** Where an `#include` goes, as the compiler finds it: `"file"` beside the source first, then the library. */
 function resolveInclude(req: BasicRequest, name: string, system: boolean): string | null {
   const snapshot = req.service.snapshotFor(req.path);
   const files = snapshot?.data.files ?? [];
-  if (system) {
-    const library = availableLibraryFiles().find((l) => l.name.toLowerCase() === name.toLowerCase());
-    const bundled = files.find((f) => f.library && f.path.toLowerCase().endsWith("/" + name.toLowerCase()));
-    if (bundled) return bundled.path;
-    if (library) return `<kbasic-stdlib>/${library.name}`;
-  }
   const dir = req.path.replace(/\\/g, "/").replace(/\/[^/]*$/, "");
   const joined = joinPath(dir, name);
-  const exact = files.find((f) => normalizeBasicPath(f.path) === normalizeBasicPath(joined));
+  const exact = system ? undefined : files.find((f) => normalizeBasicPath(f.path) === normalizeBasicPath(joined));
   if (exact) return exact.path;
+  const library = availableLibraryFiles().find((l) => l.name.toLowerCase() === name.toLowerCase());
+  const bundled = files.find((f) => f.library && f.path.toLowerCase().endsWith("/" + name.toLowerCase()));
+  if (bundled) return bundled.path;
+  if (library) return `<kbasic-stdlib>/${library.name}`;
   const suffix = files.find((f) => !f.virtual && normalizeBasicPath(f.path).endsWith("/" + normalizeBasicPath(name)));
   if (suffix) return suffix.path;
   return system ? null : joined;

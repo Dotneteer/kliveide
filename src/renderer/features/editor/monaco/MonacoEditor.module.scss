@@ -75,37 +75,41 @@
  * Inline statement markers (plan §10.3): before each further statement of a line, clicked to set a
  * breakpoint on that statement alone. The breakpoint tokens, as in the gutter; the empty marker is
  * the disabled colour, faint, so it reads as "possible here" and never as a breakpoint.
+ *
+ * Scoped under `.monaco-editor`: Monaco gives injected text the token colour class of the text it
+ * stands in (`mtk1`), a single class like these, and its rules come later, so a bare class lost and
+ * every marker drew in the foreground colour instead of the breakpoint's.
  */
-.statementBpMarker {
+:global(.monaco-editor) .statementBpMarker {
   color: var(--color-breakpoint-disabled);
   opacity: 0.5;
   cursor: pointer;
 }
 
-.statementBpSet {
+:global(.monaco-editor) .statementBpSet {
   color: var(--color-breakpoint-code);
   cursor: pointer;
 }
 
-.statementBpDisabled {
+:global(.monaco-editor) .statementBpDisabled {
   color: var(--color-breakpoint-disabled);
   cursor: pointer;
 }
 
 /* A statement breakpoint with a condition or hit rule (drawn as a circled "="), and one whose
    condition cannot stop it now (drawn hollow): the margin's variants, inline */
-.statementBpConditional {
+:global(.monaco-editor) .statementBpConditional {
   color: var(--color-breakpoint-code);
   cursor: pointer;
 }
 
-.statementBpInactive {
+:global(.monaco-editor) .statementBpInactive {
   color: var(--color-breakpoint-code);
   cursor: pointer;
 }
 
 /* A one-shot statement breakpoint (G1.6, O6): drawn as a circled "1" */
-.statementBpOnce {
+:global(.monaco-editor) .statementBpOnce {
   color: var(--color-breakpoint-code);
   cursor: pointer;
 }
@@ -382,4 +386,15 @@
      that frame stands, not where execution is, so the selection surface rather than the
      execution-point highlight */
   background: var(--surface-selected);
+}
+
+/*
+ * Folding chevrons. Monaco draws them at 140% of the editor font, which with Klive's 16px editor font
+ * makes a 22px glyph: louder than the line numbers beside it, and wider than its gutter column, so
+ * it touches the first character of the line. They take the editor's own size instead (`inherit`:
+ * the margin carries the editor's font size, so they follow the font-size setting). The attribute
+ * selector covers every folding codicon (expanded, collapsed, manual) and outranks Monaco's rule.
+ */
+:global(.monaco-editor .margin-view-overlays .codicon[class*="codicon-folding-"]) {
+  font-size: inherit;
 }

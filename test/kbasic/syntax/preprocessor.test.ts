@@ -136,6 +136,21 @@ describe("Klive BASIC preprocessor", () => {
     expect(run('#include "loop.bas"', loop).codes).toEqual(["K216"]);
   });
 
+  it('searches "file" beside the source, then the library, then the include path', () => {
+    const libraryName = (r: ReturnType<typeof run>) => r.sources.files.map((f) => f.name).filter((n) => n !== "/p/main.zxbas");
+    // --- No file of that name beside the program: Klive's library has it (zxbc does the same)
+    const fromLibrary = run('#include "attr.bas"');
+    expect(fromLibrary.codes).toEqual([]);
+    expect(libraryName(fromLibrary)).toEqual(["<kbasic-stdlib>/attr.bas"]);
+    // --- The program's own file of that name wins over the library's
+    const local = run('#include "attr.bas"', { "/p/attr.bas": "MINE" });
+    expect(local.out).toBe("MINE");
+    // --- <file> still prefers the library to the include path
+    expect(libraryName(run("#include <attr.bas>", { "/inc/attr.bas": "OTHER" }, undefined, ["/inc"]))).toEqual(["<kbasic-stdlib>/attr.bas"]);
+    // --- And "file" reaches the include path when neither has it
+    expect(run('#include "x.bas"', { "/inc/x.bas": "X" }, undefined, ["/inc"]).out).toBe("X");
+  });
+
   it("keeps #pragma lines for the parser and records #require and #init", () => {
     const r = run('#pragma array_base = 1\n#require "mem.asm"\n#init "Setup"\n#init core.Other\nX');
     expect(r.out).toBe("#pragma(array_base = 1)\nX");

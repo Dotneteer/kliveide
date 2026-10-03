@@ -40,6 +40,10 @@ export const CASES: Record<string, { accept: string[]; reject: string[] }> = {
     accept: ["DIM a(2) => {1, 2, 3}", "DIM b(1) AS UBYTE => {1, _\n 2}"],
     reject: ["DIM a(2) => 1, 2"]
   },
+  'dim-stmt = "DIM" identifier "(" bounds ")" [ "AS" type ] "=" vector ;   (* the same as => (observed through the oracle) *)': {
+    accept: ["DIM a(2) = {1, 2, 3}", "DIM b(1, 1) AS UBYTE = { _\n {1, 2}, _\n {3, 4} _\n}"],
+    reject: ["DIM a(2) = 1, 2"]
+  },
   'idlist = identifier { "," identifier } ;': { accept: ["DIM x, y, z"], reject: ["DIM x y"] },
   'bounds = bound { "," bound } ;': { accept: ["DIM a(1, 2, 3)"], reject: ["DIM a(1,)"] },
   'bound = const-expr | const-expr "TO" const-expr ;': { accept: ["DIM a(4)", "DIM b(1 TO 4)"], reject: ["DIM a(1 TO)"] },

@@ -439,7 +439,9 @@ class Extractor {
     for (const scope of scopes) {
       if (scope.routineId === undefined || scope.routineId < 0) continue;
       const routine = symbols[scope.routineId];
-      const children = scope.symbolIds.map((id) => symbols[id]).filter((s) => s.kind === "param" || !s.implicit).map((s) => entry(s));
+      // --- Parameters and locals, including the variables a statement created (W100): in a classic-style
+      // --- program those are most of its variables
+      const children = scope.symbolIds.map((id) => symbols[id]).map((s) => entry(s));
       const e = entry(routine, scope.endLine, children);
       routineEntries.set(routine.id, e);
       top.push(e);
@@ -461,7 +463,7 @@ class Extractor {
         const routine = parent !== undefined ? routineEntries.get(parent) : undefined;
         if (routine) (routine as { children?: BasicOutlineEntry[] }).children = [...(routine.children ?? []), entry(s)];
         else top.push(entry(s));
-      } else if (s.kind === "const" || s.kind === "array" || (s.kind === "variable" && !s.implicit)) top.push(entry(s));
+      } else if (s.kind === "const" || s.kind === "array" || s.kind === "variable") top.push(entry(s));
     }
     // --- Every routine of a library file (its tab's outline), not only the ones the program uses
     for (const routine of this.result.bound!.program.routines) {

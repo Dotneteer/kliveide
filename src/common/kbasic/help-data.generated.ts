@@ -303,7 +303,8 @@ export const KEYWORD_HELP: readonly BasicHelpEntry[] = [
       "DIM identifier [ AS type ] AT const-address",
       "DIM identifier (bounds) [ AS type ]",
       "DIM identifier (bounds) [ AS type ] AT const-address",
-      "DIM identifier (bounds) [ AS type ] => vector"
+      "DIM identifier (bounds) [ AS type ] => vector",
+      "DIM identifier (bounds) [ AS type ] = vector"
     ],
     "summary": "Declares scalars or arrays."
   },

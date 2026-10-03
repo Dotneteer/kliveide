@@ -422,21 +422,27 @@ class Preprocessor {
     this.processFile(child);
   }
 
+  /**
+   * Where an `#include` finds its file (spec `preprocessor.directives` #include): `<file>` searches
+   * Klive BASIC's library (plan §6.4), then the include path; `"file"` tries the including file's
+   * folder first, then searches as `<file>` does - so `#include "memorybank.bas"` finds the library
+   * file, as it does in zxbc.
+   */
   private resolveInclude(name: string, from: string, system: boolean): { path: string; text: string } | undefined {
-    // --- <file>: Klive BASIC's own library first (plan §6.4)
-    if (system) {
-      const library = libraryFile(name);
-      if (library) return library;
-    }
-    const candidates: string[] = [];
-    if (isAbsolute(name)) candidates.push(name);
-    else {
-      if (!system) candidates.push(joinPath(dirName(from), name));
-      for (const dir of this.options.includePaths ?? []) candidates.push(joinPath(dir, name));
-    }
-    for (const path of candidates) {
+    const read = (path: string) => {
       const text = this.reader.read(path);
-      if (text !== undefined) return { path, text };
+      return text !== undefined ? { path, text } : undefined;
+    };
+    if (isAbsolute(name)) return read(name);
+    if (!system) {
+      const local = read(joinPath(dirName(from), name));
+      if (local) return local;
+    }
+    const library = libraryFile(name);
+    if (library) return library;
+    for (const dir of this.options.includePaths ?? []) {
+      const found = read(joinPath(dir, name));
+      if (found) return found;
     }
     return undefined;
   }

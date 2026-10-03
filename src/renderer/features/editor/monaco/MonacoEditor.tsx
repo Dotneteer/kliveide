@@ -1087,7 +1087,11 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             readOnly: document.isReadOnly || (isProjectDebugging && document.isLocked),
             glyphMargin: languageInfo?.supportsBreakpoints,
             "semanticHighlighting.enabled": true,
-            overviewRulerBorder: true
+            overviewRulerBorder: true,
+            // --- Hovers, suggestions and parameter hints may extend past the editor (a wide hover
+            // --- near the left edge is shifted left of it); in the editor's own DOM the document
+            // --- panel clips that part, so they are drawn in Monaco's fixed overflow layer instead
+            fixedOverflowWidgets: true
           }}
           loading=""
           width={width}
@@ -1595,7 +1599,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         styles.statementBpSet,
         styles.statementBpDisabled,
         styles.statementBpConditional,
-        styles.statementBpInactive
+        styles.statementBpInactive,
+        styles.statementBpOnce
       ];
       if (
         e.target.type !== MONACO_CONTENT_TEXT ||
@@ -2001,8 +2006,10 @@ function createStatementMarkerDecoration(line: number, column: number, bp?: Brea
         "Shift-click to stop here once",
         "Right-click for more actions"
       ];
+  // --- The range covers the statement's first character: Monaco (0.55) draws no `before` text for
+  // --- a decoration with an empty range, so an empty one left every marker invisible
   return {
-    range: new monacoEditor.Range(line, column + 1, line, column + 1),
+    range: new monacoEditor.Range(line, column + 1, line, column + 2),
     options: {
       before: { content, inlineClassName: className },
       hoverMessage: { value: hover.join("\n\n") }

@@ -147,6 +147,17 @@ describe("outline", () => {
     ]);
   });
 
+  it("lists the variables a statement created, at their first use", () => {
+    const text = "DIM t1 AS FLOAT\nFOR n = 1 TO 3\nNEXT n\nWHILE INKEY$ = \"\"\n  LET a = t1 / 30\n  LET sx = 72 * SIN a\nEND WHILE\n";
+    const symbols = computeBasicDocumentSymbols(request(text));
+    expect(symbols.map((s) => `${s.name}:${s.line}:${s.detail}`)).toEqual([
+      "t1:1:DIM t1 AS Float",
+      "n:2:n AS UByte (implicit)",
+      "a:5:a AS Float (implicit)",
+      "sx:6:sx AS Float (implicit)"
+    ]);
+  });
+
   it("an included file's outline is its own", () => {
     const text = '#include "lib.zxbas"\nPRINT twice(1)\n';
     const service = new BasicIntelService();

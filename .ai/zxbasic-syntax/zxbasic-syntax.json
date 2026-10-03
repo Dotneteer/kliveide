@@ -1139,13 +1139,14 @@
         "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] ;",
         "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] \"AT\" const-address ;",
         "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] \"=>\" vector ;",
+        "dim-stmt = \"DIM\" identifier \"(\" bounds \")\" [ \"AS\" type ] \"=\" vector ;   (* the same as => (observed through the oracle) *)",
         "idlist = identifier { \",\" identifier } ;",
         "bounds = bound { \",\" bound } ;",
         "bound = const-expr | const-expr \"TO\" const-expr ;",
         "vector = \"{\" ( const-expr { \",\" const-expr } | vector { \",\" vector } ) \"}\" ;",
         "const-address = const-expr | \"@\" identifier | \"@\" identifier \"(\" const-expr { \",\" const-expr } \")\" | \"@\" label ;"
       ],
-      "semantics": "Declares scalars or arrays. Several scalars may share one DIM; the initialised (= expr) and mapped (AT) forms take one name. '= expr': a compile-time constant (not a string) becomes the static initial value, otherwise an assignment is emitted at that point; the type is inferred when AS is omitted. 'AT addr' aliases the variable to a constant address (number, @global, @label or @array(const subscripts)); inside a routine a mapped variable is static. Arrays: bounds are non-negative constants with lower <= upper; a single bound n means array_base TO n; any number of dimensions; string elements allowed; elements are contiguous row-major; @a(0) is the first element's address. '=> {...}' initialises numeric arrays; nesting depth and counts must match the bounds; string arrays cannot be initialised; => and AT cannot be combined. Inside SUB/FUNCTION, DIM allocates stack locals released on return; parameters cannot be re-DIMmed.",
+      "semantics": "Declares scalars or arrays. Several scalars may share one DIM; the initialised (= expr) and mapped (AT) forms take one name. '= expr': a compile-time constant (not a string) becomes the static initial value, otherwise an assignment is emitted at that point; the type is inferred when AS is omitted. 'AT addr' aliases the variable to a constant address (number, @global, @label or @array(const subscripts)); inside a routine a mapped variable is static. Arrays: bounds are non-negative constants with lower <= upper; a single bound n means array_base TO n; any number of dimensions; string elements allowed; elements are contiguous row-major; @a(0) is the first element's address. '=> {...}' initialises numeric arrays ('= {...}' is accepted as the same thing, without a warning; observed through the oracle with zxbc 1.19); nesting depth and counts must match the bounds; string arrays cannot be initialised; => and AT cannot be combined. Inside SUB/FUNCTION, DIM allocates stack locals released on return; parameters cannot be re-DIMmed.",
       "constraints": "Arrays must be declared before use. Declaring a variable that was already referenced is an error. A non-constant AT address or initialiser is an error. Array subscripts convert to UInteger.",
       "docs": "docs/dim.md"
     },
@@ -1788,7 +1789,7 @@
           "\"#include\" MACRO",
           "\"#include\" \"once\" [ \"[\" \"arch\" \":\" arch \"]\" ] ( \"<\" file \">\" | '\"' file '\"' )"
         ],
-        "semantics": "<file> searches the include path: the architecture's stdlib/, runtime/, then -I directories (zx81sd falls back to zx48k). \"file\" tries the current file's directory first. Absolute paths are allowed. A MACRO must expand to one of the two forms (1.15.1). Recursive inclusion warns. 'once' includes only if not already included (a later inclusion is silently empty; a warning when included from several places). The [arch:zx48k] modifier looks the file up in another architecture's library; any modifier name other than arch is an error."
+        "semantics": "<file> searches the include path: the architecture's stdlib/, runtime/, then -I directories (zx81sd falls back to zx48k). \"file\" tries the current file's directory first, then searches as <file> does, so a quoted name also finds a stdlib file (observed through the oracle: #include \"memorybank.bas\" resolves to the library). Absolute paths are allowed. A MACRO must expand to one of the two forms (1.15.1). Recursive inclusion warns. 'once' includes only if not already included (a later inclusion is silently empty; a warning when included from several places). The [arch:zx48k] modifier looks the file up in another architecture's library; any modifier name other than arch is an error."
       },
       {
         "name": "#init",
