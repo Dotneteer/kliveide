@@ -216,6 +216,8 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       condGetLastStatus: () => 0,
       condEvaluate: () => 0,
       condEvaluateValue: () => 0n,
+      condSetEnv: () => undefined,
+      condPeek: () => 0,
       memory: new WebAssembly.Memory({ initial: 8 }),
       sp48MemoryPtr: () => 0x00000,
       sp48PixelBufferPtr: () => 0x10000,

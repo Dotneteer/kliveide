@@ -4,7 +4,11 @@ import type {
 } from "@renderer/abstractions/IMachineController";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
-import type { IOutputBuffer, OutputColor } from "@renderer/appIde/ToolArea/abstractions";
+import type {
+  IOutputBuffer,
+  OutputColor,
+  OutputSpecification
+} from "@renderer/appIde/ToolArea/abstractions";
 import type { ExecutionContext } from "@emu/abstractions/ExecutionContext";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
@@ -44,6 +48,7 @@ import { delay } from "@renderer/utils/timing";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { mediaStore } from "./media/media-info";
 import { PANE_ID_EMU } from "@common/integration/constants";
+import { logLineOutput } from "./logOutput";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
   SETTING_EMU_FAST_LOAD,
@@ -692,6 +697,7 @@ export class MachineController implements IMachineController {
     // --- Starting a program is a restart (C12), also when the boot is restored from a checkpoint
     // --- rather than run from Stopped, which is where `run` resets them
     this.debugSupport?.resetHitCounts();
+    this.startLogSession();
 
     let entryPoint = 0;
     let keepPc = false;
@@ -934,8 +940,12 @@ export class MachineController implements IMachineController {
         // --- A restart: breakpoint hit counters start over (C12). Resuming from a pause does not
         // --- come here, so it keeps them.
         this.debugSupport?.resetHitCounts();
+        this.startLogSession();
         break;
     }
+
+    // --- Every run, a resume included: the previous stop's definitions no longer explain anything
+    this.debugSupport?.clearFiredBreakpoints?.();
 
     // --- Initialize the context
     this.context.frameTerminationMode = terminationMode;
@@ -989,6 +999,10 @@ export class MachineController implements IMachineController {
         const frameStartTime = performance.now();
         const termination = this.machine.executeMachineFrame();
         const cpuTime = performance.now() - frameStartTime;
+        // --- Logpoint lines of this frame: one IPC call, sent before anything else this frame
+        // --- reports (`.plans/LOGPOINTS_PLAN.md` L4, L8). Not awaited, to keep the frame rate;
+        // --- awaited below before a stop message, so the lines come first.
+        const logFlush = this.flushLogLines();
         const frameCompleted =
           termination === FrameTerminationMode.Normal && this.machine.frameJustCompleted;
         let savedFileInfo: SavedFileInfo;
@@ -1061,6 +1075,10 @@ export class MachineController implements IMachineController {
           this.context.canceled = true;
 
           if (termination === FrameTerminationMode.DebugEvent) {
+            // --- Memory, I/O and NextReg stops spend their one-shots here; an execution stop
+            // --- already did in the decision, which makes this a no-op (O5)
+            this.debugSupport?.consumeFiredOneShots();
+            await logFlush;
             await this.sendOutput(this.describeDebugStop(), "cyan");
           }
           return;
@@ -1257,6 +1275,44 @@ export class MachineController implements IMachineController {
     return { diskAChanges, diskBChanges };
   }
 
+  /** Set when the Emulator pane has said where logpoint output goes, once per debug session. */
+  private _logHintShown = false;
+
+  /**
+   * A machine start: logpoints log on the very first instruction again (L5), and the Emulator pane
+   * gets its hint again with the first line.
+   */
+  private startLogSession(): void {
+    if (this.debugSupport) {
+      this.debugSupport.lastDecisionPc = undefined;
+    }
+    this._logHintShown = false;
+  }
+
+  /**
+   * Send the queued logpoint lines to the Log pane in one `displayOutputBatch` call (L8): each line
+   * as `[GROUP] message @ $8012`, then one line counting what the per-frame cap dropped (L9).
+   */
+  private flushLogLines(): Promise<void> {
+    const debugSupport = this.debugSupport;
+    if (!debugSupport?.hasPendingLog) return Promise.resolve();
+    const { lines, dropped } = debugSupport.takeLogLines();
+    const batch: OutputSpecification[] = [];
+    if (!this._logHintShown) {
+      this._logHintShown = true;
+      batch.push({
+        pane: PANE_ID_EMU,
+        text: "Logpoint output is in the Log pane",
+        foreground: "cyan",
+        writeLine: true
+      });
+    }
+    batch.push(...logLineOutput(lines, dropped));
+    return createIdeApi(this.messenger)
+      .displayOutputBatch(batch)
+      .catch((err) => console.error("Sending logpoint output failed.", err));
+  }
+
   /**
    * Send output to the IDE
    * @param text Text to send
@@ -1291,6 +1347,52 @@ export class MachineController implements IMachineController {
    * is the entire content of the stop. The register's documented name comes from the same table
    * the Next Registers panel reads.
    */
+  /** Set once the Output pane has said how to switch assertions off (R8), once per session. */
+  private _assertionHintShown = false;
+
+  /**
+   * The report of a stop an `ASSERTION` or `WPMEM` comment caused
+   * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S11), or `undefined` for any other stop:
+   *
+   * - `ASSERTION failed at main.asm:42: A < 5  (A=$07)`
+   * - `WPMEM write at $8002 (fill_colors+2) by PC $8123, main.asm:40`
+   */
+  private describeCommentStop(): string | undefined {
+    const ds = this.debugSupport;
+    if (!ds?.lastStopBreakpoints?.length) return undefined;
+    const lines: string[] = [];
+    ds.lastStopBreakpoints.forEach((bp, i) => {
+      if (bp.owner?.kind !== "annotation" || !bp.annotationKind) return;
+      const where = `${(bp.resource ?? "").split(/[\\/]/).pop()}:${bp.line}`;
+      if (bp.annotationKind === "ASSERTION") {
+        const text = bp.annotationText ?? "";
+        const values = text ? ds.describeDezogValues(text) : "";
+        lines.push(
+          `ASSERTION failed at ${where}: ${text || "(always)"}${values ? `  (${values})` : ""}`
+        );
+        if (!this._assertionHintShown) {
+          this._assertionHintShown = true;
+          lines.push("  (as-en -d, or the ASSERTION comments switch in the Breakpoints panel, turns assertions off)");
+        }
+      } else {
+        const access = ds.lastStopAccesses?.[i];
+        const address = access?.address ?? bp.address ?? 0;
+        const named = nearestSymbol(ds.conditionSymbolTable, address);
+        // --- The decision runs before every instruction, so its last PC is the instruction that
+        // --- made the access; `opStartAddress` is kept only by some cores (the Next, the Z88)
+        const pc =
+          ds.lastDecisionPc ??
+          (this.machine as { opStartAddress?: number }).opStartAddress ??
+          this.machine.pc;
+        lines.push(
+          `WPMEM ${bp.memoryRead ? "read" : "write"} at $${toHexa4(address)}` +
+            `${named ? ` (${named})` : ""} by PC $${toHexa4(pc)}, ${where}`
+        );
+      }
+    });
+    return lines.length ? lines.join("\n") : undefined;
+  }
+
   private describeDebugStop(): string {
     if (this.sourceIndex && this.errorCodeAt(this.machine.pc) !== undefined) {
       const stop = this.getSourceStopInfo();
@@ -1298,6 +1400,9 @@ export class MachineController implements IMachineController {
       const file = s ? this.sourceIndex.info.files[s.fileIndex]?.filename.split(/[\\/]/).pop() : undefined;
       return `Runtime error ${stop?.error?.report ?? ""}${s ? ` at ${file}:${s.startLine}` : ""} (continue to let the ROM report it)`;
     }
+    // --- A stop a DeZog comment caused names the comment (S11)
+    const commentStop = this.describeCommentStop();
+    if (commentStop) return commentStop;
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {
       return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;
@@ -1328,4 +1433,20 @@ export class MachineController implements IMachineController {
     return `NextReg breakpoint: ${named} ${hex2(write.oldValue)} -> ${hex2(write.newValue)}, ${from}`;
   }
 
+}
+
+/**
+ * `fill_colors+2`: the closest build symbol at or below an address, within 256 bytes, or
+ * `undefined`. Symbols are keyed lower-case, so the name comes back lower-case.
+ */
+function nearestSymbol(symbols: Record<string, number> | undefined, address: number): string | undefined {
+  let best: { name: string; value: number } | undefined;
+  for (const [name, value] of Object.entries(symbols ?? {})) {
+    if (name.includes(":") || value > address || address - value > 0xff) continue;
+    if (!best || value > best.value || (value === best.value && name < best.name)) {
+      best = { name, value };
+    }
+  }
+  if (!best) return undefined;
+  return address === best.value ? best.name : `${best.name}+${address - best.value}`;
 }

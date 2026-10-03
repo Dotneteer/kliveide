@@ -302,8 +302,42 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   places:** `BreakpointIndicator` (panel, disassembly gutter) uses the SVGs; the Monaco margin, which
   draws `clip-path` dots, uses the same two shapes as CSS `mask`s over the same background token
   (`.conditionalBreakpointMargin` / `.inactiveBreakpointMargin`) — a mask reads only alpha, so the
-  colour stays a token; inline statement markers use the character equivalents `⊜` and `○`. Every
+  colour stays a token; inline statement markers use the character equivalents `⊜` and `○` (and
+  `①` for a one-shot). Every
   state is read through `breakpoint-filter-text.ts`, never re-derived at a call site.
+- **The breakpoint's *action* is a second shape axis: a dot stops, a diamond logs.** A logpoint
+  (`bp-logpoint.svg`, VS Code's convention) takes the same "=" and hollow variants as the dot
+  (`bp-logpoint-conditional.svg`, `bp-logpoint-inactive.svg`), and a logpoint the *build* owns - a
+  DeZog `LOGPOINT` source comment - is a hollow diamond with a centre dot
+  (`bp-logpoint-comment.svg`). Still shape only, never hue. `breakpointGlyphOf` is the one reader;
+  `BreakpointIndicator` takes its result as `glyph` and the Monaco margin maps it to a mask class
+  (`.logpoint*BreakpointMargin`, in the execution-point cancel rule like the others). **Pass the
+  breakpoint to every margin decoration builder** - the binary-address path once dropped it and drew
+  a logpoint as a plain dot. **Where a user breakpoint and a comment's logpoint share a line, the
+  user's glyph owns the margin** (Monaco would merge the comment's mask onto the user's dot); the
+  comment then lives in the hover.
+- **"Removed after it stops" is a third shape axis, and inactive still outranks it.** A one-shot
+  draws the dot with a "1" knocked out (`bp-once.svg`); a one-shot with a condition or hit rule draws
+  the "1" over a single bar (`bp-once-conditional.svg`) - one bar, not the full "=", because a "1"
+  beside an "=" is three thin strokes that merge at 14px. The hollow ring still wins over both:
+  whether a breakpoint can fire at all matters more than what happens after it does. Inline
+  statement markers use `①`. The Breakpoints panel adds a quiet italic `once` (or `run-to`) tag in
+  `--text-secondary` - a word for scanning the key column, never a hue.
+- **A build-owned comment draws the mark of its kind, not a dot.** An `ASSERTION` comment is a
+  shield with a "!" knocked out (`bp-assertion.svg`); a `WPMEM` comment reuses the memory-write
+  glyph (`bp-mem-write`) as a margin mask. Both sit on the *comment's* line in the dot's colour
+  tokens (disabled colour when switched off for the session) and join the execution-point cancel
+  rule. All three comment marks - the `LOGPOINT` diamond included - are interactive (click toggles,
+  right-click menu), so they set `cursor: pointer`; `BreakpointIndicator` still treats them as
+  read-only (its gestures would build `bp-*` commands a comment's breakpoint does not accept).
+- **A Watch row's watchpoint mark reserves its column.** The memory read/write glyph in
+  `--color-breakpoint-binary` sits in a fixed `2ch` cell that is always rendered, so the symbol
+  column does not shift as watchpoints come and go.
+- **One group, one ink, in both places it appears.** A logpoint's `[GROUP]` is painted with the
+  output pane's `bright-magenta` in the Log pane, and the Breakpoints panel's log-group switch rows
+  take the same ink through `--color-logpoint` (an L4 alias of `--console-ansi-bright-magenta`), so a
+  group reads as one thing. The line's trailing `@ $8012` is `bright-black`: where it fired is
+  supporting context, not the message.
 - **Monaco merges every glyph-margin decoration of a line into one element**, so a shape class and
   the execution point's class (`.active*Margin`, a background-image arrow) land on the same box. A
   `mask` or `clip-path` written for the dot therefore cuts the arrow too: the "=" mask once made the

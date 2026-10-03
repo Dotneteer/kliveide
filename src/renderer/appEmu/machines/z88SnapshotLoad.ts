@@ -116,6 +116,7 @@ export async function loadZ88Snapshot(
       address: pc,
       exec: true,
       oneShot: true,
+      runTo: true,
       owner: { kind: "session" }
     });
     await controller.startDebug();

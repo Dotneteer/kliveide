@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A one-shot breakpoint with a condition or hit rule: the one-shot "1" over a single bar (a
+       shortened "="), knocked out of the dot. Candidate A of the 2026-10-03 sketch: three thin
+       bars ("1" beside "=") merged at 14px. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM7.35 4.7h1.3v3.8h-1.3v-2.35l-1.1 0.7v-1.3zM5.5 9.35h5v1.3h-5z"/>
+</svg>

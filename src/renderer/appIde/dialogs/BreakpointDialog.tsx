@@ -57,6 +57,12 @@ const KIND_OPTIONS: RadioGroupOption[] = [
 /** The sixth option, offered only on a machine that has Next Registers. */
 const NEXT_REG_OPTION: RadioGroupOption = { value: "nextRegWrite", label: "NextReg write" };
 
+/** What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5). */
+const ACTION_OPTIONS: RadioGroupOption[] = [
+  { value: "stop", label: "Stop" },
+  { value: "log", label: "Log message" }
+];
+
 /**
  * What the register field says beneath itself: the register's documented name, or that it has none.
  *
@@ -102,6 +108,9 @@ const HIT_MODE_OPTIONS: DropdownOption[] = [
 /** The docs section the condition field's "Syntax" link opens. */
 const CONDITION_SYNTAX_PAGE = "/working-with-ide/breakpoints#conditions-and-hit-counts";
 
+/** The docs section the log message field's "Syntax" link opens. */
+const LOGPOINT_SYNTAX_PAGE = "/working-with-ide/breakpoints#logpoints";
+
 type Props = DialogComponentProps<BreakpointDialogResult> & {
   /** The breakpoint being edited. Absent when adding. */
   initial?: BreakpointInfo;
@@ -114,8 +123,11 @@ type Props = DialogComponentProps<BreakpointDialogResult> & {
     MemoryMachineSetupState,
     "displayBankMatrix" | "segmentOptions" | "partitionOptions"
   >;
-  /** Which field to focus first: the margin's "Edit Hit Count…" opens on the hit count. */
-  focus?: "condition" | "hitCount";
+  /**
+   * Which field to focus first: the margin's "Edit Hit Count…" opens on the hit count; "Add
+   * Logpoint…" and "Convert to Logpoint…" open on the log message, with the action set to log.
+   */
+  focus?: "condition" | "hitCount" | "logMessage";
   /** Zero the edited breakpoint's hit counter. Absent when adding (there is no counter yet). */
   onResetHits?: () => Promise<void>;
 };
@@ -131,9 +143,10 @@ export const BreakpointDialog = ({
   const mainApi = useMainApi();
   // --- The live count as it was when the dialog opened; Reset shows the zero it set
   const [hits, setHits] = useState<number | undefined>(initial?.currentHits);
-  const [form, setForm] = useState<BreakpointFormState>(() =>
-    initial ? breakpointToForm(initial) : createEmptyForm()
-  );
+  const [form, setForm] = useState<BreakpointFormState>(() => {
+    const start = initial ? breakpointToForm(initial) : createEmptyForm();
+    return focus === "logMessage" ? { ...start, action: "log" } : start;
+  });
   /**
    * Errors are shown only for fields the user has left, plus everything once Save is pressed.
    * Validating a blank Add form on first paint would greet the user with "Enter an address."
@@ -183,7 +196,9 @@ export const BreakpointDialog = ({
   const addressLabel = ioKind ? "Port" : "Address";
   // --- The place rows (type, partition, register, address, port mask) are the editor's in source
   // --- mode; the first editable field takes the focus instead.
-  const focusCondition = focus === "condition" || (sourceMode && focus !== "hitCount");
+  const focusCondition =
+    focus === "condition" || (sourceMode && focus !== "hitCount" && focus !== "logMessage");
+  const logging = form.action === "log";
 
   const submit = () => {
     setSubmitted(true);
@@ -378,6 +393,24 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
+      {!sourceMode && (form.kind === "memRead" || form.kind === "memWrite") && (
+        <DialogRow rows={true} label="Length">
+          <TextInput
+            value={form.length}
+            width={BYTE_FIELD}
+            ariaLabel="Length"
+            error={errorFor("length")}
+            onChange={(length) => {
+              setTouched((t) => ({ ...t, length: true }));
+              update({ length });
+            }}
+          />
+          <div className={styles.hint}>
+            How many bytes to watch from the address. Leave empty for one.
+          </div>
+        </DialogRow>
+      )}
+
       {!sourceMode && ioKind && (
         <DialogRow rows={true} label="Port mask">
           <TextInput
@@ -391,6 +424,52 @@ export const BreakpointDialog = ({
           />
           <div className={styles.hint}>
             Leave empty to match the port exactly.
+          </div>
+        </DialogRow>
+      )}
+
+      <DialogRow rows={true} label="Action">
+        <RadioGroup
+          ariaLabel="Breakpoint action"
+          options={ACTION_OPTIONS}
+          value={form.action}
+          columns={2}
+          onChange={(action) => update({ action: action as BreakpointFormState["action"] })}
+        />
+      </DialogRow>
+
+      {logging && (
+        <DialogRow rows={true} label="Message">
+          {/*
+            * The template, validated on every keystroke by the compiler the emulator arms it with
+            * (the Klive dialect): column-accurate errors once touched, label warnings at once.
+            */}
+          <TextInput
+            value={form.logMessage}
+            error={errorFor("logMessage")}
+            autoFocus={focus === "logMessage"}
+            ariaLabel="Log message"
+            placeholder="e.g. [LOOP] B={B} HL={HL:hex16} score={w[score]}"
+            onChange={(logMessage) => {
+              setTouched((t) => ({ ...t, logMessage: true }));
+              update({ logMessage });
+            }}
+          />
+          {warnings.logMessage && !errorFor("logMessage") && (
+            <div className={styles.warning} role="status">
+              {warnings.logMessage}
+            </div>
+          )}
+          <div className={styles.hint}>
+            Logs to the Log pane and continues. {"{expr}"} or {"{expr:hex8}"} fills in a value; a
+            leading [GROUP] names its group.{" "}
+            <button
+              type="button"
+              className={styles.link}
+              onClick={() => void mainApi.showWebsite(LOGPOINT_SYNTAX_PAGE)}
+            >
+              Syntax
+            </button>
           </div>
         </DialogRow>
       )}
@@ -418,7 +497,7 @@ export const BreakpointDialog = ({
           </div>
         )}
         <div className={styles.hint}>
-          Stops only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
+          {logging ? "Logs" : "Stops"} only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
           {nextRegKind || !(form.kind === "exec" || sourceMode) ? "VAL and ADDR, " : ""}labels.{" "}
           <button
             type="button"
@@ -487,6 +566,15 @@ export const BreakpointDialog = ({
           right={true}
           onChange={(enabled) => update({ disabled: !enabled })}
         />
+        {/* A one-shot (G1.6): session-owned and never saved; a logpoint never stops, so never */}
+        {!logging && (
+          <Checkbox
+            initialValue={form.oneShot}
+            label="Remove after it stops"
+            right={true}
+            onChange={(oneShot) => update({ oneShot })}
+          />
+        )}
       </DialogRow>
 
       {!sourceMode && nextRegKind && (

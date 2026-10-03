@@ -123,3 +123,35 @@ span.bpCell {
 .conditionError {
   color: var(--status-error);
 }
+
+/*
+ * A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.5): neutral secondary text like the
+ * condition, monospace because it is code the user typed.
+ */
+.logMessageCell {
+  font-family: var(--monospace-font);
+}
+
+/* A log group's name on its switch row: the logpoint ink, the one hue the Log pane's group takes */
+.logGroupLabel {
+  color: var(--color-logpoint);
+  margin-right: 1ch;
+}
+
+/*
+ * The `once` / `run-to` tag of a one-shot (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O6):
+ * a quiet supporting word, not a status - the glyph already carries the "1"; the tag is what a
+ * reader scanning the column of keys picks up. Secondary text, italic, no hue of its own.
+ */
+.onceTag {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/*
+ * A row just revealed from the Watch panel's watchpoint mark (W4): the list's selection tint for
+ * two seconds, so the eye finds the row the panel scrolled to.
+ */
+.revealedRow {
+  background: var(--bgcolor-disass-hover);
+}

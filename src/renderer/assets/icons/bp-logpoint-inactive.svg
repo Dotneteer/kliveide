@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A hollow logpoint diamond: set, but it cannot log now - its template or condition names a
+       label the last build did not define, or the emulator could not compile it. -->
+  <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M8 3.6L12.4 8L8 12.4L3.6 8z"/>
+</svg>

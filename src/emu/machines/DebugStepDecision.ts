@@ -109,6 +109,15 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
   debugSupport.statementTracker?.observe(pc, getPartition);
 
   /*
+   * Logpoints log once per arrival (`.plans/LOGPOINTS_PLAN.md` L5). The decision is asked again, at
+   * the same PC, on the instruction a run or step resumes from - after a pause, a step, or simply a
+   * frame boundary - and a logpoint there has already logged. Any executed instruction is an
+   * arrival; so is the first decision after a machine start, which clears `lastDecisionPc`.
+   */
+  debugSupport.logArrival = instructionsExecuted > 0 || debugSupport.lastDecisionPc !== pc;
+  debugSupport.lastDecisionPc = pc;
+
+  /*
    * A real breakpoint always wins.
    *
    * The `lastBreakpoint` dance stops a breakpoint from re-triggering on the instruction it already
@@ -129,14 +138,16 @@ export function shouldStopAtDebugPoint(input: DebugStopDecisionInput): boolean {
     debugSupport.imminentBreakpoint = undefined;
 
     /*
-     * A one-shot exists to stop the machine once — a run-to-cursor target, or the NEX entry-point
-     * stop — so it is spent here rather than left for the user to clear by hand.
+     * A one-shot exists to stop the machine once — a run-to target, the NEX entry-point stop, a
+     * user's "stop here once" — so it is spent here rather than left for the user to clear by hand.
+     * Only the one-shots whose own filters passed for this stop are spent
+     * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O3).
      *
      * Inside the guard, not above it: the `lastBreakpoint` test rejects the re-trigger at the
      * address the machine is *resuming from*, and that is not a hit. Consuming there would delete a
      * one-shot the machine never actually stopped at.
      */
-    debugSupport.consumeOneShotsAt(pc, getPartition(pc));
+    debugSupport.consumeFiredOneShots();
     return true;
   }
 

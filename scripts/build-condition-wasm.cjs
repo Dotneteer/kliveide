@@ -25,7 +25,9 @@ const exportsList = [
   "condSetToken",
   "condGetLastStatus",
   "condEvaluate",
-  "condEvaluateValue"
+  "condEvaluateValue",
+  "condSetEnv",
+  "condPeek"
 ];
 
 function buildConditionWasm({

@@ -48,6 +48,14 @@ import {
 import { derivePartitionWidthCh } from "@renderer/controls/data/partitionWidth";
 import { toHexa4 } from "../services/ide-commands";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@controls/ContextMenu";
+import { disassemblyRowMenuItems, type RowMenuTarget } from "./disassemblyRowMenu";
 import { useAppServices } from "../services/AppServicesProvider";
 import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
 import {
@@ -73,6 +81,23 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
   const editBreakpoint = useCallback(
     (bp: BreakpointInfo) => void openBreakpointDialog(bp),
     [openBreakpointDialog]
+  );
+
+  /*
+   * The row menu (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): the gutter's gestures,
+   * named, on a right-click anywhere on the row outside the gutter (which keeps its own right-click
+   * toggle). Stable, so the memoized rows are not re-rendered by it.
+   */
+  const { ideCommandsService } = useAppServices();
+  const [rowMenuState, rowMenuApi] = useContextMenuState();
+  const [rowMenuTarget, setRowMenuTarget] = useState<RowMenuTarget | undefined>(undefined);
+  const openRowMenu = useCallback(
+    (target: RowMenuTarget, event: ReactMouseEvent) => {
+      event.preventDefault();
+      setRowMenuTarget(target);
+      rowMenuApi.show(event);
+    },
+    [rowMenuApi]
   );
 
   // --- Get the machine information
@@ -617,6 +642,7 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
                   item={item}
                   mem64kLabels={mem64kLabels}
                   onEditBreakpoint={editBreakpoint}
+                  onRowMenu={openRowMenu}
                   partitionLabels={machineSetup.partitionLabels}
                   partitionWidthCh={partitionWidthCh}
                   pausedPc={pausedPc}
@@ -630,6 +656,26 @@ const BankedDisassemblyPanel = ({ document }: DocumentProps) => {
           />
         </div>
       )}
+      <ContextMenu state={rowMenuState} onClickOutside={() => rowMenuApi.conceal()}>
+        {rowMenuTarget &&
+          disassemblyRowMenuItems(rowMenuTarget, machineSetup.partitionLabels).map((item) => (
+            <span key={item.id} style={{ display: "contents" }}>
+              {item.separatorBefore && <ContextMenuSeparator />}
+              <ContextMenuItem
+                text={item.text}
+                trailing={item.hint}
+                disabled={item.disabled}
+                clicked={() => {
+                  rowMenuApi.conceal();
+                  if (item.command) void ideCommandsService.executeCommand(item.command);
+                  else if (item.id === "edit" && rowMenuTarget.breakpoint) {
+                    editBreakpoint(rowMenuTarget.breakpoint);
+                  }
+                }}
+              />
+            </span>
+          ))}
+      </ContextMenu>
     </FullPanel>
   );
 };

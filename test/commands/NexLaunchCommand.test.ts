@@ -304,6 +304,8 @@ describe("LaunchNexCommand", () => {
         // --- One-shot: the execution loop deletes it when it fires, so relaunching does not
         // --- accumulate copies and the user is not left clearing it by hand.
         oneShot: true,
+        // --- A run-to target: its own key, so it never replaces a user breakpoint (O4).
+        runTo: true,
         // --- Session-owned: it may fire while the flow's keystrokes are still in flight, and it
         // --- belongs in neither `.kliveproject` nor the NEX's sidecar.
         owner: { kind: "session" }

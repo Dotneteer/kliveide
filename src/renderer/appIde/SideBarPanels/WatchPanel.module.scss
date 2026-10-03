@@ -121,3 +121,18 @@ span.watchValueError {
   color: var(--status-warning);
   font-weight: 600;
 }
+
+/*
+ * The watchpoint mark (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` W4): the breakpoint panel's
+ * memory read/write glyph, in the binary-breakpoint colour, when an enabled memory breakpoint
+ * covers any of the watch's bytes. Always reserved, so the symbol column does not shift as marks
+ * come and go; clicking it reveals the watchpoint in the Breakpoints panel.
+ */
+.watchpointMark {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 2ch;
+  cursor: pointer;
+}

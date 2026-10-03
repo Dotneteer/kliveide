@@ -28,13 +28,21 @@ export type ConditionBinaryOp =
   | "==" | "!=" | "<" | "<=" | ">" | ">="
   | "|" | "^" | "&"
   | "<<" | ">>" | ">>>"
-  | "+" | "-";
+  | "+" | "-"
+  | "*" | "/" | "%";
 
 /** The operators of a unary node. */
 export type ConditionUnaryOp = "!" | "~" | "-";
 
 /** The functions a condition can call. */
 export type ConditionFunction = "page" | "nr" | "s8" | "s16" | "s32";
+
+/**
+ * The zero-argument machine specials (`.plans/LOGPOINTS_PLAN.md` §3.5): T-states since the machine
+ * started, the CPU clock in Hz, frames since the machine started, and the slot map (text, so only a
+ * whole logpoint placeholder may be `slots()`).
+ */
+export type MachineFunction = "tstates" | "cpufreq" | "frame" | "slots";
 
 /**
  * The evaluation tree (plan §3.8): what the checker produces, with every name resolved, strings and
@@ -55,6 +63,7 @@ export type CondNode =
       addr: CondNode;
     }
   | { k: "call"; fn: ConditionFunction; arg: CondNode }
+  | { k: "machine"; fn: Exclude<MachineFunction, "slots"> }
   | { k: "un"; op: ConditionUnaryOp; e: CondNode }
   | { k: "bin"; op: ConditionBinaryOp; l: CondNode; r: CondNode };
 
@@ -119,6 +128,8 @@ export interface ConditionContext {
   partitionOf(address: number): number | undefined;
   /** A Next register's current value. ZX Spectrum Next only. */
   nextReg?(reg: number): number;
+  /** T-states since the machine started (`tstates()`); 0 when absent. */
+  tstates?(): number;
   /** `VAL`: the byte read or written, the port value, the NextReg value. */
   accessValue?: number;
   /** `ADDR`: the memory address or the 16-bit port. */

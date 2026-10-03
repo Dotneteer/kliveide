@@ -9,7 +9,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./BreakpointsPanel.module.scss";
-import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
+import { getBreakpointAddressSpec, getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { CpuState, NextRegWriteEvent } from "@common/messaging/EmuApi";
@@ -28,8 +28,30 @@ import { SETTING_IDE_BP_GROUP_BY_KIND } from "@common/settings/setting-const";
 import {
   BREAKPOINT_GROUP_ICONS,
   BREAKPOINT_GROUP_TITLES,
-  groupBreakpoints
+  groupBreakpoints,
+  logpointSections
 } from "../utils/breakpoint-grouping";
+import { Checkbox } from "@renderer/controls/Checkbox";
+import { setLogpointGroupsAction } from "@common/state/actions";
+import { useDispatch } from "@renderer/core/RendererProvider";
+import { isLogpoint, withoutBreakpointRuntimeState } from "@common/utils/breakpoint-filters";
+import { setCommentBreakpointsEnabled } from "../utils/annotation-state";
+import { commentKindOf } from "@common/utils/source-annotations";
+import { onBreakpointReveal } from "../utils/breakpoint-reveal";
+import {
+  symbolAtAddress,
+  watchCoversAddress,
+  watchSpecForRange
+} from "../utils/watch-watchpoints";
+import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
+import type { VirtualizedListApi } from "@renderer/controls/VirtualizedList";
+import {
+  ONE_SHOT_GESTURE,
+  asOneShot,
+  asRegular
+} from "@renderer/features/editor/monaco/marginBreakpointMenu";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
+import type { LogpointGroupState } from "@abstractions/BreakpointInfo";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import {
@@ -45,8 +67,10 @@ import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
 import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
+import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "../utils/breakpoint-filter-text";
@@ -104,7 +128,11 @@ const breakpointTooltip = (
             ? "I/O write"
             : "Execution";
   // --- "at" reads wrong for a shape that is not at anywhere.
-  const lines = [`${kind} breakpoint ${nextRegKind ? "on" : "at"} ${addrKey}`];
+  const comment = isAnnotationBreakpoint(bp);
+  const noun = isLogpoint(bp) ? "logpoint" : "breakpoint";
+  const lines = comment
+    ? [`${bp.annotationKind ?? "LOGPOINT"} comment at ${bp.resource}:${bp.line}`]
+    : [`${kind} ${noun} ${nextRegKind ? "on" : "at"} ${addrKey}`];
   if (nextRegKind) {
     lines.push(nextRegName(bp.nextReg));
     lines.push(bp.nextRegCopper ? "Breaks on CPU and copper writes" : "Breaks on CPU writes");
@@ -135,6 +163,20 @@ const breakpointTooltip = (
   if (bp.resource !== undefined && bp.line !== undefined) {
     lines.push(`Click the address to go to ${bp.resource.split("/").pop()}:${bp.line}`);
   }
+  // --- A comment's breakpoint is the build's: read-only here, but an ASSERTION or WPMEM one can
+  // --- be disabled for the session (S3)
+  if (comment) {
+    if (bp.annotationKind === "WPMEM" && bp.address !== undefined) {
+      const end = bp.address + (bp.length ?? 1) - 1;
+      lines.push(
+        `Watches ${end === bp.address ? `$${toHexa4(bp.address)}` : `$${toHexa4(bp.address)}-$${toHexa4(end)}`}` +
+          ` for ${bp.memoryRead ? "reads" : "writes"}`
+      );
+    }
+    lines.push("Double-click the row to go to the comment");
+    lines.push("Right-click the row to disable it or show it in the disassembly");
+    return lines.join("\n");
+  }
   // --- The indicator's own action hints, folded in: it renders with `noTooltip` here so that its
   // --- two tooltips do not fire on top of this one.
   lines.push(bp.disabled ? "Check the box to enable" : "Uncheck the box to disable");
@@ -161,17 +203,26 @@ const BreakpointRow = ({
   tooltip,
   children,
   onContextMenu,
-  onDoubleClick
+  onDoubleClick,
+  revealed
 }: {
   tooltip: string;
   children: ReactNode;
   onContextMenu?: (e: ReactMouseEvent) => void;
   onDoubleClick?: () => void;
+  /** Just revealed from elsewhere (a Watch row's watchpoint mark, W4): briefly marked. */
+  revealed?: boolean;
 }) => {
   const ref = useTooltipRef<HTMLDivElement>();
 
   return (
-    <DataRow hoverable ref={ref} onContextMenu={onContextMenu} onDoubleClick={onDoubleClick}>
+    <DataRow
+      hoverable
+      ref={ref}
+      xclass={revealed ? styles.revealedRow : undefined}
+      onContextMenu={onContextMenu}
+      onDoubleClick={onDoubleClick}
+    >
       {children}
       <TooltipFactory
         refElement={ref.current}
@@ -208,6 +259,19 @@ export const BreakpointsPanel = () => {
   // --- The row the context menu was opened on. A breakpoint has no id, so the row itself is held
   // --- rather than a key that the next refresh could invalidate.
   const [menuTarget, setMenuTarget] = useState<BreakpointInfo>();
+  // --- The comment row menu (S3, §4.8)
+  const [commentMenuState, commentMenuApi] = useContextMenuState();
+  const [commentMenuTarget, setCommentMenuTarget] = useState<BreakpointInfo>();
+  const commentSwitches = useSelector((s) => s.sourceComments);
+  // --- The Watch link (W4, W5)
+  const watchExpressions = useSelector((s) => s.watchExpressions);
+  const compilationResult = useSelector((s) => s.compilation?.result);
+  const buildSymbols = useMemo(
+    () => integerSymbolsOf((compilationResult as { symbols?: Record<string, unknown> })?.symbols),
+    [compilationResult]
+  );
+  const listApi = useRef<VirtualizedListApi>(null);
+  const [revealedKey, setRevealedKey] = useState<string>();
   const mainApi = useMainApi();
   const grouped = useGlobalSetting(SETTING_IDE_BP_GROUP_BY_KIND) as boolean;
   const machineId = useSelector((s) => s.emulatorState?.machineId);
@@ -216,6 +280,9 @@ export const BreakpointsPanel = () => {
   // --- Live hit counts: dispatched by the emulator at most every 10 frames while running (§4.5)
   const hitsVersion = useSelector((s) => s.emulatorState?.breakpointHitsVersion);
   const pcValue = useRef(-1);
+  const logGroupState = useSelector((s) => s.logpointGroups);
+  const dispatch = useDispatch();
+  const { ideCommandsService } = useAppServices();
 
   // --- Gets the address to display in the context of the breakpoint
   const getBpAddress = (bp: BreakpointInfo): number => {
@@ -306,6 +373,13 @@ export const BreakpointsPanel = () => {
     await refreshBreakpoints();
   };
 
+  /** "Remove After It Stops" / "Keep After It Stops" (G1.6): the same key, a different owner. */
+  const toggleOneShot = async (bp: BreakpointInfo) => {
+    await emuApi.setBreakpoint(bp.oneShot ? asRegular(bp) : asOneShot(withoutBreakpointRuntimeState(bp)));
+    if (bp.disabled) await emuApi.enableBreakpoint(bp, false);
+    await refreshBreakpoints();
+  };
+
   const resetHits = async (bp?: BreakpointInfo) => {
     await emuApi.resetBreakpointHits(bp);
     await refreshBreakpoints();
@@ -338,10 +412,48 @@ export const BreakpointsPanel = () => {
     await refreshBreakpoints();
   };
 
+  /**
+   * Switch one log group (`.plans/LOGPOINTS_PLAN.md` §4.5): the DeZog model keeps a list of the
+   * groups that log, so switching one off lists the rest, and switching the last one on drops the
+   * list again. Persisted with the project; the emulator reads it from the shared store.
+   */
+  const toggleLogGroup = (group: string, on: boolean) => {
+    const known = [
+      ...new Set(bps.filter((bp) => isLogpoint(bp)).map((bp) => logGroupOfRow(bp)))
+    ];
+    const state: LogpointGroupState = logGroupState ?? { enabled: true };
+    const current = !state.enabled ? [] : (state.groups ?? known);
+    const next = on ? [...new Set([...current, group])] : current.filter((g) => g !== group);
+    dispatch(
+      setLogpointGroupsAction(
+        known.every((g) => next.includes(g)) ? { enabled: true } : { enabled: true, groups: next }
+      )
+    );
+    void mainApi.saveProject();
+  };
+
   const showRowMenu = (bp: BreakpointInfo, e: ReactMouseEvent) => {
     e.preventDefault();
+    if (isAnnotationBreakpoint(bp)) {
+      // --- A DeZog comment's breakpoint - LOGPOINT, ASSERTION or WPMEM alike (Q6): Enable/Disable,
+      // --- Go to Comment, Show in Disassembly; no Remove (S3)
+      setCommentMenuTarget(bp);
+      commentMenuApi.show(e);
+      return;
+    }
     setMenuTarget(bp);
     menuApi.show(e);
+  };
+
+  /** Every definition the comment of `bp` made (each expansion, both halves of `rw`). */
+  const sameComment = (bp: BreakpointInfo) =>
+    bps.filter(
+      (b) => b.annotationKind === bp.annotationKind && b.resource === bp.resource && b.line === bp.line
+    );
+
+  /** Switch a comment kind on or off for the project (S6), as `as-en`/`wp-en` do. */
+  const setCommentSwitch = (kind: "assertion" | "wpmem", on: boolean) => {
+    void ideCommandsService.executeCommand(`${kind === "assertion" ? "as-en" : "wp-en"}${on ? "" : " -d"}`);
   };
 
   const runFromMenu = (action: () => Promise<void>) => () => {
@@ -357,9 +469,45 @@ export const BreakpointsPanel = () => {
    * order, so the list reshuffled every time a breakpoint was added or removed.
    */
   const listItems = useMemo(
-    () => groupBreakpoints(bps, partitionLabels, grouped !== false),
-    [bps, partitionLabels, grouped]
+    () => [
+      ...groupBreakpoints(bps, partitionLabels, grouped !== false),
+      ...logpointSections(bps, logGroupState, commentSwitches)
+    ],
+    [bps, partitionLabels, grouped, logGroupState, commentSwitches]
   );
+
+  /*
+   * A Watch row's watchpoint mark asks for its breakpoint (W4): scroll to the row and mark it for
+   * a moment. Read through a ref, so the subscription is made once.
+   */
+  const listItemsRef = useRef(listItems);
+  listItemsRef.current = listItems;
+  useEffect(
+    () =>
+      onBreakpointReveal((key) => {
+        const index = listItemsRef.current.findIndex(
+          (item) => item.kind === "row" && safeStorageKey(item.bp) === key
+        );
+        if (index < 0) return;
+        listApi.current?.scrollToIndex(index, { align: "center" });
+        setRevealedKey(key);
+        setTimeout(() => setRevealedKey((current) => (current === key ? undefined : current)), 2000);
+      }),
+    []
+  );
+
+  /**
+   * "Add to Watch" (W5): a memory breakpoint whose address a build symbol starts at, and whose
+   * bytes no watch shows yet. No watch by address only (Q4).
+   */
+  const addToWatchSpec = (bp: BreakpointInfo | undefined): string | undefined => {
+    if (!bp || !(bp.memoryRead || bp.memoryWrite)) return undefined;
+    const start = bp.address ?? bp.resolvedAddress;
+    if (start === undefined) return undefined;
+    if (watchCoversAddress(start, watchExpressions ?? [], buildSymbols)) return undefined;
+    const symbol = bp.watchSymbol ?? symbolAtAddress(start, buildSymbols);
+    return symbol ? watchSpecForRange(symbol, bp.length ?? 1) : undefined;
+  };
 
   return (
     <div className={styles.breakpointsPanel}>
@@ -406,6 +554,13 @@ export const BreakpointsPanel = () => {
           iconName="pencil"
           clicked={runFromMenu(() => editBreakpoint(menuTarget))}
         />
+        {menuTarget && !isLogpoint(menuTarget) && !menuTarget.runTo && (
+          <ContextMenuItem
+            text={menuTarget.oneShot ? "Keep after it stops" : "Remove after it stops"}
+            trailing={menuTarget.oneShot ? undefined : ONE_SHOT_GESTURE}
+            clicked={runFromMenu(() => toggleOneShot(menuTarget))}
+          />
+        )}
         <ContextMenuItem
           text={menuTarget?.disabled ? "Enable breakpoint" : "Disable breakpoint"}
           clicked={runFromMenu(() => toggleBreakpoint(menuTarget))}
@@ -415,6 +570,14 @@ export const BreakpointsPanel = () => {
           dangerous
           clicked={runFromMenu(() => removeBreakpoint(menuTarget))}
         />
+        {addToWatchSpec(menuTarget) && (
+          <ContextMenuItem
+            text="Add to Watch"
+            clicked={runFromMenu(async () => {
+              await ideCommandsService.executeCommand(`w-add ${addToWatchSpec(menuTarget)}`);
+            })}
+          />
+        )}
         <ContextMenuSeparator />
         <ContextMenuItem
           text="Reset hit count"
@@ -431,17 +594,130 @@ export const BreakpointsPanel = () => {
           clicked={runFromMenu(removeAllBreakpoints)}
         />
       </ContextMenu>
+      <ContextMenu state={commentMenuState} onClickOutside={() => commentMenuApi.conceal()}>
+        {commentMenuTarget && (
+          <>
+            <ContextMenuItem
+              text={
+                sameComment(commentMenuTarget).every((b) => b.disabled)
+                  ? `Enable ${commentKindOf(commentMenuTarget)}`
+                  : `Disable ${commentKindOf(commentMenuTarget)}`
+              }
+              clicked={() => {
+                commentMenuApi.conceal();
+                const all = sameComment(commentMenuTarget);
+                void setCommentBreakpointsEnabled(emuApi, all, all.every((b) => b.disabled)).then(
+                  refreshBreakpoints
+                );
+              }}
+            />
+            {addToWatchSpec(commentMenuTarget) && (
+              <ContextMenuItem
+                text="Add to Watch"
+                clicked={() => {
+                  commentMenuApi.conceal();
+                  void ideCommandsService.executeCommand(`w-add ${addToWatchSpec(commentMenuTarget)}`);
+                }}
+              />
+            )}
+            <ContextMenuItem
+              text="Go to comment"
+              clicked={() => {
+                commentMenuApi.conceal();
+                void ideCommandsService.executeCommand(
+                  `nav "${commentMenuTarget.resource}" ${commentMenuTarget.line} -r breakpoint`
+                );
+              }}
+            />
+            {[
+              ...new Set(
+                sameComment(commentMenuTarget)
+                  .filter((b) => b.exec)
+                  .map((b) => b.address)
+                  .filter((a): a is number => a !== undefined)
+              )
+            ].map((address, _i, all) => (
+              <ContextMenuItem
+                key={address}
+                text={all.length > 1 ? `Show in disassembly ($${toHexa4(address)})` : "Show in disassembly"}
+                clicked={() => {
+                  commentMenuApi.conceal();
+                  void ideCommandsService.executeCommand(`show-disass $${toHexa4(address)}`);
+                }}
+              />
+            ))}
+          </>
+        )}
+      </ContextMenu>
       {/*
         * The empty test runs on the breakpoints, not on the flattened items: a list of six headers
         * and no rows would otherwise count as a populated panel.
         */}
-      {bps.length === 0 && <EmptyState message="No breakpoints defined" />}
-      {bps.length > 0 && (
+      {listItems.length === 0 && <EmptyState message="No breakpoints defined" />}
+      {listItems.length > 0 && (
         <VirtualizedList
           items={listItems}
+          apiLoaded={(api) => (listApi.current = api)}
           renderItem={(idx) => {
             try {
               const item = listItems[idx];
+              if (item.kind === "sectionHeader" && (item.section === "assertions" || item.section === "wpmem")) {
+                // --- The ASSERTION / WPMEM comment switch lives on the header row (S6)
+                const assertions = item.section === "assertions";
+                return (
+                  <SectionHeader>
+                    <div style={{ zoom: 0.8 }}>
+                      <Checkbox
+                        key={`${item.section}-${item.on}`}
+                        initialValue={item.on !== false}
+                        right={true}
+                        onChange={(on) => setCommentSwitch(assertions ? "assertion" : "wpmem", on)}
+                      />
+                    </div>
+                    <Icon
+                      iconName={assertions ? "bp-assertion" : "bp-mem-write"}
+                      fill="--color-breakpoint-type"
+                      width={16}
+                      height={16}
+                    />
+                    <span>{assertions ? "ASSERTION comments" : "WPMEM comments"}</span>
+                    <span>{item.on === false ? "off" : item.count}</span>
+                  </SectionHeader>
+                );
+              }
+              if (item.kind === "sectionHeader") {
+                return (
+                  <SectionHeader>
+                    <Icon
+                      iconName={item.section === "comments" ? "bp-logpoint-comment" : "bp-logpoint"}
+                      fill="--color-breakpoint-type"
+                      width={16}
+                      height={16}
+                    />
+                    <span>{item.section === "comments" ? "LOGPOINT comments" : "Log groups"}</span>
+                    <span>{item.count}</span>
+                  </SectionHeader>
+                );
+              }
+              if (item.kind === "logGroup") {
+                return (
+                  <DataRow hoverable>
+                    <div style={{ zoom: 0.8 }}>
+                      <Checkbox
+                        key={`${item.group}-${item.on}`}
+                        initialValue={item.on}
+                        right={true}
+                        onChange={(on) => toggleLogGroup(item.group, on)}
+                      />
+                    </div>
+                    <Label text={`[${item.group}]`} className={styles.logGroupLabel} />
+                    <Secondary
+                      text={`${item.count} logpoint${item.count === 1 ? "" : "s"}${item.on ? "" : " - off"}`}
+                      width="auto"
+                    />
+                  </DataRow>
+                );
+              }
               if (item.kind === "header") {
                 /*
                  * A heading *within* panel content, so `SectionHeader` - `PanelHeader` is a panel's
@@ -467,7 +743,10 @@ export const BreakpointsPanel = () => {
               // --- which take the kind as an option instead. This panel cleared the kind flags
               // --- inline to get the same result; `getBreakpointAddressSpec` is that, named, so
               // --- the disassembly gutter could stop getting it wrong.
-              const addrKey = getBreakpointAddressSpec(bp, partitionLabels);
+              const comment = isAnnotationBreakpoint(bp);
+              const addrKey = comment
+                ? `${(bp.resource ?? "").split("/").pop()}:${bp.line}`
+                : getBreakpointAddressSpec(bp, partitionLabels);
               const addr = bp.address;
               const disabled = bp.disabled ?? false;
               let isCurrent = false;
@@ -506,7 +785,14 @@ export const BreakpointsPanel = () => {
                     partitionLabels
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
-                  onDoubleClick={() => void editBreakpoint(bp)}
+                  revealed={revealedKey !== undefined && safeStorageKey(bp) === revealedKey}
+                  onDoubleClick={() =>
+                    comment
+                      ? void ideCommandsService.executeCommand(
+                          `nav "${bp.resource}" ${bp.line} -r breakpoint`
+                        )
+                      : void editBreakpoint(bp)
+                  }
                 >
                   <BreakpointIndicator
                     partition={
@@ -524,7 +810,7 @@ export const BreakpointsPanel = () => {
                      * amber colour is for - and before this, a bank-relative or NextReg row wore
                      * that colour while being perfectly able to fire.
                      */
-                    armed={bp.resource === undefined}
+                    armed={bp.resource === undefined || comment}
                     memoryRead={bp.memoryRead}
                     memoryWrite={bp.memoryWrite}
                     ioRead={bp.ioRead}
@@ -534,6 +820,9 @@ export const BreakpointsPanel = () => {
                     noTooltip
                     conditional={isConditionalBreakpoint(bp)}
                     inactive={isInactiveBreakpoint(bp)}
+                    glyph={breakpointGlyphOf(bp)}
+                    oneShot={bp.oneShot}
+                    length={bp.length}
                   />
                   {/*
                     * The breakpoint's own address is the headline and takes the primary accent (see
@@ -549,7 +838,37 @@ export const BreakpointsPanel = () => {
                     />
                   )}
                   <BreakpointAddressLabel addrKey={addrKey} breakpoint={bp} />
-                  {bp.exec && (
+                  {/* A one-shot (O6) and a run-to target say so: both are gone after the stop */}
+                  {(bp.oneShot || bp.runTo) && (
+                    <Secondary
+                      text={bp.runTo ? "run-to" : "once"}
+                      width="auto"
+                      className={styles.onceTag}
+                    />
+                  )}
+                  {comment && bp.address !== undefined && (
+                    <Value
+                      text={
+                        bp.length && bp.length > 1
+                          ? `$${toHexa4(bp.address)}+${bp.length}`
+                          : `$${toHexa4(bp.address)}`
+                      }
+                      width="auto"
+                      className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                    />
+                  )}
+                  {/* The comment's own DeZog text; the tooltip has the Klive reading (S4) */}
+                  {bp.annotationKind && (
+                    <Secondary
+                      text={`${bp.annotationKind}${bp.annotationKind === "WPMEM" ? (bp.memoryRead ? " r" : " w") : ""} ${bp.annotationText ?? ""}`.trim()}
+                      width="auto"
+                      className={classnames(styles.conditionCell, {
+                        [styles.conditionInactive]: !!bp.conditionInactive,
+                        [styles.conditionError]: !!bp.conditionError
+                      })}
+                    />
+                  )}
+                  {bp.exec && !comment && (
                     <Value
                       text={instruction}
                       width="auto"
@@ -640,7 +959,8 @@ export const BreakpointsPanel = () => {
 const BreakpointFilterCells = ({ bp }: { bp: BreakpointInfo }) => {
   const hitSpec = formatHitSpec(bp);
   const condition = bp.condition?.trim();
-  if (!hitSpec && !condition) return null;
+  const logMessage = isLogpoint(bp) ? bp.logMessage : undefined;
+  if (!hitSpec && !condition && !logMessage) return null;
   return (
     <>
       {bp.currentHits !== undefined && (
@@ -651,6 +971,20 @@ const BreakpointFilterCells = ({ bp }: { bp: BreakpointInfo }) => {
         />
       )}
       {hitSpec && <Secondary text={`hit ${hitSpec}`} width="auto" />}
+      {/*
+        * A logpoint's template, before the condition and like it the cell that truncates; a
+        * template that did not compile takes the error colour, an inactive one is muted.
+        */}
+      {logMessage && (
+        <Secondary
+          text={`log ${logMessage}`}
+          width="auto"
+          className={classnames(styles.conditionCell, styles.logMessageCell, {
+            [styles.conditionInactive]: !!bp.conditionInactive,
+            [styles.conditionError]: !!bp.logError
+          })}
+        />
+      )}
       {condition && (
         <Secondary
           text={`if ${condition}`}
@@ -694,3 +1028,17 @@ const BreakpointAddressLabel = ({ addrKey, breakpoint }: BreakpointAddressLabelP
     </span>
   );
 };
+
+/** A logpoint row's group, as the switch rows name it. */
+function logGroupOfRow(bp: BreakpointInfo): string {
+  return logGroupOf(bp.logMessage);
+}
+
+/** A breakpoint's storage key, or `undefined` for one that has none. */
+function safeStorageKey(bp: BreakpointInfo): string | undefined {
+  try {
+    return getBreakpointStorageKey(bp);
+  } catch {
+    return undefined;
+  }
+}

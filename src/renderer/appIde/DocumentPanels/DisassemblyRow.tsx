@@ -5,6 +5,7 @@ import { memo } from "react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { getBreakpointAddressSpec } from "@common/utils/breakpoints";
+import { breakpointCommandSpec } from "@renderer/appIde/commands/BreakpointCommands";
 import { LabelSeparator } from "@renderer/controls/layout/LabelSeparator";
 import { Label } from "@renderer/controls/layout/Label";
 import { Secondary } from "@renderer/controls/layout/Secondary";
@@ -14,6 +15,7 @@ import { TooltipFactory, useTooltipRef } from "@controls/Tooltip";
 import { BreakpointIndicator } from "./BreakpointIndicator";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "@renderer/appIde/utils/breakpoint-filter-text";
@@ -21,6 +23,19 @@ import { formatBranchReadout, isCall, type BranchVerdict } from "./branchVerdict
 import type { DisassemblyItem, DisassemblyOperandInfo } from "../disassemblers/common-types";
 import { toDecimal3, toDecimal5, toHexa2, toHexa4 } from "../services/ide-commands";
 import styles from "./DisassemblyPanel.module.scss";
+
+/**
+ * The command that turns `bp` into a one-shot with its filters kept (Shift+click, O1), or
+ * `undefined` where none applies: no breakpoint, already a one-shot, a logpoint, or one the
+ * comment owns.
+ */
+export function oneShotCommandOf(
+  bp: BreakpointInfo | undefined,
+  partitionLabels: Record<number, string>
+): string | undefined {
+  if (!bp || bp.oneShot || bp.logMessage || bp.owner?.kind === "annotation") return undefined;
+  return `bp-set ${breakpointCommandSpec({ ...bp, oneShot: true }, partitionLabels)}`;
+}
 
 export type DisassemblyRowViewModel = {
   address: number;
@@ -380,6 +395,14 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    * menu of its own, so the indicator's double-click is the way in.
    */
   onEditBreakpoint?: (breakpoint: BreakpointInfo) => void;
+  /**
+   * Open the row menu (Add/Remove Breakpoint, Add One-Shot Breakpoint, Run to Here, Edit
+   * Breakpoint...). Stable across rows; used when no `onContextMenu` is given.
+   */
+  onRowMenu?: (
+    target: { address: number; spec: string; breakpoint?: BreakpointInfo },
+    event: MouseEvent<HTMLDivElement>
+  ) => void;
   onClick?: (event: MouseEvent<HTMLDivElement>) => void;
   onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
@@ -394,6 +417,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   onClick,
   onContextMenu,
   onEditBreakpoint,
+  onRowMenu,
   onKeyDown,
   partitionWidthCh,
   rowHeight,
@@ -460,7 +484,23 @@ export const DisassemblyRow = memo(function DisassemblyRow({
       data-selected-range={selectedRange ? "true" : undefined}
       data-synopsis-edge={synopsisEdge}
       onClick={onClick}
-      onContextMenu={onContextMenu}
+      onContextMenu={
+        onContextMenu ??
+        (onRowMenu && viewModel
+          ? (event) =>
+              onRowMenu(
+                {
+                  address: viewModel.address,
+                  spec:
+                    typeof viewModel.breakpointAddress === "number"
+                      ? `$${toHexa4(viewModel.breakpointAddress)}`
+                      : viewModel.breakpointAddress,
+                  breakpoint
+                },
+                event
+              )
+          : undefined)
+      }
       onKeyDown={onKeyDown}
       aria-selected={selected || selectedRange || undefined}
       tabIndex={onClick || onContextMenu || onKeyDown ? 0 : undefined}
@@ -528,6 +568,10 @@ export const DisassemblyRow = memo(function DisassemblyRow({
             conditional={isConditionalBreakpoint(breakpoint)}
             inactive={isInactiveBreakpoint(breakpoint)}
             filterLines={breakpoint ? breakpointFilterLines(breakpoint) : undefined}
+            glyph={breakpoint ? breakpointGlyphOf(breakpoint) : undefined}
+            oneShot={breakpoint?.oneShot}
+            length={breakpoint?.length}
+            oneShotCommand={oneShotCommandOf(breakpoint, viewModelParams.partitionLabels)}
           />
           {/*
             * Rendered whenever the listing has a bank column at all, not merely when *this* row has

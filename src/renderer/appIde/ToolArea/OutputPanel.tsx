@@ -21,6 +21,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import {
   PANE_ID_BUILD,
   PANE_ID_EMU,
+  PANE_ID_LOG,
   PANE_ID_SCRIPTIMG
 } from "@common/integration/constants";
 
@@ -42,6 +43,16 @@ const EMPTY_STATES: Record<string, { title: string; hint: ReactNode }> = {
       <>
         Run <code>compile</code>, or use the Build command. Output from the last build stays here
         until you clear it.
+      </>
+    )
+  },
+  [PANE_ID_LOG]: {
+    title: "No logpoint output yet",
+    hint: (
+      <>
+        Logpoints write here while a debug run passes them. Set one with{" "}
+        <code>bp-set &lt;address&gt; -log "A={"{A}"}"</code>, or add a <code>LOGPOINT</code> comment
+        and build.
       </>
     )
   },

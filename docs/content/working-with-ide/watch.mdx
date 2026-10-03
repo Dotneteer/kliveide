@@ -114,3 +114,23 @@ The Watch panel formats values based on the symbol’s type and whether the watc
 - If you frequently work with strings or arrays and omit length, the default is 8.
 - Use w-list to verify your watch specifications and types.
 - Rebuild your project to update symbol addresses when you change code; unresolved symbols will display as “`<not found>`”.
+
+## Watchpoints
+
+A *watch* shows a value; a *watchpoint* is a memory breakpoint. The two are linked:
+
+- Right-clicking a watch row offers **Break on write**, **Break on read** and **Break on access**.
+  Each sets a memory breakpoint over the bytes the watch shows &mdash; one for a byte or flag, two for
+  a word, four for a double word, the length for an array or a string &mdash; and **Remove watchpoint**
+  takes it away again. The items are disabled for a direct (`>`) watch, which reads no memory. The
+  same menu has **Delete watch**; right-clicking the icon still deletes the watch, too.
+- A watchpoint made this way follows its **symbol**: after a rebuild that moves the symbol it
+  watches the new bytes, and while the build has no such symbol it does not stop. `bp-list` shows
+  it as `WS:<symbol>`.
+- A watch row shows the memory read or write glyph when any enabled memory breakpoint covers its
+  bytes &mdash; one you set, one made from a watch, or one from a DeZog
+  [`WPMEM` comment](./breakpoints#dezog-assertion-and-wpmem-comments). Its tooltip lists them, and
+  clicking the glyph shows the breakpoint in the Breakpoints view.
+- In the other direction, the Breakpoints view's row menu offers **Add to Watch** on a memory
+  breakpoint whose address a build symbol starts at, when no watch shows it yet.
+

@@ -15,6 +15,7 @@ import {
 import { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import { SETTING_IDE_ACTIVE_OUTPUT_PANE, SETTING_IDE_ACTIVE_TOOL, SETTING_IDE_SHOW_TOOLS } from "@common/settings/setting-const";
 import { createSpecialDocument } from "@renderer/features/documents/specialDocuments";
+import { revealWhenMounted } from "@renderer/appIde/navigation/addressNavigationAdapters";
 
 type SelectOutputArgs = {
   paneId: string;
@@ -79,14 +80,21 @@ export class HideMemoryCommand extends IdeCommandBase {
   }
 }
 
-export class ShowDisassemblyCommand extends IdeCommandBase {
+/**
+ * `show-disass [<address>]`: displays the live disassembly panel and, with an address, reveals it
+ * there (in the 64K view). The reusable "Show in Disassembly" entry point: any view that knows an
+ * address runs this command (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8).
+ */
+export class ShowDisassemblyCommand extends IdeCommandBase<{ address?: number }> {
   readonly id = "show-disass";
-  readonly description = "Displays the disassembly panel";
-  readonly usage = "show-disass";
+  readonly description = "Displays the disassembly panel, optionally at an address";
+  readonly usage = "show-disass [<address>]";
   readonly aliases = ["shdis"];
+  readonly argumentInfo: CommandArgumentInfo = {
+    optional: [{ name: "address", type: "number", minValue: 0, maxValue: 0xffff }]
+  };
 
-
-  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+  async execute(context: IdeCommandContext, args: { address?: number }): Promise<IdeCommandResult> {
     const documentHubService = context.service.projectService.getActiveDocumentHubService();
     if (documentHubService.isOpen(DISASSEMBLY_PANEL_ID)) {
       await documentHubService.setActiveDocument(DISASSEMBLY_PANEL_ID);
@@ -96,6 +104,13 @@ export class ShowDisassemblyCommand extends IdeCommandBase {
         undefined,
         false
       );
+    }
+    if (args?.address !== undefined) {
+      await revealWhenMounted(documentHubService, DISASSEMBLY_PANEL_ID, {
+        kind: "address",
+        address: args.address & 0xffff,
+        fullView: true
+      });
     }
     return commandSuccess;
   }

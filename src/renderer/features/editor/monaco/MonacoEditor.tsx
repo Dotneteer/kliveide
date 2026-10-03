@@ -13,6 +13,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import { addBreakpoint, getBreakpoints, removeBreakpoint } from "@renderer/appIde/utils/breakpoint-utils";
 import styles from "./MonacoEditor.module.scss";
 import { refreshSourceCodeBreakpoints } from "@common/utils/breakpoints";
+import { isAnnotationBreakpoint } from "@common/utils/breakpoint-scope";
 import {
   incBreakpointsVersionAction,
   incEditorVersionAction,
@@ -62,11 +63,14 @@ import {
 import { useBreakpointDialog } from "@renderer/appIde/dialogs/useBreakpointDialog";
 import {
   breakpointFilterLines,
+  breakpointGlyphOf,
   isConditionalBreakpoint,
   isInactiveBreakpoint
 } from "@renderer/appIde/utils/breakpoint-filter-text";
 import {
   marginMenuItems,
+  asOneShot,
+  oneShotToggle,
   runMarginAction,
   type MarginTarget
 } from "./marginBreakpointMenu";
@@ -74,6 +78,8 @@ import { stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { buildSourceCallStack } from "@renderer/appIde/debugger/source/call-stack-model";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import { statementAtColumn } from "@common/utils/breakpoints";
+import { setCommentBreakpointsEnabled } from "@renderer/appIde/utils/annotation-state";
+import { commentKindOf } from "@common/utils/source-annotations";
 import { languageIntelSingleton } from "@renderer/appIde/services/LanguageIntelService";
 import { notifySemanticTokensChanged, type RenameEdit } from "@renderer/appIde/services/z80-providers";
 import { defineLanguageThemes, initializeMonaco, isMonacoInitialized } from "./monacoBootstrap";
@@ -673,6 +679,16 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           }
         }),
         ed.addAction({
+          id: "klive.stopHereOnce",
+          label: "Stop Here Once",
+          contextMenuGroupId: "klive-debug",
+          contextMenuOrder: 1.5,
+          run: (target) => {
+            const position = target.getPosition();
+            if (position) void stopHereOnce(position.lineNumber, position.column - 1);
+          }
+        }),
+        ed.addAction({
           id: "klive.runToCursor",
           label: "Run to Cursor",
           contextMenuGroupId: "klive-debug",
@@ -1022,7 +1038,15 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       await refreshSourceCodeBreakpoints(store, messenger);
       store.dispatch(incBreakpointsVersionAction());
     },
-    edit: (bp: BreakpointInfo, focus: "condition" | "hitCount") => openBreakpointDialog(bp, { focus })
+    edit: (bp: BreakpointInfo, focus: "condition" | "hitCount" | "logMessage") =>
+      openBreakpointDialog(bp, { focus }),
+    setCommentsEnabled: async (bps: BreakpointInfo[], enabled: boolean) => {
+      await setCommentBreakpointsEnabled(emuApi, bps, enabled);
+      store.dispatch(incBreakpointsVersionAction());
+    },
+    showInDisassembly: async (address: number) => {
+      await ideCommandsService.executeCommand(`show-disass $${address.toString(16).padStart(4, "0")}`);
+    }
   };
 
   // --- render the editor when monaco has been initialized
@@ -1067,9 +1091,10 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
               text={item.text}
               dangerous={item.dangerous}
               disabled={item.disabled}
+              trailing={item.hint}
               clicked={() => {
                 marginMenuApi.conceal();
-                void runMarginAction(item.id, marginTarget, resourceName, marginActionPorts);
+                void runMarginAction(item.id, marginTarget, resourceName, marginActionPorts, item.address);
               }}
             />
           </span>
@@ -1098,6 +1123,34 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     // --- Iterate through all breakpoins using this file's resource name as a filter
     const resourceName = getResourceName();
     bps.forEach(async (bp) => {
+      /*
+       * A `LOGPOINT` comment's logpoint (`.plans/LOGPOINTS_PLAN.md` §4.5): the hollow diamond on
+       * its line, read-only. A user breakpoint on the same line owns the margin - Monaco merges a
+       * line's glyph classes into one box, and the comment's mask would reshape the user's dot - so
+       * the comment then shows only in the hover.
+       */
+      if (isAnnotationBreakpoint(bp)) {
+        const userBpHere = bps.some(
+          (b) =>
+            !isAnnotationBreakpoint(b) &&
+            b.resource === bp.resource &&
+            b.line === bp.line &&
+            b.column === undefined
+        );
+        const drawnAlready = bps.find(
+          (b) => isAnnotationBreakpoint(b) && b.resource === bp.resource && b.line === bp.line
+        );
+        if (
+          editorLines !== null &&
+          bp.resource === resourceName.slice(1) &&
+          bp.line <= editorLines &&
+          !userBpHere &&
+          drawnAlready === bp
+        ) {
+          decorations.push(createBinaryBreakpointDecoration(bp.line, !!bp.disabled, bp));
+        }
+        return;
+      }
       let unreachable = true;
       if (
         compilationResult?.errors?.every((e) => e.isWarning) &&
@@ -1123,7 +1176,7 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             const bpInfo = compilationResult.sourceMap[bp.address];
             if (bpInfo) {
               if (bpInfo.fileIndex === fileIndex) {
-                decorations.push(createBinaryBreakpointDecoration(bpInfo.line, bp.disabled));
+                decorations.push(createBinaryBreakpointDecoration(bpInfo.line, bp.disabled, bp));
               }
             }
           }
@@ -1187,7 +1240,103 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
    * Adds or removes the statement breakpoint at a line and 0-based column (plan §10.3): the
    * statement whose range holds the column.
    */
-  async function toggleStatementBreakpoint(line: number, column: number): Promise<void> {
+  /** The breakpoints `ASSERTION`/`WPMEM` comments on a line made (S12). */
+  function commentBreakpointsOn(line: number): BreakpointInfo[] {
+    return breakpoints.current.filter(
+      (bp) =>
+        bp.resource === document.node?.projectPath &&
+        bp.line === line &&
+        isAnnotationBreakpoint(bp)
+    );
+  }
+
+  /** A click on a comment's mark: disable its breakpoints, or enable them again (S12, S3). */
+  async function toggleCommentBreakpoints(line: number): Promise<void> {
+    const bps = commentBreakpointsOn(line);
+    if (!bps.length) return;
+    await setCommentBreakpointsEnabled(emuApi, bps, bps.every((bp) => bp.disabled));
+    store.dispatch(incBreakpointsVersionAction());
+  }
+
+  /**
+   * What a comment's mark says on hover (S12): which instruction an assertion guards - usually the
+   * next source line, which is why it is named rather than left to a jump - or what a watchpoint
+   * watches.
+   */
+  function describeCommentMark(bps: BreakpointInfo[]): string[] {
+    const lines: string[] = [];
+    const result = store.getState().compilation?.result;
+    for (const bp of bps) {
+      if (bp.exec && bp.address !== undefined) {
+        const item = isDebuggableCompilerOutput(result)
+          ? result.listFileItems.find((li) => li.address === bp.address)
+          : undefined;
+        const fileName = item && isDebuggableCompilerOutput(result)
+          ? result.sourceFileList[item.fileIndex]?.filename
+          : undefined;
+        const sep = getIsWindows() ? "\\" : "/";
+        const sameFile = !!fileName && fileName.replaceAll(sep, "/").endsWith(getResourceName());
+        const code =
+          item && sameFile && item.lineNumber <= (editor.current?.getModel()?.getLineCount() ?? 0)
+            ? editor.current.getModel().getLineContent(item.lineNumber).split(";")[0].trim()
+            : undefined;
+        const at = `$${bp.address.toString(16).toUpperCase().padStart(4, "0")}`;
+        // --- An assertion is checked, a logpoint logs, before the instruction at its address
+        const verb = commentKindOf(bp) === "LOGPOINT" ? "Logs" : "Checked";
+        lines.push(
+          code && item
+            ? `${verb} before \`${code}\`, line ${item.lineNumber}, ${at}`
+            : `${verb} at ${at}`
+        );
+      } else if (bp.annotationKind === "WPMEM" && bp.address !== undefined) {
+        const from = bp.address;
+        const to = from + (bp.length ?? 1) - 1;
+        const hex = (v: number) => `$${v.toString(16).toUpperCase().padStart(4, "0")}`;
+        lines.push(
+          `Watches ${from === to ? hex(from) : `${hex(from)}-${hex(to)}`} for ${bp.memoryRead ? "reads" : "writes"}`
+        );
+      }
+    }
+    return [...new Set(lines)];
+  }
+
+  /**
+   * "Stop Here Once" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot on the
+   * statement under the cursor when the build knows statements there, else on the line. An
+   * existing breakpoint there becomes a one-shot; nothing is removed.
+   */
+  async function stopHereOnce(line: number, column: number): Promise<void> {
+    const resource = document.node?.projectPath ?? getResourceName().slice(1);
+    const result = store.getState().compilation?.result;
+    let statementColumn: number | undefined;
+    if (hasSourceLevelDebug(result)) {
+      const fileIndex = sourceFileIndex(result.sourceLevelDebug, getResourceName(), getIsWindows());
+      const statement =
+        fileIndex >= 0 ? statementAtColumn(result.sourceLevelDebug, fileIndex, line, column) : undefined;
+      if (statement && statement.startLine === line) statementColumn = statement.startColumn;
+    }
+    const existing = breakpoints.current.find(
+      (bp) =>
+        bp.resource === resource &&
+        bp.line === line &&
+        bp.column === statementColumn &&
+        !isAnnotationBreakpoint(bp)
+    );
+    if (existing?.oneShot) return;
+    if (!existing && !(await canAddBreakpointAt(line))) return;
+    const place: BreakpointInfo = {
+      resource,
+      line,
+      ...(statementColumn !== undefined ? { column: statementColumn } : {}),
+      exec: true
+    };
+    const next = oneShotToggle(existing, place);
+    if ("set" in next) await addBreakpoint(messenger, next.set);
+    await refreshSourceCodeBreakpoints(store, messenger);
+    store.dispatch(incBreakpointsVersionAction());
+  }
+
+  async function toggleStatementBreakpoint(line: number, column: number, once = false): Promise<void> {
     const result = store.getState().compilation?.result;
     if (!hasSourceLevelDebug(result)) return;
     const fileIndex = sourceFileIndex(result.sourceLevelDebug, getResourceName(), getIsWindows());
@@ -1195,10 +1344,20 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     if (!statement || statement.startLine !== line) return;
     const resource = document.node?.projectPath ?? getResourceName().slice(1);
     const existing = breakpoints.current.find(
-      (bp) => bp.resource === resource && bp.line === line && bp.column === statement.startColumn
+      (bp) =>
+        bp.resource === resource &&
+        bp.line === line &&
+        bp.column === statement.startColumn &&
+        !isAnnotationBreakpoint(bp)
     );
-    if (existing) await removeBreakpoint(messenger, existing);
-    else await addBreakpoint(messenger, { resource, line, column: statement.startColumn, exec: true });
+    const place: BreakpointInfo = { resource, line, column: statement.startColumn, exec: true };
+    if (once) {
+      // --- Shift+click (O1): add a one-shot, turn a regular one into one, remove a one-shot
+      const next = oneShotToggle(existing, place);
+      if ("remove" in next) await removeBreakpoint(messenger, next.remove);
+      else await addBreakpoint(messenger, next.set);
+    } else if (existing) await removeBreakpoint(messenger, existing);
+    else await addBreakpoint(messenger, place);
     await refreshSourceCodeBreakpoints(store, messenger);
     store.dispatch(incBreakpointsVersionAction());
   }
@@ -1214,9 +1373,20 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // --- Check if there is an existing breakpoint at this line
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === resourceName && bp.line === lineNo && bp.column === undefined
+        (bp) =>
+          bp.resource === resourceName &&
+          bp.line === lineNo &&
+          bp.column === undefined &&
+          !isAnnotationBreakpoint(bp)
       );
-      if (!existingBp && languageInfo?.instantSyntaxCheck) {
+      // --- A comment on the line is described, never offered for removal
+      const commentBp = breakpoints.current.find(
+        (bp) => bp.resource === resourceName && bp.line === lineNo && isAnnotationBreakpoint(bp)
+      );
+      // --- An `ASSERTION`/`WPMEM` comment's mark (S12): a click toggles it, so the line need not
+      // --- be able to hold a breakpoint
+      const commentMarks = existingBp ? [] : commentBreakpointsOn(lineNo);
+      if (!existingBp && !commentMarks.length && languageInfo?.instantSyntaxCheck) {
         // --- No existing breakpoint, alllow creating one, if the source code has anything here
         const lineContent = editor.current.getModel().getLineContent(lineNo);
         const allowBp = await createMainApi(messenger).canLineHaveBreakpoint(
@@ -1235,11 +1405,22 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
 
       // --- Display the message: the gesture, the breakpoint's filters, the menu
       hoverDecorations.current?.clear();
-      const message = [
-        `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`,
-        ...(existingBp ? breakpointFilterLines(existingBp) : []),
+      const message = (commentMarks.length ? [
+        `Click to ${commentMarks.every((bp) => bp.disabled) ? "enable" : "disable"} this ${commentKindOf(commentMarks[0])} comment`,
+        ...describeCommentMark(commentMarks),
+        ...breakpointFilterLines(commentMarks[0]),
         "Right-click for more actions"
-      ].join("\n\n");
+      ] : [
+        `Click to ${existingBp ? "remove the existing" : "add a new"} breakpoint`,
+        existingBp?.oneShot
+          ? "Shift-click to remove the one-shot"
+          : existingBp
+            ? "Shift-click to make it stop here once"
+            : "Shift-click to stop here once",
+        ...(existingBp ? breakpointFilterLines(existingBp) : []),
+        ...(commentBp ? breakpointFilterLines(commentBp) : []),
+        "Right-click for more actions"
+      ]).join("\n\n");
       hoverDecorations.current = editor.current.createDecorationsCollection([
         createHoverBreakpointDecoration(lineNo, message)
       ]);
@@ -1275,15 +1456,32 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       ? e.target.position.lineNumber
       : null;
 
-    // --- An inline statement marker (plan §10.3): toggles that statement's breakpoint
-    const markerClasses = [styles.statementBpMarker, styles.statementBpSet, styles.statementBpDisabled];
+    // --- An inline statement marker (plan §10.3): toggles that statement's breakpoint; Shift+click
+    // --- makes it a one-shot (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` O1)
+    const markerClasses = [
+      styles.statementBpMarker,
+      styles.statementBpSet,
+      styles.statementBpDisabled,
+      styles.statementBpConditional,
+      styles.statementBpInactive,
+      styles.statementBpOnce
+    ];
     if (
       e.event.leftButton &&
       e.target?.type === MONACO_CONTENT_TEXT &&
       e.target.position &&
       markerClasses.some((c) => e.target.element?.classList.contains(c))
     ) {
-      void toggleStatementBreakpoint(e.target.position.lineNumber, e.target.position.column - 1);
+      if (e.event.shiftKey) {
+        // --- Before Monaco extends the selection to the click (R6)
+        e.event.preventDefault();
+        e.event.stopPropagation();
+      }
+      void toggleStatementBreakpoint(
+        e.target.position.lineNumber,
+        e.target.position.column - 1,
+        e.event.shiftKey
+      );
       return;
     }
 
@@ -1294,10 +1492,37 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
       // --- Breakpoint glyph is clicked
       const lineNo = e.target.position.lineNumber;
       const existingBp = breakpoints.current.find(
-        (bp) => bp.resource === document.node?.projectPath && bp.line === lineNo && bp.column === undefined
+        (bp) =>
+          bp.resource === document.node?.projectPath &&
+          bp.line === lineNo &&
+          bp.column === undefined &&
+          !isAnnotationBreakpoint(bp)
       );
+      // --- A DeZog comment's mark: a click toggles its disabled state (S12; LOGPOINT too, Q6)
+      const commentBp = breakpoints.current.find(
+        (bp) =>
+          bp.resource === document.node?.projectPath &&
+          bp.line === lineNo &&
+          isAnnotationBreakpoint(bp)
+      );
+      if (!existingBp && commentBp && !e.event.shiftKey) {
+        void toggleCommentBreakpoints(lineNo);
+        return;
+      }
+      if (e.event.shiftKey) {
+        // --- Shift+click (O1). Monaco reads Shift+mousedown as "extend the selection"; the margin
+        // --- click is ours (R6)
+        e.event.preventDefault();
+        e.event.stopPropagation();
+      }
       (async () => {
-        if (existingBp) {
+        if (e.event.shiftKey && existingBp) {
+          const next = oneShotToggle(existingBp, existingBp);
+          if ("remove" in next) await removeBreakpoint(messenger, next.remove);
+          else await addBreakpoint(messenger, next.set);
+          await refreshSourceCodeBreakpoints(store, messenger);
+          store.dispatch(incBreakpointsVersionAction());
+        } else if (existingBp) {
           await removeBreakpoint(messenger, existingBp);
         } else {
           // --- Check if this is a valid location for a breakpoint
@@ -1310,11 +1535,8 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
             );
           }
           if (allow) {
-            await addBreakpoint(messenger, {
-              resource: resourceName,
-              line: lineNo,
-              exec: true
-            });
+            const place: BreakpointInfo = { resource: resourceName, line: lineNo, exec: true };
+            await addBreakpoint(messenger, e.event.shiftKey ? asOneShot(place) : place);
             await refreshSourceCodeBreakpoints(store, messenger);
             store.dispatch(incBreakpointsVersionAction());
             handleEditorMouseLeave(e);
@@ -1374,12 +1596,18 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
     e.event.preventDefault();
     e.event.stopPropagation();
     const breakpoint = breakpoints.current.find(
-      (bp) => bp.resource === projectPath && bp.line === line && bp.column === column
+      (bp) =>
+        bp.resource === projectPath &&
+        bp.line === line &&
+        bp.column === column &&
+        !isAnnotationBreakpoint(bp)
     );
+    // --- An `ASSERTION`/`WPMEM` comment's mark has its own menu while no user breakpoint is here
+    const comments = column === undefined && !breakpoint ? commentBreakpointsOn(line) : [];
     const browserEvent = e.event.browserEvent;
     void (async () => {
       const canAdd = breakpoint ? true : await canAddBreakpointAt(line);
-      setMarginTarget({ line, column, breakpoint, canAdd });
+      setMarginTarget({ line, column, breakpoint, canAdd, comments });
       marginMenuApi.show(browserEvent as unknown as Parameters<typeof marginMenuApi.show>[0]);
     })();
   }
@@ -1597,9 +1825,31 @@ function createCodeBreakpointDecoration(lineNo: number, disabled: boolean, bp?: 
  * same shapes the disassembly gutter and the Breakpoints panel draw (plan §4.4.2).
  */
 function withFilterGlyph(className: string, bp?: BreakpointInfo): string {
-  if (isInactiveBreakpoint(bp)) return `${className} ${styles.inactiveBreakpointMargin}`;
-  if (isConditionalBreakpoint(bp)) return `${className} ${styles.conditionalBreakpointMargin}`;
-  return className;
+  // --- One reading of the glyph for every surface (`breakpoint-filter-text.ts`)
+  switch (breakpointGlyphOf(bp)) {
+    case "inactive":
+      return `${className} ${styles.inactiveBreakpointMargin}`;
+    case "conditional":
+      return `${className} ${styles.conditionalBreakpointMargin}`;
+    case "logpoint":
+      return `${className} ${styles.logpointBreakpointMargin}`;
+    case "logpointConditional":
+      return `${className} ${styles.logpointConditionalBreakpointMargin}`;
+    case "logpointInactive":
+      return `${className} ${styles.logpointInactiveBreakpointMargin}`;
+    case "logpointComment":
+      return `${className} ${styles.logpointCommentBreakpointMargin}`;
+    case "once":
+      return `${className} ${styles.onceBreakpointMargin}`;
+    case "onceConditional":
+      return `${className} ${styles.onceConditionalBreakpointMargin}`;
+    case "assertion":
+      return `${className} ${styles.assertionCommentMargin}`;
+    case "watchpoint":
+      return `${className} ${styles.wpmemCommentMargin}`;
+    default:
+      return className;
+  }
 }
 
 /**
@@ -1702,16 +1952,34 @@ function createStatementMarkerDecoration(line: number, column: number, bp?: Brea
       ? styles.statementBpDisabled
       : isInactiveBreakpoint(bp)
         ? styles.statementBpInactive
-        : isConditionalBreakpoint(bp)
-          ? styles.statementBpConditional
-          : styles.statementBpSet
+        : bp.oneShot
+          ? styles.statementBpOnce
+          : isConditionalBreakpoint(bp)
+            ? styles.statementBpConditional
+            : styles.statementBpSet
     : styles.statementBpMarker;
   // --- The glyph carries the variant, as in the margin: a hollow dot for an inactive breakpoint, a
-  // --- circled "=" for a conditional one
-  const content = bp && isInactiveBreakpoint(bp) ? "\u25cb" : bp && isConditionalBreakpoint(bp) ? "\u229c" : "\u25cf";
+  // --- circled "1" for a one-shot (inactive still wins, O6), a circled "=" for a conditional one
+  const content =
+    bp && isInactiveBreakpoint(bp)
+      ? "\u25cb"
+      : bp?.oneShot
+        ? "\u2460"
+        : bp && isConditionalBreakpoint(bp)
+          ? "\u229c"
+          : "\u25cf";
   const hover = bp
-    ? ["Click to remove the breakpoint on this statement", ...breakpointFilterLines(bp), "Right-click for more actions"]
-    : ["Click to add a breakpoint on this statement", "Right-click for more actions"];
+    ? [
+        "Click to remove the breakpoint on this statement",
+        bp.oneShot ? "Shift-click to remove the one-shot" : "Shift-click to make it stop here once",
+        ...breakpointFilterLines(bp),
+        "Right-click for more actions"
+      ]
+    : [
+        "Click to add a breakpoint on this statement",
+        "Shift-click to stop here once",
+        "Right-click for more actions"
+      ];
   return {
     range: new monacoEditor.Range(line, column + 1, line, column + 1),
     options: {

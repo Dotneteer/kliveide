@@ -1,4 +1,5 @@
 import fs from "fs";
+import { annotationsInComment } from "@common/utils/source-annotations";
 import path from "path";
 
 import type { ErrorCodes } from "../compiler-common/assembler-errors";
@@ -1329,6 +1330,59 @@ export abstract class CommonAssembler<
    * @param fromMacroEmit Is this method called during macro emit?
    */
   private async emitSingleLine(
+    allLines: AssemblyLine<TInstruction>[],
+    scopeLines: AssemblyLine<TInstruction>[],
+    asmLine: AssemblyLine<TInstruction>,
+    currentLineIndex: { index: number },
+    fromMacroEmit: boolean = false
+  ): Promise<void> {
+    /*
+     * A DeZog `LOGPOINT`, `ASSERTION` or `WPMEM` comment (`.plans/LOGPOINTS_PLAN.md` §4.7,
+     * `.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.3) on any line that is assembled -
+     * comment-only and label-only lines included; lines of a false IF branch never get here. It
+     * fires at the line's own address when the line emits code, and otherwise at the location
+     * counter after it: the next instruction emitted in the same segment. Each macro expansion
+     * passes through here with its own address, so it yields its own annotation.
+     */
+    const found = annotationsInComment(asmLine.comment);
+    if (found.length === 0) {
+      await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
+      return;
+    }
+    const segmentBefore = this._currentSegment;
+    const lengthBefore = segmentBefore?.emittedCode.length ?? 0;
+    const addressBefore = this.locationCounter();
+    await this.emitSingleLineCore(allLines, scopeLines, asmLine, currentLineIndex, fromMacroEmit);
+    const emitted =
+      this._currentSegment === segmentBefore &&
+      (this._currentSegment?.emittedCode.length ?? 0) > lengthBefore;
+    // --- `ASSERTION` and `WPMEM` (G1.5) follow the same address rule: an assertion on an
+    // --- instruction's line is checked before that instruction runs; on its own line, before the
+    // --- next one. A WPMEM without an address watches the line's own address.
+    for (const { kind, text } of found) {
+      this._output.debugAnnotations.push({
+        kind,
+        fileIndex: asmLine.fileIndex,
+        line: asmLine.line,
+        address: (emitted ? addressBefore : this.locationCounter()) & 0xffff,
+        segmentIndex: this._output.segments.length - 1,
+        text
+      });
+    }
+  }
+
+  /**
+   * The address the next emitted byte goes to. Not `getCurrentAddress()`, which is "$" - the start
+   * of the instruction being assembled - and between two lines still names the previous one.
+   */
+  private locationCounter(): number {
+    this.ensureCodeSegment();
+    const segment = this._currentSegment;
+    return (segment.startAddress + (segment.displacement ?? 0) + segment.emittedCode.length) & 0xffff;
+  }
+
+  /** `emitSingleLine` without the source-annotation scan. */
+  private async emitSingleLineCore(
     allLines: AssemblyLine<TInstruction>[],
     scopeLines: AssemblyLine<TInstruction>[],
     asmLine: AssemblyLine<TInstruction>,

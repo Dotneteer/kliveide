@@ -1,4 +1,4 @@
-import type { BreakpointHitMode } from "@abstractions/BreakpointInfo";
+import type { BreakpointHitMode, LogDialect } from "@abstractions/BreakpointInfo";
 
 import { readStoredBreakpointFilters } from "@common/utils/breakpoint-filters";
 
@@ -147,6 +147,10 @@ export type NexSidecarBreakpointFilters = {
   condition?: string;
   hitMode?: BreakpointHitMode;
   hitCount?: number;
+  /** A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.6). */
+  logMessage?: string;
+  /** Absent means the Klive dialect. */
+  logDialect?: LogDialect;
 };
 
 /**

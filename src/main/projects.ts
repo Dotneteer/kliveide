@@ -1,7 +1,11 @@
 import path from "path";
 import fs from "fs";
 
-import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
+import type {
+  BreakpointInfo,
+  LogpointGroupState,
+  SourceCommentSwitches
+} from "@abstractions/BreakpointInfo";
 import { breakpointMatchesScope } from "@common/utils/breakpoint-scope";
 import { withoutBreakpointRuntimeState } from "@common/utils/breakpoint-filters";
 import type { WatchInfo } from "@common/state/AppState";
@@ -21,6 +25,8 @@ import {
   setWorkspaceSettingsAction,
   setWatchesAction,
   setBasicWatchesAction,
+  setLogpointGroupsAction,
+  setSourceCommentsAction,
 } from "@state/actions";
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "./main-store";
@@ -193,6 +199,12 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- previously open project's watches would leak into this one.
       disp(setWatchesAction(projectStruct.debugger?.watchExpressions ?? []));
       disp(setBasicWatchesAction(projectStruct.debugger?.basicWatches ?? []));
+      // --- The logpoint group switch (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent means everything
+      // --- on, so a project without it resets what the previous project switched off. The
+      // --- emulator reads it from the shared store.
+      disp(setLogpointGroupsAction(readLogpointGroups(projectStruct.debugger?.logpointGroups)));
+      // --- The ASSERTION / WPMEM switches (S6); absent means both on
+      disp(setSourceCommentsAction(readSourceComments(projectStruct.debugger?.sourceComments)));
 
       // --- Restore breakpoints, but only onto the machine this project actually installed. If a
       // --- concurrent machine change superseded ours, the live machine is somebody else's and
@@ -230,6 +242,9 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
         // --- used to replace *every* breakpoint the emulator held, so opening a project destroyed
         // --- breakpoints belonging to anything else — a `.nex` sidecar, or a live debug session.
         await getEmuApi().restoreBreakpoints(restoredBreakpoints, { kind: "project" });
+        // --- The previous project's `LOGPOINT` comments belong to its build, not to this project;
+        // --- they come back with this project's first build (`.plans/LOGPOINTS_PLAN.md` L10)
+        await getEmuApi().restoreBreakpoints([], { kind: "annotation" });
       } else {
         console.warn(
           `Skipped restoring breakpoints for '${projectFolder}': the project's machine was ` +
@@ -416,7 +431,16 @@ function getKliveProjectStructureFromState(breakpoints: BreakpointInfo[]): Klive
       // --- Unlike breakpoints, watches live in the shared store rather than in the emulator, so
       // --- they are read straight from the state snapshot instead of over IPC.
       watchExpressions: state.watchExpressions ?? [],
-      basicWatches: state.basicWatches ?? []
+      basicWatches: state.basicWatches ?? [],
+      // --- Absent when everything logs, so a project that never touched the switch stays
+      // --- byte-identical (`.plans/LOGPOINTS_PLAN.md` §4.6)
+      ...(isDefaultLogpointGroups(state.logpointGroups)
+        ? {}
+        : { logpointGroups: state.logpointGroups }),
+      // --- Absent when both are on (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.8)
+      ...(isDefaultSourceComments(state.sourceComments)
+        ? {}
+        : { sourceComments: state.sourceComments })
     },
     builder: {
       roots: state.project?.buildRoots ?? []
@@ -570,7 +594,50 @@ type DebuggerState = {
   watchExpressions?: WatchInfo[];
   /** BASIC watch expressions (the Variables panel); optional for the same reason. */
   basicWatches?: string[];
+  /**
+   * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.6). Absent when everything does - an
+   * additive field, so no schema bump.
+   */
+  logpointGroups?: LogpointGroupState;
+  /**
+   * The ASSERTION / WPMEM comment switches (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6).
+   * Absent when both are on - an additive field, so no schema bump.
+   */
+  sourceComments?: SourceCommentSwitches;
 };
+
+/** Are both comment switches on? */
+function isDefaultSourceComments(state: SourceCommentSwitches | undefined): boolean {
+  return !state || (state.assertion !== false && state.wpmem !== false);
+}
+
+/** The stored comment switches, validated: anything but an explicit `false` reads as on. */
+export function readSourceComments(stored: unknown): SourceCommentSwitches | undefined {
+  if (!stored || typeof stored !== "object") return undefined;
+  const { assertion, wpmem } = stored as Record<string, unknown>;
+  return {
+    ...(assertion === false ? { assertion: false } : {}),
+    ...(wpmem === false ? { wpmem: false } : {})
+  };
+}
+
+/** Is this the default logpoint group state - everything on? */
+function isDefaultLogpointGroups(state: LogpointGroupState | undefined): boolean {
+  return !state || (state.enabled && !state.groups);
+}
+
+/**
+ * The stored logpoint group state, validated: a malformed value is read as "everything on" (the
+ * direction in which nothing is silently lost).
+ */
+export function readLogpointGroups(stored: unknown): LogpointGroupState | undefined {
+  if (!stored || typeof stored !== "object") return undefined;
+  const { enabled, groups } = stored as Record<string, unknown>;
+  if (typeof enabled !== "boolean") return undefined;
+  if (groups === undefined) return { enabled };
+  if (!Array.isArray(groups) || groups.some((g) => typeof g !== "string")) return { enabled };
+  return { enabled, groups: groups as string[] };
+}
 
 // --- Represents the state of the builder
 type BuilderState = {

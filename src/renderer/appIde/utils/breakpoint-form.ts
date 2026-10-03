@@ -15,6 +15,7 @@ import {
   withoutBreakpointRuntimeState
 } from "@common/utils/breakpoint-filters";
 import { compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
+import { compileLogTemplate } from "@common/utils/breakpoint-condition/logpoint-template";
 import { conditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 import { parseCommand } from "@renderer/appIde/services/command-parser";
 import { getNumericTokenValue, toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
@@ -105,6 +106,13 @@ export type BreakpointFormState = {
   nextRegCopper: boolean;
   disabled: boolean;
   /**
+   * "Remove after it stops" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
+   * session-owned and never saved (O2). Unticking it makes the breakpoint project-owned again.
+   */
+  oneShot: boolean;
+  /** Raw input, memory kinds only: how many bytes the watchpoint covers (S10). Empty means one. */
+  length: string;
+  /**
    * The condition as typed (`.plans/CONDITIONAL_BREAKPOINTS_PLAN.md` §4.4.1). Empty means none.
    * Every kind carries one, source breakpoints included.
    */
@@ -114,6 +122,13 @@ export type BreakpointFormState = {
   /** Raw input: the rule's N. Meaningful unless `hitMode` is `"always"`. */
   hitCount: string;
   /**
+   * What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5): stop the
+   * machine, or log `logMessage` and continue - a logpoint.
+   */
+  action: "stop" | "log";
+  /** The logpoint's template as typed (the Klive dialect). Meaningful when `action` is `"log"`. */
+  logMessage: string;
+  /**
    * **Source mode** (§4.4.2): the source breakpoint being edited. The editor places and tracks a
    * source breakpoint, so only its condition, hit rule and enabled state are editable here; its
    * location is shown, not authored. Absent for every other breakpoint.
@@ -122,7 +137,7 @@ export type BreakpointFormState = {
 };
 
 /** Messages that accept the form but deserve a note (unknown labels, shadowed names). */
-export type FieldWarnings = Partial<Record<"condition", string>>;
+export type FieldWarnings = Partial<Record<"condition" | "logMessage", string>>;
 
 /**
  * Everything the rules need to know about the world, resolved by the caller before the dialog opens.
@@ -278,10 +293,18 @@ export function createEmptyForm(): BreakpointFormState {
     nextRegMask: "",
     nextRegCopper: false,
     disabled: false,
+    oneShot: false,
+    length: "",
     condition: "",
     hitMode: "always",
-    hitCount: ""
+    hitCount: "",
+    action: "stop",
+    logMessage: ""
   };
+}
+
+function isMemoryKind(kind: BreakpointKind): boolean {
+  return kind === "memRead" || kind === "memWrite";
 }
 
 function isIoKind(kind: BreakpointKind): boolean {
@@ -320,7 +343,8 @@ export function applyKindChange(
     filterValue: nextReg ? form.filterValue : false,
     nextRegValue: nextReg ? form.nextRegValue : "",
     nextRegMask: nextReg ? form.nextRegMask : "",
-    nextRegCopper: nextReg ? form.nextRegCopper : false
+    nextRegCopper: nextReg ? form.nextRegCopper : false,
+    length: isMemoryKind(kind) ? form.length : ""
   };
 }
 
@@ -360,18 +384,39 @@ export function isKnownPartition(partition: number, env: BreakpointEnvironment):
  * `undefined`, which `getBreakpointDisplayKey` would reject. Never emits `resource`/`line`.
  */
 export function formToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
-  return { ...formPlaceToBreakpointInfo(form), ...formFilters(form) };
+  const bp: BreakpointInfo = { ...formPlaceToBreakpointInfo(form), ...formFilters(form) };
+  if (form.oneShot && form.action !== "log") {
+    // --- A one-shot is session-owned and never saved (O2)
+    bp.oneShot = true;
+    bp.owner = { kind: "session" };
+  } else if (bp.oneShot) {
+    // --- "Keep after it stops": a regular, project-owned breakpoint again
+    delete bp.oneShot;
+    if (bp.owner?.kind === "session") delete bp.owner;
+  }
+  return bp;
+}
+
+/** The form's Length field as a byte count over 1, or `undefined` (one byte, or not a memory kind). */
+function formLength(form: BreakpointFormState): number | undefined {
+  if (!isMemoryKind(form.kind)) return undefined;
+  const parsed = parseNumericInput(form.length);
+  return parsed.ok && parsed.value > 1 ? parsed.value : undefined;
 }
 
 /**
  * The condition and hit rule the form describes, normalised like a stored breakpoint (a blank
  * condition or `"always"` says nothing). An unparseable count is dropped; validation refuses it.
  */
-function formFilters(form: BreakpointFormState): Pick<BreakpointInfo, "condition" | "hitMode" | "hitCount"> {
+function formFilters(
+  form: BreakpointFormState
+): Pick<BreakpointInfo, "condition" | "hitMode" | "hitCount" | "logMessage" | "logDialect"> {
   const count = form.hitMode === "always" ? undefined : parseNumericInput(form.hitCount);
   return breakpointFiltersOf({
     condition: form.condition,
-    ...(count?.ok ? { hitMode: form.hitMode as BreakpointHitMode, hitCount: count.value } : {})
+    ...(count?.ok ? { hitMode: form.hitMode as BreakpointHitMode, hitCount: count.value } : {}),
+    // --- Stop leaves no template behind, so the action switch turns a logpoint back (L2)
+    ...(form.action === "log" ? { logMessage: form.logMessage } : {})
   });
 }
 
@@ -387,6 +432,8 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
       condition: _condition,
       hitMode: _hitMode,
       hitCount: _hitCount,
+      logMessage: _logMessage,
+      logDialect: _logDialect,
       ...place
     } = withoutBreakpointRuntimeState(form.source);
     return { ...place, disabled: form.disabled };
@@ -426,6 +473,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
   // --- bank anyway would build a breakpoint the emulator's own guard rejects.
   const bankSite = isIoKind(form.kind) ? undefined : parseBankRelativeInput(form.address);
   if (bankSite?.ok) {
+    const bankLength = formLength(form);
     return {
       bank: bankSite.bank,
       bankOffset: bankSite.bankOffset,
@@ -434,6 +482,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
       memoryWrite: form.kind === "memWrite",
       ioRead: false,
       ioWrite: false,
+      ...(bankLength !== undefined ? { length: bankLength } : {}),
       // --- No partition: a bank-relative breakpoint derives its own from the bank and offset, and
       // --- carrying a second, independent one would arm it somewhere the bank is not.
       disabled: form.disabled
@@ -453,6 +502,7 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     ioRead: form.kind === "ioRead",
     ioWrite: form.kind === "ioWrite",
     ioMask: mask?.ok ? mask.value & ADDRESS_MAX : undefined,
+    ...(formLength(form) !== undefined ? { length: formLength(form) } : {}),
     disabled: form.disabled
   };
 }
@@ -495,9 +545,13 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     partition: bp.partition,
     ioMask: bp.ioMask === undefined ? "" : `$${toHexa4(bp.ioMask)}`,
     disabled: bp.disabled ?? false,
+    oneShot: !!bp.oneShot,
+    length: bp.length !== undefined && bp.length > 1 ? `${bp.length}` : "",
     condition: bp.condition ?? "",
     hitMode: effectiveHitMode(bp) ?? "always",
     hitCount: bp.hitCount === undefined ? "" : `${bp.hitCount}`,
+    action: bp.logMessage ? "log" : "stop",
+    logMessage: bp.logMessage ?? "",
     ...(bp.resource !== undefined ? { source: bp } : {})
   };
 }
@@ -624,6 +678,24 @@ export function validateBreakpointForm(
     }
   }
 
+  // --- Length: optional, memory kinds only (S10)
+  const lengthText = (form.length ?? "").trim();
+  if (lengthText) {
+    if (!isMemoryKind(form.kind)) {
+      errors.length = "A length applies only to memory breakpoints.";
+    } else {
+      const parsed = parseNumericInput(lengthText);
+      const start = parseNumericInput(addressText);
+      if (!parsed.ok) {
+        errors.length = "Enter a valid length, for example 5 or $10.";
+      } else if (parsed.value < 1 || parsed.value > 0x1_0000) {
+        errors.length = "The length must be between 1 and 65536.";
+      } else if (start.ok && start.value + parsed.value > 0x1_0000) {
+        errors.length = "A memory range cannot wrap past $FFFF.";
+      }
+    }
+  }
+
   // --- Partition
   if (form.partition !== undefined) {
     if (!env.supportsPartitions) {
@@ -654,6 +726,15 @@ function addFilterErrors(
   const error = checkCondition(form, env).errors[0];
   if (error) errors.condition = formatConditionDiagnostic(error);
 
+  if (form.action === "log") {
+    if (!(form.logMessage ?? "").trim()) {
+      errors.logMessage = "Enter the message to log.";
+    } else {
+      const logError = checkLogMessage(form, env).errors[0];
+      if (logError) errors.logMessage = formatConditionDiagnostic(logError);
+    }
+  }
+
   if (form.hitMode !== "always") {
     const count = parseNumericInput(form.hitCount);
     if (!count.ok) {
@@ -672,6 +753,20 @@ function checkCondition(
 ): { errors: ConditionDiagnostic[]; warnings: ConditionDiagnostic[] } {
   if (!(form.condition ?? "").trim()) return { errors: [], warnings: [] };
   const result = compileCondition(form.condition, {
+    ...conditionMachineFacts(env.machineId, env.partitionLabels),
+    accessKind: form.source ? "exec" : conditionAccessKindOf(form.kind),
+    symbols: env.conditionSymbols
+  });
+  return { errors: result.errors, warnings: result.warnings };
+}
+
+/** The log template's diagnostics, compiled as the emulator will (the Klive dialect). */
+function checkLogMessage(
+  form: BreakpointFormState,
+  env: BreakpointEnvironment
+): { errors: ConditionDiagnostic[]; warnings: ConditionDiagnostic[] } {
+  if (form.action !== "log" || !(form.logMessage ?? "").trim()) return { errors: [], warnings: [] };
+  const result = compileLogTemplate(form.logMessage, "klive", {
     ...conditionMachineFacts(env.machineId, env.partitionLabels),
     accessKind: form.source ? "exec" : conditionAccessKindOf(form.kind),
     symbols: env.conditionSymbols
@@ -708,9 +803,16 @@ export function breakpointFormWarnings(
   form: BreakpointFormState,
   env: BreakpointEnvironment
 ): FieldWarnings {
-  const { errors, warnings } = checkCondition(form, env);
-  if (errors.length || !warnings.length) return {};
-  return { condition: warnings.map(formatConditionDiagnostic).join("\n") };
+  const result: FieldWarnings = {};
+  const condition = checkCondition(form, env);
+  if (!condition.errors.length && condition.warnings.length) {
+    result.condition = condition.warnings.map(formatConditionDiagnostic).join("\n");
+  }
+  const log = checkLogMessage(form, env);
+  if (!log.errors.length && log.warnings.length) {
+    result.logMessage = log.warnings.map(formatConditionDiagnostic).join("\n");
+  }
+  return result;
 }
 
 /**

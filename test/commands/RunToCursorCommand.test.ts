@@ -112,6 +112,7 @@ describe("RunToCursorCommand", () => {
         line: undefined,
         exec: true,
         oneShot: true,
+        runTo: true,
         owner: { kind: "session" }
       });
       expect(issueMachineCommand).toHaveBeenCalledWith("debug");

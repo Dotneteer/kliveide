@@ -5,6 +5,7 @@ import type { ErrorCodes } from "./assembler-errors";
 import { AssemblyModule } from "./assembly-module";
 import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolReferenceInfo, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
+import type { SourceAnnotation } from "@abstractions/CompilerInfo";
 
 /**
  * This class represents the output of the Z80 assembler
@@ -101,6 +102,11 @@ export class AssemblerOutput<
    * Trace outputs
    */
   readonly traceOutput: string[];
+
+  /**
+   * DeZog-style source annotations (`LOGPOINT` comments), `.plans/LOGPOINTS_PLAN.md` §4.7
+   */
+  readonly debugAnnotations: SourceAnnotation[] = [];
 
   /**
    * ZX Spectrum Next NEX file configuration

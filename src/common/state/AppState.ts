@@ -1,5 +1,6 @@
 import type { KeyMapping } from "@abstractions/KeyMapping";
 import type { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
+import type { LogpointGroupState, SourceCommentSwitches } from "@abstractions/BreakpointInfo";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { ToolInfo } from "@renderer/abstractions/ToolInfo";
@@ -55,6 +56,18 @@ export type AppState = {
   watchExpressions?: WatchInfo[];
   /** BASIC watch expressions of the Variables panel (plan §10.8), as the user typed them. */
   basicWatches?: string[];
+  /**
+   * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2). In the shared store so the IDE
+   * (commands, the Breakpoints panel), the emulator (`DebugSupport`) and the project save all read
+   * one value; persisted with the project when it is not "everything on" (§4.6).
+   */
+  logpointGroups?: LogpointGroupState;
+  /**
+   * Which DeZog comment kinds a build turns into breakpoints
+   * (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` S6): only a switch that is off is present.
+   * Persisted with the project next to `logpointGroups`.
+   */
+  sourceComments?: SourceCommentSwitches;
 };
 
 export type IdeView = {
@@ -259,5 +272,7 @@ export const initialAppState: AppState = {
   scripts: [],
   workspaceSettings: {},
   watchExpressions: [],
-  basicWatches: []
+  basicWatches: [],
+  logpointGroups: { enabled: true },
+  sourceComments: {}
 };

@@ -22,9 +22,18 @@ export type BreakpointOwner =
   | {
       /**
        * Owned by nobody: never persisted, and dropped when the machine changes. Used for
-       * run-to-cursor and the NEX entry-point stop.
+       * run-to-cursor, the NEX entry-point stop and the user's one-shot breakpoints.
        */
       kind: "session";
+    }
+  | {
+      /**
+       * Owned by the last successful build: a breakpoint read from a DeZog `LOGPOINT`, `ASSERTION` or
+       * `WPMEM` source comment.
+       * Never persisted, replaced as a set after every successful build, dropped when the machine
+       * changes. See `.plans/LOGPOINTS_PLAN.md` L10.
+       */
+      kind: "annotation";
     };
 
 /**
@@ -45,6 +54,10 @@ export type BreakpointScope =
       /** Breakpoints owned by one `.nex.dis` sidecar. */
       kind: "nex";
       sidecar: string;
+    }
+  | {
+      /** The breakpoints the last build read from source comments (`LOGPOINT`, `ASSERTION`, `WPMEM`). */
+      kind: "annotation";
     };
 
 /**
@@ -87,12 +100,55 @@ export type BreakpointInfo = {
   bankOffset?: number;
 
   /**
-   * Removed automatically the first time it fires, and never persisted.
+   * A **one-shot**: removed automatically the first time it actually stops the machine, and never
+   * persisted (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.1).
    *
-   * Used for run-to-cursor and the NEX entry-point stop. Always paired with
-   * `owner: { kind: "session" }`.
+   * Always paired with `owner: { kind: "session" }`. A *user* one-shot is a normal breakpoint of any
+   * kind and binding - filters allowed - with this flag; it shares its storage key with the regular
+   * breakpoint at the same place, because it is the same breakpoint with a flag (O4). "First hit"
+   * means the first time its own filters pass (O3): `-once -hit 10` stops on the tenth hit and is
+   * then gone, and a one-shot whose condition is false is not spent by another breakpoint stopping
+   * the machine at the same address.
    */
   oneShot?: boolean;
+
+  /**
+   * An IDE-internal **run-to target** (run-to-cursor, the NEX entry-point stop, the Z88 snapshot
+   * start): a one-shot under its own `RT:` key prefix, so it never replaces - and so never deletes -
+   * a user breakpoint at the same place (O4). Always with `oneShot` and a session owner.
+   */
+  runTo?: boolean;
+
+  /**
+   * The number of bytes a **memory** breakpoint watches from its address, `1..65536`, never wrapping
+   * past `$FFFF` (S10). Absent means one byte. Part of the identity: the key reads `$8000+5:W`.
+   */
+  length?: number;
+
+  /**
+   * Which DeZog source comment an annotation-owned breakpoint was read from (S1). Absent with an
+   * annotation owner means a `LOGPOINT` (`logMessage` says so).
+   */
+  annotationKind?: AnnotationBreakpointKind;
+
+  /**
+   * The comment's own expression text (DeZog dialect), as written after the keyword: what the
+   * Breakpoints panel shows for an `ASSERTION` or `WPMEM` breakpoint.
+   */
+  annotationText?: string;
+
+  /**
+   * The language `condition` is written in: `"klive"` (absent; what users type) or `"dezog"` (an
+   * `ASSERTION` comment's negated expression, `.plans/LOGPOINTS_PLAN.md` §3.4). Not part of the
+   * identity.
+   */
+  conditionDialect?: LogDialect;
+
+  /**
+   * The build symbol a watchpoint made from a Watch row is anchored to (W3). Re-resolved to
+   * `address` after every build; while the symbol is missing the watchpoint is inactive.
+   */
+  watchSymbol?: string;
 
   /**
    * Indicates if a particular breakpoint is disabled
@@ -286,6 +342,54 @@ export type BreakpointInfo = {
    * label.
    */
   conditionInactive?: string;
+
+  /**
+   * The message template of a **logpoint**: a breakpoint whose action is "log this message and
+   * continue" instead of "stop" (`.plans/LOGPOINTS_PLAN.md` L1). Its presence is what makes the
+   * breakpoint a logpoint; it binds, filters (condition, hit rule) and persists like any other.
+   *
+   * Stored as typed, in the dialect `logDialect` names. Like `condition`, **not part of the
+   * identity**: `bp-set` on an existing breakpoint turns it into a logpoint or back (L2).
+   */
+  logMessage?: string;
+
+  /**
+   * Which template language `logMessage` is written in: `"klive"` (`{expr[:fmt]}`, the condition
+   * language; what the user types) or `"dezog"` (`${expr[:fmt]}`, DeZog's expressions; what a
+   * `LOGPOINT` source comment holds). Absent means `"klive"`.
+   */
+  logDialect?: LogDialect;
+
+  /**
+   * **Runtime only.** The emulator could not compile `logMessage`. Such a logpoint logs this text on
+   * every hit instead of its message (the logging analogue of `conditionError`).
+   */
+  logError?: string;
+};
+
+/** The DeZog source comments that become breakpoints besides `LOGPOINT` (G1.5). */
+export type AnnotationBreakpointKind = "ASSERTION" | "WPMEM";
+
+/**
+ * Which DeZog comment kinds a build turns into breakpoints (S6). Persisted in the project file when
+ * not "all on"; an absent member means on.
+ */
+export type SourceCommentSwitches = {
+  assertion?: boolean;
+  wpmem?: boolean;
+};
+
+/** The two logpoint template languages (`.plans/LOGPOINTS_PLAN.md` L6). */
+export type LogDialect = "klive" | "dezog";
+
+/**
+ * Which logpoint groups log (`.plans/LOGPOINTS_PLAN.md` §4.2, the DeZog model): everything, nothing,
+ * or - with `groups` - only the listed ones. Persisted in the project file when not "all on".
+ */
+export type LogpointGroupState = {
+  enabled: boolean;
+  /** With `enabled`, only these groups log; absent means every group. Upper-case names. */
+  groups?: string[];
 };
 
 /**

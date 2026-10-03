@@ -1,7 +1,12 @@
-import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type {
+  BreakpointInfo,
+  BreakpointScope,
+  LogpointGroupState
+} from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
 import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import type { ConditionStore } from "@emu/machines/conditionStore";
+import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditionStore";
+import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 /**
@@ -208,13 +213,22 @@ export interface IDebugSupport {
   keystrokesPending?: () => boolean;
 
   /**
-   * Removes every one-shot breakpoint that has just fired at `address`, and returns how many.
-   *
-   * @param address The address the machine stopped at
-   * @param partition The partition paged in at that address, so a one-shot bound to a bank that is
-   * not currently paged there is left armed
+   * The stop has been taken: removes exactly the one-shots among the definitions whose filters
+   * passed for it (any kind), and returns how many. A no-op when nothing fired.
    */
-  consumeOneShotsAt(address: number, partition: number | undefined): number;
+  consumeFiredOneShots(): number;
+
+  /** The definitions that stopped the machine at the last stop (the stop report, S11). */
+  lastStopBreakpoints: BreakpointInfo[];
+
+  /** For each of `lastStopBreakpoints`: the address it fired at and the accessed value. */
+  lastStopAccesses: { address: number; value?: number }[];
+
+  /** The registers and memory reads of a DeZog expression, as the machine holds them now. */
+  describeDezogValues(text: string): string;
+
+  /** A run starts: forget what fired and the previous stop's definitions. */
+  clearFiredBreakpoints(): void;
 
   /**
    * Replaces the breakpoints owned by `scope`, leaving every other owner's alone.
@@ -246,4 +260,27 @@ export interface IDebugSupport {
 
   /** The breakpoints with their runtime state (hit count, condition error/inactive). */
   listBreakpointsWithState(): BreakpointInfo[];
+
+  // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
+
+  /** The clock, frame counter and slot map logpoints and conditions read. */
+  machineInfo?: ConditionMachineInfo;
+
+  /** Set by `shouldStopAtDebugPoint`: is the execution address being arrived at (L5)? */
+  logArrival?: boolean;
+
+  /** The PC of the last stop decision; cleared on a machine start. */
+  lastDecisionPc?: number;
+
+  /** The log lines queued since the last call, and how many the per-frame cap dropped. */
+  takeLogLines(): { lines: LogLine[]; dropped: number };
+
+  /** Are log lines waiting? */
+  readonly hasPendingLog: boolean;
+
+  /** Switch logpoint groups: all on, all off, or only the listed ones. */
+  setLogGroups(state: LogpointGroupState | undefined): void;
+
+  /** Does this group log now? */
+  isLogGroupEnabled(group: string): boolean;
 }

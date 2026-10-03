@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- An ASSERTION source comment: a shield with a "!" knocked out (even-odd). It stops the machine
+       when its expression is false; the comment, not the IDE, owns it. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M8 2.5l4.75 1.9v3.4c0 2.9-2 4.9-4.75 5.7c-2.75-0.8-4.75-2.8-4.75-5.7v-3.4zM7.35 5h1.3v4h-1.3zM7.35 9.8h1.3v1.3h-1.3z"/>
+</svg>

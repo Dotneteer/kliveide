@@ -1,11 +1,20 @@
 import type { AppState } from "@state/AppState";
 import type { Store } from "@state/redux-light";
-import type { BreakpointInfo, BreakpointScope } from "@abstractions/BreakpointInfo";
+import type {
+  BreakpointInfo,
+  BreakpointScope,
+  LogDialect,
+  LogpointGroupState
+} from "@abstractions/BreakpointInfo";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
 import type { SourceStep } from "./SourceStepDecision";
 
 import type { CompiledCondition, ConditionAccessKind, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
-import type { ConditionStore } from "./conditionStore";
+import type { ConditionMachineInfo, ConditionStore } from "./conditionStore";
+import type {
+  CompiledLogTemplate,
+  LogValue
+} from "@common/utils/breakpoint-condition/logpoint-template";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
 
 import { incBreakpointHitsVersionAction, incBreakpointsVersionAction } from "@state/actions";
@@ -13,10 +22,29 @@ import { getBreakpointStorageKey } from "@common/utils/breakpoints";
 import {
   breakpointFiltersOf,
   effectiveHitMode,
-  hasBreakpointFilters
+  effectiveLogDialect,
+  hasBreakpointFilters,
+  isLogpoint
 } from "@common/utils/breakpoint-filters";
-import { bindCondition, compileCondition } from "@common/utils/breakpoint-condition/condition-checker";
-import { emitCondition } from "@common/utils/breakpoint-condition/condition-bytecode";
+import {
+  bindCondition,
+  compileCondition,
+  compileConditionWith
+} from "@common/utils/breakpoint-condition/condition-checker";
+import { parseDezogExpression } from "@common/utils/breakpoint-condition/dezog/dezog-parser";
+import type { SyntaxNode } from "@common/utils/breakpoint-condition/condition-parser";
+import {
+  CondEnv,
+  NO_VALUE,
+  emitCondition,
+  usesConditionEnv
+} from "@common/utils/breakpoint-condition/condition-bytecode";
+import {
+  bindLogTemplate,
+  compileLogTemplate,
+  logGroupOf,
+  renderLogTemplate
+} from "@common/utils/breakpoint-condition/logpoint-template";
 import { ConditionResult } from "./conditionStore";
 import {
   bankRelativeAddresses,
@@ -61,8 +89,26 @@ export const DIS_IOW_BP = 0x800;
  *
  * May be left stale on a port address after an I/O breakpoint is removed (the bulk I/O paths do
  * not re-derive). That only costs speed: the slow path decides from the definitions.
+ *
+ * A logpoint (`.plans/LOGPOINTS_PLAN.md` §4.2) sets it too: "log and continue" is one more outcome
+ * of the same per-definition walk.
  */
 export const COND_BP = 0x1000;
+
+/** At most this many log lines are queued between two drains - one frame (L9, Q10). */
+export const LOG_LINES_PER_FRAME = 256;
+
+/** One line a logpoint produced, waiting to be sent to the IDE's Log pane (L8). */
+export type LogLine = {
+  /** The logpoint's group, upper-case. */
+  group: string;
+  /** The filled-in message. */
+  text: string;
+  /** Where it fired: the PC for an execution logpoint, the accessed address or port otherwise. */
+  address: number;
+  /** The logpoint's storage key. */
+  key: string;
+};
 
 /** Which access a stop decision is about; selects the definitions that can match. */
 type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
@@ -73,6 +119,8 @@ type BreakpointRuntimeState = {
   hits: number;
   /** The condition text `compiled`/`error` were built from. */
   compiledFor?: string;
+  /** ...and its dialect (an `ASSERTION` comment's is DeZog's). */
+  compiledDialect?: LogDialect;
   /** The access kind they were built for (decides `VAL`/`ADDR`). */
   compiledKind?: ConditionAccessKind;
   /** The machine-facts generation they were built against. */
@@ -84,6 +132,21 @@ type BreakpointRuntimeState = {
   slot?: number;
   /** The store had no room for its program: it then stops every time, and says why. */
   overflow?: boolean;
+  /** The condition reads a fact written before evaluation (`cpufreq()`, `frame()`). */
+  conditionUsesEnv?: boolean;
+
+  // --- A logpoint's template (`.plans/LOGPOINTS_PLAN.md` §4.2), built like the condition
+  templateFor?: string;
+  templateDialect?: LogDialect;
+  templateKind?: ConditionAccessKind;
+  templateStamp?: number;
+  template?: CompiledLogTemplate;
+  /** The template did not compile: the logpoint logs this text instead of its message. */
+  logError?: string;
+  /** Each value placeholder's store slot, by segment index. */
+  templateSlots?: (number | undefined)[];
+  /** The store had no room for a placeholder's program. */
+  logOverflow?: boolean;
 };
 
 /** The access an access breakpoint saw: `VAL` and `ADDR`. */
@@ -146,6 +209,31 @@ export class DebugSupport implements IDebugSupport {
   private storeDirty = true;
   /** The token the last rebuild wrote into the store; a store not carrying it is rebuilt. */
   private storeToken = 0;
+
+  /**
+   * The machine facts the core does not keep itself - the clock, the frame counter, the slot map
+   * (`.plans/LOGPOINTS_PLAN.md` §3.5). Set with the condition store (`connectConditionSupport`).
+   */
+  machineInfo?: ConditionMachineInfo;
+
+  /**
+   * Logpoints log once per **arrival** (L5): `shouldStopAtDebugPoint` sets this before asking about
+   * an execution address. False on the instruction a run or step resumes from when the previous
+   * decision was made at that same address (a pause, a step, a frame boundary landed there).
+   */
+  logArrival = true;
+
+  /** The PC of the last stop decision; `undefined` after a machine start, so the first one logs. */
+  lastDecisionPc?: number;
+
+  /** Log lines waiting for the next drain (L8), and how many the cap dropped (L9). */
+  private pendingLog: LogLine[] = [];
+  private droppedLogLines = 0;
+
+  /** Which logpoint groups log; see `setLogGroups`. */
+  private logGroups: LogpointGroupState = { enabled: true };
+  /** The store value `logGroups` was last taken from. */
+  private logGroupsFromStore?: LogpointGroupState;
 
   /**
    * While set, only session-owned breakpoints can stop the machine.
@@ -441,7 +529,8 @@ export class DebugSupport implements IDebugSupport {
         if (mask !== 0 && (((value ^ bp.nextRegValue) & mask) & 0xff) !== 0) continue;
       }
       // --- No early return: every matching definition counts its hit (C11)
-      if (this.passesFilters(key, bp, "nextReg", { value: value & 0xff, address: reg & 0xff })) {
+      const access = { value: value & 0xff, address: reg & 0xff };
+      if (this.handleHit(key, bp, "nextReg", reg & 0xff, access, false)) {
         stop = true;
       }
     }
@@ -533,6 +622,14 @@ export class DebugSupport implements IDebugSupport {
         bank: bp.bank,
         bankOffset: bp.bankOffset,
         oneShot: bp.oneShot,
+        runTo: bp.runTo,
+        // --- A memory range (S10) and the annotation/watch provenance (G1.5, W3): identity and
+        // --- display fields, carried for the same reason as `owner` above.
+        length: bp.length !== undefined && bp.length > 1 ? bp.length : undefined,
+        annotationKind: bp.annotationKind,
+        annotationText: bp.annotationText,
+        conditionDialect: bp.conditionDialect,
+        watchSymbol: bp.watchSymbol,
         resource: bp.resource,
         line: bp.line,
         // --- Part of a statement breakpoint's identity (its storage key carries it). Omitted, the
@@ -552,7 +649,9 @@ export class DebugSupport implements IDebugSupport {
           bp.ioWrite ||
           isNextRegBreakpoint(bp)
         ),
-        resolvedAddress: bp.resolvedAddress,
+        resolvedAddress: bp.watchSymbol
+          ? (bp.resolvedAddress ?? this.watchSymbolAddress(bp.watchSymbol))
+          : bp.resolvedAddress,
         resolvedPartition: bp.resolvedPartition,
         // --- Same reason as `owner` and `bank` above: this literal rebuilds the definition field
         // --- by field, so a label-anchored breakpoint would lose the label that identifies it and
@@ -612,8 +711,9 @@ export class DebugSupport implements IDebugSupport {
       return !oldBp;
     }
 
-    // --- Extract used address and partition
-    const address = bp.address ?? bp.resolvedAddress;
+    // --- Extract used address and partition (the stored definition: a watch symbol resolved there)
+    const stored = this.breakpointDefs.get(bpKey)!;
+    const address = stored.address ?? stored.resolvedAddress;
 
     // --- Do we have a breakpoint address at all?
     if (address !== undefined) {
@@ -629,7 +729,11 @@ export class DebugSupport implements IDebugSupport {
         }
       } else {
         // --- Derived, not assigned: the flags word belongs to every breakpoint at this address.
-        this.refreshFlagsAt(address);
+        // --- A memory range claims every address it covers (S10).
+        if (oldBp && oldBp !== stored) {
+          for (const old of this.claimedAddressesOf(oldBp)) this.refreshFlagsAt(old);
+        }
+        for (const claimed of this.claimedAddressesOf(stored)) this.refreshFlagsAt(claimed);
         if (partition !== undefined) {
           // --- `!== undefined`, not truthiness: partition 0 is a real partition on every banked
           // --- machine (bank `B0` on the 128K, bank `00` on the ZX Next), and a truthiness test
@@ -640,7 +744,9 @@ export class DebugSupport implements IDebugSupport {
           // --- so this was also an add/remove asymmetry.
           // --- No tag: this entry belongs to the user's own breakpoint, not to a bank-relative
           // --- one. Dedupe is on partition *and* tag, so the two can share an address.
-          this.addPartitionEntry(address, partition, undefined, !!bp.disabled);
+          for (const claimed of this.claimedAddressesOf(stored)) {
+            this.addPartitionEntry(claimed, partition, undefined, !!bp.disabled);
+          }
         }
       }
     }
@@ -686,8 +792,14 @@ export class DebugSupport implements IDebugSupport {
       const partition = bp.partition ?? bp.resolvedPartition;
       // --- Derived from what is left, rather than by clearing this breakpoint's own bits: another
       // --- breakpoint at the same address may still want them. The definition has already been
-      // --- deleted above, so it contributes nothing here.
-      this.refreshFlagsAt(address);
+      // --- deleted above, so it contributes nothing here. A range refreshes every byte it covered.
+      const claimed = this.claimedAddressesOf(oldBp);
+      for (const each of claimed) this.refreshFlagsAt(each);
+      if (claimed.length > 1 && partition !== undefined) {
+        for (const each of claimed) {
+          if (each !== address) this.removeUntaggedPartitionEntryIfUnused(each, partition);
+        }
+      }
 
       if (bp.ioRead || bp.ioWrite) {
         for (let i = 0; i < 0x1_0000; i++) {
@@ -776,8 +888,15 @@ export class DebugSupport implements IDebugSupport {
           return false;
         }
 
-        // --- Partition breakpoint found, enable or disable it
+        // --- Partition breakpoint found, enable or disable it (every byte of a range, S10)
         partInfo[1] = !enabled;
+        for (const claimed of this.claimedAddressesOf(oldBp)) {
+          if (claimed === address) continue;
+          const entry = this.breakpointData
+            .get(claimed)
+            ?.partitions?.find((p) => p[0] === partition && p[2] === undefined);
+          if (entry) entry[1] = !enabled;
+        }
       } else {
         // --- Non-partition breakpoint
         let flag = 0x00;
@@ -805,12 +924,9 @@ export class DebugSupport implements IDebugSupport {
             }
           }
         } else {
-          // --- Set (disabled) or reset the flag
-          if (enabled) {
-            this.breakpointFlags[address] &= ~flag;
-          } else {
-            this.breakpointFlags[address] |= flag;
-          }
+          // --- Derived from the definitions (the one just changed included): a disabled flag is
+          // --- set only where *every* breakpoint of the kind is disabled, over a whole range (S10).
+          for (const claimed of this.claimedAddressesOf(oldBp)) this.refreshFlagsAt(claimed);
         }
       }
     }
@@ -917,6 +1033,9 @@ export class DebugSupport implements IDebugSupport {
      */
     const wasResolved = new Set<number>();
     for (const bp of this.breakpointDefs.values()) {
+      // --- A watch-made watchpoint is resolved from the symbol table (`setConditionSymbols`), not
+      // --- from the list file this reset prepares for (W3)
+      if (bp.watchSymbol) continue;
       if (bp.resolvedAddress !== undefined) {
         wasResolved.add(bp.resolvedAddress);
         // --- The partition entry goes with the resolution that created it. An untagged entry at
@@ -944,11 +1063,17 @@ export class DebugSupport implements IDebugSupport {
     partition?: number,
     column?: number
   ): void {
-    const bpKey = getBreakpointStorageKey({ resource, line, ...(column !== undefined ? { column } : {}) });
-    const bp = this.breakpointDefs.get(bpKey);
-    if (!bp || !bp.exec) {
-      return;
+    const spec = { resource, line, ...(column !== undefined ? { column } : {}) };
+    const bpKey = getBreakpointStorageKey(spec);
+    const runToKey = getBreakpointStorageKey({ ...spec, runTo: true });
+    for (const key of [bpKey, runToKey]) {
+      const bp = this.breakpointDefs.get(key);
+      if (bp?.exec) this.resolveOne(bp, address, partition);
     }
+  }
+
+  /** Resolve one source-bound definition to `address` (see `resolveBreakpoint`). */
+  private resolveOne(bp: BreakpointInfo, address: number, partition?: number): void {
     bp.resolvedAddress = address;
     bp.resolvedPartition = partition;
 
@@ -1040,41 +1165,61 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
-   * Remove every one-shot breakpoint that has just fired at `address`.
+   * The storage keys of the definitions whose filters passed - and so voted "stop" - since the last
+   * stop was taken (`consumeFiredOneShots`). Recorded on the slow path (`handleHit`), which every
+   * one-shot takes because it sets `COND_BP` (`collectBpFlags`).
+   */
+  private fired: { key: string; address: number; value?: number }[] = [];
+
+  /**
+   * The definitions that stopped the machine at the last stop, as they were then (a consumed
+   * one-shot included): what the stop report names (S11). Empty when a fast-path breakpoint (no
+   * filters, not a one-shot, not an annotation) stopped it, or nothing did.
+   */
+  lastStopBreakpoints: BreakpointInfo[] = [];
+
+  /** For each of `lastStopBreakpoints`: the address it fired at (PC, or the accessed byte/port). */
+  lastStopAccesses: { address: number; value?: number }[] = [];
+
+  /**
+   * The stop has been taken: remove exactly the one-shots among the definitions that fired for it
+   * (O3, O5), and remember them all as `lastStopBreakpoints`.
    *
-   * A one-shot exists to stop the machine once — a run-to-cursor target, or the NEX entry-point
-   * stop — and must not survive its own hit. Removal goes through `removeBreakpoint`, so it also
-   * bumps `breakpointsVersion`: without that the panel and the disassembly gutter would keep
-   * showing a breakpoint that no longer exists.
+   * "Fired" is per definition, so a one-shot whose own condition or hit rule did not pass is not
+   * spent when a *different* breakpoint stops the machine at the same address (B1, the bug of the
+   * address-based `consumeOneShotsAt` this replaces). Execution, memory, I/O and NextReg stops all
+   * record here, so every kind of one-shot is consumed.
    *
-   * `partition` is the partition currently paged in at `address`, so a one-shot scoped to a bank
-   * that is *not* paged there is left alone — it did not fire.
-   *
-   * **Not yet called from the execution loop.** The hit is recorded in `DebugStepDecision.ts`,
-   * which is being rewritten concurrently; the call lands with the features that need it (the entry
-   * stop and run-to-cursor). See `.plans/NEX_DEBUGGING_PLAN.md` §7.3 and §19.
+   * Removal goes through `removeBreakpoint`, which bumps `breakpointsVersion`: without that the
+   * panel and the gutters would keep showing a breakpoint that no longer exists. A no-op (and
+   * `lastStopBreakpoints` is left alone) when nothing fired, so the machine controller may call it
+   * after the decision already did.
    *
    * @returns The number of one-shots removed.
    */
-  consumeOneShotsAt(address: number, partition: number | undefined): number {
-    const spent = this.breakpoints.filter((bp) => {
-      if (!bp.oneShot || bp.disabled) return false;
-      const site = effectiveBankSite(bp);
-      if (site) {
-        return (
-          bankRelativePartition(site.bank, site.bankOffset) === partition &&
-          bankRelativeAddresses(site.bankOffset).includes(address)
-        );
-      }
-      const bpAddress = bp.address ?? bp.resolvedAddress;
-      if (bpAddress !== address) return false;
-      const bpPartition = bp.partition ?? bp.resolvedPartition;
-      return bpPartition === undefined || bpPartition === partition;
-    });
-    for (const bp of spent) {
-      this.removeBreakpoint(bp);
+  consumeFiredOneShots(): number {
+    if (this.fired.length === 0) return 0;
+    const seen = new Set<string>();
+    const hits = this.fired.filter((hit) => !seen.has(hit.key) && !!seen.add(hit.key));
+    this.fired = [];
+    const found = hits
+      .map((hit) => ({ hit, bp: this.breakpointDefs.get(hit.key) }))
+      .filter((entry): entry is { hit: (typeof hits)[number]; bp: BreakpointInfo } => !!entry.bp);
+    const fired = found.map((entry) => entry.bp);
+    this.lastStopBreakpoints = fired.map((bp) => ({ ...bp }));
+    this.lastStopAccesses = found.map(({ hit }) => ({ address: hit.address, value: hit.value }));
+    let removed = 0;
+    for (const bp of fired) {
+      if (bp.oneShot && this.removeBreakpoint(bp)) removed++;
     }
-    return spent.length;
+    return removed;
+  }
+
+  /** A run starts: nothing has fired yet, and the previous stop's report no longer applies. */
+  clearFiredBreakpoints(): void {
+    this.fired = [];
+    this.lastStopBreakpoints = [];
+    this.lastStopAccesses = [];
   }
 
   // ==============================================================================================
@@ -1107,9 +1252,200 @@ export class DebugSupport implements IDebugSupport {
         }
         if (paged !== partition) continue;
       }
-      if (this.passesFilters(key, bp, accessKindOf(kind), access)) stop = true;
+      if (this.handleHit(key, bp, accessKindOf(kind), address, access, kind === "exec")) {
+        stop = true;
+      }
     }
     return stop;
+  }
+
+  /**
+   * One definition reached: a breakpoint votes "stop" if its filters pass; a logpoint
+   * (`.plans/LOGPOINTS_PLAN.md` §4.2) logs if they pass and never stops (L3).
+   *
+   * A logpoint whose group is switched off, that is inactive (a missing label, C14), or - at an
+   * execution address - that is not being *arrived at* (L5), is skipped before its filters run, so
+   * it neither logs nor counts.
+   */
+  private handleHit(
+    key: string,
+    bp: BreakpointInfo,
+    accessKind: ConditionAccessKind,
+    address: number,
+    access: AccessFacts | undefined,
+    isExec: boolean
+  ): boolean {
+    if (!isLogpoint(bp)) {
+      if (!this.passesFilters(key, bp, accessKind, access)) return false;
+      // --- This definition votes "stop": the one-shot consumption and the stop report read it
+      this.fired.push({ key, address: address & 0xffff, value: access?.value });
+      return true;
+    }
+
+    if (isExec && !this.logArrival) return false;
+    const state = this.runtimeFor(key, bp, accessKind);
+    if (!this.isLogGroupEnabled(state.template?.group ?? logGroupOf(bp.logMessage))) return false;
+    if (state.template?.inactiveReason) return false;
+    if (this.passesFilters(key, bp, accessKind, access)) {
+      this.queueLog(key, state, address, access);
+    }
+    return false;
+  }
+
+  /** Fill in a logpoint's template now - the values must be the ones at the hit (L8) - and queue it. */
+  private queueLog(
+    key: string,
+    state: BreakpointRuntimeState,
+    address: number,
+    access: AccessFacts | undefined
+  ): void {
+    if (this.pendingLog.length >= LOG_LINES_PER_FRAME) {
+      this.droppedLogLines++;
+      return;
+    }
+    const template = state.template;
+    const text = template
+      ? this.renderTemplateNow(state, access)
+      : `<logpoint error: ${state.logError ?? "the template did not compile"}>`;
+    this.pendingLog.push({
+      group: template?.group ?? DEFAULT_GROUP,
+      text,
+      address: address & 0xffff,
+      key
+    });
+  }
+
+  /** A compiled template's text, its values read from the machine now. */
+  private renderTemplateNow(state: BreakpointRuntimeState, access: AccessFacts | undefined): string {
+    const template = state.template!;
+    const store = this.syncConditionStore();
+    if (store && template.segments.some((s) => s.k === "value" && s.usesEnv)) {
+      this.writeConditionEnv(store);
+    }
+    return renderLogTemplate(
+      template,
+      (index): LogValue => {
+        const slot = state.templateSlots?.[index];
+        if (!store || slot === undefined) return { status: "error" };
+        const { status, value } = store.evaluateValue(slot, access?.value ?? 0, access?.address ?? 0);
+        if (status === ConditionResult.DIVZERO) return { status: "divZero" };
+        if (status === ConditionResult.ERROR) return { status: "error" };
+        if (value === NO_VALUE) return { status: "noValue" };
+        return { status: "ok", value };
+      },
+      {
+        peek: (a) => store?.peek(a) ?? 0,
+        slots: () => this.machineInfo?.slots() ?? ""
+      }
+    );
+  }
+
+  /**
+   * The values a DeZog expression reads, as the machine holds them now - `A=$07, b@(HL)=$12` - for
+   * an `ASSERTION`'s failure report (S11, DeZog's "ASSERTIONs show the failure values"). Every
+   * register and memory read the expression names, each once, in the order written; labels are
+   * constants and are left out. Empty when there is nothing to show or the machine cannot say.
+   */
+  describeDezogValues(text: string): string {
+    let tree: SyntaxNode;
+    try {
+      tree = parseDezogExpression(text);
+    } catch {
+      return "";
+    }
+    const terms: string[] = [];
+    const visit = (node: SyntaxNode) => {
+      switch (node.k) {
+        case "name":
+          if (!node.quoted) terms.push(text.substring(node.start, node.end));
+          return;
+        case "mem":
+          terms.push(text.substring(node.start, node.end));
+          return;
+        case "un":
+          visit(node.e);
+          return;
+        case "bin":
+          visit(node.l);
+          visit(node.r);
+          return;
+        case "call":
+          visit(node.arg);
+          return;
+      }
+    };
+    visit(tree);
+    const unique = [...new Set(terms.map((t) => t.replace(/\s+/g, "")))];
+    if (!unique.length) return "";
+    const template = unique.map((t) => `${t}=\${${t}}`).join(", ");
+    const compiled = compileLogTemplate(template, "dezog", {
+      ...this.conditionFacts,
+      accessKind: "exec",
+      symbols: this.conditionSymbols
+    });
+    if (!compiled.template || !this.conditionStoreProvider?.()) return "";
+    // --- A transient runtime entry, so the store places its programs; gone again afterwards
+    const key = "\u0000report";
+    const state: BreakpointRuntimeState = { hits: 0, template: compiled.template };
+    this.runtime.set(key, state);
+    this.storeDirty = true;
+    try {
+      return this.renderTemplateNow(state, undefined);
+    } finally {
+      this.runtime.delete(key);
+      this.storeDirty = true;
+    }
+  }
+
+  /** Write the facts `cpufreq()` and `frame()` read into the core before a program reads them. */
+  private writeConditionEnv(store: ConditionStore): void {
+    const info = this.machineInfo;
+    store.setEnv(CondEnv.CPUFREQ, info?.cpuFrequency() ?? 0);
+    store.setEnv(CondEnv.FRAME, info?.frame() ?? 0);
+  }
+
+  /**
+   * The log lines queued since the last call, and how many were dropped for the cap (L9). The
+   * machine controller drains this once per frame and before it reports a stop (L4, L8).
+   */
+  takeLogLines(): { lines: LogLine[]; dropped: number } {
+    const lines = this.pendingLog;
+    const dropped = this.droppedLogLines;
+    this.pendingLog = [];
+    this.droppedLogLines = 0;
+    return { lines, dropped };
+  }
+
+  /** Are log lines waiting? Cheap: the controller asks after every frame. */
+  get hasPendingLog(): boolean {
+    return this.pendingLog.length > 0 || this.droppedLogLines > 0;
+  }
+
+  /**
+   * Switch logpoint groups (the DeZog model, §4.2): all on, all off, or only the listed groups on.
+   * Group state is separate from each logpoint's own `disabled` flag; a logpoint logs only if both
+   * allow it (L11).
+   */
+  setLogGroups(state: LogpointGroupState | undefined): void {
+    this.logGroups = normaliseLogGroups(state);
+    this.store?.dispatch(incBreakpointsVersionAction(), "emu");
+  }
+
+  /** The group switch now: what `setLogGroups` set, or the shared store's when it changed since. */
+  get logGroupState(): LogpointGroupState {
+    const fromStore = this.store?.getState()?.logpointGroups;
+    if (fromStore && fromStore !== this.logGroupsFromStore) {
+      this.logGroupsFromStore = fromStore;
+      this.logGroups = normaliseLogGroups(fromStore);
+    }
+    return this.logGroups;
+  }
+
+  /** Does this group log? */
+  isLogGroupEnabled(group: string): boolean {
+    const state = this.logGroupState;
+    if (!state.enabled) return false;
+    return !state.groups || state.groups.includes(group.toUpperCase());
   }
 
   /**
@@ -1134,6 +1470,7 @@ export class DebugSupport implements IDebugSupport {
       if (state.compiled.inactiveReason) return false;
       const store = this.syncConditionStore();
       if (store && state.slot !== undefined) {
+        if (state.conditionUsesEnv) this.writeConditionEnv(store);
         const result = store.evaluate(state.slot, access?.value ?? 0, access?.address ?? 0);
         if (result === ConditionResult.FALSE) return false;
       }
@@ -1175,28 +1512,65 @@ export class DebugSupport implements IDebugSupport {
       this.runtime.set(key, state);
     }
     const text = bp.condition?.trim() ? bp.condition : undefined;
+    const conditionDialect = bp.conditionDialect ?? "klive";
     if (
       state.compiledFor !== text ||
+      state.compiledDialect !== conditionDialect ||
       state.compiledKind !== accessKind ||
       state.compiledStamp !== this.conditionStamp
     ) {
       state.compiledFor = text;
+      state.compiledDialect = conditionDialect;
       state.compiledKind = accessKind;
       state.compiledStamp = this.conditionStamp;
       state.compiled = undefined;
       state.error = undefined;
       this.storeDirty = true;
       if (text !== undefined) {
-        const result = compileCondition(text, {
+        const env = { ...this.conditionFacts, accessKind, symbols: this.conditionSymbols };
+        // --- An `ASSERTION` comment's expression is DeZog's (S4): its own parser, the one checker
+        const result =
+          conditionDialect === "dezog"
+            ? compileConditionWith(text, env, parseDezogExpression)
+            : compileCondition(text, env);
+        if (result.compiled) {
+          state.compiled = result.compiled;
+          state.conditionUsesEnv = usesConditionEnv(result.compiled.tree);
+        } else {
+          const first = result.errors[0];
+          state.error = `column ${first.start + 1}: ${first.message}`;
+        }
+      }
+    }
+
+    // --- A logpoint's template, compiled the same way (`.plans/LOGPOINTS_PLAN.md` §4.2)
+    const template = bp.logMessage || undefined;
+    const dialect = effectiveLogDialect(bp);
+    if (
+      state.templateFor !== template ||
+      state.templateDialect !== dialect ||
+      state.templateKind !== accessKind ||
+      state.templateStamp !== this.conditionStamp
+    ) {
+      state.templateFor = template;
+      state.templateDialect = dialect;
+      state.templateKind = accessKind;
+      state.templateStamp = this.conditionStamp;
+      state.template = undefined;
+      state.logError = undefined;
+      state.templateSlots = undefined;
+      this.storeDirty = true;
+      if (template !== undefined) {
+        const result = compileLogTemplate(template, dialect, {
           ...this.conditionFacts,
           accessKind,
           symbols: this.conditionSymbols
         });
-        if (result.compiled) {
-          state.compiled = result.compiled;
+        if (result.template) {
+          state.template = result.template;
         } else {
           const first = result.errors[0];
-          state.error = `column ${first.start + 1}: ${first.message}`;
+          state.logError = `column ${first.start + 1}: ${first.message}`;
         }
       }
     }
@@ -1219,24 +1593,40 @@ export class DebugSupport implements IDebugSupport {
     store.slots.fill(0);
     let slot = 0;
     let offset = 0;
-    for (const state of this.runtime.values()) {
-      state.slot = undefined;
-      state.overflow = false;
-      if (!state.compiled || state.compiled.inactiveReason) continue;
-      const code = emitCondition(state.compiled);
+    // --- One program into the next free slot; `undefined` when the store has no room
+    const place = (code: Uint32Array): number | undefined => {
       if (
         slot >= store.slotCount ||
         code.length > store.maxProgramWords ||
         offset + code.length > store.arena.length
       ) {
-        state.overflow = true;
-        continue;
+        return undefined;
       }
       store.arena.set(code, offset);
       store.slots[slot * 2] = offset;
       store.slots[slot * 2 + 1] = code.length;
-      state.slot = slot++;
       offset += code.length;
+      return slot++;
+    };
+    for (const state of this.runtime.values()) {
+      state.slot = undefined;
+      state.overflow = false;
+      if (state.compiled && !state.compiled.inactiveReason) {
+        state.slot = place(emitCondition(state.compiled));
+        state.overflow = state.slot === undefined;
+      }
+
+      // --- Every value placeholder of a logpoint is a program of its own
+      state.templateSlots = undefined;
+      state.logOverflow = false;
+      if (state.template && !state.template.inactiveReason) {
+        state.templateSlots = state.template.segments.map((segment) => {
+          if (segment.k !== "value") return undefined;
+          const placed = place(emitCondition(segment.compiled));
+          if (placed === undefined) state.logOverflow = true;
+          return placed;
+        });
+      }
     }
     this.storeToken = (this.storeToken % 0xfffffffe) + 1;
     store.token = this.storeToken;
@@ -1274,6 +1664,14 @@ export class DebugSupport implements IDebugSupport {
       this.storeDirty = true;
       changed ||= before !== state.compiled.inactiveReason;
     }
+    for (const state of this.runtime.values()) {
+      if (!state.template) continue;
+      const before = state.template.inactiveReason;
+      bindLogTemplate(state.template, this.conditionSymbols);
+      this.storeDirty = true;
+      changed ||= before !== state.template.inactiveReason;
+    }
+    if (this.resolveWatchSymbols()) changed = true;
     // --- Only when a breakpoint went inactive or came back: the editors and the panel show that,
     // --- while a rebuild that moved nothing should not ripple through every breakpoint listener.
     if (changed) this.store?.dispatch(incBreakpointsVersionAction(), "emu");
@@ -1319,14 +1717,32 @@ export class DebugSupport implements IDebugSupport {
       const listed: BreakpointInfo = { ...bp };
       const state = this.runtimeFor(key, bp);
       // --- Built now, so a condition the store has no room for reports it before its first hit
-      if (state.compiled && !state.compiled.inactiveReason) this.syncConditionStore();
+      if (
+        (state.compiled && !state.compiled.inactiveReason) ||
+        (state.template && !state.template.inactiveReason)
+      ) {
+        this.syncConditionStore();
+      }
       if (state.overflow) {
         listed.conditionError =
           "the machine's condition store is full - it stops every time; remove some conditions";
       }
-      if (hasBreakpointFilters(bp) || state.hits > 0) listed.currentHits = state.hits;
+      if (hasBreakpointFilters(bp) || isLogpoint(bp) || state.hits > 0) {
+        listed.currentHits = state.hits;
+      }
       if (state.error) listed.conditionError ??= state.error;
       if (state.compiled?.inactiveReason) listed.conditionInactive = state.compiled.inactiveReason;
+      else if (state.template?.inactiveReason) {
+        listed.conditionInactive = state.template.inactiveReason;
+      }
+      if (bp.watchSymbol && bp.resolvedAddress === undefined) {
+        listed.conditionInactive ??= `unknown symbol ${bp.watchSymbol}`;
+      }
+      if (state.logError) listed.logError = state.logError;
+      else if (state.logOverflow) {
+        listed.logError =
+          "the machine's condition store is full - placeholders print <error>; remove some conditions";
+      }
       result.push(listed);
     }
     return result;
@@ -1418,7 +1834,65 @@ export class DebugSupport implements IDebugSupport {
       // --- All eight addresses its bank could be paged to, the same ones `armBankRelative` set.
       return bankRelativeAddresses(site.bankOffset).includes(address);
     }
-    return (bp.address ?? bp.resolvedAddress) === address;
+    const start = bp.address ?? bp.resolvedAddress;
+    if (start === undefined) return false;
+    if ((bp.memoryRead || bp.memoryWrite) && bp.length !== undefined && bp.length > 1) {
+      return address >= start && address < start + bp.length;
+    }
+    return start === address;
+  }
+
+  /**
+   * The addresses a plain (not bank-relative, not I/O) definition puts flags on: its address, or
+   * every byte of a memory range (S10). A range never wraps past `$FFFF`.
+   */
+  private claimedAddressesOf(bp: BreakpointInfo): number[] {
+    const start = bp.address ?? bp.resolvedAddress;
+    if (start === undefined) return [];
+    if (!(bp.memoryRead || bp.memoryWrite) || bp.length === undefined || bp.length <= 1) {
+      return [start];
+    }
+    const end = Math.min(0x1_0000, start + bp.length);
+    const result: number[] = [];
+    for (let a = start; a < end; a++) result.push(a);
+    return result;
+  }
+
+  /** Drop the untagged partition entry at `address` unless a remaining definition still claims it. */
+  private removeUntaggedPartitionEntryIfUnused(address: number, partition: number): void {
+    for (const bp of this.breakpointDefs.values()) {
+      if ((bp.partition ?? bp.resolvedPartition) === partition && this.claimsAddress(bp, address)) {
+        return;
+      }
+    }
+    this.removeUntaggedPartitionEntry(address, partition);
+  }
+
+  /** The address a watch symbol resolves to now (W3), `undefined` while the build lacks it. */
+  private watchSymbolAddress(symbol: string): number | undefined {
+    const value = this.conditionSymbols[symbol.toLowerCase()];
+    return value === undefined ? undefined : value & 0xffff;
+  }
+
+  /**
+   * Re-resolve every watch-made watchpoint against the current symbol table (W3): a rebuild that
+   * moved its label moves the watched bytes, and a symbol the build no longer has leaves it
+   * inactive (no address, so no flags).
+   * @returns Whether any watchpoint moved
+   */
+  private resolveWatchSymbols(): boolean {
+    let changed = false;
+    for (const bp of [...this.breakpointDefs.values()]) {
+      if (!bp.watchSymbol) continue;
+      const next = this.watchSymbolAddress(bp.watchSymbol);
+      if (next === bp.resolvedAddress) continue;
+      const before = this.claimedAddressesOf(bp);
+      bp.resolvedAddress = next;
+      for (const address of before) this.refreshFlagsAt(address);
+      for (const address of this.claimedAddressesOf(bp)) this.refreshFlagsAt(address);
+      changed = true;
+    }
+    return changed;
   }
 
   /**
@@ -1590,7 +2064,10 @@ export class DebugSupport implements IDebugSupport {
     if (bp.hitCount !== undefined) {
       bpFlags |= HIT_BP;
     }
-    if (hasBreakpointFilters(bp)) {
+    // --- A one-shot takes the slow path too: only there is the definition that fired known, and
+    // --- only that definition may be consumed (O3). Annotation breakpoints are named in the stop
+    // --- report (S11), which needs the same knowledge.
+    if (hasBreakpointFilters(bp) || isLogpoint(bp) || bp.oneShot || bp.owner?.kind === "annotation") {
       bpFlags |= COND_BP;
     }
 
@@ -1641,4 +2118,15 @@ function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";
+}
+
+/** The group of a logpoint whose template could not be read. */
+const DEFAULT_GROUP = "DEFAULT";
+
+/** Group names upper-case and de-duplicated; a missing state is "everything on". */
+function normaliseLogGroups(state: LogpointGroupState | undefined): LogpointGroupState {
+  if (!state) return { enabled: true };
+  return state.enabled && state.groups
+    ? { enabled: true, groups: [...new Set(state.groups.map((g) => g.toUpperCase()))] }
+    : { enabled: !!state.enabled };
 }

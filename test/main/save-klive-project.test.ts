@@ -276,4 +276,82 @@ describe("saveKliveProject", () => {
     expect(fs.existsSync(projectFile)).toBe(true);
     expect(projectFileVersionDispatches()).toBe(1);
   });
+
+  // --- `.plans/LOGPOINTS_PLAN.md` Phase 1 (§4.6)
+  it("saves a logpoint's template and dialect, but neither its error nor the build's LOGPOINT comments", async () => {
+    listBreakpoints.mockResolvedValue({
+      breakpoints: [
+        { address: 0x8000, exec: true, logMessage: "[G] A={A}", logError: "stale", currentHits: 3 },
+        {
+          address: 0x8001,
+          exec: true,
+          owner: { kind: "annotation" },
+          resource: "main.asm",
+          line: 4,
+          logMessage: "${A}",
+          logDialect: "dezog"
+        }
+      ]
+    });
+    const { saveKliveProject } = await import("@main/projects");
+
+    await saveKliveProject();
+
+    const contents = JSON.parse(fs.readFileSync(projectFile, "utf8"));
+    expect(contents.debugger.breakpoints).toEqual([
+      { address: 0x8000, exec: true, logMessage: "[G] A={A}" }
+    ]);
+  });
+
+  it("stores the logpoint group switch only when it is not 'everything on'", async () => {
+    const { saveKliveProject } = await import("@main/projects");
+    const state = (logpointGroups: unknown) => ({
+      emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
+      globalSettings: {},
+      project: { folderPath, buildRoots: [] },
+      projectSettings: {},
+      workspaceSettings: {},
+      logpointGroups
+    });
+
+    getState.mockReturnValue(state({ enabled: true }));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.logpointGroups).toBeUndefined();
+
+    getState.mockReturnValue(state({ enabled: true, groups: ["LOOP"] }));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.logpointGroups).toEqual({
+      enabled: true,
+      groups: ["LOOP"]
+    });
+  });
+
+  it("stores the ASSERTION / WPMEM switches only when one is off (S6)", async () => {
+    const { saveKliveProject, readSourceComments } = await import("@main/projects");
+    const state = (sourceComments: unknown) => ({
+      emulatorState: { machineId: "sp48", modelId: "pal", clockMultiplier: 1 },
+      globalSettings: {},
+      project: { folderPath, buildRoots: [] },
+      projectSettings: {},
+      workspaceSettings: {},
+      sourceComments
+    });
+    getState.mockReturnValue(state({}));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.sourceComments).toBeUndefined();
+    getState.mockReturnValue(state({ wpmem: false }));
+    await saveKliveProject();
+    expect(JSON.parse(fs.readFileSync(projectFile, "utf8")).debugger.sourceComments).toEqual({ wpmem: false });
+    expect(readSourceComments({ assertion: false, wpmem: "no" })).toEqual({ assertion: false });
+    expect(readSourceComments(undefined)).toBeUndefined();
+  });
+
+  it("reads a stored group switch, treating a malformed one as 'everything on'", async () => {
+    const { readLogpointGroups } = await import("@main/projects");
+    expect(readLogpointGroups(undefined)).toBeUndefined();
+    expect(readLogpointGroups({ enabled: false })).toEqual({ enabled: false });
+    expect(readLogpointGroups({ enabled: true, groups: ["A"] })).toEqual({ enabled: true, groups: ["A"] });
+    expect(readLogpointGroups({ enabled: "yes" })).toBeUndefined();
+    expect(readLogpointGroups({ enabled: true, groups: [1] })).toEqual({ enabled: true });
+  });
 });

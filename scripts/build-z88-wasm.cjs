@@ -39,6 +39,8 @@ const productionExports = [
   "condGetLastStatus",
   "condEvaluate",
   "condEvaluateValue",
+  "condSetEnv",
+  "condPeek",
   "memory",
   // --- Buffers
   "z88BreakpointFlagsPtr",

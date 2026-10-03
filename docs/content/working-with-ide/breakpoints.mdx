@@ -44,8 +44,11 @@ The toolbar at the top of the view adds two more actions:
   command, so it removes source-code breakpoints as well; the confirmation tells you how many of
   those are about to go.
 
-Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Enable**/**Disable**,
+Right-clicking a breakpoint's *row* opens a menu with **Edit breakpoint**, **Remove after it
+stops** (or **Keep after it stops** on a [one-shot](#one-shot-breakpoints)), **Enable**/**Disable**,
 **Remove breakpoint**, **Reset hit count**, **Reset all hit counts** and **Remove all breakpoints**.
+On a memory breakpoint whose address a build symbol starts at, it also offers **Add to Watch**,
+which adds a [watch](./watch) over the same bytes.
 Double-clicking a row opens the editor directly. You can also double-click a breakpoint's indicator in the
 [Disassembly View](./disassembly) to edit it there.
 
@@ -56,6 +59,30 @@ is a row that tells you nothing. It does not reorder the rows: within a kind the
 address, and that sorting applies either way, so the list no longer reshuffles as you add and remove
 breakpoints.
 
+## One-Shot Breakpoints
+
+A **one-shot** breakpoint removes itself the first time it stops the machine &mdash; "stop here
+once". Hold <kbd>Shift</kbd> and click:
+
+- the margin beside a line in the editor, or one of its inline statement markers;
+- the breakpoint gutter of the [Disassembly View](./disassembly).
+
+Shift+click where there is no breakpoint adds a one-shot, on a regular breakpoint turns it into a
+one-shot, and on a one-shot removes it. The same is offered by name: **Add One-Shot Breakpoint** and
+**Remove After It Stops** / **Keep After It Stops** in the editor's margin menu, **Stop Here Once**
+in the editor's own context menu, the disassembly row menu, the **Remove after it stops** checkbox of
+the breakpoint dialog, the Breakpoints view's row menu, and `-once` on
+[`bp-set`](/commands-reference#bp-set).
+
+A one-shot can be any kind of breakpoint, and it keeps its condition and hit rule: it is removed the
+first time those let it stop. So a one-shot with `-hit 10` stops on the tenth hit and is then gone,
+and a one-shot whose condition is false is not removed just because another breakpoint stopped the
+machine at the same address.
+
+It is drawn as the breakpoint dot with a **1** in it, and with a condition or hit rule as a **1**
+over a bar; the Breakpoints view marks it `once`. One-shots are never saved with the project.
+Making one a regular breakpoint again (**Keep After It Stops**) puts it back in the project.
+
 ## Running To A Line
 
 Holding <kbd>Ctrl</kbd> (<kbd>Cmd</kbd> on macOS) and clicking the breakpoint margin beside a line
@@ -64,7 +91,10 @@ uses is removed as soon as it is reached, and it is never written to your projec
 listed in the margin's tooltip along with the right-click and double-click actions.
 
 This works in the [Disassembly View](./disassembly) and in a popped-out ZX Spectrum Next bank, where
-it runs to an offset inside that bank &mdash; wherever the bank happens to be paged. The same action
+it runs to an offset inside that bank &mdash; wherever the bank happens to be paged. In the live
+Disassembly View, right-clicking a row outside the gutter opens a menu with the gutter's gestures by
+name: **Add**/**Remove Breakpoint**, **Add One-Shot Breakpoint**, **Run to Here** and **Edit
+Breakpoint…**. A run-to target never replaces a breakpoint you set at the same place. The same action
 is available as the [`run-to`](/commands-reference#run-to) command, which also explains what happens
 when the machine is running rather than paused.
 
@@ -89,6 +119,8 @@ every option the `bp-set` command accepts, without the flag syntax:
   **bank-relative** form, `05:+$0100`, described below. Typing one disables the partition row: a
   bank-relative breakpoint already names its bank, so there is nothing left to choose.
 - **Port mask** &mdash; only for the I/O types. Leave it empty to match the port exactly.
+- **Length** &mdash; only for the memory types: how many bytes to watch from the address, so one
+  breakpoint can guard a whole buffer. Leave it empty for one byte.
 - **Condition** &mdash; an expression; the breakpoint stops only when it is true. It is checked as
   you type, against the machine and the last build: a mistake is shown under the field with its
   column, and a label the last build did not define is a warning (the breakpoint is saved, but does
@@ -98,6 +130,7 @@ every option the `bp-set` command accepts, without the flag syntax:
   *At least*, *Less than* or *At most* a number, or on *Every* Nth hit.
 - **Hits so far** &mdash; when editing, the live count, with a **Reset** button.
 - **Enabled** &mdash; clear this to create a breakpoint that is set but not armed.
+- **Remove after it stops** &mdash; makes it a [one-shot](#one-shot-breakpoints).
 
 The dialog refuses an address that already has a breakpoint of the same type rather than silently
 merging the two, which is what `bp-set` does on the command line.
@@ -114,9 +147,16 @@ edits only its condition, hit count and enabled state. To script one, use `bp-se
 Clicking the margin beside a line adds or removes a breakpoint. **Right-clicking** it opens a menu:
 
 - on a line with a breakpoint: **Edit Condition…** and **Edit Hit Count…** (both open the dialog,
-  on that field), **Disable**/**Enable Breakpoint**, **Reset Hit Count** and **Remove Breakpoint**;
-- on a line without one: **Add Breakpoint** and **Add Conditional Breakpoint…**, which adds the
-  breakpoint and opens the dialog on its condition &mdash; **Cancel** removes it again.
+  on that field), **Convert to Logpoint…**, **Disable**/**Enable Breakpoint**, **Reset Hit Count**
+  and **Remove Breakpoint**;
+- on a line with a [logpoint](#logpoints): **Edit Log Message…**, the same condition and hit count
+  items, **Convert to Breakpoint**, and the rest as above;
+- on a line with a breakpoint, also **Remove After It Stops** (or **Keep After It Stops**), which
+  makes it a [one-shot](#one-shot-breakpoints) or a regular breakpoint again;
+- on a line without one: **Add Breakpoint**, **Add One-Shot Breakpoint**, **Add Conditional
+  Breakpoint…** and **Add Logpoint…**;
+  the last two add the breakpoint and open the dialog on its condition or message &mdash;
+  **Cancel** removes it again.
 
 The same menu works on the inline statement markers of languages with several statements on a line.
 Hovering a breakpoint in the margin shows its condition, hit rule, hit count and, when it cannot
@@ -197,10 +237,17 @@ Reading memory in a condition has no side effects on the machine.
 `page(addr)` is the partition paged in at `addr`; `nr(reg)` is a Next register's value (ZX Spectrum
 Next); `s8(x)`, `s16(x)` and `s32(x)` read the low 8, 16 or 32 bits of `x` as a signed number.
 
+Four functions take no argument and read the machine: `tstates()` is the number of T-states since
+the machine started, `cpufreq()` the current CPU clock in Hz (turbo included), `frame()` the number
+of frames since the machine started, and `slots()` the partition paged into each slot, as text
+(`R0 B5 B2 B0`) &mdash; so `slots()` can only be a whole [logpoint](#logpoints) placeholder.
+
 ### Operators
 
 From the lowest precedence to the highest: `||`; `&&`; the comparisons `== != < <= > >=`; `|`; `^`;
-`&`; the shifts `<< >> >>>`; `+ -`; and the unary `! ~ -`. **Bitwise operators bind tighter than
+`&`; the shifts `<< >> >>>`; `+ -`; `* /`; and the unary `! ~ -`. `/` divides whole numbers,
+dropping the fraction (`7 / 2` is 3, `-7 / 2` is -3); dividing by zero makes the condition fail
+safe, so the breakpoint stops. There is no `%` operator: `%` starts a binary number. **Bitwise operators bind tighter than
 comparisons**, so `A & $80 == 0` means `(A & $80) == 0`. Comparisons cannot be chained.
 
 Arithmetic and comparison work on exact numbers, so signed and unsigned values compare correctly.
@@ -244,6 +291,184 @@ Each breakpoint counts its own hits. The counters start from zero when the machi
 (*Start* after *Stop*, *Restart*, a reset) and when you reset them &mdash; from the view, the dialog,
 the editor's margin or [`bp-reset-hits`](/commands-reference#bp-reset-hits). Pausing, stepping and
 editing the breakpoint keep them.
+
+## Logpoints
+
+A **logpoint** is a breakpoint that logs a message instead of stopping. When a debug run reaches
+it, its message is filled in from the machine's state and written to the **Log** output pane, and
+the program goes on as if nothing had happened.
+
+A logpoint is set like any breakpoint &mdash; at an address, a partition address, a bank-relative
+address, a source line, or on memory, I/O and NextReg access &mdash; and can carry a condition and a
+hit rule: then it logs only when the condition is true and the rule says so, and its hit counter
+counts the lines it logged. Set one with `-log` on [`bp-set`](/commands-reference#bp-set), with the
+**Action** row (*Log message*) of the breakpoint dialog, or with **Add Logpoint…** in the editor's
+margin menu:
+
+```
+bp-set $8000 -log "x={A} at {PC:hex16}"
+bp-set [code/code.kz80.asm]:42 -log "[LOOP] B={B}" -hit *100
+bp-set $5800 -w -log "attribute {ADDR} = {VAL:bits}"
+```
+
+In the margin, the Breakpoints view and the disassembly, a logpoint is drawn as a **diamond**
+rather than a dot, with the same "=" and hollow variants. When a logpoint and a breakpoint that
+stops share an address, the logpoint logs and then the machine stops.
+
+A logpoint logs **once each time execution arrives** at it: continuing or stepping from a
+logpoint the machine is sitting on does not log it a second time.
+
+### The message
+
+```
+x={A} at {PC:hex16}
+[SPRITES] sprite {B} at {w[IX+2]:hex16}, visible={b[IX+4] & $80 != 0}
+{{literal braces}} and a dollar $ sign
+```
+
+- `{` opens a placeholder and `}` closes it; write `{{` and `}}` for literal braces.
+- A placeholder holds a full [condition](#conditions-and-hit-counts) expression, so `{A == 3}`
+  prints 0 or 1.
+- An optional `:format` ends a placeholder. Only a `:` outside brackets and parentheses followed by
+  a format name counts, so `{b[05:$C010]}` and `{05:Flags}` keep their meaning; a bank-local label
+  whose name is a format name is written in parentheses: `{(05:hex8)}`.
+- A leading `[NAME]` (letters, digits, `_` and `.`) is the logpoint's **group** and is not printed.
+  Without one, the group is `DEFAULT`.
+
+| Format | Prints | Value $F3 |
+|---|---|---|
+| `hex8` / `hex16` | 2 / 4 hexadecimal digits, no `$` | `F3` / `00F3` |
+| `uint8` / `uint16` | the low 8 / 16 bits, unsigned | `243` |
+| `int8` / `int16` | the low 8 / 16 bits, signed | `-13` |
+| `bits` | binary: 8 digits below 256, otherwise 16 | `11110011` |
+| `string` | the value is an address: the bytes there up to a 0 (at most 64), with `£`, `©`, `↑` mapped back | `HELLO` |
+| *(none)* | a bare register, flag, `VAL`, `ADDR` or unsigned memory read: `$` and as many digits as it reads (`$3F`, `$C000`; a flag prints `0`/`1`); anything else in decimal | `$F3` |
+
+A message is checked as you type it, with the same column-accurate errors as a condition. A
+division by zero prints `<division by zero>` in place of the value, and the line is still logged.
+
+### The Log pane
+
+Each line reads `[GROUP] message @ $8012` &mdash; the group, the message, and where it fired. The
+first line of a debug session also leaves a note in the Emulator pane. At most 256 lines are kept
+per frame; a logpoint in a tight loop that produces more reports the rest as one line
+(`… 1 234 log lines dropped in this frame`), so the IDE stays responsive. Logpoints work in debug
+runs only, on the Z80 machines.
+
+### Groups
+
+Groups can be switched on and off without touching the logpoints themselves:
+[`lp-en`](/commands-reference#lp-en) switches all of them, or logs only the groups you name, and
+[`lp-groups`](/commands-reference#lp-groups) lists them. In the Breakpoints view, the **Log groups**
+section has a checkbox for each group. The switch is saved with the project. A logpoint logs only
+when both it and its group are enabled.
+
+### DeZog LOGPOINT comments
+
+Klive reads [DeZog](https://github.com/maziac/DeZog)'s logpoint comments, so a DeZog-annotated
+project logs unchanged:
+
+```z80klive
+DrawSprite:
+    ld a,(hl)        ; LOGPOINT [SPRITES] Status=${A:hex8}, Counter=${b@(sprite.counter)}
+```
+
+Every build turns each `LOGPOINT` comment into a logpoint at the address of its line. It fires
+**before** that instruction runs; a comment on a line of its own, or after a label alone, fires at
+the next instruction. The keyword is case-sensitive. Each expansion of a macro holding one gets its
+own logpoint, and comments in an `IF` branch that is not assembled are ignored.
+
+These comments use DeZog's own notation:
+
+- `${expression}` or `${expression:format}`; every other character, a lone `$` or `{` included,
+  is literal text. The formats are the ones above.
+- Registers (`A`, `HL`, `IXL`, `AF'` …), labels with their full dotted name (`sprite.counter`), and
+  memory reads `b@(address)` (a byte) and `w@(address)` (a word). Parentheses alone only group:
+  `(HL)` is HL, not memory.
+- Numbers as `31`, `0x1F` or `1Fh`.
+- C's operators and precedence &mdash; unlike Klive's own conditions, comparisons bind tighter
+  than `&`, so `A & 0x0F == 3` means `A & (0x0F == 3)` &mdash; plus `*`, `/` and `%` on whole
+  numbers.
+- `${Remote.tStates}`, `${Remote.cpuFrequency}` and `${Remote.slots}`. Division drops the
+  fraction, so DeZog's `${Remote.cpuFrequency/1000000}MHz` prints `3MHz` for a 3.5 MHz machine.
+
+The logpoints belong to the build: they are not saved with the project, they are replaced by the
+next successful build (a failed build keeps the previous ones), and you change one by editing the
+comment and building again. In the editor's margin they are drawn as a **hollow diamond with a dot**,
+and the Breakpoints view lists them in a **LOGPOINT comments** section. They cannot be deleted from
+the IDE, but you can **disable** one: click its mark, or use **Disable** on its row &mdash; it stays
+disabled across rebuilds until Klive restarts. Right-clicking the mark or the row also offers **Show
+in Disassembly**. A comment that cannot be read is a build **warning** with its file and line, never
+an error.
+
+When you build with **sjasmplus**, add this line to your source, or sjasmplus leaves the comments
+out of its debug data:
+
+```z80klive
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+```
+
+Klive warns when a source has `LOGPOINT`, `ASSERTION` or `WPMEM` comments but the build delivered
+none of that kind, and names this line; it never adds it for you. sjasmplus exports **end-of-line**
+comments only. Its builds also give conditions and logpoints their labels, written with their full
+dotted name (`module.main.local`).
+
+### DeZog ASSERTION and WPMEM comments
+
+The other two DeZog comments work too, in the Klive assembler and in sjasmplus (with the `SLDOPT`
+line above).
+
+An **`ASSERTION`** stops the machine when its expression is **false**:
+
+```z80klive
+    ld a,c          ; ASSERTION a < 7
+    ; ASSERTION hl != 0 && b@(hl) == 0x20
+    ld (hl),a
+```
+
+On an instruction's line it is checked **before** that instruction runs, so the first one checks
+A's value before `ld a,c` changes it. On a line of its own it is checked before the next instruction.
+A bare `ASSERTION` always stops. A later `;` ends the expression, so the rest of the comment can
+explain it. The expression is written the way `LOGPOINT` placeholders are (above): registers, dotted
+labels, `b@(…)`/`w@(…)`, `0x1F`/`1Fh`, and **C precedence** &mdash; `A & 0x80 == 0` means
+`A & (0x80 == 0)`. The Breakpoints view shows the expression as you wrote it, and its tooltip and
+`bp-list` show how Klive reads it, with every operation in parentheses.
+
+When an assertion stops the machine, the Emulator output says which one, with the values it read:
+
+```
+ASSERTION failed at main.asm:42: a < 7  (a=$07)
+```
+
+A **`WPMEM`** comment is a memory watchpoint:
+
+```z80klive
+fill_colors:  ; WPMEM, 5, w
+    .defs 5
+    ; WPMEM 0x0000, 0x4000, w
+```
+
+Its arguments are `WPMEM [address [, length [, access]]]`. Without an address it watches the
+comment line's own address (in that line's bank) &mdash; note the comma straight after `WPMEM` when
+you give a length but no address. The length is in bytes and defaults to 1; the access is `r`, `w`
+or `rw`, the default. The address and length may use labels and arithmetic, but nothing that reads
+the machine. The stop is reported as, for example,
+`WPMEM write at $8002 (fill_colors+2) by PC $8123, main.asm:40`.
+
+Like `LOGPOINT` comments, these breakpoints belong to the build: they are replaced by each
+successful build, never saved, and a comment that cannot be read is a build warning. They cannot be
+deleted from the IDE &mdash; remove the comment &mdash; but, also like `LOGPOINT` comments, you can
+**disable** one: click its mark in the editor's margin, or use **Disable** on its row in the
+Breakpoints view. A disabled comment stays
+disabled across rebuilds while it stays on its line, until Klive restarts. Hovering an assertion's
+mark names the instruction it guards; right-clicking it, or its row, offers **Show in Disassembly**,
+listing every address when a macro expanded the comment more than once.
+
+The Breakpoints view lists them in an **ASSERTION comments** and a **WPMEM comments** section. The
+checkbox on each section's header switches that kind on or off for the project &mdash; the same as
+[`as-en`](/commands-reference#as-en) and [`wp-en`](/commands-reference#wp-en). Both are on by
+default (DeZog starts with them off), and the first assertion stop reminds you how to switch them
+off.
 
 ## Bank-Relative Breakpoints (ZX Spectrum Next)
 

@@ -2,8 +2,11 @@ import fs from "fs";
 import type { ErrorFilterDescriptor } from "@main/cli-integration/CliRunner";
 
 import {
+  AssemblerErrorInfo,
   BinarySegment,
   DebuggableOutput,
+  ExpressionValueType,
+  SourceAnnotation,
   FileLine,
   IKliveCompiler,
   KliveCompilerOutput,
@@ -31,6 +34,12 @@ import {
 } from "../../script-packages/sjasm/sjasm";
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
+import {
+  ANNOTATION_KEYWORDS,
+  SLDOPT_ALL_KEYWORDS,
+  annotationsInComment,
+  type AnnotationKeyword
+} from "@common/utils/source-annotations";
 
 /**
  * Wraps the SjasmPlus compiler
@@ -136,25 +145,24 @@ export class SjasmPCompiler implements IKliveCompiler {
       const listFileItems: ListFileItem[] = [];
 
       // --- Iterate through lines
+      const fileIndexOf = (filename: string) => {
+        let fileIndex = sourceFileHash[filename];
+        if (fileIndex === undefined) {
+          // --- Yes, a new file
+          fileIndex = sourceFileList.length;
+          sourceFileList[fileIndex] = { filename, includes: [] };
+          sourceFileHash[filename] = fileIndex;
+        }
+        return fileIndex;
+      };
       for (let i = 0; i < sldLines.length; i++) {
         const line = sldLines[i];
 
         if (line.type !== "T") {
-          // --- Process only trace lines
+          // --- Process only trace lines here; labels and keyword comments below
           continue;
         }
-
-        // --- A new file?
-        let fileIndex = sourceFileHash[line.filename];
-        if (fileIndex === undefined) {
-          fileIndex = sourceFileList.length;
-          // --- Yes, a new file
-          sourceFileList[fileIndex] = {
-            filename: line.filename,
-            includes: []
-          };
-          sourceFileHash[line.filename] = fileIndex;
-        }
+        const fileIndex = fileIndexOf(line.filename);
 
         // --- Map the address
         sourceMap[line.value] = { fileIndex, line: line.line };
@@ -165,8 +173,33 @@ export class SjasmPCompiler implements IKliveCompiler {
         });
       }
 
+      // --- Labels (`L` lines) and DeZog keyword comments (`K` lines), `.plans/LOGPOINTS_PLAN.md` §4.7
+      const symbols = sldSymbols(sldLines);
+      const debugAnnotations = sldAnnotations(sldLines, fileIndexOf);
+
       // --- Remove the output files
       removeTempFiles();
+
+      // --- A keyword in the sources with no `K` line of its kind: sjasmplus dropped it for want of
+      // --- SLDOPT (LOGPOINTS_PLAN Q6; extended to ASSERTION and WPMEM, S9)
+      const warnings: AssemblerErrorInfo[] = [];
+      const exported = new Set(debugAnnotations.map((a) => a.kind));
+      const files = new Set([filename, ...sourceFileList.map((f) => f.filename)]);
+      const missing = new Map<string, string>();
+      for (const f of files) {
+        let content: string;
+        try {
+          content = fs.readFileSync(f, "utf-8");
+        } catch {
+          continue;
+        }
+        for (const kind of annotationKindsInSource(content)) {
+          if (!exported.has(kind) && !missing.has(kind)) missing.set(kind, f);
+        }
+      }
+      if (missing.size) {
+        warnings.push(sldoptWarning([...missing.values()][0], [...missing.keys()]));
+      }
 
       const sourceContent = fs.readFileSync(filename, "utf-8");
       const modelType = getSjasmModelType(sourceContent, this.state?.emulatorState?.machineId);
@@ -175,13 +208,15 @@ export class SjasmPCompiler implements IKliveCompiler {
       return {
         traceOutput: result.traceOutput,
         debugMessages: result.debugMessages,
-        errors: [],
+        errors: warnings,
         injectOptions: { subroutine: true },
         segments,
         modelType,
         sourceFileList,
         sourceMap,
-        listFileItems
+        listFileItems,
+        symbols,
+        debugAnnotations
       } as DebuggableOutput;
 
       function removeTempFiles() {
@@ -365,7 +400,9 @@ export function extractSldInfo(content: string): SldLine[] {
       page: parseInt(parts[4].trim(), 10),
       value: parseInt(parts[5].trim(), 10),
       type: parts[6].trim(),
-      data: parts[7].trim()
+      // --- The data field is the last one and may itself hold `|`: a `K` line's comment can be a
+      // --- logpoint like `${A | B}`
+      data: parts.slice(7).join("|").trim()
     });
   }
 
@@ -373,12 +410,107 @@ export function extractSldInfo(content: string): SldLine[] {
   return result;
 }
 
+/** sjasmplus `L`-line traits of names that are not values a program reads. */
+const NON_VALUE_TRAITS = new Set(["+macro", "+module", "+endmod", "+struct_def", "+sizeof"]);
+
+/**
+ * The integer symbols of an SLD file's `L` lines (`.plans/LOGPOINTS_PLAN.md` Q7), keyed lower-case
+ * by module, main and local name joined with dots - the full global name DeZog expects labels to be
+ * written with. Shaped like the Klive assembler's symbol table, so conditions, logpoints and the
+ * Watch panel read it the same way. The deprecated `F` and `D` lines are read as `L` ones.
+ */
+export function sldSymbols(lines: SldLine[]): Record<string, unknown> {
+  const symbols: Record<string, unknown> = {};
+  for (const line of lines) {
+    if (line.type !== "L" && line.type !== "F" && line.type !== "D") continue;
+    if (!Number.isFinite(line.value)) continue;
+    const [module = "", main = "", local = "", ...traits] = line.data.split(",");
+    if (traits.some((t) => NON_VALUE_TRAITS.has(t.trim()))) continue;
+    const name = [module, main, local]
+      .map((part) => part.trim())
+      .filter((part) => part)
+      .join(".");
+    if (!name) continue;
+    symbols[name.toLowerCase()] = {
+      name,
+      value: { _type: ExpressionValueType.Integer, _value: line.value }
+    };
+  }
+  return symbols;
+}
+
+/**
+ * The DeZog annotations of an SLD file's `K` lines - `LOGPOINT`, `ASSERTION` and `WPMEM` - the
+ * comment, with the address decoded exactly as the `T` lines' is.
+ */
+export function sldAnnotations(
+  lines: SldLine[],
+  fileIndexOf: (filename: string) => number
+): SourceAnnotation[] {
+  const result: SourceAnnotation[] = [];
+  for (const line of lines) {
+    if (line.type !== "K" || !Number.isFinite(line.value)) continue;
+    for (const { kind, text } of annotationsInComment(line.data)) {
+      result.push({
+        kind,
+        fileIndex: fileIndexOf(line.filename),
+        line: line.line,
+        address: line.value & 0xffff,
+        text
+      });
+    }
+  }
+  return result;
+}
+
+/** The DeZog keywords a source's comments hold. A cheap line test, for the `SLDOPT` warning. */
+export function annotationKindsInSource(source: string): Set<AnnotationKeyword> {
+  const kinds = new Set<AnnotationKeyword>();
+  for (const line of source.split(/\r?\n/)) {
+    const comment = line.indexOf(";");
+    const slashes = line.indexOf("//");
+    const start = comment < 0 ? slashes : slashes < 0 ? comment : Math.min(comment, slashes);
+    if (start < 0) continue;
+    for (const { kind } of annotationsInComment(line.substring(start))) kinds.add(kind);
+  }
+  return kinds;
+}
+
+/** Does a source hold `LOGPOINT` in a comment? */
+export function sourceHasLogpointComment(source: string): boolean {
+  return annotationKindsInSource(source).has("LOGPOINT");
+}
+
+/**
+ * The warning when sjasmplus exported none of the comments of some kinds the sources have (Q6, S9).
+ * It names the full `SLDOPT` line; the IDE never adds it itself.
+ */
+export function sldoptWarning(
+  filename: string,
+  kinds: string[] = ["LOGPOINT"]
+): AssemblerErrorInfo {
+  const ordered = ANNOTATION_KEYWORDS.filter((k) => kinds.includes(k));
+  return {
+    errorCode: "LP002",
+    filename,
+    line: 1,
+    startPosition: 0,
+    endPosition: null,
+    startColumn: 0,
+    endColumn: null,
+    message:
+      `${ordered.join(", ")} comments are ignored: add ${SLDOPT_ALL_KEYWORDS} ` +
+      "to the source to use DeZog's source comments",
+    isWarning: true
+  };
+}
+
 type SegmentInfo = {
   origin: number;
   size: number;
 };
 
-type SldLine = {
+export type SldLine = {
   filename: string;
   line: number;
   defFile: string;

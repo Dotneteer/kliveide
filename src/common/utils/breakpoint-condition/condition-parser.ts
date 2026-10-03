@@ -2,7 +2,8 @@ import type {
   ConditionBinaryOp,
   ConditionFunction,
   ConditionSpan,
-  ConditionUnaryOp
+  ConditionUnaryOp,
+  MachineFunction
 } from "./condition-types";
 import { ConditionSyntaxError, type Token, tokenizeCondition } from "./condition-lexer";
 
@@ -12,7 +13,7 @@ import { ConditionSyntaxError, type Token, tokenizeCondition } from "./condition
  * checker's job (`condition-checker.ts`), so this module knows nothing about machines.
  *
  * Precedence, lowest first: `||`, `&&`, the comparisons (non-associative), `|`, `^`, `&`, the shifts,
- * `+`/`-`, the unary operators. Bitwise and shift bind tighter than comparison (C3).
+ * `+`/`-`, `*`/`/`, the unary operators. Bitwise and shift bind tighter than comparison (C3).
  */
 
 /** A memory access prefix: `b`, `w`, `l`, their big-endian and signed forms. */
@@ -39,6 +40,7 @@ export type SyntaxNode = ConditionSpan &
         addr: SyntaxNode;
       }
     | { k: "call"; fn: ConditionFunction; arg: SyntaxNode }
+    | { k: "machine"; fn: MachineFunction }
     | { k: "un"; op: ConditionUnaryOp; e: SyntaxNode }
     | { k: "bin"; op: ConditionBinaryOp; l: SyntaxNode; r: SyntaxNode }
   );
@@ -61,6 +63,8 @@ const ACCESS_TYPES: Record<string, Omit<AccessType, "name">> = {
 };
 
 const FUNCTIONS = new Set<string>(["page", "nr", "s8", "s16", "s32"]);
+/** The zero-argument machine specials (`.plans/LOGPOINTS_PLAN.md` §3.5). */
+export const MACHINE_FUNCTIONS = new Set<string>(["tstates", "cpufreq", "frame", "slots"]);
 const RELATIONAL = new Set(["==", "!=", "<", "<=", ">", ">="]);
 
 /**
@@ -183,7 +187,12 @@ class Parser {
   }
 
   private additive(): SyntaxNode {
-    return this.leftAssoc(() => this.unary(), ["+", "-"]);
+    return this.leftAssoc(() => this.multiplicative(), ["+", "-"]);
+  }
+
+  /** `*` and `/` (`.plans/LOGPOINTS_PLAN.md` Q4); `/` is integer division. No `%`: it is binary. */
+  private multiplicative(): SyntaxNode {
+    return this.leftAssoc(() => this.unary(), ["*", "/"]);
   }
 
   private leftAssoc(operand: () => SyntaxNode, ops: string[]): SyntaxNode {
@@ -230,6 +239,20 @@ class Parser {
         if (ACCESS_TYPES[lower] && this.isOp("[", 1)) {
           this.next();
           return this.memAccess({ ...ACCESS_TYPES[lower], name: lower }, token.start);
+        }
+        if (MACHINE_FUNCTIONS.has(lower) && this.isOp("(", 1)) {
+          this.next();
+          const open = this.next();
+          const close = this.peek();
+          if (!(close.kind === "op" && close.text === ")")) {
+            throw new ConditionSyntaxError(
+              `${lower}() takes no argument`,
+              close.start,
+              close.end
+            );
+          }
+          this.expectOp(")", open);
+          return { k: "machine", fn: lower as MachineFunction, start: token.start, end: close.end };
         }
         if (FUNCTIONS.has(lower) && this.isOp("(", 1)) {
           this.next();

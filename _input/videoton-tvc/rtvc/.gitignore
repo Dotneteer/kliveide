@@ -1,0 +1,11 @@
+/target
+/coding/*cas
+/dist
+/rtvc-media
+/rtvc-workspace.json
+/rtvc.toml
+.antigravitycli/
+.DS_Store
+profile.json.gz
+__pycache__/
+/tmp

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- A one-shot breakpoint: the breakpoint dot with a "1" knocked out (even-odd), the same
+       technique as the conditional "=". It stops once and is then removed. -->
+  <path fill="currentColor" fill-rule="evenodd" d="M8 3.25a4.75 4.75 0 1 1 0 9.5a4.75 4.75 0 1 1 0-9.5zM7.35 5.3h1.3v5.4h-1.3v-3.75l-1.2 0.8v-1.4z"/>
+</svg>

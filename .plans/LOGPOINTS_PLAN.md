@@ -1,6 +1,7 @@
 # Logpoints Plan: Breakpoints That Log, and DeZog LOGPOINT Comments
 
-Status: **all decisions recorded** (2026-10-03, §10). No code yet.
+Status: **done — all phases (1–7) implemented and verified** (2026-10-03). G1.4 is marked done in
+the base plan. §9 records what was built and where it departs from the design above.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G1, feature **G1.4**, under
 decision **D3** (be compatible with DeZog's source conventions).
 **Depends on** [CONDITIONAL_BREAKPOINTS_PLAN.md](CONDITIONAL_BREAKPOINTS_PLAN.md): its Phase 1
@@ -308,8 +309,12 @@ Each line is `[GROUP] message`, in a distinct colour (a token, not a literal), w
   without a breakpoint, *Convert to Logpoint…* / *Convert to Breakpoint* on one with a breakpoint.
 - **Glyphs:** the logpoint glyph is a **diamond** (the VS Code convention), in the same colour
   family as breakpoints, with the conditional and inactive variants of the conditional plan.
-  A LOGPOINT comment line shows a **hollow** diamond: read-only and owned by the build. Hovering it
-  shows the template, its group, the address or addresses, and any compile warning.
+  A LOGPOINT comment line shows a **hollow** diamond, owned by the build. Hovering it
+  shows the template, its group, the address or addresses, and any compile warning. *Amended
+  2026-10-03 by [ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md](ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md)
+  Q6:* the mark is no longer read-only - like an ASSERTION or WPMEM mark, a click disables the
+  comment's logpoint for the session, and right-click (and the panel row's menu) offers
+  Disable/Enable and Show in Disassembly. It still cannot be deleted from the IDE.
 - **Breakpoints panel:** user logpoints are ordinary rows showing their template. Annotation
   logpoints appear in a **"LOGPOINT comments"** group with one checkbox row per log group (wired to
   `setLogGroups`) and the comment logpoints under it; clicking one opens the source line.
@@ -484,9 +489,81 @@ Verified in the running app (CDP recipe in `.ai/ui-theming-intent-and-lessons.md
 
 ---
 
-## 9. Implementation notes
+## 9. Implementation notes (2026-10-03)
 
-(Filled in during implementation.)
+**Verification.** Unit tier and both e2e tiers green (`npm test`), `npm run build:check` (no new type
+errors), `npm run lint:renderer` (0 errors), the Vite build, `npm run doc:build && npm run doc:check`.
+Checked in the running app through the Playwright harness (`scripts/doc-shots/harness.cjs`, a
+throwaway sp48 project in a scratch folder): `compile` → `bp-set $8009 -log …` → `debug` produced the
+Log pane lines `[LOOP] B=$05, counter=$00 @ $8005` … `[END] …` `[USER] ret with A=5 @ $8009`, the
+Emulator pane's one hint, the Breakpoints panel's *Log groups* and *LOGPOINT comments* sections with
+live counts (5×, 1×, 1×), and the margin's diamonds. That run found one defect (below).
+
+**Departures from the design.**
+- **Evaluation is in C**, because conditions moved there after this plan was written
+  ([BREAKPOINT_CONDITIONS_IN_C_PLAN.md](BREAKPOINT_CONDITIONS_IN_C_PLAN.md)). Every value placeholder
+  is a program of its own in the core's store (sharing its 256 slots with conditions; no room →
+  `<error>` and a `logError` note), run with `condEvaluateValue`. New in `z80-condition.c`: `MUL`,
+  `DIV`, `MOD` (C semantics, `INT64_MIN / -1` guarded), `TSTATES` (hook `COND_TSTATES`, default
+  `cpu.tacts`), `ENV` (the clock and frame counter, written by TypeScript with the new `condSetEnv`
+  export before a program that reads them runs), status `COND_RESULT_DIVZERO` (3; a condition treats
+  it as an error, fail-safe), and the `condPeek` export the `string` format reads with. All five
+  cores rebuilt within their size budgets.
+- **The DeZog dialect is a second parser over the one checker**: `dezog/dezog-parser.ts` builds the
+  shared `SyntaxNode` tree and `compileConditionWith` checks it. A non-register name is passed as a
+  quoted label, so Klive's flag names and `VAL`/`ADDR` are labels there.
+- **Default format (Q2), read narrowly:** "special" means `VAL`/`ADDR`. The machine specials, labels
+  and signed accesses print in decimal - T-states and Hz in hex would be unreadable.
+- **The group switch lives in the shared store** (`AppState.logpointGroups`, `SET_LOGPOINT_GROUPS`),
+  so the commands, the panel, the project save and the emulator read one value. `DebugSupport`
+  picks it up lazily by reference (`logGroupState`); `setLogGroups` remains for direct use.
+- **Annotations are checked in the main process** right after a compile (`checkSourceAnnotations`
+  in `RendererToMainProcessor.compileFile`): a malformed comment is dropped with a build warning
+  (`LP001`), an unknown label warns (`LP002` is the sjasmplus `SLDOPT` warning). The IDE installs the
+  rest in `refreshSourceCodeBreakpoints` (`buildLogpoints`, every build path); the emulator compiles
+  them again against the real machine facts.
+- `SourceAnnotation` gained `segmentIndex`: the Klive assembler records the segment and the IDE
+  derives the partition with `resolvedPartitionFor`, as for source breakpoints.
+- **The arrival rule** (L5) is `DebugSupport.lastDecisionPc` / `logArrival`, set in
+  `shouldStopAtDebugPoint`; the controller clears `lastDecisionPc` on every machine start. On the
+  interpreted path (`MachineFrameRunner`), Step Into answers before the decision, so a logpoint
+  stepped onto logs on the following Continue instead - still once.
+- **Flushing:** the per-frame `displayOutputBatch` is not awaited (frame rate); it is awaited before
+  a stop message, so the lines come first (L4).
+- Annotation logpoints are also cleared when a **project opens** (they belong to the previous
+  project's build), besides on a machine change.
+
+**Defects found and fixed.**
+- `refreshSourceCodeBreakpoints` reset the project scope with *every* listed breakpoint, which would
+  have restamped a sidecar's breakpoints (and now the build's logpoints) as project-owned; it now
+  passes only project-owned ones.
+- The editor's binary-address margin path did not pass the breakpoint to the glyph chooser, so an
+  address logpoint (and an address breakpoint with a condition) drew a plain dot.
+
+**Not verified here.** No sjasmplus binary is installed on this machine, so the §4.7 real-sjasmplus
+check (a keyword on a comment-only line; 128K/Next page encoding of `K` lines) was not run; the
+`K`/`L` parsing is tested against the documented SLD v1 format. `K` addresses are decoded exactly as
+`T` lines are (`value`, no page), per G10.3.
+
+**R1, measured** (48K, the conditional plan's loop, noisy): a bare pass ≈0.7 µs; a logged pass with
+1-3 placeholders ≈0.3-0.8 µs more. A 100 000-pass loop holds 256 lines per frame and counts the rest.
+
+**Where things are.** Model: `BreakpointInfo.logMessage/logDialect/logError`, owner/scope
+`annotation`, the `LP:` key (`breakpoints.ts`), `breakpoint-filters.ts`. Engine:
+`logpoint-template.ts`, `dezog/dezog-parser.ts`, `integer-symbols.ts`. Emulator: `DebugSupport`
+(`handleHit`, `queueLog`, `takeLogLines`), `logOutput.ts`, `MachineController.flushLogLines`,
+`conditionStore.ts` (`conditionMachineInfo`). Build: `source-annotations.ts`, the Klive assembler's
+`emitSingleLine`, `SjasmPCompiler` (`sldSymbols`, `sldAnnotations`). IDE: `BreakpointCommands.ts`
+(`-log`, `lp-en`, `lp-groups`), `breakpoint-form.ts`, `BreakpointDialog.tsx`,
+`marginBreakpointMenu.ts`, `breakpoint-filter-text.ts` (glyphs), `breakpoint-grouping.ts`
+(`logpointSections`), `BreakpointsPanel.tsx`, the Log pane (`PANE_ID_LOG`). Tests:
+`test/debug/logpoint-template.test.ts`, `test/debug/logpoint-model.test.ts`,
+`test/wasm/condition/logpoint-evaluation.test.ts`, `test/wasm/condition/debug-support-logpoints.test.ts`,
+`test/emu/logpoints-real-machine.test.ts` (with the end-to-end DeZog sample),
+`test/z80-assembler/logpoint-annotations.test.ts`, `test/sjasm-int/sld-logpoints.test.ts`,
+`test/commands/logpoint-commands.test.ts`, `test/renderer/logpoint-ui.test.ts`, and additions to the
+dialog, margin-menu and project-save tests. The sp48 harness's `continueToBreakpoint` gained
+`onFrame`.
 
 ---
 
