@@ -1,0 +1,9 @@
+[alias]
+bundle-web = "run --release --manifest-path xtask/Cargo.toml -- bundle-web"
+xtask = "run --release --manifest-path xtask/Cargo.toml --"
+fuse = "run --bin fuse_test"
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false

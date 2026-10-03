@@ -1,0 +1,155 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Add WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli --version 0.2.122
+
+      - name: Build emulator
+        run: cargo build --release --bin rtvc
+
+      - name: Build command-line tools
+        run: cargo build --release --no-default-features --features cli-tools --bin rtvc-dsk --bin rtvc-asm --bin rtvc-basic --bin rtvc-tocas --bin rtvc-disasm --bin rtvc-cas2wav --bin rtvc-tap2toml
+
+      - name: Build web app
+        run: cargo xtask bundle-web-full package/rtvc-windows-x64/web
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $PackageDir = "package/rtvc-windows-x64"
+          New-Item -ItemType Directory -Path $PackageDir -Force
+          Copy-Item target/release/rtvc.exe $PackageDir/
+          Copy-Item target/release/rtvc-dsk.exe $PackageDir/
+          Copy-Item target/release/rtvc-asm.exe $PackageDir/
+          Copy-Item target/release/rtvc-basic.exe $PackageDir/
+          Copy-Item target/release/rtvc-tocas.exe $PackageDir/
+          Copy-Item target/release/rtvc-disasm.exe $PackageDir/
+          Copy-Item target/release/rtvc-cas2wav.exe $PackageDir/
+          Copy-Item target/release/rtvc-tap2toml.exe $PackageDir/
+          Copy-Item README.md $PackageDir/
+          Copy-Item README.hu.md $PackageDir/
+          Copy-Item LICENSE $PackageDir/
+          Copy-Item info $PackageDir -Recurse
+          Copy-Item info.hu $PackageDir -Recurse
+          Copy-Item roms "$PackageDir/roms" -Recurse
+          Copy-Item progs "$PackageDir/progs" -Recurse
+          Compress-Archive -Path $PackageDir -DestinationPath rtvc-windows-x64.zip
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtvc-windows-x64
+          path: rtvc-windows-x64.zip
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            os: macos-15-intel
+            target: x86_64-apple-darwin
+            folder: rtvc-macos-x64
+            package: rtvc-macos-x64.zip
+          - arch: arm64
+            os: macos-15
+            target: aarch64-apple-darwin
+            folder: rtvc-macos-arm64
+            package: rtvc-macos-arm64.zip
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }},wasm32-unknown-unknown
+
+      - name: Install wasm-bindgen
+        run: cargo install wasm-bindgen-cli --version 0.2.122
+
+      - name: Build emulator
+        run: cargo build --release --bin rtvc --target ${{ matrix.target }}
+
+      - name: Build command-line tools
+        run: cargo build --release --no-default-features --features cli-tools --target ${{ matrix.target }} --bin rtvc-dsk --bin rtvc-asm --bin rtvc-basic --bin rtvc-tocas --bin rtvc-disasm --bin rtvc-cas2wav --bin rtvc-tap2toml
+
+      - name: Build web app
+        run: cargo xtask bundle-web-full package/${{ matrix.folder }}/web
+
+      - name: Package
+        run: |
+          scripts/package-macos-app.sh \
+            ${{ matrix.target }} \
+            target/${{ matrix.target }}/release/rtvc \
+            package/${{ matrix.folder }}
+
+      - name: Zip package
+        run: |
+          (cd package && zip -r --symlinks ../${{ matrix.package }} ${{ matrix.folder }})
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtvc-macos-${{ matrix.arch }}
+          path: ${{ matrix.package }}
+
+  release:
+    name: GitHub release
+    needs:
+      - windows
+      - macos
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+
+      - name: Extract release notes
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          awk -v tag="$tag" '
+            $0 ~ "^## " tag "([[:space:]]|$)" { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGES.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            {
+              echo "Release notes for ${tag} were not found in CHANGES.md."
+              echo
+              echo "See CHANGES.md for details."
+            } > release-notes.md
+          fi
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: packages/*.zip

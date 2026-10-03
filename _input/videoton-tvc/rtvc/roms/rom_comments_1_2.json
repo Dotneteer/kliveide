@@ -1,0 +1,776 @@
+{
+  "schema_version": 1,
+  "language": "en",
+  "sources": [
+    "KL-tvcrom.md",
+    "TVC_ROM.md"
+  ],
+  "translation_note": "English comments are translated and normalized from OCR-derived Hungarian book text; source tags identify the origin. OCR lines that could not be translated cleanly are omitted.",
+  "comments": [
+    {
+      "address": "0xC000",
+      "source": "LL",
+      "text": "Reset starts with JP 0229H; at power-on the SYS ROM is also visible at page 0, so this is executed as address 0000H."
+    },
+    {
+      "address": "0xC003",
+      "source": "KL",
+      "text": "Multiplication table from 00 to 99; each byte is a BCD value."
+    },
+    {
+      "address": "0xC067",
+      "source": "KL",
+      "text": "BASIC statement jump table; contains routine addresses for tokens FFH down to D0H."
+    },
+    {
+      "address": "0xC0C7",
+      "source": "KL",
+      "text": "RST 18H arithmetic routine jump table; contains entries 0 through 14."
+    },
+    {
+      "address": "0xC111",
+      "source": "LL",
+      "text": "Numbered floating-point constants (0-39) stored in BASIC stack format without overflow bytes; each constant is 7 bytes (6-byte BCD mantissa + 1 characteristic byte)."
+    },
+    {
+      "address": "0xC229",
+      "source": "LL",
+      "text": "Cold-start initialization: sets paging, tests RAM, initializes hardware, and rebuilds RAM-resident system routines."
+    },
+    {
+      "address": "0xC23C",
+      "source": "KL",
+      "text": "Memory paging: S U V S page layout."
+    },
+    {
+      "address": "0xC243",
+      "source": "KL",
+      "text": "Memory paging: U U V S page layout."
+    },
+    {
+      "address": "0xC25F",
+      "source": "KL",
+      "text": "Send one STROBE pulse."
+    },
+    {
+      "address": "0xC290",
+      "source": "KL",
+      "text": "Memory paging: U U U S page layout."
+    },
+    {
+      "address": "0xC2D9",
+      "source": "KL",
+      "text": "Clear cursor/sound interrupt."
+    },
+    {
+      "address": "0xC302",
+      "source": "KL",
+      "text": "Memory paging: U U U S page layout."
+    },
+    {
+      "address": "0xC306",
+      "source": "KL",
+      "text": "Cartridge autostart check; if the side cartridge begins with the MOPS signature, control passes to its fifth byte."
+    },
+    {
+      "address": "0xC30F",
+      "source": "KL",
+      "text": "Memory paging: S U U C page layout."
+    },
+    {
+      "address": "0xC32B",
+      "source": "KL",
+      "text": "Memory paging: U U U S page layout."
+    },
+    {
+      "address": "0xC334",
+      "source": "KL",
+      "text": "MOSP signature text used to recognize autostart cartridges."
+    },
+    {
+      "address": "0xC363",
+      "source": "KL",
+      "text": "RST 30H entry point; function call dispatcher."
+    },
+    {
+      "address": "0xC371",
+      "source": "KL",
+      "text": "RST 30H return path."
+    },
+    {
+      "address": "0xC412",
+      "source": "KL",
+      "text": "RST 38H interrupt entry; interrupt mode 1 dispatches here."
+    },
+    {
+      "address": "0xC437",
+      "source": "KL",
+      "text": "Core interrupt handler."
+    },
+    {
+      "address": "0xC439",
+      "source": "KL",
+      "text": "Set INTFLAG while servicing an interrupt."
+    },
+    {
+      "address": "0xC43F",
+      "source": "KL",
+      "text": "Increment HL."
+    },
+    {
+      "address": "0xC443",
+      "source": "KL",
+      "text": "Load BORDER system variable into A."
+    },
+    {
+      "address": "0xC44F",
+      "source": "KL",
+      "text": "Clear cursor/sound interrupt."
+    },
+    {
+      "address": "0xC4AC",
+      "source": "KL",
+      "text": "Kernel routine jump table; first byte is the routine count, followed by routine addresses."
+    },
+    {
+      "address": "0xC4B7",
+      "source": "KL",
+      "text": "HI_MEM_SET (KERNEL 01) expects the number of bytes to reserve above HI_MEM in DE; on success DE returns the new HI_MEM+1, on failure A returns FBh."
+    },
+    {
+      "address": "0xC545",
+      "source": "KL",
+      "text": "Initial values for the 6845 video controller registers after reset."
+    },
+    {
+      "address": "0xC555",
+      "source": "KL",
+      "text": "Startup initialization routine table: sets four-color mode, initializes keyboard, RET, initializes cassette workspace."
+    },
+    {
+      "address": "0xC5B4",
+      "source": "KL",
+      "text": "Built-in character matrix table for character codes 32-127, ten bytes per character."
+    },
+    {
+      "address": "0xC974",
+      "source": "KL",
+      "text": "VIDEO routine jump table; first byte is the routine count, followed by routine addresses."
+    },
+    {
+      "address": "0xC9EA",
+      "source": "KL",
+      "text": "Initial palette bytes when the hardware color switch is on."
+    },
+    {
+      "address": "0xC9EE",
+      "source": "KL",
+      "text": "Initial palette bytes when the hardware color switch is off."
+    },
+    {
+      "address": "0xC9F4",
+      "source": "KL",
+      "text": "VMODE routine (VIDEO 04); sets the video display mode."
+    },
+    {
+      "address": "0xCA38",
+      "source": "KL",
+      "text": "PAL routine (VIDEO 0C); defines palette colors."
+    },
+    {
+      "address": "0xCA49",
+      "source": "KL",
+      "text": "CLS routine (VIDEO 05); clears the screen."
+    },
+    {
+      "address": "0xCAD7",
+      "source": "KL",
+      "text": "BREL routine (VIDEO 07); sets pen position relative to current point."
+    },
+    {
+      "address": "0xCADA",
+      "source": "KL",
+      "text": "BABS routine (VIDEO 06); sets pen position to absolute coordinates."
+    },
+    {
+      "address": "0xCB7F",
+      "source": "KL",
+      "text": "Line style bit-pattern table; 16 bytes, 14 unique patterns."
+    },
+    {
+      "address": "0xCBA0",
+      "source": "KL",
+      "text": "Line crossing mode dispatch table selected by L_MODE."
+    },
+    {
+      "address": "0xCBDB",
+      "source": "KL",
+      "text": "Helper table used by BABS/BREL line drawing."
+    },
+    {
+      "address": "0xCBF3",
+      "source": "KL",
+      "text": "BON routine (VIDEO 08); pen down (starts drawing)."
+    },
+    {
+      "address": "0xCBFF",
+      "source": "KL",
+      "text": "BOFF routine (VIDEO 09); pen up (stops drawing)."
+    },
+    {
+      "address": "0xCD48",
+      "source": "KL",
+      "text": "FILL routine (VIDEO 0A); fills closed shapes with color."
+    },
+    {
+      "address": "0xCF2C",
+      "source": "KL",
+      "text": "DEFC routine (VIDEO 0B); defines a character with specified code."
+    },
+    {
+      "address": "0xCF4B",
+      "source": "KL",
+      "text": "BTEXT routine (VIDEO 03); positions pen to normal character position."
+    },
+    {
+      "address": "0xCF98",
+      "source": "KL",
+      "text": "EDITOR routine jump table; first byte is the routine count, followed by routine addresses."
+    },
+    {
+      "address": "0xD007",
+      "source": "KL",
+      "text": "Editor mode descriptor table; each four-byte entry holds routine address, row width, and bits per pixel."
+    },
+    {
+      "address": "0xD013",
+      "source": "KL",
+      "text": "CFIX routine (EDITOR 04); notes the current cursor position."
+    },
+    {
+      "address": "0xD170",
+      "source": "KL",
+      "text": "Built-in editor function jump table; entries contain control character and routine address."
+    },
+    {
+      "address": "0xD5E3",
+      "source": "KL",
+      "text": "KEYBOARD routine jump table; first byte is the routine count, followed by routine addresses."
+    },
+    {
+      "address": "0xD612",
+      "source": "KL",
+      "text": "KB STATUS routine (BILL 03); checks if a key is pressed."
+    },
+    {
+      "address": "0xD618",
+      "source": "KL",
+      "text": "KB CHIN routine (BILL 01); reads the pressed key code."
+    },
+    {
+      "address": "0xD7BF",
+      "source": "KL",
+      "text": "Keyboard matrix decode tables for normal, SHIFT, CTRL, and ALT modes."
+    },
+    {
+      "address": "0xD8FF",
+      "source": "KL",
+      "text": "PRINTER routine jump table."
+    },
+    {
+      "address": "0xD92A",
+      "source": "KL",
+      "text": "SOUND routine jump table."
+    },
+    {
+      "address": "0xD9BB",
+      "source": "KL",
+      "text": "CASSETTE routine jump table."
+    },
+    {
+      "address": "0xD9DC",
+      "source": "KL",
+      "text": "CAS VERIFY routine (CAS 05); verifies cassette data."
+    },
+    {
+      "address": "0xDA84",
+      "source": "KL",
+      "text": "TVC BASIC 1.2 copyright sign-on text."
+    },
+    {
+      "address": "0xDAC3",
+      "source": "KL",
+      "text": "\"bytes free\" text."
+    },
+    {
+      "address": "0xDAFB",
+      "source": "KL",
+      "text": "\"ok\" text followed by clear-to-end-of-line control character."
+    },
+    {
+      "address": "0xDBBB",
+      "source": "KL",
+      "text": "REM routine."
+    },
+    {
+      "address": "0xDBF6",
+      "source": "KL",
+      "text": "\"VIDEOTON\" sign-on text."
+    },
+    {
+      "address": "0xDC00",
+      "source": "KL",
+      "text": "\"TV COMPUTER\" sign-on text."
+    },
+    {
+      "address": "0xDC15",
+      "source": "KL",
+      "text": "Cold-start sign-on picture palette bytes."
+    },
+    {
+      "address": "0xDD65",
+      "source": "KL",
+      "text": "CONTINUE routine."
+    },
+    {
+      "address": "0xDD80",
+      "source": "KL",
+      "text": "LLIST routine."
+    },
+    {
+      "address": "0xDD85",
+      "source": "KL",
+      "text": "LIST routine."
+    },
+    {
+      "address": "0xDE08",
+      "source": "KL",
+      "text": "NEW routine."
+    },
+    {
+      "address": "0xDE1B",
+      "source": "KL",
+      "text": "RUN routine."
+    },
+    {
+      "address": "0xDE40",
+      "source": "KL",
+      "text": "TRACE OFF routine."
+    },
+    {
+      "address": "0xDE46",
+      "source": "KL",
+      "text": "TRACE ON routine."
+    },
+    {
+      "address": "0xDE6D",
+      "source": "KL",
+      "text": "BASIC keyword table ordered by descending token value; the high bit marks the last byte of each keyword."
+    },
+    {
+      "address": "0xDFF2",
+      "source": "KL",
+      "text": "DATA routine."
+    },
+    {
+      "address": "0xDFFC",
+      "source": "KL",
+      "text": "CLS BASIC routine."
+    },
+    {
+      "address": "0xE002",
+      "source": "KL",
+      "text": "DEF routine."
+    },
+    {
+      "address": "0xE053",
+      "source": "KL",
+      "text": "DIM routine."
+    },
+    {
+      "address": "0xE104",
+      "source": "KL",
+      "text": "ELSE routine."
+    },
+    {
+      "address": "0xE10E",
+      "source": "KL",
+      "text": "END routine."
+    },
+    {
+      "address": "0xE117",
+      "source": "KL",
+      "text": "EXT routine."
+    },
+    {
+      "address": "0xE15C",
+      "source": "KL",
+      "text": "FOR routine."
+    },
+    {
+      "address": "0xE1CB",
+      "source": "KL",
+      "text": "INPUT routine."
+    },
+    {
+      "address": "0xE1DD",
+      "source": "KL",
+      "text": "INPUT PROMPT routine."
+    },
+    {
+      "address": "0xE21B",
+      "source": "KL",
+      "text": "READ routine."
+    },
+    {
+      "address": "0xE2EE",
+      "source": "KL",
+      "text": "IF routine."
+    },
+    {
+      "address": "0xE332",
+      "source": "KL",
+      "text": "ON routine."
+    },
+    {
+      "address": "0xE382",
+      "source": "KL",
+      "text": "GOSUB routine."
+    },
+    {
+      "address": "0xE3B2",
+      "source": "KL",
+      "text": "GOTO routine."
+    },
+    {
+      "address": "0xE3C1",
+      "source": "KL",
+      "text": "LET routine."
+    },
+    {
+      "address": "0xE452",
+      "source": "KL",
+      "text": "LOMEM routine."
+    },
+    {
+      "address": "0xE4B6",
+      "source": "KL",
+      "text": "NEXT routine."
+    },
+    {
+      "address": "0xE542",
+      "source": "KL",
+      "text": "OUT routine."
+    },
+    {
+      "address": "0xE553",
+      "source": "KL",
+      "text": "POKE routine."
+    },
+    {
+      "address": "0xE570",
+      "source": "KL",
+      "text": "LPRINT routine."
+    },
+    {
+      "address": "0xE6BD",
+      "source": "KL",
+      "text": "Special format-control characters used by PRINT USING."
+    },
+    {
+      "address": "0xE6C7",
+      "source": "KL",
+      "text": "RANDOMIZE routine."
+    },
+    {
+      "address": "0xE6F4",
+      "source": "KL",
+      "text": "RESTORE routine."
+    },
+    {
+      "address": "0xE70F",
+      "source": "KL",
+      "text": "RETURN routine."
+    },
+    {
+      "address": "0xE733",
+      "source": "KL",
+      "text": "GRAPHICS routine."
+    },
+    {
+      "address": "0xE754",
+      "source": "KL",
+      "text": "PLOT routine."
+    },
+    {
+      "address": "0xE75A",
+      "source": "KL",
+      "text": "PLOT PAINT routine."
+    },
+    {
+      "address": "0xE7E4",
+      "source": "KL",
+      "text": "SET subcommand dispatch table; token plus relative routine selector."
+    },
+    {
+      "address": "0xE7F7",
+      "source": "KL",
+      "text": "SET MODE routine."
+    },
+    {
+      "address": "0xE7FA",
+      "source": "KL",
+      "text": "SET STYLE routine."
+    },
+    {
+      "address": "0xE7FD",
+      "source": "KL",
+      "text": "SET INK routine."
+    },
+    {
+      "address": "0xE800",
+      "source": "KL",
+      "text": "SET PAPER routine."
+    },
+    {
+      "address": "0xE803",
+      "source": "KL",
+      "text": "SET DELAY routine."
+    },
+    {
+      "address": "0xE806",
+      "source": "KL",
+      "text": "SET RATE routine."
+    },
+    {
+      "address": "0xE816",
+      "source": "KL",
+      "text": "SET CHARACTER routine."
+    },
+    {
+      "address": "0xE821",
+      "source": "KL",
+      "text": "SET PALETTE routine."
+    },
+    {
+      "address": "0xE82A",
+      "source": "KL",
+      "text": "SET BORDER routine."
+    },
+    {
+      "address": "0xE833",
+      "source": "KL",
+      "text": "SOUND routine."
+    },
+    {
+      "address": "0xE87B",
+      "source": "KL",
+      "text": "SOUND subcommand dispatch table; same format as SET table."
+    },
+    {
+      "address": "0xE89B",
+      "source": "KL",
+      "text": "BASIC CLOSE routine."
+    },
+    {
+      "address": "0xE8C9",
+      "source": "KL",
+      "text": "OPEN BASIC routine."
+    },
+    {
+      "address": "0xE910",
+      "source": "KL",
+      "text": "GET routine."
+    },
+    {
+      "address": "0xE951",
+      "source": "KL",
+      "text": "LOAD routine."
+    },
+    {
+      "address": "0xE982",
+      "source": "KL",
+      "text": "SAVE routine."
+    },
+    {
+      "address": "0xE9D3",
+      "source": "KL",
+      "text": "VERIFY routine."
+    },
+    {
+      "address": "0xEDD2",
+      "source": "KL",
+      "text": "Memory paging: U U V S page layout."
+    },
+    {
+      "address": "0xF000",
+      "source": "KL",
+      "text": "Extension ROM initialization; copies tables to RAM, initializes expansion devices, then returns to the main ROM."
+    },
+    {
+      "address": "0xF0FD",
+      "source": "KL",
+      "text": "Memory paging: U U U E page layout."
+    },
+    {
+      "address": "0xF12B",
+      "source": "KL",
+      "text": "Memory paging: U U U E page layout."
+    },
+    {
+      "address": "0xF13D",
+      "source": "KL",
+      "text": "Reset integrity check; decides between warm reset and cold reset."
+    },
+    {
+      "address": "0xF140",
+      "source": "KL",
+      "text": "Memory paging: U U V E page layout."
+    },
+    {
+      "address": "0xF166",
+      "source": "KL",
+      "text": "Expansion input dispatch."
+    },
+    {
+      "address": "0xF16C",
+      "source": "KL",
+      "text": "Expansion output dispatch."
+    },
+    {
+      "address": "0xF1E6",
+      "source": "KL",
+      "text": "Expansion-call error recovery; restores default device assignments."
+    },
+    {
+      "address": "0xF227",
+      "source": "KL",
+      "text": "Expansion-card interrupt dispatch."
+    },
+    {
+      "address": "0xF291",
+      "source": "KL",
+      "text": "Serial-line routine jump table; first byte is the routine count, followed by routine addresses."
+    },
+    {
+      "address": "0xF3C6",
+      "source": "KL",
+      "text": "Serial-line baud-rate divisor table."
+    },
+    {
+      "address": "0xF726",
+      "source": "KL",
+      "text": "Arithmetic routine 4: negates the sign of the 9-byte number on the BASIC Stack."
+    },
+    {
+      "address": "0xF741",
+      "source": "KL",
+      "text": "\"Reading:\" cassette status text."
+    },
+    {
+      "address": "0xF74E",
+      "source": "KL",
+      "text": "\"Searching\" cassette status text."
+    },
+    {
+      "address": "0xF758",
+      "source": "KL",
+      "text": "\"Found:\" cassette status text."
+    },
+    {
+      "address": "0xFAF3",
+      "source": "KL",
+      "text": "Cassette work bytes used by cassette routines."
+    },
+    {
+      "address": "0xFB0E",
+      "source": "KL",
+      "text": "Initialization bytes copied to RAM addresses 0B00H-0B48H; includes the I/O assignment table."
+    },
+    {
+      "address": "0xFB28",
+      "source": "KL",
+      "text": "Arithmetic routine 13: moves from BASIC Stack to the address in HL; 9 bytes freed from Stack."
+    },
+    {
+      "address": "0xFB54",
+      "source": "KL",
+      "text": "\"MOPS\" cartridge signature text."
+    },
+    {
+      "address": "0xFB58",
+      "source": "KL",
+      "text": "\"VGB\" device identifier."
+    },
+    {
+      "address": "0xFB5B",
+      "source": "KL",
+      "text": "Bytes copied into RAM at initialization (addresses 0008H-002FH): error handlers, RST 18H entry, and function call dispatcher."
+    },
+    {
+      "address": "0xFB5C",
+      "source": "KL",
+      "text": "\"RS232\" device identifier."
+    },
+    {
+      "address": "0xFB62",
+      "source": "KL",
+      "text": "\"DISK\" device identifier."
+    },
+    {
+      "address": "0xFB67",
+      "source": "KL",
+      "text": "\"CISL\" text."
+    },
+    {
+      "address": "0xFB6B",
+      "source": "KL",
+      "text": "Character matrix table for character codes 128-160, ten bytes per character."
+    },
+    {
+      "address": "0xFD74",
+      "source": "KL",
+      "text": "\" \" text prefix for BASIC error messages."
+    },
+    {
+      "address": "0xFD9C",
+      "source": "KL",
+      "text": "\"System error\" text."
+    },
+    {
+      "address": "0xFDC6",
+      "source": "KL",
+      "text": "BASIC error message table; entries contain code, length, text, and FFH terminator."
+    },
+    {
+      "address": "0xFF3F",
+      "source": "KL",
+      "text": "PRINT special-character dispatch table."
+    },
+    {
+      "address": "0xFF47",
+      "source": "KL",
+      "text": "Binary constants 1000, 100, 10, and 1 for decimal conversion."
+    },
+    {
+      "address": "0xFFA3",
+      "source": "KL",
+      "text": "STOP routine."
+    },
+    {
+      "address": "0xFFB1",
+      "source": "KL",
+      "text": "\"STOP\" message text."
+    },
+    {
+      "address": "0xFFCA",
+      "source": "KL",
+      "text": "\" at line \" message text."
+    },
+    {
+      "address": "0xFFDE",
+      "source": "KL",
+      "text": "\"(c)1985ISL\" text."
+    }
+  ]
+}

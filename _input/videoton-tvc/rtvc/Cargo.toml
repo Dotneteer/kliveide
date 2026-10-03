@@ -1,0 +1,98 @@
+[package]
+name = "rtvc"
+version = "0.8.6"
+edition = "2024"
+license = "MIT"
+autobins = false
+
+[lib]
+name = "rtvc_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cpal = { version = "0.17", optional = true }
+egui = { version = "0.31", optional = true }
+eframe = { version = "0.31", optional = true }
+egui_dock = { version = "0.16.0", features = ["serde"], optional = true }
+png = { version = "0.17", optional = true }
+image = { version = "0.25", default-features = false, features = ["gif"], optional = true }
+rfd = { version = "0.15", optional = true }
+ureq = { version = "3.3", optional = true }
+zip = { version = "2", default-features = false, features = ["deflate"], optional = true }
+wasm-bindgen = { version = "0.2", optional = true }
+serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
+web-sys = { version = "0.3", features = ["Window", "Document", "HtmlElement", "HtmlAnchorElement", "HtmlCanvasElement", "Blob", "Url", "Storage", "BlobPropertyBag", "console"], optional = true }
+js-sys = { version = "0.3", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+web-time = { version = "1.1", optional = true }
+fatfs = { version = "0.3.6", default-features = false, features = ["std", "alloc"] }
+sha2 = "0.10"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[features]
+default = ["native"]
+native = ["dep:cpal", "dep:egui", "dep:eframe", "dep:egui_dock", "dep:png", "dep:image", "dep:rfd", "dep:ureq", "dep:zip", "dep:serde", "dep:serde_json"]
+cli-tools = ["dep:serde_json"]
+wasm = ["dep:wasm-bindgen"]
+wasm-full = ["dep:wasm-bindgen", "dep:egui", "dep:eframe", "dep:egui_dock", "dep:png", "dep:image", "dep:rfd", "dep:zip", "dep:serde", "dep:serde_json", "dep:web-sys", "dep:js-sys", "dep:wasm-bindgen-futures", "dep:web-time"]
+web-vid-simple = []
+web-vid-realistic = []
+
+[[bin]]
+name = "rtvc"
+path = "src/bin/main.rs"
+required-features = ["native"]
+
+[[bin]]
+name = "fuse_test"
+path = "src/bin/fuse_test.rs"
+
+[[bin]]
+name = "zex_test"
+path = "src/bin/zex_test.rs"
+
+[[bin]]
+name = "perf_test"
+path = "src/bin/perf_test.rs"
+
+[[bin]]
+name = "rtvc-cas2wav"
+path = "src/bin/cas2wav.rs"
+
+[[bin]]
+name = "rtvc-asm"
+path = "src/bin/rtvc_asm.rs"
+
+[[bin]]
+name = "rtvc-basic"
+path = "src/bin/rtvc_basic.rs"
+
+[[bin]]
+name = "rtvc-tocas"
+path = "src/bin/rtvc_tocas.rs"
+
+[[bin]]
+name = "rtvc-disasm"
+path = "src/bin/rtvc_disasm.rs"
+
+[[bin]]
+name = "zx82"
+path = "src/bin/zx82_main.rs"
+required-features = ["native"]
+
+[[bin]]
+name = "rtvc-dsk"
+path = "src/bin/rtvc_dsk.rs"
+
+[[bin]]
+name = "rtvc-tap2toml"
+path = "src/bin/rtvc_tap2toml.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

@@ -1,0 +1,9 @@
+https://github.com/mamedev/mame @ 0517657eee6528df430bb4bb7965193873da612b
+Original paths kept. Contents:
+- TVC-specific: driver, sound, expansion bus, HBF floppy card, tape/disk formats, software lists.
+- Generic devices the TVC driver uses: Z80 (+disassembler, daisy chain, z80make.py generator), MC6845,
+  WD177x FDC (+FDC PLL), floppy/cassette/snapshot/cart image devices, bankdev, RAM, generic cart slot,
+  centronics port, cassette/floppy image formats.
+Deliberately omitted: MAME core (src/emu, src/lib/util, src/osd), the printers that can plug into the
+centronics port, other floppy image formats, floppy drive sounds.
+src/devices/cpu/z80/z80.hxx is generated at build time from z80.lst by z80make.py.
