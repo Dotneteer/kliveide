@@ -28,7 +28,7 @@ are estimates for prioritising, not commitments.
 | # | Gap | Overall | Low-hanging pieces |
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
-| G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | .sna and .z80 loading |
+| G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04) except RZX: G2.1–G2.6 |
 | G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
@@ -85,19 +85,35 @@ conditions in C (M).
 **Why it matters:** sharing a machine state is everyday practice for 48K/128K users, and games
 are commonly distributed as snapshots.
 
-**Foundation:** none for the Spectrum. `SnaFileViewerPanel` and `Z80FileViewerPanel` are
+**Foundation (before the work):** none for the Spectrum. `SnaFileViewerPanel` and `Z80FileViewerPanel` were
 "not implemented" stubs. The code-injection flow already writes memory and registers into a
 running machine. The Next core has a checkpoint (whole-state capture) used internally by
 `MachineController`. Z88 snapshot loading exists (`Z88SnapshotCommand`) as a UX reference.
 
+**Plan:** G2.1–G2.3 (and the G2.5 viewers they bring along) are planned in
+[ZX_SPECTRUM_SNAPSHOT_PLAN.md](ZX_SPECTRUM_SNAPSHOT_PLAN.md). **Done (2026-10-04):** `.sna`, `.z80`
+(v1–v3) and `.szx` load, run and debug-stop at PC on the 48K, 128K and +2E/+3E (the snapshot picks
+the machine), from the viewer's tab bar, the Explorer, the `zx-snapshot` command, File and Machine
+menus, and by drag and drop; one viewer serves all three formats.
+G2.4 (saving) and G2.6 (Klive state files, with a quick save/restore slot) are planned together in
+[SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md](SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md). **G2.4 done (2026-10-04):** `.szx`,
+`.z80` (v3) and `.sna` are saved from a running or paused 48K, 128K or +2E/+3E, from File and Machine
+menus and the `zx-snapshot-save` command, with what `.z80`/`.sna` cannot hold reported.
+**G2.6 done (2026-10-04):** `.kls` state files and a quick save/restore slot for every WASM machine
+(48K, 128K, +2E/+3E, Next, Z88, ZX80/81), exact to the T-state, guarded by a per-build memory-layout
+fingerprint, with a `.szx` fallback for Spectrum states from another Klive version.
+G2.7 (RZX playback) and G2.8 (RZX recording), paired with the emulator video recording, are planned
+in [RZX_PLAN.md](RZX_PLAN.md). That plan argues (§1.3) that they need neither G2.6 nor the Wave 4
+replay spike.
+
 | Feature | What it does | Size |
 |---|---|---|
-| G2.1 Load .sna (48K and 128K) | Open a snapshot from the file menu, by drag and drop, or with a command; switches to the right machine and restores RAM, registers, paging and border. | S |
-| G2.2 Load .z80 (v1–v3, compressed) | The most common format in archives; includes 128K paging and AY state. | S–M |
-| G2.3 Load .szx | Modern chunked format (zlib) with full peripheral state: AY, +3 disk, keyboard, ULA timing. | M |
-| G2.4 Save snapshots | Save the current machine as .z80 / .szx (and .sna). Lets users bookmark a debugging situation or share a bug repro. | M |
-| G2.5 Real snapshot viewers | Replace the stubs: header, registers, a memory map, and a screen preview. | S |
-| G2.6 Klive state files (all machines, including Next) | Save and restore the full emulator state, building on the Next checkpoint mechanism; formats are Klive-specific. | M–L (each core needs a complete, versioned state serialiser) |
+| G2.1 Load .sna (48K and 128K) ✅ **done** | Open a snapshot from the file menu, by drag and drop, or with a command; switches to the right machine and restores RAM, registers, paging and border. | S |
+| G2.2 Load .z80 (v1–v3, compressed) ✅ **done** | The most common format in archives; includes 128K paging and AY state. | S–M |
+| G2.3 Load .szx ✅ **done** | Modern chunked format (zlib) with full peripheral state: AY, +3 disk, keyboard, ULA timing. | M |
+| G2.4 Save snapshots ✅ **done** | Save the current machine as .z80 / .szx (and .sna). Lets users bookmark a debugging situation or share a bug repro. | M |
+| G2.5 Real snapshot viewers ✅ **done** | Replace the stubs: header, registers, a memory map, and a screen preview. Done for .sna/.z80/.szx (one viewer). | S |
+| G2.6 Klive state files (all machines, including Next) ✅ **done** | Save and restore the full emulator state, building on the Next checkpoint mechanism; formats are Klive-specific. | M–L (each core needs a complete, versioned state serialiser) |
 | G2.7 RZX playback | Plays a recorded input stream frame by frame (the standard for verified game recordings and speedruns). | L (needs per-frame IN-value replay and fully deterministic emulation) |
 | G2.8 RZX recording | Record your own session for exact replay or bug reports. | L, after G2.7 |
 
@@ -266,7 +282,7 @@ Answers from the project author, 2026-10-02:
 
 **Wave 1 — low-hanging fruit:**
 G1.1 hit counts · G1.2 register conditions · G1.4 logpoints · G1.6 one-shot breakpoints ·
-G2.1 .sna load · G2.2 .z80 load · G2.5 snapshot viewers · G3.1 Copper list · G3.3 pattern viewer ·
+~~G2.1 .sna load · G2.2 .z80 load · G2.5 snapshot viewers~~ (done) · G3.1 Copper list · G3.3 pattern viewer ·
 G10.1–G10.4 proof points.
 
 **Wave 2 — the Next leadership set:**
@@ -277,7 +293,7 @@ and WPMEM comments.
 **Wave 3 — depth:**
 - G5.5 DeZog-compatible unit tests and G6.1 CLI, which together enable G5.6 (CI).
 - G7.1 annotations for any machine, G7.2 ROM annotations written from scratch.
-- ~~G8.x BASIC intelligence~~ (done), G2.4 snapshot saving, G5.2–G5.3 heat map and profiler.
+- ~~G8.x BASIC intelligence~~ (done), ~~G2.4 snapshot saving~~ (done), G5.2–G5.3 heat map and profiler.
 - **G4.2 history in every core**, which is the groundwork for G4.4.
 
 **Wave 4 — the big bets:**
@@ -289,5 +305,7 @@ and WPMEM comments.
 - ~~G9.3 ZX80/81~~ (done).
 
 **Cross-cutting note:** deterministic replay is the shared foundation of G4.4, G2.6 and
-G2.7–G2.8. Designing it once, early in Wave 4 (or as a spike during Wave 3), is the key
+G2.7–G2.8. **The capture half is done (G2.6):** every core's whole state is a memory image, and
+`test/wasm/state/machine-state-determinism.test.ts` proves save → restore → run equals a straight
+run on every core. What G4.4 still needs is incremental (dirty-page) capture and periodic keyframes. Designing it once, early in Wave 4 (or as a spike during Wave 3), is the key
 technical decision of this roadmap.

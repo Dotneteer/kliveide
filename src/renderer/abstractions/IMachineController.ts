@@ -181,8 +181,14 @@ export interface IMachineController {
    * is stopped first; `applyState` runs on the stopped machine.
    * @param applyState Writes the new state into the machine
    * @param description What was restored, for the emulator output
+   * @param options `attachMedia: false` keeps the media the state put into the machine, instead of
+   * attaching the stored media afterwards (Klive state files)
    */
-  restoreState(applyState: () => void, description: string): Promise<void>;
+  restoreState(
+    applyState: () => void,
+    description: string,
+    options?: { attachMedia?: boolean }
+  ): Promise<void>;
 
   /**
    * Resolves the source code breakpoints used when running the machine

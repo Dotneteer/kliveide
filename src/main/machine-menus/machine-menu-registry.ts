@@ -10,7 +10,13 @@ import {
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
-import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, sp48RomMenuRenderer } from "./zx-specrum-menus";
+import {
+  tapeMenuRenderer,
+  spectrumIdeRenderer,
+  diskMenuRenderer,
+  sp48RomMenuRenderer,
+  spectrumSnapshotRenderer
+} from "./zx-specrum-menus";
 import {
   z88KeyboardLayoutRenderer,
   z88LcdRenderer,
@@ -24,32 +30,47 @@ import {
   setupZxSpectrumNext
 } from "./zx-next-menus";
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
+import { machineStateMenuRenderer } from "./state-menus";
 
 /**
  * Machine-specific menu information
  */
 export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_ZX81]: {
-    machineItems: zx8081TapeMenuRenderer
+    machineItems: (windowInfo, machine, model) => [
+      ...zx8081TapeMenuRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
+    ]
   },
   [MI_ZX80]: {
-    machineItems: zx8081TapeMenuRenderer
+    machineItems: (windowInfo, machine, model) => [
+      ...zx8081TapeMenuRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
+    ]
   },
   [MI_SPECTRUM_48]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model),
       ...sp48RomMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_128]: {
-    machineItems: tapeMenuRenderer,
+    machineItems: (windowInfo, machine, model) => [
+      ...tapeMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
+    ],
     ideItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_3E]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
-      ...diskMenuRenderer(windowInfo, machine, model)
+      ...diskMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
   },
@@ -58,6 +79,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
       ...z88LcdRenderer(windowInfo, machine, model),
       ...z88SnapshotRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model),
       ...z88ResetRenderer(windowInfo, machine, model)
     ],
     helpLinks: [
@@ -98,6 +120,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...sdCardMenuRenderer(windowInfo, machine, model),
       ...joystickMenuRenderer(windowInfo, machine, model),
       ...mouseMenuRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer,
     initializer: initializeZxSpectrumNext,

@@ -30,6 +30,7 @@ import {
   SETTING_EMU_MOUSE_SHOW_POINTER,
   SETTING_EMU_MOUSE_SENSITIVITY,
   SETTING_EMU_JOYSTICK_BINDINGS,
+  SETTING_EMU_MACHINE_FAVORITES,
   SETTING_IDE_ACTIVE_OUTPUT_PANE,
   SETTING_IDE_ACTIVE_TOOL,
   SETTING_IDE_CLOSE_EMU,
@@ -184,6 +185,17 @@ const settingDefinitions: Setting[] = [
       "connector is driven by the keyboard, a gamepad, or nothing.",
     type: "object",
     defaultValue: DEFAULT_JOYSTICK_BINDINGS,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_MACHINE_FAVORITES,
+    title: "Favourite machines",
+    description:
+      "The models listed in the Machine > Machine type menu, in menu order, each optionally followed " +
+      "by a separator. Edited in the Select Machine dialog; absent means the built-in defaults.",
+    type: "array",
+    defaultValue: undefined,
     saveWithIde: true,
     boundTo: "emu"
   },

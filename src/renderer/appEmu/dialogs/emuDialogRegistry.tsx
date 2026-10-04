@@ -8,7 +8,8 @@ import {
   Z88_EXPORT_CARD_DIALOG,
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG,
-  JOYSTICK_BINDINGS_DIALOG
+  JOYSTICK_BINDINGS_DIALOG,
+  MACHINE_SELECT_DIALOG
 } from "@common/messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
@@ -37,6 +38,10 @@ import {
   Z88ChangeRamDialogResult
 } from "./z88/changeRam/Z88ChangeRamDialog";
 import {
+  MachineSelectDialog,
+  MachineSelectDialogResult
+} from "@renderer/appIde/dialogs/machineSelect/MachineSelectDialog";
+import {
   JoystickBindingsDialog,
   JoystickBindingsDialogResult
 } from "./joystick/JoystickBindingsDialog";
@@ -49,7 +54,8 @@ export type EmuDialogResult =
   | Z88InsertCardDialogResult
   | Z88ExportCardDialogResult
   | Z88ChangeRamDialogResult
-  | AboutDialogResult;
+  | AboutDialogResult
+  | MachineSelectDialogResult;
 
 export type EmuDialogRenderer = (
   data: any,
@@ -98,5 +104,8 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
       about={data as AboutDialogData}
       onClose={(result) => controls.close(result)}
     />
+  ),
+  [MACHINE_SELECT_DIALOG]: (data, controls) => (
+    <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
   )
 };

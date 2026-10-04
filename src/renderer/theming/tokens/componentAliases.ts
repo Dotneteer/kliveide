@@ -597,6 +597,9 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-state-value-alt": "var(--accent-secondary-text)",
 
+  // --- Favourites (Select Machine dialog) -------------------------------------------------------
+  "--color-favorite": "var(--mark-favorite)",
+
   // --- Explorer ---------------------------------------------------------------------------------
   "--color-explorer": "var(--text-secondary)",
   "--bgcolor-explorer-pointed": "var(--surface-hover)",

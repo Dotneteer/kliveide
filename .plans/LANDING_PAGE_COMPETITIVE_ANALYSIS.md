@@ -67,7 +67,8 @@ What the field looks like:
 | **Live Next sprite / Copper / layer inspectors** | ✗ (NextReg, MMU, palette panels only) | ✅ (ZEsarUX) | ? | — | — | ✗ |
 | Next asset editors | ✅ sprite editor (.spr), palette editors (.pal/.npl/.nxi), image viewers | ✗ | ✗ | — | — | ✗ |
 | NextZXOS boot, SD image | ✅ cached boot; `ncp` host↔image copy through a built-in FAT32 driver | ✅ | ✅ (bundled hdfmonkey) | — | — | via CSpect |
-| Load .sna / .z80 / .szx snapshots | ✗ (viewers only) | ✅ | ✗ | ✅ | ✅ | — |
+| Load and save .sna / .z80 / .szx snapshots | ✅ on main (unreleased): all three formats load, run and debug-stop at PC on the 48K/128K/+2E/+3E, with a viewer (screen, registers, paging, AY, RAM banks) and drag and drop; all three are saved from a running or paused machine, with what .z80/.sna cannot hold reported | ✅ | ✗ | ✅ | ✅ | — |
+| Save/restore the complete machine state (all machines, incl. Next and Z88) | ✅ on main (unreleased): `.kls` state files and a quick save/restore slot for every WASM machine, exact to the T-state; a Spectrum state also carries a `.szx` for other Klive versions | ◐ (ZEsarUX `.zsf`) | ? | ✅ (`.szx`, Spectrum only) | ? | via CSpect |
 | RZX recording / playback | ✗ | ? | ✗ | ✅ | ✅ | ✗ |
 | Tape / disk | ✅ TAP/TZX (all blocks), tape viewer, DSK create/view | ✅ | — | ✅ | ◐ | — |
 | Export | ✅ TAP / TZX / HEX with generated BASIC loader and loading screen, NEX | ◐ | — | — | ✅ SkoolKit | NEX |
@@ -114,7 +115,7 @@ tools:
 | W2 | **Reverse debugging / execution history** | DeZog (zsim, ZEsarUX), ZEsarUX, Zeus | DeZog's most-praised feature. |
 | W3 | **Unit tests and code coverage, profiler** | DeZog; Fuse and Zeus profilers | Klive has a strong internal test harness, but nothing user-facing. |
 | W4 | **Live Next hardware inspectors** (sprites, Copper list, Layer 2 / tilemap / layer composition) | ZEsarUX; DeZog sprites | Large impact for a "Next IDE"; Klive has only NEX-file sprite and image views. |
-| W5 | **Snapshot loading (.sna / .z80 / .szx) and RZX** | Fuse, ZEsarUX, Spectrum Analyser | Basic table stakes for 48K/128K users; Klive only *views* them. |
+| W5 | ~~**Snapshot loading and saving (.sna / .z80 / .szx), machine state files**~~ — closed on main (G2.1–G2.6; unreleased). **RZX** remains | Fuse, ZEsarUX, Spectrum Analyser | Loading, viewing, running, debugging and saving all three formats is done (.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md, .plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md). RZX playback/recording (G2.7–G2.8) is what is left. |
 | W6 | **No remote or real-hardware debugging**, no external API | DeZog (serial), ZEsarUX ZRCP, CSpect plugins, MAME gdbstub | Shuts Klive out of the VS Code/DeZog ecosystem. |
 | W7 | **48K/128K reverse-engineering depth** (automatic code/data detection, annotated ROMs, SkoolKit, graphics finders) | Spectrum Analyser | Klive's annotation model exists for NEX only. |
 | W8 | ~~**BASIC editor intelligence**~~ — closed on main (G8.1–G8.5; unreleased) | — (also weak elsewhere) | Hover, definition, scope-correct references and rename, completion (library routines add their `#include`), signature help, outline and folding for `.zxbas`, from the compiler's own binder. With zxbc selected, keyword help, completion and folding remain. |
@@ -212,7 +213,8 @@ source*.
 
 ### Deliberately **not** claimed
 - Conditional breakpoints and logpoints until a release ships them (they are on main), reverse debugging, unit
-  tests and coverage, live Copper/sprite inspectors, snapshot/RZX loading, real-hardware debugging
+  tests and coverage, live Copper/sprite inspectors, snapshot loading and saving until a release ships them (they are on main),
+  RZX, real-hardware debugging
   (see §4).
 - "Most accurate" anything. There is no public benchmark against CSpect, ZEsarUX or Fuse.
 - No named competitor on the page. Comparisons stay implicit ("no toolchain to wire up").
@@ -228,7 +230,7 @@ source*.
 4. **Implement the content** on the landing page prototype: hero video, five feature sections,
    supporting strip, and OS-detected download links.
 5. **Separately, consider the roadmap**: W1 (conditional breakpoints, logpoints, DeZog's ASSERTION/WPMEM
-   comments and one-shot breakpoints — all done on main) and W5 (snapshot loading) look like the cheapest gaps to close with the biggest
+   comments and one-shot breakpoints — all done on main) and W5 (snapshot loading and saving — done on main; RZX remains) look like the cheapest gaps to close with the biggest
    perception payoff. W4 (live Next
    inspectors) and W2 (history) are the ones that would make Klive the clear Next leader.
 

@@ -5,6 +5,8 @@ export const EXCLUDED_PROJECT_ITEMS_DIALOG = 3;
 export const FIRST_STARTUP_DIALOG_IDE = 4;
 export const ABOUT_DIALOG = 5;
 export const SJASMPLUS_INTEGRATION_DIALOG = 6;
+// --- Shown in whichever window has the focus, so both dialog registries render it (like ABOUT_DIALOG)
+export const MACHINE_SELECT_DIALOG = 7;
 
 // --- Emulator dialogs
 export const EMU_DIALOG_BASE = 1000;

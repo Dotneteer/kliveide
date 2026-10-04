@@ -47,8 +47,14 @@ import {
   NEW_PROJECT_DIALOG,
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_EMU,
-  FIRST_STARTUP_DIALOG_IDE
+  FIRST_STARTUP_DIALOG_IDE,
+  MACHINE_SELECT_DIALOG
 } from "@messaging/dialog-ids";
+import type {
+  MachineSelectDialogData,
+  MachineSelectDialogResult
+} from "@common/messaging/machine-select-dialog";
+import { normalizeMachineFavorites } from "@common/machines/machine-favorites";
 import { createAboutDialogData } from "@messaging/about-dialog";
 import { MEMORY_PANEL_ID, DISASSEMBLY_PANEL_ID } from "@state/common-ids";
 import { logEmuEvent, setMachineType } from "./registeredMachines";
@@ -56,6 +62,16 @@ import { createSettingsReader } from "@common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import {
+  canSaveSpectrumSnapshot,
+  openSpectrumSnapshot,
+  saveSpectrumSnapshotAs
+} from "./machine-menus/zx-specrum-menus";
+import {
+  canSaveMachineState,
+  openMachineState,
+  saveMachineStateAs
+} from "./machine-menus/state-menus";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import {
@@ -81,6 +97,7 @@ import {
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
   SETTING_EMU_SCANLINE_EFFECT,
+  SETTING_EMU_MACHINE_FAVORITES,
   SETTING_EMU_ZOOM_STEP,
   SETTING_IDE_CLOSE_EMU,
   SETTING_IDE_NAV_RECORD_TAB_SWITCH,
@@ -359,6 +376,40 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         }
       },
       ...recentProjectHolder,
+      { type: "separator" },
+      {
+        // --- Any machine: the IDE's zx-snapshot command switches to the one the file needs (D9)
+        id: "load_spectrum_snapshot",
+        label: "Load ZX Spectrum Snapshot...",
+        click: async () => {
+          await openSpectrumSnapshot(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        // --- Enabled only while a ZX Spectrum has a state to save
+        id: "save_spectrum_snapshot",
+        label: "Save ZX Spectrum Snapshot...",
+        enabled: canSaveSpectrumSnapshot(appState),
+        click: async () => {
+          await saveSpectrumSnapshotAs(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        // --- Any machine with a state (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md §4.9)
+        id: "save_machine_state",
+        label: "Save Machine State...",
+        enabled: canSaveMachineState(appState),
+        click: async () => {
+          await saveMachineStateAs(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        id: "load_machine_state",
+        label: "Load Machine State...",
+        click: async () => {
+          await openMachineState(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
       { type: "separator" },
       {
         id: CLOSE_FOLDER,
@@ -809,21 +860,31 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
     };
   });
 
-  // --- Machine types submenu (use the registered machines)
+  // --- Machine types submenu: the favourites, then "Select machine…"
+  // --- (.plans/MACHINE_SELECT_DIALOG_PLAN.md §3)
+  const machineFavorites = normalizeMachineFavorites(
+    getSettingValue(SETTING_EMU_MACHINE_FAVORITES),
+    machineRegistry
+  );
   const machineTypesMenu = createMachineTypesMenu(
     machineRegistry,
+    machineFavorites,
     appState.emulatorState?.machineId,
     appState.emulatorState?.modelId,
-    async (machineId, modelId) => {
-      await setMachineType(machineId, modelId);
-      if (modelId !== undefined) {
-        const newMachine = machineRegistry.find((m) => m.machineId === machineId);
-        if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
-          // --- Turn off scanline effect for machines that support it by default
-          setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
-        }
-      }
-      await saveKliveProject();
+    selectMachineType,
+    async () => {
+      const data: MachineSelectDialogData = {
+        favorites: machineFavorites,
+        current: appState.emulatorState?.machineId
+          ? { machineId: appState.emulatorState.machineId, modelId: appState.emulatorState.modelId }
+          : undefined
+      };
+      const result = (ideFocus
+        ? await getIdeApi().displayDialog(MACHINE_SELECT_DIALOG, data)
+        : await getEmuApi().displayDialog(MACHINE_SELECT_DIALOG, data)) as
+        | MachineSelectDialogResult
+        | undefined;
+      await applyMachineSelectResult(result);
     }
   );
 
@@ -1431,6 +1492,39 @@ function menuChanged(
  * Forgets the cached menu signatures so that the next `setupMenu` call rebuilds the native menu
  * even if its contents are unchanged (for example after the menu has been cleared).
  */
+/**
+ * Switches the emulator to a machine type, as the Machine type menu and the Select Machine dialog
+ * both do.
+ */
+async function selectMachineType(machineId: string, modelId?: string): Promise<void> {
+  await setMachineType(machineId, modelId);
+  if (modelId !== undefined) {
+    const newMachine = machineRegistry.find((m) => m.machineId === machineId);
+    if (newMachine?.features?.[MF_ALLOW_SCAN_LINES] === false) {
+      // --- Turn off scanline effect for machines that support it by default
+      setSettingValue(SETTING_EMU_SCANLINE_EFFECT, "off");
+    }
+  }
+  await saveKliveProject();
+}
+
+/**
+ * Applies what the Select Machine dialog returned: the dialog itself has no side effects.
+ * @param result The dialog result; undefined when cancelled
+ */
+async function applyMachineSelectResult(result: MachineSelectDialogResult | undefined): Promise<void> {
+  if (!result) return;
+  if (result.favorites) {
+    setSettingValue(
+      SETTING_EMU_MACHINE_FAVORITES,
+      normalizeMachineFavorites(result.favorites, machineRegistry)
+    );
+  }
+  if (result.switchTo) {
+    await selectMachineType(result.switchTo.machineId, result.switchTo.modelId);
+  }
+}
+
 export function invalidateMenuCache(): void {
   lastMenuSignatures.clear();
   suppressedMenuUpdates.clear();

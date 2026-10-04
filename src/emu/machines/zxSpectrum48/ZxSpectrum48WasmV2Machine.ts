@@ -18,6 +18,18 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48WasmHost } from "./ZxSpectrum48WasmHost";
 import { importAccessLog } from "../wasmAccessLog";
+import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
+import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
+import {
+  captureSpectrumSnapshot,
+  type SpectrumSnapshotCaptureMedia
+} from "../zxSpectrum/spectrumSnapshotCapture";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
+import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -952,6 +964,69 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
    * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
+  /**
+   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Call it through `IMachineController.restoreState`, which leaves the machine Paused.
+   * @returns The frame tact the machine stands at
+   * @throws When the snapshot needs another machine
+   */
+  loadSnapshotState(snapshot: SpectrumSnapshot): number {
+    assertSnapshotFitsMachine(snapshot, "sp48", this.modelInfo?.modelId);
+    const runtime = this.requireWasmV2Runtime();
+    const frameTact = restoreSpectrumSnapshot(
+      { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, is16k: this.modelInfo?.config?.[MC_MEM_SIZE] === 16, reset: () => this.reset() },
+      snapshot
+    );
+    this.invalidateWasmV2Sync();
+    this.syncCpuFromWasmV2(runtime);
+    return frameTact;
+  }
+
+  /**
+   * Reads the machine's state as a snapshot model, without changing it
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
+   * @param media The tape and disk files the media store holds
+   * @throws When the CPU stands inside a prefixed instruction
+   */
+  captureSnapshotState(media?: SpectrumSnapshotCaptureMedia): SpectrumSnapshot {
+    const runtime = this.requireWasmV2Runtime();
+    return captureSpectrumSnapshot(
+      { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, modelId: this.modelInfo?.modelId },
+      media
+    );
+  }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("sp48", runtime.module, runtime.exports.memory.buffer),
+      host: { normalFrames: this.wasmV2NormalFrames }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state. The core's memory - tape and disks included - comes
+   * from the state; the host-side caches are invalidated so the next frame pushes the live host's
+   * keyboard, audio rate and clock speed. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "sp48", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.invalidateWasmV2Sync();
+    // --- What the core already holds must not be published again as new
+    this.wasmV2SavedTapeRevision = runtime.exports.sp48TapeGetSavedRevision();
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
+  }
+
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
@@ -981,7 +1056,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.currentFrameTact = this.frameTacts;
     this.halted = wasm.sp48GetCpuHalted() !== 0;
     this.iff1 = wasm.sp48GetCpuIff1() !== 0;
-    this.iff2 = this.iff1;
+    this.iff2 = wasm.sp48GetCpuIff2() !== 0;
     this.interruptMode = wasm.sp48GetCpuInterruptMode();
     this.opCode = wasm.sp48GetCpuPrefix();
     this.retExecuted = wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;

@@ -53,6 +53,8 @@ export type AppSettings = {
   };
   media?: Record<string, any>;
   folders?: Record<string, string>;
+  /** Snapshot formats whose "what this file does not hold" notice the user turned off */
+  snapshotLossNoticesMuted?: string[];
   excludedProjectItems?: string[];
   keyMappingFile?: string;
   userSettings?: Record<string, any>;

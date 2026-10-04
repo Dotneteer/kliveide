@@ -10,6 +10,8 @@ export default {
   "always-on-top": "Keeping the Emulator always on top",
   "measure-t-states": "Measuring T-states",
   "sp48-custom-rom": "Using a Custom ROM with ZX Spectrum 48K",
+  "spectrum-snapshots": "Using ZX Spectrum Snapshots",
+  "machine-state": "Saving and Restoring the Machine State",
   "z88-snapshots": "Using Z88 Snapshots",
   "zx81": "Using the ZX81 and ZX80"
 };

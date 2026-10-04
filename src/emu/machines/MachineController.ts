@@ -613,7 +613,11 @@ export class MachineController implements IMachineController {
    * and it forgets the last breakpoint, so a breakpoint at the restored PC fires before that
    * instruction runs. Paused, not Stopped: `run()` resets a machine it starts from Stopped.
    */
-  async restoreState(applyState: () => void, description: string): Promise<void> {
+  async restoreState(
+    applyState: () => void,
+    description: string,
+    options: { attachMedia?: boolean } = {}
+  ): Promise<void> {
     const operationRevision = this.beginMachineOperation();
     await this.stop(operationRevision);
     this.assertMachineOperationIsCurrent(operationRevision);
@@ -621,8 +625,11 @@ export class MachineController implements IMachineController {
     applyState();
 
     // --- `run()` attaches the stored media when it starts from a stop; this restore takes the
-    // --- place of that start
-    attachStoredMedia(this.machine, this._machineInfo.mediaIds);
+    // --- place of that start. A Klive state brings its own media inside the core's memory, which
+    // --- an attach would overwrite (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 12).
+    if (options.attachMedia !== false) {
+      attachStoredMedia(this.machine, this._machineInfo.mediaIds);
+    }
     this.state = MachineControllerState.Paused;
     await this.sendOutput(
       `${description} (PC: $${this.machine.pc.toString(16).padStart(4, "0")})`,

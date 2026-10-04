@@ -219,6 +219,9 @@ static uint32_t spp3eDisplayTopLine;
 static uint8_t spp3eSelectedRom;
 static uint8_t spp3eSelectedBank;
 static uint8_t spp3ePagingEnabled = 1u;
+/* The last bytes written to $7FFD (while unlocked) and $1FFD (snapshot saving) */
+static uint8_t spp3ePort7ffd;
+static uint8_t spp3ePort1ffd;
 static uint8_t spp3eUseShadowScreen;
 static uint8_t spp3eInSpecialPagingMode;
 static uint8_t spp3eSpecialConfigMode;
@@ -1766,6 +1769,8 @@ void spp3eReset(void) {
   spp3eSelectedRom = 0u;
   spp3eSelectedBank = 0u;
   spp3ePagingEnabled = 1u;
+  spp3ePort7ffd = 0u;
+  spp3ePort1ffd = 0u;
   spp3eUseShadowScreen = 0u;
   spp3eInSpecialPagingMode = 0u;
   spp3eSpecialConfigMode = 0u;
@@ -2009,6 +2014,7 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
     if (nextUseShadowScreen != spp3eUseShadowScreen) {
       spp3eUlaRenderUntilCurrentTact();
     }
+    spp3ePort7ffd = (uint8_t)value;
     spp3eSelectedBank = (uint8_t)(value & 0x07u);
     spp3eUseShadowScreen = nextUseShadowScreen;
     spp3eSelectedRom = (uint8_t)(((value >> 4u) & 0x01u) | (spp3eSpecialConfigMode & 0x02u));
@@ -2018,6 +2024,7 @@ void spp3eWritePort(uint32_t address, uint32_t value) {
   }
 
   if ((address & 0xf002u) == 0x1000u) {
+    spp3ePort1ffd = (uint8_t)value;
     spp3eInSpecialPagingMode = (value & 0x01u) != 0u ? 1u : 0u;
     spp3eSpecialConfigMode = (uint8_t)((value >> 1u) & 0x03u);
     spp3eSelectedRom = (uint8_t)((spp3eSelectedRom & 0x01u) | (spp3eSpecialConfigMode & 0x02u));
@@ -2311,6 +2318,8 @@ void spp3eSetTacts(uint32_t value) {
 uint32_t spp3eGetSelectedRom(void) { return spp3eSelectedRom; }
 uint32_t spp3eGetSelectedBank(void) { return spp3eSelectedBank; }
 uint32_t spp3eGetPagingEnabled(void) { return spp3ePagingEnabled; }
+uint32_t spp3eGetPort7ffd(void) { return spp3ePort7ffd; }
+uint32_t spp3eGetPort1ffd(void) { return spp3ePort1ffd; }
 uint32_t spp3eGetUseShadowScreen(void) { return spp3eUseShadowScreen; }
 uint32_t spp3eGetScreenBank(void) { return spp3eUseShadowScreen != 0u ? 7u : 5u; }
 uint32_t spp3eGetInSpecialPagingMode(void) { return spp3eInSpecialPagingMode; }
@@ -2384,6 +2393,19 @@ void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }
 uint32_t spp3eGetCpuSp(void) { return z80GetSp(); }
 void spp3eSetCpuSp(uint32_t value) { z80SetSp(value); }
 uint32_t spp3eGetCpuHalted(void) { return z80GetHalted(); }
+
+/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
+void spp3eSetCpuHalted(uint32_t value) {
+  z80SetHalted(value);
+}
+
+uint32_t spp3eGetCpuEiBacklog(void) {
+  return z80GetEiBacklog();
+}
+
+void spp3eSetCpuEiBacklog(uint32_t value) {
+  z80SetEiBacklog(value);
+}
 uint32_t spp3eGetCpuPrefix(void) { return z80GetPrefix(); }
 uint32_t spp3eGetCpuIff1(void) { return z80GetIff1(); }
 void spp3eSetCpuIff1(uint32_t value) { z80SetIff1(value); }

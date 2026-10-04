@@ -9,6 +9,11 @@ import {
   z88BankDumpId,
   z88BankDumpTitle
 } from "../DocumentPanels/Z88/z88BankDocument";
+import {
+  parseSpectrumBankDocumentId,
+  spectrumBankDumpId,
+  spectrumBankDumpTitle
+} from "../DocumentPanels/Spectrum/spectrumBankDocument";
 import { getNexAnnotationPath } from "../DocumentPanels/Next/nexAnnotations";
 import {
   parseTapeBlockDocumentId,
@@ -176,6 +181,12 @@ export type StaticDumpNavigationDeps = {
     bank: number,
     readFile: (path: string) => Promise<Uint8Array>
   ) => Promise<Uint8Array | undefined>;
+  /** A ZX Spectrum snapshot RAM bank's bytes; absent, a closed snapshot bank is not reopened. */
+  readSpectrumBankBytes?: (
+    path: string,
+    bank: number,
+    readFile: (path: string) => Promise<Uint8Array>
+  ) => Promise<Uint8Array | undefined>;
   /** A tape block's payload; absent, a closed tape block dump is not reopened. */
   readTapeBlockBytes?: (
     path: string,
@@ -194,7 +205,7 @@ export function parseNexBankDocumentId(
 
 /**
  * Static memory dumps. Any open dump can be returned to; a *closed* one only when it is a NEX bank,
- * a `.z88` snapshot bank or a tape block, because those are the kinds whose bytes can be read back —
+ * a `.z88` snapshot bank, a ZX Spectrum snapshot RAM bank or a tape block, because those are the kinds whose bytes can be read back —
  * from the file its id names.
  */
 export function createStaticDumpNavigationAdapter(
@@ -263,6 +274,32 @@ export function createStaticDumpNavigationAdapter(
             disassOffset: locator.base ?? 0,
             // --- Reopened as it was opened: Z88 code, whatever machine is running
             disassemblyFlavor: "z88",
+            topAddress: locator.address,
+            viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
+          }
+        );
+        return true;
+      }
+
+      // --- A ZX Spectrum snapshot's RAM bank (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9)
+      const spectrumBank = parseSpectrumBankDocumentId(entry.documentId);
+      if (spectrumBank) {
+        if (!deps.readSpectrumBankBytes) return false;
+        let bytes: Uint8Array | undefined;
+        try {
+          bytes = await deps.readSpectrumBankBytes(spectrumBank.path, spectrumBank.bank, env.readBinaryFile);
+        } catch {
+          return false;
+        }
+        if (!bytes) return false;
+        await deps.openStaticMemoryDump(
+          target,
+          spectrumBankDumpId(spectrumBank.path, spectrumBank.bank),
+          spectrumBankDumpTitle(spectrumBank.path, spectrumBank.bank, env.store.getState()?.project?.folderPath),
+          bytes,
+          {
+            disassemblyEnabled: true,
+            disassOffset: locator.base ?? 0,
             topAddress: locator.address,
             viewMode: locator.viewMode === "sprites" ? "disassembly" : locator.viewMode
           }

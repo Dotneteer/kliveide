@@ -18,7 +18,7 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
@@ -42,8 +42,31 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { RecordingManager } from "./recording/RecordingManager";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
-import { setMachineConfigAction } from "@state/actions";
+import { setMachineConfigAction, setQuickStateAvailableAction } from "@state/actions";
 import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
+import { loadSpectrumSnapshot } from "./machines/spectrumSnapshotLoad";
+import { saveSpectrumSnapshot } from "./machines/spectrumSnapshotSave";
+import {
+  loadMachineStateFile,
+  quickRestoreMachineState,
+  quickSaveMachineState,
+  saveMachineStateFile,
+  type MachineStatePorts
+} from "./machines/machineStateFile";
+import type {
+  MachineStateLoadMode,
+  MachineStateLoadResult,
+  MachineStateSaveResult,
+  SdCardFingerprint
+} from "@common/machineState/machineStateTypes";
+import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
+import type {
+  SpectrumSnapshotLoadMode,
+  SpectrumSnapshotLoadOptions,
+  SpectrumSnapshotLoadResult
+} from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
@@ -231,6 +254,129 @@ class EmuMessageProcessor {
       mode,
       Date.now()
     );
+  }
+
+  /**
+   * Loads a ZX Spectrum snapshot (see `EmuApi.loadSpectrumSnapshot`).
+   * @param fileName The snapshot's file name
+   * @param contents The snapshot file
+   * @param mode What to do once the state is restored
+   * @param options Keep the model; disks the IDE read
+   */
+  loadSpectrumSnapshot(
+    fileName: string,
+    contents: Uint8Array,
+    mode: SpectrumSnapshotLoadMode,
+    options: SpectrumSnapshotLoadOptions & {
+      disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+    } = {}
+  ): Promise<SpectrumSnapshotLoadResult> {
+    const store = getCachedStore();
+    return loadSpectrumSnapshot(
+      {
+        getMachineController: () => this.machineService.getMachineController(),
+        getEmulatorState: () => store.getState()?.emulatorState ?? {},
+        setMachineType: (machineId, modelId, config) =>
+          this.machineService.setMachineType(machineId, modelId, config),
+        setTape: (file, bytes) => this.setTapeFile(file, bytes, false, true),
+        setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true)
+      },
+      fileName,
+      contents,
+      mode,
+      options
+    );
+  }
+
+  /**
+   * Saves the ZX Spectrum as a snapshot (see `EmuApi.saveSpectrumSnapshot`).
+   * @param format The file format
+   * @param creator The program a `.szx` file names as its creator
+   */
+  saveSpectrumSnapshot(
+    format: SpectrumSnapshotFormat,
+    creator?: SzxCreator
+  ): Promise<SpectrumSnapshotSaveResult> {
+    const store = getCachedStore();
+    return saveSpectrumSnapshot(
+      {
+        getMachineController: () => this.machineService.getMachineController(),
+        getMediaFiles: () => ({
+          tapeFile: mediaStore.getMedia(MEDIA_TAPE)?.mediaFile,
+          diskFiles: [
+            mediaStore.getMedia(MEDIA_DISK_A)?.mediaFile,
+            mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile
+          ]
+        }),
+        getEmulatorState: () => store.getState()?.emulatorState ?? {}
+      },
+      format,
+      creator
+    );
+  }
+
+  /** The services the Klive state calls use */
+  private machineStatePorts(): MachineStatePorts {
+    const store = getCachedStore();
+    return {
+      getMachineController: () => this.machineService.getMachineController(),
+      getEmulatorState: () => store.getState()?.emulatorState ?? {},
+      setMachineType: (machineId, modelId, config) =>
+        this.machineService.setMachineType(machineId, modelId, config),
+      setTape: (file, bytes) => this.setTapeFile(file, bytes, false, true),
+      setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true),
+      getMediaFiles: () => ({
+        [MEDIA_TAPE]: mediaStore.getMedia(MEDIA_TAPE)?.mediaFile,
+        [MEDIA_DISK_A]: mediaStore.getMedia(MEDIA_DISK_A)?.mediaFile,
+        [MEDIA_DISK_B]: mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile
+      })
+    };
+  }
+
+  /**
+   * Saves a Klive state file (see `EmuApi.saveMachineStateFile`).
+   */
+  saveMachineStateFile(options: {
+    kliveVersion: string;
+    sdCard?: SdCardFingerprint;
+  }): Promise<MachineStateSaveResult> {
+    return saveMachineStateFile(this.machineStatePorts(), {
+      kliveVersion: options.kliveVersion,
+      sdCard: options.sdCard ? { ...options.sdCard, id: MEDIA_SD_CARD } : undefined
+    });
+  }
+
+  /**
+   * Loads a Klive state file (see `EmuApi.loadMachineStateFile`).
+   */
+  loadMachineStateFile(
+    fileName: string,
+    contents: Uint8Array,
+    mode: MachineStateLoadMode,
+    options: { currentSdCard?: SdCardFingerprint; acceptChangedSdCard?: boolean } = {}
+  ): Promise<MachineStateLoadResult> {
+    return loadMachineStateFile(this.machineStatePorts(), fileName, contents, mode, {
+      currentSdCard: options.currentSdCard
+        ? { ...options.currentSdCard, id: MEDIA_SD_CARD }
+        : undefined,
+      acceptChangedSdCard: options.acceptChangedSdCard
+    });
+  }
+
+  /**
+   * Quick-saves the machine (see `EmuApi.quickSaveMachineState`).
+   */
+  async quickSaveMachineState(): Promise<{ machineName: string; pc: number }> {
+    const result = await quickSaveMachineState(this.machineStatePorts());
+    getCachedStore().dispatch(setQuickStateAvailableAction(true), "emu");
+    return result;
+  }
+
+  /**
+   * Restores the quick-saved state (see `EmuApi.quickRestoreMachineState`).
+   */
+  quickRestoreMachineState(): Promise<{ pc: number }> {
+    return quickRestoreMachineState(this.machineStatePorts());
   }
 
   /**

@@ -1,8 +1,12 @@
-import { contextBridge } from "electron";
+import { contextBridge, webUtils } from "electron";
 import { electronAPI } from "@electron-toolkit/preload";
 
 // --- Custom APIs for renderer
-const api = {};
+const api = {
+  // --- A dropped `File`'s path on disk: the renderer cannot read `File.path` with context isolation
+  // --- (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10)
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file)
+};
 
 // --- Use `contextBridge` APIs to expose Electron APIs to renderer only if context isolation
 // --- is enabled, otherwise just add to the DOM global.

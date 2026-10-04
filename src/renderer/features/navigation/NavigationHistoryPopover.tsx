@@ -20,6 +20,7 @@ export const REASON_LABELS: Record<NavigationReason, string> = {
   nexLabel: "label",
   nexBank: "bank",
   z88Bank: "bank",
+  spectrumBank: "bank",
   tapeBlock: "block",
   tabSwitch: "tab",
   explorer: "explorer",

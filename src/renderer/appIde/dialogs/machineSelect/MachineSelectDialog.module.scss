@@ -1,0 +1,480 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Select Machine dialog (`.plans/MACHINE_SELECT_DIALOG_PLAN.md` §4): an accordion of machine
+ * types and models on the left, the selected model's hardware sheet on the right.
+ *
+ * The body is a fixed-height two-pane frame so the dialog does not jump as sections open and as
+ * sheets of different lengths are selected; each pane scrolls on its own. In a narrow window (the
+ * emulator window of a ZX81 is small) the panes stack.
+ */
+.body {
+  display: grid;
+  grid-template-columns: minmax(30ch, 38ch) minmax(0, 1fr);
+  height: min(32rem, calc(100vh - 10rem));
+  min-height: 0;
+  margin: calc(var(--space-4) * -1);
+  font-size: var(--font-size-300);
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 2fr) minmax(0, 3fr);
+  }
+}
+
+// ---------------------------------------------------------------------------------------------
+// The accordion
+// ---------------------------------------------------------------------------------------------
+
+.navPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-panel);
+
+  @media (max-width: 700px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border-default);
+  }
+}
+
+.tree {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-1);
+}
+
+.navFooter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-1_5) var(--space-2);
+  border-top: 1px solid var(--border-default);
+  font-size: var(--font-size-200);
+}
+
+.linkButton {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring(1px);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.dirtyNote {
+  color: var(--text-tertiary);
+}
+
+.section + .section {
+  border-top: 1px solid var(--border-subtle);
+}
+
+%row {
+  display: grid;
+  align-items: center;
+  gap: var(--space-1_5);
+  min-height: var(--row-size-list);
+  cursor: default;
+  user-select: none;
+  outline: none;
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+  &:hover .star,
+  &:focus-visible .star {
+    visibility: visible;
+  }
+}
+
+.selected {
+  background: var(--surface-selected);
+  box-shadow: inset 2px 0 0 var(--accent-solid);
+
+  &:hover {
+    background: var(--surface-selected);
+  }
+
+  .star {
+    visibility: visible;
+  }
+
+  .rowActions {
+    display: flex;
+  }
+}
+
+.sectionHeader {
+  @extend %row;
+  grid-template-columns: 2ch minmax(0, 1fr) auto;
+  padding: var(--space-1) var(--space-2);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.favoritesHeader .name {
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* A machine type with a single model: a header-styled row that selects instead of expanding */
+.leaf {
+  @extend %row;
+  grid-template-columns: 2ch minmax(0, 1fr) auto auto;
+  padding: var(--space-1) var(--space-2);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chevron,
+.chevronSpace {
+  display: grid;
+  place-content: center;
+  color: var(--text-tertiary);
+}
+
+.chevron {
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.count {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  font-weight: 400;
+}
+
+.runningDot {
+  display: inline-block;
+  width: var(--space-1_5);
+  height: var(--space-1_5);
+  margin-left: var(--space-1_5);
+  border-radius: var(--radius-full);
+  background: var(--accent-solid);
+  vertical-align: middle;
+}
+
+.modelRow {
+  @extend %row;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 0 var(--space-2) 0 calc(var(--space-2) + 2ch + var(--space-1_5));
+  color: var(--text-primary);
+}
+
+.favoriteRow {
+  @extend %row;
+  grid-template-columns: 2ch minmax(0, 1fr) auto;
+  padding: 0 var(--space-1) 0 var(--space-3);
+  color: var(--text-primary);
+
+  &:hover .rowActions,
+  &:focus-visible .rowActions {
+    display: flex;
+  }
+}
+
+.dropBefore {
+  box-shadow: inset 0 2px 0 var(--accent-solid);
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grip {
+  display: grid;
+  place-content: center;
+  color: var(--text-disabled);
+  cursor: grab;
+}
+
+/* The favourite list draws the menu's separators where the menu will have them */
+.menuSeparator {
+  margin: var(--space-0_5) var(--space-3) var(--space-0_5) calc(var(--space-3) + 2ch + var(--space-1_5));
+  border-top: 1px dashed var(--border-strong);
+}
+
+.star {
+  display: grid;
+  place-content: center;
+  width: var(--size-controlSm);
+  height: calc(var(--size-controlSm) - var(--space-1));
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  visibility: hidden;
+
+  &:hover {
+    color: var(--color-favorite);
+  }
+}
+
+.starOn {
+  visibility: visible;
+  color: var(--color-favorite);
+}
+
+/* Hidden rows take no width, so a favourite's name is only shortened while its actions show */
+.rowActions {
+  display: none;
+  gap: 1px;
+}
+
+.rowAction {
+  display: grid;
+  place-content: center;
+  width: calc(var(--size-controlSm) - var(--space-1));
+  height: calc(var(--size-controlSm) - var(--space-1));
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:not(:disabled):hover {
+    background: var(--surface-active);
+    color: var(--text-primary);
+  }
+
+  &:disabled {
+    color: var(--text-disabled);
+    cursor: default;
+  }
+}
+
+.rowActionOn {
+  color: var(--accent-text);
+}
+
+.pill {
+  padding: 0 var(--space-1_5);
+  border-radius: var(--radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent-text);
+  font-size: var(--font-size-50);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hint {
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-tertiary);
+}
+
+// ---------------------------------------------------------------------------------------------
+// The hardware sheet
+// ---------------------------------------------------------------------------------------------
+
+.sheetPane {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--bgcolor-modal-body);
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.sheetHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-3);
+  align-items: start;
+}
+
+.sheetTitle {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sheetName {
+  color: var(--text-primary);
+  font-size: var(--font-size-400);
+  font-weight: 600;
+}
+
+.sheetSub {
+  grid-column: 1;
+  color: var(--text-secondary);
+  font-size: var(--font-size-200);
+
+  code {
+    color: var(--text-tertiary);
+    font-family: var(--monospace-font);
+    white-space: nowrap;
+  }
+}
+
+.favoriteToggle {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1_5);
+  padding: var(--space-1) var(--space-2_5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--font-size-200);
+  white-space: nowrap;
+  cursor: pointer;
+  @include focus-ring(1px);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+
+}
+
+/* The icon's colour goes on a wrapper: `Icon` sets `color: currentColor` inline on its <svg> */
+.favoriteToggleIcon {
+  display: grid;
+  color: var(--text-tertiary);
+
+  .favoriteToggleOn & {
+    color: var(--color-favorite);
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.chip {
+  padding: 0 var(--space-1_5);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(30ch, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+
+.groupWide {
+  grid-column: 1 / -1;
+}
+
+.groupTitle {
+  margin: 0 0 var(--space-1_5);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.displayBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+
+  .facts {
+    flex: 1 1 30ch;
+  }
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-0_5);
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 16ch minmax(0, 1fr);
+  gap: var(--space-2);
+
+  dt {
+    color: var(--text-secondary);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--color-state-value);
+    font-family: var(--monospace-font);
+    font-size: var(--font-size-200);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+}
+
+.factNote {
+  display: block;
+  color: var(--text-tertiary);
+  font-family: var(--main-font-family);
+  font-size: var(--font-size-100);
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.screenRaster {
+  fill: var(--surface-canvas);
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.screenPaper {
+  fill: var(--surface-active);
+  stroke: var(--border-strong);
+  stroke-width: 0.5;
+}
+
+.screenCaption {
+  color: var(--text-tertiary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}

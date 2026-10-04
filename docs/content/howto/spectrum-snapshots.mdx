@@ -1,0 +1,148 @@
+---
+description: "Klive opens, views, runs, debugs and saves ZX Spectrum snapshots: .sna, .z80 (versions 1 to 3) and .szx files."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using ZX Spectrum Snapshots
+
+A snapshot is a frozen ZX Spectrum: the Z80 registers, the RAM, and the state of the hardware
+around it (border, memory paging, the AY sound chip). Games and demos are often shared as
+snapshots, and a snapshot is also the easiest way to hand someone a machine stopped exactly where a
+bug shows up.
+
+Klive reads the three common formats:
+
+| Format | What it holds |
+|---|---|
+| `.sna` | 48K or 128K. The oldest format: registers and RAM, with the 48K program counter kept on the stack. |
+| `.z80` | Versions 1, 2 and 3, compressed or not. Adds 128K paging, the AY registers and (version 3) the position in the video frame. |
+| `.szx` | Spectaculator's zx-state format. Adds the HALT state, the +3 disk drives, the cassette (an embedded tape is inserted) and more. |
+
+## Viewing a snapshot
+
+Open a `.sna`, `.z80` or `.szx` file from the Explorer to see what it holds:
+
+- **Snapshot**: the format, the machine it was saved on and what it loads as in Klive, whether Klive
+  can load it (and if not, why), every warning, and the **screen** as it was saved.
+- **Z80 Registers**: the main and alternate registers, `IX`, `IY`, `I`, `R`, the interrupt mode and
+  flip-flops, and (`.szx`) the HALT state and `WZ`.
+- **ULA**: the border, the position in the video frame (T-states since the interrupt), and which
+  RAM bank the screen is shown from.
+- **Paging and Address Space at PC**: `$7FFD` and `$1FFD` decoded, the program counter's bank and
+  offset, and what each 16K of the address space holds. The two buttons in the heading open the 64K
+  the CPU sees as a **memory dump** or a **disassembly**, positioned at the program counter. A
+  snapshot holds no ROM, so the ROM area is shown as zeros.
+- **AY-3-8912** (128K machines): the sixteen registers and what they mean for each channel.
+- **RAM Banks**: every bank in one list, marked with where it is paged in, the screen bank, and
+  **PC** or **SP** when the program counter or stack pointer points into it. Pop a bank out as a
+  **memory dump** or a **disassembly** (listed at the address it is paged in, or `$C000`).
+- **File**: the format's own header fields; for `.szx`, every block of the file.
+
+## Loading, running and debugging
+
+- **Run** (play icon): the machine runs from the snapshot's state.
+- **Debug** (debug icon): the machine starts in debug mode and stops at the snapshot's program
+  counter **before** executing that instruction, so the CPU, Memory and Disassembly panels show the
+  saved state.
+
+You can reach them from:
+
+- the buttons in a snapshot's document tab;
+- the Explorer's context menu on a snapshot file;
+- the [`zx-snapshot`](../commands-reference#zx-snapshot) command;
+- **File &rarr; Load ZX Spectrum Snapshot...**, whatever machine is selected, and **Load
+  Snapshot...** in the Emulator's **Machine** menu while a ZX Spectrum is selected (both run the
+  snapshot);
+- dropping a snapshot file onto the Emulator window (it runs). Dropping a `.tap` or `.tzx` file
+  inserts it as a tape; dropping a `.z88` file opens it as a Z88 snapshot.
+
+## Which machine it runs on
+
+The snapshot decides the machine; Klive switches to it when needed.
+
+| Saved on | Runs on |
+|---|---|
+| ZX Spectrum 16K | ZX Spectrum 16K (a 48K also runs it) |
+| ZX Spectrum 48K | ZX Spectrum 48K (PAL, or NTSC if that is the current model) |
+| ZX Spectrum 48K NTSC (`.szx`) | ZX Spectrum 48K (NTSC) |
+| ZX Spectrum 128 | ZX Spectrum 128K |
+| ZX Spectrum +2 (grey) | ZX Spectrum 128K, with a warning |
+| ZX Spectrum +2A | ZX Spectrum +2E, with a warning |
+| ZX Spectrum +3 | ZX Spectrum +3E, with a warning (two drives when the snapshot has two) |
+| ZX Spectrum +3e | ZX Spectrum +3E |
+| Pentagon, Scorpion, SamRam, Timex, Spectrum SE, Didaktik | not supported |
+
+The warnings are there because the machine differs from the one the snapshot was saved on: Klive's
++2E and +3E use the +E ROMs, not Amstrad's, so a program that calls into the ROM at a
+version-specific address may behave differently. Klive also warns when the snapshot uses something
+it does not emulate &mdash; an AY chip on a 48K, Interface 1, an M.G.T. interface, TR-DOS, the Issue
+2 keyboard, the alternate ULA timings, or a custom ROM.
+
+<Callout type="warning" emoji="⚠️">
+With a project open, Klive does not switch the project's machine type behind your back: a snapshot
+for another machine is refused. A snapshot for the same machine type loads on the project's model,
+with a warning when the snapshot prefers another one (for example a +3 snapshot in a +2E project).
+</Callout>
+
+## Disks and tapes in `.szx` files
+
+A `.szx` file can name the disks in the +3's drives. Klive looks for each disk where the file says,
+then beside the snapshot, and inserts the ones it finds; a missing disk is reported. An embedded
+`.tap` or `.tzx` tape is put into the tape deck.
+
+## Things to know
+
+- **The 48K `.sna` stack quirk.** A 48K `.sna` keeps the program counter on the stack, so the two
+  bytes below the stack pointer hold it rather than what the program had there. This is how the
+  format works in every emulator, and a few programs show it.
+- **No frame position in `.sna` and older `.z80` files.** The machine starts at the beginning of a
+  video frame, just after the interrupt. Most programs do not notice; border and multicolour effects
+  can glitch for one frame.
+- **The +3 disk controller restarts.** Its state in the middle of a command cannot be restored, so a
+  snapshot saved while the disk was busy may not resume that operation.
+- **Restart** sets the machine up again from its configuration, so the snapshot is gone.
+
+## Saving a snapshot
+
+Klive saves the ZX Spectrum 48K, 128K and +2E/+3E as a snapshot, whether the machine is running
+or paused. A running machine is paused for an instant and then runs on; a paused one stays paused.
+A stopped machine has nothing to save.
+
+- **File &rarr; Save ZX Spectrum Snapshot...**, or **Save Snapshot...** in the Emulator's
+  **Machine** menu, asks for a file. The file type you pick (or the extension you type) decides the
+  format.
+- The [`zx-snapshot-save`](../commands-reference#zx-snapshot-save) command saves to the file you
+  name.
+
+**Save as `.szx` unless you need another format.** It is the only format that keeps the whole state
+Klive captures; the other two lose a little, and Klive tells you exactly what after saving:
+
+| | `.szx` | `.z80` (written as version 3) | `.sna` |
+|---|---|---|---|
+| Registers, RAM, border, paging | ✓ | ✓ | ✓ |
+| Position in the video frame | ✓ | ✓ | &mdash; (starts at the interrupt) |
+| AY sound chip | ✓ | ✓ | &mdash; |
+| `$1FFD` (+2E/+3E) | ✓ | ✓ | &mdash; |
+| HALT | ✓ | ✓ (the program counter stays on the `HALT`) | ✓ (same) |
+| "No interrupt before the next instruction" right after `EI` | ✓ | &mdash; | &mdash; |
+| `IFF1` different from `IFF2` | ✓ | ✓ | &mdash; |
+| +3 disks and the tape (linked by file name) | ✓ | &mdash; | &mdash; |
+| Machine names | as Klive's | +2E/+3E become +2A/+3; NTSC becomes PAL | +2E/+3E become 128K; 16K becomes 48K |
+
+Only `.szx` keeps `WZ` (MEMPTR). It shows only in two undocumented flag bits after `BIT n,(HL)`,
+so Klive does not list it as a loss. A 48K `.sna` pushes the program counter onto the stack in the
+file (never in the running machine), as every `.sna` writer does.
+
+Some states cannot be saved in a format at all, because the file would load back as a different
+machine. Klive refuses them with the reason:
+
+- a 48K `.sna` when the stack pointer is so low that the pushed program counter would land in ROM;
+- a `.sna` of a +2E/+3E in special paging mode (`$1FFD` bit 0);
+- a machine stopped between an instruction prefix (`CB`, `DD`, `ED`, `FD`) and its opcode, after a
+  single step. Step once more and save again.
+
+<Callout type="info">
+A `.szx` file links the disks in the +3's drives and the tape by their file names; it does not copy
+them. Keep those files with the snapshot when you share it.
+</Callout>

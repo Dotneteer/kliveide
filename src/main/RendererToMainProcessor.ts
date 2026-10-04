@@ -13,7 +13,10 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getIdeApi, sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { droppedFileAction } from "@common/utils/dropped-file-action";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import {
   createKliveProject,
   getKliveProjectFolder,
@@ -28,6 +31,9 @@ import {
 import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
+import { KLIVE_APP_VERSION } from "./app-version";
+import { createHash } from "node:crypto";
+import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import {
   applyProjectSettingAction,
   dimMenuAction,
@@ -58,6 +64,7 @@ import type { MessageBoxType, ZxNextStorageCopyRequest } from "@common/messaging
 import { CompileProfile, CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
 import { ScriptRunInfo } from "@abstractions/ScriptRunInfo";
 import {
+  activeSdCardFile,
   DEFAULT_SD_CARD_FILE,
   getSdCardHandler,
   invalidateSdCardHandler
@@ -778,6 +785,41 @@ class MainMessageProcessor {
    * Shows a file or folder in the system's file explorer.
    * @param itemPath The path to show in the file explorer.
    */
+  /**
+   * The Next's SD card image and a fingerprint of its content (see `MainApi.getSdCardFingerprint`).
+   * The fingerprint hashes the image's size and its first 8 MB, where the FAT32 boot sector, the
+   * allocation tables and the root directory of every card Klive makes live, so any file change
+   * shows; it ignores the modification time, so a copied card still matches.
+   */
+  async getSdCardFingerprint(): Promise<SdCardFingerprint | undefined> {
+    const fileName = activeSdCardFile();
+    if (!fileName || !fs.existsSync(fileName)) return undefined;
+    return withSdCardAccess(() => {
+      const size = fs.statSync(fileName).size;
+      const hash = createHash("sha256");
+      hash.update(String(size));
+      const fd = fs.openSync(fileName, "r");
+      try {
+        const chunk = Buffer.alloc(1024 * 1024);
+        for (let offset = 0; offset < Math.min(size, 8 * 1024 * 1024); offset += chunk.length) {
+          const read = fs.readSync(fd, chunk, 0, chunk.length, offset);
+          if (read <= 0) break;
+          hash.update(chunk.subarray(0, read));
+        }
+      } finally {
+        fs.closeSync(fd);
+      }
+      return { fileName, size, fingerprint: hash.digest("hex").slice(0, 32) };
+    });
+  }
+
+  /**
+   * The Klive version (see `MainApi.getAppVersion`).
+   */
+  async getAppVersion(): Promise<string> {
+    return KLIVE_APP_VERSION;
+  }
+
   async showItemInFolder(itemPath: string) {
     shell.showItemInFolder(path.normalize(itemPath));
   }
@@ -975,6 +1017,36 @@ class MainMessageProcessor {
     const error = await setSelectedTapeFile(filename, false);
     // --- As the menu does: the project remembers its tape
     if (!error) await saveKliveProject();
+    return error;
+  }
+
+  /**
+   * Opens a file dropped onto the emulator window (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10).
+   * @param filename The dropped file's full path
+   */
+  async openDroppedFile(filename: string): Promise<string | undefined> {
+    const action = droppedFileAction(filename);
+    let error: string | undefined;
+    if (action.kind === "command") {
+      const result = await getIdeApi().executeCommand(action.command);
+      error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+    } else if (action.kind === "tape") {
+      const machineId = mainStore.getState()?.emulatorState?.machineId;
+      const machine = machineRegistry.find((m) => m.machineId === machineId);
+      if (!machine?.features?.[MF_TAPE_SUPPORT]) {
+        error = `The ${machine?.displayName ?? "current machine"} has no tape deck.`;
+      } else {
+        error = await setSelectedTapeFile(filename, false);
+        if (!error) await saveKliveProject();
+      }
+    } else {
+      error = action.message;
+    }
+    if (error) {
+      const window = BrowserWindow.getFocusedWindow();
+      const options = { type: "error" as const, title: "Dropped file", message: error };
+      await (window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options));
+    }
     return error;
   }
 

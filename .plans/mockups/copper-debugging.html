@@ -1,0 +1,488 @@
+<title>Klive Copper Debugging</title>
+<style>
+/* Layout: one Klive IDE window paused on a Copper breakpoint (Copper side-bar panel | Copper List document with raster ruler | output), then the breakpoint dialog + Breakpoints panel, then the .copper source with hover. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c;
+  --state: #0A5E99; --state-2: #7A3FB0;          /* --color-state-value, and the accent's secondary hue */
+  --hit: #B25E00; --hit-wash: #B25E001f;         /* where the breakpoint fired */
+  --bp: #C8322B; --warn: #8A6A00; --ok: #2D7D46;
+  --zone-paper: #d7e3ef; --zone-border: #eceef1; --zone-blank: #dfe1e5;
+  --kw: #0A6FB8; --kw2: #7A3FB0; --num: #2D7D46; --cmt: #6b7d5a; --lbl: #8A4B00;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --row: 22px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --state: #7CC4F0; --state-2: #C49BEF; --hit: #F0A040; --hit-wash: #F0A0402a;
+  --bp: #F0605A; --warn: #FFC933; --ok: #6CC488;
+  --zone-paper: #1f3346; --zone-border: #1d2025; --zone-blank: #25282e;
+  --kw: #5CB0EC; --kw2: #C49BEF; --num: #8BD49C; --cmt: #8C9C7C; --lbl: #E8B070;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --state: #7CC4F0; --state-2: #C49BEF; --hit: #F0A040; --hit-wash: #F0A0402a;
+  --bp: #F0605A; --warn: #FFC933; --ok: #6CC488;
+  --zone-paper: #1f3346; --zone-border: #1d2025; --zone-blank: #25282e;
+  --kw: #5CB0EC; --kw2: #C49BEF; --num: #8BD49C; --cmt: #8C9C7C; --lbl: #E8B070;
+  color-scheme: dark; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); margin: 0; padding: 24px 16px 56px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: grid; gap: 28px; }
+header.page h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; text-wrap: balance; }
+header.page p { margin: 0; color: var(--text-2); max-width: 86ch; }
+h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+.cap { color: var(--text-2); margin: 0 0 10px; max-width: 90ch; }
+.cap code, .note code { font-family: var(--font-mono); font-size: 12px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.section { display: grid; gap: 4px; min-width: 0; }
+
+/* ---------- IDE window ---------- */
+.ide { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; box-shadow: 0 12px 40px #0003; display: grid; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; min-width: 0; }
+@media (max-width: 900px) { .ide { grid-template-columns: minmax(0, 1fr); } }
+.side { border-right: 1px solid var(--border); background: var(--panel); min-width: 0; display: flex; flex-direction: column; }
+@media (max-width: 900px) { .side { border-right: 0; border-bottom: 1px solid var(--border); } }
+.ph { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; font: 600 11px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); background: var(--chrome); border-bottom: 1px solid var(--border-subtle); }
+.ph .chev { font-size: 9px; color: var(--text-3); width: 10px; }
+.ph.collapsed { border-top: 1px solid var(--border-subtle); }
+.ph .badge { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--hit); }
+.drow { display: grid; grid-template-columns: 11ch minmax(0, 1fr); align-items: center; min-height: var(--row); padding: 0 10px; gap: 8px; }
+.drow:hover { background: var(--hover); }
+.dl { color: var(--text-2); }
+.dv { font-family: var(--font-mono); color: var(--state); font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dv .sub { color: var(--text-3); }
+.pill { display: inline-flex; align-items: center; gap: 5px; font: 500 11.5px var(--font-ui); padding: 1px 7px; border-radius: 9px; background: var(--accent-wash); color: var(--accent); }
+.pill.hit { background: var(--hit-wash); color: var(--hit); }
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.win { margin: 6px 8px 4px; border: 1px solid var(--border-subtle); border-radius: 4px; background: var(--canvas); font-family: var(--font-mono); font-size: 12px; overflow: hidden; }
+.wrow { display: grid; grid-template-columns: 12px 4ch 4.6ch minmax(0, 1fr); gap: 6px; align-items: center; height: 20px; padding: 0 6px; white-space: nowrap; }
+.wrow .ix { color: var(--text-3); }
+.wrow .mn { color: var(--kw); font-weight: 500; }
+.wrow .op { color: var(--text); overflow: hidden; text-overflow: ellipsis; }
+.wrow.pc { background: var(--accent-wash); box-shadow: inset 2px 0 0 var(--accent); }
+.wrow.hitrow { background: var(--hit-wash); box-shadow: inset 2px 0 0 var(--hit); }
+.mk { font-size: 10px; line-height: 1; }
+.mk.pc { color: var(--accent); } .mk.hit { color: var(--hit); } .mk.bp { color: var(--bp); }
+.side-foot { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 6px 10px 10px; color: var(--text-2); font-size: 12px; }
+.link { color: var(--accent); background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.link:focus-visible, button:focus-visible, .tick:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- document area ---------- */
+.doc { min-width: 0; display: flex; flex-direction: column; background: var(--canvas); }
+.tabs { display: flex; background: var(--chrome); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 6px 14px; color: var(--text-2); border-right: 1px solid var(--border-subtle); white-space: nowrap; font-size: 12.5px; }
+.tab.on { background: var(--canvas); color: var(--text); box-shadow: inset 0 2px 0 var(--accent); }
+.tab i { font-style: normal; color: var(--text-3); margin-right: 6px; font-family: var(--font-mono); font-size: 11px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--border-subtle); background: var(--panel); }
+.tb { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border: 1px solid var(--border); border-radius: 4px; background: var(--raised); color: var(--text); font: 12px var(--font-ui); cursor: pointer; }
+.tb:hover { background: var(--hover); }
+.tb.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.tb.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.toolbar .sum { margin-left: auto; color: var(--text-2); font-size: 12px; }
+.toolbar .sum b { font-weight: 500; color: var(--text); }
+.toolbar .sum .w { color: var(--warn); }
+.doc-body { display: grid; grid-template-columns: minmax(0, 1fr) 132px; min-height: 0; height: 470px; }
+@media (max-width: 640px) { .doc-body { grid-template-columns: minmax(0, 1fr); height: auto; } .ruler-wrap { display: none; } }
+.list { overflow: auto; min-width: 0; border-right: 1px solid var(--border-subtle); }
+table.cl { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 12px; }
+table.cl th { position: sticky; top: 0; background: var(--chrome); color: var(--text-2); font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--border); z-index: 1; }
+table.cl td { padding: 0 6px; height: var(--row); white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border-subtle); }
+table.cl tr:hover td { background: var(--hover); }
+td.gut { width: 34px; cursor: pointer; text-align: center; padding: 0; }
+td.gut .d { display: inline-block; width: 9px; height: 9px; border-radius: 50%; border: 1px solid transparent; }
+td.gut:hover .d { border-color: var(--bp); opacity: .55; }
+tr.bp td.gut .d { background: var(--bp); border-color: var(--bp); opacity: 1; }
+tr.bp.dis td.gut .d { background: transparent; border-color: var(--bp); opacity: 1; }
+td.ix { color: var(--text-3); width: 5ch; }
+td.wd { color: var(--text-3); width: 6ch; }
+td.mn { color: var(--kw); font-weight: 600; width: 6ch; }
+td.mn.halt { color: var(--kw2); }
+td.mn.nop { color: var(--text-3); font-weight: 400; }
+td.op { color: var(--text); width: 11ch; }
+td.mean { font-family: var(--font-ui); color: var(--text-2); }
+td.mean .reg { color: var(--text); }
+td.mean .val { font-family: var(--font-mono); color: var(--state-2); }
+td.mean .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-left: 5px; border: 1px solid var(--border-strong); }
+td.mean .warn { color: var(--warn); }
+td.src { font-family: var(--font-ui); color: var(--text-3); }
+td.src a { color: var(--accent); text-decoration: none; font-family: var(--font-mono); font-size: 11.5px; }
+td.src .patched { color: var(--warn); font-size: 11px; margin-left: 6px; }
+tr.pc td { background: var(--accent-wash); }
+tr.pc td.ix { box-shadow: inset 2px 0 0 var(--accent); color: var(--accent); font-weight: 600; }
+tr.hit td { background: var(--hit-wash); }
+tr.hit td.ix { box-shadow: inset 2px 0 0 var(--hit); color: var(--hit); font-weight: 600; }
+tr.sel td { outline: 1px solid var(--accent); outline-offset: -1px; }
+.tag { font: 500 10.5px var(--font-ui); padding: 0 5px; border-radius: 3px; margin-left: 6px; }
+.tag.pc { color: var(--accent); background: var(--accent-wash); }
+.tag.hit { color: var(--hit); background: var(--hit-wash); }
+tr.fold td { color: var(--text-3); font-family: var(--font-ui); font-style: italic; cursor: pointer; }
+
+/* raster ruler */
+.ruler-wrap { display: flex; flex-direction: column; min-width: 0; background: var(--panel); }
+.ruler-h { font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); padding: 5px 8px; border-bottom: 1px solid var(--border); background: var(--chrome); }
+.ruler { position: relative; flex: 1; margin: 8px 8px 8px 36px; border: 1px solid var(--border); border-radius: 3px; overflow: visible; }
+.zone { position: absolute; left: 0; right: 0; }
+.zone.paper { background: var(--zone-paper); }
+.zone.lower { background: var(--zone-border); }
+.zone.upper { background: var(--zone-blank); }
+.zl { position: absolute; right: 4px; font-size: 10px; color: var(--text-3); }
+.axis { position: absolute; left: -32px; font: 10px var(--font-mono); color: var(--text-3); transform: translateY(-50%); width: 28px; text-align: right; }
+.tick { position: absolute; left: 0; height: 3px; transform: translateY(-50%); border-radius: 1px; background: var(--kw); cursor: pointer; border: 0; padding: 0; }
+.tick.park { background: var(--kw2); }
+.tick.sel { box-shadow: 0 0 0 2px var(--accent); }
+.beam { position: absolute; left: -6px; right: -6px; height: 0; border-top: 2px solid var(--accent); }
+.beam span, .hitline span { position: absolute; right: 2px; top: -15px; font: 600 10px var(--font-mono); color: var(--accent); background: var(--panel); padding: 0 2px; }
+.hitline { position: absolute; left: -6px; right: -6px; height: 0; border-top: 2px dashed var(--hit); }
+.hitline span { color: var(--hit); top: 2px; }
+.legend { display: grid; gap: 3px; padding: 6px 8px 8px; font-size: 10.5px; color: var(--text-2); border-top: 1px solid var(--border-subtle); }
+.legend i { display: inline-block; width: 10px; height: 3px; margin-right: 5px; vertical-align: middle; }
+
+/* output pane */
+.out { grid-column: 1 / -1; border-top: 1px solid var(--border); background: var(--canvas); font: 12px/1.6 var(--font-mono); }
+.out .ph { text-transform: uppercase; }
+.out pre { margin: 0; padding: 6px 10px 10px; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-2); }
+.out .cy { color: var(--state); }
+
+/* ---------- second row ---------- */
+.row2 { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 980px) { .row2 { grid-template-columns: minmax(0, 1fr); } }
+.dlg { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 12px 40px #0003; overflow: hidden; min-width: 0; }
+.dlg-head { background: var(--chrome); border-bottom: 1px solid var(--border); padding: 8px 12px; font-weight: 600; display: flex; }
+.dlg-head span { margin-left: auto; color: var(--text-3); font-weight: 400; }
+.dlg-body { padding: 12px 14px; display: grid; gap: 12px; }
+.kinds { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.kinds label { display: inline-flex; gap: 5px; align-items: center; color: var(--text-2); }
+.kinds label.on { color: var(--text); font-weight: 500; }
+.field { display: grid; grid-template-columns: 13ch minmax(0, 1fr); gap: 8px; align-items: center; }
+.field .lab { color: var(--text-2); }
+.inp { background: var(--canvas); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; font: 12.5px var(--font-mono); color: var(--text); width: 100%; }
+.inp.focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-wash); }
+.preview { background: var(--canvas); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 8px 10px; font-size: 12px; color: var(--text-2); display: grid; gap: 3px; }
+.preview .l1 { font-family: var(--font-mono); color: var(--text); }
+.preview .l1 b { color: var(--kw); font-weight: 600; }
+.dlg-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 10px 14px; border-top: 1px solid var(--border-subtle); background: var(--chrome); }
+.cmdline { font: 12px var(--font-mono); color: var(--text-3); padding: 0 14px 10px; }
+
+.bpp { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; min-width: 0; }
+.grp { display: flex; align-items: center; gap: 6px; padding: 6px 10px 3px; font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); }
+.grp .n { font-family: var(--font-mono); letter-spacing: 0; }
+.bprow { display: grid; grid-template-columns: 14px 9ch minmax(0, 1fr) auto; gap: 8px; align-items: center; min-height: 24px; padding: 0 10px; font-family: var(--font-mono); font-size: 12px; }
+.bprow:hover { background: var(--hover); }
+.bprow .d { width: 9px; height: 9px; border-radius: 50%; background: var(--bp); }
+.bprow .d.off { background: transparent; border: 1px solid var(--bp); }
+.bprow .k { color: var(--text); }
+.bprow .m { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-ui); }
+.bprow .m .mono { color: var(--text); }
+.bprow .h { color: var(--text-3); font-size: 11px; }
+.bprow.hitb { background: var(--hit-wash); box-shadow: inset 2px 0 0 var(--hit); }
+.bprow.hitb .h { color: var(--hit); }
+
+/* ---------- editor ---------- */
+.row3 { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 980px) { .row3 { grid-template-columns: minmax(0, 1fr); } }
+.ed { background: var(--canvas); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; min-width: 0; }
+.ed .tabs { background: var(--chrome); }
+.code { position: relative; font: 12.5px/20px var(--font-mono); overflow-x: auto; padding: 6px 0 10px; }
+.ln { display: grid; grid-template-columns: 18px 3.5ch minmax(0, 1fr); gap: 8px; white-space: pre; padding-right: 12px; }
+.ln .g { text-align: center; }
+.ln .g .d { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--bp); vertical-align: -1px; }
+.ln .n { color: var(--text-dis); text-align: right; }
+.ln.cur { background: var(--hit-wash); }
+.ln.cur .n { color: var(--hit); }
+.c-kw { color: var(--kw); } .c-p { color: var(--kw2); } .c-sub { color: var(--kw); font-weight: 600; }
+.c-num { color: var(--num); } .c-cmt { color: var(--cmt); font-style: italic; } .c-lbl { color: var(--lbl); }
+.err { text-decoration: underline wavy var(--bp); text-underline-offset: 3px; }
+.hover { position: absolute; left: 172px; top: 128px; width: min(330px, calc(100% - 24px)); background: var(--raised); border: 1px solid var(--border-strong); border-radius: 5px; box-shadow: 0 8px 26px #0004; padding: 8px 10px; font: 12px/1.45 var(--font-ui); color: var(--text-2); white-space: normal; z-index: 2; }
+.hover .t { font-family: var(--font-mono); color: var(--text); margin-bottom: 3px; }
+.hover .t b { color: var(--kw); }
+.hover hr { border: 0; border-top: 1px solid var(--border-subtle); margin: 6px 0; }
+@media (max-width: 640px) { .hover { position: static; margin: 8px 12px 0; width: auto; } }
+.probs { border-top: 1px solid var(--border); font: 12px var(--font-mono); padding: 6px 10px; color: var(--text-2); background: var(--panel); }
+.probs .e { color: var(--bp); }
+.notes { display: grid; gap: 10px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; color: var(--text-2); }
+.note h3 { margin: 0 0 4px; font-size: 12.5px; color: var(--text); }
+.note p { margin: 0; }
+table.syn { border-collapse: collapse; width: 100%; font-size: 12px; }
+table.syn td { padding: 3px 6px 3px 0; vertical-align: top; border-top: 1px solid var(--border-subtle); }
+table.syn td:first-child { font-family: var(--font-mono); color: var(--text); white-space: nowrap; }
+.sx { overflow-x: auto; }
+@media (prefers-reduced-motion: no-preference) { tr.pc td, .wrow.pc { transition: background .15s; } }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <h1>Copper debugging in Klive: mockup</h1>
+    <p>Mockup for <code class="mono">.plans/COPPER_DEBUGGING_PLAN.md</code>. It covers G3.1 (Copper list viewer), the Copper half of G3.8 (Copper breakpoints) and the proposed <code class="mono">.copper</code> pragma. The scene shows the C03 "staircase" list paused on <code class="mono">cu:$00B</code>. The values are illustrative, and the gutter, ruler ticks and <b>Step Copper</b> button respond to clicks.</p>
+  </header>
+
+  <!-- ===================== 1. IDE paused on a Copper breakpoint ===================== -->
+  <section class="section">
+    <h2>1 · Paused on a Copper breakpoint</h2>
+    <p class="cap">The machine stopped after the Z80 instruction during which the Copper satisfied <code>WAIT 120,31</code> at <code>$00B</code>. The Copper kept running to the end of that instruction, so its PC is now <code>$00D</code>. The orange <b>hit</b> row and the blue <b>PC</b> row are separate markers (trap T1).</p>
+    <div class="ide">
+      <aside class="side" aria-label="Side bar">
+        <div class="ph"><span class="chev">▾</span>Copper<span class="badge">● breakpoint</span></div>
+        <div style="padding-top:4px">
+          <div class="drow"><span class="dl">Mode</span><span class="dv" title="Copper start, execute the list from index 0, and restart the list when the raster reaches position (0,0)">11 <span class="sub">· loop, restart at (0,0)</span></span></div>
+          <div class="drow"><span class="dl">State</span><span class="dv"><span class="pill"><span class="dot"></span><span id="st-state">Running</span></span></span></div>
+          <div class="drow"><span class="dl">PC</span><span class="dv" id="st-pc">$00D</span></div>
+          <div class="drow"><span class="dl">Hit</span><span class="dv"><span class="pill hit"><span class="dot"></span>$00B · line 120, hc 260</span></span></div>
+          <div class="drow"><span class="dl">Beam</span><span class="dv" id="st-beam">line 120 <span class="sub">·</span> hc 284</span></div>
+          <div class="drow"><span class="dl">Write ptr</span><span class="dv">$02C <span class="sub">(byte)</span></span></div>
+          <div class="drow"><span class="dl">Offset $64</span><span class="dv">$00</span></div>
+        </div>
+        <div class="win mono" id="side-win" aria-label="Instructions around the Copper PC"></div>
+        <div class="side-foot"><span class="mono" id="side-sum">22 used · HALT at $015 · 1002 NOP</span><button class="link" type="button">Open Copper List</button></div>
+        <div class="ph collapsed"><span class="chev">▸</span>Next Registers</div>
+        <div class="ph collapsed"><span class="chev">▸</span>Memory Mapping</div>
+        <div class="ph collapsed"><span class="chev">▸</span>Breakpoints<span class="badge" style="color:var(--text-3)">3</span></div>
+      </aside>
+
+      <div class="doc">
+        <div class="tabs"><span class="tab"><i>asm</i>program.asm</span><span class="tab on"><i>≡</i>Copper List</span><span class="tab"><i>⌗</i>Memory</span></div>
+        <div class="toolbar">
+          <button class="tb on" type="button" id="tb-follow" aria-pressed="true">Follow PC</button>
+          <button class="tb on" type="button" aria-pressed="true">Source</button>
+          <button class="tb" type="button" aria-pressed="false">Decimal</button>
+          <button class="tb primary" type="button" id="tb-step" title="Run until the Copper completes its next instruction (a one-shot on any index)">Step Copper ▸</button>
+          <span class="sum"><b>22</b> used · ends with <b>HALT</b> at <span class="mono">$015</span> · <span class="w">1 WAIT parks at 50 Hz</span></span>
+        </div>
+        <div class="doc-body">
+          <div class="list" id="list">
+            <table class="cl" aria-label="Copper list">
+              <thead><tr><th></th><th>Idx</th><th>Word</th><th>Op</th><th>Operands</th><th>Meaning</th><th>Source</th></tr></thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="ruler-wrap" aria-label="Raster ruler">
+            <div class="ruler-h">Raster · cvc</div>
+            <div class="ruler" id="ruler"></div>
+            <div class="legend">
+              <span><i style="background:var(--kw)"></i>WAIT</span>
+              <span><i style="background:var(--kw2)"></i>parks (never matches)</span>
+              <span><i style="background:var(--accent)"></i>beam now</span>
+              <span><i style="border-top:2px dashed var(--hit);height:0"></i>hit</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="out">
+        <div class="ph"><span class="chev">▾</span>Output · Emulator</div>
+<pre>Debug session started for C03-wait-hpos-staircase.nex
+<span class="cy">Copper breakpoint: $00B WAIT 120,31 satisfied at line 120, hc 260 (x 248); CPU at $8012 in R0</span>
+<span class="cy" id="out-step"></span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 2. Setting breakpoints ===================== -->
+  <section class="section">
+    <h2>2 · Setting and listing Copper breakpoints</h2>
+    <p class="cap">The dialog gains a seventh kind, <b>Copper instruction</b>. Its preview decodes the live list at the index. The hit count, condition and one-shot sections are the existing G1 ones. The Breakpoints panel gets a <b>Copper</b> group after <b>NextReg write</b>.</p>
+    <div class="row2">
+      <div class="dlg" role="group" aria-label="Breakpoint dialog">
+        <div class="dlg-head">Edit Breakpoint<span>✕</span></div>
+        <div class="dlg-body">
+          <div class="kinds">
+            <label><input type="radio" name="k" id="k1"> Execution</label>
+            <label><input type="radio" name="k" id="k2"> Memory read</label>
+            <label><input type="radio" name="k" id="k3"> Memory write</label>
+            <label><input type="radio" name="k" id="k4"> I/O read</label>
+            <label><input type="radio" name="k" id="k5"> I/O write</label>
+            <label><input type="radio" name="k" id="k6"> NextReg write</label>
+            <label class="on"><input type="radio" name="k" id="k7" checked> Copper instruction</label>
+          </div>
+          <div class="field"><span class="lab">List index</span><input class="inp focus" id="f-idx" value="$00B" aria-label="List index"></div>
+          <div class="preview">
+            <div class="l1"><b>WAIT</b> 120, 31 <span style="color:var(--text-3)">· $BE78</span></div>
+            <div>Fires when the raster reaches line 120, x 248 (hc 260). Source: <span class="mono" style="color:var(--accent)">program.asm:29</span></div>
+          </div>
+          <div class="field"><span class="lab">Hit count</span><input class="inp" id="f-hit" value="" placeholder="e.g. 50, >=10, *2" aria-label="Hit count"></div>
+          <div class="field"><span class="lab">Condition</span><input class="inp" id="f-cond" value="" placeholder="e.g. A == $FF" aria-label="Condition"></div>
+          <div class="field"><span class="lab"></span><label style="display:inline-flex;gap:6px;align-items:center;color:var(--text-2)"><input type="checkbox" id="f-once"> Remove after the first stop (one-shot)</label></div>
+        </div>
+        <div class="cmdline">≙ bp-set cu:$00B</div>
+        <div class="dlg-foot"><button class="tb" type="button">Cancel</button><button class="tb primary" type="button">OK</button></div>
+      </div>
+
+      <div class="bpp" aria-label="Breakpoints panel">
+        <div class="ph"><span class="chev">▾</span>Breakpoints</div>
+        <div class="grp">Execution <span class="n">1</span></div>
+        <div class="bprow"><span class="d"></span><span class="k">$8000</span><span class="m">Start</span><span class="h"></span></div>
+        <div class="grp">NextReg write <span class="n">1</span></div>
+        <div class="bprow"><span class="d"></span><span class="k">NR:$41</span><span class="m">Palette Value (8 bit) <span style="color:var(--text-3)">· CPU + Copper</span></span><span class="h"></span></div>
+        <div class="grp">Copper <span class="n">2</span></div>
+        <div class="bprow hitb"><span class="d"></span><span class="k">CU:$00B</span><span class="m"><span class="mono">WAIT 120,31</span> · line 120, x 248</span><span class="h">hit · hc 260</span></div>
+        <div class="bprow"><span class="d off"></span><span class="k">CU:$011</span><span class="m"><span class="mono">WAIT 160,0</span> · disabled</span><span class="h">-hit 50</span></div>
+        <div style="padding:10px;border-top:1px solid var(--border-subtle);margin-top:6px;font:12px/1.7 var(--font-mono);color:var(--text-2)">
+          <div><span style="color:var(--text-3)">&gt;</span> bp-set cu:$00B</div>
+          <div><span style="color:var(--text-3)">&gt;</span> bp-set cu:$011 -hit 50</div>
+          <div><span style="color:var(--text-3)">&gt;</span> bp-en cu:$011 -d</div>
+          <div><span style="color:var(--text-3)">&gt;</span> bp-set cu:$00B -w</div>
+          <div style="color:var(--bp)">A Copper breakpoint watches a list index, not memory, a port or a register</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 3. The .copper pragma ===================== -->
+  <section class="section">
+    <h2>3 · Writing the list with <code class="mono">.copper</code></h2>
+    <p class="cap">One pragma with sub-commands, like <code>.dma</code>, kept one-to-one with the hardware encoding. Hover decodes the emitted word. A <code>.copper</code> line matched to the live list has a source-level breakpoint, which becomes <code>cu:$00B</code> (D12). The errors are checked at assembly time.</p>
+    <div class="row3">
+      <div class="ed">
+        <div class="tabs"><span class="tab on"><i>asm</i>program.asm</span></div>
+        <div class="code" id="code"></div>
+        <div class="probs"><span class="e">✕ Z0375</span>  program.asm:34  Copper MOVE can write only NextRegs $00..$7F, not $8E</div>
+      </div>
+      <div class="notes">
+        <div class="note">
+          <h3>Sub-commands</h3>
+          <div class="sx"><table class="syn">
+            <tr><td>.copper wait L, H</td><td>Line 0..511, h 0..63 (paper x = 8·h). <span class="mono">1HHHHHHL LLLLLLLL</span></td></tr>
+            <tr><td>.copper move R, V</td><td>NextReg $00..$7F, 8-bit value. <span class="mono">0RRRRRRR VVVVVVVV</span></td></tr>
+            <tr><td>.copper nop</td><td><span class="mono">$00 $00</span></td></tr>
+            <tr><td>.copper halt</td><td><span class="mono">$FF $FF</span>, i.e. WAIT 511,63</td></tr>
+            <tr><td>.copper word X</td><td>Any 16-bit word, big-endian</td></tr>
+          </table></div>
+        </div>
+        <div class="note">
+          <h3>Source mapping</h3>
+          <p>Each run of consecutive <code>.copper</code> lines is recorded in the debug info as a Copper block. The viewer matches the live RAM to blocks by shape (WAIT vs MOVE plus register), so values the CPU patches at runtime still map, and are flagged <span style="color:var(--warn)">patched</span>.</p>
+        </div>
+        <div class="note">
+          <h3>Parks, not warnings</h3>
+          <p>Whether a WAIT can ever match depends on the timing (50/60 Hz, model), which the assembler cannot know. The viewer flags such WAITs instead, as for <code>$013</code> above under 50 Hz.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  const NR = { 0x40: "Palette Index", 0x41: "Palette Value (8 bit)", 0x26: "ULA X Scroll", 0x14: "Global Transparency Colour" };
+  // The C03 list plus an X-scroll band, and one park (WAIT 400,0 never matches at 50 Hz).
+  const words = [0x4010,0x4100,0x9060,0x4010,0x411C,0xA068,0x4010,0x41E0,0xB070,0x4010,0x4103,0xBE78,0x4010,0x41FC,0x8080,0x4010,0x4100,0x80A0,0x2604,0x8190,0x2600,0xFFFF];
+  const srcLine = [18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39];
+  const patched = { 18: "$00 in source" };
+  const LINES = 311;
+  let pc = 0x00D; const hitIx = 0x00B;
+  const bps = new Map([[0x00B, "on"], [0x011, "off"]]);
+  let sel = null;
+  const hex = (v, n) => "$" + v.toString(16).toUpperCase().padStart(n, "0");
+  const rgb8 = v => { const r = (v >> 5) & 7, g = (v >> 2) & 7, b = v & 3; return `rgb(${Math.round(r*255/7)},${Math.round(g*255/7)},${Math.round(b*255/3)})`; };
+  function decode(w) {
+    if (w === 0xFFFF) return { k: "halt", op: "", mean: "WAIT 511,63 · parks until the next restart" };
+    if (w & 0x8000) {
+      const line = w & 0x1FF, h = (w >> 9) & 0x3F;
+      const park = line >= LINES;
+      return { k: "wait", line, h, park, op: `${line}, ${h}`, mean: park ? `<span class="warn">line ${line} · never reached at 50 Hz (${LINES} lines)</span>` : `line ${line} · x ${h*8} <span style="color:var(--text-3)">(hc ${h*8+12})</span>` };
+    }
+    const reg = (w >> 8) & 0x7F, val = w & 0xFF;
+    if (reg === 0) return { k: "nop", op: "", mean: "" };
+    const sw = (reg === 0x41) ? `<span class="sw" style="background:${rgb8(val)}"></span>` : "";
+    return { k: "move", op: `${hex(reg,2)}, ${hex(val,2)}`, mean: `<span class="reg">${NR[reg] ?? "NextReg " + hex(reg,2)}</span> ← <span class="val">${hex(val,2)}</span>${sw}` };
+  }
+  const list = words.map((w, i) => ({ i, w, ...decode(w) }));
+  const rowsEl = document.getElementById("rows");
+  function render() {
+    const html = list.map(r => {
+      const cls = [r.i === pc ? "pc" : "", r.i === hitIx ? "hit" : "", bps.has(r.i) ? "bp" : "", bps.get(r.i) === "off" ? "dis" : "", sel === r.i ? "sel" : ""].join(" ");
+      const tags = (r.i === hitIx ? '<span class="tag hit">hit</span>' : "") + (r.i === pc ? '<span class="tag pc">PC</span>' : "");
+      const p = patched[r.i] ? `<span class="patched">patched · ${patched[r.i]}</span>` : "";
+      return `<tr class="${cls}" data-i="${r.i}"><td class="gut" title="Toggle breakpoint cu:${hex(r.i,3)}"><span class="d"></span></td><td class="ix">${hex(r.i,3).slice(1)}${tags}</td><td class="wd">${hex(r.w,4).slice(1)}</td><td class="mn ${r.k}">${r.k.toUpperCase()}</td><td class="op">${r.op}</td><td class="mean">${r.mean}</td><td class="src"><a href="#code">program.asm:${srcLine[r.i]}</a>${p}</td></tr>`;
+    }).join("") + `<tr class="fold"><td></td><td colspan="6">▸ 1002 × NOP ($016–$3FF) · zero words after the HALT</td></tr>`;
+    rowsEl.innerHTML = html;
+    const win = document.getElementById("side-win");
+    const from = Math.max(0, pc - 3), to = Math.min(list.length, from + 7);
+    win.innerHTML = list.slice(from, to).map(r => {
+      const mk = r.i === pc ? '<span class="mk pc">▶</span>' : r.i === hitIx ? '<span class="mk hit">◆</span>' : bps.has(r.i) ? '<span class="mk bp">●</span>' : "<span></span>";
+      return `<div class="wrow ${r.i === pc ? "pc" : ""} ${r.i === hitIx && r.i !== pc ? "hitrow" : ""}">${mk}<span class="ix">${hex(r.i,3).slice(1)}</span><span class="mn">${r.k.toUpperCase()}</span><span class="op">${r.op}</span></div>`;
+    }).join("");
+    document.getElementById("st-pc").textContent = hex(pc, 3);
+    const cur = list[pc];
+    document.getElementById("st-state").textContent = cur.k === "wait" ? `Waiting for line ${cur.line}, x ${cur.h*8}` : cur.k === "halt" ? `Halted at ${hex(pc,3)}` : "Running";
+    renderRuler();
+  }
+  rowsEl.addEventListener("click", e => {
+    const tr = e.target.closest("tr[data-i]"); if (!tr) return;
+    const i = +tr.dataset.i;
+    if (e.target.closest(".gut")) { bps.has(i) ? bps.delete(i) : bps.set(i, "on"); } else { sel = i; }
+    render();
+  });
+  // --- raster ruler
+  const ruler = document.getElementById("ruler");
+  const pct = l => (l / LINES * 100) + "%";
+  let beamLine = 120;
+  function renderRuler() {
+    let h = `<div class="zone paper" style="top:0;height:${pct(192)}"><span class="zl" style="top:2px">paper</span></div>
+      <div class="zone lower" style="top:${pct(192)};height:${pct(248-192)}"><span class="zl" style="top:2px">lower</span></div>
+      <div class="zone upper" style="top:${pct(248)};height:${pct(LINES-248)}"><span class="zl" style="top:2px">upper · blank</span></div>`;
+    [0, 96, 192, 248, 310].forEach(l => h += `<span class="axis" style="top:${pct(l)}">${l}</span>`);
+    list.filter(r => r.k === "wait").forEach(r => {
+      const line = Math.min(r.line, LINES - 1);
+      h += `<button type="button" class="tick ${r.park ? "park" : ""} ${sel === r.i ? "sel" : ""}" data-i="${r.i}" title="${hex(r.i,3)} WAIT ${r.op}" style="top:${pct(line)};width:${16 + r.h}%"></button>`;
+    });
+    h += `<div class="hitline" style="top:${pct(120)}"><span>hit 120</span></div>`;
+    h += `<div class="beam" style="top:${pct(beamLine)}"><span>${beamLine}</span></div>`;
+    ruler.innerHTML = h;
+  }
+  ruler.addEventListener("click", e => {
+    const t = e.target.closest(".tick"); if (!t) return;
+    sel = +t.dataset.i; render();
+    rowsEl.querySelector(`tr[data-i="${sel}"]`)?.scrollIntoView({ block: "nearest" });
+  });
+  // --- Step Copper: run until the Copper completes its next instruction
+  document.getElementById("tb-step").addEventListener("click", () => {
+    const done = list[pc];
+    if (done.k === "halt") return;
+    if (done.k === "wait") beamLine = done.line;
+    const msg = done.k === "wait" ? `Copper step: ${hex(pc,3)} WAIT ${done.op} satisfied at line ${done.line}, hc ${done.h*8+12}` : `Copper step: ${hex(pc,3)} ${done.k.toUpperCase()} ${done.op}`;
+    pc = Math.min(pc + 1, list.length - 1);
+    document.getElementById("st-beam").innerHTML = `line ${beamLine} <span class="sub">·</span> hc ${done.k === "wait" ? done.h*8+14 : 290}`;
+    document.getElementById("out-step").textContent = msg;
+    render();
+    if (document.getElementById("tb-follow").classList.contains("on")) rowsEl.querySelector("tr.pc")?.scrollIntoView({ block: "nearest" });
+  });
+  document.getElementById("tb-follow").addEventListener("click", e => { e.currentTarget.classList.toggle("on"); e.currentTarget.setAttribute("aria-pressed", e.currentTarget.classList.contains("on")); });
+  render();
+
+  // --- editor
+  const L = [
+    [14, "", '<span class="c-lbl">List:</span>'],
+    [15, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$40</span>, <span class="c-num">16</span>      <span class="c-cmt">; palette index 16</span>'],
+    [16, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$41</span>, <span class="c-num">$00</span>     <span class="c-cmt">;   black from the top</span>'],
+    [17, "", '    <span class="c-p">.copper</span> <span class="c-sub">wait</span> <span class="c-num">96</span>, <span class="c-num">8</span>        <span class="c-cmt">; paper x 64</span>'],
+    [18, "", '    <span class="c-cmt">; … green, red, blue …</span>'],
+    [29, "bp", '    <span class="c-p">.copper</span> <span class="c-sub">wait</span> <span class="c-num">120</span>, <span class="c-num">31</span>       <span class="c-cmt">; paper x 248</span>'],
+    [30, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$40</span>, <span class="c-num">16</span>'],
+    [31, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$41</span>, <span class="c-num">$FC</span>     <span class="c-cmt">;   yellow</span>'],
+    [32, "", '    <span class="c-p">.copper</span> <span class="c-sub">wait</span> <span class="c-num">128</span>, <span class="c-num">0</span>'],
+    [33, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$41</span>, <span class="c-num">$00</span>'],
+    [34, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="err"><span class="c-num">$8E</span></span>, <span class="c-num">1</span>      <span class="c-cmt">; typo for $0E</span>'],
+    [35, "", '    <span class="c-p">.copper</span> <span class="c-sub">wait</span> <span class="c-num">160</span>, <span class="c-num">0</span>'],
+    [36, "", '    <span class="c-p">.copper</span> <span class="c-sub">move</span> <span class="c-num">$26</span>, <span class="c-num">$00</span>     <span class="c-cmt">; X scroll, patched by the CPU</span>'],
+    [39, "", '    <span class="c-p">.copper</span> <span class="c-sub">halt</span>'],
+    [40, "", '<span class="c-lbl">ListEnd:</span>'],
+  ];
+  const code = document.getElementById("code");
+  code.innerHTML = L.map(([n, k, t]) => `<div class="ln ${n === 29 ? "cur" : ""}"><span class="g">${k === "bp" ? '<span class="d" title="cu:$00B"></span>' : ""}</span><span class="n">${n}</span><span>${t}</span></div>`).join("") +
+    `<div class="hover"><div class="t"><b>WAIT</b> line 120, x 248 · <span style="color:var(--text-3)">$BE 78</span></div>hc 260 on copper line 120 (cvc, $64 offset applied).<hr>Live list: <span class="mono">$00B</span> · breakpoint <span class="mono">cu:$00B</span> · last hit this frame</div>`;
+})();
+</script>

@@ -15,6 +15,20 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
+import type {
+  SpectrumSnapshotLoadMode,
+  SpectrumSnapshotLoadOptions,
+  SpectrumSnapshotLoadResult
+} from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
+import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
+import type {
+  MachineStateLoadMode,
+  MachineStateLoadResult,
+  MachineStateSaveResult,
+  SdCardFingerprint
+} from "@common/machineState/machineStateTypes";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -87,6 +101,87 @@ class EmuApiImpl {
     _contents: Uint8Array,
     _mode: Z88SnapshotLoadMode
   ): Promise<Z88SnapshotLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Loads a ZX Spectrum `.sna` / `.z80` / `.szx` snapshot into the emulator, switching to the
+   * machine it needs (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5).
+   * @param _fileName The snapshot's file name (its extension picks the format)
+   * @param _contents The snapshot file
+   * @param _mode "run": start; "debug": start debugging, stopping at the snapshot's PC before that
+   * instruction runs
+   * @param _options `keepModel` (a project is open) and the disks the IDE read for a `.szx` file
+   * @returns What was loaded; rejects with the reason when the snapshot cannot be loaded
+   */
+  async loadSpectrumSnapshot(
+    _fileName: string,
+    _contents: Uint8Array,
+    _mode: SpectrumSnapshotLoadMode,
+    _options?: SpectrumSnapshotLoadOptions & {
+      disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+    }
+  ): Promise<SpectrumSnapshotLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the running ZX Spectrum 48K, 128K or +2E/+3E as a `.sna`, `.z80` or `.szx` snapshot
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3). A running machine is paused for the
+   * capture and runs on afterwards; a paused one stays paused.
+   * @param _format The file format
+   * @param _creator The program a `.szx` file names as its creator
+   * @returns The file's bytes and what the format could not hold; rejects with the reason when the
+   * machine cannot be saved in that format
+   */
+  async saveSpectrumSnapshot(
+    _format: SpectrumSnapshotFormat,
+    _creator?: SzxCreator
+  ): Promise<SpectrumSnapshotSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the machine's complete state as a Klive state file (`.kls`;
+   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). A running machine runs on afterwards.
+   * @param _options The Klive version for the header; the Next SD card's fingerprint
+   * @returns The file; rejects when the machine has no state or cannot save one
+   */
+  async saveMachineStateFile(_options: {
+    kliveVersion: string;
+    sdCard?: SdCardFingerprint;
+  }): Promise<MachineStateSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Loads a Klive state file, switching to the machine it was saved on, then runs or debugs it.
+   * @param _fileName The file's name, for messages
+   * @param _contents The file
+   * @param _mode "run", or "debug" (stop at PC before that instruction runs)
+   * @param _options The live SD card's fingerprint; load even when it has changed
+   */
+  async loadMachineStateFile(
+    _fileName: string,
+    _contents: Uint8Array,
+    _mode: MachineStateLoadMode,
+    _options?: { currentSdCard?: SdCardFingerprint; acceptChangedSdCard?: boolean }
+  ): Promise<MachineStateLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the machine's state into its in-memory quick slot (D19 of
+   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`); a running machine runs on.
+   */
+  async quickSaveMachineState(): Promise<{ machineName: string; pc: number }> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Restores the machine's quick-saved state and leaves it Paused; rejects when there is none.
+   */
+  async quickRestoreMachineState(): Promise<{ pc: number }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

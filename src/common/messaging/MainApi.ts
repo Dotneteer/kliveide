@@ -1,4 +1,5 @@
 import { ProjectNodeWithChildren } from "@abstractions/ProjectNode";
+import type { SdCardFingerprint } from "@common/machineState/machineStateTypes";
 import { buildMessagingProxy } from "./MessageProxy";
 import { MessengerBase } from "./MessengerBase";
 import { CompilerOptions, KliveCompilerOutput } from "@abstractions/CompilerInfo";
@@ -223,6 +224,21 @@ class MainApiImpl {
    * @param _resolveIn Optional base path context.
    */
   async saveBinaryFile(_path: string, _data: Uint8Array, _resolveIn?: string): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The SD card image the ZX Spectrum Next uses now, with a fingerprint of its content
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D12); undefined when there is no image file.
+   */
+  async getSdCardFingerprint(): Promise<SdCardFingerprint | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The Klive version (the app's package version, "x.y.z").
+   */
+  async getAppVersion(): Promise<string> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -554,6 +570,16 @@ class MainApiImpl {
    * @returns An error message, or undefined when the tape was inserted
    */
   async setTapeFile(_filename: string): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Opens a file dropped onto the emulator window (`droppedFileAction`): a snapshot is run through
+   * its IDE command, a tape is inserted. Problems are shown in a message box by the main process.
+   * @param _path The dropped file's full path
+   * @returns An error message, or undefined when the file was opened
+   */
+  async openDroppedFile(_path: string): Promise<string | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

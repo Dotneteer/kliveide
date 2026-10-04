@@ -1,6 +1,25 @@
 const { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } = require("node:fs");
 const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
+const { layoutMapArgs, layoutMapPath, stampWasmLayout } = require("./wasm-layout.cjs");
+
+/**
+ * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
+ * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
+ * core's bytes there.
+ */
+const SP48_VOLATILE_SYMBOLS = [
+  // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
+  // --- state, not machine state, so a restore never brings back old breakpoints
+  "condArena",
+  "condSlots",
+  "condToken",
+  "condLastStatus",
+  "condEnv",
+  "z80AccessLog",
+  "z80AccessLogCount",
+  "z80AccessLogOverflows"
+];
 
 const root = resolve(__dirname, "..");
 const source = resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c");
@@ -187,6 +206,11 @@ const productionExports = [
   "sp48TapeGetBlockLastByteUsedBits",
   "sp48TapeGetBlockPilotPulseCount",
   "sp48GetCpuHalted",
+  "sp48SetCpuHalted",
+  "sp48GetCpuEiBacklog",
+  "sp48SetCpuEiBacklog",
+  "sp48GetCpuIff2",
+  "sp48SetCpuIff2",
   "sp48GetCpuPrefix",
   "sp48GetCpuIff1",
   "sp48SetCpuIff1",
@@ -270,7 +294,8 @@ function buildSp48Wasm({
     "-o",
     selectedOutput
   ];
-  const result = run(compiler, args, { cwd: root, stdio: "inherit" });
+  const layoutMap = layoutMapPath(selectedOutput);
+  const result = run(compiler, [...args, ...layoutMapArgs(layoutMap)], { cwd: root, stdio: "inherit" });
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`ZX Spectrum 48K WASM compilation failed (${result.status}).`);
   if (!existsSync(selectedOutput) || statSync(selectedOutput).size === 0) {
@@ -279,7 +304,10 @@ function buildSp48Wasm({
       `The build must not continue - packaging this app would ship a broken emulator.`
     );
   }
+  // --- The memory layout a Klive state file depends on (scripts/wasm-layout.cjs)
+  const layout = stampWasmLayout(selectedOutput, layoutMap, SP48_VOLATILE_SYMBOLS);
   return {
+    layout,
     compiler,
     args,
     mode: buildMode,
@@ -304,6 +332,7 @@ function toPosixRelative(from, to) {
 }
 
 module.exports = {
+  SP48_VOLATILE_SYMBOLS,
   buildSp48Wasm,
   buildAllSp48Wasm,
   buildModes,

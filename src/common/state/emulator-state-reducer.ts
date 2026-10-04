@@ -10,11 +10,15 @@ export function emulatorStateReducer(
   { type, payload }: Action
 ): EmulatorState {
   switch (type) {
+    // --- A machine or model change rebuilds the machine, which empties its quick-save slot
     case "SET_MACHINE_TYPE":
-      return { ...state, machineId: payload?.id };
+      return { ...state, machineId: payload?.id, quickStateAvailable: false };
 
     case "SET_MODEL_TYPE":
-      return { ...state, modelId: payload?.id };
+      return { ...state, modelId: payload?.id, quickStateAvailable: false };
+
+    case "SET_QUICK_STATE_AVAILABLE":
+      return { ...state, quickStateAvailable: payload?.flag as boolean };
 
     case "SET_MACHINE_STATE":
       return {

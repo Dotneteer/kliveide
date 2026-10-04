@@ -150,6 +150,8 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   spp3eGetSelectedRom: SpP3eWasmV2ExportFunction;
   spp3eGetSelectedBank: SpP3eWasmV2ExportFunction;
   spp3eGetPagingEnabled: SpP3eWasmV2ExportFunction;
+  spp3eGetPort7ffd: SpP3eWasmV2ExportFunction;
+  spp3eGetPort1ffd: SpP3eWasmV2ExportFunction;
   spp3eGetUseShadowScreen: SpP3eWasmV2ExportFunction;
   spp3eGetScreenBank: SpP3eWasmV2ExportFunction;
   spp3eGetInSpecialPagingMode: SpP3eWasmV2ExportFunction;
@@ -205,6 +207,9 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   spp3eGetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eSetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eGetCpuHalted: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuHalted: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuEiBacklog: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuEiBacklog: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPrefix: SpP3eWasmV2ExportFunction;
   spp3eGetCpuIff1: SpP3eWasmV2ExportFunction;
   spp3eSetCpuIff1: SpP3eWasmV2ExportFunction;
@@ -411,6 +416,8 @@ const requiredV2Exports = [
   "spp3eGetSelectedRom",
   "spp3eGetSelectedBank",
   "spp3eGetPagingEnabled",
+  "spp3eGetPort7ffd",
+  "spp3eGetPort1ffd",
   "spp3eGetUseShadowScreen",
   "spp3eGetScreenBank",
   "spp3eGetInSpecialPagingMode",
@@ -466,6 +473,9 @@ const requiredV2Exports = [
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",
   "spp3eGetCpuHalted",
+  "spp3eSetCpuHalted",
+  "spp3eGetCpuEiBacklog",
+  "spp3eSetCpuEiBacklog",
   "spp3eGetCpuPrefix",
   "spp3eGetCpuIff1",
   "spp3eSetCpuIff1",

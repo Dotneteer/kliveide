@@ -1657,6 +1657,32 @@ command, and two-line rows.
 selected ring comes out as a tall, thin outlined box that reads heavier than the arrows either side
 of it. Open is shown by the popover itself.
 
+## An Accordion Picker With A Detail Sheet
+
+The Select Machine dialog (`appIde/dialogs/machineSelect/`) is the pattern for choosing one item from
+a grouped catalogue while reading its facts.
+
+- **The accordion rows take the panel-list idiom**: `--row-size-list` rows, `--surface-hover` on
+  hover, and the selection as `--surface-selected` plus a 2px inset `--accent-solid` edge. Group
+  headers are 600-weight rows with a `chevron-right` that rotates; a group with a single member is a
+  *leaf* (selects, never expands), because a one-item accordion is a click that shows nothing.
+- **Facts on the sheet are data values**: label in `--text-secondary`, value in
+  `--color-state-value` monospace with tabular numbers, label column in `ch`. A unit conversion
+  ("3.5 MHz" under "3,500,000 Hz") is a `--text-tertiary` note on its own line - inline, it wraps
+  mid-phrase in a narrow column.
+- **A user's mark (a favourite star) has its own fixed hue**: `--color-favorite` → `--mark-favorite`
+  (gold, L1 `FAVORITE`). Not the accent, which would make "starred" and "selected" the same colour,
+  and not a status hue - nothing is wrong or done.
+- **Row actions that appear on hover take no width while hidden** (`display: none`, not
+  `visibility: hidden`). Reserved-but-invisible buttons truncate the name in every row, to buy a
+  steadier layout in the one row being pointed at.
+- **Give every `Icon` in such a row `fill="currentColor"`** and colour it through a parent. Its
+  default fill is white, which looks right in dark and vanishes in light; and it sets `color`
+  inline on a markup icon's `<svg>`, so a selector on the `svg` itself never wins - colour a wrapper.
+- **A schematic drawing on a sheet uses surfaces, not the accent**: the outer area
+  `--surface-canvas`, the inner area `--surface-active`, edges `--border-strong`. `--surface-stage`
+  and `--surface-selected` are almost the same value in dark, so that pair draws nothing.
+
 ## A Bank Browser Has One Shell
 
 `controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks — or anything

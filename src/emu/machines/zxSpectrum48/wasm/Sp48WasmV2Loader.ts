@@ -103,6 +103,11 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   sp48GetCpuSp: Sp48WasmV2ExportFunction;
   sp48SetCpuSp: Sp48WasmV2ExportFunction;
   sp48GetCpuHalted: Sp48WasmV2ExportFunction;
+  sp48SetCpuHalted: Sp48WasmV2ExportFunction;
+  sp48GetCpuEiBacklog: Sp48WasmV2ExportFunction;
+  sp48SetCpuEiBacklog: Sp48WasmV2ExportFunction;
+  sp48GetCpuIff2: Sp48WasmV2ExportFunction;
+  sp48SetCpuIff2: Sp48WasmV2ExportFunction;
   sp48GetCpuPrefix: Sp48WasmV2ExportFunction;
   sp48GetCpuIff1: Sp48WasmV2ExportFunction;
   sp48SetCpuIff1: Sp48WasmV2ExportFunction;
@@ -289,6 +294,11 @@ const requiredV2Exports = [
   "sp48GetCpuSp",
   "sp48SetCpuSp",
   "sp48GetCpuHalted",
+  "sp48SetCpuHalted",
+  "sp48GetCpuEiBacklog",
+  "sp48SetCpuEiBacklog",
+  "sp48GetCpuIff2",
+  "sp48SetCpuIff2",
   "sp48GetCpuPrefix",
   "sp48GetCpuIff1",
   "sp48SetCpuIff1",

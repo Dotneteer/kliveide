@@ -2,11 +2,15 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { MachineInfo } from "@common/machines/info-types";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { createMachineTypesMenu } from "@main/machine-types-menu";
+import {
+  DEFAULT_MACHINE_FAVORITES,
+  normalizeMachineFavorites
+} from "@common/machines/machine-favorites";
+import { createMachineTypesMenu, SELECT_MACHINE_ITEM_ID } from "@main/machine-types-menu";
 
 /*
- * The machine-type items of the Machine menu: one checkbox per model (or per machine without models),
- * a separator after each machine.
+ * The Machine › Machine type submenu: the favourites in order, separators where asked, the running
+ * model when it is not a favourite, then "Select machine…" (.plans/MACHINE_SELECT_DIALOG_PLAN.md §3).
  */
 
 const registry: MachineInfo[] = [
@@ -18,51 +22,90 @@ const registry: MachineInfo[] = [
     features: {},
     models: [
       { modelId: "a", displayName: "Multi A", config: {} },
-      { modelId: "b", displayName: "Multi B", config: {} }
+      { modelId: "b", displayName: "Multi B", config: {} },
+      { modelId: "c", displayName: "Multi C", config: {} }
     ]
   }
 ];
 
+const shape = (items: ReturnType<typeof createMachineTypesMenu>) =>
+  items.map((i) => (i.type === "separator" ? "---" : `${i.checked ? "✓ " : ""}${i.label}`));
+
+const menu = (favs: any[], machineId?: string, modelId?: string) =>
+  createMachineTypesMenu(registry, favs, machineId, modelId, vi.fn(), vi.fn());
+
 describe("createMachineTypesMenu", () => {
-  it("lists a machine without models as one item, and each model of the others, with separators", () => {
-    const items = createMachineTypesMenu(registry, undefined, undefined, vi.fn());
-    expect(items.map((i) => (i.type === "separator" ? "---" : [i.id, i.label, i.type]))).toEqual([
-      ["machine_solo", "Solo Machine", "checkbox"],
-      "---",
-      ["machine_multi_a", "Multi A", "checkbox"],
-      ["machine_multi_b", "Multi B", "checkbox"],
-      "---"
-    ]);
+  it("lists the favourites in order, with separators after the ones that ask, then Select machine…", () => {
+    const items = menu(
+      [{ machineId: "multi", modelId: "b", separatorAfter: true }, { machineId: "solo" }, { machineId: "multi", modelId: "a" }],
+      "solo"
+    );
+    expect(shape(items)).toEqual(["Multi B", "---", "✓ Solo Machine", "Multi A", "---", "Select machine…"]);
   });
 
-  it("checks the running model", () => {
-    const flat = createMachineTypesMenu(registry, "multi", "b", vi.fn());
-    expect(flat.find((i) => i.id === "machine_multi_b")!.checked).toBe(true);
-    expect(flat.find((i) => i.id === "machine_multi_a")!.checked).toBe(false);
-    expect(flat.find((i) => i.id === "machine_solo")!.checked).toBe(false);
-
-    const solo = createMachineTypesMenu(registry, "solo", undefined, vi.fn());
-    expect(solo[0].checked).toBe(true);
+  it("never doubles the separator before Select machine…", () => {
+    const items = menu([{ machineId: "solo", separatorAfter: true }], "solo");
+    expect(shape(items)).toEqual(["✓ Solo Machine", "---", "Select machine…"]);
   });
 
-  it("selects the machine and model that was clicked", async () => {
+  it("appends the running model, ticked, when it is not a favourite", () => {
+    const items = menu([{ machineId: "solo" }], "multi", "c");
+    expect(shape(items)).toEqual(["Solo Machine", "---", "✓ Multi C", "---", "Select machine…"]);
+  });
+
+  it("shows only the running model and Select machine… without favourites", () => {
+    expect(shape(menu([], "multi", "a"))).toEqual(["✓ Multi A", "---", "Select machine…"]);
+    expect(shape(menu([]))).toEqual(["Select machine…"]);
+  });
+
+  it("skips favourites the registry does not know", () => {
+    const items = menu([{ machineId: "gone" }, { machineId: "multi", modelId: "zz" }, { machineId: "solo" }]);
+    expect(shape(items)).toEqual(["Solo Machine", "---", "Select machine…"]);
+  });
+
+  it("selects the machine and model that was clicked, and opens the selector", async () => {
     const select = vi.fn(() => Promise.resolve());
-    const items = createMachineTypesMenu(registry, undefined, undefined, select);
+    const open = vi.fn(() => Promise.resolve());
+    const items = createMachineTypesMenu(
+      registry,
+      [{ machineId: "solo" }, { machineId: "multi", modelId: "b" }],
+      undefined,
+      undefined,
+      select,
+      open
+    );
     await items[0].click!({} as any, undefined, {} as any);
-    expect(select).toHaveBeenLastCalledWith("solo");
+    expect(select).toHaveBeenLastCalledWith("solo", undefined);
     await items.find((i) => i.id === "machine_multi_b")!.click!({} as any, undefined, {} as any);
     expect(select).toHaveBeenLastCalledWith("multi", "b");
+    const selector = items.find((i) => i.id === SELECT_MACHINE_ITEM_ID)!;
+    expect(selector.accelerator).toBe("CmdOrCtrl+Shift+M");
+    await selector.click!({} as any, undefined, {} as any);
+    expect(open).toHaveBeenCalledOnce();
   });
 
-  it("the real menu is flat: one checkbox per registered model, no submenus", () => {
-    const items = createMachineTypesMenu(machineRegistry, undefined, undefined, vi.fn());
-    expect(items.filter((i) => i.type === "submenu")).toEqual([]);
-    const checkboxes = items.filter((i) => i.type === "checkbox");
-    const modelCount = machineRegistry.reduce((n, m) => n + (m.models?.length ?? 1), 0);
-    expect(checkboxes).toHaveLength(modelCount);
-    const z88 = machineRegistry.find((m) => m.machineId === "z88")!;
-    expect(checkboxes.filter((i) => i.id!.startsWith("machine_z88_")).map((i) => i.id)).toEqual(
-      z88.models!.map((m) => `machine_z88_${m.modelId}`)
+  it("ticks a running model saved under an alias id", () => {
+    const items = createMachineTypesMenu(
+      machineRegistry,
+      normalizeMachineFavorites(undefined, machineRegistry),
+      "z88",
+      "OZ50-wasm",
+      vi.fn(),
+      vi.fn()
     );
+    expect(items.filter((i) => i.checked).map((i) => i.id)).toEqual(["machine_z88_OZ50"]);
+  });
+
+  it("the real default menu is short: the six defaults plus Select machine…", () => {
+    const items = createMachineTypesMenu(
+      machineRegistry,
+      normalizeMachineFavorites(undefined, machineRegistry),
+      "sp48",
+      "pal",
+      vi.fn(),
+      vi.fn()
+    );
+    expect(items.filter((i) => i.type === "checkbox")).toHaveLength(DEFAULT_MACHINE_FAVORITES.length);
+    expect(items.at(-1)!.id).toBe(SELECT_MACHINE_ITEM_ID);
   });
 });

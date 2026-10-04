@@ -17,7 +17,11 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/app-menu";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
-import { appSettings } from "@main/settings-utils";
+import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
+import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getModelConfig } from "@common/machines/machine-registry";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
@@ -505,4 +509,150 @@ async function resetRomFile(): Promise<void> {
   mainStore.dispatch(incMenuVersionAction());
   await logEmuEvent("ROM reset to default");
   await saveKliveProject();
+}
+
+/** The settings key of the folder the last ZX Spectrum snapshot was opened from */
+const SPECTRUM_SNAPSHOT_FOLDER = "spectrumSnapshotFolder";
+
+/**
+ * Renders the snapshot command of the ZX Spectrum machines (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
+ * §4.7). It hands the file to the IDE's `zx-snapshot` command, which switches to the machine the
+ * snapshot needs and reports problems. It runs the snapshot; debugging lives in the viewer, the
+ * Explorer and the command (D14).
+ */
+export const spectrumSnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
+  const emuWindow = windowInfo.emuWindow;
+  return [
+    { type: "separator" },
+    {
+      id: "spectrum_load_snapshot",
+      label: "Load Snapshot...",
+      click: async () => {
+        await openSpectrumSnapshot(emuWindow);
+      }
+    },
+    {
+      id: "spectrum_save_snapshot",
+      label: "Save Snapshot...",
+      enabled: canSaveSpectrumSnapshot(),
+      click: async () => {
+        await saveSpectrumSnapshotAs(emuWindow);
+      }
+    }
+  ];
+};
+
+/**
+ * Can the emulator's machine be saved as a ZX Spectrum snapshot now? It must be a 48K, 128K or
+ * +2E/+3E with a state: running or paused (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D4).
+ */
+export function canSaveSpectrumSnapshot(state: AppState = mainStore.getState()): boolean {
+  const machineId = state?.emulatorState?.machineId;
+  const execState = state?.emulatorState?.machineState;
+  return (
+    !!machineId &&
+    [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E].includes(machineId) &&
+    (execState === MachineControllerState.Running || execState === MachineControllerState.Paused)
+  );
+}
+
+/** A default snapshot file name: the project's (or the machine's) name and the time */
+export function defaultSnapshotFileName(state: AppState, now = new Date()): string {
+  const folder = state?.project?.folderPath;
+  const base = folder
+    ? path.basename(folder)
+    : (state?.emulatorState?.machineId ?? "spectrum");
+  const pad = (n: number) => `${n}`.padStart(2, "0");
+  const stamp =
+    `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}` +
+    `-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `${base}-${stamp}.szx`;
+}
+
+/**
+ * Asks for a file and saves the machine into it through the IDE's `zx-snapshot-save` command
+ * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.4). The extension picks the format, `.szx`
+ * first. What the chosen format could not hold is shown afterwards, unless the user turned that
+ * notice off for the format. The machine menus and File -> Save ZX Spectrum Snapshot... share it.
+ * @param browserWindow The window that owns the dialogs
+ */
+export async function saveSpectrumSnapshotAs(browserWindow: BrowserWindow): Promise<void> {
+  const state = mainStore.getState();
+  const folder = appSettings?.folders?.[SPECTRUM_SNAPSHOT_FOLDER] || app.getPath("home");
+  const dialogResult = await dialog.showSaveDialog(browserWindow, {
+    title: "Save ZX Spectrum Snapshot",
+    defaultPath: path.join(folder, defaultSnapshotFileName(state)),
+    filters: [
+      { name: "zx-state snapshot (keeps everything)", extensions: ["szx"] },
+      { name: "Z80 snapshot", extensions: ["z80"] },
+      { name: "SNA snapshot", extensions: ["sna"] }
+    ],
+    properties: ["showOverwriteConfirmation", "createDirectory"]
+  });
+  if (dialogResult.canceled || !dialogResult.filePath) return;
+
+  let filename = dialogResult.filePath;
+  if (!/\.(szx|z80|sna)$/i.test(filename)) filename += ".szx";
+  appSettings.folders ??= {};
+  appSettings.folders[SPECTRUM_SNAPSHOT_FOLDER] = path.dirname(filename);
+  saveAppSettings();
+
+  // --- The dialog has already confirmed any overwrite
+  const result = await getIdeApi().executeCommand(spectrumSnapshotSaveCommandText(filename, true));
+  if (!result?.success) {
+    await dialog.showMessageBox(browserWindow, {
+      type: "error",
+      title: "ZX Spectrum Snapshot",
+      message: result?.finalMessage ?? `Could not save ${filename}`
+    });
+    return;
+  }
+
+  const losses: string[] = result.value?.losses ?? [];
+  const format: string = result.value?.format ?? "";
+  const muted = appSettings.snapshotLossNoticesMuted ?? [];
+  if (!losses.length || muted.includes(format)) return;
+  const answer = await dialog.showMessageBox(browserWindow, {
+    type: "warning",
+    title: "ZX Spectrum Snapshot",
+    message: `The snapshot is saved, but a .${format} file does not hold everything:`,
+    detail: losses.map((l) => `• ${l}`).join("\n") + "\n\nSave as .szx to keep the whole state.",
+    checkboxLabel: `Don't show this again for .${format} files`
+  });
+  if (answer.checkboxChecked) {
+    appSettings.snapshotLossNoticesMuted = [...muted, format];
+    saveAppSettings();
+  }
+}
+
+/**
+ * Asks for a `.sna` / `.z80` / `.szx` file and runs it through the IDE's `zx-snapshot` command. The
+ * machine menus and File -> Load Snapshot... (D9) share it.
+ * @param browserWindow The window that owns the dialog
+ */
+export async function openSpectrumSnapshot(browserWindow: BrowserWindow): Promise<void> {
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select ZX Spectrum Snapshot File",
+    defaultPath: appSettings?.folders?.[SPECTRUM_SNAPSHOT_FOLDER] || app.getPath("home"),
+    filters: [
+      { name: "ZX Spectrum Snapshots", extensions: ["sna", "z80", "szx"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  const filename = dialogResult.filePaths[0];
+  appSettings.folders ??= {};
+  appSettings.folders[SPECTRUM_SNAPSHOT_FOLDER] = path.dirname(filename);
+  saveAppSettings();
+
+  const result = await getIdeApi().executeCommand(spectrumSnapshotCommandText(filename, "run"));
+  if (!result?.success) {
+    await dialog.showMessageBox(browserWindow, {
+      type: "error",
+      title: "ZX Spectrum Snapshot",
+      message: result?.finalMessage ?? `Could not load ${filename}`
+    });
+  }
 }

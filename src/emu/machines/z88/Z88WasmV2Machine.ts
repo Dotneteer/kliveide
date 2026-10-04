@@ -21,6 +21,11 @@ import { z88InternalRamSizeInBytes } from "./z88CardCatalog";
 import { Z88WasmHost } from "./Z88WasmHost";
 import { Z88_INTERNAL_RAM_BANK } from "@common/z88/z88Snapshot";
 import { adjustZ88LostTime } from "@common/z88/z88Rtc";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
 
 /** The size of a slot's region in the 4 MB physical memory */
 const Z88_SLOT_SIZE = 0x10_0000;
@@ -700,6 +705,39 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   // ==========================================================================================
   // Snapshots
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("z88", runtime.module, runtime.exports.memory.buffer),
+      host: { cards: this.cards.map((c) => (c ? { ...c } : null)) }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state; the host-side caches are invalidated so the next
+   * frame pushes the live host's settings. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "z88", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as { cards?: (Z88CardSpec | null)[] };
+    (host.cards ?? []).forEach((card, slot) => {
+      if (slot < this.cards.length) this.cards[slot] = card ?? undefined;
+    });
+    this.wasmV2AudioSamples.length = 0;
+    this.syncedTargetClockMultiplier = -1;
+    // --- The RTC stays as saved (D20); the audio rate is the live host's
+    this.syncAudioSampleRate(runtime);
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
+  }
+
 
   /**
    * Replaces the whole machine state with a `.z88` snapshot's (`.plans/Z88_SNAPSHOT_PLAN.md` §4.4).

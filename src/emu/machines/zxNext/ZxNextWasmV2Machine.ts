@@ -44,6 +44,11 @@ import { NEXT_ROM_FLAGS } from "./nextMachineInfo";
 import { rtcRegistersFromDate } from "./nextRtc";
 import { AUDIO_SAMPLE_RATE } from "../machine-props";
 import { importAccessLog } from "../wasmAccessLog";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -579,6 +584,55 @@ export class ZxNextWasmV2Machine
     else if (request === 1) this.reset();
     return request !== 0;
   }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused. The SD
+   * card image is a host file and not part of it (D12).
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("zxnext", runtime.module, runtime.exports.memory.buffer),
+      host: {
+        normalFrames: this.wasmV2NormalFrames,
+        debugSteps: this.wasmV2DebugSteps,
+        lastStopReason: this.wasmV2LastStopReason,
+        sdCardInfoLoaded: this.wasmV2SdCardInfoLoaded,
+        lastRenderedFrameTact: this.lastRenderedFrameTact
+      }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state; the host-side caches are invalidated so the next
+   * frame pushes the live host's settings. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "zxnext", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as {
+      normalFrames?: number;
+      debugSteps?: number;
+      lastStopReason?: ZxNextWasmV2StopReason;
+      sdCardInfoLoaded?: boolean;
+      lastRenderedFrameTact?: number;
+    };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2DebugSteps = host.debugSteps ?? 0;
+    this.wasmV2LastStopReason = host.lastStopReason ?? "reset";
+    this.wasmV2SdCardInfoLoaded = !!host.sdCardInfoLoaded;
+    this.lastRenderedFrameTact = host.lastRenderedFrameTact ?? 0;
+    // --- As a checkpoint restore: queued work of the replaced run goes; the audio rate is re-pushed
+    this.emulatedKeyStrokes.length = 0;
+    this.setFrameCommand(null);
+    this.wasmV2AudioSamples.length = 0;
+    this.wasmV2AudioSampleRate = -1;
+    this.invalidateCheckpoints();
+    this.syncCpuFromWasmV2(runtime);
+  }
+
 
   /**
    * Captures everything needed to put this machine back exactly where it stands.

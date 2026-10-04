@@ -688,6 +688,101 @@ line &mdash; with the OS initialised behind it. The first launch in a session pa
 NextZXOS boot; later ones reuse a cached machine state and start much faster.
 </Callout>
 
+## `zx-snapshot`
+
+This command loads a ZX Spectrum snapshot (a `.sna`, `.z80` or `.szx` file) and debugs or runs it.
+
+```
+zx-snapshot <snapshot-file> [-r | -d]
+```
+
+Available aliases: `zxsnap`
+
+With no option (or with `-d`), the snapshot is debugged: the machine starts in debug mode and stops
+at the snapshot's program counter before executing that instruction. Use `-r` to run the snapshot.
+Use only one option at a time.
+
+The snapshot decides the machine: the command switches to the ZX Spectrum 48K, 128K or +2E/+3E the
+snapshot needs. With a project open, it refuses a snapshot for another machine type, and keeps the
+project's model for a snapshot of the same type. Disks a `.szx` file links are read and inserted.
+
+The same actions are available from the Explorer's context menu on a snapshot file, from the buttons
+in a snapshot's document tab, from **File &rarr; Load ZX Spectrum Snapshot...**, and by dropping the
+file onto the Emulator window. See [Using ZX Spectrum Snapshots](./howto/spectrum-snapshots) for
+what Klive can load.
+
+```text
+zx-snapshot "snapshots/game.z80"
+zx-snapshot "snapshots/game.sna" -r
+zxsnap "snapshots/demo.szx" -d
+```
+
+## `zx-snapshot-save`
+
+This command saves the ZX Spectrum 48K, 128K or +2E/+3E as a snapshot.
+
+```
+zx-snapshot-save <snapshot-file> [-f]
+```
+
+Available aliases: `zxsave`
+
+The file's extension picks the format: `.szx`, `.z80` or `.sna`. `.szx` keeps the whole state; the
+command lists anything `.z80` or `.sna` cannot hold as warnings, and refuses a state the format would
+load back differently. An existing file is replaced only with `-f`.
+
+The machine must be running or paused. A running machine is paused for the capture and runs on
+afterwards; a paused one stays paused. **File &rarr; Save ZX Spectrum Snapshot...** and the Emulator's
+**Machine &rarr; Save Snapshot...** do the same after asking for a file. See
+[Using ZX Spectrum Snapshots](./howto/spectrum-snapshots#saving-a-snapshot) for what each format
+keeps.
+
+```text
+zx-snapshot-save "snapshots/level3.szx"
+zx-snapshot-save "snapshots/level3.z80" -f
+zxsave "snapshots/bug.sna"
+```
+
+## `state-save`
+
+This command saves the machine's complete state to a Klive state file (`.kls`).
+
+```
+state-save <state-file> [-f]
+```
+
+Available aliases: `ssave`
+
+It works for every machine Klive emulates in its own cores (ZX Spectrum 48K, 128K, +2E/+3E, ZX
+Spectrum Next, Cambridge Z88, ZX80, ZX81). The machine must be running or paused; a running machine
+runs on afterwards. An existing file is replaced only with `-f`. See
+[Saving and Restoring the Machine State](./howto/machine-state).
+
+```text
+state-save "states/before-boss.kls"
+ssave "states/bug.kls" -f
+```
+
+## `state-load`
+
+This command loads a Klive state file and debugs or runs it.
+
+```
+state-load <state-file> [-r | -d] [-y]
+```
+
+Available aliases: `sload`
+
+The command switches to the machine, model and configuration the state was saved on. With no option
+(or with `-d`), the machine starts in debug mode and stops at the saved program counter; `-r` runs
+it. A ZX Spectrum Next state whose SD card image has changed since is refused unless you add `-y`.
+With a project open, a state of another machine type is refused.
+
+```text
+state-load "states/before-boss.kls"
+sload "states/bug.kls" -r
+```
+
 ## `z88-snapshot`
 
 This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine and

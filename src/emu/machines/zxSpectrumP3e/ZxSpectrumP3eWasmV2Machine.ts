@@ -30,6 +30,18 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrumP3eWasmHost, mergeZxSpectrumP3eConfig } from "./ZxSpectrumP3eWasmHost";
 import { importAccessLog } from "../wasmAccessLog";
+import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
+import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
+import {
+  captureSpectrumSnapshot,
+  type SpectrumSnapshotCaptureMedia
+} from "../zxSpectrum/spectrumSnapshotCapture";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
+import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -1314,6 +1326,76 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
 
 
 
+
+  /**
+   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Call it through `IMachineController.restoreState`, which leaves the machine Paused. The disks
+   * stay as inserted: the floppy controller is reset, not restored (trap 7).
+   * @returns The frame tact the machine stands at
+   * @throws When the snapshot needs another machine
+   */
+  loadSnapshotState(snapshot: SpectrumSnapshot): number {
+    assertSnapshotFitsMachine(snapshot, "spp3e", undefined);
+    const runtime = this.requireWasmV2Runtime();
+    const frameTact = restoreSpectrumSnapshot(
+      { prefix: "spp3e", exports: runtime.exports, ram: runtime.ram, reset: () => this.reset() },
+      snapshot
+    );
+    this.invalidateWasmV2Sync();
+    this.syncCpuFromWasmV2(runtime);
+    return frameTact;
+  }
+
+  /**
+   * Reads the machine's state as a snapshot model, without changing it
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
+   * @param media The tape and disk files the media store holds
+   * @throws When the CPU stands inside a prefixed instruction
+   */
+  captureSnapshotState(media?: SpectrumSnapshotCaptureMedia): SpectrumSnapshot {
+    const runtime = this.requireWasmV2Runtime();
+    return captureSpectrumSnapshot(
+      { prefix: "spp3e", exports: runtime.exports, ram: runtime.ram },
+      media
+    );
+  }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("spp3e", runtime.module, runtime.exports.memory.buffer),
+      host: { normalFrames: this.wasmV2NormalFrames }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state. The core's memory - tape and disks included - comes
+   * from the state; the host-side caches are invalidated so the next frame pushes the live host's
+   * keyboard, audio rate and clock speed. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "spp3e", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.invalidateWasmV2Sync();
+    // --- What the core already holds must not be published again as new
+    this.wasmV2SavedTapeRevision = runtime.exports.spp3eTapeGetSavedRevision();
+    // --- The restored disks are detached from their files (D11): with no payload, no sector the
+    // --- rewound machine writes is merged back into a host .dsk; inserting a disk attaches again
+    this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
+    this.wasmV2DiskPayloads.length = 0;
+    runtime.diskChanges.fill(0);
+    runtime.diskBChanges.fill(0);
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
+  }
 
   private invalidateWasmV2Sync(): void {
     this.wasmV2KeyboardRowsValid = false;

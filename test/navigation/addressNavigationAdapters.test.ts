@@ -292,6 +292,67 @@ describe("static dump navigation adapter", () => {
   });
 
   /*
+   * A popped-out ZX Spectrum snapshot RAM bank (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §9): reopened
+   * from the snapshot file, where it was left.
+   */
+  describe("a closed ZX Spectrum snapshot bank", () => {
+    const bankDocId = "memoryDump-spectrumBankDump/project/game.szx:3";
+
+    function spectrumAdapter(readSpectrumBankBytes = vi.fn(async () => new Uint8Array([7, 8]))) {
+      const openStaticMemoryDump = vi.fn(async () => {});
+      return {
+        openStaticMemoryDump,
+        readSpectrumBankBytes,
+        adapter: createStaticDumpNavigationAdapter({
+          openStaticMemoryDump,
+          readNexBankBytes: vi.fn(),
+          readSpectrumBankBytes
+        })
+      };
+    }
+
+    it("is reopened from the file, where and how it was left", async () => {
+      const { adapter: a, openStaticMemoryDump, readSpectrumBankBytes } = spectrumAdapter();
+      const hub = fakeHub(0);
+      const readBinaryFile = vi.fn(async () => new Uint8Array(0));
+
+      const ok = await a.restore(
+        entry(bankDocId, at(0xc123, { viewMode: "disassembly", base: 0xc000 }), "StaticMemoryDumpViewer"),
+        hub,
+        services(hub),
+        env(readBinaryFile)
+      );
+
+      expect(ok).toBe(true);
+      expect(readSpectrumBankBytes).toHaveBeenCalledWith("/project/game.szx", 3, readBinaryFile);
+      expect(openStaticMemoryDump).toHaveBeenCalledWith(
+        hub,
+        "spectrumBankDump/project/game.szx:3",
+        "game.szx - Bank 3",
+        new Uint8Array([7, 8]),
+        {
+          disassemblyEnabled: true,
+          disassOffset: 0xc000,
+          topAddress: 0xc123,
+          viewMode: "disassembly"
+        }
+      );
+    });
+
+    it("is dropped when the file no longer has the bank, cannot be read, or no reader is wired", async () => {
+      const readSpectrumBankBytes = vi.fn();
+      const { adapter: a } = spectrumAdapter(readSpectrumBankBytes);
+      const hub = fakeHub(0);
+      readSpectrumBankBytes.mockResolvedValueOnce(undefined);
+      expect(await a.restore(entry(bankDocId, at(0)), hub, services(hub), env())).toBe(false);
+      readSpectrumBankBytes.mockRejectedValueOnce(new Error("gone"));
+      expect(await a.restore(entry(bankDocId, at(0)), hub, services(hub), env())).toBe(false);
+      const bare = createStaticDumpNavigationAdapter({ openStaticMemoryDump: vi.fn(), readNexBankBytes: vi.fn() });
+      expect(await bare.restore(entry(bankDocId, at(0)), hub, services(hub), env())).toBe(false);
+    });
+  });
+
+  /*
    * A popped-out tape block (`.plans/TAPE_VIEWER_PLAN.md` §4.5): reopened from the tape file, at
    * the address it was listed at.
    */
