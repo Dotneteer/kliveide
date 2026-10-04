@@ -239,8 +239,8 @@ help generated from Klive's spec; checked in the running IDE by `scripts/kbasic-
 | Feature | What it does | Size |
 |---|---|---|
 | G9.1 Pentagon 128 | Popular Russian clone, built on the 128K core (different timing and no contention). | M |
-| G9.2 ZX Spectrum +2A/+3 (non-E ROMs) | The original Amstrad ROMs alongside the +E ones. | S–M |
-| G9.3 ZX80 / ZX81 | **Done (main, 2026-10-03; unreleased)** - `.plans/ZX8081_WASM_PLAN.md`. | XL |
+| G9.2 ZX Spectrum +2A/+3 (non-E ROMs) | The original Amstrad ROMs alongside the +E ones. Plan: [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md) (decisions recorded). | S–M |
+| G9.3 ZX80 / ZX81 ✅ **done** | Both Sinclair machines on one C/WASM core (main, 2026-10-03; unreleased); plan: [ZX8081_WASM_PLAN.md](ZX8081_WASM_PLAN.md). | XL |
 | G9.4 Timex TC2048/2068, Scorpion | Long-tail clones. | L each; low priority |
 
 ---
