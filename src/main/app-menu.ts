@@ -67,6 +67,11 @@ import {
   openSpectrumSnapshot,
   saveSpectrumSnapshotAs
 } from "./machine-menus/zx-specrum-menus";
+import {
+  canSaveMachineState,
+  openMachineState,
+  saveMachineStateAs
+} from "./machine-menus/state-menus";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import {
@@ -387,6 +392,22 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         enabled: canSaveSpectrumSnapshot(appState),
         click: async () => {
           await saveSpectrumSnapshotAs(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        // --- Any machine with a state (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md §4.9)
+        id: "save_machine_state",
+        label: "Save Machine State...",
+        enabled: canSaveMachineState(appState),
+        click: async () => {
+          await saveMachineStateAs(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        id: "load_machine_state",
+        label: "Load Machine State...",
+        click: async () => {
+          await openMachineState(BrowserWindow.getFocusedWindow() ?? emuWindow);
         }
       },
       { type: "separator" },

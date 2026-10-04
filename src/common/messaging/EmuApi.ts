@@ -23,6 +23,12 @@ import type {
 import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
 import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
 import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
+import type {
+  MachineStateLoadMode,
+  MachineStateLoadResult,
+  MachineStateSaveResult,
+  SdCardFingerprint
+} from "@common/machineState/machineStateTypes";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -132,6 +138,50 @@ class EmuApiImpl {
     _format: SpectrumSnapshotFormat,
     _creator?: SzxCreator
   ): Promise<SpectrumSnapshotSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the machine's complete state as a Klive state file (`.kls`;
+   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.8). A running machine runs on afterwards.
+   * @param _options The Klive version for the header; the Next SD card's fingerprint
+   * @returns The file; rejects when the machine has no state or cannot save one
+   */
+  async saveMachineStateFile(_options: {
+    kliveVersion: string;
+    sdCard?: SdCardFingerprint;
+  }): Promise<MachineStateSaveResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Loads a Klive state file, switching to the machine it was saved on, then runs or debugs it.
+   * @param _fileName The file's name, for messages
+   * @param _contents The file
+   * @param _mode "run", or "debug" (stop at PC before that instruction runs)
+   * @param _options The live SD card's fingerprint; load even when it has changed
+   */
+  async loadMachineStateFile(
+    _fileName: string,
+    _contents: Uint8Array,
+    _mode: MachineStateLoadMode,
+    _options?: { currentSdCard?: SdCardFingerprint; acceptChangedSdCard?: boolean }
+  ): Promise<MachineStateLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the machine's state into its in-memory quick slot (D19 of
+   * `.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md`); a running machine runs on.
+   */
+  async quickSaveMachineState(): Promise<{ machineName: string; pc: number }> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Restores the machine's quick-saved state and leaves it Paused; rejects when there is none.
+   */
+  async quickRestoreMachineState(): Promise<{ pc: number }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

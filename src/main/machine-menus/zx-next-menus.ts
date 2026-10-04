@@ -270,6 +270,11 @@ async function resetToDefaultSdCardFile(): Promise<void> {
   await logSdCardEvent(getDefaultSdCardFile());
 }
 
+/** The SD card image file the Next uses now (the media store's, or the default one) */
+export function activeSdCardFile(): string {
+  return mainStore.getState().media?.[MEDIA_SD_CARD] ?? getDefaultSdCardFile();
+}
+
 let cimHandler: CimHandler;
 let currentSdCardFile: string;
 

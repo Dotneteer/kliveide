@@ -1,9 +1,11 @@
 # Snapshot Saving (G2.4) and Klive State Files (G2.6) Plan
 
-Status: **G2.4 done** (2026-10-04): Phases 1–3 are implemented, except the manual interop check
-against Fuse/ZEsarUX (D16), which needs those emulators installed. §5.1 records where the code
-differs from this plan. G2.6 (Phases 4–9) has not started. Decisions D1–D14 are accepted, and the §9
-questions were answered as proposed (D15–D22).
+Status: **done** (2026-10-04).
+- **G2.4** (Phases 1–3) is implemented, except the manual interop check against Fuse/ZEsarUX
+  (D16), which needs those emulators installed.
+- **G2.6** (Phases 4–9) is implemented.
+- §5.1 and §5.2 record where the code differs from this plan.
+- Decisions D1–D14 are accepted, and the §9 questions were answered as proposed (D15–D22).
 Scope: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md):
 - **G2.4**: save the current 48K / 128K / +2E / +3E machine as `.szx`, `.z80` or `.sna`;
 - **G2.6**: Klive state files that save and restore the *complete* emulator state of every WASM
@@ -563,7 +565,7 @@ Where the code differs from the plan, and why:
   overwrite.
 - **Muted loss notices** are kept in `appSettings.snapshotLossNoticesMuted`, one entry per format.
 
-### Phase 4 — G2.6 fingerprint
+### Phase 4 — G2.6 fingerprint ✅
 - Symbol-map extraction and `layout.json` in all six build scripts, and the loader constants.
 - `scripts/check-wasm-layout.cjs`, wired into the build check.
 - **Spike first:** confirm that the linker map has data symbols *and* the table elements
@@ -575,7 +577,7 @@ Where the code differs from the plan, and why:
     static);
   - it is unchanged by a pure code edit (same define trick, inside a function body).
 
-### Phase 5 — G2.6 state image on every core
+### Phase 5 — G2.6 state image on every core ✅
 - `wasmStateImage.ts`.
 - Per core: `volatileRanges()`, `captureHostState()`/`restoreHostState()`, `saveMachineState()`
   and `loadMachineState()`. The volatile ranges and the TS-mirror fields are listed per core *in
@@ -584,7 +586,7 @@ Where the code differs from the plan, and why:
   unchanged.
 - Measure the compressed sizes and the save and load times per core, and record them here (trap 19).
 
-### Phase 6 — G2.6 determinism proof
+### Phase 6 — G2.6 determinism proof ✅
 - One parametrised test per core, in the `e2e-cores` tier, through the harness sessions
   (`saveState()`/`loadState()` added to the sp48, sp128, z88, zx81 and zxnext sessions):
   1. Boot and run a busy workload: a game-like loop with sound, interrupts and paging. On the Next,
@@ -598,7 +600,7 @@ Where the code differs from the plan, and why:
 - This test is the reusable proof the Wave 4 spike needs, so it is documented in each harness
   README.
 
-### Phase 7 — G2.6 container, orchestration, media
+### Phase 7 — G2.6 container, orchestration, media ✅
 - `kliveStateFile.ts` (pure, with node tests): round trip, unknown sections, truncation, a bad magic
   or version.
 - `machineStateSave.ts` and `machineStateLoad.ts`, the `EmuApi` entries, and
@@ -613,7 +615,7 @@ Where the code differs from the plan, and why:
   - a state loaded over a running machine stops it first;
   - debug mode stops at PC with zero instructions executed.
 
-### Phase 8 — G2.6 user surface
+### Phase 8 — G2.6 user surface ✅
 - `MachineStateCommands.ts`, the state menus (every machine, and File), the `.kls` viewer with its
   tab-bar Run/Debug, and drag and drop.
 - **Quick save/restore (D19):** one in-memory slot per machine, holding the same parts as a state
@@ -637,7 +639,7 @@ Where the code differs from the plan, and why:
   fingerprint and the `.szx` fallback, media detaching, the SD card), plus the
   `commands-reference.mdx` entries and the route in `.plans/docs-routes.golden.txt`.
 
-### Phase 9 — verification
+### Phase 9 — verification ✅
 - In the running app, on the `scripts/doc-shots` harness (isolated HOME; read
   `.ai/doc-screenshots-guide.md` first):
   - save and load a snapshot in each format from the menus;
@@ -653,6 +655,86 @@ Where the code differs from the plan, and why:
   expected.
 
 ---
+
+### 5.2 How G2.6 was built (2026-10-04)
+
+What landed:
+- **Fingerprint:** `scripts/wasm-layout.cjs`, called by all six `scripts/build-*-wasm.cjs`, and the
+  runtime reader `src/emu/machines/state/wasmLayout.ts`.
+- **Image:** `src/emu/machines/state/wasmStateImage.ts`, plus `saveMachineState()` /
+  `loadMachineState()` on all six WASM machines.
+- **Container:** `src/common/machineState/kliveStateFile.ts` and `machineStateTypes.ts`.
+- **Save and load flow, quick slot:** `src/renderer/appEmu/machines/machineStateFile.ts`.
+- **Commands:** `state-save` and `state-load` (`MachineStateCommands.ts`).
+- **Menus:** `src/main/machine-menus/state-menus.ts`, the File menu items and
+  `MainApi.getSdCardFingerprint`.
+- **Viewer:** the `.kls` viewer (`DocumentPanels/MachineState/`) with its tab bar and Explorer menu
+  (`MachineStateLaunchMenu.tsx`), and drag and drop.
+- **Docs:** `docs/content/howto/machine-state.mdx`.
+- **Tests:**
+  - in `test/wasm/state/`: `wasm-layout`, `machine-state-determinism` and `machine-state-flow`;
+  - `test/machineState/klive-state-file.test.ts`;
+  - `test/commands/MachineStateCommands.test.ts`;
+  - `test/renderer/MachineStateViewerPanel.test.tsx`.
+
+Measured (Phase 5, trap 19), with deflate level 6, on a harness machine soon after boot. Real
+states are larger; the in-app check saved a 128K at its menu as 236 KiB and a booting Next as
+208 KiB, thumbnail and `.szx` part included:
+
+| Core | Linear memory | `.kls` image | Save | Load |
+| --- | --- | --- | --- | --- |
+| 48K | 8 MiB | ~107 KiB | ~60 ms | ~20 ms |
+| 128K | 8 MiB | ~134 KiB | ~55 ms | ~15 ms |
+| +3E | 8 MiB | ~152 KiB | ~50 ms | ~10 ms |
+| ZX81 | 2 MiB | ~12 KiB | ~8 ms | ~10 ms |
+| Z88 | 8 MiB | ~10 KiB | ~30 ms | ~15 ms |
+| Next | 32 MiB | ~107 KiB | ~130 ms | ~40 ms |
+
+Where the code differs from the plan, and why:
+- **The fingerprint lives inside the `.wasm`, not in a committed `layout.json`.**
+  - The cores' `dist/` is gitignored and built in CI, so a committed file and a "stale layout" CI
+    check had nothing to compare against.
+  - Each build links with `--Map`, computes the fingerprint and appends it as a `klive.layout`
+    custom section. The loaders already keep the compiled `module`, so
+    `WebAssembly.Module.customSections` reads it with no loader change and nothing extra to
+    package.
+  - No second link is needed.
+- **Table entries are turned into function names through the map,** in the function-index order the
+  map's CODE section lists. The cores strip the `name` section, so the names can only come from
+  there.
+- **The volatile statics are listed by name in each build script** and resolved to addresses at
+  build time. That made new "pointer" exports unnecessary, and a renamed static fails the build.
+  - On every core: the breakpoint-condition evaluator (`cond*`) and the access log.
+  - On the Z88 and the ZX80/81: the exec-breakpoint flags.
+  - On the Next: the NextReg watch and hit state and the trace ring.
+  - These are IDE debugging state, so a restore never brings back old breakpoints. A test proves a
+    breakpoint set after the save still fires.
+- **The Next checkpoint was not refactored onto the new helper.** It already worked and has its own
+  tests; changing which statics it restores (it restores the breakpoint state too) was not needed for
+  G2.6.
+- **The state's media come from the image; the media store is left alone.**
+  - `restoreState` gained `{ attachMedia: false }`, so the stored media are not uploaded over the
+    image (trap 12).
+  - The plan's D11 said the media store would get the state's file names. Rewriting the project's
+    tape or disk entries behind the user's back was judged worse, so the load reports the state's
+    media in the output instead.
+  - Disks are detached by dropping the wrapper's disk payloads, so no sector the rewound machine
+    writes is merged into a host `.dsk`. The core's dirty journals are cleared.
+- **The SD card fingerprint** hashes the image's size and its first 8 MB (boot sector, FATs, root
+  directory). It ignores the modification time, so a copied card still matches.
+- **The viewer cannot say "Loadable here"**, because the IDE has no core to compare fingerprints
+  with. It shows which Klive version saved the state and whether a portable `.szx` part is there;
+  the load gives the exact verdict.
+- **Load State... and dropping a `.kls` debug-stop at the saved PC**, while the snapshot menus run
+  (D14 of the loading plan). A state is a debugging bookmark.
+- **Quick slot (D19):**
+  - The shortcuts are **Ctrl/Cmd+Alt+S** and **Ctrl/Cmd+Alt+L**. F5 and F4 are machine control,
+    F6, F8 and F9 are Next hotkeys, and Monaco binds Alt+F1…F5.
+  - Each machine instance has its own slot (a `WeakMap`), so a rebuilt machine has none.
+  - `emulatorState.quickStateAvailable` enables Quick Restore. It is cleared by a machine or model
+    change.
+- **A Spectrum state's `.szx` part is skipped, with a warning,** when the CPU stands inside a
+  prefixed instruction. The memory image itself captures that state exactly.
 
 ## 6. Effort
 

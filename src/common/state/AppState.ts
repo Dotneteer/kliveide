@@ -167,6 +167,8 @@ export type EmulatorState = {
    */
   mouseCaptured?: boolean;
   screenRecordingAvailable?: boolean;
+  /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
+  quickStateAvailable?: boolean;
   screenRecordingState?: ScreenRecordingState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;

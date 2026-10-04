@@ -24,6 +24,11 @@ import {
   captureSpectrumSnapshot,
   type SpectrumSnapshotCaptureMedia
 } from "../zxSpectrum/spectrumSnapshotCapture";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
 import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
@@ -989,6 +994,37 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
       { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, modelId: this.modelInfo?.modelId },
       media
     );
+  }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("sp48", runtime.module, runtime.exports.memory.buffer),
+      host: { normalFrames: this.wasmV2NormalFrames }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state. The core's memory - tape and disks included - comes
+   * from the state; the host-side caches are invalidated so the next frame pushes the live host's
+   * keyboard, audio rate and clock speed. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "sp48", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.invalidateWasmV2Sync();
+    // --- What the core already holds must not be published again as new
+    this.wasmV2SavedTapeRevision = runtime.exports.sp48TapeGetSavedRevision();
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   getConditionStore(): ConditionStore | undefined {

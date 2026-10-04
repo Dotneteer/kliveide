@@ -16,6 +16,11 @@ import { loadZx8081WasmV2 } from "./wasm/Zx8081WasmV2Loader";
 import { Zx8081WasmHost } from "./Zx8081WasmHost";
 import { ZX80_ROM, ZX81_ROM } from "./zx8081MachineInfo";
 import { ZX8081_RUN_COMMAND } from "./Zx8081Typer";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
 
 /** No extra stop address for `zx8081ExecuteUntilStop` */
 const NO_EXTRA_STOP = 0xffff_ffff;
@@ -642,6 +647,31 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost {
   getScreenSurroundColor(): number {
     return 0xffffffff;
   }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("zx8081", runtime.module, runtime.exports.memory.buffer),
+      host: {}
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state; the host-side caches are invalidated so the next
+   * frame pushes the live host's settings. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "zx8081", runtime.module, runtime.exports.memory.buffer);
+    this.syncedTargetClockMultiplier = -1;
+    this.syncCpuFromWasmV2(runtime);
+  }
+
 
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;

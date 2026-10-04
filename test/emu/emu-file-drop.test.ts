@@ -11,7 +11,8 @@ describe("droppedFileAction", () => {
     ["/g/a.sna", 'zx-snapshot "/g/a.sna" -r'],
     ["/g/B.Z80", 'zx-snapshot "/g/B.Z80" -r'],
     ["C:\\My Games\\c.szx", 'zx-snapshot "C:\\My Games\\c.szx" -r'],
-    ["/g/d.z88", 'z88-snapshot "/g/d.z88" -a']
+    ["/g/d.z88", 'z88-snapshot "/g/d.z88" -a'],
+    ["/g/My State.KLS", 'state-load "/g/My State.KLS" -d']
   ])("runs %s through %s", (path, command) => {
     expect(droppedFileAction(path)).toEqual({ kind: "command", command });
   });

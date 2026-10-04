@@ -1,0 +1,82 @@
+---
+description: "Save the complete state of any Klive machine to a .kls file, or to a quick slot, and continue from exactly that point later."
+---
+
+import { Callout } from 'nextra/components'
+
+# Saving and Restoring the Machine State
+
+A **machine state** is everything a machine is: the CPU, every byte of memory, the ROM, every
+device (sound chips, the ULA, the Next's Copper, DMA and sprites, the Z88's Blink and its cards), and
+the tape and disks inside it. Klive saves it for every machine it emulates in its own WASM cores:
+the ZX Spectrum 48K, 128K, +2E/+3E, the ZX Spectrum Next, the Cambridge Z88, the ZX80 and the ZX81.
+
+Restoring a state continues *exactly* where it was saved, down to the T-state. Use it as a bookmark
+while debugging, or to hand someone a machine that shows a bug.
+
+<Callout type="info">
+For the ZX Spectrum 48K/128K/+2E/+3E you can also [save a standard snapshot](./spectrum-snapshots#saving-a-snapshot)
+(`.szx`, `.z80`, `.sna`) that other emulators open. A Klive state holds more (the tape's exact
+position, the disk controller in the middle of a command) but only Klive reads it.
+</Callout>
+
+## Saving and loading a state file
+
+The machine must be running or paused. A running machine is paused for an instant and runs on.
+
+- **File &rarr; Save Machine State...**, or **Save State...** in the Emulator's **Machine** menu,
+  writes a `.kls` file.
+- **File &rarr; Load Machine State...**, or **Load State...**, opens one. It switches to the machine,
+  model and configuration the state was saved on, and stops at the saved program counter, ready to
+  debug.
+- Open a `.kls` file in the Explorer to see what it holds: the screen as it was saved, the machine,
+  when and by which version of Klive it was saved, and its media. Its tab and its context menu
+  can load it and run it or debug it.
+- Drop a `.kls` file onto the Emulator window to load it.
+- The [`state-save`](../commands-reference#state-save) and
+  [`state-load`](../commands-reference#state-load) commands do the same from the command prompt.
+
+A state file is small: from about 10 KB to a few hundred KB, whatever the machine.
+
+## Quick save and restore
+
+**Quick Save State** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>, <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>
+on a Mac) keeps the machine's state in memory, without a file. **Quick Restore State**
+(<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>) puts it back and pauses the machine.
+There is one slot per machine. It is emptied when you switch to another machine or model, and when
+Klive closes.
+
+## Klive versions
+
+A state file is an image of the emulator's memory, so it fits only an emulator core whose memory
+layout is the same. Klive records that layout in the file and checks it on load:
+
+- with the **same layout**, the state loads exactly;
+- a **ZX Spectrum** state saved by a version of Klive with a different layout loads from the `.szx`
+  snapshot it also carries. That is nearly the same state, but it leaves out the tape's exact
+  position, the disk controller's state and a few CPU details. Klive tells you when this happens;
+- a **ZX Spectrum Next, Z88 or ZX80/81** state from a different layout cannot be loaded. The message
+  names the Klive version that saved it.
+
+<Callout type="warning" emoji="⚠️">
+Treat state files as bookmarks, not archives: a Klive update can change an emulator core's layout.
+Keep the program, tape or disk image that produced the state, too.
+</Callout>
+
+## Tapes, disks and the SD card
+
+- The **tape** inside the machine is in the state, at its exact position.
+- The **+3 disks** are in the state too. When the state is loaded, the disks are *detached* from the
+  `.dsk` files they came from: what the machine writes from then on is not saved to those files,
+  because they no longer match the rewound disk. Insert a disk to attach one again.
+- The **ZX Spectrum Next's SD card** is too big to put in the state. The state remembers which image
+  it used and a fingerprint of its contents. Loading a state whose card has changed since asks for
+  confirmation, because the file system on the card may no longer match what the machine remembers.
+- Loading a state does not change the tape or disks your project lists.
+
+## What a state does not hold
+
+- Breakpoints, watches and anything else that belongs to the project or the IDE.
+- With a project open, a state of another machine type is refused; close the project or open one for
+  that machine.
+- The Cambridge Z88's clock is restored as it was saved, not advanced to the current time.

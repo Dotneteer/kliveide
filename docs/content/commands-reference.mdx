@@ -743,6 +743,46 @@ zx-snapshot-save "snapshots/level3.z80" -f
 zxsave "snapshots/bug.sna"
 ```
 
+## `state-save`
+
+This command saves the machine's complete state to a Klive state file (`.kls`).
+
+```
+state-save <state-file> [-f]
+```
+
+Available aliases: `ssave`
+
+It works for every machine Klive emulates in its own cores (ZX Spectrum 48K, 128K, +2E/+3E, ZX
+Spectrum Next, Cambridge Z88, ZX80, ZX81). The machine must be running or paused; a running machine
+runs on afterwards. An existing file is replaced only with `-f`. See
+[Saving and Restoring the Machine State](./howto/machine-state).
+
+```text
+state-save "states/before-boss.kls"
+ssave "states/bug.kls" -f
+```
+
+## `state-load`
+
+This command loads a Klive state file and debugs or runs it.
+
+```
+state-load <state-file> [-r | -d] [-y]
+```
+
+Available aliases: `sload`
+
+The command switches to the machine, model and configuration the state was saved on. With no option
+(or with `-d`), the machine starts in debug mode and stops at the saved program counter; `-r` runs
+it. A ZX Spectrum Next state whose SD card image has changed since is refused unless you add `-y`.
+With a project open, a state of another machine type is refused.
+
+```text
+state-load "states/before-boss.kls"
+sload "states/bug.kls" -r
+```
+
 ## `z88-snapshot`
 
 This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine and

@@ -68,6 +68,7 @@ What the field looks like:
 | Next asset editors | ✅ sprite editor (.spr), palette editors (.pal/.npl/.nxi), image viewers | ✗ | ✗ | — | — | ✗ |
 | NextZXOS boot, SD image | ✅ cached boot; `ncp` host↔image copy through a built-in FAT32 driver | ✅ | ✅ (bundled hdfmonkey) | — | — | via CSpect |
 | Load and save .sna / .z80 / .szx snapshots | ✅ on main (unreleased): all three formats load, run and debug-stop at PC on the 48K/128K/+2E/+3E, with a viewer (screen, registers, paging, AY, RAM banks) and drag and drop; all three are saved from a running or paused machine, with what .z80/.sna cannot hold reported | ✅ | ✗ | ✅ | ✅ | — |
+| Save/restore the complete machine state (all machines, incl. Next and Z88) | ✅ on main (unreleased): `.kls` state files and a quick save/restore slot for every WASM machine, exact to the T-state; a Spectrum state also carries a `.szx` for other Klive versions | ◐ (ZEsarUX `.zsf`) | ? | ✅ (`.szx`, Spectrum only) | ? | via CSpect |
 | RZX recording / playback | ✗ | ? | ✗ | ✅ | ✅ | ✗ |
 | Tape / disk | ✅ TAP/TZX (all blocks), tape viewer, DSK create/view | ✅ | — | ✅ | ◐ | — |
 | Export | ✅ TAP / TZX / HEX with generated BASIC loader and loading screen, NEX | ◐ | — | — | ✅ SkoolKit | NEX |
@@ -114,7 +115,7 @@ tools:
 | W2 | **Reverse debugging / execution history** | DeZog (zsim, ZEsarUX), ZEsarUX, Zeus | DeZog's most-praised feature. |
 | W3 | **Unit tests and code coverage, profiler** | DeZog; Fuse and Zeus profilers | Klive has a strong internal test harness, but nothing user-facing. |
 | W4 | **Live Next hardware inspectors** (sprites, Copper list, Layer 2 / tilemap / layer composition) | ZEsarUX; DeZog sprites | Large impact for a "Next IDE"; Klive has only NEX-file sprite and image views. |
-| W5 | ~~**Snapshot loading and saving (.sna / .z80 / .szx)**~~ — closed on main (G2.1–G2.5; unreleased). **RZX** remains | Fuse, ZEsarUX, Spectrum Analyser | Loading, viewing, running, debugging and saving all three formats is done (.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md, .plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md). RZX playback/recording (G2.7–G2.8) is what is left. |
+| W5 | ~~**Snapshot loading and saving (.sna / .z80 / .szx), machine state files**~~ — closed on main (G2.1–G2.6; unreleased). **RZX** remains | Fuse, ZEsarUX, Spectrum Analyser | Loading, viewing, running, debugging and saving all three formats is done (.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md, .plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md). RZX playback/recording (G2.7–G2.8) is what is left. |
 | W6 | **No remote or real-hardware debugging**, no external API | DeZog (serial), ZEsarUX ZRCP, CSpect plugins, MAME gdbstub | Shuts Klive out of the VS Code/DeZog ecosystem. |
 | W7 | **48K/128K reverse-engineering depth** (automatic code/data detection, annotated ROMs, SkoolKit, graphics finders) | Spectrum Analyser | Klive's annotation model exists for NEX only. |
 | W8 | ~~**BASIC editor intelligence**~~ — closed on main (G8.1–G8.5; unreleased) | — (also weak elsewhere) | Hover, definition, scope-correct references and rename, completion (library routines add their `#include`), signature help, outline and folding for `.zxbas`, from the compiler's own binder. With zxbc selected, keyword help, completion and folding remain. |

@@ -36,6 +36,11 @@ import {
   captureSpectrumSnapshot,
   type SpectrumSnapshotCaptureMedia
 } from "../zxSpectrum/spectrumSnapshotCapture";
+import {
+  captureWasmImage,
+  restoreWasmImage,
+  type MachineStateParts
+} from "../state/wasmStateImage";
 import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
@@ -1353,6 +1358,43 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost {
       { prefix: "spp3e", exports: runtime.exports, ram: runtime.ram },
       media
     );
+  }
+
+  /**
+   * Captures the machine's whole state: the core's memory image plus this wrapper's own fields
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.5). The machine must be paused.
+   */
+  saveMachineState(): MachineStateParts {
+    const runtime = this.requireWasmV2Runtime();
+    return {
+      ...captureWasmImage("spp3e", runtime.module, runtime.exports.memory.buffer),
+      host: { normalFrames: this.wasmV2NormalFrames }
+    };
+  }
+
+  /**
+   * Puts the machine back into a saved state. The core's memory - tape and disks included - comes
+   * from the state; the host-side caches are invalidated so the next frame pushes the live host's
+   * keyboard, audio rate and clock speed. Queued work of the run being replaced is dropped.
+   * @throws MachineStateMismatchError when the state was saved by another core or layout
+   */
+  loadMachineState(parts: MachineStateParts): void {
+    const runtime = this.requireWasmV2Runtime();
+    restoreWasmImage(parts, "spp3e", runtime.module, runtime.exports.memory.buffer);
+    const host = parts.host as { normalFrames?: number };
+    this.wasmV2NormalFrames = host.normalFrames ?? 0;
+    this.wasmV2AudioSamples.length = 0;
+    this.invalidateWasmV2Sync();
+    // --- What the core already holds must not be published again as new
+    this.wasmV2SavedTapeRevision = runtime.exports.spp3eTapeGetSavedRevision();
+    // --- The restored disks are detached from their files (D11): with no payload, no sector the
+    // --- rewound machine writes is merged back into a host .dsk; inserting a disk attaches again
+    this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
+    this.wasmV2DiskPayloads.length = 0;
+    runtime.diskChanges.fill(0);
+    runtime.diskBChanges.fill(0);
+    this.syncFrameCountersFromWasmV2(runtime);
+    this.syncCpuFromWasmV2(runtime);
   }
 
   private invalidateWasmV2Sync(): void {

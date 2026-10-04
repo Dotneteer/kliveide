@@ -10,6 +10,7 @@ import {
   NEX_VIEWER,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
+  MACHINE_STATE_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
   SHR_VIEWER,
@@ -126,6 +127,11 @@ import {
   getSpectrumSnapshotContextMenuInfo,
   spectrumSnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/SpectrumSnapshotLaunchMenu";
+import {
+  getMachineStateContextMenuInfo,
+  machineStateLaunchCommandBarRenderer
+} from "@renderer/features/documents/MachineStateLaunchMenu";
+import { createMachineStateViewerPanel } from "@renderer/appIde/DocumentPanels/MachineState/MachineStateViewerPanel";
 import {
   getZ88SnapshotContextMenuInfo,
   z88SnapshotLaunchCommandBarRenderer
@@ -460,6 +466,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "chip",
     // --- Its RAM banks pop out into documents, and Go Back must return here
     navigation: fileDocumentNavigationAdapter
+  },
+  {
+    // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
+    id: MACHINE_STATE_VIEWER,
+    renderer: createMachineStateViewerPanel,
+    icon: "chip"
   },
   {
     id: Z88_SNAPSHOT_VIEWER,
@@ -824,6 +836,19 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: spectrumSnapshotLaunchCommandBarRenderer,
     contextMenuInfo: getSpectrumSnapshotContextMenuInfo
+  },
+  {
+    // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
+    matchType: "ends",
+    pattern: ".kls",
+    editor: MACHINE_STATE_VIEWER,
+    icon: "chip",
+    ignoreCase: true,
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: machineStateLaunchCommandBarRenderer,
+    contextMenuInfo: getMachineStateContextMenuInfo
   },
   {
     matchType: "ends",

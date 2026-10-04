@@ -151,6 +151,12 @@ export const setMouseCapturedAction: ActionCreator = (captured: boolean) => ({
   payload: { flag: captured }
 });
 
+/** The emulator holds a quick-saved machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
+export const setQuickStateAvailableAction: ActionCreator = (available: boolean) => ({
+  type: "SET_QUICK_STATE_AVAILABLE",
+  payload: { flag: available }
+});
+
 export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_SCREEN_RECORDING_AVAILABLE",
   payload: { flag: available }

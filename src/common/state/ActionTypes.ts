@@ -111,6 +111,7 @@ export interface ActionTypes {
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
+  SET_QUICK_STATE_AVAILABLE: null;
   SET_SCREEN_RECORDING_STATE: null;
   SET_SCREEN_RECORDING_QUALITY: null;
   SET_SCREEN_RECORDING_FORMAT: null;

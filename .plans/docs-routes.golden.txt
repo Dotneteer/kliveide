@@ -48,6 +48,7 @@
 /howto/file-extensions/index.html
 /howto/ide-startup/index.html
 /howto/instant-screen/index.html
+/howto/machine-state/index.html
 /howto/measure-t-states/index.html
 /howto/screen-recording/index.html
 /howto/shortcuts/index.html
