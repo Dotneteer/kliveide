@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createZx81Session, type Zx81TestSession } from "../harness/zx81";
+import { expectSameBytes } from "../expectBytes";
 
 /**
  * The ZX81 ULA's timing on the real ROM (`.plans/ZX8081_WASM_PLAN.md` §6, §12): VSYNC per TV frame,
@@ -134,7 +135,7 @@ describe("ZX81 ULA timing", () => {
     const first = s.screenPixels();
     for (let i = 0; i < 100; i++) {
       s.runFrames(1);
-      expect(s.screenPixels()).toEqual(first);
+      expectSameBytes(s.screenPixels(), first, `the picture of frame ${i + 1}`);
     }
   });
 

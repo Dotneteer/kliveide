@@ -27,6 +27,7 @@ import { ResolvingMessenger } from "../../harness/z88";
 import { createHarnessSpectrumMachine } from "../../harness/sp128";
 import { buildSzx, patternBank, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
 import { loadSpectrumSnapshot } from "@renderer/appEmu/machines/spectrumSnapshotLoad";
+import { expectSameBytes } from "../../expectBytes";
 
 class FakeEmulator {
   readonly store: Store<AppState> = createAppStore("emu");
@@ -144,7 +145,7 @@ describe("loading a state", () => {
     expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/`]);
     expect(emu.machine.pc).toBe(0x8100);
     // --- Exactly the saved machine: its image equals the source's
-    expect(emu.machine.saveMachineState().image).toEqual(source.machine.saveMachineState().image);
+    expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
   });
 
   it("keeps the machine when it already fits, and runs in run mode", async () => {
@@ -244,7 +245,7 @@ describe("quick save and restore (D19)", () => {
     await new Promise((r) => setTimeout(r, 60));
     await quickRestoreMachineState(emu.ports);
     expect(emu.controller!.state).toBe(MachineControllerState.Paused);
-    expect(emu.machine.saveMachineState().image).toEqual(before);
+    expectSameBytes(emu.machine.saveMachineState().image, before, "the images");
   });
 
   it("a rebuilt machine has an empty slot", async () => {

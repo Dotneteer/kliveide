@@ -22,6 +22,7 @@ import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createSession as createNextSession } from "../../harness/zxnext";
 import { BANK, buildSzx, state128, state48, szxBlock } from "../../spectrum/snapshot/builders";
+import { expectSameBytes } from "../../expectBytes";
 
 /** What every machine under test offers */
 type StateMachine = {
@@ -57,9 +58,7 @@ function proveDeterminism(a: Driver, b: Driver, frames: number): void {
   const fb = fingerprint(b.machine);
   expect(fb.regs).toEqual(fa.regs);
   // --- Compare the images without printing megabytes on a failure
-  const first = fa.image.findIndex((v, i) => v !== fb.image[i]);
-  expect(first, `first differing byte at ${first}`).toBe(-1);
-  expect(fb.image.length).toBe(fa.image.length);
+  expectSameBytes(fb.image, fa.image, "the images");
 }
 
 /*
@@ -174,7 +173,7 @@ describe("machine state: refusals", () => {
     const parts = { ...a.machine.saveMachineState(), fingerprint: "0".repeat(32) };
     const before = a.machine.saveMachineState().image;
     expect(() => a.machine.loadMachineState(parts)).toThrow(/memory layout/);
-    expect(a.machine.saveMachineState().image).toEqual(before);
+    expectSameBytes(a.machine.saveMachineState().image, before, "the images");
   });
 
   it("keeps the live core's breakpoint conditions (volatile) across a restore", async () => {

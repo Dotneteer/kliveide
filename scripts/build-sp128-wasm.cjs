@@ -1,7 +1,14 @@
 const { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } = require("node:fs");
 const { dirname, relative, resolve, sep } = require("node:path");
 const { spawnSync } = require("node:child_process");
-const { layoutMapArgs, layoutMapPath, stampWasmLayout } = require("./wasm-layout.cjs");
+const {
+  discardWasmOutput,
+  layoutMapArgs,
+  layoutMapPath,
+  publishWasmOutput,
+  stagingWasmOutput,
+  stampWasmLayout
+} = require("./wasm-layout.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -296,6 +303,8 @@ function buildSp128Wasm({
   const optimizationProfile = normalizeOptimization(optimization);
   const selected = buildModes[buildMode];
   const selectedOutput = outputPath ?? selected.output;
+  // --- A real build is staged and renamed into place (see `publishWasmOutput`)
+  const compiledOutput = stagingWasmOutput(selectedOutput, run === spawnSync);
   if (existsSync(wasmDistDirectory) && dirname(selectedOutput) === wasmDistDirectory) {
     for (const entry of readdirSync(wasmDistDirectory)) {
       const candidate = resolve(wasmDistDirectory, entry);
@@ -319,20 +328,22 @@ function buildSp128Wasm({
     ...selected.exports.filter(name => name !== "memory").map(name => `-Wl,--export=${name}`),
     ...selected.sources,
     "-o",
-    selectedOutput
+    compiledOutput
   ];
   const layoutMap = layoutMapPath(selectedOutput);
   const result = run(compiler, [...args, ...layoutMapArgs(layoutMap)], { cwd: root, stdio: "inherit" });
+  if (result.error || result.status !== 0) discardWasmOutput(compiledOutput, selectedOutput);
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`ZX Spectrum 128K WASM compilation failed (${result.status}).`);
-  if (!existsSync(selectedOutput) || statSync(selectedOutput).size === 0) {
+  if (!existsSync(compiledOutput) || statSync(compiledOutput).size === 0) {
     throw new Error(
       `ZX Spectrum 128K WASM compilation reported success (compiler: '${compiler}'), but '${selectedOutput}' is missing or empty. ` +
       `The build must not continue - packaging this app would ship a broken emulator.`
     );
   }
   // --- The memory layout a Klive state file depends on (scripts/wasm-layout.cjs)
-  const layout = stampWasmLayout(selectedOutput, layoutMap, SP128_VOLATILE_SYMBOLS);
+  const layout = stampWasmLayout(compiledOutput, layoutMap, SP128_VOLATILE_SYMBOLS);
+  publishWasmOutput(compiledOutput, selectedOutput);
   return {
     layout,
     compiler,
