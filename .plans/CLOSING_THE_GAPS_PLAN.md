@@ -102,6 +102,9 @@ menus and the `zx-snapshot-save` command, with what `.z80`/`.sna` cannot hold re
 **G2.6 done (2026-10-04):** `.kls` state files and a quick save/restore slot for every WASM machine
 (48K, 128K, +2E/+3E, Next, Z88, ZX80/81), exact to the T-state, guarded by a per-build memory-layout
 fingerprint, with a `.szx` fallback for Spectrum states from another Klive version.
+G2.7 (RZX playback) and G2.8 (RZX recording), paired with the emulator video recording, are planned
+in [RZX_PLAN.md](RZX_PLAN.md). That plan argues (§1.3) that they need neither G2.6 nor the Wave 4
+replay spike.
 
 | Feature | What it does | Size |
 |---|---|---|
