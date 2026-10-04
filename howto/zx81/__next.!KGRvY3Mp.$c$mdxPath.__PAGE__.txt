@@ -1,0 +1,130 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"ClientWrapper"]
+5:Tecf,---
+description: "Klive emulates the Sinclair ZX81 and ZX80: load .p and .o programs, type on the ZX81's own keyboard layout, and debug them."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using the ZX81 and ZX80
+
+Klive emulates the Sinclair ZX81 and its predecessor, the ZX80. Choose one from *Machine* in the
+emulator's menu:
+
+| Machine | Models |
+|---|---|
+| Sinclair ZX81 | 16K (the default), 1K, 64K, and the US machine (Timex Sinclair 1000) with 16K or 1K |
+| Sinclair ZX80 | 16K, 1K, and the ZX80 with the 8K ROM upgrade (the ZX81 ROM) |
+
+The ZX81's picture is built the way the real machine builds it, line by line, from the display
+routine the ROM runs. So both of its modes work as they did: SLOW mode computes and displays at the
+same time, and FAST mode shows no picture while a program runs. Programs that draw their own
+hi-res graphics also work.
+
+## Typing
+
+The ZX81 has no separate keys for its keywords: the key you press means a keyword or a letter
+depending on the cursor. At the **K** cursor, P is `PRINT`, J is `LOAD` and R is `RUN`. To print a
+greeting, type `P`, then `Shift+P` for the quote, `HELLO`, `Shift+P` again and `Enter`:
+
+![Typing PRINT "HELLO" on the ZX81](/images/zx81/zx81-print.png)
+
+Your keyboard maps to the ZX81's like this:
+
+| Your key | ZX81 key |
+|---|---|
+| Both Shift keys | SHIFT |
+| Enter | NEW LINE |
+| Backspace | RUBOUT (SHIFT+0) |
+| The arrow keys | the cursor keys (SHIFT+5 to SHIFT+8) |
+| Escape | BREAK (SHIFT+SPACE) |
+| `` ` `` or F1 | EDIT (SHIFT+1) |
+| Comma | SHIFT+`.` |
+
+The virtual keyboard follows the original's layout. Click a key to press it, or click it with the
+right mouse button to press it with SHIFT. Clicking a red legend presses SHIFT with the key. Clicking
+the function printed under a key (`SIN`, `RND`...) or the block graphic on a key types the keys
+that produce it:
+
+![The ZX81 virtual keyboard](/images/zx81/zx81-keyboard.png)
+
+<Callout type="info">
+The ROM ignores a key pressed too soon after the previous one. If the virtual keyboard seems to
+skip a click, wait for the last one to appear on the screen.
+</Callout>
+
+## Loading programs
+
+ZX81 programs come as `.p` (or `.81`) files, ZX80 programs as `.o` (or `.80`) files. They hold a
+copy of the machine's memory, the way the ROM saved it to tape. To load one:
+
+- Choose *Machine → Select Program File...*, then *Machine → Load and Run the Program*; or
+- right-click the file in the Explorer and choose *Load and run tape*; or
+- run `tape-load <file> -r` in the command prompt.
+
+Klive resets the machine, types `LOAD ""` (on the ZX80, `LOAD`), and when the ROM has loaded the
+program, types `RUN`. Programs saved to start themselves just start. With *Fast Load* on (the
+default) the program loads at once; with it off, it plays in real time, as from a cassette, and the
+ROM's stripes show on the screen while it loads.
+
+![A machine-code program running after Load and Run](/images/zx81/zx81-loaded.png)
+
+A program saved in FAST mode loads in FAST mode, so it shows no picture while it runs. Type `FAST`
+or `SLOW` (SHIFT+F, SHIFT+D at the K cursor) to switch.
+
+## Debugging
+
+Breakpoints, stepping, and the CPU and memory panels work as on the other machines. The
+disassembly shows the byte after `RST $08` as the ROM's error report, and the calculator literals
+after `RST $28` by name.
+
+While the ROM draws the picture, the CPU runs the display file through its copy above 32K
+(`$C000` and up). The ZX81's ULA turns every character there into a `NOP`. So when you step through
+that area, the disassembly shows the characters in memory, but the CPU executes `NOP`s.
+
+## The ROMs
+
+The ZX80 and ZX81 ROMs ship with Klive. They may be used free of charge in non-commercial
+products; their notice is in `roms/zx8081-roms-readme.txt` next to the ROM files.a:X
+f:X
+f:C
+0:{"buildId":"U-9jhWKUWzK5PBSoduDNs","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Typing","id":"typing","depth":2},{"value":"Loading programs","id":"loading-programs","depth":2},{"value":"Debugging","id":"debugging","depth":2},{"value":"The ROMs","id":"the-roms","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive emulates the Sinclair ZX81 and ZX80: load .p and .o programs, type on the ZX81's own keyboard layout, and debug them.","title":"Using the ZX81 and ZX80","filePath":"content/howto/zx81.mdx","timestamp":1791030778000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"HeadingAnchor"]
+13:I[7795,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"ImageZoom"]
+24:I[484,[],"OutletBoundary"]
+25:"$Sreact.suspense"
+27:I[484,[],"ViewportBoundary"]
+28:I[484,[],"MetadataBoundary"]
+29:I[7121,[],""]
+2a:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using the ZX81 and ZX80","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive emulates the Sinclair ZX81 and its predecessor, the ZX80. Choose one from ",["$","em",null,{"children":"Machine"}]," in the\nemulator’s menu:"]}],"\n",["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Machine","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Models","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Sinclair ZX81","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16K (the default), 1K, 64K, and the US machine (Timex Sinclair 1000) with 16K or 1K","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Sinclair ZX80","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"16K, 1K, and the ZX80 with the 8K ROM upgrade (the ZX81 ROM)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ZX81’s picture is built the way the real machine builds it, line by line, from the display\nroutine the ROM runs. So both of its modes work as they did: SLOW mode computes and displays at the\nsame time, and FAST mode shows no picture while a program runs. Programs that draw their own\nhi-res graphics also work."}],"\n",["$","h2",null,{"id":"typing","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Typing",["$","$L12",null,{"id":"typing"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX81 has no separate keys for its keywords: the key you press means a keyword or a letter\ndepending on the cursor. At the ",["$","strong",null,{"children":"K"}]," cursor, P is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"PRINT"}],", J is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD"}]," and R is ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],". To print a\ngreeting, type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"P"}],", then ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+P"}]," for the quote, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"HELLO"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Shift+P"}]," again and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"Enter"}],":"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L13",null,{"alt":"Typing PRINT \"HELLO\" on the ZX81","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/zx81-print.d5f1ce49.png","height":960,"width":960,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAMFBMVEUrLjP///8ZGRo8QET4+PhRUFHQ0dJcXFzV1derrK6ztLaTlJawsLKSk5Y2OD3V1tfTzdauAAAACXBIWXMAABYlAAAWJQFJUiTwAAAANklEQVQImU3IyQ3AMAzEQO5asuyc/Xcb6Be+iIFndMCMCE1gSdLbor8s4Dz2vm6wM2vYPVVpfyCAAPiqv2AIAAAAAElFTkSuQmCC","blurWidth":8,"blurHeight":8}}]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23"]}]
+8:["$","$L24",null,{"children":["$","$25",null,{"name":"Next.MetadataOutlet","children":"$@26"}]}]
+b:["$","$1","h",{"children":[null,["$","$L27",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L28",null,{"children":["$","$25",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using the ZX81 and ZX80 - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive emulates the Sinclair ZX81 and ZX80: load .p and .o programs, type on the ZX81's own keyboard layout, and debug them."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L29",null,{"parallelRouterKey":"children","template":["$","$L2a",null,{}]}]]}]
+11:true
+14:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Your keyboard maps to the ZX81’s like this:"}]
+15:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Your key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"ZX81 key","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":"Both Shift keys","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"SHIFT","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Enter","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"NEW LINE","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Backspace","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"RUBOUT (SHIFT+0)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"The arrow keys","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"the cursor keys (SHIFT+5 to SHIFT+8)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Escape","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"BREAK (SHIFT+SPACE)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"`"}]," or F1"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":"EDIT (SHIFT+1)","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":"Comma","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["SHIFT+",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"."}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The virtual keyboard follows the original’s layout. Click a key to press it, or click it with the\nright mouse button to press it with SHIFT. Clicking a red legend presses SHIFT with the key. Clicking\nthe function printed under a key (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SIN"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RND"}],"…) or the block graphic on a key types the keys\nthat produce it:"]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L13",null,{"alt":"The ZX81 virtual keyboard","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/zx81-keyboard.0d9c9ff0.png","height":288,"width":1440,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAACCAMAAABSSm3fAAAAElBMVEVsa2sTExM3NjZlY2MtLCwyMjKYDwJHAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAGklEQVQImWNgZGJgZmZgYWRgZGVgYGBgYgQAAPoAGDRV6zcAAAAASUVORK5CYII=","blurWidth":8,"blurHeight":2}}]}]
+18:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The ROM ignores a key pressed too soon after the previous one. If the virtual keyboard seems to\nskip a click, wait for the last one to appear on the screen."}]}]]}]
+19:["$","h2",null,{"id":"loading-programs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Loading programs",["$","$L12",null,{"id":"loading-programs"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["ZX81 programs come as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".p"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".81"}],") files, ZX80 programs as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".o"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".80"}],") files. They hold a\ncopy of the machine’s memory, the way the ROM saved it to tape. To load one:"]}]
+1b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Choose ",["$","em",null,{"children":"Machine → Select Program File…"}],", then ",["$","em",null,{"children":"Machine → Load and Run the Program"}],"; or"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["right-click the file in the Explorer and choose ",["$","em",null,{"children":"Load and run tape"}],"; or"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"tape-load <file> -r"}]," in the command prompt."]}],"\n"]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive resets the machine, types ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD \"\""}]," (on the ZX80, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD"}],"), and when the ROM has loaded the\nprogram, types ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],". Programs saved to start themselves just start. With ",["$","em",null,{"children":"Fast Load"}]," on (the\ndefault) the program loads at once; with it off, it plays in real time, as from a cassette, and the\nROM’s stripes show on the screen while it loads."]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L13",null,{"alt":"A machine-code program running after Load and Run","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/zx81-loaded.a0ab743d.png","height":960,"width":960,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAMAAADz0U65AAAAMFBMVEUZGRqysrPT09TOz88tMDVERknj4+LExMQ6PUFTUlNcW1wrLjMlKC3x8fGSk5aTlJbmz05LAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAO0lEQVQImR3ISRLAMAgDMANmTdL8/7edVkdhV5V7bdBOxDGCapmmBC1F8p9QDSXWFRF5FgDvcXx6poEXMwIBS7QEXgcAAAAASUVORK5CYII=","blurWidth":8,"blurHeight":8}}]}]
+1e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A program saved in FAST mode loads in FAST mode, so it shows no picture while it runs. Type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FAST"}],"\nor ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SLOW"}]," (SHIFT+F, SHIFT+D at the K cursor) to switch."]}]
+1f:["$","h2",null,{"id":"debugging","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debugging",["$","$L12",null,{"id":"debugging"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Breakpoints, stepping, and the CPU and memory panels work as on the other machines. The\ndisassembly shows the byte after ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $08"}]," as the ROM’s error report, and the calculator literals\nafter ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RST $28"}]," by name."]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While the ROM draws the picture, the CPU runs the display file through its copy above 32K\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$C000"}]," and up). The ZX81’s ULA turns every character there into a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],". So when you step through\nthat area, the disassembly shows the characters in memory, but the CPU executes ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"NOP"}],"s."]}]
+22:["$","h2",null,{"id":"the-roms","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The ROMs",["$","$L12",null,{"id":"the-roms"}]]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ZX80 and ZX81 ROMs ship with Klive. They may be used free of charge in non-commercial\nproducts; their notice is in ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"roms/zx8081-roms-readme.txt"}]," next to the ROM files."]}]
+26:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
