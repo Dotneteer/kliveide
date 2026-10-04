@@ -10,7 +10,7 @@
  * **Keep this list complete.** A unit-tier test that instantiates a machine core fails with a
  * message pointing here (`test/vitest.setup.ts`), so a new core test cannot quietly slow the unit
  * tier down. Membership was measured, not guessed: every file listed instantiated a core (a
- * WebAssembly instance exporting `sp48*`, `sp128*`, `spp3e*`, `zxnext*`, `z88*` or `z80*`) in a full
+ * WebAssembly instance exporting `sp48*`, `sp128*`, `spp3e*`, `zxnext*`, `z88*`, `zx8081*` or `z80*`) in a full
  * run, plus the core build/source-contract tests under `test/wasm/`.
  */
 
@@ -19,6 +19,7 @@ export const E2E_CORE_TESTS: string[] = [
   // --- Whole folders: every test in them runs a core or checks a core's sources/build
   "test/wasm/**/*.test.ts",
   "test/zxnext-hw/**/*.test.ts",
+  "test/zx8081-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
 
   // --- Mixed folders: the files that run a core
@@ -46,6 +47,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/z88/z88-sleep-and-boot.test.ts",
   "test/z88/z88-timeout-coma.test.ts",
   "test/z88/z88-wasm-build.test.ts",
+  "test/zx8081/zx8081-wasm-build.test.ts",
   "test/z88/z88-wasm-v2-loader.test.ts",
   "test/zxSpectrum/*WasmV2Machine.test.ts",
   "test/zxSpectrum/*-wasm-build.test.ts",

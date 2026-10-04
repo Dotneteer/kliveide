@@ -526,6 +526,50 @@ candidate: copy `DebugSupport.breakpointFlags` into it (128 KB, ~1 us per run) a
 policy at the candidate (`Z88WasmV2Machine.wasmV2FastPathStop`, `z88ExecuteUntilStop`). Step-into
 and memory/I/O breakpoints stay per instruction.
 
+## A New Machine On The Shared Core: The Sinclair ZX80/ZX81
+
+The ZX80/ZX81 (`.plans/ZX8081_WASM_PLAN.md`, `src/emu/machines/zx8081/wasm/README.md`) was the first
+machine built on the WASM core from scratch, with no TypeScript machine to port or to hold it to. Its
+ULA lives on four hooks of the shared Z80, three of them new and default-no-op: `Z80_REFRESH`
+(every refresh, with I:R before the increment), `Z80_NMI_ACK_WAIT` (inside the NMI acknowledge,
+split only under `#ifdef`), `Z80_INT_ACK`, plus the existing `Z80_BEFORE_OPCODE_FETCH` and the
+memory/port delay hooks, which carry the ULA's WAIT the way the Spectrum's carry contention. What it
+taught:
+
+- **Know the order the core calls its hooks in before designing on one.** The plan put the ULA's NOP
+  forcing in `Z80_AFTER_OPCODE_FETCH`, but the core runs `Z80_REFRESH` *before* that hook, and the
+  refresh is what draws the byte the M1 latched. The substitution went on the read instead: the
+  before-fetch hook marks the next read as the opcode read. The after-fetch contract (the hook may
+  replace `cpu.opCode`) is documented and tested, and simply not what this machine needed.
+- **R counts every M1; it did not.** The second opcode byte of CB/ED/DD/FD was fetched without a
+  refresh, so a prefixed instruction added 1 to R. The fix (2 for a prefixed instruction, still 2
+  for DDCB/FDCB) went into both CPUs and every machine. No tact moved, but R-derived data did: the
+  Z88's goldens changed because OZ stores `LD A,R` results. The way to review such a re-recording is
+  to record a control-flow-only variant of the goldens (PC, tacts, frames, LCD, Blink, audio - no
+  register values, no memory) under the old and the new core and require them identical; then the
+  remaining differences can only be the data the fix changes.
+- **Synchronisation is invisible when nothing varies.** The first "jitter-free" test measured the
+  picture at the idle prompt, and passed with WAIT removed: an idle loop is phase-locked to the lines,
+  so an unsynchronised display looks still too. And removing only the NMI-acknowledge WAIT is an
+  equivalent mutant - the acknowledge's stack writes are memory cycles, which WAIT also holds. The test
+  that fails without WAIT wakes HALTs reached through code of different lengths and checks the line
+  timer at the handler (`test/zx8081-hw/ula-timing.test.ts`). Mutate until the test fails for the
+  reason it names; a precondition failing first does not count.
+- **`Z80Cpu.hardReset()` leaves `tactsInFrame` at 1,000,000.** A host must set its frame length again
+  in `reset()` (the Z88 host does), because the controller paces the UI by it: the ZX81 ran at a
+  fifteenth of its speed in the app and showed a white screen - the ROM was still testing its RAM -
+  while every harness test, which drives frames directly, passed. Check a new machine in the running
+  app before calling it done.
+- **A ROM can refuse keystrokes that come too fast.** The ZX81 ignores a key that follows the last one
+  by fewer than 4 key-free frames (DEBOUNCE). The 48K's queued-keystroke offsets (0/3/10 frames, held
+  2) lose keys there; the ZX81 holds 4 and steps 10. A queued key is released at the first frame after
+  its end, so the effective gap is one frame shorter than the queue says.
+- **Read a reference's tables against the ROM, not the other way round.** CLK's ZX80 and ZX81 character
+  tables have their rows of symbols swapped and the block graphics out of order; the glyphs in each
+  ROM's character set settle it in a minute. CLK's own open question (RAM read at the refresh address,
+  not the character address) turned out right: WRX hi-res needs it, and a hi-res program draws
+  stripes the other way.
+
 ## Recommended First Reading For Next Migration
 
 Before touching ZX Spectrum Next WASM work, read:

@@ -128,7 +128,9 @@ import {
   z88SnapshotLaunchCommandBarRenderer
 } from "@renderer/features/documents/Z88SnapshotLaunchMenu";
 import {
+  getProgramLaunchContextMenuInfo,
   getTapeLaunchContextMenuInfo,
+  programLaunchCommandBarRenderer,
   tapeLaunchCommandBarRenderer
 } from "@renderer/features/documents/TapeLaunchMenu";
 import { createScriptOutputPanel } from "./appIde/DocumentPanels/ScriptOutputPanel";
@@ -677,6 +679,58 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: tapeLaunchCommandBarRenderer,
     contextMenuInfo: getTapeLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".p",
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: programLaunchCommandBarRenderer,
+    contextMenuInfo: getProgramLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".81",
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: programLaunchCommandBarRenderer,
+    contextMenuInfo: getProgramLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".o",
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: programLaunchCommandBarRenderer,
+    contextMenuInfo: getProgramLaunchContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".80",
+    // --- A ZX80/ZX81 program file, which the machine's tape plays (`.plans/ZX8081_WASM_PLAN.md` §9.1)
+    ignoreCase: true,
+    editor: BIN_VIEWER,
+    icon: "@file-tap-tzx",
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: programLaunchCommandBarRenderer,
+    contextMenuInfo: getProgramLaunchContextMenuInfo
   },
   {
     matchType: "ends",

@@ -3,7 +3,8 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
 import {
@@ -26,6 +27,18 @@ export const TAPE_LOAD_MACHINES: readonly string[] = [
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E
 ];
+
+/** The machines a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`) loads into */
+export const PROGRAM_LOAD_MACHINES: readonly string[] = [MI_ZX81, MI_ZX80];
+
+/**
+ * Why a ZX80/ZX81 program file cannot be loaded into the current machine, or undefined when it can.
+ * @param state The IDE's state (the part read here)
+ */
+export function programLoadGuard(state: { emulatorState?: { machineId?: string } }): string | undefined {
+  const machineId = state.emulatorState?.machineId;
+  return machineId && PROGRAM_LOAD_MACHINES.includes(machineId) ? undefined : "requires a ZX80 or ZX81 machine";
+}
 
 /**
  * Tells whether a path names a `.tap` or `.tzx` tape file.
@@ -83,7 +96,7 @@ export function tapeLoadGuard(state: {
 export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
   readonly id = "tape-load";
   readonly description =
-    "Inserts a .tap or .tzx tape into the ZX Spectrum's deck (-r resets and loads it, -d does so with breakpoints armed)";
+    "Inserts a .tap or .tzx tape (ZX Spectrum) or a .p/.o program (ZX80/ZX81) into the deck (-r resets and loads it, -d does so with breakpoints armed)";
   readonly aliases = ["tapeload"];
   readonly usage = "tape-load <tape-file> [-r | -d]";
 
@@ -97,15 +110,18 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     args: TapeLoadCommandArgs
   ): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
+    const isProgram = !!args.file?.trim() && isZx8081ProgramFileName(args.file.trim());
     if (!args.file?.trim()) {
       messages.push(validationError("The tape file path cannot be empty."));
-    } else if (!isTapeFilePath(args.file)) {
-      messages.push(validationError("The file to load must be a .tap or .tzx tape."));
+    } else if (!isTapeFilePath(args.file) && !isProgram) {
+      messages.push(
+        validationError("The file to load must be a .tap or .tzx tape, or a ZX80/ZX81 .p, .81, .o or .80 program.")
+      );
     }
     if (args["-r"] && args["-d"]) {
       messages.push(validationError("Use only one of -r and -d."));
     }
-    const guard = tapeLoadGuard(context.store.getState());
+    const guard = isProgram ? programLoadGuard(context.store.getState()) : tapeLoadGuard(context.store.getState());
     if (guard) {
       const machineId = context.store.getState().emulatorState?.machineId;
       const name =
@@ -126,8 +142,13 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     } catch (err) {
       return commandError(`Could not read ${file}: ${messageOf(err)}`);
     }
-    const { analysis, error } = analyzeTape(bytes);
-    if (!analysis) {
+    // --- A ZX80/ZX81 program goes into the deck as it is; the ROM's LOAD reads it
+    const isProgram = isZx8081ProgramFileName(file);
+    if (isProgram && !parseZxProgramFile(bytes, file)) {
+      return commandError(`${file} is not a ZX80/ZX81 program Klive can read.`);
+    }
+    const { analysis, error } = isProgram ? { analysis: undefined, error: undefined } : analyzeTape(bytes);
+    if (!isProgram && !analysis) {
       return commandError(`${file} is not a tape Klive can read: ${error}`);
     }
 
@@ -135,7 +156,7 @@ export class TapeLoadCommand extends IdeCommandBase<TapeLoadCommandArgs> {
     if (insertError) {
       return commandError(insertError);
     }
-    if (analysis.summary.unplayableCount > 0) {
+    if (analysis && analysis.summary.unplayableCount > 0) {
       writeMessage(
         context.output,
         `Warning: ${analysis.summary.unplayableCount} block(s) of this tape will not play in Klive; loading may fail.`,

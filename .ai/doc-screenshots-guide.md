@@ -177,7 +177,7 @@ it.
 
 ## Coverage so far
 
-Three recipes; the rest of the pages were deliberately left ungenerated.
+Four recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -185,6 +185,13 @@ Three recipes; the rest of the pages were deliberately left ungenerated.
   also photographs the **EMU window** — show it through `app.evaluate` on its `BrowserWindow`, then
   `page.screenshot()` on that window's `Page` — after `tape-load -r`, which proves the load path end
   to end.
+
+- `recipes/zx81.cjs` — the three `zx81/*.png` shots of `howto/zx81.mdx`, from the **EMU window**:
+  it picks the model from the application menu (`machine_zx81_zx81-16k`), shows the keyboard panel
+  (`button[aria-label="Show/Hide keyboard"]`), types on the host keyboard, and runs `tape-load -r`.
+  Two traps it hit: **park the mouse away from the toolbar before a shot**, or a toolbar tooltip is in
+  the picture; and a machine whose frame pacing is wrong still passes every harness test - this
+  recipe is what found the ZX81 running at a fifteenth of its speed in the app.
 
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three

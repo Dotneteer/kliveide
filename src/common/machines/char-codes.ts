@@ -547,3 +547,52 @@ export const ZxNextChars: Record<number, CharDescriptor> = {
   0xfe: { c: "token", t: "RETURN" },
   0xff: { c: "token", t: "COPY" },
 };
+
+/**
+ * The ZX81 character set for the memory panel: codes $00-$3F and their inverse ($80-$BF), the
+ * keyword tokens ($40-$42, $C0-$FF), NEWLINE ($76), the number marker ($7E) and the cursor ($7F).
+ * The glyphs were read off the ROM's character set ($1E00); see `zx8081/ZxPFile.ts`.
+ */
+export const Zx81Chars: Record<number, CharDescriptor> = buildZx8081Chars(true);
+
+/** The ZX80 character set (its own order of symbols and graphics: the ROM's set at $0E00) */
+export const Zx80Chars: Record<number, CharDescriptor> = buildZx8081Chars(false);
+
+function buildZx8081Chars(isZx81: boolean): Record<number, CharDescriptor> {
+  const zx81 = [
+    " ", "▘", "▝", "▀", "▖", "▌", "▞", "▛", "▒", "▄", "▀", '"',
+    "£", "$", ":", "?", "(", ")", ">", "<", "=", "+", "-", "*", "/", ";", ",", "."
+  ];
+  const zx80 = [
+    " ", '"', "▌", "▄", "▘", "▝", "▖", "▗", "▞", "▒", "▄", "▀",
+    "£", "$", ":", "?", "(", ")", "-", "+", "*", "/", "=", ">", "<", ";", ",", "."
+  ];
+  const head = isZx81 ? zx81 : zx80;
+  const glyphs = [...head, ..."0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
+  const graphicCodes = isZx81 ? [1, 10] : [2, 11];
+  const chars: Record<number, CharDescriptor> = {};
+  for (let code = 0; code < 0x40; code++) {
+    const isGraphic = code >= graphicCodes[0] && code <= graphicCodes[1];
+    const v = code === 0 ? "\xa0" : glyphs[code];
+    chars[code] = isGraphic ? { v, c: "graph" } : { v, ...(code === 0 ? { t: "(space)" } : {}) };
+    chars[code | 0x80] = { v, c: "graph", t: `(inverse ${code === 0 ? "space" : glyphs[code]})` };
+  }
+  for (let code = 0x40; code < 0x80; code++) chars[code] = { c: "ctrl" };
+  chars[0x76] = { c: "ctrl", t: "(NEWLINE)" };
+  chars[0x7e] = { c: "ctrl", t: "(number)" };
+  chars[0x7f] = { c: "ctrl", t: "(cursor)" };
+  if (isZx81) {
+    const tokens = [
+      '""', "AT", "TAB", "?", "CODE", "VAL", "LEN", "SIN", "COS", "TAN", "ASN", "ACS", "ATN", "LN", "EXP",
+      "INT", "SQR", "SGN", "ABS", "PEEK", "USR", "STR$", "CHR$", "NOT", "**", "OR", "AND", "<=", ">=", "<>",
+      "THEN", "TO", "STEP", "LPRINT", "LLIST", "STOP", "SLOW", "FAST", "NEW", "SCROLL", "CONT", "DIM",
+      "REM", "FOR", "GOTO", "GOSUB", "INPUT", "LOAD", "LIST", "LET", "PAUSE", "NEXT", "POKE", "PRINT",
+      "PLOT", "RUN", "SAVE", "RAND", "IF", "CLS", "UNPLOT", "CLEAR", "RETURN", "COPY"
+    ];
+    tokens.forEach((t, i) => (chars[0xc0 + i] = { c: "token", t }));
+    chars[0x40] = { c: "token", t: "RND" };
+    chars[0x41] = { c: "token", t: "INKEY$" };
+    chars[0x42] = { c: "token", t: "PI" };
+  }
+  return chars;
+}

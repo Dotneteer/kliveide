@@ -40,11 +40,14 @@
     "check:zxnext-wasm-size": "node scripts/check-zxnext-wasm-size.cjs",
     "build:z88-wasm": "node scripts/build-z88-wasm.cjs",
     "check:z88-wasm-size": "node scripts/check-z88-wasm-size.cjs",
-    "build:all-wasm": "npm run build:sp48-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm",
+    "build:zx8081-wasm": "node scripts/build-zx8081-wasm.cjs",
+    "check:zx8081-wasm-size": "node scripts/check-zx8081-wasm-size.cjs",
+    "build:all-wasm": "npm run build:sp48-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm && npm run build:zx8081-wasm",
     "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
     "benchmark:z88-wasm": "node scripts/benchmark-z88-wasm.cjs",
+    "benchmark:zx8081-wasm": "node scripts/benchmark-zx8081-wasm.cjs",
     "test:visual": "node test/harness/zxnext/cli/run.cjs",
     "visual:serve": "node test/harness/zxnext/cli/serve.cjs",
     "test:zxnext-wasm-acceptance": "npm test -- --project e2e-cores test/wasm/zxNext/wasm-next-factory-setup.test.ts test/wasm/zxNext/wasm-next-rollout.test.ts test/wasm/zxNext/wasm-next-public-adapter.test.ts test/wasm/zxNext/wasm-next-debug-step.test.ts test/wasm/zxNext/wasm-next-start-menu.test.ts test/wasm/zxNext/wasm-next-frame-runner.test.ts test/wasm/zxNext/wasm-next-performance-boundary.test.ts",
@@ -276,6 +279,13 @@
       {
         "from": "src/emu/machines/z88/wasm/dist",
         "to": "wasm/z88",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/zx8081/wasm/dist",
+        "to": "wasm/zx8081",
         "filter": [
           "**/*.wasm"
         ]

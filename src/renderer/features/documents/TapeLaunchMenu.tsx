@@ -6,7 +6,7 @@ import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import type { AppServices } from "@renderer/abstractions/AppServices";
 import type { ContextMenuInfo } from "@renderer/abstractions/ContextMenuIfo";
 
-import { tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
+import { programLoadGuard, tapeLoadGuard } from "@renderer/appIde/commands/TapeLoadCommand";
 
 /*
  * **Load and run** / **Insert** / **Load and debug** for a `.tap` or `.tzx` file: the Explorer's
@@ -37,9 +37,24 @@ export function tapeLoadCommandText(path: string, mode: TapeLaunchMode): string 
  * @param services The app services
  */
 export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  return launchMenuInfo(services, tapeLoadGuard);
+}
+
+/**
+ * The Explorer's entries for a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`): the same `tape-load`
+ * command, enabled on a ZX80 or ZX81 (`.plans/ZX8081_WASM_PLAN.md` §9.1).
+ * @param services The app services
+ */
+export function getProgramLaunchContextMenuInfo(services: AppServices): ContextMenuInfo[] {
+  return launchMenuInfo(services, programLoadGuard);
+}
+
+type LoadGuard = (state: { emulatorState?: { machineId?: string } }) => string | undefined;
+
+function launchMenuInfo(services: AppServices, guard: LoadGuard): ContextMenuInfo[] {
   const { ideCommandsService } = services;
   const refused = (store: Parameters<NonNullable<ContextMenuInfo["disabled"]>>[0]) =>
-    !!tapeLoadGuard(store.getState());
+    !!guard(store.getState());
   const launch = async (item: string, mode: TapeLaunchMode) => {
     await ideCommandsService.executeCommand(tapeLoadCommandText(item, mode));
   };
@@ -65,14 +80,15 @@ export function getTapeLaunchContextMenuInfo(services: AppServices): ContextMenu
 
 type Props = {
   path: string;
+  guard: LoadGuard;
 };
 
-/** The three actions in a tape document's tab bar */
-const TapeLaunchCommandBar = ({ path }: Props) => {
+/** The three actions in a tape (or ZX80/ZX81 program) document's tab bar */
+const TapeLaunchCommandBar = ({ path, guard }: Props) => {
   const { ideCommandsService } = useAppServices();
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
-  const refusal = tapeLoadGuard({ emulatorState: { machineId } });
+  const refusal = guard({ emulatorState: { machineId } });
   const hint = refusal ? ` (${refusal})` : "";
   const loadHint = refusal ? hint : ` — fast load ${fastLoad === false ? "off" : "on"}`;
 
@@ -107,4 +123,10 @@ const TapeLaunchCommandBar = ({ path }: Props) => {
   );
 };
 
-export const tapeLaunchCommandBarRenderer = (path: string) => <TapeLaunchCommandBar path={path} />;
+export const tapeLaunchCommandBarRenderer = (path: string) => (
+  <TapeLaunchCommandBar path={path} guard={tapeLoadGuard} />
+);
+
+export const programLaunchCommandBarRenderer = (path: string) => (
+  <TapeLaunchCommandBar path={path} guard={programLoadGuard} />
+);

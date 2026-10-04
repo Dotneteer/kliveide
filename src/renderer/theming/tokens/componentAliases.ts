@@ -269,6 +269,17 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-hilited48": "var(--accent-subtle)",
   "--bgcolor-hilited128": "var(--accent-subtle)",
   "--bgcolor-hilitedz88": "var(--accent-subtle)",
+  // --- The ZX81 keyboard: light keys on a black case. A hovered legend on the key face takes the
+  // --- accent's dark end, the keyword/function print on the case its light end (§8.1.6).
+  "--bgcolor-keyboardzx81": "var(--device-body-zx81)",
+  "--bgcolor-keyzx81": "var(--device-key-zx81)",
+  "--color-keyzx81-main": "var(--device-legend-zx81-ink)",
+  "--color-keyzx81-shift": "var(--device-legend-zx81-red)",
+  "--color-keyzx81-legend": "var(--device-legend-main)",
+  "--color-keyzx81-glyphframe": "var(--device-glyph-frame-zx81)",
+  "--color-keyzx81-highlight": "var(--accent-on-device-light)",
+  "--color-keyzx81-legend-highlight": "var(--accent-on-device-dark)",
+  "--bgcolor-hilitedzx81": "var(--accent-device-pressed)",
 
   // --- Document area ----------------------------------------------------------------------------
   "--bgcolor-docspanel": "var(--surface-canvas)",

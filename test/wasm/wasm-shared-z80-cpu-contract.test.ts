@@ -25,7 +25,8 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
       ["sp128", "z80"],
       ["spp3e", "z80"],
       ["zxnext", "z80n"],
-      ["z88", "z80"]
+      ["z88", "z80"],
+      ["zx8081", "z80"]
     ]);
     for (const model of report.models) {
       expect(model.sharedCpuSource).toBe(report.shared.relativePath);
@@ -55,9 +56,15 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
     expect(z88?.sharedDeviceIncludes).toEqual([]);
     expect(z88?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
     expect(z88?.ok).toBe(true);
+    // --- The ZX80/ZX81 shares the CPU and the Sinclair keyboard matrix, nothing else of the Spectrum
+    const zx8081 = report.models.find(model => model.id === "zx8081");
+    expect(zx8081?.sharedDeviceIncludes).toEqual(['#include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"']);
+    expect(zx8081?.forbiddenIncludeFragments).toEqual(["zxSpectrum/wasm/common/"]);
+    expect(zx8081?.allowedIncludeFragments).toEqual(["zxSpectrum/wasm/common/zx-spectrum-keyboard.c"]);
+    expect(zx8081?.ok).toBe(true);
   });
 
   it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
-    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "sp128", "spp3e", "zxnext", "z88"]);
+    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "sp128", "spp3e", "zxnext", "z88", "zx8081"]);
   });
 });

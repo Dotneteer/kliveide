@@ -1,0 +1,8 @@
+{
+  // Type-checks the ZX81 harness and the tests that use it:
+  //   npx tsc -p test/harness/zx81/tsconfig.json
+  "extends": "../../tsconfig.json",
+  "compilerOptions": { "noEmit": true, "lib": ["ESNext", "DOM"], "module": "esnext" },
+  "include": ["./**/*.ts", "../../zx8081-hw/**/*.ts", "../../zx8081/**/*.ts", "../../wasm/z80-hooks/**/*.ts"],
+  "exclude": ["node_modules"]
+}

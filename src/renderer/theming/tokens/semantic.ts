@@ -11,6 +11,18 @@ import { ACCENTS, ANSI, DEVICE, NEUTRAL, STATUS, type AccentId, type Tone, DEVIC
  * washes, which have to be composed at use time.
  */
 
+/** Mix two `#rrggbb` colours, `pct` percent of the first: for an opaque tint over a known surface */
+function mix(hex: string, other: string, pct: number): string {
+  const channel = (h: string, i: number) => parseInt(h.slice(1 + 2 * i, 3 + 2 * i), 16);
+  return (
+    "#" +
+    [0, 1, 2]
+      .map((i) => Math.round((channel(hex, i) * pct + channel(other, i) * (100 - pct)) / 100))
+      .map((v) => v.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
 /** Mix a hex colour with an alpha channel, for washes that must sit over an unknown surface. */
 function alpha(hex: string, pct: number): string {
   return `${hex}${Math.round((pct / 100) * 255)
@@ -193,6 +205,21 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
     "--device-legend-symbol": DEVICE.legendSymbol,
     "--device-legend-above": DEVICE.legendAbove,
     "--device-legend-below": DEVICE.legendBelow,
+    "--device-key-zx81": DEVICE.keyZx81,
+    "--device-legend-zx81-ink": DEVICE.legendZx81Ink,
+    "--device-legend-zx81-red": DEVICE.legendZx81Red,
+    "--device-body-zx81": DEVICE.zx81Body,
+    "--device-glyph-frame-zx81": DEVICE.zx81GlyphFrame,
+    /*
+     * The accent on a device surface, whatever the app's tone: device surfaces have no light mode
+     * (§8.2.1), so a highlight on them cannot follow `--accent-solid`'s tone. Each accent's two tone
+     * values are its two ends - the light tone's value is dark enough for a light key face (the
+     * ZX81's), the dark tone's light enough for a black case - and a pressed light key takes an
+     * opaque light tint of the accent.
+     */
+    "--accent-on-device-light": accent.solid.light,
+    "--accent-on-device-dark": accent.solid.dark,
+    "--accent-device-pressed": mix(accent.solid.dark, DEVICE.keyZx81, 45),
     ...Object.fromEntries(
       Object.entries(DEVICE_INK).map(([k, v]) => [`--device-ink-${k.toLowerCase()}`, v])
     )

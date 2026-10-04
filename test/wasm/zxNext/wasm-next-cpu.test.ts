@@ -174,11 +174,11 @@ describe("ZX Spectrum Next WASM CPU single step", () => {
       ],
       steps: [
         // --- NEXTREG $07,$03 (28 MHz)
-        { cpu: { ir: 0x3345, pc: 0x8004, tacts: 20, currentFrameTact: 40 } },
+        { cpu: { ir: 0x3346, pc: 0x8004, tacts: 20, currentFrameTact: 40 } },
         // --- LD A,($8000): A = $ED, WZ = nn + 1
-        { cpu: { af: 0xed34, wz: 0x8001, ir: 0x3346, pc: 0x8007, tacts: 37, currentFrameTact: 44 } },
+        { cpu: { af: 0xed34, wz: 0x8001, ir: 0x3347, pc: 0x8007, tacts: 37, currentFrameTact: 44 } },
         // --- NOP
-        { cpu: { ir: 0x3347, pc: 0x8008, tacts: 42, currentFrameTact: 45 } }
+        { cpu: { ir: 0x3348, pc: 0x8008, tacts: 42, currentFrameTact: 45 } }
       ]
     }
   ];

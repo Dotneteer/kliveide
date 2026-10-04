@@ -103,6 +103,28 @@ const wasmCpuContract = [
     // --- The Z88's Blink, LCD, keyboard and beeper are its own; no Spectrum device may leak in
     forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
     requiredExports: ["z88GetCpuAf", "z88GetCpuBc", "z88GetCpuDe", "z88GetCpuHl", "z88GetCpuPc", "z88GetCpuSp"]
+  },
+  {
+    id: "zx8081",
+    label: "Sinclair ZX80/ZX81",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-zx8081-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/zx8081/wasm/zx8081/zx8081.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/zx8081/wasm/zx8081/zx8081.c"),
+    artifact: resolve(root, "src/emu/machines/zx8081/wasm/dist/zx8081.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    // --- The Sinclair keyboard matrix is shared (decision D3); every other Spectrum device is not
+    sharedDeviceIncludes: ['#include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"'],
+    forbiddenIncludeFragments: ["zxSpectrum/wasm/common/"],
+    allowedIncludeFragments: ["zxSpectrum/wasm/common/zx-spectrum-keyboard.c"],
+    requiredExports: [
+      "zx8081GetCpuAf",
+      "zx8081GetCpuBc",
+      "zx8081GetCpuDe",
+      "zx8081GetCpuHl",
+      "zx8081GetCpuPc",
+      "zx8081GetCpuSp"
+    ]
   }
 ];
 
@@ -138,6 +160,17 @@ function validateSharedCpuSource() {
   ]) {
     if (!source.includes(snoozeApi)) {
       errors.push(`shared CPU source does not export: ${snoozeApi}`);
+    }
+  }
+  // --- Machine hooks the Sinclair ZX80/ZX81 ULA added (`.plans/ZX8081_WASM_PLAN.md` §5, C1-C3).
+  // --- Each must default to a no-op, so a core that does not define it is unchanged.
+  for (const hookDefault of [
+    "#define Z80_REFRESH(address) ((void)(address))",
+    "#define Z80_INT_ACK() ((void)0)",
+    "#ifdef Z80_NMI_ACK_WAIT"
+  ]) {
+    if (!source.includes(hookDefault)) {
+      errors.push(`shared CPU source does not declare the default-no-op hook: ${hookDefault}`);
     }
   }
   return {
@@ -178,7 +211,10 @@ function validateModelContract(entry) {
     for (const file of readdirSync(folder).filter((name) => name.endsWith(".c") || name.endsWith(".h"))) {
       const lines = readText(resolve(folder, file)).split(/\r?\n/);
       for (const fragment of entry.forbiddenIncludeFragments) {
-        for (const line of lines.filter((l) => l.trim().startsWith("#include") && l.includes(fragment))) {
+        const allowed = entry.allowedIncludeFragments ?? [];
+        for (const line of lines.filter(
+          (l) => l.trim().startsWith("#include") && l.includes(fragment) && !allowed.some((a) => l.includes(a))
+        )) {
           errors.push(`${relativeToRoot(resolve(folder, file))} must not include '${line.trim()}'`);
         }
       }
@@ -223,6 +259,7 @@ function validateModelContract(entry) {
     sharedCpuSource: relativeToRoot(sharedCpuSource),
     sharedDeviceIncludes: entry.sharedDeviceIncludes ?? [],
     forbiddenIncludeFragments: entry.forbiddenIncludeFragments ?? [],
+    allowedIncludeFragments: entry.allowedIncludeFragments ?? [],
     ok: errors.length === 0,
     errors
   };

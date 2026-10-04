@@ -19,6 +19,7 @@ import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
@@ -141,6 +142,27 @@ class EmuMessageProcessor {
     confirm?: boolean,
     suppressError?: boolean
   ) {
+    // --- A ZX80/ZX81 program file (.p, .81, .o, .80) is its own tape: the machine plays its bytes
+    if (file && isZx8081ProgramFileName(file)) {
+      const program = parseZxProgramFile(contents, file);
+      if (!program) {
+        if (!suppressError) {
+          await createMainApi(this.mainMessenger).displayMessageBox(
+            "error",
+            "Tape file error",
+            `${file} is not a ZX80/ZX81 program file`
+          );
+        }
+        return;
+      }
+      mediaStore.addMedia({ id: MEDIA_TAPE, mediaFile: file, mediaContents: program });
+      this.machineService.getMachineController()?.machine?.setMachineProperty(MEDIA_TAPE, program);
+      if (confirm) {
+        await createMainApi(this.mainMessenger).displayMessageBox("info", "Tape file set", `Tape file ${file} successfully set.`);
+      }
+      return;
+    }
+
     let dataBlocks: TapeDataBlock[] = [];
     const reader = new BinaryReader(contents);
     const tzxReader = new TzxReader(reader);

@@ -1022,6 +1022,11 @@ export class Z80Cpu implements IZ80Cpu {
 
       // --- After the M1 refresh cycle, DivMMC may page out memory banks
       this.afterOpcodeFetch();
+    } else if (this.prefix !== OpCodePrefix.DDCB && this.prefix !== OpCodePrefix.FDCB) {
+      // --- The byte after a CB/ED/DD/FD prefix is read by a second M1, which refreshes too: a
+      // --- prefixed instruction adds 2 to R. The DDCB/FDCB displacement and opcode do not count.
+      // --- Only R changes; the tacts stay where they were. Mirrors `z80ExecuteCpuCycle` in z80.c.
+      this.refreshMemory();
     }
     this.pc++;
 

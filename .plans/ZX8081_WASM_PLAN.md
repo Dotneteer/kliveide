@@ -1,6 +1,7 @@
 # Sinclair ZX80 / ZX81 on the WASM Core — Implementation Plan
 
-**Status:** not started. Written 2026-09-27. **Start at §13 Phase 0.** The ZX81 virtual keyboard
+**Status:** implemented 2026-10-03 (Phases 0-7; see §17 for what was done, the deviations from this
+plan and what remains open). Written 2026-09-27. The ZX81 virtual keyboard
 design is approved and fully specified in §8.1; its mockup is `.plans/zx8081/zx81-keyboard-mockup.html`.
 **Input:** Clock Signal (CLK) by Thomas Harte, MIT. The ZX80/81 sources are extracted to
 `_input/clk-zx8081/` from commit `096de574…`, 2026-07-28; read its `README.md` first.
@@ -726,7 +727,12 @@ All tests run the real WASM machine.
 
 ---
 
-## 15. Decisions needed from the project author
+## 15. Decisions (accepted by the project author on 2026-10-03)
+
+All six recommendations were accepted as written: **D1** fix R in the shared core for every machine;
+**D2** two machine IDs, one host and one artifact; **D3** reuse `zx-spectrum-keyboard.c` through
+aliases; **D4** a 352 × 288 visible window; **D5** ship the ROMs with their notice; **D6** one
+artifact with a run-time ZX80/ZX81 flag. The original questions follow for the record.
 
 - **D1 — fix R for prefixed instructions in the shared core (C4)?**
   - *Recommendation: yes, for all machines.* It is real Z80 behaviour and the ZX81 relies on R, and
@@ -765,3 +771,54 @@ All tests run the real WASM machine.
   Oracle runs against EightyOne matter most there.
 - **Changing the shared core (Phase 1)** can disturb five shipped machines. That is why it is its
   own phase, with full rebuilds and goldens, before any ZX81 code lands.
+
+---
+
+## 17. Implementation record (2026-10-03)
+
+All phases were carried out; the core's README (`src/emu/machines/zx8081/wasm/README.md`) is the
+reference for how it works now. Phases 2 and 3 were done together: the ROM cannot reach the K cursor
+without the ULA (the display file would run as code).
+
+**Phase 1.** C1-C4 in `z80.c`, C4 mirrored in `Z80Cpu.ts`. Tests: `test/wasm/z80-hooks/` (a test-only
+TU for C1-C3), `test/z80/r-register.test.ts` (C4, both CPUs), `ext-ops-50` "LD A,R" updated. All five
+artifacts rebuilt; the only failures were R-derived: one Next CPU-step expectation (`NEXTREG` is
+prefixed) and the Z88 IDE/typing goldens, re-recorded after a control-flow-only recording (PC, tacts,
+frames, LCD, Blink, audio) proved identical under both cores (`src/emu/machines/z88/wasm/README.md`).
+
+**Deviations from the plan, each for a reason found on the way:**
+- §3 (a): the NOP forcing is on the opcode *read*, marked by `Z80_BEFORE_OPCODE_FETCH`, not in
+  `Z80_AFTER_OPCODE_FETCH`: the core calls `Z80_REFRESH` before that hook. C2 stays as a documented,
+  tested contract.
+- §6: CLK's RAM read at the *refresh* address is right, not a bug: the ULA substitutes A0-A8 for the
+  ROM only. `hi-res/hrg.p` draws correctly with it and stripes without it (screen test "hi-res").
+- §9.2: fast load traps three ROM call sites of IN-BYTE ($0347 as its silence timeout, $0366, $037C),
+  so the name is fast too; the ZX80 keeps CLK's $0220 trap.
+- §9.3: the pulses are synthesized in C from the uploaded file bytes, not uploaded as a pulse list (a
+  16K program is millions of pulses). No `ZxPulseSynth.ts`. CLK's gap is per *bit*, not per byte.
+- §10: no audio ABI yet - the machine has no `getAudioSamples`, which the renderer treats as silence.
+  The VSYNC buzz is the follow-up that will need it.
+- §4.2: `ZxPFile.ts` decides the memory model from E_LINE (past $4400 → 16K), not CLK's file size,
+  which misjudges files with trailing bytes. The character tables come from the ROMs' glyphs: CLK's
+  have the symbol rows swapped between the machines.
+- 64K model: an opcode fetch above 32K reads the lower 32K (as display-capable RAM packs do); CLK's
+  64K map has no picture.
+- Typing (§8.1.5): queued keys are held 4 frames and step 10 - the ROM's debounce rejects the 48K's
+  0/3/10 offsets. Keys, characters and keywords follow the ROM, so the ZX80 with the 8K ROM types as a
+  ZX81.
+- The ZX80's tape-load flow waits at $013F, found by sampling the PC at the prompt (no listing).
+- `emuOptions.keyboardPanelHeights` has no per-machine default to set; the ZX81 keyboard zooms to fit.
+- The CPU panel has no "last opcode" field; the executed $00 is `machine.opCode` (debugger test).
+- The ZX80 has no virtual keyboard (§8.1.9 is not designed); its panel shows none rather than the
+  Spectrum 128's.
+
+**Docs:** `docs/content/howto/zx81.mdx` and the machine-types entries; the screenshots come from
+`scripts/doc-shots/recipes/zx81.cjs`, which checks the machine in the running app (keyboard, typing,
+Load and Run).
+
+**Open:**
+- Oracle runs against EightyOne/CLK (§12) were not done; the evidence is the ROM itself (boot, typing,
+  LOAD, the character set, PLOT, FAST mode), the corpus programs and hi-res.
+- A packaged build (`npm run build:mac` etc.) was not run; the artifact is in `extraResources` and the
+  Vite build bundles it.
+

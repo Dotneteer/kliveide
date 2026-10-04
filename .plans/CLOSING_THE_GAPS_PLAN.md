@@ -224,7 +224,7 @@ help generated from Klive's spec; checked in the running IDE by `scripts/kbasic-
 |---|---|---|
 | G9.1 Pentagon 128 | Popular Russian clone, built on the 128K core (different timing and no contention). | M |
 | G9.2 ZX Spectrum +2A/+3 (non-E ROMs) | The original Amstrad ROMs alongside the +E ones. | S–M |
-| G9.3 ZX80 / ZX81 | Already planned in `.plans/ZX8081_WASM_PLAN.md`. | XL |
+| G9.3 ZX80 / ZX81 | **Done (main, 2026-10-03; unreleased)** - `.plans/ZX8081_WASM_PLAN.md`. | XL |
 | G9.4 Timex TC2048/2068, Scorpion | Long-tail clones. | L each; low priority |
 
 ---
@@ -286,7 +286,7 @@ and WPMEM comments.
   state files (G2.6).
 - G3.6 layer composition.
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.
-- G9.3 ZX80/81.
+- ~~G9.3 ZX80/81~~ (done).
 
 **Cross-cutting note:** deterministic replay is the shared foundation of G4.4, G2.6 and
 G2.7–G2.8. Designing it once, early in Wave 4 (or as a spike during Wave 3), is the key

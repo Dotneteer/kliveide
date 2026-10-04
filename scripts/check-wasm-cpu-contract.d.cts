@@ -9,6 +9,7 @@ export type WasmCpuContractEntry = {
   include: string;
   sharedDeviceIncludes?: string[];
   forbiddenIncludeFragments?: string[];
+  allowedIncludeFragments?: string[];
   requiredExports: string[];
 };
 
@@ -32,6 +33,7 @@ export type WasmCpuContractModelReport = {
   sharedCpuSource: string;
   sharedDeviceIncludes: string[];
   forbiddenIncludeFragments: string[];
+  allowedIncludeFragments: string[];
   ok: boolean;
   errors: string[];
 };

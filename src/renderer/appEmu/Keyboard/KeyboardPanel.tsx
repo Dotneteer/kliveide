@@ -6,6 +6,7 @@ import styles from "./KeyboardPanel.module.scss";
 import { Z88Keyboard } from "./Z88Keyboard";
 import { useGlobalSetting } from "@renderer/core/RendererProvider";
 import { NextKeyboard } from "./NextKeyboard";
+import { Zx81Keyboard } from "./Zx81Keyboard";
 import { SETTING_EMU_KEYBOARD_LAYOUT } from "@common/settings/setting-const";
 
 export type KeyboardApi = {
@@ -47,7 +48,12 @@ export const KeyboardPanel = ({
       {type === "zxnext" && (
         <NextKeyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
-      {type !== "sp48" && type !== "z88" && type !== "zxnext" && (
+      {type === "zx81" && (
+        <Zx81Keyboard width={width} height={height} apiLoaded={apiLoaded} />
+      )}
+      {/* --- The ZX80 keyboard is not designed yet (`.plans/ZX8081_WASM_PLAN.md` §8.1.9): no keyboard,
+          rather than the Spectrum 128's legends */}
+      {type !== "sp48" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
     </div>

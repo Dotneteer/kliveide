@@ -111,6 +111,17 @@ merely uncoloured, which no route diff can see.
 - Missing a capability? Add a session method (README: "Adding a method"), do not reach into
   `session.machine`.
 
+## Sinclair ZX80 / ZX81
+
+- One C/WASM core runs both machines: `src/emu/machines/zx8081/wasm/` - read its `README.md` (how
+  the ULA maps onto the shared Z80's hooks, the picture, the tape) before changing it. The plan is
+  `.plans/ZX8081_WASM_PLAN.md`; the ULA logic is ported from Clock Signal (MIT), so derived files keep
+  its copyright line and `THIRD_PARTY_NOTICES.md` carries the notice.
+- Test with the harness in `test/harness/zx81/` (real ROM, boot to the K cursor, typing, `.P`/`.O`
+  loading, the debugger); hardware tests go in `test/zx8081-hw/`. Screen goldens are recorded only
+  after the picture was checked by eye (`ZX8081_GOLDENS_PNG=<dir>` writes them).
+- Typed keys need 4 key-free frames between them (the ROM's debounce); see `Zx8081WasmHost.typeText`.
+
 ## Current Useful Commands
 
 - Type-check: `npm run build:check` - runs `scripts/check-types.cjs`, which type-checks both

@@ -533,6 +533,20 @@ property has to be registered in `RUNTIME_PROVIDED` in `test/theming/token-contr
 the justification written there — that list is a hole in the contract and each entry pays for itself
 in prose.
 
+**A device keyboard may have a light key face, and its highlight then needs the accent's dark end.**
+The ZX81's keys are light grey (`--device-key-zx81`) with black, red and white print, where every
+earlier keyboard was dark keys with light legends. The 48K's single `--color-key48-highlight`
+(`--accent-solid`) cannot serve both grounds: in the dark tone it is the accent's *light* value,
+which vanishes on a white key, and device surfaces do not change with the tone (§8.2.1), so following
+the tone is wrong anyway. Each accent already carries its two ends as its two tone values, so the
+semantic layer exposes them tone-invariantly: `--accent-on-device-light` (the light tone's value,
+dark enough for a light key face), `--accent-on-device-dark` (the dark tone's value, light enough for
+a black case) and `--accent-device-pressed` (an opaque light tint of the accent mixed over the key
+face, `mix()` in `semantic.ts`). On the ZX81, a hovered legend on the key takes the first, the
+keyword and function print on the black case the second, and a pressed key the third. Reach for
+these for any highlight on a device surface; never `--accent-solid`, whose value depends on a tone
+the device does not have.
+
 ## Alignment In The Register Panels
 
 Three traps found the hard way while aligning the Z80 CPU panel. All three produce offsets small
