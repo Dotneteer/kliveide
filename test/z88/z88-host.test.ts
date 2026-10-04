@@ -123,7 +123,7 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
     machine.doWritePort(0x00b3, 0x48); // EPR
     // --- LCD registers: B supplies the high byte of the 16-bit value
     machine.doWritePort(0x1270, 0x34); // PB0 = $1234
-    machine.doWritePort(0x0574, 0x60); // SBR = $0560
+    machine.doWritePort(0x0574, 0x60); // SBF = $0560
     // --- A key down on line 3
     machine.setKeyStatus(3 * 8 + 2, true);
 
@@ -140,7 +140,7 @@ describe("Z88 host - Blink panel state (IZ88IdeMachine)", () => {
       TMK: 0x03,
       EPR: 0x48,
       PB0: 0x1234,
-      SBR: 0x0560,
+      SBF: 0x0560,
       SCW: 0xff,
       SCH: 8
     });

@@ -141,21 +141,22 @@ export function z88DisassemblySections(_options: Record<string, any>): IMemorySe
 export type Z88LcdSizeRegisters = { scw: number; sch: number };
 
 /**
- * Gets the LCD size registers an `MC_SCREEN_SIZE` configuration value selects. SCW is $FF for a
- * 640-pixel LCD or the width in 8-pixel columns; SCH is the number of 8-line text rows. Unknown or
- * missing values select the Z88's own 640x64 LCD. The larger LCDs follow OZvm and are all 640
- * pixels wide, the width the OZ screen driver is designed for; 640x256 matches the ZX Spectrum
- * Next in tile mode (issue #1385).
+ * Gets the LCD size registers an `MC_SCREEN_SIZE` configuration value selects. SCH is the number of
+ * 8-line text rows. SCW is the width in 8-pixel columns, 80 for every larger LCD, as OZvm reports it;
+ * the Z88's own 640x64 LCD keeps $FF, what the real Blink (which has no SCW) reads. OZ takes both as
+ * 640 pixels. Unknown or missing values select the 640x64 LCD. Every LCD is 640 pixels wide, the
+ * width the OZ screen driver is designed for; 640x256 matches the ZX Spectrum Next in tile mode
+ * (issue #1385).
  * @param screenSize The `MC_SCREEN_SIZE` value: "640x64", "640x256", "640x320" or "640x480"
  */
 export function z88LcdSizeRegisters(screenSize: unknown): Z88LcdSizeRegisters {
   switch (screenSize) {
     case "640x256":
-      return { scw: 0xff, sch: 32 };
+      return { scw: 80, sch: 32 };
     case "640x320":
-      return { scw: 0xff, sch: 40 };
+      return { scw: 80, sch: 40 };
     case "640x480":
-      return { scw: 0xff, sch: 60 };
+      return { scw: 80, sch: 60 };
     default:
       return { scw: 0xff, sch: 8 };
   }

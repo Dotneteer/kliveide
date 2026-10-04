@@ -198,6 +198,8 @@ class WasmZ88Surface implements Z88TestSurface {
 
     e.z88SetInternalRamSize(0x08_0000);
     e.z88InsertCard(0, WASM_CARD_KIND.ROM, 0x08_0000);
+    // --- A fresh machine: the Blink's power-on state (the reset button alone keeps the Blink)
+    e.z88ResetBlink();
     e.z88Reset();
 
     this.memory = {

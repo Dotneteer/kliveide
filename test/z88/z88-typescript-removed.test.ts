@@ -96,7 +96,8 @@ describe("Cambridge Z88: the TypeScript emulation is removed", () => {
       "Z88WasmHost.ts",
       "Z88WasmV2Machine.ts",
       "z88CardCatalog.ts",
-      "z88MachineInfo.ts"
+      "z88MachineInfo.ts",
+      "z88UartTx.ts"
     ]);
   });
 });

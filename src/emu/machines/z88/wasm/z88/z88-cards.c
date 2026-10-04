@@ -10,9 +10,12 @@
  * mode come here. Addresses are physical (22-bit): the 8K page's offset plus the low 13 bits of the
  * CPU address, as the TypeScript cards receive them; `bank` is the page's (absolute) bank.
  *
+ * A sector erase clears the card's 64K sector the bank belongs to, through the card's chip mask: on a
+ * card smaller than its slot, a mirrored bank erases the sector it mirrors (OZvm resolves the bank
+ * through `Memory.getBank`). The Intel manufacturer and device codes are read from the card's bottom
+ * bank, also through a mirror, at offsets 0 and 1 of the bank.
+ *
  * Kept for parity, as the TypeScript cards do them:
- * - A sector erase clears the 64K at the slot base plus `(bank & $3C) * 16K`, whatever the card's
- *   size: on a card smaller than its slot, a mirrored bank erases physical memory past the card.
  * - The AMD command cycle (the third) is not checked against its address, only the two unlock cycles.
  * - Any write while an AMD chip is executing a command is ignored, except the reset ($F0).
  */
@@ -77,22 +80,31 @@ static uint8_t z88AmdPopStatus(Z88FlashChip *chip) {
   return chip->statusDepth ? chip->status[--chip->statusDepth] : 0xffu;
 }
 
-/* An erased card is all $FF (`setPristineState`) */
-static void z88CardSetPristine(uint32_t slot) {
+/* Fills a card's bytes (from the slot base, as long as the card) */
+static void z88CardFill(uint32_t slot, uint8_t value) {
   const uint32_t base = slot * Z88_SLOT_SIZE;
   const uint32_t size = z88Cards[slot].size;
-  for (uint32_t i = 0u; i < size && base + i < Z88_MEMORY_SIZE; i++) z88Memory[base + i] = 0xffu;
+  for (uint32_t i = 0u; i < size && base + i < Z88_MEMORY_SIZE; i++) z88Memory[base + i] = value;
 }
 
-/* The 64K sector a bank belongs to, erased (`eraseSector` / `eraseSectorCommand`) */
+/* An erased card is all $FF (`setPristineState`) */
+static void z88CardSetPristine(uint32_t slot) {
+  z88CardFill(slot, 0xffu);
+}
+
+/* The 64K sector a bank belongs to, erased (`eraseSector` / `eraseSectorCommand`), through the mirror */
 static void z88CardEraseSector(uint32_t slot, uint8_t bank) {
-  const uint32_t start = slot * Z88_SLOT_SIZE + (uint32_t)(bank & 0x3cu) * 0x4000u;
+  const uint32_t start = slot * Z88_SLOT_SIZE + (uint32_t)(bank & z88Cards[slot].chipMask & 0x3cu) * 0x4000u;
   for (uint32_t i = 0u; i <= 0xffffu; i++) {
     if (start + i < Z88_MEMORY_SIZE) z88Memory[start + i] = 0xffu;
   }
 }
 
-/* `onInserted`: the card is erased and its chip is in read-array mode */
+/*
+ * `onInserted`: a new card, with its chip in read-array mode. EPROM, flash and ROM are blank ($FF, as
+ * OZvm's banks start; the host then copies a ROM's image), and RAM is zeroed (OZvm's `RamBank`), so
+ * no card ever shows the bytes of the card that was in the slot before.
+ */
 static void z88CardInserted(uint32_t slot) {
   const uint8_t kind = z88Cards[slot].kind;
   Z88FlashChip *chip = &z88Flash[slot];
@@ -104,8 +116,9 @@ static void z88CardInserted(uint32_t slot) {
   chip->statusDepth = 0u;
   chip->command = kind == Z88_CARD_INTEL_FLASH ? 0x80u : 0u;
   chip->statusRegister = kind == Z88_CARD_INTEL_FLASH ? 0x80u : 0u;
-  if (kind == Z88_CARD_UV_EPROM || kind == Z88_CARD_INTEL_FLASH || kind == Z88_CARD_AMD_29F040B ||
-      kind == Z88_CARD_AMD_29F080B) {
+  if (kind == Z88_CARD_RAM) {
+    z88CardFill(slot, 0x00u);
+  } else if (kind != Z88_CARD_NONE) {
     z88CardSetPristine(slot);
   }
 }
@@ -138,10 +151,10 @@ static uint8_t z88IntelCommandStatus(uint32_t slot, uint8_t bank, uint32_t addre
     case 0xd0u:
       return chip->statusRegister;
     case 0x90u: {
-      /* The manufacturer and device codes are in the card's bottom bank only */
-      if ((bank & 0x3fu) != 0u) return 0xffu;
+      /* The manufacturer and device codes are in the card's bottom bank only (also through a mirror) */
+      if ((bank & z88Cards[slot].chipMask & 0x3fu) != 0u) return 0xffu;
       const uint32_t type = z88CardTypeCode(&z88Cards[slot]);
-      switch (address & 0x1fffu) {
+      switch (address & 0x3fffu) {
         case 0u: return (uint8_t)(type >> 8);
         case 1u: return (uint8_t)type;
         default: return 0xffu;

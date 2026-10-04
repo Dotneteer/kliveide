@@ -795,7 +795,8 @@ export type BlinkState = {
   PB1: number;
   PB2: number;
   PB3: number;
-  SBR: number;
+  /** Screen Base File: the 16-bit register value */
+  SBF: number;
   SCW: number;
   SCH: number;
 };

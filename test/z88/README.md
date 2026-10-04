@@ -34,10 +34,22 @@ stops matching is a finding: settle it against the hardware documentation (the B
 OZvm), never by editing the golden to fit.
 
 Once a finding *is* settled as a behaviour change, re-record with `Z88_GOLDENS_RECORD=1` and review
-the JSON diff key by key before committing. That has happened once: the RTC fixes of issue #1374
+the JSON diff key by key before committing. The first time was the RTC fixes of issue #1374
 (TSTA latching, TMK kept across RESTIM). Those changed Blink TSTA/TMK values, the OZ execution that
 follows from them, and every running digest over them. They changed no LCD picture. The evidence is
 in `.plans/CAMBRIDGE_Z88_ISSUE_1374_PLAN.md`, Step 4.
+
+The second time was the OZvm parity work (`.plans/Z88_OZVM_PARITY_PLAN.md`; the list of changes is in
+the core's `README.md`). Before re-recording, the running digests were recorded once with the Blink
+state's renamed `SBF` key hashed under its old name, `SBR`, so the diff showed only behaviour. Every
+changed entry followed from a settled change:
+- physical-memory digests: a blank ROM card is $FF, which also fills the part of slot 0 past a 128K
+  ROM that the CPU never sees;
+- the OZ 4.0 and 3.x boots and typing sessions: COM.RESTIM keeps TSTA, as OZvm's `resetTimx` does;
+- one LCD picture per beeper session: the LCD is "off" until SBF and PB0-PB3 are set;
+- SCW on the larger LCDs: 80.
+
+OZ 5.0's boot and typing session did not change at all.
 
 ## Baseline
 

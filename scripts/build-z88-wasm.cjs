@@ -105,6 +105,7 @@ const productionExports = [
   "z88GetLcdSurroundColor",
   // --- Memory and cards
   "z88ReadMemory",
+  "z88PeekMemory",
   "z88WriteMemory",
   "z88InsertCard",
   "z88RemoveCard",
@@ -152,13 +153,17 @@ const productionExports = [
   "z88SetAck",
   "z88GetInterruptSignal",
   "z88GetPb",
-  "z88GetSbr",
+  "z88GetSbf",
   "z88GetEarBit",
+  "z88ResetBlink",
+  "z88UartTxPtr",
+  "z88GetUartTxCount",
+  "z88ClearUartTx",
   // --- Restoring a saved state (.z88 snapshots)
   "z88SetTim",
   "z88SetTsta",
   "z88SetPb",
-  "z88SetSbr",
+  "z88SetSbf",
   "z88DrawLcd",
   // --- CPU and bus events
   "z88GetCpuAf",

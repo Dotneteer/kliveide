@@ -86,7 +86,7 @@ once per key press. `test/wasm/z88/wasm-z88-benchmark.perf.test.ts` (`npm run te
 scenario within an absolute budget: 0.5 ms per frame (about ten times the figures above, and below
 what the TypeScript machine took for the heavier scenarios), 10 ms per 200 steps.
 
-The artifact is 151,854 bytes against a ceiling of 200,000 (`check-z88-wasm-size.cjs` says why the Z88
+The artifact is 159,230 bytes against a ceiling of 200,000 (`check-z88-wasm-size.cjs` says why the Z88
 is smaller than the 48K).
 
 ## Behaviour the core keeps from the TypeScript machine
@@ -100,16 +100,12 @@ machine) on your side, and expect the goldens to fail: that is their job.
   106 cells of 6 pixels, 636 pixels).
 - A snoozing `$B2` keyboard read answers `$FF` at once; the hardware holds the read until a key goes
   down. The snooze itself (the CPU stopped until the key interrupt) is modelled.
-- The Blink's reset re-pages SR0-SR3 with the COM value from before the reset, and can leave the
-  interrupt line active until STA or INT is written.
 - The IDE's flat 64K view reads each part from the start of its page's bank (for an odd SR0 the
   $2000-$3FFF part shows the bank's lower half).
 - Without an audio sample rate the core emits no samples (the TypeScript beeper emitted one at every
   clock step). The app always sets a rate before the machine's first reset.
-- A flash sector erase clears the 64K at the slot base plus `(bank & $3C) * 16K`, whatever the card's
-  size, so on a card smaller than its slot a mirrored bank erases memory past the card. The AMD
-  command cycle's address is not checked (only the two unlock cycles'), and a write while an AMD chip
-  executes a command is ignored unless it is the reset ($F0).
+- The AMD command cycle's address is not checked (only the two unlock cycles'), and a write while an
+  AMD chip executes a command is ignored unless it is the reset ($F0).
 
 Fixed in both machines during the comparison period (Step 15 of the migration): the Blink raises /INT
 only for an STA source whose INT enable is set - STA.TIME by INT.TIME (bit 1), not by GINT, and never
@@ -121,6 +117,56 @@ constructible (F2); the Z88 disassembles its whole 64K (F3); code injection is r
 Fixed in TypeScript instead of copied (Step 11): `Z80Cpu`'s CALL and RST passed the whole 16-bit PC
 as the low byte they push, so the CPU panel showed a 16-bit "last write value" and a card saw a
 16-bit data byte (`test/z80/call-push-bytes.test.ts`).
+
+## Brought to OZvm's behaviour (2026-10-04)
+
+`.plans/Z88_OZVM_PARITY_PLAN.md` compared the core with OZvm (https://gitlab.com/b4works/ozvm, read
+for behaviour only) after users reported "noise" on the larger LCDs under OZ 5. The goldens were
+re-recorded for it, the second settled change to them, after every changed entry had been traced to
+one of these:
+
+- **The LCD reads the Screen Base File (SBF) and the fonts as a bank and an offset**, the offset
+  wrapping inside its 16K bank, through the bank map (`z88PeekBank`). OZ 5 places a large SBF from
+  the top of a bank downwards - SBF $0127 is $24:3800 - and a 40-row file runs past $3FFF to $0000 of
+  the same bank. The core read on into the next bank, which painted that bank's bytes from row 8
+  down. A card smaller than its slot is now mirrored on the LCD as the CPU sees it, and an empty slot
+  reads $FF there.
+- **The LCD shows the "off" picture until SBF and PB0-PB3 are all set** (OZvm's
+  `isLcdEnabledAndBound`); OZ sets them one by one while booting.
+- **Only power-on resets the Blink.** The reset button resets the CPU alone (OZvm's
+  `pressResetButton`): COM, SR0-SR3, the interrupt registers, the clock and the LCD pointers keep
+  their values. The power-on reset clears COM before paging and evaluates the interrupt line after
+  clearing STA, so paging, COM.RAMS and the line always agree. The host gives a newly loaded core and
+  a `.z88` snapshot load the power-on Blink through `z88ResetBlink`.
+- **Power-on clears every RAM** - the internal RAM and every RAM card - and keeps ROM, EPROM and
+  flash. The host inserts only the cards whose type, size or image changed (`slotSources` in
+  `Z88WasmHost`): inserting a card makes it a new, blank one, and every card change and hard reset
+  used to re-insert all of them, which erased whatever OZ had programmed into a flash or EPROM card.
+- **A new card holds none of the bytes of the card before it**: RAM is zeroed, ROM, EPROM and flash
+  are $FF (OZvm's `RamBank`, `RomBank`).
+- **COM.RESTIM resets TIM0-TIM4 only**; TSTA keeps its latched events until TACK (OZvm's
+  `resetTimx`), so STA.TIME is never pending with an empty TSTA. OZ 4.0 and the 3.x ROMs take a
+  slightly different path through their boot for it, and reach the same Index.
+- **A flash sector erase goes through the card's chip mask**, so a mirrored bank erases the sector it
+  mirrors; the Intel chip's ID reads come from its bottom bank also through a mirror, at offsets 0 and
+  1 of the bank only.
+- **A key interrupt comes from a key going down** (OZvm's `signalKeyPressed`), not from a release
+  while other keys are held. **Battery low wakes a snoozing CPU.**
+- **SCW reads 80 on the larger LCDs** (640x256, 640x320, 640x480), as OZvm reports it, and $FF on the
+  Z88's own 640x64 LCD; SCH takes only 8, 32, 40 or 60. There is no 800-pixel LCD.
+- **TXD ($E3) writes are collected** (`z88UartTxPtr` / `z88GetUartTxCount` / `z88ClearUartTx`) and
+  the host prints them, a line at a time, in the emulator output, as OZvm echoes them.
+- **`z88PeekMemory` reads with no side effect** - no empty-slot value consumed, no flash command
+  aborted - for the IDE and breakpoint conditions (`COND_PEEK`).
+- **A 512K slot-0 ROM image is an AMD 29F040B flash chip**, as OZvm loads it, and a slot-0 image
+  over 512K is refused (it would overwrite the internal RAM at $080000).
+
+Kept deliberately different from OZvm: the flash chip state is per chip (per slot), not per bank or
+shared; UV EPROM programming needs slot 3 (the only slot with VPP); undefined ports read $FF; the RTC
+follows emulated time (deterministic, and it advances while stepping); STA.TIME is enabled by
+INT.TIME (F1) and TSTA latches events (issue #1374); a KWAIT keyboard read with a key held answers at
+once; the 3200 Hz tone is a square wave and a DC filter stands in for OZvm's 100 ms SBIT silence.
+Not emulated in either: Coma's slow clock and its forced INT.KEY wake-up, A19, the UART receiver.
 
 **Audio samples are doubles**, not the int16 the Spectrum cores use: the sampler runs the TypeScript
 `AudioDeviceBase` arithmetic (the sample schedule in tacts and the DC high-pass filter) in `double`,
@@ -163,4 +209,5 @@ frames, the LCD, the Blink and the audio after every frame - under the old and t
 two recordings were identical.
 
 The reset button uses the shared core's `z80SoftReset` (BC, DE, HL, their alternates, IX and IY keep
-their values, as on a real Z80 and on `Z80Cpu.reset`); power-on uses `z80Reset`.
+their values, as on a real Z80 and on `Z80Cpu.reset`) and leaves the Blink alone; power-on uses
+`z80Reset` and `z88BlinkPowerOn`.

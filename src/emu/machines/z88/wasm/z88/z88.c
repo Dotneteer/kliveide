@@ -25,14 +25,17 @@
 #define Z88_INTERNAL_RAM_START 0x080000u
 #define Z88_INTERNAL_RAM_END 0x100000u
 
-/* The LCD: 640 or 800 pixels wide, up to 60 text rows of 8 pixel lines */
-#define Z88_LCD_WIDTH_MAX 800u
+/*
+ * The LCD: 640 pixels wide, 8, 32, 40 or 60 text rows of 8 pixel lines (64, 256, 320 or 480 lines).
+ * SCW reads $FF on the Z88's own 640x64 LCD (the register is not implemented there) and 80 (640 / 8)
+ * on the larger ones, as OZvm reports them; OZ takes both as 640 pixels.
+ */
+#define Z88_LCD_WIDTH_MAX 640u
 #define Z88_LCD_LINES_MAX 480u
 #define Z88_PIXEL_BUFFER_WORDS (Z88_LCD_WIDTH_MAX * Z88_LCD_LINES_MAX)
 #define Z88_SCW_640 0xffu
-#define Z88_SCW_MAX 100u
+#define Z88_SCW_640_COLUMNS 80u
 #define Z88_SCH_DEFAULT 8u
-#define Z88_SCH_MAX 60u
 
 /* 3.2768 MHz; a frame is 5 ms (one RTC tick) */
 #define Z88_BASE_CLOCK_FREQUENCY 3276800u
@@ -255,20 +258,19 @@ uint32_t z88KeyboardLinesPtr(void) { return (uint32_t)(uintptr_t)z88KeyboardLine
 // -----------------------------------------------------------------------------
 
 /*
- * Sets the LCD size registers, as `Z88ScreenDevice.reset()` does from `MC_SCREEN_SIZE`: SCW is $FF
- * for 640 pixels or the width in 8-pixel columns (up to 100: 800 pixels); SCH is the number of text
- * rows (8 to 60). Out-of-range values select the 640x64 default.
+ * Sets the LCD size registers from `MC_SCREEN_SIZE`: SCW is $FF or 80 (640 pixels); SCH is 8, 32, 40
+ * or 60 text rows - the sizes OZvm's `BlinkLcd` accepts. Anything else selects the 640x64 default.
  */
 void z88SetLcdSize(uint32_t scw, uint32_t sch) {
-  const uint8_t widthOk = scw == Z88_SCW_640 || (scw > 0u && scw <= Z88_SCW_MAX);
-  const uint8_t heightOk = sch > 0u && sch <= Z88_SCH_MAX;
+  const uint8_t widthOk = scw == Z88_SCW_640 || scw == Z88_SCW_640_COLUMNS;
+  const uint8_t heightOk = sch == 8u || sch == 32u || sch == 40u || sch == 60u;
   z88Scw = widthOk && heightOk ? scw : Z88_SCW_640;
   z88Sch = widthOk && heightOk ? sch : Z88_SCH_DEFAULT;
 }
 
 uint32_t z88GetScw(void) { return z88Scw; }
 uint32_t z88GetSch(void) { return z88Sch; }
-uint32_t z88GetScreenWidth(void) { return z88Scw == Z88_SCW_640 ? 640u : z88Scw * 8u; }
+uint32_t z88GetScreenWidth(void) { return 640u; }
 uint32_t z88GetScreenHeight(void) { return z88Sch * 8u; }
 
 // -----------------------------------------------------------------------------
@@ -276,11 +278,10 @@ uint32_t z88GetScreenHeight(void) { return z88Sch * 8u; }
 // -----------------------------------------------------------------------------
 
 /*
- * The machine reset, in `Z88Machine.reset()`'s order: the frame counters, the Blink (which pages
- * SR0-SR3 to bank 0), the key lines, the LCD, the beeper, the sleep state. Memory is kept, and so are
- * the speaker's ear bit and oscillator bit and the keyboard's pressed/shift flags (the TypeScript
- * devices keep them too). The host sets the audio sample rate again. The next instruction starts a
- * new frame.
+ * What both resets restart: the frame counters, the key lines, the sleep state, the LCD's flash state
+ * and pixels, and the beeper. Memory is kept, and so are the speaker's ear bit and oscillator bit and
+ * the keyboard's pressed/shift flags (the TypeScript devices kept them too). The host sets the audio
+ * sample rate again. The next instruction starts a new frame.
  */
 static void z88ResetMachine(void) {
   z88Frames = 0u;
@@ -288,12 +289,9 @@ static void z88ResetMachine(void) {
   z88FrameCompleted = 1u;
   z88ClockMultiplier = z88TargetClockMultiplier;
   z88TactsInCurrentFrame = Z88_TACTS_IN_FRAME * z88ClockMultiplier;
-  z88BlinkReset();
   for (uint32_t i = 0u; i < Z88_KEYBOARD_LINES; i++) z88KeyboardLines[i] = 0u;
   z88ShiftsReleased = 0u;
   z88SleepMode = 0u;
-  for (uint32_t i = 0u; i < 4u; i++) z88Pb[i] = 0u;
-  z88Sbr = 0u;
   z88ScreenReset();
   for (uint32_t i = 0u; i < Z88_PIXEL_BUFFER_WORDS; i++) z88PixelBuffer[i] = 0u;
   z88BeeperReset();
@@ -301,8 +299,9 @@ static void z88ResetMachine(void) {
 }
 
 /*
- * The reset button. The CPU gets the reset-button reset (`Z80Cpu.reset`, `z80SoftReset`): BC, DE, HL,
- * their alternates, IX and IY keep their values.
+ * The reset button (OZvm's `pressResetButton`): the CPU only - with the reset-button reset
+ * (`z80SoftReset`: BC, DE, HL, their alternates, IX and IY keep their values). The Blink keeps COM,
+ * SR0-SR3, the interrupt registers, the clock and the LCD pointers, so OZ's time of day survives it.
  */
 void z88Reset(void) {
   z80SoftReset();
@@ -311,15 +310,18 @@ void z88Reset(void) {
 }
 
 /*
- * Power on: every CPU register (`Z80Cpu.hardReset`, `z80Reset`), the machine reset, and the internal
- * RAM ($080000-$0FFFFF) cleared - exactly what `Z88BankedMemory.resetInternalRam()` clears. The cards
- * keep their contents (a flash card's data survives a power cycle); the host re-inserts them after a
- * hard reset, as `Z88Machine.setup()` does.
+ * Power on (OZvm's `hardReset`): every RAM cleared - the internal RAM ($080000-$0FFFFF) and every RAM
+ * card in slots 1-3 - the Blink in its power-on state, and every CPU register (`z80Reset`). ROM,
+ * EPROM and flash keep their bytes: the host leaves a card that stays in its slot alone.
  */
 void z88HardReset(void) {
   for (uint32_t i = Z88_INTERNAL_RAM_START; i < Z88_INTERNAL_RAM_END; i++) z88Memory[i] = 0u;
+  for (uint32_t slot = 1u; slot < 4u; slot++) {
+    if (z88Cards[slot].kind == Z88_CARD_RAM) z88CardFill(slot, 0x00u);
+  }
   z80Reset();
   z88BusReset();
+  z88BlinkPowerOn();
   z88ResetMachine();
 }
 
@@ -395,8 +397,8 @@ uint32_t z88GetCpuSigInt(void) { return z80GetSigInt(); }
 
 // -----------------------------------------------------------------------------
 // Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
-// this machine's side-effect-free reads. `z88MemoryRead` reads through the paging with no timing and
-// no bus event. A partition is a 16K bank as `getMemoryPartition` in `Z88WasmV2Machine.ts` reads it
+// this machine's side-effect-free reads. `z88MemoryPeek` reads through the paging with no timing, no
+// bus event, no flash command abort and no empty-slot generator step. A partition is a 16K bank as `getMemoryPartition` in `Z88WasmV2Machine.ts` reads it
 // (`z88BankStorageOffset`: a small card is mirrored across its slot). `page()` stays "no value", as
 // the machine's `getPartition` does not report the Z88's paging yet.
 // -----------------------------------------------------------------------------
@@ -409,6 +411,6 @@ static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
   return z88Memory[(offset + address % 0x4000u) % Z88_MEMORY_SIZE];
 }
 
-#define COND_PEEK(address) ((uint32_t)z88MemoryRead((uint16_t)((address) & 0xffffu)))
+#define COND_PEEK(address) ((uint32_t)z88MemoryPeek((uint16_t)((address) & 0xffffu)))
 #define COND_PEEK_PARTITION(partition, address) condZ88PeekPartition(partition, address)
 #include "../../../../z80/wasm/z80-condition.c"

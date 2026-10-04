@@ -418,6 +418,14 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   `test/theming/type-scale-contract.test.ts` under the `!perf` project, not `jsdom`** — it is a
   `.test.ts`, so a `jsdom` run silently does not include it and an `em` slips through.
 
+- **A register that is a pointer shows what it points at as the secondary cell, not as a second
+  value.** The Z88 Blink panel's SBF and PB0-PB3 rows (issue #1417) keep the raw 16-bit value in
+  the state-value colour and put the decoded 24-bit address after it as `DataSecondary`, in the
+  machine's own notation (OZvm's `(243800h)`) - the slot a byte register's decimal reading takes.
+  It is a reading *of* the value, so it stays muted; colouring it too would make two payloads compete
+  in a row that holds one. The decoding lives in `@common/z88/z88ScreenPointers`, shared with the
+  snapshot viewer, never inline in a panel.
+
 - **Split a composed readout into "outcome" and "evidence" and colour only the outcome.** The first
   build wrapped the whole sentence in the accent-status colour and produced a green paragraph in a
   row of otherwise neutral text. The verb and the value carry the hue; the supporting clause stays

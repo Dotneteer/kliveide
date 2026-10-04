@@ -185,17 +185,22 @@ describe("z88CardSpec / z88SlotHasCard / z88RomImageCardSpec (the slot rules)", 
   it("a ROM image without a slot-0 configuration is a ROM card of the image's size", () => {
     expect(z88RomImageCardSpec(0x2_0000)).toEqual({ kind: "ROM", sizeInBytes: 0x2_0000 });
     expect(() => z88RomImageCardSpec(0x2_0001)).toThrow("Invalid memory card size");
+    // --- A 512K image is an AMD flash chip, as OZvm loads it (OZ 4.5+ updates its ROM in slot 0)
+    expect(z88RomImageCardSpec(0x8_0000)).toEqual({ kind: "AMD_FLASH_29F040B", sizeInBytes: 0x8_0000 });
+    // --- Slot 0's ROM half is 512K; a longer image would overwrite the internal RAM at $080000
+    expect(() => z88RomImageCardSpec(0x10_0000)).toThrow("at most 512K");
   });
 });
 
 describe("z88LcdSizeRegisters (the LCD size rule)", () => {
-  // --- The SCW/SCH the TypeScript screen device set for each configured size
+  // --- SCW is $FF on the Z88's own LCD (the real Blink has no SCW) and 80 on the larger ones, as
+  // --- OZvm reports them (`.plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.1)
   it.each([
     [undefined, 0xff, 8],
     ["640x64", 0xff, 8],
-    ["640x256", 0xff, 32],
-    ["640x320", 0xff, 40],
-    ["640x480", 0xff, 60],
+    ["640x256", 80, 32],
+    ["640x320", 80, 40],
+    ["640x480", 80, 60],
     // --- The 800-pixel sizes were removed (issue #1385): a project that still names one gets 640x64
     ["800x320", 0xff, 8],
     ["800x480", 0xff, 8],

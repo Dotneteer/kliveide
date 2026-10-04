@@ -3,13 +3,16 @@
  * the LCD registers and the I/O port decoding.
  *
  * A port of `Z88BlinkDevice.ts` and of `Z88Machine.doReadPort` / `doWritePort` (Step 6 of
- * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`). The TypeScript behaviour is the contract, quirks
- * included, and every quirk is named where it is kept:
+ * `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`), brought to OZvm's behaviour by
+ * `.plans/Z88_OZVM_PARITY_PLAN.md`:
  *
- * - The reset re-pages SR0-SR3 with the COM value from *before* the reset, then clears COM without
- *   re-paging; and it tests the interrupt line against the old STA before clearing STA, so the line
- *   can stay active after a reset until STA or INT is written.
+ * - Only power-on resets the Blink (`z88BlinkPowerOn`). The reset button resets the CPU alone, as
+ *   OZvm's `pressResetButton` does: COM, SR0-SR3, the interrupt registers, the clock and the LCD
+ *   pointers keep their values.
+ * - The power-on reset clears COM before paging SR0-SR3 and evaluates the interrupt line after STA is
+ *   cleared, so the paging, COM.RAMS and the line always agree.
  * - A snoozing keyboard read answers $FF at once (the hardware holds the read).
+ * - Writes to TXD ($E3) are collected for the host (the IDE prints them), as OZvm echoes them.
  */
 
 #define Z88_COM_LCDON 0x01u
@@ -40,9 +43,14 @@ static uint8_t z88Sta;
 static uint8_t z88Epr;
 static uint8_t z88InterruptSignal;
 
-/* The LCD registers: 16-bit, the port's high byte (B) supplies the high byte */
+/* The LCD registers: 16-bit, the port's high byte (B) supplies the high byte. SBF: Screen Base File */
 static uint16_t z88Pb[4];
-static uint16_t z88Sbr;
+static uint16_t z88Sbf;
+
+/* The bytes written to TXD ($E3) since the host last collected them */
+#define Z88_UART_TX_CAPACITY 1024u
+static uint8_t z88UartTx[Z88_UART_TX_CAPACITY];
+static uint32_t z88UartTxCount;
 
 /* The speaker's direct level: COM.SBIT, latched while COM.SRUN is clear. A reset keeps it. */
 static uint8_t z88EarBit;
@@ -105,13 +113,14 @@ static void z88BlinkSetSr(uint32_t index, uint8_t bank) {
 
 /*
  * COM.RESTIM: the clock back to zero (Developers' Notes, "the clock is reset to zero ... held in reset
- * until RESTIM is cleared"). TMK is the software's interrupt mask and is not part of the clock: OZ 5.0
- * writes it once, then resets the clock while booting, and never timed out while this reset put TMK
- * back to TICK (issue #1374). Only the power-on reset (`z88BlinkReset`) sets TMK.
+ * until RESTIM is cleared"). Only the counters: TMK is the software's interrupt mask and is not part of
+ * the clock - OZ 5.0 writes it once, then resets the clock while booting, and never timed out while
+ * this reset put TMK back to TICK (issue #1374) - and TSTA keeps its latched events until TACK, as
+ * OZvm's `resetTimx` keeps them, so STA.TIME is never pending with nothing in TSTA. Only the power-on
+ * reset (`z88BlinkPowerOn`) sets TMK and clears TSTA.
  */
 static void z88BlinkResetRtc(void) {
   for (uint32_t i = 0u; i < 5u; i++) z88Tim[i] = 0u;
-  z88Tsta = 0u;
 }
 
 static void z88BlinkSetCom(uint8_t value) {
@@ -140,17 +149,23 @@ static void z88BlinkSetAck(uint8_t value) {
   z88BlinkSetSta(z88Sta & (uint8_t)(value ^ 0xffu));
 }
 
-/* The reset order of `Z88BlinkDevice.reset()`, quirks included (see the file header) */
-static void z88BlinkReset(void) {
+/*
+ * The power-on state (OZvm's `resetBlink`): COM, STA, SR0-SR3, the clock, TSTA and the LCD pointers
+ * cleared, TMK = TICK, INT = FLAP | TIME | GINT. COM is cleared first, so SR0 pages bank $00 (not
+ * COM.RAMS's bank $20), and the interrupt line is evaluated last, against the cleared STA. EPR is
+ * cleared too (OZvm leaves it; only programming reads it, after setting it).
+ */
+static void z88BlinkPowerOn(void) {
+  z88Com = 0u;
   for (uint32_t i = 0u; i < 4u; i++) z88BlinkSetSr(i, 0u);
   z88BlinkResetRtc();
-  z88Tmk = Z88_TSTA_TICK;
-  z88BlinkSetAck(0u);
-  z88Com = 0u;
-  z88Epr = 0u;
-  z88BlinkSetInt(Z88_INT_FLAP | Z88_INT_TIME | Z88_INT_GINT);
-  z88Sta = 0u;
   z88Tsta = 0u;
+  z88Tmk = Z88_TSTA_TICK;
+  z88Epr = 0u;
+  z88Sta = 0u;
+  for (uint32_t i = 0u; i < 4u; i++) z88Pb[i] = 0u;
+  z88Sbf = 0u;
+  z88BlinkSetInt(Z88_INT_FLAP | Z88_INT_TIME | Z88_INT_GINT);
 }
 
 // -----------------------------------------------------------------------------
@@ -284,7 +299,7 @@ static void z88BlinkWritePort(uint32_t address, uint32_t value) {
   if (port <= 0x74u) {
     const uint16_t word = (uint16_t)((address & 0xff00u) | byte);
     if (port == 0x74u) {
-      z88Sbr = word;
+      z88Sbf = word;
     } else {
       z88Pb[port - 0x70u] = word;
     }
@@ -315,8 +330,12 @@ static void z88BlinkWritePort(uint32_t address, uint32_t value) {
     case 0xb6u:
       z88BlinkSetAck(byte);
       return;
+    case 0xe3u:
+      /* TXD: no serial line is emulated; the byte is kept for the host to show (OZvm echoes it) */
+      if (z88UartTxCount < Z88_UART_TX_CAPACITY) z88UartTx[z88UartTxCount++] = byte;
+      return;
     default:
-      /* The UART ($E2-$E6) is not emulated */
+      /* The rest of the UART ($E2, $E4-$E6) is not emulated */
       return;
   }
 }
@@ -338,8 +357,10 @@ void z88SignalFlapClosed(void) {
   z80AwakeCpu();
 }
 
+/* Battery low: STA.BTL, and the CPU woken from a snooze (OZvm's `signalBattLow`) */
 void z88RaiseBatteryLow(void) {
   z88BlinkSetSta(z88Sta | Z88_STA_BTL);
+  z80AwakeCpu();
 }
 
 // -----------------------------------------------------------------------------
@@ -383,7 +404,15 @@ void z88SetTack(uint32_t value) { z88BlinkSetTack((uint8_t)value); }
 void z88SetAck(uint32_t value) { z88BlinkSetAck((uint8_t)value); }
 uint32_t z88GetInterruptSignal(void) { return z88InterruptSignal; }
 uint32_t z88GetPb(uint32_t index) { return z88Pb[index & 3u]; }
-uint32_t z88GetSbr(void) { return z88Sbr; }
+uint32_t z88GetSbf(void) { return z88Sbf; }
+
+/* TXD bytes written since the host last collected them; the host reads them, then clears them */
+uint32_t z88UartTxPtr(void) { return (uint32_t)(uintptr_t)z88UartTx; }
+uint32_t z88GetUartTxCount(void) { return z88UartTxCount; }
+void z88ClearUartTx(void) { z88UartTxCount = 0u; }
+
+/* The Blink's power-on state, for the host: a newly loaded core, and a `.z88` snapshot before its load */
+void z88ResetBlink(void) { z88BlinkPowerOn(); }
 uint32_t z88GetEarBit(void) { return z88EarBit; }
 
 /*
@@ -391,14 +420,14 @@ uint32_t z88GetEarBit(void) { return z88EarBit; }
  * registers as they were saved: no RTC event, no interrupt re-evaluation (TSTA is a latch; STA and
  * INT, which drive the interrupt line, are restored through their own setters), and the LCD
  * pointers without the port's B-register split. The screen derives its font and map addresses from
- * PB0-PB3 and SBR at every draw, so there is nothing else to update.
+ * PB0-PB3 and SBF at every draw, so there is nothing else to update.
  */
 void z88SetTim(uint32_t index, uint32_t value) {
   if (index < 5u) z88Tim[index] = (uint8_t)value;
 }
 void z88SetTsta(uint32_t value) { z88Tsta = (uint8_t)value; }
 void z88SetPb(uint32_t index, uint32_t value) { z88Pb[index & 3u] = (uint16_t)value; }
-void z88SetSbr(uint32_t value) { z88Sbr = (uint16_t)value; }
+void z88SetSbf(uint32_t value) { z88Sbf = (uint16_t)value; }
 
 /* The RTC's test hooks (`IZ88BlinkTestDevice`) */
 void z88TestResetRtc(void) { z88BlinkResetRtc(); }

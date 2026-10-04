@@ -444,7 +444,11 @@ describe("Z88 - RTC", function () {
     expect(b.TIM2).toBe(0);
     expect(b.TIM3).toBe(0);
     expect(b.TIM4).toBe(0);
-    expect(b.TSTA).toBe(0);
+    // --- RESTIM resets the counters only: the TICK latched before it stays in TSTA until TACK, so
+    // --- STA.TIME is never pending with an empty TSTA (OZvm's `resetTimx`)
+    expect(b.TSTA).toBe(TSTAFlags.TICK);
+    b.setTACK(TSTAFlags.TICK);
+    expect(b.STA & 0x01).toBe(0);
   });
 });
 

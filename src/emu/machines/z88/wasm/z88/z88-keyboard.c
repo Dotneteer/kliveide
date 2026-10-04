@@ -17,7 +17,8 @@
 
 /*
  * Sets a key's state: the matrix bit, the shift flags, "a key is pressed", then - while a key is
- * pressed - the key interrupt (INT.KEY sets STA.KEY) and the KWAIT wake-up.
+ * pressed - the KWAIT wake-up, and on a key going down the key interrupt (INT.KEY sets STA.KEY). A key
+ * released while others are held raises no key interrupt (OZvm's `signalKeyPressed` runs on a press).
  */
 void z88SetKeyStatus(uint32_t key, uint32_t down) {
   if (key > 63u) return;
@@ -38,7 +39,7 @@ void z88SetKeyStatus(uint32_t key, uint32_t down) {
   }
 
   if (z88KeyPressed) {
-    if ((z88Int & Z88_INT_KEY) && !(z88Sta & Z88_STA_KEY)) {
+    if (down && (z88Int & Z88_INT_KEY) && !(z88Sta & Z88_STA_KEY)) {
       z88BlinkSetSta(z88Sta | Z88_STA_KEY);
     }
     if (z88Int & Z88_INT_KWAIT) {

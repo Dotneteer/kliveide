@@ -104,12 +104,11 @@ describe("Cambridge Z88 WASM loader", () => {
   });
 
   it.each([
-    // --- The MC_SCREEN_SIZE options of Z88ScreenDevice.reset(): SCW, SCH -> width x height
+    // --- The MC_SCREEN_SIZE options: SCW ($FF or 80 for 640 pixels), SCH -> width x height
     [0xff, 8, 640, 64],
-    [0xff, 40, 640, 320],
-    [0xff, 60, 640, 480],
-    [100, 40, 800, 320],
-    [100, 60, 800, 480]
+    [80, 32, 640, 256],
+    [80, 40, 640, 320],
+    [80, 60, 640, 480]
   ])("LCD size SCW %i, SCH %i is %i x %i", async (scw, sch, width, height) => {
     const runtime = await loadBuilt();
     runtime.exports.z88SetLcdSize(scw, sch);
@@ -123,11 +122,15 @@ describe("Cambridge Z88 WASM loader", () => {
   it.each([
     [0, 8],
     [101, 8],
+    // --- The 800-pixel widths OZvm offers are not Klive LCDs
+    [100, 40],
     [0xff, 0],
-    [0xff, 61]
+    [0xff, 61],
+    // --- SCH takes only OZvm's row counts: 8, 32, 40, 60
+    [0xff, 20]
   ])("an out-of-range LCD size (SCW %i, SCH %i) selects the 640 x 64 default", async (scw, sch) => {
     const runtime = await loadBuilt();
-    runtime.exports.z88SetLcdSize(100, 60);
+    runtime.exports.z88SetLcdSize(80, 60);
     runtime.exports.z88SetLcdSize(scw, sch);
     expect(runtime.exports.z88GetScreenWidth()).toBe(640);
     expect(runtime.exports.z88GetScreenHeight()).toBe(64);
