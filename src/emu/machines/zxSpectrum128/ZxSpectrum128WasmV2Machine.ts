@@ -635,7 +635,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   }
 
   private hardResetWasmV2(runtime: Sp128WasmV2Runtime): void {
-    runtime.exports.sp128HardReset();
+    runtime.exports.sp128HardReset(this.timing.coreTiming);
     this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;

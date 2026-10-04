@@ -22,11 +22,12 @@ export type SnapshotMachineKind =
   | "plus2"
   | "plus2a"
   | "plus3"
-  | "plus3e";
+  | "plus3e"
+  | "pentagon";
 
 /**
  * The machine the snapshot was taken on, as the file says it. `unsupported` names a machine Klive
- * has no core for (Pentagon, Scorpion, SamRam, Timex, ...): the file still parses and is shown, but
+ * has no core for (Pentagon 512/1024, Scorpion, SamRam, Timex, ...): the file still parses and is shown, but
  * the mapping refuses to load it (D2).
  */
 export type SnapshotMachine = SnapshotMachineKind | { unsupported: string };
@@ -198,6 +199,8 @@ export function snapshotMachineName(machine: SnapshotMachine): string {
       return "ZX Spectrum +3";
     case "plus3e":
       return "ZX Spectrum +3e";
+    case "pentagon":
+      return "Pentagon 128";
   }
 }
 
@@ -208,7 +211,8 @@ export function isPagedSnapshotMachine(machine: SnapshotMachine): boolean {
     machine === "plus2" ||
     machine === "plus2a" ||
     machine === "plus3" ||
-    machine === "plus3e"
+    machine === "plus3e" ||
+    machine === "pentagon"
   );
 }
 
@@ -220,6 +224,7 @@ export function isPlus3SnapshotMachine(machine: SnapshotMachine): boolean {
 /** The machine's frame length in T-states (the cores' values) */
 export function snapshotFrameLength(machine: SnapshotMachine): number {
   if (machine === "48k-ntsc") return 59136;
+  if (machine === "pentagon") return 71680;
   return isPagedSnapshotMachine(machine) ? 70908 : 69888;
 }
 

@@ -9,6 +9,7 @@
  * Media file names are not the core's business: the caller passes them in.
  */
 
+import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import {
   P3_DEFAULT_ROM_SET,
   P3_ROM_SETS,
@@ -38,7 +39,10 @@ export type SpectrumSnapshotCaptureCore = {
    * 16K banks in order
    */
   ram: Uint8Array;
-  /** The 48K's model id ("pal", "ntsc", "pal-16k"); the +2E/+3E's drives come from the core */
+  /**
+   * The 48K's model id ("pal", "ntsc", "pal-16k"); the 128K's timing (128K or Pentagon) and the
+   * +2E/+3E's drives come from the core
+   */
   modelId?: string;
   /**
    * The ROM set the +2A/+3/+2E/+3E boots (`p3RomSets.ts`; the +3E ROMs when omitted): with the
@@ -58,7 +62,7 @@ export type SpectrumSnapshotCaptureMedia = {
 /**
  * The snapshot machine a Klive machine and model are
  * @param prefix The core
- * @param modelId The 48K's model
+ * @param modelId The 48K's or the 128K machine's model ("sp128", "pentagon")
  * @param romSet The +2A/+3/+2E/+3E's ROM set (the +3E ROMs when omitted)
  * @param drives The +2A/+3/+2E/+3E's enabled drives
  */
@@ -72,7 +76,7 @@ export function snapshotMachineOfKlive(
     case "sp48":
       return modelId === "pal-16k" ? "16k" : modelId === "ntsc" ? "48k-ntsc" : "48k";
     case "sp128":
-      return "128k";
+      return modelId === "pentagon" ? "pentagon" : "128k";
     case "spp3e":
       return p3SnapshotKind(romSet, drives);
   }
@@ -96,7 +100,14 @@ export function captureSpectrumSnapshot(
   };
   // --- Disk drives, as the core has them enabled (a +2A/+2E has none)
   const drives = core.prefix === "spp3e" ? call("GetFdcEnabledDriveCount") : 0;
-  const machine = snapshotMachineOfKlive(core.prefix, core.modelId, core.romSet, drives);
+  // --- The 128K core runs the 128K's or the Pentagon's timing (`sp128Timings.ts`)
+  const modelId =
+    core.prefix === "sp128"
+      ? call("GetTiming") === SP128_TIMINGS.pentagon.coreTiming
+        ? "pentagon"
+        : "sp128"
+      : core.modelId;
+  const machine = snapshotMachineOfKlive(core.prefix, modelId, core.romSet, drives);
 
   if (call("GetCpuPrefix") !== 0) {
     throw new SnapshotRefusedError(

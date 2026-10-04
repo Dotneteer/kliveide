@@ -11,7 +11,7 @@ import { fireEvent, renderWithProviders, screen, waitFor } from "../../react-tes
  */
 
 const data = {
-  favorites: [{ machineId: "sp48", modelId: "pal" }, { machineId: "sp128" }],
+  favorites: [{ machineId: "sp48", modelId: "pal" }, { machineId: "sp128", modelId: "sp128" }],
   current: { machineId: "spp3e", modelId: "fdd1" }
 };
 
@@ -23,7 +23,7 @@ describe("MachineSelectDialog — wiring", () => {
     expect(screen.getByTestId("hardware-sheet")).toHaveTextContent("ZX Spectrum +3E (1 FDD)");
     expect(screen.getByTestId("hardware-sheet")).toHaveTextContent("3,546,900 Hz");
     expect(screen.getByTestId("machine-row-spp3e/nofdd")).toBeInTheDocument();
-    expect(screen.getByTestId("favorite-row-sp128")).toBeInTheDocument();
+    expect(screen.getByTestId("favorite-row-sp128/sp128")).toBeInTheDocument();
     expect(screen.queryByTestId("machine-row-z88/OZ50")).toBeNull();
   });
 
@@ -70,7 +70,7 @@ describe("MachineSelectDialog — wiring", () => {
       expect(onResult).toHaveBeenCalledWith({
         favorites: [
           { machineId: "sp48", modelId: "pal" },
-          { machineId: "sp128" },
+          { machineId: "sp128", modelId: "sp128" },
           { machineId: "spp3e", modelId: "fdd1" }
         ]
       })
@@ -81,8 +81,8 @@ describe("MachineSelectDialog — wiring", () => {
     const onResult = vi.fn();
     renderWithProviders(<MachineSelectDialog data={data} onResult={onResult} onClose={vi.fn()} />);
 
-    fireEvent.doubleClick(screen.getByTestId("machine-row-sp128"));
-    expect(onResult).toHaveBeenCalledWith({ switchTo: { machineId: "sp128" } });
+    fireEvent.doubleClick(screen.getByTestId("machine-row-zxnext/standard"));
+    expect(onResult).toHaveBeenCalledWith({ switchTo: { machineId: "zxnext", modelId: "standard" } });
   });
 
   it("restores the default favourites", () => {
@@ -104,6 +104,6 @@ describe("MachineSelectDialog — wiring", () => {
     expect(screen.getByTestId("favorite-row-spp3e/fdd2")).toBeInTheDocument();
     fireEvent.keyDown(screen.getByTestId("favorite-row-spp3e/fdd2"), { key: "ArrowUp", altKey: true });
     const order = screen.getAllByTestId(/^favorite-row-/).map((el) => el.dataset.testid);
-    expect(order).toEqual(["favorite-row-sp48/pal", "favorite-row-spp3e/fdd2", "favorite-row-sp128"]);
+    expect(order).toEqual(["favorite-row-sp48/pal", "favorite-row-spp3e/fdd2", "favorite-row-sp128/sp128"]);
   });
 });

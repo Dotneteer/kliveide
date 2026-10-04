@@ -10,6 +10,7 @@
 
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import {
   snapshotMachineName,
   type SnapshotMachineKind,
@@ -20,10 +21,7 @@ import {
 export type SpectrumSnapshotMapping = {
   /** The Klive machine id, when the snapshot's machine has one */
   machineId?: string;
-  /**
-   * The models of that machine the snapshot runs on, the preferred one first (`undefined` for the
-   * 128K, which has no models)
-   */
+  /** The models of that machine the snapshot runs on, the preferred one first */
   modelIds: (string | undefined)[];
   /** The display name of the Klive machine it loads as */
   kliveName?: string;
@@ -62,10 +60,12 @@ const TARGETS: Record<
     modelIds: ["ntsc"],
     kliveName: "ZX Spectrum 48K (NTSC)"
   },
-  "128k": { machineId: MI_SPECTRUM_128, modelIds: [undefined], kliveName: "ZX Spectrum 128K" },
+  // --- The 128K model first; the Pentagon runs a 128K snapshot too, so a project already on it keeps
+  // --- it (`fitSpectrumMachine`). A 128K `.sna` cannot say which of the two it came from.
+  "128k": { machineId: MI_SPECTRUM_128, modelIds: ["sp128", "pentagon"], kliveName: "ZX Spectrum 128K" },
   plus2: {
     machineId: MI_SPECTRUM_128,
-    modelIds: [undefined],
+    modelIds: ["sp128", "pentagon"],
     kliveName: "ZX Spectrum 128K",
     warning: "A ZX Spectrum +2 snapshot runs on Klive's 128K (the +2 ROM differs only in its menu)"
   },
@@ -96,7 +96,8 @@ const TARGETS: Record<
       "A ZX Spectrum +3 snapshot runs on Klive's +3E, with the +E ROMs instead of the Amstrad ones",
     eRoms: true
   },
-  plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" }
+  plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" },
+  pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" }
 };
 
 /** The display names of the models the mapping can pick */
@@ -104,6 +105,7 @@ const MODEL_NAMES: Record<string, string> = {
   "pal-16k": "ZX Spectrum 16K",
   pal: "ZX Spectrum 48K",
   ntsc: "ZX Spectrum 48K (NTSC)",
+  ...Object.fromEntries(SP128_MODELS.map((m) => [m.modelId, m.displayName])),
   ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName]))
 };
 

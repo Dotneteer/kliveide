@@ -186,6 +186,18 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       sound: ["Beeper", "AY-3-8912 PSG"],
       media: [SPECTRUM_TAPE],
       input: SPECTRUM_KEYBOARD
+    },
+    models: {
+      // --- sp128Timings.ts (the Pentagon's timing from the Next FPGA's Pentagon mode)
+      pentagon: {
+        clockHz: 3_500_000,
+        timing: {
+          perLine: 224,
+          linesPerFrame: 320,
+          perFrame: 71_680,
+          note: "No memory or I/O contention and no floating bus; the 128K ROMs, no TR-DOS"
+        }
+      }
     }
   },
   [MI_SPECTRUM_3E]: {

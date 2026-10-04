@@ -142,10 +142,38 @@ describe("loading a state", () => {
     const result = await loadMachineStateFile(emu.ports, "s.kls", bytes, "debug");
     await emu.until(MachineControllerState.Paused);
     expect(result).toMatchObject({ machineId: MI_SPECTRUM_128, rebuilt: true, path: "image", pc: 0x8100 });
-    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/`]);
+    // --- A 128K snapshot opens on the 128K model (the 128K machine has models since the Pentagon)
+    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/sp128`]);
     expect(emu.machine.pc).toBe(0x8100);
     // --- Exactly the saved machine: its image equals the source's
     expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
+  });
+
+  it("restores a Pentagon 128 state as a Pentagon, with a Pentagon .szx inside", async () => {
+    // --- A 128K snapshot loaded on a Pentagon stays on it (the mapping lists the Pentagon)
+    const source = await pausedAtLoop(MI_SPECTRUM_128, "pentagon");
+    expect(source.machine.tactsInFrame).toBe(71_680);
+    const saved = await saveMachineStateFile(source.ports, { kliveVersion: "0.62.1" });
+    const file = readKliveStateFile(saved.bytes);
+    expect(file.header).toMatchObject({ machineId: MI_SPECTRUM_128, modelId: "pentagon" });
+    expect(parseSpectrumSnapshot("x.szx", file.szx!).machine).toBe("pentagon");
+    const emu = await emulator(MI_SPECTRUM_128, "sp128");
+    const result = await loadMachineStateFile(emu.ports, "s.kls", saved.bytes, "debug");
+    await emu.until(MachineControllerState.Paused);
+    expect(result).toMatchObject({ machineId: MI_SPECTRUM_128, rebuilt: true, path: "image", pc: 0x8100 });
+    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/pentagon`]);
+    expect(emu.machine.tactsInFrame).toBe(71_680);
+    expect(emu.machine.baseClockFrequency).toBe(3_500_000);
+    expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
+  });
+
+  it("a 128K state saved before the 128K had models fits a running 128K without a rebuild", async () => {
+    const source = await pausedAtLoop(MI_SPECTRUM_128, "sp128");
+    const saved = readKliveStateFile((await saveMachineStateFile(source.ports, { kliveVersion: "0.62.1" })).bytes);
+    const old = writeKliveStateFile({ ...saved, header: { ...saved.header, modelId: undefined } });
+    const emu = await pausedAtLoop(MI_SPECTRUM_128, "sp128");
+    const result = await loadMachineStateFile(emu.ports, "s.kls", old, "debug");
+    expect(result.rebuilt).toBe(false);
   });
 
   it("keeps the machine when it already fits, and runs in run mode", async () => {

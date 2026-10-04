@@ -57,9 +57,10 @@ describe("normalizeMachineFavorites", () => {
       ],
       machineRegistry
     );
+    // --- A model-less 128K entry, saved before the 128K had models, means its "sp128" model
     expect(result).toEqual([
       { machineId: "z88", modelId: "OZ47", separatorAfter: true },
-      { machineId: "sp128" }
+      { machineId: "sp128", modelId: "sp128" }
     ]);
   });
 
@@ -71,6 +72,6 @@ describe("normalizeMachineFavorites", () => {
       ],
       machineRegistry
     );
-    expect(result).toEqual([{ machineId: "sp48", modelId: "pal" }, { machineId: "sp128" }]);
+    expect(result).toEqual([{ machineId: "sp48", modelId: "pal" }, { machineId: "sp128", modelId: "sp128" }]);
   });
 });

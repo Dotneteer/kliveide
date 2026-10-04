@@ -37,6 +37,11 @@ export const MC_ZX80_ROM8K = "zx80Rom8K";
  * "amstrad40", "amstrad41" or "amstrad41es"
  */
 export const MC_SP3_ROM_SET = "sp3RomSet";
+/**
+ * ZX Spectrum 128K only: the timing the core runs (`sp128Timings.ts`): "sp128" (the default when
+ * absent, so projects and state files from before the Pentagon keep the 128K) or "pentagon"
+ */
+export const MC_SP128_TIMING = "sp128Timing";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

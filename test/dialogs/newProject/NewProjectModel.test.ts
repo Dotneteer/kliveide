@@ -58,6 +58,12 @@ describe("NewProjectModel — machine options", () => {
     );
   });
 
+  it("offers the 128K and the Pentagon 128 as models of the 128K machine", () => {
+    const sp128 = MACHINE_OPTIONS.filter((option) => option.value.startsWith("sp128"));
+    expect(sp128.map((option) => option.value)).toEqual(["sp128:sp128", "sp128:pentagon"]);
+    expect(sp128[1].label).toContain("Pentagon 128");
+  });
+
   it("round-trips every option the dropdown can offer", () => {
     for (const option of MACHINE_OPTIONS) {
       const parsed = parseMachineOption(option.value);

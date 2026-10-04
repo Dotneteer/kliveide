@@ -153,9 +153,9 @@ describe("zx-snapshot command", () => {
       expect((await new SpectrumSnapshotCommand().execute(context, { file: "/p/a.z80" } as any)).finalMessage).toMatch(
         /^\/p\/a\.z80 is not a valid snapshot: A \.z80 file has a 30-byte header/
       );
-      ({ context } = contextFor(undefined, { "/p/a.szx": buildSzx(state128(), { machineId: 7 }) }));
+      ({ context } = contextFor(undefined, { "/p/a.szx": buildSzx(state128(), { machineId: 10 }) }));
       expect((await new SpectrumSnapshotCommand().execute(context, { file: "/p/a.szx" } as any)).finalMessage).toBe(
-        "/p/a.szx cannot be loaded: Klive cannot emulate the Pentagon 128"
+        "/p/a.szx cannot be loaded: Klive cannot emulate the Scorpion ZS-256"
       );
     });
 

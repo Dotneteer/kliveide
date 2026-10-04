@@ -1,4 +1,4 @@
-# ZX Spectrum 128K / +2A / +3 / +2E / +3E test harness
+# ZX Spectrum 128K / Pentagon 128 / +2A / +3 / +2E / +3E test harness
 
 Scripts one real ZX Spectrum 128K or +2A/+3/+2E/+3E — the WASM core the app runs, with the real
 ROMs (`src/public/roms/sp128-*.rom`; for the `spp3e` models the model's ROM set from
@@ -22,7 +22,7 @@ it("pages bank 3 in from a snapshot", async () => {
 
 | Group | Method | What it does |
 | --- | --- | --- |
-| Create | `createSp128Session(model)` | `model` is `"sp128"` (the 128K) or any `spp3e` model (`P3ModelId`): `"nofdd"`, `"fdd1"`, `"fdd2"`, `"plus2a"`, `"plus3-fdd1"`, `"plus3-es-fdd2"`, ... Builds the WASM core once per test process and sets the machine up with the model's ROMs. |
+| Create | `createSp128Session(model)` | `model` is a model of the 128K machine - `"sp128"` (the 128K) or `"pentagon"` (the Pentagon 128, `sp128Timings.ts`) - or any `spp3e` model (`P3ModelId`): `"nofdd"`, `"fdd1"`, `"fdd2"`, `"plus2a"`, `"plus3-fdd1"`, `"plus3-es-fdd2"`, ... Builds the WASM core once per test process and sets the machine up with the model's ROMs. |
 | | `createHarnessSpectrumMachine(machineId, modelId, config)` | A set-up machine of any Spectrum type (48K included) with the real ROMs, for tests that drive a `MachineController` as `MachineService` does. |
 | Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
 | | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |
@@ -30,6 +30,8 @@ it("pages bank 3 in from a snapshot", async () => {
 | RZX | `startRzxRecording(options?)` → `RzxRecorder`, `stopRzxRecording()` → `Uint8Array` | Records an RZX file from the current state as the emulator does (a `.szx` snapshot, then every IN and every frame's fetch count); stopping returns the finalised file. |
 | | `playRzx(bytes, options?)` → `RzxPlayer`, `runRzx({ onFrame, maxFrames })` → `RzxStop`, `rzxStatus` | Loads a recording's snapshot and plays it on the machine's own frame loop until it ends or desyncs (`.plans/RZX_PLAN.md`). Shared with `../sp128/` through `../spectrumRzx.ts`; `runFrames` throws when a session stops under it. |
 | Run | `runFrames(n)`, `step(n)` | Whole frames; single instructions. |
+| | `finishFrame()` | Runs the rest of the current frame instruction by instruction. Use it after stepping to a frame tact and changing memory or a port: `runFrames` from the middle of a frame re-draws that frame from its first tact. |
+| Code | `loadCode(source)`, `poke(address, bytes)` | Assembles Klive Z80 source (`.model Spectrum128`) into the memory the CPU sees, returning `{ entry, symbol(name) }`; writes bytes. Neither changes PC or SP. |
 | | `runTo(address, { rom?, maxFrames? })` | Runs until PC reaches the address, stopping before it; with `rom`, only while that ROM is paged in at $0000 (the address in another ROM is stepped past). |
 | | `runFlow(flow, { code?, checkRom?, maxFrames? })` | Plays a code-injection flow (`getCodeInjectionFlow`, `getTapeLoadFlow`) as `MachineController` does, from a hard reset: queues its keys on the machine's own keystroke queue, injects `code`, pushes the return address. `checkRom: false` matches the IDE, whose core stops on the PC alone. Returns the PC it leaves. |
 | Keyboard | `keyDown(...)`, `keyUp(...)`, `typeKeys(chords)`, `typeText(text)`, `typeFlowKeys(flow)` | `SpectrumKeyCode` names; `typeText` types letters, digits, space and `\n` (ENTER). |
@@ -46,3 +48,11 @@ it("pages bank 3 in from a snapshot", async () => {
 - Runs through the machine's public API (`executeMachineFrame`, `executionContext`,
   `doReadMemory`) and the core's own getters; nothing is mocked.
 - Self-tests: `self-tests/session.test.ts`. Both are in the e2e-cores tier (`build/e2e-tests.ts`).
+- Hardware tests of the 128K and the Pentagon 128 live in `test/sp128-hw/` (e2e-cores tier). They
+  run each check on both models: the 128K's known results prove a measurement method before the
+  Pentagon's are trusted. `sp128-golden.test.ts` holds the 128K's behaviour from before the core
+  learned the Pentagon's timing (`SP128_GOLDEN_WRITE=1` re-records it - only from a core known to be
+  right).
+- Two traps those tests hit: after `runFrames` the ROM leaves the CPU halted with interrupts on, and
+  near a frame's start the INT line is still active - clear HALT and IFF1/IFF2 before jumping to
+  test code, or the ROM's interrupt handler runs first and adds ~1,500 T-states.

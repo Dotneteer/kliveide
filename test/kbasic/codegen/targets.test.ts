@@ -95,6 +95,60 @@ describe("the 128K target", () => {
 });
 
 /**
+ * The 128K target on the Pentagon 128 (`.plans/PENTAGON_128_PLAN.md` Phase 5): the same ROMs, so
+ * the same runtime; and a program whose result depends on the machine's timing proves the model
+ * reached the core. Booted to the 128K menu (ROM 0 paged in), then called as above.
+ */
+async function runOn128(model: "sp128" | "pentagon", source: string) {
+  const session = await createSp128Session(model);
+  session.runTo(SP128_MAIN_WAITING_LOOP, { rom: 0, maxFrames: 600 });
+  const bankm = session.peek(0x5b5c);
+  const { generated } = await compileBasic(source, { target: "zx128k" });
+  for (const s of generated.output.segments.filter((s) => s.emittedCode.length)) session.poke(s.startAddress, s.emittedCode);
+  const entry = generated.entryAddress!;
+  const stub = 0xbf00;
+  session.poke(stub, [0xfb, 0xcd, entry & 0xff, entry >> 8, 0x18, 0xfe]); // --- EI / CALL entry / JR $
+  session.machine.pc = stub;
+  session.machine.sp = 0xbef0;
+  session.poke(0x5c68, [0x92, 0x5c]);
+  session.runTo(stub + 4, { maxFrames: 300 });
+  return { line: fontScreenLine((a) => session.peek(a), 0), bankm, bankmAfter: session.peek(0x5b5c) };
+}
+
+describe("the 128K target on the Pentagon 128", () => {
+  it("pages the 48K BASIC ROM in for Float and back out afterwards", async () => {
+    const r = await runOn128("pentagon", FLOAT_PROGRAM_128);
+    expect(r.line.slice(0, 19)).toBe("1414.2136 3.1415927");
+    expect(r.bankmAfter, "BANKM is as the program found it").toBe(r.bankm);
+  });
+
+  it("counts more loops in a frame than the 128K: a longer frame and no contention", async () => {
+    // --- Counts the loop passes between two FRAMES ticks; each pass reads contended memory five times
+    const source = [
+      "DIM f AS UByte",
+      "DIM n AS UInteger",
+      "DIM x AS UInteger",
+      "f = PEEK 23672",
+      "WHILE PEEK 23672 = f",
+      "WEND",
+      "f = PEEK 23672",
+      "WHILE PEEK 23672 = f",
+      "  n = n + 1",
+      "  x = PEEK 16384 + PEEK 16385 + PEEK 16386 + PEEK 16387",
+      "WEND",
+      "PRINT AT 0, 0; n"
+    ].join("\n") + "\n";
+    const sp128 = Number((await runOn128("sp128", source)).line);
+    const pentagon = Number((await runOn128("pentagon", source)).line);
+    expect(sp128).toBeGreaterThan(100);
+    // --- 71 680 / 70 908 T is 1.1% more on its own; without contention it is 2.8% (measured)
+    expect(pentagon / sp128).toBeGreaterThan(1.02);
+  });
+});
+
+const FLOAT_PROGRAM_128 = "DIM f AS Float = 2\nPRINT AT 0, 0; SQR(f) * 1000; \" \"; STR$(PI)\n";
+
+/**
  * The +3 target on the +2A/+3's own Amstrad ROMs (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md` Phase 4), and
  * on the +3E's for comparison: booted through the IDE's `spp3e` flow into +3 BASIC, then called as
  * the 128K test above calls it. Its Float output needs the 48K BASIC ROM, which the runtime pages

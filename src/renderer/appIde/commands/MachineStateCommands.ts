@@ -13,7 +13,7 @@ import {
   MI_ZX81,
   MI_ZXNEXT
 } from "@common/machines/constants";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { readKliveStateFile } from "@common/machineState/kliveStateFile";
 import { MEDIA_SD_CARD } from "@common/structs/project-const";
 import {
@@ -186,7 +186,10 @@ export class StateLoadCommand extends IdeCommandBase<StateLoadCommandArgs> {
     if (result.rebuilt) {
       writeMessage(context.output, `Machine switched to the ${result.machineName}.`, "cyan");
     }
-    if (state?.project?.isKliveProject && state.emulatorState?.modelId !== header.modelId) {
+    if (
+      state?.project?.isKliveProject &&
+      resolveModelId(header.machineId, state.emulatorState?.modelId) !== resolveModelId(header.machineId, header.modelId)
+    ) {
       writeMessage(
         context.output,
         "Warning: the project's machine model differs from the state's; the emulator runs the state's until the project's machine is set again",

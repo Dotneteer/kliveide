@@ -99,6 +99,8 @@ const productionExports = [
   "sp128GetAudioSampleCount",
   "sp128GetAudioSampleCapacity",
   "sp128GetTactsInFrame",
+  "sp128GetTiming",
+  "sp128GetInterruptTacts",
   "sp128SetTargetClockMultiplier",
   "sp128GetClockMultiplier",
   "sp128GetTargetClockMultiplier",

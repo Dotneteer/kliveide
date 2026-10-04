@@ -8,7 +8,10 @@ import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_Z88, MI_ZX81, MI_ZX
  */
 export type MachineFavorite = {
   machineId: string;
-  /** Omitted for a machine without models (the ZX Spectrum 128K) */
+  /**
+   * Omitted for a machine without models; a model-less entry saved before its machine gained models
+   * means the model `implicitModelIds` names (the ZX Spectrum 128K's `sp128`)
+   */
   modelId?: string;
   /** Draw a menu separator after this entry. Ignored on the last entry. */
   separatorAfter?: boolean;
@@ -19,7 +22,7 @@ export type MachineFavorite = {
  */
 export const DEFAULT_MACHINE_FAVORITES: readonly MachineFavorite[] = Object.freeze([
   { machineId: MI_SPECTRUM_48, modelId: "pal" },
-  { machineId: MI_SPECTRUM_128 },
+  { machineId: MI_SPECTRUM_128, modelId: "sp128" },
   { machineId: MI_SPECTRUM_3E, modelId: "fdd1", separatorAfter: true },
   { machineId: MI_ZXNEXT, modelId: "standard", separatorAfter: true },
   { machineId: MI_Z88, modelId: "OZ50" },
@@ -48,8 +51,8 @@ export function resolveMachineModel(
   if (!machine.models?.length) {
     return modelId ? undefined : { machineId, displayName: machine.displayName };
   }
-  if (!modelId) return undefined;
   const resolved = resolveModelId(machineId, modelId);
+  if (!resolved) return undefined;
   const model = machine.models.find((m) => m.modelId === resolved);
   return model ? { machineId, modelId: model.modelId, displayName: model.displayName } : undefined;
 }

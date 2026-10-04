@@ -151,6 +151,8 @@ describe(".z80", () => {
     [3, 8, false, "plus3"],
     [3, 12, false, "plus2"],
     [3, 13, false, "plus2a"],
+    [2, 9, false, "pentagon"],
+    [3, 9, false, "pentagon"],
     [3, 0, true, "16k"],
     [3, 4, true, "plus2"],
     [3, 7, true, "plus2a"]
@@ -161,7 +163,7 @@ describe(".z80", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([2, 9, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
+  it.each([2, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
     const s = parseZ80File(buildZ80(state48(), { version: 3, hwMode }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors.length).toBe(1);
@@ -244,6 +246,7 @@ describe(".szx", () => {
     [4, "plus2a"],
     [5, "plus3"],
     [6, "plus3e"],
+    [7, "pentagon"],
     [15, "48k-ntsc"]
   ] as const)("maps machine id %i to %s", (machineId, machine) => {
     const paged = !["16k", "48k", "48k-ntsc"].includes(machine);
@@ -252,7 +255,7 @@ describe(".szx", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([7, 8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
+  it.each([8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
     const s = parseSzxFile(buildSzx(state128(), { machineId }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors).toHaveLength(1);
@@ -371,8 +374,9 @@ describe("mapping", () => {
     ["16k", "sp48", "pal-16k", false],
     ["48k", "sp48", "pal", false],
     ["48k-ntsc", "sp48", "ntsc", false],
-    ["128k", "sp128", undefined, false],
-    ["plus2", "sp128", undefined, true],
+    ["128k", "sp128", "sp128", false],
+    ["plus2", "sp128", "sp128", true],
+    ["pentagon", "sp128", "pentagon", false],
     ["plus2a", "spp3e", "nofdd", true],
     ["plus3", "spp3e", "fdd1", true],
     ["plus3e", "spp3e", "fdd1", false]
@@ -382,6 +386,13 @@ describe("mapping", () => {
     expect(m.machineId).toBe(machineId);
     expect(m.modelIds[0]).toBe(modelId);
     expect(m.warnings.length > 0).toBe(warns);
+  });
+
+  it("lists the 128K model first, then the Pentagon; a Pentagon snapshot runs only on the Pentagon", () => {
+    expect(map("128k").modelIds).toEqual(["sp128", "pentagon"]);
+    expect(map("plus2").modelIds).toEqual(["sp128", "pentagon"]);
+    expect(map("pentagon").modelIds).toEqual(["pentagon"]);
+    expect(map("pentagon").kliveName).toBe("Pentagon 128");
   });
 
   it("lists the +E models first, then the Amstrad ones (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md P6)", () => {
@@ -421,8 +432,8 @@ describe("mapping", () => {
   });
 
   it("refuses an unsupported machine", () => {
-    const m = map({ unsupported: "Pentagon 128" });
-    expect(m.errors).toEqual(["Klive cannot emulate the Pentagon 128"]);
+    const m = map({ unsupported: "Scorpion ZS-256" });
+    expect(m.errors).toEqual(["Klive cannot emulate the Scorpion ZS-256"]);
     expect(m.machineId).toBeUndefined();
   });
 

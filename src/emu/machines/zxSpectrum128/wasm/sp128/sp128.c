@@ -14,9 +14,32 @@
 #define SP128_AUDIO_SAMPLE_CAPACITY 2048u
 #define SP128_AUDIO_TRANSITION_CAPACITY 8192u
 #define SP128_AUDIO_SAMPLE_SCALE 24576.0
+/*
+ * Two timings share this core (`.plans/PENTAGON_128_PLAN.md`): the ZX Spectrum 128K and the
+ * Pentagon 128. `sp128HardReset(timing)` picks one; `sp128Timings.ts` is the TypeScript side of the
+ * same table, and a test keeps the two equal.
+ */
+#define SP128_TIMING_128K 0u
+#define SP128_TIMING_PENTAGON 1u
 #define SP128_BASE_CLOCK_FREQUENCY 3546900.0
+#define SP128_PENTAGON_CLOCK_FREQUENCY 3500000.0
 #define SP128_TACTS_PER_FRAME 70908u
+/* The per-tact tables hold the longer frame: the Pentagon's 320 lines of 224 T */
+#define SP128_TACTS_PER_FRAME_MAX 71680u
 #define SP128_SCREEN_LINE_TIME 228u
+/* The 128K's INT pulse in Klive's core; the Pentagon's comes from the Next VHDL (zxnext.vhd ~1989) */
+#define SP128_INTERRUPT_TACTS 32u
+#define SP128_PENTAGON_INTERRUPT_TACTS 36u
+/*
+ * Where the Pentagon's interrupt falls relative to the raster the timing tables are built for.
+ * zxula_timing.vhd (Pentagon): the interrupt at (vc 319, hc 439) and the ULA's first fetch of a line
+ * at hc c_min_hactive - 12 = 116, both in 7 MHz clocks of a 448-clock line. From the interrupt to
+ * the first fetch of line 80 (c_min_vactive) is 9 + 116 + 80 x 448 = 35 965 clocks = 17 982.5 T.
+ * The tables put that fetch at the start of raster line 80 (80 x 224 = 17 920 T), so the frame - which
+ * starts with the interrupt - is the raster moved 62 T later. The same reading of the VHDL gives the
+ * 48K's 14 336 T exactly (its interrupt is at the fetch hc, 116).
+ */
+#define SP128_PENTAGON_RASTER_SHIFT 62u
 #define SP128_DEFAULT_SAMPLE_RATE 44100u
 #define SP128_TAPE_MAX_BLOCKS 512u
 #define SP128_TAPE_DATA_CAPACITY 0x400000u
@@ -52,7 +75,7 @@
 #define SP48_SCREEN_BUFFER_WIDTH_MAX SP128_SCREEN_WIDTH
 #define SP48_SCREEN_BUFFER_LINES_MAX SP128_SCREEN_HEIGHT
 #define SP48_PIXEL_BUFFER_GUARD_LINES 0u
-#define SP48_TACTS_PER_FRAME_MAX SP128_TACTS_PER_FRAME
+#define SP48_TACTS_PER_FRAME_MAX SP128_TACTS_PER_FRAME_MAX
 #define SP48_RENDER_PHASE_NONE 0u
 #define SP48_RENDER_PHASE_BORDER 1u
 #define SP48_RENDER_PHASE_BORDER_FETCH_PIXEL 2u
@@ -133,11 +156,13 @@ static uint8_t sp128KeyboardSelectedLineValue[256];
 static uint8_t *sp128MemorySlotBase[4];
 static uint8_t sp128MemorySlotWritable[4];
 static uint8_t sp128MemorySlotMapInitialized;
-static uint8_t sp128Contention[SP128_TACTS_PER_FRAME];
-static uint8_t sp128RenderingPhase[SP128_TACTS_PER_FRAME];
-static uint16_t sp128RenderingPixelAddress[SP128_TACTS_PER_FRAME];
-static uint16_t sp128RenderingAttributeAddress[SP128_TACTS_PER_FRAME];
-static uint32_t sp128RenderingPixelIndex[SP128_TACTS_PER_FRAME];
+/* Bit n set: the 16K slot n is contended (slot 1, and slot 3 with an odd bank; none on the Pentagon) */
+static uint8_t sp128ContendedSlots;
+static uint8_t sp128Contention[SP128_TACTS_PER_FRAME_MAX];
+static uint8_t sp128RenderingPhase[SP128_TACTS_PER_FRAME_MAX];
+static uint16_t sp128RenderingPixelAddress[SP128_TACTS_PER_FRAME_MAX];
+static uint16_t sp128RenderingAttributeAddress[SP128_TACTS_PER_FRAME_MAX];
+static uint32_t sp128RenderingPixelIndex[SP128_TACTS_PER_FRAME_MAX];
 static uint32_t sp128PixelBuffer[SP128_PIXEL_BUFFER_WORDS];
 static uint32_t sp128AttrColors[2][256][2];
 static uint8_t sp128AttrColorsInitialized;
@@ -153,6 +178,12 @@ static uint32_t sp128Tacts;
 /* What the host's tact counter is ahead of the internal one (see `sp128ShiftTactOrigin`) */
 static uint32_t sp128TactEpoch;
 static uint32_t sp128TactsInFrame = SP128_TACTS_PER_FRAME;
+/* The timing profile (SP128_TIMING_*) and what it sets */
+static uint32_t sp128Timing = SP128_TIMING_128K;
+static double sp128BaseClockFrequency = SP128_BASE_CLOCK_FREQUENCY;
+static uint32_t sp128InterruptTacts = SP128_INTERRUPT_TACTS;
+static uint8_t sp128Contended = 1u;
+static uint8_t sp128HasFloatingBus = 1u;
 static uint32_t sp128ClockMultiplier = 1u;
 static uint32_t sp128TargetClockMultiplier = 1u;
 static uint32_t sp128TactsInCurrentFrame = SP128_TACTS_PER_FRAME;
@@ -316,6 +347,16 @@ static const uint32_t sp128SpectrumColors[16] = {
 static const Sp128ScreenConfig sp128UlaConfig = {
   8u, 7u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 12u, 2u, 1u,
   {4u, 3u, 2u, 1u, 0u, 0u, 6u, 5u}
+};
+
+/*
+ * The Pentagon 128 (zxula_timing.vhd, Pentagon): 448 7 MHz clocks (224 T) by 320 lines, blanking
+ * hc 0-63 (32 T) and vc 0-15 (16 lines), the display from line 80. The visible window is the 128K's
+ * (48 border lines and 24 T of border either side; plan Q5). No contention: all eight values are 0.
+ */
+static const Sp128ScreenConfig sp128PentagonConfig = {
+  16u, 16u, 48u, 48u, 0u, 192u, 24u, 24u, 128u, 32u, 16u, 2u, 1u,
+  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
 };
 
 #define Sp48ScreenConfig Sp128ScreenConfig
@@ -495,7 +536,7 @@ static uint32_t screenBankOffset(void) {
 #define sp48AudioSampleCount sp128AudioSampleCount
 #define sp48AudioSampleLength sp128AudioSampleLength
 #define sp48AudioSampleRate sp128AudioSampleRate
-#define sp48BaseClockFrequency SP128_BASE_CLOCK_FREQUENCY
+#define sp48BaseClockFrequency sp128BaseClockFrequency
 #define sp48AudioNextSampleTact sp128AudioNextSampleTact
 #define sp48AudioNextSampleTactFloor sp128AudioNextSampleTactFloor
 #define sp48ClockMultiplier sp128ClockMultiplier
@@ -673,6 +714,9 @@ static void rebuildMemorySlotMap(void) {
   sp128MemorySlotWritable[1] = 1u;
   sp128MemorySlotWritable[2] = 1u;
   sp128MemorySlotWritable[3] = 1u;
+  sp128ContendedSlots = sp128Contended == 0u
+    ? 0u
+    : (uint8_t)(0x02u | ((sp128SelectedBank & 0x01u) != 0u ? 0x08u : 0u));
   sp128MemorySlotMapInitialized = 1u;
 }
 
@@ -762,8 +806,7 @@ SP128_ALWAYS_INLINE uint32_t currentFrameTact(void) {
 }
 
 SP128_ALWAYS_INLINE uint8_t isContendedMemoryAddress(uint32_t address) {
-  const uint32_t page = address & 0xc000u;
-  return page == 0x4000u || (page == 0xc000u && (sp128SelectedBank & 0x01u) != 0u);
+  return (uint8_t)((sp128ContendedSlots >> ((address >> 14u) & 0x03u)) & 0x01u);
 }
 
 SP128_ALWAYS_INLINE uint8_t isContendedIoAddress(uint32_t address) {
@@ -771,7 +814,7 @@ SP128_ALWAYS_INLINE uint8_t isContendedIoAddress(uint32_t address) {
 }
 
 SP128_ALWAYS_INLINE uint8_t shouldRaiseInterrupt(void) {
-  return currentFrameTact() < 32u ? 1u : 0u;
+  return currentFrameTact() < sp128InterruptTacts ? 1u : 0u;
 }
 
 SP128_ALWAYS_INLINE uint8_t sp128CpuReadMemory(uint32_t address) {
@@ -899,7 +942,7 @@ static uint32_t sp128CpuReadPort(uint32_t address) {
 #define sp48BeeperLevel sp128BeeperLevel
 #define sp48MicBit sp128MicBit
 #define sp48Tacts sp128Tacts
-#define sp48BaseClockFrequency SP128_BASE_CLOCK_FREQUENCY
+#define sp48BaseClockFrequency sp128BaseClockFrequency
 #define sp48TapeBlockCount sp128TapeBlockCount
 #define sp48TapeDataLength sp128TapeDataLength
 #define sp48TapeCurrentBlockIndex sp128TapeCurrentBlockIndex
@@ -1176,9 +1219,48 @@ static void completeMachineFrame(void) {
   }
 }
 
+#define SP128_REVERSE_RANGE(array, type, from, to) \
+  for (uint32_t lo = (from), hi = (to); lo < hi; lo++, hi--) { \
+    const type tmp = (array)[lo]; \
+    (array)[lo] = (array)[hi]; \
+    (array)[hi] = tmp; \
+  }
+#define SP128_ROTATE_RIGHT(array, type, length, by) \
+  SP128_REVERSE_RANGE(array, type, 0u, (length) - 1u) \
+  SP128_REVERSE_RANGE(array, type, 0u, (by) - 1u) \
+  SP128_REVERSE_RANGE(array, type, (by), (length) - 1u)
+
+/*
+ * Builds the timing tables of the profile and sets everything else it decides. The tables are built
+ * for a raster whose frame starts at its first line; a profile whose interrupt falls elsewhere moves
+ * them so that frame tact 0 stays the interrupt (`SP128_PENTAGON_RASTER_SHIFT`).
+ */
+static void sp128ApplyTiming(uint32_t timing) {
+  const uint8_t pentagon = timing == SP128_TIMING_PENTAGON ? 1u : 0u;
+  sp128Timing = pentagon != 0u ? SP128_TIMING_PENTAGON : SP128_TIMING_128K;
+  sp128BaseClockFrequency = pentagon != 0u ? SP128_PENTAGON_CLOCK_FREQUENCY : SP128_BASE_CLOCK_FREQUENCY;
+  sp128InterruptTacts = pentagon != 0u ? SP128_PENTAGON_INTERRUPT_TACTS : SP128_INTERRUPT_TACTS;
+  sp128Contended = pentagon != 0u ? 0u : 1u;
+  sp128HasFloatingBus = pentagon != 0u ? 0u : 1u;
+  sp128UlaInitializeTimingTables(pentagon != 0u ? &sp128PentagonConfig : &sp128UlaConfig);
+  if (pentagon != 0u) {
+    const uint32_t n = sp128TactsInFrame;
+    const uint32_t by = SP128_PENTAGON_RASTER_SHIFT;
+    SP128_ROTATE_RIGHT(sp128Contention, uint8_t, n, by)
+    SP128_ROTATE_RIGHT(sp128RenderingPhase, uint8_t, n, by)
+    SP128_ROTATE_RIGHT(sp128RenderingPixelAddress, uint16_t, n, by)
+    SP128_ROTATE_RIGHT(sp128RenderingAttributeAddress, uint16_t, n, by)
+    SP128_ROTATE_RIGHT(sp128RenderingPixelIndex, uint32_t, n, by)
+  }
+  sp128CommonSetAudioSampleRate(sp128AudioSampleRate);
+}
+
+#undef SP128_ROTATE_RIGHT
+#undef SP128_REVERSE_RANGE
+
 void sp128Reset(void) {
   if (sp128ScreenLineTime == 0u) {
-    sp128UlaInitializeTimingTables(&sp128UlaConfig);
+    sp128ApplyTiming(sp128Timing);
   }
   z80Reset();
   sp128Frames = 0u;
@@ -1212,8 +1294,10 @@ void sp128Reset(void) {
   sp128UlaRenderDisplay();
 }
 
-void sp128HardReset(void) {
+/* `timing`: SP128_TIMING_128K (0, also what a call without it passes) or SP128_TIMING_PENTAGON */
+void sp128HardReset(uint32_t timing) {
   sp128RzxSetMode(RZX_MODE_OFF);
+  sp128ApplyTiming(timing);
   for (uint32_t i = 0u; i < SP128_RAM_SIZE; i++) {
     sp128Ram[i] = 0u;
   }
@@ -1399,6 +1483,9 @@ uint32_t sp128ReadScreenMemoryOffset(uint32_t offset) {
 }
 
 uint32_t sp128ReadFloatingBus(void) {
+  if (sp128HasFloatingBus == 0u) {
+    return 0xffu;
+  }
   const uint32_t currentTactIndex =
     (sp128UlaCurrentFrameTact() + sp128TactsInFrame - 3u) % sp128TactsInFrame;
   const uint8_t phase = sp128RenderingPhase[currentTactIndex];
@@ -1425,7 +1512,7 @@ static uint32_t sp128ReadNonFePort(uint32_t address) {
   if ((address & 0xc002u) == 0xc000u) {
     return sp128PsgDataRead();
   }
-  if ((address & 0x00e0u) == 0u) {
+  if ((address & 0x00e0u) == 0u || sp128HasFloatingBus == 0u) {
     return 0xffu;
   }
   return sp128ReadFloatingBus();
@@ -1486,7 +1573,7 @@ void sp128ResetContentionCounters(void) {
 }
 
 void sp128SetContentionValue(uint32_t tact, uint32_t value) {
-  if (tact < SP128_TACTS_PER_FRAME) {
+  if (tact < sp128TactsInFrame) {
     sp128Contention[tact] = (uint8_t)value;
   }
 }
@@ -1848,14 +1935,14 @@ uint32_t sp128GetRomChecksum(void) {
 
 uint32_t sp128GetScreenWidth(void) {
   if (sp128ScreenLineTime == 0u) {
-    sp128UlaInitializeTimingTables(&sp128UlaConfig);
+    sp128ApplyTiming(sp128Timing);
   }
   return sp128TimingScreenWidth;
 }
 
 uint32_t sp128GetScreenHeight(void) {
   if (sp128ScreenLineTime == 0u) {
-    sp128UlaInitializeTimingTables(&sp128UlaConfig);
+    sp128ApplyTiming(sp128Timing);
   }
   return sp128TimingScreenLines;
 }
@@ -1877,7 +1964,17 @@ uint32_t sp128GetAudioSampleRate(void) {
 }
 
 uint32_t sp128GetTactsInFrame(void) {
-  return SP128_TACTS_PER_FRAME;
+  return sp128TactsInFrame;
+}
+
+/* The timing profile the last hard reset chose (SP128_TIMING_*) */
+uint32_t sp128GetTiming(void) {
+  return sp128Timing;
+}
+
+/* The INT pulse length in T-states */
+uint32_t sp128GetInterruptTacts(void) {
+  return sp128InterruptTacts;
 }
 
 void sp128SetTargetClockMultiplier(uint32_t value) {
@@ -1897,7 +1994,7 @@ uint32_t sp128GetTactsInCurrentFrame(void) {
 }
 
 uint32_t sp128GetBaseClockFrequency(void) {
-  return SP128_BASE_CLOCK_FREQUENCY;
+  return (uint32_t)sp128BaseClockFrequency;
 }
 
 uint32_t sp128GetFrames(void) {
@@ -1991,7 +2088,7 @@ uint32_t sp128GetCurrentPartition(uint32_t slot) {
 }
 
 uint32_t sp128GetContentionValue(uint32_t tact) {
-  return tact < SP128_TACTS_PER_FRAME ? sp128Contention[tact] : 0u;
+  return tact < sp128TactsInFrame ? sp128Contention[tact] : 0u;
 }
 
 uint32_t sp128GetRenderingPhase(uint32_t tact) {

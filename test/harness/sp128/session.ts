@@ -16,6 +16,7 @@ import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { P3ModelId } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { getSp128Model, type Sp128ModelId } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import type { SnapshotWriteResult } from "@common/spectrum/snapshot/snapshotBytes";
@@ -24,6 +25,9 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
+import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 
 import { buildSp48Wasm, productionOutput as sp48Output } from "../../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Output } from "../../../scripts/build-sp128-wasm.cjs";
@@ -32,8 +36,8 @@ import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../script
 /** The real ROMs the app ships (`src/public/roms/`) */
 const ROM_DIR = join(__dirname, "../../../src/public/roms");
 
-/** The 128K, or any model of the +2A/+3/+2E/+3E machine (`P3_MODELS`) */
-export type Sp128SessionModel = "sp128" | P3ModelId;
+/** A model of the 128K machine (`SP128_MODELS`: the 128K, the Pentagon 128), or any of the +2A/+3/+2E/+3E (`P3_MODELS`) */
+export type Sp128SessionModel = Sp128ModelId | P3ModelId;
 
 export type RunLimit = { maxFrames?: number };
 
@@ -41,8 +45,8 @@ export type RunLimit = { maxFrames?: number };
 const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
-  constructor() {
-    super(undefined, {}, {
+  constructor(model?: MachineModel) {
+    super(model, { ...(model?.config ?? {}) }, {
       artifactName: "harness-sp128-machine-v2.wasm",
       readArtifact: async () => readFileSync(sp128Output)
     });
@@ -112,7 +116,7 @@ export async function createHarnessSpectrumMachine(
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine();
+    machine = new HarnessSp128Machine(getSp128Model(modelId) ?? info);
   }
   await machine.setup();
   machine.hardReset();
@@ -125,12 +129,13 @@ export async function createHarnessSpectrumMachine(
  */
 export async function createSp128Session(model: Sp128SessionModel = "sp128"): Promise<Sp128TestSession> {
   let machine: ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
-  if (model === "sp128") {
+  const sp128Model = getSp128Model(model);
+  if (sp128Model) {
     if (!built.sp128) {
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine();
+    machine = new HarnessSp128Machine(sp128Model);
   } else {
     if (!built.spp3e) {
       buildSpP3eWasm();
@@ -164,7 +169,7 @@ export class Sp128TestSession {
   }
 
   private get prefix(): "sp128" | "spp3e" {
-    return this.model === "sp128" ? "sp128" : "spp3e";
+    return getSp128Model(this.model) ? "sp128" : "spp3e";
   }
 
   private call(name: string, ...args: number[]): number {
@@ -227,6 +232,23 @@ export class Sp128TestSession {
         this.execute();
         rzx.assertRzxRunning(this.machine);
       }
+    }
+    return this;
+  }
+
+  /**
+   * Runs the rest of the current frame instruction by instruction, as the debugger does. Unlike
+   * `runFrames`, this keeps the picture the frame has drawn so far: a normal frame started in the
+   * middle of one re-draws it from its first tact, with the memory as it is by then.
+   */
+  finishFrame(): this {
+    const ctx = this.machine.executionContext;
+    const start = this.frames;
+    ctx.debugStepMode = DebugStepMode.StopAtBreakpoint;
+    try {
+      while (this.frames === start) this.execute();
+    } finally {
+      ctx.debugStepMode = DebugStepMode.NoDebug;
     }
     return this;
   }
@@ -439,6 +461,42 @@ export class Sp128TestSession {
     const termination = this.machine.executeMachineFrame();
     if (this.machine.frameJustCompleted) this.frames++;
     return termination;
+  }
+
+  // ==========================================================================================
+  // Code
+
+  /**
+   * Assembles Klive Z80 source (`.model Spectrum128` added when missing) and writes it into the
+   * memory the CPU sees now. Does not change PC or SP. Returns a symbol lookup and the entry address.
+   */
+  async loadCode(source: string): Promise<{ entry: number; symbol: (name: string) => number }> {
+    const text = /^\s*\.model\b/im.test(source) ? source : `  .model Spectrum128\n${source}`;
+    const options = new AssemblerOptions();
+    options.currentModel = SpectrumModelType.Spectrum128;
+    const output = await new Z80Assembler().compile(text, options);
+    const errors = output.errors.filter((e) => !e.isWarning);
+    if (errors.length) {
+      throw new Error(
+        "Assembly failed:\n" + errors.map((e) => `  line ${e.line}: ${e.errorCode}: ${e.message}`).join("\n")
+      );
+    }
+    const segments = output.segments.filter((s) => s.emittedCode.length);
+    if (!segments.length) throw new Error("The source emits no code.");
+    for (const s of segments) this.poke(s.startAddress, s.emittedCode);
+    const symbol = (name: string): number => {
+      const value = output.getSymbol(name)?.value?.value;
+      if (typeof value !== "number") throw new Error(`Unknown symbol '${name}'`);
+      return value;
+    };
+    return { entry: output.entryAddress ?? segments[0].startAddress, symbol };
+  }
+
+  /** Writes bytes into the memory the CPU sees */
+  poke(address: number, bytes: number | ArrayLike<number>): this {
+    const data = typeof bytes === "number" ? [bytes] : bytes;
+    for (let i = 0; i < data.length; i++) this.machine.doWriteMemory((address + i) & 0xffff, data[i] & 0xff);
+    return this;
   }
 
   // ==========================================================================================

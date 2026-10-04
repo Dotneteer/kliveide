@@ -116,6 +116,9 @@ function machineOf(
     case 8:
       machine = "plus3";
       break;
+    case 9:
+      machine = "pentagon";
+      break;
     case 12:
       machine = "plus2";
       break;

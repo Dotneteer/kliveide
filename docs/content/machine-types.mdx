@@ -31,7 +31,27 @@ Available models:
 
 Machine ID: `sp128`
 
-Available models: Only the original ZX Spectrum 128K model is available.
+One machine with two models. Both run the ZX Spectrum 128K's ROMs and have its `$7FFD` paging and
+AY chip; they differ in timing:
+
+- `sp128`: The original ZX Spectrum 128K.
+- `pentagon`: The Pentagon 128, a Russian 128K clone much of the demoscene writes for. It runs at
+  3.5 MHz with a longer frame (224 T-states by 320 lines, 71,680 T-states, about 48.8 frames per
+  second), has no memory or I/O contention, and has no floating bus: an unattached port reads `$FF`.
+
+**Which one to pick.** Choose the Pentagon for software written for it, such as demos whose effects
+are timed to its frame, or to check that your own code runs on both machines. Choose the 128K for
+everything else. Running, debugging, injecting code, the tape Loader, snapshots and Klive state
+files work the same on both.
+
+The Pentagon model does not have the Beta 128 disk interface yet, so TR-DOS and `.trd`/`.scl` disk
+images are not available. A 128K `.sna` snapshot that has the TR-DOS ROM paged in loads with a
+warning.
+
+A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
+the 128K model, unless your project already uses the Pentagon: a 128K `.sna` file does not say
+which of the two machines it came from. A snapshot saved from the Pentagon is written as a Pentagon
+128.
 
 ## ZX Spectrum +2A/+3/+2E/+3E
 

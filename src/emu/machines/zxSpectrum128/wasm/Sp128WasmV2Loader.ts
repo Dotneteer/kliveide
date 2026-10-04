@@ -49,6 +49,8 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   sp128GetAudioSampleCount: Sp128WasmV2ExportFunction;
   sp128GetAudioSampleCapacity: Sp128WasmV2ExportFunction;
   sp128GetTactsInFrame: Sp128WasmV2ExportFunction;
+  sp128GetTiming: Sp128WasmV2ExportFunction;
+  sp128GetInterruptTacts: Sp128WasmV2ExportFunction;
   sp128SetTargetClockMultiplier: Sp128WasmV2ExportFunction;
   sp128GetClockMultiplier: Sp128WasmV2ExportFunction;
   sp128GetTargetClockMultiplier: Sp128WasmV2ExportFunction;
@@ -249,6 +251,8 @@ const requiredV2Exports = [
   "sp128GetAudioSampleCount",
   "sp128GetAudioSampleCapacity",
   "sp128GetTactsInFrame",
+  "sp128GetTiming",
+  "sp128GetInterruptTacts",
   "sp128SetTargetClockMultiplier",
   "sp128GetClockMultiplier",
   "sp128GetTargetClockMultiplier",
