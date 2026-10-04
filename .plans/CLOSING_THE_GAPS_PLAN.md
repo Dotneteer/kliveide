@@ -90,6 +90,9 @@ are commonly distributed as snapshots.
 running machine. The Next core has a checkpoint (whole-state capture) used internally by
 `MachineController`. Z88 snapshot loading exists (`Z88SnapshotCommand`) as a UX reference.
 
+**Plan:** G2.1–G2.3 (and the G2.5 viewers they bring along) are planned in
+[ZX_SPECTRUM_SNAPSHOT_PLAN.md](ZX_SPECTRUM_SNAPSHOT_PLAN.md) (decisions recorded 2026-10-04).
+
 | Feature | What it does | Size |
 |---|---|---|
 | G2.1 Load .sna (48K and 128K) | Open a snapshot from the file menu, by drag and drop, or with a command; switches to the right machine and restores RAM, registers, paging and border. | S |
