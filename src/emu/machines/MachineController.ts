@@ -21,6 +21,8 @@ import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
 import type { NextRegWriteEvent } from "@common/messaging/EmuApi";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
+import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import type { RzxState } from "@state/AppState";
 
 import { toHexa4 } from "@appIde/services/ide-commands";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
@@ -31,6 +33,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import {
   setDebuggingAction,
+  setRzxStateAction,
   incBreakpointHitsVersionAction,
   setMachineStateAction,
   setProjectDebuggingAction
@@ -174,6 +177,7 @@ export class MachineController implements IMachineController {
   dispose(): void {
     this.stateChanged?.release();
     this.frameCompleted?.release();
+    this.rzxStopped?.release();
   }
 
   /**
@@ -237,6 +241,103 @@ export class MachineController implements IMachineController {
    */
   beforeFrameDelay?: () => Promise<void>;
 
+  // ==============================================================================================
+  // RZX sessions (`.plans/RZX_PLAN.md` §4.4). The session lives on the machine
+  // (`IRzxMachine.rzxSession`), whose frame loop drives it; the controller attaches it, reports
+  // how it ends, ends it when the IDE changes the machine from outside the CPU (trap 4), pins the
+  // clock multiplier (D14), and runs unthrottled while a recording is rendered to video (D18).
+
+  /** Skip the frame delay: run as fast as the core allows (render to video only, D18) */
+  unthrottled = false;
+
+  /**
+   * Awaited before each frame when it returns a promise. Render to video holds the first frame back
+   * until the screen recorder has opened its file, so no frame is lost.
+   */
+  frameGate?: () => Promise<void> | undefined;
+
+  /** Fires when an RZX session stops: it ended, desynced, overflowed or was interrupted */
+  readonly rzxStopped = new LiteEvent<RzxStop>();
+
+  /** `restoreState` keeps the RZX session through its stop (a rollback) */
+  private keepRzxOnStop = false;
+
+  /** What the RZX state says besides the session's own counters */
+  private rzxInfo: Pick<RzxState, "file" | "mode"> = { mode: "idle" };
+
+  /** The machine's RZX session (active or a stopped recording waiting to be saved) */
+  get rzxSession(): IRzxSession | undefined {
+    return (this.machine as { rzxSession?: IRzxSession }).rzxSession;
+  }
+
+  /**
+   * Attaches an RZX session to the machine; the next run drives it
+   * @param mode How the state names it ("rendering" for render to video)
+   */
+  attachRzxSession(session: IRzxSession, info: { mode: RzxState["mode"]; file?: string }): void {
+    (this.machine as { rzxSession?: IRzxSession }).rzxSession = session;
+    this.rzxInfo = { mode: info.mode, file: info.file };
+    this.publishRzxState();
+  }
+
+  /** Detaches the machine's RZX session */
+  detachRzxSession(stopMessage?: string): void {
+    (this.machine as { rzxSession?: IRzxSession }).rzxSession = undefined;
+    this.rzxInfo = { mode: "idle" };
+    this.unthrottled = false;
+    this.frameGate = undefined;
+    this.store?.dispatch(setRzxStateAction(stopMessage ? { mode: "idle", frame: 0, stopMessage } : undefined), "emu");
+  }
+
+  /**
+   * Ends an active RZX session because the IDE changes the machine from outside the CPU (trap 4).
+   * A stopped playback is detached; a stopped recording stays attached, unsaved, until it is saved.
+   * @param reason What the IDE did, for the message
+   */
+  async interruptRzx(reason: string): Promise<void> {
+    const session = this.rzxSession;
+    if (!session?.active) return;
+    session.interrupt(reason);
+    await this.reportRzxStop();
+  }
+
+  /** Publishes the session's progress to the store */
+  publishRzxState(): void {
+    const session = this.rzxSession;
+    if (!session || !this.store) return;
+    const unsaved = session.mode === "record" && !session.active;
+    this.store.dispatch(
+      setRzxStateAction({
+        mode: session.active || unsaved ? this.rzxInfo.mode : "idle",
+        frame: session.frame,
+        frames: session.frames,
+        file: this.rzxInfo.file,
+        stopMessage: session.stop?.message,
+        unsaved
+      }),
+      "emu"
+    );
+  }
+
+  /**
+   * Prints a stopped session's message, publishes it and fires `rzxStopped`
+   * @returns true when there was a stop to report
+   */
+  private async reportRzxStop(): Promise<boolean> {
+    const session = this.rzxSession;
+    const stop = session?.takeStop();
+    if (!session || !stop) return false;
+    const color = stop.kind === "desync" || stop.kind === "overflow" ? "red" : stop.kind === "ended" ? "green" : "yellow";
+    await this.sendOutput(stop.message, color);
+    if (session.mode === "play") {
+      this.detachRzxSession(stop.message);
+    } else {
+      this.publishRzxState();
+    }
+    this.rzxStopped.fire(stop);
+    return true;
+  }
+
   /**
    * Start the machine in normal mode.
    */
@@ -293,6 +394,8 @@ export class MachineController implements IMachineController {
    */
   async stop(operationRevision?: number): Promise<void> {
     this.prepareMachineOperation(operationRevision);
+    // --- Every reset, restore, code injection and machine switch stops the machine first (trap 4)
+    if (!this.keepRzxOnStop) await this.interruptRzx("the machine was stopped, reset or reloaded");
     // --- Stop the machine
     const beforeState = this.state;
     this.isDebugging = false;
@@ -616,10 +719,16 @@ export class MachineController implements IMachineController {
   async restoreState(
     applyState: () => void,
     description: string,
-    options: { attachMedia?: boolean } = {}
+    options: { attachMedia?: boolean; keepRzxSession?: boolean } = {}
   ): Promise<void> {
     const operationRevision = this.beginMachineOperation();
-    await this.stop(operationRevision);
+    // --- An RZX rollback restores a state of its own session, which must survive the stop
+    this.keepRzxOnStop = !!options.keepRzxSession;
+    try {
+      await this.stop(operationRevision);
+    } finally {
+      this.keepRzxOnStop = false;
+    }
     this.assertMachineOperationIsCurrent(operationRevision);
 
     applyState();
@@ -999,8 +1108,20 @@ export class MachineController implements IMachineController {
       let nextFrameTime = performance.now() + nextFrameGap;
       do {
         // --- Use the latest clock multiplier
-        this.machine.targetClockMultiplier =
-          this.store.getState()?.emulatorState?.clockMultiplier ?? 1;
+        // --- ... but 1 while an RZX session plays or records (D14)
+        this.machine.targetClockMultiplier = this.rzxSession?.active
+          ? 1
+          : (this.store.getState()?.emulatorState?.clockMultiplier ?? 1);
+
+        // --- Render to video holds frames back until the recorder is ready
+        for (let gate = this.frameGate?.(); gate; gate = this.frameGate?.()) {
+          await gate;
+          if (this._cancelRequested) break;
+        }
+        if (this._cancelRequested) {
+          this.context.canceled = true;
+          return;
+        }
 
         // --- Run the machine frame and measure execution time
         const frameStartTime = performance.now();
@@ -1062,6 +1183,11 @@ export class MachineController implements IMachineController {
                 this.frameStats.lastFrameTimeInMs) /
               this.frameStats.frameCount;
 
+        // --- RZX progress: twice a second
+        if (frameCompleted && this.rzxSession?.active && this.frameStats.frameCount % 25 === 0) {
+          this.publishRzxState();
+        }
+
         // --- Live hit counts: at most every 10 frames while running (§4.5)
         if (frameCompleted && this.frameStats.frameCount % 10 === 0) {
           this.publishBreakpointHits();
@@ -1081,6 +1207,11 @@ export class MachineController implements IMachineController {
           this._machineTask = undefined;
           this.context.canceled = true;
 
+          // --- An RZX session that stopped (ended, desynced, ...) explains the pause itself
+          if (termination === FrameTerminationMode.DebugEvent && (await this.reportRzxStop())) {
+            await logFlush;
+            return;
+          }
           if (termination === FrameTerminationMode.DebugEvent) {
             // --- Memory, I/O and NextReg stops spend their one-shots here; an execution stop
             // --- already did in the decision, which makes this a no-op (O5)
@@ -1108,10 +1239,16 @@ export class MachineController implements IMachineController {
             if (this.beforeFrameDelay) {
               await this.beforeFrameDelay();
             }
-            const curTime = performance.now();
-            const toWait = Math.floor(nextFrameTime - curTime);
-            await delay(toWait - 2);
-            nextFrameTime += nextFrameGap;
+            if (this.unthrottled) {
+              // --- Render to video (D18): no delay, but the event loop gets a turn now and then
+              if (this.frameStats.frameCount % 50 === 0) await delay(0);
+              nextFrameTime = performance.now() + nextFrameGap;
+            } else {
+              const curTime = performance.now();
+              const toWait = Math.floor(nextFrameTime - curTime);
+              await delay(toWait - 2);
+              nextFrameTime += nextFrameGap;
+            }
           }
         }
       } while (true);

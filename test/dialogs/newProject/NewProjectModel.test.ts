@@ -48,6 +48,16 @@ describe("NewProjectModel — machine options", () => {
     expect(parseMachineOption("z88")).toEqual({ machineId: "z88", modelId: undefined });
   });
 
+  it("offers the Amstrad +2A/+3 models next to the +2E/+3E ones", () => {
+    const p3 = MACHINE_OPTIONS.filter((option) => option.value.startsWith("spp3e:")).map((option) => option.value);
+    expect(p3).toEqual(
+      expect.arrayContaining(["spp3e:nofdd", "spp3e:fdd1", "spp3e:plus2a", "spp3e:plus3-fdd1", "spp3e:plus3-es-fdd2"])
+    );
+    expect(MACHINE_OPTIONS.find((option) => option.value === "spp3e:plus3-v40-fdd1")?.label).toContain(
+      "ZX Spectrum +3 v4.0 (1 FDD)"
+    );
+  });
+
   it("round-trips every option the dropdown can offer", () => {
     for (const option of MACHINE_OPTIONS) {
       const parsed = parseMachineOption(option.value);

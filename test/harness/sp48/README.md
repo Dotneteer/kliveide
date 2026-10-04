@@ -48,6 +48,8 @@ it("prints through the ROM", async () => {
 | Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
 | | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |
 | | `saveSnapshot(format)` | Captures and writes a `.sna`/`.z80`/`.szx` file, as the emulator saves one; returns `{ bytes, losses }` and throws when the format refuses the state. |
+| RZX | `startRzxRecording(options?)` → `RzxRecorder`, `stopRzxRecording()` → `Uint8Array` | Records an RZX file from the current state as the emulator does (a `.szx` snapshot, then every IN and every frame's fetch count); stopping returns the finalised file. |
+| | `playRzx(bytes, options?)` → `RzxPlayer`, `runRzx({ onFrame, maxFrames })` → `RzxStop`, `rzxStatus` | Loads a recording's snapshot and plays it on the machine's own frame loop until it ends or desyncs (`.plans/RZX_PLAN.md`). Shared with `../sp128/` through `../spectrumRzx.ts`; `runFrames` throws when a session stops under it. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
 
 ## Notes

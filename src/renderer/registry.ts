@@ -10,6 +10,7 @@ import {
   NEX_VIEWER,
   Z88_SNAPSHOT_VIEWER,
   SPECTRUM_SNAPSHOT_VIEWER,
+  RZX_VIEWER,
   MACHINE_STATE_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
@@ -85,6 +86,8 @@ import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
 import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
+import { createRzxViewerPanel } from "./appIde/DocumentPanels/Spectrum/RzxViewerPanel";
+import { getRzxContextMenuInfo, rzxLaunchCommandBarRenderer } from "@renderer/features/documents/RzxLaunchMenu";
 import { readSpectrumBankBytes } from "./appIde/DocumentPanels/Spectrum/spectrumBankDocument";
 import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileViewerPanel";
 import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
@@ -468,6 +471,14 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
+    // --- RZX input recordings (`.plans/RZX_PLAN.md` §4.6)
+    id: RZX_VIEWER,
+    renderer: createRzxViewerPanel,
+    icon: "chip",
+    // --- The first snapshot's RAM banks pop out into documents, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
+  },
+  {
     // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)
     id: MACHINE_STATE_VIEWER,
     renderer: createMachineStateViewerPanel,
@@ -836,6 +847,19 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     openPermanent: true,
     documentTabRenderer: spectrumSnapshotLaunchCommandBarRenderer,
     contextMenuInfo: getSpectrumSnapshotContextMenuInfo
+  },
+  {
+    // --- RZX input recordings (`.plans/RZX_PLAN.md` §4.6)
+    matchType: "ends",
+    pattern: ".rzx",
+    editor: RZX_VIEWER,
+    icon: "chip",
+    ignoreCase: true,
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: rzxLaunchCommandBarRenderer,
+    contextMenuInfo: getRzxContextMenuInfo
   },
   {
     // --- Klive state files (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9)

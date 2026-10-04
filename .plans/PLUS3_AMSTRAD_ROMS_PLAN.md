@@ -1,6 +1,7 @@
 # ZX Spectrum +2A / +3 with the Amstrad ROMs (G9.2)
 
-Status: **decisions recorded** (2026-10-04; §8). Ready for Phase 0.
+Status: ✅ **done** (2026-10-04; main, unreleased). See §9 for what was built and where it departs
+from the plan.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.2, size S–M).
 
 > **Standing rule (from the base plan):** when this ships, update §2 and §4 of
@@ -27,7 +28,7 @@ After this change the machine list offers (Q1: every Amstrad ROM version, not ju
 | `plus3-fdd1` / `plus3-fdd2` | ZX Spectrum +3 (1 FDD / 2 FDDs) | `amstrad41` | A / A, B |
 | `plus3-v40-fdd1` / `plus3-v40-fdd2` | ZX Spectrum +3 v4.0 (1 FDD / 2 FDDs) | `amstrad40` (v4.0 English, the 1987 +3) | A / A, B |
 | `plus3-es-fdd1` / `plus3-es-fdd2` | ZX Spectrum +3 (Spanish, 1 FDD / 2 FDDs) | `amstrad41es` | A / A, B |
-| `plus3-v40-es-fdd1` / `plus3-v40-es-fdd2` | ZX Spectrum +3 v4.0 (Spanish, 1 FDD / 2 FDDs) | `amstrad40es` | A / A, B |
+| ~~`plus3-v40-es-fdd1` / `plus3-v40-es-fdd2`~~ | ~~ZX Spectrum +3 v4.0 (Spanish)~~ — dropped: no Spanish v4.0 set in the archive (§9) | ~~`amstrad40es`~~ | |
 | `nofdd`, `fdd1`, `fdd2` | ZX Spectrum +2E / +3E (unchanged) | `plus3e` | as today |
 
 The +2A shipped only with v4.1, so it gets no v4.0 models. A ROM set that turns out to be missing
@@ -207,3 +208,53 @@ English, Amstrad Spanish, +3E) without a restart.
 - **Q3. Naming:** "ZX Spectrum +2A/+3/+2E/+3E" and the model ids of §1 are accepted.
 - **Q4. Defaults:** use the E models: favorites unchanged, snapshots open on the +E models first
   (P6).
+
+## 9. As built (2026-10-04)
+
+- **ROM images (Phase 0).** Taken from Spectrum Computing's ZXDB archive (entry 1000496), which has
+  v4.0 English, v4.1 English and *one* Spanish set; the Spanish set's ROM 0 reads "test program
+  V 4.1". So three sets ship: `spp3-40-*`, `spp3-41-*`, `spp3-41es-*`. The archive has no Spanish
+  v4.0, so `amstrad40es` and its models `plus3-v40-es-fdd1/2` were dropped (as §1 allows): **eight
+  new models, eleven in all.** The v4.0 set is byte-identical to the one Fuse ships. Sizes and CRC32s:
+  `test/machines/p3-rom-images.test.ts`; notice and source: `src/public/roms/spp3-roms-readme.txt`,
+  `THIRD_PARTY_NOTICES.md`.
+- **The table (P4)** is `src/emu/machines/zxSpectrumP3e/p3RomSets.ts` (next to the core, as
+  `zx8081MachineInfo.ts` is for the ZX80/81). It also owns the model list (`P3_MODELS`), which the
+  registry uses. The +E models now state `sp3RomSet: "plus3e"` explicitly; a config without the key
+  still means the +3E ROMs. The explicit key stops a config merge (the snapshot fit keeps "the
+  machine's other settings") from carrying an Amstrad set onto a +E model.
+- **ROM addresses (Phase 2, P5)**, found by running each ROM in the harness:
+
+  | Set | Menu (ROM 0) | +3 BASIC editor entry (ROM 0) | 48 BASIC (ROM 3) |
+  |---|---|---|---|
+  | `plus3e` | $0706 | $0937 | $12AC |
+  | `amstrad40` | $0706 | $0937 | $12AC |
+  | `amstrad41` | $070B | $093C | $12AC |
+  | `amstrad41es` | $070B | $0953 | $12AC |
+
+  Each is passed once (the menu when it starts waiting, the editor point on the way into +3 BASIC,
+  with SP = $5BF3 on every set), and a program returning to the editor point leaves a working
+  editor. The menu order (Loader, +3 BASIC, Calculator, 48 BASIC) is the same on every set,
+  "Cargador"/"Calculadora" on the Spanish one. The +3E's editor point is in **ROM 0**: the flow used
+  to label it ROM 1, which never mattered because the core matches the PC alone.
+- **Harness.** `test/harness/sp128` takes any `spp3e` model, loads the ROM files by the machine's
+  `romId`, and gained `runTo` (optionally in one ROM), keys, `typeText`, `typeFlowKeys`, `runFlow`
+  (plays a code-injection flow as `MachineController` does), `insertTape`, `insertDisk` and screen
+  text. `test/zxSpectrum/p3-rom-sets.test.ts` (e2e-cores) runs the flows on every set without the
+  ROM check, as the IDE does, and asserts the ROM afterwards.
+- **Snapshots (Phase 3).** The mapping lists the +E models first; `eRomWarning` marks the "+E ROMs"
+  warning, and the loader drops it when the snapshot stays on an Amstrad model. Capture takes the ROM
+  set (`romSet` on the capture core) and reports `plus2a` / `plus3` / `plus3e`.
+- **Klive BASIC (Phase 4).** `test/kbasic/codegen/targets.test.ts` proves `rom.kz80.asm` against
+  every set: called with ROM 0 paged in, the runtime pages ROM 3 in for the calculator through
+  BANKM/BANK678 and puts ROM 0 back, and its output appears either way. **Found and fixed on the
+  way:** the runtime drew characters from the font at CHARS ($3C00, in ROM) with whatever ROM was
+  paged in, so with ROM 0 paged (the +3's editor, the 128K's menu) it printed blanks or garbage, on
+  the +3E and the 128K too. `print.kz80.asm` now copies a ROM glyph's rows out between RomIn and
+  RomOut on every target but the 48K. The 128K test had passed only because its screen reader
+  compared against the same paged-in ROM; it now reads the font from `sp48.rom`. The stdlib's
+  `screen.bas` (SCREEN$) and `print42.bas` had the same fault through `PEEK`; they now read the font
+  through `__kbRomPeek` (`__kbase.bas`, the runtime's `RomPeek`), which costs them about 45 bytes
+  and, for SCREEN$, a third more time (`opt-baseline.json` raised for that reason). The sjasmplus `+3`
+  run was not done: sjasmplus is an external tool that is not installed here, and the compilers
+  select by machine id only, so the new models cannot change them.

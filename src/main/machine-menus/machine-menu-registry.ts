@@ -31,6 +31,7 @@ import {
 } from "./zx-next-menus";
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 import { machineStateMenuRenderer } from "./state-menus";
+import { rzxMenuRenderer } from "./rzx-menus";
 
 /**
  * Machine-specific menu information
@@ -52,6 +53,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...rzxMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model),
       ...sp48RomMenuRenderer(windowInfo, machine, model)
     ],
@@ -61,6 +63,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...rzxMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
@@ -70,6 +73,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...tapeMenuRenderer(windowInfo, machine, model),
       ...diskMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...rzxMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer

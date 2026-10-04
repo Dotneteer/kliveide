@@ -16,6 +16,7 @@ import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
   MC_DISK_SUPPORT,
+  MC_SP3_ROM_SET,
   MC_SP48_ROM_FILE,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -25,6 +26,7 @@ import {
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import { mapSpectrumSnapshotToKlive } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
 import {
+  effectiveModelId,
   fitSpectrumMachine,
   loadSpectrumSnapshot,
   type SpectrumSnapshotLoadPorts
@@ -191,6 +193,62 @@ describe("fitting the machine", () => {
   });
 });
 
+describe("fitting the machine: the Amstrad +2A/+3 models (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
+  const map = (bytes: Uint8Array, name: string) => {
+    const s = parseSpectrumSnapshot(name, bytes);
+    return { s, m: mapSpectrumSnapshotToKlive(s) };
+  };
+  const plus3 = () => map(buildSzx(state128(), { machineId: 5, extra: [szxBlock("+3", [1, 0])] }), "a.szx");
+  const plus2a = () => map(buildSzx(state128(), { machineId: 4 }), "a.szx");
+
+  it("a +3 snapshot opens on the +3E by default", () => {
+    const { s, m } = plus3();
+    expect(fitSpectrumMachine({ machineId: MI_SPECTRUM_48, modelId: "pal" }, m, s, false)).toMatchObject({
+      rebuild: true,
+      modelId: "fdd1",
+      config: { [MC_DISK_SUPPORT]: 1, [MC_SP3_ROM_SET]: "plus3e" }
+    });
+  });
+
+  it.each(["plus3-fdd1", "plus3-v40-fdd2", "plus3-es-fdd1"])("a +3 snapshot stays on the project's %s", (modelId) => {
+    const { s, m } = plus3();
+    expect(fitSpectrumMachine({ machineId: MI_SPECTRUM_3E, modelId }, m, s, true)).toMatchObject({
+      rebuild: false,
+      modelId,
+      warnings: []
+    });
+  });
+
+  it("a +2A snapshot stays on the +2A models", () => {
+    const { s, m } = plus2a();
+    expect(fitSpectrumMachine({ machineId: MI_SPECTRUM_3E, modelId: "plus2a-es" }, m, s, false).rebuild).toBe(false);
+  });
+
+  it("reads a model-less Amstrad machine's model from its ROM set", () => {
+    const { s, m } = plus3();
+    const fit = fitSpectrumMachine(
+      { machineId: MI_SPECTRUM_3E, config: { [MC_DISK_SUPPORT]: 2, [MC_SP3_ROM_SET]: "amstrad40" } },
+      m,
+      s,
+      true
+    );
+    expect(fit).toMatchObject({ rebuild: false, modelId: "plus3-v40-fdd2" });
+    expect(effectiveModelId(MI_SPECTRUM_3E, { [MC_DISK_SUPPORT]: 0 })).toBe("nofdd");
+    expect(effectiveModelId(MI_SPECTRUM_3E, { [MC_DISK_SUPPORT]: 0, [MC_SP3_ROM_SET]: "amstrad41es" })).toBe("plus2a-es");
+  });
+
+  it("rebuilding from an Amstrad model to a +E model does not carry the Amstrad ROM set over", () => {
+    const { s, m } = map(buildSzx(state128(), { machineId: 6, extra: [szxBlock("+3", [1, 0])] }), "a.szx");
+    const fit = fitSpectrumMachine(
+      { machineId: MI_SPECTRUM_3E, modelId: "plus2a", config: { [MC_DISK_SUPPORT]: 0, [MC_SP3_ROM_SET]: "amstrad41" } },
+      m,
+      s,
+      false
+    );
+    expect(fit).toMatchObject({ rebuild: true, modelId: "fdd1", config: { [MC_SP3_ROM_SET]: "plus3e" } });
+  });
+});
+
 describe("loading through the controller", () => {
   it("debug: switches a Z88 to a 48K and stops at PC before running it", async () => {
     const emu = await emulator(MI_Z88);
@@ -295,6 +353,22 @@ describe("loading through the controller", () => {
     expect(result.warnings).toEqual(expect.arrayContaining([expect.stringMatching(/\+3 snapshot/)]));
   });
 
+  it("keeps a +3 snapshot on the project's Amstrad +3, without the +E ROMs warning", async () => {
+    const bytes = buildSzx(state128(), { machineId: 5, extra: [szxBlock("+3", [1, 0])] });
+    const amstrad = await emulator(MI_SPECTRUM_3E, "plus3-fdd1");
+    const onAmstrad = await loadSpectrumSnapshot(amstrad.ports, "a.szx", bytes, "debug");
+    await amstrad.until(MachineControllerState.Paused);
+    expect(onAmstrad).toMatchObject({ modelId: "plus3-fdd1", rebuilt: false, machineName: "ZX Spectrum +3 (1 FDD)" });
+    expect(onAmstrad.warnings.join()).not.toMatch(/\+E ROMs/);
+    expect(amstrad.machine.romId).toBe("spp3-41");
+
+    const plusE = await emulator(MI_SPECTRUM_3E, "fdd1");
+    const onPlusE = await loadSpectrumSnapshot(plusE.ports, "a.szx", bytes, "debug");
+    await plusE.until(MachineControllerState.Paused);
+    expect(onPlusE.modelId).toBe("fdd1");
+    expect(onPlusE.warnings.join()).toMatch(/\+E ROMs instead of the Amstrad ones/);
+  });
+
   it("warns about a disk for a drive the machine lacks", async () => {
     const emu = await emulator(MI_SPECTRUM_3E, "fdd1");
     const result = await loadSpectrumSnapshot(emu.ports, "a.szx", buildSzx(state128(), { machineId: 6 }), "debug", {
@@ -373,6 +447,26 @@ describe("saving through the controller (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_
       disks: [{ drive: 0, fileName: "/d/a.dsk" }]
     });
     expect(result.machineName).toBe("ZX Spectrum +3E (2 FDDs)");
+  });
+
+  it.each([
+    ["plus3-fdd1", 1, "plus3", 5, 7],
+    ["plus3-es-fdd2", 2, "plus3", 5, 7],
+    ["plus2a", 0, "plus2a", 4, 13],
+    ["fdd1", 1, "plus3e", 6, undefined]
+  ] as const)("saves a %s (%i drives) as a %s", async (modelId, drives, machine, szxId, z80Mode) => {
+    const emu = await emulator(MI_SPECTRUM_3E, modelId);
+    const state = buildSzx(state128(), { machineId: 6, extra: drives ? [szxBlock("+3", [drives, 0])] : [] });
+    await loadSpectrumSnapshot(emu.ports, "a.szx", state, "debug", { keepModel: true });
+    await emu.until(MachineControllerState.Paused);
+    const szx = await saveSpectrumSnapshot(savePorts(emu), "szx");
+    expect(szx.bytes[6]).toBe(szxId);
+    expect(parseSpectrumSnapshot("a.szx", szx.bytes).machine).toBe(machine);
+    if (z80Mode !== undefined) {
+      const z80 = await saveSpectrumSnapshot(savePorts(emu), "z80");
+      expect(z80.bytes[34]).toBe(z80Mode);
+      expect(parseSpectrumSnapshot("a.z80", z80.bytes).machine).toBe(machine);
+    }
   });
 
   it("refuses a .sna that the format cannot hold, and leaves the machine as it was", async () => {

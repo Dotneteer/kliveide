@@ -1,5 +1,6 @@
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
+import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
 
 export const SP48_WASM_V2_ARTIFACT_NAME = "zx-spectrum48.wasm";
 export const SP48_WASM_V2_MEMORY_SIZE = 0x10000;
@@ -8,7 +9,7 @@ export const SP48_WASM_V2_PIXEL_GUARD_LINES = 4;
 
 export type Sp48WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
+export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & RzxCoreExports<"sp48"> & {
   memory: WebAssembly.Memory;
   sp48MemoryPtr: Sp48WasmV2ExportFunction;
   sp48PixelBufferPtr: Sp48WasmV2ExportFunction;
@@ -355,6 +356,8 @@ const requiredV2Exports = [
   "sp48TapeGetDataCapacity",
   "sp48TapeGetFileNameCapacity",
   "sp48TapeGetSaveDataCapacity",
+  // --- RZX playback and recording (`zx-spectrum-rzx.c`)
+  ...rzxCoreExportNames("sp48"),
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS

@@ -9,6 +9,7 @@ const {
   stagingWasmOutput,
   stampWasmLayout
 } = require("./wasm-layout.cjs");
+const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -25,7 +26,9 @@ const SPP3E_VOLATILE_SYMBOLS = [
   "condEnv",
   "z80AccessLog",
   "z80AccessLogCount",
-  "z80AccessLogOverflows"
+  "z80AccessLogOverflows",
+  // --- An RZX session in progress (`zx-spectrum-rzx.c`)
+  ...RZX_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -283,7 +286,9 @@ const productionExports = [
   "spp3eGetLastContendedValue",
   "spp3eGetLastUlaReadValue",
   "spp3eSetLastContendedValue",
-  "spp3eSetLastUlaReadValue"
+  "spp3eSetLastUlaReadValue",
+  // --- RZX playback and recording (`.plans/RZX_PLAN.md` §4.2)
+  ...rzxExports("spp3e")
 ];
 
 const buildModes = {

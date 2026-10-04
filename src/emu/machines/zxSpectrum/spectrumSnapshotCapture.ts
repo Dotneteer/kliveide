@@ -10,6 +10,12 @@
  */
 
 import {
+  P3_DEFAULT_ROM_SET,
+  P3_ROM_SETS,
+  p3SnapshotKind,
+  type P3RomSet
+} from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import {
   SPECTRUM_48K_BANKS,
   SPECTRUM_BANK_SIZE,
   type SnapshotDisk,
@@ -34,6 +40,11 @@ export type SpectrumSnapshotCaptureCore = {
   ram: Uint8Array;
   /** The 48K's model id ("pal", "ntsc", "pal-16k"); the +2E/+3E's drives come from the core */
   modelId?: string;
+  /**
+   * The ROM set the +2A/+3/+2E/+3E boots (`p3RomSets.ts`; the +3E ROMs when omitted): with the
+   * Amstrad ROMs the machine is saved as a +2A or a +3, not a "+3e"
+   */
+  romSet?: P3RomSet;
 };
 
 /** The media the machine has, as the media store knows them */
@@ -44,10 +55,18 @@ export type SpectrumSnapshotCaptureMedia = {
   diskFiles?: (string | undefined)[];
 };
 
-/** The snapshot machine a Klive machine and model are */
+/**
+ * The snapshot machine a Klive machine and model are
+ * @param prefix The core
+ * @param modelId The 48K's model
+ * @param romSet The +2A/+3/+2E/+3E's ROM set (the +3E ROMs when omitted)
+ * @param drives The +2A/+3/+2E/+3E's enabled drives
+ */
 export function snapshotMachineOfKlive(
   prefix: SpectrumSnapshotCaptureCore["prefix"],
-  modelId?: string
+  modelId?: string,
+  romSet: P3RomSet = P3_ROM_SETS[P3_DEFAULT_ROM_SET],
+  drives = 0
 ): SnapshotMachineKind {
   switch (prefix) {
     case "sp48":
@@ -55,7 +74,7 @@ export function snapshotMachineOfKlive(
     case "sp128":
       return "128k";
     case "spp3e":
-      return "plus3e";
+      return p3SnapshotKind(romSet, drives);
   }
 }
 
@@ -75,7 +94,9 @@ export function captureSpectrumSnapshot(
     }
     return (fn(...args) as number) ?? 0;
   };
-  const machine = snapshotMachineOfKlive(core.prefix, core.modelId);
+  // --- Disk drives, as the core has them enabled (a +2A/+2E has none)
+  const drives = core.prefix === "spp3e" ? call("GetFdcEnabledDriveCount") : 0;
+  const machine = snapshotMachineOfKlive(core.prefix, core.modelId, core.romSet, drives);
 
   if (call("GetCpuPrefix") !== 0) {
     throw new SnapshotRefusedError(
@@ -153,8 +174,6 @@ export function captureSpectrumSnapshot(
     snapshot.ay = { selected: call("GetPsgRegisterIndex") & 0x0f, regs };
   }
 
-  // --- Disk drives, as the core has them enabled (a +2E has none)
-  const drives = core.prefix === "spp3e" ? call("GetFdcEnabledDriveCount") : 0;
   if (drives > 0) {
     const disks: SnapshotDisk[] = [];
     for (let drive = 0; drive < drives; drive++) {

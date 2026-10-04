@@ -6,7 +6,7 @@ import {
   detectSnapshotFormat,
   parseSpectrumSnapshot
 } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
-import { mapSpectrumSnapshotToKlive } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
+import { kliveSpectrumName, mapSpectrumSnapshotToKlive } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
 import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
 import {
   buildSna128,
@@ -382,6 +382,42 @@ describe("mapping", () => {
     expect(m.machineId).toBe(machineId);
     expect(m.modelIds[0]).toBe(modelId);
     expect(m.warnings.length > 0).toBe(warns);
+  });
+
+  it("lists the +E models first, then the Amstrad ones (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md P6)", () => {
+    expect(map("plus2a").modelIds).toEqual(["nofdd", "fdd1", "fdd2", "plus2a", "plus2a-es"]);
+    expect(map("plus3").modelIds).toEqual([
+      "fdd1",
+      "fdd2",
+      "plus3-fdd1",
+      "plus3-fdd2",
+      "plus3-v40-fdd1",
+      "plus3-v40-fdd2",
+      "plus3-es-fdd1",
+      "plus3-es-fdd2"
+    ]);
+    expect(map("plus3e").modelIds).toEqual(["fdd1", "fdd2"]);
+  });
+
+  it("marks the +E ROMs warning, so the loader can drop it on an Amstrad model", () => {
+    const m = map("plus3");
+    expect(m.eRomWarning).toMatch(/\+E ROMs instead of the Amstrad ones/);
+    expect(m.warnings).toContain(m.eRomWarning);
+    expect(map("plus2").eRomWarning).toBeUndefined();
+    expect(map("plus3e").eRomWarning).toBeUndefined();
+  });
+
+  it("names the Amstrad models", () => {
+    expect(kliveSpectrumName("spp3e", "plus3-es-fdd2")).toBe("ZX Spectrum +3 (Spanish, 2 FDDs)");
+    expect(kliveSpectrumName("spp3e", "plus2a")).toBe("ZX Spectrum +2A");
+    expect(kliveSpectrumName("spp3e", "fdd1")).toBe("ZX Spectrum +3E (1 FDD)");
+    expect(kliveSpectrumName("spp3e", undefined)).toBe("ZX Spectrum +2A/+3/+2E/+3E");
+  });
+
+  it("prefers the two-drive +E model for a two-drive +3, ahead of the Amstrad ones", () => {
+    const s = { ...parseSnaFile(buildSna48(state48())), machine: "plus3" as const };
+    s.peripherals = { ...s.peripherals, plus3: { drives: 2, motorOn: false, disks: [] } };
+    expect(mapSpectrumSnapshotToKlive(s).modelIds.slice(0, 3)).toEqual(["fdd2", "fdd1", "plus3-fdd1"]);
   });
 
   it("refuses an unsupported machine", () => {

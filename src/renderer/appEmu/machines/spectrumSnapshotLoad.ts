@@ -37,6 +37,12 @@ import {
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48
 } from "@common/machines/constants";
+import {
+  getP3RomSet,
+  P3_MODELS,
+  p3ModelDrives,
+  p3ModelRomSet
+} from "@emu/machines/zxSpectrumP3e/p3RomSets";
 
 /** The services the load uses */
 export type SpectrumSnapshotLoadPorts = {
@@ -93,7 +99,7 @@ export async function loadSpectrumSnapshot(
 
   // --- 2. Make the machine fit
   const fit = fitSpectrumMachine(ports.getEmulatorState(), mapping, snapshot, !!options.keepModel);
-  const warnings = [...snapshot.warnings, ...mapping.warnings, ...fit.warnings];
+  const warnings = [...snapshot.warnings, ...mappingWarnings(mapping, fit), ...fit.warnings];
   if (fit.rebuild) {
     const live = await ports.setMachineType(fit.machineId, fit.modelId, fit.config);
     if (!live) {
@@ -118,7 +124,7 @@ export async function loadSpectrumSnapshot(
   } else if (tape?.fileName) {
     warnings.push(`The snapshot links the tape ${tape.fileName}; insert it yourself if you need it`);
   }
-  const drives = fit.machineId === MI_SPECTRUM_3E ? driveCount(fit.modelId) : 0;
+  const drives = fit.machineId === MI_SPECTRUM_3E ? p3ModelDrives(fit.modelId) : 0;
   for (const disk of options.disks ?? []) {
     if (disk.drive >= drives) {
       warnings.push(`The machine has no drive ${disk.drive ? "B" : "A"} for ${disk.fileName}`);
@@ -159,8 +165,22 @@ export async function loadSpectrumSnapshot(
 }
 
 /**
+ * The mapping's warnings that hold for the model the snapshot opens on: the "+E ROMs instead of the
+ * Amstrad ones" warning goes when it stays on an Amstrad model (`.plans/PLUS3_AMSTRAD_ROMS_PLAN.md`
+ * Phase 3).
+ */
+function mappingWarnings(
+  mapping: SpectrumSnapshotMapping,
+  fit: { machineId: string; modelId: string | undefined }
+): string[] {
+  const onAmstrad = fit.machineId === MI_SPECTRUM_3E && p3ModelRomSet(fit.modelId).amstrad;
+  return onAmstrad ? mapping.warnings.filter((w) => w !== mapping.eRomWarning) : mapping.warnings;
+}
+
+/**
  * The model a machine without a model id runs, from its configuration: the 48K's memory size and
- * frequency, the +2E/+3E's drive count. Undefined for the 128K, which has no models.
+ * frequency, the +2A/+3/+2E/+3E's drive count and ROM set. Undefined for the 128K, which has no
+ * models.
  */
 export function effectiveModelId(machineId: string, config: MachineConfigSet | undefined): string | undefined {
   if (machineId === MI_SPECTRUM_48) {
@@ -168,15 +188,15 @@ export function effectiveModelId(machineId: string, config: MachineConfigSet | u
     return config?.[MC_SCREEN_FREQ] === "ntsc" ? "ntsc" : "pal";
   }
   if (machineId === MI_SPECTRUM_3E) {
-    const drives = config?.[MC_DISK_SUPPORT];
-    return drives === 2 ? "fdd2" : drives === 1 ? "fdd1" : "nofdd";
+    const raw = config?.[MC_DISK_SUPPORT];
+    const drives = raw === 2 ? 2 : raw === 1 ? 1 : 0;
+    const romSet = getP3RomSet(config).id;
+    const model =
+      P3_MODELS.find((m) => p3ModelDrives(m.modelId) === drives && p3ModelRomSet(m.modelId).id === romSet) ??
+      P3_MODELS.find((m) => p3ModelDrives(m.modelId) === drives);
+    return model?.modelId;
   }
   return undefined;
-}
-
-/** The drives a +2E/+3E model has */
-function driveCount(modelId: string | undefined): number {
-  return modelId === "fdd2" ? 2 : modelId === "fdd1" ? 1 : 0;
 }
 
 function baseName(path: string): string {
@@ -227,7 +247,7 @@ export function fitSpectrumMachine(
     warnings.push(
       `The snapshot is loaded on the project's ${kliveSpectrumName(machineId, current.modelId)} rather than a ${kliveSpectrumName(machineId, mapping.modelIds[0])}`
     );
-    if (machineId === MI_SPECTRUM_3E && driveCount(current.modelId) === 0 && snapshot.peripherals.plus3?.disks.length) {
+    if (machineId === MI_SPECTRUM_3E && p3ModelDrives(current.modelId) === 0 && snapshot.peripherals.plus3?.disks.length) {
       warnings.push("The project's machine has no disk drives; the snapshot's disks are not inserted");
     }
     return { rebuild: false, machineId, modelId: current.modelId, config: current.config ?? {}, warnings };

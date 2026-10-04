@@ -4,7 +4,7 @@
 ; @exports  PrintU8, PrintI8, PrintU16, PrintI16, PrintU32, PrintI32, PrintFixed, Cls, PrintRow, PrintCol
 ; @exports  PrintColour
 ; @exports  PrintApplyAttr, PrintSave
-; @requires heap, errors
+; @requires heap, errors, rom
 ; @init     PrintInit
 ;
 ; Klive's own printing (plan §6.3): no ROM calls, all 24 rows. The cursor is PrintRow (0-24) and
@@ -15,7 +15,8 @@
 ; MASK_P and P_FLAG, so a program's output continues where BASIC's left off.
 ;
 ; Characters 32-127 come from the font at CHARS, 128-143 are the block graphics, 144 and above come
-; from UDG. Control codes: 6 comma, 8 left, 9 right, 13 new line, 16-21 INK, PAPER, FLASH, BRIGHT,
+; from UDG; a glyph in ROM is read with the 48K BASIC ROM paged in (RomIn), whichever ROM the program
+; left paged on the 128K, the +3 or the Next. Control codes: 6 comma, 8 left, 9 right, 13 new line, 16-21 INK, PAPER, FLASH, BRIGHT,
 ; INVERSE, OVER (one argument each), 22 AT (row, column), 23 TAB (column low, high); any other code
 ; below 32 prints "?". Colour codes are temporary: PrintReset, at the end of a PRINT, restores the
 ; permanent colours.
@@ -90,6 +91,8 @@ PrintCtlArg:
     .defb 0                 ; its first argument
 PrintBlockBuf:
     .defs 8
+PrintGlyphBuf:
+    .defs 8                 ; a ROM character's pixel rows, copied with the 48K BASIC ROM paged in
 PrintBoldRow:
     .defb 0                 ; the pixels of a block graphics character
 
@@ -281,7 +284,24 @@ PrintGlyphIndex:
     add hl,hl
     add hl,de
     ex de,hl
+#ifmod Spectrum48
     ret
+#else
+    ; --- A font in ROM (CHARS is $3C00 by default) is the 48K BASIC ROM's, but on the 128K, the +3
+    ; --- and the Next another ROM may be paged in - the +3's editor runs with ROM 0, which holds
+    ; --- something else at $3D00. Copy the eight rows out with the 48K BASIC ROM paged in.
+    ld a,d
+    cp $40
+    ret nc                  ; a font in RAM
+    call RomIn
+    ld hl,PrintGlyphBuf
+    ex de,hl                ; HL = the rows in ROM, DE = the buffer
+    ld bc,8
+    ldir
+    call RomOut
+    ld de,PrintGlyphBuf
+    ret
+#endif
 PrintGlyphBlock:
     sub 128
     ld b,a

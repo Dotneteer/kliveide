@@ -645,6 +645,16 @@ state must be handed that state**; deriving it from the shape or type of some ot
 future shape a silent bug, and the derivation is invisible at the call site where the mistake is
 made.
 
+## A Mode Badge In A Strip Colours Its Tag, Not The Strip
+
+A session that changes what the machine is doing (the RZX PLAY / REC / VIDEO badge in the emulator
+status bar, `EmuStatusBar.tsx`) is a small outlined **tag** in a status token - `--status-success`
+playing, `--status-error` recording, `--status-info` rendering, `--status-warning` for "stopped,
+not saved" - followed by an ordinary monospace status-bar label for its counter. The bar stays
+`--surface-chrome`; only the tag carries the mode's colour, so the strip never turns into a coloured
+band and the counter stays as readable as every other readout in it. The tag's colour is chosen by
+the mode the store reports, never by which number happens to be shown.
+
 ## A Dialog Field Is As Wide As Its Widest Legal Value
 
 A `TextInput` fills its row unless told otherwise, and in a dialog that is almost never right. A
@@ -1695,6 +1705,10 @@ a grouped catalogue while reading its facts.
 - **Give every `Icon` in such a row `fill="currentColor"`** and colour it through a parent. Its
   default fill is white, which looks right in dark and vanishes in light; and it sets `color`
   inline on a markup icon's `<svg>`, so a selector on the `svg` itself never wins - colour a wrapper.
+- **Variants of one machine are models in its section, never a new section**: the +2A/+3/+2E/+3E
+  section holds eleven models (drives × ROM set). The row name carries what tells them apart
+  ("ZX Spectrum +3 v4.0 (2 FDDs)", "(Spanish, 1 FDD)"), and the sheet's ROM line names the files, so
+  the filter finds them by `v4.0`, `Spanish` or `spp3-41`.
 - **A schematic drawing on a sheet uses surfaces, not the accent**: the outer area
   `--surface-canvas`, the inner area `--surface-active`, edges `--border-strong`. `--surface-stage`
   and `--surface-selected` are almost the same value in dark, so that pair draws nothing.

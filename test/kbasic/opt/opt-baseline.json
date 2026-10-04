@@ -35,6 +35,24 @@
    "tstates": 36330
   }
  },
+ "arrays/initialiser-equals.zxbas": {
+  "0": {
+   "bytes": 57,
+   "tstates": 19704
+  },
+  "1": {
+   "bytes": 57,
+   "tstates": 19704
+  },
+  "2": {
+   "bytes": 57,
+   "tstates": 19704
+  },
+  "3": {
+   "bytes": 57,
+   "tstates": 19704
+  }
+ },
  "arrays/initialiser.zxbas": {
   "0": {
    "bytes": 94,
@@ -2177,6 +2195,24 @@
    "tstates": 6855
   }
  },
+ "preprocessor/include-quoted-library.zxbas": {
+  "0": {
+   "bytes": 120,
+   "tstates": 9567
+  },
+  "1": {
+   "bytes": 117,
+   "tstates": 8639
+  },
+  "2": {
+   "bytes": 111,
+   "tstates": 8595
+  },
+  "3": {
+   "bytes": 75,
+   "tstates": 8355
+  }
+ },
  "preprocessor/keyword-macro.zxbas": {
   "0": {
    "bytes": 14,
@@ -2665,20 +2701,20 @@
  },
  "stdlib/attr-screen.zxbas": {
   "0": {
-   "bytes": 629,
-   "tstates": 105738
+   "bytes": 676,
+   "tstates": 141803
   },
   "1": {
-   "bytes": 504,
-   "tstates": 76111
+   "bytes": 551,
+   "tstates": 112969
   },
   "2": {
-   "bytes": 491,
-   "tstates": 75223
+   "bytes": 538,
+   "tstates": 112017
   },
   "3": {
-   "bytes": 457,
-   "tstates": 74991
+   "bytes": 504,
+   "tstates": 111777
   }
  },
  "stdlib/hex-lib.zxbas": {
@@ -2737,20 +2773,20 @@
  },
  "stdlib/print42-lib.zxbas": {
   "0": {
-   "bytes": 1662,
-   "tstates": 122471
+   "bytes": 1706,
+   "tstates": 130943
   },
   "1": {
-   "bytes": 1210,
-   "tstates": 70063
+   "bytes": 1254,
+   "tstates": 78575
   },
   "2": {
-   "bytes": 1178,
-   "tstates": 69051
+   "bytes": 1222,
+   "tstates": 77515
   },
   "3": {
-   "bytes": 1178,
-   "tstates": 69051
+   "bytes": 1222,
+   "tstates": 77515
   }
  },
  "stdlib/print64-lib.zxbas": {
@@ -2791,20 +2827,20 @@
  },
  "stdlib/sinclair-functions.zxbas": {
   "0": {
-   "bytes": 829,
-   "tstates": 116243
+   "bytes": 876,
+   "tstates": 160086
   },
   "1": {
-   "bytes": 645,
-   "tstates": 79979
+   "bytes": 692,
+   "tstates": 124603
   },
   "2": {
-   "bytes": 621,
-   "tstates": 78983
+   "bytes": 668,
+   "tstates": 123499
   },
   "3": {
-   "bytes": 585,
-   "tstates": 78727
+   "bytes": 632,
+   "tstates": 123267
   }
  },
  "stdlib/string-lib.zxbas": {

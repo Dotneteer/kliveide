@@ -50,6 +50,7 @@
 /howto/instant-screen/index.html
 /howto/machine-state/index.html
 /howto/measure-t-states/index.html
+/howto/rzx-recordings/index.html
 /howto/screen-recording/index.html
 /howto/shortcuts/index.html
 /howto/sp48-custom-rom/index.html

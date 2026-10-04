@@ -1,6 +1,6 @@
 ; @module   rom
 ; @summary  Calls into the 48K BASIC ROM with IY = $5C3A, restoring the caller's IY.
-; @exports  RomCall, RomIn, RomOut
+; @exports  RomCall, RomIn, RomOut, RomPeek
 ;
 ; The ROM is used only for the Float calculator, Float <-> text, tape and error reports (plan §6.3).
 ; On the 128K and the +3 the 48K BASIC ROM must be paged in for them: RomIn pages it in and RomOut
@@ -174,6 +174,22 @@ RomOutDone:
 RomOutDone:
     pop af
 #endif
+    ret
+
+; ------------------------------------------------------------------------------------------------
+; A = the byte at HL, where an address below $4000 is read from the 48K BASIC ROM whichever ROM the
+; program has paged in: the font at CHARS ($3C00) for code that draws or recognises characters
+; itself (SCREEN$, print42). Changes F.
+RomPeek:
+    bit 7,h
+    jr nz,RomPeekRam
+    bit 6,h
+    jr nz,RomPeekRam
+    call RomIn
+    ld a,(hl)
+    jp RomOut
+RomPeekRam:
+    ld a,(hl)
     ret
 
 RomDepth:

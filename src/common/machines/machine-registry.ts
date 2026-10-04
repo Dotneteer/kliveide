@@ -12,7 +12,6 @@ import {
   MC_SCREEN_FREQ,
   MF_ROM,
   MF_BANK,
-  MC_DISK_SUPPORT,
   MC_MEM_SIZE,
   MF_ULA,
   MF_BLINK,
@@ -43,6 +42,7 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
+import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
@@ -273,7 +273,7 @@ export const machineRegistry: MachineInfo[] = [
   },
   {
     machineId: MI_SPECTRUM_3E,
-    displayName: "ZX Spectrum +2E/+3E",
+    displayName: "ZX Spectrum +2A/+3/+2E/+3E",
     charSet: ZxSpectrumChars,
     features: {
       [MF_Z80]: true,
@@ -285,29 +285,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
-    models: [
-      {
-        modelId: "nofdd",
-        displayName: "ZX Spectrum +2E",
-        config: {
-          [MC_DISK_SUPPORT]: 0
-        }
-      },
-      {
-        modelId: "fdd1",
-        displayName: "ZX Spectrum +3E (1 FDD)",
-        config: {
-          [MC_DISK_SUPPORT]: 1
-        }
-      },
-      {
-        modelId: "fdd2",
-        displayName: "ZX Spectrum +3E (2 FDDs)",
-        config: {
-          [MC_DISK_SUPPORT]: 2
-        }
-      }
-    ],
+    // --- +2A/+3 (Amstrad ROMs) and +2E/+3E (+3E ROMs): one core, the ROM set is model config
+    models: P3_MODELS,
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],

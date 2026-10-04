@@ -30,6 +30,16 @@ import type {
   SdCardFingerprint
 } from "@common/machineState/machineStateTypes";
 
+import type {
+  RzxPlayMode,
+  RzxPlayOptions,
+  RzxPlayResult,
+  RzxRecordResult,
+  RzxRollbackResult,
+  RzxStopRecordingResult,
+  RzxVideoOptions
+} from "@common/spectrum/rzx/rzxCommandTypes";
+
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
 /**
@@ -122,6 +132,65 @@ class EmuApiImpl {
       disks?: { drive: number; fileName: string; contents: Uint8Array }[];
     }
   ): Promise<SpectrumSnapshotLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Plays an RZX input recording, switching to the machine it needs (`.plans/RZX_PLAN.md` §4.5)
+   * @param _fileName The file's name, for messages
+   * @param _contents The `.rzx` file
+   * @param _mode "run", or "debug" (stop at the snapshot's PC before that instruction runs)
+   * @param _options Keep the project's model; the segment to start at
+   */
+  async playRzx(
+    _fileName: string,
+    _contents: Uint8Array,
+    _mode: RzxPlayMode,
+    _options?: RzxPlayOptions
+  ): Promise<RzxPlayResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Renders an RZX recording to video with the screen recorder (`.plans/RZX_PLAN.md` §4.7). Returns
+   * once rendering has started; the video stops by itself at the recording's end or a desync.
+   */
+  async renderRzxToVideo(
+    _fileName: string,
+    _contents: Uint8Array,
+    _options?: RzxVideoOptions
+  ): Promise<RzxPlayResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Starts recording an RZX file from the machine's current state (D16)
+   * @param _creator The program and version written into the file
+   */
+  async startRzxRecording(_creator: { name: string; major: number; minor: number }): Promise<RzxRecordResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Stops the RZX recording and returns the finalised file; the machine stays paused */
+  async stopRzxRecording(): Promise<RzxStopRecordingResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Throws the RZX recording away */
+  async discardRzxRecording(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Rolls the RZX recording back
+   * @param _back 1: the latest rollback point, 2: the one before it, ...
+   */
+  async rollbackRzxRecording(_back?: number): Promise<RzxRollbackResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Inserts a rollback point at the next frame end */
+  async insertRzxRollbackPoint(): Promise<{ frame: number }> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

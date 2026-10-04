@@ -1,5 +1,6 @@
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
+import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
 
 export const SPP3E_WASM_V2_ARTIFACT_NAME = "zx-spectrum-p3e.wasm";
 export const SPP3E_WASM_V2_MEMORY_SIZE = 0x10000;
@@ -9,7 +10,7 @@ export const SPP3E_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type SpP3eWasmV2ExportFunction = (...args: number[]) => number;
 
-export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
+export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & RzxCoreExports<"spp3e"> & {
   memory: WebAssembly.Memory;
   spp3eMemoryPtr: SpP3eWasmV2ExportFunction;
   spp3eRamPtr: SpP3eWasmV2ExportFunction;
@@ -501,6 +502,8 @@ const requiredV2Exports = [
   "spp3eGetLastUlaReadValue",
   "spp3eSetLastContendedValue",
   "spp3eSetLastUlaReadValue",
+  // --- RZX playback and recording (`zx-spectrum-rzx.c`)
+  ...rzxCoreExportNames("spp3e"),
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
   ...CONDITION_CORE_EXPORTS

@@ -41,6 +41,10 @@ every `*.bas` file here into `runtime/generated/runtime-bundle.ts`; they are ser
   program's `array_base` does not move it. `print64.bas`'s font is Klive's own 3 x 7 design, kept in
   `scripts/kbasic-font64.cjs`, which rewrites the table (`--check` verifies it). `print42.bas` needs no
   font: it squeezes the machine's own (CHARS) from six columns to five.
+- **Read the font at CHARS with `__kbRomPeek` (`__kbase.bas`), never `PEEK`.** CHARS points into the
+  48K BASIC ROM, and on the 128K, the +3 and the Next another ROM may be paged in (the +3's editor
+  runs with ROM 0), so `PEEK` reads something else there. `__kbRomPeek` pages the 48K BASIC ROM in for
+  an address below $4000 (the runtime's `RomPeek`); `screen.bas` and `print42.bas` use it.
 - Test each routine in `test/kbasic/codegen/stdlib.test.ts` on the 48K harness, and add its
   behaviour to the `library` compatibility suite (`node scripts/kbasic-compat.cjs gen`, then
   `oracle library` where zxbc is installed). Test data for `zx0.bas` and `megalz.bas` comes from

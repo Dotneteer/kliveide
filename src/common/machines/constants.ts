@@ -31,6 +31,12 @@ export const MC_Z88_KEYBOARD = "keyboard";
 export const MC_SP48_ROM_FILE = "sp48RomFile";
 /** ZX80 only: the 8K ZX81 ROM upgrade instead of the 4K ZX80 ROM */
 export const MC_ZX80_ROM8K = "zx80Rom8K";
+/**
+ * +2A/+3/+2E/+3E only: the ROM set the machine boots (`p3RomSets.ts`): "plus3e" (the default when
+ * absent, so projects and state files from before the Amstrad ROMs keep the +3E ROMs),
+ * "amstrad40", "amstrad41" or "amstrad41es"
+ */
+export const MC_SP3_ROM_SET = "sp3RomSet";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

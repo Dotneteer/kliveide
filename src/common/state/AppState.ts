@@ -130,6 +130,24 @@ export type RecordingFormat = "mp4" | "webm" | "mkv";
 export type ScreenRecordingState = "idle" | "armed" | "recording" | "paused";
 
 /**
+ * An RZX session on the emulator (`.plans/RZX_PLAN.md` §4.6): playing a recording, recording one,
+ * or rendering one to video
+ */
+export type RzxState = {
+  mode: "idle" | "playing" | "recording" | "rendering";
+  /** Frames played or recorded */
+  frame: number;
+  /** All frames of the recording that plays */
+  frames?: number;
+  /** The file that plays */
+  file?: string;
+  /** Why the last session stopped (a desync, the end, an IDE operation) */
+  stopMessage?: string;
+  /** A recording stopped by an IDE operation or an overflow holds frames not yet saved */
+  unsaved?: boolean;
+};
+
+/**
  * Where the IDE window goes relative to the emulator window in an IDE + Emulator recording
  */
 export type RecordingIdePosition = "left" | "right" | "top" | "bottom";
@@ -170,6 +188,8 @@ export type EmulatorState = {
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;
   screenRecordingState?: ScreenRecordingState;
+  /** The RZX session, if any (`.plans/RZX_PLAN.md` §4.6) */
+  rzx?: RzxState;
   screenRecordingFile?: string;
   screenRecordingFps?: RecordingFps;
   screenRecordingQuality?: RecordingQuality;

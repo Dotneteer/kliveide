@@ -28,7 +28,7 @@ are estimates for prioritising, not commitments.
 | # | Gap | Overall | Low-hanging pieces |
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
-| G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04) except RZX: G2.1–G2.6 |
+| G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
@@ -104,7 +104,13 @@ menus and the `zx-snapshot-save` command, with what `.z80`/`.sna` cannot hold re
 fingerprint, with a `.szx` fallback for Spectrum states from another Klive version.
 G2.7 (RZX playback) and G2.8 (RZX recording), paired with the emulator video recording, are planned
 in [RZX_PLAN.md](RZX_PLAN.md). That plan argues (§1.3) that they need neither G2.6 nor the Wave 4
-replay spike.
+replay spike. **G2.7 and G2.8 done (2026-10-04):** `.rzx` files play on the 48K, 128K and +2E/+3E
+(+2A/+3 recordings on the Amstrad ROMs) from File and Machine menus, the viewer, the Explorer, the
+`zx-rzx` command and by drag and drop, including under the debugger; a desync pauses at the
+instruction that caused it. Recording has 5-second autosaves with Fuse's pruning, rollback, inserted
+rollback points and finalising on save, and "record from here" takes over a playback. A recording
+renders to video through the screen recorder, unthrottled. A round-trip test proves every recorded
+session replays to identical RAM and registers.
 
 | Feature | What it does | Size |
 |---|---|---|
@@ -114,8 +120,8 @@ replay spike.
 | G2.4 Save snapshots ✅ **done** | Save the current machine as .z80 / .szx (and .sna). Lets users bookmark a debugging situation or share a bug repro. | M |
 | G2.5 Real snapshot viewers ✅ **done** | Replace the stubs: header, registers, a memory map, and a screen preview. Done for .sna/.z80/.szx (one viewer). | S |
 | G2.6 Klive state files (all machines, including Next) ✅ **done** | Save and restore the full emulator state, building on the Next checkpoint mechanism; formats are Klive-specific. | M–L (each core needs a complete, versioned state serialiser) |
-| G2.7 RZX playback | Plays a recorded input stream frame by frame (the standard for verified game recordings and speedruns). | L (needs per-frame IN-value replay and fully deterministic emulation) |
-| G2.8 RZX recording | Record your own session for exact replay or bug reports. | L, after G2.7 |
+| G2.7 RZX playback ✅ **done** | Plays a recorded input stream frame by frame (the standard for verified game recordings and speedruns). | M (IN replay and fetch-counted interrupts need no deterministic peripherals, RZX_PLAN.md §1.3) |
+| G2.8 RZX recording ✅ **done** | Record your own session for exact replay or bug reports. | M, after G2.7 |
 
 ---
 
@@ -130,6 +136,9 @@ their state (`zxnextCopperRead`), so each inspector needs a small state-export A
 renderer already draws sprite patterns, palettes and Layer 2 images for NEX files and asset
 editors (`NexBankSpritesView`, the image viewers, the palette editor), so most drawing code can
 be reused.
+
+**Plan:** G3.1 (and the Copper half of G3.8) in [COPPER_DEBUGGING_PLAN.md](COPPER_DEBUGGING_PLAN.md);
+G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](SPRITE_INSPECTOR_PLAN.md) (decisions recorded).
 
 | Feature | What it does | Size |
 |---|---|---|
@@ -238,8 +247,8 @@ help generated from Klive's spec; checked in the running IDE by `scripts/kbasic-
 
 | Feature | What it does | Size |
 |---|---|---|
-| G9.1 Pentagon 128 | Popular Russian clone, built on the 128K core (different timing and no contention). | M |
-| G9.2 ZX Spectrum +2A/+3 (non-E ROMs) | The original Amstrad ROMs alongside the +E ones. Plan: [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md) (decisions recorded). | S–M |
+| G9.1 Pentagon 128 | Popular Russian clone, built on the 128K core (different timing and no contention); plan: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (decisions recorded); TR-DOS / Beta 128 deferred to G9.1b. | M |
+| G9.2 ZX Spectrum +2A/+3 (non-E ROMs) ✅ **done** | The original Amstrad ROMs alongside the +E ones: eight +2A/+3 models (v4.0 and v4.1 English, v4.1 Spanish) on the `spp3e` core (main, 2026-10-04; unreleased); plan: [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md). The archive had no Spanish v4.0 set, so its two models were dropped. | S–M |
 | G9.3 ZX80 / ZX81 ✅ **done** | Both Sinclair machines on one C/WASM core (main, 2026-10-03; unreleased); plan: [ZX8081_WASM_PLAN.md](ZX8081_WASM_PLAN.md). | XL |
 | G9.4 Timex TC2048/2068, Scorpion | Long-tail clones. | L each; low priority |
 
@@ -267,7 +276,7 @@ Answers from the project author, 2026-10-02:
 - **D2. Aim for a very strong feature set.**
   - Full reverse debugging (G4.4) is in scope, not just the "lite" history (G4.3); G4.3 is now a
     milestone on the way.
-  - The same ambition keeps G3.6 (layer composition) and RZX (G2.7–G2.8) on the roadmap.
+  - The same ambition keeps G3.6 (layer composition) and RZX (G2.7–G2.8, now done) on the roadmap.
 - **D3. Be compatible with DeZog's conventions.**
   - Unit tests (G5.5) use DeZog's test-case and assertion conventions.
   - For consistency, the ASSERTION, LOGPOINT and WPMEM source comments are honoured too (G1.4,
@@ -298,14 +307,15 @@ and WPMEM comments.
 
 **Wave 4 — the big bets:**
 - **G4.4 full reverse debugging.** Start with a design spike on cheap state capture and
-  deterministic replay across all cores; that same work also unblocks RZX (G2.7–G2.8) and Klive
-  state files (G2.6).
+  deterministic replay across all cores. (RZX, G2.7–G2.8, turned out not to need it and is done;
+  Klive state files, G2.6, are done too.)
 - G3.6 layer composition.
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.
 - ~~G9.3 ZX80/81~~ (done).
+- ~~G9.2 +2A/+3 with the Amstrad ROMs~~ (done).
 
-**Cross-cutting note:** deterministic replay is the shared foundation of G4.4, G2.6 and
-G2.7–G2.8. **The capture half is done (G2.6):** every core's whole state is a memory image, and
+**Cross-cutting note:** deterministic replay is the shared foundation of G4.4 and G2.6 (RZX,
+G2.7–G2.8, replays its inputs instead and needed only an exact CPU and snapshot restore). **The capture half is done (G2.6):** every core's whole state is a memory image, and
 `test/wasm/state/machine-state-determinism.test.ts` proves save → restore → run equals a straight
 run on every core. What G4.4 still needs is incremental (dirty-page) capture and periodic keyframes. Designing it once, early in Wave 4 (or as a spike during Wave 3), is the key
 technical decision of this roadmap.

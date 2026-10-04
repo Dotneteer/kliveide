@@ -778,7 +778,9 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define Z80_READ_MEMORY(address) spp3eCpuReadMemory((uint32_t)(address))
 #define Z80_WRITE_MEMORY(address, value) spp3eCpuWriteMemory((uint32_t)(address), (uint32_t)(value))
 #define Z80_POKE_MEMORY(address, value) spp3eCpuPokeMemory((uint32_t)(address), (uint32_t)(value))
-#define Z80_READ_PORT(address) ((uint8_t)spp3eReadPort((uint32_t)(address)))
+/* Every port read the CPU makes; the RZX tap sits in this wrapper, not in the export (D7) */
+static uint32_t spp3eCpuReadPort(uint32_t address);
+#define Z80_READ_PORT(address) ((uint8_t)spp3eCpuReadPort((uint32_t)(address)))
 #define Z80_WRITE_PORT(address, value) spp3eWritePort((uint32_t)(address), (uint32_t)(value))
 #define Z80_CAPTURE_BUS_EVENTS() spp3eCaptureBusEvents
 #define Z80_TACT_PLUS_N(value) spp3eTactPlusN((uint32_t)(value))
@@ -787,7 +789,25 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define Z80_DELAY_ADDRESS_BUS_ACCESS(address) spp3eCpuDelayAddressBusAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_READ(address) spp3eDelayPortAccess((uint32_t)(address))
 #define Z80_DELAY_PORT_WRITE(address) spp3eDelayPortAccess((uint32_t)(address))
+/* RZX (`zx-spectrum-rzx.c`): the fetch counter counts every refresh but the INT acknowledge's */
+static inline void rzxCountFetch(void);
+static inline void rzxIntAck(void);
+#define Z80_REFRESH(address) rzxCountFetch()
+#define Z80_INT_ACK() rzxIntAck()
 #include "../../../../z80/wasm/z80.c"
+#undef Z80_REFRESH
+#undef Z80_INT_ACK
+#define RZX_CORE_PREFIX spp3e
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-rzx.c"
+
+static uint32_t spp3eCpuReadPort(uint32_t address) {
+  if (rzxMode == RZX_MODE_OFF) return spp3eReadPort(address);
+  uint32_t value;
+  if (rzxMode == RZX_MODE_PLAY && rzxPlayNextIn(&value) != 0u) return value;
+  value = spp3eReadPort(address);
+  if (rzxMode == RZX_MODE_RECORD) rzxRecordIn(value);
+  return value;
+}
 #undef Z80_EXTERNAL_BUS
 #undef Z80_MEMORY_PTR
 #undef Z80_READ_MEMORY
@@ -942,7 +962,10 @@ void spp3eWritePort(uint32_t address, uint32_t value);
 #define sp48TapeGetMaxBlocks spp3eCommonTapeGetMaxBlocks
 #define sp48TapeGetDataCapacity spp3eCommonTapeGetDataCapacity
 #define sp48TapeDataPtr spp3eCommonTapeDataPtr
+/* The fast-load trap writes RAM without an IN, so it is off while RZX plays or records (trap 3) */
+#define SP48_TAPE_FAST_LOAD_BLOCKED() (rzxMode != RZX_MODE_OFF)
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"
+#undef SP48_TAPE_FAST_LOAD_BLOCKED
 #undef sp48TapeDataPtr
 #undef sp48TapeGetDataCapacity
 #undef sp48TapeGetMaxBlocks
@@ -1794,6 +1817,7 @@ void spp3eReset(void) {
 }
 
 void spp3eHardReset(void) {
+  spp3eRzxSetMode(RZX_MODE_OFF);
   spp3eReset();
   spp3eClearBytes(spp3eRam, SPP3E_RAM_SIZE);
   for (uint32_t i = 0u; i < SPP3E_DISK_DRIVE_COUNT; i++) {
@@ -1802,7 +1826,20 @@ void spp3eHardReset(void) {
   }
 }
 
+static uint32_t spp3eExecutePlayInstruction(void);
+
 uint32_t spp3eExecuteFrame(void) {
+  if (rzxMode == RZX_MODE_PLAY) {
+    /* RZX playback: one call plays the current RZX frame to its end or to a desync (see sp48.c) */
+    spp3eCaptureBusEvents = 0u;
+    z80ClearBusEvents();
+    while (rzxStatus == RZX_STATUS_OK) {
+      spp3eExecutePlayInstruction();
+    }
+    spp3eCaptureBusEvents = 1u;
+    return 0u;
+  }
+
   spp3eBeginMachineFrame();
   spp3eCaptureBusEvents = 0u;
   z80ClearBusEvents();
@@ -1820,7 +1857,68 @@ uint32_t spp3eExecuteFrame(void) {
   return 0;
 }
 
+/*
+ * A playback frame longer than an EI/retrigger frame ended: the picture is complete, and the next
+ * frame starts here, so the interrupt falls on frame tact 0 (trap 5, D19). See sp48.c.
+ */
+static void spp3eCompletePlayPicture(void) {
+  spp3eFrameCompleted = 1u;
+  spp3eUlaRenderUntilCurrentTact();
+  spp3eNextFrameStartTact = spp3eTacts;
+  spp3eFrames++;
+  spp3eCpuFrameSliceInstructions = 0u;
+  spp3eFdcOnFrameCompleted();
+  if (spp3eNextFrameStartTact >= SPP3E_TACT_REBASE_THRESHOLD) {
+    const uint32_t rebase = spp3eNextFrameStartTact;
+    spp3eShiftTactOrigin(rebase);
+    spp3eTactEpoch += rebase;
+  }
+}
+
+/* One playback step: the interrupt comes from the recording, never from the ULA (see sp48.c) */
+static uint32_t spp3eExecutePlayInstruction(void) {
+  const uint32_t step = rzxPlayBeforeStep();
+  if (step == RZX_STEP_NONE) return 0u;
+  if (step == RZX_STEP_BOUNDARY) {
+    if (rzxStatus == RZX_STATUS_FRAME_DONE && rzxPlayTarget > RZX_SHORT_FRAME_FETCHES) {
+      spp3eCompletePlayPicture();
+    }
+    return 0u;
+  }
+  if (spp3eFrameCompleted != 0u) {
+    spp3eBeginMachineFrame();
+  }
+  if (spp3eCaptureBusEvents != 0u) {
+    z80ClearBusEvents();
+  }
+  const uint8_t intActive = step == RZX_STEP_RUN_INT ? 1u : 0u;
+  if (intActive != 0u) spp3eInterruptsRaised++;
+  spp3eInterruptLineActive = intActive;
+  z80SetSigInt(intActive);
+  z80SetTacts(spp3eTacts);
+  z80ExecuteCpuCycle();
+  spp3eTacts = z80GetTacts();
+  spp3eSetNextAudioSample();
+  z80SetSigInt(0u);
+  spp3eInterruptLineActive = 0u;
+  spp3eCpuInstructionsExecuted++;
+  spp3eCpuFrameSliceInstructions++;
+  return 0u;
+}
+
+/* RZX: puts the machine at `tact` of its frame (an input block's T-state field, trap 11) */
+void spp3eRzxSetFrameTact(uint32_t tact) {
+  if (tact >= spp3eTactsInFrame) return;
+  if (tact > spp3eTacts) {
+    spp3eShiftTactOrigin(-(int64_t)(tact - spp3eTacts));
+  }
+  spp3eNextFrameStartTact = spp3eTacts - tact;
+}
+
 uint32_t spp3eExecuteInstruction(void) {
+  if (rzxMode == RZX_MODE_PLAY) {
+    return spp3eExecutePlayInstruction();
+  }
   if (spp3eFrameCompleted != 0u) {
     spp3eBeginMachineFrame();
   }
@@ -1844,6 +1942,9 @@ uint32_t spp3eExecuteInstruction(void) {
   spp3eCpuFrameSliceInstructions++;
   spp3eFrameCompleted =
     spp3eTacts >= spp3eNextFrameStartTact + spp3eTactsInFrame ? 1u : 0u;
+  if (rzxMode == RZX_MODE_RECORD) {
+    rzxRecAfterStep(spp3eFrameCompleted);
+  }
   spp3eCompleteMachineFrame();
   return 0u;
 }

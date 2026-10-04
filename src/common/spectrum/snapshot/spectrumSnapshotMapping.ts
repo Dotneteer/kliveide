@@ -2,13 +2,14 @@
  * Decides whether, and as what, Klive can load a parsed ZX Spectrum snapshot
  * (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.3, decisions D2 and D3):
  *  - the snapshot's machine picks the Klive machine, never the current one;
- *  - near-misses (grey +2, Amstrad +2A/+3 ROMs, add-ons) load with a warning;
+ *  - near-misses (grey +2, a +2A/+3 opened on the +E ROMs, add-ons) load with a warning;
  *  - machines Klive has no core for are refused.
  *
  * Every problem is collected, so the viewer can list them all.
  */
 
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import {
   snapshotMachineName,
   type SnapshotMachineKind,
@@ -30,12 +31,25 @@ export type SpectrumSnapshotMapping = {
   errors: string[];
   /** What loads differently from how the original machine would run it */
   warnings: string[];
+  /**
+   * The warning (also in `warnings`) that a +2A/+3 snapshot runs with the +3E ROMs. It holds only
+   * while the snapshot opens on a +E model; the loader drops it when the snapshot stays on one of
+   * the Amstrad models.
+   */
+  eRomWarning?: string;
 };
 
 /** The machine and models of each snapshot machine */
 const TARGETS: Record<
   SnapshotMachineKind,
-  { machineId: string; modelIds: (string | undefined)[]; kliveName: string; warning?: string }
+  {
+    machineId: string;
+    modelIds: (string | undefined)[];
+    kliveName: string;
+    warning?: string;
+    /** The warning is about the +E ROMs, and does not hold on an Amstrad model */
+    eRoms?: boolean;
+  }
 > = {
   "16k": {
     machineId: MI_SPECTRUM_48,
@@ -55,19 +69,32 @@ const TARGETS: Record<
     kliveName: "ZX Spectrum 128K",
     warning: "A ZX Spectrum +2 snapshot runs on Klive's 128K (the +2 ROM differs only in its menu)"
   },
+  // --- The +E models come first, so a snapshot opens on them by default (plan Q4); a project
+  // --- already on an Amstrad model keeps it (`fitSpectrumMachine`)
   plus2a: {
     machineId: MI_SPECTRUM_3E,
-    modelIds: ["nofdd", "fdd1", "fdd2"],
+    modelIds: ["nofdd", "fdd1", "fdd2", "plus2a", "plus2a-es"],
     kliveName: "ZX Spectrum +2E",
     warning:
-      "A ZX Spectrum +2A snapshot runs on Klive's +2E, with the +E ROMs instead of the Amstrad ones"
+      "A ZX Spectrum +2A snapshot runs on Klive's +2E, with the +E ROMs instead of the Amstrad ones",
+    eRoms: true
   },
   plus3: {
     machineId: MI_SPECTRUM_3E,
-    modelIds: ["fdd1", "fdd2"],
+    modelIds: [
+      "fdd1",
+      "fdd2",
+      "plus3-fdd1",
+      "plus3-fdd2",
+      "plus3-v40-fdd1",
+      "plus3-v40-fdd2",
+      "plus3-es-fdd1",
+      "plus3-es-fdd2"
+    ],
     kliveName: "ZX Spectrum +3E",
     warning:
-      "A ZX Spectrum +3 snapshot runs on Klive's +3E, with the +E ROMs instead of the Amstrad ones"
+      "A ZX Spectrum +3 snapshot runs on Klive's +3E, with the +E ROMs instead of the Amstrad ones",
+    eRoms: true
   },
   plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" }
 };
@@ -77,9 +104,7 @@ const MODEL_NAMES: Record<string, string> = {
   "pal-16k": "ZX Spectrum 16K",
   pal: "ZX Spectrum 48K",
   ntsc: "ZX Spectrum 48K (NTSC)",
-  nofdd: "ZX Spectrum +2E",
-  fdd1: "ZX Spectrum +3E (1 FDD)",
-  fdd2: "ZX Spectrum +3E (2 FDDs)"
+  ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName]))
 };
 
 /** The display name of a Klive machine and model */
@@ -87,7 +112,7 @@ export function kliveSpectrumName(machineId: string, modelId: string | undefined
   if (modelId && MODEL_NAMES[modelId]) return MODEL_NAMES[modelId];
   if (machineId === MI_SPECTRUM_48) return "ZX Spectrum 48K";
   if (machineId === MI_SPECTRUM_128) return "ZX Spectrum 128K";
-  if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2E/+3E";
+  if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2A/+3/+2E/+3E";
   return machineId;
 }
 
@@ -106,6 +131,7 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   const target = TARGETS[machine];
   let modelIds = [...target.modelIds];
   if (target.warning) warnings.push(target.warning);
+  const eRomWarning = target.eRoms ? target.warning : undefined;
 
   const p = snapshot.peripherals;
   if (snapshot.ay?.on48k) {
@@ -147,7 +173,8 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
     modelIds,
     kliveName: target.kliveName,
     errors,
-    warnings
+    warnings,
+    eRomWarning
   };
 }
 

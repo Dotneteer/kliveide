@@ -1,7 +1,8 @@
 ' Klive BASIC standard library - print42.bas: print42 and printat42.
 ' Klive's own code, written from the documented API (.ai/kbasic/stdlib-api.json). The characters
 ' are the machine's own font (CHARS), squeezed to five pixels and a gap: its six columns keep their
-' outer four, and the middle two are merged into one.
+' outer four, and the middle two are merged into one. A font in ROM is read from the 48K BASIC ROM
+' whichever ROM is paged in (__kbRomPeek).
 #pragma once
 #include <__kbase.bas>
 #pragma push(case_insensitive)
@@ -71,7 +72,7 @@ SUB print42(BYVAL s AS String)
             address = 16384 + (CAST(UInteger, __kbP42Row BAND 24) SHL 8) + (CAST(UInteger, __kbP42Row BAND 7) SHL 5) + b
             mask = 0FC00h SHR shift
             FOR r = 0 TO 7
-                g = PEEK(glyph + r)
+                g = __kbRomPeek(glyph + r)
                 pattern = (CAST(UInteger, ((g BAND 70h) SHL 1) BOR ((g BAND 0Eh) SHL 2)) SHL 8) SHR shift
                 POKE address, (PEEK(address) BAND (CAST(UByte, (mask SHR 8)) BXOR 0FFh)) BOR CAST(UByte, pattern SHR 8)
                 IF shift > 2 THEN POKE address + 1, (PEEK(address + 1) BAND (CAST(UByte, mask BAND 0FFh) BXOR 0FFh)) BOR CAST(UByte, pattern BAND 0FFh)

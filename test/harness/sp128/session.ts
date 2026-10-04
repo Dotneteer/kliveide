@@ -2,17 +2,28 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
-import { MC_DISK_SUPPORT, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum48WasmV2Machine";
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
+import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
+import { FAST_LOAD } from "@emu/machines/machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
+import type { CodeToInject } from "@abstractions/CodeToInject";
+import type { P3ModelId } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import type { SnapshotWriteResult } from "@common/spectrum/snapshot/snapshotBytes";
 import type { SpectrumSnapshot, SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/RzxPlayer";
+import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
+import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import * as rzx from "../spectrumRzx";
 
 import { buildSp48Wasm, productionOutput as sp48Output } from "../../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Output } from "../../../scripts/build-sp128-wasm.cjs";
@@ -21,7 +32,13 @@ import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../script
 /** The real ROMs the app ships (`src/public/roms/`) */
 const ROM_DIR = join(__dirname, "../../../src/public/roms");
 
-export type Sp128SessionModel = "sp128" | "nofdd" | "fdd1" | "fdd2";
+/** The 128K, or any model of the +2A/+3/+2E/+3E machine (`P3_MODELS`) */
+export type Sp128SessionModel = "sp128" | P3ModelId;
+
+export type RunLimit = { maxFrames?: number };
+
+/** The character set in the 48 BASIC ROM (ROM 1 of the 128K, ROM 3 of the +2A/+3/+3E) */
+const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
   constructor() {
@@ -44,8 +61,9 @@ class HarnessSpp3eMachine extends ZxSpectrumP3eWasmV2Machine {
     });
   }
 
-  protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
-    return new Uint8Array(readFileSync(join(ROM_DIR, `spp3e-${page}.rom`)));
+  /** The model's ROM set names the files (`p3RomSets.ts`): `spp3e-*` for the +E models, `spp3-41-*` ... */
+  protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
+    return new Uint8Array(readFileSync(join(ROM_DIR, `${romName}-${page}.rom`)));
   }
 }
 
@@ -120,8 +138,9 @@ export async function createSp128Session(model: Sp128SessionModel = "sp128"): Pr
     }
     const info = machineRegistry
       .find((m) => m.machineId === MI_SPECTRUM_3E)!
-      .models!.find((m) => m.modelId === model)!;
-    machine = new HarnessSpp3eMachine({ ...info, config: { ...info.config, [MC_DISK_SUPPORT]: info.config?.[MC_DISK_SUPPORT] } });
+      .models!.find((m) => m.modelId === model);
+    if (!info) throw new Error(`Unknown +2A/+3/+2E/+3E model '${model}'`);
+    machine = new HarnessSpp3eMachine({ ...info, config: { ...info.config } });
   }
   await machine.setup();
   return new Sp128TestSession(machine, model);
@@ -160,6 +179,33 @@ export class Sp128TestSession {
     return this.machine.loadSnapshotState(parseSpectrumSnapshot(name, bytes));
   }
 
+  // --- RZX (`.plans/RZX_PLAN.md`): see `../spectrumRzx.ts`
+
+  /** Starts recording an RZX file at the machine's current state; returns the recorder */
+  startRzxRecording(options?: RzxRecorderOptions): RzxRecorder {
+    return rzx.startRzxRecording(this.machine, options);
+  }
+
+  /** Stops the recording and returns the finalised RZX file */
+  stopRzxRecording(): Uint8Array {
+    return rzx.stopRzxRecording(this.machine);
+  }
+
+  /** Parses an RZX file, loads its (first or chosen) segment's snapshot and starts playing it */
+  playRzx(bytes: Uint8Array, options?: RzxPlayerOptions): RzxPlayer {
+    return rzx.playRzx(this.machine, bytes, options);
+  }
+
+  /** Runs frames until the RZX session stops and returns why; `onFrame` after every picture */
+  runRzx(options: RunLimit & { onFrame?: () => void } = {}): RzxStop {
+    return rzx.runRzx(this.machine, () => this.frames, () => this.execute(), options);
+  }
+
+  /** The RZX session's state */
+  get rzxStatus(): rzx.RzxHarnessStatus {
+    return rzx.rzxStatus(this.machine);
+  }
+
   /** Captures the machine's state as a snapshot model, as saving does (the machine is unchanged) */
   captureSnapshot(): SpectrumSnapshot {
     return this.machine.captureSnapshotState();
@@ -177,7 +223,10 @@ export class Sp128TestSession {
   runFrames(count = 1): this {
     for (let i = 0; i < count; i++) {
       const start = this.frames;
-      while (this.frames === start) this.execute();
+      while (this.frames === start) {
+        this.execute();
+        rzx.assertRzxRunning(this.machine);
+      }
     }
     return this;
   }
@@ -192,6 +241,198 @@ export class Sp128TestSession {
       ctx.debugStepMode = DebugStepMode.NoDebug;
     }
     return this;
+  }
+
+  /**
+   * Runs until PC reaches the address, stopping before it executes; with `rom`, only while that ROM
+   * is paged in at $0000 (ROM addresses repeat across the four ROMs). Throws after `maxFrames`.
+   */
+  runTo(address: number, { rom, maxFrames = 500 }: RunLimit & { rom?: number } = {}): this {
+    const ctx = this.machine.executionContext;
+    const target = address & 0xffff;
+    const limit = this.frames + maxFrames;
+    ctx.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
+    ctx.terminationPoint = target;
+    try {
+      while (true) {
+        if (this.frames >= limit) {
+          throw new Error(
+            `Timed out after ${maxFrames} frames running to ${hex4(target)}${rom === undefined ? "" : ` in ROM ${rom}`} (PC=${hex4(this.machine.pc)}, ROM ${this.paging().rom})`
+          );
+        }
+        if (this.execute() === FrameTerminationMode.UntilExecutionPoint) {
+          if (rom === undefined || this.paging().rom === rom) return this;
+          // --- The address in another ROM: step past it and keep going
+          ctx.frameTerminationMode = FrameTerminationMode.Normal;
+          this.step();
+          ctx.frameTerminationMode = FrameTerminationMode.UntilExecutionPoint;
+        }
+      }
+    } finally {
+      ctx.frameTerminationMode = FrameTerminationMode.Normal;
+      ctx.terminationPoint = undefined;
+    }
+  }
+
+  // ==========================================================================================
+  // Keyboard
+
+  /** Holds keys down (`SpectrumKeyCode` names: `"A"`, `"N6"`, `"Enter"`, `"CShift"`, ...) */
+  keyDown(...keys: string[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), true);
+    return this;
+  }
+
+  keyUp(...keys: string[]): this {
+    for (const key of keys) this.machine.setKeyStatus(keyCode(key), false);
+    return this;
+  }
+
+  /** Types chords (keys pressed together), each held for `hold` frames and released for `gap` */
+  typeKeys(chords: string[][], { hold = 3, gap = 3 }: { hold?: number; gap?: number } = {}): this {
+    for (const chord of chords) {
+      this.keyDown(...chord).runFrames(hold);
+      this.keyUp(...chord).runFrames(gap);
+    }
+    return this;
+  }
+
+  /** Types text: letters, digits, space and ENTER (`"\n"`) */
+  typeText(text: string, options?: { hold?: number; gap?: number }): this {
+    const chords = [...text].map((ch) => {
+      if (ch === "\n") return ["Enter"];
+      if (ch === " ") return ["Space"];
+      if (/[0-9]/.test(ch)) return [`N${ch}`];
+      if (/[a-z]/i.test(ch)) return [ch.toUpperCase()];
+      throw new Error(`typeText cannot type '${ch}'`);
+    });
+    return this.typeKeys(chords, options);
+  }
+
+  /**
+   * Types a code-injection flow's `QueueKey` steps - the very keys the IDE queues - skipping the
+   * other steps: the session must already be where the flow's `ReachExecPoint` takes it.
+   */
+  typeFlowKeys(flow: CodeInjectionFlow, options?: { hold?: number; gap?: number }): this {
+    const names = Object.entries(SpectrumKeyCode);
+    const nameOf = (code: number) => names.find(([, value]) => value === code)![0];
+    const chords = flow.flatMap((step) =>
+      step.type === "QueueKey"
+        ? [[step.secondary, step.ternary, step.primary].filter((k) => k !== undefined).map((k) => nameOf(k!))]
+        : []
+    );
+    return this.typeKeys(chords, options);
+  }
+
+  /**
+   * Plays a code-injection flow (`getCodeInjectionFlow`, `getTapeLoadFlow`) the way
+   * `MachineController.executeInjectionFlow` does, from a hard reset: `ReachExecPoint` runs to the
+   * address (and, with `checkRom`, only in the flow's ROM), `QueueKey` queues the keystroke on the
+   * machine's own queue and runs the frames its `wait` stands for (20 ms each), `Inject` and
+   * `SetReturn` act on `code`. Ends where the controller would start the machine. Returns the
+   * entry point (the PC unless the flow says `KeepPc`).
+   */
+  runFlow(
+    flow: CodeInjectionFlow,
+    { code, checkRom = true, maxFrames = 600 }: { code?: CodeToInject; checkRom?: boolean; maxFrames?: number } = {}
+  ): number {
+    this.machine.hardReset();
+    let entry = 0;
+    let keepPc = false;
+    for (const step of flow) {
+      switch (step.type) {
+        case "KeepPc":
+          keepPc = true;
+          break;
+        case "ReachExecPoint":
+          this.runTo(step.execPoint, { rom: checkRom ? step.rom : undefined, maxFrames });
+          break;
+        case "QueueKey":
+          this.machine.queueKeystroke(0, 5, step.primary, step.secondary);
+          if ((step.wait ?? 100) > 0) this.runFrames(Math.ceil((step.wait ?? 100) / 20));
+          break;
+        case "Inject":
+          if (code) entry = this.machine.injectCodeToRun(code);
+          break;
+        case "SetReturn":
+          if (code?.subroutine) {
+            const sp = (this.machine.sp - 2) & 0xffff;
+            this.machine.doWriteMemory(sp, step.returnPoint & 0xff);
+            this.machine.doWriteMemory(sp + 1, step.returnPoint >> 8);
+            this.machine.sp = sp;
+          }
+          break;
+      }
+    }
+    if (!keepPc) this.machine.pc = entry;
+    return this.machine.pc;
+  }
+
+  // ==========================================================================================
+  // Media
+
+  /** Puts a tape in the deck as the IDE does (fast load on unless asked otherwise) */
+  insertTape(blocks: TapeDataBlock[], { fastLoad = true }: { fastLoad?: boolean } = {}): this {
+    this.machine.setMachineProperty(FAST_LOAD, fastLoad);
+    this.machine.setMachineProperty(MEDIA_TAPE, blocks);
+    return this;
+  }
+
+  /** Inserts a `.dsk` image in drive A (0) or B (1) as the IDE does; +2A/+3/+3E only */
+  insertDisk(drive: 0 | 1, bytes: Uint8Array): this {
+    this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, bytes);
+    return this;
+  }
+
+  // ==========================================================================================
+  // Screen
+
+  /**
+   * The character in a screen cell (row 0-23, column 0-31), recognised against the ROM character
+   * set (codes 32-127), INVERSE ignored; `undefined` for a cell matching none.
+   */
+  screenChar(row: number, col: number): string | undefined {
+    const cell: number[] = [];
+    const screen = this.bank(this.paging().shadowScreen ? 7 : 5);
+    for (let line = 0; line < 8; line++) {
+      cell.push(screen[((row & 0x18) << 8) | (line << 8) | ((row & 0x07) << 5) | col]);
+    }
+    const font = this.charset();
+    for (let code = 32; code < 128; code++) {
+      const base = ROM_CHARSET + (code - 32) * 8;
+      let same = true;
+      let inverse = true;
+      for (let line = 0; line < 8; line++) {
+        const glyph = font[base + line];
+        if (cell[line] !== glyph) same = false;
+        if (cell[line] !== (~glyph & 0xff)) inverse = false;
+      }
+      if (same || inverse) return String.fromCharCode(code);
+    }
+    return undefined;
+  }
+
+  /** One screen row as text (unrecognised cells as `?`), trailing spaces removed */
+  screenLine(row: number): string {
+    let text = "";
+    for (let col = 0; col < 32; col++) text += this.screenChar(row, col) ?? "?";
+    return text.replace(/\s+$/, "");
+  }
+
+  /** The whole screen as text, one line per row */
+  screenText(): string {
+    return Array.from({ length: 24 }, (_, row) => this.screenLine(row)).join("\n");
+  }
+
+  private charsetCache?: Uint8Array;
+
+  /** The 48 BASIC ROM, read from the file the machine booted */
+  private charset(): Uint8Array {
+    if (!this.charsetCache) {
+      const page = this.prefix === "sp128" ? 1 : 3;
+      this.charsetCache = new Uint8Array(readFileSync(join(ROM_DIR, `${this.machine.romId}-${page}.rom`)));
+    }
+    return this.charsetCache;
   }
 
   private execute(): FrameTerminationMode {
@@ -286,4 +527,14 @@ export class Sp128TestSession {
       eiBacklog: c("GetCpuEiBacklog")
     };
   }
+}
+
+function hex4(value: number): string {
+  return "$" + (value & 0xffff).toString(16).toUpperCase().padStart(4, "0");
+}
+
+function keyCode(key: string): number {
+  const code = (SpectrumKeyCode as unknown as Record<string, number>)[key];
+  if (code === undefined) throw new Error(`Unknown Spectrum key '${key}'`);
+  return code;
 }

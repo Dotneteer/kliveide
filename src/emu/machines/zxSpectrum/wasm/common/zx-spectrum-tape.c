@@ -10,6 +10,14 @@
 #endif
 
 /*
+ * 1 while the fast-load trap must not run, though the user's setting allows it: the trap writes RAM
+ * and registers without an IN, which an RZX recording cannot carry (`.plans/RZX_PLAN.md` trap 3).
+ */
+#ifndef SP48_TAPE_FAST_LOAD_BLOCKED
+#define SP48_TAPE_FAST_LOAD_BLOCKED() 0
+#endif
+
+/*
  * The level every pulse after the pilot is XORed with: 1 when the pilot has an even number of
  * pulses. A tape is a train of *edges*: each pulse flips the level. The player below sets absolute
  * levels instead - pilot pulse k high when k is even, then SYNC1 low, SYNC2 high, each bit low then
@@ -531,7 +539,7 @@ static void updateTapeMode(void) {
       setTapeModeInternal(SP48_TAPE_MODE_LOAD);
       sp48TapeLoadStartCount++;
       nextTapeBlock();
-      if (sp48TapeFastLoad != 0u) {
+      if (sp48TapeFastLoad != 0u && !SP48_TAPE_FAST_LOAD_BLOCKED()) {
         fastLoadCurrentTapeBlock();
         setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
       }

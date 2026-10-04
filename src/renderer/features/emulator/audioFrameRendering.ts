@@ -16,7 +16,12 @@ export async function renderMachineAudioFrame(
   machine: AudioFrameSource,
   audioRenderer: Pick<AudioRenderer, "storeSamples" | "play"> | undefined,
   soundLevel: number,
-  recordingManager?: AudioFrameRecorder
+  recordingManager?: AudioFrameRecorder,
+  /**
+   * The live output is muted, but the recorder still gets the sound: an RZX recording rendered to
+   * video runs faster than real time (`.plans/RZX_PLAN.md` D18)
+   */
+  liveMuted = false
 ): Promise<AudioSample[]> {
   const sampleGetter = machine.getAudioSamples;
   if (!audioRenderer || typeof sampleGetter !== "function") {
@@ -34,8 +39,10 @@ export async function renderMachineAudioFrame(
    * thump instead of the tone (issue #1374).
    */
   const samples = sampleGetter.call(machine).map(({ left, right }) => ({ left, right }));
-  audioRenderer.storeSamples(samples, soundLevel);
-  await audioRenderer.play();
+  if (!liveMuted) {
+    audioRenderer.storeSamples(samples, soundLevel);
+    await audioRenderer.play();
+  }
   await recordingManager?.submitAudioSamples?.(samples);
   return samples;
 }
