@@ -75,11 +75,14 @@ async function runModel(modelId) {
       w.focus();
       w.webContents.focus();
     });
-  // --- The app rebuilds its menu after state changes, so an item can be briefly missing or disabled
+  // --- The app rebuilds its menu after state changes, so an item can be briefly missing or disabled.
+  // --- The machine items are in the EMU window's menu: a step that typed into the IDE's prompt left
+  // --- the IDE focused, whose application menu has none, so the EMU window is focused first.
   const menu = async (id, wait = 1500) => {
     let found = "missing";
     for (let attempt = 0; attempt < 20 && found !== "clicked"; attempt++) {
       if (attempt) await sleep(500);
+      await showEmu();
       found = await app.evaluate(({ Menu }, itemId) => {
         const item = Menu.getApplicationMenu().getMenuItemById(itemId);
         if (!item) return "missing";

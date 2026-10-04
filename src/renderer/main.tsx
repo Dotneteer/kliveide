@@ -18,6 +18,7 @@ import { DialogProvider } from "./controls/overlay/DialogProvider";
 import { registerMainToEmuIpc } from "./appEmu/MainToEmuIpc";
 import { registerMainToIdeIpc } from "./appIde/MainToIdeIpc";
 import { setCachedMessenger, setCachedStore } from "./CachedServices";
+import { installMachineRebuildRejectionFilter } from "./machineRebuildRejections";
 
 // --- Create the application messenger and the store according to the discriminator parameter
 const isEmu = location.search.startsWith("?emu");
@@ -62,6 +63,9 @@ if (isEmu) {
 }
 
 document.title = isEmu ? "Klive Retro-Computer Emulator" : "Klive IDE";
+
+// --- "No machine" while the emulator rebuilds one is expected, not an error to report
+installMachineRebuildRejectionFilter(window);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>

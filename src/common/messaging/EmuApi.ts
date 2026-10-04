@@ -744,6 +744,24 @@ export type CpuState = Z80CpuState | M6510CpuState;
  * the WASM core. The WASM one was putting the raw index in, so the ULA panel showed a bare digit
  * where the other showed "Cyan". A table each is how that happened; one table is how it stops.
  */
+/**
+ * The error the emulator answers a machine request with while it has no machine controller: the
+ * moment between tearing a machine down and finishing the setup of the next one, when the machine
+ * type, model or a configuration that rebuilds the machine (a Z88 LCD size) changes. It is expected,
+ * not a fault: the IDE's pollers skip that round and ask again (`isMachineNotAvailableError`).
+ */
+export const MACHINE_NOT_AVAILABLE_MESSAGE = "Machine controller not available";
+
+/**
+ * Whether an error is the emulator's "no machine yet" answer. The message crosses the process
+ * boundary as text (`MessageProxy` rethrows an error response as `new Error(message)`), so it is
+ * recognised by its message.
+ * @param error A caught error
+ */
+export function isMachineNotAvailableError(error: unknown): boolean {
+  return error instanceof Error && error.message.includes(MACHINE_NOT_AVAILABLE_MESSAGE);
+}
+
 export const ULA_BORDER_COLOR_NAMES = [
   "Black",
   "Blue",

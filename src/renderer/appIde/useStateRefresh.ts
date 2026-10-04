@@ -1,9 +1,25 @@
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useEffect } from "react";
 import { CpuStateChunk, EmuApi } from "@common/messaging/EmuApi";
+import { reportRefreshError } from "@renderer/machineRebuildRejections";
 import { useInitializeAsync } from "@renderer/core/useInitializeAsync";
 
 type Callback = (state: MachineControllerState) => Promise<void>;
+
+/*
+ * While the emulator rebuilds its machine (a machine, model or LCD-size change) it has no machine
+ * controller for a moment, and every request is answered with "Machine controller not available".
+ * The poll skips that round and the panels' refreshes drop it; the next round, against the new
+ * machine, refreshes them. Any other failure is still reported - as a console error, never as an
+ * unhandled rejection from a timer or an effect (`reportRefreshError`).
+ */
+
+/** Runs a panel's refresh; its failure is handled (see `reportRefreshError`) */
+function runRefresh(callback: Callback, state: MachineControllerState): void {
+  Promise.resolve()
+    .then(() => callback(state))
+    .catch(reportRefreshError);
+}
 
 class EmuStateListener {
   static instance: EmuStateListener;
@@ -32,7 +48,15 @@ class EmuStateListener {
 
         this.isRunning = true;
         try {
-          const newState = await this.emuApi.getCpuStateChunk();
+          let newState: CpuStateChunk;
+          try {
+            newState = await this.emuApi.getCpuStateChunk();
+          } catch (error) {
+            // --- No machine this round: the next state is the new machine's, so refresh then
+            this.oldState = null;
+            reportRefreshError(error);
+            return;
+          }
           const changed =
             !this.oldState ||
             this.oldState.state !== newState.state ||
@@ -41,15 +65,15 @@ class EmuStateListener {
           if (changed) {
             if (newState.state === MachineControllerState.Paused) {
               // --- The machine is paused, refresh the state immediately
-              this.callbacks.forEach((cb) => cb(newState.state));
+              this.callbacks.forEach((cb) => runRefresh(cb, newState.state));
               this.lastRefresh = new Date().valueOf();
             } else if (new Date().valueOf() - this.lastRefresh > 750) {
-              this.callbacks.forEach((cb) => cb(newState.state));
+              this.callbacks.forEach((cb) => runRefresh(cb, newState.state));
               this.lastRefresh = new Date().valueOf();
             }
           } else if (new Date().valueOf() - this.lastRefresh > 5000) {
             this.lastRefresh = new Date().valueOf();
-            this.callbacks.forEach((cb) => cb(newState.state));
+            this.callbacks.forEach((cb) => runRefresh(cb, newState.state));
           }
           this.oldState = newState;
         } finally {
@@ -78,8 +102,12 @@ export function useEmuStateListener(emuApi: EmuApi, callback: Callback, onInit =
 
   useInitializeAsync(async () => {
     if (onInit) {
-      const state = await emuApi.getCpuStateChunk();
-      callback(state.state);
+      try {
+        const state = await emuApi.getCpuStateChunk();
+        runRefresh(callback, state.state);
+      } catch (error) {
+        reportRefreshError(error);
+      }
     }
   });
 
