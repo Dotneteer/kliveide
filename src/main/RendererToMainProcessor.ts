@@ -13,7 +13,10 @@ import {
   ResponseMessage
 } from "@messaging/messages-core";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
-import { sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { getIdeApi, sendFromMainToIde } from "@messaging/MainToIdeMessenger";
+import { droppedFileAction } from "@common/utils/dropped-file-action";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { MF_TAPE_SUPPORT } from "@common/machines/constants";
 import {
   createKliveProject,
   getKliveProjectFolder,
@@ -975,6 +978,36 @@ class MainMessageProcessor {
     const error = await setSelectedTapeFile(filename, false);
     // --- As the menu does: the project remembers its tape
     if (!error) await saveKliveProject();
+    return error;
+  }
+
+  /**
+   * Opens a file dropped onto the emulator window (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.10).
+   * @param filename The dropped file's full path
+   */
+  async openDroppedFile(filename: string): Promise<string | undefined> {
+    const action = droppedFileAction(filename);
+    let error: string | undefined;
+    if (action.kind === "command") {
+      const result = await getIdeApi().executeCommand(action.command);
+      error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
+    } else if (action.kind === "tape") {
+      const machineId = mainStore.getState()?.emulatorState?.machineId;
+      const machine = machineRegistry.find((m) => m.machineId === machineId);
+      if (!machine?.features?.[MF_TAPE_SUPPORT]) {
+        error = `The ${machine?.displayName ?? "current machine"} has no tape deck.`;
+      } else {
+        error = await setSelectedTapeFile(filename, false);
+        if (!error) await saveKliveProject();
+      }
+    } else {
+      error = action.message;
+    }
+    if (error) {
+      const window = BrowserWindow.getFocusedWindow();
+      const options = { type: "error" as const, title: "Dropped file", message: error };
+      await (window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options));
+    }
     return error;
   }
 

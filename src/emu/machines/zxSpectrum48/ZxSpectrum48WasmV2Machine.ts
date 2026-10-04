@@ -18,6 +18,9 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum48WasmHost } from "./ZxSpectrum48WasmHost";
 import { importAccessLog } from "../wasmAccessLog";
+import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
+import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
+import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -952,6 +955,24 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
    * The core's breakpoint condition evaluator: its program store. The shared C evaluator reads the
    * registers and memory inside the core (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`).
    */
+  /**
+   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Call it through `IMachineController.restoreState`, which leaves the machine Paused.
+   * @returns The frame tact the machine stands at
+   * @throws When the snapshot needs another machine
+   */
+  loadSnapshotState(snapshot: SpectrumSnapshot): number {
+    assertSnapshotFitsMachine(snapshot, "sp48", this.modelInfo?.modelId);
+    const runtime = this.requireWasmV2Runtime();
+    const frameTact = restoreSpectrumSnapshot(
+      { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, is16k: this.modelInfo?.config?.[MC_MEM_SIZE] === 16, reset: () => this.reset() },
+      snapshot
+    );
+    this.invalidateWasmV2Sync();
+    this.syncCpuFromWasmV2(runtime);
+    return frameTact;
+  }
+
   getConditionStore(): ConditionStore | undefined {
     return this.wasmV2Runtime ? conditionStoreOf(this.wasmV2Runtime) : undefined;
   }
@@ -981,7 +1002,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     this.currentFrameTact = this.frameTacts;
     this.halted = wasm.sp48GetCpuHalted() !== 0;
     this.iff1 = wasm.sp48GetCpuIff1() !== 0;
-    this.iff2 = this.iff1;
+    this.iff2 = wasm.sp48GetCpuIff2() !== 0;
     this.interruptMode = wasm.sp48GetCpuInterruptMode();
     this.opCode = wasm.sp48GetCpuPrefix();
     this.retExecuted = wasm.sp48GetCpuRetExecuted() !== 0 || wasm.sp48GetCpuRetnExecuted() !== 0;

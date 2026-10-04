@@ -1,7 +1,7 @@
 # ZX Spectrum Snapshot Loading (`.sna`, `.z80`, `.szx`) Plan
 
-Status: **decisions recorded** (2026-10-04): D1–D8 accepted, and the §8 questions answered as
-proposed (D9–D15). No phase started.
+Status: **Complete — all nine phases done (2026-10-04)**. D1–D8 accepted, the §8 questions answered as
+proposed (D9–D15). §9 records what was built and where it differed from this plan.
 Scope: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) G2.1 (`.sna`), G2.2 (`.z80` v1–v3) and
 G2.3 (`.szx`). Each format gets a shared parser. The snapshot can be loaded into the 48K, 128K or
 +2E/+3E machine and started with or without debugging. Each format also gets a document viewer with
@@ -17,8 +17,9 @@ Format references (normative; the parsers are written from these, in Klive's own
 - `.szx`: Spectaculator's ZX-State spec — <https://www.spectaculator.com/docs/svn/zx-state/intro.shtml>
 
 > Field layouts, machine-id numbers and chunk ids quoted in this plan were written from memory
-> while drafting. **Phase 1 and Phase 2 check every one of them against the spec before code is
-> written**, and correct this document where they differ.
+> while drafting, then checked against the three specs in Phases 1–2. Two corrections, recorded in
+> §9: `.szx` DSK blocks only *link* disk files (embedding is reserved, "not implemented"), and the
+> "EI last" flag is named `ZXSTZF_SUPPRESS_INTS` since spec 1.5.
 
 ---
 
@@ -569,3 +570,85 @@ The project author accepted every proposed answer; they are recorded as D9–D15
 | Q5 | Should a 48K snapshot be allowed to load into an open **128K/+3E project**, locked in 48K mode (`$7FFD` = `$30`), instead of being refused by D7? | No, refuse; keep the guard simple. |
 | Q6 | Run is the menu's only action (no `.szx`/`.z80` "autorun" flag exists). Is a second "Load Snapshot (Debug)..." menu item wanted? | No. Debug is in the viewer and the command. |
 | Q7 | Running an installed Fuse as a behavioural oracle (load the same synthetic snapshot, compare observed results; never copy code, never in CI), as Klive BASIC's D12 allows for `zxbc`? | Allowed, for the timing checks of Phase 3 only. |
+
+---
+
+## 9. What was built (2026-10-04)
+
+All nine phases are done. Files, by layer:
+
+| Layer | Files |
+| --- | --- |
+| Model, parsers, mapping | `src/common/spectrum/snapshot/`: `spectrumSnapshot.ts`, `snaFile.ts`, `z80File.ts`, `szxFile.ts`, `z80Compression.ts` (moved from `renderer/appIde/utils/compression/`), `parseSpectrumSnapshot.ts`, `spectrumSnapshotMapping.ts`, `spectrumSnapshotLoadTypes.ts` |
+| Cores | `z80SetHalted` in `z80.c`; `<core>SetCpuHalted`, `<core>Get/SetCpuEiBacklog` in all three cores; `sp48Get/SetCpuIff2`; the 128K loader's types gained the IFF/IM exports it already had |
+| Machines | `src/emu/machines/zxSpectrum/spectrumSnapshotRestore.ts` (the shared sequence), `spectrumSnapshotFit.ts`; `loadSnapshotState` on the three `*WasmV2Machine`s; IFF2 (48K) and IFF1/IFF2/IM (128K) now synced into the TS mirror |
+| Emulator | `src/renderer/appEmu/machines/spectrumSnapshotLoad.ts`; `EmuApi.loadSpectrumSnapshot` → `MainToEmuProcessor` |
+| IDE | `appIde/commands/SpectrumSnapshotCommand.ts` (`zx-snapshot`, alias `zxsnap`); `features/documents/SpectrumSnapshotLaunchMenu.tsx`; `DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel.tsx` + `spectrumSnapshotView.ts`; editor id `SPECTRUM_SNAPSHOT_VIEWER` on `.sna`/`.z80`/`.szx` (any case). `SnaFileViewerPanel`, `Z80FileViewerPanel`, `SNA_VIEWER` and `Z80_VIEWER` are deleted |
+| Main | `spectrumSnapshotRenderer` + `openSpectrumSnapshot` in `machine-menus/zx-specrum-menus.ts` (Machine → Load Snapshot... on all three Spectrums); File → Load ZX Spectrum Snapshot... in `app-menu.ts`; `MainApi.openDroppedFile` |
+| Drag and drop | `src/common/utils/dropped-file-action.ts` (routing), `src/renderer/appEmu/useEmuFileDrop.ts`, preload `api.getPathForFile` (`webUtils`) |
+| Docs | `docs/content/howto/spectrum-snapshots.mdx`, `zx-snapshot` in `commands-reference.mdx`, the Explorer viewer table, the route golden |
+
+### What differed from the plan
+
+- **No new frame-tact or screen export.** After the wrapper's reset the frame starts at tact 0 and the
+  epoch is 0, so the existing `SetTacts` sets the frame position; `RenderInstantScreen` already draws
+  the whole frame (border and shadow screen included). Trap 6's note about `sp48SetTacts` not
+  calling `z80SetTacts` is harmless: every instruction copies the machine counter into the CPU first.
+- **The reset is the wrapper's, after the RAM write.** The core reset clears the tape and the audio
+  rate the wrapper syncs, so `restoreSpectrumSnapshot` writes RAM, then calls the wrapper's
+  `reset()` (which keeps RAM, unlocks paging and rebuilds the 128K cores' flat 64K view).
+- **"EI last" is a backlog of 2**, as `EI` itself sets it: no interrupt before the next instruction ends.
+- **Disks are read by the IDE command**, not the emulator: the command can read files. It looks
+  where the `.szx` says, then beside the snapshot, and passes `{ drive, fileName, contents }` to the
+  emulator, which inserts them (and an embedded tape) **before** `restoreState` (trap 12).
+- **`keepModel` load option (D7).** With a project open, a same-type machine keeps its model with a
+  warning. A model-less project (`newp sp48 ...`) has its model read from its configuration
+  (`effectiveModelId`): the in-app check found the first version warning "loaded on the project's
+  ZX Spectrum 48K rather than a ZX Spectrum 48K".
+- **Bank pop-outs and Go Back** (added as a follow-up, 2026-10-04). A pop-out is recorded with the
+  navigation reason `spectrumBank`, and the viewer's editor has the file navigation adapter, so Go
+  Back returns to the viewer. `DocumentPanels/Spectrum/spectrumBankDocument.ts` keys a bank document
+  by the snapshot's full path (`memoryDump-spectrumBankDump<path>:<bank>`), as the Z88 and NEX bank
+  documents are keyed, and `readSpectrumBankBytes` re-reads the bank from the file. The static-dump
+  navigation adapter uses it to reopen a closed bank document where it was left. Checked in the
+  running app: pop out, Go Back, close the bank tab, then Go Forward reopens it. Tests:
+  `spectrum-bank-document.test.ts`, the adapter's "closed ZX Spectrum snapshot bank" cases, and the
+  viewer test's `recordJump` assertion; dropping the adapter branch or the `recordJump` each fails
+  one.
+- **Drag and drop** runs `.sna`/`.z80`/`.szx`, opens `.z88` with `-a`, and inserts `.tap`/`.tzx`;
+  anything else gets a message box from the main process.
+- **The Fuse oracle (D15) was not run:** Fuse is not installed on the development machine. The
+  timing tests stand on the specs' definitions (frame position counted from the interrupt), and the
+  Phase 3 frame-position tests pass on both frame lengths.
+
+### Tests
+
+- `test/spectrum/snapshot/spectrum-snapshot-parse.test.ts` (node, ~90 tests): every format, version,
+  hardware mode and machine id, compression, the 128K `.sna` bank orders, `.szx` chunks (unknown,
+  truncated, zlib), cross-format equality, the mapping table. `z80-compression.test.ts` moved along.
+- `spectrum-snapshot-load.test.ts` (e2e-cores, 24 tests) on the real cores through the sp48 harness
+  and the new `test/harness/sp128/` (128K, +2E, +3E; README and self-tests): registers incl. R bit
+  7 and IFF2 ≠ IFF1, RAM, border, paging and the lock, `$1FFD`, the AY, the frame position (the
+  interrupt arrives `frameLength − frameTact` T-states later on both frame lengths), HALT, the EI
+  delay, the screen and border drawn before any frame, repeat loads. Mutations caught: no frame
+  tact, no reset, no HALT, no IFF2, no screen render.
+- `spectrum-snapshot-flow.test.ts` (e2e-cores, 13 tests) on a real `MachineController`: fitting,
+  switching 48K ↔ 128K ↔ +3E, run/debug, a reload over a running machine, refusals, media before
+  the restore. Mutations caught: no one-shot breakpoint, media after the restore.
+- `test/commands/SpectrumSnapshotCommand.test.ts` (18), `test/renderer/SpectrumSnapshotViewerPanel.test.tsx`,
+  `SpectrumSnapshotLaunchMenu.test.tsx`, `spectrum-snapshot-view.test.ts`, `test/emu/emu-file-drop.test.ts`.
+
+### In-app check
+
+A scratch Playwright script on the `scripts/doc-shots` harness (isolated settings and HOME,
+synthetic snapshots, not committed):
+
+- with no project, `zx-snapshot game128.z80 -d` switched the machine to the 128K and paused at
+  `$8100` (status bar and pause overlay agree); `game3.szx -r` switched to the +3E (1 FDD) and ran,
+  with its border cycling;
+- the Pentagon file was refused; File and Machine menus carry their items;
+- in a 48K project the viewer rendered every section and the screen, the tab bar showed Run and
+  Debug, a 128K snapshot was refused naming both machines, and a 48K `.sna` debug-stopped at PC;
+- `window.api.getPathForFile` exists in the emulator window. An OS-level drag cannot be scripted
+  here, so the drop itself is covered by the unit tests only.
+- Not done: a real 128K game snapshot (no redistributable file at hand, D12).

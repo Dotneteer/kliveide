@@ -16,6 +16,7 @@ import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
+import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
@@ -354,6 +355,14 @@ export class Sp48TestSession {
 
   peek(address: number): number {
     return this.machine.doReadMemory(address & 0xffff);
+  }
+
+  /**
+   * Loads a `.sna` / `.z80` / `.szx` snapshot into the machine, as the emulator does (minus the
+   * controller): parse, then `loadSnapshotState`. Returns the frame tact the machine stands at.
+   */
+  loadSnapshot(name: string, bytes: Uint8Array): number {
+    return this.machine.loadSnapshotState(parseSpectrumSnapshot(name, bytes));
   }
 
   peekWord(address: number): number {

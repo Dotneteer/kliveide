@@ -205,6 +205,9 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   spp3eGetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eSetCpuSp: SpP3eWasmV2ExportFunction;
   spp3eGetCpuHalted: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuHalted: SpP3eWasmV2ExportFunction;
+  spp3eGetCpuEiBacklog: SpP3eWasmV2ExportFunction;
+  spp3eSetCpuEiBacklog: SpP3eWasmV2ExportFunction;
   spp3eGetCpuPrefix: SpP3eWasmV2ExportFunction;
   spp3eGetCpuIff1: SpP3eWasmV2ExportFunction;
   spp3eSetCpuIff1: SpP3eWasmV2ExportFunction;
@@ -466,6 +469,9 @@ const requiredV2Exports = [
   "spp3eGetCpuSp",
   "spp3eSetCpuSp",
   "spp3eGetCpuHalted",
+  "spp3eSetCpuHalted",
+  "spp3eGetCpuEiBacklog",
+  "spp3eSetCpuEiBacklog",
   "spp3eGetCpuPrefix",
   "spp3eGetCpuIff1",
   "spp3eSetCpuIff1",

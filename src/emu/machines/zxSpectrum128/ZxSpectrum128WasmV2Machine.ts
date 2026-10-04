@@ -16,6 +16,9 @@ import { TzxHeader } from "../tape/TzxHeader";
 import { TzxStandardSpeedBlock } from "../tape/TzxStandardSpeedBlock";
 import { ZxSpectrum128WasmHost } from "./ZxSpectrum128WasmHost";
 import { importAccessLog } from "../wasmAccessLog";
+import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
+import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
+import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -1011,6 +1014,9 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     this.frameTacts = this.tacts % this.tactsInCurrentFrame;
     this.currentFrameTact = this.frameTacts;
     this.halted = wasm.sp128GetCpuHalted() !== 0;
+    this.iff1 = wasm.sp128GetCpuIff1() !== 0;
+    this.iff2 = wasm.sp128GetCpuIff2() !== 0;
+    this.interruptMode = wasm.sp128GetCpuInterruptMode();
     this.opCode = wasm.sp128GetCpuPrefix();
     this.syncPagingStateFromWasmV2(runtime);
     this.syncContentionCountersFromWasmV2(runtime);
@@ -1045,6 +1051,24 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
       this.lastIoReadPort = portAddress;
       this.lastIoReadValue = portValue;
     }
+  }
+
+  /**
+   * Replaces the machine's state with a snapshot's (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4).
+   * Call it through `IMachineController.restoreState`, which leaves the machine Paused.
+   * @returns The frame tact the machine stands at
+   * @throws When the snapshot needs another machine
+   */
+  loadSnapshotState(snapshot: SpectrumSnapshot): number {
+    assertSnapshotFitsMachine(snapshot, "sp128", undefined);
+    const runtime = this.requireWasmV2Runtime();
+    const frameTact = restoreSpectrumSnapshot(
+      { prefix: "sp128", exports: runtime.exports, ram: runtime.ram, reset: () => this.reset() },
+      snapshot
+    );
+    this.invalidateWasmV2Sync();
+    this.syncCpuFromWasmV2(runtime);
+    return frameTact;
   }
 
   private invalidateWasmV2Sync(): void {

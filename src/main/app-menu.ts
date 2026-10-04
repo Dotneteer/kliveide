@@ -62,6 +62,7 @@ import { createSettingsReader } from "@common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
+import { openSpectrumSnapshot } from "./machine-menus/zx-specrum-menus";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import {
@@ -366,6 +367,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         }
       },
       ...recentProjectHolder,
+      { type: "separator" },
+      {
+        // --- Any machine: the IDE's zx-snapshot command switches to the one the file needs (D9)
+        id: "load_spectrum_snapshot",
+        label: "Load ZX Spectrum Snapshot...",
+        click: async () => {
+          await openSpectrumSnapshot(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
       { type: "separator" },
       {
         id: CLOSE_FOLDER,

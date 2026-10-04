@@ -10,7 +10,13 @@ import {
   MI_ZXNEXT
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
-import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer, sp48RomMenuRenderer } from "./zx-specrum-menus";
+import {
+  tapeMenuRenderer,
+  spectrumIdeRenderer,
+  diskMenuRenderer,
+  sp48RomMenuRenderer,
+  spectrumSnapshotRenderer
+} from "./zx-specrum-menus";
 import {
   z88KeyboardLayoutRenderer,
   z88LcdRenderer,
@@ -38,18 +44,23 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_SPECTRUM_48]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
       ...sp48RomMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_128]: {
-    machineItems: tapeMenuRenderer,
+    machineItems: (windowInfo, machine, model) => [
+      ...tapeMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model)
+    ],
     ideItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_3E]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
-      ...diskMenuRenderer(windowInfo, machine, model)
+      ...diskMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
   },

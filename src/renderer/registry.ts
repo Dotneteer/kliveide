@@ -8,9 +8,8 @@ import {
   TAPE_BLOCK_VIEWER,
   DSK_VIEWER,
   NEX_VIEWER,
-  Z80_VIEWER,
   Z88_SNAPSHOT_VIEWER,
-  SNA_VIEWER,
+  SPECTRUM_SNAPSHOT_VIEWER,
   SCR_VIEWER,
   SHC_VIEWER,
   SHR_VIEWER,
@@ -83,9 +82,9 @@ import {
 } from "@common/machines/constants";
 import { BlinkPanel } from "./appIde/SideBarPanels/BlinkPanel";
 import { createNexFileViewerPanel } from "./appIde/DocumentPanels/Next/NexFileViewerPanel";
-import { createZ80FileViewerPanel } from "./appIde/DocumentPanels/Next/Z80FileViewerPanel";
 import { createZ88SnapshotViewerPanel } from "./appIde/DocumentPanels/Z88/Z88SnapshotViewerPanel";
-import { createSnaFileViewerPanel } from "./appIde/DocumentPanels/Next/SnaFileViewerPanel";
+import { createSpectrumSnapshotViewerPanel } from "./appIde/DocumentPanels/Spectrum/SpectrumSnapshotViewerPanel";
+import { readSpectrumBankBytes } from "./appIde/DocumentPanels/Spectrum/spectrumBankDocument";
 import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileViewerPanel";
 import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
 import { createShrFileViewerPanel } from "./appIde/DocumentPanels/Next/ShrFileViewerPanel";
@@ -123,6 +122,10 @@ import {
   getNexLaunchContextMenuInfo,
   nexLaunchCommandBarRenderer
 } from "@renderer/features/documents/NexLaunchContextMenu";
+import {
+  getSpectrumSnapshotContextMenuInfo,
+  spectrumSnapshotLaunchCommandBarRenderer
+} from "@renderer/features/documents/SpectrumSnapshotLaunchMenu";
 import {
   getZ88SnapshotContextMenuInfo,
   z88SnapshotLaunchCommandBarRenderer
@@ -422,6 +425,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
       openStaticMemoryDump,
       readNexBankBytes,
       readZ88BankBytes,
+      readSpectrumBankBytes,
       readTapeBlockBytes
     })
   },
@@ -450,9 +454,12 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     navigation: fileDocumentNavigationAdapter
   },
   {
-    id: Z80_VIEWER,
-    renderer: createZ80FileViewerPanel,
-    icon: "chip"
+    // --- `.sna`, `.z80` and `.szx` (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8)
+    id: SPECTRUM_SNAPSHOT_VIEWER,
+    renderer: createSpectrumSnapshotViewerPanel,
+    icon: "chip",
+    // --- Its RAM banks pop out into documents, and Go Back must return here
+    navigation: fileDocumentNavigationAdapter
   },
   {
     id: Z88_SNAPSHOT_VIEWER,
@@ -461,11 +468,6 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     // --- Its banks pop out into documents, and Go Back must return here
     // --- (`.plans/Z88_SLOT_BROWSER_PLAN.md` §4.4)
     navigation: fileDocumentNavigationAdapter
-  },
-  {
-    id: SNA_VIEWER,
-    renderer: createSnaFileViewerPanel,
-    icon: "chip"
   },
   {
     id: SCR_VIEWER,
@@ -770,17 +772,21 @@ export const fileTypeRegistry: FileTypeEditor[] = [
    * and it cost every user the viewer for the most widely supported ZX Spectrum snapshot format
    * there is — 913 lines of complete, working parser that nothing could reach.
    *
-   * If that temp file turns out not to be a snapshot, `loadZ80FileContents` now says so rather than
-   * throwing: its length guard is the other half of this change.
+   * If that temp file turns out not to be a snapshot, the snapshot viewer
+   * (`loadSpectrumSnapshotFileContents`) says so rather than throwing, and its Run/Debug actions
+   * refuse it through the `zx-snapshot` command's parse.
    */
   {
     matchType: "ends",
     pattern: ".z80",
-    editor: Z80_VIEWER,
+    editor: SPECTRUM_SNAPSHOT_VIEWER,
     icon: "chip",
+    ignoreCase: true,
     isBinary: true,
     isReadOnly: true,
-    openPermanent: true
+    openPermanent: true,
+    documentTabRenderer: spectrumSnapshotLaunchCommandBarRenderer,
+    contextMenuInfo: getSpectrumSnapshotContextMenuInfo
   },
   {
     // --- An OZvm Cambridge Z88 snapshot (`.plans/Z88_SNAPSHOT_PLAN.md` §4.8)
@@ -795,13 +801,29 @@ export const fileTypeRegistry: FileTypeEditor[] = [
     contextMenuInfo: getZ88SnapshotContextMenuInfo
   },
   {
+    // --- ZX Spectrum snapshots (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.8-4.9)
     matchType: "ends",
     pattern: ".sna",
-    editor: SNA_VIEWER,
+    editor: SPECTRUM_SNAPSHOT_VIEWER,
     icon: "chip",
+    ignoreCase: true,
     isBinary: true,
     isReadOnly: true,
-    openPermanent: true
+    openPermanent: true,
+    documentTabRenderer: spectrumSnapshotLaunchCommandBarRenderer,
+    contextMenuInfo: getSpectrumSnapshotContextMenuInfo
+  },
+  {
+    matchType: "ends",
+    pattern: ".szx",
+    editor: SPECTRUM_SNAPSHOT_VIEWER,
+    icon: "chip",
+    ignoreCase: true,
+    isBinary: true,
+    isReadOnly: true,
+    openPermanent: true,
+    documentTabRenderer: spectrumSnapshotLaunchCommandBarRenderer,
+    contextMenuInfo: getSpectrumSnapshotContextMenuInfo
   },
   {
     matchType: "ends",

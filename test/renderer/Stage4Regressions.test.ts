@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readTapeFile } from "@renderer/utils/tape-utils";
 import { SPECTRUM_48_COLORS, SCR_FILE_LENGTH } from "@emu/machines/spectrum-colors";
 import { fileTypeRegistry } from "@renderer/registry";
-import { Z80_VIEWER } from "@state/common-ids";
+import { SPECTRUM_SNAPSHOT_VIEWER } from "@state/common-ids";
 
 /**
  * Stage 4 — the document panels.
@@ -84,18 +84,20 @@ describe("SPECTRUM_48_COLORS", () => {
 
 describe("the .z80 file type route", () => {
   /*
-   * `Z80_VIEWER` was registered as a document renderer while the `fileTypeRegistry` entry that
+   * `Z80_VIEWER` (now `SPECTRUM_SNAPSHOT_VIEWER`) was registered as a document renderer while the `fileTypeRegistry` entry that
    * routes a file to it stayed commented out, so 913 lines of working parser were unreachable for
    * six months. Nothing detected that, because both halves type-check on their own.
    */
-  it("routes .z80 files to the Z80 snapshot viewer", () => {
+  it.each([".z80", ".sna", ".szx"])("routes %s files to the ZX Spectrum snapshot viewer", (pattern) => {
+    // --- One viewer serves all three formats since `.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` (D6)
     const entry = fileTypeRegistry.find(
-      (item) => item.matchType === "ends" && item.pattern === ".z80"
+      (item) => item.matchType === "ends" && item.pattern === pattern
     );
 
-    expect(entry, ".z80 has no fileTypeRegistry entry — the Z80 viewer is unreachable").toBeTruthy();
-    expect(entry!.editor).toBe(Z80_VIEWER);
+    expect(entry, `${pattern} has no fileTypeRegistry entry — the snapshot viewer is unreachable`).toBeTruthy();
+    expect(entry!.editor).toBe(SPECTRUM_SNAPSHOT_VIEWER);
     expect(entry!.isBinary).toBe(true);
+    expect(entry!.ignoreCase).toBe(true);
   });
 
   it("does not tint the .z80 tab icon", () => {

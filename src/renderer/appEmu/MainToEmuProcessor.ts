@@ -44,6 +44,12 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBridge";
 import { setMachineConfigAction } from "@state/actions";
 import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
+import { loadSpectrumSnapshot } from "./machines/spectrumSnapshotLoad";
+import type {
+  SpectrumSnapshotLoadMode,
+  SpectrumSnapshotLoadOptions,
+  SpectrumSnapshotLoadResult
+} from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 
 const borderColors = ULA_BORDER_COLOR_NAMES;
@@ -230,6 +236,38 @@ class EmuMessageProcessor {
       contents,
       mode,
       Date.now()
+    );
+  }
+
+  /**
+   * Loads a ZX Spectrum snapshot (see `EmuApi.loadSpectrumSnapshot`).
+   * @param fileName The snapshot's file name
+   * @param contents The snapshot file
+   * @param mode What to do once the state is restored
+   * @param options Keep the model; disks the IDE read
+   */
+  loadSpectrumSnapshot(
+    fileName: string,
+    contents: Uint8Array,
+    mode: SpectrumSnapshotLoadMode,
+    options: SpectrumSnapshotLoadOptions & {
+      disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+    } = {}
+  ): Promise<SpectrumSnapshotLoadResult> {
+    const store = getCachedStore();
+    return loadSpectrumSnapshot(
+      {
+        getMachineController: () => this.machineService.getMachineController(),
+        getEmulatorState: () => store.getState()?.emulatorState ?? {},
+        setMachineType: (machineId, modelId, config) =>
+          this.machineService.setMachineType(machineId, modelId, config),
+        setTape: (file, bytes) => this.setTapeFile(file, bytes, false, true),
+        setDisk: (drive, file, bytes) => this.setDiskFile(drive, file, bytes, false, true)
+      },
+      fileName,
+      contents,
+      mode,
+      options
     );
   }
 

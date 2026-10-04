@@ -19,6 +19,8 @@ import {
 } from "@common/settings/setting-const";
 import { EmuDialogBridge } from "./EmuDialogBridge";
 import { useEmuRecordingManager, useEmuStartup } from "./useEmuStartup";
+import { useEmuFileDrop } from "./useEmuFileDrop";
+import { useCallback } from "react";
 
 const EmuApp = () => {
   // --- Used services
@@ -39,6 +41,10 @@ const EmuApp = () => {
   const isWindows = useSelector((s) => s.isWindows ?? false);
 
   useEmuStartup({ appServices, dispatch, isWindows, messenger, store });
+
+  // --- Snapshots and tapes dropped onto the window (D10)
+  const openDroppedFile = useCallback((path: string) => mainApi.openDroppedFile(path), [mainApi]);
+  useEmuFileDrop(openDroppedFile);
 
   return (
     <RecordingContext.Provider value={recordingManagerRef}>

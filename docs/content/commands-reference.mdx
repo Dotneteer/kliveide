@@ -688,6 +688,35 @@ line &mdash; with the OS initialised behind it. The first launch in a session pa
 NextZXOS boot; later ones reuse a cached machine state and start much faster.
 </Callout>
 
+## `zx-snapshot`
+
+This command loads a ZX Spectrum snapshot (a `.sna`, `.z80` or `.szx` file) and debugs or runs it.
+
+```
+zx-snapshot <snapshot-file> [-r | -d]
+```
+
+Available aliases: `zxsnap`
+
+With no option (or with `-d`), the snapshot is debugged: the machine starts in debug mode and stops
+at the snapshot's program counter before executing that instruction. Use `-r` to run the snapshot.
+Use only one option at a time.
+
+The snapshot decides the machine: the command switches to the ZX Spectrum 48K, 128K or +2E/+3E the
+snapshot needs. With a project open, it refuses a snapshot for another machine type, and keeps the
+project's model for a snapshot of the same type. Disks a `.szx` file links are read and inserted.
+
+The same actions are available from the Explorer's context menu on a snapshot file, from the buttons
+in a snapshot's document tab, from **File &rarr; Load ZX Spectrum Snapshot...**, and by dropping the
+file onto the Emulator window. See [Using ZX Spectrum Snapshots](./howto/spectrum-snapshots) for
+what Klive can load.
+
+```text
+zx-snapshot "snapshots/game.z80"
+zx-snapshot "snapshots/game.sna" -r
+zxsnap "snapshots/demo.szx" -d
+```
+
 ## `z88-snapshot`
 
 This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine and

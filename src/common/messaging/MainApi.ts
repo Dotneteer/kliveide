@@ -558,6 +558,16 @@ class MainApiImpl {
   }
 
   /**
+   * Opens a file dropped onto the emulator window (`droppedFileAction`): a snapshot is run through
+   * its IDE command, a tape is inserted. Problems are shown in a message box by the main process.
+   * @param _path The dropped file's full path
+   * @returns An error message, or undefined when the file was opened
+   */
+  async openDroppedFile(_path: string): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Brings the emulator window to the front and gives it the keyboard focus (restoring it if it is
    * minimized). Used after an IDE action starts the machine on something the user then types into,
    * such as loading a tape, so the keys reach the machine and not the IDE.

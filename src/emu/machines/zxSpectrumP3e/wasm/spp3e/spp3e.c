@@ -2384,6 +2384,19 @@ void spp3eSetCpuPc(uint32_t value) { z80SetPc(value); }
 uint32_t spp3eGetCpuSp(void) { return z80GetSp(); }
 void spp3eSetCpuSp(uint32_t value) { z80SetSp(value); }
 uint32_t spp3eGetCpuHalted(void) { return z80GetHalted(); }
+
+/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
+void spp3eSetCpuHalted(uint32_t value) {
+  z80SetHalted(value);
+}
+
+uint32_t spp3eGetCpuEiBacklog(void) {
+  return z80GetEiBacklog();
+}
+
+void spp3eSetCpuEiBacklog(uint32_t value) {
+  z80SetEiBacklog(value);
+}
 uint32_t spp3eGetCpuPrefix(void) { return z80GetPrefix(); }
 uint32_t spp3eGetCpuIff1(void) { return z80GetIff1(); }
 void spp3eSetCpuIff1(uint32_t value) { z80SetIff1(value); }

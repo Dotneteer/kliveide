@@ -17,7 +17,8 @@ import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/app-menu";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
-import { appSettings } from "@main/settings-utils";
+import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { getModelConfig } from "@common/machines/machine-registry";
 
 const TAPE_FILE_FOLDER = "tapeFileFolder";
@@ -505,4 +506,59 @@ async function resetRomFile(): Promise<void> {
   mainStore.dispatch(incMenuVersionAction());
   await logEmuEvent("ROM reset to default");
   await saveKliveProject();
+}
+
+/** The settings key of the folder the last ZX Spectrum snapshot was opened from */
+const SPECTRUM_SNAPSHOT_FOLDER = "spectrumSnapshotFolder";
+
+/**
+ * Renders the snapshot command of the ZX Spectrum machines (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
+ * §4.7). It hands the file to the IDE's `zx-snapshot` command, which switches to the machine the
+ * snapshot needs and reports problems. It runs the snapshot; debugging lives in the viewer, the
+ * Explorer and the command (D14).
+ */
+export const spectrumSnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
+  const emuWindow = windowInfo.emuWindow;
+  return [
+    { type: "separator" },
+    {
+      id: "spectrum_load_snapshot",
+      label: "Load Snapshot...",
+      click: async () => {
+        await openSpectrumSnapshot(emuWindow);
+      }
+    }
+  ];
+};
+
+/**
+ * Asks for a `.sna` / `.z80` / `.szx` file and runs it through the IDE's `zx-snapshot` command. The
+ * machine menus and File -> Load Snapshot... (D9) share it.
+ * @param browserWindow The window that owns the dialog
+ */
+export async function openSpectrumSnapshot(browserWindow: BrowserWindow): Promise<void> {
+  const dialogResult = await dialog.showOpenDialog(browserWindow, {
+    title: "Select ZX Spectrum Snapshot File",
+    defaultPath: appSettings?.folders?.[SPECTRUM_SNAPSHOT_FOLDER] || app.getPath("home"),
+    filters: [
+      { name: "ZX Spectrum Snapshots", extensions: ["sna", "z80", "szx"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+
+  const filename = dialogResult.filePaths[0];
+  appSettings.folders ??= {};
+  appSettings.folders[SPECTRUM_SNAPSHOT_FOLDER] = path.dirname(filename);
+  saveAppSettings();
+
+  const result = await getIdeApi().executeCommand(spectrumSnapshotCommandText(filename, "run"));
+  if (!result?.success) {
+    await dialog.showMessageBox(browserWindow, {
+      type: "error",
+      title: "ZX Spectrum Snapshot",
+      message: result?.finalMessage ?? `Could not load ${filename}`
+    });
+  }
 }

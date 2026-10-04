@@ -15,6 +15,11 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
+import type {
+  SpectrumSnapshotLoadMode,
+  SpectrumSnapshotLoadOptions,
+  SpectrumSnapshotLoadResult
+} from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -87,6 +92,27 @@ class EmuApiImpl {
     _contents: Uint8Array,
     _mode: Z88SnapshotLoadMode
   ): Promise<Z88SnapshotLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Loads a ZX Spectrum `.sna` / `.z80` / `.szx` snapshot into the emulator, switching to the
+   * machine it needs (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.5).
+   * @param _fileName The snapshot's file name (its extension picks the format)
+   * @param _contents The snapshot file
+   * @param _mode "run": start; "debug": start debugging, stopping at the snapshot's PC before that
+   * instruction runs
+   * @param _options `keepModel` (a project is open) and the disks the IDE read for a `.szx` file
+   * @returns What was loaded; rejects with the reason when the snapshot cannot be loaded
+   */
+  async loadSpectrumSnapshot(
+    _fileName: string,
+    _contents: Uint8Array,
+    _mode: SpectrumSnapshotLoadMode,
+    _options?: SpectrumSnapshotLoadOptions & {
+      disks?: { drive: number; fileName: string; contents: Uint8Array }[];
+    }
+  ): Promise<SpectrumSnapshotLoadResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

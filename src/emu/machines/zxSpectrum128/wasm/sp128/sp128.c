@@ -2055,6 +2055,19 @@ uint32_t sp128GetCpuHalted(void) {
   return z80GetHalted();
 }
 
+/* Snapshot loading: the HALT state and the EI delay (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md` §4.4) */
+void sp128SetCpuHalted(uint32_t value) {
+  z80SetHalted(value);
+}
+
+uint32_t sp128GetCpuEiBacklog(void) {
+  return z80GetEiBacklog();
+}
+
+void sp128SetCpuEiBacklog(uint32_t value) {
+  z80SetEiBacklog(value);
+}
+
 uint32_t sp128GetCpuPrefix(void) {
   return z80GetPrefix();
 }

@@ -3376,6 +3376,8 @@ uint32_t z80GetSp(void) { return cpu.sp; }
 void z80SetSp(uint32_t value) { cpu.sp = (uint16_t)value; }
 uint32_t z80GetPrefix(void) { return cpu.prefix; }
 uint32_t z80GetHalted(void) { return cpu.halted; }
+/* Puts the CPU into (or out of) the HALT state; PC stays on the HALT opcode, as `op76Halt` leaves it */
+void z80SetHalted(uint32_t value) { cpu.halted = value != 0; }
 uint32_t z80GetZ80NMode(void) { return cpu.z80nMode; }
 void z80SetZ80NMode(uint32_t value) { cpu.z80nMode = value != 0; }
 

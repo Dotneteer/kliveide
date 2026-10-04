@@ -107,6 +107,15 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   sp128GetCpuSp: Sp128WasmV2ExportFunction;
   sp128SetCpuSp: Sp128WasmV2ExportFunction;
   sp128GetCpuHalted: Sp128WasmV2ExportFunction;
+  sp128SetCpuHalted: Sp128WasmV2ExportFunction;
+  sp128GetCpuEiBacklog: Sp128WasmV2ExportFunction;
+  sp128SetCpuEiBacklog: Sp128WasmV2ExportFunction;
+  sp128GetCpuIff1: Sp128WasmV2ExportFunction;
+  sp128SetCpuIff1: Sp128WasmV2ExportFunction;
+  sp128GetCpuIff2: Sp128WasmV2ExportFunction;
+  sp128SetCpuIff2: Sp128WasmV2ExportFunction;
+  sp128GetCpuInterruptMode: Sp128WasmV2ExportFunction;
+  sp128SetCpuInterruptMode: Sp128WasmV2ExportFunction;
   sp128GetCpuPrefix: Sp128WasmV2ExportFunction;
   sp128GetAccessLogPtr: Sp128WasmV2ExportFunction;
   sp128GetAccessLogCount: Sp128WasmV2ExportFunction;
@@ -297,6 +306,15 @@ const requiredV2Exports = [
   "sp128GetCpuSp",
   "sp128SetCpuSp",
   "sp128GetCpuHalted",
+  "sp128SetCpuHalted",
+  "sp128GetCpuEiBacklog",
+  "sp128SetCpuEiBacklog",
+  "sp128GetCpuIff1",
+  "sp128SetCpuIff1",
+  "sp128GetCpuIff2",
+  "sp128SetCpuIff2",
+  "sp128GetCpuInterruptMode",
+  "sp128SetCpuInterruptMode",
   "sp128GetCpuPrefix",
   "sp128GetAccessLogPtr",
   "sp128GetAccessLogCount",

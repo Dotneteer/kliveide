@@ -45,6 +45,7 @@ it("prints through the ROM", async () => {
 | | `typeFlowKeys(flow, { hold, gap })` | Types a code-injection flow's `QueueKey` steps (for example `sp48TapeLoadFlow()`), so a test checks the keys the IDE queues. |
 | Tape | `insertTape(blocks, { fastLoad })` | Puts `TapeDataBlock`s in the deck (`MEDIA_TAPE`), fast load on by default; the ROM's LOAD reads them. |
 | Memory | `peek`, `peekWord`, `poke`, `pokeWord` | Through the machine's memory API. |
+| Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
 
 ## Notes
