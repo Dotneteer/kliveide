@@ -177,14 +177,24 @@ export function z88CardSpec(cardTypeId: string, sizeK: number): Z88CardSpec {
   }
 }
 
+/** The largest ROM image slot 0 takes: its ROM half (banks $00-$1F); $20-$3F are the internal RAM */
+export const Z88_SLOT0_ROM_MAX_SIZE = 0x08_0000;
+
 /**
- * The card of a ROM image loaded without a slot-0 configuration: a ROM card as large as the image.
- * @param sizeInBytes The image length, which must be a card size
- * @throws "Invalid memory card size" for any other length
+ * The card of a ROM image loaded without a slot-0 configuration, as OZvm's `Memory.loadRomBinary`
+ * makes it: a 512K image is an AMD 29F040B flash chip - OZ 4.5 and later update their ROM and keep a
+ * file area in slot 0 - and a smaller image a ROM card as large as the image.
+ * @param sizeInBytes The image length: a card size of at most 512K
+ * @throws For a longer image (it would overwrite the internal RAM at $080000), or any other length
  */
 export function z88RomImageCardSpec(sizeInBytes: number): Z88CardSpec {
+  if (sizeInBytes > Z88_SLOT0_ROM_MAX_SIZE) {
+    throw new Error(`A slot 0 ROM image can be at most 512K (this one is ${sizeInBytes / 1024}K)`);
+  }
   z88ChipMaskForSize(sizeInBytes);
-  return { kind: "ROM", sizeInBytes };
+  return sizeInBytes === Z88_SLOT0_ROM_MAX_SIZE
+    ? { kind: "AMD_FLASH_29F040B", sizeInBytes }
+    : { kind: "ROM", sizeInBytes };
 }
 
 /**

@@ -11,7 +11,8 @@ import { REPO_ROOT } from "../core/machines";
 describe("Z88 harness session", () => {
   it("creates a blank machine: nothing in slot 0 but a blank ROM card", async () => {
     const s = await createZ88Session();
-    expect(s.physPeek(0x00_0000)).toBe(0x00);
+    // --- A ROM card with no image is blank: $FF, as OZvm's `RomBank` starts
+    expect(s.physPeek(0x00_0000)).toBe(0xff);
     expect(s.registers().pc).toBe(0x0000);
     expect(s.lcdWidth).toBe(640);
     expect(s.lcdHeight).toBe(64);

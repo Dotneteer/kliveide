@@ -251,6 +251,14 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   inline (it portals only while visible), so it is safe as a child of the row's flex container.
   Keep per-cell tooltips only where a row genuinely has two things to say — `NextRegPanel` names
   its previous and current values separately.
+- **In a narrow sidebar, a row tooltip opens *under* the row and wraps.** `placement="right"` on a
+  full-width row places the box past the row's far end - past the sidebar's edge, far from the value
+  it explains - and `.tooltip` has no width limit, so a sentence-long description ran out of the
+  window on one line (the Z88 Blink panel). Use `placement="bottom-start"` (it aligns the box with
+  the row's label) with `className={regStyles.rowTooltip}` (`max-width` in `ch`, wrapping); the
+  shared `FlagFieldRow` takes `tooltipBelow` for the same. The box covers the rows below while the
+  pointer is there, which is harmless: tooltips are `pointer-events: none`.
+
 - **A row tooltip and a cell tooltip inside it are two boxes for one pointer.** Where a row's cells
   each have something to say — 192 array bytes, eight flag bits — do not give the cells tooltips
   *and* the row one: both appear, at different placements and on different timings, and a native
@@ -417,6 +425,14 @@ colouring one never touches the others or the still-neutral panels. Full role ta
   hierarchy against neighbouring text is better carried by colour anyway. **Run
   `test/theming/type-scale-contract.test.ts` under the `!perf` project, not `jsdom`** — it is a
   `.test.ts`, so a `jsdom` run silently does not include it and an `em` slips through.
+
+- **A register that is a pointer shows what it points at as the secondary cell, not as a second
+  value.** The Z88 Blink panel's SBF and PB0-PB3 rows (issue #1417) keep the raw 16-bit value in
+  the state-value colour and put the decoded 24-bit address after it as `DataSecondary`, in the
+  machine's own notation (OZvm's `(243800h)`) - the slot a byte register's decimal reading takes.
+  It is a reading *of* the value, so it stays muted; colouring it too would make two payloads compete
+  in a row that holds one. The decoding lives in `@common/z88/z88ScreenPointers`, shared with the
+  snapshot viewer, never inline in a panel.
 
 - **Split a composed readout into "outcome" and "evidence" and colour only the outcome.** The first
   build wrapped the whole sentence in the accent-status colour and produced a green paragraph in a

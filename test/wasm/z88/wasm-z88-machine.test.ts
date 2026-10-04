@@ -173,7 +173,8 @@ describe("Cambridge Z88 WASM machine - setup", () => {
     const wasm = (await createHarnessZ88Machine()) as Z88WasmV2Machine;
     expect(wasm.getInsertedCard(0)).toEqual({ kind: "ROM", sizeInBytes: 0x08_0000 });
     for (const slot of [1, 2, 3]) expect(wasm.getInsertedCard(slot)).toBeUndefined();
-    expect(wasm.directReadMemory(0)).toBe(0);
+    // --- A ROM card with no image is blank, $FF, as OZvm's `RomBank` starts
+    expect(wasm.directReadMemory(0)).toBe(0xff);
   });
 
   it.each([
@@ -249,6 +250,36 @@ describe("Cambridge Z88 WASM machine - cards", () => {
     });
   });
 
+  it("changing one slot leaves the cards of the other slots, and what they hold, alone", async () => {
+    // --- Every card change once inserted all three slots again, erasing a flash card to $FF
+    const wasm = await machineWith({ [MC_Z88_SLOT3]: { size: 512, cardType: CardIds.AMDF29F040B } }, {});
+    await wasm.configure();
+    const programmed = 3 * SLOT + 0x1234;
+    wasm.wasmV2Runtime!.memory[programmed] = 0x42;
+    wasm.dynamicConfig = {
+      [MC_Z88_SLOT3]: { size: 512, cardType: CardIds.AMDF29F040B },
+      [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32 }
+    };
+    await wasm.configure();
+    expect(wasm.directReadMemory(programmed)).toBe(0x42);
+    expect(wasm.getInsertedCard(1)).toEqual({ kind: "RAM", sizeInBytes: 0x8000 });
+  });
+
+  it("a new card never shows the bytes of the card that was in the slot before", async () => {
+    const image = new Uint8Array(0x8000).fill(0x5a);
+    const wasm = await machineWith({ [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" } }, {
+      "ram.bin": image
+    });
+    await wasm.configure();
+    wasm.dynamicConfig = { [MC_Z88_SLOT1]: { size: 0, cardType: "-" } };
+    await wasm.configure();
+    // --- A new RAM card is zeroed (OZvm's `RamBank`), not left with the old card's $5A
+    wasm.dynamicConfig = { [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32 } };
+    await wasm.configure();
+    expect(wasm.directReadMemory(SLOT)).toBe(0x00);
+    expect(wasm.directReadMemory(SLOT + 0x7fff)).toBe(0x00);
+  });
+
   it("removing a card keeps its bytes in physical memory", async () => {
     const ram = new Uint8Array(0x8000).fill(0x5a);
     const wasm = await machineWith({ [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32, file: "ram.bin" } }, {
@@ -309,19 +340,61 @@ describe("Cambridge Z88 WASM machine - cards", () => {
 });
 
 describe("Cambridge Z88 WASM machine - reset and power-on", () => {
-  it("hard reset clears the internal RAM, keeps and re-inserts the cards", async () => {
-    const wasm = (await createHarnessZ88Machine({ model: "OZ40", rom: "model" })) as Z88WasmV2Machine;
+  it("hard reset clears every RAM and keeps ROM, EPROM and flash as they are (OZvm's hard reset)", async () => {
+    const model = machineRegistry.find((m) => m.machineId === "z88").models[0];
+    const wasm = (await createHarnessZ88Machine({ model: model.modelId, rom: "model" })) as Z88WasmV2Machine;
+    wasm.dynamicConfig = {
+      [MC_Z88_SLOT1]: { size: 32, cardType: CardIds.RAM32 },
+      [MC_Z88_SLOT3]: { size: 512, cardType: CardIds.AMDF29F040B }
+    };
+    await wasm.configure();
     const memory = wasm.wasmV2Runtime!.memory;
-    const romByte = memory[0x1234];
-    memory[0x08_0100] = 0x55;
-    memory[0x1234] = romByte ^ 0xff;
+    const romBank0 = memory.slice(0, 0x4000);
+    memory[0x08_0100] = 0x55; // internal RAM
+    memory[SLOT + 0x100] = 0x66; // the RAM card in slot 1
+    memory[3 * SLOT + 0x100] = 0x77; // what OZ programmed into the flash card in slot 3
+    memory[0x3fff] ^= 0xff; // what OZ wrote into the slot-0 flash (OZ 5.0 runs from an AMD flash chip)
 
     await wasm.hardReset();
 
     expect(memory[0x08_0100]).toBe(0x00);
-    // --- The ROM image was re-inserted from its file
-    expect(memory[0x1234]).toBe(romByte);
-    expect(wasm.getInsertedCard(0)).toEqual({ kind: "ROM", sizeInBytes: 0x2_0000 });
+    expect(memory[SLOT + 0x100]).toBe(0x00);
+    expect(memory[3 * SLOT + 0x100]).toBe(0x77);
+    // --- The slot-0 ROM stayed in place: not loaded from its file again
+    expect(memory[0x3fff]).toBe(romBank0[0x3fff] ^ 0xff);
+    expect(memory.subarray(0, 0x3fff)).toEqual(romBank0.subarray(0, 0x3fff));
+    expect(wasm.getInsertedCard(0)).toEqual({ kind: "AMD_FLASH_29F040B", sizeInBytes: 0x8_0000 });
+  });
+
+  it("the reset button keeps the Blink - COM, SR0-SR3, the interrupt registers, the clock (OZvm)", async () => {
+    const wasm = (await createHarnessZ88Machine({ rom: "model" })) as Z88WasmV2Machine;
+    // --- OZ has booted for a while and set the Blink up: the clock runs, the LCD is on
+    for (let i = 0; i < 300; i++) wasm.executeMachineFrame();
+    const before = wasm.getBlinkState();
+    expect(before.TIM1 * 200 + before.TIM0).toBeGreaterThan(0);
+    expect(before.SBF).not.toBe(0);
+
+    wasm.reset();
+
+    const { keyLines: _k, ...after } = wasm.getBlinkState();
+    const { keyLines: _kb, ...expected } = before;
+    expect(after).toEqual(expected);
+    expect(wasm.pc).toBe(0);
+  });
+
+  it("power-on puts the Blink in its power-on state", async () => {
+    const wasm = (await createHarnessZ88Machine({ rom: "model" })) as Z88WasmV2Machine;
+    wasm.doWritePort(0xd2, 0x21);
+    wasm.doWritePort(0xb0, 0x05);
+    wasm.doWritePort(0x0174, 0x27);
+    await wasm.hardReset();
+    const blink = wasm.getBlinkState();
+    expect([blink.COM, blink.SR0, blink.SR2, blink.INT, blink.STA, blink.TMK, blink.SBF]).toEqual([
+      0x00, 0x00, 0x00, 0x23, 0x00, 0x01, 0x0000
+    ]);
+    // --- COM.RAMS is clear, so $0000 reads the ROM (bank $00), not bank $20
+    expect(wasm.wasmV2Runtime!.exports.z88GetPageBank(0)).toBe(0x00);
+    expect(wasm.wasmV2Runtime!.exports.z88GetInterruptSignal()).toBe(0);
   });
 
   it("reset keeps memory, clears the keystroke queue and the sleep flag, and resets the CPU", async () => {

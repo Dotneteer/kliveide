@@ -2,6 +2,12 @@ import { describe, it, expect } from "vitest";
 import { createZ88TestSurface } from "./z88-test-surface";
 import { COMFlags } from "./z88-blink-flags";
 
+/**
+ * A ROM card inserted without an image is blank: every byte $FF, as OZvm's `RomBank` starts (the
+ * TypeScript machine's blank ROM read $00; `.plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.7)
+ */
+const BLANK_ROM = 0xff;
+
 describe("Z88 - Memory write", function () {
   const addresses: number[] = [
     0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
@@ -32,7 +38,7 @@ describe("Z88 - Memory write", function () {
       // --- Write to ROM
       m.memory.writeMemory(addr, 0x23);
       const value = m.memory.readMemory(addr);
-      expect(value).toBe(0);
+      expect(value).toBe(BLANK_ROM);
     });
   });
 
@@ -66,7 +72,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // --- ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -101,7 +107,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // --- ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -136,7 +142,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // --- ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -171,7 +177,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -206,7 +212,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // --- ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -241,7 +247,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -271,7 +277,7 @@ describe("Z88 - Memory write", function () {
 
       m.memory.writeMemory(addr, 0x23);
       const value = m.memory.readMemory(addr);
-      expect(value).toBe(0);
+      expect(value).toBe(BLANK_ROM);
     });
   });
 
@@ -308,7 +314,7 @@ describe("Z88 - Memory write", function () {
         expect(value).toBe(0x23);
       } else {
         // ROM area
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });

@@ -6,9 +6,19 @@ import { useEmuApi } from "@renderer/core/EmuApi";
 import { BlinkState } from "@common/messaging/EmuApi";
 import { BitValue, FlagFieldRow } from "@renderer/controls/data/registers";
 import { DataPanel, DataRow } from "@renderer/controls/data";
-import { DataLabel, HexValue } from "@renderer/controls/data";
+import { DataLabel, DataSecondary, HexValue } from "@renderer/controls/data";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import {
+  formatZ88Ext24,
+  z88Pb0Address,
+  z88Pb1Address,
+  z88Pb2Address,
+  z88Pb3Address,
+  z88SbfAddress,
+  z88SbfSize,
+  type Z88ScreenPointer
+} from "@common/z88/z88ScreenPointers";
 
 // M2: a bare number reaches `DataLabel` as `ch`, but nothing said so at the call site. Spelled.
 const LAB_WIDTH = "7ch";
@@ -21,6 +31,12 @@ const KEY_LAB_WIDTH = "8ch"; // 46px / 6.4 = 7.2
  * `--data-label`. Before this the Z88 debug sidebar was the last one still entirely neutral.
  */
 const VALUE_FILL = "--color-state-value";
+
+/*
+ * Every row's tooltip opens under the row, by its label and value, and wraps (`.rowTooltip`). The
+ * descriptions are a sentence or two long; opened to the right of a full-width sidebar row they
+ * started past the sidebar's edge, far from the value, and ran out of the window on one line.
+ */
 
 export const BlinkPanel = () => {
   const emuApi = useEmuApi();
@@ -36,6 +52,7 @@ export const BlinkPanel = () => {
         value={blinkState?.COM}
         flagDescriptions={COMDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="INT"
@@ -43,6 +60,7 @@ export const BlinkPanel = () => {
         value={blinkState?.INT}
         flagDescriptions={INTDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="STA"
@@ -50,6 +68,7 @@ export const BlinkPanel = () => {
         value={blinkState?.STA}
         flagDescriptions={STADescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <Separator />
       <ValueFieldRow
@@ -73,36 +92,36 @@ export const BlinkPanel = () => {
         value={blinkState?.SR3}
       />
       <Separator />
-      <ValueFieldRow
-        label="SBR"
-        tooltip="Screen Base Register  - Point to Screen Base File of characters and attributes (typically) in RAM"
-        value={blinkState?.SBR}
-        word={true}
+      <PointerFieldRow
+        label="SBF"
+        tooltip={`Screen Base File - ${z88SbfSize(blinkState?.SCH ?? 8) / 1024}K of character/attribute pairs (256 bytes per text row), typically in RAM. In brackets: the bank and offset it points at.`}
+        value={blinkState?.SBF}
+        decode={z88SbfAddress}
       />
       <Separator />
-      <ValueFieldRow
+      <PointerFieldRow
         label="PB0"
-        tooltip="Pixel Base 0 - Point to LORES0 (64 characters, 6 by 8 pixel) user defined font bitmap (typically) in RAM"
+        tooltip="Pixel Base 0 - Point to LORES0 (64 characters, 6 by 8 pixel) user defined font bitmap (typically) in RAM. In brackets: the bank and offset it points at."
         value={blinkState?.PB0}
-        word={true}
+        decode={z88Pb0Address}
       />
-      <ValueFieldRow
+      <PointerFieldRow
         label="PB1"
-        tooltip="Pixel Base 1 - Point to LORES1 (448 characters, 6 by 8 pixel) font bitmap (typically) in ROM"
+        tooltip="Pixel Base 1 - Point to LORES1 (448 characters, 6 by 8 pixel) font bitmap (typically) in ROM. In brackets: the bank and offset it points at."
         value={blinkState?.PB1}
-        word={true}
+        decode={z88Pb1Address}
       />
-      <ValueFieldRow
+      <PointerFieldRow
         label="PB2"
-        tooltip='Pixel Base 2 - Point to HIRES0 (768 characters, 8 by 8 pixel) "PipeDream" map (typically) in RAM'
+        tooltip='Pixel Base 2 - Point to HIRES0 (768 characters, 8 by 8 pixel) "PipeDream" map (typically) in RAM. In brackets: the bank and offset it points at.'
         value={blinkState?.PB2}
-        word={true}
+        decode={z88Pb2Address}
       />
-      <ValueFieldRow
+      <PointerFieldRow
         label="PB3"
-        tooltip='Pixel Base 3 - Point to HIRES1 (256 characters, 8 by 8 pixel) "OZ" font bitmap (typically) in ROM'
+        tooltip='Pixel Base 3 - Point to HIRES1 (256 characters, 8 by 8 pixel) "OZ" font bitmap (typically) in ROM. In brackets: the bank and offset it points at.'
         value={blinkState?.PB3}
-        word={true}
+        decode={z88Pb3Address}
       />
       <Separator />
       <ValueFieldRow
@@ -136,6 +155,7 @@ export const BlinkPanel = () => {
         value={blinkState?.TSTA}
         flagDescriptions={TSTADescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="TMK"
@@ -143,6 +163,7 @@ export const BlinkPanel = () => {
         value={blinkState?.TMK}
         flagDescriptions={TMKDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <Separator />
       <DataRow dense>
@@ -242,10 +263,9 @@ type ValueFieldProps = {
   label: string;
   tooltip: string;
   value: number;
-  word?: boolean;
 };
 
-const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
+const ValueFieldRow = ({ label, tooltip, value }: ValueFieldProps) => {
   /*
    * One styled tooltip on the row, not a native `title` on the label.
    *
@@ -261,18 +281,53 @@ const ValueFieldRow = ({ label, tooltip, value, word }: ValueFieldProps) => {
       <DataLabel text={label} width={LAB_WIDTH} />
       <HexValue
         value={value ?? 0}
-        digits={word ? 4 : 2}
+        digits={2}
         decimal
         valueXclass={regStyles.stateValue}
       />
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement="right"
-          offsetX={0}
+          placement="bottom-start"
+          offsetX={2}
           offsetY={0}
           showDelay={100}
           content={tooltip}
+          className={regStyles.rowTooltip}
+        />
+      )}
+    </DataRow>
+  );
+};
+
+type PointerFieldProps = {
+  label: string;
+  tooltip: string;
+  value: number;
+  decode: (value: number) => Z88ScreenPointer;
+};
+
+/*
+ * An LCD pointer register (SBF, PB0-PB3): the raw 16-bit value, then - in OZvm's form, `(243800h)` -
+ * the 24-bit bank and offset it points at, which a memory view can open directly (issue #1417).
+ */
+const PointerFieldRow = ({ label, tooltip, value, decode }: PointerFieldProps) => {
+  const ref = useTooltipRef<HTMLDivElement>();
+  const raw = value ?? 0;
+  return (
+    <DataRow dense ref={ref}>
+      <DataLabel text={label} width={LAB_WIDTH} />
+      <HexValue value={raw} digits={4} valueXclass={regStyles.stateValue} />
+      <DataSecondary text={`(${formatZ88Ext24(decode(raw).ext24)})`} />
+      {tooltip && (
+        <TooltipFactory
+          refElement={ref.current}
+          placement="bottom-start"
+          offsetX={2}
+          offsetY={0}
+          showDelay={100}
+          content={tooltip}
+          className={regStyles.rowTooltip}
         />
       )}
     </DataRow>

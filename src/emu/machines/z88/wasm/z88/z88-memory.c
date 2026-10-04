@@ -206,6 +206,38 @@ static uint8_t z88RandomRead(void) {
   return (uint8_t)(z88RndSeed >> 8);
 }
 
+/* The value the next empty-slot read will return, without consuming it (the debugger's view) */
+static uint8_t z88RandomPeek(void) {
+  uint32_t seed = z88RndSeed;
+  const uint32_t carry = seed & 0x0001u;
+  seed >>= 1;
+  seed ^= carry ? 0xb4b8u : 0x00b8u;
+  return (uint8_t)(seed >> 8);
+}
+
+/*
+ * A byte of a bank as the Blink's own fetches see it (the LCD): through the bank map, so a card smaller
+ * than its slot is mirrored as the CPU sees it, with the offset wrapped inside the 16K bank (OZvm's
+ * `Bank.getByte`), the array whatever a flash chip's command state, and $FF for an empty slot. No side
+ * effect: the empty-slot generator is not advanced.
+ */
+static uint8_t z88PeekBank(uint8_t bank, uint32_t offset) {
+  if (z88CardOfBank(bank) == Z88_PAGE_NO_CARD) return 0xffu;
+  return z88Memory[z88BankOffset(bank) + (offset & 0x3fffu)];
+}
+
+/*
+ * A byte of the 64K logical space with no side effect (the IDE's memory views, breakpoint conditions):
+ * an empty page shows the value the CPU will read next without consuming it, and a flash chip in a
+ * command state shows its array, so looking at memory never aborts a command.
+ */
+static uint8_t z88MemoryPeek(uint16_t address) {
+  const uint32_t page = address >> 13;
+  const uint8_t card = z88PageCard[page];
+  if (card == Z88_PAGE_NO_CARD) return z88RandomPeek();
+  return z88Memory[z88PageOffset[page] + (address & 0x1fffu)];
+}
+
 static uint8_t z88MemoryRead(uint16_t address) {
   const uint32_t page = address >> 13;
   const uint8_t card = z88PageCard[page];
@@ -275,14 +307,21 @@ uint32_t z88ReadMemory(uint32_t address) {
   return z88MemoryRead((uint16_t)(address & 0xffffu));
 }
 
+/* Reads through the current paging with no side effect at all (see `z88MemoryPeek`) */
+uint32_t z88PeekMemory(uint32_t address) {
+  return z88MemoryPeek((uint16_t)(address & 0xffffu));
+}
+
 /* Writes through the current paging, as `Z88BankedMemory.writeMemory` */
 void z88WriteMemory(uint32_t address, uint32_t value) {
   z88MemoryWrite((uint16_t)(address & 0xffffu), (uint8_t)value);
 }
 
 /*
- * Inserts a card: the paging is recalculated, then the card's `onInserted` - EPROM and flash cards are
- * erased ($FF) and a flash chip starts in read-array mode. The host copies the card image afterwards.
+ * Inserts a new card: the paging is recalculated, then the card's `onInserted` - a new card holds no
+ * bytes of whatever was in the slot before: RAM is zeroed, ROM, EPROM and flash are blank ($FF), and a
+ * flash chip starts in read-array mode. The host copies the card image afterwards. The host does not
+ * call this for a card that stays in its slot, so a programmed flash card keeps its bytes.
  */
 void z88InsertCard(uint32_t slot, uint32_t kind, uint32_t size) {
   if (slot > 3u) return;
@@ -293,7 +332,7 @@ void z88InsertCard(uint32_t slot, uint32_t kind, uint32_t size) {
   z88CardInserted(slot);
 }
 
-/* Removes a card; its bytes stay in physical memory */
+/* Removes a card; its bytes stay in physical memory until a new card is inserted */
 void z88RemoveCard(uint32_t slot) {
   if (slot > 3u) return;
   z88Cards[slot].kind = Z88_CARD_NONE;

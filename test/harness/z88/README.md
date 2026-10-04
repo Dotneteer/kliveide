@@ -39,7 +39,7 @@ sample rate, setup and hard reset) and attaches a `DebugSupport` (step-into need
 |---|---|---|
 | `model` | first registered | A model id: `OZ50`, `OZ47`, `OZ40`, `OZ40FI`, `OZ30`, ... |
 | `config` | the model's | A configuration override, e.g. `{ ...model.config, screenSize: "640x480" }` |
-| `rom` | `"blank"` | `"blank"`: no setup, slot 0 holds a blank 512K ROM card - nothing runs until you load code. `"model"`: load the model's ROM and cards and hard reset, as the app does. |
+| `rom` | `"blank"` | `"blank"`: no setup, slot 0 holds a blank 512K ROM card (every byte $FF) - nothing runs until you load code. `"model"`: load the model's ROM and cards and hard reset, as the app does. |
 | `audioSampleRate` | none | Set it for any audio test. Without it the beeper emits no samples (the app always sets a rate). |
 
 ## Session API

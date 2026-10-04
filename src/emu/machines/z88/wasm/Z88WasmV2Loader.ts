@@ -13,8 +13,8 @@ export const Z88_WASM_V2_ARTIFACT_NAME = "cambridge-z88.wasm";
 /** The 4 MB physical memory: slot N (0-3) at N * $100000, internal RAM at $080000 */
 export const Z88_WASM_V2_MEMORY_SIZE = 0x40_0000;
 
-/** The pixel buffer holds the largest LCD: 800 x 480 */
-export const Z88_WASM_V2_PIXEL_BUFFER_WORDS = 800 * 480;
+/** The pixel buffer holds the largest LCD: 640 x 480 */
+export const Z88_WASM_V2_PIXEL_BUFFER_WORDS = 640 * 480;
 
 export const Z88_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
@@ -49,7 +49,7 @@ export type Z88WasmV2Views = {
   readonly memoryBuffer: ArrayBuffer;
   /** The 4 MB physical memory */
   readonly memory: Uint8Array;
-  /** The whole pixel buffer (800 x 480 words); the LCD uses its first width x height words */
+  /** The whole pixel buffer (640 x 480 words); the LCD uses its first width x height words */
   readonly pixelBuffer: Uint32Array;
   /** The same pixel buffer as RGBA bytes, for the renderer's zero-copy path */
   readonly pixelBufferBytes: Uint8ClampedArray;
@@ -119,6 +119,7 @@ export const z88WasmV2RequiredExports = [
   "z88GetLcdSurroundColor",
   // --- Memory and cards
   "z88ReadMemory",
+  "z88PeekMemory",
   "z88WriteMemory",
   "z88InsertCard",
   "z88RemoveCard",
@@ -166,13 +167,17 @@ export const z88WasmV2RequiredExports = [
   "z88SetAck",
   "z88GetInterruptSignal",
   "z88GetPb",
-  "z88GetSbr",
+  "z88GetSbf",
   "z88GetEarBit",
+  "z88ResetBlink",
+  "z88UartTxPtr",
+  "z88GetUartTxCount",
+  "z88ClearUartTx",
   // --- Restoring a saved state (.z88 snapshots)
   "z88SetTim",
   "z88SetTsta",
   "z88SetPb",
-  "z88SetSbr",
+  "z88SetSbf",
   "z88DrawLcd",
   // --- CPU and bus events
   "z88GetCpuAf",

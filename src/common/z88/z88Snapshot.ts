@@ -59,7 +59,8 @@ export type Z88SnapshotBlink = {
   tim: Z88Tim;
   /** PB0..PB3: LORES0, LORES1, HIRES0, HIRES1 */
   pb: [number, number, number, number];
-  sbr: number;
+  /** SBF, the Screen Base File register (stored under the key "SBR", as OZvm writes it) */
+  sbf: number;
   /** LCD width in pixels / 8 */
   scw: number;
   /** LCD height in pixels / 8 */
@@ -187,7 +188,7 @@ export function parseZ88Snapshot(bytes: Uint8Array): Z88Snapshot {
       props.byte("TIM4")
     ],
     pb: [props.word("PB0"), props.word("PB1"), props.word("PB2"), props.word("PB3")],
-    sbr: props.word("SBR"),
+    sbf: props.word("SBR"),
     scw: props.word("SCW", 0x0050),
     sch: props.word("SCH", 0x0008)
   };

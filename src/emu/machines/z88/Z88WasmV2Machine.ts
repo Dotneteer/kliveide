@@ -21,6 +21,9 @@ import { z88InternalRamSizeInBytes } from "./z88CardCatalog";
 import { Z88WasmHost } from "./Z88WasmHost";
 import { Z88_INTERNAL_RAM_BANK } from "@common/z88/z88Snapshot";
 import { adjustZ88LostTime } from "@common/z88/z88Rtc";
+import { createIdeApi } from "@common/messaging/IdeApi";
+import { PANE_ID_EMU } from "@common/integration/constants";
+import { Z88UartTxLines } from "./z88UartTx";
 import {
   captureWasmImage,
   restoreWasmImage,
@@ -114,6 +117,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
   /** The clock multiplier last handed to the core */
   private syncedTargetClockMultiplier = -1;
+
+  /** The serial port's TXD bytes, collected into lines for the IDE's output */
+  private readonly uartTxLines = new Z88UartTxLines();
 
   constructor(
     modelInfo?: MachineModel,
@@ -384,13 +390,15 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   /**
    * Loads the core once, and applies the configured LCD size. A freshly loaded core starts the way
    * a constructed `Z88Machine` did: the internal RAM sized by `MC_Z88_INTRAM`, a blank 512K ROM
-   * card in slot 0 (which `setup()` then replaces), and a reset (which pages SR0-SR3 to bank 0).
+   * card in slot 0 (which `setup()` then replaces), the Blink in its power-on state (SR0-SR3 page
+   * bank 0) and a reset. The reset button alone leaves the Blink as it is.
    */
   protected async prepareBackend(): Promise<void> {
     if (this.wasmV2Runtime == null) {
       this.wasmV2Runtime = await loadZ88WasmV2(this.wasmV2LoaderOptions);
       this.wasmV2Runtime.exports.z88SetInternalRamSize(this.internalRam.sizeInBytes);
       this.insertCardIntoBackend(0, { kind: "ROM", sizeInBytes: 0x08_0000 });
+      this.wasmV2Runtime.exports.z88ResetBlink();
       this.reset();
     }
     this.applyLcdSize(this.wasmV2Runtime);
@@ -408,8 +416,9 @@ export class Z88WasmV2Machine extends Z88WasmHost {
   }
 
   /**
-   * Power on: the core clears the internal RAM and resets (the cards keep their bytes), then the
-   * host sets the machine up again - which re-inserts the cards - and resets.
+   * Power on: the core clears every RAM (internal and RAM cards) and resets the Blink and the CPU;
+   * ROM, EPROM and flash keep their bytes. Then the host sets the machine up again - inserting only
+   * the cards that changed - and resets.
    */
   override async hardReset(): Promise<void> {
     this.wasmV2Runtime?.exports.z88HardReset();
@@ -457,6 +466,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     this.syncTargetClockMultiplier(runtime);
     runtime.exports.z88ExecuteFrame();
     this.syncFrameCountersFromWasmV2(runtime);
+    this.flushUartTx(runtime);
     this.frameCompleted = true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
@@ -583,6 +593,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     const runtime = this.requireWasmV2Runtime();
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
+    this.flushUartTx(runtime);
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -732,6 +743,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     });
     this.wasmV2AudioSamples.length = 0;
     this.syncedTargetClockMultiplier = -1;
+    this.adoptConfiguredSlots();
     // --- The RTC stays as saved (D20); the audio rate is the live host's
     this.syncAudioSampleRate(runtime);
     this.syncFrameCountersFromWasmV2(runtime);
@@ -770,6 +782,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
 
     // --- A clean machine, with no stale bytes of a card the snapshot does not have
     this.reset();
+    w.z88ResetBlink();
     runtime.memory.fill(0);
 
     // --- Cards, then the internal RAM (banks $20-$3F, at $080000)
@@ -782,6 +795,8 @@ export class Z88WasmV2Machine extends Z88WasmHost {
       }
     }
     runtime.memory.set(snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
+    // --- A later card change or hard reset keeps the snapshot's cards and what they hold
+    this.adoptConfiguredSlots();
 
     // --- The Blink. COM first: SR0's paging depends on COM.RAMS, and COM.RESTIM clears TIM.
     const blink = snapshot.blink;
@@ -792,7 +807,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     w.z88SetTmk(blink.tmk);
     w.z88SetTsta(blink.tsta);
     blink.pb.forEach((value, index) => w.z88SetPb(index, value));
-    w.z88SetSbr(blink.sbr);
+    w.z88SetSbf(blink.sbf);
     const tim = adjustZ88LostTime(blink.tim, snapshot.stoppedAt, nowMs);
     tim.forEach((value, index) => w.z88SetTim(index, value));
 
@@ -899,6 +914,28 @@ export class Z88WasmV2Machine extends Z88WasmHost {
     this.requireWasmV2Runtime().exports.z88WritePort(address & 0xffff, value & 0xff);
   }
 
+  /**
+   * Sends the bytes the Z88 wrote to TXD ($E3) since the last frame to the IDE's emulator output, a
+   * line at a time (OZvm echoes them to its runtime message panel). One boundary call when there are
+   * none.
+   */
+  private flushUartTx(runtime: Z88WasmV2Runtime): void {
+    const w = runtime.exports;
+    const count = w.z88GetUartTxCount();
+    if (count === 0) return;
+    const bytes = new Uint8Array(w.memory.buffer, w.z88UartTxPtr(), count).slice();
+    w.z88ClearUartTx();
+    const lines = this.uartTxLines.push(bytes);
+    if (lines.length === 0 || !this.messenger) return;
+    void createIdeApi(this.messenger)
+      .displayOutputBatch(
+        lines.map((text) => ({ pane: PANE_ID_EMU, text: `[Z88 serial] ${text}`, foreground: "bright-cyan", writeLine: true }))
+      )
+      .catch(() => {
+        // --- The output is a debugging aid; a lost line must not stop the machine
+      });
+  }
+
   /** The Blink panel's state, from the core (see `IZ88IdeMachine`) */
   getBlinkState(): BlinkState {
     const runtime = this.requireWasmV2Runtime();
@@ -926,7 +963,7 @@ export class Z88WasmV2Machine extends Z88WasmHost {
       PB1: w.z88GetPb(1),
       PB2: w.z88GetPb(2),
       PB3: w.z88GetPb(3),
-      SBR: w.z88GetSbr(),
+      SBF: w.z88GetSbf(),
       SCW: w.z88GetScw(),
       SCH: w.z88GetSch()
     };

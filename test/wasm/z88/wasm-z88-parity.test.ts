@@ -358,7 +358,7 @@ spin: jr spin
       outWord(s, 0x71, (0x23 << 2) | (0x1000 >> 12)); // PB1: LORES1
       outWord(s, 0x72, (0x20 << 1) | (0x2000 >> 13)); // PB2: HIRES0
       outWord(s, 0x73, (0x21 << 3) | (0x2800 >> 11)); // PB3: HIRES1
-      outWord(s, 0x74, (0x22 << 3) | (0x0000 >> 11)); // SBR
+      outWord(s, 0x74, (0x22 << 3) | (0x0000 >> 11)); // SBF
       s.out(0xb0, 0x05); // RAMS | LCDON
       // --- Past two text flash toggles (every 200 frames), through the cursor phases of TIM0; the
       // --- picture every 8th frame goes into the digest of each 80 frames
@@ -730,7 +730,8 @@ ${epilogue}`;
         expect([s.physPeek(card + 0x4000 + 0x200), s.physPeek(card + 0x4000 + 0x300)]).toEqual([0xff, 0xff]);
         break;
       case "plain":
-        expect(bytes("back1")).toEqual(cardType === "ROM" ? new Array(16).fill(0) : data);
+        // --- A ROM card with no image is blank ($FF, as OZvm's `RomBank`) and ignores the writes
+        expect(bytes("back1")).toEqual(cardType === "ROM" ? erased : data);
         break;
     }
 

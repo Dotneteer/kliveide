@@ -20,6 +20,14 @@ import { mapZ88SnapshotToKlive } from "@common/z88/z88SnapshotMapping";
 import { adjustZ88LostTime } from "@common/z88/z88Rtc";
 import { buildZ88AddressSpace, z88SnapshotBankReader } from "@common/z88/z88AddressSpace";
 import {
+  formatZ88Ext24,
+  z88Pb0Address,
+  z88Pb1Address,
+  z88Pb2Address,
+  z88Pb3Address,
+  z88SbfAddress
+} from "@common/z88/z88ScreenPointers";
+import {
   formatZ88Rtc,
   z88AddressLocation,
   z88BlinkBitNames,
@@ -45,6 +53,9 @@ import { z88BankDumpId, z88BankDumpTitle } from "./z88BankDocument";
 /* --- M2: `ch`, not px */
 const LABEL_WIDTH = "12ch";
 const REG_LABEL_WIDTH = "5ch";
+
+/** PB0..PB3 decoded to the 24-bit address they point at (issue #1417) */
+const PB_DECODERS = [z88Pb0Address, z88Pb1Address, z88Pb2Address, z88Pb3Address];
 const REG_VALUE_WIDTH = "14ch";
 const BLINK_VALUE_WIDTH = "30ch";
 
@@ -295,16 +306,23 @@ const BlinkSection = ({ ctx, info }: SectionProps) => {
         ))}
       </Row>
       <Row>
+        <LabeledText
+          label="SBF:"
+          labelWidth={REG_LABEL_WIDTH}
+          value={`$${toHexa4(blink.sbf)} (${formatZ88Ext24(z88SbfAddress(blink.sbf).ext24)})`}
+          valueWidth="17ch"
+        />
+      </Row>
+      <Row>
         {blink.pb.map((value, index) => (
           <LabeledText
             key={index}
             label={`PB${index}:`}
             labelWidth={REG_LABEL_WIDTH}
-            value={`$${toHexa4(value)}`}
-            valueWidth="7ch"
+            value={`$${toHexa4(value)} (${formatZ88Ext24(PB_DECODERS[index](value).ext24)})`}
+            valueWidth="17ch"
           />
         ))}
-        <LabeledText label="SBR:" labelWidth={REG_LABEL_WIDTH} value={`$${toHexa4(blink.sbr)}`} valueWidth="7ch" />
       </Row>
       <Row>
         <LabeledText

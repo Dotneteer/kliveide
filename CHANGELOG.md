@@ -1,6 +1,36 @@
 # Klive IDE Changelog
 
-## Unreleased
+## 0.63.0
+
+### Highlights
+
+- **New machines: the Sinclair ZX81 and ZX80**, on a cycle-accurate WebAssembly core, with `.p`/`.o`
+  program loading, a virtual keyboard and the full debugger.
+- **Klive BASIC: a built-in ZX BASIC compiler** with source-level debugging &mdash; compatible with
+  Boriel ZX BASIC 1.19, needing no installation, and now the default (#1400).
+- **BASIC editor intelligence:** hover, Go to Definition, references, completion, signature help,
+  rename, outline and folding, across included files (#1415).
+- **More powerful breakpoints:** conditions and hit counts, logpoints, one-shot breakpoints, memory
+  range watchpoints, and DeZog `LOGPOINT` / `ASSERTION` / `WPMEM` comments (#1413, #1414).
+- **Snapshots and machine states:** open, view, run, debug and save ZX Spectrum `.sna`, `.z80` and
+  `.szx` snapshots; save and load `.kls` machine state files on every machine, with a quick
+  save/restore slot; open and debug Cambridge Z88 `.z88` snapshots (#1409, #1418).
+- **A new tape viewer** for `.tap`/`.tzx` files, and loading tapes straight from the IDE (#1410).
+- **IDE + Emulator screen recording** of both windows into one video (#1409).
+- **Cambridge Z88 brought closer to OZvm:** no more screen noise on the larger LCDs under OZ 5, card
+  contents that survive card changes and resets, and SBF / 24-bit screen pointers in the Blink panel
+  (#1417).
+- **A no-installer Windows build** (#1382), and a searchable **Select machine…** dialog with
+  favourites (#1418).
+
+### Key fixes
+
+- Cambridge Z88: the screen showed garbage below row 8 on the 640x256/320/480 LCDs under OZ 5, and
+  inserting or removing a card (or a hard reset) erased what OZ had written to flash and EPROM cards.
+- Tape files: several TZX block types, header names and turbo-block playback are fixed.
+- `run-to` no longer deletes a user breakpoint at the same address.
+- Clicking a toolbar button no longer takes keyboard focus away from the emulator.
+- No more "Machine controller not available" errors while a machine is being rebuilt.
 
 ### Features
 
@@ -14,9 +44,106 @@
   and the disassembler decodes the ZX81 ROM's error codes and calculator literals. The ZX80 and ZX81
   ROMs ship with Klive; they are free for non-commercial use (see `zx8081-roms-readme.txt`).
 
-- **New Cambridge Z88 LCD resolution: 640x256** (#1385), as in OZvm (Blink SCW=$FF, SCH=32). It
-  matches the ZX Spectrum Next in tile mode. The Z88 now offers 640x64 (the default), 640x256,
-  640x320 and 640x480.
+- **Klive BASIC, a built-in ZX BASIC compiler** (#1400). It needs no installation and is now the
+  default compiler. It is compatible with Boriel ZX BASIC 1.19: the same options and `#pragma`s, the
+  standard libraries, the `zxbasm` inline-assembly dialect, and NextBuild's `CODEBANK` for the Next.
+  Build options go in `'@name value` header lines. `.zxbas` files are recognised, and a new
+  **zx-basic** project template is available for the 48K, 128K and Next. `set zxbasic.compiler zxbc`
+  switches back to Boriel's `zxbc`.
+
+- **Source-level BASIC debugging** (#1400). Step Into (with a **Step Into Target** drop-down), Step
+  Over, Step Out and Step Over Line step BASIC statements, and a **Source / Z80** toolbar toggle
+  switches the stepping mode. Breakpoints can be set on individual statements of a line. The Call
+  Stack panel shows SUB/FUNCTION/GOSUB frames, with **Run to this frame**, and the Variables panel
+  shows parameters, locals, globals and BASIC watch expressions. A run stops on a BASIC error. New
+  commands: `em-src`, `em-err` and `em-jmc` (Just My Code). A NEX export writes
+  `<name>.nex.kbasic-debug.json`, so `nex-run -d` debugs it at source level.
+
+- **New assembler features** (#1400): `#LINE` remaps reported source locations, and the
+  `.page <page>[, addr[, count]]` pragma places code in an 8K Next page.
+
+- **BASIC editor intelligence** (#1415). Background checking drives hover (types, scope, signatures,
+  keyword help), Go to Definition (F12, which also opens `#include` files), Find All References
+  (Shift+F12), context-aware completion (choosing a library routine adds its `#include`), signature
+  help, Rename (F2), the Outline (Cmd/Ctrl+Shift+O), folding and block highlights &mdash; all across
+  included files. With `zxbc` selected, only the keyword-level features work.
+
+- **Conditional breakpoints and hit counts** (#1413), on every breakpoint kind.
+  `bp-set ... -hit <spec>` takes `10`, `>10`, `>=10`, `<10`, `<=10` or `*10`; `-if <condition>` (it
+  must come last) takes an expression over registers, flags, `VAL`/`ADDR`, memory reads (`w[HL]`,
+  `b[05:$C010]`), `page()`, `nr()` and build labels. The new `bp-reset-hits` command resets the
+  counts, and `bp-list` prints lines you can paste back into `bp-set`. Conditions can also be edited
+  in the breakpoint dialog and the editor margin's menu.
+
+- **Logpoints** (#1414). `bp-set ... -log "x={A} at {PC:hex16}"` writes to a new **Log** output pane
+  and keeps running; formats include `hex8`, `hex16`, `int8`, `uint16`, `bits` and `string`. A
+  `[GROUP]` prefix puts a logpoint into a group; switch groups with `lp-en` and list them with
+  `lp-groups`. The breakpoint dialog has an **Action** row, the margin menu has **Add Logpoint…**,
+  and logpoints are drawn as diamonds. DeZog `; LOGPOINT` comments are read from the Klive assembler
+  and from sjasmplus (which needs `SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION`).
+
+- **DeZog `ASSERTION` and `WPMEM` comments** (#1414). A failing assertion stops the machine and
+  reports the values it read; `WPMEM` becomes a memory watchpoint over a range. Both are on by
+  default; switch them off per project with `as-en -d` and `wp-en -d`.
+
+- **One-shot breakpoints** (#1414): Shift+click the margin or the disassembly gutter, choose **Stop
+  Here Once**, or use `bp-set -once`. They are never saved with the project.
+
+- **Memory range breakpoints and watchpoints** (#1414). `bp-set <addr> -r|-w -len <bytes>` watches a
+  range. Watch view rows gain **Break on write/read/access**, which follows the symbol across
+  rebuilds (shown as `WS:<symbol>`). `show-disass <address>` moves the Disassembly view to an address.
+
+- **ZX Spectrum snapshots** (#1418). A new viewer for `.sna`, `.z80` (v1–3) and `.szx` files shows the
+  screen, registers, ULA, paging, AY and RAM banks, and banks can be popped out. Run or debug a
+  snapshot from its tab, the Explorer, **File → Load ZX Spectrum Snapshot...**, by dropping it on the
+  Emulator window, or with `zx-snapshot <file> [-r|-d]`. Klive switches to the 48K, 128K or +2E/+3E
+  the snapshot needs, and inserts the disks and tapes an `.szx` file links.
+
+- **Saving ZX Spectrum snapshots** (#1418): **File → Save ZX Spectrum Snapshot...**, the Emulator's
+  **Machine → Save Snapshot...**, or `zx-snapshot-save <file> [-f]`. The extension picks the format.
+  Klive reports what `.z80`/`.sna` cannot store, and refuses a state those formats would load back
+  differently.
+
+- **Machine state files** (#1418). `.kls` files capture the whole machine on every machine &mdash; 48K,
+  128K, +2E/+3E, Next, Z88, ZX80 and ZX81. Use **File → Save/Load Machine State...**, `state-save`, or
+  `state-load [-r|-d] [-y]`; **Quick Save/Restore State** is Ctrl/Cmd+Alt+S and Ctrl/Cmd+Alt+L.
+  `.kls` files have a viewer and can be dropped on the Emulator window. A ZX Spectrum state saved by
+  another Klive version falls back to the `.szx` it embeds.
+
+- **Select machine…** (Cmd/Ctrl+Shift+M, #1418): a searchable list of every model with its hardware
+  details. A star marks a favourite, and favourites can be reordered.
+
+- **Cambridge Z88 snapshots** (#1397, #1409). The `.z88` viewer shows the registers, the Blink, the
+  address space at PC, and a **Slots** browser that pops banks out as Z88 disassembly. Run or debug a
+  snapshot with `z88-snapshot <file> [-r|-d|-a]`, from the Explorer, or with the Emulator's **Open Z88
+  Snapshot...** (which follows the file's Autorun flag). The machine is rebuilt to match the
+  snapshot's RAM and LCD size, and the real-time clock catches up with the time the file spent on
+  disk. Hybrid RAM+Flash cards are not supported.
+
+- **IDE + Emulator recording** (#1409): **Machine → Recording → Start IDE + Emulator recording**, or
+  Ctrl+Shift+F7 (`shortcuts.recordIdeEmu` changes it), records both windows into one video at 30 fps,
+  also while the machine is paused. Options: the IDE's position (left, right, top or bottom), pointer
+  and click rings, and HiDPI.
+
+- **Tape viewer** (#1410). For `.tap`/`.tzx` files (any case of extension) it shows a summary, a
+  timeline strip, and the blocks grouped by file, with filters. It explains header bytes and pops
+  blocks out as memory, disassembly, a BASIC listing or a screen. `tape-load <file> [-r|-d]` and the
+  matching tab and Explorer buttons insert a tape, or load and run or debug it on the 48K, 128K and
+  +2/+3.
+
+- **Cambridge Z88: the Blink panel and the snapshot viewer show the 24-bit address** each screen
+  pointer register (SBF, PB0–PB3) points at, in OZvm's form &mdash; `$0127 (243800h)` &mdash; so a
+  memory view can be opened right there (#1417).
+
+- **Cambridge Z88: the serial port's output** (bytes written to TXD) appears in the Emulator output
+  as `[Z88 serial]` lines, as OZvm shows them (#1417).
+
+- **New Cambridge Z88 LCD resolution: 640x256** (#1385), as in OZvm. It matches the ZX Spectrum Next
+  in tile mode. The Z88 now offers 640x64 (the default), 640x256, 640x320 and 640x480.
+
+- **The Z88 disassembler knows the OZ v5.0 API**: the new FP\_, OS\_ and GN\_ calls of the
+  September 2026 V5.0B ROM (#1386). The OZ 4.7 model is now named "Cambridge Z88 (OZ v4.7 Int.)"
+  (#1399).
 
 - **No-installer Windows build** (#1382). Each release now also ships
   `KliveIde-Portable-{version}-x64.zip`, which you unpack and run without setup or admin rights.
@@ -27,15 +154,86 @@
 
 ### Fixes
 
+- **Cambridge Z88: no more screen noise on the larger LCDs under OZ 5** (#1417). The Blink now reads
+  the Screen Base File and the fonts as a bank and an offset that wraps inside the bank, through the
+  bank map, as OZvm does. OZ 5 places a large Screen Base File from the top of a bank downwards; Klive
+  read on into the next bank and painted it from row 8 down. Until OZ has set the screen up, the LCD
+  stays blank instead of showing whatever its registers pointed at.
+
+- **Cambridge Z88: card contents survive card changes and hard resets** (#1417). Changing one slot,
+  or a hard reset, re-inserted every card, which erased what OZ had programmed into flash and EPROM
+  cards. A new card no longer shows the bytes of the card that was in the slot before.
+
+- **Cambridge Z88 parity fixes** (#1417): COM.RESTIM keeps the latched TSTA events; releasing a key
+  while another is held raises no key interrupt; battery low wakes a snoozing CPU; a flash sector
+  erase and the Intel chip-ID read work through a mirrored bank; a blank ROM card reads $FF; looking
+  at memory in the IDE no longer changes what the CPU reads next.
+
+- **Cambridge Z88 disassembly** (#1409): pausing the Z88 no longer shows an empty Disassembly view,
+  and code in mirrored card banks no longer shows as NOPs.
+
+- **Custom disassembler items** (OZ calls, Spectrum RST data) honour the listing's address offset and
+  no longer add their bytes to the previous instruction (#1409).
+
+- **Tape fixes** (#1410): TZX $19 blocks open, and $13/$18 block lengths are read correctly; header
+  names are no longer read one byte off; turbo ($11) block playback works; BASIC `TAB` listings are
+  right; SCR images keep bright ink.
+
+- **The first visible row's left border is drawn on every ZX Spectrum** (#1410); a grey segment
+  showed at the top left on the +2A/+3.
+
+- **`run-to` no longer deletes a user breakpoint at the same address** (#1414).
+
+- **Explorer** (#1409): double-clicking a file no longer fails with "Duplicated document", and
+  context menus close after a file-type action.
+
+- **Clicking a toolbar button no longer takes keyboard focus**, so Space and Enter keep reaching the
+  emulator &mdash; for example after starting a recording (#1383, #1384).
+
+- **No more "Machine controller not available" errors** while a machine is being rebuilt (a machine
+  or model change, or a Z88 LCD size, RAM size or keyboard layout change).
+
 - **The Z80's R register counts both opcode fetches of a prefixed instruction** (`CB`, `ED`, `DD`,
   `FD`), as the real CPU does: `LD A,R` after such an instruction reads one more than before. This
   affects every machine. Timing is unchanged.
 
+- Dependency updates, including Electron 44.4.5.
+
 ### Breaking changes
+
+- **ZX BASIC builds use Klive BASIC by default** (#1400). Use `set zxbasic.compiler zxbc` to keep
+  Boriel's `zxbc`. The generated code's addresses and sizes differ from `zxbc`'s.
+
+- **The Machine → Machine type menu lists only favourite models** (#1418). Every model is in **Select
+  machine…**; the default favourites are the 48K, 128K, +3E, Next, Z88 (OZ 5.0) and ZX81 16K.
+
+- **Cambridge Z88: the reset button resets only the CPU** (#1417). The Blink &mdash; COM, the segment
+  registers, the interrupt registers, the clock and the screen pointers &mdash; keeps its state, as in
+  OZvm, so OZ's time of day survives a soft reset. Only a hard reset (power-on) resets the Blink, and
+  it now clears RAM cards too, while ROM, EPROM and flash cards keep their contents.
+
+- **Cambridge Z88: a 512K slot-0 ROM image is an AMD 29F040B flash chip**, as OZvm loads it, so OZ can
+  update it; a slot-0 image larger than 512K is refused (#1417).
+
+- **Cambridge Z88: the SCW register reads 80 on the 640x256, 640x320 and 640x480 LCDs** (640x64 still
+  reads $FF), as OZvm reports it (#1417).
+
+- **Cambridge Z88: the Blink register `SBR` is now `SBF`** (Screen Base File) in the Blink panel and
+  the snapshot viewer (#1417). `.z88` snapshot files still store it under `SBR`, as OZvm writes it.
 
 - **The 800x320 and 800x480 Cambridge Z88 LCD sizes are gone** (#1385). The OZ screen driver is
   designed for 640-pixel-wide screens, so an LCD driver for them is not practical. A project that
   still names one of them opens with the default 640x64 LCD.
+
+- **Documentation site:** "/" is now a landing page, and the Introduction moved to `/introduction`
+  (#1411). Every other address is unchanged.
+
+### Known issues
+
+- **Cambridge Z88:** the bundled OZ V5.0B ROM keeps a 2K Screen Base File on every LCD size, so on
+  640x256, 640x320 and 640x480 it uses only the top 8 text rows, and the rest of the screen shows
+  unrelated memory (OZvm shows the same). A newer OZ 5 build that allocates a larger Screen Base File
+  uses the whole screen.
 
 ## 0.61.0
 

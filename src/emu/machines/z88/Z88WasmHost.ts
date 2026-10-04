@@ -74,6 +74,14 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   /** The key strokes to emulate (code injection, the on-screen keyboard) */
   protected readonly emulatedKeyStrokes: EmulatedKeyStroke[] = [];
 
+  /**
+   * What each slot's card was inserted from (`z88SlotSource`), or undefined when the slot is empty or
+   * its card came from elsewhere (a snapshot, the blank start-up ROM). A card whose source has not
+   * changed stays in its slot: inserting it again would make it a new, blank card, and wipe what OZ
+   * programmed into a flash or EPROM card - as changing another slot or a hard reset did.
+   */
+  protected readonly slotSources: (string | undefined)[] = [undefined, undefined, undefined, undefined];
+
   constructor(
     public readonly modelInfo?: MachineModel,
     config?: MachineConfigSet,
@@ -127,7 +135,9 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
         : configuredSlot0;
       const intRom = resolveZ88RomName(this.config?.[MC_Z88_INTROM] as string | undefined);
       let useDefaultRom = false;
+      let slot0Source: string;
       if (z88SlotHasCard(slot0)) {
+        slot0Source = z88SlotSource(slot0);
         // --- There is a card in slot 0
         romCard = z88CardSpec(slot0.cardType, slot0.size);
         if (slot0.file) {
@@ -140,10 +150,16 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
         useDefaultRom = intRom === slot0.file;
       } else {
         useDefaultRom = true;
+        slot0Source = `rom:${intRom ? intRom : Z88_DEFAULT_ROM}`;
         romContents = await this.loadRomFromResource(intRom ? intRom : Z88_DEFAULT_ROM);
         romCard = z88RomImageCardSpec(romContents.length);
       }
-      this.insertCard(0, romCard, romContents);
+      // --- The same ROM stays in place: a slot-0 flash chip keeps what OZ wrote into it (OZvm's hard
+      // --- reset does not load the ROM again either)
+      if (slot0Source !== this.slotSources[0]) {
+        this.insertCard(0, romCard, romContents);
+        this.slotSources[0] = slot0Source;
+      }
 
       // --- Store the current ROM size. As on the TypeScript machine, a slot-0 card configured
       // --- without a file stops the setup here (its contents are undefined).
@@ -182,11 +198,32 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   private async configureSlot(slot: number, state: CardSlotState | undefined): Promise<void> {
     if (!z88SlotHasCard(state)) {
       this.removeCardFromBackend(slot);
+      this.slotSources[slot] = undefined;
       return;
     }
+    // --- A card that stays in its slot is left alone (see `slotSources`)
+    const source = z88SlotSource(state);
+    if (source === this.slotSources[slot]) return;
     const card = z88CardSpec(state.cardType, state.size);
     const contents = state.file ? await this.loadRomFromFile(state.file) : undefined;
     this.insertCard(slot, card, contents);
+    this.slotSources[slot] = source;
+  }
+
+  /**
+   * Records slots 1-3 as holding the cards the configuration (with the card dialogs' dynamic
+   * configuration) describes, after something other than `configure()` put them in - a snapshot - so
+   * a later `configure()` or hard reset leaves them, and their contents, alone. Slot 0 is set up
+   * again at the next hard reset.
+   */
+  protected adoptConfiguredSlots(): void {
+    const config = { ...this.config, ...this.dynamicConfig };
+    const states = [undefined, config?.[MC_Z88_SLOT1], config?.[MC_Z88_SLOT2], config?.[MC_Z88_SLOT3]];
+    this.slotSources[0] = undefined;
+    for (let slot = 1; slot < 4; slot++) {
+      const state = states[slot] as CardSlotState | undefined;
+      this.slotSources[slot] = z88SlotHasCard(state) ? z88SlotSource(state) : undefined;
+    }
   }
 
   /**
@@ -205,7 +242,7 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
 
   /**
    * Emulates turning the machine on: CPU registers to their power-on values, then the setup (which
-   * re-inserts the cards) and a reset - the order `Z88Machine.hardReset()` used.
+   * inserts only the cards that changed) and a reset - the order `Z88Machine.hardReset()` used.
    */
   async hardReset(): Promise<void> {
     super.hardReset();
@@ -393,4 +430,9 @@ export abstract class Z88WasmHost extends Z80MachineBase implements IZ88Machine,
   injectCodeToRun(_codeToInject: CodeToInject): number {
     throw new Error(Z88_NO_CODE_INJECTION);
   }
+}
+
+/** What a slot configuration's card is inserted from: its type, size and image file */
+function z88SlotSource(state: CardSlotState): string {
+  return `card:${state.cardType}:${state.size}:${state.file ?? ""}`;
 }

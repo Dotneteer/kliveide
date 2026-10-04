@@ -6,6 +6,12 @@ import { createZ88TestSurface } from "./z88-test-surface";
  */
 const RANDOM_SEQ = [0xe2, 0xc5, 0x62];
 
+/**
+ * A ROM card inserted without an image is blank: every byte $FF, as OZvm's `RomBank` starts (the
+ * TypeScript machine's blank ROM read $00; `.plans/Z88_OZVM_PARITY_PLAN.md` Phase 5.7)
+ */
+const BLANK_ROM = 0xff;
+
 describe("Z88 - Memory read", function () {
   const addresses: number[] = [
     0x0000, 0x1234, 0x1fff, 0x2000, 0x2345, 0x2fff, 0x3000, 0x3456, 0x3fff,
@@ -34,7 +40,7 @@ describe("Z88 - Memory read", function () {
       mem.insertCard(3, card3);
 
       const value = m.memory.readMemory(addr);
-      expect(value).toBe(0);
+      expect(value).toBe(BLANK_ROM);
     });
   });
 
@@ -66,7 +72,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(RANDOM_SEQ[0]);
       } else {
         // --- Normal read
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -99,7 +105,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(RANDOM_SEQ[0]);
       } else {
         // --- Normal read
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -132,7 +138,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(RANDOM_SEQ[0]);
       } else {
         // --- Normal read
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -169,7 +175,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(RANDOM_SEQ[0]);
       } else {
         // --- Normal read
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
     });
   });
@@ -206,7 +212,7 @@ describe("Z88 - Memory read", function () {
         expect(value).toBe(RANDOM_SEQ[0]);
       } else {
         // --- Normal read
-        expect(value).toBe(0);
+        expect(value).toBe(BLANK_ROM);
       }
 
       const value1 = m.memory.readMemory(addr);
@@ -215,7 +221,7 @@ describe("Z88 - Memory read", function () {
         expect(value1).toBe(RANDOM_SEQ[1]);
       } else {
         // --- Normal read
-        expect(value1).toBe(0);
+        expect(value1).toBe(BLANK_ROM);
       }
 
       const value2 = m.memory.readMemory(addr);
@@ -224,7 +230,7 @@ describe("Z88 - Memory read", function () {
         expect(value2).toBe(RANDOM_SEQ[2]);
       } else {
         // --- Normal read
-        expect(value2).toBe(0);
+        expect(value2).toBe(BLANK_ROM);
       }
     });
   });

@@ -8,6 +8,7 @@ import { parseZ88Snapshot, type Z88Snapshot } from "@common/z88/z88Snapshot";
 import { mapZ88SnapshotToKlive } from "@common/z88/z88SnapshotMapping";
 import { buildZ88AddressSpace, z88SnapshotBankReader } from "@common/z88/z88AddressSpace";
 import { createZ88Session, z88Model, type Z88TestSession } from "../../harness/z88";
+import { fitMachineConfig } from "@renderer/appEmu/machines/z88SnapshotLoad";
 
 /*
  * Loading a `.z88` snapshot into the real Z88 core (`.plans/Z88_SNAPSHOT_PLAN.md` Phase 2). The
@@ -83,7 +84,7 @@ describe("Z88 snapshot - loading into the machine", () => {
       TSTA: 0x01,
       EPR: 0x00
     });
-    expect([b.PB0, b.PB1, b.PB2, b.PB3, b.SBR]).toEqual([0x0434, 0x000d, 0x0043, 0x0019, 0x010f]);
+    expect([b.PB0, b.PB1, b.PB2, b.PB3, b.SBF]).toEqual([0x0434, 0x000d, 0x0043, 0x0019, 0x010f]);
     expect(b.keyLines.every((line) => line === 0)).toBe(true);
   });
 
@@ -106,6 +107,19 @@ describe("Z88 snapshot - loading into the machine", () => {
       { kind: "UV_EPROM", sizeInBytes: 0x8000 },
       { kind: "UV_EPROM", sizeInBytes: 0x8000 }
     ]);
+  });
+
+  it("a card plugged in later leaves the snapshot's cards, and what they hold, alone", async () => {
+    // --- As the app loads one: the configuration records the snapshot's cards (no image file)
+    const s = await sampleSession();
+    const snapshot = parseZ88Snapshot(SAMPLE);
+    const fit = fitMachineConfig({ machineId: "z88", config: s.machine.config }, mapZ88SnapshotToKlive(snapshot));
+    s.machine.dynamicConfig = fit.config;
+    s.loadSnapshot(SAMPLE);
+    // --- Every card change once inserted all three slots again: the EPROMs came back blank ($FF)
+    await s.plugCard(1, { cardType: CardIds.RAM128, size: 128 });
+    expect(physBytes(s, 2 * SLOT, 0x8000)).toEqual(snapshot.slots[2]!.bytes);
+    expect(physBytes(s, 3 * SLOT, 0x8000)).toEqual(snapshot.slots[3]!.bytes);
   });
 
   it("pages the 64K as the snapshot's SR0-SR3 and COM say (the viewer's builder agrees)", async () => {

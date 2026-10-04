@@ -8,6 +8,7 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { BreakpointIndicator } from "../DocumentPanels/BreakpointIndicator";
 import { useEmuStateListener } from "../useStateRefresh";
+import { reportRefreshError } from "@renderer/machineRebuildRejections";
 import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointAddressSpec, getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
@@ -339,11 +340,10 @@ export const BreakpointsPanel = () => {
     setBps(rows);
   };
 
-  // --- Whenever machine state changes or breakpoints change, refresh the list
+  // --- Whenever machine state changes or breakpoints change, refresh the list. The machine state
+  // --- also changes while a machine is rebuilt, when the emulator has no machine to ask for a moment
   useEffect(() => {
-    (async function () {
-      await refreshBreakpoints();
-    })();
+    refreshBreakpoints().catch(reportRefreshError);
   }, [machineState, bpsVersion, hitsVersion]);
 
   // --- Obtain available partition labels for the current machine type

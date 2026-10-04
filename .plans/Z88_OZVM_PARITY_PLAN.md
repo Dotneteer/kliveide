@@ -1,6 +1,8 @@
 # Z88 ↔ OZvm Parity Plan
 
-Status: **proposed** (2026-10-04). Nothing here is implemented yet.
+Status: **implemented** (2026-10-04), with the decisions of §9. §10 records what was done and what
+was deliberately left out. The core's `README.md` ("Brought to OZvm's behaviour") is the durable
+summary.
 
 ## 0. Background and sources
 
@@ -297,10 +299,56 @@ Then confirm:
 
 Ask Gunther to re-check with his recordings.
 
-## 9. Open questions for the user
+## 9. Decisions (the author, 2026-10-04)
 
-1. Pointer-gate colour: unlit green (OZvm) or the grey "LCD off" colour while SBF/PBx are unset?
-2. Soft reset: OZvm keeps the whole Blink. Is that what the hardware does, or only the RTC?
-3. SCW for the larger 640-wide LCDs: `$FF` or 80?
-4. Should Klive offer the 800-pixel LCD widths (800x256/320/480) that OZvm supports?
-5. Format of the 24-bit pointer in the Blink panel: `$24:3800` or OZvm's `243800h`?
+1. Pointer-gate colour: **Klive's grey** "LCD off" colour while SBF or a PB register is unset.
+2. Soft reset: **follow OZvm** - the reset button resets the CPU only; the whole Blink survives.
+3. SCW on the larger 640-wide LCDs: **follow OZvm** - 80. The original 640x64 LCD keeps $FF (what the
+   real Blink, which has no SCW, reads).
+4. 800-pixel LCD widths: **no**. The core accepts only SCW $FF/80 and SCH 8/32/40/60; the pixel
+   buffer is 640x480 now, and the 272-byte row stride of Phase 1.4 was not added.
+5. The 24-bit pointer's format: **follow OZvm** - `0127h (243800h)`: Klive's `$0127` raw value, then
+   `(243800h)`.
+
+## 10. Implementation record
+
+Done:
+
+- **Phase 1.1-1.3, 1.5, 1.6** - `z88-screen.c` reads every SBF and font byte through `z88PeekBank`
+  (bank map, offset wrapped inside the bank, $FF for an empty slot, no side effect) and paints the
+  LCD off until SBF and PB0-PB3 are set. Tests: `test/z88/z88-lcd.test.ts` (the wrap at SBF $3800 on
+  a 40-row LCD, a mirrored 32K card, the pointer gate for each register).
+- **Phase 2** - `SBR` became `SBF` in `BlinkState`, the WASM exports (`z88GetSbf`/`z88SetSbf`), the
+  Blink panel, the snapshot viewer and the `.z88` snapshot model (`sbf`, still read from the file key
+  `"SBR"`). `@common/z88/z88ScreenPointers` decodes SBF/PB0-PB3; both panels show `(243800h)` after
+  the raw value. Test: `test/z88/z88-screen-pointers.test.ts` (the issue's screenshot values).
+  `.ai/ui-theming-intent-and-lessons.md` records the display rule.
+- **Phase 3** - `Z88WasmHost.slotSources`: a card whose type, size and image file are unchanged is not
+  inserted again (by `configure()` or the hard reset's `setup()`); a snapshot's cards are adopted
+  (`adoptConfiguredSlots`). `z88HardReset` clears RAM cards; a new card is zeroed (RAM) or $FF; the
+  sector erase and the Intel ID read go through the chip mask. Tests: `wasm-z88-machine.test.ts`,
+  `z88-ozvm-parity.test.ts`, `z88-snapshot-load.test.ts`.
+- **Phase 4.1-4.6** - `z88BlinkPowerOn` (power-on only; COM first, interrupt line last), the reset
+  button keeps the Blink, RESTIM keeps TSTA, STA.KEY only on a key going down, battery low wakes the
+  CPU. The host calls `z88ResetBlink` for a newly loaded core and before a `.z88` snapshot load.
+- **Phase 5.1, 5.3, 5.4, 5.5, 5.6, 5.7** - SCW 80 / SCH restricted; a 512K slot-0 ROM image is an AMD
+  29F040B and a longer one is refused; TXD bytes reach the emulator output (`Z88UartTxLines`,
+  `[Z88 serial] ...` lines); `z88PeekMemory` for the IDE and `COND_PEEK`; a blank ROM card is $FF.
+- **Phase 5.2** - verified by reading: the `z88_lcd` menu changes the machine type
+  (`setMachineType`), which builds a new machine, so OZ always cold-boots on a new LCD size.
+- **Goldens** re-recorded after the diff was traced entry by entry (see `test/z88/README.md`).
+
+Left out, as the plan said:
+
+- **Phase 1.4** (800-pixel row stride) - decision 4.
+- **Phase 2.5** (click the 24-bit value to open the memory view) - optional; the panel shows the
+  address in the form the memory view takes.
+- **Phase 4.7** (Coma's forced INT.KEY wake) - no program found that needs it; OZ 4.7/5.0 time out
+  and wake today (`z88-timeout-coma.test.ts`).
+- **Phase 5.8** (more flash chip types) - waits for a user request.
+
+Found while verifying: the bundled `z88v50b.rom` (byte-identical to OZvm's `Z88V50B.rom`) never reads
+SCW/SCH and keeps the 2K Screen Base File (SBF $010F) on every LCD size, so on 640x256/320/480 it
+draws only 8 rows and whatever lies in the rest of the bank below them - in OZvm too. The clean
+40-row PipeDream of the recordings needs the newer OZ 5 build that allocates the larger SBF
+($0127, $24:3800); the wrap of Phase 1.1 is what that build relies on.

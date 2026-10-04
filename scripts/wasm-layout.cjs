@@ -25,7 +25,7 @@
  */
 
 const { createHash } = require("node:crypto");
-const { existsSync, readFileSync, writeFileSync, rmSync } = require("node:fs");
+const { existsSync, readFileSync, writeFileSync, rmSync, renameSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const { join, basename } = require("node:path");
 
@@ -238,7 +238,63 @@ function stampWasmLayout(outputPath, mapPath, volatileSymbols = []) {
   }
 }
 
+/*
+ * Publishing a build atomically.
+ *
+ * A build writes its module and then rewrites it with the layout stamp. Test workers run in
+ * parallel, and several of them rebuild the same production artifact while others read it: a reader
+ * that came between the two writes got a module with no stamp ("built without a memory-layout
+ * stamp"), or a half-written file. So a real build compiles and stamps a private staging file next
+ * to the output and renames it into place - a rename replaces the file in one step, so a reader sees
+ * the old complete module or the new one, never one in between.
+ */
+
+/**
+ * Where a build compiles before publishing: a staging file beside the output when `atomic` (a real
+ * compiler run), else the output itself (a test's fake compiler writes nothing to rename)
+ * @param {string} outputPath The artifact
+ * @param {boolean} atomic Whether to stage and publish
+ */
+function stagingWasmOutput(outputPath, atomic) {
+  return atomic ? `${outputPath}.${process.pid}-${Date.now()}.partial` : outputPath;
+}
+
+/** Waits synchronously (a build script has no event loop to yield to) */
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Renames a staged build into place, in one step. On Windows a rename onto a file another process
+ * has open fails for a moment (EPERM/EBUSY/EACCES), so it is retried briefly.
+ * @param {string} stagingPath What `stagingWasmOutput` returned
+ * @param {string} outputPath The artifact
+ */
+function publishWasmOutput(stagingPath, outputPath) {
+  if (stagingPath === outputPath) return;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      renameSync(stagingPath, outputPath);
+      return;
+    } catch (error) {
+      if (attempt >= 40 || !["EPERM", "EBUSY", "EACCES"].includes(error?.code)) {
+        rmSync(stagingPath, { force: true });
+        throw error;
+      }
+      sleepSync(50);
+    }
+  }
+}
+
+/** Removes a staged build that will not be published (the build failed) */
+function discardWasmOutput(stagingPath, outputPath) {
+  if (stagingPath !== outputPath) rmSync(stagingPath, { force: true });
+}
+
 module.exports = {
+  stagingWasmOutput,
+  publishWasmOutput,
+  discardWasmOutput,
   LAYOUT_SECTION,
   layoutMapPath,
   layoutMapArgs,

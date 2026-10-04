@@ -35,6 +35,8 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import {
   CpuState,
   CpuStateChunk,
+  isMachineNotAvailableError,
+  MACHINE_NOT_AVAILABLE_MESSAGE,
   ULA_BORDER_COLOR_NAMES,
   VicState
 } from "@common/messaging/EmuApi";
@@ -79,9 +81,9 @@ export function setEmuRecordingManager(mgr: RecordingManager | null): void {
   _emuRecordingManager = mgr;
 }
 
-// --- Retrieves a controller error message
-function noController() {
-  throw new Error("Machine controller not available");
+// --- There is no machine controller: a machine is being rebuilt (see MACHINE_NOT_AVAILABLE_MESSAGE)
+function noController(): never {
+  throw new Error(MACHINE_NOT_AVAILABLE_MESSAGE);
 }
 
 class EmuMessageProcessor {
@@ -1498,8 +1500,11 @@ export async function processMainToEmuMessages(
             result: await (processingMethod as Function).call(emuMessageProcessor, ...message.args)
           };
         } catch (err) {
-          // --- Report the error
-          console.error(`Error processing message: ${err}`, err);
+          // --- Report the error. "No machine" while one is being rebuilt is expected - the IDE's
+          // --- pollers ask again - so it is answered, not logged as a fault.
+          if (!isMachineNotAvailableError(err)) {
+            console.error(`Error processing message: ${err}`, err);
+          }
           return errorResponse(err.toString());
         }
       }

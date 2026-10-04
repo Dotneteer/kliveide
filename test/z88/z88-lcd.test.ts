@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { MC_SCREEN_SIZE } from "@common/machines/constants";
+import { CardIds } from "@emu/machines/z88/CardIds";
 import { createZ88Session, z88Model, Z88_LCD, type Z88TestSession } from "../harness/z88";
 
 /*
- * The Z88 LCD: the Blink renders the screen map at SBR through the four font tables (PB0-PB3) every
+ * The Z88 LCD: the Blink renders the Screen Base File (SBF) through the four font tables (PB0-PB3) every
  * 40 ms (every 8th 5 ms frame), 8 pixel rows per text row, 256 bytes per row of (char, attribute)
  * cells.
  *
@@ -27,9 +28,9 @@ const HIRES0 = 0x2000; // bank $20, offset $2000
 const HIRES1 = 0x6000; // bank $21, offset $2000
 
 // --- The register values that select them. The Blink takes the bank from the high bits and an
-// --- aligned offset from the low bits: SBR/PB3 = bank<<3 | offset>>11 (2K), PB1 = bank<<2 |
+// --- aligned offset from the low bits: SBF/PB3 = bank<<3 | offset>>11 (2K), PB1 = bank<<2 |
 // --- offset>>12 (4K), PB0 = bank<<5 | offset>>9 (512 bytes), PB2 = bank<<1 | offset>>13 (8K).
-const SBR = (0x22 << 3) | (0x0000 >> 11);
+const SBF = (0x22 << 3) | (0x0000 >> 11);
 const PB1 = (0x23 << 2) | (0x0000 >> 12);
 const PB0 = (0x21 << 5) | (0x0000 >> 9);
 const PB2 = (0x20 << 1) | (0x2000 >> 13);
@@ -63,7 +64,7 @@ spin: jr spin
   outWord(s, 0x71, PB1);
   outWord(s, 0x72, PB2);
   outWord(s, 0x73, PB3);
-  outWord(s, 0x74, SBR);
+  outWord(s, 0x74, SBF);
   s.out(0xb0, COM_RAMS | (options.lcdOn === false ? 0 : COM_LCDON));
   return s;
 }
@@ -87,7 +88,7 @@ function renderOnce(s: Z88TestSession): void {
 describe("Z88 LCD", () => {
   it("the register values select the intended addresses", async () => {
     const s = await lcdSession();
-    expect(s.blinkState()).toMatchObject({ PB0: 0x420, PB1: 0x8c, PB2: 0x41, PB3: 0x10c, SBR: 0x110 });
+    expect(s.blinkState()).toMatchObject({ PB0: 0x420, PB1: 0x8c, PB2: 0x41, PB3: 0x10c, SBF: 0x110 });
   });
 
   it("with COM.LCDON clear, the whole LCD shows the off colour", async () => {
@@ -231,9 +232,9 @@ describe("Z88 LCD", () => {
 
   it.each([
     [undefined, 640, 64, 0xff, 8],
-    ["640x256", 640, 256, 0xff, 32],
-    ["640x320", 640, 320, 0xff, 40],
-    ["640x480", 640, 480, 0xff, 60]
+    ["640x256", 640, 256, 80, 32],
+    ["640x320", 640, 320, 80, 40],
+    ["640x480", 640, 480, 80, 60]
   ] as const)("LCD size %s is %ix%i (SCW %i, SCH %i), every text row rendered", async (size, w, h, scw, sch) => {
     const s = await lcdSession({ size });
     expect(s.lcdWidth).toBe(w);
@@ -250,5 +251,50 @@ describe("Z88 LCD", () => {
     expect(s.pixel(0, h - 9)).toBe(OFF);
     expect(s.pixel(6, h - 1)).toBe(OFF);
     expect(s.screen().some((p) => p === SCREEN_OFF)).toBe(false);
+  });
+
+  /*
+   * OZ 5 places a large Screen Base File from the top of a bank downwards: SBF $0127 is $24:3800, and
+   * a 40-row file (10K) runs past $3FFF. The Blink addresses the file inside its bank, so row 8 is at
+   * offset $0000 of the same bank (OZvm's `Bank.getByte` wraps the offset). Reading on into the next
+   * bank painted that bank's bytes as "noise" from row 8 down (`.plans/Z88_OZVM_PARITY_PLAN.md` §1).
+   */
+  it("a Screen Base File near the top of its bank wraps to the start of the same bank", async () => {
+    const s = await lcdSession({ size: "640x320" });
+    outWord(s, 0x74, (0x22 << 3) | (0x3800 >> 11)); // SBF = $0117: bank $22, offset $3800
+    s.poke(LORES1 + 0x41 * 8, [0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f]);
+    s.poke(SCREEN + 0x3800, [0x41, 0x00]); // row 0, column 0
+    s.poke(SCREEN + 0x0000, [0x41, 0x00, 0x00, 0x00, 0x41, 0x00]); // row 8: wrapped to offset $0000
+    renderOnce(s);
+    expect(rowPixels(s, 0, 0, 6)).toEqual([ON, ON, ON, ON, ON, ON]);
+    expect(rowPixels(s, 0, 64, 18)).toEqual([...Array(6).fill(ON), ...Array(6).fill(OFF), ...Array(6).fill(ON)]);
+    // --- Bank $23 (the next one) holds LORES1, never drawn as screen cells: row 9 is offset $0100
+    expect(rowPixels(s, 0, 72, 6)).toEqual(Array(6).fill(OFF));
+  });
+
+  it("the screen is read through the bank map: a card smaller than its slot is mirrored", async () => {
+    const s = await lcdSession();
+    await s.plugCard(1, { cardType: CardIds.RAM32, size: 32 });
+    // --- Put a cell into bank $41 (the 32K card's second bank), paged in at $4000 for a moment
+    s.out(0xd1, 0x41);
+    s.poke(0x4000, [0x41, 0x00]);
+    s.out(0xd1, 0x21);
+    s.poke(LORES1 + 0x41 * 8, [0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f]);
+    outWord(s, 0x74, 0x43 << 3); // SBF = bank $43, which the 32K card mirrors as $41
+    renderOnce(s);
+    expect(rowPixels(s, 0, 0, 6)).toEqual([ON, ON, ON, ON, ON, ON]);
+  });
+
+  it.each([
+    ["SBF", 0x74],
+    ["PB0", 0x70],
+    ["PB1", 0x71],
+    ["PB2", 0x72],
+    ["PB3", 0x73]
+  ])("while %s is unset, the LCD shows the off colour (OZ sets the registers up one by one)", async (_name, port) => {
+    const s = await lcdSession();
+    outWord(s, port, 0);
+    renderOnce(s);
+    expect(s.screen().every((p) => p === SCREEN_OFF)).toBe(true);
   });
 });

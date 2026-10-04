@@ -1,5 +1,6 @@
 /*
- * Cambridge Z88 - the LCD: the Blink renders the screen map at SBR through the font tables PB0-PB3.
+ * Cambridge Z88 - the LCD: the Blink renders the Screen Base File (SBF) through the font tables
+ * PB0-PB3.
  *
  * A port of `Z88ScreenDevice.renderScreen` (Step 8 of `.plans/CAMBRIDGE_Z88_WASM_MIGRATION_PLAN.md`),
  * run at the start of every frame; the picture is drawn every 8th frame (40 ms). Rows of 256 bytes of
@@ -7,10 +8,17 @@
  * LORES0), HIRES cells 8 pixels (10-bit code; $300+ come from HIRES1), the cursor is a LORES cell
  * inverted while TIM0 <= 120, a null cell takes no space, FLS cells vanish every other second.
  *
- * Every byte is read from the physical memory directly (as `directReadMemory` does), so a flash
- * card's command state never affects the picture. Reads beyond the 4 MB read 0, as the TypeScript
- * renderer's out-of-range reads do in its bit arithmetic. Kept for parity: a row of LORES cells leaves
- * the last 4 pixels of a 640-pixel row unpainted.
+ * Every byte is read as a bank and an offset (`z88PeekBank`), as OZvm's `Z88Lcd` reads them: the
+ * offset wraps inside its 16K bank, and the bank goes through the bank map, so a card smaller than its
+ * slot is mirrored and an empty slot reads $FF; a flash card's command state never affects the
+ * picture. The wrap matters on the larger LCDs: OZ 5 places a big SBF from the top of a bank
+ * downwards (SBF $0127 is $24:3800), and a 40-row file runs past $3FFF back to $0000 of the same
+ * bank. Reading on into the next bank painted that bank's bytes as "noise" from row 8 down.
+ *
+ * Until SBF and all four PB registers are set, the LCD shows the "off" picture (OZvm's
+ * `isLcdEnabledAndBound`): OZ sets them up one by one while booting, and a half-set screen drew garbage.
+ *
+ * Kept for parity: a row of LORES cells leaves the last 4 pixels of a 640-pixel row unpainted.
  */
 
 #define Z88_PX_ON 0xff7d1b46u
@@ -26,7 +34,7 @@
 #define Z88_ATTR_NUL 0x34u
 #define Z88_ATTR_CUR 0x38u
 
-#define Z88_SBR_ROW_WIDTH 256u
+#define Z88_SBF_ROW_WIDTH 256u
 #define Z88_TEXT_FLASH_TOGGLE 200u
 #define Z88_UI_FRAME_FREQUENCY 8u
 
@@ -35,19 +43,42 @@ static uint8_t z88TextFlashPhase;
 static uint32_t z88TextFlashCount;
 static uint8_t z88LcdWentOff;
 
-/* The font table addresses of the current render */
+/* The font table addresses of the current render: a bank and a 14-bit offset each */
 static uint32_t z88LoRes0;
-static uint32_t z88LoRes0Bank;
+static uint8_t z88LoRes0Bank;
 static uint32_t z88LoRes1;
-static uint32_t z88LoRes1Bank;
+static uint8_t z88LoRes1Bank;
 static uint32_t z88HiRes0;
-static uint32_t z88HiRes0Bank;
+static uint8_t z88HiRes0Bank;
 static uint32_t z88HiRes1;
-static uint32_t z88HiRes1Bank;
+static uint8_t z88HiRes1Bank;
 static uint32_t z88LcdWidth;
 
-static inline uint32_t z88ScreenRead(uint32_t address) {
-  return address < Z88_MEMORY_SIZE ? z88Memory[address] : 0u;
+/* A font or screen-file byte: `offset` wraps inside `bank` (see the file header) */
+static inline uint32_t z88ScreenRead(uint8_t bank, uint32_t offset) {
+  return z88PeekBank(bank, offset);
+}
+
+/* The 24-bit (bank << 16 | offset) addresses the LCD registers point at, as OZvm's `BlinkLcd` decodes them */
+static uint32_t z88Pb0Address(void) {
+  return ((((uint32_t)z88Pb[0] << 3) & 0xf700u) | (((uint32_t)z88Pb[0] << 1) & 0x003fu)) << 8;
+}
+static uint32_t z88Pb1Address(void) {
+  return ((((uint32_t)z88Pb[1] << 6) & 0xff00u) | (((uint32_t)z88Pb[1] << 4) & 0x0030u)) << 8;
+}
+static uint32_t z88Pb2Address(void) {
+  return ((((uint32_t)z88Pb[2] << 7) & 0xff00u) | (((uint32_t)z88Pb[2] << 5) & 0x0020u)) << 8;
+}
+static uint32_t z88Pb3Address(void) {
+  return ((((uint32_t)z88Pb[3] << 5) & 0xff00u) | (((uint32_t)z88Pb[3] << 3) & 0x0038u)) << 8;
+}
+static uint32_t z88SbfAddress(void) {
+  return ((((uint32_t)z88Sbf << 5) & 0xff00u) | (((uint32_t)z88Sbf << 3) & 0x0038u)) << 8;
+}
+
+/* SBF and PB0-PB3 all point somewhere: the Blink has a screen to draw (OZvm's `isLcdEnabledAndBound`) */
+static uint8_t z88LcdPointersSet(void) {
+  return z88SbfAddress() && z88Pb0Address() && z88Pb1Address() && z88Pb2Address() && z88Pb3Address();
 }
 
 /* The screen reset: the flash state; the LCD registers are reset with the Blink */
@@ -73,18 +104,15 @@ static void z88DrawHiResRow(uint32_t ptr, uint32_t color, uint32_t pattern) {
   }
 }
 
-/* The address of a LORES character's font: a user graphic from LORES0, else LORES1 */
-static uint32_t z88LoResFontAddress(uint32_t ch, uint32_t attr) {
-  uint32_t fontOffset = ((attr & 0x01u) << 8) | ch;
-  uint32_t fontBank;
-  if (fontOffset >= 0x01c0u) {
-    fontOffset = z88LoRes0 + ((ch & 0x3fu) << 3);
-    fontBank = z88LoRes0Bank;
-  } else {
-    fontOffset = z88LoRes1 + (fontOffset << 3);
-    fontBank = z88LoRes1Bank;
+/* The bank and offset of a LORES character's font: a user graphic from LORES0, else LORES1 */
+static uint32_t z88LoResFontOffset(uint32_t ch, uint32_t attr, uint8_t *bank) {
+  const uint32_t code = ((attr & 0x01u) << 8) | ch;
+  if (code >= 0x01c0u) {
+    *bank = z88LoRes0Bank;
+    return z88LoRes0 + ((ch & 0x3fu) << 3);
   }
-  return (fontOffset & 0x3fffu) | (fontBank << 14);
+  *bank = z88LoRes1Bank;
+  return z88LoRes1 + (code << 3);
 }
 
 static void z88DrawLoResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr) {
@@ -99,25 +127,27 @@ static void z88DrawLoResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr)
   }
 
   const uint32_t color = attr & Z88_ATTR_GRY ? Z88_PX_GREY : Z88_PX_ON;
-  const uint32_t fontAddress = z88LoResFontAddress(ch, attr);
+  uint8_t fontBank;
+  const uint32_t fontOffset = z88LoResFontOffset(ch, attr, &fontBank);
   const uint32_t mask = attr & Z88_ATTR_REV ? 0xffu : 0x00u;
   for (uint32_t row = 0u; row < 7u; row++, ptr += z88LcdWidth) {
-    z88DrawLoResRow(ptr, color, z88ScreenRead(fontAddress + row) ^ mask);
+    z88DrawLoResRow(ptr, color, z88ScreenRead(fontBank, fontOffset + row) ^ mask);
   }
   if (attr & Z88_ATTR_UND) {
     z88DrawLoResRow(ptr, color, attr & Z88_ATTR_REV ? 0x00u : 0xffu);
     return;
   }
-  z88DrawLoResRow(ptr, color, z88ScreenRead(fontAddress + 7u) ^ mask);
+  z88DrawLoResRow(ptr, color, z88ScreenRead(fontBank, fontOffset + 7u) ^ mask);
 }
 
 static void z88DrawLoResCursor(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr) {
   if (z88LcdWidth < x + 6u) return;
   uint32_t ptr = x + y * z88LcdWidth;
-  const uint32_t fontAddress = z88LoResFontAddress(ch, attr);
+  uint8_t fontBank;
+  const uint32_t fontOffset = z88LoResFontOffset(ch, attr, &fontBank);
   const uint32_t mask = z88FlashFlag ? 0xffu : 0x00u;
   for (uint32_t row = 0u; row < 8u; row++, ptr += z88LcdWidth) {
-    z88DrawLoResRow(ptr, Z88_PX_ON, z88ScreenRead(fontAddress + row) ^ mask);
+    z88DrawLoResRow(ptr, Z88_PX_ON, z88ScreenRead(fontBank, fontOffset + row) ^ mask);
   }
 }
 
@@ -134,7 +164,7 @@ static void z88DrawHiResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr)
 
   const uint32_t color = attr & Z88_ATTR_GRY ? Z88_PX_GREY : Z88_PX_ON;
   uint32_t fontOffset = ((attr & 0x03u) << 8) | ch;
-  uint32_t fontBank;
+  uint8_t fontBank;
   if (fontOffset >= 0x0300u) {
     fontOffset = z88HiRes1 + (ch << 3);
     fontBank = z88HiRes1Bank;
@@ -142,10 +172,9 @@ static void z88DrawHiResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr)
     fontOffset = z88HiRes0 + (fontOffset << 3);
     fontBank = z88HiRes0Bank;
   }
-  const uint32_t fontAddress = (fontOffset & 0x3fffu) | (fontBank << 14);
   const uint32_t mask = attr & Z88_ATTR_REV ? 0xffu : 0x00u;
   for (uint32_t row = 0u; row < 8u; row++, ptr += z88LcdWidth) {
-    z88DrawHiResRow(ptr, color, z88ScreenRead(fontAddress + row) ^ mask);
+    z88DrawHiResRow(ptr, color, z88ScreenRead(fontBank, fontOffset + row) ^ mask);
   }
 }
 
@@ -153,7 +182,8 @@ static void z88DrawHiResChar(uint32_t x, uint32_t y, uint32_t ch, uint32_t attr)
  * The colour around the LCD: what the glass shows where no pixel is lit - unlit green, or grey once
  * the LCD was painted off. The picture has no border of its own, so the renderer pads it with this
  * colour to keep the display's rounded corners off the pixels (issue #1374). It follows the last
- * paint, not COM.LCDON, so the surround never disagrees with the picture it frames.
+ * paint, not COM.LCDON, so the surround never disagrees with the picture it frames. The LCD is painted
+ * off while COM.LCDON is clear and while SBF or a PB register is still unset.
  */
 uint32_t z88GetLcdSurroundColor(void) {
   return z88LcdWentOff ? Z88_PX_SCREEN_OFF : Z88_PX_OFF;
@@ -169,30 +199,29 @@ static void z88DrawScreen(void) {
   z88LcdWidth = z88GetScreenWidth();
   const uint32_t ctrlCharsPerRow = z88LcdWidth / 6u;
 
-  uint32_t loRes0 = ((((uint32_t)z88Pb[0] << 3) & 0xf700u) | (((uint32_t)z88Pb[0] << 1) & 0x003fu)) << 8;
-  z88LoRes0Bank = loRes0 >> 16;
+  const uint32_t loRes0 = z88Pb0Address();
+  z88LoRes0Bank = (uint8_t)(loRes0 >> 16);
   z88LoRes0 = loRes0 & 0x3fffu;
-  uint32_t loRes1 = ((((uint32_t)z88Pb[1] << 6) & 0xff00u) | (((uint32_t)z88Pb[1] << 4) & 0x0030u)) << 8;
-  z88LoRes1Bank = loRes1 >> 16;
+  const uint32_t loRes1 = z88Pb1Address();
+  z88LoRes1Bank = (uint8_t)(loRes1 >> 16);
   z88LoRes1 = loRes1 & 0x3fffu;
-  uint32_t hiRes0 = ((((uint32_t)z88Pb[2] << 7) & 0xff00u) | (((uint32_t)z88Pb[2] << 5) & 0x0020u)) << 8;
-  z88HiRes0Bank = hiRes0 >> 16;
+  const uint32_t hiRes0 = z88Pb2Address();
+  z88HiRes0Bank = (uint8_t)(hiRes0 >> 16);
   z88HiRes0 = hiRes0 & 0x3fffu;
-  uint32_t hiRes1 = ((((uint32_t)z88Pb[3] << 5) & 0xff00u) | (((uint32_t)z88Pb[3] << 3) & 0x0038u)) << 8;
-  z88HiRes1Bank = hiRes1 >> 16;
+  const uint32_t hiRes1 = z88Pb3Address();
+  z88HiRes1Bank = (uint8_t)(hiRes1 >> 16);
   z88HiRes1 = hiRes1 & 0x3fffu;
-  uint32_t sbr = ((((uint32_t)z88Sbr << 5) & 0xff00u) | (((uint32_t)z88Sbr << 3) & 0x0038u)) << 8;
-  const uint32_t sbrBank = sbr >> 16;
-  sbr &= 0x3fffu;
+  const uint32_t sbf = z88SbfAddress();
+  const uint8_t sbfBank = (uint8_t)(sbf >> 16);
 
   uint32_t coordY = 0u;
-  uint32_t rowSbrPtr = sbr | (sbrBank << 14);
+  uint32_t rowOffset = sbf & 0x3fffu;
   for (uint32_t rowCount = z88Sch; rowCount; rowCount--) {
     uint32_t coordX = 0u;
-    uint32_t sbrPtr = rowSbrPtr;
-    for (uint32_t column = ctrlCharsPerRow + 1u; column; column--, sbrPtr += 2u) {
-      const uint32_t ch = z88ScreenRead(sbrPtr);
-      const uint32_t attr = z88ScreenRead(sbrPtr + 1u);
+    uint32_t cellOffset = rowOffset;
+    for (uint32_t column = ctrlCharsPerRow + 1u; column; column--, cellOffset += 2u) {
+      const uint32_t ch = z88ScreenRead(sbfBank, cellOffset);
+      const uint32_t attr = z88ScreenRead(sbfBank, cellOffset + 1u);
       if (!(attr & Z88_ATTR_HRS)) {
         z88DrawLoResChar(coordX, coordY, ch, attr);
         coordX += 6u;
@@ -212,7 +241,7 @@ static void z88DrawScreen(void) {
     }
 
     coordY += 8u;
-    rowSbrPtr += Z88_SBR_ROW_WIDTH;
+    rowOffset += Z88_SBF_ROW_WIDTH;
   }
 }
 
@@ -229,7 +258,7 @@ static void z88RenderScreen(void) {
 
   if (z88Frames % Z88_UI_FRAME_FREQUENCY) return;
 
-  if (!(z88Com & Z88_COM_LCDON)) {
+  if (!(z88Com & Z88_COM_LCDON) || !z88LcdPointersSet()) {
     if (!z88LcdWentOff) z88RenderScreenOff();
     z88LcdWentOff = 1u;
     return;
@@ -246,7 +275,7 @@ static void z88RenderScreen(void) {
  */
 void z88DrawLcd(void) {
   z88FlashFlag = z88Tim[0] <= 120u ? 1u : 0u;
-  if (!(z88Com & Z88_COM_LCDON)) {
+  if (!(z88Com & Z88_COM_LCDON) || !z88LcdPointersSet()) {
     z88RenderScreenOff();
     z88LcdWentOff = 1u;
     return;
