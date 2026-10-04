@@ -10,6 +10,7 @@ export const SETTING_EMU_MOUSE_CAPTURE = "emuOptions.mouseCapture";
 export const SETTING_EMU_MOUSE_SHOW_POINTER = "emuOptions.mouseShowPointer";
 export const SETTING_EMU_MOUSE_SENSITIVITY = "emuOptions.mouseSensitivity";
 export const SETTING_EMU_JOYSTICK_BINDINGS = "emuOptions.joystickBindings";
+export const SETTING_EMU_MACHINE_FAVORITES = "emuOptions.machineFavorites";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_STEP_IN_INTERRUPTS = "emuOptions.sourceStepStopsInInterrupts";

@@ -234,6 +234,16 @@ export const STATUS: Record<Tone, Record<"error" | "warning" | "success" | "info
   }
 };
 
+/**
+ * The favourite star (the Select Machine dialog). Gold, fixed across accents: a star is "marked by
+ * the user", which no accent means. It is not a status, and it stays clear of `warning` (hue ~20).
+ * The light value is the Ember accent's light solid, which clears AA on white.
+ */
+export const FAVORITE: Record<Tone, string> = {
+  dark: "#E8B931",
+  light: "#8A6A00"
+};
+
 // ---------------------------------------------------------------------------------------------
 // Device surfaces
 // ---------------------------------------------------------------------------------------------

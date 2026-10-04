@@ -1,4 +1,4 @@
-import { ACCENTS, ANSI, DEVICE, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
+import { ACCENTS, ANSI, DEVICE, FAVORITE, NEUTRAL, STATUS, type AccentId, type Tone, DEVICE_INK } from "./palette";
 
 /**
  * L2 — semantics.
@@ -168,6 +168,10 @@ export function semanticTokens(tone: Tone, accentId: AccentId): Record<string, s
      * move with the tone, so a light-theme danger button drew itself in the dark theme's red.
      */
     "--status-error-hover": alpha(s.error, 88),
+
+    // --- Marks ---------------------------------------------------------------------------------
+    /** Something the user starred (favourite machines). Fixed across accents, like the status hues. */
+    "--mark-favorite": FAVORITE[tone],
 
     // --- Data panels ---------------------------------------------------------------------------
     /**

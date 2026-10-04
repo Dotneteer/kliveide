@@ -31,6 +31,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/logpoints-real-machine.test.ts",
   "test/emu/one-shot-real-machine.test.ts",
   "test/emu/assertion-wpmem-real-machine.test.ts",
+  "test/machines/hardware-specs-cores.test.ts",
   "test/tape/tape-load-flow.test.ts",
   "test/tape/turbo-block-playback.test.ts",
   "test/z88/memory-*.test.ts",

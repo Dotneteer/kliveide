@@ -6,7 +6,8 @@ import {
   EXCLUDED_PROJECT_ITEMS_DIALOG,
   FIRST_STARTUP_DIALOG_IDE,
   NEW_PROJECT_DIALOG,
-  SJASMPLUS_INTEGRATION_DIALOG
+  SJASMPLUS_INTEGRATION_DIALOG,
+  MACHINE_SELECT_DIALOG
 } from "@messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "./AboutDialog";
@@ -27,6 +28,10 @@ import {
   FirstStartDialogResult
 } from "./FirstStartDialog";
 import {
+  MachineSelectDialog,
+  MachineSelectDialogResult
+} from "./machineSelect/MachineSelectDialog";
+import {
   SjasmplusIntegrationDialog,
   SjasmplusIntegrationDialogResult
 } from "./sjasmplus/SjasmplusIntegrationDialog";
@@ -37,7 +42,8 @@ export type IdeDialogResult =
   | ExcludedProjectItemsDialogResult
   | FirstStartDialogResult
   | AboutDialogResult
-  | SjasmplusIntegrationDialogResult;
+  | SjasmplusIntegrationDialogResult
+  | MachineSelectDialogResult;
 
 export type IdeDialogRenderer = (
   data: any,
@@ -65,5 +71,8 @@ export const ideDialogRegistry: Record<number, IdeDialogRenderer> = {
   ),
   [SJASMPLUS_INTEGRATION_DIALOG]: (_, controls) => (
     <SjasmplusIntegrationDialog onClose={(result) => controls.close(result)} />
+  ),
+  [MACHINE_SELECT_DIALOG]: (data, controls) => (
+    <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
   )
 };

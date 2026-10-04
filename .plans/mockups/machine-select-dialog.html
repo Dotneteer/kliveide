@@ -1,0 +1,352 @@
+<title>Select Machine Dialog</title>
+<style>
+/* Layout: one Klive dialog. Left: accordion of machine types → models (favourites section on top). Right: the selected model's hardware sheet. A live Machine-type-menu preview sits beside it. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c; --value: #0A18B8; --star: #8A6A00;
+  --paper: #d9dde3; --border-area: #b7bec8; --lcd: #c9d3b4; --lcd-ink: #3b4a2a;
+  --menu-bg: #f6f6f7; --menu-hi: #0A6FB8; --menu-hi-fg: #ffffff;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --row: 26px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --value: #939CF0; --star: #FFC933;
+  --paper: #2a3038; --border-area: #3a424d; --lcd: #3d4a35; --lcd-ink: #c9d8b4;
+  --menu-bg: #2a2c30; --menu-hi: #2f6fb0; --menu-hi-fg: #ffffff; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --value: #939CF0; --star: #FFC933;
+  --paper: #2a3038; --border-area: #3a424d; --lcd: #3d4a35; --lcd-ink: #c9d8b4;
+  --menu-bg: #2a2c30; --menu-hi: #2f6fb0; --menu-hi-fg: #ffffff; color-scheme: dark; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); padding: 24px 16px 48px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 20px; }
+header.page h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+header.page p { margin: 0; color: var(--text-2); max-width: 80ch; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: start; }
+@media (max-width: 1060px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+
+.dlg { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 12px 40px #0005; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+.dlg-head { background: var(--chrome); border-bottom: 1px solid var(--border); padding: 8px 12px; display: flex; align-items: center; font-weight: 600; }
+.dlg-head .x { margin-left: auto; color: var(--text-3); cursor: pointer; border: 0; background: none; font-size: 16px; }
+.dlg-body { display: grid; grid-template-columns: 300px minmax(0, 1fr); height: 520px; }
+@media (max-width: 760px) { .dlg-body { grid-template-columns: minmax(0, 1fr); height: auto; } .tree { max-height: 300px; } }
+
+/* --- Accordion */
+.left { display: flex; flex-direction: column; border-right: 1px solid var(--border); min-width: 0; min-height: 0; }
+@media (max-width: 760px) { .left { border-right: 0; border-bottom: 1px solid var(--border); } }
+.filter { padding: 8px; border-bottom: 1px solid var(--border-subtle); }
+.filter input { width: 100%; background: var(--canvas); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 4px 8px; font: inherit; }
+.tree { flex: 1; overflow: auto; min-height: 0; }
+.sec { border-bottom: 1px solid var(--border-subtle); }
+.sec-h { width: 100%; display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; gap: 6px; align-items: center; height: 30px; padding: 0 10px; background: none; border: 0; color: var(--text); font: 600 12.5px var(--font-ui); text-align: left; cursor: pointer; }
+.sec-h:hover { background: var(--hover); }
+.sec-h .chev { color: var(--text-3); transition: transform .12s; font-size: 10px; }
+.sec.open > .sec-h .chev { transform: rotate(90deg); }
+.sec-h .n { color: var(--text-3); font-weight: 400; font-size: 11px; font-family: var(--font-mono); }
+.sec-h .runs { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); display: inline-block; margin-left: 6px; vertical-align: middle; }
+.sec-h.leaf.sel { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); }
+.sec-b { display: none; padding-bottom: 4px; }
+.sec.open > .sec-b { display: block; }
+.fav-h { color: var(--text-2); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; height: var(--row); padding: 0 8px 0 30px; cursor: default; }
+.row:hover { background: var(--hover); }
+.row.sel { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); }
+.row .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.star { border: 0; background: none; padding: 0; width: 18px; cursor: pointer; color: var(--text-dis); font-size: 13px; }
+.star.on { color: var(--star); }
+.row:not(:hover):not(.sel) .star:not(.on) { visibility: hidden; }
+.pill { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 8px; background: var(--accent-wash); color: var(--accent); font-weight: 600; }
+.frow { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 6px; align-items: center; height: var(--row); padding: 0 6px 0 16px; }
+.frow:hover { background: var(--hover); }
+.frow.sel { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); }
+.frow .grip { color: var(--text-dis); cursor: grab; font-size: 10px; letter-spacing: -2px; }
+.frow .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops { display: flex; gap: 1px; visibility: hidden; }
+.frow:hover .ops, .frow.sel .ops { visibility: visible; }
+.ib { border: 0; background: none; color: var(--text-2); width: 20px; height: 20px; border-radius: 3px; cursor: pointer; font-size: 11px; }
+.ib:hover { background: var(--border); color: var(--text); }
+.ib:disabled { color: var(--text-dis); background: none; cursor: default; }
+.ib.on { color: var(--accent); }
+.fsep { height: 9px; margin: 0 10px 0 34px; border-top: 1px dashed var(--border-strong); transform: translateY(4px); }
+.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.hint { color: var(--text-3); padding: 4px 16px 8px; font-size: 12px; }
+.sec-h:focus-visible, .row:focus-visible, .frow:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* --- Hardware sheet */
+.sheet { overflow: auto; min-width: 0; padding: 16px 20px 20px; display: grid; gap: 16px; align-content: start; }
+.sh-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; }
+.sh-head h2 { margin: 0; font-size: 17px; font-weight: 600; text-wrap: balance; }
+.sh-head .sub { grid-column: 1; color: var(--text-2); font-size: 12px; }
+.sh-head .sub code { font-family: var(--font-mono); color: var(--text-3); }
+.favbtn { grid-row: 1 / span 2; grid-column: 2; border: 1px solid var(--border); background: var(--raised); color: var(--text); border-radius: 4px; padding: 4px 10px; font: 12px var(--font-ui); cursor: pointer; white-space: nowrap; }
+.favbtn .s { color: var(--text-3); }
+.favbtn.on .s { color: var(--star); }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { font: 11px var(--font-mono); color: var(--text-2); border: 1px solid var(--border); border-radius: 3px; padding: 0 6px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 24px; }
+.grp h3 { margin: 0 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--text-2); font-weight: 600; padding-bottom: 4px; border-bottom: 1px solid var(--border-subtle); }
+.kv { display: grid; grid-template-columns: 15ch minmax(0, 1fr); gap: 3px 10px; margin: 0; }
+.kv dt { color: var(--text-2); }
+.kv dd { margin: 0; color: var(--value); font-family: var(--font-mono); font-size: 12px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.kv dd small { color: var(--text-3); font-family: var(--font-ui); font-size: 11px; }
+.grp.wide { grid-column: 1 / -1; }
+.screen { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 14px; align-items: center; }
+.screen svg { width: 180px; max-width: 100%; height: auto; }
+.screen svg text { font: 9px var(--font-mono); fill: var(--text-2); }
+.unv { color: var(--text-3); font-size: 11px; }
+
+.dlg-foot { background: var(--chrome); border-top: 1px solid var(--border); padding: 8px 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.grow { flex: 1; }
+.btn { border: 1px solid var(--border-strong); background: var(--raised); color: var(--text); border-radius: 4px; padding: 5px 14px; font: 13px var(--font-ui); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 500; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.link { border: 0; background: none; color: var(--text-2); padding-inline: 4px; }
+.dirty { font-size: 11px; color: var(--text-3); }
+
+.side { display: grid; gap: 10px; }
+.cap { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-2); font-weight: 600; }
+.menu { background: var(--menu-bg); border: 1px solid var(--border-strong); border-radius: 6px; padding: 4px; box-shadow: 0 8px 24px #0004; }
+.mi { display: grid; grid-template-columns: 14px 1fr auto; gap: 6px; padding: 2px 8px; border-radius: 4px; }
+.mi:hover { background: var(--menu-hi); color: var(--menu-hi-fg); }
+.mi .k { color: var(--text-3); }
+.ms { border-top: 1px solid var(--border-strong); margin: 4px 6px; }
+.note { color: var(--text-2); font-size: 12px; margin: 0; }
+.log { font: 11px/1.5 var(--font-mono); color: var(--text-2); background: var(--panel); border: 1px solid var(--border); border-radius: 4px; padding: 6px 8px; white-space: pre-wrap; min-height: 34px; }
+@media (max-width: 560px) { .screen { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <h1>Select Machine dialog</h1>
+    <p>Mockup v2. Machine types open like an accordion; selecting a model shows its hardware sheet. Favourites (the Machine type menu) are the first section: star a model to add it, then reorder or add separators there. Figures come from Klive's emulator sources.</p>
+  </header>
+  <div class="stage">
+    <section class="dlg" aria-label="Select Machine dialog">
+      <div class="dlg-head">Select Machine <button class="x" id="x" aria-label="Close">×</button></div>
+      <div class="dlg-body">
+        <div class="left">
+          <div class="filter"><input id="q" type="search" placeholder="Filter (name, 128K, NTSC, disk, OZ…)" aria-label="Filter machines"></div>
+          <div id="tree" class="tree"></div>
+        </div>
+        <div id="sheet" class="sheet" aria-live="polite"></div>
+      </div>
+      <div class="dlg-foot">
+        <button class="btn link" id="reset">Restore default favourites</button>
+        <span id="dirty" class="dirty"></span>
+        <span class="grow"></span>
+        <button class="btn" id="cancel">Cancel</button>
+        <button class="btn" id="save">Save</button>
+        <button class="btn primary" id="switch">Switch</button>
+      </div>
+    </section>
+    <aside class="side">
+      <div class="cap">Preview: Machine › Machine type</div>
+      <div id="menu" class="menu"></div>
+      <p class="note">The running model stays visible (ticked) even when it is not a favourite.</p>
+      <div class="cap">Dialog result sent to main</div>
+      <div id="log" class="log">—</div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const T = (n) => n.toLocaleString("en-US");
+const SPEC_ULA = (o) => ({
+  cpu: "Zilog Z80", ...o,
+  display: [["Resolution", "256 × 192 px"], ["Colours", "15 (8 × BRIGHT)"], ["Attributes", "32 × 24 cells of 8 × 8, FLASH"]],
+  input: [["Keyboard", "40-key Spectrum"]]
+});
+const FAM = [
+  { id: "sp48", name: "ZX Spectrum 48K", models: [
+    { m: "pal", name: "ZX Spectrum 48K", spec: SPEC_ULA({ clock: 3500000, mult: "1× – 24×", rom: [["ROM", "1 × 16K"], ["Image", "sp48.rom"]], ram: [["RAM", "48K"]], raster: [352, 288, 256, 192], timing: [224, 312, 69888, "≈50.08 Hz", "PAL"], sound: ["Beeper"], media: ["Tape (TAP/TZX)"] }) },
+    { m: "ntsc", name: "ZX Spectrum 48K (NTSC)", spec: SPEC_ULA({ clock: 3527500, mult: "1× – 24×", rom: [["ROM", "1 × 16K"], ["Image", "sp48.rom"]], ram: [["RAM", "48K"]], raster: [352, 240, 256, 192], timing: [224, 264, 59136, "≈59.65 Hz", "NTSC"], sound: ["Beeper"], media: ["Tape (TAP/TZX)"] }) },
+    { m: "pal-16k", name: "ZX Spectrum 16K", spec: SPEC_ULA({ clock: 3500000, mult: "1× – 24×", rom: [["ROM", "1 × 16K"], ["Image", "sp48.rom"]], ram: [["RAM", "16K"], ["Above $8000", "reads $FF"]], raster: [352, 288, 256, 192], timing: [224, 312, 69888, "≈50.08 Hz", "PAL"], sound: ["Beeper"], media: ["Tape (TAP/TZX)"] }) } ] },
+  { id: "sp128", name: "ZX Spectrum 128K", models: [
+    { m: null, name: "ZX Spectrum 128K", spec: SPEC_ULA({ clock: 3546900, mult: "1× – 24×", rom: [["ROM", "2 × 16K"], ["Images", "sp128-0.rom, sp128-1.rom"]], ram: [["RAM", "128K"], ["Banks", "8 × 16K"]], raster: [352, 287, 256, 192], timing: [228, 311, 70908, "≈50.02 Hz", "PAL"], sound: ["Beeper", "AY-3-8912 PSG"], media: ["Tape (TAP/TZX)"] }) } ] },
+  { id: "spp3e", name: "ZX Spectrum +2E/+3E", models: ["nofdd|ZX Spectrum +2E|0", "fdd1|ZX Spectrum +3E (1 FDD)|1", "fdd2|ZX Spectrum +3E (2 FDDs)|2"].map((s) => { const [m, name, d] = s.split("|");
+    return { m, name, spec: SPEC_ULA({ clock: 3546900, mult: "1× – 24×", rom: [["ROM", "4 × 16K"], ["Images", "spp3e-0 … spp3e-3.rom"]], ram: [["RAM", "128K"], ["Banks", "8 × 16K"]], raster: [352, 287, 256, 192], timing: [228, 311, 70908, "≈50.02 Hz", "PAL"], sound: ["Beeper", "AY-3-8912 PSG"], media: ["Tape (TAP/TZX)", d === "0" ? "No floppy drive" : d === "1" ? "Floppy drive A (DSK)" : "Floppy drives A and B (DSK)"] }) }; }) },
+  { id: "zxnext", name: "ZX Spectrum Next", models: [
+    { m: "standard", name: "ZX Spectrum Next", spec: { cpu: "Z80N", clock: 3500000, clockNote: "3.5 / 7 / 14 / 28 MHz via NextReg $07", mult: "— (set by software)",
+      rom: [["ROM", "7 × 16K pages"], ["Images", "enNextZX 64K, enAltZX 32K, enNxtmmc 8K (DivMMC), enNextMf 8K (Multiface)"]],
+      ram: [["Memory", "2 MB"], ["Banks", "224"]],
+      display: [["Layers", "ULA 256 × 192, Layer 2 up to 320 × 256, tilemap, 128 sprites"], ["Colours", "512-colour palettes"], ["Extras", "Copper"]],
+      raster: [720, 288, 256, 192], rasterNote: "output buffer",
+      timing: ["456 (7 MHz)", 311, null, "50 or 60 Hz", "Selectable (NextReg $03/$05)"], timingNote: "128K/+3 timing shown; 48K and Pentagon timings selectable",
+      sound: ["Beeper", "TurboSound (3 × AY)", "4-channel DAC (SpecDrum)"], media: ["SD card (FAT32 image)"],
+      input: [["Keyboard", "Next, extended keys"], ["Pointing", "Kempston mouse"], ["Joysticks", "2 ports"]] } } ] },
+  { id: "z88", name: "Cambridge Z88", models: [
+    ["OZ50", "OZ v5.0B Int.", "512K", "z88v50b · 512K flash (AMD 29F040B)", "UK"], ["OZ47", "OZ v4.7 Int.", "512K", "z88v47 · 512K flash (AMD 29F040B)", "UK"],
+    ["OZ40", "OZ v4.0 UK", "128K", "z88ukv40 · 128K", "UK"], ["OZ40FI", "OZ v4.01 SE/FI", "128K", "z88fiv401 · 128K", "Swedish/Finnish"],
+    ["OZ30", "OZ v3.0 UK", "32K", "z88ukv30 · 128K", "UK"], ["OZ323IT", "OZ v3.23 IT", "32K", "z88itv323 · 128K", "Italian"],
+    ["OZ326FR", "OZ v3.26 FR", "32K", "z88frv326 · 128K", "French"], ["OZ319ES", "OZ v3.19 ES", "32K", "z88esv319 · 128K", "Spanish"],
+    ["OZ321DK", "OZ v3.21 DK", "32K", "z88dkv321 · 128K", "Danish"], ["OZ318DE", "OZ v3.18 DE", "32K", "z88dev318 · 128K", "German"]
+  ].map(([m, v, ram, rom, kb]) => ({ m, name: `Cambridge Z88 (${v})`, spec: { cpu: "Zilog Z80", clock: 3276800, mult: "1× – 24×",
+    rom: [["Slot 0 ROM", rom]], ram: [["Internal RAM", ram], ["Address space", "256 × 16K banks (4 MB)"]],
+    display: [["LCD", "640 × 64 px, monochrome"], ["Attributes", "grey, reverse, flash, underline"], ["Other sizes", "640 × 256 / 320 / 480 (config)"]],
+    raster: [640, 64, 640, 64], lcd: true,
+    timing: [null, null, 16384, "200 Hz (5 ms) · LCD 25 Hz", "—"],
+    sound: ["Beeper"], media: ["Card slots 1–3 (RAM, EPROM, flash)"], input: [["Keyboard", `64-key, ${kb} layout`]] } })) },
+  { id: "zx81", name: "Sinclair ZX81", models: [
+    ["zx81-16k", "Sinclair ZX81 (16K)", "16K", 0], ["zx81-1k", "Sinclair ZX81 (1K)", "1K", 0], ["zx81-64k", "Sinclair ZX81 (64K)", "64K", 0],
+    ["zx81-16k-us", "Timex Sinclair 1000 / ZX81 US (16K, NTSC)", "16K", 1], ["zx81-1k-us", "ZX81 US (1K, NTSC)", "1K", 1]
+  ].map(([m, name, ram, ntsc]) => ({ m, name, spec: { cpu: "Zilog Z80", clock: 3250000, mult: "1× – 24×",
+    rom: [["ROM", "8K"], ["Image", "zx81.rom"]], ram: [["RAM", ram]],
+    display: [["Text", "32 × 24 characters"], ["Colours", "monochrome"], ["Generation", "CPU-driven (software video)"]],
+    raster: [352, ntsc ? 240 : 288, 256, 192], timing: [207, null, ntsc ? 54167 : 65000, ntsc ? "≈60 Hz" : "≈50 Hz", ntsc ? "NTSC" : "PAL"],
+    sound: [], media: ["Tape (.P files)"], input: [["Keyboard", "40-key membrane"]] } })) },
+  { id: "zx80", name: "Sinclair ZX80", models: [
+    ["zx80-16k", "Sinclair ZX80 (16K)", "16K", "4K · zx80.rom"], ["zx80-1k", "Sinclair ZX80 (1K)", "1K", "4K · zx80.rom"],
+    ["zx80-8krom-16k", "Sinclair ZX80 with the 8K ROM (16K)", "16K", "8K · zx81.rom"]
+  ].map(([m, name, ram, rom]) => ({ m, name, spec: { cpu: "Zilog Z80", clock: 3250000, mult: "1× – 24×",
+    rom: [["ROM", rom]], ram: [["RAM", ram]],
+    display: [["Text", "32 × 24 characters"], ["Colours", "monochrome"], ["Generation", "CPU-driven; blanks while computing"]],
+    raster: [352, 288, 256, 192], timing: [null, null, 65000, "≈50 Hz", "PAL only"],
+    sound: [], media: ["Tape (.O files)"], input: [["Keyboard", "40-key membrane"]] } })) },
+  { id: "c64", name: "Commodore 64 (experimental)", models: [
+    ["pal", "Commodore 64 (experimental)", 985248, "MOS 6569R3", [63, 312, 19656, "≈50.12 Hz", "PAL"], 272, "c64-kernal-pal"],
+    ["ntsc", "Commodore 64 (experimental, NTSC)", 1022727, "MOS 8562", [65, 263, 17095, "≈59.83 Hz", "NTSC"], 247, "c64-kernal-ntsc"]
+  ].map(([m, name, clk, vic, tim, h, kern]) => ({ m, name, spec: { cpu: "MOS 6510", clock: clk, mult: "1× – 24×", cycles: "cycles",
+    rom: [["ROM", "BASIC 8K, KERNAL 8K, CHARGEN 4K"], ["Images", `c64-basic, ${kern}, c64-chargen`]], ram: [["RAM", "64K"]],
+    display: [["Video chip", `VIC-II ${vic}`], ["Resolution", "320 × 200 px"], ["Colours", "16"]],
+    raster: [384, h, 320, 200], timing: tim, sound: ["SID"], media: ["Tape"], input: [["Keyboard", "C64, 66 keys"]] } })) }
+];
+const ALL = [], BY = {};
+for (const f of FAM) for (const md of f.models) { const k = f.id + (md.m ? "/" + md.m : ""); const o = { key: k, fam: f, ...md }; ALL.push(o); BY[k] = o; }
+const DEFAULTS = [{ key: "sp48/pal" }, { key: "sp128" }, { key: "spp3e/fdd1", sep: true }, { key: "zxnext/standard", sep: true }, { key: "z88/OZ50" }, { key: "zx81/zx81-16k" }];
+const clone = (a) => a.map((e) => ({ ...e }));
+const S = { running: "spp3e/fdd1", saved: clone(DEFAULTS), favs: clone(DEFAULTS), sel: "spp3e/fdd1", open: new Set(["fav", "spp3e"]), q: "" };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const isFav = (k) => S.favs.some((e) => e.key === k);
+const dirty = () => JSON.stringify(S.favs) !== JSON.stringify(S.saved);
+const haystack = (o) => [o.name, o.fam.name, ...o.spec.ram.map((r) => r[1]), ...o.spec.media, o.spec.timing[4], o.spec.cpu, ...o.spec.rom.map((r) => r[1])].join(" ").toLowerCase();
+
+function toggleFav(k) { if (isFav(k)) S.favs = S.favs.filter((e) => e.key !== k); else S.favs.push({ key: k }); render(); }
+function move(k, d) { const i = S.favs.findIndex((e) => e.key === k), j = i + d; if (i < 0 || j < 0 || j >= S.favs.length) return; [S.favs[i], S.favs[j]] = [S.favs[j], S.favs[i]]; render(); }
+
+function renderTree() {
+  const q = S.q.trim().toLowerCase();
+  let h = "";
+  if (!q) {
+    const open = S.open.has("fav");
+    h += `<div class="sec ${open ? "open" : ""}"><button class="sec-h" data-sec="fav" aria-expanded="${open}"><span class="chev">▶</span><span class="fav-h">Favourites · menu order</span><span class="n">${S.favs.length}</span></button><div class="sec-b">`;
+    if (!S.favs.length) h += `<div class="hint">Star a model to add it to the Machine type menu.</div>`;
+    S.favs.forEach((e, i) => {
+      const o = BY[e.key];
+      h += `<div class="frow ${S.sel === e.key ? "sel" : ""}" tabindex="0" draggable="true" data-fav="${e.key}"><span class="grip">⋮⋮</span><span class="name">${esc(o.name)}</span>
+        <span class="ops"><button class="ib" data-op="up" ${i === 0 ? "disabled" : ""} title="Move up (Alt+↑)">↑</button><button class="ib" data-op="down" ${i === S.favs.length - 1 ? "disabled" : ""} title="Move down (Alt+↓)">↓</button><button class="ib ${e.sep ? "on" : ""}" data-op="sep" ${i === S.favs.length - 1 ? "disabled" : ""} title="Separator after" aria-pressed="${!!e.sep}">─</button><button class="ib" data-op="rm" title="Remove from favourites">×</button></span></div>`;
+      if (e.sep && i < S.favs.length - 1) h += `<div class="fsep"></div>`;
+    });
+    h += `</div></div>`;
+  }
+  for (const f of FAM) {
+    const ms = ALL.filter((o) => o.fam === f && (!q || haystack(o).includes(q)));
+    if (!ms.length) continue;
+    const runs = ms.some((o) => o.key === S.running);
+    if (f.models.length === 1) {
+      const o = ms[0];
+      h += `<div class="sec"><div class="sec-h leaf ${S.sel === o.key ? "sel" : ""}" tabindex="0" data-key="${o.key}" role="button"><span></span><span>${esc(f.name)}${runs ? '<span class="runs" title="Running"></span>' : ""}</span>
+        <button class="star ${isFav(o.key) ? "on" : ""}" data-star="${o.key}" title="Favourite">${isFav(o.key) ? "★" : "☆"}</button></div></div>`;
+      continue;
+    }
+    const open = q || S.open.has(f.id);
+    h += `<div class="sec ${open ? "open" : ""}"><button class="sec-h" data-sec="${f.id}" aria-expanded="${!!open}"><span class="chev">▶</span><span>${esc(f.name)}${runs && !open ? '<span class="runs" title="Running model inside"></span>' : ""}</span><span class="n">${ms.length}</span></button><div class="sec-b">`;
+    for (const o of ms) {
+      h += `<div class="row ${S.sel === o.key ? "sel" : ""}" tabindex="0" data-key="${o.key}"><span class="name">${esc(o.name)}</span>${o.key === S.running ? '<span class="pill">Running</span>' : "<span></span>"}
+        <button class="star ${isFav(o.key) ? "on" : ""}" data-star="${o.key}" title="${isFav(o.key) ? "Remove from" : "Add to"} favourites">${isFav(o.key) ? "★" : "☆"}</button></div>`;
+    }
+    h += `</div></div>`;
+  }
+  $("tree").innerHTML = h || `<div class="hint">No machine matches “${esc(S.q)}”.</div>`;
+}
+
+function kv(rows) { return `<dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join("")}</dl>`; }
+function screenSvg(sp) {
+  const [W, H, w, h] = sp.raster, sc = 170 / Math.max(W, H * 1.6), bw = W * sc, bh = H * sc, iw = w * sc, ih = h * sc;
+  const x = (180 - bw) / 2, y = 4;
+  if (sp.lcd) return `<svg viewBox="0 0 180 ${bh + 26}" role="img" aria-label="LCD ${W} by ${H}"><rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="var(--lcd)" stroke="var(--border-strong)"/><text x="90" y="${y + bh / 2 + 3}" text-anchor="middle" style="fill:var(--lcd-ink)">PIPEDREAM</text><text x="90" y="${bh + 20}" text-anchor="middle">${W} × ${H} LCD</text></svg>`;
+  return `<svg viewBox="0 0 180 ${bh + 26}" role="img" aria-label="Raster ${W} by ${H}, display ${w} by ${h}"><rect x="${x}" y="${y}" width="${bw}" height="${bh}" fill="var(--border-area)"/><rect x="${x + (bw - iw) / 2}" y="${y + (bh - ih) / 2}" width="${iw}" height="${ih}" fill="var(--paper)" stroke="var(--border-strong)" stroke-width=".5"/><text x="90" y="${y + bh / 2 + 3}" text-anchor="middle">${w} × ${h}</text><text x="90" y="${bh + 20}" text-anchor="middle">${W} × ${H}${sp.rasterNote ? " " + sp.rasterNote : " with border"}</text></svg>`;
+}
+function renderSheet() {
+  const o = BY[S.sel]; if (!o) { $("sheet").innerHTML = ""; return; }
+  const sp = o.spec, fav = isFav(o.key), cyc = sp.cycles || "T-states";
+  const [tl, lines, tf, hz, std] = sp.timing;
+  const mhz = (sp.clock / 1e6).toLocaleString("en-US", { maximumFractionDigits: 6 });
+  const chips = [sp.cpu, sp.ram[0][1] + " RAM", std, ...sp.media.filter((m) => !/^No /.test(m)).map((m) => m.split(" (")[0])].filter((c) => c && c !== "—");
+  $("sheet").innerHTML = `
+    <div class="sh-head"><h2>${esc(o.name)} ${o.key === S.running ? '<span class="pill">Running</span>' : ""}</h2>
+      <button class="favbtn ${fav ? "on" : ""}" id="favbtn" aria-pressed="${fav}"><span class="s">${fav ? "★" : "☆"}</span> ${fav ? "In Machine type menu" : "Add to Machine type menu"}</button>
+      <div class="sub">${esc(o.fam.name)} · <code>${esc(o.fam.id)}${o.m ? " / " + esc(o.m) : ""}</code></div></div>
+    <div class="chips">${chips.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>
+    <div class="grid2">
+      <div class="grp"><h3>Processor</h3>${kv([["CPU", esc(sp.cpu)], ["Clock", `${T(sp.clock)} Hz <small>(${mhz} MHz)</small>`], ...(sp.clockNote ? [["Turbo", esc(sp.clockNote)]] : []), ["Clock multiplier", esc(sp.mult)]])}</div>
+      <div class="grp"><h3>Memory</h3>${kv([...sp.rom, ...sp.ram].map(([k, v]) => [k, esc(v)]))}</div>
+      <div class="grp wide"><h3>Display</h3><div class="screen">${screenSvg(sp)}${kv(sp.display.map(([k, v]) => [k, esc(v)]))}</div></div>
+      <div class="grp"><h3>Frame timing</h3>${kv([["Standard", esc(std)], [`${cyc} / line`, tl == null ? "—" : esc(typeof tl === "number" ? T(tl) : tl)], ["Lines / frame", lines == null ? "—" : T(lines)], [`${cyc} / frame`, tf == null ? "—" : T(tf)], ["Frame rate", esc(hz)]])}${sp.timingNote ? `<div class="unv">${esc(sp.timingNote)}</div>` : ""}</div>
+      <div class="grp"><h3>Sound</h3>${kv(sp.sound.length ? sp.sound.map((s, i) => [i ? "" : "Devices", esc(s)]) : [["Devices", "none"]])}</div>
+      <div class="grp"><h3>Storage &amp; input</h3>${kv([...sp.media.map((m, i) => [i ? "" : "Media", esc(m)]), ...sp.input.map(([k, v]) => [k, esc(v)])])}</div>
+    </div>`;
+  $("favbtn").onclick = () => toggleFav(o.key);
+}
+function renderMenu() {
+  let h = "";
+  S.favs.forEach((e, i) => { h += `<div class="mi"><span>${e.key === S.running ? "✓" : ""}</span><span>${esc(BY[e.key].name)}</span><span></span></div>`; if (e.sep && i < S.favs.length - 1) h += `<div class="ms"></div>`; });
+  if (!isFav(S.running)) { if (S.favs.length) h += `<div class="ms"></div>`; h += `<div class="mi"><span>✓</span><span>${esc(BY[S.running].name)}</span><span></span></div>`; }
+  $("menu").innerHTML = h + `<div class="ms"></div><div class="mi"><span></span><span>Select machine…</span><span class="k">⇧⌘M</span></div>`;
+}
+function render() {
+  renderTree(); renderSheet(); renderMenu();
+  $("dirty").textContent = dirty() ? "Unsaved favourite changes" : "";
+  $("save").disabled = !dirty();
+  const o = BY[S.sel], can = o && S.sel !== S.running;
+  $("switch").disabled = !can; $("switch").textContent = can ? `Switch to ${o.name}` : "Switch";
+}
+const toResult = () => S.favs.map((e) => { const o = BY[e.key]; return { machineId: o.fam.id, ...(o.m ? { modelId: o.m } : {}), ...(e.sep ? { separatorAfter: true } : {}) }; });
+function doSwitch(k) { const o = BY[k]; if (!o || k === S.running) return; $("log").textContent = JSON.stringify({ favorites: dirty() ? toResult() : undefined, switchTo: { machineId: o.fam.id, modelId: o.m ?? undefined } }, null, 1); S.running = k; S.saved = clone(S.favs); render(); }
+const focusSel = () => $("tree").querySelector(`[data-key="${S.sel}"], [data-fav="${S.sel}"]`)?.focus();
+
+$("tree").addEventListener("click", (ev) => {
+  const st = ev.target.closest("[data-star]"); if (st) { toggleFav(st.dataset.star); return; }
+  const sec = ev.target.closest("[data-sec]"); if (sec) { const id = sec.dataset.sec; S.open.has(id) ? S.open.delete(id) : S.open.add(id); render(); return; }
+  const fr = ev.target.closest("[data-fav]");
+  if (fr) { const k = fr.dataset.fav, op = ev.target.closest("[data-op]")?.dataset.op; S.sel = k;
+    if (op === "up") move(k, -1); else if (op === "down") move(k, 1);
+    else if (op === "sep") { const e = S.favs.find((e) => e.key === k); e.sep = !e.sep; render(); }
+    else if (op === "rm") { S.favs = S.favs.filter((e) => e.key !== k); render(); } else render(); return; }
+  const r = ev.target.closest("[data-key]"); if (r) { S.sel = r.dataset.key; render(); focusSel(); }
+});
+$("tree").addEventListener("dblclick", (ev) => { if (ev.target.closest("[data-op],[data-star]")) return; const r = ev.target.closest("[data-key],[data-fav]"); if (r) doSwitch(r.dataset.key || r.dataset.fav); });
+$("tree").addEventListener("keydown", (ev) => {
+  const items = [...$("tree").querySelectorAll("[data-sec],[data-key],[data-fav]")]; const cur = document.activeElement; const i = items.indexOf(cur);
+  if (ev.altKey && cur?.dataset.fav && (ev.key === "ArrowUp" || ev.key === "ArrowDown")) { ev.preventDefault(); move(cur.dataset.fav, ev.key === "ArrowUp" ? -1 : 1); focusSel(); return; }
+  if (ev.key === "ArrowDown" || ev.key === "ArrowUp") { ev.preventDefault(); const n = items[Math.max(0, Math.min(items.length - 1, i + (ev.key === "ArrowDown" ? 1 : -1)))]; if (n) { const k = n.dataset.key || n.dataset.fav; if (k) { S.sel = k; render(); focusSel(); } else n.focus(); } }
+  else if (ev.key === " " && (cur?.dataset.key || cur?.dataset.fav)) { ev.preventDefault(); toggleFav(S.sel); focusSel(); }
+  else if (ev.key === "Enter" && (cur?.dataset.key || cur?.dataset.fav)) doSwitch(S.sel);
+  else if ((ev.key === "ArrowRight" || ev.key === "ArrowLeft") && cur?.dataset.sec) { const id = cur.dataset.sec; ev.key === "ArrowRight" ? S.open.add(id) : S.open.delete(id); render(); $("tree").querySelector(`[data-sec="${id}"]`)?.focus(); }
+});
+let drag = null;
+$("tree").addEventListener("dragstart", (ev) => { const r = ev.target.closest("[data-fav]"); if (!r) return; drag = r.dataset.fav; try { ev.dataTransfer.setData("text/plain", drag); } catch {} });
+$("tree").addEventListener("dragover", (ev) => { const r = ev.target.closest("[data-fav]"); if (!drag || !r) return; ev.preventDefault(); $("tree").querySelectorAll(".drop-before").forEach((x) => x.classList.remove("drop-before")); r.classList.add("drop-before"); });
+$("tree").addEventListener("drop", (ev) => { const r = ev.target.closest("[data-fav]"); if (!drag || !r) return; ev.preventDefault(); const [it] = S.favs.splice(S.favs.findIndex((e) => e.key === drag), 1); S.favs.splice(S.favs.findIndex((e) => e.key === r.dataset.fav), 0, it); drag = null; render(); });
+$("tree").addEventListener("dragend", () => { drag = null; render(); });
+$("q").addEventListener("input", (ev) => { S.q = ev.target.value; render(); });
+$("reset").onclick = () => { S.favs = clone(DEFAULTS); render(); };
+$("save").onclick = () => { $("log").textContent = JSON.stringify({ favorites: toResult() }, null, 1); S.saved = clone(S.favs); render(); };
+$("cancel").onclick = $("x").onclick = () => { $("log").textContent = "(cancelled: no change)"; S.favs = clone(S.saved); render(); };
+$("switch").onclick = () => doSwitch(S.sel);
+render();
+</script>
