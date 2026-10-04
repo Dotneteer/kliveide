@@ -173,6 +173,8 @@ const productionExports = [
   "spp3eGetSelectedRom",
   "spp3eGetSelectedBank",
   "spp3eGetPagingEnabled",
+  "spp3eGetPort7ffd",
+  "spp3eGetPort1ffd",
   "spp3eGetUseShadowScreen",
   "spp3eGetScreenBank",
   "spp3eGetInSpecialPagingMode",

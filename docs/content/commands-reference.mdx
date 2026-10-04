@@ -717,6 +717,32 @@ zx-snapshot "snapshots/game.sna" -r
 zxsnap "snapshots/demo.szx" -d
 ```
 
+## `zx-snapshot-save`
+
+This command saves the ZX Spectrum 48K, 128K or +2E/+3E as a snapshot.
+
+```
+zx-snapshot-save <snapshot-file> [-f]
+```
+
+Available aliases: `zxsave`
+
+The file's extension picks the format: `.szx`, `.z80` or `.sna`. `.szx` keeps the whole state; the
+command lists anything `.z80` or `.sna` cannot hold as warnings, and refuses a state the format would
+load back differently. An existing file is replaced only with `-f`.
+
+The machine must be running or paused. A running machine is paused for the capture and runs on
+afterwards; a paused one stays paused. **File &rarr; Save ZX Spectrum Snapshot...** and the Emulator's
+**Machine &rarr; Save Snapshot...** do the same after asking for a file. See
+[Using ZX Spectrum Snapshots](./howto/spectrum-snapshots#saving-a-snapshot) for what each format
+keeps.
+
+```text
+zx-snapshot-save "snapshots/level3.szx"
+zx-snapshot-save "snapshots/level3.z80" -f
+zxsave "snapshots/bug.sna"
+```
+
 ## `z88-snapshot`
 
 This command loads a Cambridge Z88 snapshot (a `.z88` file saved by OZvm) into the Z88 machine and

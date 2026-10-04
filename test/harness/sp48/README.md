@@ -46,6 +46,8 @@ it("prints through the ROM", async () => {
 | Tape | `insertTape(blocks, { fastLoad })` | Puts `TapeDataBlock`s in the deck (`MEDIA_TAPE`), fast load on by default; the ROM's LOAD reads them. |
 | Memory | `peek`, `peekWord`, `poke`, `pokeWord` | Through the machine's memory API. |
 | Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
+| | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |
+| | `saveSnapshot(format)` | Captures and writes a `.sna`/`.z80`/`.szx` file, as the emulator saves one; returns `{ bytes, losses }` and throws when the format refuses the state. |
 | Screen | `screenChar(row, col)`, `screenLine(row)` | Text in a cell/row, recognised against the ROM character set (INVERSE-insensitive); `?` for unrecognised cells. |
 
 ## Notes

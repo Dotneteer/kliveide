@@ -62,7 +62,11 @@ import { createSettingsReader } from "@common/utils/SettingsReader";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
-import { openSpectrumSnapshot } from "./machine-menus/zx-specrum-menus";
+import {
+  canSaveSpectrumSnapshot,
+  openSpectrumSnapshot,
+  saveSpectrumSnapshotAs
+} from "./machine-menus/zx-specrum-menus";
 import { fileChangeWatcher } from "./file-watcher";
 import { collectedBuildTasks } from "./build";
 import {
@@ -374,6 +378,15 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         label: "Load ZX Spectrum Snapshot...",
         click: async () => {
           await openSpectrumSnapshot(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        // --- Enabled only while a ZX Spectrum has a state to save
+        id: "save_spectrum_snapshot",
+        label: "Save ZX Spectrum Snapshot...",
+        enabled: canSaveSpectrumSnapshot(appState),
+        click: async () => {
+          await saveSpectrumSnapshotAs(BrowserWindow.getFocusedWindow() ?? emuWindow);
         }
       },
       { type: "separator" },

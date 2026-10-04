@@ -150,6 +150,8 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   spp3eGetSelectedRom: SpP3eWasmV2ExportFunction;
   spp3eGetSelectedBank: SpP3eWasmV2ExportFunction;
   spp3eGetPagingEnabled: SpP3eWasmV2ExportFunction;
+  spp3eGetPort7ffd: SpP3eWasmV2ExportFunction;
+  spp3eGetPort1ffd: SpP3eWasmV2ExportFunction;
   spp3eGetUseShadowScreen: SpP3eWasmV2ExportFunction;
   spp3eGetScreenBank: SpP3eWasmV2ExportFunction;
   spp3eGetInSpecialPagingMode: SpP3eWasmV2ExportFunction;
@@ -414,6 +416,8 @@ const requiredV2Exports = [
   "spp3eGetSelectedRom",
   "spp3eGetSelectedBank",
   "spp3eGetPagingEnabled",
+  "spp3eGetPort7ffd",
+  "spp3eGetPort1ffd",
   "spp3eGetUseShadowScreen",
   "spp3eGetScreenBank",
   "spp3eGetInSpecialPagingMode",

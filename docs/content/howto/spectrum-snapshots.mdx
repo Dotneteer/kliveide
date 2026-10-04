@@ -1,5 +1,5 @@
 ---
-description: "Klive opens, views, runs and debugs ZX Spectrum snapshots: .sna, .z80 (versions 1 to 3) and .szx files."
+description: "Klive opens, views, runs, debugs and saves ZX Spectrum snapshots: .sna, .z80 (versions 1 to 3) and .szx files."
 ---
 
 import { Callout } from 'nextra/components'
@@ -102,4 +102,47 @@ then beside the snapshot, and inserts the ones it finds; a missing disk is repor
 - **The +3 disk controller restarts.** Its state in the middle of a command cannot be restored, so a
   snapshot saved while the disk was busy may not resume that operation.
 - **Restart** sets the machine up again from its configuration, so the snapshot is gone.
-- Klive loads snapshots; it does not save them yet.
+
+## Saving a snapshot
+
+Klive saves the ZX Spectrum 48K, 128K and +2E/+3E as a snapshot, whether the machine is running
+or paused. A running machine is paused for an instant and then runs on; a paused one stays paused.
+A stopped machine has nothing to save.
+
+- **File &rarr; Save ZX Spectrum Snapshot...**, or **Save Snapshot...** in the Emulator's
+  **Machine** menu, asks for a file. The file type you pick (or the extension you type) decides the
+  format.
+- The [`zx-snapshot-save`](../commands-reference#zx-snapshot-save) command saves to the file you
+  name.
+
+**Save as `.szx` unless you need another format.** It is the only format that keeps the whole state
+Klive captures; the other two lose a little, and Klive tells you exactly what after saving:
+
+| | `.szx` | `.z80` (written as version 3) | `.sna` |
+|---|---|---|---|
+| Registers, RAM, border, paging | ✓ | ✓ | ✓ |
+| Position in the video frame | ✓ | ✓ | &mdash; (starts at the interrupt) |
+| AY sound chip | ✓ | ✓ | &mdash; |
+| `$1FFD` (+2E/+3E) | ✓ | ✓ | &mdash; |
+| HALT | ✓ | ✓ (the program counter stays on the `HALT`) | ✓ (same) |
+| "No interrupt before the next instruction" right after `EI` | ✓ | &mdash; | &mdash; |
+| `IFF1` different from `IFF2` | ✓ | ✓ | &mdash; |
+| +3 disks and the tape (linked by file name) | ✓ | &mdash; | &mdash; |
+| Machine names | as Klive's | +2E/+3E become +2A/+3; NTSC becomes PAL | +2E/+3E become 128K; 16K becomes 48K |
+
+Only `.szx` keeps `WZ` (MEMPTR). It shows only in two undocumented flag bits after `BIT n,(HL)`,
+so Klive does not list it as a loss. A 48K `.sna` pushes the program counter onto the stack in the
+file (never in the running machine), as every `.sna` writer does.
+
+Some states cannot be saved in a format at all, because the file would load back as a different
+machine. Klive refuses them with the reason:
+
+- a 48K `.sna` when the stack pointer is so low that the pushed program counter would land in ROM;
+- a `.sna` of a +2E/+3E in special paging mode (`$1FFD` bit 0);
+- a machine stopped between an instruction prefix (`CB`, `DD`, `ED`, `FD`) and its opcode, after a
+  single step. Step once more and save again.
+
+<Callout type="info">
+A `.szx` file links the disks in the +3's drives and the tape by their file names; it does not copy
+them. Keep those files with the snapshot when you share it.
+</Callout>

@@ -20,6 +20,9 @@ import type {
   SpectrumSnapshotLoadOptions,
   SpectrumSnapshotLoadResult
 } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
+import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
 
 const NO_PROXY_ERROR = "Method should be implemented by a proxy.";
 
@@ -113,6 +116,22 @@ class EmuApiImpl {
       disks?: { drive: number; fileName: string; contents: Uint8Array }[];
     }
   ): Promise<SpectrumSnapshotLoadResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Saves the running ZX Spectrum 48K, 128K or +2E/+3E as a `.sna`, `.z80` or `.szx` snapshot
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.3). A running machine is paused for the
+   * capture and runs on afterwards; a paused one stays paused.
+   * @param _format The file format
+   * @param _creator The program a `.szx` file names as its creator
+   * @returns The file's bytes and what the format could not hold; rejects with the reason when the
+   * machine cannot be saved in that format
+   */
+  async saveSpectrumSnapshot(
+    _format: SpectrumSnapshotFormat,
+    _creator?: SzxCreator
+  ): Promise<SpectrumSnapshotSaveResult> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

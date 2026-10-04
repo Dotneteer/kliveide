@@ -45,6 +45,10 @@ import { openRendererDialog } from "@renderer/controls/overlay/dialogRequestBrid
 import { setMachineConfigAction } from "@state/actions";
 import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
 import { loadSpectrumSnapshot } from "./machines/spectrumSnapshotLoad";
+import { saveSpectrumSnapshot } from "./machines/spectrumSnapshotSave";
+import type { SpectrumSnapshotSaveResult } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
+import type { SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
 import type {
   SpectrumSnapshotLoadMode,
   SpectrumSnapshotLoadOptions,
@@ -268,6 +272,33 @@ class EmuMessageProcessor {
       contents,
       mode,
       options
+    );
+  }
+
+  /**
+   * Saves the ZX Spectrum as a snapshot (see `EmuApi.saveSpectrumSnapshot`).
+   * @param format The file format
+   * @param creator The program a `.szx` file names as its creator
+   */
+  saveSpectrumSnapshot(
+    format: SpectrumSnapshotFormat,
+    creator?: SzxCreator
+  ): Promise<SpectrumSnapshotSaveResult> {
+    const store = getCachedStore();
+    return saveSpectrumSnapshot(
+      {
+        getMachineController: () => this.machineService.getMachineController(),
+        getMediaFiles: () => ({
+          tapeFile: mediaStore.getMedia(MEDIA_TAPE)?.mediaFile,
+          diskFiles: [
+            mediaStore.getMedia(MEDIA_DISK_A)?.mediaFile,
+            mediaStore.getMedia(MEDIA_DISK_B)?.mediaFile
+          ]
+        }),
+        getEmulatorState: () => store.getState()?.emulatorState ?? {}
+      },
+      format,
+      creator
     );
   }
 

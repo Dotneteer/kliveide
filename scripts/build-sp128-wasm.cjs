@@ -94,6 +94,7 @@ const productionExports = [
   "sp128GetSelectedRom",
   "sp128GetSelectedBank",
   "sp128GetPagingEnabled",
+  "sp128GetPort7ffd",
   "sp128GetUseShadowScreen",
   "sp128GetScreenBank",
   "sp128GetCurrentPartition",

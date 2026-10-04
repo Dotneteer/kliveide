@@ -31,6 +31,7 @@ import {
 import { AppSettings, KLIVE_HOME_FOLDER } from "./settings";
 import { getKliveHomeBase } from "./portable";
 import { mainStore } from "./main-store";
+import { KLIVE_APP_VERSION } from "./app-version";
 import {
   applyProjectSettingAction,
   dimMenuAction,
@@ -781,6 +782,13 @@ class MainMessageProcessor {
    * Shows a file or folder in the system's file explorer.
    * @param itemPath The path to show in the file explorer.
    */
+  /**
+   * The Klive version (see `MainApi.getAppVersion`).
+   */
+  async getAppVersion(): Promise<string> {
+    return KLIVE_APP_VERSION;
+  }
+
   async showItemInFolder(itemPath: string) {
     shell.showItemInFolder(path.normalize(itemPath));
   }

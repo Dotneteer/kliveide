@@ -61,6 +61,7 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   sp128GetSelectedRom: Sp128WasmV2ExportFunction;
   sp128GetSelectedBank: Sp128WasmV2ExportFunction;
   sp128GetPagingEnabled: Sp128WasmV2ExportFunction;
+  sp128GetPort7ffd: Sp128WasmV2ExportFunction;
   sp128GetUseShadowScreen: Sp128WasmV2ExportFunction;
   sp128GetScreenBank: Sp128WasmV2ExportFunction;
   sp128GetCurrentPartition: Sp128WasmV2ExportFunction;
@@ -260,6 +261,7 @@ const requiredV2Exports = [
   "sp128GetSelectedRom",
   "sp128GetSelectedBank",
   "sp128GetPagingEnabled",
+  "sp128GetPort7ffd",
   "sp128GetUseShadowScreen",
   "sp128GetScreenBank",
   "sp128GetCurrentPartition",

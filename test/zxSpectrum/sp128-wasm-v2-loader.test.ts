@@ -941,6 +941,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       sp128GetSelectedRom: () => 0,
       sp128GetSelectedBank: () => 0,
       sp128GetPagingEnabled: () => 1,
+      sp128GetPort7ffd: () => 0,
       sp128GetUseShadowScreen: () => 0,
       sp128GetScreenBank: () => 5,
       sp128GetCurrentPartition: () => 0,

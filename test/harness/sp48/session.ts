@@ -17,6 +17,9 @@ import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
+import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
+import type { SnapshotWriteResult } from "@common/spectrum/snapshot/snapshotBytes";
+import type { SpectrumSnapshot, SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
 
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
@@ -363,6 +366,19 @@ export class Sp48TestSession {
    */
   loadSnapshot(name: string, bytes: Uint8Array): number {
     return this.machine.loadSnapshotState(parseSpectrumSnapshot(name, bytes));
+  }
+
+  /** Captures the machine's state as a snapshot model, as saving does (the machine is unchanged) */
+  captureSnapshot(): SpectrumSnapshot {
+    return this.machine.captureSnapshotState();
+  }
+
+  /**
+   * Saves the machine as a `.sna` / `.z80` / `.szx` file, as the emulator does (minus the
+   * controller): capture, then write. Throws when the format refuses the state.
+   */
+  saveSnapshot(format: SpectrumSnapshotFormat): SnapshotWriteResult {
+    return writeSpectrumSnapshot(this.machine.captureSnapshotState(), format);
   }
 
   peekWord(address: number): number {

@@ -121,6 +121,11 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   if (p.customRomSize) {
     warnings.push("The snapshot carries a custom ROM, which Klive does not install");
   }
+  if (machine === "plus3e" && snapshot.format === "szx" && !p.plus3) {
+    // --- A +3e zx-state without a +3 block has no drives: Klive writes its +2E that way
+    // --- (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1)
+    modelIds = ["nofdd", ...modelIds];
+  }
   if (p.plus3) {
     if (p.plus3.drives >= 2 || p.plus3.disks.some((d) => d.drive === 1)) {
       // --- Two drives: prefer the two-drive model

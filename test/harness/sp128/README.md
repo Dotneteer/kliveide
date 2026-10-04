@@ -23,6 +23,8 @@ it("pages bank 3 in from a snapshot", async () => {
 | Create | `createSp128Session(model)` | `model` is `"sp128"` (the 128K) or a +2E/+3E model: `"nofdd"`, `"fdd1"`, `"fdd2"`. Builds the WASM core once per test process and sets the machine up with the real ROMs. |
 | | `createHarnessSpectrumMachine(machineId, modelId, config)` | A set-up machine of any Spectrum type (48K included) with the real ROMs, for tests that drive a `MachineController` as `MachineService` does. |
 | Snapshot | `loadSnapshot(name, bytes)` | Parses a `.sna`/`.z80`/`.szx` file (its extension picks the format) and loads it with `loadSnapshotState`, as the emulator does; returns the frame tact. |
+| | `captureSnapshot()` | Reads the machine's state as a snapshot model with `captureSnapshotState`, without changing it. |
+| | `saveSnapshot(format)` | Captures and writes a `.sna`/`.z80`/`.szx` file, as the emulator saves one; returns `{ bytes, losses }` and throws when the format refuses the state. |
 | Run | `runFrames(n)`, `step(n)` | Whole frames; single instructions. |
 | Memory | `peek(address)`, `bank(n)` | A byte of the 64K the CPU sees; a RAM bank as stored. |
 | Paging | `paging()` | `{ bank, rom, shadowScreen, locked }`, plus `specialPaging` and `diskMotor` on the +2E/+3E. |

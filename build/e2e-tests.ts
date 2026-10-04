@@ -40,6 +40,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/z88/snapshot/z88-snapshot-load.test.ts",
   "test/spectrum/snapshot/spectrum-snapshot-load.test.ts",
   "test/spectrum/snapshot/spectrum-snapshot-flow.test.ts",
+  "test/spectrum/snapshot/spectrum-snapshot-save.test.ts",
   "test/z88/z88-beeper.test.ts",
   "test/z88/z88-code-injection.test.ts",
   "test/z88/z88-host.test.ts",

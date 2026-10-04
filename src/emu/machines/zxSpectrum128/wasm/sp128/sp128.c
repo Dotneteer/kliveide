@@ -189,6 +189,8 @@ static double sp128DcFilterPrevOutputRight;
 static uint8_t sp128SelectedRom;
 static uint8_t sp128SelectedBank;
 static uint8_t sp128PagingEnabled;
+/* The last byte written to $7FFD while paging was unlocked (snapshot saving) */
+static uint8_t sp128Port7ffd;
 static uint8_t sp128UseShadowScreen;
 static uint8_t sp128PortFeValue;
 static uint8_t sp128BorderColor;
@@ -1167,6 +1169,7 @@ void sp128Reset(void) {
   sp128SelectedRom = 0u;
   sp128SelectedBank = 0u;
   sp128PagingEnabled = 1u;
+  sp128Port7ffd = 0u;
   sp128UseShadowScreen = 0u;
   sp128CommonResetPortFe();
   sp128BorderFrameStartTact = 0u;
@@ -1351,6 +1354,7 @@ static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
   if (nextUseShadowScreen != sp128UseShadowScreen) {
     sp128UlaRenderUntilCurrentTact();
   }
+  sp128Port7ffd = (uint8_t)value;
   sp128SelectedBank = (uint8_t)(value & 0x07u);
   sp128UseShadowScreen = nextUseShadowScreen;
   sp128SelectedRom = (value & 0x10u) != 0u ? 1u : 0u;
@@ -1861,6 +1865,10 @@ uint32_t sp128GetSelectedBank(void) {
 
 uint32_t sp128GetPagingEnabled(void) {
   return sp128PagingEnabled;
+}
+
+uint32_t sp128GetPort7ffd(void) {
+  return sp128Port7ffd;
 }
 
 uint32_t sp128GetUseShadowScreen(void) {

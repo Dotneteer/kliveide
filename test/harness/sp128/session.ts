@@ -10,6 +10,9 @@ import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
+import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
+import type { SnapshotWriteResult } from "@common/spectrum/snapshot/snapshotBytes";
+import type { SpectrumSnapshot, SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
 
 import { buildSp48Wasm, productionOutput as sp48Output } from "../../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Output } from "../../../scripts/build-sp128-wasm.cjs";
@@ -155,6 +158,19 @@ export class Sp128TestSession {
   /** Parses and loads a snapshot (its extension picks the format); returns the frame tact */
   loadSnapshot(name: string, bytes: Uint8Array): number {
     return this.machine.loadSnapshotState(parseSpectrumSnapshot(name, bytes));
+  }
+
+  /** Captures the machine's state as a snapshot model, as saving does (the machine is unchanged) */
+  captureSnapshot(): SpectrumSnapshot {
+    return this.machine.captureSnapshotState();
+  }
+
+  /**
+   * Saves the machine as a `.sna` / `.z80` / `.szx` file, as the emulator does (minus the
+   * controller): capture, then write. Throws when the format refuses the state.
+   */
+  saveSnapshot(format: SpectrumSnapshotFormat): SnapshotWriteResult {
+    return writeSpectrumSnapshot(this.machine.captureSnapshotState(), format);
   }
 
   /** Runs whole frames */

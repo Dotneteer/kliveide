@@ -227,6 +227,13 @@ class MainApiImpl {
   }
 
   /**
+   * The Klive version (the app's package version, "x.y.z").
+   */
+  async getAppVersion(): Promise<string> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Saves the current project state to disk.
    */
   async saveProject(): Promise<void> {

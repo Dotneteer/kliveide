@@ -18,6 +18,10 @@ import { ZxSpectrum128WasmHost } from "./ZxSpectrum128WasmHost";
 import { importAccessLog } from "../wasmAccessLog";
 import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
 import { restoreSpectrumSnapshot } from "../zxSpectrum/spectrumSnapshotRestore";
+import {
+  captureSpectrumSnapshot,
+  type SpectrumSnapshotCaptureMedia
+} from "../zxSpectrum/spectrumSnapshotCapture";
 import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
@@ -1069,6 +1073,20 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost {
     this.invalidateWasmV2Sync();
     this.syncCpuFromWasmV2(runtime);
     return frameTact;
+  }
+
+  /**
+   * Reads the machine's state as a snapshot model, without changing it
+   * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.1). The machine must be paused.
+   * @param media The tape and disk files the media store holds
+   * @throws When the CPU stands inside a prefixed instruction
+   */
+  captureSnapshotState(media?: SpectrumSnapshotCaptureMedia): SpectrumSnapshot {
+    const runtime = this.requireWasmV2Runtime();
+    return captureSpectrumSnapshot(
+      { prefix: "sp128", exports: runtime.exports, ram: runtime.ram, modelId: undefined },
+      media
+    );
   }
 
   private invalidateWasmV2Sync(): void {

@@ -15,6 +15,7 @@ import { DebugSupport } from "@emu/machines/DebugSupport";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
+  MC_DISK_SUPPORT,
   MC_SP48_ROM_FILE,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
@@ -28,6 +29,7 @@ import {
   loadSpectrumSnapshot,
   type SpectrumSnapshotLoadPorts
 } from "@renderer/appEmu/machines/spectrumSnapshotLoad";
+import { saveSpectrumSnapshot, type SpectrumSnapshotSavePorts } from "@renderer/appEmu/machines/spectrumSnapshotSave";
 import { ResolvingMessenger } from "../../harness/z88";
 import { createHarnessSpectrumMachine } from "../../harness/sp128";
 import {
@@ -224,7 +226,13 @@ describe("loading through the controller", () => {
     await emu.until(MachineControllerState.Paused);
     expect(r).toMatchObject({ machineId: MI_SPECTRUM_128, rebuilt: true });
     expect(emu.machine.pc).toBe(0x8100);
-    r = await loadSpectrumSnapshot(emu.ports, "a.szx", buildSzx(state128(), { machineId: 6 }), "debug");
+    // --- A +3e with a drive (without the +3 block it would be Klive's own +2E, which has none)
+    r = await loadSpectrumSnapshot(
+      emu.ports,
+      "a.szx",
+      buildSzx(state128(), { machineId: 6, extra: [szxBlock("+3", [1, 0])] }),
+      "debug"
+    );
     await emu.until(MachineControllerState.Paused);
     expect(r).toMatchObject({ machineId: MI_SPECTRUM_3E, modelId: "fdd1", rebuilt: true });
     r = await loadSpectrumSnapshot(emu.ports, "a.szx", loop48(), "debug");
@@ -295,5 +303,88 @@ describe("loading through the controller", () => {
     await emu.until(MachineControllerState.Paused);
     expect(result.warnings.join()).toMatch(/no drive B/);
     expect(emu.events.some((e) => e.startsWith("disk"))).toBe(false);
+  });
+});
+
+describe("saving through the controller (.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md Phase 3)", () => {
+  function savePorts(emu: FakeEmulator, media = {}): SpectrumSnapshotSavePorts {
+    return {
+      getMachineController: () => emu.controller,
+      getMediaFiles: () => media,
+      getEmulatorState: () => emu.store.getState().emulatorState ?? {}
+    };
+  }
+
+  it("refuses a machine that has not started", async () => {
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    await expect(saveSpectrumSnapshot(savePorts(emu), "szx")).rejects.toThrow(/start it first/);
+  });
+
+  it("keeps a paused machine paused, and the file loads back to the same PC", async () => {
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    await loadSpectrumSnapshot(emu.ports, "a.szx", loop48(), "debug");
+    await emu.until(MachineControllerState.Paused);
+    const result = await saveSpectrumSnapshot(savePorts(emu), "szx");
+    expect(emu.controller!.state).toBe(MachineControllerState.Paused);
+    expect(result).toMatchObject({ format: "szx", pc: 0x8100, machineName: "ZX Spectrum 48K", losses: [] });
+    const reread = parseSpectrumSnapshot("a.szx", result.bytes);
+    expect(reread.cpu.pc).toBe(0x8100);
+    expect(reread.machine).toBe("48k");
+  });
+
+  it("pauses a running machine for the capture and lets it run on", async () => {
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    await loadSpectrumSnapshot(emu.ports, "a.szx", loop48(), "run");
+    await emu.until(MachineControllerState.Running);
+    const result = await saveSpectrumSnapshot(savePorts(emu), "z80");
+    expect(emu.controller!.state).toBe(MachineControllerState.Running);
+    expect(emu.controller!.isDebugging).toBe(false);
+    expect(parseSpectrumSnapshot("a.z80", result.bytes).cpu.pc).toBe(0x8100);
+  });
+
+  it("keeps a debugging machine in debug mode", async () => {
+    const emu = await emulator(MI_SPECTRUM_48, "pal");
+    await loadSpectrumSnapshot(emu.ports, "a.szx", loop48(), "debug");
+    await emu.until(MachineControllerState.Paused);
+    await emu.controller!.startDebug();
+    await emu.until(MachineControllerState.Running);
+    await saveSpectrumSnapshot(savePorts(emu), "szx");
+    expect(emu.controller!.state).toBe(MachineControllerState.Running);
+    expect(emu.controller!.isDebugging).toBe(true);
+  });
+
+  it("names the tape and the +3 disks the media store holds", async () => {
+    const emu = await emulator(MI_SPECTRUM_3E, "fdd2", { [MC_DISK_SUPPORT]: 2 });
+    await loadSpectrumSnapshot(
+      emu.ports,
+      "a.szx",
+      buildSzx(state128(), { machineId: 6, extra: [szxBlock("+3", [2, 0])] }),
+      "debug"
+    );
+    await emu.until(MachineControllerState.Paused);
+    const result = await saveSpectrumSnapshot(
+      savePorts(emu, { diskFiles: ["/d/a.dsk", undefined] }),
+      "szx"
+    );
+    const reread = parseSpectrumSnapshot("a.szx", result.bytes);
+    expect(reread.peripherals.plus3).toEqual({
+      drives: 2,
+      motorOn: false,
+      disks: [{ drive: 0, fileName: "/d/a.dsk" }]
+    });
+    expect(result.machineName).toBe("ZX Spectrum +3E (2 FDDs)");
+  });
+
+  it("refuses a .sna that the format cannot hold, and leaves the machine as it was", async () => {
+    const emu = await emulator(MI_SPECTRUM_3E, "fdd1", { [MC_DISK_SUPPORT]: 1 });
+    await loadSpectrumSnapshot(
+      emu.ports,
+      "a.szx",
+      buildSzx(state128({ port1ffd: 0x01 }), { machineId: 6, extra: [szxBlock("+3", [1, 0])] }),
+      "debug"
+    );
+    await emu.until(MachineControllerState.Paused);
+    await expect(saveSpectrumSnapshot(savePorts(emu), "sna")).rejects.toThrow(/special paging/);
+    expect(emu.controller!.state).toBe(MachineControllerState.Paused);
   });
 });
