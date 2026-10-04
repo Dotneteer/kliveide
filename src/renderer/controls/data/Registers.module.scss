@@ -196,3 +196,16 @@ span.stateValueAlt {
   flex-grow: 0;
   flex-shrink: 0;
 }
+
+/*
+ * A register row's tooltip that opens under the row (`placement="bottom-start"`), by its label and
+ * value, wrapping a long description onto several lines. Without a width limit the box took one
+ * line for the whole sentence and ran out of the window. Doubled class: it must beat `.tooltip`
+ * whatever order the two stylesheets load in (see `Tooltip`'s `className`).
+ */
+.rowTooltip.rowTooltip {
+  max-width: 44ch;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+

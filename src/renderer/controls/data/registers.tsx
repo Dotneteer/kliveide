@@ -354,6 +354,11 @@ type FlagFieldRowProps = {
   flagDescriptions: string[];
   /** Fill for the eight bit glyphs. Panels that have taken the state-value colour pass it here. */
   iconFill?: string;
+  /**
+   * Opens the tooltip under the row, by its label, as a wrapping box (`.rowTooltip`), instead of to
+   * the right of the whole row. A panel in a narrow sidebar with long descriptions opts in.
+   */
+  tooltipBelow?: boolean;
 };
 
 /**
@@ -374,7 +379,8 @@ export const FlagFieldRow = ({
   tooltip,
   value,
   flagDescriptions,
-  iconFill
+  iconFill,
+  tooltipBelow = false
 }: FlagFieldRowProps) => {
   const ref = useTooltipRef<HTMLDivElement>();
   const [hoveredBit, setHoveredBit] = useState<number | null>(null);
@@ -392,11 +398,12 @@ export const FlagFieldRow = ({
       {content && (
         <TooltipFactory
           refElement={ref.current}
-          placement="right"
-          offsetX={0}
+          placement={tooltipBelow ? "bottom-start" : "right"}
+          offsetX={tooltipBelow ? 2 : 0}
           offsetY={0}
           showDelay={100}
           content={content}
+          className={tooltipBelow ? styles.rowTooltip : undefined}
         />
       )}
       <FlagRow

@@ -191,7 +191,7 @@ Click the rightmost icon (with the "play" sign) to compile and run the code:
 <ClickableImage src="/images/working-with-ide/zxb-running.png" width={480} />
 
 <Callout type="info" emoji="💡">
-You can also try keyboard shortcuts to trigger these actions: `F7` to compile, `Ctrl+F7` to inject code into memory, `Shift+F7` to run the code, and `Ctrl+Shift+F7` to run it in debug mode.
+These actions have no keyboard shortcuts. You can also start them from the IDE's command prompt with [`compile`](/commands-reference#compile), [`inject`](/commands-reference#inject), [`run`](/commands-reference#run) and [`debug`](/commands-reference#debug), which act on the project's [build root](/getting-started/creating-project#the-build-root).
 </Callout>
 
 ## Handling Errors
@@ -200,4 +200,4 @@ When you run the code, the compiler checks the syntax. If there are any errors, 
 
 ## Debugging
 
-You can run your code in debug mode by clicking the last icon in the document tab bar or pressing `Ctrl+Shift+F7`. With Klive BASIC, debugging works at source level as described in [Debugging BASIC at source level](#debugging-basic-at-source-level); with the external `zxbc`, the IDE steps Z80 instructions.
+You can run your code in debug mode by clicking the last icon in the document tab bar or with the [`debug`](/commands-reference#debug) command. With Klive BASIC, debugging works at source level as described in [Debugging BASIC at source level](#debugging-basic-at-source-level); with the external `zxbc`, the IDE steps Z80 instructions.

@@ -32,6 +32,12 @@ const KEY_LAB_WIDTH = "8ch"; // 46px / 6.4 = 7.2
  */
 const VALUE_FILL = "--color-state-value";
 
+/*
+ * Every row's tooltip opens under the row, by its label and value, and wraps (`.rowTooltip`). The
+ * descriptions are a sentence or two long; opened to the right of a full-width sidebar row they
+ * started past the sidebar's edge, far from the value, and ran out of the window on one line.
+ */
+
 export const BlinkPanel = () => {
   const emuApi = useEmuApi();
   const [blinkState, setBlinkState] = useState<BlinkState>(null);
@@ -46,6 +52,7 @@ export const BlinkPanel = () => {
         value={blinkState?.COM}
         flagDescriptions={COMDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="INT"
@@ -53,6 +60,7 @@ export const BlinkPanel = () => {
         value={blinkState?.INT}
         flagDescriptions={INTDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="STA"
@@ -60,6 +68,7 @@ export const BlinkPanel = () => {
         value={blinkState?.STA}
         flagDescriptions={STADescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <Separator />
       <ValueFieldRow
@@ -146,6 +155,7 @@ export const BlinkPanel = () => {
         value={blinkState?.TSTA}
         flagDescriptions={TSTADescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <FlagFieldRow
         label="TMK"
@@ -153,6 +163,7 @@ export const BlinkPanel = () => {
         value={blinkState?.TMK}
         flagDescriptions={TMKDescription}
         iconFill={VALUE_FILL}
+        tooltipBelow
       />
       <Separator />
       <DataRow dense>
@@ -277,11 +288,12 @@ const ValueFieldRow = ({ label, tooltip, value }: ValueFieldProps) => {
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement="right"
-          offsetX={0}
+          placement="bottom-start"
+          offsetX={2}
           offsetY={0}
           showDelay={100}
           content={tooltip}
+          className={regStyles.rowTooltip}
         />
       )}
     </DataRow>
@@ -310,11 +322,12 @@ const PointerFieldRow = ({ label, tooltip, value, decode }: PointerFieldProps) =
       {tooltip && (
         <TooltipFactory
           refElement={ref.current}
-          placement="right"
-          offsetX={0}
+          placement="bottom-start"
+          offsetX={2}
           offsetY={0}
           showDelay={100}
           content={tooltip}
+          className={regStyles.rowTooltip}
         />
       )}
     </DataRow>

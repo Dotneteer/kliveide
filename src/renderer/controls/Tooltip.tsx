@@ -8,7 +8,12 @@ import { useOverlayRoot } from "./overlay/useOverlayRoot";
 // =====================================================================================================================
 // Tooltip React component definition
 
-type Placement = "left" | "right" | "top" | "bottom";
+/*
+ * Where the box sits around its anchor. The `-start` forms align the box with the anchor's start
+ * edge: `bottom-start` under a full-width row puts it beside the row's label and values, instead of
+ * past the far end of the row where `right` puts it.
+ */
+type Placement = "left" | "right" | "top" | "bottom" | "top-start" | "bottom-start";
 
 /**
  * Tooltip properties
@@ -64,6 +69,12 @@ export const Tooltip = ({
       break;
     case "right":
       fallbackPlacement = "left";
+      break;
+    case "top-start":
+      fallbackPlacement = "bottom-start";
+      break;
+    case "bottom-start":
+      fallbackPlacement = "top-start";
   }
 
   const { styles: popperStyles, attributes } = usePopper(refElement, popperElement, {
