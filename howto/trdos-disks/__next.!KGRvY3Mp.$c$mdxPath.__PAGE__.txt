@@ -1,0 +1,108 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"ClientWrapper"]
+5:Td6e,---
+description: "The Pentagon 128 model has the Beta 128 disk interface: two drives for .trd and .scl images, running your own copy of TR-DOS."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using TR-DOS Disks on the Pentagon 128
+
+The **Pentagon 128** model (Machine ID `sp128`, model `pentagon`) has the **Beta 128 disk interface**,
+the Pentagon's own disk system: a floppy disk controller, two drives (A and B) and the **TR-DOS**
+disk operating system. Much Pentagon software, from demos to games and disk magazines, comes on
+TR-DOS disks.
+
+## Naming your TR-DOS ROM
+
+<Callout type="warning" emoji="⚠️">
+Klive cannot ship the TR-DOS ROM: nobody has been able to establish who holds its rights or to give
+permission to distribute it. You need your own 16K TR-DOS ROM image (version 5.03 is the most common).
+</Callout>
+
+With the Pentagon selected, open **Machine > TR-DOS ROM** in the Emulator window:
+
+- **Select TR-DOS ROM File...** picks the image. It must be exactly 16,384 bytes. The machine restarts
+  with it.
+- **Forget the TR-DOS ROM** clears it.
+
+The first item of the submenu says which ROM is in use, or that none is set. Without a ROM the
+Pentagon still runs, but its drives are off. The ROM is a Klive setting, not a project setting, so you
+name it once.
+
+## Inserting disks
+
+**Machine > Floppy Disks** works as it does on the ZX Spectrum +3: **Insert Disk into Drive A...** (or B),
+**Eject**, and **Write Protect**. The emulator's media strip shows both drives. The Pentagon takes:
+
+- **`.trd`** files: raw TR-DOS disk images. When TR-DOS writes to the disk (`SAVE`, `FORMAT`,
+  `ERASE`...), Klive writes the changed sectors back into the `.trd` file.
+- **`.scl`** files: compact archives of TR-DOS files. Klive builds a disk from them when you insert one.
+  TR-DOS can write to that disk, but the `.scl` file is **never changed**. To keep the changes, use
+  **Save Disk in Drive A as .trd...**, which writes a new `.trd` and puts it in the drive.
+
+**Create Disk File...** makes a blank, formatted TR-DOS disk (80 or 40 tracks, one or two sides),
+as does the IDE command [`crd`](/commands-reference#crd), for example `crd trd80ds games`.
+
+## Booting a disk
+
+**Machine > Floppy Disks > Boot Disk in Drive A** resets the machine and does what you would type:
+it selects **48 BASIC** from the 128K menu, enters TR-DOS with `RANDOMIZE USR 15616`, and types `RUN`,
+which loads and runs the disk's BASIC program `boot`.
+
+You can also do it by hand. At the TR-DOS `A>` prompt, the usual commands work: `LIST` shows the
+catalogue, `RUN "name"` and `LOAD "name"` load files, `SAVE "name" CODE 32768,100` saves one, and
+`RETURN` goes back to BASIC. From a BASIC program, `RANDOMIZE USR 15619: REM : LOAD "data" CODE`
+runs a TR-DOS command.
+
+## Debugging with TR-DOS
+
+While TR-DOS runs, its ROM replaces the 48K BASIC ROM at `$0000`. The debugger shows it as the memory
+partition **R2** ("TR-DOS ROM"), so a breakpoint like `R2:$3D2F` stops only in TR-DOS.
+
+## Snapshots and machine states
+
+- A `.szx` snapshot of the Pentagon keeps the disk interface's state and links the disks to their
+  files. A `.sna` keeps only whether TR-DOS was paged in; a `.z80` keeps neither.
+- A snapshot taken with TR-DOS paged in opens on the Pentagon.
+- A [machine state](/howto/machine-state) keeps the disks with everything written to them. After you
+  load one, the disks are not written back to their files until you insert a disk again.a:X
+f:X
+f:C
+0:{"buildId":"JGgrHKqtMN2AlLE1ym9zV","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Naming your TR-DOS ROM","id":"naming-your-tr-dos-rom","depth":2},{"value":"Inserting disks","id":"inserting-disks","depth":2},{"value":"Booting a disk","id":"booting-a-disk","depth":2},{"value":"Debugging with TR-DOS","id":"debugging-with-tr-dos","depth":2},{"value":"Snapshots and machine states","id":"snapshots-and-machine-states","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The Pentagon 128 model has the Beta 128 disk interface: two drives for .trd and .scl images, running your own copy of TR-DOS.","title":"Using TR-DOS Disks on the Pentagon 128","filePath":"content/howto/trdos-disks.mdx","timestamp":1791213353000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"HeadingAnchor"]
+20:I[484,[],"OutletBoundary"]
+21:"$Sreact.suspense"
+23:I[484,[],"ViewportBoundary"]
+24:I[484,[],"MetadataBoundary"]
+25:I[7121,[],""]
+26:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Using TR-DOS Disks on the Pentagon 128","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The ",["$","strong",null,{"children":"Pentagon 128"}]," model (Machine ID ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"sp128"}],", model ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"pentagon"}],") has the ",["$","strong",null,{"children":"Beta 128 disk interface"}],",\nthe Pentagon’s own disk system: a floppy disk controller, two drives (A and B) and the ",["$","strong",null,{"children":"TR-DOS"}],"\ndisk operating system. Much Pentagon software, from demos to games and disk magazines, comes on\nTR-DOS disks."]}],"\n",["$","h2",null,{"id":"naming-your-tr-dos-rom","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Naming your TR-DOS ROM",["$","$L12",null,{"id":"naming-your-tr-dos-rom"}]]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive cannot ship the TR-DOS ROM: nobody has been able to establish who holds its rights or to give\npermission to distribute it. You need your own 16K TR-DOS ROM image (version 5.03 is the most common)."}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With the Pentagon selected, open ",["$","strong",null,{"children":"Machine > TR-DOS ROM"}]," in the Emulator window:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Select TR-DOS ROM File…"}]," picks the image. It must be exactly 16,384 bytes. The machine restarts\nwith it."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Forget the TR-DOS ROM"}]," clears it."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The first item of the submenu says which ROM is in use, or that none is set. Without a ROM the\nPentagon still runs, but its drives are off. The ROM is a Klive setting, not a project setting, so you\nname it once."}],"\n",["$","h2",null,{"id":"inserting-disks","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Inserting disks",["$","$L12",null,{"id":"inserting-disks"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Machine > Floppy Disks"}]," works as it does on the ZX Spectrum +3: ",["$","strong",null,{"children":"Insert Disk into Drive A…"}]," (or B),\n",["$","strong",null,{"children":"Eject"}],", and ",["$","strong",null,{"children":"Write Protect"}],". The emulator’s media strip shows both drives. The Pentagon takes:"]}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]}]," files: raw TR-DOS disk images. When TR-DOS writes to the disk (","$L13",", ","$L14",",\n","$L15","…), Klive writes the changed sectors back into the ","$L16"," file."]}],"\n","$L17","\n"]}],"\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f"]}]
+8:["$","$L20",null,{"children":["$","$21",null,{"name":"Next.MetadataOutlet","children":"$@22"}]}]
+b:["$","$1","h",{"children":[null,["$","$L23",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L24",null,{"children":["$","$21",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Using TR-DOS Disks on the Pentagon 128 - Klive IDE"}],["$","meta","1",{"name":"description","content":"The Pentagon 128 model has the Beta 128 disk interface: two drives for .trd and .scl images, running your own copy of TR-DOS."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L25",null,{"parallelRouterKey":"children","template":["$","$L26",null,{}]}]]}]
+11:true
+27:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],""]
+13:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE"}]
+14:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"FORMAT"}]
+15:["$","code",null,{"className":"nextra-code","dir":"ltr","children":"ERASE"}]
+16:["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]
+17:["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}]}]," files: compact archives of TR-DOS files. Klive builds a disk from them when you insert one.\nTR-DOS can write to that disk, but the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".scl"}]," file is ",["$","strong",null,{"children":"never changed"}],". To keep the changes, use\n",["$","strong",null,{"children":"Save Disk in Drive A as .trd…"}],", which writes a new ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".trd"}]," and puts it in the drive."]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Create Disk File…"}]," makes a blank, formatted TR-DOS disk (80 or 40 tracks, one or two sides),\nas does the IDE command ",["$","$L27",null,{"href":"/commands-reference#crd","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"crd"}]}],", for example ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"crd trd80ds games"}],"."]}]
+19:["$","h2",null,{"id":"booting-a-disk","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Booting a disk",["$","$L12",null,{"id":"booting-a-disk"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Machine > Floppy Disks > Boot Disk in Drive A"}]," resets the machine and does what you would type:\nit selects ",["$","strong",null,{"children":"48 BASIC"}]," from the 128K menu, enters TR-DOS with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RANDOMIZE USR 15616"}],", and types ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN"}],",\nwhich loads and runs the disk’s BASIC program ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"boot"}],"."]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["You can also do it by hand. At the TR-DOS ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"A>"}]," prompt, the usual commands work: ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LIST"}]," shows the\ncatalogue, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RUN \"name\""}]," and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"LOAD \"name\""}]," load files, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"SAVE \"name\" CODE 32768,100"}]," saves one, and\n",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RETURN"}]," goes back to BASIC. From a BASIC program, ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"RANDOMIZE USR 15619: REM : LOAD \"data\" CODE"}],"\nruns a TR-DOS command."]}]
+1c:["$","h2",null,{"id":"debugging-with-tr-dos","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debugging with TR-DOS",["$","$L12",null,{"id":"debugging-with-tr-dos"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While TR-DOS runs, its ROM replaces the 48K BASIC ROM at ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$0000"}],". The debugger shows it as the memory\npartition ",["$","strong",null,{"children":"R2"}]," (“TR-DOS ROM”), so a breakpoint like ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"R2:$3D2F"}]," stops only in TR-DOS."]}]
+1e:["$","h2",null,{"id":"snapshots-and-machine-states","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Snapshots and machine states",["$","$L12",null,{"id":"snapshots-and-machine-states"}]]}]
+1f:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".szx"}]," snapshot of the Pentagon keeps the disk interface’s state and links the disks to their\nfiles. A ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".sna"}]," keeps only whether TR-DOS was paged in; a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".z80"}]," keeps neither."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A snapshot taken with TR-DOS paged in opens on the Pentagon."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["A ",["$","$L27",null,{"href":"/howto/machine-state","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"machine state"}]," keeps the disks with everything written to them. After you\nload one, the disks are not written back to their files until you insert a disk again."]}],"\n"]}]
+22:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
