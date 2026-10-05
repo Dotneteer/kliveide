@@ -129,7 +129,7 @@
     "vite-electron-plugin": "^0.8.3",
     "vite-plugin-electron-renderer": "^1.0.0",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.3"
   },
   "debug": {
     "env": {
