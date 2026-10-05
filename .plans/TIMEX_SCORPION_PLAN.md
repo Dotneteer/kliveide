@@ -1,7 +1,6 @@
 # Timex TC2048 / TC2068 / TS2068 and Scorpion ZS-256 (G9.4)
 
-Status: **decisions recorded** (2026-10-04; see §9). G9.4a is ready for its Phase 0; G9.4c waits
-for G9.1b.
+Status: **✅ done** - G9.4a, G9.4b and G9.4c (2026-10-05; main, unreleased; see §10, §11 and §12).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.4, "long-tail clones",
 size L each, low priority).
 Related: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (G9.1, done: a clone as a timing profile of
@@ -199,13 +198,42 @@ the ZX81).
 
 | Machine | Value | Klive | Source |
 |---|---|---|---|
-| TC2048 | port `$FF` bits; mode addresses and colours | | |
-| TC2048 | frame, contention, floating bus | | |
-| TC2068 / TS2068 | `$F4` chunk map; `$FF` bit 7; AY ports and clock | | |
-| TC2068 / TS2068 | frame per model | | |
-| Scorpion | `$7FFD` + `$1FFD` bits; ROM selection | | |
-| Scorpion | frame, contention, floating bus | | |
-| all | ROM versions and CRC32s | | |
+| TC2048 | port `$FF` bits 0-2 | 000 primary display file `$4000`; 001 second file `$6000` (its attributes at `$7800`); 010 extended colour: pixels `$4000`, an attribute per 8 × 1 at `$6000` + the pixel offset; 110 64 columns: even columns `$4000`, odd `$6000`. "Other combinations may produce unpredictable results": Klive decodes the bits one by one as the Next does (bit 0 the second file, bit 1 the attribute from the second file's pixel address, bit 2 two bytes as 16 narrow pixels) | [TM] 2.1.13.1, 5.2.1-5.2.3; cross-check: zxula.vhd ~230-260 |
+| TC2048 | port `$FF` bits 3-5 | 64-column ink: 000 black/white … 111 white/black, paper the complement (ink ^ 7); the border shows the paper colour; FLASH 0 | [TM] 2.1.13.1, table 3.2.2-1, 5.2.3 |
+| TC2048 | 64-column BRIGHT | **BRIGHT**, border included. [TM] says BRIGHT is fixed at 0 (the TS2068); [FAQ] (the TC2048) says every colour, the border too, is BRIGHT, and the Next agrees. Klive keeps it per model (`timexModels.ts` `hiresBright`); G9.4b decides the 2068s | [FAQ]; [TM] 5.2.3; zxula.vhd ~431 |
+| TC2048 | port `$FF` bit 6, bit 7 | bit 6 = 1 inhibits the frame interrupt (0 enables); bit 7 the EXROM/DOCK select (no effect on the TC2048) | [TM] 2.1.8.4, 2.1.13.1 |
+| TC2048 | port `$FF` read, decoding | returns the last value written; Klive decodes the full low byte (`$xxFF`), as [TM] lists the ports | [FAQ]; [TM] I/O port table |
+| TC2048 | Kempston port | built in; Klive decodes A5 low (with A0 high), the Kempston interface's decoding: no source gives the TC2048's | [FAQ] ("Kempston joystick port"); decoding: Klive's choice |
+| TC2048 | CPU clock | 3.528 MHz (14.112 MHz / 4) | [TM] 2.1.8.2; [FAQ] (European models) |
+| TC2048 | frame, contention, floating bus | 224 T × 312 lines = 69,888 T, the 48K's contention pattern from tact 14,335, the 48K's floating bus (except port `$FF` and the Kempston port, which answer themselves). [TM] gives the SCLD's line as 896 crystal clocks = 224 T and memory contention by stopping the CPU clock; no source gives the TC2048's line count ([FAQ]: "311 or 312", unmeasured), so the 48K's stands | [TM] 2.1.8.2-2.1.8.3; [FAQ] |
+| TC2048 | ROM | the Sinclair 48K ROM with 7 bytes changed: the CALL at `$1299` (the start-up/NEW path's copyright message, after `XOR A`) goes to `$386E`, which does `OUT ($FF),A` and the original CALL `$0C0A`. CRC32 of the copy checked: `f1b5fa67` (the same file the Next's distribution carries). Not shipped (P5): see §10 | observed by running and comparing (P6) |
+| TC2068 / TS2068 | `$F4` chunk map; `$FF` bit 7 | eight 8K chunks; `$F4` bit n set maps chunk n from the DOCK (`$FF` bit 7 = 0) or the EXROM bank (1), clear from HOME; `$F4` reads back. HOME = the 16K HOME ROM (chunks 0-1) and 48K RAM; the EXROM is 8K at EXROM-bank `$0000`. The display RAM is HOME chunks 2-3 whatever is mapped | [TM] 1.1.1, 2.1.4, 2.1.8.1, 2.1.13.5, 5.1.1 |
+| TC2068 / TS2068 | what fills the rest of the external banks | **not documented**. Klive: the 8K EXROM answers in every chunk of its bank; an unpopulated DOCK chunk, and the EXROM bank without an EXROM, read `$FF` and ignore writes. Contention only while HOME's chunks 2-3 are mapped ([TM] 2.1.8.2: the CPU waits only for the display RAM) | Klive's choice; [TM] 2.1.8.2 |
+| TC2068 / TS2068 | port decoding | `$FE`, `$F4`, `$F5`, `$F6`, `$FF` on the full low byte (A0-A7 = `$FE` selects the keyboard) | [TM] 2.1.9, I/O port table |
+| TC2068 / TS2068 | AY ports and clock | `$F5` register select, `$F6` data (R/W); the PSG clock 14.112 MHz / 8 = 1.764 MHz = CPU / 2 | [TM] 2.1.6, 2.1.13.4 |
+| TC2068 / TS2068 | joysticks | the AY's port A (R14), read from `$F6` with R7 bit 6 clear; A8 high strobes player 1, A9 player 2; low active: bit 0 up, 1 down, 2 left, 3 right, 7 button, 4-6 always 1 | [TM] 2.1.7, 2.4.4, 4.3 |
+| TS2068 | frame | 3.528 MHz; a line is 896 periods of 14.112 MHz = 224 T; 262 lines = 58,688 T, 60.11 Hz. Where the lines fall around the paper is not documented: Klive keeps the 48K NTSC raster's borders and takes two lines off the top non-visible border | [TM] 2.1.8.2-2.1.8.3 |
+| TC2068 | frame | **not documented**: Klive gives it the TC2048's (312 lines × 224 T at 3.528 MHz) | Klive's choice, as the TC2048 |
+| TS2068 / TC2068 | 64-column BRIGHT | TS2068: not BRIGHT ([TM] 5.2.3); TC2068: BRIGHT, as the TC2048 ([FAQ] on the TC machines) | [TM]; [FAQ] |
+| TS2068 | ROM | 24K: HOME 16K (CRC-32 `bf44ec3f`) + EXROM 8K (`ae16233a`), whole file `48004230`. Main loop entry `$0E32` (the 48K's MAIN-EXEC shape at `$0E28`, i.e. the 48K's `$12AC`); the tape routines are the 48K's, moved into the EXROM: LD-START `$0112`, invalid header `$015C`, resume `$0188`, SA-BYTES `$0068`. Not shipped (P5) | observed by running and comparing with the 48K ROM (P6) |
+| TC2068 | ROM | no copy was available: an unknown 24K ROM boots and runs, but the IDE's flows (injection, tape load) are off until its addresses are recorded | — |
+| all 2068 | `.dck` | records of a 9-byte header (bank: 0 DOCK, 254 EXROM, 255 HOME; one type byte per chunk: bit 0 RAM, bit 1 image present) and the 8K images it announces, in chunk order | loadzx.com "Timex Cartridge" |
+| all 2068 | `.szx`, `.z80` | zx-state machines 9 (TC2068) and 12 (TS2068); `DOCK` block: `wFlags` (1 compressed, 2 RAM, 4 DOCK else EXROM), `chPageNo` 0-7, 8K data. `.z80` mode 15 TC2068, 128 TS2068, bytes 35/36 the last OUTs to `$F4`/`$FF` | spectaculator.com zx-state DOCK; WoS z80format |
+| Scorpion | `$7FFD`, `$1FFD` | `$7FFD` decoded with A0, A2, A5, A12, A14 high and A1, A15 low; bits 0-2 the bank, 3 the screen, 4 the ROM, 5 the lock. `$1FFD` with A0, A2, A5, A12 high and A1, A14, A15 low: bit 0 RAM page 0 at `$0000`, bit 1 the service ROM, bit 4 RAM banks 8-15 at `$C000` (bits 2, 5: RS-232 and Centronics, not emulated) | [SG] |
+| Scorpion | `$0000` priority; lock | RAM 0 (`$1FFD` bit 0), else the service ROM (bit 1), else TR-DOS while the Beta 128 has paged it, else ROM 0/1 by `$7FFD` bit 4; `$7FFD` bit 5 locks `$7FFD`, not `$1FFD` | [MiSTer] |
+| Scorpion | ROM | 64K: page 0 the 128K editor (patched), 1 48K BASIC (patched), 2 the service monitor, 3 TR-DOS. No copy was available: not shipped (P5); without it the 128K ROMs boot and TR-DOS comes from the TR-DOS ROM setting | [MiSTer] |
+| Scorpion | frame, contention, floating bus | 3.5 MHz; 224 T × 312 lines = 69,888 T, the interrupt 14,336 T before the first paper pixel; no memory or I/O contention; unattached ports read the floating bus (the ULA's attribute byte). The interrupt length is not documented: Klive keeps the 128K's 32 T | [MiSTer] (which says it matches Fuse's and Unreal Speccy's Scorpion timings); interrupt: Klive's choice |
+| all | ROM versions and CRC32s | TC2048 above | |
+
+**[SG]** "Scorpion ZS 256: a short guide for programmers" (zxpress.ru/article.php?id=6048);
+**[MiSTer]** the Scorpion ZS-256 support notes of the MiSTer ZX-Spectrum core
+(github.com/MiSTer-devel/ZX-Spectrum_MISTer/pull/66), read for facts only.
+Sources: **[TM]** Timex Sinclair 2068 Technical Manual (Timex, 1983; text at
+retromaniek.pl/wp-content/uploads/2019/09/Timex-Sinclair-2068-Technical-Manual-best.pdf);
+**[FAQ]** World of Spectrum, "Timex Technical Information"
+(worldofspectrum.org/faq/reference/tmxreference.htm). Snapshot formats: zx-state `SCLD` block
+(spectaculator.com/docs/zx-state/scld.shtml: `chF4`, `chFf`); `.z80` hardware mode 14 = TC2048, bytes
+35 and 36 the last OUTs to `$F4` and `$FF` in a Timex mode (worldofspectrum.org/faq/reference/z80format.htm).
 
 ## 9. Decisions from the author (2026-10-04)
 
@@ -222,3 +250,138 @@ All proposals accepted:
   favourites.
 - **Q5. 8K pages in the debugger:** the 2068's memory is shown as 8K chunks with their own labels
   (`H0`-`H7`, `D0`-`D7`, `X0`-`X7`), extending the partition model in G9.4b Phase 3.
+
+## 10. G9.4a as built (2026-10-05)
+
+**The core (Phase 1).** `src/emu/machines/timex/wasm/timex/timex.c` is the 48K machine (`sp48.c`)
+compiled with `SP48_SCLD`, two buffer pixels per Spectrum pixel and the 3.528 MHz clock; the SCLD is
+the shared `zx-spectrum-scld.c`, which `zx-spectrum-ula.c` includes in place of its renderers. The
+48K, 128K and +3E cores build bit-identical to before (checked against `HEAD` builds). The 48K's
+exports keep their `sp48` names in the Timex core, so `TimexWasmV2Machine` extends
+`ZxSpectrum48WasmV2Machine` through four protected hooks (`hardResetCore`, `loadMachineRom`,
+`stateCoreId`, the snapshot extras) and loads through the 48K loader with its own artifact
+(`zx-timex.wasm`). **Departure from P2's wording:** no separate copy of the machine loop - the 48K's
+`sp48.c` is itself the shared piece; G9.4b's memory map will hang off the same switch. Speed: about
+6% slower per frame than the 48K core in the standard mode, 8% in the 64-column mode (≈0.5 ms per
+20 ms frame, measured in Node).
+
+**The ROM (P5, Q1).** The TC2048 ROM is "Copyright Sinclair Research Ltd. and Timex"; Amstrad's
+permission covers only Sinclair and Amstrad code and says to ask Timex for the rest, so the rights
+are not clear and Klive does not ship it. **Departure:** instead of refusing to start, the TC2048
+boots the shipped Sinclair 48K ROM until the user names a TC2048 ROM (setting
+`emuOptions.tc2048RomFile`, **Machine > TC2048 ROM**): the TC2048 ROM differs only by clearing port
+`$FF` at start-up, so every flow, test and program works on either, and CI needs no ROM. The
+ROM-gated tests run with `KLIVE_TC2048_ROM` set.
+
+**Host, registry, harness (Phase 2).** Machine `timex`, model `tc2048` (`timexModels.ts`, config
+`MC_TIMEX_MODEL`), after the Next in the registry; hardware sheet (the raster given in Spectrum
+pixels, 352 × 288); the 48K's keyboard, tape, snapshot and state menus plus **Kempston Joystick**
+(joystick 1's bindings, `setJoystickState`) and **TC2048 ROM**; the media strip; tape loading from
+the IDE. The panel shows the 704-wide buffer at `[0.5, 1]`. The harness is
+`test/harness/timex/` - the 48K harness's session class with SCLD probes (decided in Phase 1: it
+shares everything else).
+
+**Tests (Phase 3).** `test/timex-hw/`: every mode by pixel probes, mirroring the Next's TMX-001 -
+TMX-005 and TMX-013 cases (the P7 cross-check), the eight 64-column inks, FLASH, a mode change
+mid-frame, port `$FF` readback and decoding, the interrupt inhibit, the Kempston port and its
+decoding, the model table against the core, contention tact for tact against the 48K core and a
+contended loop measured on both, the floating bus following the selected display file, injection,
+tape loading, and the ROM's start-up hook (ROM-gated).
+
+**Snapshots and state (Phase 4).** `.szx` machine 8 with the `SCLD` block, `.z80` hardware mode 14
+with `$F4`/`$FF` in bytes 35/36, both loading onto the TC2048 with the screen mode and both written
+by it; a `.sna` is written as a 48K and names the lost port `$FF`. Klive state files record the core
+as `timex`; the determinism test covers it.
+
+**IDE and docs (Phase 5).** No new default favourite (Q4). `project-templates/timex` from the 48K's.
+`docs/content/machine-types.mdx` has a TC2048 section. No style or theming change, so
+`.ai/ui-theming-intent-and-lessons.md` is unchanged.
+
+## 11. G9.4b as built (2026-10-05)
+
+**The core.** The 2068s are models 1 (TC2068) and 2 (TS2068) of `timexHardReset`, on the same Timex
+core; the switches are runtime statics, so the TC2048 is unchanged. `sp48-memory.c` gains the 8K
+chunk map (`timexRebuildChunkMap`: a base pointer, a writable flag and a source per chunk) for the
+CPU's reads and writes; `sp48Memory` stays the HOME bank, which the SCLD keeps displaying. The AY is
+`zx-spectrum-psg.c`, included as the 128K includes it, mixed into the beeper's samples only on the
+2068s; its clock tact points join the tact rebase. Four shared hooks keep the other cores bit-identical
+(checked against builds of the pre-Timex sources): `SP48_CONTENDED_MEMORY`, `SP48_PORT_IS_ULA`,
+`SP48_TAPE_TRAP_ACTIVE`, and the tape routine addresses made overridable.
+
+**ROMs (P5, P6).** Neither 2068 ROM is shipped. A 2068 boots the user's 24K file (HOME then EXROM)
+or, without one, the Sinclair 48K ROM with no EXROM - the same departure G9.4a made, so CI runs every
+non-ROM test. `TIMEX_KNOWN_ROMS` (`timexModels.ts`, keyed by CRC-32) records what running each ROM
+showed: the TS2068's main loop at `$0E32` and its tape routines in the EXROM, where the tape trap
+fires only while chunk 0 is the EXROM. No TC2068 ROM was available, so an unknown 2068 ROM boots and
+runs but the IDE's injection and tape-load flows say they cannot start (§7's accepted fallback,
+applied to the TC2068 for want of its ROM rather than of a way to inject).
+
+**The DOCK (Phase 2).** `src/common/timex/dckFile.ts` reads and writes `.dck` files; the DOCK bank
+goes into the core's 64K DOCK image with its chunk types. **Machine > Insert Cartridge... / Eject
+Cartridge**, the media strip's cartridge card (icon `chip`, no drive letter), the media store (so a
+machine change keeps it), and the app's start-up restore. Inserting or ejecting restarts a running
+machine, since the ROM looks for a cartridge at start-up; a Klive-made LROS cartridge starts on the
+real TS2068 ROM. A `.dck`'s EXROM and HOME banks are not loaded.
+
+**Host, registry, debugger (Phase 3).** The machine is "Timex TC2048/TC2068/TS2068" with three models;
+`MF_PSG`, `MF_ROM` and `MF_BANK` switch the PSG panel and the partition views on (the hardware sheet
+shows banks only for a model with a bank size, so the TC2048 shows none). Partitions (Q5): `H0`/`H1`
+-1/-2, `X0`-`X7` -3 to -10, `H2`-`H7` 2-7, `D0`-`D7` 8-15; `getRomFlags`, `getCurrentPartitions` and
+the CPU's flat view follow the chunk map. Settings `emuOptions.tc2068RomFile` /
+`emuOptions.ts2068RomFile` and their **Machine > TC2068 ROM / TS2068 ROM** menus; **Machine >
+Joysticks** for the two sticks.
+
+**Tests (Phase 4).** `test/timex-hw/2068-*.test.ts`: every chunk through `$F4`, DOCK against EXROM,
+an empty chunk, the display staying on HOME, contention only on HOME, full port decoding (and the
+TC2048 keeping A0), the AY's registers and its measured pitch on both models (CPU / 32 / period),
+both joysticks through R14 (and R14 as an output), each model's frame against `timexModels.ts`, the
+TS2068's 60 frames a second and non-BRIGHT 64 columns, the partitions; ROM-gated: booting, injection,
+tape loading through the EXROM's routines and an LROS cartridge on the TS2068 ROM. `.dck` round trips
+in the unit tier.
+
+**Snapshots and state (Phase 5).** `.szx` machines 9/12 with SCLD, AY and DOCK blocks; `.z80` modes
+15/128 with `$F4`/`$FF` in bytes 35/36 and the AY in the header (a `.z80` keeps no cartridge, and says
+so); `.sna` as a 48K with each loss named. State files carry the chunk map, the AY and the cartridge;
+the determinism test runs a TS2068 with a cartridge chunk mapped.
+
+**IDE and docs (Phase 6).** No new favourite; the `timex` project templates serve all three models.
+`docs/content/machine-types.mdx` covers the three models. The media strip's badge rule is recorded in
+`.ai/ui-theming-intent-and-lessons.md`.
+
+## 12. G9.4c as built (2026-10-05)
+
+**The core.** The Scorpion is the `sp128` core's third timing profile, `SP128_TIMING_SCORPION`, which
+also switches on `$1FFD`: the core's RAM grows to 256K (sixteen banks) and its ROM to three pages
+(the service monitor is page 2; TR-DOS stays the Beta 128's own page). Slot 0 follows the priority of
+§8; the Beta 128's paging trap and the tape traps keep out while `$1FFD` puts RAM or the service ROM
+at `$0000`. A write now updates every slot of the flat 64K view that shows the same bank (bank 0 at
+`$0000` and `$C000`; this also fixes the 128K's view when bank 5 or 2 is paged at `$C000`). The 128K
+golden, the Pentagon's timing tests and the Beta 128 tests stay green; the core's memory grows to
+9 MB, so state files saved by earlier builds of the 128K core no longer load.
+
+**The machine (P3).** `ScorpionWasmV2Machine` extends the 128K's machine through two hooks
+(`loadMachineRoms`, `loadTrdosRomForBeta128`): machine id `scorpion`, model `zs256` (config
+`MC_SCORPION`; a 128K project's timing setting cannot select the Scorpion), partitions R0-R3 and
+B0-B15, the Beta 128 with two drives. **The ROM (P5):** none was available, and its rights are not
+clear; the setting `emuOptions.scorpionRomFile` (**Machine > Scorpion ROM**) names the user's 64K
+file. Without it - the same departure as G9.4a/b - the Scorpion boots the 128K ROMs, its service page
+reads `$FF`, and TR-DOS comes from the TR-DOS ROM setting, so every flow and test runs. With an
+unknown Scorpion ROM, the IDE's injection, tape and disk-boot flows say they cannot start, and the
+tape traps stay on only if the 48K page's tape routines match the shipped 48K BASIC ROM's
+(`$04C2`-`$0604`, compared at load).
+
+**Tests.** `test/sp128-hw/pentagon-timing.test.ts` measures the Scorpion beside the 128K and the
+Pentagon (frame, contention, I/O timing, floating bus, interrupt, paper start, border, paging, the AY,
+the IDE's flows); `test/sp128-hw/scorpion/` covers `$1FFD` and all sixteen banks, RAM at `$0000`,
+the service ROM, the port decoding against the 128K's, the lock, the partitions, TR-DOS from the
+Scorpion ROM (with the G9.1b stand-in) or the setting, the flows' refusal on its own ROM, and
+snapshots. The state determinism test runs a Scorpion.
+
+**Snapshots.** `.szx` machine 10 (sixteen RAMP pages, `$1FFD` in SPCR), `.z80` mode 10 (pages 3-18,
+`$1FFD` in byte 86 of the 55-byte header); a `.sna` refuses `$1FFD` in use and otherwise loads as a
+128K. The Beta 128's blocks are the Pentagon's.
+
+**IDE and docs.** No new favourite; `project-templates/scorpion` from the 128K's; the TR-DOS disk
+menus, the Disk Loader and the disk dialog treat the Scorpion's drives as the Pentagon's;
+`docs/content/machine-types.mdx` has a Scorpion section. No visual change.
+

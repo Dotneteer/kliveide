@@ -1326,6 +1326,28 @@ function saveDiskChanges(diskIndex: number, changes: SectorChanges): ResponseMes
     return errorResponse(`No disk file found for disk ${diskIndex}`);
   }
 
+  // --- TR-DOS disks (the Pentagon's Beta 128): a `.trd` takes each change at its file sector; an
+  // --- `.scl` is a container, never written back (`.plans/BETA128_TRDOS_PLAN.md` Q4)
+  const extension = path.extname(diskFile).toLowerCase();
+  if (extension === ".scl") {
+    return defaultResponse();
+  }
+  if (extension === ".trd") {
+    try {
+      const handle = fs.openSync(diskFile, "r+");
+      try {
+        for (const [fileSector, data] of changes) {
+          fs.writeSync(handle, data, 0, data.length, fileSector * 256);
+        }
+      } finally {
+        fs.closeSync(handle);
+      }
+    } catch (err) {
+      return errorResponse(`Saving disk changes failed: ${err.message}`);
+    }
+    return defaultResponse();
+  }
+
   try {
     const contents = fs.readFileSync(diskFile);
     const diskInfo = readDiskData(new Uint8Array(contents));

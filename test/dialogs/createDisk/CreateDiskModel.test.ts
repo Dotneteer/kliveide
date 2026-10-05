@@ -132,3 +132,17 @@ describe("CreateDiskModel — field errors", () => {
     expect(isComplete(aState({ folder: "/tmp", filename: "d.dsk", busy: true }))).toBe(true);
   });
 });
+
+describe("CreateDiskModel — TR-DOS disks (the Pentagon's Beta 128)", () => {
+  it("offers the TR-DOS types and starts on the first when the machine takes TR-DOS disks", async () => {
+    const { TRD_DISK_TYPES, diskTypesOf } = await import("@renderer/appEmu/dialogs/createDisk/CreateDiskModel");
+    const { selectViewModel } = await import("@renderer/appEmu/dialogs/createDisk/CreateDiskViewModel");
+    const env = { ...anEnv(), diskTypes: TRD_DISK_TYPES };
+    const state = initialState(env);
+    expect(state.diskType).toBe("trd80ds");
+    expect(diskTypesOf(env)).toBe(TRD_DISK_TYPES);
+    expect(selectViewModel(state).diskType.options.map((o) => o.value)).toEqual(["trd80ds", "trd40ds", "trd80ss", "trd40ss"]);
+    // --- Without the list the +3's CPC types stay the default
+    expect(selectViewModel(initialState(anEnv())).diskType.options).toBe(DISK_TYPES);
+  });
+});

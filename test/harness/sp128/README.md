@@ -35,7 +35,8 @@ it("pages bank 3 in from a snapshot", async () => {
 | | `runTo(address, { rom?, maxFrames? })` | Runs until PC reaches the address, stopping before it; with `rom`, only while that ROM is paged in at $0000 (the address in another ROM is stepped past). |
 | | `runFlow(flow, { code?, checkRom?, maxFrames? })` | Plays a code-injection flow (`getCodeInjectionFlow`, `getTapeLoadFlow`) as `MachineController` does, from a hard reset: queues its keys on the machine's own keystroke queue, injects `code`, pushes the return address. `checkRom: false` matches the IDE, whose core stops on the PC alone. Returns the PC it leaves. |
 | Keyboard | `keyDown(...)`, `keyUp(...)`, `typeKeys(chords)`, `typeText(text)`, `typeFlowKeys(flow)` | `SpectrumKeyCode` names; `typeText` types letters, digits, space and `\n` (ENTER). |
-| Media | `insertTape(blocks)`, `insertDisk(drive, bytes)` | As the IDE inserts them (a `.dsk` image into drive A or B). |
+| Media | `insertTape(blocks)`, `insertDisk(drive, bytes)` | As the IDE inserts them: a `.dsk` into the +3's drive A or B, a `.trd` / `.scl` into the Pentagon's. |
+| Beta 128 | `createSp128Session("pentagon", { trdosRom })`, `beta128()`, `takeDiskChanges(drive)`, `diskUnsaved(drive)` | The Pentagon's disk interface needs a TR-DOS ROM: the tests in `test/sp128-hw/beta128/` hand it their own stand-in (`test-rom.ts`); `trdosRomFromEnvironment()` reads a real one from `KLIVE_TRDOS_ROM` (Klive cannot ship it). `beta128()` reads the interface and the WD1793 without side effects; `takeDiskChanges` returns the `.trd` sectors the guest wrote, as the controller writes them back. |
 | Screen | `screenChar(row, col)`, `screenLine(row)`, `screenText()` | Text recognised against the 48 BASIC ROM's character set. |
 | Memory | `peek(address)`, `bank(n)` | A byte of the 64K the CPU sees; a RAM bank as stored. |
 | Paging | `paging()` | `{ bank, rom, shadowScreen, locked }`, plus `specialPaging` and `diskMotor` on the +2E/+3E. |

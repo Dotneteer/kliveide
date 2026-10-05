@@ -70,8 +70,14 @@ function write48(s: SpectrumSnapshot, losses: string[]): Uint8Array {
     losses.push("A .sna has no 16K layout; the file loads as a 48K");
   } else if (s.machine === "48k-ntsc") {
     losses.push("A .sna has no NTSC layout; the file loads as a PAL 48K");
+  } else if (s.machine === "tc2048" || s.machine === "tc2068" || s.machine === "ts2068") {
+    losses.push(
+      `A .sna has no Timex layout; the file loads as a 48K${(s.timex?.portFf ?? 0) !== 0 ? ", without the SCLD's port $FF (screen mode " + hex(s.timex!.portFf) + ")" : ""}`
+    );
+    if (s.timex?.portF4) losses.push(`A .sna has no chunk map: port $F4 (${hex(s.timex.portF4)}) is lost`);
+    if (s.timex?.dock?.length) losses.push("A .sna does not record the cartridge in the DOCK");
   }
-  if (s.ay?.on48k) {
+  if (s.ay?.on48k || (s.ay && (s.machine === "tc2068" || s.machine === "ts2068"))) {
     losses.push("A 48K .sna has no AY registers; they are not saved");
   }
 
@@ -105,6 +111,14 @@ function write128(s: SpectrumSnapshot, losses: string[]): Uint8Array {
     losses.push("A .sna has no $1FFD port and no +2A/+3 layout; the file loads as a ZX Spectrum 128K");
   } else if (s.machine === "plus2") {
     losses.push("A .sna has no +2 layout; the file loads as a ZX Spectrum 128K");
+  } else if (s.machine === "scorpion") {
+    const port1ffd = s.paging?.port1ffd ?? 0;
+    if (port1ffd & 0x13) {
+      throw new SnapshotRefusedError(
+        `The Scorpion's $1FFD is ${hex(port1ffd)} (RAM at $0000, the service ROM or a bank above 7), which a .sna cannot hold; save it as .szx or .z80`
+      );
+    }
+    losses.push("A .sna has no Scorpion layout; the file loads as a 128K, without RAM banks 8-15");
   }
   if (s.ay && s.ay.regs.some((r) => r !== 0)) {
     losses.push("A .sna has no AY registers; the sound chip starts silent");
@@ -114,7 +128,7 @@ function write128(s: SpectrumSnapshot, losses: string[]): Uint8Array {
   const out = new SnapshotBytes();
   writeHeader(out, s, s.cpu.sp);
   out.bytes(bank(s, 5)).bytes(bank(s, 2)).bytes(bank(s, paged));
-  out.word(s.cpu.pc).byte(port7ffd, 0 /* TR-DOS ROM not paged */);
+  out.word(s.cpu.pc).byte(port7ffd, s.peripherals.trdosPaged ? 1 : 0);
   // --- The rest in ascending order. With bank 2 or 5 paged in, that is six banks (the bank at
   // --- $C000 was a second copy), which makes the 147,487-byte variant.
   for (let b = 0; b < 8; b++) {

@@ -34,8 +34,11 @@ import {
   MC_DISK_SUPPORT,
   MC_MEM_SIZE,
   MC_SCREEN_FREQ,
+  MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
-  MI_SPECTRUM_48
+  MI_SPECTRUM_48,
+  MI_TIMEX,
+  MI_SCORPION
 } from "@common/machines/constants";
 import {
   getP3RomSet,
@@ -43,6 +46,8 @@ import {
   p3ModelDrives,
   p3ModelRomSet
 } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { getSp128Model, getSp128Timing } from "@emu/machines/zxSpectrum128/sp128Timings";
+import { getTimexModel } from "@emu/machines/timex/timexModels";
 
 /** The services the load uses */
 export type SpectrumSnapshotLoadPorts = {
@@ -124,7 +129,11 @@ export async function loadSpectrumSnapshot(
   } else if (tape?.fileName) {
     warnings.push(`The snapshot links the tape ${tape.fileName}; insert it yourself if you need it`);
   }
-  const drives = fit.machineId === MI_SPECTRUM_3E ? p3ModelDrives(fit.modelId) : 0;
+  // --- The +2A/+3/+3E's drives, or the Pentagon's Beta 128 drives
+  const drives =
+    fit.machineId === MI_SPECTRUM_3E
+      ? p3ModelDrives(fit.modelId)
+      : Number(getSp128Model(fit.modelId)?.config?.[MC_DISK_SUPPORT] ?? 0);
   for (const disk of options.disks ?? []) {
     if (disk.drive >= drives) {
       warnings.push(`The machine has no drive ${disk.drive ? "B" : "A"} for ${disk.fileName}`);
@@ -179,13 +188,22 @@ function mappingWarnings(
 
 /**
  * The model a machine without a model id runs, from its configuration: the 48K's memory size and
- * frequency, the +2A/+3/+2E/+3E's drive count and ROM set. Undefined for the 128K, which has no
- * models.
+ * frequency, the 128K machine's timing (the 128K or the Pentagon), the +2A/+3/+2E/+3E's drive count
+ * and ROM set.
  */
 export function effectiveModelId(machineId: string, config: MachineConfigSet | undefined): string | undefined {
   if (machineId === MI_SPECTRUM_48) {
     if (config?.[MC_MEM_SIZE] === 16) return "pal-16k";
     return config?.[MC_SCREEN_FREQ] === "ntsc" ? "ntsc" : "pal";
+  }
+  if (machineId === MI_SPECTRUM_128) {
+    return getSp128Timing(config).id;
+  }
+  if (machineId === MI_TIMEX) {
+    return getTimexModel(config).id;
+  }
+  if (machineId === MI_SCORPION) {
+    return "zs256";
   }
   if (machineId === MI_SPECTRUM_3E) {
     const raw = config?.[MC_DISK_SUPPORT];

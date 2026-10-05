@@ -9,7 +9,9 @@ const sharedSpectrumDeviceSources = {
   beeper: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-beeper.c"),
   ports: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ports.c"),
   tape: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-tape.c"),
-  psg: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c")
+  psg: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c"),
+  // --- The Timex SCLD, included by the ULA in the Timex core (`.plans/TIMEX_SCORPION_PLAN.md` P2)
+  scld: resolve(root, "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-scld.c")
 };
 
 /*
@@ -34,6 +36,26 @@ const wasmCpuContract = [
       '#include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"'
     ],
     requiredExports: ["sp48GetCpuAf", "sp48GetCpuBc", "sp48GetCpuDe", "sp48GetCpuHl", "sp48GetCpuPc", "sp48GetCpuSp"]
+  },
+  {
+    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` P2): `timex.c` builds the 48K machine with
+    // --- the SCLD switched on, so its CPU adapter is the 48K's
+    id: "timex",
+    label: "Timex Computer 2048",
+    mode: "z80",
+    buildScript: resolve(root, "scripts/build-timex-wasm.cjs"),
+    buildEntrySource: resolve(root, "src/emu/machines/timex/wasm/timex/timex.c"),
+    cpuAdapterSource: resolve(root, "src/emu/machines/zxSpectrum48/wasm/sp48/sp48.c"),
+    artifact: resolve(root, "src/emu/machines/timex/wasm/dist/zx-timex.wasm"),
+    include: '#include "../../../../z80/wasm/z80.c"',
+    sharedDeviceIncludes: [
+      '#include "../../../zxSpectrum/wasm/common/zx-spectrum-ula.c"',
+      '#include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"',
+      '#include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"',
+      '#include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"',
+      '#include "../../../zxSpectrum/wasm/common/zx-spectrum-tape.c"'
+    ],
+    requiredExports: ["sp48GetCpuAf", "sp48GetCpuBc", "sp48GetCpuDe", "sp48GetCpuHl", "sp48GetCpuPc", "sp48GetCpuSp", "timexHardReset"]
   },
   {
     id: "sp128",

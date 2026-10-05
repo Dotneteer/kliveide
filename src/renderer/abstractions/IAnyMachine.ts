@@ -218,6 +218,12 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
   getTapeLoadFlow?(): CodeInjectionFlow;
 
   /**
+   * The flow that boots the disk in drive A after a reset (the Pentagon's Beta 128: TR-DOS, then
+   * `RUN`). Absent on a machine that cannot boot a disk this way.
+   */
+  getDiskBootFlow?(): CodeInjectionFlow;
+
+  /**
    * Injects the specified code into the ZX Spectrum machine
    * @param codeToInject Code to inject into the machine
    */

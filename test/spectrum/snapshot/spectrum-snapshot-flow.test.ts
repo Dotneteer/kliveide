@@ -317,8 +317,8 @@ describe("loading through the controller", () => {
   it("refuses an unsupported machine, leaving the machine untouched", async () => {
     const emu = await emulator(MI_SPECTRUM_48, "pal");
     await expect(
-      loadSpectrumSnapshot(emu.ports, "a.szx", buildSzx(state128(), { machineId: 10 }), "run")
-    ).rejects.toThrow(/Scorpion ZS-256/);
+      loadSpectrumSnapshot(emu.ports, "a.szx", buildSzx(state128(), { machineId: 11 }), "run")
+    ).rejects.toThrow(/ZX Spectrum SE/);
     expect(emu.rebuilds).toEqual([]);
     expect(emu.events.filter((e) => e.startsWith("state:"))).toEqual([]);
   });

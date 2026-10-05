@@ -6,6 +6,8 @@ import { createZxSpectrumP3eMachine } from "@emu/machines/zxSpectrumP3e/ZxSpectr
 import { createZxNextMachine } from "@emu/machines/zxNext/ZxNextMachineFactory";
 import { createZ88Machine } from "@emu/machines/z88/Z88MachineFactory";
 import { createZx8081Machine } from "@emu/machines/zx8081/Zx8081MachineFactory";
+import { createTimexMachine } from "@emu/machines/timex/TimexMachineFactory";
+import { createScorpionMachine } from "@emu/machines/zxSpectrum128/ScorpionMachineFactory";
 import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_48,
@@ -14,7 +16,9 @@ import {
   MI_ZXNEXT,
   MI_C64,
   MI_ZX80,
-  MI_ZX81
+  MI_ZX81,
+  MI_TIMEX,
+  MI_SCORPION
 } from "./constants";
 import { C64Machine } from "@emu/machines/c64/C64Machine";
 
@@ -26,6 +30,14 @@ export const machineRendererRegistry: MachineUiRendererInfo[] = [
   {
     machineId: MI_SPECTRUM_128,
     factory: (_, model, config) => createZxSpectrum128Machine(model, config)
+  },
+  {
+    machineId: MI_TIMEX,
+    factory: (_, model, config) => createTimexMachine(model, config)
+  },
+  {
+    machineId: MI_SCORPION,
+    factory: (_, model, config) => createScorpionMachine(model, config)
   },
   {
     machineId: MI_SPECTRUM_3E,

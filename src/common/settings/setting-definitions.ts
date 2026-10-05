@@ -14,6 +14,11 @@ import {
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_TC2048_ROM,
+  SETTING_EMU_TC2068_ROM,
+  SETTING_EMU_TS2068_ROM,
+  SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -196,6 +201,63 @@ const settingDefinitions: Setting[] = [
       "by a separator. Edited in the Select Machine dialog; absent means the built-in defaults.",
     type: "array",
     defaultValue: undefined,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TRDOS_ROM,
+    title: "TR-DOS ROM file",
+    description:
+      "The 16K TR-DOS ROM the Pentagon 128's Beta 128 disk interface boots. Klive cannot ship it " +
+      "(its rights are unclear), so the Pentagon's disks are available once you name your own copy.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TC2048_ROM,
+    title: "TC2048 ROM file",
+    description:
+      "The 16K ROM the Timex Computer 2048 boots. Klive cannot ship Timex's ROM (its rights are " +
+      "unclear), so without your own copy the TC2048 boots the Sinclair 48K ROM, which differs from " +
+      "it only by a hook that clears port $FF when it starts up.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TC2068_ROM,
+    title: "TC2068 ROM file",
+    description:
+      "The 24K ROM the Timex Computer 2068 boots: its 16K HOME ROM followed by its 8K EXROM. Klive " +
+      "cannot ship it; without it the TC2068 boots the Sinclair 48K ROM and has no EXROM.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TS2068_ROM,
+    title: "TS2068 ROM file",
+    description:
+      "The 24K ROM the Timex Sinclair 2068 boots: its 16K HOME ROM followed by its 8K EXROM. Klive " +
+      "cannot ship it; without it the TS2068 boots the Sinclair 48K ROM and has no EXROM.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SCORPION_ROM,
+    title: "Scorpion ZS-256 ROM file",
+    description:
+      "The 64K ROM the Scorpion ZS-256 boots: the 128K editor, 48K BASIC, the service monitor and " +
+      "TR-DOS. Klive cannot ship it; without it the Scorpion boots the 128K ROMs and takes TR-DOS " +
+      "from the TR-DOS ROM file.",
+    type: "string",
+    defaultValue: "",
     saveWithIde: true,
     boundTo: "emu"
   },

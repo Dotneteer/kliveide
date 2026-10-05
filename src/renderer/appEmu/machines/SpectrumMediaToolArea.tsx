@@ -3,8 +3,9 @@ import { Icon } from "@renderer/controls/Icon";
 import { useSelector } from "@renderer/core/RendererProvider";
 import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
-import { MC_DISK_SUPPORT } from "@common/machines/constants";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import { MC_DISK_SUPPORT, MI_TIMEX } from "@common/machines/constants";
+import { MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { getTimexModel } from "@emu/machines/timex/timexModels";
 import styles from "./SpectrumMediaToolArea.module.scss";
 import { describeSpectrumMedia, SpectrumMediaCard } from "./spectrumMedia";
 
@@ -20,7 +21,11 @@ import { describeSpectrumMedia, SpectrumMediaCard } from "./spectrumMedia";
 export const SpectrumMediaToolArea = () => {
   const media = useSelector((s) => s.media);
   const diskDrives = useSelector((s) => s.emulatorState?.config?.[MC_DISK_SUPPORT] ?? 0);
-  const cards = describeSpectrumMedia(media, diskDrives as number);
+  // --- The Timex 2068s' DOCK
+  const dock = useSelector(
+    (s) => s.emulatorState?.machineId === MI_TIMEX && getTimexModel(s.emulatorState?.config).is2068
+  );
+  const cards = describeSpectrumMedia(media, diskDrives as number, dock);
   return (
     <div className={styles.mediaTools}>
       {cards.map((card) => (
@@ -33,7 +38,7 @@ export const SpectrumMediaToolArea = () => {
 const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
   const mainApi = useMainApi();
   const inserted = !!card.fileName;
-  const kind = card.mediaId === MEDIA_TAPE ? "tape" : "disk";
+  const kind = card.mediaId === MEDIA_TAPE ? "tape" : card.mediaId === MEDIA_DOCK ? "cartridge" : "disk";
 
   const insert = async () => {
     try {
@@ -54,12 +59,13 @@ const MediaCard = ({ card }: { card: SpectrumMediaCard }) => {
     <div className={styles.mediaCard}>
       <span className={styles.mediaIcon} title={card.title} aria-label={card.title}>
         <Icon
-          iconName={card.mediaId === MEDIA_TAPE ? "cassette-tape" : "floppy"}
+          iconName={card.mediaId === MEDIA_TAPE ? "cassette-tape" : card.mediaId === MEDIA_DOCK ? "chip" : "floppy"}
           width={14}
           height={14}
           fill="--color-display"
         />
-        {card.mediaId !== MEDIA_TAPE && (
+        {/* --- The drive letter, on the disk cards only */}
+        {card.mediaId !== MEDIA_TAPE && card.mediaId !== MEDIA_DOCK && (
           <span className={styles.driveLetter}>{card.title.slice(-1)}</span>
         )}
       </span>

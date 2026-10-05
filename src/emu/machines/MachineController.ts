@@ -797,6 +797,22 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * Resets the machine and boots the disk in drive A (the Pentagon's Beta 128: `trdosFlows.ts`,
+   * `.plans/BETA128_TRDOS_PLAN.md` Phase 4).
+   * @param debug Arm the breakpoints once the keystrokes are typed
+   */
+  async runDiskBoot(debug: boolean): Promise<void> {
+    const flow = this.machine.getDiskBootFlow?.();
+    if (!flow) {
+      throw new Error("This machine cannot boot a disk automatically.");
+    }
+    const operationRevision = this.beginMachineOperation();
+    await this.stop(operationRevision);
+    this.assertMachineOperationIsCurrent(operationRevision);
+    await this.executeInjectionFlow(flow, undefined, debug, operationRevision);
+  }
+
+  /**
    * Runs a code-injection flow's steps, then starts the machine - in debug mode if asked. Shared by
    * `runCode` and `runTapeLoad`; a flow with no `Inject` step needs no code.
    */

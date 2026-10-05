@@ -44,9 +44,10 @@ are timed to its frame, or to check that your own code runs on both machines. Ch
 everything else. Running, debugging, injecting code, the tape Loader, snapshots and Klive state
 files work the same on both.
 
-The Pentagon model does not have the Beta 128 disk interface yet, so TR-DOS and `.trd`/`.scl` disk
-images are not available. A 128K `.sna` snapshot that has the TR-DOS ROM paged in loads with a
-warning.
+The Pentagon has the **Beta 128 disk interface**: two drives (A and B) that take TR-DOS disk images
+(`.trd` and `.scl`), and TR-DOS itself. Klive cannot ship the TR-DOS ROM, so you name your own copy
+under **Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
+[Using TR-DOS Disks on the Pentagon 128](/howto/trdos-disks).
 
 A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
 the 128K model, unless your project already uses the Pentagon: a 128K `.sna` file does not say
@@ -90,6 +91,91 @@ and the warning goes. A snapshot saved from a +2A or +3 model is written as a +2
 Machine ID: `zxnext`
 
 Available models: Only the original ZX Spectrum Next (KS2) model is available; it is still in development.
+
+## Timex TC2048/TC2068/TS2068
+
+Machine ID: `timex`
+
+Available models:
+- `tc2048`: The Timex Computer 2048, a 48K Spectrum made in Portugal, whose ULA is Timex's SCLD.
+- `tc2068`: The Timex Computer 2068, the European 2068 (PAL, 50 Hz).
+- `ts2068`: The Timex Sinclair 2068, the American 2068 (NTSC, 60 Hz).
+
+Every model runs 48K software, and adds the SCLD's features:
+
+- **Screen modes**, selected by port `$FF` bits 0-2: `0` the normal screen; `1` a second screen at
+  `$6000` (attributes at `$7800`); `2` extended colour, one attribute byte for every 8 × 1 pixels,
+  at `$6000` plus the pixel byte's offset; `6` a 512 × 192 two-colour screen, whose even columns
+  come from `$4000` and odd columns from `$6000`. Bits 3-5 pick that mode's ink (the paper is its
+  complement, and the border shows the paper colour); the TC models show these colours BRIGHT, the
+  TS2068 does not. Reading port `$FF` returns what was written.
+- **Interrupt control**: port `$FF` bit 6 set stops the frame interrupt.
+
+The CPU runs at the SCLD's 3.528 MHz. The TC2048 and TC2068 keep the 48K's frame (224 T-states by
+312 lines); the TS2068's is 262 lines (58,688 T-states, 60 frames a second).
+
+**The TC2048** has a built-in Kempston joystick port, driven by joystick 1's bindings
+(**Machine > Kempston Joystick**).
+
+**The TC2068 and TS2068** add:
+
+- **Bank switching in 8K chunks.** Each of the eight 8K chunks of the address space comes from the
+  HOME bank (the 16K ROM and 48K of RAM), or - when its bit in port `$F4` is set - from the cartridge
+  (the DOCK) or, with port `$FF` bit 7 set, from the 8K Extension ROM (EXROM). The screen always
+  comes from HOME. The memory and disassembly views and the breakpoints name the chunks `H0`-`H7`,
+  `D0`-`D7` and `X0`-`X7`.
+- **An AY-3-8912 sound chip** on ports `$F5` (register select) and `$F6` (data), clocked at 1.764 MHz,
+  with the PSG panel.
+- **Two joysticks**, read through the AY's register 14 (**Machine > Joysticks**).
+- **Cartridges**: **Machine > Insert Cartridge...** puts a `.dck` file into the DOCK, and the media
+  strip shows it. The machine restarts, because its ROM looks for a cartridge when it starts.
+- Ports `$FE`, `$F4`, `$F5`, `$F6` and `$FF` are decoded on their full low byte.
+
+**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Machine > TC2048 ROM**,
+**TC2068 ROM** or **TS2068 ROM**: the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
+followed by its 8K EXROM. Until you do, the machine boots the Sinclair 48K ROM (a 2068 then has no
+EXROM). Klive knows the TS2068 ROM (CRC-32 `48004230`): with it, running and debugging code, and
+loading tapes from the IDE, use its own main loop and tape routines. With a 2068 ROM Klive has not
+seen, the machine runs, but the IDE cannot start a program or a tape in it.
+
+Running, debugging, injecting code (code built for the 48K runs as it is), tapes, snapshots and Klive
+state files work on every model.
+
+**Snapshots.** A `.szx` or `.z80` snapshot of a TC2048, TC2068 or TS2068 opens on its model, with its
+screen mode, its chunk map and the 2068s' AY; a `.szx` also keeps the cartridge's pages. A Timex
+machine saved as `.sna` loads as a 48K, and Klive names what it loses.
+
+## Scorpion ZS-256
+
+Machine ID: `scorpion`
+
+Available models:
+- `zs256`: The Scorpion ZS-256, a Russian 128K-compatible machine with 256K of RAM and a built-in
+  Beta 128 disk interface.
+
+The Scorpion runs on the ZX Spectrum 128K's core, and adds:
+
+- **256K of RAM in sixteen banks.** Port `$7FFD` pages banks as on the 128K; port `$1FFD` bit 4 adds
+  8 to the bank at `$C000` (banks 8-15), bit 0 puts RAM bank 0 at `$0000`, and bit 1 puts the
+  service monitor ROM there. `$7FFD` bit 5 locks `$7FFD` only, never `$1FFD`. Both ports are decoded
+  on more address lines than the 128K's.
+- **Four ROMs**: the 128K editor, 48K BASIC, the service monitor and TR-DOS. The memory and
+  disassembly views and the breakpoints name them `R0`-`R3`, and the banks `B0`-`B15`.
+- **The Beta 128 disk interface**, built in, with two drives (`.trd` and `.scl` disks), as on the
+  Pentagon 128 - see [Using TR-DOS Disks on the Pentagon 128](/howto/trdos-disks).
+- **Timing**: 3.5 MHz, the 48K's frame (224 T-states by 312 lines, 69,888 T-states), and no memory or
+  I/O contention. Unattached ports read the floating bus.
+
+**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Machine > Scorpion
+ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
+`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Machine > TR-DOS ROM**. With the 128K
+ROMs, running and debugging code, the Tape Loader and booting a disk work as on the 128K and the
+Pentagon. With the Scorpion's own ROM the machine runs, but the IDE cannot start a program, a tape or
+a disk in its editor, which Klive does not know; load them by hand.
+
+**Snapshots.** A `.szx` or `.z80` snapshot of a Scorpion opens on it with all sixteen banks and
+`$1FFD`. A Scorpion saved as `.sna` loads as a 128K without banks 8-15, and Klive refuses it while
+`$1FFD` is in use.
 
 ## Cambridge Z88
 

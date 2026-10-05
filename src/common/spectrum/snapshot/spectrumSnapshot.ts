@@ -23,7 +23,11 @@ export type SnapshotMachineKind =
   | "plus2a"
   | "plus3"
   | "plus3e"
-  | "pentagon";
+  | "pentagon"
+  | "tc2048"
+  | "tc2068"
+  | "ts2068"
+  | "scorpion";
 
 /**
  * The machine the snapshot was taken on, as the file says it. `unsupported` names a machine Klive
@@ -75,8 +79,30 @@ export type SpectrumSnapshotUla = {
 /** Memory paging ports */
 export type SpectrumSnapshotPaging = {
   port7ffd: number;
-  /** +2A/+3 only */
+  /** +2A/+3 and Scorpion only */
   port1ffd?: number;
+};
+
+/** An 8K page of a 2068's DOCK or EXROM bank (`.szx` DOCK block) */
+export type SnapshotDockPage = {
+  /** 0-7: the chunk */
+  page: number;
+  /** The DOCK bank (else the EXROM bank) */
+  dock: boolean;
+  /** Read-write */
+  ram: boolean;
+  /** The 8K */
+  data: Uint8Array;
+};
+
+/** The Timex SCLD's registers (`.szx` SCLD block; `.z80` bytes 35-36 in a Timex mode) */
+export type SpectrumSnapshotTimex = {
+  /** Port $F4, the 2068's chunk paging (0 on the TC2048) */
+  portF4: number;
+  /** Port $FF: the screen mode, the 64-column colours, the interrupt inhibit, the EXROM select */
+  portFf: number;
+  /** The cartridge's pages (the 2068s; `.szx` only) */
+  dock?: SnapshotDockPage[];
 };
 
 /** The AY-3-8912 sound chip */
@@ -125,14 +151,41 @@ export type SpectrumSnapshotPeripherals = {
   mgt?: boolean;
   /** A Multiface ROM was paged */
   multiface?: boolean;
-  /** The TR-DOS ROM was paged (`.sna` 128K) */
+  /** The TR-DOS ROM was paged (`.sna` 128K, or the `.szx` B128 block) */
   trdosPaged?: boolean;
+  /** The Beta 128 disk interface (`.szx` B128 and BDSK blocks; `.plans/BETA128_TRDOS_PLAN.md`) */
+  beta128?: SnapshotBeta128;
   /** A custom ROM (`.szx` ROM block), which Klive does not install */
   customRomSize?: number;
   /** +3 disk drives */
   plus3?: { drives: number; motorOn: boolean; disks: SnapshotDisk[] };
   /** The cassette recorder */
   tape?: SnapshotTape;
+};
+
+/** A disk in a Beta 128 drive (`.szx` BDSK block) */
+export type SnapshotBetaDisk = {
+  drive: number;
+  /** Where the head is */
+  cylinder: number;
+  /** The image format: 0 TRD, 1 SCL, 2 FDI, 3 UDI (zx-state `ZXSTBDT_*`) */
+  diskType: number;
+  writeProtected: boolean;
+  fileName?: string;
+  embedded?: Uint8Array;
+};
+
+/** The Beta 128's state (`.szx` B128 block) */
+export type SnapshotBeta128 = {
+  drives: number;
+  paged: boolean;
+  /** The system register (port $FF) and the WD1793's registers */
+  system: number;
+  track: number;
+  sector: number;
+  data: number;
+  status: number;
+  disks: SnapshotBetaDisk[];
 };
 
 /** A header field, as the viewer's "File" section lists it */
@@ -158,6 +211,8 @@ export type SpectrumSnapshot = {
   cpu: SpectrumSnapshotCpu;
   ula: SpectrumSnapshotUla;
   paging?: SpectrumSnapshotPaging;
+  /** The Timex machines' SCLD */
+  timex?: SpectrumSnapshotTimex;
   /**
    * 16K RAM banks in 128K numbering, for every machine: a 48K snapshot holds banks 5 ($4000),
    * 2 ($8000) and 0 ($C000); a 16K one holds bank 5 only.
@@ -201,6 +256,14 @@ export function snapshotMachineName(machine: SnapshotMachine): string {
       return "ZX Spectrum +3e";
     case "pentagon":
       return "Pentagon 128";
+    case "tc2048":
+      return "Timex TC2048";
+    case "tc2068":
+      return "Timex TC2068";
+    case "ts2068":
+      return "Timex TS2068";
+    case "scorpion":
+      return "Scorpion ZS-256";
   }
 }
 
@@ -212,8 +275,14 @@ export function isPagedSnapshotMachine(machine: SnapshotMachine): boolean {
     machine === "plus2a" ||
     machine === "plus3" ||
     machine === "plus3e" ||
-    machine === "pentagon"
+    machine === "pentagon" ||
+    machine === "scorpion"
   );
+}
+
+/** The 16K RAM banks a paged machine holds: sixteen on the Scorpion ZS-256, eight elsewhere */
+export function snapshotBankCount(machine: SnapshotMachine): number {
+  return machine === "scorpion" ? 16 : 8;
 }
 
 /** Is this a +2A/+3 family machine (`$1FFD`)? */
@@ -221,9 +290,20 @@ export function isPlus3SnapshotMachine(machine: SnapshotMachine): boolean {
   return machine === "plus2a" || machine === "plus3" || machine === "plus3e";
 }
 
+/** Is this a Timex machine (the SCLD's port $FF)? */
+export function isTimexSnapshotMachine(machine: SnapshotMachine): boolean {
+  return machine === "tc2048" || machine === "tc2068" || machine === "ts2068";
+}
+
+/** Is this a Timex 2068 (the chunk map, the built-in AY, the DOCK)? */
+export function isTimex2068SnapshotMachine(machine: SnapshotMachine): boolean {
+  return machine === "tc2068" || machine === "ts2068";
+}
+
 /** The machine's frame length in T-states (the cores' values) */
 export function snapshotFrameLength(machine: SnapshotMachine): number {
   if (machine === "48k-ntsc") return 59136;
+  if (machine === "ts2068") return 58688;
   if (machine === "pentagon") return 71680;
   return isPagedSnapshotMachine(machine) ? 70908 : 69888;
 }

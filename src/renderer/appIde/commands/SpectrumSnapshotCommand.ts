@@ -5,7 +5,7 @@ import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage
 import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
 import type { SpectrumSnapshotLoadMode } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
   parseSpectrumSnapshot,
@@ -28,7 +28,7 @@ export type SpectrumSnapshotCommandArgs = {
 };
 
 /** The ZX Spectrum machines a snapshot can load on */
-const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E];
+const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX, MI_SCORPION];
 
 /**
  * Tells whether a path names a ZX Spectrum snapshot (`.sna`, `.z80`, `.szx`; any case).
@@ -117,7 +117,7 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     // --- Linked +3 disks
     const disks: { drive: number; fileName: string; contents: Uint8Array }[] = [];
     const diskWarnings: string[] = [];
-    for (const disk of snapshot.peripherals.plus3?.disks ?? []) {
+    for (const disk of [...(snapshot.peripherals.plus3?.disks ?? []), ...(snapshot.peripherals.beta128?.disks ?? [])]) {
       if (disk.embedded) {
         disks.push({ drive: disk.drive, fileName: `drive ${disk.drive ? "B" : "A"} (embedded)`, contents: disk.embedded });
         continue;

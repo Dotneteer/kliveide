@@ -31,6 +31,8 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TIMEX,
+  MI_SCORPION,
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
@@ -49,6 +51,8 @@ import {
   Z88_UI_FRAME_FREQUENCY
 } from "@emu/machines/z88/z88MachineInfo";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
+import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
 
 /** One ROM image the machine loads */
 export type RomImage = { id: string; kb: number; role?: string };
@@ -120,6 +124,30 @@ const SPECTRUM_DISPLAY: DisplaySpec = {
 };
 const SPECTRUM_KEYBOARD = [{ label: "Keyboard", value: "40-key Spectrum" }];
 const SPECTRUM_TAPE = "Tape (TAP, TZX)";
+
+/** The TC2068 and TS2068: the TC2048 plus the EXROM, the chunk map, the AY and the cartridge */
+function TIMEX_2068_SPECS(id: "tc2068" | "ts2068"): Overrides {
+  const model = TIMEX_MODELS_INFO[id];
+  return {
+    rom: [
+      { id, kb: 16, role: "HOME ROM; your copy, or the 48K ROM" },
+      { id: `${id}-exrom`, kb: 8, role: "EXROM, from the same file" }
+    ],
+    bankKb: 8,
+    addressSpace: "64K as eight 8K chunks, each HOME, DOCK or EXROM (port $F4)",
+    timing: {
+      perLine: model.tactsPerLine,
+      linesPerFrame: model.linesPerFrame,
+      perFrame: model.tactsPerFrame,
+      note: model.ntsc
+        ? "60 Hz at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+        : "The 48K's raster at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+    },
+    sound: ["Beeper", "AY-3-8912 PSG (ports $F5/$F6)"],
+    media: [SPECTRUM_TAPE, "Cartridge (.dck) in the DOCK"],
+    input: [...SPECTRUM_KEYBOARD, { label: "Joysticks", value: "2, read through the AY" }]
+  };
+}
 
 const ZX8081_BASE: HardwareSpecEntry = {
   cpu: "Zilog Z80",
@@ -195,9 +223,69 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
           perLine: 224,
           linesPerFrame: 320,
           perFrame: 71_680,
-          note: "No memory or I/O contention and no floating bus; the 128K ROMs, no TR-DOS"
-        }
+          note: "No memory or I/O contention and no floating bus; the 128K ROMs"
+        },
+        // --- The Beta 128 (`.plans/BETA128_TRDOS_PLAN.md`): it boots the user's own TR-DOS ROM
+        media: [SPECTRUM_TAPE, "Beta 128: 2 drives (TRD, SCL), with your TR-DOS ROM"]
       }
+    }
+  },
+  [MI_TIMEX]: {
+    // --- timexModels.ts, timex.c, zx-spectrum-scld.c (`.plans/TIMEX_SCORPION_PLAN.md` §8)
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: TIMEX_MODELS_INFO.tc2048.clockHz,
+      rom: [{ id: "tc2048", kb: 16, role: "your copy; the 48K ROM without one" }],
+      ramKb: 48,
+      display: {
+        ...SPECTRUM_DISPLAY,
+        attributes: "32 × 24 cells of 8 × 8 px, or 32 × 192 cells of 8 × 1 px (extended colour), FLASH",
+        otherSizes: "512 × 192 in two colours (64-column mode); a second screen at $6000",
+        videoChip: "Timex SCLD"
+      },
+      timing: {
+        unit: "T-states",
+        perLine: TIMEX_MODELS_INFO.tc2048.tactsPerLine,
+        linesPerFrame: TIMEX_MODELS_INFO.tc2048.linesPerFrame,
+        perFrame: TIMEX_MODELS_INFO.tc2048.tactsPerFrame,
+        note: "The 48K's raster at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+      },
+      sound: ["Beeper"],
+      media: [SPECTRUM_TAPE],
+      input: [...SPECTRUM_KEYBOARD, { label: "Joystick", value: "Kempston, built in" }]
+    },
+    models: {
+      tc2068: TIMEX_2068_SPECS("tc2068"),
+      ts2068: {
+        ...TIMEX_2068_SPECS("ts2068"),
+        display: { rasterHeight: 240 }
+      }
+    }
+  },
+  [MI_SCORPION]: {
+    // --- sp128Timings.ts (the Scorpion profile), sp128.c, ScorpionWasmV2Machine.ts (plan §8)
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: SP128_TIMINGS.scorpion.clockHz,
+      rom: [
+        { id: "scorpion-0", kb: 16, role: "128K editor; your ROM, or the 128K's" },
+        { id: "scorpion-1", kb: 16, role: "48K BASIC; your ROM, or the 128K's" },
+        { id: "scorpion-2", kb: 16, role: "service monitor; your ROM" },
+        { id: "scorpion-3", kb: 16, role: "TR-DOS; your ROM, or the TR-DOS ROM file" }
+      ],
+      ramKb: 256,
+      bankKb: 16,
+      display: { ...SPECTRUM_DISPLAY, rasterHeight: 287 },
+      timing: {
+        unit: "T-states",
+        perLine: SP128_TIMINGS.scorpion.tactsPerLine,
+        linesPerFrame: SP128_TIMINGS.scorpion.linesPerFrame,
+        perFrame: SP128_TIMINGS.scorpion.tactsPerFrame,
+        note: "No memory or I/O contention; $1FFD adds RAM at $0000, the service ROM and banks 8-15"
+      },
+      sound: ["Beeper", "AY-3-8912 PSG"],
+      media: [SPECTRUM_TAPE, "Beta 128: 2 drives (TRD, SCL), built in"],
+      input: SPECTRUM_KEYBOARD
     }
   },
   [MI_SPECTRUM_3E]: {
@@ -428,7 +516,9 @@ export function getHardwareSpec(machine: MachineInfo, modelId?: string): Hardwar
     modelId: model?.modelId,
     standard,
     clockMultiplier: machine.features?.[MF_ALLOW_CLOCK_MULTIPLIER] !== false,
-    bankCount: typeof banks === "number" ? banks : undefined,
+    // --- Only a model with paged memory (a bank size) has banks: the Timex machine declares the
+    // --- 2068s' chunks, which the TC2048 lacks
+    bankCount: typeof banks === "number" && spec.bankKb ? banks : undefined,
     timing: { ...spec.timing, frameHz }
   };
 }

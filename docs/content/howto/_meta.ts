@@ -10,6 +10,7 @@ export default {
   "always-on-top": "Keeping the Emulator always on top",
   "measure-t-states": "Measuring T-states",
   "sp48-custom-rom": "Using a Custom ROM with ZX Spectrum 48K",
+  "trdos-disks": "Using TR-DOS Disks on the Pentagon 128",
   "spectrum-snapshots": "Using ZX Spectrum Snapshots",
   "rzx-recordings": "Playing and Recording RZX Files",
   "machine-state": "Saving and Restoring the Machine State",

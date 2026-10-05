@@ -88,10 +88,12 @@ describe(".sna", () => {
     expect(() => parseSnaFile(bytes)).toThrow(/147487/);
   });
 
-  it("warns about the TR-DOS ROM and refuses an odd size", () => {
+  it("opens a .sna with TR-DOS paged on the Pentagon (the Beta 128's machine), and refuses an odd size", () => {
     const s = parseSnaFile(buildSna128(state128(), 1));
     expect(s.peripherals.trdosPaged).toBe(true);
-    expect(mapSpectrumSnapshotToKlive(s).warnings.join()).toMatch(/TR-DOS/);
+    const mapping = mapSpectrumSnapshotToKlive(s);
+    expect(mapping.modelIds).toEqual(["pentagon", "sp128"]);
+    expect(mapping.warnings.join()).not.toMatch(/TR-DOS/);
     expect(() => parseSnaFile(new Uint8Array(1000))).toThrow(/49179/);
   });
 });
@@ -163,10 +165,36 @@ describe(".z80", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([2, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
+  it.each([2, 11])("marks hardware mode %i unsupported", (hwMode) => {
     const s = parseZ80File(buildZ80(state48(), { version: 3, hwMode }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors.length).toBe(1);
+  });
+
+  it("reads hardware mode 14 as the TC2048, with ports $F4 and $FF in bytes 35 and 36", () => {
+    const bytes = buildZ80(state48(), { version: 3, hwMode: 14 });
+    bytes[35] = 0x00;
+    bytes[36] = 0xff;
+    const s = parseZ80File(bytes);
+    expect(s.machine).toBe("tc2048");
+    expect(s.timex).toEqual({ portF4: 0x00, portFf: 0xff });
+    // --- $FF in byte 36 is port $FF here, not a paged Interface 1 ROM
+    expect(s.peripherals.interface1).toBeUndefined();
+    expect(mapSpectrumSnapshotToKlive(s)).toMatchObject({ machineId: "timex", modelIds: ["tc2048"], errors: [] });
+  });
+
+  it.each([
+    [15, "tc2068"],
+    [128, "ts2068"]
+  ] as const)("reads hardware mode %i as the %s, with its built-in AY", (hwMode, machine) => {
+    const bytes = buildZ80(state48(), { version: 3, hwMode });
+    bytes[35] = 0x0f;
+    bytes[36] = 0x80;
+    const s = parseZ80File(bytes);
+    expect(s.machine).toBe(machine);
+    expect(s.timex).toEqual({ portF4: 0x0f, portFf: 0x80 });
+    expect(s.ay?.on48k).toBeUndefined();
+    expect(mapSpectrumSnapshotToKlive(s)).toMatchObject({ machineId: "timex", modelIds: [machine], errors: [] });
   });
 
   it("reads $1FFD from the 55-byte header of a +3 file", () => {
@@ -255,10 +283,35 @@ describe(".szx", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
+  it.each([11, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
     const s = parseSzxFile(buildSzx(state128(), { machineId }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors).toHaveLength(1);
+  });
+
+  it("reads machine id 8 as the TC2048, with its SCLD block", () => {
+    const s = parseSzxFile(buildSzx(state48(), { machineId: 8, extra: [szxBlock("SCLD", [0x00, 0x3e])] }));
+    expect(s.machine).toBe("tc2048");
+    expect(s.timex).toEqual({ portF4: 0x00, portFf: 0x3e });
+    expect(s.chunks?.find((c) => c.id === "SCLD")?.known).toBe(true);
+    expect(mapSpectrumSnapshotToKlive(s)).toMatchObject({ machineId: "timex", errors: [] });
+    // --- Without the block the SCLD is in its reset state
+    expect(parseSzxFile(buildSzx(state48(), { machineId: 8 })).timex).toEqual({ portF4: 0, portFf: 0 });
+  });
+
+  it.each([
+    [9, "tc2068"],
+    [12, "ts2068"]
+  ] as const)("reads machine id %i as the %s, with its DOCK pages", (machineId, machine) => {
+    const page = [0x06, 0x00, 0x03, ...new Array(0x2000).fill(0x3c)]; // --- RAM, DOCK, uncompressed, page 3
+    const s = parseSzxFile(
+      buildSzx(state48(), { machineId, extra: [szxBlock("SCLD", [0x08, 0x00]), szxBlock("DOCK", page)] })
+    );
+    expect(s.machine).toBe(machine);
+    expect(s.timex?.portF4).toBe(0x08);
+    expect(s.timex?.dock).toHaveLength(1);
+    expect(s.timex?.dock?.[0]).toMatchObject({ page: 3, ram: true, dock: true });
+    expect(s.timex?.dock?.[0].data[0x1fff]).toBe(0x3c);
   });
 
   it("reads $1FFD on a +3", () => {

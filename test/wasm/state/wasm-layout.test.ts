@@ -107,6 +107,7 @@ describe("layout fingerprint", () => {
 describe("the cores carry a layout", () => {
   const cores: [string, string][] = [
     ["sp48", "../../../scripts/build-sp48-wasm.cjs"],
+    ["timex", "../../../scripts/build-timex-wasm.cjs"],
     ["sp128", "../../../scripts/build-sp128-wasm.cjs"],
     ["spp3e", "../../../scripts/build-spp3e-wasm.cjs"],
     ["z88", "../../../scripts/build-z88-wasm.cjs"],

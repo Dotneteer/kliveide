@@ -19,9 +19,11 @@ import {
 import {
   SPECTRUM_48K_BANKS,
   SPECTRUM_BANK_SIZE,
+  type SnapshotBetaDisk,
   type SnapshotDisk,
   type SnapshotMachineKind,
-  type SpectrumSnapshot
+  type SpectrumSnapshot,
+  snapshotBankCount
 } from "@common/spectrum/snapshot/spectrumSnapshot";
 import { SnapshotRefusedError } from "@common/spectrum/snapshot/snapshotBytes";
 
@@ -76,7 +78,7 @@ export function snapshotMachineOfKlive(
     case "sp48":
       return modelId === "pal-16k" ? "16k" : modelId === "ntsc" ? "48k-ntsc" : "48k";
     case "sp128":
-      return modelId === "pentagon" ? "pentagon" : "128k";
+      return modelId === "pentagon" ? "pentagon" : modelId === "scorpion" ? "scorpion" : "128k";
     case "spp3e":
       return p3SnapshotKind(romSet, drives);
   }
@@ -105,7 +107,9 @@ export function captureSpectrumSnapshot(
     core.prefix === "sp128"
       ? call("GetTiming") === SP128_TIMINGS.pentagon.coreTiming
         ? "pentagon"
-        : "sp128"
+        : call("GetTiming") === SP128_TIMINGS.scorpion.coreTiming
+          ? "scorpion"
+          : "sp128"
       : core.modelId;
   const machine = snapshotMachineOfKlive(core.prefix, modelId, core.romSet, drives);
 
@@ -158,7 +162,7 @@ export function captureSpectrumSnapshot(
       ram.set(bank, core.ram.slice(start, start + SPECTRUM_BANK_SIZE));
     });
   } else {
-    for (let bank = 0; bank < 8; bank++) {
+    for (let bank = 0; bank < snapshotBankCount(machine); bank++) {
       const start = bank * SPECTRUM_BANK_SIZE;
       ram.set(bank, core.ram.slice(start, start + SPECTRUM_BANK_SIZE));
     }
@@ -179,7 +183,7 @@ export function captureSpectrumSnapshot(
   // --- Paging and the AY (the 128K models)
   if (core.prefix !== "sp48") {
     snapshot.paging = { port7ffd: call("GetPort7ffd") & 0xff };
-    if (core.prefix === "spp3e") snapshot.paging.port1ffd = call("GetPort1ffd") & 0xff;
+    if (core.prefix === "spp3e" || machine === "scorpion") snapshot.paging.port1ffd = call("GetPort1ffd") & 0xff;
     const regs = new Uint8Array(16);
     for (let reg = 0; reg < 16; reg++) regs[reg] = call("GetPsgRegisterValue", reg) & 0xff;
     snapshot.ay = { selected: call("GetPsgRegisterIndex") & 0x0f, regs };
@@ -192,6 +196,34 @@ export function captureSpectrumSnapshot(
       if (fileName) disks.push({ drive, fileName });
     }
     snapshot.peripherals.plus3 = { drives, motorOn: call("GetDiskMotorOn") !== 0, disks };
+  }
+
+  // --- The Pentagon's Beta 128: its registers, the TR-DOS page and the disks linked to their files
+  if (core.prefix === "sp128" && call("BetaGetEnabled") !== 0) {
+    const disks: SnapshotBetaDisk[] = [];
+    for (let drive = 0; drive < 2; drive++) {
+      const fileName = media.diskFiles?.[drive];
+      if (!fileName || call("BetaDiskGetPresent", drive) === 0) continue;
+      disks.push({
+        drive,
+        cylinder: call("BetaGetDriveCylinder", drive),
+        diskType: /\.scl$/i.test(fileName) ? 1 : 0,
+        writeProtected: call("BetaDiskGetWriteProtected", drive) !== 0,
+        fileName
+      });
+    }
+    const paged = call("BetaGetPaged") !== 0;
+    snapshot.peripherals.beta128 = {
+      drives: 2,
+      paged,
+      system: call("BetaGetSystemRegister"),
+      track: call("BetaGetFdcTrack"),
+      sector: call("BetaGetFdcSector"),
+      data: call("BetaGetFdcData"),
+      status: call("BetaGetFdcStatus"),
+      disks
+    };
+    if (paged) snapshot.peripherals.trdosPaged = true;
   }
 
   // --- The tape in the deck

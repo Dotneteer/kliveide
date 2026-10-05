@@ -18,10 +18,12 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
       ["beeper", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-beeper.c", true],
       ["ports", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-ports.c", true],
       ["tape", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-tape.c", true],
-      ["psg", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c", true]
+      ["psg", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-psg.c", true],
+      ["scld", "src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-scld.c", true]
     ]);
     expect(report.models.map(model => [model.id, model.mode])).toEqual([
       ["sp48", "z80"],
+      ["timex", "z80"],
       ["sp128", "z80"],
       ["spp3e", "z80"],
       ["zxnext", "z80n"],
@@ -65,6 +67,6 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
   });
 
   it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
-    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "sp128", "spp3e", "zxnext", "z88", "zx8081"]);
+    expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081"]);
   });
 });

@@ -58,7 +58,7 @@ import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
 import { __WIN32__ } from "./electron-utils";
@@ -69,6 +69,7 @@ import { setMachineType } from "./registeredMachines";
 import { resolveModelId } from "@common/machines/machine-registry";
 import { parseKeyMappings } from "./key-mappings/keymapping-parser";
 import { setSelectedDiskFile, setSelectedTapeFile } from "./machine-menus/zx-specrum-menus";
+import { setDockFile } from "./machine-menus/timex-menus";
 import { processBuildFile } from "./build";
 import { machineMenuRegistry } from "./machine-menus/machine-menu-registry";
 import { SETTING_EMU_STAY_ON_TOP, SETTING_IDE_CLOSE_EMU } from "@common/settings/setting-const";
@@ -392,6 +393,11 @@ async function createAppWindows() {
       const diskBState = appSettings.media?.[MEDIA_DISK_B];
       if (diskBState?.diskFile) {
         await setSelectedDiskFile(1, diskBState.diskFile, diskBState.writeProtected ?? true);
+      }
+      // --- A Timex 2068's cartridge
+      const dockFile = appSettings.media?.[MEDIA_DOCK];
+      if (typeof dockFile === "string" && dockFile) {
+        await setDockFile(dockFile, false);
       }
 
       // --- Set key mappings

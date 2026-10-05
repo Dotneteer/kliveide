@@ -100,6 +100,22 @@ class EmuApiImpl {
   }
 
   /**
+   * Inserts a `.dck` cartridge into a Timex 2068's DOCK (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b); a
+   * running machine restarts, since the ROM looks for a cartridge when it starts
+   * @param _file The cartridge file
+   * @param _contents Its bytes
+   * @returns Why it cannot be inserted, or undefined
+   */
+  async setDockFile(_file: string, _contents: Uint8Array): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Removes the cartridge from the DOCK; a running machine restarts */
+  async ejectDock(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Loads a `.z88` (OZvm) snapshot into the emulator, rebuilding the machine as a Z88 that fits it
    * when needed (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5).
    * @param _contents The `.z88` file
@@ -282,6 +298,14 @@ class EmuApiImpl {
   }
 
   /**
+   * The Pentagon's TR-DOS disk in a drive as a `.trd` image, with the guest's writes (to save an
+   * `.scl` disk, which is never written back); undefined without a Beta 128 or a disk
+   */
+  async getTrdosDiskImage(_index: number): Promise<Uint8Array | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current CPU state.
    */
   async getCpuState(): Promise<CpuState> {
@@ -392,6 +416,10 @@ class EmuApiImpl {
    * the Tape Loader on a 128K or +2/+3. The tape must already be inserted (`MainApi.setTapeFile`).
    * @param _debug Arm the breakpoints once the keystrokes are typed
    */
+  async startDiskBoot(_debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async startTapeLoad(_debug: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -1058,6 +1086,7 @@ const UNBOUNDED_EMU_METHODS = [
   "runCodeCommand",
   // --- Reaches the editor or the start-up menu by running the ROM, like `runCodeCommand`
   "startTapeLoad",
+  "startDiskBoot",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
   "stopScript"

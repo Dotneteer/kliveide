@@ -5,6 +5,11 @@
 #define SP48_PORT_READ_NON_FE(address) sp48ReadFloatingBus()
 #endif
 
+/* Which ports the ULA answers: A0 low on Sinclair's machines; the Timex 2068s decode $FE fully */
+#ifndef SP48_PORT_IS_ULA
+#define SP48_PORT_IS_ULA(address) (((address) & 0x0001u) == 0u)
+#endif
+
 #ifndef SP48_PORT_WRITE_NON_FE
 #define SP48_PORT_WRITE_NON_FE(address, value) ((void)(address), (void)(value))
 #endif
@@ -20,7 +25,7 @@ static void resetPortFe(void) {
 }
 
 uint32_t sp48ReadPort(uint32_t address) {
-  if ((address & 0x0001u) != 0u) {
+  if (!(SP48_PORT_IS_ULA(address))) {
     return SP48_PORT_READ_NON_FE(address);
   }
 
@@ -46,7 +51,7 @@ uint32_t sp48ReadPort(uint32_t address) {
 }
 
 void sp48WritePort(uint32_t address, uint32_t value) {
-  if ((address & 0x0001u) != 0u) {
+  if (!(SP48_PORT_IS_ULA(address))) {
     SP48_PORT_WRITE_NON_FE(address, value);
     return;
   }
@@ -78,5 +83,6 @@ void sp48WritePort(uint32_t address, uint32_t value) {
   }
 }
 
+#undef SP48_PORT_IS_ULA
 #undef SP48_PORT_WRITE_NON_FE
 #undef SP48_PORT_READ_NON_FE

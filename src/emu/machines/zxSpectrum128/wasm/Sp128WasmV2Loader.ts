@@ -4,8 +4,8 @@ import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rz
 
 export const SP128_WASM_V2_ARTIFACT_NAME = "zx-spectrum128.wasm";
 export const SP128_WASM_V2_MEMORY_SIZE = 0x10000;
-export const SP128_WASM_V2_RAM_SIZE = 0x20000;
-export const SP128_WASM_V2_ROM_SIZE = 0x8000;
+export const SP128_WASM_V2_RAM_SIZE = 0x40000;
+export const SP128_WASM_V2_ROM_SIZE = 0xc000;
 export const SP128_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Sp128WasmV2ExportFunction = (...args: number[]) => number;
@@ -42,6 +42,11 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   sp128SetContentionValue: Sp128WasmV2ExportFunction;
   sp128GetMemorySize: Sp128WasmV2ExportFunction;
   sp128GetRamSize: Sp128WasmV2ExportFunction;
+  /** The Scorpion ZS-256's $1FFD, and its tape-trap switch (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
+  sp128GetPort1ffd: Sp128WasmV2ExportFunction;
+  sp128SetPort1ffd: Sp128WasmV2ExportFunction;
+  sp128GetScorpion: Sp128WasmV2ExportFunction;
+  sp128SetTapeTrapsEnabled: Sp128WasmV2ExportFunction;
   sp128GetRomSize: Sp128WasmV2ExportFunction;
   sp128GetScreenWidth: Sp128WasmV2ExportFunction;
   sp128GetScreenHeight: Sp128WasmV2ExportFunction;
@@ -50,6 +55,36 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   sp128GetAudioSampleCapacity: Sp128WasmV2ExportFunction;
   sp128GetTactsInFrame: Sp128WasmV2ExportFunction;
   sp128GetTiming: Sp128WasmV2ExportFunction;
+  // --- The Beta 128 disk interface (`zx-spectrum-beta128.c`); present in every build, used on the Pentagon
+  sp128BetaGetEnabled: Sp128WasmV2ExportFunction;
+  sp128BetaGetPaged: Sp128WasmV2ExportFunction;
+  sp128BetaSetPaged: Sp128WasmV2ExportFunction;
+  sp128BetaGetSystemRegister: Sp128WasmV2ExportFunction;
+  sp128BetaSetSystemRegister: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcStatus: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcTrack: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcSector: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcData: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcCommand: Sp128WasmV2ExportFunction;
+  sp128BetaGetFdcBusy: Sp128WasmV2ExportFunction;
+  sp128BetaGetIntrq: Sp128WasmV2ExportFunction;
+  sp128BetaGetDrq: Sp128WasmV2ExportFunction;
+  sp128BetaSetFdcRegisters: Sp128WasmV2ExportFunction;
+  sp128BetaGetDriveCylinder: Sp128WasmV2ExportFunction;
+  sp128BetaSetDriveCylinder: Sp128WasmV2ExportFunction;
+  sp128BetaDiskDataPtr: Sp128WasmV2ExportFunction;
+  sp128BetaDiskGetCapacity: Sp128WasmV2ExportFunction;
+  sp128BetaDiskInsert: Sp128WasmV2ExportFunction;
+  sp128BetaDiskEject: Sp128WasmV2ExportFunction;
+  sp128BetaDiskSetWriteProtected: Sp128WasmV2ExportFunction;
+  sp128BetaDiskGetPresent: Sp128WasmV2ExportFunction;
+  sp128BetaDiskGetCylinders: Sp128WasmV2ExportFunction;
+  sp128BetaDiskGetSides: Sp128WasmV2ExportFunction;
+  sp128BetaDiskGetWriteProtected: Sp128WasmV2ExportFunction;
+  sp128BetaGetDirtyRevision: Sp128WasmV2ExportFunction;
+  sp128BetaGetSectorCount: Sp128WasmV2ExportFunction;
+  sp128BetaGetSectorDirty: Sp128WasmV2ExportFunction;
+  sp128BetaClearDirty: Sp128WasmV2ExportFunction;
   sp128GetInterruptTacts: Sp128WasmV2ExportFunction;
   sp128SetTargetClockMultiplier: Sp128WasmV2ExportFunction;
   sp128GetClockMultiplier: Sp128WasmV2ExportFunction;
@@ -244,6 +279,10 @@ const requiredV2Exports = [
   "sp128SetContentionValue",
   "sp128GetMemorySize",
   "sp128GetRamSize",
+  "sp128GetPort1ffd",
+  "sp128SetPort1ffd",
+  "sp128GetScorpion",
+  "sp128SetTapeTrapsEnabled",
   "sp128GetRomSize",
   "sp128GetScreenWidth",
   "sp128GetScreenHeight",

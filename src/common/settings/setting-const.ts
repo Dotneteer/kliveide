@@ -12,6 +12,15 @@ export const SETTING_EMU_MOUSE_SENSITIVITY = "emuOptions.mouseSensitivity";
 export const SETTING_EMU_JOYSTICK_BINDINGS = "emuOptions.joystickBindings";
 export const SETTING_EMU_MACHINE_FAVORITES = "emuOptions.machineFavorites";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
+/** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
+export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
+/** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
+export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
+/** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */
+export const SETTING_EMU_TC2068_ROM = "emuOptions.tc2068RomFile";
+export const SETTING_EMU_TS2068_ROM = "emuOptions.ts2068RomFile";
+/** The Scorpion ZS-256's 64K ROM file (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c); Klive cannot ship it */
+export const SETTING_EMU_SCORPION_ROM = "emuOptions.scorpionRomFile";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_STEP_IN_INTERRUPTS = "emuOptions.sourceStepStopsInInterrupts";
 export const SETTING_EMU_STOP_ON_ERRORS = "emuOptions.stopOnRuntimeErrors";

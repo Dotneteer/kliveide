@@ -9,6 +9,8 @@
  *   SPCR  border, $7FFD, $1FFD, the last $FE
  *   AY    the sound chip (128K models, or an add-on AY of a 48K)
  *   KEYB  the keyboard: issue 2, no keyboard joystick
+ *   SCLD  the Timex SCLD's ports $F4 and $FF (the Timex machines)
+ *   DOCK  one per 8K page of a 2068's cartridge, zlib-compressed
  *   RAMP  one per RAM page, zlib-compressed
  *   +3    drive count and motor (+3 models with drives)
  *   DSK   one per inserted disk, as a link to the disk file (the spec has no embedded disks yet)
@@ -21,6 +23,9 @@ import {
   SPECTRUM_BANK_SIZE,
   isPagedSnapshotMachine,
   isPlus3SnapshotMachine,
+  isTimexSnapshotMachine,
+  isTimex2068SnapshotMachine,
+  snapshotBankCount,
   snapshotMachineName,
   type SnapshotMachineKind,
   type SpectrumSnapshot
@@ -42,6 +47,10 @@ const SZX_MACHINE_IDS: Record<SnapshotMachineKind, number> = {
   plus3: 5,
   plus3e: 6,
   pentagon: 7,
+  tc2048: 8,
+  tc2068: 9,
+  ts2068: 12,
+  scorpion: 10,
   "48k-ntsc": 15
 };
 
@@ -104,14 +113,15 @@ export function writeSzxFile(
   const spcr = new SnapshotBytes()
     .byte(s.ula.border & 0x07)
     .byte(paged ? (s.paging?.port7ffd ?? 0) : 0)
-    .byte(plus3 ? (s.paging?.port1ffd ?? 0) : 0)
+    .byte(plus3 || machine === "scorpion" ? (s.paging?.port1ffd ?? 0) : 0)
     .byte(s.ula.lastFe ?? s.ula.border & 0x07)
     .fill(4);
   block(out, "SPCR", spcr.toArray());
 
-  // --- AY: built into the 128K models (flags 0), or a Melodik-style add-on of a 48K
-  if (s.ay && (paged || s.ay.on48k)) {
-    const ay = new SnapshotBytes().byte(paged ? 0x00 : 0x02, s.ay.selected & 0x0f);
+  // --- AY: built into the 128K models and the 2068s (flags 0), or a Melodik-style add-on of a 48K
+  const builtInAy = paged || isTimex2068SnapshotMachine(machine);
+  if (s.ay && (builtInAy || s.ay.on48k)) {
+    const ay = new SnapshotBytes().byte(builtInAy ? 0x00 : 0x02, s.ay.selected & 0x0f);
     for (let r = 0; r < 16; r++) ay.byte(s.ay.regs[r] ?? 0);
     block(out, "AY", ay.toArray());
   } else if (s.ay) {
@@ -124,9 +134,23 @@ export function writeSzxFile(
     .byte(8 /* ZXSTKJT_NONE */);
   block(out, "KEYB", keyb.toArray());
 
+  // --- SCLD: the Timex's screen mode and paging (zx-state 1.2); DOCK: a 2068's cartridge pages
+  if (isTimexSnapshotMachine(machine)) {
+    const t = s.timex ?? { portF4: 0, portFf: 0 };
+    block(out, "SCLD", new SnapshotBytes().byte(t.portF4 & 0xff, t.portFf & 0xff).toArray());
+    for (const page of t.dock ?? []) {
+      const flags = 0x01 | (page.ram ? 0x02 : 0) | (page.dock ? 0x04 : 0);
+      block(out, "DOCK", new SnapshotBytes().word(flags).byte(page.page & 0x07).bytes(zlibSync(page.data)).toArray());
+    }
+  }
+
   // --- RAMP
   const banks =
-    machine === "16k" ? [5] : paged ? [0, 1, 2, 3, 4, 5, 6, 7] : [...SPECTRUM_48K_BANKS];
+    machine === "16k"
+      ? [5]
+      : paged
+        ? Array.from({ length: snapshotBankCount(machine) }, (_, b) => b)
+        : [...SPECTRUM_48K_BANKS];
   for (const b of banks) {
     const data = s.ram.get(b);
     if (!data || data.length !== SPECTRUM_BANK_SIZE) {
@@ -156,6 +180,38 @@ export function writeSzxFile(
         .dword(name.length)
         .bytes(name);
       block(out, "DSK", dsk.toArray());
+    }
+  }
+
+  // --- B128 and BDSK: the Beta 128 (the Pentagon); its disks are linked to their files, like the +3's
+  const beta = s.peripherals.beta128;
+  if (beta) {
+    const flags = 0x01 /* connected */ | (beta.paged ? 0x04 : 0);
+    block(
+      out,
+      "B128",
+      new SnapshotBytes()
+        .dword(flags)
+        .byte(beta.drives, beta.system, beta.track, beta.sector, beta.data, beta.status)
+        .toArray()
+    );
+    for (const disk of beta.disks) {
+      if (!disk.fileName) {
+        losses.push(
+          `The Beta disk in drive ${disk.drive === 1 ? "B" : "A"} has no file, and a .szx can only link disks to files`
+        );
+        continue;
+      }
+      const name = latin1Bytes(disk.fileName + "\0");
+      block(
+        out,
+        "BDSK",
+        new SnapshotBytes()
+          .dword(disk.writeProtected ? 0x04 : 0x00)
+          .byte(disk.drive, disk.cylinder, disk.diskType)
+          .bytes(name)
+          .toArray()
+      );
     }
   }
 

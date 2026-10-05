@@ -12,5 +12,7 @@ export const MEDIA_TAPE = "tape";
 export const MEDIA_DISK_A = "diskA";
 export const MEDIA_DISK_B = "diskB";
 export const MEDIA_SD_CARD = "sdCard";
+/** The Timex 2068s' cartridge (`.dck`) in the DOCK */
+export const MEDIA_DOCK = "dock";
 
 export const LANGUAGE_SETTINGS = "languages";

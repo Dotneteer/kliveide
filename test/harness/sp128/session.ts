@@ -10,7 +10,8 @@ import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { FAST_LOAD } from "@emu/machines/machine-props";
+import { DISK_A_CHANGES, DISK_A_UNSAVED, DISK_B_CHANGES, DISK_B_UNSAVED, FAST_LOAD, TRDOS_ROM_FILE } from "@emu/machines/machine-props";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
@@ -25,6 +26,8 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
+import { SCORPION_ROM_FILE } from "@emu/machines/machine-props";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
@@ -37,7 +40,7 @@ import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../script
 const ROM_DIR = join(__dirname, "../../../src/public/roms");
 
 /** A model of the 128K machine (`SP128_MODELS`: the 128K, the Pentagon 128), or any of the +2A/+3/+2E/+3E (`P3_MODELS`) */
-export type Sp128SessionModel = Sp128ModelId | P3ModelId;
+export type Sp128SessionModel = Sp128ModelId | P3ModelId | "scorpion";
 
 export type RunLimit = { maxFrames?: number };
 
@@ -45,14 +48,46 @@ export type RunLimit = { maxFrames?: number };
 const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
-  constructor(model?: MachineModel) {
+  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array) {
     super(model, { ...(model?.config ?? {}) }, {
       artifactName: "harness-sp128-machine-v2.wasm",
       readArtifact: async () => readFileSync(sp128Output)
     });
+    // --- The Beta 128 needs a TR-DOS ROM; the harness hands over the bytes it was given
+    if (trdosRomImage) this.setMachineProperty(TRDOS_ROM_FILE, "<harness>");
+  }
+
+  protected override async loadTrdosRom(): Promise<Uint8Array> {
+    if (!this.trdosRomImage) throw new Error("No TR-DOS ROM given to the harness");
+    return this.trdosRomImage;
   }
 
   protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
+    return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
+  }
+}
+
+/**
+ * The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): the 128K ROMs (as the machine boots
+ * without its own), or a 64K Scorpion ROM image; TR-DOS from the image, or the TR-DOS ROM given
+ */
+class HarnessScorpionMachine extends ScorpionWasmV2Machine {
+  constructor(private readonly scorpionRom?: Uint8Array, private readonly trdosRomImage?: Uint8Array) {
+    super(undefined, undefined, {
+      artifactName: "harness-sp128-machine-v2.wasm",
+      readArtifact: async () => readFileSync(sp128Output)
+    });
+    if (scorpionRom) this.setMachineProperty(SCORPION_ROM_FILE, "<harness-scorpion>");
+    if (trdosRomImage) this.setMachineProperty(TRDOS_ROM_FILE, "<harness>");
+  }
+
+  protected override async loadTrdosRom(): Promise<Uint8Array> {
+    if (!this.trdosRomImage) throw new Error("No TR-DOS ROM given to the harness");
+    return this.trdosRomImage;
+  }
+
+  protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
+    if (romName === "<harness-scorpion>") return this.scorpionRom!;
     return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
   }
 }
@@ -127,15 +162,41 @@ export async function createHarnessSpectrumMachine(
  * Creates a ZX Spectrum 128K, or a +2E/+3E of the given model, with the real ROMs. Builds the WASM
  * core first, once per test process.
  */
-export async function createSp128Session(model: Sp128SessionModel = "sp128"): Promise<Sp128TestSession> {
+/**
+ * The TR-DOS ROM named by the `KLIVE_TRDOS_ROM` environment variable, if any. Klive cannot ship the
+ * ROM (`.plans/BETA128_TRDOS_PLAN.md` Q1), so the tests that need the real one run only when a
+ * developer names their own copy.
+ */
+export function trdosRomFromEnvironment(): Uint8Array | undefined {
+  const path = process.env.KLIVE_TRDOS_ROM;
+  return path ? new Uint8Array(readFileSync(path)) : undefined;
+}
+
+export type Sp128SessionOptions = {
+  /** The Pentagon's TR-DOS ROM (16K); without one its Beta 128 is off, as in the IDE */
+  trdosRom?: Uint8Array;
+  /** The Scorpion's 64K ROM (model "scorpion"); without it the Scorpion boots the 128K ROMs */
+  scorpionRom?: Uint8Array;
+};
+
+export async function createSp128Session(
+  model: Sp128SessionModel = "sp128",
+  options: Sp128SessionOptions = {}
+): Promise<Sp128TestSession> {
   let machine: ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
   const sp128Model = getSp128Model(model);
-  if (sp128Model) {
+  if (model === "scorpion") {
     if (!built.sp128) {
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine(sp128Model);
+    machine = new HarnessScorpionMachine(options.scorpionRom, options.trdosRom);
+  } else if (sp128Model) {
+    if (!built.sp128) {
+      buildSp128Wasm();
+      built.sp128 = true;
+    }
+    machine = new HarnessSp128Machine(sp128Model, options.trdosRom);
   } else {
     if (!built.spp3e) {
       buildSpP3eWasm();
@@ -169,7 +230,7 @@ export class Sp128TestSession {
   }
 
   private get prefix(): "sp128" | "spp3e" {
-    return getSp128Model(this.model) ? "sp128" : "spp3e";
+    return getSp128Model(this.model) || this.model === "scorpion" ? "sp128" : "spp3e";
   }
 
   private call(name: string, ...args: number[]): number {
@@ -404,6 +465,41 @@ export class Sp128TestSession {
   insertDisk(drive: 0 | 1, bytes: Uint8Array): this {
     this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, bytes);
     return this;
+  }
+
+  /**
+   * The disk writes the machine has handed over since the last call (the Beta 128 publishes them as
+   * `.trd` file sectors at frame ends and debug stops), and clears them, as the controller does
+   */
+  takeDiskChanges(drive: 0 | 1): SectorChanges | undefined {
+    const key = drive ? DISK_B_CHANGES : DISK_A_CHANGES;
+    const changes = this.machine.getMachineProperty(key) as SectorChanges | undefined;
+    this.machine.setMachineProperty(key, undefined);
+    return changes;
+  }
+
+  /** The guest changed the disk, but its file (an `.scl`) is not written back */
+  diskUnsaved(drive: 0 | 1): boolean {
+    return !!this.machine.getMachineProperty(drive ? DISK_B_UNSAVED : DISK_A_UNSAVED);
+  }
+
+  /** The Beta 128's state, read without side effects */
+  beta128() {
+    const c = (name: string, ...args: number[]) => this.call(name, ...args);
+    return {
+      enabled: c("BetaGetEnabled") !== 0,
+      paged: c("BetaGetPaged") !== 0,
+      system: c("BetaGetSystemRegister"),
+      status: c("BetaGetFdcStatus"),
+      track: c("BetaGetFdcTrack"),
+      sector: c("BetaGetFdcSector"),
+      data: c("BetaGetFdcData"),
+      command: c("BetaGetFdcCommand"),
+      busy: c("BetaGetFdcBusy") !== 0,
+      intrq: c("BetaGetIntrq") !== 0,
+      drq: c("BetaGetDrq") !== 0,
+      cylinders: [c("BetaGetDriveCylinder", 0), c("BetaGetDriveCylinder", 1)]
+    };
   }
 
   // ==========================================================================================

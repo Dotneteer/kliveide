@@ -169,12 +169,12 @@ if (typeof HTMLCanvasElement !== "undefined") {
  * Tests that do are the end-to-end tiers (`build/e2e-tests.ts`), which `npm test` runs only when
  * their inputs changed. A core test left in the unit tier would slow every run down and, worse,
  * escape that bookkeeping - so it fails here, naming the fix. A core is recognised by its exports
- * (`sp48*`, `sp128*`, `spp3e*`, `zxnext*`, `z88*`, `zx8081*`, `z80*`, and `cond*` for the condition evaluator
+ * (`sp48*`, `sp128*`, `spp3e*`, `timex*`, `zxnext*`, `z88*`, `zx8081*`, `z80*`, and `cond*` for the condition evaluator
  * built alone); other WebAssembly (Node's own HTTP parser, for one) is left alone.
  */
 if (process.env.KLIVE_TEST_TIER === "unit") {
   // --- `cond*`: the breakpoint condition evaluator's test build, which runs the cores' C code
-  const CORE_EXPORT = /^(sp48|sp128|spp3e|zxnext|z88|zx8081|z80|cond)[A-Z]/;
+  const CORE_EXPORT = /^(sp48|sp128|spp3e|timex|zxnext|z88|zx8081|z80|cond)[A-Z]/;
   const refuseCore = (instance: WebAssembly.Instance | undefined): void => {
     const core = Object.keys(instance?.exports ?? {}).find((name) => CORE_EXPORT.test(name));
     if (core) {

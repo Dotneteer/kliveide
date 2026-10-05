@@ -30,7 +30,11 @@ export const CreateDiskView = ({ vm, dispatch }: CreateDiskViewProps) => (
           placeholder="Select..."
           options={vm.diskType.options}
           initialValue={vm.diskType.value}
-          width={200}
+          // --- As wide as its widest label (`.ai/ui-theming-intent-and-lessons.md`, "A Dialog Field
+          // --- Is As Wide As Its Widest Legal Value"), from the options themselves: the machine
+          // --- picks them (CPC on the +3, TR-DOS on the Pentagon), and a fixed 200px clipped the
+          // --- TR-DOS ones. The extra 4ch hold the chevron; the open list takes this width too.
+          width={`${Math.max(...vm.diskType.options.map((o) => o.label.length)) + 4}ch`}
           onChanged={(diskType) => dispatch({ type: "diskTypeSelected", diskType })}
         />
       </div>

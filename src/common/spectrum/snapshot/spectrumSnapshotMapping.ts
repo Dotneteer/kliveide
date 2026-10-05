@@ -8,7 +8,8 @@
  * Every problem is collected, so the viewer can list them all.
  */
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
+import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import {
@@ -97,7 +98,11 @@ const TARGETS: Record<
     eRoms: true
   },
   plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" },
-  pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" }
+  pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" },
+  tc2048: { machineId: MI_TIMEX, modelIds: ["tc2048"], kliveName: "Timex Computer 2048" },
+  tc2068: { machineId: MI_TIMEX, modelIds: ["tc2068"], kliveName: "Timex Computer 2068" },
+  ts2068: { machineId: MI_TIMEX, modelIds: ["ts2068"], kliveName: "Timex Sinclair 2068" },
+  scorpion: { machineId: MI_SCORPION, modelIds: ["zs256"], kliveName: "Scorpion ZS-256" }
 };
 
 /** The display names of the models the mapping can pick */
@@ -106,7 +111,8 @@ const MODEL_NAMES: Record<string, string> = {
   pal: "ZX Spectrum 48K",
   ntsc: "ZX Spectrum 48K (NTSC)",
   ...Object.fromEntries(SP128_MODELS.map((m) => [m.modelId, m.displayName])),
-  ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName]))
+  ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName])),
+  ...Object.fromEntries(TIMEX_MODELS.map((m) => [m.modelId, m.displayName]))
 };
 
 /** The display name of a Klive machine and model */
@@ -115,6 +121,8 @@ export function kliveSpectrumName(machineId: string, modelId: string | undefined
   if (machineId === MI_SPECTRUM_48) return "ZX Spectrum 48K";
   if (machineId === MI_SPECTRUM_128) return "ZX Spectrum 128K";
   if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2A/+3/+2E/+3E";
+  if (machineId === MI_TIMEX) return "Timex TC2048/TC2068/TS2068";
+  if (machineId === MI_SCORPION) return "Scorpion ZS-256";
   return machineId;
 }
 
@@ -141,7 +149,14 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   }
   if (p.interface1) warnings.push("Interface 1 is not emulated; its state is ignored");
   if (p.mgt) warnings.push("The M.G.T. (Disciple/Plus D) interface is not emulated");
-  if (p.trdosPaged) warnings.push("The TR-DOS ROM was paged in; Klive has no Beta 128 interface");
+  // --- The Beta 128 (TR-DOS) is the Pentagon's: such a snapshot opens on it
+  if (p.trdosPaged || p.beta128) {
+    if (target.machineId === MI_SPECTRUM_128) {
+      modelIds = ["pentagon", ...modelIds.filter((m) => m !== "pentagon")];
+    } else if (target.machineId !== MI_SCORPION) {
+      warnings.push("The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 and Scorpion ZS-256 have");
+    }
+  }
   if (p.issue2) warnings.push("The snapshot asks for an Issue 2 keyboard, which Klive does not emulate");
   if (snapshot.ula.alternateTimings) {
     warnings.push("The snapshot uses the alternate (late) ULA timings; Klive uses the standard ones");
@@ -186,6 +201,9 @@ function bankAt(snapshot: SpectrumSnapshot, address: number): number | undefined
   if (address < 0x8000) return 5;
   if (address < 0xc000) return 2;
   if (snapshot.paging) {
+    if (snapshot.machine === "scorpion") {
+      return (snapshot.paging.port7ffd & 0x07) | ((snapshot.paging.port1ffd ?? 0) & 0x10 ? 8 : 0);
+    }
     const special = snapshot.paging.port1ffd !== undefined && (snapshot.paging.port1ffd & 0x01) !== 0;
     if (special) return undefined;
     return snapshot.paging.port7ffd & 0x07;

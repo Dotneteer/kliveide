@@ -14,6 +14,9 @@ import {
   SPECTRUM_BANK_SIZE,
   isPagedSnapshotMachine,
   isPlus3SnapshotMachine,
+  isTimexSnapshotMachine,
+  isTimex2068SnapshotMachine,
+  snapshotBankCount,
   snapshotMachineName,
   type SnapshotMachineKind,
   type SpectrumSnapshot
@@ -58,13 +61,21 @@ function hardwareMode(
     case "pentagon":
       // --- Not in the v3 specification: an extension other emulators share (z80File.ts)
       return { mode: 9, modified: false };
+    case "tc2048":
+      return { mode: 14, modified: false };
+    case "tc2068":
+      return { mode: 15, modified: false };
+    case "ts2068":
+      return { mode: 128, modified: false };
+    case "scorpion":
+      return { mode: 10, modified: false };
   }
 }
 
 /** The pages a machine stores, as `.z80` page numbers with their 128K bank */
 function pagesOf(machine: SnapshotMachineKind): { page: number; bank: number }[] {
   if (isPagedSnapshotMachine(machine)) {
-    return [0, 1, 2, 3, 4, 5, 6, 7].map((bank) => ({ page: bank + 3, bank }));
+    return Array.from({ length: snapshotBankCount(machine) }, (_, bank) => ({ page: bank + 3, bank }));
   }
   if (machine === "16k") return [{ page: 8, bank: 5 }];
   return [
@@ -78,8 +89,12 @@ function pagesOf(machine: SnapshotMachineKind): { page: number; bank: number }[]
  * Encodes a frame position as the version 3 T-state counter: the high byte counts quarter frames
  * and is 3 just after the interrupt; the low word counts down through each quarter
  */
-export function z80TStateCounter(frameTact: number, paged: boolean): { low: number; high: number } {
-  const quarter = paged ? 17727 : 17472;
+export function z80TStateCounter(
+  frameTact: number,
+  paged: boolean,
+  quarterFrame?: number
+): { low: number; high: number } {
+  const quarter = quarterFrame ?? (paged ? 17727 : 17472);
   const tact = Math.max(0, Math.min(frameTact, 4 * quarter - 1));
   const q = Math.floor(tact / quarter);
   return { low: quarter - 1 - (tact % quarter), high: (q + 3) & 0x03 };
@@ -112,13 +127,21 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
 
   // --- The version 3 extra header
   const ay = s.ay;
-  const ay48 = !paged && !!ay?.on48k;
-  if (!paged && ay && !ay.on48k) {
+  // --- The 2068s' AY is written as the 48K add-on's (byte 37 bit 2), the only way a v3 header says so
+  const ay48 = !paged && (!!ay?.on48k || (isTimex2068SnapshotMachine(machine) && !!ay));
+  if (!paged && ay && !ay48) {
     losses.push(`A 48K .z80 keeps the AY registers only for an add-on AY; they are not saved`);
   }
-  out.word(plus3 ? 55 : 54);
+  // --- The 55-byte header carries $1FFD: the +2A/+3's, and the Scorpion's
+  const long = plus3 || machine === "scorpion";
+  out.word(long ? 55 : 54);
   out.word(c.pc);
-  out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, 0 /* Interface 1 ROM not paged */);
+  if (isTimexSnapshotMachine(machine)) {
+    // --- A Timex mode: the last OUTs to $F4 and $FF in place of $7FFD and Interface 1
+    out.byte(mode, (s.timex?.portF4 ?? 0) & 0xff, (s.timex?.portFf ?? 0) & 0xff);
+  } else {
+    out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, 0 /* Interface 1 ROM not paged */);
+  }
   out.byte((modified ? 0x80 : 0) | (ay48 ? 0x04 : 0) | 0x03 /* R and LDIR emulation on */);
   if (paged || ay48) {
     out.byte(ay?.selected ?? 0);
@@ -126,13 +149,14 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   } else {
     out.fill(17);
   }
-  const t = z80TStateCounter(s.ula.frameTact ?? 0, paged);
+  if (s.timex?.dock?.length) losses.push("A .z80 does not record the cartridge in the DOCK");
+  const t = z80TStateCounter(s.ula.frameTact ?? 0, paged, machine === "ts2068" ? 58688 / 4 : undefined);
   out.word(t.low).byte(t.high);
   out.byte(0 /* Spectator */, 0 /* M.G.T. ROM */, 0 /* Multiface ROM */);
   out.byte(0xff, 0xff); // --- $0000-$3FFF is ROM
   out.fill(10).fill(10); // --- Joystick key mappings and their ASCII words: none
   out.byte(0 /* M.G.T. type */, 0, 0 /* Disciple inhibit */);
-  if (plus3) out.byte(s.paging?.port1ffd ?? 0);
+  if (long) out.byte(s.paging?.port1ffd ?? 0);
 
   // --- Memory pages
   for (const { page, bank } of pagesOf(machine)) {

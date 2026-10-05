@@ -25,9 +25,17 @@ export function commonLosses(s: SpectrumSnapshot, format: "sna" | "z80"): string
   if (tape) {
     losses.push(`A .${format} does not record the tape${tape.fileName ? ` (${tape.fileName})` : ""}`);
   }
-  const disks = s.peripherals.plus3?.disks ?? [];
+  const disks = [...(s.peripherals.plus3?.disks ?? []), ...(s.peripherals.beta128?.disks ?? [])];
   if (disks.length) {
     losses.push(`A .${format} does not record the inserted disk${disks.length > 1 ? "s" : ""}`);
+  }
+  // --- The Beta 128: a .sna keeps only whether TR-DOS was paged in, a .z80 nothing at all
+  if (s.peripherals.beta128) {
+    losses.push(
+      format === "sna"
+        ? "A .sna keeps only whether TR-DOS was paged in, not the disk controller's state"
+        : "A .z80 does not record the Beta 128 disk interface"
+    );
   }
   return losses;
 }

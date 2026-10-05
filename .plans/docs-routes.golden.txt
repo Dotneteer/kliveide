@@ -55,6 +55,7 @@
 /howto/shortcuts/index.html
 /howto/sp48-custom-rom/index.html
 /howto/spectrum-snapshots/index.html
+/howto/trdos-disks/index.html
 /howto/z88-snapshots/index.html
 /howto/zx81/index.html
 /index.html

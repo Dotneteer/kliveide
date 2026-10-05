@@ -357,10 +357,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp48WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();
-    const customRomFile = this.config?.[MC_SP48_ROM_FILE] as string | undefined;
-    const romContents = customRomFile
-      ? await this.loadRomFromResource(customRomFile)
-      : await this.loadRomFromResource(this.romId);
+    const romContents = await this.loadMachineRom();
 
     this.hardResetWasmV2(runtime);
     this.uploadRomBytes(romContents);
@@ -368,6 +365,19 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** The 16K ROM the machine boots: the one the machine config names, or the machine's own */
+  protected async loadMachineRom(): Promise<Uint8Array> {
+    const customRomFile = this.config?.[MC_SP48_ROM_FILE] as string | undefined;
+    return customRomFile
+      ? await this.loadRomFromResource(customRomFile)
+      : await this.loadRomFromResource(this.romId);
+  }
+
+  /** The id a Klive state file records for this core (`state/wasmStateImage.ts`) */
+  protected get stateCoreId(): string {
+    return "sp48";
   }
 
   override hardReset(): void {
@@ -600,10 +610,15 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     };
   }
 
-  private hardResetWasmV2(runtime: Sp48WasmV2Runtime): void {
+  /** Hard-resets the core into this machine's model */
+  protected hardResetCore(runtime: Sp48WasmV2Runtime): void {
     const is16KModel = this.modelInfo?.config?.[MC_MEM_SIZE] === 16 ? 1 : 0;
     const isNtsc = this.modelInfo?.config?.[MC_SCREEN_FREQ] === "ntsc" ? 1 : 0;
     runtime.exports.sp48HardReset(is16KModel, isNtsc);
+  }
+
+  private hardResetWasmV2(runtime: Sp48WasmV2Runtime): void {
+    this.hardResetCore(runtime);
     this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
@@ -1025,12 +1040,13 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
    * @throws When the snapshot needs another machine
    */
   loadSnapshotState(snapshot: SpectrumSnapshot): number {
-    assertSnapshotFitsMachine(snapshot, "sp48", this.modelInfo?.modelId);
+    assertSnapshotFitsMachine(snapshot, this.machineId, this.modelInfo?.modelId);
     const runtime = this.requireWasmV2Runtime();
     const frameTact = restoreSpectrumSnapshot(
       { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, is16k: this.modelInfo?.config?.[MC_MEM_SIZE] === 16, reset: () => this.reset() },
       snapshot
     );
+    this.restoreSnapshotExtras(snapshot);
     this.invalidateWasmV2Sync();
     this.syncCpuFromWasmV2(runtime);
     return frameTact;
@@ -1044,10 +1060,20 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
    */
   captureSnapshotState(media?: SpectrumSnapshotCaptureMedia): SpectrumSnapshot {
     const runtime = this.requireWasmV2Runtime();
-    return captureSpectrumSnapshot(
-      { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, modelId: this.modelInfo?.modelId },
-      media
+    return this.captureSnapshotExtras(
+      captureSpectrumSnapshot(
+        { prefix: "sp48", exports: runtime.exports, ram: runtime.memory, modelId: this.modelInfo?.modelId },
+        media
+      )
     );
+  }
+
+  /** What a machine on this core adds to a snapshot's restore, after the 48K's state is in */
+  protected restoreSnapshotExtras(_snapshot: SpectrumSnapshot): void {}
+
+  /** What a machine on this core adds to a captured snapshot */
+  protected captureSnapshotExtras(snapshot: SpectrumSnapshot): SpectrumSnapshot {
+    return snapshot;
   }
 
   /**
@@ -1057,7 +1083,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
   saveMachineState(): MachineStateParts {
     const runtime = this.requireWasmV2Runtime();
     return {
-      ...captureWasmImage("sp48", runtime.module, runtime.exports.memory.buffer),
+      ...captureWasmImage(this.stateCoreId, runtime.module, runtime.exports.memory.buffer),
       host: { normalFrames: this.wasmV2NormalFrames }
     };
   }
@@ -1070,7 +1096,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
    */
   loadMachineState(parts: MachineStateParts): void {
     const runtime = this.requireWasmV2Runtime();
-    restoreWasmImage(parts, "sp48", runtime.module, runtime.exports.memory.buffer);
+    restoreWasmImage(parts, this.stateCoreId, runtime.module, runtime.exports.memory.buffer);
     const host = parts.host as { normalFrames?: number };
     this.wasmV2NormalFrames = host.normalFrames ?? 0;
     this.wasmV2AudioSamples.length = 0;
@@ -1136,7 +1162,7 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements I
     this.wasmV2TargetClockMultiplier = -1;
   }
 
-  private requireWasmV2Runtime(): Sp48WasmV2Runtime {
+  protected requireWasmV2Runtime(): Sp48WasmV2Runtime {
     if (this.wasmV2Runtime == null) {
       throw new Error("ZX Spectrum 48K WASM v2 runtime has not been loaded.");
     }

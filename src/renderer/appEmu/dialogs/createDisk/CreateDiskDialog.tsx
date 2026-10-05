@@ -8,7 +8,9 @@ import { useViewModel } from "@mvc/react/useViewModel";
 import { useFilePickerPort } from "@mvc/dialogs/useDialogPorts";
 
 import { CreateDiskController } from "./CreateDiskController";
-import type { CreateDiskEnvironment } from "./CreateDiskModel";
+import { TRD_DISK_TYPES, type CreateDiskEnvironment } from "./CreateDiskModel";
+import { useSelector } from "@renderer/core/RendererProvider";
+import { MI_SCORPION, MI_SPECTRUM_128 } from "@common/machines/constants";
 import type { CreateDiskDialogResult, CreateDiskPorts } from "./CreateDiskPorts";
 import { CreateDiskView } from "./CreateDiskView";
 
@@ -29,9 +31,14 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   const files = useFilePickerPort();
   const { validationService } = useAppServices();
 
+  // --- The Pentagon's Beta 128 takes TR-DOS disks; the +3 takes CPC DSK
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
   const env = useMemo<CreateDiskEnvironment>(
-    () => ({ validation: validationService }),
-    [validationService]
+    () => ({
+      validation: validationService,
+      ...(machineId === MI_SPECTRUM_128 || machineId === MI_SCORPION ? { diskTypes: TRD_DISK_TYPES } : {})
+    }),
+    [validationService, machineId]
   );
 
   // --- The controller is built once and holds its ports for its lifetime, so

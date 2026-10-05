@@ -671,6 +671,12 @@ The second gain is free and matters more than the first: **unequal widths tell t
 A register, a port mask and an address are different quantities, and boxes of identical width say
 they are the same kind of thing.
 
+**A `Dropdown` follows the same rule, computed from its options.** Its widest legal value is its
+longest label, and when the options come from data, a literal width goes stale with them: the Create
+Disk dialog's fixed 200px fitted the +3's CPC labels and clipped the Pentagon's TR-DOS ones. Size it
+as `` `${longest label length + 4}ch` `` (the 4ch hold the chevron); the open list takes the trigger's
+width (`--radix-select-trigger-width`), so one value sizes both.
+
 ## A Hint Under A Field Needs Its Own Top Margin
 
 `TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and
@@ -1954,7 +1960,9 @@ Two things follow for any later change here:
   `--bgcolor-display`, `--font-size-50`, the file or size in `--color-display-hilite`, an empty slot
   in dimmed `--color-display`, and insert/eject/replace as the 14px `@upload` / `@eject` / `@replace`
   images at the right (eject left of insert). A media card is a single line: the medium is named by
-  its icon (`cassette-tape`; `floppy` plus the drive letter), not a caption.
+  its icon (`cassette-tape`; `floppy` plus the drive letter; `chip` for the Timex 2068's cartridge),
+  not a caption. The letter badge is for disk drives only: a medium that is the only one of its kind
+  shows its icon alone (deriving the badge from the card's title put a stray "e" after the cartridge).
 - **A file name truncates at its start, not its end** — the end and the extension are what tell
   files apart. `direction: rtl` + `text-overflow: ellipsis` on the box puts the ellipsis on the left;
   the name goes inside a `<bdi>` so its own text stays left to right (without it, trailing brackets

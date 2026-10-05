@@ -17,6 +17,15 @@ export const DISK_TYPES: DiskTypeOption[] = [
 
 export const DEFAULT_DISK_TYPE = "ss";
 
+// --- TR-DOS disks for the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Phase 3): blank,
+// --- TR-DOS-formatted `.trd` images (`createBlankTrd`)
+export const TRD_DISK_TYPES: DiskTypeOption[] = [
+  { value: "trd80ds", label: "TR-DOS 80 tracks, double-sided (640K)" },
+  { value: "trd40ds", label: "TR-DOS 40 tracks, double-sided (320K)" },
+  { value: "trd80ss", label: "TR-DOS 80 tracks, single-sided (320K)" },
+  { value: "trd40ss", label: "TR-DOS 40 tracks, single-sided (160K)" }
+];
+
 // --- Where the folder picker remembers its last location.
 export const NEW_DISK_FOLDER_SETTINGS_KEY = "newDiskFolder";
 
@@ -31,7 +40,14 @@ export const NEW_DISK_FOLDER_SETTINGS_KEY = "newDiskFolder";
  */
 export type CreateDiskEnvironment = {
   validation: IValidationService;
+  /** The disk types the machine takes (`DISK_TYPES` when omitted: the +3's CPC DSK) */
+  diskTypes?: DiskTypeOption[];
 };
+
+/** The disk types an environment offers */
+export function diskTypesOf(env: CreateDiskEnvironment): DiskTypeOption[] {
+  return env.diskTypes ?? DISK_TYPES;
+}
 
 export type CreateDiskState = {
   env: CreateDiskEnvironment;
@@ -61,7 +77,7 @@ export type CreateDiskEvent =
 export function initialState(env: CreateDiskEnvironment): CreateDiskState {
   return {
     env,
-    diskType: DEFAULT_DISK_TYPE,
+    diskType: diskTypesOf(env)[0].value,
     folder: "",
     filename: "",
     busy: false

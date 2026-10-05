@@ -19,6 +19,9 @@ import {
   type SpectrumSnapshot,
   type SpectrumSnapshotPeripherals,
   isPagedSnapshotMachine,
+  isTimexSnapshotMachine,
+  isTimex2068SnapshotMachine,
+  snapshotBankCount,
   isPlus3SnapshotMachine
 } from "./spectrumSnapshot";
 
@@ -119,11 +122,23 @@ function machineOf(
     case 9:
       machine = "pentagon";
       break;
+    case 10:
+      machine = "scorpion";
+      break;
     case 12:
       machine = "plus2";
       break;
     case 13:
       machine = "plus2a";
+      break;
+    case 14:
+      machine = "tc2048";
+      break;
+    case 15:
+      machine = "tc2068";
+      break;
+    case 128:
+      machine = "ts2068";
       break;
     default:
       machine = { unsupported: HW_MODE_EXTENDED[mode] ?? `unknown hardware mode ${mode}` };
@@ -137,9 +152,9 @@ function machineOf(
 }
 
 /** The bank a `.z80` page number holds, or undefined for a ROM / unknown page */
-function bankOfPage(page: number, paged: boolean): number | undefined {
+function bankOfPage(page: number, paged: boolean, banks = 8): number | undefined {
   if (paged) {
-    return page >= 3 && page <= 10 ? page - 3 : undefined;
+    return page >= 3 && page < 3 + banks ? page - 3 : undefined;
   }
   switch (page) {
     case 4:
@@ -156,7 +171,7 @@ function bankOfPage(page: number, paged: boolean): number | undefined {
 /** The banks a machine's snapshot must hold */
 function requiredBanks(machine: SnapshotMachine): number[] {
   if (machine === "16k") return [5];
-  if (isPagedSnapshotMachine(machine)) return [0, 1, 2, 3, 4, 5, 6, 7];
+  if (isPagedSnapshotMachine(machine)) return Array.from({ length: snapshotBankCount(machine) }, (_, b) => b);
   return [5, 2, 0];
 }
 
@@ -256,7 +271,9 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   const modified = (flags3 & 0x80) !== 0;
   const { machine, interface1, mgt } = machineOf(version, hwMode, modified);
   const paged = isPagedSnapshotMachine(machine);
-  if (interface1 || bytes[36] === 0xff) peripherals.interface1 = true;
+  // --- In a Timex mode bytes 35 and 36 are the last OUTs to $F4 and $FF, not $7FFD and Interface 1
+  const timexMode = isTimexSnapshotMachine(machine);
+  if (interface1 || (!timexMode && bytes[36] === 0xff)) peripherals.interface1 = true;
   if (mgt) peripherals.mgt = true;
 
   header.unshift(
@@ -264,8 +281,15 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     { label: "Hardware mode", value: `${hwMode}: ${z80HardwareModeName(version, hwMode, modified)}` }
   );
   header.push(
-    { label: "Port $7FFD", value: hex(bytes[35]) },
-    { label: "Interface 1 ROM paged", value: bytes[36] === 0xff ? "yes" : "no" },
+    ...(timexMode
+      ? [
+          { label: "Port $F4", value: hex(bytes[35]) },
+          { label: "Port $FF", value: hex(bytes[36]) }
+        ]
+      : [
+          { label: "Port $7FFD", value: hex(bytes[35]) },
+          { label: "Interface 1 ROM paged", value: bytes[36] === 0xff ? "yes" : "no" }
+        ]),
     { label: "R emulation", value: flags3 & 0x01 ? "on" : "off" },
     { label: "LDIR emulation", value: flags3 & 0x02 ? "on" : "off" },
     { label: "AY sound in use", value: flags3 & 0x04 ? "yes" : "no" },
@@ -284,10 +308,12 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     warnings
   };
 
+  if (timexMode) result.timex = { portF4: bytes[35], portFf: bytes[36] };
+
   // --- Paging
   if (paged) {
     result.paging = { port7ffd: bytes[35] };
-    if (isPlus3SnapshotMachine(machine) && extraLength === 55) {
+    if ((isPlus3SnapshotMachine(machine) || machine === "scorpion") && extraLength === 55) {
       result.paging.port1ffd = bytes[86];
     }
   }
@@ -296,12 +322,14 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   }
 
   // --- The AY chip: built into the 128K models, an add-on of a 48K when byte 37 bit 2 says so
-  const hasAy = paged || (flags3 & 0x04) !== 0;
+  // --- (and built into the 2068s)
+  const builtInAy = paged || isTimex2068SnapshotMachine(machine);
+  const hasAy = builtInAy || (flags3 & 0x04) !== 0;
   if (hasAy) {
     result.ay = {
       selected: bytes[38] & 0x0f,
       regs: bytes.slice(39, 55),
-      on48k: paged ? undefined : true
+      on48k: builtInAy ? undefined : true
     };
   }
 
@@ -309,7 +337,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   if (version === 3) {
     const low = readWord(bytes, 55);
     const high = bytes[57];
-    const quarter = paged ? 17727 : 17472;
+    const quarter = paged ? 17727 : machine === "ts2068" ? 58688 / 4 : 17472;
     header.push({ label: "T-state counter", value: `${hex(high)} / ${hex(low, 4)}` });
     if (low < quarter) {
       // --- The high counter is 3 just after the interrupt and counts up every quarter frame;
@@ -346,7 +374,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
         `The .z80 memory block of page ${page} holds ${data.length} bytes instead of 16384`
       );
     }
-    const bank = bankOfPage(page, paged);
+    const bank = bankOfPage(page, paged, snapshotBankCount(machine));
     if (bank === undefined) {
       warnings.push(`Memory page ${page} is not RAM of this machine; it is ignored`);
       continue;
