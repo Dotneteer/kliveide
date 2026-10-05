@@ -87,6 +87,23 @@ static uint8_t zxnextNextRegHitOld;
 static uint8_t zxnextNextRegHitNew;
 static uint8_t zxnextNextRegHitOrigin;
 
+/*
+ * The Copper-instruction breakpoint watch and its hit latch. See `.plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.6.
+ *
+ * One bit per Copper list index, pushed whole by the host. `zxnextCopperWatchArmed` guards the hot
+ * path (trap T3): the Copper tests the table only at instruction boundaries, and only when armed.
+ * `zxnextCopperWatchAny` makes every index match; the IDE's "Step Copper" arms it as a one-shot.
+ *
+ * The latch keeps the *first* hit since the host last took one (trap T2) together with the beam
+ * position it happened at, because the Copper keeps running to the end of the Z80 instruction and
+ * may be well past the hit when the machine stops (trap T1).
+ */
+static uint8_t zxnextCopperWatch[128];
+static uint8_t zxnextCopperWatchArmed;
+static uint8_t zxnextCopperWatchAny;
+static uint32_t zxnextCopperHit;
+
 static uint16_t cpuAf;
 static uint16_t cpuBc;
 static uint16_t cpuDe;
@@ -515,6 +532,29 @@ uint32_t zxnextTakeNextRegHit(void) {
   return packed;
 }
 
+/*
+ * The Copper watch table: 128 bytes, one bit per list index (bit `index & 7` of byte `index >> 3`).
+ * The host pushes it whole, then arms it with `zxnextSetCopperWatchMode`.
+ */
+uint32_t zxnextCopperWatchPtr(void) { return (uint32_t)(uintptr_t)zxnextCopperWatch; }
+
+/* Arm (or disarm) the table, and the "any index" mode Step Copper uses. Clears a stale hit. */
+void zxnextSetCopperWatchMode(uint32_t armed, uint32_t any) {
+  zxnextCopperWatchAny = any ? 1u : 0u;
+  zxnextCopperWatchArmed = (armed || any) ? 1u : 0u;
+  zxnextCopperHit = 0u;
+}
+
+/*
+ * Take the latched Copper hit, if there is one, and clear it. Bit 31: present; bits 28-29: kind
+ * (1 WAIT, 2 MOVE, 3 NOP); bits 19-27: `hc_ula`; bits 10-18: `cvc`; bits 0-9: the list index.
+ */
+uint32_t zxnextTakeCopperHit(void) {
+  uint32_t hit = zxnextCopperHit;
+  zxnextCopperHit = 0u;
+  return hit;
+}
+
 void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
 void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxnextDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }
 void zxnextDivMmcArmNmi(void) { zxnextDivMmcArmNmiButton(); }
@@ -640,6 +680,14 @@ uint32_t zxnextGetCopperListAddress(void) { return zxnextCopperGetListAddress();
 uint32_t zxnextGetCopperListData(void) { return zxnextCopperGetListData(); }
 uint32_t zxnextGetCopperDout(void) { return zxnextCopperGetDout(); }
 uint32_t zxnextGetCopperVerticalLineOffset(void) { return zxnextCopperGetVerticalLineOffset(); }
+/* The Copper list RAM, for the IDE to copy in one go (trap T8) */
+uint32_t zxnextCopperMemoryPtr(void) { return zxnextCopperGetMemoryPtr(); }
+/* The Copper beam at the CPU's current tact: bits 0-8 `cvc`, bits 9-17 `hc_ula`, bit 18 waiting */
+uint32_t zxnextGetCopperBeam(void) { return zxnextCopperGetBeam(); }
+/* The live timing: bits 0-15 the `cvc` lines in a frame, bits 16-31 the `hc_ula` positions in a line */
+uint32_t zxnextGetCopperTiming(void) { return zxnextCopperGetTiming(); }
+/* The visible lines above the paper: the last this-many `cvc` lines of a frame are the upper border */
+uint32_t zxnextGetCopperUpperBorder(void) { return zxnextTimingDisplayYStart - zxnextTimingFirstVc; }
 void zxnextSetBeeperOutput(uint32_t ear, uint32_t mic) { zxnextBeeperSetOutput(ear, mic); }
 uint32_t zxnextGetBeeperEar(void) { return zxnextBeeperGetEar(); }
 uint32_t zxnextGetBeeperMic(void) { return zxnextBeeperGetMic(); }

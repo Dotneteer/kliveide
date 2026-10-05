@@ -7,6 +7,7 @@ import type { NextMachine } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type {
+  CopperState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -71,6 +72,18 @@ export type NextRegHit = {
   newValue: number;
   /** Which writer performed it. Copper writes are only ever caught when the watch asked for them. */
   origin: "cpu" | "copper";
+};
+
+/** A Copper instruction the core caught for an armed Copper watch, as `takeCopperHit` reports it. */
+export type CopperHit = {
+  /** The list index of the instruction that completed */
+  index: number;
+  /** WAIT (satisfied), MOVE or NOP (issued) */
+  kind: "wait" | "move" | "nop";
+  /** `cvc` at the hit */
+  line: number;
+  /** `hc_ula` at the hit */
+  hc: number;
 };
 
 export type Registers = {
@@ -836,6 +849,55 @@ export class NextTestSession {
       newValue: (packed >>> 16) & 0xff,
       origin: ((packed >>> 24) & 0x03) === 2 ? "copper" : "cpu"
     };
+  }
+
+  /**
+   * Arms the core's Copper-instruction watch, as `cu:` breakpoints and the IDE's "Step Copper" do
+   * (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6). `indexes` are list indexes `$000..$3FF`; `any` makes
+   * every completed instruction a hit. Replaces any earlier watch and clears a latched hit.
+   *
+   * Like `watchNextRegWrite`, a run through the debug loop (`call`, `runTo`, `step`) re-pushes the
+   * watch from `DebugSupport` and wipes this; drive a watched program with `runFrames`.
+   */
+  watchCopper(indexes: number[], { any = false }: { any?: boolean } = {}): this {
+    const runtime = this.machine.wasmV2Runtime!;
+    runtime.copperWatch.fill(0);
+    for (const index of indexes) runtime.copperWatch[(index & 0x3ff) >> 3] |= 1 << (index & 7);
+    runtime.exports.zxnextSetCopperWatchMode(indexes.length > 0 ? 1 : 0, any ? 1 : 0);
+    return this;
+  }
+
+  /** Disarms the Copper watch and clears any latched hit. */
+  clearCopperWatch(): this {
+    this.machine.wasmV2Runtime!.exports.zxnextSetCopperWatchMode(0, 0);
+    return this;
+  }
+
+  /**
+   * Takes the latched Copper hit - the **first** watched instruction the Copper completed since the
+   * latch was last taken, with the beam where it completed - and clears it. `undefined` if none.
+   */
+  takeCopperHit(): CopperHit | undefined {
+    const packed = this.machine.wasmV2Runtime!.exports.zxnextTakeCopperHit();
+    if ((packed & 0x8000_0000) === 0) return undefined;
+    const kind = (packed >>> 28) & 0x03;
+    return {
+      index: packed & 0x3ff,
+      kind: kind === 1 ? "wait" : kind === 2 ? "move" : "nop",
+      line: (packed >>> 10) & 0x1ff,
+      hc: (packed >>> 19) & 0x1ff
+    };
+  }
+
+  /**
+   * The Copper as the IDE's Copper views read it (`IZxNextIdeMachine.getCopperState`): a copy of the
+   * list RAM, mode, PC, write pointer, `$64`, the beam at the CPU's tact and the live timing. No side
+   * effects on the machine.
+   */
+  copperState(): CopperState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getCopperState();
   }
 
   /**

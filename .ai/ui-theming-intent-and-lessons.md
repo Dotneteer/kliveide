@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints. Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, and the Copper panel and Copper List (whose plan asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -714,6 +714,28 @@ a resolved address beside a source breakpoint's key, an op address beside a watc
 NextReg breakpoint's `$00 → $03` beside its register. Context that is neither — a disassembled
 instruction, a register's documented name — stays on `Value`/`Secondary`'s neutral `--data-value`.
 Three pairs reading the same way is the point; a fourth hue would have made the panel a legend.
+
+## Two Pointers Into One List Get Two Markers, Never One
+
+A view of a list that something executes — the Copper List, the Copper panel's window — can have two
+"current" rows at once: where the executor **is now** and where a breakpoint **hit**. They differ
+whenever the executor outruns the stop (the Copper runs on to the end of the Z80 instruction), and
+showing one marker for both makes the user read the PC as the breakpoint. So each gets its own glyph
+in a fixed `2ch` marker column (`▶` now, `●` hit) **and** its own row tint: `--bgcolor-copper-pc`
+(the accent's subtle fill, as the debugger's active line) and `--bgcolor-copper-hit` (the warning's
+subtle fill, the same family as `--color-breakpoint-current`). The hit's beam position is printed on
+its row, because the row the user is looking at is the only place it is true.
+
+A view-specific token family (`--bgcolor-copper-*`, `--color-copper-*`) aliases L2 roles at L4, like
+the memory and disassembly families: the ruler's three raster zones are the accent's subtle fill
+(paper, where the effect is seen) and two neutral surfaces (the borders), and a WAIT that can never
+match is a muted tick rather than a red one — it is a fact about the timing mode, not an error.
+A palette MOVE's colour swatch is the machine's colour, drawn inline from the decoded value, and is
+the one literal colour in these views (see "Colour That Belongs To The Machine").
+
+**A data strip narrower than ~6ch reads as a scrollbar.** The raster ruler at `4ch` (minus padding)
+sat beside the list's scrollbar and looked like a second one; its zones were invisible. At `8ch` the
+bands read as bands. Size a vertical overview strip so its content, not its edge, is what you see.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 

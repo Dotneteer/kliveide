@@ -86,6 +86,19 @@ export interface IDebugSupport {
    */
   hasNextRegWrite(reg: number, value: number, origin: "cpu" | "copper"): boolean;
 
+  /** Does any enabled breakpoint watch a Copper list index (`cu:`)? */
+  hasCopperBreakpoints(): boolean;
+
+  /** The 128-byte Copper watch table (one bit per list index) to push into the Next core. */
+  buildCopperWatch(): Uint8Array;
+
+  /**
+   * Does any breakpoint want to stop on this completed Copper instruction?
+   * @param index The list index
+   * @param word The instruction word (a condition's `VAL`; `ADDR` is the index)
+   */
+  hasCopperHit(index: number, word: number): boolean;
+
   /**
    * Gets IO read breakpoint information for the specified port
    * @param port Port read during the current instruction

@@ -75,6 +75,10 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
+- a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
+  for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
+  `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
+  and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol), for example, `WS:score -w -len 2` &mdash; a memory
   breakpoint anchored to the symbol rather than to an address, so a rebuild that moves the symbol
   moves the watched bytes, and it does not stop while the build has no such symbol. This is what
@@ -166,6 +170,10 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
+- a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
+  for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
+  `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
+  and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
 
 The `-d` option disables the breakpoint.
@@ -252,6 +260,10 @@ The `address-spec` parameter can be
   that does not name a place: it watches a machine event, so it has no address, no partition and no
   disassembly. Add `=` and a value to break only on that value, and `/` and a mask to compare only
   some of its bits, as in `nr:$07=$03/$0f`. See [NextReg Write Breakpoints](/working-with-ide/breakpoints#nextreg-write-breakpoints);
+- a **Copper instruction** on the ZX Spectrum Next (`cu:` then a Copper list index, `$000`-`$3FF`),
+  for example, `cu:$00B` &mdash; meaning "stop when the Copper completes list instruction `$00B`": a
+  `MOVE` when it is issued, a `WAIT` when its condition is satisfied. Like `nr:`, it has no address
+  and no partition. See [Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next);
 - a **watch symbol** (`WS:` then a build symbol, with `-r` or `-w`), for example, `WS:score -w -len 2`,
   as described under [`bp-del`](#bp-del);
 - or a source code line specification, for example, `[code/code.kz80.asm]:12`
@@ -521,6 +533,16 @@ These are the input arguments and options:
 > **Note #1**: If the compilation fails, no code will be exported.
 
 > **Note #2**: If you compile code for a ZX Spectrum 128 (or upper) model with multiple bank support, the exporter creates a loader that loads the banks in the compilation (and puts them into the appropriate memory bank) before starting the app.
+
+## `hide-copper`
+
+Use this command to close the Copper List.
+
+```
+hide-copper
+```
+
+Available aliases: `hcop`
 
 ## `hide-disassembly`
 
@@ -1082,7 +1104,11 @@ works in the Disassembly panel and in a popped-out NEX bank alike.
 run-to $8000
 run-to r1:$32ac
 run-to 05:+$0100
+run-to cu:$00B
 ```
+
+On the ZX Spectrum Next, `run-to cu:<index>` runs until the Copper completes that list
+instruction &mdash; the Copper List's **Run to here**.
 
 ## `script-cancel`
 
@@ -1222,6 +1248,19 @@ This command runs only when the machine is paused. In other states, it gives an 
 When the value is outside the register's valid range, the command will give you a warning and keep only the last 8 or 16 bits.
 
 
+## `show-copper`
+
+Use this command to open the ZX Spectrum Next's [Copper List](/working-with-ide/copper), and
+optionally to reveal one list index in it.
+
+```
+show-copper [<index>]
+```
+
+Available aliases: `shcop`
+
+With an index (`$000`-`$3FF`), the list turns **Follow PC** off, selects that slot and scrolls to it.
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in
@@ -1245,6 +1284,20 @@ show-memory
 ```
 
 Available aliases: `shmem`
+
+## `step-copper`
+
+Use this command on the ZX Spectrum Next to run the machine until the Copper completes its next
+instruction. The machine stops at the end of the Z80 instruction during which that happened.
+
+```
+step-copper
+```
+
+Available aliases: `stcop`
+
+Like [`run-to`](#run-to), it needs the machine paused, stopped, or running with debugging. See
+[Stepping The Copper](/working-with-ide/copper#stepping-the-copper).
 
 ## `zxb-reset`
 

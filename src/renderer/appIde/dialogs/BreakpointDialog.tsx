@@ -7,7 +7,7 @@ import type {
   BreakpointKind
 } from "@renderer/appIde/utils/breakpoint-form";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { TextInput } from "@controls/TextInput";
 import { Checkbox } from "@renderer/controls/Checkbox";
 import { DialogForm } from "@renderer/controls/DialogForm";
@@ -16,6 +16,13 @@ import { RadioGroup, type RadioGroupOption } from "@renderer/controls/RadioGroup
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { Button } from "@renderer/controls/Button";
 import { useMainApi } from "@renderer/core/MainApi";
+import { useEmuApi } from "@renderer/core/EmuApi";
+import {
+  copperWordAt,
+  decodeCopperWord,
+  describeCopperInstruction,
+  formatCopperInstruction
+} from "@common/zxnext/copper/copperDecoder";
 import { PartitionPicker } from "@renderer/controls/PartitionPicker";
 import type { MemoryMachineSetupState } from "@renderer/features/memory/useMemoryMachineSetup";
 import {
@@ -25,6 +32,7 @@ import {
   createEmptyForm,
   formToBreakpointInfo,
   isBankRelativeInput,
+  isCopperKind,
   isFormValid,
   isNextRegKind,
   parseNumericInput,
@@ -56,6 +64,21 @@ const KIND_OPTIONS: RadioGroupOption[] = [
 
 /** The sixth option, offered only on a machine that has Next Registers. */
 const NEXT_REG_OPTION: RadioGroupOption = { value: "nextRegWrite", label: "NextReg write" };
+
+/** The seventh, on the same machines: the Copper completes a list instruction. */
+const COPPER_OPTION: RadioGroupOption = { value: "copper", label: "Copper instruction" };
+
+/**
+ * The Copper index field's hint: the instruction at that index in the live list RAM, decoded, or
+ * the accepted spellings when the index does not parse or the RAM is not known.
+ */
+const describeCopperIndex = (text: string, ram: Uint8Array | undefined): string | undefined => {
+  const parsed = parseNumericInput(text);
+  if (!parsed.ok || parsed.value < 0 || parsed.value > 0x3ff || !ram) return undefined;
+  const instr = decodeCopperWord(parsed.value, copperWordAt(ram, parsed.value));
+  const hex = `$${parsed.value.toString(16).toUpperCase().padStart(3, "0")}`;
+  return `${hex} — ${formatCopperInstruction(instr)} · ${describeCopperInstruction(instr)}`;
+};
 
 /** What the breakpoint does when its filters pass (`.plans/LOGPOINTS_PLAN.md` §4.5). */
 const ACTION_OPTIONS: RadioGroupOption[] = [
@@ -169,12 +192,33 @@ export const BreakpointDialog = ({
 
   const ioKind = isIoKind(form.kind);
   const nextRegKind = isNextRegKind(form.kind);
-  // --- The sixth type is offered only where it means something. `validateBreakpointForm` refuses
-  // --- it anyway, but a type a machine cannot have should not be on screen to choose.
+  const copperKind = isCopperKind(form.kind);
+  // --- The sixth and seventh types are offered only where they mean something.
+  // --- `validateBreakpointForm` refuses them anyway, but a type a machine cannot have should not be
+  // --- on screen to choose.
   const kindOptions = useMemo(
-    () => (env.supportsNextRegBreakpoints ? [...KIND_OPTIONS, NEXT_REG_OPTION] : KIND_OPTIONS),
+    () =>
+      env.supportsNextRegBreakpoints
+        ? [...KIND_OPTIONS, NEXT_REG_OPTION, COPPER_OPTION]
+        : KIND_OPTIONS,
     [env.supportsNextRegBreakpoints]
   );
+  // --- The live Copper RAM, read once when the Copper kind is chosen, for the index preview
+  const emuApi = useEmuApi();
+  const [copperRam, setCopperRam] = useState<Uint8Array | undefined>();
+  useEffect(() => {
+    if (!copperKind || copperRam) return undefined;
+    let live = true;
+    emuApi
+      .getCopperState()
+      .then((state) => live && setCopperRam(state?.ram))
+      .catch(() => {
+        // --- No machine, or not a Next: the field keeps its plain hint
+      });
+    return () => {
+      live = false;
+    };
+  }, [copperKind, copperRam, emuApi]);
   // --- A bank-relative address names its own bank, so the partition control has nothing left to
   // --- choose. Judged from what is *typed*, so the row responds as the user finishes the spelling.
   const bankRelative = isBankRelativeInput(form.address);
@@ -183,7 +227,8 @@ export const BreakpointDialog = ({
   // --- Hidden entirely for a NextReg breakpoint rather than disabled with an explanation: a
   // --- register has no location, so there is no "why not" worth a sentence - unlike the I/O case,
   // --- where a user might reasonably expect a partition to apply.
-  const partitionEnabled = env.supportsPartitions && !ioKind && !bankRelative && !nextRegKind;
+  const partitionEnabled =
+    env.supportsPartitions && !ioKind && !bankRelative && !nextRegKind && !copperKind;
   /*
    * What ticking the partition box selects first. The lowest index the machine actually has, which
    * is ROM 0 where there are ROMs and bank 0 otherwise — never a hardcoded 0, which is not a
@@ -234,7 +279,7 @@ export const BreakpointDialog = ({
       </DialogRow>
       )}
 
-      {!sourceMode && env.supportsPartitions && !nextRegKind && (
+      {!sourceMode && env.supportsPartitions && !nextRegKind && !copperKind && (
         <DialogRow rows={true} label="Partition">
           {/*
             * Opt in, rather than a "(none)" entry in the picker.
@@ -366,7 +411,26 @@ export const BreakpointDialog = ({
         </>
       )}
 
-      {!sourceMode && !nextRegKind && (
+      {!sourceMode && copperKind && (
+        <DialogRow rows={true} label="List index *">
+          <TextInput
+            value={form.copperIndex}
+            width={BYTE_FIELD}
+            error={errorFor("copperIndex")}
+            autoFocus={!focus}
+            onChange={(copperIndex) => {
+              setTouched((t) => ({ ...t, copperIndex: true }));
+              update({ copperIndex });
+            }}
+          />
+          <div className={styles.hint}>
+            {describeCopperIndex(form.copperIndex, copperRam) ??
+              "Accepts $00B, 11 or %1011 ($000-$3FF). A WAIT stops when it is satisfied; a MOVE when it is issued."}
+          </div>
+        </DialogRow>
+      )}
+
+      {!sourceMode && !nextRegKind && !copperKind && (
       <DialogRow rows={true} label={`${addressLabel} *`}>
         <TextInput
           value={form.address}
@@ -498,7 +562,12 @@ export const BreakpointDialog = ({
         )}
         <div className={styles.hint}>
           {logging ? "Logs" : "Stops"} only when true. Registers, flags (ZF, CF, …), memory ([HL], w[$5C3A]),{" "}
-          {nextRegKind || !(form.kind === "exec" || sourceMode) ? "VAL and ADDR, " : ""}labels.{" "}
+          {copperKind
+            ? "VAL (the instruction word) and ADDR (the list index), "
+            : nextRegKind || !(form.kind === "exec" || sourceMode)
+              ? "VAL and ADDR, "
+              : ""}
+          labels.{" "}
           <button
             type="button"
             className={styles.link}
@@ -587,6 +656,15 @@ export const BreakpointDialog = ({
           <div className={styles.hint}>
             Stops after the instruction that wrote the register, reporting its previous and new
             values.
+          </div>
+        </DialogRow>
+      )}
+
+      {!sourceMode && copperKind && (
+        <DialogRow rows={true}>
+          <div className={styles.hint}>
+            Stops after the Z80 instruction during which the Copper completed it. The Copper keeps
+            running to the end of that instruction, so its PC may already be past the index.
           </div>
         </DialogRow>
       )}

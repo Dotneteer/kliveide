@@ -135,7 +135,8 @@ describe("groupBreakpoints - headers", () => {
       { address: 0x8000, memoryWrite: true },
       { address: 0x7ffd, ioRead: true },
       { address: 0x7ffd, ioWrite: true },
-      { nextReg: 0x07 }
+      { nextReg: 0x07 },
+      { copperIndex: 0x0b }
     ];
     expect(group(oneEach).filter((i) => i.kind === "header")).toHaveLength(
       BREAKPOINT_GROUP_ORDER.length

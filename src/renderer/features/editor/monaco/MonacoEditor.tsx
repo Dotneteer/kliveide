@@ -19,8 +19,10 @@ import {
   incEditorVersionAction,
   resetBackgroundCompileAction,
   startBackgroundCompileAction,
-  setCursorPositionAction
+  setCursorPositionAction,
+  setIdeStatusMessageAction
 } from "@common/state/actions";
+import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 import { DocumentApi } from "@renderer/abstractions/DocumentApi";
 import {
   useDocumentHubService,
@@ -28,6 +30,12 @@ import {
 } from "@renderer/appIde/services/DocumentServiceProvider";
 import { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
 import { getIsWindows } from "@renderer/os-utils";
+import { MI_ZXNEXT } from "@common/machines/constants";
+import {
+  copperIndexesForSourceLine,
+  copperSourceFileIndex,
+  isCopperSourceLine
+} from "@renderer/features/copper/copperSourceBreakpoints";
 import { getMonospaceFontFamily } from "@common/settings/monospace-fonts";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { createEmuApi } from "@common/messaging/EmuApi";
@@ -1549,6 +1557,9 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
           store.dispatch(incBreakpointsVersionAction());
         } else if (existingBp) {
           await removeBreakpoint(messenger, existingBp);
+        } else if (await addCopperSourceBreakpoint(lineNo)) {
+          // --- A `.copper` line on the Next: a Copper breakpoint, not an execution one (D12)
+          handleEditorMouseLeave(e);
         } else {
           // --- Check if this is a valid location for a breakpoint
           let allow = !languageInfo?.instantSyntaxCheck;
@@ -1569,6 +1580,51 @@ export const MonacoEditor = ({ document, value, apiLoaded, languageOverride }: E
         }
       })();
     }
+  }
+
+  /**
+   * A gutter click on a `.copper` line while a ZX Spectrum Next runs: sets a `cu:` breakpoint on
+   * every list index the line occupies in the live Copper RAM (`.plans/COPPER_DEBUGGING_PLAN.md`
+   * D12). The `.copper` words are data the Z80 never executes, so an execution breakpoint there
+   * could not fire. Returns false for any other line, which then takes the usual path.
+   */
+  async function addCopperSourceBreakpoint(lineNo: number): Promise<boolean> {
+    if (store.getState().emulatorState?.machineId !== MI_ZXNEXT) return false;
+    if (!isCopperSourceLine(editor.current.getModel().getLineContent(lineNo))) return false;
+    const result = store.getState().compilation?.result as
+      | { sourceFileList?: { filename: string }[]; copperBlocks?: CopperBlock[] }
+      | undefined;
+    const emuApi = createEmuApi(messenger);
+    let indexes: number[] = [];
+    try {
+      const state = await emuApi.getCopperState();
+      const fileIndex = copperSourceFileIndex(result?.sourceFileList, resourceName, getIsWindows());
+      indexes = copperIndexesForSourceLine(state?.ram, result?.copperBlocks, fileIndex, lineNo);
+    } catch {
+      indexes = [];
+    }
+    if (!indexes.length) {
+      store.dispatch(
+        setIdeStatusMessageAction(
+          "This .copper line is not in the Copper's RAM: build, run until the list is uploaded, then click again",
+          false
+        )
+      );
+      return true;
+    }
+    for (const index of indexes) {
+      await emuApi.setBreakpoint({ copperIndex: index, exec: false });
+    }
+    store.dispatch(incBreakpointsVersionAction());
+    store.dispatch(
+      setIdeStatusMessageAction(
+        `Copper breakpoint set on ${indexes
+          .map((i) => `CU:$${i.toString(16).toUpperCase().padStart(3, "0")}`)
+          .join(", ")}`,
+        true
+      )
+    );
+    return true;
   }
 
   /**

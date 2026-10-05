@@ -29,7 +29,7 @@ are estimates for prioritising, not commitments.
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
-| G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table |
+| G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
@@ -142,14 +142,15 @@ G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](S
 
 | Feature | What it does | Size |
 |---|---|---|
-| G3.1 Copper list viewer | The 1K Copper program decoded as `WAIT line,h` / `MOVE reg,val`, with the current Copper PC highlighted and NextReg names. | S–M |
+| G3.1 Copper list viewer ✅ **done** | The 1K Copper program decoded as `WAIT line,h` / `MOVE reg,val`, with the current Copper PC highlighted and NextReg names. | S–M |
 | G3.2 Sprite table inspector | All 128 sprite attribute slots: position, pattern, palette offset, mirror/rotate/scale, relative/anchor, visible; click to show the pattern. | M |
 | G3.3 Pattern memory viewer | All 16K of sprite pattern RAM as 8-bit or 4-bit images with the active palette. | S (reuses the sprite drawing) |
 | G3.4 Tilemap / tile definition viewer | The live tilemap with tile indices and attributes, plus the tile definitions. | M |
 | G3.5 Layer 2 live viewer | Current Layer 2 banks as an image at its resolution (256×192 / 320×256 / 640×256), with scroll and clip shown. | S–M (reuses the `.sl2`/`.shr` viewers) |
 | G3.6 Layer composition view | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. | L (the C renderer must compose selectively) |
 | G3.7 Beam-position overlay | Show the raster position on the paused screen; useful with Copper and with the ULA panel's beam phase. | S–M |
-| G3.8 Copper / sprite breakpoints | Stop when the Copper reaches an instruction, or when a sprite attribute is written. | M, after G1 |
+| G3.8 Copper / sprite breakpoints (Copper half ✅ **done**) | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (not yet). | M, after G1 |
+| G3.9 `.copper` assembler pragma ✅ **done** | `.copper wait/move/nop/halt/word` in the Klive Z80 Assembler, with highlighting, completion and hover; the Copper List maps the live list back to these source lines and a margin click on one sets a Copper breakpoint. | S |
 
 ---
 
@@ -292,7 +293,7 @@ Answers from the project author, 2026-10-02:
 
 **Wave 1 — low-hanging fruit:**
 G1.1 hit counts · G1.2 register conditions · G1.4 logpoints · G1.6 one-shot breakpoints ·
-~~G2.1 .sna load · G2.2 .z80 load · G2.5 snapshot viewers~~ (done) · G3.1 Copper list · G3.3 pattern viewer ·
+~~G2.1 .sna load · G2.2 .z80 load · G2.5 snapshot viewers~~ (done) · ~~G3.1 Copper list~~ (done) · G3.3 pattern viewer ·
 G10.1–G10.4 proof points.
 
 **Wave 2 — the Next leadership set:**

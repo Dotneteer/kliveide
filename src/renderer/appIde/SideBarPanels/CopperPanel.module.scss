@@ -1,0 +1,94 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Copper side-bar panel. A `DataPanel`, so font, size and leading come from `Data.module.scss`;
+ * this file only lays out the field rows, the instruction window and the footer.
+ */
+.copperPanel {
+  padding-block: var(--space-1);
+}
+
+.fieldRow {
+  padding-inline: var(--space-2);
+}
+
+/* The decoded window: one line per instruction, the PC and the hit marked apart (trap T1). */
+.window {
+  margin-block: var(--space-1);
+  border-block: 1px solid var(--border-subtle);
+}
+
+.instrRow {
+  padding-inline: var(--space-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.pcRow {
+  background-color: var(--bgcolor-copper-pc);
+}
+
+.hitRow {
+  background-color: var(--bgcolor-copper-hit);
+}
+
+/* `▶` for the PC, `●` for the hit; two cells, so the column holds either glyph (M2). */
+.marker {
+  width: 2ch;
+  flex-shrink: 0;
+  color: var(--color-copper-hit);
+}
+
+.pcRow .marker {
+  color: var(--color-state-value);
+}
+
+span.instrText {
+  width: 15ch;
+  flex-shrink: 0;
+}
+
+/* A palette MOVE's colour: the machine's colour, theme-invariant by nature. */
+.swatch {
+  width: 1ch;
+  height: 1ch;
+  flex-shrink: 0;
+  border: 1px solid var(--border-strong);
+}
+
+span.meaning {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer {
+  padding-inline: var(--space-2);
+  justify-content: space-between;
+}
+
+.summary {
+  color: var(--data-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryWarning {
+  color: var(--status-warning);
+}
+
+.link {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--accent-text);
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  @include focus-ring;
+}

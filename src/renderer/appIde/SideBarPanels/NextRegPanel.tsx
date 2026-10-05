@@ -8,6 +8,7 @@ import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./NextRegPanel.module.scss";
 import {} from "@controls/Tooltip";
 import { NextRegDescriptor, NextRegValueSlice, RegValueState } from "@emu/machines/zxNext/nextRegDescriptors";
+import { isFlagSlice, sliceBits, sliceText, sliceValue } from "@common/zxnext/nextRegSlices";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import { DataRow } from "@renderer/controls/data";
@@ -71,49 +72,9 @@ const registerTooltip = (
 /*
  * `NextRegDevice` documents 73 of its 141 registers field by field — 338 slices in all, 292 of them
  * single bits, 46 multi-bit fields and 21 carrying a named `valueSet`. All of it already travels to
- * the renderer inside `NextRegDescriptor`; until now the panel used only the register's own
- * `description`.
- *
- * Two shapes in that data the helpers below deliberately tolerate rather than assume away:
- *
- *  - **`mask` is optional.** Reg $00 (Machine ID) has a single slice with no mask at all, meaning
- *    "the whole byte". Missing therefore reads as `0xFF`, not as zero.
- *  - **`view` cannot be trusted to say what a slice is.** The type offers `"flag" | "number"`, but
- *    only 8 of the 338 slices set it and every one of those says `"number"` — *no* slice in the
- *    table is marked `"flag"`. So a flag is recognised by its mask holding exactly one bit, which is
- *    true of the data as written; `view` is honoured only as an override where it is present.
+ * the renderer inside `NextRegDescriptor`. The slice helpers live in `@common/zxnext/nextRegSlices`,
+ * shared with the Copper decoder, whose MOVE meanings are the same slice text.
  */
-
-const sliceMask = (slice: NextRegValueSlice) => slice.mask ?? 0xff;
-
-/** The slice's own value: masked out of the register byte and shifted down to bit 0. */
-const sliceValue = (regValue: number, slice: NextRegValueSlice) =>
-  (regValue & sliceMask(slice)) >> (slice.shift ?? 0);
-
-/** A single-bit slice is a flag. See the `view` note above for why the mask decides, not `view`. */
-const isFlagSlice = (slice: NextRegValueSlice) => {
-  if (slice.view === "number") return false;
-  const mask = sliceMask(slice);
-  return mask !== 0 && (mask & (mask - 1)) === 0;
-};
-
-/** `7` for one bit, `5:0` for a range — the notation the Next documentation itself uses. */
-const sliceBits = (slice: NextRegValueSlice) => {
-  const mask = sliceMask(slice);
-  const high = 31 - Math.clz32(mask);
-  const low = Math.log2(mask & -mask);
-  return high === low ? `${high}` : `${high}:${low}`;
-};
-
-/**
- * The words for a slice's value: the `valueSet` name where one matches, then the slice's own
- * description. Reg $00 has a `valueSet` and no description, most flags have a description and no
- * `valueSet`, and either may be missing, so this is a join of whatever is actually present.
- */
-const sliceText = (regValue: number, slice: NextRegValueSlice) => {
-  const named = slice.valueSet?.[sliceValue(regValue, slice)];
-  return [named, slice.description].filter(Boolean).join(" — ");
-};
 
 /**
  * One decoded field of a register.

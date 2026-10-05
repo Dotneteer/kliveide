@@ -1,0 +1,230 @@
+---
+description: "The .copper pragma writes ZX Spectrum Next Copper lists as readable WAIT and MOVE instructions instead of raw bytes."
+---
+
+# `.copper` Pragma Reference
+
+The `.copper` pragma lets you write a ZX Spectrum Next **Copper list** as readable instructions — `wait`, `move`, `nop`, `halt` — instead of hand-encoded `.defb` bytes. Each `.copper` line emits exactly one two-byte Copper instruction. The pragma is only available when targeting the ZX Spectrum Next (`.model next`).
+
+## Overview
+
+The Copper is a small coprocessor locked to the video beam. It runs a program of up to 1024 two-byte instructions from its own 2K RAM, which the Z80 fills through NextReg `$60` (or `$63`). It knows two instructions: **WAIT** for a raster position, and **MOVE** a value into a NextReg. The `.copper` pragma gives each of them, and the two common idioms built from them, its own sub-command:
+
+```z80klive
+.copper <subcommand> [operands]
+```
+
+A typical list:
+
+```z80klive
+List:
+    .copper move $40, 16        ; palette index 16
+    .copper move $41, $00       ;   black
+    .copper wait 96, 8          ; line 96, paper x 64
+    .copper move $40, 16
+    .copper move $41, $1C       ;   green
+    .copper halt
+ListEnd:
+```
+
+## Encoding
+
+Copper words are emitted **big-endian** — high byte first — because that is the order the Copper reads them. This is the opposite of `.dw`, so do not build Copper lists with `.dw`.
+
+| Instruction | High byte | Low byte | Fields |
+|---|---|---|---|
+| WAIT | `1HHHHHHL` | `LLLLLLLL` | `L` = line (9 bits, 0–511), `H` = horizontal position (6 bits, 0–63) |
+| MOVE | `0RRRRRRR` | `VVVVVVVV` | `R` = NextReg (`$00`–`$7F`), `V` = value (8 bits) |
+
+A WAIT is satisfied when the Copper's line counter equals `line` **and** the horizontal counter has reached `hpos * 8 + 12`, which is paper x `hpos * 8`. Lines are counted from the first paper line; NextReg `$64` shifts that origin.
+
+---
+
+## WAIT — Wait for a Raster Position
+
+**Syntax:**
+
+```z80klive
+.copper wait <line>, <hpos>
+```
+
+| Operand | Range | Description |
+|---|---|---|
+| `line` | 0–511 | Raster line to wait for (line 0 is the first paper line) |
+| `hpos` | 0–63 | Horizontal position; the WAIT releases at paper x `8 * hpos` |
+
+**Examples:**
+
+```z80klive
+.copper wait 96, 8          ; emits $90, $60  (line 96, paper x 64)
+.copper wait 120, 31        ; emits $BE, $78  (line 120, paper x 248)
+.copper wait 256, 0         ; emits $81, $00  (line bit 8 goes into the high byte)
+```
+
+A line past the end of the frame, or a horizontal position past the end of the line, never matches: the Copper parks there. The assembler cannot know the timing mode (50 or 60 Hz), so it does not warn about such a WAIT; the IDE's Copper List shows it as a *park*.
+
+---
+
+## MOVE — Write a NextReg
+
+**Syntax:**
+
+```z80klive
+.copper move <reg>, <value>
+```
+
+| Operand | Range | Description |
+|---|---|---|
+| `reg` | `$00`–`$7F` | The NextReg to write |
+| `value` | 8 bits (`-128`–`255`) | The value to write |
+
+The register field is only 7 bits wide. A register above `$7F` is an **error**, never silently masked — masking would turn a typo such as `$80` into a write to register `$00`.
+
+**Examples:**
+
+```z80klive
+.copper move $40, 16        ; emits $40, $10  (palette index)
+.copper move $41, $FC       ; emits $41, $FC  (palette value: yellow)
+.copper move $4A, $00       ; emits $4A, $00  (fallback colour)
+```
+
+A MOVE to register `0` is legal: the Copper treats it as a **NOP** and ignores the value. The assembler emits it exactly as written.
+
+---
+
+## NOP — No Operation
+
+```z80klive
+.copper nop                 ; emits $00, $00
+```
+
+`nop` is `MOVE 0, 0`. It takes one Copper instruction slot and does nothing; it is useful as a placeholder the CPU patches later.
+
+---
+
+## HALT — Stop Until the Next Restart
+
+```z80klive
+.copper halt                ; emits $FF, $FF
+```
+
+`halt` is `WAIT 511, 63`, a position no frame ever reaches, so the Copper parks there until it is restarted: at the start of every frame in mode `%11`, or when the CPU writes NextReg `$62` again. End every list with `halt`: without it the Copper runs on into whatever the RAM holds after your list.
+
+---
+
+## WORD — Any Copper Word (Escape Hatch)
+
+```z80klive
+.copper word <expr>
+```
+
+Emits any 16-bit value, big-endian, as one Copper instruction. Use it for a word computed elsewhere.
+
+```z80klive
+.copper word $BE78          ; same as .copper wait 120, 31
+```
+
+---
+
+## Expressions and Forward References
+
+Every operand is an expression, and it may refer to symbols defined later in the source. The assembler patches the word when the symbol is resolved, and applies the same range checks then:
+
+```z80klive
+    .copper wait SPLIT_LINE, 0
+    .copper move $41, SKY_COLOUR
+    .copper halt
+
+SPLIT_LINE .equ 96
+SKY_COLOUR .equ $1C
+```
+
+`.copper` also works inside macros, so you can name the patterns you repeat:
+
+```z80klive
+Band: .macro(atLine, colour)
+    .copper wait {{atLine}}, 0
+    .copper move $40, 16
+    .copper move $41, {{colour}}
+    .endm
+```
+
+---
+
+## Complete Example — A Two-Colour Split
+
+```z80klive
+    .model next
+    .org $8000
+Start:
+    nextreg $43, $00            ; ULA palette 1, auto-increment on
+    ld hl, List
+    ld bc, ListEnd - List
+    nextreg $62, $00            ; stop the Copper, write address 0
+    nextreg $61, $00
+Upload:
+    ld a, (hl)
+    nextreg $60, a              ; one byte at a time, auto-incrementing
+    inc hl
+    dec bc
+    ld a, b
+    or c
+    jr nz, Upload
+    nextreg $62, $C0            ; mode %11: restart the list every frame
+Park:
+    jr Park
+
+List:
+    .copper move $40, 16        ; palette index 16
+    .copper move $41, $00       ;   black
+    .copper wait 96, 8          ; line 96, paper x 64
+    .copper move $40, 16
+    .copper move $41, $1C       ;   green
+    .copper halt
+ListEnd:
+```
+
+The list emits 12 bytes:
+
+| Pragma | Bytes |
+|---|---|
+| `.copper move $40, 16` | `$40 $10` |
+| `.copper move $41, $00` | `$41 $00` |
+| `.copper wait 96, 8` | `$90 $60` |
+| `.copper move $40, 16` | `$40 $10` |
+| `.copper move $41, $1C` | `$41 $1C` |
+| `.copper halt` | `$FF $FF` |
+
+---
+
+## Notes
+
+- **Big-endian.** Copper words are high byte first, the opposite of `.dw`.
+- **MOVE 0 is a NOP.** `.copper move 0, x` is legal and emitted as written; the Copper ignores `x`.
+- **`halt` is WAIT 511, 63.** It never matches, so the Copper parks until its next restart.
+- **No missing-`halt` warning.** The assembler cannot tell whether a block of `.copper` lines is the whole list, so it does not warn when a block does not end with `halt`. The IDE's Copper List flags a list that does not end in a HALT.
+- **1024 instructions at most.** A run of consecutive `.copper` lines longer than the Copper's 1024 instructions is an error.
+- **Debug information.** The assembler records each run of consecutive `.copper` lines (a *Copper block*) with its source lines, so the IDE can map the live Copper RAM back to your source.
+- **Only the dotted form.** Write `.copper` (or `.COPPER`); a bare `copper` stays an ordinary identifier, so `.savenex copper "file"` and labels named `copper` keep working.
+
+---
+
+## Error Reference
+
+| Code | Message | Cause |
+|---|---|---|
+| `Z0371` | Unknown .copper sub-command: `'{0}'` | A sub-command other than `wait`, `move`, `nop`, `halt` or `word` |
+| `Z0372` | The `.copper` pragma requires the Next model (`.model next`) | Used outside `.model next` |
+| `Z0373` | Copper WAIT line `{0}` is out of range (0..511) | WAIT line outside 0–511 |
+| `Z0374` | Copper WAIT horizontal position `{0}` is out of range (0..63) | WAIT position outside 0–63 |
+| `Z0375` | Copper MOVE can write only NextRegs $00..$7F, not `{0}` | MOVE register above `$7F` |
+| `Z0376` | Copper MOVE value `{0}` does not fit in 8 bits | MOVE value outside -128–255 |
+| `Z0377` | Copper block at `{0}` is `{1}` instructions long; the Copper holds at most 1024 | More than 1024 consecutive `.copper` instructions |
+
+---
+
+## See Also
+
+- [ZX Spectrum Next](./zx-next) - Next-specific assembler features and `.savenex` pragma
+- [.dma Pragma Reference](./zx-next-dma) - zxnDMA programs written the same way
+- [Pragmas](./pragmas) - Complete pragma reference

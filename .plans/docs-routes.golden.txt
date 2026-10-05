@@ -67,6 +67,7 @@
 /working-with-ide/breakpoints/index.html
 /working-with-ide/build-system/index.html
 /working-with-ide/commands/index.html
+/working-with-ide/copper/index.html
 /working-with-ide/cpu/index.html
 /working-with-ide/disassembly/index.html
 /working-with-ide/editing-code/index.html
@@ -92,5 +93,6 @@
 /z80-assembly/structs/index.html
 /z80-assembly/z80-assembler/index.html
 /z80-assembly/z80-instructions/index.html
+/z80-assembly/zx-next-copper/index.html
 /z80-assembly/zx-next-dma/index.html
 /z80-assembly/zx-next/index.html

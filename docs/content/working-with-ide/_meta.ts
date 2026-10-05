@@ -10,6 +10,7 @@ export default {
   "ide-settings": "IDE Settings",
   cpu: "The CPU View",
   ula: "The ULA View",
+  copper: "The Copper View",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

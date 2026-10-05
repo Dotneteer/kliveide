@@ -143,6 +143,9 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextNextRegWatchPtr: ZxNextWasmV2ExportFunction;
   zxnextClearNextRegWatch: ZxNextWasmV2ExportFunction;
   zxnextTakeNextRegHit: ZxNextWasmV2ExportFunction;
+  zxnextCopperWatchPtr: ZxNextWasmV2ExportFunction;
+  zxnextSetCopperWatchMode: ZxNextWasmV2ExportFunction;
+  zxnextTakeCopperHit: ZxNextWasmV2ExportFunction;
   zxnextGetPortFeValue: ZxNextWasmV2ExportFunction;
   zxnextGetBorderColor: ZxNextWasmV2ExportFunction;
   zxnextGetEarBit: ZxNextWasmV2ExportFunction;
@@ -219,6 +222,10 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetCopperListData: ZxNextWasmV2ExportFunction;
   zxnextGetCopperDout: ZxNextWasmV2ExportFunction;
   zxnextGetCopperVerticalLineOffset: ZxNextWasmV2ExportFunction;
+  zxnextCopperMemoryPtr: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperBeam: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperTiming: ZxNextWasmV2ExportFunction;
+  zxnextGetCopperUpperBorder: ZxNextWasmV2ExportFunction;
   zxnextSetBeeperOutput: ZxNextWasmV2ExportFunction;
   zxnextGetBeeperEar: ZxNextWasmV2ExportFunction;
   zxnextGetBeeperMic: ZxNextWasmV2ExportFunction;
@@ -377,6 +384,10 @@ export type ZxNextWasmV2Runtime = {
    * core's `breakpointFlags`.
    */
   readonly nextRegWatch: Uint8Array;
+  /** One bit per Copper list index: the Copper-instruction breakpoint watch (COPPER_DEBUGGING_PLAN §4.6) */
+  readonly copperWatch: Uint8Array;
+  /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
+  readonly copperMemory: Uint8Array;
   readonly frameTrace: Uint8Array;
 };
 
@@ -510,6 +521,9 @@ const requiredV2Exports = [
   "zxnextNextRegWatchPtr",
   "zxnextClearNextRegWatch",
   "zxnextTakeNextRegHit",
+  "zxnextCopperWatchPtr",
+  "zxnextSetCopperWatchMode",
+  "zxnextTakeCopperHit",
   "zxnextGetPortFeValue",
   "zxnextGetBorderColor",
   "zxnextGetEarBit",
@@ -586,6 +600,10 @@ const requiredV2Exports = [
   "zxnextGetCopperListData",
   "zxnextGetCopperDout",
   "zxnextGetCopperVerticalLineOffset",
+  "zxnextCopperMemoryPtr",
+  "zxnextGetCopperBeam",
+  "zxnextGetCopperTiming",
+  "zxnextGetCopperUpperBorder",
   "zxnextSetBeeperOutput",
   "zxnextGetBeeperEar",
   "zxnextGetBeeperMic",
@@ -783,6 +801,8 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "keyboardLines", exports.zxnextKeyboardLinesPtr(), keyboardLineCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegs", exports.zxnextNextRegsPtr(), nextRegCount, memoryBuffer);
   assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
+  assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
+  assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
 
   return {
@@ -795,6 +815,8 @@ export function createZxNextWasmV2Views(
     keyboardLines: new Uint8Array(memoryBuffer, exports.zxnextKeyboardLinesPtr(), keyboardLineCount),
     nextRegs: new Uint8Array(memoryBuffer, exports.zxnextNextRegsPtr(), nextRegCount),
     nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
+    copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
+    copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes)
   };
 }

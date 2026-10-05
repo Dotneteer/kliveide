@@ -13,7 +13,7 @@ import styles from "./BreakpointsPanel.module.scss";
 import { getBreakpointAddressSpec, getBreakpointStorageKey } from "@common/utils/breakpoints";
 import { toHexa2, toHexa4 } from "../services/ide-commands";
 import { useEmuApi } from "@renderer/core/EmuApi";
-import { CpuState, NextRegWriteEvent } from "@common/messaging/EmuApi";
+import { CopperHitEvent, CpuState, NextRegWriteEvent } from "@common/messaging/EmuApi";
 import { VirtualizedList } from "@renderer/controls/VirtualizedList";
 import classnames from "classnames";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
@@ -65,7 +65,12 @@ import { IconButton } from "@renderer/controls/IconButton";
 import { useConfirmPort } from "@mvc/dialogs/useDialogPorts";
 import { useBreakpointDialog } from "../dialogs/useBreakpointDialog";
 import { isAuthorableBreakpoint } from "../utils/breakpoint-form";
-import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import { isCopperBreakpoint, isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import {
+  copperWordAt,
+  decodeCopperWord,
+  formatCopperInstruction
+} from "@common/zxnext/copper/copperDecoder";
 import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
 import { formatHitSpec } from "@common/utils/breakpoint-filters";
 import { logGroupOf } from "@common/utils/breakpoint-condition/logpoint-template";
@@ -101,6 +106,10 @@ const OP_ADDR_WIDTH = "8ch"; // 52px / 6.4 = 8.125
 const nextRegWriteOf = (state?: CpuState) =>
   state && "lastNextRegWrite" in state ? state.lastNextRegWrite : undefined;
 
+/** The Copper instruction the machine last stopped on, or `undefined`; see `nextRegWriteOf`. */
+const copperHitOf = (state?: CpuState): CopperHitEvent | undefined =>
+  state && "lastCopperHit" in state ? state.lastCopperHit : undefined;
+
 /** A Next Register's documented name, for the row and the tooltip. */
 const nextRegName = (reg: number | undefined): string => {
   if (reg === undefined) return "";
@@ -114,12 +123,16 @@ const breakpointTooltip = (
   instruction: string,
   isWatchpoint: boolean,
   lastWrite?: NextRegWriteEvent,
-  partitionLabels?: Record<number, string>
+  partitionLabels?: Record<number, string>,
+  copperHit?: CopperHitEvent
 ): string => {
   const nextRegKind = isNextRegBreakpoint(bp);
+  const copperKind = isCopperBreakpoint(bp);
   const kind = nextRegKind
     ? "NextReg write"
-    : bp.memoryRead
+    : copperKind
+      ? "Copper"
+      : bp.memoryRead
       ? "Memory read"
       : bp.memoryWrite
         ? "Memory write"
@@ -133,7 +146,19 @@ const breakpointTooltip = (
   const noun = isLogpoint(bp) ? "logpoint" : "breakpoint";
   const lines = comment
     ? [`${bp.annotationKind ?? "LOGPOINT"} comment at ${bp.resource}:${bp.line}`]
-    : [`${kind} ${noun} ${nextRegKind ? "on" : "at"} ${addrKey}`];
+    : [`${kind} ${noun} ${nextRegKind || copperKind ? "on" : "at"} ${addrKey}`];
+  if (copperKind) {
+    if (instruction) lines.push(instruction);
+    lines.push("Stops when the Copper completes it: a WAIT when satisfied, a MOVE when issued");
+    if (copperHit?.index === bp.copperIndex) {
+      lines.push(
+        `Hit at line ${copperHit.line}, hc ${copperHit.hc}; CPU at $${toHexa4(copperHit.pc)}` +
+          (copperHit.partition === undefined
+            ? ""
+            : ` in ${partitionLabels?.[copperHit.partition] ?? copperHit.partition}`)
+      );
+    }
+  }
   if (nextRegKind) {
     lines.push(nextRegName(bp.nextReg));
     lines.push(bp.nextRegCopper ? "Breaks on CPU and copper writes" : "Breaks on CPU writes");
@@ -316,10 +341,24 @@ export const BreakpointsPanel = () => {
       }
     }
 
+    // --- A Copper breakpoint's "instruction" is the Copper word at its index, from the live RAM
+    let copperRam: Uint8Array | undefined;
+    if (bpState.breakpoints.some((bp) => isCopperBreakpoint(bp))) {
+      try {
+        copperRam = (await emuApi.getCopperState())?.ram;
+      } catch {
+        copperRam = undefined;
+      }
+    }
+
     // --- Disassemble memory data, pairing each instruction with the breakpoint it belongs to
     const rows: BreakpointRowModel[] = [];
     for (const bpInfo of bpState.breakpoints) {
       let instruction = "";
+      if (isCopperBreakpoint(bpInfo) && copperRam) {
+        const index = bpInfo.copperIndex! & 0x3ff;
+        instruction = formatCopperInstruction(decodeCopperWord(index, copperWordAt(copperRam, index)));
+      }
       if (bpInfo.address !== undefined) {
         const bpAddr = getBpAddress(bpInfo);
         const disass = new Z80Disassembler(
@@ -768,11 +807,13 @@ export const BreakpointsPanel = () => {
                   // --- This shape has no address, so it is "current" when the write the machine
                   // --- stopped on was to its register.
                   isCurrent = nextRegWriteOf(lastCpuState)?.reg === bp.nextReg;
+                } else if (isCopperBreakpoint(bp)) {
+                  isCurrent = copperHitOf(lastCpuState)?.index === bp.copperIndex;
                 }
               }
 
               const isWatchpoint = !!(bp.memoryRead || bp.memoryWrite || bp.ioRead || bp.ioWrite);
-              const instruction = bp.instruction || "???";
+              const instruction = bp.instruction || (isCopperBreakpoint(bp) ? "" : "???");
 
               return (
                 <BreakpointRow
@@ -782,7 +823,8 @@ export const BreakpointsPanel = () => {
                     instruction,
                     isWatchpoint,
                     nextRegWriteOf(lastCpuState),
-                    partitionLabels
+                    partitionLabels,
+                    copperHitOf(lastCpuState)
                   )}
                   onContextMenu={(e) => showRowMenu(bp, e)}
                   revealed={revealedKey !== undefined && safeStorageKey(bp) === revealedKey}
@@ -804,6 +846,7 @@ export const BreakpointsPanel = () => {
                     hasBreakpoint={true}
                     disabled={disabled}
                     nextReg={bp.nextReg}
+                    copper={isCopperBreakpoint(bp)}
                     /*
                      * Told rather than inferred from the type of `address`. Every shape the panel
                      * lists is armed except an unresolved source breakpoint, which is the one the
@@ -924,6 +967,21 @@ export const BreakpointsPanel = () => {
                         </>
                       );
                     })()}
+                  {isCopperBreakpoint(bp) && (
+                    <>
+                      {machineState === MachineControllerState.Paused &&
+                        copperHitOf(lastCpuState)?.index === bp.copperIndex && (
+                          <Value
+                            text={`line ${copperHitOf(lastCpuState)!.line} · hc ${copperHitOf(lastCpuState)!.hc}`}
+                            width="auto"
+                            className={classnames(styles.bpCell, regStyles.stateValueAlt)}
+                          />
+                        )}
+                      {instruction && (
+                        <Value text={instruction} width="auto" className={styles.bpCell} />
+                      )}
+                    </>
+                  )}
                   {isWatchpoint && machineState === MachineControllerState.Paused && (
                     <>
                       <Secondary

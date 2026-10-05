@@ -76,6 +76,7 @@ import {
   ShowDisassemblyCommand,
   ShowMemoryCommand
 } from "./commands/ToolCommands";
+import { HideCopperCommand, ShowCopperCommand, StepCopperCommand } from "./commands/CopperCommands";
 import {
   ProjectExcludeItemsCommand,
   ProjectListExcludedItemsCommand
@@ -158,6 +159,9 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new HideMemoryCommand());
   cmdSrv.registerCommand(new ShowDisassemblyCommand());
   cmdSrv.registerCommand(new HideDisassemblyCommand());
+  cmdSrv.registerCommand(new ShowCopperCommand());
+  cmdSrv.registerCommand(new HideCopperCommand());
+  cmdSrv.registerCommand(new StepCopperCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

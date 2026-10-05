@@ -6,6 +6,7 @@ import { AssemblyModule } from "./assembly-module";
 import { IAssemblerErrorInfo, IBinarySegment, IFileLine, IListFileItem, ISourceFileItem, SourceMap, SymbolReferenceInfo, SymbolValueMap, TypedObject } from "@main/compiler-common/abstractions";
 import { CommonTokenType } from "./common-tokens";
 import type { SourceAnnotation } from "@abstractions/CompilerInfo";
+import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 
 /**
  * This class represents the output of the Z80 assembler
@@ -107,6 +108,12 @@ export class AssemblerOutput<
    * DeZog-style source annotations (`LOGPOINT` comments), `.plans/LOGPOINTS_PLAN.md` §4.7
    */
   readonly debugAnnotations: SourceAnnotation[] = [];
+
+  /**
+   * The `.copper` blocks: maximal runs of consecutive `.copper` emissions, with each word's final
+   * value (after fixups) and source line (`.plans/COPPER_DEBUGGING_PLAN.md` D8)
+   */
+  readonly copperBlocks: CopperBlock[] = [];
 
   /**
    * ZX Spectrum Next NEX file configuration

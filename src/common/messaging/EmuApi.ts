@@ -535,6 +535,21 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next Copper's state: its list RAM, mode, pointers and beam.
+   */
+  async getCopperState(): Promise<CopperState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * "Step Copper": runs the ZX Spectrum Next in debug mode until the Copper completes its next
+   * instruction, then stops at the end of that Z80 instruction.
+   */
+  async stepCopper(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the Next memory mapping state.
    */
   async getNextMemoryMapping(): Promise<NextMemoryMapping> {
@@ -776,6 +791,57 @@ export type Z80CpuState = {
    * breakpoint read as "before" without the core having to withhold the write.
    */
   lastNextRegWrite?: NextRegWriteEvent;
+  /**
+   * The Copper instruction the machine last stopped on. ZX Spectrum Next only, and absent until a
+   * Copper breakpoint (`cu:`) or a Copper step fires.
+   */
+  lastCopperHit?: CopperHitEvent;
+};
+
+/**
+ * A Copper instruction a breakpoint stopped on; see `Z80CpuState.lastCopperHit`.
+ *
+ * The Copper keeps running to the end of the Z80 instruction during which the hit happened, so the
+ * Copper's PC at the stop may be well past `index` (COPPER_DEBUGGING_PLAN trap T1). The event
+ * therefore carries the beam position of the hit itself.
+ */
+export type CopperHitEvent = {
+  /** The list index of the instruction that completed (0..$3FF) */
+  index: number;
+  kind: "wait" | "move" | "nop";
+  /** The instruction word at the time of the hit */
+  word: number;
+  /** `cvc` at the hit */
+  line: number;
+  /** `hc_ula` at the hit */
+  hc: number;
+  /** The first byte of the Z80 instruction during which the hit happened */
+  pc: number;
+  /** The memory partition `pc` was in, if the machine has partitions */
+  partition?: number;
+};
+
+/** The ZX Spectrum Next Copper, as the IDE's Copper views read it (COPPER_DEBUGGING_PLAN §4.3). */
+export type CopperState = {
+  /** The 2K list RAM, a copy: 1024 big-endian words */
+  ram: Uint8Array;
+  /** `$62` bits 7-6 */
+  startMode: number;
+  /** The list address (the Copper's PC), 0..$3FF */
+  pc: number;
+  /** The CPU's `$60`/`$63` write pointer, in bytes, 0..$7FF */
+  writeAddress: number;
+  /** `$64`, the vertical line offset */
+  lineOffset: number;
+  /** The Copper beam at the CPU's current tact, and whether the Copper is in a WAIT */
+  beam: { line: number; hc: number; waiting: boolean };
+  /**
+   * The live timing: `cvc` lines in a frame, `hc_ula` positions in a line, and how many of the
+   * frame's last `cvc` lines are the visible upper border (the paper is `cvc` 0-191)
+   */
+  timing: { lines: number; hcs: number; upperBorder?: number };
+  /** The stop's hit, when the last stop was a Copper breakpoint */
+  lastHit?: CopperHitEvent;
 };
 
 /** A NextReg write a breakpoint stopped on; see `Z80CpuState.lastNextRegWrite`. */

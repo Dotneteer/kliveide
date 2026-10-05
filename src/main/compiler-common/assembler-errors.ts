@@ -103,6 +103,15 @@ export type ErrorCodes =
   | "Z0367"
   | "Z0368"
 
+  // --- Copper pragma errors
+  | "Z0371"
+  | "Z0372"
+  | "Z0373"
+  | "Z0374"
+  | "Z0375"
+  | "Z0376"
+  | "Z0377"
+
   // --- Next model warnings
   | "Z0370"
 
@@ -299,6 +308,15 @@ export const errorMessages: Record<string, string> = {
   Z0366: "Expected operating mode: 'byte', 'continuous', or 'burst'.",
   Z0367: "Prescaler requires cycle length to be specified.",
   Z0368: "The .dma pragma requires the Next model (.model next).",
+
+  // --- Copper pragma errors
+  Z0371: "Unknown .copper sub-command: '{0}'.",
+  Z0372: "The .copper pragma requires the Next model (.model next).",
+  Z0373: "Copper WAIT line {0} is out of range (0..511).",
+  Z0374: "Copper WAIT horizontal position {0} is out of range (0..63).",
+  Z0375: "Copper MOVE can write only NextRegs $00..$7F, not {0}.",
+  Z0376: "Copper MOVE value {0} does not fit in 8 bits.",
+  Z0377: "Copper block at {0} is {1} instructions long; the Copper holds at most 1024.",
 
   // --- Next model warnings
   Z0370: "Unbanked code address ${0} exceeds typical bank 2 range ($8000-$bfff). This will create a gap in bank 2 when exporting to NEX. Consider using explicit .bank for separate bank layout.",

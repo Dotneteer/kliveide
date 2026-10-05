@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.61.0",
+  "kliveVersion": "0.63.0",
   "machineType": "zxnext",
   "modelId": "standard",
   "config": {},
@@ -8,7 +8,12 @@
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP",
+    "diskA": {
+      "diskFile": "/Users/dotneteer/Downloads/we_are_vocoders/thevocoders.scl",
+      "writeProtected": true
+    }
   },
   "machineSpecific": {},
   "ide": {
@@ -19,31 +24,9 @@
   },
   "debugger": {
     "schemaVersion": 1,
-    "breakpoints": [
-      {
-        "address": 56,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "bank": 2,
-        "bankOffset": 4604,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "exec": false,
-        "memoryRead": false,
-        "memoryWrite": false,
-        "ioRead": false,
-        "ioWrite": false,
-        "ioMask": 65535,
-        "nextReg": 2,
-        "nextRegCopper": false,
-        "disabled": false
-      }
-    ],
-    "watchExpressions": []
+    "breakpoints": [],
+    "watchExpressions": [],
+    "basicWatches": []
   },
   "builder": {
     "roots": [
@@ -126,9 +109,17 @@
                 "line": 0,
                 "column": 0
               }
+            },
+            {
+              "type": "CopperList",
+              "id": "$copper",
+              "position": {
+                "line": 0,
+                "column": 0
+              }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "$copper"
         }
       ]
     }

@@ -1,8 +1,29 @@
 # Copper Debugging Plan: List Viewer, Copper Breakpoints and `.copper` Pragmas
 
-Status: **decisions recorded** (2026-10-04): D1–D9 accepted, and the §8 questions answered as
-proposed (D10–D17). No phase started. Q4 and Q5 are deferred to
-[NEXTREG_NAMES_AND_COPPER_SHORTHANDS_PLAN.md](NEXTREG_NAMES_AND_COPPER_SHORTHANDS_PLAN.md).
+Status: **implemented** (2026-10-05), Phases 1–11. Decisions D1–D17 as recorded below; Q4 and Q5
+are deferred to [NEXTREG_NAMES_AND_COPPER_SHORTHANDS_PLAN.md](NEXTREG_NAMES_AND_COPPER_SHORTHANDS_PLAN.md).
+
+Where the implementation differs from the text below:
+- **Tokens (§4.9):** only `.copper` / `.COPPER` are registered. The bare `copper` keyword broke
+  `.savenex copper "file"` (and any label named `copper`), which is the fallback §4.9 allowed.
+- **Fixups (T6):** `CopperWait` and `CopperMove` were added; `.copper word` reuses the existing
+  `FixupType.Bit16Be` instead of a new `Bit16BigEndian`. Error texts follow `Z0368`'s style.
+- **Core exports (§4.2):** one more, `zxnextGetCopperUpperBorder()`, so the raster ruler shades the
+  upper border from the live timing. `CopperState.timing` carries it as `upperBorder`.
+- **Conditions (D6):** a `cu:` breakpoint's condition sees `ADDR` = the list index and `VAL` = the
+  16-bit instruction word (`ConditionAccessKind` `"copper"`).
+- **Step Copper (§4.6):** a machine flag (`requestCopperStep`) that arms the core's "any" mode for the
+  next debug run; reachable as `step-copper` (alias `stcop`), the Copper List toolbar, and
+  **Machine → Step Copper**. `run-to cu:<index>` is the list's **Run to here**.
+- **Source-line breakpoints (D12):** a margin click on a `.copper` line resolves **at click time**
+  against the live Copper RAM and sets `cu:` on every index the line occupies; when the list is not
+  uploaded yet the status bar says so. It is not deferred to the next stop, and the source line
+  carries no gutter dot of its own (the Copper List and the Breakpoints view show it).
+- **T3 measurement (Phase 7):** a lenient in-test check (armed < 2× unarmed + 20 ms over 20 frames of
+  a 1024-MOVE looping list) in `test/zxnext-hw/copper/copper-debug.test.ts`.
+- Verified in the running IDE (Phase 11): C03 built with `.copper`, stopped on `cu:$002` (hit at line
+  96, hc 76, PC already on the HALT), stepped the Copper, and the ruler, the Breakpoints row, the
+  panel and the source column agreed.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.1**, the Copper list viewer.

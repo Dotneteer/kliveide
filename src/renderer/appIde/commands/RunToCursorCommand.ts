@@ -6,10 +6,7 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
 import { commandError, commandSuccess, writeSuccessMessage } from "../services/ide-commands";
-import {
-  BreakpointWithAddressCommand,
-  type BreakpointWithAddressArgs
-} from "./BreakpointCommands";
+import { BreakpointWithAddressCommand, type BreakpointWithAddressArgs } from "./BreakpointCommands";
 
 /**
  * Runs the machine until it reaches one address, then stops — without leaving a breakpoint behind.
@@ -32,7 +29,7 @@ import {
 export class RunToCursorCommand extends BreakpointWithAddressCommand {
   readonly id = "run-to";
   readonly description = "Runs the machine until it reaches the given address, then stops";
-  readonly usage = "run-to <address>";
+  readonly usage = "run-to <address> | run-to cu:<index>";
   readonly aliases = ["rtc"];
 
   /**
@@ -66,18 +63,29 @@ export class RunToCursorCommand extends BreakpointWithAddressCommand {
       );
     }
 
-    const target: BreakpointInfo = {
-      address: args.address,
-      partition: args.partition,
-      bank: args.bank,
-      bankOffset: args.bankOffset,
-      resource: args.resource,
-      line: args.line,
-      exec: true,
-      oneShot: true,
-      runTo: true,
-      owner: { kind: "session" }
-    };
+    // --- `run-to cu:<index>`: run until the Copper completes that list instruction (the Copper
+    // --- List's "Run to here", `.plans/COPPER_DEBUGGING_PLAN.md` D6)
+    const target: BreakpointInfo =
+      args.copperIndex !== undefined
+        ? {
+            copperIndex: args.copperIndex,
+            exec: false,
+            oneShot: true,
+            runTo: true,
+            owner: { kind: "session" }
+          }
+        : {
+            address: args.address,
+            partition: args.partition,
+            bank: args.bank,
+            bankOffset: args.bankOffset,
+            resource: args.resource,
+            line: args.line,
+            exec: true,
+            oneShot: true,
+            runTo: true,
+            owner: { kind: "session" }
+          };
 
     await context.emuApi.setBreakpoint(target);
     const addrKey = getBreakpointDisplayKey({ ...target, runTo: undefined }, this.partitionLabels);

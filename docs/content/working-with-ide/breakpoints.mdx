@@ -104,7 +104,7 @@ The **Add breakpoint** button and the **Edit breakpoint** command both open a di
 every option the `bp-set` command accepts, without the flag syntax:
 
 - **Type** &mdash; execution, memory read, memory write, I/O read, I/O write, or, on the ZX Spectrum
-  Next, NextReg write. A breakpoint has exactly one type, so choosing one here replaces the last.
+  Next, NextReg write and Copper instruction. A breakpoint has exactly one type, so choosing one here replaces the last.
   Choosing **NextReg write** replaces the address field with a register chooser and hides the
   partition row, because that type names no place; it adds a value filter and a copper checkbox of
   its own. See [NextReg Write Breakpoints](#nextreg-write-breakpoints).
@@ -674,6 +674,49 @@ exactly as it always did.
 
 These breakpoints are stored in the project, not in a `.nex.dis` sidecar: they watch a hardware
 register, so they mean the same thing whichever NEX file is loaded.
+
+## Copper Breakpoints (ZX Spectrum Next)
+
+A Copper breakpoint names another event: **the Copper completes an instruction of its list**. The
+list holds 1024 instructions, so the breakpoint names a list index, `$000` to `$3FF`:
+
+```
+bp-set cu:$00B
+```
+
+- A `MOVE` (or a `NOP`) fires when the Copper issues it.
+- A `WAIT` fires when its condition is **satisfied** &mdash; when the raster reaches the line and
+  position it waits for &mdash; not when the Copper arrives at it. That is the moment that matters:
+  "the beam has reached line 96".
+- The `HALT` (`WAIT 511,63`) never completes, so a breakpoint on it never fires.
+
+Hit counts, conditions, logpoints and one-shots work as on any other breakpoint. A list that runs
+once per frame passes each instruction once per frame, so `-hit` counts frames:
+
+```
+bp-set cu:$00B -hit 50      ; the 50th frame
+bp-set cu:$00B -once        ; once, then the breakpoint is removed
+```
+
+In a condition, `ADDR` is the list index and `VAL` is the 16-bit instruction word, so
+`-if VAL != $BE78` stops only when the CPU has patched the instruction.
+
+<Callout type="warning">
+**The Copper runs on to the end of the Z80 instruction.** The Copper executes at 28 MHz, locked to the
+beam, and the machine can only stop between Z80 instructions. By the time it stops, the Copper may
+have completed several more instructions. The stop message, the Breakpoints view and the
+[Copper List](/working-with-ide/copper) therefore report the **hit** &mdash; the instruction and the
+beam position where it completed &mdash; separately from where the Copper is now.
+</Callout>
+
+```
+Copper breakpoint: $002 WAIT 96, 8 satisfied at line 96, hc 76 (x 64); CPU at $8019 in 05
+```
+
+You can set a Copper breakpoint from the Copper List's gutter, from the **Copper instruction** type
+of the [Breakpoint Dialog](#the-breakpoint-dialog), or by clicking the margin of a `.copper` source
+line while the program runs: Klive finds where that line's instruction sits in the Copper's memory
+and sets the breakpoint on that index.
 
 ## Resolved Source Code Breakpoints
 

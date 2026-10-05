@@ -33,6 +33,8 @@ type Props = {
    * address-taking commands.
    */
   nextReg?: number;
+  /** This row is a Copper breakpoint (`cu:`); `address` then carries its `CU:$xxx` spec. */
+  copper?: boolean;
   memoryRead?: boolean;
   memoryWrite?: boolean;
   ioRead?: boolean;
@@ -109,6 +111,7 @@ export const BreakpointIndicator = ({
   disabled,
   current,
   nextReg,
+  copper,
   memoryRead,
   memoryWrite,
   ioRead,
@@ -167,6 +170,9 @@ export const BreakpointIndicator = ({
     // --- without learning a new sign; only the target below it is new.
     bpType = "NextReg write";
     typeIcon = "bp-nextreg";
+  } else if (copper) {
+    bpType = "Copper instruction";
+    typeIcon = "bp-copper";
   }
   // --- One colour for all five: the glyphs now carry the read/write distinction the three ANSI
   // --- hues used to. See `--color-breakpoint-type` in componentAliases.ts.

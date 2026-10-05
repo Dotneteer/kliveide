@@ -158,6 +158,22 @@ export function isNextRegBreakpoint(bp: BreakpointInfo): boolean {
 }
 
 /**
+ * Is this breakpoint watching a ZX Spectrum Next Copper list index (`cu:`)? The index is the
+ * binding, as the register is for `isNextRegBreakpoint`.
+ */
+export function isCopperBreakpoint(bp: BreakpointInfo): boolean {
+  return bp?.copperIndex !== undefined;
+}
+
+/**
+ * Is this an *event* breakpoint - one bound to something other than a Z80 address (a NextReg write
+ * or a Copper instruction)? Such a breakpoint is never an execution breakpoint and has no gutter.
+ */
+export function isEventBreakpoint(bp: BreakpointInfo): boolean {
+  return isNextRegBreakpoint(bp) || isCopperBreakpoint(bp);
+}
+
+/**
  * The 8K partition a bank-relative breakpoint must match.
  *
  * A NEX bank is 16K and a Next partition is an 8K page, so the offset decides which half of the

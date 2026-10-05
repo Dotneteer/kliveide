@@ -421,7 +421,11 @@ export enum FixupType {
   FieldBit16,
   NexStackAddr,
   NexEntryAddr,
-  BitIndex
+  BitIndex,
+  /** A `.copper wait` operand; `data` 0 patches the line, 1 the horizontal position */
+  CopperWait,
+  /** A `.copper move` operand; `data` 0 patches the register, 1 the value */
+  CopperMove
 }
 
 /**

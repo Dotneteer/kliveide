@@ -234,6 +234,18 @@ static void zxnextCopperAdvanceTo(uint32_t frameTact) {
   }
 }
 
+/*
+ * A Copper instruction completes (a WAIT is satisfied, a MOVE or NOP is issued) at the current list
+ * address: latch it if it is watched and no earlier hit is waiting to be taken (trap T2). Called only
+ * when the watch is armed (trap T3). `kind`: 1 WAIT, 2 MOVE, 3 NOP.
+ */
+static void zxnextCopperCheckWatch(uint32_t kind, uint32_t cvc, uint32_t hc) {
+  if (zxnextCopperHit) return;
+  uint32_t index = zxnextCopperListAddress & 0x3ffu;
+  if (!zxnextCopperWatchAny && !(zxnextCopperWatch[index >> 3] & (1u << (index & 7u)))) return;
+  zxnextCopperHit = 0x80000000u | (kind << 28) | ((hc & 0x1ffu) << 19) | ((cvc & 0x1ffu) << 10) | index;
+}
+
 // The copper compares against `cvc`, the copper-offset vertical counter built in
 // `zxula_timing.vhd`, not the raw ULA vertical counter: `zxnext.vhd` wires
 // `vcount_i => cvc`, and `copper.vhd` has no offset input of its own. The caller supplies
@@ -269,12 +281,14 @@ static void zxnextCopperExecuteTick(uint32_t cvc, uint32_t hc) {
         uint32_t waitLine = zxnextCopperListData & 0x1ffu;
         uint32_t waitHc = ((zxnextCopperListData >> 9u) & 0x3fu) * 8u + 12u;
         if (cvc == waitLine && hc >= waitHc) {
+          if (zxnextCopperWatchArmed) zxnextCopperCheckWatch(1u, cvc, hc);
           zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
         }
       } else {
         /* MOVE; register 0 is a NOP: no output pulse */
         zxnextCopperData = zxnextCopperListData & 0x7fffu;
         if (zxnextCopperData & 0x7f00u) zxnextCopperDout = 1u;
+        if (zxnextCopperWatchArmed) zxnextCopperCheckWatch((zxnextCopperData & 0x7f00u) ? 2u : 3u, cvc, hc);
         zxnextCopperListAddress = (zxnextCopperListAddress + 1u) & 0x3ffu;
       }
     }
@@ -303,3 +317,19 @@ static uint32_t zxnextCopperGetListData(void) { return zxnextCopperListData; }
 static uint32_t zxnextCopperGetDout(void) { return zxnextCopperDout; }
 static uint32_t zxnextCopperGetVerticalLineOffset(void) { return zxnextCopperVerticalLineOffset; }
 static uint32_t zxnextCopperGetFrameTact(void) { return zxnextCopperFrameTact; }
+static uint32_t zxnextCopperGetMemoryPtr(void) { return (uint32_t)(uintptr_t)zxnextCopperMemory; }
+
+/* The beam at the CPU's current tact, in the Copper's own coordinates (`cvc`, `hc_ula`; trap T4) */
+static uint32_t zxnextCopperGetBeam(void) {
+  uint32_t vc = currentFrameTact / ZXNEXT_SCREEN_TOTAL_HC;
+  uint32_t rawHc = currentFrameTact % ZXNEXT_SCREEN_TOTAL_HC;
+  uint32_t cvc = zxnextCopperLineAt(vc, rawHc) & 0x1ffu;
+  uint32_t hcUla = zxnextCopperHcAt(rawHc) & 0x1ffu;
+  uint32_t at = (uint32_t)zxnextCopperListAddress * 2u;
+  uint32_t waiting = zxnextCopperStartMode != 0u && (zxnextCopperMemory[at] & 0x80u) != 0u;
+  return cvc | (hcUla << 9) | (waiting << 18);
+}
+
+static uint32_t zxnextCopperGetTiming(void) {
+  return (uint32_t)ZXNEXT_COPPER_TOTAL_VC | ((uint32_t)ZXNEXT_SCREEN_TOTAL_HC << 16);
+}

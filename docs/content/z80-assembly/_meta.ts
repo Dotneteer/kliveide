@@ -7,6 +7,7 @@ export default {
   pragmas: "Pragmas",
   "zx-next": "ZX Spectrum Next",
   "zx-next-dma": ".dma Pragma Reference",
+  "zx-next-copper": ".copper Pragma Reference",
   statements: "Assembler Statements",
   modules: "Modules",
   macros: "Macros",

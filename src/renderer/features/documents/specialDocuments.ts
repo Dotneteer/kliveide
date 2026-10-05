@@ -1,6 +1,8 @@
 import {
   BASIC_EDITOR,
   BASIC_PANEL_ID,
+  COPPER_EDITOR,
+  COPPER_PANEL_ID,
   DISASSEMBLY_EDITOR,
   DISASSEMBLY_PANEL_ID,
   MEMORY_EDITOR,
@@ -11,7 +13,8 @@ import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumen
 export type SpecialDocumentId =
   | typeof MEMORY_PANEL_ID
   | typeof DISASSEMBLY_PANEL_ID
-  | typeof BASIC_PANEL_ID;
+  | typeof BASIC_PANEL_ID
+  | typeof COPPER_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -39,6 +42,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     id: BASIC_PANEL_ID,
     name: "BASIC Listing",
     type: BASIC_EDITOR,
+    workspaceRestorable: true
+  },
+  // --- The ZX Spectrum Next Copper list (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5)
+  [COPPER_PANEL_ID]: {
+    id: COPPER_PANEL_ID,
+    name: "Copper List",
+    type: COPPER_EDITOR,
+    iconName: "bp-copper",
     workspaceRestorable: true
   }
 };

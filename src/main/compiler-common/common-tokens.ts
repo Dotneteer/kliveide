@@ -142,7 +142,8 @@ export const CommonTokens = {
   CharLiteral: 125,
   StringLiteral: 126,
 
-  PagePragma: 127
+  PagePragma: 127,
+  CopperPragma: 128
 }
 
 export type CommonTokenType = typeof CommonTokens[keyof typeof CommonTokens];
@@ -357,6 +358,11 @@ export const commonResolverHash: { [key: string]: CommonTokenType } = {
   ".DMA": CommonTokens.DmaPragma,
   dma: CommonTokens.DmaPragma,
   DMA: CommonTokens.DmaPragma,
+
+  // --- Only the dotted forms: a bare `copper` would turn `.savenex copper "file"` (whose sub-command
+  // --- is an identifier) and any label named `copper` into this pragma.
+  ".copper": CommonTokens.CopperPragma,
+  ".COPPER": CommonTokens.CopperPragma,
 
   ".macro": CommonTokens.Macro,
   ".MACRO": CommonTokens.Macro,
@@ -656,6 +662,7 @@ commonTokenTraits.set(CommonTokens.CiNotEqual, {});
 commonTokenTraits.set(CommonTokens.Colon, {});
 commonTokenTraits.set(CommonTokens.Comma, {});
 commonTokenTraits.set(CommonTokens.CompareBinPragma, { pragma: true });
+commonTokenTraits.set(CommonTokens.CopperPragma, { pragma: true });
 commonTokenTraits.set(CommonTokens.Continue, { statement: true });
 commonTokenTraits.set(CommonTokens.CurAddress, { expressionStart: true, literal: true });
 commonTokenTraits.set(CommonTokens.CurCnt, { expressionStart: true, literal: true });

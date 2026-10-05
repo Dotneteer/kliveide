@@ -9,6 +9,7 @@ const z80Language = {
     { "include": "#comment" },
     { "include": "#string" },
     { "include": "#dma" },
+    { "include": "#copper" },
     { "include": "#pragma" },
     { "include": "#directive" },
     { "include": "#number" },
@@ -138,6 +139,24 @@ const z80Language = {
     "dmaparams": {
       "name": "keyword.control.z80klive",
       "match": "(?i)\\b(a_to_b|b_to_a|search_transfer|transfer|search|memory|io|increment|decrement|fixed|4t|3t|2t|continuous|burst|byte|auto_restart|dma_enable|int_enable|stop_on_match)\\b"
+    },
+    "copper": {
+      "begin": "(?i)(\\.copper)(?=\\s|$)",
+      "end": "$",
+      "beginCaptures": {
+        "1": { "name": "keyword.control.pragma.z80klive" }
+      },
+      "patterns": [
+        { "include": "#comment" },
+        { "include": "#coppersubcmd" },
+        { "include": "#number" },
+        { "include": "#operator" },
+        { "include": "#identifier" }
+      ]
+    },
+    "coppersubcmd": {
+      "name": "keyword.control.statement.z80klive",
+      "match": "(?i)\\b(wait|move|nop|halt|word)\\b"
     },
     "identifier": {
       "name": "variable.other.identifier.z80klive",

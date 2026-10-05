@@ -176,6 +176,8 @@ export type BreakpointWithAddressArgs = {
   "-m"?: number;
   /** The Next Register a `nr:<register>` spec named. */
   nextReg?: number;
+  /** The Copper list index of a `cu:` breakpoint (ZX Spectrum Next only), `$000-$3FF`. */
+  copperIndex?: number;
   /** Also break on copper writes (NextReg breakpoints only). */
   "-c"?: boolean;
   /** Break only on this written value (NextReg breakpoints only); `-m` masks the comparison. */
@@ -222,6 +224,7 @@ function parseNumericSpec(text: string): number | undefined {
  */
 function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
   const isNextReg = args.nextReg !== undefined;
+  const isCopper = args.copperIndex !== undefined;
   return {
     address: args.address,
     partition: args.partition,
@@ -236,7 +239,8 @@ function breakpointFromArgs(args: BreakpointWithAddressArgs): BreakpointInfo {
     // --- kind takes it and the other must not, or a mask meant for one would arrive as the other.
     nextRegMask: isNextReg && args["-v"] !== undefined ? args["-m"] : undefined,
     nextRegCopper: args["-c"],
-    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg),
+    copperIndex: args.copperIndex,
+    exec: !(args["-r"] || args["-w"] || args["-i"] || args["-o"] || isNextReg || isCopper),
     memoryRead: args["-r"],
     memoryWrite: args["-w"],
     ioRead: args["-i"],
@@ -343,6 +347,31 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
                * `DM`, `M0`-`MF` and one or two hex digits (`parseNextPartitionLabel`), and `nr` is
                * none of those - `n` and `r` are not hex digits.
                */
+              /*
+               * `cu:<index>` - a Copper-instruction breakpoint (`.plans/COPPER_DEBUGGING_PLAN.md`
+               * §4.8). Before the partition gate for the same reason as `nr:`; `cu` cannot shadow a
+               * partition label either (`u` is not a hex digit).
+               */
+              if (segments[0] === "cu") {
+                if (machine.machineId !== MI_ZXNEXT) {
+                  messages = [
+                    validationError("Copper breakpoints are supported on the ZX Spectrum Next only")
+                  ];
+                  break;
+                }
+                const index = parseNumericSpec(segments[1]);
+                if (index === undefined) {
+                  messages = [validationError("Invalid Copper list index")];
+                  break;
+                }
+                if (index < 0 || index > 0x3ff) {
+                  messages = [validationError("A Copper list index must be between $000 and $3FF")];
+                  break;
+                }
+                args.copperIndex = index;
+                break;
+              }
+
               if (segments[0] === "nr") {
                 if (machine.machineId !== MI_ZXNEXT) {
                   messages = [
@@ -542,6 +571,16 @@ export abstract class BreakpointWithAddressCommand extends IdeCommandBase<Breakp
      * value it filters on are meaningless without it.
      */
     const isNextReg = args.nextReg !== undefined;
+    if (
+      args.copperIndex !== undefined &&
+      (bpOptions > 0 || args["-c"] || args["-v"] !== undefined || args["-m"] !== undefined)
+    ) {
+      return [
+        validationError(
+          "A Copper breakpoint watches a list index, not memory, a port or a register"
+        )
+      ];
+    }
     if (isNextReg && bpOptions > 0) {
       return [
         validationError("A NextReg breakpoint watches a register, not memory or a port")
@@ -600,6 +639,7 @@ export class SetBreakpointCommand extends BreakpointWithAddressCommand {
   readonly usage = [
     "bp-set <address-spec> [-r] [-w] [-i] [-o] [-c] [-m <mask>] [-v <value>] [-len <bytes>] [-once] [-log \"<template>\"] [-hit <spec>] [-if <condition>]",
     "-len: a memory breakpoint (-r/-w) over this many bytes, e.g. bp-set $8000 -w -len 5",
+    "cu:<index>: (ZX Spectrum Next) stop when the Copper completes list index $000-$3FF; a WAIT when it is satisfied, e.g. bp-set cu:$00B -hit 50",
     "-once: a one-shot breakpoint, removed the first time it stops the machine; never saved",
     "-log: log the message and continue instead of stopping (a logpoint), e.g. -log \"[LOOP] B={B} HL={HL:hex16}\"",
     "-hit: stop on hit N (N or =N), after it (>N), from it (>=N), before it (<N), up to it (<=N), every Nth (*N)",
@@ -771,6 +811,7 @@ export class ResetBreakpointHitsCommand extends BreakpointWithAddressCommand {
 /** The condition-language kind of the breakpoint a set of `bp-*` arguments describes. */
 function accessKindOfArgs(args: BreakpointWithAddressArgs): ConditionAccessKind {
   if (args.nextReg !== undefined) return "nextReg";
+  if (args.copperIndex !== undefined) return "copper";
   if (args["-r"] || args["-w"]) return "memory";
   if (args["-i"] || args["-o"]) return "io";
   return "exec";

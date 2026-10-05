@@ -266,6 +266,17 @@ export type BreakpointInfo = {
   nextRegCopper?: boolean;
 
   /**
+   * The ZX Spectrum Next **Copper list index** (`$000`-`$3FF`) this breakpoint watches: the machine
+   * stops when the Copper completes that instruction - a MOVE or NOP when it is issued, a WAIT when
+   * its condition is satisfied (`.plans/COPPER_DEBUGGING_PLAN.md` D3, D4).
+   *
+   * Like `nextReg`, the index is the binding and the discriminator; there is no kind flag. Use
+   * `isCopperBreakpoint` in `@common/utils/breakpoint-scope`. It has no Z80 address, no partition
+   * and no gutter in the Z80 disassembly.
+   */
+  copperIndex?: number;
+
+  /**
    * Indicates an execution breakpoint
    */
   exec?: boolean;

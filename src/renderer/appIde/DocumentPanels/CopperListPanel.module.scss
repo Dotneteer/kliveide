@@ -1,0 +1,205 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Copper List document: the instruction table and the raster ruler side by side. Columns are
+ * `ch` (M2); rows take their height from their padding and line box (M3), as a listing pane does.
+ */
+
+.body {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  line-height: var(--panel-line-height);
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--measure-gap);
+  padding: var(--space-0_5) var(--space-2);
+  white-space: nowrap;
+  cursor: default;
+
+  &:hover {
+    background-color: var(--bgcolor-item-hover);
+  }
+}
+
+/* The PC and the last hit are two markers, never one (trap T1). */
+.pcRow {
+  background-color: var(--bgcolor-copper-pc);
+}
+
+.hitRow {
+  background-color: var(--bgcolor-copper-hit);
+}
+
+.selectedRow {
+  outline: 1px solid var(--accent-border);
+  outline-offset: -1px;
+}
+
+/* Slots past the used part of the list recede */
+.unused {
+  color: var(--data-secondary);
+}
+
+.gutter {
+  width: 2ch;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.marker {
+  width: 2ch;
+  flex-shrink: 0;
+  color: var(--color-copper-hit);
+}
+
+.pcRow .marker {
+  color: var(--color-state-value);
+}
+
+.index {
+  width: 5ch;
+  flex-shrink: 0;
+  color: var(--color-state-value);
+}
+
+.word {
+  width: 6ch;
+  flex-shrink: 0;
+  color: var(--color-state-value-alt);
+}
+
+.mnemonic {
+  width: 5ch;
+  flex-shrink: 0;
+  font-weight: 600;
+  color: var(--data-value);
+}
+
+.operands {
+  width: 11ch;
+  flex-shrink: 0;
+  color: var(--data-value);
+}
+
+.meaning {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--data-secondary);
+}
+
+.hitNote {
+  color: var(--color-copper-hit);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1ch;
+  height: 1ch;
+  margin-inline-end: var(--space-1);
+  border: 1px solid var(--border-strong);
+  vertical-align: middle;
+}
+
+.source {
+  width: 24ch;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--data-label);
+}
+
+/* An operand the CPU changed since assembly */
+.patched {
+  color: var(--status-warning);
+}
+
+.warning {
+  color: var(--status-warning);
+}
+
+.nopsRow {
+  cursor: pointer;
+  color: var(--data-secondary);
+  font-style: italic;
+}
+
+.nops {
+  flex: 0 0 auto;
+}
+
+.expandHint {
+  color: var(--text-tertiary);
+}
+
+.summary {
+  color: var(--data-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The raster ruler: a fixed strip, the SVG stretched to its height */
+.ruler {
+  /* Wide enough that the zones read as bands and a tick is a mark, not a scrollbar */
+  flex: 0 0 8ch;
+  display: flex;
+  border-inline-start: 1px solid var(--border-default);
+  padding: var(--space-1);
+}
+
+.rulerSvg {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.zonePaper {
+  fill: var(--bgcolor-copper-ruler-paper);
+}
+
+.zoneLower {
+  fill: var(--bgcolor-copper-ruler-lower);
+}
+
+.zoneUpper {
+  fill: var(--bgcolor-copper-ruler-upper);
+}
+
+.tick {
+  stroke: var(--color-copper-tick);
+  stroke-width: 2px;
+}
+
+.tickPark {
+  stroke: var(--color-copper-tick-park);
+  stroke-width: 2px;
+  stroke-dasharray: 2 2;
+}
+
+.beam {
+  stroke: var(--color-copper-beam);
+  stroke-width: 1px;
+}
+
+.hit {
+  stroke: var(--color-copper-hit);
+  stroke-width: 2px;
+}

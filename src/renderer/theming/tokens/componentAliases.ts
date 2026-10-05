@@ -597,6 +597,25 @@ export const componentAliases: Record<string, string> = {
    */
   "--color-state-value-alt": "var(--accent-secondary-text)",
 
+  // --- Copper views (`.plans/COPPER_DEBUGGING_PLAN.md` §4.4, §4.5) -----------------------------
+  /*
+   * The raster ruler's three zones, in `cvc` order. The paper takes the accent's subtle fill
+   * because it is where the list's effects are seen; the borders are neutral surfaces, the lower
+   * one (border and blanking, mostly invisible) a step stronger than the upper.
+   */
+  "--bgcolor-copper-ruler-paper": "var(--accent-subtle)",
+  "--bgcolor-copper-ruler-lower": "var(--surface-active)",
+  "--bgcolor-copper-ruler-upper": "var(--surface-hover)",
+  /* A WAIT's tick: the state value when it can match, muted when it never can (trap T5). */
+  "--color-copper-tick": "var(--color-state-value)",
+  "--color-copper-tick-park": "var(--text-tertiary)",
+  /* The live beam is neutral; the hit is the execution point's colour, as everywhere else. */
+  "--color-copper-beam": "var(--text-primary)",
+  "--color-copper-hit": "var(--color-breakpoint-current)",
+  /* The Copper's PC row and the hit row: two distinct markers (trap T1). */
+  "--bgcolor-copper-pc": "var(--accent-subtle)",
+  "--bgcolor-copper-hit": "var(--status-warning-subtle)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 
