@@ -254,22 +254,48 @@ describe("Z88 LCD", () => {
   });
 
   /*
-   * OZ 5 places a large Screen Base File from the top of a bank downwards: SBF $0127 is $24:3800, and
-   * a 40-row file (10K) runs past $3FFF. The Blink addresses the file inside its bank, so row 8 is at
-   * offset $0000 of the same bank (OZvm's `Bank.getByte` wraps the offset). Reading on into the next
-   * bank painted that bank's bytes as "noise" from row 8 down (`.plans/Z88_OZVM_PARITY_PLAN.md` §1).
+   * The SBF register is a 24-bit pointer, a bank and a page offset, and the Screen Base File runs from
+   * that offset to the end of the bank: the Blink stops scanning rows at the 16K boundary. So the page
+   * offset sets the file's size - $3800 is 2K (8 rows), $2000 8K (32 rows) - and the LCD shows no more
+   * rows than that, however tall it is; the rest stays unlit (OZvm `Z88Lcd`, commit b8f617b6). Sizing
+   * the file from the LCD height read past $3FFF and painted unrelated bytes as "noise".
    */
-  it("a Screen Base File near the top of its bank wraps to the start of the same bank", async () => {
+  it("a 2K Screen Base File ($3800) on a 40-row LCD draws 8 rows; the rest stays unlit", async () => {
     const s = await lcdSession({ size: "640x320" });
     outWord(s, 0x74, (0x22 << 3) | (0x3800 >> 11)); // SBF = $0117: bank $22, offset $3800
     s.poke(LORES1 + 0x41 * 8, [0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f]);
     s.poke(SCREEN + 0x3800, [0x41, 0x00]); // row 0, column 0
-    s.poke(SCREEN + 0x0000, [0x41, 0x00, 0x00, 0x00, 0x41, 0x00]); // row 8: wrapped to offset $0000
+    s.poke(SCREEN + 0x3f00, [0x41, 0x00]); // row 7, the last row of the file
+    s.poke(SCREEN + 0x0000, [0x41, 0x00]); // offset $0000 of the same bank: not part of the file
+    // --- Bank $23 (the next one) holds LORES1: lit pixels there would show as cells, too
     renderOnce(s);
-    expect(rowPixels(s, 0, 0, 6)).toEqual([ON, ON, ON, ON, ON, ON]);
-    expect(rowPixels(s, 0, 64, 18)).toEqual([...Array(6).fill(ON), ...Array(6).fill(OFF), ...Array(6).fill(ON)]);
-    // --- Bank $23 (the next one) holds LORES1, never drawn as screen cells: row 9 is offset $0100
-    expect(rowPixels(s, 0, 72, 6)).toEqual(Array(6).fill(OFF));
+    expect(rowPixels(s, 0, 0, 6)).toEqual(Array(6).fill(ON));
+    expect(rowPixels(s, 0, 56, 6)).toEqual(Array(6).fill(ON));
+    const below = s.screen().slice(64 * 640);
+    expect(below).toHaveLength(256 * 640);
+    expect(below.every((p) => p === OFF)).toBe(true);
+  });
+
+  it("the page offset sets the size: SBF at $2000 is 8K, 32 rows", async () => {
+    const s = await lcdSession({ size: "640x320" });
+    outWord(s, 0x74, (0x22 << 3) | (0x2000 >> 11)); // bank $22, offset $2000
+    s.poke(LORES1 + 0x41 * 8, [0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f]);
+    s.poke(SCREEN + 0x2000 + 31 * 256, [0x41, 0x00]); // row 31, the last row of the file
+    s.poke(SCREEN + 0x0000, [0x41, 0x00]); // would be row 32 if the offset wrapped
+    renderOnce(s);
+    expect(rowPixels(s, 0, 31 * 8, 6)).toEqual(Array(6).fill(ON));
+    expect(s.screen().slice(32 * 8 * 640).every((p) => p === OFF)).toBe(true);
+  });
+
+  it("rows a smaller Screen Base File no longer covers turn unlit", async () => {
+    const s = await lcdSession({ size: "640x256" });
+    s.poke(LORES1 + 0x41 * 8, [0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f, 0x3f]);
+    cell(s, 20, 0, 0x41, 0x00); // SBF at offset $0000: 16K, every row of the LCD
+    renderOnce(s);
+    expect(rowPixels(s, 0, 20 * 8, 6)).toEqual(Array(6).fill(ON));
+    outWord(s, 0x74, (0x22 << 3) | (0x3800 >> 11)); // OZ moves to a 2K file
+    renderOnce(s);
+    expect(s.screen().slice(64 * 640).every((p) => p === OFF)).toBe(true);
   });
 
   it("the screen is read through the bank map: a card smaller than its slot is mirrored", async () => {

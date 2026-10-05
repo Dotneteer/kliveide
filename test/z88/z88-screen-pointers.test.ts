@@ -34,9 +34,12 @@ describe("Z88 LCD pointer registers decoded (issue #1417)", () => {
     expect(formatZ88Ext24(0)).toBe("000000h");
   });
 
-  it("the Screen Base File is 256 bytes per text row", () => {
-    expect(z88SbfSize(8)).toBe(2048);
-    expect(z88SbfSize(40)).toBe(10240);
+  it("the Screen Base File runs from its page offset to the end of the bank", () => {
+    expect(z88SbfSize(0x0127)).toBe(0x0800); // $24:3800, 2K: 8 rows
+    expect(z88SbfSize(0x010f)).toBe(0x0800); // $21:3800, OZ 5's standard file
+    expect(z88SbfSize((0x20 << 3) | (0x2000 >> 11))).toBe(0x2000); // $20:2000, 8K: 32 rows
+    expect(z88SbfSize(0x20 << 3)).toBe(0x4000); // $20:0000, the whole bank
+    expect(z88SbfSize(0)).toBe(0x0800); // unset: the standard 2K, as OZvm
   });
 });
 

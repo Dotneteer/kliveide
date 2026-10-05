@@ -94,7 +94,7 @@ export const BlinkPanel = () => {
       <Separator />
       <PointerFieldRow
         label="SBF"
-        tooltip={`Screen Base File - ${z88SbfSize(blinkState?.SCH ?? 8) / 1024}K of character/attribute pairs (256 bytes per text row), typically in RAM. In brackets: the bank and offset it points at.`}
+        tooltip={`Screen Base File - ${z88SbfSize(blinkState?.SBF ?? 0) / 1024}K (${z88SbfSize(blinkState?.SBF ?? 0) / 256} text rows of 256 bytes) of character/attribute pairs, typically in RAM. It runs from its offset to the end of the bank, so the offset sets its size. In brackets: the bank and offset it points at.`}
         value={blinkState?.SBF}
         decode={z88SbfAddress}
       />

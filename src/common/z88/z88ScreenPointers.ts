@@ -56,9 +56,15 @@ export function z88SbfAddress(value: number): Z88ScreenPointer {
   return fromExt24(((((value << 5) & 0xff00) | ((value << 3) & 0x0038)) << 8) >>> 0);
 }
 
-/** The size of the Screen Base File for an LCD of `sch` text rows: 256 bytes a row (2K on 64 lines) */
-export function z88SbfSize(sch: number): number {
-  return sch * 256;
+/**
+ * The size of the Screen Base File for an SBF register value: the file runs from its page offset to
+ * the end of the bank, where the Blink stops scanning rows - $3800 is 2K (8 text rows of 256 bytes),
+ * $2000 8K (32 rows). An unset register counts as the standard 2K, as in OZvm's
+ * `Z88Lcd.readBlinkScreenRegisters`. The LCD shows at most this many rows, however tall it is.
+ */
+export function z88SbfSize(value: number): number {
+  const sbf = z88SbfAddress(value);
+  return sbf.ext24 ? 0x4000 - sbf.offset : 0x0800;
 }
 
 /** A 24-bit extended address as OZvm prints it: six hex digits and `h` (`243800h`) */

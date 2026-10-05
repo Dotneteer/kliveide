@@ -8,12 +8,18 @@
  * LORES0), HIRES cells 8 pixels (10-bit code; $300+ come from HIRES1), the cursor is a LORES cell
  * inverted while TIM0 <= 120, a null cell takes no space, FLS cells vanish every other second.
  *
- * Every byte is read as a bank and an offset (`z88PeekBank`), as OZvm's `Z88Lcd` reads them: the
- * offset wraps inside its 16K bank, and the bank goes through the bank map, so a card smaller than its
- * slot is mirrored and an empty slot reads $FF; a flash card's command state never affects the
- * picture. The wrap matters on the larger LCDs: OZ 5 places a big SBF from the top of a bank
- * downwards (SBF $0127 is $24:3800), and a 40-row file runs past $3FFF back to $0000 of the same
- * bank. Reading on into the next bank painted that bank's bytes as "noise" from row 8 down.
+ * Every byte is read as a bank and an offset (`z88PeekBank`), as OZvm's `Z88Lcd` reads them: the bank
+ * goes through the bank map, so a card smaller than its slot is mirrored and an empty slot reads $FF;
+ * a flash card's command state never affects the picture.
+ *
+ * The SBF register is a 24-bit pointer, a bank and the page offset inside it, and the Screen Base File
+ * runs from that offset up to the end of the bank: the Blink stops scanning rows when its page counter
+ * reaches the 16K boundary. The page offset therefore sets the file's size - $3800 is 2K (8 rows, what
+ * every ROM uses), $2000 is 8K (32 rows), $0000 16K - and the LCD shows at most that many rows, however
+ * tall it is (OZvm `Z88Lcd.readBlinkScreenRegisters`, Gunther Strube's fix of 2026-10-05). The rows below
+ * the file stay unlit. Sizing the file from the LCD height instead read past $3FFF - into the next bank,
+ * or wrapped to $0000 of the same one - and painted unrelated bytes as "noise" (a 2K SBF on a 640x320
+ * LCD).
  *
  * Until SBF and all four PB registers are set, the LCD shows the "off" picture (OZvm's
  * `isLcdEnabledAndBound`): OZ sets them up one by one while booting, and a half-set screen drew garbage.
@@ -214,9 +220,13 @@ static void z88DrawScreen(void) {
   const uint32_t sbf = z88SbfAddress();
   const uint8_t sbfBank = (uint8_t)(sbf >> 16);
 
-  uint32_t coordY = 0u;
+  /* The file runs from its page offset to the end of the bank: (0x4000 - offset) / 256 rows */
   uint32_t rowOffset = sbf & 0x3fffu;
-  for (uint32_t rowCount = z88Sch; rowCount; rowCount--) {
+  uint32_t sbfRows = (0x4000u - rowOffset) / Z88_SBF_ROW_WIDTH;
+  if (sbfRows > z88Sch) sbfRows = z88Sch;
+
+  uint32_t coordY = 0u;
+  for (uint32_t rowCount = sbfRows; rowCount; rowCount--) {
     uint32_t coordX = 0u;
     uint32_t cellOffset = rowOffset;
     for (uint32_t column = ctrlCharsPerRow + 1u; column; column--, cellOffset += 2u) {
@@ -243,6 +253,10 @@ static void z88DrawScreen(void) {
     coordY += 8u;
     rowOffset += Z88_SBF_ROW_WIDTH;
   }
+
+  /* The LCD rows below the Screen Base File are unlit */
+  const uint32_t words = z88GetScreenHeight() * z88LcdWidth;
+  for (uint32_t ptr = coordY * z88LcdWidth; ptr < words; ptr++) z88PixelBuffer[ptr] = Z88_PX_OFF;
 }
 
 /*

@@ -1,6 +1,6 @@
 # Z88 ↔ OZvm Parity Plan
 
-Status: **implemented** (2026-10-04), with the decisions of §9. §10 records what was done and what
+Status: **implemented** (2026-10-04); the SBF size follow-up of §11 on 2026-10-05, with the decisions of §9. §10 records what was done and what
 was deliberately left out. The core's `README.md` ("Brought to OZvm's behaviour") is the durable
 summary.
 
@@ -352,3 +352,37 @@ SCW/SCH and keeps the 2K Screen Base File (SBF $010F) on every LCD size, so on 6
 draws only 8 rows and whatever lies in the rest of the bank below them - in OZvm too. The clean
 40-row PipeDream of the recordings needs the newer OZ 5 build that allocates the larger SBF
 ($0127, $24:3800); the wrap of Phase 1.1 is what that build relies on.
+
+## 11. Follow-up: the SBF's size comes from its page offset (2026-10-05)
+
+Gunther Strube found the real cause of the noise and fixed OZvm (commit `b8f617b6`, "Fixed SBF size
+algorithm, based Page offset returned from SBF register"). §1's reading was wrong: the Blink does not
+wrap a large SBF inside its bank.
+
+- The SBF register is a 24-bit pointer: a bank and the page offset inside it. The file runs from that
+  offset up to `$3FFF`; the hardware stops scanning rows when the page counter reaches the 16K
+  boundary. So the offset *is* the size: `$3800` = 2K (8 rows, every ROM), `$2000` = 8K (32 rows).
+- OZvm now sets `sbfSize = 0x4000 - (sbf & 0x3FFF)` and renders rows while
+  `rowOffset < sbfSize && y < lcdHeight`. Rows past the file are not touched; the whole LCD is
+  pre-painted unlit (`PXCOLOFF`) on construction and on every resolution change.
+- The old size was the LCD height × 256, so a 2K SBF on a 640x320 LCD read 8K past it - Klive's
+  §1 wrap merely moved where the noise came from (offset `$0000` of the same bank instead of the next
+  bank).
+
+Klive (`z88-screen.c`): draws `min(SCH, (0x4000 - offset) / 256)` rows and paints the LCD rows below
+them unlit (`Z88_PX_OFF`) on every render - the same picture as OZvm's pre-paint, but independent of
+earlier frames (deliberate, recorded in the core's `README.md`). Font reads keep the in-bank offset
+wrap, which OZvm still has (`Bank.getByte`).
+
+The IDE had the same misreading: `z88SbfSize` (`@common/z88/z88ScreenPointers`) took SCH and the
+Blink panel's SBF tooltip said "SCH × 256" (Phase 2.4). It now takes the SBF value and returns
+`0x4000 - offset` (2K for an unset register, as OZvm); `z88-screen-pointers.test.ts` covers it.
+
+Tests (`test/z88/z88-lcd.test.ts`): the wrap test is replaced by a 2K SBF at `$3800` on a 40-row LCD
+(8 rows drawn, the rest unlit, offset `$0000` never read), an 8K SBF at `$2000` (32 rows), and rows a
+smaller file no longer covers turning unlit. The goldens put SBF at offset `$0000` (16K), so they are
+unchanged. Checked by booting the bundled `z88v50b.rom` (SBF `$010F` = `$21:3800`) at 640x256/320/480:
+8 rows of OZ, every row below unlit.
+
+The other OZvm changes since `9e15b4c` (SD/MMC card emulation over SPI, `SdCard`, `SpiController`,
+`Z88MmcCard`) are a new feature, not a parity fix, and are not taken up here.
