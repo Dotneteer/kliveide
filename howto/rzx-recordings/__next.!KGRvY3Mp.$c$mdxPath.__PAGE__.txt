@@ -1,0 +1,175 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"ClientWrapper"]
+5:T19b7,---
+description: "Play, debug, record, roll back and render RZX input recordings on the ZX Spectrum 48K, 128K and +2E/+3E."
+---
+
+import { Callout } from 'nextra/components'
+
+# Playing and Recording RZX Files
+
+An RZX file is a ZX Spectrum session you can replay exactly. It holds a snapshot of the machine and,
+after it, every value the program read from a port (the keyboard, the joystick, the tape, the
+floating bus, the sound chip) together with how many instructions ran between two interrupts.
+Playing it back answers every port read from the file, so the program takes exactly the same path
+it took when it was recorded - in Klive or in another emulator.
+
+Thousands of verified game playthroughs are shared this way, and an RZX file is also the most exact
+bug report you can hand someone: they see what you saw, frame by frame.
+
+Klive plays and records RZX files (version 0.13) on the ZX Spectrum 48K (and 16K, NTSC), the 128K
+and the +2E/+3E. A recording made on a +2A or +3 plays on Klive's Amstrad models, with the ROMs the
+original machine had.
+
+## Playing a recording
+
+Any of these plays a recording, switching the emulator to the machine it needs:
+
+- **File &rarr; Play RZX Recording...**, or **Machine &rarr; RZX &rarr; Play Recording...** in the
+  Emulator;
+- dropping the `.rzx` file onto the Emulator window;
+- **Play recording** in the Explorer's context menu, or the **Play** button in the recording's
+  document tab;
+- the [`zx-rzx`](../commands-reference#zx-rzx) command.
+
+While a recording plays, the Emulator's status bar shows a **PLAY** badge with the frame counter.
+The keyboard does nothing: every key the program reads comes from the file.
+
+When the recording ends, the machine pauses. Resume it to go on playing yourself, or start a
+recording from there (below).
+
+<Callout type="info">
+Tape loading inside a recording runs at real speed, even with fast load on: the tape's bits are
+part of the recording. The clock multiplier is held at 1 while a recording plays or records.
+</Callout>
+
+## Debugging inside a recording
+
+**Debug recording** (the context menu, the **Debug** button, or `zx-rzx <file> -d`) loads the
+recording and stops at its first instruction. From there, everything the debugger does works while
+the recording plays: breakpoints, stepping, the memory, disassembly and register panels. Continue,
+and playback goes on from where it stopped.
+
+Changing the machine from outside the program ends the playback, with a message saying why: editing
+memory or a register, injecting code, a reset, loading a snapshot or a state, switching the machine,
+and changing the tape or a disk. A breakpoint, a step or reading a panel never does.
+
+## When a recording desyncs
+
+If the program reads more port values in a frame than the recording holds, or fewer, the playback
+has *desynced*: from here on it would no longer follow the recording. Klive pauses the machine at
+the instruction that desynced and says which frame it was, how many values the frame held and how
+many the program read, and which emulator made the recording. You can inspect the machine from
+there, or resume it to carry on live.
+
+Recordings desync for reasons outside the file: a different ROM (the ROM is not in the file), or an
+emulator that handled an edge case differently. The recording's viewer shows the warnings Klive
+knows of before you play it.
+
+## Viewing a recording
+
+Open an `.rzx` file from the Explorer to see:
+
+- **RZX Recording**: the version, the program that made it, the machine it plays on, the number of
+  frames and the playing time, whether Klive can play it, and anything the reader noticed (blocks
+  it skipped, a signature it does not verify);
+- **Segments**: each snapshot inside the file starts a segment. The play button beside a segment
+  plays the recording from there (`zx-rzx <file> -s <n>`);
+- the first snapshot, exactly as the [snapshot viewer](./spectrum-snapshots#viewing-a-snapshot) shows
+  it: the screen, the registers, the paging, the RAM banks.
+
+## Recording
+
+**Machine &rarr; RZX &rarr; Record** (or `zx-rzx-record`) starts recording from the machine's current
+state. The machine can be running or paused - including paused at the end of a playback, or in the
+middle of one, which is how you take over a recording and continue it yourself. The status bar shows
+a **REC** badge with the frame counter.
+
+Every five seconds the recording stores a snapshot, so you can go back to it:
+
+- **Roll Back** (`zx-rzx-rollback`) returns to the latest rollback point and discards everything
+  recorded after it; `zx-rzx-rollback 2` goes back one point further, and so on. The machine is
+  paused at the point; resume to record on.
+- **Insert Rollback Point** (`zx-rzx-point`) adds a point of your own at the next frame.
+
+Older rollback points are thinned out as the recording goes on: all of them are kept for the last 15
+seconds, then one every 15 seconds up to a minute, one a minute up to five minutes, and one every
+five minutes after that. Points you insert are always kept.
+
+**Stop and Save...** (`zx-rzx-stop <file>`) stops recording and saves the file. The saved file keeps
+the first snapshot and every frame; the rollback points are left out, as other emulators expect.
+
+<Callout type="warning">
+Anything that changes the machine from outside the program stops the recording too (see above). The
+frames recorded so far are kept; save them with **Stop and Save...**. The REC badge stays, in the
+warning colour, until you do.
+</Callout>
+
+## Rendering a recording to video
+
+**Machine &rarr; RZX &rarr; Render Recording to Video...** (or `zx-rzx-video <file>`) plays a recording
+into a video file with the [screen recorder](./screen-recording), using its frame rate, quality and
+format settings. The recording plays as fast as the emulator can run it, with the speaker muted; the
+sound still goes into the video, and the video plays at the normal speed. Add `-t` to the command to
+render in real time instead. The video stops by itself when the recording ends, or at a desync, and
+the output names the file.
+
+The IDE + Emulator window recording is not started automatically, but you can start it by hand
+while a recording plays at normal speed.
+
+## Limits
+
+- Signed recordings play, but Klive does not verify their signatures. Recordings that refer to an
+  external snapshot file, and encrypted (protected) input blocks, are refused.
+- The ZX Spectrum Next, ZX80/81 and Z88 have no RZX conventions; Pentagon, Scorpion and Timex
+  recordings need machines Klive does not have.
+- You cannot seek to an arbitrary frame; you can start from any segment.a:X
+f:X
+f:C
+0:{"buildId":"4iKu8YjCPDPYIpEJqwxYX","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Playing a recording","id":"playing-a-recording","depth":2},{"value":"Debugging inside a recording","id":"debugging-inside-a-recording","depth":2},{"value":"When a recording desyncs","id":"when-a-recording-desyncs","depth":2},{"value":"Viewing a recording","id":"viewing-a-recording","depth":2},{"value":"Recording","id":"recording","depth":2},{"value":"Rendering a recording to video","id":"rendering-a-recording-to-video","depth":2},{"value":"Limits","id":"limits","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Play, debug, record, roll back and render RZX input recordings on the ZX Spectrum 48K, 128K and +2E/+3E.","title":"Playing and Recording RZX Files","filePath":"content/howto/rzx-recordings.mdx","timestamp":1791192423000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"HeadingAnchor"]
+13:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],""]
+2b:I[484,[],"OutletBoundary"]
+2c:"$Sreact.suspense"
+2e:I[484,[],"ViewportBoundary"]
+2f:I[484,[],"MetadataBoundary"]
+30:I[7121,[],""]
+31:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Playing and Recording RZX Files","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"An RZX file is a ZX Spectrum session you can replay exactly. It holds a snapshot of the machine and,\nafter it, every value the program read from a port (the keyboard, the joystick, the tape, the\nfloating bus, the sound chip) together with how many instructions ran between two interrupts.\nPlaying it back answers every port read from the file, so the program takes exactly the same path\nit took when it was recorded - in Klive or in another emulator."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Thousands of verified game playthroughs are shared this way, and an RZX file is also the most exact\nbug report you can hand someone: they see what you saw, frame by frame."}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive plays and records RZX files (version 0.13) on the ZX Spectrum 48K (and 16K, NTSC), the 128K\nand the +2E/+3E. A recording made on a +2A or +3 plays on Klive’s Amstrad models, with the ROMs the\noriginal machine had."}],"\n",["$","h2",null,{"id":"playing-a-recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Playing a recording",["$","$L12",null,{"id":"playing-a-recording"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Any of these plays a recording, switching the emulator to the machine it needs:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"File → Play RZX Recording…"}],", or ",["$","strong",null,{"children":"Machine → RZX → Play Recording…"}]," in the\nEmulator;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["dropping the ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".rzx"}]," file onto the Emulator window;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Play recording"}]," in the Explorer’s context menu, or the ",["$","strong",null,{"children":"Play"}]," button in the recording’s\ndocument tab;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","$L13",null,{"href":"../commands-reference#zx-rzx","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx"}]}]," command."]}],"\n"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While a recording plays, the Emulator’s status bar shows a ",["$","strong",null,{"children":"PLAY"}]," badge with the frame counter.\nThe keyboard does nothing: every key the program reads comes from the file."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the recording ends, the machine pauses. Resume it to go on playing yourself, or start a\nrecording from there (below)."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":"$L14"}],"$L15"]}],"\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a"]}]
+8:["$","$L2b",null,{"children":["$","$2c",null,{"name":"Next.MetadataOutlet","children":"$@2d"}]}]
+b:["$","$1","h",{"children":[null,["$","$L2e",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2f",null,{"children":["$","$2c",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Playing and Recording RZX Files - Klive IDE"}],["$","meta","1",{"name":"description","content":"Play, debug, record, roll back and render RZX input recordings on the ZX Spectrum 48K, 128K and +2E/+3E."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L30",null,{"parallelRouterKey":"children","template":["$","$L31",null,{}]}]]}]
+11:true
+14:["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]
+15:["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Tape loading inside a recording runs at real speed, even with fast load on: the tape’s bits are\npart of the recording. The clock multiplier is held at 1 while a recording plays or records."}]}]
+16:["$","h2",null,{"id":"debugging-inside-a-recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Debugging inside a recording",["$","$L12",null,{"id":"debugging-inside-a-recording"}]]}]
+17:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Debug recording"}]," (the context menu, the ",["$","strong",null,{"children":"Debug"}]," button, or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx <file> -d"}],") loads the\nrecording and stops at its first instruction. From there, everything the debugger does works while\nthe recording plays: breakpoints, stepping, the memory, disassembly and register panels. Continue,\nand playback goes on from where it stopped."]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Changing the machine from outside the program ends the playback, with a message saying why: editing\nmemory or a register, injecting code, a reset, loading a snapshot or a state, switching the machine,\nand changing the tape or a disk. A breakpoint, a step or reading a panel never does."}]
+19:["$","h2",null,{"id":"when-a-recording-desyncs","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["When a recording desyncs",["$","$L12",null,{"id":"when-a-recording-desyncs"}]]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["If the program reads more port values in a frame than the recording holds, or fewer, the playback\nhas ",["$","em",null,{"children":"desynced"}],": from here on it would no longer follow the recording. Klive pauses the machine at\nthe instruction that desynced and says which frame it was, how many values the frame held and how\nmany the program read, and which emulator made the recording. You can inspect the machine from\nthere, or resume it to carry on live."]}]
+1b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Recordings desync for reasons outside the file: a different ROM (the ROM is not in the file), or an\nemulator that handled an edge case differently. The recording’s viewer shows the warnings Klive\nknows of before you play it."}]
+1c:["$","h2",null,{"id":"viewing-a-recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Viewing a recording",["$","$L12",null,{"id":"viewing-a-recording"}]]}]
+1d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Open an ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".rzx"}]," file from the Explorer to see:"]}]
+1e:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"RZX Recording"}],": the version, the program that made it, the machine it plays on, the number of\nframes and the playing time, whether Klive can play it, and anything the reader noticed (blocks\nit skipped, a signature it does not verify);"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Segments"}],": each snapshot inside the file starts a segment. The play button beside a segment\nplays the recording from there (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx <file> -s <n>"}],");"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the first snapshot, exactly as the ",["$","$L13",null,{"href":"./spectrum-snapshots#viewing-a-snapshot","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"snapshot viewer"}]," shows\nit: the screen, the registers, the paging, the RAM banks."]}],"\n"]}]
+1f:["$","h2",null,{"id":"recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Recording",["$","$L12",null,{"id":"recording"}]]}]
+20:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Machine → RZX → Record"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-record"}],") starts recording from the machine’s current\nstate. The machine can be running or paused - including paused at the end of a playback, or in the\nmiddle of one, which is how you take over a recording and continue it yourself. The status bar shows\na ",["$","strong",null,{"children":"REC"}]," badge with the frame counter."]}]
+21:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Every five seconds the recording stores a snapshot, so you can go back to it:"}]
+22:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Roll Back"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-rollback"}],") returns to the latest rollback point and discards everything\nrecorded after it; ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-rollback 2"}]," goes back one point further, and so on. The machine is\npaused at the point; resume to record on."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Insert Rollback Point"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-point"}],") adds a point of your own at the next frame."]}],"\n"]}]
+23:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Older rollback points are thinned out as the recording goes on: all of them are kept for the last 15\nseconds, then one every 15 seconds up to a minute, one a minute up to five minutes, and one every\nfive minutes after that. Points you insert are always kept."}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Stop and Save…"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-stop <file>"}],") stops recording and saves the file. The saved file keeps\nthe first snapshot and every frame; the rollback points are left out, as other emulators expect."]}]
+25:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:18:props:children:0:props:style","data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Anything that changes the machine from outside the program stops the recording too (see above). The\nframes recorded so far are kept; save them with ",["$","strong",null,{"children":"Stop and Save…"}],". The REC badge stays, in the\nwarning colour, until you do."]}]}]]}]
+26:["$","h2",null,{"id":"rendering-a-recording-to-video","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Rendering a recording to video",["$","$L12",null,{"id":"rendering-a-recording-to-video"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Machine → RZX → Render Recording to Video…"}]," (or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"zx-rzx-video <file>"}],") plays a recording\ninto a video file with the ",["$","$L13",null,{"href":"./screen-recording","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"screen recorder"}],", using its frame rate, quality and\nformat settings. The recording plays as fast as the emulator can run it, with the speaker muted; the\nsound still goes into the video, and the video plays at the normal speed. Add ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-t"}]," to the command to\nrender in real time instead. The video stops by itself when the recording ends, or at a desync, and\nthe output names the file."]}]
+28:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The IDE + Emulator window recording is not started automatically, but you can start it by hand\nwhile a recording plays at normal speed."}]
+29:["$","h2",null,{"id":"limits","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Limits",["$","$L12",null,{"id":"limits"}]]}]
+2a:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Signed recordings play, but Klive does not verify their signatures. Recordings that refer to an\nexternal snapshot file, and encrypted (protected) input blocks, are refused."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The ZX Spectrum Next, ZX80/81 and Z88 have no RZX conventions; Pentagon, Scorpion and Timex\nrecordings need machines Klive does not have."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"You cannot seek to an arbitrary frame; you can start from any segment."}],"\n"]}]
+2d:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
