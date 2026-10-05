@@ -123,6 +123,30 @@ const SPECTRUM_DISPLAY: DisplaySpec = {
 const SPECTRUM_KEYBOARD = [{ label: "Keyboard", value: "40-key Spectrum" }];
 const SPECTRUM_TAPE = "Tape (TAP, TZX)";
 
+/** The TC2068 and TS2068: the TC2048 plus the EXROM, the chunk map, the AY and the cartridge */
+function TIMEX_2068_SPECS(id: "tc2068" | "ts2068"): Overrides {
+  const model = TIMEX_MODELS_INFO[id];
+  return {
+    rom: [
+      { id, kb: 16, role: "HOME ROM; your copy, or the 48K ROM" },
+      { id: `${id}-exrom`, kb: 8, role: "EXROM, from the same file" }
+    ],
+    bankKb: 8,
+    addressSpace: "64K as eight 8K chunks, each HOME, DOCK or EXROM (port $F4)",
+    timing: {
+      perLine: model.tactsPerLine,
+      linesPerFrame: model.linesPerFrame,
+      perFrame: model.tactsPerFrame,
+      note: model.ntsc
+        ? "60 Hz at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+        : "The 48K's raster at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+    },
+    sound: ["Beeper", "AY-3-8912 PSG (ports $F5/$F6)"],
+    media: [SPECTRUM_TAPE, "Cartridge (.dck) in the DOCK"],
+    input: [...SPECTRUM_KEYBOARD, { label: "Joysticks", value: "2, read through the AY" }]
+  };
+}
+
 const ZX8081_BASE: HardwareSpecEntry = {
   cpu: "Zilog Z80",
   clockHz: ZX8081_BASE_CLOCK_FREQUENCY,
@@ -227,6 +251,13 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       sound: ["Beeper"],
       media: [SPECTRUM_TAPE],
       input: [...SPECTRUM_KEYBOARD, { label: "Joystick", value: "Kempston, built in" }]
+    },
+    models: {
+      tc2068: TIMEX_2068_SPECS("tc2068"),
+      ts2068: {
+        ...TIMEX_2068_SPECS("ts2068"),
+        display: { rasterHeight: 240 }
+      }
     }
   },
   [MI_SPECTRUM_3E]: {
@@ -457,7 +488,9 @@ export function getHardwareSpec(machine: MachineInfo, modelId?: string): Hardwar
     modelId: model?.modelId,
     standard,
     clockMultiplier: machine.features?.[MF_ALLOW_CLOCK_MULTIPLIER] !== false,
-    bankCount: typeof banks === "number" ? banks : undefined,
+    // --- Only a model with paged memory (a bank size) has banks: the Timex machine declares the
+    // --- 2068s' chunks, which the TC2048 lacks
+    bankCount: typeof banks === "number" && spec.bankKb ? banks : undefined,
     timing: { ...spec.timing, frameHz }
   };
 }

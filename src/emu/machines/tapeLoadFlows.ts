@@ -14,14 +14,17 @@ import { SP48_MAIN_ENTRY, SP_KEY_WAIT } from "./ZxSpectrumBase";
 
 const toHexa4 = (value: number) => value.toString(16).toUpperCase().padStart(4, "0");
 
-/** The 48K: reach the editor, then type `LOAD ""` and ENTER. */
-export function sp48TapeLoadFlow(): CodeInjectionFlow {
+/**
+ * The 48K: reach the editor, then type `LOAD ""` and ENTER.
+ * @param mainEntry The ROM's main loop entry ($12AC; the Timex machines pass their ROM's)
+ */
+export function sp48TapeLoadFlow(mainEntry = SP48_MAIN_ENTRY): CodeInjectionFlow {
   return [
     {
       type: "ReachExecPoint",
       rom: 0,
-      execPoint: SP48_MAIN_ENTRY,
-      message: `Main execution cycle point reached (ROM0/$${toHexa4(SP48_MAIN_ENTRY)})`
+      execPoint: mainEntry,
+      message: `Main execution cycle point reached (ROM0/$${toHexa4(mainEntry)})`
     },
     { type: "KeepPc" },
     { type: "Start" },

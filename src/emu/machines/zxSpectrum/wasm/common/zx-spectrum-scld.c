@@ -158,15 +158,20 @@ static void renderUlaTact(uint32_t tact) {
   }
 }
 
-/* The SCLD after a reset: the primary display file, interrupts on, joystick released */
+/* The SCLD after a reset: the primary display file, interrupts on, HOME mapped, joysticks released */
 static void scldReset(void) {
   sp48ScldPortFf = 0u;
   sp48KempstonState = 0u;
+  sp48TimexPortF4 = 0u;
+  sp48TimexJoystick[0] = 0u;
+  sp48TimexJoystick[1] = 0u;
+  timexRebuildChunkMap();
 }
 
 /*
  * Writes the control register. The picture is drawn up to now first, so a mode change takes effect
- * at the tact of the OUT, as the fetches that follow it see the new mode.
+ * at the tact of the OUT, as the fetches that follow it see the new mode. Bit 7 switches the 2068's
+ * external chunks between DOCK and EXROM.
  */
 static void scldWritePortFf(uint32_t value) {
   const uint8_t next = (uint8_t)(value & 0xffu);
@@ -174,29 +179,90 @@ static void scldWritePortFf(uint32_t value) {
     return;
   }
   renderUlaUntilCurrentTact();
+  const uint8_t bankChanged = ((next ^ sp48ScldPortFf) & 0x80u) != 0u;
   sp48ScldPortFf = next;
+  if (bankChanged && sp48TimexChunked != 0u) timexRebuildChunkMap();
+}
+
+/* Port $F4, the Horizontal Select Register (the 2068s) */
+static void timexWritePortF4(uint32_t value) {
+  sp48TimexPortF4 = (uint8_t)(value & 0xffu);
+  timexRebuildChunkMap();
+}
+
+/* The ULA's port: A0 low on the TC2048 (as the 48K), the full low byte $FE on the 2068s */
+static inline uint8_t scldIsUlaPort(uint32_t address) {
+  return sp48TimexFullDecode != 0u ? (address & 0xffu) == 0xfeu : (address & 0x01u) == 0u;
 }
 
 /*
- * The ports with A0 set (the ULA's own port has A0 low):
+ * The AY's I/O port A, as the 2068 wires it to the joysticks (TS2068 Technical Manual 2.1.7, 4.3):
+ * an IN from $F6 with register 14 selected and port A an input reads the player 1 stick while A8 is
+ * high and the player 2 stick while A9 is high, low active - bit 0 up, 1 down, 2 left, 3 right,
+ * 7 the button, bits 4-6 always 1.
+ */
+static uint32_t timexReadJoysticks(uint32_t address) {
+  uint32_t value = 0xffu;
+  for (uint32_t side = 0u; side < 2u; side++) {
+    if ((address & (0x100u << side)) == 0u) continue;
+    const uint8_t pins = sp48TimexJoystick[side];
+    uint32_t pressed = 0u;
+    if ((pins & 0x08u) != 0u) pressed |= 0x01u; /* up */
+    if ((pins & 0x04u) != 0u) pressed |= 0x02u; /* down */
+    if ((pins & 0x02u) != 0u) pressed |= 0x04u; /* left */
+    if ((pins & 0x01u) != 0u) pressed |= 0x08u; /* right */
+    if ((pins & 0x10u) != 0u) pressed |= 0x80u; /* fire */
+    value &= ~pressed & 0xffu;
+  }
+  return value;
+}
+
+static uint32_t timexReadAyData(uint32_t address) {
+  const uint8_t index = sp128PsgRegisterIndex & 0x0fu;
+  if (sp128PsgActive != 0u && index == SP128_AY_PORTA && (sp128PsgRegisters[SP128_AY_ENABLE] & 0x40u) == 0u) {
+    return timexReadJoysticks(address);
+  }
+  return sp128PsgDataRead();
+}
+
+/*
+ * The ports the ULA does not answer:
  * - $FF (the full low byte): the SCLD control register, read back as written;
- * - A5 low: the TC2048's built-in Kempston joystick, bits 0-4 right, left, down, up, fire, active
+ * - the 2068s: $F4 (read/write), $F5 (the AY's register select), $F6 (the AY's data, and the
+ *   joysticks through register 14);
+ * - the TC2048: A5 low is the built-in Kempston joystick, bits 0-4 right, left, down, up, fire, active
  *   high. Klive decodes A5 alone, as the Kempston interface does (plan §8: the TC2048's own decoding
  *   is not documented);
  * - anything else: the floating bus, as on the 48K.
  */
 static uint32_t scldReadNonFePort(uint32_t address) {
-  if ((address & 0xffu) == 0xffu) {
+  const uint32_t low = address & 0xffu;
+  if (low == 0xffu) {
     return sp48ScldPortFf;
   }
-  if ((address & 0x20u) == 0u) {
+  if (sp48TimexHasAy != 0u) {
+    if (low == 0xf4u) return sp48TimexPortF4;
+    if (low == 0xf6u) return timexReadAyData(address);
+  }
+  if (sp48TimexKempston != 0u && (address & 0x21u) == 0x01u) {
     return sp48KempstonState;
   }
   return sp48ReadFloatingBus();
 }
 
 static void scldWriteNonFePort(uint32_t address, uint32_t value) {
-  if ((address & 0xffu) == 0xffu) {
+  const uint32_t low = address & 0xffu;
+  if (low == 0xffu) {
     scldWritePortFf(value);
+    return;
+  }
+  if (sp48TimexHasAy != 0u) {
+    if (low == 0xf4u) {
+      timexWritePortF4(value);
+    } else if (low == 0xf5u) {
+      sp128PsgAddressWrite(value);
+    } else if (low == 0xf6u) {
+      sp128PsgDataWrite(value);
+    }
   }
 }

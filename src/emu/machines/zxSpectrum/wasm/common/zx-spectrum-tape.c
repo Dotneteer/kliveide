@@ -532,10 +532,15 @@ uint32_t sp48TapeGetFastLoad(void) {
   return sp48TapeFastLoad;
 }
 
+/* Whether the ROM holding the tape routines is paged where the CPU runs them (Timex: HOME or EXROM) */
+#ifndef SP48_TAPE_TRAP_ACTIVE
+#define SP48_TAPE_TRAP_ACTIVE() 1
+#endif
+
 static void updateTapeMode(void) {
   const uint32_t pc = z80GetPc();
   if (sp48TapeMode == SP48_TAPE_MODE_PASSIVE) {
-    if (pc == SP48_TAPE_LOAD_BYTES_ROUTINE) {
+    if (pc == SP48_TAPE_LOAD_BYTES_ROUTINE && SP48_TAPE_TRAP_ACTIVE()) {
       setTapeModeInternal(SP48_TAPE_MODE_LOAD);
       sp48TapeLoadStartCount++;
       nextTapeBlock();
@@ -543,7 +548,7 @@ static void updateTapeMode(void) {
         fastLoadCurrentTapeBlock();
         setTapeModeInternal(SP48_TAPE_MODE_PASSIVE);
       }
-    } else if (pc == SP48_TAPE_SAVE_BYTES_ROUTINE) {
+    } else if (pc == SP48_TAPE_SAVE_BYTES_ROUTINE && SP48_TAPE_TRAP_ACTIVE()) {
       setTapeModeInternal(SP48_TAPE_MODE_SAVE);
       sp48TapeSaveStartCount++;
       beginTapeSaveCapture();

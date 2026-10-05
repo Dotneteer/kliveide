@@ -122,11 +122,14 @@ describe("TC2048 frame and contention", () => {
           halt
           di
           ld hl,$4000
-          ld b,0
+          ld bc,3000         ; longer than a frame, so the loop crosses the paper
       Loop:
-          ld a,(hl)         ; a contended read every iteration, across the paper
+          ld a,(hl)          ; a read of the display RAM every iteration
           inc hl
-          djnz Loop
+          dec bc
+          ld a,b
+          or c
+          jr nz,Loop
           ret
     `;
     const t = await createTimexSession();
@@ -134,10 +137,12 @@ describe("TC2048 frame and contention", () => {
     const measure = async (s: typeof t | typeof z) => {
       s.bootToBasic();
       await s.loadCode(program);
-      s.call("Main", { maxFrames: 3 });
+      s.call("Main", { maxFrames: 8 });
       return s.machine.totalContentionDelaySinceStart;
     };
-    expect(await measure(t)).toBe(await measure(z));
+    const timex = await measure(t);
+    expect(timex).toBeGreaterThan(1000);
+    expect(timex).toBe(await measure(z));
   });
 
   it("puts the SCLD's fetch on the floating bus, from the display file the mode selects", async () => {

@@ -99,7 +99,9 @@ const TARGETS: Record<
   },
   plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" },
   pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" },
-  tc2048: { machineId: MI_TIMEX, modelIds: ["tc2048"], kliveName: "Timex Computer 2048" }
+  tc2048: { machineId: MI_TIMEX, modelIds: ["tc2048"], kliveName: "Timex Computer 2048" },
+  tc2068: { machineId: MI_TIMEX, modelIds: ["tc2068"], kliveName: "Timex Computer 2068" },
+  ts2068: { machineId: MI_TIMEX, modelIds: ["ts2068"], kliveName: "Timex Sinclair 2068" }
 };
 
 /** The display names of the models the mapping can pick */
@@ -118,7 +120,7 @@ export function kliveSpectrumName(machineId: string, modelId: string | undefined
   if (machineId === MI_SPECTRUM_48) return "ZX Spectrum 48K";
   if (machineId === MI_SPECTRUM_128) return "ZX Spectrum 128K";
   if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2A/+3/+2E/+3E";
-  if (machineId === MI_TIMEX) return "Timex Computer 2048";
+  if (machineId === MI_TIMEX) return "Timex TC2048/TC2068/TS2068";
   return machineId;
 }
 

@@ -8,6 +8,9 @@
 export {
   createTimexSession,
   hasTc2048Rom,
+  hasTimexRom,
+  TIMEX_ROM_PATHS,
+  type TimexSessionOptions,
   SPECTRUM_COLORS,
   TC2048_ROM_PATH,
   TimexTestSession

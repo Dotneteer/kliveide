@@ -74,13 +74,13 @@ describe("hardware specs against the cores", () => {
     await expectMatches(machine, "sp128", modelId);
   });
 
-  it("Timex Computer 2048 (the 704-wide buffer is the 352-pixel raster at two pixels each)", async () => {
+  it.each(["tc2048", "tc2068", "ts2068"])("Timex %s (the 704-wide buffer is the 352-pixel raster at two pixels each)", async (modelId) => {
     buildTimexWasm();
-    const model = machineRegistry.find((m) => m.machineId === "timex")!.models!.find((m) => m.modelId === "tc2048")!;
+    const model = machineRegistry.find((m) => m.machineId === "timex")!.models!.find((m) => m.modelId === modelId)!;
     const machine = new Timex(model, model.config, {
       artifactName: "machine-timex.wasm",
       readArtifact: async () => readFileSync(timexWasm)
     });
-    await expectMatches(machine, "timex", "tc2048", 2);
+    await expectMatches(machine, "timex", modelId, 2);
   });
 });

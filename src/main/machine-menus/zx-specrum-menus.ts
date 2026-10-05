@@ -13,7 +13,8 @@ import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { logEmuEvent, setMachineType } from "@main/registeredMachines";
 import { dialog, BrowserWindow, app } from "electron";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
+import { ejectDock, selectDockFile } from "./timex-menus";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/app-menu";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
@@ -332,7 +333,9 @@ export async function setSelectedTapeFile(
  * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
  */
 export async function selectMediaFile(browserWindow: BrowserWindow, mediaId: string): Promise<void> {
-  if (mediaId === MEDIA_TAPE) {
+  if (mediaId === MEDIA_DOCK) {
+    await selectDockFile(browserWindow);
+  } else if (mediaId === MEDIA_TAPE) {
     await setTapeFile(browserWindow, mainStore.getState());
   } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
     const index = mediaId === MEDIA_DISK_B ? 1 : 0;
@@ -349,7 +352,9 @@ export async function selectMediaFile(browserWindow: BrowserWindow, mediaId: str
  * @param mediaId MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B
  */
 export async function ejectMediaFile(mediaId: string): Promise<void> {
-  if (mediaId === MEDIA_TAPE) {
+  if (mediaId === MEDIA_DOCK) {
+    await ejectDock();
+  } else if (mediaId === MEDIA_TAPE) {
     await ejectTape(true);
   } else if (mediaId === MEDIA_DISK_A || mediaId === MEDIA_DISK_B) {
     const index = mediaId === MEDIA_DISK_B ? 1 : 0;

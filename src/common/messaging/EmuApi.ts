@@ -100,6 +100,22 @@ class EmuApiImpl {
   }
 
   /**
+   * Inserts a `.dck` cartridge into a Timex 2068's DOCK (`.plans/TIMEX_SCORPION_PLAN.md` G9.4b); a
+   * running machine restarts, since the ROM looks for a cartridge when it starts
+   * @param _file The cartridge file
+   * @param _contents Its bytes
+   * @returns Why it cannot be inserted, or undefined
+   */
+  async setDockFile(_file: string, _contents: Uint8Array): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /** Removes the cartridge from the DOCK; a running machine restarts */
+  async ejectDock(): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Loads a `.z88` (OZvm) snapshot into the emulator, rebuilding the machine as a Z88 that fits it
    * when needed (`.plans/Z88_SNAPSHOT_PLAN.md` §4.5).
    * @param _contents The `.z88` file

@@ -62,7 +62,7 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "timex"]);
+    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });
@@ -91,7 +91,7 @@ describe("Select Machine dialog", () => {
     const h = open().do({ type: "filterChanged", text: "ntsc" });
     expect(h.vm.sections.some((s) => s.kind === "favorites")).toBe(false);
     const keys = h.vm.sections.flatMap((s) => (s.kind === "leaf" ? [s.row.key] : s.kind === "machine" ? s.rows.map((r) => r.key) : []));
-    expect(keys).toEqual(["sp48/ntsc", "zxnext/standard", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
+    expect(keys).toEqual(["sp48/ntsc", "zxnext/standard", "timex/ts2068", "zx81/zx81-16k-us", "zx81/zx81-1k-us", "c64/ntsc"]);
     expect(h.vm.sections.every((s) => s.kind === "leaf" || s.open)).toBe(true);
 
     h.do({ type: "filterChanged", text: "z88 128k" });

@@ -34,7 +34,7 @@ import {
   MI_ZX81,
   MI_TIMEX
 } from "./constants";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
 import { DisassemblyOptions, MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
@@ -341,20 +341,25 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
-    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a): a 48K with Timex's SCLD - the
-    // --- extra screen modes, port $FF, a built-in Kempston port. No ROM pages or RAM banks.
+    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md`): the TC2048 (G9.4a), a 48K with Timex's
+    // --- SCLD - the extra screen modes, port $FF, a Kempston port; the TC2068/TS2068 (G9.4b) add the
+    // --- 8K chunk map (HOME/DOCK/EXROM partitions H0-H7, D0-D7, X0-X7), the AY and the cartridge.
     machineId: MI_TIMEX,
-    displayName: "Timex Computer 2048",
+    displayName: "Timex TC2048/TC2068/TS2068",
     charSet: ZxSpectrumChars,
     features: {
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_INJECT_SUPPORT]: true,
       [MF_ULA]: true,
-      [MF_JOYSTICK_SUPPORT]: true
+      [MF_JOYSTICK_SUPPORT]: true,
+      [MF_PSG]: true,
+      [MF_ROM]: 2,
+      [MF_BANK]: 8
     },
     models: TIMEX_MODELS,
-    mediaIds: [MEDIA_TAPE],
+    // --- The DOCK is the 2068s' (their model config); the TC2048 has none
+    mediaIds: [MEDIA_TAPE, MEDIA_DOCK],
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],

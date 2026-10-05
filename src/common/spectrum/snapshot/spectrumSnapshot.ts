@@ -24,7 +24,9 @@ export type SnapshotMachineKind =
   | "plus3"
   | "plus3e"
   | "pentagon"
-  | "tc2048";
+  | "tc2048"
+  | "tc2068"
+  | "ts2068";
 
 /**
  * The machine the snapshot was taken on, as the file says it. `unsupported` names a machine Klive
@@ -80,12 +82,26 @@ export type SpectrumSnapshotPaging = {
   port1ffd?: number;
 };
 
+/** An 8K page of a 2068's DOCK or EXROM bank (`.szx` DOCK block) */
+export type SnapshotDockPage = {
+  /** 0-7: the chunk */
+  page: number;
+  /** The DOCK bank (else the EXROM bank) */
+  dock: boolean;
+  /** Read-write */
+  ram: boolean;
+  /** The 8K */
+  data: Uint8Array;
+};
+
 /** The Timex SCLD's registers (`.szx` SCLD block; `.z80` bytes 35-36 in a Timex mode) */
 export type SpectrumSnapshotTimex = {
   /** Port $F4, the 2068's chunk paging (0 on the TC2048) */
   portF4: number;
-  /** Port $FF: the screen mode, the 64-column colours, the interrupt inhibit */
+  /** Port $FF: the screen mode, the 64-column colours, the interrupt inhibit, the EXROM select */
   portFf: number;
+  /** The cartridge's pages (the 2068s; `.szx` only) */
+  dock?: SnapshotDockPage[];
 };
 
 /** The AY-3-8912 sound chip */
@@ -241,6 +257,10 @@ export function snapshotMachineName(machine: SnapshotMachine): string {
       return "Pentagon 128";
     case "tc2048":
       return "Timex TC2048";
+    case "tc2068":
+      return "Timex TC2068";
+    case "ts2068":
+      return "Timex TS2068";
   }
 }
 
@@ -261,9 +281,20 @@ export function isPlus3SnapshotMachine(machine: SnapshotMachine): boolean {
   return machine === "plus2a" || machine === "plus3" || machine === "plus3e";
 }
 
+/** Is this a Timex machine (the SCLD's port $FF)? */
+export function isTimexSnapshotMachine(machine: SnapshotMachine): boolean {
+  return machine === "tc2048" || machine === "tc2068" || machine === "ts2068";
+}
+
+/** Is this a Timex 2068 (the chunk map, the built-in AY, the DOCK)? */
+export function isTimex2068SnapshotMachine(machine: SnapshotMachine): boolean {
+  return machine === "tc2068" || machine === "ts2068";
+}
+
 /** The machine's frame length in T-states (the cores' values) */
 export function snapshotFrameLength(machine: SnapshotMachine): number {
   if (machine === "48k-ntsc") return 59136;
+  if (machine === "ts2068") return 58688;
   if (machine === "pentagon") return 71680;
   return isPagedSnapshotMachine(machine) ? 70908 : 69888;
 }

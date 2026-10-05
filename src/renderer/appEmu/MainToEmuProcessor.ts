@@ -18,7 +18,8 @@ import { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import { BinaryReader } from "@common/utils/BinaryReader";
 import type { ISpectrumPsgDevice } from "@emu/machines/zxSpectrum/ISpectrumPsgDevice";
 import { isZ88IdeMachine } from "@emu/machines/z88/IZ88IdeMachine";
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
+import { dockBankOf, parseDckFile } from "@common/timex/dckFile";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
@@ -178,6 +179,39 @@ class EmuMessageProcessor {
    * @param confirm Optional flag to show confirmation.
    * @param suppressError Optional flag to suppress errors.
    */
+  /**
+   * Inserts a `.dck` cartridge (the Timex 2068s): the media store keeps it for the next machine, and a
+   * live machine gets it and restarts, so its ROM finds the cartridge
+   */
+  async setDockFile(file: string, contents: Uint8Array): Promise<string | undefined> {
+    let image;
+    try {
+      image = parseDckFile(contents);
+    } catch (err) {
+      return `${(err as Error).message}`;
+    }
+    if (!dockBankOf(image)) return "The file holds no DOCK bank";
+    mediaStore.addMedia({ id: MEDIA_DOCK, mediaFile: file, mediaContents: image });
+    await this.restartWithDock(image);
+    return undefined;
+  }
+
+  /** Removes the cartridge, from the media store and from a live machine, which restarts */
+  async ejectDock(): Promise<void> {
+    mediaStore.addMedia({ id: MEDIA_DOCK, mediaFile: undefined, mediaContents: undefined });
+    await this.restartWithDock(undefined);
+  }
+
+  private async restartWithDock(image: unknown): Promise<void> {
+    const controller = this.machineService.getMachineController();
+    if (!controller?.machine) return;
+    controller.machine.setMachineProperty(MEDIA_DOCK, image);
+    const state = controller.state;
+    if (state === MachineControllerState.Running || state === MachineControllerState.Paused) {
+      await controller.restart();
+    }
+  }
+
   async setTapeFile(
     file: string,
     contents: Uint8Array,

@@ -16,7 +16,9 @@
 #ifndef SP48_BASE_CLOCK_FREQUENCY_PAL
 #define SP48_BASE_CLOCK_FREQUENCY_PAL 3500000u
 #endif
+#ifndef SP48_BASE_CLOCK_FREQUENCY_NTSC
 #define SP48_BASE_CLOCK_FREQUENCY_NTSC 3527500u
+#endif
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
 #define SP48_AUDIO_TRANSITION_CAPACITY 8192u
@@ -37,10 +39,13 @@
 #define SP48_TAPE_BIT0_PULSE_LENGTH 855u
 #define SP48_TAPE_BIT1_PULSE_LENGTH 1710u
 #define SP48_TAPE_TERM_SYNC_PULSE_LENGTH 947u
+/* The ROM's tape routines the tape device traps (the Timex core sets them per ROM) */
+#ifndef SP48_TAPE_LOAD_BYTES_ROUTINE
 #define SP48_TAPE_LOAD_BYTES_ROUTINE 0x056cu
 #define SP48_TAPE_LOAD_BYTES_INVALID_HEADER_ROUTINE 0x05b6u
 #define SP48_TAPE_LOAD_BYTES_RESUME_ROUTINE 0x05e2u
 #define SP48_TAPE_SAVE_BYTES_ROUTINE 0x04c2u
+#endif
 #define SP48_DIAGNOSTIC_TAPE_BLOCK_OVERFLOW 0x00000004u
 #define SP48_DIAGNOSTIC_TAPE_DATA_OVERFLOW 0x00000008u
 #define SP48_DIAGNOSTIC_TAPE_UPLOAD_INCOMPLETE 0x00000010u
@@ -262,12 +267,44 @@ static uint32_t sp48TapeSaveCurrentBlockLength;
 static uint8_t sp48ScldPortFf;
 static uint8_t sp48ScldHiresBright = 1u;
 static uint8_t sp48KempstonState;
+/*
+ * The model's hardware (`timexHardReset`): the TC2048 has the Kempston port and the flat 48K map;
+ * the TC2068/TS2068 have the 8K chunk map (port $F4), the AY on $F5/$F6 with the joysticks, and
+ * decode the full low byte of every port, $FE included.
+ */
+static uint8_t sp48TimexKempston = 1u;
+static uint8_t sp48TimexChunked;
+static uint8_t sp48TimexHasAy;
+static uint8_t sp48TimexFullDecode;
+/* Port $F4, the Horizontal Select Register: bit n set maps chunk n from DOCK or EXROM ($FF bit 7) */
+static uint8_t sp48TimexPortF4;
+/* The two joysticks' pins, Kempston order (right, left, down, up, fire), active high */
+static uint8_t sp48TimexJoystick[2];
+/* The 8K Extension ROM, and the DOCK (cartridge) bank: 64K of data and a type per chunk */
+static uint8_t sp48TimexExrom[0x2000];
+static uint8_t sp48TimexExromLoaded;
+static uint8_t sp48TimexDock[0x10000];
+/* Per DOCK chunk, as a .dck header says: bit 0 RAM (else ROM), bit 1 present */
+static uint8_t sp48TimexDockChunkType[8];
+/* What a chunk with nothing behind it reads */
+static uint8_t sp48TimexOpenBus[0x2000];
+/* The CPU's view of the address space: where each 8K chunk reads and writes, and its source */
+static uint8_t *sp48TimexChunkBase[8];
+static uint8_t sp48TimexChunkWritable[8];
+static uint8_t sp48TimexChunkSource[8];
+static uint8_t sp48TimexChunkMapValid;
 #endif
 
 static void setNextAudioSample(void);
 static void renderUlaUntilCurrentTact(void);
 static uint32_t normalizeClockMultiplier(uint32_t value);
 
+#ifdef SP48_SCLD
+/* The TC2068/TS2068's AY-3-8912 (`zx-spectrum-psg.c`, as the 128K's), clocked at CPU / 2 */
+#define sp128Tacts sp48Tacts
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-psg.c"
+#undef sp128Tacts
+#endif
 #include "sp48-memory.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ula.c"
 
@@ -387,14 +424,14 @@ static void SP48_CPU_NOINLINE sp48CpuDelayPortAccess(uint32_t address) {
 }
 
 static void SP48_CPU_NOINLINE sp48CpuDelayMemoryRead(uint32_t address) {
-  if ((address & 0xc000u) == 0x4000u) {
+  if (SP48_CONTENDED_MEMORY(address)) {
     sp48CpuApplyContention();
   }
   sp48CpuTactPlusN(3u);
 }
 
 static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
-  if ((address & 0xc000u) == 0x4000u) {
+  if (SP48_CONTENDED_MEMORY(address)) {
     sp48CpuApplyContention();
   }
 }
@@ -418,8 +455,16 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 #undef SP48_CPU_NOINLINE
 
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
+#ifdef SP48_SCLD
+/* The 2068s' AY joins the beeper in every audio sample */
+#define SP48_AUDIO_BEFORE_SAMPLE(sampleEndTact) \
+  do { if (sp48TimexHasAy != 0u) sp128PsgPrepareAudioSample(sampleEndTact); } while (0)
+#define SP48_AUDIO_EXTRA_LEFT() (sp48TimexHasAy != 0u ? sp128PsgAudioLevel() : 0.0)
+#define SP48_AUDIO_EXTRA_RIGHT() (sp48TimexHasAy != 0u ? sp128PsgAudioLevel() : 0.0)
+#endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"
 #ifdef SP48_SCLD
+#define SP48_PORT_IS_ULA(address) scldIsUlaPort(address)
 #define SP48_PORT_READ_NON_FE(address) scldReadNonFePort(address)
 #define SP48_PORT_WRITE_NON_FE(address, value) scldWriteNonFePort((address), (value))
 #endif
@@ -504,6 +549,10 @@ static void sp48ShiftTactOrigin(int64_t amount) {
   sp48TapeStartTact -= by;
   sp48TapeLastModeChangeTact -= by;
   sp48TapeSaveLastMicBitTact -= by;
+#ifdef SP48_SCLD
+  sp128PsgNextClockTact -= by;
+  sp128PsgLastAccumulationTact -= byDouble;
+#endif
 }
 
 static void completeMachineFrame(void) {
@@ -561,6 +610,9 @@ void sp48Reset(void) {
   sp48InterruptLineActive = 0u;
   resetTapePlayback();
   resetAudio();
+#ifdef SP48_SCLD
+  resetPsg();
+#endif
   renderUlaDisplay();
 }
 
@@ -710,7 +762,7 @@ void sp48RzxSetFrameTact(uint32_t tact) {
 }
 
 void sp48DelayAddressBusAccess(uint32_t address) {
-  if ((address & 0xc000u) == 0x4000u) {
+  if (SP48_CONTENDED_MEMORY(address)) {
     applyContentionDelay();
   }
 }
@@ -1181,5 +1233,9 @@ uint32_t sp48GetDiagnosticFlags(void) {
 // this machine's side-effect-free reads. The 48K has no partitions, so the defaults stand for them.
 // -----------------------------------------------------------------------------
 
+#ifdef SP48_SCLD
+#define COND_PEEK(address) ((uint32_t)sp48CpuReadMemory((uint32_t)(address)))
+#else
 #define COND_PEEK(address) ((uint32_t)sp48Memory[(address) & 0xffffu])
+#endif
 #include "../../../../z80/wasm/z80-condition.c"

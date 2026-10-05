@@ -117,6 +117,21 @@ describe("machine state: save, load into another machine, run = keep running", (
     expect(a.peek(0xa000)).toBeGreaterThan(20);
   });
 
+  it("Timex Sinclair 2068 (a cartridge chunk mapped, the AY running)", async () => {
+    const a = await createTimexSession({ model: "ts2068" });
+    const b = await createTimexSession({ model: "ts2068" });
+    // --- machine id 12; chunk 6 from cartridge RAM; an AY tone
+    const dock = [0x06, 0x00, 0x06, ...new Array(0x2000).fill(0)];
+    const ay = [0x00, 0x07, 0x40, 0x00, 0, 0, 0, 0, 0, 0x3e, 0x0f, 0, 0, 0, 0, 0, 0, 0];
+    a.loadSnapshot("p.szx", spectrumSnapshot(false, 12, [szxBlock("SCLD", [0x40, 0x00]), szxBlock("DOCK", dock), szxBlock("AY", ay)]));
+    b.bootToBasic();
+    a.runFrames(4).step(1237);
+    expect(a.exports.timexGetPortF4()).toBe(0x40);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 25);
+    expect(b.exports.timexGetChunkSource(6)).toBe(1);
+    expect(a.peek(0xa000)).toBeGreaterThan(20);
+  });
+
   it.each<Sp128SessionModel>(["sp128", "nofdd", "fdd1"])("ZX Spectrum 128K / +3E (%s)", async (model) => {
     const a = await createSp128Session(model);
     const b = await createSp128Session(model);

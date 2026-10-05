@@ -11,6 +11,9 @@ export const DISK_B_CHANGES = "DiskBChanges";
 export const TRDOS_ROM_FILE = "TrdosRomFile";
 /** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
 export const TIMEX_ROM_FILE = "TimexRomFile";
+/** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */
+export const TC2068_ROM_FILE = "Tc2068RomFile";
+export const TS2068_ROM_FILE = "Ts2068RomFile";
 /** A TR-DOS disk in drive A / B that the guest changed but that is not written back (an `.scl`) */
 export const DISK_A_UNSAVED = "DiskAUnsaved";
 export const DISK_B_UNSAVED = "DiskBUnsaved";

@@ -19,6 +19,8 @@ import {
   type SpectrumSnapshot,
   type SpectrumSnapshotPeripherals,
   isPagedSnapshotMachine,
+  isTimexSnapshotMachine,
+  isTimex2068SnapshotMachine,
   isPlus3SnapshotMachine
 } from "./spectrumSnapshot";
 
@@ -127,6 +129,12 @@ function machineOf(
       break;
     case 14:
       machine = "tc2048";
+      break;
+    case 15:
+      machine = "tc2068";
+      break;
+    case 128:
+      machine = "ts2068";
       break;
     default:
       machine = { unsupported: HW_MODE_EXTENDED[mode] ?? `unknown hardware mode ${mode}` };
@@ -260,7 +268,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   const { machine, interface1, mgt } = machineOf(version, hwMode, modified);
   const paged = isPagedSnapshotMachine(machine);
   // --- In a Timex mode bytes 35 and 36 are the last OUTs to $F4 and $FF, not $7FFD and Interface 1
-  const timexMode = machine === "tc2048";
+  const timexMode = isTimexSnapshotMachine(machine);
   if (interface1 || (!timexMode && bytes[36] === 0xff)) peripherals.interface1 = true;
   if (mgt) peripherals.mgt = true;
 
@@ -310,12 +318,14 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   }
 
   // --- The AY chip: built into the 128K models, an add-on of a 48K when byte 37 bit 2 says so
-  const hasAy = paged || (flags3 & 0x04) !== 0;
+  // --- (and built into the 2068s)
+  const builtInAy = paged || isTimex2068SnapshotMachine(machine);
+  const hasAy = builtInAy || (flags3 & 0x04) !== 0;
   if (hasAy) {
     result.ay = {
       selected: bytes[38] & 0x0f,
       regs: bytes.slice(39, 55),
-      on48k: paged ? undefined : true
+      on48k: builtInAy ? undefined : true
     };
   }
 
@@ -323,7 +333,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   if (version === 3) {
     const low = readWord(bytes, 55);
     const high = bytes[57];
-    const quarter = paged ? 17727 : 17472;
+    const quarter = paged ? 17727 : machine === "ts2068" ? 58688 / 4 : 17472;
     header.push({ label: "T-state counter", value: `${hex(high)} / ${hex(low, 4)}` });
     if (low < quarter) {
       // --- The high counter is 3 just after the interrupt and counts up every quarter frame;

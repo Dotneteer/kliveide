@@ -34,7 +34,7 @@ import {
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 import { machineStateMenuRenderer } from "./state-menus";
 import { rzxMenuRenderer } from "./rzx-menus";
-import { kempstonJoystickMenuRenderer, timexRomMenuRenderer } from "./timex-menus";
+import { timexDockMenuRenderer, timexJoystickMenuRenderer, timexRomMenuRenderer } from "./timex-menus";
 
 /**
  * Machine-specific menu information
@@ -65,7 +65,8 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_TIMEX]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
-      ...kempstonJoystickMenuRenderer(windowInfo, machine, model),
+      ...timexDockMenuRenderer(windowInfo, machine, model),
+      ...timexJoystickMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model),
       ...timexRomMenuRenderer(windowInfo, machine, model)

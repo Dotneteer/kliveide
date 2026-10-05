@@ -16,6 +16,9 @@ export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
 /** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
 export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
+/** The TC2068's and TS2068's 24K ROM files (the HOME ROM, then the EXROM); Klive cannot ship them */
+export const SETTING_EMU_TC2068_ROM = "emuOptions.tc2068RomFile";
+export const SETTING_EMU_TS2068_ROM = "emuOptions.ts2068RomFile";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_STEP_IN_INTERRUPTS = "emuOptions.sourceStepStopsInInterrupts";
 export const SETTING_EMU_STOP_ON_ERRORS = "emuOptions.stopOnRuntimeErrors";

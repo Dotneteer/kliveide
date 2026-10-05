@@ -16,6 +16,8 @@ import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_TC2048_ROM,
+  SETTING_EMU_TC2068_ROM,
+  SETTING_EMU_TS2068_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -219,6 +221,28 @@ const settingDefinitions: Setting[] = [
       "The 16K ROM the Timex Computer 2048 boots. Klive cannot ship Timex's ROM (its rights are " +
       "unclear), so without your own copy the TC2048 boots the Sinclair 48K ROM, which differs from " +
       "it only by a hook that clears port $FF when it starts up.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TC2068_ROM,
+    title: "TC2068 ROM file",
+    description:
+      "The 24K ROM the Timex Computer 2068 boots: its 16K HOME ROM followed by its 8K EXROM. Klive " +
+      "cannot ship it; without it the TC2068 boots the Sinclair 48K ROM and has no EXROM.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TS2068_ROM,
+    title: "TS2068 ROM file",
+    description:
+      "The 24K ROM the Timex Sinclair 2068 boots: its 16K HOME ROM followed by its 8K EXROM. Klive " +
+      "cannot ship it; without it the TS2068 boots the Sinclair 48K ROM and has no EXROM.",
     type: "string",
     defaultValue: "",
     saveWithIde: true,

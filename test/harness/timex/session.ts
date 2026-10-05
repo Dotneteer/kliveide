@@ -2,9 +2,11 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { TimexWasmV2Machine } from "@emu/machines/timex/TimexWasmV2Machine";
-import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
+import { TIMEX_MODELS, type TimexModelId } from "@emu/machines/timex/timexModels";
 import type { TimexWasmV2Exports } from "@emu/machines/timex/wasm/TimexWasmV2Loader";
-import { TIMEX_ROM_FILE } from "@emu/machines/machine-props";
+import { TC2068_ROM_FILE, TIMEX_ROM_FILE, TS2068_ROM_FILE } from "@emu/machines/machine-props";
+import { MEDIA_DOCK } from "@common/structs/project-const";
+import type { DckImage } from "@common/timex/dckFile";
 
 import { Sp48TestSession } from "../sp48/session";
 import { buildTimexWasm, productionOutput } from "../../../scripts/build-timex-wasm.cjs";
@@ -13,11 +15,26 @@ import { buildTimexWasm, productionOutput } from "../../../scripts/build-timex-w
 const SP48_ROM_PATH = join(__dirname, "../../../src/public/roms/sp48.rom");
 
 /**
- * A TC2048 ROM for the ROM-gated tests. Klive cannot ship it (`.plans/TIMEX_SCORPION_PLAN.md` P5),
- * so a developer who has one names it in `KLIVE_TC2048_ROM`; without it those tests are skipped.
+ * The Timex ROMs for the ROM-gated tests. Klive cannot ship them (`.plans/TIMEX_SCORPION_PLAN.md`
+ * P5), so a developer who has them names them in `KLIVE_TC2048_ROM`, `KLIVE_TC2068_ROM` and
+ * `KLIVE_TS2068_ROM` (the 2068s' as one 24K file, HOME then EXROM); without them those tests are
+ * skipped.
  */
-export const TC2048_ROM_PATH = process.env.KLIVE_TC2048_ROM;
-export const hasTc2048Rom = (): boolean => !!TC2048_ROM_PATH && existsSync(TC2048_ROM_PATH);
+export const TIMEX_ROM_PATHS: Record<TimexModelId, string | undefined> = {
+  tc2048: process.env.KLIVE_TC2048_ROM,
+  tc2068: process.env.KLIVE_TC2068_ROM,
+  ts2068: process.env.KLIVE_TS2068_ROM
+};
+export const TC2048_ROM_PATH = TIMEX_ROM_PATHS.tc2048;
+export const hasTimexRom = (model: TimexModelId): boolean =>
+  !!TIMEX_ROM_PATHS[model] && existsSync(TIMEX_ROM_PATHS[model]!);
+export const hasTc2048Rom = (): boolean => hasTimexRom("tc2048");
+
+const ROM_PROPERTY: Record<TimexModelId, string> = {
+  tc2048: TIMEX_ROM_FILE,
+  tc2068: TC2068_ROM_FILE,
+  ts2068: TS2068_ROM_FILE
+};
 
 /**
  * The core's 16 colours (`sp48SpectrumColors` in zx-spectrum-ula.c), as the pixel buffer holds them
@@ -29,12 +46,12 @@ export const SPECTRUM_COLORS = [
 ].map((c) => c >>> 0);
 
 class HarnessTimexMachine extends TimexWasmV2Machine {
-  constructor(private readonly rom: Uint8Array, romPath?: string) {
-    super(TIMEX_MODELS[0], {}, {
+  constructor(private readonly rom: Uint8Array, model: TimexModelId, romPath?: string) {
+    super(TIMEX_MODELS.find((m) => m.modelId === model), {}, {
       artifactName: "harness-timex.wasm",
       readArtifact: async () => readFileSync(productionOutput)
     });
-    if (romPath) this.setMachineProperty(TIMEX_ROM_FILE, romPath);
+    if (romPath) this.setMachineProperty(ROM_PROPERTY[model], romPath);
   }
 
   protected override async loadRomFromResource(): Promise<Uint8Array> {
@@ -44,20 +61,41 @@ class HarnessTimexMachine extends TimexWasmV2Machine {
 
 let wasmBuilt = false;
 
+export type TimexSessionOptions = {
+  /** The model (the TC2048 when omitted) */
+  model?: TimexModelId;
+  /**
+   * "own": the model's ROM from `KLIVE_<MODEL>_ROM` (check `hasTimexRom()` first); "tc2048" is the
+   * TC2048's own ROM (G9.4a's spelling); otherwise the Sinclair 48K ROM, as the machine boots
+   * without one. `bytes` boots a ROM image the test built (16K, or 24K for a 2068).
+   */
+  rom?: "sp48" | "own" | "tc2048" | { bytes: Uint8Array };
+};
+
 /**
- * Creates a Timex Computer 2048 on the Timex core, ready to boot. With `{ rom: "tc2048" }` it boots
- * the TC2048 ROM named in `KLIVE_TC2048_ROM` (check `hasTc2048Rom()` first); otherwise the Sinclair
- * 48K ROM, as the machine does without a TC2048 ROM.
+ * Creates a Timex machine on the Timex core, ready to boot: a TC2048 unless a model is given, with
+ * the Sinclair 48K ROM unless the options name the model's own ROM.
  */
-export async function createTimexSession(options: { rom?: "sp48" | "tc2048" } = {}): Promise<TimexTestSession> {
+export async function createTimexSession(options: TimexSessionOptions = {}): Promise<TimexTestSession> {
   if (!wasmBuilt) {
     buildTimexWasm();
     wasmBuilt = true;
   }
-  const useTc2048 = options.rom === "tc2048";
-  if (useTc2048 && !hasTc2048Rom()) throw new Error("KLIVE_TC2048_ROM does not name a readable TC2048 ROM.");
-  const rom = new Uint8Array(readFileSync(useTc2048 ? TC2048_ROM_PATH! : SP48_ROM_PATH));
-  const machine = new HarnessTimexMachine(rom, useTc2048 ? TC2048_ROM_PATH : undefined);
+  const model = options.model ?? "tc2048";
+  const romOption = options.rom === "tc2048" ? "own" : options.rom;
+  let rom: Uint8Array;
+  let romPath: string | undefined;
+  if (romOption === "own") {
+    if (!hasTimexRom(model)) throw new Error(`KLIVE_${model.toUpperCase()}_ROM does not name a readable ROM.`);
+    romPath = TIMEX_ROM_PATHS[model]!;
+    rom = new Uint8Array(readFileSync(romPath));
+  } else if (typeof romOption === "object") {
+    romPath = "test-rom";
+    rom = romOption.bytes;
+  } else {
+    rom = new Uint8Array(readFileSync(SP48_ROM_PATH));
+  }
+  const machine = new HarnessTimexMachine(rom, model, romPath);
   await machine.setup();
   return new TimexTestSession(machine);
 }
@@ -119,6 +157,17 @@ export class TimexTestSession extends Sp48TestSession {
   /** The colour of the border at the top-left corner of the picture */
   borderPixel(): number {
     return this.timex.getPixelBuffer()[this.exports.sp48GetScreenWidth() * 2 + 4] >>> 0;
+  }
+
+  /** Puts a cartridge into the DOCK (as the emulator does), or empties it */
+  insertCartridge(image: DckImage | undefined): this {
+    this.timex.setMachineProperty(MEDIA_DOCK, image);
+    return this;
+  }
+
+  /** What the CPU reads at an address, through the 2068's chunk map */
+  cpuPeek(address: number): number {
+    return this.exports.sp48ReadMemory(address & 0xffff);
   }
 
   /** Redraws the whole picture from memory and the current registers */

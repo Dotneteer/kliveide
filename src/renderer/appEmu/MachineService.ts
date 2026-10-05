@@ -1,9 +1,21 @@
 import { FileProvider } from "@renderer/core/FileProvider";
 import { MachineController } from "@emu/machines/MachineController";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { FILE_PROVIDER, AUDIO_SAMPLE_RATE, TIMEX_ROM_FILE, TRDOS_ROM_FILE } from "@emu/machines/machine-props";
+import {
+  FILE_PROVIDER,
+  AUDIO_SAMPLE_RATE,
+  TC2068_ROM_FILE,
+  TIMEX_ROM_FILE,
+  TRDOS_ROM_FILE,
+  TS2068_ROM_FILE
+} from "@emu/machines/machine-props";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
-import { SETTING_EMU_TC2048_ROM, SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
+import {
+  SETTING_EMU_TC2048_ROM,
+  SETTING_EMU_TC2068_ROM,
+  SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_TS2068_ROM
+} from "@common/settings/setting-const";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -126,6 +138,8 @@ class MachineService implements IMachineService {
     );
     machine.setMachineProperty(TRDOS_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TRDOS_ROM) || undefined);
     machine.setMachineProperty(TIMEX_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TC2048_ROM) || undefined);
+    machine.setMachineProperty(TC2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TC2068_ROM) || undefined);
+    machine.setMachineProperty(TS2068_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TS2068_ROM) || undefined);
     await machine.setup();
     await machine.hardReset();
 

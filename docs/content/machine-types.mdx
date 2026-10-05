@@ -92,34 +92,58 @@ Machine ID: `zxnext`
 
 Available models: Only the original ZX Spectrum Next (KS2) model is available; it is still in development.
 
-## Timex Computer 2048
+## Timex TC2048/TC2068/TS2068
 
 Machine ID: `timex`
 
 Available models:
 - `tc2048`: The Timex Computer 2048, a 48K Spectrum made in Portugal, whose ULA is Timex's SCLD.
+- `tc2068`: The Timex Computer 2068, the European 2068 (PAL, 50 Hz).
+- `ts2068`: The Timex Sinclair 2068, the American 2068 (NTSC, 60 Hz).
 
-The TC2048 runs 48K software, and adds:
+Every model runs 48K software, and adds the SCLD's features:
 
 - **Screen modes**, selected by port `$FF` bits 0-2: `0` the normal screen; `1` a second screen at
   `$6000` (attributes at `$7800`); `2` extended colour, one attribute byte for every 8 × 1 pixels,
   at `$6000` plus the pixel byte's offset; `6` a 512 × 192 two-colour screen, whose even columns
   come from `$4000` and odd columns from `$6000`. Bits 3-5 pick that mode's ink (the paper is its
-  complement, and the border shows the paper colour). Reading port `$FF` returns what was written.
-- **Interrupt control**: port `$FF` bit 6 set stops the 50 Hz frame interrupt.
-- **A Kempston joystick port**, built in. Joystick 1's bindings drive it; set them under
-  **Machine > Kempston Joystick**.
+  complement, and the border shows the paper colour); the TC models show these colours BRIGHT, the
+  TS2068 does not. Reading port `$FF` returns what was written.
+- **Interrupt control**: port `$FF` bit 6 set stops the frame interrupt.
 
-The CPU runs at the SCLD's 3.528 MHz, with the 48K's frame (224 T-states by 312 lines) and memory
-contention.
+The CPU runs at the SCLD's 3.528 MHz. The TC2048 and TC2068 keep the 48K's frame (224 T-states by
+312 lines); the TS2068's is 262 lines (58,688 T-states, 60 frames a second).
 
-Klive cannot ship the TC2048's ROM. Name your own copy under **Machine > TC2048 ROM**; until you do,
-the TC2048 boots the Sinclair 48K ROM, which the TC2048's differs from only by clearing port `$FF`
-when it starts up. Running, debugging, injecting code (code built for the 48K runs as it is), tapes,
-snapshots and Klive state files work either way.
+**The TC2048** has a built-in Kempston joystick port, driven by joystick 1's bindings
+(**Machine > Kempston Joystick**).
 
-A `.szx` or `.z80` snapshot of a TC2048 opens on this machine, with its screen mode. A TC2048 saved
-as `.sna` loads as a 48K, without port `$FF`; save it as `.szx` or `.z80` to keep the screen mode.
+**The TC2068 and TS2068** add:
+
+- **Bank switching in 8K chunks.** Each of the eight 8K chunks of the address space comes from the
+  HOME bank (the 16K ROM and 48K of RAM), or - when its bit in port `$F4` is set - from the cartridge
+  (the DOCK) or, with port `$FF` bit 7 set, from the 8K Extension ROM (EXROM). The screen always
+  comes from HOME. The memory and disassembly views and the breakpoints name the chunks `H0`-`H7`,
+  `D0`-`D7` and `X0`-`X7`.
+- **An AY-3-8912 sound chip** on ports `$F5` (register select) and `$F6` (data), clocked at 1.764 MHz,
+  with the PSG panel.
+- **Two joysticks**, read through the AY's register 14 (**Machine > Joysticks**).
+- **Cartridges**: **Machine > Insert Cartridge...** puts a `.dck` file into the DOCK, and the media
+  strip shows it. The machine restarts, because its ROM looks for a cartridge when it starts.
+- Ports `$FE`, `$F4`, `$F5`, `$F6` and `$FF` are decoded on their full low byte.
+
+**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Machine > TC2048 ROM**,
+**TC2068 ROM** or **TS2068 ROM**: the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
+followed by its 8K EXROM. Until you do, the machine boots the Sinclair 48K ROM (a 2068 then has no
+EXROM). Klive knows the TS2068 ROM (CRC-32 `48004230`): with it, running and debugging code, and
+loading tapes from the IDE, use its own main loop and tape routines. With a 2068 ROM Klive has not
+seen, the machine runs, but the IDE cannot start a program or a tape in it.
+
+Running, debugging, injecting code (code built for the 48K runs as it is), tapes, snapshots and Klive
+state files work on every model.
+
+**Snapshots.** A `.szx` or `.z80` snapshot of a TC2048, TC2068 or TS2068 opens on its model, with its
+screen mode, its chunk map and the 2068s' AY; a `.szx` also keeps the cartridge's pages. A Timex
+machine saved as `.sna` loads as a 48K, and Klive names what it loses.
 
 ## Cambridge Z88
 

@@ -22,7 +22,9 @@ import {
   type SpectrumSnapshot,
   type SpectrumSnapshotPeripherals,
   isPagedSnapshotMachine,
-  isPlus3SnapshotMachine
+  isPlus3SnapshotMachine,
+  isTimexSnapshotMachine,
+  isTimex2068SnapshotMachine
 } from "./spectrumSnapshot";
 
 /** The magic at the start of every `.szx` file */
@@ -39,10 +41,10 @@ const SZX_MACHINES: Record<number, SnapshotMachine> = {
   6: "plus3e",
   7: "pentagon",
   8: "tc2048",
-  9: { unsupported: "Timex TC2068" },
+  9: "tc2068",
   10: { unsupported: "Scorpion ZS-256" },
   11: { unsupported: "ZX Spectrum SE" },
-  12: { unsupported: "Timex TS2068" },
+  12: "ts2068",
   13: { unsupported: "Pentagon 512" },
   14: { unsupported: "Pentagon 1024" },
   15: "48k-ntsc",
@@ -88,7 +90,8 @@ const KNOWN_BLOCKS = new Set([
   "ROM",
   "B128",
   "BDSK",
-  "SCLD"
+  "SCLD",
+  "DOCK"
 ]);
 
 /** Readable names of the blocks Klive skips, for the warnings */
@@ -105,7 +108,6 @@ const SKIPPED_BLOCK_NAMES: Record<string, string> = {
   AMXM: "AMX mouse",
   COVX: "Covox",
   DIDE: "DivIDE",
-  DOCK: "Timex dock",
   EXCT: "Timex dock",
   SIDE: "Simple IDE",
   SPCD: "SpecDrum",
@@ -199,6 +201,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
   let paging: SpectrumSnapshot["paging"];
   let ay: SpectrumSnapshot["ay"];
   let timex: SpectrumSnapshot["timex"];
+  const dockPages: NonNullable<NonNullable<SpectrumSnapshot["timex"]>["dock"]> = [];
   let creator: string | undefined;
   let specRegsSeen = false;
 
@@ -305,7 +308,8 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         need(18);
         const flags = data[0];
         ay = { selected: data[1] & 0x0f, regs: data.slice(2, 18) };
-        if (flags & 0x03) ay.on48k = true;
+        // --- The 2068s' AY is built in, whatever the flags say
+        if (flags & 0x03 && !isTimex2068SnapshotMachine(machine)) ay.on48k = true;
         if (flags & 0x01) warnings.push("The AY chip is a Fuller Box, which Klive does not emulate");
         break;
       }
@@ -412,6 +416,17 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         }
         break;
       }
+      case "DOCK": {
+        need(3);
+        const flags = readWord(data, 0);
+        const page = data[2] & 0x07;
+        const content = (flags & 0x01) !== 0 ? inflate(data.subarray(3), `DOCK page ${page}`) : data.slice(3);
+        if (content.length !== 0x2000) {
+          throw new Error(`DOCK page ${page} holds ${content.length} bytes instead of 8192`);
+        }
+        dockPages.push({ page, dock: (flags & 0x04) !== 0, ram: (flags & 0x02) !== 0, data: content });
+        break;
+      }
       case "SCLD": {
         need(2);
         timex = { portF4: data[0], portFf: data[1] };
@@ -461,7 +476,9 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
     cpu,
     ula,
     paging,
-    timex: timex ?? (machine === "tc2048" ? { portF4: 0, portFf: 0 } : undefined),
+    timex: isTimexSnapshotMachine(machine)
+      ? { ...(timex ?? { portF4: 0, portFf: 0 }), ...(dockPages.length ? { dock: dockPages } : {}) }
+      : timex,
     ram,
     ay,
     peripherals,

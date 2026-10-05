@@ -38,7 +38,31 @@ const timexOwnExports = [
   "timexSetPortFf",
   "timexSetKempston",
   "timexGetKempston",
-  "timexGetHiresBright"
+  "timexGetHiresBright",
+  "timexGetPortF4",
+  "timexSetPortF4",
+  "timexSetJoystick",
+  "timexUploadExromByte",
+  "timexExromPtr",
+  "timexGetExromLoaded",
+  "timexDockPtr",
+  "timexDockSetChunkType",
+  "timexDockGetChunkType",
+  "timexDockEject",
+  "timexGetChunkSource",
+  "timexGetPsgRegisterIndex",
+  "timexGetPsgRegisterValue",
+  "timexReadPsgRegisterValue",
+  "timexGetPsgToneA",
+  "timexGetPsgToneB",
+  "timexGetPsgToneC",
+  "timexGetPsgVolumeA",
+  "timexGetPsgVolumeB",
+  "timexGetPsgVolumeC",
+  "timexGetPsgCurrentOutput",
+  "timexGetHasAy",
+  "timexSetTapeTraps",
+  "timexGetTapeLoadTrap"
 ];
 
 const productionExports = [...sp48Exports, ...timexOwnExports];

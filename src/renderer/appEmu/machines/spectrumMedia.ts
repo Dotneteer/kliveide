@@ -1,11 +1,11 @@
-import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 import type { MediaState } from "@common/state/AppState";
 
 /**
  * One card of the ZX Spectrum media strip under the emulator screen.
  */
 export type SpectrumMediaCard = {
-  /** The medium the card stands for: MEDIA_TAPE, MEDIA_DISK_A or MEDIA_DISK_B */
+  /** The medium the card stands for: MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B or MEDIA_DOCK */
   mediaId: string;
   /** The card's title, e.g. "Tape" or "Drive A" */
   title: string;
@@ -30,14 +30,15 @@ export function mediaFileName(fullPath: string): string {
 
 /**
  * Describes the media strip's cards: always the tape, plus one card per floppy drive the model
- * has (the +3E's `diskSupport` config value: 0, 1 or 2).
+ * has (the +3E's `diskSupport` config value: 0, 1 or 2), plus the cartridge on a Timex 2068.
  *
  * The media state is written by the main process (`zx-specrum-menus.ts`): the tape is a plain path
  * string ("" once ejected), a disk is `{ diskFile, writeProtected }` (`{}` once ejected).
  */
 export function describeSpectrumMedia(
   media: MediaState | undefined,
-  diskDrives: number
+  diskDrives: number,
+  dock = false
 ): SpectrumMediaCard[] {
   const cards: SpectrumMediaCard[] = [];
   const tapeFile = media?.[MEDIA_TAPE];
@@ -64,6 +65,17 @@ export function describeSpectrumMedia(
       fullPath: diskPath,
       emptyText: "(no disk)",
       writeProtected: diskPath ? !!state.writeProtected : undefined
+    });
+  }
+  if (dock) {
+    const dockFile = media?.[MEDIA_DOCK];
+    const dockPath = typeof dockFile === "string" && dockFile ? dockFile : undefined;
+    cards.push({
+      mediaId: MEDIA_DOCK,
+      title: "Cartridge",
+      fileName: dockPath ? mediaFileName(dockPath) : undefined,
+      fullPath: dockPath,
+      emptyText: "(no cartridge)"
     });
   }
   return cards;

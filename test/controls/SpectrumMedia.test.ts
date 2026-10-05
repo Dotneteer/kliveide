@@ -34,6 +34,16 @@ describe("Spectrum media strip", () => {
     ]);
   });
 
+  it("adds the cartridge card on a Timex 2068 (the DOCK), empty or inserted", () => {
+    const empty = describeSpectrumMedia({ tape: "" }, 0, true);
+    expect(empty.map((c) => c.mediaId)).toEqual(["tape", "dock"]);
+    expect(empty[1]).toMatchObject({ title: "Cartridge", emptyText: "(no cartridge)", fileName: undefined });
+    const inserted = describeSpectrumMedia({ dock: "/carts/chess.dck" }, 0, true);
+    expect(inserted[1]).toMatchObject({ fileName: "chess.dck", fullPath: "/carts/chess.dck" });
+    // --- Not without a DOCK
+    expect(describeSpectrumMedia({ dock: "/carts/chess.dck" }, 0).map((c) => c.mediaId)).toEqual(["tape"]);
+  });
+
   it("treats an ejected tape and missing media state as empty", () => {
     expect(describeSpectrumMedia({ tape: "" }, 0)[0].fileName).toBeUndefined();
     expect(describeSpectrumMedia(undefined, 0)[0].fileName).toBeUndefined();

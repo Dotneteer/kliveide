@@ -20,6 +20,30 @@ export type TimexWasmV2Exports = Sp48WasmV2Exports & {
   timexSetKempston: Sp48WasmV2ExportFunction;
   timexGetKempston: Sp48WasmV2ExportFunction;
   timexGetHiresBright: Sp48WasmV2ExportFunction;
+  timexGetPortF4: Sp48WasmV2ExportFunction;
+  timexSetPortF4: Sp48WasmV2ExportFunction;
+  timexSetJoystick: Sp48WasmV2ExportFunction;
+  timexUploadExromByte: Sp48WasmV2ExportFunction;
+  timexExromPtr: Sp48WasmV2ExportFunction;
+  timexGetExromLoaded: Sp48WasmV2ExportFunction;
+  timexDockPtr: Sp48WasmV2ExportFunction;
+  timexDockSetChunkType: Sp48WasmV2ExportFunction;
+  timexDockGetChunkType: Sp48WasmV2ExportFunction;
+  timexDockEject: Sp48WasmV2ExportFunction;
+  timexGetChunkSource: Sp48WasmV2ExportFunction;
+  timexGetPsgRegisterIndex: Sp48WasmV2ExportFunction;
+  timexGetPsgRegisterValue: Sp48WasmV2ExportFunction;
+  timexReadPsgRegisterValue: Sp48WasmV2ExportFunction;
+  timexGetPsgToneA: Sp48WasmV2ExportFunction;
+  timexGetPsgToneB: Sp48WasmV2ExportFunction;
+  timexGetPsgToneC: Sp48WasmV2ExportFunction;
+  timexGetPsgVolumeA: Sp48WasmV2ExportFunction;
+  timexGetPsgVolumeB: Sp48WasmV2ExportFunction;
+  timexGetPsgVolumeC: Sp48WasmV2ExportFunction;
+  timexGetPsgCurrentOutput: Sp48WasmV2ExportFunction;
+  timexGetHasAy: Sp48WasmV2ExportFunction;
+  timexSetTapeTraps: Sp48WasmV2ExportFunction;
+  timexGetTapeLoadTrap: Sp48WasmV2ExportFunction;
 };
 
 export const TIMEX_OWN_EXPORTS = [
@@ -29,7 +53,31 @@ export const TIMEX_OWN_EXPORTS = [
   "timexSetPortFf",
   "timexSetKempston",
   "timexGetKempston",
-  "timexGetHiresBright"
+  "timexGetHiresBright",
+  "timexGetPortF4",
+  "timexSetPortF4",
+  "timexSetJoystick",
+  "timexUploadExromByte",
+  "timexExromPtr",
+  "timexGetExromLoaded",
+  "timexDockPtr",
+  "timexDockSetChunkType",
+  "timexDockGetChunkType",
+  "timexDockEject",
+  "timexGetChunkSource",
+  "timexGetPsgRegisterIndex",
+  "timexGetPsgRegisterValue",
+  "timexReadPsgRegisterValue",
+  "timexGetPsgToneA",
+  "timexGetPsgToneB",
+  "timexGetPsgToneC",
+  "timexGetPsgVolumeA",
+  "timexGetPsgVolumeB",
+  "timexGetPsgVolumeC",
+  "timexGetPsgCurrentOutput",
+  "timexGetHasAy",
+  "timexSetTapeTraps",
+  "timexGetTapeLoadTrap"
 ] as const;
 
 /** Throws when a core lacks one of the Timex's own exports (the 48K loader checks the rest) */
