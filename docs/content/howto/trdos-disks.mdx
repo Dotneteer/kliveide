@@ -1,0 +1,67 @@
+---
+description: "The Pentagon 128 model has the Beta 128 disk interface: two drives for .trd and .scl images, running your own copy of TR-DOS."
+---
+
+import { Callout } from 'nextra/components'
+
+# Using TR-DOS Disks on the Pentagon 128
+
+The **Pentagon 128** model (Machine ID `sp128`, model `pentagon`) has the **Beta 128 disk interface**,
+the Pentagon's own disk system: a floppy disk controller, two drives (A and B) and the **TR-DOS**
+disk operating system. Much Pentagon software, from demos to games and disk magazines, comes on
+TR-DOS disks.
+
+## Naming your TR-DOS ROM
+
+<Callout type="warning" emoji="⚠️">
+Klive cannot ship the TR-DOS ROM: nobody has been able to establish who holds its rights or to give
+permission to distribute it. You need your own 16K TR-DOS ROM image (version 5.03 is the most common).
+</Callout>
+
+With the Pentagon selected, open **Machine > TR-DOS ROM** in the Emulator window:
+
+- **Select TR-DOS ROM File...** picks the image. It must be exactly 16,384 bytes. The machine restarts
+  with it.
+- **Forget the TR-DOS ROM** clears it.
+
+The first item of the submenu says which ROM is in use, or that none is set. Without a ROM the
+Pentagon still runs, but its drives are off. The ROM is a Klive setting, not a project setting, so you
+name it once.
+
+## Inserting disks
+
+**Machine > Floppy Disks** works as it does on the ZX Spectrum +3: **Insert Disk into Drive A...** (or B),
+**Eject**, and **Write Protect**. The emulator's media strip shows both drives. The Pentagon takes:
+
+- **`.trd`** files: raw TR-DOS disk images. When TR-DOS writes to the disk (`SAVE`, `FORMAT`,
+  `ERASE`...), Klive writes the changed sectors back into the `.trd` file.
+- **`.scl`** files: compact archives of TR-DOS files. Klive builds a disk from them when you insert one.
+  TR-DOS can write to that disk, but the `.scl` file is **never changed**. To keep the changes, use
+  **Save Disk in Drive A as .trd...**, which writes a new `.trd` and puts it in the drive.
+
+**Create Disk File...** makes a blank, formatted TR-DOS disk (80 or 40 tracks, one or two sides),
+as does the IDE command [`crd`](/commands-reference#crd), for example `crd trd80ds games`.
+
+## Booting a disk
+
+**Machine > Floppy Disks > Boot Disk in Drive A** resets the machine and does what you would type:
+it selects **48 BASIC** from the 128K menu, enters TR-DOS with `RANDOMIZE USR 15616`, and types `RUN`,
+which loads and runs the disk's BASIC program `boot`.
+
+You can also do it by hand. At the TR-DOS `A>` prompt, the usual commands work: `LIST` shows the
+catalogue, `RUN "name"` and `LOAD "name"` load files, `SAVE "name" CODE 32768,100` saves one, and
+`RETURN` goes back to BASIC. From a BASIC program, `RANDOMIZE USR 15619: REM : LOAD "data" CODE`
+runs a TR-DOS command.
+
+## Debugging with TR-DOS
+
+While TR-DOS runs, its ROM replaces the 48K BASIC ROM at `$0000`. The debugger shows it as the memory
+partition **R2** ("TR-DOS ROM"), so a breakpoint like `R2:$3D2F` stops only in TR-DOS.
+
+## Snapshots and machine states
+
+- A `.szx` snapshot of the Pentagon keeps the disk interface's state and links the disks to their
+  files. A `.sna` keeps only whether TR-DOS was paged in; a `.z80` keeps neither.
+- A snapshot taken with TR-DOS paged in opens on the Pentagon.
+- A [machine state](/howto/machine-state) keeps the disks with everything written to them. After you
+  load one, the disks are not written back to their files until you insert a disk again.

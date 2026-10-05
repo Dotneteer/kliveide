@@ -262,7 +262,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 2,
       [MF_BANK]: 8
     },
-    mediaIds: [MEDIA_TAPE],
+    // --- The disks are the Pentagon's Beta 128 (the model's `MC_DISK_SUPPORT`; the 128K has none)
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     // --- The 128K and the Pentagon 128: one core, the timing is model config
     models: SP128_MODELS,
     toolInfo: {

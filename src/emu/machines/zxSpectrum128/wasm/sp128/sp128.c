@@ -150,6 +150,8 @@ typedef struct Sp128ScreenConfig {
 
 static uint8_t sp128Ram[SP128_RAM_SIZE];
 static uint8_t sp128Rom[SP128_ROM_SIZE];
+/* The Beta 128's TR-DOS ROM (`.plans/BETA128_TRDOS_PLAN.md`); in at $0000 while `beta128Paged` */
+static uint8_t sp128TrdosRom[0x4000u];
 static uint8_t sp128Memory[SP128_MEMORY_SIZE];
 static uint8_t sp128KeyboardLines[SP128_KEYBOARD_LINE_COUNT];
 static uint8_t sp128KeyboardSelectedLineValue[256];
@@ -302,6 +304,14 @@ static void sp128CpuPokeMemory(uint32_t address, uint32_t value);
 static void updateTapeMode(void);
 static uint32_t sp128ReadNonFePort(uint32_t address);
 static void sp128WriteNonFePort(uint32_t address, uint32_t value);
+
+/* The Beta 128 disk interface (the Pentagon model; `sp128HardReset`'s `beta128` argument) */
+#define BETA128_NOW() sp128Tacts
+#define BETA128_TACTS_PER_MS \
+  (sp128BaseClockFrequency * (double)(sp128ClockMultiplier == 0u ? 1u : sp128ClockMultiplier) / 1000.0)
+#include "../../../zxSpectrum/wasm/common/zx-spectrum-beta128.c"
+#undef BETA128_TACTS_PER_MS
+#undef BETA128_NOW
 static uint32_t sp128CommonTapeGetEarBit(void);
 static void sp128CommonTapeProcessMicBit(uint32_t micBit);
 
@@ -706,7 +716,7 @@ static void resetTapePlayback(void) {
 }
 
 static void rebuildMemorySlotMap(void) {
-  sp128MemorySlotBase[0] = &sp128Rom[romBankOffset(sp128SelectedRom)];
+  sp128MemorySlotBase[0] = beta128Paged != 0u ? sp128TrdosRom : &sp128Rom[romBankOffset(sp128SelectedRom)];
   sp128MemorySlotBase[1] = &sp128Ram[ramBankOffset(5u)];
   sp128MemorySlotBase[2] = &sp128Ram[ramBankOffset(2u)];
   sp128MemorySlotBase[3] = &sp128Ram[ramBankOffset(sp128SelectedBank)];
@@ -851,6 +861,23 @@ static inline void rzxCountFetch(void);
 static inline void rzxIntAck(void);
 #define Z80_REFRESH(address) rzxCountFetch()
 #define Z80_INT_ACK() rzxIntAck()
+/*
+ * The Beta 128's paging trap ([BK], plan §9): an M1 fetch from $3D00-$3DFF with the 48K BASIC ROM
+ * selected pages the TR-DOS ROM in, before the fetch reads it; an M1 fetch from RAM pages it out.
+ */
+#define Z80_BEFORE_OPCODE_FETCH() sp128BetaBeforeFetch(cpu.pc)
+static inline void sp128BetaBeforeFetch(uint16_t pc) {
+  if (beta128Enabled == 0u) return;
+  if (beta128Paged == 0u) {
+    if ((pc & 0xff00u) != 0x3d00u || sp128SelectedRom != 1u) return;
+    beta128Paged = 1u;
+  } else {
+    if (pc < 0x4000u) return;
+    beta128Paged = 0u;
+  }
+  rebuildMemorySlotMap();
+  rebuildFlatRomSlot();
+}
 #include "../../../../z80/wasm/z80.c"
 #undef Z80_REFRESH
 #undef Z80_INT_ACK
@@ -1192,6 +1219,7 @@ static void sp128ShiftTactOrigin(int64_t amount) {
   sp128TapeSaveLastMicBitTact -= by;
   sp128PsgNextClockTact -= by;
   sp128PsgLastAccumulationTact -= byDouble;
+  beta128ShiftTactOrigin(by);
 }
 
 /* Test hook: as if `amount` tacts passed with nothing happening (see `sp48TestAdvanceTacts`) */
@@ -1289,15 +1317,20 @@ void sp128Reset(void) {
   sp128InterruptsRaised = 0u;
   sp128InterruptLineActive = 0u;
   sp128CommonResetKeyboard();
+  beta128Reset();
   sp128CommonResetAudio();
   rebuildFlatMemory();
   sp128UlaRenderDisplay();
 }
 
-/* `timing`: SP128_TIMING_128K (0, also what a call without it passes) or SP128_TIMING_PENTAGON */
-void sp128HardReset(uint32_t timing) {
+/*
+ * `timing`: SP128_TIMING_128K (0, also what a call without it passes) or SP128_TIMING_PENTAGON;
+ * `beta128`: 1 connects the Beta 128 disk interface (it needs the TR-DOS ROM uploaded as ROM 2)
+ */
+void sp128HardReset(uint32_t timing, uint32_t beta128) {
   sp128RzxSetMode(RZX_MODE_OFF);
   sp128ApplyTiming(timing);
+  beta128Enabled = beta128 != 0u ? 1u : 0u;
   for (uint32_t i = 0u; i < SP128_RAM_SIZE; i++) {
     sp128Ram[i] = 0u;
   }
@@ -1428,6 +1461,12 @@ void sp128RenderInstantScreen(void) {
 }
 
 void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
+  if (rom == 2u && offset < 0x4000u) {
+    /* The TR-DOS ROM; it is not part of the 128K ROMs' upload count or checksum */
+    sp128TrdosRom[offset] = (uint8_t)value;
+    if (beta128Paged != 0u) sp128Memory[offset] = (uint8_t)value;
+    return;
+  }
   if (rom < 2u && offset < 0x4000u) {
     if (rom == 0u && offset == 0u) {
       sp128RomUploadCount = 0u;
@@ -1437,7 +1476,7 @@ void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
     sp128RomChecksum =
       ((sp128RomChecksum << 5u) | (sp128RomChecksum >> 27u)) ^ ((uint8_t)value + offset + (rom << 14u));
     sp128Rom[romBankOffset(rom) + offset] = (uint8_t)value;
-    if (rom == sp128SelectedRom) {
+    if (rom == sp128SelectedRom && beta128Paged == 0u) {
       sp128Memory[offset] = (uint8_t)value;
     }
   }
@@ -1471,6 +1510,9 @@ void sp128WriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
 }
 
 uint32_t sp128ReadRomBank(uint32_t bank, uint32_t offset) {
+  if (bank == 2u && offset < 0x4000u) {
+    return sp128TrdosRom[offset];
+  }
   if (bank >= 2u || offset >= 0x4000u) {
     return 0xffu;
   }
@@ -1509,6 +1551,9 @@ void sp128SetKeyStatus(uint32_t key, uint32_t down) {
 }
 
 static uint32_t sp128ReadNonFePort(uint32_t address) {
+  if (beta128Paged != 0u && beta128IsPort(address)) {
+    return beta128ReadPort(address);
+  }
   if ((address & 0xc002u) == 0xc000u) {
     return sp128PsgDataRead();
   }
@@ -1519,6 +1564,10 @@ static uint32_t sp128ReadNonFePort(uint32_t address) {
 }
 
 static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
+  if (beta128Paged != 0u && beta128IsPort(address)) {
+    beta128WritePort(address, value);
+    return;
+  }
   if ((address & 0xc002u) != 0x4000u) {
     if ((address & 0xc002u) == 0xc000u) {
       sp128PsgAddressWrite(value & 0x0fu);
@@ -1967,6 +2016,95 @@ uint32_t sp128GetTactsInFrame(void) {
   return sp128TactsInFrame;
 }
 
+/* ------------------------------------------------------------------------------------------- */
+/* The Beta 128 disk interface (`zx-spectrum-beta128.c`): state for the host, the debugger, snapshots */
+
+uint32_t sp128BetaGetEnabled(void) { return beta128Enabled; }
+uint32_t sp128BetaGetPaged(void) { return beta128Paged; }
+
+/* Pages the TR-DOS ROM in or out (snapshot restore) */
+void sp128BetaSetPaged(uint32_t paged) {
+  if (beta128Enabled == 0u) return;
+  const uint8_t next = paged != 0u ? 1u : 0u;
+  if (next == beta128Paged) return;
+  beta128Paged = next;
+  rebuildMemorySlotMap();
+  rebuildFlatRomSlot();
+}
+
+uint32_t sp128BetaGetSystemRegister(void) { return beta128SysReg; }
+/* Sets the system register without the reset pulse's side effects (snapshot restore) */
+void sp128BetaSetSystemRegister(uint32_t value) { beta128SysReg = (uint8_t)value; }
+
+/* The controller's registers, read without side effects (reading the status port clears INTRQ) */
+uint32_t sp128BetaGetFdcStatus(void) {
+  const uint8_t intrq = beta128Intrq;
+  const uint32_t status = beta128ReadStatus();
+  beta128Intrq = intrq;
+  return status;
+}
+uint32_t sp128BetaGetFdcTrack(void) { return beta128Track; }
+uint32_t sp128BetaGetFdcSector(void) { return beta128Sector; }
+uint32_t sp128BetaGetFdcData(void) { return beta128DataReg; }
+uint32_t sp128BetaGetFdcCommand(void) { return beta128Command; }
+uint32_t sp128BetaGetFdcBusy(void) { beta128Advance(); return beta128Busy; }
+uint32_t sp128BetaGetIntrq(void) { beta128Advance(); return beta128Intrq; }
+uint32_t sp128BetaGetDrq(void) { beta128Advance(); return beta128Drq; }
+
+/* Sets the controller's registers (snapshot restore): no command runs afterwards */
+void sp128BetaSetFdcRegisters(uint32_t track, uint32_t sector, uint32_t data, uint32_t command) {
+  beta128ResetController();
+  beta128Track = (uint8_t)track;
+  beta128Sector = (uint8_t)sector;
+  beta128DataReg = (uint8_t)data;
+  beta128Command = (uint8_t)command;
+}
+
+/* The head's cylinder in a drive; moving it (snapshot restore) */
+uint32_t sp128BetaGetDriveCylinder(uint32_t drive) {
+  return drive < BETA128_DRIVE_COUNT ? beta128Drives[drive].cylinder : 0u;
+}
+void sp128BetaSetDriveCylinder(uint32_t drive, uint32_t cylinder) {
+  if (drive < BETA128_DRIVE_COUNT && cylinder < BETA128_MAX_CYLINDERS) beta128Drives[drive].cylinder = (uint8_t)cylinder;
+}
+
+/* Disks: the host writes the canonical image through the pointer, then inserts it */
+uint8_t *sp128BetaDiskDataPtr(uint32_t drive) {
+  return beta128Data[drive < BETA128_DRIVE_COUNT ? drive : 0u];
+}
+uint32_t sp128BetaDiskGetCapacity(void) { return BETA128_DRIVE_CAPACITY; }
+void sp128BetaDiskInsert(uint32_t drive, uint32_t cylinders, uint32_t sides, uint32_t writeProtected) {
+  beta128InsertDisk(drive, cylinders, sides, writeProtected);
+}
+void sp128BetaDiskEject(uint32_t drive) { beta128EjectDisk(drive); }
+void sp128BetaDiskSetWriteProtected(uint32_t drive, uint32_t value) {
+  if (drive < BETA128_DRIVE_COUNT) beta128Drives[drive].writeProtected = value != 0u ? 1u : 0u;
+}
+uint32_t sp128BetaDiskGetPresent(uint32_t drive) {
+  return drive < BETA128_DRIVE_COUNT ? beta128Drives[drive].present : 0u;
+}
+uint32_t sp128BetaDiskGetCylinders(uint32_t drive) {
+  return drive < BETA128_DRIVE_COUNT ? beta128Drives[drive].cylinders : 0u;
+}
+uint32_t sp128BetaDiskGetSides(uint32_t drive) {
+  return drive < BETA128_DRIVE_COUNT ? beta128Drives[drive].sides : 0u;
+}
+uint32_t sp128BetaDiskGetWriteProtected(uint32_t drive) {
+  return drive < BETA128_DRIVE_COUNT ? beta128Drives[drive].writeProtected : 0u;
+}
+
+/* Written sectors: a revision that changes on every write, and a bit per canonical sector */
+uint32_t sp128BetaGetDirtyRevision(void) { return beta128DirtyRevision; }
+uint32_t sp128BetaGetSectorCount(void) { return BETA128_SECTOR_COUNT; }
+uint32_t sp128BetaGetSectorDirty(uint32_t drive, uint32_t index) {
+  if (drive >= BETA128_DRIVE_COUNT || index >= BETA128_SECTOR_COUNT) return 0u;
+  return (beta128Dirty[drive][index >> 5u] >> (index & 31u)) & 1u;
+}
+void sp128BetaClearDirty(uint32_t drive) {
+  if (drive >= BETA128_DRIVE_COUNT) return;
+  for (uint32_t i = 0u; i < BETA128_DIRTY_WORDS; i++) beta128Dirty[drive][i] = 0u;
+}
+
 /* The timing profile the last hard reset chose (SP128_TIMING_*) */
 uint32_t sp128GetTiming(void) {
   return sp128Timing;
@@ -2077,6 +2215,8 @@ uint32_t sp128GetScreenBank(void) {
 uint32_t sp128GetCurrentPartition(uint32_t slot) {
   switch (slot & 0x03u) {
     case 0u:
+      /* The TR-DOS ROM is partition -3 ("R2") while the Beta 128 pages it in */
+      if (beta128Paged != 0u) return 0xfffffffdu;
       return sp128SelectedRom == 0u ? 0xffffffffu : 0xfffffffeu;
     case 1u:
       return 5u;

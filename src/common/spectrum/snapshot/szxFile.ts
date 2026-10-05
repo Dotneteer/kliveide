@@ -16,6 +16,7 @@ import {
   hex,
   readDword,
   readWord,
+  type SnapshotBetaDisk,
   type SnapshotChunkInfo,
   type SnapshotMachine,
   type SpectrumSnapshot,
@@ -84,7 +85,9 @@ const KNOWN_BLOCKS = new Set([
   "+3",
   "DSK",
   "TAPE",
-  "ROM"
+  "ROM",
+  "B128",
+  "BDSK"
 ]);
 
 /** Readable names of the blocks Klive skips, for the warnings */
@@ -94,8 +97,6 @@ const SKIPPED_BLOCK_NAMES: Record<string, string> = {
   MDRV: "Microdrive",
   MFCE: "Multiface",
   ZXPR: "ZX Printer",
-  B128: "Beta 128",
-  BDSK: "Beta disk",
   PLSD: "Plus D",
   PDSK: "Plus D disk",
   OPUS: "Opus Discovery",
@@ -349,6 +350,44 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         }
         peripherals.plus3 ??= { drives: 1, motorOn: false, disks: [] };
         peripherals.plus3.disks.push(disk);
+        break;
+      }
+      case "B128": {
+        // --- dwFlags, chNumDrives, chSysReg, chTrackReg, chSectorReg, chDataReg, chStatusReg (zx-state)
+        need(10);
+        const flags = readDword(data, 0);
+        const paged = (flags & 0x04) !== 0;
+        peripherals.beta128 = {
+          drives: data[4],
+          paged,
+          system: data[5],
+          track: data[6],
+          sector: data[7],
+          data: data[8],
+          status: data[9],
+          disks: peripherals.beta128?.disks ?? []
+        };
+        if (paged) peripherals.trdosPaged = true;
+        break;
+      }
+      case "BDSK": {
+        // --- dwFlags, chDriveNum, chCylinder, chDiskType, then a file name or the image (zx-state)
+        need(7);
+        const flags = readDword(data, 0);
+        const payload = data.subarray(7);
+        const disk: SnapshotBetaDisk = {
+          drive: data[4],
+          cylinder: data[5],
+          diskType: data[6],
+          writeProtected: (flags & 0x04) !== 0
+        };
+        if (flags & 0x01) {
+          disk.embedded = flags & 0x02 ? inflate(payload, `Beta disk in drive ${data[4]}`) : payload.slice();
+        } else {
+          disk.fileName = readString(payload, 0, payload.length);
+        }
+        peripherals.beta128 ??= { drives: 2, paged: false, system: 0, track: 0, sector: 1, data: 0, status: 0, disks: [] };
+        peripherals.beta128.disks.push(disk);
         break;
       }
       case "TAPE": {

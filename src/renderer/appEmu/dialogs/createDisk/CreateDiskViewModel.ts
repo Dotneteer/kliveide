@@ -1,5 +1,5 @@
 import {
-  DISK_TYPES,
+  diskTypesOf,
   filenameErrorOf,
   folderErrorOf,
   isComplete,
@@ -39,7 +39,7 @@ export type CreateDiskViewModel = {
 export function selectViewModel(state: CreateDiskState): CreateDiskViewModel {
   return {
     diskType: {
-      options: DISK_TYPES,
+      options: diskTypesOf(state.env),
       value: state.diskType
     },
     folder: {

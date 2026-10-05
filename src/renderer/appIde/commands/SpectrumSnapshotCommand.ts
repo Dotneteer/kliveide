@@ -117,7 +117,7 @@ export class SpectrumSnapshotCommand extends IdeCommandBase<SpectrumSnapshotComm
     // --- Linked +3 disks
     const disks: { drive: number; fileName: string; contents: Uint8Array }[] = [];
     const diskWarnings: string[] = [];
-    for (const disk of snapshot.peripherals.plus3?.disks ?? []) {
+    for (const disk of [...(snapshot.peripherals.plus3?.disks ?? []), ...(snapshot.peripherals.beta128?.disks ?? [])]) {
       if (disk.embedded) {
         disks.push({ drive: disk.drive, fileName: `drive ${disk.drive ? "B" : "A"} (embedded)`, contents: disk.embedded });
         continue;

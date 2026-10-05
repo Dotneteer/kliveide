@@ -123,7 +123,19 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
   // --- EI sets a backlog of 2: no interrupt is accepted before the next instruction completes
   call("SetCpuEiBacklog", cpu.suppressInterrupt ? 2 : 0);
 
-  // --- 7. The picture
+  // --- 7. The Pentagon's Beta 128: its registers and the TR-DOS page (`.szx` B128, the `.sna` byte).
+  // --- The disks themselves arrive through the media store before the restore.
+  const beta = snapshot.peripherals.beta128;
+  if (core.prefix === "sp128" && call("BetaGetEnabled") !== 0 && (beta || snapshot.peripherals.trdosPaged)) {
+    if (beta) {
+      call("BetaSetSystemRegister", beta.system);
+      call("BetaSetFdcRegisters", beta.track, beta.sector, beta.data, 0x03);
+      for (const disk of beta.disks) call("BetaSetDriveCylinder", disk.drive, disk.cylinder);
+    }
+    call("BetaSetPaged", snapshot.peripherals.trdosPaged || beta?.paged ? 1 : 0);
+  }
+
+  // --- 8. The picture
   call("RenderInstantScreen");
   return frameTact;
 }

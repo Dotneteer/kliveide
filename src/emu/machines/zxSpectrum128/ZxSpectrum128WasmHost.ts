@@ -25,7 +25,7 @@ import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/Wasm
 
 import { menuTapeLoadFlow } from "../tapeLoadFlows";
 import { getSp128Timing, type Sp128Timing } from "./sp128Timings";
-import { MC_SP128_TIMING } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SP128_TIMING } from "@common/machines/constants";
 
 /**
  * The model's configuration under the project's: the project's own settings win, except the timing,
@@ -50,6 +50,15 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
 
   /** The timing the machine runs: the 128K's or the Pentagon's (`MC_SP128_TIMING`) */
   readonly timing: Sp128Timing;
+
+  /**
+   * The model has the Beta 128 disk interface (the Pentagon: `MC_DISK_SUPPORT`). It works only with a
+   * TR-DOS ROM, which the user supplies (`.plans/BETA128_TRDOS_PLAN.md` Q1).
+   */
+  get beta128Model(): boolean {
+    const drives = this.config?.[MC_DISK_SUPPORT];
+    return this.timing.id === "pentagon" && typeof drives === "number" && drives > 0;
+  }
 
   constructor(_modelInfo?: MachineModel, config?: MachineConfigSet) {
     super(mergeZxSpectrum128Config(_modelInfo, config));
@@ -115,12 +124,18 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
     return this.selectedRom === 1;
   }
 
+  /** ROM pages: the 128K's two, and the Pentagon's TR-DOS ROM ("R2") with the Beta 128 */
+  private get romPageCount(): number {
+    return this.beta128Model ? 3 : 2;
+  }
+
   parsePartitionLabel(label: string): number | undefined {
-    return parseSpectrumPartitionLabel(label, 2);
+    return parseSpectrumPartitionLabel(label, this.romPageCount);
   }
 
   getPartitionLabels(): Record<number, string> {
     return {
+      ...(this.beta128Model ? { [-3]: "R2" } : {}),
       [-2]: "R1",
       [-1]: "R0",
       0: "B0",
@@ -135,7 +150,9 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   }
 
   getPartitionDescriptions(): Record<number, string> {
-    return buildSpectrumPartitionDescriptions(2);
+    const descriptions = buildSpectrumPartitionDescriptions(2);
+    if (this.beta128Model) descriptions[-3] = "TR-DOS ROM";
+    return descriptions;
   }
 
   getCurrentPartitionLabels(): string[] {

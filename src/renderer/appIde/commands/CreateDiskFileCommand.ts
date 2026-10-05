@@ -11,7 +11,8 @@ import {
 } from "../services/ide-commands";
 import { DISK_FOLDER } from "@common/structs/project-const";
 
-const availableDiskTypes = ["ss", "ds", "sse", "dse"];
+// --- CPC DSK disks for the +3, blank TR-DOS disks for the Pentagon (`.plans/BETA128_TRDOS_PLAN.md`)
+const availableDiskTypes = ["ss", "ds", "sse", "dse", "trd80ds", "trd40ds", "trd80ss", "trd40ss"];
 
 type CreateDiskFileCommandArgs = {
   diskType: string;

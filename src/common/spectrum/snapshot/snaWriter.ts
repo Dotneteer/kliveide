@@ -114,7 +114,7 @@ function write128(s: SpectrumSnapshot, losses: string[]): Uint8Array {
   const out = new SnapshotBytes();
   writeHeader(out, s, s.cpu.sp);
   out.bytes(bank(s, 5)).bytes(bank(s, 2)).bytes(bank(s, paged));
-  out.word(s.cpu.pc).byte(port7ffd, 0 /* TR-DOS ROM not paged */);
+  out.word(s.cpu.pc).byte(port7ffd, s.peripherals.trdosPaged ? 1 : 0);
   // --- The rest in ascending order. With bank 2 or 5 paged in, that is six banks (the bank at
   // --- $C000 was a second copy), which makes the 147,487-byte variant.
   for (let b = 0; b < 8; b++) {

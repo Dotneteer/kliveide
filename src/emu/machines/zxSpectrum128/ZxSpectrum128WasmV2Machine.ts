@@ -8,8 +8,25 @@ import { DebugStepMode } from "@emu/abstractions/DebugStepMode";
 import { shouldStopAtDebugPoint } from "../DebugStepDecision";
 import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { TapeMode } from "@emu/abstractions/TapeMode";
-import { AUDIO_SAMPLE_RATE, FAST_LOAD, REWIND_REQUESTED, SAVED_TO_TAPE, TAPE_MODE } from "../machine-props";
-import { MEDIA_TAPE } from "@common/structs/project-const";
+import {
+  AUDIO_SAMPLE_RATE,
+  DISK_A_CHANGES,
+  DISK_A_UNSAVED,
+  DISK_A_WP,
+  DISK_B_CHANGES,
+  DISK_B_UNSAVED,
+  DISK_B_WP,
+  FAST_LOAD,
+  REWIND_REQUESTED,
+  SAVED_TO_TAPE,
+  TAPE_MODE,
+  TRDOS_ROM_FILE
+} from "../machine-props";
+import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import { Beta128Disks } from "./Beta128Disks";
+import { trdosDiskBootFlow } from "./trdosFlows";
+import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
 import { BinaryWriter } from "@utils/BinaryWriter";
 import { loadSp128WasmV2 } from "./wasm/Sp128WasmV2Loader";
 import { TzxHeader } from "../tape/TzxHeader";
@@ -77,6 +94,13 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   private wasmV2TapeUploadCount = 0;
   private wasmV2SavedTapeRevision = 0;
   private wasmV2ContentionPauseBase = 0;
+  /** The TR-DOS ROM, when the model has the Beta 128 and the user named a readable 16K ROM */
+  private trdosRom?: Uint8Array;
+  /** Why the Beta 128 is off on a model that has it (no ROM named, unreadable, wrong size) */
+  trdosRomProblem?: string;
+  private beta128Disks?: Beta128Disks;
+  /** Warnings from the last disk insert (an `.scl` checksum, for example) */
+  diskWarnings: string[] = [];
 
   constructor(
     public readonly requestedModelInfo?: MachineModel,
@@ -348,10 +372,16 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp128WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();
+    if (this.beta128Model) await this.loadTrdosRomForBeta128();
 
     this.hardResetWasmV2(runtime);
     this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
     this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
+    if (this.trdosRom) {
+      for (let i = 0; i < this.trdosRom.length; i++) runtime.exports.sp128UploadRomByte(2, i, this.trdosRom[i]);
+      this.beta128Disks = new Beta128Disks(runtime.exports as never);
+      this.syncBetaDisksToWasmV2();
+    }
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
     this.syncTapeStateToWasmV2(runtime);
@@ -387,7 +417,91 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncTapePropertyToWasmV2(runtime, key, value);
+      this.syncBetaDiskPropertyToWasmV2(key, value);
     }
+  }
+
+  // ==============================================================================================
+  // The Beta 128 (`.plans/BETA128_TRDOS_PLAN.md`)
+
+  /** Is the Beta 128 connected: a model that has it, with a TR-DOS ROM */
+  get beta128Active(): boolean {
+    return this.trdosRom != null;
+  }
+
+  /** Reads the TR-DOS ROM the user named (the machine property `TRDOS_ROM_FILE`, from the settings) */
+  protected async loadTrdosRom(path: string): Promise<Uint8Array> {
+    return await this.loadRomFromResource(path);
+  }
+
+  private async loadTrdosRomForBeta128(): Promise<void> {
+    this.trdosRom = undefined;
+    const path = this.getMachineProperty(TRDOS_ROM_FILE) as string | undefined;
+    if (!path) {
+      this.trdosRomProblem = "No TR-DOS ROM is set: Klive cannot ship it; name your copy in the settings";
+      return;
+    }
+    try {
+      const rom = await this.loadTrdosRom(path);
+      if (rom.length !== 0x4000) {
+        this.trdosRomProblem = `The TR-DOS ROM must be 16384 bytes; ${path} has ${rom.length}`;
+        return;
+      }
+      this.trdosRom = rom;
+      this.trdosRomProblem = undefined;
+    } catch (err) {
+      this.trdosRomProblem = `Cannot read the TR-DOS ROM ${path}: ${(err as Error)?.message ?? err}`;
+    }
+  }
+
+  private syncBetaDisksToWasmV2(): void {
+    if (!this.beta128Disks) return;
+    this.diskWarnings = [
+      ...this.beta128Disks.insert(0, this.getMachineProperty(MEDIA_DISK_A), !!this.getMachineProperty(DISK_A_WP)),
+      ...this.beta128Disks.insert(1, this.getMachineProperty(MEDIA_DISK_B), !!this.getMachineProperty(DISK_B_WP))
+    ];
+  }
+
+  private syncBetaDiskPropertyToWasmV2(key: string, value?: any): void {
+    const disks = this.beta128Disks;
+    if (!disks) return;
+    if (key === MEDIA_DISK_A || key === MEDIA_DISK_B) {
+      const drive = key === MEDIA_DISK_A ? 0 : 1;
+      this.diskWarnings = disks.insert(drive, value, !!this.getMachineProperty(drive ? DISK_B_WP : DISK_A_WP));
+      super.setMachineProperty(drive ? DISK_B_UNSAVED : DISK_A_UNSAVED, undefined);
+    } else if (key === DISK_A_WP || key === DISK_B_WP) {
+      disks.setWriteProtected(key === DISK_A_WP ? 0 : 1, !!value);
+    }
+  }
+
+  /** Hands the guest's disk writes to the controller, which writes them back to `.trd` files */
+  private publishBetaDiskChanges(): void {
+    const published = this.beta128Disks?.publish();
+    if (!published) return;
+    const props = [DISK_A_CHANGES, DISK_B_CHANGES];
+    published.changes.forEach((changes, drive) => {
+      if (!changes) return;
+      const pending = this.getMachineProperty(props[drive]) as SectorChanges | undefined;
+      if (pending) changes.forEach((data, key) => pending.set(key, data));
+      else super.setMachineProperty(props[drive], changes);
+    });
+    published.unsaved.forEach((unsaved, drive) => {
+      if (unsaved) super.setMachineProperty(drive ? DISK_B_UNSAVED : DISK_A_UNSAVED, true);
+    });
+  }
+
+  /** Boots the disk in drive A through TR-DOS; only with the Beta 128 connected */
+  getDiskBootFlow(): CodeInjectionFlow | undefined {
+    if (!this.beta128Active) {
+      if (this.beta128Model) throw new Error(this.trdosRomProblem ?? "The Beta 128 has no TR-DOS ROM.");
+      return undefined;
+    }
+    return trdosDiskBootFlow();
+  }
+
+  /** The disk in a drive as a `.trd` (to save an `.scl` disk the guest changed) */
+  exportBetaDiskAsTrd(drive: number): Uint8Array | undefined {
+    return this.beta128Disks?.exportTrd(drive);
   }
 
   override executeMachineFrame(): FrameTerminationMode {
@@ -419,6 +533,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     this.wasmV2NormalFrames++;
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
+    this.publishBetaDiskChanges();
     this.frameCompleted = true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
@@ -457,6 +572,10 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
 
   override getMemoryPartition(index: number): Uint8Array {
     const runtime = this.requireWasmV2Runtime();
+    if (index === -3) {
+      // --- The Beta 128's TR-DOS ROM (partition "R2")
+      return this.trdosRom ?? new Uint8Array(0x4000);
+    }
     if (index < 0) {
       const romIndex = index === -2 ? 1 : 0;
       return runtime.rom.subarray(romIndex * 0x4000, (romIndex + 1) * 0x4000);
@@ -475,7 +594,9 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   }
 
   override getSelectedRomPage(): number {
-    return this.requireWasmV2Runtime().exports.sp128GetSelectedRom();
+    const wasm = this.requireWasmV2Runtime().exports;
+    // --- While the Beta 128 pages TR-DOS in, it is ROM 2
+    return wasm.sp128BetaGetPaged() ? 2 : wasm.sp128GetSelectedRom();
   }
 
   override getSelectedRamBank(): number {
@@ -635,7 +756,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   }
 
   private hardResetWasmV2(runtime: Sp128WasmV2Runtime): void {
-    runtime.exports.sp128HardReset(this.timing.coreTiming);
+    runtime.exports.sp128HardReset(this.timing.coreTiming, this.beta128Active ? 1 : 0);
     this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
     this.wasmV2SavedTapeRevision = 0;
@@ -958,6 +1079,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
+    this.publishBetaDiskChanges();
     this.executionContext.lastTerminationReason = termination;
     return termination;
   }
@@ -1174,6 +1296,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     this.invalidateWasmV2Sync();
     // --- What the core already holds must not be published again as new
     this.wasmV2SavedTapeRevision = runtime.exports.sp128TapeGetSavedRevision();
+    this.beta128Disks?.afterStateLoad();
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
   }

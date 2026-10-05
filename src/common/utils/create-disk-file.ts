@@ -1,5 +1,6 @@
 import { resolveHomeFilePath } from "../../main/projects";
 import { BinaryWriter } from "./BinaryWriter";
+import { createBlankTrd, type TrdGeometry } from "@emu/machines/disk/trd/trdImage";
 import fs from "fs";
 import path from "path";
 import os from "os";
@@ -9,24 +10,40 @@ const CPC_EXT_HEAD = "EXTENDED CPC DSK File\r\nDisk-Info\r\n";
 const TRACK_HEAD = "Track-Info\r\n";
 const creator = "Klive IDE".padEnd(14, " ");
 
+/** The TR-DOS disk types of the Create Disk dialog (`TRD_DISK_TYPES`) and their geometries */
+const TRD_GEOMETRIES: Record<string, TrdGeometry> = {
+  trd80ds: { cylinders: 80, sides: 2 },
+  trd40ds: { cylinders: 40, sides: 2 },
+  trd80ss: { cylinders: 80, sides: 1 },
+  trd40ss: { cylinders: 40, sides: 1 }
+};
+
 export function createDiskFile (
   foldername: string,
   filename: string,
   diskFormat: string
 ): string {
-  const writer = new BinaryWriter();
-  createDisk(writer, diskFormat);
+  const trdGeometry = TRD_GEOMETRIES[diskFormat];
+  let contents: Uint8Array;
+  if (trdGeometry) {
+    // --- A blank, TR-DOS-formatted disk for the Pentagon's Beta 128
+    contents = createBlankTrd(trdGeometry, path.parse(filename).name.slice(0, 8));
+  } else {
+    const writer = new BinaryWriter();
+    createDisk(writer, diskFormat);
+    contents = writer.buffer;
+  }
   const fileExt = path.extname(filename);
   foldername = foldername ? resolveHomeFilePath(foldername) : os.homedir();
   if (!fileExt) {
-    filename += ".dsk";
+    filename += trdGeometry ? ".trd" : ".dsk";
   }
   if (!fs.existsSync(foldername)) {
     fs.mkdirSync(foldername, { recursive: true });
   }
   const fileWithPath = foldername ? `${foldername}/${filename}` : filename;
   const fullPath = resolveHomeFilePath(fileWithPath);
-  fs.writeFileSync(fullPath, writer.buffer);
+  fs.writeFileSync(fullPath, contents);
   return fullPath;
 }
 

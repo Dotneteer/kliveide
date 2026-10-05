@@ -10,7 +10,8 @@ import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
-import { FAST_LOAD } from "@emu/machines/machine-props";
+import { DISK_A_CHANGES, DISK_A_UNSAVED, DISK_B_CHANGES, DISK_B_UNSAVED, FAST_LOAD, TRDOS_ROM_FILE } from "@emu/machines/machine-props";
+import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import type { TapeDataBlock } from "@common/structs/TapeDataBlock";
 import type { CodeInjectionFlow } from "@emu/abstractions/CodeInjectionFlow";
@@ -45,11 +46,18 @@ export type RunLimit = { maxFrames?: number };
 const ROM_CHARSET = 0x3d00;
 
 class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
-  constructor(model?: MachineModel) {
+  constructor(model?: MachineModel, private readonly trdosRomImage?: Uint8Array) {
     super(model, { ...(model?.config ?? {}) }, {
       artifactName: "harness-sp128-machine-v2.wasm",
       readArtifact: async () => readFileSync(sp128Output)
     });
+    // --- The Beta 128 needs a TR-DOS ROM; the harness hands over the bytes it was given
+    if (trdosRomImage) this.setMachineProperty(TRDOS_ROM_FILE, "<harness>");
+  }
+
+  protected override async loadTrdosRom(): Promise<Uint8Array> {
+    if (!this.trdosRomImage) throw new Error("No TR-DOS ROM given to the harness");
+    return this.trdosRomImage;
   }
 
   protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
@@ -127,7 +135,25 @@ export async function createHarnessSpectrumMachine(
  * Creates a ZX Spectrum 128K, or a +2E/+3E of the given model, with the real ROMs. Builds the WASM
  * core first, once per test process.
  */
-export async function createSp128Session(model: Sp128SessionModel = "sp128"): Promise<Sp128TestSession> {
+/**
+ * The TR-DOS ROM named by the `KLIVE_TRDOS_ROM` environment variable, if any. Klive cannot ship the
+ * ROM (`.plans/BETA128_TRDOS_PLAN.md` Q1), so the tests that need the real one run only when a
+ * developer names their own copy.
+ */
+export function trdosRomFromEnvironment(): Uint8Array | undefined {
+  const path = process.env.KLIVE_TRDOS_ROM;
+  return path ? new Uint8Array(readFileSync(path)) : undefined;
+}
+
+export type Sp128SessionOptions = {
+  /** The Pentagon's TR-DOS ROM (16K); without one its Beta 128 is off, as in the IDE */
+  trdosRom?: Uint8Array;
+};
+
+export async function createSp128Session(
+  model: Sp128SessionModel = "sp128",
+  options: Sp128SessionOptions = {}
+): Promise<Sp128TestSession> {
   let machine: ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
   const sp128Model = getSp128Model(model);
   if (sp128Model) {
@@ -135,7 +161,7 @@ export async function createSp128Session(model: Sp128SessionModel = "sp128"): Pr
       buildSp128Wasm();
       built.sp128 = true;
     }
-    machine = new HarnessSp128Machine(sp128Model);
+    machine = new HarnessSp128Machine(sp128Model, options.trdosRom);
   } else {
     if (!built.spp3e) {
       buildSpP3eWasm();
@@ -404,6 +430,41 @@ export class Sp128TestSession {
   insertDisk(drive: 0 | 1, bytes: Uint8Array): this {
     this.machine.setMachineProperty(drive ? MEDIA_DISK_B : MEDIA_DISK_A, bytes);
     return this;
+  }
+
+  /**
+   * The disk writes the machine has handed over since the last call (the Beta 128 publishes them as
+   * `.trd` file sectors at frame ends and debug stops), and clears them, as the controller does
+   */
+  takeDiskChanges(drive: 0 | 1): SectorChanges | undefined {
+    const key = drive ? DISK_B_CHANGES : DISK_A_CHANGES;
+    const changes = this.machine.getMachineProperty(key) as SectorChanges | undefined;
+    this.machine.setMachineProperty(key, undefined);
+    return changes;
+  }
+
+  /** The guest changed the disk, but its file (an `.scl`) is not written back */
+  diskUnsaved(drive: 0 | 1): boolean {
+    return !!this.machine.getMachineProperty(drive ? DISK_B_UNSAVED : DISK_A_UNSAVED);
+  }
+
+  /** The Beta 128's state, read without side effects */
+  beta128() {
+    const c = (name: string, ...args: number[]) => this.call(name, ...args);
+    return {
+      enabled: c("BetaGetEnabled") !== 0,
+      paged: c("BetaGetPaged") !== 0,
+      system: c("BetaGetSystemRegister"),
+      status: c("BetaGetFdcStatus"),
+      track: c("BetaGetFdcTrack"),
+      sector: c("BetaGetFdcSector"),
+      data: c("BetaGetFdcData"),
+      command: c("BetaGetFdcCommand"),
+      busy: c("BetaGetFdcBusy") !== 0,
+      intrq: c("BetaGetIntrq") !== 0,
+      drq: c("BetaGetDrq") !== 0,
+      cylinders: [c("BetaGetDriveCylinder", 0), c("BetaGetDriveCylinder", 1)]
+    };
   }
 
   // ==========================================================================================

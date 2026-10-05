@@ -14,6 +14,7 @@ import {
   tapeMenuRenderer,
   spectrumIdeRenderer,
   diskMenuRenderer,
+  trdosRomMenuRenderer,
   sp48RomMenuRenderer,
   spectrumSnapshotRenderer
 } from "./zx-specrum-menus";
@@ -62,6 +63,9 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_SPECTRUM_128]: {
     machineItems: (windowInfo, machine, model) => [
       ...tapeMenuRenderer(windowInfo, machine, model),
+      // --- The Pentagon's Beta 128 (model config `MC_DISK_SUPPORT`; none on the 128K)
+      ...diskMenuRenderer(windowInfo, machine, model),
+      ...trdosRomMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
       ...rzxMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model)

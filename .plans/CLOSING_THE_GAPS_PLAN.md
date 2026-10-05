@@ -35,7 +35,7 @@ are estimates for prioritising, not commitments.
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
 | G8 | BASIC editor intelligence | **M** | ✅ done (2026-10-03): G8.1–G8.5 |
-| G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.2 +2A/+3, G9.3 ZX80/81 done; G9.1b TR-DOS next |
+| G9 | Machine breadth (ZX80/81, clones) | **M → XL** | ✅ G9.1 Pentagon 128, G9.1b Beta 128 / TR-DOS, G9.2 +2A/+3, G9.3 ZX80/81 done; G9.4 next |
 | G10 | Proof points (accuracy evidence) | **S–M** | Publishing results of known test suites |
 
 ---
@@ -248,7 +248,7 @@ help generated from Klive's spec; checked in the running IDE by `scripts/kbasic-
 | Feature | What it does | Size |
 |---|---|---|
 | G9.1 Pentagon 128 ✅ **done** | Popular Russian clone: a model of the 128K on its core, with the Pentagon's timing (71,680-T frame, 3.5 MHz, no contention, no floating bus) (main, 2026-10-04; unreleased); plan: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md). | M |
-| G9.1b Beta 128 / TR-DOS | The Pentagon's disk interface: a WD1793 FDC, `.trd`/`.scl` images, the TR-DOS ROM and its paging trap; plan: [BETA128_TRDOS_PLAN.md](BETA128_TRDOS_PLAN.md) (decisions recorded; the TR-DOS ROM ships only with clear permission, otherwise the user supplies it). | M–L |
+| G9.1b Beta 128 / TR-DOS ✅ **done** | The Pentagon's disk interface: a WD1793 from its data sheet, two drives, `.trd`/`.scl` images (written back to `.trd`; an `.scl` never), a Disk Loader, the TR-DOS ROM as partition R2 (main, 2026-10-05; unreleased); plan: [BETA128_TRDOS_PLAN.md](BETA128_TRDOS_PLAN.md). The TR-DOS ROM cannot be distributed, so the user names their own copy. | M–L |
 | G9.2 ZX Spectrum +2A/+3 (non-E ROMs) ✅ **done** | The original Amstrad ROMs alongside the +E ones: eight +2A/+3 models (v4.0 and v4.1 English, v4.1 Spanish) on the `spp3e` core (main, 2026-10-04; unreleased); plan: [PLUS3_AMSTRAD_ROMS_PLAN.md](PLUS3_AMSTRAD_ROMS_PLAN.md). The archive had no Spanish v4.0 set, so its two models were dropped. | S–M |
 | G9.3 ZX80 / ZX81 ✅ **done** | Both Sinclair machines on one C/WASM core (main, 2026-10-03; unreleased); plan: [ZX8081_WASM_PLAN.md](ZX8081_WASM_PLAN.md). | XL |
 | G9.4 Timex TC2048/2068, Scorpion | Long-tail clones, in three parts: G9.4a TC2048, G9.4b TC2068/TS2068, G9.4c Scorpion ZS-256 (after G9.1b); plan: [TIMEX_SCORPION_PLAN.md](TIMEX_SCORPION_PLAN.md) (decisions recorded). | L each; low priority |
@@ -314,7 +314,7 @@ and WPMEM comments.
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.
 - ~~G9.3 ZX80/81~~ (done).
 - ~~G9.2 +2A/+3 with the Amstrad ROMs~~ (done).
-- ~~G9.1 Pentagon 128~~ (done); G9.1b TR-DOS next for the Pentagon.
+- ~~G9.1 Pentagon 128~~ (done); ~~G9.1b Beta 128 / TR-DOS~~ (done).
 
 **Cross-cutting note:** deterministic replay is the shared foundation of G4.4 and G2.6 (RZX,
 G2.7–G2.8, replays its inputs instead and needed only an exact CPU and snapshot restore). **The capture half is done (G2.6):** every core's whole state is a memory image, and

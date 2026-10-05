@@ -195,8 +195,10 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
           perLine: 224,
           linesPerFrame: 320,
           perFrame: 71_680,
-          note: "No memory or I/O contention and no floating bus; the 128K ROMs, no TR-DOS"
-        }
+          note: "No memory or I/O contention and no floating bus; the 128K ROMs"
+        },
+        // --- The Beta 128 (`.plans/BETA128_TRDOS_PLAN.md`): it boots the user's own TR-DOS ROM
+        media: [SPECTRUM_TAPE, "Beta 128: 2 drives (TRD, SCL), with your TR-DOS ROM"]
       }
     }
   },

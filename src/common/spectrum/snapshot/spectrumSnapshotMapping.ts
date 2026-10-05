@@ -141,7 +141,14 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   }
   if (p.interface1) warnings.push("Interface 1 is not emulated; its state is ignored");
   if (p.mgt) warnings.push("The M.G.T. (Disciple/Plus D) interface is not emulated");
-  if (p.trdosPaged) warnings.push("The TR-DOS ROM was paged in; Klive has no Beta 128 interface");
+  // --- The Beta 128 (TR-DOS) is the Pentagon's: such a snapshot opens on it
+  if (p.trdosPaged || p.beta128) {
+    if (target.machineId === MI_SPECTRUM_128) {
+      modelIds = ["pentagon", ...modelIds.filter((m) => m !== "pentagon")];
+    } else {
+      warnings.push("The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 has");
+    }
+  }
   if (p.issue2) warnings.push("The snapshot asks for an Issue 2 keyboard, which Klive does not emulate");
   if (snapshot.ula.alternateTimings) {
     warnings.push("The snapshot uses the alternate (late) ULA timings; Klive uses the standard ones");

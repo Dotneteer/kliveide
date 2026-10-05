@@ -671,6 +671,12 @@ The second gain is free and matters more than the first: **unequal widths tell t
 A register, a port mask and an address are different quantities, and boxes of identical width say
 they are the same kind of thing.
 
+**A `Dropdown` follows the same rule, computed from its options.** Its widest legal value is its
+longest label, and when the options come from data, a literal width goes stale with them: the Create
+Disk dialog's fixed 200px fitted the +3's CPC labels and clipped the Pentagon's TR-DOS ones. Size it
+as `` `${longest label length + 4}ch` `` (the 4ch hold the chevron); the open list takes the trigger's
+width (`--radix-select-trigger-width`), so one value sizes both.
+
 ## A Hint Under A Field Needs Its Own Top Margin
 
 `TextInput` carries no bottom margin — `DialogRow` owns the gap between a label and its field, and

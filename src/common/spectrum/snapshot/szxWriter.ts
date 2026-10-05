@@ -159,6 +159,38 @@ export function writeSzxFile(
     }
   }
 
+  // --- B128 and BDSK: the Beta 128 (the Pentagon); its disks are linked to their files, like the +3's
+  const beta = s.peripherals.beta128;
+  if (beta) {
+    const flags = 0x01 /* connected */ | (beta.paged ? 0x04 : 0);
+    block(
+      out,
+      "B128",
+      new SnapshotBytes()
+        .dword(flags)
+        .byte(beta.drives, beta.system, beta.track, beta.sector, beta.data, beta.status)
+        .toArray()
+    );
+    for (const disk of beta.disks) {
+      if (!disk.fileName) {
+        losses.push(
+          `The Beta disk in drive ${disk.drive === 1 ? "B" : "A"} has no file, and a .szx can only link disks to files`
+        );
+        continue;
+      }
+      const name = latin1Bytes(disk.fileName + "\0");
+      block(
+        out,
+        "BDSK",
+        new SnapshotBytes()
+          .dword(disk.writeProtected ? 0x04 : 0x00)
+          .byte(disk.drive, disk.cylinder, disk.diskType)
+          .bytes(name)
+          .toArray()
+      );
+    }
+  }
+
   // --- TAPE: linked to its file, or embedded when it has none (D17)
   const tape = s.peripherals.tape;
   if (tape) {

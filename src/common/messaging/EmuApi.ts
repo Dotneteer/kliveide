@@ -282,6 +282,14 @@ class EmuApiImpl {
   }
 
   /**
+   * The Pentagon's TR-DOS disk in a drive as a `.trd` image, with the guest's writes (to save an
+   * `.scl` disk, which is never written back); undefined without a Beta 128 or a disk
+   */
+  async getTrdosDiskImage(_index: number): Promise<Uint8Array | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the current CPU state.
    */
   async getCpuState(): Promise<CpuState> {
@@ -392,6 +400,10 @@ class EmuApiImpl {
    * the Tape Loader on a 128K or +2/+3. The tape must already be inserted (`MainApi.setTapeFile`).
    * @param _debug Arm the breakpoints once the keystrokes are typed
    */
+  async startDiskBoot(_debug: boolean): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
   async startTapeLoad(_debug: boolean): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
@@ -1058,6 +1070,7 @@ const UNBOUNDED_EMU_METHODS = [
   "runCodeCommand",
   // --- Reaches the editor or the start-up menu by running the ROM, like `runCodeCommand`
   "startTapeLoad",
+  "startDiskBoot",
   // --- Script lifetime is controlled by the script/user, not by this call
   "startScript",
   "stopScript"

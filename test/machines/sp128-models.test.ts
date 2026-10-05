@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { MC_SP128_TIMING, MI_SPECTRUM_128 } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SP128_TIMING, MI_SPECTRUM_128 } from "@common/machines/constants";
 import { getModelConfig, machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { getHardwareSpec } from "@common/machines/hardware-specs";
 import { resolveMachineModel } from "@common/machines/machine-favorites";
@@ -25,7 +25,8 @@ describe("ZX Spectrum 128K models", () => {
       ["sp128", "ZX Spectrum 128K"],
       ["pentagon", "Pentagon 128"]
     ]);
-    expect(getModelConfig(MI_SPECTRUM_128, "pentagon")).toEqual({ [MC_SP128_TIMING]: "pentagon" });
+    // --- The Pentagon has the Beta 128's two drives (`.plans/BETA128_TRDOS_PLAN.md` B1)
+    expect(getModelConfig(MI_SPECTRUM_128, "pentagon")).toEqual({ [MC_SP128_TIMING]: "pentagon", [MC_DISK_SUPPORT]: 2 });
     expect(getModelConfig(MI_SPECTRUM_128, "sp128")).toEqual({ [MC_SP128_TIMING]: "sp128" });
   });
 
@@ -52,6 +53,7 @@ describe("ZX Spectrum 128K models", () => {
     const sp128 = getSp128Model("sp128")!;
     expect(mergeZxSpectrum128Config(pentagon, { [MC_SP128_TIMING]: "sp128", other: 1 })).toEqual({
       [MC_SP128_TIMING]: "pentagon",
+      [MC_DISK_SUPPORT]: 2,
       other: 1
     });
     expect(mergeZxSpectrum128Config(sp128, { [MC_SP128_TIMING]: "pentagon" })).toEqual({ [MC_SP128_TIMING]: "sp128" });

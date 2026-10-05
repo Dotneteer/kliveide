@@ -5,4 +5,11 @@
  *
  * See README.md.
  */
-export { createHarnessSpectrumMachine, createSp128Session, Sp128TestSession, type Sp128SessionModel } from "./session";
+export {
+  createHarnessSpectrumMachine,
+  createSp128Session,
+  Sp128TestSession,
+  trdosRomFromEnvironment,
+  type Sp128SessionModel,
+  type Sp128SessionOptions
+} from "./session";

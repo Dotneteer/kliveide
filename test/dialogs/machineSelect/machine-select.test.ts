@@ -98,8 +98,9 @@ describe("Select Machine dialog", () => {
     const z88 = h.vm.sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows.map((r) => r.key)).toEqual(["z88/OZ40", "z88/OZ40FI"]);
 
+    // --- The +2A/+3/+3E's drives, and the Pentagon's Beta 128
     h.do({ type: "filterChanged", text: "disk" });
-    expect(h.vm.sections.map((s) => s.id)).toEqual(["spp3e"]);
+    expect(h.vm.sections.map((s) => s.id)).toEqual(["sp128", "spp3e"]);
 
     h.do({ type: "filterChanged", text: "nothing-like-this" });
     expect(h.vm.noMatch).toBe(true);

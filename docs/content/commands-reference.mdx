@@ -366,7 +366,7 @@ Available aliases: `co`
 
 ## `crd`
 
-This command creates an empty disk file (DSK format) you can use with ZX Spectrum +3 models (and compatible).
+This command creates an empty disk file: a DSK file for the ZX Spectrum +3 models (and compatible), or a blank, formatted TR-DOS disk (`.trd`) for the Pentagon 128's Beta 128 interface.
 
 ```
 crd <disk-type> <disk-name> [<disk-folder>] [-p]
@@ -378,7 +378,11 @@ These are the arguments of the command:
   - `ds`: Double-sided CPC
   - `sse`: Single-sided Extended CPC
   - `dse`: Double-sided Extended CPC
-- `disk-name`: The name of the disk file (`.dsk` extension as added automatically)
+  - `trd80ds`: TR-DOS, 80 tracks, double-sided (640K)
+  - `trd40ds`: TR-DOS, 40 tracks, double-sided (320K)
+  - `trd80ss`: TR-DOS, 80 tracks, single-sided (320K)
+  - `trd40ss`: TR-DOS, 40 tracks, single-sided (160K)
+- `disk-name`: The name of the disk file (the `.dsk` or `.trd` extension is added automatically)
 - `disk-folder`: An optional folder in which the new disk file is created. The folder must exist.
 - `-p`: Creates the disk file within the currently opened project folder (under `disks`).
 

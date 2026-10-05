@@ -1,7 +1,9 @@
 import { FileProvider } from "@renderer/core/FileProvider";
 import { MachineController } from "@emu/machines/MachineController";
 import { DebugSupport } from "@emu/machines/DebugSupport";
-import { FILE_PROVIDER, AUDIO_SAMPLE_RATE } from "@emu/machines/machine-props";
+import { FILE_PROVIDER, AUDIO_SAMPLE_RATE, TRDOS_ROM_FILE } from "@emu/machines/machine-props";
+import { getGlobalSetting } from "@renderer/core/RendererProvider";
+import { SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
 import { LiteEvent } from "@emu/utils/lite-event";
 import { MessageSource } from "@messaging/messages-core";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -122,6 +124,7 @@ class MachineService implements IMachineService {
       AUDIO_SAMPLE_RATE,
       this.store.getState()?.emulatorState?.audioSampleRate
     );
+    machine.setMachineProperty(TRDOS_ROM_FILE, getGlobalSetting(this.store, SETTING_EMU_TRDOS_ROM) || undefined);
     await machine.setup();
     await machine.hardReset();
 

@@ -88,10 +88,12 @@ describe(".sna", () => {
     expect(() => parseSnaFile(bytes)).toThrow(/147487/);
   });
 
-  it("warns about the TR-DOS ROM and refuses an odd size", () => {
+  it("opens a .sna with TR-DOS paged on the Pentagon (the Beta 128's machine), and refuses an odd size", () => {
     const s = parseSnaFile(buildSna128(state128(), 1));
     expect(s.peripherals.trdosPaged).toBe(true);
-    expect(mapSpectrumSnapshotToKlive(s).warnings.join()).toMatch(/TR-DOS/);
+    const mapping = mapSpectrumSnapshotToKlive(s);
+    expect(mapping.modelIds).toEqual(["pentagon", "sp128"]);
+    expect(mapping.warnings.join()).not.toMatch(/TR-DOS/);
     expect(() => parseSnaFile(new Uint8Array(1000))).toThrow(/49179/);
   });
 });

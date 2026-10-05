@@ -19,6 +19,7 @@ import {
 import {
   SPECTRUM_48K_BANKS,
   SPECTRUM_BANK_SIZE,
+  type SnapshotBetaDisk,
   type SnapshotDisk,
   type SnapshotMachineKind,
   type SpectrumSnapshot
@@ -192,6 +193,34 @@ export function captureSpectrumSnapshot(
       if (fileName) disks.push({ drive, fileName });
     }
     snapshot.peripherals.plus3 = { drives, motorOn: call("GetDiskMotorOn") !== 0, disks };
+  }
+
+  // --- The Pentagon's Beta 128: its registers, the TR-DOS page and the disks linked to their files
+  if (core.prefix === "sp128" && call("BetaGetEnabled") !== 0) {
+    const disks: SnapshotBetaDisk[] = [];
+    for (let drive = 0; drive < 2; drive++) {
+      const fileName = media.diskFiles?.[drive];
+      if (!fileName || call("BetaDiskGetPresent", drive) === 0) continue;
+      disks.push({
+        drive,
+        cylinder: call("BetaGetDriveCylinder", drive),
+        diskType: /\.scl$/i.test(fileName) ? 1 : 0,
+        writeProtected: call("BetaDiskGetWriteProtected", drive) !== 0,
+        fileName
+      });
+    }
+    const paged = call("BetaGetPaged") !== 0;
+    snapshot.peripherals.beta128 = {
+      drives: 2,
+      paged,
+      system: call("BetaGetSystemRegister"),
+      track: call("BetaGetFdcTrack"),
+      sector: call("BetaGetFdcSector"),
+      data: call("BetaGetFdcData"),
+      status: call("BetaGetFdcStatus"),
+      disks
+    };
+    if (paged) snapshot.peripherals.trdosPaged = true;
   }
 
   // --- The tape in the deck

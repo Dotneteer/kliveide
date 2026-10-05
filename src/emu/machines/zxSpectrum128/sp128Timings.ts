@@ -1,6 +1,6 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
-import { MC_SP128_TIMING } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SP128_TIMING } from "@common/machines/constants";
 
 /*
  * The two timings the `sp128` core runs (`.plans/PENTAGON_128_PLAN.md`, P2-P3): the ZX Spectrum 128K
@@ -129,7 +129,12 @@ export function getSp128Timing(config: MachineConfigSet | undefined): Sp128Timin
  */
 export const SP128_MODELS: MachineModel[] = [
   { modelId: "sp128", displayName: "ZX Spectrum 128K", config: { [MC_SP128_TIMING]: "sp128" } },
-  { modelId: "pentagon", displayName: "Pentagon 128", config: { [MC_SP128_TIMING]: "pentagon" } }
+  // --- The Pentagon's Beta 128 disk interface has two drives (`.plans/BETA128_TRDOS_PLAN.md` B1, Q3)
+  {
+    modelId: "pentagon",
+    displayName: "Pentagon 128",
+    config: { [MC_SP128_TIMING]: "pentagon", [MC_DISK_SUPPORT]: 2 }
+  }
 ];
 
 /** The model of the `sp128` machine, by id (`undefined` - a project from before the models - is none) */

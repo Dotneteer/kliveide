@@ -537,6 +537,13 @@ class EmuMessageProcessor {
    * @param index The disk drive index.
    * @param protect True to enable write protection.
    */
+  getTrdosDiskImage(index: number): Uint8Array | undefined {
+    const machine = this.machineService.getMachineController()?.machine as
+      | { exportBetaDiskAsTrd?: (drive: number) => Uint8Array | undefined }
+      | undefined;
+    return machine?.exportBetaDiskAsTrd?.(index);
+  }
+
   setDiskWriteProtection(index: number, protect: boolean) {
     const controller = this.machineService.getMachineController();
     const propName = index ? DISK_B_WP : DISK_A_WP;
@@ -857,6 +864,18 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.runTapeLoad(debug);
+  }
+
+  /**
+   * Resets the machine and boots the disk in drive A (`MachineController.runDiskBoot`).
+   * @param debug True to arm the breakpoints once the keystrokes are typed.
+   */
+  startDiskBoot(debug: boolean) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.runDiskBoot(debug);
   }
 
   /**

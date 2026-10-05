@@ -125,14 +125,41 @@ export type SpectrumSnapshotPeripherals = {
   mgt?: boolean;
   /** A Multiface ROM was paged */
   multiface?: boolean;
-  /** The TR-DOS ROM was paged (`.sna` 128K) */
+  /** The TR-DOS ROM was paged (`.sna` 128K, or the `.szx` B128 block) */
   trdosPaged?: boolean;
+  /** The Beta 128 disk interface (`.szx` B128 and BDSK blocks; `.plans/BETA128_TRDOS_PLAN.md`) */
+  beta128?: SnapshotBeta128;
   /** A custom ROM (`.szx` ROM block), which Klive does not install */
   customRomSize?: number;
   /** +3 disk drives */
   plus3?: { drives: number; motorOn: boolean; disks: SnapshotDisk[] };
   /** The cassette recorder */
   tape?: SnapshotTape;
+};
+
+/** A disk in a Beta 128 drive (`.szx` BDSK block) */
+export type SnapshotBetaDisk = {
+  drive: number;
+  /** Where the head is */
+  cylinder: number;
+  /** The image format: 0 TRD, 1 SCL, 2 FDI, 3 UDI (zx-state `ZXSTBDT_*`) */
+  diskType: number;
+  writeProtected: boolean;
+  fileName?: string;
+  embedded?: Uint8Array;
+};
+
+/** The Beta 128's state (`.szx` B128 block) */
+export type SnapshotBeta128 = {
+  drives: number;
+  paged: boolean;
+  /** The system register (port $FF) and the WD1793's registers */
+  system: number;
+  track: number;
+  sector: number;
+  data: number;
+  status: number;
+  disks: SnapshotBetaDisk[];
 };
 
 /** A header field, as the viewer's "File" section lists it */

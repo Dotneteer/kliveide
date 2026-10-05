@@ -7,6 +7,11 @@ export const DISK_A_WP = "DiskAWp";
 export const DISK_B_WP = "DiskBWp";
 export const DISK_A_CHANGES = "DiskAChanges";
 export const DISK_B_CHANGES = "DiskBChanges";
+/** The TR-DOS ROM file's path (the Pentagon's Beta 128), from the `SETTING_EMU_TRDOS_ROM` setting */
+export const TRDOS_ROM_FILE = "TrdosRomFile";
+/** A TR-DOS disk in drive A / B that the guest changed but that is not written back (an `.scl`) */
+export const DISK_A_UNSAVED = "DiskAUnsaved";
+export const DISK_B_UNSAVED = "DiskBUnsaved";
 export const FILE_PROVIDER = "FileProvider";
 export const AUDIO_SAMPLE_RATE = "AudioSampleRate";
 export const BEEPER_SAMPLES = "BeeperSamples";

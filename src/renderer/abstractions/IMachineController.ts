@@ -202,6 +202,7 @@ export interface IMachineController {
    * @param debug Arm the breakpoints once the keystrokes are typed
    */
   runTapeLoad(debug: boolean): Promise<void>;
+  runDiskBoot(debug: boolean): Promise<void>;
 
   /**
    * Replaces the machine's state and leaves it Paused, so the next Start, Debug or step continues

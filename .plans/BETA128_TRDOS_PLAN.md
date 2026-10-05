@@ -1,6 +1,7 @@
 # Beta 128 disk interface and TR-DOS on the Pentagon 128 (G9.1b)
 
-Status: **decisions recorded** (2026-10-04; see §8). Ready for Phase 0.
+Status: ✅ **done** (2026-10-05; main, unreleased) — except running real TR-DOS, which needs a ROM
+Klive cannot ship (§10). See §10 for what was built and where it departs from the plan.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.1b, size M–L).
 Builds on: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (G9.1, done).
 
@@ -250,13 +251,103 @@ All proposals accepted:
   enter TR-DOS and boot the disk.
 - **Q6. Speed:** accurate disk timing only; a fast-disk mode later.
 
-## 9. Reference values (filled in Phase 0)
+## 9. Reference values (recorded in Phase 0, 2026-10-05)
+
+Sources: **[DS]** the Western Digital FD179X-01 data sheet, October 1979 (text layer of the scan on
+bitsavers: `components/westernDigital/FD179X-01_Data_Sheet_Oct1979.pdf`); **[BK]** "ZX-Spectrum &
+TR-DOS для пользователей и программистов", chapter "Интерфейс BETA DISK - принцип работы"
+(zxpress.ru, book_articles.php?id=1866); **[UM]** the Technology Research Beta 128 user manual
+(text transcription on k1.spdns.de); **[KS]** Kaitai Struct `filesystem/tr_dos_image.ksy` (CC0);
+**[SW]** Sinclair Wiki, "TR-DOS filesystem" and "SCL format" (CC BY-SA); **[ZS]** the zx-state
+specification, `ZXSTBETA128` / `ZXSTBETADISK` (spectaculator.com).
 
 | Value | Klive | Source |
 |---|---|---|
-| Ports and bits (`$1F`, `$3F`, `$5F`, `$7F`, `$FF`) | | |
-| Paging trap range and conditions | | |
-| Data rate, rotation, index pulse | | |
-| Step rates, head settle | | |
-| TR-DOS ROM version and CRC32 | | |
-| TR-DOS command loop key wait | | |
+| WD1793 registers | `$1F` status (R) / command (W), `$3F` track, `$5F` sector, `$7F` data | [BK] |
+| System register (W, `$FF`) | bits 0–1 drive A–D; bit 2 controller reset, active low (pulse 0 then 1); bit 3 must be 1 (gates HLT); bit 4 side; bit 6 density, 1 = MFM | [BK] |
+| Side bit polarity | **open**: [BK] reads as "0 = first head"; to be decided by the ROM-gated test with a file on side 1 (one constant in the core) | [BK], TR-DOS |
+| Density bit | stored, **not enforced**: Klive models MFM only, and which value TR-DOS writes is not confirmed; enforcing the wrong one would make every disk unreadable | Klive choice |
+| System register (R, `$FF`) | bit 6 DRQ, bit 7 INTRQ; other bits not driven | [BK] |
+| Paging trap | TR-DOS ROM in on an M1 fetch from `$3D00–$3DFF`, out on an M1 fetch from `$4000–$FFFF`; on the 128K ROMs only while the 48K BASIC ROM (ROM 1) is selected, since ROM 0 runs code at `$3Dxx` | [BK]; the ROM 1 condition is plan §1 |
+| Ports while not paged | not decoded (the Pentagon reads `$FF`) | [BK], G9.1 |
+| Clock | 1 MHz (5.25" drives): MFM at 250 kbit/s, one byte per 32 µs = 112 T at 3.5 MHz | [DS] ("1 MHz for mini-drives"; the 2 MHz rates doubled) |
+| Step rates (r1 r0) | 6, 12, 20, 30 ms at 1 MHz | [DS] Table 1 |
+| Head settling | 30 ms at 1 MHz after the last step when V = 1, and when E = 1 on Type II/III | [DS] "Head positioning" |
+| Verify | first ID field's track vs the track register; Seek Error if no match within 5 revolutions | [DS] |
+| Record Not Found | no matching ID within four revolutions (five index pulses for the side compare) | [DS] Type II |
+| Restore | Seek Error after 255 steps without Track 0 | [DS] |
+| Head unload | idle for 15 index pulses (15 revolutions) | [DS] |
+| Type II/III on a not-ready drive | do not execute (Not Ready) | [DS] status bit S7 |
+| Lost Data | the CPU did not service DRQ within one byte time; Write Sector with DRQ unserviced at the data field terminates; Write Track substitutes a zero byte | [DS] |
+| Read Address | 6 bytes: track, side, sector, length code, CRC1, CRC2; the track goes to the sector register | [DS] |
+| Write Track bytes (MFM) | `F5` → A1 + preset CRC, `F6` → C2, `F7` → two CRC bytes, `F8`–`FF` written as is (`FE` ID mark, `FB` data mark) | [DS] |
+| Force Interrupt | `D0`: terminate, no INTRQ; I2 every index pulse; I3 immediate; with no command running the status shows Type I bits | [DS] |
+| Status bits | Type I: NotReady, Protected, HeadLoaded, SeekError, CRC, Track0, Index, Busy; Type II/III: NotReady, WriteProtect, RecordType/WriteFault, RNF, CRC, LostData, DRQ, Busy | [DS] Table 6 |
+| Rotation | 300 rpm: 200 ms a revolution, 700 000 T at 3.5 MHz (standard for 5.25" DD drives; not stated by [DS]) | drive convention |
+| TRD | logical track = cylinder × 2 + side, 16 × 256-byte sectors (ID 1–16); catalogue in sectors 1–8 of track 0 (128 × 16-byte entries); disk info in sector 9 | [KS], [SW] |
+| Disk info (track 0, sector 9) | `+$E1` first free sector, `+$E2` first free track, `+$E3` type (`$16` 80/DS, `$17` 40/DS, `$18` 80/SS, `$19` 40/SS), `+$E4` files, `+$E5` free sectors (LE), `+$E7` `$10`, `+$EA` password (9), `+$F4` deleted files, `+$F5` label (8) | [KS] |
+| File entry | name (8), type (1: `B`, `C`, `D`, `#`), params (2+2), sectors (1), first sector (1), first track (1); first name byte `$00` = end, `$01` = deleted. BASIC: total length, program length; `$80 $AA` + autostart line follow the data | [KS], [SW] |
+| Free space on a blank 80/DS disk | 2 544 sectors (159 × 16) | [UM] |
+| SCL | `SINCLAIR`, file count, 14-byte headers (the TRD entry without sector/track), data in order, then a 4-byte little-endian sum of all preceding bytes | [SW]; the checksum is the common convention, not in [SW]: written, a mismatch only warns |
+| zx-state | `B128`: flags (connected, custom ROM, paged, autoboot, seek lower, compressed), drive count, system, track, sector, data and status registers; `BDSK` blocks reference the disk files | [ZS] |
+| TR-DOS entry | `RANDOMIZE USR 15616` from 48 BASIC; `RETURN` back; on start TR-DOS boots a BASIC file `boot` from drive A | [UM] |
+| TR-DOS ROM | not distributable (Fuse, Philip Kendall, fuse-emulator-devel, 2011-01-03: "cannot be distributed"); the user names the file (Q1). The copy checked locally reads "TR-DOS Ver 5.03, 1986 Technology Research Ltd. (U.K.)" | Fuse mailing list |
+
+## 10. As built (2026-10-05)
+
+- **The TR-DOS ROM (Q1).** It cannot be shipped: Fuse's maintainer concluded on the fuse-emulator-devel
+  list (2011-01-03) that it "cannot be distributed", having found no rights holder to ask, and Fuse has
+  shipped without it since. So the user names it: the global setting `emuOptions.trdosRomFile`
+  (`SETTING_EMU_TRDOS_ROM`), set from **Machine > TR-DOS ROM** (select / forget, with the ROM in use as
+  the first item). `MachineService` hands it to the machine (`TRDOS_ROM_FILE`); without a readable 16K
+  ROM the Pentagon runs without the interface and says why (`trdosRomProblem`).
+- **The controller (Phase 1).** `zxSpectrum/wasm/common/zx-spectrum-beta128.c`, included by `sp128.c`.
+  It is **lazy**: the Beta 128 does not wire INTRQ to the Z80, so the controller plays its elapsed
+  events only when the CPU touches its ports. Two disks of up to 86 cylinders, two sides, live in WASM
+  memory in a canonical layout, so state files carry them. The TR-DOS ROM is a separate 16K page
+  (the 128K ROMs' upload count and checksum are unchanged). The paging trap is the shared Z80's
+  `Z80_BEFORE_OPCODE_FETCH` hook, armed only with the interface connected. The 128K golden and the
+  Pentagon's timing tests pass unchanged, and the 1 000-frame benchmark did not slow down
+  (≈ 526 ms against ≈ 535 ms before).
+- **Choices the sources did not settle**, each in one place and listed in §9: the side bit's polarity
+  (decided by the ROM-gated test with a file on side 1), and the density bit, which is **stored, not
+  enforced** (Klive models MFM only). The track layout (a 100-byte gap after the index, 16 slots of
+  384 bytes in ID order) is Klive's choice: an image holds none.
+- **Tests (Phase 2).** Klive cannot use the real ROM in CI, so `test/sp128-hw/beta128/test-rom.ts`
+  assembles a **stand-in ROM** with FDC routines at `$3D00`, entered through the real trap from RAM, so
+  DRQ, Lost Data and INTRQ are what a program sees with real CPU timing. `wd1793.test.ts` covers the
+  trap (ROM 1 only, M1 fetches only, out from RAM), the ports (only while paged), every Type I command
+  with the data sheet's step rates, settling, verify and Seek Error, the index pulse, Read/Write Sector
+  (at 112 T a byte), multi-sector reads, Record Not Found, Write Protect, Lost Data, Not Ready, Read
+  Address with its CRC, Write Track formatting (which extends the disk), Read Track, Force Interrupt and
+  the master reset's Restore.
+- **Formats and media (Phase 3).** `disk/trd/trdImage.ts`: TRD geometry, catalogue, writer, blank
+  formatter, SCL ↔ TRD (a bad or missing SCL checksum only warns). `Beta128Disks` puts a file into the
+  core and hands written sectors back as `.trd` file sectors; the main process writes them at
+  `sector × 256` and never touches an `.scl`. Re-sending the same file (the controller attaches stored
+  media on every start) keeps the guest's writes; a newly read file replaces the disk. Create Disk
+  offers TR-DOS types on the Pentagon, and `crd` takes `trd80ds`/`trd40ds`/`trd80ss`/`trd40ss`. An `.scl`
+  disk the guest changed can be saved as a new `.trd` (**Save Disk in Drive A as .trd...**), which then
+  takes the drive. **Not done:** the optional TRD/SCL catalogue viewer.
+- **TR-DOS and the IDE (Phase 4).** The Disk Loader (`trdosFlows.ts`, **Boot Disk in Drive A**,
+  `EmuApi.startDiskBoot`) waits only on 128K ROM addresses; TR-DOS's own addresses could not be found
+  without the ROM (P6), so it gives TR-DOS 2.5 s before typing `RUN`. A stand-in ROM proves the
+  keystrokes reach `$3D00` through the trap. The TR-DOS ROM is partition **R2** (`-3`): memory view,
+  `getSelectedRomPage` and partition breakpoints. `MF_ROM` stays 2 for the machine (it is per machine,
+  not per model), so the disassembly's ROM picker does not list R2.
+- **Snapshots and state (Phase 5).** `.szx` `B128` and `BDSK` blocks are read and written (zx-state);
+  the `.sna` TR-DOS byte is written; a snapshot with TR-DOS paged or a Beta 128 opens on the Pentagon.
+  Capture and restore carry the registers, the TR-DOS page and the head positions. A Klive state brings
+  its disks and **detaches** them from their files (state-files plan D11). RZX recordings embed an
+  `.szx`, so they carry the same blocks. Found on the way: `effectiveModelId` still treated the 128K as
+  model-less; it now returns its timing's model.
+- **Waiting on the real ROM.** `test/sp128-hw/beta128/trdos.test.ts` runs only with
+  `KLIVE_TRDOS_ROM=/path/to/trdos.rom`: the Disk Loader boots a Klive-made disk whose `boot` program
+  `LOAD`s a file from side 1 (deciding the side bit) and `SAVE`s one back, which must reach the `.trd`;
+  and TR-DOS shows as partition R2 while it runs. They were not run here: the only TR-DOS ROMs on this
+  machine are in other projects, which this session was not allowed to read.
+- **IDE check.** Scripted launch with a seeded setting and disk: the Pentagon shows both drives in the
+  media strip with the `.trd` in A. The menu items could not be driven (the scripted instance's menus
+  are empty in this environment, as in G9.1).
+- **No `.ai/ui-theming-intent-and-lessons.md` entry:** the new menu items and drive cards reuse the
+  +3's components and taught no styling rule.

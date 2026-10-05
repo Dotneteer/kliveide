@@ -44,9 +44,10 @@ are timed to its frame, or to check that your own code runs on both machines. Ch
 everything else. Running, debugging, injecting code, the tape Loader, snapshots and Klive state
 files work the same on both.
 
-The Pentagon model does not have the Beta 128 disk interface yet, so TR-DOS and `.trd`/`.scl` disk
-images are not available. A 128K `.sna` snapshot that has the TR-DOS ROM paged in loads with a
-warning.
+The Pentagon has the **Beta 128 disk interface**: two drives (A and B) that take TR-DOS disk images
+(`.trd` and `.scl`), and TR-DOS itself. Klive cannot ship the TR-DOS ROM, so you name your own copy
+under **Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
+[Using TR-DOS Disks on the Pentagon 128](/howto/trdos-disks).
 
 A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
 the 128K model, unless your project already uses the Pentagon: a 128K `.sna` file does not say

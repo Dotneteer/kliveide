@@ -16,8 +16,8 @@ import { dialog, BrowserWindow, app } from "electron";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
 import { createBooleanSettingsMenu } from "@main/app-menu";
-import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
-import { appSettings, saveAppSettings } from "@main/settings-utils";
+import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
+import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
@@ -91,6 +91,21 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     },
     { type: "separator" }
   ];
+  // --- The Pentagon: boot the disk in drive A through TR-DOS (`trdosFlows.ts`)
+  if (mainStore.getState()?.emulatorState?.machineId === MI_SPECTRUM_128) {
+    floppySubMenu.push({
+      id: "boot_disk",
+      label: "Boot Disk in Drive A",
+      enabled: !!getDiskMediaState(0).diskFile,
+      click: async () => {
+        try {
+          await getEmuApi().startDiskBoot(false);
+        } catch (err) {
+          dialog.showErrorBox("Cannot boot the disk", (err as Error)?.message ?? String(err));
+        }
+      }
+    });
+  }
   createDiskMenu(0, "a");
   if (disksSupported > 1) {
     createDiskMenu(1, "b");
@@ -108,6 +123,16 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
   function createDiskMenu(index: number, suffix: string): void {
     const state = appState?.media?.[index ? MEDIA_DISK_B : MEDIA_DISK_A] ?? {};
     const hasDisk = !!state?.diskFile;
+    // --- An `.scl` on the Pentagon is never written back: it can be saved as a `.trd` instead
+    if (hasDisk && String(state.diskFile).toLowerCase().endsWith(".scl")) {
+      floppySubMenu.push({
+        id: `save_trd_${suffix}`,
+        label: `Save Disk in Drive ${suffix.toUpperCase()} as .trd...`,
+        click: async () => {
+          await saveTrdosDiskAsTrd(emuWindow, index, suffix);
+        }
+      });
+    }
     floppySubMenu.push({ type: "separator" });
     if (hasDisk) {
       floppySubMenu.push({
@@ -150,6 +175,95 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     });
   }
 };
+
+/**
+ * The TR-DOS ROM of the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship
+ * it, so the user names their own copy; the machine restarts with it
+ */
+export const trdosRomMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
+  if (!((model?.config?.[MC_DISK_SUPPORT] ?? 0) > 0)) return [];
+  const romFile = getSettingValue(SETTING_EMU_TRDOS_ROM) as string | undefined;
+  return [
+    {
+      id: "trdos_rom_menu",
+      label: "TR-DOS ROM",
+      submenu: [
+        {
+          id: "trdos_rom_status",
+          label: romFile ? `Using ${path.basename(romFile)}` : "No TR-DOS ROM set: the disks are off",
+          enabled: false
+        },
+        {
+          id: "select_trdos_rom",
+          label: "Select TR-DOS ROM File...",
+          click: async () => {
+            await selectTrdosRomFile(windowInfo.emuWindow);
+          }
+        },
+        {
+          id: "clear_trdos_rom",
+          label: "Forget the TR-DOS ROM",
+          enabled: !!romFile,
+          click: async () => {
+            setSettingValue(SETTING_EMU_TRDOS_ROM, "");
+            await restartForTrdosRom("TR-DOS ROM cleared");
+          }
+        }
+      ]
+    }
+  ];
+};
+
+async function selectTrdosRomFile(emuWindow: BrowserWindow): Promise<void> {
+  const current = getSettingValue(SETTING_EMU_TRDOS_ROM) as string | undefined;
+  const dialogResult = await dialog.showOpenDialog(emuWindow, {
+    title: "Select the TR-DOS ROM (16K)",
+    defaultPath: current ? path.dirname(current) : app.getPath("home"),
+    filters: [
+      { name: "ROM Files", extensions: ["rom", "bin"] },
+      { name: "All Files", extensions: ["*"] }
+    ],
+    properties: ["openFile"]
+  });
+  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
+  const filename = dialogResult.filePaths[0];
+  const size = fs.statSync(filename).size;
+  if (size !== ROM_SIZE) {
+    dialog.showErrorBox("Not a TR-DOS ROM", `The TR-DOS ROM is 16384 bytes; ${filename} has ${size}.`);
+    return;
+  }
+  setSettingValue(SETTING_EMU_TRDOS_ROM, filename);
+  await restartForTrdosRom(`TR-DOS ROM set to ${filename}`);
+}
+
+/** Rebuilds the machine, which reads the TR-DOS ROM setting when it starts */
+async function restartForTrdosRom(message: string): Promise<void> {
+  const emulatorState = mainStore.getState()?.emulatorState;
+  await setMachineType(emulatorState?.machineId, emulatorState?.modelId, emulatorState?.config ?? {});
+  mainStore.dispatch(incMenuVersionAction());
+  saveAppSettings();
+  await logEmuEvent(message);
+}
+
+/** Saves the Pentagon's disk in a drive (an `.scl`, with the guest's writes) as a new `.trd` */
+async function saveTrdosDiskAsTrd(emuWindow: BrowserWindow, index: number, suffix: string): Promise<void> {
+  const image = await getEmuApi().getTrdosDiskImage(index);
+  if (!image) {
+    dialog.showErrorBox("No TR-DOS disk", `There is no TR-DOS disk in drive ${suffix.toUpperCase()}.`);
+    return;
+  }
+  const current = getDiskMediaState(index).diskFile;
+  const result = await dialog.showSaveDialog(emuWindow, {
+    title: "Save the Disk as .trd",
+    defaultPath: current ? current.replace(/\.scl$/i, ".trd") : undefined,
+    filters: [{ name: "TR-DOS Disk Images", extensions: ["trd"] }]
+  });
+  if (result.canceled || !result.filePath) return;
+  fs.writeFileSync(result.filePath, image);
+  // --- The new `.trd` takes the drive, so later writes go back to it
+  await setSelectedDiskFile(index, result.filePath, getDiskMediaState(index).writeProtected ?? false, suffix);
+  await logEmuEvent(`Disk in drive ${suffix.toUpperCase()} saved as ${result.filePath}`);
+}
 
 /**
  * Renders ZX Spectrum IDE commands
@@ -309,11 +423,13 @@ async function setDiskFile(
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
+  // --- The Pentagon's Beta 128 reads TR-DOS images; the +3 reads CPC DSK
+  const trdos = mainStore.getState()?.emulatorState?.machineId === MI_SPECTRUM_128;
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: "Select Disk File",
     defaultPath,
     filters: [
-      { name: "Disk Files", extensions: ["dsk"] },
+      trdos ? { name: "TR-DOS Disk Images", extensions: ["trd", "scl"] } : { name: "Disk Files", extensions: ["dsk"] },
       { name: "All Files", extensions: ["*"] }
     ],
     properties: ["openFile"]

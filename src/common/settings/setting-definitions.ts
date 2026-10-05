@@ -14,6 +14,7 @@ import {
 import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import {
   SETTING_EMU_FAST_LOAD,
+  SETTING_EMU_TRDOS_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -196,6 +197,17 @@ const settingDefinitions: Setting[] = [
       "by a separator. Edited in the Select Machine dialog; absent means the built-in defaults.",
     type: "array",
     defaultValue: undefined,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TRDOS_ROM,
+    title: "TR-DOS ROM file",
+    description:
+      "The 16K TR-DOS ROM the Pentagon 128's Beta 128 disk interface boots. Klive cannot ship it " +
+      "(its rights are unclear), so the Pentagon's disks are available once you name your own copy.",
+    type: "string",
+    defaultValue: "",
     saveWithIde: true,
     boundTo: "emu"
   },
