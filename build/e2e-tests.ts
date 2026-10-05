@@ -10,7 +10,7 @@
  * **Keep this list complete.** A unit-tier test that instantiates a machine core fails with a
  * message pointing here (`test/vitest.setup.ts`), so a new core test cannot quietly slow the unit
  * tier down. Membership was measured, not guessed: every file listed instantiated a core (a
- * WebAssembly instance exporting `sp48*`, `sp128*`, `spp3e*`, `zxnext*`, `z88*`, `zx8081*` or `z80*`) in a full
+ * WebAssembly instance exporting `sp48*`, `sp128*`, `spp3e*`, `timex*`, `zxnext*`, `z88*`, `zx8081*` or `z80*`) in a full
  * run, plus the core build/source-contract tests under `test/wasm/`.
  */
 
@@ -21,6 +21,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/zxnext-hw/**/*.test.ts",
   "test/zx8081-hw/**/*.test.ts",
   "test/sp128-hw/**/*.test.ts",
+  "test/timex-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
 
   // --- Mixed folders: the files that run a core

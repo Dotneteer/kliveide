@@ -9,6 +9,7 @@
  *   SPCR  border, $7FFD, $1FFD, the last $FE
  *   AY    the sound chip (128K models, or an add-on AY of a 48K)
  *   KEYB  the keyboard: issue 2, no keyboard joystick
+ *   SCLD  the Timex SCLD's ports $F4 and $FF (the TC2048)
  *   RAMP  one per RAM page, zlib-compressed
  *   +3    drive count and motor (+3 models with drives)
  *   DSK   one per inserted disk, as a link to the disk file (the spec has no embedded disks yet)
@@ -42,6 +43,7 @@ const SZX_MACHINE_IDS: Record<SnapshotMachineKind, number> = {
   plus3: 5,
   plus3e: 6,
   pentagon: 7,
+  tc2048: 8,
   "48k-ntsc": 15
 };
 
@@ -123,6 +125,12 @@ export function writeSzxFile(
     .dword(!paged && s.peripherals.issue2 ? 0x01 : 0x00)
     .byte(8 /* ZXSTKJT_NONE */);
   block(out, "KEYB", keyb.toArray());
+
+  // --- SCLD: the Timex's screen mode and paging (zx-state 1.2)
+  if (machine === "tc2048") {
+    const t = s.timex ?? { portF4: 0, portFf: 0 };
+    block(out, "SCLD", new SnapshotBytes().byte(t.portF4 & 0xff, t.portFf & 0xff).toArray());
+  }
 
   // --- RAMP
   const banks =

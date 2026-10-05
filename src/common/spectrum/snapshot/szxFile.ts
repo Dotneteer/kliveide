@@ -38,7 +38,7 @@ const SZX_MACHINES: Record<number, SnapshotMachine> = {
   5: "plus3",
   6: "plus3e",
   7: "pentagon",
-  8: { unsupported: "Timex TC2048" },
+  8: "tc2048",
   9: { unsupported: "Timex TC2068" },
   10: { unsupported: "Scorpion ZS-256" },
   11: { unsupported: "ZX Spectrum SE" },
@@ -87,7 +87,8 @@ const KNOWN_BLOCKS = new Set([
   "TAPE",
   "ROM",
   "B128",
-  "BDSK"
+  "BDSK",
+  "SCLD"
 ]);
 
 /** Readable names of the blocks Klive skips, for the warnings */
@@ -106,7 +107,6 @@ const SKIPPED_BLOCK_NAMES: Record<string, string> = {
   DIDE: "DivIDE",
   DOCK: "Timex dock",
   EXCT: "Timex dock",
-  SCLD: "Timex SCLD",
   SIDE: "Simple IDE",
   SPCD: "SpecDrum",
   USPE: "Currah µSpeech",
@@ -198,6 +198,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
   if (bytes[7] & 0x01) ula.alternateTimings = true;
   let paging: SpectrumSnapshot["paging"];
   let ay: SpectrumSnapshot["ay"];
+  let timex: SpectrumSnapshot["timex"];
   let creator: string | undefined;
   let specRegsSeen = false;
 
@@ -411,6 +412,15 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         }
         break;
       }
+      case "SCLD": {
+        need(2);
+        timex = { portF4: data[0], portFf: data[1] };
+        header.push(
+          { label: "Port $F4", value: hex(data[0]) },
+          { label: "Port $FF", value: hex(data[1]) }
+        );
+        break;
+      }
       case "ROM": {
         need(6);
         peripherals.customRomSize = readDword(data, 2);
@@ -451,6 +461,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
     cpu,
     ula,
     paging,
+    timex: timex ?? (machine === "tc2048" ? { portF4: 0, portFf: 0 } : undefined),
     ram,
     ay,
     peripherals,

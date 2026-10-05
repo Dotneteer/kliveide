@@ -20,7 +20,7 @@ import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/s
 import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getModelConfig } from "@common/machines/machine-registry";
 
@@ -659,15 +659,15 @@ export const spectrumSnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
 };
 
 /**
- * Can the emulator's machine be saved as a ZX Spectrum snapshot now? It must be a 48K, 128K or
- * +2E/+3E with a state: running or paused (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D4).
+ * Can the emulator's machine be saved as a ZX Spectrum snapshot now? It must be a 48K, 128K,
+ * +2E/+3E or TC2048 with a state: running or paused (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D4).
  */
 export function canSaveSpectrumSnapshot(state: AppState = mainStore.getState()): boolean {
   const machineId = state?.emulatorState?.machineId;
   const execState = state?.emulatorState?.machineState;
   return (
     !!machineId &&
-    [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E].includes(machineId) &&
+    [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX].includes(machineId) &&
     (execState === MachineControllerState.Running || execState === MachineControllerState.Paused)
   );
 }

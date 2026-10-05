@@ -62,7 +62,7 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext"]);
+    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext", "timex"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });

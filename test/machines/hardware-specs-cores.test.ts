@@ -7,6 +7,8 @@ import { ZxSpectrum48WasmV2Machine } from "@emu/machines/zxSpectrum48/ZxSpectrum
 import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectrum128WasmV2Machine";
 import { buildSp48Wasm, productionOutput as sp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
+import { TimexWasmV2Machine } from "@emu/machines/timex/TimexWasmV2Machine";
+import { buildTimexWasm, productionOutput as timexWasm } from "../../scripts/build-timex-wasm.cjs";
 
 /*
  * The hardware sheet's figures against the running cores, for the machines that only report their
@@ -24,13 +26,20 @@ class Sp128 extends ZxSpectrum128WasmV2Machine {
   }
 }
 
-async function expectMatches(machine: any, machineId: string, modelId?: string) {
+class Timex extends TimexWasmV2Machine {
+  protected override async loadRomFromResource(): Promise<Uint8Array> {
+    return new Uint8Array(0x4000);
+  }
+}
+
+/** @param pixelScale Buffer pixels per Spectrum pixel (the sheet gives the raster in Spectrum pixels) */
+async function expectMatches(machine: any, machineId: string, modelId?: string, pixelScale = 1) {
   await machine.setup();
   const spec = getHardwareSpec(machineRegistry.find((m) => m.machineId === machineId)!, modelId)!;
   expect(spec.clockHz).toBe(machine.baseClockFrequency);
   expect(spec.timing.perFrame).toBe(machine.tactsInFrame);
   expect([spec.display.rasterWidth, spec.display.rasterHeight]).toEqual([
-    machine.screenWidthInPixels,
+    machine.screenWidthInPixels / pixelScale,
     machine.screenHeightInPixels
   ]);
 }
@@ -63,5 +72,15 @@ describe("hardware specs against the cores", () => {
       readArtifact: async () => readFileSync(sp128Wasm)
     });
     await expectMatches(machine, "sp128", modelId);
+  });
+
+  it("Timex Computer 2048 (the 704-wide buffer is the 352-pixel raster at two pixels each)", async () => {
+    buildTimexWasm();
+    const model = machineRegistry.find((m) => m.machineId === "timex")!.models!.find((m) => m.modelId === "tc2048")!;
+    const machine = new Timex(model, model.config, {
+      artifactName: "machine-timex.wasm",
+      readArtifact: async () => readFileSync(timexWasm)
+    });
+    await expectMatches(machine, "timex", "tc2048", 2);
   });
 });

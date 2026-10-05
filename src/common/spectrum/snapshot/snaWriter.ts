@@ -70,6 +70,10 @@ function write48(s: SpectrumSnapshot, losses: string[]): Uint8Array {
     losses.push("A .sna has no 16K layout; the file loads as a 48K");
   } else if (s.machine === "48k-ntsc") {
     losses.push("A .sna has no NTSC layout; the file loads as a PAL 48K");
+  } else if (s.machine === "tc2048") {
+    losses.push(
+      `A .sna has no Timex layout; the file loads as a 48K${(s.timex?.portFf ?? 0) !== 0 ? ", without the SCLD's port $FF (screen mode " + hex(s.timex!.portFf) + ")" : ""}`
+    );
   }
   if (s.ay?.on48k) {
     losses.push("A 48K .sna has no AY registers; they are not saved");

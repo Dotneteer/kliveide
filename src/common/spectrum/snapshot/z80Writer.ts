@@ -58,6 +58,8 @@ function hardwareMode(
     case "pentagon":
       // --- Not in the v3 specification: an extension other emulators share (z80File.ts)
       return { mode: 9, modified: false };
+    case "tc2048":
+      return { mode: 14, modified: false };
   }
 }
 
@@ -118,7 +120,12 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   }
   out.word(plus3 ? 55 : 54);
   out.word(c.pc);
-  out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, 0 /* Interface 1 ROM not paged */);
+  if (machine === "tc2048") {
+    // --- A Timex mode: the last OUTs to $F4 and $FF in place of $7FFD and Interface 1
+    out.byte(mode, (s.timex?.portF4 ?? 0) & 0xff, (s.timex?.portFf ?? 0) & 0xff);
+  } else {
+    out.byte(mode, paged ? (s.paging?.port7ffd ?? 0) : 0, 0 /* Interface 1 ROM not paged */);
+  }
   out.byte((modified ? 0x80 : 0) | (ay48 ? 0x04 : 0) | 0x03 /* R and LDIR emulation on */);
   if (paged || ay48) {
     out.byte(ay?.selected ?? 0);

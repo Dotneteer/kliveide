@@ -1,4 +1,4 @@
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_Z88 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_Z88 } from "@common/machines/constants";
 import { SETTING_EMU_SHOW_MEDIA_INFO } from "@common/settings/setting-const";
 import { ReactNode } from "react";
 import { Z88ToolArea } from "./machines/Z88ToolArea";
@@ -31,5 +31,6 @@ export const machineEmuToolRegistry: EmuToolInfo[] = [
   },
   spectrumMediaTool(MI_SPECTRUM_48),
   spectrumMediaTool(MI_SPECTRUM_128),
-  spectrumMediaTool(MI_SPECTRUM_3E)
+  spectrumMediaTool(MI_SPECTRUM_3E),
+  spectrumMediaTool(MI_TIMEX)
 ];

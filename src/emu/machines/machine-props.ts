@@ -9,6 +9,8 @@ export const DISK_A_CHANGES = "DiskAChanges";
 export const DISK_B_CHANGES = "DiskBChanges";
 /** The TR-DOS ROM file's path (the Pentagon's Beta 128), from the `SETTING_EMU_TRDOS_ROM` setting */
 export const TRDOS_ROM_FILE = "TrdosRomFile";
+/** The TC2048 ROM file's path, from the `SETTING_EMU_TC2048_ROM` setting (`.plans/TIMEX_SCORPION_PLAN.md` P5) */
+export const TIMEX_ROM_FILE = "TimexRomFile";
 /** A TR-DOS disk in drive A / B that the guest changed but that is not written back (an `.scl`) */
 export const DISK_A_UNSAVED = "DiskAUnsaved";
 export const DISK_B_UNSAVED = "DiskBUnsaved";

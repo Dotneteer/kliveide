@@ -1,6 +1,16 @@
 // ----------------------------------------------------------------------------
 // Memory map and CPU bus memory access
 
+/*
+ * Writes below this address can change the picture, so the renderer catches up first. The Timex
+ * SCLD also shows the second display file ($6000-$7AFF).
+ */
+#ifdef SP48_SCLD
+#define SP48_DISPLAY_MEMORY_END 0x7b00u
+#else
+#define SP48_DISPLAY_MEMORY_END 0x5b00u
+#endif
+
 static inline uint8_t readScreenMemoryOffset(uint32_t offset) {
   return sp48Memory[0x4000u + (offset & 0x3fffu)];
 }
@@ -13,7 +23,7 @@ static uint8_t sp48CpuReadMemory(uint32_t address) {
 static void sp48CpuWriteMemory(uint32_t address, uint32_t value) {
   const uint16_t maskedAddress = (uint16_t)(address & 0xffffu);
   if (maskedAddress >= 0x4000u) {
-    if (maskedAddress < 0x5b00u) {
+    if (maskedAddress < SP48_DISPLAY_MEMORY_END) {
       renderUlaUntilCurrentTact();
     }
     sp48Memory[maskedAddress] = (uint8_t)value;
@@ -45,7 +55,7 @@ uint32_t sp48ReadMemory(uint32_t address) {
 void sp48WriteMemory(uint32_t address, uint32_t value) {
   const uint32_t maskedAddress = address & 0xffffu;
   if (maskedAddress >= 0x4000u) {
-    if (maskedAddress < 0x5b00u) {
+    if (maskedAddress < SP48_DISPLAY_MEMORY_END) {
       renderUlaUntilCurrentTact();
     }
     sp48Memory[maskedAddress] = (uint8_t)value;

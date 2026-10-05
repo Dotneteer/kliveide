@@ -165,10 +165,22 @@ describe(".z80", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([2, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
+  it.each([2, 10, 11, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
     const s = parseZ80File(buildZ80(state48(), { version: 3, hwMode }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors.length).toBe(1);
+  });
+
+  it("reads hardware mode 14 as the TC2048, with ports $F4 and $FF in bytes 35 and 36", () => {
+    const bytes = buildZ80(state48(), { version: 3, hwMode: 14 });
+    bytes[35] = 0x00;
+    bytes[36] = 0xff;
+    const s = parseZ80File(bytes);
+    expect(s.machine).toBe("tc2048");
+    expect(s.timex).toEqual({ portF4: 0x00, portFf: 0xff });
+    // --- $FF in byte 36 is port $FF here, not a paged Interface 1 ROM
+    expect(s.peripherals.interface1).toBeUndefined();
+    expect(mapSpectrumSnapshotToKlive(s)).toMatchObject({ machineId: "timex", modelIds: ["tc2048"], errors: [] });
   });
 
   it("reads $1FFD from the 55-byte header of a +3 file", () => {
@@ -257,10 +269,20 @@ describe(".szx", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
+  it.each([9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
     const s = parseSzxFile(buildSzx(state128(), { machineId }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors).toHaveLength(1);
+  });
+
+  it("reads machine id 8 as the TC2048, with its SCLD block", () => {
+    const s = parseSzxFile(buildSzx(state48(), { machineId: 8, extra: [szxBlock("SCLD", [0x00, 0x3e])] }));
+    expect(s.machine).toBe("tc2048");
+    expect(s.timex).toEqual({ portF4: 0x00, portFf: 0x3e });
+    expect(s.chunks?.find((c) => c.id === "SCLD")?.known).toBe(true);
+    expect(mapSpectrumSnapshotToKlive(s)).toMatchObject({ machineId: "timex", errors: [] });
+    // --- Without the block the SCLD is in its reset state
+    expect(parseSzxFile(buildSzx(state48(), { machineId: 8 })).timex).toEqual({ portF4: 0, portFf: 0 });
   });
 
   it("reads $1FFD on a +3", () => {

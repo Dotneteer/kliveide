@@ -15,6 +15,7 @@ import { DEFAULT_JOYSTICK_BINDINGS } from "@common/settings/joystick-bindings";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_TRDOS_ROM,
+  SETTING_EMU_TC2048_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -206,6 +207,18 @@ const settingDefinitions: Setting[] = [
     description:
       "The 16K TR-DOS ROM the Pentagon 128's Beta 128 disk interface boots. Klive cannot ship it " +
       "(its rights are unclear), so the Pentagon's disks are available once you name your own copy.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_TC2048_ROM,
+    title: "TC2048 ROM file",
+    description:
+      "The 16K ROM the Timex Computer 2048 boots. Klive cannot ship Timex's ROM (its rights are " +
+      "unclear), so without your own copy the TC2048 boots the Sinclair 48K ROM, which differs from " +
+      "it only by a hook that clears port $FF when it starts up.",
     type: "string",
     defaultValue: "",
     saveWithIde: true,

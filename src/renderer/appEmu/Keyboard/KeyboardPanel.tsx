@@ -39,7 +39,8 @@ export const KeyboardPanel = ({
 
   return (
     <div className={styles.keyboard} ref={hostElement}>
-      {type === "sp48" && (
+      {/* --- The TC2048's 40 keys carry the 48K's legends */}
+      {(type === "sp48" || type === "timex") && (
         <Sp48Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
       {type === "z88" && (
@@ -53,7 +54,7 @@ export const KeyboardPanel = ({
       )}
       {/* --- The ZX80 keyboard is not designed yet (`.plans/ZX8081_WASM_PLAN.md` §8.1.9): no keyboard,
           rather than the Spectrum 128's legends */}
-      {type !== "sp48" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && (
+      {type !== "sp48" && type !== "timex" && type !== "z88" && type !== "zxnext" && type !== "zx81" && type !== "zx80" && (
         <Sp128Keyboard width={width} height={height} apiLoaded={apiLoaded} />
       )}
     </div>

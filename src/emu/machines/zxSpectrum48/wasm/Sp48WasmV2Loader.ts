@@ -28,6 +28,8 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rzx
   sp48ReadMemory: Sp48WasmV2ExportFunction;
   sp48WriteMemory: Sp48WasmV2ExportFunction;
   sp48ReadPort: Sp48WasmV2ExportFunction;
+  /** The byte the ULA is fetching now (the Timex machine reads its floating bus through it) */
+  sp48ReadFloatingBus?: Sp48WasmV2ExportFunction;
   sp48WritePort: Sp48WasmV2ExportFunction;
   sp48SetKeyStatus: Sp48WasmV2ExportFunction;
   sp48GetKeyboardLine: Sp48WasmV2ExportFunction;

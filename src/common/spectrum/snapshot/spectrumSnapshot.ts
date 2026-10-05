@@ -23,7 +23,8 @@ export type SnapshotMachineKind =
   | "plus2a"
   | "plus3"
   | "plus3e"
-  | "pentagon";
+  | "pentagon"
+  | "tc2048";
 
 /**
  * The machine the snapshot was taken on, as the file says it. `unsupported` names a machine Klive
@@ -77,6 +78,14 @@ export type SpectrumSnapshotPaging = {
   port7ffd: number;
   /** +2A/+3 only */
   port1ffd?: number;
+};
+
+/** The Timex SCLD's registers (`.szx` SCLD block; `.z80` bytes 35-36 in a Timex mode) */
+export type SpectrumSnapshotTimex = {
+  /** Port $F4, the 2068's chunk paging (0 on the TC2048) */
+  portF4: number;
+  /** Port $FF: the screen mode, the 64-column colours, the interrupt inhibit */
+  portFf: number;
 };
 
 /** The AY-3-8912 sound chip */
@@ -185,6 +194,8 @@ export type SpectrumSnapshot = {
   cpu: SpectrumSnapshotCpu;
   ula: SpectrumSnapshotUla;
   paging?: SpectrumSnapshotPaging;
+  /** The Timex machines' SCLD */
+  timex?: SpectrumSnapshotTimex;
   /**
    * 16K RAM banks in 128K numbering, for every machine: a 48K snapshot holds banks 5 ($4000),
    * 2 ($8000) and 0 ($C000); a 16K one holds bank 5 only.
@@ -228,6 +239,8 @@ export function snapshotMachineName(machine: SnapshotMachine): string {
       return "ZX Spectrum +3e";
     case "pentagon":
       return "Pentagon 128";
+    case "tc2048":
+      return "Timex TC2048";
   }
 }
 

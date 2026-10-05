@@ -3,14 +3,19 @@
 #define SP48_MEMORY_SIZE 0x10000u
 #define SP48_DISPLAY_WIDTH 256u
 #define SP48_DISPLAY_HEIGHT 192u
+/* The Timex core (`timex.c`) builds this machine with two buffer pixels per Spectrum pixel */
+#ifndef SP48_SCREEN_BUFFER_WIDTH_MAX
 #define SP48_SCREEN_BUFFER_WIDTH_MAX 352u
+#endif
 #define SP48_SCREEN_BUFFER_LINES_MAX 288u
 #define SP48_PIXEL_BUFFER_GUARD_LINES 4u
 #define SP48_PIXEL_BUFFER_WORDS_MAX \
   (SP48_SCREEN_BUFFER_WIDTH_MAX * (SP48_SCREEN_BUFFER_LINES_MAX + SP48_PIXEL_BUFFER_GUARD_LINES))
 #define SP48_TACTS_PER_FRAME_PAL 69888u
 #define SP48_TACTS_PER_FRAME_MAX SP48_TACTS_PER_FRAME_PAL
+#ifndef SP48_BASE_CLOCK_FREQUENCY_PAL
 #define SP48_BASE_CLOCK_FREQUENCY_PAL 3500000u
+#endif
 #define SP48_BASE_CLOCK_FREQUENCY_NTSC 3527500u
 #define SP48_DEFAULT_SAMPLE_RATE 44100u
 #define SP48_AUDIO_SAMPLE_CAPACITY 2048u
@@ -252,6 +257,12 @@ static uint32_t sp48TapeSavedDataLength;
 static uint32_t sp48TapeSavedRevision;
 static uint32_t sp48TapeSaveCurrentBlockOffset;
 static uint32_t sp48TapeSaveCurrentBlockLength;
+#ifdef SP48_SCLD
+/* The Timex SCLD (`zx-spectrum-scld.c`): port $FF, the 64-column BRIGHT bit, the Kempston port */
+static uint8_t sp48ScldPortFf;
+static uint8_t sp48ScldHiresBright = 1u;
+static uint8_t sp48KempstonState;
+#endif
 
 static void setNextAudioSample(void);
 static void renderUlaUntilCurrentTact(void);
@@ -408,6 +419,10 @@ static void SP48_CPU_NOINLINE sp48CpuDelayAddressBusAccess(uint32_t address) {
 
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-keyboard.c"
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-beeper.c"
+#ifdef SP48_SCLD
+#define SP48_PORT_READ_NON_FE(address) scldReadNonFePort(address)
+#define SP48_PORT_WRITE_NON_FE(address, value) scldWriteNonFePort((address), (value))
+#endif
 #include "../../../zxSpectrum/wasm/common/zx-spectrum-ports.c"
 #define SP48_EXTERNAL_TACT(tact) ((uint32_t)((tact) + sp48TactEpoch))
 /* The fast-load trap writes RAM without an IN, so it is off while RZX plays or records (trap 3) */
@@ -527,6 +542,9 @@ void sp48Reset(void) {
   z80Reset();
   resetKeyboard();
   resetPortFe();
+#ifdef SP48_SCLD
+  scldReset();
+#endif
   sp48Frames = 0u;
   sp48Tacts = 0u;
   sp48TactEpoch = 0u;

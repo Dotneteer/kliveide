@@ -9,6 +9,7 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TIMEX,
   MI_Z88
 } from "@common/machines/constants";
 import { SETTING_EMU_SHOW_MEDIA_INFO } from "@common/settings/setting-const";
@@ -58,7 +59,7 @@ describe("Spectrum media strip", () => {
   });
 
   it("registers a switchable strip for the Spectrum models and keeps the Z88 strip fixed", () => {
-    expect(MEDIA_INFO_MACHINE_IDS).toEqual([MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E]);
+    expect(MEDIA_INFO_MACHINE_IDS).toEqual([MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX]);
     for (const id of MEDIA_INFO_MACHINE_IDS) {
       const entry = machineEmuToolRegistry.find((t) => t.machineId === id);
       expect(entry?.visibilitySetting).toBe(SETTING_EMU_SHOW_MEDIA_INFO);

@@ -125,6 +125,9 @@ function machineOf(
     case 13:
       machine = "plus2a";
       break;
+    case 14:
+      machine = "tc2048";
+      break;
     default:
       machine = { unsupported: HW_MODE_EXTENDED[mode] ?? `unknown hardware mode ${mode}` };
   }
@@ -256,7 +259,9 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   const modified = (flags3 & 0x80) !== 0;
   const { machine, interface1, mgt } = machineOf(version, hwMode, modified);
   const paged = isPagedSnapshotMachine(machine);
-  if (interface1 || bytes[36] === 0xff) peripherals.interface1 = true;
+  // --- In a Timex mode bytes 35 and 36 are the last OUTs to $F4 and $FF, not $7FFD and Interface 1
+  const timexMode = machine === "tc2048";
+  if (interface1 || (!timexMode && bytes[36] === 0xff)) peripherals.interface1 = true;
   if (mgt) peripherals.mgt = true;
 
   header.unshift(
@@ -264,8 +269,15 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     { label: "Hardware mode", value: `${hwMode}: ${z80HardwareModeName(version, hwMode, modified)}` }
   );
   header.push(
-    { label: "Port $7FFD", value: hex(bytes[35]) },
-    { label: "Interface 1 ROM paged", value: bytes[36] === 0xff ? "yes" : "no" },
+    ...(timexMode
+      ? [
+          { label: "Port $F4", value: hex(bytes[35]) },
+          { label: "Port $FF", value: hex(bytes[36]) }
+        ]
+      : [
+          { label: "Port $7FFD", value: hex(bytes[35]) },
+          { label: "Interface 1 ROM paged", value: bytes[36] === 0xff ? "yes" : "no" }
+        ]),
     { label: "R emulation", value: flags3 & 0x01 ? "on" : "off" },
     { label: "LDIR emulation", value: flags3 & 0x02 ? "on" : "off" },
     { label: "AY sound in use", value: flags3 & 0x04 ? "yes" : "no" },
@@ -283,6 +295,8 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
     header,
     warnings
   };
+
+  if (timexMode) result.timex = { portF4: bytes[35], portFf: bytes[36] };
 
   // --- Paging
   if (paged) {

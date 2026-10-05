@@ -28,8 +28,17 @@ static const Sp48ScreenConfig sp48NtscConfig = {
   8u, 15u, 25u, 24u, 0u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u, {6u, 5u, 4u, 3u, 2u, 1u, 0u, 0u}
 };
 
+/*
+ * Buffer pixels per Spectrum pixel. The Timex core (`zx-spectrum-scld.c`) draws two, so its 512-wide
+ * mode fits without a size change mid-frame (`.plans/TIMEX_SCORPION_PLAN.md` P4); the timing tables
+ * stay in Spectrum pixels and the renderer scales their indexes.
+ */
+#ifndef SP48_PIXEL_SCALE
+#define SP48_PIXEL_SCALE 1u
+#endif
+
 static inline uint32_t currentScreenWidth(void) {
-  return sp48TimingScreenWidth == 0u ? SP48_SCREEN_BUFFER_WIDTH_MAX : sp48TimingScreenWidth;
+  return sp48TimingScreenWidth == 0u ? SP48_SCREEN_BUFFER_WIDTH_MAX : sp48TimingScreenWidth * SP48_PIXEL_SCALE;
 }
 
 static inline uint32_t currentScreenHeight(void) {
@@ -138,6 +147,17 @@ static void setRenderingTact(
   sp48Contention[tact] = contention;
 }
 
+/*
+ * The SCLD's extended-colour and 512-wide modes fetch, at an attribute tact, the second display
+ * file's byte of the *pixel* address of that column, so the Timex core records it there too. The
+ * other cores leave attribute tacts without a pixel address, as they always had.
+ */
+#ifdef SP48_SCLD
+#define SP48_ATTR_FETCH_PIXEL_ADDRESS(address) (pixelAddress = (address))
+#else
+#define SP48_ATTR_FETCH_PIXEL_ADDRESS(address) ((void)0)
+#endif
+
 static void initializeTimingTables(const Sp48ScreenConfig *config) {
   initializeAttrColorTables();
   clearTimingTables();
@@ -201,6 +221,7 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
         } else if (tactInLine == borderAttrFetchTact) {
           phase = SP48_RENDER_PHASE_BORDER_FETCH_ATTR;
           attributeAddress = calcAttrAddress(line + 1u, 0u);
+          SP48_ATTR_FETCH_PIXEL_ADDRESS(calcPixelAddress(line + 1u, 0u));
           contention = config->contentionValues[0];
           calculated = 1u;
         }
@@ -222,6 +243,7 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
             case 1u:
               phase = SP48_RENDER_PHASE_DISPLAY_B1_FETCH_A2;
               attributeAddress = calcAttrAddress(line, tactInLine + 3u);
+              SP48_ATTR_FETCH_PIXEL_ADDRESS(calcPixelAddress(line, tactInLine + 3u));
               contention = config->contentionValues[2];
               break;
             case 2u:
@@ -253,6 +275,8 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
               if (tactInLine < config->displayLineTime - config->attributeDataPrefetchTime) {
                 phase = SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1;
                 attributeAddress = calcAttrAddress(line, tactInLine + config->attributeDataPrefetchTime);
+                SP48_ATTR_FETCH_PIXEL_ADDRESS(
+                  calcPixelAddress(line, tactInLine + config->attributeDataPrefetchTime));
                 contention = config->contentionValues[0];
               }
               break;
@@ -267,6 +291,7 @@ static void initializeTimingTables(const Sp48ScreenConfig *config) {
             } else if (tactInLine == borderAttrFetchTact) {
               phase = SP48_RENDER_PHASE_BORDER_FETCH_ATTR;
               attributeAddress = calcAttrAddress(line + 1u, 0u);
+              SP48_ATTR_FETCH_PIXEL_ADDRESS(calcPixelAddress(line + 1u, 0u));
               contention = config->contentionValues[0];
             }
           }
@@ -294,6 +319,10 @@ static inline uint8_t isContendedIoAddress(uint32_t address) {
 }
 
 static inline uint8_t shouldRaiseInterrupt(void) {
+#ifdef SP48_SCLD
+  /* Port $FF bit 6 inhibits the SCLD's frame interrupt (TS2068 Technical Manual 2.1.8.4) */
+  if ((sp48ScldPortFf & 0x40u) != 0u) return 0u;
+#endif
   return currentFrameTact() < 32u ? 1u : 0u;
 }
 
@@ -306,6 +335,13 @@ static void beginBorderFrame(uint32_t frameStartTact) {
   sp48AttrByte2 = 0u;
 }
 
+#ifdef SP48_SCLD
+/* The Timex SCLD's screen modes draw the picture (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a) */
+#include "zx-spectrum-scld.c"
+#define SP48_FILL_BORDER_PIXEL() scldBorderPixel()
+#define SP48_FLOATING_PIXEL(tact) scldFetchPixel(tact)
+#define SP48_FLOATING_ATTR(tact) scldFetchAttr(tact)
+#else
 static inline void renderBorderPixelsAt(uint32_t index) {
   if (index + 1u >= pixelBufferWordCount()) {
     return;
@@ -386,6 +422,11 @@ static void renderUlaTact(uint32_t tact) {
   }
 }
 
+#define SP48_FILL_BORDER_PIXEL() getBorderPixel(sp48BorderColor)
+#define SP48_FLOATING_PIXEL(tact) readScreenMemoryOffset(sp48RenderingPixelAddress[tact])
+#define SP48_FLOATING_ATTR(tact) readScreenMemoryOffset(sp48RenderingAttributeAddress[tact])
+#endif
+
 static void renderUlaUntilCurrentTact(void) {
   const uint32_t elapsedTacts =
     sp48Tacts >= sp48BorderFrameStartTact ? sp48Tacts - sp48BorderFrameStartTact : 0u;
@@ -403,7 +444,7 @@ static void renderUlaUntilCurrentTact(void) {
 
 static void renderUlaDisplay(void) {
   const uint32_t words = pixelBufferWordCount();
-  const uint32_t borderPixel = getBorderPixel(sp48BorderColor);
+  const uint32_t borderPixel = SP48_FILL_BORDER_PIXEL();
   for (uint32_t i = 0u; i < words; i++) {
     sp48PixelBuffer[i] = borderPixel;
   }
@@ -426,12 +467,17 @@ uint32_t sp48ReadFloatingBus(void) {
     case SP48_RENDER_PHASE_BORDER_FETCH_PIXEL:
     case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_B2:
     case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_B1:
-      return readScreenMemoryOffset(sp48RenderingPixelAddress[currentTactIndex]);
+      return SP48_FLOATING_PIXEL(currentTactIndex);
     case SP48_RENDER_PHASE_BORDER_FETCH_ATTR:
     case SP48_RENDER_PHASE_DISPLAY_B1_FETCH_A2:
     case SP48_RENDER_PHASE_DISPLAY_B2_FETCH_A1:
-      return readScreenMemoryOffset(sp48RenderingAttributeAddress[currentTactIndex]);
+      return SP48_FLOATING_ATTR(currentTactIndex);
     default:
       return 0xffu;
   }
 }
+
+#undef SP48_FLOATING_ATTR
+#undef SP48_FLOATING_PIXEL
+#undef SP48_FILL_BORDER_PIXEL
+#undef SP48_ATTR_FETCH_PIXEL_ADDRESS

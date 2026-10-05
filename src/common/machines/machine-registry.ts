@@ -31,7 +31,8 @@ import {
   MF_VIC,
   MF_ALLOW_SCAN_LINES,
   MI_ZX80,
-  MI_ZX81
+  MI_ZX81,
+  MI_TIMEX
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_TAPE } from "@common/structs/project-const";
 import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -44,6 +45,7 @@ import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disas
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
 import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
@@ -336,6 +338,31 @@ export const machineRegistry: MachineInfo[] = [
         options?: DisassemblyOptions
       ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
       [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrumNextCustomDisassembler()
+    }
+  },
+  {
+    // --- The Timex core (`.plans/TIMEX_SCORPION_PLAN.md` G9.4a): a 48K with Timex's SCLD - the
+    // --- extra screen modes, port $FF, a built-in Kempston port. No ROM pages or RAM banks.
+    machineId: MI_TIMEX,
+    displayName: "Timex Computer 2048",
+    charSet: ZxSpectrumChars,
+    features: {
+      [MF_Z80]: true,
+      [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true,
+      [MF_ULA]: true,
+      [MF_JOYSTICK_SUPPORT]: true
+    },
+    models: TIMEX_MODELS,
+    mediaIds: [MEDIA_TAPE],
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options),
+      [CT_CUSTOM_DISASSEMBLER]: () => new ZxSpectrum48CustomDisassembler()
     }
   },
   {

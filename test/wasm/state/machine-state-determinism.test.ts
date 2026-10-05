@@ -18,6 +18,7 @@ import type { MachineStateParts } from "@emu/machines/state/wasmStateImage";
 import { MachineStateMismatchError } from "@emu/machines/state/wasmStateImage";
 import { createSp48Session } from "../../harness/sp48";
 import { createSp128Session, type Sp128SessionModel } from "../../harness/sp128";
+import { createTimexSession } from "../../harness/timex";
 import { createZ88Session } from "../../harness/z88";
 import { createZx81Session } from "../../harness/zx81";
 import { createSession as createNextSession } from "../../harness/zxnext";
@@ -100,6 +101,19 @@ describe("machine state: save, load into another machine, run = keep running", (
     b.bootToBasic();
     a.runFrames(4).step(1237);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 25);
+    expect(a.peek(0xa000)).toBeGreaterThan(20);
+  });
+
+  it("Timex Computer 2048 (in the 64-column mode)", async () => {
+    const a = await createTimexSession();
+    const b = await createTimexSession();
+    // --- machine id 8 with an SCLD block: the 64-column mode, ink 5
+    a.loadSnapshot("p.szx", spectrumSnapshot(false, 8, [szxBlock("SCLD", [0x00, 0x2e])]));
+    b.bootToBasic();
+    a.runFrames(4).step(1237);
+    expect(a.portFf).toBe(0x2e);
+    proveDeterminism(a as unknown as Driver, b as unknown as Driver, 25);
+    expect(b.portFf).toBe(0x2e);
     expect(a.peek(0xa000)).toBeGreaterThan(20);
   });
 

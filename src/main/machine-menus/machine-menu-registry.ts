@@ -7,7 +7,8 @@ import {
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
-  MI_ZXNEXT
+  MI_ZXNEXT,
+  MI_TIMEX
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import {
@@ -33,6 +34,7 @@ import {
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 import { machineStateMenuRenderer } from "./state-menus";
 import { rzxMenuRenderer } from "./rzx-menus";
+import { kempstonJoystickMenuRenderer, timexRomMenuRenderer } from "./timex-menus";
 
 /**
  * Machine-specific menu information
@@ -57,6 +59,16 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...rzxMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model),
       ...sp48RomMenuRenderer(windowInfo, machine, model)
+    ],
+    ideItems: spectrumIdeRenderer
+  },
+  [MI_TIMEX]: {
+    machineItems: (windowInfo, machine, model) => [
+      ...tapeMenuRenderer(windowInfo, machine, model),
+      ...kempstonJoystickMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model),
+      ...timexRomMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer
   },

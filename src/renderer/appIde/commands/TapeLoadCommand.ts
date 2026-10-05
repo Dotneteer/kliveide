@@ -3,7 +3,7 @@ import type { IdeCommandContext } from "@renderer/abstractions/IdeCommandContext
 import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX, MI_ZX80, MI_ZX81 } from "@common/machines/constants";
 import { isZx8081ProgramFileName, parseZxProgramFile } from "@emu/machines/zx8081/ZxPFile";
 import { machineRegistry } from "@common/machines/machine-registry";
 import { analyzeTape } from "../DocumentPanels/Tape/tapeView";
@@ -25,7 +25,8 @@ export type TapeLoadCommandArgs = {
 export const TAPE_LOAD_MACHINES: readonly string[] = [
   MI_SPECTRUM_48,
   MI_SPECTRUM_128,
-  MI_SPECTRUM_3E
+  MI_SPECTRUM_3E,
+  MI_TIMEX
 ];
 
 /** The machines a ZX80/ZX81 program file (`.p`, `.81`, `.o`, `.80`) loads into */

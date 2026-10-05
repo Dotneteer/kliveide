@@ -16,7 +16,8 @@ import { zxSpectrum48SysVars } from "./ZxSpectrum48SysVars";
 import { WasmFloatingBusDevice } from "../zxSpectrum/WasmSpectrumSupport";
 
 export abstract class ZxSpectrum48WasmHost extends ZxSpectrumBase {
-  public readonly machineId = "sp48";
+  /** "sp48"; the Timex core's machines reuse this host under their own id */
+  public readonly machineId: string = "sp48";
   protected readonly is16KModel: boolean;
 
   constructor(public readonly modelInfo?: MachineModel, config?: MachineConfigSet) {

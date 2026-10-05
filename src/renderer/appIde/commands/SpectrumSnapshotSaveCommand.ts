@@ -4,7 +4,7 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 import type { SzxCreator } from "@common/spectrum/snapshot/szxWriter";
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
 import { snapshotFormatOfName } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
 import {
   commandError,
@@ -21,7 +21,7 @@ export type SpectrumSnapshotSaveCommandArgs = {
 };
 
 /** The ZX Spectrum machines a snapshot can be saved from */
-const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E];
+const SPECTRUM_MACHINES = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX];
 
 /**
  * Saves the running ZX Spectrum 48K, 128K or +2E/+3E as a `.szx`, `.z80` or `.sna` snapshot

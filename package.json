@@ -32,6 +32,7 @@
     "kbasic:help": "node scripts/kbasic-help-data.cjs",
     "build:sp48-wasm": "node scripts/build-sp48-wasm.cjs",
     "check:sp48-wasm-size": "node scripts/check-sp48-wasm-size.cjs",
+    "build:timex-wasm": "node scripts/build-timex-wasm.cjs",
     "build:sp128-wasm": "node scripts/build-sp128-wasm.cjs",
     "check:sp128-wasm-size": "node scripts/check-sp128-wasm-size.cjs",
     "build:spp3e-wasm": "node scripts/build-spp3e-wasm.cjs",
@@ -42,7 +43,7 @@
     "check:z88-wasm-size": "node scripts/check-z88-wasm-size.cjs",
     "build:zx8081-wasm": "node scripts/build-zx8081-wasm.cjs",
     "check:zx8081-wasm-size": "node scripts/check-zx8081-wasm-size.cjs",
-    "build:all-wasm": "npm run build:sp48-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm && npm run build:zx8081-wasm",
+    "build:all-wasm": "npm run build:sp48-wasm && npm run build:timex-wasm && npm run build:sp128-wasm && npm run build:spp3e-wasm && npm run build:zxnext-wasm && npm run build:z88-wasm && npm run build:zx8081-wasm",
     "check:wasm-cpu-contract": "node scripts/check-wasm-cpu-contract.cjs",
     "benchmark:spectrum-wasm": "node scripts/benchmark-spectrum-wasm.cjs",
     "benchmark:zxnext-wasm": "node scripts/benchmark-zxnext-wasm.cjs",
@@ -251,6 +252,13 @@
       {
         "from": "src/emu/machines/zxSpectrum48/wasm/dist",
         "to": "wasm/zxSpectrum48",
+        "filter": [
+          "**/*.wasm"
+        ]
+      },
+      {
+        "from": "src/emu/machines/timex/wasm/dist",
+        "to": "wasm/timex",
         "filter": [
           "**/*.wasm"
         ]

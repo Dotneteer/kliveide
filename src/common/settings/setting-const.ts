@@ -14,6 +14,8 @@ export const SETTING_EMU_MACHINE_FAVORITES = "emuOptions.machineFavorites";
 export const SETTING_EMU_FAST_LOAD = "emuOptions.fastLoad";
 /** The TR-DOS ROM file the Pentagon's Beta 128 boots (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship it */
 export const SETTING_EMU_TRDOS_ROM = "emuOptions.trdosRomFile";
+/** The TC2048 ROM file the Timex boots (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it */
+export const SETTING_EMU_TC2048_ROM = "emuOptions.tc2048RomFile";
 export const SETTING_EMU_STAY_ON_TOP = "emuOptions.stayOnTop";
 export const SETTING_EMU_STEP_IN_INTERRUPTS = "emuOptions.sourceStepStopsInInterrupts";
 export const SETTING_EMU_STOP_ON_ERRORS = "emuOptions.stopOnRuntimeErrors";

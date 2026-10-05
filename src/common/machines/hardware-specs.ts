@@ -31,6 +31,7 @@ import {
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
+  MI_TIMEX,
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
@@ -49,6 +50,7 @@ import {
   Z88_UI_FRAME_FREQUENCY
 } from "@emu/machines/z88/z88MachineInfo";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
+import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
 
 /** One ROM image the machine loads */
 export type RomImage = { id: string; kb: number; role?: string };
@@ -200,6 +202,31 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         // --- The Beta 128 (`.plans/BETA128_TRDOS_PLAN.md`): it boots the user's own TR-DOS ROM
         media: [SPECTRUM_TAPE, "Beta 128: 2 drives (TRD, SCL), with your TR-DOS ROM"]
       }
+    }
+  },
+  [MI_TIMEX]: {
+    // --- timexModels.ts, timex.c, zx-spectrum-scld.c (`.plans/TIMEX_SCORPION_PLAN.md` §8)
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: TIMEX_MODELS_INFO.tc2048.clockHz,
+      rom: [{ id: "tc2048", kb: 16, role: "your copy; the 48K ROM without one" }],
+      ramKb: 48,
+      display: {
+        ...SPECTRUM_DISPLAY,
+        attributes: "32 × 24 cells of 8 × 8 px, or 32 × 192 cells of 8 × 1 px (extended colour), FLASH",
+        otherSizes: "512 × 192 in two colours (64-column mode); a second screen at $6000",
+        videoChip: "Timex SCLD"
+      },
+      timing: {
+        unit: "T-states",
+        perLine: TIMEX_MODELS_INFO.tc2048.tactsPerLine,
+        linesPerFrame: TIMEX_MODELS_INFO.tc2048.linesPerFrame,
+        perFrame: TIMEX_MODELS_INFO.tc2048.tactsPerFrame,
+        note: "The 48K's raster at the SCLD's 3.528 MHz; port $FF bit 6 holds off the frame interrupt"
+      },
+      sound: ["Beeper"],
+      media: [SPECTRUM_TAPE],
+      input: [...SPECTRUM_KEYBOARD, { label: "Joystick", value: "Kempston, built in" }]
     }
   },
   [MI_SPECTRUM_3E]: {

@@ -39,6 +39,7 @@ const CORE_INPUTS = [
   "test/harness",
   "test/wasm",
   "test/zxnext-hw",
+  "test/timex-hw",
   "test/zxnext-shared",
   "test/zxSpectrum",
   "test/z88",

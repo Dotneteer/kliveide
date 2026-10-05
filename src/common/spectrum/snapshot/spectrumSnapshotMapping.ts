@@ -8,7 +8,8 @@
  * Every problem is collected, so the viewer can list them all.
  */
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
+import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import {
@@ -97,7 +98,8 @@ const TARGETS: Record<
     eRoms: true
   },
   plus3e: { machineId: MI_SPECTRUM_3E, modelIds: ["fdd1", "fdd2"], kliveName: "ZX Spectrum +3E" },
-  pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" }
+  pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" },
+  tc2048: { machineId: MI_TIMEX, modelIds: ["tc2048"], kliveName: "Timex Computer 2048" }
 };
 
 /** The display names of the models the mapping can pick */
@@ -106,7 +108,8 @@ const MODEL_NAMES: Record<string, string> = {
   pal: "ZX Spectrum 48K",
   ntsc: "ZX Spectrum 48K (NTSC)",
   ...Object.fromEntries(SP128_MODELS.map((m) => [m.modelId, m.displayName])),
-  ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName]))
+  ...Object.fromEntries(P3_MODELS.map((m) => [m.modelId, m.displayName])),
+  ...Object.fromEntries(TIMEX_MODELS.map((m) => [m.modelId, m.displayName]))
 };
 
 /** The display name of a Klive machine and model */
@@ -115,6 +118,7 @@ export function kliveSpectrumName(machineId: string, modelId: string | undefined
   if (machineId === MI_SPECTRUM_48) return "ZX Spectrum 48K";
   if (machineId === MI_SPECTRUM_128) return "ZX Spectrum 128K";
   if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2A/+3/+2E/+3E";
+  if (machineId === MI_TIMEX) return "Timex Computer 2048";
   return machineId;
 }
 

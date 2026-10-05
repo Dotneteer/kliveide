@@ -36,7 +36,8 @@ import {
   MC_SCREEN_FREQ,
   MI_SPECTRUM_128,
   MI_SPECTRUM_3E,
-  MI_SPECTRUM_48
+  MI_SPECTRUM_48,
+  MI_TIMEX
 } from "@common/machines/constants";
 import {
   getP3RomSet,
@@ -45,6 +46,7 @@ import {
   p3ModelRomSet
 } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { getSp128Model, getSp128Timing } from "@emu/machines/zxSpectrum128/sp128Timings";
+import { getTimexModel } from "@emu/machines/timex/timexModels";
 
 /** The services the load uses */
 export type SpectrumSnapshotLoadPorts = {
@@ -195,6 +197,9 @@ export function effectiveModelId(machineId: string, config: MachineConfigSet | u
   }
   if (machineId === MI_SPECTRUM_128) {
     return getSp128Timing(config).id;
+  }
+  if (machineId === MI_TIMEX) {
+    return getTimexModel(config).id;
   }
   if (machineId === MI_SPECTRUM_3E) {
     const raw = config?.[MC_DISK_SUPPORT];
