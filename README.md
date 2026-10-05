@@ -45,15 +45,20 @@
 
 Klive targets retro computers built around the Z80 CPU family. Each machine is emulated cycle-accurately with its authentic ROM and hardware behaviour.
 
-| Machine                   | Status          | Notes                                                |
-| ------------------------- | --------------- | ---------------------------------------------------- |
-| **ZX Spectrum 48K**       | ✅ Active       | PAL, NTSC, and 16K models                            |
-| **ZX Spectrum 128K**      | ✅ Active       | Full 128K memory paging                              |
-| **ZX Spectrum +2E / +3E** | ✅ Active       | Single and dual floppy drive models                  |
-| **Cambridge Z88**         | ✅ Active       | Multiple OZ OS versions (3.x – 5.0), various locales |
-| **ZX Spectrum Next**      | ✅ Active       | KS2 model; extended Z80 instruction set              |
-| **Commodore 64**          | 🧪 Experimental | Early stage; 6510 CPU                                |
-| **ZX 80 / ZX 81**         | ✅ Active       | ZX81 1K/16K/64K, PAL/NTSC; ZX80 1K/16K, 8K ROM       |
+| Machine                    | Status          | Notes                                                        |
+| -------------------------- | --------------- | ------------------------------------------------------------ |
+| **ZX Spectrum 48K**        | ✅ Active       | PAL, NTSC, and 16K models                                    |
+| **ZX Spectrum 128K**       | ✅ Active       | Full 128K memory paging                                      |
+| **ZX Spectrum +2E / +3E**  | ✅ Active       | Single and dual floppy drive models                          |
+| **Cambridge Z88**          | ✅ Active       | Multiple OZ OS versions (3.x – 5.0), various locales         |
+| **ZX Spectrum Next**       | ✅ Active       | KS2 model; extended Z80 instruction set                      |
+| **ZX 80 / ZX 81**          | ✅ Active       | ZX81 1K/16K/64K, PAL/NTSC; ZX80 1K/16K, 8K ROM               |
+| **ZX Spectrum +2A / +3**   | 🚧 In progress  | Original Amstrad ROMs (v4.0, v4.1, Spanish v4.1)             |
+| **Pentagon 128**           | 🚧 In progress  | Pentagon timing; Beta 128 disk interface with TR-DOS         |
+| **Timex TC2048**           | 🚧 In progress  | SCLD screen modes, built-in Kempston port                    |
+| **Timex TC2068 / TS2068**  | 🚧 In progress  | AY sound, DOCK cartridges (`.dck`); TS2068 runs at 60 Hz     |
+| **Scorpion ZS-256**        | 🚧 In progress  | 256K RAM, service ROM, Beta 128 disk interface with TR-DOS   |
+| **Commodore 64**           | 🧪 Experimental | Early stage; 6510 CPU                                        |
 
 ---
 
