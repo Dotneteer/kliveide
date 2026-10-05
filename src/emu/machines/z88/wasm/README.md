@@ -125,12 +125,18 @@ for behaviour only) after users reported "noise" on the larger LCDs under OZ 5. 
 re-recorded for it, the second settled change to them, after every changed entry had been traced to
 one of these:
 
-- **The LCD reads the Screen Base File (SBF) and the fonts as a bank and an offset**, the offset
-  wrapping inside its 16K bank, through the bank map (`z88PeekBank`). OZ 5 places a large SBF from
-  the top of a bank downwards - SBF $0127 is $24:3800 - and a 40-row file runs past $3FFF to $0000 of
-  the same bank. The core read on into the next bank, which painted that bank's bytes from row 8
-  down. A card smaller than its slot is now mirrored on the LCD as the CPU sees it, and an empty slot
-  reads $FF there.
+- **The LCD reads the Screen Base File (SBF) and the fonts as a bank and an offset**, through the
+  bank map (`z88PeekBank`): a card smaller than its slot is mirrored on the LCD as the CPU sees it,
+  and an empty slot reads $FF there.
+- **The SBF's page offset sets its size** (OZvm commit `b8f617b6`, 2026-10-05). The SBF register is a
+  bank and a page offset, and the file runs from that offset to the end of the bank - the Blink stops
+  scanning at the 16K boundary. $3800 (every ROM) is 2K, 8 rows; $2000 is 8K, 32 rows; $0000 16K. The
+  LCD draws at most `(0x4000 - offset) / 256` rows and leaves the rows below unlit, whatever its
+  height. Sizing the file from the LCD height - first by reading on into the next bank, then by
+  wrapping to $0000 of the same bank - painted unrelated RAM as "noise" whenever a 2K SBF met a
+  taller LCD. OZvm leaves those rows as they were last painted (it pre-paints the whole LCD unlit when
+  the resolution changes); Klive paints them unlit every frame, which looks the same and keeps the
+  picture a function of the machine state.
 - **The LCD shows the "off" picture until SBF and PB0-PB3 are all set** (OZvm's
   `isLcdEnabledAndBound`); OZ sets them one by one while booting.
 - **Only power-on resets the Blink.** The reset button resets the CPU alone (OZvm's
