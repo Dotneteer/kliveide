@@ -8,7 +8,8 @@ import {
   MI_ZX80,
   MI_ZX81,
   MI_ZXNEXT,
-  MI_TIMEX
+  MI_TIMEX,
+  MI_SCORPION
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
 import {
@@ -35,6 +36,7 @@ import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
 import { machineStateMenuRenderer } from "./state-menus";
 import { rzxMenuRenderer } from "./rzx-menus";
 import { timexDockMenuRenderer, timexJoystickMenuRenderer, timexRomMenuRenderer } from "./timex-menus";
+import { scorpionRomMenuRenderer } from "./scorpion-menus";
 
 /**
  * Machine-specific menu information
@@ -81,6 +83,17 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...trdosRomMenuRenderer(windowInfo, machine, model),
       ...spectrumSnapshotRenderer(windowInfo, machine, model),
       ...rzxMenuRenderer(windowInfo, machine, model),
+      ...machineStateMenuRenderer(windowInfo, machine, model)
+    ],
+    ideItems: spectrumIdeRenderer
+  },
+  [MI_SCORPION]: {
+    machineItems: (windowInfo, machine, model) => [
+      ...tapeMenuRenderer(windowInfo, machine, model),
+      ...diskMenuRenderer(windowInfo, machine, model),
+      ...trdosRomMenuRenderer(windowInfo, machine, model),
+      ...scorpionRomMenuRenderer(windowInfo, machine, model),
+      ...spectrumSnapshotRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer

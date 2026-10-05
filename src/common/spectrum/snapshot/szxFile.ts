@@ -24,7 +24,8 @@ import {
   isPagedSnapshotMachine,
   isPlus3SnapshotMachine,
   isTimexSnapshotMachine,
-  isTimex2068SnapshotMachine
+  isTimex2068SnapshotMachine,
+  snapshotBankCount
 } from "./spectrumSnapshot";
 
 /** The magic at the start of every `.szx` file */
@@ -42,7 +43,7 @@ const SZX_MACHINES: Record<number, SnapshotMachine> = {
   7: "pentagon",
   8: "tc2048",
   9: "tc2068",
-  10: { unsupported: "Scorpion ZS-256" },
+  10: "scorpion",
   11: { unsupported: "ZX Spectrum SE" },
   12: "ts2068",
   13: { unsupported: "Pentagon 512" },
@@ -276,7 +277,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         ula.border = data[0] & 0x07;
         ula.lastFe = data[3];
         paging = { port7ffd: data[1] };
-        if (isPlus3SnapshotMachine(machine)) paging.port1ffd = data[2];
+        if (isPlus3SnapshotMachine(machine) || machine === "scorpion") paging.port1ffd = data[2];
         header.push(
           { label: "Border", value: `${data[0]}` },
           { label: "Port $7FFD", value: hex(data[1]) },
@@ -295,7 +296,7 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
         if (content.length !== SPECTRUM_BANK_SIZE) {
           throw new Error(`RAM page ${page} holds ${content.length} bytes instead of 16384`);
         }
-        if (page > 7) {
+        if (page >= snapshotBankCount(machine)) {
           warnings.push(`RAM page ${page} does not exist on a Klive machine; it is ignored`);
         } else if (ram.has(page)) {
           warnings.push(`RAM page ${page} is stored twice; the first copy is used`);
@@ -457,11 +458,18 @@ export function parseSzxFile(bytes: Uint8Array): SpectrumSnapshot {
     warnings.push("The .szx file has no SPCR block; border and paging default to 0");
   }
   if (isPagedSnapshotMachine(machine) && !paging) {
-    paging = { port7ffd: 0, port1ffd: isPlus3SnapshotMachine(machine) ? 0 : undefined };
+    paging = {
+      port7ffd: 0,
+      port1ffd: isPlus3SnapshotMachine(machine) || machine === "scorpion" ? 0 : undefined
+    };
   }
   if (typeof machine === "string") {
     const required =
-      machine === "16k" ? [5] : isPagedSnapshotMachine(machine) ? [0, 1, 2, 3, 4, 5, 6, 7] : [5, 2, 0];
+      machine === "16k"
+        ? [5]
+        : isPagedSnapshotMachine(machine)
+          ? Array.from({ length: snapshotBankCount(machine) }, (_, b) => b)
+          : [5, 2, 0];
     const missing = required.filter((b) => !ram.has(b));
     if (missing.length) {
       throw new Error(`The .szx file lacks RAM page(s) ${missing.join(", ")}`);

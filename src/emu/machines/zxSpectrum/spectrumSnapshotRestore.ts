@@ -61,7 +61,7 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
   if (paged) {
     core.ram.fill(0);
     for (const [bank, bytes] of snapshot.ram) {
-      if (bank < 8) core.ram.set(bytes, bank * SPECTRUM_BANK_SIZE);
+      if (bank * SPECTRUM_BANK_SIZE < core.ram.length) core.ram.set(bytes, bank * SPECTRUM_BANK_SIZE);
     }
   } else {
     core.ram.fill(0, 0x4000, 0x10000);
@@ -78,7 +78,10 @@ export function restoreSpectrumSnapshot(core: SpectrumSnapshotCore, snapshot: Sp
     if (core.prefix === "spp3e" && snapshot.paging.port1ffd !== undefined) {
       call("WritePort", 0x1ffd, snapshot.paging.port1ffd & 0xff);
     }
+    // --- The Scorpion's $1FFD (not locked by $7FFD): set after $7FFD, below
+    const scorpion1ffd = snapshot.machine === "scorpion" ? (snapshot.paging.port1ffd ?? 0) : undefined;
     call("WritePort", 0x7ffd, snapshot.paging.port7ffd & 0xff);
+    if (scorpion1ffd !== undefined) call("SetPort1ffd", scorpion1ffd & 0xff);
   }
 
   // --- 3. The AY chip

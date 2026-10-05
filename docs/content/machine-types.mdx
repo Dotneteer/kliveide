@@ -145,6 +145,38 @@ state files work on every model.
 screen mode, its chunk map and the 2068s' AY; a `.szx` also keeps the cartridge's pages. A Timex
 machine saved as `.sna` loads as a 48K, and Klive names what it loses.
 
+## Scorpion ZS-256
+
+Machine ID: `scorpion`
+
+Available models:
+- `zs256`: The Scorpion ZS-256, a Russian 128K-compatible machine with 256K of RAM and a built-in
+  Beta 128 disk interface.
+
+The Scorpion runs on the ZX Spectrum 128K's core, and adds:
+
+- **256K of RAM in sixteen banks.** Port `$7FFD` pages banks as on the 128K; port `$1FFD` bit 4 adds
+  8 to the bank at `$C000` (banks 8-15), bit 0 puts RAM bank 0 at `$0000`, and bit 1 puts the
+  service monitor ROM there. `$7FFD` bit 5 locks `$7FFD` only, never `$1FFD`. Both ports are decoded
+  on more address lines than the 128K's.
+- **Four ROMs**: the 128K editor, 48K BASIC, the service monitor and TR-DOS. The memory and
+  disassembly views and the breakpoints name them `R0`-`R3`, and the banks `B0`-`B15`.
+- **The Beta 128 disk interface**, built in, with two drives (`.trd` and `.scl` disks), as on the
+  Pentagon 128 - see [Using TR-DOS Disks on the Pentagon 128](/howto/trdos-disks).
+- **Timing**: 3.5 MHz, the 48K's frame (224 T-states by 312 lines, 69,888 T-states), and no memory or
+  I/O contention. Unattached ports read the floating bus.
+
+**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Machine > Scorpion
+ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
+`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Machine > TR-DOS ROM**. With the 128K
+ROMs, running and debugging code, the Tape Loader and booting a disk work as on the 128K and the
+Pentagon. With the Scorpion's own ROM the machine runs, but the IDE cannot start a program, a tape or
+a disk in its editor, which Klive does not know; load them by hand.
+
+**Snapshots.** A `.szx` or `.z80` snapshot of a Scorpion opens on it with all sixteen banks and
+`$1FFD`. A Scorpion saved as `.sna` loads as a 128K without banks 8-15, and Klive refuses it while
+`$1FFD` is in use.
+
 ## Cambridge Z88
 
 Machine ID: `z88`

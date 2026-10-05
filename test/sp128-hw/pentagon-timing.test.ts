@@ -23,7 +23,7 @@ import { createSp128Session, type Sp128TestSession } from "../harness/sp128";
 type X = Record<string, (...args: number[]) => number>;
 const exportsOf = (s: Sp128TestSession) => s.machine.wasmV2Runtime!.exports as unknown as X;
 
-const MODELS: Sp128TimingId[] = ["sp128", "pentagon"];
+const MODELS: Sp128TimingId[] = ["sp128", "pentagon", "scorpion"];
 
 /** A booted machine (the 128K menu), its exports and its timing */
 async function boot(model: Sp128TimingId) {
@@ -126,8 +126,8 @@ describe.each(MODELS)("%s", (model) => {
     expect(frameStart() - start).toBe(10 * t.tactsPerFrame);
     expect(x.sp128GetInterruptsRaised() - ints).toBe(10);
     expect(s.machine.tactsInFrame).toBe(t.tactsPerFrame);
-    // --- 3 500 000 / 71 680 = 48.83 Hz on the Pentagon; 50.02 Hz on the 128K
-    expect(t.clockHz / t.tactsPerFrame).toBeCloseTo(model === "pentagon" ? 48.828 : 50.021, 2);
+    // --- 3 500 000 / 71 680 = 48.83 Hz on the Pentagon; 50.02 Hz on the 128K; 50.08 Hz on the Scorpion
+    expect(t.clockHz / t.tactsPerFrame).toBeCloseTo({ pentagon: 48.828, sp128: 50.021, scorpion: 50.08 }[model], 2);
   }, 60_000);
 
   it("memory: contention only on the 128K, in slot 1 and in odd banks at $C000", async () => {
@@ -237,7 +237,8 @@ describe.each(MODELS)("%s", (model) => {
     const height = s.machine.screenHeightInPixels;
     const firstVisible = drawTact(t, 0, 0);
     expect(firstVisible).toBe(
-      model === "pentagon" ? 62 + 31 * 224 + 200 : 14 * 228 + 204 // --- 7 206 and 3 396
+      // --- 7 206, 3 396 and 3 560
+      { pentagon: 62 + 31 * 224 + 200, sp128: 14 * 228 + 204, scorpion: 15 * 224 + 200 }[model]
     );
     loadSled(s, 1);
     for (const target of [firstVisible - 3, firstVisible + 41, drawTact(t, 47, 300), t.paperStartTact + 140, drawTact(t, 286, 340)]) {

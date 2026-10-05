@@ -16,6 +16,7 @@ import {
   isPlus3SnapshotMachine,
   isTimexSnapshotMachine,
   isTimex2068SnapshotMachine,
+  snapshotBankCount,
   snapshotMachineName,
   type SnapshotMachineKind,
   type SpectrumSnapshot
@@ -66,13 +67,15 @@ function hardwareMode(
       return { mode: 15, modified: false };
     case "ts2068":
       return { mode: 128, modified: false };
+    case "scorpion":
+      return { mode: 10, modified: false };
   }
 }
 
 /** The pages a machine stores, as `.z80` page numbers with their 128K bank */
 function pagesOf(machine: SnapshotMachineKind): { page: number; bank: number }[] {
   if (isPagedSnapshotMachine(machine)) {
-    return [0, 1, 2, 3, 4, 5, 6, 7].map((bank) => ({ page: bank + 3, bank }));
+    return Array.from({ length: snapshotBankCount(machine) }, (_, bank) => ({ page: bank + 3, bank }));
   }
   if (machine === "16k") return [{ page: 8, bank: 5 }];
   return [
@@ -129,7 +132,9 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   if (!paged && ay && !ay48) {
     losses.push(`A 48K .z80 keeps the AY registers only for an add-on AY; they are not saved`);
   }
-  out.word(plus3 ? 55 : 54);
+  // --- The 55-byte header carries $1FFD: the +2A/+3's, and the Scorpion's
+  const long = plus3 || machine === "scorpion";
+  out.word(long ? 55 : 54);
   out.word(c.pc);
   if (isTimexSnapshotMachine(machine)) {
     // --- A Timex mode: the last OUTs to $F4 and $FF in place of $7FFD and Interface 1
@@ -151,7 +156,7 @@ export function writeZ80File(s: SpectrumSnapshot): SnapshotWriteResult {
   out.byte(0xff, 0xff); // --- $0000-$3FFF is ROM
   out.fill(10).fill(10); // --- Joystick key mappings and their ASCII words: none
   out.byte(0 /* M.G.T. type */, 0, 0 /* Disciple inhibit */);
-  if (plus3) out.byte(s.paging?.port1ffd ?? 0);
+  if (long) out.byte(s.paging?.port1ffd ?? 0);
 
   // --- Memory pages
   for (const { page, bank } of pagesOf(machine)) {

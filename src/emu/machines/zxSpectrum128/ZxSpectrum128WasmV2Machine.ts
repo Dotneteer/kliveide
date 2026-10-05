@@ -95,7 +95,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   private wasmV2SavedTapeRevision = 0;
   private wasmV2ContentionPauseBase = 0;
   /** The TR-DOS ROM, when the model has the Beta 128 and the user named a readable 16K ROM */
-  private trdosRom?: Uint8Array;
+  protected trdosRom?: Uint8Array;
   /** Why the Beta 128 is off on a model that has it (no ROM named, unreadable, wrong size) */
   trdosRomProblem?: string;
   private beta128Disks?: Beta128Disks;
@@ -372,11 +372,15 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   override async setup(): Promise<void> {
     this.wasmV2Runtime = await loadSp128WasmV2(this.wasmV2LoaderOptions);
     const runtime = this.requireWasmV2Runtime();
+    const roms = await this.loadMachineRoms();
     if (this.beta128Model) await this.loadTrdosRomForBeta128();
 
     this.hardResetWasmV2(runtime);
-    this.uploadRomBytes(-1, await this.loadRomFromResource(this.romId, 0));
-    this.uploadRomBytes(-2, await this.loadRomFromResource(this.romId, 1));
+    this.uploadRomBytes(-1, roms.rom0);
+    this.uploadRomBytes(-2, roms.rom1);
+    if (roms.service) {
+      for (let i = 0; i < roms.service.length; i++) runtime.exports.sp128UploadRomByte(3, i, roms.service[i]);
+    }
     if (this.trdosRom) {
       for (let i = 0; i < this.trdosRom.length; i++) runtime.exports.sp128UploadRomByte(2, i, this.trdosRom[i]);
       this.beta128Disks = new Beta128Disks(runtime.exports as never);
@@ -434,7 +438,19 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     return await this.loadRomFromResource(path);
   }
 
-  private async loadTrdosRomForBeta128(): Promise<void> {
+  /**
+   * The ROMs the machine boots: the 128K editor and 48K BASIC ROMs (the Scorpion adds its service
+   * ROM, and may bring its own TR-DOS)
+   */
+  protected async loadMachineRoms(): Promise<{ rom0: Uint8Array; rom1: Uint8Array; service?: Uint8Array }> {
+    return {
+      rom0: await this.loadRomFromResource("sp128", 0),
+      rom1: await this.loadRomFromResource("sp128", 1)
+    };
+  }
+
+  /** Reads the TR-DOS ROM for the Beta 128 (the user's, from the settings) */
+  protected async loadTrdosRomForBeta128(): Promise<void> {
     this.trdosRom = undefined;
     const path = this.getMachineProperty(TRDOS_ROM_FILE) as string | undefined;
     if (!path) {
@@ -661,7 +677,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   override uploadRomBytes(partition: number, data: Uint8Array): void {
     const runtime = this.requireWasmV2Runtime();
     const romIndex = partition === -2 ? 1 : 0;
-    const romSize = runtime.exports.sp128GetRomSize() / 2;
+    const romSize = 0x4000; // --- one 16K ROM page (the core holds three: ROM 0, ROM 1, the Scorpion's service ROM)
     if (data.length !== romSize) {
       throw new Error(`Invalid ZX Spectrum 128K ROM size: ${data.length}. Expected ${romSize}.`);
     }
@@ -755,7 +771,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     };
   }
 
-  private hardResetWasmV2(runtime: Sp128WasmV2Runtime): void {
+  protected hardResetWasmV2(runtime: Sp128WasmV2Runtime): void {
     runtime.exports.sp128HardReset(this.timing.coreTiming, this.beta128Active ? 1 : 0);
     this.wasmV2ContentionPauseBase = 0;
     this.invalidateWasmV2Sync();
@@ -1244,7 +1260,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
    * @throws When the snapshot needs another machine
    */
   loadSnapshotState(snapshot: SpectrumSnapshot): number {
-    assertSnapshotFitsMachine(snapshot, "sp128", undefined);
+    assertSnapshotFitsMachine(snapshot, this.machineId, undefined);
     const runtime = this.requireWasmV2Runtime();
     const frameTact = restoreSpectrumSnapshot(
       { prefix: "sp128", exports: runtime.exports, ram: runtime.ram, reset: () => this.reset() },
@@ -1307,7 +1323,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     this.wasmV2TargetClockMultiplier = -1;
   }
 
-  private requireWasmV2Runtime(): Sp128WasmV2Runtime {
+  protected requireWasmV2Runtime(): Sp128WasmV2Runtime {
     if (this.wasmV2Runtime == null) {
       throw new Error("ZX Spectrum 128K WASM v2 runtime has not been loaded.");
     }

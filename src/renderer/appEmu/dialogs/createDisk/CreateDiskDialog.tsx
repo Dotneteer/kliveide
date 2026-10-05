@@ -10,7 +10,7 @@ import { useFilePickerPort } from "@mvc/dialogs/useDialogPorts";
 import { CreateDiskController } from "./CreateDiskController";
 import { TRD_DISK_TYPES, type CreateDiskEnvironment } from "./CreateDiskModel";
 import { useSelector } from "@renderer/core/RendererProvider";
-import { MI_SPECTRUM_128 } from "@common/machines/constants";
+import { MI_SCORPION, MI_SPECTRUM_128 } from "@common/machines/constants";
 import type { CreateDiskDialogResult, CreateDiskPorts } from "./CreateDiskPorts";
 import { CreateDiskView } from "./CreateDiskView";
 
@@ -36,7 +36,7 @@ export const CreateDiskDialog = ({ onClose, onCreate }: Props) => {
   const env = useMemo<CreateDiskEnvironment>(
     () => ({
       validation: validationService,
-      ...(machineId === MI_SPECTRUM_128 ? { diskTypes: TRD_DISK_TYPES } : {})
+      ...(machineId === MI_SPECTRUM_128 || machineId === MI_SCORPION ? { diskTypes: TRD_DISK_TYPES } : {})
     }),
     [validationService, machineId]
   );

@@ -25,6 +25,7 @@ import {
   isPlus3SnapshotMachine,
   isTimexSnapshotMachine,
   isTimex2068SnapshotMachine,
+  snapshotBankCount,
   snapshotMachineName,
   type SnapshotMachineKind,
   type SpectrumSnapshot
@@ -49,6 +50,7 @@ const SZX_MACHINE_IDS: Record<SnapshotMachineKind, number> = {
   tc2048: 8,
   tc2068: 9,
   ts2068: 12,
+  scorpion: 10,
   "48k-ntsc": 15
 };
 
@@ -111,7 +113,7 @@ export function writeSzxFile(
   const spcr = new SnapshotBytes()
     .byte(s.ula.border & 0x07)
     .byte(paged ? (s.paging?.port7ffd ?? 0) : 0)
-    .byte(plus3 ? (s.paging?.port1ffd ?? 0) : 0)
+    .byte(plus3 || machine === "scorpion" ? (s.paging?.port1ffd ?? 0) : 0)
     .byte(s.ula.lastFe ?? s.ula.border & 0x07)
     .fill(4);
   block(out, "SPCR", spcr.toArray());
@@ -144,7 +146,11 @@ export function writeSzxFile(
 
   // --- RAMP
   const banks =
-    machine === "16k" ? [5] : paged ? [0, 1, 2, 3, 4, 5, 6, 7] : [...SPECTRUM_48K_BANKS];
+    machine === "16k"
+      ? [5]
+      : paged
+        ? Array.from({ length: snapshotBankCount(machine) }, (_, b) => b)
+        : [...SPECTRUM_48K_BANKS];
   for (const b of banks) {
     const data = s.ram.get(b);
     if (!data || data.length !== SPECTRUM_BANK_SIZE) {

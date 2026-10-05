@@ -32,7 +32,8 @@ import {
   MF_ALLOW_SCAN_LINES,
   MI_ZX80,
   MI_ZX81,
-  MI_TIMEX
+  MI_TIMEX,
+  MI_SCORPION
 } from "./constants";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 import { Zx80Chars, Zx81Chars, ZxNextChars, ZxSpectrumChars } from "./char-codes";
@@ -43,7 +44,7 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
-import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
+import { SCORPION_MODELS, SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
@@ -371,6 +372,32 @@ export const machineRegistry: MachineInfo[] = [
     }
   },
   {
+    // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on the 128K
+    // --- core - 256K in sixteen banks, $1FFD, four ROMs (R0-R3), the Beta 128 built in (P3)
+    machineId: MI_SCORPION,
+    displayName: "Scorpion ZS-256",
+    charSet: ZxSpectrumChars,
+    features: {
+      [MF_Z80]: true,
+      [MF_TAPE_SUPPORT]: true,
+      [MF_INJECT_SUPPORT]: true,
+      [MF_ULA]: true,
+      [MF_PSG]: true,
+      [MF_ROM]: 4,
+      [MF_BANK]: 16
+    },
+    mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
+    models: SCORPION_MODELS,
+    toolInfo: {
+      [CT_DISASSEMBLER]: (
+        memorySections: MemorySection[],
+        memoryContents: Uint8Array,
+        partitionLabels?: string[],
+        options?: DisassemblyOptions
+      ) => new Z80Disassembler(memorySections, memoryContents, partitionLabels, options)
+    }
+  },
+  {
     machineId: MI_Z88,
     displayName: "Cambridge Z88",
     charSet: ZxSpectrumChars,
@@ -541,7 +568,10 @@ export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, str
  * until the Pentagon 128 became its second one (`.plans/PENTAGON_128_PLAN.md`, P1).
  */
 export const implicitModelIds: Readonly<Record<string, string>> = {
-  [MI_SPECTRUM_128]: "sp128"
+  [MI_SPECTRUM_128]: "sp128",
+  // --- The Timex machine and the Scorpion: a model-less reference (`newp timex`) means the first model
+  [MI_TIMEX]: "tc2048",
+  [MI_SCORPION]: "zs256"
 };
 
 /**

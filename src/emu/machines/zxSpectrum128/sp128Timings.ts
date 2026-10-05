@@ -1,6 +1,6 @@
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { ScreenConfiguration } from "@emu/abstractions/ScreenConfiguration";
-import { MC_DISK_SUPPORT, MC_SP128_TIMING } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SCORPION, MC_SP128_TIMING } from "@common/machines/constants";
 
 /*
  * The two timings the `sp128` core runs (`.plans/PENTAGON_128_PLAN.md`, P2-P3): the ZX Spectrum 128K
@@ -14,10 +14,10 @@ import { MC_DISK_SUPPORT, MC_SP128_TIMING } from "@common/machines/constants";
  */
 
 /** The timing ids, the values of `MC_SP128_TIMING` */
-export type Sp128TimingId = "sp128" | "pentagon";
+export type Sp128TimingId = "sp128" | "pentagon" | "scorpion";
 
-/** The model ids of the `sp128` machine (the same as the timing ids) */
-export type Sp128ModelId = Sp128TimingId;
+/** The model ids of the `sp128` machine (the same as the timing ids; the Scorpion is its own machine) */
+export type Sp128ModelId = Exclude<Sp128TimingId, "scorpion">;
 
 /** What one timing decides */
 export type Sp128Timing = {
@@ -46,7 +46,7 @@ export type Sp128Timing = {
   /** The screen geometry the screen device uses (the core's `Sp128ScreenConfig`) */
   screen: ScreenConfiguration;
   /** The machine `.szx` / `.z80` files call this one */
-  snapshotKind: "128k" | "pentagon";
+  snapshotKind: "128k" | "pentagon" | "scorpion";
 };
 
 export const SP128_TIMINGS: Record<Sp128TimingId, Sp128Timing> = {
@@ -111,6 +111,37 @@ export const SP128_TIMINGS: Record<Sp128TimingId, Sp128Timing> = {
       contentionValues: [0, 0, 0, 0, 0, 0, 0, 0]
     },
     snapshotKind: "pentagon"
+  },
+  // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c, §8): the 48K's raster at
+  // --- 3.5 MHz, no contention, the floating bus kept; its own machine (`scorpion`) on this core
+  scorpion: {
+    id: "scorpion",
+    coreTiming: 2,
+    clockHz: 3_500_000,
+    tactsPerLine: 224,
+    linesPerFrame: 312,
+    tactsPerFrame: 69_888,
+    interruptTacts: 32,
+    paperStartTact: 64 * 224,
+    contention: false,
+    floatingBus: true,
+    screen: {
+      verticalSyncLines: 8,
+      nonVisibleBorderTopLines: 8,
+      borderTopLines: 48,
+      borderBottomLines: 48,
+      nonVisibleBorderBottomLines: 8,
+      displayLines: 192,
+      borderLeftTime: 24,
+      borderRightTime: 24,
+      displayLineTime: 128,
+      horizontalBlankingTime: 40,
+      nonVisibleBorderRightTime: 8,
+      pixelDataPrefetchTime: 2,
+      attributeDataPrefetchTime: 1,
+      contentionValues: [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    snapshotKind: "scorpion"
   }
 };
 
@@ -119,7 +150,10 @@ export const SP128_DEFAULT_TIMING: Sp128TimingId = "sp128";
 
 /** The timing a machine configuration selects; an unknown or missing value is the 128K's */
 export function getSp128Timing(config: MachineConfigSet | undefined): Sp128Timing {
+  // --- The Scorpion's timing comes with the Scorpion machine (`MC_SCORPION`), never from a 128K's config
+  if (config?.[MC_SCORPION]) return SP128_TIMINGS.scorpion;
   const id = config?.[MC_SP128_TIMING];
+  if (id === "scorpion") return SP128_TIMINGS[SP128_DEFAULT_TIMING];
   return (typeof id === "string" && SP128_TIMINGS[id as Sp128TimingId]) || SP128_TIMINGS[SP128_DEFAULT_TIMING];
 }
 
@@ -141,3 +175,15 @@ export const SP128_MODELS: MachineModel[] = [
 export function getSp128Model(modelId: string | undefined): MachineModel | undefined {
   return modelId === undefined ? undefined : SP128_MODELS.find((m) => m.modelId === modelId);
 }
+
+/**
+ * The registry model of the `scorpion` machine: the 128K core with the Scorpion's timing, $1FFD,
+ * 256K and its four ROMs, and the Beta 128 built in (two drives)
+ */
+export const SCORPION_MODELS: MachineModel[] = [
+  {
+    modelId: "zs256",
+    displayName: "Scorpion ZS-256",
+    config: { [MC_SCORPION]: true, [MC_SP128_TIMING]: "scorpion", [MC_DISK_SUPPORT]: 2 }
+  }
+];

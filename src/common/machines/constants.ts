@@ -9,12 +9,20 @@ export const MI_ZX80 = "zx80";
 export const MI_ZX81 = "zx81";
 /** The Timex Computer 2048 (`.plans/TIMEX_SCORPION_PLAN.md`; the TC2068/TS2068 join as models) */
 export const MI_TIMEX = "timex";
+/** The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c), on the 128K's core */
+export const MI_SCORPION = "scorpion";
 
 /**
  * The machines whose emulator screen can show the media strip (the tape and disk files in use),
  * switched by the `emuViewOptions.showMediaInfo` setting.
  */
-export const MEDIA_INFO_MACHINE_IDS: string[] = [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX];
+export const MEDIA_INFO_MACHINE_IDS: string[] = [
+  MI_SPECTRUM_48,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_TIMEX,
+  MI_SCORPION
+];
 
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";
@@ -46,6 +54,8 @@ export const MC_SP3_ROM_SET = "sp3RomSet";
 export const MC_SP128_TIMING = "sp128Timing";
 /** Timex only: the model the core runs (`timexModels.ts`): "tc2048" */
 export const MC_TIMEX_MODEL = "timexModel";
+/** Scorpion only: the 128K core runs as the Scorpion ZS-256 */
+export const MC_SCORPION = "scorpion";
 
 // Available machine config keys
 export const MF_TAPE_SUPPORT = "tapeSupport";

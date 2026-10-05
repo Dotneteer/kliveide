@@ -87,6 +87,8 @@ function spectrumSnapshot(paged: boolean, machineId: number, extra: number[][] =
   const base = paged ? state128({ port7ffd: 0x10 }) : state48();
   const ram = new Map(base.ram);
   ram.set(2, spectrumProgram(paged));
+  // --- The Scorpion (machine 10) has sixteen banks
+  if (machineId === 10) for (let bank = 8; bank < 16; bank++) ram.set(bank, new Uint8Array(BANK).fill(bank));
   return buildSzx(
     { ...base, ram, pc: 0x8100, sp: 0xff00, i: 0x90, im: 2, iff1: true, iff2: true },
     { machineId, extra }
@@ -132,10 +134,10 @@ describe("machine state: save, load into another machine, run = keep running", (
     expect(a.peek(0xa000)).toBeGreaterThan(20);
   });
 
-  it.each<Sp128SessionModel>(["sp128", "nofdd", "fdd1"])("ZX Spectrum 128K / +3E (%s)", async (model) => {
+  it.each<Sp128SessionModel>(["sp128", "nofdd", "fdd1", "scorpion"])("ZX Spectrum 128K / +3E / Scorpion (%s)", async (model) => {
     const a = await createSp128Session(model);
     const b = await createSp128Session(model);
-    const machineId = model === "sp128" ? 2 : 6;
+    const machineId = model === "sp128" ? 2 : model === "scorpion" ? 10 : 6;
     const extra = model === "fdd1" ? [szxBlock("+3", [1, 0])] : [];
     a.loadSnapshot("p.szx", spectrumSnapshot(true, machineId, extra));
     a.runFrames(4).step(2001);

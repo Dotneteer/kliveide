@@ -14,6 +14,8 @@ export const TIMEX_ROM_FILE = "TimexRomFile";
 /** The TC2068's and TS2068's 24K ROM files, from `SETTING_EMU_TC2068_ROM` / `SETTING_EMU_TS2068_ROM` */
 export const TC2068_ROM_FILE = "Tc2068RomFile";
 export const TS2068_ROM_FILE = "Ts2068RomFile";
+/** The Scorpion ZS-256's 64K ROM file, from `SETTING_EMU_SCORPION_ROM` */
+export const SCORPION_ROM_FILE = "ScorpionRomFile";
 /** A TR-DOS disk in drive A / B that the guest changed but that is not written back (an `.scl`) */
 export const DISK_A_UNSAVED = "DiskAUnsaved";
 export const DISK_B_UNSAVED = "DiskBUnsaved";

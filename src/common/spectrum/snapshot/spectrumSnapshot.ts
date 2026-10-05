@@ -26,7 +26,8 @@ export type SnapshotMachineKind =
   | "pentagon"
   | "tc2048"
   | "tc2068"
-  | "ts2068";
+  | "ts2068"
+  | "scorpion";
 
 /**
  * The machine the snapshot was taken on, as the file says it. `unsupported` names a machine Klive
@@ -78,7 +79,7 @@ export type SpectrumSnapshotUla = {
 /** Memory paging ports */
 export type SpectrumSnapshotPaging = {
   port7ffd: number;
-  /** +2A/+3 only */
+  /** +2A/+3 and Scorpion only */
   port1ffd?: number;
 };
 
@@ -261,6 +262,8 @@ export function snapshotMachineName(machine: SnapshotMachine): string {
       return "Timex TC2068";
     case "ts2068":
       return "Timex TS2068";
+    case "scorpion":
+      return "Scorpion ZS-256";
   }
 }
 
@@ -272,8 +275,14 @@ export function isPagedSnapshotMachine(machine: SnapshotMachine): boolean {
     machine === "plus2a" ||
     machine === "plus3" ||
     machine === "plus3e" ||
-    machine === "pentagon"
+    machine === "pentagon" ||
+    machine === "scorpion"
   );
+}
+
+/** The 16K RAM banks a paged machine holds: sixteen on the Scorpion ZS-256, eight elsewhere */
+export function snapshotBankCount(machine: SnapshotMachine): number {
+  return machine === "scorpion" ? 16 : 8;
 }
 
 /** Is this a +2A/+3 family machine (`$1FFD`)? */

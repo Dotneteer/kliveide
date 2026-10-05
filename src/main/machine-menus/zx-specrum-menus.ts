@@ -21,7 +21,18 @@ import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/s
 import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
+import {
+  MI_SCORPION,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_SPECTRUM_48,
+  MI_TIMEX
+} from "@common/machines/constants";
+
+/** The machines whose drives are a Beta 128's (TR-DOS disks): the Pentagon's and the Scorpion's */
+function isBeta128Machine(machineId: string | undefined): boolean {
+  return machineId === MI_SPECTRUM_128 || machineId === MI_SCORPION;
+}
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { getModelConfig } from "@common/machines/machine-registry";
 
@@ -92,8 +103,8 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
     },
     { type: "separator" }
   ];
-  // --- The Pentagon: boot the disk in drive A through TR-DOS (`trdosFlows.ts`)
-  if (mainStore.getState()?.emulatorState?.machineId === MI_SPECTRUM_128) {
+  // --- The Pentagon and the Scorpion: boot the disk in drive A through TR-DOS (`trdosFlows.ts`)
+  if (isBeta128Machine(mainStore.getState()?.emulatorState?.machineId)) {
     floppySubMenu.push({
       id: "boot_disk",
       label: "Boot Disk in Drive A",
@@ -428,8 +439,8 @@ async function setDiskFile(
   const defaultPath =
     appSettings?.folders?.[DISK_FILE_FOLDER] ||
     (lastFile ? path.dirname(lastFile) : app.getPath("home"));
-  // --- The Pentagon's Beta 128 reads TR-DOS images; the +3 reads CPC DSK
-  const trdos = mainStore.getState()?.emulatorState?.machineId === MI_SPECTRUM_128;
+  // --- The Pentagon's and the Scorpion's Beta 128 reads TR-DOS images; the +3 reads CPC DSK
+  const trdos = isBeta128Machine(mainStore.getState()?.emulatorState?.machineId);
   const dialogResult = await dialog.showOpenDialog(browserWindow, {
     title: "Select Disk File",
     defaultPath,
@@ -672,7 +683,7 @@ export function canSaveSpectrumSnapshot(state: AppState = mainStore.getState()):
   const execState = state?.emulatorState?.machineState;
   return (
     !!machineId &&
-    [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX].includes(machineId) &&
+    [MI_SPECTRUM_48, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_TIMEX, MI_SCORPION].includes(machineId) &&
     (execState === MachineControllerState.Running || execState === MachineControllerState.Paused)
   );
 }

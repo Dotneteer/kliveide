@@ -165,7 +165,7 @@ describe(".z80", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([2, 10, 11])("marks hardware mode %i unsupported", (hwMode) => {
+  it.each([2, 11])("marks hardware mode %i unsupported", (hwMode) => {
     const s = parseZ80File(buildZ80(state48(), { version: 3, hwMode }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors.length).toBe(1);
@@ -283,7 +283,7 @@ describe(".szx", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([10, 11, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
+  it.each([11, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
     const s = parseSzxFile(buildSzx(state128(), { machineId }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors).toHaveLength(1);

@@ -26,6 +26,8 @@ import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/R
 import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
 import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import * as rzx from "../spectrumRzx";
+import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
+import { SCORPION_ROM_FILE } from "@emu/machines/machine-props";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
 import { SpectrumModelType } from "@main/z80-compiler/SpectrumModelTypes";
 import { Z80Assembler } from "@main/z80-compiler/z80-assembler";
@@ -38,7 +40,7 @@ import { buildSpP3eWasm, productionOutput as spp3eOutput } from "../../../script
 const ROM_DIR = join(__dirname, "../../../src/public/roms");
 
 /** A model of the 128K machine (`SP128_MODELS`: the 128K, the Pentagon 128), or any of the +2A/+3/+2E/+3E (`P3_MODELS`) */
-export type Sp128SessionModel = Sp128ModelId | P3ModelId;
+export type Sp128SessionModel = Sp128ModelId | P3ModelId | "scorpion";
 
 export type RunLimit = { maxFrames?: number };
 
@@ -61,6 +63,31 @@ class HarnessSp128Machine extends ZxSpectrum128WasmV2Machine {
   }
 
   protected override async loadRomFromResource(_romName: string, page = 0): Promise<Uint8Array> {
+    return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
+  }
+}
+
+/**
+ * The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): the 128K ROMs (as the machine boots
+ * without its own), or a 64K Scorpion ROM image; TR-DOS from the image, or the TR-DOS ROM given
+ */
+class HarnessScorpionMachine extends ScorpionWasmV2Machine {
+  constructor(private readonly scorpionRom?: Uint8Array, private readonly trdosRomImage?: Uint8Array) {
+    super(undefined, undefined, {
+      artifactName: "harness-sp128-machine-v2.wasm",
+      readArtifact: async () => readFileSync(sp128Output)
+    });
+    if (scorpionRom) this.setMachineProperty(SCORPION_ROM_FILE, "<harness-scorpion>");
+    if (trdosRomImage) this.setMachineProperty(TRDOS_ROM_FILE, "<harness>");
+  }
+
+  protected override async loadTrdosRom(): Promise<Uint8Array> {
+    if (!this.trdosRomImage) throw new Error("No TR-DOS ROM given to the harness");
+    return this.trdosRomImage;
+  }
+
+  protected override async loadRomFromResource(romName: string, page = 0): Promise<Uint8Array> {
+    if (romName === "<harness-scorpion>") return this.scorpionRom!;
     return new Uint8Array(readFileSync(join(ROM_DIR, `sp128-${page}.rom`)));
   }
 }
@@ -148,6 +175,8 @@ export function trdosRomFromEnvironment(): Uint8Array | undefined {
 export type Sp128SessionOptions = {
   /** The Pentagon's TR-DOS ROM (16K); without one its Beta 128 is off, as in the IDE */
   trdosRom?: Uint8Array;
+  /** The Scorpion's 64K ROM (model "scorpion"); without it the Scorpion boots the 128K ROMs */
+  scorpionRom?: Uint8Array;
 };
 
 export async function createSp128Session(
@@ -156,7 +185,13 @@ export async function createSp128Session(
 ): Promise<Sp128TestSession> {
   let machine: ZxSpectrum128WasmV2Machine | ZxSpectrumP3eWasmV2Machine;
   const sp128Model = getSp128Model(model);
-  if (sp128Model) {
+  if (model === "scorpion") {
+    if (!built.sp128) {
+      buildSp128Wasm();
+      built.sp128 = true;
+    }
+    machine = new HarnessScorpionMachine(options.scorpionRom, options.trdosRom);
+  } else if (sp128Model) {
     if (!built.sp128) {
       buildSp128Wasm();
       built.sp128 = true;
@@ -195,7 +230,7 @@ export class Sp128TestSession {
   }
 
   private get prefix(): "sp128" | "spp3e" {
-    return getSp128Model(this.model) ? "sp128" : "spp3e";
+    return getSp128Model(this.model) || this.model === "scorpion" ? "sp128" : "spp3e";
   }
 
   private call(name: string, ...args: number[]): number {

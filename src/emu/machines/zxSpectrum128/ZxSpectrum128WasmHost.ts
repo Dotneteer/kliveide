@@ -41,7 +41,8 @@ export function mergeZxSpectrum128Config(model?: MachineModel, config?: MachineC
 }
 
 export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
-  readonly machineId = "sp128";
+  /** "sp128"; the Scorpion ZS-256 runs on this core under its own id */
+  readonly machineId: string = "sp128";
   selectedRom = 0;
   selectedBank = 0;
   pagingEnabled = true;
@@ -57,7 +58,7 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
    */
   get beta128Model(): boolean {
     const drives = this.config?.[MC_DISK_SUPPORT];
-    return this.timing.id === "pentagon" && typeof drives === "number" && drives > 0;
+    return (this.timing.id === "pentagon" || this.timing.id === "scorpion") && typeof drives === "number" && drives > 0;
   }
 
   constructor(_modelInfo?: MachineModel, config?: MachineConfigSet) {

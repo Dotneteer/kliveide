@@ -8,7 +8,7 @@
  * Every problem is collected, so the viewer can list them all.
  */
 
-import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
+import { MI_SCORPION, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48, MI_TIMEX } from "@common/machines/constants";
 import { TIMEX_MODELS } from "@emu/machines/timex/timexModels";
 import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
@@ -101,7 +101,8 @@ const TARGETS: Record<
   pentagon: { machineId: MI_SPECTRUM_128, modelIds: ["pentagon"], kliveName: "Pentagon 128" },
   tc2048: { machineId: MI_TIMEX, modelIds: ["tc2048"], kliveName: "Timex Computer 2048" },
   tc2068: { machineId: MI_TIMEX, modelIds: ["tc2068"], kliveName: "Timex Computer 2068" },
-  ts2068: { machineId: MI_TIMEX, modelIds: ["ts2068"], kliveName: "Timex Sinclair 2068" }
+  ts2068: { machineId: MI_TIMEX, modelIds: ["ts2068"], kliveName: "Timex Sinclair 2068" },
+  scorpion: { machineId: MI_SCORPION, modelIds: ["zs256"], kliveName: "Scorpion ZS-256" }
 };
 
 /** The display names of the models the mapping can pick */
@@ -121,6 +122,7 @@ export function kliveSpectrumName(machineId: string, modelId: string | undefined
   if (machineId === MI_SPECTRUM_128) return "ZX Spectrum 128K";
   if (machineId === MI_SPECTRUM_3E) return "ZX Spectrum +2A/+3/+2E/+3E";
   if (machineId === MI_TIMEX) return "Timex TC2048/TC2068/TS2068";
+  if (machineId === MI_SCORPION) return "Scorpion ZS-256";
   return machineId;
 }
 
@@ -151,8 +153,8 @@ export function mapSpectrumSnapshotToKlive(snapshot: SpectrumSnapshot): Spectrum
   if (p.trdosPaged || p.beta128) {
     if (target.machineId === MI_SPECTRUM_128) {
       modelIds = ["pentagon", ...modelIds.filter((m) => m !== "pentagon")];
-    } else {
-      warnings.push("The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 has");
+    } else if (target.machineId !== MI_SCORPION) {
+      warnings.push("The snapshot uses the Beta 128 (TR-DOS), which only Klive's Pentagon 128 and Scorpion ZS-256 have");
     }
   }
   if (p.issue2) warnings.push("The snapshot asks for an Issue 2 keyboard, which Klive does not emulate");
@@ -199,6 +201,9 @@ function bankAt(snapshot: SpectrumSnapshot, address: number): number | undefined
   if (address < 0x8000) return 5;
   if (address < 0xc000) return 2;
   if (snapshot.paging) {
+    if (snapshot.machine === "scorpion") {
+      return (snapshot.paging.port7ffd & 0x07) | ((snapshot.paging.port1ffd ?? 0) & 0x10 ? 8 : 0);
+    }
     const special = snapshot.paging.port1ffd !== undefined && (snapshot.paging.port1ffd & 0x01) !== 0;
     if (special) return undefined;
     return snapshot.paging.port7ffd & 0x07;

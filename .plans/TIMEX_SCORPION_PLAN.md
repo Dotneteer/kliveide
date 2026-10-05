@@ -1,7 +1,6 @@
 # Timex TC2048 / TC2068 / TS2068 and Scorpion ZS-256 (G9.4)
 
-Status: **G9.4a ✅ and G9.4b ✅ done** (2026-10-05; main, unreleased; see §10 and §11). G9.4c
-(Scorpion) is next; it can start, since G9.1b is done.
+Status: **✅ done** - G9.4a, G9.4b and G9.4c (2026-10-05; main, unreleased; see §10, §11 and §12).
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.4, "long-tail clones",
 size L each, low priority).
 Related: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (G9.1, done: a clone as a timing profile of
@@ -220,10 +219,15 @@ the ZX81).
 | TC2068 | ROM | no copy was available: an unknown 24K ROM boots and runs, but the IDE's flows (injection, tape load) are off until its addresses are recorded | — |
 | all 2068 | `.dck` | records of a 9-byte header (bank: 0 DOCK, 254 EXROM, 255 HOME; one type byte per chunk: bit 0 RAM, bit 1 image present) and the 8K images it announces, in chunk order | loadzx.com "Timex Cartridge" |
 | all 2068 | `.szx`, `.z80` | zx-state machines 9 (TC2068) and 12 (TS2068); `DOCK` block: `wFlags` (1 compressed, 2 RAM, 4 DOCK else EXROM), `chPageNo` 0-7, 8K data. `.z80` mode 15 TC2068, 128 TS2068, bytes 35/36 the last OUTs to `$F4`/`$FF` | spectaculator.com zx-state DOCK; WoS z80format |
-| Scorpion | `$7FFD` + `$1FFD` bits; ROM selection | | |
-| Scorpion | frame, contention, floating bus | | |
+| Scorpion | `$7FFD`, `$1FFD` | `$7FFD` decoded with A0, A2, A5, A12, A14 high and A1, A15 low; bits 0-2 the bank, 3 the screen, 4 the ROM, 5 the lock. `$1FFD` with A0, A2, A5, A12 high and A1, A14, A15 low: bit 0 RAM page 0 at `$0000`, bit 1 the service ROM, bit 4 RAM banks 8-15 at `$C000` (bits 2, 5: RS-232 and Centronics, not emulated) | [SG] |
+| Scorpion | `$0000` priority; lock | RAM 0 (`$1FFD` bit 0), else the service ROM (bit 1), else TR-DOS while the Beta 128 has paged it, else ROM 0/1 by `$7FFD` bit 4; `$7FFD` bit 5 locks `$7FFD`, not `$1FFD` | [MiSTer] |
+| Scorpion | ROM | 64K: page 0 the 128K editor (patched), 1 48K BASIC (patched), 2 the service monitor, 3 TR-DOS. No copy was available: not shipped (P5); without it the 128K ROMs boot and TR-DOS comes from the TR-DOS ROM setting | [MiSTer] |
+| Scorpion | frame, contention, floating bus | 3.5 MHz; 224 T × 312 lines = 69,888 T, the interrupt 14,336 T before the first paper pixel; no memory or I/O contention; unattached ports read the floating bus (the ULA's attribute byte). The interrupt length is not documented: Klive keeps the 128K's 32 T | [MiSTer] (which says it matches Fuse's and Unreal Speccy's Scorpion timings); interrupt: Klive's choice |
 | all | ROM versions and CRC32s | TC2048 above | |
 
+**[SG]** "Scorpion ZS 256: a short guide for programmers" (zxpress.ru/article.php?id=6048);
+**[MiSTer]** the Scorpion ZS-256 support notes of the MiSTer ZX-Spectrum core
+(github.com/MiSTer-devel/ZX-Spectrum_MISTer/pull/66), read for facts only.
 Sources: **[TM]** Timex Sinclair 2068 Technical Manual (Timex, 1983; text at
 retromaniek.pl/wp-content/uploads/2019/09/Timex-Sinclair-2068-Technical-Manual-best.pdf);
 **[FAQ]** World of Spectrum, "Timex Technical Information"
@@ -343,4 +347,41 @@ the determinism test runs a TS2068 with a cartridge chunk mapped.
 **IDE and docs (Phase 6).** No new favourite; the `timex` project templates serve all three models.
 `docs/content/machine-types.mdx` covers the three models. The media strip's badge rule is recorded in
 `.ai/ui-theming-intent-and-lessons.md`.
+
+## 12. G9.4c as built (2026-10-05)
+
+**The core.** The Scorpion is the `sp128` core's third timing profile, `SP128_TIMING_SCORPION`, which
+also switches on `$1FFD`: the core's RAM grows to 256K (sixteen banks) and its ROM to three pages
+(the service monitor is page 2; TR-DOS stays the Beta 128's own page). Slot 0 follows the priority of
+§8; the Beta 128's paging trap and the tape traps keep out while `$1FFD` puts RAM or the service ROM
+at `$0000`. A write now updates every slot of the flat 64K view that shows the same bank (bank 0 at
+`$0000` and `$C000`; this also fixes the 128K's view when bank 5 or 2 is paged at `$C000`). The 128K
+golden, the Pentagon's timing tests and the Beta 128 tests stay green; the core's memory grows to
+9 MB, so state files saved by earlier builds of the 128K core no longer load.
+
+**The machine (P3).** `ScorpionWasmV2Machine` extends the 128K's machine through two hooks
+(`loadMachineRoms`, `loadTrdosRomForBeta128`): machine id `scorpion`, model `zs256` (config
+`MC_SCORPION`; a 128K project's timing setting cannot select the Scorpion), partitions R0-R3 and
+B0-B15, the Beta 128 with two drives. **The ROM (P5):** none was available, and its rights are not
+clear; the setting `emuOptions.scorpionRomFile` (**Machine > Scorpion ROM**) names the user's 64K
+file. Without it - the same departure as G9.4a/b - the Scorpion boots the 128K ROMs, its service page
+reads `$FF`, and TR-DOS comes from the TR-DOS ROM setting, so every flow and test runs. With an
+unknown Scorpion ROM, the IDE's injection, tape and disk-boot flows say they cannot start, and the
+tape traps stay on only if the 48K page's tape routines match the shipped 48K BASIC ROM's
+(`$04C2`-`$0604`, compared at load).
+
+**Tests.** `test/sp128-hw/pentagon-timing.test.ts` measures the Scorpion beside the 128K and the
+Pentagon (frame, contention, I/O timing, floating bus, interrupt, paper start, border, paging, the AY,
+the IDE's flows); `test/sp128-hw/scorpion/` covers `$1FFD` and all sixteen banks, RAM at `$0000`,
+the service ROM, the port decoding against the 128K's, the lock, the partitions, TR-DOS from the
+Scorpion ROM (with the G9.1b stand-in) or the setting, the flows' refusal on its own ROM, and
+snapshots. The state determinism test runs a Scorpion.
+
+**Snapshots.** `.szx` machine 10 (sixteen RAMP pages, `$1FFD` in SPCR), `.z80` mode 10 (pages 3-18,
+`$1FFD` in byte 86 of the 55-byte header); a `.sna` refuses `$1FFD` in use and otherwise loads as a
+128K. The Beta 128's blocks are the Pentagon's.
+
+**IDE and docs.** No new favourite; `project-templates/scorpion` from the 128K's; the TR-DOS disk
+menus, the Disk Loader and the disk dialog treat the Scorpion's drives as the Pentagon's;
+`docs/content/machine-types.mdx` has a Scorpion section. No visual change.
 

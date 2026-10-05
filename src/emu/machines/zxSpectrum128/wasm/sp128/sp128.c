@@ -1,7 +1,9 @@
 #include <stdint.h>
 
-#define SP128_RAM_SIZE 0x20000u
-#define SP128_ROM_SIZE 0x8000u
+/* 256K of RAM and three 16K ROMs: the Scorpion ZS-256's sixteen banks and its service ROM; the 128K
+   and the Pentagon use the first eight banks and two ROMs */
+#define SP128_RAM_SIZE 0x40000u
+#define SP128_ROM_SIZE 0xc000u
 #define SP128_MEMORY_SIZE 0x10000u
 #define SP128_KEYBOARD_LINE_COUNT 8u
 #define SP128_SCREEN_WIDTH 352u
@@ -21,6 +23,8 @@
  */
 #define SP128_TIMING_128K 0u
 #define SP128_TIMING_PENTAGON 1u
+/* The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c): its own machine on this core */
+#define SP128_TIMING_SCORPION 2u
 #define SP128_BASE_CLOCK_FREQUENCY 3546900.0
 #define SP128_PENTAGON_CLOCK_FREQUENCY 3500000.0
 #define SP128_TACTS_PER_FRAME 70908u
@@ -221,6 +225,14 @@ static double sp128DcFilterPrevOutputLeft;
 static double sp128DcFilterPrevOutputRight;
 static uint8_t sp128SelectedRom;
 static uint8_t sp128SelectedBank;
+/*
+ * The Scorpion's $1FFD (its programmer's guide): bit 0 RAM bank 0 at $0000, bit 1 the service ROM
+ * at $0000, bit 4 the top RAM bank's bit 3 (banks 8-15). Not locked by $7FFD bit 5.
+ */
+static uint8_t sp128Scorpion;
+static uint8_t sp128Port1ffd;
+/* The tape traps assume the 48K BASIC ROM's LD-BYTES; the host turns them off for a ROM without it */
+static uint8_t sp128TapeTrapsEnabled = 1u;
 static uint8_t sp128PagingEnabled;
 /* The last byte written to $7FFD while paging was unlocked (snapshot saving) */
 static uint8_t sp128Port7ffd;
@@ -328,11 +340,12 @@ static void SP128_CPU_NOINLINE sp128CpuDelayAddressBusAccess(uint32_t address);
 static void SP128_CPU_NOINLINE sp128DelayPortAccess(uint32_t address);
 
 static uint32_t ramBankOffset(uint32_t bank) {
-  return (bank & 0x07u) * 0x4000u;
+  return (bank & 0x0fu) * 0x4000u;
 }
 
+/* ROM 0 and 1 (the 128K editor and 48K BASIC), and ROM 2 (the Scorpion's service monitor) */
 static uint32_t romBankOffset(uint32_t bank) {
-  return (bank & 0x01u) * 0x4000u;
+  return (bank <= 2u ? bank : 0u) * 0x4000u;
 }
 
 static const uint32_t sp128SpectrumColors[16] = {
@@ -366,6 +379,16 @@ static const Sp128ScreenConfig sp128UlaConfig = {
  */
 static const Sp128ScreenConfig sp128PentagonConfig = {
   16u, 16u, 48u, 48u, 0u, 192u, 24u, 24u, 128u, 32u, 16u, 2u, 1u,
+  {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
+};
+
+/*
+ * The Scorpion ZS-256: the 48K's raster - 224 T by 312 lines (69,888 T), the interrupt 14,336 T
+ * (64 lines) before the first paper pixel - at 3.5 MHz, with no memory or I/O contention (plan §8).
+ * The visible window is this core's (48 border lines above the paper, as the 128K and the Pentagon).
+ */
+static const Sp128ScreenConfig sp128ScorpionConfig = {
+  8u, 8u, 48u, 48u, 8u, 192u, 24u, 24u, 128u, 40u, 8u, 2u, 1u,
   {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}
 };
 
@@ -716,11 +739,17 @@ static void resetTapePlayback(void) {
 }
 
 static void rebuildMemorySlotMap(void) {
-  sp128MemorySlotBase[0] = beta128Paged != 0u ? sp128TrdosRom : &sp128Rom[romBankOffset(sp128SelectedRom)];
+  /* The Scorpion's $0000: RAM bank 0, else the service ROM, else TR-DOS or ROM 0/1 */
+  const uint8_t ramAtZero = sp128Scorpion != 0u && (sp128Port1ffd & 0x01u) != 0u;
+  const uint8_t serviceRom = sp128Scorpion != 0u && (sp128Port1ffd & 0x02u) != 0u;
+  sp128MemorySlotBase[0] = ramAtZero != 0u ? &sp128Ram[ramBankOffset(0u)]
+    : serviceRom != 0u ? &sp128Rom[romBankOffset(2u)]
+    : beta128Paged != 0u ? sp128TrdosRom
+    : &sp128Rom[romBankOffset(sp128SelectedRom)];
   sp128MemorySlotBase[1] = &sp128Ram[ramBankOffset(5u)];
   sp128MemorySlotBase[2] = &sp128Ram[ramBankOffset(2u)];
   sp128MemorySlotBase[3] = &sp128Ram[ramBankOffset(sp128SelectedBank)];
-  sp128MemorySlotWritable[0] = 0u;
+  sp128MemorySlotWritable[0] = ramAtZero;
   sp128MemorySlotWritable[1] = 1u;
   sp128MemorySlotWritable[2] = 1u;
   sp128MemorySlotWritable[3] = 1u;
@@ -784,8 +813,12 @@ SP128_ALWAYS_INLINE void writeMappedMemory(uint32_t address, uint32_t value) {
   if (isVisibleScreenSlotOffset(slot, offset) != 0u) {
     sp128UlaRenderUntilCurrentTact();
   }
-  sp128MemorySlotBase[slot][offset] = byteValue;
-  sp128Memory[maskedAddress] = byteValue;
+  uint8_t *base = sp128MemorySlotBase[slot];
+  base[offset] = byteValue;
+  /* Every slot showing the same bank (bank 5 or 2 also at $C000, the Scorpion's bank 0 at $0000) */
+  for (uint32_t other = 0u; other < 4u; other++) {
+    if (sp128MemorySlotBase[other] == base) sp128Memory[(other << 14u) | offset] = byteValue;
+  }
 }
 
 SP128_ALWAYS_INLINE void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t offset, uint8_t value) {
@@ -797,6 +830,9 @@ SP128_ALWAYS_INLINE void updateVisibleRamBankMirrorByte(uint32_t bank, uint32_t 
   }
   if (bank == sp128SelectedBank) {
     sp128Memory[0xc000u + offset] = value;
+  }
+  if (bank == 0u && sp128MemorySlotBase[0] == &sp128Ram[0]) {
+    sp128Memory[offset] = value;
   }
 }
 
@@ -869,7 +905,7 @@ static inline void rzxIntAck(void);
 static inline void sp128BetaBeforeFetch(uint16_t pc) {
   if (beta128Enabled == 0u) return;
   if (beta128Paged == 0u) {
-    if ((pc & 0xff00u) != 0x3d00u || sp128SelectedRom != 1u) return;
+    if ((pc & 0xff00u) != 0x3d00u || sp128SelectedRom != 1u || (sp128Port1ffd & 0x03u) != 0u) return;
     beta128Paged = 1u;
   } else {
     if (pc < 0x4000u) return;
@@ -1088,7 +1124,7 @@ static uint32_t sp128CpuReadPort(uint32_t address) {
 #undef sp48CpuReadMemory
 
 static void updateTapeMode(void) {
-  if (sp128SelectedRom != 1u) {
+  if (sp128SelectedRom != 1u || (sp128Port1ffd & 0x03u) != 0u || sp128TapeTrapsEnabled == 0u) {
     return;
   }
   sp128CommonUpdateTapeMode();
@@ -1265,12 +1301,18 @@ static void completeMachineFrame(void) {
  */
 static void sp128ApplyTiming(uint32_t timing) {
   const uint8_t pentagon = timing == SP128_TIMING_PENTAGON ? 1u : 0u;
-  sp128Timing = pentagon != 0u ? SP128_TIMING_PENTAGON : SP128_TIMING_128K;
-  sp128BaseClockFrequency = pentagon != 0u ? SP128_PENTAGON_CLOCK_FREQUENCY : SP128_BASE_CLOCK_FREQUENCY;
+  const uint8_t scorpion = timing == SP128_TIMING_SCORPION ? 1u : 0u;
+  sp128Timing = pentagon != 0u ? SP128_TIMING_PENTAGON : scorpion != 0u ? SP128_TIMING_SCORPION : SP128_TIMING_128K;
+  sp128Scorpion = scorpion;
+  sp128BaseClockFrequency =
+    pentagon != 0u || scorpion != 0u ? SP128_PENTAGON_CLOCK_FREQUENCY : SP128_BASE_CLOCK_FREQUENCY;
   sp128InterruptTacts = pentagon != 0u ? SP128_PENTAGON_INTERRUPT_TACTS : SP128_INTERRUPT_TACTS;
-  sp128Contended = pentagon != 0u ? 0u : 1u;
+  sp128Contended = pentagon != 0u || scorpion != 0u ? 0u : 1u;
+  /* The Scorpion's unattached ports read the attribute byte the ULA fetches (plan §8) */
   sp128HasFloatingBus = pentagon != 0u ? 0u : 1u;
-  sp128UlaInitializeTimingTables(pentagon != 0u ? &sp128PentagonConfig : &sp128UlaConfig);
+  sp128UlaInitializeTimingTables(
+    pentagon != 0u ? &sp128PentagonConfig : scorpion != 0u ? &sp128ScorpionConfig : &sp128UlaConfig
+  );
   if (pentagon != 0u) {
     const uint32_t n = sp128TactsInFrame;
     const uint32_t by = SP128_PENTAGON_RASTER_SHIFT;
@@ -1303,6 +1345,7 @@ void sp128Reset(void) {
   sp128SelectedBank = 0u;
   sp128PagingEnabled = 1u;
   sp128Port7ffd = 0u;
+  sp128Port1ffd = 0u;
   sp128UseShadowScreen = 0u;
   sp128CommonResetPortFe();
   sp128BorderFrameStartTact = 0u;
@@ -1461,6 +1504,11 @@ void sp128RenderInstantScreen(void) {
 }
 
 void sp128UploadRomByte(uint32_t rom, uint32_t offset, uint32_t value) {
+  if (rom == 3u && offset < 0x4000u) {
+    /* The Scorpion's service ROM; not part of the 128K ROMs' upload count or checksum */
+    sp128Rom[romBankOffset(2u) + offset] = (uint8_t)value;
+    return;
+  }
   if (rom == 2u && offset < 0x4000u) {
     /* The TR-DOS ROM; it is not part of the 128K ROMs' upload count or checksum */
     sp128TrdosRom[offset] = (uint8_t)value;
@@ -1491,14 +1539,14 @@ void sp128WriteMemory(uint32_t address, uint32_t value) {
 }
 
 uint32_t sp128ReadRamBank(uint32_t bank, uint32_t offset) {
-  if (bank >= 8u || offset >= 0x4000u) {
+  if (bank >= 16u || offset >= 0x4000u) {
     return 0xffu;
   }
   return sp128Ram[ramBankOffset(bank) + offset];
 }
 
 void sp128WriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
-  if (bank >= 8u || offset >= 0x4000u) {
+  if (bank >= 16u || offset >= 0x4000u) {
     return;
   }
   const uint8_t byteValue = (uint8_t)value;
@@ -1512,6 +1560,9 @@ void sp128WriteRamBank(uint32_t bank, uint32_t offset, uint32_t value) {
 uint32_t sp128ReadRomBank(uint32_t bank, uint32_t offset) {
   if (bank == 2u && offset < 0x4000u) {
     return sp128TrdosRom[offset];
+  }
+  if (bank == 3u && offset < 0x4000u) {
+    return sp128Rom[romBankOffset(2u) + offset];
   }
   if (bank >= 2u || offset >= 0x4000u) {
     return 0xffu;
@@ -1563,9 +1614,34 @@ static uint32_t sp128ReadNonFePort(uint32_t address) {
   return sp128ReadFloatingBus();
 }
 
+/*
+ * The Scorpion's paging ports (its programmer's guide): $7FFD answers with A0, A2, A5, A12, A14 high
+ * and A1, A15 low; $1FFD with A0, A2, A5, A12 high and A1, A14, A15 low
+ */
+#define SP128_SCORPION_PORT_MASK 0xd027u
+#define SP128_SCORPION_7FFD 0x5025u
+#define SP128_SCORPION_1FFD 0x1025u
+
+static void sp128WriteScorpion1ffd(uint32_t value) {
+  const uint8_t oldBank = sp128SelectedBank;
+  sp128Port1ffd = (uint8_t)value;
+  sp128SelectedBank = (uint8_t)((sp128Port7ffd & 0x07u) | ((value & 0x10u) != 0u ? 0x08u : 0u));
+  rebuildMemorySlotMap();
+  rebuildFlatRomSlot();
+  if (sp128SelectedBank != oldBank) rebuildFlatTopRamSlot();
+}
+
 static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
   if (beta128Paged != 0u && beta128IsPort(address)) {
     beta128WritePort(address, value);
+    return;
+  }
+  if (sp128Scorpion != 0u && (address & 0xc002u) == 0x4000u) {
+    /* The Scorpion's $7FFD decodes more lines than the 128K's; $1FFD is its own */
+    if ((address & SP128_SCORPION_PORT_MASK) != SP128_SCORPION_7FFD) return;
+  }
+  if (sp128Scorpion != 0u && (address & SP128_SCORPION_PORT_MASK) == SP128_SCORPION_1FFD) {
+    sp128WriteScorpion1ffd(value);
     return;
   }
   if ((address & 0xc002u) != 0x4000u) {
@@ -1589,7 +1665,7 @@ static void sp128WriteNonFePort(uint32_t address, uint32_t value) {
     sp128UlaRenderUntilCurrentTact();
   }
   sp128Port7ffd = (uint8_t)value;
-  sp128SelectedBank = (uint8_t)(value & 0x07u);
+  sp128SelectedBank = (uint8_t)((value & 0x07u) | ((sp128Port1ffd & 0x10u) != 0u ? 0x08u : 0u));
   sp128UseShadowScreen = nextUseShadowScreen;
   sp128SelectedRom = (value & 0x10u) != 0u ? 1u : 0u;
   sp128PagingEnabled = (value & 0x20u) != 0u ? 0u : 1u;
@@ -1970,6 +2046,24 @@ uint32_t sp128GetRamSize(void) {
   return SP128_RAM_SIZE;
 }
 
+/* --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
+uint32_t sp128GetPort1ffd(void) {
+  return sp128Port1ffd;
+}
+
+/* Sets $1FFD as an OUT would (snapshots and tests); nothing on the 128K and the Pentagon */
+void sp128SetPort1ffd(uint32_t value) {
+  if (sp128Scorpion != 0u) sp128WriteScorpion1ffd(value & 0xffu);
+}
+
+uint32_t sp128GetScorpion(void) {
+  return sp128Scorpion;
+}
+
+void sp128SetTapeTrapsEnabled(uint32_t enabled) {
+  sp128TapeTrapsEnabled = enabled != 0u ? 1u : 0u;
+}
+
 uint32_t sp128GetRomSize(void) {
   return SP128_ROM_SIZE;
 }
@@ -2215,6 +2309,13 @@ uint32_t sp128GetScreenBank(void) {
 uint32_t sp128GetCurrentPartition(uint32_t slot) {
   switch (slot & 0x03u) {
     case 0u:
+      if (sp128Scorpion != 0u) {
+        /* The Scorpion: RAM bank 0, the service ROM -3 ("R2"), TR-DOS -4 ("R3") */
+        if ((sp128Port1ffd & 0x01u) != 0u) return 0u;
+        if ((sp128Port1ffd & 0x02u) != 0u) return 0xfffffffdu;
+        if (beta128Paged != 0u) return 0xfffffffcu;
+        return sp128SelectedRom == 0u ? 0xffffffffu : 0xfffffffeu;
+      }
       /* The TR-DOS ROM is partition -3 ("R2") while the Beta 128 pages it in */
       if (beta128Paged != 0u) return 0xfffffffdu;
       return sp128SelectedRom == 0u ? 0xffffffffu : 0xfffffffeu;

@@ -90,6 +90,11 @@ const productionExports = [
   "sp128SetContentionValue",
   "sp128GetMemorySize",
   "sp128GetRamSize",
+  // --- The Scorpion ZS-256 (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c)
+  "sp128GetPort1ffd",
+  "sp128SetPort1ffd",
+  "sp128GetScorpion",
+  "sp128SetTapeTrapsEnabled",
   "sp128GetRomSize",
   "sp128GetRomUploadCount",
   "sp128GetRomChecksum",
@@ -310,7 +315,8 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    initialMemory: 8 * 1024 * 1024
+    // --- 9 MB since the Scorpion ZS-256 (256K RAM, the service ROM) joined the core
+    initialMemory: 9 * 1024 * 1024
   }
 };
 

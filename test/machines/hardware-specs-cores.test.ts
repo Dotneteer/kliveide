@@ -8,6 +8,7 @@ import { ZxSpectrum128WasmV2Machine } from "@emu/machines/zxSpectrum128/ZxSpectr
 import { buildSp48Wasm, productionOutput as sp48Wasm } from "../../scripts/build-sp48-wasm.cjs";
 import { buildSp128Wasm, productionOutput as sp128Wasm } from "../../scripts/build-sp128-wasm.cjs";
 import { TimexWasmV2Machine } from "@emu/machines/timex/TimexWasmV2Machine";
+import { ScorpionWasmV2Machine } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Machine";
 import { buildTimexWasm, productionOutput as timexWasm } from "../../scripts/build-timex-wasm.cjs";
 
 /*
@@ -21,6 +22,12 @@ class Sp48 extends ZxSpectrum48WasmV2Machine {
   }
 }
 class Sp128 extends ZxSpectrum128WasmV2Machine {
+  protected override async loadRomFromResource(): Promise<Uint8Array> {
+    return new Uint8Array(0x4000);
+  }
+}
+
+class Scorpion extends ScorpionWasmV2Machine {
   protected override async loadRomFromResource(): Promise<Uint8Array> {
     return new Uint8Array(0x4000);
   }
@@ -82,5 +89,15 @@ describe("hardware specs against the cores", () => {
       readArtifact: async () => readFileSync(timexWasm)
     });
     await expectMatches(machine, "timex", modelId, 2);
+  });
+
+  it("Scorpion ZS-256", async () => {
+    buildSp128Wasm();
+    const model = machineRegistry.find((m) => m.machineId === "scorpion")!.models![0];
+    const machine = new Scorpion(model, model.config, {
+      artifactName: "machine-scorpion.wasm",
+      readArtifact: async () => readFileSync(sp128Wasm)
+    });
+    await expectMatches(machine, "scorpion", model.modelId);
   });
 });

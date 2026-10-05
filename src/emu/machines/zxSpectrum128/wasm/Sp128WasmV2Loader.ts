@@ -4,8 +4,8 @@ import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rz
 
 export const SP128_WASM_V2_ARTIFACT_NAME = "zx-spectrum128.wasm";
 export const SP128_WASM_V2_MEMORY_SIZE = 0x10000;
-export const SP128_WASM_V2_RAM_SIZE = 0x20000;
-export const SP128_WASM_V2_ROM_SIZE = 0x8000;
+export const SP128_WASM_V2_RAM_SIZE = 0x40000;
+export const SP128_WASM_V2_ROM_SIZE = 0xc000;
 export const SP128_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Sp128WasmV2ExportFunction = (...args: number[]) => number;
@@ -42,6 +42,11 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   sp128SetContentionValue: Sp128WasmV2ExportFunction;
   sp128GetMemorySize: Sp128WasmV2ExportFunction;
   sp128GetRamSize: Sp128WasmV2ExportFunction;
+  /** The Scorpion ZS-256's $1FFD, and its tape-trap switch (`.plans/TIMEX_SCORPION_PLAN.md` G9.4c) */
+  sp128GetPort1ffd: Sp128WasmV2ExportFunction;
+  sp128SetPort1ffd: Sp128WasmV2ExportFunction;
+  sp128GetScorpion: Sp128WasmV2ExportFunction;
+  sp128SetTapeTrapsEnabled: Sp128WasmV2ExportFunction;
   sp128GetRomSize: Sp128WasmV2ExportFunction;
   sp128GetScreenWidth: Sp128WasmV2ExportFunction;
   sp128GetScreenHeight: Sp128WasmV2ExportFunction;
@@ -274,6 +279,10 @@ const requiredV2Exports = [
   "sp128SetContentionValue",
   "sp128GetMemorySize",
   "sp128GetRamSize",
+  "sp128GetPort1ffd",
+  "sp128SetPort1ffd",
+  "sp128GetScorpion",
+  "sp128SetTapeTrapsEnabled",
   "sp128GetRomSize",
   "sp128GetScreenWidth",
   "sp128GetScreenHeight",

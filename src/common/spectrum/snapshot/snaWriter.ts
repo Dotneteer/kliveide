@@ -111,6 +111,14 @@ function write128(s: SpectrumSnapshot, losses: string[]): Uint8Array {
     losses.push("A .sna has no $1FFD port and no +2A/+3 layout; the file loads as a ZX Spectrum 128K");
   } else if (s.machine === "plus2") {
     losses.push("A .sna has no +2 layout; the file loads as a ZX Spectrum 128K");
+  } else if (s.machine === "scorpion") {
+    const port1ffd = s.paging?.port1ffd ?? 0;
+    if (port1ffd & 0x13) {
+      throw new SnapshotRefusedError(
+        `The Scorpion's $1FFD is ${hex(port1ffd)} (RAM at $0000, the service ROM or a bank above 7), which a .sna cannot hold; save it as .szx or .z80`
+      );
+    }
+    losses.push("A .sna has no Scorpion layout; the file loads as a 128K, without RAM banks 8-15");
   }
   if (s.ay && s.ay.regs.some((r) => r !== 0)) {
     losses.push("A .sna has no AY registers; the sound chip starts silent");

@@ -21,6 +21,7 @@ import {
   isPagedSnapshotMachine,
   isTimexSnapshotMachine,
   isTimex2068SnapshotMachine,
+  snapshotBankCount,
   isPlus3SnapshotMachine
 } from "./spectrumSnapshot";
 
@@ -121,6 +122,9 @@ function machineOf(
     case 9:
       machine = "pentagon";
       break;
+    case 10:
+      machine = "scorpion";
+      break;
     case 12:
       machine = "plus2";
       break;
@@ -148,9 +152,9 @@ function machineOf(
 }
 
 /** The bank a `.z80` page number holds, or undefined for a ROM / unknown page */
-function bankOfPage(page: number, paged: boolean): number | undefined {
+function bankOfPage(page: number, paged: boolean, banks = 8): number | undefined {
   if (paged) {
-    return page >= 3 && page <= 10 ? page - 3 : undefined;
+    return page >= 3 && page < 3 + banks ? page - 3 : undefined;
   }
   switch (page) {
     case 4:
@@ -167,7 +171,7 @@ function bankOfPage(page: number, paged: boolean): number | undefined {
 /** The banks a machine's snapshot must hold */
 function requiredBanks(machine: SnapshotMachine): number[] {
   if (machine === "16k") return [5];
-  if (isPagedSnapshotMachine(machine)) return [0, 1, 2, 3, 4, 5, 6, 7];
+  if (isPagedSnapshotMachine(machine)) return Array.from({ length: snapshotBankCount(machine) }, (_, b) => b);
   return [5, 2, 0];
 }
 
@@ -309,7 +313,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
   // --- Paging
   if (paged) {
     result.paging = { port7ffd: bytes[35] };
-    if (isPlus3SnapshotMachine(machine) && extraLength === 55) {
+    if ((isPlus3SnapshotMachine(machine) || machine === "scorpion") && extraLength === 55) {
       result.paging.port1ffd = bytes[86];
     }
   }
@@ -370,7 +374,7 @@ export function parseZ80File(bytes: Uint8Array): SpectrumSnapshot {
         `The .z80 memory block of page ${page} holds ${data.length} bytes instead of 16384`
       );
     }
-    const bank = bankOfPage(page, paged);
+    const bank = bankOfPage(page, paged, snapshotBankCount(machine));
     if (bank === undefined) {
       warnings.push(`Memory page ${page} is not RAM of this machine; it is ignored`);
       continue;

@@ -18,6 +18,7 @@ import {
   SETTING_EMU_TC2048_ROM,
   SETTING_EMU_TC2068_ROM,
   SETTING_EMU_TS2068_ROM,
+  SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
@@ -243,6 +244,18 @@ const settingDefinitions: Setting[] = [
     description:
       "The 24K ROM the Timex Sinclair 2068 boots: its 16K HOME ROM followed by its 8K EXROM. Klive " +
       "cannot ship it; without it the TS2068 boots the Sinclair 48K ROM and has no EXROM.",
+    type: "string",
+    defaultValue: "",
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SCORPION_ROM,
+    title: "Scorpion ZS-256 ROM file",
+    description:
+      "The 64K ROM the Scorpion ZS-256 boots: the 128K editor, 48K BASIC, the service monitor and " +
+      "TR-DOS. Klive cannot ship it; without it the Scorpion boots the 128K ROMs and takes TR-DOS " +
+      "from the TR-DOS ROM file.",
     type: "string",
     defaultValue: "",
     saveWithIde: true,

@@ -32,6 +32,7 @@ import {
   MI_SPECTRUM_3E,
   MI_SPECTRUM_48,
   MI_TIMEX,
+  MI_SCORPION,
   MI_Z88,
   MI_ZX80,
   MI_ZX81,
@@ -51,6 +52,7 @@ import {
 } from "@emu/machines/z88/z88MachineInfo";
 import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { TIMEX_MODELS_INFO } from "@emu/machines/timex/timexModels";
+import { SP128_TIMINGS } from "@emu/machines/zxSpectrum128/sp128Timings";
 
 /** One ROM image the machine loads */
 export type RomImage = { id: string; kb: number; role?: string };
@@ -258,6 +260,32 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
         ...TIMEX_2068_SPECS("ts2068"),
         display: { rasterHeight: 240 }
       }
+    }
+  },
+  [MI_SCORPION]: {
+    // --- sp128Timings.ts (the Scorpion profile), sp128.c, ScorpionWasmV2Machine.ts (plan §8)
+    base: {
+      cpu: "Zilog Z80",
+      clockHz: SP128_TIMINGS.scorpion.clockHz,
+      rom: [
+        { id: "scorpion-0", kb: 16, role: "128K editor; your ROM, or the 128K's" },
+        { id: "scorpion-1", kb: 16, role: "48K BASIC; your ROM, or the 128K's" },
+        { id: "scorpion-2", kb: 16, role: "service monitor; your ROM" },
+        { id: "scorpion-3", kb: 16, role: "TR-DOS; your ROM, or the TR-DOS ROM file" }
+      ],
+      ramKb: 256,
+      bankKb: 16,
+      display: { ...SPECTRUM_DISPLAY, rasterHeight: 287 },
+      timing: {
+        unit: "T-states",
+        perLine: SP128_TIMINGS.scorpion.tactsPerLine,
+        linesPerFrame: SP128_TIMINGS.scorpion.linesPerFrame,
+        perFrame: SP128_TIMINGS.scorpion.tactsPerFrame,
+        note: "No memory or I/O contention; $1FFD adds RAM at $0000, the service ROM and banks 8-15"
+      },
+      sound: ["Beeper", "AY-3-8912 PSG"],
+      media: [SPECTRUM_TAPE, "Beta 128: 2 drives (TRD, SCL), built in"],
+      input: SPECTRUM_KEYBOARD
     }
   },
   [MI_SPECTRUM_3E]: {
