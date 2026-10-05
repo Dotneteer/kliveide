@@ -88,7 +88,7 @@
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^3.0.1",
-    "@electron-toolkit/eslint-config-ts": "^3.1.0",
+    "@electron-toolkit/eslint-config-ts": "^4.0.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
     "@eslint-community/regexpp": "^4.10.0",
     "@fontsource-variable/fira-code": "^5.3.0",
