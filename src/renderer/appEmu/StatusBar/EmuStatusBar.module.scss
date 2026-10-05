@@ -56,3 +56,35 @@
     margin: 0 var(--space-1);
     align-items: center;
 }
+
+/*
+ * The RZX badge (`.plans/RZX_PLAN.md` §4.6). Only the tag carries colour, a status token per mode;
+ * the counter stays a normal status-bar label.
+ */
+.rzxBadge {
+    gap: var(--space-1);
+}
+
+.rzxTag {
+    font-size: var(--font-size-100);
+    font-weight: 600;
+    padding: 0 var(--space-1);
+    border: 1px solid currentColor;
+    border-radius: var(--radius-sm);
+}
+
+.rzxPlaying .rzxTag {
+    color: var(--status-success);
+}
+
+.rzxRecording .rzxTag {
+    color: var(--status-error);
+}
+
+.rzxRendering .rzxTag {
+    color: var(--status-info);
+}
+
+.rzxUnsaved .rzxTag {
+    color: var(--status-warning);
+}

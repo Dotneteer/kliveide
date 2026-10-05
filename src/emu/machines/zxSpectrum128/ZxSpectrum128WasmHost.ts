@@ -24,6 +24,22 @@ import { zxSpectrum128SysVars } from "./ZxSpectrum128SysVars";
 import { WasmFloatingBusDevice, WasmSpectrumPsgDevice } from "../zxSpectrum/WasmSpectrumSupport";
 
 import { menuTapeLoadFlow } from "../tapeLoadFlows";
+import { getSp128Timing, type Sp128Timing } from "./sp128Timings";
+import { MC_SP128_TIMING } from "@common/machines/constants";
+
+/**
+ * The model's configuration under the project's: the project's own settings win, except the timing,
+ * which is what the model *is* - a 128K project's config must not turn the Pentagon model into a
+ * 128K, or the other way round. Without a model (a project from before the 128K had models) the
+ * config decides, and no timing key means the 128K.
+ */
+export function mergeZxSpectrum128Config(model?: MachineModel, config?: MachineConfigSet): MachineConfigSet {
+  const merged = { ...(model?.config ?? {}), ...(config ?? {}) };
+  const timing = model?.config?.[MC_SP128_TIMING];
+  if (timing !== undefined) merged[MC_SP128_TIMING] = timing;
+  return merged;
+}
+
 export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   readonly machineId = "sp128";
   selectedRom = 0;
@@ -32,13 +48,17 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
   useShadowScreen = false;
   psgDevice: ISpectrumPsgDevice;
 
+  /** The timing the machine runs: the 128K's or the Pentagon's (`MC_SP128_TIMING`) */
+  readonly timing: Sp128Timing;
+
   constructor(_modelInfo?: MachineModel, config?: MachineConfigSet) {
-    super(config ?? {});
-    this.baseClockFrequency = 3_546_900;
+    super(mergeZxSpectrum128Config(_modelInfo, config));
+    this.timing = getSp128Timing(this.config);
+    this.baseClockFrequency = this.timing.clockHz;
     this.clockMultiplier = 1;
     this.delayedAddressBus = true;
     this.keyboardDevice = new KeyboardDevice(this);
-    this.screenDevice = new CommonScreenDevice(this, CommonScreenDevice.ZxSpectrum128ScreenConfiguration);
+    this.screenDevice = new CommonScreenDevice(this, this.timing.screen);
     this.beeperDevice = new SpectrumBeeperDevice(this);
     this.psgDevice = new WasmSpectrumPsgDevice(
       this,
@@ -162,11 +182,13 @@ export abstract class ZxSpectrum128WasmHost extends ZxSpectrumBase {
         { type: "Start" },
         { type: "QueueKey", primary: SpectrumKeyCode.N6, secondary: SpectrumKeyCode.CShift, wait: SP_KEY_WAIT, message: "Arrow down" },
         { type: "QueueKey", primary: SpectrumKeyCode.Enter, wait: 0, message: "Enter" },
+        // --- The 128 BASIC editor runs in ROM 0 (labelled ROM 1 before the Pentagon's tests, which
+        // --- check the ROM, found it; the core matches the PC alone, so the label never mattered)
         {
           type: "ReachExecPoint",
-          rom: 1,
+          rom: 0,
           execPoint: SP128_RETURN_TO_EDITOR,
-          message: `Main execution cycle point reached (ROM1/$${toHexa4(SP128_RETURN_TO_EDITOR)})`
+          message: `Main execution cycle point reached (ROM0/$${toHexa4(SP128_RETURN_TO_EDITOR)})`
         },
         { type: "Inject" },
         { type: "SetReturn", returnPoint: SP128_RETURN_TO_EDITOR }

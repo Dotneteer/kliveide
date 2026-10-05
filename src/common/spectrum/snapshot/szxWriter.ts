@@ -41,6 +41,7 @@ const SZX_MACHINE_IDS: Record<SnapshotMachineKind, number> = {
   plus2a: 4,
   plus3: 5,
   plus3e: 6,
+  pentagon: 7,
   "48k-ntsc": 15
 };
 

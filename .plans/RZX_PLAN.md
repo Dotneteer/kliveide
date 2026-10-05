@@ -1,6 +1,8 @@
 # RZX Playback (G2.7) and Recording (G2.8) Plan
 
-Status: **planned** (2026-10-04). Nothing is implemented. Decisions D1–D20 are accepted.
+Status: **implemented** (2026-10-04). All eight phases are built; three manual checks that need
+outside files or programs are still open (§8, "Open manual checks"). Decisions D1–D20 are accepted;
+§8 records where the build differs.
 Scope: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md):
 - **G2.7**: play an `.rzx` input recording on the 48K, 128K and +2E/+3E;
 - **G2.8**: record one, with periodic snapshots, rollback and finalising;
@@ -514,6 +516,138 @@ The total is M + M (playback, then recording), against the roadmap's L + L. The 
 (Filled in as phases land: where the build differs from this plan, and why. This includes the
 manual interop results from Phase 6.)
 
+### Phases 1–4 (2026-10-04)
+
+**Where things are.**
+- Format: `src/common/spectrum/rzx/` - `rzxModel`, `rzxFile`, `rzxWriter`, `rzxSegments`,
+  `rzxFinalise`, plus `rzxMapping` (below). Tests: `test/spectrum/rzx/rzx-format.test.ts`,
+  `rzx-mapping.test.ts`.
+- Core: `src/emu/machines/zxSpectrum/wasm/common/zx-spectrum-rzx.c`, included by `sp48.c`, `sp128.c`
+  and `spp3e.c` right after `z80.c` with `RZX_CORE_PREFIX` set, so the exports are `sp48Rzx*`,
+  `sp128Rzx*`, `spp3eRzx*`. The export and volatile-static lists are shared:
+  `scripts/rzx-core-exports.cjs` (build) and `rzxCoreBridge.ts` (loaders). Tests:
+  `test/wasm/rzx/` (a test-only translation unit, in the style of `test/wasm/z80-hooks/`).
+- Machine layer: `src/emu/machines/zxSpectrum/rzx/` - `rzxCoreBridge`, `rzxSession` (`IRzxSession`,
+  `IRzxMachine`), `RzxPlayer`, `RzxRecorder`. Each Spectrum machine has `rzxCore` and an
+  `rzxSession` slot; the fast path calls `runFastFrame`, the debug loop `beforeInstruction` /
+  `afterInstruction` / `afterRun`.
+- Harnesses: `test/harness/spectrumRzx.ts`, used by `sp48/` and `sp128/`. Round trips:
+  `test/spectrum/rzx/rzx-sp48-roundtrip.test.ts` (boot, typing, a real-speed load of `floatspy.tap`
+  with fast load *on*, a DI stretch, EI/HALT, an IM 2 retrigger, other keys held on playback,
+  both desync directions) and `rzx-sp128-roundtrip.test.ts` (128K, +3E `fdd1` with an FDC status
+  poll, +2E `nofdd`: paging, AY reads through IN). All in the e2e-cores tier.
+
+**Differences from the plan.**
+- `parseRzxFile` throws `RzxError` rather than returning it, like the snapshot parsers. Bytes after
+  an input block's declared frames are a note, not an error.
+- `RzxSetPlayFrame(fetchCount, inCount, raiseInt)` takes "raise the interrupt first" instead of the
+  next frame's fetch count. The core raises the boundary's interrupt when the *next* frame is
+  supplied, so it already knows that frame's count for the D8 EI rule; the first frame of a segment
+  is supplied with `raiseInt = 0`.
+- A playback step that reaches the fetch count runs no instruction; it only ends the frame. The
+  debug loop therefore skips such a call (`afterInstruction` returns `boundary`/`picture`), so a
+  step or a breakpoint never lands on a call that ran nothing.
+- An interrupt that is raised but not accepted (DI, or an EI delay kept by D8) takes no step: a
+  0-fetch frame under DI ends immediately, as in Fuse.
+- Trap 3 is enforced in the core, not the controller: the shared tape code asks
+  `SP48_TAPE_FAST_LOAD_BLOCKED()`, which each core defines as "an RZX mode is on". The user's
+  setting is never changed, so nothing has to be restored.
+- The 128K and +3E cores called their *exported* port read from the CPU, so the debugger's reads
+  and the CPU's were one function. Each now has a CPU-only wrapper (`sp128CpuReadPort`,
+  `spp3eCpuReadPort`) that carries the tap (D7).
+- Autosave and rollback points (trap 10) are captured at a ULA frame end *before* that frame's
+  interrupt, not after it. The recorder then marks a block start in the core, and the core closes
+  an empty frame when the interrupt is accepted before any fetch (`rzxIntAck`). Every player raises
+  the interrupt at the end of each frame, so it raises this one first - the same state Fuse #304
+  asks for. When the segments are finalised, the empty frame's interrupt finds IFF1 already cleared
+  by the real one and is ignored. Recording a mid-frame start (D16) inside the INT window works the
+  same way.
+- "Insert Rollback Point" takes the point at the next ULA frame end: a point inside a frame would
+  split it, and finalising would then raise an interrupt there.
+- Embedded snapshots carry no tape or disk images (captured without media): every byte read from
+  them arrives through IN anyway.
+- A playback that stops (ended, desync, interrupted) ends the machine frame with
+  `FrameTerminationMode.DebugEvent`; the session keeps the message for the controller
+  (`takeStop()`), which Phase 5 prints.
+- Trap 6: the working tree now has the Amstrad +2A/+3 ROM models (G9.2), so `mapRzxToKlive` puts
+  them first for +2A/+3 recordings - the ROM is not in the file, and the right one is what keeps a
+  recording in sync. The +E warning (`RZX_E_ROM_WARNING`) appears only when a recording would still
+  run on +E ROMs.
+- New statics changed the three cores' memory layouts, so state files saved by earlier builds no
+  longer load (the layout fingerprint does its job). The RZX statics are volatile.
+
+
+### Phases 5–8 (2026-10-04)
+
+**Where things are.**
+- Controller (`MachineController.ts`, `IMachineController`): `attachRzxSession`, `detachRzxSession`,
+  `interruptRzx(reason)`, `publishRzxState`, the `rzxStopped` event, `unthrottled` and `frameGate`.
+  The run loop pins the clock multiplier to 1 while a session is active (D14), prints a stopped
+  session's message instead of "Breakpoint reached" (D11, D12), publishes progress every 25 frames,
+  and skips the frame delay when unthrottled (D18, yielding every 50 frames).
+- Emulator orchestration: `src/renderer/appEmu/machines/rzxPlayback.ts` (play, render to video) and
+  `rzxRecording.ts` (record, stop, discard, rollback, insert point), reached through `EmuApi` /
+  `MainToEmuProcessor` (`playRzx`, `renderRzxToVideo`, `startRzxRecording`, `stopRzxRecording`,
+  `discardRzxRecording`, `rollbackRzxRecording`, `insertRzxRollbackPoint`). Shared types and command
+  texts: `src/common/spectrum/rzx/rzxCommandTypes.ts`.
+- IDE: `src/renderer/appIde/commands/RzxCommands.ts` (`zx-rzx`, `zx-rzx-record`, `zx-rzx-stop`,
+  `zx-rzx-rollback`, `zx-rzx-point`, `zx-rzx-video`); viewer `DocumentPanels/Spectrum/RzxViewerPanel.tsx`
+  (reuses the snapshot viewer's `SnapshotView` for the first snapshot); tab bar and Explorer entries
+  `features/documents/RzxLaunchMenu.tsx`; `registry.ts` (`.rzx`, `RZX_VIEWER`); drops in
+  `dropped-file-action.ts`.
+- Main: `src/main/machine-menus/rzx-menus.ts` (Machine → RZX on the three Spectrum machines; File →
+  Play RZX Recording...).
+- State: `emulatorState.rzx` (`RzxState`, `setRzxStateAction`); the badge is `RzxBadge` in
+  `appEmu/StatusBar/EmuStatusBar.tsx`, with its rule in `.ai/ui-theming-intent-and-lessons.md`.
+- Tests: `test/commands/RzxCommands.test.ts` (commands, command texts, drops) and
+  `test/spectrum/rzx/rzx-sp-flow.test.ts` (a real controller and 48K core: record from a running
+  machine with the multiplier pinned, play to the end, desync, debug, trap 4, rollback, and render
+  to video with a stub recorder - exactly one video frame per picture, stopping at the end and at a
+  desync).
+- Archive check: `scripts/rzx-archive-check.cjs <folder> [--report f] [--max-frames n]`, which runs
+  `test/spectrum/rzx/rzx-sp-archive-run.test.ts` (skipped unless the script starts it).
+- Docs: `docs/content/howto/rzx-recordings.mdx`, the six commands in `commands-reference.mdx`,
+  `.rzx` in `working-with-ide/project-explorer.mdx`; the routes golden has the new page.
+
+**Differences from the plan.**
+- Trap 4 is enforced in two places. `MachineController.stop()` interrupts the session, and every
+  reset, restart, snapshot or state load, code-injection run and machine switch stops the machine
+  first, so one line covers them; `restoreState` takes `keepRzxSession` for a rollback, which
+  restores its own session's state. `MainToEmuProcessor` interrupts on register and memory edits, an
+  injected code block, and tape and disk changes. Frame commands are not covered: none of the
+  Spectrum machines' frame commands writes machine state today.
+- A stopped *playback* is detached at once. A stopped *recording* stays attached, marked
+  `unsaved`, so **Stop and Save...** still saves every complete frame; the REC badge turns to the
+  warning colour meanwhile. Record refuses to start over an unsaved recording.
+- **Render to video** asks for no output path: the screen recorder already names its file by its
+  own rules, and the output reports it when the video closes. The controller's `frameGate` holds
+  every frame back until the recorder reports "recording", so no frame is lost while FFmpeg starts.
+- Live audio is muted through `renderMachineAudioFrame(..., liveMuted)`, which skips the speaker but
+  still hands the samples to the recorder.
+- The badge sits in the emulator's status bar (as §4.6 says), not in the overlay stack where
+  `RecordingStateOverlay` lives; it follows that component's pattern of reading the store.
+- `zx-rzx-point` and `discardRzxRecording` were added: the menu's Insert Rollback Point needs a
+  command, and a recording must be droppable without saving (API only for now).
+- "Debug" plays from the first instruction (a one-shot breakpoint at the segment's PC), as
+  `zx-snapshot` does.
+
+**Checked in the running app** (2026-10-04, the built app driven through `scripts/doc-shots/harness.cjs`
+with an isolated home and a scratch project): the `.rzx` viewer renders the recording, its segment
+and the first snapshot, with Play / Debug / Render in the tab bar; `zx-rzx` plays with the PLAY badge
+counting (`RZX 50/136`), the output reports the end and the badge goes; `zx-rzx-record` on the paused
+machine shows REC, and `zx-rzx-stop` writes the file (131 frames). The recording was Klive's own.
+
+### Open manual checks
+
+These need files or programs that are not in the repository, and were not run:
+- **Phase 5:** a few RZX Archive recordings played in the running app, and a border-effect demo
+  checked by eye for picture alignment (§7, trap 5). `scripts/rzx-archive-check.cjs` is the
+  headless half and is ready to run on a local archive folder.
+- **Phase 6 interop:** a Klive recording played in Fuse (and Spectaculator if available). Klive's
+  writer emits exactly what its reader and the format description expect, and the round-trip tests
+  pass, but no other emulator has read one yet.
+- **Phase 7:** a long archive recording rendered to video, with its duration and audio sync compared
+  against real-time playback.
 ---
 
 ## 9. Open questions

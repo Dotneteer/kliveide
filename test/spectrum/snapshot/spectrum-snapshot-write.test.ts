@@ -425,9 +425,9 @@ describe(".szx writer", () => {
   });
 
   it("refuses an unsupported machine in every format", () => {
-    const s = model(state128(), "128k", { machine: { unsupported: "Pentagon 128" } });
+    const s = model(state128(), "128k", { machine: { unsupported: "Scorpion ZS-256" } });
     for (const f of ["sna", "z80", "szx"] as const) {
-      expect(() => writeSpectrumSnapshot(s, f)).toThrow(/Pentagon/);
+      expect(() => writeSpectrumSnapshot(s, f)).toThrow(/Scorpion/);
     }
   });
 });

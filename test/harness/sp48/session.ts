@@ -20,6 +20,10 @@ import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSn
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
 import type { SnapshotWriteResult } from "@common/spectrum/snapshot/snapshotBytes";
 import type { SpectrumSnapshot, SpectrumSnapshotFormat } from "@common/spectrum/snapshot/spectrumSnapshot";
+import type { RzxPlayer, RzxPlayerOptions } from "@emu/machines/zxSpectrum/rzx/RzxPlayer";
+import type { RzxRecorder, RzxRecorderOptions } from "@emu/machines/zxSpectrum/rzx/RzxRecorder";
+import type { RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import * as rzx from "../spectrumRzx";
 
 import { buildSp48Wasm, productionOutput } from "../../../scripts/build-sp48-wasm.cjs";
 
@@ -381,6 +385,40 @@ export class Sp48TestSession {
     return writeSpectrumSnapshot(this.machine.captureSnapshotState(), format);
   }
 
+  // ==========================================================================================
+  // RZX (`.plans/RZX_PLAN.md`)
+
+  /**
+   * Starts recording an RZX file at the machine's current state, as the emulator does: a `.szx`
+   * snapshot of it, then every IN and every frame's fetch count. Returns the recorder.
+   */
+  startRzxRecording(options?: RzxRecorderOptions): RzxRecorder {
+    return rzx.startRzxRecording(this.machine, options);
+  }
+
+  /** Stops the recording and returns the finalised RZX file */
+  stopRzxRecording(): Uint8Array {
+    return rzx.stopRzxRecording(this.machine);
+  }
+
+  /** Parses an RZX file, loads its (first or chosen) segment's snapshot and starts playing it */
+  playRzx(bytes: Uint8Array, options?: RzxPlayerOptions): RzxPlayer {
+    return rzx.playRzx(this.machine, bytes, options);
+  }
+
+  /**
+   * Runs frames until the RZX session stops (the recording ended, desynced, ...) and returns why.
+   * `onFrame` runs after every completed picture frame.
+   */
+  runRzx(options: RunLimit & { onFrame?: () => void } = {}): RzxStop {
+    return rzx.runRzx(this.machine, () => this.frames, () => this.execute(), options);
+  }
+
+  /** The RZX session's state */
+  get rzxStatus(): rzx.RzxHarnessStatus {
+    return rzx.rzxStatus(this.machine);
+  }
+
   peekWord(address: number): number {
     return this.peek(address) | (this.peek(address + 1) << 8);
   }
@@ -438,7 +476,10 @@ export class Sp48TestSession {
 
   private runOneFrame(): void {
     const start = this.frames;
-    while (this.frames === start) this.execute();
+    while (this.frames === start) {
+      this.execute();
+      rzx.assertRzxRunning(this.machine);
+    }
   }
 
   private execute(): FrameTerminationMode {

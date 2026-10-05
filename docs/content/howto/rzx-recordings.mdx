@@ -1,0 +1,124 @@
+---
+description: "Play, debug, record, roll back and render RZX input recordings on the ZX Spectrum 48K, 128K and +2E/+3E."
+---
+
+import { Callout } from 'nextra/components'
+
+# Playing and Recording RZX Files
+
+An RZX file is a ZX Spectrum session you can replay exactly. It holds a snapshot of the machine and,
+after it, every value the program read from a port (the keyboard, the joystick, the tape, the
+floating bus, the sound chip) together with how many instructions ran between two interrupts.
+Playing it back answers every port read from the file, so the program takes exactly the same path
+it took when it was recorded - in Klive or in another emulator.
+
+Thousands of verified game playthroughs are shared this way, and an RZX file is also the most exact
+bug report you can hand someone: they see what you saw, frame by frame.
+
+Klive plays and records RZX files (version 0.13) on the ZX Spectrum 48K (and 16K, NTSC), the 128K
+and the +2E/+3E. A recording made on a +2A or +3 plays on Klive's Amstrad models, with the ROMs the
+original machine had.
+
+## Playing a recording
+
+Any of these plays a recording, switching the emulator to the machine it needs:
+
+- **File &rarr; Play RZX Recording...**, or **Machine &rarr; RZX &rarr; Play Recording...** in the
+  Emulator;
+- dropping the `.rzx` file onto the Emulator window;
+- **Play recording** in the Explorer's context menu, or the **Play** button in the recording's
+  document tab;
+- the [`zx-rzx`](../commands-reference#zx-rzx) command.
+
+While a recording plays, the Emulator's status bar shows a **PLAY** badge with the frame counter.
+The keyboard does nothing: every key the program reads comes from the file.
+
+When the recording ends, the machine pauses. Resume it to go on playing yourself, or start a
+recording from there (below).
+
+<Callout type="info">
+Tape loading inside a recording runs at real speed, even with fast load on: the tape's bits are
+part of the recording. The clock multiplier is held at 1 while a recording plays or records.
+</Callout>
+
+## Debugging inside a recording
+
+**Debug recording** (the context menu, the **Debug** button, or `zx-rzx <file> -d`) loads the
+recording and stops at its first instruction. From there, everything the debugger does works while
+the recording plays: breakpoints, stepping, the memory, disassembly and register panels. Continue,
+and playback goes on from where it stopped.
+
+Changing the machine from outside the program ends the playback, with a message saying why: editing
+memory or a register, injecting code, a reset, loading a snapshot or a state, switching the machine,
+and changing the tape or a disk. A breakpoint, a step or reading a panel never does.
+
+## When a recording desyncs
+
+If the program reads more port values in a frame than the recording holds, or fewer, the playback
+has *desynced*: from here on it would no longer follow the recording. Klive pauses the machine at
+the instruction that desynced and says which frame it was, how many values the frame held and how
+many the program read, and which emulator made the recording. You can inspect the machine from
+there, or resume it to carry on live.
+
+Recordings desync for reasons outside the file: a different ROM (the ROM is not in the file), or an
+emulator that handled an edge case differently. The recording's viewer shows the warnings Klive
+knows of before you play it.
+
+## Viewing a recording
+
+Open an `.rzx` file from the Explorer to see:
+
+- **RZX Recording**: the version, the program that made it, the machine it plays on, the number of
+  frames and the playing time, whether Klive can play it, and anything the reader noticed (blocks
+  it skipped, a signature it does not verify);
+- **Segments**: each snapshot inside the file starts a segment. The play button beside a segment
+  plays the recording from there (`zx-rzx <file> -s <n>`);
+- the first snapshot, exactly as the [snapshot viewer](./spectrum-snapshots#viewing-a-snapshot) shows
+  it: the screen, the registers, the paging, the RAM banks.
+
+## Recording
+
+**Machine &rarr; RZX &rarr; Record** (or `zx-rzx-record`) starts recording from the machine's current
+state. The machine can be running or paused - including paused at the end of a playback, or in the
+middle of one, which is how you take over a recording and continue it yourself. The status bar shows
+a **REC** badge with the frame counter.
+
+Every five seconds the recording stores a snapshot, so you can go back to it:
+
+- **Roll Back** (`zx-rzx-rollback`) returns to the latest rollback point and discards everything
+  recorded after it; `zx-rzx-rollback 2` goes back one point further, and so on. The machine is
+  paused at the point; resume to record on.
+- **Insert Rollback Point** (`zx-rzx-point`) adds a point of your own at the next frame.
+
+Older rollback points are thinned out as the recording goes on: all of them are kept for the last 15
+seconds, then one every 15 seconds up to a minute, one a minute up to five minutes, and one every
+five minutes after that. Points you insert are always kept.
+
+**Stop and Save...** (`zx-rzx-stop <file>`) stops recording and saves the file. The saved file keeps
+the first snapshot and every frame; the rollback points are left out, as other emulators expect.
+
+<Callout type="warning">
+Anything that changes the machine from outside the program stops the recording too (see above). The
+frames recorded so far are kept; save them with **Stop and Save...**. The REC badge stays, in the
+warning colour, until you do.
+</Callout>
+
+## Rendering a recording to video
+
+**Machine &rarr; RZX &rarr; Render Recording to Video...** (or `zx-rzx-video <file>`) plays a recording
+into a video file with the [screen recorder](./screen-recording), using its frame rate, quality and
+format settings. The recording plays as fast as the emulator can run it, with the speaker muted; the
+sound still goes into the video, and the video plays at the normal speed. Add `-t` to the command to
+render in real time instead. The video stops by itself when the recording ends, or at a desync, and
+the output names the file.
+
+The IDE + Emulator window recording is not started automatically, but you can start it by hand
+while a recording plays at normal speed.
+
+## Limits
+
+- Signed recordings play, but Klive does not verify their signatures. Recordings that refer to an
+  external snapshot file, and encrypted (protected) input blocks, are refused.
+- The ZX Spectrum Next, ZX80/81 and Z88 have no RZX conventions; Pentagon, Scorpion and Timex
+  recordings need machines Klive does not have.
+- You cannot seek to an arbitrary frame; you can start from any segment.

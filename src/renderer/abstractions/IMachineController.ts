@@ -1,5 +1,5 @@
 import type { ILiteEvent } from "@abstractions/ILiteEvent";
-import type { IOutputBuffer } from "@appIde/ToolArea/abstractions";
+import type { IOutputBuffer, OutputColor } from "@appIde/ToolArea/abstractions";
 import type { CodeToInject } from "@abstractions/CodeToInject";
 import type { FrameStats } from "@renderer/abstractions/FrameStats";
 import type { IDebugSupport } from "@renderer/abstractions/IDebugSupport";
@@ -14,6 +14,8 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
+import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
+import type { RzxState } from "@state/AppState";
 import { IAnyMachine } from "./IAnyMachine";
 
 /**
@@ -85,6 +87,32 @@ export interface IMachineController {
    * the CPU is idle, rather than during the frame-completed event handler.
    */
   beforeFrameDelay?: () => Promise<void>;
+
+  // --- RZX sessions (`.plans/RZX_PLAN.md` §4.4)
+
+  /** Skip the frame delay (render to video, D18) */
+  unthrottled: boolean;
+
+  /** Awaited before each frame when it returns a promise (render to video waits for the recorder) */
+  frameGate?: () => Promise<void> | undefined;
+
+  /** Fires when an RZX session stops */
+  readonly rzxStopped: ILiteEvent<RzxStop>;
+
+  /** The machine's RZX session, active or a stopped recording not yet saved */
+  readonly rzxSession?: IRzxSession;
+
+  /** Attaches an RZX session to the machine */
+  attachRzxSession(session: IRzxSession, info: { mode: RzxState["mode"]; file?: string }): void;
+
+  /** Detaches the machine's RZX session */
+  detachRzxSession(stopMessage?: string): void;
+
+  /** Ends an active RZX session because the IDE changed the machine from outside the CPU (trap 4) */
+  interruptRzx(reason: string): Promise<void>;
+
+  /** Publishes the RZX session's progress to the store */
+  publishRzxState(): void;
 
   /**
    * Start the machine in normal mode.
@@ -187,8 +215,11 @@ export interface IMachineController {
   restoreState(
     applyState: () => void,
     description: string,
-    options?: { attachMedia?: boolean }
+    options?: { attachMedia?: boolean; keepRzxSession?: boolean }
   ): Promise<void>;
+
+  /** Writes a line to the emulator's output */
+  sendOutput(text: string, foreground: OutputColor): Promise<void>;
 
   /**
    * Resolves the source code breakpoints used when running the machine

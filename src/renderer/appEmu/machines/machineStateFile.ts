@@ -35,7 +35,7 @@ import type {
 import type { SpectrumSnapshotLoadPorts } from "./spectrumSnapshotLoad";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { machineRegistry } from "@common/machines/machine-registry";
+import { machineRegistry, resolveModelId } from "@common/machines/machine-registry";
 import { readKliveStateFile, writeKliveStateFile } from "@common/machineState/kliveStateFile";
 import { stateMismatch } from "@emu/machines/state/wasmStateImage";
 import { writeSpectrumSnapshot } from "@common/spectrum/snapshot/writeSpectrumSnapshot";
@@ -255,9 +255,10 @@ export async function loadMachineStateFile(
   // --- 1. Fit the machine: type, model and configuration, exactly as saved
   const emulator = ports.getEmulatorState();
   let rebuilt = false;
+  // --- Model ids compare as they resolve: a 128K state from before the 128K had models says none
   if (
     emulator.machineId !== header.machineId ||
-    emulator.modelId !== header.modelId ||
+    resolveModelId(header.machineId, emulator.modelId) !== resolveModelId(header.machineId, header.modelId) ||
     configDiffers(emulator.config, header.config)
   ) {
     const done = await ports.setMachineType(

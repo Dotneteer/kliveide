@@ -34,16 +34,6 @@ export const SP128_MAIN_WAITING_LOOP = 0x2653;
 export const SP128_RETURN_TO_EDITOR = 0x2604;
 
 /**
- * ZX Spectrum 128/+2E/+3E main waiting loop (Spectrum +3E ROM 0)
- */
-export const SPP3_MAIN_WAITING_LOOP = 0x0706;
-
-/**
- * Return to Editor entry point in Spectrum +3E ROM 0
- */
-export const SPP3_RETURN_TO_EDITOR = 0x0937;
-
-/**
  * Wait between menu keys
  */
 export const SP_KEY_WAIT = 250;

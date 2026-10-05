@@ -8,13 +8,8 @@ import { TapeMode } from "@emu/abstractions/TapeMode";
 import { SpectrumBeeperDevice } from "../BeeperDevice";
 import { CommonScreenDevice } from "../CommonScreenDevice";
 import { KeyboardDevice } from "../zxSpectrum/SpectrumKeyboardDevice";
-import {
-  SP48_MAIN_ENTRY,
-  SPP3_MAIN_WAITING_LOOP,
-  SPP3_RETURN_TO_EDITOR,
-  SP_KEY_WAIT,
-  ZxSpectrumBase
-} from "../ZxSpectrumBase";
+import { SP_KEY_WAIT, ZxSpectrumBase } from "../ZxSpectrumBase";
+import { getP3RomSet, type P3RomSet } from "./p3RomSets";
 import { AUDIO_SAMPLE_RATE, REWIND_REQUESTED, TAPE_MODE, TAPE_SAVER } from "../machine-props";
 import { TapeDevice, TapeSaver } from "../tape/TapeDevice";
 import { SpectrumKeyCode } from "@emu/machines/zxSpectrum/SpectrumKeyCode";
@@ -69,6 +64,19 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
   psgDevice: ISpectrumPsgDevice;
   floppyDevice: IFloppyControllerDevice;
   protected readonly uploadedRomPages = new Map<number, Uint8Array>();
+
+  /**
+   * The ROM set this machine boots (`MC_SP3_ROM_SET`; the +3E ROMs when the config does not say).
+   * It owns the ROM file names and the ROM addresses the flows wait for.
+   */
+  get romSet(): P3RomSet {
+    return getP3RomSet(this.config);
+  }
+
+  /** The ROM file stem: `roms/<romId>-0..3.rom` */
+  override get romId(): string {
+    return this.romSet.romId;
+  }
 
   constructor(model?: MachineModel, config?: MachineConfigSet) {
     super(mergeZxSpectrumP3eConfig(model, config));
@@ -170,28 +178,47 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
   }
 
   async getCodeInjectionFlow(model: string): Promise<CodeInjectionFlow> {
+    const rom = this.romSet;
+    const menu = rom.mainWaitingLoop;
+    const reachMenu = {
+      type: "ReachExecPoint",
+      rom: 0,
+      execPoint: menu,
+      message: `Main execution cycle point reached (ROM0/$${toHexa4(menu)})`
+    } as const;
+    const arrowDown = {
+      type: "QueueKey",
+      primary: SpectrumKeyCode.N6,
+      secondary: SpectrumKeyCode.CShift,
+      wait: SP_KEY_WAIT,
+      message: "Arrow down"
+    } as const;
     if (model === "sp48") {
+      // --- The menu's fourth item is 48 BASIC, on the Amstrad and the +3E ROMs alike
+      const entry = rom.sp48MainEntry;
       return [
-        { type: "ReachExecPoint", rom: 0, execPoint: SPP3_MAIN_WAITING_LOOP, message: `Main execution cycle point reached (ROM0/$${toHexa4(SPP3_MAIN_WAITING_LOOP)})` },
+        reachMenu,
         { type: "Start" },
-        { type: "QueueKey", primary: SpectrumKeyCode.N6, secondary: SpectrumKeyCode.CShift, wait: SP_KEY_WAIT, message: "Arrow down" },
-        { type: "QueueKey", primary: SpectrumKeyCode.N6, secondary: SpectrumKeyCode.CShift, wait: SP_KEY_WAIT, message: "Arrow down" },
-        { type: "QueueKey", primary: SpectrumKeyCode.N6, secondary: SpectrumKeyCode.CShift, wait: SP_KEY_WAIT, message: "Arrow down" },
+        arrowDown,
+        arrowDown,
+        arrowDown,
         { type: "QueueKey", primary: SpectrumKeyCode.Enter, wait: 0, message: "Enter" },
-        { type: "ReachExecPoint", rom: 3, execPoint: SP48_MAIN_ENTRY, message: `Main execution cycle point reached (ROM3/$${toHexa4(SP48_MAIN_ENTRY)})` },
+        { type: "ReachExecPoint", rom: 3, execPoint: entry, message: `Main execution cycle point reached (ROM3/$${toHexa4(entry)})` },
         { type: "Inject" },
-        { type: "SetReturn", returnPoint: SP48_MAIN_ENTRY }
+        { type: "SetReturn", returnPoint: entry }
       ];
     }
     if (model === "spp3e") {
+      // --- The second item is +3 BASIC
+      const editor = rom.returnToEditor;
       return [
-        { type: "ReachExecPoint", rom: 0, execPoint: SPP3_MAIN_WAITING_LOOP, message: `Main execution cycle point reached (ROM0/$${toHexa4(SPP3_MAIN_WAITING_LOOP)})` },
+        reachMenu,
         { type: "Start" },
-        { type: "QueueKey", primary: SpectrumKeyCode.N6, secondary: SpectrumKeyCode.CShift, wait: SP_KEY_WAIT, message: "Arrow down" },
+        arrowDown,
         { type: "QueueKey", primary: SpectrumKeyCode.Enter, wait: 0, message: "Enter" },
-        { type: "ReachExecPoint", rom: 1, execPoint: SPP3_RETURN_TO_EDITOR, message: `Main execution cycle point reached (ROM1/$${toHexa4(SPP3_RETURN_TO_EDITOR)})` },
+        { type: "ReachExecPoint", rom: 0, execPoint: editor, message: `Main execution cycle point reached (ROM0/$${toHexa4(editor)})` },
         { type: "Inject" },
-        { type: "SetReturn", returnPoint: SPP3_RETURN_TO_EDITOR }
+        { type: "SetReturn", returnPoint: editor }
       ];
     }
     throw new Error(`Code for machine model '${model}' cannot run on this virtual machine.`);
@@ -202,7 +229,7 @@ export abstract class ZxSpectrumP3eWasmHost extends ZxSpectrumBase {
    * Loader boots a disk in drive A instead of the tape.
    */
   getTapeLoadFlow(): CodeInjectionFlow {
-    return menuTapeLoadFlow(SPP3_MAIN_WAITING_LOOP, "Loader");
+    return menuTapeLoadFlow(this.romSet.mainWaitingLoop, "Loader");
   }
 
   injectCodeToRun(codeToInject: CodeToInject): number {

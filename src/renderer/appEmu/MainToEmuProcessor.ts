@@ -48,6 +48,23 @@ import { setMachineConfigAction, setQuickStateAvailableAction } from "@state/act
 import { loadZ88Snapshot } from "./machines/z88SnapshotLoad";
 import { loadSpectrumSnapshot } from "./machines/spectrumSnapshotLoad";
 import { saveSpectrumSnapshot } from "./machines/spectrumSnapshotSave";
+import { playRzxRecording, renderRzxToVideo, type RzxPlaybackPorts } from "./machines/rzxPlayback";
+import {
+  discardRzxRecording,
+  insertRzxRollbackPoint,
+  rollbackRzxRecording,
+  startRzxRecording,
+  stopRzxRecording
+} from "./machines/rzxRecording";
+import type {
+  RzxPlayMode,
+  RzxPlayOptions,
+  RzxPlayResult,
+  RzxRecordResult,
+  RzxRollbackResult,
+  RzxStopRecordingResult,
+  RzxVideoOptions
+} from "@common/spectrum/rzx/rzxCommandTypes";
 import {
   loadMachineStateFile,
   quickRestoreMachineState,
@@ -167,6 +184,7 @@ class EmuMessageProcessor {
     confirm?: boolean,
     suppressError?: boolean
   ) {
+    await this.machineService.getMachineController()?.interruptRzx?.("the tape was changed");
     // --- A ZX80/ZX81 program file (.p, .81, .o, .80) is its own tape: the machine plays its bytes
     if (file && isZx8081ProgramFileName(file)) {
       const program = parseZxProgramFile(contents, file);
@@ -290,6 +308,81 @@ class EmuMessageProcessor {
     );
   }
 
+  // --- RZX (`.plans/RZX_PLAN.md` §4.5-4.7)
+
+  /** The services the RZX calls use */
+  private rzxPorts(): RzxPlaybackPorts {
+    const store = getCachedStore();
+    return {
+      getMachineController: () => this.machineService.getMachineController(),
+      getEmulatorState: () => store.getState()?.emulatorState ?? {},
+      setMachineType: (machineId, modelId, config) =>
+        this.machineService.setMachineType(machineId, modelId, config)
+    };
+  }
+
+  /** Plays an RZX recording (see `EmuApi.playRzx`) */
+  playRzx(
+    fileName: string,
+    contents: Uint8Array,
+    mode: RzxPlayMode,
+    options: RzxPlayOptions = {}
+  ): Promise<RzxPlayResult> {
+    return playRzxRecording(this.rzxPorts(), fileName, contents, mode, options);
+  }
+
+  /** Renders an RZX recording to video (see `EmuApi.renderRzxToVideo`) */
+  renderRzxToVideo(
+    fileName: string,
+    contents: Uint8Array,
+    options: RzxVideoOptions = {}
+  ): Promise<RzxPlayResult> {
+    const store = getCachedStore();
+    return renderRzxToVideo(
+      {
+        ...this.rzxPorts(),
+        getRecorder: () => _emuRecordingManager ?? undefined,
+        getVideoFile: () => store.getState()?.emulatorState?.screenRecordingFile
+      },
+      fileName,
+      contents,
+      options,
+      (stop, videoFile) => {
+        const controller = this.machineService.getMachineController();
+        const how = stop?.kind === "desync" ? "stopped at the desync" : stop?.kind === "ended" ? "finished" : "stopped";
+        void controller?.sendOutput(
+          `RZX video ${how}${videoFile ? `: ${videoFile}` : ""}`,
+          stop?.kind === "ended" ? "green" : "yellow"
+        );
+      }
+    );
+  }
+
+  /** Starts an RZX recording (see `EmuApi.startRzxRecording`) */
+  startRzxRecording(creator: { name: string; major: number; minor: number }): Promise<RzxRecordResult> {
+    return startRzxRecording(this.rzxPorts(), creator);
+  }
+
+  /** Stops the RZX recording (see `EmuApi.stopRzxRecording`) */
+  stopRzxRecording(): Promise<RzxStopRecordingResult> {
+    return stopRzxRecording(this.rzxPorts());
+  }
+
+  /** Throws the RZX recording away (see `EmuApi.discardRzxRecording`) */
+  discardRzxRecording(): Promise<void> {
+    return discardRzxRecording(this.rzxPorts());
+  }
+
+  /** Rolls the RZX recording back (see `EmuApi.rollbackRzxRecording`) */
+  rollbackRzxRecording(back = 1): Promise<RzxRollbackResult> {
+    return rollbackRzxRecording(this.rzxPorts(), back);
+  }
+
+  /** Inserts a rollback point (see `EmuApi.insertRzxRollbackPoint`) */
+  insertRzxRollbackPoint(): Promise<{ frame: number }> {
+    return insertRzxRollbackPoint(this.rzxPorts());
+  }
+
   /**
    * Saves the ZX Spectrum as a snapshot (see `EmuApi.saveSpectrumSnapshot`).
    * @param format The file format
@@ -398,6 +491,7 @@ class EmuMessageProcessor {
   ) {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
+    await controller?.interruptRzx?.("a disk was changed");
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
     // --- claimed drive A regardless of which drive was actually used.
@@ -729,6 +823,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    void controller.interruptRzx?.("code was injected");
     controller.machine.injectCodeToRun(codeToInject);
   }
 
@@ -1074,6 +1169,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    await controller.interruptRzx?.(`register ${register.toUpperCase()} was edited`);
     const machine = controller.machine as any;
     switch (register.toUpperCase()) {
       case "A":
@@ -1177,6 +1273,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    await controller.interruptRzx?.("memory was edited");
     const machine = controller.machine;
     switch (size) {
       case 8:

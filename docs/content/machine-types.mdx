@@ -31,16 +31,59 @@ Available models:
 
 Machine ID: `sp128`
 
-Available models: Only the original ZX Spectrum 128K model is available.
+One machine with two models. Both run the ZX Spectrum 128K's ROMs and have its `$7FFD` paging and
+AY chip; they differ in timing:
 
-## ZX Spectrum +2E/+3E
+- `sp128`: The original ZX Spectrum 128K.
+- `pentagon`: The Pentagon 128, a Russian 128K clone much of the demoscene writes for. It runs at
+  3.5 MHz with a longer frame (224 T-states by 320 lines, 71,680 T-states, about 48.8 frames per
+  second), has no memory or I/O contention, and has no floating bus: an unattached port reads `$FF`.
+
+**Which one to pick.** Choose the Pentagon for software written for it, such as demos whose effects
+are timed to its frame, or to check that your own code runs on both machines. Choose the 128K for
+everything else. Running, debugging, injecting code, the tape Loader, snapshots and Klive state
+files work the same on both.
+
+The Pentagon model does not have the Beta 128 disk interface yet, so TR-DOS and `.trd`/`.scl` disk
+images are not available. A 128K `.sna` snapshot that has the TR-DOS ROM paged in loads with a
+warning.
+
+A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
+the 128K model, unless your project already uses the Pentagon: a 128K `.sna` file does not say
+which of the two machines it came from. A snapshot saved from the Pentagon is written as a Pentagon
+128.
+
+## ZX Spectrum +2A/+3/+2E/+3E
 
 Machine ID: `spp3e`
 
-Available models:
+One machine with two families of ROMs. The hardware is Amstrad's +2A/+3 (the gate array, the
+`$7FFD`/`$1FFD` paging, the floppy controller and the AY chip) in every model; the models differ in
+their drives and in the ROMs they boot.
+
+The +2E/+3E models boot Garry Lancaster's +3E ROMs, a modern replacement for the Amstrad ones:
+
 - `nofdd`: ZX Spectrum +2E (without floppy disk drive).
 - `fdd1`: ZX Spectrum +3E (with a single floppy disk drive).
 - `fdd2`: ZX Spectrum +3E (with two floppy disk drives).
+
+The +2A/+3 models boot Amstrad's original ROMs, unmodified:
+
+- `plus2a`: ZX Spectrum +2A (v4.1 ROMs, no floppy disk drive).
+- `plus2a-es`: ZX Spectrum +2A (Spanish v4.1 ROMs).
+- `plus3-fdd1`, `plus3-fdd2`: ZX Spectrum +3 (v4.1 ROMs, one or two floppy disk drives).
+- `plus3-v40-fdd1`, `plus3-v40-fdd2`: ZX Spectrum +3 v4.0 (the 1987 ROMs of the first +3s).
+- `plus3-es-fdd1`, `plus3-es-fdd2`: ZX Spectrum +3 (Spanish v4.1 ROMs).
+
+**Which one to pick.** Choose a +2A or +3 model when a program must behave exactly as on the
+original machine: software that calls the Amstrad ROM directly, or needs a particular ROM version
+or the Spanish ROMs. Choose a +2E or +3E model for everyday use: the +3E ROMs are compatible with
+the Amstrad ones and add their own improvements. Running, debugging, injecting code, the tape
+Loader, `.dsk` disks, snapshots and Klive state files work the same on every model.
+
+A `.z80` or `.szx` snapshot of a +2A or +3 opens on a +2E/+3E model by default, with a warning that
+it runs on the +E ROMs. When your project already uses a +2A or +3 model, the snapshot stays on it
+and the warning goes. A snapshot saved from a +2A or +3 model is written as a +2A or +3.
 
 ## ZX Spectrum Next
 

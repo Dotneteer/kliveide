@@ -30,6 +30,8 @@ import {
   type MachineStateParts
 } from "../state/wasmStateImage";
 import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
+import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
+import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -65,9 +67,12 @@ export type Sp48WasmV2Diagnostics = {
  * pixels, and audio, while later migration phases fill in the complete IDE
  * debugger/tape compatibility surface.
  */
-export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
+export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost implements IRzxMachine {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp48WasmV2Runtime;
+  /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */
+  public rzxSession?: IRzxSession;
+  private rzxCoreBridge?: RzxCoreBridge;
   private readonly wasmV2AudioSamples: AudioSample[] = [];
   private readonly wasmV2KeyboardRows = new Uint8Array(8);
   private wasmV2KeyboardRowsValid = false;
@@ -411,16 +416,43 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
 
     this.emulateKeystroke();
-    this.syncKeyboardToWasmV2(runtime);
+    const rzx = this.rzxSession?.active ? this.rzxSession : undefined;
+    // --- While a recording plays, every port value comes from the file (trap 8)
+    if (rzx?.mode !== "play") this.syncKeyboardToWasmV2(runtime);
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
-    runtime.exports.sp48ExecuteFrame();
+    if (rzx) {
+      if (!rzx.runFastFrame(() => runtime.exports.sp48ExecuteFrame())) {
+        return this.stopForRzx(runtime);
+      }
+    } else {
+      runtime.exports.sp48ExecuteFrame();
+    }
     this.wasmV2NormalFrames++;
     this.syncFrameCountersFromWasmV2(runtime);
     this.publishSavedTapeFromWasmV2(runtime);
     this.frameCompleted = true;
     this.executionContext.lastTerminationReason = FrameTerminationMode.Normal;
     return FrameTerminationMode.Normal;
+  }
+
+  /** The core's RZX module */
+  get rzxCore(): RzxCoreBridge {
+    const runtime = this.requireWasmV2Runtime();
+    if (this.rzxCoreBridge == null) {
+      this.rzxCoreBridge = new RzxCoreBridge("sp48", runtime.exports, runtime.exports.memory);
+    }
+    return this.rzxCoreBridge;
+  }
+
+  /** An RZX session stopped: the frame ends as a debug stop, which pauses the machine (D11, D12) */
+  private stopForRzx(runtime: Sp48WasmV2Runtime): FrameTerminationMode {
+    this.syncCpuFromWasmV2(runtime);
+    this.publishSavedTapeFromWasmV2(runtime);
+    // --- The call that sees the stop completes no frame (the last picture was reported already)
+    this.frameCompleted = false;
+    this.executionContext.lastTerminationReason = FrameTerminationMode.DebugEvent;
+    return FrameTerminationMode.DebugEvent;
   }
 
   override readScreenMemory(offset: number): number {
@@ -788,7 +820,8 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     // --- Queued keystrokes are timed in tacts and held for whole frames, so the queue cannot
     // --- advance faster than the frame counter it is measured against anyway.
     this.emulateKeystroke();
-    this.syncKeyboardToWasmV2(runtime);
+    const rzx = this.rzxSession?.active ? this.rzxSession : undefined;
+    if (rzx?.mode !== "play") this.syncKeyboardToWasmV2(runtime);
     this.syncAudioSampleRateToWasmV2(runtime);
     this.syncTargetClockMultiplierToWasmV2(runtime);
 
@@ -806,7 +839,23 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
     }
 
     while (!this.frameCompleted) {
+      if (rzx && !rzx.beforeInstruction()) {
+        return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+      }
       wasm.sp48ExecuteInstruction();
+      if (rzx) {
+        // --- A playback call that ends an RZX frame runs no instruction (`zx-spectrum-rzx.c`)
+        const result = rzx.afterInstruction();
+        if (result === "stopped") {
+          super.pc = wasm.sp48GetCpuPc();
+          return this.finishWasmV2DebugLoop(FrameTerminationMode.DebugEvent);
+        }
+        if (result === "picture") {
+          this.frameCompleted = true;
+          break;
+        }
+        if (result === "boundary") continue;
+      }
       instructionsExecuted++;
 
       // --- Assigning through `super` on purpose: this class mirrors `pc` with a setter that pushes
@@ -815,7 +864,8 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
       if (watchesBusAccess) {
         this.importWasmV2BusAccess(runtime);
       }
-      this.frameCompleted = wasm.sp48GetFrameCompleted() !== 0;
+      // --- In playback a frame completes only at an RZX frame end, above
+      this.frameCompleted = rzx?.mode === "play" ? false : wasm.sp48GetFrameCompleted() !== 0;
 
       if (this.executionContext.frameTerminationMode === FrameTerminationMode.UntilExecutionPoint) {
         const point = this.executionContext.terminationPoint;
@@ -848,6 +898,10 @@ export class ZxSpectrum48WasmV2Machine extends ZxSpectrum48WasmHost {
    */
   private finishWasmV2DebugLoop(termination: FrameTerminationMode): FrameTerminationMode {
     const runtime = this.requireWasmV2Runtime();
+    const rzx = this.rzxSession;
+    if (rzx?.active && !rzx.afterRun(this.frameCompleted)) {
+      termination = FrameTerminationMode.DebugEvent;
+    }
     this.syncCpuFromWasmV2(runtime);
     this.importWasmV2BusAccess(runtime);
     this.publishSavedTapeFromWasmV2(runtime);

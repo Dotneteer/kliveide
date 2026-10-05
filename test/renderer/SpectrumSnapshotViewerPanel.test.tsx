@@ -140,8 +140,8 @@ describe("SpectrumSnapshotViewerPanel", () => {
   });
 
   it("says why a snapshot cannot be loaded, and still shows it", async () => {
-    await renderViewer("p.szx", buildSzx(state128(), { machineId: 7 }));
-    expect(await screen.findByText("Klive cannot emulate the Pentagon 128")).toBeInTheDocument();
+    await renderViewer("p.szx", buildSzx(state128(), { machineId: 10 }));
+    expect(await screen.findByText("Klive cannot emulate the Scorpion ZS-256")).toBeInTheDocument();
     expect(screen.getByText("Z80 Registers")).toBeInTheDocument();
   });
 

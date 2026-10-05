@@ -46,12 +46,22 @@ describe("hardware specs against the cores", () => {
     await expectMatches(machine, "sp48", modelId);
   });
 
-  it("ZX Spectrum 128K", async () => {
+  it("ZX Spectrum 128K (no model: a project from before the models)", async () => {
     buildSp128Wasm();
     const machine = new Sp128(undefined, undefined, {
       artifactName: "machine-128-v2.wasm",
       readArtifact: async () => readFileSync(sp128Wasm)
     });
     await expectMatches(machine, "sp128");
+  });
+
+  it.each(["sp128", "pentagon"])("ZX Spectrum 128K machine, model %s", async (modelId) => {
+    buildSp128Wasm();
+    const model = machineRegistry.find((m) => m.machineId === "sp128")!.models!.find((m) => m.modelId === modelId)!;
+    const machine = new Sp128(model, model.config, {
+      artifactName: "machine-128-v2.wasm",
+      readArtifact: async () => readFileSync(sp128Wasm)
+    });
+    await expectMatches(machine, "sp128", modelId);
   });
 });

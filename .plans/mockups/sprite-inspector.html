@@ -1,0 +1,713 @@
+<title>Klive Sprite Inspector</title>
+<style>
+/* Layout: the Sprite Inspector document (toolbar, globals strip, Sprites table | Pattern sheet, inspector pane), then the states: the selected-pattern inspector, the row context menu, the diagnostic chips, and the empty state. Interactive: select rows, cells and map outlines; switch views, formats and zoom. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c;
+  --state: #0A5E99; --state-2: #7A3FB0;          /* --color-state-value, and the accent's secondary hue */
+  --changed: #B25E00; --changed-wash: #B25E001a; /* Q7: changed since the last stop (a new treatment) */
+  --warn: #8A6A00; --warn-wash: #8A6A001c; --info: #565c65; --ok: #2D7D46; --bp: #C8322B;
+  --zone-paper: #d7e3ef; --zone-border: #eceef1;
+  --check-a: #ffffff; --check-b: #e3e5e9;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --row: 26px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --state: #7CC4F0; --state-2: #C49BEF; --changed: #F0A040; --changed-wash: #F0A04024;
+  --warn: #FFC933; --warn-wash: #FFC93322; --info: #949aa4; --ok: #6CC488; --bp: #F0605A;
+  --zone-paper: #1f3346; --zone-border: #1d2025;
+  --check-a: #22252a; --check-b: #2c3036;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --state: #7CC4F0; --state-2: #C49BEF; --changed: #F0A040; --changed-wash: #F0A04024;
+  --warn: #FFC933; --warn-wash: #FFC93322; --info: #949aa4; --ok: #6CC488; --bp: #F0605A;
+  --zone-paper: #1f3346; --zone-border: #1d2025;
+  --check-a: #22252a; --check-b: #2c3036;
+  color-scheme: dark; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); margin: 0; padding: 24px 16px 56px; }
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 28px; }
+header.page h1 { font-size: 19px; font-weight: 600; margin: 0 0 6px; text-wrap: balance; }
+header.page p { margin: 0; color: var(--text-2); max-width: 90ch; }
+h2 { font-size: 14px; font-weight: 600; margin: 0 0 4px; }
+h3 { font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); margin: 0 0 6px; }
+.cap { color: var(--text-2); margin: 0 0 10px; max-width: 92ch; }
+code { font-family: var(--font-mono); font-size: 12px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.section { display: grid; gap: 4px; min-width: 0; }
+button { font: inherit; color: inherit; }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ---------- window ---------- */
+.ide { background: var(--canvas); border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; box-shadow: 0 12px 40px #0003; display: flex; flex-direction: column; min-width: 0; }
+.tabs { display: flex; background: var(--chrome); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tab { padding: 6px 14px; color: var(--text-2); border-right: 1px solid var(--border-subtle); white-space: nowrap; font-size: 12.5px; }
+.tab.on { background: var(--canvas); color: var(--text); box-shadow: inset 0 2px 0 var(--accent); }
+.tab i { font-style: normal; color: var(--text-3); margin-right: 6px; font-family: var(--font-mono); font-size: 11px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--border-subtle); background: var(--panel); }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: var(--raised); }
+.seg button { height: 24px; padding: 0 9px; border: 0; border-right: 1px solid var(--border-subtle); background: transparent; font-size: 12px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { background: var(--hover); }
+.seg button.on { background: var(--accent-wash); color: var(--accent); }
+.tbl { color: var(--text-3); font-size: 11.5px; margin-right: -8px; }
+.tb { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border: 1px solid var(--border); border-radius: 4px; background: var(--raised); font-size: 12px; cursor: pointer; }
+.tb:hover { background: var(--hover); }
+.tb.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+select.tb { padding-right: 4px; }
+.toolbar .right { margin-left: auto; display: flex; gap: 8px; align-items: center; color: var(--text-2); font-size: 12px; }
+
+/* globals strip */
+.globals { display: flex; flex-wrap: wrap; gap: 4px 18px; padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--canvas); font-size: 12px; }
+.g { display: inline-flex; gap: 6px; align-items: baseline; white-space: nowrap; }
+.g .k { color: var(--text-2); }
+.g .v { font-family: var(--font-mono); color: var(--state); font-variant-numeric: tabular-nums; }
+.g .v .sub { color: var(--text-3); }
+.g .v.flag-on { color: var(--warn); }
+
+/* main split */
+.main { display: grid; grid-template-columns: minmax(0, 1.45fr) 6px minmax(0, 1fr); height: 430px; min-height: 0; border-bottom: 1px solid var(--border); }
+.main.only-sprites, .main.only-patterns { grid-template-columns: minmax(0, 1fr); }
+.main.only-sprites .pane.patterns, .main.only-patterns .pane.sprites { display: none; }
+.main.only-sprites .splitter, .main.only-patterns .splitter { display: none; }
+.splitter { background: var(--chrome); border-left: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle); cursor: col-resize; }
+.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.pane-h { display: flex; align-items: center; gap: 10px; padding: 0 10px; height: 28px; border-bottom: 1px solid var(--border-subtle); background: var(--chrome); font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); }
+.pane-h .meta { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--text-3); }
+.scroll { overflow: auto; flex: 1; min-height: 0; }
+@media (max-width: 980px) {
+  .main, .main.only-sprites, .main.only-patterns { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; height: auto; }
+  .splitter { display: none; }
+  .pane .scroll { max-height: 380px; }
+  .pane.patterns { border-top: 1px solid var(--border); }
+}
+
+/* sprites table */
+table.st { border-collapse: collapse; width: 100%; min-width: 820px; font-size: 12px; }
+table.st th { position: sticky; top: 0; background: var(--chrome); color: var(--text-2); font: 600 10.5px var(--font-ui); letter-spacing: .05em; text-transform: uppercase; text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--border); z-index: 1; white-space: nowrap; }
+table.st td { padding: 0 6px; height: var(--row); white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; border-bottom: 1px solid var(--border-subtle); color: var(--state); }
+table.st tr { cursor: pointer; }
+table.st tr:hover td { background: var(--hover); }
+table.st tr.sel td { background: var(--accent-wash); }
+table.st tr.sel td.ix { box-shadow: inset 2px 0 0 var(--accent); }
+td.ix { color: var(--text-3) !important; width: 7ch; position: relative; }
+tr.changed td.ix::after { content: ""; position: absolute; right: 3px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--changed); }
+td.ix .anc { font-family: var(--font-ui); font-size: 10.5px; color: var(--state-2); margin-left: 4px; }
+td.vis { width: 3ch; text-align: center; font-family: var(--font-ui) !important; }
+.vdot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+.vdot.on { background: var(--ok); }
+.vdot.half { border: 1.5px solid var(--warn); }
+td.pat { width: 15ch; }
+td.pat canvas, .thumb { width: 20px; height: 20px; vertical-align: middle; image-rendering: pixelated; border-radius: 2px; margin-right: 6px; }
+.checker { background-color: var(--check-a); background-image: conic-gradient(var(--check-b) 25%, transparent 0 50%, var(--check-b) 0 75%, transparent 0); background-size: 8px 8px; }
+td .sub { color: var(--text-3); }
+td.dim { color: var(--text-dis) !important; }
+td.xf .on { color: var(--state-2); font-weight: 600; }
+td.xf .off { color: var(--text-dis); }
+td.type { font-family: var(--font-ui) !important; color: var(--text-2) !important; }
+td.raw { color: var(--text-3) !important; }
+td.raw s { color: var(--text-dis); }
+.raw-hidden td.raw, .raw-hidden th.raw { display: none; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font: 500 11px var(--font-ui); padding: 1px 7px; border-radius: 9px; white-space: nowrap; }
+.chip.warn { color: var(--warn); background: var(--warn-wash); }
+.chip.info { color: var(--info); background: var(--hover); }
+.chip.ok { color: var(--ok); }
+
+/* pattern sheet */
+.sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(calc(var(--px) + 14px), 1fr)); gap: 6px; padding: 10px; --px: 32px; }
+.cell { position: relative; display: grid; justify-items: center; gap: 2px; padding: 5px 3px 3px; border: 1px solid var(--border-subtle); border-radius: 4px; cursor: pointer; background: var(--canvas); }
+.cell:hover { border-color: var(--border-strong); }
+.cell canvas { width: var(--px); height: var(--px); image-rendering: pixelated; border-radius: 2px; }
+.cell .n { font: 11px var(--font-mono); color: var(--text-3); }
+.cell.blank canvas { opacity: .35; }
+.cell.unused .n { color: var(--text-dis); }
+.cell.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); background: var(--accent-wash); }
+.cell.ref { border-color: var(--state-2); }
+.cell.four { background: linear-gradient(var(--accent-wash), var(--accent-wash)); }
+.cell.four::before { content: "4"; position: absolute; left: 3px; top: 1px; font: 600 9px var(--font-mono); color: var(--accent); }
+.cell .badge { position: absolute; top: -6px; right: -5px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; font: 600 10px/16px var(--font-ui); text-align: center; background: var(--state); color: var(--canvas); }
+.cell .badge.muted { background: var(--border-strong); color: var(--text); }
+.cell.mixed::after { content: ""; position: absolute; left: 0; bottom: 0; border-left: 10px solid var(--warn); border-top: 10px solid transparent; border-bottom-left-radius: 3px; }
+.cell .cursor { position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); font: 600 9px var(--font-ui); color: var(--changed); }
+.sheet-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 6px 10px; border-top: 1px solid var(--border-subtle); color: var(--text-3); font-size: 11.5px; background: var(--panel); }
+.lg { display: inline-flex; align-items: center; gap: 5px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+/* inspector */
+.insp { display: grid; grid-template-columns: 250px minmax(0, 1fr) 300px; gap: 0; background: var(--panel); min-height: 300px; }
+@media (max-width: 1080px) { .insp { grid-template-columns: 250px minmax(0, 1fr); } .insp .map-col { grid-column: 1 / -1; border-top: 1px solid var(--border-subtle); } }
+@media (max-width: 640px) { .insp { grid-template-columns: minmax(0, 1fr); } .insp > div { border-right: 0 !important; border-bottom: 1px solid var(--border-subtle); } }
+.insp > div { padding: 10px 12px; min-width: 0; border-right: 1px solid var(--border-subtle); }
+.insp > div:last-child { border-right: 0; }
+.insp .title { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.insp .why { margin: 0 0 10px; color: var(--text-2); font-size: 12px; }
+.previews { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.pv { display: grid; gap: 4px; justify-items: start; }
+.pv canvas { image-rendering: pixelated; border: 1px solid var(--border); border-radius: 3px; }
+.pv span { font-size: 11px; color: var(--text-3); }
+.swatches { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 10px; }
+.swatches .sw { width: 16px; height: 16px; border: 1px solid var(--border-strong); position: relative; }
+.fields { width: 100%; border-collapse: collapse; font-size: 12px; }
+.fields th { text-align: left; color: var(--text-3); font: 600 10px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; padding: 0 8px 4px 0; }
+.fields td { padding: 3px 8px 3px 0; border-top: 1px solid var(--border-subtle); vertical-align: top; }
+.fields td:first-child { color: var(--text-2); white-space: nowrap; width: 12ch; }
+.fields td.v { font-family: var(--font-mono); color: var(--state); }
+.fields td.v.diff { color: var(--state-2); }
+.fields td.v .sub { color: var(--text-3); }
+.map-col canvas { width: 100%; max-width: 320px; height: auto; aspect-ratio: 320 / 256; image-rendering: pixelated; border: 1px solid var(--border); border-radius: 3px; cursor: crosshair; display: block; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 3px 12px; margin-top: 6px; font-size: 11px; color: var(--text-3); }
+.link { color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; font-family: var(--font-mono); font-size: 12px; }
+
+/* states section */
+.states { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.card { background: var(--canvas); border: 1px solid var(--border-strong); border-radius: 6px; padding: 12px; min-width: 0; }
+.menu { width: 270px; max-width: 100%; background: var(--raised); border: 1px solid var(--border-strong); border-radius: 5px; box-shadow: 0 8px 24px #0003; padding: 4px 0; font-size: 12.5px; }
+.mi { display: flex; justify-content: space-between; gap: 10px; padding: 4px 12px; }
+.mi:hover { background: var(--accent); color: var(--on-accent); }
+.mi .kb { color: var(--text-3); font-size: 11px; }
+.mi.dis { color: var(--text-dis); }
+.mi.dis:hover { background: transparent; color: var(--text-dis); }
+.msep { height: 1px; background: var(--border-subtle); margin: 4px 0; }
+.chiplist { display: grid; gap: 6px; }
+.chiplist div { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--text-2); }
+.empty { display: grid; place-items: center; text-align: center; gap: 6px; padding: 28px 12px; color: var(--text-2); }
+.empty .ic { width: 36px; height: 36px; border-radius: 8px; border: 1.5px dashed var(--border-strong); }
+.note { color: var(--text-3); font-size: 12px; margin-top: 8px; }
+</style>
+
+<div class="wrap">
+  <header class="page">
+    <h1>Sprite Inspector — G3.2 sprite table + G3.3 pattern memory in one document</h1>
+    <p>Mockup for <code>.plans/SPRITE_INSPECTOR_PLAN.md</code>. A ZX Spectrum Next game paused at a breakpoint. Everything below is clickable: select a sprite row, a pattern cell or an outline on the sprite-space map; switch the view, the pattern format, the palette-offset mode and the zoom; show the raw attribute bytes.</p>
+  </header>
+
+  <section class="section">
+    <h2>1 · The document, paused mid-frame</h2>
+    <p class="cap">Sprite <b>#12</b> is selected: rotated, X-mirrored and scaled 2×. Its pattern is outlined in the sheet. The orange dots mark rows whose bytes changed since the previous stop (Q7, a new treatment). Purple sheet borders mark patterns that the selected sprite reads.</p>
+
+    <div class="ide">
+      <div class="tabs">
+        <div class="tab"><i>asm</i>game.kz80.asm</div>
+        <div class="tab"><i>$</i>Memory</div>
+        <div class="tab on"><i>$</i>Sprite Inspector</div>
+      </div>
+
+      <div class="toolbar">
+        <span class="tbl">View</span>
+        <div class="seg" id="viewSeg">
+          <button data-v="sprites">Sprites</button><button data-v="patterns">Patterns</button><button data-v="both" class="on">Both</button>
+        </div>
+        <span class="tbl">Show</span>
+        <select class="tb" id="filterSel" aria-label="Sprite filter">
+          <option value="last">Up to last visible (#27)</option>
+          <option value="visible">Visible only</option>
+          <option value="nonempty">Non-empty</option>
+          <option value="all">All 128</option>
+        </select>
+        <button class="tb" id="rawBtn" aria-pressed="false">Raw bytes</button>
+        <span class="tbl">Palette</span>
+        <select class="tb" id="palSel" aria-label="Sprite palette bank">
+          <option>Live (bank 1)</option><option>Pin bank 1</option><option>Pin bank 2</option>
+        </select>
+        <div class="right">
+          <button class="tb on" id="followBtn" aria-pressed="true">⟳ Refresh on stop</button>
+        </div>
+      </div>
+
+      <div class="globals">
+        <span class="g"><span class="k">Sprites</span><span class="v">ON</span></span>
+        <span class="g"><span class="k">Over border</span><span class="v">off</span></span>
+        <span class="g"><span class="k">Clip $19</span><span class="v">0,255,0,191 <span class="sub">→ (32,32)–(287,223)</span></span></span>
+        <span class="g"><span class="k">Order</span><span class="v">S L U</span></span>
+        <span class="g"><span class="k">#0 on top</span><span class="v">no</span></span>
+        <span class="g"><span class="k">Transp. $4B</span><span class="v">$E3 <span class="sub">(4-bit: 3)</span></span></span>
+        <span class="g"><span class="k">Last visible</span><span class="v">#27</span></span>
+        <span class="g"><span class="k">Status</span><span class="v flag-on">collision</span></span>
+        <span class="g"><span class="k">Upload</span><span class="v">#28.0 · pattern 45.$00</span></span>
+        <span class="g"><span class="k">Mirror $34</span><span class="v">#28 <span class="sub">(tied)</span></span></span>
+      </div>
+
+      <div class="main" id="main">
+        <div class="pane sprites">
+          <div class="pane-h">Sprites <span class="meta" id="spriteMeta"></span></div>
+          <div class="scroll raw-hidden" id="tableWrap">
+            <table class="st">
+              <thead><tr>
+                <th>#</th><th title="Effective visibility">Vis</th><th>Pattern</th><th>X</th><th>Y</th><th>Fmt</th><th>Pal</th><th>Xform</th><th>Scale</th><th>Type</th><th class="raw">Raw attr0–4</th><th>Note</th>
+              </tr></thead>
+              <tbody id="spriteRows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="splitter" aria-hidden="true"></div>
+        <div class="pane patterns">
+          <div class="pane-h">Pattern memory
+            <span class="meta">
+              <span class="seg" id="fmtSeg" style="vertical-align:middle">
+                <button data-f="used" class="on">As used</button><button data-f="8">8-bit</button><button data-f="4">4-bit</button>
+              </span>
+            </span>
+          </div>
+          <div class="toolbar" style="border-bottom:1px solid var(--border-subtle)">
+            <span class="tbl">Palette offset</span>
+            <select class="tb" id="offSel" aria-label="Palette offset mode">
+              <option value="sprite">From sprite</option>
+              <option value="0">Fixed 0</option><option value="1">Fixed 1</option><option value="14">Fixed 14</option><option value="15">Fixed 15</option>
+            </select>
+            <span class="tbl">Zoom</span>
+            <div class="seg" id="zoomSeg"><button data-z="1">1</button><button data-z="2" class="on">2</button><button data-z="3">3</button><button data-z="4">4</button></div>
+            <button class="tb on" id="checkBtn" aria-pressed="true">▦ Checker</button>
+          </div>
+          <div class="scroll"><div class="sheet" id="sheet"></div></div>
+          <div class="sheet-legend">
+            <span class="lg"><span class="sw" style="background:var(--state)"></span>used by visible sprites</span>
+            <span class="lg"><span class="sw" style="background:var(--border-strong)"></span>used, not visible</span>
+            <span class="lg"><span class="sw" style="background:var(--accent-wash);border:1px solid var(--accent)"></span>read as 4-bit</span>
+            <span class="lg"><span class="sw" style="background:var(--warn)"></span>read both ways</span>
+            <span class="lg"><span style="color:var(--changed);font-weight:600">▲</span> next <code>$5B</code> write</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="insp" id="insp"></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>2 · Pieces and states</h2>
+    <p class="cap">The inspector when a pattern is selected; the row context menu, with the slot reserved for G3.8; the diagnostic chips <code>spriteDiagnostics</code> produces; and the document on a machine that is not a Next.</p>
+    <div class="states">
+      <div class="card">
+        <h3>Inspector · pattern selected</h3>
+        <div id="patInsp"></div>
+      </div>
+      <div class="card">
+        <h3>Row context menu</h3>
+        <div class="menu" role="menu">
+          <div class="mi">Show pattern <span class="kb">dbl-click</span></div>
+          <div class="mi">Select anchor (#0)</div>
+          <div class="msep"></div>
+          <div class="mi">Copy as <code>nextreg $34…$39</code></div>
+          <div class="mi">Copy as <code>.db</code> (5 bytes)</div>
+          <div class="msep"></div>
+          <div class="mi dis">Break on attribute write <span class="kb">G3.8</span></div>
+        </div>
+        <p class="note">Until G3.8, the docs point at <code>bp-set nr:$35</code>…<code>$39</code> / <code>$75</code>…<code>$79</code>.</p>
+      </div>
+      <div class="card">
+        <h3>Diagnostic chips</h3>
+        <div class="chiplist">
+          <div><span class="chip ok">✓ on screen</span>nothing to report</div>
+          <div><span class="chip warn">hidden: visible bit clear</span>attr3 bit 7</div>
+          <div><span class="chip warn">hidden: anchor #15 not visible</span>T5</div>
+          <div><span class="chip warn">off screen</span>9-bit wrap, T8</div>
+          <div><span class="chip warn">outside clip window</span>T8</div>
+          <div><span class="chip info">partly clipped</span>T8</div>
+          <div><span class="chip info">4-byte: attr4 ignored</span>T4, Q4</div>
+          <div><span class="chip warn">pattern is blank</span><code>isBlankPattern</code></div>
+          <div><span class="chip warn">sprites disabled ($15)</span>global</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Empty state</h3>
+        <div class="empty">
+          <div class="ic"></div>
+          <div style="font-weight:600;color:var(--text)">No ZX Spectrum Next running</div>
+          <div>The Sprite Inspector shows a running ZX Spectrum Next.<br>The document stays open across machine switches.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(() => {
+  // ---------- palette: the Next reset sprite palette (register layout), as NEX_RESET_PALETTE ----------
+  const LV = [0, 0x24, 0x49, 0x6d, 0x92, 0xb6, 0xdb, 0xff];
+  const rgbOf = i => [LV[(i >> 5) & 7], LV[(i >> 2) & 7], LV[((i & 3) << 1) | ((i & 3) ? 1 : 0)]];
+  const css = i => { const [r, g, b] = rgbOf(i); return `rgb(${r},${g},${b})`; };
+  const TRANSP = 0xe3, T = -1;
+
+  // ---------- pattern RAM, 16K, raw layout ----------
+  const ram = new Uint8Array(0x4000).fill(0);
+  const put8 = (n, f) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = f(x, y); ram[n * 256 + y * 16 + x] = v === T ? TRANSP : v; } };
+  const put4 = (p, f) => { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const v = f(x, y) & 15; const a = p * 128 + ((y * 16 + x) >> 1); ram[a] = (x & 1) ? (ram[a] & 0xf0) | v : (ram[a] & 0x0f) | (v << 4); } };
+
+  // ship, 32×32 over patterns 0..3
+  const ship = (x, y) => {
+    const cx = 15.5, w = (y - 2) * 0.5;
+    if (y >= 26 && y <= 30 && (Math.abs(x - 10) < 2 || Math.abs(x - 21) < 2)) return y > 28 ? 0xFC : 0xF0;
+    if (y < 2 || y > 26 || Math.abs(x - cx) > w) return T;
+    if (Math.abs(x - cx) < 2.5 && y > 8 && y < 15) return 0x1F;
+    if (Math.abs(x - cx) > w - 1.2) return 0x49;
+    return y > 20 ? 0x92 : 0xFF;
+  };
+  [0, 1, 2, 3].forEach(n => put8(n, (x, y) => ship(x + (n & 1) * 16, y + (n >> 1) * 16)));
+  // explosion frames 4..7
+  for (let f = 0; f < 4; f++) put8(4 + f, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5), r = 2 + f * 2; if (d > r) return T; if (d > r - 1.5) return 0xE0; return d > r / 2 ? 0xF0 : 0xFC; });
+  // aliens 8..11
+  const alienA = (x, y, fr) => { const m = ["....##....##....", ".....##..##.....", "....########....", "...##.####.##...", "..############..", "..#.########.#..", "..#.#......#.#..", ".....##..##....."]; const row = m[(y >> 1)] ; if (!row || y > 15) return T; let ch = row[x]; if (fr && y >= 12) ch = (".." + row).slice(0, 16)[x]; if (ch !== "#") return T; return (y >> 1) === 3 && (x === 5 || x === 10) ? 0x00 : 0x1C; };
+  put8(8, (x, y) => alienA(x, y, 0)); put8(9, (x, y) => alienA(x, y, 1));
+  const alienB = (x, y) => { const d = Math.hypot(x - 7.5, (y - 6) * 1.3); if (y > 13) return (x % 4 === 1 || x % 4 === 2) ? 0x1F : T; if (d > 7) return T; if (y > 4 && y < 8 && (Math.abs(x - 4.5) < 1.2 || Math.abs(x - 10.5) < 1.2)) return 0xFF; return d > 5.5 ? 0x13 : 0x1F; };
+  put8(10, alienB); put8(11, (x, y) => alienB(15 - x, y));
+  put8(12, (x, y) => { const d = Math.hypot(x - 7.5, y - 7.5); if (d > 7) return T; return Math.hypot(x - 5, y - 5) < 2 ? 0xFF : (d > 6 ? 0x80 : 0xE0); });
+  put8(13, (x, y) => (x >= 7 && x <= 8 && y >= 3 && y <= 12) ? (y < 6 ? 0xFF : 0xFC) : T);
+  put8(14, (x, y) => (x === 7 || x === 8 || y === 7 || y === 8) && Math.abs(x - 7.5) + Math.abs(y - 7.5) < 8 ? (Math.abs(x - 7.5) + Math.abs(y - 7.5) < 3 ? 0xFF : 0xFC) : T);
+  put8(15, (x, y) => { const X = (x - 7.5) / 7, Y = (7 - y) / 7; return Math.pow(X * X + Y * Y - 1, 3) - X * X * Y * Y * Y < 0 ? 0xE2 : T; });
+  // digits 0..9 → patterns 16..25 (3×5 font at ×3)
+  const F = ["111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001", "111100111001111", "111100111101111", "111001001001001", "111101111101111", "111101111001111"];
+  F.forEach((g, d) => put8(16 + d, (x, y) => { const cx = Math.floor((x - 2) / 4), cy = Math.floor((y - 1) / 3); return x >= 2 && cx < 3 && y >= 1 && cy < 5 && g[cy * 3 + cx] === "1" ? 0xFC : T; }));
+  // 26..39 left all-transparent (blank)
+  for (let n = 26; n < 40; n++) put8(n, () => T);
+  // 40..43: 4-bit patterns 80..87 (gems and coins), nibble 3 is transparent
+  const gem = k => (x, y) => { const d = Math.abs(x - 7.5) + Math.abs(y - 7.5) * (k & 1 ? 1.4 : 1); if (d > 7) return 3; if (d > 6) return 1; if (x < 7 && y < 7) return 15; return [4, 6, 8, 10, 12, 14, 9, 11][k]; };
+  for (let p = 80; p < 88; p++) put4(p, gem(p - 80));
+  // 44: an 8-bit beam, but sprite #23 reads its second half as 4-bit (mixed use)
+  put8(44, (x, y) => (Math.abs(x - 7.5) < 3 - Math.abs(y - 7.5) / 6) ? (Math.abs(x - 7.5) < 1 ? 0xFF : 0x9F) : T);
+  // 45..47: uninitialised-looking noise; 48..63: zeros (solid black → blank)
+  let seed = 7; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) & 0xff;
+  for (let a = 45 * 256; a < 48 * 256; a++) ram[a] = rnd();
+
+  // ---------- sprite attributes (encoded the way a program would write them) ----------
+  const attrs = Array.from({ length: 128 }, () => [0, 0, 0, 0, 0]);
+  const anchor = (i, o) => { const p6 = o.four ? o.p >> 1 : o.p, n6 = o.four ? o.p & 1 : 0; attrs[i] = [o.x & 255, o.y & 255, (o.pal || 0) << 4 | (o.xm ? 8 : 0) | (o.ym ? 4 : 0) | (o.rot ? 2 : 0) | ((o.x >> 8) & 1), (o.vis === false ? 0 : 0x80) | (o.four5 === false ? 0 : 0x40) | p6, o.four5 === false ? o.stale : (o.four ? 0x80 : 0) | (n6 ? 0x40 : 0) | (o.unified ? 0x20 : 0) | ((o.sx || 0) << 3) | ((o.sy || 0) << 1) | ((o.y >> 8) & 1)]; };
+  const rel = (i, o) => { attrs[i] = [o.dx & 255, o.dy & 255, (o.pal || 0) << 4 | (o.palRel ? 1 : 0), (o.vis === false ? 0 : 0x80) | 0x40 | o.p6, 0x40 | (o.n6 ? 0x20 : 0) | (o.patRel ? 1 : 0)]; };
+  anchor(0, { x: 144, y: 176, p: 0, unified: true });
+  rel(1, { dx: 16, dy: 0, p6: 1, patRel: true }); rel(2, { dx: 0, dy: 16, p6: 2, patRel: true }); rel(3, { dx: 16, dy: 16, p6: 3, patRel: true });
+  for (let k = 0; k < 8; k++) anchor(4 + k, { x: 56 + k * 28, y: 72, p: 8 + (k & 1) });
+  anchor(12, { x: 200, y: 108, p: 10, rot: 1, xm: 1, sx: 1, sy: 1 });
+  anchor(13, { x: 400, y: 100, p: 12 });
+  anchor(14, { x: 100, y: 10, p: 14 });
+  anchor(15, { x: 60, y: 150, p: 12, vis: false }); rel(16, { dx: 20, dy: 0, p6: 15 });
+  anchor(17, { x: 150, y: 150, p: 13, four5: false, stale: 0x0A });
+  [14, 1, 15, 7].forEach((pal, k) => anchor(18 + k, { x: 226 + k * 18, y: 200, p: 80 + k * 2, four: true, pal }));
+  anchor(22, { x: 252, y: 128, p: 44 });
+  anchor(23, { x: 274, y: 128, p: 89, four: true, pal: 1 });
+  [0, 4, 2, 0].forEach((d, k) => anchor(24 + k, { x: 40 + k * 14, y: 36, p: 16 + d }));
+  const changed = new Set([4, 5, 6, 7, 8, 9, 10, 11, 13]);
+
+  // ---------- decode one slot (spriteAttributes.ts) and resolve (the core's zxnextUlaResolveSprites) ----------
+  const decode = (i) => {
+    const r = attrs[i], five = (r[3] & 0x40) !== 0, relative = five && ((r[4] >> 6) & 3) === 1;
+    const kind = !five ? "anchor·4B" : relative ? "rel" : "anchor";
+    return { i, raw: r, five, relative, kind, visBit: (r[3] & 0x80) !== 0, p6: r[3] & 0x3f };
+  };
+  const resolved = []; const anchorOf = [];
+  (() => {
+    let A = { vis: 0, rt: 0, h: 0, x: 0, y: 0, p: 0, pal: 0, rot: 0, xm: 0, ym: 0, sx: 0, sy: 0 }, ai = undefined;
+    for (let i = 0; i < 128; i++) {
+      const [a0, a1, a2, a3, a4] = attrs[i], five = (a3 & 0x40) !== 0, relative = five && ((a4 >> 6) & 3) === 1;
+      if (!relative) {
+        const h = five && (a4 & 0x80) ? 1 : 0, n6 = h && (a4 & 0x40) ? 1 : 0;
+        const o = { vis: (a3 & 0x80) ? 1 : 0, x: ((a2 & 1) << 8) | a0, y: ((five ? a4 & 1 : 0) << 8) | a1, pal: a2 >> 4, xm: (a2 >> 3) & 1, ym: (a2 >> 2) & 1, rot: (a2 >> 1) & 1, sx: five ? (a4 >> 3) & 3 : 0, sy: five ? (a4 >> 1) & 3 : 0, four: h, p7: ((a3 & 0x3f) << 1) | n6 };
+        resolved[i] = o; anchorOf[i] = undefined; ai = i;
+        const rt = five && (a4 & 0x20) ? 1 : 0;
+        A = { vis: o.vis, rt, h, x: o.x, y: o.y, p: o.p7, pal: o.pal, rot: rt ? o.rot : 0, xm: rt ? o.xm : 0, ym: rt ? o.ym : 0, sx: rt ? o.sx : 0, sy: rt ? o.sy : 0, unified: rt };
+        continue;
+      }
+      const sx9 = (v, s) => (((v & 0x80) ? v | 0x100 : v) << s) & 0x1ff;
+      const x0 = A.rot ? a1 : a0, y0 = A.rot ? a0 : a1;
+      const x1 = (A.rot ^ A.xm) ? ((~x0 + 1) & 255) : x0, y1 = A.ym ? ((~y0 + 1) & 255) : y0;
+      const oxm = (a2 >> 3) & 1, oym = (a2 >> 2) & 1, orot = (a2 >> 1) & 1;
+      const o = { vis: A.vis && (a3 & 0x80) ? 1 : 0, x: (A.x + sx9(x1, A.sx)) & 0x1ff, y: (A.y + sx9(y1, A.sy)) & 0x1ff, pal: (a2 & 1) ? ((A.pal + (a2 >> 4)) & 15) : a2 >> 4, four: A.h };
+      if (A.rt) { o.xm = A.xm ^ (A.rot ? oym ^ orot : oxm); o.ym = A.ym ^ (A.rot ? oxm ^ orot : oym); o.rot = A.rot ^ orot; o.sx = A.sx; o.sy = A.sy; }
+      else { o.xm = oxm; o.ym = oym; o.rot = orot; o.sx = (a4 >> 3) & 3; o.sy = (a4 >> 1) & 3; }
+      let p7 = ((a3 & 0x3f) << 1) | (A.h && (a4 & 0x20) ? 1 : 0); if (a4 & 1) p7 = (p7 + A.p) & 0x7f; o.p7 = p7;
+      o.relType = A.rt ? "unified" : "composite";
+      resolved[i] = o; anchorOf[i] = ai;
+    }
+  })();
+  let lastVisible = -1; for (let i = 0; i < 128; i++) if (attrs[i][3] & 0x80) lastVisible = i;
+
+  // ---------- patterns (spritePatterns.ts, with the 8-bit palette offset of T11) ----------
+  const pixels = (fourBit, num, off) => {
+    const px = new Int16Array(256);
+    if (!fourBit) { for (let p = 0; p < 256; p++) { const v = ram[num * 256 + p]; px[p] = v === TRANSP ? T : ((((v >> 4) + off) & 15) << 4) | (v & 15); } }
+    else { for (let p = 0; p < 256; p++) { const b = ram[num * 128 + (p >> 1)], n = (p & 1) ? b & 15 : b >> 4; px[p] = n === (TRANSP & 15) ? T : ((off & 15) << 4) | n; } }
+    return px;
+  };
+  const isBlank = px => px.every(v => v === px[0]);
+  const vso = (v, row, col) => { const r = (v >> 2) & 1, xm = (v >> 1) & 1, ym = v & 1; let sx, sy; if (r) { sx = xm ? row : 15 - row; sy = ym ? 15 - col : col; } else { sx = xm ? 15 - col : col; sy = ym ? 15 - row : row; } return sy * 16 + sx; };
+  const transform = (px, rot, xm, ym) => { const out = new Int16Array(256), v = rot << 2 | xm << 1 | ym; for (let r = 0; r < 16; r++) for (let c = 0; c < 16; c++) out[vso(v, r, c)] = px[r * 16 + c]; return out; };
+  let checker = true;
+  const paint = (canvas, px, sx = 0, sy = 0) => {
+    const w = 16 << sx, h = 16 << sy; canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d"), img = ctx.createImageData(w, h);
+    const tr = rgbOf(TRANSP);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const v = px[(y >> sy) * 16 + (x >> sx)], o = (y * w + x) * 4;
+      if (v === T) { if (!checker) { img.data[o] = tr[0]; img.data[o + 1] = tr[1]; img.data[o + 2] = tr[2]; img.data[o + 3] = 255; } continue; }
+      const [r, g, b] = rgbOf(v); img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    canvas.classList.toggle("checker", checker);
+    return canvas;
+  };
+  const fmtPat = o => o.four ? `${o.p7} <span class="sub">(${o.p7 >> 1}·${o.p7 & 1 ? "hi" : "lo"})</span>` : `${o.p7 >> 1}`;
+  const slotOf = o => o.four ? o.p7 >> 1 : o.p7 >> 1;
+  const hex2 = v => "$" + v.toString(16).toUpperCase().padStart(2, "0");
+  const hex4 = v => "$" + v.toString(16).toUpperCase().padStart(4, "0");
+  const sX = v => v > 319 ? v - 512 : v, sY = v => v > 255 ? v - 512 : v;
+
+  // ---------- geometry and diagnostics ----------
+  const clip = { x1: 32, x2: 287, y1: 32, y2: 223 };
+  const rectOf = o => { let x = o.x, y = o.y; if (x > 319) x -= 512; if (y > 255) y -= 512; return { x, y, w: 16 << o.sx, h: 16 << o.sy }; };
+  const diag = i => {
+    const o = resolved[i], d = decode(i);
+    if (!d.visBit) return ["warn", "hidden: visible bit clear"];
+    if (!o.vis) return ["warn", `hidden: anchor #${anchorOf[i]} not visible`];
+    const r = rectOf(o);
+    if (r.x + r.w <= 0 || r.x >= 320 || r.y + r.h <= 0 || r.y >= 256) return ["warn", "off screen"];
+    if (r.x > clip.x2 || r.x + r.w - 1 < clip.x1 || r.y > clip.y2 || r.y + r.h - 1 < clip.y1) return ["warn", "outside clip window"];
+    if (isBlank(pixels(o.four, o.four ? o.p7 : o.p7 >> 1, o.pal))) return ["warn", "pattern is blank"];
+    if (!d.five) return ["info", "4-byte: attr4 ignored"];
+    if (r.x < clip.x1 || r.x + r.w - 1 > clip.x2 || r.y < clip.y1 || r.y + r.h - 1 > clip.y2) return ["info", "partly clipped"];
+    return ["ok", "✓"];
+  };
+
+  // ---------- pattern usage (patternUsage(resolved)) ----------
+  const usage = {}; // slot → { as8: [i], as4: { lo: [i], hi: [i] } }
+  for (let i = 0; i <= lastVisible; i++) {
+    const o = resolved[i]; if (!(attrs[i][3] & 0x80)) continue;
+    const s = o.p7 >> 1; usage[s] ??= { as8: [], lo: [], hi: [] };
+    if (o.four) usage[s][(o.p7 & 1) ? "hi" : "lo"].push(i); else usage[s].as8.push(i);
+  }
+
+  // ---------- state ----------
+  const st = { sel: { kind: "sprite", i: 12 }, filter: "last", fmt: "used", off: "sprite", zoom: 2 };
+
+  // ---------- sprites table ----------
+  const rows = document.getElementById("spriteRows");
+  const renderTable = () => {
+    rows.innerHTML = "";
+    const n = st.filter === "all" ? 128 : st.filter === "last" ? lastVisible + 1 : 128;
+    let shown = 0;
+    for (let i = 0; i < n; i++) {
+      const d = decode(i), o = resolved[i];
+      if (st.filter === "visible" && !o.vis) continue;
+      if (st.filter === "nonempty" && attrs[i].every(b => b === 0)) continue;
+      shown++;
+      const tr = document.createElement("tr");
+      tr.className = (changed.has(i) ? "changed " : "") + (st.sel.kind === "sprite" && st.sel.i === i ? "sel" : "");
+      tr.tabIndex = 0; tr.dataset.i = i;
+      const vis = o.vis ? '<span class="vdot on" title="visible"></span>' : d.visBit ? '<span class="vdot half" title="visible bit set, hidden by its anchor"></span>' : "";
+      const rel = d.relative;
+      const dxy = rel ? ` <span class="sub">Δ${(attrs[i][0] << 24 >> 24) >= 0 ? "+" : ""}${attrs[i][0] << 24 >> 24},${(attrs[i][1] << 24 >> 24) >= 0 ? "+" : ""}${attrs[i][1] << 24 >> 24}</span>` : "";
+      const xf = `<span class="${o.rot ? "on" : "off"}">R</span><span class="${o.xm ? "on" : "off"}">X</span><span class="${o.ym ? "on" : "off"}">Y</span>`;
+      const raw = attrs[i].map((b, k) => k === 4 && !d.five ? `<s title="ignored: 4-byte sprite">${hex2(b)}</s>` : hex2(b)).join(" ");
+      const type = rel ? `rel·${o.relType}` : d.kind;
+      const [dk, dt] = diag(i);
+      const empty = attrs[i].every(b => b === 0);
+      tr.innerHTML = `
+        <td class="ix">${i}${rel ? `<span class="anc">↳${anchorOf[i]}</span>` : ""}</td>
+        <td class="vis">${vis}</td>
+        <td class="pat ${empty ? "dim" : ""}"><canvas></canvas>${fmtPat(o)}</td>
+        <td class="${o.vis ? "" : "dim"}">${sX(o.x)}${dxy}</td>
+        <td class="${o.vis ? "" : "dim"}">${sY(o.y)}</td>
+        <td>${o.four ? 4 : 8}</td>
+        <td>${o.pal}${rel && (attrs[i][2] & 1) ? '<span class="sub"> rel</span>' : ""}</td>
+        <td class="xf">${xf}</td>
+        <td>${1 << o.sx}×${1 << o.sy}</td>
+        <td class="type">${type}</td>
+        <td class="raw">${raw}</td>
+        <td style="font-family:var(--font-ui)">${empty ? "" : `<span class="chip ${dk}">${dt}</span>`}</td>`;
+      paint(tr.querySelector("canvas"), pixels(o.four, o.four ? o.p7 : o.p7 >> 1, o.pal));
+      tr.addEventListener("click", () => select({ kind: "sprite", i }));
+      tr.addEventListener("keydown", e => { if (e.key === "Enter") select({ kind: "sprite", i }); });
+      tr.addEventListener("dblclick", () => select({ kind: "pattern", slot: slotOf(o), half: o.four ? (o.p7 & 1) : undefined }));
+      rows.appendChild(tr);
+    }
+    document.getElementById("spriteMeta").textContent = `${shown} of 128 · ${resolved.filter(o => o.vis).length} visible`;
+  };
+
+  // ---------- pattern sheet ----------
+  const sheet = document.getElementById("sheet");
+  const offFor = (slot, half, four) => {
+    if (st.off !== "sprite") return +st.off;
+    const u = usage[slot]; if (!u) return 0;
+    const list = four ? u[half ? "hi" : "lo"] : u.as8;
+    const i = list.find(k => resolved[k].vis) ?? list[0];
+    return i === undefined ? 0 : resolved[i].pal;
+  };
+  const selSlots = () => {
+    if (st.sel.kind === "pattern") return { slot: st.sel.slot, half: st.sel.half };
+    const o = resolved[st.sel.i]; return { slot: o.p7 >> 1, half: o.four ? o.p7 & 1 : undefined, four: o.four };
+  };
+  const renderSheet = () => {
+    sheet.innerHTML = ""; sheet.style.setProperty("--px", `${16 * st.zoom}px`);
+    const cursorSlot = 45;
+    const ss = selSlots();
+    const addCell = (slot, four, half) => {
+      const u = usage[slot] || { as8: [], lo: [], hi: [] };
+      const users = four ? u[half ? "hi" : "lo"] : u.as8;
+      const all = four ? users : [...u.as8];
+      const px = pixels(four, four ? slot * 2 + half : slot, offFor(slot, half, four));
+      const c = document.createElement("div");
+      const mixed = u.as8.length && (u.lo.length || u.hi.length);
+      const isSel = st.sel.kind === "pattern" ? (st.sel.slot === slot && (four ? st.sel.half === half : st.sel.half === undefined)) : false;
+      const isRef = st.sel.kind === "sprite" && ss.slot === slot && (four ? ss.half === half : !ss.four);
+      c.className = "cell" + (four ? " four" : "") + (isBlank(px) ? " blank" : "") + (all.length ? "" : " unused") + (mixed ? " mixed" : "") + (isSel ? " sel" : "") + (isRef ? " ref" : "");
+      c.tabIndex = 0;
+      const label = four ? `${slot * 2 + half}` : `${slot}`;
+      const visN = all.filter(i => resolved[i].vis).length;
+      c.title = `${four ? "4-bit pattern " + label + " (slot " + slot + "·" + (half ? "hi" : "lo") + ")" : "8-bit pattern " + label} · ${hex4(slot * 256 + (four && half ? 128 : 0))}` +
+        (all.length ? `\nused by #${all.join(", #")}` : "\nnot referenced") + (mixed ? "\n⚠ slot read as both 8-bit and 4-bit" : "");
+      c.innerHTML = `<canvas></canvas><span class="n">${label}</span>` +
+        (all.length ? `<span class="badge ${visN ? "" : "muted"}">${all.length}</span>` : "") +
+        (slot === cursorSlot && (!four || half === 0) ? `<span class="cursor" title="next $5B write: pattern 45, sub $00">▲</span>` : "");
+      paint(c.querySelector("canvas"), px);
+      c.addEventListener("click", () => select({ kind: "pattern", slot, half: four ? half : undefined }));
+      sheet.appendChild(c);
+    };
+    for (let slot = 0; slot < 64; slot++) {
+      let four;
+      if (st.fmt === "8") four = false;
+      else if (st.fmt === "4") four = true;
+      else { const u = usage[slot]; four = !!u && !u.as8.length && (u.lo.length + u.hi.length > 0); }
+      if (four) { addCell(slot, true, 0); addCell(slot, true, 1); } else addCell(slot, false);
+    }
+  };
+
+  // ---------- inspector ----------
+  const insp = document.getElementById("insp");
+  const big = (px, scale, sx = 0, sy = 0) => { const c = paint(document.createElement("canvas"), px, sx, sy); c.style.width = `${(16 << sx) * scale}px`; c.style.height = `${(16 << sy) * scale}px`; return c; };
+  const swatches = px => { const seen = [...new Set([...px].filter(v => v !== T))].sort((a, b) => a - b); return `<div class="swatches">${seen.slice(0, 24).map(v => `<span class="sw" style="background:${css(v)}" title="index ${hex2(v)}"></span>`).join("")}${seen.length > 24 ? `<span class="sub">+${seen.length - 24}</span>` : ""}</div>`; };
+
+  const renderSpriteInsp = () => {
+    const i = st.sel.i, o = resolved[i], d = decode(i), r = attrs[i];
+    const num = o.four ? o.p7 : o.p7 >> 1, px = pixels(o.four, num, o.pal);
+    const [dk, dt] = diag(i);
+    const why = { ok: "On screen and inside the clip window.", warn: dt[0].toUpperCase() + dt.slice(1) + ".", info: dt[0].toUpperCase() + dt.slice(1) + "." }[dk];
+    const own = d.relative
+      ? { pos: `Δ ${r[0] << 24 >> 24}, ${r[1] << 24 >> 24}`, pat: `${d.p6}${r[4] & 1 ? " + anchor's" : ""}${r[4] & 0x20 ? " · N6" : ""}`, pal: `${r[2] >> 4}${r[2] & 1 ? " + anchor's" : ""}`, xf: `${r[2] & 2 ? "R " : ""}${r[2] & 8 ? "X " : ""}${r[2] & 4 ? "Y" : ""}` || "—", sc: o.relType === "unified" ? "from anchor" : `${1 << ((r[4] >> 3) & 3)}×${1 << ((r[4] >> 1) & 3)}` }
+      : { pos: `${o.x}, ${o.y}`, pat: `${d.p6}${o.four ? (r[4] & 0x40 ? " · N6=1" : " · N6=0") : ""}`, pal: `${o.pal}`, xf: `${o.rot ? "R " : ""}${o.xm ? "X " : ""}${o.ym ? "Y" : ""}` || "—", sc: d.five ? `${1 << o.sx}×${1 << o.sy}` : "1×1 (4-byte)" };
+    const eff = { pos: `${sX(o.x)}, ${sY(o.y)}`, pat: (o.four ? `4-bit ${o.p7} (slot ${o.p7 >> 1}·${o.p7 & 1 ? "hi" : "lo"})` : `8-bit ${o.p7 >> 1}`), pal: `${o.pal}`, xf: `${o.rot ? "R " : ""}${o.xm ? "X " : ""}${o.ym ? "Y" : ""}` || "—", sc: `${1 << o.sx}×${1 << o.sy}` };
+    const row = (k, a, b) => `<tr><td>${k}</td><td class="v">${a}</td><td class="v ${a !== b ? "diff" : ""}">${b}</td></tr>`;
+    insp.innerHTML = `
+      <div>
+        <div class="title">Sprite #${i}</div>
+        <p class="why"><span class="chip ${dk}">${dk === "ok" ? "✓ on screen" : dt}</span></p>
+        <div class="previews" id="pv"></div>
+        ${swatches(px)}
+      </div>
+      <div>
+        <table class="fields">
+          <tr><th></th><th>Slot bytes say</th><th>Effective</th></tr>
+          ${row("Type", d.relative ? `relative (${o.relType})` : d.five ? "anchor, 5-byte" : "anchor, 4-byte", d.relative ? `of anchor #${anchorOf[i]}` : "anchor")}
+          ${row("Visible", d.visBit ? "yes" : "no", o.vis ? "yes" : d.visBit ? `no — anchor #${anchorOf[i]} hidden` : "no")}
+          ${row("Position", own.pos, eff.pos)}
+          ${row("Pattern", own.pat, eff.pat)}
+          ${row("Palette offset", own.pal, eff.pal)}
+          ${row("Transform", own.xf.trim() || "—", eff.xf.trim() || "—")}
+          ${row("Scale", own.sc, eff.sc)}
+          <tr><td>Raw</td><td class="v" colspan="2">${r.map((b, k) => k === 4 && !d.five ? `<s>${hex2(b)}</s> <span class="sub">ignored</span>` : hex2(b)).join(" ")}</td></tr>
+          <tr><td>Pattern RAM</td><td class="v" colspan="2">${hex4(o.four ? o.p7 * 128 : (o.p7 >> 1) * 256)}–${hex4(o.four ? o.p7 * 128 + 127 : (o.p7 >> 1) * 256 + 255)} <button class="link" id="goPat">show pattern</button></td></tr>
+        </table>
+        <p class="why" style="margin-top:8px">${why}</p>
+      </div>
+      <div class="map-col">
+        <h3>Sprite space · 320×256</h3>
+        <canvas id="map" width="320" height="256"></canvas>
+        <div class="map-legend">
+          <span class="lg"><span class="sw" style="background:var(--zone-paper)"></span>paper</span>
+          <span class="lg"><span class="sw" style="border:1.5px dashed var(--accent)"></span>clip window</span>
+          <span class="lg"><span class="sw" style="border:1.5px solid var(--state)"></span>visible sprite</span>
+          <span class="lg"><span class="sw" style="background:var(--accent)"></span>selected</span>
+        </div>
+      </div>`;
+    const pv = insp.querySelector("#pv");
+    const a = document.createElement("div"); a.className = "pv"; a.append(big(px, 4)); a.insertAdjacentHTML("beforeend", "<span>as stored</span>");
+    const b = document.createElement("div"); b.className = "pv"; b.append(big(transform(px, o.rot, o.xm, o.ym), o.sx || o.sy ? 2 : 4, o.sx, o.sy)); b.insertAdjacentHTML("beforeend", `<span>as shown · ${o.rot ? "R " : ""}${o.xm ? "X " : ""}${o.ym ? "Y " : ""}${1 << o.sx}×${1 << o.sy}</span>`);
+    pv.append(a, b);
+    insp.querySelector("#goPat").addEventListener("click", () => select({ kind: "pattern", slot: o.p7 >> 1, half: o.four ? o.p7 & 1 : undefined }));
+    drawMap(insp.querySelector("#map"));
+  };
+
+  const patInspHtml = (slot, half, target) => {
+    const four = half !== undefined, num = four ? slot * 2 + half : slot;
+    const u = usage[slot] || { as8: [], lo: [], hi: [] };
+    const users = four ? u[half ? "hi" : "lo"] : u.as8;
+    const off = offFor(slot, half, four);
+    const px = pixels(four, num, off);
+    const cols = new Set([...px].filter(v => v !== T)).size;
+    const mixed = u.as8.length && (u.lo.length || u.hi.length);
+    target.innerHTML = `
+      <div class="title">${four ? `4-bit pattern ${num}` : `8-bit pattern ${num}`}</div>
+      <p class="why">${hex4(four ? num * 128 : num * 256)}–${hex4(four ? num * 128 + 127 : num * 256 + 255)} · ${isBlank(px) ? "blank" : `${cols} colour${cols === 1 ? "" : "s"}`} · palette offset ${off}${st.off === "sprite" ? " (from sprite)" : ""}</p>
+      <div class="previews"></div>
+      ${swatches(px)}
+      <p class="why" style="margin-top:10px">${users.length ? `Used by ${users.map(i => `<button class="link" data-s="${i}">#${i}</button>`).join(" ")}` : "Not referenced by any sprite up to the last visible one."}</p>
+      ${mixed ? `<p class="why"><span class="chip warn">slot ${slot} read both ways</span> 8-bit by #${u.as8.join(", #")}; 4-bit by #${[...u.lo, ...u.hi].join(", #")}.</p>` : ""}`;
+    const p = document.createElement("div"); p.className = "pv"; p.append(big(px, 6)); target.querySelector(".previews").append(p);
+    target.querySelectorAll("[data-s]").forEach(b => b.addEventListener("click", () => select({ kind: "sprite", i: +b.dataset.s })));
+  };
+
+  const renderPatternInsp = () => {
+    insp.innerHTML = `<div style="grid-column:1/-1" id="pi"></div>`;
+    patInspHtml(st.sel.slot, st.sel.half, insp.querySelector("#pi"));
+  };
+
+  // ---------- sprite-space map ----------
+  const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const drawMap = canvas => {
+    const g = canvas.getContext("2d");
+    g.fillStyle = cssVar("--zone-border"); g.fillRect(0, 0, 320, 256);
+    g.fillStyle = cssVar("--zone-paper"); g.fillRect(32, 32, 256, 192);
+    g.setLineDash([4, 3]); g.strokeStyle = cssVar("--accent"); g.lineWidth = 1.5; g.strokeRect(clip.x1 + .5, clip.y1 + .5, clip.x2 - clip.x1, clip.y2 - clip.y1); g.setLineDash([]);
+    for (let i = 0; i <= lastVisible; i++) {
+      const o = resolved[i]; if (!o.vis) continue;
+      const r = rectOf(o), sel = st.sel.kind === "sprite" && st.sel.i === i;
+      if (sel) { g.fillStyle = cssVar("--accent"); g.globalAlpha = .45; g.fillRect(r.x, r.y, r.w, r.h); g.globalAlpha = 1; }
+      g.strokeStyle = sel ? cssVar("--accent") : cssVar("--state"); g.lineWidth = sel ? 2 : 1; g.strokeRect(r.x + .5, r.y + .5, r.w - 1, r.h - 1);
+    }
+    g.fillStyle = cssVar("--text-3"); g.font = "10px IBM Plex Mono, monospace"; g.fillText("(32,32)", 34, 44);
+    canvas.onclick = e => {
+      const b = canvas.getBoundingClientRect(), x = (e.clientX - b.left) * 320 / b.width, y = (e.clientY - b.top) * 256 / b.height;
+      for (let i = lastVisible; i >= 0; i--) { const o = resolved[i]; if (!o.vis) continue; const r = rectOf(o); if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) { select({ kind: "sprite", i }); return; } }
+    };
+  };
+
+  // ---------- wiring ----------
+  const render = () => {
+    renderTable(); renderSheet();
+    st.sel.kind === "sprite" ? renderSpriteInsp() : renderPatternInsp();
+    patInspHtml(40, 0, document.getElementById("patInsp"));
+  };
+  function select(sel) {
+    st.sel = sel;
+    if (sel.kind === "pattern" && st.fmt !== "used") st.fmt = sel.half !== undefined ? "4" : "8", syncSeg("fmtSeg", "f", st.fmt);
+    render();
+    const target = sel.kind === "sprite" ? rows.querySelector(`tr[data-i="${sel.i}"]`) : sheet.querySelector(".cell.sel");
+    target?.scrollIntoView({ block: "nearest" });
+  }
+  const syncSeg = (id, key, val) => document.querySelectorAll(`#${id} button`).forEach(b => b.classList.toggle("on", b.dataset[key] === val));
+  document.querySelectorAll("#viewSeg button").forEach(b => b.addEventListener("click", () => {
+    syncSeg("viewSeg", "v", b.dataset.v);
+    const m = document.getElementById("main"); m.classList.remove("only-sprites", "only-patterns");
+    if (b.dataset.v !== "both") m.classList.add("only-" + b.dataset.v);
+  }));
+  document.querySelectorAll("#fmtSeg button").forEach(b => b.addEventListener("click", () => { st.fmt = b.dataset.f; syncSeg("fmtSeg", "f", st.fmt); renderSheet(); }));
+  document.querySelectorAll("#zoomSeg button").forEach(b => b.addEventListener("click", () => { st.zoom = +b.dataset.z; syncSeg("zoomSeg", "z", b.dataset.z); renderSheet(); }));
+  document.getElementById("filterSel").addEventListener("change", e => { st.filter = e.target.value; renderTable(); });
+  document.getElementById("offSel").addEventListener("change", e => { st.off = e.target.value; render(); });
+  document.getElementById("rawBtn").addEventListener("click", e => { const on = document.getElementById("tableWrap").classList.toggle("raw-hidden"); e.currentTarget.classList.toggle("on", !on); e.currentTarget.setAttribute("aria-pressed", String(!on)); });
+  document.getElementById("checkBtn").addEventListener("click", e => { checker = !checker; e.currentTarget.classList.toggle("on", checker); render(); });
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+  render();
+})();
+</script>

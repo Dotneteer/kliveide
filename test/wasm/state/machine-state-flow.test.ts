@@ -14,7 +14,7 @@ import { setMachineConfigAction, setMachineTypeAction, setModelTypeAction } from
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
-import { MC_DISK_SUPPORT, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
+import { MC_DISK_SUPPORT, MC_SP3_ROM_SET, MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import { MEDIA_DISK_A, MEDIA_SD_CARD, MEDIA_TAPE } from "@common/structs/project-const";
 import { readKliveStateFile, writeKliveStateFile } from "@common/machineState/kliveStateFile";
 import { parseSpectrumSnapshot } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
@@ -142,10 +142,38 @@ describe("loading a state", () => {
     const result = await loadMachineStateFile(emu.ports, "s.kls", bytes, "debug");
     await emu.until(MachineControllerState.Paused);
     expect(result).toMatchObject({ machineId: MI_SPECTRUM_128, rebuilt: true, path: "image", pc: 0x8100 });
-    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/`]);
+    // --- A 128K snapshot opens on the 128K model (the 128K machine has models since the Pentagon)
+    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/sp128`]);
     expect(emu.machine.pc).toBe(0x8100);
     // --- Exactly the saved machine: its image equals the source's
     expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
+  });
+
+  it("restores a Pentagon 128 state as a Pentagon, with a Pentagon .szx inside", async () => {
+    // --- A 128K snapshot loaded on a Pentagon stays on it (the mapping lists the Pentagon)
+    const source = await pausedAtLoop(MI_SPECTRUM_128, "pentagon");
+    expect(source.machine.tactsInFrame).toBe(71_680);
+    const saved = await saveMachineStateFile(source.ports, { kliveVersion: "0.62.1" });
+    const file = readKliveStateFile(saved.bytes);
+    expect(file.header).toMatchObject({ machineId: MI_SPECTRUM_128, modelId: "pentagon" });
+    expect(parseSpectrumSnapshot("x.szx", file.szx!).machine).toBe("pentagon");
+    const emu = await emulator(MI_SPECTRUM_128, "sp128");
+    const result = await loadMachineStateFile(emu.ports, "s.kls", saved.bytes, "debug");
+    await emu.until(MachineControllerState.Paused);
+    expect(result).toMatchObject({ machineId: MI_SPECTRUM_128, rebuilt: true, path: "image", pc: 0x8100 });
+    expect(emu.rebuilds).toEqual([`${MI_SPECTRUM_128}/pentagon`]);
+    expect(emu.machine.tactsInFrame).toBe(71_680);
+    expect(emu.machine.baseClockFrequency).toBe(3_500_000);
+    expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
+  });
+
+  it("a 128K state saved before the 128K had models fits a running 128K without a rebuild", async () => {
+    const source = await pausedAtLoop(MI_SPECTRUM_128, "sp128");
+    const saved = readKliveStateFile((await saveMachineStateFile(source.ports, { kliveVersion: "0.62.1" })).bytes);
+    const old = writeKliveStateFile({ ...saved, header: { ...saved.header, modelId: undefined } });
+    const emu = await pausedAtLoop(MI_SPECTRUM_128, "sp128");
+    const result = await loadMachineStateFile(emu.ports, "s.kls", old, "debug");
+    expect(result.rebuilt).toBe(false);
   });
 
   it("keeps the machine when it already fits, and runs in run mode", async () => {
@@ -227,6 +255,50 @@ describe("loading a state", () => {
     await emu.until(MachineControllerState.Paused);
     expect((emu.machine as any).wasmV2DiskPayloads.length).toBe(0);
     expect(result.warnings.join()).toMatch(/Disk A .*detached/);
+  });
+});
+
+describe("state files of the +2A/+3 models (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md Phase 3)", () => {
+  /** An emulator on a +2A/+3/+2E/+3E model, paused at $8100 of a loaded +3 program */
+  async function p3PausedAtLoop(modelId: string, config: MachineConfigSet = {}): Promise<FakeEmulator> {
+    const emu = await emulator(MI_SPECTRUM_3E, modelId, config);
+    const t = state128();
+    const b2 = patternBank(0x22);
+    b2.set([0x18, 0xfe], 0x100);
+    t.ram.set(2, b2);
+    const bytes = buildSzx({ ...t, pc: 0x8100, iff1: false, iff2: false }, { machineId: 5, extra: [szxBlock("+3", [1, 0])] });
+    await loadSpectrumSnapshot(emu.ports, "p.szx", bytes, "debug", { keepModel: true });
+    await emu.until(MachineControllerState.Paused);
+    return emu;
+  }
+
+  it("a state saved on a +3 restores to that +3: model, ROM set and image", async () => {
+    const source = await p3PausedAtLoop("plus3-fdd1", { [MC_DISK_SUPPORT]: 1, [MC_SP3_ROM_SET]: "amstrad41" });
+    expect(source.machine.romId).toBe("spp3-41");
+    const bytes = (await saveMachineStateFile(source.ports, { kliveVersion: "0.63.0" })).bytes;
+    expect(readKliveStateFile(bytes).header).toMatchObject({
+      machineId: MI_SPECTRUM_3E,
+      modelId: "plus3-fdd1",
+      config: { [MC_SP3_ROM_SET]: "amstrad41" }
+    });
+    const emu = await emulator(MI_SPECTRUM_3E, "fdd1", { [MC_DISK_SUPPORT]: 1 });
+    const result = await loadMachineStateFile(emu.ports, "s.kls", bytes, "debug");
+    await emu.until(MachineControllerState.Paused);
+    expect(result).toMatchObject({ modelId: "plus3-fdd1", rebuilt: true, path: "image" });
+    expect(emu.machine.romId).toBe("spp3-41");
+    expectSameBytes(emu.machine.saveMachineState().image, source.machine.saveMachineState().image, "the images");
+  });
+
+  it("a +3E state from before the Amstrad ROMs (no ROM set in its config) restores as a +3E", async () => {
+    const source = await p3PausedAtLoop("fdd1", { [MC_DISK_SUPPORT]: 1 });
+    const bytes = (await saveMachineStateFile(source.ports, { kliveVersion: "0.62.1" })).bytes;
+    expect(readKliveStateFile(bytes).header.config).toEqual({ [MC_DISK_SUPPORT]: 1 });
+    const emu = await emulator(MI_SPECTRUM_3E, "plus3-fdd1", { [MC_DISK_SUPPORT]: 1, [MC_SP3_ROM_SET]: "amstrad41" });
+    const result = await loadMachineStateFile(emu.ports, "s.kls", bytes, "debug");
+    await emu.until(MachineControllerState.Paused);
+    expect(result).toMatchObject({ modelId: "fdd1", rebuilt: true });
+    expect(emu.machine.romId).toBe("spp3e");
+    expect(emu.machine.pc).toBe(0x8100);
   });
 });
 

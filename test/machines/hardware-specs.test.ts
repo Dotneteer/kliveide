@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { machineRegistry } from "@common/machines/machine-registry";
 import { getHardwareSpec } from "@common/machines/hardware-specs";
+import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { ZxSpectrumP3eWasmV2Machine } from "@emu/machines/zxSpectrumP3e/ZxSpectrumP3eWasmV2Machine";
 import { C64Machine } from "@emu/machines/c64/C64Machine";
 
@@ -50,6 +51,12 @@ describe("hardware specs", () => {
     expect(get("sp128").bankCount).toBe(8);
     expect(get("spp3e", "nofdd").media).toContain("No floppy drive");
     expect(get("spp3e", "fdd2").media).toContain("Floppy disk drives A and B (DSK)");
+    expect(get("spp3e", "fdd1").rom.map((r) => r.id)).toEqual(["spp3e-0", "spp3e-1", "spp3e-2", "spp3e-3"]);
+    expect(get("spp3e", "plus3-fdd1").rom.map((r) => r.id)).toEqual(["spp3-41-0", "spp3-41-1", "spp3-41-2", "spp3-41-3"]);
+    expect(get("spp3e", "plus3-v40-fdd2").rom[0]).toEqual({ id: "spp3-40-0", kb: 16 });
+    expect(get("spp3e", "plus2a-es").rom[3]).toEqual({ id: "spp3-41es-3", kb: 16 });
+    expect(get("spp3e", "plus2a").media).toContain("No floppy drive");
+    expect(get("spp3e", "plus3-es-fdd2").media).toContain("Floppy disk drives A and B (DSK)");
     expect(get("z88", "OZ50").ramKb).toBe(512);
     expect(get("z88", "OZ30").ramKb).toBe(32);
     expect(get("z88", "OZ40").rom).toEqual([{ id: "z88ukv40", kb: 128, role: "OZ" }]);
@@ -66,7 +73,7 @@ describe("hardware specs", () => {
     expect(get("sp48", "pal").clockMultiplier).toBe(true);
   });
 
-  it.each(["nofdd", "fdd1", "fdd2"])("+2E/+3E %s matches the machine", (modelId) => {
+  it.each(P3_MODELS.map((m) => m.modelId))("+2A/+3/+2E/+3E %s matches the machine", (modelId) => {
     const info = machineRegistry.find((m) => m.machineId === "spp3e")!;
     const model = info.models!.find((m) => m.modelId === modelId)!;
     const machine = new ZxSpectrumP3eWasmV2Machine(model, model.config);
@@ -77,6 +84,8 @@ describe("hardware specs", () => {
       machine.screenWidthInPixels,
       machine.screenHeightInPixels
     ]);
+    // --- The sheet lists the ROM files the machine loads
+    expect(spec.rom.map((r) => r.id)).toEqual([0, 1, 2, 3].map((page) => `${machine.romId}-${page}`));
   });
 
   it.each(["pal", "ntsc"])("C64 %s matches the machine", (modelId) => {

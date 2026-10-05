@@ -20,6 +20,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/wasm/**/*.test.ts",
   "test/zxnext-hw/**/*.test.ts",
   "test/zx8081-hw/**/*.test.ts",
+  "test/sp128-hw/**/*.test.ts",
   "test/harness/**/self-tests/**/*.test.ts",
 
   // --- Mixed folders: the files that run a core
@@ -42,6 +43,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/spectrum/snapshot/spectrum-snapshot-load.test.ts",
   "test/spectrum/snapshot/spectrum-snapshot-flow.test.ts",
   "test/spectrum/snapshot/spectrum-snapshot-save.test.ts",
+  "test/spectrum/rzx/rzx-sp*.test.ts",
   "test/z88/z88-beeper.test.ts",
   "test/z88/z88-code-injection.test.ts",
   "test/z88/z88-host.test.ts",
@@ -55,6 +57,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/zx8081/zx8081-wasm-build.test.ts",
   "test/z88/z88-wasm-v2-loader.test.ts",
   "test/zxSpectrum/*WasmV2Machine.test.ts",
+  "test/zxSpectrum/p3-*.test.ts",
   "test/zxSpectrum/*-wasm-build.test.ts",
   "test/zxSpectrum/*-wasm-v2-loader.test.ts"
 ];

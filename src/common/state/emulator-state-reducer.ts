@@ -17,6 +17,9 @@ export function emulatorStateReducer(
     case "SET_MODEL_TYPE":
       return { ...state, modelId: payload?.id, quickStateAvailable: false };
 
+    case "SET_RZX_STATE":
+      return { ...state, rzx: payload?.value };
+
     case "SET_QUICK_STATE_AVAILABLE":
       return { ...state, quickStateAvailable: payload?.flag as boolean };
 

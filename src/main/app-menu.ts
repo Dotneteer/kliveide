@@ -1,3 +1,4 @@
+import { openRzxRecording } from "./machine-menus/rzx-menus";
 import {
   app,
   BrowserWindow,
@@ -383,6 +384,14 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
         label: "Load ZX Spectrum Snapshot...",
         click: async () => {
           await openSpectrumSnapshot(BrowserWindow.getFocusedWindow() ?? emuWindow);
+        }
+      },
+      {
+        // --- Any machine: the IDE's zx-rzx command switches to the one the file needs
+        id: "play_rzx_recording",
+        label: "Play RZX Recording...",
+        click: async () => {
+          await openRzxRecording(BrowserWindow.getFocusedWindow() ?? emuWindow);
         }
       },
       {

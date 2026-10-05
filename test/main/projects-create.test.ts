@@ -160,4 +160,19 @@ describe("createKliveProject", () => {
     expect(projectContents.builder.roots).toEqual(["code/code.asm"]);
     expect(projectContents.settings.languages.sjasmp).toBe(".asm|.sjasm");
   });
+
+  // --- The registry is mocked here; `getModelConfig` of these models is covered by the factory test
+  it.each(["plus3-fdd1", "plus2a-es", "plus3-v40-fdd2"])("creates a %s project from the spp3e template", async (modelId) => {
+    const { createKliveProject } = await import("@main/projects");
+    const parentFolder = fs.mkdtempSync(path.join(os.tmpdir(), "klive-create-project-"));
+
+    const result = await createKliveProject("spp3e", modelId, "default", "AmstradProject", parentFolder);
+
+    const projectFolder = path.join(parentFolder, "AmstradProject");
+    const projectContents = JSON.parse(fs.readFileSync(path.join(projectFolder, "klive.project"), "utf8"));
+    expect(result.errorMessage).toBeUndefined();
+    expect(fs.existsSync(path.join(projectFolder, "code", "code.kz80.asm"))).toBe(true);
+    expect(projectContents.machineType).toBe("spp3e");
+    expect(projectContents.modelId).toBe(modelId);
+  });
 });

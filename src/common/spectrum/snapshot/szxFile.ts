@@ -36,7 +36,7 @@ const SZX_MACHINES: Record<number, SnapshotMachine> = {
   4: "plus2a",
   5: "plus3",
   6: "plus3e",
-  7: { unsupported: "Pentagon 128" },
+  7: "pentagon",
   8: { unsupported: "Timex TC2048" },
   9: { unsupported: "Timex TC2068" },
   10: { unsupported: "Scorpion ZS-256" },

@@ -12,7 +12,6 @@ import {
   MC_SCREEN_FREQ,
   MF_ROM,
   MF_BANK,
-  MC_DISK_SUPPORT,
   MC_MEM_SIZE,
   MF_ULA,
   MF_BLINK,
@@ -43,6 +42,8 @@ import { ZxSpectrumNextCustomDisassembler } from "@renderer/appIde/disassemblers
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { Zx81CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/zx81-disassembler";
 import { ZX80_MODELS, ZX81_MODELS } from "@emu/machines/zx8081/zx8081MachineInfo";
+import { SP128_MODELS } from "@emu/machines/zxSpectrum128/sp128Timings";
+import { P3_MODELS } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 import { M6510Disassembler } from "@renderer/appIde/disassemblers/6510-disassembler/m6510-disassembler";
 
 /**
@@ -262,6 +263,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8
     },
     mediaIds: [MEDIA_TAPE],
+    // --- The 128K and the Pentagon 128: one core, the timing is model config
+    models: SP128_MODELS,
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],
@@ -273,7 +276,7 @@ export const machineRegistry: MachineInfo[] = [
   },
   {
     machineId: MI_SPECTRUM_3E,
-    displayName: "ZX Spectrum +2E/+3E",
+    displayName: "ZX Spectrum +2A/+3/+2E/+3E",
     charSet: ZxSpectrumChars,
     features: {
       [MF_Z80]: true,
@@ -285,29 +288,8 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 8
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
-    models: [
-      {
-        modelId: "nofdd",
-        displayName: "ZX Spectrum +2E",
-        config: {
-          [MC_DISK_SUPPORT]: 0
-        }
-      },
-      {
-        modelId: "fdd1",
-        displayName: "ZX Spectrum +3E (1 FDD)",
-        config: {
-          [MC_DISK_SUPPORT]: 1
-        }
-      },
-      {
-        modelId: "fdd2",
-        displayName: "ZX Spectrum +3E (2 FDDs)",
-        config: {
-          [MC_DISK_SUPPORT]: 2
-        }
-      }
-    ],
+    // --- +2A/+3 (Amstrad ROMs) and +2E/+3E (+3E ROMs): one core, the ROM set is model config
+    models: P3_MODELS,
     toolInfo: {
       [CT_DISASSEMBLER]: (
         memorySections: MemorySection[],
@@ -521,14 +503,26 @@ export const modelIdAliases: Readonly<Record<string, Readonly<Record<string, str
 };
 
 /**
- * The model a model id means now: its alias target, or the id itself
+ * The model a reference *without* a model id means, for machines that gained models after projects,
+ * favourites and state files had already saved them without one. The ZX Spectrum 128K had no models
+ * until the Pentagon 128 became its second one (`.plans/PENTAGON_128_PLAN.md`, P1).
+ */
+export const implicitModelIds: Readonly<Record<string, string>> = {
+  [MI_SPECTRUM_128]: "sp128"
+};
+
+/**
+ * The model a model id means now: its alias target, or the id itself; for a missing id, the model a
+ * model-less reference means (`implicitModelIds`), if the machine has one
  * @param machineId The machine
  * @param modelId The model id, as saved
  */
 export function resolveModelId(machineId: string, modelId: string): string;
 export function resolveModelId(machineId: string, modelId: string | undefined): string | undefined;
 export function resolveModelId(machineId: string, modelId: string | undefined): string | undefined {
-  return modelId === undefined ? undefined : (modelIdAliases[machineId]?.[modelId] ?? modelId);
+  return modelId === undefined
+    ? implicitModelIds[machineId]
+    : (modelIdAliases[machineId]?.[modelId] ?? modelId);
 }
 
 /**

@@ -48,3 +48,18 @@ The ZX80 and ZX81 ROM files may be used free of charge in any non-commercial (i.
 For information on obtaining a commercial license, please contact John Grant.
 This notice must be retained.
 ```
+
+## The ZX Spectrum +2A/+3 ROMs
+
+`src/public/roms/spp3-40-*.rom`, `spp3-41-*.rom` and `spp3-41es-*.rom` (shipped under `roms/`) are
+Amstrad's +2A/+3 ROMs (v4.0 English, v4.1 English, v4.1 Spanish), unmodified. They are not covered by
+the MIT licence above, nor by Klive's own. Their notice and source are kept beside them in
+`spp3-roms-readme.txt`:
+
+```
+These ROMs are copyright Amstrad, who allow distribution of the ROMs but
+retain the copyright. You may not sell the ROMs or embed the ROMs in
+hardware, although it is allowed to sell a product which contains the
+ROMs, so long as the charge is being made for the product, not for the
+ROMs themselves. The copyright messages in the ROMs must be kept.
+```

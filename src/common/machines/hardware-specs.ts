@@ -48,6 +48,7 @@ import {
   Z88_TACTS_IN_FRAME,
   Z88_UI_FRAME_FREQUENCY
 } from "@emu/machines/z88/z88MachineInfo";
+import { getP3RomSet } from "@emu/machines/zxSpectrumP3e/p3RomSets";
 
 /** One ROM image the machine loads */
 export type RomImage = { id: string; kb: number; role?: string };
@@ -185,6 +186,18 @@ export const HARDWARE_SPECS: Readonly<Record<string, MachineSpecs>> = {
       sound: ["Beeper", "AY-3-8912 PSG"],
       media: [SPECTRUM_TAPE],
       input: SPECTRUM_KEYBOARD
+    },
+    models: {
+      // --- sp128Timings.ts (the Pentagon's timing from the Next FPGA's Pentagon mode)
+      pentagon: {
+        clockHz: 3_500_000,
+        timing: {
+          perLine: 224,
+          linesPerFrame: 320,
+          perFrame: 71_680,
+          note: "No memory or I/O contention and no floating bus; the 128K ROMs, no TR-DOS"
+        }
+      }
     }
   },
   [MI_SPECTRUM_3E]: {
@@ -369,6 +382,12 @@ export function getHardwareSpec(machine: MachineInfo, modelId?: string): Hardwar
 
   // --- The ZX80 with the ZX81's 8K ROM
   if (config[MC_ZX80_ROM8K]) spec.rom = [{ id: ZX81_ROM, kb: 8 }];
+
+  // --- The +2A/+3/+2E/+3E boots the model's ROM set (the +3E ROMs when the config does not say)
+  if (machine.machineId === MI_SPECTRUM_3E) {
+    const romId = getP3RomSet(config).romId;
+    spec.rom = [0, 1, 2, 3].map((page) => ({ id: `${romId}-${page}`, kb: 16 }));
+  }
 
   // --- The Z88's internal ROM sits in slot 0
   const slot0 = config[MC_Z88_SLOT0];

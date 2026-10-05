@@ -117,6 +117,7 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
           </>
         )}
         <SpaceFiller />
+        <RzxBadge />
         <Label text={machineName} />
         <LabelSeparator />
         <Label text={`(${(freq / 1_000_000).toFixed(3)} MHz)`} />
@@ -176,3 +177,30 @@ const DataLabel = ({
 
 const LabelSeparator = () => <div className={styles.labelSeparator} />;
 const SectionSeparator = () => <div className={styles.sectionSeparator} />;
+
+/**
+ * The RZX badge (`.plans/RZX_PLAN.md` §4.6): PLAY with the frame counter while a recording plays,
+ * REC while one records, VIDEO while one renders, and REC in the warning colour while a stopped
+ * recording waits to be saved. The colours are status tokens: state, not decoration.
+ */
+const RzxBadge = () => {
+  const rzx = useSelector((s) => s.emulatorState?.rzx);
+  if (!rzx || (rzx.mode === "idle" && !rzx.unsaved)) return null;
+  const counter = rzx.frames ? `${rzx.frame}/${rzx.frames}` : `${rzx.frame}`;
+  const [tag, cls, title] = rzx.unsaved
+    ? ["REC", styles.rzxUnsaved, `The RZX recording stopped and is not saved: ${rzx.stopMessage ?? ""}`]
+    : rzx.mode === "recording"
+      ? ["REC", styles.rzxRecording, "Recording an RZX file"]
+      : rzx.mode === "rendering"
+        ? ["VIDEO", styles.rzxRendering, `Rendering ${rzx.file ?? "an RZX recording"} to video`]
+        : ["PLAY", styles.rzxPlaying, `Playing ${rzx.file ?? "an RZX recording"}`];
+  return (
+    <>
+      <div className={classnames(styles.section, styles.rzxBadge, cls)} title={title}>
+        <span className={styles.rzxTag}>{tag}</span>
+        <Label text={`RZX ${counter}`} isMonospace={true} />
+      </div>
+      <SectionSeparator />
+    </>
+  );
+};

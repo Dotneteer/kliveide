@@ -293,11 +293,13 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     if (args.fullFrame) {
       const soundLevel = store.getState()?.emulatorState?.soundLevel ?? 0.0;
+      const rendering = store.getState()?.emulatorState?.rzx?.mode === "rendering";
       await renderMachineAudioFrame(
         currentController.machine,
         beeperRenderer.current,
         soundLevel,
-        recordingManagerRef?.current
+        recordingManagerRef?.current,
+        rendering
       );
     }
 

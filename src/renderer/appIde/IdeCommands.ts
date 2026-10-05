@@ -1,3 +1,11 @@
+import {
+  RzxPlayCommand,
+  RzxRecordCommand,
+  RzxRollbackCommand,
+  RzxRollbackPointCommand,
+  RzxStopCommand,
+  RzxVideoCommand
+} from "./commands/RzxCommands";
 import { IIdeCommandService } from "../abstractions/IIdeCommandService";
 import {
   EraseAllBreakpointsCommand,
@@ -213,6 +221,12 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new Z88SnapshotCommand());
   cmdSrv.registerCommand(new SpectrumSnapshotCommand());
   cmdSrv.registerCommand(new SpectrumSnapshotSaveCommand());
+  cmdSrv.registerCommand(new RzxPlayCommand());
+  cmdSrv.registerCommand(new RzxRecordCommand());
+  cmdSrv.registerCommand(new RzxStopCommand());
+  cmdSrv.registerCommand(new RzxRollbackCommand());
+  cmdSrv.registerCommand(new RzxRollbackPointCommand());
+  cmdSrv.registerCommand(new RzxVideoCommand());
   cmdSrv.registerCommand(new StateSaveCommand());
   cmdSrv.registerCommand(new StateLoadCommand());
   cmdSrv.registerCommand(new TapeLoadCommand());

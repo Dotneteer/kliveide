@@ -157,6 +157,12 @@ export const setQuickStateAvailableAction: ActionCreator = (available: boolean) 
   payload: { flag: available }
 });
 
+/** The RZX session's state (`.plans/RZX_PLAN.md` §4.6); undefined clears it */
+export const setRzxStateAction: ActionCreator = (rzx?: import("./AppState").RzxState) => ({
+  type: "SET_RZX_STATE",
+  payload: { value: rzx }
+});
+
 export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_SCREEN_RECORDING_AVAILABLE",
   payload: { flag: available }

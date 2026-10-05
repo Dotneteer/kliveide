@@ -68,14 +68,15 @@ The snapshot decides the machine; Klive switches to it when needed.
 | ZX Spectrum 48K NTSC (`.szx`) | ZX Spectrum 48K (NTSC) |
 | ZX Spectrum 128 | ZX Spectrum 128K |
 | ZX Spectrum +2 (grey) | ZX Spectrum 128K, with a warning |
-| ZX Spectrum +2A | ZX Spectrum +2E, with a warning |
-| ZX Spectrum +3 | ZX Spectrum +3E, with a warning (two drives when the snapshot has two) |
+| ZX Spectrum +2A | ZX Spectrum +2E, with a warning; a +2A project stays on its +2A |
+| ZX Spectrum +3 | ZX Spectrum +3E, with a warning (two drives when the snapshot has two); a +3 project stays on its +3 |
 | ZX Spectrum +3e | ZX Spectrum +3E |
 | Pentagon, Scorpion, SamRam, Timex, Spectrum SE, Didaktik | not supported |
 
 The warnings are there because the machine differs from the one the snapshot was saved on: Klive's
 +2E and +3E use the +E ROMs, not Amstrad's, so a program that calls into the ROM at a
-version-specific address may behave differently. Klive also warns when the snapshot uses something
+version-specific address may behave differently. Klive's +2A and +3 models boot the Amstrad ROMs,
+so a +2A or +3 snapshot loaded on one of them gets no such warning. Klive also warns when the snapshot uses something
 it does not emulate &mdash; an AY chip on a 48K, Interface 1, an M.G.T. interface, TR-DOS, the Issue
 2 keyboard, the alternate ULA timings, or a custom ROM.
 
@@ -105,7 +106,8 @@ then beside the snapshot, and inserts the ones it finds; a missing disk is repor
 
 ## Saving a snapshot
 
-Klive saves the ZX Spectrum 48K, 128K and +2E/+3E as a snapshot, whether the machine is running
+Klive saves the ZX Spectrum 48K, 128K, +2A/+3 and +2E/+3E as a snapshot (a +2A or +3 model is
+written as a +2A or +3, a +2E/+3E as a +3e), whether the machine is running
 or paused. A running machine is paused for an instant and then runs on; a paused one stays paused.
 A stopped machine has nothing to save.
 
@@ -123,7 +125,7 @@ Klive captures; the other two lose a little, and Klive tells you exactly what af
 | Registers, RAM, border, paging | ✓ | ✓ | ✓ |
 | Position in the video frame | ✓ | ✓ | &mdash; (starts at the interrupt) |
 | AY sound chip | ✓ | ✓ | &mdash; |
-| `$1FFD` (+2E/+3E) | ✓ | ✓ | &mdash; |
+| `$1FFD` (+2A/+3/+2E/+3E) | ✓ | ✓ | &mdash; |
 | HALT | ✓ | ✓ (the program counter stays on the `HALT`) | ✓ (same) |
 | "No interrupt before the next instruction" right after `EI` | ✓ | &mdash; | &mdash; |
 | `IFF1` different from `IFF2` | ✓ | ✓ | &mdash; |

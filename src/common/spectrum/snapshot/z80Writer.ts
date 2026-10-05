@@ -55,6 +55,9 @@ function hardwareMode(
         "A .z80 has no +2E; the file names a +2A, and other emulators run it with the Amstrad ROMs"
       );
       return { mode: 13, modified: false };
+    case "pentagon":
+      // --- Not in the v3 specification: an extension other emulators share (z80File.ts)
+      return { mode: 9, modified: false };
   }
 }
 

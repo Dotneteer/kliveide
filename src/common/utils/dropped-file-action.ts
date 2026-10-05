@@ -5,12 +5,14 @@
  *  - `.z88`: open the Z88 snapshot as the Z88 menu does (`z88-snapshot -a`, following Autorun);
  *  - `.tap`, `.tzx`: insert the tape, as Select Tape File... does;
  *  - `.kls`: load the Klive state and debug it, stopping at its PC, as Load State... does;
+ *  - `.rzx`: play the RZX recording (`zx-rzx`), as Play RZX Recording... does (`.plans/RZX_PLAN.md`);
  *  - anything else: refused with a message.
  */
 
 import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { z88SnapshotCommandText } from "@common/z88/z88SnapshotLoadTypes";
 import { machineStateLoadCommandText } from "@common/machineState/machineStateTypes";
+import { rzxPlayCommandText } from "@common/spectrum/rzx/rzxCommandTypes";
 
 export type DroppedFileAction =
   | { kind: "command"; command: string }
@@ -33,10 +35,12 @@ export function droppedFileAction(path: string): DroppedFileAction {
       return { kind: "tape" };
     case "kls":
       return { kind: "command", command: machineStateLoadCommandText(path, "debug") };
+    case "rzx":
+      return { kind: "command", command: rzxPlayCommandText(path) };
     default:
       return {
         kind: "unsupported",
-        message: `Klive cannot open ${ext ? `.${ext}` : "this kind of"} file by dropping it on the emulator. Drop a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, or a .tap or .tzx tape.`
+        message: `Klive cannot open ${ext ? `.${ext}` : "this kind of"} file by dropping it on the emulator. Drop a .sna, .z80, .szx or .z88 snapshot, a .kls machine state, an .rzx recording, or a .tap or .tzx tape.`
       };
   }
 }

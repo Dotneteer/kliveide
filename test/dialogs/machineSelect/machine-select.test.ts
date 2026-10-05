@@ -62,7 +62,7 @@ describe("Select Machine dialog", () => {
     const h = open();
     const sections = h.vm.sections.filter((s) => s.kind !== "favorites");
     expect(sections.map((s) => s.id)).toEqual(machineRegistry.map((m) => m.machineId));
-    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["sp128", "zxnext"]);
+    expect(sections.filter((s) => s.kind === "leaf").map((s) => s.id)).toEqual(["zxnext"]);
     const z88 = sections.find((s) => s.id === "z88")!;
     expect(z88.kind === "machine" && z88.rows).toHaveLength(10);
   });
@@ -118,11 +118,11 @@ describe("Select Machine dialog", () => {
 
   it("reorders favourites with the buttons and by dropping, keeping separators with their item", () => {
     const h = open();
-    expect(favKeys(h)).toEqual(["sp48/pal", "sp128", "spp3e/fdd1 |", "zxnext/standard |", "z88/OZ50", "zx81/zx81-16k"]);
+    expect(favKeys(h)).toEqual(["sp48/pal", "sp128/sp128", "spp3e/fdd1 |", "zxnext/standard |", "z88/OZ50", "zx81/zx81-16k"]);
     h.do({ type: "favoriteMoved", key: "sp48/pal", delta: -1 });
     expect(favKeys(h)[0]).toBe("sp48/pal");
     h.do({ type: "favoriteMoved", key: "spp3e/fdd1", delta: -1 });
-    expect(favKeys(h).slice(0, 3)).toEqual(["sp48/pal", "spp3e/fdd1 |", "sp128"]);
+    expect(favKeys(h).slice(0, 3)).toEqual(["sp48/pal", "spp3e/fdd1 |", "sp128/sp128"]);
     h.do({ type: "favoriteDropped", key: "zx81/zx81-16k", beforeKey: "sp48/pal" });
     expect(favKeys(h)[0]).toBe("zx81/zx81-16k");
   });
@@ -141,7 +141,7 @@ describe("Select Machine dialog", () => {
     const h = open()
       .do({ type: "separatorToggled", key: "sp48/pal" })
       .do({ type: "separatorToggled", key: "spp3e/fdd1" })
-      .do({ type: "favoriteRemoved", key: "sp128" });
+      .do({ type: "favoriteRemoved", key: "sp128/sp128" });
     expect(favKeys(h).slice(0, 2)).toEqual(["sp48/pal |", "spp3e/fdd1"]);
     h.do({ type: "defaultsRestored" });
     expect(h.state.favorites).toEqual(DEFAULT_MACHINE_FAVORITES.map((f) => ({ ...f })));
@@ -159,8 +159,8 @@ describe("Select Machine dialog", () => {
     expect(result.favorites!.at(-1)).toEqual({ machineId: "zx80", modelId: "zx80-1k" });
     expect(saveResult(h.state).favorites).toEqual(result.favorites);
 
-    h.do({ type: "modelSelected", key: "sp128" });
-    expect(switchResult(h.state)!.switchTo).toEqual({ machineId: "sp128" });
+    h.do({ type: "modelSelected", key: "sp128/pentagon" });
+    expect(switchResult(h.state)!.switchTo).toEqual({ machineId: "sp128", modelId: "pentagon" });
     h.do({ type: "modelSelected", key: "spp3e/fdd1" });
     expect(switchResult(h.state)).toBeUndefined();
   });
@@ -169,13 +169,23 @@ describe("Select Machine dialog", () => {
     const h = open([]);
     const fav = h.vm.sections[0];
     expect(fav.kind === "favorites" && fav.rows).toEqual([]);
-    expect(saveResult(h.do({ type: "favoriteToggled", key: "sp128" }).state).favorites).toEqual([{ machineId: "sp128" }]);
+    expect(saveResult(h.do({ type: "favoriteToggled", key: "sp128/pentagon" }).state).favorites).toEqual([
+      { machineId: "sp128", modelId: "pentagon" }
+    ]);
   });
 
-  it("opens on a model-less running machine whose state carries a stray model ID", () => {
-    const h = open(undefined, { machineId: "sp128", modelId: "whatever" });
-    expect(h.state.runningKey).toBe("sp128");
+  it("opens a 128K running without a model ID (a session from before its models) on the 128K model", () => {
+    const h = open(undefined, { machineId: "sp128" });
+    expect(h.state.runningKey).toBe("sp128/sp128");
     expect(h.vm.sheet?.name).toBe("ZX Spectrum 128K");
+  });
+
+  it("lists the Pentagon 128 as a model of the 128K, with its own hardware sheet", () => {
+    const h = open(undefined, { machineId: "sp128", modelId: "pentagon" });
+    expect(h.state.runningKey).toBe("sp128/pentagon");
+    const sp128 = h.vm.sections.find((s) => s.id === "sp128")!;
+    expect(sp128.kind === "machine" && sp128.rows.map((r) => r.key)).toEqual(["sp128/sp128", "sp128/pentagon"]);
+    expect(h.vm.sheet?.name).toBe("Pentagon 128");
   });
 
   it("formats the hardware sheet", () => {

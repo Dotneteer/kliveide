@@ -6,7 +6,7 @@ import {
   detectSnapshotFormat,
   parseSpectrumSnapshot
 } from "@common/spectrum/snapshot/parseSpectrumSnapshot";
-import { mapSpectrumSnapshotToKlive } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
+import { kliveSpectrumName, mapSpectrumSnapshotToKlive } from "@common/spectrum/snapshot/spectrumSnapshotMapping";
 import type { SpectrumSnapshot } from "@common/spectrum/snapshot/spectrumSnapshot";
 import {
   buildSna128,
@@ -151,6 +151,8 @@ describe(".z80", () => {
     [3, 8, false, "plus3"],
     [3, 12, false, "plus2"],
     [3, 13, false, "plus2a"],
+    [2, 9, false, "pentagon"],
+    [3, 9, false, "pentagon"],
     [3, 0, true, "16k"],
     [3, 4, true, "plus2"],
     [3, 7, true, "plus2a"]
@@ -161,7 +163,7 @@ describe(".z80", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([2, 9, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
+  it.each([2, 10, 11, 14, 15, 128])("marks hardware mode %i unsupported", (hwMode) => {
     const s = parseZ80File(buildZ80(state48(), { version: 3, hwMode }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors.length).toBe(1);
@@ -244,6 +246,7 @@ describe(".szx", () => {
     [4, "plus2a"],
     [5, "plus3"],
     [6, "plus3e"],
+    [7, "pentagon"],
     [15, "48k-ntsc"]
   ] as const)("maps machine id %i to %s", (machineId, machine) => {
     const paged = !["16k", "48k", "48k-ntsc"].includes(machine);
@@ -252,7 +255,7 @@ describe(".szx", () => {
     expect(s.machine).toBe(machine);
   });
 
-  it.each([7, 8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
+  it.each([8, 9, 10, 11, 12, 13, 14, 16, 99])("marks machine id %i unsupported", (machineId) => {
     const s = parseSzxFile(buildSzx(state128(), { machineId }));
     expect(typeof s.machine).toBe("object");
     expect(mapSpectrumSnapshotToKlive(s).errors).toHaveLength(1);
@@ -371,8 +374,9 @@ describe("mapping", () => {
     ["16k", "sp48", "pal-16k", false],
     ["48k", "sp48", "pal", false],
     ["48k-ntsc", "sp48", "ntsc", false],
-    ["128k", "sp128", undefined, false],
-    ["plus2", "sp128", undefined, true],
+    ["128k", "sp128", "sp128", false],
+    ["plus2", "sp128", "sp128", true],
+    ["pentagon", "sp128", "pentagon", false],
     ["plus2a", "spp3e", "nofdd", true],
     ["plus3", "spp3e", "fdd1", true],
     ["plus3e", "spp3e", "fdd1", false]
@@ -384,9 +388,52 @@ describe("mapping", () => {
     expect(m.warnings.length > 0).toBe(warns);
   });
 
+  it("lists the 128K model first, then the Pentagon; a Pentagon snapshot runs only on the Pentagon", () => {
+    expect(map("128k").modelIds).toEqual(["sp128", "pentagon"]);
+    expect(map("plus2").modelIds).toEqual(["sp128", "pentagon"]);
+    expect(map("pentagon").modelIds).toEqual(["pentagon"]);
+    expect(map("pentagon").kliveName).toBe("Pentagon 128");
+  });
+
+  it("lists the +E models first, then the Amstrad ones (.plans/PLUS3_AMSTRAD_ROMS_PLAN.md P6)", () => {
+    expect(map("plus2a").modelIds).toEqual(["nofdd", "fdd1", "fdd2", "plus2a", "plus2a-es"]);
+    expect(map("plus3").modelIds).toEqual([
+      "fdd1",
+      "fdd2",
+      "plus3-fdd1",
+      "plus3-fdd2",
+      "plus3-v40-fdd1",
+      "plus3-v40-fdd2",
+      "plus3-es-fdd1",
+      "plus3-es-fdd2"
+    ]);
+    expect(map("plus3e").modelIds).toEqual(["fdd1", "fdd2"]);
+  });
+
+  it("marks the +E ROMs warning, so the loader can drop it on an Amstrad model", () => {
+    const m = map("plus3");
+    expect(m.eRomWarning).toMatch(/\+E ROMs instead of the Amstrad ones/);
+    expect(m.warnings).toContain(m.eRomWarning);
+    expect(map("plus2").eRomWarning).toBeUndefined();
+    expect(map("plus3e").eRomWarning).toBeUndefined();
+  });
+
+  it("names the Amstrad models", () => {
+    expect(kliveSpectrumName("spp3e", "plus3-es-fdd2")).toBe("ZX Spectrum +3 (Spanish, 2 FDDs)");
+    expect(kliveSpectrumName("spp3e", "plus2a")).toBe("ZX Spectrum +2A");
+    expect(kliveSpectrumName("spp3e", "fdd1")).toBe("ZX Spectrum +3E (1 FDD)");
+    expect(kliveSpectrumName("spp3e", undefined)).toBe("ZX Spectrum +2A/+3/+2E/+3E");
+  });
+
+  it("prefers the two-drive +E model for a two-drive +3, ahead of the Amstrad ones", () => {
+    const s = { ...parseSnaFile(buildSna48(state48())), machine: "plus3" as const };
+    s.peripherals = { ...s.peripherals, plus3: { drives: 2, motorOn: false, disks: [] } };
+    expect(mapSpectrumSnapshotToKlive(s).modelIds.slice(0, 3)).toEqual(["fdd2", "fdd1", "plus3-fdd1"]);
+  });
+
   it("refuses an unsupported machine", () => {
-    const m = map({ unsupported: "Pentagon 128" });
-    expect(m.errors).toEqual(["Klive cannot emulate the Pentagon 128"]);
+    const m = map({ unsupported: "Scorpion ZS-256" });
+    expect(m.errors).toEqual(["Klive cannot emulate the Scorpion ZS-256"]);
     expect(m.machineId).toBeUndefined();
   });
 

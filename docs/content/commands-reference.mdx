@@ -743,6 +743,85 @@ zx-snapshot-save "snapshots/level3.z80" -f
 zxsave "snapshots/bug.sna"
 ```
 
+## `zx-rzx`
+
+This command plays an RZX input recording on the ZX Spectrum.
+
+```
+zx-rzx <rzx-file> [-d] [-s <segment>]
+```
+
+Available aliases: `rzx`
+
+The recording decides the machine, as a snapshot does (see [`zx-snapshot`](#zx-snapshot)). With
+`-d`, the machine starts in debug mode and stops at the recording's first instruction; breakpoints
+and stepping work while it plays. `-s` starts at a segment (an embedded snapshot), counted from 1.
+When the recording ends the machine pauses; a desync pauses it at the instruction that desynced. See
+[Playing and Recording RZX Files](./howto/rzx-recordings).
+
+```text
+zx-rzx "recordings/game.rzx"
+zx-rzx "recordings/game.rzx" -d
+rzx "recordings/longplay.rzx" -s 3
+```
+
+## `zx-rzx-record`
+
+This command starts recording an RZX file from the ZX Spectrum's current state.
+
+```
+zx-rzx-record
+```
+
+The machine must be a ZX Spectrum 48K, 128K or +2E/+3E, running or paused. A playback that is
+running or paused is taken over: the recording starts from where it stands.
+
+## `zx-rzx-stop`
+
+This command stops the RZX recording and saves it.
+
+```
+zx-rzx-stop <rzx-file> [-f]
+```
+
+The file holds the first snapshot and every recorded frame (the rollback points are left out). An
+existing file is replaced only with `-f`. The machine stays paused.
+
+## `zx-rzx-rollback`
+
+This command rolls the RZX recording back to a rollback point.
+
+```
+zx-rzx-rollback [n]
+```
+
+With no argument it goes back to the latest point; `n` goes back to the n-th latest. Everything
+recorded after the point is discarded, and the machine is paused there.
+
+## `zx-rzx-point`
+
+This command inserts a rollback point into the RZX recording, at the next frame.
+
+```
+zx-rzx-point
+```
+
+## `zx-rzx-video`
+
+This command renders an RZX recording to a video file with the screen recorder.
+
+```
+zx-rzx-video <rzx-file> [-t]
+```
+
+The video uses the screen recorder's frame rate, quality and format, and stops at the recording's
+end or at a desync. The recording plays as fast as the emulator can run it, with the speaker muted;
+`-t` plays it in real time instead. Screen recording must be available (FFmpeg installed).
+
+```text
+zx-rzx-video "recordings/game.rzx"
+```
+
 ## `state-save`
 
 This command saves the machine's complete state to a Klive state file (`.kls`).

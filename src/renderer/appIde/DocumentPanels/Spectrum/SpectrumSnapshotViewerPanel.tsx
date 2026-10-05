@@ -63,7 +63,7 @@ const LABEL_WIDTH = "14ch";
 const REG_LABEL_WIDTH = "5ch";
 const REG_VALUE_WIDTH = "14ch";
 
-type SpectrumSnapshotViewState = {
+export type SpectrumSnapshotViewState = {
   scrollPosition?: number;
   summaryExpanded?: boolean;
   cpuExpanded?: boolean;
@@ -131,8 +131,11 @@ export const createSpectrumSnapshotViewerPanel = ({ document, contents, viewStat
 
 type ViewProps = { ctx: ViewContext; documentSource: string; fullPath: string };
 
-/** A module-level component, so it may hold state (see `GenericFilePanel`'s renderer note) */
-const SnapshotView = ({ ctx, documentSource, fullPath }: ViewProps) => {
+/**
+ * A module-level component, so it may hold state (see `GenericFilePanel`'s renderer note). The RZX
+ * viewer shows a recording's first snapshot with it (`RzxViewerPanel.tsx`).
+ */
+export const SnapshotView = ({ ctx, documentSource, fullPath }: ViewProps) => {
   const info = ctx.fileInfo;
   if (!info) return null;
   return (
