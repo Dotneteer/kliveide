@@ -1,6 +1,6 @@
 # Beta 128 disk interface and TR-DOS on the Pentagon 128 (G9.1b)
 
-Status: **draft: waiting for the author's answers to §8.**
+Status: **decisions recorded** (2026-10-04; see §8). Ready for Phase 0.
 Base plan: [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md), §G9 (G9.1b, size M–L).
 Builds on: [PENTAGON_128_PLAN.md](PENTAGON_128_PLAN.md) (G9.1, done).
 
@@ -88,7 +88,7 @@ formats, Pentagon 512/1024 memory, and the Next's own TR-DOS-free disk story.
 - **References in the repo:** `_input/765.pdf` (the uPD765) exists; there is no WD1793 data sheet yet
   (Phase 0 adds one). The Next FPGA sources have no Beta 128.
 
-## 3. Decisions (proposed; see §8)
+## 3. Decisions (accepted by the author, 2026-10-04; see §8)
 
 - **B1. The Beta 128 is part of the Pentagon model.** `pentagon` gets `MC_DISK_SUPPORT: 2`; the 128K
   model stays disk-less. No new model id, so G9.1's projects are unaffected.
@@ -232,24 +232,23 @@ behaviour.
 | Writing back to an `.scl` corrupts it | Q4: never written back in place |
 | A Klive state of the 128K changes size | the layout fingerprint changes as in G9.1; old states load through their `.szx` (D9) |
 
-## 8. Questions for the author
+## 8. Decisions from the author (2026-10-04)
 
-- **Q1. The TR-DOS ROM.** Proposed: Phase 0 looks for a TR-DOS 5.0x image whose distribution with
-  emulators is permitted, and ships it like the Amstrad ROMs (readme, notice, CRC test). If no clear
-  permission is found, the user names a ROM file in the settings, and the Pentagon's disk features
-  stay off until they do. Which do you prefer if the rights are unclear?
-- **Q2. Which machines.** Proposed: the Pentagon model only, with the interface always present
-  (B1). The 128K (and 48K) with a Beta 128 as an option is a later step on the same device (B2).
-- **Q3. Drives.** Proposed: two (A, B), reusing the +3's media ids and UI. The Beta 128 supports four.
-- **Q4. `.scl` images.** Proposed: converted to TRD on insert; TR-DOS can write to the emulated disk,
-  but the `.scl` file is never written back. The disk is shown as "changed, not saved", and a command
-  saves it as a `.trd`. Alternatives: `.scl` read-only (write-protected), or rewrite the `.scl` on
-  every change.
-- **Q5. Booting.** Proposed: the Pentagon still boots the 128K menu (so code injection and the tape
-  Loader stay as they are), and a Disk Loader flow plus a "Boot disk" item enter TR-DOS and boot the
-  disk. Alternative: boot straight into TR-DOS, as many real Pentagons did, which changes every IDE
-  flow on the model.
-- **Q6. Speed.** Proposed: accurate disk timing only; a fast-disk mode, like fast tape loading, later.
+All proposals accepted:
+
+- **Q1. The TR-DOS ROM:** Phase 0 looks for a TR-DOS 5.0x image whose distribution with emulators is
+  permitted, and ships it like the Amstrad ROMs (readme, notice, CRC test). **If the rights stay
+  unclear, the ROM is not shipped:** the user names a ROM file in the settings, and the Pentagon's
+  disk features stay off, saying why, until they do.
+- **Q2. Machines:** the Pentagon model only, with the interface always present (B1). A Beta 128 on
+  the 128K or 48K is a later step on the same device (B2).
+- **Q3. Drives:** two, A and B, reusing the +3's media ids and UI.
+- **Q4. `.scl` images:** converted to TRD on insert; TR-DOS writes to the emulated disk, but the
+  `.scl` file is never written back. The disk shows as "changed, not saved", and a command saves it
+  as a `.trd`.
+- **Q5. Booting:** the Pentagon boots the 128K menu as now; a Disk Loader flow and a "Boot disk" item
+  enter TR-DOS and boot the disk.
+- **Q6. Speed:** accurate disk timing only; a fast-disk mode later.
 
 ## 9. Reference values (filled in Phase 0)
 
