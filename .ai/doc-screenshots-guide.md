@@ -177,7 +177,7 @@ it.
 
 ## Coverage so far
 
-Seven recipes; the rest of the pages were deliberately left ungenerated.
+Eight recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -211,6 +211,13 @@ Seven recipes; the rest of the pages were deliberately left ungenerated.
   frame opaque, in *Whole map* and again after clicking *As displayed*, where it checks the clip and
   the scroll moved the picture. A DOM check alone cannot see a wrong decode. It also opens cell (3, 10)'s tile
   as a snapshot (`tile-snapshot.png`) and checks *As shown* and *As stored* differ as the transform says.
+- `recipes/layer2-inspector.cjs` — the two `working-with-ide/layer2-inspector*.png` shots, and the
+  running-app check of the Layer 2 Inspector, on the same pattern (source `recipes/layer2-demo.kz80.asm`,
+  which runs at 28 MHz so the 80K fill takes frames, not seconds). It reads canvas pixels for the
+  *Displayed*, *Shadow* and *Write window* sources and after *As displayed*, and the inspector's decode
+  of a clicked pixel. **Do not trust a reset value the firmware may have changed:** in the app `$14`
+  read `$00` after boot, not the `$E3` the core resets it to, so the demo sets it before relying on
+  index `$E3` being transparent.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

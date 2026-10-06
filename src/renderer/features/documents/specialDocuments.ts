@@ -10,6 +10,8 @@ import {
   SPRITES_PANEL_ID,
   TILEMAP_EDITOR,
   TILEMAP_PANEL_ID,
+  LAYER2_EDITOR,
+  LAYER2_PANEL_ID,
   MEMORY_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -20,7 +22,8 @@ export type SpecialDocumentId =
   | typeof BASIC_PANEL_ID
   | typeof COPPER_PANEL_ID
   | typeof SPRITES_PANEL_ID
-  | typeof TILEMAP_PANEL_ID;
+  | typeof TILEMAP_PANEL_ID
+  | typeof LAYER2_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -72,6 +75,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Tilemap Inspector",
     type: TILEMAP_EDITOR,
     iconName: "tilemap",
+    workspaceRestorable: true
+  },
+  // --- The ZX Spectrum Next's Layer 2 image, banks and windows (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4)
+  [LAYER2_PANEL_ID]: {
+    id: LAYER2_PANEL_ID,
+    name: "Layer 2 Inspector",
+    type: LAYER2_EDITOR,
+    iconName: "layer2",
     workspaceRestorable: true
   }
 };

@@ -624,6 +624,20 @@ uint32_t zxnextGetLayer2PaletteOffset(void) { return zxnextLayer2GetPaletteOffse
 uint32_t zxnextGetLayer2ScrollX(void) { return zxnextLayer2GetScrollX(); }
 uint32_t zxnextGetLayer2ScrollY(void) { return zxnextLayer2GetScrollY(); }
 uint32_t zxnextGetLayer2Clip(uint32_t index) { return zxnextLayer2GetClip(index); }
+/*
+ * The Layer 2 Inspector's reads (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.2). Side-effect free: the port
+ * value comes from the module state, never through a port access (D8).
+ */
+/* $12 */
+uint32_t zxnextGetLayer2ActiveBank(void) { return zxnextLayer2GetActiveRamBank(); }
+/* $13 */
+uint32_t zxnextGetLayer2ShadowBank(void) { return zxnextLayer2GetShadowRamBank(); }
+/* What a `$123B` read returns */
+uint32_t zxnextGetLayer2Port123BPeek(void) { return zxnextLayer2GetPort123B(); }
+/* The bank offset a `$123B` write with bit 4 set stores */
+uint32_t zxnextGetLayer2BankOffset(void) { return zxnextLayer2GetBankOffset(); }
+/* Which `$18` value the next write sets */
+uint32_t zxnextGetLayer2ClipIndex(void) { return zxnextLayer2GetClipIndex(); }
 uint32_t zxnextGetLoResEnabled(void) { return zxnextLoResGetEnabled(); }
 uint32_t zxnextGetLoResRadastanMode(void) { return zxnextLoResGetRadastanMode(); }
 uint32_t zxnextGetLoResPaletteOffset(void) { return zxnextLoResGetPaletteOffset(); }
