@@ -399,6 +399,7 @@ describe("helpers", () => {
       nextRegValue: "",
       nextRegMask: "",
       nextRegCopper: false,
+      copperIndex: "",
       disabled: false,
       oneShot: false,
       length: "",
@@ -1172,5 +1173,65 @@ describe("one-shots and memory ranges (G1.6, S10)", () => {
     expect(
       validateBreakpointForm(aForm({ kind: "memRead", address: "$8000", length: "5" }), anEnv()).length
     ).toBeUndefined();
+  });
+});
+
+/*
+ * Copper breakpoints: the seventh kind, bound to a Copper list index (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.8). Like the NextReg kind it shares no field with the place kinds.
+ */
+describe("Copper breakpoints - the form", () => {
+  const copperForm = (over: Partial<BreakpointFormState> = {}): BreakpointFormState => ({
+    ...createEmptyForm(),
+    kind: "copper",
+    copperIndex: "$00B",
+    ...over
+  });
+
+  it("accepts an index, spelled any way the command takes", () => {
+    for (const text of ["$00B", "11", "$3ff", "0"]) {
+      expect(validateBreakpointForm(copperForm({ copperIndex: text }), nextRegEnv())).toEqual({});
+    }
+  });
+
+  it("refuses the kind off the ZX Spectrum Next, an empty and an out-of-range index", () => {
+    expect(validateBreakpointForm(copperForm(), nextEnv()).copperIndex).toMatch(/ZX Spectrum Next only/);
+    expect(validateBreakpointForm(copperForm({ copperIndex: "" }), nextRegEnv()).copperIndex).toMatch(
+      /Enter a Copper list index/
+    );
+    expect(validateBreakpointForm(copperForm({ copperIndex: "$400" }), nextRegEnv()).copperIndex).toMatch(
+      /between \$000 and \$3FF/
+    );
+  });
+
+  it("builds a non-exec breakpoint with only the index", () => {
+    const bp = formToBreakpointInfo(copperForm({ partition: 3, address: "$8000" }));
+    expect(bp).toMatchObject({ copperIndex: 0x0b, exec: false });
+    expect(bp.address).toBeUndefined();
+    expect(bp.partition).toBeUndefined();
+  });
+
+  it("round-trips through breakpointToForm", () => {
+    const form = breakpointToForm({ copperIndex: 0x0b, hitCount: 50, hitMode: "eq" });
+    expect(form).toMatchObject({ kind: "copper", copperIndex: "$00B", hitMode: "eq", hitCount: "50" });
+    expect(isAuthorableBreakpoint({ copperIndex: 0x0b })).toBe(true);
+  });
+
+  it("drops the address and partition when switching to it, and the index when leaving it", () => {
+    const toCopper = applyKindChange(
+      { ...createEmptyForm(), address: "$8000", partition: 2, copperIndex: "" },
+      "copper"
+    );
+    expect(toCopper).toMatchObject({ address: "", partition: undefined });
+    expect(applyKindChange(copperForm(), "exec").copperIndex).toBe("");
+  });
+
+  it("refuses a duplicate", () => {
+    const errors = validateBreakpointForm(copperForm(), nextRegEnv({ existingKeys: ["CU:$00B"] }));
+    expect(errors.form).toMatch(/already exists at CU:\$00B/);
+  });
+
+  it("allows VAL as a 16-bit word in a condition", () => {
+    expect(validateBreakpointForm(copperForm({ condition: "VAL == $BE78" }), nextRegEnv())).toEqual({});
   });
 });

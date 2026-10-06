@@ -1,0 +1,122 @@
+---
+description: "The ZX Spectrum Next's Copper: its live state in the Debug activity, the Copper List with its raster ruler, Copper breakpoints and stepping."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Copper View
+
+The ZX Spectrum Next's **Copper** is a tiny coprocessor that writes Next Registers in step with the
+video beam &mdash; a palette colour that changes on line 96, a scroll offset per raster band. It runs
+a program of up to 1024 two-byte instructions from its own 2K memory, which the Z80 cannot read back,
+and its mistakes show only as a wrong picture. Klive shows you that program, where the Copper is in
+it, and where in the frame each instruction acts.
+
+There are two views of the same state: a compact **Copper** panel in the Debug activity, and the
+full **Copper List** document. Both are available on the ZX Spectrum Next only.
+
+## The Copper Panel
+
+Open the Debug activity and expand the **Copper** header (it sits beside **Next Registers**):
+
+| Row | Shows |
+|---|---|
+| **Mode** | NextReg `$62` bits 7-6 as a phrase, for example `11 · loop, restart at (0,0)`. The tooltip has the register's full description. |
+| **State** | `Stopped`, `Stopped · list retained`, `Running`, `Waiting for line 96, x 64`, or `Halted at $005`. |
+| **PC** | The Copper's list address. After a Copper breakpoint, `hit $002` beside it names the instruction that stopped the machine. |
+| **Write ptr** | The CPU's `$60`/`$63` write pointer, in bytes, and the list index it points to. |
+| **Line offset** | NextReg `$64`: which raster line the Copper counts as line 0. |
+| **Beam** | The beam in the Copper's own coordinates: the line (`cvc`, where 0 is the first paper line) and the horizontal position (`hc`). After a Copper breakpoint, the beam at the hit is shown beside it. |
+
+Under the rows, seven decoded instructions around the Copper's PC: `▶` marks the PC, `●` the last
+hit. The footer summarises the list (`6 used · HALT at $005 · 1018 NOP`) and turns amber when
+something looks wrong; its **Open Copper List** link opens the document.
+
+<Callout type="info">
+A soft reset stops the Copper but keeps its memory, exactly as the hardware does, so after a reset
+the panel still shows the old list &mdash; and says `Stopped · list retained` so it does not look
+stale. A hard reset clears it.
+</Callout>
+
+## The Copper List
+
+Open it with the panel's link, **Machine → Show Copper List**, or the command:
+
+```
+show-copper
+show-copper $00B      ; and reveal list index $00B
+```
+
+Every row is one list instruction:
+
+| Column | Shows |
+|---|---|
+| gutter | a Copper breakpoint dot; click to set or remove one |
+| index | `$00B` |
+| word | the instruction as the Copper reads it, `$BE78` |
+| mnemonic | `WAIT`, `MOVE`, `NOP` or `HALT` |
+| operands | `120, 31` for a `WAIT` (line, horizontal position), `$41, $FC` for a `MOVE` (register, value) |
+| meaning | `line 120 · x 248`, or the register's name and the value written; a palette write carries a colour swatch |
+| source | the `.copper` source line the instruction came from |
+
+The row the Copper is executing is marked `▶`, the instruction a Copper breakpoint last stopped on
+is marked `●` with the beam position of the hit. The run of empty slots after the list collapses
+into one `1018 × NOP` row; click it to expand.
+
+The toolbar has **Follow PC** (keep the Copper's PC in view), **Source** (the source column),
+**Hex WAIT** (`WAIT` operands in hexadecimal), **Step Copper**, and the list summary.
+
+### What The List Is Checked For
+
+- **No `HALT`.** A list that does not end in a `HALT` runs on into whatever else is in the Copper's
+  memory. The assembler cannot know where your list ends, so this is reported here.
+- **A `WAIT` that never matches.** A line past the end of the frame, or a horizontal position past
+  the end of the line, is never reached &mdash; and the frame's length depends on the timing mode
+  (50 or 60 Hz), so a list that works at 50 Hz can park the Copper at 60 Hz. Such a `WAIT` is shown
+  in amber with `never matches`.
+- **A `WAIT` for an earlier line than the one before it.** That is legal, but in a looping mode it
+  waits for the *next* frame, which is rarely what was meant.
+
+### The Raster Ruler
+
+The strip at the right of the list is one frame, top to bottom, in the Copper's line numbering: the
+paper (lines 0-191), then the lower border and the blanking interval, then the upper border, which
+is the end of the Copper's frame because its line 0 is the first paper line. Each `WAIT` is a tick
+at its line &mdash; muted when it can never match &mdash; and the live beam and the last hit are
+drawn across it. Hover a tick to name its instruction; click it to select the row. It answers "where
+in the frame does this list act" at a glance.
+
+### The Source Column
+
+When the program was built with the [`.copper` pragma](/z80-assembly/zx-next-copper), Klive matches
+the Copper's memory against the assembled Copper instructions by their *shape* &mdash; `WAIT`
+against `WAIT`, `MOVE` to the same register against `MOVE` &mdash; so a list uploaded at an offset,
+or one whose values the program patches at runtime, still maps to its source. A patched operand is
+marked `*` and shown in amber; the tooltip shows the assembled word. Fewer than three matching
+instructions in a row is never claimed as a match.
+
+Double-click a row, or use **Go to source** in its context menu, to open the line.
+
+### The Row Menu
+
+Right-click a row for **Add/Remove breakpoint**, **Edit breakpoint...**, **Run to here** (run until
+the Copper completes this instruction, without leaving a breakpoint behind), and **Go to source**.
+
+## Copper Breakpoints
+
+`bp-set cu:$00B` stops the machine when the Copper completes list instruction `$00B`: a `MOVE` when
+it is issued, a `WAIT` when it is satisfied. See
+[Copper Breakpoints](/working-with-ide/breakpoints#copper-breakpoints-zx-spectrum-next) for the
+details, including why the Copper may already be past the instruction when the machine stops.
+
+## Stepping The Copper
+
+**Step Copper** (the toolbar button, **Machine → Step Copper**, or `step-copper`) runs the machine
+until the Copper completes its next instruction, whatever its index, and stops at the end of that
+Z80 instruction.
+
+<Callout type="info">
+Several Copper instructions can complete during one Z80 instruction &mdash; two `MOVE`s are only two
+28 MHz ticks apart. Step Copper stops on the first of them; the Copper's PC may show that it has
+already completed the next one too.
+</Callout>

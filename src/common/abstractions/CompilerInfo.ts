@@ -2,6 +2,7 @@ import type { BasicIntelData } from "./BasicIntel";
 import { AppState } from "@common/state/AppState";
 import { ISourceFileItem } from "@main/compiler-common/abstractions";
 import type { SourceDebugExtensions } from "./SourceDebugInfo";
+import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 
 /**
  * Represents the possible types of an expression value
@@ -863,6 +864,12 @@ export type DebuggableOutput = InjectableOutput & {
    * G1.5 (`.plans/LOGPOINTS_PLAN.md` §4.7). Kind-tagged so a new kind adds nothing else.
    */
   readonly debugAnnotations?: SourceAnnotation[];
+
+  /**
+   * The Klive assembler's `.copper` blocks (`.plans/COPPER_DEBUGGING_PLAN.md` D8): maximal runs of
+   * consecutive `.copper` emissions, matched against the live Copper RAM by instruction shape.
+   */
+  readonly copperBlocks?: CopperBlock[];
 };
 
 /** A source-comment annotation the build found (`.plans/LOGPOINTS_PLAN.md` §4.7). */

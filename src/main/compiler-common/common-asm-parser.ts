@@ -95,6 +95,11 @@ import {
   DmaWr3Pragma,
   DmaWr4Pragma,
   DmaWr5Pragma,
+  CopperWaitPragma,
+  CopperMovePragma,
+  CopperNopPragma,
+  CopperHaltPragma,
+  CopperWordPragma,
   PartialAssemblyLine,
   ProcEndStatement,
   ProcStatement,
@@ -791,6 +796,9 @@ export abstract class CommonAsmParser<
 
       case CommonTokens.DmaPragma:
         return this.parseDmaPragma();
+
+      case CommonTokens.CopperPragma:
+        return this.parseCopperPragma();
     }
     return null;
   }
@@ -2712,6 +2720,49 @@ export abstract class CommonAsmParser<
       autoRestart = true;
     }
     return { type: "DmaWr5Pragma", autoRestart } as DmaWr5Pragma<TInstruction, TToken>;
+  }
+
+  // ---------------------------------------------------------------------------
+  // .copper pragma sub-parsers
+
+  private parseCopperPragma(): PartialAssemblyLine<TInstruction> | null {
+    // --- `nop` and `halt` are Z80 keywords, not identifiers: take the sub-command by its text
+    const subcommand = this.tokens.peek();
+    const subcmdText = subcommand.text ?? "";
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(subcmdText)) {
+      this.reportError("Z0371", subcommand, [subcmdText]);
+      return null;
+    }
+    this.tokens.get(); // consume sub-command
+
+    switch (subcmdText.toLowerCase()) {
+      case "wait": {
+        const waitLine = this.getExpression();
+        if (!waitLine) return null;
+        const waitHpos = this.getExpression(false, true);
+        if (!waitHpos) return null;
+        return { type: "CopperWaitPragma", waitLine, waitHpos } as CopperWaitPragma<TInstruction, TToken>;
+      }
+      case "move": {
+        const reg = this.getExpression();
+        if (!reg) return null;
+        const value = this.getExpression(false, true);
+        if (!value) return null;
+        return { type: "CopperMovePragma", reg, value } as CopperMovePragma<TInstruction, TToken>;
+      }
+      case "nop":
+        return { type: "CopperNopPragma" } as CopperNopPragma<TInstruction>;
+      case "halt":
+        return { type: "CopperHaltPragma" } as CopperHaltPragma<TInstruction>;
+      case "word": {
+        const value = this.getExpression();
+        if (!value) return null;
+        return { type: "CopperWordPragma", value } as CopperWordPragma<TInstruction, TToken>;
+      }
+      default:
+        this.reportError("Z0371", subcommand, [subcmdText]);
+        return null;
+    }
   }
 }
 

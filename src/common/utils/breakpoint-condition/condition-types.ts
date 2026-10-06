@@ -68,7 +68,7 @@ export type CondNode =
   | { k: "bin"; op: ConditionBinaryOp; l: CondNode; r: CondNode };
 
 /** Which kind of breakpoint the condition belongs to; decides whether `VAL`/`ADDR` mean anything. */
-export type ConditionAccessKind = "exec" | "memory" | "io" | "nextReg";
+export type ConditionAccessKind = "exec" | "memory" | "io" | "nextReg" | "copper";
 
 /**
  * The machine facts the checker needs (plan §3.7 rules 3-5). The IDE builds it from the machine

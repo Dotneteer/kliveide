@@ -1074,6 +1074,42 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next Copper's state.
+   */
+  getCopperState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getCopperState();
+  }
+
+  /**
+   * Gets the ZX Spectrum Next sprite state (the Sprite Inspector's snapshot).
+   */
+  getNextSpriteState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getNextSpriteState();
+  }
+
+  /**
+   * Arms a Copper step and runs the machine in debug mode until it fires.
+   */
+  async stepCopper() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    requireZxNextIdeMachine(controller.machine).requestCopperStep(true);
+    if (controller.state !== MachineControllerState.Running) {
+      await controller.startDebug();
+    }
+  }
+
+  /**
    * Gets the Next memory mapping state.
    */
   getNextMemoryMapping() {

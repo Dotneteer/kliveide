@@ -14,6 +14,7 @@ export {
   READY_REG,
   READY_VALUE,
   type AudioSample,
+  type CopperHit,
   type Hotkey,
   type IdeState,
   type Program,

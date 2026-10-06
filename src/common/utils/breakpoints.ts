@@ -11,7 +11,7 @@ import { Store } from "@common/state/redux-light";
 import { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import { toHexa2, toHexa4 } from "@renderer/appIde/services/ide-commands";
 import { getBreakpoints } from "@renderer/appIde/utils/breakpoint-utils";
-import { breakpointMatchesScope, isNextRegBreakpoint } from "./breakpoint-scope";
+import { breakpointMatchesScope, isCopperBreakpoint, isNextRegBreakpoint } from "./breakpoint-scope";
 import { resolvedPartitionFor } from "./source-breakpoint-partition";
 import { hasSourceLevelDebug, isDebuggableCompilerOutput } from "@renderer/appIde/utils/compiler-utils";
 import type {
@@ -176,6 +176,16 @@ function buildBreakpointKey(
    */
   if (isNextRegBreakpoint(bp)) {
     return `NR:$${toHexa2(bp.nextReg)}${nextRegFilterText(bp)}`;
+  }
+
+  /*
+   * A Copper breakpoint is named by its list index (`.plans/COPPER_DEBUGGING_PLAN.md` D3): `CU:$00B`.
+   * Like `NR:`, it has no kind suffix and no partition, and cannot collide with a partition label
+   * (`parseNextPartitionLabel` takes `R0`-`R3`, `X0`/`X1`, `DM`, `M0`-`MF`, `UN` and hex digits;
+   * `CU` is none of them).
+   */
+  if (isCopperBreakpoint(bp)) {
+    return `CU:$${(bp.copperIndex! & 0x3ff).toString(16).toUpperCase().padStart(3, "0")}`;
   }
 
   if (bp.address !== undefined) {

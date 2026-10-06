@@ -1,5 +1,5 @@
 {
-  "kliveVersion": "0.61.0",
+  "kliveVersion": "0.63.0",
   "machineType": "zxnext",
   "modelId": "standard",
   "config": {},
@@ -8,7 +8,12 @@
   "soundMuted": false,
   "savedSoundLevel": 0.8,
   "media": {
-    "sdCard": "/Users/dotneteer/Klive/ks2.cim"
+    "sdCard": "/Users/dotneteer/Klive/ks2.cim",
+    "tape": "/Users/dotneteer/source/kliveide/_experiments/testprojects/taptzx/LTK128.TAP",
+    "diskA": {
+      "diskFile": "/Users/dotneteer/Downloads/we_are_vocoders/thevocoders.scl",
+      "writeProtected": true
+    }
   },
   "machineSpecific": {},
   "ide": {
@@ -19,31 +24,9 @@
   },
   "debugger": {
     "schemaVersion": 1,
-    "breakpoints": [
-      {
-        "address": 56,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "bank": 2,
-        "bankOffset": 4604,
-        "exec": true,
-        "ioMask": 65535
-      },
-      {
-        "exec": false,
-        "memoryRead": false,
-        "memoryWrite": false,
-        "ioRead": false,
-        "ioWrite": false,
-        "ioMask": 65535,
-        "nextReg": 2,
-        "nextRegCopper": false,
-        "disabled": false
-      }
-    ],
-    "watchExpressions": []
+    "breakpoints": [],
+    "watchExpressions": [],
+    "basicWatches": []
   },
   "builder": {
     "roots": [
@@ -81,54 +64,24 @@
               }
             },
             {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm",
-              "position": {
-                "line": 16,
-                "column": 32
-              },
-              "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 16,
-                      "column": 32
-                    },
-                    "position": {
-                      "lineNumber": 16,
-                      "column": 32
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 1,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": 0
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 23,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
-            },
-            {
-              "type": "NexViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/nxmodplayer.nex",
+              "type": "SpriteInspector",
+              "id": "$sprites",
               "position": {
                 "line": 0,
                 "column": 0
+              },
+              "viewState": {
+                "view": "both",
+                "showRaw": false,
+                "zoom": 4,
+                "checker": true,
+                "formatMode": "asUsed",
+                "fallback": "8bit",
+                "paletteOffset": "fromSprite"
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "$sprites"
         }
       ]
     }

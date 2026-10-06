@@ -29,6 +29,7 @@ import {
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
+  copperMenuRenderer,
   sdCardMenuRenderer,
   setupZxSpectrumNext
 } from "./zx-next-menus";
@@ -154,6 +155,7 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
       ...sdCardMenuRenderer(windowInfo, machine, model),
       ...joystickMenuRenderer(windowInfo, machine, model),
       ...mouseMenuRenderer(windowInfo, machine, model),
+      ...copperMenuRenderer(windowInfo, machine, model),
       ...machineStateMenuRenderer(windowInfo, machine, model)
     ],
     ideItems: spectrumIdeRenderer,

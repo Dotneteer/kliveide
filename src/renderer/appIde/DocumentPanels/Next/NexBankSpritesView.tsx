@@ -1,7 +1,6 @@
 import classnames from "classnames";
 import {
   KeyboardEvent,
-  memo,
   MouseEvent,
   useCallback,
   useEffect,
@@ -10,7 +9,7 @@ import {
   useRef,
   useState
 } from "react";
-import { getAbrgForPaletteCode, getRgbPartsForPaletteCode } from "@emu/machines/zxNext/palette";
+import { getRgbPartsForPaletteCode } from "@emu/machines/zxNext/palette";
 import { PanelHeaderGroup } from "@renderer/controls/data";
 import Dropdown, { type DropdownOption } from "@renderer/controls/Dropdown";
 import { LabeledSwitch } from "@renderer/controls/LabeledSwitch";
@@ -37,8 +36,20 @@ import {
   patternSize,
   patternSpan,
   type NexSpriteFormat
-} from "./nexBankSprites";
+} from "@common/zxnext/sprites/spritePatterns";
 import ScrollViewer from "@renderer/controls/ScrollViewer";
+import {
+  SpriteCanvas,
+  spriteCheckerClass,
+  SpritePatternSheet,
+  spriteSegmentClass,
+  spriteSegmentedClass,
+  spriteSegmentLiveClass,
+  SpriteZoomButtons,
+  type SpriteSheetCell,
+  type SpriteSheetZoom
+} from "@renderer/controls/Next/sprites/SpritePatternSheet";
+import { abgrToCss, toAbgrTable } from "@renderer/controls/Next/sprites/spriteAbgr";
 import styles from "./NexBankSpritesView.module.scss";
 
 /*
@@ -56,7 +67,7 @@ import styles from "./NexBankSpritesView.module.scss";
  * in the dump component, which is the one place that decides whether the machine is read at all.
  */
 
-export type NexSpritesZoom = 1 | 2 | 3 | 4;
+export type NexSpritesZoom = SpriteSheetZoom;
 
 /** How the sheet is looked at: document view state, never the sidecar. */
 export type NexSpritesLook = {
@@ -95,8 +106,6 @@ export type NexSpritesPaletteInfo = {
 export const NEX_RESET_PALETTE: number[] = Array.from({ length: 256 }, (_, i) =>
   i | (i & 0x03 ? 0x100 : 0)
 );
-
-const ZOOMS: NexSpritesZoom[] = [1, 2, 3, 4];
 
 const paletteOffsetOptions: DropdownOption[] = Array.from({ length: 16 }, (_, i) => ({
   value: String(i),
@@ -158,7 +167,7 @@ export const NexBankSpritesToolbar = ({
       <PanelHeaderGroup>
         <Text text="Palette" />
         <LabelSeparator />
-        <span className={styles.segmented} role="group" aria-label="Sprite palette">
+        <span className={spriteSegmentedClass} role="group" aria-label="Sprite palette">
           {([0, 1] as const).map((bank) => {
             const live = paletteInfo.source === "machine" && paletteInfo.liveBank === bank;
             const name = bank === 0 ? "Primary" : "Secondary";
@@ -166,7 +175,7 @@ export const NexBankSpritesToolbar = ({
               <button
                 key={bank}
                 type="button"
-                className={classnames(styles.segment, { [styles.segmentLive]: live })}
+                className={classnames(spriteSegmentClass, { [spriteSegmentLiveClass]: live })}
                 aria-pressed={look.palette === bank}
                 title={
                   `${name} sprite palette (Reg $43, bit 3)` +
@@ -194,12 +203,12 @@ export const NexBankSpritesToolbar = ({
       <PanelHeaderGroup>
         <Text text="Format" />
         <LabelSeparator />
-        <span className={styles.segmented} role="group" aria-label="Sprite pattern format">
+        <span className={spriteSegmentedClass} role="group" aria-label="Sprite pattern format">
           {(["8bit", "4bit"] as const).map((f) => (
             <button
               key={f}
               type="button"
-              className={styles.segment}
+              className={spriteSegmentClass}
               aria-pressed={format === f}
               title={
                 f === "8bit"
@@ -230,19 +239,7 @@ export const NexBankSpritesToolbar = ({
       <PanelHeaderGroup>
         <Text text="Zoom" />
         <LabelSeparator />
-        <span className={styles.segmented} role="group" aria-label="Zoom">
-          {ZOOMS.map((z) => (
-            <button
-              key={z}
-              type="button"
-              className={styles.segment}
-              aria-pressed={look.zoom === z}
-              onClick={() => onLookChange({ zoom: z })}
-            >
-              {`${z}×`}
-            </button>
-          ))}
-        </span>
+        <SpriteZoomButtons zoom={look.zoom} onChange={(zoom) => onLookChange({ zoom })} />
       </PanelHeaderGroup>
       <PanelHeaderGroup>
         <LabeledSwitch
@@ -383,7 +380,8 @@ export const NexBankSpritesView = ({
         patternPixels(bytes, i, {
           format,
           offset,
-          paletteOffset: look.paletteOffset,
+          // --- The offset control exists for 4-bit only; an 8-bit bank is shown as stored
+          paletteOffset: format === "4bit" ? look.paletteOffset : 0,
           transparencyIndex: paletteInfo.transparencyIndex
         })
       ),
@@ -391,6 +389,24 @@ export const NexBankSpritesView = ({
   );
   const abgr = useMemo(() => toAbgrTable(paletteInfo.palette), [paletteInfo.palette]);
   const transparentAbgr = abgr[paletteInfo.transparencyIndex & 0xff];
+  const cells = useMemo<SpriteSheetCell[]>(
+    () =>
+      allPixels.map((pixels, index) => {
+        const at = patternOffset(index, format, offset);
+        const markedBytes = spanHasRegionType(regions, at, at + size - 1, "bytes");
+        return {
+          index,
+          id: `nex-sprite-${bank}-${index}`,
+          pixels,
+          title: `Pattern #${index} · bank offset $${toHexa4(at)}${markedBytes ? " · marked as bytes" : ""}`,
+          number: `#${index}`,
+          secondary: `$${toHexa4(at)}`,
+          dimmed: isBlankPattern(pixels),
+          fold: markedBytes
+        };
+      }),
+    [allPixels, bank, format, offset, regions, size]
+  );
 
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const [menuState, menuApi] = useContextMenuState();
@@ -483,30 +499,18 @@ export const NexBankSpritesView = ({
             {count === 0 ? (
               <div className={styles.empty}>No whole pattern fits after this offset.</div>
             ) : (
-              <div className={styles.grid} style={{ ["--sprite-px" as string]: `${16 * look.zoom}px` }}>
-                {allPixels.map((pixels, index) => {
-                  const at = patternOffset(index, format, offset);
-                  return (
-                    <SpriteCell
-                      key={index}
-                      id={`nex-sprite-${bank}-${index}`}
-                      index={index}
-                      bankOffset={at}
-                      pixels={pixels}
-                      abgr={abgr}
-                      transparentAbgr={transparentAbgr}
-                      showTransparent={look.showTransparent}
-                      selected={index >= first && index <= last}
-                      active={index === active}
-                      blank={isBlankPattern(pixels)}
-                      markedBytes={spanHasRegionType(regions, at, at + size - 1, "bytes")}
-                      onSelect={select}
-                      onContextMenu={openMenu}
-                      onOpen={(i) => onShowIn("memory", patternOffset(i, format, offset))}
-                    />
-                  );
-                })}
-              </div>
+              <SpritePatternSheet
+                cells={cells}
+                zoom={look.zoom}
+                abgr={abgr}
+                transparentAbgr={transparentAbgr}
+                showTransparent={look.showTransparent}
+                isSelected={(index) => index >= first && index <= last}
+                activeIndex={active}
+                onSelect={select}
+                onContextMenu={openMenu}
+                onOpen={(i) => onShowIn("memory", patternOffset(i, format, offset))}
+              />
             )}
           </div>
         </ScrollViewer>
@@ -578,121 +582,6 @@ export function patternForAddress(
   const bankOffset = (address - addressBase) & 0xffff;
   return bankOffset < 0x4000 ? patternAt(bankOffset, format, offset) : undefined;
 }
-
-// ─── Cells ───────────────────────────────────────────────────────────────────
-
-type CellProps = {
-  id: string;
-  index: number;
-  bankOffset: number;
-  pixels: Int16Array;
-  abgr: Uint32Array;
-  transparentAbgr: number;
-  showTransparent: boolean;
-  selected: boolean;
-  active: boolean;
-  blank: boolean;
-  markedBytes: boolean;
-  onSelect: (index: number, extend: boolean) => void;
-  onContextMenu: (index: number, event: MouseEvent<HTMLElement>) => void;
-  onOpen: (index: number) => void;
-};
-
-const SpriteCell = memo(
-  ({
-    id,
-    index,
-    bankOffset,
-    pixels,
-    abgr,
-    transparentAbgr,
-    showTransparent,
-    selected,
-    active,
-    blank,
-    markedBytes,
-    onSelect,
-    onContextMenu,
-    onOpen
-  }: CellProps) => (
-    <div
-      id={id}
-      role="option"
-      aria-selected={selected}
-      data-pattern={index}
-      className={classnames(styles.cell, {
-        [styles.cellSelected]: selected,
-        [styles.cellActive]: active,
-        [styles.cellBlank]: blank
-      })}
-      title={`Pattern #${index} · bank offset $${toHexa4(bankOffset)}${markedBytes ? " · marked as bytes" : ""}`}
-      onClick={(event) => onSelect(index, event.shiftKey)}
-      onDoubleClick={() => onOpen(index)}
-      onContextMenu={(event) => onContextMenu(index, event)}
-    >
-      <span className={styles.cellImage}>
-        <SpriteCanvas
-          pixels={pixels}
-          abgr={abgr}
-          transparentAbgr={transparentAbgr}
-          showTransparent={showTransparent}
-          className={styles.cellCanvas}
-        />
-        {markedBytes && <span className={styles.bytesMark} aria-label="Marked as bytes" />}
-      </span>
-      <span className={styles.cellLabel}>
-        <span className={styles.cellNumber}>{`#${index}`}</span>
-        {` $${toHexa4(bankOffset)}`}
-      </span>
-    </div>
-  )
-);
-
-/**
- * A pattern at its native 16×16, scaled up by CSS with `image-rendering: pixelated`.
- *
- * Transparent pixels are left transparent in the canvas when the checker is on, so the checkerboard
- * is the element's CSS background and stays crisp at any zoom instead of being baked in at sprite
- * resolution.
- */
-const SpriteCanvas = memo(
-  ({
-    pixels,
-    abgr,
-    transparentAbgr,
-    showTransparent,
-    className
-  }: {
-    pixels: Int16Array;
-    abgr: Uint32Array;
-    transparentAbgr: number;
-    showTransparent: boolean;
-    className?: string;
-  }) => {
-    const ref = useRef<HTMLCanvasElement | null>(null);
-    useLayoutEffect(() => {
-      const context = ref.current?.getContext?.("2d");
-      if (!context) return;
-      const image = context.createImageData(16, 16);
-      const out = new Uint32Array(image.data.buffer);
-      for (let p = 0; p < 256; p++) {
-        const value = pixels[p];
-        out[p] =
-          value === NEX_SPRITE_TRANSPARENT ? (showTransparent ? 0 : transparentAbgr) : abgr[value];
-      }
-      context.putImageData(image, 0, 0);
-    }, [abgr, pixels, showTransparent, transparentAbgr]);
-
-    return (
-      <canvas
-        ref={ref}
-        width={16}
-        height={16}
-        className={classnames(className, { [styles.checker]: showTransparent })}
-      />
-    );
-  }
-);
 
 // ─── Inspector ───────────────────────────────────────────────────────────────
 
@@ -776,7 +665,7 @@ const SpriteInspector = ({
               {shownColours.map(({ index, count }) =>
                 index === NEX_SPRITE_TRANSPARENT ? (
                   <span key="t" className={styles.swatch} title={`Transparent · ${count} px`}>
-                    <span className={classnames(styles.swatchColour, styles.checker)} />
+                    <span className={classnames(styles.swatchColour, spriteCheckerClass)} />
                     transp.
                   </span>
                 ) : (
@@ -863,16 +752,4 @@ function describeHint(hint: ReturnType<typeof patternHint>, transparencyIndex: n
         hint.transparent === 1 ? "" : "s"
       }.`;
   }
-}
-
-// ─── Colour helpers ──────────────────────────────────────────────────────────
-
-function toAbgrTable(palette: number[]): Uint32Array {
-  const table = new Uint32Array(256);
-  for (let i = 0; i < 256; i++) table[i] = getAbrgForPaletteCode(palette[i] ?? i) >>> 0;
-  return table;
-}
-
-function abgrToCss(value: number): string {
-  return `rgb(${value & 0xff}, ${(value >>> 8) & 0xff}, ${(value >>> 16) & 0xff})`;
 }

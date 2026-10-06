@@ -18,57 +18,6 @@
 
 // ─── Toolbar pieces ──────────────────────────────────────────────────────────
 
-.segmented {
-  display: inline-flex;
-  flex: 0 0 auto;
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.segment {
-  position: relative;
-  padding: 0 var(--space-2);
-  border: 0;
-  background: var(--bgcolor-input);
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--font-size-100);
-  line-height: 1.6;
-  cursor: pointer;
-  @include focus-ring;
-
-  & + & {
-    border-left: 1px solid var(--border-default);
-  }
-
-  &:hover {
-    color: var(--text-primary);
-  }
-
-  &[aria-pressed="true"] {
-    background: var(--accent-solid);
-    color: var(--text-on-accent);
-  }
-}
-
-/*
- * The palette the machine is drawing with: a ring, the sprite editor's vocabulary. Invisible under
- * the fill when the two coincide, which is the ordinary case.
- */
-.segmentLive::after {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  border: 1px solid var(--accent-solid);
-  border-radius: 2px;
-  pointer-events: none;
-}
-
-.segmentLive[aria-pressed="true"]::after {
-  border-color: var(--text-on-accent);
-}
-
 .paletteFallback {
   color: var(--status-warning);
   font-size: var(--font-size-100);
@@ -134,112 +83,11 @@
   min-height: 100%;
   padding: var(--space-2);
   outline: none;
-
-  &:focus-visible .cellActive {
-    outline: 2px solid var(--accent-solid);
-    outline-offset: 1px;
-  }
 }
 
 .empty {
   padding: var(--space-4);
   color: var(--data-secondary);
-}
-
-/*
- * Cells wrap to the width. A cell is never narrower than its label (`11ch`: `#127 $3F80`), so 1×
- * zoom still reads; `--sprite-px` is the scaled image, set per zoom by the component.
- */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(max(var(--sprite-px), 11ch), 1fr));
-  gap: var(--space-2) var(--space-1);
-}
-
-.cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-0_5);
-  padding: var(--space-1) var(--space-0_5);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  user-select: none;
-
-  &:hover {
-    background: var(--surface-hover);
-  }
-}
-
-.cellSelected {
-  border-color: var(--accent-solid);
-  background: var(--surface-selected);
-
-  &:hover {
-    background: var(--surface-selected);
-  }
-}
-
-.cellActive {
-  box-shadow: inset 0 0 0 1px var(--accent-solid);
-}
-
-/* --- A pattern of one colour is kept in the grid but recedes: a sheet of blanks still reads. */
-.cellBlank .cellCanvas {
-  opacity: 0.35;
-}
-
-.cellImage {
-  position: relative;
-  display: block;
-}
-
-/*
- * A faint edge on every pattern: a bank is often mostly zero bytes, and a black 16×16 square on the
- * dark panel — dimmed as blank besides — otherwise vanishes, taking the sheet's grid with it.
- */
-.cellCanvas {
-  display: block;
-  width: var(--sprite-px);
-  height: var(--sprite-px);
-  outline: 1px solid var(--border-default);
-  image-rendering: pixelated;
-}
-
-/* --- Already a `bytes` region: a corner fold, so the grid shows what the listing will. */
-.bytesMark {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-top: 8px solid var(--accent-secondary-text);
-  border-left: 8px solid transparent;
-}
-
-.cellLabel {
-  color: var(--data-secondary);
-  font-family: var(--monospace-font);
-  font-size: var(--font-size-100);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.cellNumber {
-  color: var(--text-primary);
-}
-
-/* --- Transparent pixels show this through the canvas. */
-.checker {
-  background-color: var(--surface-active);
-  background-image:
-    linear-gradient(45deg, var(--surface-hover) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--surface-hover) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--surface-hover) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--surface-hover) 75%);
-  background-size: 8px 8px;
-  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
 }
 
 // ─── Inspector ───────────────────────────────────────────────────────────────

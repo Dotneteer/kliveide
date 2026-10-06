@@ -19,7 +19,12 @@ import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 import type { ResolvedBreakpoint } from "@emu/abstractions/ResolvedBreakpoint";
 import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { MachineInfo } from "@common/machines/info-types";
-import type { NextRegWriteEvent } from "@common/messaging/EmuApi";
+import type { CopperHitEvent, NextRegWriteEvent } from "@common/messaging/EmuApi";
+import {
+  decodeCopperWord,
+  formatCopperIndex,
+  formatCopperInstruction
+} from "@common/zxnext/copper/copperDecoder";
 import type { IFloppyControllerDevice } from "@emu/abstractions/IFloppyControllerDevice";
 import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import type { RzxState } from "@state/AppState";
@@ -1563,6 +1568,10 @@ export class MachineController implements IMachineController {
     // --- A stop a DeZog comment caused names the comment (S11)
     const commentStop = this.describeCommentStop();
     if (commentStop) return commentStop;
+    const copperHit = (this.machine as { lastCopperHit?: CopperHitEvent }).lastCopperHit;
+    if (copperHit) {
+      return describeCopperStop(copperHit, this.machine.getPartitionLabels?.());
+    }
     const write = (this.machine as { lastNextRegWrite?: NextRegWriteEvent }).lastNextRegWrite;
     if (!write) {
       return `Breakpoint reached at PC=$${toHexa4(this.machine.pc)}`;
@@ -1593,6 +1602,36 @@ export class MachineController implements IMachineController {
     return `NextReg breakpoint: ${named} ${hex2(write.oldValue)} -> ${hex2(write.newValue)}, ${from}`;
   }
 
+}
+
+/**
+ * The stop message of a Copper breakpoint or a Copper step (`.plans/COPPER_DEBUGGING_PLAN.md` §4.7).
+ * It names the **hit** - the instruction and the beam where it completed - because the Copper has
+ * run on to the end of the Z80 instruction by the time the machine stops (T1):
+ *
+ *   Copper breakpoint: $00B WAIT 120, 31 satisfied at line 120, hc 262 (x 250); CPU at $8012 in R0
+ *   Copper breakpoint: $00D MOVE $41, $FC (Palette Value (8 bit)) at line 120, hc 270; CPU at $8012
+ */
+export function describeCopperStop(
+  hit: CopperHitEvent,
+  partitionLabels?: Record<number, string>
+): string {
+  const instr = decodeCopperWord(hit.index, hit.word);
+  const at = `line ${hit.line}, hc ${hit.hc}`;
+  let what: string;
+  switch (instr.kind) {
+    case "wait":
+      what = `${formatCopperInstruction(instr)} satisfied at ${at} (x ${hit.hc - 12})`;
+      break;
+    case "move":
+      what = `${formatCopperInstruction(instr)}${instr.regName ? ` (${instr.regName})` : ""} at ${at}`;
+      break;
+    default:
+      what = `${formatCopperInstruction(instr)} at ${at}`;
+  }
+  const paged =
+    hit.partition === undefined ? "" : ` in ${partitionLabels?.[hit.partition] ?? hit.partition}`;
+  return `Copper breakpoint: ${formatCopperIndex(hit.index)} ${what}; CPU at $${toHexa4(hit.pc)}${paged}`;
 }
 
 /**

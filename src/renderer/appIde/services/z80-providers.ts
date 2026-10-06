@@ -20,6 +20,13 @@ import {
 } from "./z80-completion-data";
 import { lookupTstates } from "./z80-tstates-data";
 import type { DocumentOutlineEntry, SymbolDefinitionInfo } from "@abstractions/CompilerInfo";
+import { NEXT_REG_DESCRIPTORS } from "@emu/machines/zxNext/nextRegDescriptors";
+import {
+  decodeCopperWord,
+  describeCopperInstruction,
+  formatCopperInstruction,
+  formatCopperWord
+} from "@common/zxnext/copper/copperDecoder";
 
 // ---------------------------------------------------------------------------
 // Semantic-token change notification
@@ -467,6 +474,153 @@ export function getDmaCompletionItems(ctx: DmaCompletionContext): CompletionResu
   return DMA_ITEMS[ctx.phase] ?? [];
 }
 
+// ---------------------------------------------------------------------------
+// Copper context-aware completion helpers (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9)
+// ---------------------------------------------------------------------------
+
+/** Where the cursor is within a `.copper` pragma line. */
+export type CopperCompletionContext = {
+  phase: "subcommand" | "move-reg" | "wait-args";
+};
+
+/** A `.copper` line (dotted forms only, like the assembler), after an optional `label:` */
+const COPPER_LINE_RE = /^(?:[^:;"]+:\s*)?\s*\.copper\b/i;
+
+/**
+ * Detects the Copper completion context from the current line text (up to the cursor).
+ * Returns null when the line is not a `.copper` pragma, or when nothing is to be offered.
+ */
+export function getCopperCompletionContext(lineContent: string): CopperCompletionContext | null {
+  const match = COPPER_LINE_RE.exec(lineContent);
+  if (!match) return null;
+  const rest = lineContent.slice(match[0].length);
+  // --- The cursor must be past `.copper ` (right after `.copper` the word is still the pragma)
+  if (!/^\s/.test(rest)) return null;
+  const trimmed = rest.trimStart().toLowerCase();
+  // --- Still typing the sub-command (or nothing typed yet)
+  if (/^\w*$/.test(trimmed)) return { phase: "subcommand" };
+  // --- `move ` with nothing typed after it: `$41` is not a word, so a typed prefix would be
+  // --- duplicated rather than replaced
+  if (/^move\s+$/.test(trimmed)) return { phase: "move-reg" };
+  // --- `wait ` with nothing typed after it
+  if (/^wait\s+$/.test(trimmed)) return { phase: "wait-args" };
+  return null;
+}
+
+function copperKeyword(label: string, detail: string, insertText?: string): CompletionResult {
+  const text = insertText ?? label;
+  return { label, kind: CIK.Keyword, detail, insertText: text, isSnippet: text.includes("$") };
+}
+
+const COPPER_SUBCOMMAND_ITEMS: CompletionResult[] = [
+  copperKeyword("wait", "WAIT for a raster line and horizontal position", "wait ${1:line}, ${2:hpos}"),
+  copperKeyword("move", "MOVE a value to a NextReg ($00-$7F)", "move ${1:reg}, ${2:value}"),
+  copperKeyword("nop", "NOP ($0000, a MOVE to register 0)"),
+  copperKeyword("halt", "HALT ($FFFF, WAIT 511, 63: park until the next restart)"),
+  copperKeyword("word", "Any 16-bit Copper word, big-endian", "word ${1:value}")
+];
+
+/** NextRegs $01-$7F: the registers a Copper MOVE can write ($00 would be a NOP). */
+const COPPER_MOVE_REG_ITEMS: CompletionResult[] = NEXT_REG_DESCRIPTORS.filter(
+  (d) => d.id >= 0x01 && d.id <= 0x7f
+).map((d) => {
+  const label = `$${d.id.toString(16).toUpperCase().padStart(2, "0")}`;
+  return { label, kind: CIK.Constant, detail: d.description, insertText: label, isSnippet: false };
+});
+
+const COPPER_WAIT_ARGS_ITEMS: CompletionResult[] = [
+  {
+    label: "line, hpos",
+    kind: CIK.Snippet,
+    detail: "Raster line (0-511), horizontal position (0-63; paper x = 8 * hpos)",
+    insertText: "${1:line}, ${2:hpos}",
+    isSnippet: true
+  }
+];
+
+/** Returns context-aware completion items for the given Copper completion phase. */
+export function getCopperCompletionItems(ctx: CopperCompletionContext): CompletionResult[] {
+  switch (ctx.phase) {
+    case "subcommand":
+      return COPPER_SUBCOMMAND_ITEMS;
+    case "move-reg":
+      return COPPER_MOVE_REG_ITEMS;
+    case "wait-args":
+      return COPPER_WAIT_ARGS_ITEMS;
+  }
+}
+
+/** Parses a numeric literal the way the Klive assembler writes them; `undefined` if it is not one. */
+function parseAsmLiteral(text: string): number | undefined {
+  const t = text.trim();
+  let m: RegExpExecArray | null;
+  if ((m = /^-?\d+$/.exec(t))) return parseInt(t, 10);
+  if ((m = /^(?:\$|0x|#)([0-9a-f]+)$/i.exec(t))) return parseInt(m[1], 16);
+  if ((m = /^([0-9][0-9a-f]*)h$/i.exec(t))) return parseInt(m[1], 16);
+  if ((m = /^(?:%|0b)([01_]+)$/i.exec(t))) return parseInt(m[1].replace(/_/g, ""), 2);
+  return undefined;
+}
+
+/**
+ * The Copper word a `.copper` line assembles to, from its literal operands; `undefined` when an
+ * operand is not a literal or out of range (the assembler reports that).
+ */
+export function copperWordOfLine(lineContent: string): number | undefined {
+  const match = COPPER_LINE_RE.exec(lineContent);
+  if (!match) return undefined;
+  const body = lineContent.slice(match[0].length).split(";")[0].trim();
+  const sub = /^(\w+)\s*(.*)$/.exec(body);
+  if (!sub) return undefined;
+  const args = sub[2].trim() === "" ? [] : sub[2].split(",").map(parseAsmLiteral);
+  if (args.some((a) => a === undefined)) return undefined;
+  const [a, b] = args as number[];
+  switch (sub[1].toLowerCase()) {
+    case "nop":
+      return args.length === 0 ? 0x0000 : undefined;
+    case "halt":
+      return args.length === 0 ? 0xffff : undefined;
+    case "word":
+      return args.length === 1 ? a & 0xffff : undefined;
+    case "wait":
+      if (args.length !== 2 || a < 0 || a > 511 || b < 0 || b > 63) return undefined;
+      return 0x8000 | (b << 9) | a;
+    case "move":
+      if (args.length !== 2 || a < 0 || a > 0x7f || b < -128 || b > 0xff) return undefined;
+      return (a << 8) | (b & 0xff);
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Hover for a `.copper` line: the encoded word and its decoded meaning, through the shared Copper
+ * decoder. The word comes from the line's literal operands, or else from the bytes the last build
+ * emitted for the line (`compiledBytes`), which covers symbolic operands.
+ * Returns null when the line is not a `.copper` pragma or the word is unknown.
+ */
+export function computeCopperHover(lineContent: string, compiledBytes?: readonly number[]): HoverResult | null {
+  if (!COPPER_LINE_RE.test(lineContent)) return null;
+  let word = copperWordOfLine(lineContent);
+  if (word === undefined && compiledBytes?.length === 2) {
+    word = ((compiledBytes[0] & 0xff) << 8) | (compiledBytes[1] & 0xff);
+  }
+  if (word === undefined) return null;
+  const instr = decodeCopperWord(0, word);
+  const head =
+    instr.kind === "wait"
+      ? `WAIT line ${instr.line}, x ${instr.paperX}`
+      : instr.kind === "halt"
+        ? "HALT (WAIT 511, 63)"
+        : formatCopperInstruction(instr);
+  const contents = [`**${formatCopperWord(word)}** · ${head} *(Copper)*`];
+  if (instr.kind === "wait") {
+    contents.push(`Releases when the raster reaches line ${instr.line} and hc ${instr.hc} (paper x ${instr.paperX})`);
+  } else {
+    contents.push(describeCopperInstruction(instr));
+  }
+  return { contents };
+}
+
 /**
  * Compute completion items for the given word prefix and optional trigger character.
  *
@@ -486,6 +640,10 @@ export function computeCompletionItems(
     const dmaCtx = getDmaCompletionContext(lineContent);
     if (dmaCtx) {
       return getDmaCompletionItems(dmaCtx);
+    }
+    const copperCtx = getCopperCompletionContext(lineContent);
+    if (copperCtx) {
+      return getCopperCompletionItems(copperCtx);
     }
   }
 
@@ -1243,14 +1401,6 @@ export function registerZ80Providers(
       const svc = getService();
       const lineContent: string = model.getLineContent(position.lineNumber) ?? "";
 
-      // --- Symbol / instruction hover
-      const result = word
-        ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.(), lineContent)
-        : null;
-
-      // --- Numeric literal hover (hex/decimal/binary/octal conversions)
-      const numResult = result ? null : computeNumericHover(lineContent, position.column);
-
       // --- Address + byte info for the current line
       const modelPath: string = model.uri?.fsPath ?? model.uri?.path ?? "";
       const fileIndex = svc.getFileIndex(modelPath);
@@ -1258,6 +1408,24 @@ export function registerZ80Providers(
         fileIndex !== undefined
           ? svc.getLineAddress(fileIndex, position.lineNumber)
           : undefined;
+
+      // --- A `.copper` line: the decoded Copper word (`nop`/`halt` there are not Z80 mnemonics).
+      // --- Only before a comment, so hovering the comment still behaves as elsewhere.
+      const commentAt = lineContent.indexOf(";");
+      const copperResult =
+        commentAt < 0 || position.column <= commentAt
+          ? computeCopperHover(lineContent, lineAddr?.bytes)
+          : null;
+
+      // --- Symbol / instruction hover
+      const result =
+        copperResult ??
+        (word
+          ? computeHover(word.word, svc, position.lineNumber, getProjectFolder?.(), lineContent)
+          : null);
+
+      // --- Numeric literal hover (hex/decimal/binary/octal conversions)
+      const numResult = result ? null : computeNumericHover(lineContent, position.column);
 
       if (!result && !numResult && !lineAddr) return null;
 

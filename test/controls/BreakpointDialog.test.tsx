@@ -873,3 +873,45 @@ describe("BreakpointDialog - logpoints", () => {
     expect(controls.close).not.toHaveBeenCalled();
   });
 });
+
+describe("BreakpointDialog - Copper instruction breakpoints", () => {
+  const chooseCopper = () => fireEvent.click(screen.getByLabelText("Copper instruction"));
+
+  it("offers the type only on the ZX Spectrum Next", () => {
+    renderWithProviders(
+      <BreakpointDialog env={anEnv()} machineSetup={aListMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("Copper instruction")).toBeNull();
+    cleanup();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    expect(screen.queryByLabelText("Copper instruction")).not.toBeNull();
+  });
+
+  it("replaces the address with a list index and hides the partition row", () => {
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={someControls()} />
+    );
+    chooseCopper();
+    expect(screen.queryByText(/^Address/)).toBeNull();
+    expect(screen.queryByText("Break only in a specific partition")).toBeNull();
+    expect(screen.queryByText("List index *")).not.toBeNull();
+  });
+
+  it("emits a cu: breakpoint", async () => {
+    const controls = someControls();
+    renderWithProviders(
+      <BreakpointDialog env={aNextEnv()} machineSetup={aMatrixMachine} controls={controls} />
+    );
+    chooseCopper();
+    typeInto(0, "$00B");
+    submit();
+    await waitFor(() =>
+      expect(controls.close).toHaveBeenCalledWith({
+        breakpoint: expect.objectContaining({ copperIndex: 0x0b, exec: false })
+      })
+    );
+    expect(controls.close.mock.calls[0][0].breakpoint.address).toBeUndefined();
+  });
+});

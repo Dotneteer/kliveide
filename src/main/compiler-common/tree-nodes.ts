@@ -67,7 +67,8 @@ export type Pragma<TInstruction extends TypedObject, TToken extends CommonTokenT
   | InjectOptPragma<TInstruction>
   | OnSuccessPragma<TInstruction>
   | SaveNexPragma<TInstruction, TToken>
-  | DmaPragma<TInstruction, TToken>;
+  | DmaPragma<TInstruction, TToken>
+  | CopperPragma<TInstruction, TToken>;
 
 export type IfLikeStatement<TInstruction extends TypedObject, TToken extends CommonTokenType> =
   | IfStatement<TInstruction, TToken>
@@ -1399,4 +1400,51 @@ export interface MacroOrStructInvocation<TNode extends TypedObject, TToken exten
   type: "MacroOrStructInvocation";
   identifier: IdentifierNode<TNode>;
   operands: Operand<TNode, TToken>[];
+}
+
+// ============================================================================
+// Copper pragma nodes
+
+/**
+ * Union of all .copper sub-command pragma node types
+ */
+export type CopperPragma<TNode extends TypedObject, TToken extends CommonTokenType> =
+  | CopperWaitPragma<TNode, TToken>
+  | CopperMovePragma<TNode, TToken>
+  | CopperNopPragma<TNode>
+  | CopperHaltPragma<TNode>
+  | CopperWordPragma<TNode, TToken>;
+
+/** `.copper wait <line>, <hpos>` */
+export interface CopperWaitPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "CopperWaitPragma";
+  /** Not `line`: that is the node's source line (`NodePosition`) */
+  waitLine: Expression<TNode, TToken>;
+  waitHpos: Expression<TNode, TToken>;
+}
+
+/** `.copper move <reg>, <value>` */
+export interface CopperMovePragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "CopperMovePragma";
+  reg: Expression<TNode, TToken>;
+  value: Expression<TNode, TToken>;
+}
+
+/** `.copper nop` */
+export interface CopperNopPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "CopperNopPragma";
+}
+
+/** `.copper halt` */
+export interface CopperHaltPragma<TNode extends TypedObject> extends PartialAssemblyLine<TNode> {
+  type: "CopperHaltPragma";
+}
+
+/** `.copper word <expr>` */
+export interface CopperWordPragma<TNode extends TypedObject, TToken extends CommonTokenType>
+  extends PartialAssemblyLine<TNode> {
+  type: "CopperWordPragma";
+  value: Expression<TNode, TToken>;
 }

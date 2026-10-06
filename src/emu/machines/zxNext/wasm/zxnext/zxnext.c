@@ -87,6 +87,23 @@ static uint8_t zxnextNextRegHitOld;
 static uint8_t zxnextNextRegHitNew;
 static uint8_t zxnextNextRegHitOrigin;
 
+/*
+ * The Copper-instruction breakpoint watch and its hit latch. See `.plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.6.
+ *
+ * One bit per Copper list index, pushed whole by the host. `zxnextCopperWatchArmed` guards the hot
+ * path (trap T3): the Copper tests the table only at instruction boundaries, and only when armed.
+ * `zxnextCopperWatchAny` makes every index match; the IDE's "Step Copper" arms it as a one-shot.
+ *
+ * The latch keeps the *first* hit since the host last took one (trap T2) together with the beam
+ * position it happened at, because the Copper keeps running to the end of the Z80 instruction and
+ * may be well past the hit when the machine stops (trap T1).
+ */
+static uint8_t zxnextCopperWatch[128];
+static uint8_t zxnextCopperWatchArmed;
+static uint8_t zxnextCopperWatchAny;
+static uint32_t zxnextCopperHit;
+
 static uint16_t cpuAf;
 static uint16_t cpuBc;
 static uint16_t cpuDe;
@@ -515,6 +532,29 @@ uint32_t zxnextTakeNextRegHit(void) {
   return packed;
 }
 
+/*
+ * The Copper watch table: 128 bytes, one bit per list index (bit `index & 7` of byte `index >> 3`).
+ * The host pushes it whole, then arms it with `zxnextSetCopperWatchMode`.
+ */
+uint32_t zxnextCopperWatchPtr(void) { return (uint32_t)(uintptr_t)zxnextCopperWatch; }
+
+/* Arm (or disarm) the table, and the "any index" mode Step Copper uses. Clears a stale hit. */
+void zxnextSetCopperWatchMode(uint32_t armed, uint32_t any) {
+  zxnextCopperWatchAny = any ? 1u : 0u;
+  zxnextCopperWatchArmed = (armed || any) ? 1u : 0u;
+  zxnextCopperHit = 0u;
+}
+
+/*
+ * Take the latched Copper hit, if there is one, and clear it. Bit 31: present; bits 28-29: kind
+ * (1 WAIT, 2 MOVE, 3 NOP); bits 19-27: `hc_ula`; bits 10-18: `cvc`; bits 0-9: the list index.
+ */
+uint32_t zxnextTakeCopperHit(void) {
+  uint32_t hit = zxnextCopperHit;
+  zxnextCopperHit = 0u;
+  return hit;
+}
+
 void zxnextDivMmcBeforeFetch(uint32_t pc) { zxnextDivMmcBeforeOpcodeFetch(pc); }
 void zxnextDivMmcAfterFetch(uint32_t retnSeen, uint32_t suppressRetn) { zxnextDivMmcAfterOpcodeFetch(retnSeen, suppressRetn); }
 void zxnextDivMmcArmNmi(void) { zxnextDivMmcArmNmiButton(); }
@@ -631,6 +671,62 @@ uint32_t zxnextGetSpritePatternByte4(uint32_t variant, uint32_t offset) {
   return zxnextSpritesGetPatternByte4(variant, offset);
 }
 uint32_t zxnextGetLastVisibleSpriteIndex(void) { return zxnextSpritesGetLastVisibleSpriteIndex(); }
+
+/*
+ * The Sprite Inspector's reads (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.2). None of them changes the
+ * machine: the status is peeked, not read through $303B (T1), and the IDE resolves into its own
+ * buffer, never the render's cache (T3).
+ */
+/* `zxnextSpriteAttributes[128][5]`: 640 contiguous bytes */
+uint32_t zxnextSpriteAttributesPtr(void) { return zxnextSpritesGetAttributesPtr(); }
+/*
+ * `zxnextSpritePatternMemory8[512][256]`: 8 transformed variants per 8-bit pattern. Variant 0 is the
+ * identity layout, so raw pattern byte `N*256+i` is at row `N*8`, offset `i` - a stride of 2048 (T2).
+ */
+uint32_t zxnextSpritePatternMemory8Ptr(void) { return zxnextSpritesGetPatternMemory8Ptr(); }
+/* $15 as written (sprite 0 on top, clipping, layer priority, over border, enabled) */
+uint32_t zxnextGetSpriteControl(void) { return zxnextSpritesGetNextReg(0x15u); }
+/* $303B bit 1 (too many) and bit 0 (collision), without clearing them (T1) */
+uint32_t zxnextGetSpriteStatusPeek(void) { return zxnextSpritesPeekStatus(); }
+/* The $34 attribute mirror index, bit 7 included */
+uint32_t zxnextGetSpriteMirrorIndex(void) { return zxnextSpritesGetMirrorIndex(); }
+/* Which `$19` value the next write sets (`$1C` bits 3-2) */
+uint32_t zxnextGetSpriteClipIndex(void) { return zxnextSpritesGetClipIndex(); }
+
+/*
+ * All 128 sprites resolved for the IDE, 8 bytes each (volatile, T3):
+ *   0    flags: bit 0 visible, 1 xmirror, 2 ymirror, 3 rotate, 4 four-bit
+ *   1-2  X, little-endian, 9 bits
+ *   3-4  Y, little-endian, 9 bits
+ *   5    palette offset
+ *   6    scale: scaleX << 2 | scaleY
+ *   7    pattern7 (the 7-bit pattern number, `N5..N0 & N6`)
+ * Decoded on the host by `decodeResolvedSprites` (`src/common/zxnext/sprites/spriteAttributes.ts`).
+ */
+static uint8_t zxnextIdeResolvedSprites[128u * 8u];
+/*
+ * The resolve's working table. A static, not a local: a 1.8K local lives on the shadow stack, which is
+ * in linear memory and so in the state image - reading the sprites would have changed it.
+ */
+static ZxnextResolvedSprite zxnextIdeResolveScratch[128];
+
+uint32_t zxnextResolveSpritesForIde(void) {
+  zxnextUlaResolveSpritesInto(zxnextIdeResolveScratch, 128u);
+  for (uint32_t i = 0u; i < 128u; i++) {
+    const ZxnextResolvedSprite* r = &zxnextIdeResolveScratch[i];
+    uint8_t* o = &zxnextIdeResolvedSprites[i * 8u];
+    o[0] = (uint8_t)((r->visible ? 0x01u : 0u) | (r->xmirror ? 0x02u : 0u) | (r->ymirror ? 0x04u : 0u) |
+      (r->rotate ? 0x08u : 0u) | (r->is4Bit ? 0x10u : 0u));
+    o[1] = (uint8_t)(r->x & 0xffu);
+    o[2] = (uint8_t)((r->x >> 8u) & 0x01u);
+    o[3] = (uint8_t)(r->y & 0xffu);
+    o[4] = (uint8_t)((r->y >> 8u) & 0x01u);
+    o[5] = (uint8_t)(r->paletteOffset & 0x0fu);
+    o[6] = (uint8_t)(((r->scaleX & 3u) << 2u) | (r->scaleY & 3u));
+    o[7] = (uint8_t)(r->pattern7 & 0x7fu);
+  }
+  return (uint32_t)(uintptr_t)zxnextIdeResolvedSprites;
+}
 void zxnextCopperTick(uint32_t cvc, uint32_t hc) { zxnextCopperExecuteTick(cvc, hc); }
 uint32_t zxnextCopperRead(uint32_t address) { return zxnextCopperReadMemory(address); }
 uint32_t zxnextGetCopperNextReg(uint32_t reg) { return zxnextCopperGetNextReg(reg); }
@@ -640,6 +736,14 @@ uint32_t zxnextGetCopperListAddress(void) { return zxnextCopperGetListAddress();
 uint32_t zxnextGetCopperListData(void) { return zxnextCopperGetListData(); }
 uint32_t zxnextGetCopperDout(void) { return zxnextCopperGetDout(); }
 uint32_t zxnextGetCopperVerticalLineOffset(void) { return zxnextCopperGetVerticalLineOffset(); }
+/* The Copper list RAM, for the IDE to copy in one go (trap T8) */
+uint32_t zxnextCopperMemoryPtr(void) { return zxnextCopperGetMemoryPtr(); }
+/* The Copper beam at the CPU's current tact: bits 0-8 `cvc`, bits 9-17 `hc_ula`, bit 18 waiting */
+uint32_t zxnextGetCopperBeam(void) { return zxnextCopperGetBeam(); }
+/* The live timing: bits 0-15 the `cvc` lines in a frame, bits 16-31 the `hc_ula` positions in a line */
+uint32_t zxnextGetCopperTiming(void) { return zxnextCopperGetTiming(); }
+/* The visible lines above the paper: the last this-many `cvc` lines of a frame are the upper border */
+uint32_t zxnextGetCopperUpperBorder(void) { return zxnextTimingDisplayYStart - zxnextTimingFirstVc; }
 void zxnextSetBeeperOutput(uint32_t ear, uint32_t mic) { zxnextBeeperSetOutput(ear, mic); }
 uint32_t zxnextGetBeeperEar(void) { return zxnextBeeperGetEar(); }
 uint32_t zxnextGetBeeperMic(void) { return zxnextBeeperGetMic(); }

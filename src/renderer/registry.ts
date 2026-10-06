@@ -26,6 +26,8 @@ import {
   STATIC_MEMORY_DUMP_VIEWER,
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
+  COPPER_EDITOR,
+  SPRITES_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -43,6 +45,8 @@ import { OutputPaneInfo } from "./abstractions/OutputPaneInfo";
 import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
+import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
+import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -150,6 +154,7 @@ import { createBankedDisassemblyPanel } from "./appIde/DocumentPanels/Disassembl
 import { createMemoryPanel } from "@renderer/features/memory/MemoryPanel";
 import { createUnknownFileViewerPanel } from "./appIde/DocumentPanels/UnknownFileViewerPanel";
 import { NextRegPanel } from "./appIde/SideBarPanels/NextRegPanel";
+import { CopperPanel } from "./appIde/SideBarPanels/CopperPanel";
 import { MemMappingPanel } from "./appIde/SideBarPanels/MemMappingPanel";
 import { VariablesPanel } from "./appIde/debugger/source/VariablesPanel";
 import { CallStackPanel } from "./appIde/SideBarPanels/CallStackPanel";
@@ -253,6 +258,14 @@ export const sideBarPanelRegistry: SideBarPanelInfo[] = [
     hostActivity: ACTIVITY_DEBUG_ID,
     useScrollViewer: false,
     renderer: NextRegPanel,
+    restrictTo: [MI_ZXNEXT]
+  },
+  {
+    // --- Beside the Next Registers (`.plans/COPPER_DEBUGGING_PLAN.md` D16)
+    id: "nextCopperPanel",
+    title: "Copper",
+    hostActivity: ACTIVITY_DEBUG_ID,
+    renderer: CopperPanel,
     restrictTo: [MI_ZXNEXT]
   },
   {
@@ -420,6 +433,16 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: BASIC_EDITOR,
     renderer: createBasicPanel,
     icon: "code"
+  },
+  {
+    id: COPPER_EDITOR,
+    renderer: createCopperListPanel,
+    icon: "bp-copper"
+  },
+  {
+    id: SPRITES_EDITOR,
+    renderer: createSpriteInspectorPanel,
+    icon: "sprites"
   },
   {
     id: COMMAND_RESULT_EDITOR,

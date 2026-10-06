@@ -15,6 +15,7 @@ import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
 import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
@@ -367,3 +368,36 @@ function isMachineStopped(): boolean {
     state.emulatorState?.machineState === MachineControllerState.None
   );
 }
+
+/**
+ * The Next inspector items: open the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.5) and the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4), and step the Copper.
+ * All go through the IDE's commands, so the menu, the command line and the panels share one
+ * implementation.
+ */
+export const copperMenuRenderer: MachineMenuRenderer = () => [
+  { type: "separator" },
+  {
+    id: "show_copper_list",
+    label: "Show Copper List",
+    click: async () => {
+      await getIdeApi().executeCommand("show-copper");
+    }
+  },
+  {
+    id: "step_copper",
+    label: "Step Copper",
+    enabled: mainStore.getState()?.emulatorState?.machineState !== MachineControllerState.Running,
+    click: async () => {
+      await getIdeApi().executeCommand("step-copper");
+    }
+  },
+  {
+    // --- The Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4) shares this group
+    id: "show_sprite_inspector",
+    label: "Show Sprite Inspector",
+    click: async () => {
+      await getIdeApi().executeCommand("show-sprites");
+    }
+  }
+];

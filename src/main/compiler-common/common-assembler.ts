@@ -27,6 +27,7 @@ import {
   setRandomSeed
 } from "../compiler-common/expressions";
 import { FixupEntry } from "../compiler-common/fixups";
+import type { CopperBlock } from "@common/zxnext/copper/copperBlocks";
 import { ExpressionValueType } from "@abstractions/CompilerInfo";
 import {
   BinaryComparisonInfo,
@@ -118,6 +119,11 @@ import {
   DmaWr3Pragma,
   DmaWr4Pragma,
   DmaWr5Pragma,
+  CopperWaitPragma,
+  CopperMovePragma,
+  CopperNopPragma,
+  CopperHaltPragma,
+  CopperWordPragma,
   SkipPragma,
   Statement,
   StructStatement,
@@ -282,6 +288,12 @@ export abstract class CommonAssembler<
   private _modelPragmas: ModelPragma<TInstruction>[] = [];
 
   /**
+   * Every `.copper` word emitted, in emission order; `collectCopperBlocks` turns them into the
+   * output's `copperBlocks` once the fixups have patched the words
+   */
+  private _copperEmissions: CopperEmission<TInstruction>[] = [];
+
+  /**
    * Store the handler of trace messages
    */
   private _traceHandler: (message: string) => void;
@@ -436,6 +448,7 @@ export abstract class CommonAssembler<
     this.compareBins = [];
     this._modelPragmas = [];
     this._nexBorderSetExplicitly = false;
+    this._copperEmissions = [];
 
     // --- Prepare pre-defined symbols
     this.conditionSymbols = Object.assign({}, this._options.predefinedSymbols);
@@ -468,6 +481,9 @@ export abstract class CommonAssembler<
     emitSuccess = await this.emitCode(this.preprocessedLines);
     if (emitSuccess) {
       emitSuccess = (await this.fixupUnresolvedSymbols()) && this.compareBinaries();
+    }
+    if (emitSuccess) {
+      emitSuccess = this.collectCopperBlocks();
     }
     if (!emitSuccess) {
       // --- If failed, clear output segments
@@ -2019,6 +2035,23 @@ export abstract class CommonAssembler<
       case "DmaWr5Pragma":
         this.processDmaWr5Pragma(pragmaLine);
         break;
+
+      // --- Copper pragma cases
+      case "CopperWaitPragma":
+        this.processCopperWaitPragma(pragmaLine);
+        break;
+      case "CopperMovePragma":
+        this.processCopperMovePragma(pragmaLine);
+        break;
+      case "CopperNopPragma":
+        this.processCopperFixedWord(pragmaLine, 0x0000);
+        break;
+      case "CopperHaltPragma":
+        this.processCopperFixedWord(pragmaLine, 0xffff);
+        break;
+      case "CopperWordPragma":
+        this.processCopperWordPragma(pragmaLine);
+        break;
     }
   }
 
@@ -3528,6 +3561,229 @@ export abstract class CommonAssembler<
     let baseByte = 0x82; // D7:D6=10, D2:D0=010 (WR5 identifier)
     if (pragma.autoRestart) baseByte |= 0x20; // D5
     this.emitByte(baseByte);
+  }
+
+
+  // ---------------------------------------------------------------------------
+  // Copper pragma emission helpers (`.plans/COPPER_DEBUGGING_PLAN.md` §4.9)
+  //
+  // Copper words are big-endian (high byte first), as the Copper reads them:
+  //   WAIT  1HHHHHHL LLLLLLLL   line 0..511, horizontal position 0..63
+  //   MOVE  0RRRRRRR VVVVVVVV   NextReg $00..$7F (0 is a NOP), 8-bit value
+  // An operand that is not yet known gets a `CopperWait`/`CopperMove` fixup (trap T6), which
+  // patches only its own bits and applies the same range check as an immediate operand.
+
+  private isCopperNextModel(pragma: PartialAssemblyLine<TInstruction>): boolean {
+    if ((this._output.modelType ?? this._options.currentModel) !== 4) {
+      this.reportAssemblyError("Z0372", pragma as unknown as AssemblyLine<TInstruction>);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Checks one Copper operand's range; reports the error and returns false when it is out of range.
+   * @param kind The fixup kind (`CopperWait` or `CopperMove`)
+   * @param operand 0 for the first operand (line or register), 1 for the second (hpos or value)
+   */
+  private checkCopperOperand(
+    sourceLine: PartialAssemblyLine<TInstruction>,
+    kind: FixupType,
+    operand: number,
+    value: number
+  ): boolean {
+    if (kind === FixupType.CopperWait) {
+      if (operand === 0 && (value < 0 || value > 511)) {
+        this.reportAssemblyError("Z0373", sourceLine, null, value);
+        return false;
+      }
+      if (operand === 1 && (value < 0 || value > 63)) {
+        this.reportAssemblyError("Z0374", sourceLine, null, value);
+        return false;
+      }
+    } else {
+      // --- T7: never mask the register - `$80` would silently become a write to `$00`
+      if (operand === 0 && (value < 0 || value > 0x7f)) {
+        const shown = value < 0 ? `${value}` : `$${value.toString(16).toUpperCase().padStart(2, "0")}`;
+        this.reportAssemblyError("Z0375", sourceLine, null, shown);
+        return false;
+      }
+      if (operand === 1 && (value < -128 || value > 0xff)) {
+        this.reportAssemblyError("Z0376", sourceLine, null, value);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Patches one Copper operand into the big-endian word at `offset`, touching only its bits
+   */
+  private patchCopperOperand(
+    code: number[],
+    offset: number,
+    kind: FixupType,
+    operand: number,
+    value: number
+  ): void {
+    if (kind === FixupType.CopperWait) {
+      if (operand === 0) {
+        code[offset] = (code[offset] & 0xfe) | ((value >> 8) & 0x01);
+        code[offset + 1] = value & 0xff;
+      } else {
+        code[offset] = (code[offset] & 0x81) | ((value & 0x3f) << 1);
+      }
+    } else {
+      if (operand === 0) {
+        code[offset] = (code[offset] & 0x80) | (value & 0x7f);
+      } else {
+        code[offset + 1] = value & 0xff;
+      }
+    }
+  }
+
+  /**
+   * Evaluates one Copper operand. Returns its value, `null` when a fixup was recorded (the operand
+   * is then emitted as zero bits), or `undefined` on an error.
+   */
+  private evalCopperOperand(
+    pragma: PartialAssemblyLine<TInstruction>,
+    expr: Expression<TInstruction, TToken>,
+    kind: FixupType,
+    operand: number
+  ): number | null | undefined {
+    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
+    const value = this.evaluateExpr(expr);
+    if (value.isNonEvaluated) {
+      this.recordFixup(sourceLine, kind, expr, null, null, null, operand);
+      return null;
+    }
+    if (!value.isValid) return undefined;
+    if (value.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z0603", sourceLine);
+      return undefined;
+    }
+    const numeric = value.asLong();
+    return this.checkCopperOperand(pragma, kind, operand, numeric) ? numeric : undefined;
+  }
+
+  /**
+   * Emits one big-endian Copper word and records it for the debug info
+   */
+  private emitCopperWord(pragma: PartialAssemblyLine<TInstruction>, word: number): void {
+    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
+    this.ensureCodeSegment();
+    this._copperEmissions.push({
+      segmentIndex: this._output.segments.length - 1,
+      offset: this._currentSegment.currentOffset,
+      address: this.locationCounter(),
+      sourceLine
+    });
+    this.emitByte((word >> 8) & 0xff);
+    this.emitByte(word & 0xff);
+  }
+
+  private processCopperTwoOperands(
+    pragma: PartialAssemblyLine<TInstruction>,
+    kind: FixupType,
+    first: Expression<TInstruction, TToken>,
+    second: Expression<TInstruction, TToken>,
+    baseWord: number
+  ): void {
+    if (!this.isCopperNextModel(pragma)) return;
+    // --- Both fixups (if any) are recorded before the word is emitted, so they point at it
+    const a = this.evalCopperOperand(pragma, first, kind, 0);
+    const b = this.evalCopperOperand(pragma, second, kind, 1);
+    if (a === undefined || b === undefined) return;
+    const code = [(baseWord >> 8) & 0xff, baseWord & 0xff];
+    if (a !== null) this.patchCopperOperand(code, 0, kind, 0, a);
+    if (b !== null) this.patchCopperOperand(code, 0, kind, 1, b);
+    this.emitCopperWord(pragma, (code[0] << 8) | code[1]);
+  }
+
+  private processCopperWaitPragma(pragma: CopperWaitPragma<TInstruction, TToken>): void {
+    this.processCopperTwoOperands(pragma, FixupType.CopperWait, pragma.waitLine, pragma.waitHpos, 0x8000);
+  }
+
+  private processCopperMovePragma(pragma: CopperMovePragma<TInstruction, TToken>): void {
+    // --- `move 0, x` is legal (a NOP) and is emitted as written (T7)
+    this.processCopperTwoOperands(pragma, FixupType.CopperMove, pragma.reg, pragma.value, 0x0000);
+  }
+
+  private processCopperFixedWord(
+    pragma: CopperNopPragma<TInstruction> | CopperHaltPragma<TInstruction>,
+    word: number
+  ): void {
+    if (!this.isCopperNextModel(pragma)) return;
+    this.emitCopperWord(pragma, word);
+  }
+
+  private processCopperWordPragma(pragma: CopperWordPragma<TInstruction, TToken>): void {
+    if (!this.isCopperNextModel(pragma)) return;
+    const sourceLine = pragma as unknown as AssemblyLine<TInstruction>;
+    const value = this.evaluateExpr(pragma.value);
+    if (value.isNonEvaluated) {
+      this.recordFixup(sourceLine, FixupType.Bit16Be, pragma.value);
+      this.emitCopperWord(pragma, 0x0000);
+      return;
+    }
+    if (!value.isValid) return;
+    if (value.type === ExpressionValueType.String) {
+      this.reportAssemblyError("Z0603", sourceLine);
+      return;
+    }
+    this.emitCopperWord(pragma, value.asWord());
+  }
+
+  /**
+   * Builds the output's `copperBlocks` from the emitted `.copper` words, after the fixups: a block
+   * is a maximal run of words at consecutive offsets of one segment (nothing else emitted between).
+   * Reports Z0377 for a block longer than the Copper's 1024 instructions.
+   * @returns False if a block is too long
+   */
+  private collectCopperBlocks(): boolean {
+    const blocks = this._output.copperBlocks;
+    blocks.length = 0;
+    let success = true;
+    let current: CopperBlock | null = null;
+    let first: CopperEmission<TInstruction> | null = null;
+    let prev: CopperEmission<TInstruction> | null = null;
+    const close = () => {
+      if (current && current.length > 1024) {
+        this.reportAssemblyError(
+          "Z0377",
+          first.sourceLine,
+          null,
+          `$${current.address.toString(16).toUpperCase().padStart(4, "0")}`,
+          current.length
+        );
+        success = false;
+      }
+    };
+    for (const emission of this._copperEmissions) {
+      const code = this._output.segments[emission.segmentIndex]?.emittedCode;
+      if (!code) continue;
+      const word = ((code[emission.offset] & 0xff) << 8) | (code[emission.offset + 1] & 0xff);
+      const contiguous =
+        prev &&
+        prev.segmentIndex === emission.segmentIndex &&
+        prev.offset + 2 === emission.offset;
+      if (!contiguous) {
+        close();
+        current = { address: emission.address, length: 0, entries: [] };
+        first = emission;
+        blocks.push(current);
+      }
+      current.entries.push({
+        word,
+        fileIndex: emission.sourceLine.fileIndex,
+        line: emission.sourceLine.line
+      });
+      current.length++;
+      prev = emission;
+    }
+    close();
+    return success;
   }
 
   /**
@@ -5583,7 +5839,9 @@ export abstract class CommonAssembler<
           f.type === FixupType.Ent ||
           f.type === FixupType.Xent ||
           f.type === FixupType.NexStackAddr ||
-          f.type === FixupType.NexEntryAddr)
+          f.type === FixupType.NexEntryAddr ||
+          f.type === FixupType.CopperWait ||
+          f.type === FixupType.CopperMove)
     )) {
       const evalResult = this.evaluateFixupExpression(fixup, true, signNotEvaluable);
 
@@ -5660,6 +5918,19 @@ export abstract class CommonAssembler<
             }
             this._output.nexConfig.entryAddr = entryAddr;
             break;
+
+          case FixupType.CopperWait:
+          case FixupType.CopperMove: {
+            // --- The same range checks as an immediate operand (T6, T7)
+            const operandValue = evalResult.value.asLong();
+            const operand = fixup.data ?? 0;
+            if (!this.checkCopperOperand(fixup.sourceLine, fixup.type, operand, operandValue)) {
+              success = false;
+              break;
+            }
+            this.patchCopperOperand(emittedCode, fixup.offset, fixup.type, operand, operandValue);
+            break;
+          }
         }
       } else {
         success = false;
@@ -5988,3 +6259,13 @@ function isByteEmittingPragma<TInstruction extends TypedObject>(
       return false;
   }
 }
+
+/**
+ * One `.copper` word as it was emitted: where it is, and which line produced it
+ */
+type CopperEmission<TInstruction extends TypedObject> = {
+  segmentIndex: number;
+  offset: number;
+  address: number;
+  sourceLine: AssemblyLine<TInstruction>;
+};

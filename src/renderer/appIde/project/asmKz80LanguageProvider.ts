@@ -314,6 +314,8 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
       ".DMA",
       "dma",
       "DMA",
+      ".copper",
+      ".COPPER",
       ".page",
       ".PAGE",
       ".xorg",
@@ -781,6 +783,10 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
         //     gets "statement" colour instead of falling through to identifier
         [/\.[Dd][Mm][Aa]\b|(?<![.\w])[Dd][Mm][Aa]\b/, { token: "pragma", next: "@dmaSubcmd" }],
 
+        // --- Copper pragma (dotted forms only, like the assembler): push copperSubcmd state so
+        //     the sub-command keyword gets "statement" colour (`nop`/`halt` are not mnemonics here)
+        [/\.[Cc][Oo][Pp][Pp][Ee][Rr]\b/, { token: "pragma", next: "@copperSubcmd" }],
+
         // --- Keyword-like tokens
         [
           /[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/,
@@ -864,6 +870,15 @@ export const asmKz80LanguageProvider: MonacoAwareCustomLanguageInfo = {
           /wr[0-5]|reset|load|enable|disable|continue|readmask|cmd/i,
           { token: "statement", next: "@pop" }
         ],
+        [/[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/, { token: "identifier", next: "@pop" }],
+        [/$/, { token: "", next: "@pop" }]
+      ],
+
+      // --- Copper sub-command state: colours the first word after .copper as "statement",
+      //     then immediately pops back to root so no state leaks to subsequent lines.
+      copperSubcmd: [
+        [/[ \t]+/, "white"],
+        [/(?:wait|move|nop|halt|word)\b/i, { token: "statement", next: "@pop" }],
         [/[\._@`A-Za-z][_@!?\.0-9A-Za-z]*/, { token: "identifier", next: "@pop" }],
         [/$/, { token: "", next: "@pop" }]
       ]

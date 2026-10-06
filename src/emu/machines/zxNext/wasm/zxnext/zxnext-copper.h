@@ -19,5 +19,9 @@ static uint32_t zxnextCopperGetListAddress(void);
 static uint32_t zxnextCopperGetListData(void);
 static uint32_t zxnextCopperGetDout(void);
 static uint32_t zxnextCopperGetVerticalLineOffset(void);
+static uint32_t zxnextCopperGetMemoryPtr(void);
+static uint32_t zxnextCopperGetBeam(void);
+static uint32_t zxnextCopperGetTiming(void);
+static void zxnextCopperCheckWatch(uint32_t kind, uint32_t cvc, uint32_t hc);
 
 #endif

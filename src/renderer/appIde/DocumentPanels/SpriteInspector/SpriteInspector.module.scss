@@ -1,0 +1,733 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4-§4.5; layout:
+ * `.plans/mockups/sprite-inspector-layout.html`). Values take the converted state panels'
+ * `--color-state-value`; a relative's anchor, the lit transform glyphs and a slot's own reading the
+ * secondary hue; a row changed since the previous stop the shared `--color-state-changed` dot (D16).
+ *
+ * The toolbar and the globals strip are one line each at every width. The document picks its layout
+ * from its own width (`data-layout` on `.root`): narrow puts the inspector in a band under the list,
+ * medium and wide in a rail beside it.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* --- Measures one `ch` of the panel font, for the layout breakpoints and the rail/band sizes. */
+.chProbe {
+  position: absolute;
+  visibility: hidden;
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  pointer-events: none;
+}
+
+// ─── Toolbar: one line, never wrapping ───────────────────────────────────────
+
+.toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  white-space: nowrap;
+}
+
+.toolbarContext {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.toolbarSpacer {
+  flex: 1 1 auto;
+}
+
+.moreButton {
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+  }
+}
+
+// ─── Globals strip: one line, flags first ────────────────────────────────────
+
+.globals {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--font-size-200);
+  white-space: nowrap;
+}
+
+/* --- "+n more" opens the strip in place: it wraps instead of clipping */
+.globalsOpen {
+  flex-wrap: wrap;
+  row-gap: var(--space-0_5);
+}
+
+.globalItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+/* --- Collapsed, the strip shows only the flags and the primary items */
+.globalSecondary {
+  display: none;
+}
+
+.globalKey {
+  color: var(--data-label);
+}
+
+.globalValue {
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.globalFlag {
+  color: var(--status-warning);
+}
+
+.globalFlagChip {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--bgcolor-sprite-chip-warning);
+  color: var(--color-sprite-chip-warning);
+}
+
+.globalsMore {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+// ─── Body and panes ──────────────────────────────────────────────────────────
+
+/*
+ * No `position` here: SplitPanel places its splitter from offsets measured against the page, so a
+ * positioned ancestor moves the drawn splitter away from the seam it drags (by the sidebar's width).
+ */
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.views {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.paneHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.paneMeta {
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--data-secondary);
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+.warningText {
+  color: var(--status-warning);
+}
+
+// ─── Sprites table ───────────────────────────────────────────────────────────
+
+.tableBody {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.emptyRows {
+  padding: var(--space-4);
+  color: var(--data-secondary);
+}
+
+/*
+ * One table in one scroller: the header is sticky to the top, so it scrolls sideways with its
+ * columns, and #, vis and pattern are sticky to the left. Every cell is in the monospace stack at one
+ * size, because the pinned widths are in `ch` and `ch` resolves against each cell's own font.
+ */
+.spriteTable {
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  th,
+  td {
+    box-sizing: border-box;
+    padding: 0 var(--space-2);
+    background: var(--surface-canvas);
+    text-align: left;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 1px solid var(--border-default);
+    background: var(--surface-chrome);
+    color: var(--data-label);
+    font-weight: 400;
+  }
+
+  td {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  tbody tr {
+    cursor: pointer;
+  }
+
+  tbody tr:hover td {
+    background: var(--surface-hover);
+  }
+}
+
+/*
+ * The pinned columns. Each width is fixed - width, min and max equal, padding included - and each
+ * left offset is the sum of the widths before it: a pinned cell that could shrink lets the next one
+ * slide over it, which reads as a column narrowing while the table scrolls.
+ */
+.pinIndex,
+.pinVis,
+.pinPattern {
+  position: sticky;
+  z-index: 1;
+}
+
+th.pinIndex,
+th.pinVis,
+th.pinPattern {
+  z-index: 3;
+}
+
+.pinIndex {
+  left: 0;
+  width: 9ch;
+  min-width: 9ch;
+  max-width: 9ch;
+  color: var(--data-secondary);
+}
+
+.pinVis {
+  left: 9ch;
+  width: 5ch;
+  min-width: 5ch;
+  max-width: 5ch;
+  text-align: center !important;
+}
+
+/* --- The thumbnail and the number only; a 4-bit pattern's half is in the fmt column */
+.pinPattern {
+  left: 14ch;
+  width: 9ch;
+  min-width: 9ch;
+  max-width: 9ch;
+  box-shadow: 1px 0 0 var(--border-default);
+}
+
+.spriteTable tbody tr.rowSelected td {
+  background: var(--surface-selected);
+}
+
+.spriteTable tbody tr.rowPrimary td.pinIndex {
+  box-shadow: inset 2px 0 0 var(--accent-solid);
+}
+
+/* --- A slot whose visible bit is clear recedes: it is there, it shows nothing. */
+.spriteTable tbody tr.rowClear td {
+  color: var(--data-secondary);
+}
+
+/* --- Changed since the previous stop (D16): a dot at the index cell's end, never a row fill. */
+.changed::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: var(--space-1);
+  width: calc(var(--panel-font-size) * 0.45);
+  height: calc(var(--panel-font-size) * 0.45);
+  border-radius: 50%;
+  background: var(--color-state-changed);
+  transform: translateY(-50%);
+}
+
+.anchorBadge {
+  margin-left: var(--space-1);
+  color: var(--color-sprite-anchor);
+}
+
+.visDot {
+  display: inline-block;
+  box-sizing: border-box;
+  width: calc(var(--panel-font-size) * 0.6);
+  height: calc(var(--panel-font-size) * 0.6);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.visOn {
+  background: var(--color-sprite-visible);
+}
+
+.visHalf {
+  border: 1.5px solid var(--color-sprite-hidden-by-anchor);
+}
+
+.thumb {
+  width: calc(var(--panel-font-size) * 1.4);
+  height: calc(var(--panel-font-size) * 1.4);
+  margin-right: var(--space-1);
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+
+.secondary {
+  color: var(--data-secondary);
+}
+
+.glyphOn {
+  color: var(--color-sprite-anchor);
+  font-weight: 600;
+}
+
+.glyphOff {
+  color: var(--text-disabled);
+}
+
+.colType {
+  color: var(--data-label);
+}
+
+.colRaw {
+  color: var(--data-secondary);
+
+  s {
+    color: var(--text-disabled);
+  }
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--bgcolor-sprite-chip-warning);
+  color: var(--color-sprite-chip-warning);
+  font-family: var(--main-font-family);
+  font-size: var(--font-size-100);
+}
+
+.chipInfo {
+  background: var(--bgcolor-sprite-chip-info);
+  color: var(--color-sprite-chip-info);
+}
+
+// ─── Patterns view ───────────────────────────────────────────────────────────
+
+.sheetScroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.sheet {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: var(--space-2);
+  outline: none;
+}
+
+// ─── Inspector: one column, two homes ────────────────────────────────────────
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface-chrome);
+  font-size: var(--font-size-200);
+}
+
+.inspectorHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.inspectorSummary {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  text-overflow: ellipsis;
+}
+
+/* --- Band (narrow): details | sprite space, side by side, both visible without scrolling */
+.band .inspectorBody {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) 30ch;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-2) var(--space-3);
+}
+
+.band .details {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-1) var(--space-3);
+  min-height: 0;
+  overflow: auto;
+}
+
+/* --- A sentence, a link or the facts of a pattern span both columns of the band's details */
+.band .details > .problem,
+.band .details > .why,
+.band .details > .link {
+  grid-column: 1 / -1;
+}
+
+/*
+ * The band's map fills its box and the drawing letterboxes inside it (the SVG's default
+ * `xMidYMid meet`): sized from the width, a 320×256 map is taller than the band and loses its bottom.
+ */
+.band .mapBox {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.band .mapFigure {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.band .map {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
+  border: 0;
+}
+
+/* --- Rail (medium, wide): everything stacked, scrolling as one */
+.rail {
+  border-left: 1px solid var(--border-default);
+}
+
+.inspectorScroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.railContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.rail .details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.why {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* --- Only a problem gets a sentence: hidden, clipped, a stale attr4, a mixed slot */
+.problem {
+  margin: 0;
+  color: var(--status-warning);
+}
+
+.previews {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rail .previews {
+  flex-flow: row wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.previewImages {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0_5);
+  margin: 0;
+
+  figcaption {
+    color: var(--data-secondary);
+    font-size: var(--font-size-100);
+  }
+}
+
+.previewCanvas {
+  border: 1px solid var(--border-default);
+  image-rendering: pixelated;
+}
+
+.bigFrame {
+  position: relative;
+  display: block;
+  width: calc(var(--panel-font-size) * 8);
+  aspect-ratio: 1;
+  border: 1px solid var(--border-default);
+}
+
+.rail .bigFrame {
+  width: 100%;
+  max-width: 24ch;
+}
+
+.bigCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+.patternFacts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-0_5);
+}
+
+.swatch {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-strong);
+  color: var(--data-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+}
+
+.swatchColour {
+  display: inline-block;
+  width: 1.5ch;
+  height: 1.5ch;
+}
+
+/*
+ * The fields: the effective value, and the slot's own reading after it in the secondary hue when it
+ * differs. Two columns in the rail; in the band two pairs to a line, with a long value or one that
+ * carries an own reading taking a whole line.
+ */
+.fields {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-0_5) var(--space-3);
+  min-width: 0;
+  margin: 0;
+
+  dt {
+    color: var(--data-label);
+    white-space: nowrap;
+  }
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  s {
+    color: var(--text-disabled);
+  }
+}
+
+.band .fields {
+  grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr);
+  gap: 0 var(--space-3);
+
+  dt.wide {
+    grid-column: 1;
+  }
+
+  dd.wide {
+    grid-column: 2 / -1;
+  }
+}
+
+.fieldValue {
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+}
+
+.own {
+  color: var(--color-state-value-alt);
+}
+
+.link {
+  align-self: flex-start;
+  justify-self: start;
+  margin-right: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+.sectionTitle {
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mapFigure {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.map {
+  display: block;
+  width: 100%;
+  aspect-ratio: 320 / 256;
+  border: 1px solid var(--border-default);
+  cursor: crosshair;
+}
+
+.rail .map {
+  max-width: 44ch;
+}
+
+.mapSpace {
+  fill: var(--bgcolor-sprite-map);
+}
+
+.mapPaper {
+  fill: var(--bgcolor-sprite-map-paper);
+}
+
+.mapSprite {
+  fill: none;
+  stroke: var(--color-sprite-map-outline);
+  stroke-width: 1;
+}
+
+.mapSelected {
+  fill: var(--bgcolor-sprite-map-selected);
+  fill-opacity: 0.6;
+  stroke: var(--bgcolor-sprite-map-selected);
+  stroke-width: 2;
+}
+
+.mapClip {
+  fill: none;
+  stroke: var(--color-sprite-map-clip);
+  stroke-dasharray: 4 3;
+  stroke-width: 1;
+  pointer-events: none;
+}

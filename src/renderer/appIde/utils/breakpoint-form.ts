@@ -6,7 +6,11 @@ import type {
 } from "@common/utils/breakpoint-condition/condition-types";
 
 import { getBreakpointDisplayKey } from "@common/utils/breakpoints";
-import { isBankRelative, isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import {
+  isBankRelative,
+  isCopperBreakpoint,
+  isNextRegBreakpoint
+} from "@common/utils/breakpoint-scope";
 import {
   MAX_BREAKPOINT_HIT_COUNT,
   breakpointFiltersOf,
@@ -66,7 +70,9 @@ export type BreakpointKind =
   | "memWrite"
   | "ioRead"
   | "ioWrite"
-  | "nextRegWrite";
+  | "nextRegWrite"
+  /** The ZX Spectrum Next's `cu:<index>`: the Copper completes a list instruction. */
+  | "copper";
 
 /**
  * The dialog's fields, as the user typed them.
@@ -104,6 +110,8 @@ export type BreakpointFormState = {
   nextRegMask: string;
   /** Also break when the copper writes the register, not only when the CPU does. */
   nextRegCopper: boolean;
+  /** Raw input, Copper kind only: the Copper list index, `$000`..`$3FF`. */
+  copperIndex: string;
   disabled: boolean;
   /**
    * "Remove after it stops" (`.plans/ASSERTIONS_WATCHPOINTS_ONE_SHOT_PLAN.md` §4.2): a one-shot,
@@ -230,7 +238,10 @@ const BYTE_HINT = "for example $07, 7, or %00000111";
  */
 export function isAuthorableBreakpoint(bp: BreakpointInfo | undefined): boolean {
   return (
-    bp?.address !== undefined || isNextRegBreakpoint(bp ?? {}) || isBankRelative(bp ?? {})
+    bp?.address !== undefined ||
+    isNextRegBreakpoint(bp ?? {}) ||
+    isCopperBreakpoint(bp ?? {}) ||
+    isBankRelative(bp ?? {})
   );
 }
 
@@ -292,6 +303,7 @@ export function createEmptyForm(): BreakpointFormState {
     nextRegValue: "",
     nextRegMask: "",
     nextRegCopper: false,
+    copperIndex: "",
     disabled: false,
     oneShot: false,
     length: "",
@@ -316,6 +328,13 @@ export function isNextRegKind(kind: BreakpointKind): boolean {
   return kind === "nextRegWrite";
 }
 
+/** True for the kind bound to a Copper list index rather than to a place. */
+export function isCopperKind(kind: BreakpointKind): boolean {
+  return kind === "copper";
+}
+
+const COPPER_INDEX_MAX = 0x3ff;
+
 /**
  * Switch the breakpoint type, dropping whatever the new type cannot carry.
  *
@@ -330,14 +349,16 @@ export function applyKindChange(
   kind: BreakpointKind
 ): BreakpointFormState {
   const nextReg = isNextRegKind(kind);
+  const copper = isCopperKind(kind);
   return {
     ...form,
     kind,
+    copperIndex: copper ? form.copperIndex : "",
     // --- A NextReg breakpoint has no address and no partition; the address field is not merely
     // --- re-labelled for it, it is replaced, so a value left here would be invisible *and*
     // --- unreachable.
-    address: nextReg ? "" : form.address,
-    partition: isIoKind(kind) || nextReg ? undefined : form.partition,
+    address: nextReg || copper ? "" : form.address,
+    partition: isIoKind(kind) || nextReg || copper ? undefined : form.partition,
     ioMask: isIoKind(kind) ? form.ioMask : "",
     nextReg: nextReg ? form.nextReg : "",
     filterValue: nextReg ? form.filterValue : false,
@@ -466,6 +487,20 @@ function formPlaceToBreakpointInfo(form: BreakpointFormState): BreakpointInfo {
     };
   }
 
+  // --- A Copper breakpoint: like the NextReg kind, it shares no field with the place kinds
+  if (isCopperKind(form.kind)) {
+    const index = parseNumericInput(form.copperIndex);
+    return {
+      copperIndex: index.ok ? index.value & COPPER_INDEX_MAX : undefined,
+      exec: false,
+      memoryRead: false,
+      memoryWrite: false,
+      ioRead: false,
+      ioWrite: false,
+      disabled: form.disabled
+    };
+  }
+
   const mask = isIoKind(form.kind) ? parseNumericInput(form.ioMask) : undefined;
 
   // --- A bank-relative site instead of an address. Not for the I/O kinds, which watch a port and
@@ -518,7 +553,9 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
   // --- same order `buildBreakpointKey` uses, and for the same reason.
   const kind: BreakpointKind = isNextRegBreakpoint(bp)
     ? "nextRegWrite"
-    : bp.memoryRead
+    : isCopperBreakpoint(bp)
+      ? "copper"
+      : bp.memoryRead
       ? "memRead"
       : bp.memoryWrite
         ? "memWrite"
@@ -535,6 +572,10 @@ export function breakpointToForm(bp: BreakpointInfo): BreakpointFormState {
     nextRegValue: bp.nextRegValue === undefined ? "" : `$${toHexa2(bp.nextRegValue)}`,
     nextRegMask: bp.nextRegMask === undefined ? "" : `$${toHexa2(bp.nextRegMask)}`,
     nextRegCopper: bp.nextRegCopper ?? false,
+    copperIndex:
+      bp.copperIndex === undefined
+        ? ""
+        : `$${(bp.copperIndex & COPPER_INDEX_MAX).toString(16).toUpperCase().padStart(3, "0")}`,
     // --- The same spelling `getBreakpointDisplayKey` produces and `bp-set` accepts, so an edited
     // --- breakpoint round-trips through the field without changing its key.
     address: isBankRelative(bp)
@@ -624,6 +665,25 @@ export function validateBreakpointForm(
       errors.nextRegMask = "A mask needs a value to mask.";
     }
 
+    addDuplicateKeyError(errors, form, env);
+    return errors;
+  }
+
+  // --- The Copper rules, on their own path like the NextReg ones
+  if (isCopperKind(form.kind)) {
+    if (!env.supportsNextRegBreakpoints) {
+      errors.copperIndex = "Copper breakpoints are supported on the ZX Spectrum Next only.";
+    } else {
+      const index = parseNumericInput(form.copperIndex);
+      if (!index.ok) {
+        errors.copperIndex =
+          index.reason === "empty"
+            ? "Enter a Copper list index."
+            : "Enter a valid list index, for example $00B or 11.";
+      } else if (index.value < 0 || index.value > COPPER_INDEX_MAX) {
+        errors.copperIndex = "A Copper list index is between $000 and $3FF.";
+      }
+    }
     addDuplicateKeyError(errors, form, env);
     return errors;
   }
@@ -785,6 +845,8 @@ export function conditionAccessKindOf(kind: BreakpointKind): ConditionAccessKind
       return "io";
     case "nextRegWrite":
       return "nextReg";
+    case "copper":
+      return "copper";
     default:
       return "exec";
   }

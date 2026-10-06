@@ -1,4 +1,4 @@
-import { isNextRegBreakpoint } from "@common/utils/breakpoint-scope";
+import { isEventBreakpoint } from "@common/utils/breakpoint-scope";
 import { breakpointFiltersOf, sameBreakpointFilters } from "@common/utils/breakpoint-filters";
 import type { BreakpointInfo } from "@abstractions/BreakpointInfo";
 
@@ -29,8 +29,9 @@ export function sidecarKindOf(bp: BreakpointInfo): NexSidecarBreakpointKind | un
   // --- Nor a NextReg write breakpoint. It watches a hardware register, so it means the same thing
   // --- whichever `.nex` is loaded and belongs in the project rather than in a sidecar that travels
   // --- with one file. It is already excluded by having no bank, but so is an I/O breakpoint, and
-  // --- that one is named here too: a kind this file cannot represent says so in one place.
-  if (isNextRegBreakpoint(bp)) return undefined;
+  // --- that one is named here too: a kind this file cannot represent says so in one place. A Copper
+  // --- breakpoint is the same: it watches the Copper list, not the NEX's banks.
+  if (isEventBreakpoint(bp)) return undefined;
   return "exec";
 }
 

@@ -597,7 +597,12 @@ static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
 }
 
 /*
- * Resolve every sprite up to `lastVisible` in index order, as the FPGA qualifies them.
+ * Resolve the first `count` sprites in index order into `resolved`, as the FPGA qualifies them.
+ *
+ * The render resolves into its own cache, `zxnextUlaResolvedSprites`, up to the last visible sprite.
+ * The IDE's Sprite Inspector resolves all 128 into a separate, volatile buffer
+ * (`zxnextResolveSpritesForIde`), so reading the sprite table never writes machine state
+ * (`.plans/SPRITE_INSPECTOR_PLAN.md` trap T3).
  *
  * Follows `_input/next-fpga/src/video/sprites.vhd` ("sort out relative sprite characteristics" and
  * the anchor latch in `S_QUALIFY`):
@@ -612,7 +617,7 @@ static uint32_t zxnextUlaSignExtendScale9(uint32_t value8, uint32_t scale) {
  *   attr4 bit 5, adds the anchor's pattern when attr4 bit 0 is set, adds the anchor's palette offset
  *   when attr2 bit 0 is set, and is visible only when the anchor is.
  */
-static void zxnextUlaResolveSprites(uint32_t lastVisible) {
+static void zxnextUlaResolveSpritesInto(ZxnextResolvedSprite* resolved, uint32_t count) {
   uint32_t anchorVisible = 0u;
   uint32_t anchorRelType = 0u;
   uint32_t anchorH = 0u;
@@ -626,7 +631,7 @@ static void zxnextUlaResolveSprites(uint32_t lastVisible) {
   uint32_t anchorScaleX = 0u;
   uint32_t anchorScaleY = 0u;
 
-  for (uint32_t sprite = 0u; sprite <= lastVisible && sprite < 128u; sprite++) {
+  for (uint32_t sprite = 0u; sprite < count && sprite < 128u; sprite++) {
     uint32_t attr0 = zxnextSpritesGetAttribute(sprite, 0) & 0xffu;
     uint32_t attr1 = zxnextSpritesGetAttribute(sprite, 1) & 0xffu;
     uint32_t attr2 = zxnextSpritesGetAttribute(sprite, 2) & 0xffu;
@@ -634,7 +639,7 @@ static void zxnextUlaResolveSprites(uint32_t lastVisible) {
     uint32_t attr4 = zxnextSpritesGetAttribute(sprite, 4) & 0xffu;
     uint32_t has5Attrs = (attr3 & 0x40u) != 0u;
     uint32_t relative = has5Attrs && ((attr4 >> 6u) & 0x03u) == 0x01u;
-    ZxnextResolvedSprite* out = &zxnextUlaResolvedSprites[sprite];
+    ZxnextResolvedSprite* out = &resolved[sprite];
 
     if (!relative) {
       uint32_t h = has5Attrs && (attr4 & 0x80u);
@@ -817,7 +822,7 @@ static void zxnextUlaProcessSprites(uint32_t drawPixels, uint32_t detectCollisio
     if (clipY2 > 223u) clipY2 = 223u; /* sprites.vhd: without over-border, vcounter < 224 too */
   }
 
-  zxnextUlaResolveSprites(lastVisible);
+  zxnextUlaResolveSpritesInto(zxnextUlaResolvedSprites, lastVisible + 1u);
   uint32_t overtime = zxnextUlaComputeSpriteLineCuts(lastVisible, drawPixels && !detectCollisions);
   if (detectCollisions && overtime) zxnextSpritesSignalTooMany();
   if (detectCollisions) {

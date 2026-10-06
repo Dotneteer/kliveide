@@ -3,6 +3,9 @@ import type { MachineConfigSet, MachineModel } from "@common/machines/info-types
 import {
   ULA_BORDER_COLOR_NAMES,
   type CpuState,
+  type CopperHitEvent,
+  type CopperState,
+  type NextSpriteState,
   type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
@@ -769,6 +772,24 @@ export class ZxNextWasmV2Machine
     this.lastNextRegWrite = undefined;
 
     /*
+     * The Copper watch (`.plans/COPPER_DEBUGGING_PLAN.md` §4.6): pushed whole on entry like the
+     * NextReg table, and disarmed when nothing watches, so the Copper's hot path stays free (T3).
+     * A pending Copper step arms "any index" as a one-shot.
+     */
+    const watchesCopper = (debugSupport?.hasCopperBreakpoints() ?? false) || this.copperStepPending;
+    if (watchesCopper) {
+      if (debugSupport?.hasCopperBreakpoints()) {
+        runtime.copperWatch.set(debugSupport.buildCopperWatch());
+      } else {
+        runtime.copperWatch.fill(0);
+      }
+      wasm.zxnextSetCopperWatchMode(1, this.copperStepPending ? 1 : 0);
+    } else {
+      wasm.zxnextSetCopperWatchMode(0, 0);
+    }
+    this.lastCopperHit = undefined;
+
+    /*
      * Finish a reset the last run stopped in front of.
      *
      * A NextReg write breakpoint on `$02` catches the write that *asks* for a reset, and stops
@@ -797,7 +818,7 @@ export class ZxNextWasmV2Machine
       // --- its first byte, as the TypeScript CPU records it - so not while a prefix is pending
       // --- `|| watchesNextReg`: a NextReg hit is reported against the instruction that wrote, the
       // --- same way a watchpoint hit is, so it needs this tracked too.
-      if ((watchesBusAccess || watchesNextReg) && wasm.zxnextGetCpuPrefix() === 0) {
+      if ((watchesBusAccess || watchesNextReg || watchesCopper) && wasm.zxnextGetCpuPrefix() === 0) {
         this.opStartAddress = this.pc;
       }
       wasm.zxnextExecuteInstruction();
@@ -827,6 +848,11 @@ export class ZxNextWasmV2Machine
        * Stopping first leaves the request standing; the loop entry above honours it on resume.
        */
       if (watchesNextReg && this.acceptWasmV2NextRegHit(wasm.zxnextTakeNextRegHit())) {
+        return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
+      }
+      // --- The Copper may complete a watched instruction during any Z80 instruction; the machine
+      // --- stops at the end of it, while the Copper has run on to the end of it (T1).
+      if (watchesCopper && this.acceptWasmV2CopperHit(runtime, wasm.zxnextTakeCopperHit())) {
         return this.finishWasmV2DebugLoop(runtime, FrameTerminationMode.DebugEvent);
       }
 
@@ -967,6 +993,37 @@ export class ZxNextWasmV2Machine
       oldValue: (packed >>> 8) & 0xff,
       newValue,
       origin,
+      pc,
+      partition: this.getPartition(pc)
+    };
+    return true;
+  }
+
+  /**
+   * Unpacks a Copper hit the core latched and decides whether it stops the machine: always, when a
+   * Copper step is pending; otherwise when a `cu:` breakpoint's filters accept it (D6).
+   *
+   * @param packed `zxnextTakeCopperHit`'s word: bit 31 presence, 28-29 kind (1 WAIT, 2 MOVE,
+   *   3 NOP), 19-27 `hc_ula`, 10-18 `cvc`, 0-9 the list index.
+   */
+  private acceptWasmV2CopperHit(runtime: ZxNextWasmV2Runtime, packed: number): boolean {
+    if ((packed & 0x8000_0000) === 0) return false;
+    const index = packed & 0x3ff;
+    const kindCode = (packed >>> 28) & 0x03;
+    const word = (runtime.copperMemory[index * 2] << 8) | runtime.copperMemory[index * 2 + 1];
+    if (this.copperStepPending) {
+      this.copperStepPending = false;
+    } else {
+      const debugSupport = this.executionContext.debugSupport;
+      if (!debugSupport?.hasCopperHit(index, word)) return false;
+    }
+    const pc = this.opStartAddress;
+    this.lastCopperHit = {
+      index,
+      kind: kindCode === 1 ? "wait" : kindCode === 2 ? "move" : "nop",
+      word,
+      line: (packed >>> 10) & 0x1ff,
+      hc: (packed >>> 19) & 0x1ff,
       pc,
       partition: this.getPartition(pc)
     };
@@ -1387,13 +1444,34 @@ export class ZxNextWasmV2Machine
    */
   lastNextRegWrite?: NextRegWriteEvent;
 
+  /**
+   * The Copper instruction a `cu:` breakpoint or a Copper step last stopped on. Set by the debug
+   * loop, cleared when the machine resumes.
+   */
+  lastCopperHit?: CopperHitEvent;
+
+  /**
+   * "Step Copper" is pending: the next debug run stops after the Z80 instruction during which the
+   * Copper completes its next instruction, whatever its index (plan §4.6).
+   */
+  copperStepPending = false;
+
+  /** Arms (or cancels) a Copper step for the next debug run. */
+  requestCopperStep(armed = true): void {
+    this.copperStepPending = armed;
+  }
+
   override getCpuState(): CpuState {
     const runtime = this.wasmV2Runtime;
     if (runtime != null) {
       this.syncCpuFromWasmV2(runtime);
       this.importWasmV2BusAccess(runtime);
     }
-    return { ...super.getCpuState(), lastNextRegWrite: this.lastNextRegWrite };
+    return {
+      ...super.getCpuState(),
+      lastNextRegWrite: this.lastNextRegWrite,
+      lastCopperHit: this.lastCopperHit
+    };
   }
 
   override getDisassemblySections(options: Record<string, any>) {
@@ -1436,6 +1514,70 @@ export class ZxNextWasmV2Machine
       keyLines: Array.from(runtime.keyboardLines),
       romP: this.getSelectedRomPage(),
       ramB: this.getSelectedRamBank()
+    };
+  }
+
+  getCopperState(): CopperState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const beam = ex.zxnextGetCopperBeam();
+    const timing = ex.zxnextGetCopperTiming();
+    return {
+      // --- One copy of the whole 2K rather than 2048 calls across the boundary (T8)
+      ram: runtime.copperMemory.slice(),
+      startMode: ex.zxnextGetCopperStartMode() & 0x03,
+      pc: ex.zxnextGetCopperListAddress() & 0x3ff,
+      writeAddress: ex.zxnextGetCopperInstructionAddress() & 0x7ff,
+      lineOffset: ex.zxnextGetCopperVerticalLineOffset() & 0xff,
+      beam: { line: beam & 0x1ff, hc: (beam >>> 9) & 0x1ff, waiting: ((beam >>> 18) & 1) !== 0 },
+      timing: {
+        lines: timing & 0xffff,
+        hcs: (timing >>> 16) & 0xffff,
+        upperBorder: ex.zxnextGetCopperUpperBorder()
+      },
+      lastHit: this.lastCopperHit
+    };
+  }
+
+  /**
+   * The Sprite Inspector's snapshot (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3). Every value comes from
+   * a side-effect-free getter: the status is peeked, not read through `$303B` (T1), and the resolve
+   * goes into the core's IDE buffer, never the render cache (T3).
+   */
+  getNextSpriteState(): NextSpriteState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    // --- The core keeps 8 transformed variants per pattern; variant 0 of pattern N (row N * 8) is
+    // --- the raw layout, so the 16K is 64 rows of 256 bytes at a stride of 2048 (T2).
+    const patterns = new Uint8Array(0x4000);
+    const variants = runtime.spritePatterns8;
+    for (let n = 0; n < 64; n++) {
+      const row = n * 8 * 256;
+      patterns.set(variants.subarray(row, row + 256), n * 256);
+    }
+    const resolvedPtr = ex.zxnextResolveSpritesForIde();
+    const resolved = new Uint8Array(runtime.memoryBuffer, resolvedPtr, 128 * 8).slice();
+    const lastVisible = ex.zxnextGetLastVisibleSpriteIndex();
+    const status = ex.zxnextGetSpriteStatusPeek();
+    return {
+      attributes: runtime.spriteAttributes.slice(),
+      patterns,
+      resolved,
+      lastVisible: lastVisible === 0xffffffff || lastVisible < 0 ? -1 : lastVisible & 0x7f,
+      control: ex.zxnextGetSpriteControl() & 0xff,
+      clip: [0, 1, 2, 3].map((i) => ex.zxnextGetSpriteClip(i) & 0xff) as [number, number, number, number],
+      clipIndex: ex.zxnextGetSpriteClipIndex() & 0x03,
+      transparencyIndex: ex.zxnextGetSpriteTransparencyIndex() & 0xff,
+      status: { tooMany: (status & 0x02) !== 0, collision: (status & 0x01) !== 0 },
+      upload: {
+        spriteIndex: ex.zxnextGetSpriteIndex() & 0x7f,
+        spriteSub: ex.zxnextGetSpriteSubIndex() & 0x07,
+        patternIndex: ex.zxnextGetSpritePatternIndex() & 0x3f,
+        patternSub: ex.zxnextGetSpritePatternSubIndex() & 0xff,
+        mirrorIndex: ex.zxnextGetSpriteMirrorIndex() & 0xff,
+        tied: (ex.zxnextGetNextRegisterDirect(0x09) & 0x10) !== 0
+      },
+      spritePaletteBank: (ex.zxnextGetNextRegisterDirect(0x43) & 0x08) !== 0 ? 1 : 0
     };
   }
 

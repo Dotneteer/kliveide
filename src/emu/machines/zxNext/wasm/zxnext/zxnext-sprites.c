@@ -253,6 +253,11 @@ static uint32_t zxnextSpritesReadPort303b(void) {
   return value;
 }
 
+/* The status bits without the read's side effect: the IDE must not swallow the program's check (T1) */
+static uint32_t zxnextSpritesPeekStatus(void) {
+  return (zxnextSpriteTooMany ? 0x02u : 0u) | (zxnextSpriteCollision ? 0x01u : 0u);
+}
+
 static uint32_t zxnextSpritesGetClip(uint32_t index) { return zxnextSpriteClipWindow[index & 0x03u]; }
 static uint32_t zxnextSpritesGetTransparencyIndex(void) { return zxnextSpriteTransparencyIndex; }
 static uint32_t zxnextSpritesGetSpriteIndex(void) { return zxnextSpriteIndex; }
@@ -285,3 +290,6 @@ static uint32_t zxnextSpritesGetSprite0OnTop(void) { return zxnextSprite0OnTop; 
 static uint32_t zxnextSpritesGetClippingEnabled(void) { return zxnextSpriteClippingEnabled; }
 static uint32_t zxnextSpritesGetOverBorderEnabled(void) { return zxnextSpritesOverBorderEnabled; }
 static uint32_t zxnextSpritesGetEnabled(void) { return zxnextSpritesEnabled; }
+static uint32_t zxnextSpritesGetMirrorIndex(void) { return zxnextSpriteMirrorQ; }
+static uint32_t zxnextSpritesGetAttributesPtr(void) { return (uint32_t)(uintptr_t)zxnextSpriteAttributes; }
+static uint32_t zxnextSpritesGetPatternMemory8Ptr(void) { return (uint32_t)(uintptr_t)zxnextSpritePatternMemory8; }

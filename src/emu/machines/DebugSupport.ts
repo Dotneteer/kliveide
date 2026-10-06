@@ -52,6 +52,8 @@ import {
   breakpointMatchesScope,
   effectiveBankSite,
   isBankRelative,
+  isCopperBreakpoint,
+  isEventBreakpoint,
   isNextRegBreakpoint,
   withScopeOwner
 } from "@common/utils/breakpoint-scope";
@@ -165,6 +167,9 @@ export const NEXTREG_WATCH_COPPER = 0x02;
 const NEXTREG_WATCH_ROW = 0x100;
 const NEXTREG_WATCH_SIZE = NEXTREG_WATCH_ROW * 3;
 
+/** The Copper-instruction watch: 1024 list indexes, one bit each (`zxnextCopperWatch`). */
+const COPPER_WATCH_SIZE = 128;
+
 /**
  * This class implement support functions for debugging
  */
@@ -181,6 +186,9 @@ export class DebugSupport implements IDebugSupport {
   private readonly nextRegWatchFlags = this.nextRegWatch.subarray(0, NEXTREG_WATCH_ROW);
   private readonly nextRegWatchValue = this.nextRegWatch.subarray(NEXTREG_WATCH_ROW, NEXTREG_WATCH_ROW * 2);
   private readonly nextRegWatchMask = this.nextRegWatch.subarray(NEXTREG_WATCH_ROW * 2, NEXTREG_WATCH_SIZE);
+
+  /** The Copper watch table: one bit per list index, as `zxnextCopperWatch` expects. */
+  readonly copperWatch = new Uint8Array(COPPER_WATCH_SIZE);
 
   private suspendVersionIncrement = false;
 
@@ -538,6 +546,55 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * Does any enabled breakpoint watch a Copper list index (`cu:`)? Asked once per debug-loop entry
+   * by the ZX Spectrum Next, like `hasNextRegBreakpoints`.
+   */
+  hasCopperBreakpoints(): boolean {
+    for (const bp of this.breakpointDefs.values()) {
+      if (isCopperBreakpoint(bp) && !bp.disabled) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * The Copper watch table to hand the core: 128 bytes, bit `index & 7` of byte `index >> 3` set
+   * for every watched list index. Rebuilt on every call, for the reason `buildNextRegWatch` gives.
+   * Exact, unlike the NextReg table: a bit per index needs no collapsing.
+   */
+  buildCopperWatch(): Uint8Array {
+    this.copperWatch.fill(0);
+    for (const bp of this.breakpointDefs.values()) {
+      if (!isCopperBreakpoint(bp) || bp.disabled) continue;
+      const index = bp.copperIndex! & 0x3ff;
+      this.copperWatch[index >> 3] |= 1 << (index & 7);
+    }
+    return this.copperWatch;
+  }
+
+  /**
+   * Does any breakpoint want to stop on this Copper instruction? Runs every matching definition
+   * through `handleHit`, so hit counts, conditions, logpoints and one-shots apply (plan D6). In a
+   * condition, `ADDR` is the list index and `VAL` the instruction word.
+   *
+   * @param index The list index of the instruction the Copper completed
+   * @param word The instruction word
+   */
+  hasCopperHit(index: number, word: number): boolean {
+    let stop = false;
+    for (const [key, bp] of this.breakpointDefs) {
+      if (!isCopperBreakpoint(bp) || bp.disabled) continue;
+      if ((bp.copperIndex! & 0x3ff) !== (index & 0x3ff)) continue;
+      const access = { value: word & 0xffff, address: index & 0x3ff };
+      if (this.handleHit(key, bp, "copper", index & 0x3ff, access, false)) {
+        stop = true;
+      }
+    }
+    return stop;
+  }
+
+  /**
    * Gets I/O read breakpoint information for the specified address
    * @param address I/O address read during the current instruction
    */
@@ -647,7 +704,7 @@ export class DebugSupport implements IDebugSupport {
           bp.memoryWrite ||
           bp.ioRead ||
           bp.ioWrite ||
-          isNextRegBreakpoint(bp)
+          isEventBreakpoint(bp)
         ),
         resolvedAddress: bp.watchSymbol
           ? (bp.resolvedAddress ?? this.watchSymbolAddress(bp.watchSymbol))
@@ -673,6 +730,8 @@ export class DebugSupport implements IDebugSupport {
         nextRegValue: bp.nextRegValue,
         nextRegMask: bp.nextRegMask,
         nextRegCopper: bp.nextRegCopper,
+        // --- Same reason again: the Copper list index is a Copper breakpoint's whole identity.
+        copperIndex: bp.copperIndex,
         /*
          * `disabled` and `hitCount`, for the same reason as `owner` and `bank` above — and these
          * two were being dropped.
@@ -2115,6 +2174,7 @@ function accessKindOf(kind: DecisionKind): ConditionAccessKind {
 /** The condition-language kind of a breakpoint definition. */
 function accessKindOfBreakpoint(bp: BreakpointInfo): ConditionAccessKind {
   if (isNextRegBreakpoint(bp)) return "nextReg";
+  if (isCopperBreakpoint(bp)) return "copper";
   if (bp.memoryRead || bp.memoryWrite) return "memory";
   if (bp.ioRead || bp.ioWrite) return "io";
   return "exec";
