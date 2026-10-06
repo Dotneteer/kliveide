@@ -583,6 +583,13 @@ Where the shipped code differs from §1–§5, and why:
   `sprite-demo.kz80.asm` into a paused Next (no NextZXOS needed), checks the table, the strip, the
   sheet and the export from the DOM, and produces the two documentation screenshots.
 
+- **Pattern snapshots (2026-10-06, after the plan).** *Open in sprite editor* (the inspector, for a
+  sprite or a pattern, and the table's row menu) opens the pattern, as its sprite shows it, in a
+  read-only sprite editor: an in-memory `SpritePatternSnapshot` document (`patternSnapshot.ts`,
+  `PatternSnapshotPanel.tsx`), one 8-bit sprite with the palette offset applied and transparent pixels
+  as `$4B`. `SpriteEditor` takes `readOnly`; its `commit` and save are no-ops then. One tab per pattern
+  and format, retaken in place; not restored with the workspace.
+
 ### 9.1 Layout redesign (2026-10-06)
 
 The first layout put the toolbar, the globals, the table beside the sheet and a bottom inspector in

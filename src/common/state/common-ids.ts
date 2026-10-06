@@ -11,9 +11,13 @@ export const COPPER_PANEL_ID = "$copper";
 export const COPPER_EDITOR = "CopperList";
 export const SPRITES_PANEL_ID = "$sprites";
 export const SPRITES_EDITOR = "SpriteInspector";
+export const TILEMAP_PANEL_ID = "$tilemap";
+export const TILEMAP_EDITOR = "TilemapInspector";
 export const UNKNOWN_EDITOR = "Unknown";
 export const COMMAND_RESULT_EDITOR = "CommandResult";
 export const STATIC_MEMORY_DUMP_VIEWER = "StaticMemoryDumpViewer";
+export const SPRITE_PATTERN_SNAPSHOT_VIEWER = "SpritePatternSnapshot";
+export const TILE_SNAPSHOT_VIEWER = "TileSnapshot";
 export const TAP_VIEWER = "TapViewer";
 // --- A tape block popped out as a BASIC listing or a screen (`.plans/TAPE_VIEWER_PLAN.md` §4.5)
 export const TAPE_BLOCK_VIEWER = "TapeBlockViewer";

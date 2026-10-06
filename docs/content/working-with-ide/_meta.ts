@@ -12,6 +12,7 @@ export default {
   ula: "The ULA View",
   copper: "The Copper View",
   "sprite-inspector": "The Sprite Inspector",
+  "tilemap-inspector": "The Tilemap Inspector",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

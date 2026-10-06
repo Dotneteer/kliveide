@@ -41,6 +41,8 @@ type Props = {
   selectedSprite?: number;
   onSelect: (index: number) => void;
   onShowPattern: (row: SpriteRow) => void;
+  /** Pops the row's pattern out into a read-only sprite editor, as the sprite shows it */
+  onOpenSnapshot: (row: SpriteRow) => void;
   onCopy: (text: string, what: string) => void;
 };
 
@@ -77,6 +79,7 @@ export const SpritesTable = ({
   selectedSprite,
   onSelect,
   onShowPattern,
+  onOpenSnapshot,
   onCopy
 }: Props) => {
   const { list: rowHeight } = useRowSizes();
@@ -265,6 +268,10 @@ export const SpritesTable = ({
           )}
         />
         <ContextMenuItem text="Show pattern" clicked={fromMenu(() => menuRow && onShowPattern(menuRow))} />
+        <ContextMenuItem
+          text="Open pattern in sprite editor"
+          clicked={fromMenu(() => menuRow && onOpenSnapshot(menuRow))}
+        />
         <ContextMenuSeparator />
         {/* --- Reserved for the sprite half of G3.8; until then, nr: breakpoints on $35-$39 */}
         <ContextMenuItem text="Break on attribute write (coming later)" disabled={true} />

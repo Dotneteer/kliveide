@@ -29,7 +29,7 @@ are estimates for prioritising, not commitments.
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
-| G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) |
+| G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
@@ -139,10 +139,10 @@ be reused.
 
 **Plan:** G3.1 (and the Copper half of G3.8) in [COPPER_DEBUGGING_PLAN.md](COPPER_DEBUGGING_PLAN.md);
 G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](SPRITE_INSPECTOR_PLAN.md) (done);
-G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md); G3.5 in
+G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md) (done); G3.5 in
 [LAYER2_INSPECTOR_PLAN.md](LAYER2_INSPECTOR_PLAN.md); G3.6 in
 [LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md); G3.7 in
-[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (all four drafts, questions open).
+[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (those three drafts, questions open).
 Research for those four corrected two assumptions in the table below: the `.sl2`/`.shr` viewers G3.5
 was to reuse are stubs (the Layer 2 plan builds the decoder and replaces the `.sl2`/`.nxi` stubs),
 and G3.6 is nearer **M–L** than L, because the core already renders each layer into its own buffer
@@ -153,7 +153,7 @@ and mixes them in one function. G3.7 should land before G3.6, which reuses its s
 | G3.1 Copper list viewer ✅ **done** | The 1K Copper program decoded as `WAIT line,h` / `MOVE reg,val`, with the current Copper PC highlighted and NextReg names. | S–M |
 | G3.2 Sprite table inspector ✅ **done** | All 128 sprite attribute slots: position, pattern, palette offset, mirror/rotate/scale, relative/anchor, visible; click to show the pattern. | M |
 | G3.3 Pattern memory viewer ✅ **done** | All 16K of sprite pattern RAM as 8-bit or 4-bit images with the active palette. | S (reuses the sprite drawing) |
-| G3.4 Tilemap / tile definition viewer | The live tilemap with tile indices and attributes, plus the tile definitions. | M |
+| G3.4 Tilemap / tile definition viewer ✅ **done** | The live tilemap with tile indices and attributes, plus the tile definitions. | M |
 | G3.5 Layer 2 live viewer | Current Layer 2 banks as an image at its resolution (256×192 / 320×256 / 640×256), with scroll and clip shown. | S–M (reuses the `.sl2`/`.shr` viewers) |
 | G3.6 Layer composition view | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. | L (the C renderer must compose selectively) |
 | G3.7 Beam-position overlay | Show the raster position on the paused screen; useful with Copper and with the ULA panel's beam phase. | S–M |
@@ -171,6 +171,22 @@ stepping backwards.
 (`zxnext-trace.c`: 160,000 records × 128 bytes, PC plus memory-map context), used for boot
 traces and diagnostics. The Next also has full-state checkpoints. The 48K/128K/+3 cores have
 neither.
+
+**Plan:** G4.1 in [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md), G4.2 in
+[EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md), G4.3 in
+[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md).
+The G4.1 and G4.2 decisions and G4.3's D1–D14 are recorded (2026-10-06). G4.3's §8 questions are
+still open, and G4.4 is a draft gated by a Phase 0 spike. G4.4 uses keyframes that share unchanged
+pages, an input journal kept at each core's export boundary, and deterministic replay to an exact
+instruction, which the replay checks itself. Research for
+them corrected the foundation note above. The frame trace is a **linear** buffer that stops when
+full, not a ring. It records registers *after* each instruction, holds no opcode bytes, and is off
+in every production path. So G4.1 does not reuse it. Instead it adds a shared history recorder
+hooked into the shared Z80 (`src/emu/z80/wasm/`). The recorder keeps a ring of 64-byte "state before
+the instruction" records. Because every core compiles that Z80, G4.2 is per-core wiring only: a
+16-byte context, a memory increase and tests. Recording runs only in debug sessions. G4.1 raises
+the Next's memory from 32 to 40 MB for a 131,072-record ring, and records DMA bus holds. A follow-up
+then moves the frame trace to a diagnostics build, which shrinks the Next to about 20 MB.
 
 | Feature | What it does | Size |
 |---|---|---|
@@ -305,7 +321,7 @@ G1.1 hit counts · G1.2 register conditions · G1.4 logpoints · G1.6 one-shot b
 G10.1–G10.4 proof points.
 
 **Wave 2 — the Next leadership set:**
-~~G3.2 sprite inspector~~ (done) · G3.4 tilemap · G3.5 Layer 2 · G4.1 history viewer (Next) · G4.3 lite
+~~G3.2 sprite inspector~~ (done) · ~~G3.4 tilemap~~ (done) · G3.5 Layer 2 · G4.1 history viewer (Next) · G4.3 lite
 step back · G5.1 coverage · G1.3 memory and value conditions · G1.5 DeZog-compatible ASSERTION
 and WPMEM comments.
 

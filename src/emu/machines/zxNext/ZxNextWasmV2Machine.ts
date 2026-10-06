@@ -6,6 +6,7 @@ import {
   type CopperHitEvent,
   type CopperState,
   type NextSpriteState,
+  type NextTilemapState,
   type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
@@ -19,6 +20,7 @@ import type {
   JoystickConnector
 } from "./IZxNextHostInputMachine";
 import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
+import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDeviceState, RegValueState } from "./nextRegDescriptors";
@@ -1578,6 +1580,39 @@ export class ZxNextWasmV2Machine
         tied: (ex.zxnextGetNextRegisterDirect(0x09) & 0x10) !== 0
       },
       spritePaletteBank: (ex.zxnextGetNextRegisterDirect(0x43) & 0x08) !== 0 ? 1 : 0
+    };
+  }
+
+  /**
+   * The Tilemap Inspector's snapshot (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.3). Side-effect free
+   * (D8): the registers come from getters and direct NextReg reads, the banks are two copies of
+   * physical memory, one call for the whole 32K rather than a read per byte.
+   */
+  getNextTilemapState(): NextTilemapState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const control = ex.zxnextGetTilemapControl() & 0xff;
+    return {
+      regs: {
+        enabled: (control & 0x80) !== 0,
+        control,
+        defaultAttr: ex.zxnextGetTilemapDefaultAttr() & 0xff,
+        mapBank7: ex.zxnextGetTilemapBaseAddressUseBank7() !== 0,
+        mapMsb: ex.zxnextGetTilemapBaseAddressMsb() & 0x3f,
+        defBank7: ex.zxnextGetTilemapDefinitionAddressUseBank7() !== 0,
+        defMsb: ex.zxnextGetTilemapDefinitionAddressMsb() & 0x3f,
+        scrollX: ex.zxnextGetTilemapScrollX() & 0x3ff,
+        scrollY: ex.zxnextGetTilemapScrollY() & 0xff,
+        transparencyIndex: ex.zxnextGetTilemapTransparencyIndex() & 0x0f,
+        globalTransparency: ex.zxnextGetNextRegisterDirect(0x14) & 0xff,
+        clip: [0, 1, 2, 3].map((i) => ex.zxnextGetTilemapClip(i) & 0xff) as [number, number, number, number],
+        clipIndex: ex.zxnextGetTilemapClipIndex() & 0x03,
+        ulaDisabled: (ex.zxnextGetNextRegisterDirect(0x68) & 0x80) !== 0
+      },
+      bank5: runtime.memory.slice(BANK5_PHYSICAL, BANK5_PHYSICAL + 0x4000),
+      bank7: runtime.memory.slice(BANK7_PHYSICAL, BANK7_PHYSICAL + 0x4000),
+      slotOffsets: Array.from({ length: 8 }, (_, slot) => ex.zxnextGetMemoryPageReadOffset(slot) >>> 0),
+      copperRunning: (ex.zxnextGetCopperStartMode() & 0x03) !== 0
     };
   }
 

@@ -153,6 +153,27 @@ sprite editor. The file holds the 64 8-bit patterns; a 4-bit pattern is half of 
 nothing is lost. The [`export-patterns`](/commands-reference#export-patterns) command does the same
 with a file name of your choice.
 
+## Opening A Pattern In The Sprite Editor
+
+**Open in sprite editor** (in the inspector, for a sprite or a pattern, and in a row's right-click
+menu) pops the pattern out into a **read-only** sprite editor, so you can examine it pixel by pixel
+the way you would a `.spr` file: zoom, grid, onion skin, the live sprite palette, the coordinates and
+colour index under the pointer, and Copy, to paste it into a sprite sheet of your own.
+
+The snapshot is the pattern **as the sprite shows it**, frozen when you took it:
+
+- a 4-bit pattern is shown with the sprite's palette offset in each pixel's high nibble, so the indices
+  are the ones the hardware draws;
+- an 8-bit pattern has the offset added to its high nibble (with offset 0 the bytes are unchanged);
+- a transparent pixel is the transparency index (`$4B`).
+
+From a pattern rather than a sprite, the palette offset is the one the Patterns view uses (**From
+sprite** or **Fixed n**). The bar at the top says which pattern it is, which sprite it was taken for,
+the offset and the time. Taking the same pattern again refreshes its tab; the snapshot is not saved and
+does not come back with the workspace.
+
+![A pattern popped out into the read-only sprite editor](/images/working-with-ide/sprite-pattern-snapshot.png)
+
 ## The Inspector
 
 The band or the rail shows the selection. Its header line sums it up: `Sprite #9 · drawn · 120,69 ·

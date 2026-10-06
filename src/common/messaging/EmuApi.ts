@@ -15,6 +15,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
+import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type {
   SpectrumSnapshotLoadMode,
   SpectrumSnapshotLoadOptions,
@@ -551,6 +552,14 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next tilemap state the Tilemap Inspector shows: the registers and copies of
+   * banks 5 and 7. Reading it never changes the machine.
+   */
+  async getNextTilemapState(): Promise<NextTilemapState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * "Step Copper": runs the ZX Spectrum Next in debug mode until the Copper completes its next
    * instruction, then stops at the end of that Z80 instruction.
    */
@@ -868,6 +877,25 @@ export type NextSpriteState = {
   };
   /** `$43` bit 3: the sprite palette in use (0: first, 1: second) */
   spritePaletteBank: 0 | 1;
+};
+
+/**
+ * The ZX Spectrum Next tilemap, as the Tilemap Inspector reads it in one call
+ * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.3, D2).
+ */
+export type NextTilemapState = {
+  regs: TilemapRegs;
+  /** A 16K copy of bank 5 (physical $054000) */
+  bank5: Uint8Array;
+  /** A 16K copy of bank 7 (physical $05C000); the tilemap reads only its first 8K (T1) */
+  bank7: Uint8Array;
+  /**
+   * The physical read offset of each 8K Z80 slot, so the inspector can show an entry's Z80 address
+   * only when its page is mapped (T1), whatever pages it (ROM, DivMMC, MMU)
+   */
+  slotOffsets: number[];
+  /** `$62` bits 7-6 are non-zero: register values may change per line (T10) */
+  copperRunning: boolean;
 };
 
 /** The ZX Spectrum Next Copper, as the IDE's Copper views read it (COPPER_DEBUGGING_PLAN §4.3). */

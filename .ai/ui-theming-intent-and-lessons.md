@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, and the Sprite Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector and the Tilemap Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -745,7 +745,9 @@ hierarchy's `--data-changed`) after the row's index, drawn as an `::after` on th
 **marker, never a row fill** — the row's values keep `--color-state-value` and the selection keeps
 its wash, so a changed, selected row still reads as both. The baseline is the attribute snapshot at
 the *previous* stop while paused, and the last stop while running; the Sprite Inspector is its first
-user (`useNextSpriteState`).
+user (`useNextSpriteState`). On an image rather than a table (the Tilemap Inspector's map) the same
+dot goes in the changed cell's top-right corner, drawn on the overlay canvas — still a marker, never a
+tint over the machine's pixels.
 
 ## A Wide Table Scrolls As One Piece, Pinned Columns Fixed
 
@@ -769,7 +771,8 @@ column. Let colour (`--data-label`) set the header apart.
 
 A document that holds several panes measures **its own** width (a `ResizeObserver` and a hidden `0`
 in the panel font to turn pixels into `ch`), never the window's: docked in a narrow split it must
-behave like a narrow window. The Sprite Inspector has three layouts, with breakpoints in `ch`:
+behave like a narrow window. The Sprite Inspector has three layouts, with breakpoints in `ch`, and
+the Tilemap Inspector copies them (Map/Tiles for Sprites/Patterns):
 narrow (the list as tabs, the inspector a band under it), medium (tabs, the inspector a rail beside
 it), wide (two lists side by side and the rail). Rules it settled:
 
@@ -806,6 +809,46 @@ accent's subtle fill, sprites as state-value outlines, the selection filled with
 clip window dashed in the warning hue. Pattern pixels are the machine's colours (see "Colour That
 Belongs To The Machine"); the sheet's badges, the mixed-format corner and the upload bar are the
 only chrome drawn on them.
+
+The Tilemap Inspector (`--color-tilemap-*`) keeps that vocabulary and adds one rule: **two different
+windows get two hues**. The clip window (what cuts pixels off, shown in *As displayed*) is the
+warning hue, as on the sprite map; the visible window on the *unscrolled* map (where the screen's
+view lands after the scroll, possibly wrapped into four pieces) is a dashed `--accent-secondary-solid`
+outline, because it is a different question. The selected cell is the primary accent, 2px; a
+selected tile's users the same hue at 1px. Its diagnostics reuse the sprite chip aliases rather than
+minting a second set.
+
+Chrome over a machine-coloured image is drawn on **one overlay canvas** (`OverlayCanvas`) from a
+list of shapes, never an element per cell: an 80×32 map is 2560 cells, and DOM badges cost more
+than the image. The canvas reads its colours with `getComputedStyle` from the `--color-tilemap-*`
+tokens, so the theme still decides. Text on a small tile (a usage count) is a **corner badge** at
+about two-thirds of the cell height; centred at full size it hides the tile it describes. The image
+itself is one `ImageData` in an `IndexedImageCanvas`, scaled by CSS with `image-rendering:
+pixelated`, the checker as a CSS background behind transparent pixels. An image pane scrolls through a `ScrollViewer` like every
+other scroll area (the rule under "Method Lessons"): a `display: flex` box with `min-width`/
+`min-height: 0` around the `ScrollViewer`, and the image in an `inline-block` wrapper so the content is
+as wide as the image and the viewer scrolls both ways. The first version used bare `overflow: auto`
+and showed native bars; `recipes/tilemap-inspector.cjs` now fails if any element in the document
+scrolls outside an OverlayScrollbars viewport.
+
+## A Read-Only View Of An Editor Hides Its Tools, And Says So In One Line
+
+When an editor shows something that must not change (the Sprite Inspector's pattern snapshot in the
+sprite editor), it **hides** the editing chrome rather than disabling it: the tool rail, the sheet
+operations and the pen/fill colours go, because a column of greyed tools reads as "broken", not as
+"read-only". The toolbar row becomes one line: a `Read-only` badge in the warning hue's subtle fill
+(the inspectors' chip vocabulary), the title in `--text-primary`, the facts (source, offset, time) in
+`--text-tertiary`, and only the actions that still mean something (Copy). Everything for looking -
+zoom, grid, onion skin, palette, preview, hover readout - stays exactly as in the editable view, so
+the reader sees what the editor would show. The guard is in the editor's one commit point as well as
+in the hidden UI, so a shortcut that slips through still changes nothing.
+
+Where no editor fits (a tilemap tile is 8×8 4-bit; the sprite editor is 16×16 8-bit throughout), the
+read-only view is a **viewer built in the editor's shape** rather than a stretched editor: the same bar,
+stage header, rulers (`SpriteRulers` takes a `count`), status line and palette/preview column, and the
+file viewers' root type (`--monospace-font` at `--panel-font-size`), so the two snapshots read as one
+family. A snapshot that should outlive the machine freezes its **palette** with its bytes and says so
+in the palette's header ("as taken").
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 

@@ -1,8 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PaletteDeviceInfo } from "@common/messaging/EmuApi";
-import { paletteCodeFromDeviceValue } from "@emu/machines/zxNext/palette";
-import { useEmuApi } from "@renderer/core/EmuApi";
-import { useEmuStateListener } from "@renderer/appIde/useStateRefresh";
+import { useNextDevicePalette } from "@renderer/features/next-palette/useNextDevicePalette";
 import { DEFAULT_SPRITE_TRANSPARENCY } from "./sprite-file";
 
 /**
@@ -40,12 +36,6 @@ export type SpritePalette = {
   pinBank: (bank: 0 | 1) => void;
 };
 
-/** Next Reg $43, bit 3 selects which sprite palette the engine reads. */
-const liveBankOf = (info: PaletteDeviceInfo): 0 | 1 => ((info.reg43Value ?? 0) & 0x08 ? 1 : 0);
-
-const sameValues = (a: number[], b: number[]): boolean =>
-  a.length === b.length && a.every((v, i) => v === b[i]);
-
 export type UseSpritePaletteOptions = {
   /**
    * Show this bank, whatever the machine selects and whatever was pinned.
@@ -66,60 +56,17 @@ export type UseSpritePaletteOptions = {
 };
 
 export function useSpritePalette(options: UseSpritePaletteOptions = {}): SpritePalette {
-  const emuApi = useEmuApi();
-  const [info, setInfo] = useState<PaletteDeviceInfo | undefined>(undefined);
-  const [pinnedBank, setPinnedBank] = useState<0 | 1 | null>(null);
-
-  const enabled = options.enabled ?? true;
-  const refresh = useCallback(async () => {
-    if (!enabled) return;
-    try {
-      setInfo(await emuApi.getPalettedDeviceInfo());
-    } catch {
-      // No machine controller, or a machine that is not a Next. Neither is an error here: a `.spr`
-      // is perfectly editable with the emulator stopped, it just cannot show the live palette.
-      setInfo(undefined);
-    }
-  }, [emuApi, enabled]);
-
-  useEmuStateListener(emuApi, refresh, enabled);
-  // --- Becoming enabled after mount reads at once, rather than waiting for the machine to change.
-  const wasEnabled = useRef(enabled);
-  useEffect(() => {
-    if (enabled && !wasEnabled.current) void refresh();
-    wasEnabled.current = enabled;
-  }, [enabled, refresh]);
-
-  const liveBank = info ? liveBankOf(info) : undefined;
-  const shownBank: 0 | 1 = options.bank ?? pinnedBank ?? liveBank ?? 0;
-
-  /*
-   * Identity stability is load-bearing, not a micro-optimisation.
-   *
-   * This hook re-runs on every emulator state change, and the palette array is a prop of the
-   * memoized grid, of all ten thumbnails and of the 256-swatch viewer. Returning a fresh array each
-   * time would undo Phase 3 entirely - so the previous array is kept unless the *values* differ.
-   */
-  const cached = useRef<number[]>(DEFAULT_SPRITE_PALETTE);
-  const palette = useMemo(() => {
-    const raw = info ? (shownBank === 0 ? info.spriteFirst : info.spriteSecond) : undefined;
-    // The device stores straight 9-bit RGB333; everything else in the app speaks the register
-    // layout. This is the boundary that converts, once per rendered bank.
-    const next = raw?.length ? raw.map(paletteCodeFromDeviceValue) : DEFAULT_SPRITE_PALETTE;
-    if (sameValues(next, cached.current)) return cached.current;
-    cached.current = next;
-    return next;
-  }, [info, shownBank]);
-
-  const source: SpritePaletteSource = palette === DEFAULT_SPRITE_PALETTE ? "default" : "machine";
-
+  // --- The sprite device's live palette (`useNextDevicePalette`); this hook adds only the visible
+  // --- fallback the editor labels
+  const device = useNextDevicePalette("sprites", { bank: options.bank, enabled: options.enabled });
+  const palette = device.palette ?? DEFAULT_SPRITE_PALETTE;
+  const source: SpritePaletteSource = device.palette ? "machine" : "default";
   return {
     palette,
-    transparencyIndex:
-      info?.spriteTransparencyIndex ?? DEFAULT_SPRITE_TRANSPARENCY,
+    transparencyIndex: device.transparencyIndex ?? DEFAULT_SPRITE_TRANSPARENCY,
     source,
-    shownBank,
-    liveBank,
-    pinBank: setPinnedBank
+    shownBank: device.shownBank,
+    liveBank: device.liveBank,
+    pinBank: device.pinBank
   };
 }

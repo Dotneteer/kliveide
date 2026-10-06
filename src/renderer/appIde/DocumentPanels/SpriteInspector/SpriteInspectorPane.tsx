@@ -28,6 +28,7 @@ import {
   type SpriteSelection
 } from "@renderer/features/sprites/spriteViewModel";
 import type { SpriteInspectorViewState } from "./SpriteInspectorPanel";
+import type { NexSpriteFormat } from "@common/zxnext/sprites/spritePatterns";
 import styles from "./SpriteInspector.module.scss";
 
 /*
@@ -52,6 +53,8 @@ type Props = {
   abgr: Uint32Array;
   onSelectSprite: (index: number) => void;
   onSelectPattern: (slot: number, half?: 0 | 1) => void;
+  /** Pops a pattern out into a read-only sprite editor (`patternSnapshot.ts`) */
+  onOpenSnapshot: (format: NexSpriteFormat, pattern: number, paletteOffset: number, sprite?: number) => void;
 };
 
 const hex2 = (v: number) => `$${(v & 0xff).toString(16).toUpperCase().padStart(2, "0")}`;
@@ -138,7 +141,16 @@ const ColourStrip = ({ pixels, palette, abgr }: { pixels: Int16Array; palette: n
 
 // --- A selected sprite
 
-const SpriteDetails = ({ model, look, palette, abgr, layout, index, onSelectPattern }: Props & { index: number }) => {
+const SpriteDetails = ({
+  model,
+  look,
+  palette,
+  abgr,
+  layout,
+  index,
+  onSelectPattern,
+  onOpenSnapshot
+}: Props & { index: number }) => {
   const slot = model.slots[index];
   const r = model.resolved[index];
   const transparentAbgr = abgr[model.state.transparencyIndex & 0xff];
@@ -223,6 +235,21 @@ const SpriteDetails = ({ model, look, palette, abgr, layout, index, onSelectPatt
       >
         Show pattern {formatSpritePattern(r.fourBit, r.pattern7)}
       </button>
+      <button
+        type="button"
+        className={styles.link}
+        title="Open this pattern, as this sprite shows it, in a read-only sprite editor"
+        onClick={() =>
+          onOpenSnapshot(
+            r.fourBit ? "4bit" : "8bit",
+            r.fourBit ? r.pattern7 : patternSlotOf(r),
+            r.paletteOffset,
+            index
+          )
+        }
+      >
+        Open in sprite editor
+      </button>
     </>
   );
 };
@@ -263,7 +290,15 @@ function describeHint(pixels: Int16Array, transparencyIndex: number): string {
   }
 }
 
-const PatternDetails = ({ model, look, palette, abgr, cell, onSelectSprite }: Props & { cell: PatternCell }) => {
+const PatternDetails = ({
+  model,
+  look,
+  palette,
+  abgr,
+  cell,
+  onSelectSprite,
+  onOpenSnapshot
+}: Props & { cell: PatternCell }) => {
   const pixels = useMemo(
     () =>
       patternPixels(model.state.patterns, cell.pattern, {
@@ -303,6 +338,16 @@ const PatternDetails = ({ model, look, palette, abgr, cell, onSelectSprite }: Pr
           </p>
         )}
         <p className={styles.why}>{describeHint(pixels, model.state.transparencyIndex)}</p>
+        <button
+          type="button"
+          className={styles.link}
+          title="Open this pattern, with the palette offset shown here, in a read-only sprite editor"
+          onClick={() =>
+            onOpenSnapshot(cell.format, cell.pattern, cellPaletteOffset(model, cell, look.paletteOffset))
+          }
+        >
+          Open in sprite editor
+        </button>
         <dl className={styles.fields}>
           <FieldRow name="Used by" wide={true}>
             {cell.users.length === 0 && others.length === 0 && "no sprite"}

@@ -1,7 +1,7 @@
 # Tilemap Inspector Plan: the Live Tilemap and Its Tile Definitions
 
-Status: **draft** (2026-10-05). Decisions D1–D10 are proposed; the §8 questions are open. No phase
-started.
+Status: **done** (2026-10-06): Phases 1–7 implemented. Decisions D1–D10 and the §8 questions taken as
+proposed. §9 records where the implementation departs from the text below.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.4**: the live tilemap with tile indices
@@ -376,3 +376,55 @@ About **M**, as the roadmap estimated.
 | Q3 | Show the ULA layer faintly under the map for orientation? | No; that is G3.6's job |
 | Q4 | Treat overlaps as warnings even when deliberate? | Yes, with the T7 suppression when the ULA is off |
 | Q5 | Export the map and definitions (`.map`/`.til`) in this plan? | No; revisit after use |
+
+---
+
+## 9. Implementation notes (2026-10-06)
+
+Where the shipped code differs from §1–§5, and why:
+
+- **This plan created the §4.6 shared pieces.** The Sprite Inspector landed first but built none of
+  them. `src/common/zxnext/video/clipWindows.ts` holds the four layers' clip rules, and
+  `spriteGeometry.effectiveClipWindow` now delegates to it. `features/next-palette/` holds
+  `useNextDevicePalette` and the device table that moved out of `PalettePanel.tsx`; `useSpritePalette`
+  is a thin call of it plus its visible fallback, and its tests pass unchanged.
+  `controls/Next/IndexedImageCanvas.tsx` scales one `ImageData` by CSS (`image-rendering: pixelated`,
+  the checker a CSS background) rather than through `ScreenCanvas`'s shadow canvas.
+- **`mmu` is `slotOffsets`**: the physical read offset of each 8K slot, from the core's paging. That
+  answers "is this entry mapped, and where" for ROM, DivMMC and MMU paging alike, where eight `$50`–`$57`
+  page numbers would not.
+- **The decoder takes the snapshot as `TilemapBanks`** (`{bank5, bank7}`) rather than two arrays, and
+  has two more entry points: `renderTilemapImage` (*Whole map* or *As displayed*) and
+  `renderTileSheet`. `tilePixels` returns the stored nibbles or bits; `pixelIndex` turns one into a
+  palette index. Text-mode transparency compares the palette's RGB with `$14`, which a pure decoder
+  cannot know, so the caller passes `textTransparent(index)` (`textTransparency` builds it from the
+  palette's device values). Without it no text pixel is transparent, as in `_tilemap-helpers.ts`.
+- **The overlap check uses the tiles the map uses, not the whole table.** From the reset base `$4C00`
+  a 256-tile table always covers the ULA bitmap, so checking the full table would warn on every
+  program. A full table that would run past its bank is an info chip (`table wraps`); used tiles that
+  do are a warning. The Tiles view shows overlaps through the strip's chips, not as range markers.
+- **"Changed since the previous stop"** compares each cell's tile and effective attribute
+  (`cellKeys`), not raw bytes, so a byte that changes nothing on screen (an attribute-less map's
+  unused half) is not marked.
+- **No "Machine → ZX Spectrum Next" submenu**, as with the Sprite Inspector: **Show Tilemap Inspector**
+  joins the flat Next group in `zx-next-menus.ts` and runs `show-tilemap`. No `IdeApi` method; workspace
+  restore is the generic special-document path.
+- **Overlays are one canvas** (`OverlayCanvas`, shapes from `tilemapOverlay.ts`): the grid, the visible
+  or clip window, the selection, a selected tile's users, the changed dots and the tile numbers.
+  Usage counts on the tile sheet are small corner badges from zoom 3; unreferenced tiles are drawn at
+  reduced alpha (`dim`).
+- **The hidden-document gate is structural**, as in the Sprite Inspector: the document area mounts only
+  the active document. `useNextTilemapState` replaces the snapshot object only when the hash of the
+  32K, the registers, the paging and the Copper flag changes, so the views re-decode only then.
+- **Verification in the running app** is `scripts/doc-shots/recipes/tilemap-inspector.cjs`: it pokes
+  `tilemap-demo.kz80.asm` into a paused Next, checks the strip, the inspector's decode of a rotated and
+  mirrored cell, canvas pixels in *Whole map* and *As displayed*, the narrow layout and 80 columns,
+  and produces the two documentation screenshots. *As displayed* against the screen pixel by pixel is
+  the harness test's job (`test/zxnext-hw/tilemap/inspector-state.test.ts`, twelve configurations and
+  bank 7, against both the core's picture and the VHDL-derived model).
+- **Tile snapshots (2026-10-06, after the plan).** *Open tile snapshot* (the inspector, for a cell or a
+  tile, and the cell menu) opens a read-only `TileSnapshot` document (`features/tilemap/tileSnapshot.ts`,
+  `DocumentPanels/TileSnapshot/`): the tile's definition bytes read through the decoder's addressing
+  (so the bank-7 wrap holds), the cell's palette offset and transform (*As shown* / *As stored*), and
+  the tilemap palette frozen with it. It is a viewer in the sprite editor's shape, not the sprite
+  editor, which is 16×16 8-bit throughout. One tab per tile, retaken in place; not restored.

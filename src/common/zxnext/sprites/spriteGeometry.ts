@@ -5,14 +5,22 @@
  * Sprite space is 320 x 256. The paper's top left is (32, 32), so the paper is (32,32)-(287,223).
  */
 
-export const SPRITE_SPACE_WIDTH = 320;
-export const SPRITE_SPACE_HEIGHT = 256;
+import {
+  LAYER_SPACE_HEIGHT,
+  LAYER_SPACE_WIDTH,
+  PAPER_RECT as SHARED_PAPER_RECT,
+  spriteClipWindow,
+  type LayerRect
+} from "../video/clipWindows";
+
+export const SPRITE_SPACE_WIDTH = LAYER_SPACE_WIDTH;
+export const SPRITE_SPACE_HEIGHT = LAYER_SPACE_HEIGHT;
 
 /** An inclusive rectangle in sprite space. */
-export type SpriteSpaceRect = { x1: number; y1: number; x2: number; y2: number };
+export type SpriteSpaceRect = LayerRect;
 
 /** The ULA paper in sprite space. */
-export const PAPER_RECT: SpriteSpaceRect = { x1: 32, y1: 32, x2: 287, y2: 223 };
+export const PAPER_RECT: SpriteSpaceRect = SHARED_PAPER_RECT;
 
 /**
  * The `$19` clip window in sprite space. Its units differ per mode (`zxnext-ula.c`, T8):
@@ -20,6 +28,7 @@ export const PAPER_RECT: SpriteSpaceRect = { x1: 32, y1: 32, x2: 287, y2: 223 };
  * - over border on, clipping off: no clip, the whole 320 x 256;
  * - over border off: paper-relative (+32 on every edge), and Y is capped at 223.
  *
+ * The rule lives with the other layers' in `video/clipWindows.ts`.
  * @param clip `$19`'s four values: x1, x2, y1, y2
  */
 export function effectiveClipWindow(
@@ -27,14 +36,7 @@ export function effectiveClipWindow(
   overBorder: boolean,
   clippingEnabled: boolean
 ): SpriteSpaceRect {
-  const [cx1, cx2, cy1, cy2] = clip.map((v) => v & 0xff);
-  if (overBorder) {
-    if (clippingEnabled) {
-      return { x1: cx1 << 1, x2: (cx2 << 1) | 1, y1: cy1, y2: cy2 };
-    }
-    return { x1: 0, x2: SPRITE_SPACE_WIDTH - 1, y1: 0, y2: SPRITE_SPACE_HEIGHT - 1 };
-  }
-  return { x1: cx1 + 32, x2: cx2 + 32, y1: cy1 + 32, y2: Math.min(cy2 + 32, 223) };
+  return spriteClipWindow(clip, overBorder, clippingEnabled);
 }
 
 /** The fields of a resolved sprite the geometry needs. */

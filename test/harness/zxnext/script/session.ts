@@ -9,6 +9,7 @@ import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type {
   CopperState,
   NextSpriteState,
+  NextTilemapState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -911,6 +912,16 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getNextSpriteState();
+  }
+
+  /**
+   * What the IDE's Tilemap Inspector reads (`getNextTilemapState`): the tilemap registers, copies of
+   * banks 5 and 7, the slots' physical offsets and whether the Copper runs. No side effects.
+   */
+  tilemapState(): NextTilemapState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getNextTilemapState();
   }
 
   /**
