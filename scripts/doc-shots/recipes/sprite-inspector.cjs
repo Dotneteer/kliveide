@@ -94,6 +94,28 @@ module.exports = {
       await klive.ide.mouse.move(5, 5);
       await klive.shot(DOC, "working-with-ide/sprite-inspector.png", { displayWidth: 900 });
 
+      // --- Sprite #1's pattern popped out into a read-only sprite editor
+      await klive.ide.locator('[aria-label="Sprite Inspector selection"] button', { hasText: "Open in sprite editor" }).click();
+      await klive.sleep(1500);
+      const snapshot = await klive.ide.evaluate(() => {
+        const bar = document.querySelector('[aria-label="Read-only snapshot"]');
+        return {
+          bar: bar?.textContent ?? "",
+          pixels: document.querySelectorAll('[data-role="pixels"] rect').length,
+          pencil: !!document.querySelector('button[aria-label^="Pencil tool"]'),
+          undo: !!document.querySelector('button[aria-label^="Undo"]')
+        };
+      });
+      console.log("  snapshot ·", JSON.stringify(snapshot));
+      await klive.ide.mouse.move(5, 5);
+      await klive.shot(DOC, "working-with-ide/sprite-pattern-snapshot.png", { displayWidth: 900 });
+      if (!/Read-only/.test(snapshot.bar) || !/as sprite #1 shows it/.test(snapshot.bar)) {
+        throw new Error(`The snapshot is not a read-only view of sprite #1's pattern: ${snapshot.bar}`);
+      }
+      if (snapshot.pixels !== 256 || snapshot.pencil || snapshot.undo) {
+        throw new Error(`The snapshot editor is not read-only: ${JSON.stringify(snapshot)}`);
+      }
+
       // --- Narrow: tabs, the inspector band with the details and the map side by side
       await resize(860);
       await klive.sleep(1200);

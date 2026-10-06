@@ -177,7 +177,7 @@ it.
 
 ## Coverage so far
 
-Six recipes; the rest of the pages were deliberately left ungenerated.
+Seven recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -199,10 +199,18 @@ Six recipes; the rest of the pages were deliberately left ungenerated.
   bytes a command, `setz80reg pc $8000`, `em-debug`, `em-pause`. The program's source is
   `recipes/sprite-demo.kz80.asm`; its bytes are pasted into the recipe (re-assemble after editing it).
   It passes `window.userHome`, because a Next launch writes `~/Klive/ks2.cim`. It verifies the table,
-  the globals strip, the sheet and the `.spr` export before it photographs. **It resizes the IDE window
+  the globals strip, the sheet and the `.spr` export before it photographs, and opens sprite #1's
+  pattern as a read-only snapshot (`sprite-pattern-snapshot.png`), checking the editor shows no tools. **It resizes the IDE window
   between shots** (`klive.app.evaluate` → `setContentSize`) to photograph each width-driven layout,
   checks `data-layout` first, and scrolls the table sideways to prove the pinned columns hold. The
   window widths depend on the panel font: Iosevka at 12px is about 6px a `ch`.
+- `recipes/tilemap-inspector.cjs` — the two `working-with-ide/tilemap-inspector*.png` shots, and the
+  running-app check of the Tilemap Inspector, on the Sprite Inspector recipe's pattern (a program
+  poked into a paused Next; source `recipes/tilemap-demo.kz80.asm`). It also **reads canvas pixels**:
+  `getContext("2d").getImageData` on the map canvas proves a transparent cell is alpha 0 and a tile's
+  frame opaque, in *Whole map* and again after clicking *As displayed*, where it checks the clip and
+  the scroll moved the picture. A DOM check alone cannot see a wrong decode. It also opens cell (3, 10)'s tile
+  as a snapshot (`tile-snapshot.png`) and checks *As shown* and *As stored* differ as the transform says.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

@@ -1096,6 +1096,17 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next tilemap state (the Tilemap Inspector's snapshot).
+   */
+  getNextTilemapState() {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getNextTilemapState();
+  }
+
+  /**
    * Arms a Copper step and runs the machine in debug mode until it fires.
    */
   async stepCopper() {

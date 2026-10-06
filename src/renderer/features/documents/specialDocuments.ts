@@ -8,6 +8,8 @@ import {
   MEMORY_EDITOR,
   SPRITES_EDITOR,
   SPRITES_PANEL_ID,
+  TILEMAP_EDITOR,
+  TILEMAP_PANEL_ID,
   MEMORY_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -17,7 +19,8 @@ export type SpecialDocumentId =
   | typeof DISASSEMBLY_PANEL_ID
   | typeof BASIC_PANEL_ID
   | typeof COPPER_PANEL_ID
-  | typeof SPRITES_PANEL_ID;
+  | typeof SPRITES_PANEL_ID
+  | typeof TILEMAP_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -61,6 +64,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Sprite Inspector",
     type: SPRITES_EDITOR,
     iconName: "sprites",
+    workspaceRestorable: true
+  },
+  // --- The ZX Spectrum Next tilemap and its tile definitions (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4)
+  [TILEMAP_PANEL_ID]: {
+    id: TILEMAP_PANEL_ID,
+    name: "Tilemap Inspector",
+    type: TILEMAP_EDITOR,
+    iconName: "tilemap",
     workspaceRestorable: true
   }
 };

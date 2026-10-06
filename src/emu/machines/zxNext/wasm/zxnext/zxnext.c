@@ -651,6 +651,17 @@ uint32_t zxnextGetTilemapDefinitionAddressUseBank7(void) {
   return zxnextTilemapGetDefinitionAddressUseBank7();
 }
 uint32_t zxnextGetTilemapDefinitionAddressMsb(void) { return zxnextTilemapGetDefinitionAddressMsb(); }
+/*
+ * The Tilemap Inspector's reads (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.2). Side-effect free.
+ */
+/* $6B: bit 7 (enable) and bit 4 (second tilemap palette, kept by the palette module) re-ORed */
+uint32_t zxnextGetTilemapControl(void) { return zxnextGetTilemapNextReg(0x6bu); }
+/* $6C */
+uint32_t zxnextGetTilemapDefaultAttr(void) { return zxnextTilemapGetDefaultAttr(); }
+/* $4C, low nibble */
+uint32_t zxnextGetTilemapTransparencyIndex(void) { return zxnextTilemapGetTransparencyIndex() & 0x0fu; }
+/* Which `$1B` value the next write sets (`$1C` bits 5-4 reset it) */
+uint32_t zxnextGetTilemapClipIndex(void) { return zxnextTilemapGetClipIndex(); }
 void zxnextSpriteWritePort303b(uint32_t value) { zxnextSpritesWritePort303b(value); }
 void zxnextSpriteWritePort57(uint32_t value) { zxnextSpritesWritePort57(value); }
 void zxnextSpriteWritePort5b(uint32_t value) { zxnextSpritesWritePort5b(value); }

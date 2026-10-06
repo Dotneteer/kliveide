@@ -199,6 +199,10 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetTilemapBaseAddressMsb: ZxNextWasmV2ExportFunction;
   zxnextGetTilemapDefinitionAddressUseBank7: ZxNextWasmV2ExportFunction;
   zxnextGetTilemapDefinitionAddressMsb: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapControl: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapDefaultAttr: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapTransparencyIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetTilemapClipIndex: ZxNextWasmV2ExportFunction;
   zxnextSpriteWritePort303b: ZxNextWasmV2ExportFunction;
   zxnextSpriteWritePort57: ZxNextWasmV2ExportFunction;
   zxnextSpriteWritePort5b: ZxNextWasmV2ExportFunction;
@@ -591,6 +595,10 @@ const requiredV2Exports = [
   "zxnextGetTilemapBaseAddressMsb",
   "zxnextGetTilemapDefinitionAddressUseBank7",
   "zxnextGetTilemapDefinitionAddressMsb",
+  "zxnextGetTilemapControl",
+  "zxnextGetTilemapDefaultAttr",
+  "zxnextGetTilemapTransparencyIndex",
+  "zxnextGetTilemapClipIndex",
   "zxnextSpriteWritePort303b",
   "zxnextSpriteWritePort57",
   "zxnextSpriteWritePort5b",

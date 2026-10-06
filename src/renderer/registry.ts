@@ -24,10 +24,13 @@ import {
   VID_VIEWER,
   IMAGE_VIEWER,
   STATIC_MEMORY_DUMP_VIEWER,
+  SPRITE_PATTERN_SNAPSHOT_VIEWER,
+  TILE_SNAPSHOT_VIEWER,
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   COPPER_EDITOR,
   SPRITES_EDITOR,
+  TILEMAP_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -47,6 +50,7 @@ import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
+import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -101,6 +105,8 @@ import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileVi
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
 import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
 import { createSprFileEditorPanel } from "@renderer/features/sprite-editor/SprFileEditorPanel";
+import { createPatternSnapshotPanel } from "@renderer/features/sprites/PatternSnapshotPanel";
+import { createTileSnapshotPanel } from "./appIde/DocumentPanels/TileSnapshot/TileSnapshotPanel";
 import { createVidFileViewerPanel } from "./appIde/DocumentPanels/Next/VidFileViewerPanel";
 import { createBinFileViewerPanel } from "./appIde/DocumentPanels/BinFileViewerPanel";
 import { createImageViewerPanel } from "./appIde/DocumentPanels/ImageViewerPanel";
@@ -445,9 +451,26 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "sprites"
   },
   {
+    id: TILEMAP_EDITOR,
+    renderer: createTilemapInspectorPanel,
+    icon: "tilemap"
+  },
+  {
     id: COMMAND_RESULT_EDITOR,
     renderer: createCommandResultPanel,
     icon: "code"
+  },
+  {
+    // --- A tilemap tile popped out of the Tilemap Inspector: a read-only tile viewer
+    id: TILE_SNAPSHOT_VIEWER,
+    renderer: createTileSnapshotPanel,
+    icon: "tilemap"
+  },
+  {
+    // --- A sprite pattern popped out of the Sprite Inspector: the sprite editor, read-only
+    id: SPRITE_PATTERN_SNAPSHOT_VIEWER,
+    renderer: createPatternSnapshotPanel,
+    icon: "sprites"
   },
   {
     id: STATIC_MEMORY_DUMP_VIEWER,

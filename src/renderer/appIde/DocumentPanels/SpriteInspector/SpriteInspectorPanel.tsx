@@ -30,6 +30,8 @@ import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import type { DocumentProps } from "@renderer/features/documents/DocumentsContainer";
 import { useSpritePalette } from "@renderer/features/sprite-editor/useSpritePalette";
 import { onSpriteReveal } from "@renderer/features/sprites/spriteReveal";
+import { openPatternSnapshot } from "@renderer/features/sprites/patternSnapshot";
+import { patternSlotOf } from "@common/zxnext/sprites/spriteAttributes";
 import {
   buildSpriteModel,
   changedSlots,
@@ -263,6 +265,18 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
 
   const selectSprite = (index: number) => setSelection({ kind: "sprite", index });
   const selectPattern = (slot: number, half?: 0 | 1) => setSelection({ kind: "pattern", slot, half });
+  // --- A pattern popped out into a read-only sprite editor, frozen as it is now
+  const openSnapshot = (format: NexSpriteFormat, pattern: number, paletteOffset: number, sprite?: number) => {
+    if (!documentHubService) return;
+    void openPatternSnapshot(documentHubService, {
+      patterns: model.state.patterns,
+      format,
+      pattern,
+      paletteOffset,
+      transparencyIndex: model.state.transparencyIndex,
+      sprite
+    });
+  };
   const fromMenu = (action: () => void) => () => {
     menuApi.conceal();
     action();
@@ -335,6 +349,10 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
         if (view === "sprites") updateLook(layout === "wide" ? { view: "both" } : chooseView(look, "patterns", layout));
         selectPattern(row.patternSlot, row.patternHalf);
       }}
+      onOpenSnapshot={(row) => {
+        const r = row.resolved;
+        openSnapshot(r.fourBit ? "4bit" : "8bit", r.fourBit ? r.pattern7 : patternSlotOf(r), r.paletteOffset, row.index);
+      }}
       onCopy={(text, what) => {
         void navigator.clipboard?.writeText(text);
         dispatch(setIdeStatusMessageAction(`${what} copied to the clipboard`, true));
@@ -383,6 +401,7 @@ const SpriteInspectorPanel = ({ document, viewState }: DocumentProps<Partial<Spr
       abgr={abgr}
       onSelectSprite={selectSprite}
       onSelectPattern={selectPattern}
+      onOpenSnapshot={openSnapshot}
     />
   );
 

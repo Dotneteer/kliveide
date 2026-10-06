@@ -1330,6 +1330,34 @@ Available aliases: `shspr`
 With an index (`0`-`127`), the sprite is selected: the inspector shows it and the Patterns view
 marks its pattern. The **Machine → Show Sprite Inspector** menu item runs `show-sprites`. In a document too narrow for the Patterns view beside the table, `show-patterns` switches to its tab.
 
+## `show-tilemap`
+
+Use this command to open the ZX Spectrum Next's [Tilemap Inspector](/working-with-ide/tilemap-inspector)
+on its Map view, and optionally to select a cell in it.
+
+```
+show-tilemap [<col> <row>]
+```
+
+Available aliases: `shtm`
+
+With a column (`0`-`79`) and a row (`0`-`31`), the cell is selected: the inspector decodes it and the
+Tiles view marks its tile. The **Machine → Show Tilemap Inspector** menu item runs `show-tilemap`.
+
+## `show-tiles`
+
+Use this command to open the ZX Spectrum Next's [Tilemap Inspector](/working-with-ide/tilemap-inspector)
+on its Tiles view, and optionally to select a tile in it.
+
+```
+show-tiles [<index>]
+```
+
+Available aliases: `shtl`
+
+With an index (`0`-`511`), the tile is selected: the inspector lists the cells that use it, and the map
+outlines them.
+
 ## `step-copper`
 
 Use this command on the ZX Spectrum Next to run the machine until the Copper completes its next

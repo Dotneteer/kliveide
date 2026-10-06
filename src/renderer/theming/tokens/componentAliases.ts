@@ -644,6 +644,20 @@ export const componentAliases: Record<string, string> = {
   "--color-sprite-map-outline": "var(--color-state-value)",
   "--bgcolor-sprite-map-selected": "var(--accent-solid)",
 
+  // --- Tilemap Inspector (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.5) ------------------------------
+  /*
+   * The overlays drawn on the map and the tile sheet. The clip window takes the warning hue, as on
+   * the sprite-space map (it is what cuts pixels off); the visible window, a different thing on the
+   * unscrolled map (where the screen's view lands after scrolling), the secondary accent; the
+   * selection and a selected tile's users the primary accent. The grid is the editor's grid line.
+   */
+  "--color-tilemap-grid": "var(--border-subtle)",
+  "--color-tilemap-clip": "var(--status-warning)",
+  "--color-tilemap-visible": "var(--accent-secondary-solid)",
+  "--color-tilemap-selected": "var(--accent-solid)",
+  "--color-tilemap-index": "var(--text-primary)",
+  "--bgcolor-tilemap-index": "var(--surface-canvas)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 

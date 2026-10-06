@@ -1,0 +1,232 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The tile snapshot (`tileSnapshot.ts`): laid out like the sprite editor - a one-line bar, a stage
+ * with its own header, the pixel grid with rulers, a status line, and the palette and preview in a
+ * column beside it - and read-only the same way (no tools, a "Read-only" badge). The rulers are the
+ * sprite editor's own component and styles, so their tracks are named `rulerTop` / `rulerLeft`.
+ */
+
+.snapshot {
+  display: grid;
+  grid-template-areas:
+    "bar    bar"
+    "header insp"
+    "canvas insp"
+    "status insp";
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  /* --- The root type of every file viewer, as `GenericFilePanel`'s `.panelFont` sets it for the
+     sprite editor, so the two read-only snapshots read the same */
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
+  background-color: var(--bgcolor-sprite-editor);
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  white-space: nowrap;
+}
+
+/* --- The sprite snapshot's read-only vocabulary */
+.readOnlyBadge {
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--status-warning-subtle);
+  color: var(--status-warning);
+  font-size: var(--font-size-100);
+}
+
+.title {
+  flex: 0 0 auto;
+  color: var(--text-primary);
+}
+
+.detail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.segmented {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.segment {
+  padding: 0 var(--space-2);
+  border: 0;
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  & + & {
+    border-left: 1px solid var(--border-default);
+  }
+
+  &:hover {
+    color: var(--text-primary);
+  }
+
+  &[aria-pressed="true"] {
+    background: var(--accent-solid);
+    color: var(--text-on-accent);
+  }
+}
+
+.stageHeader {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  height: var(--row-panelHeader);
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.zoomLabel {
+  min-width: 5ch;
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  text-align: center;
+}
+
+.separator {
+  width: 1px;
+  height: 60%;
+  margin: 0 var(--space-1);
+  background: var(--border-subtle);
+}
+
+.canvasArea {
+  grid-area: canvas;
+  display: grid;
+  place-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--space-2);
+  overflow: hidden;
+}
+
+.canvasFrame {
+  display: grid;
+  grid-template-areas:
+    ".         rulerTop"
+    "rulerLeft canvas";
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+}
+
+.grid {
+  grid-area: canvas;
+  display: block;
+}
+
+.gridLines line {
+  stroke: var(--color-grid-sprite-editor);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.checker {
+  background-color: var(--surface-active);
+  background-image:
+    linear-gradient(45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface-hover) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-hover) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+}
+
+.status {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--row-list);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--text-tertiary);
+}
+
+.inspector {
+  grid-area: insp;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--border-subtle);
+  background: var(--surface-panel);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  height: var(--row-panelHeader);
+  padding: 0 var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.paletteBody {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+
+.previews {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: var(--font-size-100);
+}

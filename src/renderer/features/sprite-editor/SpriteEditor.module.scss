@@ -653,3 +653,32 @@
     cursor: grabbing;
   }
 }
+
+/*
+ * A read-only snapshot (the Sprite Inspector's "Open in sprite editor") replaces the sheet toolbar
+ * with one line saying what it is. The badge takes the warning hue's subtle fill - the same
+ * "this is not what you think" signal the inspectors' chips use - so nobody hunts for the pencil.
+ */
+.readOnlyBadge {
+  flex: 0 0 auto;
+  margin-right: var(--space-2);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--status-warning-subtle);
+  color: var(--status-warning);
+  font-size: var(--font-size-100);
+}
+
+.readOnlyTitle {
+  flex: 0 0 auto;
+  margin-right: var(--space-3);
+  color: var(--text-primary);
+}
+
+.readOnlyDetail {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

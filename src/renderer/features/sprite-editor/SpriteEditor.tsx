@@ -67,8 +67,22 @@ import { cellSizeFromLegacyZoom, useFittedCellSize } from "./useFittedCellSize";
  */
 const SAVE_DEBOUNCE_MS = 400;
 
+/**
+ * A read-only editor: a snapshot to examine, not a file to change (the Sprite Inspector's "Open in
+ * sprite editor"). Nothing can edit it: `commit` and the save are no-ops, and the drawing tools, the
+ * sheet operations and the pen colours are not shown. Selecting, copying, zoom, grid, onion skin, the
+ * palette and the preview work as in an editable sheet.
+ */
+export type SpriteEditorReadOnly = {
+  /** The bar's text, e.g. `Pattern 40 · 8-bit` */
+  title: string;
+  /** A quieter line of facts: when it was taken, the palette offset applied */
+  detail?: string;
+};
+
 type Props = {
   context: GenericFileContext<SprFileContents, SprFileViewState>;
+  readOnly?: SpriteEditorReadOnly;
 };
 
 /**
@@ -84,7 +98,10 @@ type FloatingPatch = {
   lifted?: SpriteRegion;
 };
 
-export const SpriteEditor = ({ context }: Props) => {
+export const SpriteEditor = ({ context, readOnly }: Props) => {
+  const isReadOnly = !!readOnly;
+  const readOnlyRef = useRef(isReadOnly);
+  readOnlyRef.current = isReadOnly;
   // --- Sign the view state is initialized (to avoid flickering)
   const viewStateInitialized = useRef(false);
 
@@ -219,7 +236,7 @@ export const SpriteEditor = ({ context }: Props) => {
   const saveNow = useRef<() => Promise<void>>();
   saveNow.current = async () => {
     const current = latestDoc.current;
-    if (!current?.sprites?.length) return;
+    if (readOnlyRef.current || !current?.sprites?.length) return;
     await context.saveToFile(serializeSprFile(current.sprites, context.fileInfo?.trailing));
   };
 
@@ -266,7 +283,8 @@ export const SpriteEditor = ({ context }: Props) => {
   const commit = useCallback(
     (next: SpriteDocument | undefined) => {
       const current = latestDoc.current;
-      if (!next || next === current) return;
+      // --- A read-only snapshot never changes: every edit comes through here, so this is the guard
+      if (readOnlyRef.current || !next || next === current) return;
       latestDoc.current = next;
       // The panel above still owns `fileInfo`; keep its array pointing at the current sheet.
       if (context.fileInfo) context.fileInfo.sprites = next.sprites;
@@ -643,24 +661,27 @@ export const SpriteEditor = ({ context }: Props) => {
     [commit]
   );
 
+  // --- Read-only: the editing actions do nothing (Cut copies)
+  const noop = useCallback(() => {}, []);
+  const noFalse = useCallback(() => false, []);
   const handleKeyDown = useSpriteShortcuts(hover, {
-    selectTool: handleSelectTool,
-    swapColors: handleSwapColors,
-    undo: handleUndo,
-    redo: handleRedo,
+    selectTool: isReadOnly ? noop : handleSelectTool,
+    swapColors: isReadOnly ? noop : handleSwapColors,
+    undo: isReadOnly ? noop : handleUndo,
+    redo: isReadOnly ? noop : handleRedo,
     previousSprite: handlePrevSprite,
     nextSprite: handleNextSprite,
     zoomIn: zoom.zoomIn,
     zoomOut: zoom.zoomOut,
     fit: zoom.fit,
-    drawAtCursor: handleDrawAtCursor,
-    cut: handleCut,
+    drawAtCursor: isReadOnly ? noop : handleDrawAtCursor,
+    cut: isReadOnly ? handleCopy : handleCut,
     copy: handleCopy,
-    paste: handlePaste,
+    paste: isReadOnly ? noop : handlePaste,
     selectAll: handleSelectAll,
-    deleteSelection: handleDeleteSelection,
-    nudge: handleNudge,
-    commitFloating,
+    deleteSelection: isReadOnly ? noFalse : handleDeleteSelection,
+    nudge: isReadOnly ? noFalse : handleNudge,
+    commitFloating: isReadOnly ? noFalse : commitFloating,
     escape: handleEscape
   });
 
@@ -694,35 +715,52 @@ export const SpriteEditor = ({ context }: Props) => {
       onKeyDown={handleKeyDown}
       style={{ "--sheet-height": `${sheetHeight}px` } as React.CSSProperties}
     >
-      <SpriteSheetToolbar
-        spriteCount={sprites.length}
-        selectedIndex={selectedSpriteIndex}
-        canUndo={canUndo(doc)}
-        canRedo={canRedo(doc)}
-        canPaste={canPaste}
-        hasSelection={!!selection}
-        separated={!!spriteImagesSeparated}
-        onUndo={handleUndo}
-        onRedo={handleRedo}
-        onDuplicate={handleDuplicate}
-        onCut={handleCut}
-        onCopy={handleCopy}
-        onPaste={handlePaste}
-        onDelete={handleDeleteOrRemove}
-        onMoveLeft={handleMoveLeft}
-        onMoveRight={handleMoveRight}
-        onAdd={handleAdd}
-        onToggleSeparated={handleToggleSeparated}
-      />
+      {readOnly ? (
+        <div className={styles.sheetToolbar} role="toolbar" aria-label="Read-only snapshot">
+          <span className={styles.readOnlyBadge}>Read-only</span>
+          <span className={styles.readOnlyTitle}>{readOnly.title}</span>
+          {readOnly.detail && <span className={styles.readOnlyDetail}>{readOnly.detail}</span>}
+          <span className={styles.statusSpacer} />
+          <SmallIconButton
+            iconName="spr-copy"
+            title="Copy the selection, or the sprite (Ctrl+C)"
+            enable={true}
+            clicked={handleCopy}
+          />
+        </div>
+      ) : (
+        <SpriteSheetToolbar
+          spriteCount={sprites.length}
+          selectedIndex={selectedSpriteIndex}
+          canUndo={canUndo(doc)}
+          canRedo={canRedo(doc)}
+          canPaste={canPaste}
+          hasSelection={!!selection}
+          separated={!!spriteImagesSeparated}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onDuplicate={handleDuplicate}
+          onCut={handleCut}
+          onCopy={handleCopy}
+          onPaste={handlePaste}
+          onDelete={handleDeleteOrRemove}
+          onMoveLeft={handleMoveLeft}
+          onMoveRight={handleMoveRight}
+          onAdd={handleAdd}
+          onToggleSeparated={handleToggleSeparated}
+        />
+      )}
 
-      <SpriteToolRail
-        tool={currentTool}
-        onSelectTool={handleSelectTool}
-        onRotateCcw={handleRotateCcw}
-        onRotateCw={handleRotateCw}
-        onFlipHorizontal={handleFlipHorizontal}
-        onFlipVertical={handleFlipVertical}
-      />
+      {!readOnly && (
+        <SpriteToolRail
+          tool={currentTool}
+          onSelectTool={handleSelectTool}
+          onRotateCcw={handleRotateCcw}
+          onRotateCw={handleRotateCw}
+          onFlipHorizontal={handleFlipHorizontal}
+          onFlipVertical={handleFlipVertical}
+        />
+      )}
 
       <div className={styles.stage}>
         <SpriteStageHeader
@@ -752,7 +790,7 @@ export const SpriteEditor = ({ context }: Props) => {
               floating={floatingForGrid}
               onSelectRegion={setSelection}
               lifted={floating?.lifted}
-              onMoveStart={handleMoveStart}
+              onMoveStart={isReadOnly ? noop : handleMoveStart}
               onMoveTo={handleMoveTo}
               onMoveEnd={handleMoveEnd}
               onionSprite={onionSprite}
@@ -761,9 +799,9 @@ export const SpriteEditor = ({ context }: Props) => {
               transparencyIndex={transparencyIndex}
               pencilColorIndex={pencilColorIndex}
               fillColorIndex={fillColorIndex}
-              tool={currentTool}
+              tool={isReadOnly ? "select" : currentTool}
               hover={hover}
-              onCommit={handleCommitPixels}
+              onCommit={isReadOnly ? noop : handleCommitPixels}
               onCancelDrag={handleCancelDrag}
             />
           </div>
@@ -777,34 +815,36 @@ export const SpriteEditor = ({ context }: Props) => {
       </div>
 
       <div className={styles.inspector}>
-      <div className={styles.colorsPane}>
-          <div className={styles.colorPair}>
-            <span className={styles.colorSlot}>
-              <span className={styles.colorSlotLabel}>Pen</span>
-              <ColorSample
-                color={palette[pencilColorIndex]}
-                isTransparency={pencilColorIndex === transparencyIndex}
-                xclass={styles.colorSampleLarge}
+      {!readOnly && (
+        <div className={styles.colorsPane}>
+            <div className={styles.colorPair}>
+              <span className={styles.colorSlot}>
+                <span className={styles.colorSlotLabel}>Pen</span>
+                <ColorSample
+                  color={palette[pencilColorIndex]}
+                  isTransparency={pencilColorIndex === transparencyIndex}
+                  xclass={styles.colorSampleLarge}
+                />
+              </span>
+              <SmallIconButton
+                iconName="spr-swap"
+                title="Swap pen and fill colors (X)"
+                enable={true}
+                clicked={handleSwapColors}
               />
-            </span>
-            <SmallIconButton
-              iconName="spr-swap"
-              title="Swap pen and fill colors (X)"
-              enable={true}
-              clicked={handleSwapColors}
-            />
-            <span className={styles.colorSlot}>
-              <span className={styles.colorSlotLabel}>Fill</span>
-              <ColorSample
-                color={palette[fillColorIndex]}
-                isTransparency={fillColorIndex === transparencyIndex}
-                xclass={styles.colorSampleLarge}
-              />
-            </span>
-            <span className={styles.statusSpacer} />
-            <span className={styles.colorIndex}>${pencilColorIndex.toString(16).toUpperCase().padStart(2, "0")}</span>
+              <span className={styles.colorSlot}>
+                <span className={styles.colorSlotLabel}>Fill</span>
+                <ColorSample
+                  color={palette[fillColorIndex]}
+                  isTransparency={fillColorIndex === transparencyIndex}
+                  xclass={styles.colorSampleLarge}
+                />
+              </span>
+              <span className={styles.statusSpacer} />
+              <span className={styles.colorIndex}>${pencilColorIndex.toString(16).toUpperCase().padStart(2, "0")}</span>
+            </div>
           </div>
-        </div>
+      )}
         <div className={styles.inspectorSection}>
           <div className={styles.sectionHeader}>
             <SpritePaletteHeader
@@ -819,11 +859,11 @@ export const SpriteEditor = ({ context }: Props) => {
               palette={palette}
               cellSize={17}
               transparencyIndex={transparencyIndex}
-              allowSelection={true}
+              allowSelection={!isReadOnly}
               // The viewer has always accepted this and the editor never passed it, so the palette
               // showed no selection at all - not the pen colour restored from the view state, and
               // not the result of the Swap button.
-              selectedIndex={pencilColorIndex}
+              selectedIndex={isReadOnly ? undefined : pencilColorIndex}
               onSelection={handleSelectPencilColor}
               onRightClick={handleSelectFillColor}
             />
@@ -850,7 +890,7 @@ export const SpriteEditor = ({ context }: Props) => {
         separated={!!spriteImagesSeparated}
         showTransparencyColor={!!showTrancparencyColor}
         onSelect={navigate}
-        onReorder={handleReorder}
+        onReorder={isReadOnly ? noop : handleReorder}
         height={sheetHeight}
         onResize={handleResizeSheet}
         onResizeEnd={handleResizeSheetEnd}
