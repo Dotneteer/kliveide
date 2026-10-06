@@ -371,8 +371,9 @@ function isMachineStopped(): boolean {
 
 /**
  * The Next inspector items: open the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
- * §4.5), the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4) and the Tilemap Inspector
- * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), and step the Copper.
+ * §4.5), the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
+ * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4) and the Layer 2 Inspector
+ * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4), and step the Copper.
  * All go through the IDE's commands, so the menu, the command line and the panels share one
  * implementation.
  */
@@ -406,6 +407,13 @@ export const copperMenuRenderer: MachineMenuRenderer = () => [
     label: "Show Tilemap Inspector",
     click: async () => {
       await getIdeApi().executeCommand("show-tilemap");
+    }
+  },
+  {
+    id: "show_layer2_inspector",
+    label: "Show Layer 2 Inspector",
+    click: async () => {
+      await getIdeApi().executeCommand("show-layer2");
     }
   }
 ];

@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector and the Tilemap Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector and the Layer 2 Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -830,6 +830,19 @@ other scroll area (the rule under "Method Lessons"): a `display: flex` box with 
 as wide as the image and the viewer scrolls both ways. The first version used bare `overflow: auto`
 and showed native bars; `recipes/tilemap-inspector.cjs` now fails if any element in the document
 scrolls outside an OverlayScrollbars viewport.
+
+The Layer 2 Inspector (`--color-layer2-*`) keeps both windows' hues and adds the rest of a
+layer's plumbing, **one hue per question**: the `$123B` write window (where writes land) in
+`--status-success`, bank boundaries as `--border-strong` 1px outlines with a number chip, and banks past
+2 MB **hatched** in the warning hue - absent pixels must never look like transparent ones, which keep
+the checker. The Banks strip tags a bank's roles in the overlay's hues (displayed in the accent text,
+shadow in the secondary, write window in the success hue), so a chip and the outline it explains
+match. A selected *pixel* is framed by a box one pixel wider each way, not stroked over itself: a
+one-pixel rectangle at zoom 2 is a dot the stroke covers. A view option that changes how the machine's
+colours read (priority highlighting) **dims the others** through `IndexedImageCanvas`'s `dim` mask
+rather than tinting the pixels it is about, so the highlighted pixels keep their real colour. A pixel
+layer half as wide as tall (640×256) doubles its **height** (`zoomY`), never halves its width: halving
+drops every other column at zoom 1.
 
 ## A Read-Only View Of An Editor Hides Its Tools, And Says So In One Line
 

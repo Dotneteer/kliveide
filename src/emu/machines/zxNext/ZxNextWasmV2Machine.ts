@@ -7,6 +7,7 @@ import {
   type CopperState,
   type NextSpriteState,
   type NextTilemapState,
+  type NextLayer2State,
   type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
@@ -21,6 +22,7 @@ import type {
 } from "./IZxNextHostInputMachine";
 import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
+import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDeviceState, RegValueState } from "./nextRegDescriptors";
@@ -1616,6 +1618,51 @@ export class ZxNextWasmV2Machine
     };
   }
 
+  /**
+   * The Layer 2 Inspector's snapshot (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3). Side-effect free (D8):
+   * the registers come from getters (the `$123B` value from the module, not a port read), the banks
+   * are copies of physical memory, 128K per set in one call (the 80K of the widest layer and the three
+   * banks a scroll can reach past it, T4). The shadow set is copied only when asked
+   * (T9). A bank past 2 MB reads as zeros; the decode leaves its pixels out (T5).
+   */
+  getNextLayer2State(options?: { shadow?: boolean }): NextLayer2State {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const copySet = (base: number) => {
+      const out = new Uint8Array(LAYER2_READ_BYTES);
+      for (let i = 0; i < LAYER2_READ_BYTES / 0x4000; i++) {
+        const bank = base + i;
+        if (isOutsideRam(bank)) break;
+        const start = LAYER2_RAM_PHYSICAL + bank * 0x4000;
+        out.set(runtime.memory.subarray(start, start + 0x4000), i * 0x4000);
+      }
+      return out;
+    };
+    const activeBank = ex.zxnextGetLayer2ActiveBank() & 0x7f;
+    const shadowBank = ex.zxnextGetLayer2ShadowBank() & 0x7f;
+    return {
+      regs: {
+        enabled: ex.zxnextGetLayer2Enabled() !== 0,
+        activeBank,
+        shadowBank,
+        port123B: ex.zxnextGetLayer2Port123BPeek() & 0xff,
+        bankOffset: ex.zxnextGetLayer2BankOffset() & 0x07,
+        resolution: ex.zxnextGetLayer2Resolution() & 0x03,
+        paletteOffset: ex.zxnextGetLayer2PaletteOffset() & 0x0f,
+        scrollX: ex.zxnextGetLayer2ScrollX() & 0x1ff,
+        scrollY: ex.zxnextGetLayer2ScrollY() & 0xff,
+        clip: [0, 1, 2, 3].map((i) => ex.zxnextGetLayer2Clip(i) & 0xff) as [number, number, number, number],
+        clipIndex: ex.zxnextGetLayer2ClipIndex() & 0x03,
+        globalTransparency: ex.zxnextGetNextRegisterDirect(0x14) & 0xff,
+        secondPalette: (ex.zxnextGetNextRegisterDirect(0x43) & 0x04) !== 0
+      },
+      displayed: copySet(activeBank),
+      shadow: options?.shadow ? copySet(shadowBank) : undefined,
+      slotOffsets: Array.from({ length: 8 }, (_, slot) => ex.zxnextGetMemoryPageReadOffset(slot) >>> 0),
+      copperRunning: (ex.zxnextGetCopperStartMode() & 0x03) !== 0
+    };
+  }
+
   getNextRegDescriptors(): NextRegDescriptors["descriptors"] {
     return NEXT_REG_DESCRIPTORS.slice();
   }
@@ -1769,7 +1816,8 @@ export class ZxNextWasmV2Machine
       port1ffd,
       portDffd: ex.zxnextGetMemoryPortDffd(),
       portEff7: ex.zxnextGetMemoryPortEff7(),
-      portLayer2: 0,
+      // --- What a $123B read returns, peeked (LAYER2_INSPECTOR_PLAN §4.2)
+      portLayer2: ex.zxnextGetLayer2Port123BPeek() & 0xff,
       portTimex: 0,
       divMmc: ex.zxnextGetDivMmcPortE3Value(),
       divMmcIn: ex.zxnextGetDivMmcConmem() !== 0 || ex.zxnextGetDivMmcAutoMapActive() !== 0,

@@ -1,0 +1,450 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4-§4.5). It shares the Tilemap
+ * Inspector's frame: a one-line toolbar, a one-line globals strip (flags first, "+n more"), then the
+ * Banks strip, and the inspector a band under the image or a rail beside it (`data-layout`). Values
+ * take the state panels' `--color-state-value`; overlays on the image are painted from the
+ * `--color-layer2-*` aliases, and the Banks strip's role tags use the same hues as the overlays.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* --- Measures one `ch` of the panel font, for the layout breakpoints and the rail/band sizes. */
+.chProbe {
+  position: absolute;
+  visibility: hidden;
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  pointer-events: none;
+}
+
+// ─── Toolbar: one line, never wrapping ───────────────────────────────────────
+
+.toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--strip-panelHeader);
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  white-space: nowrap;
+}
+
+.toolbarContext {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.toolbarSpacer {
+  flex: 1 1 auto;
+}
+
+.moreButton {
+  flex: 0 0 auto;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--text-secondary);
+  font: inherit;
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--surface-hover);
+  }
+}
+
+// ─── Globals strip: one line, diagnostics first ──────────────────────────────
+
+.globals {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--font-size-200);
+  white-space: nowrap;
+}
+
+.globalsOpen {
+  flex-wrap: wrap;
+  row-gap: var(--space-0_5);
+}
+
+.globalItem {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.globalSecondary {
+  display: none;
+}
+
+.globalKey {
+  color: var(--data-label);
+}
+
+.globalValue {
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Diagnostics (D10): the Sprite Inspector's chip vocabulary */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-100);
+}
+
+.chipWarning {
+  background: var(--bgcolor-sprite-chip-warning);
+  color: var(--color-sprite-chip-warning);
+}
+
+.chipInfo {
+  background: var(--bgcolor-sprite-chip-info);
+  color: var(--color-sprite-chip-info);
+}
+
+.globalsMore {
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+// ─── Body and panes ──────────────────────────────────────────────────────────
+
+/* No `position`: SplitPanel measures against the page (see the Sprite Inspector's note). */
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.views {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pane {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.paneHeader {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  color: var(--data-label);
+  font-size: var(--font-size-100);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.paneMeta {
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--data-secondary);
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+/* --- The image scrolls both ways inside the pane, through the IDE's ScrollViewer */
+.scroller {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
+.scrollContent {
+  display: inline-block;
+  padding: var(--space-2);
+}
+
+.image {
+  cursor: crosshair;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hoverLine {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-3);
+  padding: var(--space-0_5) var(--space-3);
+  overflow: hidden;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--text-tertiary);
+}
+
+// ─── Inspector ───────────────────────────────────────────────────────────────
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-left: 1px solid var(--border-subtle);
+  font-size: var(--font-size-200);
+}
+
+.inspectorBand {
+  border-top: 1px solid var(--border-subtle);
+  border-left: 0;
+}
+
+.inspectorEmpty {
+  padding: var(--space-4);
+  color: var(--data-secondary);
+}
+
+.inspectorHeader {
+  flex: 0 0 auto;
+  padding: var(--space-1) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-chrome);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* --- The header stays put; the body scrolls through the IDE's thin ScrollViewer */
+.inspectorScroll {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.inspectorBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+/* --- In the band, the bank thumbnail sits beside the fields */
+.inspectorBand .inspectorBody {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: start;
+
+  > :not(.preview):not(.fields) {
+    grid-column: 1 / -1;
+  }
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-0_5);
+  margin: 0;
+  color: var(--data-secondary);
+  font-size: var(--font-size-100);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-0_5) var(--space-3);
+  min-width: 0;
+  margin: 0;
+
+  dt {
+    color: var(--data-label);
+    white-space: nowrap;
+  }
+
+  dd {
+    margin: 0;
+    overflow: hidden;
+    color: var(--color-state-value);
+    font-family: var(--monospace-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.field {
+  display: contents;
+}
+
+.inspectorSection {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.sectionLabel {
+  flex: 0 0 auto;
+  color: var(--data-label);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1.6ch;
+  height: 1.6ch;
+  border: 1px solid var(--border-strong);
+}
+
+.reason {
+  margin: 0;
+  color: var(--status-warning);
+}
+
+.note {
+  margin: 0;
+  color: var(--data-secondary);
+}
+
+.linkButton {
+  align-self: flex-start;
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  @include focus-ring;
+}
+
+
+.warn {
+  color: var(--status-warning) !important;
+}
+
+.linkButton:disabled {
+  color: var(--text-tertiary);
+  text-decoration: none;
+  cursor: default;
+}
+
+/* --- Keeps a bank chosen in the strip scrolled into view; draws nothing */
+.bankMarker {
+  position: absolute;
+  pointer-events: none;
+}
+
+// ─── Banks strip (§4.5): the source's 3 or 5 banks, with their roles ─────────
+
+.banks {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  overflow: hidden;
+  border-bottom: 1px solid var(--border-default);
+  font-size: var(--font-size-100);
+  white-space: nowrap;
+}
+
+.bankChip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--bgcolor-input);
+  color: var(--color-state-value);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  line-height: 1.6;
+  cursor: pointer;
+  @include focus-ring;
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.bankChipSelected {
+  border-color: var(--color-layer2-selected);
+}
+
+.bankChipOutside {
+  color: var(--text-tertiary);
+}
+
+.role {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-sm);
+  font-family: var(--main-font-family);
+}
+
+.role_displayed {
+  color: var(--color-layer2-role-displayed);
+}
+
+.role_shadow {
+  color: var(--color-layer2-role-shadow);
+}
+
+.role_window {
+  color: var(--color-layer2-window);
+}
+
+.role_outside {
+  color: var(--status-warning);
+}

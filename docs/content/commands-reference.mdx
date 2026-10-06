@@ -1358,6 +1358,21 @@ Available aliases: `shtl`
 With an index (`0`-`511`), the tile is selected: the inspector lists the cells that use it, and the map
 outlines them.
 
+## `show-layer2`
+
+Use this command to open the ZX Spectrum Next's [Layer 2 Inspector](/working-with-ide/layer2-inspector),
+optionally on a source.
+
+```
+show-layer2 [displayed|shadow|window]
+```
+
+Available aliases: `shl2`
+
+`displayed` shows the banks from NextReg `$12`, `shadow` those from `$13`, and `window` the set the
+port `$123B` write window maps. Without a source the document keeps the one it shows. The
+**Machine → Show Layer 2 Inspector** menu item runs `show-layer2`.
+
 ## `step-copper`
 
 Use this command on the ZX Spectrum Next to run the machine until the Copper completes its next

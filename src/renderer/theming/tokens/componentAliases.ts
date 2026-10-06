@@ -658,6 +658,26 @@ export const componentAliases: Record<string, string> = {
   "--color-tilemap-index": "var(--text-primary)",
   "--bgcolor-tilemap-index": "var(--surface-canvas)",
 
+  // --- Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.5) --------------------------------
+  /*
+   * The overlays on the Layer 2 image follow the Tilemap Inspector's: the clip window in the warning
+   * hue, the visible window in the secondary accent, the selection in the primary accent. New here:
+   * the $123B write window in the success hue (where writes land - a third thing to tell apart from
+   * the two windows), bank boundaries as strong borders with a label chip, and the banks past 2 MB
+   * hatched in the warning hue (absent pixels, never to be mistaken for transparent ones). The Banks
+   * strip tags a bank's roles in the same hues: displayed the accent text, shadow the secondary.
+   */
+  "--color-layer2-clip": "var(--status-warning)",
+  "--color-layer2-visible": "var(--accent-secondary-solid)",
+  "--color-layer2-selected": "var(--accent-solid)",
+  "--color-layer2-window": "var(--status-success)",
+  "--color-layer2-bank": "var(--border-strong)",
+  "--color-layer2-outside": "var(--status-warning)",
+  "--color-layer2-label": "var(--text-primary)",
+  "--bgcolor-layer2-label": "var(--surface-canvas)",
+  "--color-layer2-role-displayed": "var(--accent-text)",
+  "--color-layer2-role-shadow": "var(--accent-secondary-text)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 

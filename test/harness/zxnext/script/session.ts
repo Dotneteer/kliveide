@@ -10,6 +10,7 @@ import type {
   CopperState,
   NextSpriteState,
   NextTilemapState,
+  NextLayer2State,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -922,6 +923,17 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getNextTilemapState();
+  }
+
+  /**
+   * What the IDE's Layer 2 Inspector reads (`getNextLayer2State`): the Layer 2 registers, 80K copies
+   * of the displayed banks (and of the shadow banks with `shadow`), the slots' physical offsets and
+   * whether the Copper runs. No side effects.
+   */
+  layer2State(options?: { shadow?: boolean }): NextLayer2State {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getNextLayer2State(options);
   }
 
   /**

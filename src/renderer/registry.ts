@@ -31,6 +31,7 @@ import {
   COPPER_EDITOR,
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
+  LAYER2_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -51,6 +52,7 @@ import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
+import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -101,9 +103,8 @@ import { createScrFileViewerPanel } from "./appIde/DocumentPanels/Next/ScrFileVi
 import { createShcFileViewerPanel } from "./appIde/DocumentPanels/Next/ShcFileViewerPanel";
 import { createShrFileViewerPanel } from "./appIde/DocumentPanels/Next/ShrFileViewerPanel";
 import { createSlrFileViewerPanel } from "./appIde/DocumentPanels/Next/SlrFileViewerPanel";
-import { createSl2FileViewerPanel } from "./appIde/DocumentPanels/Next/Sl2FileViewerPanel";
+import { createLayer2FileViewerPanel } from "./appIde/DocumentPanels/Next/Layer2FileViewerPanel";
 import { createPalFileEditorPanel } from "./appIde/DocumentPanels/Next/PalFileEditorPanel";
-import { createNxiFileEditorPanel } from "./appIde/DocumentPanels/Next/NxiFileEditorPanel";
 import { createSprFileEditorPanel } from "@renderer/features/sprite-editor/SprFileEditorPanel";
 import { createPatternSnapshotPanel } from "@renderer/features/sprites/PatternSnapshotPanel";
 import { createTileSnapshotPanel } from "./appIde/DocumentPanels/TileSnapshot/TileSnapshotPanel";
@@ -456,6 +457,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     icon: "tilemap"
   },
   {
+    id: LAYER2_EDITOR,
+    renderer: createLayer2InspectorPanel,
+    icon: "layer2"
+  },
+  {
     id: COMMAND_RESULT_EDITOR,
     renderer: createCommandResultPanel,
     icon: "code"
@@ -560,7 +566,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: SL2_VIEWER,
-    renderer: createSl2FileViewerPanel,
+    renderer: createLayer2FileViewerPanel,
     icon: "vm"
   },
   {
@@ -575,7 +581,7 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
   },
   {
     id: NXI_EDITOR,
-    renderer: createNxiFileEditorPanel,
+    renderer: createLayer2FileViewerPanel,
     icon: "layers"
   },
   {

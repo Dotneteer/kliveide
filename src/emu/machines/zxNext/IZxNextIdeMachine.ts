@@ -2,6 +2,7 @@ import type {
   CopperState,
   NextSpriteState,
   NextTilemapState,
+  NextLayer2State,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -49,6 +50,9 @@ export interface IZxNextIdeMachine {
   /** The tilemap, for the Tilemap Inspector: registers and banks 5 and 7 in one read (TILEMAP_INSPECTOR_PLAN D2, D8). */
   getNextTilemapState(): NextTilemapState;
 
+  /** Layer 2, for the Layer 2 Inspector: registers and the displayed (and shadow) banks in one read (LAYER2_INSPECTOR_PLAN D2, D8). */
+  getNextLayer2State(options?: { shadow?: boolean }): NextLayer2State;
+
   /** Arms (or cancels) "Step Copper": the next debug run stops when the Copper completes any instruction. */
   requestCopperStep(armed?: boolean): void;
 }
@@ -68,7 +72,8 @@ export function isZxNextIdeMachine(machine: unknown): machine is IZxNextIdeMachi
     typeof m.getNextUlaState === "function" &&
     typeof m.getCopperState === "function" &&
     typeof m.getNextSpriteState === "function" &&
-    typeof m.getNextTilemapState === "function"
+    typeof m.getNextTilemapState === "function" &&
+    typeof m.getNextLayer2State === "function"
   );
 }
 

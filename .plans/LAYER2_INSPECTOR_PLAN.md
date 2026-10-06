@@ -1,7 +1,8 @@
 # Layer 2 Inspector Plan: the Live Layer 2 Image, Its Banks and Its Windows
 
-Status: **draft** (2026-10-05). Decisions D1–D10 are proposed; the §8 questions are open. No phase
-started.
+Status: **done** (2026-10-06): Phases 1–7 implemented. Decisions D1–D10 and the §8 questions taken as
+proposed. §9 records where the implementation departs from the text below, including two corrections
+to the traps (T4, T7) and a core bug found on the way.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.5**: the current Layer 2 banks as an
@@ -303,3 +304,59 @@ reuse; the decoder is small).
 | Q3 | Show bank boundaries by default? | Yes; they explain column-major data at a glance (T2/T3) |
 | Q4 | Include the `.sl2`/`.nxi` file viewers (Phase 7)? | Yes, since the decoder is the same and the stubs are a visible gap |
 | Q5 | Export the live layer as `.sl2`/`.nxi`? | Not now; revisit with Q4's viewers in place |
+
+---
+
+## 9. Implementation notes (2026-10-06)
+
+Where the shipped code differs from §1–§5, and why:
+
+- **T4 was incomplete: a scroll reads past the layer's own banks.** The wide modes' X wrap is not a
+  modulo of 320: display column + scroll reaches 830, and 640-830 map to source columns 320-511, which
+  are banks +5 to +7 of the set. The 256×192 fold-back likewise reaches rows 192-254 (bank +3). The
+  harness test caught it (the decode read past the 80K copy). So the snapshot copies **128K per set**
+  (`LAYER2_READ_BYTES`, eight banks), `displayedImage` decodes from the bytes rather than from the
+  whole-layer image, and a `scroll reads past the layer` warning (`readsPastLayer`) says so.
+- **T7 was wrong for 640×256.** The palette offset is not added to the 4-bit pixel: it *becomes* the
+  high nibble (`(offset << 4) | nibble`), as `zxnextUlaRenderLayer2_640x256Screen` and the
+  `layer2.vhd` transcription in `_layer2-helpers.ts` both do. `layer2PaletteIndex` follows them.
+- **Core fix: `$70` resolution `%11` drew nothing.** `layer2.vhd` takes `1X` as 640×256; the core's
+  dispatch tested `== 2`. It now renders 640×256 for both, with a harness test. `layer2Resolution`
+  maps 3 to 640×256. Together with the planned `portLayer2` fix, these are the only core changes
+  besides the five exports.
+- **`mmu` is `slotOffsets`**, as in the Tilemap Inspector (the physical read offset of each 8K slot).
+  A pixel's Z80 address is given twice: through the MMU, and through the `$123B` window
+  (`windowZ80Address`).
+- **The pixel actions never depend on the byte being mapped** (the first version disabled them unless
+  it was, which for Layer 2 banks is nearly always). *Show in memory* opens the Memory view at the Z80
+  address when the MMU maps the byte, otherwise in its 8K page (the view's partition mode;
+  `memoryLocation`). *Break on write* sets a bank-relative write breakpoint (`<bank>:+<offset> -w`),
+  which fires wherever the MMU pages the bank in, plus a plain write breakpoint on the `$123B` window
+  address when the window maps writes (`breakOnWriteCommands`), since window writes bypass the MMU's
+  pages. Checked in the running app: the breakpoint stopped a write to bank 9 through MMU slot 6.
+- **The *Write window* source shows the set `$123B` bit 3 picks** (`$12`'s or `$13`'s), with the
+  window's bank(s) outlined and tagged in the Banks strip; it reads the shadow banks only when bit 3 is
+  set (`needsShadow`). `writeTarget` copies `zxnextMemoryResolveLayer2Offset`, including the bank
+  offset added modulo 8 and the bank wrapped at 128. The low overlay (DivMMC) that wins over the
+  window at `$0000-$3FFF` is not modelled.
+- **No `outsideRam` count in the snapshot**: banks past 2 MB read as zeros and the decode leaves their
+  pixels out given the set's first bank; the view hatches them.
+- **Transparency and priority are view options over the palette**, since the decode is palette-free:
+  *Show transparent pixels as transparent* clears the entries whose RGB equals `$14`, *Highlight
+  priority pixels* dims every pixel without the priority bit (D10). `paletteFlags` builds both from the
+  live palette's device values, which carry bit 9.
+- **Layout**: one breakpoint (`RAIL_FROM_CH`): the inspector is a band under the image, or a rail
+  beside it. Palette and zoom move into the **⋯** menu in the band layout. As with the other
+  inspectors, no submenu: **Show Layer 2 Inspector** joins the flat Next group and runs
+  `show-layer2`; no `IdeApi` method.
+- **`show-layer2` takes `displayed`, `shadow` or `window`**, not only `shadow`.
+- **The `.sl2`/`.nxi` viewer** (`Layer2FileViewerPanel`) replaces both stubs; the stub files are
+  deleted. A file 512 bytes longer than 48K or 80K starts with a palette (`RRRGGGBB`, `0000000B`,
+  NextReg `$44` order); otherwise the default Layer 2 palette (`zxnextPaletteHardReset`) is used and
+  the toolbar says so. An 80K file offers 320×256 and 640×256.
+- **Verification in the running app** is `scripts/doc-shots/recipes/layer2-inspector.cjs`: it pokes
+  `layer2-demo.kz80.asm` into a paused Next (a 320×256 ramp with a transparent band in `$12`'s banks,
+  the shadow's first bank drawn through `$123B` with bit 3 set, a scroll), checks the strips, the
+  inspector's decode, canvas pixels for all three sources and *As displayed*, then photographs. It
+  found that the firmware leaves `$14` at `$00`, not the reset `$E3`, so the demo sets it.
+

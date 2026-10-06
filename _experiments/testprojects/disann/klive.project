@@ -24,7 +24,21 @@
   },
   "debugger": {
     "schemaVersion": 1,
-    "breakpoints": [],
+    "breakpoints": [
+      {
+        "address": 9843,
+        "exec": false,
+        "memoryWrite": true,
+        "ioMask": 65535
+      },
+      {
+        "bank": 11,
+        "bankOffset": 9843,
+        "exec": false,
+        "memoryWrite": true,
+        "ioMask": 65535
+      }
+    ],
     "watchExpressions": [],
     "basicWatches": []
   },
@@ -64,25 +78,42 @@
               }
             },
             {
-              "type": "SpriteInspector",
-              "id": "$sprites",
+              "type": "Layer2Inspector",
+              "id": "$layer2",
               "position": {
                 "line": 0,
                 "column": 0
               },
               "viewState": {
-                "view": "both",
-                "showRaw": false,
-                "zoom": 2,
+                "source": "displayed",
+                "asDisplayed": false,
+                "banks": true,
+                "priority": false,
+                "transparent": true,
                 "checker": true,
-                "formatMode": "asUsed",
-                "fallback": "8bit",
-                "paletteOffset": "fromSprite",
-                "tab": "sprites"
+                "zoom": 2,
+                "bandSize": "256px"
+              }
+            },
+            {
+              "type": "Memory",
+              "id": "$memory",
+              "position": {
+                "line": 0,
+                "column": 0
+              },
+              "viewState": {
+                "topIndex": 103,
+                "isFullView": false,
+                "currentSegment": 23,
+                "decimalView": false,
+                "viewMode": "8x2",
+                "charDump": true,
+                "bankLabel": true
               }
             }
           ],
-          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
+          "activeDocumentId": "$memory"
         }
       ]
     }

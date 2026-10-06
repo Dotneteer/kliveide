@@ -1107,6 +1107,17 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next Layer 2 state (the Layer 2 Inspector's snapshot).
+   */
+  getNextLayer2State(options?: { shadow?: boolean }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getNextLayer2State(options);
+  }
+
+  /**
    * Arms a Copper step and runs the machine in debug mode until it fires.
    */
   async stepCopper() {

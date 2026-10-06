@@ -1240,7 +1240,8 @@ static uint32_t zxnextUlaRenderInstantScreen(void) {
     uint32_t resolution = zxnextLayer2GetResolution();
     if (resolution == 0u) zxnextUlaRenderLayer2_256x192Screen();
     else if (resolution == 1u) zxnextUlaRenderLayer2_320x256Screen();
-    else if (resolution == 2u) zxnextUlaRenderLayer2_640x256Screen();
+    /* layer2.vhd: `i_resolution` 1X is 640x256 - both 10 and 11 */
+    else zxnextUlaRenderLayer2_640x256Screen();
   }
   if (sprEn) {
     for (uint32_t i = first; i < end; i++) zxnextLayerSpr[i] = 0u;

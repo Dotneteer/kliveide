@@ -16,6 +16,7 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
+import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
 import type {
   SpectrumSnapshotLoadMode,
   SpectrumSnapshotLoadOptions,
@@ -560,6 +561,15 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next Layer 2 state the Layer 2 Inspector shows: the registers and a copy of
+   * the five 16K banks from `$12`, and from `$13` when `shadow` is set. Reading it never changes the
+   * machine.
+   */
+  async getNextLayer2State(_options?: { shadow?: boolean }): Promise<NextLayer2State> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * "Step Copper": runs the ZX Spectrum Next in debug mode until the Copper completes its next
    * instruction, then stops at the end of that Z80 instruction.
    */
@@ -893,6 +903,25 @@ export type NextTilemapState = {
    * The physical read offset of each 8K Z80 slot, so the inspector can show an entry's Z80 address
    * only when its page is mapped (T1), whatever pages it (ROM, DivMMC, MMU)
    */
+  slotOffsets: number[];
+  /** `$62` bits 7-6 are non-zero: register values may change per line (T10) */
+  copperRunning: boolean;
+};
+
+/**
+ * The ZX Spectrum Next's Layer 2, as the Layer 2 Inspector reads it in one call
+ * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D2).
+ */
+export type NextLayer2State = {
+  regs: Layer2Regs;
+  /**
+   * 128K from `$12` (`LAYER2_READ_BYTES`): the widest layer's 80K, so a resolution switch needs no
+   * re-read, and the three banks after it, which a scroll can make the display read (T4); zero past 2 MB
+   */
+  displayed: Uint8Array;
+  /** 128K from `$13`, only when requested (T9); zero past 2 MB */
+  shadow?: Uint8Array;
+  /** The physical read offset of each 8K Z80 slot, for a pixel's Z80 address (D6) */
   slotOffsets: number[];
   /** `$62` bits 7-6 are non-zero: register values may change per line (T10) */
   copperRunning: boolean;

@@ -181,6 +181,11 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetLayer2ScrollX: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ScrollY: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Clip: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ActiveBank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ShadowBank: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2Port123BPeek: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2BankOffset: ZxNextWasmV2ExportFunction;
+  zxnextGetLayer2ClipIndex: ZxNextWasmV2ExportFunction;
   zxnextGetLoResEnabled: ZxNextWasmV2ExportFunction;
   zxnextGetLoResRadastanMode: ZxNextWasmV2ExportFunction;
   zxnextGetLoResPaletteOffset: ZxNextWasmV2ExportFunction;
@@ -577,6 +582,11 @@ const requiredV2Exports = [
   "zxnextGetLayer2ScrollX",
   "zxnextGetLayer2ScrollY",
   "zxnextGetLayer2Clip",
+  "zxnextGetLayer2ActiveBank",
+  "zxnextGetLayer2ShadowBank",
+  "zxnextGetLayer2Port123BPeek",
+  "zxnextGetLayer2BankOffset",
+  "zxnextGetLayer2ClipIndex",
   "zxnextGetLoResEnabled",
   "zxnextGetLoResRadastanMode",
   "zxnextGetLoResPaletteOffset",
