@@ -73,15 +73,16 @@
               "viewState": {
                 "view": "both",
                 "showRaw": false,
-                "zoom": 4,
+                "zoom": 2,
                 "checker": true,
                 "formatMode": "asUsed",
                 "fallback": "8bit",
-                "paletteOffset": "fromSprite"
+                "paletteOffset": "fromSprite",
+                "tab": "sprites"
               }
             }
           ],
-          "activeDocumentId": "$sprites"
+          "activeDocumentId": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/ScrollNutter.nex"
         }
       ]
     }

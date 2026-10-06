@@ -172,6 +172,22 @@ stepping backwards.
 traces and diagnostics. The Next also has full-state checkpoints. The 48K/128K/+3 cores have
 neither.
 
+**Plan:** G4.1 in [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md), G4.2 in
+[EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md), G4.3 in
+[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md).
+The G4.1 and G4.2 decisions and G4.3's D1–D14 are recorded (2026-10-06). G4.3's §8 questions are
+still open, and G4.4 is a draft gated by a Phase 0 spike. G4.4 uses keyframes that share unchanged
+pages, an input journal kept at each core's export boundary, and deterministic replay to an exact
+instruction, which the replay checks itself. Research for
+them corrected the foundation note above. The frame trace is a **linear** buffer that stops when
+full, not a ring. It records registers *after* each instruction, holds no opcode bytes, and is off
+in every production path. So G4.1 does not reuse it. Instead it adds a shared history recorder
+hooked into the shared Z80 (`src/emu/z80/wasm/`). The recorder keeps a ring of 64-byte "state before
+the instruction" records. Because every core compiles that Z80, G4.2 is per-core wiring only: a
+16-byte context, a memory increase and tests. Recording runs only in debug sessions. G4.1 raises
+the Next's memory from 32 to 40 MB for a 131,072-record ring, and records DMA bus holds. A follow-up
+then moves the frame trace to a diagnostics build, which shrinks the Next to about 20 MB.
+
 | Feature | What it does | Size |
 |---|---|---|
 | G4.1 History viewer (Next) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
