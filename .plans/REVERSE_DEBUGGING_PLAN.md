@@ -1,6 +1,7 @@
 # Reverse Debugging Plan: Keyframes, an Input Journal and Deterministic Replay
 
-Status: **draft** (2026-10-06). Decisions D1–D20 are proposals; the §9 questions are open. Phase 0 is
+Status: **decisions recorded** (2026-10-06). D1–D21 are the decisions; the author accepted the
+suggested answers to all §9 questions, folded into D2, D6, D11, D12, D19 and D21. Phase 0 is
 a **spike with a go/no-go gate**, as the roadmap asks; the phases after it are planned in less detail
 on purpose.
 
@@ -28,7 +29,7 @@ Builds on:
   the "record from here takes over a playback" interaction this plan reuses for forking.
 
 Not in scope: the C64 (TypeScript 6510, no WASM image). Saving a reverse-debugging session to disk is
-also out of scope (Q6).
+also out of scope: it is roadmap item **G4.6** (D21).
 
 ---
 
@@ -70,25 +71,26 @@ yet exist:
 | # | Decision |
 | --- | --- |
 | D1 | **Keyframes + journal + deterministic replay**, not an undo log. An undo log would have to journal the state change of every device (about 20 on the Next) and would break with every device change. Replay reuses the whole-image capture that is already proven deterministic on every core. |
-| D2 | **Reverse debugging runs only in debug sessions**, like history recording (G4.1 D8). Starting with debugging starts a **timeline**: a base keyframe, an empty journal and a cleared history ring. Restart, reset, a state, snapshot or RZX load, code injection, and a machine or ROM change end the timeline. |
+| D2 | **Reverse debugging runs only in debug sessions**, like history recording (G4.1 D8). Starting with debugging starts a **timeline**: a base keyframe, an empty journal and a cleared history ring. Restart, reset, a state, snapshot or RZX load, code injection, and a machine or ROM change end the timeline. **It is on by default in every debug session** (Q1): its value is retroactive, because nobody knows they need it until the bug has happened. Setting `emuOptions.reverseDebugging` (default on) turns it off, and the status bar shows whether it is active. |
 | D3 | **The timeline position is the history recorder's sequence plus a sub-index.** The shared recorder (G4.1) counts every instruction-boundary event on every core. A position is `(sequence, sub)`, where `sub` counts the units already merged into a coalesced record (HALT cycles, Next DMA hold T-states, ZX81 forced-NOP fetches). This is exact at every point where the host can touch the machine, including mid-HALT frame boundaries. The per-core instruction counters are not used: their semantics differ, and two cores have none. |
 | D4 | **Stop-at-position in C.** The recorder gains a *target* position. When it is reached, it raises a stop flag that every core's frame loop and `…ExecuteUntilStop` check, the way the Next's frame loop already exits on an SD host command (`zxnext-frame.c:24`). The fast path can then replay at full speed. The per-instruction TypeScript debug loop is only for the last few instructions, when breakpoints must be checked. |
 | D5 | **Keyframes at frame boundaries, every *K* frames, page-shared.** The controller captures between `executeMachineFrame` calls. Default *K* = 25 (0.5 s at 50 Hz), set by Phase 0's measurements. An image is split into 4 KiB pages. A page equal to the same page of the previous keyframe is stored as a reference, so each keyframe is a full page table over a pool of immutable, reference-counted pages. There is no base keyframe to rebase, and evicting a keyframe only drops references. A C-side dirty bitmap over the RAM write funnel is an **optimisation** for Phase 3, not a prerequisite. |
-| D6 | **A memory budget, not a time budget.** Setting `emuOptions.reverseDebugMemoryMb` defaults to 512 (Q2). When the pool exceeds it, the oldest keyframes are evicted; the timeline start moves forward and the UI shows it. Pages may be compressed with fflate level 1 when the pool passes half the budget (Phase 3). |
+| D6 | **A memory budget, not a time budget.** Setting `emuOptions.reverseDebugMemoryMb` defaults to **the smaller of 512 MB and 1/16 of physical memory** (256 MB on a 4 GB machine, 512 MB from 8 GB up), adjustable from 64 MB to 2 GB (Q2). Keyframes live in ArrayBuffers in the emulator renderer, outside V8's heap limit but inside the process. When the pool exceeds it, the oldest keyframes are evicted; the timeline start moves forward and the UI shows it. Pages may be compressed with fflate level 1 when the pool passes half the budget (Phase 3). |
 | D7 | **Journal at the core's export boundary.** Every call the TypeScript side makes into a core export that *changes* machine state goes through a journaling wrapper on `runtime.exports`, stamped with the current position: key status, joystick, mouse, tape mode/rewind/fast-load, media uploads, writes to memory, registers and ports, NextReg writes, SD responses, Z88 card/flap/battery, the clock multiplier, tacts. TypeScript writes straight into core memory (`memory.set` for tape, ROM and card uploads, the SD buffers) go through a journaled helper. A **contract test** classifies every export of every core as *pure*, *execution* or *journaled*; an unclassified export fails the build, so a new input path cannot silently break replay. |
 | D8 | **Journal the effect, not the host event.** The emulated-keystroke queue, the Spectrum keyboard sync, the clock-multiplier read and the ZX81 auto-RUN typer all live in TypeScript outside the image. Their *effects* reach the core through journaled exports. During replay the TypeScript sources are muted and the journal supplies the effects, so state that lives outside the image does not matter. |
 | D9 | **Replay verifies itself.** When a replay passes a later keyframe's position, the live image's page hashes must equal that keyframe's. While the history ring still holds a record for the position being replayed, the recorder compares its would-be record with it (PC, SP, AF). A mismatch stops the replay with "Replay diverged at step −N", like an RZX desync (G2.7), and the timeline is cut there. A desync is treated as a bug with a test, never as a user error. |
 | D10 | **The historical-state provider is replay.** `ReplayStateProvider` implements G4.3's `IHistoricalStateProvider`: restore keyframe, replay to *s*, report `memoryIsHistorical: true`. Every G4.3 banner then disappears, and every panel shows the past because the machine **is** in the past. |
-| D11 | **Continue from the past replays toward the present.** Continue, Step Into/Over/Out and Run-to from a past position run the machine with the journal supplying inputs ("**Replaying**", with the distance to the present in the status bar). Breakpoints are active. Live input is ignored, and the status bar says so. Reaching the end of the journal switches seamlessly to live. |
-| D12 | **Forking is explicit: "Take over here".** A command (and status-bar action) discards the future: journal entries, keyframes and history records after the position. Live input then resumes, as RZX's "record from here" does. These also fork after a confirmation: editing a register or memory in the past, loading media, or pressing a key into the emulator while replaying. |
+| D11 | **Continue from the past replays toward the present.** Continue, Step Into/Over/Out and Run-to from a past position run the machine with the journal supplying inputs ("**Replaying**", with the distance to the present in the status bar). Breakpoints are active. Live input is ignored, and the status bar says so. Reaching the end of the journal switches seamlessly to live. This is the default because it loses nothing and keeps Step Forward meaningful (Q3); a forking "Continue from here (take over)" can be added later if users ask. |
+| D12 | **Forking is explicit: "Take over here".** A command (and status-bar action) discards the future: journal entries, keyframes and history records after the position. Live input then resumes, as RZX's "record from here" does. These also fork after a confirmation: editing a register or memory in the past, or loading media. **Key presses (and joystick or mouse input) while replaying never fork** (Q4): keys reach the emulator panel by accident, and a fork is irreversible for tape saves. They are ignored *visibly*, as the status bar flashes "Replaying — input ignored · Take over here". |
 | D13 | **Host side effects are suppressed during replay and undone on fork** (T3, T4). Tape-save publishing, disk write-back publishing, logpoint output, Z88 serial output, audio and frame-completed screen pushes are skipped while replaying. On fork: disk images are re-published from the restored in-core image; Next SD sectors written in the discarded future are restored from the SD undo log (D14); host files written by tape SAVE cannot be unwritten, so the fork confirmation lists them. |
 | D14 | **The Next SD card gets a journal and an undo log.** Sector reads in a timeline are journaled with their 512-byte data, so replay never re-reads a host file that later writes may have changed. A write first reads the old sector and journals it, then writes. On fork, the discarded future's writes are reverted in reverse order. During replay, writes are acknowledged from the journal without touching the host. |
 | D15 | **Reverse Continue scans forward.** To find the last breakpoint hit before *s*: replay the keyframe interval that ends at or contains *s* with breakpoints in *collect* mode (record hits, do not stop); take the last hit before *s*; if there is none, move one interval back. Then replay to that hit. Every breakpoint kind works: conditions reading memory, memory-write watchpoints, I/O, NextReg and Copper breakpoints. That gives **reverse watchpoints** ("last write to `$8000`") without new machinery. |
 | D16 | **Hit counts and one-shots are part of the timeline.** `DebugSupport` hit counters are captured with each keyframe and restored with it, so a replay counts them identically. One-shot breakpoints removed in the future are restored on fork. |
 | D17 | **The ring is regenerated by replay.** While replaying, the recorder writes records as usual, so after a deep step back the ring holds the history *up to* the cursor. Future rows beyond the cursor are shown as "not in history — step forward to replay". Reverse step over/out and the historical call stack (G4.3) use the regenerated records. Reaching beyond the ring's reach is just another replay. |
 | D18 | **The emulator screen shows the past.** After a replay stops, the screen shows the core's pixel buffer as it is at that instant: a partly drawn frame mid-frame, as on real hardware. When G3.7's beam overlay exists it marks the beam position. |
-| D19 | **One mechanism for every WASM core**, enabled per machine with `MF_REVERSE_DEBUG` after that core passes the journal-replay determinism test (§6). Order: the Next and the 48K first (the G4.3 test pair), then the G4.2 order. |
+| D19 | **One mechanism for every WASM core**, enabled per machine with `MF_REVERSE_DEBUG` after that core passes the journal-replay determinism test (§6). Order: the Next and the 48K first (the G4.3 test pair), then the G4.2 order: 128K family, +3E, Z88, ZX80/81 (Q5). The Z88's unusual inputs need no earlier slot, because Phase 1's export contract classifies every export of every core up front. |
 | D20 | **The keys and commands are G4.3's.** Step Back, Step Forward, Reverse Step Over/Out, Reverse Continue and Return to Present keep their names and shortcuts. Only "Return to Present" changes meaning: it replays to the end of the journal. "Take over here" is the one new command. |
+| D21 | **Saving a debugging session is G4.6, a separate roadmap item** (Q6), planned once G4.4 works on at least two cores. It writes the keyframes and the journal (including the SD sector data) to a file, so a bug repro replays with the debugger attached. The first keyframe is effectively a `.kls`, so a recording replays only on the same build: fine for bug reports, not for archives. |
 
 ---
 
@@ -252,7 +254,7 @@ The G4.3 visuals stay, minus the "memory shows the present" banners (`memoryIsHi
   replay" (D17); a header line shows the timeline start.
 - **Desync:** an error toast and an output-pane entry with the position and the first differing page
   (D9).
-- **Settings:** `emuOptions.reverseDebugMemoryMb` (D6); `emuOptions.keyframeIntervalFrames`
+- **Settings:** `emuOptions.reverseDebugging` (D2); `emuOptions.reverseDebugMemoryMb` (D6); `emuOptions.keyframeIntervalFrames`
   (advanced, D5).
 
 ---
@@ -311,19 +313,11 @@ goes ahead. Phases 1–5 on the Next and the 48K are the bulk, roughly two month
 
 ---
 
-## 9. Questions
+## 9. Questions (all answered, 2026-10-06)
 
-1. **Q1 — Default on?** Reverse debugging in every debug session (proposed, consistent with
-   history), or opt-in per session with a toolbar toggle?
-2. **Q2 — Memory budget default.** 512 MB (proposed), 256 MB, or a percentage of system memory?
-3. **Q3 — Continue from the past.** Replay to the present (proposed, D11), or fork immediately as
-   DeZog-style tools tend to? Replay is safer; forking is what users of "set next statement" may
-   expect.
-4. **Q4 — Key presses while replaying.** Ignore them with a status note (proposed), or treat the
-   first one as an implicit "Take over here" after a confirmation?
-5. **Q5 — Order after the Next and the 48K.** The G4.2 order (128K family, +3E, Z88, ZX80/81), or the
-   Z88 earlier because its card and flap inputs are the strangest and would test the export contract
-   hardest?
-6. **Q6 — Saving a timeline.** Out of scope here. Is a "save debugging session" (keyframes + journal
-   to a file, replayable later) worth a roadmap entry of its own? It would be the Klive analogue of an
-   RZX with a debugger attached.
+1. **Q1 — Default on?** Yes, in every debug session, with a setting to turn it off (D2).
+2. **Q2 — Memory budget.** The smaller of 512 MB and 1/16 of physical memory; 64 MB–2 GB (D6).
+3. **Q3 — Continue from the past.** Replays to the present; forking stays explicit (D11, D12).
+4. **Q4 — Key presses while replaying.** Ignored visibly, with a one-click Take over here (D12).
+5. **Q5 — Order.** The G4.2 order after the Next and the 48K (D19).
+6. **Q6 — Saving a timeline.** A new roadmap item, G4.6 (D21).

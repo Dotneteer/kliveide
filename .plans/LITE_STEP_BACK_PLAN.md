@@ -3,7 +3,7 @@
 Status: **draft** (2026-10-06). Depends on [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md)
 (G4.1). Works on every machine that [EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md)
 (G4.2) has reached, with no extra work per machine. Decisions D1–D14 are **accepted** (2026-10-06);
-the §8 questions are still open.
+§8 has suggested answers awaiting confirmation.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.3**, DeZog's "lite" reverse debugging:
@@ -265,15 +265,60 @@ views are small because D2 makes most of them follow the cursor for free.
 
 ## 8. Questions
 
-1. **Q1 — Visual treatment.** Outlined secondary-accent execution marker plus banners (proposed), or
-   a full "history mode" tint on the CPU panel and editor gutter?
-2. **Q2 — Changed markers in the CPU panel.** Compare the historical registers with the **present**
-   (proposed: "what is different now"), or with the **previous step** in history (as forward stepping
-   would)?
-3. **Q3 — Keys.** `Ctrl+Shift+F10` for Step Back and `Ctrl+Shift+F11` (macOS `Ctrl+Shift+F12`) for Step
-   Forward, both configurable? DeZog users in VS Code are used to the debug toolbar's Step Back
-   button rather than a key.
-4. **Q4 — Source-level step back (D12) in the first release, or a follow-up?** It is the most
-   valuable form for Klive BASIC users and the most work (T10).
-5. **Q5 — Reverse Continue and conditions that cannot be evaluated.** Treat as true with a note
-   (proposed), or skip such breakpoints entirely?
+Suggested answers, awaiting the author's confirmation (2026-10-06):
+
+1. **Q1 — Visual treatment: the outlined secondary-accent marker plus banners, not a tint.**
+   - A tint across the CPU panel and the gutter reads as "disabled" in the neutral data hierarchy.
+     Under G4.4 it would also have to stay on while every panel is genuinely historical, which makes
+     the whole IDE look tinted.
+   - The marker and the status-bar indicator mean "you are in the past". They outlive the
+     "memory shows the present" banners, which disappear with G4.4 (D14).
+   - Colours come from `--accent-secondary-*` tokens, as `.ai/ui-theming-intent-and-lessons.md`
+     requires.
+2. **Q2 — Changed markers compare with the chronologically previous step.** This *revises* the
+   earlier proposal ("compare with the present").
+   - The marker then answers "what did the instruction just before this point do?": the
+     registers that differ between record *n+1* (older) and record *n*.
+   - That is what a forward debugger's changed markers mean, so it reads the same whichever direction
+     the user is stepping. It also matches the history document's *Changes* column.
+   - Compared with the present, almost everything is marked a few hundred steps back, so the marker
+     stops saying anything.
+   - The present value goes into each register's tooltip ("now: $8001").
+3. **Q3 — Keys: the forward key plus Alt; all of them settings.**
+
+   | Command | Key | macOS |
+   | --- | --- | --- |
+   | Step Back | `Alt+F11` | `Alt+F12` |
+   | Reverse Step Over | `Alt+F10` | `Alt+F10` |
+   | Reverse Step Out | `Alt+Shift+F11` | `Alt+Shift+F12` |
+   | Reverse Continue | `Alt+F5` | `Alt+F5` |
+   | Step Forward | `Alt+Shift+F10` | `Alt+Shift+F10` |
+
+   - **Return to Present** has no default key; it is reachable from the toolbar, the status bar and
+     the `history-present` command.
+   - **Why "+Alt" and not the earlier `Ctrl+Shift+F10`.** One rule is easier to remember than a list.
+     It is also collision-free in Klive, where `Shift+F5` (Pause), `Ctrl+F5` (Start with Debugging),
+     `Shift+F10` (Step Over Line) and `Shift+F11`/`Shift+F12` (Step Out) are already taken, and
+     `Ctrl+Shift+F11` would clash with "Step Out + Ctrl".
+   - **Linux.** GNOME binds `Alt+F5`, `Alt+F7`, `Alt+F8` and `Alt+F10` to window actions, so on
+     Linux the defaults use `Ctrl+Alt+` instead.
+   - New settings keys: `shortcuts.stepBack`, `stepBackOver`, `stepBackOut`, `reverseContinue`,
+     `stepForward`, read where `app-menu.ts:300-306` reads the forward ones.
+4. **Q4 — Source-level step back (D12) is in the first release, for Klive BASIC and SLD sources.**
+   - With source stepping on, an *instruction* step back from a BASIC statement lands in runtime-library
+     code almost every time. To a BASIC user, step back would look broken.
+   - Klive BASIC debugging is a headline feature, so it should not get the weaker version.
+   - It also brings the history document's *by statement* grouping (G4.1 D16).
+   - Fallback if it slips: ship G4.3 with step back **disabled** while source stepping is on (with a
+     tooltip saying why), rather than shipping the instruction-level behaviour there.
+5. **Q5 — A condition that cannot be evaluated counts as true, and the stop says so.**
+   - **Over-stopping is the safer failure.** A false candidate is visible and one more Reverse
+     Continue moves on. Skipping the breakpoint could silently miss the real hit, and the user would
+     never know.
+   - **How it is reported.**
+     - The output pane notes it once per breakpoint and command.
+     - The stop is labelled "condition not checked: it reads memory, which is not historical in lite
+       mode".
+     - The Breakpoints panel marks the row for the duration of the history visit.
+   - **Temporary by design.** G4.4 makes memory historical, so every condition is evaluated there and
+     this rule disappears with the lite provider.
