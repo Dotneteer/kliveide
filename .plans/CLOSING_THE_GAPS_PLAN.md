@@ -138,7 +138,15 @@ editors (`NexBankSpritesView`, the image viewers, the palette editor), so most d
 be reused.
 
 **Plan:** G3.1 (and the Copper half of G3.8) in [COPPER_DEBUGGING_PLAN.md](COPPER_DEBUGGING_PLAN.md);
-G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](SPRITE_INSPECTOR_PLAN.md) (done).
+G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](SPRITE_INSPECTOR_PLAN.md) (done);
+G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md); G3.5 in
+[LAYER2_INSPECTOR_PLAN.md](LAYER2_INSPECTOR_PLAN.md); G3.6 in
+[LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md); G3.7 in
+[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (all four drafts, questions open).
+Research for those four corrected two assumptions in the table below: the `.sl2`/`.shr` viewers G3.5
+was to reuse are stubs (the Layer 2 plan builds the decoder and replaces the `.sl2`/`.nxi` stubs),
+and G3.6 is nearer **M–L** than L, because the core already renders each layer into its own buffer
+and mixes them in one function. G3.7 should land before G3.6, which reuses its screen overlay.
 
 | Feature | What it does | Size |
 |---|---|---|

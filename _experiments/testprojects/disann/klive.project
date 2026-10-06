@@ -64,62 +64,24 @@
               }
             },
             {
-              "type": "CodeEditor",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/code/code.kz80.asm",
+              "type": "SpriteInspector",
+              "id": "$sprites",
               "position": {
-                "line": 16,
-                "column": 32
+                "line": 0,
+                "column": 0
               },
               "viewState": {
-                "cursorState": [
-                  {
-                    "inSelectionMode": false,
-                    "selectionStart": {
-                      "lineNumber": 16,
-                      "column": 32
-                    },
-                    "position": {
-                      "lineNumber": 16,
-                      "column": 32
-                    }
-                  }
-                ],
-                "viewState": {
-                  "scrollLeft": 0,
-                  "firstPosition": {
-                    "lineNumber": 1,
-                    "column": 1
-                  },
-                  "firstPositionDeltaTop": 0
-                },
-                "contributionsState": {
-                  "editor.contrib.folding": {
-                    "lineCount": 23,
-                    "provider": "syntax",
-                    "foldedImports": false
-                  },
-                  "editor.contrib.wordHighlighter": false
-                }
-              }
-            },
-            {
-              "type": "NexViewer",
-              "id": "/Users/dotneteer/source/kliveide/_experiments/testprojects/disann/nxmodplayer.nex",
-              "position": {
-                "line": 0,
-                "column": 0
-              }
-            },
-            {
-              "type": "CopperList",
-              "id": "$copper",
-              "position": {
-                "line": 0,
-                "column": 0
+                "view": "both",
+                "showRaw": false,
+                "zoom": 4,
+                "checker": true,
+                "formatMode": "asUsed",
+                "fallback": "8bit",
+                "paletteOffset": "fromSprite"
               }
             }
           ],
-          "activeDocumentId": "$copper"
+          "activeDocumentId": "$sprites"
         }
       ]
     }
