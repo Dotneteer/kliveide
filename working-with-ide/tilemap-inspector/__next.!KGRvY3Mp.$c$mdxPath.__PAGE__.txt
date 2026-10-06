@@ -1,0 +1,216 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"ClientWrapper"]
+5:T2280,---
+description: "The ZX Spectrum Next's tilemap while your program runs: the whole map with each cell's tile, attribute and address, the tile definitions in the live palette, and the base-address overlaps that break a picture before it is drawn."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Tilemap Inspector
+
+A ZX Spectrum Next tilemap program writes a map of one- or two-byte entries and a set of 8×8 tile
+definitions into bank 5 or bank 7, then points six NextRegs at them. When the picture is wrong, the
+cause is usually in that setup &mdash; a base address that overlaps the ULA screen or the other table,
+attribute-less mode with a two-byte map, 512-tile mode quietly taking attribute bit 0, a palette
+offset, the scroll and clip units &mdash; and none of it can be read back from the Z80. The **Tilemap
+Inspector** shows the map and its definitions as the hardware decodes them.
+
+It is one document with two linked views: **Map** (the 40×32 or 80×32 map) and **Tiles** (the 256 or
+512 definitions). Select a cell and the inspector shows its tile; select a tile and every cell that
+uses it is outlined on the map. It is available on the ZX Spectrum Next only.
+
+![The Tilemap Inspector: the whole map with the screen's view outlined, the tile sheet, and a cell whose tile is rotated and mirrored](/images/working-with-ide/tilemap-inspector.png)
+
+## Opening It
+
+Use **Machine → Show Tilemap Inspector**, or one of the commands:
+
+```
+show-tilemap          ; the Map view
+show-tilemap 12 5     ; ... with cell (12, 5) selected
+show-tiles 40         ; the Tiles view, with tile 40 selected
+```
+
+## The Layout
+
+Like the [Sprite Inspector](/working-with-ide/sprite-inspector), the document arranges itself by its
+own width:
+
+- **Narrow**: **Map** and **Tiles** are tabs, and the inspector is a band under them.
+- **Medium**: tabs, and the inspector is a rail beside the view.
+- **Wide**: **Both** is offered too &mdash; the map and the tile sheet side by side, with the rail.
+  **Both** is the default; where it does not fit, the tab decides.
+
+![The Tilemap Inspector in a narrow document: the Tiles tab, and the band listing the cells that use tile 8](/images/working-with-ide/tilemap-inspector-tiles.png)
+
+The toolbar holds the view tabs, the map mode, the tile sheet's palette offset, the tilemap palette
+(**Live** follows NextReg `$6B` bit 4; **1** and **2** pin a palette, and a ring marks the one the
+hardware is drawing with), and the zoom, **Grid** and **Indices** switches when there is room.
+Whatever does not fit &mdash; and the tile sheet's zoom and the checkerboard &mdash; is in the **⋯**
+menu. The document remembers these, and the pane sizes, with the workspace.
+
+<Callout type="info">
+The inspector only reads. It copies banks 5 and 7 and reads the tilemap registers without side
+effects, so opening it never changes the machine.
+</Callout>
+
+## The Globals Strip
+
+The line under the toolbar summarises the tilemap's registers. Diagnostics come first, as chips:
+
+| Item | Shows |
+|---|---|
+| **Tilemap** | `$6B` bit 7 |
+| **Size** | `40×32` or `80×32` (`$6B` bit 6) |
+| **Entries** | `2-byte` (tile, then attribute), or `1-byte` with the attribute every cell takes from `$6C` (`$6B` bit 5) |
+| **Tiles** | `256` or `512` (`$6B` bit 1), and `4-bit` or `text 1-bit` (`$6B` bit 3) |
+| **Map**, **Defs** | Where the map (`$6E`) and the definitions (`$6F`) start, as bank:offset; the tooltip adds the physical address and the Z80 address when the page is mapped |
+| **Scroll** | `$2F`/`$30` (X, 10 bits) and `$31` (Y) |
+| **Clip** | The four `$1B` values; the tooltip gives the window in layer pixels and which value the next write sets |
+| **$4C** | The transparent nibble &mdash; or, in text mode, **$14**, the global transparency colour |
+| **Priority** | Over or below the ULA: per cell (attribute bit 0), always below in 512-tile mode, always over with `$6B` bit 0 |
+| **Palette** | First or second tilemap palette (`$6B` bit 4) |
+| **Copper** | `running` when the Copper is on: it may change these registers per line |
+
+### Diagnostics
+
+The map, the definitions of the tiles the map uses, the ULA bitmap (`$4000`-`$57FF`) and the ULA
+attributes (`$5800`-`$5AFF`) are checked against one another, because an overlap is the commonest
+tilemap bug and stays invisible until the program writes to one of them:
+
+- `map overlaps ULA attributes`, `tiles overlap ULA bitmap`, `map overlaps tiles`, and so on. They are
+  warnings, not errors: sharing bank 5 is legal and sometimes deliberate. The ULA ones disappear when
+  the ULA is turned off (`$68` bit 7).
+- `map wraps in bank 7`, `tiles wrap in bank 7` &mdash; bank 7 is an 8K memory for the tilemap, so a
+  table that runs past 8K continues at the start of bank 7, not into the next page.
+- `table wraps` (grey) &mdash; a full table of 256 or 512 tiles would run past the end of its bank, but
+  the tiles in use do not.
+- `tilemap off`, and `512 tiles: below ULA` &mdash; in 512-tile mode attribute bit 0 is the ninth bit
+  of the tile number, so no cell can ask to be over the ULA unless `$6B` bit 0 forces the tilemap on
+  top.
+
+## The Map View
+
+**Whole map** (the default) draws the map unscrolled: cell (0, 0) at the top left. The dashed outline
+is the part the screen shows &mdash; the clip window moved by the scroll, which can wrap round both
+edges. **As displayed** applies the scroll and the clip window, so the view matches the tilemap layer
+as it reaches the screen, with the clip window outlined.
+
+- **Grid** draws the cell grid from zoom 2; **Indices** writes each cell's tile number from zoom 3.
+- A dot in a cell's corner marks a cell whose tile or attribute changed since the machine last stopped.
+- The line under the map names the cell under the pointer, its tile and its entry address.
+- In 80-column mode the map is 640 pixels wide: each tile is drawn 8 pixels wide, half a screen pixel
+  each.
+
+Right-click a cell to **Show entry in memory**, to **Break on write to this entry** (an ordinary
+memory write breakpoint on its bytes) or to **Copy as .db**. The first two need the entry's page to be
+mapped into the Z80's address space.
+
+<Callout type="info">
+The registers are the ones at the stop. A program that changes the scroll or the palette offset per
+line with the Copper produces a picture no single register set reproduces; the inspector says so when
+the Copper is running.
+</Callout>
+
+## The Tiles View
+
+The definitions as a sheet of 8×8 tiles, 16 to a row: 256 or 512, 4-bit or text mode. Tiles no cell
+uses are dimmed; from zoom 3 a small count in each used tile's corner says how many cells use it.
+**From map** draws each tile with the palette offset of the first cell that uses it, so the sheet looks
+like the screen; **Fixed n** uses one offset for all.
+
+## Opening A Tile Snapshot
+
+**Open tile snapshot** (in the inspector, for a cell or a tile, and in a cell's right-click menu)
+pops the tile out into a **read-only** tile viewer, laid out like the sprite editor: the 8×8 pixels
+large, with rulers and a grid, the tilemap palette, and a preview at 1×, 2× and 4×. Point at a pixel to
+read its position, its stored nibble (or bit, in text mode) and the palette index it draws, or why it
+is transparent.
+
+The snapshot is frozen when you take it &mdash; the tile's bytes **and the tilemap palette** &mdash; so
+it keeps its colours after the program changes them or the machine stops:
+
+- Taken from a **cell**, it uses that cell's palette offset and opens **As shown**: rotated, then
+  mirrored, the way the hardware draws the cell. **As stored** shows the definition bytes unturned.
+- Taken from the **Tiles** view, it uses the sheet's palette offset (**From map** or **Fixed n**).
+- The copy button puts the tile's bytes on the clipboard as `.db` lines.
+
+The bar at the top names the tile, the cell, the palette and offset, the transform, the address and
+the time. Taking the same tile again refreshes its tab; the snapshot is not saved and does not come
+back with the workspace.
+
+![Tile 8 popped out of cell (3, 10), rotated and mirrored as the cell shows it](/images/working-with-ide/tile-snapshot.png)
+
+## The Inspector
+
+For a **cell**: its tile **as stored** and **as shown** &mdash; rotated first, then mirrored, the way
+the hardware does it &mdash; then every field with the raw bytes: the tile number (`300 (bit 8 from
+attr)` in 512-tile mode), the attribute, the palette offset, the transform and the priority; the entry
+three ways (bank:offset, physical, and the Z80 address when mapped); the colours the cell shows; and,
+in amber, every reason it may not be on screen: the tilemap is off, the cell is outside the visible
+window, all of its pixels are transparent, or it is below the ULA.
+
+For a **tile**: the tile large, its bytes, and the cells that use it &mdash; click one to select it on
+the map.a:X
+f:X
+f:C
+0:{"buildId":"dkhWayWM88MrrWmTGsPXH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Opening It","id":"opening-it","depth":2},{"value":"The Layout","id":"the-layout","depth":2},{"value":"The Globals Strip","id":"the-globals-strip","depth":2},{"value":"Diagnostics","id":"diagnostics","depth":3},{"value":"The Map View","id":"the-map-view","depth":2},{"value":"The Tiles View","id":"the-tiles-view","depth":2},{"value":"Opening A Tile Snapshot","id":"opening-a-tile-snapshot","depth":2},{"value":"The Inspector","id":"the-inspector","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"The ZX Spectrum Next's tilemap while your program runs: the whole map with each cell's tile, attribute and address, the tile definitions in the live palette, and the base-address overlaps that break a picture before it is drawn.","title":"The Tilemap Inspector","filePath":"content/working-with-ide/tilemap-inspector.mdx","timestamp":1791305068000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[7795,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"ImageZoom"]
+13:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"HeadingAnchor"]
+14:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],"ToggleWordWrapButton"]
+31:I[484,[],"OutletBoundary"]
+32:"$Sreact.suspense"
+34:I[484,[],"ViewportBoundary"]
+35:I[484,[],"MetadataBoundary"]
+36:I[7121,[],""]
+37:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["The Tilemap Inspector","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A ZX Spectrum Next tilemap program writes a map of one- or two-byte entries and a set of 8×8 tile\ndefinitions into bank 5 or bank 7, then points six NextRegs at them. When the picture is wrong, the\ncause is usually in that setup — a base address that overlaps the ULA screen or the other table,\nattribute-less mode with a two-byte map, 512-tile mode quietly taking attribute bit 0, a palette\noffset, the scroll and clip units — and none of it can be read back from the Z80. The ",["$","strong",null,{"children":"Tilemap\nInspector"}]," shows the map and its definitions as the hardware decodes them."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["It is one document with two linked views: ",["$","strong",null,{"children":"Map"}]," (the 40×32 or 80×32 map) and ",["$","strong",null,{"children":"Tiles"}]," (the 256 or\n512 definitions). Select a cell and the inspector shows its tile; select a tile and every cell that\nuses it is outlined on the map. It is available on the ZX Spectrum Next only."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L12",null,{"alt":"The Tilemap Inspector: the whole map with the screen's view outlined, the tile sheet, and a cell whose tile is rotated and mirrored","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/tilemap-inspector.42559d00.png","height":986,"width":1800,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAMAAACEE47CAAAAIVBMVEUUFRYkKjweHiYqZp8lV6EfNVMeJzEoXn8kPWoshasgSVj0PSv1AAAACXBIWXMAABYlAAAWJQFJUiTwAAAAJ0lEQVQImRXFQRIAIAgDsaVQAf//YMdcwnRPRBxqs/5UbkoC+xrgAQmwAHahMWLRAAAAAElFTkSuQmCC","blurWidth":8,"blurHeight":4}}]}],"\n",["$","h2",null,{"id":"opening-it","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening It",["$","$L13",null,{"id":"opening-it"}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Use ",["$","strong",null,{"children":"Machine → Show Tilemap Inspector"}],", or one of the commands:"]}],"\n",["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L14",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"show-tilemap          ; the Map view"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"show-tilemap 12 5     ; ... with cell (12, 5) selected"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"show-tiles 40         ; the Tiles view, with tile 40 selected"}]}]]}]]}]]}],"\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25","\n","$L26","\n","$L27","\n","$L28","\n","$L29","\n","$L2a","\n","$L2b","\n","$L2c","\n","$L2d","\n","$L2e","\n","$L2f","\n","$L30"]}]
+8:["$","$L31",null,{"children":["$","$32",null,{"name":"Next.MetadataOutlet","children":"$@33"}]}]
+b:["$","$1","h",{"children":[null,["$","$L34",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L35",null,{"children":["$","$32",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"The Tilemap Inspector - Klive IDE"}],["$","meta","1",{"name":"description","content":"The ZX Spectrum Next's tilemap while your program runs: the whole map with each cell's tile, attribute and address, the tile definitions in the live palette, and the base-address overlaps that break a picture before it is drawn."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L36",null,{"parallelRouterKey":"children","template":["$","$L37",null,{}]}]]}]
+11:true
+38:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0a26b4d540355e6c.js"],""]
+15:["$","h2",null,{"id":"the-layout","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Layout",["$","$L13",null,{"id":"the-layout"}]]}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Like the ",["$","$L38",null,{"href":"/working-with-ide/sprite-inspector","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Sprite Inspector"}],", the document arranges itself by its\nown width:"]}]
+17:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Narrow"}],": ",["$","strong",null,{"children":"Map"}]," and ",["$","strong",null,{"children":"Tiles"}]," are tabs, and the inspector is a band under them."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Medium"}],": tabs, and the inspector is a rail beside the view."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Wide"}],": ",["$","strong",null,{"children":"Both"}]," is offered too — the map and the tile sheet side by side, with the rail.\n",["$","strong",null,{"children":"Both"}]," is the default; where it does not fit, the tab decides."]}],"\n"]}]
+18:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L12",null,{"alt":"The Tilemap Inspector in a narrow document: the Tiles tab, and the band listing the cells that use tile 8","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/tilemap-inspector-tiles.7b496b6e.png","height":1598,"width":1360,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAICAMAAAAC2hU0AAAADFBMVEUUFhcbHiIlKTUkM0Kp+NjfAAAACXBIWXMAABYlAAAWJQFJUiTwAAAAJ0lEQVQImUXKwQkAQAwCwVX77zlEctxrFCWxJOENgO2cr9eegI7fAQoqAECp+X60AAAAAElFTkSuQmCC","blurWidth":7,"blurHeight":8}}]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The toolbar holds the view tabs, the map mode, the tile sheet’s palette offset, the tilemap palette\n(",["$","strong",null,{"children":"Live"}]," follows NextReg ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 4; ",["$","strong",null,{"children":"1"}]," and ",["$","strong",null,{"children":"2"}]," pin a palette, and a ring marks the one the\nhardware is drawing with), and the zoom, ",["$","strong",null,{"children":"Grid"}]," and ",["$","strong",null,{"children":"Indices"}]," switches when there is room.\nWhatever does not fit — and the tile sheet’s zoom and the checkerboard — is in the ",["$","strong",null,{"children":"⋯"}],"\nmenu. The document remembers these, and the pane sizes, with the workspace."]}]
+1a:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The inspector only reads. It copies banks 5 and 7 and reads the tilemap registers without side\neffects, so opening it never changes the machine."}]}]]}]
+1b:["$","h2",null,{"id":"the-globals-strip","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Globals Strip",["$","$L13",null,{"id":"the-globals-strip"}]]}]
+1c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The line under the toolbar summarises the tilemap’s registers. Diagnostics come first, as chips:"}]
+1d:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"children":"Item","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"children":"Shows","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Tilemap"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 7"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Size"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"40×32"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"80×32"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 6)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Entries"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"2-byte"}]," (tile, then attribute), or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"1-byte"}]," with the attribute every cell takes from ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6C"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 5)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Tiles"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"256"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"512"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 1), and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"4-bit"}]," or ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"text 1-bit"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 3)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"children":[["$","strong",null,{"children":"Map"}],", ",["$","strong",null,{"children":"Defs"}]],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Where the map (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6E"}],") and the definitions (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6F"}],") start, as bank:offset; the tooltip adds the physical address and the Z80 address when the page is mapped"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L39","$L3a","$L3b","$L3c","$L3d","$L3e"]}]]}]
+1e:["$","h3",null,{"id":"diagnostics","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Diagnostics",["$","$L13",null,{"id":"diagnostics"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The map, the definitions of the tiles the map uses, the ULA bitmap (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$4000"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$57FF"}],") and the ULA\nattributes (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$5800"}],"-",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$5AFF"}],") are checked against one another, because an overlap is the commonest\ntilemap bug and stays invisible until the program writes to one of them:"]}]
+20:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"map overlaps ULA attributes"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"tiles overlap ULA bitmap"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"map overlaps tiles"}],", and so on. They are\nwarnings, not errors: sharing bank 5 is legal and sometimes deliberate. The ULA ones disappear when\nthe ULA is turned off (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$68"}]," bit 7)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"map wraps in bank 7"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"tiles wrap in bank 7"}]," — bank 7 is an 8K memory for the tilemap, so a\ntable that runs past 8K continues at the start of bank 7, not into the next page."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"table wraps"}]," (grey) — a full table of 256 or 512 tiles would run past the end of its bank, but\nthe tiles in use do not."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"tilemap off"}],", and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"512 tiles: below ULA"}]," — in 512-tile mode attribute bit 0 is the ninth bit\nof the tile number, so no cell can ask to be over the ULA unless ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 0 forces the tilemap on\ntop."]}],"\n"]}]
+21:["$","h2",null,{"id":"the-map-view","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Map View",["$","$L13",null,{"id":"the-map-view"}]]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Whole map"}]," (the default) draws the map unscrolled: cell (0, 0) at the top left. The dashed outline\nis the part the screen shows — the clip window moved by the scroll, which can wrap round both\nedges. ",["$","strong",null,{"children":"As displayed"}]," applies the scroll and the clip window, so the view matches the tilemap layer\nas it reaches the screen, with the clip window outlined."]}]
+23:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Grid"}]," draws the cell grid from zoom 2; ",["$","strong",null,{"children":"Indices"}]," writes each cell’s tile number from zoom 3."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"A dot in a cell’s corner marks a cell whose tile or attribute changed since the machine last stopped."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"The line under the map names the cell under the pointer, its tile and its entry address."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"In 80-column mode the map is 640 pixels wide: each tile is drawn 8 pixels wide, half a screen pixel\neach."}],"\n"]}]
+24:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Right-click a cell to ",["$","strong",null,{"children":"Show entry in memory"}],", to ",["$","strong",null,{"children":"Break on write to this entry"}]," (an ordinary\nmemory write breakpoint on its bytes) or to ",["$","strong",null,{"children":"Copy as .db"}],". The first two need the entry’s page to be\nmapped into the Z80’s address space."]}]
+25:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$1a:props:children:0:props:style","data-pagefind-ignore":"all","children":"$1a:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The registers are the ones at the stop. A program that changes the scroll or the palette offset per\nline with the Copper produces a picture no single register set reproduces; the inspector says so when\nthe Copper is running."}]}]]}]
+26:["$","h2",null,{"id":"the-tiles-view","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Tiles View",["$","$L13",null,{"id":"the-tiles-view"}]]}]
+27:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The definitions as a sheet of 8×8 tiles, 16 to a row: 256 or 512, 4-bit or text mode. Tiles no cell\nuses are dimmed; from zoom 3 a small count in each used tile’s corner says how many cells use it.\n",["$","strong",null,{"children":"From map"}]," draws each tile with the palette offset of the first cell that uses it, so the sheet looks\nlike the screen; ",["$","strong",null,{"children":"Fixed n"}]," uses one offset for all."]}]
+28:["$","h2",null,{"id":"opening-a-tile-snapshot","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening A Tile Snapshot",["$","$L13",null,{"id":"opening-a-tile-snapshot"}]]}]
+29:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Open tile snapshot"}]," (in the inspector, for a cell or a tile, and in a cell’s right-click menu)\npops the tile out into a ",["$","strong",null,{"children":"read-only"}]," tile viewer, laid out like the sprite editor: the 8×8 pixels\nlarge, with rulers and a grid, the tilemap palette, and a preview at 1×, 2× and 4×. Point at a pixel to\nread its position, its stored nibble (or bit, in text mode) and the palette index it draws, or why it\nis transparent."]}]
+2a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["The snapshot is frozen when you take it — the tile’s bytes ",["$","strong",null,{"children":"and the tilemap palette"}]," — so\nit keeps its colours after the program changes them or the machine stops:"]}]
+2b:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["Taken from a ",["$","strong",null,{"children":"cell"}],", it uses that cell’s palette offset and opens ",["$","strong",null,{"children":"As shown"}],": rotated, then\nmirrored, the way the hardware draws the cell. ",["$","strong",null,{"children":"As stored"}]," shows the definition bytes unturned."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Taken from the ",["$","strong",null,{"children":"Tiles"}]," view, it uses the sheet’s palette offset (",["$","strong",null,{"children":"From map"}]," or ",["$","strong",null,{"children":"Fixed n"}],")."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["The copy button puts the tile’s bytes on the clipboard as ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".db"}]," lines."]}],"\n"]}]
+2c:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The bar at the top names the tile, the cell, the palette and offset, the transform, the address and\nthe time. Taking the same tile again refreshes its tab; the snapshot is not saved and does not come\nback with the workspace."}]
+2d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","$L12",null,{"alt":"Tile 8 popped out of cell (3, 10), rotated and mirrored as the cell shows it","placeholder":"blur","src":{"src":"/kliveide//_next/static/media/tile-snapshot.df9e07c4.png","height":986,"width":1800,"blurDataURL":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAECAMAAACEE47CAAAAG1BMVEUTFBQWGRkVHygjKS8lWosrO0g1dHSBSlWgiYE8LYD6AAAACXBIWXMAABYlAAAWJQFJUiTwAAAAIklEQVQImRXDhwkAIAwAsHSp/18sDUQsc1AV7iO6Qw0y9wcEyQBBEHjpkQAAAABJRU5ErkJggg==","blurWidth":8,"blurHeight":4}}]}]
+2e:["$","h2",null,{"id":"the-inspector","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["The Inspector",["$","$L13",null,{"id":"the-inspector"}]]}]
+2f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For a ",["$","strong",null,{"children":"cell"}],": its tile ",["$","strong",null,{"children":"as stored"}]," and ",["$","strong",null,{"children":"as shown"}]," — rotated first, then mirrored, the way\nthe hardware does it — then every field with the raw bytes: the tile number (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"300 (bit 8 from attr)"}]," in 512-tile mode), the attribute, the palette offset, the transform and the priority; the entry\nthree ways (bank:offset, physical, and the Z80 address when mapped); the colours the cell shows; and,\nin amber, every reason it may not be on screen: the tilemap is off, the cell is outside the visible\nwindow, all of its pixels are transparent, or it is below the ULA."]}]
+30:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["For a ",["$","strong",null,{"children":"tile"}],": the tile large, its bytes, and the cells that use it — click one to select it on\nthe map."]}]
+33:null
+a:300
+39:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Scroll"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$2F"}],"/",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$30"}]," (X, 10 bits) and ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$31"}]," (Y)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3a:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Clip"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The four ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$1B"}]," values; the tooltip gives the window in layer pixels and which value the next write sets"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3b:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"$$4C"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["The transparent nibble — or, in text mode, ",["$","strong",null,{"children":"$$14"}],", the global transparency colour"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3c:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Priority"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["Over or below the ULA: per cell (attribute bit 0), always below in 512-tile mode, always over with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 0"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3d:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Palette"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":["First or second tilemap palette (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"$$6B"}]," bit 4)"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+3e:["$","tr",null,{"children":[["$","td",null,{"children":["$","strong",null,{"children":"Copper"}],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"running"}]," when the Copper is on: it may change these registers per line"],"className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
