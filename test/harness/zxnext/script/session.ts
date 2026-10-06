@@ -8,6 +8,7 @@ import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import type {
   CopperState,
+  NextSpriteState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -898,6 +899,35 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getCopperState();
+  }
+
+  /**
+   * The sprites as the IDE's Sprite Inspector reads them (`IZxNextIdeMachine.getNextSpriteState`):
+   * copies of the attribute slots and the raw 16K pattern RAM, the core-resolved table (relatives
+   * composed onto their anchors, all 128 slots), `$15`, `$19`, `$4B`, the `$303B` status (peeked, not
+   * cleared) and the upload pointers. No side effects on the machine.
+   */
+  spriteState(): NextSpriteState {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m.getNextSpriteState();
+  }
+
+  /**
+   * One of the 8 transformed copies the core keeps of 8-bit pattern `pattern` (`0..63`), or with
+   * `fourBit` of 4-bit pattern `pattern` (`0..127`, one nibble per pixel): `variant` is
+   * `rotate << 2 | xmirror << 1 | ymirror`, and entry `sy * 16 + sx` is the pixel the engine draws at
+   * screen position (sx, sy) of the unscaled sprite.
+   */
+  spritePatternVariant(pattern: number, variant: number, { fourBit = false }: { fourBit?: boolean } = {}): Uint8Array {
+    const ex = this.machine.wasmV2Runtime!.exports;
+    if (fourBit) {
+      // --- 4-bit pattern `0..127`: one nibble per pixel
+      const row = ((pattern & 0x7f) << 3) | (variant & 7);
+      return Uint8Array.from({ length: 256 }, (_, i) => ex.zxnextGetSpritePatternByte4(row, i) & 0x0f);
+    }
+    const row = ((pattern & 0x3f) << 3) | (variant & 7);
+    return Uint8Array.from({ length: 256 }, (_, i) => ex.zxnextGetSpritePatternByte8(row, i) & 0xff);
   }
 
   /**

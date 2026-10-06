@@ -534,6 +534,23 @@ These are the input arguments and options:
 
 > **Note #2**: If you compile code for a ZX Spectrum 128 (or upper) model with multiple bank support, the exporter creates a loader that loads the banks in the compilation (and puts them into the appropriate memory bank) before starting the app.
 
+## `export-patterns`
+
+Use this command on the ZX Spectrum Next to save the 16K of sprite pattern RAM as a `.spr` file
+&mdash; 64 8-bit patterns, which the [sprite editor](/working-with-ide/sprite-inspector#exporting-the-pattern-ram)
+opens. A 4-bit pattern is half of one of them, so nothing is lost whatever the program uses.
+
+```
+export-patterns [<file>] [-f] [-o]
+```
+
+Available aliases: `exppat`
+
+A relative path is in the project folder. Without a file the command picks the first free name of
+`pattern-ram.spr`, `pattern-ram-2.spr`, and so on. `-f` replaces an existing file; `-o` opens the
+file in the sprite editor once it is written. The Sprite Inspector's **⋯ → Export pattern RAM as .spr** runs
+`export-patterns -o`.
+
 ## `hide-copper`
 
 Use this command to close the Copper List.
@@ -1284,6 +1301,34 @@ show-memory
 ```
 
 Available aliases: `shmem`
+
+## `show-patterns`
+
+Use this command to open the ZX Spectrum Next's [Sprite Inspector](/working-with-ide/sprite-inspector)
+on its Patterns view, and optionally to select a pattern in it.
+
+```
+show-patterns [<index>]
+```
+
+Available aliases: `shpat`
+
+The index is a 256-byte pattern slot (`0`-`63`), the number an 8-bit sprite uses. The inspector
+shows the slot's users and, when sprites read it as 4-bit halves, both halves.
+
+## `show-sprites`
+
+Use this command to open the ZX Spectrum Next's [Sprite Inspector](/working-with-ide/sprite-inspector)
+on its Sprites view, and optionally to select a sprite in it.
+
+```
+show-sprites [<index>]
+```
+
+Available aliases: `shspr`
+
+With an index (`0`-`127`), the sprite is selected: the inspector shows it and the Patterns view
+marks its pattern. The **Machine → Show Sprite Inspector** menu item runs `show-sprites`. In a document too narrow for the Patterns view beside the table, `show-patterns` switches to its tab.
 
 ## `step-copper`
 

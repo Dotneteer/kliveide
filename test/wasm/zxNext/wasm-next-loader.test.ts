@@ -50,6 +50,9 @@ describe("ZX Spectrum Next WASM v2 loader", () => {
     // --- One bit per Copper list index, and the 2K list RAM
     expect(views.copperWatch.byteLength).toBe(128);
     expect(views.copperMemory.byteLength).toBe(0x800);
+    // --- The sprite attributes, and the 8-bit pattern memory with its 8 variants per pattern
+    expect(views.spriteAttributes.byteLength).toBe(640);
+    expect(views.spritePatterns8.byteLength).toBe(512 * 256);
     expect(views.frameTrace.byteLength).toBe(
       ZXNEXT_FRAME_TRACE_HEADER_SIZE + ZXNEXT_FRAME_TRACE_CAPACITY * ZXNEXT_FRAME_TRACE_RECORD_SIZE
     );
@@ -96,6 +99,9 @@ function createViewExports(
     // --- The Copper watch and list RAM share the NextReg watch's page; only their ranges are checked
     zxnextCopperWatchPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextCopperMemoryPtr: () => options.nextRegWatchOffset ?? 0,
+    // --- So do the sprite attribute slots and the 128K of 8-bit pattern variants (from offset 0)
+    zxnextSpriteAttributesPtr: () => options.nextRegWatchOffset ?? 0,
+    zxnextSpritePatternMemory8Ptr: () => 0,
     zxnextTraceGetStartOffset: () => options.traceOffset ?? 0,
     zxnextTraceGetHeaderSize: () => ZXNEXT_FRAME_TRACE_HEADER_SIZE,
     zxnextTraceGetRecordSize: () => ZXNEXT_FRAME_TRACE_RECORD_SIZE,

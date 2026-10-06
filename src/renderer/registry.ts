@@ -27,6 +27,7 @@ import {
   SCRIPT_OUTPUT_VIEWER,
   MEMORY_EDITOR,
   COPPER_EDITOR,
+  SPRITES_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -45,6 +46,7 @@ import { SideBarPanelInfo } from "./abstractions/SideBarPanelInfo";
 import { ToolRendererInfo } from "./abstractions/ToolRendererInfo";
 import { createBasicPanel } from "./appIde/DocumentPanels/BasicPanel";
 import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
+import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -436,6 +438,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: COPPER_EDITOR,
     renderer: createCopperListPanel,
     icon: "bp-copper"
+  },
+  {
+    id: SPRITES_EDITOR,
+    renderer: createSpriteInspectorPanel,
+    icon: "sprites"
   },
   {
     id: COMMAND_RESULT_EDITOR,

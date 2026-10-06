@@ -616,6 +616,34 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
 
+  // --- Changed since the previous stop (`.plans/SPRITE_INSPECTOR_PLAN.md` D16) -------------------
+  /*
+   * One treatment for "these bytes moved since the machine last stopped", defined once so any state
+   * panel can adopt it: a dot in `--color-state-changed` beside the row's index. It is the data
+   * hierarchy's own `--data-changed`, which exists for exactly this signal and had no user yet. It
+   * is a marker, never a row fill: the row's values keep `--color-state-value`, and the selection
+   * keeps its own wash.
+   */
+  "--color-state-changed": "var(--data-changed)",
+
+  // --- Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.5) -------------------------------
+  /* Effective visibility: drawn, or its own bit set but hidden by its anchor (trap T5). */
+  "--color-sprite-visible": "var(--status-success)",
+  "--color-sprite-hidden-by-anchor": "var(--status-warning)",
+  /* A relative's anchor badge and the lit transform glyphs: the secondary hue of the row's values. */
+  "--color-sprite-anchor": "var(--color-state-value-alt)",
+  /* The diagnostic chips: a hidden or warning reason in the warning hue, an info one neutral (D13). */
+  "--color-sprite-chip-warning": "var(--status-warning)",
+  "--bgcolor-sprite-chip-warning": "var(--status-warning-subtle)",
+  "--color-sprite-chip-info": "var(--text-secondary)",
+  "--bgcolor-sprite-chip-info": "var(--surface-hover)",
+  /* The sprite-space map: the paper zone, the clip window, every sprite, the selected one. */
+  "--bgcolor-sprite-map": "var(--surface-active)",
+  "--bgcolor-sprite-map-paper": "var(--accent-subtle)",
+  "--color-sprite-map-clip": "var(--status-warning)",
+  "--color-sprite-map-outline": "var(--color-state-value)",
+  "--bgcolor-sprite-map-selected": "var(--accent-solid)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 

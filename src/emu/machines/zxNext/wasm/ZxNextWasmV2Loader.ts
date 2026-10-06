@@ -213,6 +213,13 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetSpritePatternByte8: ZxNextWasmV2ExportFunction;
   zxnextGetSpritePatternByte4: ZxNextWasmV2ExportFunction;
   zxnextGetLastVisibleSpriteIndex: ZxNextWasmV2ExportFunction;
+  zxnextSpriteAttributesPtr: ZxNextWasmV2ExportFunction;
+  zxnextSpritePatternMemory8Ptr: ZxNextWasmV2ExportFunction;
+  zxnextResolveSpritesForIde: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteControl: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteStatusPeek: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteMirrorIndex: ZxNextWasmV2ExportFunction;
+  zxnextGetSpriteClipIndex: ZxNextWasmV2ExportFunction;
   zxnextCopperTick: ZxNextWasmV2ExportFunction;
   zxnextCopperRead: ZxNextWasmV2ExportFunction;
   zxnextGetCopperNextReg: ZxNextWasmV2ExportFunction;
@@ -388,6 +395,13 @@ export type ZxNextWasmV2Runtime = {
   readonly copperWatch: Uint8Array;
   /** The Copper list RAM, 2K, big-endian words (read only by the IDE) */
   readonly copperMemory: Uint8Array;
+  /** The sprite attribute slots, 128 x 5 bytes (read only by the IDE) */
+  readonly spriteAttributes: Uint8Array;
+  /**
+   * The 8-bit sprite pattern memory: 512 rows of 256 bytes, 8 transformed variants per pattern. Raw
+   * pattern N is row `N * 8` (SPRITE_INSPECTOR_PLAN trap T2). Read only by the IDE.
+   */
+  readonly spritePatterns8: Uint8Array;
   readonly frameTrace: Uint8Array;
 };
 
@@ -591,6 +605,13 @@ const requiredV2Exports = [
   "zxnextGetSpritePatternByte8",
   "zxnextGetSpritePatternByte4",
   "zxnextGetLastVisibleSpriteIndex",
+  "zxnextSpriteAttributesPtr",
+  "zxnextSpritePatternMemory8Ptr",
+  "zxnextResolveSpritesForIde",
+  "zxnextGetSpriteControl",
+  "zxnextGetSpriteStatusPeek",
+  "zxnextGetSpriteMirrorIndex",
+  "zxnextGetSpriteClipIndex",
   "zxnextCopperTick",
   "zxnextCopperRead",
   "zxnextGetCopperNextReg",
@@ -803,6 +824,8 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "nextRegWatch", exports.zxnextNextRegWatchPtr(), nextRegCount * 3, memoryBuffer);
   assertViewRange(artifactName, "copperWatch", exports.zxnextCopperWatchPtr(), 128, memoryBuffer);
   assertViewRange(artifactName, "copperMemory", exports.zxnextCopperMemoryPtr(), 0x800, memoryBuffer);
+  assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
+  assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
 
   return {
@@ -817,6 +840,8 @@ export function createZxNextWasmV2Views(
     nextRegWatch: new Uint8Array(memoryBuffer, exports.zxnextNextRegWatchPtr(), nextRegCount * 3),
     copperWatch: new Uint8Array(memoryBuffer, exports.zxnextCopperWatchPtr(), 128),
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
+    spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
+    spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),
     frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes)
   };
 }

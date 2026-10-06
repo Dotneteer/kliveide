@@ -10,7 +10,7 @@ import {
   patternPixels,
   patternSize,
   patternSpan
-} from "@renderer/appIde/DocumentPanels/Next/nexBankSprites";
+} from "@common/zxnext/sprites/spritePatterns";
 
 const T = NEX_SPRITE_TRANSPARENT;
 
@@ -123,5 +123,25 @@ describe("pattern hints", () => {
     const bytes = new Uint8Array(256).map((_, i) => i);
     const pixels = patternPixels(bytes, 0, { format: "8bit", offset: 0 });
     expect(patternHint(pixels).kind).toBe("noisy");
+  });
+});
+
+// --- SPRITE_INSPECTOR_PLAN T11: the core adds the palette offset to an 8-bit pixel's high nibble
+describe("patternPixels: the 8-bit palette offset", () => {
+  it("adds the offset to the high nibble, wrapping, and leaves transparency alone", () => {
+    const bytes = new Uint8Array(256);
+    bytes[0] = 0x12;
+    bytes[1] = 0xf5;
+    bytes[2] = 0xe3;
+    const pixels = patternPixels(bytes, 0, { format: "8bit", offset: 0, paletteOffset: 3 });
+    expect(pixels[0]).toBe(0x42);
+    expect(pixels[1]).toBe(0x25);
+    expect(pixels[2]).toBe(NEX_SPRITE_TRANSPARENT);
+  });
+
+  it("is unchanged with the default offset", () => {
+    const bytes = Uint8Array.from({ length: 256 }, (_, i) => (i === 0xe3 ? 0 : i));
+    const pixels = patternPixels(bytes, 0, { format: "8bit", offset: 0 });
+    expect(Array.from(pixels)).toEqual(Array.from(bytes));
   });
 });

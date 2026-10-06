@@ -177,7 +177,7 @@ it.
 
 ## Coverage so far
 
-Four recipes; the rest of the pages were deliberately left ungenerated.
+Six recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -193,6 +193,16 @@ Four recipes; the rest of the pages were deliberately left ungenerated.
   the picture; and a machine whose frame pacing is wrong still passes every harness test - this
   recipe is what found the ZX81 running at a fifteenth of its speed in the app.
 
+- `recipes/sprite-inspector.cjs` — the two `working-with-ide/sprite-inspector*.png` shots, and the
+  running-app check of the Sprite Inspector. **A Next cannot run IDE-built code without NextZXOS on a
+  card**, so it pokes a program into a paused machine instead: `em-debug`, `em-pause`, `setmem` four
+  bytes a command, `setz80reg pc $8000`, `em-debug`, `em-pause`. The program's source is
+  `recipes/sprite-demo.kz80.asm`; its bytes are pasted into the recipe (re-assemble after editing it).
+  It passes `window.userHome`, because a Next launch writes `~/Klive/ks2.cim`. It verifies the table,
+  the globals strip, the sheet and the `.spr` export before it photographs. **It resizes the IDE window
+  between shots** (`klive.app.evaluate` → `setContentSize`) to photograph each width-driven layout,
+  checks `data-layout` first, and scrolls the table sideways to prove the pinned columns hold. The
+  window widths depend on the panel font: Iosevka at 12px is about 6px a `ch`.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

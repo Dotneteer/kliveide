@@ -106,7 +106,7 @@ import {
 import {
   patternOffset as spritePatternOffset,
   type NexSpriteFormat
-} from "@renderer/appIde/DocumentPanels/Next/nexBankSprites";
+} from "@common/zxnext/sprites/spritePatterns";
 import { useSpritePalette } from "@renderer/features/sprite-editor/useSpritePalette";
 
 type MemoryDumpViewState = {

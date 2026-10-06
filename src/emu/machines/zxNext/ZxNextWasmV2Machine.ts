@@ -5,6 +5,7 @@ import {
   type CpuState,
   type CopperHitEvent,
   type CopperState,
+  type NextSpriteState,
   type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
@@ -1535,6 +1536,48 @@ export class ZxNextWasmV2Machine
         upperBorder: ex.zxnextGetCopperUpperBorder()
       },
       lastHit: this.lastCopperHit
+    };
+  }
+
+  /**
+   * The Sprite Inspector's snapshot (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3). Every value comes from
+   * a side-effect-free getter: the status is peeked, not read through `$303B` (T1), and the resolve
+   * goes into the core's IDE buffer, never the render cache (T3).
+   */
+  getNextSpriteState(): NextSpriteState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    // --- The core keeps 8 transformed variants per pattern; variant 0 of pattern N (row N * 8) is
+    // --- the raw layout, so the 16K is 64 rows of 256 bytes at a stride of 2048 (T2).
+    const patterns = new Uint8Array(0x4000);
+    const variants = runtime.spritePatterns8;
+    for (let n = 0; n < 64; n++) {
+      const row = n * 8 * 256;
+      patterns.set(variants.subarray(row, row + 256), n * 256);
+    }
+    const resolvedPtr = ex.zxnextResolveSpritesForIde();
+    const resolved = new Uint8Array(runtime.memoryBuffer, resolvedPtr, 128 * 8).slice();
+    const lastVisible = ex.zxnextGetLastVisibleSpriteIndex();
+    const status = ex.zxnextGetSpriteStatusPeek();
+    return {
+      attributes: runtime.spriteAttributes.slice(),
+      patterns,
+      resolved,
+      lastVisible: lastVisible === 0xffffffff || lastVisible < 0 ? -1 : lastVisible & 0x7f,
+      control: ex.zxnextGetSpriteControl() & 0xff,
+      clip: [0, 1, 2, 3].map((i) => ex.zxnextGetSpriteClip(i) & 0xff) as [number, number, number, number],
+      clipIndex: ex.zxnextGetSpriteClipIndex() & 0x03,
+      transparencyIndex: ex.zxnextGetSpriteTransparencyIndex() & 0xff,
+      status: { tooMany: (status & 0x02) !== 0, collision: (status & 0x01) !== 0 },
+      upload: {
+        spriteIndex: ex.zxnextGetSpriteIndex() & 0x7f,
+        spriteSub: ex.zxnextGetSpriteSubIndex() & 0x07,
+        patternIndex: ex.zxnextGetSpritePatternIndex() & 0x3f,
+        patternSub: ex.zxnextGetSpritePatternSubIndex() & 0xff,
+        mirrorIndex: ex.zxnextGetSpriteMirrorIndex() & 0xff,
+        tied: (ex.zxnextGetNextRegisterDirect(0x09) & 0x10) !== 0
+      },
+      spritePaletteBank: (ex.zxnextGetNextRegisterDirect(0x43) & 0x08) !== 0 ? 1 : 0
     };
   }
 

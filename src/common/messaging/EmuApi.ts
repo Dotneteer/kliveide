@@ -542,6 +542,15 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next sprite state the Sprite Inspector shows: the raw attribute and pattern
+   * memories, the core-resolved table and the global sprite registers. Reading it never changes the
+   * machine.
+   */
+  async getNextSpriteState(): Promise<NextSpriteState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * "Step Copper": runs the ZX Spectrum Next in debug mode until the Copper completes its next
    * instruction, then stops at the end of that Z80 instruction.
    */
@@ -819,6 +828,46 @@ export type CopperHitEvent = {
   pc: number;
   /** The memory partition `pc` was in, if the machine has partitions */
   partition?: number;
+};
+
+/**
+ * The ZX Spectrum Next sprites, as the Sprite Inspector reads them in one call
+ * (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.3, D2). Not `SpriteInfo`: that name is the C64 VIC type.
+ */
+export type NextSpriteState = {
+  /** 128 slots x 5 attribute bytes, a copy */
+  attributes: Uint8Array;
+  /** The 16K pattern RAM in its raw layout: 8-bit pattern N at N * 256 (trap T2) */
+  patterns: Uint8Array;
+  /** 128 x 8 bytes: the core's effective values, relatives composed (D4); `decodeResolvedSprites` */
+  resolved: Uint8Array;
+  /** The highest slot with its visible bit set, -1 when none */
+  lastVisible: number;
+  /** `$15` */
+  control: number;
+  /** `$19`: x1, x2, y1, y2 */
+  clip: [number, number, number, number];
+  /** The `$1C` sprite clip index: which `$19` value the next write sets */
+  clipIndex: number;
+  /** `$4B` */
+  transparencyIndex: number;
+  /** `$303B`, peeked without clearing it (trap T1) */
+  status: { tooMany: boolean; collision: boolean };
+  /** Where the next port write goes (trap T12) */
+  upload: {
+    /** Port `$57`'s sprite and attribute byte */
+    spriteIndex: number;
+    spriteSub: number;
+    /** Port `$5B`'s 256-byte slot and byte within it */
+    patternIndex: number;
+    patternSub: number;
+    /** `$34`, the NextReg attribute mirror's sprite (bit 7 included) */
+    mirrorIndex: number;
+    /** `$09` bit 4: the mirror and the upload index are tied */
+    tied: boolean;
+  };
+  /** `$43` bit 3: the sprite palette in use (0: first, 1: second) */
+  spritePaletteBank: 0 | 1;
 };
 
 /** The ZX Spectrum Next Copper, as the IDE's Copper views read it (COPPER_DEBUGGING_PLAN §4.3). */

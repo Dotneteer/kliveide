@@ -45,6 +45,21 @@ type Anchor = {
   yscale: number;
 };
 
+/** One sprite as S_QUALIFY leaves it: composed onto its anchor, every field decoded (`spr_cur_*`). */
+export type QualifiedSprite = {
+  visible: boolean;
+  x: number;
+  y: number;
+  paletteOffset: number;
+  xmirror: boolean;
+  ymirror: boolean;
+  rotate: boolean;
+  scaleX: number;
+  scaleY: number;
+  fourBit: boolean;
+  pattern7: number;
+};
+
 const sx8 = (v: number) => (v & 0x80 ? (v | ~0xff) : v & 0xff);
 
 /** Renders sprite line V. `attrs` has 128 entries (attr 4 is ignored unless attr 3 bit 6 is set). */
@@ -54,7 +69,8 @@ export function spriteLine(
   v: number,
   transparent: number,
   zeroOnTop: boolean,
-  anchorIn?: Anchor
+  anchorIn?: Anchor,
+  qualified?: QualifiedSprite[]
 ): LineResult & { anchor: Anchor } {
   const buf = new Int16Array(320).fill(-1);
   const owner = new Int16Array(320).fill(-1);
@@ -120,6 +136,19 @@ export function spriteLine(
       a.xscale = unified ? (s4 >> 3) & 3 : 0;
       a.yscale = unified ? (s4 >> 1) & 3 : 0;
     }
+    qualified?.push({
+      visible,
+      x,
+      y,
+      paletteOffset: c2 >> 4,
+      xmirror: (c2 & 0x08) !== 0,
+      ymirror: (c2 & 0x04) !== 0,
+      rotate: (c2 & 0x02) !== 0,
+      scaleX: xscale,
+      scaleY: yscale,
+      fourBit: h,
+      pattern7: pattern
+    });
     if (!visible || ((yoff >> 4) & 0x1f) !== 0) continue;
     // --- draw
     const rotate = (c2 & 0x02) !== 0;
@@ -161,6 +190,16 @@ export function spriteLine(
     }
   }
   return { pixels: buf, collision, cost, owner, anchor: a };
+}
+
+/**
+ * Every sprite as the engine qualifies it, from a cold start (the anchor all zero and invisible, as
+ * the core resolves it for the IDE).
+ */
+export function qualifySprites(attrs: SpriteAttrs[]): QualifiedSprite[] {
+  const qualified: QualifiedSprite[] = [];
+  spriteLine(attrs, new Uint8Array(0x4000), 0, 0, false, undefined, qualified);
+  return qualified;
 }
 
 /** All 256 lines; the anchor state entering line 0 is the one a full pass leaves (it is line-independent). */

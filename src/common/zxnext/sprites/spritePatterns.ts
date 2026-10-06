@@ -1,8 +1,9 @@
 /*
- * A 16K NEX bank read as ZX Spectrum Next sprite patterns.
+ * 16K of bytes read as ZX Spectrum Next sprite patterns: a NEX bank, a `.spr` file, or the live
+ * pattern RAM the Sprite Inspector reads (`.plans/SPRITE_INSPECTOR_PLAN.md` D5).
  *
- * Pure: bytes in, palette indices out. The Sprites view draws what this returns, and the tests pin
- * the layout without a canvas.
+ * Pure: bytes in, palette indices out. The NEX Sprites view and the Sprite Inspector draw what this
+ * returns, and the tests pin the layout without a canvas.
  *
  * The layout follows the hardware, not Klive's emulator. From `_input/next-fpga/src/video/sprites.vhd`:
  *
@@ -12,6 +13,9 @@
  *   address shifted right by one, and the pixel takes the byte's **high nibble when x is even**, the
  *   low nibble when x is odd. A pixel is transparent when its nibble equals the low nibble of the
  *   transparency index; otherwise its palette index is `paletteOffset << 4 | nibble`.
+ * - The palette offset also applies to an **8-bit** pixel: it is added to the byte's high nibble,
+ *   `((p >> 4) + offset) & 15) << 4 | p & 15` (`zxnext-ula.c`, SPRITE_INSPECTOR_PLAN trap T11). The
+ *   transparency test is on the byte *before* the offset.
  *
  * A bank carries its patterns from `offset`, not necessarily from `$0000`: sprite data often shares a
  * bank with code or starts after a small header.
@@ -74,7 +78,10 @@ export function patternSpan(
 export type NexSpritePixelOptions = {
   format: NexSpriteFormat;
   offset: number;
-  /** 4-bit only: the palette offset, `0..15`, placed in the index's high nibble. */
+  /**
+   * The palette offset, `0..15`: a 4-bit pixel's high nibble, and added to an 8-bit pixel's high
+   * nibble. Defaults to 0, which leaves an 8-bit pixel unchanged.
+   */
   paletteOffset?: number;
   transparencyIndex?: number;
 };
@@ -96,9 +103,13 @@ export function patternPixels(
 
   if (format === "8bit") {
     const transparent = transparencyIndex & 0xff;
+    const add = paletteOffset & 0x0f;
     for (let p = 0; p < NEX_SPRITE_PIXELS; p++) {
       const value = byteAt(start + p);
-      pixels[p] = value === transparent ? NEX_SPRITE_TRANSPARENT : value;
+      pixels[p] =
+        value === transparent
+          ? NEX_SPRITE_TRANSPARENT
+          : ((((value >> 4) + add) & 0x0f) << 4) | (value & 0x0f);
     }
     return pixels;
   }

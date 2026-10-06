@@ -1,5 +1,6 @@
 import type {
   CopperState,
+  NextSpriteState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -41,6 +42,9 @@ export interface IZxNextIdeMachine {
   /** The Copper: list RAM, mode, pointers, beam and the last Copper breakpoint hit. */
   getCopperState(): CopperState;
 
+  /** The sprites, for the Sprite Inspector: one side-effect-free snapshot (SPRITE_INSPECTOR_PLAN D2, D8). */
+  getNextSpriteState(): NextSpriteState;
+
   /** Arms (or cancels) "Step Copper": the next debug run stops when the Copper completes any instruction. */
   requestCopperStep(armed?: boolean): void;
 }
@@ -58,7 +62,8 @@ export function isZxNextIdeMachine(machine: unknown): machine is IZxNextIdeMachi
     typeof m.getNextMemoryMapping === "function" &&
     typeof m.getPaletteDeviceInfo === "function" &&
     typeof m.getNextUlaState === "function" &&
-    typeof m.getCopperState === "function"
+    typeof m.getCopperState === "function" &&
+    typeof m.getNextSpriteState === "function"
   );
 }
 

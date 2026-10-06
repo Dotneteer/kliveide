@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sprite Inspector Layout</title>
+<style>
+/*
+ * Sprite Inspector layout redesign (.plans/SPRITE_INSPECTOR_PLAN.md, follow-up to the shipped UI).
+ * One document, three widths. Switch the width with the buttons at the top; everything inside reacts
+ * to the document's own width (container queries), exactly as the real panel would.
+ */
+:root {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624;
+  --state: #7CC4F0; --state-2: #C49BEF; --changed: #F0A040;
+  --warn: #FFC933; --warn-wash: #FFC93322; --ok: #6CC488;
+  --check-a: #22252a; --check-b: #2c3036;
+  --font-ui: -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, Menlo, monospace;
+  --row: 24px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c;
+  --state: #0A5E99; --state-2: #7A3FB0; --changed: #B25E00;
+  --warn: #8A6A00; --warn-wash: #8A6A001c; --ok: #2D7D46;
+  --check-a: #ffffff; --check-b: #e3e5e9;
+  color-scheme: light; } }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 20px 16px 48px; background: var(--page); color: var(--text); font: 13px/1.4 var(--font-ui); }
+h1 { font-size: 18px; margin: 0 0 6px; }
+h2 { font-size: 14px; margin: 28px 0 6px; }
+p { margin: 0 0 8px; color: var(--text-2); max-width: 96ch; }
+code { font-family: var(--font-mono); font-size: 12px; }
+button { font: inherit; color: inherit; }
+.wrap { max-width: 1560px; margin: 0 auto; }
+.switch { display: flex; gap: 8px; align-items: center; margin: 14px 0; flex-wrap: wrap; }
+.switch button { border: 1px solid var(--border); background: var(--raised); border-radius: 4px; padding: 3px 10px; cursor: pointer; }
+.switch button.on { border-color: var(--accent); color: var(--accent); background: var(--accent-wash); }
+.switch .hint { color: var(--text-3); font-size: 12px; }
+
+/* --- The IDE document area: a fixed height, as in the app */
+.frame { max-width: 100%; height: 620px; border: 1px solid var(--border-strong); border-radius: 6px; overflow: hidden; transition: width .2s; background: var(--canvas); }
+.doc { container-type: inline-size; height: 100%; display: flex; flex-direction: column; min-width: 0; }
+
+/* --- Row 1: one toolbar, never wrapping. Low-priority controls fold into ⋯ as the width drops. */
+.tb { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 8px; border-bottom: 1px solid var(--border-subtle); background: var(--panel); white-space: nowrap; overflow: hidden; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; flex: 0 0 auto; }
+.seg button { height: 22px; padding: 0 8px; border: 0; border-right: 1px solid var(--border-subtle); background: var(--raised); font-size: 12px; color: var(--text-2); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--accent); color: var(--on-accent); }
+.dd { height: 22px; padding: 0 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--raised); font-size: 12px; color: var(--text); display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.dd::after { content: "▾"; color: var(--text-3); font-size: 10px; }
+.lbl { color: var(--text-3); font-size: 12px; }
+.sp { flex: 1; }
+.more { width: 26px; height: 22px; border: 1px solid var(--border); border-radius: 4px; background: var(--raised); color: var(--text-2); cursor: pointer; flex: 0 0 auto; }
+.ctx { display: inline-flex; gap: 8px; align-items: center; padding-left: 10px; border-left: 1px solid var(--border-subtle); }
+.only-wide, .only-mid { display: none !important; }
+.both-btn { display: none; }
+
+/* --- Row 2: the globals, one line. Flags first; the rest truncate behind "+n". */
+.gl { display: flex; gap: 14px; align-items: baseline; height: 26px; padding: 0 10px; border-bottom: 1px solid var(--border); font-size: 12px; white-space: nowrap; overflow: hidden; }
+.gl .g { display: inline-flex; gap: 5px; }
+.gl .k { color: var(--text-3); }
+.gl .v { font-family: var(--font-mono); color: var(--state); }
+.gl .flag { font-family: var(--font-ui); color: var(--warn); background: var(--warn-wash); border-radius: 8px; padding: 0 7px; }
+.gl .g.lo { display: none; }
+.gl .moreg { margin-left: auto; color: var(--accent); cursor: pointer; border: 0; background: none; padding: 0; font-size: 12px; }
+.gl.open { height: auto; flex-wrap: wrap; padding: 4px 10px; row-gap: 2px; }
+.gl.open .g.lo { display: inline-flex; }
+
+/* --- The body: list area + inspector. Narrow: a bottom drawer; wider: a right rail. */
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 6px 236px; grid-template-areas: "list" "split" "insp"; }
+/* --- The splitter between the list and the inspector band (narrow); between the list and the rail (wider) */
+.split { grid-area: split; background: var(--chrome); border-top: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); cursor: row-resize; }
+.list { grid-area: list; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.pane.patterns { display: none; }
+.doc[data-tab="patterns"] .pane.sprites { display: none; }
+.doc[data-tab="patterns"] .pane.patterns { display: flex; }
+.ph { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 10px; background: var(--chrome); border-bottom: 1px solid var(--border-subtle); font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); white-space: nowrap; }
+.ph .meta { margin-left: auto; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+.ph .meta .w { color: var(--warn); }
+
+/* --- The table: ONE scroller for header and rows, so the header scrolls sideways with the columns.
+       The header is sticky to the top; the first two columns are sticky to the left. */
+.ts { flex: 1; min-height: 0; overflow: auto; }
+table.st { border-collapse: separate; border-spacing: 0; font: 12px var(--font-mono); white-space: nowrap; min-width: 100%; }
+table.st th { position: sticky; top: 0; z-index: 2; height: 24px; padding: 0 8px; text-align: left; background: var(--chrome); color: var(--text-3); font-weight: 400; border-bottom: 1px solid var(--border); }
+table.st td { height: var(--row); padding: 0 8px; border-bottom: 1px solid var(--border-subtle); color: var(--state); background: var(--canvas); }
+table.st tr { cursor: pointer; }
+table.st tr:hover td { background: var(--hover); }
+table.st tr.sel td { background: var(--selected); }
+/*
+ * Three pinned columns: #, vis, pattern. Each has a FIXED width (width = min = max, padding included)
+ * and its left offset is the sum of the widths before it. A pinned cell that could shrink lets the
+ * next one slide over it, which reads as a column getting narrower while you scroll.
+ */
+table.st .f1, table.st .f2, table.st .f3 { position: sticky; z-index: 1; box-sizing: border-box; }
+table.st th.f1, table.st th.f2, table.st th.f3 { z-index: 3; }
+table.st .f1 { left: 0; width: 8ch; min-width: 8ch; max-width: 8ch; color: var(--text-3); }
+table.st .f2 { left: 8ch; width: 5ch; min-width: 5ch; max-width: 5ch; text-align: center; padding: 0; }
+/* --- The pinned pattern column holds only the thumbnail and the number (at most 3 digits); a 4-bit
+       sprite's half (lo/hi of the 256-byte slot) is in the fmt column, which scrolls */
+table.st .f3 { left: 13ch; width: 9ch; min-width: 9ch; max-width: 9ch; padding: 0 6px; box-shadow: 1px 0 0 var(--border); }
+table.st tr.sel .f1 { box-shadow: inset 2px 0 0 var(--accent); }
+.anc { font: 10.5px var(--font-ui); color: var(--state-2); margin-left: 3px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); vertical-align: 0; }
+.dot.half { background: none; border: 1.5px solid var(--warn); }
+.dot.off { background: none; }
+.chg { position: relative; }
+.chg::after { content: ""; position: absolute; right: 2px; top: 50%; margin-top: -3px; width: 6px; height: 6px; border-radius: 50%; background: var(--changed); }
+canvas.th { width: 18px; height: 18px; image-rendering: pixelated; vertical-align: middle; margin-right: 6px; }
+.checker { background-color: var(--check-a); background-image: conic-gradient(var(--check-b) 25% , transparent 0 50%, var(--check-b) 0 75%, transparent 0); background-size: 8px 8px; }
+.sub { color: var(--text-3); }
+.xf .on { color: var(--state-2); font-weight: 600; } .xf .off { color: var(--text-dis); }
+td.ty { font-family: var(--font-ui); color: var(--text-2) !important; }
+.chip { font: 500 11px var(--font-ui); padding: 1px 7px; border-radius: 9px; color: var(--warn); background: var(--warn-wash); }
+.chip.info { color: var(--text-2); background: var(--hover); }
+
+/* --- The sheet: no toolbar of its own any more; its controls live in the toolbar's context group */
+.sheet { flex: 1; min-height: 0; overflow: auto; padding: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px 4px; align-content: start; }
+.cell { position: relative; display: grid; justify-items: center; gap: 2px; padding: 4px 2px 2px; border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+.cell:hover { background: var(--hover); }
+.cell canvas { width: 48px; height: 48px; image-rendering: pixelated; outline: 1px solid var(--border); }
+.cell .n { font: 11px var(--font-mono); color: var(--text-3); }
+.cell.sel { border-color: var(--accent); background: var(--selected); }
+.cell.dim canvas { opacity: .35; }
+.cell .b { position: absolute; right: 2px; top: 38px; min-width: 15px; height: 15px; border-radius: 8px; background: var(--accent); color: var(--on-accent); font: 600 10px/15px var(--font-ui); text-align: center; }
+.cell.mixed::before { content: ""; position: absolute; left: 6px; top: 4px; border-top: 8px solid var(--warn); border-right: 8px solid transparent; z-index: 1; }
+
+/* --- The inspector: one column of stacked sections, whatever its host */
+.insp { grid-area: insp; display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
+.ih { display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 10px; white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--border-subtle); }
+.ih b { font-weight: 600; }
+.ih .why2 { color: var(--warn); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+.ih .sum { color: var(--text-2); font-family: var(--font-mono); font-size: 12px; overflow: hidden; text-overflow: ellipsis; }
+.ib { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 8px 10px; }
+/* --- Narrow: previews beside the fields, so the whole decode fits the band without scrolling */
+.det { min-width: 0; min-height: 0; overflow: auto; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-content: start; }
+.det .why { grid-column: 1 / -1; color: var(--warn); }
+.det .why:empty { display: none; }
+.det .pv { flex-direction: column; align-items: flex-start; gap: 6px; }
+.det .pv .imgs { display: flex; gap: 6px; }
+.mapbox { min-height: 0; display: flex; flex-direction: column; }
+.mapbox { width: 216px; }
+.mapbox .map { width: 100%; height: auto; max-width: none; }
+.why { color: var(--text-2); margin: 0; }
+.pv { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+.pv figure { margin: 0; display: grid; gap: 3px; }
+.pv canvas { width: 40px; height: 40px; image-rendering: pixelated; border: 1px solid var(--border); }
+.pv figcaption { font-size: 11px; color: var(--text-3); }
+.sw { display: flex; gap: 3px; }
+.sw i { width: 14px; height: 14px; border: 1px solid var(--border-strong); display: inline-block; }
+/* Two columns, not three: the effective value, and the slot's own reading under it when it differs */
+.fl { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content minmax(0, 1fr); gap: 1px 10px; font-size: 12px; margin: 0; }
+.fl dd { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fl dt.wide { grid-column: 1; }
+.fl dd.wide { grid-column: 2 / -1; }
+.fl dt { color: var(--text-3); }
+.fl dd { margin: 0; font-family: var(--font-mono); color: var(--state); }
+.fl dd .own { color: var(--state-2); }
+.map { width: 100%; max-width: 320px; aspect-ratio: 5 / 4; border: 1px solid var(--border); display: block; }
+.sec { font: 600 10.5px var(--font-ui); letter-spacing: .06em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+.ibgrid { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+
+/* ---------- Medium: the inspector becomes a right rail; Sprites / Patterns stay tabs ---------- */
+@container (min-width: 820px) {
+  .body { grid-template-columns: minmax(0, 1fr) 6px 300px; grid-template-rows: minmax(0, 1fr); grid-template-areas: "list split insp"; }
+  .split { border: 0; border-left: 1px solid var(--border-subtle); border-right: 1px solid var(--border-subtle); cursor: col-resize; }
+  .ib { display: flex; flex-direction: column; overflow: auto; }
+  .det { overflow: visible; display: flex; flex-direction: column; gap: 10px; }
+  .det .pv { flex-direction: row; align-items: flex-end; }
+  .det .why { color: var(--warn); }
+  .mapbox { width: auto; }
+  .mapbox .map { width: 100%; height: auto; flex: none; }
+  .pv canvas { width: 64px; height: 64px; }
+  .fl { grid-template-columns: max-content minmax(0, 1fr); gap: 2px 14px; }
+  .fl dt.wide, .fl dd.wide { grid-column: auto; }
+  .only-mid { display: inline-flex !important; }
+}
+/* ---------- Wide: table and sheet side by side, with the rail ---------- */
+@container (min-width: 1300px) {
+  .both-btn { display: inline-block; }
+  .doc[data-tab="both"] .list { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); }
+  .doc[data-tab="both"] .pane.sprites, .doc[data-tab="both"] .pane.patterns { display: flex; }
+  .doc[data-tab="both"] .pane.patterns { border-left: 1px solid var(--border); }
+  .body { grid-template-columns: minmax(0, 1fr) 6px 320px; }
+  .only-wide { display: inline-flex !important; }
+  .gl .g.lo { display: inline-flex; } .gl .moreg { display: none; }
+}
+
+/* --- Notes under the mockup */
+.notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 16px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.note h3 { margin: 0 0 4px; font-size: 13px; }
+.note p, .note li { font-size: 12.5px; color: var(--text-2); }
+.note ul { margin: 0; padding-left: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sprite Inspector: layout redesign</h1>
+  <p>The same document at three widths. The document reacts to its <em>own</em> width, so docking it in a narrow split behaves like a narrow window. Click rows, cells and tabs; scroll the table sideways to see the header and the first three columns stay put.</p>
+
+  <div class="switch" role="group" aria-label="Document width">
+    <span class="lbl">Document width</span>
+    <button data-w="680" class="on">Narrow · 680px (your screenshot)</button>
+    <button data-w="1040">Medium · 1040px</button>
+    <button data-w="1520">Wide · 1520px</button>
+    <span class="hint">Narrow: tabs + inspector band (details | sprite space) · Medium: tabs + inspector rail · Wide: both views + rail</span>
+  </div>
+
+  <div class="frame" id="frame" style="width:680px">
+    <div class="doc" id="doc" data-tab="sprites">
+      <div class="tb">
+        <span class="seg" role="tablist" aria-label="View">
+          <button data-tab="sprites" class="on">Sprites</button><button data-tab="patterns">Patterns</button><button data-tab="both" class="both-btn">Both</button>
+        </span>
+        <span class="ctx" id="ctxSprites"><span class="dd">Up to last visible</span></span>
+        <span class="ctx" id="ctxPatterns" style="display:none"><span class="dd">As used</span><span class="dd only-mid">From sprite</span></span>
+        <span class="sp"></span>
+        <span class="lbl only-mid">Palette</span>
+        <span class="seg only-mid"><button class="on">Live (1)</button><button>1</button><button>2</button></span>
+        <span class="seg only-wide"><button>1×</button><button class="on">2×</button><button>3×</button><button>4×</button></span>
+        <button class="more" title="Palette, zoom, checker, raw bytes, unused-slot format, palette offset, export as .spr">⋯</button>
+      </div>
+
+      <div class="gl" id="gl">
+        <span class="g"><span class="k">Sprites</span><span class="v">ON</span></span>
+        <span class="g"><span class="flag">collision</span></span>
+        <span class="g"><span class="k">Clip</span><span class="v">(32,32)-(287,223)</span></span>
+        <span class="g"><span class="k">Last visible</span><span class="v">#63</span></span>
+        <span class="g lo"><span class="k">Over border</span><span class="v">no</span></span>
+        <span class="g lo"><span class="k">Order</span><span class="v">SLU</span></span>
+        <span class="g lo"><span class="k">On top</span><span class="v">#127</span></span>
+        <span class="g lo"><span class="k">$4B</span><span class="v">$E3</span></span>
+        <span class="g lo"><span class="k">Upload</span><span class="v">#45.0 pat 49.$00</span></span>
+        <span class="g lo"><span class="k">Mirror</span><span class="v">#32</span></span>
+        <button class="moreg" id="glMore">+6 more</button>
+      </div>
+
+      <div class="body">
+        <div class="list">
+          <section class="pane sprites">
+            <div class="ph">Sprites <span class="meta">64 of 128 · last visible #63</span></div>
+            <div class="ts">
+              <table class="st" id="tbl">
+                <thead><tr><th class="f1">#</th><th class="f2">vis</th><th class="f3">pattern</th><th>x</th><th>y</th><th>fmt</th><th>pal</th><th>xform</th><th>scale</th><th>type</th><th>note</th></tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="pane patterns">
+            <div class="ph">Patterns <span class="meta">36 of 64 slots used · <span class="w">1 mixed</span></span></div>
+            <div class="sheet" id="sheet"></div>
+          </section>
+        </div>
+
+        <div class="split" title="Drag to resize"></div>
+        <aside class="insp" id="insp">
+          <div class="ih" id="ih"><b id="ititle">Sprite #9</b><span class="sum" id="isum">drawn · 120,69 · pattern 9 · 8-bit</span></div>
+          <div class="ib">
+            <div class="det">
+            <p class="why" id="iwhy"></p>
+            <div class="pv">
+              <div class="imgs">
+              <figure><canvas id="pvA" width="16" height="16" class="checker"></canvas><figcaption>stored</figcaption></figure>
+              <figure><canvas id="pvB" width="16" height="16" class="checker"></canvas><figcaption>shown</figcaption></figure>
+              </div>
+              <div class="sw" id="sw"></div>
+            </div>
+            <div>
+              <dl class="fl" id="fl"></dl>
+            </div>
+            </div>
+            <div class="mapbox">
+              <div class="sec">Sprite space</div>
+              <svg class="map" viewBox="0 0 320 256" id="map"></svg>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><h3>1 · Two strips, each one line</h3>
+      <ul><li>One toolbar that never wraps: the view tabs, then only the active view's own control (the filter, or the pattern format). Palette, zoom, checker, raw bytes, the unused-slot format, the palette offset and <b>Export as .spr</b> move into <b>⋯</b> as the width drops, in that order.</li>
+      <li>The globals strip is one line. Raised flags (<code>OFF</code>, <code>collision</code>, <code>too many</code>) come first as chips, then Clip and Last visible; the rest sit behind <b>+n more</b>, which wraps the strip open in place.</li></ul></div>
+    <div class="note"><h3>2 · One list at a time until there is room for two</h3>
+      <ul><li>Sprites and Patterns are tabs. <b>Both</b> appears only when the document is wide enough for the table <em>and</em> four columns of patterns beside the rail (about 180ch); below that it is not offered, rather than offered and cramped.</li>
+      <li>The Patterns pane loses its inner toolbar, so the sheet starts right under its header.</li>
+      <li>Selecting in one view still marks the other: a sprite's pattern gets its marker when you switch tabs, and a pattern selects its first user in the table.</li></ul></div>
+    <div class="note"><h3>3 · The inspector is one column with two homes</h3>
+      <ul><li><b>Narrow</b>: a band under the list, always visible, split in two: the sprite's details on the left (previews, the reason it may be hidden, the fields two to a line) and the sprite-space map on the right, sized to the band's height. A splitter trades list rows for band height; the size is remembered.</li>
+      <li><b>Medium and wide</b>: a right rail, full height, 300-320px. Height is what the inspector needs (previews, fields, map stack vertically), and a side rail does not steal rows from the table.</li>
+      <li>The field table goes from three columns to two: the <em>effective</em> value, with the slot's own reading after it in the secondary hue when it differs (<code>132 · own Δ+16</code>). That removes the wrapped "SLOT BYTES SAY" header.</li></ul></div>
+    <div class="note"><h3>4 · The table scrolls as one piece</h3>
+      <ul><li>Header and rows live in the <b>same</b> scroller: the header is <code>position: sticky; top: 0</code>, so it moves sideways with the columns and stays put vertically.</li>
+      <li>The pinned <code>pattern</code> column holds only the thumbnail and the number (<code>40</code>, or <code>81</code> for a 4-bit pattern): 9ch instead of 14ch. Which half of the 256-byte slot a 4-bit pattern is moves to the scrolling <code>fmt</code> column (<code>4·hi</code>), and the cell's tooltip spells it out.</li>
+      <li>The first three columns (<code>#</code>, <code>vis</code>, <code>pattern</code>) are sticky to the left, so a row keeps its identity while you scroll to <code>type</code> or <code>note</code>. Each has a fixed width in <code>ch</code> (width = min = max, padding included), and each one's left offset is the sum of the widths before it, so none can shrink or slide under its neighbour.</li>
+      <li>In the app the rows are virtualized; the header renders as the scroller's first sticky child (the virtualizer's start margin is the header height). If the virtualizer cannot host it, the fallback is a separate header whose <code>scrollLeft</code> follows the body's.</li></ul></div>
+  </div>
+</div>
+
+<script>
+// --- A tiny deterministic generator, so the thumbnails look like sprites and never change between loads
+function rng(seed) { return () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff); }
+const PALETTE = ["#1c1a10", "#6b6a12", "#f5f0c8", "#b8913a", "#c26a10", "#2d6e2d", "#e0e0e0", "#7a3a10"];
+function patternOf(n) {
+  const r = rng(n * 977 + 13), px = [];
+  for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+    const solid = x > 3 + (n % 4) && x < 13 && y > 1;
+    px.push(solid ? PALETTE[Math.floor(r() * 5)] : r() < .2 ? PALETTE[Math.floor(r() * 3)] : null);
+  }
+  return px;
+}
+function draw(cv, px, rotate = false, xm = false) {
+  const c = cv.getContext("2d"); c.clearRect(0, 0, 16, 16);
+  px.forEach((col, i) => {
+    if (!col) return;
+    let x = i & 15, y = i >> 4;
+    if (rotate) [x, y] = [15 - y, x];
+    if (xm) x = 15 - x;
+    c.fillStyle = col; c.fillRect(x, y, 1, 1);
+  });
+}
+const sprites = Array.from({ length: 24 }, (_, i) => ({
+  i, pat: i < 12 ? i : i - 12, x: 104 + 16 * (i % 4), y: 37 + 16 * Math.floor(i / 4) % 96,
+  rel: i === 13 ? 12 : undefined, hid: i === 17, clip: i === 21, stale: i === 6, changed: i === 4 || i === 9,
+  rot: i === 10, xm: i === 10 || i === 11,
+  // --- Two 4-bit sprites: 4-bit pattern 81 and 80, the high and low halves of 256-byte slot 40
+  four: i === 14 || i === 15
+}));
+sprites.forEach((s) => { if (s.four) s.pat7 = s.i === 14 ? 81 : 80; });
+const tbody = document.querySelector("#tbl tbody");
+sprites.forEach((s) => {
+  const tr = document.createElement("tr");
+  tr.dataset.i = s.i;
+  const note = s.hid ? '<span class="chip">hidden: anchor #12 not visible</span>' : s.clip ? '<span class="chip">partly clipped</span>' : s.stale ? '<span class="chip info">4-byte: attr4 ignored</span>' : "";
+  tr.innerHTML =
+    `<td class="f1 ${s.changed ? "chg" : ""}">${s.i}${s.rel !== undefined ? `<span class="anc">↳${s.rel}</span>` : ""}</td>` +
+    `<td class="f2"><span class="dot ${s.hid ? "half" : ""}"></span></td>` +
+    `<td class="f3" title="${s.four ? `4-bit pattern ${s.pat7}: the ${s.pat7 & 1 ? "high" : "low"} half of slot ${s.pat7 >> 1}` : `8-bit pattern ${s.pat}`}"><canvas class="th checker" width="16" height="16"></canvas>${s.four ? s.pat7 : s.pat}</td>` +
+    `<td>${s.x}${s.rel !== undefined ? ' <span class="sub">Δ+16,+0</span>' : ""}</td><td>${s.y}</td><td>${s.four ? `4<span class="sub">·${s.pat7 & 1 ? "hi" : "lo"}</span>` : "8"}</td><td>0</td>` +
+    `<td class="xf"><span class="${s.rot ? "on" : "off"}">R</span><span class="${s.xm ? "on" : "off"}">X</span><span class="off">Y</span></td>` +
+    `<td>1×1</td><td class="ty">${s.rel !== undefined ? "rel·unified" : s.stale ? "anchor·4B" : "anchor"}</td><td>${note}</td>`;
+  draw(tr.querySelector("canvas"), patternOf(s.pat));
+  tbody.appendChild(tr);
+});
+const sheet = document.getElementById("sheet");
+for (let n = 0; n < 40; n++) {
+  const users = sprites.filter((s) => s.pat === n).length;
+  const d = document.createElement("div");
+  d.className = "cell" + (n >= 12 ? " dim" : "") + (n === 2 ? " mixed" : "");
+  d.dataset.n = n;
+  d.innerHTML = `<canvas width="16" height="16" class="checker"></canvas><span class="n">#${n}</span>${users ? `<span class="b">${users}</span>` : ""}`;
+  if (n < 12) draw(d.querySelector("canvas"), patternOf(n));
+  sheet.appendChild(d);
+}
+
+const doc = document.getElementById("doc");
+function select(i) {
+  const s = sprites[i];
+  document.querySelectorAll("#tbl tr.sel, .cell.sel").forEach((e) => e.classList.remove("sel"));
+  document.querySelector(`#tbl tr[data-i="${i}"]`)?.classList.add("sel");
+  document.querySelector(`.cell[data-n="${s.pat}"]`)?.classList.add("sel");
+  document.getElementById("ititle").textContent = `Sprite #${i}`;
+  const state = s.hid ? "hidden" : "drawn";
+  document.getElementById("isum").textContent = `${state} · ${s.x},${s.y} · pattern ${s.pat} · 8-bit`;
+  // --- Only a problem gets a sentence; a drawn sprite says so in the header line
+  document.getElementById("iwhy").textContent = s.hid ? "Hidden: its anchor, sprite #12, is not visible." : s.clip ? "Partly clipped: 40% of it is outside the clip window." : "";
+  const px = patternOf(s.pat);
+  draw(document.getElementById("pvA"), px);
+  draw(document.getElementById("pvB"), px, s.rot, s.xm);
+  document.getElementById("sw").innerHTML = PALETTE.slice(0, 5).map((c) => `<i style="background:${c}"></i>`).join("");
+  const rows = [
+    ["Type", s.rel !== undefined ? 'relative <span class="own">· anchor #12, unified</span>' : s.stale ? "anchor, 4-byte" : "anchor, 5-byte"],
+    ["Visible", s.hid ? 'no <span class="own">· own bit yes</span>' : "yes"],
+    ["X", s.rel !== undefined ? `${s.x} <span class="own">· own Δ+16</span>` : s.x],
+    ["Y", s.y], ["Pattern", `${s.pat}`], ["Format", "8-bit"], ["Palette", "0"],
+    ["Transform", `${s.rot ? "R" : "-"}${s.xm ? "X" : "-"}-`], ["Scale", "1×1"],
+    ["Bytes", s.stale ? "$78 $45 $00 $89 <s>$0A</s>" : "$78 $45 $00 $C9 $00"]
+  ];
+    document.getElementById("fl").innerHTML = rows
+    .map(([k, v]) => {
+      // --- A long value, or one that carries the slot's own reading, takes a whole line
+      const wide = k === "Type" || k === "Bytes" || String(v).includes('class="own"');
+      return wide ? `<dt class="wide">${k}</dt><dd class="wide">${v}</dd>` : `<dt>${k}</dt><dd>${v}</dd>`;
+    })
+    .join("");
+  const map = document.getElementById("map");
+  map.innerHTML = `<rect width="320" height="256" fill="var(--hover)"/><rect x="32" y="32" width="256" height="192" fill="var(--accent-wash)"/>` +
+    sprites.filter((t) => !t.hid).map((t) => `<rect x="${t.x}" y="${t.y + 20}" width="16" height="16" fill="${t.i === i ? "var(--accent)" : "none"}" stroke="var(--state)" stroke-width="1"/>`).join("") +
+    `<rect x="32" y="32" width="256" height="192" fill="none" stroke="var(--warn)" stroke-dasharray="4 3"/>`;
+}
+tbody.addEventListener("click", (e) => { const tr = e.target.closest("tr"); if (tr) select(+tr.dataset.i); });
+sheet.addEventListener("click", (e) => {
+  const c = e.target.closest(".cell"); if (!c) return;
+  const user = sprites.find((s) => s.pat === +c.dataset.n);
+  if (user) select(user.i); else { document.querySelectorAll(".cell.sel").forEach((x) => x.classList.remove("sel")); c.classList.add("sel"); }
+});
+document.querySelectorAll(".tb [data-tab]").forEach((b) => b.addEventListener("click", () => {
+  doc.dataset.tab = b.dataset.tab;
+  document.querySelectorAll(".tb [data-tab]").forEach((x) => x.classList.toggle("on", x === b));
+  document.getElementById("ctxSprites").style.display = b.dataset.tab === "patterns" ? "none" : "";
+  document.getElementById("ctxPatterns").style.display = b.dataset.tab === "sprites" ? "none" : "";
+}));
+document.getElementById("glMore").addEventListener("click", (e) => {
+  const gl = document.getElementById("gl"); gl.classList.toggle("open");
+  e.target.textContent = gl.classList.contains("open") ? "less" : "+6 more";
+});
+document.querySelectorAll(".switch [data-w]").forEach((b) => b.addEventListener("click", () => {
+  document.getElementById("frame").style.width = b.dataset.w + "px";
+  document.querySelectorAll(".switch [data-w]").forEach((x) => x.classList.toggle("on", x === b));
+  // --- "Both" is not offered below the wide breakpoint: fall back to the table
+  if (+b.dataset.w < 1300 && doc.dataset.tab === "both") document.querySelector('.tb [data-tab="sprites"]').click();
+}));
+select(9);
+</script>
+</body>
+</html>

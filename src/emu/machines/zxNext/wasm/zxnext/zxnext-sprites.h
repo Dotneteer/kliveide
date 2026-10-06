@@ -28,5 +28,9 @@ static uint32_t zxnextSpritesGetSprite0OnTop(void);
 static uint32_t zxnextSpritesGetClippingEnabled(void);
 static uint32_t zxnextSpritesGetOverBorderEnabled(void);
 static uint32_t zxnextSpritesGetEnabled(void);
+static uint32_t zxnextSpritesPeekStatus(void);
+static uint32_t zxnextSpritesGetMirrorIndex(void);
+static uint32_t zxnextSpritesGetAttributesPtr(void);
+static uint32_t zxnextSpritesGetPatternMemory8Ptr(void);
 
 #endif

@@ -78,6 +78,11 @@ import {
 } from "./commands/ToolCommands";
 import { HideCopperCommand, ShowCopperCommand, StepCopperCommand } from "./commands/CopperCommands";
 import {
+  ExportPatternsCommand,
+  ShowPatternsCommand,
+  ShowSpritesCommand
+} from "./commands/SpriteCommands";
+import {
   ProjectExcludeItemsCommand,
   ProjectListExcludedItemsCommand
 } from "./commands/ProjectExcludedItemsCommand";
@@ -162,6 +167,9 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ShowCopperCommand());
   cmdSrv.registerCommand(new HideCopperCommand());
   cmdSrv.registerCommand(new StepCopperCommand());
+  cmdSrv.registerCommand(new ShowSpritesCommand());
+  cmdSrv.registerCommand(new ShowPatternsCommand());
+  cmdSrv.registerCommand(new ExportPatternsCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

@@ -370,9 +370,10 @@ function isMachineStopped(): boolean {
 }
 
 /**
- * The Copper items (`.plans/COPPER_DEBUGGING_PLAN.md` §4.5): open the Copper List document, and
- * step the Copper. Both go through the IDE's commands, so the menu, the command line and the panels
- * share one implementation.
+ * The Next inspector items: open the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * §4.5) and the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4), and step the Copper.
+ * All go through the IDE's commands, so the menu, the command line and the panels share one
+ * implementation.
  */
 export const copperMenuRenderer: MachineMenuRenderer = () => [
   { type: "separator" },
@@ -389,6 +390,14 @@ export const copperMenuRenderer: MachineMenuRenderer = () => [
     enabled: mainStore.getState()?.emulatorState?.machineState !== MachineControllerState.Running,
     click: async () => {
       await getIdeApi().executeCommand("step-copper");
+    }
+  },
+  {
+    // --- The Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4) shares this group
+    id: "show_sprite_inspector",
+    label: "Show Sprite Inspector",
+    click: async () => {
+      await getIdeApi().executeCommand("show-sprites");
     }
   }
 ];

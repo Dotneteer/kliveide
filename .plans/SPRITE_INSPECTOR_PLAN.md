@@ -1,7 +1,8 @@
 # Sprite Inspector Plan: Sprite Table and Pattern Memory in One Document
 
-Status: **decisions recorded** (2026-10-04): D1–D9 accepted, and the §8 questions answered as
-proposed (D10–D17). No phase started.
+Status: **done** (2026-10-05): Phases 1–9 implemented. Decisions D1–D9 accepted and the §8
+questions answered as proposed (D10–D17) on 2026-10-04. §9 records where the implementation departs
+from the text below.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.2**, the sprite table inspector: all 128
@@ -544,3 +545,65 @@ All eight were accepted as proposed and are recorded as D10–D17 in §1.1.
 | Q6 | Export pattern RAM as `.spr`? | Yes, Phase 9 (D15) |
 | Q7 | "Changed since the last stop" markers? | Yes, a new treatment defined once (D16) |
 | Q8 | Default pattern format? | *As used*, 8-bit fallback (D17) |
+
+---
+
+## 9. Implementation notes (2026-10-05)
+
+Where the shipped code differs from §1–§5, and why:
+
+- **`SpriteSlotKind` is `anchor4 | anchor5 | relative`**, not four kinds. Whether a relative is
+  composite or unified is its *anchor's* T bit, which one slot's bytes cannot say (D3);
+  `relativeTypeOf(slots, i)` answers it, and the table's type column shows `rel·composite` /
+  `rel·unified` as planned.
+- **The IDE resolve uses a static scratch table, `zxnextIdeResolveScratch`, also volatile.** A
+  1.8K local array lived on the WASM shadow stack, which is in linear memory and so in the state
+  image: the T3 harness test (snapshot image before and after `spriteState()`) caught reading the
+  sprites changing the image.
+- **One more export, `zxnextGetSpriteClipIndex`,** for the globals strip's "next `$19` write sets".
+- **`SpritePatternSheet` takes per-cell data, not `formatPerSlot` / `paletteOffsetPerPattern`.**
+  Each caller turns bytes into pixels itself, so a per-slot format or a per-pattern palette offset
+  is the caller's business; the sheet adds only the presentation (`badge`, `markers`, `warning`,
+  `fold`, `dimmed`). The NEX view passes its palette offset for 4-bit only, so T11's 8-bit offset
+  leaves it unchanged.
+- **No `IdeApi` visibility method.** As in the Copper plan, the menu item runs the command
+  (`show-sprites`) through `executeCommand`; workspace restore is the generic special-document path.
+- **The hidden-document gate is structural.** The document area mounts only the active document,
+  so a hidden Sprite Inspector is unmounted and reads nothing; `enabled` covers a non-Next machine.
+- **"Changed since the previous stop" baselines** on the attributes at the previous stop while
+  paused (a new stop is a new tact count), and on the last stop while running.
+- **`show-patterns <n>` takes an 8-bit slot number (0–63)**; a 4-bit half is reached from the
+  sheet or from a sprite.
+- **Phase 9 is the `export-patterns [<file>] [-f] [-o]` command** (alias `exppat`); the toolbar's
+  **Export as .spr** runs `export-patterns -o`, which writes the next free `pattern-ram.spr` in the
+  project and opens it in the sprite editor. There is no save dialog in the IDE to offer a name.
+- **The colour-use strip draws its own swatches** (as the NEX inspector does) rather than
+  `NextPaletteViewer`, which renders a whole 256-entry palette.
+- **Verification in the running app** is `scripts/doc-shots/recipes/sprite-inspector.cjs`: it pokes
+  `sprite-demo.kz80.asm` into a paused Next (no NextZXOS needed), checks the table, the strip, the
+  sheet and the export from the DOM, and produces the two documentation screenshots.
+
+### 9.1 Layout redesign (2026-10-06)
+
+The first layout put the toolbar, the globals, the table beside the sheet and a bottom inspector in
+one grid; in a narrow document each was too small, the toolbar and the globals wrapped to two lines
+each, and the table's header did not scroll with its columns. The redesign
+([mockups/sprite-inspector-layout.html](mockups/sprite-inspector-layout.html)) replaces §4.4's
+layout:
+
+- **Three layouts by the document's own width**, in `ch` of the panel font (`layoutForWidth`):
+  narrow (< 114ch) — Sprites and Patterns as tabs, the inspector a band under the list with the
+  details and the sprite-space map side by side; medium — tabs, the inspector a rail; wide (≥ 180ch)
+  — *Both* offered, with the rail. D12's default *Both* is kept: where it does not fit, the view's
+  `tab` decides (`chooseView`), and a reveal never discards it.
+- **One-line toolbar and globals strip**; the Patterns pane's controls moved into the toolbar, and
+  zoom, checker, raw bytes, the unused-slot format and the export into a `⋯` menu as width drops.
+- **The table** is one scroller with a sticky header and three pinned columns (#, vis, pattern), and
+  is no longer virtualized (128 rows at most). The pinned pattern cell shows the number alone; the
+  4-bit half moved to `fmt` (`4·hi`).
+- **The inspector** shows two columns of fields (effective, then the slot's own reading where it
+  differs, `spriteFields`), a one-line summary in its header (`spriteSummary`), a sentence only for
+  a problem, and the map of a selected pattern's users.
+- Verified in the running app at all three widths by `scripts/doc-shots/recipes/sprite-inspector.cjs`,
+  which also checks that the pinned columns keep their place and width while the table scrolls.
+

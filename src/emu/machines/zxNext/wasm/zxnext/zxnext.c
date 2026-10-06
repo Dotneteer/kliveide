@@ -671,6 +671,62 @@ uint32_t zxnextGetSpritePatternByte4(uint32_t variant, uint32_t offset) {
   return zxnextSpritesGetPatternByte4(variant, offset);
 }
 uint32_t zxnextGetLastVisibleSpriteIndex(void) { return zxnextSpritesGetLastVisibleSpriteIndex(); }
+
+/*
+ * The Sprite Inspector's reads (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.2). None of them changes the
+ * machine: the status is peeked, not read through $303B (T1), and the IDE resolves into its own
+ * buffer, never the render's cache (T3).
+ */
+/* `zxnextSpriteAttributes[128][5]`: 640 contiguous bytes */
+uint32_t zxnextSpriteAttributesPtr(void) { return zxnextSpritesGetAttributesPtr(); }
+/*
+ * `zxnextSpritePatternMemory8[512][256]`: 8 transformed variants per 8-bit pattern. Variant 0 is the
+ * identity layout, so raw pattern byte `N*256+i` is at row `N*8`, offset `i` - a stride of 2048 (T2).
+ */
+uint32_t zxnextSpritePatternMemory8Ptr(void) { return zxnextSpritesGetPatternMemory8Ptr(); }
+/* $15 as written (sprite 0 on top, clipping, layer priority, over border, enabled) */
+uint32_t zxnextGetSpriteControl(void) { return zxnextSpritesGetNextReg(0x15u); }
+/* $303B bit 1 (too many) and bit 0 (collision), without clearing them (T1) */
+uint32_t zxnextGetSpriteStatusPeek(void) { return zxnextSpritesPeekStatus(); }
+/* The $34 attribute mirror index, bit 7 included */
+uint32_t zxnextGetSpriteMirrorIndex(void) { return zxnextSpritesGetMirrorIndex(); }
+/* Which `$19` value the next write sets (`$1C` bits 3-2) */
+uint32_t zxnextGetSpriteClipIndex(void) { return zxnextSpritesGetClipIndex(); }
+
+/*
+ * All 128 sprites resolved for the IDE, 8 bytes each (volatile, T3):
+ *   0    flags: bit 0 visible, 1 xmirror, 2 ymirror, 3 rotate, 4 four-bit
+ *   1-2  X, little-endian, 9 bits
+ *   3-4  Y, little-endian, 9 bits
+ *   5    palette offset
+ *   6    scale: scaleX << 2 | scaleY
+ *   7    pattern7 (the 7-bit pattern number, `N5..N0 & N6`)
+ * Decoded on the host by `decodeResolvedSprites` (`src/common/zxnext/sprites/spriteAttributes.ts`).
+ */
+static uint8_t zxnextIdeResolvedSprites[128u * 8u];
+/*
+ * The resolve's working table. A static, not a local: a 1.8K local lives on the shadow stack, which is
+ * in linear memory and so in the state image - reading the sprites would have changed it.
+ */
+static ZxnextResolvedSprite zxnextIdeResolveScratch[128];
+
+uint32_t zxnextResolveSpritesForIde(void) {
+  zxnextUlaResolveSpritesInto(zxnextIdeResolveScratch, 128u);
+  for (uint32_t i = 0u; i < 128u; i++) {
+    const ZxnextResolvedSprite* r = &zxnextIdeResolveScratch[i];
+    uint8_t* o = &zxnextIdeResolvedSprites[i * 8u];
+    o[0] = (uint8_t)((r->visible ? 0x01u : 0u) | (r->xmirror ? 0x02u : 0u) | (r->ymirror ? 0x04u : 0u) |
+      (r->rotate ? 0x08u : 0u) | (r->is4Bit ? 0x10u : 0u));
+    o[1] = (uint8_t)(r->x & 0xffu);
+    o[2] = (uint8_t)((r->x >> 8u) & 0x01u);
+    o[3] = (uint8_t)(r->y & 0xffu);
+    o[4] = (uint8_t)((r->y >> 8u) & 0x01u);
+    o[5] = (uint8_t)(r->paletteOffset & 0x0fu);
+    o[6] = (uint8_t)(((r->scaleX & 3u) << 2u) | (r->scaleY & 3u));
+    o[7] = (uint8_t)(r->pattern7 & 0x7fu);
+  }
+  return (uint32_t)(uintptr_t)zxnextIdeResolvedSprites;
+}
 void zxnextCopperTick(uint32_t cvc, uint32_t hc) { zxnextCopperExecuteTick(cvc, hc); }
 uint32_t zxnextCopperRead(uint32_t address) { return zxnextCopperReadMemory(address); }
 uint32_t zxnextGetCopperNextReg(uint32_t reg) { return zxnextCopperGetNextReg(reg); }

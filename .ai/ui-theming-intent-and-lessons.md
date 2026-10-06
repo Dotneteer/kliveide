@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, and the Copper panel and Copper List (whose plan asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, and the Sprite Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -736,6 +736,76 @@ the one literal colour in these views (see "Colour That Belongs To The Machine")
 **A data strip narrower than ~6ch reads as a scrollbar.** The raster ruler at `4ch` (minus padding)
 sat beside the list's scrollbar and looked like a second one; its zones were invisible. At `8ch` the
 bands read as bands. Size a vertical overview strip so its content, not its edge, is what you see.
+
+## Changed Since The Previous Stop Is A Dot, Defined Once
+
+"These bytes moved since the machine last stopped" has one treatment, so any state panel can adopt it
+without inventing its own: a small dot in `--color-state-changed` (an L4 alias of the data
+hierarchy's `--data-changed`) after the row's index, drawn as an `::after` on the index cell. It is a
+**marker, never a row fill** — the row's values keep `--color-state-value` and the selection keeps
+its wash, so a changed, selected row still reads as both. The baseline is the attribute snapshot at
+the *previous* stop while paused, and the last stop while running; the Sprite Inspector is its first
+user (`useNextSpriteState`).
+
+## A Wide Table Scrolls As One Piece, Pinned Columns Fixed
+
+A table wider than its pane puts its header **and** its rows in one scroller: the header row is
+`position: sticky; top: 0`, so it moves sideways with its columns. A header kept outside the scroller
+stays put while the columns move under it — the Sprite Inspector's first version did that.
+
+Columns pinned to the left (`position: sticky; left: …`) each get a **fixed** width — `width`,
+`min-width` and `max-width` equal, `box-sizing: border-box` so padding is inside — and each left offset
+is the sum of the widths before it. A pinned cell that can shrink lets the next pinned cell slide over
+it, which reads as a column getting narrower as the table scrolls. Pin only what identifies a row, and
+keep it narrow: the Sprite Inspector pins `#`, `vis` and the pattern thumbnail with its number, and
+moves the 4-bit half (`4·hi`) to the scrolling `fmt` column. The pinned header cells take a higher
+`z-index` than the pinned body cells, which take a higher one than the rest.
+
+Every cell keeps the monospace stack at one size, header included: the widths are in `ch`, and `ch`
+resolves against each element's own font, so a header in the UI font sits several characters off its
+column. Let colour (`--data-label`) set the header apart.
+
+## A Document Lays Itself Out By Its Own Width
+
+A document that holds several panes measures **its own** width (a `ResizeObserver` and a hidden `0`
+in the panel font to turn pixels into `ch`), never the window's: docked in a narrow split it must
+behave like a narrow window. The Sprite Inspector has three layouts, with breakpoints in `ch`:
+narrow (the list as tabs, the inspector a band under it), medium (tabs, the inspector a rail beside
+it), wide (two lists side by side and the rail). Rules it settled:
+
+- **A toolbar and a status strip are one line at every width.** Low-priority controls fold into a
+  `⋯` menu as the width drops; the strip shows its flags and primary items and puts the rest behind
+  "+n more". Two wrapped strips cost the list four rows.
+- **A pane has no toolbar of its own** when the document has one: its controls join the document
+  toolbar as a context group for the active view.
+- **Do not offer a mode that does not fit.** *Both* exists only in the wide layout; elsewhere a tab
+  decides, and the chosen mode is kept for when it fits again. Never decide it from the width at the
+  moment a request arrives — the document may not have measured itself yet.
+- **An inspector band shows details and its map side by side**, details as previews beside fields
+  (two pairs to a line, a long value on its own line), so nothing scrolls. An SVG map in a band fills
+  its box and letterboxes (`xMidYMid meet`); sized from its width it is taller than the band. Map a
+  click through `getScreenCTM().inverse()`, not the element's box.
+- **Two columns, not three, for "own vs effective"**: the effective value, then the slot's own reading
+  after it in `--color-state-value-alt` only where it differs. A third column's header wraps first.
+
+## A `SplitPanel` Needs No Positioned Ancestor Inside The Document
+
+`SplitPanel` places its splitter from offsets measured against the page. A `position: relative` on an
+element between the document and the `SplitPanel` makes the splitter draw shifted by that element's
+offset — by the sidebar's width — as a stray line through the content, while the drag still works at
+the real seam. Leave the containers of a `SplitPanel` unpositioned.
+
+## A Next Inspector's Vocabulary
+
+The Sprite Inspector (`--color-sprite-*`, `--bgcolor-sprite-*`) aliases L2 roles like the Copper
+family: values in `--color-state-value`, a relative's anchor badge and the lit `R X Y` glyphs in the
+secondary `--color-state-value-alt` (they are the row's *second kind* of value), effective visibility
+a `--status-success` dot or a `--status-warning` ring (set but hidden by its anchor), diagnostic
+chips in the warning hue with an info-level one neutral. Its sprite-space map draws the paper in the
+accent's subtle fill, sprites as state-value outlines, the selection filled with the accent, and the
+clip window dashed in the warning hue. Pattern pixels are the machine's colours (see "Colour That
+Belongs To The Machine"); the sheet's badges, the mixed-format corner and the upload bar are the
+only chrome drawn on them.
 
 ## A Heading Inside Panel Content Is `SectionHeader`, Not `PanelHeader`
 
