@@ -1,7 +1,7 @@
 1:"$Sreact.fragment"
-2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"TOCProvider"]
-3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"Sidebar"]
-4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"ClientWrapper"]
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-e7df869c2dce98e9.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-e7df869c2dce98e9.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-e7df869c2dce98e9.js"],"ClientWrapper"]
 5:Tfc7,---
 description: "Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window."
 ---
@@ -68,7 +68,7 @@ This needs no project at all, so a single NEX file can be opened and debugged by
 require the current machine to be the ZX Spectrum Next, since NextZXOS is what loads a NEX.a:X
 f:X
 f:C
-0:{"buildId":"DH1-klRS5Dk55sCKlpmuy","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Running a NEX File Directly","id":"running-a-nex-file-directly","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window.","title":"Running and Debugging code","filePath":"content/working-with-ide/run-debug.mdx","timestamp":1791213353000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+0:{"buildId":"dhmaEUEgEGTK-PX0vnnfT","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Running a NEX File Directly","id":"running-a-nex-file-directly","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window.","title":"Running and Debugging code","filePath":"content/working-with-ide/run-debug.mdx","timestamp":1791298175000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
 1d:I[484,[],"OutletBoundary"]
 1e:"$Sreact.suspense"
 20:I[484,[],"ViewportBoundary"]
@@ -83,8 +83,8 @@ f:C
 b:["$","$1","h",{"children":[null,["$","$L20",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L21",null,{"children":["$","$1e",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Running and Debugging code - Klive IDE"}],["$","meta","1",{"name":"description","content":"Klive displays a toolbar at the top of the screen in the Emulator window and another in the IDE window."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
 d:["$","$1","c",{"children":[null,["$","$L22",null,{"parallelRouterKey":"children","template":["$","$L23",null,{}]}]]}]
 11:true
-24:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],"HeadingAnchor"]
-25:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-b9a52d4f3e784d59.js"],""]
+24:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-e7df869c2dce98e9.js"],"HeadingAnchor"]
+25:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-e7df869c2dce98e9.js"],""]
 :HL["/kliveide/images/working-with-ide/machine-running.png","image"]
 :HL["/kliveide/images/working-with-ide/machine-paused.png","image"]
 12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"When the machine is running, you can use any of the windows to control it (pause, stop, or restart)"}]
