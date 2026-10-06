@@ -611,6 +611,16 @@ class MainApiImpl {
   }
 
   /**
+   * Opens one of the IDE's ZX Spectrum Next inspectors from the emulator window: the pixel probe's
+   * "open the owning inspector" (`.plans/LAYER_COMPOSITION_PLAN.md` D7). Only these four, never an
+   * arbitrary command.
+   * @param _inspector Which inspector
+   */
+  async openNextInspector(_inspector: "sprites" | "tilemap" | "layer2" | "layers"): Promise<void> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a global application setting value.
    * @param _settingId The setting key to set.
    * @param _value The value to set.

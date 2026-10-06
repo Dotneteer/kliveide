@@ -1,0 +1,193 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Layers document (LAYER_COMPOSITION_PLAN D9). A Next inspector's vocabulary
+ * (`.ai/ui-theming-intent-and-lessons.md`): values in `--color-state-value`, labels `--data-label`;
+ * each layer's identity colour (`--color-layers-*`) as a dot beside its name and as the 2px frame of
+ * its picture - the same colour as its chip in the emulator's strip and its clip outline on the
+ * screen. The pictures are machine colour over the shared checker, scaled with `pixelated`. The
+ * document lays itself out by its own width: the cards are an auto-fill grid.
+ */
+.document {
+  padding: var(--space-3);
+  font-size: var(--font-size-100);
+  color: var(--text-primary);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.mode {
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-300);
+  color: var(--color-state-value);
+}
+
+.meta {
+  color: var(--text-secondary);
+}
+
+.section {
+  margin-bottom: var(--space-4);
+}
+
+.stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 5ch max-content 1fr;
+  row-gap: var(--space-1);
+  column-gap: var(--space-2);
+}
+
+.level {
+  display: contents;
+}
+
+.levelLayers {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.levelLabel {
+  color: var(--color-state-value);
+}
+
+.levelNote {
+  color: var(--text-secondary);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+
+.dot.ula {
+  background-color: var(--color-layers-ula);
+}
+.dot.tm {
+  background-color: var(--color-layers-tm);
+}
+.dot.l2 {
+  background-color: var(--color-layers-l2);
+}
+.dot.spr {
+  background-color: var(--color-layers-spr);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42ch, 1fr));
+  gap: var(--space-3);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-panel);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.cardActions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: var(--space-1);
+
+  button {
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-weight: normal;
+    padding: 0 var(--space-2);
+    cursor: pointer;
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+
+    &[aria-pressed="true"] {
+      background-color: var(--accent-subtle);
+      border-color: var(--accent-border);
+    }
+  }
+}
+
+.thumbnail {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 360 x 288: the Next screen's shape (its buffer pixels are 0.5:1, the pictures drop every other column) */
+  aspect-ratio: 360 / 288;
+  image-rendering: pixelated;
+  border: 2px solid var(--border-default);
+  background-color: var(--surface-active);
+  background-image:
+    linear-gradient(45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--surface-hover) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--surface-hover) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-hover) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+
+  &.ula {
+    border-color: var(--color-layers-ula);
+  }
+  &.tm {
+    border-color: var(--color-layers-tm);
+  }
+  &.l2 {
+    border-color: var(--color-layers-l2);
+  }
+  &.spr {
+    border-color: var(--color-layers-spr);
+  }
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 11ch 1fr;
+  column-gap: var(--space-2);
+  row-gap: 2px;
+  margin: 0;
+
+  dt {
+    color: var(--data-label);
+  }
+
+  dd {
+    margin: 0;
+    color: var(--color-state-value);
+  }
+}
+
+.reasons {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--status-warning);
+}

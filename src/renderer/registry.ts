@@ -32,6 +32,7 @@ import {
   SPRITES_EDITOR,
   TILEMAP_EDITOR,
   LAYER2_EDITOR,
+  LAYERS_EDITOR,
   DISASSEMBLY_EDITOR,
   UNKNOWN_EDITOR
 } from "@state/common-ids";
@@ -53,6 +54,7 @@ import { createCopperListPanel } from "./appIde/DocumentPanels/CopperListPanel";
 import { createSpriteInspectorPanel } from "./appIde/DocumentPanels/SpriteInspector/SpriteInspectorPanel";
 import { createTilemapInspectorPanel } from "./appIde/DocumentPanels/TilemapInspector/TilemapInspectorPanel";
 import { createLayer2InspectorPanel } from "./appIde/DocumentPanels/Layer2Inspector/Layer2InspectorPanel";
+import { createLayersDocumentPanel } from "./appIde/DocumentPanels/LayersDocument/LayersDocumentPanel";
 import { createCodeEditorPanel } from "./appIde/DocumentPanels/CodeEditorPanel";
 import { createTextEditorPanel } from "./appIde/DocumentPanels/TextEditorPanel";
 import { createCommandResultPanel } from "./appIde/DocumentPanels/CommandResult";
@@ -460,6 +462,11 @@ export const documentPanelRegistry: DocumentRendererInfo[] = [
     id: LAYER2_EDITOR,
     renderer: createLayer2InspectorPanel,
     icon: "layer2"
+  },
+  {
+    id: LAYERS_EDITOR,
+    renderer: createLayersDocumentPanel,
+    icon: "layers"
   },
   {
     id: COMMAND_RESULT_EDITOR,

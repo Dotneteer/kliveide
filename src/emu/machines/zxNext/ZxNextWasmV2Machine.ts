@@ -8,6 +8,8 @@ import {
   type NextSpriteState,
   type NextTilemapState,
   type NextLayer2State,
+  type NextLayerState,
+  type NextLayerThumbnails,
   type NextRegWriteEvent,
   type NextMemoryMapping,
   type NextRegDescriptors,
@@ -23,6 +25,14 @@ import type {
 import { NEXT_REG_DESCRIPTORS } from "./nextRegDescriptors";
 import { BANK5_PHYSICAL, BANK7_PHYSICAL } from "@common/zxnext/tilemap/tilemapDecode";
 import { isOutsideRam, LAYER2_RAM_PHYSICAL, LAYER2_READ_BYTES } from "@common/zxnext/layer2/layer2Decode";
+import {
+  decodeProbe,
+  decodeRecomposeStatus,
+  NO_LAYER_DEBUG,
+  type NextLayerDebug,
+  type NextPixelProbe,
+  type RecomposeStatus
+} from "@common/zxnext/layers/layerMix";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDeviceState, RegValueState } from "./nextRegDescriptors";
@@ -537,6 +547,8 @@ export class ZxNextWasmV2Machine
   override executeMachineFrame(): FrameTerminationMode {
     // --- Nothing to run before `setup()` has loaded the core: never fall back to another CPU
     const runtime = this.requireWasmV2Runtime();
+    // --- The machine draws again: the paused debug preview is over
+    this.layerPreviewShown = false;
 
     if (
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
@@ -571,6 +583,7 @@ export class ZxNextWasmV2Machine
   }
 
   executeWasmV2Instruction(runtime = this.requireWasmV2Runtime()): void {
+    this.layerPreviewShown = false;
     if (runtime.exports.zxnextGetCpuPrefix() === 0) this.opStartAddress = runtime.exports.zxnextGetCpuPc();
     runtime.exports.zxnextExecuteInstruction();
     this.wasmV2DebugSteps++;
@@ -638,6 +651,7 @@ export class ZxNextWasmV2Machine
     this.wasmV2AudioSampleRate = -1;
     this.invalidateCheckpoints();
     this.syncCpuFromWasmV2(runtime);
+    this.reapplyLayerDebug(runtime);
   }
 
 
@@ -702,6 +716,8 @@ export class ZxNextWasmV2Machine
     this.wasmV2AudioSamples.length = 0;
 
     this.syncCpuFromWasmV2(runtime);
+    // --- The image carried the debug view of its time: put back today's (D2)
+    this.reapplyLayerDebug(runtime);
     return true;
   }
 
@@ -1396,16 +1412,20 @@ export class ZxNextWasmV2Machine
   /** A Next screen pixel is half as wide as it is tall (the 640-pixel-wide buffer shows a 4:3 picture). */
   getAspectRatio = (): [number, number] => [0.5, 1];
 
+  /** The picture the screen shows: the layer debug preview while one is up (§4.2), else the machine's */
   override getPixelBuffer(): Uint32Array {
-    return this.requireWasmV2Runtime().pixelBuffer;
+    const runtime = this.requireWasmV2Runtime();
+    return this.layerPreviewShown ? runtime.layerPreview : runtime.pixelBuffer;
   }
 
   getPixelBufferBytes(): Uint8ClampedArray {
-    return this.requireWasmV2Runtime().pixelBufferBytes;
+    const runtime = this.requireWasmV2Runtime();
+    return this.layerPreviewShown ? runtime.layerPreviewBytes : runtime.pixelBufferBytes;
   }
 
   override renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
     const runtime = this.requireWasmV2Runtime();
+    this.layerPreviewShown = false;
     const snapshot = new Uint32Array(runtime.pixelBuffer);
     if (savedPixelBuffer != null) {
       runtime.pixelBuffer.set(savedPixelBuffer.subarray(0, runtime.pixelBuffer.length));
@@ -1663,6 +1683,141 @@ export class ZxNextWasmV2Machine
     };
   }
 
+  // ─── Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`) ────────────────────────────────
+
+  /** The debug view the host last set; re-pushed after anything that rewrites the core's memory */
+  private layerDebug: NextLayerDebug = { ...NO_LAYER_DEBUG };
+  private layerCaptureOn = false;
+  /** The screen shows the recomposed preview until the machine runs again */
+  private layerPreviewShown = false;
+
+  private reapplyLayerDebug(runtime: ZxNextWasmV2Runtime): void {
+    const d = this.layerDebug ?? NO_LAYER_DEBUG;
+    runtime.exports.zxnextSetLayerDebug(d.hidden & 0x0f, d.solo & 0x0f, d.showTransparent ? 1 : 0);
+    // --- Off and on: the capture describes a picture that is no longer the core's (T3)
+    runtime.exports.zxnextSetLayerCapture(0);
+    runtime.exports.zxnextSetLayerCapture(this.layerCaptureOn ? 1 : 0);
+    this.layerPreviewShown = false;
+  }
+
+  setLayerDebug(debug: NextLayerDebug): void {
+    this.layerDebug = {
+      hidden: debug.hidden & 0x0f,
+      solo: debug.solo & 0x0f,
+      showTransparent: !!debug.showTransparent
+    };
+    const d = this.layerDebug;
+    this.requireWasmV2Runtime().exports.zxnextSetLayerDebug(d.hidden, d.solo, d.showTransparent ? 1 : 0);
+  }
+
+  getLayerDebug(): NextLayerDebug {
+    const v = this.requireWasmV2Runtime().exports.zxnextGetLayerDebug();
+    return { hidden: v & 0x0f, solo: (v >> 4) & 0x0f, showTransparent: ((v >> 8) & 1) !== 0 };
+  }
+
+  setLayerCapture(on: boolean): void {
+    this.layerCaptureOn = on;
+    this.requireWasmV2Runtime().exports.zxnextSetLayerCapture(on ? 1 : 0);
+  }
+
+  recomposeForDebug(): RecomposeStatus {
+    const status = this.requireWasmV2Runtime().exports.zxnextRecomposeForDebug();
+    this.layerPreviewShown = true;
+    return decodeRecomposeStatus(status);
+  }
+
+  dropLayerPreview(): void {
+    this.layerPreviewShown = false;
+  }
+
+  probePixel(x: number, y: number): NextPixelProbe {
+    const runtime = this.requireWasmV2Runtime();
+    const width = runtime.exports.zxnextGetScreenWidth();
+    const height = runtime.exports.zxnextGetScreenHeight();
+    const inside = x >= 0 && y >= 0 && x < width && y < height;
+    // --- (x, y) on the screen; the buffer may start past its first pixel (getBufferStartOffset)
+    const start = runtime.exports.zxnextGetPixelBufferStartOffset();
+    const ptr = runtime.exports.zxnextProbePixel(inside ? start + y * width + x : 0xffffffff);
+    const words = new Uint32Array(runtime.memoryBuffer, ptr, 12);
+    return decodeProbe(x, y, Array.from(words));
+  }
+
+  getNextLayerState(options?: { thumbnails?: boolean }): NextLayerState {
+    const runtime = this.requireWasmV2Runtime();
+    const ex = runtime.exports;
+    const reg = (r: number) => ex.zxnextGetNextRegisterDirect(r) & 0xff;
+    const r15 = ex.zxnextGetSpriteControl() & 0xff;
+    const r68 = reg(0x68);
+    const r6b = ex.zxnextGetTilemapControl() & 0xff;
+    const clip = (get: (i: number) => number) =>
+      [0, 1, 2, 3].map((i) => get(i) & 0xff) as [number, number, number, number];
+    const debugWord = ex.zxnextGetLayerDebug();
+    return {
+      regs: {
+        priorities: (r15 >> 2) & 7,
+        blendMode: (r68 >> 5) & 3,
+        stencil: (r68 & 0x01) !== 0,
+        ulaEnabled: (r68 & 0x80) === 0,
+        loRes: (r15 & 0x80) !== 0,
+        tilemapEnabled: (r6b & 0x80) !== 0,
+        tilemapOnTop: (r6b & 0x01) !== 0,
+        layer2Enabled: ex.zxnextGetLayer2Enabled() !== 0,
+        layer2Resolution: ex.zxnextGetLayer2Resolution() & 0x03,
+        spritesEnabled: (r15 & 0x01) !== 0,
+        spritesOverBorder: (r15 & 0x02) !== 0,
+        spritesClipping: (r15 & 0x20) !== 0,
+        globalTransparency: reg(0x14),
+        fallback: reg(0x4a),
+        ulaClip: clip((i) => ex.zxnextGetUlaClip(i)),
+        layer2Clip: clip((i) => ex.zxnextGetLayer2Clip(i)),
+        spriteClip: clip((i) => ex.zxnextGetSpriteClip(i)),
+        tilemapClip: clip((i) => ex.zxnextGetTilemapClip(i)),
+        copperRunning: (ex.zxnextGetCopperStartMode() & 0x03) !== 0
+      },
+      debug: this.getLayerDebug(),
+      capture: ((debugWord >> 9) & 1) !== 0,
+      paperBufferY: ex.zxnextGetCopperUpperBorder(),
+      thumbnails: options?.thumbnails ? this.layerThumbnails(runtime) : undefined
+    };
+  }
+
+  /**
+   * Half-width RGBA pictures of each layer (the capture while it is on) and the machine's own picture:
+   * every other column, every row, because a buffer pixel is half as wide as it is tall (0.5:1)
+   */
+  private layerThumbnails(runtime: ZxNextWasmV2Runtime): NextLayerThumbnails {
+    const ex = runtime.exports;
+    const width = ex.zxnextGetScreenWidth();
+    const height = ex.zxnextGetScreenHeight();
+    const tw = width >> 1;
+    const th = height;
+    const rgba = new Uint32Array(512);
+    for (let i = 0; i < 512; i++) rgba[i] = ex.zxnextGetRgbaForRgb333(i) >>> 0;
+    const layer = (index: number): Uint8ClampedArray => {
+      const src = new Uint16Array(runtime.memoryBuffer, ex.zxnextLayerBufferPtr(index), width * height);
+      const out = new Uint32Array(tw * th);
+      for (let y = 0; y < th; y++) {
+        for (let x = 0; x < tw; x++) {
+          const v = src[y * width + (x << 1)];
+          // --- Transparent stays transparent (alpha 0): the document draws its own checker under it
+          out[y * tw + x] = v & 0x8000 ? rgba[v & 0x1ff] : 0;
+        }
+      }
+      return new Uint8ClampedArray(out.buffer);
+    };
+    // --- The machine's own picture, composed by the core with no debug view (never the masked screen)
+    const composite = new Uint32Array(runtime.memoryBuffer, ex.zxnextRenderLayerComposite(), tw * th).slice();
+    return {
+      width: tw,
+      height: th,
+      ula: layer(0),
+      tm: layer(1),
+      l2: layer(2),
+      spr: layer(3),
+      composite: new Uint8ClampedArray(composite.buffer)
+    };
+  }
+
   getNextRegDescriptors(): NextRegDescriptors["descriptors"] {
     return NEXT_REG_DESCRIPTORS.slice();
   }
@@ -1723,6 +1878,8 @@ export class ZxNextWasmV2Machine
   private hardResetWasmV2(runtime: ZxNextWasmV2Runtime): void {
     runtime.exports.zxnextHardReset();
     this.uploadCachedWasmV2RomImages(runtime);
+    // --- The debug view survives a reset (Q2)
+    this.reapplyLayerDebug(runtime);
     this.wasmV2ContentionPauseBase = 0;
     this.wasmV2NormalFrames = 0;
     this.wasmV2DebugSteps = 0;

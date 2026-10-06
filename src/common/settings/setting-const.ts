@@ -4,6 +4,7 @@ export const SETTING_EMU_SHOW_PERFORMANCE_INFO = "emuViewOptions.showPerformance
 export const SETTING_EMU_SHOW_KEYBOARD = "emuViewOptions.showKeyboard";
 export const SETTING_EMU_SHOW_INSTANT_SCREEN = "emuViewOptions.showInstantScreen";
 export const SETTING_EMU_SHOW_MEDIA_INFO = "emuViewOptions.showMediaInfo";
+export const SETTING_EMU_SHOW_NEXT_LAYERS = "emuViewOptions.showNextLayers";
 export const SETTING_EMU_SCANLINE_EFFECT = "emuOptions.scanlineEffect";
 export const SETTING_EMU_ZOOM_STEP = "emuOptions.zoomStep";
 export const SETTING_EMU_MOUSE_CAPTURE = "emuOptions.mouseCapture";

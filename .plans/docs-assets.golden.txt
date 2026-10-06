@@ -90,6 +90,9 @@
 /images/working-with-ide/layer2-inspector-narrow.png
 /images/working-with-ide/layer2-inspector-window.png
 /images/working-with-ide/layer2-inspector.png
+/images/working-with-ide/layers-document.png
+/images/working-with-ide/layers-probe.png
+/images/working-with-ide/layers-solo.png
 /images/working-with-ide/machine-paused.png
 /images/working-with-ide/machine-running.png
 /images/working-with-ide/mem-view.png

@@ -1,0 +1,122 @@
+---
+description: "The ZX Spectrum Next's video layers on the emulator screen: hide, solo and probe the ULA, tilemap, Layer 2 and sprites, see their priority order and clip windows, and find out which layer produced a pixel and why it won."
+---
+
+import { Callout } from 'nextra/components'
+
+# Video Layers
+
+A ZX Spectrum Next picture is four layers &mdash; the ULA (or LoRes), the tilemap, Layer 2 and the
+sprites &mdash; mixed by one of eight priority modes (NextReg `$15`), two of which blend Layer 2 with
+the ULA or the tilemap. On top of that come the Layer 2 palette priority bit, stencil mode, the tilemap
+above or below the ULA per tile, a global transparency colour (`$14`), a fallback colour (`$4A`) and four
+clip windows. When a pixel is wrong, the screen does not tell you which layer drew it.
+
+Klive can **hide** any layer, show one **alone**, mark the pixels no layer covers, draw the **clip
+windows**, and **probe** a pixel to tell you which layer produced it and which rule made it win.
+
+This is a debugging view only. It changes what the emulator shows, never what the machine does: the
+registers stay as the program set them, and sprite collision and "too many sprites" (port `$303B`) are
+computed exactly as before.
+
+It is available on the ZX Spectrum Next only.
+
+## The Layers Strip
+
+Turn on **View → Show Layers** (in the emulator window), or toggle a layer from the menu or the
+`layers` command, and a strip appears under the screen:
+
+![The Layers strip under the screen with Layer 2 soloed: Layer 2 alone over a checkerboard, and the pill that announces it](/images/working-with-ide/layers-solo.png)
+
+- The priority mode comes first (`SLU`, `LSU`, … or the blend mode), then one chip per layer **in that
+  order, top layer first**. The order follows `$15` live, including changes the Copper makes.
+- Click a chip to **hide** or show that layer. **S** shows the layer **alone** (solo) over a
+  checkerboard, so its transparent pixels are visible.
+- A layer the *program* has switched off has its name struck through &mdash; a different thing from
+  hiding it here.
+- The checkerboard button marks **transparency**: where no layer is opaque, the screen shows magenta
+  instead of the fallback colour (`$4A`). With a solo layer, it marks that layer's transparent pixels.
+- The dashed-square button draws the four **clip windows**, each in its layer's colour.
+- The crosshair button turns on the **pixel probe**.
+- **All** shows every layer again.
+- **×** closes the strip: it first returns to the composite picture &mdash; every layer shown, no
+  solo, no transparency marking, the clip windows and the probe off &mdash; then hides the strip.
+  **View → Show Layers** brings it back.
+
+While any layer is hidden or soloed, or transparency is marked, a pill on the screen says so &mdash;
+`Layers: sprites hidden` &mdash; so a forgotten toggle is never mistaken for a bug in your program.
+
+## Toggling While Paused
+
+When the machine is paused, a toggle redraws the paused picture at once. Klive records each layer and
+the mixer's registers for every part of the frame the beam drew with different settings, so the
+redrawn picture is exact even when the Copper or your code changed `$15`, `$4A` or a palette mid-frame
+&mdash; on both sides of the beam. This recording runs only while the strip, the probe or the Layers
+document is open.
+
+<Callout type="info">
+If you turn the strip on while paused, nothing has been recorded yet: the pill adds
+**approximate: exact from the next frame**, and the picture is redrawn from the registers as they are
+now. Run a frame (or step through one) and it is exact again.
+</Callout>
+
+## The Pixel Probe
+
+With the probe on, pause the machine and point at a pixel:
+
+![The pixel probe on a sprite below a Copper split: Layer 2 wins because the mode there is LSU](/images/working-with-ide/layers-probe.png)
+
+The probe shows:
+
+- the pixel's colour and **the rule that chose it**: the top opaque layer in this order, the Layer 2
+  priority bit, a sprite over the ULA border, stencil, a blend, or the fallback colour;
+- each layer's value at that pixel &mdash; its colour, *transparent* or *disabled* &mdash; with the
+  Layer 2 priority bit, the tile's "below the ULA" bit and the ULA border flag;
+- the priority mode, stencil and fallback colour **in force for that pixel**, which under a Copper
+  split differ from line to line;
+- whether the pixel was drawn this frame or is left from the last one (past the beam).
+
+When a layer is hidden, the probe also says what the machine itself shows there. Clicking the pixel
+opens the inspector that owns it: the [Sprite Inspector](/working-with-ide/sprite-inspector), the
+[Tilemap Inspector](/working-with-ide/tilemap-inspector) or the
+[Layer 2 Inspector](/working-with-ide/layer2-inspector).
+
+## The Layers Document
+
+**Machine → Layers → Show Layers Document**, or the `show-layers` command, opens a document with the
+static picture:
+
+![The Layers document: the priority stack, and a card per layer with its picture, state and clip window](/images/working-with-ide/layers-document.png)
+
+- **Priority, top first** &mdash; the stack `$15` selects, with the Layer 2 priority pixels, the
+  ULA/tilemap pair (and stencil), and for the blend modes what is blended with what.
+- **A card per layer** &mdash; its picture alone, whether the program has it on, its clip window, its
+  state in the debug view, and the reasons it might not be on the screen: switched off, an empty clip
+  window, every pixel transparent, hidden here, or another layer soloed. Click a picture, or **Solo**,
+  to show that layer alone on the emulator screen.
+- **Composite** &mdash; the machine's own picture, with no layer hidden.
+
+## The Menu And The Command
+
+**Machine → Layers** has a check item for each layer, a solo item for each, *Show Transparency*,
+*Show Clip Windows*, *Pixel Probe* and *Show All Layers*. The `layers` command does the same from the
+IDE:
+
+```
+layers                    ; list the layers
+layers spr off            ; hide the sprites
+layers l2 solo            ; Layer 2 alone
+layers tm                 ; toggle the tilemap
+layers transparency on    ; mark where no layer is opaque
+layers all on             ; show every layer
+```
+
+The strip, the menu and the command change the same setting, so they always agree. It lasts until you
+close Klive; it survives a machine reset, and it is never saved in a machine state file.
+
+<Callout type="info">
+Hiding a layer makes its pixels transparent; it does not switch the layer off. The difference shows in
+two places. In **stencil** mode (`$68` bit 0) the ULA shows only where the tilemap is opaque, so hiding
+the tilemap hides the ULA too, while switching the tilemap off ends stencil mode. And a hidden tile
+keeps its "below the ULA" bit, which still decides where the ULA goes in the blend modes.
+</Callout>

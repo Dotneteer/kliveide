@@ -678,6 +678,21 @@ export const componentAliases: Record<string, string> = {
   "--color-layer2-role-displayed": "var(--accent-text)",
   "--color-layer2-role-shadow": "var(--accent-secondary-text)",
 
+  // --- Next layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` §4.5) ----------------------------
+  /*
+   * Four layers, four identities: the strip's chips, the clip-window outlines on the screen and the
+   * Layers document's thumbnail frames all colour a layer the same way. The four status hues are the
+   * only four well-separated hues that hold in both tones and under all six accents; here they name
+   * a layer, never a status, and always sit beside the layer's name. The pill that announces a hidden
+   * layer (D3) is the warning hue: that one *is* a status.
+   */
+  "--color-layers-ula": "var(--status-info)",
+  "--color-layers-tm": "var(--status-success)",
+  "--color-layers-l2": "var(--status-warning)",
+  "--color-layers-spr": "var(--status-error)",
+  "--color-layers-pill": "var(--status-warning)",
+  "--color-layers-chip-off": "var(--text-disabled)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 

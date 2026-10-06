@@ -29,7 +29,7 @@ are estimates for prioritising, not commitments.
 |---|---|---|---|
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
-| G3 | Live Next hardware inspectors | **M** (layers: L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) · ✅ G3.5, the Layer 2 Inspector, done (2026-10-06) |
+| G3 | Live Next hardware inspectors | **M** (layers: M–L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) · ✅ G3.5, the Layer 2 Inspector, done (2026-10-06) · ✅ G3.6, layer composition (hide, solo, probe, the Layers document), done (2026-10-06) |
 | G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
@@ -141,12 +141,13 @@ be reused.
 G3.2 and G3.3, as one Sprite Inspector document, in [SPRITE_INSPECTOR_PLAN.md](SPRITE_INSPECTOR_PLAN.md) (done);
 G3.4 in [TILEMAP_INSPECTOR_PLAN.md](TILEMAP_INSPECTOR_PLAN.md) (done); G3.5 in
 [LAYER2_INSPECTOR_PLAN.md](LAYER2_INSPECTOR_PLAN.md) (done); G3.6 in
-[LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md); G3.7 in
-[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (those three drafts, questions open).
+[LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md) (done); G3.7 in
+[BEAM_POSITION_OVERLAY_PLAN.md](BEAM_POSITION_OVERLAY_PLAN.md) (a draft, questions open).
 Research for those four corrected two assumptions in the table below: the `.sl2`/`.shr` viewers G3.5
 was to reuse are stubs (the Layer 2 plan builds the decoder and replaces the `.sl2`/`.nxi` stubs),
 and G3.6 is nearer **M–L** than L, because the core already renders each layer into its own buffer
-and mixes them in one function. G3.7 should land before G3.6, which reuses its screen overlay.
+and mixes them in one function. G3.6 landed first after all: it brought its own screen overlay
+(`NextLayersScreenOverlay`) and the paused preview buffer (`zxnextLayerPreview`), which G3.7 can reuse.
 
 | Feature | What it does | Size |
 |---|---|---|
@@ -155,7 +156,7 @@ and mixes them in one function. G3.7 should land before G3.6, which reuses its s
 | G3.3 Pattern memory viewer ✅ **done** | All 16K of sprite pattern RAM as 8-bit or 4-bit images with the active palette. | S (reuses the sprite drawing) |
 | G3.4 Tilemap / tile definition viewer ✅ **done** | The live tilemap with tile indices and attributes, plus the tile definitions. | M |
 | G3.5 Layer 2 live viewer ✅ **done** | Current Layer 2 banks as an image at its resolution (256×192 / 320×256 / 640×256), with scroll and clip shown. Delivered as the Layer 2 Inspector: the displayed, shadow and `$123B`-window banks, whole or as displayed. | S–M (there were no viewers to reuse: `.sl2` was a stub and `.shr` is a Timex mode; the Layer 2 decoder was built once and also replaced the `.sl2`/`.nxi` stubs) |
-| G3.6 Layer composition view | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. | L (the C renderer must compose selectively) |
+| G3.6 Layer composition view ✅ **done** | Toggle individual layers (ULA, Layer 2, sprites, tilemap) on and off in the emulator screen; show the priority order, clip windows and transparency. Delivered as a debug mask in the core's mixer (the program is unaffected), a Layers strip with hide/solo/transparency/clips, an exact paused recompose from a per-span capture, a pixel probe that names the rule a pixel won by, and a `$layers` document. | M–L (the core already rendered each layer into its own buffer and mixed them in one function; the mask, the capture and the probe all live there) |
 | G3.7 Beam-position overlay | Show the raster position on the paused screen; useful with Copper and with the ULA panel's beam phase. | S–M |
 | G3.8 Copper / sprite breakpoints (Copper half ✅ **done**) | Stop when the Copper reaches an instruction (`cu:<index>`, Step Copper), or when a sprite attribute is written (not yet). | M, after G1 |
 | G3.9 `.copper` assembler pragma ✅ **done** | `.copper wait/move/nop/halt/word` in the Klive Z80 Assembler, with highlighting, completion and hover; the Copper List maps the live list back to these source lines and a margin click on one sets a Copper breakpoint. | S |
@@ -336,7 +337,7 @@ and WPMEM comments.
 - **G4.4 full reverse debugging.** Start with a design spike on cheap state capture and
   deterministic replay across all cores. (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
-- G3.6 layer composition.
+- ~~G3.6 layer composition~~ (done).
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.
 - ~~G9.3 ZX80/81~~ (done).
 - ~~G9.2 +2A/+3 with the Amstrad ROMs~~ (done).

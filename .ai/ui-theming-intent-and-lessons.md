@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector and the Layer 2 Inspector (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector and the Layers document (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -629,6 +629,11 @@ own content size into that track**, and the damage shows up somewhere else entir
 - **A fitted canvas needs integer cell sizes.** Same lesson `NextPaletteViewer` learned with `1fr`
   columns: fractional cells put every edge and hairline off the device pixel grid and the mosaic
   goes faintly soft at *every* size. Floor the division, clamp it, and re-measure on resize.
+- **A list laid out as a grid through `display: contents` rows must render every cell of every row.**
+  Auto-placement fills cells in order, so a row that omits an optional cell (a note) pulls the next
+  row's first cell up into its place and every row after it shifts by one; the Layers document's
+  priority stack wrapped its notes into a one-word-wide column that way. Render the empty cell
+  (`{note ?? ""}`), never `{note && …}`.
 
 ## An Indicator's State Is Told, Never Inferred From A Prop's Type
 
@@ -843,6 +848,36 @@ colours read (priority highlighting) **dims the others** through `IndexedImageCa
 rather than tinting the pixels it is about, so the highlighted pixels keep their real colour. A pixel
 layer half as wide as tall (640×256) doubles its **height** (`zoomY`), never halves its width: halving
 drops every other column at zoom 1.
+
+The Next **layer views** (`--color-layers-*`: the Layers strip under the emulator screen, the clip
+outlines and probe over it, the `$layers` document) give each of the four video layers an
+**identity hue**: ULA `--status-info`, tilemap `--status-success`, Layer 2 `--status-warning`, sprites
+`--status-error`. It is the one place the status hues name things rather than states, which is
+tolerable only because the colour is never alone: always a dot or frame **beside the layer's name**
+(the strip's chip, the document's card and picture frame) or a dashed outline whose `<title>` names
+it. Four layers need four well-separated hues that hold in both tones and under all six accents; the
+accents cannot supply four, and the status hues can. Three further rules:
+
+- **A state the user must not forget is announced on the screen and cannot be dismissed.** A hidden
+  or soloed layer gets a pill in the overlay stack (`LayerDebugOverlay`), in the warning hue, which a
+  click does not hide - unlike the execution pill. A forgotten toggle must never look like a bug in
+  the user's program.
+- **A strip that can close itself restores the picture first.** The Layers strip's close button
+  (`closeLayerView`) shows every layer and turns its overlays off before hiding: a strip gone while a
+  layer stayed hidden would leave only the pill to undo it. It sits last, apart from the controls.
+- **Two kinds of "off" get two marks.** A layer the *debug view* hides dims its chip and crosses its
+  eye; a layer the *program* has switched off strikes its name through. The strip is a device
+  surface (`--bgcolor-display`), like the Spectrum media strip.
+- **Chrome over the emulator screen is an SVG in the picture's own pixels**: `viewBox` = the machine's
+  buffer size, `preserveAspectRatio="none"`, `vector-effect: non-scaling-stroke`, so it follows every
+  zoom and stays one screen pixel wide. The solo checkerboard is *not* chrome: the core paints it into
+  the picture (two greys, 16×8 buffer pixels, square on screen), because it stands in for transparent
+  machine pixels. The document's per-layer pictures use the shared CSS checker behind alpha 0.
+- **A small picture of the Next screen keeps the screen's shape.** Its buffer pixels are half as wide
+  as they are tall (0.5:1), so a reduced copy drops every other *column* and keeps every row
+  (360×288, shown with `aspect-ratio: 360 / 288`). Dropping both halved the height and squashed the
+  Layers document's pictures to 2.5:1. Same rule as the Layer 2 Inspector's 640×256: never scale the
+  two axes of a non-square pixel by the same factor.
 
 ## A Read-Only View Of An Editor Hides Its Tools, And Says So In One Line
 

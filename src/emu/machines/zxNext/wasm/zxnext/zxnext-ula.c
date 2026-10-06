@@ -1036,25 +1036,331 @@ static inline void zxnextEnsureRgbaTable(void) {
   zxnextRgbaTableReady = 1u;
 }
 
+/*
+ * The mixer's inputs that do not change per pixel (zxnext.vhd stage 2), read from the state once per
+ * compose call. Packed into one word (zxnextMixParamsPack) for the layer capture's span table.
+ */
+typedef struct {
+  uint32_t fallbackRgb;    /* $4A as 9-bit RGB */
+  uint32_t priorities;     /* $15 bits 4-2 */
+  uint32_t ulaEn;          /* not $68 bit 7 */
+  uint32_t tmEn;           /* $6B bit 7 */
+  uint32_t l2En;
+  uint32_t sprEn;          /* $15 bit 0 */
+  uint32_t stencil;        /* $68 bit 0, with the ULA and the tilemap both enabled */
+  uint32_t blendMode;      /* $68 bits 6-5 */
+  uint32_t tmBelowWhenOff; /* not $6B bit 0: where a disabled tilemap's "below" comes from */
+} ZxnextMixParams;
+
+static inline void zxnextMixParamsCurrent(ZxnextMixParams* p) {
+  uint32_t fb = zxnextNextRegs[0x4au];
+  p->fallbackRgb = ((fb << 1u) | ((fb & 0x03u) != 0u ? 1u : 0u)) & 0x1ffu;
+  p->priorities = (zxnextNextRegs[0x15u] >> 2u) & 0x07u;
+  p->ulaEn = !ulaDisableOutput;
+  p->tmEn = zxnextTilemapGetEnabled() ? 1u : 0u;
+  p->l2En = zxnextLayer2GetEnabled() ? 1u : 0u;
+  p->sprEn = zxnextSpritesGetEnabled() ? 1u : 0u;
+  p->stencil = (ulaEnableStencilMode && p->ulaEn && p->tmEn) ? 1u : 0u;
+  p->blendMode = ulaBlendingInSluModes & 0x03u;
+  p->tmBelowWhenOff = (zxnextNextRegs[0x6bu] & 0x01u) == 0u;
+}
+
+/* Bits 0-8 fallback, 9-11 priorities, 12 ULA, 13 tilemap, 14 Layer 2, 15 sprites, 16 stencil,
+   17-18 blend mode, 19 tilemap-below-when-off (the probe reports this word to the IDE) */
+static inline uint32_t zxnextMixParamsPack(const ZxnextMixParams* p) {
+  return (p->fallbackRgb & 0x1ffu) | ((p->priorities & 7u) << 9u) | (p->ulaEn << 12u) | (p->tmEn << 13u) |
+    (p->l2En << 14u) | (p->sprEn << 15u) | (p->stencil << 16u) | ((p->blendMode & 3u) << 17u) |
+    (p->tmBelowWhenOff << 19u);
+}
+
+static inline void zxnextMixParamsUnpack(uint32_t v, ZxnextMixParams* p) {
+  p->fallbackRgb = v & 0x1ffu;
+  p->priorities = (v >> 9u) & 7u;
+  p->ulaEn = (v >> 12u) & 1u;
+  p->tmEn = (v >> 13u) & 1u;
+  p->l2En = (v >> 14u) & 1u;
+  p->sprEn = (v >> 15u) & 1u;
+  p->stencil = (v >> 16u) & 1u;
+  p->blendMode = (v >> 17u) & 3u;
+  p->tmBelowWhenOff = (v >> 19u) & 1u;
+}
+
+/*
+ * Why a pixel shows what it shows (`.plans/LAYER_COMPOSITION_PLAN.md` D7, T5). Computed by
+ * zxnextComposePixel itself, so the explanation can never drift from the mixer (D10). Mirrored by
+ * `src/common/zxnext/layers/layerMix.ts`.
+ */
+#define ZXNEXT_WHY_FALLBACK 0u    /* no layer opaque: $4A */
+#define ZXNEXT_WHY_ULA 1u         /* the ULA (or LoRes), through the ULA/tilemap combination */
+#define ZXNEXT_WHY_TM 2u          /* the tilemap, through the ULA/tilemap combination */
+#define ZXNEXT_WHY_L2 3u          /* Layer 2 by the $15 order */
+#define ZXNEXT_WHY_L2_PRIORITY 4u /* Layer 2 by its palette priority bit */
+#define ZXNEXT_WHY_SPR 5u         /* sprites by the $15 order */
+#define ZXNEXT_WHY_BORDER 6u      /* sprites over an opaque ULA border pixel (LUS/USL/ULS exception) */
+#define ZXNEXT_WHY_STENCIL 7u     /* ULA AND tilemap ($68 bit 0) */
+#define ZXNEXT_WHY_BLEND_ADD 8u   /* Layer 2 + the blend source, saturated ($15 110) */
+#define ZXNEXT_WHY_BLEND_SUB 9u   /* Layer 2 + the blend source - 5 ($15 111) */
+
+/*
+ * One pixel of zxnext.vhd stage 2: the four layer values (ZXNEXT_PX_* encoding) to a 9-bit colour in
+ * bits 0-8, and the rule that chose it (ZXNEXT_WHY_*) in bits 12-15. The live mixer, the paused
+ * recompose and the probe all call this (D10). The "why" travels in the result, never through a
+ * pointer: an address-taken local lives on the shadow stack, which is in the state image (T8).
+ * `withWhy` is a constant at every call: the live mixer passes 0, and the rule bookkeeping folds away.
+ */
+#define ZXNEXT_MIX_WHY_SHIFT 12u
+#define ZXNEXT_MIX_WHY(v) (((v) >> ZXNEXT_MIX_WHY_SHIFT) & 0x0fu)
+static inline __attribute__((always_inline)) uint32_t zxnextComposePixel(const ZxnextMixParams* p, uint32_t u, uint32_t t,
+  uint32_t l, uint32_t sp, const uint32_t withWhy) {
+  // --- ula_mix_*: the ULA as blended ($68 bit 7 does not apply); ula_*: as layered
+  uint32_t ulaMixT = (u & ZXNEXT_PX_OPAQUE) == 0u;
+  uint32_t ulaMixRgb = ulaMixT ? 0u : (u & ZXNEXT_PX_RGB);
+  uint32_t ulaT = ulaMixT || !p->ulaEn;
+  uint32_t ulaRgb = ulaT ? 0u : ulaMixRgb;
+  uint32_t border = !ulaT && (u & ZXNEXT_PX_BORDER) != 0u;
+
+  uint32_t tmT = !p->tmEn || (t & ZXNEXT_PX_OPAQUE) == 0u;
+  uint32_t tmRgb = tmT ? 0u : (t & ZXNEXT_PX_RGB);
+  uint32_t tmBelow = p->tmEn ? ((t & ZXNEXT_PX_TM_BELOW) != 0u) : p->tmBelowWhenOff;
+
+  // --- ula_final_*: stencil_* or ulatm_*
+  uint32_t finalT;
+  uint32_t finalRgb;
+  uint32_t finalWhy;
+  if (p->stencil) {
+    finalT = ulaT || tmT;
+    finalRgb = finalT ? 0u : (ulaRgb & tmRgb);
+    finalWhy = ZXNEXT_WHY_STENCIL;
+  } else {
+    finalT = ulaT && tmT;
+    uint32_t tmShows = !tmT && (!tmBelow || ulaT);
+    finalRgb = tmShows ? tmRgb : ulaRgb;
+    finalWhy = tmShows ? ZXNEXT_WHY_TM : ZXNEXT_WHY_ULA;
+  }
+
+  uint32_t sprT = !p->sprEn || (sp & ZXNEXT_PX_OPAQUE) == 0u;
+  uint32_t sprRgb = sprT ? 0u : (sp & ZXNEXT_PX_RGB);
+  uint32_t l2T = !p->l2En || (l & ZXNEXT_PX_OPAQUE) == 0u;
+  uint32_t l2Rgb = l2T ? 0u : (l & ZXNEXT_PX_RGB);
+  uint32_t l2Priority = !l2T && (l & ZXNEXT_PX_L2_PRIORITY) != 0u;
+
+  uint32_t out = p->fallbackRgb;
+  uint32_t w = ZXNEXT_WHY_FALLBACK;
+  // --- The border exception in LUS/USL/ULS: a sprite shows over an opaque ULA border pixel when the
+  // --- tilemap is transparent there.
+  uint32_t ulaWins = !finalT && !(border && tmT && !sprT);
+  // --- A sprite that wins in LUS/USL/ULS where the ULA/tilemap pixel was opaque won by that exception
+  uint32_t sprUlaWhy = finalT ? ZXNEXT_WHY_SPR : ZXNEXT_WHY_BORDER;
+
+  switch (p->priorities) {
+    case 0u: // SLU
+      if (l2Priority) { out = l2Rgb; w = ZXNEXT_WHY_L2_PRIORITY; }
+      else if (!sprT) { out = sprRgb; w = ZXNEXT_WHY_SPR; }
+      else if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      else if (!finalT) { out = finalRgb; w = finalWhy; }
+      break;
+    case 1u: // LSU
+      if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      else if (!sprT) { out = sprRgb; w = ZXNEXT_WHY_SPR; }
+      else if (!finalT) { out = finalRgb; w = finalWhy; }
+      break;
+    case 2u: // SUL
+      if (l2Priority) { out = l2Rgb; w = ZXNEXT_WHY_L2_PRIORITY; }
+      else if (!sprT) { out = sprRgb; w = ZXNEXT_WHY_SPR; }
+      else if (!finalT) { out = finalRgb; w = finalWhy; }
+      else if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      break;
+    case 3u: // LUS
+      if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      else if (ulaWins) { out = finalRgb; w = finalWhy; }
+      else if (!sprT) { out = sprRgb; w = sprUlaWhy; }
+      break;
+    case 4u: // USL
+      if (l2Priority) { out = l2Rgb; w = ZXNEXT_WHY_L2_PRIORITY; }
+      else if (ulaWins) { out = finalRgb; w = finalWhy; }
+      else if (!sprT) { out = sprRgb; w = sprUlaWhy; }
+      else if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      break;
+    case 5u: // ULS
+      if (l2Priority) { out = l2Rgb; w = ZXNEXT_WHY_L2_PRIORITY; }
+      else if (ulaWins) { out = finalRgb; w = finalWhy; }
+      else if (!l2T) { out = l2Rgb; w = ZXNEXT_WHY_L2; }
+      else if (!sprT) { out = sprRgb; w = sprUlaWhy; }
+      break;
+    default: { // 110 / 111: blend
+      // --- mix_* by $68 bits 6-5 (zxnext.vhd `case ula_blend_mode_2`)
+      uint32_t mixRgb;
+      uint32_t mixT;
+      uint32_t topT, topRgb, botT, botRgb, topWhy, botWhy;
+      switch (p->blendMode) {
+        case 0u:
+          mixRgb = ulaMixRgb; mixT = ulaMixT;
+          topT = tmT || tmBelow; topRgb = tmRgb;
+          botT = tmT || !tmBelow; botRgb = tmRgb;
+          topWhy = ZXNEXT_WHY_TM; botWhy = ZXNEXT_WHY_TM;
+          break;
+        case 2u:
+          mixRgb = finalRgb; mixT = finalT;
+          topT = 1u; topRgb = tmRgb; botT = 1u; botRgb = tmRgb;
+          topWhy = ZXNEXT_WHY_TM; botWhy = ZXNEXT_WHY_TM;
+          break;
+        case 3u:
+          mixRgb = tmRgb; mixT = tmT;
+          topT = ulaT || !tmBelow; topRgb = ulaRgb;
+          botT = ulaT || tmBelow; botRgb = ulaRgb;
+          topWhy = ZXNEXT_WHY_ULA; botWhy = ZXNEXT_WHY_ULA;
+          break;
+        default:
+          mixRgb = 0u; mixT = 1u;
+          if (tmBelow) {
+            topT = ulaT; topRgb = ulaRgb; botT = tmT; botRgb = tmRgb;
+            topWhy = ZXNEXT_WHY_ULA; botWhy = ZXNEXT_WHY_TM;
+          } else {
+            topT = tmT; topRgb = tmRgb; botT = ulaT; botRgb = ulaRgb;
+            topWhy = ZXNEXT_WHY_TM; botWhy = ZXNEXT_WHY_ULA;
+          }
+          break;
+      }
+      uint32_t r = ((l2Rgb >> 6u) & 7u) + ((mixRgb >> 6u) & 7u);
+      uint32_t g = ((l2Rgb >> 3u) & 7u) + ((mixRgb >> 3u) & 7u);
+      uint32_t bl = (l2Rgb & 7u) + (mixRgb & 7u);
+      if (p->priorities == 6u) {
+        if (r > 7u) r = 7u;
+        if (g > 7u) g = 7u;
+        if (bl > 7u) bl = 7u;
+      } else if (!mixT) {
+        r = r <= 4u ? 0u : (r >= 12u ? 7u : r - 5u);
+        g = g <= 4u ? 0u : (g >= 12u ? 7u : g - 5u);
+        bl = bl <= 4u ? 0u : (bl >= 12u ? 7u : bl - 5u);
+      }
+      uint32_t mixed = ((r & 7u) << 6u) | ((g & 7u) << 3u) | (bl & 7u);
+      uint32_t blendWhy = p->priorities == 6u ? ZXNEXT_WHY_BLEND_ADD : ZXNEXT_WHY_BLEND_SUB;
+      if (l2Priority) { out = mixed; w = blendWhy; }
+      else if (!topT) { out = topRgb; w = topWhy; }
+      else if (!sprT) { out = sprRgb; w = ZXNEXT_WHY_SPR; }
+      else if (!botT) { out = botRgb; w = botWhy; }
+      else if (!l2T) { out = mixed; w = blendWhy; }
+      break;
+    }
+  }
+  return withWhy ? ((out & ZXNEXT_PX_RGB) | (w << ZXNEXT_MIX_WHY_SHIFT)) : (out & ZXNEXT_PX_RGB);
+}
+
+// ---------------------------------------------------------------------------
+// Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`)
+//
+// The IDE can hide layers, show one alone (solo) and mark the pixels no layer covers. This is applied
+// only here, in the mixer (D1): the renderers still run, so sprite collision and "too many sprites"
+// ($303B) never change (T1). It is debugging state, not machine state: these statics are volatile
+// (ZXNEXT_VOLATILE_SYMBOLS), so a state file neither saves nor restores them (D2, T8).
+// ---------------------------------------------------------------------------
+
+#define ZXNEXT_LAYER_BIT_ULA 0x01u
+#define ZXNEXT_LAYER_BIT_TM 0x02u
+#define ZXNEXT_LAYER_BIT_L2 0x04u
+#define ZXNEXT_LAYER_BIT_SPR 0x08u
+#define ZXNEXT_LAYER_BITS 0x0fu
+#define ZXNEXT_LAYER_DEBUG_SHOW_TRANSPARENT 0x01u
+/* What "show transparency" paints where no layer is opaque: magenta, which no fallback default uses */
+#define ZXNEXT_LAYER_DEBUG_FLAG_RGB 0x1c7u
+/* Solo's checker under a layer's transparent pixels: two greys, 16 x 8 buffer pixels (square on screen) */
+#define ZXNEXT_LAYER_DEBUG_CHECKER_A 0x092u
+#define ZXNEXT_LAYER_DEBUG_CHECKER_B 0x0dbu
+
+/* The layers the mixer treats as transparent (ZXNEXT_LAYER_BIT_*) */
+static uint8_t zxnextLayerDebugMask;
+/* 0, or the one layer shown alone */
+static uint8_t zxnextLayerDebugSolo;
+/* ZXNEXT_LAYER_DEBUG_SHOW_TRANSPARENT */
+static uint8_t zxnextLayerDebugFlags;
+
+/*
+ * Hides the masked layers' pixels. A hidden tilemap pixel keeps its "below" bit (T4): hiding makes its
+ * pixels transparent, it does not disable the tilemap, so the ULA's place above or below it - and
+ * stencil mode - stay as the program set them.
+ */
+static inline uint32_t zxnextLayerDebugMasked(uint32_t mask, uint32_t layerBit, uint32_t v) {
+  if (!(mask & layerBit)) return v;
+  return layerBit == ZXNEXT_LAYER_BIT_TM ? (v & ZXNEXT_PX_TM_BELOW) : 0u;
+}
+
+/*
+ * The value a solo layer shows: the layer as the renderer drew it. A disabled tilemap, Layer 2 or
+ * sprite layer shows nothing (its buffer is not re-rendered while disabled, so it is stale); the ULA
+ * is always rendered and shows even with $68 bit 7 set, because the blend modes still read it.
+ */
+static inline uint32_t zxnextLayerDebugSoloValue(const ZxnextMixParams* p, uint32_t solo, uint32_t u, uint32_t t,
+  uint32_t l, uint32_t sp) {
+  switch (solo) {
+    case ZXNEXT_LAYER_BIT_ULA: return u;
+    case ZXNEXT_LAYER_BIT_TM: return p->tmEn ? t : 0u;
+    case ZXNEXT_LAYER_BIT_L2: return p->l2En ? l : 0u;
+    default: return p->sprEn ? sp : 0u;
+  }
+}
+
+/*
+ * Composes buffer pixels [first, end) of the given layer buffers into target, with the debug mask,
+ * solo and flags in force. Without any of them it is exactly the plain mixer loop.
+ */
+static void zxnextComposeRange(const ZxnextMixParams* p, uint32_t first, uint32_t end, uint32_t* target,
+  const uint16_t* ula, const uint16_t* tm, const uint16_t* l2, const uint16_t* spr) {
+  uint32_t mask = zxnextLayerDebugMask & ZXNEXT_LAYER_BITS;
+  uint32_t solo = zxnextLayerDebugSolo & ZXNEXT_LAYER_BITS;
+  uint32_t showT = (zxnextLayerDebugFlags & ZXNEXT_LAYER_DEBUG_SHOW_TRANSPARENT) != 0u;
+  if (!mask && !solo && !showT) {
+    for (uint32_t i = first; i < end; i++) {
+      target[i] = zxnextRgbaTable[zxnextComposePixel(p, ula[i], tm[i], l2[i], spr[i], 0u)];
+    }
+    return;
+  }
+  uint32_t flag = zxnextRgbaTable[ZXNEXT_LAYER_DEBUG_FLAG_RGB];
+  if (solo) {
+    uint32_t checkerA = zxnextRgbaTable[ZXNEXT_LAYER_DEBUG_CHECKER_A];
+    uint32_t checkerB = zxnextRgbaTable[ZXNEXT_LAYER_DEBUG_CHECKER_B];
+    for (uint32_t i = first; i < end; i++) {
+      uint32_t v = zxnextLayerDebugSoloValue(p, solo, ula[i], tm[i], l2[i], spr[i]);
+      if (v & ZXNEXT_PX_OPAQUE) {
+        target[i] = zxnextRgbaTable[v & ZXNEXT_PX_RGB];
+      } else if (showT) {
+        target[i] = flag;
+      } else {
+        uint32_t x = i % ZXNEXT_SCREEN_WIDTH;
+        uint32_t y = i / ZXNEXT_SCREEN_WIDTH;
+        target[i] = (((x >> 4u) ^ (y >> 3u)) & 1u) ? checkerB : checkerA;
+      }
+    }
+    return;
+  }
+  for (uint32_t i = first; i < end; i++) {
+    uint32_t out = zxnextComposePixel(p, zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_ULA, ula[i]),
+      zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_TM, tm[i]), zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_L2, l2[i]),
+      zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_SPR, spr[i]), 1u);
+    target[i] = (showT && ZXNEXT_MIX_WHY(out) == ZXNEXT_WHY_FALLBACK) ? flag : zxnextRgbaTable[out & ZXNEXT_PX_RGB];
+  }
+}
+
+static inline uint32_t zxnextLayerDebugActive(void) {
+  return (zxnextLayerDebugMask & ZXNEXT_LAYER_BITS) || (zxnextLayerDebugSolo & ZXNEXT_LAYER_BITS) ||
+    (zxnextLayerDebugFlags & ZXNEXT_LAYER_DEBUG_SHOW_TRANSPARENT);
+}
+
+/* The mixer inputs of the most recent compose: the raster's capture records them per span. */
+static ZxnextMixParams zxnextLastMixParams;
+
 static void zxnextUlaCompose(void) {
   uint32_t first = zxnextRenderRowFirst * ZXNEXT_SCREEN_WIDTH;
   uint32_t end = (zxnextRenderRowLast + 1u) * ZXNEXT_SCREEN_WIDTH;
-  uint32_t fb = zxnextNextRegs[0x4au];
-  uint32_t fallbackRgb = ((fb << 1u) | ((fb & 0x03u) != 0u ? 1u : 0u)) & 0x1ffu;
-  uint32_t priorities = (zxnextNextRegs[0x15u] >> 2u) & 0x07u;
-  uint32_t ulaEn = !ulaDisableOutput;
-  uint32_t tmEn = zxnextTilemapGetEnabled();
-  uint32_t l2En = zxnextLayer2GetEnabled();
-  uint32_t sprEn = zxnextSpritesGetEnabled();
-  uint32_t stencil = ulaEnableStencilMode && ulaEn && tmEn;
-  uint32_t blendMode = ulaBlendingInSluModes & 0x03u;
-  uint32_t tmBelowWhenOff = (zxnextNextRegs[0x6bu] & 0x01u) == 0u;
+  ZxnextMixParams p;
+  zxnextMixParamsCurrent(&p);
+  zxnextLastMixParams = p;
   zxnextEnsureRgbaTable();
 
-  // --- Fast path: only the ULA can be opaque and no blend mode - the common case.
-  if (!tmEn && !l2En && !sprEn && priorities < 6u) {
-    uint32_t fallbackPixel = zxnextRgbaTable[fallbackRgb];
-    if (!ulaEn) {
+  // --- Fast path: only the ULA can be opaque and no blend mode - the common case. Not with the layer
+  // --- debug view on: hiding the ULA, solo and "show transparency" all need the general loop (T9).
+  if (!p.tmEn && !p.l2En && !p.sprEn && p.priorities < 6u && !zxnextLayerDebugActive()) {
+    uint32_t fallbackPixel = zxnextRgbaTable[p.fallbackRgb];
+    if (!p.ulaEn) {
       for (uint32_t i = first; i < end; i++) zxnextRenderTarget[i] = fallbackPixel;
       return;
     }
@@ -1065,129 +1371,7 @@ static void zxnextUlaCompose(void) {
     return;
   }
 
-  for (uint32_t i = first; i < end; i++) {
-    uint32_t u = zxnextLayerUla[i];
-    uint32_t t = zxnextLayerTm[i];
-    uint32_t l = zxnextLayerL2[i];
-    uint32_t sp = zxnextLayerSpr[i];
-
-    // --- ula_mix_*: the ULA as blended ($68 bit 7 does not apply); ula_*: as layered
-    uint32_t ulaMixT = (u & ZXNEXT_PX_OPAQUE) == 0u;
-    uint32_t ulaMixRgb = ulaMixT ? 0u : (u & ZXNEXT_PX_RGB);
-    uint32_t ulaT = ulaMixT || !ulaEn;
-    uint32_t ulaRgb = ulaT ? 0u : ulaMixRgb;
-    uint32_t border = !ulaT && (u & ZXNEXT_PX_BORDER) != 0u;
-
-    uint32_t tmT = !tmEn || (t & ZXNEXT_PX_OPAQUE) == 0u;
-    uint32_t tmRgb = tmT ? 0u : (t & ZXNEXT_PX_RGB);
-    uint32_t tmBelow = tmEn ? ((t & ZXNEXT_PX_TM_BELOW) != 0u) : tmBelowWhenOff;
-
-    // --- ula_final_*: stencil_* or ulatm_*
-    uint32_t finalT;
-    uint32_t finalRgb;
-    if (stencil) {
-      finalT = ulaT || tmT;
-      finalRgb = finalT ? 0u : (ulaRgb & tmRgb);
-    } else {
-      finalT = ulaT && tmT;
-      finalRgb = (!tmT && (!tmBelow || ulaT)) ? tmRgb : ulaRgb;
-    }
-
-    uint32_t sprT = !sprEn || (sp & ZXNEXT_PX_OPAQUE) == 0u;
-    uint32_t sprRgb = sprT ? 0u : (sp & ZXNEXT_PX_RGB);
-    uint32_t l2T = !l2En || (l & ZXNEXT_PX_OPAQUE) == 0u;
-    uint32_t l2Rgb = l2T ? 0u : (l & ZXNEXT_PX_RGB);
-    uint32_t l2Priority = !l2T && (l & ZXNEXT_PX_L2_PRIORITY) != 0u;
-
-    uint32_t out = fallbackRgb;
-    // --- The border exception in LUS/USL/ULS: a sprite shows over an opaque ULA border pixel when the
-    // --- tilemap is transparent there.
-    uint32_t ulaWins = !finalT && !(border && tmT && !sprT);
-
-    switch (priorities) {
-      case 0u: // SLU
-        if (l2Priority) out = l2Rgb;
-        else if (!sprT) out = sprRgb;
-        else if (!l2T) out = l2Rgb;
-        else if (!finalT) out = finalRgb;
-        break;
-      case 1u: // LSU
-        if (!l2T) out = l2Rgb;
-        else if (!sprT) out = sprRgb;
-        else if (!finalT) out = finalRgb;
-        break;
-      case 2u: // SUL
-        if (l2Priority) out = l2Rgb;
-        else if (!sprT) out = sprRgb;
-        else if (!finalT) out = finalRgb;
-        else if (!l2T) out = l2Rgb;
-        break;
-      case 3u: // LUS
-        if (!l2T) out = l2Rgb;
-        else if (ulaWins) out = finalRgb;
-        else if (!sprT) out = sprRgb;
-        break;
-      case 4u: // USL
-        if (l2Priority) out = l2Rgb;
-        else if (ulaWins) out = finalRgb;
-        else if (!sprT) out = sprRgb;
-        else if (!l2T) out = l2Rgb;
-        break;
-      case 5u: // ULS
-        if (l2Priority) out = l2Rgb;
-        else if (ulaWins) out = finalRgb;
-        else if (!l2T) out = l2Rgb;
-        else if (!sprT) out = sprRgb;
-        break;
-      default: { // 110 / 111: blend
-        // --- mix_* by $68 bits 6-5 (zxnext.vhd `case ula_blend_mode_2`)
-        uint32_t mixRgb;
-        uint32_t mixT;
-        uint32_t topT, topRgb, botT, botRgb;
-        switch (blendMode) {
-          case 0u:
-            mixRgb = ulaMixRgb; mixT = ulaMixT;
-            topT = tmT || tmBelow; topRgb = tmRgb;
-            botT = tmT || !tmBelow; botRgb = tmRgb;
-            break;
-          case 2u:
-            mixRgb = finalRgb; mixT = finalT;
-            topT = 1u; topRgb = tmRgb; botT = 1u; botRgb = tmRgb;
-            break;
-          case 3u:
-            mixRgb = tmRgb; mixT = tmT;
-            topT = ulaT || !tmBelow; topRgb = ulaRgb;
-            botT = ulaT || tmBelow; botRgb = ulaRgb;
-            break;
-          default:
-            mixRgb = 0u; mixT = 1u;
-            if (tmBelow) { topT = ulaT; topRgb = ulaRgb; botT = tmT; botRgb = tmRgb; }
-            else { topT = tmT; topRgb = tmRgb; botT = ulaT; botRgb = ulaRgb; }
-            break;
-        }
-        uint32_t r = ((l2Rgb >> 6u) & 7u) + ((mixRgb >> 6u) & 7u);
-        uint32_t g = ((l2Rgb >> 3u) & 7u) + ((mixRgb >> 3u) & 7u);
-        uint32_t bl = (l2Rgb & 7u) + (mixRgb & 7u);
-        if (priorities == 6u) {
-          if (r > 7u) r = 7u;
-          if (g > 7u) g = 7u;
-          if (bl > 7u) bl = 7u;
-        } else if (!mixT) {
-          r = r <= 4u ? 0u : (r >= 12u ? 7u : r - 5u);
-          g = g <= 4u ? 0u : (g >= 12u ? 7u : g - 5u);
-          bl = bl <= 4u ? 0u : (bl >= 12u ? 7u : bl - 5u);
-        }
-        uint32_t mixed = ((r & 7u) << 6u) | ((g & 7u) << 3u) | (bl & 7u);
-        if (l2Priority) out = mixed;
-        else if (!topT) out = topRgb;
-        else if (!sprT) out = sprRgb;
-        else if (!botT) out = botRgb;
-        else if (!l2T) out = mixed;
-        break;
-      }
-    }
-    zxnextRenderTarget[i] = zxnextRgbaTable[out & ZXNEXT_PX_RGB];
-  }
+  zxnextComposeRange(&p, first, end, zxnextRenderTarget, zxnextLayerUla, zxnextLayerTm, zxnextLayerL2, zxnextLayerSpr);
 }
 
 /*
@@ -1438,6 +1622,268 @@ static uint32_t zxnextRasterWriteTact(void) {
   return zxnextNextRegWriteTactOverride != 0xffffffffu ? zxnextNextRegWriteTactOverride : currentFrameTact;
 }
 
+/*
+ * Layer capture (`.plans/LAYER_COMPOSITION_PLAN.md` §4.3, D6, T3, T6, T7).
+ *
+ * The per-layer buffers hold, per row, the render of that row's *last* span, and the mixer's inputs
+ * ($15, $4A, $68, the enables) are read from the current state, so recomposing a paused picture from
+ * them is wrong wherever something changed mid-frame. While capture is on (only while an IDE view
+ * needs it: T6), every span the raster renders also copies its own pixels of the four layers here,
+ * and appends its start pixel and mixer inputs to the frame's span table. A recompose then gives
+ * every pixel its own span's inputs: exact on both sides of the beam.
+ *
+ * The pixel copies need no double buffering - a span overwrites only its own range, so the pixels the
+ * beam has not reached this frame still hold last frame's capture. Only the span table is kept twice:
+ * this frame's spans cover [0, zxnextRasterPixel), last frame's the rest.
+ *
+ * All of it is volatile (T8): debugging data, never in a state file.
+ */
+#define ZXNEXT_CAP_SPAN_MAX 4096u
+static uint8_t zxnextLayerCaptureOn;
+static uint16_t zxnextCapUla[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextCapTm[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextCapL2[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextCapSpr[ZXNEXT_PIXEL_COUNT];
+/* [table][span][0: start pixel, 1: packed ZxnextMixParams] */
+static uint32_t zxnextCapSpans[2][ZXNEXT_CAP_SPAN_MAX][2];
+static uint32_t zxnextCapSpanCount[2];
+/* A table ran out of room: the pixels after its last span are composed with that span's inputs (T7) */
+static uint8_t zxnextCapSpanOverflow[2];
+/* The table was recorded from its frame's first pixel (capture was on when the frame started) */
+static uint8_t zxnextCapSpanComplete[2];
+/* Which table is this frame's */
+static uint8_t zxnextCapCurrent;
+/* The recomposed picture the IDE shows while paused; never zxnextPixelBuffer (§4.2) */
+static uint32_t zxnextLayerPreview[ZXNEXT_PIXEL_COUNT];
+
+static void zxnextLayerCaptureInvalidate(void) {
+  zxnextCapSpanCount[0] = zxnextCapSpanCount[1] = 0u;
+  zxnextCapSpanOverflow[0] = zxnextCapSpanOverflow[1] = 0u;
+  zxnextCapSpanComplete[0] = zxnextCapSpanComplete[1] = 0u;
+}
+
+/*
+ * The debug functions' mixer inputs. A static, not a local: a local whose address is taken lives on
+ * the shadow stack, which is linear memory and so in the state image - a probe would have changed it.
+ */
+static ZxnextMixParams zxnextDebugMixParams;
+
+/* Called by the raster after it rendered (and composed) the span [start, end). */
+static void zxnextLayerCaptureSpan(uint32_t start, uint32_t end) {
+  for (uint32_t i = start; i < end; i++) {
+    zxnextCapUla[i] = zxnextLayerUla[i];
+    zxnextCapTm[i] = zxnextLayerTm[i];
+    zxnextCapL2[i] = zxnextLayerL2[i];
+    zxnextCapSpr[i] = zxnextLayerSpr[i];
+  }
+  uint32_t t = zxnextCapCurrent;
+  uint32_t n = zxnextCapSpanCount[t];
+  uint32_t packed = zxnextMixParamsPack(&zxnextLastMixParams);
+  // --- Consecutive spans with the same inputs (a memory-write catch-up, a latch) are one span
+  if (n > 0u && zxnextCapSpans[t][n - 1u][1] == packed) return;
+  if (n >= ZXNEXT_CAP_SPAN_MAX) {
+    zxnextCapSpanOverflow[t] = 1u;
+    return;
+  }
+  zxnextCapSpans[t][n][0] = start;
+  zxnextCapSpans[t][n][1] = packed;
+  zxnextCapSpanCount[t] = n + 1u;
+}
+
+/* The frame's picture is complete: its table becomes "last frame's", and a new one starts. */
+static void zxnextLayerCaptureFrameDone(void) {
+  if (!zxnextLayerCaptureOn) return;
+  uint32_t next = zxnextCapCurrent ^ 1u;
+  zxnextCapCurrent = (uint8_t)next;
+  zxnextCapSpanCount[next] = 0u;
+  zxnextCapSpanOverflow[next] = 0u;
+  zxnextCapSpanComplete[next] = 1u;
+}
+
+static void zxnextLayerSetCapture(uint32_t on) {
+  uint32_t was = zxnextLayerCaptureOn;
+  zxnextLayerCaptureOn = on ? 1u : 0u;
+  if (on && !was) {
+    zxnextLayerCaptureInvalidate();
+    // --- Switched on between frames: this frame's table starts complete
+    zxnextCapSpanComplete[zxnextCapCurrent] = zxnextRasterPixel == 0u;
+  }
+}
+
+/*
+ * The span-table entry that covers pixel i in table t, or -1. Binary search: spans are in pixel order.
+ */
+static int32_t zxnextLayerCaptureFindSpan(uint32_t t, uint32_t i) {
+  int32_t lo = 0, hi = (int32_t)zxnextCapSpanCount[t] - 1, found = -1;
+  while (lo <= hi) {
+    int32_t mid = (lo + hi) >> 1;
+    if (zxnextCapSpans[t][mid][0] <= i) { found = mid; lo = mid + 1; }
+    else hi = mid - 1;
+  }
+  return found;
+}
+
+/*
+ * The capture status bits zxnextRecomposeForDebug and zxnextProbePixel report:
+ * bit 0 exact (every pixel had its own span's inputs), bit 1 capture is on, bit 2 a span table
+ * overflowed (T7).
+ */
+#define ZXNEXT_RECOMPOSE_EXACT 0x01u
+#define ZXNEXT_RECOMPOSE_CAPTURED 0x02u
+#define ZXNEXT_RECOMPOSE_OVERFLOW 0x04u
+
+/* Composes [from, to) of the capture through table t's spans; returns the status bits it can vouch for. */
+static uint32_t zxnextLayerRecomposeTable(uint32_t t, uint32_t from, uint32_t to) {
+  if (from >= to) return ZXNEXT_RECOMPOSE_EXACT;
+  uint32_t count = zxnextCapSpanCount[t];
+  uint32_t exact = zxnextCapSpanComplete[t] && count > 0u;
+  ZxnextMixParams* p = &zxnextDebugMixParams;
+  int32_t k = zxnextLayerCaptureFindSpan(t, from);
+  if (k < 0) {
+    // --- Pixels before the table's first span (capture started mid-frame): today's inputs
+    uint32_t stop = count > 0u ? zxnextCapSpans[t][0][0] : to;
+    if (stop > to) stop = to;
+    zxnextMixParamsCurrent(p);
+    zxnextComposeRange(p, from, stop, zxnextLayerPreview, zxnextCapUla, zxnextCapTm, zxnextCapL2, zxnextCapSpr);
+    from = stop;
+    k = 0;
+    exact = 0u;
+  }
+  for (uint32_t s = (uint32_t)k; s < count && from < to; s++) {
+    uint32_t spanEnd = s + 1u < count ? zxnextCapSpans[t][s + 1u][0] : to;
+    if (spanEnd > to) spanEnd = to;
+    if (spanEnd <= from) continue;
+    zxnextMixParamsUnpack(zxnextCapSpans[t][s][1], p);
+    zxnextComposeRange(p, from, spanEnd, zxnextLayerPreview, zxnextCapUla, zxnextCapTm, zxnextCapL2, zxnextCapSpr);
+    from = spanEnd;
+  }
+  if (zxnextCapSpanOverflow[t]) return ZXNEXT_RECOMPOSE_OVERFLOW;
+  return exact ? ZXNEXT_RECOMPOSE_EXACT : 0u;
+}
+
+/*
+ * Recomposes the paused picture into zxnextLayerPreview with the debug mask in force, and returns the
+ * ZXNEXT_RECOMPOSE_* status. With capture on, from the capture (exact unless a table is incomplete or
+ * overflowed); otherwise from the live layer buffers with today's mixer inputs (approximate, §4.2).
+ */
+static uint32_t zxnextLayerRecomposeForDebug(void) {
+  zxnextEnsureRgbaTable();
+  if (!zxnextLayerCaptureOn) {
+    zxnextMixParamsCurrent(&zxnextDebugMixParams);
+    zxnextComposeRange(&zxnextDebugMixParams, 0u, ZXNEXT_PIXEL_COUNT, zxnextLayerPreview, zxnextLayerUla, zxnextLayerTm, zxnextLayerL2,
+      zxnextLayerSpr);
+    return 0u;
+  }
+  uint32_t beam = zxnextRasterPixel;
+  uint32_t cur = zxnextCapCurrent;
+  uint32_t a = zxnextLayerRecomposeTable(cur, 0u, beam);
+  uint32_t b = zxnextLayerRecomposeTable(cur ^ 1u, beam, ZXNEXT_PIXEL_COUNT);
+  return ZXNEXT_RECOMPOSE_CAPTURED | (a & b & ZXNEXT_RECOMPOSE_EXACT) | ((a | b) & ZXNEXT_RECOMPOSE_OVERFLOW);
+}
+
+/*
+ * What the probe found at one pixel (D7), read by the IDE as 12 words:
+ *   0-3  the ULA, tilemap, Layer 2 and sprite values (ZXNEXT_PX_* encoding) the mixer received
+ *   4    the packed mixer inputs in force for the pixel (zxnextMixParamsPack)
+ *   5    the winner (ZXNEXT_WHY_*) with the debug mask applied
+ *   6    the 9-bit colour with the mask applied (what the debug view shows, solo aside)
+ *   7    the winner without the mask (what the machine shows)
+ *   8    the 9-bit colour without the mask
+ *   9    ZXNEXT_RECOMPOSE_* bits for this pixel
+ *   10   the span's first pixel (or 0)
+ *   11   1 if the pixel was drawn this frame (before the beam), 0 if it is last frame's
+ */
+static uint32_t zxnextLayerProbe[12];
+
+/*
+ * The span pixel i belongs to: fills zxnextDebugMixParams with its mixer inputs and returns
+ * ZXNEXT_RECOMPOSE_* bits; zxnextLayerAtSpanStart gets the span's first pixel. Statics, not out
+ * parameters: an address-taken local would live on the shadow stack, in the state image (T8).
+ */
+static uint32_t zxnextLayerAtSpanStart;
+
+static uint32_t zxnextLayerParamsAt(uint32_t i) {
+  ZxnextMixParams* p = &zxnextDebugMixParams;
+  zxnextLayerAtSpanStart = 0u;
+  if (!zxnextLayerCaptureOn) {
+    zxnextMixParamsCurrent(p);
+    return 0u;
+  }
+  uint32_t table = i < zxnextRasterPixel ? zxnextCapCurrent : (zxnextCapCurrent ^ 1u);
+  int32_t k = zxnextLayerCaptureFindSpan(table, i);
+  uint32_t status = ZXNEXT_RECOMPOSE_CAPTURED;
+  if (k < 0) {
+    zxnextMixParamsCurrent(p);
+    return status;
+  }
+  zxnextMixParamsUnpack(zxnextCapSpans[table][k][1], p);
+  zxnextLayerAtSpanStart = zxnextCapSpans[table][k][0];
+  if (zxnextCapSpanComplete[table]) status |= ZXNEXT_RECOMPOSE_EXACT;
+  if (zxnextCapSpanOverflow[table] && (uint32_t)k + 1u == zxnextCapSpanCount[table]) {
+    status = (status & ~ZXNEXT_RECOMPOSE_EXACT) | ZXNEXT_RECOMPOSE_OVERFLOW;
+  }
+  return status;
+}
+
+static uint32_t zxnextLayerProbePixel(uint32_t i) {
+  for (uint32_t k = 0u; k < 12u; k++) zxnextLayerProbe[k] = 0u;
+  if (i >= ZXNEXT_PIXEL_COUNT) return (uint32_t)(uintptr_t)zxnextLayerProbe;
+  const ZxnextMixParams* p = &zxnextDebugMixParams;
+  uint32_t status = zxnextLayerParamsAt(i);
+  uint32_t cap = zxnextLayerCaptureOn;
+  uint32_t u = cap ? zxnextCapUla[i] : zxnextLayerUla[i];
+  uint32_t t = cap ? zxnextCapTm[i] : zxnextLayerTm[i];
+  uint32_t l = cap ? zxnextCapL2[i] : zxnextLayerL2[i];
+  uint32_t sp = cap ? zxnextCapSpr[i] : zxnextLayerSpr[i];
+  uint32_t mask = zxnextLayerDebugMask & ZXNEXT_LAYER_BITS;
+  uint32_t plain = zxnextComposePixel(p, u, t, l, sp, 1u);
+  uint32_t masked = zxnextComposePixel(p, zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_ULA, u),
+    zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_TM, t), zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_L2, l),
+    zxnextLayerDebugMasked(mask, ZXNEXT_LAYER_BIT_SPR, sp), 1u);
+  zxnextLayerProbe[0] = u;
+  zxnextLayerProbe[1] = t;
+  zxnextLayerProbe[2] = l;
+  zxnextLayerProbe[3] = sp;
+  zxnextLayerProbe[4] = zxnextMixParamsPack(p);
+  zxnextLayerProbe[5] = ZXNEXT_MIX_WHY(masked);
+  zxnextLayerProbe[6] = masked & ZXNEXT_PX_RGB;
+  zxnextLayerProbe[7] = ZXNEXT_MIX_WHY(plain);
+  zxnextLayerProbe[8] = plain & ZXNEXT_PX_RGB;
+  zxnextLayerProbe[9] = status;
+  zxnextLayerProbe[10] = zxnextLayerAtSpanStart;
+  zxnextLayerProbe[11] = i < zxnextRasterPixel;
+  return (uint32_t)(uintptr_t)zxnextLayerProbe;
+}
+
+/*
+ * The machine's own picture at half width (every other column, every row), composed from the capture
+ * with no debug view in force: the Layers document's composite (D9). Half the width only, because a
+ * buffer pixel is half as wide as it is tall (the 0.5:1 aspect of the Next screen): 360 x 288 square
+ * pixels have the screen's shape. The live picture cannot serve, because while running it carries
+ * the debug mask.
+ */
+#define ZXNEXT_LAYER_THUMB_WIDTH (ZXNEXT_SCREEN_WIDTH / 2u)
+#define ZXNEXT_LAYER_THUMB_HEIGHT ZXNEXT_SCREEN_HEIGHT
+static uint32_t zxnextLayerThumb[ZXNEXT_LAYER_THUMB_WIDTH * ZXNEXT_LAYER_THUMB_HEIGHT];
+
+static uint32_t zxnextLayerRenderComposite(void) {
+  zxnextEnsureRgbaTable();
+  uint32_t cap = zxnextLayerCaptureOn;
+  const uint16_t* ula = cap ? zxnextCapUla : zxnextLayerUla;
+  const uint16_t* tm = cap ? zxnextCapTm : zxnextLayerTm;
+  const uint16_t* l2 = cap ? zxnextCapL2 : zxnextLayerL2;
+  const uint16_t* spr = cap ? zxnextCapSpr : zxnextLayerSpr;
+  for (uint32_t y = 0u; y < ZXNEXT_LAYER_THUMB_HEIGHT; y++) {
+    for (uint32_t x = 0u; x < ZXNEXT_LAYER_THUMB_WIDTH; x++) {
+      uint32_t i = y * ZXNEXT_SCREEN_WIDTH + (x << 1u);
+      zxnextLayerParamsAt(i);
+      uint32_t out = zxnextComposePixel(&zxnextDebugMixParams, ula[i], tm[i], l2[i], spr[i], 0u);
+      zxnextLayerThumb[y * ZXNEXT_LAYER_THUMB_WIDTH + x] = zxnextRgbaTable[out];
+    }
+  }
+  return (uint32_t)(uintptr_t)zxnextLayerThumb;
+}
+
 /* Renders buffer pixels [zxnextRasterPixel, endPixel) from the current state. */
 static void zxnextRasterRenderSpan(uint32_t endPixel) {
   if (endPixel > ZXNEXT_PIXEL_COUNT) endPixel = ZXNEXT_PIXEL_COUNT;
@@ -1454,6 +1900,7 @@ static void zxnextRasterRenderSpan(uint32_t endPixel) {
   zxnextRenderRowLast = ZXNEXT_SCREEN_HEIGHT - 1u;
 
   for (uint32_t i = start; i < endPixel; i++) zxnextPixelBuffer[i] = zxnextRasterScratch[i];
+  if (zxnextLayerCaptureOn) zxnextLayerCaptureSpan(start, endPixel);
   zxnextRasterPixel = endPixel;
 }
 
@@ -1514,6 +1961,7 @@ static void zxnextRasterCatchUp(uint32_t frameTact) {
 static void zxnextRasterFinishFrame(void) {
   zxnextRasterRenderTo(ZXNEXT_PIXEL_COUNT);
   zxnextUlaApplyAllLatches(); /* a latch point past the last visible pixel */
+  zxnextLayerCaptureFrameDone();
   zxnextRasterPixel = 0u;
 }
 
@@ -1539,6 +1987,9 @@ static void zxnextRasterMemoryWrite(uint32_t physical, uint32_t value) {
 static void zxnextRasterReset(void) {
   zxnextUlaApplyAllLatches();
   zxnextRasterPixel = 0u;
+  // --- The capture no longer matches the frame: a reset is not a frame end (T3)
+  zxnextLayerCaptureInvalidate();
+  zxnextCapSpanComplete[zxnextCapCurrent] = zxnextLayerCaptureOn;
 }
 
 /*

@@ -10,13 +10,24 @@ import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
 import { KLIVE_HOME_FOLDER } from "@main/settings";
 import { getKliveHomeBase } from "@main/portable";
-import { setMediaAction } from "@common/state/actions";
+import { setMediaAction, setNextLayersAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
 import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
+import { SETTING_EMU_SCANLINE_EFFECT, SETTING_EMU_SHOW_NEXT_LAYERS } from "@common/settings/setting-const";
+import {
+  applyLayersCommand,
+  EMPTY_LAYER_VIEW,
+  type LayersCommand
+} from "@common/zxnext/layers/layerView";
+import {
+  NEXT_LAYER_BITS,
+  NEXT_LAYER_IDS,
+  NEXT_LAYER_NAMES,
+  type NextLayerViewState
+} from "@common/zxnext/layers/layerMix";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
 
@@ -417,3 +428,85 @@ export const copperMenuRenderer: MachineMenuRenderer = () => [
     }
   }
 ];
+
+/**
+ * Machine -> Layers (`.plans/LAYER_COMPOSITION_PLAN.md` D4): the same one debug view the Layers strip
+ * and the `layers` command change. A toggle from here shows the strip (Q3), so a hidden layer is
+ * always in sight.
+ */
+export const layersMenuRenderer: MachineMenuRenderer = () => {
+  const view: NextLayerViewState = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
+  const apply = (cmd: LayersCommand, showStrip = true) => async () => {
+    const current = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
+    mainStore.dispatch(setNextLayersAction(applyLayersCommand(current, cmd)));
+    if (showStrip) setSettingValue(SETTING_EMU_SHOW_NEXT_LAYERS, true);
+  };
+  const setFlag = (patch: Partial<NextLayerViewState>) => async () => {
+    const current = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
+    mainStore.dispatch(setNextLayersAction({ ...current, ...patch }));
+    setSettingValue(SETTING_EMU_SHOW_NEXT_LAYERS, true);
+  };
+  return [
+    {
+      id: "next_layers",
+      label: "Layers",
+      type: "submenu",
+      submenu: [
+        ...NEXT_LAYER_IDS.map((id) => ({
+          id: `next_layer_show_${id}`,
+          label: `Show ${NEXT_LAYER_NAMES[id]}`,
+          type: "checkbox" as const,
+          checked: (view.hidden & NEXT_LAYER_BITS[id]) === 0,
+          click: apply({ target: id, action: view.hidden & NEXT_LAYER_BITS[id] ? "on" : "off" })
+        })),
+        { type: "separator" as const },
+        ...NEXT_LAYER_IDS.map((id) => ({
+          id: `next_layer_solo_${id}`,
+          label: `Solo ${NEXT_LAYER_NAMES[id]}`,
+          type: "checkbox" as const,
+          checked: view.solo === NEXT_LAYER_BITS[id],
+          click:
+            view.solo === NEXT_LAYER_BITS[id]
+              ? setFlag({ solo: 0 })
+              : apply({ target: id, action: "solo" })
+        })),
+        { type: "separator" as const },
+        {
+          id: "next_layer_transparency",
+          label: "Show Transparency",
+          type: "checkbox" as const,
+          checked: !!view.showTransparent,
+          click: setFlag({ showTransparent: !view.showTransparent })
+        },
+        {
+          id: "next_layer_clips",
+          label: "Show Clip Windows",
+          type: "checkbox" as const,
+          checked: !!view.showClips,
+          click: setFlag({ showClips: !view.showClips })
+        },
+        {
+          id: "next_layer_probe",
+          label: "Pixel Probe",
+          type: "checkbox" as const,
+          checked: !!view.probe,
+          click: setFlag({ probe: !view.probe })
+        },
+        { type: "separator" as const },
+        {
+          id: "next_layers_reset",
+          label: "Show All Layers",
+          enabled: view.hidden !== 0 || view.solo !== 0 || !!view.showTransparent,
+          click: apply({ target: "all", action: "on" }, false)
+        },
+        {
+          id: "next_layers_document",
+          label: "Show Layers Document",
+          click: async () => {
+            await getIdeApi().executeCommand("show-layers");
+          }
+        }
+      ]
+    }
+  ];
+};

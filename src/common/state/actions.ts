@@ -151,6 +151,17 @@ export const setMouseCapturedAction: ActionCreator = (captured: boolean) => ({
   payload: { flag: captured }
 });
 
+/**
+ * The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` D2, D4): the strip, the
+ * menu and the `layers` command all set it; the emulator window applies it to the machine.
+ */
+export const setNextLayersAction: ActionCreator = (
+  value: import("@common/zxnext/layers/layerMix").NextLayerViewState
+) => ({
+  type: "SET_NEXT_LAYERS",
+  payload: { value }
+});
+
 /** The emulator holds a quick-saved machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
 export const setQuickStateAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_QUICK_STATE_AVAILABLE",

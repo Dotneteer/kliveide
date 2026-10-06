@@ -110,6 +110,8 @@ export interface ActionTypes {
 
   // --- Screen recording
   SET_MOUSE_CAPTURED: null;
+  // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4)
+  SET_NEXT_LAYERS: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
   SET_QUICK_STATE_AVAILABLE: null;
   SET_SCREEN_RECORDING_STATE: null;

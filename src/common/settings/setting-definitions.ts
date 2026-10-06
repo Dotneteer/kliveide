@@ -23,6 +23,7 @@ import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_MEDIA_INFO,
+  SETTING_EMU_SHOW_NEXT_LAYERS,
   SETTING_EMU_SHOW_STATUS_BAR,
   SETTING_EMU_SHOW_TOOLBAR,
   SETTING_EMU_STAY_ON_TOP,
@@ -126,6 +127,18 @@ const settingDefinitions: Setting[] = [
       "inserted tape file and, on models with floppy drives, the disk file in each drive.",
     type: "boolean",
     defaultValue: true,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SHOW_NEXT_LAYERS,
+    title: "Show Layers",
+    description:
+      "Show or hide the strip under the ZX Spectrum Next screen that hides, solos and probes the " +
+      "video layers (ULA, tilemap, Layer 2, sprites) in priority order. Toggling a layer from the " +
+      "Machine menu or the layers command shows it.",
+    type: "boolean",
+    defaultValue: false,
     saveWithIde: true,
     boundTo: "emu"
   },

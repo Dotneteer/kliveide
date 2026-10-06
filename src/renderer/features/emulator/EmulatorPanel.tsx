@@ -25,6 +25,8 @@ import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
 import { useEmulatorMouse } from "./useEmulatorMouse";
 import { useEmulatorJoystick } from "./useEmulatorJoystick";
 import { CapturedPointer } from "./CapturedPointer";
+import { useNextLayerRegs, useNextLayerView } from "./useNextLayerView";
+import { NextLayersScreenOverlay } from "./NextLayersScreenOverlay";
 import { normalizeMousePointerDisplay } from "@common/settings/mouse-capture";
 import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
@@ -341,6 +343,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     machineFrameCompleted
   );
 
+  // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`): mask, capture, pill
+  const layerView = useNextLayerView(controller, displayScreenData);
+  const layerState = useNextLayerRegs(
+    layerView.machine,
+    !!layerView.view.showClips,
+    machineState === MachineControllerState.Running
+  );
+
   // --- Keep controllerRef in sync with the latest controller value
   useEffect(() => {
     controllerRef.current = controller;
@@ -460,9 +470,21 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               onDismiss={() => setShowOverlay(false)}
               mouseCaptured={captured}
               mouseCaptureRefused={captureRefused}
+              layerDebugText={layerView.pillText}
+              layerDebugApproximate={layerView.approximate}
             />
             {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
             <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+            {layerView.machine && (
+              <NextLayersScreenOverlay
+                machine={layerView.machine}
+                view={layerView.view}
+                layerState={layerState}
+                paused={layerView.paused}
+                screenWidth={controller?.machine?.screenWidthInPixels ?? 720}
+                screenHeight={controller?.machine?.screenHeightInPixels ?? 288}
+              />
+            )}
           </div>
           {showMachineTools && (
             <div className={styles.toolArea} ref={toolArea}>

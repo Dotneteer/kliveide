@@ -3,6 +3,13 @@
 Status: **draft** (2026-10-05). Decisions D1–D10 are proposed; the §8 questions are open. No phase
 started.
 
+> **Note (2026-10-06):** G3.6 ([LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md)) landed first and
+> brought two pieces this plan meant to introduce on the Next: a volatile paused-preview buffer
+> (`zxnextLayerPreview`, shown through `ZxNextWasmV2Machine.getPixelBuffer()` until the machine runs)
+> and an overlay over the emulator screen (`NextLayersScreenOverlay`, buffer coordinates through an
+> SVG `viewBox`). The beam overlay should build on those rather than add a second of each, and the
+> layer capture's `zxnextGetRasterPixel()` already reports the fresh/stale split for the Next.
+
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.7**: show the raster position on the
   paused emulator screen, useful with the Copper and with the ULA panel's beam phase.

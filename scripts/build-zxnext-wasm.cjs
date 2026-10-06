@@ -42,7 +42,29 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextFrameTrace",
   "zxnextTraceEnabled",
   "zxnextTraceCount",
-  "zxnextTraceOverflow"
+  "zxnextTraceOverflow",
+  // --- Layer debugging: the mask, the capture, the preview and the probe (LAYER_COMPOSITION_PLAN
+  // --- D2, T8), and the raster's scratch picture, which every span renders before it reads it
+  "zxnextLayerDebugMask",
+  "zxnextLayerDebugSolo",
+  "zxnextLayerDebugFlags",
+  "zxnextLayerCaptureOn",
+  "zxnextCapUla",
+  "zxnextCapTm",
+  "zxnextCapL2",
+  "zxnextCapSpr",
+  "zxnextCapSpans",
+  "zxnextCapSpanCount",
+  "zxnextCapSpanOverflow",
+  "zxnextCapSpanComplete",
+  "zxnextCapCurrent",
+  "zxnextLayerPreview",
+  "zxnextLayerProbe",
+  "zxnextLastMixParams",
+  "zxnextDebugMixParams",
+  "zxnextLayerAtSpanStart",
+  "zxnextLayerThumb",
+  "zxnextRasterScratch"
 ];
 
 const root = resolve(__dirname, "..");
@@ -241,6 +263,17 @@ const productionExports = [
   "zxnextGetLayer2ScrollX",
   "zxnextGetLayer2ScrollY",
   "zxnextGetLayer2Clip",
+  "zxnextSetLayerDebug",
+  "zxnextGetLayerDebug",
+  "zxnextSetLayerCapture",
+  "zxnextRecomposeForDebug",
+  "zxnextLayerPreviewPtr",
+  "zxnextProbePixel",
+  "zxnextRenderLayerComposite",
+  "zxnextLayerBufferPtr",
+  "zxnextGetLayerCaptureStatus",
+  "zxnextGetRasterPixel",
+  "zxnextGetRgbaForRgb333",
   "zxnextGetLayer2ActiveBank",
   "zxnextGetLayer2ShadowBank",
   "zxnextGetLayer2Port123BPeek",

@@ -187,6 +187,48 @@ loop:
     a.runFrames(6).step(999);
     proveDeterminism(a as unknown as Driver, b as unknown as Driver, 20);
   });
+
+  /*
+   * The layer debug view is debugging state (`.plans/LAYER_COMPOSITION_PLAN.md` D2, T8): A hides the
+   * ULA, captures, recomposes and probes; B does none of it. Everything but the picture - which the
+   * mask is meant to change - must still be equal, and neither machine takes the other's view.
+   */
+  it("ZX Spectrum Next with a layer hidden, capture on and a probe (only on one machine)", async () => {
+    const a = await createNextSession();
+    const b = await createNextSession();
+    await a.loadCode(`
+      .org $8000
+start:
+      inc a
+      out ($fe),a
+      nextreg $40,a
+      nextreg $15,a
+      ld ($c000),a
+      jr start
+`);
+    a.setLayerDebug({ hide: ["ula"], showTransparent: true }).setLayerCapture(true);
+    a.runFrames(4).step(777);
+    a.recomposeLayers();
+    a.probePixel(300, 120);
+    const saved = a.machine.saveMachineState();
+    a.runFrames(12);
+    a.recomposeLayers();
+    a.probePixel(10, 10);
+    b.runFrames(3);
+    b.machine.loadMachineState(saved);
+    b.runFrames(12);
+    expect(b.layerDebug()).toEqual({ hidden: 0, solo: 0, showTransparent: false });
+    expect(a.layerDebug()).toEqual({ hidden: 1, solo: 0, showTransparent: true });
+    const fa = fingerprint(a.machine as unknown as StateMachine);
+    const fb = fingerprint(b.machine as unknown as StateMachine);
+    expect(fb.regs).toEqual(fa.regs);
+    // --- The picture differs by design (A's ULA is hidden): blank it in both, compare the rest
+    const pixels = a.machine.wasmV2Runtime!.exports.zxnextPixelBufferPtr();
+    const pixelBytes = a.machine.wasmV2Runtime!.pixelBuffer.byteLength;
+    fa.image.fill(0, pixels, pixels + pixelBytes);
+    fb.image.fill(0, pixels, pixels + pixelBytes);
+    expectSameBytes(fb.image, fa.image, "the images");
+  });
 });
 
 describe("machine state: refusals", () => {

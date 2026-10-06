@@ -1373,6 +1373,33 @@ Available aliases: `shl2`
 port `$123B` write window maps. Without a source the document keeps the one it shows. The
 **Machine → Show Layer 2 Inspector** menu item runs `show-layer2`.
 
+## `layers`
+
+Use this command on the ZX Spectrum Next to hide, show or solo a video layer on the emulator screen
+([Video Layers](/working-with-ide/layers)). It changes only what the emulator shows, never the machine.
+
+```
+layers [ula|tm|l2|spr|all|transparency] [on|off|solo]
+```
+
+Without arguments it lists the layers. A layer without an action is toggled; `solo` shows that layer
+alone; `all on` shows every layer and `all off` hides them all; `transparency on` marks the pixels no
+layer covers. The layers are also accepted by their names: `tilemap`, `layer2`, `sprites`. A change shows
+the Layers strip under the emulator screen. The **Machine → Layers** menu does the same.
+
+## `show-layers`
+
+Use this command to open the ZX Spectrum Next's [Layers document](/working-with-ide/layers#the-layers-document):
+the priority stack, one card per layer, and one picture per layer.
+
+```
+show-layers
+```
+
+Available aliases: `shly`
+
+The **Machine → Layers → Show Layers Document** menu item runs `show-layers`.
+
 ## `step-copper`
 
 Use this command on the ZX Spectrum Next to run the machine until the Copper completes its next

@@ -1118,6 +1118,28 @@ class EmuMessageProcessor {
   }
 
   /**
+   * Gets the ZX Spectrum Next layer state (the Layers document's snapshot, LAYER_COMPOSITION_PLAN D9).
+   */
+  getNextLayerState(options?: { thumbnails?: boolean }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getNextLayerState(options);
+  }
+
+  /**
+   * The pixel probe (LAYER_COMPOSITION_PLAN D7) at screen pixel (x, y).
+   */
+  probeNextPixel(x: number, y: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).probePixel(x, y);
+  }
+
+  /**
    * Arms a Copper step and runs the machine in debug mode until it fires.
    */
   async stepCopper() {
