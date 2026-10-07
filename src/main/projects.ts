@@ -172,6 +172,7 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   // --- Check if the folder is a Klive project
   const projectFile = path.join(projectFolder, PROJECT_FILE);
   let isValidProject = false;
+  let loadError: string | null = null;
   if (fs.existsSync(projectFile)) {
     const projectContents = fs.readFileSync(projectFile, "utf8");
     try {
@@ -255,8 +256,17 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
       // --- Start watching project changes in the opened folder
       fileChangeWatcher.stopWatching();
       fileChangeWatcher.startWatching(projectFolder);
-    } catch {
-      // --- Intentionally ingored
+    } catch (err) {
+      /*
+       * The folder still opens, so its files can be reached and the project file fixed, but the
+       * user is told. This used to be swallowed: a machine core that failed to load left an empty
+       * Explorer and a blank document area with nothing to say why.
+       */
+      loadError =
+        `The project in ${projectFolder} was not loaded completely: ` +
+        (err instanceof Error ? err.message : String(err));
+      console.error(loadError, err);
+      reportProjectOpenError(loadError);
     }
   }
 
@@ -274,7 +284,29 @@ export async function openFolderByPath(projectFolder: string): Promise<string | 
   appSettings.folders ??= {};
   appSettings.folders[LAST_PROJECT_FOLDER] = projectFolder;
   saveAppSettings();
-  return null;
+  return loadError;
+}
+
+/**
+ * Tells the user that a project could not be loaded.
+ *
+ * A dialog rather than only the return value: the menu, the recent-projects list and the reopen at
+ * startup all ignore what `openFolderByPath` returns. It is not awaited, so the open completes
+ * while the dialog is up.
+ * @param detail The failure, naming the project folder
+ */
+function reportProjectOpenError(detail: string): void {
+  const options = {
+    type: "error" as const,
+    title: "Klive IDE",
+    message: "The project could not be loaded",
+    detail,
+    buttons: ["OK"]
+  };
+  const owner = BrowserWindow.getFocusedWindow();
+  (owner ? dialog.showMessageBox(owner, options) : dialog.showMessageBox(options)).catch(
+    (err: unknown) => console.error("Could not show the project-open error", err)
+  );
 }
 
 /**
