@@ -15,6 +15,7 @@ import { SysVar } from "@abstractions/SysVar";
 import { IMachineFrameRunner } from "@emu/machines/MachineFrameRunner";
 import { IMemorySection } from "@abstractions/MemorySection";
 import type { ConditionStore } from "@emu/machines/conditionStore";
+import type { BeamPosition } from "@common/utils/beamGeometry";
 
 /**
  * This interface defines the behavior of a virtual machine that integrates the emulator from
@@ -159,6 +160,21 @@ export interface IAnyMachine extends IAnyCpu, IMachineEventHandler {
    * Gets the offset of the pixel buffer in the memory
    */
   getBufferStartOffset(): number;
+
+  /**
+   * Where the raster is now, for the beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`
+   * D4): the beam's line, tact and pixel in the displayed buffer, the machine's raster timing, and
+   * how much of the picture is this frame's (T1). A machine without one shows no overlay. Reading it
+   * never changes the machine.
+   */
+  getBeamPosition?(): BeamPosition;
+
+  /**
+   * Brings the paused picture up to the beam without changing what the machine renders later (D3,
+   * T2): afterwards the pixel buffer getters return everything the beam has drawn this frame, and
+   * the previous frame's pixels only past it.
+   */
+  renderToBeamPreview?(): void;
 
   /**
    * Gets the key code set used for the machine

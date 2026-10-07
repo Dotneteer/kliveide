@@ -64,7 +64,18 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextDebugMixParams",
   "zxnextLayerAtSpanStart",
   "zxnextLayerThumb",
-  "zxnextRasterScratch"
+  "zxnextRasterScratch",
+  // --- The beam position overlay's preview (BEAM_POSITION_OVERLAY_PLAN T2): the save area it restores
+  // --- the renderers' statics from, and the info block it reports the beam in
+  "zxnextBeamSaveUla",
+  "zxnextBeamSaveTm",
+  "zxnextBeamSaveL2",
+  "zxnextBeamSaveSpr",
+  "zxnextBeamSaveLineCut",
+  "zxnextBeamSaveResolved",
+  "zxnextBeamSaveShown",
+  "zxnextBeamLatchesDone",
+  "zxnextBeamInfo"
 ];
 
 const root = resolve(__dirname, "..");
@@ -273,6 +284,8 @@ const productionExports = [
   "zxnextLayerBufferPtr",
   "zxnextGetLayerCaptureStatus",
   "zxnextGetRasterPixel",
+  "zxnextGetBeamInfo",
+  "zxnextRenderPreviewToBeam",
   "zxnextGetRgbaForRgb333",
   "zxnextGetLayer2ActiveBank",
   "zxnextGetLayer2ShadowBank",

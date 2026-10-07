@@ -15,6 +15,7 @@ export default {
   "tilemap-inspector": "The Tilemap Inspector",
   "layer2-inspector": "The Layer 2 Inspector",
   layers: "Video Layers",
+  "beam-position": "The Beam Position",
   memory: "The Memory View",
   disassembly: "The Disassembly View",
   watch: "Watch Expressions",

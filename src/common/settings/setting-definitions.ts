@@ -20,6 +20,7 @@ import {
   SETTING_EMU_TS2068_ROM,
   SETTING_EMU_SCORPION_ROM,
   SETTING_EMU_KEYBOARD_LAYOUT,
+  SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_MEDIA_INFO,
@@ -116,6 +117,18 @@ const settingDefinitions: Setting[] = [
     description: "Show or hide the instant screen in the Emulator view.",
     type: "boolean",
     defaultValue: false,
+    saveWithIde: true,
+    boundTo: "emu"
+  },
+  {
+    id: SETTING_EMU_SHOW_BEAM_POSITION,
+    title: "Show the Beam Position",
+    description:
+      "While the machine is paused, show where the raster beam is on the emulator screen: a line " +
+      "across its row, its position (line, tact, frame tact), and the part of the picture still " +
+      "showing the previous frame. The paused picture is drawn up to the beam first.",
+    type: "boolean",
+    defaultValue: true,
     saveWithIde: true,
     boundTo: "emu"
   },

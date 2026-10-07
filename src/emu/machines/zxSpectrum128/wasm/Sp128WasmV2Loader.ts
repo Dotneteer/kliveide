@@ -108,6 +108,8 @@ export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   sp128GetRenderingPixelAddress: Sp128WasmV2ExportFunction;
   sp128GetRenderingAttributeAddress: Sp128WasmV2ExportFunction;
   sp128GetRenderingPixelIndex: Sp128WasmV2ExportFunction;
+  sp128GetBeamInfo: Sp128WasmV2ExportFunction;
+  sp128RenderToBeam: Sp128WasmV2ExportFunction;
   sp128GetTotalContentionDelaySinceStart: Sp128WasmV2ExportFunction;
   sp128GetContentionDelaySincePause: Sp128WasmV2ExportFunction;
   sp128GetCpuInstructionsExecuted: Sp128WasmV2ExportFunction;
@@ -314,6 +316,8 @@ const requiredV2Exports = [
   "sp128GetRenderingPixelAddress",
   "sp128GetRenderingAttributeAddress",
   "sp128GetRenderingPixelIndex",
+  "sp128GetBeamInfo",
+  "sp128RenderToBeam",
   "sp128GetTotalContentionDelaySinceStart",
   "sp128GetContentionDelaySincePause",
   "sp128GetCpuInstructionsExecuted",

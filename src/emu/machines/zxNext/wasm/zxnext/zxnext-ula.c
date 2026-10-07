@@ -1351,16 +1351,20 @@ static ZxnextMixParams zxnextLastMixParams;
 static void zxnextUlaCompose(void) {
   uint32_t first = zxnextRenderRowFirst * ZXNEXT_SCREEN_WIDTH;
   uint32_t end = (zxnextRenderRowLast + 1u) * ZXNEXT_SCREEN_WIDTH;
-  ZxnextMixParams p;
-  zxnextMixParamsCurrent(&p);
-  zxnextLastMixParams = p;
+  /*
+   * The volatile static, not a local: an address-taken local lives on the shadow stack, which is
+   * linear memory and so in the state image, and the beam preview composes from another call depth
+   * than the raster (BEAM_POSITION_OVERLAY_PLAN T2) - it would leave different bytes there.
+   */
+  ZxnextMixParams* const p = &zxnextLastMixParams;
+  zxnextMixParamsCurrent(p);
   zxnextEnsureRgbaTable();
 
   // --- Fast path: only the ULA can be opaque and no blend mode - the common case. Not with the layer
   // --- debug view on: hiding the ULA, solo and "show transparency" all need the general loop (T9).
-  if (!p.tmEn && !p.l2En && !p.sprEn && p.priorities < 6u && !zxnextLayerDebugActive()) {
-    uint32_t fallbackPixel = zxnextRgbaTable[p.fallbackRgb];
-    if (!p.ulaEn) {
+  if (!p->tmEn && !p->l2En && !p->sprEn && p->priorities < 6u && !zxnextLayerDebugActive()) {
+    uint32_t fallbackPixel = zxnextRgbaTable[p->fallbackRgb];
+    if (!p->ulaEn) {
       for (uint32_t i = first; i < end; i++) zxnextRenderTarget[i] = fallbackPixel;
       return;
     }
@@ -1371,7 +1375,7 @@ static void zxnextUlaCompose(void) {
     return;
   }
 
-  zxnextComposeRange(&p, first, end, zxnextRenderTarget, zxnextLayerUla, zxnextLayerTm, zxnextLayerL2, zxnextLayerSpr);
+  zxnextComposeRange(p, first, end, zxnextRenderTarget, zxnextLayerUla, zxnextLayerTm, zxnextLayerL2, zxnextLayerSpr);
 }
 
 /*
@@ -1990,6 +1994,130 @@ static void zxnextRasterReset(void) {
   // --- The capture no longer matches the frame: a reset is not a frame end (T3)
   zxnextLayerCaptureInvalidate();
   zxnextCapSpanComplete[zxnextCapCurrent] = zxnextLayerCaptureOn;
+}
+
+/*
+ * Beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2, D3, T2).
+ *
+ * A paused picture is this frame up to the last catch-up and last frame's pixels after it (T1). The
+ * IDE shows the picture "rendered to the beam": [zxnextRasterPixel, beam) drawn from the current
+ * state into zxnextLayerPreview, the volatile buffer the layer debug view already shows while paused.
+ *
+ * Advancing the real raster to the beam would not be neutral: a later screen-memory write in the
+ * same row catches up only to the row start, so a mid-row catch-up by the IDE would change the rest
+ * of that row. So the preview never moves zxnextRasterPixel, never applies a pending latch for real
+ * and never records a capture span; and the state the renderers rewrite on the way (the per-layer
+ * rows it renders, the sprite line cuts and resolve cache, the latched ULA values) is saved before
+ * and restored after, so the machine's memory image is exactly what it was (the determinism test in
+ * test/zxnext-hw/video/beam-position.test.ts proves it). All of the statics below are volatile.
+ */
+static uint16_t zxnextBeamSaveUla[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextBeamSaveTm[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextBeamSaveL2[ZXNEXT_PIXEL_COUNT];
+static uint16_t zxnextBeamSaveSpr[ZXNEXT_PIXEL_COUNT];
+static uint8_t zxnextBeamSaveLineCut[ZXNEXT_SPRITE_SPACE_HEIGHT];
+static ZxnextResolvedSprite zxnextBeamSaveResolved[128];
+/*
+ * The two small ones are C `volatile` so the compiler keeps them in memory: promoted to registers
+ * they would vanish from the linker map, and the build's volatile-symbol list names them.
+ */
+static volatile uint8_t zxnextBeamSaveShown[ZXNEXT_ULA_LATCH_COUNT];
+/* The latches the preview has applied (bit per latch), so each applies once */
+static volatile uint32_t zxnextBeamLatchesDone;
+
+/*
+ * The beam, for the IDE (§4.2), read as 12 words:
+ *   0 vc   1 hc   2 totalVc   3 totalHc   4 firstVc   5 firstHc   6 displayXStart   7 displayYStart
+ *   8 zxnextRasterPixel   9 the beam's buffer pixel (zxnextRasterTactToPixel)   10 currentFrameTact
+ *   11 the buffer width
+ */
+static uint32_t zxnextBeamInfo[12];
+
+static uint32_t zxnextBeamGetInfo(void) {
+  zxnextBeamInfo[0] = currentFrameTact / ZXNEXT_SCREEN_TOTAL_HC;
+  zxnextBeamInfo[1] = currentFrameTact % ZXNEXT_SCREEN_TOTAL_HC;
+  zxnextBeamInfo[2] = zxnextTimingTotalVc;
+  zxnextBeamInfo[3] = zxnextTimingTotalHc;
+  zxnextBeamInfo[4] = zxnextTimingFirstVc;
+  zxnextBeamInfo[5] = zxnextTimingFirstHc;
+  zxnextBeamInfo[6] = zxnextTimingDisplayXStart;
+  zxnextBeamInfo[7] = zxnextTimingDisplayYStart;
+  zxnextBeamInfo[8] = zxnextRasterPixel;
+  zxnextBeamInfo[9] = zxnextRasterTactToPixel(currentFrameTact);
+  zxnextBeamInfo[10] = currentFrameTact;
+  zxnextBeamInfo[11] = ZXNEXT_SCREEN_WIDTH;
+  return (uint32_t)(uintptr_t)zxnextBeamInfo;
+}
+
+/* Renders buffer pixels [start, end) from the current state into the preview; moves nothing. */
+static void zxnextBeamRenderSpan(uint32_t start, uint32_t end) {
+  if (end > ZXNEXT_PIXEL_COUNT) end = ZXNEXT_PIXEL_COUNT;
+  if (end <= start) return;
+  zxnextRenderTarget = zxnextRasterScratch;
+  zxnextRenderRowFirst = start / ZXNEXT_SCREEN_WIDTH;
+  zxnextRenderRowLast = (end - 1u) / ZXNEXT_SCREEN_WIDTH;
+  zxnextUlaRenderInstantScreen();
+  zxnextRenderTarget = zxnextPixelBuffer;
+  zxnextRenderRowFirst = 0u;
+  zxnextRenderRowLast = ZXNEXT_SCREEN_HEIGHT - 1u;
+  for (uint32_t i = start; i < end; i++) zxnextLayerPreview[i] = zxnextRasterScratch[i];
+}
+
+/*
+ * Renders the preview to the beam (D3) and returns the beam's buffer pixel. With `keep` 0 the preview
+ * starts as a copy of the machine's picture; with 1 it draws over the preview already there (the layer
+ * debug view's recompose, so a hidden layer stays hidden on both sides of the beam).
+ */
+static uint32_t zxnextBeamRenderPreview(uint32_t keep) {
+  uint32_t beam = zxnextRasterTactToPixel(currentFrameTact);
+  if (!keep) {
+    for (uint32_t i = 0u; i < ZXNEXT_PIXEL_COUNT; i++) zxnextLayerPreview[i] = zxnextPixelBuffer[i];
+  }
+  uint32_t from = zxnextRasterPixel;
+  if (beam <= from) return beam;
+
+  // --- Save what the renderers rewrite: the rows they touch, the sprite caches, the latched values
+  uint32_t first = (from / ZXNEXT_SCREEN_WIDTH) * ZXNEXT_SCREEN_WIDTH;
+  uint32_t last = ((beam - 1u) / ZXNEXT_SCREEN_WIDTH + 1u) * ZXNEXT_SCREEN_WIDTH;
+  for (uint32_t i = first; i < last; i++) {
+    zxnextBeamSaveUla[i] = zxnextLayerUla[i];
+    zxnextBeamSaveTm[i] = zxnextLayerTm[i];
+    zxnextBeamSaveL2[i] = zxnextLayerL2[i];
+    zxnextBeamSaveSpr[i] = zxnextLayerSpr[i];
+  }
+  for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextBeamSaveLineCut[i] = zxnextUlaSpriteLineCut[i];
+  for (uint32_t i = 0u; i < 128u; i++) zxnextBeamSaveResolved[i] = zxnextUlaResolvedSprites[i];
+  for (uint32_t i = 0u; i < ZXNEXT_ULA_LATCH_COUNT; i++) zxnextBeamSaveShown[i] = ulaShown[i];
+
+  // --- As zxnextRasterRenderTo: each pending latch takes effect at its own pixel
+  zxnextBeamLatchesDone = 0u;
+  for (;;) {
+    uint32_t next = ZXNEXT_ULA_LATCH_COUNT;
+    for (uint32_t i = 0; i < ZXNEXT_ULA_LATCH_COUNT; i++) {
+      if (!ulaLatchPending[i] || (zxnextBeamLatchesDone & (1u << i))) continue;
+      if (next == ZXNEXT_ULA_LATCH_COUNT || ulaLatchTact[i] < ulaLatchTact[next]) next = i;
+    }
+    if (next == ZXNEXT_ULA_LATCH_COUNT) break;
+    uint32_t latchPixel = zxnextRasterTactToPixel(ulaLatchTact[next]);
+    if (latchPixel >= beam) break;
+    zxnextBeamRenderSpan(from, latchPixel);
+    if (latchPixel > from) from = latchPixel;
+    ulaShown[next] = ulaLatchValue[next];
+    zxnextBeamLatchesDone |= 1u << next;
+  }
+  zxnextBeamRenderSpan(from, beam);
+
+  // --- Restore
+  for (uint32_t i = first; i < last; i++) {
+    zxnextLayerUla[i] = zxnextBeamSaveUla[i];
+    zxnextLayerTm[i] = zxnextBeamSaveTm[i];
+    zxnextLayerL2[i] = zxnextBeamSaveL2[i];
+    zxnextLayerSpr[i] = zxnextBeamSaveSpr[i];
+  }
+  for (uint32_t i = 0u; i < ZXNEXT_SPRITE_SPACE_HEIGHT; i++) zxnextUlaSpriteLineCut[i] = zxnextBeamSaveLineCut[i];
+  for (uint32_t i = 0u; i < 128u; i++) zxnextUlaResolvedSprites[i] = zxnextBeamSaveResolved[i];
+  for (uint32_t i = 0u; i < ZXNEXT_ULA_LATCH_COUNT; i++) ulaShown[i] = zxnextBeamSaveShown[i];
+  return beam;
 }
 
 /*

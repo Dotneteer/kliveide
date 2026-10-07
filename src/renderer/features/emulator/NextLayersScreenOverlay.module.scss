@@ -6,28 +6,15 @@
  * each layer's identity colour (`--color-layers-*`), drawn 1 screen pixel wide whatever the zoom
  * (`vector-effect: non-scaling-stroke`); the probe's card is the overlay pill's surface.
  */
-.overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
+/* The overlay layer itself is EmulatorScreenOverlay's (BEAM_POSITION_OVERLAY_PLAN D10) */
 .probing {
-  pointer-events: auto;
   cursor: crosshair;
 }
 
-.clips {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-
-  rect {
-    fill: none;
-    stroke-width: 1;
-    stroke-dasharray: 4 3;
-  }
+.clip {
+  fill: none;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
 }
 
 .clip-ula {

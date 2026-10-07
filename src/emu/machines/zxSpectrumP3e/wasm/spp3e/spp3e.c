@@ -2440,6 +2440,11 @@ uint32_t spp3eGetRenderingPhase(uint32_t tact) { return spp3eRenderingPhase[tact
 uint32_t spp3eGetRenderingPixelAddress(uint32_t tact) { return spp3eRenderingPixelAddress[tact % SPP3E_TACTS_PER_FRAME]; }
 uint32_t spp3eGetRenderingAttributeAddress(uint32_t tact) { return spp3eRenderingAttributeAddress[tact % SPP3E_TACTS_PER_FRAME]; }
 uint32_t spp3eGetRenderingPixelIndex(uint32_t tact) { return spp3eRenderingPixelIndex[tact % SPP3E_TACTS_PER_FRAME]; }
+
+/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+   (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
+uint32_t spp3eGetBeamInfo(uint32_t field) { return ulaBeamInfo(field); }
+void spp3eRenderToBeam(void) { spp3eUlaRenderUntilCurrentTact(); }
 void spp3eDelayAddressBusAccess(uint32_t address) {
   if (spp3eIsContendedMemoryAddress(address) != 0u) {
     spp3eApplyContentionDelay();

@@ -166,6 +166,8 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rz
   spp3eGetRenderingPixelAddress: SpP3eWasmV2ExportFunction;
   spp3eGetRenderingAttributeAddress: SpP3eWasmV2ExportFunction;
   spp3eGetRenderingPixelIndex: SpP3eWasmV2ExportFunction;
+  spp3eGetBeamInfo: SpP3eWasmV2ExportFunction;
+  spp3eRenderToBeam: SpP3eWasmV2ExportFunction;
   spp3eDelayAddressBusAccess: SpP3eWasmV2ExportFunction;
   spp3eDelayPortRead: SpP3eWasmV2ExportFunction;
   spp3eDelayPortWrite: SpP3eWasmV2ExportFunction;
@@ -432,6 +434,8 @@ const requiredV2Exports = [
   "spp3eGetRenderingPixelAddress",
   "spp3eGetRenderingAttributeAddress",
   "spp3eGetRenderingPixelIndex",
+  "spp3eGetBeamInfo",
+  "spp3eRenderToBeam",
   "spp3eDelayAddressBusAccess",
   "spp3eDelayPortRead",
   "spp3eDelayPortWrite",

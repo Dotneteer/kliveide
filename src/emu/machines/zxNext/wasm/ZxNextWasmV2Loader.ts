@@ -191,6 +191,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextLayerBufferPtr: ZxNextWasmV2ExportFunction;
   zxnextGetLayerCaptureStatus: ZxNextWasmV2ExportFunction;
   zxnextGetRasterPixel: ZxNextWasmV2ExportFunction;
+  zxnextGetBeamInfo: ZxNextWasmV2ExportFunction;
+  zxnextRenderPreviewToBeam: ZxNextWasmV2ExportFunction;
   zxnextGetRgbaForRgb333: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ActiveBank: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ShadowBank: ZxNextWasmV2ExportFunction;
@@ -609,6 +611,8 @@ const requiredV2Exports = [
   "zxnextLayerBufferPtr",
   "zxnextGetLayerCaptureStatus",
   "zxnextGetRasterPixel",
+  "zxnextGetBeamInfo",
+  "zxnextRenderPreviewToBeam",
   "zxnextGetRgbaForRgb333",
   "zxnextGetLayer2ActiveBank",
   "zxnextGetLayer2ShadowBank",

@@ -5,6 +5,8 @@ export const SETTING_EMU_SHOW_KEYBOARD = "emuViewOptions.showKeyboard";
 export const SETTING_EMU_SHOW_INSTANT_SCREEN = "emuViewOptions.showInstantScreen";
 export const SETTING_EMU_SHOW_MEDIA_INFO = "emuViewOptions.showMediaInfo";
 export const SETTING_EMU_SHOW_NEXT_LAYERS = "emuViewOptions.showNextLayers";
+/** The beam position overlay on the paused screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D8) */
+export const SETTING_EMU_SHOW_BEAM_POSITION = "emuViewOptions.showBeamPosition";
 export const SETTING_EMU_SCANLINE_EFFECT = "emuOptions.scanlineEffect";
 export const SETTING_EMU_ZOOM_STEP = "emuOptions.zoomStep";
 export const SETTING_EMU_MOUSE_CAPTURE = "emuOptions.mouseCapture";

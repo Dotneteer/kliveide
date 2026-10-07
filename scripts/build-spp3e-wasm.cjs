@@ -217,6 +217,8 @@ const productionExports = [
   "spp3eGetRenderingPixelAddress",
   "spp3eGetRenderingAttributeAddress",
   "spp3eGetRenderingPixelIndex",
+  "spp3eGetBeamInfo",
+  "spp3eRenderToBeam",
   "spp3eDelayAddressBusAccess",
   "spp3eDelayPortRead",
   "spp3eDelayPortWrite",

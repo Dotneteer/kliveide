@@ -76,6 +76,11 @@ export interface IAnyCpu {
 
   /**
    * Get the number of T-states in a display line (use -1, if this info is not available)
+   *
+   * Not the length of a raster line, whatever the name says: the Spectrum WASM machines return half
+   * the buffer width (176 on the 48K, whose lines are 224 T), the Next its buffer width (720). Code
+   * that needs the raster - the beam's line and the tact in it - reads `IAnyMachine.getBeamPosition`
+   * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T6).
    */
   get tactsInDisplayLine(): number;
 

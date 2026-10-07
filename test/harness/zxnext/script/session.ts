@@ -6,6 +6,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import type { NextMachine } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
   CopperState,
   NextSpriteState,
@@ -1003,6 +1004,27 @@ export class NextTestSession {
     const words = runtime.pixelBuffer;
     const bytes = new Uint8Array(words.buffer, words.byteOffset + start * 4, width * height * 4);
     return { width, height, rgba: new Uint8Array(bytes) };
+  }
+
+  // ==========================================================================================
+  // The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): where the raster is and the
+  // paused picture rendered up to it. Neither changes the machine.
+
+  /** Where the raster is now, as the overlay reads it (D4). */
+  beamPosition(): BeamPosition {
+    return this.machine.getBeamPosition();
+  }
+
+  /**
+   * The paused picture rendered up to the beam (D3), as the emulator window shows it; the machine's
+   * own picture is unchanged (`machinePicture`). With a layer debug recompose up, draws over it.
+   */
+  renderToBeam(): Frame {
+    this.machine.renderToBeamPreview();
+    const frame = captureFrame(this.machine);
+    // --- Back to the machine's picture, as running again would do
+    this.ideMachine().dropLayerPreview();
+    return frame;
   }
 
   /** The pixel probe (D7) at buffer pixel (x, y). */

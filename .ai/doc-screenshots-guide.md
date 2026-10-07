@@ -177,7 +177,7 @@ it.
 
 ## Coverage so far
 
-Eight recipes; the rest of the pages were deliberately left ungenerated.
+Ten recipes; the rest of the pages were deliberately left ungenerated.
 
 - `recipes/tapes.cjs` — the three `getting-started/tape-viewer*.png` shots. **Verifies before it
   photographs**: it reads the rendered block list, timeline and BASIC preview from the DOM and throws
@@ -228,6 +228,16 @@ Eight recipes; the rest of the pages were deliberately left ungenerated.
   the paused recompose without a screenshot diff; and **anything that turns a capture on while paused
   is approximate until a frame runs** - the recipe checks the pill says so, then runs one before
   probing, or the probe reports the registers as they are at the pause, not per line.
+- `recipes/beam.cjs` — `working-with-ide/beam-position.png`, and the running-app check of the beam
+  position overlay on the Next and the 48K. Same poke-a-program pattern (source
+  `recipes/beam-demo.kz80.asm`: the layers demo's Copper split and a loop that changes the border every
+  ~20 lines). Two lessons: **to stop mid-frame, use a hit count on a breakpoint inside a delay loop,
+  and pick a period that drifts across the line** - `-hit *1000` landed every stop at nearly the same
+  `hc` (all in horizontal blanking); `*1037` sweeps the line, so a few `em-debug` continues reach the
+  middle of the paper. And **an SVG overlay's `<defs>` hold elements too**: query the shapes as
+  `svg > line`, or `querySelector("line")` returns the hatch pattern's line, which has no layout box.
+  It also checks geometry the way a user sees it: the beam line's on-screen `top` must equal its
+  buffer row times the canvas scale (T5).
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

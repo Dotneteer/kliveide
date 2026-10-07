@@ -34,6 +34,7 @@ import {
   type RecomposeStatus
 } from "@common/zxnext/layers/layerMix";
 import type { MessengerBase } from "@common/messaging/MessengerBase";
+import { beamAt, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
 import type { NextRegDeviceState, RegValueState } from "./nextRegDescriptors";
 import type { ZxNextWasmV2LoaderOptions, ZxNextWasmV2Runtime } from "./wasm/ZxNextWasmV2Loader";
@@ -549,6 +550,7 @@ export class ZxNextWasmV2Machine
     const runtime = this.requireWasmV2Runtime();
     // --- The machine draws again: the paused debug preview is over
     this.layerPreviewShown = false;
+    this.beamPreviewShown = false;
 
     if (
       this.executionContext.debugStepMode !== DebugStepMode.NoDebug ||
@@ -584,6 +586,7 @@ export class ZxNextWasmV2Machine
 
   executeWasmV2Instruction(runtime = this.requireWasmV2Runtime()): void {
     this.layerPreviewShown = false;
+    this.beamPreviewShown = false;
     if (runtime.exports.zxnextGetCpuPrefix() === 0) this.opStartAddress = runtime.exports.zxnextGetCpuPc();
     runtime.exports.zxnextExecuteInstruction();
     this.wasmV2DebugSteps++;
@@ -1426,6 +1429,7 @@ export class ZxNextWasmV2Machine
   override renderInstantScreen(savedPixelBuffer?: Uint32Array): Uint32Array {
     const runtime = this.requireWasmV2Runtime();
     this.layerPreviewShown = false;
+    this.beamPreviewShown = false;
     const snapshot = new Uint32Array(runtime.pixelBuffer);
     if (savedPixelBuffer != null) {
       runtime.pixelBuffer.set(savedPixelBuffer.subarray(0, runtime.pixelBuffer.length));
@@ -1698,6 +1702,7 @@ export class ZxNextWasmV2Machine
     runtime.exports.zxnextSetLayerCapture(0);
     runtime.exports.zxnextSetLayerCapture(this.layerCaptureOn ? 1 : 0);
     this.layerPreviewShown = false;
+    this.beamPreviewShown = false;
   }
 
   setLayerDebug(debug: NextLayerDebug): void {
@@ -1721,13 +1726,66 @@ export class ZxNextWasmV2Machine
   }
 
   recomposeForDebug(): RecomposeStatus {
-    const status = this.requireWasmV2Runtime().exports.zxnextRecomposeForDebug();
+    const ex = this.requireWasmV2Runtime().exports;
+    const status = ex.zxnextRecomposeForDebug();
     this.layerPreviewShown = true;
+    // --- The recompose splits at the raster; a picture rendered to the beam stays rendered to it
+    if (this.beamPreviewShown) ex.zxnextRenderPreviewToBeam(1);
     return decodeRecomposeStatus(status);
   }
 
   dropLayerPreview(): void {
     this.layerPreviewShown = false;
+    this.beamPreviewShown = false;
+  }
+
+  // ─── The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2) ─────────────────
+
+  /** The preview shows the picture rendered up to the beam (D3) until the machine runs again */
+  private beamPreviewShown = false;
+
+  /** The raster timing of the frame in progress, read fresh (T4): it changes with NextReg $03 */
+  private readBeamInfo(): { info: Uint32Array; timing: BeamTiming } {
+    const runtime = this.requireWasmV2Runtime();
+    const info = new Uint32Array(runtime.memoryBuffer, runtime.exports.zxnextGetBeamInfo(), 12).slice();
+    const [, , totalVc, totalHc, firstVc, firstHc, displayXStart, displayYStart] = info;
+    const width = runtime.exports.zxnextGetScreenWidth();
+    const height = runtime.exports.zxnextGetScreenHeight();
+    const startRows = Math.floor(runtime.exports.zxnextGetPixelBufferStartOffset() / width);
+    // --- Two buffer pixels per HC; buffer (0, 0) is at (firstVc, firstHc) on every timing
+    const timing: BeamTiming = {
+      unit: "HC",
+      tactsPerLine: totalHc,
+      linesPerFrame: totalVc,
+      firstVisibleTact: (firstVc + startRows) * totalHc + firstHc,
+      tactsPerBufferPixel: 0.5,
+      bufferWidth: width,
+      bufferHeight: height,
+      paperLeft: (displayXStart - firstHc) * 2,
+      paperTop: displayYStart - firstVc - startRows,
+      paperWidth: 512,
+      paperHeight: 192
+    };
+    return { info, timing };
+  }
+
+  getBeamPosition(): BeamPosition {
+    const { info, timing } = this.readBeamInfo();
+    const start = this.requireWasmV2Runtime().exports.zxnextGetPixelBufferStartOffset();
+    const rasterPixel = info[8];
+    const beamPixel = info[9];
+    const drawn = this.beamPreviewShown ? Math.max(rasterPixel, beamPixel) : rasterPixel;
+    const position = beamAt(timing, info[10], Math.max(0, drawn - start));
+    // --- The core's own counters, not a division: VC and HC as the raster has them
+    return { ...position, line: info[0], lineTact: info[1] };
+  }
+
+  renderToBeamPreview(): void {
+    const ex = this.requireWasmV2Runtime().exports;
+    // --- Over a layer debug recompose, so a hidden layer stays hidden past the old split
+    ex.zxnextRenderPreviewToBeam(this.layerPreviewShown ? 1 : 0);
+    this.layerPreviewShown = true;
+    this.beamPreviewShown = true;
   }
 
   probePixel(x: number, y: number): NextPixelProbe {

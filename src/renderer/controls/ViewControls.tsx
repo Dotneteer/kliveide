@@ -12,6 +12,7 @@ import { requestMouseCapture } from "@renderer/features/emulator/mouseCaptureBri
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_MOUSE_CAPTURE,
+  SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_STAY_ON_TOP
@@ -34,6 +35,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
   const state = useSelector((s) => s.emulatorState?.machineState);
   const showKeyboard = useGlobalSetting(SETTING_EMU_SHOW_KEYBOARD);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
+  const showBeamPosition = useGlobalSetting(SETTING_EMU_SHOW_BEAM_POSITION);
   const stayOnTop = useGlobalSetting(SETTING_EMU_STAY_ON_TOP);
   const recState = useSelector((s) => s.emulatorState?.screenRecordingState);
   const recordingAvailable = useSelector((s) => s.emulatorState?.screenRecordingAvailable !== false);
@@ -75,6 +77,17 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
         title="Turn on/off instant screen"
         clicked={async () => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_INSTANT_SCREEN, !showInstantScreen);
+        }}
+      />
+      {/* The beam position overlay (BEAM_POSITION_OVERLAY_PLAN D8): shown only while paused */}
+      <IconButton
+        iconName="scan-line"
+        iconSize={SECONDARY_ICON_SIZE}
+        fill="--color-toolbarbutton"
+        selected={showBeamPosition}
+        title="Show/Hide the beam position while paused"
+        clicked={async () => {
+          await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_BEAM_POSITION, !showBeamPosition);
         }}
       />
       {mouseSupport && (

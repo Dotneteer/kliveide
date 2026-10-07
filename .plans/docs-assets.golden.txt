@@ -72,6 +72,7 @@
 /images/working-with-ide/banked-disass-view.png
 /images/working-with-ide/banked-mem-view.png
 /images/working-with-ide/basic-list.png
+/images/working-with-ide/beam-position.png
 /images/working-with-ide/bp-explain.png
 /images/working-with-ide/bp-not-resolved.png
 /images/working-with-ide/bp-resolved.png

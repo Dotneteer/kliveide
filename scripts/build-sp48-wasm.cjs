@@ -120,6 +120,8 @@ const productionExports = [
   "sp48GetRenderingPixelAddress",
   "sp48GetRenderingAttributeAddress",
   "sp48GetRenderingPixelIndex",
+  "sp48GetBeamInfo",
+  "sp48RenderToBeam",
   "sp48GetTotalContentionDelaySinceStart",
   "sp48GetContentionDelaySincePause",
   "sp48GetNextFrameStartTact",

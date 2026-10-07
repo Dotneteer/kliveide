@@ -660,6 +660,17 @@ uint32_t zxnextGetLayerCaptureStatus(void) {
 }
 /* The first buffer pixel of this frame the beam has not drawn yet */
 uint32_t zxnextGetRasterPixel(void) { return zxnextRasterPixel; }
+/*
+ * The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2). Neither changes the machine:
+ * the info is read from the raster's own counters, and the preview renders into the volatile preview
+ * buffer with every rewritten static restored (T2).
+ */
+/* A pointer to 12 words: vc, hc, totalVc, totalHc, firstVc, firstHc, displayXStart, displayYStart,
+   rasterPixel, beamPixel, frameTact, buffer width (zxnextBeamInfo) */
+uint32_t zxnextGetBeamInfo(void) { return zxnextBeamGetInfo(); }
+/* Renders the paused picture up to the beam into the preview buffer; `keep` 1 draws over the preview
+   already there. Returns the beam's buffer pixel. */
+uint32_t zxnextRenderPreviewToBeam(uint32_t keep) { return zxnextBeamRenderPreview(keep); }
 /* The RGBA the picture uses for a 9-bit colour */
 uint32_t zxnextGetRgbaForRgb333(uint32_t rgb333) { return zxnextUlaRgb333Color(rgb333 & 0x1ffu); }
 

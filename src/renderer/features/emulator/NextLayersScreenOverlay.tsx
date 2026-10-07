@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import type { NextLayerRegs, NextLayerState } from "@common/messaging/EmuApi";
 import {
@@ -25,6 +25,7 @@ import {
 import type { IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import { useMainApi } from "@renderer/core/MainApi";
 import { reportMessagingError } from "@renderer/reportError";
+import { EmulatorScreenOverlay, type ScreenPointer, type ScreenShape } from "./EmulatorScreenOverlay";
 import styles from "./NextLayersScreenOverlay.module.scss";
 
 type Props = {
@@ -75,29 +76,14 @@ const INSPECTOR: Partial<Record<NextLayerId, "sprites" | "tilemap" | "layer2">> 
  */
 export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, screenWidth, screenHeight }: Props) => {
   const mainApi = useMainApi();
-  const host = useRef<HTMLDivElement>(null);
   const [probe, setProbe] = useState<{ result: NextPixelProbe; left: number; top: number; flip: boolean }>();
   const probing = !!view.probe && paused;
 
-  const onMove = useCallback(
-    (e: React.MouseEvent) => {
-      const el = host.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const x = Math.floor(((e.clientX - rect.left) / rect.width) * screenWidth);
-      const y = Math.floor(((e.clientY - rect.top) / rect.height) * screenHeight);
-      if (x < 0 || y < 0 || x >= screenWidth || y >= screenHeight) {
-        setProbe(undefined);
-        return;
-      }
-      setProbe({
-        result: machine.probePixel(x, y),
-        left: e.clientX - rect.left,
-        top: e.clientY - rect.top,
-        flip: e.clientX - rect.left > rect.width / 2
-      });
+  const onPointer = useCallback(
+    (p: ScreenPointer | undefined) => {
+      setProbe(p ? { result: machine.probePixel(p.x, p.y), left: p.left, top: p.top, flip: p.flip } : undefined);
     },
-    [machine, screenWidth, screenHeight]
+    [machine]
   );
 
   const onClick = useCallback(async () => {
@@ -114,40 +100,31 @@ export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, scr
   if (!showClips && !probing) return null;
 
   const clips = showClips ? effectiveClipWindows(layerState!.regs) : undefined;
+  const shapes: ScreenShape[] = clips
+    ? NEXT_LAYER_IDS.map((id) => {
+        const r = layerRectToBuffer(clips[id], layerState!.paperBufferY);
+        return {
+          kind: "rect",
+          className: `${styles.clip} ${styles[`clip-${id}`]}`,
+          x: r.x + 0.5,
+          y: r.y + 0.5,
+          width: Math.max(0, r.width - 1),
+          height: Math.max(0, r.height - 1),
+          title: `${NEXT_LAYER_NAMES[id]} clip window`
+        };
+      })
+    : [];
   return (
-    <div
-      ref={host}
-      className={probing ? `${styles.overlay} ${styles.probing}` : styles.overlay}
-      onMouseMove={probing ? onMove : undefined}
-      onMouseLeave={() => setProbe(undefined)}
+    <EmulatorScreenOverlay
+      screenWidth={screenWidth}
+      screenHeight={screenHeight}
+      shapes={shapes}
+      onPointer={probing ? onPointer : undefined}
       onClick={probing ? onClick : undefined}
-      data-testid="next-layers-overlay"
+      className={probing ? styles.probing : undefined}
+      testId="next-layers-overlay"
+      svgTestId={clips ? "next-layer-clips" : undefined}
     >
-      {clips && (
-        <svg
-          className={styles.clips}
-          viewBox={`0 0 ${screenWidth} ${screenHeight}`}
-          preserveAspectRatio="none"
-          data-testid="next-layer-clips"
-        >
-          {NEXT_LAYER_IDS.map((id) => {
-            const r = layerRectToBuffer(clips[id], layerState!.paperBufferY);
-            return (
-              <rect
-                key={id}
-                className={styles[`clip-${id}`]}
-                x={r.x + 0.5}
-                y={r.y + 0.5}
-                width={Math.max(0, r.width - 1)}
-                height={Math.max(0, r.height - 1)}
-                vectorEffect="non-scaling-stroke"
-              >
-                <title>{`${NEXT_LAYER_NAMES[id]} clip window`}</title>
-              </rect>
-            );
-          })}
-        </svg>
-      )}
       {probing && probe && (
         <ProbeTooltip
           probe={probe.result}
@@ -158,7 +135,7 @@ export const NextLayersScreenOverlay = ({ machine, view, layerState, paused, scr
           }}
         />
       )}
-    </div>
+    </EmulatorScreenOverlay>
   );
 };
 

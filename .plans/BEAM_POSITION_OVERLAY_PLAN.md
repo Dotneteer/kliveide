@@ -1,7 +1,54 @@
 # Beam Position Overlay Plan: Where the Raster Is on a Paused Screen
 
-Status: **draft** (2026-10-05). Decisions D1–D10 are proposed; the §8 questions are open. No phase
-started.
+Status: **done** (2026-10-06). Phases 1–6 implemented; D1–D10 taken as proposed and the §8 questions
+answered as proposed (on by default, render to the beam, redrawn at every stop, no "run to raster
+position", no ZX80/81 or Z88). See "Outcome" below for where the implementation differs from the text.
+
+## Outcome
+
+What was built, and the places the design changed on contact with the code:
+
+- **Next core (§4.2).** `zxnextGetBeamInfo()` (12 words: vc, hc, the timing, `zxnextRasterPixel`, the
+  beam's pixel) and `zxnextRenderPreviewToBeam(keep)`, which renders `[zxnextRasterPixel, beam)` into
+  the existing `zxnextLayerPreview` (`keep` 1 draws over a layer debug recompose). **T2 is settled by
+  save and restore**, not by separate layer buffers: the rows of the four layer buffers the preview
+  renders, the sprite line cuts and resolve cache and the latched ULA values are copied to volatile
+  save areas and put back, and pending latches are applied at their own pixel without being consumed.
+  The determinism test found one more leak: `zxnextUlaCompose` took the address of a local
+  `ZxnextMixParams`, which lives on the shadow stack (linear memory, in the state image), and the
+  preview composes from another call depth. It now uses the volatile static `zxnextLastMixParams`.
+- **Spectrum cores (§4.3).** One `ulaBeamInfo(field)` in `zx-spectrum-ula.c` and two exports per
+  core: `<core>GetBeamInfo(field)` and `<core>RenderToBeam()` (the ULA's own catch-up, neutral as T2
+  says). The **Pentagon's tables are rotated 62 T** so that frame tact 0 is its interrupt; field 8
+  reports that shift (`BeamTiming.lineStartTact`), or its raster would be 62 T off.
+- **The contract (§4.1)** is `src/common/utils/beamGeometry.ts`: every machine's raster is linear in
+  the *displayed* buffer (`firstVisibleTact`, `tactsPerLine`, `tactsPerBufferPixel`), the Spectrum's
+  "left border drawn at the end of the line before" included. The Next's paper is at buffer y 48 at
+  50 Hz but **24 at 60 Hz**: the paper position is reported, never assumed.
+- **The overlay (§4.4, D10).** `EmulatorScreenOverlay` (an SVG in buffer pixels plus HTML labels)
+  now carries both the beam overlay and G3.6's clip outlines and probe. The pill sits in the overlay
+  stack (`BeamPositionPill`), not on the screen.
+- **D7, the Copper marker**, uses the Copper's **breakpoint hit** (`getCopperState().lastHit`), not
+  `beam`: the core advances the Copper to the CPU's tact after every instruction, so the Copper's
+  "now" is always the CPU's beam. The hit is where it differs (Copper plan T1).
+- **A paused picture is no longer overwritten.** `EmulatorPanel` restored the last full frame *into
+  the machine's pixel buffer* at every pause (the Instant Screen toggle's restore ran on every
+  machine-state change), which both hid T1 and changed the machine. It now restores only when Instant
+  Screen is switched off while paused, from a snapshot taken when it was switched on; the per-frame
+  copy that fed it is gone.
+- **T6.** `MainToEmuProcessor.getUlaState` takes RAS/POS from `getBeamPosition` (`ulaRasterPosition`);
+  `tactsInDisplayLine` is documented as not being a line length and left alone.
+- **Tests.** `test/zxnext-hw/video/beam-position.test.ts` (every timing, render to the beam against
+  the frame the machine then draws, byte-equal state images), `test/spectrum-hw/beam-position.test.ts`
+  (48K, 128K, Pentagon, +2A, +3E, Timex: the linear raster against each core's tact → pixel table,
+  render to the beam, determinism, and the ULA panel's RAS/POS through the real request path),
+  `test/common/beamGeometry.test.ts`, `test/renderer/beamOverlayModel.test.ts`,
+  `test/renderer/BeamPositionOverlay.test.tsx`, `test/commands/BeamCommands.test.ts`. The ULA panel
+  check runs on the cores through `processMainToEmuMessages` rather than as a jsdom panel test.
+- **Running app and docs.** `scripts/doc-shots/recipes/beam.cjs` (program `beam-demo.kz80.asm`)
+  checks the overlay on the Next (pill, beam line at its row, hatch and legend, hover readout,
+  `beam off`/`on`, the Copper marker at a `cu:` breakpoint) and the 48K (T-states, VBLANK) and takes
+  the screenshot for the new page `docs/content/working-with-ide/beam-position.mdx`.
 
 > **Note (2026-10-06):** G3.6 ([LAYER_COMPOSITION_PLAN.md](LAYER_COMPOSITION_PLAN.md)) landed first and
 > brought two pieces this plan meant to introduce on the Next: a volatile paused-preview buffer

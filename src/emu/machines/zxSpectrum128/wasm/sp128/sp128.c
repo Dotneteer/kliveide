@@ -2348,6 +2348,18 @@ uint32_t sp128GetRenderingPixelIndex(uint32_t tact) {
   return sp128RenderingPixelIndex[tact % sp128TactsInFrame];
 }
 
+/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+   (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
+uint32_t sp128GetBeamInfo(uint32_t field) {
+  /* The Pentagon's tables are the raster rotated SP128_PENTAGON_RASTER_SHIFT tacts later */
+  if (field == 8u) return sp128Timing == SP128_TIMING_PENTAGON ? SP128_PENTAGON_RASTER_SHIFT : 0u;
+  return ulaBeamInfo(field);
+}
+
+void sp128RenderToBeam(void) {
+  sp128UlaRenderUntilCurrentTact();
+}
+
 uint32_t sp128GetTotalContentionDelaySinceStart(void) {
   return sp128TotalContentionDelaySinceStart;
 }

@@ -92,6 +92,7 @@ import {
 import { createIdeIntegrationsMenu } from "./ide-integrations-menu";
 import {
   SETTING_EMU_SHOW_INSTANT_SCREEN,
+  SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_KEYBOARD,
   SETTING_EMU_SHOW_MEDIA_INFO,
   SETTING_EMU_SHOW_NEXT_LAYERS,
@@ -683,6 +684,8 @@ export function setupMenu(emuWindow: BrowserWindow, ideWindow: BrowserWindow): v
       },
       createBooleanSettingsMenu(SETTING_EMU_SHOW_KEYBOARD),
       createBooleanSettingsMenu(SETTING_EMU_SHOW_INSTANT_SCREEN),
+      // --- The beam position overlay on the paused screen (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D8)
+      createBooleanSettingsMenu(SETTING_EMU_SHOW_BEAM_POSITION),
       // --- Only the Spectrum models have a media strip under the screen
       createBooleanSettingsMenu(SETTING_EMU_SHOW_MEDIA_INFO, {
         visibleFn: () =>

@@ -870,7 +870,13 @@ accents cannot supply four, and the status hues can. Three further rules:
   surface (`--bgcolor-display`), like the Spectrum media strip.
 - **Chrome over the emulator screen is an SVG in the picture's own pixels**: `viewBox` = the machine's
   buffer size, `preserveAspectRatio="none"`, `vector-effect: non-scaling-stroke`, so it follows every
-  zoom and stays one screen pixel wide. The solo checkerboard is *not* chrome: the core paints it into
+  zoom and stays one screen pixel wide. There is **one** such layer, `EmulatorScreenOverlay`: the clip
+  outlines, the probe and the beam overlay are all shapes handed to it, never a second overlay
+  component. **Text never goes in that SVG** - with `preserveAspectRatio="none"` the Next's half-width
+  pixels squash it - so labels are HTML placed by percentage at their buffer position, on the overlay
+  pill's surface so they read over any machine colour. A **fill pattern** in it is stretched the same
+  way: divide its width by the machine's pixel aspect (`getAspectRatio()[0]`) to keep it square on
+  screen. The solo checkerboard is *not* chrome: the core paints it into
   the picture (two greys, 16×8 buffer pixels, square on screen), because it stands in for transparent
   machine pixels. The document's per-layer pictures use the shared CSS checker behind alpha 0.
 - **A small picture of the Next screen keeps the screen's shape.** Its buffer pixels are half as wide
@@ -878,6 +884,19 @@ accents cannot supply four, and the status hues can. Three further rules:
   (360×288, shown with `aspect-ratio: 360 / 288`). Dropping both halved the height and squashed the
   Layers document's pictures to 2.5:1. Same rule as the Layer 2 Inspector's 640×256: never scale the
   two axes of a non-square pixel by the same factor.
+
+## A Picture That Is Partly Last Frame's Says So
+
+A paused emulator screen holds two frames: this one up to the beam, the previous one after it. That
+second part must be **marked, never hidden** - it is still the machine's pixels, and hiding it would
+lose the evidence of a mid-frame effect. The beam position overlay (`--color-beam-*`) washes it with
+the backdrop's alpha (`--bgcolor-beam-stale` = `--bgcolor-backdrop`) under a `--border-strong` hatch,
+and puts a `previous frame` legend at its first pixel: an unexplained hatch reads as an emulator bug.
+The beam itself is the primary accent (a dashed line across its row, a solid tick at its pixel, a
+thicker edge mark in blanking), and the Copper's breakpoint hit the secondary accent - two pointers
+into one raster, two hues, as with two pointers into one list. Over Instant Screen there is no stale
+part, so there is no hatch: the pill says *instant screen* instead. The overlay's pill joins the
+overlay stack; it does not float near the beam, where it would cover the pixels it describes.
 
 ## A Read-Only View Of An Editor Hides Its Tools, And Says So In One Line
 

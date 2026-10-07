@@ -66,6 +66,7 @@
 /scripting/overview/index.html
 /scripting/syntax/index.html
 /working-with-ide/basic/index.html
+/working-with-ide/beam-position/index.html
 /working-with-ide/breakpoints/index.html
 /working-with-ide/build-system/index.html
 /working-with-ide/commands/index.html

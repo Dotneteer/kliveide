@@ -963,6 +963,16 @@ uint32_t sp48GetRenderingPixelIndex(uint32_t tact) {
   return sp48RenderingPixelIndex[tact % sp48TactsInFrame];
 }
 
+/* The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3): the beam, one field per call
+   (see ulaBeamInfo), and rendering the paused picture up to it, which changes nothing later (T2) */
+uint32_t sp48GetBeamInfo(uint32_t field) {
+  return ulaBeamInfo(field);
+}
+
+void sp48RenderToBeam(void) {
+  renderUlaUntilCurrentTact();
+}
+
 uint32_t sp48GetTotalContentionDelaySinceStart(void) {
   return sp48TotalContentionDelaySinceStart;
 }

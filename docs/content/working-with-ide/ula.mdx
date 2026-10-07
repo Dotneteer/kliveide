@@ -18,7 +18,7 @@ You can read this information in this panel:
 - **`FCL`**: Frame clock. This value shows the current screen rendering tact, which depends on the ZX Spectrum model. For example, the ZX Spectrum 48K (PAL) uses 69.888 tacts to render the entire screen, including the borders, blank area, and sync tacts.
 - **`FRM`**: The number of frames rendered since the machine started.
 - **`RAS`**: The raster line being rendered
-- **`POS`**: The current rendering position within the raster line.
+- **`POS`**: The current rendering position within the raster line, in T-states (on the ZX Spectrum Next, in 7 MHz `HC` units). The paused emulator screen shows the same position as a [beam overlay](/working-with-ide/beam-position).
 - **`PIX`**: The current pixel rendering operation:
   - **`None`**: A blank (non-visible) area is being rendered.
   - **`Border`**: The ULA sets the border color to display the current pixel.
