@@ -65,55 +65,18 @@
               "position": {
                 "line": 0,
                 "column": 0
-              },
-              "viewState": {
-                "scrollPosition": 0,
-                "bankExpanded": {
-                  "0": true,
-                  "2": false
-                },
-                "selectedBank": 12,
-                "headerAttrExpanded": false,
-                "bankFilter": "nonEmpty"
               }
             },
             {
-              "type": "Layer2Inspector",
-              "id": "$layer2",
+              "type": "LayersDocument",
+              "id": "$layers",
               "position": {
                 "line": 0,
                 "column": 0
-              },
-              "viewState": {
-                "source": "displayed",
-                "asDisplayed": false,
-                "banks": true,
-                "priority": false,
-                "transparent": true,
-                "checker": true,
-                "zoom": 2,
-                "bandSize": "256px"
-              }
-            },
-            {
-              "type": "Memory",
-              "id": "$memory",
-              "position": {
-                "line": 0,
-                "column": 0
-              },
-              "viewState": {
-                "topIndex": 103,
-                "isFullView": false,
-                "currentSegment": 23,
-                "decimalView": false,
-                "viewMode": "8x2",
-                "charDump": true,
-                "bankLabel": true
               }
             }
           ],
-          "activeDocumentId": "$memory"
+          "activeDocumentId": "$layers"
         }
       ]
     }
