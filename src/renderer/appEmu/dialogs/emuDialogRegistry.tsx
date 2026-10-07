@@ -9,7 +9,8 @@ import {
   Z88_INSERT_CARD_DIALOG,
   Z88_REMOVE_CARD_DIALOG,
   JOYSTICK_BINDINGS_DIALOG,
-  MACHINE_SELECT_DIALOG
+  MACHINE_SELECT_DIALOG,
+  SETTINGS_DIALOG
 } from "@common/messaging/dialog-ids";
 import type { AboutDialogData } from "@common/messaging/about-dialog";
 import { AboutDialog, AboutDialogResult } from "@renderer/appIde/dialogs/AboutDialog";
@@ -46,6 +47,8 @@ import {
   JoystickBindingsDialogResult
 } from "./joystick/JoystickBindingsDialog";
 
+import { SettingsDialog, type SettingsDialogResult } from "@renderer/appIde/dialogs/settings/SettingsDialog";
+
 export type EmuDialogResult =
   | JoystickBindingsDialogResult
   | FirstStartDialogResult
@@ -55,7 +58,8 @@ export type EmuDialogResult =
   | Z88ExportCardDialogResult
   | Z88ChangeRamDialogResult
   | AboutDialogResult
-  | MachineSelectDialogResult;
+  | MachineSelectDialogResult
+  | SettingsDialogResult;
 
 export type EmuDialogRenderer = (
   data: any,
@@ -107,5 +111,6 @@ export const emuDialogRegistry: Record<number, EmuDialogRenderer> = {
   ),
   [MACHINE_SELECT_DIALOG]: (data, controls) => (
     <MachineSelectDialog data={data} onResult={(result) => controls.close(result)} onClose={controls.cancel} />
-  )
+  ),
+  [SETTINGS_DIALOG]: (data, controls) => <SettingsDialog data={data} onClose={controls.cancel} />
 };

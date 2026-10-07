@@ -4,7 +4,13 @@ import { Activity } from "../../abstractions/Activity";
 import styles from "./ActivityBar.module.scss";
 import { ActivityButton } from "./ActivityButton";
 import { useMainApi } from "@renderer/core/MainApi";
-import { SETTING_IDE_SHOW_SIDEBAR } from "@common/settings/setting-const";
+import { SETTING_IDE_SHOW_SIDEBAR, SETTING_IDE_SIDEBAR_TO_RIGHT } from "@common/settings/setting-const";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@renderer/controls/ContextMenu";
 
 type Props = {
   activities: Activity[];
@@ -16,6 +22,9 @@ export const ActivityBar = ({ order, activities }: Props) => {
   const dispatch = useDispatch();
   const activeActitity = useSelector((s) => s.ideView?.activity);
   const sideBarVisible = useGlobalSetting(SETTING_IDE_SHOW_SIDEBAR);
+  const sideBarToRight = useGlobalSetting(SETTING_IDE_SIDEBAR_TO_RIGHT);
+  // --- The layout is changed where the layout is (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  const [menuState, menuApi] = useContextMenuState();
 
   return (
     <div
@@ -25,6 +34,10 @@ export const ActivityBar = ({ order, activities }: Props) => {
       role="tablist"
       aria-orientation="vertical"
       aria-label="Activities"
+      onContextMenu={(e) => {
+        e.preventDefault();
+        menuApi.show(e);
+      }}
     >
       {[
         ...activities.map((act) => (
@@ -45,6 +58,32 @@ export const ActivityBar = ({ order, activities }: Props) => {
           />
         ))
       ]}
+      {menuState.contextVisible && (
+        <ContextMenu state={menuState} onClickOutside={menuApi.conceal}>
+          <ContextMenuItem
+            text={sideBarToRight ? "Move Sidebar to the Left" : "Move Sidebar to the Right"}
+            clicked={async () => {
+              menuApi.conceal();
+              await mainApi.setGlobalSettingsValue(SETTING_IDE_SIDEBAR_TO_RIGHT, !sideBarToRight);
+            }}
+          />
+          <ContextMenuItem
+            text={sideBarVisible ? "Hide Sidebar" : "Show Sidebar"}
+            clicked={async () => {
+              menuApi.conceal();
+              await mainApi.setGlobalSettingsValue(SETTING_IDE_SHOW_SIDEBAR, !sideBarVisible);
+            }}
+          />
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            text="Appearance Settings..."
+            clicked={async () => {
+              menuApi.conceal();
+              await mainApi.runUiAction("open-settings", "appearance");
+            }}
+          />
+        </ContextMenu>
+      )}
     </div>
   );
 };

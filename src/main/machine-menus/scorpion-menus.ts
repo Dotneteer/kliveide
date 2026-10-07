@@ -1,8 +1,6 @@
 import path from "path";
 import fs from "fs";
 
-import type { MachineMenuRenderer } from "@common/machines/info-types";
-
 import { app, BrowserWindow, dialog } from "electron";
 import { mainStore } from "@main/main-store";
 import { logEmuEvent, setMachineType } from "@main/registeredMachines";
@@ -14,42 +12,15 @@ import { SCORPION_ROM_SIZE } from "@emu/machines/zxSpectrum128/ScorpionWasmV2Mac
 /**
  * The Scorpion ZS-256's 64K ROM (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship it, so the
  * user names their own copy; without one the Scorpion boots the 128K ROMs and takes TR-DOS from the
- * TR-DOS ROM setting. Choosing or forgetting it restarts the machine.
+ * TR-DOS ROM setting. Chosen in Settings › Machine; choosing or forgetting it restarts the machine.
  */
-export const scorpionRomMenuRenderer: MachineMenuRenderer = (windowInfo) => {
-  const romFile = getSettingValue(SETTING_EMU_SCORPION_ROM) as string | undefined;
-  return [
-    {
-      id: "scorpion_rom_menu",
-      label: "Scorpion ROM",
-      submenu: [
-        {
-          id: "scorpion_rom_status",
-          label: romFile ? `Using ${path.basename(romFile)}` : "No Scorpion ROM set: booting the 128K ROMs",
-          enabled: false
-        },
-        {
-          id: "select_scorpion_rom",
-          label: "Select Scorpion ROM File...",
-          click: async () => {
-            await selectScorpionRomFile(windowInfo.emuWindow);
-          }
-        },
-        {
-          id: "clear_scorpion_rom",
-          label: "Forget the Scorpion ROM",
-          enabled: !!romFile,
-          click: async () => {
-            setSettingValue(SETTING_EMU_SCORPION_ROM, "");
-            await restartForScorpionRom("Scorpion ROM cleared: the 128K ROMs boot");
-          }
-        }
-      ]
-    }
-  ];
-};
+export async function forgetScorpionRom(): Promise<void> {
+  setSettingValue(SETTING_EMU_SCORPION_ROM, "");
+  await restartForScorpionRom("Scorpion ROM cleared: the 128K ROMs boot");
+}
 
-async function selectScorpionRomFile(emuWindow: BrowserWindow): Promise<void> {
+/** Asks for the Scorpion ROM and restarts the machine with it */
+export async function selectScorpionRomFile(emuWindow: BrowserWindow): Promise<void> {
   const current = getSettingValue(SETTING_EMU_SCORPION_ROM) as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
     title: "Select the Scorpion ZS-256 ROM (64K)",

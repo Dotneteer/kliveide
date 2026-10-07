@@ -1,12 +1,11 @@
 /*
- * The Klive state items of every machine's menu and of the File menu
+ * The Klive state items of the File menu
  * (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` §4.9, D19): save and load a state file, and the
  * in-memory quick save/restore slot.
  */
 import path from "path";
 import { app, dialog, type BrowserWindow } from "electron";
 
-import type { MachineMenuRenderer, MachineMenuItem } from "@common/machines/info-types";
 import type { AppState } from "@state/AppState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import {
@@ -66,48 +65,6 @@ export function canQuickRestoreMachineState(state: AppState = mainStore.getState
   return !!state?.emulatorState?.quickStateAvailable;
 }
 
-/** The state items of a machine's menu */
-export const machineStateMenuRenderer: MachineMenuRenderer = (windowInfo) => {
-  const emuWindow = windowInfo.emuWindow;
-  const items: MachineMenuItem[] = [
-    { type: "separator" },
-    {
-      id: "machine_save_state",
-      label: "Save State...",
-      enabled: canSaveMachineState(),
-      click: async () => {
-        await saveMachineStateAs(emuWindow);
-      }
-    },
-    {
-      id: "machine_load_state",
-      label: "Load State...",
-      click: async () => {
-        await openMachineState(emuWindow);
-      }
-    },
-    {
-      id: "machine_quick_save_state",
-      label: "Quick Save State",
-      accelerator: QUICK_SAVE_ACCELERATOR,
-      enabled: canSaveMachineState(),
-      click: async () => {
-        await quickSaveState(emuWindow);
-      }
-    },
-    {
-      id: "machine_quick_restore_state",
-      label: "Quick Restore State",
-      accelerator: QUICK_RESTORE_ACCELERATOR,
-      enabled: canQuickRestoreMachineState(),
-      click: async () => {
-        await quickRestoreState(emuWindow);
-      }
-    }
-  ];
-  return items;
-};
-
 /** A default state file name: the project's (or the machine's) name and the time */
 export function defaultStateFileName(state: AppState, now = new Date()): string {
   const folder = state?.project?.folderPath;
@@ -151,25 +108,10 @@ export async function saveMachineStateAs(browserWindow: BrowserWindow): Promise<
 }
 
 /**
- * Asks for a state file and loads it through the IDE's `state-load` command, stopping at its PC
- * (a state is a debugging bookmark). A changed Next SD card is asked about first.
+ * Loads a state file through the IDE's `state-load` command, stopping at its PC. A changed Next SD
+ * card is asked about first. File › Open File… and a dropped `.kls` come here too.
  */
-export async function openMachineState(browserWindow: BrowserWindow): Promise<void> {
-  const result = await dialog.showOpenDialog(browserWindow, {
-    title: "Load Machine State",
-    defaultPath: appSettings?.folders?.[MACHINE_STATE_FOLDER] || app.getPath("home"),
-    filters: [
-      { name: "Klive machine state", extensions: ["kls"] },
-      { name: "All Files", extensions: ["*"] }
-    ],
-    properties: ["openFile"]
-  });
-  if (result.canceled || result.filePaths.length < 1) return;
-  const filename = result.filePaths[0];
-  appSettings.folders ??= {};
-  appSettings.folders[MACHINE_STATE_FOLDER] = path.dirname(filename);
-  saveAppSettings();
-
+export async function loadMachineStateFile(browserWindow: BrowserWindow, filename: string): Promise<void> {
   let done = await getIdeApi().executeCommand(machineStateLoadCommandText(filename, "debug"));
   if (!done?.success && /Use -y to load it anyway/.test(done?.finalMessage ?? "")) {
     const answer = await dialog.showMessageBox(browserWindow, {

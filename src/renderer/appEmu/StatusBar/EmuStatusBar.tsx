@@ -1,5 +1,25 @@
 import { useMachineController } from "@renderer/core/useMachineController";
-import { useSelector } from "@renderer/core/RendererProvider";
+import { useGlobalSetting, useSelector } from "@renderer/core/RendererProvider";
+import { useMainApi } from "@renderer/core/MainApi";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "@renderer/controls/ContextMenu";
+import { CLOCK_MULTIPLIERS, clockMultiplierLabel } from "@common/machines/emulator-levels";
+import { machineRegistry } from "@common/machines/machine-registry";
+import {
+  MEDIA_INFO_MACHINE_IDS,
+  MF_ALLOW_CLOCK_MULTIPLIER,
+  MI_ZXNEXT
+} from "@common/machines/constants";
+import {
+  SETTING_EMU_SHOW_MEDIA_INFO,
+  SETTING_EMU_SHOW_NEXT_LAYERS,
+  SETTING_EMU_SHOW_PERFORMANCE_INFO,
+  SETTING_EMU_SHOW_STATUS_BAR
+} from "@common/settings/setting-const";
 import { useAppServices } from "@appIde/services/AppServicesProvider";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Icon } from "@controls/Icon";
@@ -33,6 +53,19 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
    */
   useSelector(s => s.emulatorState?.machineState);
   const counter = useRef(0);
+  const mainApi = useMainApi();
+  const showMediaInfo = useGlobalSetting(SETTING_EMU_SHOW_MEDIA_INFO);
+  const showNextLayers = useGlobalSetting(SETTING_EMU_SHOW_NEXT_LAYERS);
+  const canMultiply =
+    machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_ALLOW_CLOCK_MULTIPLIER] !== false;
+  // --- The status bar's own parts are toggled from the status bar (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  const [barMenu, barMenuApi] = useContextMenuState();
+  const [speedMenu, speedMenuApi] = useContextMenuState();
+  const speedChip = useRef<HTMLButtonElement>(null);
+  const toggle = (settingId: string, value: boolean) => async () => {
+    barMenuApi.conceal();
+    await mainApi.setGlobalSettingsValue(settingId, value);
+  };
 
   // --- Read by the frame handler, which is subscribed once per controller: a ref keeps it current
   // --- without resubscribing, and lets it skip the re-render while nothing would show the stats.
@@ -70,7 +103,14 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
 
   if (!show) return null;
   return (
-    <div className={styles.statusBar}>
+    <div
+      className={styles.statusBar}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        // --- Anchored to the bar, not the click: the menu opens upward, inside the window
+        barMenuApi.showAt(e.currentTarget);
+      }}
+    >
       <div className={styles.sectionWrapper}>
         {showPerformanceInfo && (
           <>
@@ -118,10 +158,77 @@ export const EmuStatusBar = ({ show, showPerformanceInfo = true }: EmuStatusBarP
         )}
         <SpaceFiller />
         <RzxBadge />
-        <Label text={machineName} />
+        <button
+          type="button"
+          className={styles.chip}
+          title="Select machine"
+          onClick={async () => await mainApi.runUiAction("open-machine-selector")}
+        >
+          {machineName}
+        </button>
         <LabelSeparator />
-        <Label text={`(${(freq / 1_000_000).toFixed(3)} MHz)`} />
+        {canMultiply ? (
+          <button
+            ref={speedChip}
+            type="button"
+            className={classnames(styles.chip, styles.isMonospace)}
+            title="Speed"
+            aria-haspopup="menu"
+            onClick={() => speedMenuApi.showAt(speedChip.current)}
+          >
+            {`(${(freq / 1_000_000).toFixed(3)} MHz)`}
+          </button>
+        ) : (
+          <Label text={`(${(freq / 1_000_000).toFixed(3)} MHz)`} />
+        )}
       </div>
+      {speedMenu.contextVisible && (
+        <ContextMenu state={speedMenu} placement="top-end" onClickOutside={speedMenuApi.conceal}>
+          {CLOCK_MULTIPLIERS.map((m) => (
+            <ContextMenuItem
+              key={m}
+              text={clockMultiplierLabel(m)}
+              selected={m === clockMultiplier}
+              clicked={async () => {
+                speedMenuApi.conceal();
+                await mainApi.runUiAction("set:clockMultiplier", m);
+              }}
+            />
+          ))}
+        </ContextMenu>
+      )}
+      {barMenu.contextVisible && (
+        <ContextMenu state={barMenu} placement="top-start" onClickOutside={barMenuApi.conceal}>
+          <ContextMenuItem
+            text="Show Performance Info"
+            selected={showPerformanceInfo}
+            clicked={toggle(SETTING_EMU_SHOW_PERFORMANCE_INFO, !showPerformanceInfo)}
+          />
+          {MEDIA_INFO_MACHINE_IDS.includes(machineId) && (
+            <ContextMenuItem
+              text="Show Media Information"
+              selected={!!showMediaInfo}
+              clicked={toggle(SETTING_EMU_SHOW_MEDIA_INFO, !showMediaInfo)}
+            />
+          )}
+          {machineId === MI_ZXNEXT && (
+            <ContextMenuItem
+              text="Show the Layers Strip"
+              selected={!!showNextLayers}
+              clicked={toggle(SETTING_EMU_SHOW_NEXT_LAYERS, !showNextLayers)}
+            />
+          )}
+          <ContextMenuSeparator />
+          <ContextMenuItem text="Hide Status Bar" clicked={toggle(SETTING_EMU_SHOW_STATUS_BAR, false)} />
+          <ContextMenuItem
+            text="Emulator Settings..."
+            clicked={async () => {
+              barMenuApi.conceal();
+              await mainApi.runUiAction("open-settings", "emulator");
+            }}
+          />
+        </ContextMenu>
+      )}
     </div>
   );
 };

@@ -18,19 +18,19 @@ Klive cannot ship the TR-DOS ROM: nobody has been able to establish who holds it
 permission to distribute it. You need your own 16K TR-DOS ROM image (version 5.03 is the most common).
 </Callout>
 
-With the Pentagon selected, open **Machine > TR-DOS ROM** in the Emulator window:
+With the Pentagon selected, open the **Machine** page of the [Settings](/working-with-ide/settings)
+dialog and find the **TR-DOS ROM** option:
 
-- **Select TR-DOS ROM File...** picks the image. It must be exactly 16,384 bytes. The machine restarts
-  with it.
-- **Forget the TR-DOS ROM** clears it.
+- **Browse...** picks the image. It must be exactly 16,384 bytes. The machine restarts with it.
+- **Reset** clears it.
 
-The first item of the submenu says which ROM is in use, or that none is set. Without a ROM the
+The option says which ROM is in use, or that none is set. Without a ROM the
 Pentagon still runs, but its drives are off. The ROM is a Klive setting, not a project setting, so you
 name it once.
 
 ## Inserting disks
 
-**Machine > Floppy Disks** works as it does on the ZX Spectrum +3: **Insert Disk into Drive A...** (or B),
+**Machine > Disks** works as it does on the ZX Spectrum +3: **Insert Disk into Drive A...** (or B),
 **Eject**, and **Write Protect**. The emulator's media strip shows both drives. The Pentagon takes:
 
 - **`.trd`** files: raw TR-DOS disk images. When TR-DOS writes to the disk (`SAVE`, `FORMAT`,
@@ -44,7 +44,7 @@ as does the IDE command [`crd`](/commands-reference#crd), for example `crd trd80
 
 ## Booting a disk
 
-**Machine > Floppy Disks > Boot Disk in Drive A** resets the machine and does what you would type:
+**Machine > Disks > Boot Disk in Drive A** resets the machine and does what you would type:
 it selects **48 BASIC** from the 128K menu, enters TR-DOS with `RANDOMIZE USR 15616`, and types `RUN`,
 which loads and runs the disk's BASIC program `boot`.
 

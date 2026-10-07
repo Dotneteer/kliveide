@@ -1,4 +1,4 @@
-import type { MachineMenuInfo } from "@common/machines/info-types";
+import type { MachineMenuInfo, MachineMenuRenderer } from "@common/machines/info-types";
 
 import {
   MI_SPECTRUM_128,
@@ -12,112 +12,71 @@ import {
   MI_SCORPION
 } from "@common/machines/constants";
 import { zx8081TapeMenuRenderer } from "./zx8081-menus";
-import {
-  tapeMenuRenderer,
-  spectrumIdeRenderer,
-  diskMenuRenderer,
-  trdosRomMenuRenderer,
-  sp48RomMenuRenderer,
-  spectrumSnapshotRenderer
-} from "./zx-specrum-menus";
-import {
-  z88KeyboardLayoutRenderer,
-  z88LcdRenderer,
-  z88ResetRenderer,
-  z88SnapshotRenderer
-} from "./z88-menus";
+import { tapeMenuRenderer, spectrumIdeRenderer, diskMenuRenderer } from "./zx-specrum-menus";
+import { z88ResetRenderer } from "./z88-menus";
 import {
   hotkeyMenuRenderer,
   initializeZxSpectrumNext,
-  copperMenuRenderer,
-  layersMenuRenderer,
+  nextDebugMenuRenderer,
+  nextViewsMenuRenderer,
   sdCardMenuRenderer,
   setupZxSpectrumNext
 } from "./zx-next-menus";
 import { joystickMenuRenderer, mouseMenuRenderer } from "./zx-next-input-menus";
-import { machineStateMenuRenderer } from "./state-menus";
 import { rzxMenuRenderer } from "./rzx-menus";
-import { timexDockMenuRenderer, timexJoystickMenuRenderer, timexRomMenuRenderer } from "./timex-menus";
-import { scorpionRomMenuRenderer } from "./scorpion-menus";
+import { timexDockMenuRenderer, timexJoystickMenuRenderer } from "./timex-menus";
+
+/** Renders the items of several renderers, one after the other */
+function combine(...renderers: MachineMenuRenderer[]): MachineMenuRenderer {
+  return (windowInfo, machine, model, config) =>
+    renderers.flatMap((r) => r(windowInfo, machine, model, config));
+}
 
 /**
- * Machine-specific menu information
+ * Machine-specific menu information (`.plans/MENU_REDESIGN_PLAN.md`): where each machine's own
+ * items appear in the menu. Machine options that are set once (ROM files, the Z88's keyboard layout
+ * and LCD) are in Settings › Machine, not here.
  */
 export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
   [MI_ZX81]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...zx8081TapeMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ]
+    devices: { program: zx8081TapeMenuRenderer }
   },
   [MI_ZX80]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...zx8081TapeMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ]
+    devices: { program: zx8081TapeMenuRenderer }
   },
   [MI_SPECTRUM_48]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...tapeMenuRenderer(windowInfo, machine, model),
-      ...spectrumSnapshotRenderer(windowInfo, machine, model),
-      ...rzxMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model),
-      ...sp48RomMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer
+    devices: { tape: tapeMenuRenderer },
+    viewItems: spectrumIdeRenderer,
+    recordItems: rzxMenuRenderer
   },
   [MI_TIMEX]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...tapeMenuRenderer(windowInfo, machine, model),
-      ...timexDockMenuRenderer(windowInfo, machine, model),
-      ...timexJoystickMenuRenderer(windowInfo, machine, model),
-      ...spectrumSnapshotRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model),
-      ...timexRomMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer
+    devices: {
+      tape: tapeMenuRenderer,
+      cartridge: timexDockMenuRenderer,
+      input: timexJoystickMenuRenderer
+    },
+    viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_128]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...tapeMenuRenderer(windowInfo, machine, model),
+    devices: {
+      tape: tapeMenuRenderer,
       // --- The Pentagon's Beta 128 (model config `MC_DISK_SUPPORT`; none on the 128K)
-      ...diskMenuRenderer(windowInfo, machine, model),
-      ...trdosRomMenuRenderer(windowInfo, machine, model),
-      ...spectrumSnapshotRenderer(windowInfo, machine, model),
-      ...rzxMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer
+      disks: diskMenuRenderer
+    },
+    viewItems: spectrumIdeRenderer,
+    recordItems: rzxMenuRenderer
   },
   [MI_SCORPION]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...tapeMenuRenderer(windowInfo, machine, model),
-      ...diskMenuRenderer(windowInfo, machine, model),
-      ...trdosRomMenuRenderer(windowInfo, machine, model),
-      ...scorpionRomMenuRenderer(windowInfo, machine, model),
-      ...spectrumSnapshotRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer
+    devices: { tape: tapeMenuRenderer, disks: diskMenuRenderer },
+    viewItems: spectrumIdeRenderer
   },
   [MI_SPECTRUM_3E]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...tapeMenuRenderer(windowInfo, machine, model),
-      ...diskMenuRenderer(windowInfo, machine, model),
-      ...spectrumSnapshotRenderer(windowInfo, machine, model),
-      ...rzxMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer
+    devices: { tape: tapeMenuRenderer, disks: diskMenuRenderer },
+    viewItems: spectrumIdeRenderer,
+    recordItems: rzxMenuRenderer
   },
   [MI_Z88]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...z88KeyboardLayoutRenderer(windowInfo, machine, model),
-      ...z88LcdRenderer(windowInfo, machine, model),
-      ...z88SnapshotRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model),
-      ...z88ResetRenderer(windowInfo, machine, model)
-    ],
+    hardwareItems: z88ResetRenderer,
     helpLinks: [
       {
         label: "Cambridge Z88 User Guide",
@@ -151,16 +110,13 @@ export const machineMenuRegistry: Record<string, MachineMenuInfo> = {
     ]
   },
   [MI_ZXNEXT]: {
-    machineItems: (windowInfo, machine, model) => [
-      ...hotkeyMenuRenderer(windowInfo, machine, model),
-      ...sdCardMenuRenderer(windowInfo, machine, model),
-      ...joystickMenuRenderer(windowInfo, machine, model),
-      ...mouseMenuRenderer(windowInfo, machine, model),
-      ...copperMenuRenderer(windowInfo, machine, model),
-      ...layersMenuRenderer(windowInfo, machine, model),
-      ...machineStateMenuRenderer(windowInfo, machine, model)
-    ],
-    ideItems: spectrumIdeRenderer,
+    devices: {
+      sdCard: sdCardMenuRenderer,
+      input: combine(joystickMenuRenderer, mouseMenuRenderer)
+    },
+    hardwareItems: hotkeyMenuRenderer,
+    viewItems: combine(spectrumIdeRenderer, nextViewsMenuRenderer),
+    debugItems: nextDebugMenuRenderer,
     initializer: initializeZxSpectrumNext,
     setup: setupZxSpectrumNext
   }

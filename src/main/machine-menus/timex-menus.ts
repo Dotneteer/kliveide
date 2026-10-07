@@ -39,45 +39,25 @@ const DOCK_FILE_FOLDER = "dockFileFolder";
 
 /**
  * The model's ROM (`.plans/TIMEX_SCORPION_PLAN.md` P5): Klive cannot ship Timex's ROMs, so the user
- * names their own copy; without one the machine boots the Sinclair 48K ROM. Choosing or forgetting
- * it restarts the machine.
+ * names their own copy in Settings › Machine; without one the machine boots the Sinclair 48K ROM.
+ * Choosing or forgetting it restarts the machine. Both act on the running Timex model.
  */
-export const timexRomMenuRenderer: MachineMenuRenderer = (windowInfo, _, modelInfo) => {
-  const model = getTimexModel(modelInfo?.config);
-  const name = model.id.toUpperCase();
-  const romFile = getSettingValue(ROM_SETTING[model.id]) as string | undefined;
-  return [
-    {
-      id: "timex_rom_menu",
-      label: `${name} ROM`,
-      submenu: [
-        {
-          id: "timex_rom_status",
-          label: romFile
-            ? `Using ${path.basename(romFile)}`
-            : `No ${name} ROM set: booting the 48K ROM${model.is2068 ? " (no EXROM)" : ""}`,
-          enabled: false
-        },
-        {
-          id: "select_timex_rom",
-          label: `Select ${name} ROM File...`,
-          click: async () => {
-            await selectTimexRomFile(windowInfo.emuWindow, model.id, model.romSize);
-          }
-        },
-        {
-          id: "clear_timex_rom",
-          label: `Forget the ${name} ROM`,
-          enabled: !!romFile,
-          click: async () => {
-            setSettingValue(ROM_SETTING[model.id], "");
-            await restartForTimexRom(`${name} ROM cleared: the 48K ROM boots`);
-          }
-        }
-      ]
-    }
-  ];
-};
+export function timexRomSettingId(config: Record<string, any> | undefined): string {
+  return ROM_SETTING[getTimexModel(config).id];
+}
+
+/** Asks for the running Timex model's ROM and restarts the machine with it */
+export async function selectTimexRom(emuWindow: BrowserWindow): Promise<void> {
+  const model = getTimexModel(mainStore.getState()?.emulatorState?.config);
+  await selectTimexRomFile(emuWindow, model.id, model.romSize);
+}
+
+/** Forgets the running Timex model's ROM; the 48K ROM boots */
+export async function forgetTimexRom(): Promise<void> {
+  const model = getTimexModel(mainStore.getState()?.emulatorState?.config);
+  setSettingValue(ROM_SETTING[model.id], "");
+  await restartForTimexRom(`${model.id.toUpperCase()} ROM cleared: the 48K ROM boots`);
+}
 
 /**
  * The joysticks, driven by the host's joystick bindings (the same table the Next's joysticks use):

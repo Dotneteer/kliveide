@@ -20,6 +20,13 @@ import {
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
+import { SOUND_LEVELS } from "@common/machines/emulator-levels";
+import {
+  ContextMenu,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  useContextMenuState
+} from "./ContextMenu";
 
 type Props = {
   recordingManagerRef?: MutableRefObject<RecordingManager | null>;
@@ -50,6 +57,12 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
   const mouseSupport = machineInfo?.features?.[MF_MOUSE_SUPPORT] ?? false;
   const mouseCaptureEnabled = !!useGlobalSetting(SETTING_EMU_MOUSE_CAPTURE);
   const mouseCaptured = useSelector((s) => s.emulatorState?.mouseCaptured ?? false);
+
+  const soundLevel = useSelector((s) => s.emulatorState?.soundLevel);
+  const windowRecording = useSelector((s) => s.emulatorState?.windowRecordingState === "recording");
+  // --- The sound level and the recordings, next to their buttons (`.plans/MENU_REDESIGN_PLAN.md` §5)
+  const [soundMenu, soundMenuApi] = useContextMenuState();
+  const [recordMenu, recordMenuApi] = useContextMenuState();
 
   const saveProject = useCallback(async () => {
     await mainApi.saveProject();
@@ -158,6 +171,28 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           }}
         />
       )}
+      <IconButton
+        iconName="chevron-down"
+        iconSize={SECONDARY_ICON_SIZE}
+        fill="--color-toolbarbutton"
+        title="Sound level"
+        clicked={(e) => soundMenuApi.showAt(e.currentTarget)}
+      />
+      {soundMenu.contextVisible && (
+        <ContextMenu state={soundMenu} onClickOutside={soundMenuApi.conceal}>
+          {SOUND_LEVELS.map((level) => (
+            <ContextMenuItem
+              key={level.value}
+              text={level.label}
+              selected={level.value === soundLevel}
+              clicked={async () => {
+                soundMenuApi.conceal();
+                await mainApi.runUiAction("set:soundLevel", level.value);
+              }}
+            />
+          ))}
+        </ContextMenu>
+      )}
       {tapeSupport && <ToolbarSeparator />}
       {tapeSupport && (
         <IconButton
@@ -201,7 +236,7 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           selected={recState === "recording" || recState === "armed"}
           title={
             !recState || recState === "idle"
-              ? "Start recording \u2014 use Machine \u203a Recording to choose fps"
+              ? "Start video recording \u2014 the arrow next to it has the other recordings"
               : recState === "armed"
                 ? "Ready \u2013 waiting for machine to run (click to cancel)"
                 : recState === "recording"
@@ -214,6 +249,36 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
               : () => recordingManagerRef?.current?.disarm()
           }
         />
+      )}
+      {recordingAvailable && (
+        <IconButton
+          iconName="chevron-down"
+          iconSize={SECONDARY_ICON_SIZE}
+          fill="--color-toolbarbutton"
+          title="Recordings"
+          clicked={(e) => recordMenuApi.showAt(e.currentTarget)}
+        />
+      )}
+      {recordMenu.contextVisible && (
+        <ContextMenu state={recordMenu} onClickOutside={recordMenuApi.conceal}>
+          <ContextMenuItem
+            text={windowRecording ? "Stop IDE + Emulator Recording" : "Start IDE + Emulator Recording"}
+            disabled={!windowRecording && !!recState && recState !== "idle"}
+            clicked={async () => {
+              recordMenuApi.conceal();
+              const problem = await mainApi.runUiAction("toggle-ide-emu-recording");
+              if (problem) await mainApi.displayMessageBox("info", "IDE + Emulator Recording", problem);
+            }}
+          />
+          <ContextMenuSeparator />
+          <ContextMenuItem
+            text="Recording Settings..."
+            clicked={async () => {
+              recordMenuApi.conceal();
+              await mainApi.runUiAction("open-settings", "recording");
+            }}
+          />
+        </ContextMenu>
       )}
     </>
   );

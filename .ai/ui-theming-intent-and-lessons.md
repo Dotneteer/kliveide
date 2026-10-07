@@ -1921,6 +1921,38 @@ a grouped catalogue while reading its facts.
   `--surface-canvas`, the inner area `--surface-active`, edges `--border-strong`. `--surface-stage`
   and `--surface-selected` are almost the same value in dark, so that pair draws nothing.
 
+## A Preference Goes To Settings; A Strip's Parts Are Toggled From The Strip
+
+The application menu holds commands; set-once preferences live in the Settings dialog
+(`appIde/dialogs/settings/`, `.plans/MENU_REDESIGN_PLAN.md`). A value changed during a session
+(sound, speed, the machine) may *also* get a control where the user is already looking, but the menu
+keeps the command as the keyboard path.
+
+- **A Settings row is a two-column grid**: label (title, then a `--font-size-200` tertiary
+  description) and a control column of `minmax(24ch, 36ch)`. A switch row is one column with the
+  box *first* (`Checkbox right`), so a page of switches reads as a checklist, not a ragged edge of
+  boxes after labels of different lengths. Group titles reuse the uppercase `--font-size-100`
+  secondary style of the Select Machine favourites header.
+- **A dialog's scrolling pane scrolls in a `ScrollViewer`**, never with `overflow: auto`: the
+  browser's own scrollbar is the one surface in the app that is not themed. Give the pane a
+  non-scrolling cell (`display: flex; flex-direction: column; min-height: 0; overflow: hidden`)
+  for the `ScrollViewer` to fill, and keep the padding on the content inside it, not on the cell.
+- **"Was: <old menu path>" shows only while searching**, in `--accent-text`: it is how a user who
+  remembers the old place finds the new one, and noise on a page they navigated to.
+- **Accent choices are swatches, not a list**, painted from `ACCENTS[id].solid[tone]` — palette data,
+  not a literal — with the selected one ringed in `--text-primary`.
+- **A strip's own parts are toggled from that strip's context menu** (the emulator status bar:
+  performance info, media strip, Layers strip). **Anchor such a menu to the strip** with
+  `showAt(e.currentTarget)` and a `top-*` placement. A menu positioned at the click (`show(e)`)
+  ignores the placement and hangs below the pointer — off the bottom of the window for a strip at
+  the window's bottom edge.
+- **A status-bar value that opens choices is a chip**: a borderless button that looks exactly like
+  the label it replaced (`--color-statusbar-label`, `--font-size-100`) until hovered
+  (`--surface-hover`). It must not read as a new control competing with the readouts beside it.
+- **Judge a modal's fit from a window screenshot, never from `locator.screenshot()` of the dialog.**
+  An element shot of the Settings dialog came out clipped on the right while the dialog fitted with
+  room to spare; measure with `getBoundingClientRect` or shoot the whole window.
+
 ## A Bank Browser Has One Shell
 
 `controls/bankBrowser/BankBrowser.tsx` is the browser for any file that holds banks — or anything

@@ -27,7 +27,8 @@ The same actions are available in three more places:
 - **The toolbar.** The first buttons of the IDE toolbar are **Back** and **Forward**. Hover over
   one to see where it goes (for example, *Back to main.kz80.asm · line 42*). A button is disabled
   when there is nowhere to go.
-- **The IDE menu.** **IDE &rsaquo; Go** has **Back**, **Forward** and **Clear Navigation History**.
+- **The View menu.** **View &rsaquo; Go Back** and **View &rsaquo; Go Forward**. **Clear Navigation
+  History** is in the navigation dropdown of the IDE toolbar.
 - **Interactive commands.** [`nav-back`](/commands-reference#nav-back) and
   [`nav-forward`](/commands-reference#nav-forward), with
   [`nav-history`](/commands-reference#nav-history) and
@@ -89,7 +90,7 @@ The history lasts until you close the project. It is not saved with the project.
 
 ## Settings
 
-**IDE &rsaquo; IDE Settings &rsaquo; Record tab switches in the navigation history** decides whether
+**Settings &rsaquo; General &rsaquo; Record tab switches in the navigation history** decides whether
 clicking a document tab, choosing a document in the Open Editors panel, or opening a file from the
 Project Explorer adds a place. It is on by default. Turn it off if you only want jumps in the history.
 
@@ -103,4 +104,4 @@ set -u shortcuts.navigateForward "CmdOrCtrl+]"
 ```
 
 `CmdOrCtrl` means <kbd>Cmd</kbd> on macOS and <kbd>Ctrl</kbd> elsewhere. The toolbar tooltips and
-the **Go** menu show the shortcuts in effect.
+the **View** menu show the shortcuts in effect.

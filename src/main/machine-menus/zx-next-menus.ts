@@ -10,24 +10,13 @@ import { saveKliveProject } from "@main/projects";
 import { app, BrowserWindow, dialog } from "electron";
 import { KLIVE_HOME_FOLDER } from "@main/settings";
 import { getKliveHomeBase } from "@main/portable";
-import { setMediaAction, setNextLayersAction } from "@common/state/actions";
+import { setMediaAction } from "@common/state/actions";
 import { logEmuEvent } from "@main/registeredMachines";
 import { CimHandler } from "@main/fat32/CimHandlers";
 import { appSettings, saveAppSettings, setSettingValue } from "@main/settings-utils";
 import { getEmuApi } from "@common/messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
-import { SETTING_EMU_SCANLINE_EFFECT, SETTING_EMU_SHOW_NEXT_LAYERS } from "@common/settings/setting-const";
-import {
-  applyLayersCommand,
-  EMPTY_LAYER_VIEW,
-  type LayersCommand
-} from "@common/zxnext/layers/layerView";
-import {
-  NEXT_LAYER_BITS,
-  NEXT_LAYER_IDS,
-  NEXT_LAYER_NAMES,
-  type NextLayerViewState
-} from "@common/zxnext/layers/layerMix";
+import { SETTING_EMU_SCANLINE_EFFECT } from "@common/settings/setting-const";
 import { ensureSdCardBackupIfEnabled } from "./sd-card-backup";
 import { withSdCardAccess } from "../sd-card-access";
 
@@ -36,7 +25,7 @@ export const DEFAULT_SD_CARD_FILE = "ks2.cim";
 export const SOURCE_SD_CARD_FILE = "mmc/ks2-base.cim";
 
 /**
- * Renders tape commands
+ * Machine › SD Card
  */
 export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const items: MachineMenuItem[] = [];
@@ -44,7 +33,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const appState = mainStore.getState();
   items.push({
     id: "select_sd_card",
-    label: "Select SD Card Image...",
+    label: "Select Image...",
     enabled: isMachineStopped(),
     click: async () => {
       await setSdCardFile(emuWindow, appState);
@@ -54,7 +43,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   });
   items.push({
     id: "default_sd_card",
-    label: "Use the default SD Card Image",
+    label: "Use the Default Image",
     enabled: isMachineStopped(),
     click: async () => {
       // --- Store the last selected tape file
@@ -67,7 +56,7 @@ export const sdCardMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   items.push({ type: "separator" });
   items.push({
     id: "reset_sd_card",
-    label: "Reset the default SD Card Image",
+    label: "Reset the Default Image...",
     enabled:
       appState.emulatorState?.machineState === MachineControllerState.Stopped ||
       appState.emulatorState?.machineState === MachineControllerState.None,
@@ -381,132 +370,33 @@ function isMachineStopped(): boolean {
 }
 
 /**
- * The Next inspector items: open the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
+ * View › Machine Views on the Next: the Copper List document (`.plans/COPPER_DEBUGGING_PLAN.md`
  * §4.5), the Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4), the Tilemap Inspector
- * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4) and the Layer 2 Inspector
- * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.4), and step the Copper.
- * All go through the IDE's commands, so the menu, the command line and the panels share one
- * implementation.
+ * (`.plans/TILEMAP_INSPECTOR_PLAN.md` §4.4), the Layer 2 Inspector (`.plans/LAYER2_INSPECTOR_PLAN.md`
+ * §4.4) and the Layers document (`.plans/LAYER_COMPOSITION_PLAN.md`). All go through the IDE's
+ * commands, so the menu, the command line and the panels share one implementation. The layer
+ * toggles themselves live on the Layers strip under the screen, which has every one of them.
  */
-export const copperMenuRenderer: MachineMenuRenderer = () => [
-  { type: "separator" },
-  {
-    id: "show_copper_list",
-    label: "Show Copper List",
-    click: async () => {
-      await getIdeApi().executeCommand("show-copper");
-    }
-  },
+export const nextViewsMenuRenderer: MachineMenuRenderer = () => [
+  { id: "show_copper_list", label: "Copper List", click: ideCommand("show-copper") },
+  { id: "show_sprite_inspector", label: "Sprite Inspector", click: ideCommand("show-sprites") },
+  { id: "show_tilemap_inspector", label: "Tilemap Inspector", click: ideCommand("show-tilemap") },
+  { id: "show_layer2_inspector", label: "Layer 2 Inspector", click: ideCommand("show-layer2") },
+  { id: "next_layers_document", label: "Layers", click: ideCommand("show-layers") }
+];
+
+/** Debug › Step Copper on the Next */
+export const nextDebugMenuRenderer: MachineMenuRenderer = () => [
   {
     id: "step_copper",
     label: "Step Copper",
     enabled: mainStore.getState()?.emulatorState?.machineState !== MachineControllerState.Running,
-    click: async () => {
-      await getIdeApi().executeCommand("step-copper");
-    }
-  },
-  {
-    // --- The Sprite Inspector (`.plans/SPRITE_INSPECTOR_PLAN.md` §4.4) shares this group
-    id: "show_sprite_inspector",
-    label: "Show Sprite Inspector",
-    click: async () => {
-      await getIdeApi().executeCommand("show-sprites");
-    }
-  },
-  {
-    id: "show_tilemap_inspector",
-    label: "Show Tilemap Inspector",
-    click: async () => {
-      await getIdeApi().executeCommand("show-tilemap");
-    }
-  },
-  {
-    id: "show_layer2_inspector",
-    label: "Show Layer 2 Inspector",
-    click: async () => {
-      await getIdeApi().executeCommand("show-layer2");
-    }
+    click: ideCommand("step-copper")
   }
 ];
 
-/**
- * Machine -> Layers (`.plans/LAYER_COMPOSITION_PLAN.md` D4): the same one debug view the Layers strip
- * and the `layers` command change. A toggle from here shows the strip (Q3), so a hidden layer is
- * always in sight.
- */
-export const layersMenuRenderer: MachineMenuRenderer = () => {
-  const view: NextLayerViewState = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
-  const apply = (cmd: LayersCommand, showStrip = true) => async () => {
-    const current = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
-    mainStore.dispatch(setNextLayersAction(applyLayersCommand(current, cmd)));
-    if (showStrip) setSettingValue(SETTING_EMU_SHOW_NEXT_LAYERS, true);
+function ideCommand(command: string): () => Promise<void> {
+  return async () => {
+    await getIdeApi().executeCommand(command);
   };
-  const setFlag = (patch: Partial<NextLayerViewState>) => async () => {
-    const current = mainStore.getState()?.emulatorState?.nextLayers ?? EMPTY_LAYER_VIEW;
-    mainStore.dispatch(setNextLayersAction({ ...current, ...patch }));
-    setSettingValue(SETTING_EMU_SHOW_NEXT_LAYERS, true);
-  };
-  return [
-    {
-      id: "next_layers",
-      label: "Layers",
-      type: "submenu",
-      submenu: [
-        ...NEXT_LAYER_IDS.map((id) => ({
-          id: `next_layer_show_${id}`,
-          label: `Show ${NEXT_LAYER_NAMES[id]}`,
-          type: "checkbox" as const,
-          checked: (view.hidden & NEXT_LAYER_BITS[id]) === 0,
-          click: apply({ target: id, action: view.hidden & NEXT_LAYER_BITS[id] ? "on" : "off" })
-        })),
-        { type: "separator" as const },
-        ...NEXT_LAYER_IDS.map((id) => ({
-          id: `next_layer_solo_${id}`,
-          label: `Solo ${NEXT_LAYER_NAMES[id]}`,
-          type: "checkbox" as const,
-          checked: view.solo === NEXT_LAYER_BITS[id],
-          click:
-            view.solo === NEXT_LAYER_BITS[id]
-              ? setFlag({ solo: 0 })
-              : apply({ target: id, action: "solo" })
-        })),
-        { type: "separator" as const },
-        {
-          id: "next_layer_transparency",
-          label: "Show Transparency",
-          type: "checkbox" as const,
-          checked: !!view.showTransparent,
-          click: setFlag({ showTransparent: !view.showTransparent })
-        },
-        {
-          id: "next_layer_clips",
-          label: "Show Clip Windows",
-          type: "checkbox" as const,
-          checked: !!view.showClips,
-          click: setFlag({ showClips: !view.showClips })
-        },
-        {
-          id: "next_layer_probe",
-          label: "Pixel Probe",
-          type: "checkbox" as const,
-          checked: !!view.probe,
-          click: setFlag({ probe: !view.probe })
-        },
-        { type: "separator" as const },
-        {
-          id: "next_layers_reset",
-          label: "Show All Layers",
-          enabled: view.hidden !== 0 || view.solo !== 0 || !!view.showTransparent,
-          click: apply({ target: "all", action: "on" }, false)
-        },
-        {
-          id: "next_layers_document",
-          label: "Show Layers Document",
-          click: async () => {
-            await getIdeApi().executeCommand("show-layers");
-          }
-        }
-      ]
-    }
-  ];
-};
+}

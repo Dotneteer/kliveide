@@ -6,7 +6,7 @@ import { MI_ZX80 } from "@common/machines/constants";
 import { MEDIA_TAPE } from "@common/structs/project-const";
 import { SETTING_EMU_FAST_LOAD } from "@common/settings/setting-const";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
-import { createBooleanSettingsMenu } from "@main/app-menu";
+import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
 import { mainStore } from "@main/main-store";
 import { saveKliveProject } from "@main/projects";
 import { appSettings } from "@main/settings-utils";

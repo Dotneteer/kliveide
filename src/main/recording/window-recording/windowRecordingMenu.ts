@@ -9,19 +9,12 @@ import {
 } from "@common/state/actions";
 
 /**
- * The IDE + Emulator recording items of Machine | Recording (plan §5.2).
+ * The IDE + Emulator recording item of Machine › Record (`.plans/IDE_EMU_RECORDING_PLAN.md` §5.2).
  *
  * Built from the state alone, so the enablement rules can be tested without the whole app menu.
- * Toggles read the *current* state at click time: the app menu is only rebuilt when its rendered
- * form changes, so a click handler may outlive the state it was built from.
  */
 export type WindowRecordingMenuContext = {
   state: AppState | undefined;
-  /** The current state, read at click time */
-  getState: () => AppState | undefined;
-  dispatch: (action: Action) => void;
-  /** Persists the preferences (they live in the app settings) */
-  saveSettings: () => void;
   ideWindowVisible: boolean;
   /** Accelerator of the start/stop item */
   shortcut: string;
@@ -35,6 +28,11 @@ export const IDE_POSITION_ITEMS: [RecordingIdePosition, string][] = [
   ["bottom", "Bottom"]
 ];
 
+/**
+ * The IDE + Emulator recording item of Machine › Record: start or stop. Its preferences (the IDE's
+ * position, the pointer, the clicks, HiDPI) are in Settings › Recording
+ * (`.plans/MENU_REDESIGN_PLAN.md` §4.1), which writes them with `windowRecordingPreferenceAction`.
+ */
 export function createWindowRecordingMenuItems(
   context: WindowRecordingMenuContext
 ): MenuItemConstructorOptions[] {
@@ -42,15 +40,6 @@ export function createWindowRecordingMenuItems(
   const recording = emulatorState?.windowRecordingState === "recording";
   const screenState = emulatorState?.screenRecordingState;
   const screenIdle = !screenState || screenState === "idle";
-  const pointer = emulatorState?.windowRecordingPointer ?? true;
-  const position = emulatorState?.windowRecordingIdePosition ?? "left";
-  const current = () => context.getState()?.emulatorState;
-
-  const toggle = (action: Action) => {
-    context.dispatch(action);
-    context.saveSettings();
-  };
-
   return [
     {
       id: "recording_ide_emu_start_stop",
@@ -59,43 +48,33 @@ export function createWindowRecordingMenuItems(
       // --- One recording at a time; the IDE must be visible to be recorded
       enabled: recording || (screenIdle && context.ideWindowVisible),
       click: async () => await context.toggleRecording()
-    },
-    {
-      id: "recording_ide_position",
-      label: "IDE position",
-      enabled: !recording,
-      submenu: IDE_POSITION_ITEMS.map(([value, label]) => ({
-        id: `recording_ide_position_${value}`,
-        label,
-        type: "radio" as const,
-        checked: position === value,
-        enabled: !recording,
-        click: () => toggle(setWindowRecordingIdePositionAction(value))
-      }))
-    },
-    {
-      id: "recording_ide_emu_pointer",
-      label: "Include pointer",
-      type: "checkbox",
-      checked: pointer,
-      enabled: !recording,
-      click: () => toggle(setWindowRecordingPointerAction(!(current()?.windowRecordingPointer ?? true)))
-    },
-    {
-      id: "recording_ide_emu_clicks",
-      label: "Show mouse clicks",
-      type: "checkbox",
-      checked: emulatorState?.windowRecordingClicks ?? true,
-      enabled: !recording && pointer,
-      click: () => toggle(setWindowRecordingClicksAction(!(current()?.windowRecordingClicks ?? true)))
-    },
-    {
-      id: "recording_ide_emu_hidpi",
-      label: "Full resolution (HiDPI)",
-      type: "checkbox",
-      checked: emulatorState?.windowRecordingHiDpi ?? false,
-      enabled: !recording,
-      click: () => toggle(setWindowRecordingHiDpiAction(!(current()?.windowRecordingHiDpi ?? false)))
     }
   ];
+}
+
+/** The IDE + Emulator recording preferences Settings › Recording edits */
+export type WindowRecordingPreference = "idePosition" | "pointer" | "clicks" | "hiDpi";
+
+/**
+ * The action that stores one IDE + Emulator recording preference. The caller persists the app
+ * settings afterwards (the preferences live there).
+ */
+export function windowRecordingPreferenceAction(
+  preference: WindowRecordingPreference,
+  value: unknown
+): Action | undefined {
+  switch (preference) {
+    case "idePosition":
+      return IDE_POSITION_ITEMS.some(([v]) => v === value)
+        ? setWindowRecordingIdePositionAction(value as RecordingIdePosition)
+        : undefined;
+    case "pointer":
+      return setWindowRecordingPointerAction(!!value);
+    case "clicks":
+      return setWindowRecordingClicksAction(!!value);
+    case "hiDpi":
+      return setWindowRecordingHiDpiAction(!!value);
+    default:
+      return undefined;
+  }
 }

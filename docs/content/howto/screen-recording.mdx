@@ -10,15 +10,15 @@ Klive can capture the emulator display (plus audio) as a video file.
 This is ideal for sharing gameplay clips, building tutorials, or demonstrating your retro programs to the community.
 
 <Callout type="info" emoji="💡">
-FFmpeg is **bundled with Klive** — no separate installation is required. The Record button and Machine › Recording menu are available out of the box on all platforms.
+FFmpeg is **bundled with Klive** — no separate installation is required. The Record button and Machine › Record menu are available out of the box on all platforms.
 </Callout>
 
 ---
 
 ## Quick-Start: Record in Three Steps
 
-1. **Configure** — Use **Machine › Recording** to choose your format, quality, and frame rate _before_ you start (settings are locked while recording).
-2. **Arm** — Click the **Record** button (⏺) in the toolbar, or choose **Machine › Recording › Start Recording**.
+1. **Configure** — Use **Machine › Record › Recording Settings...** (the **Recording** page of [Settings](/working-with-ide/settings)) to choose your format, quality, and frame rate _before_ you start (settings are locked while recording).
+2. **Arm** — Click the **Record** button (⏺) in the toolbar, or choose **Machine › Record › Start Video Recording**.
    The button turns **gold** — the recorder is now _armed_ and waiting for the machine to run.
 3. **Play** — Start or continue the machine. Recording begins automatically the moment the machine runs.
    The Record button turns **red** while capturing.
@@ -54,7 +54,7 @@ Because the recorder arms _before_ the machine starts, you never miss the first 
 
 ## Configuring the Recording
 
-All options live under **Machine › Recording**. They can only be changed while recording is **idle**.
+All options live on the **Recording** page of the [Settings](/working-with-ide/settings) dialog (**Machine › Record › Recording Settings...**). They can only be changed while recording is **idle**.
 
 ### Output Format
 
@@ -98,7 +98,7 @@ When **Half** is selected, both video frames and audio samples are sub-sampled t
 You can pause a recording independently of the machine:
 
 - **Machine paused** (debug step, Pause button): the recorder automatically suspends. It resumes the moment the machine runs again.
-- **Manual pause/resume** (via **Machine › Recording › Pause Recording** / **Continue Recording**): pause the capture while the machine keeps running. Use this to skip sections you don't want in the output.
+- **Manual pause/resume** (via **Machine › Record › Pause Video Recording** / **Continue Video Recording**): pause the capture while the machine keeps running. Use this to skip sections you don't want in the output.
 
 During a pause the output file stays open — no data is lost, and the resume is seamless.
 
@@ -116,13 +116,13 @@ If the machine produces no sound, the video will contain silence — that is nor
 
 To show your code and the running machine in one video — a tutorial, a bug report, a debugging session — record both windows side by side.
 
-Choose **Machine › Recording › Start IDE + Emulator recording**, or press **Ctrl+Shift+F7**. Both window titles show **● REC** while the recording runs. Use the same command (or shortcut) again to stop; the file is saved to the same folder as any other recording.
+Choose **Machine › Record › Start IDE + Emulator recording**, or press **Ctrl+Shift+F7**. Both window titles show **● REC** while the recording runs. Use the same command (or shortcut) again to stop; the file is saved to the same folder as any other recording.
 
 This recording runs on the clock, not on the machine: it starts at once and keeps recording while the machine is stopped or paused, so you can show the IDE before you run anything. The IDE window must be visible to start it.
 
 ### Arranging the windows
 
-The two windows are placed next to each other in the video, wherever they are on your screen. **Machine › Recording › IDE position** sets where the IDE goes relative to the emulator: **Left** (default), **Right**, **Top**, or **Bottom**. The video is just large enough to hold both; the smaller window is centred along the shared side, and the space around it is filled with your theme's background colour.
+The two windows are placed next to each other in the video, wherever they are on your screen. **Settings › Recording › IDE position** sets where the IDE goes relative to the emulator: **Left** (default), **Right**, **Top**, or **Bottom**. The video is just large enough to hold both; the smaller window is centred along the shared side, and the space around it is filled with your theme's background colour.
 
 If you resize a window while recording, its picture is scaled to fit the space it had when the recording started.
 
@@ -141,7 +141,7 @@ The **format** and **quality** settings above apply to this recording too. The f
 The machine's sound is recorded while it runs. While the machine is paused or stopped, the recording carries silence, so the sound always stays in step with the picture.
 
 <Callout type="info" emoji="💡">
-Only one recording runs at a time: while the IDE + Emulator recording runs, the emulator's own **Start Recording** is unavailable, and the other way round. The recording options are locked while either recording runs.
+Only one recording runs at a time: while the IDE + Emulator recording runs, the emulator's own **Start Video Recording** is unavailable, and the other way round. The recording options are locked while either recording runs.
 </Callout>
 
 To use another shortcut, set the `shortcuts.recordIdeEmu` user setting with the

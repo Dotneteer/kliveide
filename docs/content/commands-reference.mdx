@@ -750,7 +750,7 @@ snapshot needs. With a project open, it refuses a snapshot for another machine t
 project's model for a snapshot of the same type. Disks a `.szx` file links are read and inserted.
 
 The same actions are available from the Explorer's context menu on a snapshot file, from the buttons
-in a snapshot's document tab, from **File &rarr; Load ZX Spectrum Snapshot...**, and by dropping the
+in a snapshot's document tab, from **File &rarr; Open File...**, and by dropping the
 file onto the Emulator window. See [Using ZX Spectrum Snapshots](./howto/spectrum-snapshots) for
 what Klive can load.
 
@@ -775,8 +775,7 @@ command lists anything `.z80` or `.sna` cannot hold as warnings, and refuses a s
 load back differently. An existing file is replaced only with `-f`.
 
 The machine must be running or paused. A running machine is paused for the capture and runs on
-afterwards; a paused one stays paused. **File &rarr; Save ZX Spectrum Snapshot...** and the Emulator's
-**Machine &rarr; Save Snapshot...** do the same after asking for a file. See
+afterwards; a paused one stays paused. **File &rarr; Save Snapshot...** does the same after asking for a file. See
 [Using ZX Spectrum Snapshots](./howto/spectrum-snapshots#saving-a-snapshot) for what each format
 keeps.
 
@@ -919,8 +918,8 @@ Available aliases: `z88snap`
 With no option (or with `-d`), the snapshot is debugged: the machine starts in debug mode and stops
 at the snapshot's program counter before executing that instruction. Use `-r` to run the snapshot.
 `-a` does what the file's *Autorun* flag says &mdash; run
-when it is set, debug and stop at the program counter when it is not &mdash; as the Emulator's
-**Open Z88 Snapshot...** menu does. Use only one option at a time.
+when it is set, debug and stop at the program counter when it is not &mdash; as opening the file with
+**File | Open File...** does. Use only one option at a time.
 
 The command makes the machine fit the snapshot: it switches to the Cambridge Z88, or sets the Z88 up
 again with the snapshot's internal RAM and LCD size, when needed. It refuses to do that when a
@@ -947,7 +946,7 @@ tape-load <tape-file> [-r | -d]
 
 Available aliases: `tapeload`
 
-With no option, the tape is only inserted, as **Machine | Select Tape File** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. A relative path is taken from the project folder.
+With no option, the tape is only inserted, as **Machine | Tape | Insert Tape...** does; inserting the tape already in the deck rewinds it. `-r` then resets the machine and starts the tape loading: it types `LOAD ""` on a 48K and chooses the Tape Loader (Loader on a +2A/+3) from a 128K's start-up menu. `-d` does the same with your breakpoints armed. A relative path is taken from the project folder.
 
 The command works on the ZX Spectrum 48K, 128K and +2/+3 only. It is what the tape viewer's buttons and the Explorer's context menu on a tape file run; see [Loading from Tape](./getting-started/tapes).
 
@@ -1177,7 +1176,7 @@ Available aliases: `sjasmpr`
 
 Klive stores the SjasmPlus settings in the `Klive.setting` file. If you want to change this path for a particular project (perhaps you want to test with another SjasmPlus version), use the `-p` switch to save this setting into the currently open project.
 
-You can also configure SJASMPLUS from the graphical dialog available at `IDE > Integrations > SJASMPLUS...`.
+You can also configure SJASMPLUS from the graphical dialog available at **Settings > Integrations > SjasmPlus > Configure...** (see [Settings](/working-with-ide/settings)).
 
 ## `set`
 
@@ -1328,7 +1327,7 @@ show-sprites [<index>]
 Available aliases: `shspr`
 
 With an index (`0`-`127`), the sprite is selected: the inspector shows it and the Patterns view
-marks its pattern. The **Machine → Show Sprite Inspector** menu item runs `show-sprites`. In a document too narrow for the Patterns view beside the table, `show-patterns` switches to its tab.
+marks its pattern. The **View → Machine Views → Sprite Inspector** menu item runs `show-sprites`. In a document too narrow for the Patterns view beside the table, `show-patterns` switches to its tab.
 
 ## `show-tilemap`
 
@@ -1342,7 +1341,7 @@ show-tilemap [<col> <row>]
 Available aliases: `shtm`
 
 With a column (`0`-`79`) and a row (`0`-`31`), the cell is selected: the inspector decodes it and the
-Tiles view marks its tile. The **Machine → Show Tilemap Inspector** menu item runs `show-tilemap`.
+Tiles view marks its tile. The **View → Machine Views → Tilemap Inspector** menu item runs `show-tilemap`.
 
 ## `show-tiles`
 
@@ -1371,7 +1370,7 @@ Available aliases: `shl2`
 
 `displayed` shows the banks from NextReg `$12`, `shadow` those from `$13`, and `window` the set the
 port `$123B` write window maps. Without a source the document keeps the one it shows. The
-**Machine → Show Layer 2 Inspector** menu item runs `show-layer2`.
+**View → Machine Views → Layer 2 Inspector** menu item runs `show-layer2`.
 
 ## `layers`
 
@@ -1385,7 +1384,7 @@ layers [ula|tm|l2|spr|all|transparency] [on|off|solo]
 Without arguments it lists the layers. A layer without an action is toggled; `solo` shows that layer
 alone; `all on` shows every layer and `all off` hides them all; `transparency on` marks the pixels no
 layer covers. The layers are also accepted by their names: `tilemap`, `layer2`, `sprites`. A change shows
-the Layers strip under the emulator screen. The **Machine → Layers** menu does the same.
+the Layers strip under the emulator screen, whose chips do the same.
 
 ## `show-layers`
 
@@ -1398,7 +1397,7 @@ show-layers
 
 Available aliases: `shly`
 
-The **Machine → Layers → Show Layers Document** menu item runs `show-layers`.
+The **View → Machine Views → Layers** menu item runs `show-layers`.
 
 ## `beam`
 
@@ -1409,8 +1408,8 @@ emulator screen: where the raster is, and which part of the picture is left from
 beam [on|off]
 ```
 
-Without an argument it says whether the overlay is shown. **View → Show the Beam Position** in the
-emulator window and the beam button in its toolbar change the same setting.
+Without an argument it says whether the overlay is shown. The beam button in the emulator toolbar and
+**Settings → Emulator → Beam position** change the same setting.
 
 ## `step-copper`
 

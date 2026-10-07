@@ -756,3 +756,23 @@ export function isIdeWindowFocused() {
 export function isIdeWindowVisible() {
   return (ideWindow?.isDestroyed() ?? false) === false && ideWindow.isVisible?.();
 }
+
+/** The emulator and IDE windows (either may be null before startup or after closing) */
+export function getAppWindows(): { emuWindow: BrowserWindow | null; ideWindow: BrowserWindow | null } {
+  return { emuWindow, ideWindow };
+}
+
+/**
+ * Shows the IDE window (maximized if it was) and remembers to show it at the next start. The menu
+ * and the actions that need the IDE (its dialogs, its views) call this first.
+ */
+export function showIdeWindow(): void {
+  if (!ideWindow || ideWindow.isDestroyed()) return;
+  ideWindow.show();
+  if (appSettings?.windowStates?.ideWindow?.isMaximized) {
+    ideWindow.maximize();
+  }
+  appSettings.windowStates ??= {};
+  appSettings.windowStates.showIdeOnStartup = true;
+  saveAppSettings();
+}

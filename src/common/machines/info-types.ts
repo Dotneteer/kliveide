@@ -167,14 +167,39 @@ export type CharDescriptor = {
 };
 
 /**
+ * The device submenus of the Machine menu, in their display order
+ */
+export const MACHINE_DEVICE_MENUS = ["tape", "program", "disks", "cartridge", "sdCard", "input"] as const;
+export type MachineDeviceMenuId = (typeof MACHINE_DEVICE_MENUS)[number];
+
+/** The label of each device submenu */
+export const MACHINE_DEVICE_MENU_LABELS: Record<MachineDeviceMenuId, string> = {
+  tape: "Tape",
+  program: "Program",
+  disks: "Disks",
+  cartridge: "Cartridge",
+  sdCard: "SD Card",
+  input: "Input"
+};
+
+/**
  * This type represents a machine-related menu item information
  */
 export type MachineMenuInfo = {
+  /**
+   * One submenu per device the machine has, under Machine (`.plans/MENU_REDESIGN_PLAN.md` P4). A
+   * renderer that returns a single submenu item (such as "Floppy Disks") is unwrapped, so its items
+   * become the device submenu's items. An empty result hides the submenu.
+   */
+  devices?: Partial<Record<MachineDeviceMenuId, MachineMenuRenderer>>;
+  /** Machine-specific hardware actions, in a submenu named after the machine */
+  hardwareItems?: MachineMenuRenderer;
+  /** The machine's views, under View › Machine Views (they open in the IDE) */
   viewItems?: MachineMenuRenderer;
-  machineItems?: MachineMenuRenderer;
-  projectItems?: MachineMenuRenderer;
-  ideItems?: MachineMenuRenderer;
-  helpItems?: MachineMenuRenderer;
+  /** Machine-specific debugging commands, at the end of the Debug menu */
+  debugItems?: MachineMenuRenderer;
+  /** Machine-specific recordings (RZX), in Machine › Record */
+  recordItems?: MachineMenuRenderer;
   helpLinks?: HelpLinkInfo[];
   initializer?: () => Promise<void>;
   setup?: () => Promise<void>;

@@ -1,7 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { MenuItemConstructorOptions } from "electron";
 import type { AppState } from "@common/state/AppState";
-import { createWindowRecordingMenuItems } from "@main/recording/window-recording/windowRecordingMenu";
+import {
+  createWindowRecordingMenuItems,
+  IDE_POSITION_ITEMS,
+  windowRecordingPreferenceAction
+} from "@main/recording/window-recording/windowRecordingMenu";
 import {
   DEFAULT_RECORD_IDE_EMU_SHORTCUT,
   readRecordIdeEmuShortcut,
@@ -9,7 +13,8 @@ import {
 } from "@common/utils/recordingShortcuts";
 
 /*
- * Machine | Recording: the IDE + Emulator recording items (.plans/IDE_EMU_RECORDING_PLAN.md §5.2).
+ * Machine › Record: the IDE + Emulator recording item (.plans/IDE_EMU_RECORDING_PLAN.md §5.2), and
+ * the actions Settings › Recording stores its preferences with (.plans/MENU_REDESIGN_PLAN.md §4.1).
  */
 
 function stateWith(emulatorState: Record<string, unknown>): AppState {
@@ -18,14 +23,9 @@ function stateWith(emulatorState: Record<string, unknown>): AppState {
 
 function build(emulatorState: Record<string, unknown> = {}, ideWindowVisible = true) {
   const state = stateWith(emulatorState);
-  const dispatch = vi.fn();
-  const saveSettings = vi.fn();
   const toggleRecording = vi.fn();
   const items = createWindowRecordingMenuItems({
     state,
-    getState: () => state,
-    dispatch,
-    saveSettings,
     ideWindowVisible,
     shortcut: "Ctrl+Shift+F7",
     toggleRecording
@@ -35,12 +35,12 @@ function build(emulatorState: Record<string, unknown> = {}, ideWindowVisible = t
     if (!found) throw new Error(`No item ${id}`);
     return found;
   };
-  return { items, item, dispatch, saveSettings, toggleRecording };
+  return { items, item, toggleRecording };
 }
 
 const click = (item: MenuItemConstructorOptions) => (item.click as any)?.();
 
-describe("the IDE + Emulator recording menu items", () => {
+describe("the IDE + Emulator recording menu item", () => {
   it("offers start with the shortcut when idle", () => {
     const { item } = build();
     const start = item("recording_ide_emu_start_stop");
@@ -49,14 +49,14 @@ describe("the IDE + Emulator recording menu items", () => {
     expect(start.enabled).toBe(true);
   });
 
-  it("offers stop while recording, and locks the options", () => {
+  it("offers stop while recording", () => {
     const { item } = build({ windowRecordingState: "recording" });
     expect(item("recording_ide_emu_start_stop").label).toBe("Stop IDE + Emulator recording");
     expect(item("recording_ide_emu_start_stop").enabled).toBe(true);
-    expect(item("recording_ide_position").enabled).toBe(false);
-    expect(item("recording_ide_emu_pointer").enabled).toBe(false);
-    expect(item("recording_ide_emu_clicks").enabled).toBe(false);
-    expect(item("recording_ide_emu_hidpi").enabled).toBe(false);
+  });
+
+  it("holds only the start/stop item: the preferences are in Settings", () => {
+    expect(build().items.map((i) => i.id)).toEqual(["recording_ide_emu_start_stop"]);
   });
 
   it("cannot start while the emulator screen recording runs", () => {
@@ -75,38 +75,30 @@ describe("the IDE + Emulator recording menu items", () => {
     expect(toggleRecording).toHaveBeenCalledOnce();
   });
 
-  it("defaults: IDE on the left, pointer and clicks on, 1x", () => {
-    const { item } = build();
-    const positions = item("recording_ide_position").submenu as MenuItemConstructorOptions[];
-    expect(positions.map((p) => p.label)).toEqual(["Left", "Right", "Top", "Bottom"]);
-    expect(positions.find((p) => p.checked)?.label).toBe("Left");
-    expect(item("recording_ide_emu_pointer").checked).toBe(true);
-    expect(item("recording_ide_emu_clicks").checked).toBe(true);
-    expect(item("recording_ide_emu_hidpi").checked).toBe(false);
+});
+
+describe("the IDE + Emulator recording preferences", () => {
+  it("offers the four IDE positions", () => {
+    expect(IDE_POSITION_ITEMS.map(([, label]) => label)).toEqual(["Left", "Right", "Top", "Bottom"]);
   });
 
-  it("choosing a position stores and saves it", () => {
-    const { item, dispatch, saveSettings } = build();
-    const positions = item("recording_ide_position").submenu as MenuItemConstructorOptions[];
-    click(positions[2]);
-    expect(dispatch).toHaveBeenCalledWith({
+  it("stores a position", () => {
+    expect(windowRecordingPreferenceAction("idePosition", "top")).toEqual({
       type: "SET_WINDOW_RECORDING_IDE_POSITION",
       payload: { id: "top" }
     });
-    expect(saveSettings).toHaveBeenCalledOnce();
   });
 
-  it("Show mouse clicks needs Include pointer", () => {
-    expect(build({ windowRecordingPointer: false }).item("recording_ide_emu_clicks").enabled).toBe(false);
-    expect(build({ windowRecordingPointer: true }).item("recording_ide_emu_clicks").enabled).toBe(true);
+  it("refuses a position that does not exist", () => {
+    expect(windowRecordingPreferenceAction("idePosition", "diagonal")).toBeUndefined();
   });
 
-  it("checkboxes toggle the current value", () => {
-    const { item, dispatch } = build({ windowRecordingPointer: true, windowRecordingHiDpi: false });
-    click(item("recording_ide_emu_pointer"));
-    click(item("recording_ide_emu_hidpi"));
-    click(item("recording_ide_emu_clicks"));
-    expect(dispatch.mock.calls.map((c) => c[0])).toEqual([
+  it("stores the flags", () => {
+    expect([
+      windowRecordingPreferenceAction("pointer", false),
+      windowRecordingPreferenceAction("hiDpi", true),
+      windowRecordingPreferenceAction("clicks", false)
+    ]).toEqual([
       { type: "SET_WINDOW_RECORDING_POINTER", payload: { flag: false } },
       { type: "SET_WINDOW_RECORDING_HIDPI", payload: { flag: true } },
       { type: "SET_WINDOW_RECORDING_CLICKS", payload: { flag: false } }

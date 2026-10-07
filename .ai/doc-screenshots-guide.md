@@ -112,8 +112,10 @@ of a machine through the same session and compares them:
   and focus it through `app.evaluate` on its `BrowserWindow` before sending keys; the harness hides it.
 - **Choose a machine or model through the application menu**, not the dialogs:
   `Menu.getApplicationMenu().getMenuItemById("machine_z88_OZ50-wasm").click()` inside
-  `app.evaluate`. Machine-specific items (`z88_reset`, `z88_640_320`, `z88_de_layout`, ...) are there
-  too. **The app rebuilds its menu after state changes**, so an item can be missing or disabled for a
+  `app.evaluate`. Machine-specific items (`z88_reset`, `z88_battery_low`, ...) are there too; set-once
+  machine options (the Z88's LCD and keyboard layout, ROM files) are in the Settings dialog
+  (`open_settings`, then `settings-page-machine` and `settings-select-<rowId>`), as
+  `scripts/z88-app-pass.cjs` does. **The app rebuilds its menu after state changes**, so an item can be missing or disabled for a
   moment: poll for it (the pass retries for 10 s) instead of failing on the first look.
 - **Hold emulated keys for several frames.** `keyboard.press` releases at once, and a machine that
   scans its keyboard on an interrupt (the Z88: every 10 ms) never sees it. `keyboard.down`, wait

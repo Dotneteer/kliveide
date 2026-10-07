@@ -16,10 +16,9 @@ import { dialog, BrowserWindow, app } from "electron";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 import { ejectDock, selectDockFile } from "./timex-menus";
 import { CREATE_DISK_DIALOG } from "@messaging/dialog-ids";
-import { createBooleanSettingsMenu } from "@main/app-menu";
+import { createBooleanSettingsMenu } from "@main/menus/menu-utils";
 import { SETTING_EMU_FAST_LOAD, SETTING_EMU_TRDOS_ROM } from "@common/settings/setting-const";
 import { appSettings, getSettingValue, saveAppSettings, setSettingValue } from "@main/settings-utils";
-import { spectrumSnapshotCommandText } from "@common/spectrum/snapshot/spectrumSnapshotLoadTypes";
 import { spectrumSnapshotSaveCommandText } from "@common/spectrum/snapshot/spectrumSnapshotSaveTypes";
 import {
   MI_SCORPION,
@@ -52,18 +51,16 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
   const emuWindow = windowInfo.emuWindow;
   const appState = mainStore.getState();
   if (machine.features?.[MF_TAPE_SUPPORT]) {
-    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any);
     items.push({
       id: "rewind_tape",
-      label: "Rewind Tape",
+      label: "Rewind",
       click: async () => {
-        console.log("tape", appState.media?.[MEDIA_TAPE]);
         await getEmuApi().issueMachineCommand("rewind");
       }
     });
     items.push({
       id: "select_tape_file",
-      label: "Select Tape File...",
+      label: "Insert Tape...",
       click: async () => {
         await setTapeFile(emuWindow, appState);
         await saveKliveProject();
@@ -71,13 +68,15 @@ export const tapeMenuRenderer: MachineMenuRenderer = (windowInfo, machine) => {
     });
     items.push({
       id: "eject_tape",
-      label: "Eject Tape",
+      label: "Eject",
       enabled: !!appState.media?.[MEDIA_TAPE],
       click: async () => {
         await ejectTape(true);
         await saveKliveProject();
       }
     });
+    items.push({ type: "separator" });
+    items.push(createBooleanSettingsMenu(SETTING_EMU_FAST_LOAD) as any);
   }
   return items;
 };
@@ -190,43 +189,15 @@ export const diskMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
 
 /**
  * The TR-DOS ROM of the Pentagon's Beta 128 (`.plans/BETA128_TRDOS_PLAN.md` Q1): Klive cannot ship
- * it, so the user names their own copy; the machine restarts with it
+ * it, so the user names their own copy in Settings › Machine; the machine restarts with it.
  */
-export const trdosRomMenuRenderer: MachineMenuRenderer = (windowInfo, _, model) => {
-  if (!((model?.config?.[MC_DISK_SUPPORT] ?? 0) > 0)) return [];
-  const romFile = getSettingValue(SETTING_EMU_TRDOS_ROM) as string | undefined;
-  return [
-    {
-      id: "trdos_rom_menu",
-      label: "TR-DOS ROM",
-      submenu: [
-        {
-          id: "trdos_rom_status",
-          label: romFile ? `Using ${path.basename(romFile)}` : "No TR-DOS ROM set: the disks are off",
-          enabled: false
-        },
-        {
-          id: "select_trdos_rom",
-          label: "Select TR-DOS ROM File...",
-          click: async () => {
-            await selectTrdosRomFile(windowInfo.emuWindow);
-          }
-        },
-        {
-          id: "clear_trdos_rom",
-          label: "Forget the TR-DOS ROM",
-          enabled: !!romFile,
-          click: async () => {
-            setSettingValue(SETTING_EMU_TRDOS_ROM, "");
-            await restartForTrdosRom("TR-DOS ROM cleared");
-          }
-        }
-      ]
-    }
-  ];
-};
+export async function forgetTrdosRom(): Promise<void> {
+  setSettingValue(SETTING_EMU_TRDOS_ROM, "");
+  await restartForTrdosRom("TR-DOS ROM cleared");
+}
 
-async function selectTrdosRomFile(emuWindow: BrowserWindow): Promise<void> {
+/** Asks for the TR-DOS ROM and restarts the machine with it */
+export async function selectTrdosRomFile(emuWindow: BrowserWindow): Promise<void> {
   const current = getSettingValue(SETTING_EMU_TRDOS_ROM) as string | undefined;
   const dialogResult = await dialog.showOpenDialog(emuWindow, {
     title: "Select the TR-DOS ROM (16K)",
@@ -285,7 +256,7 @@ export const spectrumIdeRenderer: MachineMenuRenderer = () => {
   return [
     {
       id: "show_basic",
-      label: "Show BASIC Listing",
+      label: "BASIC Listing",
       type: "checkbox",
       checked: volatileDocs[BASIC_PANEL_ID],
       click: async () => {
@@ -538,37 +509,10 @@ const ROM_FILE_FOLDER = "sp48RomFileFolder";
 const ROM_SIZE = 16384;
 
 /**
- * Renders the "Select ROM" menu for the ZX Spectrum 48 model
- */
-export const sp48RomMenuRenderer: MachineMenuRenderer = (windowInfo) => {
-  const emuWindow = windowInfo.emuWindow;
-  const appState = mainStore.getState();
-  const customRom = appState?.emulatorState?.config?.[MC_SP48_ROM_FILE] as string | undefined;
-  return [
-    { type: "separator" },
-    {
-      id: "select_rom_file",
-      label: "Select ROM File...",
-      click: async () => {
-        await selectRomFile(emuWindow);
-      }
-    },
-    {
-      id: "reset_rom_file",
-      label: "Reset to Default ROM",
-      enabled: !!customRom,
-      click: async () => {
-        await resetRomFile();
-      }
-    }
-  ];
-};
-
-/**
  * Opens a file dialog to select a ZX Spectrum 48 ROM file (exactly 16K).
  * Stores the path in the emulator config and restarts the machine.
  */
-async function selectRomFile(emuWindow: BrowserWindow): Promise<void> {
+export async function selectSp48RomFile(emuWindow: BrowserWindow): Promise<void> {
   const emulatorState = mainStore.getState()?.emulatorState;
   const defaultPath =
     appSettings?.folders?.[ROM_FILE_FOLDER] ?? app.getPath("home");
@@ -623,7 +567,7 @@ async function selectRomFile(emuWindow: BrowserWindow): Promise<void> {
 /**
  * Clears the custom ROM file from config and restarts the machine with the default ROM.
  */
-async function resetRomFile(): Promise<void> {
+export async function resetSp48RomFile(): Promise<void> {
   const result = await dialog.showMessageBox({
     type: "question",
     buttons: ["Yes", "No"],
@@ -643,36 +587,8 @@ async function resetRomFile(): Promise<void> {
   await saveKliveProject();
 }
 
-/** The settings key of the folder the last ZX Spectrum snapshot was opened from */
+/** The settings key of the folder the last ZX Spectrum snapshot was saved to */
 const SPECTRUM_SNAPSHOT_FOLDER = "spectrumSnapshotFolder";
-
-/**
- * Renders the snapshot command of the ZX Spectrum machines (`.plans/ZX_SPECTRUM_SNAPSHOT_PLAN.md`
- * §4.7). It hands the file to the IDE's `zx-snapshot` command, which switches to the machine the
- * snapshot needs and reports problems. It runs the snapshot; debugging lives in the viewer, the
- * Explorer and the command (D14).
- */
-export const spectrumSnapshotRenderer: MachineMenuRenderer = (windowInfo) => {
-  const emuWindow = windowInfo.emuWindow;
-  return [
-    { type: "separator" },
-    {
-      id: "spectrum_load_snapshot",
-      label: "Load Snapshot...",
-      click: async () => {
-        await openSpectrumSnapshot(emuWindow);
-      }
-    },
-    {
-      id: "spectrum_save_snapshot",
-      label: "Save Snapshot...",
-      enabled: canSaveSpectrumSnapshot(),
-      click: async () => {
-        await saveSpectrumSnapshotAs(emuWindow);
-      }
-    }
-  ];
-};
 
 /**
  * Can the emulator's machine be saved as a ZX Spectrum snapshot now? It must be a 48K, 128K,
@@ -757,34 +673,3 @@ export async function saveSpectrumSnapshotAs(browserWindow: BrowserWindow): Prom
   }
 }
 
-/**
- * Asks for a `.sna` / `.z80` / `.szx` file and runs it through the IDE's `zx-snapshot` command. The
- * machine menus and File -> Load Snapshot... (D9) share it.
- * @param browserWindow The window that owns the dialog
- */
-export async function openSpectrumSnapshot(browserWindow: BrowserWindow): Promise<void> {
-  const dialogResult = await dialog.showOpenDialog(browserWindow, {
-    title: "Select ZX Spectrum Snapshot File",
-    defaultPath: appSettings?.folders?.[SPECTRUM_SNAPSHOT_FOLDER] || app.getPath("home"),
-    filters: [
-      { name: "ZX Spectrum Snapshots", extensions: ["sna", "z80", "szx"] },
-      { name: "All Files", extensions: ["*"] }
-    ],
-    properties: ["openFile"]
-  });
-  if (dialogResult.canceled || dialogResult.filePaths.length < 1) return;
-
-  const filename = dialogResult.filePaths[0];
-  appSettings.folders ??= {};
-  appSettings.folders[SPECTRUM_SNAPSHOT_FOLDER] = path.dirname(filename);
-  saveAppSettings();
-
-  const result = await getIdeApi().executeCommand(spectrumSnapshotCommandText(filename, "run"));
-  if (!result?.success) {
-    await dialog.showMessageBox(browserWindow, {
-      type: "error",
-      title: "ZX Spectrum Snapshot",
-      message: result?.finalMessage ?? `Could not load ${filename}`
-    });
-  }
-}
