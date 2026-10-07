@@ -18,7 +18,9 @@ import {
 import { flattenBankComment } from "./nexAnnotationEdits";
 import {
   contentMixPercent,
+  formatMixPercent,
   NEX_REGION_TYPES,
+  mixLegendTypes,
   type NexBankContentMix,
   type NexBankLabel
 } from "./nexBankSummary";
@@ -87,6 +89,8 @@ const REGION_NAMES: Record<NexAnnotationRegionType, string> = {
   disassemble: "Code",
   bytes: "Bytes",
   words: "Words",
+  copper: "Copper",
+  dma: "DMA",
   skip: "Skip"
 };
 
@@ -251,10 +255,10 @@ const MixBar = ({ mix, className }: { mix: NexBankContentMix; className?: string
   <span
     className={classnames(styles.mixBar, className)}
     role="img"
-    aria-label={NEX_REGION_TYPES.map(
-      (t) => `${REGION_NAMES[t]} ${contentMixPercent(mix, t)}%`
+    aria-label={mixLegendTypes(mix).map(
+      (t) => `${REGION_NAMES[t]} ${formatMixPercent(mix, t)}`
     ).join(", ")}
-    title={NEX_REGION_TYPES.map((t) => `${REGION_NAMES[t]} ${contentMixPercent(mix, t)}%`).join(
+    title={mixLegendTypes(mix).map((t) => `${REGION_NAMES[t]} ${formatMixPercent(mix, t)}`).join(
       " · "
     )}
   >
@@ -325,10 +329,10 @@ const BankDetails = ({
           <>
             <MixBar mix={item.mix} className={styles.detailsBar} />
             <div className={styles.legend}>
-              {NEX_REGION_TYPES.map((type) => (
+              {mixLegendTypes(item.mix).map((type) => (
                 <span key={type}>
                   <span className={classnames(styles.swatch, styles[`mix_${type}`])} />
-                  {`${REGION_NAMES[type]} ${contentMixPercent(item.mix!, type)}%`}
+                  {`${REGION_NAMES[type]} ${formatMixPercent(item.mix!, type)}`}
                 </span>
               ))}
             </div>

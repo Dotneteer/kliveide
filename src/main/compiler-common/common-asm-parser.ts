@@ -2643,7 +2643,7 @@ export abstract class CommonAsmParser<
           }
           break;
         }
-      } else if (t.type > 0) {
+      } else if (t.type > 0 && t.type !== CommonTokens.NewLine) {
         // Non-identifier expression token (number, etc.) — treat as mask
         node.mask = this.getExpression() ?? undefined;
         if (this.skipToken(CommonTokens.Comma)) {

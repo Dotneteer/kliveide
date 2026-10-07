@@ -199,12 +199,25 @@ describe("NexBankBrowser", () => {
   });
 
   it("names the region types in the content mix", () => {
-    renderBrowser([item(5, { mix: { disassemble: 0x1000, bytes: 0x3000, words: 0, skip: 0 } })]);
+    renderBrowser([
+      item(5, { mix: { disassemble: 0x1000, bytes: 0x3000, words: 0, copper: 0, dma: 0, skip: 0 } })
+    ]);
     const panel = screen.getByRole("complementary", { name: "Bank $05 details" });
     expect(within(panel).getByText("Code 25%")).toBeInTheDocument();
     expect(within(panel).getByText("Bytes 75%")).toBeInTheDocument();
     expect(
       within(panel).getByRole("img", { name: "Code 25%, Bytes 75%, Words 0%, Skip 0%" })
     ).toBeInTheDocument();
+  });
+
+  it("names Copper and DMA in the content mix only when the bank has them", () => {
+    renderBrowser([
+      item(5, {
+        mix: { disassemble: 0x2000, bytes: 0, words: 0, copper: 0x1000, dma: 0x1000, skip: 0 }
+      })
+    ]);
+    const panel = screen.getByRole("complementary", { name: "Bank $05 details" });
+    expect(within(panel).getByText("Copper 25%")).toBeInTheDocument();
+    expect(within(panel).getByText("DMA 25%")).toBeInTheDocument();
   });
 });

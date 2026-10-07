@@ -616,6 +616,18 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
 
+  // --- NEX bank browser content mix (`.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` Phase 4) -----------
+  /*
+   * The two hardware-program kinds take fixed hues, not accent shades: the accent already owns
+   * Code (primary) and Words (secondary), and Bytes takes the warning hue, so the two new segments
+   * must stay apart from all three whichever accent is chosen. Success green for the Copper and the
+   * favourite gold for DMA are the remaining fixed hues; neither is the default blue accent's hue
+   * (which `--status-info` is, exactly). Each still sits near one accent (teal, gold) - the bar's
+   * tooltip names every segment, so the colour is a cue, not the only carrier.
+   */
+  "--color-nex-mix-copper": "var(--status-success)",
+  "--color-nex-mix-dma": "var(--mark-favorite)",
+
   // --- Changed since the previous stop (`.plans/SPRITE_INSPECTOR_PLAN.md` D16) -------------------
   /*
    * One treatment for "these bytes moved since the machine last stopped", defined once so any state

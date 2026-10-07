@@ -267,6 +267,11 @@ describe("Z80 Assembler - .dma wr3", () => {
     await compileDma(".dma wr3", 0x80);
   });
 
+  it("wr3 (no flags) followed by another line emits 0x80", async () => {
+    // --- The end of the line is not a mask expression
+    await compileDma(".dma wr3\n.dma wr3 ; comment\n.dma load", 0x80, 0x80, 0xcf);
+  });
+
   it("wr3 dma_enable emits 0xC0", async () => {
     // 0x80 | 0x40 = 0xC0
     await compileDma(".dma wr3 dma_enable", 0xc0);

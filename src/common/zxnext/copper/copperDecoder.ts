@@ -203,6 +203,24 @@ export function formatCopperInstruction(instr: CopperInstruction, opts?: { hex?:
 }
 
 /**
+ * The `.copper` pragma that assembles back to exactly this word: `.copper wait 96, 8`,
+ * `.copper move $41, $1C`, `.copper nop`, `.copper halt`. WAIT operands are decimal; MOVE operands
+ * are hex unless `decimal` is set. A NOP with a non-zero value is `.copper word $00vv`, since
+ * `.copper nop` would emit `$0000`.
+ */
+export function formatCopperSource(instr: CopperInstruction, opts?: { decimal?: boolean }): string {
+  switch (instr.kind) {
+    case "halt":
+      return ".copper halt";
+    case "nop":
+      if (!instr.value) return ".copper nop";
+      return `.copper word ${opts?.decimal ? instr.word : formatCopperWord(instr.word)}`;
+    default:
+      return `.copper ${instr.kind} ${formatCopperOperands(instr, opts?.decimal ? { hex: false } : undefined)}`;
+  }
+}
+
+/**
  * What a MOVE's value means for its register: the register's slice text where it has slices,
  * otherwise nothing beyond the register name.
  */

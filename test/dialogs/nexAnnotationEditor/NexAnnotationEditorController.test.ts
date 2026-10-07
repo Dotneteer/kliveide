@@ -853,6 +853,63 @@ describe("regions", () => {
     expect(controller.state.dirty).toEqual(false);
   });
 
+  it("marks a range as Copper through the region dialog", async () => {
+    const controller = await opened();
+    fakes.dialogs.answerWith("region", (args: any) => ({
+      start: 0x100,
+      end: 0x13f,
+      type: args.initialType
+    }));
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "copper", rowIndex: 2 });
+    await controller.settle();
+
+    expect(fakes.dialogs.callsTo("region")[0]).toMatchObject({ initialType: "copper" });
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions).toContainEqual({
+      start: 0x100,
+      end: 0x13f,
+      type: "copper"
+    });
+  });
+
+  it("marks a range as DMA through the region dialog", async () => {
+    const controller = await opened();
+    fakes.dialogs.answerWith("region", { start: 0x200, end: 0x20d, type: "dma" });
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "dma", rowIndex: 2 });
+    await controller.settle();
+
+    expect(publishedBank(fakes.session, SIDECAR, BANK)?.regions).toContainEqual({
+      start: 0x200,
+      end: 0x20d,
+      type: "dma"
+    });
+  });
+
+  it("confirms marking the whole bank as Copper, and applies nothing when refused", async () => {
+    const controller = await opened();
+    fakes.nativeConfirm.mockReturnValue(false);
+    fakes.dialogs.answerWith("region", { start: 0, end: 0x3fff, type: "copper" });
+    await controller.dispatch({ type: "regionTypeMarked", regionType: "copper", rowIndex: 0 });
+    await controller.settle();
+
+    expect(fakes.nativeConfirm).toHaveBeenCalledWith(WHOLE_BANK_CONFIRM_MESSAGE);
+    expect(fakes.session.writeCalls).toEqual([]);
+  });
+
+  it("refuses an odd-length Copper span", async () => {
+    // --- The dialog refuses one too; a span gesture reaches the model without it.
+    const controller = await opened();
+    await controller.dispatch({
+      type: "regionSpanMarked",
+      start: 0x100,
+      end: 0x102,
+      regionType: "copper"
+    });
+    await controller.settle();
+
+    expect(fakes.session.writeCalls).toEqual([]);
+    expect(controller.state.dirty).toEqual(false);
+  });
+
   it("does not ask about a change that is not the whole bank", async () => {
     const controller = await opened();
     fakes.dialogs.answerWith("region", { start: 0, end: 0x3ffe, type: "skip" });

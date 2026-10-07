@@ -38,7 +38,11 @@ import { Text } from "@renderer/controls/layout/Text";
 import { Z80Disassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z80-disassembler";
 import { Z88CustomDisassembler } from "@renderer/appIde/disassemblers/z80-disassembler/z88-custom.disassembler";
 import { MemorySection, type DisassemblyItem } from "@renderer/appIde/disassemblers/common-types";
-import { deriveLabelWidthCh, DisassemblyRow } from "@renderer/appIde/DocumentPanels/DisassemblyRow";
+import {
+  deriveInstructionWidthCh,
+  deriveLabelWidthCh,
+  DisassemblyRow
+} from "@renderer/appIde/DocumentPanels/DisassemblyRow";
 import {
   useContextMenuState
 } from "@renderer/controls/ContextMenu";
@@ -719,6 +723,11 @@ const StaticMemoryDump = ({
   const disassemblyLabelWidthCh = useMemo(
     () => deriveLabelWidthCh(disassemblyItems, decimalView),
     [decimalView, disassemblyItems]
+  );
+  // --- Annotated listings carry `.dma`/`.copper` rows longer than the default column.
+  const disassemblyInstructionWidthCh = useMemo(
+    () => deriveInstructionWidthCh(disassemblyItems),
+    [disassemblyItems]
   );
   /*
    * The width every row reserves for its hard comment, so the zebra stripes all end at the same x.
@@ -1647,6 +1656,7 @@ const StaticMemoryDump = ({
                     isFullView={true}
                     item={item}
                     labelWidthCh={disassemblyLabelWidthCh}
+                    instructionWidthCh={disassemblyInstructionWidthCh}
                     mem64kLabels={[]}
                     onClick={(event) => {
                       selectDisassemblyRow(idx, event.shiftKey);

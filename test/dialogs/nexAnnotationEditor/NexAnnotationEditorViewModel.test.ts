@@ -135,6 +135,8 @@ describe("menu", () => {
       "mark-disassembly",
       "mark-bytes",
       "mark-words",
+      "mark-copper",
+      "mark-dma",
       "mark-skip",
       "clear"
     ]);
@@ -297,6 +299,8 @@ describe("regionTypeOfAction", () => {
     expect(regionTypeOfAction("mark-bytes")).toEqual("bytes");
     expect(regionTypeOfAction("mark-words")).toEqual("words");
     expect(regionTypeOfAction("mark-skip")).toEqual("skip");
+    expect(regionTypeOfAction("mark-copper")).toEqual("copper");
+    expect(regionTypeOfAction("mark-dma")).toEqual("dma");
   });
 
   it("is undefined for an action that is not a region change", () => {
