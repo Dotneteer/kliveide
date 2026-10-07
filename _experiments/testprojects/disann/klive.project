@@ -1,8 +1,11 @@
 {
   "kliveVersion": "0.64.0",
-  "machineType": "zxnext",
-  "modelId": "standard",
-  "config": {},
+  "machineType": "zx81",
+  "modelId": "zx81-16k",
+  "config": {
+    "memSize": 16,
+    "screenFreq": "pal"
+  },
   "clockMultiplier": 1,
   "soundLevel": 0.8,
   "soundMuted": false,
