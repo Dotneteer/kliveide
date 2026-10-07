@@ -16,6 +16,8 @@ import { MemorySection } from "@renderer/appIde/disassemblers/common-types";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import styles from "./NexRegionDialog.module.scss";
 import { DialogFooter } from "@renderer/controls/overlay/DialogFooter";
+import { decodeCopperWord, formatCopperSource } from "@common/zxnext/copper/copperDecoder";
+import { decodeDmaStream, formatDmaCommand } from "@common/zxnext/dma/dmaDecoder";
 
 export type NexRegionDialogResult = {
   type: NexAnnotationRegionType;
@@ -35,6 +37,8 @@ const REGION_TYPES: Array<{ value: NexAnnotationRegionType; label: string }> = [
   { value: "disassemble", label: "Disassembly" },
   { value: "bytes", label: "Bytes" },
   { value: "words", label: "Words" },
+  { value: "copper", label: "Copper" },
+  { value: "dma", label: "DMA" },
   { value: "skip", label: "Skip" }
 ];
 
@@ -63,6 +67,10 @@ export function NexRegionDialog({
   const error = useMemo(
     () => validateRegion(type, start, end),
     [end, start, type]
+  );
+  const hint = useMemo(
+    () => (error ? undefined : regionHint(type, start!, end!, bytes)),
+    [bytes, end, error, start, type]
   );
   /*
    * The preview is awaited, because previewing a `disassemble` region means really disassembling it.
@@ -133,6 +141,19 @@ export function NexRegionDialog({
       {error && (
         <div className={styles.error} role="alert">
           {error}
+        </div>
+      )}
+      {/* --- Non-blocking: a suggestion the user may take or leave (plan D8). */}
+      {hint && (
+        <div className={styles.hint} role="status">
+          <span>{hint.text}</span>
+          {hint.trimEnd !== undefined && (
+            <Button
+              text={`Trim to ${formatRegionOffset(hint.trimEnd)}`}
+              variant="secondary"
+              clicked={() => setEndText(formatRegionOffset(hint.trimEnd!))}
+            />
+          )}
         </div>
       )}
       <DialogRow label="Affected regions" rows={true}>
@@ -229,6 +250,22 @@ export function formatRegionPreview(
         }
         return `${formatRegionOffset(offset)}  .defw ${words.join(", ")}`;
       });
+    case "copper":
+      return createPreviewLines(start, end, 2, (offset, values) => {
+        if (values.length < 2) {
+          return `${formatRegionOffset(offset)}  .defb $${toHexa2(values[0])}`;
+        }
+        const word = (values[0] << 8) | values[1];
+        return `${formatRegionOffset(offset)}  ${formatCopperSource(decodeCopperWord(0, word))}`;
+      });
+    case "dma": {
+      const commands = decodeDmaStream(bytes, start, end + 1);
+      const lines = commands
+        .slice(0, PREVIEW_LINE_LIMIT)
+        .map((cmd) => `${formatRegionOffset(cmd.offset)}  ${formatDmaCommand(cmd).text}`);
+      if (commands.length > PREVIEW_LINE_LIMIT) lines.push("...");
+      return lines.join("\n");
+    }
     case "skip":
       return `${formatRegionOffset(start)}  .skip ${formatRegionOffset(length)}`;
     default:
@@ -265,7 +302,56 @@ export function formatRegionPreview(
   }
 }
 
-function validateRegion(
+/** A trailing run of `$00` bytes this long in a DMA region gets a trim suggestion (plan D8). */
+export const DMA_ZERO_TAIL_THRESHOLD = 8;
+
+/**
+ * Where a DMA region could end instead, when it ends in a long run of `$00`.
+ *
+ * `$00` is a valid WR2 write, so a zero-filled tail lists as an endless run of
+ * `.dma wr2 memory, decrement`: honest, but almost always a sign the range is too long. The cut is
+ * made at a command boundary — after the last command with any non-zero byte — so trimming never
+ * truncates a command whose follow bytes happen to be zero. `undefined` when there is nothing to
+ * suggest, including a region that is zero throughout.
+ */
+export function dmaTrimSuggestion(
+  bytes: ArrayLike<number>,
+  start: number,
+  end: number
+): number | undefined {
+  let lastUsedEnd: number | undefined;
+  for (const cmd of decodeDmaStream(bytes, start, end + 1)) {
+    if (cmd.bytes.some((b) => b !== 0)) lastUsedEnd = cmd.offset + cmd.bytes.length - 1;
+  }
+  if (lastUsedEnd === undefined) return undefined;
+  return end - lastUsedEnd >= DMA_ZERO_TAIL_THRESHOLD ? lastUsedEnd : undefined;
+}
+
+export type RegionHint = { text: string; trimEnd?: number };
+
+/** A non-blocking note about a valid region: a DMA zero tail, or a Copper list on an odd offset. */
+export function regionHint(
+  type: NexAnnotationRegionType,
+  start: number,
+  end: number,
+  bytes: ArrayLike<number>
+): RegionHint | undefined {
+  if (type === "dma") {
+    const trimEnd = dmaTrimSuggestion(bytes, start, end);
+    if (trimEnd !== undefined) {
+      return {
+        text: `The range ends in ${end - trimEnd} zero bytes, each listed as a WR2 write.`,
+        trimEnd
+      };
+    }
+  }
+  if (type === "copper" && start % 2 !== 0) {
+    return { text: "Copper words are read from the region start, which is on an odd offset." };
+  }
+  return undefined;
+}
+
+export function validateRegion(
   type: NexAnnotationRegionType,
   start: number | undefined,
   end: number | undefined
@@ -281,6 +367,9 @@ function validateRegion(
   }
   if (type === "words" && (end - start + 1) % 2 !== 0) {
     return "Word regions must contain an even number of bytes.";
+  }
+  if (type === "copper" && (end - start + 1) % 2 !== 0) {
+    return "Copper regions must contain an even number of bytes.";
   }
   return undefined;
 }

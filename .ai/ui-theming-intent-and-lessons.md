@@ -2028,6 +2028,28 @@ bar whose segments are as wide as their share of a whole. What carries over to a
 - **It is not a second control.** No tab stop and `aria-hidden`: the list's keyboard moves the
   selection and the strip follows, so a screen reader is not told the list twice.
 
+### A categorical bar that already spends both accents: fixed hues, named by its tooltip
+
+The NEX bank browser's content mix (`NexBankBrowser.module.scss`, `.mix_*`) is the opposite case to
+the tape timeline: every segment is a region *kind* the user chose, so each needs its own hue, and
+the accent pair plus the warning hue are already spent on Code, Words and Bytes. New kinds take
+**fixed (non-accent) hues aliased at L4** (`--color-nex-mix-copper` → `--status-success`,
+`--color-nex-mix-dma` → `--mark-favorite`), never a literal and never `--status-info`, which *is*
+the default blue accent's hue to the digit. Any fixed hue sits near some accent (green near teal,
+gold near Ember), so the colour is only a cue: the bar's `aria-label`/`title` and the legend name
+every segment. **Rare kinds are named only when present** (`mixLegendTypes`), so a typical bank's
+legend does not grow a row of `0%` entries for every kind that exists.
+
+### A listing column sized for one row kind wraps the next kind into its neighbour
+
+The disassembly row's instruction cell was a fixed `25ch`, which fits every Z80 instruction and a
+four-value `.defb`. An annotated `.NEX` listing also lists `.dma`/`.copper` pragma rows up to ~40
+characters, and a cell narrower than its text **wraps into the row below and overprints it** (rows
+have a fixed height). A shared listing column is sized from the listing's own rows with a floor
+(`deriveInstructionWidthCh`, like `deriveLabelWidthCh` and the comment column), so ordinary listings
+are unchanged and every row's later columns still start at one x. Unit tests of row text cannot see
+this; only the running app showed it.
+
 ## An Explainer Links Bytes To Meanings With One Highlight
 
 The tape viewer's header explainer (`Tape/TapeHeaderBytes.tsx`) shows raw bytes above the fields

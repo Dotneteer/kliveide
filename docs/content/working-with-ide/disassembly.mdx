@@ -174,6 +174,46 @@ program counter is in this bank. The button lands on the row carrying the execut
 which follows the listing's own numbering &mdash; so it is right even when the **Offset** dropdown
 lists the bank at an address it is not paged at.
 
+### Copper Lists and DMA Programs
+
+When a `.NEX` file has an annotation file, you can tell the listing what a range of a bank holds. The
+**Annotations** menu and the region dialogs offer **Disassembly**, **Bytes**, **Words**, **Skip**, and
+two kinds for ZX Spectrum Next hardware programs:
+
+- **Copper** lists the range as a Copper list, one `.copper` instruction per two-byte word, with what
+  each instruction does in the comment column. The range must have an even number of bytes.
+- **DMA** lists the range as a zxnDMA program &mdash; the bytes a program sends to port `$6B` &mdash;
+  one `.dma` command per row.
+
+The rows use the same [`.copper`](/z80-assembly/zx-next-copper) and
+[`.dma`](/z80-assembly/zx-next-dma) pragmas the assembler accepts, and every row assembles back to the
+exact bytes it shows:
+
+```z80klive
+    .copper wait 96, 3              ; line 96 · x 24
+    .copper move $41, $E0           ; Palette Value (8 bit) ← $E0
+    .copper halt                    ; halt until the next restart
+    .dma reset                      ; WR6: reset
+    .dma wr0 a_to_b, transfer, $4000, $0020
+    .dma wr4 continuous, $4800      ; WR4: continuous mode, port B $4800
+```
+
+A DMA range is read the way the DMA reads it: the bits of each command byte decide how many bytes
+follow. A command the pragma cannot spell is shown as `.dma cmd` or `.defb`, with its meaning in the
+comment, and a command cut off by the end of the range says how many bytes it still expects. A label
+on an address or a length inside a command splits it into the
+[runtime-patching form](/z80-assembly/zx-next-dma#runtime-patching-pattern), with the labelled field
+as a `.defw` row of its own.
+
+<Callout type="info">
+`$00` is a valid DMA command, so a range that runs into zero-filled memory lists many
+`.dma wr2 memory, decrement` rows. When a DMA range ends in a long run of zeros, the region dialogs
+offer to trim it.
+</Callout>
+
+The annotation file stores both kinds as byte regions with a `decode` key, so an older Klive opens the
+file and shows these ranges as plain `.defb` rows.
+
 ## Machine-Specific Memory Partitions
 
 The bank column and the bank chooser name partitions exactly as the rest of the IDE does. See

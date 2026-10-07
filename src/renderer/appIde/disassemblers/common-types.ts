@@ -131,7 +131,13 @@ export type DisassemblyBranchInfo = {
   tstatesNotTaken: number;
 };
 
-export type DisassemblyAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
+export type DisassemblyAnnotationRegionType =
+  | "disassemble"
+  | "bytes"
+  | "words"
+  | "skip"
+  | "copper"
+  | "dma";
 
 export type DisassemblyAnnotationMetadata = {
   /**

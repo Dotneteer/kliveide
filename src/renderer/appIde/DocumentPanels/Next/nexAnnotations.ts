@@ -26,7 +26,24 @@ export const NEX_LABEL_MAX_LENGTH = 16;
 export const NEX_BANK_COMMENT_SOFT_LIMIT = 4000;
 
 export type NexAnnotationOffsetIndex = 0 | 1 | 2 | 3;
-export type NexAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip";
+/**
+ * What a region of a bank is. `copper` and `dma` exist only in memory: on disk they are `bytes`
+ * regions with a `decode` key, which shipped builds ignore — see `toSidecarRegion` and
+ * `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` D3.
+ */
+export type NexAnnotationRegionType = "disassemble" | "bytes" | "words" | "skip" | "copper" | "dma";
+
+/** The region kinds stored as `bytes` + `decode` on disk. */
+export type NexDecodedRegionType = Extract<NexAnnotationRegionType, "copper" | "dma">;
+
+/** A region as the sidecar stores it: only the types every shipped build accepts. */
+export type NexSidecarRegion = {
+  start: number;
+  end: number;
+  type: "disassemble" | "bytes" | "words" | "skip";
+  rowBytes?: number;
+  decode?: NexDecodedRegionType;
+};
 export type NexAnnotationLabelScope = "global" | "local";
 export type NexAnnotationBankView = "memory" | "disassembly";
 
@@ -75,6 +92,35 @@ export function sameRegionLayout(
   b: Pick<NexAnnotationRegion, "type" | "rowBytes">
 ): boolean {
   return a.type === b.type && getRegionRowBytes(a) === getRegionRowBytes(b);
+}
+
+/**
+ * A region as the sidecar stores it (D3): a Copper list is `bytes` with `rowBytes: 2` and
+ * `decode: "copper"`, a DMA program is `bytes` with `decode: "dma"`. A shipped build ignores
+ * `decode` and lists them as plain `.defb` rows — one Copper word per row — instead of refusing the
+ * whole file over an unknown type.
+ */
+export function toSidecarRegion(region: NexAnnotationRegion): NexSidecarRegion {
+  switch (region.type) {
+    case "copper":
+      return { start: region.start, end: region.end, type: "bytes", rowBytes: 2, decode: "copper" };
+    case "dma":
+      return { start: region.start, end: region.end, type: "bytes", decode: "dma" };
+    default:
+      return { ...region, type: region.type };
+  }
+}
+
+/** The bank map with every region in its stored form; everything else is passed through as is. */
+export function toSidecarBanks(
+  banks: Record<string, NexBankAnnotation>
+): Record<string, Omit<NexBankAnnotation, "regions"> & { regions: NexSidecarRegion[] }> {
+  const result: Record<string, Omit<NexBankAnnotation, "regions"> & { regions: NexSidecarRegion[] }> =
+    {};
+  for (const [key, bank] of Object.entries(banks)) {
+    result[key] = { ...bank, regions: bank.regions.map(toSidecarRegion) };
+  }
+  return result;
 }
 
 export type NexLineAnnotation = {
@@ -226,12 +272,14 @@ export type ResolvedNexAnnotationLabel = NexAnnotationLabel & {
 };
 
 const LABEL_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+/** The types a sidecar may store: deliberately the set every shipped build accepts (D3). */
 const REGION_TYPES = new Set<NexAnnotationRegionType>([
   "disassemble",
   "bytes",
   "words",
   "skip"
 ]);
+const DECODED_REGION_TYPES = new Set<NexDecodedRegionType>(["copper", "dma"]);
 const LABEL_SCOPES = new Set<NexAnnotationLabelScope>(["global", "local"]);
 const BANK_VIEWS = new Set<NexAnnotationBankView>(["memory", "disassembly"]);
 /**
@@ -900,12 +948,32 @@ function normalizeRegions(
         return;
       }
     }
+    // --- `decode` refines a `bytes` region into a Copper list or a DMA program (D3). An unknown or
+    // --- unusable value is a warning, not an error: the region stays `bytes`, and the file loads.
+    let type = item.type as NexAnnotationRegionType;
+    if (item.decode !== undefined) {
+      if (item.type !== "bytes") {
+        diagnostics.push(warning(`${itemPath}.decode`, "decode applies only to bytes regions."));
+      } else if (!DECODED_REGION_TYPES.has(item.decode as NexDecodedRegionType)) {
+        diagnostics.push(warning(`${itemPath}.decode`, "decode is not supported; listed as bytes."));
+      } else {
+        // --- An odd Copper region (a neighbouring edit can trim one) still loads: its last byte is
+        // --- listed as `.defb`. The region dialog is what keeps new ones even.
+        if (item.decode === "copper" && (item.end - item.start + 1) % 2 !== 0) {
+          diagnostics.push(
+            warning(itemPath, "Copper regions should contain an even number of bytes.")
+          );
+        }
+        type = item.decode as NexDecodedRegionType;
+      }
+    }
     regions.push({
       start: item.start,
       end: item.end,
-      type: item.type as NexAnnotationRegionType,
-      // --- Only when it says something: the default row size is written as no field at all.
-      ...(item.rowBytes !== undefined && item.rowBytes !== NEX_MAX_ROW_BYTES
+      type,
+      // --- Only when it says something: the default row size is written as no field at all. A
+      // --- decoded region lays out its own rows, so the stored `rowBytes` is not carried over.
+      ...(type === "bytes" && item.rowBytes !== undefined && item.rowBytes !== NEX_MAX_ROW_BYTES
         ? { rowBytes: item.rowBytes as number }
         : {})
     });

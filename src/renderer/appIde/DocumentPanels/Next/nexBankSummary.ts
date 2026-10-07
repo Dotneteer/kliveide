@@ -14,10 +14,17 @@ import { getBankAnnotation, getNexBankAddressOffset, NEX_BANK_SIZE } from "./nex
 /** Bytes of a bank per region type. Sums to the bank size (regions cover it completely). */
 export type NexBankContentMix = Record<NexAnnotationRegionType, number>;
 
-export const NEX_REGION_TYPES: NexAnnotationRegionType[] = ["disassemble", "bytes", "words", "skip"];
+export const NEX_REGION_TYPES: NexAnnotationRegionType[] = [
+  "disassemble",
+  "bytes",
+  "words",
+  "copper",
+  "dma",
+  "skip"
+];
 
 export function bankContentMix(regions: NexAnnotationRegion[] | undefined): NexBankContentMix {
-  const mix: NexBankContentMix = { disassemble: 0, bytes: 0, words: 0, skip: 0 };
+  const mix: NexBankContentMix = { disassemble: 0, bytes: 0, words: 0, copper: 0, dma: 0, skip: 0 };
   for (const region of regions ?? []) {
     const start = Math.max(0, region.start);
     const end = Math.min(NEX_BANK_SIZE - 1, region.end);
@@ -26,10 +33,27 @@ export function bankContentMix(regions: NexAnnotationRegion[] | undefined): NexB
   return mix;
 }
 
+/**
+ * The region types a bank's mix names in its legend and tooltip: the four everyday kinds always,
+ * Copper and DMA only when the bank has some, so the common bank does not list two zeros.
+ */
+export function mixLegendTypes(mix: NexBankContentMix): NexAnnotationRegionType[] {
+  return NEX_REGION_TYPES.filter((type) => (type !== "copper" && type !== "dma") || mix[type] > 0);
+}
+
 /** A share of the bank, as a whole percentage, for display. */
 export function contentMixPercent(mix: NexBankContentMix, type: NexAnnotationRegionType): number {
   const total = NEX_REGION_TYPES.reduce((sum, t) => sum + mix[t], 0);
   return total ? Math.round((mix[type] * 100) / total) : 0;
+}
+
+/**
+ * A share as text: `25%`, or `<1%` for a share that exists but rounds to nothing - a 14-byte Copper
+ * list is named in the legend because it is there, and `0%` beside its name would say it is not.
+ */
+export function formatMixPercent(mix: NexBankContentMix, type: NexAnnotationRegionType): string {
+  const percent = contentMixPercent(mix, type);
+  return percent === 0 && mix[type] > 0 ? "<1%" : `${percent}%`;
 }
 
 /** A label that lands in a bank, with the address it is listed at. */

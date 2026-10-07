@@ -418,7 +418,7 @@ export function withEndOfLineComment(
   });
 }
 
-/** Retype a span of the bank as disassembly, bytes, words or skip. */
+/** Retype a span of the bank as disassembly, bytes, words, Copper, DMA or skip. */
 export function withRegion(
   annotations: NexFileAnnotations,
   bank: number,
@@ -428,6 +428,9 @@ export function withRegion(
 ): NexFileAnnotations | undefined {
   const bankAnnotation = getBankAnnotation(annotations, bank);
   if (!bankAnnotation) return undefined;
+  // --- A Copper list is whole 2-byte words. The region dialog refuses an odd span; this refuses
+  // --- one that arrives without it (a span gesture), rather than writing it.
+  if (type === "copper" && (end - start + 1) % 2 !== 0) return undefined;
   return withBank(annotations, bank, {
     ...bankAnnotation,
     regions: replaceAnnotationRegion(bankAnnotation.regions, start, end, type)

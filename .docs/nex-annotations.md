@@ -182,7 +182,7 @@ file.
 
 While the machine is paused with the PC inside the bank, the listing is additionally cut and
 re-decoded at the PC, so the rows from there on are the instructions that will actually run rather
-than a linear guess from byte 0. Regions annotated as `bytes`, `words` or `skip` are never cut.
+than a linear guess from byte 0. Regions annotated as `bytes`, `words`, `copper`, `dma` or `skip` are never cut.
 
 The NEX viewer's bank headings show how many breakpoints each bank carries, counted from the
 *emulator* rather than from the sidecar — what is armed now, including another NEX's breakpoints in
@@ -214,7 +214,9 @@ Regions can be:
 - `disassemble`: generate Z80 instructions;
 - `bytes`: generate `.defb` lines with up to four values per line;
 - `words`: generate `.defw` lines with up to two words per line;
-- `skip`: generate a `.skip` line.
+- `skip`: generate a `.skip` line;
+- `copper`: generate one `.copper` row per big-endian word (a Copper list);
+- `dma`: generate one `.dma` row per register write (a zxnDMA program).
 
 Data rows normally start at a labelled byte, so a label inside a table gets a row
 of its own. A `bytes` region may instead set `rowBytes` (1–4) to lay its data out
@@ -229,3 +231,34 @@ either side.
 
 The Memory Region dialog validates ranges before applying them. Whole-bank
 changes require confirmation.
+
+### Copper and DMA Regions
+
+See `.plans/NEX_DMA_COPPER_REGIONS_PLAN.md`. The decoders are pure shared modules:
+`src/common/zxnext/copper/copperDecoder.ts` and `src/common/zxnext/dma/dmaDecoder.ts`.
+
+- **Every row reassembles.** A row's text assembles (with `.model next`) to exactly the bytes it
+  covers. What the pragma cannot express falls back to `.dma cmd $xx`, `.copper word $xxxx` or
+  `.defb`, and the meaning goes in the generated comment (`generatedHardComment`), so a user
+  end-of-line comment replaces it as on every other row.
+- **Storage.** In memory the types are `copper` and `dma`. On disk they are `bytes` regions with a
+  `decode` key — `{ "type": "bytes", "rowBytes": 2, "decode": "copper" }` and
+  `{ "type": "bytes", "decode": "dma" }` — written by `toSidecarRegion` (used by both
+  `formatNexAnnotations` and `saveNexAnnotationSubtree`) and read back by `normalizeRegions`.
+  Shipped builds reject an unknown region `type` and with it the whole file, but ignore an unknown
+  key: they list a Copper region as one `.defb` word per row and a DMA region as plain bytes, and a
+  build that rewrites the bank drops `decode`. No schema bump. An unknown `decode` value, or
+  `decode` on a region that is not `bytes`, is a warning and the region stays as stored.
+- **Copper** regions are even-length (the dialogs and `withRegion` refuse an odd span; an odd one
+  in a file loads with a warning and lists its last byte as `.defb`). Words align to the region
+  start. A word is never split at a label, like a `rowBytes` record.
+- **DMA** regions are decoded as the hardware sequences the bytes (`zxnextDmaWriteBase` /
+  `zxnextDmaWritePort`): the follow-byte bits of each base byte decide the command length, not the
+  assembler's conventions. A command cut off by the region end is `.defb` with a
+  `truncated: WRn expects N more bytes` comment. A label on a follow byte splits the command into
+  the documented runtime-patching form: the base byte alone (`.dma wr0 a_to_b, transfer`,
+  `.dma wr4 continuous`, otherwise `.dma cmd $xx`), then each field as a `.defw` (or `.defb`) row; a
+  label on the second byte of a word field splits that field into two `.defb` rows. Commands are
+  never collapsed; the region dialogs suggest trimming a DMA range that ends in 8 or more `$00`
+  bytes (cut at a command boundary).
+- Neither kind is cut at the program counter (only `disassemble` regions are).

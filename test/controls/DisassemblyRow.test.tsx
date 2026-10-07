@@ -2,6 +2,8 @@ import { cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   branchGlyphFor,
+  DEFAULT_INSTRUCTION_WIDTH_CH,
+  deriveInstructionWidthCh,
   deriveDisassemblyRowViewModel,
   DisassemblyRow,
   isAuthoredRow,
@@ -1102,5 +1104,23 @@ describe("DisassemblyRow: the breakpoint kind reaches the indicator", () => {
   it("offers no edit for a row with no breakpoint", () => {
     const props = renderWithBreakpoint(undefined, { onEditBreakpoint: vi.fn() });
     expect(props.onEdit).toBeUndefined();
+  });
+});
+
+describe("deriveInstructionWidthCh", () => {
+  it("keeps the default for ordinary instructions", () => {
+    expect(
+      deriveInstructionWidthCh([{ address: 0, instruction: "ld hl,$8100" }, { address: 3 }])
+    ).toBe(DEFAULT_INSTRUCTION_WIDTH_CH);
+  });
+
+  it("widens to the longest pragma row, so it never wraps into the next row", () => {
+    const longest = ".dma wr0 a_to_b, transfer, $4000, $0020";
+    expect(
+      deriveInstructionWidthCh([
+        { address: 0, instruction: ".dma reset" },
+        { address: 1, instruction: longest }
+      ])
+    ).toBe(longest.length + 1);
   });
 });

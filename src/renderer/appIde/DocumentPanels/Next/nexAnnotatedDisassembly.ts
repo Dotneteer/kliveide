@@ -18,6 +18,19 @@ import {
   getNexBankAddressOffset
 } from "./nexAnnotations";
 import { chainOperandLabelResolvers } from "@renderer/appIde/disassemblers/sys-var-operand-labels";
+import {
+  decodeCopperWord,
+  describeCopperInstruction,
+  formatCopperSource
+} from "@common/zxnext/copper/copperDecoder";
+import {
+  decodeDmaStream,
+  describeDmaCommand,
+  formatDmaBase,
+  formatDmaCommand,
+  type DmaField,
+  type DmaFieldRole
+} from "@common/zxnext/dma/dmaDecoder";
 
 /**
  * Split a byte range so that an instruction boundary is guaranteed to fall on `anchor`.
@@ -213,6 +226,16 @@ export async function createAnnotatedNexDisassemblyItems({
       case "words":
         items.push(
           ...createWordItems(contents, start, end, decimalView, addressOffset, labelOffsets)
+        );
+        break;
+
+      case "copper":
+        items.push(...createCopperItems(contents, start, end, decimalView, addressOffset));
+        break;
+
+      case "dma":
+        items.push(
+          ...createDmaItems(contents, start, end, decimalView, addressOffset, labelOffsets)
         );
         break;
 
@@ -418,6 +441,147 @@ function createWordItems(
     });
   }
   return items;
+}
+
+/**
+ * A Copper list: one `.copper` row per big-endian word, aligned to the region start.
+ *
+ * A word is never split by a label (plan D5): a label on its second byte still names that address
+ * in operands, as with a `rowBytes` record. An odd trailing byte - a region a neighbouring edit
+ * trimmed - is listed as `.defb`. The meaning goes in the generated comment, so a user comment
+ * replaces it and clearing that brings it back.
+ */
+function createCopperItems(
+  contents: Uint8Array,
+  start: number,
+  end: number,
+  decimalView: boolean,
+  addressOffset: number
+): DisassemblyItem[] {
+  const items: DisassemblyItem[] = [];
+  for (let offset = start; offset <= end; offset += 2) {
+    if (offset === end) {
+      items.push(dataRow(offset, [contents[offset]], "copper", decimalView, addressOffset));
+      break;
+    }
+    const instr = decodeCopperWord(0, (contents[offset] << 8) | contents[offset + 1]);
+    items.push({
+      address: effectiveAddress(offset, addressOffset),
+      instruction: formatCopperSource(instr, { decimal: decimalView }),
+      hardComment: describeCopperInstruction(instr),
+      annotation: createAnnotationMetadata(undefined, offset, 2, "copper")
+    });
+  }
+  return items;
+}
+
+/** What a DMA follow field is, for the comment of a row that lists it on its own. */
+const DMA_FIELD_NAMES: Record<DmaFieldRole, string> = {
+  portA: "port A address",
+  portALo: "port A address, low byte",
+  portAHi: "port A address, high byte",
+  length: "block length",
+  lengthLo: "block length, low byte",
+  lengthHi: "block length, high byte",
+  portB: "port B address",
+  portBLo: "port B address, low byte",
+  portBHi: "port B address, high byte",
+  timing: "timing byte",
+  timingExtra: "ignored byte (port A has no prescaler)",
+  prescaler: "prescaler",
+  mask: "mask byte",
+  match: "match byte",
+  readMask: "read mask"
+};
+
+/**
+ * A DMA program: one row per register write, decoded the way the DMA takes the bytes (plan D2),
+ * never collapsed (D8). A command cut off by the region end is listed as `.defb` with a
+ * "truncated" comment (D4).
+ *
+ * A label on a follow byte splits the command into the documented runtime-patching form (D5): the
+ * base byte alone (`.dma wr0 a_to_b, transfer`, or `.dma cmd $xx`), then each field on its own row,
+ * a word as `.defw`. A label on the second byte of a word field splits that field into two `.defb`
+ * rows. Every form reassembles to the bytes it covers (D1).
+ */
+function createDmaItems(
+  contents: Uint8Array,
+  start: number,
+  end: number,
+  decimalView: boolean,
+  addressOffset: number,
+  labelOffsets: number[]
+): DisassemblyItem[] {
+  const items: DisassemblyItem[] = [];
+  const opts = { decimal: decimalView };
+  const labelled = new Set(labelOffsets);
+  for (const cmd of decodeDmaStream(contents, start, end + 1)) {
+    const size = cmd.bytes.length;
+    let split = false;
+    for (let at = cmd.offset + 1; at < cmd.offset + size; at++) {
+      if (labelled.has(at)) split = true;
+    }
+    if (!split) {
+      items.push({
+        address: effectiveAddress(cmd.offset, addressOffset),
+        instruction: formatDmaCommand(cmd, opts).text,
+        hardComment: describeDmaCommand(cmd),
+        annotation: createAnnotationMetadata(undefined, cmd.offset, size, "dma")
+      });
+      continue;
+    }
+    items.push({
+      address: effectiveAddress(cmd.offset, addressOffset),
+      instruction: formatDmaBase(cmd, opts).text,
+      hardComment: describeDmaCommand(cmd),
+      annotation: createAnnotationMetadata(undefined, cmd.offset, 1, "dma")
+    });
+    for (const field of cmd.fields) {
+      items.push(...dmaFieldRows(field, labelled, decimalView, addressOffset));
+    }
+  }
+  return items;
+}
+
+function dmaFieldRows(
+  field: DmaField,
+  labelled: Set<number>,
+  decimalView: boolean,
+  addressOffset: number
+): DisassemblyItem[] {
+  const name = DMA_FIELD_NAMES[field.role];
+  if (field.size === 2 && !labelled.has(field.offset + 1)) {
+    return [
+      {
+        address: effectiveAddress(field.offset, addressOffset),
+        instruction: `.defw ${decimalView ? field.value.toString(10) : `$${toHexa4(field.value)}`}`,
+        hardComment: name,
+        annotation: createAnnotationMetadata(undefined, field.offset, 2, "dma")
+      }
+    ];
+  }
+  if (field.size === 2) {
+    return [
+      { ...dataRow(field.offset, [field.value & 0xff], "dma", decimalView, addressOffset), hardComment: `${name}, low byte` },
+      { ...dataRow(field.offset + 1, [field.value >> 8], "dma", decimalView, addressOffset), hardComment: `${name}, high byte` }
+    ];
+  }
+  return [{ ...dataRow(field.offset, [field.value], "dma", decimalView, addressOffset), hardComment: name }];
+}
+
+/** One `.defb` row inside a decoded region. */
+function dataRow(
+  offset: number,
+  values: number[],
+  regionType: "copper" | "dma",
+  decimalView: boolean,
+  addressOffset: number
+): DisassemblyItem {
+  return {
+    address: effectiveAddress(offset, addressOffset),
+    instruction: `.defb ${values.map((v) => (decimalView ? toDecimal3(v) : `$${toHexa2(v)}`)).join(", ")}`,
+    annotation: createAnnotationMetadata(undefined, offset, values.length, regionType)
+  };
 }
 
 function createSkipItem(

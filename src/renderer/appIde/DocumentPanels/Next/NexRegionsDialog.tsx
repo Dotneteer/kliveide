@@ -12,6 +12,7 @@ import {
 } from "./nexAnnotations";
 import {
   createRegionPreview,
+  dmaTrimSuggestion,
   formatRegionOffset
 } from "./NexRegionDialog";
 import { parseNexLabelValue } from "./NexLabelDialog";
@@ -41,6 +42,8 @@ const REGION_TYPE_OPTIONS: DropdownOption[] = [
   { value: "disassemble", label: "Disassembly" },
   { value: "bytes", label: "Bytes" },
   { value: "words", label: "Words" },
+  { value: "copper", label: "Copper" },
+  { value: "dma", label: "DMA" },
   { value: "skip", label: "Skip" }
 ];
 
@@ -93,6 +96,15 @@ export function NexRegionsDialog({
   const selectedRegion = useMemo(
     () => sortedRegions.find((region) => getRegionKey(region) === selectedRegionKey),
     [selectedRegionKey, sortedRegions]
+  );
+
+  // --- A DMA region ending in a long `$00` run: offer to edit it with the trimmed end (plan D8).
+  const trimEnd = useMemo(
+    () =>
+      selectedRegion?.type === "dma"
+        ? dmaTrimSuggestion(bytes, selectedRegion.start, selectedRegion.end)
+        : undefined,
+    [bytes, selectedRegion]
   );
 
   // --- Awaited: a `disassemble` region is previewed by really disassembling it.
@@ -223,6 +235,18 @@ export function NexRegionsDialog({
           {preview}
         </div>
       </DialogRow>
+      {selectedRegion && trimEnd !== undefined && (
+        <div className={styles.hint} role="status">
+          <span>{`Ends in ${selectedRegion.end - trimEnd} zero bytes, each listed as a WR2 write.`}</span>
+          <Button
+            text={`Trim to ${formatRegionOffset(trimEnd)}`}
+            variant="secondary"
+            clicked={() =>
+              controls.close({ action: "edit", region: { ...selectedRegion, end: trimEnd } })
+            }
+          />
+        </div>
+      )}
       <DialogFooter>
         <Button variant="secondary" text="Close" clicked={controls.cancel} />
         <DialogFooterSpacer />
@@ -268,6 +292,10 @@ function estimateRegionLineCount(region: NexAnnotationRegion): string {
     case "bytes":
     case "words":
       return String(Math.ceil(length / 4));
+    case "copper":
+      return String(Math.ceil(length / 2));
+    case "dma":
+      return `<= ${length}`;
     case "skip":
       return "1";
     default:

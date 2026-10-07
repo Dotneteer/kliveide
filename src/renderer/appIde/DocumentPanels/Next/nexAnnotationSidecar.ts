@@ -16,7 +16,8 @@ import {
   getBankAnnotation,
   getNexAnnotationPath,
   getNexBankAddressOffset,
-  parseNexAnnotations
+  parseNexAnnotations,
+  toSidecarBanks
 } from "./nexAnnotations";
 
 export type NexAnnotationSidecarPaths = {
@@ -85,7 +86,18 @@ export function getAnnotatedDecimalViewForBank(
 }
 
 export function formatNexAnnotations(annotations: NexFileAnnotations): string {
-  return `${JSON.stringify(annotations, null, 2)}\n`;
+  return `${JSON.stringify(toSidecarAnnotations(annotations), null, 2)}\n`;
+}
+
+/**
+ * The model in its stored form. Regions are the only part whose in-memory shape differs from the
+ * file's: `copper`/`dma` are written as `bytes` + `decode` (`toSidecarRegion`), so the file stays
+ * readable by shipped builds.
+ */
+function toSidecarAnnotations(annotations: NexFileAnnotations): Record<string, unknown> {
+  return annotations.banks
+    ? { ...annotations, banks: toSidecarBanks(annotations.banks) }
+    : { ...annotations };
 }
 
 /*
@@ -134,11 +146,12 @@ export async function saveNexAnnotationSubtree(
 ): Promise<void> {
   const raw = await readRawSidecar(projectService, fullPath);
   const merged: Record<string, unknown> = { ...raw };
+  const stored = toSidecarAnnotations(annotations);
   for (const key of ANNOTATION_KEYS) {
-    if (annotations[key] === undefined) {
+    if (stored[key] === undefined) {
       delete merged[key];
     } else {
-      merged[key] = annotations[key];
+      merged[key] = stored[key];
     }
   }
   await projectService.saveFileContent(fullPath, formatRawSidecar(merged));

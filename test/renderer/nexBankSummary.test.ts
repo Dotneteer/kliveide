@@ -4,6 +4,8 @@ import {
   bankContentMix,
   bankLabels,
   contentMixPercent,
+  formatMixPercent,
+  mixLegendTypes,
   isAnnotatedBank,
   isEmptyBank
 } from "@renderer/appIde/DocumentPanels/Next/nexBankSummary";
@@ -25,9 +27,40 @@ describe("bankContentMix", () => {
       { start: 0x3000, end: 0x37ff, type: "words" },
       { start: 0x3800, end: 0x3fff, type: "skip" }
     ]);
-    expect(mix).toEqual({ disassemble: 0x1000, bytes: 0x2000, words: 0x800, skip: 0x800 });
+    expect(mix).toEqual({
+      disassemble: 0x1000,
+      bytes: 0x2000,
+      words: 0x800,
+      copper: 0,
+      dma: 0,
+      skip: 0x800
+    });
     expect(contentMixPercent(mix, "bytes")).toBe(50);
     expect(contentMixPercent(mix, "words")).toBe(13);
+  });
+
+  it("counts Copper and DMA regions, and names them only when present", () => {
+    const mix = bankContentMix([
+      { start: 0, end: 0x0fff, type: "disassemble" },
+      { start: 0x1000, end: 0x10ff, type: "copper" },
+      { start: 0x1100, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(mix.copper).toBe(0x100);
+    expect(formatMixPercent(mix, "copper")).toBe("2%");
+    const tiny = bankContentMix([
+      { start: 0, end: 13, type: "copper" },
+      { start: 14, end: 0x3fff, type: "disassemble" }
+    ]);
+    expect(formatMixPercent(tiny, "copper")).toBe("<1%");
+    expect(formatMixPercent(mix, "dma")).toBe("0%");
+    expect(mix.dma).toBe(0);
+    expect(mixLegendTypes(mix)).toEqual(["disassemble", "bytes", "words", "copper", "skip"]);
+    expect(mixLegendTypes(bankContentMix(undefined))).toEqual([
+      "disassemble",
+      "bytes",
+      "words",
+      "skip"
+    ]);
   });
 
   it("is all zero without regions", () => {

@@ -126,6 +126,28 @@ export function deriveLabelWidthCh(
 }
 
 /**
+ * The instruction column's width when nothing in the listing is longer: fits every Z80 mnemonic
+ * with its operands, and every `.defb`/`.defw` row of four values.
+ */
+export const DEFAULT_INSTRUCTION_WIDTH_CH = 25;
+
+/**
+ * The instruction column a listing needs: the default, widened to its longest instruction.
+ *
+ * A fixed width was enough while every row was a Z80 instruction or a short data directive. An
+ * annotated `.NEX` listing also carries `.dma` and `.copper` pragma rows
+ * (`.dma wr0 a_to_b, transfer, $4000, $0020` is 38 characters), and a cell narrower than its text
+ * wraps it into the row below, overprinting it. Shared by every row, like the comment column, so
+ * the comment column still starts at one x.
+ */
+export function deriveInstructionWidthCh(items: readonly DisassemblyItem[]): number {
+  return items.reduce(
+    (widest, item) => Math.max(widest, (item.instruction?.length ?? 0) + 1),
+    DEFAULT_INSTRUCTION_WIDTH_CH
+  );
+}
+
+/**
  * Splits an instruction so the operand labels a resolver substituted can be tinted separately.
  *
  * The disassembler puts a resolved label into the instruction as plain text, so by the time a row
@@ -363,6 +385,12 @@ type DisassemblyRowProps = DisassemblyRowViewModelParams & {
    */
   labelWidthCh?: number;
   /**
+   * Characters reserved for the instruction column, shared by every row in the list. Defaults to
+   * `DEFAULT_INSTRUCTION_WIDTH_CH`; pass `deriveInstructionWidthCh(items)` for a listing that can
+   * hold pragma rows longer than that.
+   */
+  instructionWidthCh?: number;
+  /**
    * Draw this row as an *annotated* listing row rather than a machine disassembly row.
    *
    * Opt-in, and off by default, because the two views have different colour tables and only the
@@ -414,6 +442,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
   index,
   item,
   labelWidthCh = DEFAULT_LABEL_WIDTH_CH,
+  instructionWidthCh = DEFAULT_INSTRUCTION_WIDTH_CH,
   onClick,
   onContextMenu,
   onEditBreakpoint,
@@ -636,7 +665,7 @@ export const DisassemblyRow = memo(function DisassemblyRow({
           )}
           <Value
             text={viewModel.instruction}
-            width="25ch"
+            width={`${instructionWidthCh}ch`}
             className={
               isDirective ? styles.annotationDirective : styles.disassemblyInstruction
             }

@@ -1,6 +1,6 @@
 # NEX Annotations — DMA and Copper Regions Plan
 
-Status: **decisions recorded** (2026-10-07; open questions resolved in §8). Nothing implemented yet.
+Status: **implemented** (2026-10-07; open questions resolved in §8). Phases 1-5 are done; §6 lists the follow-ups.
 
 ## 1. Goal
 
@@ -250,3 +250,23 @@ bytes on the same row:
 | Q2 | Single-key shortcuts for Copper and DMA? | **None for now** (D7). The hint table is "the whole set" by decision; the menu and dialogs suffice. |
 | Q3 | Should the assembler warn about missing `.dma wr0` / `wr4` follow bytes? | **Yes, but only for `wr0` with an address and no length**, and as a separate change (§6). The no-address forms are the documented patching pattern. |
 | Q4 | Collapse repeated identical DMA commands into one row? | **No, one command per row** (D8), with a trim suggestion for a trailing `$00` run. |
+
+## 9. Implementation notes
+
+Where the implementation differs from, or adds to, the text above:
+
+- The decoder tests live beside the Copper decoder's, in `test/zxnext-shared/dmaDecoder.test.ts`; the
+  annotation, listing and dialog-helper tests are in `test/renderer/nexDecodedRegions.test.ts`.
+- `decodeDmaStream(bytes, start, end)` takes an **exclusive** `end`; the listing passes `region.end + 1`.
+- A multi-byte fallback is one `.defb` row (an assembler line holds one statement); `.dma cmd $xx` is
+  used for one-byte fallbacks and for the base byte of a split command that has no patching form.
+- An odd-length Copper region **in a file** loads as Copper with a warning (its last byte listed as
+  `.defb`) rather than degrading to `bytes`: a neighbouring region edit can trim one, and losing the
+  kind on reload would be worse. New odd spans are refused by the dialogs and by `withRegion`.
+- The round trip found an assembler bug: a bare `.dma wr3` followed by another line took the newline
+  as a mask expression (Z0111). Fixed in `parseDmaWr3`, with a test.
+- The mix bar's Copper and DMA segments are named in its legend and tooltip only when the bank has
+  them (`mixLegendTypes`). Hues: `--color-nex-mix-copper` (success green) and `--color-nex-mix-dma`
+  (favourite gold); see `.ai/ui-theming-intent-and-lessons.md`.
+- `formatCopperSource` in `copperDecoder.ts` writes the `.copper` source text, shared by the listing
+  and the region dialog's preview.

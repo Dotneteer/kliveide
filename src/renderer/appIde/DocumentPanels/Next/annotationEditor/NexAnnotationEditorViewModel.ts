@@ -75,6 +75,8 @@ export type NexAnnotationMenuAction =
   | "mark-disassembly"
   | "mark-bytes"
   | "mark-words"
+  | "mark-copper"
+  | "mark-dma"
   | "mark-skip"
   | "clear";
 
@@ -348,6 +350,9 @@ function selectMenu(
     item("mark-disassembly", "Mark As Disassembly"),
     item("mark-bytes", "Mark As Bytes"),
     item("mark-words", "Mark As Words"),
+    // --- No shortcut keys for these two (plan D7): rare, and marked once per program.
+    item("mark-copper", "Mark As Copper"),
+    item("mark-dma", "Mark As DMA"),
     item("mark-skip", "Mark As Skip"),
     { kind: "separator" },
     item("clear", "Clear Row Annotations")
@@ -494,6 +499,10 @@ export function regionTypeOfAction(
       return "bytes";
     case "mark-words":
       return "words";
+    case "mark-copper":
+      return "copper";
+    case "mark-dma":
+      return "dma";
     case "mark-skip":
       return "skip";
     default:

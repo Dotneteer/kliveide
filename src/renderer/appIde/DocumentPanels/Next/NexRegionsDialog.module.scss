@@ -156,3 +156,14 @@
 }
 
 
+
+/* A suggestion about the selected region, with its one-click remedy; the same shape as the region
+   dialog's `.hint`. */
+.hint {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  color: var(--color-doc-inactiveText);
+  font-size: var(--font-size-100);
+}
