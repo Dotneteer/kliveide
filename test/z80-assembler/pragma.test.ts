@@ -1373,14 +1373,26 @@ describe("Assembler - pragmas", async () => {
     await await testCodeEmit(source, 0x01, 0x45, 0xae, 122);
   });
 
-  it("defb - fails with string", async () => {
-    const compiler = new Z80Assembler();
-    const source = `.defb "Hello"`;
+  it("defb - accepts string", async () => {
+    await testCodeEmit(`.defb "Hello"`, 0x48, 0x65, 0x6c, 0x6c, 0x6f);
+  });
 
-    const output = await compiler.compile(source);
+  it("defb - mixes numbers and strings (issue #1437)", async () => {
+    await testCodeEmit(`defb 22,9,5,"O/P",0`, 22, 9, 5, 0x4f, 0x2f, 0x50, 0x00);
+  });
 
-    expect(output.errorCount).toBe(1);
-    expect(output.errors[0].errorCode === "Z0601").toBe(true);
+  it("defb - string with escapes", async () => {
+    await testCodeEmit(`db 1, "a\\x12", 2`, 0x01, 0x61, 0x12, 0x02);
+  });
+
+  it("defb - string inside a struct", async () => {
+    const source = `
+    MyStruct: .struct
+      .defb 1, "AB"
+    .ends
+    MyStruct()
+    `;
+    await testCodeEmit(source, 0x01, 0x41, 0x42);
   });
 
   it("defb - flexible mode", async () => {

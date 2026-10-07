@@ -2452,13 +2452,9 @@ export abstract class CommonAssembler<
       const value = this.evaluateExpr(expr);
       if (value.isValid) {
         if (value.type === ExpressionValueType.String) {
-          if (this._options.flexibleDefPragmas) {
-            // --- In flexible mode, we allow strings...
-            this.emitString(value, false, false, emitAction);
-          } else {
-            // --- ...otherwise, we accept only numeric values
-            this.reportAssemblyError("Z0601", pragma);
-          }
+          // --- A string emits its characters, one byte each, so text and numbers can be
+          // --- mixed (`.defb 22, 9, 5, "TEXT"`), as in other Z80 assemblers
+          this.emitString(value, false, false, emitAction);
         } else {
           emit(value.value & 0xff);
         }

@@ -374,6 +374,14 @@ The __DEFB__ pragma emits 8-bit expressions (bytes) from the current assembly po
 The __DEFB__ pragma will emit these four bytes starting at 0x6000: 0x01, 0x02, 0x03, 0x04.
 The `$` expression will emit 0x03, because, at the emission point, the current assembly address is 0x6003. The __DEFB__ program considers only the rightmost 8 bits of any expression: this is how `$` results in 0x03.
 
+A __DEFB__ argument can also be a string. It emits one byte for each of its characters, exactly as __DEFM__ does (escape sequences included), so you can mix numbers and text in one line:
+
+```z80klive
+.defb 22, 9, 5, "O/P OR Z/X TO MOVE THE BAT"
+```
+
+This line emits 22, 9, and 5 (the `AT 9,5` control codes of the ZX Spectrum ROM's print routine), followed by the 26 characters of the text.
+
 > __DEFB__ has extra syntax variants: `db`, `.db`, `DB`, and `.DB` are accepted, too.
 
 ## The DEFW pragma
