@@ -1,4 +1,4 @@
 :HL["/kliveide/_next/static/css/11c59cc40cabfed8.css","style"]
 :HL["/kliveide/_next/static/css/0bf80bfc72b7f908.css","style"]
 :HL["/kliveide/images/klive-logo.svg","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"working-with-ide/layer2-inspector","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"Vs-vyj4UHJafz11HCgCVq"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"working-with-ide/layer2-inspector","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"a6zhC0AuD-GM8l6hzoDMP"}
