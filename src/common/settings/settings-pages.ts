@@ -20,6 +20,7 @@ import { MOUSE_POINTER_DISPLAYS, MOUSE_SENSITIVITIES } from "./mouse-capture";
 import { ACCENT_MENU_ITEMS, DEFAULT_ACCENT } from "@common/theming/accents";
 import { machineRegistry } from "@common/machines/machine-registry";
 import {
+  BEAM_POSITION_MACHINE_IDS,
   MC_DISK_SUPPORT,
   MC_SCREEN_SIZE,
   MC_SP48_ROM_FILE,
@@ -466,7 +467,9 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     description: "Also on the emulator toolbar",
     editor: "switch",
     source: setting(SETTING_EMU_SHOW_BEAM_POSITION),
-    replaces: "View › Show the Beam Position"
+    replaces: "View › Show the Beam Position",
+    // --- Only machines with a raster beam: not the Z88's LCD, the ZX80/81 or the C64
+    when: { kind: "machine", machineIds: BEAM_POSITION_MACHINE_IDS }
   },
   {
     id: "stayOnTop",

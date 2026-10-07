@@ -4,7 +4,7 @@ import { IconButton } from "./IconButton";
 import { ToolbarSeparator } from "./ToolbarSeparator";
 import { MutableRefObject, useCallback } from "react";
 import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_MOUSE_SUPPORT, MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { BEAM_POSITION_MACHINE_IDS, MF_MOUSE_SUPPORT, MF_TAPE_SUPPORT } from "@common/machines/constants";
 import { useMainApi } from "@renderer/core/MainApi";
 import { useEmuApi } from "@renderer/core/EmuApi";
 import type { RecordingManager } from "@renderer/appEmu/recording/RecordingManager";
@@ -92,17 +92,20 @@ export const ViewControls = ({ recordingManagerRef }: Props) => {
           await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_INSTANT_SCREEN, !showInstantScreen);
         }}
       />
-      {/* The beam position overlay (BEAM_POSITION_OVERLAY_PLAN D8): shown only while paused */}
-      <IconButton
-        iconName="scan-line"
-        iconSize={SECONDARY_ICON_SIZE}
-        fill="--color-toolbarbutton"
-        selected={showBeamPosition}
-        title="Show/Hide the beam position while paused"
-        clicked={async () => {
-          await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_BEAM_POSITION, !showBeamPosition);
-        }}
-      />
+      {/* The beam position overlay (BEAM_POSITION_OVERLAY_PLAN D8): shown only while paused, and only
+          on a machine with a raster beam (not the Z88's LCD) */}
+      {BEAM_POSITION_MACHINE_IDS.includes(machineId) && (
+        <IconButton
+          iconName="scan-line"
+          iconSize={SECONDARY_ICON_SIZE}
+          fill="--color-toolbarbutton"
+          selected={showBeamPosition}
+          title="Show/Hide the beam position while paused"
+          clicked={async () => {
+            await mainApi.setGlobalSettingsValue(SETTING_EMU_SHOW_BEAM_POSITION, !showBeamPosition);
+          }}
+        />
+      )}
       {mouseSupport && (
         <>
           <ToolbarSeparator />

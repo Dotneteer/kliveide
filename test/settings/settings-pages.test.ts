@@ -122,6 +122,13 @@ describe("isSettingsRowApplicable", () => {
     expect(isSettingsRowApplicable(row("mouseCapture"), running("sp48"))).toBe(false);
   });
 
+  it("shows the beam position only on a machine with a raster beam", () => {
+    for (const id of ["sp48", "sp128", "spp3e", "timex", "scorpion", "zxnext"]) {
+      expect(isSettingsRowApplicable(row("beamPosition"), running(id)), id).toBe(true);
+    }
+    expect(isSettingsRowApplicable(row("beamPosition"), running("z88"))).toBe(false);
+  });
+
   it("shows the TR-DOS ROM only for a model with a Beta 128", () => {
     const sp128 = machineRegistry.find((m) => m.machineId === "sp128")!;
     const withDisks = sp128.models!.find((m) => (m.config?.[MC_DISK_SUPPORT] ?? 0) > 0)!;

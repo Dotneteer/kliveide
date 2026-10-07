@@ -5,10 +5,20 @@ import { createMockContext } from "./test-helpers/mock-context";
 
 // --- BEAM_POSITION_OVERLAY_PLAN D8: `beam [on|off]` is the View menu's "Show the Beam Position"
 
+const machine = (context: any, machineId: string) =>
+  context.service.machineService.getMachineInfo.mockReturnValue({ machine: { machineId } });
+
 describe("beam", () => {
   let context: any;
   beforeEach(() => {
     context = createMockContext();
+    machine(context, "sp48");
+  });
+
+  it("refuses a machine without a raster beam (the Z88's LCD)", async () => {
+    machine(context, "z88");
+    expect((await new BeamCommand().execute(context, { state: "on" })).success).toBe(false);
+    expect(context.mainApi.setGlobalSettingsValue).not.toHaveBeenCalled();
   });
 
   it("switches the setting on and off", async () => {
