@@ -1767,6 +1767,32 @@ export class DebugSupport implements IDebugSupport {
   }
 
   /**
+   * The breakpoints that would stop at an execution address in the past
+   * (`.plans/LITE_STEP_BACK_PLAN.md` D11): Reverse Continue's search. Enabled execution breakpoints
+   * claiming the address in the partition the record was made in, with their compiled conditions for
+   * the caller to evaluate against the record's registers. Hit counts are ignored, logpoints neither
+   * stop nor print, and a condition waiting for a missing label does not stop - as live.
+   */
+  historicalExecBreakpoints(
+    address: number,
+    partition: number | undefined
+  ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[] {
+    const found: { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[] = [];
+    for (const [key, bp] of this.breakpointDefs) {
+      // --- ASSERTION and WPMEM comments are checks, not stops a user placed to come back to
+      if (bp.disabled || !bp.exec || bp.runTo || bp.annotationKind || isLogpoint(bp)) continue;
+      if (!this.claimsAddress(bp, address)) continue;
+      const site = effectiveBankSite(bp);
+      const own = site ? bankRelativePartition(site.bank, site.bankOffset) : (bp.partition ?? bp.resolvedPartition);
+      if (own !== undefined && own !== partition) continue;
+      const state = this.runtimeFor(key, bp, "exec");
+      if (state.compiled?.inactiveReason) continue;
+      found.push({ bp, ...(state.compiled ? { compiled: state.compiled } : {}), ...(state.error ? { error: state.error } : {}) });
+    }
+    return found;
+  }
+
+  /**
    * The breakpoints with their runtime state: the live hit count, a condition error, the reason a
    * condition is inactive. What `listBreakpoints` reports; every persister strips these fields.
    */

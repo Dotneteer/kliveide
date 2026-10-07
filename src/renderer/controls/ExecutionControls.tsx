@@ -14,6 +14,9 @@ import { SECONDARY_ICON_SIZE } from "./toolbar-constants";
 import { hasSourceLevelDebug } from "@renderer/appIde/utils/compiler-utils";
 import { canSourceStepOut, STEP_OUT_IN_MAIN, stepIntoTargets } from "@renderer/appIde/debugger/source/step-targets";
 import { SETTING_EMU_JUST_MY_CODE } from "@common/settings/setting-const";
+import { MF_EXEC_HISTORY } from "@common/machines/constants";
+import { machineRegistry } from "@common/machines/machine-registry";
+import { defaultReverseShortcuts, type ReverseShortcuts } from "@common/settings/reverse-shortcuts";
 
 type Props = {
   ide: boolean;
@@ -87,6 +90,12 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       state === MachineControllerState.Pausing ||
       state === MachineControllerState.Paused);
   const canStep = !isCompiling && state === MachineControllerState.Paused;
+  // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.4): on every machine that records history
+  const machineId = useSelector((s) => s.emulatorState?.machineId);
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
+  const recordsHistory = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
+  // --- In the past, every forward command acts on the live machine (D5): the tooltips say so
+  const fromPresent = historyPosition ? " - resumes from the present" : "";
   const mayInjectCode = ide && kliveProjectLoaded;
 
   const startOptions = ide ? ideStartOptions : emuStartOptions;
@@ -157,6 +166,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   const [stepIntoKey, setStepIntoKey] = useState<string>(null);
   const [stepOverKey, setStepOverKey] = useState<string>(null);
   const [stepOutKey, setStepOutKey] = useState<string>(null);
+  const [reverseKeys, setReverseKeys] = useState<ReverseShortcuts>();
 
   const { outputPaneService, ideCommandsService } = useAppServices();
 
@@ -228,6 +238,15 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
     await emuApi.sourceStep("overLine");
   }, [emuApi]);
 
+  // --- History navigation runs the IDE commands, so the output pane says where each one went
+  const runHistoryCommand = useCallback(
+    async (command: string) => {
+      if (ide) await ideCommandsService.executeCommand(command);
+      else await ideApi.executeCommand(command);
+    },
+    [ide, ideCommandsService, ideApi]
+  );
+
   const handleToggleStepMode = useCallback(async () => {
     const next = !sourceMode;
     await emuApi.setSourceStepping(next);
@@ -241,6 +260,17 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
       setStepIntoKey(settings?.shortcuts?.stepInto ?? (isWindows ? "F11" : "F12"));
       setStepOverKey(settings?.shortcuts?.stepOver ?? "F10");
       setStepOutKey(settings?.shortcuts?.stepOut ?? (isWindows ? "Shift+F11" : "Shift+F12"));
+      const platform = isWindows ? "win32" : /mac/i.test(navigator.platform) ? "darwin" : "linux";
+      const defaults = defaultReverseShortcuts(platform);
+      const keys: ReverseShortcuts = {
+        stepBack: settings?.shortcuts?.stepBack ?? defaults.stepBack,
+        stepBackOver: settings?.shortcuts?.stepBackOver ?? defaults.stepBackOver,
+        stepBackOut: settings?.shortcuts?.stepBackOut ?? defaults.stepBackOut,
+        reverseContinue: settings?.shortcuts?.reverseContinue ?? defaults.reverseContinue,
+        stepForward: settings?.shortcuts?.stepForward ?? defaults.stepForward
+      };
+      // --- Only a real change re-renders: a fresh object every time would loop with this effect
+      setReverseKeys((old) => (old && JSON.stringify(old) === JSON.stringify(keys) ? old : keys));
     })();
   }, [mainApi, isWindows]);
 
@@ -294,7 +324,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         options={resumeSplitOptions}
         selectedValue={resumeAction}
         enable={canContinue}
-        dropdownTitle="Choose resume mode"
+        dropdownTitle={`Choose resume mode${fromPresent}`}
         onAction={handleResumeAction}
       />
       <ToolbarSeparator />
@@ -336,7 +366,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
           iconName="step-into"
           iconSize={SECONDARY_ICON_SIZE}
           fill="--color-toolbarbutton-blue"
-          title={`Step Into (${stepIntoKey})`}
+          title={`Step Into (${stepIntoKey})${fromPresent}`}
           enable={canStep}
           clicked={handleStepInto}
         />
@@ -345,7 +375,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         iconName="step-over"
         iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title={`Step Over (${stepOverKey})`}
+        title={`Step Over (${stepOverKey})${fromPresent}`}
         enable={canStep}
         clicked={handleStepOver}
       />
@@ -353,7 +383,7 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
         iconName="step-out"
         iconSize={SECONDARY_ICON_SIZE}
         fill="--color-toolbarbutton-blue"
-        title={sourceStepping && !stepOutPossible ? STEP_OUT_IN_MAIN : `Step Out (${stepOutKey})`}
+        title={sourceStepping && !stepOutPossible ? STEP_OUT_IN_MAIN : `Step Out (${stepOutKey})${fromPresent}`}
         enable={canStep && (!sourceStepping || stepOutPossible)}
         clicked={handleStepOut}
       />
@@ -377,6 +407,35 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
                 : "Stepping Z80 instructions (click to step source statements)"
             }
             clicked={handleToggleStepMode}
+          />
+        </>
+      )}
+      {recordsHistory && (
+        <>
+          <ToolbarSeparator />
+          <IconButton
+            iconName="step-back"
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton-blue"
+            title={`Step Back through the history (${reverseKeys?.stepBack ?? ""})`}
+            enable={canStep}
+            clicked={() => runHistoryCommand("step-back")}
+          />
+          <IconButton
+            iconName="step-forward-history"
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton-blue"
+            title={`Step Forward through the history (${reverseKeys?.stepForward ?? ""})`}
+            enable={canStep && !!historyPosition}
+            clicked={() => runHistoryCommand("step-forward")}
+          />
+          <IconButton
+            iconName="history-present"
+            iconSize={SECONDARY_ICON_SIZE}
+            fill="--color-toolbarbutton-blue"
+            title="Return to the present"
+            enable={canStep && !!historyPosition}
+            clicked={() => runHistoryCommand("history-present")}
           />
         </>
       )}

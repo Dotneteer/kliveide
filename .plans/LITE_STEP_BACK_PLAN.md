@@ -1,9 +1,10 @@
 # Lite Step Back Plan: Walking Backwards Through the Execution History
 
-Status: **draft** (2026-10-06). Depends on [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md)
+Status: **implemented** (2026-10-07); §9 records what was built, the T1 audit and what was deferred.
+Drafted 2026-10-06. Depends on [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md)
 (G4.1). Works on every machine that [EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md)
 (G4.2) has reached, with no extra work per machine. Decisions D1–D14 are **accepted** (2026-10-06);
-§8 has suggested answers awaiting confirmation.
+§8's suggested answers were taken as given when the plan was executed (2026-10-07).
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G4.3**, DeZog's "lite" reverse debugging:
@@ -322,3 +323,62 @@ Suggested answers, awaiting the author's confirmation (2026-10-06):
      - The Breakpoints panel marks the row for the duration of the history visit.
    - **Temporary by design.** G4.4 makes memory historical, so every condition is evaluated there and
      this rule disappears with the lite provider.
+
+---
+
+## 9. Implementation record (2026-10-07)
+
+### 9.1 Where things are
+
+| Part | Where |
+| --- | --- |
+| Walkers (§4.2) | `src/common/history/reverseStep.ts` - step back/forward, reverse step over/out, reverse continue, the historical call stack, `PagedHistorySource`. Statement-level stepping (D12) is the same walkers with an `isStop` that accepts statement entries (`SourceDebugIndex.entryAt`); no separate `sourceStepBack.ts` was needed. |
+| Register-only conditions (T5) | `src/common/history/historyCondition.ts`; a zero divisor fails safe (stops), as the live `DIVZERO` does |
+| API types | `src/common/history/historyNavigation.ts` |
+| Cursor and lite provider (D1, D14) | `src/emu/machines/history/HistoryCursor.ts`, owned by `MachineController` (`historyCursor`, `navigateHistory`, `clearHistoryCursor`) |
+| Emu API (§4.3) | `navigateHistory`; `getCpuState({ present })`; `Z80CpuState.history`; `CpuStateChunk.historyPosition`; `CallStackInfo.historical`; `MemoryInfo.history` (the disassembly's T2 check) |
+| Store (D3) | `emulatorState.historyPosition` / `historySequence` / `historyMemoryIsHistorical`, `setHistoryPositionAction` |
+| Reverse Continue's breakpoints | `DebugSupport.historicalExecBreakpoints` |
+| Views | `debugger/history/HistoryBanner.tsx` (CPU band), `HistoryPresentBanner.tsx` (D6 band), `HistoricalCallStack.tsx`; the editor's `asHistoricalDecoration`; the disassembly's `historyExecPoint` / `historyCodeChanged` rows; the status-bar chip; three toolbar buttons |
+| Commands, menu, keys (§4.5, Q3) | `HistoryCommands.ts`; the Debug menu's reverse group; `src/common/settings/reverse-shortcuts.ts` |
+
+**Interrupt pairing.** Reverse step over/out and the call stack treat a complete interrupt service
+(G4.2's `serviceSpans`) as one opaque step rather than pairing INT with RETI by kind. That copes with
+the ZX81's NMI service, which leaves by `JP (HL)`, and keeps an ISR's own calls out of the depth count.
+
+### 9.2 The T1 audit
+
+| Consumer | Class | What it does in the past |
+| --- | --- | --- |
+| `Z80CpuPanel` | follow | the record's registers, the band, changed-vs-previous-step washes, "Now:" tooltips, unknowns as `--` |
+| `MonacoEditor.refreshCurrentBreakpoint` | follow | historical decoration; the present's source stop, step-into targets and frame marker are left out |
+| `IdeEventsHandler.refreshCodeLocation`, `revealNexBankForPc` | follow | re-run on `historyPosition`; the present's source stop report is not used |
+| Disassembly Follow-PC (`getMemoryContents`) | follow | `history.pc`; branch verdicts get the record's registers and no stack reads |
+| `BreakpointsPanel` (row at PC) | follow | marks the breakpoint at the historical PC |
+| `useNexLiveBank` | follow | pages the bank view to the historical PC (present contents) |
+| `CallStackPanel` | follow (rebuilt) | `HistoricalCallStack`, never the memory above SP |
+| Execution History document (`liveRegs`), `history` command | present | `getCpuState({ present: true })` |
+| `em-pause`/`em-stop`/step commands' "at PC=" | present | `getCpuState({ present: true })`; the command then clears the cursor |
+| Memory, Watch, Variables, ULA, Next registers, memory mapping, system variables, disassembly bytes | present | `HistoryPresentBanner` |
+| Breakpoint-hit handling, "stopped at" output | ignore | keyed on `execState` only, which a cursor move never changes |
+
+### 9.3 Verification
+
+- `test/common/history/reverse-step.test.ts`, `history-condition.test.ts`, `history-navigation.test.ts` (node).
+- `test/wasm/condition/history-condition-differential.test.ts`: 3,000 random register-only conditions, TypeScript against C.
+- `test/emu/history-step-back-real-machine.test.ts` (e2e, 48K): step back reproduces the registers stepping
+  forward produced; over, out, call stack, reverse continue with register and memory conditions; D5 and T6 clearing.
+- `test/controls/LiteStepBackUi.test.tsx` (jsdom): the CPU band, controls, status-bar chip.
+- `scripts/doc-shots/recipes/lite-step-back.cjs`: the running app on the 48K - a reverse step over and a
+  reverse continue, verified in the DOM and photographed (`step-back-over.png`, `reverse-continue.png`).
+
+### 9.4 Deferred
+
+- **Phase 0's mockup** was not made: the Q1 treatment was built directly and checked in the running app.
+- **The history document's *by statement* grouping** (D12, G4.1 D16) is not built; statement-level stepping is.
+- **`scripts/kbasic-ide-check.cjs` step-back checks** are not written; statement-level walks are covered by the
+  node tests only.
+- **The Next (§6.2 "Next first")**: the e2e test and the recipe run on the 48K only. The cursor has no
+  machine-specific code, but nothing has yet stepped back on the Next or the ZX81 in a test.
+- **The Breakpoints panel marking a row whose condition was not checked (Q5)**: the note goes to the output pane only.
+

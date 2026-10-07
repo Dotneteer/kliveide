@@ -7,13 +7,16 @@ import classnames from "classnames";
 import styles from "./IdeStatusBar.module.scss";
 import { useAppServices } from "@renderer/appIde/services/AppServicesProvider";
 import { CODE_EDITOR } from "@common/state/common-ids";
+import { historyStepText } from "@common/history/historyNavigation";
 
 type IdeStatusBarProps = {
   show: boolean;
 };
 
 export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
-  const { projectService } = useAppServices();
+  const { projectService, ideCommandsService } = useAppServices();
+  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7): "you are in the past", one click back
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const statusMessage = useSelector((s) => s.ideView?.statusMessage);
   const statusSuccess = useSelector((s) => s.ideView?.statusSuccess);
@@ -58,6 +61,18 @@ export const IdeStatusBar = ({ show }: IdeStatusBarProps) => {
           <LabelSeparator />
           <Label text={machineState} />
         </Section>
+        {!!historyPosition && execState === MachineControllerState.Paused && (
+          <Section>
+            <button
+              type="button"
+              className={styles.historyChip}
+              title="Showing the execution history: memory shows the present. Click to return to the present."
+              onClick={() => void ideCommandsService.executeCommand("history-present")}
+            >
+              ⟲ History {historyStepText(historyPosition)}
+            </button>
+          </Section>
+        )}
         {isKliveProject && (
           <Section>
             <LabelSeparator />

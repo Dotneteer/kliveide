@@ -769,6 +769,16 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-debug-active-bp": "var(--accent-subtle)",
   "--bgcolor-debug-macro-bp": "var(--status-success-subtle)",
   "--color-debug-unreachable-bp": "var(--status-warning)",
+  /*
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): "you are looking at the past".
+   * The secondary accent, because the present's execution point is the primary one and both can be
+   * talked about in one view (the editor, the status bar) - two pointers into one timeline. An
+   * outline and a band, never a tint over a whole panel: a tinted panel reads as disabled.
+   */
+  "--color-history-marker": "var(--accent-secondary-solid)",
+  "--color-history-text": "var(--accent-secondary-text)",
+  "--bgcolor-history-band": "var(--accent-secondary-subtle)",
+  "--border-history-band": "var(--accent-secondary-border)",
 
   // --- Editors ----------------------------------------------------------------------------------
   "--bgcolor-editors": "var(--surface-canvas)",

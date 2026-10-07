@@ -17,6 +17,12 @@ import type { SectorChanges } from "@emu/abstractions/IFloppyDiskDrive";
 import type { IRzxSession, RzxStop } from "@emu/machines/zxSpectrum/rzx/rzxSession";
 import type { RzxState } from "@state/AppState";
 import { IAnyMachine } from "./IAnyMachine";
+import type { HistoryCursor } from "@emu/machines/history/HistoryCursor";
+import type {
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
 
 /**
  * This class implements a machine controller that can operate an emulated machine invoking its execution loop.
@@ -166,6 +172,18 @@ export interface IMachineController {
 
   /** The symbolic call stack, innermost first. */
   getSourceCallStack(): SourceActivationInfo[] | undefined;
+
+  /**
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D1): the paused machine looked at in its
+   * recorded past. Optional so test doubles need not provide it.
+   */
+  readonly historyCursor?: HistoryCursor;
+
+  /** Moves the history cursor (D4); the machine is not touched */
+  navigateHistory?(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult;
+
+  /** Returns to the present (D5) */
+  clearHistoryCursor?(): void;
 
   /**
    * Starts the machine in step-over mode.

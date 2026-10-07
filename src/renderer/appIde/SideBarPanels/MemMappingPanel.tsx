@@ -15,6 +15,7 @@ import {
   getNexLoad
 } from "@renderer/appIde/DocumentPanels/Next/nexLoadSession";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 /** The token every value in this panel is drawn with; labels stay on `--data-label`. */
 const VALUE_FILL = "--color-state-value";
@@ -157,6 +158,7 @@ export const MemMappingPanel = () => {
     : "Off";
   return (
     <div className={styles.memMappingPanel}>
+      <HistoryPresentBanner what="The memory mapping" />
       <DataRow hoverable dense xclass={styles.memMapRow}>
         <Label text="All RAM:" className={styles.memMapLabel} />
         <Value text={allRamValue} className={regStyles.stateValue} />

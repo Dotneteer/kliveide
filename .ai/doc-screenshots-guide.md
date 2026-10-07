@@ -240,6 +240,13 @@ Ten recipes; the rest of the pages were deliberately left ungenerated.
   `svg > line`, or `querySelector("line")` returns the hatch pattern's line, which has no layout box.
   It also checks geometry the way a user sees it: the beam line's on-screen `top` must equal its
   buffer row times the canvas scale (T5).
+- `recipes/lite-step-back.cjs` — `working-with-ide/step-back-over.png` and `reverse-continue.png`,
+  and the running-app check of lite step back on the 48K: it pokes a call tree into a paused machine,
+  stops at a breakpoint, runs `step-back-over` and `reverse-continue` (with an `-if A == 2` condition)
+  as typed commands, and reads the history band (`[aria-label="History cursor"]`), the status-bar
+  chip (`_historyChip_`), the historical disassembly row (`[data-history-exec="true"]`) and the
+  "present" bands (`[role="note"]`) before it photographs. It ends with `em-sti` and checks every band
+  is gone: a machine command returns to the present.
 - `recipes/scripting.cjs` — `scripting/script-output-pane.png`. The worked template.
 - `recipes/disassembly.cjs` — `working-with-ide/disass-branch-verdicts.png`. Adds three
   techniques worth reusing:

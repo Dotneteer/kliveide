@@ -7,8 +7,9 @@ import type { BrowserWindow } from "electron";
 import type { AppState } from "@state/AppState";
 import type { MachineInfo, MachineMenuInfo, MachineModel } from "@common/machines/info-types";
 import type { SettingsPageId } from "@common/settings/settings-pages";
+import type { ReverseShortcuts } from "@common/settings/reverse-shortcuts";
 
-export type MenuShortcuts = {
+export type MenuShortcuts = ReverseShortcuts & {
   fullScreen: string;
   stepInto: string;
   stepOver: string;

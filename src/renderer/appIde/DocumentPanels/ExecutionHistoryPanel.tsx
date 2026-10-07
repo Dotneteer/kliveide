@@ -118,6 +118,8 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const machineState = useSelector((s) => s.emulatorState?.machineState);
   const isDebugging = useSelector((s) => s.emulatorState?.isDebugging);
+  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D13): its row is selected and in view
+  const historySequence = useSelector((s) => s.emulatorState?.historySequence);
   const compilation = useSelector((s) => s.compilation?.result) as KliveCompilerOutput | undefined;
 
   const [state, dispatch] = useReducer(reduceHistoryView, initialHistoryViewState);
@@ -166,7 +168,8 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       dispatch({ type: "infoLoaded", info: newInfo });
       setSpans(newInfo?.count ? ((await emuApi.getHistoryServiceSpans()) ?? []) : []);
       if (newInfo?.count) {
-        const cpu = (await emuApi.getCpuState()) as Z80CpuState;
+        // --- The state after the newest record is the live one, wherever the history cursor is
+        const cpu = (await emuApi.getCpuState({ present: true })) as Z80CpuState;
         setLiveRegs({
           pc: cpu.pc,
           af: cpu.af,
@@ -382,8 +385,23 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     };
   };
 
-  // --- Actions
-  const select = (sequence: number | undefined) => dispatch({ type: "selected", sequence });
+  // --- Actions. Selecting a row of a paused machine moves the history cursor there (D13).
+  const select = (sequence: number | undefined) => {
+    dispatch({ type: "selected", sequence });
+    if (sequence !== undefined && machineState === MachineControllerState.Paused && sequence !== historySequence) {
+      void emuApi.navigateHistory({ toSequence: sequence }).catch(() => undefined);
+    }
+  };
+
+  // --- ...and moving the cursor selects its row and scrolls it into view
+  useEffect(() => {
+    if (historySequence === undefined) return;
+    dispatch({ type: "selected", sequence: historySequence });
+    if (stateRef.current.followNewest) dispatch({ type: "followChanged", follow: false });
+    const row = rowOfSequence(historySequence);
+    if (row >= 0) requestAnimationFrame(() => listApi.current?.scrollToIndex(row, { align: "nearest" }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historySequence]);
   const goToSource = async (record: HistoryRecord) => {
     const location = sourceOf(record);
     if (location) {
@@ -554,6 +572,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
           [styles.separatorRow]: cells.separator,
           [styles.selectedRow]: selected,
           [styles.newestRow]: sequence === info?.newestSequence,
+          [styles.cursorRow]: sequence === historySequence,
           [styles.frameStart]: newFrame
         })}
         title={newFrame ? `Frame ${record.frame}` : undefined}

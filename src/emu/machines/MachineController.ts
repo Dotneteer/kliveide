@@ -41,8 +41,13 @@ import {
   setRzxStateAction,
   incBreakpointHitsVersionAction,
   setMachineStateAction,
-  setProjectDebuggingAction
+  setProjectDebuggingAction,
+  setHistoryPositionAction
 } from "@state/actions";
+import { HistoryCursor } from "./history/HistoryCursor";
+import type { HistoryRecord } from "@common/history/historyRecord";
+import type { HistoryNavigationOp, HistoryNavigationOptions, HistoryNavigationResult } from "@common/history/historyNavigation";
+import { evaluateHistoryCondition } from "@common/history/historyCondition";
 import {
   DISK_A_CHANGES,
   DISK_A_WP,
@@ -215,6 +220,8 @@ export class MachineController implements IMachineController {
 
     const oldState = this._machineState;
     this._machineState = value;
+    // --- Only a paused machine is looked at in the past (D1)
+    if (value !== MachineControllerState.Paused) this._historyCursor?.clear();
     this.store.dispatch(setMachineStateAction(value, this.machine.pc), "emu");
     this.stateChanged.fire({ oldState, newState: this._machineState });
   }
@@ -1055,6 +1062,71 @@ export class MachineController implements IMachineController {
     this.debugSupport.normalizeBreakpoints(resource, lineCount);
   }
 
+  // ==============================================================================================
+  // The history cursor (`.plans/LITE_STEP_BACK_PLAN.md`, G4.3): the paused machine looked at in its
+  // recorded past. The machine itself never changes; `getCpuState()` answers from the cursor (D2).
+
+  private _historyCursor?: HistoryCursor;
+
+  /** The history cursor; created on first use */
+  get historyCursor(): HistoryCursor {
+    this._historyCursor ??= new HistoryCursor({
+      historySource: () => this.historySource(),
+      isPaused: () => this.state === MachineControllerState.Paused,
+      livePc: () => this.machine.pc,
+      liveSp: () => this.machine.sp,
+      statementStop: () => {
+        // --- Statement-level stepping back (D12) uses the same index as forward source stepping
+        if (!this.usesSourceStepping) return undefined;
+        this.refreshSourceIndex();
+        const index = this.sourceIndex;
+        return index ? (record, partition) => index.entryAt(record.regs.pc, partition) >= 0 : undefined;
+      },
+      breakpointHit: (record, partition, notes) => this.historicalBreakpointHit(record, partition, notes),
+      publish: (position, sequence) =>
+        this.store?.dispatch(
+          setHistoryPositionAction(position, sequence, this._historyCursor?.memoryIsHistorical ?? false),
+          "emu"
+        )
+    });
+    return this._historyCursor;
+  }
+
+  /** Moves the history cursor (D4): never a machine command, the machine is not touched */
+  navigateHistory(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult {
+    return this.historyCursor.navigate(op, options);
+  }
+
+  /** Returns to the present (D5): register and memory edits call it before they act */
+  clearHistoryCursor(): void {
+    this._historyCursor?.clear();
+  }
+
+  /** Reverse Continue (D11): whether an enabled execution breakpoint stops at a record */
+  private historicalBreakpointHit(
+    record: HistoryRecord,
+    partition: number | undefined,
+    notes: Set<string>
+  ): { hit: boolean; label?: string } {
+    const candidates = this.debugSupport?.historicalExecBreakpoints?.(record.regs.pc, partition) ?? [];
+    for (const { bp, compiled, error } of candidates) {
+      const label = bp.resource && bp.line !== undefined ? `${bp.resource}:${bp.line}` : `$${toHexa4(record.regs.pc)}`;
+      // --- No condition, or one that does not compile (it stops every time, as live: C15)
+      if (!compiled || error) return { hit: true, label };
+      const result = evaluateHistoryCondition(compiled, record.regs);
+      if ("value" in result) {
+        if (result.value) return { hit: true, label };
+        continue;
+      }
+      // --- Over-stopping is the safe failure (Q5): the user is told, once per breakpoint
+      notes.add(
+        `Breakpoint ${label}: condition not checked - ${(result as { reason: string }).reason}, which is not historical in lite mode`
+      );
+      return { hit: true, label };
+    }
+    return { hit: false };
+  }
+
   /**
    * The machine as an execution-history recorder, when it is one
    * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4)
@@ -1351,6 +1423,8 @@ export class MachineController implements IMachineController {
    * sequence that may still be waiting on ROM execution, queued keys, or startup delays.
    */
   private beginMachineOperation(): number {
+    // --- Any machine command returns to the present first (`.plans/LITE_STEP_BACK_PLAN.md` D5)
+    this._historyCursor?.clear();
     return ++this._operationRevision;
   }
 
@@ -1358,6 +1432,7 @@ export class MachineController implements IMachineController {
    * Invalidates pending project startup continuations for user-issued machine control commands.
    */
   private prepareMachineOperation(operationRevision?: number): number {
+    this._historyCursor?.clear();
     if (operationRevision === undefined) {
       return this.beginMachineOperation();
     }

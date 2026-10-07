@@ -16,6 +16,13 @@ import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceD
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
+import type { HistoryRegisters } from "@common/history/historyRecord";
+import type {
+  HistoricalCpuInfo,
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
@@ -311,9 +318,10 @@ class EmuApiImpl {
   }
 
   /**
-   * Gets the current CPU state.
+   * Gets the current CPU state. While the history cursor is in the past it is the state at the
+   * cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2), with `history` set; `present` asks for the live one.
    */
-  async getCpuState(): Promise<CpuState> {
+  async getCpuState(_options?: { present?: boolean }): Promise<CpuState> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 
@@ -572,6 +580,17 @@ class EmuApiImpl {
   }
 
   /**
+   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4): Step Back, Step Forward, Reverse
+   * Step Over/Out, Reverse Continue, Return to Present, or to a record. Never changes the machine.
+   */
+  async navigateHistory(
+    _op: HistoryNavigationOp,
+    _options?: HistoryNavigationOptions
+  ): Promise<HistoryNavigationResult> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ZX Spectrum Next Copper's state: its list RAM, mode, pointers and beam.
    */
   async getCopperState(): Promise<CopperState> {
@@ -820,8 +839,11 @@ class EmuApiImpl {
 // --- The response with the CPU state chunk
 export type CpuStateChunk = {
   state: MachineControllerState;
+  /** The PC at the history cursor while it is in the past (D3) */
   pcValue: number;
   tacts: number;
+  /** The history cursor's steps back from the present; 0 or absent at the present */
+  historyPosition?: number;
 };
 
 // --- The response with the CPU state information
@@ -876,6 +898,12 @@ export type Z80CpuState = {
    * Copper breakpoint (`cu:`) or a Copper step fires.
    */
   lastCopperHit?: CopperHitEvent;
+  /**
+   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the
+   * registers, flags, interrupt state and PC partition are the record's; `tacts`, the last memory
+   * and I/O accesses and `opStartAddress` are not in a record and must be shown as unknown.
+   */
+  history?: HistoricalCpuInfo;
 };
 
 /**
@@ -1285,6 +1313,12 @@ export type MemoryInfo = {
   selectedBank?: number;
   osInitialized: boolean;
   memBreakpoints: BreakpointInfo[];
+  /**
+   * Set while the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` T2): the
+   * registers above are the present's, these are the cursor's, and `bytes` are the bytes the CPU
+   * decoded at `pc` then - the disassembly marks the row when memory there has changed since.
+   */
+  history?: { position: number; pc: number; regs: HistoryRegisters; bytes: number[]; partition?: number };
 };
 
 // --- The response with the Next register descriptors

@@ -162,6 +162,19 @@ export const setNextLayersAction: ActionCreator = (
   payload: { value }
 });
 
+/**
+ * The history cursor moved (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (0 at
+ * the present) and the record it is on
+ */
+export const setHistoryPositionAction: ActionCreator = (
+  position: number,
+  sequence?: number,
+  memoryIsHistorical = false
+) => ({
+  type: "SET_HISTORY_POSITION",
+  payload: { value: { position, sequence, memoryIsHistorical } }
+});
+
 /** The emulator holds a quick-saved machine state (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` D19) */
 export const setQuickStateAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_QUICK_STATE_AVAILABLE",

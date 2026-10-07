@@ -1322,6 +1322,83 @@ history-clear
 
 Available aliases: `hclr`
 
+## `step-back`
+
+Use this command to step back to the previous instruction in the
+[execution history](/working-with-ide/execution-history#stepping-back) of the paused machine. The CPU
+panel, the editor and the disassembly show that point; memory stays at the present.
+
+```
+step-back
+```
+
+Available aliases: `stb`
+
+With source stepping on, it steps back by statements.
+
+## `step-forward`
+
+Use this command to step forward through the execution history; after the newest record it returns
+to the present.
+
+```
+step-forward
+```
+
+Available aliases: `stf`
+
+## `step-back-over`
+
+Use this command to step back like `step-back`, passing over a call that returned to the call
+instruction itself.
+
+```
+step-back-over
+```
+
+Available aliases: `stbo`
+
+## `step-back-out`
+
+Use this command to step back to the call (or interrupt) that entered the current routine.
+
+```
+step-back-out
+```
+
+Available aliases: `stbu`
+
+## `reverse-continue`
+
+Use this command to go back to the previous hit of an enabled execution breakpoint in the execution
+history. Conditions that read only registers and flags are checked against the recorded registers;
+other conditions count as hit, and the output says so.
+
+```
+reverse-continue
+```
+
+Available aliases: `rcont`
+
+## `history-present`
+
+Use this command to leave the execution history and show the live machine again.
+
+```
+history-present
+```
+
+Available aliases: `hpres`
+
+## `history-goto`
+
+Use this command to move to a point of the execution history: a step back from the present (`-42`)
+or a record's sequence number (`#1234`).
+
+```
+history-goto <-n | #sequence>
+```
+
 ## `show-disassembly`
 
 Use this command to display the machine code disassembly view, and optionally to show an address in

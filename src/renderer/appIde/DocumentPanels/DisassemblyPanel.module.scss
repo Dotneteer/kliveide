@@ -91,6 +91,21 @@
   &.execPoint {
     background: var(--bgcolor-disassembly-current);
   }
+
+  /*
+   * The history cursor's row (`.plans/LITE_STEP_BACK_PLAN.md` D7): an outline in the secondary
+   * accent instead of the present's fill, as in the editor. A row whose present bytes differ from
+   * the ones that ran (T2) gets a dashed outline: what is listed is not what ran.
+   */
+  &.execPoint.historyExecPoint {
+    background: transparent;
+    outline: 1px solid var(--color-history-marker);
+    outline-offset: -1px;
+  }
+
+  &.execPoint.historyCodeChanged {
+    outline-style: dashed;
+  }
 }
 
 /*

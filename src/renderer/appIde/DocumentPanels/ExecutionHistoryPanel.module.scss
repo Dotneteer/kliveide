@@ -161,3 +161,13 @@
   white-space: normal;
   color: var(--data-secondary);
 }
+
+/*
+ * The history cursor's row (`.plans/LITE_STEP_BACK_PLAN.md` D13, D7): the secondary accent's rail
+ * and outline, as the editor's historical marker, so it reads apart from the selection's wash.
+ */
+.cursorRow {
+  box-shadow:
+    inset 3px 0 0 var(--color-history-marker),
+    inset 0 0 0 1px var(--border-history-band);
+}

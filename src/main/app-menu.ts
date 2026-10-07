@@ -5,7 +5,8 @@
  */
 import { BrowserWindow, Menu, MenuItem, MenuItemConstructorOptions, dialog } from "electron";
 
-import { __DARWIN__ } from "./electron-utils";
+import { __DARWIN__, __LINUX__ } from "./electron-utils";
+import { readReverseShortcuts } from "@common/settings/reverse-shortcuts";
 import { mainStore } from "./main-store";
 import { dimMenuAction } from "@state/actions";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
@@ -58,6 +59,11 @@ export function createMenuContext(emuWindow: BrowserWindow, ideWindow: BrowserWi
       stepOut:
         settingsReader.readSetting("shortcuts.stepOut") ?? (__DARWIN__ ? "Shift+F12" : "Shift+F11"),
       stepOverLine: settingsReader.readSetting("shortcuts.stepOverLine") ?? "Shift+F10",
+      // --- Reverse stepping (`.plans/LITE_STEP_BACK_PLAN.md` Q3)
+      ...readReverseShortcuts(
+        (key) => settingsReader.readSetting(key),
+        __DARWIN__ ? "darwin" : __LINUX__ ? "linux" : "win32"
+      ),
       navBack: navigationShortcuts.back,
       navForward: navigationShortcuts.forward,
       recordIdeEmu: readRecordIdeEmuShortcut(appState)

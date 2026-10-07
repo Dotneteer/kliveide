@@ -9,6 +9,7 @@ import { BitValue, FlagValue, SimpleValue } from "@renderer/controls/data/regist
 import { DataPanel, DataRow } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import styles from "./UlaPanel.module.scss";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 /**
  * The token every value in this panel is drawn with. Labels stay on `--data-label`; see the comment
@@ -44,6 +45,7 @@ export const UlaPanel = () => {
 
   return (
     <DataPanel autoHeight>
+      <HistoryPresentBanner what="The ULA" />
       <DataRow dense>
         <SimpleValue
           label="FCL"

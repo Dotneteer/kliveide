@@ -20,6 +20,7 @@ import { bankedMemoryView, bankPagesOf, encodeValue, memoryView, type MemoryView
 import { buildVariableSections, type VariableNode } from "./variables-model";
 import { evaluateWatch } from "./watch-expression";
 import styles from "./VariablesPanel.module.scss";
+import { HistoryPresentBanner } from "../history/HistoryPresentBanner";
 
 type Snapshot = { chain: SourceActivationInfo[]; stop?: SourceStopInfo; mem: MemoryView };
 
@@ -174,6 +175,7 @@ const SourceVariables = ({ info }: { info: SourceLevelDebugInfo }) => {
 
   return (
     <DataPanel xclass={styles.variablesPanel}>
+      <HistoryPresentBanner what="Variables" plural />
       {!sections && <EmptyState message="Pause the machine to see variables" />}
       {sections && sections.returned.length > 0 && (
         <>

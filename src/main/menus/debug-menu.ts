@@ -73,6 +73,31 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
         await getEmuApi().sourceStep("overLine");
       }
     },
+    // --- Reverse stepping through the recorded history (`.plans/LITE_STEP_BACK_PLAN.md` §4.5): IDE
+    // --- commands, so the output pane says where each one went; never a machine command (D4)
+    ...(context.currentMachine?.features?.[MF_EXEC_HISTORY]
+      ? [
+          { type: "separator" as const },
+          reverseItem("step_back", "Step Back", context.shortcuts.stepBack, "step-back", machinePaused),
+          reverseItem("step_forward", "Step Forward", context.shortcuts.stepForward, "step-forward", machinePaused),
+          reverseItem("step_back_over", "Reverse Step Over", context.shortcuts.stepBackOver, "step-back-over", machinePaused),
+          reverseItem("step_back_out", "Reverse Step Out", context.shortcuts.stepBackOut, "step-back-out", machinePaused),
+          reverseItem(
+            "reverse_continue",
+            "Reverse Continue",
+            context.shortcuts.reverseContinue,
+            "reverse-continue",
+            machinePaused
+          ),
+          reverseItem(
+            "history_present",
+            "Return to Present",
+            undefined,
+            "history-present",
+            machinePaused && !!context.appState?.emulatorState?.historyPosition
+          )
+        ]
+      : []),
     { type: "separator" },
     // --- Every machine that records history, so G4.2 lights it up without moving it
     // --- (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
@@ -101,4 +126,23 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     }
   ];
   return { label: "Debug", submenu: tidySeparators(items) };
+}
+
+/** A reverse-stepping item: runs its IDE command */
+function reverseItem(
+  id: string,
+  label: string,
+  accelerator: string | undefined,
+  command: string,
+  enabled: boolean
+): MenuItemConstructorOptions {
+  return {
+    id,
+    label,
+    enabled,
+    ...(accelerator ? { accelerator } : {}),
+    click: async () => {
+      await getIdeApi().executeCommand(command);
+    }
+  };
 }

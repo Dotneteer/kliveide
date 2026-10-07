@@ -1,0 +1,57 @@
+/*
+ * The history cursor's visual vocabulary (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q1): a band in the
+ * secondary accent at the top of a view, never a tint over the view. The CPU panel's band says where
+ * in the past it is; a memory-reading view's thinner band says that it is *not* there.
+ */
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border-history-band);
+  border-left: 3px solid var(--color-history-marker);
+  background: var(--bgcolor-history-band);
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--panel-font-size);
+  line-height: var(--panel-line-height);
+}
+
+.title {
+  color: var(--color-history-text);
+  font-weight: 600;
+}
+
+.fact {
+  color: var(--text-secondary);
+}
+
+.warning {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+.note {
+  flex-basis: 100%;
+  color: var(--text-secondary);
+}
+
+.link {
+  margin-left: auto;
+  color: var(--color-history-text);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: var(--text-primary);
+  }
+}
+
+/* The thin "present" band of a memory-reading view */
+.present {
+  padding-top: 0;
+  padding-bottom: 0;
+  border-left-width: 2px;
+}

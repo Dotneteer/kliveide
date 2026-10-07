@@ -13,6 +13,10 @@ import {
 } from "@renderer/controls/data/registers";
 import { DataPanel, DataRow } from "@renderer/controls/data";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
+import { HistoryCpuBanner } from "../debugger/history/HistoryBanner";
+
+const hex4 = (value: number) => value.toString(16).toUpperCase().padStart(4, "0");
+const hex2 = (value: number) => value.toString(16).toUpperCase().padStart(2, "0");
 
 const REG16_TOOLTIP = "{r16N}: {r16v}\n{r8HN}: {r8Hv}\n{r8LN}: {r8Lv}";
 const REG16_ONLY_TOOLTIP = "{r16N}: {r16v}";
@@ -21,16 +25,35 @@ const REG8_TOOLTIP = "{r8N}: {r8v}";
 export const Z80CpuPanel = () => {
   const emuApi = useEmuApi();
   const [cpuState, setCpuState] = useState<Z80CpuState>(null);
+  // --- The live state, while the history cursor shows the past (for the "Now:" tooltips)
+  const [present, setPresent] = useState<Z80CpuState>();
 
   const toFlag = (value: number | undefined, bitNo: number) =>
     value !== undefined ? !!(value & (1 << bitNo)) : undefined;
 
   useEmuStateListener(emuApi, async () => {
-    setCpuState((await emuApi.getCpuState()) as Z80CpuState);
+    const state = (await emuApi.getCpuState()) as Z80CpuState;
+    setCpuState(state);
+    setPresent(state?.history ? ((await emuApi.getCpuState({ present: true })) as Z80CpuState) : undefined);
   });
+
+  // --- In the past (`.plans/LITE_STEP_BACK_PLAN.md` D7, Q2, T9): what the instruction just before
+  // --- this point changed is marked, the present value is in the tooltip, and what a record does
+  // --- not hold (the T-state counter, the last accesses) is unknown rather than the present's
+  const history = cpuState?.history;
+  const previous = history?.previousRegs;
+  type Word = "af" | "bc" | "de" | "hl" | "af_" | "bc_" | "de_" | "hl_" | "ix" | "iy" | "pc" | "sp" | "wz";
+  const changed = (key: Word) => !!previous && !!cpuState && previous[key] !== cpuState[key];
+  const irChanged = (shift: 8 | 0) =>
+    !!previous && !!cpuState && ((previous.ir >> shift) & 0xff) !== ((cpuState.ir >> shift) & 0xff);
+  const now = (key: Word) => (present ? `Now: $${hex4(present[key])}` : undefined);
+  const nowByte = (value: number | undefined) =>
+    present && value !== undefined ? `Now: $${hex2(value)}` : undefined;
+  const unknown = <T,>(value: T): T | undefined => (history ? undefined : value);
 
   return (
     <DataPanel autoHeight>
+      {history && <HistoryCpuBanner info={history} />}
       <DataRow dense>
         <FlagLetter label="F" />
         <VerticalFlagValue
@@ -92,6 +115,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.af}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("af")}
+          tooltipSuffix={now("af")}
         />
         <Bit16Value
           label="AF'"
@@ -99,6 +124,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.af_}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("af_")}
+          tooltipSuffix={now("af_")}
         />
       </DataRow>
       <DataRow dense>
@@ -110,6 +137,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.bc}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("bc")}
+          tooltipSuffix={now("bc")}
         />
         <Bit16Value
           label="BC'"
@@ -117,6 +146,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.bc_}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("bc_")}
+          tooltipSuffix={now("bc_")}
         />
       </DataRow>
       <DataRow dense>
@@ -128,6 +159,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.de}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("de")}
+          tooltipSuffix={now("de")}
         />
         <Bit16Value
           label="DE'"
@@ -135,6 +168,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.de_}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("de_")}
+          tooltipSuffix={now("de_")}
         />
       </DataRow>
       <DataRow dense>
@@ -146,6 +181,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.hl}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("hl")}
+          tooltipSuffix={now("hl")}
         />
         <Bit16Value
           label="HL'"
@@ -153,6 +190,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.hl_}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("hl_")}
+          tooltipSuffix={now("hl_")}
         />
       </DataRow>
       <DataRow dense>
@@ -164,6 +203,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.ix}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("ix")}
+          tooltipSuffix={now("ix")}
         />
       </DataRow>
       <DataRow dense>
@@ -175,6 +216,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.iy}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("iy")}
+          tooltipSuffix={now("iy")}
         />
       </DataRow>
       <DataRow dense>
@@ -184,6 +227,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.pc}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("pc")}
+          tooltipSuffix={now("pc")}
         />
       </DataRow>
       <DataRow dense>
@@ -193,6 +238,8 @@ export const Z80CpuPanel = () => {
           value={cpuState?.sp}
           tooltip={REG16_ONLY_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("sp")}
+          tooltipSuffix={now("sp")}
         />
       </DataRow>
       <DataRow dense>
@@ -201,12 +248,16 @@ export const Z80CpuPanel = () => {
           value={cpuState?.ir ? cpuState.ir >>> 8 : 0}
           tooltip={REG8_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={irChanged(8)}
+          tooltipSuffix={nowByte(present ? present.ir >>> 8 : undefined)}
         />
         <Bit8Value
           label="R"
           value={cpuState?.ir ? cpuState.ir & 0xff : 0}
           tooltip={REG8_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={irChanged(0)}
+          tooltipSuffix={nowByte(present ? present.ir & 0xff : undefined)}
         />
       </DataRow>
       <DataRow dense>
@@ -218,19 +269,21 @@ export const Z80CpuPanel = () => {
           value={cpuState?.wz}
           tooltip={REG16_TOOLTIP}
           valueXclass={regStyles.stateValue}
+          changed={changed("wz")}
+          tooltipSuffix={now("wz")}
         />
       </DataRow>
       <Separator />
       <DataRow dense>
         <Bit8Value
           label="LMR"
-          value={cpuState?.lastMemoryReadValue ?? 0}
+          value={unknown(cpuState?.lastMemoryReadValue ?? 0)}
           tooltip={"Last value read from memory:\n{r8v}"}
           valueXclass={regStyles.stateValue}
         />
         <Bit8Value
           label="LMW"
-          value={cpuState?.lastMemoryWriteValue ?? 0}
+          value={unknown(cpuState?.lastMemoryWriteValue ?? 0)}
           tooltip={"Last value written to memory:\n{r8v}"}
           valueXclass={regStyles.stateValue}
         />
@@ -238,13 +291,13 @@ export const Z80CpuPanel = () => {
       <DataRow dense>
         <Bit8Value
           label="IRV"
-          value={cpuState?.lastIoReadValue ?? 0}
+          value={unknown(cpuState?.lastIoReadValue ?? 0)}
           tooltip={"Last value read from the I/O port:\n{r8v}"}
           valueXclass={regStyles.stateValue}
         />
         <Bit8Value
           label="IWV"
-          value={cpuState?.lastIoWriteValue ?? 0}
+          value={unknown(cpuState?.lastIoWriteValue ?? 0)}
           tooltip={"Last value written to the I/O port:\n{r8v}"}
           valueXclass={regStyles.stateValue}
         />
@@ -259,7 +312,7 @@ export const Z80CpuPanel = () => {
         />
         <FlagValue
           label="SNZ"
-          value={cpuState?.snoozed}
+          value={unknown(cpuState?.snoozed)}
           tooltip="Is the CPU snoozed?"
           iconFill="--color-state-value"
         />
@@ -295,7 +348,7 @@ export const Z80CpuPanel = () => {
       <DataRow dense>
         <SimpleValue
           label="CLK"
-          value={cpuState?.tacts ?? 0}
+          value={unknown(cpuState?.tacts ?? 0)}
           tooltip="Current CPU clock"
           fullWidth
           valueXclass={regStyles.stateValue}
@@ -304,7 +357,7 @@ export const Z80CpuPanel = () => {
       <DataRow dense>
         <SimpleValue
           label="TSP"
-          value={(cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0)}
+          value={unknown((cpuState?.tacts ?? 0) - (cpuState?.tactsAtLastStart ?? 0))}
           tooltip="T-States since last start after pause"
           fullWidth
           valueXclass={regStyles.stateValue}

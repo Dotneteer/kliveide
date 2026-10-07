@@ -114,6 +114,8 @@ export interface ActionTypes {
   SET_NEXT_LAYERS: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
   SET_QUICK_STATE_AVAILABLE: null;
+  // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3)
+  SET_HISTORY_POSITION: null;
   SET_SCREEN_RECORDING_STATE: null;
   SET_RZX_STATE: null;
   SET_SCREEN_RECORDING_QUALITY: null;

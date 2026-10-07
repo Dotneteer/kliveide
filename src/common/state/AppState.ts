@@ -193,6 +193,19 @@ export type EmulatorState = {
   screenRecordingAvailable?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;
+  /**
+   * The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3): steps back from the present (1 = the
+   * newest record); undefined at the present. The IDE's effects keyed on the execution point re-run
+   * when it moves.
+   */
+  historyPosition?: number;
+  /** The record the history cursor is on */
+  historySequence?: number;
+  /**
+   * Whether memory and devices show the history cursor's moment too (D14): false in lite mode,
+   * where the "present" banners say so; G4.4's full reverse debugging makes it true
+   */
+  historyMemoryIsHistorical?: boolean;
   screenRecordingState?: ScreenRecordingState;
   /** The RZX session, if any (`.plans/RZX_PLAN.md` §4.6) */
   rzx?: RzxState;

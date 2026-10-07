@@ -16,6 +16,7 @@ import { Icon } from "@renderer/controls/Icon";
 import { TooltipFactory, useTooltipRef } from "@renderer/controls/Tooltip";
 import regStyles from "@renderer/controls/data/Registers.module.scss";
 import classnames from "classnames";
+import { HistoryPresentBanner } from "../debugger/history/HistoryPresentBanner";
 
 // M2: `ch`, not px. Capacity preserved from the px width at its old 12.8px size (px / 6.4).
 const VALUE_WIDTH = "5ch"; // 32px / 6.4
@@ -262,6 +263,7 @@ export const NextRegPanel = () => {
 
   return (
     <div className={styles.nextRegPanel}>
+      <HistoryPresentBanner what="The Next registers" plural />
       <DataRow hoverable dense xclass={styles.nextRegRow}>
         <Label text={`Last Reg Index:`} className={styles.nextRegHeaderLabel} />
         <Value

@@ -40,6 +40,7 @@ import { MemoryBankToolbar } from "./MemoryBankToolbar";
 import { getMemoryCharacterInfo, MemoryDumpSectionView } from "./MemoryDumpSection";
 import { createVisibleMemoryRenderRecorder } from "./memoryPerformance";
 import type { NavigationLocator } from "@renderer/abstractions/NavigationLocation";
+import { HistoryPresentBanner } from "@renderer/appIde/debugger/history/HistoryPresentBanner";
 
 /*
  * M3: the row height comes from the shared module, not a private copy.
@@ -420,6 +421,7 @@ const BankedMemoryPanel = ({ document }: DocumentProps) => {
           onViewModeChanged={handleViewModeChanged}
         />
       </PanelHeader>
+      <HistoryPresentBanner />
       {machineSetup.banksView && (
         <PanelHeader>
           <MemoryBankToolbar

@@ -41,10 +41,13 @@ export const IdeEventsHandler = () => {
   const compilation = useSelector((s) => s.compilation);
   const execState = useSelector((s) => s.emulatorState?.machineState);
   const breakpointsVersion = useSelector((s) => s.emulatorState?.breakpointsVersion);
+  // --- The history cursor (LITE_STEP_BACK_PLAN D2, T1): the execution point follows it
+  const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
   const syncBps = useGlobalSetting(SETTING_IDE_SYNC_BREAKPOINTS);
   const buildFilePath = useRef<string>(null);
 
-  // --- Refresh the code location whenever the machine is paused
+  // --- Refresh the code location whenever the machine is paused, and whenever the history cursor
+  // --- moves: the code location *follows* the cursor (T1); revealing a NEX bank does too
   useEffect(() => {
     (async () => {
       if (execState === MachineControllerState.Paused) {
@@ -52,7 +55,7 @@ export const IdeEventsHandler = () => {
         await refreshCodeLocation();
       }
     })();
-  }, [execState]);
+  }, [execState, historyPosition]);
 
   // --- Save any breakpoint changes to the project file
   useEffect(() => {
@@ -199,7 +202,8 @@ export const IdeEventsHandler = () => {
     // --- The source location of PC: with source-level info, where the last step stopped (a return
     // --- point is not a statement entry, so it has no sourceMap entry)
     let stop;
-    if (hasSourceLevelDebug(compilation.result)) {
+    // --- The last stop's source report is the present's: in the past only PC says where we are
+    if (hasSourceLevelDebug(compilation.result) && !(cpuResponse as { history?: unknown }).history) {
       try {
         stop = await emuApi.getSourceStopInfo();
       } catch {

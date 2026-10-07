@@ -100,6 +100,7 @@
 /images/working-with-ide/mem-view.png
 /images/working-with-ide/new-sjasmp-project.png
 /images/working-with-ide/next-mem-view.png
+/images/working-with-ide/reverse-continue.png
 /images/working-with-ide/running-sjasmp-code.png
 /images/working-with-ide/select-start-mode.png
 /images/working-with-ide/sjasmp-reset.png
@@ -107,6 +108,7 @@
 /images/working-with-ide/sprite-inspector-pattern.png
 /images/working-with-ide/sprite-inspector.png
 /images/working-with-ide/sprite-pattern-snapshot.png
+/images/working-with-ide/step-back-over.png
 /images/working-with-ide/sysvar-explain.png
 /images/working-with-ide/sysvar-flag.png
 /images/working-with-ide/sysvar-view.png

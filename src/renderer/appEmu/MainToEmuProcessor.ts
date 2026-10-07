@@ -27,6 +27,15 @@ import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
 import { isExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { CallStackInfo } from "@emu/abstractions/CallStack";
+import { historyContextDecoder } from "@common/history/contexts";
+import { HistoryKind } from "@common/history/historyRecord";
+import type {
+  HistoryNavigationOp,
+  HistoryNavigationOptions,
+  HistoryNavigationResult
+} from "@common/history/historyNavigation";
+import type { HistoricalState } from "@emu/machines/history/HistoryCursor";
 import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -38,6 +47,7 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import {
   CpuState,
   CpuStateChunk,
+  type Z80CpuState,
   isMachineNotAvailableError,
   MACHINE_NOT_AVAILABLE_MESSAGE,
   ULA_BORDER_COLOR_NAMES,
@@ -99,6 +109,27 @@ let _emuRecordingManager: RecordingManager | null = null;
 /** Called from EmuApp after the RecordingManager is created. */
 export function setEmuRecordingManager(mgr: RecordingManager | null): void {
   _emuRecordingManager = mgr;
+}
+
+/**
+ * The CPU state at the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D2, T9): the record's
+ * registers, interrupt state and partition over the live state's shape. What a record does not hold
+ * - the T-state counter, the last memory and I/O accesses, the stop events - must not pass for
+ * historical, so `history` tells the views to show it as unknown and the stop events are dropped.
+ */
+export function historicalCpuState(live: Z80CpuState, historical: HistoricalState): Z80CpuState {
+  const { record, info, pcPartition } = historical;
+  const { lastNextRegWrite: _w, lastCopperHit: _c, ...rest } = live;
+  return {
+    ...rest,
+    ...record.regs,
+    halted: record.kind === HistoryKind.Halt,
+    snoozed: false,
+    sigINT: record.intPending,
+    opStartAddress: record.regs.pc,
+    ...(pcPartition === undefined ? { pcPartition: undefined } : { pcPartition }),
+    history: info
+  };
 }
 
 // --- There is no machine controller: a machine is being rebuilt (see MACHINE_NOT_AVAILABLE_MESSAGE)
@@ -598,15 +629,18 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Gets the current CPU state.
+   * Gets the current CPU state: the state at the history cursor while it is in the past
+   * (`.plans/LITE_STEP_BACK_PLAN.md` D2), unless `present` asks for the live one.
    */
-  getCpuState(): CpuState {
+  getCpuState(options?: { present?: boolean }): CpuState {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
     }
     const machine = controller.machine;
     const state = machine.getCpuState();
+    const historical = options?.present ? undefined : controller.historyCursor?.state();
+    if (historical) return historicalCpuState(state as Z80CpuState, historical);
     const pcPartition = machine.getPartition?.(state.pc);
     return pcPartition === undefined ? state : { ...state, pcPartition };
   }
@@ -837,7 +871,24 @@ class EmuMessageProcessor {
       selectedRom: controller.machine.getSelectedRomPage?.(),
       selectedBank: controller.machine.getSelectedRamBank?.(),
       memBreakpoints: controller.debugSupport.breakpoints,
-      osInitialized: controller.machine?.isOsInitialized ?? false
+      osInitialized: controller.machine?.isOsInitialized ?? false,
+      ...this.historyOfMemoryView(controller)
+    };
+  }
+
+  /** The history cursor's PC, registers and decoded bytes, for the disassembly (T2) */
+  private historyOfMemoryView(controller: { historyCursor?: { state(): HistoricalState | undefined } }) {
+    const state = controller.historyCursor?.state();
+    if (!state) return {};
+    const { record, info, pcPartition } = state;
+    return {
+      history: {
+        position: info.position,
+        pc: record.regs.pc,
+        regs: record.regs,
+        bytes: record.bytes,
+        ...(pcPartition === undefined ? {} : { partition: pcPartition })
+      }
     };
   }
 
@@ -1097,11 +1148,24 @@ class EmuMessageProcessor {
   }
 
   /**
-   * Empties the execution-history ring.
+   * Empties the execution-history ring; a history cursor goes with it (T6).
    */
   clearHistory() {
-    const machine = this.machineService.getMachineController()?.machine;
+    const controller = this.machineService.getMachineController();
+    controller?.clearHistoryCursor?.();
+    const machine = controller?.machine;
     if (isExecutionHistorySource(machine)) machine.clearHistory();
+  }
+
+  /**
+   * Moves the history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D4).
+   */
+  navigateHistory(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return controller.navigateHistory?.(op, options) ?? { position: 0, moved: false, reason: "noHistory" };
   }
 
   /**
@@ -1243,10 +1307,32 @@ class EmuMessageProcessor {
   /**
    * Gets the current call stack information.
    */
-  getCallStack() {
+  getCallStack(): CallStackInfo {
     const controller = this.machineService.getMachineController();
     if (!controller) {
       noController();
+    }
+    // --- In the past the memory above SP is the present's: reconstruct from history (D6, D10)
+    const cursor = controller.historyCursor;
+    const historical = cursor?.callStack();
+    if (cursor && historical) {
+      const machine = controller.machine;
+      const decoder = historyContextDecoder(isExecutionHistorySource(machine) ? machine.historyMachineId : undefined);
+      return {
+        sp: cursor.state()?.record.regs.sp ?? machine.sp,
+        frames: [],
+        historical: {
+          incomplete: historical.incomplete,
+          frames: historical.frames.map((f) => ({
+            callSite: f.callSite,
+            returnAddress: f.returnAddress,
+            kind: f.kind,
+            sp: f.sp,
+            sequence: f.sequence,
+            partition: decoder?.partitionFor(f.context, f.callSite)
+          }))
+        }
+      };
     }
     return controller.machine.getCallStack();
   }
@@ -1333,6 +1419,8 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    // --- An edit acts on the present: no register edits in the past (LITE_STEP_BACK_PLAN D5)
+    controller.clearHistoryCursor?.();
     await controller.interruptRzx?.(`register ${register.toUpperCase()} was edited`);
     const machine = controller.machine as any;
     switch (register.toUpperCase()) {
@@ -1437,6 +1525,7 @@ class EmuMessageProcessor {
     if (!controller) {
       noController();
     }
+    controller.clearHistoryCursor?.();
     await controller.interruptRzx?.("memory was edited");
     const machine = controller.machine;
     switch (size) {
@@ -1499,10 +1588,14 @@ class EmuMessageProcessor {
       noController();
     }
     const machine = controller.machine;
+    // --- The cursor's PC and position, so the state listener refreshes on a cursor move (D3)
+    const cursor = controller.historyCursor;
+    const position = cursor?.position ?? 0;
     return {
       state: controller.state,
-      pcValue: machine.pc,
-      tacts: machine.tacts
+      pcValue: position ? (cursor!.state()?.record.regs.pc ?? machine.pc) : machine.pc,
+      tacts: machine.tacts,
+      ...(position ? { historyPosition: position } : {})
     };
   }
 

@@ -115,6 +115,11 @@ export type DisassemblyRefreshResult = {
   items: DisassemblyItem[];
   mem64kLabels: string[];
   pausedPc: number;
+  /**
+   * While the history cursor is in the past (`.plans/LITE_STEP_BACK_PLAN.md` T2): its step, and the
+   * bytes the CPU decoded at `pausedPc` then. Undefined at the present.
+   */
+  history?: { position: number; bytes: number[] };
   refreshDisassembly: () => Promise<void>;
   refreshVersion: number;
   /**
@@ -177,6 +182,8 @@ export function useDisassemblyRefresh({
   const [breakpointMap, setBreakpointMap] = useState<BreakpointsByAddress>(() => new Map());
   const [mem64kLabels, setMem64kLabels] = useState<string[]>([]);
   const [pausedPc, setPausedPc] = useState(0);
+  // --- The history cursor's step and the bytes the CPU decoded at its PC (T2)
+  const [history, setHistory] = useState<{ position: number; bytes: number[] }>();
   const [cpuSnapshot, setCpuSnapshot] = useState<BranchCpuSnapshot | undefined>(undefined);
   const [refreshVersion, setRefreshVersion] = useState(0);
   const refreshInProgress = useRef(false);
@@ -203,8 +210,11 @@ export function useDisassemblyRefresh({
           const getMemoryResponse = await emuApi.getMemoryContents(partition);
           const memory = getMemoryResponse.memory;
 
+          // --- In the past, Follow-PC follows the history cursor (LITE_STEP_BACK_PLAN D2, T2)
+          const history = getMemoryResponse.history;
+          const pc = history?.pc ?? getMemoryResponse.pc;
           const memSections = refreshState.autoRefresh
-            ? createFollowPcMemorySections(getMemoryResponse.pc)
+            ? createFollowPcMemorySections(pc)
             : createManualMemorySections(
                 await emuApi.getDisassemblySections({
                   ram: refreshState.ram,
@@ -253,10 +263,17 @@ export function useDisassemblyRefresh({
 
           setItems(outputItems);
           setMem64kLabels(getMemoryResponse.partitionLabels);
-          setPausedPc(getMemoryResponse.pc);
+          setPausedPc(pc);
+          setHistory(history ? { position: history.position, bytes: history.bytes } : undefined);
           // --- `partition === undefined` is the 64K view, which is the only one whose memory image
-          // --- can be indexed by an absolute address. See `createBranchCpuSnapshot`.
-          setCpuSnapshot(createBranchCpuSnapshot(getMemoryResponse, partition === undefined));
+          // --- can be indexed by an absolute address. See `createBranchCpuSnapshot`. In the past the
+          // --- registers are the record's and memory is the present's: no stack reads (RET cc is
+          // --- then "unobtainable", the honest answer)
+          setCpuSnapshot(
+            history
+              ? createBranchCpuSnapshot({ ...history.regs, memory: getMemoryResponse.memory }, false)
+              : createBranchCpuSnapshot(getMemoryResponse, partition === undefined)
+          );
           setBreakpoints(memoryBreakpoints);
           setBreakpointMap(buildBreakpointMap(memoryBreakpoints));
           setRefreshVersion((version) => version + 1);
@@ -288,6 +305,7 @@ export function useDisassemblyRefresh({
     breakpoints,
     breakpointMap,
     cpuSnapshot,
+    history,
     items,
     mem64kLabels,
     pausedPc,

@@ -104,6 +104,61 @@ The filter field in the header narrows the list to:
 - a label of the current compilation (`MainLoop`) or a range of two labels;
 - any other text, matched against the disassembled instructions (`call`, `ld a,`).
 
+## Stepping back
+
+While the machine is paused you can **step back** through the history and look at the program as it
+was at any recorded instruction. The CPU panel shows the registers, flags and interrupt state from
+before that instruction ran, the editor and the disassembly mark its line, and the Call Stack is
+rebuilt from the history. The machine itself does not change.
+
+| Command | Toolbar / menu | Default key | Goes to |
+| --- | --- | --- | --- |
+| Step Back | ↶ | `Alt+F11` (macOS `Alt+F12`) | the previous instruction |
+| Step Forward | ↷ | `Alt+Shift+F10` | the next one, and after the newest, the present |
+| Reverse Step Over | Debug menu | `Alt+F10` | as Step Back, but a call that returned is passed over to the `CALL` itself |
+| Reverse Step Out | Debug menu | `Alt+Shift+F11` (macOS `Alt+Shift+F12`) | the call (or interrupt) that entered the current routine |
+| Reverse Continue | Debug menu | `Alt+F5` | the previous hit of an enabled execution breakpoint |
+| Return to Present | toolbar, status bar | | the live machine |
+
+On Linux the default keys use `Ctrl+Alt` instead of `Alt`. Every key is a setting
+(`shortcuts.stepBack`, `shortcuts.stepBackOver`, `shortcuts.stepBackOut`,
+`shortcuts.reverseContinue`, `shortcuts.stepForward`).
+
+![Reverse Step Over: the CPU panel shows history step −6, the disassembly outlines the CALL](/images/working-with-ide/step-back-over.png)
+
+**Memory shows the present.** A history record holds the registers, not memory, so the Memory view,
+Watch, the ULA and Next panels, the system variables and the bytes in the disassembly keep showing
+the live machine. Each says so in a band at its top while you are in the past, and the CPU panel's
+band repeats it. A disassembly row whose bytes have changed since the instruction ran has a dashed
+outline.
+
+**You can tell the past from the present at a glance.** The present's execution point is a solid
+highlight; a historical one is an outline in the second accent colour. The status bar shows
+`⟲ History −42`; click it to return to the present.
+
+**Any machine command returns to the present first.** Continue, the steps, Pause, Stop, Reset and
+register or memory edits act on the live machine; you cannot continue from a point in the past.
+
+**Interrupts.** Interrupt and NMI rows are not stops: stepping back from an interrupt routine's first
+instruction lands on the instruction that was interrupted, and the CPU panel says the routine was
+entered by an interrupt. When the document folds interrupt service, Step Back and Step Forward pass
+over a whole service in one step. Reverse Step Over and Out always do.
+
+**Reverse Continue and conditions.** A condition that reads only registers and flags is checked
+against the recorded registers. A condition that reads memory, ports, paging or the frame counter
+cannot be checked in the past, so the breakpoint counts as hit and the output says the condition was
+not checked. Hit counts are ignored and logpoints do not print.
+
+![Reverse Continue stopped at $8200 where the condition A == 2 held](/images/working-with-ide/reverse-continue.png)
+
+**Klive BASIC.** With source stepping on, Step Back, Step Forward and Reverse Step Over and Out move
+by statements, as the forward steps do.
+
+**Selecting a row** of the Execution History while the machine is paused moves there, and moving
+selects the row.
+
+Stepping back stops at the start of the recorded history and says so; it never wraps.
+
 ## Commands
 
 ```
@@ -111,6 +166,13 @@ show-history          ; open the Execution History
 hide-history          ; close it
 history-clear         ; empty the history
 history 50            ; print the newest 50 records to the command output
+step-back             ; step back one instruction (stb)
+step-forward          ; step forward, up to the present (stf)
+step-back-over        ; step back over a call that returned (stbo)
+step-back-out         ; step back out of the current routine (stbu)
+reverse-continue      ; back to the previous breakpoint hit (rcont)
+history-present       ; return to the present (hpres)
+history-goto -42      ; go to step −42, or to a record with history-goto #1234
 ```
 
 See [Interactive Commands](/working-with-ide/commands) and the

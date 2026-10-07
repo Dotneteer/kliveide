@@ -923,6 +923,33 @@ accents cannot supply four, and the status hues can. Three further rules:
   Layers document's pictures to 2.5:1. Same rule as the Layer 2 Inspector's 640×256: never scale the
   two axes of a non-square pixel by the same factor.
 
+## The Past Is Outlined In The Secondary Accent; The Present Stays Solid
+
+Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` D7) shows registers from the past while memory stays at
+the present, so two rules carry the whole visual vocabulary:
+
+- **Where the view shows the past, it says where - in the secondary accent, as an outline or a band,
+  never a fill or a panel tint.** The present's execution point is a *solid* primary-accent fill
+  (editor line, disassembly row); the historical one is an *outline* in `--color-history-marker`
+  (dashed in the editor, solid in the disassembly, dashed there too when the bytes have changed since
+  - "what is listed is not what ran"), with a hollow arrow glyph in the gutter. Two pointers into one
+  timeline, two hues - the same reasoning as two pointers into one list. A tint over a whole panel was
+  rejected: it reads as *disabled*, and under full reverse debugging (G4.4) it would have to cover the
+  whole IDE.
+- **Where the view shows the present while the cursor is in the past, it says that** - a thin band
+  (`HistoryPresentBanner`, italic `--text-tertiary` on `--bgcolor-history-band` with a 2px rail) at
+  the top of every memory- or device-reading view. It keys off `historyMemoryIsHistorical`, not off
+  "a cursor is set", so it disappears by itself when memory becomes historical.
+- Four L4 aliases, all of the secondary accent: `--color-history-marker`, `--color-history-text`,
+  `--bgcolor-history-band`, `--border-history-band`. The CPU panel's band, the status-bar chip, the
+  Execution History document's cursor row (a 3px rail plus an outline, so it reads apart from the
+  selection) and the toolbar's absence of any colour change all come from them.
+- **A changed value on an accent-coloured panel takes the wash, not the colour** (`changedWash` via
+  `Bit16Value`/`Bit8Value`'s `changed`): `.changed` repaints an accent value in the same accent and
+  shows nothing. In history the CPU panel marks what the *previous step* changed, the present value
+  goes in the tooltip, and what a record does not hold (T-states, last accesses) shows as `--`,
+  never as the present's number.
+
 ## A Picture That Is Partly Last Frame's Says So
 
 A paused emulator screen holds two frames: this one up to the beam, the previous one after it. That

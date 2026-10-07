@@ -81,7 +81,14 @@ import {
   ClearExecutionHistoryCommand,
   HideHistoryCommand,
   HistoryCommand,
-  ShowHistoryCommand
+  HistoryGotoCommand,
+  HistoryPresentCommand,
+  ReverseContinueCommand,
+  ShowHistoryCommand,
+  StepBackCommand,
+  StepBackOutCommand,
+  StepBackOverCommand,
+  StepForwardCommand
 } from "./commands/HistoryCommands";
 import {
   ExportPatternsCommand,
@@ -182,6 +189,14 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new HideHistoryCommand());
   cmdSrv.registerCommand(new ClearExecutionHistoryCommand());
   cmdSrv.registerCommand(new HistoryCommand());
+  // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.5)
+  cmdSrv.registerCommand(new StepBackCommand());
+  cmdSrv.registerCommand(new StepForwardCommand());
+  cmdSrv.registerCommand(new StepBackOverCommand());
+  cmdSrv.registerCommand(new StepBackOutCommand());
+  cmdSrv.registerCommand(new ReverseContinueCommand());
+  cmdSrv.registerCommand(new HistoryPresentCommand());
+  cmdSrv.registerCommand(new HistoryGotoCommand());
   cmdSrv.registerCommand(new ShowSpritesCommand());
   cmdSrv.registerCommand(new ShowPatternsCommand());
   cmdSrv.registerCommand(new ExportPatternsCommand());

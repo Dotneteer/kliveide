@@ -4,7 +4,7 @@ import type {
   LogpointGroupState
 } from "@abstractions/BreakpointInfo";
 import type { SourceStep } from "@emu/machines/SourceStepDecision";
-import type { ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
+import type { CompiledCondition, ConditionSymbols } from "@common/utils/breakpoint-condition/condition-types";
 import type { ConditionMachineInfo, ConditionStore } from "@emu/machines/conditionStore";
 import type { LogLine } from "@emu/machines/DebugSupport";
 import type { ConditionMachineFacts } from "@common/utils/breakpoint-condition/condition-machine";
@@ -273,6 +273,15 @@ export interface IDebugSupport {
 
   /** The breakpoints with their runtime state (hit count, condition error/inactive). */
   listBreakpointsWithState(): BreakpointInfo[];
+
+  /**
+   * Reverse Continue (`.plans/LITE_STEP_BACK_PLAN.md` D11): the enabled execution breakpoints at an
+   * address in a partition, with their compiled conditions. Optional: test doubles may omit it.
+   */
+  historicalExecBreakpoints?(
+    address: number,
+    partition: number | undefined
+  ): { bp: BreakpointInfo; compiled?: CompiledCondition; error?: string }[];
 
   // --- Logpoints (`.plans/LOGPOINTS_PLAN.md` §4.2)
 
