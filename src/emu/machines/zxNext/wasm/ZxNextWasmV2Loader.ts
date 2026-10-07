@@ -11,6 +11,8 @@ export const ZXNEXT_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export const ZXNEXT_WASM_V2_NEXT_REG_COUNT = 0x100;
 export const ZXNEXT_WASM_V2_SCREEN_WIDTH = 720;
 export const ZXNEXT_WASM_V2_SCREEN_HEIGHT = 288;
+/** `zxnextGetPartitionOfPage`'s answer when no partition is paged into the slot (Multiface memory) */
+export const ZXNEXT_NO_PARTITION = 0x7fffffff;
 
 export type ZxNextWasmV2ExportFunction = (...args: number[]) => number;
 
@@ -36,6 +38,8 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextGetMemoryPortEff7: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank16: ZxNextWasmV2ExportFunction;
   zxnextGetMemoryPageBank8: ZxNextWasmV2ExportFunction;
+  /** The partition an 8K slot holds, overlays included; `ZXNEXT_NO_PARTITION` for none */
+  zxnextGetPartitionOfPage: ZxNextWasmV2ExportFunction;
   zxnextGetMemorySelectedRomPage: ZxNextWasmV2ExportFunction;
   zxnextGetMemorySelectedRamBank: ZxNextWasmV2ExportFunction;
   zxnextSetKeyStatus: ZxNextWasmV2ExportFunction;
@@ -456,6 +460,7 @@ const requiredV2Exports = [
   "zxnextGetMemoryPortEff7",
   "zxnextGetMemoryPageBank16",
   "zxnextGetMemoryPageBank8",
+  "zxnextGetPartitionOfPage",
   "zxnextGetMemorySelectedRomPage",
   "zxnextGetMemorySelectedRamBank",
   "zxnextSetKeyStatus",

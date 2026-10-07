@@ -458,10 +458,15 @@ document.
   ROM overlay slots 0–1 whatever MMU0/1 say, so the raw registers could not reproduce `getPartition`;
   the partition can, and it is what source mapping needs (T13). Encoding: 0–223 a RAM page, 233–255 the
   negative partitions −23..−1, 224 none. The invariant test compares it with `getPartition` per slot.
-- **`getPartition` itself ignores the DivMMC and Multiface overlays** (it reads the raw page offset, not
-  `zxnextMemoryResolveReadOffset`), so while DivMMC is mapped the context says ROM for slot 0 - exactly
-  as the live machine does. The context carries "DivMMC mapped" in byte 12. Fixing `getPartition` is a
-  separate task (it changes breakpoints and source mapping too).
+- **`getPartition` follows the DivMMC and Multiface overlays** (fixed after G4.1 landed; it used to
+  read only the MMU's page tables and named the ROM underneath a mapped DivMMC). One C function,
+  `zxnextPartitionOfPage`, now answers for `getPartition` (through `zxnextGetPartitionOfPage`),
+  breakpoint conditions' `page()` and the history context, in the CPU's code-fetch order: Multiface
+  (no partition), then DivMMC (`DM`, `M0`..`MF`), then the MMU. The Next captures an instruction's
+  context *before* the opcode fetch (`Z80_HISTORY_CONTEXT_BEFORE_FETCH`), so an instant DivMMC entry
+  names the DivMMC and a delayed one the ROM the byte was fetched from. A Layer 2 read mapping is
+  deliberately not an overlay for partitions (it maps RAM for data reads; a read and a write of one
+  address would disagree). Tests: `test/zxnext-hw/memory/partition-overlays.test.ts`.
 - **`Z80_HISTORY_CONTEXT` takes the kind** (`(kind, out16)`), and the recorder exposes
   `z80HistoryAppend`/`z80HistoryNewest` so a core can write its own event records (the DMA hold).
 - **DMA holds** are recorded whenever `zxnextCpuRunDma` held the bus before an instruction (a whole

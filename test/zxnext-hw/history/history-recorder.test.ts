@@ -190,8 +190,9 @@ Start:  di
     expect(r.bytes.slice(0, 3)).toEqual([0x01, 0x22, 0x11]);
     expect(s.registers().bc, "the CPU did execute the DivMMC's ld bc").toBe(0x1122);
     expect(r.context[12] & 0x01, "DivMMC mapped").toBe(0x01);
-    // --- The slot partition is what the live machine's getPartition says, overlay and all
-    expect(zxNextPartitionFor(r.context, 0x0008)).toBe(s.machine.getPartition(0x0008));
+    // --- The instant entry mapped before the fetch: the code came from DivMMC RAM bank 3 (mapram), M3
+    expect(zxNextPartitionFor(r.context, 0x0008)).toBe(-11);
+    expect(s.partition(0x0008)).toBe(-11);
   });
 
   it("a delayed entry point records the ROM byte the CPU fetched before the DivMMC paged in", async () => {
@@ -204,6 +205,9 @@ Start:  di
     expect(r.regs.pc).toBe(0x0008);
     expect(r.bytes[0]).toBe(romByte);
     expect(r.bytes[0]).not.toBe(0x01);
+    // --- The context names the map the fetch saw: ROM 0, though the DivMMC is mapped now
+    expect(zxNextPartitionFor(r.context, 0x0008)).toBe(-1);
+    expect(s.partition(0x0008)).toBe(-11);
     expect(s.registers().bc, "the CPU executed the ROM's instruction").not.toBe(0x1122);
   });
 });
@@ -219,7 +223,7 @@ Start:  nextreg $56,$20
         nop
         jr $`);
     for (let i = 0; i < 5; i++) {
-      const live = Array.from({ length: 8 }, (_, slot) => s.machine.getPartition(slot << 13));
+      const live = Array.from({ length: 8 }, (_, slot) => s.partition(slot << 13));
       s.step(1);
       const r = s.history().at(-1)!;
       expect(Array.from({ length: 8 }, (_, slot) => zxNextPartitionFor(r.context, slot << 13)), `step ${i}`).toEqual(live);

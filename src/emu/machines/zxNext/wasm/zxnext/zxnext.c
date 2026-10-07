@@ -890,9 +890,9 @@ int32_t zxnextGetAudioMixerSampleRight(uint32_t index) { return zxnextAudioMixer
 // -----------------------------------------------------------------------------
 // Breakpoint conditions (`.plans/BREAKPOINT_CONDITIONS_IN_C_PLAN.md`): the shared evaluator, with
 // this machine's side-effect-free reads. `zxnextMemoryPeekMapped` is the CPU view with no contention
-// or bus-mirror update. The partition layout mirrors `getMemoryPartition` and the paging
-// `getWasmV2PartitionForPage` in `ZxNextWasmV2Machine.ts` exactly (a test compares them); the
-// offsets are `nextMemoryLayout.ts`'s.
+// or bus-mirror update. The partition layout mirrors `getMemoryPartition` in `ZxNextWasmV2Machine.ts`;
+// which partition a slot holds is decided here only (`zxnextPartitionOfPage`), and `getPartition`
+// asks for it through `zxnextGetPartitionOfPage`. The offsets are `nextMemoryLayout.ts`'s.
 // -----------------------------------------------------------------------------
 
 #define COND_NEXT_OFFS_NEXT_ROM 0x000000u
@@ -924,11 +924,8 @@ static uint32_t condNextPeekPartition(int32_t partition, uint32_t address) {
   return zxnextMemory[(offset + address % length) % ZXNEXT_MEMORY_SIZE];
 }
 
-static int64_t condNextPartitionOf(uint32_t address) {
-  const uint32_t page = (address >> 13) & 0x07u;
-  const uint32_t bank8 = zxnextMemoryGetPageBank8(page);
-  if (bank8 < 224u) return bank8;
-  const uint32_t readOffset = zxnextMemoryGetPageReadOffset(page);
+/* The partition a physical read offset lies in (no RAM page: the caller knows those by bank) */
+static int64_t zxnextPartitionOfOffset(uint32_t readOffset) {
   if (readOffset >= COND_NEXT_OFFS_NEXT_RAM) return INT64_MIN /* COND_NO_VALUE */;
   if (readOffset >= COND_NEXT_OFFS_DIVMMC_RAM) return -8 - (int64_t)((readOffset - COND_NEXT_OFFS_DIVMMC_RAM) >> 13);
   if (readOffset >= COND_NEXT_OFFS_ALT_ROM_1 && readOffset < COND_NEXT_OFFS_ALT_ROM_1 + 0x4000u) return -6;
@@ -936,6 +933,42 @@ static int64_t condNextPartitionOf(uint32_t address) {
   if (readOffset >= COND_NEXT_OFFS_DIVMMC_ROM && readOffset < COND_NEXT_OFFS_DIVMMC_ROM + 0x2000u) return -7;
   if (readOffset < COND_NEXT_OFFS_NEXT_ROM + 0x10000u) return -1 - (int64_t)(readOffset >> 14);
   return INT64_MIN /* COND_NO_VALUE */;
+}
+
+/*
+ * The partition the MMU pages into an 8K slot, ignoring the $0000-$3FFF overlays: only
+ * `zxnextMemorySetPageInfo` changes it, which is what lets the history context cache it.
+ * The `bank8 < 224` threshold is carried over from `getWasmV2PartitionForPage`.
+ */
+static int64_t zxnextMmuPartitionOfPage(uint32_t page) {
+  const uint32_t bank8 = zxnextMemoryGetPageBank8(page & 0x07u);
+  if (bank8 < 224u) return bank8;
+  return zxnextPartitionOfOffset(zxnextMemoryGetPageReadOffset(page & 0x07u));
+}
+
+/*
+ * The partition an 8K slot holds as the CPU reads code there (`zxnextMemoryPeekMapped`): in slots
+ * 0-1 the Multiface wins over the DivMMC, and both over the MMU. Multiface memory has no partition
+ * (`COND_NO_VALUE`); the DivMMC's ROM is `DM` (-7) and its RAM `M0`..`MF` (-8..-23), mapram's
+ * read-only bank 3 included. A Layer 2 read mapping is not an overlay here: it maps RAM pages for
+ * data reads, and its partition would differ between a read and a write of the same address.
+ */
+static int64_t zxnextPartitionOfPage(uint32_t page) {
+  page &= 0x07u;
+  if (page < 2u && zxnextMemoryLowOverlayActive()) {
+    if (zxnextMultifaceIsPaged()) return INT64_MIN /* COND_NO_VALUE */;
+    return zxnextPartitionOfOffset(zxnextMemoryResolveReadOffset(page));
+  }
+  return zxnextMmuPartitionOfPage(page);
+}
+
+static int64_t condNextPartitionOf(uint32_t address) { return zxnextPartitionOfPage((address >> 13) & 0x07u); }
+
+/* `getPartition`'s answer for a slot; ZXNEXT_NO_PARTITION_EXPORT when nothing a partition names is there */
+#define ZXNEXT_NO_PARTITION_EXPORT 0x7fffffff
+int32_t zxnextGetPartitionOfPage(uint32_t page) {
+  const int64_t partition = zxnextPartitionOfPage(page);
+  return partition == INT64_MIN ? ZXNEXT_NO_PARTITION_EXPORT : (int32_t)partition;
 }
 
 #define COND_PEEK(address) ((uint32_t)zxnextMemoryPeekMapped(address))
@@ -950,10 +983,12 @@ static int64_t condNextPartitionOf(uint32_t address) {
 // with this machine's side-effect-free peek, its frame position in 28 MHz ticks, and its context.
 //
 // The instruction context (`zxnextContext.ts` decodes it):
-//   0-7  the partition of each 8K slot, as `getPartition` returns it (`condNextPartitionOf`):
+//   0-7  the partition of each 8K slot, as `getPartition` returns it (`zxnextPartitionOfPage`),
+//        Multiface and DivMMC overlays included, captured before the opcode fetch (so a delayed
+//        DivMMC entry still names the ROM the CPU fetched from):
 //        0-223 a Next RAM page, 233-255 the negative partitions -23..-1 (ROMs, DivMMC), 224 none.
-//        The partition, not the raw MMU value, because ROM, DivMMC and Alt ROM overlay slots 0-1
-//        whatever MMU0/MMU1 say - and the partition is what source mapping needs (trap T13).
+//        The partition, not the raw MMU value, because ROM, DivMMC, Multiface and Alt ROM overlay
+//        slots 0-1 whatever MMU0/MMU1 say - and the partition is what source mapping needs (T13).
 //   8    port $7FFD   9 port $1FFD   10 port $DFFD   11 DivMMC port $E3
 //   12   bit 0 DivMMC mapped, bit 1 Multiface paged, bit 2 Alt ROM enabled, bit 3 ROM in slot 0
 //   13   CPU speed (NextReg $07 effective, 0-3)
@@ -964,17 +999,24 @@ static int64_t condNextPartitionOf(uint32_t address) {
 
 #define ZXNEXT_HISTORY_NO_PARTITION 224u
 
+static inline uint8_t zxnextHistoryEncodePartition(int64_t partition) {
+  return partition == INT64_MIN ? (uint8_t)ZXNEXT_HISTORY_NO_PARTITION : (uint8_t)(partition & 0xff);
+}
+
 static inline void zxnextHistoryContext(uint32_t kind, uint8_t *out) {
   (void)kind;
   if (!zxnextHistorySlotsValid) {
     for (uint32_t slot = 0u; slot < 8u; slot++) {
-      const int64_t partition = condNextPartitionOf(slot << 13);
-      zxnextHistorySlots[slot] =
-        partition == INT64_MIN ? (uint8_t)ZXNEXT_HISTORY_NO_PARTITION : (uint8_t)(partition & 0xff);
+      zxnextHistorySlots[slot] = zxnextHistoryEncodePartition(zxnextMmuPartitionOfPage(slot));
     }
     zxnextHistorySlotsValid = 1u;
   }
   for (uint32_t slot = 0u; slot < 8u; slot++) out[slot] = zxnextHistorySlots[slot];
+  /* The Multiface and DivMMC overlays change without touching the page tables: never cached */
+  if (zxnextMemoryLowOverlayActive()) {
+    out[0] = zxnextHistoryEncodePartition(zxnextPartitionOfPage(0u));
+    out[1] = zxnextHistoryEncodePartition(zxnextPartitionOfPage(1u));
+  }
   out[8] = memPort7ffd;
   out[9] = memPort1ffd;
   out[10] = memPortDffd;
@@ -1016,6 +1058,9 @@ static inline void zxnextHistoryPeek3(uint16_t from, uint8_t *out) {
 #define Z80_HISTORY_PEEK(address) zxnextMemoryPeekMapped(address)
 #define Z80_HISTORY_PEEK3(from, out3) zxnextHistoryPeek3(from, out3)
 #define Z80_HISTORY_CONTEXT(kind, out16) zxnextHistoryContext(kind, out16)
+/* The DivMMC's instant entry points map before the fetch (zxnextDivMmcBeforeOpcodeFetch), its delayed
+   ones after it (zxnextDivMmcAfterM1): the map at the begin phase is the one the fetch saw */
+#define Z80_HISTORY_CONTEXT_BEFORE_FETCH 1
 #define Z80_HISTORY_FRAME() frames
 #define Z80_HISTORY_FRAME_TACT() frameTacts28
 #include "../../../../z80/wasm/z80-history.c"

@@ -12,7 +12,11 @@
  * - `Z80_HISTORY_CONTEXT(kind, out16)`: the 16-byte machine context of a record, which only the
  *   core and its TypeScript decoder (`src/common/history/contexts/`) interpret (§4.3);
  * - `Z80_HISTORY_FRAME()` and `Z80_HISTORY_FRAME_TACT()`: the frame counter and the position in
- *   the frame, in the machine's own unit (trap T10).
+ *   the frame, in the machine's own unit (trap T10);
+ * - optionally `Z80_HISTORY_CONTEXT_BEFORE_FETCH`: capture an instruction's context before the
+ *   opcode fetch instead of after it, for a machine whose fetch-time paging happens after the byte
+ *   is read (the Next's delayed DivMMC entry); by default it is captured after, for one whose
+ *   paging happens at the fetch and supplies the byte (the 128K's TR-DOS ROM).
  *
  * An instruction is recorded in two phases (trap T4): `z80HistoryBegin` writes the registers into
  * the next slot before the opcode fetch increments R, and `z80HistoryCommit` adds the executed bytes
@@ -177,13 +181,22 @@ static void z80HistoryEvent(uint32_t kind) {
   Z80_HISTORY_CONTEXT(kind, r->context);
 }
 
-static void z80HistoryBegin(void) { (void)z80HistoryStage(Z80_HISTORY_KIND_INSTRUCTION); }
+static void z80HistoryBegin(void) {
+  Z80HistoryRecord *r = z80HistoryStage(Z80_HISTORY_KIND_INSTRUCTION);
+#ifdef Z80_HISTORY_CONTEXT_BEFORE_FETCH
+  Z80_HISTORY_CONTEXT(Z80_HISTORY_KIND_INSTRUCTION, r->context);
+#else
+  (void)r;
+#endif
+}
 
 static void z80HistoryCommit(void) {
   Z80HistoryRecord *r = &z80HistoryRing[z80HistoryHeader.writeIndex];
   r->bytes[0] = cpu.opCode;
   z80HistoryPeekBytes(r, cpu.pc);
+#ifndef Z80_HISTORY_CONTEXT_BEFORE_FETCH
   Z80_HISTORY_CONTEXT(Z80_HISTORY_KIND_INSTRUCTION, r->context);
+#endif
   z80HistoryPublish();
 }
 

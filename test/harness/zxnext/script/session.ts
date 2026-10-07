@@ -210,6 +210,15 @@ export class NextTestSession {
   // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`): the core's recorder, as the IDE
   // reads it through `IExecutionHistorySource`
 
+  /**
+   * The partition the machine names for an address now (`getPartition`): what source mapping,
+   * partitioned breakpoints and `page()` see. In slots 0-1 the Multiface (undefined) and the DivMMC
+   * (`DM` -7, `M0`..`MF` -8..-23) overlay the MMU page.
+   */
+  partition(address: number): number | undefined {
+    return this.machine.getPartition(address & 0xffff);
+  }
+
   /** Turns the execution-history recorder on or off, as a debug session does (D8). */
   recordHistory(on = true): this {
     this.machine.setHistoryEnabled(on);

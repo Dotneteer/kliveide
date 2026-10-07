@@ -133,6 +133,7 @@ const productionExports = [
   "zxnextGetMemoryPortEff7",
   "zxnextGetMemoryPageBank16",
   "zxnextGetMemoryPageBank8",
+  "zxnextGetPartitionOfPage",
   "zxnextGetMemorySelectedRomPage",
   "zxnextGetMemorySelectedRamBank",
   "zxnextSetKeyStatus",

@@ -5,8 +5,9 @@ import { HistoryKind, type HistoryRecord } from "../historyRecord";
  * `zxnextHistoryDmaHold` at the end of `zxnext.c`; `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.3).
  *
  * An instruction's context carries the *partition* of each 8K slot as the Next's `getPartition`
- * returns it, not the raw MMU registers: ROM, DivMMC and Alt ROM overlay slots 0-1 whatever MMU0/1
- * say, and the partition is what source mapping needs (trap T13).
+ * returns it, not the raw MMU registers: ROM, DivMMC, Multiface and Alt ROM overlay slots 0-1
+ * whatever MMU0/1 say, and the partition is what source mapping needs (trap T13). It is captured
+ * before the opcode fetch, so it names the memory the fetch read.
  */
 
 /** The byte that stands for "no partition" */

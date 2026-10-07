@@ -49,7 +49,7 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import { MemorySectionType } from "@abstractions/MemorySection";
 import { TapeMode } from "@emu/abstractions/TapeMode";
 import { createMainApi } from "@common/messaging/MainApi";
-import { loadZxNextWasmV2 } from "./wasm/ZxNextWasmV2Loader";
+import { loadZxNextWasmV2, ZXNEXT_NO_PARTITION } from "./wasm/ZxNextWasmV2Loader";
 import {
   allRamBanksFor,
   OFFS_ALT_ROM_0,
@@ -2113,40 +2113,16 @@ export class ZxNextWasmV2Machine
   /**
    * The partition index paged into an 8K page, or `undefined` when the page is not backed by one.
    *
-   * The WASM counterpart of `MemoryDevice.getPartitionForPage`, and the only offset-to-index
-   * function on this path. It replaces a pair — one building a label from offsets, one parsing that
-   * label back — whose vocabularies (`A0`/`A1`, `D0`..`DF`) matched each other and nothing else in
-   * the system.
-   *
-   * The `bank8 < 224` threshold is carried over verbatim from the function this replaces; see
-   * `.plans/PARTITION_NAMING_UNIFICATION_PLAN.md` §8, decision 3.
+   * The WASM counterpart of `MemoryDevice.getPartitionForPage`. The core decides
+   * (`zxnextPartitionOfPage` in `zxnext.c`, the same function breakpoint conditions' `page()` uses),
+   * the way the CPU reads code: in slots 0-1 the Multiface (no partition) wins over the DivMMC
+   * (`DM`, `M0`..`MF`), and both over the MMU. Before, this read the MMU's page tables only, so
+   * while the DivMMC was mapped it named the ROM underneath - for source mapping, partitioned
+   * breakpoints and the execution history alike.
    */
   private getWasmV2PartitionForPage(pageIndex: number): number | undefined {
-    const wasm = this.requireWasmV2Runtime().exports;
-    const bank8 = wasm.zxnextGetMemoryPageBank8(pageIndex);
-    // --- The 8K page itself, not `>> 1`. See `MemoryDevice.getPartitionForPage`.
-    if (bank8 < 224) return bank8;
-
-    const readOffset = wasm.zxnextGetMemoryPageReadOffset(pageIndex);
-    if (readOffset >= OFFS_NEXT_RAM) return undefined;
-    if (readOffset >= OFFS_DIVMMC_RAM) {
-      // --- DivMMC RAM pages 0..15 occupy partitions -8..-23 ("M0".."MF")
-      return -8 - ((readOffset - OFFS_DIVMMC_RAM) >> 13);
-    }
-    if (readOffset >= OFFS_ALT_ROM_1 && readOffset < OFFS_ALT_ROM_1 + 0x4000) {
-      return -6; // --- Alt ROM 1, "X1"
-    }
-    if (readOffset >= OFFS_ALT_ROM_0 && readOffset < OFFS_ALT_ROM_0 + 0x4000) {
-      return -5; // --- Alt ROM 0, "X0"
-    }
-    if (readOffset >= OFFS_DIVMMC_ROM && readOffset < OFFS_DIVMMC_ROM + 0x2000) {
-      return -7; // --- DivMMC ROM, "DM"
-    }
-    if (readOffset < OFFS_NEXT_ROM + 0x10000) {
-      // --- Next ROM 0..3 occupy partitions -1..-4
-      return -1 - (readOffset >> 14);
-    }
-    return undefined;
+    const partition = this.requireWasmV2Runtime().exports.zxnextGetPartitionOfPage(pageIndex & 0x07);
+    return partition === ZXNEXT_NO_PARTITION ? undefined : partition;
   }
 
   /**
