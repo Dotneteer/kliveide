@@ -442,6 +442,33 @@ static void renderUlaUntilCurrentTact(void) {
   }
 }
 
+/*
+ * The beam, for the IDE's beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), one
+ * field per call so no static is needed:
+ *   0 the current frame tact   1 tacts per raster line   2 raster lines per frame
+ *   3 the first visible line   4 the first display (paper) line   5 the first visible border tact
+ *   (a line's left border is drawn at the end of the line before it, from this tact on)
+ *   6 the first frame tact not rendered yet   7 tacts in a frame
+ *   8 the frame tact raster line 0 starts at: 0 here; a core whose tables are rotated so that frame
+ *   tact 0 stays its interrupt (the Pentagon) answers this field itself
+ * Rendering to the beam is renderUlaUntilCurrentTact itself (T2): it renders tact by tact from the
+ * memory as it is now, which is what the beam saw, and every later write catches up first anyway, so
+ * calling it while paused changes nothing the machine shows later.
+ */
+static uint32_t ulaBeamInfo(uint32_t field) {
+  switch (field) {
+    case 0u: return currentFrameTact();
+    case 1u: return sp48ScreenLineTime;
+    case 2u: return sp48RasterLines;
+    case 3u: return sp48FirstVisibleLine;
+    case 4u: return sp48FirstDisplayLine;
+    case 5u: return sp48FirstVisibleBorderTact;
+    case 6u: return sp48LastRenderedFrameTact;
+    case 7u: return sp48TactsInFrame;
+    default: return 0u;
+  }
+}
+
 static void renderUlaDisplay(void) {
   const uint32_t words = pixelBufferWordCount();
   const uint32_t borderPixel = SP48_FILL_BORDER_PIXEL();

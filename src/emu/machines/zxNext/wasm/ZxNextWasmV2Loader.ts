@@ -181,6 +181,19 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
   zxnextGetLayer2ScrollX: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ScrollY: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Clip: ZxNextWasmV2ExportFunction;
+  zxnextSetLayerDebug: ZxNextWasmV2ExportFunction;
+  zxnextGetLayerDebug: ZxNextWasmV2ExportFunction;
+  zxnextSetLayerCapture: ZxNextWasmV2ExportFunction;
+  zxnextRecomposeForDebug: ZxNextWasmV2ExportFunction;
+  zxnextLayerPreviewPtr: ZxNextWasmV2ExportFunction;
+  zxnextProbePixel: ZxNextWasmV2ExportFunction;
+  zxnextRenderLayerComposite: ZxNextWasmV2ExportFunction;
+  zxnextLayerBufferPtr: ZxNextWasmV2ExportFunction;
+  zxnextGetLayerCaptureStatus: ZxNextWasmV2ExportFunction;
+  zxnextGetRasterPixel: ZxNextWasmV2ExportFunction;
+  zxnextGetBeamInfo: ZxNextWasmV2ExportFunction;
+  zxnextRenderPreviewToBeam: ZxNextWasmV2ExportFunction;
+  zxnextGetRgbaForRgb333: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ActiveBank: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2ShadowBank: ZxNextWasmV2ExportFunction;
   zxnextGetLayer2Port123BPeek: ZxNextWasmV2ExportFunction;
@@ -412,6 +425,12 @@ export type ZxNextWasmV2Runtime = {
    */
   readonly spritePatterns8: Uint8Array;
   readonly frameTrace: Uint8Array;
+  /**
+   * The layer debug view's recomposed picture (LAYER_COMPOSITION_PLAN §4.2): what the screen shows
+   * while the machine is paused and a layer toggle has recomposed it. Never the machine's picture.
+   */
+  readonly layerPreview: Uint32Array;
+  readonly layerPreviewBytes: Uint8ClampedArray;
 };
 
 const requiredV2Exports = [
@@ -582,6 +601,19 @@ const requiredV2Exports = [
   "zxnextGetLayer2ScrollX",
   "zxnextGetLayer2ScrollY",
   "zxnextGetLayer2Clip",
+  "zxnextSetLayerDebug",
+  "zxnextGetLayerDebug",
+  "zxnextSetLayerCapture",
+  "zxnextRecomposeForDebug",
+  "zxnextLayerPreviewPtr",
+  "zxnextProbePixel",
+  "zxnextRenderLayerComposite",
+  "zxnextLayerBufferPtr",
+  "zxnextGetLayerCaptureStatus",
+  "zxnextGetRasterPixel",
+  "zxnextGetBeamInfo",
+  "zxnextRenderPreviewToBeam",
+  "zxnextGetRgbaForRgb333",
   "zxnextGetLayer2ActiveBank",
   "zxnextGetLayer2ShadowBank",
   "zxnextGetLayer2Port123BPeek",
@@ -845,6 +877,7 @@ export function createZxNextWasmV2Views(
   assertViewRange(artifactName, "spriteAttributes", exports.zxnextSpriteAttributesPtr(), 640, memoryBuffer);
   assertViewRange(artifactName, "spritePatterns8", exports.zxnextSpritePatternMemory8Ptr(), 512 * 256, memoryBuffer);
   assertViewRange(artifactName, "frameTrace", exports.zxnextTraceGetStartOffset(), traceBytes, memoryBuffer);
+  assertViewRange(artifactName, "layerPreview", exports.zxnextLayerPreviewPtr(), pixelBytes, memoryBuffer);
 
   return {
     memoryBuffer,
@@ -860,7 +893,9 @@ export function createZxNextWasmV2Views(
     copperMemory: new Uint8Array(memoryBuffer, exports.zxnextCopperMemoryPtr(), 0x800),
     spriteAttributes: new Uint8Array(memoryBuffer, exports.zxnextSpriteAttributesPtr(), 640),
     spritePatterns8: new Uint8Array(memoryBuffer, exports.zxnextSpritePatternMemory8Ptr(), 512 * 256),
-    frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes)
+    frameTrace: new Uint8Array(memoryBuffer, exports.zxnextTraceGetStartOffset(), traceBytes),
+    layerPreview: new Uint32Array(memoryBuffer, exports.zxnextLayerPreviewPtr(), pixelWords),
+    layerPreviewBytes: new Uint8ClampedArray(memoryBuffer, exports.zxnextLayerPreviewPtr(), pixelBytes)
   };
 }
 

@@ -184,6 +184,12 @@ export type EmulatorState = {
    * as a flag it set and therefore controls.
    */
   mouseCaptured?: boolean;
+  /**
+   * The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`): hidden and solo
+   * layers, "show transparency", the clip outlines, the probe. Debugging state of this session only
+   * (D2): never a setting, never saved, never in a machine state file.
+   */
+  nextLayers?: import("@common/zxnext/layers/layerMix").NextLayerViewState;
   screenRecordingAvailable?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;

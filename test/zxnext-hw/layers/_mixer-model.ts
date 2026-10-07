@@ -23,6 +23,12 @@ export type MixerConfig = {
   transparent: number;
   /** $4A. */
   fallback: number;
+  /**
+   * The IDE's layer debug mask (`.plans/LAYER_COMPOSITION_PLAN.md` D1): bit 0 ULA, 1 tilemap,
+   * 2 Layer 2, 3 sprites. A hidden layer's pixels are transparent; nothing else changes - a hidden
+   * tile keeps its "below" bit and stencil mode stays on (T4). Not hardware: the IDE's own view.
+   */
+  hidden?: number;
 };
 
 export type MixerPixel = {
@@ -47,16 +53,40 @@ export const expand8 = (v: number) => ((v << 1) | ((v & 3) !== 0 ? 1 : 0)) & 0x1
 
 /** The 9-bit colour the mixer outputs for one pixel. */
 export function mixPixel(c: MixerConfig, p: MixerPixel): number {
+  return mixPixelExplained(c, p).rgb;
+}
+
+/**
+ * Which rule chose a pixel's colour - the IDE's pixel probe vocabulary
+ * (`.plans/LAYER_COMPOSITION_PLAN.md` D7, `src/common/zxnext/layers/layerMix.ts` `WHY_*`): the layer
+ * the priority case took, with the ULA/tilemap pair named by its source (ULA, tilemap or stencil),
+ * a sprite that won over an opaque ULA border pixel as "border", and a blended Layer 2 by its mode.
+ */
+export type MixWhy =
+  | "fallback"
+  | "ula"
+  | "tm"
+  | "l2"
+  | "l2-priority"
+  | "spr"
+  | "border"
+  | "stencil"
+  | "blend-add"
+  | "blend-sub";
+
+/** The 9-bit colour and the rule that chose it. */
+export function mixPixelExplained(c: MixerConfig, p: MixerPixel): { rgb: number; why: MixWhy } {
   const T = c.transparent & 0xff;
+  const hide = c.hidden ?? 0;
 
   // --- ULA (~7046-7050); the clip window is left open by the tests, the border is never clipped
-  const ulaMixTransparent = p.ula >> 1 === T;
+  const ulaMixTransparent = p.ula >> 1 === T || (hide & 1) !== 0;
   const ulaMixRgb = ulaMixTransparent ? 0 : p.ula;
   const ulaTransparent = ulaMixTransparent || !c.ulaEn;
   const ulaRgb = ulaTransparent ? 0 : p.ula;
 
   // --- tilemap (~7055, text mode not used); below (~6809): the tile's bit when enabled, else not $6B bit 0
-  const tmTransparent = !p.tmPixelEn || !c.tmEn;
+  const tmTransparent = !p.tmPixelEn || !c.tmEn || (hide & 2) !== 0;
   const tmRgb = tmTransparent ? 0 : p.tm;
   const tmBelow = c.tmEn ? p.tmAttrBelow && !c.tmOnTop : !c.tmOnTop;
 
@@ -67,9 +97,9 @@ export function mixPixel(c: MixerConfig, p: MixerPixel): number {
   const ulatmRgb = !tmTransparent && (!tmBelow || ulaTransparent) ? tmRgb : ulaRgb;
 
   // --- sprites (~7065, ~6880) and Layer 2 (~7067-7069)
-  const spriteTransparent = !(p.spritePixelEn && c.spritesEn);
+  const spriteTransparent = !(p.spritePixelEn && c.spritesEn) || (hide & 8) !== 0;
   const spriteRgb = spriteTransparent ? 0 : p.sprite;
-  const layer2Transparent = p.layer2 >> 1 === T || !p.layer2PixelEn;
+  const layer2Transparent = p.layer2 >> 1 === T || !p.layer2PixelEn || (hide & 4) !== 0;
   const layer2Rgb = layer2Transparent ? 0 : p.layer2;
   const layer2Priority = layer2Transparent ? false : p.layer2PriorityBit;
 
@@ -109,12 +139,23 @@ export function mixPixel(c: MixerConfig, p: MixerPixel): number {
   const U = () => (!ulaFinalTransparent ? ulaFinalRgb : undefined);
   const Ub = () => (ulaShows ? ulaFinalRgb : undefined);
   const P = () => (layer2Priority ? layer2Rgb : undefined);
-  const first = (...xs: Array<() => number | undefined>) => {
+  // --- the source of the ULA/tilemap pair (ula_final): stencil, or the tilemap when it is above
+  const finalWhy: MixWhy = stencilOn ? "stencil" : !tmTransparent && (!tmBelow || ulaTransparent) ? "tm" : "ula";
+  // --- a sprite under the ULA in LUS/USL/ULS shows only by the border exception
+  const sprUnderUla = (c.order & 7) >= 3 && !ulaFinalTransparent;
+  const why = new Map<() => number | undefined, MixWhy>([
+    [L, "l2"],
+    [S, sprUnderUla ? "border" : "spr"],
+    [U, finalWhy],
+    [Ub, finalWhy],
+    [P, "l2-priority"]
+  ]);
+  const first = (...xs: Array<() => number | undefined>): { rgb: number; why: MixWhy } => {
     for (const x of xs) {
       const v = x();
-      if (v !== undefined) return v;
+      if (v !== undefined) return { rgb: v, why: why.get(x)! };
     }
-    return expand8(c.fallback);
+    return { rgb: expand8(c.fallback), why: "fallback" };
   };
 
   switch (c.order & 7) {
@@ -147,5 +188,11 @@ export function mixPixel(c: MixerConfig, p: MixerPixel): number {
   const PB = () => (layer2Priority ? blended : undefined);
   const Top = () => (!topT ? topRgb : undefined);
   const Bot = () => (!botT ? botRgb : undefined);
+  const blendWhy: MixWhy = (c.order & 7) === 6 ? "blend-add" : "blend-sub";
+  // --- top / bottom: the tilemap for sources 0 and 2, the ULA for 3, otherwise as the tile's below bit puts them
+  const blend = c.blend & 3;
+  const topWhy: MixWhy = blend === 3 ? "ula" : blend === 1 && tmBelow ? "ula" : "tm";
+  const botWhy: MixWhy = blend === 3 ? "ula" : blend === 1 && !tmBelow ? "ula" : "tm";
+  why.set(B, blendWhy).set(PB, blendWhy).set(Top, topWhy).set(Bot, botWhy).set(S, "spr");
   return first(PB, Top, S, Bot, B);
 }

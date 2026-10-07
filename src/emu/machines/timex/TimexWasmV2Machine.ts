@@ -178,6 +178,11 @@ export class TimexWasmV2Machine extends ZxSpectrum48WasmV2Machine {
     return this.screenWidthInPixels / 4;
   }
 
+  /** The SCLD draws two buffer pixels per Spectrum pixel (the beam overlay's raster, §4.3) */
+  protected override get beamPixelScale(): number {
+    return 2;
+  }
+
   /** The 704-wide buffer shows at the 48K's proportions (as the Next's 720) */
   getAspectRatio = (): [number, number] => [0.5, 1];
 

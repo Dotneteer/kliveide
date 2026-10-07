@@ -35,6 +35,7 @@
 /commands-reference/index.html
 /contribute/get-source/index.html
 /contribute/improve-docs/index.html
+/contribute/wasm-toolchain/index.html
 /getting-started/creating-project/index.html
 /getting-started/first-run/index.html
 /getting-started/installation/index.html
@@ -59,11 +60,13 @@
 /howto/z88-snapshots/index.html
 /howto/zx81/index.html
 /index.html
+/introduction/index.html
 /machine-types/index.html
 /project-templates/index.html
 /scripting/overview/index.html
 /scripting/syntax/index.html
 /working-with-ide/basic/index.html
+/working-with-ide/beam-position/index.html
 /working-with-ide/breakpoints/index.html
 /working-with-ide/build-system/index.html
 /working-with-ide/commands/index.html
@@ -74,6 +77,7 @@
 /working-with-ide/exporting-code/index.html
 /working-with-ide/ide-settings/index.html
 /working-with-ide/layer2-inspector/index.html
+/working-with-ide/layers/index.html
 /working-with-ide/memory/index.html
 /working-with-ide/navigation/index.html
 /working-with-ide/pasta80/index.html

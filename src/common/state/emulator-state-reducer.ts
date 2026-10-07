@@ -81,6 +81,12 @@ export function emulatorStateReducer(
         mouseCaptured: payload?.flag
       };
 
+    case "SET_NEXT_LAYERS":
+      return {
+        ...state,
+        nextLayers: payload?.value
+      };
+
     case "SET_CLOCK_MULTIPLIER":
       return {
         ...state,

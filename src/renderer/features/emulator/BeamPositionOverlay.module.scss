@@ -1,0 +1,94 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The beam position overlay (BEAM_POSITION_OVERLAY_PLAN D1, D2, D5-D7, D9). Lines are one screen pixel
+ * wide at any zoom (EmulatorScreenOverlay sets `vector-effect: non-scaling-stroke`). The beam is the
+ * primary accent, the Copper's hit the secondary; the previous frame's pixels are washed and hatched,
+ * never hidden. Every colour is a `--color-beam-*` alias.
+ */
+.beamLine {
+  stroke: var(--color-beam-line);
+  stroke-width: 1;
+  stroke-dasharray: 6 4;
+  opacity: 0.85;
+}
+
+.beamMarker {
+  stroke: var(--color-beam-line);
+  stroke-width: 3;
+}
+
+.beamEdge {
+  stroke: var(--color-beam-line);
+  stroke-width: 4;
+}
+
+.copper {
+  stroke: var(--color-beam-copper);
+  stroke-width: 3;
+}
+
+.stale {
+  fill: url(#klive-beam-hatch);
+}
+
+.staleWash {
+  fill: var(--bgcolor-beam-stale);
+}
+
+.hatch {
+  stroke: var(--color-beam-hatch);
+  stroke-width: 1;
+}
+
+/* A label over a machine picture sits on the overlay pill's surface, so it reads on any colour */
+.staleLabel,
+.copperLabel {
+  margin: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--bgcolor-emuoverlay);
+  color: var(--color-beam-label);
+  opacity: 0.9;
+}
+
+.copperLabel {
+  color: var(--color-beam-copper);
+}
+
+.hovering {
+  cursor: crosshair;
+}
+
+.readout {
+  position: absolute;
+  z-index: 2;
+  white-space: nowrap;
+  background-color: var(--bgcolor-emuoverlay);
+  color: var(--color-beam-label);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  pointer-events: none;
+}
+
+/* The pill: the layer debug pill's shape, the beam's hue on its glyph */
+.pillHost {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bgcolor-emuoverlay);
+  color: var(--color-beam-label);
+  opacity: 0.9;
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-100);
+  padding: 3px var(--space-3) 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}

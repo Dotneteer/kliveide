@@ -168,6 +168,8 @@ const productionExports = [
   "sp128GetRenderingPixelAddress",
   "sp128GetRenderingAttributeAddress",
   "sp128GetRenderingPixelIndex",
+  "sp128GetBeamInfo",
+  "sp128RenderToBeam",
   "sp128GetTotalContentionDelaySinceStart",
   "sp128GetContentionDelaySincePause",
   "sp128GetCpuInstructionsExecuted",

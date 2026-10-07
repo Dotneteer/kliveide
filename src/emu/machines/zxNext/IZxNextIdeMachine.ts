@@ -3,12 +3,14 @@ import type {
   NextSpriteState,
   NextTilemapState,
   NextLayer2State,
+  NextLayerState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
   PaletteDeviceInfo,
   UlaState
 } from "@common/messaging/EmuApi";
+import type { NextLayerDebug, NextPixelProbe, RecomposeStatus } from "@common/zxnext/layers/layerMix";
 
 /**
  * What the IDE reads from a ZX Spectrum Next.
@@ -55,6 +57,31 @@ export interface IZxNextIdeMachine {
 
   /** Arms (or cancels) "Step Copper": the next debug run stops when the Copper completes any instruction. */
   requestCopperStep(armed?: boolean): void;
+
+  /**
+   * The layer debug view (LAYER_COMPOSITION_PLAN D1, D2): hides, solos and flags layers in the
+   * mixer only. Debugging state: never saved in a state file, never changes what the program reads.
+   */
+  setLayerDebug(debug: NextLayerDebug): void;
+  getLayerDebug(): NextLayerDebug;
+
+  /** Records every span's layer pixels and mixer inputs while on, for an exact paused recompose (§4.3). */
+  setLayerCapture(on: boolean): void;
+
+  /**
+   * Recomposes the paused picture with the debug view into the preview the screen then shows, until
+   * the machine runs again (§4.2, §4.3).
+   */
+  recomposeForDebug(): RecomposeStatus;
+
+  /** The screen shows the machine's own picture again (running does this too). */
+  dropLayerPreview(): void;
+
+  /** Which layer produced screen pixel (x, y) - the coordinates of the displayed picture - and why (D7). */
+  probePixel(x: number, y: number): NextPixelProbe;
+
+  /** The mixer registers, clip windows and debug view; with `thumbnails`, one picture per layer (D9). */
+  getNextLayerState(options?: { thumbnails?: boolean }): NextLayerState;
 }
 
 /**
@@ -73,7 +100,8 @@ export function isZxNextIdeMachine(machine: unknown): machine is IZxNextIdeMachi
     typeof m.getCopperState === "function" &&
     typeof m.getNextSpriteState === "function" &&
     typeof m.getNextTilemapState === "function" &&
-    typeof m.getNextLayer2State === "function"
+    typeof m.getNextLayer2State === "function" &&
+    typeof m.getNextLayerState === "function"
   );
 }
 

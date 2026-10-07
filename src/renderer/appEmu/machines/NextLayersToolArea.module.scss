@@ -1,0 +1,163 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The ZX Spectrum Next Layers strip, under the emulator screen (LAYER_COMPOSITION_PLAN §4.5).
+ *
+ * A device surface like the Z88 slot strip and the Spectrum media strip: `--bgcolor-display` /
+ * `--color-display`, theme-invariant. Each layer chip carries its identity colour (`--color-layers-*`)
+ * as a dot, so the chip, the clip outline on the screen and the Layers document's frames match. A
+ * hidden layer's chip dims and crosses its eye; a soloed one fills its S. A layer the *program* has
+ * switched off is told by a struck-through name, a different question from the debug view's hiding.
+ */
+.layersStrip {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background-color: var(--bgcolor-display);
+  color: var(--color-display);
+  font-size: var(--font-size-50);
+  line-height: 18px;
+}
+
+.order {
+  font-family: var(--monospace-font);
+  color: var(--color-display-hilite);
+  margin-right: var(--space-1);
+  white-space: nowrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+
+  &.off {
+    opacity: 0.55;
+  }
+
+  button {
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: 0 var(--space-1);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+
+    &:hover {
+      background-color: var(--surface-hover);
+    }
+  }
+}
+
+.chipMain {
+  padding-right: var(--space-2);
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.ula .dot {
+  background-color: var(--color-layers-ula);
+}
+.tm .dot {
+  background-color: var(--color-layers-tm);
+}
+.l2 .dot {
+  background-color: var(--color-layers-l2);
+}
+.spr .dot {
+  background-color: var(--color-layers-spr);
+}
+
+.name {
+  white-space: nowrap;
+}
+
+.programOff {
+  text-decoration: line-through;
+  color: var(--color-layers-chip-off);
+}
+
+.chip .solo {
+  border-left: 1px solid var(--border-default);
+  font-family: var(--monospace-font);
+}
+
+.soloed .solo {
+  background-color: var(--color-display-hilite);
+  color: var(--bgcolor-display);
+}
+
+.separator {
+  width: 1px;
+  align-self: stretch;
+  background-color: var(--border-default);
+  margin: 0 var(--space-1);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: 1px var(--space-1);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+
+  &.on {
+    border-color: var(--color-display-hilite);
+  }
+}
+
+.reset {
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0 var(--space-2);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+/*
+ * Closing the strip restores the composite picture first (`closeLayerView`): a strip that hid itself
+ * while a layer stayed hidden would leave the debug view on with nothing but the pill to undo it.
+ * It sits last, a step apart from the controls that change the view.
+ */
+.close {
+  display: inline-flex;
+  align-items: center;
+  margin-left: var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  padding: 1px var(--space-1);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--surface-hover);
+  }
+}

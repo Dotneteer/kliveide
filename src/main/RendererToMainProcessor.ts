@@ -1074,6 +1074,22 @@ class MainMessageProcessor {
   }
 
   /**
+   * Opens a ZX Spectrum Next inspector in the IDE (the pixel probe's click, LAYER_COMPOSITION_PLAN D7).
+   * @param inspector Which inspector
+   */
+  async openNextInspector(inspector: "sprites" | "tilemap" | "layer2" | "layers"): Promise<void> {
+    const commands = {
+      sprites: "show-sprites",
+      tilemap: "show-tilemap",
+      layer2: "show-layer2",
+      layers: "show-layers"
+    } as const;
+    const command = commands[inspector];
+    if (!command) return;
+    await getIdeApi().executeCommand(command);
+  }
+
+  /**
    * Sets a global application setting value.
    * @param settingId The setting key to set.
    * @param value The value to set.

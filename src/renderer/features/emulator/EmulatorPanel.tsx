@@ -15,6 +15,7 @@ import { useMainApi } from "@renderer/core/MainApi";
 import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_MOUSE_SHOW_POINTER,
+  SETTING_EMU_SHOW_BEAM_POSITION,
   SETTING_EMU_SHOW_INSTANT_SCREEN
 } from "@common/settings/setting-const";
 import { useRecordingManager } from "@renderer/appEmu/recording/RecordingContext";
@@ -25,6 +26,11 @@ import { useEmulatorKeyboard } from "./useEmulatorKeyboard";
 import { useEmulatorMouse } from "./useEmulatorMouse";
 import { useEmulatorJoystick } from "./useEmulatorJoystick";
 import { CapturedPointer } from "./CapturedPointer";
+import { useNextLayerRegs, useNextLayerView } from "./useNextLayerView";
+import { NextLayersScreenOverlay } from "./NextLayersScreenOverlay";
+import { BeamPositionOverlay } from "./BeamPositionOverlay";
+import { useBeamOverlay } from "./useBeamOverlay";
+import { beamOverlayPill } from "./beamOverlayModel";
 import { normalizeMousePointerDisplay } from "@common/settings/mouse-capture";
 import { renderMachineAudioFrame } from "./audioFrameRendering";
 import { MEDIA_DISK_A, MEDIA_DISK_B } from "@common/structs/project-const";
@@ -67,6 +73,9 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   const fastLoad = useGlobalSetting(SETTING_EMU_FAST_LOAD);
   const showInstantScreen = useGlobalSetting(SETTING_EMU_SHOW_INSTANT_SCREEN);
+  const showBeamPosition = !!useGlobalSetting(SETTING_EMU_SHOW_BEAM_POSITION);
+  // --- Counts the stops, so the beam overlay redraws at each one, stepping included (T9)
+  const [stopCount, setStopCount] = useState(0);
 
   const [overlay, setOverlay] = useState(null);
   const [showOverlay, setShowOverlay] = useState(true);
@@ -77,7 +86,15 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
       newState: MachineControllerState;
     }[],
     machineStateProcessing: false,
-    savedPixelBuffer: null as Uint32Array | null
+    /*
+     * The machine's own picture from just before Instant Screen replaced it while paused, put back
+     * when Instant Screen is switched off again. Taken only then: restoring a saved picture at every
+     * pause wrote the previous frame over the part of the buffer the raster had already drawn, inside
+     * the machine (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T1).
+     */
+    instantSnapshot: null as Uint32Array | null,
+    /** Instant Screen's value when the effect that applies it last ran */
+    lastShowInstant: undefined as boolean | undefined
   });
 
   const controllerRef = useRef<IMachineController>(null);
@@ -206,6 +223,8 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
         switch (toProcess.newState) {
           case MachineControllerState.Running:
+            // --- The machine draws again: a picture kept at an earlier pause is no longer its own
+            componentStateRef.current.instantSnapshot = null;
             setOverlay(currentController.isDebugging ? "Debug mode" : "");
             await beeperRenderer?.current?.play();
             await recordingManagerRef?.current?.onMachineRunning(
@@ -229,6 +248,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
           case MachineControllerState.Paused: {
             setPauseOverlay();
+            setStopCount((n) => n + 1);
             await beeperRenderer?.current?.suspend();
             recordingManagerRef?.current?.onMachinePaused();
             const showInstantScreenOnPause = getGlobalSetting(
@@ -237,8 +257,10 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
             );
             if (showInstantScreenOnPause) {
               const shadow = currentController.machine.renderInstantScreen();
-              if (!componentStateRef.current.savedPixelBuffer) {
-                componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
+              // --- The first render of this pause keeps the machine's picture; the Instant Screen
+              // --- effect may have rendered already, and then `shadow` is its render, not the machine's
+              if (!componentStateRef.current.instantSnapshot) {
+                componentStateRef.current.instantSnapshot = new Uint32Array(shadow);
               }
               displayScreenData();
             }
@@ -246,7 +268,7 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
           }
 
           case MachineControllerState.Stopped:
-            componentStateRef.current.savedPixelBuffer = null;
+            componentStateRef.current.instantSnapshot = null;
             setOverlay(`Stopped (PC: $${toHexa4(currentController.machine.pc)})`);
             await beeperRenderer?.current?.suspend();
             await recordingManagerRef?.current?.onMachineStopped();
@@ -279,16 +301,6 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
     if (currentController.machine.frames % currentController.machine.uiFrameFrequency === 0) {
       displayScreenData();
-    }
-
-    if (args.fullFrame) {
-      // --- Keep the picture just shown for the pause overlay's "instant screen" toggle. A copy, not a
-      // --- render: every core draws its frame while it executes, so rendering the whole screen again
-      // --- here only produced this copy - at 23-38% of the frame time (ZX Next, TS and WASM cores).
-      const shown = currentController.machine.getPixelBuffer();
-      const saved = componentStateRef.current.savedPixelBuffer;
-      if (saved && saved.length === shown.length) saved.set(shown);
-      else componentStateRef.current.savedPixelBuffer = new Uint32Array(shown);
     }
 
     if (args.fullFrame) {
@@ -341,6 +353,14 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     machineFrameCompleted
   );
 
+  // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md`): mask, capture, pill
+  const layerView = useNextLayerView(controller, displayScreenData);
+  const layerState = useNextLayerRegs(
+    layerView.machine,
+    !!layerView.view.showClips,
+    machineState === MachineControllerState.Running
+  );
+
   // --- Keep controllerRef in sync with the latest controller value
   useEffect(() => {
     controllerRef.current = controller;
@@ -390,21 +410,22 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
 
   // --- Respond to shadow screen changes
   useEffect(() => {
+    const state = componentStateRef.current;
+    const wasInstant = state.lastShowInstant;
+    state.lastShowInstant = !!showInstantScreen;
+    if (machineState !== MachineControllerState.Paused) return;
+    setPauseOverlay();
     if (showInstantScreen) {
-      if (machineState === MachineControllerState.Paused) {
-        setPauseOverlay();
-        const shadow = controller?.machine?.renderInstantScreen();
-        if (!componentStateRef.current.savedPixelBuffer) {
-          componentStateRef.current.savedPixelBuffer = new Uint32Array(shadow);
-        }
-        displayScreenData();
-      }
-    } else {
-      if (machineState === MachineControllerState.Paused) {
-        setPauseOverlay();
-        controller?.machine?.renderInstantScreen(componentStateRef.current.savedPixelBuffer);
-        displayScreenData();
-      }
+      const shadow = controller?.machine?.renderInstantScreen();
+      // --- The first render of this pause keeps the machine's picture to put back (the snapshot is
+      // --- dropped whenever the machine runs, so one left over is always this pause's)
+      if (shadow && !state.instantSnapshot) state.instantSnapshot = new Uint32Array(shadow);
+      displayScreenData();
+    } else if (wasInstant && state.instantSnapshot) {
+      // --- Switched off while paused: the machine's own picture again
+      controller?.machine?.renderInstantScreen(state.instantSnapshot);
+      state.instantSnapshot = null;
+      displayScreenData();
     }
   }, [controller?.machine, displayScreenData, machineState, setPauseOverlay, showInstantScreen]);
 
@@ -433,6 +454,18 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
     }
   }, [controller?.machine, displayScreenData, emuViewVersion, store]);
 
+  // --- The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`). Declared after the
+  // --- Instant Screen effects on purpose: effects run in order, and the picture it renders to the
+  // --- beam must be drawn after theirs.
+  const paused = machineState === MachineControllerState.Paused;
+  const beamState = useBeamOverlay(controller?.machine, displayScreenData, {
+    paused,
+    enabled: showBeamPosition,
+    instant: !!showInstantScreen,
+    stopCount,
+    viewVersion: emuViewVersion
+  });
+
   return (
     <div className={styles.emulatorPanel} ref={hostElement} tabIndex={-1}>
       <div className={styles.screenArea} ref={screenArea}>
@@ -460,9 +493,32 @@ export const EmulatorPanel = ({ keyStatusSet }: Props) => {
               onDismiss={() => setShowOverlay(false)}
               mouseCaptured={captured}
               mouseCaptureRefused={captureRefused}
+              layerDebugText={layerView.pillText}
+              layerDebugApproximate={layerView.approximate}
+              beamText={beamState ? beamOverlayPill(beamState) : undefined}
             />
             {captured && showCapturedPointer && <CapturedPointer ref={capturedPointer} />}
             <canvas ref={screenElement} width={canvasWidth} height={canvasHeight} />
+            {beamState && (
+              <BeamPositionOverlay
+                state={beamState}
+                screenWidth={controller?.machine?.screenWidthInPixels ?? 1}
+                screenHeight={controller?.machine?.screenHeightInPixels ?? 1}
+                aspectX={controller?.machine?.getAspectRatio?.()[0] ?? 1}
+                // --- The probe and the captured mouse own the pointer; the readout steps aside
+                hover={!captured && !(layerView.view.probe && layerView.paused)}
+              />
+            )}
+            {layerView.machine && (
+              <NextLayersScreenOverlay
+                machine={layerView.machine}
+                view={layerView.view}
+                layerState={layerState}
+                paused={layerView.paused}
+                screenWidth={controller?.machine?.screenWidthInPixels ?? 720}
+                screenHeight={controller?.machine?.screenHeightInPixels ?? 288}
+              />
+            )}
           </div>
           {showMachineTools && (
             <div className={styles.toolArea} ref={toolArea}>

@@ -1,7 +1,8 @@
 # Layer Composition Plan: Toggling, Isolating and Probing the Next's Video Layers
 
-Status: **draft** (2026-10-05). Decisions D1–D11 are proposed; the §8 questions are open. No phase
-started.
+Status: **done** (2026-10-06): Phases 1–7 implemented. Decisions D1–D11 and the §8 questions taken as
+proposed. §9 records where the implementation departs from the text below, and the measurements
+Phases 1 and 4 asked for.
 
 Scope:
 - [CLOSING_THE_GAPS_PLAN.md](CLOSING_THE_GAPS_PLAN.md) **G3.6**: toggle individual layers (ULA,
@@ -259,3 +260,63 @@ delivers the roadmap's headline and can ship on their own.
 | Q3 | Is the Layers strip shown by default on the Next? | No; it appears when the user toggles a layer or opens it from the menu, and its visibility is a setting |
 | Q4 | Let the probe also name the sprite slot under a sprite pixel? | Later: the sprite buffer holds colours, not slots; it needs a per-pixel slot capture, a Sprite Inspector follow-up |
 | Q5 | Capture always on while paused, or only with a consumer open? | Only with a consumer open (T6) |
+
+---
+
+## 9. Implementation notes (2026-10-06)
+
+Where the shipped code differs from §1–§5, and why:
+
+- **G3.6 landed before G3.7.** The plan assumed G3.7's paused-preview buffer and screen overlay
+  (§4.2, D8). They did not exist, so this plan built them: `zxnextLayerPreview` (volatile), shown by
+  `ZxNextWasmV2Machine.getPixelBuffer()` / `getPixelBufferBytes()` from a recompose until the machine
+  next executes (`dropLayerPreview()`, any frame or instruction, a reset, a state load), and
+  `NextLayersScreenOverlay`, an SVG in buffer coordinates over the canvas. G3.7 should reuse both
+  (a note in `BEAM_POSITION_OVERLAY_PLAN.md` says so).
+- **The "why" travels in `zxnextComposePixel`'s return value** (bits 12-15), not through a pointer.
+  An out parameter whose address is taken lives on the shadow stack, which is in the state image: the
+  T8 determinism test caught the probe leaving a byte there. For the same reason the debug functions
+  use statics (`zxnextDebugMixParams`, `zxnextLayerAtSpanStart`) and never address-taken locals. A
+  constant `withWhy` argument lets the live mixer fold the bookkeeping away.
+- **Phase 1 benchmark** (all four layers on, 100-frame median, the harness): 2.05 ms/frame before,
+  2.03 after. The first version with the packed "why" cost 2.17; the constant `withWhy` removed that.
+- **Phase 4 cost**: capture on adds about 0.13 ms/frame (2.03 → 2.16 all layers; 1.06 → 1.20 ULA
+  only), roughly 6-13%; a hidden layer costs about 0.1 ms (the debug loop masks every pixel, and
+  with only the ULA on it gives up the fast path, T9).
+- **Capture** dedups consecutive spans with identical mixer inputs, so a memory-write catch-up or a
+  latch adds no span. The span table is double-buffered as planned; a table is "complete" only when
+  capture was on from its frame's first pixel, so switching capture on mid-frame (or while paused)
+  gives an *approximate* recompose until one whole frame is captured, and the pill says so. A
+  reset or a state load/checkpoint restore invalidates the capture (`reapplyLayerDebug`). T7: 4,096
+  spans a frame; a CPU loop writing `$4A` at 28 MHz overflows it in the test.
+- **`HIDDEN_BY_MASK` is not a "why" code.** The probe composes each pixel twice, with and without the
+  mask, and reports both winners (`why` / `machineWhy`); the tooltip says what the machine shows when
+  they differ.
+- **"Show transparency"** paints the pixels whose winner is the fallback (`$4A`) magenta; with a solo
+  layer, that layer's transparent pixels instead of the checker. **Solo** shows the layer as the
+  renderer drew it: the ULA even with `$68` bit 7 set (the blend modes read it), the other layers only
+  while enabled (their buffers are not re-rendered while disabled).
+- **Hiding is "transparent", exactly (T4)**: a hidden tile keeps its below bit, and stencil stays on,
+  so hiding the tilemap in stencil mode hides the ULA too. Both are tested and documented.
+- **The Layers document's composite** is composed by the core from the capture with no mask
+  (`zxnextRenderLayerComposite`, 360 x 288: every other column, every row, which with square pixels
+  is the screen's shape, since a buffer pixel is 0.5:1), not copied from the screen, which while running carries
+  the mask.
+- **The probe's click** opens the owning inspector through a narrow `MainApi.openNextInspector`
+  (sprites, tilemap, Layer 2, or the Layers document for the ULA/fallback), never an arbitrary command.
+  It opens the inspector, but does not yet select the tile cell or Layer 2 pixel under the probe
+  (D7's "at that point"): the inspectors' reveal channels (`layer2Reveal`, the tilemap's) take a
+  source, not a position. A follow-up, like Q4's sprite slot.
+- **The strip has no "open document" button**: the emulator window cannot run IDE commands; the
+  Machine → Layers submenu and `show-layers` do it.
+- **Layer colours** are L4 aliases of the four status hues (`--color-layers-*`); see
+  `.ai/ui-theming-intent-and-lessons.md`.
+- **Tests**: `test/zxnext-hw/layers/debug-mask.test.ts` (Phase 2: the model with a mask for every
+  order, hide = disable outside T4, both T4 cases, T1 `$303B`, solo, transparency, reset, approximate
+  recompose), `capture-and-probe.test.ts` (Phases 4-6: exact recompose on both sides of the beam under
+  a Copper split, its absence without capture, T7, state restore, the probe's colour and rule against
+  `_mixer-model.ts`'s new `mixPixelExplained` for all eight orders with and without a mask, the
+  composite), the T8 case in `machine-state-determinism.test.ts`, and the unit tier's
+  `layerView.test.ts`, `layersDocumentModel.test.ts`, `LayersCommands.test.ts`. The running-app check
+  and the screenshots are `scripts/doc-shots/recipes/layers.cjs`.
+

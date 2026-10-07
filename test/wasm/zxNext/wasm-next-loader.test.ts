@@ -56,6 +56,8 @@ describe("ZX Spectrum Next WASM v2 loader", () => {
     expect(views.frameTrace.byteLength).toBe(
       ZXNEXT_FRAME_TRACE_HEADER_SIZE + ZXNEXT_FRAME_TRACE_CAPACITY * ZXNEXT_FRAME_TRACE_RECORD_SIZE
     );
+    expect(views.layerPreview.length).toBe(views.pixelBuffer.length);
+    expect(views.layerPreviewBytes.byteLength).toBe(views.pixelBufferBytes.byteLength);
   });
 
   it("rejects wrong reported sizes instead of silently creating Spectrum-sized views", () => {
@@ -103,6 +105,8 @@ function createViewExports(
     zxnextSpriteAttributesPtr: () => options.nextRegWatchOffset ?? 0,
     zxnextSpritePatternMemory8Ptr: () => 0,
     zxnextTraceGetStartOffset: () => options.traceOffset ?? 0,
+    // --- The layer debug preview (LAYER_COMPOSITION_PLAN §4.2): a picture-sized view
+    zxnextLayerPreviewPtr: () => options.pixelOffset,
     zxnextTraceGetHeaderSize: () => ZXNEXT_FRAME_TRACE_HEADER_SIZE,
     zxnextTraceGetRecordSize: () => ZXNEXT_FRAME_TRACE_RECORD_SIZE,
     zxnextTraceGetCapacity: () => ZXNEXT_FRAME_TRACE_CAPACITY,

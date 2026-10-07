@@ -17,6 +17,7 @@ import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
+import type { NextLayerDebug, NextPixelProbe } from "@common/zxnext/layers/layerMix";
 import type {
   SpectrumSnapshotLoadMode,
   SpectrumSnapshotLoadOptions,
@@ -570,6 +571,23 @@ class EmuApiImpl {
   }
 
   /**
+   * Gets the ZX Spectrum Next layer state the Layers document shows
+   * (`.plans/LAYER_COMPOSITION_PLAN.md` D9): the mixer registers, the clip windows, the debug view
+   * and, with `thumbnails`, one picture per layer from the capture, in the screen's shape. Reading it never
+   * changes the machine.
+   */
+  async getNextLayerState(_options?: { thumbnails?: boolean }): Promise<NextLayerState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The pixel probe (D7): which layer produced buffer pixel (x, y) of the paused picture, and why.
+   */
+  async probeNextPixel(_x: number, _y: number): Promise<NextPixelProbe> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * "Step Copper": runs the ZX Spectrum Next in debug mode until the Copper completes its next
    * instruction, then stops at the end of that Z80 instruction.
    */
@@ -912,6 +930,74 @@ export type NextTilemapState = {
  * The ZX Spectrum Next's Layer 2, as the Layer 2 Inspector reads it in one call
  * (`.plans/LAYER2_INSPECTOR_PLAN.md` §4.3, D2).
  */
+/**
+ * The ZX Spectrum Next's layer mixer as the Layers document and strip read it
+ * (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4, D9).
+ */
+export type NextLayerState = {
+  regs: NextLayerRegs;
+  /** The debug view in force in the core */
+  debug: NextLayerDebug;
+  /** Capture is on (§4.3) */
+  capture: boolean;
+  /** The buffer row of the ULA paper's top line (48 at 50 Hz, 24 at 60 Hz) */
+  paperBufferY: number;
+  /**
+   * One picture per layer and the composite, when asked: 360 x 288 RGBA, every other buffer column and
+   * every row, so square pixels give the screen's shape (a buffer pixel is 0.5:1)
+   */
+  thumbnails?: NextLayerThumbnails;
+};
+
+/** The registers the mixer and the four clip windows read */
+export type NextLayerRegs = {
+  /** `$15` bits 4-2 */
+  priorities: number;
+  /** `$68` bits 6-5 */
+  blendMode: number;
+  /** `$68` bit 0 */
+  stencil: boolean;
+  /** Not `$68` bit 7 */
+  ulaEnabled: boolean;
+  /** `$15` bit 7 */
+  loRes: boolean;
+  /** `$6B` bit 7 */
+  tilemapEnabled: boolean;
+  /** `$6B` bit 0: the tilemap on top of the ULA everywhere */
+  tilemapOnTop: boolean;
+  layer2Enabled: boolean;
+  /** `$70` bits 5-4 */
+  layer2Resolution: number;
+  /** `$15` bit 0 */
+  spritesEnabled: boolean;
+  /** `$15` bit 1 */
+  spritesOverBorder: boolean;
+  /** `$15` bit 5 */
+  spritesClipping: boolean;
+  /** `$14` */
+  globalTransparency: number;
+  /** `$4A` */
+  fallback: number;
+  /** `$1A`, `$18`, `$19`, `$1B`: x1, x2, y1, y2 */
+  ulaClip: [number, number, number, number];
+  layer2Clip: [number, number, number, number];
+  spriteClip: [number, number, number, number];
+  tilemapClip: [number, number, number, number];
+  /** `$62` bits 7-6 are non-zero: registers may change per line */
+  copperRunning: boolean;
+};
+
+export type NextLayerThumbnails = {
+  width: number;
+  height: number;
+  ula: Uint8ClampedArray;
+  tm: Uint8ClampedArray;
+  l2: Uint8ClampedArray;
+  spr: Uint8ClampedArray;
+  /** The machine's own picture, composed with no debug view in force */
+  composite: Uint8ClampedArray;
+};
+
 export type NextLayer2State = {
   regs: Layer2Regs;
   /**

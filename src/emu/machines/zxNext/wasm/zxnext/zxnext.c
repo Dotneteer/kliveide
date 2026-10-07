@@ -610,6 +610,70 @@ uint32_t zxnextGetUlaScrollX(void) { return zxnextUlaGetScrollX(); }
 uint32_t zxnextGetUlaScrollY(void) { return zxnextUlaGetScrollY(); }
 uint32_t zxnextGetUlaClip(uint32_t index) { return zxnextUlaGetClip(index); }
 
+/*
+ * Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md` §4.1-§4.3). None of these changes the machine:
+ * the mask acts in the mixer only (D1), and all of the state they touch is volatile (D2, T8).
+ */
+/* mask: ZXNEXT_LAYER_BIT_* hidden; solo: 0 or one layer bit; flags: bit 0 show transparency */
+void zxnextSetLayerDebug(uint32_t mask, uint32_t solo, uint32_t flags) {
+  zxnextLayerDebugMask = (uint8_t)(mask & ZXNEXT_LAYER_BITS);
+  solo &= ZXNEXT_LAYER_BITS;
+  /* solo is one layer: keep the lowest bit */
+  zxnextLayerDebugSolo = (uint8_t)(solo & (0u - solo));
+  zxnextLayerDebugFlags = (uint8_t)(flags & ZXNEXT_LAYER_DEBUG_SHOW_TRANSPARENT);
+}
+/* Bits 0-3 mask, 4-7 solo, 8 flags, 9 capture on */
+uint32_t zxnextGetLayerDebug(void) {
+  return (uint32_t)zxnextLayerDebugMask | ((uint32_t)zxnextLayerDebugSolo << 4u) |
+    ((uint32_t)zxnextLayerDebugFlags << 8u) | ((uint32_t)zxnextLayerCaptureOn << 9u);
+}
+void zxnextSetLayerCapture(uint32_t on) { zxnextLayerSetCapture(on); }
+/* Recomposes the paused picture into the preview buffer; ZXNEXT_RECOMPOSE_* status */
+uint32_t zxnextRecomposeForDebug(void) { return zxnextLayerRecomposeForDebug(); }
+uint32_t zxnextLayerPreviewPtr(void) { return (uint32_t)(uintptr_t)zxnextLayerPreview; }
+/* Probes buffer pixel `index`; returns a pointer to the 12-word result (see zxnextLayerProbe) */
+uint32_t zxnextProbePixel(uint32_t index) { return zxnextLayerProbePixel(index); }
+/* The machine's picture, half width (360 x 288 RGBA, the screen's shape), from the capture with no debug view */
+uint32_t zxnextRenderLayerComposite(void) { return zxnextLayerRenderComposite(); }
+/*
+ * One layer's 16-bit values (0 ULA, 1 tilemap, 2 Layer 2, 3 sprites): the capture while it is on,
+ * else the live buffer. ZXNEXT_PIXEL_COUNT words.
+ */
+uint32_t zxnextLayerBufferPtr(uint32_t layer) {
+  uint32_t cap = zxnextLayerCaptureOn;
+  switch (layer & 3u) {
+    case 0u: return (uint32_t)(uintptr_t)(cap ? zxnextCapUla : zxnextLayerUla);
+    case 1u: return (uint32_t)(uintptr_t)(cap ? zxnextCapTm : zxnextLayerTm);
+    case 2u: return (uint32_t)(uintptr_t)(cap ? zxnextCapL2 : zxnextLayerL2);
+    default: return (uint32_t)(uintptr_t)(cap ? zxnextCapSpr : zxnextLayerSpr);
+  }
+}
+/*
+ * The span tables (T7): bits 0-12 this frame's span count, 13 its overflow, 14 complete;
+ * bits 16-28 last frame's count, 29 its overflow, 30 complete.
+ */
+uint32_t zxnextGetLayerCaptureStatus(void) {
+  uint32_t c = zxnextCapCurrent, p = c ^ 1u;
+  return (zxnextCapSpanCount[c] & 0x1fffu) | ((uint32_t)zxnextCapSpanOverflow[c] << 13u) |
+    ((uint32_t)zxnextCapSpanComplete[c] << 14u) | ((zxnextCapSpanCount[p] & 0x1fffu) << 16u) |
+    ((uint32_t)zxnextCapSpanOverflow[p] << 29u) | ((uint32_t)zxnextCapSpanComplete[p] << 30u);
+}
+/* The first buffer pixel of this frame the beam has not drawn yet */
+uint32_t zxnextGetRasterPixel(void) { return zxnextRasterPixel; }
+/*
+ * The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.2). Neither changes the machine:
+ * the info is read from the raster's own counters, and the preview renders into the volatile preview
+ * buffer with every rewritten static restored (T2).
+ */
+/* A pointer to 12 words: vc, hc, totalVc, totalHc, firstVc, firstHc, displayXStart, displayYStart,
+   rasterPixel, beamPixel, frameTact, buffer width (zxnextBeamInfo) */
+uint32_t zxnextGetBeamInfo(void) { return zxnextBeamGetInfo(); }
+/* Renders the paused picture up to the beam into the preview buffer; `keep` 1 draws over the preview
+   already there. Returns the beam's buffer pixel. */
+uint32_t zxnextRenderPreviewToBeam(uint32_t keep) { return zxnextBeamRenderPreview(keep); }
+/* The RGBA the picture uses for a 9-bit colour */
+uint32_t zxnextGetRgbaForRgb333(uint32_t rgb333) { return zxnextUlaRgb333Color(rgb333 & 0x1ffu); }
+
 uint32_t zxnextGetPaletteNextReg(uint32_t reg) { return zxnextPaletteGetNextReg(reg); }
 uint32_t zxnextGetPaletteEntry(uint32_t palette, uint32_t index) { return zxnextPaletteGetEntry(palette, index); }
 uint32_t zxnextGetPaletteCurrentEntry(uint32_t index) { return zxnextPaletteGetCurrentEntry(index); }

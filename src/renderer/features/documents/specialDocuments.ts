@@ -12,6 +12,8 @@ import {
   TILEMAP_PANEL_ID,
   LAYER2_EDITOR,
   LAYER2_PANEL_ID,
+  LAYERS_EDITOR,
+  LAYERS_PANEL_ID,
   MEMORY_PANEL_ID
 } from "@common/state/common-ids";
 import type { ProjectDocumentState } from "@renderer/abstractions/ProjectDocumentState";
@@ -23,7 +25,8 @@ export type SpecialDocumentId =
   | typeof COPPER_PANEL_ID
   | typeof SPRITES_PANEL_ID
   | typeof TILEMAP_PANEL_ID
-  | typeof LAYER2_PANEL_ID;
+  | typeof LAYER2_PANEL_ID
+  | typeof LAYERS_PANEL_ID;
 
 export type SpecialDocumentDefinition = Pick<
   ProjectDocumentState,
@@ -83,6 +86,14 @@ const specialDocumentDefinitions: Record<SpecialDocumentId, SpecialDocumentDefin
     name: "Layer 2 Inspector",
     type: LAYER2_EDITOR,
     iconName: "layer2",
+    workspaceRestorable: true
+  },
+  // --- The ZX Spectrum Next's layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` D9)
+  [LAYERS_PANEL_ID]: {
+    id: LAYERS_PANEL_ID,
+    name: "Layers",
+    type: LAYERS_EDITOR,
+    iconName: "layers",
     workspaceRestorable: true
   }
 };

@@ -1,6 +1,8 @@
 import { ExecutionStateOverlay } from "./ExecutionStateOverlay";
 import { MouseCaptureOverlay } from "./MouseCaptureOverlay";
 import { RecordingStateOverlay } from "./RecordingStateOverlay";
+import { LayerDebugOverlay } from "./LayerDebugOverlay";
+import { BeamPositionPill } from "./BeamPositionOverlay";
 import styles from "./EmulatorPanel.module.scss";
 
 type Props = {
@@ -11,6 +13,11 @@ type Props = {
   mouseCaptured?: boolean;
   /** True just after a capture was refused, so the pill can say to try again. */
   mouseCaptureRefused?: boolean;
+  /** The ZX Spectrum Next layer debug view's announcement (LAYER_COMPOSITION_PLAN D3) */
+  layerDebugText?: string;
+  layerDebugApproximate?: boolean;
+  /** Where the beam is, while paused (BEAM_POSITION_OVERLAY_PLAN D1) */
+  beamText?: string;
 };
 
 /**
@@ -26,10 +33,15 @@ export const EmulatorOverlay = ({
   showOverlay,
   onDismiss,
   mouseCaptured = false,
-  mouseCaptureRefused = false
+  mouseCaptureRefused = false,
+  layerDebugText,
+  layerDebugApproximate,
+  beamText
 }: Props) => (
   <div className={styles.overlayStack}>
     {showOverlay && <ExecutionStateOverlay text={overlay} clicked={onDismiss} />}
+    <LayerDebugOverlay text={layerDebugText} approximate={layerDebugApproximate} />
+    <BeamPositionPill text={beamText} />
     <RecordingStateOverlay />
     <MouseCaptureOverlay captured={mouseCaptured} refused={mouseCaptureRefused} />
   </div>

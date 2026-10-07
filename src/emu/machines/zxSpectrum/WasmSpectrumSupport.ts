@@ -3,6 +3,7 @@ import type { IFloatingBusDevice } from "@emu/abstractions/IFloatingBusDevice";
 import type { PsgChipState } from "@emu/abstractions/PsgChipState";
 import type { ISpectrumPsgDevice } from "./ISpectrumPsgDevice";
 import type { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
+import { beamAt, drawnUpTo, type BeamPosition, type BeamTiming } from "@common/utils/beamGeometry";
 
 type PsgRead = (name: string, ...args: number[]) => number | undefined;
 
@@ -119,4 +120,47 @@ export class WasmSpectrumPsgDevice implements ISpectrumPsgDevice {
   private getExportValue(name: string, ...args: number[]): number {
     return this.read(name, ...args) ?? 0;
   }
+}
+
+/**
+ * The beam of a core built on `zx-spectrum-ula.c` (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3), from
+ * its `GetBeamInfo(field)` export (fields in `ulaBeamInfo`), the displayed buffer's size and start
+ * offset, and the buffer pixels per Spectrum pixel (2 on the Timex).
+ *
+ * A line's left border is drawn at the end of the line before it, from `firstVisibleBorderTact` on,
+ * and buffer row 0 is the first visible line; the displayed picture starts `startOffset` pixels in.
+ * Seen from the displayed buffer that is one linear raster (see `beamGeometry.ts`).
+ */
+export function spectrumWasmBeamPosition(
+  beamInfo: (field: number) => number,
+  bufferWidth: number,
+  bufferHeight: number,
+  startOffset: number,
+  pixelScale = 1
+): BeamPosition {
+  const frameTact = beamInfo(0);
+  const lineTime = beamInfo(1);
+  const rasterLines = beamInfo(2);
+  const firstVisibleLine = beamInfo(3);
+  const firstDisplayLine = beamInfo(4);
+  const leftBorderTacts = lineTime - beamInfo(5);
+  const lastRendered = beamInfo(6);
+  const lineStartTact = beamInfo(8);
+  const startRows = Math.floor(startOffset / bufferWidth);
+  const timing: BeamTiming = {
+    unit: "T",
+    tactsPerLine: lineTime,
+    linesPerFrame: rasterLines,
+    lineStartTact,
+    firstVisibleTact: lineStartTact + (firstVisibleLine + startRows) * lineTime - leftBorderTacts,
+    tactsPerBufferPixel: 1 / (2 * pixelScale),
+    bufferWidth,
+    bufferHeight,
+    paperLeft: leftBorderTacts * 2 * pixelScale,
+    paperTop: firstDisplayLine - firstVisibleLine - startRows,
+    paperWidth: 256 * pixelScale,
+    paperHeight: 192
+  };
+  // --- `lastRendered` is the first tact the ULA has not drawn yet
+  return beamAt(timing, frameTact, drawnUpTo(timing, lastRendered));
 }

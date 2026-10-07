@@ -1,0 +1,107 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * Chrome over the ZX Spectrum Next screen (LAYER_COMPOSITION_PLAN D7, D8): the clip-window outlines
+ * and the pixel probe. It covers the canvas exactly and changes none of its pixels. The outlines are
+ * each layer's identity colour (`--color-layers-*`), drawn 1 screen pixel wide whatever the zoom
+ * (`vector-effect: non-scaling-stroke`); the probe's card is the overlay pill's surface.
+ */
+/* The overlay layer itself is EmulatorScreenOverlay's (BEAM_POSITION_OVERLAY_PLAN D10) */
+.probing {
+  cursor: crosshair;
+}
+
+.clip {
+  fill: none;
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+}
+
+.clip-ula {
+  stroke: var(--color-layers-ula);
+}
+.clip-tm {
+  stroke: var(--color-layers-tm);
+}
+.clip-l2 {
+  stroke: var(--color-layers-l2);
+}
+.clip-spr {
+  stroke: var(--color-layers-spr);
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 2;
+  min-width: 30ch;
+  max-width: 46ch;
+  background-color: var(--bgcolor-emuoverlay);
+  color: var(--color-emuoverlay);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-100);
+  pointer-events: none;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+}
+
+.why {
+  margin-top: var(--space-1);
+  color: var(--text-primary);
+}
+
+.rows {
+  margin-top: var(--space-1);
+  display: grid;
+  grid-template-columns: 9ch 1fr;
+  column-gap: var(--space-2);
+}
+
+.row {
+  display: contents;
+}
+
+.label {
+  color: var(--data-label);
+}
+
+.label-ula {
+  color: var(--color-layers-ula);
+}
+.label-tm {
+  color: var(--color-layers-tm);
+}
+.label-l2 {
+  color: var(--color-layers-l2);
+}
+.label-spr {
+  color: var(--color-layers-spr);
+}
+
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--monospace-font);
+  color: var(--color-state-value);
+}
+
+.swatch {
+  display: inline-block;
+  width: 1.2ch;
+  height: 1.2ch;
+  flex: 0 0 auto;
+  border: 1px solid var(--border-strong);
+}
+
+.note {
+  margin-top: var(--space-1);
+  color: var(--text-secondary);
+}

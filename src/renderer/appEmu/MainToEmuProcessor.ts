@@ -1,4 +1,5 @@
 import { AppServices } from "@renderer/abstractions/AppServices";
+import type { IAnyMachine } from "@renderer/abstractions/IAnyMachine";
 import { IZxSpectrumMachine } from "@renderer/abstractions/IZxSpectrumMachine";
 import { RenderingPhase } from "@renderer/abstractions/RenderingPhase";
 import { DISK_A_WP, DISK_B_WP, REWIND_REQUESTED } from "@emu/machines/machine-props";
@@ -636,19 +637,15 @@ class EmuMessageProcessor {
       romP = pagingMachine.getSelectedRomPage?.() ?? pagingMachine.selectedRom ?? 0;
       ramB = pagingMachine.getSelectedRamBank?.() ?? pagingMachine.selectedBank ?? 0;
     }
-    let ras = Math.floor(machine.currentFrameTact / machine.screenWidthInPixels);
-    if (isNaN(ras)) {
-      ras = 0;
-    }
-    let pos = machine.currentFrameTact % machine.screenWidthInPixels;
-    if (isNaN(pos)) {
-      pos = 0;
-    }
+    // --- RAS/POS: the raster line and the tact in it, from the machine's own raster timing
+    // --- (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T6). Neither `screenWidthInPixels` nor
+    // --- `tactsInDisplayLine` is the length of a raster line: dividing by them was wrong everywhere.
+    const { ras, pos } = ulaRasterPosition(machine);
     return {
       fcl: machine.currentFrameTact ?? 0,
       frm: machine.frames,
-      ras: Math.floor(machine.currentFrameTact / machine.screenWidthInPixels),
-      pos: machine.currentFrameTact % machine.screenWidthInPixels,
+      ras,
+      pos,
       pix: RenderingPhase[screenDevice.renderingTactTable[machine.currentFrameTact]?.phase],
       bor: borderColors[screenDevice.borderColor & 0x07],
       flo: (machine as ZxSpectrumBase).floatingBusDevice?.readFloatingBus(),
@@ -1115,6 +1112,28 @@ class EmuMessageProcessor {
       noController();
     }
     return requireZxNextIdeMachine(controller.machine).getNextLayer2State(options);
+  }
+
+  /**
+   * Gets the ZX Spectrum Next layer state (the Layers document's snapshot, LAYER_COMPOSITION_PLAN D9).
+   */
+  getNextLayerState(options?: { thumbnails?: boolean }) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).getNextLayerState(options);
+  }
+
+  /**
+   * The pixel probe (LAYER_COMPOSITION_PLAN D7) at screen pixel (x, y).
+   */
+  probeNextPixel(x: number, y: number) {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return requireZxNextIdeMachine(controller.machine).probePixel(x, y);
   }
 
   /**
@@ -1742,4 +1761,13 @@ function requireZxNextIdeMachine(machine: unknown): IZxNextIdeMachine {
     throw new Error("This request needs a ZX Spectrum Next machine.");
   }
   return machine;
+}
+
+/**
+ * The ULA panel's RAS and POS (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` T6): the beam's raster line and
+ * its tact within the line, as the machine reports them; 0 and 0 for a machine without a beam.
+ */
+export function ulaRasterPosition(machine: Pick<IAnyMachine, "getBeamPosition">): { ras: number; pos: number } {
+  const beam = machine.getBeamPosition?.();
+  return beam ? { ras: beam.line, pos: beam.lineTact } : { ras: 0, pos: 0 };
 }

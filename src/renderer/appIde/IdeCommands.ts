@@ -84,6 +84,8 @@ import {
 } from "./commands/SpriteCommands";
 import { ShowTilemapCommand, ShowTilesCommand } from "./commands/TilemapCommands";
 import { ShowLayer2Command } from "./commands/Layer2Commands";
+import { LayersCommand, ShowLayersCommand } from "./commands/LayersCommands";
+import { BeamCommand } from "./commands/BeamCommands";
 import {
   ProjectExcludeItemsCommand,
   ProjectListExcludedItemsCommand
@@ -175,6 +177,9 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ShowTilemapCommand());
   cmdSrv.registerCommand(new ShowTilesCommand());
   cmdSrv.registerCommand(new ShowLayer2Command());
+  cmdSrv.registerCommand(new LayersCommand());
+  cmdSrv.registerCommand(new ShowLayersCommand());
+  cmdSrv.registerCommand(new BeamCommand());
 
   cmdSrv.registerCommand(new EraseAllBreakpointsCommand());
   cmdSrv.registerCommand(new ListBreakpointsCommand());

@@ -1,0 +1,28 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The layer debug pill (LAYER_COMPOSITION_PLAN D3), in the overlay stack under the execution pill.
+ * The recording pill's shape; the glyph and the text in the warning hue, because a hidden layer is a
+ * state the user must not forget, and the note on an approximate recompose a step quieter.
+ */
+.layerOverlay {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bgcolor-emuoverlay);
+  color: var(--color-layers-pill);
+  opacity: 0.9;
+  font-size: var(--font-size-200);
+  padding: 3px var(--space-3) 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.note {
+  color: var(--color-emuoverlay);
+  font-size: var(--font-size-100);
+}

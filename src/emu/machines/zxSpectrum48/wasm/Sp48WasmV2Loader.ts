@@ -69,6 +69,8 @@ export type Sp48WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Rzx
   sp48GetRenderingPixelAddress: Sp48WasmV2ExportFunction;
   sp48GetRenderingAttributeAddress: Sp48WasmV2ExportFunction;
   sp48GetRenderingPixelIndex: Sp48WasmV2ExportFunction;
+  sp48GetBeamInfo: Sp48WasmV2ExportFunction;
+  sp48RenderToBeam: Sp48WasmV2ExportFunction;
   sp48GetTotalContentionDelaySinceStart: Sp48WasmV2ExportFunction;
   sp48GetContentionDelaySincePause: Sp48WasmV2ExportFunction;
   sp48GetNextFrameStartTact: Sp48WasmV2ExportFunction;
@@ -260,6 +262,8 @@ const requiredV2Exports = [
   "sp48GetRenderingPixelAddress",
   "sp48GetRenderingAttributeAddress",
   "sp48GetRenderingPixelIndex",
+  "sp48GetBeamInfo",
+  "sp48RenderToBeam",
   "sp48GetTotalContentionDelaySinceStart",
   "sp48GetContentionDelaySincePause",
   "sp48GetNextFrameStartTact",

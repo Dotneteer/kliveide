@@ -6,11 +6,13 @@ import { FrameTerminationMode } from "@emu/abstractions/FrameTerminationMode";
 import type { NextMachine } from "../core/machines";
 import { toBcd } from "@emu/machines/zxNext/nextRtc";
 import { isZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import type { BeamPosition } from "@common/utils/beamGeometry";
 import type {
   CopperState,
   NextSpriteState,
   NextTilemapState,
   NextLayer2State,
+  NextLayerState,
   NextMemoryMapping,
   NextRegDescriptors,
   NextRegState,
@@ -18,6 +20,14 @@ import type {
   UlaState
 } from "@common/messaging/EmuApi";
 import { AssemblerOptions } from "@main/compiler-common/assembler-in-out";
+import {
+  NEXT_LAYER_BITS,
+  NO_LAYER_DEBUG,
+  type NextLayerDebug,
+  type NextLayerId,
+  type NextPixelProbe,
+  type RecomposeStatus
+} from "@common/zxnext/layers/layerMix";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
@@ -934,6 +944,108 @@ export class NextTestSession {
     const m = this.machine;
     if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
     return m.getNextLayer2State(options);
+  }
+
+  // ==========================================================================================
+  // Layer debugging (`.plans/LAYER_COMPOSITION_PLAN.md`): the IDE's debug view of the mixer. None of
+  // these changes the machine; they are what the emulator window and the Layers document call.
+
+  private ideMachine() {
+    const m = this.machine;
+    if (!isZxNextIdeMachine(m)) throw new Error("The machine does not implement IZxNextIdeMachine");
+    return m;
+  }
+
+  /**
+   * Sets the layer debug view (D1, D5): `hide` the named layers, show `solo` alone over a checker,
+   * paint the uncovered pixels with `showTransparent`. Omitted fields are off.
+   */
+  setLayerDebug({ hide = [], solo, showTransparent = false }: { hide?: NextLayerId[]; solo?: NextLayerId; showTransparent?: boolean } = {}): this {
+    const debug: NextLayerDebug = {
+      ...NO_LAYER_DEBUG,
+      hidden: hide.reduce((bits, id) => bits | NEXT_LAYER_BITS[id], 0),
+      solo: solo ? NEXT_LAYER_BITS[solo] : 0,
+      showTransparent
+    };
+    this.ideMachine().setLayerDebug(debug);
+    return this;
+  }
+
+  /** The debug view as the core holds it. */
+  layerDebug(): NextLayerDebug {
+    return this.ideMachine().getLayerDebug();
+  }
+
+  /** Switches the layer capture (§4.3) on or off. */
+  setLayerCapture(on: boolean): this {
+    this.ideMachine().setLayerCapture(on);
+    return this;
+  }
+
+  /**
+   * Recomposes the paused picture with the debug view, as the emulator window does on a paused
+   * toggle; `frame` is what the screen then shows. The machine's own picture is unchanged
+   * (`machinePicture`).
+   */
+  recomposeLayers(): { status: RecomposeStatus; frame: Frame } {
+    const status = this.ideMachine().recomposeForDebug();
+    const frame = captureFrame(this.machine);
+    // --- Back to the machine's picture, as running again would do
+    this.ideMachine().dropLayerPreview();
+    return { status, frame };
+  }
+
+  /** The machine's own pixel buffer now - mid-frame too, unlike `screen()` - never the debug preview. */
+  machinePicture(): Frame {
+    const runtime = this.machine.wasmV2Runtime!;
+    const width = this.machine.screenWidthInPixels;
+    const height = this.machine.screenHeightInPixels;
+    const start = this.machine.getBufferStartOffset();
+    const words = runtime.pixelBuffer;
+    const bytes = new Uint8Array(words.buffer, words.byteOffset + start * 4, width * height * 4);
+    return { width, height, rgba: new Uint8Array(bytes) };
+  }
+
+  // ==========================================================================================
+  // The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): where the raster is and the
+  // paused picture rendered up to it. Neither changes the machine.
+
+  /** Where the raster is now, as the overlay reads it (D4). */
+  beamPosition(): BeamPosition {
+    return this.machine.getBeamPosition();
+  }
+
+  /**
+   * The paused picture rendered up to the beam (D3), as the emulator window shows it; the machine's
+   * own picture is unchanged (`machinePicture`). With a layer debug recompose up, draws over it.
+   */
+  renderToBeam(): Frame {
+    this.machine.renderToBeamPreview();
+    const frame = captureFrame(this.machine);
+    // --- Back to the machine's picture, as running again would do
+    this.ideMachine().dropLayerPreview();
+    return frame;
+  }
+
+  /** The pixel probe (D7) at buffer pixel (x, y). */
+  probePixel(x: number, y: number): NextPixelProbe {
+    return this.ideMachine().probePixel(x, y);
+  }
+
+  /** What the Layers document reads (D9). */
+  layerState(options?: { thumbnails?: boolean }): NextLayerState {
+    return this.ideMachine().getNextLayerState(options);
+  }
+
+  /** The span tables of the capture (T7): counts, overflow and completeness of this and last frame. */
+  layerCaptureStatus(): { current: number; currentOverflow: boolean; previous: number; previousOverflow: boolean } {
+    const v = this.machine.wasmV2Runtime!.exports.zxnextGetLayerCaptureStatus() >>> 0;
+    return {
+      current: v & 0x1fff,
+      currentOverflow: ((v >> 13) & 1) !== 0,
+      previous: (v >> 16) & 0x1fff,
+      previousOverflow: ((v >> 29) & 1) !== 0
+    };
   }
 
   /**

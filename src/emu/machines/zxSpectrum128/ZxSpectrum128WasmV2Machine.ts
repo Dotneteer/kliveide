@@ -47,6 +47,8 @@ import {
 import { assertSnapshotFitsMachine } from "../zxSpectrum/spectrumSnapshotFit";
 import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
 import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
+import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
+import type { BeamPosition } from "@common/utils/beamGeometry";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -720,6 +722,28 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
 
   override getBufferStartOffset(): number {
     return this.requireWasmV2Runtime().exports.sp128GetPixelBufferStartOffset();
+  }
+
+  /** The beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` §4.3, D4) */
+  getBeamPosition(): BeamPosition {
+    const ex = this.requireWasmV2Runtime().exports;
+    return spectrumWasmBeamPosition(
+      (field) => ex.sp128GetBeamInfo(field),
+      this.screenWidthInPixels,
+      this.screenHeightInPixels,
+      this.getBufferStartOffset(),
+      this.beamPixelScale
+    );
+  }
+
+  /** Renders the paused picture up to the beam: the ULA's own catch-up, which changes nothing later (T2) */
+  renderToBeamPreview(): void {
+    this.requireWasmV2Runtime().exports.sp128RenderToBeam();
+  }
+
+  /** Buffer pixels per Spectrum pixel */
+  protected get beamPixelScale(): number {
+    return 1;
   }
 
   override getAudioSamples(): AudioSample[] {

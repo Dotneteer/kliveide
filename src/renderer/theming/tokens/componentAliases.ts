@@ -678,6 +678,35 @@ export const componentAliases: Record<string, string> = {
   "--color-layer2-role-displayed": "var(--accent-text)",
   "--color-layer2-role-shadow": "var(--accent-secondary-text)",
 
+  // --- Next layer composition (`.plans/LAYER_COMPOSITION_PLAN.md` §4.5) ----------------------------
+  /*
+   * Four layers, four identities: the strip's chips, the clip-window outlines on the screen and the
+   * Layers document's thumbnail frames all colour a layer the same way. The four status hues are the
+   * only four well-separated hues that hold in both tones and under all six accents; here they name
+   * a layer, never a status, and always sit beside the layer's name. The pill that announces a hidden
+   * layer (D3) is the warning hue: that one *is* a status.
+   */
+  "--color-layers-ula": "var(--status-info)",
+  "--color-layers-tm": "var(--status-success)",
+  "--color-layers-l2": "var(--status-warning)",
+  "--color-layers-spr": "var(--status-error)",
+  "--color-layers-pill": "var(--status-warning)",
+  "--color-layers-chip-off": "var(--text-disabled)",
+
+  // --- Beam position overlay (`.plans/BEAM_POSITION_OVERLAY_PLAN.md` D9) ----------------------------
+  /*
+   * Chrome over the paused emulator screen. The beam is the primary accent and the Copper's hit the
+   * secondary (D7): two pointers into one raster get two markers in two hues. The part of the picture
+   * past the beam belongs to the previous frame (D2), so it is washed with the backdrop's alpha and
+   * hatched - never hidden: those are still the machine's pixels. The pill is the overlay pill's
+   * surface with the beam's hue for its glyph.
+   */
+  "--color-beam-line": "var(--accent-solid)",
+  "--color-beam-copper": "var(--accent-secondary-solid)",
+  "--bgcolor-beam-stale": "var(--bgcolor-backdrop)",
+  "--color-beam-hatch": "var(--border-strong)",
+  "--color-beam-label": "var(--text-primary)",
+
   // --- Favourites (Select Machine dialog) -------------------------------------------------------
   "--color-favorite": "var(--mark-favorite)",
 
