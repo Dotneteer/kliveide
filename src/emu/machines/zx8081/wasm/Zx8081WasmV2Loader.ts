@@ -6,6 +6,7 @@
  */
 
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "@emu/machines/wasmAccessLog";
 
 export const ZX8081_WASM_V2_ARTIFACT_NAME = "zx8081.wasm";
@@ -15,12 +16,12 @@ export const ZX8081_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 export type Zx8081WasmV2ExportFunction = (...args: number[]) => number;
 
 export type Zx8081WasmV2Exports = WebAssembly.Exports &
-  ConditionCoreExports & {
+  ConditionCoreExports & Z80HistoryCoreExports & {
     memory: WebAssembly.Memory;
   } & {
     [Name in Exclude<
       (typeof zx8081WasmV2RequiredExports)[number],
-      "memory" | (typeof CONDITION_CORE_EXPORTS)[number]
+      "memory" | (typeof CONDITION_CORE_EXPORTS)[number] | (typeof Z80_HISTORY_CORE_EXPORTS)[number]
     >]: Zx8081WasmV2ExportFunction;
   };
 
@@ -172,7 +173,9 @@ export const zx8081WasmV2RequiredExports = [
   "zx8081WriteMemory",
   "zx8081WritePort",
   // --- Last: the breakpoint condition evaluator, identical in every Z80 core
-  ...CONDITION_CORE_EXPORTS
+  ...CONDITION_CORE_EXPORTS,
+  // --- The execution-history recorder, identical in every core that records history
+  ...Z80_HISTORY_CORE_EXPORTS
 ] as const;
 
 let cachedModule: WebAssembly.Module | undefined;

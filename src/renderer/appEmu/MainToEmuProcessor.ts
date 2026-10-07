@@ -1089,6 +1089,14 @@ class EmuMessageProcessor {
   }
 
   /**
+   * The outermost interrupt service spans of the held history records (the viewer folds them).
+   */
+  getHistoryServiceSpans() {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.getHistoryServiceSpans() : undefined;
+  }
+
+  /**
    * Empties the execution-history ring.
    */
   clearHistory() {

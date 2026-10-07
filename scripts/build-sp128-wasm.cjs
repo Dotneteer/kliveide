@@ -10,6 +10,7 @@ const {
   stampWasmLayout
 } = require("./wasm-layout.cjs");
 const { RZX_VOLATILE_SYMBOLS, rzxExports } = require("./rzx-core-exports.cjs");
+const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -28,7 +29,9 @@ const SP128_VOLATILE_SYMBOLS = [
   "z80AccessLogCount",
   "z80AccessLogOverflows",
   // --- An RZX session in progress (`zx-spectrum-rzx.c`)
-  ...RZX_VOLATILE_SYMBOLS
+  ...RZX_VOLATILE_SYMBOLS,
+  // --- The execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN)
+  ...Z80_HISTORY_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -59,6 +62,8 @@ const productionExports = [
   "condEvaluateValue",
   "condSetEnv",
   "condPeek",
+  // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
+  ...Z80_HISTORY_EXPORTS,
   "memory",
   "sp128MemoryPtr",
   "sp128RamPtr",
@@ -318,7 +323,8 @@ const buildModes = {
     exports: productionExports,
     sources: [source],
     // --- 9 MB since the Scorpion ZS-256 (256K RAM, the service ROM) joined the core
-    initialMemory: 9 * 1024 * 1024
+    // --- 13 MB: the 4 MB execution-history ring (EXECUTION_HISTORY_ALL_CORES_PLAN D2, D3)
+    initialMemory: 13 * 1024 * 1024
   }
 };
 

@@ -47,12 +47,15 @@
 #define Z88_KEYBOARD_LINES 8u
 
 /* The linear memory the build script reserves (Z88_WASM_MEMORY_BYTES in build-z88-wasm.cjs) */
-#define Z88_WASM_LINEAR_MEMORY (8u * 1024u * 1024u)
+#define Z88_WASM_LINEAR_MEMORY (12u * 1024u * 1024u)
+/* The execution-history ring: 65,536 records of 64 bytes (EXECUTION_HISTORY_ALL_CORES_PLAN D2) */
+#define Z88_WASM_HISTORY_RING (65536u * 64u)
 /* Headroom for the stack, the CPU state and the machine's small variables */
 #define Z88_WASM_RESERVED (512u * 1024u)
 
 _Static_assert(
-  Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + 0x20000u + Z88_WASM_RESERVED <=
+  Z88_MEMORY_SIZE + Z88_PIXEL_BUFFER_WORDS * 4u + Z88_AUDIO_SAMPLE_CAPACITY * 16u + 0x20000u + Z88_WASM_HISTORY_RING +
+      Z88_WASM_RESERVED <=
     Z88_WASM_LINEAR_MEMORY,
   "The Z88 buffers no longer fit the WASM linear memory; raise Z88_WASM_MEMORY_BYTES with a reason");
 
@@ -121,6 +124,9 @@ static inline void z88BusNewInstruction(void);
 /* Operand bytes are read as `Z80Cpu.fetchCodeByte` reads them: timed, but not recorded */
 #define Z80_FETCH_CODE_BYTE(address) z88FetchCodeByte((uint16_t)(address))
 #define Z80_TACT_PLUS_N(value) z88CpuTactPlusN((uint32_t)(value))
+/* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
+   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 4) */
+#include "../../../../z80/wasm/z80-history.h"
 #include "../../../../z80/wasm/z80.c"
 
 // -----------------------------------------------------------------------------
@@ -414,3 +420,35 @@ static uint32_t condZ88PeekPartition(int32_t partition, uint32_t address) {
 #define COND_PEEK(address) ((uint32_t)z88MemoryPeek((uint16_t)((address) & 0xffffu)))
 #define COND_PEEK_PARTITION(partition, address) condZ88PeekPartition(partition, address)
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 4): the shared recorder,
+// with this machine's side-effect-free peek (`z88MemoryPeek`), its frame position in T-states and
+// its context. `z88ExecuteUntilStop` loops the CPU in C, so the debugger's fast path records too
+// (D9). A snoozed CPU runs `z80SnoozeCycle`, not a CPU cycle, and a CPU in coma runs nothing: both
+// leave a gap in the history, which the frame numbers show (trap T8).
+//
+// The context (`z88Context.ts` decodes it):
+//   0-3  SR0-SR3, the segment registers
+//   4-11 the bank behind each 8K page (`z88PageBank`), which covers the split segment 0
+//   12   COM.RAMS (bit 2): bank $20 rather than $00 at $0000-$1FFF
+// The Z88's `getPartition` names no partition yet (the breakpoint conditions' `page()` says the same),
+// so its decoder names none either (D4).
+// -----------------------------------------------------------------------------
+
+static inline void z88HistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  for (uint32_t i = 0u; i < 4u; i++) out[i] = z88Sr[i];
+  for (uint32_t i = 0u; i < 8u; i++) out[4u + i] = z88PageBank[i];
+  out[12] = (uint8_t)(z88Com & Z88_COM_RAMS);
+  out[13] = 0u;
+  out[14] = 0u;
+  out[15] = 0u;
+}
+
+#define Z80_HISTORY_CAPACITY 65536u
+#define Z80_HISTORY_PEEK(address) z88MemoryPeek((uint16_t)((address) & 0xffffu))
+#define Z80_HISTORY_CONTEXT(kind, out16) z88HistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() z88Frames
+#define Z80_HISTORY_FRAME_TACT() z88FrameTacts
+#include "../../../../z80/wasm/z80-history.c"

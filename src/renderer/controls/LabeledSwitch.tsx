@@ -1,6 +1,6 @@
 import styles from "./LabeledSwitch.module.scss";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Switch from "react-switch";
 import { TooltipFactory, useTooltipRef } from "./Tooltip";
 import { useTheme } from "@renderer/theming/ThemeProvider";
@@ -16,6 +16,8 @@ type Props = {
 export const LabeledSwitch = ({ label, title, value, clicked }: Props) => {
   const ref = useTooltipRef();
   const [switchState, setSwitchState] = useState(value);
+  // --- Follow the owner's value when it changes (the Execution History's per-machine fold choice)
+  useEffect(() => setSwitchState(value), [value]);
   const themeSrv = useTheme();
   const onColor = themeSrv.getThemeProperty("--bgcolor-switch-on");
   const onHandleColor = themeSrv.getThemeProperty("--color-switch-on");

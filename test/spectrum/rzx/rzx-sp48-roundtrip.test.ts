@@ -9,6 +9,7 @@ import { parseRzxFile } from "@common/spectrum/rzx/rzxFile";
 import { writeRzxFile } from "@common/spectrum/rzx/rzxWriter";
 import { rzxSegments } from "@common/spectrum/rzx/rzxSegments";
 import type { RzxFrame, RzxInputBlock } from "@common/spectrum/rzx/rzxModel";
+import { HistoryKind } from "@common/history/historyRecord";
 import { createSp48Session, type Sp48TestSession } from "../../harness/sp48";
 
 /*
@@ -88,8 +89,9 @@ function finish(s: Sp48TestSession, samples: Map<number, string>, start: number)
 }
 
 /** Plays a recording on a fresh machine, comparing its samples */
-async function replay(rec: Recording, holdKeys: string[] = []) {
+async function replay(rec: Recording, holdKeys: string[] = [], recordHistory = false) {
   const s = await createSp48Session();
+  s.recordHistory(recordHistory);
   s.keyDown(...holdKeys);
   s.playRzx(rec.bytes);
   const seen = new Map<number, string>();
@@ -235,6 +237,21 @@ describe("RZX round trip on the 48K (the determinism proof)", () => {
     expect(frames.some((f) => f.fetchCount <= 4)).toBe(true);
     expect(frames.filter((f) => f.fetchCount > 4).length).toBe(retriggerRec.frames);
     expectSameRun(retriggerRec, await replay(retriggerRec, ["Space"]));
+  }, 120_000);
+
+  /*
+   * Playback records execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D8, T9): a desync
+   * stop is where "how did I get here?" matters. The recorder only reads the CPU, so it cannot disturb
+   * the replaced IN values or the fetch count that places the interrupts.
+   */
+  it("plays back identically while recording execution history, and records the playback (T9)", async () => {
+    const run = await replay(retriggerRec, ["Space"], true);
+    expectSameRun(retriggerRec, run);
+    const records = run.s.history();
+    expect(records.length).toBe(run.s.historyInfo().capacity);
+    expect(records.some((r) => r.kind === HistoryKind.Int)).toBe(true);
+    expect(records.some((r) => r.kind === HistoryKind.Halt)).toBe(true);
+    expect(records.at(-1)!.frame).toBeGreaterThan(0);
   }, 120_000);
 
   it("pauses at the frame that lacks an IN", async () => {

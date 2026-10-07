@@ -31,7 +31,10 @@ const RET_ED = new Set([0x45, 0x4d, 0x55, 0x5d, 0x65, 0x6d, 0x75, 0x7d]);
  * @param record The record
  * @param nextPc The PC of the next record (or the live PC, for the newest); decides "taken"
  */
-export function classifyFlow(record: Pick<HistoryRecord, "kind" | "bytes" | "regs">, nextPc?: number): FlowInfo {
+export function classifyFlow(
+  record: Pick<HistoryRecord, "kind" | "bytes"> & { regs: Pick<HistoryRecord["regs"], "pc"> },
+  nextPc?: number
+): FlowInfo {
   switch (record.kind) {
     case HistoryKind.Int:
       return { kind: "int", conditional: false };

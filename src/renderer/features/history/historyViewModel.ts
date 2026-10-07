@@ -1,5 +1,6 @@
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { HistoryRecord } from "@common/history/historyRecord";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 
 /*
  * The Execution History document's model (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6, §6.3):
@@ -167,6 +168,124 @@ export function missingHistoryPages(state: HistoryViewState, from: number, to: n
     reads.push([start, end - start + 1]);
   }
   return reads;
+}
+
+// ------------------------------------------------------------------------------------------------
+// Folded interrupt service (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10)
+
+/** The machines whose interrupt service is folded until the user says otherwise (D10) */
+const FOLD_BY_DEFAULT = new Set(["zx80", "zx81"]);
+
+/** Whether a machine folds its interrupt service when the user has not chosen */
+export function foldsServiceByDefault(machineId: string | undefined): boolean {
+  return !!machineId && FOLD_BY_DEFAULT.has(machineId);
+}
+
+type PreferenceStorage = Pick<Storage, "getItem" | "setItem">;
+
+const FOLD_KEY = "klive.executionHistory.foldService.";
+
+function defaultStorage(): PreferenceStorage | undefined {
+  try {
+    return globalThis.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Whether to fold a machine's interrupt service: the user's last choice for it, else its default */
+export function readFoldPreference(machineId: string | undefined, storage = defaultStorage()): boolean {
+  try {
+    const stored = machineId ? storage?.getItem(FOLD_KEY + machineId) : undefined;
+    if (stored === "1" || stored === "0") return stored === "1";
+  } catch {
+    // --- No storage: the default
+  }
+  return foldsServiceByDefault(machineId);
+}
+
+/** Remembers the user's choice for a machine */
+export function writeFoldPreference(machineId: string | undefined, fold: boolean, storage = defaultStorage()): void {
+  if (!machineId) return;
+  try {
+    storage?.setItem(FOLD_KEY + machineId, fold ? "1" : "0");
+  } catch {
+    // --- No storage: the choice lasts as long as the document
+  }
+}
+
+/** How rows map to sequence numbers */
+export type HistoryRowMap = {
+  /** Rows in the list */
+  count: number;
+  /** The sequence number a row shows: a folded service's row shows its INT or NMI record */
+  sequenceAt(row: number): number | undefined;
+  /** The row that shows a sequence number (a folded record: its service's row), or -1 */
+  rowOf(sequence: number): number;
+  /** The folded service whose row a sequence number starts, if any */
+  foldedAt(sequence: number): HistoryServiceSpan | undefined;
+};
+
+/**
+ * The rows of the held records with every service span folded into the row of its INT or NMI
+ * record, except those the user expanded. Step numbers stay the records' own (`historyStepOf`), so
+ * they run on across a folded row.
+ * @param info What the ring holds
+ * @param spans The ring's outermost service spans, oldest first (`findServiceSpans`)
+ * @param expanded The first sequences of the spans the user expanded
+ */
+export function foldedHistoryRows(
+  info: ExecutionHistoryInfo | undefined,
+  spans: readonly HistoryServiceSpan[],
+  expanded: ReadonlySet<number> = new Set()
+): HistoryRowMap {
+  if (!info || info.count === 0) {
+    return { count: 0, sequenceAt: () => undefined, rowOf: () => -1, foldedAt: () => undefined };
+  }
+  const oldest = info.oldestSequence;
+  const newest = info.newestSequence;
+  const folded = spans.filter((s) => s.first >= oldest && s.last <= newest && s.last > s.first && !expanded.has(s.first));
+  // --- The row of each folded span, and how many records the spans before it hide
+  const rowOfFirst: number[] = [];
+  let hidden = 0;
+  for (const span of folded) {
+    rowOfFirst.push(span.first - oldest - hidden);
+    hidden += span.last - span.first;
+  }
+  /** The last folded span whose key is at or below a value, or -1 */
+  const lastAtOrBelow = (keys: (k: number) => number, value: number) => {
+    let lo = 0;
+    let hi = folded.length - 1;
+    let found = -1;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (keys(mid) <= value) {
+        found = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return found;
+  };
+  const byFirst = new Map(folded.map((s) => [s.first, s]));
+  const count = info.count - hidden;
+  return {
+    count,
+    sequenceAt(row) {
+      if (row < 0 || row >= count) return undefined;
+      const k = lastAtOrBelow((i) => rowOfFirst[i], row);
+      if (k < 0) return oldest + row;
+      return row === rowOfFirst[k] ? folded[k].first : folded[k].last + (row - rowOfFirst[k]);
+    },
+    rowOf(sequence) {
+      if (sequence < oldest || sequence > newest) return -1;
+      const k = lastAtOrBelow((i) => folded[i].first, sequence);
+      if (k < 0) return sequence - oldest;
+      return sequence <= folded[k].last ? rowOfFirst[k] : rowOfFirst[k] + (sequence - folded[k].last);
+    },
+    foldedAt: (sequence) => byFirst.get(sequence)
+  };
 }
 
 // ------------------------------------------------------------------------------------------------

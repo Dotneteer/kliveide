@@ -1,9 +1,16 @@
 import type { HistoryRecord } from "../historyRecord";
+import { describeSp128Context, sp128PartitionFor } from "./sp128Context";
+import { describeSp48Context, sp48PartitionFor } from "./sp48Context";
+import { describeSpP3eContext, spp3ePartitionFor } from "./spp3eContext";
+import { describeTimexContext, timexPartitionFor } from "./timexContext";
+import { describeZ88Context, z88PartitionFor } from "./z88Context";
+import { describeZx8081Context, zx8081PartitionFor } from "./zx8081Context";
 import { describeZxNextContext, describeZxNextDmaHold, zxNextPartitionFor } from "./zxnextContext";
 
 /*
  * The per-machine context decoders (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D4, D14). A machine
- * that records history names its decoder by `historyMachineId`; G4.2 adds one entry per core here.
+ * that records history names its decoder by `historyMachineId` - its machine id. G4.2
+ * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`) added one per core; models share their machine's.
  */
 
 export type HistoryContextDecoder = {
@@ -19,7 +26,20 @@ export type HistoryContextDecoder = {
   frameTactsPerBaseT: number;
 };
 
+/** A machine whose frame position counts CPU T-states */
+function tStates(partitionFor: HistoryContextDecoder["partitionFor"], describe: HistoryContextDecoder["describe"]): HistoryContextDecoder {
+  return { partitionFor, describe, frameTactUnit: "T-states", frameTactsPerBaseT: 1 };
+}
+
 const decoders: Record<string, HistoryContextDecoder> = {
+  sp48: tStates(sp48PartitionFor, describeSp48Context),
+  timex: tStates(timexPartitionFor, describeTimexContext),
+  sp128: tStates(sp128PartitionFor, describeSp128Context),
+  scorpion: tStates(sp128PartitionFor, describeSp128Context),
+  spp3e: tStates(spp3ePartitionFor, describeSpP3eContext),
+  z88: tStates(z88PartitionFor, describeZ88Context),
+  zx80: tStates(zx8081PartitionFor, describeZx8081Context),
+  zx81: tStates(zx8081PartitionFor, describeZx8081Context),
   zxnext: {
     partitionFor: zxNextPartitionFor,
     describe: describeZxNextContext,

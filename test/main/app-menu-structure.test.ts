@@ -205,9 +205,12 @@ describe("the application menu", () => {
     expect(labels(submenu(machine, "ZX Spectrum Next"))[0]).toMatch(/^F1 /);
     expect(labels(machine)).not.toContain("Layers");
     expect(labels(menu(template, "Debug"))).toContain("Step Copper");
-    // --- Every machine with MF_EXEC_HISTORY (EXECUTION_HISTORY_VIEWER_PLAN §4.5): the Next today
+    // --- Every machine with MF_EXEC_HISTORY (EXECUTION_HISTORY_VIEWER_PLAN §4.5): every Z80 machine
+    // --- (EXECUTION_HISTORY_ALL_CORES_PLAN), not the C64
     expect(labels(menu(template, "Debug"))).toContain("Execution History");
-    expect(labels(menu(buildMenu("sp48"), "Debug"))).not.toContain("Execution History");
+    expect(labels(menu(buildMenu("sp48"), "Debug"))).toContain("Execution History");
+    expect(labels(menu(buildMenu("zx81"), "Debug"))).toContain("Execution History");
+    expect(labels(menu(buildMenu("c64"), "Debug"))).not.toContain("Execution History");
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",

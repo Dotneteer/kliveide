@@ -75,6 +75,7 @@ void timexHardReset(uint32_t model) {
   /* 64-column BRIGHT: the TC models (WoS FAQ), not the TS2068 (its manual, 5.2.3) */
   sp48ScldHiresBright = timexModel == TIMEX_MODEL_TS2068 ? 0u : 1u;
   sp48HardReset(0u, timexModel == TIMEX_MODEL_TS2068 ? 1u : 0u);
+  sp48HistoryModel = (uint8_t)timexModel;
   if (timexModel == TIMEX_MODEL_TS2068) {
     initializeTimingTables(&timexTs2068Config);
     sp48Reset();

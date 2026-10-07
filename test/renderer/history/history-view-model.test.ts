@@ -3,6 +3,10 @@ import { describe, expect, it } from "vitest";
 import { HistoryKind, type HistoryRecord } from "@common/history/historyRecord";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import {
+  foldedHistoryRows,
+  foldsServiceByDefault,
+  readFoldPreference,
+  writeFoldPreference,
   HISTORY_PAGE_SIZE,
   historyCountText,
   historyEmptyMessage,
@@ -201,5 +205,58 @@ describe("history view model: empty states", () => {
     expect(historyEmptyMessage({ supported: true, running: false, debugging: true }, info({ count: 0 }))).toBe("No history yet");
     expect(historyEmptyMessage({ supported: true, running: false, debugging: true }, info())).toBeUndefined();
     expect(historyCountText(info({ count: 12345 }))).toBe("12,345 of 131,072 recorded");
+  });
+});
+
+describe("folded interrupt service rows (EXECUTION_HISTORY_ALL_CORES_PLAN D10)", () => {
+  // --- 100 records, 1..100; spans 10-14 (5 records) and 50-59 (10 records)
+  const held = info({ count: 100, newestSequence: 100 });
+  const spans = [
+    { first: 10, last: 14, kind: HistoryKind.Int, instructions: 4 },
+    { first: 50, last: 59, kind: HistoryKind.Nmi, instructions: 9 }
+  ] as const;
+
+  it("folds each span into the row of its INT or NMI record", () => {
+    const rows = foldedHistoryRows(held, [...spans]);
+    expect(rows.count).toBe(100 - 4 - 9);
+    expect([0, 8, 9, 10, 11, 44, 45, 46, rows.count - 1].map((row) => rows.sequenceAt(row))).toEqual([
+      1, 9, 10, 15, 16, 49, 50, 60, 100
+    ]);
+    expect([1, 10, 12, 14, 15, 50, 55, 60, 100].map((s) => rows.rowOf(s))).toEqual([0, 9, 9, 9, 10, 45, 45, 46, 86]);
+    expect(rows.foldedAt(10)?.instructions).toBe(4);
+    expect(rows.foldedAt(11)).toBeUndefined();
+    expect(rows.sequenceAt(rows.count)).toBeUndefined();
+  });
+
+  it("round-trips every row", () => {
+    const rows = foldedHistoryRows(held, [...spans], new Set([50]));
+    expect(rows.count).toBe(100 - 4);
+    for (let row = 0; row < rows.count; row++) expect(rows.rowOf(rows.sequenceAt(row)!)).toBe(row);
+    expect(rows.foldedAt(50)).toBeUndefined();
+  });
+
+  it("ignores spans partly out of the ring", () => {
+    const rows = foldedHistoryRows(info({ count: 90, newestSequence: 100 }), [...spans]);
+    expect(rows.count).toBe(90 - 9);
+    expect(rows.sequenceAt(0)).toBe(11);
+  });
+
+  it("folds by default on the ZX80/81 only, and remembers the choice per machine", () => {
+    const store = new Map<string, string>();
+    const storage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+    expect(foldsServiceByDefault("zx81")).toBe(true);
+    expect(foldsServiceByDefault("zx80")).toBe(true);
+    expect(foldsServiceByDefault("sp48")).toBe(false);
+    expect(readFoldPreference("sp48", storage)).toBe(false);
+    writeFoldPreference("sp48", true, storage);
+    writeFoldPreference("zx81", false, storage);
+    expect([readFoldPreference("sp48", storage), readFoldPreference("zx81", storage), readFoldPreference("zx80", storage)]).toEqual([
+      true,
+      false,
+      true
+    ]);
+    const broken = { getItem: () => { throw new Error("no"); }, setItem: () => { throw new Error("no"); } };
+    expect(readFoldPreference("zx81", broken)).toBe(true);
+    expect(() => writeFoldPreference("zx81", false, broken)).not.toThrow();
   });
 });

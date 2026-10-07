@@ -18,6 +18,7 @@ import {
 import { classifyFlow, type FlowKind } from "@common/history/flowKind";
 import { formatRegisterDiff, registerDiff } from "@common/history/registerDiff";
 import { formatHistoryRow, historyRowCells, isSeparatorRecord } from "@common/history/historyRow";
+import { serviceSpanText, type HistoryServiceSpan } from "@common/history/serviceSpans";
 import { integerSymbolsOf } from "@common/utils/breakpoint-condition/integer-symbols";
 import { SmallIconButton } from "@controls/IconButton";
 import { LabeledSwitch } from "@controls/LabeledSwitch";
@@ -52,6 +53,7 @@ import {
   historyLabelLookup
 } from "@renderer/features/history/historyDisassembly";
 import {
+  foldedHistoryRows,
   historyCountText,
   historyEmptyMessage,
   historyRecordAt,
@@ -62,7 +64,9 @@ import {
   initialHistoryViewState,
   missingHistoryPages,
   parseHistoryFilter,
-  reduceHistoryView
+  readFoldPreference,
+  reduceHistoryView,
+  writeFoldPreference
 } from "@renderer/features/history/historyViewModel";
 import { useEmuStateListener } from "../useStateRefresh";
 import styles from "./ExecutionHistoryPanel.module.scss";
@@ -121,6 +125,15 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const [liveRegs, setLiveRegs] = useState<HistoryRegisters>();
   const [disassemblyVersion, setDisassemblyVersion] = useState(0);
   const [filteredSequences, setFilteredSequences] = useState<number[]>();
+  // --- Folded interrupt service (EXECUTION_HISTORY_ALL_CORES_PLAN D10): the spans of the last stop,
+  // --- the user's choice per machine, and the spans they opened
+  const [spans, setSpans] = useState<HistoryServiceSpan[]>([]);
+  const [foldService, setFoldService] = useState(() => readFoldPreference(machineId));
+  const [expanded, setExpanded] = useState<ReadonlySet<number>>(new Set());
+  useEffect(() => {
+    setFoldService(readFoldPreference(machineId));
+    setExpanded(new Set());
+  }, [machineId]);
   const [menuState, menuApi] = useContextMenuState();
   const listApi = useRef<VirtualizedListApi>(null);
   const loading = useRef(new Set<string>());
@@ -151,6 +164,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
       if (controllerState === MachineControllerState.Running) return;
       const newInfo = await emuApi.getHistoryInfo();
       dispatch({ type: "infoLoaded", info: newInfo });
+      setSpans(newInfo?.count ? ((await emuApi.getHistoryServiceSpans()) ?? []) : []);
       if (newInfo?.count) {
         const cpu = (await emuApi.getCpuState()) as Z80CpuState;
         setLiveRegs({
@@ -264,18 +278,40 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     };
   }, [filter, info, readRecords, disassembly]);
 
-  // --- The rows: every held sequence, or the filter's matches
-  const rowCount = filteredSequences ? filteredSequences.length : (info?.count ?? 0);
+  // --- The rows: every held sequence with interrupt service folded (D10), or the filter's matches
+  // --- (a filter shows every match, folded or not)
+  useEffect(() => setExpanded(new Set()), [info?.generation]);
+  const folded = useMemo(
+    () => (foldService && !filteredSequences ? foldedHistoryRows(info, spans, expanded) : undefined),
+    [foldService, filteredSequences, info, spans, expanded]
+  );
+  const spanByFirst = useMemo(() => new Map(spans.map((span) => [span.first, span])), [spans]);
+  const rowCount = filteredSequences ? filteredSequences.length : (folded?.count ?? info?.count ?? 0);
   const rowItems = useMemo(() => new Array<number>(rowCount).fill(0), [rowCount]);
   const sequenceOfRow = useCallback(
-    (row: number) => (filteredSequences ? filteredSequences[row] : historySequenceAt(state, row)),
-    [filteredSequences, state]
+    (row: number) =>
+      filteredSequences
+        ? filteredSequences[row]
+        : folded
+          ? folded.sequenceAt(row)
+          : historySequenceAt(state, row),
+    [filteredSequences, folded, state]
   );
   const rowOfSequence = useCallback(
     (sequence: number) =>
-      filteredSequences ? filteredSequences.indexOf(sequence) : historyRowOf(state, sequence),
-    [filteredSequences, state]
+      filteredSequences
+        ? filteredSequences.indexOf(sequence)
+        : folded
+          ? folded.rowOf(sequence)
+          : historyRowOf(state, sequence),
+    [filteredSequences, folded, state]
   );
+  const toggleSpan = (first: number) =>
+    setExpanded((open) => {
+      const next = new Set(open);
+      if (!next.delete(first)) next.add(first);
+      return next;
+    });
 
   // --- Follow the newest record after every stop. The list may mount after this effect (it replaces
   // --- an empty state), so `apiLoaded` scrolls too, and the scroll waits a frame for the layout.
@@ -449,6 +485,16 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
         clicked={(follow) => dispatch({ type: "followChanged", follow })}
       />
       <ToolbarSeparator small={true} />
+      <LabeledSwitch
+        value={foldService}
+        label="Fold interrupts:"
+        title="Show each interrupt and its service routine as one row you can open"
+        clicked={(fold) => {
+          setFoldService(fold);
+          writeFoldPreference(machineId, fold);
+        }}
+      />
+      <ToolbarSeparator small={true} />
       <SmallIconButton
         iconName="clear-all"
         title="Clear the execution history"
@@ -494,6 +540,14 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
     const newFrame = previous !== undefined && previous.frame !== record.frame;
     const flow = classifyFlow(record, afterOf(record)?.pc);
     const selected = state.selected === sequence;
+    // --- An INT or NMI that starts a service span: folded, or opened by the user
+    const span = folded && !filteredSequences ? spanByFirst.get(sequence) : undefined;
+    const isFolded = !!span && !!folded?.foldedAt(sequence);
+    const separatorText = span
+      ? isFolded
+        ? serviceSpanText(span, contextDecoder?.frameTactsPerBaseT)
+        : cells.instruction
+      : cells.instruction;
     return (
       <div
         className={classnames(styles.row, {
@@ -514,7 +568,23 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
         <span className={styles.step}>{cells.step}</span>
         <span className={styles.time}>{cells.time}</span>
         {cells.separator ? (
-          <span className={styles.separator}>{cells.instruction}</span>
+          <span className={styles.separator}>
+            {span && (
+              <span
+                className={styles.fold}
+                role="button"
+                aria-expanded={!isFolded}
+                title={isFolded ? "Show the service's instructions" : "Fold the service into this row"}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSpan(span.first);
+                }}
+              >
+                {isFolded ? "▸" : "▾"}
+              </span>
+            )}
+            {separatorText}
+          </span>
         ) : (
           <>
             <span className={styles.address}>

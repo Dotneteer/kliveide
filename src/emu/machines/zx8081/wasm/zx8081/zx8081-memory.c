@@ -11,6 +11,13 @@
 /* Set by Z80_BEFORE_OPCODE_FETCH: the next memory read is the opcode read of an unprefixed M1 */
 static uint8_t zx8081M1Fetch;
 
+/*
+ * Whether the last opcode read of an unprefixed M1 was a NOP the ULA forced onto the bus: the
+ * execution-history recorder merges those into runs (`Z80_HISTORY_FORCED_NOP`, zx8081.c). Written on
+ * every such read, so it is never stale; debug bookkeeping, volatile.
+ */
+static uint8_t zx8081HistoryForcedNop;
+
 /* The display byte the ULA latched at an M1 above 32K, waiting for the refresh that draws it */
 static uint8_t zx8081LatchedVideoByte;
 static uint8_t zx8081HasLatchedVideoByte;
@@ -33,6 +40,7 @@ static uint8_t zx8081CpuReadMemory(uint16_t address) {
   uint8_t value = zx8081PeekMemory(address);
   if (zx8081M1Fetch) {
     zx8081M1Fetch = 0u;
+    zx8081HistoryForcedNop = 0u;
     /*
      * The 64K model: an opcode fetch above 32K reads the lower 32K, as the RAM packs that keep the
      * display working do - the ROM runs the display file (below 32K) through its upper echo, which a
@@ -46,6 +54,7 @@ static uint8_t zx8081CpuReadMemory(uint16_t address) {
     if ((address & 0x8000u) && address >= zx8081RamBase && !(value & 0x40u)) {
       zx8081LatchedVideoByte = value;
       zx8081HasLatchedVideoByte = 1u;
+      zx8081HistoryForcedNop = 1u;
       value = 0x00u;
     }
   }

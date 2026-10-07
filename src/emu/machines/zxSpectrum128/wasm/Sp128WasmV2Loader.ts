@@ -1,4 +1,5 @@
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 import { WASM_ACCESS_LOG_CAPACITY } from "../../wasmAccessLog";
 import { rzxCoreExportNames, type RzxCoreExports } from "../../zxSpectrum/rzx/rzxCoreBridge";
 
@@ -10,7 +11,7 @@ export const SP128_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Sp128WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & RzxCoreExports<"sp128"> & {
+export type Sp128WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & RzxCoreExports<"sp128"> & {
   memory: WebAssembly.Memory;
   sp128MemoryPtr: Sp128WasmV2ExportFunction;
   sp128RamPtr: Sp128WasmV2ExportFunction;
@@ -425,7 +426,9 @@ const requiredV2Exports = [
   ...rzxCoreExportNames("sp128"),
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
-  ...CONDITION_CORE_EXPORTS
+  ...CONDITION_CORE_EXPORTS,
+  // --- The execution-history recorder, identical in every core that records history
+  ...Z80_HISTORY_CORE_EXPORTS
 ] as const;
 
 export function resetSp128WasmV2ModuleCache(): void {

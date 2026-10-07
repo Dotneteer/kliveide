@@ -11,7 +11,9 @@ there*: it lists the last instructions the CPU executed, newest at the bottom, e
 registers it changed, the bytes it ran and the source line it came from.
 
 <Callout type="info">
-The Execution History is available on the **ZX Spectrum Next**. The other machines will follow.
+The Execution History is available on every Z80 machine: the ZX Spectrum 48K and 16K, 128K,
+Pentagon 128, +2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex TC2048, TC2068 and TS2068,
+the Cambridge Z88, and the ZX80 and ZX81. The Commodore 64 does not record history.
 </Callout>
 
 ## Recording
@@ -20,7 +22,9 @@ History is recorded **only in debug sessions**: after **Start with Debugging** a
 A plain **Start** records nothing and costs nothing. The header says whether the machine is
 recording now.
 
-Klive keeps the last **131,072** records (about two frames at 28 MHz, about fifteen at 3.5 MHz).
+Klive keeps the last **131,072** records on the Next (about two frames at 28 MHz, about fifteen at
+3.5 MHz) and the last **65,536** on the other machines (about seven or eight frames of a Spectrum
+program).
 The history runs on across pauses, steps and continues; it starts over when the machine starts from
 Stopped, after a reset, and after a machine state, snapshot or checkpoint is restored. **Clear**
 in the header empties it on demand.
@@ -41,7 +45,7 @@ history changes far faster than any view could follow.
 | Column | Shows |
 |---|---|
 | **Step** | `−1` for the newest record, `−2` for the one before, and so on. |
-| **Time** | The position in the frame when the instruction started (on the Next, in 28 MHz ticks). A hairline marks the first record of each new frame. |
+| **Time** | The position in the frame when the instruction started, in T-states (on the Next, in 28 MHz ticks). A hairline marks the first record of each new frame. |
 | **Address** | The memory bank (partition) and the address of the instruction, from the paging *at the time it ran*. |
 | **Bytes** | The bytes the CPU executed. They are captured as the instruction runs, so self-modifying code shows what really ran, not what is in memory now. |
 | **Instruction** | The disassembly, with labels from the current compilation. An arrow marks calls, returns and taken jumps. |
@@ -54,6 +58,9 @@ Some records are not instructions:
   is the next row.
 - An **NMI** reads `— NMI —`.
 - A CPU waiting in **HALT** is one row with a count, `HALT ×1,203`, however long it waited.
+- On the **ZX80 and ZX81**, the CPU "runs" the display file to draw the picture, and the ULA turns
+  each character into a NOP. One display line is one row with a count, `Display NOPs ×32`, not 32
+  rows.
 - When the **DMA** held the bus, the row says for how long and what it copied:
   `— DMA held the bus for 3,072 T ($4000 → $C000, 0 left) —`.
 
@@ -61,12 +68,33 @@ Some records are not instructions:
 
 Click a row to select it. The pane beside the list shows the full register set **before** and
 **after** that instruction, with the changed values marked, the frame and position, and the memory
-map at the time (the bank in each 8K slot, the paging ports, DivMMC and the CPU speed).
+map at the time: the bank in each slot and the paging ports (on the Next also DivMMC and the CPU
+speed; on the Timex 2068s the source of each 8K chunk; on the Z88 the segment registers and the
+bank behind each 8K page).
 
 Double-click a row, or press **Enter**, to go to its source line; a row with no source shows the
 address in the disassembly. **↑** and **↓** move the selection. The context menu also offers
 **Show in disassembly**, **Show in memory**, **Copy row**, **Copy rows as text** (from the selected
 row to the newest) and **Set breakpoint here**.
+
+## Folding interrupts
+
+Interrupt routines can bury the program you are debugging: a ZX81 in SLOW mode takes an NMI on
+every blank scan line and draws the whole picture from one of them. Switch on **Fold interrupts** in
+the header, and each interrupt, with every instruction of its service routine, becomes one row:
+
+```
+▸ NMI service, 5 instructions, 32 T
+```
+
+![The Execution History of a ZX81 drawing its picture: each display line, its HALT and one folded interrupt service](/images/working-with-ide/execution-history-fold.png)
+
+Click **▸** to open a service and see its instructions; **▾** folds it again. Nothing disappears
+for good, and the step numbers run on across a folded row, so `−120` is the same instruction whether
+its service is folded or not. A service still running at the newest record is not folded.
+
+The switch is on by default on the ZX80 and ZX81 and off on the other machines; Klive remembers
+your choice for each machine. While a filter is active, the list shows every match, folded or not.
 
 ## Filtering
 

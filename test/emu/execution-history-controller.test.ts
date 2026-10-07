@@ -8,7 +8,11 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
 import { decodeHistoryPage, HistoryKind } from "@common/history/historyRecord";
 
+import { historyContextDecoder } from "@common/history/contexts";
 import { createCore } from "../harness/zxnext";
+import { createSp48Session } from "../harness/sp48";
+import { createZ88Session } from "../harness/z88";
+import { createZx81Session } from "../harness/zx81";
 
 /*
  * The controller's half of the execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D8, D9),
@@ -100,6 +104,38 @@ describe("execution history through the machine controller", () => {
     const after = machine.getHistoryInfo()!;
     expect(after.count).toBe(0);
     expect(after.generation).toBe(before.generation + 1);
+    await controller.stop();
+  });
+});
+
+/*
+ * Every other core (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the same controller code, no
+ * machine-specific handler. The 48K's debugger runs instructions from TypeScript; the ZX81's and the
+ * Z88's run them in C (`…ExecuteUntilStop`), which records too.
+ */
+describe.each([
+  ["the ZX Spectrum 48K", "sp48", async () => (await createSp48Session()).machine],
+  ["the ZX81", "zx81", async () => (await createZx81Session()).machine],
+  ["the Cambridge Z88", "z88", async () => (await createZ88Session()).machine]
+] as const)("execution history through the machine controller on %s", (_name, machineId, create) => {
+  it("records in a debug session for the machine's decoder, and not in a plain Run", async () => {
+    const machine = await create();
+    const controller = new MachineController(createAppStore(`test-exec-history-${machineId}`), new ResolvingMessenger(), machine as any);
+    await controller.startDebug();
+    await wait(120);
+    await controller.pause();
+    const info = machine.getHistoryInfo()!;
+    expect(info).toMatchObject({ enabled: true, machineId, capacity: 65536 });
+    expect(info.count).toBeGreaterThan(100);
+    expect(historyContextDecoder(info.machineId)).toBeDefined();
+    const newest = decodeHistoryPage(machine.readHistory(info.newestSequence, 1)!)[0];
+    expect(newest.sequence).toBe(info.newestSequence);
+
+    await controller.stop();
+    await controller.start();
+    await wait(60);
+    await controller.pause();
+    expect(machine.getHistoryInfo()).toMatchObject({ enabled: false, count: 0 });
     await controller.stop();
   });
 });

@@ -149,6 +149,9 @@ static void zx8081IntAck(void);
 #define Z80_REFRESH(address) zx8081Refresh((uint16_t)(address))
 #define Z80_NMI_ACK_WAIT() zx8081NmiAckWait()
 #define Z80_INT_ACK() zx8081IntAck()
+/* The execution-history recorder's hooks; the recorder and this machine's macros for it are at the
+   end of this file (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` Phase 5) */
+#include "../../../../z80/wasm/z80-history.h"
 #include "../../../../z80/wasm/z80.c"
 
 // -----------------------------------------------------------------------------
@@ -424,3 +427,35 @@ uint32_t zx8081GetLastPortIsWrite(void) { return z80GetLastPortIsWrite(); }
 
 #define COND_PEEK(address) ((uint32_t)zx8081PeekMemory((uint16_t)((address) & 0xffffu)))
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` §3, Phase 5): the shared recorder,
+// with this machine's side-effect-free peek, its frame position in T-states and its context.
+// `zx8081ExecuteUntilStop` loops the CPU in C, so the debugger's fast path records too.
+//
+// The CPU "executes" the display file: every M1 above 32K of a byte with bit 6 clear reads a NOP the
+// ULA forced onto the bus (zx8081-memory.c). Those fetches tell the recorder so
+// (`Z80_HISTORY_FORCED_NOP`), and it merges each run into one record per display line (D6, T2).
+//
+// The context (`zx8081Context.ts` decodes it):
+//   0    bits 0-1 the RAM (0 1K, 1 16K, 3 64K), bit 4 the ZX81 ULA (else the ZX80's), bit 5 the 8K
+//        ZX81 ROM (else the 4K ZX80 ROM), bit 6 NTSC
+//   1    bit 0 the ZX81's NMI generator is on (the ROM's SLOW mode while it shows a picture)
+// There is no banking: `getPartition` names no partition, and neither does the decoder (D4).
+// -----------------------------------------------------------------------------
+
+static inline void zx8081HistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  const uint8_t ram = zx8081RamSizeKb >= 64u ? 3u : zx8081RamSizeKb >= 16u ? 1u : 0u;
+  out[0] = (uint8_t)(ram | (zx8081IsZx81 ? 0x10u : 0u) | (zx8081RomIsZx81 ? 0x20u : 0u) | (zx8081Ntsc ? 0x40u : 0u));
+  out[1] = zx8081NmiEnabled ? 0x01u : 0u;
+  for (uint32_t i = 2u; i < 16u; i++) out[i] = 0u;
+}
+
+#define Z80_HISTORY_CAPACITY 65536u
+#define Z80_HISTORY_PEEK(address) zx8081PeekMemory((uint16_t)((address) & 0xffffu))
+#define Z80_HISTORY_CONTEXT(kind, out16) zx8081HistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() zx8081Frames
+#define Z80_HISTORY_FRAME_TACT() zx8081FrameTacts
+#define Z80_HISTORY_FORCED_NOP() zx8081HistoryForcedNop
+#include "../../../../z80/wasm/z80-history.c"

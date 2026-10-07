@@ -1,3 +1,7 @@
+import { WasmHistorySource } from "../history/WasmHistorySource";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import type { AudioSample } from "@emu/abstractions/IAudioDevice";
@@ -78,7 +82,40 @@ export type Sp128WasmV2Diagnostics = {
 /**
  * Full-machine WASM v2 adapter for the ZX Spectrum 128K migration path.
  */
-export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements IRzxMachine {
+export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements IExecutionHistorySource, IRzxMachine {
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the shared recorder in the
+  // core, read through the shared reader; the machine id names the context decoder
+
+  get historyMachineId(): string {
+    return this.machineId;
+  }
+
+  private readonly wasmV2History = new WasmHistorySource(
+    () => this.wasmV2Runtime?.exports,
+    () => this.historyMachineId
+  );
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.wasmV2History.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.wasmV2History.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.wasmV2History.serviceSpans();
+  }
+
+  clearHistory(): void {
+    this.wasmV2History.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.wasmV2History.setEnabled(enabled);
+  }
+
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: Sp128WasmV2Runtime;
   /** The RZX session playing or recording on this machine (`.plans/RZX_PLAN.md` §4.3) */

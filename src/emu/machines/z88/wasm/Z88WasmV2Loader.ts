@@ -7,6 +7,7 @@
  */
 
 import { CONDITION_CORE_EXPORTS, type ConditionCoreExports } from "@emu/machines/conditionStore";
+import { Z80_HISTORY_CORE_EXPORTS, type Z80HistoryCoreExports } from "@emu/machines/history/WasmHistoryReader";
 
 export const Z88_WASM_V2_ARTIFACT_NAME = "cambridge-z88.wasm";
 
@@ -20,10 +21,10 @@ export const Z88_WASM_V2_KEYBOARD_LINE_COUNT = 8;
 
 export type Z88WasmV2ExportFunction = (...args: number[]) => number;
 
-export type Z88WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & {
+export type Z88WasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z80HistoryCoreExports & {
   memory: WebAssembly.Memory;
 } & {
-  [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory" | (typeof CONDITION_CORE_EXPORTS)[number]>]: Z88WasmV2ExportFunction;
+  [Name in Exclude<(typeof z88WasmV2RequiredExports)[number], "memory" | (typeof CONDITION_CORE_EXPORTS)[number] | (typeof Z80_HISTORY_CORE_EXPORTS)[number]>]: Z88WasmV2ExportFunction;
 } & {
   /** The RTC test hooks; in the build's allow-list, not required by the loader */
   z88TestResetRtc?: Z88WasmV2ExportFunction;
@@ -223,7 +224,9 @@ export const z88WasmV2RequiredExports = [
   "z88GetCpuSigInt",
   // --- Last, so a core missing its own exports is reported by those: the breakpoint condition
   // --- evaluator, identical in every Z80 core
-  ...CONDITION_CORE_EXPORTS
+  ...CONDITION_CORE_EXPORTS,
+  // --- The execution-history recorder, identical in every core that records history
+  ...Z80_HISTORY_CORE_EXPORTS
 ] as const;
 
 let cachedModule: WebAssembly.Module | undefined;

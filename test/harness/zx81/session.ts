@@ -1,3 +1,6 @@
+import type { HistoryRecord } from "@common/history/historyRecord";
+import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
+import { historyFromOf, historyInfoOf, historyOf } from "../historySupport";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -323,5 +326,36 @@ export class Zx81TestSession {
       rows.push(row);
     }
     return rows;
+  }
+
+  // ==========================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`): the core's recorder, as the
+  // IDE reads it through `IExecutionHistorySource`
+
+  /** Turns the execution-history recorder on or off, as a debug session does */
+  recordHistory(on = true): this {
+    this.machine.setHistoryEnabled(on);
+    return this;
+  }
+
+  /** Empties the history ring, as the controller does on a start from Stopped or a restore */
+  clearHistory(): this {
+    this.machine.clearHistory();
+    return this;
+  }
+
+  /** What the ring holds: capacity, count, newest and oldest sequence, generation, enabled */
+  historyInfo(): ExecutionHistoryInfo {
+    return historyInfoOf(this.machine);
+  }
+
+  /** The newest `count` records (all held when omitted), oldest first, decoded */
+  history(count?: number): HistoryRecord[] {
+    return historyOf(this.machine, count);
+  }
+
+  /** Records from `fromSequence` on, with the reader's `gone` flag */
+  historyFrom(fromSequence: number, count: number): { records: HistoryRecord[]; gone: boolean } {
+    return historyFromOf(this.machine, fromSequence, count);
   }
 }

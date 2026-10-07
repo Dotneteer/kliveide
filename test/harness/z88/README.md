@@ -69,6 +69,7 @@ Methods returning `this` chain.
 | LCD | `lcdWidth` `lcdHeight` `pixel(x, y)` `screen()` | ABGR words; compare with `Z88_LCD.ON/OFF/GREY/SCREEN_OFF`. The LCD renders every 8th frame. |
 | Audio | `startAudio()` `audio()` | Samples of every completed frame (DC-filtered: level changes show as jumps) |
 | Snapshots | `loadSnapshot(bytes, nowMs?)` `insertedCards()` | Parses and maps a `.z88` file, then `loadSnapshotState`; `nowMs` defaults to the file's stop time (no RTC catch-up). Returns the snapshot, its mapping and the restored TIM0-4. |
+| History | `recordHistory(on)` `clearHistory()` `historyInfo()` `history(count?)` `historyFrom(sequence, count)` | The execution-history recorder (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md`), shared with every harness (`../historySupport.ts`). A snoozed CPU records nothing. |
 | Escape hatch | `s.machine` | Avoid in tests; add a method instead |
 
 ## Rules

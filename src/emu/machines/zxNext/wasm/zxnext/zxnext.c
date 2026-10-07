@@ -1003,14 +1003,12 @@ static inline uint8_t zxnextHistoryEncodePartition(int64_t partition) {
   return partition == INT64_MIN ? (uint8_t)ZXNEXT_HISTORY_NO_PARTITION : (uint8_t)(partition & 0xff);
 }
 
+static void zxnextHistoryUpdateSlot(uint32_t page) {
+  zxnextHistorySlots[page & 0x07u] = zxnextHistoryEncodePartition(zxnextMmuPartitionOfPage(page));
+}
+
 static inline void zxnextHistoryContext(uint32_t kind, uint8_t *out) {
   (void)kind;
-  if (!zxnextHistorySlotsValid) {
-    for (uint32_t slot = 0u; slot < 8u; slot++) {
-      zxnextHistorySlots[slot] = zxnextHistoryEncodePartition(zxnextMmuPartitionOfPage(slot));
-    }
-    zxnextHistorySlotsValid = 1u;
-  }
   for (uint32_t slot = 0u; slot < 8u; slot++) out[slot] = zxnextHistorySlots[slot];
   /* The Multiface and DivMMC overlays change without touching the page tables: never cached */
   if (zxnextMemoryLowOverlayActive()) {

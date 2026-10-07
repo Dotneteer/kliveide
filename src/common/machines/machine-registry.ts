@@ -216,7 +216,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_INJECT_SUPPORT]: true,
-      [MF_ULA]: true
+      [MF_ULA]: true,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     models: [
       {
@@ -264,7 +266,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 2,
-      [MF_BANK]: 8
+      [MF_BANK]: 8,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     // --- The disks are the Pentagon's Beta 128 (the model's `MC_DISK_SUPPORT`; the 128K has none)
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
@@ -290,7 +294,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 4,
-      [MF_BANK]: 8
+      [MF_BANK]: 8,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     // --- +2A/+3 (Amstrad ROMs) and +2E/+3E (+3E ROMs): one core, the ROM set is model config
@@ -323,7 +329,7 @@ export const machineRegistry: MachineInfo[] = [
       [MF_BANK]: 224,
       [MF_ALLOW_CLOCK_MULTIPLIER]: false,
       [MF_ALLOW_SCAN_LINES]: false,
-      // --- The shared execution-history recorder (EXECUTION_HISTORY_VIEWER_PLAN); G4.2 adds the rest
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_VIEWER_PLAN)
       [MF_EXEC_HISTORY]: true
     },
     models: [
@@ -359,7 +365,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_JOYSTICK_SUPPORT]: true,
       [MF_PSG]: true,
       [MF_ROM]: 2,
-      [MF_BANK]: 8
+      [MF_BANK]: 8,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     models: TIMEX_MODELS,
     // --- The DOCK is the 2068s' (their model config); the TC2048 has none
@@ -387,7 +395,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ULA]: true,
       [MF_PSG]: true,
       [MF_ROM]: 4,
-      [MF_BANK]: 16
+      [MF_BANK]: 16,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     mediaIds: [MEDIA_TAPE, MEDIA_DISK_A, MEDIA_DISK_B],
     models: SCORPION_MODELS,
@@ -411,7 +421,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_INJECT_SUPPORT]: false,
       [MF_BANK]: 256,
       [MF_BLINK]: true,
-      [MF_ALLOW_SCAN_LINES]: false
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     models: [...Z88_MODELS],
     toolInfo: {
@@ -439,7 +451,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_TAPE_SUPPORT]: true,
       // --- Programs arrive as .P files the ROM loads; code injection is a follow-up (plan §14)
       [MF_INJECT_SUPPORT]: false,
-      [MF_ALLOW_SCAN_LINES]: false
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     models: [...ZX81_MODELS],
     mediaIds: [MEDIA_TAPE],
@@ -465,7 +479,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_Z80]: true,
       [MF_TAPE_SUPPORT]: true,
       [MF_INJECT_SUPPORT]: false,
-      [MF_ALLOW_SCAN_LINES]: false
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
+      [MF_EXEC_HISTORY]: true
     },
     models: [...ZX80_MODELS],
     mediaIds: [MEDIA_TAPE],

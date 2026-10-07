@@ -210,7 +210,7 @@ describe("the ZX Next context", () => {
     context[6] = 0x08;
     expect(describeZxNextDmaHold({ kind: HistoryKind.DmaHold, repeat: 6, context })).toContain("port $C000");
     expect(historyContextDecoder("zxnext")?.partitionFor(context, 0)).toBe(0);
-    expect(historyContextDecoder("sp48")).toBeUndefined();
+    expect(historyContextDecoder("c64")).toBeUndefined();
   });
 });
 

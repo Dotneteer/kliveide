@@ -2,6 +2,7 @@ import { conditionStoreOf, type ConditionStore } from "../conditionStore";
 import { WasmHistoryReader } from "../history/WasmHistoryReader";
 import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import { readWasmLayout } from "../state/wasmLayout";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
@@ -775,6 +776,10 @@ export class ZxNextWasmV2Machine
 
   readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
     return this.historyReader()?.read(fromSequence, count);
+  }
+
+  getHistoryServiceSpans(): HistoryServiceSpan[] | undefined {
+    return this.historyReader()?.serviceSpans();
   }
 
   clearHistory(): void {

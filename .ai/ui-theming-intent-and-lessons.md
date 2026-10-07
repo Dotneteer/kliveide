@@ -761,6 +761,16 @@ hue (`--color-history-recording`, `--status-error`: the conventional "recording"
 "○ Not recording" is told by the words, not the colour alone. Values (addresses, register changes)
 take `--color-state-value`, the register/state panels' rule.
 
+A **folded interrupt service** is the same separator band, not a new row kind: the INT or NMI row
+reads "▸ NMI service, 5 instructions, 32 T" and stands for the whole service. A merged ZX80/81
+display line ("Display NOPs ×32") is *not* a separator: like `HALT ×n`, the CPU did execute those
+NOPs, so it is an instruction row with a count. The open/fold glyph (`▸`/`▾`) is the only
+interactive part of a separator: neutral `--data-label`, `--color-history-separator` on hover, a
+fixed `2ch` box so folded and opened rows keep their text aligned - no button chrome, no accent,
+because folding is a view choice, not an event. Folding never renumbers: a folded row keeps its INT
+record's step number and the next row jumps past the service, so "−120" names the same instruction
+folded or not (G4.3 steps through those numbers).
+
 **A `VirtualizedList` beside a side pane goes in a flex row, not a `SplitPanel`.** The first
 Execution History put its list in a `SplitPanel` pane: the virtualizer laid out its full 2.7M px
 content, yet OverlayScrollbars marked the viewport `overflowYHidden`, its `scrollHeight` equalled its

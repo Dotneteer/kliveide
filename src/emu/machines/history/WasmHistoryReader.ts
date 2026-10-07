@@ -1,3 +1,5 @@
+import { findServiceSpans, type HistoryServiceSpan, type ServiceSpanInput } from "@common/history/serviceSpans";
+import type { HistoryKind } from "@common/history/historyRecord";
 import {
   HISTORY_RECORD_SIZE,
   type ExecutionHistoryInfo,
@@ -108,6 +110,32 @@ export class WasmHistoryReader {
       slot = (slot + run) & mask;
     }
     return { info, firstSequence: first, records, gone };
+  }
+
+  /**
+   * The outermost interrupt service spans of every held record (`serviceSpans.ts`,
+   * `.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10). Scanned here, beside the ring, so the viewer
+   * folds services without copying the whole ring across the Emu API.
+   */
+  serviceSpans(): HistoryServiceSpan[] {
+    const header = this.header();
+    if (header.count === 0) return [];
+    const view = this.view();
+    const mask = header.capacity - 1;
+    const oldestSlot = (header.writeIndex - header.count) & mask;
+    const records: ServiceSpanInput[] = new Array(header.count);
+    for (let i = 0; i < header.count; i++) {
+      const o = header.ringOffset + ((oldestSlot + i) & mask) * HISTORY_RECORD_SIZE;
+      records[i] = {
+        sequence: header.oldestSequence + i,
+        kind: view.getUint8(o + 12) as HistoryKind,
+        frame: view.getUint32(o + 4, true),
+        frameTact: view.getUint32(o + 8, true),
+        regs: { pc: view.getUint16(o + 16, true), sp: view.getUint16(o + 38, true) },
+        bytes: [view.getUint8(o + 44), view.getUint8(o + 45), 0, 0]
+      };
+    }
+    return findServiceSpans(records);
   }
 
   /** Empties the ring; the generation moves on */

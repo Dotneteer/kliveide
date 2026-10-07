@@ -15,6 +15,7 @@ import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
 import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import type { HistoryServiceSpan } from "@common/history/serviceSpans";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
@@ -551,6 +552,15 @@ class EmuApiImpl {
    * reads them), or undefined when the machine does not record history.
    */
   async getHistoryRecords(_fromSequence: number, _count: number): Promise<ExecutionHistoryPage | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * The outermost interrupt service spans of the held history records, for the viewer to fold
+   * (`.plans/EXECUTION_HISTORY_ALL_CORES_PLAN.md` D10), or undefined when the machine does not
+   * record history.
+   */
+  async getHistoryServiceSpans(): Promise<HistoryServiceSpan[] | undefined> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

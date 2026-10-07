@@ -84,6 +84,7 @@
 /images/working-with-ide/disassembly-breakpoint-message.png
 /images/working-with-ide/edit-memory.png
 /images/working-with-ide/emu-toolbar-startup.png
+/images/working-with-ide/execution-history-fold.png
 /images/working-with-ide/export-dialog-1.png
 /images/working-with-ide/export-dialog-2.png
 /images/working-with-ide/ide-commands.png

@@ -78,6 +78,18 @@
   color: var(--color-history-separator);
 }
 
+/* The open/fold glyph of an interrupt service row (EXECUTION_HISTORY_ALL_CORES_PLAN D10) */
+.fold {
+  display: inline-block;
+  width: 2ch;
+  cursor: pointer;
+  color: var(--data-label);
+
+  &:hover {
+    color: var(--color-history-separator);
+  }
+}
+
 .step {
   width: 8ch;
   flex-shrink: 0;

@@ -889,6 +889,10 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       condEvaluateValue: () => 0n,
       condSetEnv: () => undefined,
       condPeek: () => 0,
+      // --- The execution-history recorder (every Z80 core exports it)
+      z80HistoryGetHeaderOffset: () => 0,
+      z80HistorySetEnabled: () => undefined,
+      z80HistoryClear: () => undefined,
       memory: new WebAssembly.Memory({ initial: 16 }),
       sp128MemoryPtr: () => 0x00000,
       sp128RamPtr: () => 0x10000,

@@ -16,7 +16,12 @@
  * - optionally `Z80_HISTORY_CONTEXT_BEFORE_FETCH`: capture an instruction's context before the
  *   opcode fetch instead of after it, for a machine whose fetch-time paging happens after the byte
  *   is read (the Next's delayed DivMMC entry); by default it is captured after, for one whose
- *   paging happens at the fetch and supplies the byte (the 128K's TR-DOS ROM).
+ *   paging happens at the fetch and supplies the byte (the 128K's TR-DOS ROM);
+ * - optionally `Z80_HISTORY_FORCED_NOP()`: nonzero when the opcode fetch just committed did not
+ *   read the byte at PC but had the hardware force a NOP onto the bus (the ZX80/81 ULA's display
+ *   fetches above 32K). Such fetches coalesce into one *forced-NOP run* record per run of
+ *   consecutive addresses, whose repeat count is the run's length (`.plans/
+ *   EXECUTION_HISTORY_ALL_CORES_PLAN.md` D6, T2): a display line is one record, not 32.
  *
  * An instruction is recorded in two phases (trap T4): `z80HistoryBegin` writes the registers into
  * the next slot before the opcode fetch increments R, and `z80HistoryCommit` adds the executed bytes
@@ -39,6 +44,8 @@
 #if (Z80_HISTORY_CAPACITY & (Z80_HISTORY_CAPACITY - 1)) != 0
 #error "Z80_HISTORY_CAPACITY must be a power of two"
 #endif
+
+#include <stddef.h>
 
 #define Z80_HISTORY_MAGIC 0x5453484bu /* "KHST" */
 #define Z80_HISTORY_VERSION 1u
@@ -99,6 +106,14 @@ static inline Z80HistoryRecord *z80HistoryNewest(void) {
   return &z80HistoryRing[(z80HistoryHeader.writeIndex - 1u) & Z80_HISTORY_MASK];
 }
 
+/*
+ * The record's AF ... IY are the CPU's ten register pairs in the CPU's own order and byte order, so
+ * staging copies them in one go (trap T5: the Z88's and the ZX80/81's debug loops run in C, where
+ * every store of the recorder shows)
+ */
+_Static_assert(offsetof(Z80State, iy) - offsetof(Z80State, af) == 18u, "AF..IY are contiguous in the CPU state");
+_Static_assert(offsetof(Z80HistoryRecord, iy) - offsetof(Z80HistoryRecord, af) == 18u, "AF..IY are contiguous in a record");
+
 /* Writes the CPU state into the next slot without publishing it */
 Z80_ALWAYS_INLINE Z80HistoryRecord *z80HistoryStage(uint32_t kind) {
   Z80HistoryRecord *r = &z80HistoryRing[z80HistoryHeader.writeIndex];
@@ -106,21 +121,11 @@ Z80_ALWAYS_INLINE Z80HistoryRecord *z80HistoryStage(uint32_t kind) {
   r->frame = (uint32_t)(Z80_HISTORY_FRAME());
   r->frameTact = (uint32_t)(Z80_HISTORY_FRAME_TACT());
   r->kind = (uint8_t)kind;
-  r->flags = (uint8_t)((cpu.iff1 ? Z80_HISTORY_FLAG_IFF1 : 0u) | (cpu.iff2 ? Z80_HISTORY_FLAG_IFF2 : 0u) |
-                       ((uint32_t)(cpu.interruptMode & 0x03u) << Z80_HISTORY_FLAG_IM_SHIFT) |
-                       (cpu.sigInt ? Z80_HISTORY_FLAG_INT_PENDING : 0u));
+  r->flags = (uint8_t)((cpu.iff1 & 1u) | ((cpu.iff2 & 1u) << 1u) | ((uint32_t)(cpu.interruptMode & 0x03u) << Z80_HISTORY_FLAG_IM_SHIFT) |
+                       ((cpu.sigInt & 1u) << 4u));
   r->repeat = 1u;
   r->pc = cpu.pc;
-  r->af = AF;
-  r->bc = BC;
-  r->de = DE;
-  r->hl = HL;
-  r->afAlt = AF_ALT;
-  r->bcAlt = BC_ALT;
-  r->deAlt = DE_ALT;
-  r->hlAlt = HL_ALT;
-  r->ix = IX;
-  r->iy = IY;
+  __builtin_memcpy(&r->af, &cpu.af, 20u);
   r->sp = cpu.sp;
   r->i = cpu.ir.bytes.high;
   r->r = cpu.ir.bytes.low;
@@ -190,8 +195,37 @@ static void z80HistoryBegin(void) {
 #endif
 }
 
+#ifdef Z80_HISTORY_FORCED_NOP
+/*
+ * A forced NOP (see the top of this file). The staged record holds the registers before the fetch:
+ * it either starts a new run, or - when the newest record is a run that ends right before this
+ * address - is dropped and the run grows by one. The registers of a run are those before its first
+ * NOP; a NOP changes nothing else a record holds but R, PC and the frame position.
+ */
+static void z80HistoryForcedNop(Z80HistoryRecord *r) {
+  Z80HistoryRecord *newest = z80HistoryNewest();
+  if (newest && newest->kind == Z80_HISTORY_KIND_FORCED_NOP && newest->repeat < Z80_HISTORY_MAX_REPEAT &&
+      (uint16_t)(newest->pc + newest->repeat) == cpu.pc) {
+    newest->repeat++;
+    /* Staging wrote into the slot after the newest one: with a full ring, that was the oldest record */
+    if (z80HistoryHeader.count == (uint32_t)(Z80_HISTORY_CAPACITY)) z80HistoryHeader.count--;
+    return;
+  }
+  r->kind = (uint8_t)Z80_HISTORY_KIND_FORCED_NOP;
+  for (uint32_t i = 0; i < 4u; i++) r->bytes[i] = 0u;
+  Z80_HISTORY_CONTEXT(Z80_HISTORY_KIND_FORCED_NOP, r->context);
+  z80HistoryPublish();
+}
+#endif
+
 static void z80HistoryCommit(void) {
   Z80HistoryRecord *r = &z80HistoryRing[z80HistoryHeader.writeIndex];
+#ifdef Z80_HISTORY_FORCED_NOP
+  if (Z80_HISTORY_FORCED_NOP()) {
+    z80HistoryForcedNop(r);
+    return;
+  }
+#endif
   r->bytes[0] = cpu.opCode;
   z80HistoryPeekBytes(r, cpu.pc);
 #ifndef Z80_HISTORY_CONTEXT_BEFORE_FETCH
