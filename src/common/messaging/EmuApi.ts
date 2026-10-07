@@ -14,6 +14,7 @@ import { IMemorySection } from "@abstractions/MemorySection";
 import type { SourceLevelDebugInfo } from "@abstractions/CompilerInfo";
 import type { SourceActivationInfo, SourceStopInfo } from "@abstractions/SourceDebugInfo";
 import type { SourceStepKind } from "@emu/machines/SourceStepDecision";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
 import type { Z88SnapshotLoadMode, Z88SnapshotLoadResult } from "@common/z88/z88SnapshotLoadTypes";
 import type { TilemapRegs } from "@common/zxnext/tilemap/tilemapDecode";
 import type { Layer2Regs } from "@common/zxnext/layer2/layer2Decode";
@@ -534,6 +535,29 @@ class EmuApiImpl {
    * Gets the Next register state.
    */
   async getNextRegState(): Promise<NextRegState> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * What the execution-history ring holds (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4), or
+   * undefined when the machine does not record history.
+   */
+  async getHistoryInfo(): Promise<ExecutionHistoryInfo | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Up to `count` consecutive history records from `fromSequence` on, raw (`decodeHistoryPage`
+   * reads them), or undefined when the machine does not record history.
+   */
+  async getHistoryRecords(_fromSequence: number, _count: number): Promise<ExecutionHistoryPage | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
+   * Empties the execution-history ring.
+   */
+  async clearHistory(): Promise<void> {
     return Promise.reject(new Error(NO_PROXY_ERROR));
   }
 

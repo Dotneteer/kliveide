@@ -1,0 +1,89 @@
+---
+description: "The Execution History: the instructions the CPU ran in a debug session, with the registers each one changed and the source line it came from."
+---
+
+import { Callout } from 'nextra/components'
+
+# The Execution History
+
+A breakpoint stop answers *where* the program is. The **Execution History** answers *how it got
+there*: it lists the last instructions the CPU executed, newest at the bottom, each with the
+registers it changed, the bytes it ran and the source line it came from.
+
+<Callout type="info">
+The Execution History is available on the **ZX Spectrum Next**. The other machines will follow.
+</Callout>
+
+## Recording
+
+History is recorded **only in debug sessions**: after **Start with Debugging** and while you step.
+A plain **Start** records nothing and costs nothing. The header says whether the machine is
+recording now.
+
+Klive keeps the last **131,072** records (about two frames at 28 MHz, about fifteen at 3.5 MHz).
+The history runs on across pauses, steps and continues; it starts over when the machine starts from
+Stopped, after a reset, and after a machine state, snapshot or checkpoint is restored. **Clear**
+in the header empties it on demand.
+
+## Opening it
+
+Use **Debug → Execution History**, or the command:
+
+```
+show-history
+```
+
+The document reads the history whenever the machine stops. While the machine runs it says so: the
+history changes far faster than any view could follow.
+
+## The rows
+
+| Column | Shows |
+|---|---|
+| **Step** | `−1` for the newest record, `−2` for the one before, and so on. |
+| **Time** | The position in the frame when the instruction started (on the Next, in 28 MHz ticks). A hairline marks the first record of each new frame. |
+| **Address** | The memory bank (partition) and the address of the instruction, from the paging *at the time it ran*. |
+| **Bytes** | The bytes the CPU executed. They are captured as the instruction runs, so self-modifying code shows what really ran, not what is in memory now. |
+| **Instruction** | The disassembly, with labels from the current compilation. An arrow marks calls, returns and taken jumps. |
+| **Source** | `file.asm:123` when the address maps to your source; in banked code, the bank the instruction ran in decides which source line. |
+| **Changes** | The registers the instruction changed, and the flags it set or cleared: `HL=8001 SP=FFFC Z↑ C↓`. |
+
+Some records are not instructions:
+
+- An **interrupt** reads `— IM 2 interrupt, vector $FF —`; the interrupt routine's first instruction
+  is the next row.
+- An **NMI** reads `— NMI —`.
+- A CPU waiting in **HALT** is one row with a count, `HALT ×1,203`, however long it waited.
+- When the **DMA** held the bus, the row says for how long and what it copied:
+  `— DMA held the bus for 3,072 T ($4000 → $C000, 0 left) —`.
+
+## Looking at one record
+
+Click a row to select it. The pane beside the list shows the full register set **before** and
+**after** that instruction, with the changed values marked, the frame and position, and the memory
+map at the time (the bank in each 8K slot, the paging ports, DivMMC and the CPU speed).
+
+Double-click a row, or press **Enter**, to go to its source line; a row with no source shows the
+address in the disassembly. **↑** and **↓** move the selection. The context menu also offers
+**Show in disassembly**, **Show in memory**, **Copy row**, **Copy rows as text** (from the selected
+row to the newest) and **Set breakpoint here**.
+
+## Filtering
+
+The filter field in the header narrows the list to:
+
+- an address (`$8000`, `8000h`, `0x8000`) or a range (`$8000-$80FF`);
+- a label of the current compilation (`MainLoop`) or a range of two labels;
+- any other text, matched against the disassembled instructions (`call`, `ld a,`).
+
+## Commands
+
+```
+show-history          ; open the Execution History
+hide-history          ; close it
+history-clear         ; empty the history
+history 50            ; print the newest 50 records to the command output
+```
+
+See [Interactive Commands](/working-with-ide/commands) and the
+[command reference](/commands-reference#show-history).

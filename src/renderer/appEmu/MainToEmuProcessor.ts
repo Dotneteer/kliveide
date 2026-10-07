@@ -26,6 +26,7 @@ import { mediaStore } from "@emu/machines/media/media-info";
 import { EmuScriptRunner } from "./ksx/EmuScriptRunner";
 import { getCachedMessenger, getCachedStore } from "@renderer/CachedServices";
 import { isZxNextIdeMachine, type IZxNextIdeMachine } from "@emu/machines/zxNext/IZxNextIdeMachine";
+import { isExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
 import { createMainApi } from "@common/messaging/MainApi";
 import { IMachineService } from "@renderer/abstractions/IMachineService";
 import { CodeToInject } from "@abstractions/CodeToInject";
@@ -1068,6 +1069,31 @@ class EmuMessageProcessor {
       lastRegisterIndex: devState?.lastRegisterIndex,
       regs: devState?.regs
     };
+  }
+
+  /**
+   * What the execution-history ring holds; undefined on a machine that does not record history. The
+   * guard is the capability, not the Next, so every core that records needs no handler of its own.
+   */
+  getHistoryInfo() {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.getHistoryInfo() : undefined;
+  }
+
+  /**
+   * Consecutive raw history records from a sequence number on.
+   */
+  getHistoryRecords(fromSequence: number, count: number) {
+    const machine = this.machineService.getMachineController()?.machine;
+    return isExecutionHistorySource(machine) ? machine.readHistory(fromSequence, count) : undefined;
+  }
+
+  /**
+   * Empties the execution-history ring.
+   */
+  clearHistory() {
+    const machine = this.machineService.getMachineController()?.machine;
+    if (isExecutionHistorySource(machine)) machine.clearHistory();
   }
 
   /**

@@ -29,6 +29,8 @@ import {
   type RecomposeStatus
 } from "@common/zxnext/layers/layerMix";
 import { connectConditionSupport } from "@emu/machines/conditionStore";
+import { decodeHistoryPage, type HistoryRecord } from "@common/history/historyRecord";
+import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import { DebugSupport } from "@emu/machines/DebugSupport";
 import {
   beginSourceStep,
@@ -203,6 +205,44 @@ export class NextTestSession {
 
   /** What the last `pressHotkey` returned to the app (the new setting, or `undefined` when gated). */
   lastHotkeyResult: unknown;
+
+  // ==========================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md`): the core's recorder, as the IDE
+  // reads it through `IExecutionHistorySource`
+
+  /** Turns the execution-history recorder on or off, as a debug session does (D8). */
+  recordHistory(on = true): this {
+    this.machine.setHistoryEnabled(on);
+    return this;
+  }
+
+  /** Empties the history ring, as the controller does on a start from Stopped or a restore. */
+  clearHistory(): this {
+    this.machine.clearHistory();
+    return this;
+  }
+
+  /** What the ring holds: capacity, count, newest and oldest sequence, generation, enabled. */
+  historyInfo(): ExecutionHistoryInfo {
+    return this.machine.getHistoryInfo()!;
+  }
+
+  /**
+   * The newest `count` history records (all held when omitted), oldest first, decoded, with full
+   * sequence numbers. Each holds the state *before* its instruction or event.
+   */
+  history(count?: number): HistoryRecord[] {
+    const info = this.historyInfo();
+    const n = Math.min(count ?? info.count, info.count);
+    if (n === 0) return [];
+    return decodeHistoryPage(this.machine.readHistory(info.newestSequence - n + 1, n)!);
+  }
+
+  /** History records from `fromSequence` on: the reader's page, decoded, with its `gone` flag. */
+  historyFrom(fromSequence: number, count: number): { records: HistoryRecord[]; gone: boolean } {
+    const page = this.machine.readHistory(fromSequence, count)!;
+    return { records: decodeHistoryPage(page), gone: page.gone };
+  }
 
   // ==========================================================================================
   // Checkpoints

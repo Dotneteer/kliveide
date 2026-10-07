@@ -8,6 +8,7 @@ import {
   MF_MOUSE_SUPPORT,
   MF_JOYSTICK_SUPPORT,
   MF_INJECT_SUPPORT,
+  MF_EXEC_HISTORY,
   MI_SPECTRUM_3E,
   MC_SCREEN_FREQ,
   MF_ROM,
@@ -321,7 +322,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ROM]: 7,
       [MF_BANK]: 224,
       [MF_ALLOW_CLOCK_MULTIPLIER]: false,
-      [MF_ALLOW_SCAN_LINES]: false
+      [MF_ALLOW_SCAN_LINES]: false,
+      // --- The shared execution-history recorder (EXECUTION_HISTORY_VIEWER_PLAN); G4.2 adds the rest
+      [MF_EXEC_HISTORY]: true
     },
     models: [
       {

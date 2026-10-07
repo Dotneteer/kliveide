@@ -138,6 +138,19 @@ describe("harness session", () => {
     }
   });
 
+  it("recordHistory / history: records each stepped instruction, oldest first; off records nothing", async () => {
+    const s = await createSession();
+    await s.loadCode(" .org $8000\nStart: ld a,1\n inc a\n jr $");
+    s.recordHistory(false).clearHistory().step(1);
+    expect(s.historyInfo().count).toBe(0);
+    s.recordHistory(true).step(2);
+    expect(s.history().map((r) => r.regs.pc)).toEqual([0x8002, 0x8003]);
+    const info = s.historyInfo();
+    expect(info.enabled).toBe(true);
+    expect(s.historyFrom(info.newestSequence, 1).records[0].bytes[0], "jr $").toBe(0x18);
+    expect(s.clearHistory().historyInfo().count).toBe(0);
+  });
+
   it("reset is a soft reset: PC back to 0, RAM kept", async () => {
     const s = await createSession();
     await s.loadCode(` .org $8000\n ld a,1\n jr $`);

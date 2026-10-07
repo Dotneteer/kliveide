@@ -944,3 +944,118 @@ static int64_t condNextPartitionOf(uint32_t address) {
 #define COND_PARTITION_OF(address) condNextPartitionOf(address)
 #define COND_NEXTREG(reg) zxnextNextRegPeek(reg)
 #include "../../../../z80/wasm/z80-condition.c"
+
+// -----------------------------------------------------------------------------
+// Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.2-§4.3): the shared recorder,
+// with this machine's side-effect-free peek, its frame position in 28 MHz ticks, and its context.
+//
+// The instruction context (`zxnextContext.ts` decodes it):
+//   0-7  the partition of each 8K slot, as `getPartition` returns it (`condNextPartitionOf`):
+//        0-223 a Next RAM page, 233-255 the negative partitions -23..-1 (ROMs, DivMMC), 224 none.
+//        The partition, not the raw MMU value, because ROM, DivMMC and Alt ROM overlay slots 0-1
+//        whatever MMU0/MMU1 say - and the partition is what source mapping needs (trap T13).
+//   8    port $7FFD   9 port $1FFD   10 port $DFFD   11 DivMMC port $E3
+//   12   bit 0 DivMMC mapped, bit 1 Multiface paged, bit 2 Alt ROM enabled, bit 3 ROM in slot 0
+//   13   CPU speed (NextReg $07 effective, 0-3)
+// The DMA hold context (D15):
+//   0-1  source address at the start of the hold   2-3 destination   4-5 bytes left
+//   6    bit 0 port A to B, bit 1 burst mode, bit 2 source is I/O, bit 3 destination is I/O
+// -----------------------------------------------------------------------------
+
+#define ZXNEXT_HISTORY_NO_PARTITION 224u
+
+static inline void zxnextHistoryContext(uint32_t kind, uint8_t *out) {
+  (void)kind;
+  if (!zxnextHistorySlotsValid) {
+    for (uint32_t slot = 0u; slot < 8u; slot++) {
+      const int64_t partition = condNextPartitionOf(slot << 13);
+      zxnextHistorySlots[slot] =
+        partition == INT64_MIN ? (uint8_t)ZXNEXT_HISTORY_NO_PARTITION : (uint8_t)(partition & 0xff);
+    }
+    zxnextHistorySlotsValid = 1u;
+  }
+  for (uint32_t slot = 0u; slot < 8u; slot++) out[slot] = zxnextHistorySlots[slot];
+  out[8] = memPort7ffd;
+  out[9] = memPort1ffd;
+  out[10] = memPortDffd;
+  out[11] = (uint8_t)zxnextDivMmcGetPortE3();
+  /* -6..-1: a Next ROM or an Alt ROM */
+  out[12] = (uint8_t)((zxnextDivMmcIsMappingActive() ? 0x01u : 0u) | (zxnextMultifaceIsPaged() ? 0x02u : 0u) |
+                      ((zxnextNextRegs[0x8cu] & 0x80u) ? 0x04u : 0u) |
+                      (out[0] >= 250u ? 0x08u : 0u));
+  out[13] = (uint8_t)(cpuEffectiveSpeed & 0x03u);
+  out[14] = 0u;
+  out[15] = 0u;
+}
+
+/*
+ * The three bytes after the opcode at `from`: one mapping resolution when they lie in the same 8K
+ * page as `from + 1` (nearly always), `zxnextMemoryPeekMapped`'s side-effect-free path otherwise.
+ */
+static inline void zxnextHistoryPeek3(uint16_t from, uint8_t *out) {
+  const uint32_t first = (uint16_t)(from + 1u);
+  if ((first & 0x1fffu) <= 0x1ffdu) {
+    uint32_t physical = ZXNEXT_NO_WRITE_OFFSET;
+    if (!((first >> 13u) < 2u && zxnextMemoryLowOverlayActive())) {
+      physical = zxnextMemoryResolveLayer2Offset(first, 0u);
+    }
+    if (physical == ZXNEXT_NO_WRITE_OFFSET) {
+      physical = zxnextMemoryResolveReadOffset(first >> 13) + (first & 0x1fffu);
+    }
+    out[0] = (uint8_t)zxnextMemoryReadPhysical(physical);
+    out[1] = (uint8_t)zxnextMemoryReadPhysical(physical + 1u);
+    out[2] = (uint8_t)zxnextMemoryReadPhysical(physical + 2u);
+    return;
+  }
+  out[0] = (uint8_t)zxnextMemoryPeekMapped(first);
+  out[1] = (uint8_t)zxnextMemoryPeekMapped((uint16_t)(first + 1u));
+  out[2] = (uint8_t)zxnextMemoryPeekMapped((uint16_t)(first + 2u));
+}
+
+#define Z80_HISTORY_CAPACITY 131072u
+#define Z80_HISTORY_PEEK(address) zxnextMemoryPeekMapped(address)
+#define Z80_HISTORY_PEEK3(from, out3) zxnextHistoryPeek3(from, out3)
+#define Z80_HISTORY_CONTEXT(kind, out16) zxnextHistoryContext(kind, out16)
+#define Z80_HISTORY_FRAME() frames
+#define Z80_HISTORY_FRAME_TACT() frameTacts28
+#include "../../../../z80/wasm/z80-history.c"
+
+static inline uint16_t zxnextHistoryDmaLeft(void) {
+  return dmaCounter < dmaBlockLength ? (uint16_t)(dmaBlockLength - dmaCounter) : 0u;
+}
+
+/*
+ * The DMA held the bus for `cpuTacts` CPU T-states before the next instruction (plan D15).
+ * Consecutive holds with no instruction between them coalesce, like HALT: the repeat count carries
+ * the held T-states, saturates at 65,535, and the rest starts a new record.
+ */
+static void zxnextHistoryDmaHold(uint32_t cpuTacts, uint16_t src, uint16_t dest, uint32_t frame, uint32_t frameTact) {
+  Z80HistoryRecord *newest = z80HistoryNewest();
+  if (newest && newest->kind == Z80_HISTORY_KIND_DMA_HOLD && newest->pc == cpu.pc) {
+    const uint32_t room = Z80_HISTORY_MAX_REPEAT - newest->repeat;
+    const uint32_t taken = cpuTacts < room ? cpuTacts : room;
+    newest->repeat = (uint16_t)(newest->repeat + taken);
+    const uint16_t left = zxnextHistoryDmaLeft();
+    newest->context[4] = (uint8_t)left;
+    newest->context[5] = (uint8_t)(left >> 8);
+    cpuTacts -= taken;
+  }
+  while (cpuTacts > 0u) {
+    Z80HistoryRecord *r = z80HistoryAppend(Z80_HISTORY_KIND_DMA_HOLD);
+    const uint32_t taken = cpuTacts < Z80_HISTORY_MAX_REPEAT ? cpuTacts : Z80_HISTORY_MAX_REPEAT;
+    r->repeat = (uint16_t)taken;
+    r->frame = frame;
+    r->frameTact = frameTact;
+    const uint16_t left = zxnextHistoryDmaLeft();
+    r->context[0] = (uint8_t)src;
+    r->context[1] = (uint8_t)(src >> 8);
+    r->context[2] = (uint8_t)dest;
+    r->context[3] = (uint8_t)(dest >> 8);
+    r->context[4] = (uint8_t)left;
+    r->context[5] = (uint8_t)(left >> 8);
+    r->context[6] = (uint8_t)((dmaDirAtoB ? 0x01u : 0u) | (dmaTransferMode == DMA_MODE_BURST ? 0x02u : 0u) |
+                              ((dmaDirAtoB ? dmaPortAIsIo : dmaPortBIsIo) ? 0x04u : 0u) |
+                              ((dmaDirAtoB ? dmaPortBIsIo : dmaPortAIsIo) ? 0x08u : 0u));
+    cpuTacts -= taken;
+  }
+}

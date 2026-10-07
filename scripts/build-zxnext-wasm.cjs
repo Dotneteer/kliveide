@@ -9,6 +9,7 @@ const {
   stagingWasmOutput,
   stampWasmLayout
 } = require("./wasm-layout.cjs");
+const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-history-exports.cjs");
 
 /**
  * Statics a Klive state file leaves out (`.plans/SNAPSHOT_SAVING_AND_STATE_FILES_PLAN.md` trap 10):
@@ -75,7 +76,9 @@ const ZXNEXT_VOLATILE_SYMBOLS = [
   "zxnextBeamSaveResolved",
   "zxnextBeamSaveShown",
   "zxnextBeamLatchesDone",
-  "zxnextBeamInfo"
+  "zxnextBeamInfo",
+  // --- The execution-history ring (EXECUTION_HISTORY_VIEWER_PLAN D7)
+  ...Z80_HISTORY_VOLATILE_SYMBOLS
 ];
 
 const root = resolve(__dirname, "..");
@@ -107,6 +110,8 @@ const productionExports = [
   "condEvaluateValue",
   "condSetEnv",
   "condPeek",
+  // --- Execution history recorder (`src/emu/z80/wasm/z80-history.c`)
+  ...Z80_HISTORY_EXPORTS,
   "memory",
   "zxnextMemoryPtr",
   "zxnextPixelBufferPtr",
@@ -474,7 +479,9 @@ const buildModes = {
     output: productionOutput,
     exports: productionExports,
     sources: [source],
-    initialMemory: 32 * 1024 * 1024
+    // --- 40 MB: the 8 MB execution-history ring did not fit beside the frame trace in 32 MB
+    // --- (EXECUTION_HISTORY_VIEWER_PLAN T9, Q6)
+    initialMemory: 40 * 1024 * 1024
   }
 };
 

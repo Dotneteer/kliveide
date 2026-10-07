@@ -1,13 +1,16 @@
 /*
  * The Debug menu (`.plans/MENU_REDESIGN_PLAN.md` §3): starting with the debugger, stepping, the
- * machine's own debugging commands (Step Copper on the Next), and the source sync. The debugger's
+ * Execution History, the machine's own debugging commands (Step Copper on the Next), and the source
+ * sync. The debugger's
  * preferences are in Settings › Debugging.
  */
 import type { MenuItemConstructorOptions } from "electron";
 
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
+import { MF_EXEC_HISTORY } from "@common/machines/constants";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
+import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { type MenuContext, windowInfoOf } from "./menu-context";
 import { createBooleanSettingsMenu, submenuContent, tidySeparators } from "./menu-utils";
 
@@ -71,6 +74,19 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
       }
     },
     { type: "separator" },
+    // --- Every machine that records history, so G4.2 lights it up without moving it
+    // --- (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
+    ...(context.currentMachine?.features?.[MF_EXEC_HISTORY]
+      ? [
+          {
+            id: "show_execution_history",
+            label: "Execution History",
+            click: async () => {
+              await getIdeApi().executeCommand("show-history");
+            }
+          }
+        ]
+      : []),
     ...machineItems,
     { type: "separator" },
     // --- Shown in both windows: it is a debugger behaviour, not a part of one window

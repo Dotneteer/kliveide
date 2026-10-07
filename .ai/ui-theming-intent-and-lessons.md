@@ -42,7 +42,7 @@ These were decided by the project author. Changing them is a product decision, n
 | Sidebar "..." menu and panel badges | **Extension points exist, unused by default** (`Activity.commands`, `SideBarPanelInfo.badge`). An activity with no commands renders **no button at all**. Badges so far: Breakpoints, Watch. |
 | Next palette display | **Four device sections, one fixed-cell grid.** The sidebar panel is ULA / Layer 2 / Sprites / Tilemap — *one palette with two banks each*, never eight peers — each row carrying a 32px thumbnail of its whole palette and a two-segment bank control: the fill is the bank you are *looking at*, an accent ring is the bank the machine is *drawing with*. The ring marks the **exception** — the two coincide by default, so it only becomes visible once the view is pinned away from the hardware. `NextPaletteViewer` has no "small" mode and is **sized from its swatch** (`cellSize`, 14px in the sidebar), never from its container. |
 | Navigation history (Go Back / Forward) | **Toolbar controls, not per-area buttons** (the author chose Option A over buttons in each document header): Back, a narrow chevron that opens the history list, and Forward, grouped with no internal gap at the **start** of the IDE toolbar, then a separator. Neutral `--color-toolbarbutton` glyphs; the tooltip names the target and the shortcut. The list is a portalled popover — see "A Menu-Like List With A Header". |
-| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector and the Layers document (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
+| Register/state panel colour | **A third exception, added after Phase 10** at the author's request, panel by panel — Z80 CPU, ULA & I/O, Next Registers, Next Memory Mapping, Call Stack, Watch, Breakpoints, the Copper panel and Copper List, the Sprite Inspector, the Tilemap Inspector, the Layer 2 Inspector, the Layers document and the Execution History (whose plans asked for it). Every *value* takes the primary accent (`--color-state-value`); labels stay `--data-label`. **One hue, plus the secondary (`--color-state-value-alt`) wherever a row carries two kinds of number with nothing but position to tell them apart** — `NextRegPanel`'s previous value, `MemMappingPanel`'s page offsets, `CallStackPanel`'s stack slot beside its return address. Contrast the Z80 shadow bank, which asked for the same treatment and was refused — `AF'` is *named* differently from `AF`, so the hue would buy nothing. Panels that have not been converted stay neutral; convert one by passing `valueXclass`/`iconFill`, never by restyling the shared primitives. |
 
 > **Phase 8's Monaco palette was wrong and has been replaced.** It generated every class as a
 > lightness step of the accent, which put nine of eleven classes in one blue and comments in neutral
@@ -741,6 +741,34 @@ the one literal colour in these views (see "Colour That Belongs To The Machine")
 **A data strip narrower than ~6ch reads as a scrollbar.** The raster ruler at `4ch` (minus padding)
 sat beside the list's scrollbar and looked like a second one; its zones were invisible. At `8ch` the
 bands read as bands. Size a vertical overview strip so its content, not its edge, is what you see.
+
+## An Event In An Instruction Listing Is A Band, Not A Row Kind Of Its Own
+
+A listing of what the CPU did - the Execution History - interleaves instructions with events that ran
+no opcode: an interrupt acknowledge, an NMI, the DMA holding the bus. They are drawn as **separator
+rows**: the whole row is one secondary-text sentence ("— IM 2 interrupt, vector $FF —") on a subtle
+neutral band (`--bgcolor-history-separator` / `--color-history-separator`), with no address, bytes or
+changes columns. A run of instructions then reads unbroken, and the event still stands out; colouring
+them with an accent or a status hue would make an ordinary interrupt look like an error. A HALT that
+repeated is an instruction row with a count (`HALT ×1,203`), not a separator: the CPU did execute it.
+
+Two things in the same listing are **not** rows: a frame boundary is a hairline on the frame's first
+record (`--color-history-frame-line`, a top border that is transparent on every other row so heights
+never change), because a row there would shift the step numbers G4.3 steps through. And the newest
+record - where the machine is now - takes the execution point's fill (`--bgcolor-history-newest`, the
+accent's subtle fill, as the Copper's PC row). The recording indicator in the header is the one status
+hue (`--color-history-recording`, `--status-error`: the conventional "recording" red); it is text, so
+"○ Not recording" is told by the words, not the colour alone. Values (addresses, register changes)
+take `--color-state-value`, the register/state panels' rule.
+
+**A `VirtualizedList` beside a side pane goes in a flex row, not a `SplitPanel`.** The first
+Execution History put its list in a `SplitPanel` pane: the virtualizer laid out its full 2.7M px
+content, yet OverlayScrollbars marked the viewport `overflowYHidden`, its `scrollHeight` equalled its
+`clientHeight`, and neither the wheel nor `scrollToIndex` moved it - so "follow newest" showed the
+*oldest* rows. Laid out as the Copper List lays out its table and ruler (`.body` a flex row with
+`min-width: 0`, the list `flex: 1 1 0; min-width: 0; overflow: hidden`, the side pane a fixed `ch`
+width), the same list scrolls. Probe it in the running app: the viewport's
+`data-overlayscrollbars-viewport` attribute says `overflowYScroll` when it works.
 
 ## Changed Since The Previous Stop Is A Dot, Defined Once
 

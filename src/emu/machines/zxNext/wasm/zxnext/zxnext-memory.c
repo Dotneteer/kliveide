@@ -14,6 +14,13 @@
 #define ZXNEXT_MAX_RAM_8K_PAGES 224u
 
 static uint32_t pageReadOffset[8];
+/*
+ * The execution-history context's partition of each slot, computed from `pageBank8` and
+ * `pageReadOffset` and valid until `zxnextMemorySetPageInfo` changes them. Deliberately NOT volatile:
+ * a state file or checkpoint restores it together with the page tables it was computed from.
+ */
+static uint8_t zxnextHistorySlots[8];
+static uint8_t zxnextHistorySlotsValid;
 static uint32_t pageWriteOffset[8];
 static uint16_t pageBank16[8];
 static uint16_t pageBank8[8];
@@ -73,6 +80,8 @@ static inline void zxnextMemorySetPageInfo(
   uint16_t bank8
 ) {
   uint32_t page = pageIndex & 0x07u;
+  /* The history context's slot partitions derive from these (zxnext.c, zxnextHistoryContext) */
+  zxnextHistorySlotsValid = 0u;
   pageReadOffset[page] = readOffset;
   pageWriteOffset[page] = writeOffset;
   pageBank16[page] = bank16;

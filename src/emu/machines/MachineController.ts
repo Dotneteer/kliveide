@@ -59,6 +59,10 @@ import { PANE_ID_EMU } from "@common/integration/constants";
 import { logLineOutput } from "./logOutput";
 import { createIdeApi } from "@common/messaging/IdeApi";
 import {
+  isExecutionHistorySource,
+  type IExecutionHistorySource
+} from "@emu/abstractions/IExecutionHistorySource";
+import {
   SETTING_EMU_FAST_LOAD,
   SETTING_EMU_JUST_MY_CODE,
   SETTING_EMU_STEP_IN_INTERRUPTS,
@@ -737,6 +741,8 @@ export class MachineController implements IMachineController {
     this.assertMachineOperationIsCurrent(operationRevision);
 
     applyState();
+    // --- The restored state's past is not in the ring: that history belongs to another timeline (D7, D9)
+    this.historySource()?.clearHistory();
 
     // --- `run()` attaches the stored media when it starts from a stop; this restore takes the
     // --- place of that start. A Klive state brings its own media inside the core's memory, which
@@ -855,6 +861,8 @@ export class MachineController implements IMachineController {
           // --- cold boot dwarfs everything else the flow does. When the step opts into a checkpoint
           // --- and the machine still holds one, restore it and skip the journey entirely.
           if (step.checkpoint && m.tryRestoreCheckpoint?.(step.checkpoint)) {
+            // --- The checkpoint leaves the history ring alone (T7): what it holds is another run's
+            this.historySource()?.clearHistory();
             // --- `run()` attaches the stored media as part of starting from a stop; the restore
             // --- took the place of that start, so do it here instead.
             attachStoredMedia(m, this._machineInfo.mediaIds);
@@ -1002,6 +1010,7 @@ export class MachineController implements IMachineController {
         this.suppressUserBreakpointsUntilKeystrokesLand(operationRevision);
         this.machine?.awakeCpu();
         this.store.dispatch(setDebuggingAction(true), "emu");
+        this.applyHistoryRecording(true);
       } else {
         // --- No suppression here: this branch starts a machine that is stopped or paused, so
         // --- nothing is in flight, and a window opened before `startDebug` would be closed by the
@@ -1047,6 +1056,23 @@ export class MachineController implements IMachineController {
   }
 
   /**
+   * The machine as an execution-history recorder, when it is one
+   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4)
+   */
+  private historySource(): IExecutionHistorySource | undefined {
+    return isExecutionHistorySource(this.machine) ? this.machine : undefined;
+  }
+
+  /**
+   * Records history in debug sessions only (D8): Start with debugging and the steps, never a plain
+   * Run, and not the `NoDebug` runs of a code-injection flow that boot the machine to its entry point.
+   * @param debugRun Whether the run about to start is a debug run
+   */
+  private applyHistoryRecording(debugRun: boolean): void {
+    this.historySource()?.setHistoryEnabled(this.isDebugging && debugRun);
+  }
+
+  /**
    * Run the machine loop until cancelled
    */
   private async run(
@@ -1078,6 +1104,8 @@ export class MachineController implements IMachineController {
         // --- come here, so it keeps them.
         this.debugSupport?.resetHitCounts();
         this.startLogSession();
+        // --- ...and so does the execution history: a start from Stopped is a new timeline (D9)
+        this.historySource()?.clearHistory();
         break;
     }
 
@@ -1115,6 +1143,7 @@ export class MachineController implements IMachineController {
 
     // --- Sign if we are in debug mode
     this.store.dispatch(setDebuggingAction(this.isDebugging), "emu");
+    this.applyHistoryRecording(debugStepMode !== DebugStepMode.NoDebug);
 
     // --- Now, run!
     this.state = MachineControllerState.Running;

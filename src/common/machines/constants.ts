@@ -101,6 +101,13 @@ export const MF_ALLOW_SCAN_LINES = "allowScanLines";
  * they deliver the code by whatever route the machine does support.
  */
 export const MF_INJECT_SUPPORT = "injectSupport";
+/**
+ * Whether the machine records execution history in debug sessions
+ * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` D12): the Execution History document, its commands and
+ * its menu item gate on this, not on a list of machine ids, so a core that starts recording lights
+ * them up by setting it here.
+ */
+export const MF_EXEC_HISTORY = "execHistory";
 
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";

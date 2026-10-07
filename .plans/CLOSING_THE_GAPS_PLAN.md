@@ -30,7 +30,7 @@ are estimates for prioritising, not commitments.
 | G1 | Conditional breakpoints, hit counts, logpoints | **S–M** | ✅ done (2026-10-03): G1.1–G1.4, G1.5 (DeZog ASSERTION/WPMEM comments) and G1.6 (one-shot breakpoints) |
 | G2 | Load and save snapshots (.sna/.z80/.szx), RZX | **S → L** | ✅ done (2026-10-04): G2.1–G2.8 |
 | G3 | Live Next hardware inspectors | **M** (layers: M–L) | Copper list viewer, sprite table · ✅ G3.1, the Copper half of G3.8 and the `.copper` pragma (G3.9) done (2026-10-05) · ✅ G3.2 and G3.3, the Sprite Inspector, done (2026-10-05) · ✅ G3.4, the Tilemap Inspector, done (2026-10-06) · ✅ G3.5, the Layer 2 Inspector, done (2026-10-06) · ✅ G3.6, layer composition (hide, solo, probe, the Layers document), done (2026-10-06) · ✅ G3.7, the beam position overlay, done (2026-10-06) |
-| G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next |
+| G4 | Execution history and reverse debugging | **M → XL** | Read-only history viewer on the Next · ✅ G4.1, the Execution History on the Next, done (2026-10-07) |
 | G5 | Code coverage, profiler, unit tests | **M → L** | Coverage map in the disassembly |
 | G6 | Remote debugging, real hardware, external API | **M → XL** | Command API for scripts and CI |
 | G7 | 48K/128K reverse-engineering depth | **M → L** | Generalising the NEX annotation sidecar |
@@ -192,7 +192,7 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 
 | Feature | What it does | Size |
 |---|---|---|
-| G4.1 History viewer (Next) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
+| G4.1 History viewer (Next) ✅ **done** (2026-10-07) | After a stop, list the last N executed instructions with registers, disassembly and source line; click one to jump to its source. Read-only. | M (the data exists; needs an export, a UI and source mapping) |
 | G4.2 History in the other cores | The same trace recording for 48K/128K/+3E (and Z88). | M |
 | G4.3 "Lite" step back | Step backwards through the trace and show the historical registers and PC in the CPU panel and editor. Memory stays at the present. This is DeZog's "lite" mode. | M, after G4.1 |
 | G4.4 Full reverse debugging | Step back and reverse-continue with exact memory and device state: periodic checkpoints plus deterministic re-execution to the target instruction. | XL (every core needs cheap state capture; input, tape, disk and audio must replay deterministically) |
@@ -324,7 +324,7 @@ G1.1 hit counts · G1.2 register conditions · G1.4 logpoints · G1.6 one-shot b
 G10.1–G10.4 proof points.
 
 **Wave 2 — the Next leadership set:**
-~~G3.2 sprite inspector~~ (done) · ~~G3.4 tilemap~~ (done) · ~~G3.5 Layer 2~~ (done) · G4.1 history viewer (Next) · G4.3 lite
+~~G3.2 sprite inspector~~ (done) · ~~G3.4 tilemap~~ (done) · ~~G3.5 Layer 2~~ (done) · ~~G4.1 history viewer (Next)~~ (done) · G4.3 lite
 step back · G5.1 coverage · G1.3 memory and value conditions · G1.5 DeZog-compatible ASSERTION
 and WPMEM comments.
 

@@ -616,6 +616,19 @@ export const componentAliases: Record<string, string> = {
   "--bgcolor-copper-pc": "var(--accent-subtle)",
   "--bgcolor-copper-hit": "var(--status-warning-subtle)",
 
+  // --- Execution History (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6) -----------------------
+  /*
+   * Event rows (INT, NMI, DMA hold) are separators, not instructions: a subtle neutral band with
+   * secondary text, so a run of instructions reads unbroken and an interrupt still stands out. The
+   * newest row is where the machine is now - the execution point's colour, as in the Copper list. A
+   * frame boundary is a hairline, not a row: it must not change the row count G4.3 steps through.
+   */
+  "--bgcolor-history-separator": "var(--surface-hover)",
+  "--color-history-separator": "var(--data-secondary)",
+  "--bgcolor-history-newest": "var(--accent-subtle)",
+  "--color-history-frame-line": "var(--border-strong)",
+  "--color-history-recording": "var(--status-error)",
+
   // --- NEX bank browser content mix (`.plans/NEX_DMA_COPPER_REGIONS_PLAN.md` Phase 4) -----------
   /*
    * The two hardware-program kinds take fixed hues, not accent shades: the accent already owns

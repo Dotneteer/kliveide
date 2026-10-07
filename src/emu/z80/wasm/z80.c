@@ -76,6 +76,35 @@
 #define Z80_INT_ACK() ((void)0)
 #endif
 
+/*
+ * The execution-history recorder (`z80-history.c`, `.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.1).
+ * A core that records history includes `z80-history.h` before this file, which defines all three;
+ * every other core keeps these no-ops and pays nothing.
+ *
+ * - `Z80_HISTORY_EVENT(kind)`: an NMI or INT acknowledge (before it runs) or a HALTed cycle;
+ * - `Z80_HISTORY_BEGIN()`: at the M1 of an unprefixed opcode fetch, before the fetch - the registers
+ *   of the instruction about to run (R not yet incremented);
+ * - `Z80_HISTORY_COMMIT()`: after `Z80_AFTER_OPCODE_FETCH`, with `cpu.opCode` the byte the CPU
+ *   decodes and `cpu.pc` still the fetch address - the executed bytes and the machine context.
+ */
+/* The record kinds (`historyRecord.ts` keeps the same numbers) */
+#define Z80_HISTORY_KIND_INSTRUCTION 0u
+#define Z80_HISTORY_KIND_INT 1u
+#define Z80_HISTORY_KIND_NMI 2u
+#define Z80_HISTORY_KIND_HALT 3u
+#define Z80_HISTORY_KIND_FORCED_NOP 4u
+#define Z80_HISTORY_KIND_DMA_HOLD 5u
+
+#ifndef Z80_HISTORY_EVENT
+#define Z80_HISTORY_EVENT(kind) ((void)0)
+#endif
+#ifndef Z80_HISTORY_BEGIN
+#define Z80_HISTORY_BEGIN() ((void)0)
+#endif
+#ifndef Z80_HISTORY_COMMIT
+#define Z80_HISTORY_COMMIT() ((void)0)
+#endif
+
 #ifndef Z80_ALWAYS_INLINE
 #define Z80_ALWAYS_INLINE static inline __attribute__((always_inline))
 #endif
@@ -3234,11 +3263,13 @@ void z80ExecuteCpuCycle(void) {
   }
 
   if (cpu.sigNmi && cpu.prefix == PREFIX_NONE) {
+    Z80_HISTORY_EVENT(Z80_HISTORY_KIND_NMI);
     processNmi();
     return;
   }
 
   if (cpu.sigInt && cpu.prefix == PREFIX_NONE && cpu.iff1 && cpu.eiBacklog == 0) {
+    Z80_HISTORY_EVENT(Z80_HISTORY_KIND_INT);
     processInt();
     return;
   }
@@ -3246,6 +3277,7 @@ void z80ExecuteCpuCycle(void) {
   cpu.afterLdAIR = 0;
 
   if (cpu.halted) {
+    Z80_HISTORY_EVENT(Z80_HISTORY_KIND_HALT);
     delayMemoryRead(cpu.pc);
     Z80_REFRESH(IR);
     refreshMemory();
@@ -3255,6 +3287,7 @@ void z80ExecuteCpuCycle(void) {
 
   uint8_t m1Active = cpu.prefix == PREFIX_NONE;
   if (m1Active) {
+    Z80_HISTORY_BEGIN();
     Z80_BEFORE_OPCODE_FETCH();
   }
   cpu.opCode = readCodeMemory(cpu.pc);
@@ -3263,6 +3296,7 @@ void z80ExecuteCpuCycle(void) {
     refreshMemory();
     tactPlus1WithAddress(IR);
     Z80_AFTER_OPCODE_FETCH();
+    Z80_HISTORY_COMMIT();
   } else if (cpu.prefix != PREFIX_DDCB && cpu.prefix != PREFIX_FDCB) {
     /*
      * The byte after a CB/ED/DD/FD prefix is fetched by a second M1, which refreshes too: R counts

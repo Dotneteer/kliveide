@@ -66,6 +66,12 @@ describe("WASM machines: shared Z80/Z80N CPU contract", () => {
     expect(zx8081?.ok).toBe(true);
   });
 
+  it("knows which cores record execution history (EXECUTION_HISTORY_VIEWER_PLAN §4.1; G4.2 adds the rest)", () => {
+    const report = validateWasmCpuContract();
+    expect(report.models.filter((model) => model.recordsHistory).map((model) => model.id)).toEqual(["zxnext"]);
+    expect(report.models.every((model) => model.ok)).toBe(true);
+  });
+
   it("keeps the contract list explicit so new WASM machines cannot appear silently", () => {
     expect(wasmCpuContract.map(entry => entry.id)).toEqual(["sp48", "timex", "sp128", "spp3e", "zxnext", "z88", "zx8081"]);
   });

@@ -561,6 +561,16 @@ hide-copper
 
 Available aliases: `hcop`
 
+## `hide-history`
+
+Use this command to close the [Execution History](/working-with-ide/execution-history).
+
+```
+hide-history
+```
+
+Available aliases: `hhist`
+
 ## `hide-disassembly`
 
 Use this command to hide the machine code disassembly view.
@@ -1276,6 +1286,41 @@ show-copper [<index>]
 Available aliases: `shcop`
 
 With an index (`$000`-`$3FF`), the list turns **Follow PC** off, selects that slot and scrolls to it.
+
+## `show-history`
+
+Use this command to open the [Execution History](/working-with-ide/execution-history): the
+instructions the CPU ran in the current debug session.
+
+```
+show-history
+```
+
+Available aliases: `shhist`
+
+It works on machines that record execution history (the ZX Spectrum Next).
+
+## `history`
+
+Use this command to print the newest execution history records to the command output: the step,
+the frame position, the address, the bytes, the instruction, the source line and the registers each
+instruction changed.
+
+```
+history [<count>]
+```
+
+The count is 1-10000; it is 20 by default. History is recorded only in debug sessions.
+
+## `history-clear`
+
+Use this command to empty the execution history.
+
+```
+history-clear
+```
+
+Available aliases: `hclr`
 
 ## `show-disassembly`
 

@@ -1,0 +1,151 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Execution History document (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.6): the record list
+ * and the detail pane. Columns are `ch` (M2); rows take their height from their padding and line box
+ * (M3), as a listing pane does. Colours are the `--*-history-*` aliases.
+ */
+
+.count {
+  color: var(--data-label);
+  white-space: nowrap;
+}
+
+.recording {
+  color: var(--data-secondary);
+  white-space: nowrap;
+}
+
+.recordingOn {
+  color: var(--color-history-recording);
+}
+
+/* The list and the detail pane side by side, as the Copper List lays out its table and ruler */
+.body {
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  line-height: var(--panel-line-height);
+  outline: none;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--measure-gap);
+  padding: var(--space-0_5) var(--space-2);
+  white-space: nowrap;
+  cursor: default;
+  border-top: 1px solid transparent;
+
+  &:hover {
+    background-color: var(--bgcolor-item-hover);
+  }
+}
+
+.selectedRow {
+  outline: 1px solid var(--accent-border);
+  outline-offset: -1px;
+}
+
+.newestRow {
+  background-color: var(--bgcolor-history-newest);
+}
+
+/* A frame boundary: a hairline above the frame's first record */
+.frameStart {
+  border-top-color: var(--color-history-frame-line);
+}
+
+.separatorRow {
+  background-color: var(--bgcolor-history-separator);
+}
+
+.separator {
+  flex: 1 1 auto;
+  color: var(--color-history-separator);
+}
+
+.step {
+  width: 8ch;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--data-label);
+}
+
+.time {
+  width: 7ch;
+  flex-shrink: 0;
+  text-align: right;
+  color: var(--data-secondary);
+}
+
+/* The partition label (up to 3ch), its colon and four hex digits, with the prefix's own gap */
+.address {
+  display: flex;
+  align-items: center;
+  width: 11ch;
+  flex-shrink: 0;
+  color: var(--color-state-value);
+}
+
+.bytes {
+  width: 12ch;
+  flex-shrink: 0;
+  color: var(--data-secondary);
+}
+
+.flow {
+  width: 2ch;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--data-label);
+}
+
+.instruction {
+  width: 22ch;
+  flex-shrink: 0;
+  color: var(--data-value);
+}
+
+.source {
+  width: 20ch;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--data-label);
+}
+
+.changes {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-state-value);
+}
+
+.detail {
+  flex: 0 0 auto;
+  width: 34ch;
+  overflow: auto;
+  padding: var(--space-1) 0;
+  border-left: 1px solid var(--border-default);
+}
+
+.context {
+  padding: var(--space-0_5) var(--space-2);
+  white-space: normal;
+  color: var(--data-secondary);
+}

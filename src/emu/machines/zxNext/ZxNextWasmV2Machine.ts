@@ -1,4 +1,8 @@
 import { conditionStoreOf, type ConditionStore } from "../conditionStore";
+import { WasmHistoryReader } from "../history/WasmHistoryReader";
+import type { IExecutionHistorySource } from "@emu/abstractions/IExecutionHistorySource";
+import type { ExecutionHistoryInfo, ExecutionHistoryPage } from "@common/history/historyTypes";
+import { readWasmLayout } from "../state/wasmLayout";
 import type { MachineConfigSet, MachineModel } from "@common/machines/info-types";
 import {
   ULA_BORDER_COLOR_NAMES,
@@ -134,15 +138,14 @@ type ZxNextWasmV2Checkpoint = {
   key: string;
 
   /**
-   * The core's linear memory, minus the frame-trace ring that sits between these two halves.
-   *
-   * That ring is ~19.5 MiB of the 32 MiB buffer and holds nothing but diagnostics, so leaving it out
-   * takes the checkpoint from 32 MiB to roughly 13 MiB and lets a trace being recorded across a
-   * restore stay intact - the ring's header lives inside the excluded span, so it stays consistent
-   * with its own contents.
+   * The core's linear memory, minus every volatile range of its `klive.layout` stamp: the frame
+   * trace, the execution-history ring, the layer captures and the other debugging buffers
+   * (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` trap T7). They hold nothing a restored machine needs,
+   * so leaving them out keeps the checkpoint small, and a restore leaves them as they are - the
+   * history ring is the controller's to clear (D9), and a trace recorded across a restore stays
+   * consistent with its own header. One entry per kept span, in address order.
    */
-  memoryBeforeTrace: Uint8Array;
-  memoryAfterTrace: Uint8Array;
+  memory: { offset: number; bytes: Uint8Array }[];
 
   normalFrames: number;
   debugSteps: number;
@@ -154,7 +157,7 @@ type ZxNextWasmV2Checkpoint = {
 
 export class ZxNextWasmV2Machine
   extends ZxNextWasmHost
-  implements IZxNextIdeMachine, IZxNextHostInputMachine
+  implements IZxNextIdeMachine, IZxNextHostInputMachine, IExecutionHistorySource
 {
   public readonly implementation = "wasm" as const;
   public wasmV2Runtime?: ZxNextWasmV2Runtime;
@@ -676,12 +679,9 @@ export class ZxNextWasmV2Machine
     const runtime = this.wasmV2Runtime;
     if (runtime == null) return;
     const all = new Uint8Array(runtime.memoryBuffer);
-    const traceStart = runtime.exports.zxnextTraceGetStartOffset();
-    const traceEnd = traceStart + runtime.frameTrace.byteLength;
     this.wasmV2Checkpoint = {
       key,
-      memoryBeforeTrace: all.slice(0, traceStart),
-      memoryAfterTrace: all.slice(traceEnd),
+      memory: this.checkpointSpans(runtime).map(([from, to]) => ({ offset: from, bytes: all.slice(from, to) })),
       normalFrames: this.wasmV2NormalFrames,
       debugSteps: this.wasmV2DebugSteps,
       lastStopReason: this.wasmV2LastStopReason,
@@ -702,8 +702,7 @@ export class ZxNextWasmV2Machine
     if (runtime == null || checkpoint == null || checkpoint.key !== key) return false;
 
     const all = new Uint8Array(runtime.memoryBuffer);
-    all.set(checkpoint.memoryBeforeTrace, 0);
-    all.set(checkpoint.memoryAfterTrace, all.length - checkpoint.memoryAfterTrace.length);
+    for (const span of checkpoint.memory) all.set(span.bytes, span.offset);
     this.lastRenderedFrameTact = checkpoint.lastRenderedFrameTact;
     this.wasmV2NormalFrames = checkpoint.normalFrames;
     this.wasmV2DebugSteps = checkpoint.debugSteps;
@@ -722,6 +721,68 @@ export class ZxNextWasmV2Machine
     // --- The image carried the debug view of its time: put back today's (D2)
     this.reapplyLayerDebug(runtime);
     return true;
+  }
+
+  /**
+   * The spans of linear memory a checkpoint keeps, `[from, to)` in address order: everything but the
+   * volatile ranges of the core's layout stamp. A core without a stamp (a test double) leaves out
+   * only the frame trace, as checkpoints always did.
+   */
+  private checkpointSpans(runtime: ZxNextWasmV2Runtime): [number, number][] {
+    if (this.wasmV2CheckpointSpans?.runtime === runtime) return this.wasmV2CheckpointSpans.spans;
+    const size = runtime.memoryBuffer.byteLength;
+    const excluded = (readWasmLayout(runtime.module)?.volatile ?? []).map(
+      (v) => [v.address, v.address + v.size] as [number, number]
+    );
+    if (!excluded.length) {
+      const traceStart = runtime.exports.zxnextTraceGetStartOffset();
+      excluded.push([traceStart, traceStart + runtime.frameTrace.byteLength]);
+    }
+    excluded.sort((a, b) => a[0] - b[0]);
+    const spans: [number, number][] = [];
+    let from = 0;
+    for (const [start, end] of excluded) {
+      if (start > from) spans.push([from, Math.min(start, size)]);
+      from = Math.max(from, end);
+    }
+    if (from < size) spans.push([from, size]);
+    this.wasmV2CheckpointSpans = { runtime, spans };
+    return spans;
+  }
+
+  private wasmV2CheckpointSpans?: { runtime: ZxNextWasmV2Runtime; spans: [number, number][] };
+
+  // ==============================================================================================
+  // Execution history (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.4): the shared recorder in the
+  // core, read through the shared reader
+
+  readonly historyMachineId = "zxnext";
+
+  private wasmV2HistoryReader?: { runtime: ZxNextWasmV2Runtime; reader: WasmHistoryReader };
+
+  private historyReader(): WasmHistoryReader | undefined {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return undefined;
+    if (this.wasmV2HistoryReader?.runtime !== runtime) {
+      this.wasmV2HistoryReader = { runtime, reader: new WasmHistoryReader(runtime.exports, this.historyMachineId) };
+    }
+    return this.wasmV2HistoryReader.reader;
+  }
+
+  getHistoryInfo(): ExecutionHistoryInfo | undefined {
+    return this.historyReader()?.info();
+  }
+
+  readHistory(fromSequence: number, count: number): ExecutionHistoryPage | undefined {
+    return this.historyReader()?.read(fromSequence, count);
+  }
+
+  clearHistory(): void {
+    this.historyReader()?.clear();
+  }
+
+  setHistoryEnabled(enabled: boolean): void {
+    this.historyReader()?.setEnabled(enabled);
   }
 
   /**
