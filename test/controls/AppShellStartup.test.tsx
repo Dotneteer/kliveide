@@ -200,7 +200,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.FIRST_STARTUP_DIALOG_IDE,
       dialogIds.ABOUT_DIALOG,
       dialogIds.SJASMPLUS_INTEGRATION_DIALOG,
-      dialogIds.MACHINE_SELECT_DIALOG
+      dialogIds.MACHINE_SELECT_DIALOG,
+      dialogIds.SETTINGS_DIALOG
     ];
     const expectedEmuIds = [
       dialogIds.FIRST_STARTUP_DIALOG_EMU,
@@ -211,7 +212,8 @@ describe("app shell dialog registries and bridges", () => {
       dialogIds.Z88_CHANGE_RAM_DIALOG,
       dialogIds.JOYSTICK_BINDINGS_DIALOG,
       dialogIds.ABOUT_DIALOG,
-      dialogIds.MACHINE_SELECT_DIALOG
+      dialogIds.MACHINE_SELECT_DIALOG,
+      dialogIds.SETTINGS_DIALOG
     ];
 
     expect(Object.keys(ideDialogRegistry).map(Number).sort((a, b) => a - b)).toEqual(

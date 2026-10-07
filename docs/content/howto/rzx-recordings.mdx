@@ -23,8 +23,7 @@ original machine had.
 
 Any of these plays a recording, switching the emulator to the machine it needs:
 
-- **File &rarr; Play RZX Recording...**, or **Machine &rarr; RZX &rarr; Play Recording...** in the
-  Emulator;
+- **File &rarr; Open File...**, choosing the `.rzx` file;
 - dropping the `.rzx` file onto the Emulator window;
 - **Play recording** in the Explorer's context menu, or the **Play** button in the recording's
   document tab;
@@ -78,23 +77,23 @@ Open an `.rzx` file from the Explorer to see:
 
 ## Recording
 
-**Machine &rarr; RZX &rarr; Record** (or `zx-rzx-record`) starts recording from the machine's current
+**Machine &rarr; Record &rarr; RZX: Record** (or `zx-rzx-record`) starts recording from the machine's current
 state. The machine can be running or paused - including paused at the end of a playback, or in the
 middle of one, which is how you take over a recording and continue it yourself. The status bar shows
 a **REC** badge with the frame counter.
 
 Every five seconds the recording stores a snapshot, so you can go back to it:
 
-- **Roll Back** (`zx-rzx-rollback`) returns to the latest rollback point and discards everything
+- **RZX: Roll Back** (`zx-rzx-rollback`) returns to the latest rollback point and discards everything
   recorded after it; `zx-rzx-rollback 2` goes back one point further, and so on. The machine is
   paused at the point; resume to record on.
-- **Insert Rollback Point** (`zx-rzx-point`) adds a point of your own at the next frame.
+- **RZX: Insert Rollback Point** (`zx-rzx-point`) adds a point of your own at the next frame.
 
 Older rollback points are thinned out as the recording goes on: all of them are kept for the last 15
 seconds, then one every 15 seconds up to a minute, one a minute up to five minutes, and one every
 five minutes after that. Points you insert are always kept.
 
-**Stop and Save...** (`zx-rzx-stop <file>`) stops recording and saves the file. The saved file keeps
+**RZX: Stop and Save...** (`zx-rzx-stop <file>`) stops recording and saves the file. The saved file keeps
 the first snapshot and every frame; the rollback points are left out, as other emulators expect.
 
 <Callout type="warning">
@@ -105,7 +104,7 @@ warning colour, until you do.
 
 ## Rendering a recording to video
 
-**Machine &rarr; RZX &rarr; Render Recording to Video...** (or `zx-rzx-video <file>`) plays a recording
+**Machine &rarr; Record &rarr; RZX: Render a Recording to Video...** (or `zx-rzx-video <file>`) plays a recording
 into a video file with the [screen recorder](./screen-recording), using its frame rate, quality and
 format settings. The recording plays as fast as the emulator can run it, with the speaker muted; the
 sound still goes into the video, and the video plays at the normal speed. Add `-t` to the command to

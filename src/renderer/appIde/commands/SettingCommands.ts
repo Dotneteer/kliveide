@@ -10,6 +10,7 @@ import {
   writeMessage,
   IdeCommandBase
 } from "@renderer/appIde/services/ide-commands";
+import { SETTINGS_PAGES } from "@common/settings/settings-pages";
 
 type SettingsArgs = {
   "-p"?: boolean;
@@ -157,5 +158,42 @@ export class MoveSettingsCommand extends IdeCommandBase<MoveSettingsArgs> {
     await context.mainApi.moveSettings(!!args["-pull"], !!args["-c"]);
     writeSuccessMessage(context.output, `Command successfully executed`);
     return commandSuccess;
+  }
+}
+
+type SettingsDialogArgs = {
+  page?: string;
+};
+
+/**
+ * Opens the Settings dialog (`.plans/MENU_REDESIGN_PLAN.md` §4), optionally on one page.
+ */
+export class SettingsDialogCommand extends IdeCommandBase<SettingsDialogArgs> {
+  readonly id = "settings";
+  readonly description =
+    "Opens the Settings dialog. Pages: " + SETTINGS_PAGES.map((p) => p.id).join(", ");
+  readonly usage = "settings [<page>]";
+  readonly aliases = [];
+  readonly argumentInfo: CommandArgumentInfo = {
+    optional: [{ name: "page" }]
+  };
+
+  async validateCommandArgs(
+    _context: IdeCommandContext,
+    args: SettingsDialogArgs
+  ): Promise<ValidationMessage[]> {
+    if (args.page !== undefined && !SETTINGS_PAGES.some((p) => p.id === args.page)) {
+      return [
+        validationError(
+          `Unknown page '${args.page}'. Use one of: ${SETTINGS_PAGES.map((p) => p.id).join(", ")}`
+        )
+      ];
+    }
+    return [];
+  }
+
+  async execute(context: IdeCommandContext, args: SettingsDialogArgs): Promise<IdeCommandResult> {
+    const problem = await context.mainApi.runUiAction("open-settings", args.page);
+    return problem ? commandError(problem) : commandSuccess;
   }
 }

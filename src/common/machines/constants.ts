@@ -24,6 +24,21 @@ export const MEDIA_INFO_MACHINE_IDS: string[] = [
   MI_SCORPION
 ];
 
+/**
+ * The machines with a raster beam the emulator can show on its paused screen
+ * (`.plans/BEAM_POSITION_OVERLAY_PLAN.md`): the ZX Spectrum family and the Next. Not the Z88 (an LCD,
+ * no beam), the ZX80/81 (a CPU-generated display) or the C64. The toolbar button and the View menu
+ * item appear only for these.
+ */
+export const BEAM_POSITION_MACHINE_IDS: string[] = [
+  MI_SPECTRUM_48,
+  MI_SPECTRUM_128,
+  MI_SPECTRUM_3E,
+  MI_TIMEX,
+  MI_SCORPION,
+  MI_ZXNEXT
+];
+
 // Available machine configuration keys
 export const MC_DISK_SUPPORT = "diskSupport";
 export const MC_SCREEN_FREQ = "screenFreq";

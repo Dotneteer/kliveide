@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Menu Redesign</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Mockup for .plans/MENU_REDESIGN_PLAN.md. Same token set as the other mockups in this folder. */
+:root {
+  --page: #e9ebee; --panel: #f7f8f9; --chrome: #f1f2f4; --canvas: #ffffff; --raised: #ffffff;
+  --hover: #e8eaee; --selected: #e2e6ec; --border-subtle: #e5e7ea; --border: #d5d8dd; --border-strong: #b9bec6;
+  --text: #1b1d21; --text-2: #565c65; --text-3: #6b717a; --text-dis: #9aa0a8;
+  --accent: #0A6FB8; --on-accent: #ffffff; --accent-wash: #0A6FB81c; --value: #0A18B8;
+  --menu-bg: #f6f6f7; --menu-hi: #0A6FB8; --menu-hi-fg: #ffffff;
+  --gone: #b3261e; --gone-wash: #b3261e14; --new: #1b7f3b; --new-wash: #1b7f3b16; --moved: #8A6A00; --moved-wash: #8A6A0018;
+  --font-ui: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --value: #939CF0;
+  --menu-bg: #2a2c30; --menu-hi: #2f6fb0; --menu-hi-fg: #ffffff;
+  --gone: #f2857c; --gone-wash: #f2857c18; --new: #6fd08f; --new-wash: #6fd08f18; --moved: #FFC933; --moved-wash: #FFC93318;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --page: #0e0f11; --panel: #17191c; --chrome: #1b1d21; --canvas: #141517; --raised: #202329;
+  --hover: #24272e; --selected: #2a2e36; --border-subtle: #24272b; --border: #2e3238; --border-strong: #3d424a;
+  --text: #e4e6ea; --text-2: #949aa4; --text-3: #7f8690; --text-dis: #5a606a;
+  --accent: #45A5E6; --on-accent: #0e0f11; --accent-wash: #45A5E624; --value: #939CF0;
+  --menu-bg: #2a2c30; --menu-hi: #2f6fb0; --menu-hi-fg: #ffffff;
+  --gone: #f2857c; --gone-wash: #f2857c18; --new: #6fd08f; --new-wash: #6fd08f18; --moved: #FFC933; --moved-wash: #FFC93318;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--text); font: 13px/1.45 var(--font-ui); padding: 24px 16px 64px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+h1 { font-size: 19px; margin: 0 0 4px; font-weight: 600; }
+h2 { font-size: 15px; margin: 0 0 6px; font-weight: 600; }
+p { margin: 0; color: var(--text-2); max-width: 90ch; }
+code { font-family: var(--font-mono); font-size: 12px; }
+section { display: grid; gap: 12px; }
+
+/* --- Controls */
+.ctrls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 5px; overflow: hidden; background: var(--canvas); }
+.seg button { border: 0; background: none; color: var(--text-2); font: 500 12px var(--font-ui); padding: 5px 10px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button.on { background: var(--accent); color: var(--on-accent); }
+.ctrls label { color: var(--text-3); font-size: 12px; margin-right: 6px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.legend .l-new::before { background: var(--new); } .legend .l-moved::before { background: var(--moved); } .legend .l-gone::before { background: var(--gone); }
+
+/* --- Menu comparison */
+.compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .compare { grid-template-columns: minmax(0, 1fr); } }
+.win { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; overflow: visible; min-width: 0; }
+.win-title { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 12px; background: var(--chrome); border-bottom: 1px solid var(--border); border-radius: 6px 6px 0 0; font-weight: 600; }
+.win-title .stat { font: 400 11.5px var(--font-mono); color: var(--text-3); }
+.menubar { display: flex; flex-wrap: wrap; gap: 0; padding: 2px 6px; border-bottom: 1px solid var(--border); background: var(--menu-bg); position: relative; }
+.menubar > .mb { position: relative; }
+.menubar > .mb > button { border: 0; background: none; color: var(--text); font: 13px var(--font-ui); padding: 4px 9px; border-radius: 4px; cursor: default; }
+.menubar > .mb > button.open { background: var(--menu-hi); color: var(--menu-hi-fg); }
+.menubar > .mb > button .cnt { font: 10px var(--font-mono); color: var(--text-3); margin-left: 3px; }
+.menubar > .mb > button.open .cnt { color: inherit; opacity: .8; }
+.menubar > .mb > button.new { box-shadow: inset 0 -2px 0 var(--new); }
+.win-body { min-height: 560px; padding: 12px; color: var(--text-3); font-size: 12px; }
+.dd { position: absolute; top: 100%; left: 0; z-index: 20; min-width: 250px; background: var(--raised); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 10px 30px #0004; padding: 4px 0; }
+.dd .dd { top: -5px; left: calc(100% - 4px); }
+.mi { position: relative; display: grid; grid-template-columns: 16px minmax(0, 1fr) auto 12px; gap: 6px; align-items: center; padding: 3px 10px 3px 6px; white-space: nowrap; cursor: default; }
+.mi .ck { font-size: 11px; text-align: center; }
+.mi .k { font: 11.5px var(--font-mono); color: var(--text-3); }
+.mi .arr { font-size: 9px; color: var(--text-3); }
+.mi.dis { color: var(--text-dis); }
+.mi.new { background: var(--new-wash); box-shadow: inset 3px 0 0 var(--new); }
+.mi.moved { background: var(--moved-wash); box-shadow: inset 3px 0 0 var(--moved); }
+.mi.gone { background: var(--gone-wash); box-shadow: inset 3px 0 0 var(--gone); }
+.mi.gone .lbl { text-decoration: line-through; text-decoration-color: var(--gone); }
+.mi .note { display: block; font-size: 10.5px; color: var(--text-3); white-space: normal; max-width: 34ch; }
+.sepr { height: 1px; background: var(--border); margin: 4px 0; }
+.mi > .dd { display: none; }
+.mi:hover > .dd { display: block; }
+/* Hover last and with the higher specificity: it must beat the new/moved/gone tints and the disabled
+   colour, or hovered text turns white on a pale tint (or grey on the highlight). */
+.mi.mi:hover { background: var(--menu-hi); color: var(--menu-hi-fg); }
+.mi.mi:hover .k, .mi.mi:hover .note, .mi.mi:hover .arr { color: inherit; opacity: .85; }
+.mi.dis:hover { opacity: .75; }
+.mi.gone:hover .lbl { text-decoration-color: currentColor; }
+.hint { margin-top: 6px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+.stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.stat-card b { display: block; font: 600 20px var(--font-mono); color: var(--value); }
+.stat-card span { font-size: 12px; color: var(--text-2); }
+
+/* --- Settings dialog */
+.dlg { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 12px 40px #0004; overflow: hidden; }
+.dlg-head { display: flex; align-items: center; gap: 12px; background: var(--chrome); border-bottom: 1px solid var(--border); padding: 8px 12px; font-weight: 600; }
+.dlg-head input { margin-left: auto; width: min(320px, 50%); background: var(--canvas); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 4px 8px; font: 12.5px var(--font-ui); }
+.dlg-body { display: grid; grid-template-columns: 190px minmax(0, 1fr); height: 540px; }
+@media (max-width: 700px) { .dlg-body { grid-template-columns: minmax(0, 1fr); height: auto; } .nav { display: flex; flex-wrap: wrap; border-right: 0 !important; border-bottom: 1px solid var(--border); } }
+.nav { border-right: 1px solid var(--border); padding: 6px 0; overflow: auto; }
+.nav button { display: flex; width: 100%; justify-content: space-between; border: 0; background: none; color: var(--text); text-align: left; padding: 5px 12px; font: 13px var(--font-ui); cursor: pointer; }
+.nav button:hover { background: var(--hover); }
+.nav button.on { background: var(--selected); box-shadow: inset 2px 0 0 var(--accent); font-weight: 500; }
+.nav button .n { color: var(--text-3); font: 11px var(--font-mono); }
+.page { overflow: auto; padding: 14px 20px 20px; }
+.page h3 { font-size: 15px; margin: 0 0 2px; }
+.page .sub { color: var(--text-3); font-size: 12px; margin-bottom: 10px; }
+.grp { margin-top: 14px; }
+.grp > .gh { font: 600 11px var(--font-ui); text-transform: uppercase; letter-spacing: .06em; color: var(--text-3); border-bottom: 1px solid var(--border-subtle); padding-bottom: 4px; margin-bottom: 4px; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 240px); gap: 16px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border-subtle); }
+.row .t { font-weight: 500; }
+.row .d { color: var(--text-3); font-size: 11.5px; }
+.row .src { font: 10.5px var(--font-mono); color: var(--moved); }
+.row.hl { background: var(--accent-wash); }
+select, .fake-in { width: 100%; background: var(--canvas); border: 1px solid var(--border); border-radius: 4px; color: var(--text); padding: 3px 6px; font: 12.5px var(--font-ui); }
+.fake-in { display: flex; gap: 6px; align-items: center; overflow: hidden; }
+.fake-in span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-size: 11.5px; color: var(--text-2); }
+.btn { border: 1px solid var(--border-strong); background: var(--raised); color: var(--text); border-radius: 4px; padding: 3px 10px; font: 12px var(--font-ui); cursor: pointer; white-space: nowrap; }
+.btn.primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.sw { justify-self: end; width: 32px; height: 18px; border-radius: 9px; background: var(--border-strong); position: relative; cursor: pointer; border: 0; }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--raised); transition: left .12s; }
+.sw.on { background: var(--accent); } .sw.on::after { left: 16px; }
+.swatches { display: flex; gap: 6px; justify-self: end; }
+.swatches i { width: 20px; height: 20px; border-radius: 50%; display: block; border: 2px solid transparent; cursor: pointer; }
+.swatches i.on { border-color: var(--text); }
+.dlg-foot { display: flex; gap: 8px; align-items: center; justify-content: flex-end; padding: 8px 12px; border-top: 1px solid var(--border); background: var(--chrome); }
+.dlg-foot .live { margin-right: auto; color: var(--text-3); font-size: 12px; }
+
+/* --- Strips */
+.strip-demo { display: grid; gap: 16px; }
+.emu { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 6px; overflow: visible; }
+.tb { display: flex; align-items: center; gap: 4px; padding: 5px 8px; background: var(--chrome); border-bottom: 1px solid var(--border); flex-wrap: wrap; position: relative; }
+.ib { width: 30px; height: 28px; border-radius: 4px; display: grid; place-items: center; color: var(--text-2); font-size: 14px; border: 0; background: none; cursor: default; position: relative; }
+.ib:hover { background: var(--hover); }
+.ib.sel { background: var(--selected); color: var(--accent); }
+.ib.new { box-shadow: 0 0 0 2px var(--new); }
+.ib .car { position: absolute; right: 1px; bottom: 1px; font-size: 7px; color: var(--text-3); }
+.tsep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.screen { height: 160px; background: repeating-linear-gradient(0deg, #00000010 0 2px, transparent 2px 4px), #1c2a6b; display: grid; place-items: center; color: #d0d4ff; font: 12px var(--font-mono); }
+.sb { display: flex; align-items: center; gap: 0; padding: 0 6px; height: 24px; background: var(--chrome); border-top: 1px solid var(--border); font-size: 12px; position: relative; flex-wrap: nowrap; overflow: visible; }
+.sb .sp { flex: 1; }
+.sb .chip { padding: 1px 8px; border-radius: 3px; cursor: default; position: relative; white-space: nowrap; }
+.sb .chip.click { box-shadow: inset 0 -1px 0 var(--new); }
+.sb .chip.click:hover { background: var(--hover); }
+.pop { position: absolute; bottom: calc(100% + 4px); right: 0; z-index: 30; background: var(--raised); border: 1px solid var(--border-strong); border-radius: 6px; box-shadow: 0 10px 30px #0004; padding: 4px 0; min-width: 180px; display: none; }
+.tb .pop { top: calc(100% + 2px); bottom: auto; left: 0; right: auto; }
+.has-pop:hover > .pop, .has-pop:focus-within > .pop { display: block; }
+.vol { padding: 8px 12px; display: grid; gap: 6px; }
+.vol input { width: 100%; accent-color: var(--accent); }
+.callouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.callout { background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--new); border-radius: 4px; padding: 8px 10px; }
+.callout b { display: block; margin-bottom: 2px; }
+.callout span { color: var(--text-2); font-size: 12px; }
+table.map { width: 100%; border-collapse: collapse; font-size: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+table.map th, table.map td { text-align: left; padding: 5px 10px; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+table.map th { background: var(--chrome); font-weight: 600; color: var(--text-2); }
+table.map td:first-child { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-2); }
+.tablewrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Klive menu redesign</h1>
+    <p>Mockup for <code>.plans/MENU_REDESIGN_PLAN.md</code>. Hover a menu title to open it. Compare
+      what the native menu shows <b>today</b> with the <b>proposed</b> menu, for the window that has
+      focus and the machine that is running. Coloured rows in the proposed menu show what changed;
+      in today's menu, red rows are the ones that leave the menu.</p>
+  </header>
+
+  <section>
+    <div class="ctrls">
+      <div><label>Focused window</label><span class="seg" id="focusSeg"></span></div>
+      <div><label>Machine</label><span class="seg" id="machineSeg"></span></div>
+      <div><label>Platform</label><span class="seg" id="platSeg"></span></div>
+    </div>
+    <div class="legend"><span class="l-new">new item or menu</span><span class="l-moved">moved here from another menu</span><span class="l-gone">leaves the menu (see note on the item)</span></div>
+    <div class="compare">
+      <div class="win"><div class="win-title">Today <span class="stat" id="statOld"></span></div><div class="menubar" id="mbOld"></div><div class="win-body">Hover a menu title above.</div></div>
+      <div class="win"><div class="win-title">Proposed <span class="stat" id="statNew"></span></div><div class="menubar" id="mbNew"></div><div class="win-body">Hover a menu title above.</div></div>
+    </div>
+    <div class="stats" id="statCards"></div>
+  </section>
+
+  <section>
+    <h2>Settings dialog (<code>Ctrl+,</code> / <code>⌘,</code>)</h2>
+    <p>One dialog takes every set-and-forget option out of the menu. Its pages are generated from
+      <code>setting-definitions.ts</code> (a new <code>category</code>/<code>group</code> per entry);
+      the few values that live in app state get adapters. Changes apply immediately, as the menu
+      checkboxes do today. The orange tag under each row names the menu path it replaces. Type in
+      the search box to filter across all pages.</p>
+    <div class="dlg">
+      <div class="dlg-head">Settings <input id="search" placeholder="Search settings (e.g. font, rom, joystick)"></div>
+      <div class="dlg-body"><nav class="nav" id="nav"></nav><div class="page" id="page"></div></div>
+      <div class="dlg-foot"><span class="live">Changes apply immediately</span><button class="btn">Reset Page to Defaults</button><button class="btn primary">Close</button></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Controls that move into the window itself</h2>
+    <p>Frequent, state-like choices go where the user is already looking: the emulator toolbar and
+      the status bar. The menu keeps the command, so keyboard and menu users lose nothing. Hover
+      the green-outlined controls.</p>
+    <div class="strip-demo">
+      <div class="emu">
+        <div class="tb">
+          <button class="ib" title="Start">▶</button><button class="ib" title="Debug">🐞</button><button class="ib">⏸</button><button class="ib">⏹</button><button class="ib">↻</button>
+          <div class="tsep"></div>
+          <button class="ib">⤵</button><button class="ib">⤼</button><button class="ib">⤴</button>
+          <div class="tsep"></div>
+          <button class="ib sel" title="Stay on top">📌</button><button class="ib" title="Instant screen">▣</button><button class="ib" title="Beam position">┼</button><button class="ib" title="Keyboard">⌨</button>
+          <div class="has-pop" style="position:relative" tabindex="0">
+            <button class="ib new" title="Sound level">🔊<span class="car">▼</span></button>
+            <div class="pop"><div class="vol"><b style="font-size:12px">Sound</b><input type="range" min="0" max="4" value="2"><span style="font-size:11px;color:var(--text-3)">Mute · Low · <b>Medium</b> · High · Highest</span></div><div class="sepr"></div><div class="mi"><span class="ck"></span><span class="lbl">Mute</span><span class="k"></span><span></span></div></div>
+          </div>
+          <button class="ib">🚀</button><button class="ib">⏪</button>
+          <div class="has-pop" style="position:relative" tabindex="0">
+            <button class="ib new" title="Record">⏺<span class="car">▼</span></button>
+            <div class="pop" style="min-width:240px">
+              <div class="mi"><span class="ck"></span><span class="lbl">Start Video Recording</span><span class="k"></span><span></span></div>
+              <div class="mi"><span class="ck"></span><span class="lbl">Start IDE + Emulator Recording</span><span class="k">⌘⇧R</span><span></span></div>
+              <div class="mi"><span class="ck"></span><span class="lbl">Start RZX Recording</span><span class="k"></span><span></span></div>
+              <div class="sepr"></div>
+              <div class="mi"><span class="ck"></span><span class="lbl">Recording Settings…</span><span class="k"></span><span></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="screen">ZX Spectrum 48K screen</div>
+        <div class="sb" id="emuSb">
+          <span class="chip has-pop click" tabindex="0">⏱ 0.42 / 0.40 ms
+            <div class="pop" style="left:0;right:auto"><div class="mi"><span class="ck">✓</span><span class="lbl">Show Performance Info</span><span></span><span></span></div><div class="mi"><span class="ck">✓</span><span class="lbl">Show Media Information</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">Show Layers Strip</span><span></span><span></span></div><div class="sepr"></div><div class="mi"><span class="ck"></span><span class="lbl">Hide Status Bar</span><span></span><span></span></div></div>
+          </span>
+          <span class="sp"></span>
+          <span class="chip has-pop click" tabindex="0">ZX Spectrum 48K
+            <div class="pop"><div class="mi"><span class="ck">✓</span><span class="lbl">ZX Spectrum 48K</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">ZX Spectrum 128K</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">ZX Spectrum Next</span><span></span><span></span></div><div class="sepr"></div><div class="mi"><span class="ck"></span><span class="lbl">Select Machine…</span><span class="k">⇧⌘M</span><span></span></div></div>
+          </span>
+          <span class="chip has-pop click" tabindex="0">3.500 MHz
+            <div class="pop" style="min-width:140px"><div class="mi"><span class="ck">✓</span><span class="lbl">Normal</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">2x</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">4x</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">8x</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">16x</span><span></span><span></span></div><div class="mi"><span class="ck"></span><span class="lbl">24x</span><span></span><span></span></div></div>
+          </span>
+        </div>
+      </div>
+      <div class="callouts">
+        <div class="callout"><b>Sound level dropdown</b><span>The mute/unmute button gains a caret: a slider with the five levels. Machine › Sound stays as the keyboard path.</span></div>
+        <div class="callout"><b>Record dropdown</b><span>The record button offers the three kinds of recording and “Recording Settings…”. Format, quality, fps and the IDE + Emulator options leave the menu.</span></div>
+        <div class="callout"><b>Machine name and MHz are clickable</b><span>The status bar already shows both; clicking opens the favourites + “Select Machine…” and the clock multiplier.</span></div>
+        <div class="callout"><b>Status bar context menu</b><span>Right-click (or click the performance chip) toggles the status-bar extras: performance info, media strip, Next layers strip.</span></div>
+        <div class="callout"><b>Layout lives with the layout</b><span>Right-click the activity bar: “Move Sidebar to the Right”. The Command & Output header gets “Move to Top” and “Maximize” buttons.</span></div>
+        <div class="callout"><b>Layers strip already owns layers</b><span>Show/Solo per layer, transparency, clip windows and the pixel probe are all on the strip; the 16-item Machine › Layers submenu goes.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Where every item goes</h2>
+    <div class="tablewrap"><table class="map" id="mapTable"><thead><tr><th>Today</th><th>Proposed</th><th>Why</th></tr></thead><tbody></tbody></table></div>
+  </section>
+</div>
+
+<script>
+// ---------------------------------------------------------------------------------------------
+// Menu model. Item: {l, k (accelerator), c (checked), d (disabled), s (submenu), f ("emu"|"ide"),
+// m (machines it appears for), mk ("new"|"moved"|"gone"), n (note)} or "-" for a separator.
+const state = { focus: "emu", machine: "sp48", plat: "mac" };
+const MACHINES = { sp48: "ZX Spectrum 48K", pent: "Pentagon 128", next: "ZX Spectrum Next", z88: "Cambridge Z88" };
+const SPECTRUMS = ["sp48", "pent", "next"];
+const isMac = () => state.plat === "mac";
+const MOD = () => (isMac() ? "⌘" : "Ctrl+");
+const list = (labels, checkedIdx = 0) => labels.map((l, i) => ({ l, c: i === checkedIdx }));
+
+const accents = ["Sinclair Blue", "Spectrum Magenta", "Ember", "Ultraviolet", "Deep Teal", "Phosphor Green"];
+const fonts = ["IBM Plex Mono", "JetBrains Mono", "Cascadia Code", "Fira Code", "Menlo", "Consolas"];
+const sizes = ["Smallest", "Small", "Medium", "Large", "Largest"];
+const multipliers = ["Normal", "2x", "4x", "6x", "8x", "10x", "12x", "16x", "20x", "24x"];
+const soundLevels = ["Mute", "Low", "Medium", "High", "Highest"];
+const favourites = () => [...list(["ZX Spectrum 48K", "ZX Spectrum 128K", "ZX Spectrum +3E", "ZX Spectrum Next", "Cambridge Z88"], -1).map((i) => ({ ...i, c: i.l === MACHINES[state.machine] })), "-", { l: "Select machine…", k: "⇧" + MOD() + "M" }];
+const nextHotkeys = ["F1 - Hard Reset", "F2 - Toggle Scandoubler", "F3 - Toggle 50Hz/60Hz Display", "F4 - Soft Reset", "F5 - Enable Expansion Bus", "F6 - Disable Expansion Bus", "F7 - Adjust Scanline Weight", "F8 - Cycle CPU Speed", "F9 - Multiface NMI", "F10 - DivMMC NMI"].map((l) => ({ l }));
+const joySide = (side) => ({ l: side, s: [{ l: "Driven by", s: list(["Not connected", "Host keyboard", "Host gamepad"], 1) }, { l: "Set machine mode (NextReg $05)", s: list(["Sinclair 2 (keys 1-5)", "Kempston 1 (port $1F)", "Cursor / Protek", "Sinclair 1 (keys 6-0)", "Kempston 2 (port $37)", "MD 1", "MD 2", "User-defined (joymap)"], 1) }] });
+const layers = ["ULA", "Layer 2", "Sprites", "Tilemap"];
+
+// ---------------------------------------------------------------------------------------------
+// TODAY
+function oldMenus() {
+  const f = state.focus, m = state.machine, gone = (n, x = {}) => ({ mk: "gone", n, ...x });
+  const menus = [];
+  if (isMac()) menus.push({ t: "Klive", items: [{ l: "Hide Klive" }, { l: "Hide Others" }, { l: "Show All" }, "-", { l: "Quit Klive" }] });
+  menus.push({ t: "File", items: [
+    { l: "New project..." }, { l: "Open folder..." }, "-", { l: "Recent Folders", s: [{ l: "~/KliveProjects/game" }, { l: "~/KliveProjects/demo" }] }, "-",
+    { l: "Load ZX Spectrum Snapshot...", ...gone("Merged into File › Open File…") },
+    { l: "Play RZX Recording...", ...gone("Merged into File › Open File…") },
+    { l: "Save ZX Spectrum Snapshot...", d: !SPECTRUMS.includes(m) },
+    { l: "Save Machine State..." }, { l: "Load Machine State...", ...gone("Merged into File › Open File…") }, "-",
+    { l: "Close Folder" }, "-", { l: "Manage Excluded Items", ...gone("Settings › General › Project") },
+    ...(isMac() ? [] : ["-", { l: "Quit" }])
+  ] });
+  if (isMac()) menus.push({ t: "Edit", items: [{ l: "Undo" }, { l: "Redo" }, "-", { l: "Cut" }, { l: "Copy" }, { l: "Paste" }, { l: "Paste and Match Style" }, { l: "Delete" }, { l: "Select All" }] });
+  const view = [
+    { l: "Actual Size", k: MOD() + "0" }, { l: "Zoom In", k: MOD() + "+" }, { l: "Zoom Out", k: MOD() + "-" }, "-",
+    { l: "Toggle Full Screen", k: "Ctrl+⇧F9" }, "-"
+  ];
+  if (f === "emu") view.push(
+    { l: "Show the Toolbar", c: true }, { l: "Show the Status Bar", c: true },
+    { l: "Show Performance Info in the Status Bar", ...gone("Status bar context menu; Settings › Emulator") }, "-",
+    { l: "Show the Virtual Keyboard" }, { l: "Show the Instant Screen", ...gone("Emulator toolbar (already there); Settings › Emulator") },
+    { l: "Show the Beam Position", ...gone("Emulator toolbar (already there); Settings › Emulator") },
+    ...(["sp48", "pent"].includes(m) ? [{ l: "Show Media Information", c: true, ...gone("Status bar context menu; Settings › Emulator") }] : []),
+    ...(m === "next" ? [{ l: "Show Layers", ...gone("Status bar context menu; Settings › Emulator") }] : []),
+    { l: "Screen Zoom Steps", ...gone("Settings › Emulator"), s: ["Whole Steps (1x, 2x, 3x)", "Half Steps (1x, 1.5x, 2x)", "Quarter Steps (1x, 1.25x, 1.5x)"].map((l, i) => ({ l, c: !i })) },
+    { l: "Fit Window to Screen" }, { l: "Fit Window to Screen at 1x" },
+    { l: "Keep Emulator on Top", c: true, ...gone("Emulator toolbar pin (already there); Settings › Emulator") });
+  else view.push(
+    { l: "Show the Toolbar", c: true }, { l: "Show the Status Bar", c: true }, "-",
+    { l: "Show the Sidebar", c: true }, { l: "Move the Sidebar to the Right", ...gone("Activity bar context menu; Settings › Appearance") }, "-",
+    { l: "Show Command and Output", c: true }, { l: "Move Commands and Output to the top", ...gone("Tool area header button; Settings › Appearance") },
+    { l: "Maximize Commands and Output", ...gone("Tool area header button; Settings › Appearance") });
+  view.push("-", { l: "Sync the Source with the Current Breakpoint", c: true, mk: "gone", n: "Moves to Debug; also on the IDE toolbar" }, "-",
+    { l: "Theme", ...gone("Settings › Appearance; View keeps one light/dark toggle"), s: [...accents.map((a, i) => ({ l: `${a} (Light)`, c: false })), "-", ...accents.map((a, i) => ({ l: `${a} (Dark)`, c: !i }))] }, "-",
+    { l: "Editor Options", ...gone("Settings › Editor"), s: [{ l: "Font Family", s: list(fonts) }, { l: "Font Size", s: list(sizes, 1) }, { l: "Enable AutoComplete", c: true }, { l: "Enable Selection Highlight", c: true }, { l: "Enable Occurrences Highlight", c: true }, { l: "Quick Suggestion Delay", s: list(["Instantenous", "Short (100ms)", "Medium (200ms)", "Long (500ms)", "Longest (1s)"], 2) }, "-", { l: "Detect Indentation", c: true }, { l: "Insert Spaces Instead of Tabs", c: true }, { l: "Render Whitespaces", s: list(["Do not render whitespaces", "Render whitespace at line boundaries", "Only render whitespace inside selected text", "Render all whitespace characters"]) }, "-", { l: "Tab Size", s: list(["2", "4", "8", "16"], 1) }, "-", { l: "Allow background compile", c: true }] },
+    { l: "Panel Options", ...gone("Settings › Appearance"), s: [{ l: "Font Family", s: list(fonts) }, { l: "Font Size", s: list(sizes, 2) }] });
+  menus.push({ t: "View", items: view });
+
+  const mach = [
+    { l: "Machine type", s: favourites() }, "-",
+    { l: "Start", k: "F5" }, { l: "Pause", k: "⇧F5", d: true }, { l: "Stop", k: "F4", d: true }, { l: "Restart", k: "⇧F4", d: true }, "-",
+    { l: "Start with Debugging", k: "Ctrl+F5", mk: "gone", n: "Moves to the new Debug menu" },
+    { l: "Step Into", k: isMac() ? "F12" : "F11", d: true, mk: "gone", n: "Moves to Debug" },
+    { l: "Step Over", k: "F10", d: true, mk: "gone", n: "Moves to Debug" },
+    { l: "Step Out", k: isMac() ? "⇧F12" : "⇧F11", d: true, mk: "gone", n: "Moves to Debug" },
+    { l: "Step Over Line", k: "⇧F10", d: true, mk: "gone", n: "Moves to Debug" }, "-",
+    { l: "Clock Multiplier", s: list(multipliers) }, "-", { l: "Sound Level", s: list(soundLevels, 2) }, "-",
+    ...(m !== "z88" ? [{ l: "Scanline Effect", s: list(["Off", "50%", "25%", "12.5%"]), ...gone("Settings › Emulator") }] : []), "-"
+  ];
+  if (["sp48", "pent"].includes(m)) mach.push({ l: "Rewind Tape" }, { l: "Select Tape File..." }, { l: "Eject Tape" });
+  if (m === "pent") mach.push({ l: "Create Disk File..." }, { l: "Boot Disk in Drive A" }, { l: "Floppy Disks", s: [{ l: "Insert Disk in Drive A..." }, { l: "Save Disk in Drive A as .trd..." }, { l: "Eject Disk from Drive A" }, { l: "Write Protect Drive A" }, "-", { l: "Insert Disk in Drive B..." }, { l: "Eject Disk from Drive B" }, { l: "Write Protect Drive B" }] },
+    { l: "TR-DOS ROM", ...gone("Settings › Machine"), s: [{ l: "Using trdos.rom", d: true }, { l: "Select TR-DOS ROM File..." }, { l: "Forget the TR-DOS ROM" }] });
+  if (SPECTRUMS.includes(m) && m !== "next") mach.push("-", { l: "Load Snapshot...", ...gone("Duplicate of File › Load ZX Spectrum Snapshot") }, { l: "Save Snapshot...", ...gone("Duplicate of File › Save ZX Spectrum Snapshot") });
+  if (m !== "next" && m !== "z88") mach.push({ l: "RZX", s: [{ l: "Play Recording...", mk: "gone", n: "Duplicate of File › Play RZX Recording" }, { l: "Record" }, { l: "Stop and Save..." }, { l: "Insert Rollback Point" }, { l: "Roll Back" }, { l: "Render Recording to Video..." }], mk: "gone", n: "Joins Machine › Record" });
+  if (m === "next") mach.push(
+    { l: "Hotkeys", s: nextHotkeys },
+    { l: "Select SD Card Image..." }, { l: "Use the default SD Card Image", c: true }, { l: "Reset the default SD Card Image" },
+    { l: "Joystick", s: [joySide("Left joystick"), joySide("Right joystick"), "-", { l: "Configure bindings..." }] },
+    { l: "Mouse", s: [{ l: "Capture the mouse", c: true }, { l: "Show the captured pointer", s: list(["Hidden", "Crosshair", "Arrow"]) }, { l: "Sensitivity (Normal)", s: list(["Slowest", "Slow", "Normal", "Fast", "Fastest"], 2) }] },
+    "-", { l: "Show Copper List", ...gone("View › Machine Views") }, { l: "Step Copper", ...gone("Debug › Step Copper") },
+    { l: "Show Sprite Inspector", ...gone("View › Machine Views") }, { l: "Show Tilemap Inspector", ...gone("View › Machine Views") }, { l: "Show Layer 2 Inspector", ...gone("View › Machine Views") },
+    { l: "Layers", ...gone("Duplicates the Layers strip, which has every control"), s: [...layers.flatMap((x) => [{ l: `Show ${x}`, c: true }, { l: `Solo ${x}` }]), "-", { l: "Show Transparency" }, { l: "Show Clip Windows" }, { l: "Pixel Probe" }, "-", { l: "Show All Layers" }, { l: "Show Layers Document" }] });
+  if (m === "sp48") mach.push("-", { l: "Select ROM File...", ...gone("Settings › Machine") }, { l: "Reset to Default ROM", ...gone("Settings › Machine") });
+  if (m === "z88") mach.push(
+    { l: "Keyboard layout", ...gone("Settings › Machine"), s: list(["British & American", "Spanish", "French", "Italian", "German", "Danish & Norwegian", "Swedish & Finish"]) },
+    { l: "LCD resolution", ...gone("Settings › Machine"), s: list(["640 x 64", "640 x 256", "640 x 320", "640 x 480"]) },
+    "-", { l: "Open Z88 Snapshot...", ...gone("Merged into File › Open File…") });
+  mach.push("-", { l: "Save State...", ...gone("Duplicate of File › Save Machine State") }, { l: "Load State...", ...gone("Duplicate of File › Load Machine State") },
+    { l: "Quick Save State", k: MOD() + "⌥S", mk: "gone", n: "Moves to File" }, { l: "Quick Restore State", k: MOD() + "⌥L", d: true, mk: "gone", n: "Moves to File" });
+  if (m === "z88") mach.push("-", { l: "Soft reset" }, { l: "Hard reset" }, { l: "Press both SHIFT keys" }, { l: "Raise battery low signal" });
+  if (f === "emu") mach.push("-", { l: "Select Key Mapping...", ...gone("Settings › Input") }, { l: "Reset Key Mapping", ...gone("Settings › Input") });
+  mach.push("-", { l: "Recording", s: [
+    { l: "Half fps", ...gone("Settings › Recording") }, "-",
+    { l: "Highest (lossless) quality", ...gone("Settings › Recording") }, { l: "High quality", ...gone("Settings › Recording") }, { l: "Best compression quality", c: true, ...gone("Settings › Recording") }, "-",
+    { l: "Format: MP4 (H.264) – Universal, small files", c: true, ...gone("Settings › Recording") }, { l: "Format: WebM (VP9) – Best for web sharing", ...gone("Settings › Recording") }, { l: "Format: MKV (H.265) – Best compression", ...gone("Settings › Recording") }, "-",
+    { l: "Start recording" }, "-", { l: "Pause recording", d: true }, "-",
+    { l: "Start IDE + Emulator recording", k: MOD() + "⇧R" }, { l: "IDE position", ...gone("Settings › Recording"), s: list(["Left", "Right", "Top", "Bottom"]) },
+    { l: "Include pointer", c: true, ...gone("Settings › Recording") }, { l: "Show mouse clicks", c: true, ...gone("Settings › Recording") }, { l: "Full resolution (HiDPI)", ...gone("Settings › Recording") }] });
+  menus.push({ t: "Machine", items: mach });
+  menus.push({ t: "Build", items: [{ l: "Build Code" }, { l: "Inject Code" }, { l: "Run Code" }, { l: "Debug Code" }, "-", { l: "Export Code..." }] });
+  const ide = [
+    { l: "Show Machine Memory", ...gone("View › Machine Views") }, { l: "Show Disassembly", ...gone("View › Machine Views") }, "-",
+    { l: "Go", s: [{ l: "Back", k: "⌃-" }, { l: "Forward", k: "⌃⇧-" }, "-", { l: "Clear Navigation History" }], mk: "gone", n: "Moves to View › Go" }, "-",
+    ...(SPECTRUMS.includes(m) ? [{ l: "Show BASIC Listing", ...gone("View › Machine Views") }] : []), "-",
+    { l: "Integrations", s: [{ l: "SjasmPlus Assembler" }], ...gone("Settings › Integrations") }, "-",
+    { l: "IDE Settings", ...gone("Settings › General"), s: [{ l: "Open the last project at startup", c: true }, "-", { l: "Close Emulator when IDE is closed" }, { l: "Record tab switches in the navigation history" }] }
+  ];
+  menus.push({ t: "IDE", items: ide, gone: true });
+  const help = [{ l: "About" }, { l: "Klive IDE Home Page" }, "-", { l: "Welcome screen" }];
+  if (m === "z88") help.push("-", ...["Cambridge Z88 User Guide", "Cambridge Z88 Developers' Notes", "BBC BASIC (Z80) Reference Guide for Z88", "Cambridge Z88 ROM source code", "Cambridge Z88 3rd party apps", "Cambridge Z88 tools and games", "Cambridge Z88 on Wikipedia"].map((l) => ({ l })));
+  menus.push({ t: "Help", items: help });
+  return menus;
+}
+
+// ---------------------------------------------------------------------------------------------
+// PROPOSED
+function newMenus() {
+  const f = state.focus, m = state.machine, nw = (x) => ({ mk: "new", ...x }), mv = (n, x) => ({ mk: "moved", n, ...x });
+  const settings = nw({ l: "Settings…", k: MOD() + ",", n: "Opens the Settings dialog" });
+  const menus = [];
+  if (isMac()) menus.push({ t: "Klive", items: [mv("Was Help › About", { l: "About Klive" }), "-", settings, "-", { l: "Hide Klive" }, { l: "Hide Others" }, { l: "Show All" }, "-", { l: "Quit Klive" }] });
+  menus.push({ t: "File", items: [
+    { l: "New Project…" }, { l: "Open Folder…" }, { l: "Open Recent", s: [{ l: "~/KliveProjects/game" }, { l: "~/KliveProjects/demo" }, "-", { l: "Clear Recent" }] }, "-",
+    nw({ l: "Open File…", k: MOD() + "O", n: "Snapshot, state, RZX, tape, disk, cartridge, program — routed by extension, exactly like a dropped file" }),
+    { l: "Save Snapshot…", d: !SPECTRUMS.includes(m) || m === "next" }, { l: "Save Machine State…" }, "-",
+    mv("Was Machine › Quick Save State", { l: "Quick Save State", k: MOD() + "⌥S" }), mv("Was Machine › Quick Restore State", { l: "Quick Restore State", k: MOD() + "⌥L", d: true }), "-",
+    { l: "Close Folder" },
+    ...(isMac() ? [] : ["-", settings, "-", { l: "Exit" }])
+  ] });
+  if (isMac()) menus.push({ t: "Edit", items: [{ l: "Undo" }, { l: "Redo" }, "-", { l: "Cut" }, { l: "Copy" }, { l: "Paste" }, { l: "Paste and Match Style" }, { l: "Delete" }, { l: "Select All" }] });
+  const views = [mv("Was IDE › Show Machine Memory", { l: "Memory", c: false }), mv("Was IDE › Show Disassembly", { l: "Disassembly" })];
+  if (SPECTRUMS.includes(m)) views.push(mv("Was IDE › Show BASIC Listing", { l: "BASIC Listing" }));
+  if (m === "next") views.push(mv("Was Machine › Show Copper List", { l: "Copper List" }), mv("Was Machine › Show Sprite Inspector", { l: "Sprite Inspector" }), mv("Was Machine › Show Tilemap Inspector", { l: "Tilemap Inspector" }), mv("Was Machine › Show Layer 2 Inspector", { l: "Layer 2 Inspector" }), mv("Was Machine › Layers › Show Layers Document", { l: "Layers" }));
+  const view = [nw({ l: "Machine Views", s: views, n: "Opens in the IDE" }), "-"];
+  if (f === "emu") view.push({ l: "Toolbar", c: true }, { l: "Status Bar", c: true }, { l: "Virtual Keyboard" }, "-", { l: "Fit Window to Screen" }, { l: "Fit Window to Screen at 1x" }, "-", { l: "Show IDE" });
+  else view.push({ l: "Toolbar", c: true }, { l: "Status Bar", c: true }, { l: "Sidebar", c: true }, { l: "Command and Output", c: true });
+  // --- In both windows: the accelerators are what make navigation work from the emulator window
+  view.push("-", mv("Was IDE › Go", { l: "Go Back", k: "⌃-" }), mv("Was IDE › Go", { l: "Go Forward", k: "⌃⇧-" }));
+  view.push("-", { l: "Actual Size", k: MOD() + "0" }, { l: "Zoom In", k: MOD() + "+" }, { l: "Zoom Out", k: MOD() + "-" }, { l: "Toggle Full Screen", k: "Ctrl+⇧F9" }, "-",
+    nw({ l: "Switch to Light Theme", n: "One toggle; accent and fonts in Settings › Appearance" }));
+  menus.push({ t: "View", items: view });
+
+  // --- Machine: run control, speed, sound, then one submenu per device the machine has
+  const mach = [
+    { l: "Machine Type", s: favourites() }, "-",
+    { l: "Start", k: "F5" }, { l: "Pause", k: "⇧F5", d: true }, { l: "Stop", k: "F4", d: true }, { l: "Restart", k: "⇧F4", d: true }, "-",
+    { l: "Speed", s: list(multipliers), n: "Also: click the MHz in the status bar" }, { l: "Sound", s: list(soundLevels, 2), n: "Also: the toolbar's sound dropdown" }, "-"
+  ];
+  if (["sp48", "pent"].includes(m)) mach.push(nw({ l: "Tape", s: [{ l: "Insert Tape…" }, { l: "Rewind" }, { l: "Eject" }, "-", { l: "Fast Load", c: true }] }));
+  if (m === "pent") mach.push(nw({ l: "Disks", s: [{ l: "Insert Disk in Drive A…" }, { l: "Insert Disk in Drive B…" }, { l: "Create Disk File…" }, "-", { l: "Boot Disk in Drive A" }, "-", { l: "Save Disk in Drive A as .trd…" }, { l: "Eject Drive A" }, { l: "Eject Drive B" }, "-", { l: "Write Protect A" }, { l: "Write Protect B" }] }));
+  if (m === "next") mach.push(nw({ l: "SD Card", s: [{ l: "Select SD Card Image…" }, { l: "Use the Default Image", c: true }, "-", { l: "Reset the Default Image…" }] }));
+  const input = [];
+  if (m === "next") input.push({ l: "Joystick", s: [joySide("Left joystick"), joySide("Right joystick")] }, { l: "Capture the Mouse", c: true });
+  input.push(...(input.length ? ["-"] : []), { l: "Input Settings…", n: "Key mapping, joystick bindings, mouse pointer and sensitivity" });
+  mach.push(nw({ l: "Input", s: input }));
+  if (m === "next") mach.push(nw({ l: "ZX Spectrum Next", s: nextHotkeys, n: "Was Machine › Hotkeys" }));
+  if (m === "z88") mach.push(nw({ l: "Cambridge Z88", s: [{ l: "Soft Reset" }, { l: "Hard Reset" }, "-", { l: "Press Both SHIFT Keys" }, { l: "Raise Battery Low Signal" }] }));
+  const rec = [{ l: "Start Video Recording" }, { l: "Pause Video Recording", d: true }, "-", { l: "Start IDE + Emulator Recording", k: MOD() + "⇧R" }];
+  if (m !== "next" && m !== "z88") rec.push("-", mv("Was Machine › RZX", { l: "RZX: Record" }), { l: "RZX: Stop and Save…", d: true }, { l: "RZX: Insert Rollback Point", d: true }, { l: "RZX: Roll Back", d: true }, { l: "RZX: Render to Video…" });
+  rec.push("-", nw({ l: "Recording Settings…", n: "Settings › Recording" }));
+  mach.push("-", mv("Was Machine › Recording + Machine › RZX", { l: "Record", s: rec }));
+  menus.push({ t: "Machine", items: mach });
+
+  const dbg = [
+    mv("Was Machine › Start with Debugging", { l: "Start Debugging", k: "Ctrl+F5" }), "-",
+    mv("Was Machine", { l: "Step Into", k: isMac() ? "F12" : "F11", d: true }), mv("Was Machine", { l: "Step Over", k: "F10", d: true }),
+    mv("Was Machine", { l: "Step Out", k: isMac() ? "⇧F12" : "⇧F11", d: true }), mv("Was Machine", { l: "Step Over Line", k: "⇧F10", d: true })
+  ];
+  if (m === "next") dbg.push("-", mv("Was Machine › Step Copper", { l: "Step Copper", d: true }));
+  dbg.push("-", mv("Was View › Sync the Source…", { l: "Sync Source with Breakpoint", c: true }), nw({ l: "Debugger Settings…", n: "Interrupt stepping, stop at errors, Just My Code" }));
+  menus.push({ t: "Debug", items: dbg, isNew: true });
+  menus.push({ t: "Build", items: [{ l: "Build Code" }, { l: "Inject Code" }, { l: "Run Code" }, { l: "Debug Code" }, "-", { l: "Export Code…" }] });
+  const help = [...(isMac() ? [] : [{ l: "About Klive" }]), { l: "Klive IDE Home Page" }, { l: "Welcome Screen" }];
+  if (m === "z88") help.push("-", nw({ l: "Cambridge Z88 Resources", s: ["User Guide", "Developers' Notes", "BBC BASIC (Z80) Reference", "-", "ROM source code", "3rd party apps", "Tools and games", "Wikipedia"].map((l) => (l === "-" ? "-" : { l })) }));
+  menus.push({ t: "Help", items: help });
+  return menus;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Rendering
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+function renderItems(items) {
+  const out = []; let prevSep = true;
+  items.forEach((it, i) => {
+    if (it === "-") { if (!prevSep && i < items.length - 1) out.push('<div class="sepr"></div>'); prevSep = true; return; }
+    prevSep = false;
+    const cls = ["mi", it.d ? "dis" : "", it.mk || ""].join(" ");
+    out.push(`<div class="${cls}"><span class="ck">${it.c ? "✓" : ""}</span><span class="lbl">${esc(it.l)}${it.n ? `<span class="note">${esc(it.n)}</span>` : ""}</span><span class="k">${it.k ? esc(it.k) : ""}</span><span class="arr">${it.s ? "▶" : ""}</span>${it.s ? `<div class="dd">${renderItems(it.s)}</div>` : ""}</div>`);
+  });
+  if (out.length && out[out.length - 1].includes("sepr")) out.pop();
+  return out.join("");
+}
+function count(items) { let top = 0, leaves = 0; const walk = (xs, d) => xs.forEach((x) => { if (x === "-") return; if (!d) top++; if (x.s) walk(x.s, d + 1); else leaves++; }); walk(items, 0); return { top, leaves }; }
+function renderBar(el, menus, statEl) {
+  el.innerHTML = menus.map((mm, idx) => { const c = count(mm.items); return `<div class="mb" data-i="${idx}"><button class="${mm.isNew ? "new" : ""}">${esc(mm.t)}<span class="cnt">${c.top}</span></button><div class="dd" style="display:none">${renderItems(mm.items)}</div></div>`; }).join("");
+  const tot = menus.reduce((a, mm) => { const c = count(mm.items); return { top: a.top + c.top, leaves: a.leaves + c.leaves }; }, { top: 0, leaves: 0 });
+  statEl.textContent = `${menus.length} menus · ${tot.top} first-level items · ${tot.leaves} commands`;
+  el.querySelectorAll(".mb").forEach((mb) => {
+    const btn = mb.querySelector("button"), dd = mb.querySelector(".dd");
+    const open = () => { el.querySelectorAll(".mb").forEach((o) => { o.querySelector(".dd").style.display = "none"; o.querySelector("button").classList.remove("open"); }); dd.style.display = "block"; btn.classList.add("open"); };
+    mb.addEventListener("mouseenter", open); btn.addEventListener("click", open);
+    mb.addEventListener("mouseleave", () => { dd.style.display = "none"; btn.classList.remove("open"); });
+  });
+  return tot;
+}
+function largest(menus) { return menus.reduce((a, mm) => { const c = count(mm.items).top; return c > a.n ? { n: c, t: mm.t } : a; }, { n: 0, t: "" }); }
+function render() {
+  const o = oldMenus(), n = newMenus();
+  const to = renderBar(document.getElementById("mbOld"), o, document.getElementById("statOld"));
+  const tn = renderBar(document.getElementById("mbNew"), n, document.getElementById("statNew"));
+  const lo = largest(o), ln = largest(n);
+  document.getElementById("statCards").innerHTML = [
+    [`${to.top} → ${tn.top}`, "first-level items, all menus"], [`${to.leaves} → ${tn.leaves}`, "commands reachable from the menu"],
+    [`${lo.n} → ${ln.n}`, `longest menu (${lo.t} → ${ln.t})`], [`${count(o.find((x) => x.t === "Machine").items).top} → ${count(n.find((x) => x.t === "Machine").items).top}`, "Machine menu, first level"],
+    [`${count(o.find((x) => x.t === "View").items).top} → ${count(n.find((x) => x.t === "View").items).top}`, "View menu, first level"]
+  ].map(([b, s]) => `<div class="stat-card"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+function seg(id, key, opts) {
+  const el = document.getElementById(id);
+  el.innerHTML = Object.entries(opts).map(([v, l]) => `<button data-v="${v}" class="${state[key] === v ? "on" : ""}">${l}</button>`).join("");
+  el.addEventListener("click", (e) => { const v = e.target.dataset.v; if (!v) return; state[key] = v; el.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.v === v)); render(); });
+}
+seg("focusSeg", "focus", { emu: "Emulator", ide: "IDE" });
+seg("machineSeg", "machine", MACHINES);
+seg("platSeg", "plat", { mac: "macOS", win: "Windows / Linux" });
+render();
+
+// ---------------------------------------------------------------------------------------------
+// Settings dialog. Row: [title, control, description, source (menu path it replaces)]
+const sw = (on) => `<button class="sw ${on ? "on" : ""}" onclick="this.classList.toggle('on')"></button>`;
+const sel = (opts, i = 0) => `<select>${opts.map((o, j) => `<option ${i === j ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+const file = (v) => `<div class="fake-in"><span>${esc(v)}</span><button class="btn">Browse…</button><button class="btn">Clear</button></div>`;
+const btn = (l) => `<div style="justify-self:end"><button class="btn">${esc(l)}</button></div>`;
+const swatch = `<div class="swatches">${["#0A6FB8", "#B80A8A", "#C8501E", "#6A3CC8", "#0E7C7B", "#2E8B3A"].map((c, i) => `<i class="${i ? "" : "on"}" style="background:${c}" title="${accents[i]}"></i>`).join("")}</div>`;
+const PAGES = [
+  { id: "general", t: "General", groups: [["Startup", [["Open the last project at startup", sw(true), "", "IDE › IDE Settings"]]], ["Windows", [["Close the emulator when the IDE is closed", sw(false), "", "IDE › IDE Settings"]]], ["Navigation", [["Record tab switches in the navigation history", sw(false), "Go Back / Go Forward also step through tabs you switched between", "IDE › IDE Settings"]]], ["Project", [["Excluded items", btn("Manage…"), "Files and folders hidden from the explorer and the build", "File › Manage Excluded Items"]]]] },
+  { id: "appearance", t: "Appearance", groups: [
+    ["Theme", [["Tone", sel(["Dark", "Light"]), "", "View › Theme"], ["Accent", swatch, "Sinclair Blue", "View › Theme"]]],
+    ["Panels", [["Panel font", sel(fonts), "Memory, disassembly, registers and the other data panels", "View › Panel Options"], ["Panel font size", sel(sizes, 2), "", "View › Panel Options"]]],
+    ["Layout", [["Sidebar position", sel(["Left", "Right"]), "Also: right-click the activity bar", "View › Move the Sidebar to the Right"], ["Command and Output position", sel(["Bottom", "Top"]), "Also: the button in the tool area header", "View › Move Commands and Output to the top"], ["Maximize Command and Output", sw(false), "", "View › Maximize Commands and Output"]]]] },
+  { id: "editor", t: "Editor", groups: [
+    ["Text", [["Font family", sel(fonts), "", "View › Editor Options › Font Family"], ["Font size", sel(sizes, 1), "", "View › Editor Options › Font Size"], ["Render whitespace", sel(["None", "At line boundaries", "Inside selection", "All"]), "", "View › Editor Options › Render Whitespaces"]]],
+    ["Indentation", [["Tab size", sel(["2", "4", "8", "16"], 1), "", "View › Editor Options › Tab Size"], ["Insert spaces instead of tabs", sw(true), "", "View › Editor Options"], ["Detect indentation", sw(true), "", "View › Editor Options"]]],
+    ["Assistance", [["Enable autocomplete", sw(true), "", "View › Editor Options"], ["Quick suggestion delay", sel(["Instantaneous", "Short (100 ms)", "Medium (200 ms)", "Long (500 ms)", "Longest (1 s)"], 2), "", "View › Editor Options"], ["Selection highlight", sw(true), "", "View › Editor Options"], ["Occurrences highlight", sw(true), "", "View › Editor Options"], ["Compile in the background", sw(true), "Errors appear while you type", "View › Editor Options"]]]] },
+  { id: "emulator", t: "Emulator", groups: [
+    ["Screen", [["Zoom steps", sel(["Whole steps (1x, 2x, 3x)", "Half steps (1x, 1.5x, 2x)", "Quarter steps (1x, 1.25x, 1.5x)"]), "The screen fits its window, snapped down to this step", "View › Screen Zoom Steps"], ["Scanline effect", sel(["Off", "50%", "25%", "12.5%"]), "", "Machine › Scanline Effect"], ["Show the instant screen", sw(false), "Also on the emulator toolbar", "View › Show the Instant Screen"], ["Show the beam position while paused", sw(false), "Also on the emulator toolbar", "View › Show the Beam Position"]]],
+    ["Window", [["Keep the emulator on top", sw(true), "Also the pin on the emulator toolbar", "View › Keep Emulator on Top"]]],
+    ["Status bar", [["Show performance info", sw(true), "Also: right-click the status bar", "View › Show Performance Info…"], ["Show media information", sw(true), "Spectrum models: tape and disk strip", "View › Show Media Information"], ["Show the Layers strip", sw(false), "ZX Spectrum Next", "View › Show Layers"]]],
+    ["Tape", [["Fast load", sw(true), "Also on the emulator toolbar", "(toolbar only today)"]]]] },
+  { id: "debugging", t: "Debugging", groups: [["Stepping", [["Stop in interrupt handlers while stepping", sw(false), "", "(command only today)"], ["Just My Code", sw(true), "Step over code without source", "(command only today)"]]], ["Breakpoints", [["Stop at runtime errors", sw(true), "", "(command only today)"], ["Sync the source with the current breakpoint", sw(true), "Also: Debug menu and the IDE toolbar", "View › Sync the Source…"], ["Group breakpoints by kind", sw(false), "", "(panel only today)"]]]] },
+  { id: "machine", t: "Machine", groups: [
+    ["ROMs", [["ZX Spectrum 48K ROM", file("(built-in)"), "", "Machine › Select ROM File / Reset to Default ROM"], ["TR-DOS ROM", file("~/roms/trdos-5.04t.rom"), "Pentagon and Scorpion disks stay off without it", "Machine › TR-DOS ROM"], ["Scorpion ZS-256 ROM", file("(not set)"), "", "Machine › Scorpion ROM"], ["Timex TC2048 / TC2068 / TS2068 ROMs", btn("Choose…"), "", "Machine › <model> ROM"]]],
+    ["ZX Spectrum Next", [["SD card image", file("(default image)"), "", "Machine › Select / Use default SD Card Image"], ["Default SD card image", btn("Reset…"), "Restores the bundled image", "Machine › Reset the default SD Card Image"]]],
+    ["Cambridge Z88", [["Keyboard layout", sel(["British & American", "Spanish", "French", "Italian", "German", "Danish & Norwegian", "Swedish & Finnish"]), "", "Machine › Keyboard layout"], ["LCD resolution", sel(["640 x 64", "640 x 256", "640 x 320", "640 x 480"]), "Restarts the machine", "Machine › LCD resolution"]]]] },
+  { id: "input", t: "Input", groups: [
+    ["Keyboard", [["Key mapping file", file("(none)"), "Maps host keys to machine keys", "Machine › Select Key Mapping / Reset Key Mapping"]]],
+    ["Joysticks", [["Joystick bindings", btn("Configure…"), "Host keys and gamepad buttons", "Machine › Joystick › Configure bindings"]]],
+    ["Mouse", [["Capture the mouse", sw(true), "", "Machine › Mouse"], ["Captured pointer", sel(["Hidden", "Crosshair", "Arrow"]), "", "Machine › Mouse › Show the captured pointer"], ["Sensitivity", sel(["Slowest", "Slow", "Normal", "Fast", "Fastest"], 2), "", "Machine › Mouse › Sensitivity"]]]] },
+  { id: "recording", t: "Recording", groups: [
+    ["Video recording", [["Format", sel(["MP4 (H.264) – universal, small files", "WebM (VP9) – web sharing", "MKV (H.265) – best compression"]), "", "Machine › Recording › Format"], ["Quality", sel(["Best compression", "High", "Highest (lossless)"]), "", "Machine › Recording"], ["Half frame rate", sw(false), "", "Machine › Recording › Half fps"]]],
+    ["IDE + Emulator recording", [["IDE position", sel(["Left", "Right", "Top", "Bottom"]), "", "Machine › Recording › IDE position"], ["Include the pointer", sw(true), "", "Machine › Recording"], ["Show mouse clicks", sw(true), "", "Machine › Recording"], ["Full resolution (HiDPI)", sw(false), "", "Machine › Recording"]]]] },
+  { id: "integrations", t: "Integrations", groups: [["Assemblers", [["SjasmPlus", btn("Configure…"), "Path, options and the build integration", "IDE › Integrations › SjasmPlus Assembler"]]], ["Advanced", [["Allow developer tools", sw(false), "Adds View › Toggle Developer Tools", "(settings file only today)"]]]] }
+];
+let curPage = "appearance";
+function renderSettings() {
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const match = (r) => !q || (r[0] + " " + r[2] + " " + r[3]).toLowerCase().includes(q);
+  const hits = PAGES.map((p) => p.groups.reduce((a, g) => a + g[1].filter(match).length, 0));
+  document.getElementById("nav").innerHTML = PAGES.map((p, i) => `<button data-p="${p.id}" class="${p.id === curPage && !q ? "on" : ""}" ${q && !hits[i] ? 'style="opacity:.4"' : ""}>${p.t}<span class="n">${q ? hits[i] : ""}</span></button>`).join("");
+  const shown = q ? PAGES : PAGES.filter((p) => p.id === curPage);
+  document.getElementById("page").innerHTML = shown.map((p) => {
+    const groups = p.groups.map(([gh, rows]) => { const rs = rows.filter(match); return rs.length ? `<div class="grp"><div class="gh">${gh}</div>${rs.map((r) => `<div class="row ${q ? "hl" : ""}"><div><div class="t">${esc(r[0])}</div>${r[2] ? `<div class="d">${esc(r[2])}</div>` : ""}<div class="src">was: ${esc(r[3])}</div></div>${r[1]}</div>`).join("")}</div>` : ""; }).join("");
+    return groups ? `<h3>${p.t}</h3>${p.id === "machine" && !q ? '<div class="sub">Options for every machine; the running machine\'s group is listed first.</div>' : ""}${groups}` : "";
+  }).join("") || '<p style="color:var(--text-3)">No setting matches.</p>';
+}
+document.getElementById("nav").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; curPage = b.dataset.p; document.getElementById("search").value = ""; renderSettings(); });
+document.getElementById("search").addEventListener("input", renderSettings);
+renderSettings();
+
+// ---------------------------------------------------------------------------------------------
+const MAP = [
+  ["File › Load ZX Spectrum Snapshot / Play RZX / Load Machine State; Machine › Load Snapshot / Load State / Open Z88 Snapshot", "File › Open File…", "Six entry points for “open a file the emulator understands”. Drag-and-drop already routes by extension (droppedFileAction); the menu reuses it."],
+  ["Machine › Save Snapshot / Save State", "File › Save Snapshot… / Save Machine State…", "Exact duplicates of the File items."],
+  ["Machine › Quick Save / Quick Restore State", "File", "File operations; accelerators unchanged."],
+  ["Machine › Start with Debugging, Step ×4; Machine › Step Copper; View › Sync the Source…", "Debug (new menu)", "Running and debugging are different jobs; this halves the Machine menu. Accelerators unchanged."],
+  ["Machine › Tape items, Floppy Disks, SD Card items, Cartridge", "Machine › Tape ▸ / Disks ▸ / SD Card ▸ / Cartridge ▸", "One submenu per device the running machine has, instead of 3–8 loose items each."],
+  ["Machine › Joystick, Mouse, Key Mapping ×2", "Machine › Input ▸ (live toggles) + Settings › Input", "Live choices stay; files, bindings, pointer and sensitivity are set-and-forget."],
+  ["Machine › Hotkeys (Next), Z88 resets", "Machine › <machine name> ▸", "Machine-specific hardware actions under the machine's own name."],
+  ["Machine › ROM / TR-DOS ROM / Scorpion ROM / Timex ROM; Z88 Keyboard layout, LCD; Next SD card default", "Settings › Machine", "Configured once, never during a session."],
+  ["Machine › Layers ▸ (16 items)", "— (Layers strip)", "The strip under the screen already has every control."],
+  ["Machine › Show Copper List / Sprite / Tilemap / Layer 2 Inspector; IDE › Show Memory / Disassembly / BASIC", "View › Machine Views ▸", "These open views; View is where views are."],
+  ["Machine › Recording ▸ (19 items) + Machine › RZX ▸", "Machine › Record ▸ (actions) + Settings › Recording + toolbar dropdown", "Format, quality, fps and the IDE + Emulator options are preferences, not commands."],
+  ["Machine › Scanline Effect; View › Screen Zoom Steps", "Settings › Emulator", "Display preferences."],
+  ["View › Show Performance Info / Media Information / Layers", "Status bar context menu + Settings › Emulator", "They are parts of the status bar; toggle them where they are."],
+  ["View › Instant Screen / Beam Position / Keep on Top", "Emulator toolbar (already there) + Settings › Emulator", "Each already has a toolbar button."],
+  ["View › Sidebar to the Right; Commands and Output on top / maximized", "Activity bar / tool area header + Settings › Appearance", "Layout is adjusted where the layout is."],
+  ["View › Theme ▸ (12 items), Editor Options ▸ (~35), Panel Options ▸ (~11)", "Settings › Appearance / Editor; View › Switch to Light/Dark Theme", "Over 50 checkbox leaves become two pages with real controls."],
+  ["IDE › Go ▸", "View › Go Back / Go Forward", "Clear Navigation History stays on the toolbar's navigation dropdown."],
+  ["IDE › Integrations, IDE › IDE Settings; File › Manage Excluded Items", "Settings › Integrations / General", "With these gone the IDE menu has nothing left and is removed."],
+  ["Help › About (macOS)", "Klive › About Klive", "macOS convention; Settings… goes there too."]
+];
+document.querySelector("#mapTable tbody").innerHTML = MAP.map((r) => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("");
+</script>
+</body>
+</html>

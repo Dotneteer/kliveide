@@ -6,7 +6,7 @@ import { Callout } from 'nextra/components'
 
 # Loading from Tape
 
-Klive can emulate playing back tape files with `.tap` and `.tzx` extensions. To use them with the `LOAD` Basic command, first select a tape file using the **Machine | Select Tape File** function. This command opens a file selection dialog where you can select a `.tap` or `.tzx` file. You can also select files with other extensions. In that case, the Emulator tries to read them as tape files by attempting to parse them.
+Klive can emulate playing back tape files with `.tap` and `.tzx` extensions. To use them with the `LOAD` Basic command, first select a tape file using the **Machine | Tape | Insert Tape...** function (or **File | Open File...**). This command opens a file selection dialog where you can select a `.tap` or `.tzx` file. You can also select files with other extensions. In that case, the Emulator tries to read them as tape files by attempting to parse them.
 
 On successful read, you can issue a `LOAD` Basic command (or use the Tape Loader from the startup menu of ZX Spectrum 128/+2E/+3E). The running `LOAD` command will playback the selected file.
 
@@ -18,7 +18,7 @@ You can change the tape file any time, even when the machine is stopped, paused,
 
 Loading ZX Spectrum programs and tapes may take a long time, especially for large files. Besides the *normal loading* mode, Klive supports *fast load*, which reads the program instantly, in a fraction of a second.
 
-You can turn on or off fast load with the **Machine | Fast Load** command or by clicking the **Fast Load** icon (rocket) in the toolbar.
+You can turn on or off fast load with the **Machine | Tape | Fast Load** command (or **Settings | Emulator**) or by clicking the **Fast Load** icon (rocket) in the toolbar.
 
 You can change the Fast Load mode even while loading a game. However, the change will take effect only when you start loading a program next time.
 
@@ -30,7 +30,7 @@ By default, fast load is turned on.
 
 When the loading completes or gets interrupted, the tape position stays as if you stopped the physical tape player. When you issue the `LOAD` command again, the load operation starts searching the following file header from the position where it has been stopped.
 
-You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Rewind Tape** command.
+You can rewind the tape to its beginning just as you can do it with a physical tape cassette. Click the **Rewind** icon in the toolbar (the one to the right of the rocket icon) or execute the **Machine | Tape | Rewind** command.
 
 ## Viewing a Tape File
 
@@ -61,7 +61,7 @@ On a ZX Spectrum 48K, 128K or +2/+3, the tape viewer's tab has three buttons, an
 <ClickableImage src="/images/getting-started/tape-viewer-commands.png" width={900} />
 
 - **Load and run tape** (play icon) resets the machine and starts the tape loading: it types `LOAD ""` on a 48K, and chooses **Tape Loader** from the start-up menu of a 128K or +2 (**Loader** on a +2A/+3, which boots a disk instead if one is in drive A). Whatever loader the tape carries then runs as it would on the real machine.
-- **Insert tape** (cassette icon) puts the tape in the deck without a reset, as **Machine | Select Tape File** does. Inserting the tape that is already in the deck rewinds it.
+- **Insert tape** (cassette icon) puts the tape in the deck without a reset, as **Machine | Tape | Insert Tape...** does. Inserting the tape that is already in the deck rewinds it.
 - **Load and debug tape** (debug icon) is **Load and run** with your breakpoints armed.
 
 <ClickableImage src="/images/getting-started/tape-viewer-loaded.png" width={720} />

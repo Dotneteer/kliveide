@@ -1,0 +1,242 @@
+@use "@styles/core.scss" as *;
+
+/*
+ * The Settings dialog (`.plans/MENU_REDESIGN_PLAN.md` §4): the pages and the search on the left,
+ * the page's groups of rows on the right. A fixed-height frame, so switching pages does not make
+ * the dialog jump; each pane scrolls on its own. In a narrow window (a small emulator window) the
+ * panes stack.
+ */
+.body {
+  display: grid;
+  grid-template-columns: minmax(22ch, 26ch) minmax(0, 1fr);
+  height: min(34rem, calc(100vh - 10rem));
+  min-height: 0;
+  margin: calc(var(--space-4) * -1);
+  font-size: var(--font-size-300);
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--border-default);
+  background: var(--surface-panel);
+
+  @media (max-width: 700px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border-default);
+  }
+}
+
+.search {
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/*
+ * Both panes scroll in a `ScrollViewer`, like every other scrolling surface of the app, never with
+ * the browser's own scrollbar. The pane is the non-scrolling cell that bounds it.
+ */
+.pagesPane,
+.contentPane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pagesPane {
+  flex: 1 1 auto;
+}
+
+.pages {
+  margin: 0;
+  padding: var(--space-1) 0;
+  list-style: none;
+
+  @media (max-width: 700px) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: var(--row-size-list);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  @include focus-ring(-2px);
+
+  &:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.selected {
+  background: var(--surface-selected);
+  box-shadow: inset 2px 0 0 var(--accent-solid);
+  font-weight: 600;
+
+  &:hover {
+    background: var(--surface-selected);
+  }
+}
+
+.noMatch {
+  color: var(--text-tertiary);
+}
+
+.count {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-200);
+  font-variant-numeric: tabular-nums;
+}
+
+.content {
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.note,
+.empty {
+  margin: 0 0 var(--space-2);
+  color: var(--text-secondary);
+}
+
+.error {
+  margin: var(--space-3) 0 0;
+  color: var(--status-error);
+}
+
+.section + .section {
+  margin-top: var(--space-4);
+}
+
+.pageTitle {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-400);
+  font-weight: 600;
+}
+
+.group + .group {
+  margin-top: var(--space-3);
+}
+
+.groupTitle {
+  margin: 0 0 var(--space-1);
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: var(--font-size-100);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(24ch, 36ch);
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1_5) 0;
+  border-bottom: 1px solid var(--border-subtle);
+
+  &:has(.switchCell) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (max-width: 700px) {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}
+
+.label,
+.switchText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.switchText {
+  padding-left: calc(var(--space-4) + var(--space-2));
+}
+
+.title {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.description {
+  color: var(--text-tertiary);
+  font-size: var(--font-size-200);
+}
+
+.replaces {
+  color: var(--accent-text);
+  font-size: var(--font-size-200);
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fileValue {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-family: var(--monospace-font);
+  font-size: var(--font-size-200);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.buttons {
+  display: flex;
+  flex: 0 0 auto;
+  gap: var(--space-1);
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1_5);
+}
+
+.swatch {
+  width: calc(var(--space-4) + var(--space-1));
+  height: calc(var(--space-4) + var(--space-1));
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  @include focus-ring(2px);
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+}
+
+.swatchSelected {
+  border-color: var(--text-primary);
+}

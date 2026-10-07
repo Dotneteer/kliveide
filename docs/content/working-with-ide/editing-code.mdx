@@ -29,7 +29,7 @@ All standard VS Code keyboard shortcuts work in Klive's editor. Refer to the VS 
 
 ## Editor preferences
 
-You can set some preferences with the menu items within the **View | Editor Options** menu.
+You can set some preferences on the **Editor** page of the [Settings](/working-with-ide/settings) dialog.
 
 <Callout type="info" emoji="💡">
 These settings are saved to your project and the Klive settings file. When you load a project, the project settings override the previous Klive settings.
@@ -54,7 +54,7 @@ Klive extends Monaco with features that are specific to Z80 (and 6510) assembly 
 
 The Klive editor uses **semantic tokens** — a form of syntax highlighting driven by the compiler's understanding of your code, not just its textual patterns. Beyond the basic tokenizer colors, Klive uses the compiler's knowledge of your code to color tokens by their resolved role: labels, macro names, struct names, `.equ` constants, variables, and macro parameter placeholders each get a distinct style. These **semantic colors** update a moment after you finish typing, reflecting the compiler's current interpretation of your source.
 
-You can customize every semantic color and token style (including font weight and emphasis) via **View | Customize Colors**. For in-depth information, including how token definitions work and how to create your own theme, see the [Customize Syntax Colors](../howto/customize-syntax-colors) how-to guide.
+You can customize every semantic color and token style (including font weight and emphasis) with token files in your Klive settings folder. For in-depth information, including how token definitions work and how to create your own theme, see the [Customize Syntax Colors](../howto/customize-syntax-colors) how-to guide.
 
 ### Inline error diagnostics
 

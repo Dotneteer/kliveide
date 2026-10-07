@@ -10,9 +10,9 @@ Background compilation is an optional feature that keeps the compiler running qu
 
 ## Enabling the feature
 
-Background compilation is **off by default**. Turn it on from the application menu:
+Background compilation is **off by default**. Turn it on in the [Settings](/working-with-ide/settings) dialog:
 
-**View → Editor Options → Allow Background Compile**
+**Settings → Editor → Background compile**
 
 The setting is saved globally with the IDE (not per-project), so it applies to every project you open.
 
@@ -40,5 +40,5 @@ To designate a file as the build root, right-click it in the Project Explorer an
 
 ## Tips
 
-- **Slow machines or large files**: increase the debounce window by raising the **Quick Suggestion Delay** in **View → Editor Options**. While this setting primarily affects autocomplete, a longer pause before suggestions also reduces the rate at which the background compiler fires.
+- **Slow machines or large files**: increase the debounce window by raising the **Quick Suggestion Delay** in **Settings → Editor**. While this setting primarily affects autocomplete, a longer pause before suggestions also reduces the rate at which the background compiler fires.
 - **Temporary files**: background compilation does not produce any output files on disk — it runs entirely in memory.

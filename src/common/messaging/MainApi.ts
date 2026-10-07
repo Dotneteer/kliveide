@@ -621,6 +621,21 @@ class MainApiImpl {
   }
 
   /**
+   * Runs one of the main process's UI actions (`src/main/ui-actions.ts`): the Settings dialog's
+   * buttons and app-state values, and the toolbar and status-bar controls
+   * (`.plans/MENU_REDESIGN_PLAN.md` §4–§5). Each runs the code its old menu item ran.
+   * @param _actionId The action
+   * @param _value Its argument, if it takes one
+   * @returns An error message for an unknown action or value, undefined when done
+   */
+  async runUiAction(
+    _actionId: import("@common/settings/ui-action-ids").UiActionId,
+    _value?: unknown
+  ): Promise<string | undefined> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Sets a global application setting value.
    * @param _settingId The setting key to set.
    * @param _value The value to set.
@@ -706,6 +721,8 @@ const UNBOUNDED_MAIN_METHODS = [
   "showOpenFileDialog",
   "selectMediaFile",
   "ejectMediaFile",
+  // --- File pickers, confirmations and dialogs of their own
+  "runUiAction",
   // --- The app is terminating; a response may legitimately never arrive
   "exitApp",
   // --- Compilation time scales with the project and the external toolchain

@@ -14,12 +14,12 @@ This feature is only available for the **ZX Spectrum 48K** machine model. Other 
 
 ## Selecting a Custom ROM
 
-Open the **Machine** menu in the Emulator window. Under the ZX Spectrum 48K machine, you will find two ROM-related commands:
+While the ZX Spectrum 48K runs, open the **Machine** page of the [Settings](/working-with-ide/settings) dialog. Its **ZX Spectrum 48K ROM** option has two buttons:
 
-- **Select ROM File...** — opens a file picker to choose a ROM image
-- **Reset to Default ROM** — removes the custom ROM and restores the original Spectrum 48K ROM
+- **Browse...** — opens a file picker to choose a ROM image
+- **Reset** — removes the custom ROM and restores the original Spectrum 48K ROM
 
-Click **Select ROM File...** and browse to your ROM file. Klive accepts files with the `.rom` and `.bin` extensions (as well as any other extension via the *All Files* filter).
+Click **Browse...** and browse to your ROM file. Klive accepts files with the `.rom` and `.bin` extensions (as well as any other extension via the *All Files* filter).
 
 <Callout type="info" emoji="💡">
 The selected ROM file must be **exactly 16,384 bytes** (16K) in size. If the file is smaller or larger, Klive will reject it and display an error message.
@@ -29,14 +29,14 @@ Once a valid file is selected, the machine is restarted automatically with the n
 
 ## Resetting to the Default ROM
 
-To go back to the original ZX Spectrum 48K ROM, click **Reset to Default ROM** in the **Machine** menu. Klive will ask for confirmation before switching back:
+To go back to the original ZX Spectrum 48K ROM, click **Reset** next to the **ZX Spectrum 48K ROM** option on the **Settings > Machine** page. Klive will ask for confirmation before switching back:
 
 > *Are you sure you want to reset to the default ZX Spectrum 48 ROM?*
 
 Confirm with **Yes** and the machine will restart with the built-in ROM.
 
 <Callout type="info" emoji="💡">
-The **Reset to Default ROM** menu item is only enabled when a custom ROM is currently active.
+The **Reset** button is only enabled when a custom ROM is currently active.
 </Callout>
 
 ## How the ROM Path Is Stored

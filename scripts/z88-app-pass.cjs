@@ -133,6 +133,18 @@ async function runModel(modelId) {
     await emu.getByRole("option", { name: text, exact: false }).first().click();
     await sleep(300);
   };
+  // --- Machine options are in Settings › Machine (`.plans/MENU_REDESIGN_PLAN.md` §4): open the
+  // --- dialog in the EMU window, pick the option, close it
+  const machineSetting = async (rowId, optionText, wait = 1500) => {
+    await menu("open_settings", 800);
+    await emu.getByTestId("settings-page-machine").click();
+    await emu.getByTestId(`settings-select-${rowId}`).click();
+    await sleep(400);
+    await emu.getByRole("option", { name: optionText, exact: true }).first().click();
+    await sleep(300);
+    await dialogButton(["Close"]);
+    await sleep(wait);
+  };
   const start = async (wait = 12_000) => {
     await cmd("em-start", wait);
   };
@@ -236,13 +248,13 @@ async function runModel(modelId) {
 
     // --- 8. LCD sizes (each rebuilds the machine)
     for (const size of ["640_320", "640_480", "640_64"]) {
-      await menu(`z88_${size}`, 4000);
+      await machineSetting("z88Lcd", size.replace("_", " x "), 4000);
       await start();
       await lcd(`13-lcd-${size}`);
     }
 
     // --- 9. A keyboard layout
-    await menu("z88_de_layout", 3000);
+    await machineSetting("z88KeyboardLayout", "German", 3000);
     await start(3000);
     await lcd("14-keyboard-de");
     await emu.locator('button[aria-label="Show/Hide keyboard"]').first().click({ force: true });

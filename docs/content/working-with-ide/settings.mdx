@@ -1,0 +1,189 @@
+---
+description: "The Settings dialog holds every Klive preference in one place: appearance, the editor, the emulator, debugging, the running machine's ROMs and options, input, recording and integrations. It also lists where each former menu item went."
+---
+
+import { Callout } from 'nextra/components'
+
+# Settings
+
+Klive keeps its preferences in one **Settings** dialog. The menus hold commands &mdash; things that
+act now &mdash; and the dialog holds what you set once and forget.
+
+## Opening the Settings
+
+| Platform | Menu | Shortcut |
+| --- | --- | --- |
+| macOS | **Klive › Settings...** | <kbd>Cmd</kbd>+<kbd>,</kbd> |
+| Windows and Linux | **File › Settings...** | &mdash; |
+
+Some menus also have an item that opens the dialog on the page you need:
+
+- **Machine › Input › Input Settings...** opens the **Input** page.
+- **Machine › Record › Recording Settings...** opens the **Recording** page.
+- **Debug › Debugger Settings...** opens the **Debugging** page.
+
+The dialog opens in the window you are working in, the IDE or the emulator, so it works while the IDE
+is hidden.
+
+## How It Works
+
+- **Changes apply immediately.** There is no OK or Cancel button: switch an option and Klive uses it at
+  once, just as the menu check items used to. Close the dialog when you are done.
+- **Search** with the box at the top. It looks through the options of every page, so you can find an
+  option without knowing which page it is on.
+- **Reset Page to Defaults** returns every option of the current page to its default value.
+- Options that restart the machine, such as a new ROM or another Z88 LCD size, say so in their
+  description.
+
+## The Pages
+
+### General
+
+| Option | What it does |
+| --- | --- |
+| Open the last project at startup | Klive opens the project you used last when it starts. See [IDE Startup Options](/howto/ide-startup). |
+| Close the emulator when the IDE is closed | Closing the IDE window also closes the emulator, and with it Klive. |
+| Record tab switches in the navigation history | Clicking a document tab adds a place to the [navigation history](/working-with-ide/navigation). |
+| Excluded items | **Manage...** lists the files and folders hidden from the Project Explorer. Available while a Klive project is open. |
+
+### Appearance
+
+| Option | What it does |
+| --- | --- |
+| Tone | **Light** or **Dark**. **View › Switch to Light Theme** / **Switch to Dark Theme** flips it from the menu. |
+| Accent | The accent colour: Sinclair Blue, Spectrum Magenta, Ember, Ultraviolet, Deep Teal or Phosphor Green. |
+| Panel font, Panel font size | The font of the IDE's panels. |
+| Sidebar on the right | Moves the sidebar to the right side of the IDE window. |
+| Command and Output on top | Moves the Command and Output area above the editor. |
+| Maximize Command and Output | Lets the Command and Output area take the whole editor area. |
+
+### Editor
+
+The code editor's options: the font family and size, autocomplete, selection and occurrences
+highlighting, the quick suggestion delay, detecting the indentation, inserting spaces for a tab,
+rendering whitespace, the tab size, and [background compilation](/howto/background-compilation).
+See [Editing Code](/working-with-ide/editing-code).
+
+### Emulator
+
+| Option | What it does |
+| --- | --- |
+| Zoom steps | The zoom steps of the emulator screen. |
+| Scanline effect | Draws CRT-style scanlines over the picture. |
+| Show the instant screen | See [Using the Instant Screen](/howto/instant-screen). Also a button in the emulator toolbar. |
+| Show the beam position while paused | See [The Beam Position](/working-with-ide/beam-position). Also a button in the emulator toolbar. |
+| Keep the emulator on top | See [Keeping the Emulator always on top](/howto/always-on-top). Also a button in the emulator toolbar. |
+| Show performance info | Shows the emulator's performance figures in its status bar. |
+| Show media information | Shows the media strip (tapes, disks, cartridges) in the emulator's status bar. |
+| Show the Layers strip | Shows the ZX Spectrum Next's [Layers strip](/working-with-ide/layers) under the screen. |
+| Fast load | Loads tapes at once instead of in real time. Also **Machine › Tape › Fast load**. |
+
+<Callout type="info" emoji="💡">
+Right-clicking the emulator's status bar toggles the performance info, the media information and the
+Show the Layers strip, too.
+</Callout>
+
+### Debugging
+
+| Option | What it does |
+| --- | --- |
+| Stop in interrupt handlers while stepping | Stepping goes into an interrupt routine instead of over it. |
+| Stop at runtime errors | The debugger stops where a program raises a runtime error. |
+| Just My Code | Stepping skips the code of libraries you did not write. |
+| Sync the source with the current breakpoint | The editor shows the source line where the machine stopped. Also **Debug › Sync Source with Breakpoint** and an IDE toolbar button. |
+| Group breakpoints by kind | Groups the [Breakpoints view](/working-with-ide/breakpoints) by breakpoint kind. |
+
+### Machine
+
+This page shows the options of the **running machine** only; switch machines to see another's.
+
+| Option | Machine | What it does |
+| --- | --- | --- |
+| ZX Spectrum 48K ROM | ZX Spectrum 48K | **Browse...** picks a custom ROM, **Reset** returns to the original. See [Using a Custom ROM](/howto/sp48-custom-rom). |
+| TR-DOS ROM | Pentagon 128, Scorpion | Names your TR-DOS ROM image. See [Using TR-DOS Disks](/howto/trdos-disks). |
+| Scorpion ZS-256 ROM | Scorpion ZS-256 | Names your copy of the Scorpion's 64K ROM. |
+| Timex ROM | Timex models | Names your copy of that model's ROM. See [Machine Types](/machine-types). |
+| Keyboard layout | Cambridge Z88 | The Z88's keyboard layout. |
+| LCD resolution | Cambridge Z88 | The size of the Z88's screen. Changing it restarts the machine. |
+
+### Input
+
+| Option | What it does |
+| --- | --- |
+| Key mapping file | **Browse...** picks a key mapping file, **Reset** returns to the default mapping. |
+| Joystick bindings | **Configure...** sets which keys and controller buttons drive the joysticks. |
+| Mouse | On the ZX Spectrum Next: mouse capture, showing the captured pointer, and sensitivity. |
+
+### Recording
+
+| Option | What it does |
+| --- | --- |
+| Format | MP4, WebM or MKV. |
+| Quality | How much the video is compressed. |
+| Frame rate | The machine's own, or half of it (every second frame). |
+| IDE + Emulator: IDE position | Where the IDE goes next to the emulator in an IDE + Emulator recording. |
+| IDE + Emulator: Include the pointer, Show mouse clicks | Draw the mouse pointer and its clicks into the video. |
+| IDE + Emulator: Full resolution (HiDPI) | Records at the display's full pixel density. |
+
+See [Recording the Emulator Screen](/howto/screen-recording) for what each option does.
+
+### Integrations
+
+| Option | What it does |
+| --- | --- |
+| SjasmPlus | **Configure...** opens the SjasmPlus Integration dialog. See [SJASMPLUS Integration](/working-with-ide/sjasmp). |
+
+## In the Windows Themselves
+
+A few controls moved out of the menus into the part of the window they change:
+
+- The emulator toolbar's **sound** button has a dropdown with the sound levels.
+- In the emulator status bar, the **machine name** opens the Select Machine dialog, and the **MHz**
+  label opens the list of speeds.
+- Right-clicking the emulator status bar toggles the performance info, the media information and the
+  Show the Layers strip.
+- The IDE toolbar's navigation dropdown has **Clear Navigation History**.
+
+## Where Did It Go?
+
+The menus were reorganised. If you are looking for an item from an earlier version of Klive:
+
+| Earlier menu item | Now |
+| --- | --- |
+| File › Load ZX Spectrum Snapshot, File › Play RZX Recording, File › Load Machine State | **File › Open File...** (opens snapshots, `.kls` states, `.rzx` recordings and tapes; the same as dropping the file onto the emulator) |
+| Machine › Load Snapshot / Load State, Machine › Open Z88 Snapshot, Machine › RZX › Play Recording | **File › Open File...** |
+| Machine › Save Snapshot / Save State | **File › Save Snapshot...** / **File › Save Machine State...** |
+| Machine › Quick Save State / Quick Restore State | **File › Quick Save State** / **File › Quick Restore State** |
+| File › Manage Excluded Items | **Settings › General › Excluded items** |
+| IDE › IDE Settings | **Settings › General** |
+| IDE › Show Machine Memory / Show Disassembly / Show BASIC Listing | **View › Machine Views › Memory / Disassembly / BASIC Listing** |
+| IDE › Go › Back / Forward | **View › Go Back** / **View › Go Forward** |
+| IDE › Go › Clear Navigation History | The IDE toolbar's navigation dropdown |
+| IDE › Integrations › SjasmPlus Assembler | **Settings › Integrations › SjasmPlus** |
+| View › Theme | **Settings › Appearance**; **View › Switch to Light/Dark Theme** |
+| View › Editor Options | **Settings › Editor** |
+| View › Panel Options, Move the Sidebar to the Right, Move Commands and Output to the top, Maximize Commands and Output | **Settings › Appearance** |
+| View › Screen Zoom Steps, Show Performance Info, Show Media Information, Show Layers | **Settings › Emulator** (the last three also from the emulator status bar's right-click menu) |
+| View › Show the Instant Screen, Show the Beam Position, Keep Emulator on Top | **Settings › Emulator**, or the emulator toolbar buttons |
+| View › Sync the Source with the Current Breakpoint | **Debug › Sync Source with Breakpoint**, or the IDE toolbar |
+| Machine › Start with Debugging, Step Into, Step Over, Step Out, Step Over Line | **Debug** menu |
+| Machine › Step Copper | **Debug › Step Copper** |
+| Machine › Clock Multiplier | **Machine › Speed**, or the MHz label in the emulator status bar |
+| Machine › Sound Level | **Machine › Sound**, or the emulator toolbar's sound dropdown |
+| Machine › Select Tape File, Rewind Tape, Eject Tape, Fast Load | **Machine › Tape** (Insert Tape..., Rewind, Eject, Fast Load) |
+| Machine › Floppy Disks, Create Disk File, Boot Disk in Drive A | **Machine › Disks** |
+| Machine › Insert Cartridge (Timex) | **Machine › Cartridge** |
+| ZX Spectrum Next SD card items | **Machine › SD Card** |
+| Machine › Joystick, Mouse | **Machine › Input** |
+| Machine › Hotkeys (ZX Spectrum Next) | **Machine › ZX Spectrum Next** |
+| Z88 Soft Reset, Hard Reset, Press Both SHIFT Keys, Raise Battery Low Signal | **Machine › Cambridge Z88** |
+| Machine › Scanline Effect | **Settings › Emulator** |
+| Machine › Select ROM File / Reset to Default ROM, TR-DOS ROM, Scorpion ROM, TC2048/TC2068/TS2068 ROM | **Settings › Machine** |
+| Machine › Keyboard layout, LCD resolution (Z88) | **Settings › Machine** |
+| Machine › Select Key Mapping / Reset Key Mapping | **Settings › Input** |
+| Machine › Recording (start, pause, IDE + Emulator) | **Machine › Record** |
+| Machine › Recording (format, quality, half fps, IDE + Emulator options) | **Settings › Recording** (**Machine › Record › Recording Settings...**) |
+| Machine › RZX (record, rollback, render to video) | **Machine › Record** (RZX: Record, RZX: Stop and Save..., ...) |
+| Machine › Layers (ZX Spectrum Next) | The [Layers strip](/working-with-ide/layers) under the screen; the Layers document is **View › Machine Views › Layers** |
+| Machine › Show Copper List, Show Sprite / Tilemap / Layer 2 Inspector | **View › Machine Views** |
+| Z88 help links | **Help › Cambridge Z88 Resources** |

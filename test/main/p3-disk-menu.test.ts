@@ -11,7 +11,7 @@ vi.mock("electron", () => ({ app: {}, dialog: {}, BrowserWindow: class {} }));
 vi.mock("@main/main-store", () => ({ mainStore: { getState: () => ({ media: {} }), dispatch: vi.fn() } }));
 vi.mock("@main/projects", () => ({ saveKliveProject: vi.fn() }));
 vi.mock("@main/registeredMachines", () => ({ logEmuEvent: vi.fn(), setMachineType: vi.fn() }));
-vi.mock("@main/app-menu", () => ({ createBooleanSettingsMenu: vi.fn() }));
+vi.mock("@main/menus/menu-utils", () => ({ createBooleanSettingsMenu: vi.fn() }));
 vi.mock("@main/settings-utils", () => ({ appSettings: {}, saveAppSettings: vi.fn() }));
 vi.mock("@messaging/MainToEmuMessenger", () => ({ getEmuApi: vi.fn() }));
 vi.mock("@messaging/MainToIdeMessenger", () => ({ getIdeApi: vi.fn() }));

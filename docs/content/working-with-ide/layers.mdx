@@ -23,8 +23,9 @@ It is available on the ZX Spectrum Next only.
 
 ## The Layers Strip
 
-Turn on **View → Show Layers** (in the emulator window), or toggle a layer from the menu or the
-`layers` command, and a strip appears under the screen:
+Turn on **Settings → Emulator → Show the Layers strip** (or right-click the emulator's status bar and
+choose the Layers strip), or toggle a layer with the `layers` command, and a strip appears under the
+screen:
 
 ![The Layers strip under the screen with Layer 2 soloed: Layer 2 alone over a checkerboard, and the pill that announces it](/images/working-with-ide/layers-solo.png)
 
@@ -41,7 +42,7 @@ Turn on **View → Show Layers** (in the emulator window), or toggle a layer fro
 - **All** shows every layer again.
 - **×** closes the strip: it first returns to the composite picture &mdash; every layer shown, no
   solo, no transparency marking, the clip windows and the probe off &mdash; then hides the strip.
-  **View → Show Layers** brings it back.
+  **Settings → Emulator → Show the Layers strip**, or the status bar's right-click menu, brings it back.
 
 While any layer is hidden or soloed, or transparency is marked, a pill on the screen says so &mdash;
 `Layers: sprites hidden` &mdash; so a forgotten toggle is never mistaken for a bug in your program.
@@ -83,7 +84,7 @@ opens the inspector that owns it: the [Sprite Inspector](/working-with-ide/sprit
 
 ## The Layers Document
 
-**Machine → Layers → Show Layers Document**, or the `show-layers` command, opens a document with the
+**View → Machine Views → Layers**, or the `show-layers` command, opens a document with the
 static picture:
 
 ![The Layers document: the priority stack, and a card per layer with its picture, state and clip window](/images/working-with-ide/layers-document.png)
@@ -96,11 +97,10 @@ static picture:
   to show that layer alone on the emulator screen.
 - **Composite** &mdash; the machine's own picture, with no layer hidden.
 
-## The Menu And The Command
+## The Command
 
-**Machine → Layers** has a check item for each layer, a solo item for each, *Show Transparency*,
-*Show Clip Windows*, *Pixel Probe* and *Show All Layers*. The `layers` command does the same from the
-IDE:
+There is no Layers menu: the strip has every one of its controls. The `layers` command does the same
+from the IDE:
 
 ```
 layers                    ; list the layers
@@ -111,7 +111,7 @@ layers transparency on    ; mark where no layer is opaque
 layers all on             ; show every layer
 ```
 
-The strip, the menu and the command change the same setting, so they always agree. It lasts until you
+The strip and the command change the same setting, so they always agree. It lasts until you
 close Klive; it survives a machine reset, and it is never saved in a machine state file.
 
 <Callout type="info">

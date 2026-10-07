@@ -93,7 +93,8 @@ import {
 import {
   ListSettingsCommand,
   MoveSettingsCommand,
-  SettingCommand
+  SettingCommand,
+  SettingsDialogCommand
 } from "./commands/SettingCommands";
 import { ResetZxbCommand } from "./commands/ZxbCommands";
 import { CreateDiskFileCommand } from "./commands/CreateDiskFileCommand";
@@ -220,6 +221,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new ProjectExcludeItemsCommand());
   cmdSrv.registerCommand(new SettingCommand());
   cmdSrv.registerCommand(new ListSettingsCommand());
+  cmdSrv.registerCommand(new SettingsDialogCommand());
   cmdSrv.registerCommand(new MoveSettingsCommand());
   cmdSrv.registerCommand(new ResetZxbCommand());
 

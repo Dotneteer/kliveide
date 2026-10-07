@@ -8,7 +8,7 @@ This document summarizes the machines and models available in Klive IDE.
 
 ## Choosing a machine
 
-The **Machine | Machine type** menu lists only your *favourite* models, followed by **Select machine…** (**Cmd+Shift+M** on macOS, **Ctrl+Shift+M** on Windows and Linux). If the machine you are running is not a favourite, the menu still shows it, ticked, below the favourites.
+The **Machine | Machine Type** menu lists only your *favourite* models, followed by **Select machine…** (**Cmd+Shift+M** on macOS, **Ctrl+Shift+M** on Windows and Linux). If the machine you are running is not a favourite, the menu still shows it, ticked, below the favourites.
 
 **Select machine…** opens a dialog with every model Klive emulates:
 
@@ -46,7 +46,7 @@ files work the same on both.
 
 The Pentagon has the **Beta 128 disk interface**: two drives (A and B) that take TR-DOS disk images
 (`.trd` and `.scl`), and TR-DOS itself. Klive cannot ship the TR-DOS ROM, so you name your own copy
-under **Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
+under **Settings > Machine > TR-DOS ROM**; until you do, the Pentagon runs without its disks. See
 [Using TR-DOS Disks on the Pentagon 128](/howto/trdos-disks).
 
 A `.z80` or `.szx` snapshot of a Pentagon 128 opens on the Pentagon model. A 128K snapshot opens on
@@ -115,7 +115,7 @@ The CPU runs at the SCLD's 3.528 MHz. The TC2048 and TC2068 keep the 48K's frame
 312 lines); the TS2068's is 262 lines (58,688 T-states, 60 frames a second).
 
 **The TC2048** has a built-in Kempston joystick port, driven by joystick 1's bindings
-(**Machine > Kempston Joystick**).
+(**Machine > Input > Kempston Joystick**).
 
 **The TC2068 and TS2068** add:
 
@@ -126,13 +126,13 @@ The CPU runs at the SCLD's 3.528 MHz. The TC2048 and TC2068 keep the 48K's frame
   `D0`-`D7` and `X0`-`X7`.
 - **An AY-3-8912 sound chip** on ports `$F5` (register select) and `$F6` (data), clocked at 1.764 MHz,
   with the PSG panel.
-- **Two joysticks**, read through the AY's register 14 (**Machine > Joysticks**).
-- **Cartridges**: **Machine > Insert Cartridge...** puts a `.dck` file into the DOCK, and the media
+- **Two joysticks**, read through the AY's register 14 (**Machine > Input > Joysticks**).
+- **Cartridges**: **Machine > Cartridge > Insert Cartridge...** puts a `.dck` file into the DOCK, and the media
   strip shows it. The machine restarts, because its ROM looks for a cartridge when it starts.
 - Ports `$FE`, `$F4`, `$F5`, `$F6` and `$FF` are decoded on their full low byte.
 
-**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Machine > TC2048 ROM**,
-**TC2068 ROM** or **TS2068 ROM**: the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
+**ROMs.** Klive cannot ship Timex's ROMs. Name your own copy under **Settings > Machine** (the
+**TC2048 ROM**, **TC2068 ROM** or **TS2068 ROM** option, shown while that model runs): the TC2048's is 16K; a 2068's is one 24K file, its 16K HOME ROM
 followed by its 8K EXROM. Until you do, the machine boots the Sinclair 48K ROM (a 2068 then has no
 EXROM). Klive knows the TS2068 ROM (CRC-32 `48004230`): with it, running and debugging code, and
 loading tapes from the IDE, use its own main loop and tape routines. With a 2068 ROM Klive has not
@@ -166,9 +166,9 @@ The Scorpion runs on the ZX Spectrum 128K's core, and adds:
 - **Timing**: 3.5 MHz, the 48K's frame (224 T-states by 312 lines, 69,888 T-states), and no memory or
   I/O contention. Unattached ports read the floating bus.
 
-**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Machine > Scorpion
-ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
-`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Machine > TR-DOS ROM**. With the 128K
+**ROMs.** Klive cannot ship the Scorpion's 64K ROM. Name your own copy under **Settings > Machine >
+Scorpion ROM**. Until you do, the Scorpion boots the ZX Spectrum 128K's ROMs, the service monitor's page reads
+`$FF`, and TR-DOS comes from the TR-DOS ROM you name under **Settings > Machine > TR-DOS ROM**. With the 128K
 ROMs, running and debugging code, the Tape Loader and booting a disk work as on the 128K and the
 Pentagon. With the Scorpion's own ROM the machine runs, but the IDE cannot start a program, a tape or
 a disk in its editor, which Klive does not know; load them by hand.

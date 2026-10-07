@@ -36,6 +36,26 @@
     padding: 0 var(--space-0_5);
 }
 
+/*
+ * The machine name and the clock are buttons (`.plans/MENU_REDESIGN_PLAN.md` §5): they open Select
+ * Machine and the speed list. They look like the labels they were until pointed at.
+ */
+.chip {
+    font: inherit;
+    font-size: var(--font-size-100);
+    color: var(--color-statusbar-label);
+    padding: 0 var(--space-1);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    cursor: pointer;
+    @include focus-ring(-1px);
+
+    &:hover {
+        background: var(--surface-hover);
+    }
+}
+
 .isMonospace {
     font-family: var(--monospace-font);
 }

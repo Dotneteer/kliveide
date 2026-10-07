@@ -14,9 +14,9 @@ import {
 } from "@messaging/messages-core";
 import { sendFromMainToEmu } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, sendFromMainToIde } from "@messaging/MainToIdeMessenger";
-import { droppedFileAction } from "@common/utils/dropped-file-action";
-import { machineRegistry } from "@common/machines/machine-registry";
-import { MF_TAPE_SUPPORT } from "@common/machines/constants";
+import { openEmulatorFile } from "./open-file";
+import { runUiAction } from "./ui-actions";
+import type { UiActionId } from "@common/settings/ui-action-ids";
 import {
   createKliveProject,
   getKliveProjectFolder,
@@ -45,7 +45,7 @@ import {
 } from "@state/actions";
 import { createCompilerRegistry } from "./compiler-integration/compiler-registry";
 import { getDirectoryContent, getProjectDirectoryContentFilter } from "./directory-content";
-import { KLIVE_GITHUB_PAGES } from "./app-menu";
+import { KLIVE_GITHUB_PAGES } from "./menus/help-menu";
 import { checkZ88SlotFile } from "./machine-menus/z88-menus";
 import {
   MEDIA_DISK_A,
@@ -1025,29 +1025,14 @@ class MainMessageProcessor {
    * @param filename The dropped file's full path
    */
   async openDroppedFile(filename: string): Promise<string | undefined> {
-    const action = droppedFileAction(filename);
-    let error: string | undefined;
-    if (action.kind === "command") {
-      const result = await getIdeApi().executeCommand(action.command);
-      error = result?.success ? undefined : (result?.finalMessage ?? `Could not open ${filename}`);
-    } else if (action.kind === "tape") {
-      const machineId = mainStore.getState()?.emulatorState?.machineId;
-      const machine = machineRegistry.find((m) => m.machineId === machineId);
-      if (!machine?.features?.[MF_TAPE_SUPPORT]) {
-        error = `The ${machine?.displayName ?? "current machine"} has no tape deck.`;
-      } else {
-        error = await setSelectedTapeFile(filename, false);
-        if (!error) await saveKliveProject();
-      }
-    } else {
-      error = action.message;
-    }
-    if (error) {
-      const window = BrowserWindow.getFocusedWindow();
-      const options = { type: "error" as const, title: "Dropped file", message: error };
-      await (window ? dialog.showMessageBox(window, options) : dialog.showMessageBox(options));
-    }
-    return error;
+    return await openEmulatorFile(BrowserWindow.getFocusedWindow() ?? undefined, filename, "Dropped file");
+  }
+
+  /**
+   * Runs a UI action (`src/main/ui-actions.ts`).
+   */
+  async runUiAction(actionId: UiActionId, value?: unknown): Promise<string | undefined> {
+    return await runUiAction(actionId, value);
   }
 
   /**

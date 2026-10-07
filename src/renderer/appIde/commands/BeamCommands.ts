@@ -3,6 +3,7 @@ import type { IdeCommandResult } from "@renderer/abstractions/IdeCommandResult";
 import type { CommandArgumentInfo } from "@renderer/abstractions/IdeCommandInfo";
 import type { ValidationMessage } from "@renderer/abstractions/ValidationMessage";
 
+import { BEAM_POSITION_MACHINE_IDS } from "@common/machines/constants";
 import { SETTING_EMU_SHOW_BEAM_POSITION } from "@common/settings/setting-const";
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import {
@@ -40,6 +41,11 @@ export class BeamCommand extends IdeCommandBase<{ state?: string }> {
   }
 
   async execute(context: IdeCommandContext, args: { state?: string }): Promise<IdeCommandResult> {
+    // --- No raster beam to show: the Z88's LCD, the ZX80/81, the C64
+    const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
+    if (!BEAM_POSITION_MACHINE_IDS.includes(machineId)) {
+      return commandError("This machine has no raster beam to show");
+    }
     const value = parseBeamSwitch(args?.state);
     if (args?.state !== undefined && value === undefined) return commandError(`Use 'on' or 'off', not '${args.state}'`);
     if (value !== undefined) {

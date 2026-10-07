@@ -24,9 +24,8 @@ position, the disk controller in the middle of a command) but only Klive reads i
 
 The machine must be running or paused. A running machine is paused for an instant and runs on.
 
-- **File &rarr; Save Machine State...**, or **Save State...** in the Emulator's **Machine** menu,
-  writes a `.kls` file.
-- **File &rarr; Load Machine State...**, or **Load State...**, opens one. It switches to the machine,
+- **File &rarr; Save Machine State...** writes a `.kls` file.
+- **File &rarr; Open File...**, choosing a `.kls` file, opens one. It switches to the machine,
   model and configuration the state was saved on, and stops at the saved program counter, ready to
   debug.
 - Open a `.kls` file in the Explorer to see what it holds: the screen as it was saved, the machine,
@@ -40,9 +39,9 @@ A state file is small: from about 10 KB to a few hundred KB, whatever the machin
 
 ## Quick save and restore
 
-**Quick Save State** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>, <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>
+**File &rarr; Quick Save State** (<kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>, <kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>S</kbd>
 on a Mac) keeps the machine's state in memory, without a file. **Quick Restore State**
-(<kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>) puts it back and pauses the machine.
+(also in **File**; <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>Alt</kbd>+<kbd>L</kbd>) puts it back and pauses the machine.
 There is one slot per machine. It is emptied when you switch to another machine or model, and when
 Klive closes.
 

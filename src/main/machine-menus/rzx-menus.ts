@@ -12,7 +12,6 @@ import type { AppState } from "@state/AppState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MI_SPECTRUM_128, MI_SPECTRUM_3E, MI_SPECTRUM_48 } from "@common/machines/constants";
 import {
-  rzxPlayCommandText,
   rzxStopCommandText,
   rzxVideoCommandText
 } from "@common/spectrum/rzx/rzxCommandTypes";
@@ -51,56 +50,42 @@ export function isRzxRecordingActive(state: AppState = mainStore.getState()): bo
   return rzx?.mode === "recording" && !rzx.unsaved;
 }
 
-/** Machine -> RZX */
+/** The RZX items of Machine › Record (`.plans/RZX_PLAN.md`); playing a recording is File › Open File… */
 export const rzxMenuRenderer: MachineMenuRenderer = (windowInfo) => {
   const emuWindow = windowInfo.emuWindow;
   const state = mainStore.getState();
   return [
     {
-      id: "rzx_menu",
-      label: "RZX",
-      type: "submenu",
-      submenu: [
-        {
-          id: "rzx_play",
-          label: "Play Recording...",
-          click: async () => await openRzxRecording(emuWindow)
-        },
-        { type: "separator" },
-        {
-          id: "rzx_record",
-          label: "Record",
-          enabled: canStartRzxRecording(state),
-          click: async () => await runRzxCommand(emuWindow, "zx-rzx-record", "RZX Recording")
-        },
-        {
-          id: "rzx_stop",
-          label: "Stop and Save...",
-          enabled: hasRzxRecording(state),
-          click: async () => await saveRzxRecordingAs(emuWindow)
-        },
-        {
-          id: "rzx_point",
-          label: "Insert Rollback Point",
-          enabled: isRzxRecordingActive(state),
-          click: async () => await runRzxCommand(emuWindow, "zx-rzx-point", "RZX Recording")
-        },
-        {
-          id: "rzx_rollback",
-          label: "Roll Back",
-          enabled: isRzxRecordingActive(state),
-          click: async () => await runRzxCommand(emuWindow, "zx-rzx-rollback", "RZX Recording")
-        },
-        { type: "separator" },
-        {
-          id: "rzx_video",
-          label: "Render Recording to Video...",
-          enabled: !!state?.emulatorState?.screenRecordingAvailable,
-          click: async () => await renderRzxRecording(emuWindow)
-        }
-      ] as MachineMenuItem[]
+      id: "rzx_record",
+      label: "RZX: Record",
+      enabled: canStartRzxRecording(state),
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-record", "RZX Recording")
+    },
+    {
+      id: "rzx_stop",
+      label: "RZX: Stop and Save...",
+      enabled: hasRzxRecording(state),
+      click: async () => await saveRzxRecordingAs(emuWindow)
+    },
+    {
+      id: "rzx_point",
+      label: "RZX: Insert Rollback Point",
+      enabled: isRzxRecordingActive(state),
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-point", "RZX Recording")
+    },
+    {
+      id: "rzx_rollback",
+      label: "RZX: Roll Back",
+      enabled: isRzxRecordingActive(state),
+      click: async () => await runRzxCommand(emuWindow, "zx-rzx-rollback", "RZX Recording")
+    },
+    {
+      id: "rzx_video",
+      label: "RZX: Render a Recording to Video...",
+      enabled: !!state?.emulatorState?.screenRecordingAvailable,
+      click: async () => await renderRzxRecording(emuWindow)
     }
-  ];
+  ] as MachineMenuItem[];
 };
 
 /** Asks for an `.rzx` file */
@@ -134,13 +119,7 @@ async function runRzxCommand(browserWindow: BrowserWindow, command: string, titl
   return true;
 }
 
-/** File -> Play RZX Recording... and Machine -> RZX -> Play Recording... */
-export async function openRzxRecording(browserWindow: BrowserWindow): Promise<void> {
-  const file = await pickRzxFile(browserWindow, "Select RZX Recording");
-  if (file) await runRzxCommand(browserWindow, rzxPlayCommandText(file), "RZX Playback");
-}
-
-/** Machine -> RZX -> Render Recording to Video... */
+/** Machine › Record › RZX: Render a Recording to Video... */
 export async function renderRzxRecording(browserWindow: BrowserWindow): Promise<void> {
   const file = await pickRzxFile(browserWindow, "Select RZX Recording to Render");
   if (file) await runRzxCommand(browserWindow, rzxVideoCommandText(file), "RZX Video");
@@ -154,7 +133,7 @@ export function defaultRzxFileName(state: AppState, now = new Date()): string {
   return `${base}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.rzx`;
 }
 
-/** Machine -> RZX -> Stop and Save... */
+/** Machine › Record › RZX: Stop and Save... */
 export async function saveRzxRecordingAs(browserWindow: BrowserWindow): Promise<void> {
   const folder = appSettings?.folders?.[RZX_FOLDER] || app.getPath("home");
   const dialogResult = await dialog.showSaveDialog(browserWindow, {
