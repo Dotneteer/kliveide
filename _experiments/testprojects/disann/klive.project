@@ -56,7 +56,17 @@
       "areas": [
         {
           "areaId": "document-area-1",
-          "documents": []
+          "documents": [
+            {
+              "type": "ExecutionHistory",
+              "id": "$history",
+              "position": {
+                "line": 0,
+                "column": 0
+              }
+            }
+          ],
+          "activeDocumentId": "$history"
         }
       ]
     }
