@@ -468,6 +468,8 @@ export class MachineController implements IMachineController {
       delete this.debugSupport.imminentBreakpoint;
       delete this.debugSupport.lastBreakpoint;
       delete this.debugSupport.lastStartupBreakpoint;
+      // --- ...and the last decision: a breakpoint at a restored PC fires before that instruction runs
+      delete this.debugSupport.lastDecisionPc;
     }
   }
 
@@ -1284,7 +1286,8 @@ export class MachineController implements IMachineController {
    */
   private collectBreakpointHits(from: TimelinePosition, end: TimelinePosition): { position: TimelinePosition; label: string }[] {
     const timeline = this.timeline!;
-    timeline.replayTo(from);
+    // --- The run makes the decision at `from` itself: a hit exactly at a keyframe belongs to this interval
+    timeline.replayTo(from, { beforeDecision: true });
     timeline.startReplayRun(end);
     const ctx = this.context;
     const saved = {
@@ -1399,7 +1402,8 @@ export class MachineController implements IMachineController {
         debugSupport: hasTimelineState(this.debugSupport) ? this.debugSupport : undefined,
         // --- The present's unpublished tape saves and disk writes go out before the machine moves
         // --- into the past, where a replay's own would be indistinguishable from them (D13)
-        beforeLeavePresent: () => this.publishHostEffects()
+        beforeLeavePresent: () => this.publishHostEffects(),
+        onLanded: (decided) => this.markReplayLanding(decided)
       });
     } catch (err) {
       console.warn("Reverse debugging is off for this session:", err);
@@ -1437,7 +1441,8 @@ export class MachineController implements IMachineController {
       this._timeline = Timeline.fromSnapshot(this.machine, snapshot, {
         budgetBytes: reverseDebugBudgetBytes(settingMb, deviceGb ? deviceGb * 2 ** 30 : undefined),
         debugSupport: hasTimelineState(this.debugSupport) ? this.debugSupport : undefined,
-        beforeLeavePresent: () => this.publishHostEffects()
+        beforeLeavePresent: () => this.publishHostEffects(),
+        onLanded: (decided) => this.markReplayLanding(decided)
       }, options.expectedImage ? { image: options.expectedImage } : undefined);
     } catch (err) {
       this._timeline = undefined;
@@ -1454,6 +1459,18 @@ export class MachineController implements IMachineController {
     if (options.land) this.landInTimeline(options.land);
     this.store?.dispatch(setMachineStateAction(this.state, this.machine.pc), "emu");
     this.publishReverseState();
+  }
+
+  /**
+   * A replay put the machine at a point (`TimelineOptions.onLanded`): its stop decision counts as made
+   * when the restored counters hold it - so the next run neither counts nor stops on it again, as
+   * when resuming from a pause - and as not made when the next run is to make it (Reverse Continue)
+   */
+  private markReplayLanding(decided: boolean): void {
+    const ds = this.debugSupport;
+    if (!ds) return;
+    ds.lastBreakpoint = undefined;
+    ds.lastDecisionPc = decided ? this.machine.pc : undefined;
   }
 
   /** Puts the machine at a point of the timeline: on a record the cursor can name, else a deep landing (D17) */

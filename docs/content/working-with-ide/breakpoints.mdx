@@ -167,7 +167,9 @@ stop, why.
 Every breakpoint &mdash; execution, memory, I/O, NextReg, bank-relative, label-anchored and
 source-code &mdash; can carry a **condition** and a **hit count rule**. The machine stops only if
 the condition is true; a hit is counted only when it is, and the rule then decides whether this hit
-stops. Set them with `-if` and `-hit` on [`bp-set`](/commands-reference#bp-set), in the breakpoint
+stops. A hit is counted once each time the program reaches the breakpoint - also when you step onto
+it and on from it, or when you go back to it in the [execution history](/working-with-ide/reverse-debugging).
+Set them with `-if` and `-hit` on [`bp-set`](/commands-reference#bp-set), in the breakpoint
 dialog, or from the editor's margin menu. Conditions work on the Z80 machines.
 
 ```

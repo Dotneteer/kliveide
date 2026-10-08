@@ -135,6 +135,13 @@ export type TimelineOptions = {
    * what the live run produced (unpublished tape saves and disk writes, D13)
    */
   beforeLeavePresent?: () => void;
+  /**
+   * A replay put the machine at a point. `decided`: the breakpoint counters restored there already
+   * hold the stop decision at its PC - as the recorded run's did, whose loop decides at the next PC
+   * before a frame ends or a step stops - so the host marks it made and the next run does not count
+   * it again; false (`replayTo`'s `beforeDecision`) leaves it to the next run.
+   */
+  onLanded?: (decided: boolean) => void;
 };
 
 /**
@@ -458,6 +465,7 @@ export class Timeline {
         this.machine.restoreHostState(host);
         if (debug) this.debugSupport?.restoreTimelineState(debug);
         this.machine.invalidateHostSync();
+        this.options.onLanded?.(true);
       }
     }
   }
@@ -654,14 +662,14 @@ export class Timeline {
    * @throws ReplayError when the position is before the timeline's start or after its present;
    * ReplayDesyncError when the replay diverged - the timeline has then ended at the last good point
    */
-  replayTo(target: TimelinePosition): ReplayResult {
+  replayTo(target: TimelinePosition, options: { beforeDecision?: boolean } = {}): ReplayResult {
     this.assertActive();
     if (comparePositions(target, this.presentPosition) > 0) {
       throw new RangeError("The target is after the present: run forward instead");
     }
     if (this._mode === "replaying") throw new Error("A replay run is in progress");
     if (this._mode === "live") this.leavePresent();
-    const result = this.runReplay(target, true);
+    const result = this.runReplay(target, true, options.beforeDecision);
     this.at = this.port.position;
     return result;
   }
@@ -908,7 +916,12 @@ export class Timeline {
     this.machine.invalidateHostSync();
   }
 
-  private runReplay(target: TimelinePosition, transients: boolean): ReplayResult {
+  /**
+   * @param beforeDecision Restore the breakpoint counters as they were *before* the stop decision at
+   * the target's PC (Reverse Continue's collect run makes that decision itself, so a hit exactly at a
+   * keyframe is found)
+   */
+  private runReplay(target: TimelinePosition, transients: boolean, beforeDecision = false): ReplayResult {
     this.replaying = true;
     let result: ReplayResult;
     const from = this.store.keyframeAtOrBefore(target);
@@ -941,17 +954,32 @@ export class Timeline {
     const meta = result.keyframe.meta as KeyframeMeta | undefined;
     if (meta) {
       this.machine.restoreHostState(meta.host);
-      if (meta.debug) this.debugSupport?.restoreTimelineState(meta.debug, this.hitsBetween(meta.hitLogIndex, target));
+      if (meta.debug) {
+        const extra = this.hitsBetween(meta.hitLogIndex, target, beforeDecision);
+        // --- A keyframe exactly at the target holds the decision there in its own counters: take it out
+        if (beforeDecision) {
+          for (let i = meta.hitLogIndex - 1; i >= 0 && comparePositions(this.hitLog[i].position, target) === 0; i--) {
+            const key = this.hitLog[i].key;
+            extra.set(key, (extra.get(key) ?? 0) - 1);
+          }
+        }
+        this.debugSupport?.restoreTimelineState(meta.debug, extra);
+      }
     }
+    this.options.onLanded?.(!beforeDecision);
     return result;
   }
 
-  /** The logged hits from a keyframe's log index up to a position, by definition */
-  private hitsBetween(fromIndex: number, to: TimelinePosition): Map<string, number> {
+  /**
+   * The logged hits from a keyframe's log index up to a position, by definition: those at the
+   * position too, unless `strict` (they are the stop decision at its PC, which the run then makes)
+   */
+  private hitsBetween(fromIndex: number, to: TimelinePosition, strict = false): Map<string, number> {
     const hits = new Map<string, number>();
     for (let i = fromIndex; i < this.hitLog.length; i++) {
       const h = this.hitLog[i];
-      if (comparePositions(h.position, to) > 0) break;
+      const order = comparePositions(h.position, to);
+      if (order > 0 || (strict && order === 0)) break;
       hits.set(h.key, (hits.get(h.key) ?? 0) + 1);
     }
     return hits;

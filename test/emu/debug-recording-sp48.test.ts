@@ -222,9 +222,6 @@ describe("debug recordings on the 48K (Phase 2)", () => {
     // --- Reverse Continue with a memory-write watchpoint lands on the same write in both
     const store = a.program.symbol("Store");
     for (const d of [a.debugSupport, b.debugSupport]) d.addBreakpoint({ address: store, memoryWrite: true });
-    // --- The same keyframes on both sides: transient ones depend on where each was navigated before, and
-    // --- with a hit-count breakpoint a search's result can depend on them (a G4.4 matter, not the file's)
-    for (const c of [a.controller, b.controller]) c.timeline!.store.dropTransient();
     const ra = a.controller.navigateHistory("reverseContinue");
     const rb = b.controller.navigateHistory("reverseContinue");
     expect(ra.moved && rb.moved).toBe(true);

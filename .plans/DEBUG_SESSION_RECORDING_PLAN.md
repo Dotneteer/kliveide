@@ -388,10 +388,11 @@ Viewer: `DocumentPanels/DebugRecording/` + `features/documents/DebugRecordingLau
 - **D14's "attach the matching card when going live past the end"** is reported, not acted on: the
   load says whether the current card is the recorded one, and running on uses whatever card the
   machine has.
-- Found while testing, outside this plan: with a hit-count breakpoint, G4.4's Reverse Continue can
-  give a different answer from the same timeline depending on where transient keyframes sit; it is
-  filed as its own task. The tests compare the original and the opened timeline with the same
-  keyframes.
+- Found while testing, outside this plan, and fixed (2026-10-08): with a hit-count breakpoint, G4.4's
+  Reverse Continue could give a different answer from the same timeline depending on where transient
+  keyframes sat - live steps counted each visit twice, and a keyframe exactly on a logged hit counted
+  it twice in a replay run. See `REVERSE_DEBUGGING_PLAN.md` D16; the recording tests compare the
+  original and the opened timeline with whatever keyframes each has.
 
 **Tests.** `test/debugRecording/` (format, `.kls` golden), `test/emu/debug-recording-sp48.test.ts`
 (Phase 2: 1,000 step backs, Reverse Continue to a write, hit counts, `-start`, `-from`, `-sparse`,

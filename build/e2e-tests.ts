@@ -37,6 +37,7 @@ export const E2E_CORE_TESTS: string[] = [
   "test/emu/reverse-timeline-controller.test.ts",
   "test/emu/reverse-step-back-controller.test.ts",
   "test/emu/reverse-continue-controller.test.ts",
+  "test/emu/reverse-hit-counts-controller.test.ts",
   "test/emu/reverse-sd-fork-controller.test.ts",
   "test/emu/reverse-cores-controller.test.ts",
   "test/emu/reverse-next-breakpoints-controller.test.ts",
