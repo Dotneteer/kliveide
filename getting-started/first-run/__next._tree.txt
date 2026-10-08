@@ -3,4 +3,4 @@
 :HL["/kliveide/images/klive-logo.svg","image"]
 :HL["/kliveide/images/getting-started/emulator-start-screen.png","image"]
 :HL["/kliveide/images/getting-started/ide-start-screen.png","image"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"getting-started/first-run","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"KvzXDPAlCKJHk8AzA2JGj"}
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"(docs)","param":null,"prefetchHints":4144,"slots":{"children":{"name":"mdxPath","param":{"type":"c","key":"getting-started/first-run","siblings":["_not-found","_global-error"]},"prefetchHints":4160,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"z8Hdp3IqPyBJl4Ax3_9mH"}

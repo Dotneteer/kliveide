@@ -1,0 +1,82 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"ClientWrapper"]
+6:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],""]
+5:T694,---
+description: "Turn on Klive's advanced debugging features: the execution history, reverse debugging, trace export and debug recordings."
+---
+
+# Advanced Debugging Features
+
+Klive's advanced debugging features are turned off unless you turn them on. They are:
+
+- the [Execution History](/working-with-ide/execution-history), with lite step back and trace export;
+- [reverse debugging](/working-with-ide/reverse-debugging): Step Back and Forward, Reverse Step
+  Over and Out, Reverse Continue, and Take over here;
+- [debug recordings](/howto/debug-recordings) (`.klr` files).
+
+The same switch will also cover the code coverage, profiling and unit-testing features as they
+arrive.
+
+Use these steps to turn them on:
+
+1. Start Klive
+2. In the IDE window, execute this command:
+
+```text
+set -u features.advancedDebugging 1
+```
+
+3. Restart Klive
+
+After the restart, the **Debug** menu has the reverse-stepping commands, **Execution History**,
+**Export Execution History...** and the debug-recording commands. The toolbars have the Step Back,
+Step Forward and Return to Present buttons. The keyboard shortcuts, the history commands
+(`show-history`, `step-back`, `history-export`, `debug-recording-load` and the rest) and the
+**Reverse debugging** settings page group work too.
+
+While the features are off, Klive does not record the execution history or keep a reverse-debugging
+timeline, so a debug session costs nothing extra. The history commands, and opening a `.klr` file,
+say how to turn the features on.
+
+You can turn the features off by executing this command in the IDE window:
+
+```text
+set -u features.advancedDebugging 0
+```
+
+You should restart Klive after changing the setting.15:X
+1a:X
+1a:C
+0:{"buildId":"z8Hdp3IqPyBJl4Ax3_9mH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Turn on Klive's advanced debugging features: the execution history, reverse debugging, trace export and debug recordings.","title":"Advanced Debugging Features","filePath":"content/howto/advanced-debugging.mdx","timestamp":1791471794000},"sourceCode":"$5","children":[["$","div",null,{"id":"nextra-skip-nav"}],["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Advanced Debugging Features","$undefined"]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Klive’s advanced debugging features are turned off unless you turn them on. They are:"}],"\n",["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","$L6",null,{"href":"/working-with-ide/execution-history","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"Execution History"}],", with lite step back and trace export;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","$L6",null,{"href":"/working-with-ide/reverse-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"reverse debugging"}],": Step Back and Forward, Reverse Step\nOver and Out, Reverse Continue, and Take over here;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["$L7"," (","$L8"," files)."]}],"\n"]}],"\n","$L9","\n","$La","\n","$Lb","\n","$Lc","\n","$Ld","\n","$Le","\n","$Lf","\n","$L10","\n","$L11","\n","$L12"]}]]}]]}]}],null,"$L13"]}],"isPartial":"$@14","staleTime":"$15","varyParams":null},{"rsc":"$L16","isPartial":"$@17","staleTime":"$15","varyParams":null},{"rsc":"$L18","isPartial":"$@19","staleTime":"$15","varyParams":"$1a"}],"isUpgradeableISRFallback":false,"a":"$@1b","rootVaryParams":null,"needsRuntimeRequest":"$@1c"}
+1d:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"ToggleWordWrapButton"]
+1e:I[484,[],"OutletBoundary"]
+1f:"$Sreact.suspense"
+21:I[484,[],"ViewportBoundary"]
+22:I[484,[],"MetadataBoundary"]
+23:I[7121,[],""]
+24:I[4581,[],""]
+7:["$","$L6",null,{"href":"/howto/debug-recordings","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"debug recordings"}]
+8:["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klr"}]
+9:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"The same switch will also cover the code coverage, profiling and unit-testing features as they\narrive."}]
+a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Use these steps to turn them on:"}]
+b:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Start Klive"}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"In the IDE window, execute this command:"}],"\n"]}]
+c:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L1d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"set -u features.advancedDebugging 1"}]}]}]]}]]}]
+d:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"3","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":"Restart Klive"}],"\n"]}]
+e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["After the restart, the ",["$","strong",null,{"children":"Debug"}]," menu has the reverse-stepping commands, ",["$","strong",null,{"children":"Execution History"}],",\n",["$","strong",null,{"children":"Export Execution History…"}]," and the debug-recording commands. The toolbars have the Step Back,\nStep Forward and Return to Present buttons. The keyboard shortcuts, the history commands\n(",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"show-history"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"step-back"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"history-export"}],", ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"debug-recording-load"}]," and the rest) and the\n",["$","strong",null,{"children":"Reverse debugging"}]," settings page group work too."]}]
+f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["While the features are off, Klive does not record the execution history or keep a reverse-debugging\ntimeline, so a debug session costs nothing extra. The history commands, and opening a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klr"}]," file,\nsay how to turn the features on."]}]
+10:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You can turn the features off by executing this command in the IDE window:"}]
+11:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L1d",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":["$","span",null,{"children":"set -u features.advancedDebugging 0"}]}]}]]}]]}]
+12:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"You should restart Klive after changing the setting."}]
+13:["$","$L1e",null,{"children":["$","$1f",null,{"name":"Next.MetadataOutlet","children":"$@20"}]}]
+16:["$","$1","h",{"children":[null,["$","$L21",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L22",null,{"children":["$","$1f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Advanced Debugging Features - Klive IDE"}],["$","meta","1",{"name":"description","content":"Turn on Klive's advanced debugging features: the execution history, reverse debugging, trace export and debug recordings."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+18:["$","$1","c",{"children":[null,["$","$L23",null,{"parallelRouterKey":"children","template":["$","$L24",null,{}]}]]}]
+1c:true
+20:null
+15:300
+15:C
+1b:0
+17:"$undefined"
+19:"$undefined"
+14:"$undefined"

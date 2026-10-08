@@ -1,0 +1,160 @@
+1:"$Sreact.fragment"
+2:I[826,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"TOCProvider"]
+3:I[4637,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"Sidebar"]
+4:I[6665,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"ClientWrapper"]
+5:T1829,---
+description: "Save a reverse-debugging session to a .klr file and open it later, or on another computer, with the whole past to step back through."
+---
+
+import { Callout } from 'nextra/components'
+
+# Saving and Opening Debug Recordings
+
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are off unless
+you turn them on: run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
+With [reverse debugging](/working-with-ide/reverse-debugging), a debug session remembers its past:
+Step Back, Reverse Continue and reverse watchpoints can take the machine back to any moment since
+the session started. A **debug recording** saves that whole session to a `.klr` file. Whoever opens
+it - you tomorrow, or someone you send it to - is in the debugger at the moment you saved, on a
+machine that is exactly yours, and can step back through everything the recording holds.
+
+It is the best way to report a bug that is hard to reproduce: reproduce it once, save, send the file.
+
+<Callout type="info">
+Debug recordings work on every machine with reverse debugging: the ZX Spectrum 48K and 16K, 128K,
+Pentagon 128, +2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88,
+and the ZX80 and ZX81.
+</Callout>
+
+## Making a bug report
+
+1. **Start with Debugging** (reverse debugging is on by default).
+2. Make the bug happen.
+3. Pause the machine at the bug - or step back to the moment that shows it best.
+4. **Debug &rarr; Save Debug Recording...**, or type `drsave bug.klr -note Crashes when the second level starts`.
+
+Saving pauses a running machine for a moment and lets it run on; the session goes on as before.
+A recording saved while the machine stands in the past opens at that point.
+
+A recording is small, because it holds keyframes and inputs, not video: about 1-2 MB for a minute of
+a ZX Spectrum game and 2-4 MB for a minute of a busy ZX Spectrum Next program.
+
+## Opening a recording
+
+- **Debug &rarr; Open Debug Recording...**, or **File &rarr; Open File...**, choosing a `.klr` file.
+- Drop a `.klr` file onto the Emulator window.
+- Open it in the Explorer to see what it holds; its tab has **Open** and **Open at start** buttons.
+- `drload bug.klr` from the command prompt.
+
+Klive switches to the machine, model and configuration the recording was made on, and stands paused
+**where it was saved**, in a debug session. From there everything works as in the session that made
+it: Step Back, Reverse Step Over and Out, Reverse Continue, reverse watchpoints, the Execution History.
+The status bar names the recording while you work in it.
+
+**Open at start** (`drload bug.klr -start`) stands at the recording's first moment instead. Continue
+then replays the recording with your breakpoints active - "the recording, with the debugger
+attached". At the recording's end the machine goes on running live: the recording becomes the past of
+a new session, and saving again writes the longer recording. If you stop, reset or restart a
+recording you ran on like that, Klive asks first, so you can save the new part.
+
+## What is in a recording
+
+- the machine's **keyframes** (complete pictures of the machine taken as the session ran) and its
+  **inputs**: every key, joystick and mouse movement, every tape block and every SD card sector the
+  machine read;
+- your **breakpoints and watches**. Opened, they are added as *session* breakpoints, next to the
+  project's own, and are never saved into the project. Use `-nobreakpoints` to keep only yours;
+- the **sources' identity**: the compilation's file names and fingerprints. If the open project's
+  files differ, Klive says which before you step, because labels and source lines may then not match;
+  stepping through the disassembly and address breakpoints are always exact. `drsave -sources` puts
+  the source files themselves in the recording;
+- the **media's names**: tapes and disks are inside the machine, so the recording needs no files. A
+  disk is detached on opening, so replaying never writes into your `.dsk`;
+- on the ZX Spectrum Next, **no SD card image**: every sector the session read is in the recording,
+  so it replays without the card. Running on past its end uses your card only if it is the one the
+  recording was made with.
+
+<Callout type="warning" emoji="⚠️">
+A recording holds everything the machine was given: whatever was typed, every SD card sector read,
+and with `-sources` the source files. Check before you share one.
+</Callout>
+
+## Same Klive build only
+
+A recording replays the exact code that made it, so it opens only in a Klive whose emulator core is
+**the same build**. Klive checks this when it opens one (and the Explorer view says it before you
+open it). A recording from another build is refused - but it also carries the machine state of its
+end, which Klive offers to open instead: the bug's moment, without its past.
+
+## Making recordings smaller
+
+- `drsave bug.klr -from -500000` drops everything before the last keyframe at or before 500,000
+  instructions back (`-from #1234` names a record of the Execution History).
+- `drsave bug.klr -sparse` keeps only keyframes about a second apart. The first step back into a
+  stretch then replays a little longer.
+
+`drload bug.klr -verify` replays a recording once from its start, checking it against every keyframe,
+and reports how long that took. A recording checks itself as it replays anyway: a damaged one stops
+reverse debugging at the first point that does not match, never showing a wrong past.
+
+## Commands
+
+```
+drsave bug.klr                 ; save the session (debug-recording-save)
+drsave bug.klr -f -note Text   ; replace the file; the note is the rest of the line
+drsave bug.klr -sparse -sources
+drload bug.klr                 ; open where it was saved (debug-recording-load)
+drload bug.klr -start          ; open at its start
+drload bug.klr -verify         ; replay it all once, checking every keyframe
+drload bug.klr -nobreakpoints  ; keep the current breakpoints
+drload bug.klr -y              ; another build's recording: open its end state
+```
+
+See the [command reference](../commands-reference#debug-recording-save).a:X
+f:X
+f:C
+0:{"buildId":"z8Hdp3IqPyBJl4Ax3_9mH","data":[{"rsc":["$","$1","c",{"children":[["$","div",null,{"className":"x:mx-auto x:flex x:max-w-(--nextra-content-width)","children":["$","$L2",null,{"value":[{"value":"Making a bug report","id":"making-a-bug-report","depth":2},{"value":"Opening a recording","id":"opening-a-recording","depth":2},{"value":"What is in a recording","id":"what-is-in-a-recording","depth":2},{"value":"Same Klive build only","id":"same-klive-build-only","depth":2},{"value":"Making recordings smaller","id":"making-recordings-smaller","depth":2},{"value":"Commands","id":"commands","depth":2}],"children":[["$","$L3",null,{}],["$","$L4",null,{"metadata":{"description":"Save a reverse-debugging session to a .klr file and open it later, or on another computer, with the whole past to step back through.","title":"Saving and Opening Debug Recordings","filePath":"content/howto/debug-recordings.mdx","timestamp":1791471794000},"sourceCode":"$5","children":["$L6","$L7"]}]]}]}],null,"$L8"]}],"isPartial":"$@9","staleTime":"$a","varyParams":null},{"rsc":"$Lb","isPartial":"$@c","staleTime":"$a","varyParams":null},{"rsc":"$Ld","isPartial":"$@e","staleTime":"$a","varyParams":"$f"}],"isUpgradeableISRFallback":false,"a":"$@10","rootVaryParams":null,"needsRuntimeRequest":"$@11"}
+12:I[8500,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],""]
+26:I[484,[],"OutletBoundary"]
+27:"$Sreact.suspense"
+29:I[484,[],"ViewportBoundary"]
+2a:I[484,[],"MetadataBoundary"]
+2b:I[7121,[],""]
+2c:I[4581,[],""]
+6:["$","div",null,{"id":"nextra-skip-nav"}]
+7:["$","main",null,{"data-pagefind-body":true,"children":[["$","h1",null,{"className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-bold x:mt-2 x:text-4xl","children":["Saving and Opening Debug Recordings","$undefined"]}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":{"fontFamily":"\"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\""},"data-pagefind-ignore":"all","children":["$","svg",null,{"viewBox":"0 0 16 16","fill":"currentColor","height":".8em","className":"x:mt-[.3em]","children":["$","path",null,{"d":"M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8Zm8-6.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM6.5 7.75A.75.75 0 0 1 7.25 7h1a.75.75 0 0 1 .75.75v2.75h.25a.75.75 0 0 1 0 1.5h-2a.75.75 0 0 1 0-1.5h.25v-2h-.25a.75.75 0 0 1-.75-.75ZM8 6a1 1 0 1 1 0-2 1 1 0 0 1 0 2Z"}]}]}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["This is one of Klive’s ",["$","$L12",null,{"href":"/howto/advanced-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"advanced debugging features"}],", which are off unless\nyou turn them on: run ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"set -u features.advancedDebugging 1"}]," in the IDE, then restart Klive."]}]}]]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["With ",["$","$L12",null,{"href":"/working-with-ide/reverse-debugging","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"reverse debugging"}],", a debug session remembers its past:\nStep Back, Reverse Continue and reverse watchpoints can take the machine back to any moment since\nthe session started. A ",["$","strong",null,{"children":"debug recording"}]," saves that whole session to a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klr"}]," file. Whoever opens\nit - you tomorrow, or someone you send it to - is in the debugger at the moment you saved, on a\nmachine that is exactly yours, and can step back through everything the recording holds."]}],"\n",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"It is the best way to report a bug that is hard to reproduce: reproduce it once, save, send the file."}],"\n",["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-blue-100 x:dark:bg-blue-900/30 x:text-blue-700 x:dark:text-blue-400 x:border-blue-700 x:dark:border-blue-600","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"$7:props:children:2:props:children:0:props:children"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Debug recordings work on every machine with reverse debugging: the ZX Spectrum 48K and 16K, 128K,\nPentagon 128, +2A/+3/+2E/+3E and Next, the Scorpion ZS-256, the Timex machines, the Cambridge Z88,\nand the ZX80 and ZX81."}]}]]}],"\n",["$","h2",null,{"id":"making-a-bug-report","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Making a bug report","$L13"]}],"\n","$L14","\n","$L15","\n","$L16","\n","$L17","\n","$L18","\n","$L19","\n","$L1a","\n","$L1b","\n","$L1c","\n","$L1d","\n","$L1e","\n","$L1f","\n","$L20","\n","$L21","\n","$L22","\n","$L23","\n","$L24","\n","$L25"]}]
+8:["$","$L26",null,{"children":["$","$27",null,{"name":"Next.MetadataOutlet","children":"$@28"}]}]
+b:["$","$1","h",{"children":[null,["$","$L29",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L2a",null,{"children":["$","$27",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"Saving and Opening Debug Recordings - Klive IDE"}],["$","meta","1",{"name":"description","content":"Save a reverse-debugging session to a .klr file and open it later, or on another computer, with the whole past to step back through."}],["$","meta","2",{"property":"og:title","content":"KliveIDE Documentation"}],["$","meta","3",{"property":"og:description","content":"The comprehensive guide to KliveIDE"}],["$","meta","4",{"name":"twitter:card","content":"summary"}],["$","meta","5",{"name":"twitter:title","content":"KliveIDE Documentation"}],["$","meta","6",{"name":"twitter:description","content":"The comprehensive guide to KliveIDE"}]]}]}]}],null]}]
+d:["$","$1","c",{"children":[null,["$","$L2b",null,{"parallelRouterKey":"children","template":["$","$L2c",null,{}]}]]}]
+11:true
+2d:I[721,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"HeadingAnchor"]
+2e:I[9023,["545","static/chunks/c16f53c3-d1dc27298ca4c9c2.js","500","static/chunks/500-b13bb91f5a6311b6.js","436","static/chunks/436-d16556725788e4d5.js","220","static/chunks/app/(docs)/%5B...mdxPath%5D/page-0b2d921aca6411ec.js"],"ToggleWordWrapButton"]
+13:["$","$L2d",null,{"id":"making-a-bug-report"}]
+14:["$","ol",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Start with Debugging"}]," (reverse debugging is on by default)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Make the bug happen."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":"Pause the machine at the bug - or step back to the moment that shows it best."}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Debug → Save Debug Recording…"}],", or type ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drsave bug.klr -note Crashes when the second level starts"}],"."]}],"\n"]}]
+15:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Saving pauses a running machine for a moment and lets it run on; the session goes on as before.\nA recording saved while the machine stands in the past opens at that point."}]
+16:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A recording is small, because it holds keyframes and inputs, not video: about 1-2 MB for a minute of\na ZX Spectrum game and 2-4 MB for a minute of a busy ZX Spectrum Next program."}]
+17:["$","h2",null,{"id":"opening-a-recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Opening a recording",["$","$L2d",null,{"id":"opening-a-recording"}]]}]
+18:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","strong",null,{"children":"Debug → Open Debug Recording…"}],", or ",["$","strong",null,{"children":"File → Open File…"}],", choosing a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klr"}]," file."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Drop a ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".klr"}]," file onto the Emulator window."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["Open it in the Explorer to see what it holds; its tab has ",["$","strong",null,{"children":"Open"}]," and ",["$","strong",null,{"children":"Open at start"}]," buttons."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drload bug.klr"}]," from the command prompt."]}],"\n"]}]
+19:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Klive switches to the machine, model and configuration the recording was made on, and stands paused\n",["$","strong",null,{"children":"where it was saved"}],", in a debug session. From there everything works as in the session that made\nit: Step Back, Reverse Step Over and Out, Reverse Continue, reverse watchpoints, the Execution History.\nThe status bar names the recording while you work in it."]}]
+1a:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","strong",null,{"children":"Open at start"}]," (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drload bug.klr -start"}],") stands at the recording’s first moment instead. Continue\nthen replays the recording with your breakpoints active - “the recording, with the debugger\nattached”. At the recording’s end the machine goes on running live: the recording becomes the past of\na new session, and saving again writes the longer recording. If you stop, reset or restart a\nrecording you ran on like that, Klive asks first, so you can save the new part."]}]
+1b:["$","h2",null,{"id":"what-is-in-a-recording","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["What is in a recording",["$","$L2d",null,{"id":"what-is-in-a-recording"}]]}]
+1c:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":["the machine’s ",["$","strong",null,{"children":"keyframes"}]," (complete pictures of the machine taken as the session ran) and its\n",["$","strong",null,{"children":"inputs"}],": every key, joystick and mouse movement, every tape block and every SD card sector the\nmachine read;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["your ",["$","strong",null,{"children":"breakpoints and watches"}],". Opened, they are added as ",["$","em",null,{"children":"session"}]," breakpoints, next to the\nproject’s own, and are never saved into the project. Use ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-nobreakpoints"}]," to keep only yours;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","strong",null,{"children":"sources’ identity"}],": the compilation’s file names and fingerprints. If the open project’s\nfiles differ, Klive says which before you step, because labels and source lines may then not match;\nstepping through the disassembly and address breakpoints are always exact. ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drsave -sources"}]," puts\nthe source files themselves in the recording;"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["the ",["$","strong",null,{"children":"media’s names"}],": tapes and disks are inside the machine, so the recording needs no files. A\ndisk is detached on opening, so replaying never writes into your ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":".dsk"}],";"]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":["on the ZX Spectrum Next, ",["$","strong",null,{"children":"no SD card image"}],": every sector the session read is in the recording,\nso it replays without the card. Running on past its end uses your card only if it is the one the\nrecording was made with."]}],"\n"]}]
+1d:["$","div",null,{"className":"nextra-callout x:overflow-x-auto x:not-first:mt-[1.25em] x:flex x:rounded-lg x:border x:py-[.5em] x:pe-[1em] x:contrast-more:border-current! x:bg-yellow-50 x:dark:bg-yellow-700/30 x:text-yellow-700 x:dark:text-yellow-500 x:border-yellow-700","children":[["$","div",null,{"className":"x:select-none x:text-[1.25em] x:ps-[.6em] x:pe-[.4em]","style":"$7:props:children:2:props:children:0:props:style","data-pagefind-ignore":"all","children":"⚠️"}],["$","div",null,{"className":"x:w-full x:min-w-0","children":["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A recording holds everything the machine was given: whatever was typed, every SD card sector read,\nand with ",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-sources"}]," the source files. Check before you share one."]}]}]]}]
+1e:["$","h2",null,{"id":"same-klive-build-only","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Same Klive build only",["$","$L2d",null,{"id":"same-klive-build-only"}]]}]
+1f:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["A recording replays the exact code that made it, so it opens only in a Klive whose emulator core is\n",["$","strong",null,{"children":"the same build"}],". Klive checks this when it opens one (and the Explorer view says it before you\nopen it). A recording from another build is refused - but it also carries the machine state of its\nend, which Klive offers to open instead: the bug’s moment, without its past."]}]
+20:["$","h2",null,{"id":"making-recordings-smaller","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Making recordings smaller",["$","$L2d",null,{"id":"making-recordings-smaller"}]]}]
+21:["$","ul",null,{"className":"x:[:is(ol,ul)_&]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drsave bug.klr -from -500000"}]," drops everything before the last keyframe at or before 500,000\ninstructions back (",["$","code",null,{"className":"nextra-code","dir":"ltr","children":"-from #1234"}]," names a record of the Execution History)."]}],"\n",["$","li",null,{"className":"x:my-[.5em]","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drsave bug.klr -sparse"}]," keeps only keyframes about a second apart. The first step back into a\nstretch then replays a little longer."]}],"\n"]}]
+22:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":[["$","code",null,{"className":"nextra-code","dir":"ltr","children":"drload bug.klr -verify"}]," replays a recording once from its start, checking it against every keyframe,\nand reports how long that took. A recording checks itself as it replays anyway: a damaged one stops\nreverse debugging at the first point that does not match, never showing a wrong past."]}]
+23:["$","h2",null,{"id":"commands","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Commands",["$","$L2d",null,{"id":"commands"}]]}]
+24:["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L2e",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":["$","span",null,{"children":"drsave bug.klr                 ; save the session (debug-recording-save)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drsave bug.klr -f -note Text   ; replace the file; the note is the rest of the line"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drsave bug.klr -sparse -sources"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drload bug.klr                 ; open where it was saved (debug-recording-load)"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drload bug.klr -start          ; open at its start"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drload bug.klr -verify         ; replay it all once, checking every keyframe"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drload bug.klr -nobreakpoints  ; keep the current breakpoints"}]}],"\n",["$","span",null,{"children":["$","span",null,{"children":"drload bug.klr -y              ; another build's recording: open its end state"}]}]]}]]}]]}]
+25:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["See the ",["$","$L12",null,{"href":"../commands-reference#debug-recording-save","className":"x:focus-visible:nextra-focus x:text-primary-600 x:underline x:hover:no-underline x:decoration-from-font x:[text-underline-position:from-font]","children":"command reference"}],"."]}]
+28:null
+a:300
+a:C
+10:0
+c:"$undefined"
+e:"$undefined"
+9:"$undefined"
