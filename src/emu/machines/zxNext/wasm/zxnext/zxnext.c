@@ -483,6 +483,9 @@ uint32_t zxnextGetNextRegisterLastWrite(uint32_t reg) {
 /* The M1 (Multiface) and DRIVE (DivMMC) NMI buttons - the F9/F10 menu commands. */
 void zxnextPressMultifaceNmiButton(void) { zxnextNmiRequestMultiface(); }
 void zxnextPressDivMmcNmiButton(void) { zxnextNmiRequestDivMmc(); }
+/* Whether a NextReg $02 reset is pending, without taking it: the debug loop asks after every
+   instruction, and only a pending request is worth a journaled take (REVERSE_DEBUGGING_PLAN D7) */
+uint32_t zxnextGetResetRequest(void) { return zxnextResetRequest; }
 uint32_t zxnextTakeResetRequest(void) {
   uint32_t request = zxnextResetRequest;
   zxnextResetRequest = 0u;
@@ -878,6 +881,7 @@ void zxnextBeginAudioMixerFrame(void) { zxnextAudioMixerBeginFrame(); }
 /* A new frame's audio, as zxnextFrameExecute begins it: the host's per-instruction (debug) loop starts
    frames itself, and without this the sample buffers filled in its first frame and stayed full */
 void zxnextBeginAudioFrame(void) {
+  zxnextFrameBegun = 1u;
   zxnextBeeperBeginFrame();
   zxnextPsgBeginFrame();
   zxnextAudioMixerBeginFrame();

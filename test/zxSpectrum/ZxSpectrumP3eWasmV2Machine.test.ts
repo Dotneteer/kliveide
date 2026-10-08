@@ -288,6 +288,14 @@ describe("ZX Spectrum +2E/+3E WASM v2 machine adapter", () => {
     expect(changes.get(firstSector.record)[0]).toBe(0x77);
     expect(changes.get(firstSector.record)).toHaveLength(firstSector.data.length);
     expect(Array.from(runtime.diskChanges.slice(0, 8))).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+
+    // --- A reverse-debugging fork republishes every sector of the in-core disk (REVERSE_DEBUGGING_PLAN D13)
+    machine.setMachineProperty(DISK_A_CHANGES);
+    expect(machine.republishDisks()).toBe(true);
+    const all = machine.getMachineProperty(DISK_A_CHANGES);
+    expect(all.size).toBe(40 * 9);
+    expect(all.get(firstSector.record)[0]).toBe(0x77);
+    expect(all.get(1 * 100 + firstSector.record)).toHaveLength(firstSector.data.length);
   });
 
   it("syncs keyboard rows into WASM before frames and port reads", async () => {

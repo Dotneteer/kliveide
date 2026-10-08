@@ -25,7 +25,7 @@
  */
 
 const { createHash } = require("node:crypto");
-const { existsSync, readFileSync, writeFileSync, rmSync, renameSync } = require("node:fs");
+const { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, renameSync } = require("node:fs");
 const { tmpdir } = require("node:os");
 const { join, basename } = require("node:path");
 
@@ -183,7 +183,7 @@ function readWasmLayoutFacts(bytes) {
  * @param {string} mapText The linker map of the same link
  * @param {string[]} volatileSymbols Statics a state leaves out
  */
-function computeWasmLayout(wasmBytes, mapText, volatileSymbols = []) {
+function computeWasmLayout(wasmBytes, mapText, volatileSymbols = [], scratchSymbols = []) {
   const { symbols, functions } = parseLinkerMap(mapText);
   const facts = readWasmLayoutFacts(wasmBytes);
   const table = facts.table.map(
@@ -198,11 +198,33 @@ function computeWasmLayout(wasmBytes, mapText, volatileSymbols = []) {
     if (!s) throw new Error(`The volatile symbol '${name}' is not in the linker map`);
     return { symbol: name, address: s.address, size: s.size };
   });
+  // --- Frame-boundary scratch (REVERSE_DEBUGGING_PLAN T5): buffers the core rewrites before it reads
+  // --- them, so a keyframe taken at a frame boundary may leave them out. State files keep them, and
+  // --- they are not part of the fingerprint.
+  const scratch = scratchSymbols.map((name) => {
+    const s = byName.get(name);
+    if (!s) throw new Error(`The scratch symbol '${name}' is not in the linker map`);
+    return { symbol: name, address: s.address, size: s.size };
+  });
+  // --- The C shadow stack: from the end of the statics below the stack pointer up to it. Between
+  // --- exported calls it is unwound, so its bytes are stale frames, not machine state; replay leaves
+  // --- it out (REVERSE_DEBUGGING_PLAN Phase 1). Not part of the fingerprint: state files keep it.
+  let stack;
+  if (typeof facts.stackPointer === "number" && facts.stackPointer > 0) {
+    let bottom = 0;
+    for (const s of symbols) {
+      const end = s.address + s.size;
+      if (end <= facts.stackPointer && end > bottom) bottom = end;
+    }
+    stack = { address: bottom, size: facts.stackPointer - bottom };
+  }
   return {
     version: 1,
     fingerprint: hash.digest("hex").slice(0, 32),
     memorySize,
-    volatile
+    volatile,
+    ...(stack ? { stack } : {}),
+    ...(scratch.length ? { scratch } : {})
   };
 }
 
@@ -223,17 +245,24 @@ function appendCustomSection(wasmBytes, name, payload) {
  * replaced (the build-script tests) writes no map, and is left as it is.
  * @returns The layout, or undefined when there was no map
  */
-function stampWasmLayout(outputPath, mapPath, volatileSymbols = []) {
+function stampWasmLayout(outputPath, mapPath, volatileSymbols = [], scratchSymbols = []) {
   if (!existsSync(mapPath)) return undefined;
   try {
     const bytes = readFileSync(outputPath);
-    const layout = computeWasmLayout(bytes, readFileSync(mapPath, "utf8"), volatileSymbols);
+    const layout = computeWasmLayout(bytes, readFileSync(mapPath, "utf8"), volatileSymbols, scratchSymbols);
     writeFileSync(
       outputPath,
       appendCustomSection(bytes, LAYOUT_SECTION, Buffer.from(JSON.stringify(layout), "utf8"))
     );
     return layout;
   } finally {
+    // --- A measurement that needs symbol names (the reverse-debugging spike's page attribution)
+    // --- asks for a copy of the map: KLIVE_WASM_MAP_DIR=<folder>
+    const keepDir = process.env.KLIVE_WASM_MAP_DIR;
+    if (keepDir) {
+      mkdirSync(keepDir, { recursive: true });
+      copyFileSync(mapPath, join(keepDir, `${basename(outputPath)}.map`));
+    }
     rmSync(mapPath, { force: true });
   }
 }

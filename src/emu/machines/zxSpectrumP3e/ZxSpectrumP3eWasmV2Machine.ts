@@ -50,6 +50,7 @@ import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
 import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -534,7 +535,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
 
   override readScreenMemory(offset: number): number {
     const runtime = this.requireWasmV2Runtime();
-    const value = runtime.exports.spp3eReadScreenMemoryOffset(offset & 0x3fff);
+    // --- A host read: no floating-bus latch (the ULA's own reads do that inside the core)
+    const value = runtime.exports.spp3ePeekScreenMemoryOffset(offset & 0x3fff);
     this.importWasmV2BusAccess(runtime);
     return value;
   }
@@ -590,7 +592,8 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
 
   override doReadMemory(address: number): number {
     const runtime = this.requireWasmV2Runtime();
-    const value = runtime.exports.spp3eReadMemory(address & 0xffff);
+    // --- A host read: no floating-bus latch (the CPU's own reads do that inside the core)
+    const value = runtime.exports.spp3ePeekMemory(address & 0xffff);
     this.importWasmV2BusAccess(runtime);
     return value;
   }
@@ -825,7 +828,7 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
     let offset = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      runtime.tapeData.set(block.data, offset);
+      writeCoreBytes(runtime, runtime.tapeData, block.data, offset);
       if (
         wasm.spp3eTapeSetBlock(
           i,
@@ -1012,9 +1015,31 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
       DISK_B_CHANGES,
       this.collectWasmDiskChanges(runtime, 1, runtime.diskBChanges)
     );
-    runtime.diskChanges.fill(0);
-    runtime.diskBChanges.fill(0);
+    fillCoreBytes(runtime, runtime.diskChanges, 0);
+    fillCoreBytes(runtime, runtime.diskBChanges, 0);
     this.wasmV2DiskChangeRevision = revision;
+  }
+
+  /**
+   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): every sector of the inserted disks
+   * goes to the write-back, so the `.dsk` files follow the restored in-core disks
+   * @returns true when there was a disk to write back
+   */
+  republishDisks(): boolean {
+    const runtime = this.wasmV2Runtime;
+    if (runtime == null) return false;
+    let any = false;
+    for (let drive = 0; drive < 2; drive++) {
+      const payload = this.wasmV2DiskPayloads[drive];
+      if (payload == null || payload.sectorLength === 0) continue;
+      const diskData = drive === 0 ? runtime.diskData : runtime.diskBData;
+      const changes: SectorChanges = new Map();
+      this.collectWasmDiskRangeChanges(changes, diskData, payload, 0, Math.min(payload.data.length, diskData.length));
+      if (changes.size === 0) continue;
+      this.mergePendingDiskChanges(drive === 0 ? DISK_A_CHANGES : DISK_B_CHANGES, changes);
+      any = true;
+    }
+    return any;
   }
 
   private collectWasmDiskChanges(
@@ -1499,10 +1524,15 @@ export class ZxSpectrumP3eWasmV2Machine extends ZxSpectrumP3eWasmHost implements
     // --- rewound machine writes is merged back into a host .dsk; inserting a disk attaches again
     this.wasmV2DiskChangeRevision = runtime.exports.spp3eFdcGetDirtyRevision();
     this.wasmV2DiskPayloads.length = 0;
-    runtime.diskChanges.fill(0);
-    runtime.diskBChanges.fill(0);
+    fillCoreBytes(runtime, runtime.diskChanges, 0);
+    fillCoreBytes(runtime, runtime.diskBChanges, 0);
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.invalidateWasmV2Sync();
   }
 
   private invalidateWasmV2Sync(): void {

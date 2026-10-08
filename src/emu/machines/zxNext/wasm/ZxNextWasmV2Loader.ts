@@ -139,6 +139,7 @@ export type ZxNextWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z
   zxnextWriteNextRegister: ZxNextWasmV2ExportFunction;
   zxnextGetNextRegisterLastWrite: ZxNextWasmV2ExportFunction;
   zxnextPeekNextRegister: ZxNextWasmV2ExportFunction;
+  zxnextGetResetRequest: ZxNextWasmV2ExportFunction;
   zxnextTakeResetRequest: ZxNextWasmV2ExportFunction;
   zxnextPressMultifaceNmiButton: ZxNextWasmV2ExportFunction;
   zxnextPressDivMmcNmiButton: ZxNextWasmV2ExportFunction;
@@ -560,6 +561,7 @@ const requiredV2Exports = [
   "zxnextWriteNextRegister",
   "zxnextGetNextRegisterLastWrite",
   "zxnextPeekNextRegister",
+  "zxnextGetResetRequest",
   "zxnextTakeResetRequest",
   "zxnextPressMultifaceNmiButton",
   "zxnextPressDivMmcNmiButton",

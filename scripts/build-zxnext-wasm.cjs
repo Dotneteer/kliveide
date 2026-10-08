@@ -16,6 +16,15 @@ const { Z80_HISTORY_EXPORTS, Z80_HISTORY_VOLATILE_SYMBOLS } = require("./z80-his
  * debugging state and buffers the core rewrites before it reads them, so a restore keeps the live
  * core's bytes there.
  */
+/*
+ * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): the ULA/sprite coverage map, which
+ * the core rewrites before it reads it. Keyframes taken at a frame boundary leave it out; the T5 proof
+ * in `test/wasm/reverse/journal-replay-determinism.test.ts` checks every keyframe interval. Not
+ * scratch: the picture and the four layer buffers, which a step back shows half drawn (D18) and the
+ * layer views read, and the beeper's transition buffer, whose pending transitions carry over.
+ */
+const ZXNEXT_SCRATCH_SYMBOLS = ["zxnextUlaSpriteCoverage"];
+
 const ZXNEXT_VOLATILE_SYMBOLS = [
   // --- The IDE's breakpoint conditions and the per-instruction access log they read: debugging
   // --- state, not machine state, so a restore never brings back old breakpoints
@@ -233,6 +242,7 @@ const productionExports = [
   "zxnextWriteNextRegister",
   "zxnextGetNextRegisterLastWrite",
   "zxnextPeekNextRegister",
+  "zxnextGetResetRequest",
   "zxnextTakeResetRequest",
   "zxnextPressMultifaceNmiButton",
   "zxnextPressDivMmcNmiButton",
@@ -556,7 +566,7 @@ function buildZxNextWasm({
       );
     }
     // --- The memory layout a Klive state file depends on (scripts/wasm-layout.cjs)
-    const layout = stampWasmLayout(compiledOutput, layoutMap, ZXNEXT_VOLATILE_SYMBOLS);
+    const layout = stampWasmLayout(compiledOutput, layoutMap, ZXNEXT_VOLATILE_SYMBOLS, ZXNEXT_SCRATCH_SYMBOLS);
     publishWasmOutput(compiledOutput, selectedOutput);
     return {
       layout,

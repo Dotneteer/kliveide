@@ -17,6 +17,18 @@ export type WasmLayout = {
   memorySize: number;
   /** Statics the image leaves out */
   volatile: WasmVolatileSymbol[];
+  /**
+   * The C shadow stack: stale frames between exported calls, not machine state. A state file keeps
+   * it; keyframes and replay comparisons leave it out (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 1).
+   * Absent in a core built before it was stamped.
+   */
+  stack?: { address: number; size: number };
+  /**
+   * Frame-boundary scratch (`.plans/REVERSE_DEBUGGING_PLAN.md` T5): buffers the core rewrites before
+   * it reads them - the picture, layer and audio buffers - so a keyframe taken at a frame boundary
+   * may leave them out. A state file keeps them.
+   */
+  scratch?: WasmVolatileSymbol[];
 };
 
 /** The custom section's name */

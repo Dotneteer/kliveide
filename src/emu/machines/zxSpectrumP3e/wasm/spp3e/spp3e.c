@@ -2021,6 +2021,22 @@ uint32_t spp3eReadScreenMemoryOffset(uint32_t offset) {
   return spp3eLastUlaReadValue;
 }
 
+/*
+ * The host's reads (memory panels, watches, the debugger): the same bytes as `spp3eReadMemory` and
+ * `spp3eReadScreenMemoryOffset`, without the floating-bus latches those update for the CPU and the
+ * ULA. A host read must change nothing, or looking at memory would change what the +3 does next
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` Phase 1, the export contract).
+ */
+uint32_t spp3ePeekMemory(uint32_t address) {
+  const uint32_t maskedAddress = address & 0xffffu;
+  return spp3eMemorySlotBase[maskedAddress >> 14u][maskedAddress & 0x3fffu];
+}
+
+uint32_t spp3ePeekScreenMemoryOffset(uint32_t offset) {
+  const uint32_t bank = spp3eUseShadowScreen != 0u ? 7u : 5u;
+  return spp3eRam[spp3eRamBankOffset(bank) + (offset & 0x3fffu)];
+}
+
 void spp3eRenderInstantScreen(void) {
   spp3eUlaRenderDisplay();
 }

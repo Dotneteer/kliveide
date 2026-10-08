@@ -4,6 +4,7 @@ import {
   canonicalToTrd,
   trdosImageToCanonical,
   TRD_SECTOR_SIZE,
+  TRD_TRACK_SIZE,
   type TrdGeometry
 } from "../disk/trd/trdImage";
 
@@ -141,6 +142,35 @@ export class Beta128Disks {
       if (changes.size) result.changes[drive] = changes;
     }
     return result;
+  }
+
+  /**
+   * Every sector of every written-back disk, as a publish (REVERSE_DEBUGGING_PLAN D13): after a fork
+   * the in-core disks are the restored past's, and the files must follow them. `.scl` and detached
+   * disks are never written back, so they are left out.
+   */
+  republishAll(): Beta128DiskPublish | undefined {
+    const result: Beta128DiskPublish = { changes: [undefined, undefined], unsaved: [false, false] };
+    const count = this.core.sp128BetaGetSectorCount();
+    let any = false;
+    for (let drive = 0; drive < 2; drive++) {
+      const state = this.drives[drive];
+      if (!state || state.scl || state.detached) continue;
+      const buffer = this.buffer(drive);
+      const changes: SectorChanges = new Map();
+      // --- The file's own sectors: the core's buffer has room for more cylinders than the file
+      const fileSectors = (state.geometry.cylinders * state.geometry.sides * TRD_TRACK_SIZE) / TRD_SECTOR_SIZE;
+      for (let index = 0; index < count; index++) {
+        const fileSector = canonicalSectorToTrdSector(index, state.geometry);
+        if (fileSector === undefined || fileSector >= fileSectors) continue;
+        changes.set(fileSector, new Uint8Array(buffer.subarray(index * TRD_SECTOR_SIZE, (index + 1) * TRD_SECTOR_SIZE)));
+      }
+      if (changes.size) {
+        result.changes[drive] = changes;
+        any = true;
+      }
+    }
+    return any ? result : undefined;
   }
 
   /**

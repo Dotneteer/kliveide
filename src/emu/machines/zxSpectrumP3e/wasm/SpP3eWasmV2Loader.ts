@@ -37,6 +37,8 @@ export type SpP3eWasmV2Exports = WebAssembly.Exports & ConditionCoreExports & Z8
   spp3eWriteRamBank: SpP3eWasmV2ExportFunction;
   spp3eReadRomBank: SpP3eWasmV2ExportFunction;
   spp3eReadScreenMemoryOffset: SpP3eWasmV2ExportFunction;
+  spp3ePeekMemory: SpP3eWasmV2ExportFunction;
+  spp3ePeekScreenMemoryOffset: SpP3eWasmV2ExportFunction;
   spp3eReadFloatingBus: SpP3eWasmV2ExportFunction;
   spp3eSetKeyStatus: SpP3eWasmV2ExportFunction;
   spp3eReadPort: SpP3eWasmV2ExportFunction;
@@ -305,6 +307,8 @@ const requiredV2Exports = [
   "spp3eWriteRamBank",
   "spp3eReadRomBank",
   "spp3eReadScreenMemoryOffset",
+  "spp3ePeekMemory",
+  "spp3ePeekScreenMemoryOffset",
   "spp3eReadFloatingBus",
   "spp3eSetKeyStatus",
   "spp3eReadPort",

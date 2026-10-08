@@ -115,6 +115,14 @@ export type LogLine = {
 /** Which access a stop decision is about; selects the definitions that can match. */
 type DecisionKind = "exec" | "memRead" | "memWrite" | "ioRead" | "ioWrite";
 
+/** What a reverse-debugging keyframe keeps of the breakpoints (`.plans/REVERSE_DEBUGGING_PLAN.md` D16) */
+export type DebugTimelineState = {
+  /** Hit counters that are not zero, by storage key */
+  hits: [string, number][];
+  /** The one-shot definitions that existed */
+  oneShots: BreakpointInfo[];
+};
+
 /** Per-definition runtime state, keyed by storage key; never persisted (plan §4.5, C12). */
 type BreakpointRuntimeState = {
   /** Condition-true hits since the last restart or reset. */
@@ -197,6 +205,41 @@ export class DebugSupport implements IDebugSupport {
 
   /** A counter moved since `takeHitsChanged` last asked. */
   private hitsChanged = false;
+
+  /**
+   * Called with a definition's storage key whenever its hit counter moves: the reverse-debugging
+   * timeline logs it with the position, so a replay - which runs without breakpoints - can put the
+   * counters where the recorded run had them (`.plans/REVERSE_DEBUGGING_PLAN.md` D16, T8).
+   */
+  onHitCounted?: (key: string) => void;
+
+  /** The hit counters and the one-shot definitions, for a reverse-debugging keyframe (D16) */
+  captureTimelineState(): DebugTimelineState {
+    const hits: [string, number][] = [];
+    for (const [key, state] of this.runtime) if (state.hits > 0) hits.push([key, state.hits]);
+    const oneShots: BreakpointInfo[] = [];
+    for (const bp of this.breakpointDefs.values()) if (bp.oneShot) oneShots.push({ ...bp });
+    return { hits, oneShots };
+  }
+
+  /**
+   * Puts the hit counters where a keyframe had them, plus `extraHits` (the logged hits between the
+   * keyframe and the replay target), and brings back one-shots the keyframe had that fired since.
+   * Definitions that no longer exist are skipped; a counter of a definition the keyframe did not
+   * know starts at its extra hits.
+   */
+  restoreTimelineState(state: DebugTimelineState, extraHits?: ReadonlyMap<string, number>): void {
+    for (const bp of state.oneShots) {
+      if (!this.breakpointDefs.has(getBreakpointStorageKey(bp))) this.addBreakpoint({ ...bp });
+    }
+    const base = new Map(state.hits);
+    const hitsOf = (key: string) => (base.get(key) ?? 0) + (extraHits?.get(key) ?? 0);
+    for (const [key, runtime] of this.runtime) runtime.hits = hitsOf(key);
+    for (const key of new Set([...base.keys(), ...(extraHits?.keys() ?? [])])) {
+      if (!this.runtime.has(key) && this.breakpointDefs.has(key)) this.runtime.set(key, { hits: hitsOf(key) });
+    }
+    this.hitsChanged = true;
+  }
 
   /** The machine facts conditions are compiled against; `setConditionEnvironment` sets them. */
   private conditionFacts: ConditionMachineFacts = { isZ80: true };
@@ -1537,6 +1580,7 @@ export class DebugSupport implements IDebugSupport {
 
     state.hits++;
     this.hitsChanged = true;
+    this.onHitCounted?.(key);
     const mode = effectiveHitMode(bp);
     if (!mode) return true;
     const target = bp.hitCount!;

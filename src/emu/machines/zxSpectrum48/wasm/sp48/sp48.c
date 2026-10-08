@@ -210,6 +210,12 @@ static uint32_t sp48CpuInstructionsExecuted;
 static uint32_t sp48CpuFrameSliceInstructions;
 static uint32_t sp48NextFrameStartTact;
 static uint32_t sp48FrameCompleted;
+/*
+ * A frame has begun (`beginMachineFrame`) since the reset. With `sp48FrameCompleted` clear, that
+ * frame is still in progress - a history stop target or the debug loop left it mid-way - and the
+ * next fast frame continues it instead of beginning another (REVERSE_DEBUGGING_PLAN D4).
+ */
+static uint32_t sp48FrameBegun;
 static uint32_t sp48InterruptsRaised;
 static uint8_t sp48InterruptLineActive;
 static uint32_t sp48RomUploadCount;
@@ -511,6 +517,7 @@ static uint32_t normalizeClockMultiplier(uint32_t value) {
 
 static void beginMachineFrame(void) {
   sp48FrameCompleted = 0u;
+  sp48FrameBegun = 1u;
 
   if (sp48ClockMultiplier != sp48TargetClockMultiplier) {
     sp48ClockMultiplier = sp48TargetClockMultiplier;
@@ -615,6 +622,7 @@ void sp48Reset(void) {
   sp48CpuFrameSliceInstructions = 0u;
   sp48NextFrameStartTact = 0u;
   sp48FrameCompleted = 0u;
+  sp48FrameBegun = 0u;
   sp48InterruptsRaised = 0u;
   sp48InterruptLineActive = 0u;
   resetTapePlayback();
@@ -654,7 +662,8 @@ uint32_t sp48ExecuteFrame(void) {
     return 0u;
   }
 
-  beginMachineFrame();
+  /* A frame a stop target or the debug loop left mid-way goes on where it stopped */
+  if (sp48FrameCompleted != 0u || sp48FrameBegun == 0u) beginMachineFrame();
   sp48CaptureBusEvents = 0u;
   z80ClearBusEvents();
 
@@ -666,7 +675,10 @@ uint32_t sp48ExecuteFrame(void) {
   const uint32_t frameEndTact = sp48NextFrameStartTact + sp48TactsInCurrentFrame;
   while (sp48Tacts < frameEndTact) {
     sp48ExecuteInstruction();
+    /* Checked on the frame's last instruction too: the host reads the reached mark after the call */
+    const uint32_t stop = z80HistoryStopNow();
     if (sp48FrameCompleted != 0u) break;
+    if (stop != 0u) break;
   }
   sp48CaptureBusEvents = 1u;
   return 0u;

@@ -50,8 +50,27 @@ export type HistoricalState = {
   pcPartition?: number;
 };
 
+/**
+ * Full reverse debugging behind the cursor (`.plans/REVERSE_DEBUGGING_PLAN.md` D10): moving the
+ * cursor puts the machine itself at that point by replay, so memory and devices show it too
+ */
+export interface HistoryReplayHook {
+  /** The machine stands in the past (memory and devices are historical) */
+  readonly inPast: boolean;
+  /**
+   * Puts the machine where it was just before a record ran
+   * @returns false when it cannot (before the timeline's start, a desync): the cursor then shows the
+   * record over the present, as G4.3's lite provider does
+   */
+  enter(sequence: number): boolean;
+  /** Back to the present */
+  leave(): void;
+}
+
 /** What the cursor needs of the machine controller */
 export interface HistoryCursorHost {
+  /** Full reverse debugging, when the machine keeps a timeline (D10); undefined: the lite provider */
+  replay?(): HistoryReplayHook | undefined;
   /** The machine's ring; undefined on a machine that does not record history */
   historySource(): IExecutionHistorySource | undefined;
   /** Only a paused machine has a cursor (D1) */
@@ -74,7 +93,11 @@ export interface HistoryCursorHost {
 }
 
 export class HistoryCursor implements IHistoricalStateProvider {
-  readonly memoryIsHistorical = false;
+  /** True while a timeline has put the machine itself at the cursor (D10); false for the lite provider */
+  get memoryIsHistorical(): boolean {
+    return !!this.host.replay?.()?.inPast;
+  }
+
   private current?: { sequence: number; generation: number };
   private spansCache?: { generation: number; newest: number; spans: HistoryServiceSpan[] };
 
@@ -105,12 +128,38 @@ export class HistoryCursor implements IHistoricalStateProvider {
     return info ? info.newestSequence - sequence + 1 : 0;
   }
 
-  /** Back to the present (D5); returns whether there was a cursor */
-  clear(): boolean {
+  /**
+   * Back to the present (D5); returns whether there was a cursor
+   * @param leavePast With a timeline, replay the machine back to the present too (the default); a
+   * replay run toward the present (D11) takes the cursor away without that
+   */
+  clear(leavePast = true): boolean {
     if (!this.current) return false;
     this.current = undefined;
+    if (leavePast) this.host.replay?.()?.leave();
     this.host.publish(0, undefined);
     return true;
+  }
+
+  /**
+   * Moves the cursor to a record as it stands - no walker rule moves it on (an INT row is not turned
+   * into the instruction after it) - and the machine with it (D10). Full Reverse Continue lands here.
+   */
+  moveToRecord(sequence: number): void {
+    const info = this.host.historySource()?.getHistoryInfo();
+    if (!info) return;
+    this.moveTo(sequence, info.generation);
+  }
+
+  /**
+   * Puts the cursor on a record without moving the machine: a replay run stopped there, so the
+   * machine already stands just before it (D11)
+   */
+  attach(sequence: number): void {
+    const info = this.host.historySource()?.getHistoryInfo();
+    if (!info) return;
+    this.current = { sequence, generation: info.generation };
+    this.host.publish(this.position, sequence);
   }
 
   /** The state at the cursor, or undefined at the present */
@@ -171,6 +220,13 @@ export class HistoryCursor implements IHistoricalStateProvider {
     if (!source) return here({ reason: "noHistory" });
     if (op === "present") {
       const moved = this.clear();
+      // --- The machine can be in the past with no cursor (a landing beyond the ring, D15)
+      const replay = this.host.replay?.();
+      if (!moved && replay?.inPast) {
+        replay.leave();
+        this.host.publish(0, undefined);
+        return { position: 0, moved: true };
+      }
       return { position: 0, moved };
     }
     if (!this.host.isPaused()) return here({ reason: "running" });
@@ -248,6 +304,10 @@ export class HistoryCursor implements IHistoricalStateProvider {
       return;
     }
     this.current = { sequence, generation };
+    // --- With a timeline the machine goes there too; where it cannot, the cursor shows the record
+    // --- over the present (the lite provider) and the machine returns there
+    const replay = this.host.replay?.();
+    if (replay && !replay.enter(sequence)) replay.leave();
     this.host.publish(this.position, sequence);
   }
 

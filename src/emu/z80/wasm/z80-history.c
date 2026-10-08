@@ -114,9 +114,22 @@ static inline Z80HistoryRecord *z80HistoryNewest(void) {
 _Static_assert(offsetof(Z80State, iy) - offsetof(Z80State, af) == 18u, "AF..IY are contiguous in the CPU state");
 _Static_assert(offsetof(Z80HistoryRecord, iy) - offsetof(Z80HistoryRecord, af) == 18u, "AF..IY are contiguous in a record");
 
+/*
+ * Replay's self-check (`.plans/REVERSE_DEBUGGING_PLAN.md` D9): the slot about to be written may still
+ * hold the record the recorded run wrote for the same sequence (a rewound ring keeps them). If it
+ * does and the CPU disagrees with it, the replay has diverged: mark it and stop at once.
+ */
+static void z80HistoryVerifySlot(const Z80HistoryRecord *old) {
+  if (old->sequence != z80HistoryHeader.newestSequenceLo + 1u) return;
+  if (old->pc == cpu.pc && old->sp == cpu.sp && old->af == cpu.af.word) return;
+  z80HistoryHeader.verifyState |= Z80_HISTORY_VERIFY_MISMATCH;
+  z80HistoryHeader.stopState = Z80_HISTORY_STOP_ARMED | Z80_HISTORY_STOP_REACHED;
+}
+
 /* Writes the CPU state into the next slot without publishing it */
 Z80_ALWAYS_INLINE Z80HistoryRecord *z80HistoryStage(uint32_t kind) {
   Z80HistoryRecord *r = &z80HistoryRing[z80HistoryHeader.writeIndex];
+  if (z80HistoryHeader.verifyState != 0u) z80HistoryVerifySlot(r);
   r->sequence = z80HistoryHeader.newestSequenceLo + 1u;
   r->frame = (uint32_t)(Z80_HISTORY_FRAME());
   r->frameTact = (uint32_t)(Z80_HISTORY_FRAME_TACT());
@@ -255,4 +268,157 @@ void z80HistoryClear(void) {
   z80HistoryHeader.count = 0u;
   z80HistoryHeader.writeIndex = 0u;
   z80HistoryHeader.generation++;
+}
+
+// -----------------------------------------------------------------------------
+// Positions and the stop target (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4, T6)
+//
+// A position is `(sequence, sub, phase)`: the newest record's sequence, the units it holds - its
+// repeat count, which grows while HALTed cycles, forced NOPs or DMA-hold T-states coalesce into it -
+// and how far into a prefixed instruction the CPU is. A prefixed instruction is one record but
+// several CPU cycles, and the host can touch the machine between them: a frame can end after the `ED`
+// of the ROM's `IN A,(C)`, and a debugger step runs one cycle. The phase is 0 at an instruction
+// boundary, 1 after a CB/ED/DD/FD prefix and 2 after DD CB / FD CB; inside one record the phases
+// come in the order 1, 2, 0. (A run of DD/FD prefixes stays in phase 1, so its cycles share a
+// position.) The recorder counts only while it is enabled, so a replay records.
+// -----------------------------------------------------------------------------
+
+/* The units the newest record holds: 0 right after a clear or a reseed without a record */
+static inline uint32_t z80HistoryCurrentSub(void) {
+  Z80HistoryRecord *newest = z80HistoryNewest();
+  return newest ? (uint32_t)newest->repeat : 0u;
+}
+
+/* How far into a prefixed instruction the CPU is (see above) */
+static inline uint32_t z80HistoryCurrentPhase(void) {
+  switch (cpu.prefix) {
+    case PREFIX_NONE: return 0u;
+    case PREFIX_DDCB:
+    case PREFIX_FDCB: return 2u;
+    default: return 1u;
+  }
+}
+
+/*
+ * Marks the target reached once the position is at it - or past it, at the next instruction boundary.
+ * The host reads the mark from the header after a frame call, so a frame that completes on the very
+ * cycle that reaches the target still reports it.
+ */
+static uint32_t z80HistoryStopNow(void) {
+  const uint32_t state = z80HistoryHeader.stopState;
+  if (state == 0u) return 0u;
+  if ((state & Z80_HISTORY_STOP_REACHED) != 0u) return 1u;
+  const uint32_t hi = z80HistoryHeader.newestSequenceHi;
+  const uint32_t lo = z80HistoryHeader.newestSequenceLo;
+  const uint32_t thi = z80HistoryHeader.targetSequenceHi;
+  const uint32_t tlo = z80HistoryHeader.targetSequenceLo;
+  if (hi < thi || (hi == thi && lo < tlo)) return 0u;
+  const uint32_t phase = z80HistoryCurrentPhase();
+  if (hi == thi && lo == tlo) {
+    const uint32_t sub = z80HistoryCurrentSub();
+    const uint32_t tsub = z80HistoryHeader.targetSub;
+    if (sub < tsub) return 0u;
+    const uint32_t tphase = z80HistoryHeader.targetPhase;
+    /* At the target's record and units: a mid-instruction target stops at its phase; anything else
+       waits for the instruction boundary */
+    if (sub == tsub && tphase != 0u && phase == tphase) {
+      z80HistoryHeader.stopState = state | Z80_HISTORY_STOP_REACHED;
+      return 1u;
+    }
+  }
+  if (phase != 0u) return 0u;
+  z80HistoryHeader.stopState = state | Z80_HISTORY_STOP_REACHED;
+  return 1u;
+}
+
+/* Arms the stop target; a frame loop returns once the position reaches it (D4) */
+void z80HistorySetTarget(uint32_t sequenceLo, uint32_t sequenceHi, uint32_t sub, uint32_t phase) {
+  z80HistoryEnsureHeader();
+  z80HistoryHeader.targetSequenceLo = sequenceLo;
+  z80HistoryHeader.targetSequenceHi = sequenceHi;
+  z80HistoryHeader.targetSub = sub;
+  z80HistoryHeader.targetPhase = phase;
+  z80HistoryHeader.stopState = Z80_HISTORY_STOP_ARMED;
+}
+
+void z80HistoryClearTarget(void) {
+  z80HistoryEnsureHeader();
+  z80HistoryHeader.stopState = 0u;
+}
+
+/* The newest record's units: with the header's newest sequence, the current position */
+uint32_t z80HistoryGetSub(void) {
+  return z80HistoryCurrentSub();
+}
+
+/* The current position's phase (0 at an instruction boundary) */
+uint32_t z80HistoryGetPhase(void) {
+  return z80HistoryCurrentPhase();
+}
+
+/*
+ * Rewinds the ring to an earlier sequence it still holds (D9, D17): the newest sequence, the write
+ * index and the count move back, and the later records stay in their slots, where a verifying replay
+ * compares with them before it overwrites them. Returns 0 when the ring does not hold the sequence;
+ * the host then reseeds instead. The host puts the keyframe's newest record into the newest slot
+ * afterwards (its repeat count may have grown since).
+ */
+uint32_t z80HistoryRewind(uint32_t sequenceLo, uint32_t sequenceHi) {
+  z80HistoryEnsureHeader();
+  const uint64_t newest = ((uint64_t)z80HistoryHeader.newestSequenceHi << 32) | z80HistoryHeader.newestSequenceLo;
+  const uint64_t target = ((uint64_t)sequenceHi << 32) | sequenceLo;
+  if (target > newest) return 0u;
+  const uint64_t delta = newest - target;
+  if (delta >= (uint64_t)z80HistoryHeader.count) return 0u;
+  z80HistoryHeader.writeIndex = (z80HistoryHeader.writeIndex - (uint32_t)delta) & Z80_HISTORY_MASK;
+  z80HistoryHeader.count -= (uint32_t)delta;
+  z80HistoryHeader.newestSequenceLo = sequenceLo;
+  z80HistoryHeader.newestSequenceHi = sequenceHi;
+  z80HistoryHeader.generation++;
+  return 1u;
+}
+
+/* Turns replay verification on or off, and clears a reported mismatch (D9) */
+void z80HistorySetVerify(uint32_t on) {
+  z80HistoryEnsureHeader();
+  z80HistoryHeader.verifyState = on ? Z80_HISTORY_VERIFY_ON : 0u;
+}
+
+/*
+ * Restarts the ring at a keyframe's position (T6). The ring is volatile, so after a keyframe restore
+ * it holds the future; the host writes the keyframe's newest record into slot 0 first (the header
+ * says where the ring is) when `hasRecord` is set, so a HALT or a forced-NOP run in progress at the
+ * keyframe keeps coalescing into it exactly as it did in the original run.
+ */
+void z80HistorySetPosition(uint32_t sequenceLo, uint32_t sequenceHi, uint32_t hasRecord) {
+  z80HistoryEnsureHeader();
+  z80HistoryHeader.newestSequenceLo = sequenceLo;
+  z80HistoryHeader.newestSequenceHi = sequenceHi;
+  z80HistoryHeader.count = hasRecord ? 1u : 0u;
+  z80HistoryHeader.writeIndex = hasRecord ? 1u : 0u;
+  z80HistoryHeader.generation++;
+}
+
+/*
+ * The CPU's bus-event fields - the last port address, value and direction, and the event flag. The
+ * CPU writes them only while its core captures bus events: in the per-instruction debug loop, never
+ * in a fast frame. They are what the debugger observed, not machine state, so a fast-path replay
+ * leaves them as they were and a comparison with a debug-loop run masks them
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` T15).
+ */
+uint32_t z80HistoryBusEventFieldsPtr(void) {
+  return (uint32_t)(uintptr_t)&cpu.lastPortAddress;
+}
+
+uint32_t z80HistoryBusEventFieldsSize(void) {
+  return (uint32_t)(offsetof(Z80State, hasPortEvent) + 1u - offsetof(Z80State, lastPortAddress));
+}
+
+/*
+ * The host's per-instruction loops (the TypeScript debug loop) ask this after every instruction while
+ * a replay run toward the present is armed (`.plans/REVERSE_DEBUGGING_PLAN.md` D11): nonzero once the
+ * stop target is reached, at an instruction boundary - the same check the frame loops make.
+ */
+uint32_t z80HistoryCheckStop(void) {
+  return z80HistoryStopNow();
 }

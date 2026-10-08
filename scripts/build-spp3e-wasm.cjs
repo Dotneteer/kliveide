@@ -89,6 +89,8 @@ const productionExports = [
   "spp3eWriteRamBank",
   "spp3eReadRomBank",
   "spp3eReadScreenMemoryOffset",
+  "spp3ePeekMemory",
+  "spp3ePeekScreenMemoryOffset",
   "spp3eReadFloatingBus",
   "spp3eSetKeyStatus",
   "spp3eReadPort",

@@ -33,6 +33,7 @@ import {
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 /** The size of a slot's region in the 4 MB physical memory */
 const Z88_SLOT_SIZE = 0x10_0000;
@@ -736,7 +737,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
     this.cards[slot] = card;
     runtime.exports.z88InsertCard(slot, CARD_KIND_CODES[card.kind], card.sizeInBytes);
     if (contents) {
-      runtime.memory.set(contents, slot * Z88_SLOT_SIZE);
+      writeCoreBytes(runtime, runtime.memory, contents, slot * Z88_SLOT_SIZE);
     }
   }
 
@@ -820,7 +821,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
     // --- A clean machine, with no stale bytes of a card the snapshot does not have
     this.reset();
     w.z88ResetBlink();
-    runtime.memory.fill(0);
+    fillCoreBytes(runtime, runtime.memory, 0);
 
     // --- Cards, then the internal RAM (banks $20-$3F, at $080000)
     for (let slot = 0; slot < 4; slot++) {
@@ -831,7 +832,7 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
         this.removeCardFromBackend(slot);
       }
     }
-    runtime.memory.set(snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
+    writeCoreBytes(runtime, runtime.memory, snapshot.ram, Z88_INTERNAL_RAM_BANK * Z88_BANK_SIZE);
     // --- A later card change or hard reset keeps the snapshot's cards and what they hold
     this.adoptConfiguredSlots();
 
@@ -957,6 +958,9 @@ export class Z88WasmV2Machine extends Z88WasmHost implements IExecutionHistorySo
    * none.
    */
   private flushUartTx(runtime: Z88WasmV2Runtime): void {
+    // --- A reverse-debugging replay re-sends what the IDE has shown already; the journal clears the
+    // --- core's buffer where the live run did (REVERSE_DEBUGGING_PLAN D13)
+    if (this.executionContext.isReplayingHistory?.()) return;
     const w = runtime.exports;
     const count = w.z88GetUartTxCount();
     if (count === 0) return;

@@ -176,9 +176,13 @@ neither.
 
 **Plan:** G4.1 in [EXECUTION_HISTORY_VIEWER_PLAN.md](EXECUTION_HISTORY_VIEWER_PLAN.md), G4.2 in
 [EXECUTION_HISTORY_ALL_CORES_PLAN.md](EXECUTION_HISTORY_ALL_CORES_PLAN.md), G4.3 in
-[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md).
+[LITE_STEP_BACK_PLAN.md](LITE_STEP_BACK_PLAN.md), G4.4 in [REVERSE_DEBUGGING_PLAN.md](REVERSE_DEBUGGING_PLAN.md),
+G4.5 in [TRACE_EXPORT_PLAN.md](TRACE_EXPORT_PLAN.md) and G4.6 in
+[DEBUG_SESSION_RECORDING_PLAN.md](DEBUG_SESSION_RECORDING_PLAN.md) (decisions recorded for both,
+2026-10-08: the suggested answers accepted).
 The G4.1 and G4.2 decisions and G4.3's D1–D14 are recorded (2026-10-06). G4.4's decisions are recorded
-too; it is gated by a Phase 0 spike. G4.3's §8 questions were answered as suggested and G4.3 is done (2026-10-07). G4.4 uses keyframes that share unchanged
+too; its Phase 0 spike passed its go/no-go gate on the 48K and the Next (2026-10-07; results in the
+plan's §10). G4.3's §8 questions were answered as suggested and G4.3 is done (2026-10-07). G4.4 uses keyframes that share unchanged
 pages, an input journal kept at each core's export boundary, and deterministic replay to an exact
 instruction, which the replay checks itself. Research for
 them corrected the foundation note above. The frame trace is a **linear** buffer that stops when
@@ -336,7 +340,13 @@ and WPMEM comments.
 
 **Wave 4 — the big bets:**
 - **G4.4 full reverse debugging.** Start with a design spike on cheap state capture and
-  deterministic replay across all cores. (RZX, G2.7–G2.8, turned out not to need it and is done;
+  deterministic replay across all cores. The spike (Phase 0) is done and passed its gate; Phase 1, the
+  export contract and the journal, is done (2026-10-08); Phases 2 (the timeline and replay engine on
+  the Next and the 48K), 3 (performance: the gate holds over a 10-minute session) and 4 (Step Back
+  and the other G4.3 commands put the machine itself in the past; Continue from the past; Take over
+  here) and 5 (Reverse Continue checking every breakpoint on the real past machine, reverse
+  watchpoints) and 6 (the Next's SD card journaled and undone on a fork, disk write-back republished,
+  replays kept away from every host side effect) are done too; Phase 7, the remaining cores, is next. (RZX, G2.7–G2.8, turned out not to need it and is done;
   Klive state files, G2.6, are done too.)
 - ~~G3.6 layer composition~~ (done).
 - G6.4 real Next hardware debugging, with G6.5 send-to-Next as its first milestone.

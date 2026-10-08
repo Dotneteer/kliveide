@@ -53,6 +53,7 @@ import { RzxCoreBridge } from "../zxSpectrum/rzx/rzxCoreBridge";
 import type { IRzxMachine, IRzxSession } from "../zxSpectrum/rzx/rzxSession";
 import { spectrumWasmBeamPosition } from "../zxSpectrum/WasmSpectrumSupport";
 import type { BeamPosition } from "@common/utils/beamGeometry";
+import { writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 const WASM_AUDIO_SAMPLE_SCALE = 32768.0;
 
@@ -532,7 +533,22 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
   /** Hands the guest's disk writes to the controller, which writes them back to `.trd` files */
   private publishBetaDiskChanges(): void {
     const published = this.beta128Disks?.publish();
-    if (!published) return;
+    if (published) this.mergeBetaDiskPublish(published);
+  }
+
+  /**
+   * After a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13): every sector of the inserted disks
+   * goes to the write-back, so the `.trd` files follow the restored in-core disks
+   * @returns true when there was a disk to write back
+   */
+  republishDisks(): boolean {
+    const published = this.beta128Disks?.republishAll();
+    if (!published) return false;
+    this.mergeBetaDiskPublish(published);
+    return true;
+  }
+
+  private mergeBetaDiskPublish(published: NonNullable<ReturnType<Beta128Disks["publish"]>>): void {
     const props = [DISK_A_CHANGES, DISK_B_CHANGES];
     published.changes.forEach((changes, drive) => {
       if (!changes) return;
@@ -902,7 +918,7 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     let offset = 0;
     for (let i = 0; i < blocks.length; i++) {
       const block = blocks[i];
-      runtime.tapeData.set(block.data, offset);
+      writeCoreBytes(runtime, runtime.tapeData, block.data, offset);
       if (
         wasm.sp128TapeSetBlock(
           i,
@@ -1376,6 +1392,11 @@ export class ZxSpectrum128WasmV2Machine extends ZxSpectrum128WasmHost implements
     this.beta128Disks?.afterStateLoad();
     this.syncFrameCountersFromWasmV2(runtime);
     this.syncCpuFromWasmV2(runtime);
+  }
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.invalidateWasmV2Sync();
   }
 
   private invalidateWasmV2Sync(): void {

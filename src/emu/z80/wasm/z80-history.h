@@ -28,10 +28,29 @@ typedef struct Z80HistoryHeader {
   uint32_t newestSequenceHi; /* 28 */
   uint32_t generation; /* 32: bumped by every clear, so a reader drops its caches */
   uint32_t ringOffset; /* 36: where the records start in linear memory */
-  uint32_t spare[6]; /* 40..63 */
+  /* The stop target of a replay (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4): a position is the
+     newest record's sequence and the units it holds (its repeat count), `z80HistorySetTarget` */
+  uint32_t targetSequenceLo; /* 40 */
+  uint32_t targetSequenceHi; /* 44 */
+  uint32_t targetSub; /* 48 */
+  uint32_t stopState; /* 52: Z80_HISTORY_STOP_ARMED, Z80_HISTORY_STOP_REACHED */
+  uint32_t targetPhase; /* 56: 0 an instruction boundary, 1/2 inside a prefixed instruction */
+  uint32_t verifyState; /* 60: Z80_HISTORY_VERIFY_ON, Z80_HISTORY_VERIFY_MISMATCH (D9) */
 } Z80HistoryHeader;
 
 static Z80HistoryHeader z80HistoryHeader;
+
+#define Z80_HISTORY_STOP_ARMED 0x01u
+#define Z80_HISTORY_STOP_REACHED 0x02u
+#define Z80_HISTORY_VERIFY_ON 0x01u
+#define Z80_HISTORY_VERIFY_MISMATCH 0x02u
+
+/*
+ * Nonzero when a frame loop must return now: the recorder reached its stop target and the CPU is at
+ * an instruction boundary (no prefix pending). One call per instruction in every frame loop and
+ * `...ExecuteUntilStop`; with no target armed it is a load and a compare. Defined in `z80-history.c`.
+ */
+static uint32_t z80HistoryStopNow(void);
 
 static void z80HistoryEvent(uint32_t kind);
 static void z80HistoryBegin(void);

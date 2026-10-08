@@ -6,7 +6,22 @@
  */
 
 /** The exports: everything else is in the header the first one locates */
-const Z80_HISTORY_EXPORTS = ["z80HistoryGetHeaderOffset", "z80HistorySetEnabled", "z80HistoryClear"];
+const Z80_HISTORY_EXPORTS = [
+  "z80HistoryGetHeaderOffset",
+  "z80HistorySetEnabled",
+  "z80HistoryClear",
+  // --- Positions and the stop target (`.plans/REVERSE_DEBUGGING_PLAN.md` D3, D4)
+  "z80HistorySetTarget",
+  "z80HistoryClearTarget",
+  "z80HistoryGetSub",
+  "z80HistoryGetPhase",
+  "z80HistorySetPosition",
+  "z80HistoryRewind",
+  "z80HistorySetVerify",
+  "z80HistoryCheckStop",
+  "z80HistoryBusEventFieldsPtr",
+  "z80HistoryBusEventFieldsSize"
+];
 
 /**
  * The statics a Klive state file (and the Next's checkpoint) leaves out (D7): history belongs to the

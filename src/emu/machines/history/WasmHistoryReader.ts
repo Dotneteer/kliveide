@@ -20,7 +20,9 @@ import {
 export const Z80_HISTORY_CORE_EXPORTS = [
   "z80HistoryGetHeaderOffset",
   "z80HistorySetEnabled",
-  "z80HistoryClear"
+  "z80HistoryClear",
+  // --- Reverse debugging's replay runs (`.plans/REVERSE_DEBUGGING_PLAN.md` D11)
+  "z80HistoryCheckStop"
 ] as const;
 
 /** The recorder's exports, as a core's export type includes them */
@@ -28,6 +30,8 @@ export type Z80HistoryCoreExports = {
   z80HistoryGetHeaderOffset(): number;
   z80HistorySetEnabled(enabled: number): void;
   z80HistoryClear(): void;
+  /** Nonzero once the recorder's stop target is reached at an instruction boundary */
+  z80HistoryCheckStop(): number;
 };
 
 /** What the reader needs of a core */

@@ -9,6 +9,7 @@ import {
   MF_JOYSTICK_SUPPORT,
   MF_INJECT_SUPPORT,
   MF_EXEC_HISTORY,
+  MF_REVERSE_DEBUG,
   MI_SPECTRUM_3E,
   MC_SCREEN_FREQ,
   MF_ROM,
@@ -218,7 +219,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_INJECT_SUPPORT]: true,
       [MF_ULA]: true,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_ALL_CORES_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: [
       {
@@ -330,7 +333,9 @@ export const machineRegistry: MachineInfo[] = [
       [MF_ALLOW_CLOCK_MULTIPLIER]: false,
       [MF_ALLOW_SCAN_LINES]: false,
       // --- The shared execution-history recorder (EXECUTION_HISTORY_VIEWER_PLAN)
-      [MF_EXEC_HISTORY]: true
+      [MF_EXEC_HISTORY]: true,
+      // --- Passes the journal-replay determinism test (REVERSE_DEBUGGING_PLAN D19)
+      [MF_REVERSE_DEBUG]: true
     },
     models: [
       {

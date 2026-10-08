@@ -117,6 +117,9 @@ export interface IMachineController {
   /** Ends an active RZX session because the IDE changed the machine from outside the CPU (trap 4) */
   interruptRzx(reason: string): Promise<void>;
 
+  /** Ends the reverse-debugging timeline (`.plans/REVERSE_DEBUGGING_PLAN.md` D2): code injection does */
+  endTimeline?(): void;
+
   /** Publishes the RZX session's progress to the store */
   publishRzxState(): void;
 
@@ -181,6 +184,9 @@ export interface IMachineController {
 
   /** Moves the history cursor (D4); the machine is not touched */
   navigateHistory?(op: HistoryNavigationOp, options?: HistoryNavigationOptions): HistoryNavigationResult;
+
+  /** Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12); false when the machine is not in the past */
+  takeOverHere?(): Promise<boolean>;
 
   /** Returns to the present (D5) */
   clearHistoryCursor?(): void;

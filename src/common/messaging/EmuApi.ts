@@ -591,6 +591,14 @@ class EmuApiImpl {
   }
 
   /**
+   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the point in the past the machine
+   * stands at becomes the present. False when the machine is not in the past.
+   */
+  async takeOverHere(): Promise<boolean> {
+    return Promise.reject(new Error(NO_PROXY_ERROR));
+  }
+
+  /**
    * Gets the ZX Spectrum Next Copper's state: its list RAM, mode, pointers and beam.
    */
   async getCopperState(): Promise<CopperState> {

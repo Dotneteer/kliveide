@@ -251,6 +251,8 @@ class EmuMessageProcessor {
     confirm?: boolean,
     suppressError?: boolean
   ) {
+    // --- New media act on the present: a muted journal in the past would drop them (REVERSE_DEBUGGING_PLAN D12)
+    this.machineService.getMachineController()?.clearHistoryCursor?.();
     await this.machineService.getMachineController()?.interruptRzx?.("the tape was changed");
     // --- A ZX80/ZX81 program file (.p, .81, .o, .80) is its own tape: the machine plays its bytes
     if (file && isZx8081ProgramFileName(file)) {
@@ -558,6 +560,8 @@ class EmuMessageProcessor {
   ) {
     // --- Get disk information
     const controller = this.machineService.getMachineController();
+    // --- New media act on the present (REVERSE_DEBUGGING_PLAN D12)
+    controller?.clearHistoryCursor?.();
     await controller?.interruptRzx?.("a disk was changed");
     const mediaId = diskIndex ? MEDIA_DISK_B : MEDIA_DISK_A;
     // --- `diskIndex` is a number, so indexing it always yielded `undefined` and every message
@@ -914,6 +918,8 @@ class EmuMessageProcessor {
       noController();
     }
     void controller.interruptRzx?.("code was injected");
+    // --- Injection waits on wall time, so where it continues is not reproducible (T10)
+    controller.endTimeline?.();
     controller.machine.injectCodeToRun(codeToInject);
   }
 
@@ -1166,6 +1172,17 @@ class EmuMessageProcessor {
       noController();
     }
     return controller.navigateHistory?.(op, options) ?? { position: 0, moved: false, reason: "noHistory" };
+  }
+
+  /**
+   * Take over here (`.plans/REVERSE_DEBUGGING_PLAN.md` D12).
+   */
+  async takeOverHere(): Promise<boolean> {
+    const controller = this.machineService.getMachineController();
+    if (!controller) {
+      noController();
+    }
+    return (await controller.takeOverHere?.()) ?? false;
   }
 
   /**

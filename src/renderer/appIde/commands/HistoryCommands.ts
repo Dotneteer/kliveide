@@ -266,6 +266,31 @@ export class HistoryPresentCommand extends IdeCommandBase {
   }
 }
 
+/**
+ * `history-take-over`: the point the machine stands at in the past becomes the present
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` D12): the recorded future goes, and live input resumes
+ */
+export class HistoryTakeOverCommand extends IdeCommandBase {
+  readonly id = "history-take-over";
+  readonly description = "Takes over at the current point in the past: discards the recorded future";
+  readonly usage = "history-take-over";
+  readonly aliases = ["htake"];
+
+  async execute(context: IdeCommandContext): Promise<IdeCommandResult> {
+    const refused = requireHistory(context);
+    if (refused) return refused;
+    if (!(await context.emuApi.takeOverHere())) {
+      return commandError("Take over here works in the past of a reverse-debugging session (step back first)");
+    }
+    const cpu = await context.emuApi.getCpuState();
+    writeSuccessMessage(
+      context.output,
+      `Took over at PC=$${cpu.pc.toString(16).toUpperCase().padStart(4, "0")}: this is the present now`
+    );
+    return commandSuccess;
+  }
+}
+
 /** `history-goto <-n | #seq>`: to a step (−42) or a record's sequence number (#1234) */
 export class HistoryGotoCommand extends IdeCommandBase<{ target: string }> {
   readonly id = "history-goto";

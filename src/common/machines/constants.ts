@@ -109,6 +109,13 @@ export const MF_INJECT_SUPPORT = "injectSupport";
  */
 export const MF_EXEC_HISTORY = "execHistory";
 
+/**
+ * Whether the machine keeps a reverse-debugging timeline in debug sessions
+ * (`.plans/REVERSE_DEBUGGING_PLAN.md` D19): set per core once it passes the journal-replay
+ * determinism test (`test/wasm/reverse/journal-replay-determinism.test.ts`).
+ */
+export const MF_REVERSE_DEBUG = "reverseDebug";
+
 // Available custom tool keys
 export const CT_DISASSEMBLER = "disassembler";
 export const CT_CUSTOM_DISASSEMBLER = "customDisassembler";

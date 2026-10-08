@@ -173,6 +173,30 @@ describe("WD1793: Type II commands", () => {
     expect(Array.from(changes.get(2 * 16 + 2)!)).toEqual(Array.from(data));
   }, 60_000);
 
+  it("republishes the whole in-core disk for a reverse-debugging fork (REVERSE_DEBUGGING_PLAN D13)", async () => {
+    const disk = createBlankTrd({ cylinders: 80, sides: 2 });
+    const s = await pentagon(disk);
+    seek(s, 1);
+    callRom(s, ENTRY.SECTOR, 3);
+    const data = pattern(256, 9);
+    s.poke(BUFFER, data);
+    expect(callRom(s, ENTRY.WRITE, 0xa0).a).toBe(0);
+    s.runFrames(1);
+    s.takeDiskChanges(0);
+    expect((s.machine as unknown as { republishDisks(): boolean }).republishDisks()).toBe(true);
+    const all = s.takeDiskChanges(0)!;
+    // --- Every sector of the file, the written one as the core has it
+    expect(all.size).toBe(disk.length / 256);
+    expect(Array.from(all.get(2 * 16 + 2)!)).toEqual(Array.from(data));
+    expect(Array.from(all.get(0)!)).toEqual(Array.from(disk.subarray(0, 256)));
+    expect(s.takeDiskChanges(1)).toBeUndefined();
+  }, 60_000);
+
+  it("has nothing to republish without a disk", async () => {
+    const s = await pentagon(null);
+    expect((s.machine as unknown as { republishDisks(): boolean }).republishDisks()).toBe(false);
+  }, 60_000);
+
   it("[BK] the side bit selects the disk's second side", async () => {
     const s = await pentagon();
     callRom(s, ENTRY.SYS, SYS_SIDE1);

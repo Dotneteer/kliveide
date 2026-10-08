@@ -87,6 +87,7 @@ import {
   ShowHistoryCommand,
   StepBackCommand,
   StepBackOutCommand,
+  HistoryTakeOverCommand,
   StepBackOverCommand,
   StepForwardCommand
 } from "./commands/HistoryCommands";
@@ -194,6 +195,7 @@ export function registerIdeCommands(cmdSrv: IIdeCommandService): void {
   cmdSrv.registerCommand(new StepForwardCommand());
   cmdSrv.registerCommand(new StepBackOverCommand());
   cmdSrv.registerCommand(new StepBackOutCommand());
+  cmdSrv.registerCommand(new HistoryTakeOverCommand());
   cmdSrv.registerCommand(new ReverseContinueCommand());
   cmdSrv.registerCommand(new HistoryPresentCommand());
   cmdSrv.registerCommand(new HistoryGotoCommand());

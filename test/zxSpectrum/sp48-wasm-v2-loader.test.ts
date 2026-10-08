@@ -223,6 +223,7 @@ function fakeV2Instance(overrides: Partial<Sp48WasmV2Exports> = {}): Promise<Sp4
       z80HistoryGetHeaderOffset: () => 0,
       z80HistorySetEnabled: () => undefined,
       z80HistoryClear: () => undefined,
+      z80HistoryCheckStop: () => 0,
       memory: new WebAssembly.Memory({ initial: 8 }),
       sp48MemoryPtr: () => 0x00000,
       sp48PixelBufferPtr: () => 0x10000,

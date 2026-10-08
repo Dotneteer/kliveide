@@ -893,6 +893,7 @@ function fakeV2Instance(overrides: Partial<Sp128WasmV2Exports> = {}): Promise<Sp
       z80HistoryGetHeaderOffset: () => 0,
       z80HistorySetEnabled: () => undefined,
       z80HistoryClear: () => undefined,
+      z80HistoryCheckStop: () => 0,
       memory: new WebAssembly.Memory({ initial: 16 }),
       sp128MemoryPtr: () => 0x00000,
       sp128RamPtr: () => 0x10000,

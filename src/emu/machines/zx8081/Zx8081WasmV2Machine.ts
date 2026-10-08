@@ -25,6 +25,7 @@ import {
   restoreWasmImage,
   type MachineStateParts
 } from "../state/wasmStateImage";
+import { fillCoreBytes, writeCoreBytes } from "@emu/machines/reverse/coreMemoryWrites";
 
 /** No extra stop address for `zx8081ExecuteUntilStop` */
 const NO_EXTRA_STOP = 0xffff_ffff;
@@ -333,8 +334,8 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     const hw = this.hardware;
     runtime.exports.zx8081Configure(hw.hardwareZx81 ? 1 : 0, hw.romZx81 ? 1 : 0, hw.ramKb, hw.ntsc ? 1 : 0);
     const rom = await this.loadRomFromResource(hw.romZx81 ? ZX81_ROM : ZX80_ROM);
-    runtime.rom.fill(0);
-    runtime.rom.set(rom.subarray(0, runtime.rom.length));
+    fillCoreBytes(runtime, runtime.rom, 0);
+    writeCoreBytes(runtime, runtime.rom, rom.subarray(0, runtime.rom.length));
     const words = runtime.exports.zx8081GetScreenWidth() * runtime.exports.zx8081GetScreenHeight();
     this.screenPixels = runtime.pixelBuffer.subarray(0, words);
     this.screenPixelBytes = runtime.pixelBufferBytes.subarray(0, words * 4);
@@ -411,7 +412,7 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
     if (bytes.length > runtime.tapeData.length) {
       throw new Error(`The program is too large for the tape: ${bytes.length} bytes.`);
     }
-    runtime.tapeData.set(bytes);
+    writeCoreBytes(runtime, runtime.tapeData, bytes);
     runtime.exports.zx8081TapeSetLength(bytes.length);
     runtime.exports.zx8081TapeSetPlaying(1);
   }
@@ -716,6 +717,11 @@ export class Zx8081WasmV2Machine extends Zx8081WasmHost implements IExecutionHis
 
   // ==========================================================================================
   // Helpers
+
+  /** Forgets what was last pushed into the core, so the next frame pushes the live state (D8) */
+  invalidateHostSync(): void {
+    this.syncedTargetClockMultiplier = -1;
+  }
 
   private syncTargetClockMultiplier(runtime: Zx8081WasmV2Runtime): void {
     if (this.targetClockMultiplier !== this.syncedTargetClockMultiplier) {
