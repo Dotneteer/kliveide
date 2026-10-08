@@ -1,6 +1,7 @@
 export default {
   "ide-startup": "IDE startup options",
   "diagnostics": "Diagnostics",
+  "advanced-debugging": "Turning on advanced debugging",
   "shortcuts": "Changing keyboard shortcuts",
   "file-extensions": "Changing default file extensions",
   "customize-syntax-colors": "Customizing syntax highlighting colors",

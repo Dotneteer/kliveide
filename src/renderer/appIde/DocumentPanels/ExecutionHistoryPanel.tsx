@@ -157,9 +157,9 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   const stateRef = useRef(state);
   stateRef.current = state;
 
-  const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[
-    MF_EXEC_HISTORY
-  ];
+  const advancedDebugging = useSelector((s) => s.emulatorState?.advancedDebugging) === true;
+  const supported =
+    advancedDebugging && !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
   const running = machineState === MachineControllerState.Running;
   const info = state.info;
   const contextDecoder = historyContextDecoder(info?.machineId);
@@ -516,7 +516,7 @@ const ExecutionHistoryPanel = (_props: DocumentProps) => {
   );
 
   // --- Empty states (§4.6.1)
-  const empty = historyEmptyMessage({ supported, running, debugging: !!isDebugging }, info);
+  const empty = historyEmptyMessage({ supported, running, debugging: !!isDebugging, switchedOff: !advancedDebugging }, info);
   const header = (
     <PanelHeader>
       <span className={styles.count}>{historyCountText(info)}</span>

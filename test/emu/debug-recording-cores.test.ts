@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -98,7 +99,7 @@ async function waitFor(done: () => boolean, what: string): Promise<void> {
 }
 
 function controllerFor(machine: AnyWasmMachine, name: string) {
-  const controller = new MachineController(createAppStore(name), new ResolvingMessenger(), machine as never);
+  const controller = new MachineController(withAdvancedDebugging(createAppStore(name)), new ResolvingMessenger(), machine as never);
   const debugSupport = new DebugSupport(undefined, []);
   connectConditionSupport(debugSupport, machine as never);
   machine.executionContext.debugSupport = debugSupport;

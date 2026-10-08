@@ -42,6 +42,7 @@
 /getting-started/keyboard/index.html
 /getting-started/save-programs/index.html
 /getting-started/tapes/index.html
+/howto/advanced-debugging/index.html
 /howto/always-on-top/index.html
 /howto/background-compilation/index.html
 /howto/customize-syntax-colors/index.html

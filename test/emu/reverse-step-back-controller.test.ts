@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -85,7 +86,7 @@ async function setUp() {
   const session = (await createSp48Session()).bootToBasic();
   const program = await session.loadCode(PROGRAM);
   session.machine.pc = program.symbol("Main");
-  const controller = new MachineController(createAppStore("test-reverse"), new ResolvingMessenger(), session.machine as any);
+  const controller = new MachineController(withAdvancedDebugging(createAppStore("test-reverse")), new ResolvingMessenger(), session.machine as any);
   const debugSupport = session.attachDebugSupport();
   controller.debugSupport = debugSupport;
   controller.state = MachineControllerState.Paused;

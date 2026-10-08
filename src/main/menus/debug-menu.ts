@@ -9,6 +9,7 @@ import type { MenuItemConstructorOptions } from "electron";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { SETTING_IDE_SYNC_BREAKPOINTS } from "@common/settings/setting-const";
 import { MF_EXEC_HISTORY, MF_REVERSE_DEBUG } from "@common/machines/constants";
+import { hasMachineFeature } from "@common/features/advancedDebugging";
 import { getEmuApi } from "@messaging/MainToEmuMessenger";
 import { getIdeApi } from "@messaging/MainToIdeMessenger";
 import { canExportHistory, exportExecutionHistoryAs } from "@main/history-export";
@@ -77,7 +78,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     },
     // --- Reverse stepping through the recorded history (`.plans/LITE_STEP_BACK_PLAN.md` §4.5): IDE
     // --- commands, so the output pane says where each one went; never a machine command (D4)
-    ...(context.currentMachine?.features?.[MF_EXEC_HISTORY]
+    ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
       ? [
           { type: "separator" as const },
           reverseItem("step_back", "Step Back", context.shortcuts.stepBack, "step-back", machinePaused),
@@ -103,7 +104,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
     { type: "separator" },
     // --- Every machine that records history, so G4.2 lights it up without moving it
     // --- (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5, D12)
-    ...(context.currentMachine?.features?.[MF_EXEC_HISTORY]
+    ...(hasMachineFeature(context.currentMachine, MF_EXEC_HISTORY, context.appState)
       ? [
           {
             id: "show_execution_history",
@@ -125,7 +126,7 @@ export function createDebugMenu(context: MenuContext): MenuItemConstructorOption
       : []),
     // --- Debug recordings (`.plans/DEBUG_SESSION_RECORDING_PLAN.md` D2): a reverse-debugging session
     // --- to a file and back; saving needs a timeline, opening switches to the recording's machine
-    ...(context.currentMachine?.features?.[MF_REVERSE_DEBUG]
+    ...(hasMachineFeature(context.currentMachine, MF_REVERSE_DEBUG, context.appState)
       ? [
           { type: "separator" as const },
           {

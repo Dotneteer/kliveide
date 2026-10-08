@@ -6,6 +6,11 @@ import { Callout } from 'nextra/components'
 
 # Saving and Opening Debug Recordings
 
+<Callout type="info">
+This is one of Klive's [advanced debugging features](/howto/advanced-debugging), which are off unless
+you turn them on: run `set -u features.advancedDebugging 1` in the IDE, then restart Klive.
+</Callout>
+
 With [reverse debugging](/working-with-ide/reverse-debugging), a debug session remembers its past:
 Step Back, Reverse Continue and reverse watchpoints can take the machine back to any moment since
 the session started. A **debug recording** saves that whole session to a `.klr` file. Whoever opens

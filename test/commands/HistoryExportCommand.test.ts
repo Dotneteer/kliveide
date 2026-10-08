@@ -88,7 +88,12 @@ function fake(options: {
   });
   const context = createMockContext();
   const state = {
-    emulatorState: { machineId, modelId: undefined, machineState: options.machineState ?? MachineControllerState.Paused },
+    emulatorState: {
+      machineId,
+      modelId: undefined,
+      machineState: options.machineState ?? MachineControllerState.Paused,
+      advancedDebugging: true
+    },
     compilation: {}
   };
   (context.store.getState as any).mockImplementation(() => state);

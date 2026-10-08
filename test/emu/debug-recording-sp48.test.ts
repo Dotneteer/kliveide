@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -105,7 +106,7 @@ function portsOf(controller: MachineController): MachineStatePorts {
 }
 
 function controllerFor(session: Sp48TestSession, name: string) {
-  const controller = new MachineController(createAppStore(name), new ResolvingMessenger(), session.machine as any);
+  const controller = new MachineController(withAdvancedDebugging(createAppStore(name)), new ResolvingMessenger(), session.machine as any);
   const debugSupport = session.attachDebugSupport();
   controller.debugSupport = debugSupport;
   return { controller, debugSupport };

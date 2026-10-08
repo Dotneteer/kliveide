@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -38,7 +39,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function controllerWithNext() {
   const machine = await createCore({ hardReset: true });
-  const controller = new MachineController(createAppStore("test-exec-history"), new ResolvingMessenger(), machine as any);
+  const controller = new MachineController(withAdvancedDebugging(createAppStore("test-exec-history")), new ResolvingMessenger(), machine as any);
   return { machine, controller };
 }
 
@@ -66,6 +67,19 @@ describe("execution history through the machine controller", () => {
     expect(afterStep.newestSequence).toBeGreaterThan(info.newestSequence);
     const stepped = decodeHistoryPage(machine.readHistory(info.newestSequence + 1, afterStep.newestSequence - info.newestSequence)!);
     expect(stepped.some((r) => r.regs.pc === pcBeforeStep || r.kind !== HistoryKind.Instruction)).toBe(true);
+    await controller.stop();
+  });
+
+  it("records nothing and keeps no timeline with the advanced-debugging switch off (the default)", async () => {
+    const machine = await createCore({ hardReset: true });
+    const controller = new MachineController(createAppStore("test-exec-history-off"), new ResolvingMessenger(), machine as any);
+    await controller.startDebug();
+    await wait(60);
+    await controller.pause();
+    const info = machine.getHistoryInfo()!;
+    expect(info.enabled).toBe(false);
+    expect(info.count).toBe(0);
+    expect(controller.timeline).toBeUndefined();
     await controller.stop();
   });
 
@@ -120,7 +134,7 @@ describe.each([
 ] as const)("execution history through the machine controller on %s", (_name, machineId, create) => {
   it("records in a debug session for the machine's decoder, and not in a plain Run", async () => {
     const machine = await create();
-    const controller = new MachineController(createAppStore(`test-exec-history-${machineId}`), new ResolvingMessenger(), machine as any);
+    const controller = new MachineController(withAdvancedDebugging(createAppStore(`test-exec-history-${machineId}`)), new ResolvingMessenger(), machine as any);
     await controller.startDebug();
     await wait(120);
     await controller.pause();

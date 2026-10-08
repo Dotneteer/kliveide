@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import React, { type ReactNode } from "react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { createMockStore, renderWithProviders } from "../react-test-utils";
@@ -102,7 +103,7 @@ const tick = async (state = MachineControllerState.Paused) => {
 };
 
 function setup(machineState = MachineControllerState.Paused) {
-  const store = createMockStore();
+  const store = withAdvancedDebugging(createMockStore());
   store.dispatch(setMachineTypeAction("zx81"));
   store.dispatch(setMachineStateAction(machineState, 0));
   renderWithProviders(createExecutionHistoryPanel({ document: doc }), { store });

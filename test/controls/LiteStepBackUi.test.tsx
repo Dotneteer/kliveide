@@ -4,6 +4,7 @@
  * toolbar's reverse controls.
  */
 
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 import { renderWithProviders, screen, createMockStore, act, fireEvent } from "../react-test-utils";
@@ -73,7 +74,7 @@ beforeEach(() => {
 });
 
 function pausedStore(machineId = "sp48") {
-  const store = createMockStore();
+  const store = withAdvancedDebugging(createMockStore());
   store.dispatch(setMachineTypeAction(machineId), "emu");
   store.dispatch(setMachineStateAction(MachineControllerState.Paused, 0), "emu");
   return store;

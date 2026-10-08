@@ -167,6 +167,16 @@ overlay now sits on a shared `EmulatorScreenOverlay`, and its render to the beam
 
 ## G4. Execution history and reverse debugging — **M → XL; full reverse debugging is in scope (D2)**
 
+> **Feature switch (G4 and G5):** the whole group is off unless the user runs
+> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> The main process reads it once at startup into `emulatorState.advancedDebugging`;
+> `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
+> `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
+> recorder or the timeline. **Every G5 piece must honour it too**: add its machine feature (the
+> coverage plan's `MF_PROFILE`) to `ADVANCED_DEBUGGING_FEATURES`, and gate its commands, views and
+> hooks on `isAdvancedDebuggingEnabled`. Tests of the group turn it on with
+> `test/advanced-debugging-helper.ts`.
+
 **Why it matters:** this is DeZog's most-praised feature: "how did I get here?" answered by
 stepping backwards.
 
@@ -207,6 +217,16 @@ then moves the frame trace to a diagnostics build, which shrinks the Next to abo
 ---
 
 ## G5. Coverage, profiling and unit tests — **M → L**
+
+> **Feature switch (G4 and G5):** the whole group is off unless the user runs
+> `set -u features.advancedDebugging 1` and restarts (`docs/content/howto/advanced-debugging.mdx`).
+> The main process reads it once at startup into `emulatorState.advancedDebugging`;
+> `src/common/features/advancedDebugging.ts` is the one gate. Off, `MF_EXEC_HISTORY` and
+> `MF_REVERSE_DEBUG` read as absent (`hasMachineFeature`) and the machine controller never starts the
+> recorder or the timeline. **Every G5 piece must honour it too**: add its machine feature (the
+> coverage plan's `MF_PROFILE`) to `ADVANCED_DEBUGGING_FEATURES`, and gate its commands, views and
+> hooks on `isAdvancedDebuggingEnabled`. Tests of the group turn it on with
+> `test/advanced-debugging-helper.ts`.
 
 **Why it matters:** DeZog's unit tests and coverage are unique in the field. Klive has a strong
 *internal* test harness (`test/harness/sp48`, `test/harness/zxnext`), but nothing for users.

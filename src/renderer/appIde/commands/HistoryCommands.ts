@@ -8,6 +8,10 @@ import { MachineControllerState } from "@abstractions/MachineControllerState";
 import type { Z80CpuState } from "@common/messaging/EmuApi";
 import { MF_EXEC_HISTORY, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
+import {
+  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  isAdvancedDebuggingEnabled
+} from "@common/features/advancedDebugging";
 import { HISTORY_PANEL_ID } from "@common/state/common-ids";
 import { historyContextDecoder } from "@common/history/contexts";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
@@ -53,11 +57,13 @@ import {
 
 /*
  * The execution history's commands (`.plans/EXECUTION_HISTORY_VIEWER_PLAN.md` §4.5). They gate on
- * the `MF_EXEC_HISTORY` capability, not on a machine id, so G4.2 lights them up without changes.
+ * the `MF_EXEC_HISTORY` capability, not on a machine id, so G4.2 lights them up without changes,
+ * and on the advanced-debugging switch (`@common/features/advancedDebugging`).
  */
 
 /** Refuses a command on a machine that does not record history */
 function requireHistory(context: IdeCommandContext): IdeCommandResult | undefined {
+  if (!isAdvancedDebuggingEnabled(context.store.getState())) return commandError(ADVANCED_DEBUGGING_OFF_MESSAGE);
   const machineId = context.service.machineService.getMachineInfo()?.machine?.machineId;
   const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
   return supported ? undefined : commandError("This machine does not record execution history");

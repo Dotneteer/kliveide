@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -100,7 +101,7 @@ describe("reverse debugging through the controller on every Phase 7 machine", ()
   for (const m of MACHINES) {
     it(m.name, async () => {
       const machine = await m.create();
-      const controller = new MachineController(createAppStore(`test-reverse-${m.coreId}`), new ResolvingMessenger(), machine as never);
+      const controller = new MachineController(withAdvancedDebugging(createAppStore(`test-reverse-${m.coreId}`)), new ResolvingMessenger(), machine as never);
       const debugSupport = new DebugSupport(undefined, []);
       connectConditionSupport(debugSupport, machine as never);
       machine.executionContext.debugSupport = debugSupport;

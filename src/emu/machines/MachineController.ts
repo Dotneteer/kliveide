@@ -84,6 +84,10 @@ import {
 import { getGlobalSetting } from "@renderer/core/RendererProvider";
 import { MF_REVERSE_DEBUG } from "@common/machines/constants";
 import {
+  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  isAdvancedDebuggingEnabled
+} from "@common/features/advancedDebugging";
+import {
   Timeline,
   type ForkAwareMachine,
   type ForkPreview,
@@ -1372,11 +1376,20 @@ export class MachineController implements IMachineController {
    * @param debugRun Whether the run about to start is a debug run
    */
   private applyHistoryRecording(debugRun: boolean): void {
-    const recording = this.isDebugging && debugRun;
+    // --- Never with the advanced-debugging switch off: the whole G4 group then costs nothing
+    const recording = this.isDebugging && debugRun && this.advancedDebuggingEnabled;
     this.historySource()?.setHistoryEnabled(recording);
     // --- A timeline's positions are the recorder's: it lives exactly while the recorder records (D2, D3)
     if (recording) this.ensureTimeline();
     else this.endTimeline();
+  }
+
+  /**
+   * The advanced-debugging feature switch (G4 + G5, `@common/features/advancedDebugging`): read from
+   * the shared store, where the main process put it at startup
+   */
+  private get advancedDebuggingEnabled(): boolean {
+    return isAdvancedDebuggingEnabled(this.store?.getState());
   }
 
   // ------------------------------------------------------------------------------------------------
@@ -1396,6 +1409,7 @@ export class MachineController implements IMachineController {
   private ensureTimeline(): void {
     if (this.timeline) return;
     if (!this._machineInfo?.features?.[MF_REVERSE_DEBUG]) return;
+    if (!this.advancedDebuggingEnabled) return;
     if (this.store && getGlobalSetting(this.store, SETTING_EMU_REVERSE_DEBUGGING) === false) return;
     if (!isTimelineMachine(this.machine)) return;
     try {
@@ -1435,6 +1449,7 @@ export class MachineController implements IMachineController {
     snapshot: TimelineSnapshot,
     options: { land?: TimelinePosition; description?: string; expectedImage?: Uint8Array; recordingName?: string } = {}
   ): Promise<void> {
+    if (!this.advancedDebuggingEnabled) throw new Error(ADVANCED_DEBUGGING_OFF_MESSAGE);
     if (!isTimelineMachine(this.machine)) throw new Error("This machine has no reverse debugging");
     await this.restoreState(applyState, options.description ?? "Debug recording opened", { attachMedia: false });
     this.historySource()?.setHistoryEnabled(true);

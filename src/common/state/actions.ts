@@ -193,6 +193,12 @@ export const setRzxStateAction: ActionCreator = (rzx?: import("./AppState").RzxS
   payload: { value: rzx }
 });
 
+/** The advanced-debugging feature switch, as the main process read it at startup */
+export const setAdvancedDebuggingAction: ActionCreator = (enabled: boolean) => ({
+  type: "SET_ADVANCED_DEBUGGING",
+  payload: { flag: enabled }
+});
+
 export const setScreenRecordingAvailableAction: ActionCreator = (available: boolean) => ({
   type: "SET_SCREEN_RECORDING_AVAILABLE",
   payload: { flag: available }

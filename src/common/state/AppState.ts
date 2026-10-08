@@ -218,6 +218,11 @@ export type EmulatorState = {
    */
   nextLayers?: import("@common/zxnext/layers/layerMix").NextLayerViewState;
   screenRecordingAvailable?: boolean;
+  /**
+   * The advanced-debugging feature switch (G4 + G5; `@common/features/advancedDebugging`): read once
+   * by the main process at startup from `features.advancedDebugging`. Off unless set.
+   */
+  advancedDebugging?: boolean;
   /** A quick-saved machine state is held for the current machine (D19 of the state-files plan) */
   quickStateAvailable?: boolean;
   /**

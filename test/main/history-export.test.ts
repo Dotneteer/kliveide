@@ -29,7 +29,10 @@ beforeEach(() => {
   env.showMessageBox.mockReset();
   env.executeCommand.mockReset().mockResolvedValue({ success: true });
   env.settings.folders = {};
-  env.state = { emulatorState: { machineId: "sp48", machineState: MachineControllerState.Paused }, project: {} };
+  env.state = {
+    emulatorState: { machineId: "sp48", machineState: MachineControllerState.Paused, advancedDebugging: true },
+    project: {}
+  };
 });
 
 describe("save file dialog", () => {

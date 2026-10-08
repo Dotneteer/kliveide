@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { setGlobalSettingAction } from "@state/actions";
 import { MachineController } from "@emu/machines/MachineController";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -33,7 +34,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function controllerWithNext(storeId: string) {
   const machine = await createCore({ hardReset: true });
-  const store = createAppStore(storeId);
+  const store = withAdvancedDebugging(createAppStore(storeId));
   const controller = new MachineController(store, new ResolvingMessenger(), machine as any);
   return { machine, controller, store };
 }

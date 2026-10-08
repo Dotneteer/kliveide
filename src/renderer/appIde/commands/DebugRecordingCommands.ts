@@ -8,6 +8,10 @@ import type { WatchInfo } from "@common/state/AppState";
 
 import { MF_REVERSE_DEBUG, MI_ZXNEXT } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
+import {
+  ADVANCED_DEBUGGING_OFF_MESSAGE,
+  isAdvancedDebuggingEnabled
+} from "@common/features/advancedDebugging";
 import { isDebugRecordingPath, readDebugRecording } from "@common/debugRecording/debugRecordingFile";
 import { formatReverseSeconds } from "@common/history/reverseDebugText";
 import { addWatchAction } from "@common/state/actions";
@@ -79,7 +83,8 @@ export class DebugRecordingSaveCommand extends IdeCommandBase<DebugRecordingSave
     if (args["-from"] !== undefined && !parseRecordingFrom(String(args["-from"]))) {
       messages.push(validationError("-from: use a step back (-42) or a sequence number (#1234)"));
     }
-    if (!hasReverseDebugging(context)) messages.push(validationError("This machine has no reverse debugging to record."));
+    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(ADVANCED_DEBUGGING_OFF_MESSAGE));
+    else if (!hasReverseDebugging(context)) messages.push(validationError("This machine has no reverse debugging to record."));
     return messages;
   }
 
@@ -142,9 +147,10 @@ export class DebugRecordingLoadCommand extends IdeCommandBase<DebugRecordingLoad
     commandOptions: ["-start", "-verify", "-nobreakpoints", "-y"]
   };
 
-  async validateCommandArgs(_context: IdeCommandContext, args: DebugRecordingLoadArgs): Promise<ValidationMessage[]> {
+  async validateCommandArgs(context: IdeCommandContext, args: DebugRecordingLoadArgs): Promise<ValidationMessage[]> {
     const messages: ValidationMessage[] = [];
-    if (!args.file?.trim()) messages.push(validationError("The recording's file path cannot be empty."));
+    if (!isAdvancedDebuggingEnabled(context.store.getState())) messages.push(validationError(ADVANCED_DEBUGGING_OFF_MESSAGE));
+    else if (!args.file?.trim()) messages.push(validationError("The recording's file path cannot be empty."));
     else if (!isDebugRecordingPath(args.file)) messages.push(validationError("The file to open must be a debug recording (.klr)."));
     return messages;
   }

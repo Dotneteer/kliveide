@@ -19,7 +19,7 @@ async function exportTrace(s: Sp48TestSession, commandLine: string): Promise<str
   const m = s.machine;
   const files = new Map<string, string>();
   const context = createMockContext();
-  const state = { emulatorState: { machineId: "sp48", machineState: MachineControllerState.Paused }, compilation: {} };
+  const state = { emulatorState: { machineId: "sp48", machineState: MachineControllerState.Paused, advancedDebugging: true }, compilation: {} };
   (context.store.getState as any).mockImplementation(() => state);
   (context.service.machineService as any).getMachineInfo = () => ({ machine: { machineId: "sp48" } });
   Object.assign(context.emuApi, {

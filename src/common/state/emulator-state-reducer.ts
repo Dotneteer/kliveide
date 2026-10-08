@@ -130,6 +130,12 @@ export function emulatorStateReducer(
         emuViewVersion: (state.emuViewVersion ?? 0) + 1
       };
 
+    case "SET_ADVANCED_DEBUGGING":
+      return {
+        ...state,
+        advancedDebugging: payload?.flag as boolean
+      };
+
     case "SET_SCREEN_RECORDING_AVAILABLE":
       return {
         ...state,

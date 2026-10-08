@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Channel, RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MessengerBase } from "@messaging/MessengerBase";
@@ -62,7 +63,7 @@ describe("Reverse Continue by replay (Phase 5)", () => {
     const program = await session.loadCode(PROGRAM);
     session.poke(0x9600, 0);
     session.machine.pc = program.symbol("Main");
-    const controller = new MachineController(createAppStore("test-reverse-continue"), new ResolvingMessenger(), session.machine as any);
+    const controller = new MachineController(withAdvancedDebugging(createAppStore("test-reverse-continue")), new ResolvingMessenger(), session.machine as any);
     const debugSupport = session.attachDebugSupport();
     controller.debugSupport = debugSupport;
     controller.state = MachineControllerState.Paused;
@@ -146,7 +147,7 @@ describe("Reverse Continue by replay (Phase 5)", () => {
     const program = await session.loadCode(PROGRAM);
     session.poke(0x9600, 0);
     session.machine.pc = program.symbol("Main");
-    const store = createAppStore("test-reverse-progress");
+    const store = withAdvancedDebugging(createAppStore("test-reverse-progress"));
     const controller = new MachineController(store, new ResolvingMessenger(), session.machine as any);
     const debugSupport = session.attachDebugSupport();
     controller.debugSupport = debugSupport;
@@ -199,7 +200,7 @@ describe("Reverse Continue by replay (Phase 5)", () => {
     const program = await session.loadCode(PROGRAM);
     session.poke(0x9600, 0);
     session.machine.pc = program.symbol("Main");
-    const store = createAppStore("test-reverse-desync");
+    const store = withAdvancedDebugging(createAppStore("test-reverse-desync"));
     const sent: string[] = [];
     class RecordingMessenger extends ResolvingMessenger {
       protected override send(message: RequestMessage): void {

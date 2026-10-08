@@ -51,13 +51,15 @@ import {
   initGlobalSettingsAction,
   setMachineTypeAction,
   setModelTypeAction,
-  setScreenRecordingAvailableAction
+  setScreenRecordingAvailableAction,
+  setAdvancedDebuggingAction
 } from "@state/actions";
 import { isFFmpegAvailable } from "./recording/ffmpegAvailable";
 import { Unsubscribe } from "@state/redux-light";
 import { registerMainToEmuMessenger } from "@messaging/MainToEmuMessenger";
 import { getIdeApi, registerMainToIdeMessenger } from "@messaging/MainToIdeMessenger";
 import { createSettingsReader } from "@utils/SettingsReader";
+import { readAdvancedDebuggingSetting } from "@common/features/advancedDebugging";
 import { MEDIA_DISK_A, MEDIA_DISK_B, MEDIA_DOCK, MEDIA_TAPE } from "@common/structs/project-const";
 
 import { invalidateMenuCache, setupMenu } from "./app-menu";
@@ -131,6 +133,9 @@ const settingsReader = createSettingsReader(mainStore.getState());
 const allowDevTools = !!settingsReader.readSetting("devTools.allow");
 const displayIdeDevTools = !!settingsReader.readSetting("devTools.ide") && allowDevTools;
 const displayEmuDevTools = !!settingsReader.readSetting("devTools.emu") && allowDevTools;
+// --- The G4/G5 feature group switch: read once, published below (`@common/features/advancedDebugging`)
+const advancedDebugging = readAdvancedDebuggingSetting(settingsReader);
+mainStore.dispatch(setAdvancedDebuggingAction(advancedDebugging));
 
 // --- Copy workers to the public Klive folder
 // const workerDestFolder = path.join(app.getPath("home"), KLIVE_HOME_FOLDER);
@@ -330,6 +335,9 @@ async function createAppWindows() {
 
       // --- Detect FFmpeg availability (may be absent on some platforms, e.g. win32-arm64)
       mainStore.dispatch(setScreenRecordingAvailableAction(isFFmpegAvailable()));
+
+      // --- The advanced-debugging switch, re-sent now that the windows exist to receive it
+      mainStore.dispatch(setAdvancedDebuggingAction(advancedDebugging));
 
       // --- Store all global settings
       mainStore.dispatch(initGlobalSettingsAction(appSettings.globalSettings ?? {}));

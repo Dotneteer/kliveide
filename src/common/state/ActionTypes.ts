@@ -113,6 +113,7 @@ export interface ActionTypes {
   // --- The ZX Spectrum Next layer debug view (`.plans/LAYER_COMPOSITION_PLAN.md` §4.4)
   SET_NEXT_LAYERS: null;
   SET_SCREEN_RECORDING_AVAILABLE: null;
+  SET_ADVANCED_DEBUGGING: null;
   SET_QUICK_STATE_AVAILABLE: null;
   // --- The history cursor (`.plans/LITE_STEP_BACK_PLAN.md` D3)
   SET_HISTORY_POSITION: null;

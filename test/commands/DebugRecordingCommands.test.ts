@@ -53,7 +53,7 @@ function fake(machineId = "sp48", project?: { folderPath: string }): Fake {
   const files = new Map<string, Uint8Array | string>();
   const context = createMockContext();
   const state: any = {
-    emulatorState: { machineId },
+    emulatorState: { machineId, advancedDebugging: true },
     compilation: { filename: "/p/code/main.asm", result: { sourceFileList: [{ filename: "/p/code/main.asm" }, { filename: "/p/code/lib.asm" }] } },
     watchExpressions: [{ symbol: "counter", type: "b" }],
     project: project ? { ...project, isKliveProject: true } : {}
@@ -255,6 +255,21 @@ describe("debug-recording-load", () => {
     expect((await run(f, new DebugRecordingLoadCommand(), "drload next.klr")).finalMessage).toMatch(
       /The open project targets the ZX Spectrum 48K, but this recording was made on the ZX Spectrum Next/
     );
+  });
+});
+
+describe("debug recordings with the advanced-debugging switch off", () => {
+  it("refuses to save or open one, and says how to turn the switch on", async () => {
+    const f = fake();
+    f.state.emulatorState.advancedDebugging = false;
+    for (const [command, line] of [
+      [new DebugRecordingSaveCommand(), "drsave bug.klr"],
+      [new DebugRecordingLoadCommand(), "drload bug.klr"]
+    ] as const) {
+      const result = await run(f, command, line);
+      expect(result.success).toBe(false);
+      expect(JSON.stringify(result)).toContain("set -u features.advancedDebugging 1");
+    }
   });
 });
 

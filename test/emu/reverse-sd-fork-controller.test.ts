@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RequestMessage } from "@messaging/messages-core";
 import createAppStore from "@state/store";
+import { withAdvancedDebugging } from "../advanced-debugging-helper";
 import { MachineController } from "@emu/machines/MachineController";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { comparePositions } from "@emu/machines/reverse/timelinePosition";
@@ -149,7 +150,7 @@ describe("Reverse debugging and the Next's SD card (Phase 6)", () => {
     s.poke(0x9000, 0);
     const card = new MemorySdCard(new Uint8Array(SECTORS * SD_SECTOR_BYTES).fill(INITIAL));
     const messenger = new SdTestMessenger(card);
-    const controller = new MachineController(createAppStore("test-reverse-sd"), messenger, s.machine as any);
+    const controller = new MachineController(withAdvancedDebugging(createAppStore("test-reverse-sd")), messenger, s.machine as any);
     const debugSupport = s.attachDebugSupport();
     controller.debugSupport = debugSupport;
     controller.state = MachineControllerState.Paused;

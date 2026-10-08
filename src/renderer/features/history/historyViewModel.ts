@@ -1,3 +1,4 @@
+import { ADVANCED_DEBUGGING_OFF_MESSAGE } from "@common/features/advancedDebugging";
 import type { ExecutionHistoryInfo } from "@common/history/historyTypes";
 import type { HistoryRecord } from "@common/history/historyRecord";
 import type { HistoryServiceSpan } from "@common/history/serviceSpans";
@@ -298,10 +299,13 @@ export type HistoryEnvironment = {
   running: boolean;
   /** The current or last run is a debug session */
   debugging: boolean;
+  /** The advanced-debugging switch is off (`@common/features/advancedDebugging`) */
+  switchedOff?: boolean;
 };
 
 /** The message the document shows instead of rows, or undefined when it has rows to show */
 export function historyEmptyMessage(env: HistoryEnvironment, info: ExecutionHistoryInfo | undefined): string | undefined {
+  if (env.switchedOff) return ADVANCED_DEBUGGING_OFF_MESSAGE;
   if (!env.supported) return "This machine does not record execution history";
   if (env.running) return "Running — history updates at the next stop";
   if (!info || info.count === 0) {

@@ -10,6 +10,7 @@
  *    `set:` UI action of the same key (`MainApi.runUiAction`, `src/main/ui-actions.ts`).
  * File rows (ROMs, the key mapping) show a value and offer buttons, which run UI actions.
  */
+import { isAdvancedDebuggingEnabled } from "@common/features/advancedDebugging";
 import type { AppState } from "@state/AppState";
 import type { UiActionId } from "./ui-action-ids";
 import { KliveGlobalSettings } from "./setting-definitions";
@@ -131,7 +132,9 @@ export type SettingsRowCondition =
   | { kind: "machine"; machineIds: string[] }
   /** The Pentagon's and the Scorpion's Beta 128 */
   | { kind: "beta128" }
-  | { kind: "kliveProject" };
+  | { kind: "kliveProject" }
+  /** The advanced-debugging feature switch is on (`@common/features/advancedDebugging`) */
+  | { kind: "advancedDebugging" };
 
 export type SettingsRow = {
   id: string;
@@ -575,7 +578,8 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     title: "Reverse debugging",
     description: "Step back with the whole machine in the past; takes effect at the next debug session",
     editor: "switch",
-    source: setting(SETTING_EMU_REVERSE_DEBUGGING)
+    source: setting(SETTING_EMU_REVERSE_DEBUGGING),
+    when: { kind: "advancedDebugging" }
   },
   {
     id: "reverseDebugMemory",
@@ -585,6 +589,7 @@ export const SETTINGS_ROWS: SettingsRow[] = [
     description: "More memory reaches further back. Automatic: 512 MB or 1/16 of the computer's memory",
     editor: "select",
     source: setting(SETTING_EMU_REVERSE_DEBUG_MEMORY_MB),
+    when: { kind: "advancedDebugging" },
     options: opts([
       [0, "Automatic"],
       [128, "128 MB"],
@@ -939,6 +944,8 @@ export function isSettingsRowApplicable(row: SettingsRow, appState: AppState | u
     }
     case "kliveProject":
       return !!appState?.project?.isKliveProject;
+    case "advancedDebugging":
+      return isAdvancedDebuggingEnabled(appState);
     default:
       return true;
   }

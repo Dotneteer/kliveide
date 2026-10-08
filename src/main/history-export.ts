@@ -9,6 +9,7 @@ import type { AppState } from "@state/AppState";
 import { MachineControllerState } from "@abstractions/MachineControllerState";
 import { MF_EXEC_HISTORY } from "@common/machines/constants";
 import { machineRegistry } from "@common/machines/machine-registry";
+import { hasMachineFeature } from "@common/features/advancedDebugging";
 import {
   HISTORY_EXPORT_FOLDER,
   historyExportCommandText,
@@ -21,7 +22,7 @@ import { displaySaveFileDialog } from "./save-file-dialog";
 /** Whether the history can be exported now: a machine that records it, not running (D10) */
 export function canExportHistory(state: AppState = mainStore.getState()): boolean {
   const machineId = state?.emulatorState?.machineId;
-  const supported = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
+  const supported = hasMachineFeature(machineRegistry.find((m) => m.machineId === machineId), MF_EXEC_HISTORY, state);
   return supported && state?.emulatorState?.machineState !== MachineControllerState.Running;
 }
 

@@ -68,7 +68,7 @@ function pentagonModelId(): string {
   return sp128.models!.find((m) => (m.config?.[MC_DISK_SUPPORT] ?? 0) > 0)!.modelId;
 }
 
-function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "emu") {
+function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "emu", advancedDebugging = true) {
   env.emuFocused = focus === "emu";
   env.state = {
     ideFocused: focus === "ide",
@@ -79,7 +79,8 @@ function buildMenu(machineId: string, modelId?: string, focus: "emu" | "ide" = "
       machineState: MachineControllerState.Paused,
       clockMultiplier: 1,
       soundLevel: 0.4,
-      screenRecordingAvailable: true
+      screenRecordingAvailable: true,
+      advancedDebugging
     },
     media: {},
     project: {},
@@ -230,6 +231,22 @@ describe("the application menu", () => {
     buildMenu("zxnext");
     env.state.emulatorState.reverseDebug = { active: true, mode: "live" };
     expect(saveItem(createMenuTemplate(createMenuContext(window, window)))?.enabled).toBe(true);
+    // --- The advanced-debugging switch off (the default): the whole G4 group is gone, keys included
+    const off = menu(buildMenu("zxnext", undefined, "emu", false), "Debug");
+    for (const id of [
+      "step_back",
+      "step_forward",
+      "step_back_over",
+      "step_back_out",
+      "reverse_continue",
+      "history_present",
+      "show_execution_history",
+      "export_execution_history",
+      "save_debug_recording",
+      "open_debug_recording"
+    ]) {
+      expect(off.find((i) => i.id === id), id).toBeUndefined();
+    }
     expect(labels(submenu(menu(template, "View"), "Machine Views"))).toEqual([
       "Memory",
       "Disassembly",

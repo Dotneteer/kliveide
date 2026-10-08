@@ -93,7 +93,11 @@ export const ExecutionControls = ({ ide, kliveProjectLoaded }: Props) => {
   // --- Lite step back (`.plans/LITE_STEP_BACK_PLAN.md` §4.4): on every machine that records history
   const machineId = useSelector((s) => s.emulatorState?.machineId);
   const historyPosition = useSelector((s) => s.emulatorState?.historyPosition);
-  const recordsHistory = !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
+  // --- Off with the advanced-debugging switch (`@common/features/advancedDebugging`)
+  const advancedDebugging = useSelector((s) => s.emulatorState?.advancedDebugging);
+  const recordsHistory =
+    advancedDebugging === true &&
+    !!machineRegistry.find((m) => m.machineId === machineId)?.features?.[MF_EXEC_HISTORY];
   // --- In the past, every forward command acts on the live machine (D5): the tooltips say so
   const fromPresent = historyPosition ? " - resumes from the present" : "";
   const mayInjectCode = ide && kliveProjectLoaded;
